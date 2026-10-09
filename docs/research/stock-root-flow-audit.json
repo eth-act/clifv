@@ -102,7 +102,32 @@
     }
   ],
   "targeted_build_jobs": 236,
-  "method": "Capped targeted build and10 matching standard-only MCP/compiled-module CLI audits. Pattern/root modules have complete clean MCP diagnostics; existing constant fixture diagnostics still elaborating.",
+  "method": "Complete clean exact-PR lean-mcp diagnostics;10 matching standard-only exact-PR MCP/compiled-module CLI theorem and witness audits; capped targeted and required full/execution gates.",
   "scope": "Actual stock whole-root mapped output provenance, read-only source pattern transport and successful full generated constant-root witness at driver fuel. No identity mapping, new input restrictions or native certificates. Final source-availability-closed alias paths, noninterference and full simulation/cutover remain.",
-  "required_full_and_execution_gates": "pending on isolated PR source"
+  "required_full_and_execution_gates": "passed on validated_source_commit; final PR commit changes receipt only",
+  "gates": {
+    "full_build_jobs": 1300,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "b6b0b89bb496714a9a5d62a58d006a1d13e56acd",
+  "validated_main_commit": "8563945d77edfb292c00ab557fef7425670e9f68",
+  "gate_log_sha256": {
+    "full": "26dd6c063e862408d24c172a3b91d40aa9fe247e19c7afadc50e838cceee5d15",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "1b1797223a099753aabd1707ace4c02cb69543c8671b75a9289dcbd932073275",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "9bd21f45e8e4fae9101eb73671ca2b64a764ccc19796888a9c2b0f0dbc3ca8e6"
+  }
 }
