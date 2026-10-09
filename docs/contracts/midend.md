@@ -726,6 +726,12 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   The optional `/tmp/rust-clif-survey` data was absent. The instruction-count increase from
   R0's 3010 runtest instructions comes with replacing division/remainder by multi-instruction
   sequences; it is not a measured latency result.
+- Integration gates: full compiler build (1290 jobs) and crate-proofs build (958 jobs)
+  completed successfully. All 13 audited root/aggregate/E2E/crate theorems use only permitted
+  axioms. Encoding comparison: 1292/1292 identical functions, 54842 words and 1332 relocations.
+  E2E lowering: 1150 accepted, zero rejected, 97 out of scope. Native filetests: corpus
+  136 passed; runtests 4672 passed, zero failed and zero native disagreements (unsupported
+  and out-of-scope cases remain reported separately).
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (230): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
