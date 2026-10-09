@@ -3,11 +3,9 @@ import FV.E2E.CodeMap
 
 /-! # The code map of an alias-free placement (L1)
 
-`codeMap_place`: without self-call aliases, the code map check `codeMapB` holds on the compiler's
-table placed by `leanLink`, by construction — every function's link-map address is its load
-address (the placement, `addrs_name`), and two functions' code ranges are disjoint (consecutive
-offsets, `off_sep`). With aliases it stays `leanLink`'s check (an alias shares its function's
-code, and whether no `blr` enters it depends on the program).
+`codeMap_place`: the code map check `codeMapB` holds on the compiler's table placed by
+`leanLink`, by construction — every function's link-map address is its load address
+(`addrs_name`), and two functions' code ranges are disjoint (consecutive offsets, `off_sep`).
 -/
 
 namespace Link
@@ -18,7 +16,7 @@ open E2E E2E.LinkCheck Backend LinkSpec
 theorem codeMap_place {S : LinkSpec} (hp : S.placeOkB = true)
     (hr : S.input.resultsT.all (·.2.toBool) = true)
     (hn : S.namesOkB (tabOf S.input.resultsT) = true)
-    (hs : S.sizesOkB (tabOf S.input.resultsT) = true) (hal : S.aliasFns = []) :
+    (hs : S.sizesOkB (tabOf S.input.resultsT) = true) :
     codeMapB S.input (tabOf S.input.resultsT) = true := by
   have hP := placeOk_of hp
   have hidx : ∀ e ∈ tabOf S.input.resultsT,
@@ -26,7 +24,7 @@ theorem codeMap_place {S : LinkSpec} (hp : S.placeOkB = true)
     intro e he
     obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 he
     have := (List.getElem?_eq_some_iff.1 hi).1
-    rw [tab_length, hal] at this
+    rw [tab_length] at this
     exact ⟨i, by simpa using this, hi⟩
   have hfit : ∀ i < S.funcs.length, S.R + (offs S.sizes 0)[i]! + 4 * S.sizes[i]! < 2 ^ 64 :=
     fun i hi => by

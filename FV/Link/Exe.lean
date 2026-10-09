@@ -45,7 +45,7 @@ theorem okB_leanLink {S : LinkSpec} {file0 file : ByteArray}
 /-- **The code map of `leanLink`'s output** (`leanLink`'s check `codeMapB`). -/
 theorem codeMap_leanLink {S : LinkSpec} {file0 file : ByteArray}
     (h : leanLink S file0 = .ok file) : codeMapB S.input (tabOf S.input.results) = true := by
-  obtain ⟨-, -, -, -, -, -, -, -, -, hcm, -⟩ := leanLink_spec h
+  obtain ⟨-, -, -, -, -, -, -, hcm, -⟩ := leanLink_spec h
   rw [S.input_results]
   exact hcm
 
@@ -130,19 +130,5 @@ theorem compileExe_correct {S : LinkSpec} {file0 file : ByteArray}
   exact binary_correct_exec_proven (okB_leanLink hin hl)
     (codeMap_leanLink hl) (binOk_leanLink hl) (gotOk_leanLink hl) B hB hH hf hc M hX ho
     (outsideAvoids_leanLink hl _ _ _ _ _) hr htr
-
-/-- **`compileExe_correct`'s run premise in its former form implies the present one**: from the
-theorem's own premises (`compileExe` succeeded, `BaseOk`, `f` a function of the program, the CLIF
-entry state), `TrapsExplicit` of the activation's run in `P.only f` gives it in `P.bare`
-(`LinkSys.trapsExplicit_bare_of_only`), so `compileExe_correct` holds with the former premise. -/
-theorem compileExe_trapsExplicit_bare {S : LinkSpec} {file0 file : ByteArray}
-    (h : compileExe S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.input B)) {n : String}
-    {f : Clif.Function} (hf : (prog S.input).func? n = some f) {M : Nat} {args : List Clif.Val}
-    {cs : Clif.State} (hcs : ClifEntry f args cs)
-    (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) ((prog S.input).only f) cs) :
-    TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs := by
-  obtain ⟨hin, hl⟩ := compileExe_spec h
-  have hL := okB_sound (okB_leanLink hin hl) (F := fun _ => True) (baseOk_F hB) fun _ _ => trivial
-  exact LinkSys.trapsExplicit_bare_of_only hL (Clif.Program.func?_some hf).1 hcs htr
 
 end Link
