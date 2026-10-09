@@ -16,8 +16,8 @@ vreg) — whose uses are `retPairs` of its argument vregs in the registers `call
 signature, whose defs are `callDefs` in x0, x1, …, and (a `tryCall`) whose `rets` is the
 signature's number of ABI results. The transfer to the callee `h` of `P`:
 
-* a `bl e.name` with `P.func? e.name = some h`: `h ≠ g` (`InSubset`: no direct self-call), `g`
-  declares it, and `callRegs e.sig args = regLocs h.sig` (`dirSiteB`); its `rets` are `h`'s
+* a `bl e.name` with `P.func? e.name = some h`: `g` declares it (possibly itself), and
+  `callRegs e.sig args = regLocs h.sig` (`dirSiteB`); its `rets` are `h`'s
   (the declared signature `e.sig = h.sig`);
 * a GOT `blr`: the GOT symbol restricts the callees to `h` named `e.name`, as for `bl`;
 * an indirect `blr`: every callee the site may enter (`indSiteB`).

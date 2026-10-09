@@ -1728,8 +1728,8 @@ structure Ok : Prop where
   /-- layout: the return address of a call is not in the code of a function of `P` that `g`
   calls, or is after a call instruction of that function's code, not at its entry (`RaOk`;
   stated for the callees of `g`'s call sites, not for every function of `P`: the return address
-  is in `g`'s own code, so a callee sharing `g`'s code — `cargo fv`'s alias of a recursive
-  function at the function's own address — takes the second case) -/
+  is in `g`'s own code, so a native recursive callee or a callee sharing `g`'s code
+  takes the second case) -/
   raCall : ∀ g ∈ L.P.funcs, ∀ info h, L.ProgSite g info h → ∀ pc, CallPc (L.A g).fa (L.A g).base pc →
     RaOk (L.A h) pc
   raStar : ∀ h ∈ L.P.funcs, ∀ k < (L.A h).fb.words.size,

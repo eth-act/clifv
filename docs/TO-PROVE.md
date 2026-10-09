@@ -34,7 +34,7 @@ theorem compileExe_total : InScopeP P → ∃ elf, compileExe P outside = .ok el
 Delivered (L1, `FV/Link/Exe.lean`, `FV/Link/ExeTotal.lean`): `Link.compileExe S file0` (the CLIF
 functions with the oracle's answers, the placement and rust-lld's executable of the outside part in);
 `Link.compileExe_correct` with the outside-code contracts and "no call cycle reachable from the entry"
-as premises; `Link.compileExe_total` under `InScopeP`, no self-call alias, the driver's names/sizes,
+as premises; `Link.compileExe_total` under `InScopeP`, the driver's names/sizes,
 the addresses within the relocations' reach and rust-lld's output passing `regionOkB`/`outsideOkB`.
 
 ### 1.2 What "no per-program certificate" means here (decision)
@@ -76,7 +76,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (`ctlCheck`, operand/move shapes; no frame-size limit since V5); a rejection of regalloc2's allocation falls back to `spillAlloc`, which `lowerRFunc` provably lowers (`E2E.lowerRFunc_spillAlloc`) | fallback; its lowering proven | V5 done |
 | emission, layout | Lean | branch relaxation; `emitFunc_layout_total` from `layoutReadyB`; regalloc2's code kept only if `emitReady` (`lowerAllocReady`), the spill code proven ready (`E2E.emitReady_spill`) under `emitCondsB`; its three isel facts proven from the ISLE data (`E2E.backend_correct_final_total_emit_in`, input condition `extendsWidenB`); the size bound from the input condition `sizeOkB f` (`E2E.backend_correct_final_total_emit_input`) | proven | — |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
-| linking (program level) | `cargo fv` object merge + **rust-lld**; with `--lean-link` the program part's placement is Lean's (`Link.leanLink`) | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide`; with `--lean-link` `linkerOkB` is proven (`Link.leanLink_linkerOk`) | **validator premise + oracle + per-program proof**; L2b stages 1–2: linker facts proven (self-call aliases included) | L1, L2 |
+| linking (program level) | `cargo fv` object merge + **rust-lld**; with `--lean-link` the program part's placement is Lean's (`Link.leanLink`) | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide`; with `--lean-link` `linkerOkB` is proven (`Link.leanLink_linkerOk`) | **validator premise + oracle + per-program proof**; L2b stages 1–2: linker facts proven | L1, L2 |
 | executable bytes | **rust-lld**; with `--lean-link` the program part's bytes are `Link.leanLink`'s | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide`; with `--lean-link` `BinOk` of the placed input (whose results are the compiler's, `LinkInput.fallback`) without premise (`Link.binOk_leanLink`): the code proven, the facts about rust-lld's bytes (`regionOkB`, `Static`, `DataOk`, `SymsOk`) checks inside `leanLink` | **validator premise + oracle + per-program proof**; with `compileExe` (L1): code proven, rust-lld's output checked by the linker | L2, L1 done |
 | executable semantics | — | `E2E.ExecBytes.binary_correct_exec_proven`: the executable's own words (outside calls and TLS by hooks) refine the CLIF run, with **no per-state hypothesis**: the premises of `binary_correct_of_checks_acyclic`, the per-program checks `codeMapB` and `gotB` (`GotOk`), the outside-code contracts `HooksSim` and `OutsideAvoids`; the run's facts come from the M6 proof (`RL.GoodX`, exported through `LinkSys.RunGoodL`); for `compileExe`'s output every per-program fact is proven or a `leanLink` check (`Link.compileExe_correct`: `GotOk` and `OutsideAvoids` vacuous, no GOT slot) | proven; with `compileExe` no per-program premise (L1); the TLS hook (T1) | L3, L1 done |
 | stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); `compileExe_correct` takes the input condition `¬ CycleFrom` directly | input condition | L4 done |
@@ -358,7 +358,7 @@ author's estimate, not measured), **Risk**.
     (`BaseOk`, `HooksSim`, `OutsideCall`, `ClifRun`'s choice, `TrapsExplicit`) and no call cycle
     reachable from the entered function (`CycleFrom`, a property of the CLIF program).
   - **`Link.compileExe_total`** (`FV/Link/ExeTotal.lean`): `compileExe` succeeds under `InScopeP`, the
-    scope limit "no self-call alias" (`S.aliasFns = []`), the driver's data (`placeOkB`, names, sizes
+    driver's data (`placeOkB`, names, sizes
     `LinkSpec.sizesOf`), the address condition `relocRangeB` (targets within `bl`/`adrp` reach, TLS
     offsets below `2^32`) and rust-lld's output (`regionOkB`, `outsideOkB`). The compiler's outputs need
     nothing: `pipeT_ok`, `relocShapes_of_pipeT` (`FV/Link/RelocShapeProof.lean`: every relocated
@@ -370,15 +370,16 @@ author's estimate, not measured), **Risk**.
     with `5` in x0).
 - **L1b (`agent/compile-exe`):** `addrSlotsInB`/`addrSlotsB` relaxed (`|| declSlotsB P`: with a declared
   program callee with slots the run has `NeedSlots`, where `LinkSys.Ok.addrSlots` is not used; the premise
-  now takes `¬ NeedSlots`). Self-call aliases: `Link.compileExe_total_alias` (`FV/Link/AliasOut.lean`)
-  proves every `leanLink` check with aliases from the input conditions `aliasInB` (the alias has its
-  function's oracle answer) and `aliasSymsB` (no function takes an alias's address) and the **unproven**
-  output facts `AliasOut`: (A) the pipeline commutes with swapping the names `f`/`f__fvself` (`pipeT`
-  equivariance through the ISLE interpreter, the isel hooks, allocation, emission; est. 3000–5000 lines);
-  (B) neither name occurs in a non-`bl` reference (`adrp`/GOT/TLS) of `f`'s code (an ISLE rule analysis
-  as `LinkOwnCalls*`, est. 800–1500 lines); (C) `blrGotB` for functions declaring the alias (needs
-  `RunCall` of the GOT call rule 2518 to record a non-colocated extern).
-- **Open:** (A)–(C) above; recursive programs (`CycleFrom`); inputs outside `InScopeP` (`lean-link` then
+  now takes `¬ NeedSlots`).
+- **L1c (#88, `agent/alias-total`), done:** eliminate alias generation instead of proving compiler
+  renaming equivariance. Direct calls, including self-calls, use `P.bare` activation contracts;
+  `DeclN` includes self declarations, and local verification no longer rejects them.
+  `LinkSpec` has no aliases; `compileExe_total` needs no alias restriction or `AliasOut` output
+  hypothesis. The compiler preserves original symbols, including a recursive function's own
+  address. Generic shared-code `LinkInput` certificates remain supported.
+  `E2E.LinkWitness.DirectSelf` witnesses the scope, declaration and self edge, and proves that
+  the actual compiled recursive input has no depth-independent stack budget.
+- **Open:** recursive executable correctness without `CycleFrom` exclusion; inputs outside `InScopeP` (`lean-link` then
   falls back to `leanLink`, not covered by `compileExe_correct`, and prints the failing conditions per
   cause). Remaining failures are proof limits (each protects a `LinkSys.Ok` premise `okB` checks the same
   way). `sret` at indirect calls is done (#89 (a), `agent/scope-widen`: `Ok.indSig` asks for equal
@@ -432,7 +433,7 @@ author's estimate, not measured), **Risk**.
   | fits | `fits` | linker output | `linkerOkB` |
   | depth | `depth` | own output | by construction: `withDepth`, `D` := the largest `frameDrop` (`le_depthOf`) |
   | free (no `return_call`) | `free` | input | `fnScopeB` |
-  | subset: E, no direct self-call, ABI signatures, indirect-call signatures | `subset` | input | `fnScopeB` |
+  | subset: E, ABI signatures, indirect-call signatures in `P.bare` | `subset` | input | `fnScopeB` |
   | callRegs/blrRegs | `callRegs`, `blrRegs` | own output + input | `sites_of_lower` (`FV/E2E/LinkOwnCalls.lean`) from `callScopeB` (input) and the call inversion `CallShapeHyp` (`callShapeHyp_of`, `LinkOwnCallsShape.lean`) of the per-run facts `callStmtRunHyp`, `tryRunHyp`, `stmt_noCalls`, `term_noCalls` (`LinkOwnCallsRun/Stmt/Try*.lean`) and the GOT facts `segRangeHyp`, `gotLocalHyp` (`gotRunHyp_of`, `LinkOwnGotRun/SegRange/GotLocal.lean`). A first statement of the GOT fact for every GOT-loaded vreg was false (a `func_addr` value renamed to its GOT vreg and called in another block); the proven one is about a direct call's GOT vreg |
   | outFits | `outFits` | own output + input | `outFits_of_lower` from `outScopeB` (input: a declared program callee's stack parameters fit the stack area of the calls made) |
   | calleeFrame/slotFits | `calleeFrame`, `slotFits` | own output | `frame_of_lower` (`FV/E2E/LinkOwnFrames.lean`) |
@@ -464,16 +465,16 @@ author's estimate, not measured), **Risk**.
   rust-lld links (346 inputs, 18 allocated relocation types; the Lean code uses only `CALL26` and the
   GOT pair); design (a): the program part placed, relocated and written by Lean (`FV/Link/`:
   `LinkSpec`, `leanLink`), the outside part linked by rust-lld around a placeholder. Proven:
-  `Link.linkerOkB_place_alias` / `Link.leanLink_linkerOk` (`linkerOkB` by construction, self-call
-  aliases included), `Link.leanLink_code` (`ArtOk`), `Link.binOk_leanLink` (`BinOk` of the placed
+  `Link.linkerOkB_place` / `Link.leanLink_linkerOk` (`linkerOkB` by construction),
+  `Link.leanLink_code` (`ArtOk`), `Link.binOk_leanLink` (`BinOk` of the placed
   input, the compiler's code, with no premise: the facts about rust-lld's bytes — headers, cg_clif's
   data objects, the symbol table incl. the functions' placement, the region's segment — are
   `leanLink`'s checks `regionOkB`/`outsideOkB` of rust-lld's output; theorems only with design (b)),
   `Link.crate_correct_leanLink` / `_lower` / `_proven` (no `linkerOkB` premise); witness
   `crate-proofs/Crates/LeanLinkWitness.lean`. `cargo fv --lean-link` (`lake exe lean-link`): the
-  survey crates (18 executables, binary check 18/18, all tests), `fv-demo` (self-call aliases, all
-  tests), `examples/deps`' `deps-demo` (17,090 functions; `lean-link` 16 s); unverified functions and
-  self-calling functions that take their own address keep cg_clif's code. The binary theorem on
+  survey crates, `fv-demo` and `examples/deps`' `deps-demo` exercise this path. Unverified
+  functions keep cg_clif's code; direct self-calls and taking one's own address are supported
+  without aliases (#88). The binary theorem on
   `leanLink`'s output is L1's `compileExe_correct`. Open: design (b) for the outside part.
 
 - **Depends:** L2a on V1–V6; L2b independent of them. **Risk:** L2b scope (archive handling, all
@@ -754,10 +755,11 @@ label**; list the free ones with
 | V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` |
 | V6c | [#76](https://github.com/eth-act/clifv/issues/76) `emitCondsB` from the input | **done**: isel facts (`backend_correct_final_total_emit_in`, input condition `extendsWidenB`), size bound (`backend_correct_final_total_emit_input`, input condition `sizeOkB`) |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | **done**: `crate_correct_inScope_proven` (no `okB`, no open hypothesis: `InScopeP` + `linkerOkB`); `SpillDefinedHyp` (its first statement was false, `not_spillDefinedHyp`; `InScopeP` has `entryParamsB`) proven: `LowerDefinedHyp` from the driver's assembly (`DefRun.lower_defined`) and the ISLE run facts (`DefRun.defRunsHyp`, abstract interpretation `DefGen*`) |
-| L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | stages 1–2 (`agent/lean-linker`): program part placed/relocated/written by `Link.leanLink`; `linkerOkB` (aliases included) and `ArtOk` proven, `BinOk` of the placed input without premise (rust-lld's bytes checked by the linker); `cargo fv --lean-link` on survey, fv-demo, deps; the binary theorem on its output: L1; open: design (b) for the outside part |
+| L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | stages 1–2 (`agent/lean-linker`): program part placed/relocated/written by `Link.leanLink`; `linkerOkB` and `ArtOk` proven, `BinOk` of the placed input without premise (rust-lld's bytes checked by the linker); `cargo fv --lean-link` on survey, fv-demo, deps; the binary theorem on its output: L1; open: design (b) for the outside part |
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); aliases done (`agent/exec-alias`: site kinds, `codeMapB` holds on `fv-demo`) |
 | L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | **done** (`agent/stack-complete`): `budOkW_budMap`, `goodN_iff`, `stackB_isSome_iff`, `binary_correct_of_checks_acyclic` |
-| L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | **done** (`agent/compile-exe`): `Link.compileExe`, `compileExe_correct` (no per-program premise, no open hypothesis), `compileExe_total` (scope limit: no self-call alias; address and rust-lld conditions); `lake exe lean-link` runs `compileExe` |
+| L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | **done** (`agent/compile-exe`): `Link.compileExe`, `compileExe_correct` (no per-program premise, no open hypothesis), `compileExe_total` (address and rust-lld conditions); #88 removes the alias restriction by compiling native self-calls; `lake exe lean-link` runs `compileExe` |
+| L1c | [#88](https://github.com/eth-act/clifv/issues/88) Remove `AliasOut` from executable compiler totality | **done** (`agent/alias-total`): native self-calls in function-free activations; alias-free driver and `LinkSpec`; `compileExe_total` without alias restriction or output hypothesis; recursive own-address smoke passes |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | **done** (`agent/rule-infra`; 43 + 10 roots) |
 | R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (28 rules left) | open |
 | R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (15 rules left) | open |

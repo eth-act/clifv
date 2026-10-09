@@ -19,7 +19,7 @@ stack slot and an outgoing-argument area; it calls
 * `s` with an `sret` pointer to its slot (`s` stores through it, returns the pointer in x0),
 * `k` with 9 arguments (the 9th on the stack, in `f`'s outgoing area),
 * `g` by a `try_call` with a result (`g` calls `h`: a non-leaf program callee),
-* the recursive `r` (`r n = 2 n`): its self-call is `cargo fv`'s alias `r__fvself`, a second
+* the recursive `r` (`r n = 2 n`): its self-call uses the historical alias `r__fvself`, a second
   function with `r`'s body whose self-call names `r` (the two call each other), compiled to the
   same words and loaded at `r`'s address: one copy of the code, each call returning into the
   callee's own code (`raCall`'s second case, `RaOk`),
@@ -290,7 +290,7 @@ def fG : Clif.Function := fn 1
 def fS : Clif.Function := fn 2
 def fK : Clif.Function := fn 3
 def fR : Clif.Function := fn 4
-/-- `r`'s alias (`cargo fv`'s `r__fvself`): `r`'s body, its self-call naming `r`. -/
+/-- `r`'s historical alias `r__fvself`: `r`'s body, its self-call naming `r`. -/
 def fRS : Clif.Function := fn 5
 def fF : Clif.Function := fn 6
 def fQ : Clif.Function := fn 7
@@ -1814,12 +1814,12 @@ theorem backend_correct_program_witness :
   have hpS : (L F0).P.func? fS.name = some fS := by show P.func? fS.name = some fS; rw [hns]; exact hps
   have hnmY : ¬ (L F0).MayCall fY fS.name := by
     rintro (hd | ⟨-, -, hall⟩)
-    · have h1 := hd.1; rw [hexty] at h1; simp at h1
+    · simpa [DeclN, hexty] using hd
     · obtain ⟨sig, hs, hm⟩ := hall fS hpS
       exact hnomatchY sig hs hm
   have hnmZ : ¬ (L F0).MayCall fZ fS.name := by
     rintro (hd | ⟨-, -, hall⟩)
-    · have h1 := hd.1; rw [hextz] at h1; simp at h1
+    · simpa [DeclN, hextz] using hd
     · obtain ⟨sig, hs, hm⟩ := hall fS hpS
       exact hnoZ sig hs hm
   have hnmV : ¬ (L F0).MayCall fV fK.name := by
@@ -1869,7 +1869,7 @@ theorem backend_correct_program_witness :
     by simp [L, P], by simp [L, P], hsT, hslT', hsU, hsUK,
     hibU, hNS, hNN, hplace, by simp [L, P], by simp [L, P], ?_,
     fun h => (by rw [indFreeB_of h] at hindD; cases hindD), hextD',
-    (fun h => by have h1 := h.1; rw [hextD'] at h1; simp at h1), regCallsB_sound hregD,
+    (fun h => by simpa [DeclN, hextD'] using h), regCallsB_sound hregD,
     (by simp only [L, hnm']; exact hsm), (by show symsW "vt" = some vtAddr; exact hsvt), hdrop8,
     ?_, by simp [L, P], indFreeB_sound hie, (by rw [hns]; exact declB_sound hde), hpz, hsr,
     gotCallB_sound hgc', by simp [L, P], hniY, (by simp only [L, hns]; exact hsyms), hnmY,
@@ -2092,7 +2092,7 @@ block2:
 }
 "
 
-def fnInput : LinkCheck.FnInput := ⟨src, "{}"⟩
+def fnInput : LinkCheck.FnInput := { clif := src, ra := "{}" }
 
 def func : Clif.Function := fnInput.func
 
@@ -2111,6 +2111,8 @@ theorem checks :
     LinkCheck.InScopeP input = true ∧ Backend.verifiable func = true ∧
     DeclN func func.name ∧
     StackBound.edgeB (fun n => input.syms.lookup n) func func = true := by
+  refine ⟨by native_decide, rfl, ?_⟩
+  unfold DeclN
   native_decide
 
 /-- Per-activation verification uses the empty function table, not a renamed self callee. -/

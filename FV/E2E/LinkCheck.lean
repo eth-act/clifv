@@ -48,7 +48,7 @@ structure FnInput where
 /-- **The input of a crate-level instance**: the program's functions; the link map (`addrs`:
 every symbol's address, `Xb.sym`); the CLIF image's symbol table (`syms`: `L.syms`, the
 `symbol_value`/`func_addr` names of the program's CLIF with their addresses); a return address
-outside all code (`raStar`); the stack of one call level (`D`); `cargo fv`'s self-call aliases
+outside all code (`raStar`); the stack of one call level (`D`); historical shared-code aliases
 (`aliases`: `(f__fvself, f)`, a function of the program with `f`'s body, its self-call naming
 `f`, loaded at `f`'s address — one copy of the code, as the linker resolves the alias; the alias
 has no symbol in the executable, so `addrs` gives it a fresh address no other symbol has); the
@@ -585,7 +585,7 @@ theorem outside_sound {ra : BitVec 64} {a : Art} (h : outside ra a = true) :
   omega
 
 /-- `LinkSys.RaOk` decided: the return address `pc + 4` is outside `ah`'s code, or `pc` is a
-call of `ah`'s own code (one copy of code shared with the caller: `cargo fv`'s self-call alias)
+call of `ah`'s own code (native recursion or code shared with the caller)
 and `pc + 4` is not its entry. -/
 def raOkB (ah : Art) (pc : BitVec 64) : Bool :=
   outside (pc + 4) ah ||

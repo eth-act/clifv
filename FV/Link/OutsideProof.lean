@@ -9,7 +9,7 @@ whole file as the excerpt (`agrees_self`):
 * `outsideOkB_data`: cg_clif's data objects are at their link-map addresses with their resolved
   bytes (`dataFastB_sound`: `dataFastB` is `dataB` with one address map, `addrMap_get`, so
   `dataB_sound`);
-* `symsOkB_sound`, `outsideOkB_syms`: every link-map name but the self-call aliases is a symbol
+* `symsOkB_sound`, `outsideOkB_syms`: every link-map name is a symbol
   of the file at its address (`SymsOk`; the index `symIndex` only names the entry, which
   `symsOkB` re-checks on the file's bytes);
 * `leanLink_spec`: `leanLink`'s checks and result, unfolded (its parallel pipeline is

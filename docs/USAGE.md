@@ -302,18 +302,16 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   `func_addr` (vtables, `fn` pointers, `dyn` dispatch) and `try_call_indirect` are inside
   `E2E.backend_correct_final` when the indirect calls have at most 8 register parameters and
   plain/`sret` signatures (otherwise "indirect call with stack-passed arguments or a
-  special-purpose parameter"). An indirect call is covered when it reaches an extern (a
-  function not compiled in the same file, e.g. a `dyn` method from another codegen unit or
-  the standard library) under the contract `XCallsIndOk`; one that reaches a function of the
-  same file is excluded by the run premise `TrapsExplicit.indirect`, as direct calls of
-  functions of the file are. Under `--opt-proven-only` `call_indirect` functions stay
-  unverified (the mid-end simulation does not model them); after `i128` legalisation a
-  `call_indirect` without `i128` operands is covered (agent/last-unverified).
-* **Recursion**: each function is compiled in its own file, so a recursive call is the only
-  call of a function of the file. `cargo fv` compiles it as a call of an extern alias
-  `<symbol>__fvself` and points the alias's relocations back at `<symbol>` (the same code):
-  the recursive call is then covered by the callee contract like every other call
-  (`docs/contracts/e2e.md`, "Calls of the function itself").
+  special-purpose parameter"). Calls are interpreted in a function-free activation program
+  under `XCallsIndOk`/`XCallsOk`; the linking theorem supplies the contracts for compiled
+  program callees, including the caller itself. Under `--opt-proven-only` `call_indirect`
+  functions stay unverified (the mid-end simulation does not model them); after `i128`
+  legalisation a `call_indirect` without `i128` operands is covered.
+* **Recursion**: `cargo fv` compiles the original self-call directly, without an extern alias
+  or a renamed copy of the function. Taking one's own function address is supported too.
+  Recursive calls use the same per-activation callee contracts as other calls
+  (`docs/contracts/e2e.md`, "Calls of the function itself"). This does not supply an
+  unbounded stack: `compileExe_correct` still requires no reachable call cycle.
 * With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
   landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
   reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif
@@ -483,8 +481,8 @@ $ cd ../../crate-proofs && lake build Crates.GU128
    evaluates the checker `E2E.LinkCheck.okB` and prints the failing premises of `LinkSys.Ok` per
    function, with details (the call site, the undeclared name), and a count per premise.
    `--prune` drops the failing functions and their callers (transitively), so the rest is
-   closed under calls. A recursive function's self-call alias `f__fvself` becomes a function of
-   the program at `f`'s address (one copy of the code). Then the **binary checks**
+   closed under calls. Recursive calls retain their original names and enter the same
+   function's code; no self-call alias is synthesized. Then the **binary checks**
    (`FV/E2E/BinCheck.lean`, e2e.md "Binary level (M9)") read the executable: every compiled word
    of the (pruned) program at its address, every relocation resolved (`bl` targets, address
    pairs as emitted with resolved immediates, GOT slots, TLSDESC in lld's local-exec form), the data objects the program reaches and
