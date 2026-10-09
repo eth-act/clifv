@@ -78,15 +78,17 @@ def provenSimplifyRules : List Nat :=
 
 /-- Ids of the exported `simplify_skeleton` rules whose correctness is proven
 (`Opt.Proof.skeletonRulesCorrect_proven`; the theorems are in `FV/Opt/Proof/RuleSkeleton.lean`,
-`RuleSkeleton2.lean`, `RuleSkeleton3.lean` and `RuleSkeleton4.lean`): `arithmetic.isle` 79, 80,
+`RuleSkeleton2.lean` through `RuleSkeleton6.lean`): `arithmetic.isle` 79, 80,
 130, 131, 132 (division/remainder by 1 and -1), 83, 87, 102, 135, 142 (division/remainder by a
-power of two), 114, 117, 157, 160 (unsigned division/remainder by a constant: `div_const` magic
-numbers), `cprop.isle` 32, 38, 44, 50 (division/remainder of two constants) and `skeleton.isle` 7,
-9, 22, 26, 33, 37, 44 (conditional traps and branches on constants, branches to trap blocks), 50,
-53, 56 (conditions stripped by `truthy`), 80 (`udiv` by a power-of-two `select`). -/
+power of two), 114, 117, 122, 125, 157, 160, 165, 168 (unsigned/signed division/remainder by a
+constant: `div_const` magic numbers), `cprop.isle` 32, 38, 44, 50 (division/remainder of two constants),
+`icmp.isle` 461, 466, 471, 475 (branches on leading/trailing-zero counts, also after reduction),
+and `skeleton.isle` 7, 9, 22, 26, 33, 37, 44 (conditional traps and branches on constants,
+branches to trap blocks), 50, 53, 56 (conditions stripped by `truthy`), 80
+(`udiv` by a power-of-two `select`). -/
 def provenSkeletonRules : List Nat :=
-  [83, 84, 85, 86, 87, 88, 89, 92, 93, 94, 95, 96, 97, 98, 824, 825, 826, 827, 1366, 1367, 1370,
-   1371, 1372, 1373, 1374, 1375, 1376, 1377, 1378]
+  [83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 824, 825, 826, 827,
+   1114, 1115, 1116, 1117, 1366, 1367, 1370, 1371, 1372, 1373, 1374, 1375, 1376, 1377, 1378]
 
 /-- Which exported rules may contribute candidates (`Isle.Opt.simplify`'s and
 `Isle.Opt.simplifySkeleton`'s allow-list); the other rules still run, their candidates are

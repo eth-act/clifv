@@ -65,7 +65,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 
 | Stage | Implemented in | Verified today by | Kind (§1.2) | WP |
 | --- | --- | --- | --- | --- |
-| mid-end `simplify` rules | Lean (ISLE data) | 1055 + 29 rule theorems; unproven rules disabled (`ruleAllow := .proven`) | proven | R1–R9 (coverage) |
+| mid-end `simplify` rules | Lean (ISLE data) | 1055 + 37 rule theorems; unproven rules disabled (`ruleAllow := .proven`) | proven | R1–R8 (coverage); R9 done |
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
@@ -645,7 +645,7 @@ These don't remove certificates; they shrink the set of functions reported "unve
 
 ### R1–R9. Mid-end rule proofs (the deferred `simplify` rules)
 
-1084 of 1193 rule roots are proven; the rest are disabled in the proven configuration. Status and recipe:
+1092 of 1193 rule roots are proven; the rest are disabled in the proven configuration. Status and recipe:
 `docs/DEFERRED.md` "Mid-end `simplify` rule proofs", per-rule reasons in `docs/contracts/midend.md`
 "Rule proofs" (lines ~570-610). One agent per family; files `FV/Opt/Proof/Rule<Family>.lean`, allow-list in
 `FV/Opt/RuleAllow.lean`, import in `FV/Opt/Proof/RuleAll.lean`.
@@ -660,7 +660,7 @@ These don't remove certificates; they shrink the set of functions reported "unve
 | R6 | cprop | 0 | **done** (R0) |
 | R7 | bitops | 3 | 79 (needs 64-bit and/not immediate specs), 157/170 (byte-swap timeouts) |
 | R8 | extends | 3 | 40, 42, 44 timeouts at 16M heartbeats |
-| R9 | skeleton | 8 | signed `div_const` sequences (`arithmetic.isle` 122, 125, 165, 168: `magicS_spec` is proven, the rule wiring is not); `icmp.isle` 461–475 |
+| R9 | skeleton | 0 | **done** (`agent/skeleton-r9`): all 37 roots; signed `div_const` and count-based branches, including i128/reduced counts |
 
 **R0 (shared infrastructure) is done** (`agent/rule-infra`): `iabs` `bif` form, the finish for constants
 made under a type variable, the `truthy` if-let lemma, `u64_bswap*`, power-of-two and `div_const`
@@ -769,7 +769,7 @@ label**; list the free ones with
 | R6 | [#20](https://github.com/eth-act/clifv/issues/20) Mid-end rule proofs: cprop (0 rules left) | **done** (by R0, `agent/rule-infra`) |
 | R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (3 rules left) | open |
 | R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (3 rules left) | open |
-| R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (8 rules left) | open |
+| R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (0 rules left) | **done** (`agent/skeleton-r9`) |
 | M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | open |
 | S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | open |
 | S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | open |

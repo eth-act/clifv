@@ -42,6 +42,67 @@ example : (BitVec.intMin 128).clz = 0#128 ↔ (BitVec.intMin 128).msb = true :=
 example : (0#128).clz.setWidth 8 = 0#8 ↔ (0#128).clz = 0#128 :=
   skel_count_clz_reduce_zero (by decide) _
 
+/-- Masking bit zero tests exactly the low bit, at every positive width. -/
+theorem skel_count_low_zero {w : Nat} (hw : 0 < w) (x : BitVec w) :
+    x &&& 1#w = 0#w ↔ x.getLsbD 0 = false := by
+  rw [BitVec.and_one_eq_setWidth_ofBool_getLsbD]
+  cases x.getLsbD 0 <;>
+    simp [BitVec.ofBool,
+      BitVec.setWidth_ofNat_one_eq_ofNat_one_of_lt (v := 1) (w := w) (by decide),
+      Nat.ne_of_gt hw]
+
+theorem skel_count_ctz_zero {w : Nat} (hw : 0 < w) (x : BitVec w) :
+    x.ctz = 0#w ↔ x.getLsbD 0 = true := by
+  rw [BitVec.ctz_eq_reverse_clz, skel_count_clz_zero hw, BitVec.msb_reverse]
+
+/-- The replacement condition and the original count choose the same branch. -/
+theorem skel_count_ctz_truthy {w : Nat} (hw : 0 < w) (x : BitVec w) :
+    Sem.truthy (Sem.icmp .eq (x &&& 1#w) 0#w) = Sem.truthy x.ctz := by
+  apply Bool.eq_iff_iff.mpr
+  cases h : x.getLsbD 0 <;>
+    simp [Sem.truthy, Sem.icmp, Sem.intcc, Sem.bool8, bne_iff_ne,
+      skel_count_low_zero hw x, skel_count_ctz_zero hw x, h]
+
+theorem skel_count_clz_truthy {w : Nat} (hw : 0 < w) (x : BitVec w) :
+    Sem.truthy (Sem.icmp .sge x 0#w) = Sem.truthy x.clz := by
+  apply Bool.eq_iff_iff.mpr
+  cases h : x.msb <;>
+    simp [Sem.truthy, Sem.icmp, Sem.intcc, Sem.bool8, bne_iff_ne,
+      BitVec.zero_sle_eq_not_msb, skel_count_clz_zero hw x, h]
+
+theorem skel_count_ctz_reduce_truthy {w v : Nat} (hw : 0 < w) (hv : w < 2 ^ v)
+    (x : BitVec w) :
+    Sem.truthy (Sem.icmp .eq (x &&& 1#w) 0#w) = Sem.truthy (x.ctz.setWidth v) := by
+  rw [skel_count_ctz_truthy hw]
+  apply Bool.eq_iff_iff.mpr
+  simp only [Sem.truthy, bne_iff_ne, BitVec.ctz_eq_reverse_clz]
+  exact not_congr (skel_count_clz_reduce_zero hv x.reverse).symm
+
+theorem skel_count_clz_reduce_truthy {w v : Nat} (hw : 0 < w) (hv : w < 2 ^ v)
+    (x : BitVec w) :
+    Sem.truthy (Sem.icmp .sge x 0#w) = Sem.truthy (x.clz.setWidth v) := by
+  rw [skel_count_clz_truthy hw]
+  apply Bool.eq_iff_iff.mpr
+  simp only [Sem.truthy, bne_iff_ne]
+  exact not_congr (skel_count_clz_reduce_zero hv x).symm
+
+example : (2#128 &&& 1#128 = 0#128) ↔ (2#128).getLsbD 0 = false :=
+  skel_count_low_zero (by decide) _
+example : (1#128).ctz = 0#128 ↔ (1#128).getLsbD 0 = true :=
+  skel_count_ctz_zero (by decide) _
+example : Sem.truthy (Sem.icmp .eq (2#128 &&& 1#128) 0#128) =
+    Sem.truthy (2#128).ctz :=
+  skel_count_ctz_truthy (by decide) _
+example : Sem.truthy (Sem.icmp .sge (BitVec.intMin 128) 0#128) =
+    Sem.truthy (BitVec.intMin 128).clz :=
+  skel_count_clz_truthy (by decide) _
+example : Sem.truthy (Sem.icmp .eq (0#128 &&& 1#128) 0#128) =
+    Sem.truthy ((0#128).ctz.setWidth 8) :=
+  skel_count_ctz_reduce_truthy (by decide) (by decide) _
+example : Sem.truthy (Sem.icmp .sge 0#128 0#128) =
+    Sem.truthy ((0#128).clz.setWidth 8) :=
+  skel_count_clz_reduce_truthy (by decide) (by decide) _
+
 open Lean Meta Elab Tactic in
 /-- Share one graph-constructor result by a definition, not a new premise. -/
 elab "skel_count_share_one " h:ident : tactic => withMainContext do
@@ -93,18 +154,17 @@ elab "skel_count_type_one" : tactic => withMainContext do
   throwError "no made operand type to reconcile"
 
 set_option hygiene false in
-/-- Apply only the branch-condition outcome, then decide its count identity. -/
+/-- Instantiate the count identities directly, without reflecting graph-local expressions. -/
 macro "skel_count_finish" : tactic => `(tactic| (
   apply skel_brif_cond (hle4 _ _ (by opt_den_x)) (hle4 _ _ (by opt_den_x))
   opt_cases_ty
   all_goals (
     dsimp only [Ty.width] at *
-    simp only [Sem.truthy, Sem.icmp, Sem.unary, Sem.clz, Sem.ctz, Sem.ireduce,
-      Sem.uextend, Sem.binary, Sem.band, bool8_bif, intcc_eq', intcc_sge']
-    rw [Bool.eq_iff_iff]
-    simp (disch := decide) only [bne_iff_ne, ne_eq, BitVec.ctz_eq_reverse_clz,
-      skel_count_clz_reduce_zero, skel_count_clz_zero, BitVec.msb_reverse]
-    bv_decide (config := { timeout := 120 }))))
+    first
+      | (apply skel_count_ctz_truthy <;> decide)
+      | (apply skel_count_clz_truthy <;> decide)
+      | (apply skel_count_ctz_reduce_truthy <;> decide)
+      | (apply skel_count_clz_reduce_truthy <;> decide))))
 
 set_option hygiene false in
 /-- The ordinary skeleton RHS phase, sharing each made node between steps. -/

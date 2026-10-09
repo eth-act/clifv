@@ -21,13 +21,20 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
+**Status (2026-10-09, R9):** 1092 of 1193 roots are proven: 1055 `simplify` and all 37
+`simplify_skeleton`. R9 completes signed i32/i64 `div_const` division/remainder and the four
+leading/trailing-zero branch rules, including i128 and reduced counts. Proven-only differential
+tests: corpus 4668 → 2289 instructions, runtests 3389 → 3071, no refinement failures or verifier
+rejections. All eight new roots fire in a 798-case CLI/AArch64 smoke with exact agreement.
+See midend.md "Skeleton rules" for the proofs, witnesses and verification scope.
+
 **Status (2026-10-07, R0 / RuleInfra):** 1055 `simplify` roots are proven and allow-listed: arithmetic 230 of 258, cprop 68 of 68, bitops 447 of 450, icmp 109 of 124, selects 87 of 100, extends 26 of 29, shifts 56 of 75, spaceship 20 of 40 and remat 12 of 12; 29 `simplify_skeleton` roots (`arithmetic.isle` 79, 80, 83, 87, 102, 114, 117, 130-132, 135, 142, 157, 160; `cprop.isle` 32, 38, 44, 50; `skeleton.isle` 7, 9, 22, 26, 33, 37, 44, 50, 53, 56, 80). R0 added the shared infrastructure (an `iabs` `bif` form, the right-hand-side finish for constants made under a type variable, a `truthy` if-let lemma, `u64_bswap*`, `imm64_power_of_two`/power-of-two division and `div_const` magic-number specs `magicU_spec`/`magicS_spec`, low-memory icmp/selects templates) and 43 + 10 roots with it; midend.md "R0" has the details. `E2E.backend_correct_opt_proven` covers exactly these sets. With only these rules enabled (`--opt-proven-only`), corpus instructions fall from 4668 to 2289 (unchanged by R0), runtests from 3389 to 3010 (2926 before R0) and the survey file from 355 to 190 (191). In these sets the new `simplify` rules fire 35 times (`cprop.isle` 269 18 times) and the new skeleton rules 32 times; the latter replace a division by a constant with its shift or multiply-high sequence (cheaper, but more instructions), hence the +84 in runtests.
 
 **Status (2026-10-01, RulesRest):** 1012 `simplify` roots were proven: arithmetic 216 of 258, cprop 61 of 68, bitops 444 of 450, icmp 95 of 124, selects 82 of 100, extends 26 of 29, shifts 56 of 75, spaceship 20 of 40 and remat 12 of 12. **Skeleton (2026-10-01, SkeletonProof):** 19 `simplify_skeleton` roots (`arithmetic.isle` 79, 80, 130-132; `cprop.isle` 32, 38, 44, 50; `skeleton.isle` 7, 9, 22, 26, 33, 37, 44, 50, 53, 56), after the framework fix below. With these rules, corpus instructions fell from 4668 to 2289 (2322 without skeleton rules; all rules: 2287), and runtests from 3389 to 2926 (was 2976).
 
 **Findings:** `shifts.isle` 84 and 88 are false under the CLIF semantics (shift constants above the type width make `shift_amt_to_type` pick a type wider than `ty`, so the rule builds an ill-typed `ireduce`/`sextend`; midend.md has the example). The skeleton framework gap (node facts of the start state vs. refinement in later valuations) is closed by a reads-defined premise: `SkeletonSound`/`SkelRuleOk` assume the instruction's reads (`Opt.skelReads`) are defined when the rules run, and `runSkel_spec` discharges the undefined case (known values never change, so the original is stuck); see midend.md "Skeleton rules".
 
-**Remaining:** arithmetic 28, bitops 3, icmp 15, selects 13, extends 3, shifts 19 (2 of them false), spaceship 20, skeleton 8 (`arithmetic.isle` 122, 125, 165, 168: signed `div_const` sequences, the magic numbers are proven (`magicS_spec`), the rule wiring is not; `icmp.isle` 461-475; midend.md "Skeleton rules"). midend.md lists them with reasons. Roots per family:
+**Remaining:** arithmetic 28, bitops 3, icmp 15, selects 13, extends 3, shifts 19 (2 of them false), spaceship 20. Skeleton is complete. midend.md lists the remaining roots with reasons. Roots per family:
 
 | Family | Roots |
 | --- | --- |
@@ -40,7 +47,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 | spaceship | 40 |
 | extends | 29 |
 | remat | 12 (all proven) |
-| skeleton (incl. div_const) | 37 |
+| skeleton (incl. div_const) | 37 (all proven) |
 
 **How to add a family:** follow the recipe in midend.md "Rule proofs":
 1. Write a per-family file with `RuleOk` proofs over an abstract `p` with `Data p`.
