@@ -1,0 +1,104 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockCtorFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockCtorFlow.lean": "d7877c2e4135f1d73e19847fa5823a9ec56e9e7fd2d5391dcab7751e06e499dd"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_reserved_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_reserved_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_built_ctor_output_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_built_ctor_output_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_values",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_values_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_instructions",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_instructions_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 241,
+  "method": "Complete clean canonical Lean MCP diagnostics; ten matching standard-only MCP/compiled Lean audits; capped targeted build of constructor, mapped flow, root flow and binding flow passes.",
+  "scope": "Exact argument/fresh/mapped/physical/invalid or reserved return/payload constructor origins for arbitrary exception reservations. Successful try-call merge witness has payload194 aliasing return193 and retained payload195; old ordinary-origin interface preserved for empty reservations. Whole-interpreter/root reserved flow, actual scan/final alias availability and production cutover remain.",
+  "required_full_and_execution_gates": "pending on publication source"
+}
