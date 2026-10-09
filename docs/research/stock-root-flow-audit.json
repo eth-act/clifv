@@ -1,0 +1,108 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockPatternSource",
+    "FV.Backend.Proof.StockRootFlow",
+    "FV.Backend.Proof.StockConstantRoot"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockPatternSource.lean": "405f5c99e070f51e499717b0001a5208ec80d0e5bfdf09bd8b1ea1b6100845ca",
+    "FV/Backend/Proof/StockRootFlow.lean": "7c87456aff57aa7cf907221ea26a40d95be1aeb2b36ea90309bbd5e4d3235ec8",
+    "FV/Backend/Proof/StockConstantRoot.lean": "dca4c42bd1ebf914cc8ce62c69f1cfdc1c4e7326702b72fb35fbd89eed98228b"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.DFGViewEq.externExtract_eq",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_matchPat_source",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_matchArgs_source",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_extract_source_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_matchPat_source_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_matchArgs_source_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant_built",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_statement_selectedConstant_built_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.MappedFlow.stock_root_mapped_flow_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 236,
+  "method": "Capped targeted build and10 matching standard-only MCP/compiled-module CLI audits. Pattern/root modules have complete clean MCP diagnostics; existing constant fixture diagnostics still elaborating.",
+  "scope": "Actual stock whole-root mapped output provenance, read-only source pattern transport and successful full generated constant-root witness at driver fuel. No identity mapping, new input restrictions or native certificates. Final source-availability-closed alias paths, noninterference and full simulation/cutover remain.",
+  "required_full_and_execution_gates": "pending on isolated PR source"
+}
