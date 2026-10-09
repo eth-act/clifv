@@ -1,0 +1,116 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockCtorFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockCtorFlow.lean": "73060e20e3baadb9f53b643fb626c86d96d5e863cf55ec1aba831692c3c07036"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_built_ctor_output_origin",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_values",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_instructions",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_built_ctor_output_origin_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_values_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_ctor_output_instructions_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 156,
+  "method": "Complete clean canonical lean-mcp diagnostics; all8 standard-only theorem/witness MCP audits; capped targeted build and matching compiled-module CLI audits.",
+  "scope": "All successful actual stock constructors: mapped/argument/fresh/physical register origins in statement contexts, source-value containment, instruction origins including successful sinkability. Actual successful buildCtx supplies the statement-context premise. Nonempty witnesses cover mapped192/fresh194/195, source-value atoms and successful sinkability. Whole-rule flow model, final alias provenance/noninterference and full simulation remain unfinished.",
+  "log_sha256": {
+    "/tmp/stock-ctor-flow-targeted.log": "246d671bc400382682a74ab7f90746482106bf8621c0f448b3377aa6df2cd8a4",
+    "/tmp/stock-ctor-flow-axioms.log": "96f1783dfab57adfd3f4971d7d9adbeeb016f54ecc445f7101d501e7d1f2b5e0"
+  },
+  "required_full_and_execution_gates": "passed on exact isolated source8a64403",
+  "gates": {
+    "full_build_jobs": 1297,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "8a644034ea59b8a888522bd1d9ff0a7d57c74130",
+  "validated_main_commit": "4369a6d84c0e35494170f258e8cf7744dd80672b",
+  "gate_log_sha256": {
+    "full": "6685e0056bafbeac28fdc7d8e342b9253f516c820871c221f4843e355d283e2f",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "f03d1f125ecc3fd71573d69a7d0fa4edf0d9a144b1637c4981bb22a42f666363",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "96f1783dfab57adfd3f4971d7d9adbeeb016f54ecc445f7101d501e7d1f2b5e0"
+  },
+  "exact_pr_mcp_diagnostics": "complete clean; all8 exact PR standard-only MCP audits match CLI"
+}
