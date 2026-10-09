@@ -60,6 +60,22 @@ Next: fresh-frontier and exception-reservation invariants through scans and the
 whole driver, then the remaining SSA/load-fusion obligations and whole-driver
 correctness/completeness. Production remains legacy; cutover is incomplete.
 
+## Allocation invariants landing slice
+
+After #105 landed as 4c73876, StockAllocationFlow proves that actual
+constructors, complete term evaluation, instruction scans and tail-recursive
+block scans never decrease nextVreg and preserve preallocated exception
+reservations. Call-output witnesses allocate two fresh registers and retain
+nonempty reservations; scan witnesses exercise actual opportunistic aliases.
+Four public results have four inhabited witnesses. This changes no compiler
+behavior and adds no acceptance restriction.
+
+Eight Lean MCP and exact-branch axiom checks use standard axioms only. All
+required gates pass: full1272, crate959, corpus114/extrt22, runtests4672/0 and
+zero disagreements, encoder1292 identical/0 differing, E2E1149/0 rejected,
+and seven final theorem axiom audits. Whole-driver composition and production
+cutover remain pending.
+
 ## Summary
 
 Implement #60 by changing Lean's lowering driver to follow Cranelift 0.136.1 at
