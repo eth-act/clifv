@@ -1,0 +1,101 @@
+{
+  "checks": [
+    {
+      "theorem": "ScansSpec.fall_refines",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_scanBlock_fall_refines",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omitted_fall_refines",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omitted_source_step",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omittedBlock_fall_refines",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "ScansSpec.fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omitted_fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_scanBlock_fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omitted_source_step_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "stock_omittedBlock_fall_refines_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "build": {
+    "jobs": 1262,
+    "log": "/tmp/stock-scan-semantics-pr-full.log",
+    "result": "passed"
+  },
+  "scope": "Forward source composition of actual backward stock scans and real omitted source steps. Per-record emitted semantics and whole-driver correctness remain obligations.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockScanSemantics.lean": "5318e2b94bd8770f1b9d58fb27f874f092230da69fc1248bd7dfe5e3caf340cd"
+  }
+}

@@ -142,3 +142,13 @@ Next required work:
    acceptance parity, then publish measured results and update contracts.
 
 Keep slices reviewable; no claim that the preserved large migration is complete.
+
+### Scan-composition slice prepared for review
+
+The bounded scan-composition PR starts from current main33f03f2 and contains
+StockScanSemantics plus this plan and its audit receipt. Reverified the exact
+PR branch with capped FV/FVTest/backend/E2E/link-check:1262 jobs passed. Lean
+MCP diagnostics are clean; five public theorem/five non-vacuity witness audits
+use only standard axioms. Runtime/corpus, crate-proofs and final E2E axiom
+gates have not been rerun on this isolated branch, so the PR is a draft rather
+than merge-ready. The remaining local proof stack is excluded from this slice.
