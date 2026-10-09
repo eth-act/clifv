@@ -44,7 +44,32 @@
     }
   ],
   "targeted_build_jobs": 237,
-  "method": "Complete clean canonical lean-mcp diagnostics,4 matching standard-only MCP/compiled-module CLI audits and capped targeted build.",
+  "method": "Complete clean exact-PR lean-mcp diagnostics;4 matching standard-only exact-PR MCP/compiled Lean audits; capped targeted and required full/execution gates.",
   "scope": "Validated mapped-context whole-root flow with empty exception reservations; existing build-derived theorem retained. Canonical identity context used only as a proof view for source matching; actual runtime context remains mapped. Terminator overrides can use validated mapped context variant; actual exception reservations, full scan transport, final alias availability/noninterference and whole simulation/cutover remain.",
-  "required_full_and_execution_gates": "pending on isolated PR source"
+  "required_full_and_execution_gates": "passed on validated_source_commit; final PR commit changes receipt only",
+  "gates": {
+    "full_build_jobs": 1300,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "80c41a78f0e49f6e04e77a6433b7e83a00f5e95e",
+  "validated_main_commit": "914eb6fd2a55b8e8164abebc31cd8dcf11ea1446",
+  "gate_log_sha256": {
+    "full": "b173740cbb64579a4177aa724704f830c7a46204c5e62e59931b50bd173c986d",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "3e238f20982660f0dc4f339bd6f0a461945f28fd5621a5755a260dbdb61e4354",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "6f5fc40fd2fb5fffcc5335c7b1ada5bce7d66e78c5a03d9efced0f6ba549027a"
+  }
 }
