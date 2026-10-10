@@ -1,0 +1,76 @@
+{
+  "schema": 1,
+  "method": "normal built imports; memory-capped lake env lean #print axioms for paired original and cleanup roots",
+  "log_sha256": "c07491644ea965ee2126f49cfb19fb29c5b68165b82fa5bcd9ac01eba8e2c83e",
+  "roots": [
+    {
+      "baseline_theorem": "E2E.backend_correct_opt_proven",
+      "cleanup_theorem": "E2E.backend_correct_opt_proven_cleanup",
+      "baseline_count": 8937,
+      "cleanup_count": 8937,
+      "added": [],
+      "removed": [],
+      "disallowed": [],
+      "mcp": {
+        "axiom_count": 8937,
+        "matches_capped_print_axioms": true,
+        "source_warnings": [],
+        "diagnostics_errors": 0
+      }
+    },
+    {
+      "baseline_theorem": "E2E.backend_correct_legal_direct",
+      "cleanup_theorem": "E2E.backend_correct_legal_direct_cleanup",
+      "baseline_count": 884,
+      "cleanup_count": 884,
+      "added": [],
+      "removed": [],
+      "disallowed": []
+    },
+    {
+      "baseline_theorem": "E2E.backend_correct_final_total",
+      "cleanup_theorem": "E2E.backend_correct_final_cleanup_total",
+      "baseline_count": 803,
+      "cleanup_count": 803,
+      "added": [],
+      "removed": [],
+      "disallowed": []
+    },
+    {
+      "baseline_theorem": "E2E.backend_correct_final_total_emit_in",
+      "cleanup_theorem": "E2E.backend_correct_final_cleanup_total_emit_in",
+      "baseline_count": 819,
+      "cleanup_count": 819,
+      "added": [],
+      "removed": [],
+      "disallowed": []
+    },
+    {
+      "baseline_theorem": "E2E.backend_correct_final_total_emit_input",
+      "cleanup_theorem": "E2E.backend_correct_final_cleanup_total_emit_input",
+      "baseline_count": 853,
+      "cleanup_count": 853,
+      "added": [],
+      "removed": [],
+      "disallowed": []
+    },
+    {
+      "baseline_theorem": "Link.compileExe_correct",
+      "cleanup_theorem": "Link.DeadCleanup.compileExe_correct",
+      "baseline_count": 830,
+      "cleanup_count": 830,
+      "added": [],
+      "removed": [],
+      "disallowed": []
+    },
+    {
+      "baseline_theorem": "Link.compileExe_total",
+      "cleanup_theorem": "Link.DeadCleanup.compileExe_total",
+      "baseline_count": 823,
+      "cleanup_count": 823,
+      "added": [],
+      "removed": [],
+      "disallowed": []
+    }
+  ]
+}

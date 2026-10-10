@@ -47,7 +47,8 @@ binary, crate and stack proofs. The generated input retains allocator fallback
 mode. `lean-link --dead-cleanup` selects the matching executable compiler.
 `--no-dead-cleanup` selects the legacy path. Cleanup is the default for these tools and compiler helpers. `cargo fv`
 explicitly selects cleanup and reports its matching final/optimizer theorem.
-Final merge gates must validate this cutover. Lowering diagnostics retain raw
+Full proof/crate builds and runtime, encoder and E2E identity gates pass for
+the validated source; see the final validation receipt. Lowering diagnostics retain raw
 selection/replay and also record the post-cleanup allocation input; their
 `allocator_input` follows the same cleanup mode as the compiler.
 
@@ -67,4 +68,4 @@ Closed compilation/linker witnesses use the baseline fixed-receipt convention
 and are excluded from production correctness roots.
 
 Receipts are in `docs/research/legacy-dead-instruction-cleanup/`. The implementation
-plan and pending gates are in `docs/plans/legacy-dead-instruction-cleanup.md`.
+plan and completed checkpoints are in `docs/plans/legacy-dead-instruction-cleanup.md`.

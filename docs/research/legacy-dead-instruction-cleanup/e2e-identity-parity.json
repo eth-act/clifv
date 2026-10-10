@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "head": "735a762de36e17e652a1b5c3660a14734c2c3038",
+  "comparison": "explicit legacy diagnostic path versus cleanup default; identical source files and all successful checker stages",
+  "identities": 1150,
+  "stage_counts": {
+    "checked": 1150,
+    "lowerCheck": 1150,
+    "prepare": 1150,
+    "formsCoveredB": 1150,
+    "checkAlloc": 1150,
+    "lowerRFunc": 1150,
+    "emitFunc": 1150,
+    "layoutReadyB": 1150,
+    "killFreeB": 1150,
+    "prepCheck": 1150,
+    "legalized": 161
+  },
+  "lost": 0,
+  "gained": 0,
+  "changed_stages": 0,
+  "reports": [
+    {
+      "path": "/tmp/legacy-dead-cleanup-final-legacy-e2e-identities.json",
+      "sha256": "c6073d7d22cb356ac863dbbcae7e07d92568c47c34b7adee542c40e014a5430b"
+    },
+    {
+      "path": "/tmp/legacy-dead-cleanup-final-e2e-identities.json",
+      "sha256": "8cdc10dc3ee93c52e91dff68bd798e607e775f016492f95dc0215a100a8af963"
+    }
+  ]
+}

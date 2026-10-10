@@ -3,6 +3,31 @@
 User-approved implementation plan, 2026-10-10. The replacement-driver effort and
 draft PR #135 remain paused. This work starts at fresh main `8959127`.
 
+## Current status
+
+The narrow implementation is published in PR #137 at `735a762`, based on main
+`b75d724`. Cleanup and its matching compiler, checker, linker and generated-proof
+consumers are enabled by default. The original driver, theorem variants and
+source scope are preserved. Fresh full comparison gives 465 -> 671 exact
+artifacts (+206), zero lost matches/new rejections and all three focused cases
+exact. Runtime, encoder, stack allocation and E2E identity parity pass: both
+modes accept the same 1,150 functions, including 161 legalized functions.
+
+The required normal builds pass at that validated source: full FV/FVTest/tools
+1,417 jobs and crate proofs 1,171 jobs. The seven paired final theorem audits
+have exactly unchanged original/cleanup axiom sets; optimizer-proven parity
+(8,937 axioms) also passes Lean MCP verification and its source scan. Runtime:
+114/114 corpus, 22/22 external runtime and 4,672 passing runtests with zero
+failures/errors/disagreements; the seven native-unsupported cases are unchanged.
+Encoder: 1,292 identical, zero differing artifacts. Python: 79 passing tests,
+two skips. The original declaration source inventory has no missing occurrences;
+it is not a kernel proof count. See `final-validation.json`,
+`final-paired-root-axioms.json` and `e2e-identity-parity.json` in the research
+receipt directory. PR #136 is merged; implementation and validation are complete
+for PR #137. Replacement-driver #135 remains paused.
+
+The progress entries below record earlier checkpoints chronologically.
+
 ## Acceptance checkpoint
 
 Prototype a conservative post-lowering cleanup before proof migration. Run the

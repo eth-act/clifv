@@ -124,3 +124,31 @@ python3 scripts/stock-comparison-delta.py \
   --require-exact isa/aarch64/arithmetic.clif:%msub_i32 \
   --require-exact isa/aarch64/stack.clif:%stack_load_small
 ```
+
+## Final implementation validation
+
+[final-validation.json](final-validation.json) records the validated source head,
+normal full build (1,417 jobs), normal crate build (1,171 jobs), runtime,
+stack-allocator, encoder and Python results, and log hashes.
+[final-paired-root-axioms.json](final-paired-root-axioms.json) records exact
+original/cleanup axiom-set parity for optimizer-proven, legalization, totality,
+emission, input-size-bound totality and executable correctness/totality roots.
+The optimizer root also passes Lean MCP verification and source scan.
+
+[e2e-identity-parity.json](e2e-identity-parity.json) compares the same 1,150
+function identities and successful checker stages in both modes, including all
+161 legalized identities. It records zero losses, gains or changed stages.
+Reproduce the manifests after building `lean-e2e-check`:
+
+```sh
+FV_MEMCAP=22G scripts/memcap.sh .lake/build/bin/lean-e2e-check \
+  --identity-report /tmp/cleanup-identities.json
+FV_MEMCAP=22G scripts/memcap.sh .lake/build/bin/lean-e2e-check \
+  --no-dead-cleanup --identity-report /tmp/legacy-identities.json
+```
+
+Compare the reports' `functions` arrays by file, original function index, name
+and successful stages. The top-level `dead_cleanup` field records the mode.
+The declaration source inventory preserves all baseline occurrences; it is a
+source retention check, not a kernel proof count. The normal builds establish
+that the retained declarations and new adapters elaborate together.
