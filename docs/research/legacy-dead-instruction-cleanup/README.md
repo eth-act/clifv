@@ -97,3 +97,30 @@ only the stock allocator callback's VCode array, exactly as in the original
 measurement. The hook and candidate executable were isolated in the measurement
 worktree; the hook was removed after preserving the executable. Production
 integration and its full proof/validation gates are still pending.
+
+## Production default comparison
+
+`default-enabled-receipt.json` records the fresh compiler at `b6b6c9e`, using its
+unflagged cleanup default against its explicit `--no-dead-cleanup` path. Both
+runs pin the same allocator executable. `default-enabled-delta.json` verifies
+the full 1,302-file inventory, **465 → 671 exact artifacts**, **206 gains**, no
+lost identities or new rejections, and all three focused cases. This is artifact
+comparison evidence; the full proof and runtime gates are checked separately.
+
+After building `lean-backend`, reproduce the two measurements with:
+
+```sh
+export LEAN_REGALLOC="$PWD/rust/target/release/lean-regalloc"
+FV_MEMCAP=8G scripts/memcap.sh python3 scripts/stock-compiler-compare.py \
+  --out target/legacy-dead-cleanup/final-legacy-comparison --jobs 2 \
+  --lean-compiler-arg=--no-dead-cleanup
+FV_MEMCAP=8G scripts/memcap.sh python3 scripts/stock-compiler-compare.py \
+  --out target/legacy-dead-cleanup/final-default-comparison --jobs 2
+python3 scripts/stock-comparison-delta.py \
+  target/legacy-dead-cleanup/final-legacy-comparison/results.json \
+  target/legacy-dead-cleanup/final-default-comparison/results.json \
+  --out target/legacy-dead-cleanup/final-default-delta.json --require-full-suite \
+  --require-exact isa/aarch64/bitops.clif:%band_not_i64 \
+  --require-exact isa/aarch64/arithmetic.clif:%msub_i32 \
+  --require-exact isa/aarch64/stack.clif:%stack_load_small
+```

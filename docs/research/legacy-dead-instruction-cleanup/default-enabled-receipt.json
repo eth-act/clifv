@@ -1,0 +1,36 @@
+{
+  "baseline_main_commit": "b75d7248039eb902080c64fc1e7d044126532b0b",
+  "compiler_source_commit": "b6b6c9e93fe1d117c5b8c9414da95d584de783d7",
+  "measurement_mode": "one fresh compiler executable; explicit --no-dead-cleanup versus unflagged cleanup default; same explicit LEAN_REGALLOC",
+  "updated_utc": "2026-10-10T19:18:17.923467+00:00",
+  "artifacts": {
+    "pass": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/FV/Backend/DeadCleanup.lean",
+      "sha256": "2d866fb9d31506f414fd1ccbccb0e52b9d576d0e5b66ca904fa85291c1c68d66"
+    },
+    "compiler": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/.lake/build/bin/lean-backend",
+      "sha256": "b2341caa7416d577a4d529b1f0e2e47e75f5639c92208871e862782a0fdc67c0"
+    },
+    "regalloc_oracle": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/rust/target/release/lean-regalloc",
+      "sha256": "f2ee5d31b3455b18c074397943b1acfafc7d9fc49217f0345c84e1e920db87be"
+    },
+    "baseline_report": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/target/legacy-dead-cleanup/final-legacy-comparison/results.json",
+      "sha256": "8fa344498224592df6532a0eaf67de61888428cd45ef65899b17028e9f8c35d1"
+    },
+    "candidate_report": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/target/legacy-dead-cleanup/final-default-comparison/results.json",
+      "sha256": "3404a4400778cd4c8b27d1e28a2ff4558f29ee8debac2fe69ad1bf4cab2b3e64"
+    }
+  },
+  "baseline_exact": 465,
+  "candidate_exact": 671,
+  "gained": 206,
+  "lost": 0,
+  "new_rejections": 0,
+  "full_inventory_files": 1302,
+  "checkpoint_passed": true,
+  "scope": "code bytes, relocations, alignment and traps; separate runtime/proof gates are required"
+}

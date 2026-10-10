@@ -24,6 +24,8 @@ every function the backend lowers (default:
 `corpus/clif/*.clif`, `corpus/clif/extrt/*.clif`, the hand-written regression files
 `corpus/clif-regress/*.clif`, Cranelift's `runtests/*.clif`) and prints
 every rejection with the failing part. Exit status 0 iff every lowered function is accepted.
+`--identity-report PATH` writes file/function identities and their successful stages as JSON
+for comparisons between cleanup and the explicit `--no-dead-cleanup` diagnostic path.
 
 It also decides `formsCoveredB` (the `FormsCovered` premise of `E2E.backend_correct_final`) on
 every prepared VCode and reports the number of covered functions and, for the others, the
@@ -152,8 +154,24 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
           some s!"  block {bi}: {bad}; A0={A 0} Aend={A n} params={B.params.map (·.1)} term={repr B.term}; In={In.getD bi []}"
         | _, _, _ => none
 
+private def identityArgs : List String → Except String (Option String × List String)
+  | [] => .ok (none, [])
+  | "--identity-report" :: path :: rest => do
+    let (report, files) ← identityArgs rest
+    if report.isSome then throw "duplicate --identity-report"
+    pure (some path, files)
+  | ["--identity-report"] => .error "--identity-report requires an output path"
+  | arg :: rest => do
+    let (report, files) ← identityArgs rest
+    pure (report, arg :: files)
+
 def main (args : List String) : IO UInt32 := do
-  let deadCleanup := !args.contains "--no-dead-cleanup"
+  let (identityReport, args) ← match identityArgs args with
+    | .ok r => pure r
+    | .error e => throw (IO.userError e)
+  let deadCleanup := args.foldl (fun mode flag =>
+    if flag == "--dead-cleanup" then true
+    else if flag == "--no-dead-cleanup" then false else mode) true
   let args := args.filter fun a => a != "--dead-cleanup" && a != "--no-dead-cleanup"
   let (optCfg, args) ← match Opt.parseOptArgs args with
     | .ok r => pure r
@@ -203,10 +221,14 @@ def main (args : List String) : IO UInt32 := do
   let mut tgtBad := 0
   let mut immOk := 0
   let mut immBad := 0
+  let mut identities : Array Lean.Json := #[]
   for file in files do
     let lg := Opt.Legalize128.parsedFile128 (Clif.parseFile (← IO.FS.readFile file))
     let pf := match optCfg with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
+    let mut functionIndex := 0
     for p in pf.funcs do
+      let index := functionIndex
+      functionIndex := functionIndex + 1
       let .ok f := p.func | continue
       -- legalised functions outside `E2E.backend_correct_legal`
       if (lg.unverified.lookup p.name).isSome ||
@@ -249,6 +271,9 @@ def main (args : List String) : IO UInt32 := do
       if E2E.sizeOkB f then szIn := szIn + 1
       else IO.println s!"{file}: %{f.name}: sizeOkB fails ({bIn} words, need < 2^24): out of scope"
       let r ← IO.lazyPure (fun _ => lowerCheck f vc)
+      let mut stages : Array String := #["checked"]
+      if r then stages := stages.push "lowerCheck"
+      if lg.accepted.contains p.name then stages := stages.push "legalized"
       let t2 ← IO.monoMsNow
       if t2 - t0 > 2000 then IO.println s!"{file}: %{f.name}: lowerFunction {t1 - t0} ms, lowerCheck {t2 - t1} ms"
       tLower := tLower + (t1 - t0)
@@ -260,7 +285,10 @@ def main (args : List String) : IO UInt32 := do
       tPrep := tPrep + (t4 - t3)
       match pr with
       | .ok vcp =>
-        if Backend.Proof.formsCoveredB default vcp then cov := cov + 1
+        stages := stages.push "prepare"
+        if Backend.Proof.formsCoveredB default vcp then
+          cov := cov + 1
+          stages := stages.push "formsCoveredB"
         else
           uncov := uncov + 1
           let us := uncovered vcp
@@ -290,18 +318,24 @@ def main (args : List String) : IO UInt32 := do
           immBad := immBad + 1
           IO.println s!"{file}: %{f.name}: immsOkB fails (an immediate outside the encoder's range)"
         match ← IO.lazyPure (fun _ => checkAlloc vcp rf) with
-        | .ok () => spillOk := spillOk + 1
+        | .ok () =>
+          spillOk := spillOk + 1
+          stages := stages.push "checkAlloc"
         | .error e =>
           spillBad := spillBad + 1
           IO.println s!"{file}: %{f.name}: checkAlloc rejects the spill allocation: {e}"
         match ← IO.lazyPure (fun _ => lowerRFunc vcp rf) with
         | .ok af =>
           spillLow := spillLow + 1
+          stages := stages.push "lowerRFunc"
           match ← IO.lazyPure (fun _ => emitFunc 0 af) with
           | .ok fa =>
             emitOk := emitOk + 1
+            stages := stages.push "emitFunc"
             if fa.size > emitMax then emitMax := fa.size
-            if ← IO.lazyPure (fun _ => fa.layoutReadyB) then readyOk := readyOk + 1
+            if ← IO.lazyPure (fun _ => fa.layoutReadyB) then
+              readyOk := readyOk + 1
+              stages := stages.push "layoutReadyB"
             else
               readyBad := readyBad + 1
               IO.println s!"{file}: %{f.name}: layoutReadyB fails on the spill allocation's code"
@@ -313,7 +347,9 @@ def main (args : List String) : IO UInt32 := do
           IO.println s!"{file}: %{f.name}: lowerRFunc rejects the spill allocation: {e}"
         -- the syntactic availability facts (`Spill.killFreeB`, `E2E.SpillKillFree`)
         if !(Backend.Proof.Spill.killedOf vcp).isEmpty then kfKilled := kfKilled + 1
-        if ← IO.lazyPure (fun _ => Backend.Proof.Spill.killFreeB vcp) then kfOk := kfOk + 1
+        if ← IO.lazyPure (fun _ => Backend.Proof.Spill.killFreeB vcp) then
+          kfOk := kfOk + 1
+          stages := stages.push "killFreeB"
         else
           kfBad := kfBad + 1
           IO.println s!"{file}: %{f.name}: killFreeB rejects (a killed vreg is read, or a killed branch argument is not stored on entry)"
@@ -322,16 +358,26 @@ def main (args : List String) : IO UInt32 := do
         let pc ← IO.lazyPure (fun _ => prepCheck selected vcp)
         let t6 ← IO.monoMsNow
         tPCheck := tPCheck + (t6 - t5)
-        if pc then pok := pok + 1
+        if pc then
+          pok := pok + 1
+          stages := stages.push "prepCheck"
         else
           pbad := pbad + 1
           IO.println s!"{file}: %{f.name}: prepCheck rejects"
       | .error _ => pure ()
+      if identityReport.isSome then
+        identities := identities.push (Lean.Json.mkObj
+          [("file", Lean.toJson file), ("index", Lean.toJson index),
+           ("function", Lean.toJson f.name), ("stages", Lean.toJson stages)])
       if r then ok := ok + 1
       else
         bad := bad + 1
         IO.println s!"{file}: %{f.name}: lowerCheck rejects ({diagnose f vc})"
         IO.println (detail f vc)
+  if let some path := identityReport then
+    IO.FS.writeFile path (Lean.Json.mkObj
+      [("schema", Lean.toJson (1 : Nat)), ("dead_cleanup", Lean.toJson deadCleanup),
+       ("functions", Lean.toJson identities)]).pretty
   IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack-passed arguments of an indirect call, special-purpose parameters other than one sret, outside clif-subset-v2 E, or a try_call/call_indirect under --opt)"
   IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects or --opt)"
   IO.println s!"dead instruction cleanup: {deadCleanup}"
