@@ -140,6 +140,48 @@ private theorem scans_record_entry {exec : Nat → State → Except String Scan}
       exact keeps j (List.mem_cons_of_mem _ jm) (fun eq => nd.1 (eq ▸ jm)) st out run
     · exact ih nd.2 (fun j jm => keeps j (List.mem_cons_of_mem _ jm)) tailMember
 
+private theorem scans_record_input_entry {exec : Nat → State → Except String Scan}
+    {indices : List Nat} {input : State} {output : BlockScan} {key owner : Nat}
+    (cert : ScansSpec exec indices input output) (unique : indices.Nodup)
+    (keeps : ∀ i ∈ indices, i ≠ owner → ∀ st scan, exec i st = .ok scan →
+      (scan.state.alias[key]?).join = (st.alias[key]?).join)
+    {record : ScanRecord} (member : record ∈ output.records) (which : record.inst = owner) :
+    (record.input.alias[key]?).join = (input.alias[key]?).join := by
+  induction cert with
+  | nil input => cases member
+  | @cons i rest input scan tail head remaining ih =>
+    have nd := List.nodup_cons.mp unique
+    rcases List.mem_cons.mp member with same | tailMember
+    · subst record; rfl
+    · have ownerMem : owner ∈ rest := by
+        rw [← remaining.order]
+        exact List.mem_map.mpr ⟨record, tailMember, which⟩
+      have different : i ≠ owner := by intro same; exact nd.1 (same ▸ ownerMem)
+      exact (ih nd.2 (fun j jm => keeps j (List.mem_cons_of_mem _ jm)) tailMember).trans
+        (keeps i (List.mem_cons_self ..) different input scan head)
+
+/-- Earlier records in the actual nonrepeating scan preserve the source
+definition's entry until its own record. SSA derives the per-step frame facts. -/
+theorem stock_scanBlock_record_inputAliasEntry {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, initial))
+    (ssa : (valueDefs f).Nodup) {x key owner ti : Nat} {info : IInfo}
+    (definition : ctx.insts[owner]? = some info) (result : x ∈ info.results)
+    (mapped : ctx.valueReg? x = some (.vreg key .int))
+    (data : V) {block : Nat} {branch : Bool} {indices : List Nat}
+    {st : State} {output : BlockScan}
+    (unique : indices.Nodup)
+    (run : scanBlock { Driver.termCtx ctx ti data with tryRegs := initial.tryRegs[ti]! }
+      block ti branch indices st = .ok output)
+    {record : ScanRecord} (member : record ∈ output.records) (which : record.inst = owner) :
+    (record.input.alias[key]?).join = (st.alias[key]?).join := by
+  apply scans_record_input_entry (runScans_spec run) unique ?_ member which
+  intro i _ different a scan step
+  exact stock_scan_sourceAliasEntry
+    (ctx := { Driver.termCtx ctx ti data with tryRegs := initial.tryRegs[ti]! })
+    (slot := ti) build mapped (fun _ => rfl) rfl
+    (stock_buildCtx_term_other_results build ssa data definition result different) step
+
 /-- In the actual nonrepeating block scan, later records cannot rebind an
 previously bound source definition. The conclusion transports its post-scan
 alias entry to the complete block output, without a caller-supplied alias fact. -/
@@ -248,6 +290,26 @@ theorem stock_scanBlock_record_aliasEntry_witness :
     member, rfl, rfl, by decide, by decide, ?_⟩
   exact stock_scanBlock_record_aliasEntry ssaBuild ssaInput definition result mapping (.int 17)
     (by decide) record_block member rfl
+
+private def inputProtectedRecord : ScanRecord := ⟨0, recordMiddle, jointScan⟩
+
+/-- A preceding actual record installs193→196 while the protected source0
+entry remains absent until the second record. Both records execute; the chosen
+incoming state is not asserted reachable from whole-function lowering. -/
+theorem stock_scanBlock_record_inputAliasEntry_witness :
+    Stock.buildCtx ssaFunction = .ok ssaBuilt ∧
+    (valueDefs ssaFunction).Nodup ∧
+    scanBlock jointCtx 0 2 false [1, 0] recordInput = .ok recordBlock ∧
+    inputProtectedRecord ∈ recordBlock.records ∧
+    (recordMiddle.alias[193]?).join = some 196 ∧
+    (inputProtectedRecord.input.alias[192]?).join = none ∧
+    (inputProtectedRecord.input.alias[192]?).join = (recordInput.alias[192]?).join := by
+  have member : inputProtectedRecord ∈ recordBlock.records :=
+    List.mem_cons_of_mem _ (List.mem_cons_self ..)
+  have kept := stock_scanBlock_record_inputAliasEntry ssaBuild ssaInput
+    firstLookup firstResult (x := 0) (key := 192) rfl (.int 17)
+    (by decide) record_block member rfl
+  exact ⟨ssaBuild, ssaInput, record_block, member, by decide, kept.trans rfl, kept⟩
 
 /-- A nonempty backward range and an empty/reversed range both satisfy the
 unconditional index-uniqueness result. -/

@@ -87,6 +87,72 @@ theorem stock_emitBranch_aliasEntry {ctx : Ctx} {f : Clif.Function} {t : Clif.Te
         have same := named_entry (st := before) payloads root
         exact same
 
+/-- Branch emission and outgoing collection preserve every mapped source
+alias before the core body scan, including the source block's own definitions.
+Reservation separation follows from the actual allocation. -/
+theorem stock_lowerBlockCore_scanAliasEntry {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, initial))
+    {x key : Nat} (mapped : ctx.valueReg? x = some (.vreg key .int))
+    {second : Clif.Block} {bi start stop : Nat}
+    {order : Order} {data : V} {targets : Array Nat} {input : State} {output : LoweredBlockCore}
+    (reservations : input.tryRegs = initial.tryRegs)
+    (run : lowerBlockCore ctx order f second bi start stop data targets input = .ok output) :
+    (output.scan.input.alias[key]?).join = (input.alias[key]?).join := by
+  let ti := stop - 1
+  let selected := { Driver.termCtx ctx ti data with tryRegs := input.tryRegs[ti]! }
+  let branch : Bool := match second.term with | .ret .. | .trap .. | .returnCall .. => false | _ => true
+  let branchCall : Except String (Option BranchEmission) :=
+    if branch then some <$> emitBranch selected f second.term bi ti targets input else pure none
+  have payloads : ∀ r ∈ selected.tryRegs.2, ∀ c, r ≠ .vreg key c :=
+    source_payloads_apart (slot := ti) build mapped (by simp only [selected, reservations])
+  have branchKeeps {br : Option BranchEmission} (call : branchCall = .ok br) :
+      (((br.map (·.state)).getD input).alias[key]?).join = (input.alias[key]?).join := by
+    unfold branchCall at call
+    split at call
+    · cases emitted : emitBranch selected f second.term bi ti targets input with
+      | error e => simp only [emitted, Functor.map, Except.map] at call; cases call
+      | ok e =>
+        simp only [emitted, Functor.map, Except.map] at call
+        cases call
+        exact stock_emitBranch_aliasEntry payloads emitted
+    · cases call; rfl
+  have normal : lowerBlockCore ctx order f second bi start stop data targets input = (do
+      let br ← branchCall
+      let (next, outgoing) ← collectOutgoing ctx order bi targets (br.map (·.state) |>.getD input)
+      let before := { next with color := some next.endColor[bi]! }
+      let indices := ((Array.range (stop - start)).map (start + ·)).reverse.toList
+      let body ← scanBlock selected bi ti branch indices before
+      pure ⟨body.state, body.code ++ (br.map (·.code) |>.getD #[]), outgoing,
+        br, ⟨selected, bi, ti, branch, indices, before, body⟩⟩) := by
+    unfold lowerBlockCore
+    dsimp only [branchCall, branch, selected, ti, Driver.termCtx]
+    split <;> simp_all only [branch, selected, ti] <;> rfl
+  rw [normal] at run
+  cases call : branchCall with
+  | error e => simp only [call, bind, Except.bind] at run; cases run
+  | ok br =>
+    simp only [call, bind, Except.bind] at run
+    cases edges : collectOutgoing ctx order bi targets (br.map (·.state) |>.getD input) with
+    | error e => simp only [edges] at run; cases run
+    | ok pair =>
+      rcases pair with ⟨next, outgoing⟩
+      simp only [edges] at run
+      let before := { next with color := some next.endColor[bi]! }
+      let indices := ((Array.range (stop - start)).map (start + ·)).reverse.toList
+      have keeps : (next.alias[key]?).join = (input.alias[key]?).join := by
+        rw [stock_collectOutgoing_alias edges]
+        exact branchKeeps call
+      change (scanBlock selected bi ti branch indices before >>= fun body =>
+        pure (⟨body.state, body.code ++ (br.map (·.code) |>.getD #[]), outgoing,
+          br, ⟨selected, bi, ti, branch, indices, before, body⟩⟩ : LoweredBlockCore)) = .ok output at run
+      cases scan : scanBlock selected bi ti branch indices before with
+      | error e => simp only [scan, bind, Except.bind] at run; cases run
+      | ok body =>
+        simp only [scan, bind, Except.bind, pure, Except.pure] at run
+        cases run
+        exact keeps
+
 /-- Actual original-block lowering preserves a definition's alias when lowering
 another source block. All scan exclusions come from source SSA and real ranges. -/
 theorem stock_lowerBlockCore_other_aliasEntry {f : Clif.Function} {ctx : Ctx}
@@ -237,6 +303,23 @@ theorem stock_lowerBlockCore_other_aliasEntry_witness :
       (reservations := rfl) actual
     have entry : (frameInput.alias[192]?).join = some 193 := by decide
     exact preserved.trans entry
+
+/-- Actual jump emission and outgoing collection preserve a stored mapped
+source alias in the body scan input. The incoming state is chosen, not asserted
+reachable from whole-function lowering. -/
+theorem stock_lowerBlockCore_scanAliasEntry_witness :
+    Stock.buildCtx frameFunction = .ok frameBuilt ∧
+    ∃ output, frameCall = .ok output ∧ output.code = #[.jump 0] ∧
+      output.branch.isSome = true ∧ (output.scan.input.alias[192]?).join = some 193 := by
+  refine ⟨frame_built, ?_⟩
+  cases call : frameCall with
+  | error e => have success := frame_success; simp only [call, Except.isOk] at success; cases success
+  | ok output =>
+    have observation := frame_observed
+    simp only [call, Except.toOption, Option.map_some, Option.some.injEq, Prod.mk.injEq] at observation
+    have kept := stock_lowerBlockCore_scanAliasEntry frame_built frame_mapping
+      (input := frameInput) (reservations := rfl) call
+    exact ⟨output, rfl, observation.1, observation.2, kept.trans (by decide)⟩
 
 private def frameBranchCtx : Ctx :=
   { Driver.termCtx frameBuilt.1 2 frameData with tryRegs := frameInput.tryRegs[2]! }
