@@ -56,7 +56,7 @@ mkdir -p target/legacy-dead-cleanup
 LEAN_NUM_THREADS=2 FV_MEMCAP=22G scripts/memcap.sh lake build lean-backend
 cp .lake/build/bin/lean-backend target/legacy-dead-cleanup/lean-backend-baseline
 cp docs/research/legacy-dead-instruction-cleanup/DeadCleanupPrototype.lean FVTest/Backend/
-git apply docs/research/legacy-dead-instruction-cleanup/prototype-main.patch
+git apply --unidiff-zero docs/research/legacy-dead-instruction-cleanup/prototype-main.patch
 LEAN_NUM_THREADS=2 FV_MEMCAP=22G scripts/memcap.sh lake build lean-backend
 export LEAN_REGALLOC="$PWD/rust/target/release/lean-regalloc"
 FV_MEMCAP=22G scripts/memcap.sh python3 scripts/stock-compiler-compare.py \

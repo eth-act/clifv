@@ -186,9 +186,14 @@
   },
   "archive_sha256": {
     "DeadCleanupPrototype.lean": "e11a8ecd66739d0709c1e5bbaaaea805479a55838aa1c6715b4b7b5e7a691ab4",
-    "prototype-main.patch": "34c3ef94e60046e4b549351e4e2fbeca88df8f832eded8f71e062fee0d1e55e7",
+    "prototype-main.patch": "a0ea24437c040214653046cca698cde572c7cab07cb5410d4d5bf731046a076c",
     "delta.json": "3fc2e28c17c23b19f3e882e8b505ef9ebd188dd7b6d9cb0d4bc605399f60bc3f",
     "focused.json": "3866c18dbfb0fc370f26f26597d37a393e4d6cfba71e9e6b6f3938a5ed0898ff",
-    "gains.tsv": "971fcbd4124bcd5b732e4017a0824c03e6394cc747956caab7b5fbf291c8a64f"
+    "gains.tsv": "971fcbd4124bcd5b732e4017a0824c03e6394cc747956caab7b5fbf291c8a64f",
+    "README.md": "00379ca624b0335fd4b0ee2037598d123fa1c9f31258ef729190d178e6648c8e"
+  },
+  "preserved_executables": {
+    "baseline": "target/legacy-dead-cleanup/lean-backend-baseline",
+    "candidate": "target/legacy-dead-cleanup/lean-backend-candidate"
   }
 }

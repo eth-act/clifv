@@ -1,44 +1,16 @@
-diff --git a/FVTest/Backend/Main.lean b/FVTest/Backend/Main.lean
-index 424bd4c..dcc9591 100644
 --- a/FVTest/Backend/Main.lean
 +++ b/FVTest/Backend/Main.lean
-@@ -2,6 +2,7 @@ import FV.Backend
- import FV.Opt.Legalize128Pass
- import FVTest.Opt.Common
- import FVTest.Backend.StockConfig
+@@ -4,0 +5 @@
 +import FVTest.Backend.DeadCleanupPrototype
- 
- /-!
- `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
-@@ -62,9 +63,13 @@ structure Opts where
-   personality : Option String := none
-   stockConfig : Option String := none
-   configReceipt : Option String := none
+@@ -64,0 +66 @@
 +  deadCleanupPrototype : Bool := false
- 
- def run (input output : String) (o : Opts) : IO UInt32 := do
-   let src ← IO.FS.readFile input
+@@ -67,0 +70,3 @@
 +  if o.deadCleanupPrototype && o.stockConfig.isNone then
 +    IO.eprintln "lean-backend: --dead-cleanup-prototype requires --stock-config (measurement only, outside backend_correct)"
 +    return 2
-   if o.configReceipt.isSome != o.stockConfig.isSome then
-     IO.eprintln "lean-backend: --stock-config and --config-receipt must be supplied together"
-     return 2
-@@ -110,7 +115,8 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
-   let rejected ← IO.mkRef (#[] : Array (String × String))
-   let fa ← match stock with
-     | none => compileFileIO alloc pf (unv128 ++ unvTry)
+@@ -113 +118,2 @@
 -    | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
 +    | some c => (compileFileWith (fun vcs => StockConfig.allocate c clif rejected alloc
 +        (if o.deadCleanupPrototype then vcs.map DeadCleanupPrototype.clean else vcs)) pf
-         (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))))
-   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
-     IO.FS.writeFile receipt
-@@ -171,6 +177,7 @@ def main (args : List String) : IO UInt32 := do
-     | "--personality" :: p :: rest => opts { o with personality := some p } rest
-     | "--stock-config" :: c :: rest => opts { o with stockConfig := some c } rest
-     | "--config-receipt" :: c :: rest => opts { o with configReceipt := some c } rest
+@@ -173,0 +180 @@
 +    | "--dead-cleanup-prototype" :: rest => opts { o with deadCleanupPrototype := true } rest
-     | _ => none
-   let (optCfg, args) ← match Opt.parseOptArgs args with
-     | .ok r => pure r
