@@ -61,7 +61,32 @@
     }
   ],
   "targeted_build_jobs": 247,
-  "method": "Complete clean canonical Lean MCP diagnostics; six matching permitted-only MCP/compiled Lean audits; capped targeted build includes existing binding-flow caller.",
+  "method": "Complete clean exact published-source Lean MCP diagnostics; six matching permitted-only MCP/compiled Lean audits; all required exact-source full/build/execution gates passed.",
   "scope": "Actual allocator-slot bounds and source-map separation derived from successful Stock.buildCtx and AllocationLe. Selected root provenance/source-available mapped output classification carries exact slot membership, initial-frontier bound and source-register separation. Real successful try-call allocation nonempty slot193/194/195, source0\u2192192, parameters196/197; actual generated constant root from allocated frontier198 after successful tryCallData extraction returnsfresh198. Actual LowerScope/Dominated/post-body source0 availability witnesses. Result binding/final aliases, noninterference, whole simulation/completeness/baseline parity and production cutover remain.",
-  "required_full_and_execution_gates": "pending on publication source"
+  "required_full_and_execution_gates": "passed on validated_source_commit; receipt-only commit follows",
+  "gates": {
+    "full_build_jobs": 1305,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "bb4790acf2d3b19a18c32d6365fc6ea7979d7e50",
+  "validated_main_commit": "326b384a57bd63c1de50b6b2eecde89593439665",
+  "gate_log_sha256": {
+    "full": "7550d30fdd4537f0d6c73df470021babc31f473281e44b6f2152c470d1a1982e",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "16657a2a9302b2bdf5ba5a2db974f05f11adefe0ad19d65548009e0161fa50f3",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "dcd0119bbfde1363b39e496dec476341b7d5bf6dbca4e97f5fc84e2f2060b193"
+  }
 }
