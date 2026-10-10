@@ -1,0 +1,854 @@
+[
+  {
+    "test": "isa/aarch64/arithmetic.clif",
+    "source_sha256": "ad893880133c9104471eb3127b7f2e8436773c06c5e2ff68086a3a79f71b6f54",
+    "variant": 0,
+    "settings": {
+      "target": "aarch64-unknown-unknown-elf",
+      "stage": "compile",
+      "flags": [
+        {
+          "name": "regalloc_algorithm",
+          "value": "backtracking"
+        },
+        {
+          "name": "opt_level",
+          "value": "none"
+        },
+        {
+          "name": "tls_model",
+          "value": "none"
+        },
+        {
+          "name": "stack_switch_model",
+          "value": "none"
+        },
+        {
+          "name": "libcall_call_conv",
+          "value": "isa_default"
+        },
+        {
+          "name": "probestack_size_log2",
+          "value": "12"
+        },
+        {
+          "name": "probestack_strategy",
+          "value": "outline"
+        },
+        {
+          "name": "bb_padding_log2_minus_one",
+          "value": "0"
+        },
+        {
+          "name": "log2_min_function_alignment",
+          "value": "0"
+        },
+        {
+          "name": "regalloc_checker",
+          "value": "false"
+        },
+        {
+          "name": "regalloc_verbose_logs",
+          "value": "false"
+        },
+        {
+          "name": "enable_alias_analysis",
+          "value": "true"
+        },
+        {
+          "name": "enable_verifier",
+          "value": "true"
+        },
+        {
+          "name": "is_pic",
+          "value": "false"
+        },
+        {
+          "name": "use_colocated_libcalls",
+          "value": "false"
+        },
+        {
+          "name": "enable_nan_canonicalization",
+          "value": "false"
+        },
+        {
+          "name": "enable_pinned_reg",
+          "value": "false"
+        },
+        {
+          "name": "enable_llvm_abi_extensions",
+          "value": "false"
+        },
+        {
+          "name": "enable_multi_ret_implicit_sret",
+          "value": "false"
+        },
+        {
+          "name": "unwind_info",
+          "value": "false"
+        },
+        {
+          "name": "preserve_frame_pointers",
+          "value": "false"
+        },
+        {
+          "name": "machine_code_cfg_info",
+          "value": "true"
+        },
+        {
+          "name": "enable_probestack",
+          "value": "false"
+        },
+        {
+          "name": "enable_heap_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_table_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_incremental_compilation_cache_checks",
+          "value": "false"
+        },
+        {
+          "name": "enable_compact_unwind_abi",
+          "value": "false"
+        }
+      ],
+      "isa_flags": [
+        {
+          "name": "has_lse",
+          "value": "false"
+        },
+        {
+          "name": "has_pauth",
+          "value": "false"
+        },
+        {
+          "name": "has_fp16",
+          "value": "false"
+        },
+        {
+          "name": "has_dotprod",
+          "value": "false"
+        },
+        {
+          "name": "has_i8mm",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_all",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_with_bkey",
+          "value": "false"
+        },
+        {
+          "name": "use_bti",
+          "value": "false"
+        },
+        {
+          "name": "use_csdb",
+          "value": "false"
+        }
+      ]
+    },
+    "baseline": {
+      "name": "%msub_i32",
+      "index": 35,
+      "status": "different_code_artifact",
+      "bytes": {
+        "equal": false,
+        "left_size": 8,
+        "right_size": 12,
+        "left_sha256": "0009bd52485750eb8a576113a1b5c14aa281730883e7ff9ea2fb43fb121870ac",
+        "right_sha256": "2bb4180508550ee2a3fd4e252ba7383b07fdeabbe1d5f408119aa4ac15cd8bab",
+        "first_difference": 0,
+        "left_context": "2080021bc0035fd6",
+        "right_context": "247c021b2080021bc0035fd6"
+      },
+      "reference_relocations": [],
+      "lean_relocations": [],
+      "alignment": {
+        "stock": 4,
+        "lean": 4
+      },
+      "traps": {
+        "stock": [],
+        "lean": []
+      },
+      "exact_code_artifact": false
+    },
+    "candidate": {
+      "name": "%msub_i32",
+      "index": 35,
+      "status": "identical_code_artifact",
+      "bytes": {
+        "equal": true,
+        "left_size": 8,
+        "right_size": 8,
+        "left_sha256": "0009bd52485750eb8a576113a1b5c14aa281730883e7ff9ea2fb43fb121870ac",
+        "right_sha256": "0009bd52485750eb8a576113a1b5c14aa281730883e7ff9ea2fb43fb121870ac",
+        "first_difference": null,
+        "left_context": null,
+        "right_context": null
+      },
+      "reference_relocations": [],
+      "lean_relocations": [],
+      "alignment": {
+        "stock": 4,
+        "lean": 4
+      },
+      "traps": {
+        "stock": [],
+        "lean": []
+      },
+      "exact_code_artifact": true
+    }
+  },
+  {
+    "test": "isa/aarch64/bitops.clif",
+    "source_sha256": "e9c34dc2aaf23fcace4fb82421f99eadf91bb417a17393ac8373d9f2002b8713",
+    "variant": 0,
+    "settings": {
+      "target": "aarch64-unknown-unknown-elf",
+      "stage": "compile",
+      "flags": [
+        {
+          "name": "regalloc_algorithm",
+          "value": "backtracking"
+        },
+        {
+          "name": "opt_level",
+          "value": "none"
+        },
+        {
+          "name": "tls_model",
+          "value": "none"
+        },
+        {
+          "name": "stack_switch_model",
+          "value": "none"
+        },
+        {
+          "name": "libcall_call_conv",
+          "value": "isa_default"
+        },
+        {
+          "name": "probestack_size_log2",
+          "value": "12"
+        },
+        {
+          "name": "probestack_strategy",
+          "value": "outline"
+        },
+        {
+          "name": "bb_padding_log2_minus_one",
+          "value": "0"
+        },
+        {
+          "name": "log2_min_function_alignment",
+          "value": "0"
+        },
+        {
+          "name": "regalloc_checker",
+          "value": "false"
+        },
+        {
+          "name": "regalloc_verbose_logs",
+          "value": "false"
+        },
+        {
+          "name": "enable_alias_analysis",
+          "value": "true"
+        },
+        {
+          "name": "enable_verifier",
+          "value": "true"
+        },
+        {
+          "name": "is_pic",
+          "value": "false"
+        },
+        {
+          "name": "use_colocated_libcalls",
+          "value": "false"
+        },
+        {
+          "name": "enable_nan_canonicalization",
+          "value": "false"
+        },
+        {
+          "name": "enable_pinned_reg",
+          "value": "false"
+        },
+        {
+          "name": "enable_llvm_abi_extensions",
+          "value": "false"
+        },
+        {
+          "name": "enable_multi_ret_implicit_sret",
+          "value": "false"
+        },
+        {
+          "name": "unwind_info",
+          "value": "false"
+        },
+        {
+          "name": "preserve_frame_pointers",
+          "value": "false"
+        },
+        {
+          "name": "machine_code_cfg_info",
+          "value": "true"
+        },
+        {
+          "name": "enable_probestack",
+          "value": "false"
+        },
+        {
+          "name": "enable_heap_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_table_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_incremental_compilation_cache_checks",
+          "value": "false"
+        },
+        {
+          "name": "enable_compact_unwind_abi",
+          "value": "false"
+        }
+      ],
+      "isa_flags": [
+        {
+          "name": "has_lse",
+          "value": "false"
+        },
+        {
+          "name": "has_pauth",
+          "value": "false"
+        },
+        {
+          "name": "has_fp16",
+          "value": "false"
+        },
+        {
+          "name": "has_dotprod",
+          "value": "false"
+        },
+        {
+          "name": "has_i8mm",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_all",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_with_bkey",
+          "value": "false"
+        },
+        {
+          "name": "use_bti",
+          "value": "false"
+        },
+        {
+          "name": "use_csdb",
+          "value": "false"
+        }
+      ]
+    },
+    "baseline": {
+      "name": "%band_not_i64",
+      "index": 65,
+      "status": "different_code_artifact",
+      "bytes": {
+        "equal": false,
+        "left_size": 8,
+        "right_size": 12,
+        "left_sha256": "110e965281eeed80a3f9a2a84ea251074e61c04759d3a3fbde81d024bc7423c0",
+        "right_sha256": "8ed7a4395c2e314145f62ba2ffe0a853847ee2f0c4b12608a1b7f26dca1ce145",
+        "first_difference": 0,
+        "left_context": "0000218ac0035fd6",
+        "right_context": "e30321aa0000218ac0035fd6"
+      },
+      "reference_relocations": [],
+      "lean_relocations": [],
+      "alignment": {
+        "stock": 4,
+        "lean": 4
+      },
+      "traps": {
+        "stock": [],
+        "lean": []
+      },
+      "exact_code_artifact": false
+    },
+    "candidate": {
+      "name": "%band_not_i64",
+      "index": 65,
+      "status": "identical_code_artifact",
+      "bytes": {
+        "equal": true,
+        "left_size": 8,
+        "right_size": 8,
+        "left_sha256": "110e965281eeed80a3f9a2a84ea251074e61c04759d3a3fbde81d024bc7423c0",
+        "right_sha256": "110e965281eeed80a3f9a2a84ea251074e61c04759d3a3fbde81d024bc7423c0",
+        "first_difference": null,
+        "left_context": null,
+        "right_context": null
+      },
+      "reference_relocations": [],
+      "lean_relocations": [],
+      "alignment": {
+        "stock": 4,
+        "lean": 4
+      },
+      "traps": {
+        "stock": [],
+        "lean": []
+      },
+      "exact_code_artifact": true
+    }
+  },
+  {
+    "test": "isa/aarch64/stack.clif",
+    "source_sha256": "88bb0048dbe66c2f361813a13f32b743e424a532af9ad3a4f12cab9e6fa504c8",
+    "variant": 0,
+    "settings": {
+      "target": "aarch64-unknown-unknown-elf",
+      "stage": "compile",
+      "flags": [
+        {
+          "name": "regalloc_algorithm",
+          "value": "backtracking"
+        },
+        {
+          "name": "opt_level",
+          "value": "none"
+        },
+        {
+          "name": "tls_model",
+          "value": "none"
+        },
+        {
+          "name": "stack_switch_model",
+          "value": "none"
+        },
+        {
+          "name": "libcall_call_conv",
+          "value": "isa_default"
+        },
+        {
+          "name": "probestack_size_log2",
+          "value": "12"
+        },
+        {
+          "name": "probestack_strategy",
+          "value": "outline"
+        },
+        {
+          "name": "bb_padding_log2_minus_one",
+          "value": "0"
+        },
+        {
+          "name": "log2_min_function_alignment",
+          "value": "0"
+        },
+        {
+          "name": "regalloc_checker",
+          "value": "false"
+        },
+        {
+          "name": "regalloc_verbose_logs",
+          "value": "false"
+        },
+        {
+          "name": "enable_alias_analysis",
+          "value": "true"
+        },
+        {
+          "name": "enable_verifier",
+          "value": "true"
+        },
+        {
+          "name": "is_pic",
+          "value": "false"
+        },
+        {
+          "name": "use_colocated_libcalls",
+          "value": "false"
+        },
+        {
+          "name": "enable_nan_canonicalization",
+          "value": "false"
+        },
+        {
+          "name": "enable_pinned_reg",
+          "value": "false"
+        },
+        {
+          "name": "enable_llvm_abi_extensions",
+          "value": "false"
+        },
+        {
+          "name": "enable_multi_ret_implicit_sret",
+          "value": "false"
+        },
+        {
+          "name": "unwind_info",
+          "value": "false"
+        },
+        {
+          "name": "preserve_frame_pointers",
+          "value": "false"
+        },
+        {
+          "name": "machine_code_cfg_info",
+          "value": "true"
+        },
+        {
+          "name": "enable_probestack",
+          "value": "false"
+        },
+        {
+          "name": "enable_heap_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_table_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_incremental_compilation_cache_checks",
+          "value": "false"
+        },
+        {
+          "name": "enable_compact_unwind_abi",
+          "value": "false"
+        }
+      ],
+      "isa_flags": [
+        {
+          "name": "has_lse",
+          "value": "false"
+        },
+        {
+          "name": "has_pauth",
+          "value": "false"
+        },
+        {
+          "name": "has_fp16",
+          "value": "false"
+        },
+        {
+          "name": "has_dotprod",
+          "value": "false"
+        },
+        {
+          "name": "has_i8mm",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_all",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_with_bkey",
+          "value": "false"
+        },
+        {
+          "name": "use_bti",
+          "value": "false"
+        },
+        {
+          "name": "use_csdb",
+          "value": "false"
+        }
+      ]
+    },
+    "baseline": {
+      "name": "%stack_load_small",
+      "index": 2,
+      "status": "different_code_artifact",
+      "bytes": {
+        "equal": false,
+        "left_size": 28,
+        "right_size": 32,
+        "left_sha256": "a52fd6bf456eb5ec62c5bd5ff76803b59e71cdaf5ce04ca5672fcadc5a41d450",
+        "right_sha256": "ab2bddda17c84e7502baf44c6ba952a948d7c9733743b6cf7d655ce2f1258285",
+        "first_difference": 12,
+        "left_context": "fd030091ff4300d1e00340f8ff430091fd7bc1a8c0035fd6",
+        "right_context": "fd030091ff4300d1e1030091e00340f8ff430091fd7bc1a8c0035fd6"
+      },
+      "reference_relocations": [],
+      "lean_relocations": [],
+      "alignment": {
+        "stock": 4,
+        "lean": 4
+      },
+      "traps": {
+        "stock": [],
+        "lean": []
+      },
+      "exact_code_artifact": false
+    },
+    "candidate": {
+      "name": "%stack_load_small",
+      "index": 2,
+      "status": "identical_code_artifact",
+      "bytes": {
+        "equal": true,
+        "left_size": 28,
+        "right_size": 28,
+        "left_sha256": "a52fd6bf456eb5ec62c5bd5ff76803b59e71cdaf5ce04ca5672fcadc5a41d450",
+        "right_sha256": "a52fd6bf456eb5ec62c5bd5ff76803b59e71cdaf5ce04ca5672fcadc5a41d450",
+        "first_difference": null,
+        "left_context": null,
+        "right_context": null
+      },
+      "reference_relocations": [],
+      "lean_relocations": [],
+      "alignment": {
+        "stock": 4,
+        "lean": 4
+      },
+      "traps": {
+        "stock": [],
+        "lean": []
+      },
+      "exact_code_artifact": true
+    }
+  },
+  {
+    "test": "runtests/arithmetic.clif",
+    "source_sha256": "052bed0befd17a61278e32be6d9ab7293afc6c477a91dcff74e06f810edd6b63",
+    "variant": 0,
+    "settings": {
+      "target": "aarch64-unknown-linux-gnu",
+      "stage": "run",
+      "flags": [
+        {
+          "name": "regalloc_algorithm",
+          "value": "backtracking"
+        },
+        {
+          "name": "opt_level",
+          "value": "none"
+        },
+        {
+          "name": "tls_model",
+          "value": "none"
+        },
+        {
+          "name": "stack_switch_model",
+          "value": "none"
+        },
+        {
+          "name": "libcall_call_conv",
+          "value": "isa_default"
+        },
+        {
+          "name": "probestack_size_log2",
+          "value": "12"
+        },
+        {
+          "name": "probestack_strategy",
+          "value": "outline"
+        },
+        {
+          "name": "bb_padding_log2_minus_one",
+          "value": "0"
+        },
+        {
+          "name": "log2_min_function_alignment",
+          "value": "0"
+        },
+        {
+          "name": "regalloc_checker",
+          "value": "false"
+        },
+        {
+          "name": "regalloc_verbose_logs",
+          "value": "false"
+        },
+        {
+          "name": "enable_alias_analysis",
+          "value": "true"
+        },
+        {
+          "name": "enable_verifier",
+          "value": "true"
+        },
+        {
+          "name": "is_pic",
+          "value": "false"
+        },
+        {
+          "name": "use_colocated_libcalls",
+          "value": "false"
+        },
+        {
+          "name": "enable_nan_canonicalization",
+          "value": "false"
+        },
+        {
+          "name": "enable_pinned_reg",
+          "value": "false"
+        },
+        {
+          "name": "enable_llvm_abi_extensions",
+          "value": "false"
+        },
+        {
+          "name": "enable_multi_ret_implicit_sret",
+          "value": "false"
+        },
+        {
+          "name": "unwind_info",
+          "value": "false"
+        },
+        {
+          "name": "preserve_frame_pointers",
+          "value": "false"
+        },
+        {
+          "name": "machine_code_cfg_info",
+          "value": "true"
+        },
+        {
+          "name": "enable_probestack",
+          "value": "false"
+        },
+        {
+          "name": "enable_heap_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_table_access_spectre_mitigation",
+          "value": "true"
+        },
+        {
+          "name": "enable_incremental_compilation_cache_checks",
+          "value": "false"
+        },
+        {
+          "name": "enable_compact_unwind_abi",
+          "value": "false"
+        }
+      ],
+      "isa_flags": [
+        {
+          "name": "has_lse",
+          "value": "false"
+        },
+        {
+          "name": "has_pauth",
+          "value": "false"
+        },
+        {
+          "name": "has_fp16",
+          "value": "false"
+        },
+        {
+          "name": "has_dotprod",
+          "value": "false"
+        },
+        {
+          "name": "has_i8mm",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_all",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address",
+          "value": "false"
+        },
+        {
+          "name": "sign_return_address_with_bkey",
+          "value": "false"
+        },
+        {
+          "name": "use_bti",
+          "value": "false"
+        },
+        {
+          "name": "use_csdb",
+          "value": "false"
+        }
+      ]
+    },
+    "baseline": {
+      "name": "%msub_i32",
+      "index": 19,
+      "status": "different_code_artifact",
+      "bytes": {
+        "equal": false,
+        "left_size": 8,
+        "right_size": 12,
+        "left_sha256": "0009bd52485750eb8a576113a1b5c14aa281730883e7ff9ea2fb43fb121870ac",
+        "right_sha256": "2bb4180508550ee2a3fd4e252ba7383b07fdeabbe1d5f408119aa4ac15cd8bab",
+        "first_difference": 0,
+        "left_context": "2080021bc0035fd6",
+        "right_context": "247c021b2080021bc0035fd6"
+      },
+      "reference_relocations": [],
+      "lean_relocations": [],
+      "alignment": {
+        "stock": 4,
+        "lean": 4
+      },
+      "traps": {
+        "stock": [],
+        "lean": []
+      },
+      "exact_code_artifact": false
+    },
+    "candidate": {
+      "name": "%msub_i32",
+      "index": 19,
+      "status": "identical_code_artifact",
+      "bytes": {
+        "equal": true,
+        "left_size": 8,
+        "right_size": 8,
+        "left_sha256": "0009bd52485750eb8a576113a1b5c14aa281730883e7ff9ea2fb43fb121870ac",
+        "right_sha256": "0009bd52485750eb8a576113a1b5c14aa281730883e7ff9ea2fb43fb121870ac",
+        "first_difference": null,
+        "left_context": null,
+        "right_context": null
+      },
+      "reference_relocations": [],
+      "lean_relocations": [],
+      "alignment": {
+        "stock": 4,
+        "lean": 4
+      },
+      "traps": {
+        "stock": [],
+        "lean": []
+      },
+      "exact_code_artifact": true
+    }
+  }
+]

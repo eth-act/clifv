@@ -1,0 +1,56 @@
+# Legacy dead-instruction cleanup
+
+User-approved implementation plan, 2026-10-10. The replacement-driver effort and
+draft PR #135 remain paused. This work starts at fresh main `8959127`.
+
+## Acceptance checkpoint
+
+Prototype a conservative post-lowering cleanup before proof migration. Run the
+existing stock comparison with identical inputs, settings and toolchain, first
+without cleanup and then with cleanup. Require exact code artifacts for
+`%band_not_i64`, `%msub_i32` and `%stack_load_small`, a positive full-suite gain,
+no loss of any baseline exact-match identity and no new rejected functions.
+Compare relocations, alignment and traps as well as bytes. If this fails, stop
+and report measured blockers; do not expand scope automatically.
+
+## Implementation after a successful checkpoint
+
+- Keep legacy instruction selection and `lowerCheck` unchanged. Clean validated
+  VCode before allocation; preparation/checking operate on cleaned VCode.
+- Scan each block backwards, conservatively preserving virtual registers used
+  by other blocks and all outgoing edge arguments. Remove an explicitly pure
+  instruction only when every definition is virtual and dead, with no clobbers.
+- Whitelist integer moves/constants/address computation and non-flag-setting
+  arithmetic/logical/multiply-add/subtract instructions. Preserve memory, flags,
+  calls, ABI instructions, traps, control flow and all unknown forms.
+- Preserve numbering/classes, parameters, edges, signatures and rule history.
+  Only instruction arrays change. No load sinking or register renumbering.
+- Prove successful execution and observable-result preservation, and preparation
+  and allocation structural requirements. Compose the stage into existing
+  production E2E/legalization/crate/binary consumers without narrower source
+  assumptions or new per-program certificates. Keep existing theorem variants.
+- Use lean-mcp, non-vacuity witnesses and permitted-only axiom audits.
+
+## Validation and landing
+
+Cover dead chains, live/cross-block/loop/edge/ABI uses, real-register definitions
+and retained effects. Exercise regalloc2 and stack allocation. Run all required
+TO-PROVE section 7 builds, filetests, encoder, E2E and proof audits; preserve
+accepted function identities, not just aggregate counts.
+
+PR 1 contains measurement evidence, focused regressions and comparison support,
+without a production change. PR 2 contains the proved pass, proof composition,
+contracts and default enablement together. Retain `--no-dead-cleanup` for diagnosis
+and record cleanup mode in comparison reports. Review and validate exact heads,
+check fresh main and squash merge under the existing user authorization.
+
+## Progress
+
+- Fresh main fetched: `8959127bf91f93699b674a3148fab441be874140`.
+- Worktree: `/home/lee/clifv/.worktrees/legacy-dead-cleanup`.
+- Measurement checkpoint passed: 465 -> 674 exact artifacts, 209 gained, zero
+  lost and zero new rejections; all three focused cases exact. Full 1,302-file
+  inventory compared. One ASLR-dependent stock stage has only unsupported Lean
+  functions and contributes no comparisons. See the research receipt/report.
+- Prototype archived as research evidence; production unchanged. Proof integration
+  and enablement remain next.
