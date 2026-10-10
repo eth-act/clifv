@@ -1,5 +1,8 @@
 # M7: the end-to-end theorem `backend_correct`
 
+The legacy-driver cleanup stage and its matching proof consumers are described in
+[dead-cleanup.md](dead-cleanup.md); original theorem variants remain available.
+
 Producer: M7 (agents `M7Skeleton`, `M7Driver`; branch `agent/m7-driver`). Consumers: the
 integrator, M4 (rule proofs), M6 (register level). Code: `FV/E2E/{Statement,Compose,Main}.lean`
 (namespace `E2E`), the CLIF → VCode driver simulation

@@ -133,3 +133,13 @@ check fresh main and squash merge under the existing user authorization.
   cleanup checker/binary/stack roots. Its generated one-function proof, including
   binary, closed-base, crate and stack statements, checks. Final broad builds and
   optimizer-proven wrapper validation are still running; default remains off.
+
+- Generated split proof checks 33 functions across two slices, including literal
+  source names `codeB`, `okB` and `crate_correct`. The optimizer-proven wrapper
+  passes a targeted compile using active cleanup dependencies and 58 byte-identical
+  unchanged optimizer cache imports from the warm worktree. No cache artifacts
+  were copied; normal whole-repository builds remain the final gates.
+- Cleanup is now enabled locally in compiler helpers/CLI, E2E checker, linked
+  checker/generator and executable linker. Rust consumers explicitly select that
+  mode and report the matching final/optimizer theorem. Final validation and
+  review are pending; no merge-ready claim is made.

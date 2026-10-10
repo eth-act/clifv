@@ -23,7 +23,7 @@ under qemu-aarch64-static. After a build the report is in target/fv-report.json 
 report` prints it).
 
   --opt               run the Lean mid-end (all rules; nothing is reported verified)
-  --opt-proven-only   run the Lean mid-end with the proven rules (E2E.backend_correct_opt_proven)
+  --opt-proven-only   run the Lean mid-end with the proven rules (E2E.backend_correct_opt_proven_cleanup)
   --members-only      only the workspace members go through the Lean backend; dependencies are
                       plain cg_clif (separate target dir). Single dependencies: FV_SKIP_DEPS=a,b
                       or [package.metadata.fv] / [workspace.metadata.fv] skip-deps = [\"a\"]

@@ -115,14 +115,14 @@ def overBudget? (f : Clif.Function) : Option String :=
 
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
 labels); also returns the ISLE rules that fired. -/
-def compileFunction (k : Nat) (f : Clif.Function) (deadCleanup : Bool := false) :
+def compileFunction (k : Nat) (f : Clif.Function) (deadCleanup : Bool := true) :
     Except String (FnAsm × Array Isle.RuleId) := do
   let vc ← lowerForAllocation f (verifiable f) deadCleanup
   let af ← allocate vc
   pure (← emitFunc k af, vc.rulesFired)
 
 /-- Compile one function with the given allocator. -/
-def compileFunctionWith (a : Allocator) (k : Nat) (f : Clif.Function) (deadCleanup : Bool := false) :
+def compileFunctionWith (a : Allocator) (k : Nat) (f : Clif.Function) (deadCleanup : Bool := true) :
     IO (Except String (FnAsm × Array Isle.RuleId)) := do
   match lowerForAllocation f (verifiable f) deadCleanup with
   | .error e => pure (.error e)
@@ -187,7 +187,7 @@ compiled is not compiled either (its object code would reference an undefined sy
 rejects, "i128 legalized (outside backend_correct: …)"); they are not lowering-validated. -/
 def compileFileWith {m : Type → Type} [Monad m]
     (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
-    (preUnverified : List (String × String) := []) (deadCleanup : Bool := false) : m FileAsm := do
+    (preUnverified : List (String × String) := []) (deadCleanup : Bool := true) : m FileAsm := do
   -- lowering (per function, in file order)
   let lowered : Array (String × Except String (Clif.Function × VCode)) :=
     pf.funcs.toArray.map fun p => (p.name, match p.func with
@@ -246,12 +246,12 @@ def compileFileWith {m : Type → Type} [Monad m]
          lsda := lsda.toList.filter fun (n, _) => funcs.any (·.name == n) }
 
 /-- `compileFileWith` the stack-slot allocator (pure). -/
-def compileFile (pf : Clif.ParsedFile) (deadCleanup : Bool := false) : FileAsm :=
+def compileFile (pf : Clif.ParsedFile) (deadCleanup : Bool := true) : FileAsm :=
   Id.run (compileFileWith (fun vcs => pure (vcs.map allocate)) pf [] deadCleanup)
 
 /-- `compileFileWith` the given allocator. -/
 def compileFileIO (a : Allocator) (pf : Clif.ParsedFile)
-    (preUnverified : List (String × String) := []) (deadCleanup : Bool := false) : IO FileAsm :=
+    (preUnverified : List (String × String) := []) (deadCleanup : Bool := true) : IO FileAsm :=
   compileFileWith a.run pf preUnverified deadCleanup
 
 def jsonString (s : String) : String :=

@@ -1,5 +1,12 @@
 # What remains to be proven
 
+Current #60 work is conservative dead selected-instruction cleanup on the legacy
+driver (draft #137). Replacement-driver #135 remains paused. Baseline source
+scope and theorem variants are preserved; matching executable correctness and
+totality variants compile with exact baseline axiom parity. Cleanup defaults and matched consumers are now enabled locally; final gates
+remain pending. See [the contract](contracts/dead-cleanup.md) and
+[the implementation plan](plans/legacy-dead-instruction-cleanup.md).
+
 Goal: **the compiler itself is formally verified.** Its correctness is one set of theorems proven once, for
 every input program, with no per-program certificates: no validator verdict as a theorem premise, no
 per-crate `native_decide` proof files, no external tool whose output must be checked for the result to be

@@ -153,7 +153,7 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
         | _, _, _ => none
 
 def main (args : List String) : IO UInt32 := do
-  let deadCleanup := args.contains "--dead-cleanup" && !args.contains "--no-dead-cleanup"
+  let deadCleanup := !args.contains "--no-dead-cleanup"
   let args := args.filter fun a => a != "--dead-cleanup" && a != "--no-dead-cleanup"
   let (optCfg, args) ← match Opt.parseOptArgs args with
     | .ok r => pure r

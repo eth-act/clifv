@@ -1,5 +1,12 @@
 # Plan: a verified compiler for a Lean-embedded DSL, via CLIF to AArch64
 
+Current #60 work is conservative dead selected-instruction cleanup on the legacy
+driver (draft #137). Replacement-driver #135 remains paused. Baseline source
+scope and theorem variants are preserved; matching executable correctness and
+totality variants compile with exact baseline axiom parity. Cleanup defaults and matched consumers are now enabled locally; final gates
+remain pending. See [the contract](contracts/dead-cleanup.md) and
+[the implementation plan](plans/legacy-dead-instruction-cleanup.md).
+
 *Status: design plan, September 2026, updated with progress through 2026-10-04 (see "Current status" below, the per-milestone status notes, and M8). Hand-off document for an engineer or AI picking up the work.*
 
 ## 0. How to use this document

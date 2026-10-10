@@ -224,7 +224,7 @@ structure Opts where
   entries : Option (List String) := none
   prune : Bool := false
   profile : Bool := false
-  deadCleanup : Bool := false
+  deadCleanup : Bool := true
 
 def parseOpts : List String → Option Opts → Option Opts
   | [], o => o

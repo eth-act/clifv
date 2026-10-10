@@ -70,7 +70,7 @@ def main (args : List String) : IO UInt32 := do
   let (deadCleanup, args) := match args with
     | d :: sz :: ["--dead-cleanup"] => (true, [d, sz])
     | d :: sz :: ["--no-dead-cleanup"] => (false, [d, sz])
-    | _ => (false, args)
+    | _ => (true, args)
   let [d, sz] := args | do IO.eprintln "usage: lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup]"; return 2
   let dir : System.FilePath := d
   let j ← match Json.parse (← IO.FS.readFile (dir / "link.json")) with

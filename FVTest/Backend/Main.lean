@@ -62,7 +62,7 @@ structure Opts where
   personality : Option String := none
   stockConfig : Option String := none
   configReceipt : Option String := none
-  deadCleanup : Bool := false
+  deadCleanup : Bool := true
 
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
