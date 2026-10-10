@@ -31,6 +31,9 @@ import FV.Opt.Proof.RuleIcmp9
 import FV.Opt.Proof.RuleShifts3
 import FV.Opt.Proof.RuleShifts4
 import FV.Opt.Proof.RuleShifts5
+import FV.Opt.Proof.RuleShiftsConst
+import FV.Opt.Proof.RuleShiftsRotate
+import FV.Opt.Proof.RuleShiftsDistribution
 import FV.Opt.Proof.RuleArith2
 import FV.Opt.Proof.RuleArith3
 import FV.Opt.Proof.RuleArith4
