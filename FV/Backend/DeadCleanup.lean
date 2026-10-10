@@ -59,4 +59,11 @@ def cleanBlock (vc : VCode) (idx : Nat) (b : VBlock) : VBlock :=
 def clean (vc : VCode) : VCode :=
   { vc with blocks := vc.blocks.mapIdx (cleanBlock vc) }
 
+/-- An invalid CFG is left untouched. Successful CFG construction supplies
+the block-termination fact needed by the generic simulation. -/
+def prune (vc : VCode) : VCode :=
+  match vc.cfg with
+  | .ok _ => clean vc
+  | .error _ => vc
+
 end Backend.DeadCleanup

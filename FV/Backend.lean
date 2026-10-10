@@ -7,6 +7,7 @@ import FV.Backend.Asm
 import FV.Backend.Encode
 import FV.Backend.Obj
 import FV.Backend.Proof.DriverCheck
+import FV.Backend.DeadCleanup
 import FV.Compile.Subset
 import Std.Data.HashSet
 
@@ -71,6 +72,11 @@ def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
     throw "lowering rejected by the M7 lowering validator (lowerCheck)"
   pure vc
 
+/-- Validate the unchanged lowering output, then select the VCode supplied to
+every allocator. Cleanup preserves classes and rule history. -/
+def lowerForAllocation (f : Clif.Function) (verify deadCleanup : Bool) : Except String VCode :=
+  (lowerChecked f verify).map fun vc => if deadCleanup then DeadCleanup.prune vc else vc
+
 /-- The signatures of `f` and of every callee are ones the end-to-end theorem covers
 (`sigAbiOk`, `E2E.InSubset.abiSigs`): `normal` parameters plus at most one `sret` pointer (in
 x8, returned in x0), `normal` returns. Other special-purpose parameters (`vmctx`, `sarg`) are
@@ -109,15 +115,16 @@ def overBudget? (f : Clif.Function) : Option String :=
 
 /-- Compile one function with the stack-slot allocator (`k` = index in the file, for local
 labels); also returns the ISLE rules that fired. -/
-def compileFunction (k : Nat) (f : Clif.Function) : Except String (FnAsm × Array Isle.RuleId) := do
-  let vc ← lowerChecked f (verifiable f)
+def compileFunction (k : Nat) (f : Clif.Function) (deadCleanup : Bool := false) :
+    Except String (FnAsm × Array Isle.RuleId) := do
+  let vc ← lowerForAllocation f (verifiable f) deadCleanup
   let af ← allocate vc
   pure (← emitFunc k af, vc.rulesFired)
 
 /-- Compile one function with the given allocator. -/
-def compileFunctionWith (a : Allocator) (k : Nat) (f : Clif.Function) :
+def compileFunctionWith (a : Allocator) (k : Nat) (f : Clif.Function) (deadCleanup : Bool := false) :
     IO (Except String (FnAsm × Array Isle.RuleId)) := do
-  match lowerChecked f (verifiable f) with
+  match lowerForAllocation f (verifiable f) deadCleanup with
   | .error e => pure (.error e)
   | .ok vc =>
     let rs ← a.run #[vc]
@@ -180,15 +187,15 @@ compiled is not compiled either (its object code would reference an undefined sy
 rejects, "i128 legalized (outside backend_correct: …)"); they are not lowering-validated. -/
 def compileFileWith {m : Type → Type} [Monad m]
     (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
-    (preUnverified : List (String × String) := []) : m FileAsm := do
+    (preUnverified : List (String × String) := []) (deadCleanup : Bool := false) : m FileAsm := do
   -- lowering (per function, in file order)
   let lowered : Array (String × Except String (Clif.Function × VCode)) :=
     pf.funcs.toArray.map fun p => (p.name, match p.func with
       | .error e => .error e.toString
-      | .ok f => (lowerChecked f
+      | .ok f => (lowerForAllocation f
           ((unverifiedReason? f).isSome || (preUnverified.lookup p.name).isSome ||
             (overBudget? f).isSome).not
-          ).map (f, ·))
+          deadCleanup).map (f, ·))
   let vcs := lowered.filterMap fun (_, r) => r.toOption.map (·.2)
   let afs ← alloc vcs
   let mut done : Array (FnAsm × List String) := #[]
@@ -239,13 +246,13 @@ def compileFileWith {m : Type → Type} [Monad m]
          lsda := lsda.toList.filter fun (n, _) => funcs.any (·.name == n) }
 
 /-- `compileFileWith` the stack-slot allocator (pure). -/
-def compileFile (pf : Clif.ParsedFile) : FileAsm :=
-  Id.run (compileFileWith (fun vcs => pure (vcs.map allocate)) pf)
+def compileFile (pf : Clif.ParsedFile) (deadCleanup : Bool := false) : FileAsm :=
+  Id.run (compileFileWith (fun vcs => pure (vcs.map allocate)) pf [] deadCleanup)
 
 /-- `compileFileWith` the given allocator. -/
 def compileFileIO (a : Allocator) (pf : Clif.ParsedFile)
-    (preUnverified : List (String × String) := []) : IO FileAsm :=
-  compileFileWith a.run pf preUnverified
+    (preUnverified : List (String × String) := []) (deadCleanup : Bool := false) : IO FileAsm :=
+  compileFileWith a.run pf preUnverified deadCleanup
 
 def jsonString (s : String) : String :=
   "\"" ++ String.join (s.toList.map fun c =>

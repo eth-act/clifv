@@ -26,6 +26,9 @@ def rows(report):
 
 
 def compare(baseline, candidate, required=(), full_suite=False):
+    if "regalloc_oracle" in baseline and "regalloc_oracle" in candidate:
+        if baseline["regalloc_oracle"]["sha256"] != candidate["regalloc_oracle"]["sha256"]:
+            raise ValueError("different regalloc oracle")
     for field in ("upstream_commit", "target", "inventory"):
         if baseline[field] != candidate[field]:
             raise ValueError(f"different {field}")

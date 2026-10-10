@@ -69,3 +69,37 @@ check fresh main and squash merge under the existing user authorization.
   check. Production integration, structural pipeline preservation, final E2E
   variants/caller migration and proof/binary parity validation remain. Cleanup
   is not yet enabled in production.
+
+- Local preparation-domain and raw-lowering → cleanup → preparation E2E
+  composition are checked. The production guard leaves a CFG-invalid input
+  untouched, so the simulation needs no additional source certificate. A kernel
+  witness constructs a valid nonempty CFG/domain and exercises an actual removal.
+- Concrete final and linker/world/non-interference adapters are being checked;
+  allocation totality, consumers, default enablement, witnesses and final gates
+  remain. No completed production cutover is claimed.
+
+- Concrete final compiler theorem `backend_correct_final_cleanup` checks with
+  the same source/callee/ABI premises. Its 764 transitive axioms exactly match
+  `backend_correct_final`: no additions; source scan clean. GOT and guarded
+  world-agreement adapters and the positional/head-retention lemmas also check.
+- Allocation/control-layout/edge and emission preservation are local work in
+  progress. The linker representation boundary is recorded in #60 at
+  https://github.com/eth-act/clifv/issues/60#issuecomment-6099312928.
+
+- The real compiler now accepts `--dead-cleanup` / `--no-dead-cleanup`; the
+  default remains off until the consumer cutover and final gates are complete.
+  Its full comparison is 465 -> 671 (+206), no losses/new rejections, and all
+  three focused cases exact. The regalloc2 oracle was explicitly pinned for
+  both runs; the harness now records its actual path and hash.
+- Concrete final, world, non-interference, allocation-totality and emission
+  adapters check. The linker accepts either preserved legacy artifacts or
+  cleanup artifacts, and a cleanup checker has a soundness theorem. The final
+  theorem's 764 transitive axioms exactly match the baseline set.
+- Preparation commutation checks for pruning, reachability, critical-edge
+  splitting and block reordering. The exact spill-size proof's supporting
+  instruction-body, edge-copy and entry-store lemmas check in lean-mcp.
+- Remaining work: transport the baseline linked-input size and availability
+  hypotheses; migrate runtime/checker/generated-proof consumers together;
+  finish joint non-vacuity and root audits; enable the default; run all final
+  proof/runtime/comparison gates and resolve review. A broader capped build
+  is currently rebuilding unchanged instruction-selection dependencies.

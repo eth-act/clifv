@@ -1190,7 +1190,7 @@ theorem L_ok (F : BitVec 64 → Prop) (hF : ∀ a, Img P A a → F a) : (L F).Ok
     have := List.all_eq_true.mp (facts hg).indOk sig hs
     simpa [Bool.and_eq_true, decide_eq_true_eq] using this
   · obtain ⟨hl, hp, ha, he, hla, -, -⟩ := pipe_spec (facts hg).pipe
-    exact ⟨hl, (facts hg).lowerOk, hp, (facts hg).prepOk, (facts hg).check, ha, he, hla⟩
+    exact .legacy ⟨hl, (facts hg).lowerOk, hp, (facts hg).prepOk, (facts hg).check, ha, he, hla⟩
   · obtain ⟨⟨fn, e'⟩, hm, rfl⟩ := List.mem_map.1 he
     exact outFitsB_sound ((facts hg).outFits _ hm hs) hl hp
   · simp only [L] at hf

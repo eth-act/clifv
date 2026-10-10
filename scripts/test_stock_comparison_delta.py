@@ -22,6 +22,19 @@ def report(exact):
 
 
 class DeltaTests(unittest.TestCase):
+    def test_changed_allocator_invalidates_the_comparison(self):
+        baseline, candidate = report([False]), report([True])
+        baseline["regalloc_oracle"] = {"path": "/baseline/ra", "sha256": "one"}
+        candidate["regalloc_oracle"] = {"path": "/candidate/ra", "sha256": "two"}
+        with self.assertRaisesRegex(ValueError, "different regalloc oracle"):
+            DELTA.compare(baseline, candidate)
+
+    def test_same_allocator_at_another_path_is_comparable(self):
+        baseline, candidate = report([False]), report([True])
+        baseline["regalloc_oracle"] = {"path": "/baseline/ra", "sha256": "same"}
+        candidate["regalloc_oracle"] = {"path": "/candidate/ra", "sha256": "same"}
+        self.assertTrue(DELTA.compare(baseline, candidate)["checkpoint_passed"])
+
     def test_gain_preserves_each_existing_match(self):
         result = DELTA.compare(report([True, False]), report([True, True]),
                                [("test.clif", "%f1")], full_suite=True)

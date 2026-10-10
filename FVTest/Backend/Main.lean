@@ -42,7 +42,7 @@ validator and listed as `compiled, unverified (validation budget)`.
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--stock-config <request.json> --config-receipt <receipt.json>]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--stock-config <request.json> --config-receipt <receipt.json>]"
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
@@ -62,6 +62,7 @@ structure Opts where
   personality : Option String := none
   stockConfig : Option String := none
   configReceipt : Option String := none
+  deadCleanup : Bool := false
 
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
@@ -79,7 +80,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     let checked := StockConfig.parse request
     let error := match checked with | .ok _ => none | .error e => some e
     if let some receipt := o.configReceipt then
-      IO.FS.writeFile receipt ((StockConfig.receipt request error).pretty ++ "\n")
+      IO.FS.writeFile receipt ((StockConfig.receipt request error none o.deadCleanup).pretty ++ "\n")
     match checked with
     | .error e => IO.eprintln s!"lean-backend: unsupported stock configuration: {e}"; return 3
     | .ok c => stock := some c
@@ -109,12 +110,12 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     (source.funcs ++ pf.funcs).filterMap fun p => if p.name == name then p.func.toOption else none
   let rejected ← IO.mkRef (#[] : Array (String × String))
   let fa ← match stock with
-    | none => compileFileIO alloc pf (unv128 ++ unvTry)
+    | none => compileFileIO alloc pf (unv128 ++ unvTry) o.deadCleanup
     | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
-        (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))))
+        (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))) o.deadCleanup)
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
     IO.FS.writeFile receipt
-      ((StockConfig.receipt request none (some (← rejected.get).toList)).pretty ++ "\n")
+      ((StockConfig.receipt request none (some (← rejected.get).toList) o.deadCleanup).pretty ++ "\n")
   let fa := match stock with
     | some c => if c.unwind then fa else { fa with unwind := [] }
     | none => fa
@@ -171,6 +172,8 @@ def main (args : List String) : IO UInt32 := do
     | "--personality" :: p :: rest => opts { o with personality := some p } rest
     | "--stock-config" :: c :: rest => opts { o with stockConfig := some c } rest
     | "--config-receipt" :: c :: rest => opts { o with configReceipt := some c } rest
+    | "--dead-cleanup" :: rest => opts { o with deadCleanup := true } rest
+    | "--no-dead-cleanup" :: rest => opts { o with deadCleanup := false } rest
     | _ => none
   let (optCfg, args) ← match Opt.parseOptArgs args with
     | .ok r => pure r

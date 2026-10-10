@@ -1,0 +1,3333 @@
+{
+  "baseline_exact": 465,
+  "candidate_exact": 671,
+  "gained": [
+    [
+      "isa/aarch64/amodes.clif",
+      0,
+      7,
+      "%f11"
+    ],
+    [
+      "isa/aarch64/amodes.clif",
+      0,
+      8,
+      "%add_imm12_max_shifted"
+    ],
+    [
+      "isa/aarch64/amodes.clif",
+      0,
+      9,
+      "%f12"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      6,
+      "%f7"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      8,
+      "%f9"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      12,
+      "%f13"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      14,
+      "%f15"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      20,
+      "%f21"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      21,
+      "%f22"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      22,
+      "%f23"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      25,
+      "%f26"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      26,
+      "%f27"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      27,
+      "%f28"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      33,
+      "%add_mul_1"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      34,
+      "%add_mul_2"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      35,
+      "%msub_i32"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      36,
+      "%msub_i64"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      39,
+      "%srem_const"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      40,
+      "%urem_const"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      41,
+      "%sdiv_minus_one"
+    ],
+    [
+      "isa/aarch64/arithmetic.clif",
+      0,
+      42,
+      "%sdiv_i16_const"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      30,
+      "%bnot_i128"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      36,
+      "%band_i128"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      40,
+      "%band_i64_constant"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      41,
+      "%band_i64_constant2"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      46,
+      "%bor_i128"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      50,
+      "%bor_i64_constant"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      51,
+      "%bor_i64_constant2"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      56,
+      "%bxor_i128"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      60,
+      "%bxor_i64_constant"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      61,
+      "%bxor_i64_constant2"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      64,
+      "%band_not_i32"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      65,
+      "%band_not_i64"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      66,
+      "%band_not_i128"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      72,
+      "%bor_not_i32"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      73,
+      "%bor_not_i64"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      74,
+      "%bor_not_i128"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      80,
+      "%bxor_not_i32"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      81,
+      "%bxor_not_i64"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      82,
+      "%bxor_not_i128"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      91,
+      "%bnot_of_bxor"
+    ],
+    [
+      "isa/aarch64/bitops.clif",
+      0,
+      92,
+      "%bnot_of_bxor"
+    ],
+    [
+      "isa/aarch64/condbr.clif",
+      0,
+      25,
+      "%tbnz_i8"
+    ],
+    [
+      "isa/aarch64/condbr.clif",
+      0,
+      27,
+      "%tbnz_i32"
+    ],
+    [
+      "isa/aarch64/condops-with-csdb.clif",
+      0,
+      50,
+      "%g"
+    ],
+    [
+      "isa/aarch64/condops.clif",
+      0,
+      50,
+      "%g"
+    ],
+    [
+      "isa/aarch64/extend-op.clif",
+      0,
+      4,
+      "%i128_uextend_i32"
+    ],
+    [
+      "isa/aarch64/extend-op.clif",
+      0,
+      5,
+      "%i128_sextend_i32"
+    ],
+    [
+      "isa/aarch64/extend-op.clif",
+      0,
+      6,
+      "%i128_uextend_i16"
+    ],
+    [
+      "isa/aarch64/extend-op.clif",
+      0,
+      7,
+      "%i128_sextend_i16"
+    ],
+    [
+      "isa/aarch64/extend-op.clif",
+      0,
+      8,
+      "%i128_uextend_i8"
+    ],
+    [
+      "isa/aarch64/extend-op.clif",
+      0,
+      9,
+      "%i128_sextend_i8"
+    ],
+    [
+      "isa/aarch64/iconst-imm12_from_negated.clif",
+      0,
+      0,
+      "%c"
+    ],
+    [
+      "isa/aarch64/iconst-imm12_from_negated.clif",
+      0,
+      1,
+      "%b"
+    ],
+    [
+      "isa/aarch64/iconst-imm12_from_negated.clif",
+      0,
+      2,
+      "%a"
+    ],
+    [
+      "isa/aarch64/iconst-imm12_from_negated.clif",
+      0,
+      3,
+      "%c"
+    ],
+    [
+      "isa/aarch64/iconst-imm12_from_negated.clif",
+      0,
+      4,
+      "%b"
+    ],
+    [
+      "isa/aarch64/iconst-imm12_from_negated.clif",
+      0,
+      5,
+      "%a"
+    ],
+    [
+      "isa/aarch64/iconst-imm12_from_negated.clif",
+      0,
+      6,
+      "%c"
+    ],
+    [
+      "isa/aarch64/iconst-imm12_from_negated.clif",
+      0,
+      7,
+      "%b"
+    ],
+    [
+      "isa/aarch64/iconst-imm12_from_negated.clif",
+      0,
+      8,
+      "%a"
+    ],
+    [
+      "isa/aarch64/reduce.clif",
+      0,
+      1,
+      "%ireduce_128_32"
+    ],
+    [
+      "isa/aarch64/reduce.clif",
+      0,
+      2,
+      "%ireduce_128_16"
+    ],
+    [
+      "isa/aarch64/reduce.clif",
+      0,
+      3,
+      "%ireduce_128_8"
+    ],
+    [
+      "isa/aarch64/shift-op.clif",
+      0,
+      1,
+      "%f"
+    ],
+    [
+      "isa/aarch64/shift-rotate.clif",
+      0,
+      22,
+      "%f20"
+    ],
+    [
+      "isa/aarch64/shift-rotate.clif",
+      0,
+      23,
+      "%f21"
+    ],
+    [
+      "isa/aarch64/shift-rotate.clif",
+      0,
+      24,
+      "%f22"
+    ],
+    [
+      "isa/aarch64/shift-rotate.clif",
+      0,
+      25,
+      "%f23"
+    ],
+    [
+      "isa/aarch64/shift-rotate.clif",
+      0,
+      26,
+      "%f24"
+    ],
+    [
+      "isa/aarch64/shift-rotate.clif",
+      0,
+      27,
+      "%f25"
+    ],
+    [
+      "isa/aarch64/shift-rotate.clif",
+      0,
+      28,
+      "%f26"
+    ],
+    [
+      "isa/aarch64/shift-rotate.clif",
+      0,
+      29,
+      "%f27"
+    ],
+    [
+      "isa/aarch64/stack.clif",
+      0,
+      2,
+      "%stack_load_small"
+    ],
+    [
+      "isa/aarch64/stack.clif",
+      0,
+      4,
+      "%stack_store_small"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      13,
+      "%madd_i8"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      14,
+      "%madd_i16"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      15,
+      "%madd_i32"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      16,
+      "%madd_i64"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      17,
+      "%msub_i8"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      18,
+      "%msub_i16"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      19,
+      "%msub_i32"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      20,
+      "%msub_i64"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      22,
+      "%sdiv_i64_const"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      24,
+      "%sdiv_i32_const"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      26,
+      "%sdiv_i16_const"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      28,
+      "%sdiv_i8_const"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      30,
+      "%udiv_i64_const"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      32,
+      "%udiv_i32_const"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      34,
+      "%udiv_i16_const"
+    ],
+    [
+      "runtests/arithmetic.clif",
+      0,
+      36,
+      "%udiv_i8_const"
+    ],
+    [
+      "runtests/bnot.clif",
+      0,
+      4,
+      "%band_not"
+    ],
+    [
+      "runtests/bnot.clif",
+      0,
+      5,
+      "%bor_not"
+    ],
+    [
+      "runtests/bnot.clif",
+      0,
+      6,
+      "%bxor_not"
+    ],
+    [
+      "runtests/call.clif",
+      0,
+      0,
+      "%callee_i64"
+    ],
+    [
+      "runtests/call.clif",
+      0,
+      5,
+      "%callee_i8"
+    ],
+    [
+      "runtests/call.clif",
+      1,
+      0,
+      "%callee_i64"
+    ],
+    [
+      "runtests/call.clif",
+      1,
+      5,
+      "%callee_i8"
+    ],
+    [
+      "runtests/call.clif",
+      2,
+      0,
+      "%callee_i64"
+    ],
+    [
+      "runtests/call.clif",
+      2,
+      5,
+      "%callee_i8"
+    ],
+    [
+      "runtests/call_indirect.clif",
+      0,
+      0,
+      "%callee_indirect"
+    ],
+    [
+      "runtests/call_indirect.clif",
+      1,
+      0,
+      "%callee_indirect"
+    ],
+    [
+      "runtests/call_indirect.clif",
+      2,
+      0,
+      "%callee_indirect"
+    ],
+    [
+      "runtests/div-checks.clif",
+      0,
+      1,
+      "%i8_const"
+    ],
+    [
+      "runtests/div-checks.clif",
+      0,
+      3,
+      "%i16_const"
+    ],
+    [
+      "runtests/div-checks.clif",
+      0,
+      5,
+      "%i32_const"
+    ],
+    [
+      "runtests/div-checks.clif",
+      0,
+      7,
+      "%i64_const"
+    ],
+    [
+      "runtests/div-checks.clif",
+      0,
+      9,
+      "%i8_u_const"
+    ],
+    [
+      "runtests/div-checks.clif",
+      0,
+      11,
+      "%i16_u_const"
+    ],
+    [
+      "runtests/div-checks.clif",
+      0,
+      13,
+      "%i32_u_const"
+    ],
+    [
+      "runtests/div-checks.clif",
+      0,
+      15,
+      "%i64_u_const"
+    ],
+    [
+      "runtests/i128-bandnot.clif",
+      0,
+      0,
+      "%band_not_i128"
+    ],
+    [
+      "runtests/i128-bitops.clif",
+      0,
+      0,
+      "%bnot_i128"
+    ],
+    [
+      "runtests/i128-bitops.clif",
+      0,
+      1,
+      "%band_i128"
+    ],
+    [
+      "runtests/i128-bitops.clif",
+      0,
+      2,
+      "%bor_i128"
+    ],
+    [
+      "runtests/i128-bitops.clif",
+      0,
+      3,
+      "%bxor_i128"
+    ],
+    [
+      "runtests/i128-bornot.clif",
+      0,
+      0,
+      "%bor_not_i128"
+    ],
+    [
+      "runtests/i128-bswap.clif",
+      0,
+      0,
+      "%bswap_i128"
+    ],
+    [
+      "runtests/i128-bxornot.clif",
+      0,
+      0,
+      "%bxor_not_i128"
+    ],
+    [
+      "runtests/i128-extend.clif",
+      0,
+      2,
+      "%i128_uextend_i32"
+    ],
+    [
+      "runtests/i128-extend.clif",
+      0,
+      3,
+      "%i128_sextend_i32"
+    ],
+    [
+      "runtests/i128-extend.clif",
+      0,
+      4,
+      "%i128_uextend_i16"
+    ],
+    [
+      "runtests/i128-extend.clif",
+      0,
+      5,
+      "%i128_sextend_i16"
+    ],
+    [
+      "runtests/i128-extend.clif",
+      0,
+      6,
+      "%i128_uextend_i8"
+    ],
+    [
+      "runtests/i128-extend.clif",
+      0,
+      7,
+      "%i128_sextend_i8"
+    ],
+    [
+      "runtests/i128-ireduce.clif",
+      0,
+      1,
+      "%ireduce_128_32"
+    ],
+    [
+      "runtests/i128-ireduce.clif",
+      0,
+      2,
+      "%ireduce_128_16"
+    ],
+    [
+      "runtests/i128-ireduce.clif",
+      0,
+      3,
+      "%ireduce_128_8"
+    ],
+    [
+      "runtests/icmp-eq-imm.clif",
+      0,
+      0,
+      "%icmp_imm_eq_i8"
+    ],
+    [
+      "runtests/icmp-eq-imm.clif",
+      0,
+      1,
+      "%icmp_neg_eq_i8"
+    ],
+    [
+      "runtests/icmp-eq.clif",
+      0,
+      4,
+      "%icmp_eq_i8_imm"
+    ],
+    [
+      "runtests/icmp-eq.clif",
+      0,
+      5,
+      "%icmp_eq_i16_imm"
+    ],
+    [
+      "runtests/icmp-eq.clif",
+      0,
+      6,
+      "%icmp_eq_i32_imm"
+    ],
+    [
+      "runtests/icmp-eq.clif",
+      0,
+      7,
+      "%icmp_eq_i64_imm"
+    ],
+    [
+      "runtests/icmp-ne.clif",
+      0,
+      4,
+      "%icmp_ne_i8_imm"
+    ],
+    [
+      "runtests/icmp-ne.clif",
+      0,
+      5,
+      "%icmp_ne_i16_imm"
+    ],
+    [
+      "runtests/icmp-ne.clif",
+      0,
+      6,
+      "%icmp_ne_i32_imm"
+    ],
+    [
+      "runtests/icmp-ne.clif",
+      0,
+      7,
+      "%icmp_ne_i64_imm"
+    ],
+    [
+      "runtests/icmp-sge.clif",
+      0,
+      6,
+      "%icmp_sge_i32_imm"
+    ],
+    [
+      "runtests/icmp-sge.clif",
+      0,
+      7,
+      "%icmp_sge_i64_imm"
+    ],
+    [
+      "runtests/icmp-sgt.clif",
+      0,
+      6,
+      "%icmp_sgt_i32_imm"
+    ],
+    [
+      "runtests/icmp-sgt.clif",
+      0,
+      7,
+      "%icmp_sgt_i64_imm"
+    ],
+    [
+      "runtests/icmp-sle.clif",
+      0,
+      6,
+      "%icmp_sle_i32_imm"
+    ],
+    [
+      "runtests/icmp-sle.clif",
+      0,
+      7,
+      "%icmp_sle_i64_imm"
+    ],
+    [
+      "runtests/icmp-slt.clif",
+      0,
+      6,
+      "%icmp_slt_i32_imm"
+    ],
+    [
+      "runtests/icmp-slt.clif",
+      0,
+      7,
+      "%icmp_slt_i64_imm"
+    ],
+    [
+      "runtests/icmp-uge.clif",
+      0,
+      5,
+      "%icmp_uge_i8_imm"
+    ],
+    [
+      "runtests/icmp-uge.clif",
+      0,
+      6,
+      "%icmp_uge_i16_imm"
+    ],
+    [
+      "runtests/icmp-uge.clif",
+      0,
+      7,
+      "%icmp_uge_i32_imm"
+    ],
+    [
+      "runtests/icmp-uge.clif",
+      0,
+      8,
+      "%icmp_uge_i64_imm"
+    ],
+    [
+      "runtests/icmp-ugt.clif",
+      0,
+      5,
+      "%icmp_ugt_i8_imm"
+    ],
+    [
+      "runtests/icmp-ugt.clif",
+      0,
+      6,
+      "%icmp_ugt_i16_imm"
+    ],
+    [
+      "runtests/icmp-ugt.clif",
+      0,
+      7,
+      "%icmp_ugt_i32_imm"
+    ],
+    [
+      "runtests/icmp-ugt.clif",
+      0,
+      8,
+      "%icmp_ugt_i64_imm"
+    ],
+    [
+      "runtests/icmp-ule.clif",
+      0,
+      4,
+      "%icmp_ule_i8_imm"
+    ],
+    [
+      "runtests/icmp-ule.clif",
+      0,
+      5,
+      "%icmp_ule_i16_imm"
+    ],
+    [
+      "runtests/icmp-ule.clif",
+      0,
+      6,
+      "%icmp_ule_i32_imm"
+    ],
+    [
+      "runtests/icmp-ule.clif",
+      0,
+      7,
+      "%icmp_ule_i64_imm"
+    ],
+    [
+      "runtests/icmp-ult.clif",
+      0,
+      4,
+      "%icmp_ult_i8_imm"
+    ],
+    [
+      "runtests/icmp-ult.clif",
+      0,
+      5,
+      "%icmp_ult_i16_imm"
+    ],
+    [
+      "runtests/icmp-ult.clif",
+      0,
+      6,
+      "%icmp_ult_i32_imm"
+    ],
+    [
+      "runtests/icmp-ult.clif",
+      0,
+      7,
+      "%icmp_ult_i64_imm"
+    ],
+    [
+      "runtests/rotl.clif",
+      0,
+      20,
+      "%rotl_i8_const_37"
+    ],
+    [
+      "runtests/rotl.clif",
+      0,
+      21,
+      "%rotl_i32_const4"
+    ],
+    [
+      "runtests/rotl.clif",
+      0,
+      22,
+      "%rotl_i64_const4"
+    ],
+    [
+      "runtests/rotl.clif",
+      0,
+      23,
+      "%rotl_i64_const128"
+    ],
+    [
+      "runtests/rotr.clif",
+      0,
+      22,
+      "%rotr_i8_const_37"
+    ],
+    [
+      "runtests/rotr.clif",
+      0,
+      23,
+      "%rotr_i32_const4"
+    ],
+    [
+      "runtests/rotr.clif",
+      0,
+      24,
+      "%rotr_i64_const4"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      60,
+      "%ishl_i64_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      61,
+      "%ishl_i32_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      62,
+      "%ishl_i16_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      63,
+      "%ishl_i8_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      64,
+      "%ushr_i64_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      65,
+      "%ushr_i32_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      66,
+      "%ushr_i16_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      67,
+      "%ushr_i8_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      68,
+      "%sshr_i64_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      69,
+      "%sshr_i32_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      70,
+      "%sshr_i16_const"
+    ],
+    [
+      "runtests/shifts.clif",
+      0,
+      71,
+      "%sshr_i8_const"
+    ],
+    [
+      "runtests/srem.clif",
+      0,
+      4,
+      "%srem_imm_i64"
+    ],
+    [
+      "runtests/srem.clif",
+      0,
+      5,
+      "%srem_imm_i32"
+    ],
+    [
+      "runtests/srem.clif",
+      0,
+      6,
+      "%srem_imm_i16"
+    ],
+    [
+      "runtests/srem.clif",
+      0,
+      7,
+      "%srem_imm_i8"
+    ],
+    [
+      "runtests/srem_opts.clif",
+      0,
+      4,
+      "%srem_imm_i64"
+    ],
+    [
+      "runtests/srem_opts.clif",
+      0,
+      5,
+      "%srem_imm_i32"
+    ],
+    [
+      "runtests/srem_opts.clif",
+      0,
+      6,
+      "%srem_imm_i16"
+    ],
+    [
+      "runtests/srem_opts.clif",
+      0,
+      7,
+      "%srem_imm_i8"
+    ],
+    [
+      "runtests/srem_opts.clif",
+      0,
+      29,
+      "%srem_imm_pow2_more_i64"
+    ],
+    [
+      "runtests/srem_opts.clif",
+      0,
+      30,
+      "%srem_imm_pow2_more_i32"
+    ],
+    [
+      "runtests/srem_opts.clif",
+      0,
+      31,
+      "%srem_imm_large_i64"
+    ],
+    [
+      "runtests/srem_opts.clif",
+      0,
+      32,
+      "%srem_imm_prime_i64"
+    ],
+    [
+      "runtests/stack.clif",
+      0,
+      0,
+      "%stack_simple"
+    ],
+    [
+      "runtests/stack.clif",
+      0,
+      1,
+      "%stack_offset"
+    ],
+    [
+      "runtests/stack.clif",
+      0,
+      2,
+      "%offset_unaligned"
+    ],
+    [
+      "runtests/stack.clif",
+      0,
+      4,
+      "%multi_slot_out_of_bounds_writes"
+    ],
+    [
+      "runtests/stack.clif",
+      0,
+      5,
+      "%multi_slot_offset_writes"
+    ],
+    [
+      "runtests/udiv.clif",
+      0,
+      1,
+      "%udiv_pow2_i32"
+    ],
+    [
+      "runtests/udiv.clif",
+      0,
+      2,
+      "%udiv_by_const_1337_i32"
+    ],
+    [
+      "runtests/udiv.clif",
+      0,
+      4,
+      "%udiv_pow2_i64"
+    ],
+    [
+      "runtests/udiv.clif",
+      0,
+      5,
+      "%udiv_by_const_1337_i64"
+    ],
+    [
+      "runtests/urem.clif",
+      0,
+      4,
+      "%urem_imm_i64"
+    ],
+    [
+      "runtests/urem.clif",
+      0,
+      5,
+      "%urem_imm_i32"
+    ],
+    [
+      "runtests/urem.clif",
+      0,
+      6,
+      "%urem_imm_i16"
+    ],
+    [
+      "runtests/urem.clif",
+      0,
+      7,
+      "%urem_imm_i8"
+    ]
+  ],
+  "lost": [],
+  "new_rejections": [],
+  "status_changes": [
+    {
+      "identity": [
+        "isa/aarch64/amodes.clif",
+        0,
+        7,
+        "%f11"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/amodes.clif",
+        0,
+        8,
+        "%add_imm12_max_shifted"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/amodes.clif",
+        0,
+        9,
+        "%f12"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        6,
+        "%f7"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        8,
+        "%f9"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        12,
+        "%f13"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        14,
+        "%f15"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        20,
+        "%f21"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        21,
+        "%f22"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        22,
+        "%f23"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        25,
+        "%f26"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        26,
+        "%f27"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        27,
+        "%f28"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        33,
+        "%add_mul_1"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        34,
+        "%add_mul_2"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        35,
+        "%msub_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        36,
+        "%msub_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        39,
+        "%srem_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        40,
+        "%urem_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        41,
+        "%sdiv_minus_one"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/arithmetic.clif",
+        0,
+        42,
+        "%sdiv_i16_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        30,
+        "%bnot_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        36,
+        "%band_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        40,
+        "%band_i64_constant"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        41,
+        "%band_i64_constant2"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        46,
+        "%bor_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        50,
+        "%bor_i64_constant"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        51,
+        "%bor_i64_constant2"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        56,
+        "%bxor_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        60,
+        "%bxor_i64_constant"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        61,
+        "%bxor_i64_constant2"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        64,
+        "%band_not_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        65,
+        "%band_not_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        66,
+        "%band_not_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        72,
+        "%bor_not_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        73,
+        "%bor_not_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        74,
+        "%bor_not_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        80,
+        "%bxor_not_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        81,
+        "%bxor_not_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        82,
+        "%bxor_not_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        91,
+        "%bnot_of_bxor"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/bitops.clif",
+        0,
+        92,
+        "%bnot_of_bxor"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/condbr.clif",
+        0,
+        25,
+        "%tbnz_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/condbr.clif",
+        0,
+        27,
+        "%tbnz_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/condops-with-csdb.clif",
+        0,
+        50,
+        "%g"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/condops.clif",
+        0,
+        50,
+        "%g"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/extend-op.clif",
+        0,
+        4,
+        "%i128_uextend_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/extend-op.clif",
+        0,
+        5,
+        "%i128_sextend_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/extend-op.clif",
+        0,
+        6,
+        "%i128_uextend_i16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/extend-op.clif",
+        0,
+        7,
+        "%i128_sextend_i16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/extend-op.clif",
+        0,
+        8,
+        "%i128_uextend_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/extend-op.clif",
+        0,
+        9,
+        "%i128_sextend_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/iconst-imm12_from_negated.clif",
+        0,
+        0,
+        "%c"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/iconst-imm12_from_negated.clif",
+        0,
+        1,
+        "%b"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/iconst-imm12_from_negated.clif",
+        0,
+        2,
+        "%a"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/iconst-imm12_from_negated.clif",
+        0,
+        3,
+        "%c"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/iconst-imm12_from_negated.clif",
+        0,
+        4,
+        "%b"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/iconst-imm12_from_negated.clif",
+        0,
+        5,
+        "%a"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/iconst-imm12_from_negated.clif",
+        0,
+        6,
+        "%c"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/iconst-imm12_from_negated.clif",
+        0,
+        7,
+        "%b"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/iconst-imm12_from_negated.clif",
+        0,
+        8,
+        "%a"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/reduce.clif",
+        0,
+        1,
+        "%ireduce_128_32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/reduce.clif",
+        0,
+        2,
+        "%ireduce_128_16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/reduce.clif",
+        0,
+        3,
+        "%ireduce_128_8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/shift-op.clif",
+        0,
+        1,
+        "%f"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/shift-rotate.clif",
+        0,
+        22,
+        "%f20"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/shift-rotate.clif",
+        0,
+        23,
+        "%f21"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/shift-rotate.clif",
+        0,
+        24,
+        "%f22"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/shift-rotate.clif",
+        0,
+        25,
+        "%f23"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/shift-rotate.clif",
+        0,
+        26,
+        "%f24"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/shift-rotate.clif",
+        0,
+        27,
+        "%f25"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/shift-rotate.clif",
+        0,
+        28,
+        "%f26"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/shift-rotate.clif",
+        0,
+        29,
+        "%f27"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/stack.clif",
+        0,
+        2,
+        "%stack_load_small"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "isa/aarch64/stack.clif",
+        0,
+        4,
+        "%stack_store_small"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        13,
+        "%madd_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        14,
+        "%madd_i16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        15,
+        "%madd_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        16,
+        "%madd_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        17,
+        "%msub_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        18,
+        "%msub_i16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        19,
+        "%msub_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        20,
+        "%msub_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        22,
+        "%sdiv_i64_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        24,
+        "%sdiv_i32_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        26,
+        "%sdiv_i16_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        28,
+        "%sdiv_i8_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        30,
+        "%udiv_i64_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        32,
+        "%udiv_i32_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        34,
+        "%udiv_i16_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/arithmetic.clif",
+        0,
+        36,
+        "%udiv_i8_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/bnot.clif",
+        0,
+        4,
+        "%band_not"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/bnot.clif",
+        0,
+        5,
+        "%bor_not"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/bnot.clif",
+        0,
+        6,
+        "%bxor_not"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/call.clif",
+        0,
+        0,
+        "%callee_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/call.clif",
+        0,
+        5,
+        "%callee_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/call.clif",
+        1,
+        0,
+        "%callee_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/call.clif",
+        1,
+        5,
+        "%callee_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/call.clif",
+        2,
+        0,
+        "%callee_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/call.clif",
+        2,
+        5,
+        "%callee_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/call_indirect.clif",
+        0,
+        0,
+        "%callee_indirect"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/call_indirect.clif",
+        1,
+        0,
+        "%callee_indirect"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/call_indirect.clif",
+        2,
+        0,
+        "%callee_indirect"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/div-checks.clif",
+        0,
+        1,
+        "%i8_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/div-checks.clif",
+        0,
+        3,
+        "%i16_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/div-checks.clif",
+        0,
+        5,
+        "%i32_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/div-checks.clif",
+        0,
+        7,
+        "%i64_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/div-checks.clif",
+        0,
+        9,
+        "%i8_u_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/div-checks.clif",
+        0,
+        11,
+        "%i16_u_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/div-checks.clif",
+        0,
+        13,
+        "%i32_u_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/div-checks.clif",
+        0,
+        15,
+        "%i64_u_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-bandnot.clif",
+        0,
+        0,
+        "%band_not_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-bitops.clif",
+        0,
+        0,
+        "%bnot_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-bitops.clif",
+        0,
+        1,
+        "%band_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-bitops.clif",
+        0,
+        2,
+        "%bor_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-bitops.clif",
+        0,
+        3,
+        "%bxor_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-bornot.clif",
+        0,
+        0,
+        "%bor_not_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-bswap.clif",
+        0,
+        0,
+        "%bswap_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-bxornot.clif",
+        0,
+        0,
+        "%bxor_not_i128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-extend.clif",
+        0,
+        2,
+        "%i128_uextend_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-extend.clif",
+        0,
+        3,
+        "%i128_sextend_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-extend.clif",
+        0,
+        4,
+        "%i128_uextend_i16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-extend.clif",
+        0,
+        5,
+        "%i128_sextend_i16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-extend.clif",
+        0,
+        6,
+        "%i128_uextend_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-extend.clif",
+        0,
+        7,
+        "%i128_sextend_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-ireduce.clif",
+        0,
+        1,
+        "%ireduce_128_32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-ireduce.clif",
+        0,
+        2,
+        "%ireduce_128_16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/i128-ireduce.clif",
+        0,
+        3,
+        "%ireduce_128_8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-eq-imm.clif",
+        0,
+        0,
+        "%icmp_imm_eq_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-eq-imm.clif",
+        0,
+        1,
+        "%icmp_neg_eq_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-eq.clif",
+        0,
+        4,
+        "%icmp_eq_i8_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-eq.clif",
+        0,
+        5,
+        "%icmp_eq_i16_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-eq.clif",
+        0,
+        6,
+        "%icmp_eq_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-eq.clif",
+        0,
+        7,
+        "%icmp_eq_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ne.clif",
+        0,
+        4,
+        "%icmp_ne_i8_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ne.clif",
+        0,
+        5,
+        "%icmp_ne_i16_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ne.clif",
+        0,
+        6,
+        "%icmp_ne_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ne.clif",
+        0,
+        7,
+        "%icmp_ne_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-sge.clif",
+        0,
+        6,
+        "%icmp_sge_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-sge.clif",
+        0,
+        7,
+        "%icmp_sge_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-sgt.clif",
+        0,
+        6,
+        "%icmp_sgt_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-sgt.clif",
+        0,
+        7,
+        "%icmp_sgt_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-sle.clif",
+        0,
+        6,
+        "%icmp_sle_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-sle.clif",
+        0,
+        7,
+        "%icmp_sle_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-slt.clif",
+        0,
+        6,
+        "%icmp_slt_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-slt.clif",
+        0,
+        7,
+        "%icmp_slt_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-uge.clif",
+        0,
+        5,
+        "%icmp_uge_i8_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-uge.clif",
+        0,
+        6,
+        "%icmp_uge_i16_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-uge.clif",
+        0,
+        7,
+        "%icmp_uge_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-uge.clif",
+        0,
+        8,
+        "%icmp_uge_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ugt.clif",
+        0,
+        5,
+        "%icmp_ugt_i8_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ugt.clif",
+        0,
+        6,
+        "%icmp_ugt_i16_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ugt.clif",
+        0,
+        7,
+        "%icmp_ugt_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ugt.clif",
+        0,
+        8,
+        "%icmp_ugt_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ule.clif",
+        0,
+        4,
+        "%icmp_ule_i8_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ule.clif",
+        0,
+        5,
+        "%icmp_ule_i16_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ule.clif",
+        0,
+        6,
+        "%icmp_ule_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ule.clif",
+        0,
+        7,
+        "%icmp_ule_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ult.clif",
+        0,
+        4,
+        "%icmp_ult_i8_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ult.clif",
+        0,
+        5,
+        "%icmp_ult_i16_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ult.clif",
+        0,
+        6,
+        "%icmp_ult_i32_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/icmp-ult.clif",
+        0,
+        7,
+        "%icmp_ult_i64_imm"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/rotl.clif",
+        0,
+        20,
+        "%rotl_i8_const_37"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/rotl.clif",
+        0,
+        21,
+        "%rotl_i32_const4"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/rotl.clif",
+        0,
+        22,
+        "%rotl_i64_const4"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/rotl.clif",
+        0,
+        23,
+        "%rotl_i64_const128"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/rotr.clif",
+        0,
+        22,
+        "%rotr_i8_const_37"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/rotr.clif",
+        0,
+        23,
+        "%rotr_i32_const4"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/rotr.clif",
+        0,
+        24,
+        "%rotr_i64_const4"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        60,
+        "%ishl_i64_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        61,
+        "%ishl_i32_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        62,
+        "%ishl_i16_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        63,
+        "%ishl_i8_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        64,
+        "%ushr_i64_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        65,
+        "%ushr_i32_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        66,
+        "%ushr_i16_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        67,
+        "%ushr_i8_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        68,
+        "%sshr_i64_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        69,
+        "%sshr_i32_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        70,
+        "%sshr_i16_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/shifts.clif",
+        0,
+        71,
+        "%sshr_i8_const"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem.clif",
+        0,
+        4,
+        "%srem_imm_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem.clif",
+        0,
+        5,
+        "%srem_imm_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem.clif",
+        0,
+        6,
+        "%srem_imm_i16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem.clif",
+        0,
+        7,
+        "%srem_imm_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem_opts.clif",
+        0,
+        4,
+        "%srem_imm_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem_opts.clif",
+        0,
+        5,
+        "%srem_imm_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem_opts.clif",
+        0,
+        6,
+        "%srem_imm_i16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem_opts.clif",
+        0,
+        7,
+        "%srem_imm_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem_opts.clif",
+        0,
+        29,
+        "%srem_imm_pow2_more_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem_opts.clif",
+        0,
+        30,
+        "%srem_imm_pow2_more_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem_opts.clif",
+        0,
+        31,
+        "%srem_imm_large_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/srem_opts.clif",
+        0,
+        32,
+        "%srem_imm_prime_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/stack.clif",
+        0,
+        0,
+        "%stack_simple"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/stack.clif",
+        0,
+        1,
+        "%stack_offset"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/stack.clif",
+        0,
+        2,
+        "%offset_unaligned"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/stack.clif",
+        0,
+        4,
+        "%multi_slot_out_of_bounds_writes"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/stack.clif",
+        0,
+        5,
+        "%multi_slot_offset_writes"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/udiv.clif",
+        0,
+        1,
+        "%udiv_pow2_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/udiv.clif",
+        0,
+        2,
+        "%udiv_by_const_1337_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/udiv.clif",
+        0,
+        4,
+        "%udiv_pow2_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/udiv.clif",
+        0,
+        5,
+        "%udiv_by_const_1337_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/urem.clif",
+        0,
+        4,
+        "%urem_imm_i64"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/urem.clif",
+        0,
+        5,
+        "%urem_imm_i32"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/urem.clif",
+        0,
+        6,
+        "%urem_imm_i16"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    },
+    {
+      "identity": [
+        "runtests/urem.clif",
+        0,
+        7,
+        "%urem_imm_i8"
+      ],
+      "before": "different_code_artifact",
+      "after": "identical_code_artifact"
+    }
+  ],
+  "focused": [
+    {
+      "test": "isa/aarch64/bitops.clif",
+      "name": "%band_not_i64",
+      "occurrences": 1,
+      "all_exact": true
+    },
+    {
+      "test": "isa/aarch64/arithmetic.clif",
+      "name": "%msub_i32",
+      "occurrences": 1,
+      "all_exact": true
+    },
+    {
+      "test": "isa/aarch64/stack.clif",
+      "name": "%stack_load_small",
+      "occurrences": 1,
+      "all_exact": true
+    }
+  ],
+  "uncompared_reference_gaps": [
+    [
+      "runtests/throw.clif",
+      0
+    ]
+  ],
+  "checkpoint_passed": true
+}
