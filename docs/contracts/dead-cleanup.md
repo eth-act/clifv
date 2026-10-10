@@ -47,7 +47,9 @@ binary, crate and stack proofs. The generated input retains allocator fallback
 mode. `lean-link --dead-cleanup` selects the matching executable compiler.
 `--no-dead-cleanup` selects the legacy path. Cleanup is the default for these tools and compiler helpers. `cargo fv`
 explicitly selects cleanup and reports its matching final/optimizer theorem.
-Final merge gates must validate this cutover.
+Final merge gates must validate this cutover. Lowering diagnostics retain raw
+selection/replay and also record the post-cleanup allocation input; their
+`allocator_input` follows the same cleanup mode as the compiler.
 
 ## Evidence
 
