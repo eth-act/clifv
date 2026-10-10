@@ -1,6 +1,7 @@
 import FV.Backend.Proof.DeadCleanupCFG
 import FV.Backend.Proof.PrepareComplete
 import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.DeadCleanupDeletion
 
 namespace Backend.DeadCleanup
 open Backend.Proof Backend.Proof.Prep
@@ -320,6 +321,12 @@ private theorem eraseBlock_map (n : Nat) (L : List Nat) : BlockMap (eraseBlock n
 def preparedCleanupBlock (original : VCode) (b : VBlock) : VBlock :=
   eraseBlock original.classes.size (exitLive original 0 default) b
 
+theorem preparedCleanupBlock_insts (vc : VCode) {b : VBlock} {t : MInst}
+    (hb : b.insts.back? = some t) (ht : t.isTerminator = true) :
+    (preparedCleanupBlock vc b).insts =
+      (scan vc.classes.size b.insts.toList (exitLive vc 0 default)).1.toArray := by
+  simp [preparedCleanupBlock, eraseBlock, hb, ht]
+
 /-- All block interfaces and the surviving terminator agree with preparation's
 original output. -/
 theorem preparedCleanupBlock_interface (vc : VCode) (b : VBlock) :
@@ -338,6 +345,13 @@ theorem preparedCleanupBlock_sublist (vc : VCode) (b : VBlock) :
   · simpa using scan_sublist vc.classes.size b.insts.toList (exitLive vc 0 default)
   · exact List.Sublist.refl _
 
+theorem preparedCleanupBlock_pureSublist (vc : VCode) (b : VBlock) :
+    PureSublist (preparedCleanupBlock vc b).insts.toList b.insts.toList := by
+  unfold preparedCleanupBlock eraseBlock
+  split
+  · simpa using scan_pureSublist vc.classes.size b.insts.toList (exitLive vc 0 default)
+  · exact PureSublist.refl _
+
 /-- Cleanup transported across preparation, using the original liveness boundary
 and preserving the prepared CFG's labels and interfaces. -/
 def preparedCleanup (original prepared : VCode) : VCode :=
@@ -345,6 +359,11 @@ def preparedCleanup (original prepared : VCode) : VCode :=
 
 theorem preparedCleanup_blocks (vc vcp : VCode) :
     (preparedCleanup vc vcp).blocks = vcp.blocks.map (preparedCleanupBlock vc) := rfl
+
+/-- Transported cleanup keeps the prepared CFG result exactly. -/
+theorem preparedCleanup_cfg (vc vcp : VCode) :
+    (preparedCleanup vc vcp).cfg = vcp.cfg :=
+  mapBlocks_cfg (eraseBlock_map vc.classes.size (exitLive vc 0 default)) vcp
 
 /-- Preparation commutes with cleanup: it makes the same CFG decisions and
 retargets the same surviving terminators, including newly added edge blocks. -/
@@ -378,6 +397,15 @@ theorem prune_prepare_ok {vc vcp : VCode} (hp : prepare vc = .ok vcp) :
     prepare (prune vc) = .ok (preparedCleanup vc vcp) := by
   rw [prune_prepare, hp]
   rfl
+
+theorem prune_prepare_ok_inv {vc vcp : VCode} (hp : prepare (prune vc) = .ok vcp) :
+    ∃ raw, prepare vc = .ok raw ∧ vcp = preparedCleanup vc raw := by
+  rw [prune_prepare] at hp
+  cases hr : prepare vc with
+  | error e => simp [hr, Except.map] at hp
+  | ok raw =>
+    simp only [hr, Except.map, Option.some.injEq, Except.ok.injEq] at hp
+    exact ⟨raw, rfl, hp.symm⟩
 
 /-- No function metadata changes while transporting cleanup across preparation. -/
 theorem preparedCleanup_metadata (vc vcp : VCode) :

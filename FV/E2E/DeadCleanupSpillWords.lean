@@ -1,4 +1,5 @@
 import FV.E2E.EmitSize
+import FV.Backend.Proof.DeadCleanupStructure
 
 namespace E2E
 open Backend
@@ -292,5 +293,132 @@ theorem spillBlock_words (h : Homes) (vc : VCode) (succs preds : Array (Array Na
   unfold spillBlockItems
   rw [List.map_append, List.sum_append, he, spillBody_with_moves_words]
   omega
+
+theorem spillEdgeMoves_words_eq (h h' : Homes) (vc vc' : VCode)
+    (succs : Array (Array Nat)) (bi : Nat) (vb vb' : VBlock)
+    (ha : vb.branchArgs = vb'.branchArgs)
+    (hp : ∀ b : Nat, (vc.blocks[b]?.map VBlock.params) = (vc'.blocks[b]?.map VBlock.params)) :
+    ((spillEdgeMoves h vc succs bi vb).map (itemWords vb)).sum =
+      ((spillEdgeMoves h' vc' succs bi vb').map (itemWords vb')).sum := by
+  unfold spillEdgeMoves
+  rw [ha]
+  by_cases he : (!vb'.branchArgs.isEmpty) = true
+  · rw [if_pos he, if_pos he]
+    rcases succs[bi]? with _ | ⟨_ | ⟨t, _ | ⟨u, us⟩⟩⟩
+    · rfl
+    · rfl
+    · change ((match vc.blocks[t]? with
+        | some tb => spillArgMoves h vb tb
+        | none => []).map (itemWords vb)).sum =
+        ((match vc'.blocks[t]? with
+        | some tb => spillArgMoves h' vb' tb
+        | none => []).map (itemWords vb')).sum
+      have ht := hp t
+      cases hv : vc.blocks[t]? <;> cases hv' : vc'.blocks[t]? <;>
+        simp only [hv, hv', Option.map_none, Option.map_some] at ht ⊢
+      · rfl
+      · cases ht
+      · cases ht
+      · rw [spillArgMoves_words, spillArgMoves_words, ha, Option.some.inj ht]
+    · rfl
+  · rw [if_neg he, if_neg he]
+    rfl
+
+/-- Exact per-block monotonicity for an instruction-deleting transformation
+that preserves terminators and interfaces. -/
+theorem spillBlock_words_mono (h h' : Homes) (vc vc' : VCode)
+    (succs preds : Array (Array Nat)) (bi : Nat) (vb vb' : VBlock)
+    (ha : vb.branchArgs = vb'.branchArgs) (hb : vb.insts.back? = vb'.insts.back?)
+    (hs : vb'.insts.toList.Sublist vb.insts.toList)
+    (hp : ∀ b : Nat, (vc.blocks[b]?.map VBlock.params) = (vc'.blocks[b]?.map VBlock.params))
+    (ht : ∀ b : Nat, (vc.blocks[b]?.map (fun (vb : VBlock) => vb.insts.back?)) =
+      (vc'.blocks[b]?.map (fun (vb : VBlock) => vb.insts.back?))) :
+    ((spillBlockItems h' vc' succs preds bi vb').map (itemWords vb')).sum ≤
+      ((spillBlockItems h vc succs preds bi vb).map (itemWords vb)).sum := by
+  have hsave (block : VBlock) :
+      (spillSaves.map (itemWords block)).sum = 10 * calleeSaved.length :=
+    slot_moves_words block _ (fun r => by simp [itemWords, moveWords]) calleeSaved
+  have hpre : (((if bi == 0 then spillSaves else []) ++
+      spillEntryStores h vc succs preds bi).map (itemWords vb)).sum =
+      (((if bi == 0 then spillSaves else []) ++
+      spillEntryStores h' vc' succs preds bi).map (itemWords vb')).sum := by
+    rw [List.map_append, List.sum_append, List.map_append, List.sum_append,
+      spillEntryStores_words_eq h h' vc vc' succs preds bi vb vb' ht]
+    by_cases hi : (bi == 0) = true
+    · simp only [if_pos hi, hsave]
+    · simp only [if_neg hi, List.map_nil, List.sum_nil]
+  have hempty : vb.insts.isEmpty = vb'.insts.isEmpty := by
+    apply Bool.eq_iff_iff.mpr
+    simp only [Array.isEmpty_iff, ← Array.back?_eq_none_iff, hb]
+  have hedges := spillEdgeMoves_words_eq h h' vc vc' succs bi vb vb' ha hp
+  have hbody := spillBody_words_mono h h' hs
+  rw [spillBody_words, spillBody_words] at hbody
+  rw [spillBlock_words, spillBlock_words, hpre, hempty, hedges]
+  omega
+
+/-- The baseline's exact spill-size bound survives deletion across all blocks.
+No larger source bound or additional size certificate is required. -/
+theorem spillWordBound_map_mono (vc vc' : VCode) (T : VBlock → VBlock)
+    (hmap : vc'.blocks = vc.blocks.map T)
+    (hargs : ∀ b, (T b).branchArgs = b.branchArgs)
+    (hparams : ∀ b, (T b).params = b.params)
+    (hback : ∀ b, (T b).insts.back? = b.insts.back?)
+    (hsub : ∀ b, (T b).insts.toList.Sublist b.insts.toList)
+    {succs preds : Array (Array Nat)}
+    (hc : vc.cfg = .ok (succs, preds)) (hc' : vc'.cfg = .ok (succs, preds)) :
+    spillWordBound vc' ≤ spillWordBound vc := by
+  have hsz (v : VCode) : (spillAlloc v).blocks.size = v.blocks.size := by
+    unfold spillAlloc
+    rcases v.cfg with _ | ⟨s, p⟩ <;> exact Array.size_mapIdx
+  have hps : ∀ b : Nat, (vc.blocks[b]?.map VBlock.params) =
+      (vc'.blocks[b]?.map VBlock.params) := by
+    intro b
+    simp only [hmap, Array.getElem?_map, Option.map_map]
+    cases vc.blocks[b]? <;> simp [hparams]
+  have hts : ∀ b : Nat, (vc.blocks[b]?.map (fun (vb : VBlock) => vb.insts.back?)) =
+      (vc'.blocks[b]?.map (fun (vb : VBlock) => vb.insts.back?)) := by
+    intro b
+    simp only [hmap, Array.getElem?_map, Option.map_map]
+    cases vc.blocks[b]? <;> simp [hback]
+  unfold spillWordBound rfWords
+  apply sum_map_le_of_getElem?
+  · simp [hsz, hmap]
+  · intro bi x y hx hy
+    obtain ⟨vb', items'⟩ := x
+    obtain ⟨vb, items⟩ := y
+    rw [Array.getElem?_toList, Array.getElem?_zip_eq_some] at hx hy
+    obtain ⟨hvb', hitems'⟩ := hx
+    obtain ⟨hvb, hitems⟩ := hy
+    dsimp only at hvb' hitems' hvb hitems ⊢
+    have he : vb' = T vb := by
+      rw [hmap, Array.getElem?_map, hvb, Option.map_some] at hvb'
+      exact (Option.some.inj hvb').symm
+    subst vb'
+    rw [spillAlloc_block hc hvb] at hitems
+    rw [spillAlloc_block hc' hvb'] at hitems'
+    obtain rfl := Option.some.inj hitems
+    obtain rfl := Option.some.inj hitems'
+    simp only [List.toList_toArray]
+    exact Nat.add_le_add_left (spillBlock_words_mono (spillHomes vc) (spillHomes vc')
+      vc vc' succs preds bi vb (T vb) (hargs vb).symm (hback vb).symm (hsub vb) hps hts) 7
+
+/-! Joint non-vacuity with an actual deleted integer producer. The same concrete
+blocks instantiate the instruction-body and full per-block inequalities. -/
+example : ∃ vb vb' : VBlock,
+    vb.insts.size = 3 ∧ vb'.insts.size = 2 ∧
+    vb.branchArgs = vb'.branchArgs ∧ vb.insts.back? = vb'.insts.back? ∧
+    vb'.insts.toList.Sublist vb.insts.toList ∧
+    ((spillBlockItems {} ⟨"size_witness", #[vb], #[.int, .int, .int, .int], 0, 0, #[]⟩ #[#[]] #[#[]] 0 vb').map
+      (itemWords vb')).sum ≤
+    ((spillBlockItems {} ⟨"size_witness", #[vb], #[.int, .int, .int, .int], 0, 0, #[]⟩ #[#[]] #[#[]] 0 vb).map
+      (itemWords vb)).sum := by
+  let vb : VBlock := ⟨0, #[DeadCleanup.deadMvn, DeadCleanup.liveBic, DeadCleanup.liveReturn], #[], #[]⟩
+  let vb' : VBlock := ⟨0, #[DeadCleanup.liveBic, DeadCleanup.liveReturn], #[], #[]⟩
+  have ha : vb.branchArgs = vb'.branchArgs := rfl
+  have hb : vb.insts.back? = vb'.insts.back? := rfl
+  have hs : vb'.insts.toList.Sublist vb.insts.toList := by decide
+  refine ⟨vb, vb', rfl, rfl, ha, hb, hs, ?_⟩
+  exact spillBlock_words_mono {} {} _ _ #[#[]] #[#[]] 0 vb vb' ha hb hs
+    (fun _ => rfl) (fun _ => rfl)
 
 end E2E

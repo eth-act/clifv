@@ -103,3 +103,11 @@ check fresh main and squash merge under the existing user authorization.
   finish joint non-vacuity and root audits; enable the default; run all final
   proof/runtime/comparison gates and resolve review. A broader capped build
   is currently rebuilding unchanged instruction-selection dependencies.
+
+- Exact baseline prepared spill-size monotonicity and availability transport now
+  check, with standard-only lean-mcp root audits. The definite-assignment
+  transport preserves the empty-entry witness and introduces no new source
+  hypothesis. GOT knowledge and call-site acceptance also transport. Kernel
+  witnesses exercise actual deletion jointly with CFG, availability, size and
+  GOT facts. Frame/entry and allocator-check consumers, linked-input completeness
+  and the final production consumer cutover remain in progress.
