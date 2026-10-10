@@ -74,7 +74,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 
 | Stage | Implemented in | Verified today by | Kind (§1.2) | WP |
 | --- | --- | --- | --- | --- |
-| mid-end `simplify` rules | Lean (ISLE data) | 1109 + 37 rule theorems; unproven rules disabled (`ruleAllow := .proven`) | proven | R1, R4 (coverage) |
+| mid-end `simplify` rules | Lean (ISLE data) | 1137 + 37 rule theorems; unproven rules disabled (`ruleAllow := .proven`) | proven | R4 (coverage) |
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
@@ -654,14 +654,14 @@ These don't remove certificates; they shrink the set of functions reported "unve
 
 ### R1–R9. Mid-end rule proofs (the deferred `simplify` rules)
 
-1146 of 1193 rule roots are proven; the rest are disabled in the proven configuration. Status and recipe:
+1174 of 1193 rule roots are proven; the rest are disabled in the proven configuration. Status and recipe:
 `docs/DEFERRED.md` "Mid-end `simplify` rule proofs", per-rule reasons in `docs/contracts/midend.md`
 "Rule proofs" (lines ~570-610). One agent per family; files `FV/Opt/Proof/Rule<Family>.lean`, allow-list in
 `FV/Opt/RuleAllow.lean`, import in `FV/Opt/Proof/RuleAll.lean`.
 
 | WP | Family | Left | Main obstacle |
 | --- | --- | --- | --- |
-| R1 | arithmetic | 28 | timeouts (200, 206, 251–288 `imul` by odd constants, 615–622 64-bit products); `simp` type mismatch (410–428) |
+| R1 | arithmetic | 0 | **locally complete** (`agent/arithmetic-r1`): all 258 roots; exact guards, odd modular cancellation, high-half extraction and symbolic product identities; original premises unchanged; publication pending |
 | R2 | icmp | 0 | **done** ([#210](https://github.com/eth-act/clifv/pull/210)): all 124 roots; typed composition RHS proofs, exact guard/decomposition evaluation and width-parametric identities |
 | R3 | selects | 0 | **done** ([#208](https://github.com/eth-act/clifv/pull/208)): all 100 roots; symbolic select identities and typed RHS evaluation |
 | R4 | shifts | 19 | rotate regrouping through `iadd_uextend`/`isub_uextend` (239–266: ~50 of 125 per-type goals fail, 128-bit rotations); 161, 170, 184, 193, 315. **84 and 88 are false**: keep them disabled, or adopt the masked rules of kevaundray/wasmtime#2 in the exported data and prove those |
@@ -675,7 +675,7 @@ These don't remove certificates; they shrink the set of functions reported "unve
 made under a type variable, the `truthy` if-let lemma, `u64_bswap*`, power-of-two and `div_const`
 magic-number specs (`magicU_spec`, `magicS_spec`), low-memory icmp/selects templates; 43 `simplify` and 10
 skeleton roots (midend.md "R0"). The R0 templates (`rule_auto_a`, `rule_auto_tv`, `rule_pre_k`,
-`rule_lhs_g` with `Elab.async false`) are the first thing to try on the rules left in R1–R3.
+`rule_lhs_g` with `Elab.async false`) remain shared infrastructure for later rule proofs.
 
 ### M1. Mid-end validators: completeness (optional, quality only)
 
@@ -770,7 +770,7 @@ label**; list the free ones with
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | **done** (`agent/compile-exe`): `Link.compileExe`, `compileExe_correct` (no per-program premise, no open hypothesis), `compileExe_total` (address and rust-lld conditions); #88 removes the alias restriction by compiling native self-calls; `lake exe lean-link` runs `compileExe` |
 | L1c | [#88](https://github.com/eth-act/clifv/issues/88) Remove `AliasOut` from executable compiler totality | **done** (`agent/alias-total`): native self-calls in function-free activations; alias-free driver and `LinkSpec`; `compileExe_total` without alias restriction or output hypothesis; recursive own-address smoke passes |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | **done** (`agent/rule-infra`; 43 + 10 roots) |
-| R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (28 rules left) | open |
+| R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (0 rules left) | **locally complete** (`agent/arithmetic-r1`); verified, publication pending |
 | R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (0 rules left) | **done** ([#210](https://github.com/eth-act/clifv/pull/210)) |
 | R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (0 rules left) | **done** ([#208](https://github.com/eth-act/clifv/pull/208)) |
 | R4 | [#18](https://github.com/eth-act/clifv/issues/18) Mid-end rule proofs: shifts (19 rules left) | open |
