@@ -90,6 +90,18 @@ theorem resultsCleanup_ok (I : LinkInput) :
 
 def okBCleanup (I : LinkInput) : Bool := okRWith DeadCleanup.prune I I.resultsCleanup
 
+theorem okBCleanup_global {I : LinkInput} (h : okBCleanup I = true)
+    (c : String × Bool) (hc : c ∈ globalChks I (progOf I.resultsCleanup) (tabOf I.resultsCleanup)) :
+    c.2 = true := okRWith_global DeadCleanup.prune h c hc
+
+theorem okBCleanup_names {I : LinkInput} (h : okBCleanup I = true) :
+    ((progOf I.resultsCleanup).funcs.map (·.name)).Nodup := okRWith_names DeadCleanup.prune h
+
+theorem factsCleanup {I : LinkInput} (h : okBCleanup I = true) {g : Clif.Function}
+    (hg : g ∈ (progOf I.resultsCleanup).funcs) :
+    FactsWith DeadCleanup.prune I I.resultsCleanup g (artOf I.resultsCleanup g) :=
+  factsRWith DeadCleanup.prune (resultsCleanup_ok I) h hg
+
 def LinkSys.ofInputCleanup (I : LinkInput) (B : BaseEnv) (F : BitVec 64 → Prop) : LinkSys :=
   ofRes I I.resultsCleanup B F
 
@@ -112,5 +124,37 @@ theorem crate_correct_cleanup {I : LinkInput} (hI : okBCleanup I = true) (n : St
   fun _ _ hB hF f hf M _ _ _ _ _ hent hres hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr =>
     backend_correct_program _ (okBCleanup_sound hI hB hF) (Clif.Program.func?_some hf).1 M hent hres
       hFeq hgfree himg hbe hargs hcs hsav hrel hpl htr
+
+def globalBCleanup (I : LinkInput) : Bool :=
+  let R := I.resultsCleanup
+  (globalChks I (progOf R) (tabOf R)).all (·.2)
+
+/-- The per-function checks (`chks`: `staticChks ++ linkChks`) of the functions `fs` (a slice of
+the input's) against the input's program. A crate's proof decides `okBCleanup` by one `native_decide`
+per slice, in separate modules that Lake builds in parallel (`okBCleanup_of`, `fnsBCleanup_append`). -/
+def fnsBCleanup (I : LinkInput) (fs : List FnInput) : Bool :=
+  let R := I.resultsCleanup
+  let P := progOf R
+  let T := tabOf R
+  fs.all fun fi => (chksWith DeadCleanup.prune I P T fi.func (I.pipeCleanupOf fi)).all (·.2)
+
+theorem fnsBCleanup_append (I : LinkInput) (l₁ l₂ : List FnInput) :
+    fnsBCleanup I (l₁ ++ l₂) = (fnsBCleanup I l₁ && fnsBCleanup I l₂) := by
+  simp only [fnsBCleanup, List.all_append]
+
+/-- `okBCleanup` from its parts: `globalBCleanup` and `fnsBCleanup` of all the functions. -/
+theorem okBCleanup_of {I : LinkInput} (hg : globalBCleanup I = true) (hf : fnsBCleanup I I.funcs = true) :
+    okBCleanup I = true := by
+  simp only [okBCleanup, okRWith, Bool.and_eq_true]
+  refine ⟨hg, ?_⟩
+  simp only [fnsBCleanup] at hf
+  simp only [LinkInput.resultsCleanup, List.all_map]
+  exact hf
+
+
+theorem baseOk_closedCleanup {I : LinkInput} {F : BitVec 64 → Prop}
+    (htls : ∀ g ∈ (progOf I.resultsCleanup).funcs, hasTls g = false) :
+    BaseOk (LinkSys.ofInputCleanup I closedBase F) :=
+  baseOk_closedR htls
 
 end E2E.LinkCheck

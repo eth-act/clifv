@@ -153,6 +153,8 @@ def detail (f : Clif.Function) (vc : VCode) : String :=
         | _, _, _ => none
 
 def main (args : List String) : IO UInt32 := do
+  let deadCleanup := args.contains "--dead-cleanup" && !args.contains "--no-dead-cleanup"
+  let args := args.filter fun a => a != "--dead-cleanup" && a != "--no-dead-cleanup"
   let (optCfg, args) ← match Opt.parseOptArgs args with
     | .ok r => pure r
     | .error e => throw (IO.userError e)
@@ -252,7 +254,8 @@ def main (args : List String) : IO UInt32 := do
       tLower := tLower + (t1 - t0)
       tCheck := tCheck + (t2 - t1)
       let t3 ← IO.monoMsNow
-      let pr ← IO.lazyPure (fun _ => prepare vc)
+      let selected := if deadCleanup then DeadCleanup.prune vc else vc
+      let pr ← IO.lazyPure (fun _ => prepare selected)
       let t4 ← IO.monoMsNow
       tPrep := tPrep + (t4 - t3)
       match pr with
@@ -316,7 +319,7 @@ def main (args : List String) : IO UInt32 := do
           IO.println s!"{file}: %{f.name}: killFreeB rejects (a killed vreg is read, or a killed branch argument is not stored on entry)"
         tSpill := tSpill + ((← IO.monoMsNow) - ts0)
         let t5 ← IO.monoMsNow
-        let pc ← IO.lazyPure (fun _ => prepCheck vc vcp)
+        let pc ← IO.lazyPure (fun _ => prepCheck selected vcp)
         let t6 ← IO.monoMsNow
         tPCheck := tPCheck + (t6 - t5)
         if pc then pok := pok + 1
@@ -331,6 +334,7 @@ def main (args : List String) : IO UInt32 := do
         IO.println (detail f vc)
   IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack-passed arguments of an indirect call, special-purpose parameters other than one sret, outside clif-subset-v2 E, or a try_call/call_indirect under --opt)"
   IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects or --opt)"
+  IO.println s!"dead instruction cleanup: {deadCleanup}"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"lowerCheck_complete conditions: dominatedB {dom}, lowerScopeB {scope}, both {both} (of {ok + bad} checked)"
   IO.println s!"arityOkB {arity} of {ok + bad}"

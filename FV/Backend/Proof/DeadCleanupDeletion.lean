@@ -21,6 +21,18 @@ theorem PureSublist.sublist {xs ys : List MInst} (h : PureSublist xs ys) : xs.Su
   | drop _ _ ih => exact .cons _ ih
   | keep _ ih => exact .cons_cons _ ih
 
+theorem PureSublist.head_nonpure {xs ys : List MInst} (h : PureSublist xs ys)
+    {i : MInst} (hi : ys[0]? = some i) (hn : pureForm i = false) : xs[0]? = some i := by
+  induction h with
+  | nil => simp at hi
+  | drop hp h ih =>
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at hi
+    subst i
+    rw [hn] at hp
+    cases hp
+  | keep h ih =>
+    simpa only [List.getElem?_cons_zero] using hi
+
 theorem PureSublist.findSome {α : Type} {xs ys : List MInst} (h : PureSublist xs ys)
     (f : MInst → Option α) (hf : ∀ i, pureForm i = true → f i = none) :
     xs.findSome? f = ys.findSome? f := by

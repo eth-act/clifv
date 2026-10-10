@@ -111,3 +111,15 @@ check fresh main and squash merge under the existing user authorization.
   witnesses exercise actual deletion jointly with CFG, availability, size and
   GOT facts. Frame/entry and allocator-check consumers, linked-input completeness
   and the final production consumer cutover remain in progress.
+
+- Frame/entry, baseline allocator-check and linked-input completeness transports
+  now compile under unchanged source scope. The spill checker has exact baseline
+  113-axiom parity; linked-input completeness has exact 826-axiom parity.
+- Cleanup binary, stack-bound and executable-instruction theorem variants compile;
+  `binary_correct_exec_proven` has exactly the baseline's 764 transitive axioms,
+  with no additions/removals and a clean lean-mcp source scan. The original
+  theorem variants and generic byte/frame/read proofs remain available/shared.
+- Joint witnesses check both legacy and cleanup checkers on the same nonempty
+  source with real deletion and a failed-oracle spill fallback. Generated-proof
+  wiring compiles locally; generated output and executable compiler/linker
+  consumers are being completed. Defaults and final gates remain pending.
