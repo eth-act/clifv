@@ -1,0 +1,12 @@
+--- a/FVTest/Backend/Main.lean
++++ b/FVTest/Backend/Main.lean
+@@ -1,0 +2 @@
++import FV.Backend.DeadCleanup
+@@ -62,0 +64 @@
++  deadCleanupPrototype : Bool := false
+@@ -113 +115,2 @@
+-    | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
++    | some c => (compileFileWith (fun vcs => StockConfig.allocate c clif rejected alloc
++        (if o.deadCleanupPrototype then vcs.map DeadCleanup.clean else vcs)) pf
+@@ -171,0 +175 @@
++    | "--dead-cleanup-prototype" :: rest => opts { o with deadCleanupPrototype := true } rest

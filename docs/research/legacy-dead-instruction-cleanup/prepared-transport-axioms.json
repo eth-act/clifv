@@ -1,0 +1,84 @@
+{
+  "base": "b75d7248039eb902080c64fc1e7d044126532b0b",
+  "method": "lean-mcp lean_verify and source scans",
+  "scope": "Prepared size, availability and call-site transports; final cutover gates pending",
+  "roots": [
+    {
+      "file": "FV/Backend/Proof/DeadCleanupDeletion.lean",
+      "theorem": "Backend.DeadCleanup.scan_pureSublist",
+      "axioms": [
+        "propext"
+      ],
+      "warnings": []
+    },
+    {
+      "file": "FV/Backend/Proof/DeadCleanupPrepareMap.lean",
+      "theorem": "Backend.DeadCleanup.prune_prepare_ok_inv",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "file": "FV/Backend/Proof/DeadCleanupAvailability.lean",
+      "theorem": "Backend.DeadCleanup.scan_availability",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "file": "FV/Backend/Proof/DeadCleanupPreparedAvailability.lean",
+      "theorem": "Backend.DeadCleanup.preparedCleanup_spillAvail",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "file": "FV/E2E/DeadCleanupSpillWords.lean",
+      "theorem": "E2E.spillWordBound_map_mono",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "file": "FV/E2E/DeadCleanupPreparedSize.lean",
+      "theorem": "E2E.preparedCleanup_spillSizeOkB",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "file": "FV/E2E/DeadCleanupGotCheck.lean",
+      "theorem": "E2E.preparedCleanup_gotOf",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "file": "FV/E2E/DeadCleanupLinkCalls.lean",
+      "theorem": "E2E.LinkCheck.preparedCleanup_sites",
+      "axioms": [
+        "propext",
+        "Quot.sound"
+      ],
+      "warnings": [],
+      "method": "capped lake env lean #print axioms; MCP diagnostics clean; repeat MCP lean_verify inconclusive"
+    }
+  ]
+}

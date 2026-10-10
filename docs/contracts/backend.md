@@ -1,5 +1,8 @@
 # Contract: the Lean AArch64 backend (`FV/Backend`, milestone M4, unproven)
 
+The legacy-driver cleanup stage and its matching proof consumers are described in
+[dead-cleanup.md](dead-cleanup.md); original theorem variants remain available.
+
 Producer: M4 backend. Consumers: M4 proofs (ISLE rules, extern helpers, allocator), M5
 (the encoder, `docs/contracts/encoder.md`, which replaced `llvm-mc`), M6 (regalloc2 + the Lean
 allocation checker, `docs/contracts/regalloc.md`, the default allocator; `StackAlloc` kept as

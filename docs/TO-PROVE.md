@@ -1,5 +1,14 @@
 # What remains to be proven
 
+The #60 cleanup implementation in #137 uses the legacy driver and preserves
+baseline source scope and theorem variants. Cleanup and matching consumers are
+enabled by default. Full proof/crate builds, runtime, encoder and E2E identity
+parity pass; paired theorem audits have unchanged baseline axiom sets. Stock
+artifact agreement improves 465 -> 671 (+206, zero losses); both E2E modes accept
+the same 1,150 identities. Replacement-driver #135 remains paused. See
+[the contract](contracts/dead-cleanup.md) and
+[the implementation plan](plans/legacy-dead-instruction-cleanup.md).
+
 Goal: **the compiler itself is formally verified.** Its correctness is one set of theorems proven once, for
 every input program, with no per-program certificates: no validator verdict as a theorem premise, no
 per-crate `native_decide` proof files, no external tool whose output must be checked for the result to be

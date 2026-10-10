@@ -1,0 +1,63 @@
+{
+  "baseline_main_commit": "b75d7248039eb902080c64fc1e7d044126532b0b",
+  "candidate_state": "local uncommitted compiler flag and proved guarded prune; default remains legacy",
+  "measurement_mode": "one compiler executable; --no-dead-cleanup baseline and --dead-cleanup candidate; explicit LEAN_REGALLOC identical in both runs",
+  "updated_utc": "2026-10-10T16:35:03.542259+00:00",
+  "artifacts": {
+    "pass": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/FV/Backend/DeadCleanup.lean",
+      "sha256": "2d866fb9d31506f414fd1ccbccb0e52b9d576d0e5b66ca904fa85291c1c68d66"
+    },
+    "compiler": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/target/legacy-dead-cleanup/lean-backend-prune-opt-in",
+      "sha256": "d03b01f8d19f54122f92f1c299ea64544c43b1f48067dea6e8f199deed6ebfd6"
+    },
+    "regalloc_oracle": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/rust/target/release/lean-regalloc",
+      "sha256": "f2ee5d31b3455b18c074397943b1acfafc7d9fc49217f0345c84e1e920db87be"
+    },
+    "baseline_report": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/target/legacy-dead-cleanup/prune-baseline-ra-full/results.json",
+      "sha256": "7ea61eb15bf38fa5309d2bd85a80cbce293530a97895f73c5edd2684401e6816"
+    },
+    "candidate_report": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/target/legacy-dead-cleanup/prune-candidate-ra-full/results.json",
+      "sha256": "1e817cae748104dc1aa20071a996ee94d1eb77dfd4b4013eaacd29be5e21585c"
+    }
+  },
+  "baseline_exact": 465,
+  "candidate_exact": 671,
+  "gained": 206,
+  "lost": 0,
+  "new_rejections": 0,
+  "focused": [
+    {
+      "test": "isa/aarch64/bitops.clif",
+      "name": "%band_not_i64",
+      "occurrences": 1,
+      "all_exact": true
+    },
+    {
+      "test": "isa/aarch64/arithmetic.clif",
+      "name": "%msub_i32",
+      "occurrences": 1,
+      "all_exact": true
+    },
+    {
+      "test": "isa/aarch64/stack.clif",
+      "name": "%stack_load_small",
+      "occurrences": 1,
+      "all_exact": true
+    }
+  ],
+  "full_inventory_files": 1302,
+  "checkpoint_passed": true,
+  "uncompared_reference_gaps": [
+    [
+      "runtests/throw.clif",
+      0
+    ]
+  ],
+  "scope": "code bytes, relocations, alignment and traps; not a runtime or full unwind/exception-metadata equivalence claim",
+  "discarded_run": "prune-{baseline,candidate}-full used a relocated executable without an explicit allocator path and thus spill fallback; not acceptance evidence"
+}

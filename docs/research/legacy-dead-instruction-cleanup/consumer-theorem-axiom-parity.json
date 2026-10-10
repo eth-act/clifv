@@ -1,0 +1,50 @@
+{
+  "baseline": "b75d7248039eb902080c64fc1e7d044126532b0b",
+  "roots": [
+    {
+      "theorem": "E2E.DeadCleanupExecBytes.binary_correct_exec_proven",
+      "baseline_count": 764,
+      "cleanup_count": 764,
+      "added": [],
+      "removed": [],
+      "warnings": [],
+      "method": "lean-mcp lean_verify"
+    },
+    {
+      "theorem": "E2E.spillCheckAlloc_sets_cleanup",
+      "baseline_count": 113,
+      "cleanup_count": 113,
+      "added": [],
+      "removed": [],
+      "warnings": [],
+      "method": "lean-mcp lean_verify"
+    },
+    {
+      "theorem": "E2E.LinkCheck.okT_of_inScopeCleanup",
+      "baseline_count": 826,
+      "cleanup_count": 826,
+      "added": [],
+      "removed": [],
+      "warnings": [],
+      "method": "lean-mcp lean_verify"
+    },
+    {
+      "theorem": "Link.DeadCleanup.compileExe_correct",
+      "baseline_count": 830,
+      "cleanup_count": 830,
+      "added": [],
+      "removed": [],
+      "warnings": [],
+      "method": "lean-mcp lean_verify; independently capped #print axioms"
+    },
+    {
+      "theorem": "Link.DeadCleanup.compileExe_total",
+      "baseline_count": 823,
+      "cleanup_count": 823,
+      "added": [],
+      "removed": [],
+      "warnings": [],
+      "method": "lean-mcp lean_verify; independently capped #print axioms"
+    }
+  ]
+}

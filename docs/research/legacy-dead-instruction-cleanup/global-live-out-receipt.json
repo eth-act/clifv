@@ -1,0 +1,53 @@
+{
+  "baseline_commit": "8959127bf91f93699b674a3148fab441be874140",
+  "candidate_algorithm": "uniform live-out includes all blocks, including the current block; actual operand definitions; one backward scan",
+  "measurement_mode": "opt-in --dead-cleanup-prototype in the stock-settings allocator callback; production source hook removed afterward",
+  "artifacts": {
+    "pass_source": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/FV/Backend/DeadCleanup.lean",
+      "sha256": "34c2d7d6efa15ce96cc1dd50a9a34e5496302b71fb996e51dd65d9b82743a89c"
+    },
+    "baseline_compiler": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup/target/legacy-dead-cleanup/lean-backend-baseline",
+      "sha256": "841bd61bc3ad4793a975ce4c6a4d6753e662a3c0acd96c0c965ec7ff16fba37a"
+    },
+    "candidate_compiler": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup/target/legacy-dead-cleanup/lean-backend-global-candidate",
+      "sha256": "32d3a136a6fe595c13799c83268e2cc10a93982f2e5b040ca54dc3b24190e14a"
+    },
+    "baseline_report": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup/target/legacy-dead-cleanup/baseline-full/results.json",
+      "sha256": "13f4c9a03cfb9ec0f8dc591ea5b16c272d6a4db0f0445da72a4eae5ef251153d"
+    },
+    "candidate_report": {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup/target/legacy-dead-cleanup/global-candidate-full/results.json",
+      "sha256": "1d12974cf4751564ae406077da370b406fa89a44821c2d5c411fa05bdb6fe582"
+    }
+  },
+  "baseline_exact": 465,
+  "candidate_exact": 671,
+  "gained": 206,
+  "lost": 0,
+  "new_rejections": 0,
+  "focused": [
+    {
+      "test": "isa/aarch64/bitops.clif",
+      "name": "%band_not_i64",
+      "occurrences": 1,
+      "all_exact": true
+    },
+    {
+      "test": "runtests/arithmetic.clif",
+      "name": "%msub_i32",
+      "occurrences": 1,
+      "all_exact": true
+    },
+    {
+      "test": "isa/aarch64/stack.clif",
+      "name": "%stack_load_small",
+      "occurrences": 1,
+      "all_exact": true
+    }
+  ],
+  "checkpoint_passed": true
+}

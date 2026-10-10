@@ -1,4 +1,5 @@
 import FV.E2E.LinkWorld
+import FV.E2E.CompiledEither
 import FV.E2E.LinkClifN
 import FV.E2E.Link
 import FV.E2E.PairDriver
@@ -1634,7 +1635,7 @@ structure Ok : Prop where
   names : (L.P.funcs.map (·.name)).Nodup
   free : ∀ g ∈ L.P.funcs, Clif.LinkFree g
   subset : ∀ g ∈ L.P.funcs, InSubset L.P.bare g
-  compiled : ∀ g ∈ L.P.funcs, Compiled g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
+  compiled : ∀ g ∈ L.P.funcs, CompiledEither g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf
     (L.A g).af (L.A g).fa (L.A g).fb
   covered : ∀ g ∈ L.P.funcs, FormsCovered ⟨(L.A g).fa.k, (L.A g).af.slotBase⟩ (L.A g).vcp
   /-- scope: the outgoing-argument area of a function holds the stack-passed arguments of the
@@ -3921,7 +3922,7 @@ theorem thm_of (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm �
   have hJ : L.ActInv g (spv w₀) cs := ⟨hI, hWE.clif.callers, hWE.place⟩
   have hrun' : Clif.runLoop (L.envOf M g (spv w₀)) L.P.bare fuel cs = .returned rvals cm' := by
     rw [L.runLoop_envOf hL hg fuel cs hJ]; exact hrun
-  have h := backend_correct_world_ni (hL.subset g hg) hc
+  have h := backend_correct_world_ni_pipeline (hL.subset g hg) hc
     (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     (L.xCallsOk hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
@@ -3934,7 +3935,7 @@ theorem thm_of (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm �
         (L.hooks M) (L.A g).base ra s w₀' := fun G ra s w₀' hME =>
     ⟨hME.abi, hME.stack, hME.gfree, hME.hF, L.calleeOk hL hκ ih hg hME,
       fun _ => L.calleeTryOk hL hκ ih hg hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode hc ht) F (κ M g)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ M g)), hME.body⟩
   refine ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, fun G ra s hME => hall (L.hooks M) G
     (L.A g).base ra s (hAE G ra s w₀ hME), fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
   exact hni (L.xni hL hN ih hg hWE.img (spv w₀)) (L.xTls hL hN) D w₀' hrel' hsw hreg hstk
@@ -3982,7 +3983,7 @@ theorem backend_correct_program_budget (L : LinkSys) (hL : L.Ok)
     · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm k hk hk' => ?_
       rw [hF] at hk'
       rcases hk' with hw | hi
-      · exact stackArgsAvoid_frameW hc hres hent hargs off v hm k hk hw
+      · exact stackArgsAvoid_frameW_pipeline hc hres hent hargs off v hm k hk hw
       · exact hsav off v hm k hk hi
     · rw [hbe.sp, hB]; omega
     · intro a ha
@@ -4024,7 +4025,7 @@ theorem backend_correct_program_budget (L : LinkSys) (hL : L.Ok)
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOf hL hf m cs hJ]; exact hm
-    have h := backend_correct_world (hL.subset f hf) hc
+    have h := backend_correct_world_pipeline (hL.subset f hf) hc
       (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOk hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
@@ -4034,7 +4035,7 @@ theorem backend_correct_program_budget (L : LinkSys) (hL : L.Ok)
     exact h.2 c hm' (L.hooks M) L.Img (L.A f).base ra s ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
       L.calleeOk hL hκ ih hf hME,
       fun _ => L.calleeTryOk hL hκ ih hf hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode hc ht) L.F (κ M f)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipeline hc ht) L.F (κ M f)), hME.body⟩
 
 /-- **The backend's end-to-end theorem for a linked program** (`docs/contracts/e2e.md`,
 "Linking at the Arm level"): for a function `f` of a program `P` whose functions are compiled

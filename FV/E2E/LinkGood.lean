@@ -775,7 +775,7 @@ theorem thmG_of (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm 
   have hJ : L.ActInv g (spv w₀) cs := ⟨hI, hWE.clif.callers, hWE.place⟩
   have hrun' : Clif.runLoop (L.envOf M g (spv w₀)) L.P.bare fuel cs = .returned rvals cm' := by
     rw [L.runLoop_envOf hL hg fuel cs hJ]; exact hrun
-  have h := backend_correct_world_niX ((hL.subset g hg).retarget (Clif.Program.bare_func? L.P)) hc
+  have h := backend_correct_world_niX_pipeline ((hL.subset g hg).retarget (Clif.Program.bare_func? L.P)) hc
     (X := L.X κ M g F) (syms := L.syms)
     (env := L.envOf M g (spv w₀)) (K := κ M g) (F := F) (c := spv w₀) (hL.covered g hg)
     (L.xCallsOk hL hκ ih hg hWE.img hWE.room hWE.dead hWE.align)
@@ -788,7 +788,7 @@ theorem thmG_of (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm 
         (L.hooks M) (L.A g).base ra s w₀' := fun G ra s w₀' hME =>
     ⟨hME.abi, hME.stack, hME.gfree, hME.hF, L.calleeOk hL hκ ih hg hME,
       fun _ => L.calleeTryOk hL hκ ih hg hME,
-      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode hc ht) F (κ M g)), hME.body⟩
+      fun ht => L.tlsOk_hooks (hL.baseTls g hg (hasTls_of_vcode_pipeline hc ht) F (κ M g)), hME.body⟩
   refine ⟨fun G ra s hME => ?_, fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
   · obtain ⟨n, hret, -, hgood⟩ := hall (L.hooks M) G (L.A g).base ra s (hAE G ra s w₀ hME)
     exact L.runGood_of_trace hL ihG hg hME hgood fun k hno _ =>
@@ -849,7 +849,7 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
     · refine argsAtEntry_body hfr (entryRegs_of_check hc.lowerOk) hbe hargs fun off v hm k hk hk' => ?_
       rw [hF] at hk'
       rcases hk' with hw | hi
-      · exact stackArgsAvoid_frameW hc hres hent hargs off v hm k hk hw
+      · exact stackArgsAvoid_frameW_pipeline hc hres hent hargs off v hm k hk hw
       · exact hsav off v hm k hk hi
     · rw [hbe.sp, hB]; omega
     · intro a ha
@@ -888,7 +888,7 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOf hL hf m cs hJ]; exact hm
-    have h := backend_correct_worldX ((hL.subset f hf).retarget (Clif.Program.bare_func? L.P)) hc
+    have h := backend_correct_worldX_pipeline ((hL.subset f hf).retarget (Clif.Program.bare_func? L.P)) hc
       (X := L.X κ M f L.F) (syms := L.syms)
       (env := L.envOf M f (spv w₀)) (K := κ M f) (F := L.F) (c := spv w₀) (hL.covered f hf)
       (L.xCallsOk hL hκ ih hf hL.imgF hWE.room hWE.dead hWE.align)
@@ -899,7 +899,7 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
       ⟨hME.abi, hME.stack, hME.gfree, hME.hF,
         L.calleeOk hL hκ ih hf hME,
         fun _ => L.calleeTryOk hL hκ ih hf hME,
-        fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode hc ht) L.F (κ M f)), hME.body⟩
+        fun ht => L.tlsOk_hooks (hL.baseTls f hf (hasTls_of_vcode_pipeline hc ht) L.F (κ M f)), hME.body⟩
     refine L.runGood_of_trace hL (fun _ => L.thmG hL hκ (M - 1)) hf hME hgood fun k _ hk => ?_
     refine Nat.lt_of_not_le fun hle => hstuck (k - n) ?_
     rw [show n + (k - n) + 1 = k + 1 by omega]

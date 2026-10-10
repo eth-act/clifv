@@ -484,7 +484,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         return Ok(0);
     }
     let mut cmd = Command::new(&checker);
-    cmd.arg(&o.out);
+    cmd.arg(&o.out).arg("--dead-cleanup");
     if let Some(l) = &o.lean {
         cmd.arg("--lean").arg(l);
     }

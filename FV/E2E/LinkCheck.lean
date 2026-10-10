@@ -1158,7 +1158,7 @@ theorem okR_sound {I : LinkInput} {R : Res} (hR : ResOk I R) (hI : okR I R = tru
     { names := hn
       free := fun g hg => (fa hg).free
       subset := fun g hg => ⟨(fa hg).subsetE, ?_, ?_, (fa hg).abi, ?_⟩
-      compiled := fun g hg => (hpipe g hg).1
+      compiled := fun g hg => .legacy (hpipe g hg).1
       covered := fun g hg => (fa hg).covered
       outFits := fun g hg e he hs i off p hl hp => ?_
       baseNoAlloc := hB.baseNoAlloc

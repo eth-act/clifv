@@ -390,6 +390,11 @@ def main():
     env = os.environ.copy()
     env["PATH"] = os.pathsep.join([str(ROOT / "rust/target/release"),
         str(ROOT / "target/byte-agreement-tools/lean-4.34.1-linux/bin"),env.get("PATH","")])
+    # An alternate/copied compiler cannot locate the allocator relative to its
+    # executable. Pin the oracle explicitly instead of silently using spill fallback.
+    env.setdefault("LEAN_REGALLOC", str(ROOT / "rust/target/release/lean-regalloc"))
+    regalloc = Path(env["LEAN_REGALLOC"]).resolve()
+    if not regalloc.is_file(): raise ValueError(f"missing regalloc oracle: {regalloc}")
     binary = ROOT / "tools/prejit-export/target/debug/prejit-export"
     sources = [ROOT / "FVTest/Backend/StockConfig.lean", ROOT / "FVTest/Backend/Main.lean",
                ROOT / "FVTest/Backend/Lowering/StockComparison.lean",
@@ -403,6 +408,7 @@ def main():
         "inventory":[{"test":str(p.relative_to(SUITE)),"sha256":digest(p.read_bytes())} for p in all_inputs],
         "source_hashes":{str(p.relative_to(ROOT)):digest(p.read_bytes()) for p in sources},
         "lean_source_tree_sha256":lean_tree.hexdigest(),"lean_compiler":str(LEAN_BINARY),
+        "regalloc_oracle":{"path":str(regalloc),"sha256":digest(regalloc.read_bytes())},
         "lean_compiler_args":LEAN_COMPILER_ARGS,"dependency_provenance":dependencies,
         "binary_hashes":{os.path.relpath(p, ROOT):digest(p.read_bytes()) for p in [binary, LEAN_BINARY,ROOT/"rust/target/release/lean-regalloc"]},
         "actual_ci_execution":False,"execution_performed":False,"configuration_overrides":[],"binary_normalization":False,

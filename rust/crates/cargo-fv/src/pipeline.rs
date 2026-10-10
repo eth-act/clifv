@@ -11,7 +11,7 @@
 //!    objects themselves, so every data object keeps a single identity (addresses of statics,
 //!    vtables, `Location`s are the ones cg_clif's code and every other crate see).
 //! 3. `lean-backend` compiles each function in its own file, so a call to another function is
-//!    a call of an extern (`E2E.backend_correct_final` covers extern calls through its callee
+//!    a call of an extern (`E2E.backend_correct_final_cleanup` covers extern calls through its callee
 //!    contract) and a function the backend rejects does not drag its callers along: calls
 //!    to it reach cg_clif's code.
 //! 4. Safety net: every symbol our object for a function references must be defined or
