@@ -1,0 +1,75 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockSelectedBindingFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockSelectedBindingFlow.lean": "d4a2169b00d030db0b6d6a3e5030e0bdbbdc5cb2182705116550fc81e0e0a67f"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_emitInstruction_sourceAliasOrigins",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_emitInstruction_sourceAliasAvailable",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_emitInstruction_sourceAliasOrigins_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_selected_emitInstruction_sourceAliasAvailable_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 248,
+  "method": "Complete clean exact published-source Lean MCP diagnostics; four matching standard-only MCP/compiled Lean audits; all required exact-source full/build/execution gates passed.",
+  "scope": "Actual selected-context emitInstruction and ordered bindResults supply origins for mapped-source alias entries without caller alias-edge premises. Original source entries survive actual interpreter execution via allocator-derived reservation separation; new targets are fresh, original source-provenanced/available, or exact initial-bounded source-disjoint reservations. Actual successful nonempty try-call allocator state and generated emission192\u2192198 inhabit both proofs. Actual record/final-alias paths, reserve-target semantic connection, noninterference, whole simulation/completeness/parity/production cutover remain.",
+  "required_full_and_execution_gates": "passed on validated_source_commit; receipt-only commit follows",
+  "gates": {
+    "full_build_jobs": 1306,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "70f8f7dc16809ef8f7974ca284cb8b584b8cf222",
+  "validated_main_commit": "fe3cd21d4fdec7c433e2f2cfe76c88ccac4b1a96",
+  "gate_log_sha256": {
+    "full": "686aaadb80afbf4a0df3cac3c3569ffd015392be72512b681e44821fa2fcf41f",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "f75dafc7a3a1381b84539f20ecfbbec36ee8c7d040f39586085bcab32b50b9df",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "bd37701a752c8f2c14d04d9872971ff90edfceca673e0a653610350127bcbc7c"
+  }
+}
