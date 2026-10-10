@@ -1,0 +1,134 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockBackwardSuffixSplit",
+    "FV.Backend.Proof.StockTraversalAliasConnection"
+  ],
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_backward_prefix_bounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_blockOrder_backward_prefix_others",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_backward_suffix_split",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_backward_suffix_split_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_backward_prefix_bounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_blockOrder_backward_prefix_others_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_other_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_backward_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_prefix_noAlias",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_backward_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_other_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_prefix_noAlias_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    }
+  ],
+  "scope": "Actual backward-prefix bounds and owner exclusion; SSA alias absence before the owner node from actual initial allocation. Preserves existing interfaces; production remains legacy.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockBackwardSuffixSplit.lean": "988477b81e47293f29d43ce054650fde1876a7a946d89dc81eaada8e2668e3c1",
+    "FV/Backend/Proof/StockTraversalAliasConnection.lean": "8da5252a051bc99a7bd4521f4a1da3251216943787a7d235f8f870cd6186b4d7"
+  },
+  "gates": {
+    "full_build_jobs": 1307,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "fe59388866ba5c612803ca2e003a0972116bbf41",
+  "validated_main_commit": "304a0ebf5050147ea8d55f56bdf60b12ef6414ff",
+  "gate_log_sha256": {
+    "full": "ce41585a6c6cd34dd68cde4557240a2e612e225d3311cbf8a7006aa383b790c7",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "64b33f5c69e2323e09107aa3b8529597a48295513f7c8b73dfdd6e89bdad8a27",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "7bfcfa506d0ffb41bc965b61a29a6fc352e3a3e70e7b2690b727ce7eaed3bda9"
+  }
+}

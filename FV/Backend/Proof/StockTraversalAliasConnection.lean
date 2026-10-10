@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockNodeAliasConnection
 import FV.Backend.Proof.StockSourceOrder
+import FV.Backend.Proof.StockBackwardSuffixSplit
 
 namespace Backend.Stock.Proof
 open Backend.Proof Backend.Proof.Driver
@@ -81,6 +82,39 @@ theorem stock_lowerNodes_backward_aliasEntry {f : Clif.Function} {ctx : Ctx}
   stock_lowerNodes_other_aliasEntry build ssa definition result mapped firstBlock firstRange
     ownerLower ownerUpper (stock_blockOrder_backward_suffix_others ordered nonempty node) bound run
 
+/-- Before lowering a source definition's own node, its mapped register has no
+alias. Actual reverse order excludes the owner from the successful prefix, and
+the actual allocated initial state supplies the empty alias map and bounds. -/
+theorem stock_lowerNodes_prefix_noAlias {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, initial))
+    (ssa : (valueDefs f).Nodup) {owner ownerBlock x key : Nat} {info : IInfo}
+    (definition : ctx.insts[owner]? = some info) (result : x ∈ info.results)
+    (mapped : ctx.valueReg? x = some (.vreg key .int))
+    {first : Clif.Block} {owned : Nat × Nat}
+    (firstBlock : f.blocks[ownerBlock]? = some first)
+    (firstRange : ranges[ownerBlock]? = some owned)
+    (ownerLower : owned.1 ≤ owner) (ownerUpper : owner < owned.2)
+    {order : Order} (ordered : blockOrder f = .ok order)
+    (nonempty : f.blocks.length ≠ 0) {label : Nat} {earlier suffix : List Nat}
+    (node : order.nodes[label]? = some (.original ownerBlock))
+    (split : (Array.range order.nodes.size).reverse.toList = earlier ++ label :: suffix)
+    {params : List Nat} {input output : DriverState} (start : input.state = initial)
+    (run : earlier.foldlM (fun d k => lowerNode ctx ranges order f params k d) input = .ok output) :
+    (output.state.alias[key]?).join = none := by
+  obtain ⟨original, st0, requests, _, _, allocated⟩ := buildCtx_allocation build
+  have state := congrArg (fun p : Ctx × Array (Nat × Nat) × State => p.2.2) allocated
+  change initial = _ at state
+  have empty : initial.alias = #[] := by rw [state]; rfl
+  have bound : input.state.alias.size ≤ initial.base.nextVreg ∧
+      initial.base.nextVreg ≤ input.state.base.nextVreg ∧ input.state.tryRegs = initial.tryRegs := by
+    rw [start, empty]
+    exact ⟨Nat.zero_le _, Nat.le_refl _, rfl⟩
+  have kept := stock_lowerNodes_other_aliasEntry build ssa definition result mapped
+    firstBlock firstRange ownerLower ownerUpper
+    (stock_blockOrder_backward_prefix_others ordered nonempty node split) bound run
+  simpa only [start, empty, Array.getElem?_empty, Option.join_none] using kept
+
 private def suffixFunction : Clif.Function := {
   name := "actual_order_alias_suffix"
   sig := {}
@@ -139,5 +173,44 @@ theorem stock_lowerNodes_other_aliasEntry_witness :
     ∃ output, suffixCall = .ok output ∧ output.blocks[0]!.insts = #[.jump 1] ∧
       output.blockScans.size = 1 ∧ (output.state.alias[193]?).join = some 194 :=
   stock_lowerNodes_backward_aliasEntry_witness.2
+
+private def prefixInput : DriverState := {
+  state := suffixBuilt.2.2
+  blocks := Array.replicate 2 default
+  edgeArgs := Array.replicate 2 #[]
+  schedule := #[]
+  scans := #[]
+  blockScans := #[]
+  rules := #[] }
+private def prefixCall := ([1] : List Nat).foldlM
+  (fun d label => lowerNode suffixBuilt.1 suffixBuilt.2.1 suffixOrder suffixFunction [] label d)
+  prefixInput
+private theorem prefix_success : prefixCall.isOk = true := by decide +kernel
+private theorem prefix_observed : prefixCall.toOption.map
+    (fun d => (d.blocks[1]!.insts, d.blockScans.size)) = some (#[.rets []], 1) := by decide +kernel
+
+/-- The actual initial allocation and a successful nonempty owner-excluding
+prefix execute the other block's return, leaving the first source result
+without an alias before its owner node. -/
+theorem stock_lowerNodes_prefix_noAlias_witness :
+    Stock.buildCtx suffixFunction = .ok suffixBuilt ∧
+    blockOrder suffixFunction = .ok suffixOrder ∧
+    ∃ output, prefixCall = .ok output ∧ output.blocks[1]!.insts = #[.rets []] ∧
+      output.blockScans.size = 1 ∧ (output.state.alias[192]?).join = none := by
+  refine ⟨suffix_build, suffix_order, ?_⟩
+  cases call : prefixCall with
+  | error e => have success := prefix_success; simp only [call, Except.isOk] at success; cases success
+  | ok output =>
+    have observation := prefix_observed
+    simp only [call, Except.toOption, Option.map_some, Option.some.injEq, Prod.mk.injEq] at observation
+    have absent := stock_lowerNodes_prefix_noAlias
+      (ctx := suffixBuilt.1) (ranges := suffixBuilt.2.1) (initial := suffixBuilt.2.2)
+      (owner := 0) (ownerBlock := 0) (x := 0) (key := 192)
+      (info := infoOf suffixFunction ⟨[0], .iconst .i64 7⟩)
+      suffix_build (by decide) rfl (by decide) rfl
+      (first := suffixFunction.blocks[0]!) (owned := (0, 2)) rfl rfl (by decide) (by decide)
+      suffix_order (by decide) (label := 0) (earlier := [1]) (suffix := []) rfl (by simp only [Array.toList_reverse, Array.toList_range]; decide)
+      (params := []) (input := prefixInput) (output := output) rfl call
+    exact ⟨output, rfl, observation.1, observation.2, absent⟩
 
 end Backend.Stock.Proof
