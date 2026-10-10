@@ -40,6 +40,45 @@ theorem dbm_sxth : Arm.decode_bit_masks 0#1 15#6 0#6 false 32 = some (65535#32, 
 
 attribute [local csimp_rules] dbm_sxtb dbm_sxth
 
+/-- `sxtb w27, w27` (`sbfm w, w, #0, #7`) as the sign extension of the low byte, checked bit by
+bit (the Arm result is the masked merge of a replicated sign bit and the rotated source). -/
+private theorem exec_sxtb (Rn Rd : BitVec 5) (st : Arm.ArmState) :
+    Arm.DPI.exec_bitfield (Arm.Bitfield_cls.mk 0#1 0#2 0b100110#6 0#1 0#6 7#6 Rn Rd) st =
+      Arm.write_pc (Arm.read_pc (Arm.write_gpr_zr 32 Rd
+          (((Arm.read_gpr_zr 32 Rn st).setWidth 8).signExtend 32) st) + 4#64)
+        (Arm.write_gpr_zr 32 Rd (((Arm.read_gpr_zr 32 Rn st).setWidth 8).signExtend 32) st) := by
+  unfold Arm.DPI.exec_bitfield
+  simp (config := {decide := true}) only [dreduceIte, false_or, false_and, ite_false, dbm_sxtb]
+  generalize Arm.read_gpr_zr 32 Rn st = v
+  congr 4 <;>
+  · refine BitVec.eq_of_getLsbD_eq ?_
+    simp only [ite_true, BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not,
+      BitVec.getLsbD_cast, BitVec.getLsbD_replicate, Arm.BitVec.ror, Arm.BitVec.lsb,
+      BitVec.getLsbD_rotateRight, BitVec.getLsbD_signExtend, BitVec.getLsbD_setWidth,
+      BitVec.getLsbD_extractLsb', BitVec.msb_eq_getLsbD_last]
+    simp only [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, implies_true, true_and]
+    simp [-BitVec.getLsbD_eq_getElem]
+
+/-- `sxth w27, w27` (`sbfm w, w, #0, #15`) as the sign extension of the low halfword. -/
+private theorem exec_sxth (Rn Rd : BitVec 5) (st : Arm.ArmState) :
+    Arm.DPI.exec_bitfield (Arm.Bitfield_cls.mk 0#1 0#2 0b100110#6 0#1 0#6 15#6 Rn Rd) st =
+      Arm.write_pc (Arm.read_pc (Arm.write_gpr_zr 32 Rd
+          (((Arm.read_gpr_zr 32 Rn st).setWidth 16).signExtend 32) st) + 4#64)
+        (Arm.write_gpr_zr 32 Rd (((Arm.read_gpr_zr 32 Rn st).setWidth 16).signExtend 32) st) := by
+  unfold Arm.DPI.exec_bitfield
+  simp (config := {decide := true}) only [dreduceIte, false_or, false_and, ite_false, dbm_sxth]
+  generalize Arm.read_gpr_zr 32 Rn st = v
+  congr 4 <;>
+  · refine BitVec.eq_of_getLsbD_eq ?_
+    simp only [ite_true, BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not,
+      BitVec.getLsbD_cast, BitVec.getLsbD_replicate, Arm.BitVec.ror, Arm.BitVec.lsb,
+      BitVec.getLsbD_rotateRight, BitVec.getLsbD_signExtend, BitVec.getLsbD_setWidth,
+      BitVec.getLsbD_extractLsb', BitVec.msb_eq_getLsbD_last]
+    simp only [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, implies_true, true_and]
+    simp [-BitVec.getLsbD_eq_getElem]
+
+attribute [local csimp_rules ↓ high] exec_sxtb exec_sxth
+
 /-- The fields an LL/SC body leaves alone: all but the pc, the given registers and the flags. -/
 def LoopFrame (rs : List (BitVec 5)) (t t' : Arm.ArmState) : Prop :=
   ∀ f, f ≠ .PC → (∀ r ∈ rs, f ≠ .GPR r) → (∀ g, f ≠ .FLAG g) → Arm.r f t' = Arm.r f t
@@ -60,34 +99,73 @@ def rmwNew (ty : CTy) (op : AtomicRmwLoopOp) (t : Arm.ArmState) : BitVec (ty.byt
 theorem ext_sxtb32 (x : BitVec 32) :
     Arm.extend_reg x (Arm.decode_reg_extend ExtendOp.sxtb.bits) 0 = (x.setWidth 8).signExtend 32 := by
   show (BitVec.signExtend 32 (BitVec.extractLsb' 0 8 x)) <<< 0 = _
-  bv_decide
+  rw [BitVec.shiftLeft_zero, ← BitVec.setWidth_eq_extractLsb' (by decide : 8 ≤ 32)]
 theorem ext_sxth32 (x : BitVec 32) :
     Arm.extend_reg x (Arm.decode_reg_extend ExtendOp.sxth.bits) 0 = (x.setWidth 16).signExtend 32 := by
   show (BitVec.signExtend 32 (BitVec.extractLsb' 0 16 x)) <<< 0 = _
-  bv_decide
+  rw [BitVec.shiftLeft_zero, ← BitVec.setWidth_eq_extractLsb' (by decide : 16 ≤ 32)]
 theorem ext_uxtb32 (x : BitVec 32) :
     Arm.extend_reg x (Arm.decode_reg_extend ExtendOp.uxtb.bits) 0 = (x.setWidth 8).setWidth 32 := by
   show (BitVec.setWidth 32 (BitVec.extractLsb' 0 8 x)) <<< 0 = _
-  bv_decide
+  rw [BitVec.shiftLeft_zero, ← BitVec.setWidth_eq_extractLsb' (by decide : 8 ≤ 32)]
 theorem ext_uxth32 (x : BitVec 32) :
     Arm.extend_reg x (Arm.decode_reg_extend ExtendOp.uxth.bits) 0 = (x.setWidth 16).setWidth 32 := by
   show (BitVec.setWidth 32 (BitVec.extractLsb' 0 16 x)) <<< 0 = _
-  bv_decide
+  rw [BitVec.shiftLeft_zero, ← BitVec.setWidth_eq_extractLsb' (by decide : 16 ≤ 32)]
 theorem ext_uxtb64 (x : BitVec 64) :
     Arm.extend_reg x (Arm.decode_reg_extend ExtendOp.uxtb.bits) 0 = (x.setWidth 8).setWidth 64 := by
   show (BitVec.setWidth 64 (BitVec.extractLsb' 0 8 x)) <<< 0 = _
-  bv_decide
+  rw [BitVec.shiftLeft_zero, ← BitVec.setWidth_eq_extractLsb' (by decide : 8 ≤ 64)]
 theorem ext_uxth64 (x : BitVec 64) :
     Arm.extend_reg x (Arm.decode_reg_extend ExtendOp.uxth.bits) 0 = (x.setWidth 16).setWidth 64 := by
   show (BitVec.setWidth 64 (BitVec.extractLsb' 0 16 x)) <<< 0 = _
-  bv_decide
+  rw [BitVec.shiftLeft_zero, ← BitVec.setWidth_eq_extractLsb' (by decide : 16 ≤ 64)]
 theorem ext_uxtw64 (x : BitVec 64) :
     Arm.extend_reg x (Arm.decode_reg_extend ExtendOp.uxtw.bits) 0 = (x.setWidth 32).setWidth 64 := by
   show (BitVec.setWidth 64 (BitVec.extractLsb' 0 32 x)) <<< 0 = _
-  bv_decide
+  rw [BitVec.shiftLeft_zero, ← BitVec.setWidth_eq_extractLsb' (by decide : 32 ≤ 64)]
 
-/-- Abstract the old value and the operand of a run on `t` as plain bit vectors (`bv_decide`
-needs literal widths and non-dependent types). -/
+/-! ## The flags of `subs a, b` as comparisons (from `condOn_cmp_32`/`_64`) -/
+
+private theorem awc_flags {n : Nat} (hn : n = 32 ∨ n = 64) (a b : BitVec n) :
+    (((Arm.AddWithCarry a (~~~b) 1#1).snd.n = (Arm.AddWithCarry a (~~~b) 1#1).snd.v) ↔
+        b.sle a = true) ∧
+      ((Arm.AddWithCarry a (~~~b) 1#1).snd.z = 0#1 ↔ ¬a = b) ∧
+      ((Arm.AddWithCarry a (~~~b) 1#1).snd.c = 1#1 ↔ b.ule a = true) := by
+  have hc : ∀ cc, condOn (condOf cc).bits (cmpFlags a b) = Clif.Sem.intcc cc a b := by
+    rcases hn with rfl | rfl
+    · exact fun cc => condOn_cmp_32 cc a b
+    · exact fun cc => condOn_cmp_64 cc a b
+  unfold cmpFlags at hc
+  generalize (Arm.AddWithCarry a (~~~b) 1#1).snd = ps at hc ⊢
+  obtain ⟨N, Z, C, V⟩ := ps
+  have hge : decide (N = V) = b.sle a := hc .sge
+  have hne : (!decide (Z = 1#1)) = (a != b) := hc .ne
+  have hhs : decide (C = 1#1) = b.ule a := hc .uge
+  refine ⟨by rw [← hge]; simp, ?_, by rw [← hhs]; simp⟩
+  rcases bv1_cases Z with rfl | rfl <;> simp at hne ⊢ <;> simpa using hne
+
+private theorem awc_ge {n : Nat} (hn : n = 32 ∨ n = 64) (a b : BitVec n) :
+    ((Arm.AddWithCarry a (~~~b) 1#1).snd.n = (Arm.AddWithCarry a (~~~b) 1#1).snd.v) ↔
+      b.sle a = true := (awc_flags hn a b).1
+private theorem awc_z {n : Nat} (hn : n = 32 ∨ n = 64) (a b : BitVec n) :
+    (Arm.AddWithCarry a (~~~b) 1#1).snd.z = 0#1 ↔ ¬a = b := (awc_flags hn a b).2.1
+private theorem awc_c {n : Nat} (hn : n = 32 ∨ n = 64) (a b : BitVec n) :
+    (Arm.AddWithCarry a (~~~b) 1#1).snd.c = 1#1 ↔ b.ule a = true := (awc_flags hn a b).2.2
+private theorem awc_z1 {n : Nat} (hn : n = 32 ∨ n = 64) (a b : BitVec n) :
+    (Arm.AddWithCarry a (~~~b) 1#1).snd.z = 1#1 ↔ a = b := by
+  have h := awc_z hn a b
+  rcases bv1_cases (Arm.AddWithCarry a (~~~b) 1#1).snd.z with hz | hz <;> simp [hz] at h ⊢ <;>
+    simpa using h
+
+private theorem setWidth_signExtend_self {w v : Nat} (h : w ≤ v) (x : BitVec w) :
+    (x.signExtend v).setWidth w = x := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_signExtend, hi, show i < v by omega,
+    decide_true, Bool.true_and, ite_true]
+
+/-- Abstract the old value and the operand of a run on `t` as plain bit vectors (literal widths
+and non-dependent types for `rmw_fin`). -/
 syntax "loop_atoms" : tactic
 set_option hygiene false in
 macro_rules
@@ -108,15 +186,38 @@ macro_rules
     try (obtain ⟨xv, hxv⟩ : ∃ xv : BitVec 64, Arm.r (.GPR 26#5) t = xv := ⟨_, rfl⟩
          rw [hxv]; clear hxv)))
 
+/-- The value goal of a body run on the abstracted old value `m` and operand `xv`: `add`/`sub`
+by `bv_omega`; `smin`…`umax` by reading the `csel` condition as a comparison (`awc_*`), then
+splitting both selections and comparing as integers (signed) or naturals (unsigned). -/
+syntax "rmw_fin" : tactic
+macro_rules
+  | `(tactic| rmw_fin) => `(tactic| (
+    try simp only [Arm.fst_AddWithCarry_eq_add, Arm.fst_AddWithCarry_eq_sub_neg, BitVec.not_not,
+      setWidth_signExtend_self (show 8 ≤ 32 by decide),
+      setWidth_signExtend_self (show 16 ≤ 32 by decide)]
+    first
+    | done
+    | bv_omega
+    | (simp (disch := decide) only [awc_ge, awc_z, awc_c]
+       split <;> split <;>
+         (try simp (disch := decide) only [BitVec.setWidth_setWidth, setWidth_signExtend_self,
+           BitVec.setWidth_eq] at *) <;>
+         first
+         | rfl
+         | (simp only [BitVec.sle_eq_decide, decide_eq_true_eq, ← BitVec.toInt_inj] at *
+            try simp (disch := decide) only [BitVec.toInt_signExtend_of_le] at *
+            omega)
+         | (simp only [BitVec.ule_eq_decide, decide_eq_true_eq] at *; bv_omega))))
+
 /-- The value proof of a body run: after `simp`, the stored value is `rmwNew`. -/
 syntax "rmw_val" : tactic
 macro_rules
   | `(tactic| rmw_val) => `(tactic| (
     simp only [AtomicRmwLoopOp.clif, Clif.Sem.atomicRmw, Clif.Sem.smin, Clif.Sem.smax,
-      Clif.Sem.umin, Clif.Sem.umax, Arm.AddWithCarry, Arm.make_pstate, BitVec.zero_eq,
+      Clif.Sem.umin, Clif.Sem.umax, BitVec.zero_eq,
       ext_sxtb32, ext_sxth32, ext_uxtb32, ext_uxth32, ext_uxtb64, ext_uxth64, ext_uxtw64]
     loop_atoms
-    bv_decide))
+    rmw_fin))
 
 set_option maxHeartbeats 4000000 in
 /-- **The `atomic_rmw` loop body** on an error-free state. -/
@@ -144,7 +245,7 @@ theorem rmwBody_spec {ty : CTy} (hty : AtomTy ty) (op : AtomicRmwLoopOp) (fl : C
         subst hs1 <;> simp [herr, Arm.w_program, Arm.write_mem_bytes_program]
     · dsimp only [CTy.bytes, CTy.bits, Nat.reduceDiv, Nat.reduceMul]
       simp (config := {decide := true}) [csimp_rules]
-      try (loop_atoms; bv_decide)
+      try (loop_atoms; rmw_fin)
     · simp (config := {decide := true}) [csimp_rules]
     · intro f h1 h2 h3
       simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at h2
@@ -240,10 +341,9 @@ theorem casHead_spec {ty : CTy} (hty : AtomTy ty) (fl : Clif.MemFlags) (e : Env)
     · simp [Arm.w_program]
     · rw [condHolds_ne_iff]
       dsimp only [CTy.bytes, CTy.bits, Nat.reduceDiv, Nat.reduceMul]
-      simp (config := {decide := true}) [Arm.r_of_w_different, Arm.AddWithCarry, Arm.make_pstate,
-        BitVec.zero_eq, ext_uxtb64, ext_uxth64, ext_uxtw64]
+      simp (config := {decide := true}) [Arm.r_of_w_different, ext_uxtb64, ext_uxth64, ext_uxtw64]
       loop_atoms
-      bv_decide
+      simp (disch := decide) only [awc_z1] <;> bv_omega
 
 set_option maxHeartbeats 4000000 in
 /-- **The `atomic_cas` loop's `stlxr`** on an error-free state: x28's low bits stored at x25,
