@@ -154,7 +154,32 @@
     }
   ],
   "targeted_build_jobs": 300,
-  "method": "Complete clean canonical Lean MCP diagnostics for both changed modules; sixteen matching standard-only MCP/compiled Lean audits include all retained public bounds interfaces; capped targeted build includes actual emitted-scan callers.",
+  "method": "Complete clean exact published-source Lean MCP diagnostics for both modules; sixteen matching standard-only MCP/compiled Lean audits include all retained public bounds interfaces; all required exact-source full/build/execution gates passed.",
   "scope": "Core scan-input allocation frontier/reservations derived after real branch emission/outgoing collection, retaining old bounds interfaces. Actual whole-driver emitted source record final-alias origins and mapped source availability derived from successful traversal/core/record/selected emitter/ordered binder/final alias transport. Successful whole direct-call/return generated lowering, emitted decision, nonempty final alias, LowerScope/Dominated/source post-body availability witnesses. Inherited input aliases/fresh/reservation alternatives remain distinct; full path closure/reserved semantic handling, noninterference, instruction families/whole simulation/completeness/baseline parity/production cutover remain.",
-  "required_full_and_execution_gates": "pending on publication source"
+  "required_full_and_execution_gates": "passed on validated_source_commit; receipt-only commit follows",
+  "gates": {
+    "full_build_jobs": 1307,
+    "crate_build_jobs": 958,
+    "corpus_pass": 114,
+    "extrt_pass": 22,
+    "runtests_pass": 4672,
+    "runtests_fail": 0,
+    "runtime_disagreements": 0,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0,
+    "final_theorem_axiom_audits": 7
+  },
+  "validated_source_commit": "ede6849c2e0bae7deed14c5aba4e468028afb22d",
+  "validated_main_commit": "a4d375b56e96cc96597121c39ae2ee6354976290",
+  "gate_log_sha256": {
+    "full": "3fcb0553b87690d996e3b3682c57e454864f1a2e4b904b62ba159181660c17df",
+    "crates": "42726ff31ff1320598017cbe50943483060f76355f252d30101490e33d8d763e",
+    "runtime": "6fc44567e9cac0a4ed3fd2661b4aad44f7e6b43055d21fb3fe150c1a56303553",
+    "encode": "03615dfbca26e9d0ed30a780c66e8822602b1201d21afe9cd05e6af550e89919",
+    "e2e": "4f5c311973afedd7b1feab977e727b342456d52695beef4e39dabf15f409f6e4",
+    "e2e-axioms": "620761c85c2e59b59c17136e0b0d2ca8efbe83934335f99704fdd30dbd91de6b",
+    "axioms": "4f5358d593926592b1fde8525ea029a3a9171388f31431c54e29603f307cc6fc"
+  }
 }
