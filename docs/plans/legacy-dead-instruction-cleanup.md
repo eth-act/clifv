@@ -54,3 +54,18 @@ check fresh main and squash merge under the existing user authorization.
   functions and contributes no comparisons. See the research receipt/report.
 - Prototype archived as research evidence; production unchanged. Proof integration
   and enablement remain next.
+
+- Measurement/report PR #136 landed as `b75d724` after all required gates.
+- The proof implementation strengthens boundary liveness to include own-block
+  reads, covering self-loops without a new SSA premise. Repeated full comparison:
+  465 -> 671 exact (+206), zero lost matches/new rejections, all focused cases
+  exact. This conservatively retains three outputs gained by the original
+  prototype. Receipts: `global-live-out-{receipt,delta}.json` in the research
+  directory.
+- New pass, structural/liveness proofs, CFG/edge preservation, finite-run
+  simulation and return/trap preservation check in Lean. `cleanup_correct`
+  has standard axioms only; real return, trap and edge-copy witnesses check.
+- Proof-only value semantics and an adapter to the existing concrete realizer
+  check. Production integration, structural pipeline preservation, final E2E
+  variants/caller migration and proof/binary parity validation remain. Cleanup
+  is not yet enabled in production.

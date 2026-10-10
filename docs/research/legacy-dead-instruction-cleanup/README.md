@@ -77,3 +77,23 @@ python3 scripts/stock-comparison-delta.py \
 The two measurements exit **10** with finished `results.json`: suite gaps remain.
 The delta check exits **0** for this successful checkpoint. Compiler arguments
 are recorded and do not alter or bypass the exact stock-settings receipt check.
+
+## Strengthened boundary liveness
+
+The proof implementation includes reads from the current block in the live-out
+set, as well as all other blocks and edge arguments. This conservatively covers
+self-loops without a separate SSA premise. Its `discard` predicate uses actual
+operand definitions, and a failed operand view always retains the instruction.
+
+A repeated full measurement of this implementation gives **465 -> 671** exact
+artifacts: **206 gains, zero losses and zero new rejections**. All three focused
+cases remain exact. It retains three dead-chain outputs improved by the original
+prototype. See `global-live-out-receipt.json` for source/executable/report hashes
+and `global-live-out-delta.json` for the gate and focused results. The original
+209-gain prototype evidence above remains unchanged.
+
+This rerun used an opt-in measurement hook in `FVTest/Backend/Main.lean`, cleaning
+only the stock allocator callback's VCode array, exactly as in the original
+measurement. The hook and candidate executable were isolated in the measurement
+worktree; the hook was removed after preserving the executable. Production
+integration and its full proof/validation gates are still pending.
