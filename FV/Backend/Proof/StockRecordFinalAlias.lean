@@ -74,6 +74,69 @@ theorem stock_lower_record_finalAliasEntry {f : Clif.Function} {result : Result}
   rw [final, stateEq, coreState] at remaining
   exact remaining.trans blockAlias
 
+/-- A source definition retained by actual whole-driver lowering has no alias
+at its record input. Actual allocation, traversal order, core setup and SSA scan
+frames derive this absence; no caller-supplied alias or edge-origin premise. -/
+theorem stock_lower_record_inputNoAlias {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (nonempty : f.blocks.length ≠ 0)
+    (ssa : (valueDefs f).Nodup) {event : BlockScanEvent} {record : ScanRecord}
+    (eventMem : event ∈ result.blockScans.toList) (recordMem : record ∈ event.output.records)
+    {x key : Nat} {info : IInfo} (definition : result.ctx.insts[record.inst]? = some info)
+    (defines : x ∈ info.results) (mapped : result.ctx.valueReg? x = some (.vreg key .int)) :
+    (record.input.alias[key]?).join = none := by
+  obtain ⟨ranges, params, earlier, suffix, starting, finishing, before, after,
+    label, bi, data, core, build, ordered, initial, empty, parts, folded,
+    final, prefixRun, step, suffixRun, node, coreRun, eventEq, stateEq⟩ :=
+    stock_lower_blockScanOrigin run eventMem
+  obtain ⟨labelBound, _⟩ := stock_backward_suffix_split parts
+  have lookup : result.order.nodes[label]? = some (.original bi) := by
+    rw [getElem!_pos result.order.nodes label labelBound] at node
+    simp only [Array.getElem?_eq_getElem labelBound, node]
+  have valid := (stock_blockOrder_originals_nodup ordered nonempty).2
+  have projected : bi ∈ stockOriginals result.order.nodes := by
+    unfold stockOriginals
+    apply List.mem_filterMap.mpr
+    exact ⟨.original bi, Array.mem_toList_iff.mpr (Array.mem_of_getElem? lookup), rfl⟩
+  have biBound := valid bi projected
+  have firstBlock : f.blocks[bi]? = some f.blocks[bi] := by simp [biBound]
+  obtain ⟨original, st0, sourceBuild, spec, view⟩ := buildCtx_source build
+  have firstRange := spec.ranges bi f.blocks[bi] firstBlock
+  have initialBound : starting.state.alias.size ≤ result.initial.base.nextVreg ∧
+      result.initial.base.nextVreg ≤ starting.state.base.nextVreg ∧
+      starting.state.tryRegs = result.initial.tryRegs := by
+    rw [initial]
+    obtain ⟨original, st0, requests, _, _, allocated⟩ := buildCtx_allocation build
+    have state := congrArg (fun p : Ctx × Array (Nat × Nat) × State => p.2.2) allocated
+    change result.initial = _ at state
+    rw [state]
+    exact ⟨Nat.zero_le _, Nat.le_refl _, rfl⟩
+  have beforeBound := stock_lowerNodes_allocationBounds build initialBound prefixRun
+  obtain ⟨coreState, scanCtx, scanBlockId, scanTerm, scanIndices, scanRun⟩ :=
+    stock_lowerBlockCore_scanOrigin coreRun
+  rw [eventEq] at recordMem
+  have index : record.inst ∈ core.scan.indices := by
+    rw [← (runScans_spec scanRun).order]
+    exact List.mem_map.mpr ⟨record, recordMem, rfl⟩
+  rw [scanIndices] at index
+  obtain ⟨lower, upper⟩ := stock_backward_indices_mem index
+  have normalized : scanBlock
+      { Driver.termCtx result.ctx (ranges[bi]!.2 - 1) data with
+        tryRegs := result.initial.tryRegs[ranges[bi]!.2 - 1]! }
+      bi (ranges[bi]!.2 - 1) core.scan.isBranch
+      (((Array.range (ranges[bi]!.2 - ranges[bi]!.1)).map (ranges[bi]!.1 + ·)).reverse.toList)
+      core.scan.input = .ok core.scan.output := by
+    simpa only [scanCtx, scanBlockId, scanTerm, scanIndices, beforeBound.2.2] using scanRun
+  have ownerRange : ranges[bi]? = some ranges[bi]! := by
+    obtain ⟨bound, eq⟩ := Array.getElem?_eq_some_iff.mp firstRange
+    rw [getElem!_pos ranges bi bound]
+    exact Array.getElem?_eq_getElem bound
+  have prefixAlias := stock_lowerNodes_prefix_noAlias build ssa definition defines mapped
+    firstBlock ownerRange lower upper ordered nonempty lookup parts initial prefixRun
+  have coreAlias := stock_lowerBlockCore_scanAliasEntry build mapped beforeBound.2.2 coreRun
+  have recordAlias := stock_scanBlock_record_inputAliasEntry build ssa definition defines mapped
+    data (stock_scan_indices_nodup _ _) normalized recordMem rfl
+  exact recordAlias.trans (coreAlias.trans prefixAlias)
+
 /-- A fresh target installed by a recorded definition resolves in the final
 alias array. Record-to-final transport and final capacity are derived from the
 successful driver; the caller supplies only the local emission's alias/fresh facts. -/
@@ -175,4 +238,20 @@ theorem stock_lower_record_resultAlias_of_record_witness :
       (result.final.alias[192]?).join = (record.output.state.alias[192]?).join ∧
       (scanState record.input record.inst).base.nextVreg ≤ 193 ∧
       aliasNum result.final.alias 192 = 193 := stock_lower_record_finalAliasEntry_witness
+/-- Successful whole-function lowering, a retained source definition and its
+real mapping inhabit the alias-absence result. The same definition actually
+installs a final alias, so this is not an empty-output fixture. -/
+theorem stock_lower_record_inputNoAlias_witness :
+    ∃ (result : Result) (event : BlockScanEvent) (record : ScanRecord),
+      Stock.lower finalAliasFunction = .ok result ∧ event ∈ result.blockScans.toList ∧
+      record ∈ event.output.records ∧ record.inst = 0 ∧
+      result.ctx.insts[record.inst]? = some finalAliasInfo ∧
+      (0 : Nat) ∈ finalAliasInfo.results ∧ result.ctx.valueReg? 0 = some (.vreg 192 .int) ∧
+      (record.input.alias[192]?).join = none ∧
+      (record.output.state.alias[192]?).join = some 193 := by
+  obtain ⟨ssa, nonempty, result, event, record, run, eventMem, recordMem, inst,
+    source, defines, mapped, entry, _⟩ := stock_lower_record_finalAliasEntry_witness
+  exact ⟨result, event, record, run, eventMem, recordMem, inst, source, defines, mapped,
+    stock_lower_record_inputNoAlias run nonempty ssa eventMem recordMem source defines mapped, entry⟩
+
 end Backend.Stock.Proof

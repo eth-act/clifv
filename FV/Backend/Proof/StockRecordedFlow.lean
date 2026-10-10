@@ -195,6 +195,60 @@ theorem stock_lower_emitted_record_finalAliasAvailable {f : Clif.Function} {resu
       stock_available_provenance build dominated available definition reached, register⟩))
   · exact .inr (.inr (.inr reserved))
 
+/-- Actual whole-driver source aliases have fresh, source-provenanced or exact
+reserved origins. Inherited entries are excluded by the derived input absence. -/
+theorem stock_lower_emitted_record_finalAliasOrigins_noInherited {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f)
+    (nonempty : f.blocks.length ≠ 0) (ssa : (valueDefs f).Nodup)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (eventMem : event ∈ result.blockScans.toList) (recordMem : record ∈ event.output.records)
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    {x key : Nat} {info : IInfo} {inst : Clif.Inst}
+    (source : result.ctx.insts[record.inst]? = some info) (original : info.clif = some inst)
+    (defines : x ∈ info.results) (mapped : result.ctx.valueReg? x = some (.vreg key .int)) :
+    ∀ target, (result.final.alias[key]?).join = some target →
+      (record.input.base.nextVreg ≤ target ∧ target < record.output.state.base.nextVreg) ∨
+        (∃ y, Prov result.ctx record.inst y ∧ result.ctx.valueReg? y = some (.vreg target .int)) ∨
+        ((.vreg target .int) ∈ result.initial.tryRegs[event.termInst]!.1 ++
+            result.initial.tryRegs[event.termInst]!.2 ∧
+          target < result.initial.base.nextVreg ∧
+            ∀ y, result.ctx.valueReg? y ≠ some (.vreg target .int)) := by
+  intro target entry
+  have absent := stock_lower_record_inputNoAlias run nonempty ssa eventMem recordMem
+    source defines mapped
+  rcases stock_lower_emitted_record_finalAliasOrigins run scope nonempty ssa eventMem
+      recordMem recorded emitted source original defines mapped target entry with old | origins
+  · rw [absent] at old; cases old
+  · exact origins
+
+/-- Actual whole-driver source aliases have fresh, source-provenanced or exact
+reserved origins. Inherited entries are excluded by the derived input absence. -/
+theorem stock_lower_emitted_record_finalAliasAvailable_noInherited {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (nonempty : f.blocks.length ≠ 0) {event : BlockScanEvent} {record : ScanRecord}
+    (eventMem : event ∈ result.blockScans.toList) (recordMem : record ∈ event.output.records)
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    {x key bi j n : Nat} {info : IInfo} {inst : Clif.Inst}
+    (source : result.ctx.insts[record.inst]? = some info) (original : info.clif = some inst)
+    (defines : x ∈ info.results) (mapped : result.ctx.valueReg? x = some (.vreg key .int))
+    (available : n ∈ availOf f (availIn f result.ctx) bi j)
+    (definition : result.ctx.defInst? n = some record.inst) :
+    ∀ target, (result.final.alias[key]?).join = some target →
+      (record.input.base.nextVreg ≤ target ∧ target < record.output.state.base.nextVreg) ∨
+        (∃ y, y ∈ availOf f (availIn f result.ctx) bi j ∧
+          result.ctx.valueReg? y = some (.vreg target .int)) ∨
+        ((.vreg target .int) ∈ result.initial.tryRegs[event.termInst]!.1 ++
+            result.initial.tryRegs[event.termInst]!.2 ∧
+          target < result.initial.base.nextVreg ∧
+            ∀ y, result.ctx.valueReg? y ≠ some (.vreg target .int)) := by
+  intro target entry
+  have absent := stock_lower_record_inputNoAlias run nonempty dominated.ssa eventMem recordMem
+    source defines mapped
+  rcases stock_lower_emitted_record_finalAliasAvailable run scope dominated nonempty eventMem
+      recordMem recorded emitted source original defines mapped available definition target entry with old | origins
+  · rw [absent] at old; cases old
+  · exact origins
+
 attribute [local semireducible] Isle.Aarch64.program
 private def recordedSignature : Clif.Signature := {
   returns := [⟨.i8, .none, .normal⟩], callConv := some .systemV }
@@ -335,5 +389,55 @@ theorem stock_lower_emitted_record_finalAliasAvailable_witness :
   exact stock_lower_emitted_record_finalAliasAvailable actual scope dominated nonempty eventMem
     recordMem recorded emitted source (by rfl) (by decide) mapped (recorded_available result.ctx)
     definition target entry
+
+/-- The real emitted direct-call record and nonempty final alias also witness
+classification with inherited entries eliminated. -/
+theorem stock_lower_emitted_record_finalAliasOrigins_noInherited_witness :
+    ∃ (result : Result) (event : BlockScanEvent) (record : ScanRecord) (step : Step) (target : Nat),
+      LowerScope recordedFunction ∧ Dominated recordedFunction ∧
+      recordedFunction.blocks.length ≠ 0 ∧ Stock.lower recordedFunction = .ok result ∧
+      event ∈ result.blockScans.toList ∧ record ∈ event.output.records ∧ record.inst = 0 ∧
+      record.output.step = some step ∧ step.decision = .emitted ∧
+      result.ctx.insts[record.inst]? = some recordedInfo ∧
+      result.ctx.valueReg? 0 = some (.vreg 192 .int) ∧ result.ctx.defInst? 0 = some record.inst ∧
+      (result.final.alias[192]?).join = some target ∧
+      ((record.input.base.nextVreg ≤ target ∧ target < record.output.state.base.nextVreg) ∨
+          (∃ y, Prov result.ctx record.inst y ∧ result.ctx.valueReg? y = some (.vreg target .int)) ∨
+          ((.vreg target .int) ∈ result.initial.tryRegs[event.termInst]!.1 ++
+              result.initial.tryRegs[event.termInst]!.2 ∧ target < result.initial.base.nextVreg ∧
+            ∀ y, result.ctx.valueReg? y ≠ some (.vreg target .int))) := by
+  obtain ⟨result, event, record, step, target, scope, dominated, nonempty, actual, eventMem,
+    recordMem, which, recorded, emitted, source, mapped, definition, entry, _⟩ :=
+    stock_lower_emitted_record_finalAliasOrigins_witness
+  refine ⟨result, event, record, step, target, scope, dominated, nonempty, actual, eventMem,
+    recordMem, which, recorded, emitted, source, mapped, definition, entry, ?_⟩
+  exact stock_lower_emitted_record_finalAliasOrigins_noInherited actual scope nonempty dominated.ssa
+    eventMem recordMem recorded emitted source (by rfl) (by decide) mapped target entry
+
+/-- The real emitted direct-call record and nonempty final alias also witness
+classification with inherited entries eliminated. -/
+theorem stock_lower_emitted_record_finalAliasAvailable_noInherited_witness :
+    ∃ (result : Result) (event : BlockScanEvent) (record : ScanRecord) (step : Step) (target : Nat),
+      LowerScope recordedFunction ∧ Dominated recordedFunction ∧
+      recordedFunction.blocks.length ≠ 0 ∧ Stock.lower recordedFunction = .ok result ∧
+      event ∈ result.blockScans.toList ∧ record ∈ event.output.records ∧
+      record.output.step = some step ∧ step.decision = .emitted ∧
+      result.ctx.insts[record.inst]? = some recordedInfo ∧ result.ctx.valueReg? 0 = some (.vreg 192 .int) ∧
+      result.ctx.defInst? 0 = some record.inst ∧
+      (0 : Nat) ∈ availOf recordedFunction (availIn recordedFunction result.ctx) 0 1 ∧
+      (result.final.alias[192]?).join = some target ∧
+      ((record.input.base.nextVreg ≤ target ∧ target < record.output.state.base.nextVreg) ∨
+          (∃ y, y ∈ availOf recordedFunction (availIn recordedFunction result.ctx) 0 1 ∧
+            result.ctx.valueReg? y = some (.vreg target .int)) ∨
+          ((.vreg target .int) ∈ result.initial.tryRegs[event.termInst]!.1 ++
+              result.initial.tryRegs[event.termInst]!.2 ∧ target < result.initial.base.nextVreg ∧
+            ∀ y, result.ctx.valueReg? y ≠ some (.vreg target .int))) := by
+  obtain ⟨result, event, record, step, target, scope, dominated, nonempty, actual, eventMem,
+    recordMem, recorded, emitted, source, mapped, definition, available, entry, _⟩ :=
+    stock_lower_emitted_record_finalAliasAvailable_witness
+  refine ⟨result, event, record, step, target, scope, dominated, nonempty, actual, eventMem,
+    recordMem, recorded, emitted, source, mapped, definition, available, entry, ?_⟩
+  exact stock_lower_emitted_record_finalAliasAvailable_noInherited actual scope dominated nonempty
+    eventMem recordMem recorded emitted source (by rfl) (by decide) mapped available definition target entry
 
 end Backend.Stock.Proof
