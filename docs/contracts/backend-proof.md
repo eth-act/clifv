@@ -151,6 +151,10 @@ shift amounts by `shift_mask`). With "low bits" the obligation stays local to ea
 `program_term_*`, `program_rulesOf_*` in `data_program`) and the two bitmask facts
 `dbm_uxtb`, `dbm_and7`. No `sorry`, no hand-written axiom.
 
+T6 update: this probe account is historical. The current library's `dbm_uxtb` and
+`dbm_and7` facts are proved with `decide +kernel` and have only standard axioms;
+the native-mask workaround described below is no longer needed there.
+
 ## What worked (the recipe)
 
 1. **Data facts by targeted `native_decide`, over an abstract program.** `IselData.lean` is

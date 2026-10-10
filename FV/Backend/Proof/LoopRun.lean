@@ -28,11 +28,15 @@ open Backend
 attribute [local csimp_rules] wmb_cast Arm.LDST.exec_reg_exclusive Insn.armFields.exclFields
   CTy.bits Arm.r_of_write_mem_bytes Arm.ldst_read Arm.read_mem_bytes_of_w
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 /-- The `decode_bit_masks` of `sxtb`/`sxth` (`sbfm w27, w27, #0, #7`/`#15`). -/
 theorem dbm_sxtb : Arm.decode_bit_masks 0#1 7#6 0#6 false 32 = some (255#32, 255#32) := by
-  native_decide
+  decide +kernel
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem dbm_sxth : Arm.decode_bit_masks 0#1 15#6 0#6 false 32 = some (65535#32, 65535#32) := by
-  native_decide
+  decide +kernel
 
 attribute [local csimp_rules] dbm_sxtb dbm_sxth
 

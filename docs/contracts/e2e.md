@@ -32,7 +32,7 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
 | **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `indRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`, `tryRulesCorrect`, `tryUnmatchable`, `tryIndRulesCorrect`, `tryIndUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`, `IndCallsRefine` by `indCallsRefine_csem` from `XCallsIndOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
 | **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): addresses outside the world `frameW K` (frame addresses `frameF` and, since agent/callee-fix, the callees' dead stack), context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
-| **`backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6` discharged by `regLevelCorrect_backend` | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + `_native.bv_decide` certificates (M4's, M5's decoder `decode_armBits_*`/`decode_raw_inst_of_*`, `Arm.Memory.read_write_bytes_different`) |
+| **`backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6` discharged by `regLevelCorrect_backend` | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + remaining fixed `_native.bv_decide` certificates (M4/M6 bit-vector lemmas and `Arm.Memory.read_write_bytes_different`); the encoder's class and dispatch proofs use only standard axioms (T6) |
 | **`sret`** (2026-09-30, `agent/sret-proof`): functions with a struct-return pointer parameter and calls of `sret` callees are inside `backend_correct_final` (`InSubset.abiSigs`; see "`sret`" below) | **proven**; `lean-e2e-check`: all `sret` functions in scope accepted and covered |
 | **`try_call`** (2026-09-30, `agent/trycall-proof`): functions with `try_call` of an extern are inside `backend_correct_final` **for their normal returns** (see "`try_call`" below); nothing is claimed about unwinding, landing pads or the LSDA | **proven** (`term_step_try`, `tryRulesCorrect`, `tryUnmatchable`, `realizes_tryCall`) |
 | **Indirect calls** (2026-10-01, `agent/indirect-proof`): `call_indirect`, `func_addr` and `try_call_indirect` (normal return) are inside `backend_correct_final`: an indirect call of an extern under the contract `XCallsIndOk` (hypothesis `hXI`), an indirect call of a function of the program excluded by the run premise `TrapsExplicit.indirect`/`tryIndirect` (see "Indirect calls" below). Trusted-semantics growth: `Clif.stepCallIndirect` calls the extern at the callee address (`Clif.callExternAt`) where it was stuck | **proven** (`call_ind_ruleOk` 1033, `func_addr_ok` 1026, `try_ind_ruleOk` 1036, `stepCallIndirect_eq`, `term_step_try` over `IsTryWith`); `lean-e2e-check`: 1092 in scope (1083 before, plus the 9 functions of `corpus/clif-regress/call_indirect.clif`), 0 rejected, 0 not covered |
@@ -1409,8 +1409,8 @@ iteration)), `sretRets` (`retsB_of_lower` with the ISLE inversion `iselNoRets`,
 `GotRunHyp` — `gotRunHyp_of` (`LinkOwnGotRun.lean`) of `segRangeHyp` (`LinkOwnSegRange.lean`)
 and `gotLocalHyp` (`LinkOwnGotLocal.lean`)), `outFits` (`outFits_of_lower`),
 `calleeFrame/slotFits` (`frame_of_lower`, `FV/E2E/LinkOwnFrames.lean`), `depth` (by
-construction). The ISLE facts use `native_decide` table checks over the exported rules, as the
-Kill and Cov tables do. Its one program-independent hypothesis, `SpillDefinedHyp` (definite
+construction). The ISLE facts use leaf-wise kernel checks over the exported rules and
+untrusted literal term sets, as the Kill and Cov tables do. Its one program-independent hypothesis, `SpillDefinedHyp` (definite
 assignment of the prepared VCode: availability sets with nothing available on entry, from which
 `checkAlloc`'s fixpoint, started from no vreg in its home, accepts the spill allocation), for
 input whose entry block has the signature's parameters, is proven (`E2E.spillDefinedHyp`, below),
@@ -1493,7 +1493,7 @@ defined and marks the variables in its def fields defined. Soundness by fuel ind
 (`DefGen.soundAt`, `dRoot`); the extern constructors/extractors, the oracles and the
 constructor-tree terms meet their transfers (`DefGen.dModel`, `dOracle`, `dWrap`); every rule of
 the 1149 terms the roots reach and every root rule of `lower`/`lower_branch` check
-(`DefGen.tabOK`, `rootLower`, `rootBranch`, `native_decide`), but `nop`'s rule 587 (by hand) and
+(`DefGen.tabOK`, `rootLower`, `rootBranch`, kernel-checked certificates), but `nop`'s rule 587 (by hand) and
 636/637 (never match). Non-vacuity: `E2E.spillAvail_defined_witness`; `crate_correct_proven`/
 `crate_correct_fvDemo_proven` (`InScopeWitness`) instantiate `crate_correct_inScope_proven`. Witness of the crate theorem:
 `crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` (with `entryParamsB`) and
@@ -1670,8 +1670,8 @@ theorem is about the legalised program, as in "Widening" 6), `HDynGeneric` (43: 
 through vtables, `fn` pointers, closures), `IAlloc` (49) — and `FvDemo`: all 550 of `fv-demo`'s
 functions plus its recursive function's alias (551; 544 + alias before agent/sret-purpose). Axioms of `link_ok`:
 standard plus `globalB_input._native.native_decide.ax_1_1` and one `sliceK_ok._native…` per
-slice; of `correct_i`: those and the backend's existing `bv_decide`/`native_decide` ones
-(`dbm_sxtb`, `dbm_sxth`, the `decode_armBits_*`); `okB_sound`, `okB_of`: standard.
+slice; of `correct_i`: those and the backend's remaining fixed `bv_decide` certificates.
+T6 kernel-checks `dbm_sxtb`, `dbm_sxth`, and the encoder classes; `okB_sound`, `okB_of`: standard.
 
 **Survey** (`link-check --prune`, each crate's codegen unit in its `values` test executable;
 `fv-demo`: its binary, two units), after agent/link-scope (`MayCall`, program-wide indirect
@@ -2207,8 +2207,8 @@ machine state `r` itself:
   rewrite — still the hook (`step` runs the TLS site by `Hb.tls`; the Arm model has no
   `tpidr_el0`; `BinCheck` checks the `movz`/`movk`/`nop`/`nop` words).
 * Axioms (`#print axioms E2E.ExecBytes.binary_correct_exec`): `propext`, `Classical.choice`,
-  `Quot.sound` and the `_native` certificates `binary_correct_of_checks` already has (M5's decoder,
-  M4); `act_sim` and the `ExecWords` lemmas: only the first three.
+  `Quot.sound` and the remaining fixed bit-vector certificates inherited from
+  `binary_correct_of_checks`; the encoder contributes none (T6). `act_sim` and the `ExecWords` lemmas: only the first three.
 * **Non-vacuity** (`crate-proofs/Crates/BinaryExecWitness.lean`,
   `Crates.BinaryExecWitness.binary_correct_exec_witness`): on the `a_arith` executable of
   `binary_witness`, for every file holding the proof's excerpts (one exists), the call of the
@@ -2313,7 +2313,7 @@ machine state `r` itself:
     of `binary_correct_of_checks_acyclic`, `codeMapB`, `HooksSim`, `GotOk I file` (decidable:
     `gotB`) and `OutsideAvoids (GotSlot I file) …`, with **no per-state hypothesis**, `ExecRefines
     … (step I B file) r (RelocAt I) (Clif.runLoop …)`. Axioms: `propext`, `Classical.choice`,
-    `Quot.sound` and the existing `bv_decide`/`native_decide` certificates. Non-vacuity:
+    `Quot.sound` and the remaining fixed `bv_decide` certificates. Non-vacuity:
     `Crates.BinaryExecWitness.binary_correct_exec_proven_witness` (`a_arith`'s `wrapping_add`;
     no GOT pair, `noGotPair`, so no slot).
   - **Aliases** (TO-PROVE L3 item 6; 2026-10-06, `agent/exec-alias`): `cargo fv`'s self-call
@@ -2777,7 +2777,7 @@ closure roots of `lower` and from `lower_branch`, computed by the untrusted gene
 (`Clean ctx`: the context's instruction data hold no registers or instructions) and
 `ctor_sound` (every `emit`ted instruction covered: `CovSince`); `soundAt` (induction on the
 interpreter's fuel) makes every run of a checked term land in its abstract output. `chkTab`
-and the root checks are `native_decide` (8 table chunks + 4 roots, IselCovTab.lean). Driver:
+and the root checks use leaf-wise `decide +kernel` (8 table chunks + 4 roots, IselCovTab.lean). Driver:
 `stmt_cov` (emitted code covered; result registers of an instruction with results are int
 vregs, so `lowerFunction` adds no result `mov`), `termCall_cov`, `tryCall_cov`; the final
 alias renaming keeps register classes (`resolve_vrenaming`, `covered_mapRegs`), the entry's
@@ -2796,7 +2796,7 @@ int vreg, a `TestBitAndBranch` on an int vreg, `Udf`/`EmitIsland`/`Jump`; `gen_r
 int vregs) and `aOracleS` (the helpers emitting `loadExtNameGot/Near`, the LL/SC loops and
 `ElfTlsGetAddr` with fresh distinct defs, `oracle_ctl`), state invariant `ShpIs N s0`
 (`CtlSince N s0 ∧ N ≤ nextVreg`). Table `shpTab`: 641 entries, 8 chunks + 3 roots by
-`native_decide` (≈13 s, 2 GB). Hand-checked root rules (`root_hand`, `HandOk`): calls 1031–1033
+leaf-wise `decide +kernel`. Hand-checked root rules (`root_hand`, `HandOk`): calls 1031–1033
 (`handOk_call`), `try_call`s 1034–1036 (`handOk_try`), `br_table` 1140 (`handOk_brTable`, its
 `imm`/`put_in_reg_zext32` sub-runs from the table via `SubOk`). `totality`: a non-`partial` term
 never returns `none` (`totalProg_program`). Corollary `E2E.ctlSpillHyp` (under `InSubset`);
@@ -2895,7 +2895,7 @@ state-dependent, monotone along the run relation `RsK`: what a sub-run kills is 
 (`IsK`). The killing forms are built only inside `atomic_rmw_loop`, `atomic_cas_loop` and
 `br_table_impl` (oracles, `KillOracle.lean`); the term tables `killTabS` (from `lower`'s rules but
 587, 636, 637) and `killTabB` (from `lower_branch`'s) are closed and contain no killing variant and
-no `invalid_reg` (`KillTab.lean`, `native_decide`); `nop` (587) is a hand rule with no results,
+no `invalid_reg` (`TermSetData.lean`, kernel-certified by `KillTab.lean`); `nop` (587) is a hand rule with no results,
 the I128 rules 636/637 never match. `kp_ctor` (`KillCtor.lean`): every extern constructor but
 `invalid_reg` keeps the invariant (`MInst.ofV`'s uses are among the value's registers outside call
 defs, `ofV_kill`). The driver assembly (`KillAssemble.lean`) uses the runs' disjoint vreg ranges,
@@ -3043,7 +3043,7 @@ targets (`EmSince`), every terminator's (and `try_call`'s) run only `emitOk` ins
 branch targets only on the last (`EmLast`). Method: V3's abstract interpreter with emission
 transfer functions (`aextE`/`actorE`: numeric leaves `AW.num k b` for immediates, shift amounts,
 move-wide constants, call infos; `apreE`: an `emit`ted instruction passes `emChk`), table
-`emitTab` (740 entries, 13 `native_decide` chunks, `FVTest/Backend/IselEmitGen.lean`); branch
+`emitTab` (740 entries, 13 kernel-checked chunks, `FVTest/Backend/IselEmitGen.lean`); branch
 rules end in their branch (`aRuleLast`/`aLast_sound`, `root_last`: the final `emit_side_effect`'s
 last instruction may be a branch); the `uextend`/`sextend` rules (808, 819) and the `extr` rules
 (862, 863) by hand (`hand_emit`). `emitConds_lower` follows `lowerFunction`'s assembly and
@@ -3081,7 +3081,7 @@ Non-vacuity: `E2E.backend_correct_final_total_emit_in_witness`.
   and extern costs `aw`; `costAt` (`IselSzSound`, by induction on the fuel; failed match phases
   restore the state) is sound given `ExtW` (extern constructors) and `OracleW`. Two
   instantiations (`IselSzExt`, tables `szCTab`/`tgCTab` in `IselSzTab`, 699/701 entries, generated
-  by `FVTest/Backend/IselSzGen.lean`, checked by `native_decide`): weights (`actorW`: an `emit`ted
+  by `FVTest/Backend/IselSzGen.lean`, checked by leaf-wise `decide +kernel`): weights (`actorW`: an `emit`ted
   instruction of a variant other than `Call`/`CallInd`/`JTSequence` weighs at most `emitK = 107`,
   `load_constant_full` 4 of them, `gen_return` a `Rets` of at most 8 registers) and branch targets
   (`actorT`: per variant, none for `JTSequence`). By hand (`IselSzCall`, `IselSzBrTable`): the call
@@ -3212,8 +3212,9 @@ extrt and runtests (445 files): no function rejected.
 
 ## Trusted (not proven)
 
-* Lean kernel, `bv_decide`'s LRAT checker / compiled evaluation (M5, M6 axioms); Lean's and the
-  C compiler that run the compiler.
+* Lean kernel, the remaining fixed bit-vector proofs' compiled LRAT checks, and Lean's and
+  the C compiler that run the compiler. T6 removes the encoder and fixed table oracle
+  dependencies, not compiled evaluation from the overall trusted base.
 * **Arm model fidelity** (`FV/Arm`, ASL-derived, co-simulated against qemu) and **`Clif.run`
   fidelity** (checked against Cranelift's interpreter and native runs), including the choice
   that CLIF slot addresses are unspecified (`ClifEntry`).
@@ -3262,9 +3263,8 @@ Backend.Proof.Driver.termCalls_of_rules:
   [propext, Classical.choice, Quot.sound]
 E2E.clifEntry_initState: [propext, Quot.sound]
 Backend.Proof.regLevelCorrect_backend:
-  [propext, Classical.choice, Quot.sound] + M5's `decode_armBits_*._native.bv_decide` and
-  `decode_raw_inst_of_{br,dpi,dpr,dpsfp,ldst}._native.bv_decide`,
-  `Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9`
+  [propext, Classical.choice, Quot.sound] + remaining fixed bit-vector certificates;
+  the encoder's `decode_armBits_*` and dispatch lemmas contribute no native axioms (T6)
 E2E.backend_correct_final: those of `backend_correct_m4` and `regLevelCorrect_backend`
 E2E.backend_correct_linked: those of `backend_correct_final`
 Clif.runLoop_link, E2E.xCallsOk_link: [propext, Classical.choice, Quot.sound]
