@@ -2051,11 +2051,15 @@ theorem a2_legal {F : BitVec 64 → Prop} {p : Clif.Program} {K : Nat}
   have hL := L_ok (fun _ => True) (fun _ _ => trivial)
   have hA2 : fA2 ∈ P.funcs := by simp [P]
   have hfa := facts hA2
+  have hcompiled : Compiled fA2 (A fA2).k (A fA2).vc (A fA2).vcp (A fA2).rf
+      (A fA2).af (A fA2).fa (A fA2).fb := by
+    obtain ⟨hl, hp, ha, he, hla, hk, hb⟩ := pipe_spec hfa.pipe
+    exact ⟨hl, hfa.lowerOk, hp, hfa.prepOk, hfa.check, ha, he, hla⟩
   have ha := a2B_true
   simp only [a2B, Bool.and_eq_true, List.isEmpty_iff, List.all_eq_true, Bool.not_eq_true'] at ha
   obtain ⟨⟨⟨⟨⟨⟨he9, heA⟩, hi9⟩, hiA⟩, hnt⟩, hnc⟩, hchk⟩ := ha
   refine backend_correct_legal (X := Xb) (H := Hb) (syms := fun _ => none)
-    (slotOff := (A fA2).af.slotBase) (K := K) hchk (hL.subset fA2 hA2) (hL.compiled fA2 hA2)
+    (slotOff := (A fA2).af.slotBase) (K := K) hchk (hL.subset fA2 hA2) hcompiled
     (fun fn e h => by simp [Clif.Function.extern?, he9] at h)
     (fun fn e h => by simp [Clif.Function.extern?, heA] at h)
     (fun ⟨B, hB, st, hst, sig, callee, args, hi⟩ =>
