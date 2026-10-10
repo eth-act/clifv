@@ -217,7 +217,7 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  1094 `simplify` roots, all 37 `simplify_skeleton` roots and their helpers are proven (see "Rule
+  1109 `simplify` roots, all 37 `simplify_skeleton` roots and their helpers are proven (see "Rule
   proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
@@ -342,7 +342,7 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
   rule sets (`E2E.backend_correct_opt_proven`); only the allow-listed rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
-- Proven: the rule interpreter's soundness, 1094 `simplify` roots and all 37 `simplify_skeleton`
+- Proven: the rule interpreter's soundness, 1109 `simplify` roots and all 37 `simplify_skeleton`
   roots ("Rule proofs").
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
@@ -495,7 +495,7 @@ Design decisions (approved by the integrator):
 
 ## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
 
-Status: the framework is complete and proven; **1094 `simplify` roots proven** (see below),
+Status: the framework is complete and proven; **1109 `simplify` roots proven** (see below),
 allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,InterpEval,RuleBase,
 RuleData,RuleNode,RuleEmbed,RuleTactic,RuleImm,RuleCtor,RuleSkel,RuleAuto,RuleArith,RuleCprop,
 RuleAll}.lean`; generator
@@ -535,12 +535,14 @@ Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`
 the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
 agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
 
-**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest, R0, R3, R5, R7–R8): **1094 `simplify` roots** = `Opt.provenSimplifyRules` —
+**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest, R0, R2, R3, R5, R7–R8): **1109 `simplify` roots** = `Opt.provenSimplifyRules` —
 `arithmetic.isle` 230 of 258 (`RuleArith.lean`, `RuleArith2..8.lean`), `cprop.isle` 68 of 68 (`RuleCprop.lean`, `RuleCprop2..4.lean`), `remat.isle` 12 of 12 (`RuleRemat.lean`),
 `bitops.isle` 450 of 450 (`RuleBitops1..10.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
 `rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31; R0: `rule_auto_t`/`_tt` 3; R7: masked-OR and byte-swap proofs 3). **All 37 `simplify_skeleton` roots**
 (`Opt.provenSkeletonRules`, `RuleSkeleton.lean`, `RuleSkeleton2..6.lean`, see "Skeleton rules" below).
-`icmp.isle` 109 of 124 (`RuleIcmp1..10.lean`, `RuleIcmp12.lean`, `RuleIcmp13.lean`) and `selects.isle` 100 of 100 (`RuleSelects1..12.lean`),
+`icmp.isle` 124 of 124 (`RuleIcmp1..10.lean`, `RuleIcmp12.lean`, `RuleIcmp13.lean`,
+`RuleIcmpIdentity.lean`, `RuleIcmpBounds.lean`, `RuleIcmpArithmetic.lean`,
+`RuleIcmpSelects.lean`, `RuleIcmpCompose.lean`) and `selects.isle` 100 of 100 (`RuleSelects1..12.lean`),
 with the template variants of `RuleIcmpEmbed.lean` (`rule_auto_c`/`_ci`: `arr_step` for a value
 variable bound twice, `opt_split_typeof` for a made `icmp` under `subsume`; `_d`/`_di`: `Int`
 literals of if-lets reduced, `ty_smin`/`ty_smax` specs passed as extra lemmas) and
@@ -655,11 +657,10 @@ Early denotation substitution, unsigned-literal normalization and width-parametr
 select identities replace the earlier timeout-prone case splitting; see "R3" below.
 Removed from the icmp/selects modules (RuleAllScale, 2026-10-01) because the modules ran out of
 memory: `icmp.isle` 63, 70, 160, 175, 254–289, 365, 368, `selects.isle` 20 — all proven again by
-R0 in their own modules at ≤ 5.3G (see above). Still
-failing — `icmp.isle` 49, 77, 91 (`GraphOk.make_val` does not unify with the goal), 155, 165,
-170 (`bv_decide` counterexample after the earlier alternatives time out), 180, 184, 386, 394, 402,
-410 (heartbeat timeouts), 205 (`simp` made no progress), 295, 296 (no hypothesis in the
-`bv_decide` fragment).
+R0 in their own modules at ≤ 5.3G (see above). R2 now proves all remaining icmp roots:
+49, 77, 91, 155, 165, 170, 180, 184, 205, 295, 296, 386, 394, 402 and 410.
+The earlier unification failures, timeouts and solver counterexamples were proof-tooling
+failures, not counterexamples to these original rules; no `RuleOk` premise was added.
 All `bitops.isle` roots are now proven. R7 closes 79 (the masked-OR immediate guard) and
 157/170 (32/64-bit byte-swap trees) using bounded fixed-width identities and an opcode-indexed
 decoder that avoids the earlier graph-matching branch explosion. R0 proved 126/127/129
@@ -843,6 +844,41 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   seven expectation failures, ten disagreements and two oracle errors. The optional survey
   was absent.
 
+**R2 (2026-10-10, `agent/icmp-r2`, locally merge-ready):**
+- `RuleIcmpIdentity`, `RuleIcmpBounds`, `RuleIcmpArithmetic`, `RuleIcmpSelects` and
+  `RuleIcmpCompose` prove all fifteen remaining roots with their original statements
+  and premises. The icmp family is complete at 124/124; total coverage is 1146/1193.
+- Composition proofs separate exact interpreter evaluation from arithmetic.
+  `RuleIcmpComposeEval` proves twenty fixed-code lookup facts and two generic dispatchers.
+  `RuleIcmpComposeGuard` proves compatibility, including failed-guard state/trace rollback.
+  `RuleIcmpComposeRhs` proves all eight relation masks with operand width independent of
+  the i8 result. The root tactic holds only the outer composition function opaque while
+  evaluating its arguments, then uses the typed RHS theorem. Predicate identities
+  remain width-parametric. Neither the heartbeat limit nor the original fuel premise
+  is increased.
+- Every new theorem has a concrete non-vacuity witness. `RuleIcmpComposeWitness` supplies
+  sixteen full-premise RHS fixtures, including actual interpreter success and result
+  membership, over a genuine fresh-allocation graph with proved `GraphOk` and invariant.
+  Signed/unsigned modes, high-bit ordering and equality/inequality are covered.
+- CLI smoke: all fifteen roots fire across 1890 functions and widths 8–128, including
+  every condition-code pair, incompatible-class and distinct-operand controls.
+  All 15740 exact interpreter expectations, differential runs and AArch64/Cranelift-native
+  comparisons agree, with no unsupported cases or pass/rule errors. The Cranelift verifier
+  accepts all 1890 optimized functions. Instructions fall from 6597 to 3595, versus 6127
+  before enablement.
+- Full compiler/crate builds completed successfully (1310/958 jobs). All 66 audited
+  helper/root/aggregate/E2E/crate theorems use only permitted axioms. Encoding:
+  1292/1292 identical functions, 54842 words and 1332 relocations. E2E: 1150 accepted,
+  zero rejected, 97 out of scope. Native filetests: corpus 136 passed; runtests 4672 passed,
+  zero failed and zero native disagreements. Existing runtest errors (7) and not-compiled
+  cases (9054) remain reported separately.
+- Proven-only differential instructions improve to corpus 4668 → 2287 (matching all rules)
+  and runtests 3389 → 3055, from 2289/3063 before R2. No refinement failures, pass errors
+  or verifier rejections; all 445 file summaries are no worse than unoptimized baselines.
+  Existing interpreter/oracle totals remain seven expectation failures, ten disagreements
+  and two oracle errors. The optional survey was absent. Publication remains pending under
+  the agent no-push/no-merge boundary.
+
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (230): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
   173, 181, 226, 233, 236, 239, 240, 243, 244, 247, 295, 296, 297, 298, 301, 302, 303, 304, 307,
@@ -861,11 +897,11 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   130, 132, 135, 147, 152, 155, 159, 162, 165, 169, 170, 171, 172, 174, 183, 193, 197, 201, 205,
   209, 214, 217, 220, 223, 227, 229, 232, 235, 238, 241, 247, 249, 252, 254, 257, 259, 269, 320,
   322, 324, 333, 337, 341, 345, 349, 375, 377, 379, 521.
-- `icmp.isle` (109): 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 23, 25, 27, 29, 31, 33, 35, 41, 43, 63,
-  70, 84, 96, 104, 108, 112, 116, 120, 125, 130, 135, 140, 145, 150, 160, 175, 190, 193, 196, 199,
-  202, 254, 259, 264, 269, 274, 279, 284, 289, 299, 300, 303, 304, 306, 307, 310, 311, 312, 313,
+- `icmp.isle` (124): 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 23, 25, 27, 29, 31, 33, 35, 41, 43, 49, 63,
+  70, 77, 84, 91, 96, 104, 108, 112, 116, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 184, 190, 193, 196, 199,
+  202, 205, 254, 259, 264, 269, 274, 279, 284, 289, 295, 296, 299, 300, 303, 304, 306, 307, 310, 311, 312, 313,
   314, 315, 316, 317, 325, 329, 333, 337, 341, 345, 349, 353, 359, 362, 365, 368, 371, 374, 377,
-  380, 438, 442, 447, 451, 479, 482, 485, 486, 489, 490, 491, 492, 495, 498, 501, 502, 505, 506,
+  380, 386, 394, 402, 410, 438, 442, 447, 451, 479, 482, 485, 486, 489, 490, 491, 492, 495, 498, 501, 502, 505, 506,
   509, 510, 513, 514, 517, 520, 523, 526, 529, 532, 535.
 - `selects.isle` (100): 4, 9, 15, 20, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43,
   81, 85, 91,

@@ -53,6 +53,11 @@ import FV.Opt.Proof.RuleSelects12
 import FV.Opt.Proof.RuleIcmp10
 import FV.Opt.Proof.RuleIcmp12
 import FV.Opt.Proof.RuleIcmp13
+import FV.Opt.Proof.RuleIcmpIdentity
+import FV.Opt.Proof.RuleIcmpBounds
+import FV.Opt.Proof.RuleIcmpArithmetic
+import FV.Opt.Proof.RuleIcmpSelects
+import FV.Opt.Proof.RuleIcmpCompose
 import FV.Opt.Proof.RuleArith8
 import FV.Opt.Proof.RuleSkeleton
 import FV.Opt.Proof.RuleSkeleton2
