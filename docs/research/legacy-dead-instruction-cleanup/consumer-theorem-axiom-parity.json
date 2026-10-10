@@ -27,6 +27,24 @@
       "removed": [],
       "warnings": [],
       "method": "lean-mcp lean_verify"
+    },
+    {
+      "theorem": "Link.DeadCleanup.compileExe_correct",
+      "baseline_count": 830,
+      "cleanup_count": 830,
+      "added": [],
+      "removed": [],
+      "warnings": [],
+      "method": "lean-mcp lean_verify; independently capped #print axioms"
+    },
+    {
+      "theorem": "Link.DeadCleanup.compileExe_total",
+      "baseline_count": 823,
+      "cleanup_count": 823,
+      "added": [],
+      "removed": [],
+      "warnings": [],
+      "method": "lean-mcp lean_verify; independently capped #print axioms"
     }
   ]
 }

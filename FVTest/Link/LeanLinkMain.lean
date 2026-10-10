@@ -1,4 +1,5 @@
 import FV.Link.Compile
+import FV.Link.DeadCleanupCompile
 import Lean.Data.Json
 
 /-! # `lake exe lean-link DIR SIZES`: the executable compiler on an executable (L1, L2b)
@@ -66,7 +67,11 @@ def strs (j : Json) (k : String) : List String :=
   (((j.getObjVal? k).bind (·.getArr?)).toOption.getD #[]).toList.filterMap (·.getStr?.toOption)
 
 def main (args : List String) : IO UInt32 := do
-  let [d, sz] := args | do IO.eprintln "usage: lean-link DIR SIZES (cargo fv link-proof's output, the region's sizes)"; return 2
+  let (deadCleanup, args) := match args with
+    | d :: sz :: ["--dead-cleanup"] => (true, [d, sz])
+    | d :: sz :: ["--no-dead-cleanup"] => (false, [d, sz])
+    | _ => (false, args)
+  let [d, sz] := args | do IO.eprintln "usage: lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup]"; return 2
   let dir : System.FilePath := d
   let j ← match Json.parse (← IO.FS.readFile (dir / "link.json")) with
     | .ok j => pure j
@@ -124,10 +129,15 @@ def main (args : List String) : IO UInt32 := do
     R := R }
   let file0 ← IO.FS.readBinFile exe
   let summary := s!"{names.length} function(s), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes)"
-  match compileExe S file0 with
+  let compile := if deadCleanup then Link.DeadCleanup.compileExe else Link.compileExe
+  let link := if deadCleanup then Link.DeadCleanup.leanLink else Link.leanLink
+  let theoremName := if deadCleanup then "Link.DeadCleanup.compileExe_correct" else "Link.compileExe_correct"
+  let compilerName := if deadCleanup then "Link.DeadCleanup.compileExe" else "Link.compileExe"
+  let linkerName := if deadCleanup then "Link.DeadCleanup.leanLink" else "Link.leanLink"
+  match compile S file0 with
   | .ok file =>
     IO.FS.writeBinFile exe file
-    IO.println s!"lean-link: {exe}: {summary} written by Link.compileExe (Link.compileExe_correct)"
+    IO.println s!"lean-link: {exe}: {summary} written by {compilerName} ({theoremName})"
     return 0
   | .error e =>
     if e != outOfScopeMsg then
@@ -142,12 +152,12 @@ def main (args : List String) : IO UInt32 := do
       | [] => none
       | fs => some (g.name, fs)
     let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
-    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions (InScopeP): {bad.length} function(s) failing the program-level per-function conditions (by cause: {causes}) {(bad.take 3).map (·.1)}, distinct names {decide (P.funcs.map (·.name)).Nodup}, addrSlotsInB {addrSlotsInB P syms} (else fnScopeB); linking with Link.leanLink (not covered by compileExe_correct)"
+    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions (InScopeP): {bad.length} function(s) failing the program-level per-function conditions (by cause: {causes}) {(bad.take 3).map (·.1)}, distinct names {decide (P.funcs.map (·.name)).Nodup}, addrSlotsInB {addrSlotsInB P syms} (else fnScopeB); linking with {linkerName} (outside {theoremName} scope)"
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
-    match leanLink S file0 with
+    match link S file0 with
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
     | .ok file =>
       IO.FS.writeBinFile exe file
-      IO.println s!"lean-link: {exe}: {summary} written by Link.leanLink"
+      IO.println s!"lean-link: {exe}: {summary} written by {linkerName}"
       return 0

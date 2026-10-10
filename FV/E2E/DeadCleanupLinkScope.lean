@@ -15,6 +15,11 @@ def LinkInput.resultsCleanupT (I : LinkInput) : Res :=
   I.funcs.map fun fi => (fi.func, pipeCleanupT fi.func fi.k
     (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j))
 
+theorem LinkInput.resultsCleanup_fallback {I : LinkInput} (h : I.fallback = true) :
+    I.resultsCleanup = I.resultsCleanupT := by
+  simp only [LinkInput.resultsCleanup, LinkInput.resultsCleanupT, LinkInput.pipeCleanupOf,
+    h, Bool.cond_true]
+
 theorem mem_resultsCleanupT {I : LinkInput} {e : Clif.Function × Except String Art}
     (he : e ∈ I.resultsCleanupT) : ∃ fi ∈ I.funcs, e.1 = fi.func ∧
       e.2 = pipeCleanupT fi.func fi.k (BitVec.ofNat 64 (I.baseOf fi.func.name)) (raJ fi.ra fi.j) := by

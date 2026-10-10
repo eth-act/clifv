@@ -22,7 +22,8 @@ require fv from ".."
 `FV.E2E.CodeMap` and `FV.E2E.LinkScopeDefs` import `FV.E2E.LinkCheck`; `FV.Link.Image`: the Lean
 linker, `Link.leanLink`). -/
 def checkRoots : Array Lean.Name :=
-  #[`FV.E2E.StackBound, `FV.E2E.BinCheck, `FV.E2E.CodeMap, `FV.E2E.LinkScopeDefs, `FV.Link.Image]
+  #[`FV.E2E.StackBound, `FV.E2E.BinCheck, `FV.E2E.CodeMap, `FV.E2E.LinkScopeDefs, `FV.Link.Image,
+    `FV.E2E.DeadCleanupStackBound, `FV.E2E.DeadCleanupBinCheck, `FV.Link.DeadCleanupImage]
 
 /-- The compiled code of the checker modules and of the modules they import, as one shared
 library (Lake rebuilds it when any of them changes). -/

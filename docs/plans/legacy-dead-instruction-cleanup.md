@@ -123,3 +123,13 @@ check fresh main and squash merge under the existing user authorization.
   source with real deletion and a failed-oracle spill fallback. Generated-proof
   wiring compiles locally; generated output and executable compiler/linker
   consumers are being completed. Defaults and final gates remain pending.
+
+- Cleanup executable compilation and totality variants now compile with the same
+  input-scope, placement, relocation-range and outside-code hypotheses. Exact
+  baseline axiom parity: `compileExe_correct` 830, `compileExe_total` 823.
+  A closed nonempty source succeeds through both executable compilers and links
+  fewer words with cleanup; its binary facts follow from the actual linked file.
+- The cleanup proof generator preserves allocator fallback mode and emits the
+  cleanup checker/binary/stack roots. Its generated one-function proof, including
+  binary, closed-base, crate and stack statements, checks. Final broad builds and
+  optimizer-proven wrapper validation are still running; default remains off.

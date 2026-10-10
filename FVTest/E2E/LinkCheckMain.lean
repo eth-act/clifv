@@ -486,7 +486,8 @@ def input : LinkInput where
   syms := [
     {pairs I.syms}]
   raStar := {I.raStar}
-  D := {I.D}{aliases}
+  D := {I.D}
+  fallback := {I.fallback}{aliases}
 
 /-- The data objects the program reaches (`cargo fv link-proof`'s `; data:` lines). -/
 def dataObjs : List Clif.DataObject := parseData ({listLean (bg.dataLines.map leanStr)})
