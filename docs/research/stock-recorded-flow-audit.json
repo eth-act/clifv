@@ -1,0 +1,160 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockDriverBounds",
+    "FV.Backend.Proof.StockRecordedFlow"
+  ],
+  "source_sha256": {
+    "FV/Backend/Proof/StockDriverBounds.lean": "93aee77e31b1dd9bd7e1ee28ae94e4077858f6ac3e8d608a597dfc0696236f8a",
+    "FV/Backend/Proof/StockRecordedFlow.lean": "24420dd158d4697663b5761569013084922c99b45bcd97f737763d0ceef0cb33"
+  },
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_allocationBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_scanAllocationBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_allocationBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_allocationBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_scanAliasBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_blockScanAliasBounds",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_allocationBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_scanAliasBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_blockScanAliasBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_allocationBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNodes_allocationBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_scanAllocationBounds_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasOrigins",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasAvailable",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasOrigins_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasAvailable_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  ],
+  "targeted_build_jobs": 300,
+  "method": "Complete clean canonical Lean MCP diagnostics for both changed modules; sixteen matching standard-only MCP/compiled Lean audits include all retained public bounds interfaces; capped targeted build includes actual emitted-scan callers.",
+  "scope": "Core scan-input allocation frontier/reservations derived after real branch emission/outgoing collection, retaining old bounds interfaces. Actual whole-driver emitted source record final-alias origins and mapped source availability derived from successful traversal/core/record/selected emitter/ordered binder/final alias transport. Successful whole direct-call/return generated lowering, emitted decision, nonempty final alias, LowerScope/Dominated/source post-body availability witnesses. Inherited input aliases/fresh/reservation alternatives remain distinct; full path closure/reserved semantic handling, noninterference, instruction families/whole simulation/completeness/baseline parity/production cutover remain.",
+  "required_full_and_execution_gates": "pending on publication source"
+}

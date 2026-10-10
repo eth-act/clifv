@@ -218,7 +218,8 @@ private theorem block_within {ctx : Ctx} {order : Order} {f : Clif.Function} {b 
     (bound : Within cap reservations st)
     (h : lowerBlockCore ctx order f b bi start stop data targets st = .ok output) :
     Within cap reservations output.state ∧
-      (∀ r ∈ output.scan.output.records, cap ≤ r.input.base.nextVreg) := by
+      (∀ r ∈ output.scan.output.records, cap ≤ r.input.base.nextVreg) ∧
+      Within cap reservations output.scan.input := by
   let ti := stop - 1
   let termCtx := { ctx with
     insts := ctx.insts.set! ti ⟨data, [], [], none⟩
@@ -280,7 +281,7 @@ private theorem block_within {ctx : Ctx} {order : Order} {f : Clif.Function} {b 
         have alloc := stock_scanBlock_allocationLe scan
         exact ⟨⟨stock_scanBlock_aliasBelow payloads mapping beforeBound.1 scan,
           Nat.le_trans beforeBound.2.1 alloc.1, alloc.2.trans beforeBound.2.2⟩,
-          stock_scanBlock_frontiers beforeBound.2.1 scan⟩
+          stock_scanBlock_frontiers beforeBound.2.1 scan, beforeBound⟩
 
 private def ScanFrontiers (cap : Nat) (scans : Array ScanEvent) : Prop :=
   ∀ event ∈ scans.toList, cap ≤ event.input.base.nextVreg
@@ -354,7 +355,7 @@ private theorem node_frontiers {ctx : Ctx} {ranges : Array (Nat × Nat)} {order 
   repeat' first
     | (solve | cases h)
     | (solve | cases h; exact old)
-    | (solve | cases h; apply core_frontiers old; exact (block_within mapped reserved bound (by assumption)).2)
+    | (solve | cases h; apply core_frontiers old; exact (block_within mapped reserved bound (by assumption)).2.1)
     | simp only [bind, Except.bind, pure, Except.pure] at h
     | split at h
 
@@ -387,7 +388,7 @@ private theorem node_blockFrontiers {ctx : Ctx} {ranges : Array (Nat × Nat)} {o
   repeat' first
     | (solve | cases h)
     | (solve | cases h; exact old)
-    | (solve | cases h; apply core_blockFrontiers old; exact (block_within mapped reserved bound (by assumption)).2)
+    | (solve | cases h; apply core_blockFrontiers old; exact (block_within mapped reserved bound (by assumption)).2.1)
     | simp only [bind, Except.bind, pure, Except.pure] at h
     | split at h
 
@@ -481,6 +482,21 @@ theorem stock_lowerNode_allocationBounds {f : Clif.Function} {ctx : Ctx}
     output.state.alias.size ≤ initial.base.nextVreg ∧
       initial.base.nextVreg ≤ output.state.base.nextVreg ∧ output.state.tryRegs = initial.tryRegs :=
   node_within (initial_maps build) (buildCtx_reservedBelow build) bound run
+
+/-- The actual core's scan input retains the build's allocation frontier and
+reservation array after branch emission and outgoing-edge collection. These
+facts are derived from the successful core call, including nonempty slots. -/
+theorem stock_lowerBlockCore_scanAllocationBounds {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, initial))
+    {order : Order} {b : Clif.Block} {bi start stop : Nat} {data : Backend.V}
+    {targets : Array Nat} {input : State} {core : LoweredBlockCore}
+    (bound : input.alias.size ≤ initial.base.nextVreg ∧
+      initial.base.nextVreg ≤ input.base.nextVreg ∧ input.tryRegs = initial.tryRegs)
+    (run : lowerBlockCore ctx order f b bi start stop data targets input = .ok core) :
+    initial.base.nextVreg ≤ core.scan.input.base.nextVreg ∧
+      core.scan.input.tryRegs = initial.tryRegs :=
+  (block_within (initial_maps build) (buildCtx_reservedBelow build) bound run).2.2.2
 
 /-- Any successful suffix of the actual node fold retains the build's allocation
 cap and reservations. This also applies after a protected definition was emitted. -/
@@ -682,5 +698,33 @@ theorem stock_lowerNodes_allocationBounds_witness :
     rfl
   exact ⟨output, folded, code, alias,
     stock_lowerNodes_allocationBounds nodeBound_build nodeBound_input folded⟩
+
+private def coreBoundData : Backend.V :=
+  (termData nodeBoundFunction.blocks[1]!.term).toOption.getD (.op .unit)
+private def coreBoundCall := lowerBlockCore nodeBoundBuilt.1 nodeBoundOrder nodeBoundFunction
+  nodeBoundFunction.blocks[1]! 1 nodeBoundBuilt.2.1[1]!.1 nodeBoundBuilt.2.1[1]!.2
+  coreBoundData #[0] nodeBoundInput.state
+set_option maxRecDepth 20000 in
+private theorem coreBound_success : coreBoundCall.isOk = true := by decide +kernel
+
+/-- The actual successful jump core used by the original-node fixture has a
+nonempty incoming alias and supplies its scan input's allocation facts. -/
+theorem stock_lowerBlockCore_scanAllocationBounds_witness :
+    ∃ core : LoweredBlockCore,
+      Stock.buildCtx nodeBoundFunction = .ok nodeBoundBuilt ∧
+      nodeBoundInput.state.alias.size ≤ nodeBoundBuilt.2.2.base.nextVreg ∧
+      nodeBoundBuilt.2.2.base.nextVreg ≤ nodeBoundInput.state.base.nextVreg ∧
+      nodeBoundInput.state.tryRegs = nodeBoundBuilt.2.2.tryRegs ∧
+      coreBoundCall = .ok core ∧
+      nodeBoundBuilt.2.2.base.nextVreg ≤ core.scan.input.base.nextVreg ∧
+      core.scan.input.tryRegs = nodeBoundBuilt.2.2.tryRegs := by
+  cases call : coreBoundCall with
+  | error e =>
+    have success := coreBound_success
+    simp only [call, Except.isOk] at success
+    cases success
+  | ok core =>
+    exact ⟨core, nodeBound_build, nodeBound_input.1, nodeBound_input.2.1, nodeBound_input.2.2,
+      rfl, stock_lowerBlockCore_scanAllocationBounds nodeBound_build nodeBound_input call⟩
 
 end Backend.Stock.Proof
