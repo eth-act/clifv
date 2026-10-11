@@ -1,0 +1,445 @@
+{
+  "number": 27,
+  "test": "isa/aarch64/condops-with-csdb.clif",
+  "variant": 0,
+  "function": "%f",
+  "row_index": 10,
+  "stage": "compile",
+  "isa_index": 0,
+  "command_index": 0,
+  "compilation": 10,
+  "comparison": {
+    "name": "%f",
+    "bytes": {
+      "equal": false,
+      "left_size": 12,
+      "right_size": 20,
+      "left_sha256": "19c4f66e6e5290076c91e5ccef4c810cdbb14ec7b49ff7eeca12a69ca79d58b8",
+      "right_sha256": "07d826c4c60e0bb7c0d806a21389fdce22baca686cc59c01950a8d3b363c4fc1",
+      "first_difference": 4,
+      "left_context": "1fa800712000829ac0035fd6",
+      "right_context": "1fa80071e5179f9a1fa800712000829ac0035fd6"
+    },
+    "relocations_equal": true,
+    "reference_relocations": [],
+    "lean_relocations": [],
+    "exact_code_and_relocations": false,
+    "alignment_equal": true,
+    "traps_equal": true,
+    "traps": {
+      "stock": [],
+      "lean": []
+    },
+    "alignment": {
+      "stock": 4,
+      "lean": 4
+    },
+    "lean_dump_matches_object_bytes": true,
+    "lean_object_alignment_valid": true,
+    "lean_dump_matches_object_relocations": true,
+    "settings_contract_verified": true,
+    "stock_artifact_repeatable": true,
+    "exact_code_artifact": false,
+    "execution_metadata": {
+      "unwind_equal": false,
+      "stack_maps_equal": true,
+      "exception_metadata_equal": null,
+      "stock_unwind": "Some(SystemV(UnwindInfo { instructions: [], len: 12 }))",
+      "stock_exception_call_sites": "[]",
+      "stock_exception_table_bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stock_stack_maps": "[]",
+      "full_metadata_equivalence_verified": false
+    },
+    "full_artifact_equivalence_verified": false,
+    "status": "different_code_artifact",
+    "index": 10
+  },
+  "request": {
+    "schema": 1,
+    "target": "aarch64-unknown-unknown-elf",
+    "flags": [
+      {
+        "name": "regalloc_algorithm",
+        "value": "backtracking"
+      },
+      {
+        "name": "opt_level",
+        "value": "none"
+      },
+      {
+        "name": "tls_model",
+        "value": "none"
+      },
+      {
+        "name": "stack_switch_model",
+        "value": "none"
+      },
+      {
+        "name": "libcall_call_conv",
+        "value": "isa_default"
+      },
+      {
+        "name": "probestack_size_log2",
+        "value": "12"
+      },
+      {
+        "name": "probestack_strategy",
+        "value": "outline"
+      },
+      {
+        "name": "bb_padding_log2_minus_one",
+        "value": "0"
+      },
+      {
+        "name": "log2_min_function_alignment",
+        "value": "0"
+      },
+      {
+        "name": "regalloc_checker",
+        "value": "false"
+      },
+      {
+        "name": "regalloc_verbose_logs",
+        "value": "false"
+      },
+      {
+        "name": "enable_alias_analysis",
+        "value": "true"
+      },
+      {
+        "name": "enable_verifier",
+        "value": "true"
+      },
+      {
+        "name": "is_pic",
+        "value": "false"
+      },
+      {
+        "name": "use_colocated_libcalls",
+        "value": "false"
+      },
+      {
+        "name": "enable_nan_canonicalization",
+        "value": "false"
+      },
+      {
+        "name": "enable_pinned_reg",
+        "value": "false"
+      },
+      {
+        "name": "enable_llvm_abi_extensions",
+        "value": "false"
+      },
+      {
+        "name": "enable_multi_ret_implicit_sret",
+        "value": "false"
+      },
+      {
+        "name": "unwind_info",
+        "value": "false"
+      },
+      {
+        "name": "preserve_frame_pointers",
+        "value": "false"
+      },
+      {
+        "name": "machine_code_cfg_info",
+        "value": "true"
+      },
+      {
+        "name": "enable_probestack",
+        "value": "false"
+      },
+      {
+        "name": "enable_heap_access_spectre_mitigation",
+        "value": "true"
+      },
+      {
+        "name": "enable_table_access_spectre_mitigation",
+        "value": "true"
+      },
+      {
+        "name": "enable_incremental_compilation_cache_checks",
+        "value": "false"
+      },
+      {
+        "name": "enable_compact_unwind_abi",
+        "value": "false"
+      }
+    ],
+    "isa_flags": [
+      {
+        "name": "has_lse",
+        "value": "false"
+      },
+      {
+        "name": "has_pauth",
+        "value": "false"
+      },
+      {
+        "name": "has_fp16",
+        "value": "false"
+      },
+      {
+        "name": "has_dotprod",
+        "value": "false"
+      },
+      {
+        "name": "has_i8mm",
+        "value": "false"
+      },
+      {
+        "name": "sign_return_address_all",
+        "value": "false"
+      },
+      {
+        "name": "sign_return_address",
+        "value": "false"
+      },
+      {
+        "name": "sign_return_address_with_bkey",
+        "value": "false"
+      },
+      {
+        "name": "use_bti",
+        "value": "false"
+      },
+      {
+        "name": "use_csdb",
+        "value": "true"
+      }
+    ],
+    "input_sha256": "cb51aa036237114a3ce4159c7a99b38d122d04dcfd8337f7cc16f52e5ba41ad3",
+    "stage": "compile",
+    "isa_index": 0,
+    "command_index": 0
+  },
+  "receipt": {
+    "schema": 1,
+    "request": {
+      "target": "aarch64-unknown-unknown-elf",
+      "stage": "compile",
+      "schema": 1,
+      "isa_index": 0,
+      "isa_flags": [
+        {
+          "value": "false",
+          "name": "has_lse"
+        },
+        {
+          "value": "false",
+          "name": "has_pauth"
+        },
+        {
+          "value": "false",
+          "name": "has_fp16"
+        },
+        {
+          "value": "false",
+          "name": "has_dotprod"
+        },
+        {
+          "value": "false",
+          "name": "has_i8mm"
+        },
+        {
+          "value": "false",
+          "name": "sign_return_address_all"
+        },
+        {
+          "value": "false",
+          "name": "sign_return_address"
+        },
+        {
+          "value": "false",
+          "name": "sign_return_address_with_bkey"
+        },
+        {
+          "value": "false",
+          "name": "use_bti"
+        },
+        {
+          "value": "true",
+          "name": "use_csdb"
+        }
+      ],
+      "input_sha256": "cb51aa036237114a3ce4159c7a99b38d122d04dcfd8337f7cc16f52e5ba41ad3",
+      "flags": [
+        {
+          "value": "backtracking",
+          "name": "regalloc_algorithm"
+        },
+        {
+          "value": "none",
+          "name": "opt_level"
+        },
+        {
+          "value": "none",
+          "name": "tls_model"
+        },
+        {
+          "value": "none",
+          "name": "stack_switch_model"
+        },
+        {
+          "value": "isa_default",
+          "name": "libcall_call_conv"
+        },
+        {
+          "value": "12",
+          "name": "probestack_size_log2"
+        },
+        {
+          "value": "outline",
+          "name": "probestack_strategy"
+        },
+        {
+          "value": "0",
+          "name": "bb_padding_log2_minus_one"
+        },
+        {
+          "value": "0",
+          "name": "log2_min_function_alignment"
+        },
+        {
+          "value": "false",
+          "name": "regalloc_checker"
+        },
+        {
+          "value": "false",
+          "name": "regalloc_verbose_logs"
+        },
+        {
+          "value": "true",
+          "name": "enable_alias_analysis"
+        },
+        {
+          "value": "true",
+          "name": "enable_verifier"
+        },
+        {
+          "value": "false",
+          "name": "is_pic"
+        },
+        {
+          "value": "false",
+          "name": "use_colocated_libcalls"
+        },
+        {
+          "value": "false",
+          "name": "enable_nan_canonicalization"
+        },
+        {
+          "value": "false",
+          "name": "enable_pinned_reg"
+        },
+        {
+          "value": "false",
+          "name": "enable_llvm_abi_extensions"
+        },
+        {
+          "value": "false",
+          "name": "enable_multi_ret_implicit_sret"
+        },
+        {
+          "value": "false",
+          "name": "unwind_info"
+        },
+        {
+          "value": "false",
+          "name": "preserve_frame_pointers"
+        },
+        {
+          "value": "true",
+          "name": "machine_code_cfg_info"
+        },
+        {
+          "value": "false",
+          "name": "enable_probestack"
+        },
+        {
+          "value": "true",
+          "name": "enable_heap_access_spectre_mitigation"
+        },
+        {
+          "value": "true",
+          "name": "enable_table_access_spectre_mitigation"
+        },
+        {
+          "value": "false",
+          "name": "enable_incremental_compilation_cache_checks"
+        },
+        {
+          "value": "false",
+          "name": "enable_compact_unwind_abi"
+        }
+      ],
+      "command_index": 0
+    },
+    "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+    "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+    "function_rejections": {},
+    "error": null,
+    "dead_instruction_cleanup": true,
+    "configuration_accepted": true
+  },
+  "original_source_sha256": "97463c9919bb94c0801eeeeb5816c08de58776d1d8ccf580af2126937ea9f408",
+  "stock_source": "function %f(i32, i8, i8) -> i8 fast {\nblock0(v0: i32, v1: i8, v2: i8):\n    v3 = iconst.i32 42\n    v4 = icmp eq v0, v3  ; v3 = 42\n    v5 = select v4, v1, v2\n    return v5\n}\n",
+  "adapted_source": "function %f(i32, i8, i8) -> i8 fast {\nblock0(v0: i32, v1: i8, v2: i8):\n    v3 = iconst.i32 42\n    v4 = icmp eq v0, v3  ; v3 = 42\n    v5 = select v4, v1, v2\n    return v5\n}\n",
+  "stock_metadata": {
+    "alignment": 4,
+    "boundary": "stock-compile-subtest",
+    "exception_call_sites": "[]",
+    "exception_table_bytes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "index": 10,
+    "jit_allocation_performed": false,
+    "name": "%f",
+    "relocations": [],
+    "stack_maps": "[]",
+    "traps": [],
+    "unwind": "Some(SystemV(UnwindInfo { instructions: [], len: 12 }))"
+  },
+  "lean_metadata": {
+    "unwind_disabled": true,
+    "stack_maps": [],
+    "name": "f",
+    "exception_metadata_comparison_supported": false,
+    "alignment": 4
+  },
+  "stock_code_hex": "1fa800712000829ac0035fd6",
+  "lean_code_hex": "1fa80071e5179f9a1fa800712000829ac0035fd6",
+  "stock_disassembly": [
+    "0000: 1fa80071  cmp w0, #0x2a",
+    "0004: 2000829a  csel x0, x1, x2, eq",
+    "0008: c0035fd6  ret"
+  ],
+  "lean_disassembly": [
+    "0000: 1fa80071  cmp w0, #0x2a",
+    "0004: e5179f9a  cset x5, eq",
+    "0008: 1fa80071  cmp w0, #0x2a",
+    "000c: 2000829a  csel x0, x1, x2, eq",
+    "0010: c0035fd6  ret"
+  ],
+  "artifact_paths": {
+    "stock": "files/isa/aarch64/condops-with-csdb/stock/variant-0/10.json",
+    "lean": "files/isa/aarch64/condops-with-csdb/variant-0/compilation-10/lean/dump/f.bin"
+  }
+}
