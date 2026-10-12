@@ -167,10 +167,34 @@ unchanged not-runnable cases, encoder1292/0 and E2E1150/0 pass; every E2E
 identity/stage matches the preceding checkpoint. See
 `docs/research/stock-source-alias-records-audit.json`.
 
-Next derive that all final alias keys are mapped source or reserved payload keys,
-then combine source rank and reserved endpoints with the existing finite-key
-chase proof. This must prove the actual size+1 resolver reaches an unaliased
-endpoint for every key. Then establish execution values, then noninterference and full
+PR #155 landed as `d0b9ffc`. StockAliasDomain derives that every installed
+final alias key is either an actual source mapping or an initially reserved
+payload. Unknown keys retain their initial empty entries through constructors,
+binding, scans, branches, nodes and traversal. Actual source and try-call
+payload aliases inhabit both alternatives.
+
+StockAliasTerminal combines this domain with the actual source provenance rank
+and reserved endpoints. Source-key rank is2+the legacy provenance count; all
+other keys have rank1. Source edges decrease rank when their targets are aliased;
+payloads target reserved returns that are never aliased. The existing generic
+finite-key chase theorem then proves that the exact final array resolver with
+size+1 fuel reaches an unaliased endpoint for every key. Resolution is
+idempotent and constant along every final alias edge. Already-held values
+transport through arbitrary source/reserved chains; producing their values by
+execution remains separate. The real194→193→192→195 chain inhabits all results.
+Eight standard-only MCP roots and93 normal audits pass, preserving85 previous
+sets including seven final theorem roots. Full1438/crates1171, runtime4672/0/0
+with seven unchanged not-runnable cases, encoder1292/0 and E2E1150/0 pass; all
+E2E identities/stages match the preceding checkpoint. See
+`docs/research/stock-alias-terminal-audit.json`.
+
+Next prove source-available final paths and fresh-write noninterference, then
+reuse existing rule-family semantics to establish execution values. Use the
+legacy source-availability guards in the internal live-value invariant: demand
+alone includes later definitions, whose old source-frame values may be stale
+across loops. Preserve existing helper interfaces and baseline input conditions;
+do not replace this obligation with stronger caller value assumptions.
+Then establish execution values, then noninterference and full
 value simulation/completeness. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
