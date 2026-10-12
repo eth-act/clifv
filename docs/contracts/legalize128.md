@@ -71,8 +71,9 @@ in `i128-load-store.clif`, agreed by the legalised form).
 
 ## The end-to-end theorem
 
-Axioms of every theorem below: `propext`, `Classical.choice`, `Quot.sound` and `_native`
-`bv_decide` certificates only.
+Axioms of every theorem below: `propext`, `Classical.choice`, `Quot.sound` and at most the
+backend's `_native` `bv_decide` certificates (since T6 only `movK_ident`'s six; the
+`FV/Opt/Proof/Legal*` proofs use none).
 
 ```lean
 theorem E2E.backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
@@ -205,9 +206,10 @@ Modules: `LegalShift*` (variable shifts/rotates: 7-bit amounts; each module < 20
 `LegalMem` (split load/store), `LegalExt` (ABI expansion `ExpRel`, contracts), `LegalPlan`
 (`pure_step`), `LegalSim` (`enter_sim`, statements, terminators, `step_sim`, `sim_run`,
 `check_refines`), `LegalRust` (the contracts for `Clif.Rust.env`), `FV/E2E/Legal.lean`.
-`LegalArith`/`LegalShift` call `bv_decide -enums`: the enum pass realizes
+Before T6, `LegalArith`/`LegalShift` called `bv_decide -enums`: the enum pass realizes
 `Clif.Ty.enumToBitVec` in the calling module, as `FV.Backend.Proof.IselCmpExt` does, and two
-modules realizing the same constant cannot be imported together.
+modules realizing the same constant cannot be imported together. Their kernel-checked T6 proofs
+realize no such declaration (`LegalArith.lean` header).
 
 ## `try_call` and `call_indirect` (agent/last-unverified, 2026-10-01)
 

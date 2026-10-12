@@ -1268,8 +1268,9 @@ slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_tru
 `blrChainB_true`, `zChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
 `backend_correct_program_returned`. Axioms: standard plus the `_native` axioms of `names`,
 `okB_true`, `entryFactsB_true`, `callChainB_true`, `slotChainB_true`, `vtChainB_true`,
-`gotChainB_true`, `oneCopyB_true`, `sigChainB_true`, `blrChainB_true`, `zChainB_true` (and the existing
-`bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
+`gotChainB_true`, `oneCopyB_true`, `sigChainB_true`, `blrChainB_true`, `zChainB_true` (and the
+backend proofs' fixed ones: then `bv_decide`/`native_decide`, since T6 only `movK_ident`'s six
+`bv_decide` certificates). The witness found the former `raCall`
 (the return address of every call outside the code of **every** function of `P`, including the
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
 the caller's call sites (`LinkSys.ProgSite`).
@@ -1631,8 +1632,8 @@ functions it is one file, beyond that `NAME/Input.lean`, one module per slice
 auxiliary definition, then an axiom `…_native.native_decide.ax_1_1`) runs a definition natively
 when its module's compiled code is loaded, else in the IR interpreter. `precompileModules` on
 the crate library would load the shared library of the whole `FV` library, which cannot be built
-(some `bv_decide` proof modules of `FV.Opt.Proof` produce C files of up to 3.5 GB, more than
-Clang accepts), and Lake's per-module shared libraries are not linked against their imports
+(the `bv_decide` proof modules of `FV.Opt.Proof` produced C files of up to 3.5 GB, more than
+Clang accepts; T6 replaced their `bv_decide` by `kbv`, the C sizes were not re-measured), and Lake's per-module shared libraries are not linked against their imports
 on Linux, so loading `FV.E2E.LinkCheck`'s alone fails. So the proofs live in a separate Lake
 package, `crate-proofs/` (`require fv from ".."`), whose custom target `fvcheck` links the
 object files of the checker modules (`checkRoots`: `FV.E2E.StackBound`, which imports `FV.E2E.LinkCheck`, and `FV.E2E.BinCheck`) and
@@ -3212,9 +3213,10 @@ extrt and runtests (445 files): no function rejected.
 
 ## Trusted (not proven)
 
-* Lean kernel; the compiled LRAT checks of `movK_ident` (backend) and of the optimizer rule
-  proofs; Lean's and the C compiler that run the compiler. Every other fixed backend proof is
-  kernel-checked (T6).
+* Lean kernel; the compiled LRAT checks of `movK_ident`'s six `bv_decide` certificates (backend);
+  Lean's and the C compiler that run the compiler. Every other fixed backend proof and every
+  optimizer rule proof (`kbv` and hand proofs; `simplifyRulesCorrect_proven`: `propext`,
+  `Classical.choice`, `Quot.sound` only) is kernel-checked (T6).
 * **Arm model fidelity** (`FV/Arm`, ASL-derived, co-simulated against qemu) and **`Clif.run`
   fidelity** (checked against Cranelift's interpreter and native runs), including the choice
   that CLIF slot addresses are unspecified (`ClifEntry`).

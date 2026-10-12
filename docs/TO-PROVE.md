@@ -66,7 +66,8 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 
 - the frontend: rustc + rustc_codegen_cranelift produce the CLIF; the theorems are relative to it;
 - Lean's kernel and the compiled LRAT checks in the remaining **fixed** bit-vector proofs
-  (proven once, not per program; T6's encoder proofs use only standard axioms);
+  (proven once, not per program; after T6 only `movK_ident`'s six `bv_decide` certificates; the
+  encoder and optimizer rule proofs use only standard axioms);
 - the Arm model and `Clif.run` as specifications (fidelity is tested, not proven: T4, T5);
 - the contracts of code outside the program (std, musl, cg_clif-fallback functions), the OS loader.
 
@@ -587,8 +588,8 @@ author's estimate, not measured), **Risk**.
       of `binary_correct_of_checks_acyclic` + `codeMapB` + `HooksSim` + `GotOk I file` (decidable,
       `gotB`) + `OutsideAvoids (GotSlot I file) …`, no per-state hypothesis; conclusion
       `ExecRefines … (step I B file) r (RelocAt I) (Clif.runLoop …)`. Axioms: `propext`,
-      `Classical.choice`, `Quot.sound` and the project's existing `bv_decide`/`native_decide`
-      certificates. Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
+      `Classical.choice`, `Quot.sound` and the project's fixed-proof certificates (since T6 only
+      `movK_ident`'s six `bv_decide` ones). Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
       (`a_arith`'s `wrapping_add`; no GOT pair, `noGotPair`).
   - **Done: aliases** (item 6; 2026-10-06, `agent/exec-alias`; e2e.md "The executable's own words",
     "Aliases"): `siteAt` returns the kind of site (`Site`, `siteOf`: real word, call of the
@@ -710,7 +711,7 @@ Large, low priority.
 | T3 | std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | needs S11, S12, inline asm |
 | T4 | Arm model fidelity (ASL-derived, qemu co-simulation) | testing, not proof |
 | T5 | `Clif.run` fidelity (Cranelift interpreter + native runs) | testing, not proof |
-| T6 | `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | replace with kernel-checked reflection where feasible; per-program uses disappear with L1–L4. Progress (`agent/kernel-trust-t6`): every fixed `native_decide`, the encoder's `bv_decide` and the backend bit-vector lemmas' `bv_decide` replaced by kernel proofs (symbolic `BitVec` lemmas; leaf-wise `decide +kernel` over generated tables and untrusted literal term sets, `TermSetGen`); `compileExe_correct`, `backend_correct_final`, `binary_correct_exec_proven`: 759 → 6 `bv_decide` (only `movK_ident`, coordinated in #42) and 68 → 0 `native_decide` axioms. Left: `movK_ident` and the optimizer rule proofs (`Opt.Proof`, 934 lemmas with `bv_decide`); Lean 4.34's kernel-mode LRAT reflection failed even on a 15-node probe, so these need symbolic proofs |
+| T6 | `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | replace with kernel-checked reflection where feasible; per-program uses disappear with L1–L4. Progress (`agent/kernel-trust-t6`): every fixed `native_decide`, the encoder's `bv_decide` and the backend bit-vector lemmas' `bv_decide` replaced by kernel proofs (symbolic `BitVec` lemmas; leaf-wise `decide +kernel` over generated tables and untrusted literal term sets, `TermSetGen`); `compileExe_correct`, `backend_correct_final`, `binary_correct_exec_proven`: 759 → 6 `bv_decide` (only `movK_ident`, coordinated in #42) and 68 → 0 `native_decide` axioms. Optimizer rule proofs (`Opt.Proof`, formerly 934 lemmas with `bv_decide`): **done**, kernel-checked by the tactic `kbv` (`FV/Opt/Proof/KernelBV.lean`: restates the goal over its bit-vector context, then kernel-checked methods under heartbeat budgets, `kbv_guard` 20 000–2 000 000 `maxHeartbeats` units per method and 4 000 000 per goal: `bv_normalize`, bit extensionality + `decide`, `if`/`bif` case splits, `toNat`/`toInt` + `omega`, minterms + `grind`, constant-shift case splits, sign-mask lemmas, per-index bit evaluation; the shift and spaceship modules first try `kbv_amt`/`kbv_cmp`, `RuleInfraShiftAmt.lean`: shift amounts as `Nat` arithmetic, rotations as `rotateLeft`, comparison results by case split) and hand proofs (bswap/popcount, pow2 `sdiv`/`srem`, `RuleImm`'s immediate specs); no `bv_decide`, `native_decide` or `ofReduceBool` under `FV/Opt`; `simplifyRulesCorrect_proven` and the rule theorems (`RuleAll`): `propext`, `Classical.choice`, `Quot.sound` only; `backend_correct_opt_proven`: those + `movK_ident`'s six. Left: `movK_ident`; Lean 4.34's kernel-mode LRAT reflection failed even on a 15-node probe, so it needs a symbolic proof |
 | T7 | `normalize.py`, `clif-data-export` (frontend-side tools) | part of the trusted frontend today |
 
 ## 6. Not needed for the goal
@@ -725,7 +726,13 @@ Large, low priority.
   `/home/kev/work/clifv-wt/<name>`, branch `agent/<name>`. Absolute paths under the worktree. Never push,
   merge, rebase, `git stash`, or pattern-kill processes. Temp files in `/tmp/<name>_*`.
 - Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; full FV build
-  `LEAN_NUM_THREADS=2 FV_MEMCAP=22G`; check the log for "Build completed successfully".
+  `LEAN_NUM_THREADS=2 FV_MEMCAP=22G`; check the log for "Build completed successfully". The
+  `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to 16.5 GB (`RuleBitops7`; `RuleArith`
+  14 GB, a dozen others 7–11 GB) and take up to 34 min each (all 317 modules: 2 h 4 min, three at a time); `lake build` (no `-j` option) runs many
+  at once and exceeds 22G, so first build the `FV.Opt.Proof` modules (317 with their imports) at most
+  three at a time in import order (`FV_MEMCAP=13G LEAN_NUM_THREADS=2 scripts/memcap.sh lake build
+  FV.Opt.Proof.<Module>`, a module killed at 13G again alone at 22G), then the full target, which
+  replays them (docs/contracts/midend.md, build note).
 - No `sorry`, `admit`, hand-written `axiom`, `trace_state`. Allowed axioms: `propext`, `Classical.choice`,
   `Quot.sound`, and generated `*._native.bv_decide.ax_*` / `*._native.native_decide.ax_*` in fixed proofs.
 - Every new top-level theorem gets a non-vacuity witness (they have caught six unsatisfiable premises).
@@ -797,5 +804,5 @@ label**; list the free ones with
 | T3 | [#39](https://github.com/eth-act/clifv/issues/39) Trusted base: std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | open |
 | T4 | [#40](https://github.com/eth-act/clifv/issues/40) Trusted base: Arm model fidelity (ASL-derived, qemu co-simulation) | open |
 | T5 | [#41](https://github.com/eth-act/clifv/issues/41) Trusted base: `Clif.run` fidelity (Cranelift interpreter + native runs) | open |
-| T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | in progress (`agent/kernel-trust-t6`): backend chain free of `native_decide` and of `bv_decide` but `movK_ident`; optimizer rules left (§5) |
+| T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | in progress (`agent/kernel-trust-t6`): backend chain free of `native_decide` and of `bv_decide` but `movK_ident`; optimizer rule proofs done (`kbv`, standard axioms only); left: `movK_ident`'s six `bv_decide` certificates (§5) |
 | T7 | [#43](https://github.com/eth-act/clifv/issues/43) Trusted base: `normalize.py`, `clif-data-export` (frontend-side tools) | open |

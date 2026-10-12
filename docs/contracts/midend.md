@@ -299,8 +299,9 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
 2. **Per-rule `simplify` correctness vs `Clif.Sem`** (PLAN: "prove each one before enabling
    it"). For each rule of the E closure (`Isle.Opt.Closure`, 1357 rules), the statement is:
    for all bindings satisfying the LHS pattern and if-lets, the RHS denotes the same value as
-   the LHS, per type `i8`..`i64`; the proofs split on the type and close with `bv_decide`, like
-   the isel proofs (`docs/contracts/backend-proof.md`), with the Lean transcriptions of the
+   the LHS, per type `i8`..`i64`; the proofs split on the type and close with `kbv`
+   (kernel-checked bit-vector decision, `FV/Opt/Proof/KernelBV.lean`; until T6 `bv_decide`, like
+   the isel proofs, `docs/contracts/backend-proof.md`), with the Lean transcriptions of the
    extern helpers (`FV/Isle/Opt/Helpers.lean`) specified by lemmas first. Then an
    *interpreter soundness* lemma for `Isle.Interp.runMultiTerm` (a returned value comes from a
    rule whose LHS matched with some bindings and whose RHS evaluated to it) lifts the per-rule
@@ -360,8 +361,8 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
 ## Pass proofs (2026-09-28, MidPassProofs)
 
 Proven (no `sorry`, no hand-written axioms; `#print axioms` = `propext`, `Classical.choice`,
-`Quot.sound`, plus for `E2E.backend_correct_opt` the `bv_decide`/`native_decide` trust axioms
-inherited from `backend_correct_final`):
+`Quot.sound`, plus for `E2E.backend_correct_opt` `movK_ident`'s six `_native.bv_decide`
+certificates inherited from `backend_correct_final` (T6)):
 
 | Theorem | File | Statement |
 | --- | --- | --- |
@@ -384,8 +385,8 @@ configuration given `Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn`; that hy
 proven for sound rule sets (`Opt.simplifyPassSim`) and hence for the proven rule sets
 (`simplifyPassSim_proven`), which gives `optimize_sim_proven` and
 `E2E.backend_correct_opt_proven`. `#print axioms E2E.backend_correct_opt_proven` is exactly
-the axiom set of `backend_correct_opt` (`propext`, `Classical.choice`, `Quot.sound` and the
-backend's `bv_decide` trust axioms); `simpOk_sim`, `simplify_facts`, `simplifyPassSim`,
+the axiom set of `backend_correct_opt` (`propext`, `Classical.choice`, `Quot.sound` and
+`movK_ident`'s six `_native.bv_decide` certificates; the rule proofs add none, T6); `simpOk_sim`, `simplify_facts`, `simplifyPassSim`,
 `optimize_sim_proven`: `propext`, `Classical.choice`, `Quot.sound`.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
@@ -473,9 +474,9 @@ environment), `TrapsExplicit` of the optimised program's run from `optEntry` (th
 simulation says nothing about the optimised run once the source gets stuck, so it is not
 derived from the source's), `FormsCovered` of the compiled optimised code (decided per function).
 
-Build note: `FV/Opt/Proof/RuleImm.lean` imports `FV.Backend.Proof.IselCmpExt` so that both
-`bv_decide` users share one generated `Clif.Ty.enumToBitVec` (otherwise no module can import the
-rule proofs and the backend together).
+Build note: `FV/Opt/Proof/RuleImm.lean` imports `FV.Backend.Proof.IselCmpExt`; while both
+called `bv_decide` (before T6) this let them share one generated `Clif.Ty.enumToBitVec` (otherwise
+no module could import the rule proofs and the backend together).
 
 Design decisions (approved by the integrator):
 
@@ -500,10 +501,26 @@ allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,Inte
 RuleData,RuleNode,RuleEmbed,RuleTactic,RuleImm,RuleCtor,RuleSkel,RuleAuto,RuleArith,RuleCprop,
 RuleAll}.lean`; generator
 `FVTest/Opt/Proof/GenData.lean` (`lake env lean --run FVTest/Opt/Proof/GenData.lean >
-FV/Opt/Proof/RuleData.lean`, 33 s build). No `sorry`; axioms of every theorem below:
-`propext`, `Classical.choice`, `Quot.sound`, plus the `*._native.bv_decide.ax_*` certificates of
-the `bv_decide` calls (as in the backend proofs); `RuleAll` uses no `native_decide`. Full build of
+FV/Opt/Proof/RuleData.lean`, 33 s build). No `sorry`; axioms of every theorem below
+(`RuleAll.simplifyRulesCorrect_proven` and the rule theorems): `propext`, `Classical.choice`,
+`Quot.sound` only. No `bv_decide`, `native_decide` or `Lean.ofReduceBool` under `FV/Opt` (T6;
+before, the `*._native.bv_decide.ax_*` certificates of the `bv_decide` calls). Full build of
 the rule modules: see the build note under "Proven rules" (`RuleArith.lean` dominates).
+
+**`kbv`** (T6, `FV/Opt/Proof/KernelBV.lean`): kernel-checked decision for the concrete-width
+bit-vector goals of the rule proofs, in place of `bv_decide`. It restates the goal over its
+bit-vector context (bit-vector/`Bool`/`Nat`/`Int` locals and facts) and tries, under heartbeat
+budgets (`kbv_guard`: 20 000 to 2 000 000 `maxHeartbeats` units per method, 4 000 000 for the
+whole search of a goal), kernel-checked methods: `bv_normalize`
+(`bv_decide`'s `simp` preprocessing), bit extensionality + a Boolean tautology over the bits
+(`decide`), case splits on `if`/`bif` conditions, `toNat`/`toInt` arithmetic with `omega`,
+minterm decomposition + `grind`, case splits on constant shift amounts, sign-mask lemmas
+(`sshiftRight` by `w-1`, `(x ||| -x).msb`), per-index bit evaluation. The shift and spaceship
+modules (`RuleShifts1`..`5`, `RuleSpaceship`) first try a targeted method on each goal
+(`kbv_amt`/`kbv_cmp`, `FV/Opt/Proof/RuleInfraShiftAmt.lean`, through a module-`local`
+`elab_rules` for `kbv`): shift amounts as `Nat` arithmetic, rotations as `rotateLeft`, comparison
+results by case split. Some lemmas are proved by hand instead (bswap/popcount, pow2
+`sdiv`/`srem`, the immediate specs of `RuleImm.lean`).
 
 **Interface** (`Sem.lean`, owned by MidPassProofs, copied byte-identical): `Opt.evalNode`,
 `Opt.Valuation`, `GraphModel` (A1 nodes, A2 types), `MakeSound` (A3), `SimplifySound`,
@@ -588,7 +605,7 @@ imports, so the older modules did not rebuild.
   an extend of an `i64` constant). The old templates failed at the finish (`ac_rfl` recursion
   depth, `bv_decide` after the `Val` split, symbolic products). `rule_bits_tv` (no `Val` split,
   impossible `i128` cases by `contradiction`, `BitVec.neg_mul`/`mul_neg`/`neg_neg` first, then
-  `bv_decide`), `rule_auto_tv`; `imm64Neg_ofInt` (`imm64_neg` of any immediate, for the sign-cast
+  `kbv`), `rule_auto_tv`; `imm64Neg_ofInt` (`imm64_neg` of any immediate, for the sign-cast
   immediate of `cprop.isle` 269), `asI64_asU64_cast`, `ofInt_asI64_low`. Proves `arithmetic.isle`
   50, 333, 334, 343, 349, 587, 590, 593, 596, 603 (`RuleArith7.lean`) and `cprop.isle` 269
   (`RuleCprop4.lean`).
@@ -602,7 +619,7 @@ imports, so the older modules did not rebuild.
   match `simp` does not reduce, copied into every later state. Now `rule_lhs_g` opens the guards,
   `↓binaryOfIdx?_iconcat` removes the stuck match, `evalNode_iconcat_i64` evaluates the made
   `iconcat`, `cat128_*` (`select (eq ah bh) (icmp cc_lo al bl) (icmp cc ah bh) = icmp cc (ah ++ al)
-  (bh ++ bl)`, by `bv_decide` on 64-bit halves) closes the 128-bit comparisons, and
+  (bh ++ bl)`, by `cat_bits` on the 64-bit halves; until T6 `bv_decide`) closes the 128-bit comparisons, and
   `intcc_complement`/`icmp_eq_uext_icmp_zero`/… close the complemented comparisons without
   splitting the compared type (`rule_pre_k`, `fin_icmp_not_k`, `fin_bits_k`, `fin_sel_bmask_k`,
   `rule_auto_i128cmp`). Lean elaborates the theorems of a file in parallel whatever
@@ -613,7 +630,7 @@ imports, so the older modules did not rebuild.
   (`imm64PowerOfTwo (imm64OfBits b) = some e ↔ ∃ k < min w 63, b = twoPow w k ∧ e = k`), the
   `i64_is_*_power_of_two`, `ctz`, `u64_ilog2`, `u64_shl`/`i64_shl` specs, division by `±2^k` as
   shifts and masks (`pow2_sdiv_twoPow`, `pow2_umod_twoPow`, `pow2_srem_*`), per-rule sequence lemmas
-  with the exponent as a `BitVec` (`bv_decide` per width), templates `pow2_auto_simp`,
+  with the exponent as a `BitVec` (per width; until T6 `bv_decide`), templates `pow2_auto_simp`,
   `pow2_auto_div`. Proves `arithmetic.isle` 181 (`RuleArith8.lean`) and the skeleton rules
   `arithmetic.isle` 83, 87, 102, 135 and `skeleton.isle` 80 (`RuleSkeleton2.lean`), 142
   (`RuleSkeleton4.lean`, 6 min / 6.3G alone).
@@ -673,12 +690,20 @@ decoder that avoids the earlier graph-matching branch explosion. R0 proved 126/1
 `FV/Opt/Rules.lean` (or anything under `RuleBase`) rebuilds every rule module; the allow-list lives
 in `FV/Opt/RuleAllow.lean`, which no rule module imports, so extending it rebuilds only
 `Optimize`, `RuleAll` and their dependents. Build the rule modules one at a time (`lake build
-FV.Opt.Proof.RuleArith`, …, `RuleSelects6`; `LEAN_NUM_THREADS=2`, 16G cap; 2026-10-01: `RuleArith`
+FV.Opt.Proof.RuleArith`, …, `RuleSelects6`; `LEAN_NUM_THREADS=2`, 16G cap; with `bv_decide`, 2026-10-01: `RuleArith`
 14 min / 15.4G, `RuleBitops1..7` 1–11 min / 3–11.7G, `RuleCprop` 3 min / 7.4G, icmp/selects
 modules 0.3–5 min / ≤5.2G; 2026-10-07, R0 modules: `RuleCprop3` 5 min / 11.4G, `RuleSkeleton3`
 13.5 min / 7.6G, `RuleSkeleton4` 6 min / 6.6G, `RuleSkeleton2` 4.3 min / 3.6G, `RuleIcmp12`/`13`
 3 min / 5.3G, the others < 2.5 min / ≤ 4.6G), then `RuleAll`/`FV.E2E.OptProven` (parallel builds of the rule modules
-OOM). Check the log for "Build completed successfully": `memcap.sh` under `/usr/bin/time` can
+OOM). Since T6 the `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) are heavier, and `lake build`
+(it has no `-j` option) runs many of them at once, which exceeds a 22G `scripts/memcap.sh` cap.
+Build the `FV.Opt.Proof` modules (317 with their imports) a few at a time in import order first
+(`FV_MEMCAP=13G LEAN_NUM_THREADS=2 scripts/memcap.sh lake build FV.Opt.Proof.<Module>` per module,
+at most three at once, a module killed at 13G again alone at 22G); the full target build then
+replays them. Measured 2026-10-12 (`maxrss`, three at a time): `RuleBitops7` 16.5 GB / 4 min
+(alone at 22G), `RuleArith` 14.0 GB / 6 min, `RuleBitops2`..`5` 9–11 GB / 5–6 min, `RuleExtends2`
+10 GB / 14 min, `RuleShifts2`/`3` 9.7/10 GB / 8/18 min, `RuleIcmp2` 22 min, `RuleSkeleton3`
+18 min, `RuleSkeleton5` 34 min, the others less; all 317 in 2 h 4 min. Check the log for "Build completed successfully": `memcap.sh` under `/usr/bin/time` can
 report rc=0 for an OOM-killed build. `RuleAll` itself: 16 s, 3.6G (`LEAN_NUM_THREADS=1`; kernel
 check of the `allowed_ok%` term, ~0.3 s to build it). Its previous form (`rfl` on the
 `List.filter` of the 1281 `simplify` rules by `provenSimplifyRules.contains`, elaborated by
@@ -688,7 +713,7 @@ Helper specifications (`RuleImm.lean`, simp set `opt_imm`): `imm64_add/sub/mul/a
 umin/umax/smin/smax/icmp/masked/clz/ctz/shl/ushr` at every non-`i128` type, in the normal form
 `Rust.imm64X (ofClif t) (imm64OfBits b) … = .ok (imm64OfBits (<BitVec op> b …))` (proof: `imm_pre`
 unfolds the helper, `imm_cases` splits the widths, `imm_solve` turns `Int` arithmetic into
-`BitVec 64` and runs `bv_decide`; `clz`/`ctz` bridge `Nat.log2`/the Rust loop to `BitVec.clz`/`ctz`).
+`BitVec 64` and runs `kbv`, until T6 `bv_decide`; some specs are proved by hand; `clz`/`ctz` bridge `Nat.log2`/the Rust loop to `BitVec.clz`/`ctz`).
 
 **Skeleton rules** (SkeletonProof, 2026-10-01). *Framework fix:* `SkelRuleOk` could not be met:
 the left-hand side's node facts hold in the start state, but `SkelRefines` is checked in later
@@ -1006,10 +1031,10 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
 - `rule_finish`: a matched class (`Valuation.Le` chain) or a made node (`GraphOk.make_val`,
   `opt_node` operand by operand, made operands recursively), then `rule_bits`: `val_congr`
   (not `simp`: `BitVec 8` vs `BitVec Ty.i8.width`), `ac_rfl` for AC identities (64-bit `*`
-  commutation times out in `bv_decide`), else `opt_cases_ty` (types and `IntCC`s),
+  commutation timed out in `bv_decide`), else `opt_cases_ty` (types and `IntCC`s),
   `opt_widths` (locals to literal widths), `sem_simp` (`bif` forms of `select`/`bmask`/`icmp`/
   min/max — an `if` would carry a stale `Decidable` instance; shifts as `<<< (y &&& (w-1))`,
-  `ishl_mask` etc.), `bv_decide`. The context is never `simp_all`ed in `rule_bits`.
+  `ishl_mask` etc.), `kbv` (until T6 `bv_decide` with a 120 s SAT timeout). The context is never `simp_all`ed in `rule_bits`.
 - Embedding lemmas added: `evalNode` of `select`/`bitselect`/`bmask`/`uextend`/`sextend`/
   `ireduce`; `ofInst` inversion of `icmp`/ternary; type predicates on `ofClif t` and forward
   `extractFn` lemmas (internal-constructor rule selection); `CTy.ofName?` matches `I8`..`I128`
@@ -1018,7 +1043,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
 **Cost** (32 cores, `lake env lean` on one file): `cprop` 68 roots 3 m 18 s wall / 62 CPU-min;
 `arithmetic` 258 roots 21 m wall. A passing rule costs 5-30 s (LHS unfolding dominates:
 ~1 s per `simp_all` pass, 5-10 passes for two-level patterns); failing rules cost most of the CPU
-(`bv_decide` timeouts, heartbeat limit). Use `maxHeartbeats 4000000` per declaration.
+(then `bv_decide` timeouts, heartbeat limit). Use `maxHeartbeats 4000000` per declaration.
 
 **Fan-out recipe** (one agent per opts file; ids come from `Isle.Opt.Closure.rules`, roots of
 term 177 = `simplify`):
@@ -1029,8 +1054,8 @@ term 177 = `simplify`):
 2. For the failures, debug one rule with the phases spelled out (`rule_intro r; rule_no_iflets;
    rule_lhs hG; all_goals rule_rhs; trace_state`): a stuck `hev` names the missing evaluation
    lemma (helper spec → `RuleImm.lean` in the normal form above; extractor/type predicate →
-   `RuleEmbed.lean`; `evalNode` form → `RuleNode.lean`); a failing `bv_decide` names the
-   missing `sem_simp` normal form.
+   `RuleEmbed.lean`; `evalNode` form → `RuleNode.lean`); the goal a failing `kbv` (formerly
+   `bv_decide`) reports names the missing `sem_simp` normal form.
 3. Append the proven ids to `Opt.provenSimplifyRules` (`FV/Opt/RuleAllow.lean`, rule ids from
    `Closure.rules`) and import the new file in `RuleAll.lean`; nothing else in `RuleAll.lean`
    names rules (`allowed_ok%` fails with "`rule_X` is allow-listed but there is no theorem

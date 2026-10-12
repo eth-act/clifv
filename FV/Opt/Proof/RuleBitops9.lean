@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.KernelBV
 
 /-!
 # `opts/bitops.isle:79`: an OR constant absorbs an AND mask
@@ -34,7 +35,7 @@ theorem masked_or_guard {t : Ty} (ht : t ≠ .i128) (y z : BitVec t.width) :
     natCast_beq_natCast, toNat_beq_toNat]
   imm_cases t y z <;>
     simp only [Int.reducePow, Int.reduceSub, BitVec.ofInt_ofNat, BitVec.setWidth_eq] <;>
-    bv_decide
+    kbv
 
 set_option maxHeartbeats 4000000 in
 /-- `bitops.isle:79`, preserving the original match and if-let contract. -/
