@@ -77,8 +77,10 @@ one() {
       echo "lean-encode-failed" > "$WORK/$b.status"; return 0
     fi
   else
-    .lake/build/bin/lean-backend "$f" "$WORK/$b.s" --regalloc "$RA" 2>/dev/null
-    if ! .lake/build/bin/lean-backend "$f" "$WORK/$b.o" --regalloc "$RA" 2> "$WORK/$b.err"; then
+    if ! "${LEAN_BACKEND:-.lake/build/bin/lean-backend}" "$f" "$WORK/$b.s" --regalloc "$RA" 2> "$WORK/$b.err"; then
+      echo "lean-assembly-failed" > "$WORK/$b.status"; return 0
+    fi
+    if ! "${LEAN_BACKEND:-.lake/build/bin/lean-backend}" "$f" "$WORK/$b.o" --regalloc "$RA" 2> "$WORK/$b.err"; then
       echo "lean-encode-failed" > "$WORK/$b.status"; return 0
     fi
   fi
