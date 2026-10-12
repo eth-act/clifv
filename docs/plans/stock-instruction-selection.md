@@ -205,9 +205,29 @@ with seven unchanged not-runnable cases, encoder1292/0 and E2E1150/0 pass; all
 E2E identities/stages match the preceding checkpoint. See
 `docs/research/stock-alias-available-audit.json`.
 
-Next establish allocation-interval disjointness across actual retained records,
-then use available fresh origins to exclude writes by a current definition that
-is not yet available. Reuse existing rule-family semantics for execution values. Use the
+PR #157 landed as `39079c2`. StockRecordIntervals bounds and orders every
+retained body-record allocation interval across actual branch/core/node/reverse
+traversal execution. Distinct records have disjoint intervals. Combining the
+available fresh-origin theorem with the original source boundary excludes the
+current definition as a producer, so each available value's final resolved
+register lies below or above the current allocation interval. The existing
+machine frame theorem then proves fresh-only code for the actual record
+preserves that register. No caller interval/noninterference certificate is
+introduced; fragment def bounds remain existing rule-family obligations.
+A real two-live-constant run emits MOVZ9 into194 while the earlier source value
+resolves to195 and remains7, exercising the upper-interval branch with actual
+ispec execution and nonempty emitted code.
+Five standard-only MCP roots and106 normal audits pass, preserving101 previous
+sets including seven final theorem roots. Full1440/crates1171, runtime4672/0/0
+with seven unchanged not-runnable cases, encoder1292/0 and E2E1150/0 pass; all
+E2E identities/stages match the preceding checkpoint. See
+`docs/research/stock-record-intervals-audit.json`.
+
+Next connect source-availability-guarded value transfer to actual selected
+rule-family semantics, starting with the saved constant proof. Preserve existing
+helper statements while deriving final resolver and noninterference conditions
+from the run; then extend to reserved writes, memory/traps, simulation/completeness
+and production cutover. Use the
 legacy source-availability guards in the internal live-value invariant: demand
 alone includes later definitions, whose old source-frame values may be stale
 across loops. Preserve existing helper interfaces and baseline input conditions;

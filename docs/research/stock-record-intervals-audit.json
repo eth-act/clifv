@@ -1,0 +1,618 @@
+{
+  "base": "39079c292c53f00543748935414a1b7aee6d8cc1",
+  "updated_utc": "2026-10-12T20:07:05.439478+00:00",
+  "scope": "Bound/order allocation intervals of every actual retained record across scans/branch/core/original and critical-edge nodes/reverse traversal. Distinct records have disjoint intervals. Available fresh origins exclude the current source definition, deriving that source-available values resolve outside the current record allocation interval. Machine frame theorem preserves those registers for fresh-only code with existing rule-family def bounds. No new interval/noninterference input certificate, accepted-scope change or compiler change.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockRecordIntervals.lean": "31be120c50d41abddb5cc3d33d30b73d4c0f4142311cb81d5a7acaa0d6a5a7b9"
+  },
+  "mcp": {
+    "stock_lower_record_intervals": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "stock_lower_record_intervals_disjoint": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "stock_lower_available_alias_outside_record": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "stock_lower_available_fresh_frame": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "stock_lower_record_intervals_witness": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  },
+  "axiom_roots": {
+    "Backend.Stock.Proof.Coverage.statement_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.branch_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.emission_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.statement_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.branch_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.emission_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.bindResults_noOpportunity": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.bindResults_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.retTrap_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.retTrap_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.emission_retTrap_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.emission_retTrap_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_retTrap_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_retTrap_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.buildCtx_noOpportunity": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.buildCtx_noOpportunity_witness": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_source_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_source_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scanBlock_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scanBlock_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.built_scan_slots": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.built_scan_slots_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.built_scanBlock_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.built_scanBlock_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.branchArgs_noOpportunity": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.branchArgs_noOpportunity_witness": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.blockCore_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.blockCore_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.node_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.node_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scanBlock_records_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scanBlock_records_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.blockCore_records_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.blockCore_records_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_records_noOpportunity": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_records_noOpportunity_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_noOpportunistic": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_noOpportunistic_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_record_noOpportunistic": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_record_noOpportunistic_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_undefinedSource_terminal": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_undefinedSource_terminal_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_undefinedSource_value": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_undefinedSource_value_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.allocateRequests_returnsPayloadsDisjoint": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.allocateRequests_returnsPayloadsDisjoint_witness": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.buildCtx_returnsPayloadsDisjoint": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.buildCtx_returnsPayloadsDisjoint_witness": [
+      "propext",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_terminal": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_terminal_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_resolves": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_resolves_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_value": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_value_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_final_total": {
+      "count": 803,
+      "sorted_axioms_sha256": "7b73dc8531ed895171da5f31e74d7035b770ff2ffe89e5291e8ab25f970eecb3",
+      "unexpected_axioms": []
+    },
+    "E2E.backend_correct_final_total_emit_input": {
+      "count": 853,
+      "sorted_axioms_sha256": "f0d9e748fc0049607d5c3bb8aa0f82a2bc80c79090f0ea2dac4e18608fd43212",
+      "unexpected_axioms": []
+    },
+    "E2E.backend_correct_final_total_relaxed": {
+      "count": 803,
+      "sorted_axioms_sha256": "7b73dc8531ed895171da5f31e74d7035b770ff2ffe89e5291e8ab25f970eecb3",
+      "unexpected_axioms": []
+    },
+    "E2E.LinkCheck.crate_correct_inScope_proven": {
+      "count": 830,
+      "sorted_axioms_sha256": "381a2738f97cbbeb94b17941b6cf3da54f75db1a8316ff26cbc3dfd9167a93fd",
+      "unexpected_axioms": []
+    },
+    "Link.compileExe_correct": {
+      "count": 830,
+      "sorted_axioms_sha256": "381a2738f97cbbeb94b17941b6cf3da54f75db1a8316ff26cbc3dfd9167a93fd",
+      "unexpected_axioms": []
+    },
+    "Link.compileExe_total": {
+      "count": 823,
+      "sorted_axioms_sha256": "3375522de295bc8961036d6a8bc5f841cf0fcdef4f32c02282466596f90dac61",
+      "unexpected_axioms": []
+    },
+    "Link.compileExe_spec": {
+      "count": 3,
+      "sorted_axioms_sha256": "118dbe3070706ccab3cf3c2b619838c8b87613556f4cb9e0b80a8c874e29f1d8",
+      "unexpected_axioms": []
+    },
+    "Backend.Stock.Proof.stock_ctor_aliasTargetsAllowed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_apply_aliasTargetsAllowed": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_aliasOrigin": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_resolves": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_terminal": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_value": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_ctor_aliasTargetsAllowed_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_apply_aliasTargetsAllowed_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_source_provenance_rank": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_alias_provenance": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_alias_rank": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_chain_rank": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_chain_noCycle": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_source_provenance_rank_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_chain_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_record": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_emitted_record": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_final_source_alias_recorded": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_final_source_chain_rank": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_final_source_chain_noCycle": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_final_source_chain_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_key_origin": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_key_origin_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_wellFounded": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_terminal": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_idempotent": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_step": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_value": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_terminal_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_blockScanInitialFrontier": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_blockScanInitialFrontier_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_provenance": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_available": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_path_available": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_path_fresh_origin": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_available_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_path_fresh_origin_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_intervals": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_intervals_disjoint": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_available_alias_outside_record": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_available_fresh_frame": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_intervals_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ]
+  },
+  "logs": {
+    "full": {
+      "path": "/tmp/stock-record-intervals-full.log",
+      "sha256": "1a6d9f046bc05cef7675da1454df345afb9a771142da22fce81215af6cd8554f"
+    },
+    "crates": {
+      "path": "/tmp/stock-record-intervals-crates.log",
+      "sha256": "eac0d9b7e8fec967cc1aef0b033e5b426630e9b33e31e0cb010bc353201bab9b"
+    },
+    "runtime": {
+      "path": "/tmp/stock-record-intervals-runtime.log",
+      "sha256": "390e3042cda40fde1899a6c270ea598f44b59ac8c03427c5b20a21ed0af2f876"
+    },
+    "encoder": {
+      "path": "/tmp/stock-record-intervals-encoder.log",
+      "sha256": "6e5c423e505ae964646f9bd37f28c4870bb02c02a47dd8bf8c1ab5d646ff08e6"
+    },
+    "e2e": {
+      "path": "/tmp/stock-record-intervals-e2e.log",
+      "sha256": "f427bae08b53dba6f5a22054dfa66698e08016c3d3f0a71d318c2b2b4bd3f1ef"
+    },
+    "axioms": {
+      "path": "/tmp/stock-record-intervals-axioms.log",
+      "sha256": "2e1d47981044b4fa2d94a106638df8a3ce00cac76834b8b95f77147126d38a74"
+    }
+  },
+  "gates": {
+    "full_jobs": 1440,
+    "crate_jobs": 1171,
+    "runtime_pass": 4672,
+    "runtime_fail": 0,
+    "runtime_error": 0,
+    "runtime_disagree": 0,
+    "known_not_runnable": 7,
+    "encoder_identical": 1292,
+    "encoder_different": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0
+  },
+  "identity_parity": {
+    "path": "/tmp/stock-record-intervals-identities.json",
+    "sha256": "8cdc10dc3ee93c52e91dff68bd798e607e775f016492f95dc0215a100a8af963",
+    "identical_to_previous": true
+  },
+  "witnesses": "Complete two-live-constant run has two distinct actual emitting source records. Current MOVZ9 into194 occupies[194,195); prior source result resolves to195, allocated in the later reverse-scan interval, and remains7 during actual ispec execution. Nonempty emitted-code/def-bound/execution premises instantiated together.",
+  "remaining": "Source-availability-guarded execution value transfer from actual selected family semantics; reserved writes, memory/traps, full simulation/completeness and production cutover."
+}
