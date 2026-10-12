@@ -1,0 +1,456 @@
+{
+  "number": 1,
+  "test": "isa/aarch64/issue-shift-masked-imm-type.clif",
+  "variant": 0,
+  "function": "%load_i16_ishl17_should_not_fold",
+  "row_index": 1,
+  "stage": "compile",
+  "isa_index": 0,
+  "command_index": 0,
+  "compilation": 1,
+  "comparison": {
+    "name": "%load_i16_ishl17_should_not_fold",
+    "bytes": {
+      "equal": false,
+      "left_size": 12,
+      "right_size": 20,
+      "left_sha256": "3ea21c91854903127166a4fc1ab53e40cacaa3192e262e128d4e4cdf59119b4b",
+      "right_sha256": "711a30edc3575ad1506c2aaae5c8065ef9d480797290f1f020430c4db979174d",
+      "first_difference": 0,
+      "left_context": "24b86fd300686478c0035fd6",
+      "right_context": "230280d225b86fd30744018b00686578c0035fd6"
+    },
+    "relocations_equal": true,
+    "reference_relocations": [],
+    "lean_relocations": [],
+    "exact_code_and_relocations": false,
+    "alignment_equal": true,
+    "traps_equal": false,
+    "traps": {
+      "stock": [
+        {
+          "code": "heap_oob",
+          "offset": 4
+        }
+      ],
+      "lean": [
+        {
+          "offset": 12,
+          "code": "heap_oob"
+        }
+      ]
+    },
+    "alignment": {
+      "stock": 4,
+      "lean": 4
+    },
+    "lean_dump_matches_object_bytes": true,
+    "lean_object_alignment_valid": true,
+    "lean_dump_matches_object_relocations": true,
+    "settings_contract_verified": true,
+    "stock_artifact_repeatable": true,
+    "exact_code_artifact": false,
+    "execution_metadata": {
+      "unwind_equal": false,
+      "stack_maps_equal": true,
+      "exception_metadata_equal": null,
+      "stock_unwind": "Some(SystemV(UnwindInfo { instructions: [], len: 12 }))",
+      "stock_exception_call_sites": "[]",
+      "stock_exception_table_bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stock_stack_maps": "[]",
+      "full_metadata_equivalence_verified": false
+    },
+    "full_artifact_equivalence_verified": false,
+    "status": "different_code_artifact"
+  },
+  "request": {
+    "schema": 1,
+    "target": "aarch64-unknown-unknown-elf",
+    "flags": [
+      {
+        "name": "regalloc_algorithm",
+        "value": "backtracking"
+      },
+      {
+        "name": "opt_level",
+        "value": "none"
+      },
+      {
+        "name": "tls_model",
+        "value": "none"
+      },
+      {
+        "name": "stack_switch_model",
+        "value": "none"
+      },
+      {
+        "name": "libcall_call_conv",
+        "value": "isa_default"
+      },
+      {
+        "name": "probestack_size_log2",
+        "value": "12"
+      },
+      {
+        "name": "probestack_strategy",
+        "value": "outline"
+      },
+      {
+        "name": "bb_padding_log2_minus_one",
+        "value": "0"
+      },
+      {
+        "name": "log2_min_function_alignment",
+        "value": "0"
+      },
+      {
+        "name": "regalloc_checker",
+        "value": "false"
+      },
+      {
+        "name": "regalloc_verbose_logs",
+        "value": "false"
+      },
+      {
+        "name": "enable_alias_analysis",
+        "value": "true"
+      },
+      {
+        "name": "enable_verifier",
+        "value": "true"
+      },
+      {
+        "name": "is_pic",
+        "value": "false"
+      },
+      {
+        "name": "use_colocated_libcalls",
+        "value": "false"
+      },
+      {
+        "name": "enable_nan_canonicalization",
+        "value": "false"
+      },
+      {
+        "name": "enable_pinned_reg",
+        "value": "false"
+      },
+      {
+        "name": "enable_llvm_abi_extensions",
+        "value": "false"
+      },
+      {
+        "name": "enable_multi_ret_implicit_sret",
+        "value": "false"
+      },
+      {
+        "name": "unwind_info",
+        "value": "false"
+      },
+      {
+        "name": "preserve_frame_pointers",
+        "value": "false"
+      },
+      {
+        "name": "machine_code_cfg_info",
+        "value": "true"
+      },
+      {
+        "name": "enable_probestack",
+        "value": "false"
+      },
+      {
+        "name": "enable_heap_access_spectre_mitigation",
+        "value": "true"
+      },
+      {
+        "name": "enable_table_access_spectre_mitigation",
+        "value": "true"
+      },
+      {
+        "name": "enable_incremental_compilation_cache_checks",
+        "value": "false"
+      },
+      {
+        "name": "enable_compact_unwind_abi",
+        "value": "false"
+      }
+    ],
+    "isa_flags": [
+      {
+        "name": "has_lse",
+        "value": "false"
+      },
+      {
+        "name": "has_pauth",
+        "value": "false"
+      },
+      {
+        "name": "has_fp16",
+        "value": "false"
+      },
+      {
+        "name": "has_dotprod",
+        "value": "false"
+      },
+      {
+        "name": "has_i8mm",
+        "value": "false"
+      },
+      {
+        "name": "sign_return_address_all",
+        "value": "false"
+      },
+      {
+        "name": "sign_return_address",
+        "value": "false"
+      },
+      {
+        "name": "sign_return_address_with_bkey",
+        "value": "false"
+      },
+      {
+        "name": "use_bti",
+        "value": "false"
+      },
+      {
+        "name": "use_csdb",
+        "value": "false"
+      }
+    ],
+    "input_sha256": "1f4af100200169377f64e6127680d258d93799d453f478dc7858c282434df406",
+    "stage": "compile",
+    "isa_index": 0,
+    "command_index": 0
+  },
+  "receipt": {
+    "schema": 1,
+    "request": {
+      "target": "aarch64-unknown-unknown-elf",
+      "stage": "compile",
+      "schema": 1,
+      "isa_index": 0,
+      "isa_flags": [
+        {
+          "value": "false",
+          "name": "has_lse"
+        },
+        {
+          "value": "false",
+          "name": "has_pauth"
+        },
+        {
+          "value": "false",
+          "name": "has_fp16"
+        },
+        {
+          "value": "false",
+          "name": "has_dotprod"
+        },
+        {
+          "value": "false",
+          "name": "has_i8mm"
+        },
+        {
+          "value": "false",
+          "name": "sign_return_address_all"
+        },
+        {
+          "value": "false",
+          "name": "sign_return_address"
+        },
+        {
+          "value": "false",
+          "name": "sign_return_address_with_bkey"
+        },
+        {
+          "value": "false",
+          "name": "use_bti"
+        },
+        {
+          "value": "false",
+          "name": "use_csdb"
+        }
+      ],
+      "input_sha256": "1f4af100200169377f64e6127680d258d93799d453f478dc7858c282434df406",
+      "flags": [
+        {
+          "value": "backtracking",
+          "name": "regalloc_algorithm"
+        },
+        {
+          "value": "none",
+          "name": "opt_level"
+        },
+        {
+          "value": "none",
+          "name": "tls_model"
+        },
+        {
+          "value": "none",
+          "name": "stack_switch_model"
+        },
+        {
+          "value": "isa_default",
+          "name": "libcall_call_conv"
+        },
+        {
+          "value": "12",
+          "name": "probestack_size_log2"
+        },
+        {
+          "value": "outline",
+          "name": "probestack_strategy"
+        },
+        {
+          "value": "0",
+          "name": "bb_padding_log2_minus_one"
+        },
+        {
+          "value": "0",
+          "name": "log2_min_function_alignment"
+        },
+        {
+          "value": "false",
+          "name": "regalloc_checker"
+        },
+        {
+          "value": "false",
+          "name": "regalloc_verbose_logs"
+        },
+        {
+          "value": "true",
+          "name": "enable_alias_analysis"
+        },
+        {
+          "value": "true",
+          "name": "enable_verifier"
+        },
+        {
+          "value": "false",
+          "name": "is_pic"
+        },
+        {
+          "value": "false",
+          "name": "use_colocated_libcalls"
+        },
+        {
+          "value": "false",
+          "name": "enable_nan_canonicalization"
+        },
+        {
+          "value": "false",
+          "name": "enable_pinned_reg"
+        },
+        {
+          "value": "false",
+          "name": "enable_llvm_abi_extensions"
+        },
+        {
+          "value": "false",
+          "name": "enable_multi_ret_implicit_sret"
+        },
+        {
+          "value": "false",
+          "name": "unwind_info"
+        },
+        {
+          "value": "false",
+          "name": "preserve_frame_pointers"
+        },
+        {
+          "value": "true",
+          "name": "machine_code_cfg_info"
+        },
+        {
+          "value": "false",
+          "name": "enable_probestack"
+        },
+        {
+          "value": "true",
+          "name": "enable_heap_access_spectre_mitigation"
+        },
+        {
+          "value": "true",
+          "name": "enable_table_access_spectre_mitigation"
+        },
+        {
+          "value": "false",
+          "name": "enable_incremental_compilation_cache_checks"
+        },
+        {
+          "value": "false",
+          "name": "enable_compact_unwind_abi"
+        }
+      ],
+      "command_index": 0
+    },
+    "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+    "policy": "exact requested flags; unsupported flags rejected; PIC=false far symbols and tls_model=none TLS rejected per function; optional leaf frame omitted before emission; no binary normalization",
+    "error": null,
+    "configuration_accepted": true
+  },
+  "original_source_sha256": "c7f2048005f75ffc06bd543388e54286d02109daadecf6a33434d74207067e80",
+  "stock_source": "function %load_i16_ishl17_should_not_fold(i64, i64) -> i16 fast {\nblock0(v0: i64, v1: i64):\n    v2 = iconst.i64 17\n    v3 = ishl v1, v2  ; v2 = 17\n    v4 = iadd v0, v3\n    v5 = load.i16 v4\n    return v5\n}\n",
+  "adapted_source": "function %load_i16_ishl17_should_not_fold(i64, i64) -> i16 fast {\nblock0(v0: i64, v1: i64):\n    v2 = iconst.i64 17\n    v3 = ishl v1, v2  ; v2 = 17\n    v4 = iadd v0, v3\n    v5 = load.i16 v4\n    return v5\n}\n",
+  "stock_metadata": {
+    "alignment": 4,
+    "boundary": "stock-compile-subtest",
+    "exception_call_sites": "[]",
+    "exception_table_bytes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "jit_allocation_performed": false,
+    "name": "%load_i16_ishl17_should_not_fold",
+    "relocations": [],
+    "stack_maps": "[]",
+    "traps": [
+      {
+        "code": "heap_oob",
+        "offset": 4
+      }
+    ],
+    "unwind": "Some(SystemV(UnwindInfo { instructions: [], len: 12 }))"
+  },
+  "lean_metadata": {
+    "unwind_disabled": true,
+    "stack_maps": [],
+    "name": "load_i16_ishl17_should_not_fold",
+    "exception_metadata_comparison_supported": false,
+    "alignment": 4
+  },
+  "stock_code_hex": "24b86fd300686478c0035fd6",
+  "lean_code_hex": "230280d225b86fd30744018b00686578c0035fd6",
+  "stock_disassembly": [
+    "0000: 24b86fd3  lsl x4, x1, #0x11",
+    "0004: 00686478  ldrh w0, [x0, x4]",
+    "0008: c0035fd6  ret"
+  ],
+  "lean_disassembly": [
+    "0000: 230280d2  mov x3, #0x11",
+    "0004: 25b86fd3  lsl x5, x1, #0x11",
+    "0008: 0744018b  add x7, x0, x1, lsl #17",
+    "000c: 00686578  ldrh w0, [x0, x5]",
+    "0010: c0035fd6  ret"
+  ],
+  "artifact_paths": {
+    "stock": "files/isa/aarch64/issue-shift-masked-imm-type/stock/variant-0/256c6f61645f6931365f6973686c31375f73686f756c645f6e6f745f666f6c64.json",
+    "lean": "files/isa/aarch64/issue-shift-masked-imm-type/variant-0/compilation-1/lean/dump/load_i16_ishl17_should_not_fold.bin"
+  }
+}
