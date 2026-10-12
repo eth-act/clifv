@@ -1,0 +1,38 @@
+{
+  "base": "42842af",
+  "original_source": "518ca9c",
+  "full_build": "/tmp/driver-proof-resume-build-final.log",
+  "crate_build": "/tmp/driver-proof-resume-crates.log",
+  "axiom_log_sha256": "a5bfd15d3a9e73c29d81dc410705d0e15e4410f6b74a783a9682f165e096de0f",
+  "matched_original_audits": 32,
+  "mcp_record_inputNoAlias": {
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "remaining": "source/reserved semantics, whole simulation/completeness and production cutover still incomplete",
+  "full_build_sha256": "2f0ee637de7fa64f7be272b4d3f32a54ce9ac08e89ce6bc28eba994ac2cb3641",
+  "fresh_terminal": "actual Stock.lower final alias domain implies fresh targets are terminal; witnessed by existing nonempty emitted-call run",
+  "updated_utc": "2026-10-12T12:03:22.774206+00:00",
+  "fresh_mcp": {
+    "stock_lower_freshAlias_terminal": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "stock_lower_freshAlias_terminal_witness": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  }
+}

@@ -1,0 +1,273 @@
+{
+  "modules": [
+    "FV.Backend.Proof.StockNodeAliasConnection",
+    "FV.Backend.Proof.StockSSAScanConnection",
+    "FV.Backend.Proof.StockRecordFinalAlias",
+    "FV.Backend.Proof.StockRecordedFlow"
+  ],
+  "results": [
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_ssa_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_ssa_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_record_inputAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_record_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_indices_nodup",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_record_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_record_inputAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scan_indices_nodup_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_backward_record_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_scanBlock_backward_record_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_emitBranch_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_scanAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_other_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_other_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerBlockCore_scanAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_emitBranch_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_other_aliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lowerNode_other_aliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_finalAliasEntry",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_inputNoAlias",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_resultAlias_of_record",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_finalAliasEntry_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_resultAlias_of_record_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_record_inputNoAlias_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasOrigins",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasAvailable",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasOrigins_noInherited",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasAvailable_noInherited",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasOrigins_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasAvailable_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasOrigins_noInherited_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    },
+    {
+      "theorem": "Backend.Stock.Proof.stock_lower_emitted_record_finalAliasAvailable_noInherited_witness",
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    }
+  ],
+  "scope": "Derive source-definition alias absence at actual whole-driver record inputs; exclude inherited aliases from emitted-record final-origin and availability classifications. Preserve existing interfaces and production legacy.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockNodeAliasConnection.lean": "42a181b9a9b8f856f3baa4d246e2e34674ced7238f3d5107e468b309c2b101d4",
+    "FV/Backend/Proof/StockSSAScanConnection.lean": "2cc11d6d0754306f4103af816bec939599a03bf43d9d882a895bbd3ebb57fcac",
+    "FV/Backend/Proof/StockRecordFinalAlias.lean": "a07e4d212c8c47df45fc2cb702212c371e5e37c7227ca88b5bf4247aa90fc3a8",
+    "FV/Backend/Proof/StockRecordedFlow.lean": "28121ea55269df622fca5fa605cd46a117e0709e444841f87ab8a5943399989a"
+  }
+}
