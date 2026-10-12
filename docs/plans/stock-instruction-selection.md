@@ -117,7 +117,24 @@ inhabit all ten new standard-only MCP roots. All63 normal audits retain the
 seven final theorem axiom sets. Full1433/crates1171, runtime4672/0/0,
 encoder1292/0 and E2E1150/0 pass. See `docs/research/stock-reserved-terminal-audit.json`.
 
-Next close defined-source alias chains, payload-only alias invariants and
+PR #152 landed as `915ab09`. StockPayloadAliasOrigins derives the only new
+constructor alias targets from actual try-call return registers. That invariant
+composes through nested evaluation, source-result binding, every scan decision,
+branch emission, original/critical-edge nodes and the exact whole-driver traversal.
+Actual source/reservation separation prevents source writes from changing payload
+entries. Every final payload alias targets an initially reserved return, and every
+initially reserved payload resolves to an unaliased endpoint. No extra alias-validity
+certificate or narrower accepted source scope is introduced. Real constructor and
+interpreter witnesses overwrite payload194→197 with194→193; a complete try-call
+witness supplies the final reserved target, endpoint and transport of already-held
+value7. Execution producing that value is still unproved.
+Nine new MCP roots/witnesses use standard axioms only;72 normal audits preserve
+all63 previous sets, including the seven final roots. Full1434/crates1171,
+runtime4672/0/0 (seven unchanged not-runnable cases), encoder1292/0 and
+E2E1150/0 pass; every E2E identity/stage matches the previous checkpoint.
+See `docs/research/stock-payload-alias-origins-audit.json`.
+
+Next close defined-source alias chains and
 execution establishing reserved/source values, then noninterference and full
 value simulation/completeness. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
