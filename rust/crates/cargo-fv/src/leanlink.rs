@@ -143,6 +143,7 @@ pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
     let out = Command::new(&tool)
         .arg(&dir)
         .arg(&sizes)
+        .arg("--dead-cleanup")
         .output()
         .map_err(|e| format!("{}: {e} (lake build lean-link)", tool.display()))?;
     let text = String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr);

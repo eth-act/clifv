@@ -18,18 +18,20 @@ class LoweringTraceTests(unittest.TestCase):
         if not all(p.exists() for p in (cls.trace, cls.backend, cls.allocator)):
             raise unittest.SkipTest("build lean-backend, lean-backend-lowering-trace and lean-regalloc")
 
-    def check_compilation(self, source):
+    def check_compilation(self, source, cleanup=True):
         with tempfile.TemporaryDirectory(prefix="stock-lowering_trace-") as tmp:
             directory = Path(tmp)
             input_path = directory / "input.clif"
             input_path.write_text(source)
             env = dict(os.environ, LEAN_REGALLOC=str(self.allocator))
+            # Exercise the default cleanup mode and the explicit legacy diagnostic mode.
+            flags = [] if cleanup else ["--no-dead-cleanup"]
 
             def compile_at(name):
                 captured = directory / f"{name}.allocator.json"
                 output = directory / f"{name}.o"
                 result = subprocess.run(
-                    [self.backend, input_path, output], cwd=ROOT,
+                    [self.backend, input_path, output, *flags], cwd=ROOT,
                     env=dict(env, LEAN_REGALLOC_KEEP=str(captured)),
                     capture_output=True, text=True,
                 )
@@ -39,9 +41,10 @@ class LoweringTraceTests(unittest.TestCase):
 
             before, allocator = compile_at("before")
             report_path = directory / "trace.json"
-            subprocess.run([self.trace, input_path, report_path], cwd=ROOT,
+            subprocess.run([self.trace, input_path, report_path, *flags], cwd=ROOT,
                            env=env, check=True, capture_output=True)
             report = json.loads(report_path.read_text())
+            self.assertEqual(report["dead_cleanup"], cleanup)
             self.assertTrue(report["functions"])
             self.assertTrue(all(f["status"] == "lowered" for f in report["functions"]), report)
             self.assertEqual(
@@ -54,7 +57,7 @@ class LoweringTraceTests(unittest.TestCase):
             return report
 
     def test_sparse_values_fusion_and_block_arguments(self):
-        self.check_compilation("""function %fusion(i64, i64) -> i64 {
+        source = """function %fusion(i64, i64) -> i64 {
 block0(v10: i64, v20: i64):
     v30 = bnot v20
     v40 = band v10, v30
@@ -62,16 +65,22 @@ block0(v10: i64, v20: i64):
 block1(v50: i64):
     return v50
 }
-""")
+"""
+        for cleanup in (True, False):
+            with self.subTest(dead_cleanup=cleanup):
+                self.check_compilation(source, cleanup)
 
     def test_i128_diagnostics_use_the_compilers_legalized_input(self):
-        report = self.check_compilation("""function %wide(i64, i64) -> i128 {
+        source = """function %wide(i64, i64) -> i128 {
 block0(v0: i64, v1: i64):
     v2 = iconcat v0, v1
     return v2
 }
-""")
-        self.assertEqual(report["legalization_accepted"], ["wide"])
+"""
+        for cleanup in (True, False):
+            with self.subTest(dead_cleanup=cleanup):
+                report = self.check_compilation(source, cleanup)
+                self.assertEqual(report["legalization_accepted"], ["wide"])
 
 
 class StockLoweringTraceTests(unittest.TestCase):

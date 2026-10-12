@@ -1,5 +1,14 @@
 # Plan: a verified compiler for a Lean-embedded DSL, via CLIF to AArch64
 
+The #60 cleanup implementation in #137 uses the legacy driver and preserves
+baseline source scope and theorem variants. Cleanup and matching consumers are
+enabled by default. Full proof/crate builds, runtime, encoder and E2E identity
+parity pass; paired theorem audits have unchanged baseline axiom sets. Stock
+artifact agreement improves 465 -> 671 (+206, zero losses); both E2E modes accept
+the same 1,150 identities. Replacement-driver #135 remains paused. See
+[the contract](contracts/dead-cleanup.md) and
+[the implementation plan](plans/legacy-dead-instruction-cleanup.md).
+
 *Status: design plan, September 2026, updated with progress through 2026-10-04 (see "Current status" below, the per-milestone status notes, and M8). Hand-off document for an engineer or AI picking up the work.*
 
 ## 0. How to use this document

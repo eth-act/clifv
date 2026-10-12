@@ -21,6 +21,22 @@ def with_flag(request, key, name, value):
 
 
 class ContractTests(unittest.TestCase):
+    def test_extra_compiler_arguments_are_recorded_without_changing_request(self):
+        variant = {"target": "aarch64", "flags": [], "isa_flags": [], "stage": "compile",
+                   "isa_index": 0, "command_index": 0}
+        def run(argv, directory, name, env):
+            config = Path(argv[argv.index("--stock-config") + 1])
+            receipt = Path(argv[argv.index("--config-receipt") + 1])
+            receipt.write_text(json.dumps({"schema": 1, "request": json.loads(config.read_text()),
+                                          "configuration_accepted": True, "function_rejections": {}}))
+            return {"exit": 0, "argv": [str(arg) for arg in argv]}
+        with tempfile.TemporaryDirectory() as tmp, patch.object(COMPARE, "command", run), \
+                patch.object(COMPARE, "LEAN_COMPILER_ARGS", ["--no-dead-cleanup"]):
+            _, contract = COMPARE.compile_lean(variant, b"input", Path(tmp) / "compile", {})
+            self.assertIn("--no-dead-cleanup", contract["command"]["argv"])
+            self.assertEqual(contract["request"], COMPARE.request_for(variant, b"input"))
+            self.assertTrue(contract["contract_verified"])
+
     def test_receipt_requires_exact_settings_and_input(self):
         request = {"schema":1,"input_sha256":COMPARE.digest(b"input"),"flags":[]}
         receipt = {"schema":1,"request":copy.deepcopy(request),"configuration_accepted":True}

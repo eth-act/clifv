@@ -1,5 +1,20 @@
 # Match stock AArch64 instruction selection in Lean
 
+## Resumed goal, 2026-10-12
+
+Task #140 resumes completing the actual Stock driver proofs and production cutover.
+The original-driver cleanup #137 and opt-in numbering hints #139 are landed;
+these do not satisfy the driver cutover goal. PR #135 is being reconciled with
+current main; its 32 audits still match. Actual whole-driver fresh-alias terminal
+facts now check with standard axioms and a nonempty emitted-call witness.
+Next: source-available final paths, reserved-value semantics and noninterference;
+then discharge actual selected/omitted/sunk rule semantics, whole simulation and
+completeness, baseline identity/proof parity and real production/checker/linker
+cutover. Preserve original theorem variants and assumptions; no per-program
+semantic certificate or narrower source scope may substitute for these proofs.
+The historical progress entries below are checkpoints, not current scope limits.
+
+
 User-approved plan for #60. Resumed 2026-10-09 on freshly fetched origin/main 33f03f2, branch agent/stock-driver-production.
 
 

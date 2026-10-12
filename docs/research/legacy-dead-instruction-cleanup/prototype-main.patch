@@ -1,0 +1,16 @@
+--- a/FVTest/Backend/Main.lean
++++ b/FVTest/Backend/Main.lean
+@@ -4,0 +5 @@
++import FVTest.Backend.DeadCleanupPrototype
+@@ -64,0 +66 @@
++  deadCleanupPrototype : Bool := false
+@@ -67,0 +70,3 @@
++  if o.deadCleanupPrototype && o.stockConfig.isNone then
++    IO.eprintln "lean-backend: --dead-cleanup-prototype requires --stock-config (measurement only, outside backend_correct)"
++    return 2
+@@ -113 +118,2 @@
+-    | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
++    | some c => (compileFileWith (fun vcs => StockConfig.allocate c clif rejected alloc
++        (if o.deadCleanupPrototype then vcs.map DeadCleanupPrototype.clean else vcs)) pf
+@@ -173,0 +180 @@
++    | "--dead-cleanup-prototype" :: rest => opts { o with deadCleanupPrototype := true } rest

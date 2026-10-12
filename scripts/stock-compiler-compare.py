@@ -25,6 +25,7 @@ SUITE = (ROOT / "third_party/wasmtime/cranelift/filetests/filetests").resolve()
 # suite is never reported as equivalent. Crashes exit 1 (Python) or another code.
 FINISHED_WITH_GAPS = 10
 LEAN_BINARY = ROOT / ".lake/build/bin/lean-backend"
+LEAN_COMPILER_ARGS = []
 
 ELF_RELOC_TYPES = {"Arm64Call":283,"Aarch64AdrPrelPgHi21":275,"Aarch64AddAbsLo12Nc":277,
     "Aarch64AdrGotPage21":311,"Aarch64Ld64GotLo12Nc":312,
@@ -196,7 +197,7 @@ def compile_lean(variant, source, dest, env):
     write(config, request)
     lean = dest / "lean"
     lean.mkdir()
-    run = command([LEAN_BINARY, input_path, lean / "program.o",
+    run = command([LEAN_BINARY, input_path, lean / "program.o", *LEAN_COMPILER_ARGS,
         "--stock-config", config, "--config-receipt", receipt_path,
         "--dump", lean / "dump", "--traps", lean / "traps.json"], dest, "lean", env)
     receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
@@ -355,15 +356,18 @@ def safe_one(path, out, env, binary):
 
 
 def main():
-    global LEAN_BINARY
+    global LEAN_BINARY, LEAN_COMPILER_ARGS
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out",type=Path,default=ROOT / "target/stock-compiler-comparison")
     parser.add_argument("--input",type=Path,action="append")
     parser.add_argument("--jobs",type=int,default=2)
     parser.add_argument("--lean-compiler", type=Path, default=LEAN_BINARY,
                         help="comparison-compatible compiler; default: lean-backend")
+    parser.add_argument("--lean-compiler-arg", action="append", default=[],
+                        help="extra compiler argument, recorded in every command and report; use = for --flags")
     args = parser.parse_args()
     LEAN_BINARY = args.lean_compiler.resolve()
+    LEAN_COMPILER_ARGS = args.lean_compiler_arg
     if args.jobs < 1: parser.error("--jobs must be positive")
     if os.environ.get("BLESS") is not None: parser.error("BLESS must be unset")
     out = args.out.resolve()
@@ -386,6 +390,11 @@ def main():
     env = os.environ.copy()
     env["PATH"] = os.pathsep.join([str(ROOT / "rust/target/release"),
         str(ROOT / "target/byte-agreement-tools/lean-4.34.1-linux/bin"),env.get("PATH","")])
+    # An alternate/copied compiler cannot locate the allocator relative to its
+    # executable. Pin the oracle explicitly instead of silently using spill fallback.
+    env.setdefault("LEAN_REGALLOC", str(ROOT / "rust/target/release/lean-regalloc"))
+    regalloc = Path(env["LEAN_REGALLOC"]).resolve()
+    if not regalloc.is_file(): raise ValueError(f"missing regalloc oracle: {regalloc}")
     binary = ROOT / "tools/prejit-export/target/debug/prejit-export"
     sources = [ROOT / "FVTest/Backend/StockConfig.lean", ROOT / "FVTest/Backend/Main.lean",
                ROOT / "FVTest/Backend/Lowering/StockComparison.lean",
@@ -398,7 +407,9 @@ def main():
     report = {"schema":1,"upstream_commit":commit,"official_test_files":len(all_inputs),"target":TARGET,
         "inventory":[{"test":str(p.relative_to(SUITE)),"sha256":digest(p.read_bytes())} for p in all_inputs],
         "source_hashes":{str(p.relative_to(ROOT)):digest(p.read_bytes()) for p in sources},
-        "lean_source_tree_sha256":lean_tree.hexdigest(),"lean_compiler":str(LEAN_BINARY),"dependency_provenance":dependencies,
+        "lean_source_tree_sha256":lean_tree.hexdigest(),"lean_compiler":str(LEAN_BINARY),
+        "regalloc_oracle":{"path":str(regalloc),"sha256":digest(regalloc.read_bytes())},
+        "lean_compiler_args":LEAN_COMPILER_ARGS,"dependency_provenance":dependencies,
         "binary_hashes":{os.path.relpath(p, ROOT):digest(p.read_bytes()) for p in [binary, LEAN_BINARY,ROOT/"rust/target/release/lean-regalloc"]},
         "actual_ci_execution":False,"execution_performed":False,"configuration_overrides":[],"binary_normalization":False,
         "progress":"running","tests":[],"full_artifact_equivalence_verified":False}

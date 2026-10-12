@@ -1,0 +1,199 @@
+{
+  "baseline_git_commit": "8959127bf91f93699b674a3148fab441be874140",
+  "baseline_source": "unmodified main; executable saved before prototype edits",
+  "candidate_source": "same main plus archived prototype-main.patch and DeadCleanupPrototype.lean",
+  "upstream_commit": "46c23a87dac1465986a8ad53ba6a7ae49372857b",
+  "full_inventory_sha256": "72ef5cf30cf7f4f6f323a0e212e5a2d595d5f340a232fbabc4fea75b622266b7",
+  "baseline": {
+    "binary_hashes": {
+      "tools/prejit-export/target/debug/prejit-export": "e9c1aa7dfa5f20ea25323f3db4c91c3e2aacd52d0c314fecd38864fd4082dcee",
+      "target/legacy-dead-cleanup/lean-backend-baseline": "841bd61bc3ad4793a975ce4c6a4d6753e662a3c0acd96c0c965ec7ff16fba37a",
+      "rust/target/release/lean-regalloc": "f2ee5d31b3455b18c074397943b1acfafc7d9fc49217f0345c84e1e920db87be"
+    },
+    "lean_compiler_args": [],
+    "totals": {
+      "official_test_files": 1302,
+      "inventoried_test_files": 1302,
+      "files_by_category": {
+        "alias": 46,
+        "cfg": 3,
+        "domtree": 5,
+        "egraph": 76,
+        "inline": 18,
+        "isa": 704,
+        "parser": 11,
+        "runtests": 396,
+        "verifier": 24,
+        "wasm": 19
+      },
+      "file_statuses": {
+        "non_binary_test": 180,
+        "binary_test": 484,
+        "no_lean_target": 630,
+        "stock_parser_warning_skip": 8
+      },
+      "files_with_lean_compilation_attempts": 483,
+      "files_with_compared_function_outputs": 151,
+      "files_all_aarch64_code_artifacts_identical": 19,
+      "stock_binary_stages_by_command": {
+        "run": 387,
+        "compile": 141
+      },
+      "declared_stock_commands": {
+        "alias-analysis": 10,
+        "optimize": 102,
+        "interpret": 318,
+        "run": 392,
+        "print-cfg": 3,
+        "verifier": 30,
+        "domtree": 5,
+        "compile": 730,
+        "inline": 18,
+        "cat": 11
+      },
+      "accepted_lean_configuration_requests": 2012,
+      "unsupported_configuration_reasons": {
+        "unsupported setting opt_level=speed; implemented policy is none": 238,
+        "unsupported setting opt_level=speed_and_size; implemented policy is none": 5,
+        "has_lse=true changes the lowering of this function's atomic_rmw/atomic_cas; Lean does not implement LSE atomics": 114,
+        "unsupported ISA setting use_bti=true": 11,
+        "is_pic=false requires a non-PIC far-symbol lowering that Lean does not implement": 40,
+        "unsupported setting enable_compact_unwind_abi=true; implemented policy is false": 1,
+        "use_csdb=true adds csdb to this function's select_spectre_guard/br_table; Lean does not implement it": 6,
+        "unsupported setting probestack_strategy=inline; implemented policy is outline": 5,
+        "unsupported setting enable_table_access_spectre_mitigation=false; implemented policy is true": 1,
+        "unsupported setting enable_pinned_reg=true; implemented policy is false": 1,
+        "unsupported setting tls_model=elf_gd; implemented policy is none": 1,
+        "unsupported setting tls_model=macho; implemented policy is none": 1,
+        "unsupported setting bb_padding_log2_minus_one=21; implemented policy is 0": 2,
+        "sign_return_address=true signs this function's return address; Lean does not implement pointer authentication": 2,
+        "unsupported setting probestack_size_log2=16; implemented policy is 12": 2,
+        "unsupported setting probestack_size_log2=6; implemented policy is 12": 1,
+        "unsupported setting bb_padding_log2_minus_one=12; implemented policy is 0": 1
+      },
+      "test_function_compilations": 4501,
+      "function_statuses": {
+        "unsupported_configuration": 432,
+        "different_code_artifact": 1145,
+        "identical_code_artifact": 465,
+        "lean_unsupported": 2413,
+        "expected_stock_rejection_no_binary": 46
+      },
+      "distinct_test_function_names": 3872,
+      "distinct_test_functions": 4105,
+      "byte_and_relocation_matches_under_accepted_settings": 465,
+      "exact_code_artifacts": 465,
+      "full_artifact_equivalence_verified": false,
+      "failed_stock_compile_assertions": 0,
+      "nonrepeatable_reference_stages": 1,
+      "source_files_modified": 0
+    }
+  },
+  "candidate": {
+    "binary_hashes": {
+      "tools/prejit-export/target/debug/prejit-export": "e9c1aa7dfa5f20ea25323f3db4c91c3e2aacd52d0c314fecd38864fd4082dcee",
+      ".lake/build/bin/lean-backend": "083515a59edb8aa8af5d872814ac90258f58180fa4db1761bbc657e7d7a34894",
+      "rust/target/release/lean-regalloc": "f2ee5d31b3455b18c074397943b1acfafc7d9fc49217f0345c84e1e920db87be"
+    },
+    "lean_compiler_args": [
+      "--dead-cleanup-prototype"
+    ],
+    "totals": {
+      "official_test_files": 1302,
+      "inventoried_test_files": 1302,
+      "files_by_category": {
+        "alias": 46,
+        "cfg": 3,
+        "domtree": 5,
+        "egraph": 76,
+        "inline": 18,
+        "isa": 704,
+        "parser": 11,
+        "runtests": 396,
+        "verifier": 24,
+        "wasm": 19
+      },
+      "file_statuses": {
+        "non_binary_test": 180,
+        "binary_test": 484,
+        "no_lean_target": 630,
+        "stock_parser_warning_skip": 8
+      },
+      "files_with_lean_compilation_attempts": 483,
+      "files_with_compared_function_outputs": 151,
+      "files_all_aarch64_code_artifacts_identical": 32,
+      "stock_binary_stages_by_command": {
+        "run": 387,
+        "compile": 141
+      },
+      "declared_stock_commands": {
+        "alias-analysis": 10,
+        "optimize": 102,
+        "interpret": 318,
+        "run": 392,
+        "print-cfg": 3,
+        "verifier": 30,
+        "domtree": 5,
+        "compile": 730,
+        "inline": 18,
+        "cat": 11
+      },
+      "accepted_lean_configuration_requests": 2012,
+      "unsupported_configuration_reasons": {
+        "unsupported setting opt_level=speed; implemented policy is none": 238,
+        "unsupported setting opt_level=speed_and_size; implemented policy is none": 5,
+        "has_lse=true changes the lowering of this function's atomic_rmw/atomic_cas; Lean does not implement LSE atomics": 114,
+        "unsupported ISA setting use_bti=true": 11,
+        "is_pic=false requires a non-PIC far-symbol lowering that Lean does not implement": 40,
+        "unsupported setting enable_compact_unwind_abi=true; implemented policy is false": 1,
+        "use_csdb=true adds csdb to this function's select_spectre_guard/br_table; Lean does not implement it": 6,
+        "unsupported setting probestack_strategy=inline; implemented policy is outline": 5,
+        "unsupported setting enable_table_access_spectre_mitigation=false; implemented policy is true": 1,
+        "unsupported setting enable_pinned_reg=true; implemented policy is false": 1,
+        "unsupported setting tls_model=elf_gd; implemented policy is none": 1,
+        "unsupported setting tls_model=macho; implemented policy is none": 1,
+        "unsupported setting bb_padding_log2_minus_one=21; implemented policy is 0": 2,
+        "sign_return_address=true signs this function's return address; Lean does not implement pointer authentication": 2,
+        "unsupported setting probestack_size_log2=16; implemented policy is 12": 2,
+        "unsupported setting probestack_size_log2=6; implemented policy is 12": 1,
+        "unsupported setting bb_padding_log2_minus_one=12; implemented policy is 0": 1
+      },
+      "test_function_compilations": 4501,
+      "function_statuses": {
+        "unsupported_configuration": 432,
+        "different_code_artifact": 936,
+        "identical_code_artifact": 674,
+        "lean_unsupported": 2413,
+        "expected_stock_rejection_no_binary": 46
+      },
+      "distinct_test_function_names": 3872,
+      "distinct_test_functions": 4105,
+      "byte_and_relocation_matches_under_accepted_settings": 674,
+      "exact_code_artifacts": 674,
+      "full_artifact_equivalence_verified": false,
+      "failed_stock_compile_assertions": 0,
+      "nonrepeatable_reference_stages": 1,
+      "source_files_modified": 0
+    }
+  },
+  "full_results_local": {
+    "baseline": "/home/lee/clifv/.worktrees/legacy-dead-cleanup/target/legacy-dead-cleanup/baseline-full/results.json",
+    "candidate": "/home/lee/clifv/.worktrees/legacy-dead-cleanup/target/legacy-dead-cleanup/candidate-full/results.json"
+  },
+  "full_results_sha256": {
+    "baseline": "13f4c9a03cfb9ec0f8dc591ea5b16c272d6a4db0f0445da72a4eae5ef251153d",
+    "candidate": "32bf5be2de5e18c0c5dc882fc28b5220ce7ed4dd28a72eb54ad7a12a0d44c218"
+  },
+  "archive_sha256": {
+    "DeadCleanupPrototype.lean": "e11a8ecd66739d0709c1e5bbaaaea805479a55838aa1c6715b4b7b5e7a691ab4",
+    "prototype-main.patch": "a0ea24437c040214653046cca698cde572c7cab07cb5410d4d5bf731046a076c",
+    "delta.json": "3fc2e28c17c23b19f3e882e8b505ef9ebd188dd7b6d9cb0d4bc605399f60bc3f",
+    "focused.json": "3866c18dbfb0fc370f26f26597d37a393e4d6cfba71e9e6b6f3938a5ed0898ff",
+    "gains.tsv": "971fcbd4124bcd5b732e4017a0824c03e6394cc747956caab7b5fbf291c8a64f",
+    "README.md": "00379ca624b0335fd4b0ee2037598d123fa1c9f31258ef729190d178e6648c8e"
+  },
+  "preserved_executables": {
+    "baseline": "target/legacy-dead-cleanup/lean-backend-baseline",
+    "candidate": "target/legacy-dead-cleanup/lean-backend-candidate"
+  }
+}

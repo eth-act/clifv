@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "validated_source_head": "735a762de36e17e652a1b5c3660a14734c2c3038",
+  "baseline": "b75d7248039eb902080c64fc1e7d044126532b0b",
+  "recorded_utc": "2026-10-10T22:50:13.315763+00:00",
+  "normal_proof_gates": {
+    "full": "passed",
+    "crate_proofs": "passed",
+    "threads": 2,
+    "memory_cap": "22G",
+    "worktree": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof"
+  },
+  "runtime": {
+    "corpus_pass": 114,
+    "external_runtime_pass": 22,
+    "runtests_pass": 4672,
+    "fail": 0,
+    "error": 0,
+    "disagree": 0,
+    "unchanged_native_unsupported": 7
+  },
+  "stack_allocator": {
+    "corpus_pass": 114,
+    "external_runtime_pass": 22
+  },
+  "encoder": {
+    "identical": 1292,
+    "differ": 0,
+    "relocations": 1332
+  },
+  "e2e": {
+    "accepted": 1150,
+    "rejected": 0,
+    "legalized": 161,
+    "lost_identities": 0,
+    "changed_stages": 0
+  },
+  "python": {
+    "pass": 79,
+    "skipped": 2
+  },
+  "stock_artifacts": {
+    "baseline_exact": 465,
+    "cleanup_exact": 671,
+    "gained": 206,
+    "lost": 0,
+    "new_rejections": 0
+  },
+  "logs": {
+    "full": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-full-build.log",
+      "sha256": "11de946c2fb1b5028d0328d29f2bb017787ffacf331fa212fc1caa5e6edbe713"
+    },
+    "crates": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-crates.log",
+      "sha256": "5f3f9cb69d278b5d3c4edcf771fdde04260879c1f3f1c0c2d5f74699803af56b"
+    },
+    "runtime": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-runtime.log",
+      "sha256": "390e3042cda40fde1899a6c270ea598f44b59ac8c03427c5b20a21ed0af2f876"
+    },
+    "stack_allocator": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-stack-runtime.log",
+      "sha256": "186811559a5da281877966139c32327b014b0cc1cce30723008a5c671ea3145d"
+    },
+    "encoder": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-encode.log",
+      "sha256": "6e5c423e505ae964646f9bd37f28c4870bb02c02a47dd8bf8c1ab5d646ff08e6"
+    },
+    "e2e_cleanup": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-e2e.log",
+      "sha256": "dc771b134b2d84346dd0cbe4aab407c39cc027e7caf25e8a1bedb5580a75e318"
+    },
+    "e2e_legacy": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-legacy-e2e.log",
+      "sha256": "4347917a70a2172d03ae9fa41fef508ab91fb193f6d4883f13e6e8acdbd2390d"
+    },
+    "python": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-python.log",
+      "sha256": "bb4a444949366b4fe5c3065ee111515f7a5ab5335860cba8f87e1202b611c4b7"
+    },
+    "trace_integration": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-trace-tests.log",
+      "sha256": "f0e460b33ee6f81f436a30e82c6926f2fe64200c6cd5f9297ef66b40ab6f61f3"
+    },
+    "paired_root_audit": {
+      "local_log": "/tmp/legacy-dead-cleanup-final-root-audit.log",
+      "sha256": "c07491644ea965ee2126f49cfb19fb29c5b68165b82fa5bcd9ac01eba8e2c83e"
+    }
+  },
+  "limitations": [
+    "Artifact exactness covers code bytes, relocations, alignment and traps; full unwind equivalence is not measured.",
+    "The baseline declaration source inventory is not a kernel proof count.",
+    "Full and crate proof gates were run at validated_source_head; runtime and comparison results use identical compiler sources, with receipts retaining their source commits."
+  ]
+}

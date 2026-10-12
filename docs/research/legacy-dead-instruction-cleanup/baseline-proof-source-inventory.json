@@ -1,0 +1,2895 @@
+{
+  "baseline": "b75d7248039eb902080c64fc1e7d044126532b0b",
+  "method": "Source declaration-surface inventory (file plus spelling, including source templates); final full Lake build is the elaboration gate. Not a kernel environment manifest or a statement-equivalence proof.",
+  "baseline_files": 770,
+  "files_with_theorem_or_lemma_declarations": 577,
+  "baseline_declaration_occurrences": 12466,
+  "missing": [],
+  "files": [
+    {
+      "file": "FV/Arm/BitVec.lean",
+      "baseline_declarations": 84,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Exec.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/FromMathlib.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Insts/Common.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Insts/DPR/Data_processing_one_source.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Insts/DPSFP/Advanced_simd_copy.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Insts/DPSFP/Advanced_simd_three_same.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Insts/DPSFP/Advanced_simd_two_reg_misc.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Memory/MemoryProofs.lean",
+      "baseline_declarations": 45,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Memory/Separate.lean",
+      "baseline_declarations": 36,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Memory/SeparateProofs.lean",
+      "baseline_declarations": 37,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/MinTheory.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/State.lean",
+      "baseline_declarations": 65,
+      "missing": []
+    },
+    {
+      "file": "FV/Arm/Tactics/Common.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/AllocReady.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/MInst.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/AssignOk.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/CSemRename.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefAssemble.lean",
+      "baseline_declarations": 29,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefAssembleBase.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefGenModel.lean",
+      "baseline_declarations": 32,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefGenOfV.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefGenOracle.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefGenPat.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefGenSem.lean",
+      "baseline_declarations": 74,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefGenSound.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefGenSoundAt.lean",
+      "baseline_declarations": 18,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefGenTab.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefGenWrap.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DefRunsProof.lean",
+      "baseline_declarations": 18,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/DriverCheckSound.lean",
+      "baseline_declarations": 39,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/Encode.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeBR.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeBase.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeBranch.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeDPI.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeDPR.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeDPSFP.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeLDST.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeLayout.lean",
+      "baseline_declarations": 25,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeRES.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/EncodeStep.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/FormsCoverComplete.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselAtomic.lean",
+      "baseline_declarations": 104,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpBase.lean",
+      "baseline_declarations": 35,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpCond.lean",
+      "baseline_declarations": 33,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpDiv.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpDivRem.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpDivRoot.lean",
+      "baseline_declarations": 38,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpEmit.lean",
+      "baseline_declarations": 66,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpExt.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpIcmp.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpInv.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpMinMax.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpRoot.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpRun.lean",
+      "baseline_declarations": 25,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpSdiv.lean",
+      "baseline_declarations": 38,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpSelect.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpTerms.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCmpVec.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselContract.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselContractP.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovClean.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovCtor.lean",
+      "baseline_declarations": 30,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovData.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovDriver.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovExt.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovFns.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovForm.lean",
+      "baseline_declarations": 66,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovLe.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovModel.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovSem.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovSound.lean",
+      "baseline_declarations": 35,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCovTab.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtl.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlBase.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlBrTable.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlBranch.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlBrif.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlCall.lean",
+      "baseline_declarations": 36,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlCallInd.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlCallRules.lean",
+      "baseline_declarations": 77,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlTbz.lean",
+      "baseline_declarations": 18,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlTerm.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlTry.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlTryInd.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselCtlUnmatch.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselData.lean",
+      "baseline_declarations": 760,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselEmitChk.lean",
+      "baseline_declarations": 40,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselEmitCtor.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselEmitDriver.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselEmitHand.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselEmitLast.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselEmitModel.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselEmitTab.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselExcl.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselExclData.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselExclSound.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselExtern.lean",
+      "baseline_declarations": 36,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamALUA.lean",
+      "baseline_declarations": 68,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamALUAExt.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamALUAExtr.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamALUALogic.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamALUALogicNot.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamALUAMul.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamALUAMulN.lean",
+      "baseline_declarations": 30,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamALUARules.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBBase.lean",
+      "baseline_declarations": 37,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBBfm.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBBitrev.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBBswap.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBClz.lean",
+      "baseline_declarations": 42,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBExtend.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBIconst.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBMisc.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBNotShift.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBPopcnt.lean",
+      "baseline_declarations": 31,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBRot.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBRotTerms.lean",
+      "baseline_declarations": 36,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBShift.lean",
+      "baseline_declarations": 29,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBShiftBase.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBShiftTerms.lean",
+      "baseline_declarations": 31,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamAluBUnary.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamily.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFamilyALU.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlow.lean",
+      "baseline_declarations": 29,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlowCheck.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlowData.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlowExt.lean",
+      "baseline_declarations": 36,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlowGen.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlowInst.lean",
+      "baseline_declarations": 34,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlowRootF.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlowRootT.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlowTabF.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselFlowTabT.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselGeneric.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselLcf.lean",
+      "baseline_declarations": 29,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselLowerAll.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemAddr.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemAmode.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemAmodeTop.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemArm.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemBase.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemFuncAddr.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemHelpers.lean",
+      "baseline_declarations": 34,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemNoIconst.lean",
+      "baseline_declarations": 25,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemRoots.lean",
+      "baseline_declarations": 42,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemRun.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselMemSem.lean",
+      "baseline_declarations": 28,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselProbe.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselRules.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselRulesALU.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselRulesALUA.lean",
+      "baseline_declarations": 30,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselScopedProjection.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselSem.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselSemCmp.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselShpBrTable.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselShpCall.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselShpCtor.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselShpDriver.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselShpOracle.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselShpRoot.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselShpTab.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselShpTotal.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselShpTry.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselSzBrTable.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselSzCall.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselSzDriver.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselSzExt.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselSzSound.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselSzTab.lean",
+      "baseline_declarations": 32,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermFacts.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermFactsBase.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermFactsCall.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermFactsRules.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTerms.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsALUA.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsALUAExt.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsALUAExtr.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsALUAMul.lean",
+      "baseline_declarations": 28,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsALUAMulN.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsAluB.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsImm.lean",
+      "baseline_declarations": 53,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsLogic.lean",
+      "baseline_declarations": 48,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsLogicNot.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTermsShift.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/IselTls.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/KillAssemble.lean",
+      "baseline_declarations": 53,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/KillCtor.lean",
+      "baseline_declarations": 61,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/KillDriver.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/KillGen.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/KillOfV.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/KillOracle.lean",
+      "baseline_declarations": 30,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/KillPrep.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/KillTab.lean",
+      "baseline_declarations": 29,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/KillTryDefs.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LogicImmComplete.lean",
+      "baseline_declarations": 34,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LoopRun.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerAlias.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerCert.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerCertBase.lean",
+      "baseline_declarations": 41,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerComplete.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerContract.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerCover.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerDecide.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerFix.lean",
+      "baseline_declarations": 42,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerFrame.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerLemmas.lean",
+      "baseline_declarations": 37,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerLoop.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerLoopCode.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerLoopCtx.lean",
+      "baseline_declarations": 40,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerLoopPrep.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerLoopRun.lean",
+      "baseline_declarations": 44,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerLoopSim.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerRename.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerSeq.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerShapeOk.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerShapeOkFacts.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/LowerSim.lean",
+      "baseline_declarations": 51,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/MemRefines.lean",
+      "baseline_declarations": 25,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/PrepareComplete.lean",
+      "baseline_declarations": 84,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/PrepareDirect.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/PrepareSound.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RefinesCSem.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RefinesInsts.lean",
+      "baseline_declarations": 57,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RefinesInsts2.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocAtomic.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocCSem.lean",
+      "baseline_declarations": 31,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocCSemWorld.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocCover.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocFrame.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocFwd.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocInstsFP.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocInstsInt.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocInstsZR.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocLayout.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocLemmas.lean",
+      "baseline_declarations": 35,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocMem.lean",
+      "baseline_declarations": 51,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocMemAddr.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocMemCorr.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocMemOS.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocMoves.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocOS.lean",
+      "baseline_declarations": 33,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocOperands.lean",
+      "baseline_declarations": 36,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocSlots.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocSlotsFar.lean",
+      "baseline_declarations": 34,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocSound.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RegallocState.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RelaxLayout.lean",
+      "baseline_declarations": 30,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/RelaxReady.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillArity.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillAvail.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillClasses.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillClsChain.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillClsCheck.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillClsExt.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillClsInst.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillClsModel.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillClsRun.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillClsTab.lean",
+      "baseline_declarations": 39,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillCtlForms.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillCtlPipe.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillDefined.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillDefinedArgs.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillDefinedPaths.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillDefinedPrep.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillEdges.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillEdgesIsel.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillEdgesLow.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillEdgesPrep.lean",
+      "baseline_declarations": 31,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillLocal.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillLocalCheck.lean",
+      "baseline_declarations": 40,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillLocalForms.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillLocalPipe.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillLocalState.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillStep4.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillStep4Args.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillStep4Cfg.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillStep4Edge.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillStep4Homes.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillStep4Inst.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillStep4Run.lean",
+      "baseline_declarations": 28,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/SpillStep4State.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockAliasBounds.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockAliasScanEntries.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockAliasSemantics.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockAliasWrites.lean",
+      "baseline_declarations": 29,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockAllocationFlow.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockAvailableProvenance.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockBackwardSuffixSplit.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockBindingFlow.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockBlockRanges.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockBlockScan.lean",
+      "baseline_declarations": 47,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockBoundaryValues.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockConstantBoundary.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockConstantRoot.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockContext.lean",
+      "baseline_declarations": 29,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockCoreScanOrigin.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockCtorFlow.lean",
+      "baseline_declarations": 18,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockDFG.lean",
+      "baseline_declarations": 25,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockDemand.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockDriverBounds.lean",
+      "baseline_declarations": 41,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockEdgeAliasFrame.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockEmissionSemantics.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockEmittedScan.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockImm.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockLoadDelay.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockMappedFlow.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockNodeAliasConnection.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockNodeRecordOrigin.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockOmission.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockPatternBindings.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockPatternSink.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockPatternSource.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockPolicy.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockProjection.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockRecordFinalAlias.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockRecordedFlow.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockReservedFlow.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockReservedScanFlow.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockResults.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockRootFlow.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockSSAScanConnection.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockScan.lean",
+      "baseline_declarations": 18,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockScanBounds.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockScanFrontiers.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockScanSemantics.lean",
+      "baseline_declarations": 25,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockSelectedBindingFlow.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockSelectedFlow.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockSelectedProvenance.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockSinkProvenance.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockSourceOrder.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockSourceSSA.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockSourceView.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockTraversalAliasConnection.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockTraversalRecordOrigin.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/StockValues.lean",
+      "baseline_declarations": 38,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/TryRegs.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Proof/VCodeSem.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Backend/Regalloc.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Clif/Run.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Compile/Subset.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/DSL/Map.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/DSL/Ops.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/DSL/Ty.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/AllocDirect.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/AllocTotal.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/BinCheck.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Binary.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/BinaryGood.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/CodeMap.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Compose.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Elf.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/EmitCondsLower.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/EmitEnc.lean",
+      "baseline_declarations": 71,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/EmitLabels.lean",
+      "baseline_declarations": 45,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/EmitNear.lean",
+      "baseline_declarations": 43,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/EmitPreOk.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/EmitReady.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/EmitSize.lean",
+      "baseline_declarations": 31,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/EmitTotal.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/EmitTotalIn.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecBytes.lean",
+      "baseline_declarations": 49,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecFrame.lean",
+      "baseline_declarations": 18,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecFrameSim.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecGoodReads.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecGoodRun.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecGot.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecProven.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecReads.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecRunN.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecStatic.lean",
+      "baseline_declarations": 25,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/ExecWords.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Final.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/FinalDirect.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/GotFlow.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Guarded.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Legal.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LegalDirect.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Link.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkArm.lean",
+      "baseline_declarations": 166,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkCheck.lean",
+      "baseline_declarations": 61,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkClif.lean",
+      "baseline_declarations": 53,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkClifN.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkGood.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnCalls.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnCallsRun.lean",
+      "baseline_declarations": 33,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnCallsShape.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnCallsShapeOf.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnCallsStmt.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnCallsStmtHyp.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnCallsTry.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnCallsTryHyp.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnFrames.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnGotLocal.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnGotRun.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnRets.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnRetsIsel.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkOwnSegRange.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkPlace.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkScope.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkWorld.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LinkWorldX.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Lockstep.lean",
+      "baseline_declarations": 34,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/LowerDirect.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Main.lean",
+      "baseline_declarations": 22,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/MoveReads.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/NonVacuity.lean",
+      "baseline_declarations": 37,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/NonVacuityLink.lean",
+      "baseline_declarations": 78,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Opt.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/OptProven.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Pair.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/PairDriver.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/PairLines.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/PrepDirect.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelArgs.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelAtomic.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelBranch.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelCall.lean",
+      "baseline_declarations": 27,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelCorrect.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelCorrectX.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelDriverSem.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelEmit.lean",
+      "baseline_declarations": 32,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelFrame.lean",
+      "baseline_declarations": 38,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelGoodX.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelGoto.lean",
+      "baseline_declarations": 32,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelJT.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelMachine.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelMove.lean",
+      "baseline_declarations": 38,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelNext.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelOp.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelOpReads.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelRelax.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelSim.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelTls.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelTrap.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RegLevelTry.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/RelaxTotal.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SizeIn.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SizeLower.lean",
+      "baseline_declarations": 42,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SizeVC.lean",
+      "baseline_declarations": 57,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillAvail.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillCheckAlloc.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillCheckAllocFix.lean",
+      "baseline_declarations": 28,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillCheckAllocMono.lean",
+      "baseline_declarations": 50,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillCtlCheck.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillCtlWitness.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillDefined.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillDefinedFalse.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillKillFree.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillLocalWitness.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/SpillLower.lean",
+      "baseline_declarations": 32,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/StackBound.lean",
+      "baseline_declarations": 50,
+      "missing": []
+    },
+    {
+      "file": "FV/E2E/Statement.lean",
+      "baseline_declarations": 15,
+      "missing": []
+    },
+    {
+      "file": "FV/Isle/InterpProjection.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/CodeMapProof.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/Compile.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/Correct.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/Exe.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/ExeTotal.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/Image.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/ImageProof.lean",
+      "baseline_declarations": 30,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/Layout.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/LayoutFacts.lean",
+      "baseline_declarations": 25,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/LayoutProof.lean",
+      "baseline_declarations": 18,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/OutsideProof.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/RelocProof.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/RelocShape.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/RelocShapeProof.lean",
+      "baseline_declarations": 51,
+      "missing": []
+    },
+    {
+      "file": "FV/Link/Total.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/Dom.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/DomInv.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/GvnEdit.lean",
+      "baseline_declarations": 34,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/InterpEval.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/InterpMatch.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/InterpState.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalArith.lean",
+      "baseline_declarations": 48,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalBase.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalComplete.lean",
+      "baseline_declarations": 73,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalDirect.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalExt.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalMem.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalPat.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalPlan.lean",
+      "baseline_declarations": 37,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalRust.lean",
+      "baseline_declarations": 36,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalSem.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalShift.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalShift16.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalShift32.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalShift64.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalShift8.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalSim.lean",
+      "baseline_declarations": 107,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/LegalStep.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/Pipeline.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleAll.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleArith.lean",
+      "baseline_declarations": 172,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleArith2.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleArith3.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleArith4.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleArith5.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleArith6.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleArith7.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleArith8.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleAuto.lean",
+      "baseline_declarations": 23,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBase.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBitops1.lean",
+      "baseline_declarations": 67,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBitops2.lean",
+      "baseline_declarations": 86,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBitops3.lean",
+      "baseline_declarations": 90,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBitops4.lean",
+      "baseline_declarations": 90,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBitops5.lean",
+      "baseline_declarations": 60,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBitops6.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBitops7.lean",
+      "baseline_declarations": 31,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBitops8.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleBitopsEmbed.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleCprop.lean",
+      "baseline_declarations": 52,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleCprop2.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleCprop3.lean",
+      "baseline_declarations": 13,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleCprop4.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleData.lean",
+      "baseline_declarations": 385,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleEmbed.lean",
+      "baseline_declarations": 21,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleExtEmbed.lean",
+      "baseline_declarations": 35,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleExtends.lean",
+      "baseline_declarations": 26,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp1.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp10.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp12.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp13.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp2.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp3.lean",
+      "baseline_declarations": 8,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp4.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp5.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp6.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp7.lean",
+      "baseline_declarations": 16,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp8.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmp9.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmpEmbed.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleIcmpEmbed2.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleImm.lean",
+      "baseline_declarations": 81,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleInfraAbs.lean",
+      "baseline_declarations": 9,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleInfraConst.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleInfraDivConst.lean",
+      "baseline_declarations": 37,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleInfraI128.lean",
+      "baseline_declarations": 10,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleInfraIcmp.lean",
+      "baseline_declarations": 6,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleInfraPow2.lean",
+      "baseline_declarations": 77,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleNode.lean",
+      "baseline_declarations": 17,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleRemat.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleRestEmbed.lean",
+      "baseline_declarations": 7,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSelects1.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSelects2.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSelects3.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSelects4.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSelects5.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSelects6.lean",
+      "baseline_declarations": 14,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSelects7.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSelects8.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleShifts1.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleShifts2.lean",
+      "baseline_declarations": 24,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleShifts3.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleShifts4.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleShifts5.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSkel.lean",
+      "baseline_declarations": 2,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSkelEmbed.lean",
+      "baseline_declarations": 43,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSkeleton.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSkeleton2.lean",
+      "baseline_declarations": 5,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSkeleton3.lean",
+      "baseline_declarations": 11,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSkeleton4.lean",
+      "baseline_declarations": 1,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSkeleton5.lean",
+      "baseline_declarations": 34,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSkeleton6.lean",
+      "baseline_declarations": 12,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/RuleSpaceship.lean",
+      "baseline_declarations": 20,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/SemFacts.lean",
+      "baseline_declarations": 25,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/SemSim.lean",
+      "baseline_declarations": 61,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/SimpDen.lean",
+      "baseline_declarations": 18,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/SimpGraph.lean",
+      "baseline_declarations": 36,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/SimpLoop.lean",
+      "baseline_declarations": 57,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/SimpMat.lean",
+      "baseline_declarations": 19,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/SimpPass.lean",
+      "baseline_declarations": 3,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/SimpSim.lean",
+      "baseline_declarations": 102,
+      "missing": []
+    },
+    {
+      "file": "FV/Opt/Proof/Unreachable.lean",
+      "baseline_declarations": 4,
+      "missing": []
+    }
+  ]
+}

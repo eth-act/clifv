@@ -88,7 +88,7 @@ run_one() {
   for l in $link; do links+=(--link "$l"); done
   local ok=1
   if [[ $ASM == 1 ]]; then
-    .lake/build/bin/lean-backend "$f" "$d/obj/$b.s" --regalloc "$RA" $OPTS --traps "$d/obj/$b.traps.json" \
+    "${LEAN_BACKEND:-.lake/build/bin/lean-backend}" "$f" "$d/obj/$b.s" --regalloc "$RA" $OPTS --traps "$d/obj/$b.traps.json" \
       2> "$d/obj/$b.unsupported.txt"
     if ! "$LLVM_MC" -triple=aarch64-linux-gnu -filetype=obj "$d/obj/$b.s" -o "$d/obj/$b.o" \
          2> "$d/obj/$b.mc.txt"; then
@@ -96,7 +96,7 @@ run_one() {
       cat "$d/obj/$b.mc.txt" >&2
       ok=0
     fi
-  elif ! .lake/build/bin/lean-backend "$f" "$d/obj/$b.o" --regalloc "$RA" $OPTS --traps "$d/obj/$b.traps.json" \
+  elif ! "${LEAN_BACKEND:-.lake/build/bin/lean-backend}" "$f" "$d/obj/$b.o" --regalloc "$RA" $OPTS --traps "$d/obj/$b.traps.json" \
          2> "$d/obj/$b.unsupported.txt"; then
     echo "{\"file_error\": \"the Lean encoder failed for $f\"}" > "$d/lean/$b.json"
     grep -v ': unsupported: ' "$d/obj/$b.unsupported.txt" >&2 || true

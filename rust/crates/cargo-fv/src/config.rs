@@ -6,10 +6,10 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
     /// Backend only: compiled functions outside `unverifiedReason?` are inside
-    /// `E2E.backend_correct_final`.
+    /// `E2E.backend_correct_final_cleanup`.
     Plain,
     /// `--opt-proven-only`: the Lean mid-end with the proven rule set; the end-to-end theorem is
-    /// `E2E.backend_correct_opt_proven`.
+    /// `E2E.backend_correct_opt_proven_cleanup`.
     OptProven,
     /// `--opt`: the Lean mid-end with every simplify rule, most of them unproven, so no
     /// function is reported verified.
@@ -35,16 +35,16 @@ impl Mode {
     /// Extra `lean-backend` arguments.
     pub fn backend_args(self) -> &'static [&'static str] {
         match self {
-            Mode::Plain => &[],
-            Mode::OptProven => &["--opt-proven-only"],
-            Mode::Opt => &["--opt"],
+            Mode::Plain => &["--dead-cleanup"],
+            Mode::OptProven => &["--opt-proven-only", "--dead-cleanup"],
+            Mode::Opt => &["--opt", "--dead-cleanup"],
         }
     }
     /// The theorem a "verified" function is inside.
     pub fn theorem(self) -> Option<&'static str> {
         match self {
-            Mode::Plain => Some("E2E.backend_correct_final"),
-            Mode::OptProven => Some("E2E.backend_correct_opt_proven"),
+            Mode::Plain => Some("E2E.backend_correct_final_cleanup"),
+            Mode::OptProven => Some("E2E.backend_correct_opt_proven_cleanup"),
             Mode::Opt => None,
         }
     }

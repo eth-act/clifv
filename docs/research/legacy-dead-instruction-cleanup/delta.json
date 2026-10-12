@@ -1,0 +1,35 @@
+{
+  "baseline_exact": 465,
+  "candidate_exact": 674,
+  "lost": [],
+  "new_rejections": [],
+  "focused": [
+    {
+      "test": "isa/aarch64/bitops.clif",
+      "name": "%band_not_i64",
+      "occurrences": 1,
+      "all_exact": true
+    },
+    {
+      "test": "runtests/arithmetic.clif",
+      "name": "%msub_i32",
+      "occurrences": 1,
+      "all_exact": true
+    },
+    {
+      "test": "isa/aarch64/stack.clif",
+      "name": "%stack_load_small",
+      "occurrences": 1,
+      "all_exact": true
+    }
+  ],
+  "uncompared_reference_gaps": [
+    [
+      "runtests/throw.clif",
+      0
+    ]
+  ],
+  "checkpoint_passed": true,
+  "gained_count": 209,
+  "gained_identities": "gains.tsv"
+}

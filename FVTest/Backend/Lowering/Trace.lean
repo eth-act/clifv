@@ -6,7 +6,7 @@ import FV.Opt.Legalize128Pass
 # Instruction-selection diagnostics
 
 `lean-backend-lowering-trace INPUT.clif OUTPUT.json` records initial value registers,
-selected VCode, fired rules, and the prepared allocator input. It does not allocate or
+raw selected VCode, fired rules, cleanup output and the prepared allocator input. It does not allocate or
 emit code and does not change the compiler's lowering/checking path. Give it the
 stock-effective Lean input from a settings-matched comparison to inspect that case.
 
@@ -107,10 +107,11 @@ def stockSnapshot (f : Clif.Function) : Except String Json := do
     ("edge_args", toJson (r.edgeArgs.map fun args => args.map fun rs => rs.map regJson)),
     ("allocator_input", allocator)]
 
-def snapshot (f : Clif.Function) (stockSchedule : Bool) : Except String Json := do
+def snapshot (f : Clif.Function) (stockSchedule : Bool) (deadCleanup : Bool := true) : Except String Json := do
   let (ctx, ranges, initial) ← buildCtx f
   let selected ← lowerFunction f
-  let prepared ← prepare selected
+  let allocationSelected := if deadCleanup then DeadCleanup.prune selected else selected
+  let prepared ← prepare allocationSelected
   let replay ← replayJson f ctx initial
   let allocator ← match Json.parse (← vcodeJson prepared) with
     | .ok j => pure j
@@ -125,18 +126,20 @@ def snapshot (f : Clif.Function) (stockSchedule : Bool) : Except String Json := 
     ("source_blocks", toJson (f.blocks.map (·.id))),
     ("instruction_ranges", toJson (ranges.map fun (start, stop) => #[start, stop])),
     ("checker_replay", replay),
-    ("selected", codeJson selected), ("prepared", codeJson prepared),
+    ("selected", codeJson selected),
+    ("allocation_selected", codeJson allocationSelected),
+    ("dead_cleanup", toJson deadCleanup), ("prepared", codeJson prepared),
     ("allocator_input", allocator)] ++ if stockSchedule then [
     ("stock_schedule", match stockSnapshot f with
       | .ok j => j
       | .error e => Json.mkObj [("status", toJson "unsupported"), ("reason", toJson e)])] else [])
 
-def run (input output : String) (stockSchedule : Bool := false) : IO UInt32 := do
+def run (input output : String) (stockSchedule : Bool := false) (deadCleanup : Bool := true) : IO UInt32 := do
   let source ← IO.FS.readFile input
   let legalized := Opt.Legalize128.parsedFile128 (Clif.parseFile source)
   let rows := legalized.file.funcs.map fun parsed =>
     let result := match parsed.func with
-      | .ok f => snapshot f stockSchedule
+      | .ok f => snapshot f stockSchedule deadCleanup
       | .error e => .error e.toString
     match result with
     | .ok report => Json.mkObj [
@@ -146,6 +149,7 @@ def run (input output : String) (stockSchedule : Bool := false) : IO UInt32 := d
         ("reason", toJson reason)]
   let report := Json.mkObj [
     ("schema", toJson (1 : Nat)), ("input", toJson input),
+    ("dead_cleanup", toJson deadCleanup),
     ("legalization_accepted", toJson legalized.accepted),
     ("legalization_unverified", toJson legalized.unverified),
     ("functions", toJson rows)]
@@ -156,8 +160,15 @@ end LoweringTrace
 
 def main (args : List String) : IO UInt32 := do
   match args with
-  | [input, output, "--stock-schedule"] => LoweringTrace.run input output true
-  | [input, output] => LoweringTrace.run input output
+  | input :: output :: flags =>
+    if flags.all (fun f => ["--stock-schedule", "--dead-cleanup", "--no-dead-cleanup"].contains f) then
+      let cleanup := flags.foldl (fun mode flag =>
+        if flag == "--dead-cleanup" then true
+        else if flag == "--no-dead-cleanup" then false else mode) true
+      LoweringTrace.run input output (flags.contains "--stock-schedule") cleanup
+    else
+      IO.eprintln "unknown lowering-trace option"
+      return 2
   | _ =>
-    IO.eprintln "usage: lean-backend-lowering-trace INPUT.clif OUTPUT.json [--stock-schedule]"
+    IO.eprintln "usage: lean-backend-lowering-trace INPUT.clif OUTPUT.json [--stock-schedule] [--dead-cleanup|--no-dead-cleanup]"
     return 2

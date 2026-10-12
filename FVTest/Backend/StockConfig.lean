@@ -193,8 +193,10 @@ def allocate (c : Config) (clif : String → List Clif.Function)
 /-- The configuration receipt. `functionRejections` is written after compilation: the
 functions that `configure` rejected, by name, with the reason. -/
 def receipt (request : Json) (error : Option String)
-    (functionRejections : Option (List (String × String)) := none) : Json :=
+    (functionRejections : Option (List (String × String)) := none)
+    (deadCleanup : Bool := false) : Json :=
   Json.mkObj ([("schema", toJson (1 : Nat)), ("request", request),
+    ("dead_instruction_cleanup", toJson deadCleanup),
     ("configuration_accepted", toJson error.isNone), ("error", toJson error),
     ("proof_scope", toJson "experimental stock-configured driver; not covered by backend_correct"),
     ("policy", toJson "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization")] ++

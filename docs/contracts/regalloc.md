@@ -1,5 +1,8 @@
 # Register allocation: regalloc2 + Lean checker (M6)
 
+The legacy-driver cleanup stage and its matching proof consumers are described in
+[dead-cleanup.md](dead-cleanup.md); original theorem variants remain available.
+
 Modules: `FV/Backend/RegallocOps.lean` (operands, clobbers, machine environment, CFG
 preparation), `FV/Backend/RegallocCheck.lean` (the checker), `FV/Backend/SpillAlloc.lean` (the
 spill fallback, V4), `FV/Backend/Regalloc.lean`
