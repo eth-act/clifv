@@ -21,6 +21,20 @@ that create opportunistic flag producers. This is a prerequisite, not yet a
 whole-driver proof that opportunistic state stays empty. Preserve the existing
 source scope; prove reachability before broadening remembered-register semantics.
 
+PR #142 landed as `94b9a34`. The existing 704-entry coverage table and its
+statement, terminator and branch root checks also pass with `opportunistic_def`
+forbidden (`StockNoOpportunityTable`); the strengthened checks are proved by
+kernel reduction without new native certificates. The abstract bot shortcut
+cannot admit that constructor on inhabited abstract inputs. Actual other Stock
+constructors preserve the entire remembered-definition table
+(`StockNoOpportunityCtor`), including demand and payload alias updates.
+
+Next connect the existing abstract analysis to Stock.State and its mapped source
+view, rather than changing the shared legacy Cov interfaces. Instantiate the
+remembered-state invariant and compose actual interpreter/term/block/whole-driver
+runs. The checked table and constructor frames are prerequisites; they do not
+alone establish the whole-driver invariant or any emitted instruction semantics.
+
 Next: source-available final paths, reserved-value semantics and noninterference;
 then discharge actual selected/omitted/sunk rule semantics, whole simulation and
 completeness, baseline identity/proof parity and real production/checker/linker
