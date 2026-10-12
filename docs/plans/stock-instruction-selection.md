@@ -55,7 +55,17 @@ Eight new proof/witness roots use standard axioms only. Full1427/crates1171,
 runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
 `docs/research/stock-term-coverage-audit.json`.
 
-Next cover body scans and try-call term contexts, then real blocks/nodes and
+PR #146 landed as `26fdfd7`. StockCoverageScans proves actual context building
+initializes an empty remembered table, and actual source-body scans retain it
+through omission, sinking, commit attempts and emission. Complete scan lists
+compose with source/branch/return/trap slot metadata. A real constant-and-return
+function emits both instructions and installs alias193→194; its demanded body
+record also witnesses the single-scan theorem. Six new roots pass standard-only
+normal kernel and MCP run-code audits. Full1428/crates1171, runtime4672/0/0,
+encoder1292/0 and E2E1150/0 pass. See `docs/research/stock-scan-coverage-audit.json`.
+
+Next derive slot metadata uniformly from actual block construction, cover
+try-call term contexts and compose real blocks/nodes and
 the complete whole-driver remembered-state invariant. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
