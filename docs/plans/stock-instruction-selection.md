@@ -40,7 +40,14 @@ exercise actual allocation and Size64 oracle evaluation. Nine new public
 proof/witness roots pass standard-only kernel and MCP audits. All local gates
 pass: full1425/crates1171, runtime4672/0/0, encoder1292/0, E2E1150/0.
 
-Next compose checked source/terminator/branch roots and real scans/nodes to get
+PR #144 landed as `a043f9d`. StockCoverageRoots now composes actual named
+source-statement and branch roots with checked summaries/pure exclusions, and
+proves result binding after real emission retains the remembered table. Six
+standard-only roots/witnesses cover a real allocating constant, installed
+alias193→194 and a two-block jump chunk. All local gates pass:
+full1426/crates1171, runtime4672/0/0, encoder1292/0, E2E1150/0.
+
+Next cover return/trap and try-call term contexts, then real scans/nodes and
 the complete whole-driver remembered-state invariant. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
