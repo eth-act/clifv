@@ -47,7 +47,15 @@ standard-only roots/witnesses cover a real allocating constant, installed
 alias193→194 and a two-block jump chunk. All local gates pass:
 full1426/crates1171, runtime4672/0/0, encoder1292/0, E2E1150/0.
 
-Next cover return/trap and try-call term contexts, then real scans/nodes and
+PR #145 landed as `59797d1`. The next bounded slice adds return/trap root
+preservation, generic result-binding preservation, actual return/trap emission
+and the mandatory terminator scan. A real nonempty one-block return function
+inhabits root, emission and scan premises; virtual binding installs alias192→194.
+Eight new proof/witness roots use standard axioms only. Full1427/crates1171,
+runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
+`docs/research/stock-term-coverage-audit.json`.
+
+Next cover body scans and try-call term contexts, then real blocks/nodes and
 the complete whole-driver remembered-state invariant. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
