@@ -65,9 +65,8 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 ### 1.3 Trusted by design (not part of this file's goal)
 
 - the frontend: rustc + rustc_codegen_cranelift produce the CLIF; the theorems are relative to it;
-- Lean's kernel and the compiled LRAT checks in the remaining **fixed** bit-vector proofs
-  (proven once, not per program; after T6 only `movK_ident`'s six `bv_decide` certificates; the
-  encoder and optimizer rule proofs use only standard axioms);
+- Lean's kernel (since T6 no fixed proof needs compiled evaluation: no `bv_decide` or
+  `native_decide` certificate remains in the compiler theorems);
 - the Arm model and `Clif.run` as specifications (fidelity is tested, not proven: T4, T5);
 - the contracts of code outside the program (std, musl, cg_clif-fallback functions), the OS loader.
 
@@ -588,8 +587,7 @@ author's estimate, not measured), **Risk**.
       of `binary_correct_of_checks_acyclic` + `codeMapB` + `HooksSim` + `GotOk I file` (decidable,
       `gotB`) + `OutsideAvoids (GotSlot I file) …`, no per-state hypothesis; conclusion
       `ExecRefines … (step I B file) r (RelocAt I) (Clif.runLoop …)`. Axioms: `propext`,
-      `Classical.choice`, `Quot.sound` and the project's fixed-proof certificates (since T6 only
-      `movK_ident`'s six `bv_decide` ones). Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
+      `Classical.choice`, `Quot.sound` (since T6 no fixed-proof certificate). Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
       (`a_arith`'s `wrapping_add`; no GOT pair, `noGotPair`).
   - **Done: aliases** (item 6; 2026-10-06, `agent/exec-alias`; e2e.md "The executable's own words",
     "Aliases"): `siteAt` returns the kind of site (`Site`, `siteOf`: real word, call of the
@@ -711,7 +709,7 @@ Large, low priority.
 | T3 | std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | needs S11, S12, inline asm |
 | T4 | Arm model fidelity (ASL-derived, qemu co-simulation) | testing, not proof |
 | T5 | `Clif.run` fidelity (Cranelift interpreter + native runs) | testing, not proof |
-| T6 | `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | replace with kernel-checked reflection where feasible; per-program uses disappear with L1–L4. Progress (`agent/kernel-trust-t6`): every fixed `native_decide`, the encoder's `bv_decide` and the backend bit-vector lemmas' `bv_decide` replaced by kernel proofs (symbolic `BitVec` lemmas; leaf-wise `decide +kernel` over generated tables and untrusted literal term sets, `TermSetGen`); `compileExe_correct`, `backend_correct_final`, `binary_correct_exec_proven`: 759 → 6 `bv_decide` (only `movK_ident`, coordinated in #42) and 68 → 0 `native_decide` axioms. Optimizer rule proofs (`Opt.Proof`, formerly 934 lemmas with `bv_decide`): **done**, kernel-checked by the tactic `kbv` (`FV/Opt/Proof/KernelBV.lean`: restates the goal over its bit-vector context, then kernel-checked methods under heartbeat budgets, `kbv_guard` 20 000–2 000 000 `maxHeartbeats` units per method and 4 000 000 per goal: `bv_normalize`, bit extensionality + `decide`, `if`/`bif` case splits, `toNat`/`toInt` + `omega`, minterms + `grind`, constant-shift case splits, sign-mask lemmas, per-index bit evaluation; the shift and spaceship modules first try `kbv_amt`/`kbv_cmp`, `RuleInfraShiftAmt.lean`: shift amounts as `Nat` arithmetic, rotations as `rotateLeft`, comparison results by case split) and hand proofs (bswap/popcount, pow2 `sdiv`/`srem`, `RuleImm`'s immediate specs); no `bv_decide`, `native_decide` or `ofReduceBool` under `FV/Opt`; `simplifyRulesCorrect_proven` and the rule theorems (`RuleAll`): `propext`, `Classical.choice`, `Quot.sound` only; `backend_correct_opt_proven`: those + `movK_ident`'s six. Left: `movK_ident`; Lean 4.34's kernel-mode LRAT reflection failed even on a 15-node probe, so it needs a symbolic proof |
+| T6 | `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | **done** (`agent/kernel-trust-t6`, publication pending): every fixed `native_decide` and `bv_decide` replaced by kernel-checked proofs, statements unchanged. Encoder: symbolic field lemmas. Generated tables: leaf-wise `decide +kernel`; closure term sets are untrusted literals (`TermSetGen`) checked by the kernel. Backend bit-vector lemmas (incl. `movK_ident`, for every width): symbolic `BitVec` proofs. Optimizer rules (formerly 934 lemmas): the kernel-checked finisher `kbv` (`FV/Opt/Proof/KernelBV.lean`: bounded per-method heartbeat budgets; `bv_normalize`, bit extensionality, case splits, `toNat`/`toInt` + `omega`, minterms + `grind`, shift/sign lemmas), `kbv_amt`/`kbv_cmp` (`RuleInfraShiftAmt.lean`) and hand proofs. `compileExe_correct`/`_total`, `backend_correct_final`, `binary_correct_exec_proven`, `backend_correct_opt_proven`: 759–9000 `bv_decide` and up to 68 `native_decide` axioms → `propext`, `Classical.choice`, `Quot.sound` only. Lean 4.34's kernel-mode LRAT reflection was infeasible (failed on a 15-node probe). Cost: the Opt proof modules need a serial pre-build (§7) |
 | T7 | `normalize.py`, `clif-data-export` (frontend-side tools) | part of the trusted frontend today |
 
 ## 6. Not needed for the goal
@@ -804,5 +802,5 @@ label**; list the free ones with
 | T3 | [#39](https://github.com/eth-act/clifv/issues/39) Trusted base: std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | open |
 | T4 | [#40](https://github.com/eth-act/clifv/issues/40) Trusted base: Arm model fidelity (ASL-derived, qemu co-simulation) | open |
 | T5 | [#41](https://github.com/eth-act/clifv/issues/41) Trusted base: `Clif.run` fidelity (Cranelift interpreter + native runs) | open |
-| T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | in progress (`agent/kernel-trust-t6`): backend chain free of `native_decide` and of `bv_decide` but `movK_ident`; optimizer rule proofs done (`kbv`, standard axioms only); left: `movK_ident`'s six `bv_decide` certificates (§5) |
+| T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | **done** locally (`agent/kernel-trust-t6`; publication pending): no compiled-evaluation axiom in the compiler theorems |
 | T7 | [#43](https://github.com/eth-act/clifv/issues/43) Trusted base: `normalize.py`, `clif-data-export` (frontend-side tools) | open |

@@ -379,7 +379,7 @@ The goal "a real crate is covered by one theorem" is reached (all example crates
 | 6 | Unwinding | landing pads, LSDA, `.eh_frame` trusted; try_call covered for normal returns | prove unwinding, or build with `--panic-abort` (a panic becomes an abort, covered by the trap semantics) | large / free with panic-abort | v1 uses `--panic-abort` |
 | 7 | std and musl | contracts (allocator, I/O, panics, startup) | compile std through `cargo fv` (needs 5), or keep it as an explicitly trusted library with stated contracts | large | not started |
 
-**Trusted regardless:** the frontend (rustc, cg_clif); Lean's kernel, compiler and runtime (they build the compiler and run the remaining compiled LRAT checks; legacy crate/witness certificates also use `native_decide`); our CLIF and Arm models (single core, the TLSDESC hook); the OS loading the ELF segments at their link addresses. T6's encoder and fixed table proof cutover reduces oracle dependencies, not these remaining trust categories. Runs where the CLIF program gets stuck (undefined behaviour) carry no claim, as usual for refinement.
+**Trusted regardless:** the frontend (rustc, cg_clif); Lean's kernel, compiler and runtime (they build and run the compiler; since T6 no compiler theorem depends on compiled `bv_decide`/`native_decide` evaluation, though legacy crate/witness certificates still use `native_decide`); our CLIF and Arm models (single core, the TLSDESC hook); the OS loading the ELF segments at their link addresses. Runs where the CLIF program gets stuck (undefined behaviour) carry no claim, as usual for refinement.
 
 **v1 = items 1–4, with `--panic-abort` for item 6.** Deliverables:
 - an ELF reader in Lean, and checkers for code bytes, data/GOT and the stack bound, each with a soundness theorem;

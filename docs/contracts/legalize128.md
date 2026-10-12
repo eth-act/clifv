@@ -71,9 +71,8 @@ in `i128-load-store.clif`, agreed by the legalised form).
 
 ## The end-to-end theorem
 
-Axioms of every theorem below: `propext`, `Classical.choice`, `Quot.sound` and at most the
-backend's `_native` `bv_decide` certificates (since T6 only `movK_ident`'s six; the
-`FV/Opt/Proof/Legal*` proofs use none).
+Axioms of every theorem below: `propext`, `Classical.choice`, `Quot.sound` (since T6 no
+`bv_decide`/`native_decide` certificate in the backend or `FV/Opt/Proof/Legal*` proofs).
 
 ```lean
 theorem E2E.backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert}

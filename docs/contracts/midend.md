@@ -361,8 +361,8 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
 ## Pass proofs (2026-09-28, MidPassProofs)
 
 Proven (no `sorry`, no hand-written axioms; `#print axioms` = `propext`, `Classical.choice`,
-`Quot.sound`, plus for `E2E.backend_correct_opt` `movK_ident`'s six `_native.bv_decide`
-certificates inherited from `backend_correct_final` (T6)):
+`Quot.sound`; since T6 no `bv_decide` certificate, neither in the rule proofs nor inherited from
+`backend_correct_final`):
 
 | Theorem | File | Statement |
 | --- | --- | --- |
@@ -385,8 +385,7 @@ configuration given `Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn`; that hy
 proven for sound rule sets (`Opt.simplifyPassSim`) and hence for the proven rule sets
 (`simplifyPassSim_proven`), which gives `optimize_sim_proven` and
 `E2E.backend_correct_opt_proven`. `#print axioms E2E.backend_correct_opt_proven` is exactly
-the axiom set of `backend_correct_opt` (`propext`, `Classical.choice`, `Quot.sound` and
-`movK_ident`'s six `_native.bv_decide` certificates; the rule proofs add none, T6); `simpOk_sim`, `simplify_facts`, `simplifyPassSim`,
+the axiom set of `backend_correct_opt` (`propext`, `Classical.choice`, `Quot.sound`; T6); `simpOk_sim`, `simplify_facts`, `simplifyPassSim`,
 `optimize_sim_proven`: `propext`, `Classical.choice`, `Quot.sound`.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
