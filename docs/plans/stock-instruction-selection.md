@@ -134,8 +134,24 @@ runtime4672/0/0 (seven unchanged not-runnable cases), encoder1292/0 and
 E2E1150/0 pass; every E2E identity/stage matches the previous checkpoint.
 See `docs/research/stock-payload-alias-origins-audit.json`.
 
-Next close defined-source alias chains and
-execution establishing reserved/source values, then noninterference and full
+PR #153 landed as `1c19bb9`. StockSourceAliasRank reuses the legacy
+provenance-count rank over source IDs, without assuming identity register
+numbering. Original dominance excludes self-provenance; actual recorded final
+source-to-source aliases with an aliased target strictly decrease rank. The
+fresh alternative is excluded by the actual final alias-array/record frontier
+bound; reserved targets are separated from source mappings. Undefined mapped
+targets are excluded by the whole-driver terminal theorem. Nonempty recorded
+source-alias paths strictly decrease rank and cannot cycle. A real constant and
+two reductions install194→193→192→195, with both reduction records retained.
+The two witnesses inhabit all five proof results. Seven standard-only MCP audits
+and79 normal audits pass, preserving72 prior sets including seven final roots.
+Full1435/crates1171/runtime4672/0/0 with seven unchanged not-runnable cases,
+encoder1292/0 and E2E1150/0 pass; all E2E identities/stages match the preceding
+checkpoint. See `docs/research/stock-source-alias-rank-audit.json`.
+
+Next derive a producing record for every installed source alias, lifting the
+recorded-chain argument to the actual complete final map; then establish
+execution values, then noninterference and full
 value simulation/completeness. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
