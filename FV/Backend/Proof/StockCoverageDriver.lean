@@ -9,6 +9,12 @@ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000
 set_option maxHeartbeats 4000000
 
+/-- The actual stored block scans have empty remembered definitions at every
+scan/record boundary. This is a proof invariant, not a replay certificate. -/
+def RecordsEmpty (events : Array BlockScanEvent) : Prop :=
+  ∀ event ∈ events.toList, NoOpportunity event.input ∧
+    ∀ record ∈ event.output.records, NoOpportunity record.input ∧ NoOpportunity record.output.state
+
 section Preservation
 attribute [local irreducible] Isle.Aarch64.program Stock.runTerm lowerBlockCore assembleOriginalBlock
 
@@ -27,14 +33,14 @@ private theorem original_bound {f : Clif.Function} (scope : LowerScope f)
 
 /-- Every actual original or critical-edge node in the constructed order
 preserves empty remembered definitions. Actual blocks/ranges are derived. -/
-theorem node_noOpportunity {f : Clif.Function} {ctx : Ctx}
+private theorem node_invariant {f : Clif.Function} {ctx : Ctx}
     {ranges : Array (Nat × Nat)} {initial : State}
     (build : Stock.buildCtx f = .ok (ctx, ranges, initial)) (scope : LowerScope f)
     {order : Order} (ordered : blockOrder f = .ok order)
     {params : List Nat} {label : Nat} (inside : label < order.nodes.size)
     {input output : DriverState} (empty : NoOpportunity input.state)
     (run : lowerNode ctx ranges order f params label input = .ok output) :
-    NoOpportunity output.state := by
+    NoOpportunity output.state ∧ (RecordsEmpty input.blockScans → RecordsEmpty output.blockScans) := by
   cases node : order.nodes[label]! with
   | edge pred k target =>
     unfold lowerNode at run
@@ -45,6 +51,7 @@ theorem node_noOpportunity {f : Clif.Function} {ctx : Ctx}
       rcases pair with ⟨args, next⟩
       simp only [edge, bind, Except.bind, pure, Except.pure] at run
       cases run
+      refine ⟨?_, fun old => old⟩
       intro v
       rw [branchArgs_noOpportunity edge]
       exact empty v
@@ -91,31 +98,50 @@ theorem node_noOpportunity {f : Clif.Function} {ctx : Ctx}
           | ok finished =>
             simp only [assembled, pure, Except.pure] at run
             cases run
-            exact blockCore_noOpportunity build scope block rangeRun dataRun empty core
+            refine ⟨blockCore_noOpportunity build scope block rangeRun dataRun empty core, ?_⟩
+            intro old event member
+            change event ∈ (input.blockScans.push lowered.scan).toList at member
+            simp only [Array.toList_push, List.mem_append, List.mem_singleton] at member
+            rcases member with member | rfl
+            · exact old event member
+            · exact blockCore_records_noOpportunity build scope block rangeRun dataRun empty core
 
-private theorem traversal_empty {f : Clif.Function} {ctx : Ctx}
+/- The state-only theorem keeps its original interface. -/
+theorem node_noOpportunity {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, initial)) (scope : LowerScope f)
+    {order : Order} (ordered : blockOrder f = .ok order)
+    {params : List Nat} {label : Nat} (inside : label < order.nodes.size)
+    {input output : DriverState} (empty : NoOpportunity input.state)
+    (run : lowerNode ctx ranges order f params label input = .ok output) :
+    NoOpportunity output.state :=
+  (node_invariant build scope ordered inside empty run).1
+
+private theorem traversal_invariant {f : Clif.Function} {ctx : Ctx}
     {ranges : Array (Nat × Nat)} {initial : State}
     (build : Stock.buildCtx f = .ok (ctx, ranges, initial)) (scope : LowerScope f)
     {order : Order} (ordered : blockOrder f = .ok order) {params labels : List Nat}
     (inside : ∀ label ∈ labels, label < order.nodes.size)
     {input output : DriverState} (empty : NoOpportunity input.state)
+    (old : RecordsEmpty input.blockScans)
     (run : labels.foldlM (fun d label => lowerNode ctx ranges order f params label d) input = .ok output) :
-    NoOpportunity output.state := by
+    NoOpportunity output.state ∧ RecordsEmpty output.blockScans := by
   induction labels generalizing input with
-  | nil => cases run; exact empty
+  | nil => cases run; exact ⟨empty, old⟩
   | cons label labels ih =>
     rw [List.foldlM_cons] at run
     cases call : lowerNode ctx ranges order f params label input with
     | error e => simp only [call, bind, Except.bind] at run; cases run
     | ok next =>
       simp only [call, bind, Except.bind] at run
-      exact ih (fun k member => inside k (List.mem_cons_of_mem label member))
-        (node_noOpportunity build scope ordered (inside label (List.mem_cons_self)) empty call) run
+      have preserved := node_invariant build scope ordered (inside label (List.mem_cons_self)) empty call
+      exact ih (fun k member => inside k (List.mem_cons_of_mem label member)) preserved.1 (preserved.2 old) run
 
 /-- The actual complete Stock driver never creates remembered definitions on
 the existing source scope. All node metadata and loop bounds are derived. -/
-theorem lower_noOpportunity {f : Clif.Function} (scope : LowerScope f) {result : Result}
-    (run : Stock.lower f = .ok result) : NoOpportunity result.final := by
+private theorem lower_invariant {f : Clif.Function} (scope : LowerScope f) {result : Result}
+    (run : Stock.lower f = .ok result) :
+    NoOpportunity result.final ∧ RecordsEmpty result.blockScans := by
   unfold Stock.lower at run
   dsimp only at run
   repeat' first
@@ -124,13 +150,25 @@ theorem lower_noOpportunity {f : Clif.Function} (scope : LowerScope f) {result :
     | split at run
   cases run
   rename_i _ built hbuild _ order horder _ driver hdriver
-  change NoOpportunity driver.state
+  change NoOpportunity driver.state ∧ RecordsEmpty driver.blockScans
   have initial := buildCtx_noOpportunity (ctx := built.1) (ranges := built.2.1)
     (initial := built.2.2) hbuild
-  apply traversal_empty (ctx := built.1) (ranges := built.2.1) (initial := built.2.2)
-    hbuild scope horder ?_ initial hdriver
+  apply traversal_invariant (ctx := built.1) (ranges := built.2.1) (initial := built.2.2)
+    hbuild scope horder ?_ initial (by simp [RecordsEmpty]) hdriver
   intro label member
   simpa only [Array.toList_reverse, Array.toList_range, List.mem_reverse, List.mem_range] using member
+theorem lower_noOpportunity {f : Clif.Function} (scope : LowerScope f) {result : Result}
+    (run : Stock.lower f = .ok result) : NoOpportunity result.final :=
+  (lower_invariant scope run).1
+
+/-- Every actual block scan retained by successful whole Stock lowering has
+empty remembered state at its input and both endpoints of every source record. -/
+theorem lower_records_noOpportunity {f : Clif.Function} (scope : LowerScope f) {result : Result}
+    (run : Stock.lower f = .ok result) {event : BlockScanEvent}
+    (member : event ∈ result.blockScans.toList) :
+    NoOpportunity event.input ∧
+      ∀ record ∈ event.output.records, NoOpportunity record.input ∧ NoOpportunity record.output.state :=
+  (lower_invariant scope run).2 event member
 
 end Preservation
 
@@ -188,5 +226,18 @@ theorem node_noOpportunity_witness :
     criticalInput, criticalOutput, critical_build, critical_scope, critical_order, by decide, rfl,
     empty, critical_run, rfl, rfl, rfl, rfl,
     node_noOpportunity critical_build critical_scope critical_order (by decide) empty critical_run⟩
+
+/-- Reuse the actual emitted-call record to inhabit all whole-driver record
+premises, including its recorded selection step. -/
+theorem lower_records_noOpportunity_witness :
+    ∃ (f : Clif.Function) (result : Result) (event : BlockScanEvent) (record : ScanRecord) (step : Step),
+      LowerScope f ∧ Stock.lower f = .ok result ∧ event ∈ result.blockScans.toList ∧
+      record ∈ event.output.records ∧ record.output.step = some step ∧ step.decision = .emitted ∧
+      NoOpportunity event.input ∧ NoOpportunity record.input ∧ NoOpportunity record.output.state := by
+  obtain ⟨f, result, event, record, step, scope, run, nonempty, events, records, recorded, emitted, final⟩ :=
+    lower_noOpportunity_witness
+  have all := lower_records_noOpportunity scope run events
+  exact ⟨f, result, event, record, step, scope, run, events, records, recorded, emitted,
+    all.1, all.2 record records⟩
 
 end Backend.Stock.Proof.Coverage

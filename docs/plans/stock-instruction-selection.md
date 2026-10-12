@@ -86,8 +86,19 @@ and emits jump3. Four new roots use standard axioms only in MCP/kernel audits;
 runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
 `docs/research/stock-driver-coverage-audit.json`.
 
-Next derive the invariant at actual scan records and simplify final source alias
-paths, then discharge reserved values/noninterference and full value semantics. The helper theorem is
+PR #149 landed as `41db8a3`. The stronger record invariant now tracks empty
+remembered tables at block-scan inputs and both endpoints of every actual
+stored record, through scans, cores, nodes and the whole driver.
+StockCoverageRecords derives actual record execution and proves opportunistic
+binding cannot be a recorded decision: with no remembered entry, zero demands
+would have selected omission first. Existing public interfaces are retained;
+shared proofs are factored. Ten new standard-only MCP roots and49 normal audits
+pass, retaining seven final theorem axiom sets. Full1431/crates1171,
+runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
+`docs/research/stock-record-coverage-audit.json`.
+
+Next simplify final source alias paths using actual record invariants, then
+discharge reserved values/noninterference and full value semantics. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
 remembered-state invariant and compose actual interpreter/term/block/whole-driver

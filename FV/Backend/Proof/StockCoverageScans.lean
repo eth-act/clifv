@@ -179,6 +179,27 @@ theorem scanBlock_noOpportunity {f : Clif.Function} {ctx : Ctx}
       exact slots k (List.mem_cons_of_mem i member)
     · exact scan_slot_empty mapped clean (slots i (List.mem_cons_self)) empty head
 
+/-- Every actual record in a complete backward scan has empty remembered
+state at both its input and output, including emitted, omitted and sunk records. -/
+theorem scanBlock_records_noOpportunity {f : Clif.Function} {ctx : Ctx}
+    (mapped : MappedCtxInv f ctx) (clean : Clean (sourceIdentityCtx ctx))
+    {block ti : Nat} {isBranch : Bool} {indices : List Nat}
+    (slots : ∀ i ∈ indices, ScanSlot ctx i ti isBranch)
+    {input : State} {output : BlockScan} (empty : NoOpportunity input)
+    (run : scanBlock ctx block ti isBranch indices input = .ok output) :
+    ∀ record ∈ output.records, NoOpportunity record.input ∧ NoOpportunity record.output.state := by
+  have cert := runScans_spec run
+  clear run
+  induction cert with
+  | nil input => simp
+  | @cons i indices input scan tail head rest ih =>
+    have first := scan_slot_empty mapped clean (slots i (List.mem_cons_self)) empty head
+    intro record member
+    simp only [List.mem_cons] at member
+    rcases member with rfl | member
+    · exact ⟨empty, first⟩
+    · exact ih (fun k hk => slots k (List.mem_cons_of_mem i hk)) first record member
+
 private def scanFunction : Clif.Function := {
   name := "stock_scan_preservation"
   sig := {params := [⟨.i64, .none, .normal⟩], returns := [⟨.i8, .none, .normal⟩]}
@@ -295,5 +316,19 @@ theorem scan_source_noOpportunity_witness :
   exact ⟨scanFunction, scanCtx, scanCtx.insts[0]!, record.input, record.output,
     scan_mapped, scan_clean, rfl, rfl, empty, actual, rfl, rfl,
     scan_source_noOpportunity scan_mapped scan_clean rfl rfl empty actual⟩
+
+/-- The existing real demanded-constant/return scan supplies two actual records,
+with emitted code and an installed source alias; both endpoints are inhabited. -/
+theorem scanBlock_records_noOpportunity_witness :
+    ∃ (f : Clif.Function) (ctx : Ctx) (input : State) (output : BlockScan),
+      MappedCtxInv f ctx ∧ Clean (sourceIdentityCtx ctx) ∧
+      (∀ i ∈ [1, 0], ScanSlot ctx i 1 false) ∧ NoOpportunity input ∧
+      scanBlock ctx 0 1 false [1, 0] input = .ok output ∧ output.records.length = 2 ∧
+      output.code.size = 2 ∧ (output.state.alias[193]?).join = some 194 ∧
+      (∀ record ∈ output.records, NoOpportunity record.input ∧ NoOpportunity record.output.state) := by
+  obtain ⟨f, ctx, input, output, mapped, clean, slots, empty, run, records, code, alias, final⟩ :=
+    scanBlock_noOpportunity_witness
+  exact ⟨f, ctx, input, output, mapped, clean, slots, empty, run, records, code, alias,
+    scanBlock_records_noOpportunity mapped clean slots empty run⟩
 
 end Backend.Stock.Proof.Coverage

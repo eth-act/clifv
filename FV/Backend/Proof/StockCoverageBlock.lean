@@ -279,7 +279,7 @@ private theorem branch_preserves {f : Clif.Function} {ctx : Ctx}
 
 /-- All state-changing operations in an actual original block preserve empty
 remembered definitions. Context and scan metadata are derived from its build. -/
-theorem blockCore_noOpportunity {f : Clif.Function} {ctx : Ctx}
+private theorem blockCore_invariant {f : Clif.Function} {ctx : Ctx}
     {ranges : Array (Nat × Nat)} {initial : State}
     (build : Stock.buildCtx f = .ok (ctx, ranges, initial)) (scope : LowerScope f)
     {bi : Nat} {b : Clif.Block} (block : f.blocks[bi]? = some b)
@@ -288,7 +288,9 @@ theorem blockCore_noOpportunity {f : Clif.Function} {ctx : Ctx}
     {order : Order} {targets : Array Nat} {input : State} {output : LoweredBlockCore}
     (empty : NoOpportunity input)
     (run : lowerBlockCore ctx order f b bi range.1 range.2 data targets input = .ok output) :
-    NoOpportunity output.state := by
+    NoOpportunity output.state ∧ NoOpportunity output.scan.input ∧
+      (∀ record ∈ output.scan.output.records,
+        NoOpportunity record.input ∧ NoOpportunity record.output.state) := by
   let ti := range.2 - 1
   let termCtx : Ctx := {Driver.termCtx ctx ti data with tryRegs := input.tryRegs[ti]!}
   obtain ⟨original, before, legacy, spec, view⟩ := buildCtx_source build
@@ -356,7 +358,37 @@ theorem blockCore_noOpportunity {f : Clif.Function} {ctx : Ctx}
       | ok body =>
         simp only [scan, bind, Except.bind, pure, Except.pure] at run
         cases run
-        exact built_scanBlock_noOpportunity build scope block rangeRun prepared _ beforeEmpty scan
+        exact ⟨built_scanBlock_noOpportunity build scope block rangeRun prepared _ beforeEmpty scan,
+          beforeEmpty, scanBlock_records_noOpportunity mapped clean
+            (built_scan_slots build scope block rangeRun prepared _) beforeEmpty scan⟩
+
+/- The original theorem keeps its interface; the stronger record result is added. -/
+theorem blockCore_noOpportunity {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, initial)) (scope : LowerScope f)
+    {bi : Nat} {b : Clif.Block} (block : f.blocks[bi]? = some b)
+    {range : Nat × Nat} (rangeRun : ranges[bi]? = some range)
+    {data : V} (prepared : blockData f b.term = .ok data)
+    {order : Order} {targets : Array Nat} {input : State} {output : LoweredBlockCore}
+    (empty : NoOpportunity input)
+    (run : lowerBlockCore ctx order f b bi range.1 range.2 data targets input = .ok output) :
+    NoOpportunity output.state :=
+  (blockCore_invariant build scope block rangeRun prepared empty run).1
+
+/-- Actual original-block scans expose empty state at every retained record. -/
+theorem blockCore_records_noOpportunity {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {initial : State}
+    (build : Stock.buildCtx f = .ok (ctx, ranges, initial)) (scope : LowerScope f)
+    {bi : Nat} {b : Clif.Block} (block : f.blocks[bi]? = some b)
+    {range : Nat × Nat} (rangeRun : ranges[bi]? = some range)
+    {data : V} (prepared : blockData f b.term = .ok data)
+    {order : Order} {targets : Array Nat} {input : State} {output : LoweredBlockCore}
+    (empty : NoOpportunity input)
+    (run : lowerBlockCore ctx order f b bi range.1 range.2 data targets input = .ok output) :
+    NoOpportunity output.scan.input ∧
+      (∀ record ∈ output.scan.output.records,
+        NoOpportunity record.input ∧ NoOpportunity record.output.state) :=
+  (blockCore_invariant build scope block rangeRun prepared empty run).2
 
 end Preservation
 
@@ -513,5 +545,14 @@ theorem branchArgs_noOpportunity_witness :
       initial.demand[2]! = 0 ∧ next.demand[2]! = 1 ∧ next.opportunistic = initial.opportunistic :=
   ⟨edgeFunction, edgeBuilt.1, edgeBuilt.2.1, edgeBuilt.2.2, edgeBuilt.2.2.mark 2,
     edge_build, edge_run, rfl, rfl, branchArgs_noOpportunity edge_run⟩
+
+/-- The actual jump block/source scan inhabits the stronger record contract. -/
+theorem blockCore_records_noOpportunity_witness :
+    NoOpportunity blockOutput.scan.input ∧ blockOutput.scan.output.records.length = 2 ∧
+      (∀ record ∈ blockOutput.scan.output.records,
+        NoOpportunity record.input ∧ NoOpportunity record.output.state) := by
+  have checked := blockCore_records_noOpportunity block_build block_scope (bi := 0)
+    (range := (0, 2)) rfl rfl block_data (buildCtx_noOpportunity block_build) block_core_run
+  exact ⟨checked.1, rfl, checked.2⟩
 
 end Backend.Stock.Proof.Coverage
