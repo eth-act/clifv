@@ -329,4 +329,26 @@ theorem stock_statement_selectedConstant_context_witness :
   have data := congrArg (fun q => q.map (·.data)) same
   cases data
 
+/-- Complete named-root observations for any context with this constant's
+source data. Terminator replacements and exception reservations are irrelevant. -/
+theorem stock_statement_selectedConstant_context_receipts (ctx : Ctx)
+    (data : ∀ st : LState, Backend.externExtract ctx T.inst_data_value (.inst 0) st =
+      .ok [.ty (.int 8), .data 152 35 [.data 151 57 [], .int 9]]) (st : State) :
+    ∃ (next : State) (trace : Array RuleId),
+      Stock.runTerm ctx "lower" [.inst 0] st =
+        .ok (some (.regsVec [[(st.base.fresh .int).1]]), next, (trace.push 582).toList) ∧
+      (evalExpr program (Stock.sem ctx) {} 999999 rule_lower_53.rhs
+        (env2 (.ty (.int 8)) (.int 9))).run (st, #[]) =
+          .ok (some (.regsVec [[(st.base.fresh .int).1]]), next, trace) ∧
+      (matchRule program (Stock.sem ctx) {} 999825 rule_lower_53 [.inst 0]).run (st, #[]) =
+        .ok (some (env2 (.ty (.int 8)) (.int 9)), st, #[]) := by
+  obtain ⟨next, trace, actual, evaluated, matched⟩ :=
+    iconst_apply data_program nopExtraData_program ctx data st
+  refine ⟨next, trace, ?_, evaluated, matched⟩
+  unfold Stock.runTerm Interp.run
+  rw [program_termByName_lower]
+  dsimp only
+  rw [actual]
+  rfl
+
 end Backend.Stock.Proof
