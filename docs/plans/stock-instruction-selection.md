@@ -12,6 +12,15 @@ All four new theorem/witness roots use only the standard three axioms; full
 1418/crate1171, runtime4672/0/0, encoder1292/0 and E2E1150/0 pass.
 See `docs/research/stock-fresh-value-audit.json` for source/log hashes.
 This does not yet prove emitted instruction execution or whole-driver semantics.
+PR #141 landed as `dc91199`. A scope check found that the current `LowerScope`
+already excludes overflow instructions. `StockOverflowPatterns` now proves that
+all seven overflow-specific generated condition patterns and their actual Stock
+rule matches cannot succeed under the existing mapped context invariant, with
+a nonempty actual context-build witness. This includes the five AArch64 rules
+that create opportunistic flag producers. This is a prerequisite, not yet a
+whole-driver proof that opportunistic state stays empty. Preserve the existing
+source scope; prove reachability before broadening remembered-register semantics.
+
 Next: source-available final paths, reserved-value semantics and noninterference;
 then discharge actual selected/omitted/sunk rule semantics, whole simulation and
 completeness, baseline identity/proof parity and real production/checker/linker
