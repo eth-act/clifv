@@ -549,6 +549,24 @@ theorem stock_lower_scanAliasBounds {f : Clif.Function} {result : Result}
   intro event mem
   exact Nat.le_trans final.1 (frontier event mem)
 
+/-- Every actual retained record starts above the build's initial frontier,
+including source mappings not present as keys in the final alias array. -/
+theorem stock_lower_blockScanInitialFrontier {f : Clif.Function} {result : Result}
+    (h : Stock.lower f = .ok result) :
+    ∀ event ∈ result.blockScans.toList, ∀ record ∈ event.output.records,
+      result.initial.base.nextVreg ≤ record.input.base.nextVreg := by
+  unfold Stock.lower at h
+  dsimp only at h
+  repeat' first
+    | (solve | cases h)
+    | simp only [bind, Except.bind, pure, Except.pure] at h
+    | split at h
+  cases h
+  rename_i _ _ params _ _ _ _ _ source build _ order _ _ driver run
+  have frontier := traversal_blockFrontiers (output := driver) build
+    (by simp [BlockFrontiers]) run
+  exact frontier
+
 /-- The final alias bound also holds at every record retained inside an actual
 block scan. Normalizing the scan input preserves its allocation frontier, so this
 is the bound needed by emitted source-transfer proofs. -/
@@ -726,5 +744,30 @@ theorem stock_lowerBlockCore_scanAllocationBounds_witness :
   | ok core =>
     exact ⟨core, nodeBound_build, nodeBound_input.1, nodeBound_input.2.1, nodeBound_input.2.2,
       rfl, stock_lowerBlockCore_scanAllocationBounds nodeBound_build nodeBound_input call⟩
+
+set_option maxRecDepth 20000 in
+set_option maxHeartbeats 4000000 in
+private theorem frontier_observed : (Stock.lower nodeBoundFunction).toOption.map (fun result =>
+    result.blockScans.toList.any (fun event => event.output.records.any (fun record => record.inst == 0))) =
+    some true := by
+  decide +kernel
+
+/-- A real successful whole driver has a retained source record. Its input
+frontier bound is derived from construction, rather than an empty-record case. -/
+theorem stock_lower_blockScanInitialFrontier_witness :
+    ∃ (f : Clif.Function) (result : Result) (event : BlockScanEvent) (record : ScanRecord),
+      Stock.lower f = .ok result ∧ event ∈ result.blockScans.toList ∧
+      record ∈ event.output.records ∧ record.inst = 0 ∧
+      result.initial.base.nextVreg ≤ record.input.base.nextVreg := by
+  have observed := frontier_observed
+  cases run : Stock.lower nodeBoundFunction with
+  | error e => simp only [run, Except.toOption, Option.map_none] at observed; cases observed
+  | ok result =>
+    simp only [run, Except.toOption, Option.map_some, Option.some.injEq] at observed
+    obtain ⟨event, eventMem, record, recordMem, which⟩ :=
+      (by simpa only [List.any_eq_true, beq_iff_eq] using observed :
+        ∃ event ∈ result.blockScans.toList, ∃ record ∈ event.output.records, record.inst = 0)
+    exact ⟨nodeBoundFunction, result, event, record, run, eventMem, recordMem, which,
+      stock_lower_blockScanInitialFrontier run event eventMem record recordMem⟩
 
 end Backend.Stock.Proof

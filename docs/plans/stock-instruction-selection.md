@@ -188,8 +188,26 @@ with seven unchanged not-runnable cases, encoder1292/0 and E2E1150/0 pass; all
 E2E identities/stages match the preceding checkpoint. See
 `docs/research/stock-alias-terminal-audit.json`.
 
-Next prove source-available final paths and fresh-write noninterference, then
-reuse existing rule-family semantics to establish execution values. Use the
+PR #156 landed as `e440429`. The actual initial frontier now bounds every
+retained record, independently of whether a particular source mapping occurs in
+the final alias array. StockAliasAvailable derives operand provenance for every
+final source-to-source alias, including an unaliased parameter target. Actual
+numeric alias paths between mapped sources preserve source availability. Paths
+from available sources to fresh endpoints have an allocation origin in a
+retained definition that is itself available at the chosen source boundary.
+Reserved paths stay below the initial frontier and cannot masquerade as fresh
+origins. Real parameter/reduction193→192 and constant192→193 witnesses inhabit
+the availability and fresh-origin results; the frontier witness has a real
+retained source record.
+Eight standard-only MCP roots and101 normal audits pass, preserving93 prior
+sets including seven final theorem roots. Full1439/crates1171, runtime4672/0/0
+with seven unchanged not-runnable cases, encoder1292/0 and E2E1150/0 pass; all
+E2E identities/stages match the preceding checkpoint. See
+`docs/research/stock-alias-available-audit.json`.
+
+Next establish allocation-interval disjointness across actual retained records,
+then use available fresh origins to exclude writes by a current definition that
+is not yet available. Reuse existing rule-family semantics for execution values. Use the
 legacy source-availability guards in the internal live-value invariant: demand
 alone includes later definitions, whose old source-frame values may be stale
 across loops. Preserve existing helper interfaces and baseline input conditions;
