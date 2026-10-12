@@ -64,8 +64,18 @@ record also witnesses the single-scan theorem. Six new roots pass standard-only
 normal kernel and MCP run-code audits. Full1428/crates1171, runtime4672/0/0,
 encoder1292/0 and E2E1150/0 pass. See `docs/research/stock-scan-coverage-audit.json`.
 
-Next derive slot metadata uniformly from actual block construction, cover
-try-call term contexts and compose real blocks/nodes and
+PR #147 landed as `f953cff`. StockCoverageBlock derives scan-slot metadata,
+mapped context and clean patterns uniformly from actual build/scope/block/range
+and data preparation, including try-call branch slots. Actual original block
+cores now preserve empty remembered definitions through branch emission, outgoing
+argument collection and full scans. A real two-block witness emits jump1 and
+scans an unused source constant; another real edge collects register192 and
+marks demand0→1. Eight new roots/witnesses pass standard-only kernel/MCP audits;
+35 normal audits retain the seven final theorem axiom sets. Full1429/crates1171,
+runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
+`docs/research/stock-block-coverage-audit.json`.
+
+Next compose critical-edge/original nodes and actual traversal to prove
 the complete whole-driver remembered-state invariant. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
