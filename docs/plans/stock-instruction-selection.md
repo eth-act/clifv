@@ -4,9 +4,14 @@
 
 Task #140 resumes completing the actual Stock driver proofs and production cutover.
 The original-driver cleanup #137 and opt-in numbering hints #139 are landed;
-these do not satisfy the driver cutover goal. PR #135 is being reconciled with
-current main; its 32 audits still match. Actual whole-driver fresh-alias terminal
-facts now check with standard axioms and a nonempty emitted-call witness.
+these do not satisfy the driver cutover goal. PR #135 landed as `25154ad`; its 32 audits match. The next bounded slice
+proves actual final aliases to fresh targets resolve to those targets and
+transports an already-held value through that resolver. Its real emitted-constant
+witness installs alias192→193 and inhabits both lookup and value premises.
+All four new theorem/witness roots use only the standard three axioms; full
+1418/crate1171, runtime4672/0/0, encoder1292/0 and E2E1150/0 pass.
+See `docs/research/stock-fresh-value-audit.json` for source/log hashes.
+This does not yet prove emitted instruction execution or whole-driver semantics.
 Next: source-available final paths, reserved-value semantics and noninterference;
 then discharge actual selected/omitted/sunk rule semantics, whole simulation and
 completeness, baseline identity/proof parity and real production/checker/linker
