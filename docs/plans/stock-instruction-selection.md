@@ -29,8 +29,21 @@ cannot admit that constructor on inhabited abstract inputs. Actual other Stock
 constructors preserve the entire remembered-definition table
 (`StockNoOpportunityCtor`), including demand and payload alias updates.
 
-Next connect the existing abstract analysis to Stock.State and its mapped source
-view, rather than changing the shared legacy Cov interfaces. Instantiate the
+PR #143 landed as `a71f89f`. StockCoverageSound now transfers the existing fuel
+induction to actual Stock.State; StockCoverageCtor supplies all actual mapped
+constructor contracts, and StockCoverageOracle proves the real operand-size
+helper retains state. StockCoverageModel instantiates the invariant internally:
+actual helper runs described by the unchanged fixed summaries preserve the
+remembered table and return the described register classes/output shapes.
+The context-build variant derives mapped/clean facts, and nonempty witnesses
+exercise actual allocation and Size64 oracle evaluation. Nine new public
+proof/witness roots pass standard-only kernel and MCP audits. All local gates
+pass: full1425/crates1171, runtime4672/0/0, encoder1292/0, E2E1150/0.
+
+Next compose checked source/terminator/branch roots and real scans/nodes to get
+the complete whole-driver remembered-state invariant. The helper theorem is
+actual-state preservation, not emitted-instruction value semantics. Keep the
+existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
 remembered-state invariant and compose actual interpreter/term/block/whole-driver
 runs. The checked table and constructor frames are prerequisites; they do not
 alone establish the whole-driver invariant or any emitted instruction semantics.

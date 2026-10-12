@@ -1,0 +1,207 @@
+{
+  "base": "a71f89f877fd043266fbbba75fbf5029752bb2d0",
+  "scope": "State-aware soundness of the reused abstract coverage analysis for actual Stock helper evaluation, actual mapped constructor contracts and operand-size oracle, internally instantiated model, remembered-table preservation and abstract output shapes. Not emitted-instruction value semantics or whole-driver correctness.",
+  "updated_utc": "2026-10-12T14:53:44.319359+00:00",
+  "source_sha256": {
+    "FV/Backend/Proof/StockCoverageSound.lean": "962f5af5b64b6f564136f8d8416bc6143475c3bca95e986ddb5a6b9b6ba284c7",
+    "FV/Backend/Proof/StockCoverageCtor.lean": "0b0267551826aee7a51bac1289e70000b98d42c7d386a960ffbf1070513e7606",
+    "FV/Backend/Proof/StockCoverageOracle.lean": "a6e0df7630af10189305bdb982d9517bda7e631f3a8094f3f8c9fc9acbd407f0",
+    "FV/Backend/Proof/StockCoverageModel.lean": "b1302b60c31d030d01223cde4808181e565940434136a893ee838b8cffcf0169"
+  },
+  "mcp": {
+    "soundAt": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "ctor_value_sound": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "oracle_sound": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "apply_coverage": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "built_apply_coverage": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "apply_coverage_witness": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "soundAt_witness": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "ctor_value_sound_witness": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "oracle_sound_witness": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  },
+  "axiom_roots": {
+    "Backend.Stock.Proof.Coverage.soundAt": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.ctor_value_sound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.oracle_sound": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.apply_coverage": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.built_apply_coverage": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.apply_coverage_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.soundAt_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.ctor_value_sound_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "Backend.Stock.Proof.Coverage.oracle_sound_witness": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "E2E.backend_correct_final_total": {
+      "count": 803,
+      "sorted_axioms_sha256": "7b73dc8531ed895171da5f31e74d7035b770ff2ffe89e5291e8ab25f970eecb3",
+      "unexpected_axioms": []
+    },
+    "E2E.backend_correct_final_total_emit_input": {
+      "count": 853,
+      "sorted_axioms_sha256": "f0d9e748fc0049607d5c3bb8aa0f82a2bc80c79090f0ea2dac4e18608fd43212",
+      "unexpected_axioms": []
+    },
+    "E2E.backend_correct_final_total_relaxed": {
+      "count": 803,
+      "sorted_axioms_sha256": "7b73dc8531ed895171da5f31e74d7035b770ff2ffe89e5291e8ab25f970eecb3",
+      "unexpected_axioms": []
+    },
+    "E2E.LinkCheck.crate_correct_inScope_proven": {
+      "count": 830,
+      "sorted_axioms_sha256": "381a2738f97cbbeb94b17941b6cf3da54f75db1a8316ff26cbc3dfd9167a93fd",
+      "unexpected_axioms": []
+    },
+    "Link.compileExe_correct": {
+      "count": 830,
+      "sorted_axioms_sha256": "381a2738f97cbbeb94b17941b6cf3da54f75db1a8316ff26cbc3dfd9167a93fd",
+      "unexpected_axioms": []
+    },
+    "Link.compileExe_total": {
+      "count": 823,
+      "sorted_axioms_sha256": "3375522de295bc8961036d6a8bc5f841cf0fcdef4f32c02282466596f90dac61",
+      "unexpected_axioms": []
+    },
+    "Link.compileExe_spec": {
+      "count": 3,
+      "sorted_axioms_sha256": "118dbe3070706ccab3cf3c2b619838c8b87613556f4cb9e0b80a8c874e29f1d8",
+      "unexpected_axioms": []
+    }
+  },
+  "logs": {
+    "full": {
+      "path": "/tmp/stock-state-coverage-full.log",
+      "sha256": "da4ba8add95115063fc6981bc5a3693f9891962f7662e6405c32ce34cc4a4a8e"
+    },
+    "crates": {
+      "path": "/tmp/stock-state-coverage-crates.log",
+      "sha256": "87a8d051cc740ab64e8e6927aa04b4ca894dcc29f917f3a1c442e3aceeacfbdc"
+    },
+    "runtime": {
+      "path": "/tmp/stock-state-coverage-runtime.log",
+      "sha256": "390e3042cda40fde1899a6c270ea598f44b59ac8c03427c5b20a21ed0af2f876"
+    },
+    "encoder": {
+      "path": "/tmp/stock-state-coverage-encoder.log",
+      "sha256": "6e5c423e505ae964646f9bd37f28c4870bb02c02a47dd8bf8c1ab5d646ff08e6"
+    },
+    "e2e": {
+      "path": "/tmp/stock-state-coverage-e2e.log",
+      "sha256": "af4246dc4090f8876527c0e211c8c54b05ae5920e15cc8f0a13874652273c0c1"
+    },
+    "axioms": {
+      "path": "/tmp/stock-state-coverage-axioms.log",
+      "sha256": "fc4670aa4ed8ec98316d701a7f2dcd1fbf885d3d928d7bde2471a97824fb5c8e"
+    }
+  },
+  "gates": {
+    "full_jobs": 1425,
+    "crate_jobs": 1171,
+    "runtime_pass": 4672,
+    "runtime_fail": 0,
+    "runtime_error": 0,
+    "runtime_disagree": 0,
+    "known_not_runnable": 7,
+    "encoder_identical": 1292,
+    "encoder_different": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0
+  },
+  "remaining": "Compose actual statement/terminator/branch roots and real scans/nodes/whole driver to derive the complete remembered-state invariant. Source/reserved alias value semantics, fresh noninterference, selected/omitted/sunk semantic composition, full correctness/completeness and actual production cutover remain."
+}
