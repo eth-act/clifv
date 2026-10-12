@@ -209,9 +209,10 @@ private theorem fold_fields_eq {α β γ : Type} (field : α → γ)
       simp only [he, bind, Except.bind] at h
       exact (ih h).trans (hs a x middle he)
 
-private theorem binding_fields {ctx : Ctx} {pairs : List (Nat × List Reg)}
+/-- Result aliases and physical copies retain the remembered-definition table. -/
+theorem bindResults_noOpportunity {ctx : Ctx} {pairs : List (Nat × List Reg)}
     {st next : State} {copies : Array MInst}
-    (h : bindResults ctx pairs st = .ok (next, copies)) : fields next = fields st := by
+    (h : bindResults ctx pairs st = .ok (next, copies)) : next.opportunistic = st.opportunistic := by
   unfold bindResults at h
   apply fold_fields_eq (fun a : State × Array MInst => fields a.1) _ ?_ pairs h
   intro acc pair next he
@@ -232,6 +233,19 @@ private theorem binding_fields {ctx : Ctx} {pairs : List (Nat × List Reg)}
         exact setAlias_fields ha
     · cases he; rfl
     · cases he
+
+/-- A real virtual binding changes the alias table and retains remembered definitions. -/
+theorem bindResults_noOpportunity_witness :
+    ∃ next, bindResults sinkCtx [(0, [.vreg 194 .int])] sinkState = .ok (next, #[]) ∧
+      (next.alias[192]?).join = some 194 ∧ next.opportunistic = sinkState.opportunistic := by
+  let next : State := {sinkState with alias := aliasStep sinkState.alias (192, 194)}
+  have bound : bindResults sinkCtx [(0, [.vreg 194 .int])] sinkState = .ok (next, #[]) :=
+    bindResults_virtual sinkCtx sinkState [(0, 192, 194)] (by
+      intro p member; simp only [List.mem_singleton] at member; subst p; rfl)
+  refine ⟨next, bound, ?_, bindResults_noOpportunity bound⟩
+  change ((aliasStep sinkState.alias (192, 194))[192]?).join = some 194
+  rw [aliasStep_get]
+  simp
 
 /-- Actual result binding after a successful source root retains its remembered
 state, including virtual aliases and physical-register result copies. -/
@@ -263,7 +277,7 @@ theorem emission_noOpportunity {f : Clif.Function} {ctx : Ctx}
           rcases result with ⟨final, copies⟩
           simp only [bound, pure, Except.pure] at run
           cases run
-          exact (binding_fields bound).trans preserved
+          exact (bindResults_noOpportunity bound).trans preserved
 
 /-- The real constant root installs an actual result alias, exercising emission
 and binding rather than only an empty or omitted path. -/
