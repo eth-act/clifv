@@ -97,8 +97,18 @@ pass, retaining seven final theorem axiom sets. Full1431/crates1171,
 runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
 `docs/research/stock-record-coverage-audit.json`.
 
-Next simplify final source alias paths using actual record invariants, then
-discharge reserved values/noninterference and full value semantics. The helper theorem is
+PR #150 landed as `08608f7`. StockSourceTerminal proves actually mapped source
+registers without statement definitions, including block parameters, remain
+unaliased through the complete driver and are final resolver terminals. Existing
+DFG/SSA construction, allocation separation and alias-frame proofs discharge the
+exclusions. A real parameter0 stays at192 while a constant installs193→194;
+already-held value7 transports through that final resolver. Four new standard-only
+MCP roots and53 normal audits pass; seven final theorem axiom sets are unchanged.
+Full1432/crates1171, runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
+`docs/research/stock-source-terminal-audit.json`.
+
+Next close defined-source alias chains and their value transport, then reserved
+values/noninterference and full value simulation/completeness. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
 remembered-state invariant and compose actual interpreter/term/block/whole-driver
