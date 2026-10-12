@@ -107,8 +107,19 @@ MCP roots and53 normal audits pass; seven final theorem axiom sets are unchanged
 Full1432/crates1171, runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
 `docs/research/stock-source-terminal-audit.json`.
 
-Next close defined-source alias chains and their value transport, then reserved
-values/noninterference and full value simulation/completeness. The helper theorem is
+PR #151 landed as `5926b01`. StockReservedTerminal derives separation between
+all return/payload reservations across slots, including overwritten requests,
+then proves initial exception-return registers remain final alias terminals
+through actual whole lowering. Actual final aliases into returns resolve there
+and transport already-held values. A real try-call witness installs194→193
+while193 stays terminal; populated/cross-slot allocation and value7 witnesses
+inhabit all ten new standard-only MCP roots. All63 normal audits retain the
+seven final theorem axiom sets. Full1433/crates1171, runtime4672/0/0,
+encoder1292/0 and E2E1150/0 pass. See `docs/research/stock-reserved-terminal-audit.json`.
+
+Next close defined-source alias chains, payload-only alias invariants and
+execution establishing reserved/source values, then noninterference and full
+value simulation/completeness. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
 remembered-state invariant and compose actual interpreter/term/block/whole-driver
