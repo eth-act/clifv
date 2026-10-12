@@ -1,0 +1,535 @@
+{
+  "number": 85,
+  "test": "runtests/atomic-rmw-little.clif",
+  "variant": 0,
+  "function": "%atomic_rmw_smax_i32",
+  "row_index": 38,
+  "stage": "run",
+  "isa_index": 2,
+  "command_index": 1,
+  "compilation": 0,
+  "comparison": {
+    "name": "%atomic_rmw_smax_i32",
+    "bytes": {
+      "equal": false,
+      "left_size": 88,
+      "right_size": 104,
+      "left_sha256": "06d8771dc0b41314feda0f829f29ce430b29b497226815604709956fe73ce41a",
+      "right_sha256": "4569ea94ba64ab931bfdb02b8a390315385ac1dddb91afe6b27f3cf9fb152ec0",
+      "first_difference": 8,
+      "left_context": "fd7bbfa9fd030091fc0f1ff8fa6fbfa9f867bfa9ff4300d1f9030091e00300b8",
+      "right_context": "fd7bbfa9fd030091ff0301d1f80300f8f98300f8fa0301f8fb8301f8fc0302f8"
+    },
+    "relocations_equal": true,
+    "reference_relocations": [],
+    "lean_relocations": [],
+    "exact_code_and_relocations": false,
+    "alignment_equal": true,
+    "traps_equal": false,
+    "traps": {
+      "stock": [
+        {
+          "code": "heap_oob",
+          "offset": 28
+        },
+        {
+          "code": "heap_oob",
+          "offset": 36
+        },
+        {
+          "code": "heap_oob",
+          "offset": 48
+        },
+        {
+          "code": "heap_oob",
+          "offset": 56
+        }
+      ],
+      "lean": [
+        {
+          "offset": 36,
+          "code": "heap_oob"
+        },
+        {
+          "offset": 44,
+          "code": "heap_oob"
+        },
+        {
+          "offset": 56,
+          "code": "heap_oob"
+        },
+        {
+          "offset": 64,
+          "code": "heap_oob"
+        }
+      ]
+    },
+    "alignment": {
+      "stock": 4,
+      "lean": 4
+    },
+    "lean_dump_matches_object_bytes": true,
+    "lean_object_alignment_valid": true,
+    "lean_dump_matches_object_relocations": true,
+    "settings_contract_verified": true,
+    "stock_artifact_repeatable": true,
+    "exact_code_artifact": false,
+    "execution_metadata": {
+      "unwind_equal": false,
+      "stack_maps_equal": true,
+      "exception_metadata_equal": null,
+      "stock_unwind": "Some(SystemV(UnwindInfo { instructions: [], len: 88 }))",
+      "stock_exception_call_sites": "[]",
+      "stock_exception_table_bytes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "stock_stack_maps": "[]",
+      "full_metadata_equivalence_verified": false
+    },
+    "full_artifact_equivalence_verified": false,
+    "status": "different_code_artifact",
+    "index": 38
+  },
+  "request": {
+    "schema": 1,
+    "target": "aarch64-unknown-linux-gnu",
+    "flags": [
+      {
+        "name": "regalloc_algorithm",
+        "value": "backtracking"
+      },
+      {
+        "name": "opt_level",
+        "value": "none"
+      },
+      {
+        "name": "tls_model",
+        "value": "none"
+      },
+      {
+        "name": "stack_switch_model",
+        "value": "none"
+      },
+      {
+        "name": "libcall_call_conv",
+        "value": "isa_default"
+      },
+      {
+        "name": "probestack_size_log2",
+        "value": "12"
+      },
+      {
+        "name": "probestack_strategy",
+        "value": "outline"
+      },
+      {
+        "name": "bb_padding_log2_minus_one",
+        "value": "0"
+      },
+      {
+        "name": "log2_min_function_alignment",
+        "value": "0"
+      },
+      {
+        "name": "regalloc_checker",
+        "value": "false"
+      },
+      {
+        "name": "regalloc_verbose_logs",
+        "value": "false"
+      },
+      {
+        "name": "enable_alias_analysis",
+        "value": "true"
+      },
+      {
+        "name": "enable_verifier",
+        "value": "true"
+      },
+      {
+        "name": "is_pic",
+        "value": "false"
+      },
+      {
+        "name": "use_colocated_libcalls",
+        "value": "false"
+      },
+      {
+        "name": "enable_nan_canonicalization",
+        "value": "false"
+      },
+      {
+        "name": "enable_pinned_reg",
+        "value": "false"
+      },
+      {
+        "name": "enable_llvm_abi_extensions",
+        "value": "false"
+      },
+      {
+        "name": "enable_multi_ret_implicit_sret",
+        "value": "false"
+      },
+      {
+        "name": "unwind_info",
+        "value": "false"
+      },
+      {
+        "name": "preserve_frame_pointers",
+        "value": "false"
+      },
+      {
+        "name": "machine_code_cfg_info",
+        "value": "true"
+      },
+      {
+        "name": "enable_probestack",
+        "value": "false"
+      },
+      {
+        "name": "enable_heap_access_spectre_mitigation",
+        "value": "true"
+      },
+      {
+        "name": "enable_table_access_spectre_mitigation",
+        "value": "true"
+      },
+      {
+        "name": "enable_incremental_compilation_cache_checks",
+        "value": "false"
+      },
+      {
+        "name": "enable_compact_unwind_abi",
+        "value": "false"
+      }
+    ],
+    "isa_flags": [
+      {
+        "name": "has_lse",
+        "value": "false"
+      },
+      {
+        "name": "has_pauth",
+        "value": "false"
+      },
+      {
+        "name": "has_fp16",
+        "value": "false"
+      },
+      {
+        "name": "has_dotprod",
+        "value": "false"
+      },
+      {
+        "name": "has_i8mm",
+        "value": "false"
+      },
+      {
+        "name": "sign_return_address_all",
+        "value": "false"
+      },
+      {
+        "name": "sign_return_address",
+        "value": "false"
+      },
+      {
+        "name": "sign_return_address_with_bkey",
+        "value": "false"
+      },
+      {
+        "name": "use_bti",
+        "value": "false"
+      },
+      {
+        "name": "use_csdb",
+        "value": "false"
+      }
+    ],
+    "input_sha256": "06c8ef2c299abefc63778d6738315f3bfc6bfbf993d09bd8ffb5ecd4dceec36e",
+    "stage": "run",
+    "isa_index": 2,
+    "command_index": 1
+  },
+  "receipt": {
+    "schema": 1,
+    "request": {
+      "target": "aarch64-unknown-linux-gnu",
+      "stage": "run",
+      "schema": 1,
+      "isa_index": 2,
+      "isa_flags": [
+        {
+          "value": "false",
+          "name": "has_lse"
+        },
+        {
+          "value": "false",
+          "name": "has_pauth"
+        },
+        {
+          "value": "false",
+          "name": "has_fp16"
+        },
+        {
+          "value": "false",
+          "name": "has_dotprod"
+        },
+        {
+          "value": "false",
+          "name": "has_i8mm"
+        },
+        {
+          "value": "false",
+          "name": "sign_return_address_all"
+        },
+        {
+          "value": "false",
+          "name": "sign_return_address"
+        },
+        {
+          "value": "false",
+          "name": "sign_return_address_with_bkey"
+        },
+        {
+          "value": "false",
+          "name": "use_bti"
+        },
+        {
+          "value": "false",
+          "name": "use_csdb"
+        }
+      ],
+      "input_sha256": "06c8ef2c299abefc63778d6738315f3bfc6bfbf993d09bd8ffb5ecd4dceec36e",
+      "flags": [
+        {
+          "value": "backtracking",
+          "name": "regalloc_algorithm"
+        },
+        {
+          "value": "none",
+          "name": "opt_level"
+        },
+        {
+          "value": "none",
+          "name": "tls_model"
+        },
+        {
+          "value": "none",
+          "name": "stack_switch_model"
+        },
+        {
+          "value": "isa_default",
+          "name": "libcall_call_conv"
+        },
+        {
+          "value": "12",
+          "name": "probestack_size_log2"
+        },
+        {
+          "value": "outline",
+          "name": "probestack_strategy"
+        },
+        {
+          "value": "0",
+          "name": "bb_padding_log2_minus_one"
+        },
+        {
+          "value": "0",
+          "name": "log2_min_function_alignment"
+        },
+        {
+          "value": "false",
+          "name": "regalloc_checker"
+        },
+        {
+          "value": "false",
+          "name": "regalloc_verbose_logs"
+        },
+        {
+          "value": "true",
+          "name": "enable_alias_analysis"
+        },
+        {
+          "value": "true",
+          "name": "enable_verifier"
+        },
+        {
+          "value": "false",
+          "name": "is_pic"
+        },
+        {
+          "value": "false",
+          "name": "use_colocated_libcalls"
+        },
+        {
+          "value": "false",
+          "name": "enable_nan_canonicalization"
+        },
+        {
+          "value": "false",
+          "name": "enable_pinned_reg"
+        },
+        {
+          "value": "false",
+          "name": "enable_llvm_abi_extensions"
+        },
+        {
+          "value": "false",
+          "name": "enable_multi_ret_implicit_sret"
+        },
+        {
+          "value": "false",
+          "name": "unwind_info"
+        },
+        {
+          "value": "false",
+          "name": "preserve_frame_pointers"
+        },
+        {
+          "value": "true",
+          "name": "machine_code_cfg_info"
+        },
+        {
+          "value": "false",
+          "name": "enable_probestack"
+        },
+        {
+          "value": "true",
+          "name": "enable_heap_access_spectre_mitigation"
+        },
+        {
+          "value": "true",
+          "name": "enable_table_access_spectre_mitigation"
+        },
+        {
+          "value": "false",
+          "name": "enable_incremental_compilation_cache_checks"
+        },
+        {
+          "value": "false",
+          "name": "enable_compact_unwind_abi"
+        }
+      ],
+      "command_index": 1
+    },
+    "proof_scope": "experimental stock-configured driver; not covered by backend_correct",
+    "policy": "exact requested flags; a setting Lean does not implement is accepted only for functions whose code it cannot change (enable_llvm_abi_extensions, enable_multi_ret_implicit_sret, has_fp16, has_dotprod, has_i8mm: all functions; has_lse: no LSE atomic; use_csdb: no select_spectre_guard or br_table; sign_return_address, sign_return_address_with_bkey, has_pauth: unsigned functions); use_bti and other unsupported settings rejected for the whole request; is_pic=false far symbols and tls_model=none TLS rejected per function; per-function rejections listed in function_rejections; optional leaf frame omitted before emission; no binary normalization",
+    "function_rejections": {},
+    "error": null,
+    "dead_instruction_cleanup": true,
+    "configuration_accepted": true
+  },
+  "original_source_sha256": "d18706600646234d131f1e9b0dd5597d17da3abffd4cda7a87db8e8e262178d0",
+  "stock_source": "function %atomic_rmw_smax_i32(i32, i32) -> i32, i32 system_v {\n    ss0 = explicit_slot 4\n\nblock0(v0: i32, v1: i32):\n    v2 = stack_addr.i64 ss0\n    store little v0, v2\n    v3 = atomic_rmw.i32 smax v2, v1\n    v4 = load.i32 little v2\n    return v3, v4\n}\n",
+  "adapted_source": "function %atomic_rmw_smax_i32(i32, i32) -> i32, i32 system_v {\n    ss0 = explicit_slot 4\n\nblock0(v0: i32, v1: i32):\n    v2 = stack_addr.i64 ss0\n    store little v0, v2\n    v3 = atomic_rmw.i32 smax v2, v1\n    v4 = load.i32 little v2\n    return v3, v4\n}\n",
+  "stock_metadata": {
+    "alignment": 4,
+    "exception_call_sites": "[]",
+    "exception_table_bytes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "id": 38,
+    "jit_allocation_performed": false,
+    "name": "%atomic_rmw_smax_i32",
+    "relocations": [],
+    "stack_maps": "[]",
+    "traps": [
+      {
+        "code": "heap_oob",
+        "offset": 28
+      },
+      {
+        "code": "heap_oob",
+        "offset": 36
+      },
+      {
+        "code": "heap_oob",
+        "offset": 48
+      },
+      {
+        "code": "heap_oob",
+        "offset": 56
+      }
+    ],
+    "unwind": "Some(SystemV(UnwindInfo { instructions: [], len: 88 }))"
+  },
+  "lean_metadata": {
+    "unwind_disabled": true,
+    "stack_maps": [],
+    "name": "atomic_rmw_smax_i32",
+    "exception_metadata_comparison_supported": false,
+    "alignment": 4
+  },
+  "stock_code_hex": "fd7bbfa9fd030091fc0f1ff8fa6fbfa9f867bfa9ff4300d1f9030091e00300b8fa0301aa3bff5f887f031a6b7cc39a9a3cff188898ffffb5e10340b8e0031baaff430091f867c1a8fa6fc1a8fc0741f8fd7bc1a8c0035fd6",
+  "lean_code_hex": "fd7bbfa9fd030091ff0301d1f80300f8f98300f8fa0301f8fb8301f8fc0302f8f9c30091e00303b8fa0301aa3bff5f887f031a6b7cc39a9a3cff188898ffffb5e10343b8e0031baaf80340f8f98340f8fa0341f8fb8341f8fc0342f8ff030191fd7bc1a8c0035fd6",
+  "stock_disassembly": [
+    "0000: fd7bbfa9  stp x29, x30, [sp, #-0x10]!",
+    "0004: fd030091  mov x29, sp",
+    "0008: fc0f1ff8  str x28, [sp, #-0x10]!",
+    "000c: fa6fbfa9  stp x26, x27, [sp, #-0x10]!",
+    "0010: f867bfa9  stp x24, x25, [sp, #-0x10]!",
+    "0014: ff4300d1  sub sp, sp, #0x10",
+    "0018: f9030091  mov x25, sp",
+    "001c: e00300b8  stur w0, [sp]",
+    "0020: fa0301aa  mov x26, x1",
+    "0024: 3bff5f88  ldaxr w27, [x25]",
+    "0028: 7f031a6b  cmp w27, w26",
+    "002c: 7cc39a9a  csel x28, x27, x26, gt",
+    "0030: 3cff1888  stlxr w24, w28, [x25]",
+    "0034: 98ffffb5  cbnz x24, #0x24",
+    "0038: e10340b8  ldur w1, [sp]",
+    "003c: e0031baa  mov x0, x27",
+    "0040: ff430091  add sp, sp, #0x10",
+    "0044: f867c1a8  ldp x24, x25, [sp], #0x10",
+    "0048: fa6fc1a8  ldp x26, x27, [sp], #0x10",
+    "004c: fc0741f8  ldr x28, [sp], #0x10",
+    "0050: fd7bc1a8  ldp x29, x30, [sp], #0x10",
+    "0054: c0035fd6  ret"
+  ],
+  "lean_disassembly": [
+    "0000: fd7bbfa9  stp x29, x30, [sp, #-0x10]!",
+    "0004: fd030091  mov x29, sp",
+    "0008: ff0301d1  sub sp, sp, #0x40",
+    "000c: f80300f8  stur x24, [sp]",
+    "0010: f98300f8  stur x25, [sp, #8]",
+    "0014: fa0301f8  stur x26, [sp, #0x10]",
+    "0018: fb8301f8  stur x27, [sp, #0x18]",
+    "001c: fc0302f8  stur x28, [sp, #0x20]",
+    "0020: f9c30091  add x25, sp, #0x30",
+    "0024: e00303b8  stur w0, [sp, #0x30]",
+    "0028: fa0301aa  mov x26, x1",
+    "002c: 3bff5f88  ldaxr w27, [x25]",
+    "0030: 7f031a6b  cmp w27, w26",
+    "0034: 7cc39a9a  csel x28, x27, x26, gt",
+    "0038: 3cff1888  stlxr w24, w28, [x25]",
+    "003c: 98ffffb5  cbnz x24, #0x2c",
+    "0040: e10343b8  ldur w1, [sp, #0x30]",
+    "0044: e0031baa  mov x0, x27",
+    "0048: f80340f8  ldur x24, [sp]",
+    "004c: f98340f8  ldur x25, [sp, #8]",
+    "0050: fa0341f8  ldur x26, [sp, #0x10]",
+    "0054: fb8341f8  ldur x27, [sp, #0x18]",
+    "0058: fc0342f8  ldur x28, [sp, #0x20]",
+    "005c: ff030191  add sp, sp, #0x40",
+    "0060: fd7bc1a8  ldp x29, x30, [sp], #0x10",
+    "0064: c0035fd6  ret"
+  ],
+  "artifact_paths": {
+    "stock": "files/runtests/atomic-rmw-little/stock/variant-0/38.json",
+    "lean": "files/runtests/atomic-rmw-little/variant-0/compilation-0/lean/dump/atomic_rmw_smax_i32.bin"
+  }
+}
