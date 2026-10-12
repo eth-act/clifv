@@ -21,3 +21,10 @@ Checkpoint: constructor/interpreter/scan and whole-record extent plus mapped
 source demand bounds are implemented in StockDemandExtent. Steps 1–2 are the
 independent prerequisite; source-availability/guarded-coverage integration and
 updated automatic ALU transfer remain under steps 3–4.
+
+Integration checkpoint: StockAluOperandCoverage derives generic source operand
+availability from the retained original DFG and unchanged dominance. Actual
+add/subtract marked demands plus whole-run map bounds put both operands in the
+guarded invariant. The original transfer remains available; the automatic variant
+uses only that invariant. Existing complete add/subtract source-step fixtures are
+reused with the automatic variant. No runtime/default/source-scope changes.
