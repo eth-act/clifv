@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockFreshRecordValues
+import FV.Backend.Proof.StockDemandMono
 
 /-! Source-availability-guarded value transfer for actual fresh-result records. -/
 namespace Backend.Stock.Proof
@@ -52,6 +52,42 @@ theorem stock_lower_fresh_record_values {f : Clif.Function} {result : Result}
     have preserved := stock_lower_available_fresh_frame run scope dominated events records block statement current
       before (by rw [← maps]; exact map) defs executed
     exact ⟨key, map, by change VHolds val (ρ' (aliasNum result.final.alias key)); rw [preserved]; exact old⟩
+
+/-- The original guarded transfer remains available. This variant derives
+its demand premise from successful actual whole-driver record execution. -/
+theorem stock_lower_fresh_record_values_auto_demand {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} {record : ScanRecord}
+    (events : event ∈ result.blockScans.toList) (records : record ∈ event.output.records)
+    {bi j : Nat} {b : Clif.Block} {stm : Clif.Stmt}
+    (block : f.blocks[bi]? = some b) (statement : b.body[j]? = some stm)
+    (current : record.inst = blockStart f bi + j)
+    {info : IInfo} {inst : Clif.Inst} {z a d : Nat}
+    (source : event.ctx.insts[record.inst]? = some info) (clif : info.clif = some inst)
+    (results : info.results = [z]) (statementResults : stm.results = [z])
+    (mapped : event.ctx.valueReg? z = some (.vreg a .int))
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    (output : step.results = [[.vreg d .int]]) (fresh : record.input.base.nextVreg ≤ d)
+    {W : Type} {sem : ISem CV W} {fr : Clif.Frame} {ρ ρ' : Nat → CV} {w w' : W} {v : Clif.Val}
+    (held : ValuesHeld (fun y => Demanded record.output.state y ∧
+      y ∈ availOf f (availIn f result.ctx) bi j) event.ctx fr (fun k => ρ (aliasNum result.final.alias k)))
+    (defs : ∀ m ∈ record.output.emitted.toList.map (·.mapRegs
+      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1))), ∀ key ∈ vdefs m,
+        record.input.base.nextVreg ≤ key ∧ key < record.output.state.base.nextVreg)
+    (executed : seqRun sem (record.output.emitted.toList.map (·.mapRegs
+      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1)))) ρ w = some (.fall ρ' w'))
+    (value : VHolds v (ρ' d)) :
+    ValuesHeld (fun y => Demanded record.input y ∧
+      y ∈ availOf f (availIn f result.ctx) bi (j + 1)) event.ctx (withValue fr z v)
+        (fun k => ρ' (aliasNum result.final.alias k)) := by
+  have demand : ∀ y, Demanded record.input y → Demanded record.output.state y := by
+    intro y wanted zero
+    have count := stock_lower_record_demand_mono run events records recorded emitted y
+    change record.output.state.demand[y]! = 0 at zero
+    rw [zero] at count
+    exact wanted (Nat.eq_zero_of_le_zero count)
+  exact stock_lower_fresh_record_values run scope dominated events records block statement current
+    source clif results statementResults mapped recorded emitted output fresh demand held defs executed value
 
 /-- A successful source instruction with one result has exactly the register
 update used by guarded value transfer, regardless of its body/memory changes. -/
@@ -229,12 +265,6 @@ theorem stock_lower_fresh_record_values_witness :
       subst key
       rw [frontier, upper]
       omega
-    have demand : ∀ y, Demanded record.input y → Demanded record.output.state y := by
-      intro y wanted
-      have first := (demanded_mark_iff record.input 7 y (by rw [demandSize]; decide)).mpr (Or.inr wanted)
-      have second := (demanded_mark_iff (record.input.mark 7) 31 y
-        (by change 31 < (record.input.demand.modify 7 (· + 1)).size; rw [Array.size_modify, demandSize]; decide)).mpr (Or.inr first)
-      simpa only [Demanded, demandEq] using second
     have held : ValuesHeld (fun y => Demanded record.output.state y ∧
         y ∈ availOf exampleFunction (availIn exampleFunction result.ctx) 0 0) event.ctx exampleFrame
           (fun k => exampleRegs (aliasNum result.final.alias k)) := by
@@ -255,11 +285,11 @@ theorem stock_lower_fresh_record_values_witness :
         unfold VHolds exampleRegs
         decide +kernel
     have value : VHolds (.ofInt .i64 12) (exampleNext 195) := by unfold VHolds exampleNext upd exampleRegs; decide +kernel
-    have installed := stock_lower_fresh_record_values run exampleScope exampleDominated events records
+    have installed := stock_lower_fresh_record_values_auto_demand run exampleScope exampleDominated events records
       (bi := 0) (j := 0) (b := exampleFunction.blocks[0]!) (stm := ⟨[100], .binary .iadd .i64 7 31⟩)
       rfl rfl (by simpa only [blockStart, List.take_zero, List.map_nil, List.sum_nil, Nat.zero_add] using current)
       source' clif results rfl mapped recorded emitted outputs (by rw [frontier]; exact Nat.le_refl _)
-      demand held defs executed value
+      held defs executed value
     let fr' : Clif.Frame := {exampleFrame with regs := exampleFrame.regs.set 100 (.ofInt .i64 12), body := []}
     have sourceEval : instOutcome Clif.Env.empty {funcs := []} exampleFrame Clif.Mem.empty
         (.binary .iadd .i64 7 31) = .ok ([.ofInt .i64 12], Clif.Mem.empty) := rfl
