@@ -75,8 +75,19 @@ marks demand0→1. Eight new roots/witnesses pass standard-only kernel/MCP audit
 runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
 `docs/research/stock-block-coverage-audit.json`.
 
-Next compose critical-edge/original nodes and actual traversal to prove
-the complete whole-driver remembered-state invariant. The helper theorem is
+PR #148 landed as `080af26`. StockCoverageDriver composes actual original and
+critical-edge nodes, derives their bounds from the constructed order, and uses
+the exact reverse-index loop to prove successful `Stock.lower` under existing
+`LowerScope` returns an empty remembered-definition table. No caller metadata or
+new accepted-input certificate is required. The real emitted-call driver witness
+is reused; a real critical-edge witness collects register192, marks demand0→1
+and emits jump3. Four new roots use standard axioms only in MCP/kernel audits;
+39 normal audits retain the seven final theorem axiom sets. Full1430/crates1171,
+runtime4672/0/0, encoder1292/0 and E2E1150/0 pass. See
+`docs/research/stock-driver-coverage-audit.json`.
+
+Next derive the invariant at actual scan records and simplify final source alias
+paths, then discharge reserved values/noninterference and full value semantics. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
 remembered-state invariant and compose actual interpreter/term/block/whole-driver
