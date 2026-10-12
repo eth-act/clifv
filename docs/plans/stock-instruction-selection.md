@@ -149,9 +149,28 @@ Full1435/crates1171/runtime4672/0/0 with seven unchanged not-runnable cases,
 encoder1292/0 and E2E1150/0 pass; all E2E identities/stages match the preceding
 checkpoint. See `docs/research/stock-source-alias-rank-audit.json`.
 
-Next derive a producing record for every installed source alias, lifting the
-recorded-chain argument to the actual complete final map; then establish
-execution values, then noninterference and full
+PR #154 landed as `72d4a6b`. StockSourceAliasRecords locates a producing
+source scan record for every installed final alias on a source mapping, deriving
+coverage through actual scans, branch/core frames, original/critical-edge nodes
+and the exact traversal. Initial empty aliases start the invariant; retained
+records accumulate in the actual driver state. Existing SSA proves each producing
+record's input has no alias for that result. Actual transition inversion excludes
+omitted/sunk decisions, while the scope-derived empty remembered table excludes
+opportunistic binding. Consequently every such alias has an actual emitting
+record. The rank/no-cycle argument now applies to source paths read directly
+from the complete final array, with no caller-supplied record coverage.
+The complete194→193→192→195 witness inhabits coverage, emission and source-path
+rank/no-cycle results together.
+Six standard-only MCP roots and85 normal audits pass, preserving79 prior sets
+including seven final roots. Full1436/crates1171/runtime4672/0/0 with seven
+unchanged not-runnable cases, encoder1292/0 and E2E1150/0 pass; every E2E
+identity/stage matches the preceding checkpoint. See
+`docs/research/stock-source-alias-records-audit.json`.
+
+Next derive that all final alias keys are mapped source or reserved payload keys,
+then combine source rank and reserved endpoints with the existing finite-key
+chase proof. This must prove the actual size+1 resolver reaches an unaliased
+endpoint for every key. Then establish execution values, then noninterference and full
 value simulation/completeness. The helper theorem is
 actual-state preservation, not emitted-instruction value semantics. Keep the
 existing source scope and legacy Cov/T6 interfaces unchanged. Instantiate the
