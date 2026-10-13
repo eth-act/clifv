@@ -1,6 +1,6 @@
 {
-  "updated_utc": "2026-10-13T23:14:39.055969+00:00",
-  "head": "b3577ee5c1b273f58c2a0a40af851ad0fc6b227c (local family changes uncommitted when inventoried)",
+  "updated_utc": "2026-10-13T23:46:20.013931+00:00",
+  "head": "30f48dc7b6174b32db31b1c10f020e3b9496898a (local cast family changes uncommitted when inventoried)",
   "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
   "source_sha256": {
     "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
@@ -9,7 +9,7 @@
     "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f"
   },
   "generated_lower_roots": 517,
-  "roots_with_identified_guarded_stock_record_value_bridge": 25,
+  "roots_with_identified_guarded_stock_record_value_bridge": 27,
   "roots": [
     {
       "rule": "rule_lower_53",
@@ -1853,8 +1853,8 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 2729,
       "isle_name": "uextend",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+      "record_value_proof": "FV/Backend/Proof/StockCastSourceValues.lean",
+      "remaining_obligation": "Compose original source-step transfer into whole-driver simulation; all12 scalar widening source/record witnesses and family gates validated locally."
     },
     {
       "rule": "rule_lower_1266",
@@ -1925,8 +1925,8 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 2883,
       "isle_name": "sextend",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+      "record_value_proof": "FV/Backend/Proof/StockCastSourceValues.lean",
+      "remaining_obligation": "Compose original source-step transfer into whole-driver simulation; all12 scalar widening source/record witnesses and family gates validated locally."
     },
     {
       "rule": "rule_lower_1320",

@@ -5,9 +5,9 @@ Worktree: `/home/lee/clifv/.worktrees/driver-proof-resume`; recover from
 
 The machine-readable [root inventory](../research/stock-driver-rule-inventory.json)
 lists all 517 generated term686 `lower` rules with source locations and hashes.
-It identifies 25 roots with guarded actual Stock record-value bridges: constants,
+It identifies 27 roots with guarded actual Stock record-value bridges: constants,
 base add/subtract, three logical roots, scalar/shift NOT, six mirrored logical-NOT
-roots and NOT-of-XOR, plus base multiplication, three multiply-add/subtract fusions and all six scalar shift roots. This is a source inventory, not a reachable-rule inventory,
+roots and NOT-of-XOR, plus base multiplication, three multiply-add/subtract fusions all six scalar shift roots and base zero/sign extension. This is a source inventory, not a reachable-rule inventory,
 a correctness proof or a completion percentage. Helper selection subcases have
 separate obligations. Source/context/record guards still need internal composition.
 

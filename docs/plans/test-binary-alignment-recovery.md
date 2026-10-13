@@ -274,3 +274,10 @@ All four actual count selections, six scalar shift roots, retained-record/result
 Full1515/crates1171/runtime4672 with0fail/0disagree and7unchanged known non-runnable; encoder1292 identical/0different; bothE2E1150accepted/0rejected with exact full identity/stage parity. Durable receipt: docs/research/stock-scalar-shift-record-audit.json. Source inventory now identifies25 guarded record bridges among517 generated source roots; this is not whole-driver coverage or a completion percentage.
 
 Full #140 remains active and incomplete. Production remains legacy. Continue extension/reduction roots, remaining families/effects/control, source/block/whole-driver simulation and completeness, and actual compiler/checker/linker/generated-proof production integration. Require fresh complete stock comparison before cutover. No push or merge.
+
+
+## Base zero/sign-extension batch validated locally
+
+Updated UTC: 2026-10-13T23:46:20.013931+00:00
+
+Five modules,11 new standard-only normal/MCP roots, all323 prior sets unchanged (334 total). Actual base roots1261/1315, all six widening pairs, retained binding/original source-step transfer and12 complete dirty-upper-bit source/record witnesses; missing-type rejection has an actual context-build witness. Original successful source evaluation supplies the widening condition internally. Full1520/crates1171/runtime4672 with0fail/0disagree and7known non-runnable; encoder1292/0; bothE2E1150/0 with complete identity/stage parity. Receipt docs/research/stock-scalar-cast-audit.json; continuation docs/plans/stock-scalar-casts.md. Source inventory now identifies27 guarded bridges, not whole-driver coverage. Next reduction aliases using existing final-edge/endpoint proofs, then all remaining full-goal obligations. Production legacy; full #140 active/incomplete, no push/merge.
