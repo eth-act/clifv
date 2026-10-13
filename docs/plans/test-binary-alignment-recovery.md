@@ -225,3 +225,32 @@ extensions), then remaining families/effects and full source/block/driver
 simulation/completeness/cutover. Inventory identifies19 guarded record bridges
 among517 generated lower roots; this is not whole-driver coverage. Goal active
 and incomplete. No push or merge; preserve current local proof stack.
+
+## Scalar shift/extension foundation checkpoint (2026-10-13)
+
+Ten new local modules build. All four actual extension helpers derive guarded
+mapped requests and original extension/pass-through values. Immediate, register
+and masked-register shift RHSs have complete state contracts, inverse guarded
+request receipts and actual executions; all three final-alias machine contracts
+have complete witnesses with dirty upper bits. The mask RHS uses the real
+six-slot environment, with both local slots initially empty. Its interpreter
+composition is proved over an abstract semantics and then instantiated with
+Stock, avoiding an expensive kernel reduction without weakening the statement.
+
+Fresh validation: 1506 full build jobs; 1171 crate jobs; 4672 runtime passes, 0
+failures/disagreements and 7 unchanged non-runnable cases; 1292 encoder matches, 0
+differences; 1150 accepted/0 rejected in each E2E mode. Complete accepted identity
+and stage lists equal the multiply checkpoint and each other. All26 new public
+roots passed normal and MCP/kernel checks with only standard axioms; all 281 prior
+sets are unchanged (307 roots total). See the
+[foundation audit](../research/stock-scalar-shift-foundations-audit.json) and
+[family continuation](stock-scalar-shift-values.md).
+
+This foundation checkpoint adds no driver root to the 19 recorded bridges. Next:
+compose all actual do_shift selections; connect all six shift source roots,
+retained-record binding and guarded original-source transfer; derive scratch
+separation from existing record availability; add full source/record witnesses.
+Then continue all uncovered families/effects, source/block/whole-driver
+simulation and completeness, and production integration/stock comparison.
+The original scope, old variants, successful stages, trust sets and saved work
+remain preserved. Production is legacy; #140 remains unfinished. No push or merge.

@@ -1,0 +1,545 @@
+[
+  {
+    "file": "FV/Backend/Proof/StockShiftHelper.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_imm_helper",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftHelper.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_extend_helper",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftHelper.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_extend_helper_observed",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRequests.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_put_in_regs_iff",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRhs.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_imm_rhs",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRhs.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_rrr_rhs",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRhs.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_mask_rhs",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRhsObserved.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_rrr_rhs_observed",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRhsObserved.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_mask_rhs_observed",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRhsWitness.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_imm_rhs_witness",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRhsWitness.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_rrr_rhs_witness",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRhsWitness.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_mask_rhs_witness",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftSemantics.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_imm_resolved",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftSemantics.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_rrr_resolved",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftSemantics.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_mask_resolved",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendRequests.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_zext32_out",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendRequests.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_sext32_out",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendRequests.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_zext64_out",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendRequests.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_sext64_out",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendSemantics.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_extend_holds",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendSemantics.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_ext_passthrough_holds",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendSemantics.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_extend_resolved",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendValues.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_ext_values",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendValues.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_ext_helper_values",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockExtendWitness.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_ext_helper_values_witness",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRhsWitness.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_semantics_witness",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  }
+]
