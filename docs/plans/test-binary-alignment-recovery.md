@@ -254,3 +254,23 @@ Then continue all uncovered families/effects, source/block/whole-driver
 simulation and completeness, and production integration/stock comparison.
 The original scope, old variants, successful stages, trust sets and saved work
 remain preserved. Production is legacy; #140 remains unfinished. No push or merge.
+
+
+## Scalar-shift source witnesses and normal gates complete
+
+Updated UTC: 2026-10-13T23:10:09.019988+00:00
+
+The witness receipt/source proof split builds383jobs. Complete24-case actual retained-record/source witnesses cover all scalar widths, three operations and literal/register counts; literal counts stay unmaterialized. Full1515/crates1171/runtime4672 with0fail/0disagree and7unchanged known non-runnable; encoder1292 identical/0different; bothE2E1150accepted/0rejected, all full identities/stages match each other and the previous foundation batch. Normal323-root audit preserves all307 prior sets and gives16 new standard-only roots.
+
+Final MCP witness checks/source scan are pending; source-copy MCP verification is re-elaborating expensive concrete receipts, and a compact imported-root audit is prepared. Do not call this completed batch merge-ready or update inventory until those checks finish. See docs/research/stock-scalar-shift-record-checkpoint.json. Full #140 remains active and incomplete; production legacy, no push/merge. The next extension draft at /tmp/driver-resume_cast-receipts.lean kernel-checks actual base zero/sign-extension matches, requests, emissions and all six widening semantics; selected-root draft checks locally. No complete extension record/source witnesses or full family coverage claimed.
+
+
+## Scalar-shift family validated locally
+
+Updated UTC: 2026-10-13T23:14:39.055969+00:00
+
+All four actual count selections, six scalar shift roots, retained-record/result binding and original guarded source transfer are complete locally, with24 complete source/record witnesses including unmaterialized literal counts. Scratch/input separation is derived from original availability; the prior full-demand helper variant is retained. Nine new modules build. All16 new public roots pass MCP and normal standard-only audits; all307 previous sets are unchanged (323 total). Original sources have0 MCP source-warning patterns. The expensive computational witness receipts are separated from the source witness, and MCP audits import compiled declarations to avoid redundant source elaboration.
+
+Full1515/crates1171/runtime4672 with0fail/0disagree and7unchanged known non-runnable; encoder1292 identical/0different; bothE2E1150accepted/0rejected with exact full identity/stage parity. Durable receipt: docs/research/stock-scalar-shift-record-audit.json. Source inventory now identifies25 guarded record bridges among517 generated source roots; this is not whole-driver coverage or a completion percentage.
+
+Full #140 remains active and incomplete. Production remains legacy. Continue extension/reduction roots, remaining families/effects/control, source/block/whole-driver simulation and completeness, and actual compiler/checker/linker/generated-proof production integration. Require fresh complete stock comparison before cutover. No push or merge.

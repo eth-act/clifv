@@ -1,0 +1,275 @@
+[
+  {
+    "file": "FV/Backend/Proof/StockShiftMatch.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_imm_match",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftMatch.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_imm_match_receipts",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftMatch.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_rrr_match_receipts",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftMatch.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_mask_match_receipts",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftValues.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_do_shift_values_of_count",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftValues.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_do_shift_values",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftValues.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_do_shift_allocates",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRootReceipts.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_rhs_receipts",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftPrepValues.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_prep_values",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRootValues.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_root_values",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRootMatch.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_root_match",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRootMatch.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_shift_selected_root_values",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "file": "FV/Backend/Proof/StockShiftRecordValues.lean",
+    "name": "Backend.Stock.Proof.ScalarShift.stock_lower_shift_available_values",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  }
+]
