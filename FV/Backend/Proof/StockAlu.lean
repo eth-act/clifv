@@ -242,6 +242,26 @@ private theorem pure_helper {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Confi
     have nextEq : next = {st with base} := by rw [eta] at whole'; exact whole' 
     rw [nextEq]
 
+/-- The shared register ALU helper retains every Stock scheduling field and
+emits the existing helper template for any supported operation tag. -/
+theorem stock_alu_rrr_helper {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config}
+    (hc : cfg.checkOverlap = false) {w k : Nat} {op : ALUOp}
+    (hw : w ≤ 64) (hk : ALUOp.ofIdx? k = some op)
+    (st : State) (tr : Array RuleId) (n : Nat) (rx ry : Reg) :
+    (applyTerm p (Stock.sem ctx) cfg (n + 20) 27 362 [.data 59 k [], .ty (.int w), .reg rx, .reg ry]).run
+      (st, tr) = .ok (some (.reg (st.base.fresh .int).1),
+        {st with base := (st.base.fresh .int).2.emit (.aluRRR op (szOf w) (st.base.fresh .int).1 rx ry)},
+        (tr.push (if w ≤ 32 then rule_inst_1592.id else rule_inst_1593.id)).push rule_inst_2545.id) := by
+  by_cases small : w ≤ 32
+  · have legacy := alu_rrr_run hp ctx hc (w := w) st.base tr n
+      (fun base trace fuel => operand_size_32 hp ctx hc base trace fuel small)
+      (fun base rd rn rm => emit_aluRRR ctx base hk (sz := .size32) rfl rd rn rm) rx ry
+    simpa only [szOf, small, ite_true] using pure_helper hp ctx hc (by decide : 362 ∈ aluScope) legacy
+  · have legacy := alu_rrr_run hp ctx hc (w := w) st.base tr n
+      (fun base trace fuel => operand_size_64 hp ctx hc base trace fuel (by omega) hw)
+      (fun base rd rn rm => emit_aluRRR ctx base hk (sz := .size64) rfl rd rn rm) rx ry
+    simpa only [szOf, small, ite_false] using pure_helper hp ctx hc (by decide : 362 ∈ aluScope) legacy
+
 private theorem add_helper {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config}
     (hc : cfg.checkOverlap = false) {w : Nat} (hw : w ≤ 64)
     (st : State) (tr : Array RuleId) (n : Nat) (rx ry : Reg) :

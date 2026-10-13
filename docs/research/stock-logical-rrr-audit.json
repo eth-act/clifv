@@ -1,0 +1,937 @@
+{
+  "base": "d3d54ae90dd016f0a1d6eb5b3587510bf7541187",
+  "updated_utc": "2026-10-13T00:08:42.286721+00:00",
+  "scope": "Expose shared pure alu_rrr Stock helper through existing projection/frame proof. Actual logical register RHS3916 marks both source operands and emits mapped ALU instruction with complete state. Sparse context/value witnesses cover AND/OR/XOR at32/64 bits using existing alias-resolved machine semantics. No compiler/source-scope changes; selected bitwise roots have further immediate/shift cases still pending.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockAlu.lean": "2c2304b944fc1c06257b1ffa2736b13e326b735be168ebc2210e9c97b20cc10f",
+    "FV/Backend/Proof/StockLogicalRrr.lean": "729597812ff41fcd7c766377c002de2d5284b806d3365be9bcb25db155c8345d"
+  },
+  "mcp": {
+    "stock_alu_rrr_helper": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "stock_rhs_3916": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "stock_logical_rrr_witness": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    }
+  },
+  "axiom_roots": {
+    "Backend.Stock.Proof.Coverage.statement_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.branch_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.emission_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.statement_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.branch_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.emission_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.bindResults_noOpportunity": [
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.bindResults_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.retTrap_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.retTrap_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.emission_retTrap_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.emission_retTrap_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_retTrap_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_retTrap_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.buildCtx_noOpportunity": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.buildCtx_noOpportunity_witness": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_source_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_source_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scanBlock_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scanBlock_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.built_scan_slots": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.built_scan_slots_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.built_scanBlock_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.built_scanBlock_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.branchArgs_noOpportunity": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.branchArgs_noOpportunity_witness": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.blockCore_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.blockCore_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.node_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.node_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scanBlock_records_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scanBlock_records_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.blockCore_records_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.blockCore_records_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_records_noOpportunity": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_records_noOpportunity_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_noOpportunistic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.scan_noOpportunistic_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_record_noOpportunistic": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Coverage.lower_record_noOpportunistic_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_undefinedSource_terminal": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_undefinedSource_terminal_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_undefinedSource_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_undefinedSource_value_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.allocateRequests_returnsPayloadsDisjoint": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.allocateRequests_returnsPayloadsDisjoint_witness": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.buildCtx_returnsPayloadsDisjoint": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.buildCtx_returnsPayloadsDisjoint_witness": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_terminal": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_terminal_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_resolves": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_resolves_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_reservedReturn_value_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.backend_correct_final_total": {
+      "count": 803,
+      "sorted_axioms_sha256": "7b73dc8531ed895171da5f31e74d7035b770ff2ffe89e5291e8ab25f970eecb3",
+      "unexpected_axioms": []
+    },
+    "E2E.backend_correct_final_total_emit_input": {
+      "count": 853,
+      "sorted_axioms_sha256": "f0d9e748fc0049607d5c3bb8aa0f82a2bc80c79090f0ea2dac4e18608fd43212",
+      "unexpected_axioms": []
+    },
+    "E2E.backend_correct_final_total_relaxed": {
+      "count": 803,
+      "sorted_axioms_sha256": "7b73dc8531ed895171da5f31e74d7035b770ff2ffe89e5291e8ab25f970eecb3",
+      "unexpected_axioms": []
+    },
+    "E2E.LinkCheck.crate_correct_inScope_proven": {
+      "count": 830,
+      "sorted_axioms_sha256": "381a2738f97cbbeb94b17941b6cf3da54f75db1a8316ff26cbc3dfd9167a93fd",
+      "unexpected_axioms": []
+    },
+    "Link.compileExe_correct": {
+      "count": 830,
+      "sorted_axioms_sha256": "381a2738f97cbbeb94b17941b6cf3da54f75db1a8316ff26cbc3dfd9167a93fd",
+      "unexpected_axioms": []
+    },
+    "Link.compileExe_total": {
+      "count": 823,
+      "sorted_axioms_sha256": "3375522de295bc8961036d6a8bc5f841cf0fcdef4f32c02282466596f90dac61",
+      "unexpected_axioms": []
+    },
+    "Link.compileExe_spec": {
+      "count": 3,
+      "sorted_axioms_sha256": "118dbe3070706ccab3cf3c2b619838c8b87613556f4cb9e0b80a8c874e29f1d8",
+      "unexpected_axioms": []
+    },
+    "Backend.Stock.Proof.stock_ctor_aliasTargetsAllowed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_apply_aliasTargetsAllowed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_aliasOrigin": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_resolves": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_terminal": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_ctor_aliasTargetsAllowed_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_apply_aliasTargetsAllowed_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_payload_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_source_provenance_rank": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_alias_provenance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_alias_rank": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_chain_rank": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_chain_noCycle": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_source_provenance_rank_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_recorded_source_chain_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_record": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_emitted_record": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_final_source_alias_recorded": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_final_source_chain_rank": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_final_source_chain_noCycle": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_final_source_chain_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_key_origin": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_key_origin_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_wellFounded": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_terminal": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_idempotent": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_step": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alias_terminal_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_blockScanInitialFrontier": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_blockScanInitialFrontier_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_provenance": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_available": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_path_available": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_path_fresh_origin": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_alias_available_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_source_path_fresh_origin_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_intervals": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_intervals_disjoint": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_available_alias_outside_record": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_available_fresh_frame": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_intervals_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.available_before_of_after_not_result": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ValuesHeld.resolvedResult_change_needed": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ValuesHeld.resolvedResult_available": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_iconst_available_resolved": [
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_7",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_available_values_witness": [
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_7",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_iconst_resolved": [
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_7",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_context": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_constant_available_values": [
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_7",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_constant_available_values_witness": [
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_7",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_statement_selectedConstant_context_receipts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_constant_available_source": [
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_12",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_18",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_23",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_28",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_33",
+      "Backend.Proof.movK_ident._native.bv_decide.ax_1_7",
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_match_86": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_match_801": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_rhs_86": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_rhs_801": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_alu_rrr_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_alu_roots_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_fresh_result": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_fresh_result_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fresh_record_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.source_single_result_values": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fresh_record_values_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_ctor_demand_mono": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_apply_demand_mono": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_named_demand_mono": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_demand_mono": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_demand_mono_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_fresh_record_values_auto_demand": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_put_in_reg_iff": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_rhs_86_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_rhs_801_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_rhs_86_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_rhs_801_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_request_success_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alu_record_shape": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alu_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alu_available_values_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Extent.ctor_demand_size": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Extent.apply_demand_size": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Extent.named_demand_size": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Extent.scan_demand_size": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Extent.scanBlock_demand_size": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Extent.lower_record_demand_size": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Extent.lower_mapped_demand_bounds": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.Extent.demand_extent_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_args_available": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alu_operand_coverage": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alu_available_values_auto_operands": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alu_auto_values_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_named_lower_selection": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_selection": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.LowerSelection.rule_mem": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.LowerSelection.last_rule": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_selection_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alu_selected_receipts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alu_selected_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_alu_selected_values_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_alu_rrr_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_rhs_3916": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_logical_rrr_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "normal_roots": 166,
+  "inherited_axiom_sets_unchanged": 163,
+  "new_axioms": "Three new public roots/witness use only standard axioms; no new certificates.",
+  "logs": {
+    "full": {
+      "path": "/tmp/stock-logical-rrr-full.log",
+      "sha256": "b902b5c36454c8768c1e73eb81c997163f750addc01b85a4ded380e8264ece77"
+    },
+    "crates": {
+      "path": "/tmp/stock-logical-rrr-crates.log",
+      "sha256": "5facd9aaa7e75fc7dd3644799ce8d59ec3056a5f4bad12e358affd195b5e054b"
+    },
+    "runtime": {
+      "path": "/tmp/stock-logical-rrr-runtime.log",
+      "sha256": "390e3042cda40fde1899a6c270ea598f44b59ac8c03427c5b20a21ed0af2f876"
+    },
+    "encoder": {
+      "path": "/tmp/stock-logical-rrr-encoder.log",
+      "sha256": "6e5c423e505ae964646f9bd37f28c4870bb02c02a47dd8bf8c1ab5d646ff08e6"
+    },
+    "e2e": {
+      "path": "/tmp/stock-logical-rrr-e2e.log",
+      "sha256": "f5be9afd3f6f491eb1278b547222a06169758b655c96381054105c1c842dc77d"
+    },
+    "axioms": {
+      "path": "/tmp/stock-logical-rrr-axioms.log",
+      "sha256": "77b2c6ccb2b99f91f1b9c4666cb9a39198e4ad126b39cecc7517887cc11a2e0f"
+    }
+  },
+  "gates": {
+    "full_jobs": 1453,
+    "crate_jobs": 1171,
+    "runtime_pass": 4672,
+    "runtime_fail": 0,
+    "runtime_error": 0,
+    "runtime_disagree": 0,
+    "known_not_runnable": 7,
+    "encoder_identical": 1292,
+    "encoder_different": 0,
+    "e2e_accepted": 1150,
+    "e2e_rejected": 0
+  },
+  "identity_parity": {
+    "equal_to": "stock-alu-selected-values baseline",
+    "all_identity_and_stage_fields_equal": true,
+    "sha256": "8cdc10dc3ee93c52e91dff68bd798e607e775f016492f95dc0215a100a8af963"
+  },
+  "witnesses": [
+    "Real sparse-ID context maps source7/31 to192/193; helper and actual RHS allocate195, mark both source counts0\u21921 and emit mapped register ALU.",
+    "At32/64 bits the existing machine theorem computes the AND/OR/XOR source binary value and preserves argument registers7/5."
+  ],
+  "remaining": "Actual selected logical helper/root composition including immediate/shift forms; other families/reserved writes/memory/traps/deferred sinking, whole simulation/completeness and production switch remain."
+}
