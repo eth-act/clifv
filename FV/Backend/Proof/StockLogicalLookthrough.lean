@@ -90,6 +90,23 @@ private theorem shift_of_pattern {p : Program} (hp : Data p) {f : Clif.Function}
   subst result
   exact ⟨z,b,j1,j2,info1,info2,ty,ty3,c,u,hj1,hij1,hcl1,hj2,hij2,hcl2,supported,hz,rfl⟩
 
+/-- Reusable source-definition/value receipt for an actual nested LSL pattern.
+This is shared by logical binary and unary-NOT selected roots. -/
+theorem stock_shift_pattern_value {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
+    (inv : MappedCtxInv f ctx) {fr : Clif.Frame} (dfg : DFGCons ctx fr)
+    {y zSlot cSlot : Nat} {ty : Clif.Ty} {v : BitVec ty.width} (source : fr.getAs y ty = .ok v)
+    {st : State} {env env' : Isle.Interp.Env V}
+    (pattern : matchPat p (Stock.sem ctx) st
+      (.term 15 1 [.term 18 209 [.wildcard 14,.term 152 2449 [.term 151 2387 [],
+        .term 147 1614 [.bind 15 zSlot (.wildcard 15),.term 15 1 [.term 18 209 [.wildcard 14,
+          .term 152 2482 [.term 151 2341 [],.bind 134 cSlot (.wildcard 134)]]]]]]])
+        (.value y) env = .ok (some env')) :
+    ∃ (z b j1 j2 : Nat) (info1 info2 : IInfo) (ty1 ty3 : Clif.Ty) (c : BitVec ty3.width) (u : BitVec ty.width),
+      ctx.defInst? y = some j1 ∧ ctx.insts[j1]? = some info1 ∧ info1.clif = some (.binary .ishl ty1 z b) ∧
+      ctx.defInst? b = some j2 ∧ ctx.insts[j2]? = some info2 ∧ info2.clif = some (.iconst ty3 c) ∧
+      eTy ty3 = true ∧ fr.getAs z ty = .ok u ∧ v = Clif.Sem.ishl u c := by
+  exact shift_of_pattern hp inv dfg source pattern
+
 /-- Successful Stock shift-side matches expose both real source definitions;
 original DFG consistency supplies the unshifted operand and shifted value. -/
 theorem stock_logical_shift_match_value {p : Program} (hp : Data p)

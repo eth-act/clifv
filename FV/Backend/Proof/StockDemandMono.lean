@@ -189,6 +189,27 @@ private theorem binding_demandFields {ctx : Ctx} {pairs : List (Nat × List Reg)
     · cases he; rfl
     · cases he
 
+/-- Actual result binding changes aliases/copy code without changing source demand. -/
+theorem stock_bindResults_demand {ctx : Ctx} {pairs : List (Nat × List Reg)}
+    {st next : State} {copies : Array MInst}
+    (run : bindResults ctx pairs st = .ok (next,copies)) : next.demand = st.demand :=
+  binding_demandFields run
+
+/-- A nonempty virtual binding preserves a populated demand array while
+installing an actual source-to-result alias. -/
+theorem stock_bindResults_demand_witness :
+    ∃ (ctx : Ctx) (st next : State), st.demand = #[1,2] ∧
+      bindResults ctx [(0,[.vreg 194 .int])] st = .ok (next,#[]) ∧ next.demand = st.demand := by
+  let ctx : Ctx := {sinkCtx with valReg := #[some (.vreg 192 .int)]}
+  let st : State := {sinkState with demand := #[1,2]}
+  have actual := bindResults_virtual ctx st [(0,192,194)] (by
+    intro p member
+    have equal := List.mem_singleton.mp member
+    subst p
+    rfl)
+  simp only [List.map_cons,List.map_nil,List.foldl_cons,List.foldl_nil] at actual
+  exact ⟨ctx,st,_,rfl,actual,stock_bindResults_demand actual⟩
+
 /-- Successful actual named lowering preserves every existing demand count. -/
 theorem stock_named_demand_mono {ctx : Ctx} {term : String} {args : List V}
     {st next : State} {out : Option V} {trace : List RuleId}
