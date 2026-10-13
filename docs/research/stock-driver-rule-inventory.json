@@ -1,0 +1,4668 @@
+{
+  "updated_utc": "2026-10-13T11:42:09.650182+00:00",
+  "head": "cc29aaa494ddea10a8e38b5dd5fad707dcee47b6",
+  "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
+  "source_sha256": {
+    "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
+    "FV/Isle/Generated/Rules01.lean": "2f9964c0eec71285d47f1250afd0d610aaaa2df091275ca258a05f760e301550",
+    "FV/Isle/Generated/Rules02.lean": "cc5eb3ecef520bd778f7e7b0997334206a9c94e0996c4f1c6960234e0065fcc9",
+    "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f"
+  },
+  "generated_lower_roots": 517,
+  "roots_with_identified_guarded_stock_record_value_bridge": 15,
+  "roots": [
+    {
+      "rule": "rule_lower_53",
+      "id": 582,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3866,
+      "isle_name": "iconst",
+      "record_value_proof": "FV/Backend/Proof/StockConstantRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_58",
+      "id": 583,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3880,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_63",
+      "id": 584,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3894,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_68",
+      "id": 585,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3908,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_73",
+      "id": 586,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3922,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_78",
+      "id": 587,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3936,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_86",
+      "id": 588,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3950,
+      "isle_name": "iadd_base_case",
+      "record_value_proof": "FV/Backend/Proof/StockAluRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_90",
+      "id": 589,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3964,
+      "isle_name": "iadd_imm12_right",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_93",
+      "id": 590,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3978,
+      "isle_name": "iadd_imm12_left",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_98",
+      "id": 591,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 3992,
+      "isle_name": "iadd_imm12_neg_right",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_102",
+      "id": 592,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4006,
+      "isle_name": "iadd_imm12_neg_left",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_108",
+      "id": 593,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4020,
+      "isle_name": "iadd_extend_right",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_111",
+      "id": 594,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4034,
+      "isle_name": "iadd_extend_left",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_116",
+      "id": 595,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4048,
+      "isle_name": "iadd_ishl_right",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_120",
+      "id": 596,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4062,
+      "isle_name": "iadd_ishl_left",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_125",
+      "id": 597,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4076,
+      "isle_name": "iadd_imul_right",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_128",
+      "id": 598,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4090,
+      "isle_name": "iadd_imul_left",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_132",
+      "id": 599,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4104,
+      "isle_name": "isub_imul",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_137",
+      "id": 600,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4118,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_142",
+      "id": 601,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4132,
+      "isle_name": "iadd_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_165",
+      "id": 602,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4146,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_167",
+      "id": 603,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4160,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_169",
+      "id": 604,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4174,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_171",
+      "id": 605,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4188,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_190",
+      "id": 606,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4202,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_203",
+      "id": 607,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4216,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_205",
+      "id": 608,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4230,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_207",
+      "id": 609,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4244,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_209",
+      "id": 610,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4258,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_211",
+      "id": 611,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4272,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_213",
+      "id": 612,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4286,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_215",
+      "id": 613,
+      "generated_file": "FV/Isle/Generated/Rules01.lean",
+      "generated_line": 4300,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_217",
+      "id": 614,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 11,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_222",
+      "id": 615,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 25,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_224",
+      "id": 616,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 39,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_226",
+      "id": 617,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 53,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_228",
+      "id": 618,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 67,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_230",
+      "id": 619,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 81,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_232",
+      "id": 620,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 95,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_240",
+      "id": 621,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 109,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_242",
+      "id": 622,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 123,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_244",
+      "id": 623,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 137,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_246",
+      "id": 624,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 151,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_248",
+      "id": 625,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 165,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_250",
+      "id": 626,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 179,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_260",
+      "id": 627,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 193,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_262",
+      "id": 628,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 207,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_264",
+      "id": 629,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 221,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_266",
+      "id": 630,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 235,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_268",
+      "id": 631,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 249,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_270",
+      "id": 632,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 263,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_273",
+      "id": 633,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 277,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_279",
+      "id": 634,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 291,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_284",
+      "id": 635,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 305,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_294",
+      "id": 636,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 319,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_300",
+      "id": 637,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 334,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_308",
+      "id": 638,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 349,
+      "isle_name": "iconcat_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_313",
+      "id": 639,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 363,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_316",
+      "id": 640,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 377,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_319",
+      "id": 641,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 391,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_322",
+      "id": 642,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 405,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_336",
+      "id": 643,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 419,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_342",
+      "id": 644,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 433,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_359",
+      "id": 645,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 447,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_368",
+      "id": 646,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 461,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_375",
+      "id": 647,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 475,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_379",
+      "id": 648,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 489,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_383",
+      "id": 649,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 503,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_387",
+      "id": 650,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 517,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_390",
+      "id": 651,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 531,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_402",
+      "id": 652,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 545,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_419",
+      "id": 653,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 559,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_434",
+      "id": 654,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 573,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_437",
+      "id": 655,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 587,
+      "isle_name": "iabs_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_440",
+      "id": 656,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 601,
+      "isle_name": "iabs_8_16_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_450",
+      "id": 657,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 615,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_463",
+      "id": 658,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 629,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_472",
+      "id": 659,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 643,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_477",
+      "id": 660,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 657,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_482",
+      "id": 661,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 671,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_485",
+      "id": 662,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 685,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_490",
+      "id": 663,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 699,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_493",
+      "id": 664,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 713,
+      "isle_name": "fsub",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_498",
+      "id": 665,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 727,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_501",
+      "id": 666,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 741,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_506",
+      "id": 667,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 755,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_509",
+      "id": 668,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 769,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_514",
+      "id": 669,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 783,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_517",
+      "id": 670,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 797,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_522",
+      "id": 671,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 811,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_525",
+      "id": 672,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 825,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_530",
+      "id": 673,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 839,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_533",
+      "id": 674,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 853,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_538",
+      "id": 675,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 867,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_541",
+      "id": 676,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 881,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_546",
+      "id": 677,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 895,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_549",
+      "id": 678,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 909,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_554",
+      "id": 679,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 923,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_559",
+      "id": 680,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 937,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_564",
+      "id": 681,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 951,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_567",
+      "id": 682,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 965,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_570",
+      "id": 683,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 979,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_575",
+      "id": 684,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 993,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_578",
+      "id": 685,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1007,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_581",
+      "id": 686,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1021,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_586",
+      "id": 687,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1035,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_589",
+      "id": 688,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1049,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_592",
+      "id": 689,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1063,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_597",
+      "id": 690,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1077,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_600",
+      "id": 691,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1091,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_603",
+      "id": 692,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1105,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_608",
+      "id": 693,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1119,
+      "isle_name": "fma",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_609",
+      "id": 694,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1133,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_685",
+      "id": 712,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1385,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_690",
+      "id": 713,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1399,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_693",
+      "id": 714,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1413,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_696",
+      "id": 715,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1427,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_699",
+      "id": 716,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1441,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_704",
+      "id": 717,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1455,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_707",
+      "id": 718,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1469,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_710",
+      "id": 719,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1483,
+      "isle_name": "fcvt_to_sint",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_713",
+      "id": 720,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1497,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_718",
+      "id": 721,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1511,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_721",
+      "id": 722,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1525,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_724",
+      "id": 723,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1539,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_727",
+      "id": 724,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1553,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_730",
+      "id": 725,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1567,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_733",
+      "id": 726,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1581,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_738",
+      "id": 727,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1595,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_741",
+      "id": 728,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1609,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_744",
+      "id": 729,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1623,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_747",
+      "id": 730,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1637,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_750",
+      "id": 731,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1651,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_753",
+      "id": 732,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1665,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_758",
+      "id": 733,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1679,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_761",
+      "id": 734,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1693,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_764",
+      "id": 735,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1707,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_767",
+      "id": 736,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1721,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_770",
+      "id": 737,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1735,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_773",
+      "id": 738,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1749,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_778",
+      "id": 739,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1763,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_781",
+      "id": 740,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1777,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_784",
+      "id": 741,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1791,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_787",
+      "id": 742,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1805,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_790",
+      "id": 743,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1819,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_793",
+      "id": 744,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1833,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_801",
+      "id": 745,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1847,
+      "isle_name": "isub_base_case",
+      "record_value_proof": "FV/Backend/Proof/StockAluRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_805",
+      "id": 746,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1861,
+      "isle_name": "isub_imm12",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_810",
+      "id": 747,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1875,
+      "isle_name": "isub_imm12_neg",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_816",
+      "id": 748,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1889,
+      "isle_name": "isub_extend",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_821",
+      "id": 749,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1903,
+      "isle_name": "isub_ishl",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_826",
+      "id": 750,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1917,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_831",
+      "id": 751,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1931,
+      "isle_name": "isub_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_836",
+      "id": 752,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1945,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_841",
+      "id": 753,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1959,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_846",
+      "id": 754,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1973,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_851",
+      "id": 755,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 1987,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_857",
+      "id": 756,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2001,
+      "isle_name": "ineg_base_case",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_861",
+      "id": 757,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2015,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_865",
+      "id": 758,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2029,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_871",
+      "id": 759,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2043,
+      "isle_name": "imul_base_case",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_876",
+      "id": 760,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2057,
+      "isle_name": "imul_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_906",
+      "id": 761,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2071,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_914",
+      "id": 762,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2085,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_924",
+      "id": 763,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2099,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_956",
+      "id": 764,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2113,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_995",
+      "id": 765,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2127,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1000",
+      "id": 766,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2141,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1005",
+      "id": 767,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2155,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1010",
+      "id": 768,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2169,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1015",
+      "id": 769,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2183,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1020",
+      "id": 770,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2197,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1025",
+      "id": 771,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2211,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1030",
+      "id": 772,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2225,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1035",
+      "id": 773,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2239,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1040",
+      "id": 774,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2253,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1045",
+      "id": 775,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2267,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1050",
+      "id": 776,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2281,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1056",
+      "id": 777,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2295,
+      "isle_name": "smulhi_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1059",
+      "id": 778,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2309,
+      "isle_name": "smulhi_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1068",
+      "id": 779,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2323,
+      "isle_name": "umulhi_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1071",
+      "id": 780,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2337,
+      "isle_name": "umulhi_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1116",
+      "id": 786,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2421,
+      "isle_name": "udiv_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1119",
+      "id": 787,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2435,
+      "isle_name": "udiv_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1145",
+      "id": 788,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2449,
+      "isle_name": "sdiv_base_case_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1153",
+      "id": 789,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2463,
+      "isle_name": "sdiv_base_case_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1163",
+      "id": 790,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2477,
+      "isle_name": "sdiv_safe_divisor_i64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1167",
+      "id": 791,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2491,
+      "isle_name": "sdiv_safe_divisor_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1190",
+      "id": 792,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2505,
+      "isle_name": "urem_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1197",
+      "id": 793,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2519,
+      "isle_name": "urem_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1204",
+      "id": 794,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2533,
+      "isle_name": "srem_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1211",
+      "id": 795,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2547,
+      "isle_name": "srem_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1222",
+      "id": 796,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2561,
+      "isle_name": "umin",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1224",
+      "id": 797,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2575,
+      "isle_name": "smin",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1226",
+      "id": 798,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2589,
+      "isle_name": "umax",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1228",
+      "id": 799,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2603,
+      "isle_name": "smax",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1233",
+      "id": 800,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2617,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1236",
+      "id": 801,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2631,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1239",
+      "id": 802,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2645,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1242",
+      "id": 803,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2659,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1245",
+      "id": 804,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2673,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1248",
+      "id": 805,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2687,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1251",
+      "id": 806,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2701,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1254",
+      "id": 807,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2715,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1261",
+      "id": 808,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2729,
+      "isle_name": "uextend",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1266",
+      "id": 809,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2743,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1272",
+      "id": 810,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2757,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1281",
+      "id": 811,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2771,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1283",
+      "id": 812,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2785,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1289",
+      "id": 813,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2799,
+      "isle_name": "uextend_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1294",
+      "id": 814,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2813,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1300",
+      "id": 815,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2827,
+      "isle_name": "uextend_load",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1315",
+      "id": 819,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2883,
+      "isle_name": "sextend",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1320",
+      "id": 820,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2897,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1329",
+      "id": 821,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2911,
+      "isle_name": "sextend_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1339",
+      "id": 822,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2925,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1349",
+      "id": 823,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2939,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1359",
+      "id": 824,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 2953,
+      "isle_name": "sextend_load",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1377",
+      "id": 828,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3009,
+      "isle_name": "bnot_base_case",
+      "record_value_proof": "FV/Backend/Proof/StockBnotRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1381",
+      "id": 829,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3023,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1385",
+      "id": 830,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3037,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1387",
+      "id": 831,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3051,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1391",
+      "id": 832,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3065,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1401",
+      "id": 833,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3079,
+      "isle_name": "bnot_ishl",
+      "record_value_proof": "FV/Backend/Proof/StockBnotRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1406",
+      "id": 834,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3093,
+      "isle_name": null,
+      "record_value_proof": "FV/Backend/Proof/StockLogicalNotXorRecord.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1408",
+      "id": 835,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3107,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1412",
+      "id": 836,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3121,
+      "isle_name": "band_fits_in_64",
+      "record_value_proof": "FV/Backend/Proof/StockLogicalRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1415",
+      "id": 837,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3135,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1419",
+      "id": 838,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3149,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1421",
+      "id": 839,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3163,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1424",
+      "id": 840,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3177,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1429",
+      "id": 841,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3191,
+      "isle_name": "band_not_right",
+      "record_value_proof": "FV/Backend/Proof/StockLogicalNotRecord.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1431",
+      "id": 842,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3205,
+      "isle_name": "band_not_left",
+      "record_value_proof": "FV/Backend/Proof/StockLogicalNotRecord.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1434",
+      "id": 843,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3219,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1435",
+      "id": 844,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3233,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1437",
+      "id": 845,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3247,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1439",
+      "id": 846,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3261,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1442",
+      "id": 847,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3275,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1444",
+      "id": 848,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3289,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1449",
+      "id": 849,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3303,
+      "isle_name": "bor_fits_in_64",
+      "record_value_proof": "FV/Backend/Proof/StockLogicalRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1452",
+      "id": 850,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3317,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1456",
+      "id": 851,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3331,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1458",
+      "id": 852,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3345,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1461",
+      "id": 853,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3359,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1466",
+      "id": 854,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3373,
+      "isle_name": "bor_not_right",
+      "record_value_proof": "FV/Backend/Proof/StockLogicalNotRecord.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1468",
+      "id": 855,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3387,
+      "isle_name": "bor_not_left",
+      "record_value_proof": "FV/Backend/Proof/StockLogicalNotRecord.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1471",
+      "id": 856,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3401,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1472",
+      "id": 857,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3415,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1474",
+      "id": 858,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3429,
+      "isle_name": "bor_not_right_vec64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1476",
+      "id": 859,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3443,
+      "isle_name": "bor_not_left_vec64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1479",
+      "id": 860,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3457,
+      "isle_name": "bor_not_right_vec128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1481",
+      "id": 861,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3471,
+      "isle_name": "bor_not_left_vec128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1501",
+      "id": 862,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3485,
+      "isle_name": "extr_32_or_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1507",
+      "id": 863,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3501,
+      "isle_name": "extr_32_or_64_2",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1516",
+      "id": 864,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3517,
+      "isle_name": "bxor_fits_in_64",
+      "record_value_proof": "FV/Backend/Proof/StockLogicalRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1519",
+      "id": 865,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3531,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1523",
+      "id": 866,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3545,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1525",
+      "id": 867,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3559,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1528",
+      "id": 868,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3573,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1534",
+      "id": 869,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3587,
+      "isle_name": "bxor_not_right",
+      "record_value_proof": "FV/Backend/Proof/StockLogicalNotRecord.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1536",
+      "id": 870,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3601,
+      "isle_name": "bxor_not_left",
+      "record_value_proof": "FV/Backend/Proof/StockLogicalNotRecord.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
+    },
+    {
+      "rule": "rule_lower_1539",
+      "id": 871,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3615,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1540",
+      "id": 872,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3629,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1545",
+      "id": 873,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3643,
+      "isle_name": "ishl_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1549",
+      "id": 874,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3657,
+      "isle_name": "ishl_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1553",
+      "id": 875,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3671,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1583",
+      "id": 877,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3699,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1588",
+      "id": 878,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3713,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1638",
+      "id": 883,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3783,
+      "isle_name": "ushr_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1642",
+      "id": 884,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3797,
+      "isle_name": "ushr_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1646",
+      "id": 885,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3811,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1654",
+      "id": 886,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3825,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1659",
+      "id": 887,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3839,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1661",
+      "id": 888,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3853,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1695",
+      "id": 890,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3881,
+      "isle_name": "sshr_fits_in_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1699",
+      "id": 891,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3895,
+      "isle_name": "sshr_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1704",
+      "id": 892,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3909,
+      "isle_name": "sbfm",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1707",
+      "id": 893,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3923,
+      "isle_name": "ubfm",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1720",
+      "id": 894,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3937,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1729",
+      "id": 895,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3951,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1734",
+      "id": 896,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3965,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1736",
+      "id": 897,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 3979,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1772",
+      "id": 899,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4007,
+      "isle_name": "rotl_fits_in_16",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1778",
+      "id": 900,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4021,
+      "isle_name": "rotl_fits_in_16_imm",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1791",
+      "id": 901,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4035,
+      "isle_name": "rotl_32_base_case",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1797",
+      "id": 902,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4049,
+      "isle_name": "rotl_64_base_case",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1803",
+      "id": 903,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4063,
+      "isle_name": "rotl_32_imm",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1808",
+      "id": 904,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4077,
+      "isle_name": "rotl_64_imm",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1827",
+      "id": 905,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4091,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1840",
+      "id": 906,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4105,
+      "isle_name": "rotr_fits_in_16",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1844",
+      "id": 907,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4119,
+      "isle_name": "rotr_32_base_case",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1848",
+      "id": 908,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4133,
+      "isle_name": "rotr_64_base_case",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1852",
+      "id": 909,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4147,
+      "isle_name": "rotr_fits_in_16_imm",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1857",
+      "id": 910,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4161,
+      "isle_name": "rotr_32_imm",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1862",
+      "id": 911,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4175,
+      "isle_name": "rotr_64_imm",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1916",
+      "id": 914,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4217,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1931",
+      "id": 915,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4231,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1937",
+      "id": 916,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4245,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1940",
+      "id": 917,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4259,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1946",
+      "id": 918,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4273,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1951",
+      "id": 919,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4287,
+      "isle_name": "clz_8",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1955",
+      "id": 920,
+      "generated_file": "FV/Isle/Generated/Rules02.lean",
+      "generated_line": 4301,
+      "isle_name": "clz_16",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1958",
+      "id": 921,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 11,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1961",
+      "id": 922,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 25,
+      "isle_name": "clz_32_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1982",
+      "id": 924,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 53,
+      "isle_name": "ctz_8",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1986",
+      "id": 925,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 67,
+      "isle_name": "ctz_16",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1989",
+      "id": 926,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 81,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_1995",
+      "id": 927,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 95,
+      "isle_name": "ctz_32_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2000",
+      "id": 928,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 109,
+      "isle_name": "cls_8",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2004",
+      "id": 929,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 123,
+      "isle_name": "cls_16",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2016",
+      "id": 930,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 137,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2030",
+      "id": 931,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 151,
+      "isle_name": "cls_32_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2035",
+      "id": 932,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 165,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2038",
+      "id": 933,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 179,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2041",
+      "id": 934,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 193,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2044",
+      "id": 935,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 207,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2052",
+      "id": 936,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 221,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2074",
+      "id": 937,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 235,
+      "isle_name": "popcnt_8",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2080",
+      "id": 938,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 249,
+      "isle_name": "popcnt_16",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2086",
+      "id": 939,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 263,
+      "isle_name": "popcnt_32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2092",
+      "id": 940,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 277,
+      "isle_name": "popcnt_64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2099",
+      "id": 941,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 291,
+      "isle_name": "popcnt_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2108",
+      "id": 942,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 305,
+      "isle_name": "popcnt_8x16",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2113",
+      "id": 943,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 319,
+      "isle_name": "bitselect",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2120",
+      "id": 944,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 333,
+      "isle_name": "bitselect_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2138",
+      "id": 945,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 347,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2146",
+      "id": 946,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 361,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2152",
+      "id": 947,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 375,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2158",
+      "id": 948,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 389,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2164",
+      "id": 949,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 403,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2170",
+      "id": 950,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 417,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2176",
+      "id": 951,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 431,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2179",
+      "id": 952,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 445,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2185",
+      "id": 953,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 459,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2191",
+      "id": 954,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 473,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2197",
+      "id": 955,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 487,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2203",
+      "id": 956,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 501,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2209",
+      "id": 957,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 515,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2215",
+      "id": 958,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 529,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2237",
+      "id": 964,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 613,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2242",
+      "id": 965,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 627,
+      "isle_name": "lower_trapz",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2262",
+      "id": 970,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 697,
+      "isle_name": "lower_trapnz",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2267",
+      "id": 971,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 711,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2280",
+      "id": 974,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 753,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2285",
+      "id": 975,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 767,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2288",
+      "id": 976,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 781,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2294",
+      "id": 977,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 795,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2298",
+      "id": 978,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 809,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2301",
+      "id": 979,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 823,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2304",
+      "id": 980,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 837,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2307",
+      "id": 981,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 851,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2310",
+      "id": 982,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 865,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2316",
+      "id": 983,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 879,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2321",
+      "id": 984,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 893,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2328",
+      "id": 985,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 907,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2331",
+      "id": 986,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 921,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2334",
+      "id": 987,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 935,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2337",
+      "id": 988,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 949,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2340",
+      "id": 989,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 963,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2343",
+      "id": 990,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 977,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2346",
+      "id": 991,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 991,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2349",
+      "id": 992,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1005,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2352",
+      "id": 993,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1019,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2357",
+      "id": 994,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1033,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2359",
+      "id": 995,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1047,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2361",
+      "id": 996,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1061,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2363",
+      "id": 997,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1075,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2365",
+      "id": 998,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1089,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2367",
+      "id": 999,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1103,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2369",
+      "id": 1000,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1117,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2371",
+      "id": 1001,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1131,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2373",
+      "id": 1002,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1145,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2375",
+      "id": 1003,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1159,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2377",
+      "id": 1004,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1173,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2381",
+      "id": 1005,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1187,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2386",
+      "id": 1006,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1201,
+      "isle_name": "lse_atomic_cas_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2390",
+      "id": 1007,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1215,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2395",
+      "id": 1008,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1229,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2400",
+      "id": 1009,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1243,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2404",
+      "id": 1010,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1257,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2408",
+      "id": 1011,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1271,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2415",
+      "id": 1012,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1285,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2419",
+      "id": 1013,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1299,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2423",
+      "id": 1014,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1313,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2431",
+      "id": 1015,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1327,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2435",
+      "id": 1016,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1341,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2439",
+      "id": 1017,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1355,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2446",
+      "id": 1018,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1369,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2451",
+      "id": 1019,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1383,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2454",
+      "id": 1020,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1397,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2461",
+      "id": 1021,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1411,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2466",
+      "id": 1022,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1425,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2469",
+      "id": 1023,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1439,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2476",
+      "id": 1024,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1453,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2481",
+      "id": 1025,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1467,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2486",
+      "id": 1026,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1481,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2491",
+      "id": 1027,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1495,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2496",
+      "id": 1028,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1509,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2499",
+      "id": 1029,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1523,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2502",
+      "id": 1030,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1537,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2508",
+      "id": 1031,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1551,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2518",
+      "id": 1032,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1565,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2529",
+      "id": 1033,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1579,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2574",
+      "id": 1037,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1635,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2580",
+      "id": 1038,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1649,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2587",
+      "id": 1039,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1663,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2595",
+      "id": 1040,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1677,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2604",
+      "id": 1041,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1691,
+      "isle_name": "load_i8_aarch64_uload8",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2607",
+      "id": 1042,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1705,
+      "isle_name": "load_i16_aarch64_uload16",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2610",
+      "id": 1043,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1719,
+      "isle_name": "load_i32_aarch64_uload32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2613",
+      "id": 1044,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1733,
+      "isle_name": "load_i64_aarch64_uload64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2619",
+      "id": 1045,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1747,
+      "isle_name": "load_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2622",
+      "id": 1046,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1761,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2625",
+      "id": 1047,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1775,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2628",
+      "id": 1048,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1789,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2633",
+      "id": 1049,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1803,
+      "isle_name": "load_ty_vec128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2638",
+      "id": 1050,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1817,
+      "isle_name": "load_ty_dyn_vec64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2643",
+      "id": 1051,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1831,
+      "isle_name": "load_ty_dyn_vec128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2647",
+      "id": 1052,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1845,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2650",
+      "id": 1053,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1859,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2653",
+      "id": 1054,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1873,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2656",
+      "id": 1055,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1887,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2659",
+      "id": 1056,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1901,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2662",
+      "id": 1057,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1915,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2666",
+      "id": 1058,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1929,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2672",
+      "id": 1059,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1943,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2678",
+      "id": 1060,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1957,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2684",
+      "id": 1061,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1971,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2690",
+      "id": 1062,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1985,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2696",
+      "id": 1063,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 1999,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2705",
+      "id": 1064,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2013,
+      "isle_name": "store_i8_aarch64_store8",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2709",
+      "id": 1065,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2027,
+      "isle_name": "store_i16_aarch64_store16",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2713",
+      "id": 1066,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2041,
+      "isle_name": "store_i32_aarch64_store32",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2717",
+      "id": 1067,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2055,
+      "isle_name": "store_i64_aarch64_store64",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2722",
+      "id": 1068,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2069,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2726",
+      "id": 1069,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2083,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2730",
+      "id": 1070,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2097,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2735",
+      "id": 1071,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2111,
+      "isle_name": "store_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2742",
+      "id": 1072,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2125,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2746",
+      "id": 1073,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2139,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2750",
+      "id": 1074,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2153,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2754",
+      "id": 1075,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2167,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2759",
+      "id": 1076,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2181,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2763",
+      "id": 1077,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2195,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2770",
+      "id": 1078,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2209,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2773",
+      "id": 1079,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2223,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2779",
+      "id": 1080,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2237,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2784",
+      "id": 1081,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2251,
+      "isle_name": "bitcast_i128_simdfp",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2789",
+      "id": 1082,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2265,
+      "isle_name": "bitcast_simdfp_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2793",
+      "id": 1083,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2279,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2798",
+      "id": 1084,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2293,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2803",
+      "id": 1085,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2307,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2809",
+      "id": 1086,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2322,
+      "isle_name": "bitcast_i128",
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2815",
+      "id": 1087,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2336,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2818",
+      "id": 1088,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2350,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2822",
+      "id": 1089,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2364,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2828",
+      "id": 1090,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2378,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2837",
+      "id": 1091,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2392,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2842",
+      "id": 1092,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2406,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2849",
+      "id": 1093,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2420,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2863",
+      "id": 1094,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2434,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2887",
+      "id": 1095,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2448,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2900",
+      "id": 1096,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2462,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2913",
+      "id": 1097,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2476,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_2927",
+      "id": 1098,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2490,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3008",
+      "id": 1104,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2574,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3014",
+      "id": 1105,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2588,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3018",
+      "id": 1106,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2602,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3022",
+      "id": 1107,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2616,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3031",
+      "id": 1108,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2630,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3036",
+      "id": 1109,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2644,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3042",
+      "id": 1110,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2658,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3051",
+      "id": 1111,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2672,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3056",
+      "id": 1112,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2686,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3062",
+      "id": 1113,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2700,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3071",
+      "id": 1114,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2714,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3076",
+      "id": 1115,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2728,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3082",
+      "id": 1116,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2742,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3091",
+      "id": 1117,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2756,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3097",
+      "id": 1118,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2770,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3101",
+      "id": 1119,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2784,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3110",
+      "id": 1120,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2798,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3126",
+      "id": 1121,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2812,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3140",
+      "id": 1122,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2826,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3155",
+      "id": 1123,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2840,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3161",
+      "id": 1124,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2854,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3165",
+      "id": 1125,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2868,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3174",
+      "id": 1126,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2882,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3190",
+      "id": 1127,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2896,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3204",
+      "id": 1128,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2910,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3217",
+      "id": 1129,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2924,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3220",
+      "id": 1130,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2938,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3225",
+      "id": 1131,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 2952,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3286",
+      "id": 1141,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3092,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_3292",
+      "id": 1142,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3106,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_3",
+      "id": 1143,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3120,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_7",
+      "id": 1144,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3134,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_11",
+      "id": 1145,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3148,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_15",
+      "id": 1146,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3162,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_19",
+      "id": 1147,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3176,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_23",
+      "id": 1148,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3190,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_27",
+      "id": 1149,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3204,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_31",
+      "id": 1150,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3218,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_35",
+      "id": 1151,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3232,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_39",
+      "id": 1152,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3246,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_43",
+      "id": 1153,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3260,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_47",
+      "id": 1154,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3274,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_53",
+      "id": 1155,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3288,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_57",
+      "id": 1156,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3302,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_61",
+      "id": 1157,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3316,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_67",
+      "id": 1158,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3330,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_71",
+      "id": 1159,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3344,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_75",
+      "id": 1160,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3358,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_81",
+      "id": 1161,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3372,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_87",
+      "id": 1162,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3386,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_92",
+      "id": 1163,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3400,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    },
+    {
+      "rule": "rule_lower_dynamic_neon_97",
+      "id": 1164,
+      "generated_file": "FV/Isle/Generated/Rules03.lean",
+      "generated_line": 3414,
+      "isle_name": null,
+      "record_value_proof": null,
+      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+    }
+  ]
+}
