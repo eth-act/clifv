@@ -190,3 +190,38 @@ whole-driver completion. Classify the other roots against original LowerScope,
 then prove selected execution, effects/control/omission/sinking and compose
 whole-driver simulation/completeness before production consumers/cutover.
 The full goal remains active and incomplete. No push or merge.
+
+## Multiplication continuation checkpoint
+
+Updated UTC: 2026-10-13T12:08:16.964109+00:00
+
+The prior goal turn made verified progress: local commit a739ad5 and all256
+root audits/full gates pass; goal remains active. Current base is a739ad5.
+New work: actual base multiply plus three multiply-add/subtract roots, retained
+records/binding and original guarded source transfer. Normal targets pass;
+base32/64 full witnesses pass; fused32/64 unmaterialized-product witnesses
+building in session60091. Both guarded roots MCP standard3/no warnings.
+All12 modules are local/untracked/uncommitted. No runtime/compiler changes.
+Resume from [stock-multiply-values.md](stock-multiply-values.md), finish witnesses,
+all25 new/all256 prior audits and full gates, then continue original full goal.
+No push or merge; primary/archived work preserved.
+
+## Multiplication batch validated
+
+Updated UTC: 2026-10-13T12:15:35.676394+00:00
+
+Base multiply and allthree MADD/MSUB fused roots now have actual request/state,
+match/source/selection, machine/final-alias, retained-record/binding and guarded
+source-transfer proofs, with complete32/64 full witnesses and unmaterialized
+product. All12 modules pass;25 new MCP/normal standard-only roots; all256 prior
+trust sets and final compiler sets unchanged. Full1496/crates1171/runtime4672/0fail/
+0disagree/7known non-runnable; encoder1292/0; bothE2E1150/0 with exact prior/#179
+and between-mode identity-stage parity. Evidence:
+[stock-multiply-values-audit.json](../research/stock-multiply-values-audit.json).
+Witness session21610 and gates77649 completed; no compiler/runtime change.
+
+Next: scalar shifts (all four do_shift selections and original narrow-type
+extensions), then remaining families/effects and full source/block/driver
+simulation/completeness/cutover. Inventory identifies19 guarded record bridges
+among517 generated lower roots; this is not whole-driver coverage. Goal active
+and incomplete. No push or merge; preserve current local proof stack.

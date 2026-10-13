@@ -5,9 +5,9 @@ Worktree: `/home/lee/clifv/.worktrees/driver-proof-resume`; recover from
 
 The machine-readable [root inventory](../research/stock-driver-rule-inventory.json)
 lists all 517 generated term686 `lower` rules with source locations and hashes.
-It identifies 15 roots with guarded actual Stock record-value bridges: constants,
+It identifies 19 roots with guarded actual Stock record-value bridges: constants,
 base add/subtract, three logical roots, scalar/shift NOT, six mirrored logical-NOT
-roots and NOT-of-XOR. This is a source inventory, not a reachable-rule inventory,
+roots and NOT-of-XOR, plus base multiplication and three multiply-add/subtract fusions. This is a source inventory, not a reachable-rule inventory,
 a correctness proof or a completion percentage. Helper selection subcases have
 separate obligations. Source/context/record guards still need internal composition.
 
@@ -16,7 +16,7 @@ separate obligations. Source/context/record guards still need internal compositi
 - Classify remaining roots against the original `LowerScope`, keeping the scope
   unchanged. Derive impossible matches from actual mapped contexts; otherwise
   prove the actual Stock request/state/emission semantics.
-- Start with non-fused scalar multiplication and shifts, then extensions,
+- Continue scalar shifts (all helper selections and narrow-width extensions), then extensions,
   comparisons/selects and the remaining arithmetic and logical look-throughs.
   Reuse legacy machine lemmas and actual Stock selection/request receipts.
 - Each batch must connect retained records, binding and original availability-
