@@ -6,54 +6,6 @@ open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000
 set_option maxHeartbeats 4000000
 attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
-private def demandFields (st : State) := st.demand
-private theorem setAlias_demandFields {st next : State} {dst src : Reg}
-    (h : st.setAlias dst src = .ok next) : demandFields next = demandFields st := by
-  cases dst <;> cases src <;>
-    simp only [State.setAlias, bind, Except.bind, pure, Except.pure,
-      throw, throwThe, MonadExceptOf.throw] at h
-  all_goals repeat' first | (solve | cases h) | (solve | cases h; rfl) | split at h
-
-private theorem fold_demandFields_eq {α β γ : Type} (field : α → γ)
-    (step : α → β → Except String α)
-    (hs : ∀ a b next, step a b = .ok next → field next = field a)
-    (xs : List β) {a next : α} (h : xs.foldlM step a = .ok next) :
-    field next = field a := by
-  induction xs generalizing a with
-  | nil => cases h; rfl
-  | cons x xs ih =>
-    rw [List.foldlM_cons] at h
-    cases he : step a x with
-    | error e => simp only [he, bind, Except.bind] at h; cases h
-    | ok middle =>
-      simp only [he, bind, Except.bind] at h
-      exact (ih h).trans (hs a x middle he)
-
-private theorem binding_demandFields {ctx : Ctx} {pairs : List (Nat × List Reg)}
-    {st next : State} {copies : Array MInst}
-    (h : bindResults ctx pairs st = .ok (next, copies)) : demandFields next = demandFields st := by
-  unfold bindResults at h
-  apply fold_demandFields_eq (fun a : State × Array MInst => demandFields a.1) _ ?_ pairs h
-  intro acc pair next he
-  rcases acc with ⟨s, code⟩
-  rcases pair with ⟨v, rs⟩
-  dsimp only at he
-  cases hm : ctx.valueReg? v with
-  | none => simp only [hm] at he; cases he
-  | some r =>
-    simp only [hm] at he
-    split at he
-    · rename_i _ n cls
-      cases ha : s.setAlias r (.vreg n cls) with
-      | error e => simp only [ha, bind, Except.bind] at he; cases he
-      | ok q =>
-        simp only [ha, bind, Except.bind, pure, Except.pure] at he
-        cases he
-        exact setAlias_demandFields ha
-    · cases he; rfl
-    · cases he
-
-
 private theorem scan_frontier (st : State) (i : Nat) :
     (scanState st i).base.nextVreg = st.base.nextVreg := by
   unfold scanState
@@ -98,7 +50,7 @@ theorem stock_lower_logical_record_values {f : Clif.Function} {result : Result}
   have outEq := Option.some.inj (congrArg Prod.fst same)
   have nextEq := congrArg (fun q => q.2.1) same
   change receipt.next = next at nextEq
-  have bindingDemand := binding_demandFields receipt.binding
+  have bindingDemand := stock_bindResults_demand receipt.binding
   change receipt.bound.demand = receipt.next.demand at bindingDemand
   have demand : record.output.state.demand = next.demand := by
     rw [receipt.state,bindingDemand,nextEq]
