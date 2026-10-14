@@ -1,0 +1,178 @@
+[
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "Backend.Stock.Proof.ScalarPopcount.stock_popcount_byte",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum_full",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "Backend.Stock.Proof.ScalarPopcount.stock_popcnt8_fin",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "Backend.Stock.Proof.ScalarPopcount.stock_popcnt32_fin",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "Backend.Stock.Proof.ScalarPopcount.stock_popcnt64_fin",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "Backend.Stock.Proof.ScalarPopcount.stock_popcnt16_fin",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "name": "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  }
+]

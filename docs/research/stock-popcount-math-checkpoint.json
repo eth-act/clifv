@@ -1,0 +1,61 @@
+{
+  "base": "728cccb873f2ad2d7fce43f8dd1c81f19e55ce6c",
+  "updated_utc": "2026-10-14T06:20:43.723886+00:00",
+  "scope": "Partial scalar population-count family: kernel byte extraction, append-based whole-word count sum and actual eight/sixteen/thirty-two/sixty-four-bit vector-template result arithmetic. Legacy popcnt*_fin variants unchanged; new roots avoid their bit-blasting axioms. Concrete dirty-upper values/every byte index inhabit the mathematical contracts. No actual root/retained/source/complete-driver witness claim.",
+  "normal_mcp_roots": {
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_byte": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum_full": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcnt8_fin": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcnt32_fin": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcnt64_fin": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcnt16_fin": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness": [
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "sources": {
+    "FV/Backend/Proof/StockPopcountMath.lean": "250ce5b6b130b6bd46469aaba1bbbcc7062f2de8eb1106008e9883d354769147"
+  },
+  "build": {
+    "target": "FV.Backend.Proof.StockPopcountMath",
+    "jobs": 156,
+    "success": true,
+    "log_sha256": "d022f3776666a7f04b0b7e20a22bfe08bcdf2d2b98a95b3d2e2fc168cef1fba1"
+  },
+  "remaining": [
+    "Actual pure SIMD helper closure and all four scalar root RHS/guarded requests/full output state.",
+    "Final-alias machine execution/fresh-only frame, selected original values/type matching/dispatch.",
+    "Actual retained result binding/original guarded source transfer with internally derived conditions.",
+    "Complete driver/source/record witnesses at all four widths, zero/nonzero/dirty upper bits, parameter/producer data.",
+    "482 prior roots/seven exact compiler trust sets and full batch validation.",
+    "All original remaining families/effects/source-block-whole-driver simulation/completeness, actual production integration and fresh complete Stock comparison."
+  ],
+  "production": "legacy; full #140 active/incomplete; local/uncommitted; no push/merge",
+  "archive": {
+    "path": "/home/lee/.clifv-recovery/20261014T062043Z/stock-popcount-math-checkpoint.tar.gz",
+    "sha256": "8f8407b06784d58222cfefa3118f885da5b4c6ba86130477c90a5acf114feaa9"
+  }
+}

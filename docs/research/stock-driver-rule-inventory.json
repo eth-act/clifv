@@ -1,6 +1,6 @@
 {
-  "updated_utc": "2026-10-14T05:58:00.026145+00:00",
-  "head": "3221a28 (fully validated local scalar rotation batch; commit pending)",
+  "updated_utc": "2026-10-14T06:53:38.065805+00:00",
+  "head": "728cccb (fully validated local popcount batch; commit pending)",
   "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
   "source_sha256": {
     "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
@@ -9,7 +9,7 @@
     "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f"
   },
   "generated_lower_roots": 517,
-  "roots_with_identified_guarded_stock_record_value_bridge": 53,
+  "roots_with_identified_guarded_stock_record_value_bridge": 57,
   "roots": [
     {
       "rule": "rule_lower_53",
@@ -3481,9 +3481,13 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 235,
       "isle_name": "popcnt_8",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockPopcountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; popcount full gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockPopcountSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_source_by_instruction"
     },
     {
       "rule": "rule_lower_2080",
@@ -3491,9 +3495,13 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 249,
       "isle_name": "popcnt_16",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockPopcountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; popcount full gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockPopcountSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_source_by_instruction"
     },
     {
       "rule": "rule_lower_2086",
@@ -3501,9 +3509,13 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 263,
       "isle_name": "popcnt_32",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockPopcountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; popcount full gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockPopcountSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_source_by_instruction"
     },
     {
       "rule": "rule_lower_2092",
@@ -3511,9 +3523,13 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 277,
       "isle_name": "popcnt_64",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockPopcountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; popcount full gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockPopcountSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_source_by_instruction"
     },
     {
       "rule": "rule_lower_2099",

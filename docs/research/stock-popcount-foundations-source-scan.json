@@ -1,0 +1,22 @@
+{
+  "scanner_sha256": "73a580d98bb202121fca6021fcc611fd6d98d610c49a872924e5389eacf2be40",
+  "adaptation": "Only unused orjson import replaced by standard json loads; patterns/scan_warnings unchanged.",
+  "sources": {
+    "FV/Backend/Proof/StockPopcountMath.lean": {
+      "sha256": "250ce5b6b130b6bd46469aaba1bbbcc7062f2de8eb1106008e9883d354769147",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountPure.lean": {
+      "sha256": "cc8f264b0c44d7609e9e06c2ae17bd6b39103e45efedd73c62a4116870f13092",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountRhs.lean": {
+      "sha256": "82742a579aafd729d285808a28bdf7b6edf5c565f0f652193f6577b5370aed70",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountSemantics.lean": {
+      "sha256": "11d0c6129876faf16385c6e04fbc9a9cefd33cbe99f7605c13af74522efa9014",
+      "warnings": []
+    }
+  }
+}
