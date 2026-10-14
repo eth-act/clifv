@@ -334,3 +334,46 @@ reversal/comparison/select/extension/look-through families; effects/control and
 deferred invariants; full source/block/whole-driver simulation/completeness;
 actual production integration and fresh complete stock comparison. Full #140
 active/incomplete; production legacy; no push or merge.
+
+
+## Bit-reversal core saved, family unfinished
+
+Updated UTC: 2026-10-14T00:55:34.220179+00:00
+
+Local/unpublished HEAD 1fd7e7dca84a40136b7ff3bcbb5c672eca57c101. Three untracked modules StockBitHelper,
+StockBitrevRhs and StockBitrevSemantics build. Six new core roots normal/MCP
+standard-only;0 original-source warning patterns. Shared BitRR helper retains
+full scheduling state; all three bit-reversal root matches/RHSs are proved.
+A generic kernel bit-index proof covers narrow reversal followed by shift,
+including dirty upper bits. Exact source hashes and pending steps are saved
+in docs/research/stock-bitrev-core-checkpoint.json. No full bit-reversal witness
+or record/source composition or new full gates claimed. Last complete batch
+remains stock-neg-audit.json (360 audited roots). Next derive guarded RHS
+requests and fallback width restrictions, then resolved execution/selected
+values, retained binding/original source transfer and eight complete witnesses.
+Full #140 active/incomplete, production legacy; no push or merge.
+
+
+## Scalar bit reversal validated locally
+
+Updated UTC: 2026-10-14T01:12:20.511148+00:00
+
+Eight modules cover actual roots1931/1937/1946 (ids915/916/918), complete
+matching/RHS scheduling state, success-derived operand requests, first-match
+wide fallback constraints, resolved scalar values, actual retained result
+binding and original guarded source transfer. Kernel bit-index reasoning proves
+narrow reversal/shift correctness independently of dirty upper bits. Eight
+complete source/record witnesses expose actual selected roots, emitted decisions
+and nonempty bindings at8/16/32/64, including parameter and unmaterialized earlier
+producer operands. The previous partial core checkpoint is historical evidence;
+current complete source hashes and gates are in stock-bitrev-audit.json.
+
+All14 new roots normal/MCP standard-only;360 prior sets unchanged (374total),
+0 source warnings. Full1542/crates1171/runtime4672/0fail/0disagree/7known with
+identical report; encoder1292/0; bothE2E1150/0 with complete identity/stage parity.
+32 identified guarded record bridges among517 roots remains an inventory, not
+whole-driver coverage. Remaining count/byte-swap/rotation, arithmetic/comparison/
+select/extension/look-through families, effects/control/deferred invariants,
+full source/block/whole-driver simulation/completeness and actual production
+integration/complete stock comparison remain required. Full #140 active and
+incomplete; production legacy; no push or merge.

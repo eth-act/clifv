@@ -4860,8 +4860,8 @@
       "data_patterns": [
         "InstructionData.Unary"
       ],
-      "guarded_record_bridge": null,
-      "status": "In original closure; actual ordinary-source selection is proved to belong here. Execution/source transfer remains unless linked guarded bridge is supplied."
+      "guarded_record_bridge": "FV/Backend/Proof/StockBitrevRecordValues.lean",
+      "status": "Actual scalar bit-reversal retained binding and guarded original-source transfer; full driver composition remains."
     },
     {
       "rule": "rule_lower_1937",
@@ -4876,8 +4876,8 @@
       "data_patterns": [
         "InstructionData.Unary"
       ],
-      "guarded_record_bridge": null,
-      "status": "In original closure; actual ordinary-source selection is proved to belong here. Execution/source transfer remains unless linked guarded bridge is supplied."
+      "guarded_record_bridge": "FV/Backend/Proof/StockBitrevRecordValues.lean",
+      "status": "Actual scalar bit-reversal retained binding and guarded original-source transfer; full driver composition remains."
     },
     {
       "rule": "rule_lower_1940",
@@ -4906,8 +4906,8 @@
       "data_patterns": [
         "InstructionData.Unary"
       ],
-      "guarded_record_bridge": null,
-      "status": "In original closure; actual ordinary-source selection is proved to belong here. Execution/source transfer remains unless linked guarded bridge is supplied."
+      "guarded_record_bridge": "FV/Backend/Proof/StockBitrevRecordValues.lean",
+      "status": "Actual scalar bit-reversal retained binding and guarded original-source transfer; full driver composition remains."
     },
     {
       "rule": "rule_lower_1951",
