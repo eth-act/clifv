@@ -424,3 +424,51 @@ opcode/type data, then remaining families/effects, deferred invariants, full
 source/block/whole-driver simulation/completeness, actual production integration
 and fresh complete stock comparison. Full #140 active/incomplete, production
 legacy; no push or merge.
+
+
+## Opcode-based dispatch inventory saved, matching connection pending
+
+Updated UTC: 2026-10-14T01:48:35.817774+00:00
+
+Local/unpublished HEAD b0c23c47dee59996ce0f1e4448599dffa5213e2b. StockRootOpcode builds352jobs.
+Three new inventory roots normal/MCP standard-only,0 source warnings. Kernel
+checks every original closure root has a recognized primary opcode; negation
+candidates exactly[756], byte swaps[932,933,934]. This is syntax coverage, not
+execution or matching correctness. Current hashes/pending work are saved in
+stock-root-opcode-checkpoint.json. Next prove sourceOpcodePattern matching
+soundness via canonical inst_data_value/enum inversions, handle the same bind/and
+wrappers as legacy rootFmt, transport to actual Stock LowerSelection and derive
+selected families from original source data/closure membership. Then remove
+unary source-transfer rule-id premises and provide complete actual witnesses/
+full gates preserving388 prior sets. Last complete batch stock-bswap-audit.json.
+All remaining full #140 obligations persist; production legacy; no push/merge.
+
+
+## Actual opcode dispatch and unary source variants validated locally
+
+Updated UTC: 2026-10-14T02:18:14.895065+00:00
+
+Six modules prove primary-opcode recognition for all145 closure roots, its
+sound actual pattern/matching/retained-record connection, and exact negation,
+bit-reversal and byte-swap selection from original opcode/type data. Wide
+bit-reversal constraints reuse actual rejected-prefix selection. New source-
+by-instruction variants derive operand getter and selected rule id internally;
+old theorem variants and original input conditions are unchanged.22 complete
+source/record witnesses (negation8,bit reversal8,byte swaps6) use the new interface,
+with actual emitted decisions/root ids/nonempty bindings, final-alias execution,
+original post-frames, parameter/unmaterialized-producer forms and dirty upper bits.
+All three witness targets407jobs pass. All16 new roots normal/MCP standard-only;
+388 prior sets unchanged (404total),0 source warnings. Full1555/crates1171/
+runtime4672/0fail/0disagree/7known identical report; encoder1292/0; bothE2E1150/0
+with full identity/stage parity. Receipt stock-unary-dispatch-audit.json;
+plan stock-unary-dispatch.md. Earlier opcode checkpoint is historical.
+
+The complete diagnostic primary-opcode family lists (60groups/145roots) are
+saved in stock-root-opcode-families.json. Source matching is now connected to
+these candidates; remaining families still need execution/source-transfer proofs.
+35 guarded bridges remains an inventory, not whole-driver coverage. Next other
+covered-family source-based dispatch and remaining count/rotation/arithmetic/
+comparison/select/extension/look-through, effects/control/deferred invariants,
+full source/block/whole-driver simulation/completeness, production integration
+and fresh complete stock comparison. Full #140 active/incomplete; production
+legacy; no push or merge.

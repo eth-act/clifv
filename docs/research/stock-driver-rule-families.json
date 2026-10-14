@@ -2590,7 +2590,8 @@
         "InstructionData.Unary"
       ],
       "guarded_record_bridge": "FV/Backend/Proof/StockNegRecordValues.lean",
-      "status": "Actual scalar negation retained binding and guarded original source transfer; full driver composition remains."
+      "status": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_861",
@@ -4861,7 +4862,8 @@
         "InstructionData.Unary"
       ],
       "guarded_record_bridge": "FV/Backend/Proof/StockBitrevRecordValues.lean",
-      "status": "Actual scalar bit-reversal retained binding and guarded original-source transfer; full driver composition remains."
+      "status": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_1937",
@@ -4877,7 +4879,8 @@
         "InstructionData.Unary"
       ],
       "guarded_record_bridge": "FV/Backend/Proof/StockBitrevRecordValues.lean",
-      "status": "Actual scalar bit-reversal retained binding and guarded original-source transfer; full driver composition remains."
+      "status": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_1940",
@@ -4907,7 +4910,8 @@
         "InstructionData.Unary"
       ],
       "guarded_record_bridge": "FV/Backend/Proof/StockBitrevRecordValues.lean",
-      "status": "Actual scalar bit-reversal retained binding and guarded original-source transfer; full driver composition remains."
+      "status": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_1951",
@@ -5109,7 +5113,8 @@
         "InstructionData.Unary"
       ],
       "guarded_record_bridge": "FV/Backend/Proof/StockBswapRecordValues.lean",
-      "status": "Actual scalar byte-swap retained binding and source-driven original transfer; full driver dispatch/composition remains."
+      "status": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_2038",
@@ -5125,7 +5130,8 @@
         "InstructionData.Unary"
       ],
       "guarded_record_bridge": "FV/Backend/Proof/StockBswapRecordValues.lean",
-      "status": "Actual scalar byte-swap retained binding and source-driven original transfer; full driver dispatch/composition remains."
+      "status": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_2041",
@@ -5141,7 +5147,8 @@
         "InstructionData.Unary"
       ],
       "guarded_record_bridge": "FV/Backend/Proof/StockBswapRecordValues.lean",
-      "status": "Actual scalar byte-swap retained binding and source-driven original transfer; full driver dispatch/composition remains."
+      "status": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_2044",

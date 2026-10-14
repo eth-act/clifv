@@ -1,6 +1,6 @@
 {
-  "updated_utc": "2026-10-14T01:42:03.876677+00:00",
-  "head": "0004573d291c0d7b8d17d73d65c56aba7773e43c (local byte-swap/source-driven unary changes uncommitted when audited)",
+  "updated_utc": "2026-10-14T02:18:14.895065+00:00",
+  "head": "b0c23c47dee59996ce0f1e4448599dffa5213e2b (local source-driven dispatch changes uncommitted when audited)",
   "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
   "source_sha256": {
     "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
@@ -1726,8 +1726,9 @@
       "generated_line": 2001,
       "isle_name": "ineg_base_case",
       "record_value_proof": "FV/Backend/Proof/StockNegRecordValues.lean",
-      "remaining_obligation": "Compose guarded original-source transfer into whole-driver simulation; discharge original premises internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_861",
@@ -3191,8 +3192,9 @@
       "generated_line": 4231,
       "isle_name": null,
       "record_value_proof": "FV/Backend/Proof/StockBitrevRecordValues.lean",
-      "remaining_obligation": "Compose guarded original-source transfer into whole-driver simulation; discharge original premises internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_1937",
@@ -3201,8 +3203,9 @@
       "generated_line": 4245,
       "isle_name": null,
       "record_value_proof": "FV/Backend/Proof/StockBitrevRecordValues.lean",
-      "remaining_obligation": "Compose guarded original-source transfer into whole-driver simulation; discharge original premises internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_1940",
@@ -3222,8 +3225,9 @@
       "generated_line": 4273,
       "isle_name": null,
       "record_value_proof": "FV/Backend/Proof/StockBitrevRecordValues.lean",
-      "remaining_obligation": "Compose guarded original-source transfer into whole-driver simulation; discharge original premises internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_1951",
@@ -3358,8 +3362,9 @@
       "generated_line": 165,
       "isle_name": null,
       "record_value_proof": "FV/Backend/Proof/StockBswapRecordValues.lean",
-      "remaining_obligation": "Compose source-driven original unary transfer into whole-driver simulation; derive rule-family selection internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_2038",
@@ -3368,8 +3373,9 @@
       "generated_line": 179,
       "isle_name": null,
       "record_value_proof": "FV/Backend/Proof/StockBswapRecordValues.lean",
-      "remaining_obligation": "Compose source-driven original unary transfer into whole-driver simulation; derive rule-family selection internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_2041",
@@ -3378,8 +3384,9 @@
       "generated_line": 193,
       "isle_name": null,
       "record_value_proof": "FV/Backend/Proof/StockBswapRecordValues.lean",
-      "remaining_obligation": "Compose source-driven original unary transfer into whole-driver simulation; derive rule-family selection internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Actual source-by-instruction transfer derives getter and selected rule id internally; whole-driver composition remains.",
+      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains",
+      "source_dispatch_proof": "FV/Backend/Proof/StockUnaryDispatch.lean"
     },
     {
       "rule": "rule_lower_2044",
