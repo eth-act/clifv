@@ -59,3 +59,12 @@ accepted integer arithmetic, rotations/counts/reversals, comparisons/selects,
 loads/stores/atomics, addressing, calls/returns/traps. Branch roots and traversal
 obligations are additional to this term686 inventory. Preserve the original
 Compile.instE/LowerScope and derive exclusions from mapped source data.
+
+
+## Ordinary-source root exclusions validated locally
+
+Updated UTC: 2026-10-14T00:25:34.544757+00:00
+
+Original mapped source scope proves372 of517 generated lower roots cannot match ordinary source instructions. Actual first-match and retained-record selection derives membership in the145 remaining closure roots internally. Exact partition counts are kernel-checked; concrete excluded-root and complete emitted-source witnesses pass. This is scope exclusion, not execution coverage; terminator/branch contexts remain separate.
+
+All10 new roots normal/MCP standard-only;342 prior sets unchanged (352 total),0 source warnings. Full1528/crates1171/runtime4672 with0fail/0disagree and7known non-runnable; encoder1292/0; bothE2E1150/0 with full identity/stage parity. Receipt docs/research/stock-source-scope-audit.json; plan docs/plans/stock-source-scope.md. Inventory/family classification now links proof-backed ordinary-source exclusions. No legacy Cov/T6/IselLcf/optimizer interface or production changes. Next remaining closure execution/source transfer, effects/control/deferred semantics, full simulation/completeness and actual production integration/complete stock comparison. Full #140 active/incomplete; no push/merge.

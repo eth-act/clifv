@@ -1,0 +1,198 @@
+[
+  {
+    "name": "Backend.Stock.Proof.stock_excluded_root_args",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.stock_excluded_root_match",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.stock_selected_source_root_closure",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.stock_lower_source_record_closure",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.stock_excluded_source_roots_witness",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.stock_selected_source_closure_witness",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.stock_source_root_partition_counts",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.stock_selected_source_root_partition",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.stock_source_root_partition_witness",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.stock_selected_source_partition_witness",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  }
+]

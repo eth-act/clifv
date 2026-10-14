@@ -292,3 +292,12 @@ Five modules prove actual reduction root2146, its complete no-allocation/no-emis
 All8 new public roots pass normal/MCP standard-only audits and original-source scans with0 warnings; all334 earlier sets are unchanged (342 total). Full1525/crates1171/runtime4672 with0fail/0disagree and7unchanged known non-runnable; encoder1292 identical/0different; bothE2E1150accepted/0rejected, every identity/stage equal to previous and each other. Receipt docs/research/stock-reduce-audit.json.28 identified guarded bridges among517 generated roots is an inventory, not whole-driver coverage. Static opcode/type-pattern family classification saved in docs/research/stock-driver-rule-families.json; it does not prove reachability/exclusion.
 
 Full #140 remains active and incomplete. Next: scope-derived exclusions for unsupported opcode/type patterns, remaining arithmetic/logical/count/rotation/reversal, comparisons/selects and extension/look-through families; memory/call/control/trap and deferred-effect semantics; source/block/whole-driver simulation/completeness; actual compiler/checker/linker/generated-proof production integration and fresh complete stock comparison. Production legacy; no push or merge.
+
+
+## Ordinary-source root exclusions validated locally
+
+Updated UTC: 2026-10-14T00:25:34.544757+00:00
+
+Original mapped source scope proves372 of517 generated lower roots cannot match ordinary source instructions. Actual first-match and retained-record selection derives membership in the145 remaining closure roots internally. Exact partition counts are kernel-checked; concrete excluded-root and complete emitted-source witnesses pass. This is scope exclusion, not execution coverage; terminator/branch contexts remain separate.
+
+All10 new roots normal/MCP standard-only;342 prior sets unchanged (352 total),0 source warnings. Full1528/crates1171/runtime4672 with0fail/0disagree and7known non-runnable; encoder1292/0; bothE2E1150/0 with full identity/stage parity. Receipt docs/research/stock-source-scope-audit.json; plan docs/plans/stock-source-scope.md. Inventory/family classification now links proof-backed ordinary-source exclusions. No legacy Cov/T6/IselLcf/optimizer interface or production changes. Next remaining closure execution/source transfer, effects/control/deferred semantics, full simulation/completeness and actual production integration/complete stock comparison. Full #140 active/incomplete; no push/merge.
