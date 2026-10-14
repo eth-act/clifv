@@ -1562,3 +1562,273 @@ Original source/block/whole-driver simulation and completeness, production
 integration across compiler/checker/linker/generated-proof consumers and a fresh
 complete Stock comparison remain mandatory. Do not substitute scalar family
 completion for the full goal.
+
+
+## Comparison standard-kernel arithmetic and machine-body checkpoint
+
+Comparison foundation checkpoint active; full #140 incomplete. HEAD0108129 local/unpublished, branch agent/stock-logic-not-values-pr, driver-proof-resume. Five local uncommitted StockCmp modules. Standard-kernel zero/carry/signed greater-or-equal and all ten comparison conditions include both signed overflow regions; signed/unsigned extensions, guarded predecessor rewrites and condition inversion preserve legacy native variants. Alias-resolved compare/cset implements original bool8 at8/16/32/64 and preserves all other registers; ten conditions/four widths/six boundary machine-body witnesses use distinct nonidentity aliases. Pure29-term builder closure preserves full scheduling fields; six real constructor/condition/output-helper witnesses pass. Combined373-job proof build;17 normal/fresh compact-import MCP roots standard-only;five original clean scans;validated division122 sources unchanged. Receipt docs/research/stock-cmp-foundation-checkpoint.json; archive /home/lee/.clifv-recovery/20261014T154835Z/stock-cmp-foundation-checkpoint.tar.gz.
+These are machine-body/pure-builder foundations, not complete Stock.lower comparison source/record execution. Actual652 emitter requests/constant/zero/predecessor/register/extension/i128 cases and715 shape/frame/execution remain next. Full715 closure includes effectful opportunistic-definition/register requests, so pure29-term scope does not cover arbitrary715 calls; derive guarded shape-specific actual executions. Then original comparison/fused-extension matching/selection/retained binding/source transfer, complete original witnesses; minmax/select;824-prior/exact-seven/full gates. All original remaining families/effects/source/block/whole-driver simulation/completeness/production compiler/checker/linker/generated-proof integration/fresh complete Stock comparison remain mandatory. Production legacy; IselLcf/T6 untouched;saved work/old variants preserved; no push/merge. UTC 2026-10-14T15:49:03.349101+00:00
+
+
+## Comparison condition and register-emitter checkpoint
+
+Updated UTC: 2026-10-14T16:37:38.962576+00:00
+
+- Local HEAD remains `01081291`; branch `agent/stock-logic-not-values-pr`, unpublished. All earlier snapshots are preserved.
+- Eleven `StockCmp*.lean` modules compile together (397 jobs). All33 public roots pass normal kernel/transitive and fresh compact-import MCP axiom audits using only standard axioms. Eleven original source scans are clean. The ten prior condition sources and all122 validated division sources retain their checkpoint hashes.
+- Actual condition-result715 Zero/NotZero and explicit-flag executions derive their real compare/cset, fresh output and complete Stock state. Final-alias execution preserves the boolean result and other registers without a semantic-invariance premise. Actual helper witnesses cover both boolean outcomes, both machine widths, every explicit condition, nonidentity aliases and dirty upper bits.
+- Actual register-emitter `rule_inst_5128.rhs` success derives both original source demand guards and mapped registers internally, and exposes its exact flag producer and complete double-marked state. Its non-vacuity witnesses cover both widths and all conditions with distinct mapped operands.
+- Evidence: `docs/research/stock-cmp-condition-register-checkpoint.json`; archive `/home/lee/.clifv-recovery/20261014T163738Z/stock-cmp-condition-register-checkpoint.tar.gz`. Earlier foundation and condition checkpoint receipts remain historical evidence.
+- This is an incremental proof checkpoint. It is not a completed comparison family or a fresh full-repository gate run. The last fully validated family remains division. Production remains legacy.
+- Next: original source comparison selection/matching, all effectful652 zero/constant/predecessor/extension/register cases under original conditions, retained-record/result binding and guarded source transfer, fused comparison extension, complete original Stock.lower witnesses, minmax/select and full family gates. Original effects, deferred sinking invariant, source/block/whole-driver simulation and completeness, production compiler/checker/linker/generated-proof consumers and fresh complete Stock comparison remain mandatory. No push or merge.
+
+
+## Original comparison source selection checkpoint
+
+Updated UTC: 2026-10-14T16:44:32.432298+00:00
+
+- Thirteen local comparison modules compile together (402 jobs). All36 public roots pass normal kernel/transitive and fresh compact-import MCP checks with only standard axioms; thirteen original source scans are clean. All122 validated division sources and ten prior condition sources remain byte-identical to saved checkpoints.
+- `StockCmpSourceMatch.lean` derives original accepted source data, scalar width and boolean result type, and proves actual source selection is root958. These follow from the original mapped context and original source instruction, without replacing the original input scope.
+- `StockCmpSourceMatchWitness.lean` inhabits these contracts with an actual successful named Stock lowering call from a built, accepted original function with source IDs7/31/100. This is a named-root/source-selection witness, not yet a complete retained-record/source-step Stock.lower witness.
+- Receipt: `docs/research/stock-cmp-source-selection-checkpoint.json`; archive `/home/lee/.clifv-recovery/20261014T164432Z/stock-cmp-source-selection-checkpoint.tar.gz`. HEAD remains local/unpublished `01081291`; all comparison files and receipts are uncommitted. Production remains legacy; the full goal remains active and incomplete.
+- Next theorem: derive the canonical comparison root environment and unchanged match state from actual matching, then derive all actual emitter652 zero/constant/predecessor/register/extension executions and original values. Use original accepted-width/type facts to discharge incompatible i128 branches. Connect condition715/output172, actual retained-record binding and guarded source transfer. Complete original Stock.lower comparison/fused-extension witnesses and minmax/select, then run the full family gates preserving all824 prior public roots and exact seven final compiler trust sets.
+- All original remaining effects and deferred-sinking invariants, source/block/whole-driver simulation and completeness, production compiler/checker/linker/generated-proof integration and fresh complete Stock comparison remain required. No compiler/default edit, commit, push or merge occurred in this checkpoint.
+
+
+## Canonical comparison matching and register source-value checkpoint
+
+Updated UTC: 2026-10-14T17:15:22.859022+00:00
+
+- Local HEAD remains unpublished `01081291`, branch `agent/stock-logic-not-values-pr`; nineteen comparison modules and receipts are uncommitted. All earlier snapshots and source files are preserved.
+- `StockCmpRootMatch.lean` supplies actual comparison root matching and its successful observation: original operand type, canonical environment, full unchanged state and trace. `StockCmpSelectedCalls.lean` derives actual root958, canonical match and all real emitter652/condition715/output172 calls from original first-match selection, including internal fuel bounds and intermediate states. `StockCmpSelectedCallsWitness.lean` inhabits these from the already compiled actual named original-source lowering witness.
+- `StockCmpRegisterValues.lean` composes actual guarded register-emitter RHS5128 and condition715 executions into original32/64 comparison bool8 through final aliases, with full fresh-result code and every other register preserved. Actual RHS success supplies guards/maps; demand monotonicity and original getters supply source values; no caller producer certificate or semantic-invariance premise is added.
+- `StockCmpRegisterValuesWitness.lean` covers both source machine widths and all ten conditions using a built accepted sparse-ID7/31/100 original context, original getters, dirty upper machine bits and nonidentity final aliases192→1/193→3. This remains a real RHS/helper composition witness, not a complete retained-record/source-step Stock.lower witness. `StockCmpExtendBuilder.lean` adds actual pure393 builder/full-state observation and its sparse-register witness for later narrow comparison emission.
+- Combined target build passes408jobs. All46 public roots pass normal kernel/transitive and fresh compact-import MCP audits with standard axioms only. Nineteen original scans are clean; all36 prior comparison axiom sets, thirteen prior comparison source hashes and122 validated division sources are unchanged. `git diff --check` passes. Receipt `docs/research/stock-cmp-register-source-values-checkpoint.json`; archive `/home/lee/.clifv-recovery/20261014T171522Z/stock-cmp-register-source-values-checkpoint.tar.gz`.
+- Witness elaboration initially timed out while reducing the entire symbolic fixture context; opacity for the built context and symbolic condition-code facts preserve the same statements and reduce the final witness target build to2.6s. No heartbeat limit increase, unchecked decision procedure or additional axiom was used.
+- Next: connect actual emitter652 first-match execution to all original source-value alternatives (register, constant, predecessor, zero and narrow extension); then condition/output composition, actual retained-record/result binding, guarded original-source transfer, fused comparison extension and complete Stock.lower witnesses. Complete minmax/select and full comparison family gates preserving all824 prior audited roots and exact seven final compiler trust sets.
+- Full #140 remains active/incomplete. Last fully validated family remains division; full comparison family gates are not claimed. Production remains legacy. All original remaining effects/deferred-sinking invariants, source/block/whole-driver simulation and completeness, production compiler/checker/linker/generated-proof integration and fresh complete Stock comparison remain required. No compiler/default edit, commit, push or merge occurred.
+
+
+## Actual parameter comparison records and original source transfer
+
+Updated UTC: 2026-10-14T18:09:48.453792+00:00
+
+- Local/unpublished HEAD remains `01081291`, branch `agent/stock-logic-not-values-pr`;29 comparison modules are local/uncommitted. No compiler/default edit, commit, push or merge.
+- `StockCmpRegisterSelection.lean` proves actual652 first-match selection for original32/64 parameter operands; it excludes constant/zero/i128 alternatives and refutes later narrow fallbacks using their rejected-prefix failure of the real earlier register rule. No caller-selected emitter RHS certificate is required.
+- `StockCmpRegisterTraceValues.lean` adds an independent condition-trace prefix variant, preserving the prior trace-equal theorem. It accommodates the real emitter rule appended before715. `StockCmpOutput.lean` derives actual output172 vector and full unchanged state.
+- `StockCmpParameterValues.lean` and `StockCmpParameterRootValues.lean` compose actual emitter/condition/output into original32/64 source bool8 through final aliases and fresh writes. `StockCmpParameterRootWitness.lean` inhabits the real named root execution and complete output/value frame.
+- `StockCmpParameterRecordValues.lean` derives actual retained-record selection, result binding/copy absence, emitted code and value preservation; its availability variant retains original restricted DFG and demanded-and-available guards. `StockCmpParameterSourceValues.lean` transfers to the real original SourceInstResult frame and preserves source memory, with getter-explicit and internally derived-getter variants retained.
+- `StockCmpParameterDriverRuns.lean` contains a normal kernel proof of actual complete Stock.lower execution retaining root958/context/source identities and stable parameter aliases. `StockCmpParameterDriverWitness.lean` supplies a complete64/eq retained/source-step witness with sparse source IDs7/31/100, real nonempty binding, dirty upper input bits, fresh boolean result, other-register preservation and the original guarded source relation. This is one complete case in the parameter path; it is not a completed full comparison family.
+- Combined build419jobs passes. All61 public comparison roots pass normal kernel/transitive and fresh compact-import MCP audits with only standard axioms. All29 original scans are clean. The prior19 comparison source hashes/46 trust sets, earlier comparison checkpoints and all122 validated division sources remain unchanged. `git diff --check` passes.
+- Receipt `docs/research/stock-cmp-parameter-driver-checkpoint.json`; archive `/home/lee/.clifv-recovery/20261014T180948Z/stock-cmp-parameter-driver-checkpoint.tar.gz`. The aggregate audit includes the nested ParameterDriverWitness namespace rather than assuming a flat theorem namespace. Saved work and historical snapshots are retained.
+- Next: original emitter652 defined/register operands and constant/zero/predecessor/narrow8/16/extended alternatives, their internally derived type/value facts and full root/retained/source compositions; fused comparison extension, minmax/select, complete family witnesses and full family gates preserving all824 prior roots/exact seven final compiler sets. The parameter helper's context-type/no-definition facts identify that path; they are not replacements for the original full-goal input conditions.
+- Full #140 stays active/incomplete; production remains legacy. Whole-family/full repository gates are not yet claimed; division remains the last fully validated family. All original uncovered effects/deferred sinking invariants, source/block/whole-driver simulation/completeness, compiler/checker/linker/generated-proof production integration and fresh complete Stock comparison remain mandatory.
+
+
+## General nonconstant comparison selection and defined-source execution
+
+Updated UTC: 2026-10-14T18:38:53.267382+00:00
+
+- HEAD remains local/unpublished `01081291`, branch `agent/stock-logic-not-values-pr`;36 comparison modules are uncommitted. All prior work and theorem variants remain preserved. No compiler/default edit, commit, push or merge.
+- `StockCmpNonconstantSelection.lean` extends actual652 first-match selection from parameters to original defined nonconstant source operands. `NonConstantSource` refers to the original defining CLIF instruction; mapped source data excludes constant look-through cases, and the earlier register match excludes later narrow fallbacks. It introduces no caller-selected emitter/RHS certificate.
+- The nonconstant emitter/root/retained-record/source modules retain the real emitted-rule trace, derive output/binding/code internally and preserve original availability-restricted DFG, demanded/available guards and real SourceInstResult frames. Getter-explicit and automatically derived-getter variants are retained alongside the earlier parameter variants.
+- `StockCmpNonconstantDriverRuns.lean` normally kernel-checks actual Stock.lower of `ineg64 v7 → v31; icmp.eq64 v31 v7 → v100`. The actual reverse scan allocates comparison result195 before negation result196, so the final alias is193→196. This was inspected from actual execution and then kernel-proved; no hard-coded assumed alias is used as evidence.
+- `StockCmpNonconstantDriverWitness.lean` supplies a complete actual retained/source-step witness at statement1 using original defined value−7 and parameter7, dirty upper machine bits, real nonidentity alias193→196, nonempty source-result binding, fresh boolean and original guarded source transfer. The defining negation satisfies original DFG consistency and its value is materialized through the actual final alias.
+- Combined build426jobs passes. All71 public comparison roots pass normal kernel/transitive and fresh compact-import MCP audits with only standard axioms. All36 original scans are clean. Prior29 comparison source hashes/61 trust sets, earlier checkpoints and122 validated division sources remain unchanged. `git diff --check` passes. Receipt `docs/research/stock-cmp-nonconstant-driver-checkpoint.json`; complete archive `/home/lee/.clifv-recovery/20261014T183853Z/stock-cmp-nonconstant-driver-checkpoint.tar.gz`.
+- Next: constant/zero/predecessor and narrow8/16/extended comparison alternatives under original source facts, internally derived type facts, fused comparison extension, minmax/select, complete family witnesses and full family gates preserving all824 prior roots and exact seven compiler trust sets. Nonconstant classification and current32/64 type facts identify a path; they do not replace the original full-goal input conditions.
+- Full #140 remains active/incomplete; production remains legacy. Full comparison family gates are not claimed; division remains the last fully validated family. All original remaining effects/deferred-sinking invariants, source/block/whole-driver simulation/completeness, production compiler/checker/linker/generated-proof integration and fresh complete Stock comparison remain required.
+
+
+## Immediate comparison source-value checkpoint
+
+Updated UTC: 2026-10-14T18:55:46.674507+00:00
+
+- Local unpublished HEAD remains01081291. Four additional comparison modules bring the targeted build to40modules/439jobs and78 public roots. All78 normal kernel/transitive and fresh compact-import MCP audits use only standard axioms; all40 original source scans are clean. Prior36 comparison source hashes/71 axiom sets and122 validated division source hashes are unchanged.
+- Actual RHS5165 success derives the original guarded source request, mapped register, exact immediate flag producer and full marked state. Actual condition715 execution yields the immediate machine predicate through final aliases with every other register preserved.
+- Original restricted DFG consistency and source getters connect the encoded immediate to the original defining constant, composing real RHS/condition calls into original32/64 comparison bool8. The original constant need not occupy a machine register.
+- Real helper witnesses cover both machine widths/all conditions; condition-value witnesses cover both shifted and unshifted encodings, dirty upper bits and nonidentity aliases. Complete source-value non-vacuity and actual Stock.lower immediate record witnesses remain pending, so this is not a completed family.
+- Receipt: docs/research/stock-cmp-immediate-checkpoint.json. Archive: /home/lee/.clifv-recovery/20261014T185522Z-immediate/checkpoint.tar.gz
+- Next: actual652 immediate first-match observation and source typing; derive root/retained binding/guarded original source transfer internally, then complete original immediate witnesses. Continue zero/predecessor/narrow/extended/fused comparisons and minmax/select, then full family gates preserving824 prior roots and exact seven compiler trust sets.
+- Full #140 remains active/incomplete. Production remains legacy. Remaining effects/deferred-sinking invariants, source/block/whole-driver simulation and completeness, compiler/checker/linker/generated-proof integration and fresh complete Stock comparison remain mandatory. No push or merge.
+
+
+## Actual immediate driver run and integration work
+
+Updated UTC: 2026-10-14T19:38:22.982720+00:00
+
+- Actual Stock.lower of original iconst64 v31=3; icmp.eq64 v7 v31→v100 passes ordinary kernel checking. The comparison is retained at statement1/root958, original context and constant data are preserved, demand31 is zero and original input aliases are unchanged. Actual execution inspection shows the constant record is omitted and comparison result195 is allocated.
+- The original source/frame/DFG/dominance/availability and dirty-machine-register witness inputs typecheck independently. Source constant3 is deliberately absent from the machine register for its source mapping (that machine register contains777); its zero demand discharges the original guarded relation.
+- Normal79-root audit preserves all78 prior comparison trust sets; the new driver observation passes fresh MCP with standard axioms only. All40 prior comparison source hashes remain unchanged. Receipt: docs/research/stock-cmp-immediate-driver-observation.json; archive: /home/lee/.clifv-recovery/20261014T191921Z-immediate-driver/evidence.tar.gz
+- Six new selection/emitter/root/record/transfer/complete-witness modules are prepared but remain unvalidated. General selection initially exhausted heartbeats; the revised proof uses a protected original constant-data fact, direct prefix rejection and a separately checked successful-match/RHS lemma. Its integration build is the next check. No full-family or full-repository gate is claimed.
+- Next: finish general immediate selection and validate the dependent record/source/complete-witness chain, then remaining zero/predecessor/narrow/extended/fused comparisons and minmax/select, complete family witnesses and full gates. All remaining families/effects/deferred sinking, source/block/whole-driver simulation and completeness, actual production compiler/checker/linker/generated-proof integration and fresh complete Stock comparison remain mandatory. Full #140 is active/incomplete; production legacy; local/uncommitted; no push/merge.
+
+
+### Immediate selection performance diagnosis
+
+Updated UTC: 2026-10-14T20:03:02.659478+00:00
+
+The general selection/integration proof remains unvalidated. Profiling a scratch copy isolates recursive inverse simplification as the costly step. Supporting protected original-data/match/RHS lemmas typecheck independently; match and RHS executions are preserved while decoding their exact source facts. The revised decoder uses the ten relevant term facts rather than the full generated metadata context. Current build log: /tmp/driver-resume-cmp-immediate-chain-sparse.log (session53099; recheck authoritative process before waiting/restarting). Prepared47-module/88-root audit is not a passed audit. Prior79-root observation evidence and all saved work are preserved. Finish this chain, then every remaining original full-goal obligation; production legacy; no push/merge.
+
+
+### Protected original immediate conclusion
+
+Updated UTC: 2026-10-14T20:19:38.473067+00:00
+
+Authoritative failure output identified a specific proof failure: inverse simplification at all locations rewrote the theorem's target RHS equation into existential interpreter assertions. A private protected conclusion and explicit elimination lemma now preserve the original public theorem statement during decoding; all supporting helpers typecheck independently at the unchanged4M limit. Two explicit decoding passes replace recursive inverse decoding. The integration build remains unvalidated; session60219/log /tmp/driver-resume-cmp-immediate-chain-bounded-outcome.log must be rechecked against its actual process. All40 prior validated comparison source hashes remain unchanged. Evidence: docs/research/stock-cmp-immediate-outcome-progress.json. No88-root/full-family/full-repository gate is claimed. Finish general selection and dependent retained/source/complete-witness chain, then every original remaining full-goal obligation. Production legacy; no push/merge.
+
+The session60219 build is now terminal (exit1), not a verified wait. Selection reached explicit type mismatch at line240; inspect /tmp/driver-resume-cmp-immediate-chain-bounded-outcome.log before the next edit. No dependent integration gate passed.
+
+
+### Raw extractor conversion and zero-case discharge
+
+Updated UTC: 2026-10-14T20:50:31.701985+00:00
+
+Three checked raw-extractor conversion helpers derive original constant lookups and exclude original nonconstant/normalized-nonzero zero matches. Actual remaining-goal diagnostics fall from24 to16: all eight32/64 zero-case goals are discharged; two direct-immediate and fourteen later-rule goals remain. Rejection application diagnostics expose unconstrained fuel/after/start-state inference; original start state/trace are now explicit, but prefix witness extraction still needs resolution. General selection and its dependent record/source/witness chain remain unvalidated. All40 prior source hashes are unchanged. Evidence docs/research/stock-cmp-immediate-extractor-progress.json. Next: derive the exact recorded prefix failure with explicit witnesses, then finish actual direct matching/output, validate the full prepared chain and complete every remaining original full-goal obligation. Production legacy; no push/merge.
+
+
+## Integrated original immediate comparison path
+
+Updated UTC: 2026-10-14T21:00:45.835606+00:00
+
+- General actual652 first-match selection now derives rule5165 from original nonconstant-X/nonzero encodable-Y classification. All eight zero cases are excluded from original extractor/source facts; all later candidates are excluded from actual recorded failed-prefix matches. A private protected conclusion preserves the original public statement while decoding; normalized prefix facts and explicit match-start state avoid the diagnosed proof failures.
+- Actual emitter/condition/output source values, selected-root execution, retained-record/result binding/copy absence, guarded original-source transfer and auto-getter variants all compile. No caller-selected RHS/helper/output/binding certificate is added. Original restricted DFG, availability, demanded-and-available guards, scope and dominance are retained.
+- Complete actual original64/eq Stock.lower retained/source-step witness passes with sparse IDs7/31/100, dirty upper bits, fresh result195 and source constant3 deliberately absent from its mapped machine register193 (which contains777). Actual immediate execution yields original bool8 and preserves the other machine registers and source memory/frame relation.
+- Combined47-module build passes446jobs. All88 public roots pass normal kernel/transitive and fresh compact-import MCP audits using only standard axioms. All47 original scans are clean. Prior40 comparison source hashes/78 trust sets, the earlier79-root driver observation and122 validated division source hashes remain unchanged. git diff --check passes.
+- Receipt docs/research/stock-cmp-immediate-integrated-checkpoint.json; complete archive /home/lee/.clifv-recovery/20261014T205920Z-immediate-integrated/checkpoint.tar.gz. Local/unpublished HEAD remains01081291; comparison sources remain uncommitted. Earlier failed/profiling receipts remain historical; this receipt supersedes their unvalidated immediate-path status.
+- This is an integrated path checkpoint, not completed comparison-family/full-repository validation. Division remains the last fully validated family. Next: original zero/predecessor, nonencodable/constant-LHS/both-constant, narrow8/16/extended/fused/composite-condition alternatives; complete original witnesses across all forms/widths/boundaries; minmax/select and full comparison-family gates preserving824 prior roots/exact seven compiler trust sets.
+- Full original #140 is active/incomplete. Remaining uncovered families/effects/deferred sinking, source/block/whole-driver simulation and completeness, actual production compiler/checker/linker/generated-proof integration and fresh complete Stock comparison remain mandatory. Production legacy; no push/merge.
+
+
+## Zero/nonzero helper selection and original source values
+
+Updated UTC: 2026-10-14T21:32:57.475021+00:00
+
+- Actual649 Zero/NotZero inversion and successful observation preserve complete Stock state; helper witnesses cover both machine widths. Real4979 nonzero64 RHS performs the original guarded source request and derives its map, exact condition and full marked state from success.
+- Actual651 first-match selection on original64-bit parameters derives real RHS internally, excluding higher second-result look-through and incompatible widths. Actual651/715 inequality-to-zero and651/649/715 equality-to-zero executions hold original parameter bool8 through final aliases, deriving requests/code and preserving every other register.
+- Original accepted sparse-ID7 parameter function helper/source-value witnesses cover both boolean outcomes for equality and inequality, real651 selection/inversion/715 calls, dirty upper bits and nonidentity192→1 final alias. These are original-context/helper witnesses, not complete retained zero-comparison/source-step Stock.lower witnesses.
+- Combined51-module build passes450jobs. All100 public roots pass normal kernel/transitive and fresh compact-import MCP audits with only standard axioms. All51 original scans are clean. Prior47 comparison source hashes/88 trust sets and122 validated division source hashes remain unchanged. git diff --check passes. Receipt docs/research/stock-cmp-zero-checkpoint.json; complete archive /home/lee/.clifv-recovery/20261014T213114Z-zero/checkpoint.tar.gz. Local/unpublished HEAD remains01081291; comparison sources uncommitted.
+- Next: actual zero-comparison652 selection/matching from original zero definitions/source typing; selected-root/output/retained binding/guarded original source transfer and complete driver witnesses. Continue32/narrow8/16/defined-operand/composite nonzero paths, predecessor/nonencodable/constant-LHS/both-constant/extended/fused comparisons, minmax/select and complete family gates preserving824 prior roots/exact seven compiler sets.
+- Full original #140 remains active/incomplete; production legacy. All remaining uncovered families/effects/deferred sinking, source/block/whole-driver simulation and completeness, compiler/checker/linker/generated-proof integration and fresh complete Stock comparison remain mandatory. No push/merge; no full-family/full-repository gate claimed.
+
+
+## Actual zero rule RHS and original constant matching
+
+Updated UTC: 2026-10-14T21:41:57.661047+00:00
+
+- Actual rule5172 inequality RHS derives its651 call; actual rule5170 equality RHS derives651 and649 calls with original full intermediate state/trace and sufficient fuel. RHS-plus715 source-value variants derive helper success internally and preserve original64-bit source predicates, final aliases, fresh result and other registers.
+- Original defining zero data matches both actual RHS-zero rules with the exact canonical one-variable environment and unchanged complete match state/trace. First-match652 selection and higher mirrored-rule exclusion remain to be integrated.
+- Combined54-module build passes453jobs. All105 roots pass normal and fresh compact-import MCP permitted-only transitive audits;54 original scans clean. Prior51 source hashes/100 trust sets and122 division hashes unchanged; git diff --check passes. Receipt docs/research/stock-cmp-zero-rhs-checkpoint.json. These five new roots still require explicit non-vacuity witnesses; no family-ready claim.
+- Next: actual652 first-match selection, selected-root/output/retained/result binding, guarded original-source transfer and complete Stock.lower zero witnesses; then every recorded comparison alternative, minmax/select and full gates.
+- Full original #140 remains active/incomplete. Uncovered families/effects/deferred sinking, source/block/whole-driver simulation and completeness, actual production integration across compiler/checker/linker/generated-proof consumers and fresh complete Stock comparison remain required. Production legacy; no push/merge.
+
+
+## Integrated original RHS-zero comparison path
+
+Updated UTC: 2026-10-14T21:53:44.218718+00:00
+
+- Actual652 first-match selection now derives5170/5172 RHS, excluding higher mirrored rules from original parameter definition absence and later fallbacks from actual failed-prefix matches. Actual emitter/condition/output, selected source root, retained/result binding, guarded original-source transfer and getter-derived variants compile. Original DFG/restricted-frame/availability conditions retained.
+- Complete actual ordinary-kernel Stock.lower runs and original retained/source-step witnesses cover64-bit eq(false) and ne(true), sparse IDs7/31/100, dirty upper input bits, unused zero constant with mapped register193 containing777, fresh result195 and guarded postavailability. The ne witness also inhabits the automatic getter-derived source-transfer variant.
+- Combined62-module targeted build and117 normal/fresh MCP permitted-only transitive audits pass;62 original scans clean. Prior54 source hashes/105 trust sets and122 division hashes unchanged; git diff --check passes. Receipt docs/research/stock-cmp-zero-integrated-checkpoint.json. Earlier helper-only/witness-pending receipts remain historical.
+- Next: opposite complete boolean outcomes and widths/boundaries; zero LHS/both constants/defined/composite-condition paths; predecessor/nonencodable/extended/fused comparisons, minmax/select and full comparison-family gates. Division remains last fully validated family.
+- Full original #140 remains active/incomplete. Every uncovered family/effect/deferred-sinking, source/block/whole-driver simulation and completeness, production compiler/checker/linker/generated-proof integration and fresh complete Stock comparison obligation remains required. Production legacy; no push/merge.
+
+
+## Original zero comparisons on either side, all64-bit operand values
+
+Updated UTC: 2026-10-14T22:00:44.515134+00:00
+
+- Complete original RHS-zero retained/source-step equality and inequality witnesses now quantify over arbitrary64-bit parameter operands. Both boolean outcomes and every64-bit boundary follow without additional input conditions; old fixed variants remain unchanged. Dirty128-bit upper input bits and unmaterialized zero constant register777 remain covered.
+- Mirrored LHS-zero rules5171/5173 have actual match/first-match652 selection, actual emitter/condition/output, selected original source root, retained/result binding and guarded source-transfer/getter-derived proofs. Operand-order symmetry is proved in the source bool8 result; complete full Stock.lower witnesses quantify over arbitrary64-bit operands for both eq/ne, with sparse IDs7/31/100, real root958, fresh result195 and guarded postavailability.
+- Combined73-module targeted build passes472jobs. All132 public roots pass normal kernel/transitive and fresh compact-import MCP permitted-only audits;73 original source scans clean. Prior62 source hashes/117 trust sets and122 validated division hashes unchanged; git diff --check passes. Receipt docs/research/stock-cmp-zero-left-all-values-checkpoint.json.
+- Next:32/narrow8/16 zero paths, defined/composite nonzero alternatives and both constants; predecessor/nonencodable/extended/fused comparisons, minmax/select and full comparison-family gates preserving824 prior roots/exact seven compiler trust sets. Division remains last fully validated family.
+- Full original #140 remains active/incomplete: every uncovered family/effect/deferred-sinking, source/block/whole-driver simulation and completeness, actual compiler/checker/linker/generated-proof production integration and fresh complete Stock comparison remains mandatory. Production legacy; no push/merge.
+
+
+## Integrated original32-bit zero comparisons on either side
+
+Updated UTC: 2026-10-14T22:14:18.639275+00:00
+
+- Actual4977 RHS derives556 zero-extension execution and exact condition/full state/trace. Actual651 first-match selection on original32-bit parameters supplies this RHS internally, excluding higher second-result and incompatible-width patterns. Successful source requests/zero-extension derive the guarded mapping and complete marked state; actual715 and649 inversion preserve original32-bit predicates through final aliases.
+- Both original operand orders now compose actual652/715/172 and selected958 source root, retained result binding/exact code/copy absence and guarded original-source transfer/getter-derived variants. Complete ordinary-kernel Stock.lower observations and retained/source-step witnesses quantify over arbitrary32-bit operands for eq/ne and zero on either side, including both boolean outcomes/all32-bit boundaries. Sparse IDs7/31/100, dirty128-bit upper input bits, unmaterialized constant register193=777, fresh result195, memory/other-register preservation and guarded postavailability remain covered.
+- Combined93-module targeted build passes492jobs. All165 roots pass normal kernel/transitive and fresh compact-import MCP permitted-only audits;93 original source scans clean. Prior73 source hashes/132 trust sets and122 validated division hashes unchanged; git diff --check passes. Receipt docs/research/stock-cmp-zero32-integrated-checkpoint.json.
+- Next:8-bit masked-test and16-bit zero/nonzero behavior/original accepted-input parity, defined/composite/both-constant zero paths; predecessor/nonencodable/extended/fused comparisons, minmax/select and full comparison-family gates preserving824 prior roots/exact seven compiler trust sets. Division remains last fully validated family.
+- Full original #140 remains active/incomplete: every uncovered family/effect/deferred-sinking, source/block/whole-driver simulation and completeness, actual compiler/checker/linker/generated-proof production integration and fresh complete Stock comparison remains mandatory. Production legacy; no push/merge.
+
+
+## Actual8-bit masked-test helper/source-value checkpoint
+
+Updated UTC: 2026-10-14T22:31:29.813177+00:00
+
+- Actual424 test builder preserves complete Stock state and records real size/test traces. Actual4988 RHS performs the guarded original request and derives its map, full marked state and exact TST255 producer from success. Actual651 first-match selection on original8-bit parameters derives4988 RHS internally, excluding higher second-result patterns and lower fallback rules. Actual RHS/715 and selected651/715 executions hold the original8-bit nonzero predicate through final aliases and preserve other registers.
+- Kernel-checked TST255 low-byte truth and original8-bit predicate facts replace legacy native dependencies; equality uses the preserved standard-only inversion theorem. The initial failed native-dependency MCP audit is archived as historical diagnostic evidence. Actual649 explicit flag inversion preserves its producer/all Stock fields, with an inhabited witness for every condition variant. Actual RHS/649/715 equality-to-zero values and original accepted sparse-ID7 helper/source-value witnesses cover both boolean outcomes, dirty128-bit upper bits and nonidentity192-to1 alias. These remain helper/source-value witnesses, not complete retained8-bit Stock.lower comparison witnesses.
+- The read-only16-bit eq/zero probe succeeds in both Stock and legacy lowering. Recorded Stock trace emits zero-extension16-to32, cmp0 and cseteq. Generated term111 is fits_in_32 (not exact-width ty_32); the16-bit path requires composition of the real temporary-write extension fragment. Probe evidence is observational and does not close general16-bit semantics/completeness/parity.
+- Combined104-module targeted build passes503jobs. All181 public roots pass normal kernel/transitive and fresh compact-import MCP permitted-only audits;104 original scans clean. Prior93 source hashes/165 trust sets and122 validated division hashes unchanged; git diff --check passes. Receipt docs/research/stock-cmp-nonzero8-checkpoint.json.
+- Next: actual8-bit zero652/root/retained/source integration and complete Stock.lower witnesses;16-bit extension/source/temp-frame composition and complete retained witnesses; defined/composite/both-constant, predecessor/nonencodable/extended/fused comparisons, minmax/select and full family gates. Full original #140 remains active/incomplete; every remaining family/effect/deferred-sinking/source-block-whole-driver simulation and completeness/actual production integration/fresh Stock comparison obligation remains required. Production legacy; no push/merge.
+
+
+## Integrated original8-bit zero comparisons and16-bit helper composition
+
+Updated UTC: 2026-10-14T22:43:28.173711+00:00
+
+- Actual8-bit zero652 selection now derives its real helper/flag inversion calls internally; original selected958 source root and172 output establish source bool8 for both operand orders. Actual retained records derive fresh nonempty binding, exact TST255/cset code/copy absence, guarded original-source transfer and getter-derived variants under the original restricted DFG/availability/demand conditions.
+- Complete ordinary-kernel Stock.lower observations and retained/original source-step witnesses cover arbitrary8-bit operands, eq/ne and zero on either side (all8-bit boundaries and both boolean outcomes). Sparse IDs7/31/100, dirty128-bit upper input bits, constant register193=777 deliberately unmaterialized, fresh result195, other-register/source-memory preservation and guarded postavailability remain covered.
+- Actual16-bit4977 RHS/556 extension carries the original source value through its real temporary-write prefix and outside frame. Actual prefix-plus715 condition establishes original nonzero bool8 with preservation outside the entire fresh allocation interval. Checked accepted-original parameter helper witnesses quantify over arbitrary16-bit values, dirty upper bits and nonidentity192-to1 aliases; these remain helper/source-value witnesses, not complete retained16-bit comparison witnesses.
+- Combined123-module targeted build passes522jobs. All209 roots pass normal kernel/transitive and fresh compact-import MCP standard-only audits;123 original source scans clean. Prior104 source hashes/181 trust sets and122 validated division hashes unchanged; git diff --check passes. Receipt docs/research/stock-cmp-zero8-integrated-checkpoint.json.
+- Next:16-bit actual651/equality/zero652/root/retained/guarded original-source-step integration and complete driver witnesses; defined/composite/both-constant zero paths; predecessor/nonencodable/extended/fused comparisons, minmax/select and full comparison-family gates preserving824 prior roots/exact seven compiler trust sets. Division remains last fully validated family.
+- Full original #140 remains active/incomplete: every uncovered family/effect/deferred-sinking, source/block/whole-driver simulation and completeness, actual compiler/checker/linker/generated-proof production integration and fresh complete Stock comparison remains mandatory. Production legacy; no push/merge.
+
+
+## Integrated original16-bit zero comparisons and original-invariant selection
+
+Updated UTC: 2026-10-14T22:57:25.843242+00:00
+
+- Actual16-bit equality composes the real extension prefix,649 inversion and715 condition. The complete fresh-interval frame accounts for both temporary and boolean writes. Actual651 parameter selection, zero652/RHS/condition/output and selected original958 root establish source bool8 for both operand orders.
+- Actual retained records derive fresh nonempty result binding and exact emitted prefix/cmp/cset code/copy absence. Guarded original-source and getter-derived transfer retain restricted DFG, availability, demand and memory. Complete ordinary-kernel Stock.lower observations and retained/original source-step witnesses cover arbitrary16-bit parameter operands, eq/ne and zero on either side (all boundaries and both outcomes). Sparse7/31/100, dirty128-bit upper input bits, unmaterialized constant register193=777, temporary195/fresh result196, correct outside-fresh-interval and guarded postavailability preservation remain covered.
+- A new original-invariant16-bit helper selection theorem excludes all seven overflow alternatives using the existing mapped source invariant and removes the parameter-only premise. The old parameter variant remains unchanged. An actual original-context construction/execution witness inhabits the new statement; integration into defined/composite/both-constant retained paths remains next.
+- Combined142-module targeted build passes541jobs. All237 public roots pass normal kernel/transitive and fresh compact-import MCP standard-only audits;142 original scans clean. Prior123 source hashes/209 trust sets and122 validated division hashes unchanged; git diff --check passes. Receipt docs/research/stock-cmp-zero16-integrated-checkpoint.json.
+- Next: original-invariant helper selection for defined/composite/both-constant operands at all widths; predecessor/nonencodable/extended/fused comparisons, minmax/select and complete comparison-family gates preserving824 prior roots/exact seven compiler trust sets. Division remains last fully validated family.
+- Full original #140 remains active/incomplete: every uncovered family/effect/deferred-sinking, source/block/whole-driver simulation and completeness, actual compiler/checker/linker/generated-proof production integration and fresh complete Stock comparison remains mandatory. Production legacy; no push/merge.
+
+
+## Original-invariant16-bit defined/both-constant zero comparisons
+
+Updated UTC: 2026-10-14T23:13:47.498604+00:00
+
+- New original-invariant16-bit RHS/source, constant-left652 emission, selected958/172 output, retained binding and guarded original-source/getter-derived variants remove parameter-only premises. Old parameter variants and all original DFG/availability/demand conditions remain unchanged.
+- Complete ordinary-kernel Stock.lower observations and original retained/source-step eq/ne witnesses cover a real preceding negation over arbitrary16-bit parameter values, actual defined source31 and final alias193-to198. Original sparse7/31/63/100, dirty128-bit upper bits, looked-through zero register194=777 deliberately unmaterialized, temporary196/result197, outside-fresh-interval/source-memory/postavailability preservation remain covered.
+- Complete ordinary-kernel both-constant driver observations and original retained/source-step witnesses cover eq/ne for zero-vs-zero and zero-vs-three, with real demanded-constant alias193-to198 and unmaterialized looked-through zero. These exercise the original-invariant retained variants without adding caller selection/helper/binding certificates.
+- Original-invariant nonzero helper selection is now proved at8/16/32/64 widths using existing mapped-source overflow exclusions, with original-context actual execution witnesses and unchanged old variants. Integration into analogous8/32/64 defined/both-constant retained paths remains next.
+- Combined161-module targeted build passes560jobs. All261 roots pass normal kernel/transitive and fresh compact-import MCP standard-only audits;161 original scans clean. Prior142 source hashes/237 trust sets and122 validated division hashes unchanged; git diff --check passes. Receipt docs/research/stock-cmp-defined16-checkpoint.json.
+- Next: original-invariant8/32/64 source/root/retained and complete defined/both-constant witnesses; RHS-zero nonconstant first-match variants; predecessor/nonencodable/extended/fused comparisons, minmax/select and complete family gates preserving824 prior roots/exact seven compiler trust sets. Division remains last fully validated family.
+- Full original #140 remains active/incomplete: every uncovered family/effect/deferred-sinking, source/block/whole-driver simulation and completeness, actual compiler/checker/linker/generated-proof production integration and fresh complete Stock comparison remains mandatory. Production legacy; no push/merge.
+
+
+## Original-invariant32-bit defined/both-constant comparisons
+
+Updated UTC: 2026-10-14T23:24:23.410666+00:00
+
+- New original-invariant32-bit helper/RHS/source, constant-left652 emission, selected958/172 output, retained binding and guarded source/getter-derived variants remove parameter-only premises. Old variants and original DFG/availability/demand conditions preserved.
+- Complete ordinary-kernel Stock.lower/source-step eq/ne witnesses cover preceding negation over arbitrary32-bit inputs and both constants zero-vs-zero/zero-vs-three. Sparse7/31/63/100, actual alias193-to197, dirty128-bit upper bits, unmaterialized zero register194=777, result196 and other-register/memory/postavailability preservation checked.
+- Combined175-module targeted build: 574 jobs;281 normal/fresh MCP standard-only roots;175 original scans clean. Prior161 source hashes/261 trust sets and122 division hashes unchanged. Receipt docs/research/stock-cmp-defined32-checkpoint.json.
+- Next: analogous8/64 original-invariant integration and complete defined/both-constant witnesses; RHS-zero nonconstant selection; remaining comparison forms/minmax/select and full family gates. Full original #140 obligations remain active/incomplete, production legacy, no push/merge.
+
+
+## Original-invariant8/64-bit defined/both-constant comparisons
+
+Updated UTC: 2026-10-14T23:33:41.801114+00:00
+
+- New original-invariant8/64-bit helper/RHS/source, constant-left652 emission, selected958/172 output, retained binding and guarded source/getter-derived variants remove parameter-only premises. Old variants and original DFG/availability/demand conditions preserved.
+- Complete ordinary-kernel Stock.lower/source-step eq/ne witnesses cover preceding negation over arbitrary8/64-bit inputs and both constants zero-vs-zero/zero-vs-three. Sparse7/31/63/100, actual alias193-to197, dirty128-bit upper bits, unmaterialized zero register194=777, result196 and other-register/memory/postavailability preservation checked.
+- Combined202-module targeted build: 601 jobs;319 normal standard-only roots,38 fresh MCP audits and281 reused unchanged prior MCP audits;202 original scans clean. Prior175 source hashes/281 trust sets and122 division hashes unchanged. Receipt docs/research/stock-cmp-defined8-64-checkpoint.json.
+- Next: RHS-zero nonconstant selection; remaining comparison forms/minmax/select and full family gates. Full original #140 obligations remain active/incomplete, production legacy, no push/merge.
+
+
+## Original-invariant zero-right defined-source comparisons
+
+Updated UTC: 2026-10-14T23:41:16.224182+00:00
+
+- Actual652 zero-right first-match selection uses original mapped-source nonconstant classification to exclude higher mirrored constant rules. This is a source-classification branch; full-family dispatch must derive classification internally. No caller match/helper/binding certificates introduced, old parameter variants retained.
+- Original-invariant8/16/32/64 emitter/root958/output172, retained binding and guarded original-source/getter-derived transfer compile. Complete actual ordinary-kernel Stock.lower/source-step eq/ne witnesses cover preceding negation over arbitrary inputs at every width, sparse7/31/63/100, dirty128-bit upper bits and unmaterialized zero register194=777.
+- Actual alias193-to197/result196 at8/32/64; alias193-to198/temporary196/result197 and correct outside-allocation-interval frame at16. Source-memory and postavailability preserved.
+- Combined231-module build: 630 jobs;364 normal standard-only roots,45 fresh MCP audits and319 reused prior results after checking all202 prior source hashes and319 trust sets unchanged;231 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-zero-right-defined-checkpoint.json.
+- Next: remaining comparison forms/all-condition/all-width coverage, minmax/select and complete family gates. Every original whole-driver/effect/deferred-sinking/completeness/production-integration obligation remains required; production legacy, full #140 active/incomplete, no push/merge.
