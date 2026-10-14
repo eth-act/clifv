@@ -1,6 +1,6 @@
 {
-  "updated_utc": "2026-10-13T11:42:09.650182+00:00",
-  "head": "cc29aaa494ddea10a8e38b5dd5fad707dcee47b6",
+  "updated_utc": "2026-10-13T12:14:29.336474+00:00",
+  "head": "a739ad525b0277f45717da92785d6ef7ccaaadea",
   "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
   "source_sha256": {
     "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
@@ -9,7 +9,7 @@
     "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f"
   },
   "generated_lower_roots": 517,
-  "roots_with_identified_guarded_stock_record_value_bridge": 15,
+  "roots_with_identified_guarded_stock_record_value_bridge": 19,
   "roots": [
     {
       "rule": "rule_lower_53",
@@ -152,8 +152,8 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 4076,
       "isle_name": "iadd_imul_right",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+      "record_value_proof": "FV/Backend/Proof/StockMulFusedRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
     },
     {
       "rule": "rule_lower_128",
@@ -161,8 +161,8 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 4090,
       "isle_name": "iadd_imul_left",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+      "record_value_proof": "FV/Backend/Proof/StockMulFusedRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
     },
     {
       "rule": "rule_lower_132",
@@ -170,8 +170,8 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 4104,
       "isle_name": "isub_imul",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+      "record_value_proof": "FV/Backend/Proof/StockMulFusedRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
     },
     {
       "rule": "rule_lower_137",
@@ -1457,8 +1457,8 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 2043,
       "isle_name": "imul_base_case",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility"
+      "record_value_proof": "FV/Backend/Proof/StockMulRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally"
     },
     {
       "rule": "rule_lower_876",
