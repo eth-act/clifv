@@ -5,9 +5,10 @@ The full objective remains **unfinished**: prove the preserved Stock lowering
 driver and switch production while retaining accepted-input and theorem parity.
 This file is the resume entry point; the smaller family plans are supporting records.
 
-Latest validated local batch: scalar population count,16 complete source/record
-witnesses and509 audited roots (482 prior +27 new). See the
-[popcount receipt](../research/stock-popcount-audit.json) and final checkpoint below.
+Latest validated local batch: scalar add/subtract, all17 actual candidates,
+84 complete source/record cases, auxiliary projection witness and569 audited
+roots (509 prior +60 new). See the
+[add/subtract receipt](../research/stock-addsub-audit.json) and final checkpoint below.
 Whole-driver simulation/completeness, uncovered families/effects and production
 integration remain required; production still uses the legacy driver.
 The initial recovery snapshot and earlier checkpoints are retained as history.
@@ -47,7 +48,7 @@ The initial recovery snapshot and earlier checkpoints are retained as history.
 | Fused binary logical-NOT batch | Fully validated locally | `a739ad5`; complete NOT-of-XOR/retained/source witnesses and full gates recorded in `stock-logical-not-values-audit.json`. |
 | Subsequent scalar proof families | Fully validated locally | Multiplication, shifts, casts/reduction, source-scope partition, negation, bit reversal/byte swap, unary dispatch and counts; receipts and commits below. |
 | Scalar rotations | Fully validated locally | All12 selected roots/retained/source/dispatch,64 complete witnesses,54 new standard-only roots and all full gates; `728cccb`, `stock-rotate-audit.json`. |
-| Scalar population count | Full family batch validated locally; commit pending | Four actual roots/retained/source/dispatch,16 complete witnesses,27 new standard-only roots and full gates; `stock-popcount-audit.json`. |
+| Scalar population count | Fully validated locally (`3ae4c79`) | Four actual roots/retained/source/dispatch,16 complete witnesses,27 new standard-only roots and full gates; `stock-popcount-audit.json`. |
 | Production Stock-driver cutover | Pending | No whole-driver simulation/completeness or actual production switch demonstrated. |
 
 The committed [#179 audit](../research/stock-bnot-values-audit.json) records full
@@ -980,3 +981,179 @@ across compiler/checker/linker/generated-proof consumers. Preserve original
 inputs/old variants/identities/stages/trust sets/#179 and require fresh complete
 Stock comparison. Full #140 active/incomplete; production legacy; local commit
 next; no push/merge. Earlier pending popcount checkpoints are historical.
+
+## Add/subtract foundations checkpoint
+
+Five saved, uncommitted `StockAddSub*` modules compile through
+`StockAddSubObserved` (387 jobs). All twelve actual positive/negative immediate,
+extended and shifted add/subtract RHS forms preserve complete Stock scheduling
+state and emit the expected fresh instruction. Successful actual execution
+supplies its own mapped-register and demand-safety facts, including extended
+source requests. Immediate, shift and extension machine execution uses final
+aliases and preserves every register except the fresh destination; extension
+semantics uses original narrow values without requiring clean upper bits.
+The pure closure excludes demand-changing terms381/434/439; their actual
+Stock scheduling is handled explicitly rather than projected away.
+
+Fresh normal kernel and Lean MCP audits agree on23 public roots, all standard
+axioms only. Five source scans report zero warnings. Evidence/source hashes,
+logs, scripts and preservation archive are recorded in
+[stock-addsub-foundations-checkpoint.json](../research/stock-addsub-foundations-checkpoint.json).
+This is a partial foundation checkpoint, not completed family validation.
+
+Next: derive canonical environments and looked-through original values from
+actual matches; complete actual opcode dispatch including old base variants,
+selected original-source values, retained-result binding and guarded source
+transfer. Then supply complete actual driver witnesses and every-public-root
+non-vacuity review; freshly audit509 prior roots and the exact seven final
+compiler trust sets and run full batch gates/identity-stage parity.
+All remaining families/effects/control/deferred invariants, source/block/
+whole-driver simulation and completeness under original input conditions,
+production integration across all consumers and a fresh complete Stock
+comparison remain required. Production remains legacy; #140 active/incomplete;
+no commit, push or merge for this partial batch.
+
+## Add/subtract original-source checkpoint
+
+Ten uncommitted StockAddSub modules compile through StockAddSubDispatch
+(404 jobs). Nine actual positive-immediate, extended and shifted roots now
+recover original source values/canonical environments from actual successful
+matching and compose selected original binary values through final aliases,
+success-derived demand guards and fresh-only machine writes. Narrow extended
+inputs retain arbitrary upper bits. Actual opcode dispatch inventories all11
+add and6 subtract candidates, including the old base rules and three fused
+multiply rules already covered by the prior multiplication batch.
+
+Fresh normal/MCP audits agree on37 standard-only public roots, with all23
+foundation axiom sets unchanged. Ten original-source scans report zero warnings.
+Receipt and preservation archive:
+[stock-addsub-source-checkpoint.json](../research/stock-addsub-source-checkpoint.json).
+This is a partial checkpoint; family/full-goal completion is not claimed.
+
+Next: three negative-immediate original-source matching/value connections;
+unified selected dispatch/value cases including existing base/multiply variants;
+actual retained-result binding and guarded original-source transfer, complete
+non-vacuity witnesses,509-prior/exact-seven audits and full validation. All
+remaining family/effect/control/deferred, source/block/whole-driver simulation
+and completeness, production integration across consumers and fresh complete
+Stock comparison obligations persist. Production remains legacy; #140 active/
+incomplete; no commit/push/merge for this partial batch.
+
+## Add/subtract retained-record and all-rule source checkpoint
+
+Eighteen uncommitted StockAddSub modules compile through AllSourceValues
+(440 jobs). Negative-immediate inversion uses the actual mapped context rather
+than substituting identity-context semantics. All twelve new fused forms compose
+original values, actual selection, guarded requests, retained result binding,
+emitted code, fresh allocation and alias-resolved execution. Original availability
+transfer uses the unchanged restricted DFG frame.
+
+Unified availability/source-by-instruction contracts cover all17 actual scalar
+add/subtract candidates, including existing base and multiply-fusion variants.
+They derive original operands and dispatch internally without a chosen-rule,
+final-rule-ID or match-certificate premise. Source memory and the guarded
+post-frame relation are preserved; older theorem variants remain available.
+
+Fresh normal/MCP audits agree on54 standard-only public roots;37 prior
+checkpoint axiom sets are unchanged. Eighteen source scans report zero warnings.
+Receipt and preservation archive:
+[stock-addsub-record-checkpoint.json](../research/stock-addsub-record-checkpoint.json).
+This remains partial: complete actual driver/source witnesses and per-public-root
+non-vacuity,509-prior/exact-seven compiler trust audits and full batch validation
+are next. All remaining original family/effect/control/deferred, source/block/
+whole-driver simulation/completeness, production integration and fresh complete
+Stock comparison obligations persist. Production legacy; #140 active/incomplete;
+no commit/push/merge for this checkpoint.
+
+## Add/subtract witnesses continuation
+
+Positive-immediate complete witnesses pass442-job ordinary kernel build
+(12 cases: all three roots × four widths), with actual Stock.lower/retained
+records/nonempty fresh binding/original source steps, dirty upper bits and
+unmaterialized constant register193. The public witness root passes matching
+normal/MCP standard-only audits and its original source scan has zero warnings.
+Receipt: [stock-addsub-immediate-witness-checkpoint.json](../research/stock-addsub-immediate-witness-checkpoint.json).
+
+Negative and shift complete witness bodies precheck with explicit scratch
+observation premises; their final source files contain actual ordinary-kernel
+observations and no extra premise.36 compiled observation diagnostics return
+true; the sequential22G kernel queue is live, session75070, Immediate then
+Negative then Shift. Poll that session or inspect the exact process/log;
+do not restart after an observation timeout. Preservation details and live
+snapshot are in [stock-addsub-witness-prechecks.json](../research/stock-addsub-witness-prechecks.json).
+
+Priority findings preserved: i8 add of -5 selects higher-priority positive
+immediate589/590; i8 subtract of255 selects negative747. Positive witnesses
+use127 at every width; negative witnesses retain real narrow-width dispatch.
+All36 signed/unsigned extension combinations (six legal width pairs × three
+roots × two signs) have successful compiled diagnostics; their complete witness
+module is next. Shift zero/wrap edge witnesses, all-public non-vacuity and fresh
+509-prior/exact-seven/full validation remain. Gate scripts are prepared but not
+started. All original remaining full-goal obligations persist; production legacy;
+#140 active/incomplete; no commit/push/merge this partial checkpoint.
+
+## Add/subtract extension/edge validation queue
+
+Immediate, negative and shifted complete driver/source witnesses now pass
+ordinary442-job kernel builds (12 cases each). The auxiliary pure projection
+has a concrete nonzero-demand/sunk-state witness (407-job build). All four public
+witness roots have matching fresh normal/MCP standard-only audits; six witness
+source scans have zero warnings.
+
+The36-case extension module covers all six legal target/source width pairs and
+both signs for each of the three roots. Its complete original DFG/retained/source
+body prechecks with an explicit scratch observation premise; the final source
+contains actual ordinary-kernel observations without an extra premise. All36
+full observation diagnostics are true. Extension kernel session9291 remains
+live. Shift-edge witnesses cover width-equal masked counts at8/16/32 and zero
+at64, for each root (12 cases); prechecks and diagnostics pass. Session40997
+waits for Extension then compiles ShiftEdge. Session79497 waits for ShiftEdge,
+removes eight trailing spaces from StockAddSubObserved and runs the full569-root
+validation script. Session75070 is terminal success. Poll these exact handles/
+processes; do not restart after an observation timeout.
+
+Sources/hashes, successful checks, pending states, scripts and preservation
+archive are in
+[stock-addsub-extended-witness-checkpoint.json](../research/stock-addsub-extended-witness-checkpoint.json).
+The [witness checklist](../research/stock-addsub-witness-checklist.json) covers
+all60 public roots; final all-witness/non-vacuity review remains pending.
+Full gates enforce509 prior/exact-seven compiler trust sets plus60 new roots,
+full/crates/runtime/encoder/both E2E identity-stage parity. They are queued,
+not yet completed. Next finish kernels/gates/fresh all-root MCP/source review,
+final receipt and local commit. All remaining original family/effect/control/
+deferred, source/block/whole-driver simulation/completeness, actual production
+integration/fresh complete Stock comparison obligations persist. Production
+legacy; #140 active/incomplete; no commit/push/merge for this partial checkpoint.
+
+## Add/subtract final local validation
+
+All24 modules and84 complete original source/record cases plus auxiliary
+projection pass ordinary kernel builds. All17 actual scalar candidates compose
+original matching/values, guarded requests, final aliases, retained binding/
+code/allocation and availability/source transfer. Source-by-instruction derives
+original getters and dispatch internally, preserving old base/multiply variants,
+source memory and guarded post-frames.
+
+Full1629/crates1171/runtime4672/0 runnable failures/0 disagreements/seven
+unchanged known not-runnable cases/byte-identical runtime report/encoder1292
+identical0different/bothE2E1150accepted0rejected pass. Every identity/stage field
+matches both modes and population count. All509 prior and exact seven final
+compiler trust sets are unchanged in569-root audit;60 fresh normal/MCP roots
+are standard-only;24 source scans have zero warnings. All60 public-root premise
+reviews and actual non-vacuity chains pass, including original i8 priorities,
+dirty upper bits, unmaterialized fused sources, six signed/unsigned extension
+width pairs and zero/wrapped shift counts.
+
+Final receipt:
+[stock-addsub-audit.json](../research/stock-addsub-audit.json).
+Family plan: [stock-scalar-addsub.md](stock-scalar-addsub.md).
+The inventory identifies69 guarded record bridges among517 roots; it remains a
+diagnostic rather than a reachable-rule completeness percentage. No compiler/
+default change or fresh complete Stock comparison is claimed. Next uncovered
+high multiply/division/remaining cast/logical families and effects/control/
+deferred invariants; source/block/whole-driver simulation and completeness;
+actual production integration across compiler/checker/linker/generated-proof
+consumers, with fresh complete Stock comparison and final production gates.
+Preserve original inputs/old variants/identities/stages/trust sets/#179. Full
+#140 active/incomplete; production legacy; local commit next; no push/merge.
+Earlier pending checkpoints above are historical and superseded for this batch.

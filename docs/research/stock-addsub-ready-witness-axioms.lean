@@ -1,0 +1,8 @@
+import FV.Backend.Proof.StockAddSubImmediateWitness
+import FV.Backend.Proof.StockAddSubNegativeWitness
+import FV.Backend.Proof.StockAddSubShiftWitness
+import FV.Backend.Proof.StockAddSubAuxWitness
+#print axioms Backend.Stock.Proof.ScalarAddSub.ImmediateWitness.stock_lower_addsub_immediate_source_witness
+#print axioms Backend.Stock.Proof.ScalarAddSub.NegativeWitness.stock_lower_addsub_negative_source_witness
+#print axioms Backend.Stock.Proof.ScalarAddSub.ShiftWitness.stock_lower_addsub_shift_source_witness
+#print axioms Backend.Stock.Proof.ScalarAddSub.AuxWitness.stock_addsub_negative_projection_witness

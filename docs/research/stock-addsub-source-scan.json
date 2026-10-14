@@ -1,0 +1,105 @@
+{
+  "scanner": {
+    "path": "/home/cody/.cache/uv/archive-v0/txMZz4UJwvitBV53gFJ1J/lib/python3.12/site-packages/lean_lsp_mcp/verify.py",
+    "sha256": "73a580d98bb202121fca6021fcc611fd6d98d610c49a872924e5389eacf2be40",
+    "adaptation": "Unused orjson loads import replaced with json loads; patterns/scan_warnings unchanged"
+  },
+  "sources": {
+    "FV/Backend/Proof/StockAddSubAllSourceValues.lean": {
+      "sha256": "eaaf451376adce8447721a53cde16b1acf77eca03128d9fb757ae875e6965d89",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubAllValues.lean": {
+      "sha256": "ffc521cd0cb681791ccb997c85de07c5a2cc4413cbc390bad4b1c44c7ee60c52",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubAuxWitness.lean": {
+      "sha256": "93ba7e8b9f80ed61d2a8528df4de27d81ae20dfff25ece166f90d117298073bd",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubDispatch.lean": {
+      "sha256": "5041b1f95dcbe7c5da3476841df53d3ebd8813e01b49228d6f3428373210690c",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubExtensionWitness.lean": {
+      "sha256": "c854f4fd665881f425cd51cf493503b9148ae31193dbf7160ea731586ef33b72",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubImmediateMatch.lean": {
+      "sha256": "258f36e4a906ac64dca8a407938d95a2c26807462db246862b3630d734f05dca",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubImmediateValues.lean": {
+      "sha256": "fc8ce0e17a2dab868af7255ca9428d3cad662b593a0cf68f955fcb7588f85b18",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubImmediateWitness.lean": {
+      "sha256": "3f1082aa755569a8b7400df29f38abf34cea39740151e2644552ae3eca8208a5",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubMatch.lean": {
+      "sha256": "088b24b41aa1ae5b80f19485d77a1d3ee279be2ce897c2c5df76b5773a476244",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubNegativeMatch.lean": {
+      "sha256": "a17d09ca5f3df402a1b8aaabb732613466f990f21997a87079e0ef53006781c2",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubNegativePure.lean": {
+      "sha256": "8394e47bdb5f97bb2da3a52d6629bacd4fc9ffd2a6326e0997abaa87c57ab849",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubNegativeValues.lean": {
+      "sha256": "b66afd292ede2fe36a304052dcf18f7d368aff7673a36804121d34cdeac40e30",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubNegativeWitness.lean": {
+      "sha256": "e60787b7631fd5758642c53de434eeaeac1f274e164b4ca8100e2639d7e34d35",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubObserved.lean": {
+      "sha256": "1aa9ddb69c7ba850a93c6afd256528fca6b0bbb099de90ec8aa84cd93824f184",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubPure.lean": {
+      "sha256": "c6c8a59015b686eb2191b7c67b92cc80077c4cf900b4663915f00e2d39d23d6e",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubRecordValues.lean": {
+      "sha256": "46e381ac903953a0dd3e4c14fd40fb046f4a397968ef89c4997c183351a94d50",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubRhs.lean": {
+      "sha256": "8a248832a4b32b36246d829a77a64ce25d373058a0d795b61f0942043298155f",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubSelected.lean": {
+      "sha256": "63fc3bdfa38f4677e515883664d10f0c2a6f148ca7f44fdd55cd7aebc2497252",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubSemantics.lean": {
+      "sha256": "a5a438f3cea2eef2f8416b816f1aa626bfed5816b0738c5f83a4b6359aaf969a",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubShiftEdgeWitness.lean": {
+      "sha256": "dc20397996f7415a8af561adae4ac56683fcdcc60107e4335a0cac074c61bdc0",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubShiftWitness.lean": {
+      "sha256": "9ec21717182c1c258275ccd70d431b13500fb2c01585971cd5272814a09cec37",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubSourceValues.lean": {
+      "sha256": "b2c74ada0aa877d49e0a2c7c301e0d384a3967273e0f8cd4d3d4ecac4d840846",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubUnifiedValues.lean": {
+      "sha256": "e04186e795d5421063a0ef8c0a20f0948d571d02f65dd40d834b62606329bd81",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockAddSubValues.lean": {
+      "sha256": "b2a2b6219db84d073bd9c38e1c4b63526300493479e940d43cb7994def846e90",
+      "warnings": []
+    }
+  }
+}
