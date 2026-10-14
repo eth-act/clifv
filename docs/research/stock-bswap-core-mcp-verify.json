@@ -1,0 +1,41 @@
+[
+  {
+    "name": "Backend.Stock.Proof.ScalarBit.stock_bswap16_bits",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.ScalarBit.stock_bswap_wide_bits",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  }
+]

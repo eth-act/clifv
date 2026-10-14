@@ -1,6 +1,6 @@
 {
-  "updated_utc": "2026-10-14T01:12:20.511148+00:00",
-  "head": "1fd7e7dca84a40136b7ff3bcbb5c672eca57c101 (local bit-reversal changes uncommitted when audited)",
+  "updated_utc": "2026-10-14T01:42:03.876677+00:00",
+  "head": "0004573d291c0d7b8d17d73d65c56aba7773e43c (local byte-swap/source-driven unary changes uncommitted when audited)",
   "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
   "source_sha256": {
     "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
@@ -9,7 +9,7 @@
     "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f"
   },
   "generated_lower_roots": 517,
-  "roots_with_identified_guarded_stock_record_value_bridge": 32,
+  "roots_with_identified_guarded_stock_record_value_bridge": 35,
   "roots": [
     {
       "rule": "rule_lower_53",
@@ -3357,8 +3357,8 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 165,
       "isle_name": null,
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
+      "record_value_proof": "FV/Backend/Proof/StockBswapRecordValues.lean",
+      "remaining_obligation": "Compose source-driven original unary transfer into whole-driver simulation; derive rule-family selection internally",
       "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
     },
     {
@@ -3367,8 +3367,8 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 179,
       "isle_name": null,
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
+      "record_value_proof": "FV/Backend/Proof/StockBswapRecordValues.lean",
+      "remaining_obligation": "Compose source-driven original unary transfer into whole-driver simulation; derive rule-family selection internally",
       "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
     },
     {
@@ -3377,8 +3377,8 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 193,
       "isle_name": null,
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
+      "record_value_proof": "FV/Backend/Proof/StockBswapRecordValues.lean",
+      "remaining_obligation": "Compose source-driven original unary transfer into whole-driver simulation; derive rule-family selection internally",
       "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
     },
     {

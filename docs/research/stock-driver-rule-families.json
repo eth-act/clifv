@@ -5108,8 +5108,8 @@
       "data_patterns": [
         "InstructionData.Unary"
       ],
-      "guarded_record_bridge": null,
-      "status": "In original closure; actual ordinary-source selection is proved to belong here. Execution/source transfer remains unless linked guarded bridge is supplied."
+      "guarded_record_bridge": "FV/Backend/Proof/StockBswapRecordValues.lean",
+      "status": "Actual scalar byte-swap retained binding and source-driven original transfer; full driver dispatch/composition remains."
     },
     {
       "rule": "rule_lower_2038",
@@ -5124,8 +5124,8 @@
       "data_patterns": [
         "InstructionData.Unary"
       ],
-      "guarded_record_bridge": null,
-      "status": "In original closure; actual ordinary-source selection is proved to belong here. Execution/source transfer remains unless linked guarded bridge is supplied."
+      "guarded_record_bridge": "FV/Backend/Proof/StockBswapRecordValues.lean",
+      "status": "Actual scalar byte-swap retained binding and source-driven original transfer; full driver dispatch/composition remains."
     },
     {
       "rule": "rule_lower_2041",
@@ -5140,8 +5140,8 @@
       "data_patterns": [
         "InstructionData.Unary"
       ],
-      "guarded_record_bridge": null,
-      "status": "In original closure; actual ordinary-source selection is proved to belong here. Execution/source transfer remains unless linked guarded bridge is supplied."
+      "guarded_record_bridge": "FV/Backend/Proof/StockBswapRecordValues.lean",
+      "status": "Actual scalar byte-swap retained binding and source-driven original transfer; full driver dispatch/composition remains."
     },
     {
       "rule": "rule_lower_2044",

@@ -377,3 +377,50 @@ select/extension/look-through families, effects/control/deferred invariants,
 full source/block/whole-driver simulation/completeness and actual production
 integration/complete stock comparison remain required. Full #140 active and
 incomplete; production legacy; no push or merge.
+
+
+## Byte-swap math saved, family unfinished
+
+Updated UTC: 2026-10-14T01:17:54.573264+00:00
+
+Local/unpublished HEAD 0004573d291c0d7b8d17d73d65c56aba7773e43c. StockBswapSemantics builds362jobs.
+Two new math roots pass normal/MCP standard-only audits,0 source warnings.
+Halfword REV16 low-bit correctness uses kernel bit-index reasoning rather
+than legacy bit-blasting; generic word/doubleword contracts use exact operand
+width. Source hashes and pending work: stock-bswap-core-checkpoint.json.
+Next actual roots2035/2038/2041 match/RHS/request contracts, resolved execution
+and selected values, retained binding/original source transfer, six complete
+16/32/64 parameter/earlier-producer source witnesses, full prior-root/gate
+validation. Last complete batch: stock-bitrev-audit.json (374roots).
+Full #140 active/incomplete; production legacy; no push or merge.
+
+
+## Byte swaps and source-driven unary transfer validated locally
+
+Updated UTC: 2026-10-14T01:42:03.876677+00:00
+
+Seven modules cover actual roots2035/2038/2041 (ids932/933/934), full match/RHS
+state, success-derived mapped requests, resolved values, retained binding and
+original source transfer. Kernel bit-index reasoning proves REV16 correctness
+without legacy byte-swap bit-blasting. Six complete16/32/64 source/record
+witnesses expose real selected roots/nonempty bindings, parameters and earlier
+producers with original source registers unmaterialized. Halfword fixtures
+include dirty bits just above16 bits inside the physical32-bit operand.
+
+StockUnarySourceValues derives restricted typed operands from actual original
+source success and unchanged dominance. Getter-free negation/bit-reversal/
+byte-swap variants preserve earlier theorem variants; new byte-swap fixtures
+use the source-driven interface. The older8+8 complete negation/bit-reversal
+fixtures still inhabit their unchanged source/input conditions. Initial witness
+build370jobs and source-driven build403jobs pass. All14 new roots normal/MCP
+standard-only;374 previous sets unchanged (388total),0 source warnings.
+Full1549/crates1171/runtime4672/0fail/0disagree/7known with identical report;
+encoder1292/0; bothE2E1150/0 with complete identity/stage parity. Current source
+hashes/gates: stock-bswap-audit.json; the previous math checkpoint is historical.
+
+35 guarded bridges among517 generated roots remains an inventory, not whole-
+driver coverage. Next derive actual selected-rule families from original source
+opcode/type data, then remaining families/effects, deferred invariants, full
+source/block/whole-driver simulation/completeness, actual production integration
+and fresh complete stock comparison. Full #140 active/incomplete, production
+legacy; no push or merge.
