@@ -1,6 +1,6 @@
 {
-  "updated_utc": "2026-10-14T02:18:14.895065+00:00",
-  "head": "b0c23c47dee59996ce0f1e4448599dffa5213e2b (local source-driven dispatch changes uncommitted when audited)",
+  "updated_utc": "2026-10-14T03:33:45.694219+00:00",
+  "head": "9bab358 (local scalar count batch uncommitted when audited)",
   "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
   "source_sha256": {
     "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
@@ -9,7 +9,7 @@
     "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f"
   },
   "generated_lower_roots": 517,
-  "roots_with_identified_guarded_stock_record_value_bridge": 35,
+  "roots_with_identified_guarded_stock_record_value_bridge": 41,
   "roots": [
     {
       "rule": "rule_lower_53",
@@ -3235,9 +3235,12 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 4287,
       "isle_name": "clz_8",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockCountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
+      "ordinary_source_scope_status": "closure: actual selected record/source value bridge exists under original demand/availability and DFG guards; whole-driver composition remains",
+      "source_value_proof": "FV/Backend/Proof/StockCountSourceValues.lean",
+      "actual_dispatch_proof": "FV/Backend/Proof/StockCountSelected.lean",
+      "validated_batch": "docs/research/stock-count-audit.json"
     },
     {
       "rule": "rule_lower_1955",
@@ -3245,9 +3248,12 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 4301,
       "isle_name": "clz_16",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockCountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
+      "ordinary_source_scope_status": "closure: actual selected record/source value bridge exists under original demand/availability and DFG guards; whole-driver composition remains",
+      "source_value_proof": "FV/Backend/Proof/StockCountSourceValues.lean",
+      "actual_dispatch_proof": "FV/Backend/Proof/StockCountSelected.lean",
+      "validated_batch": "docs/research/stock-count-audit.json"
     },
     {
       "rule": "rule_lower_1958",
@@ -3266,9 +3272,12 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 25,
       "isle_name": "clz_32_64",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockCountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
+      "ordinary_source_scope_status": "closure: actual selected record/source value bridge exists under original demand/availability and DFG guards; whole-driver composition remains",
+      "source_value_proof": "FV/Backend/Proof/StockCountSourceValues.lean",
+      "actual_dispatch_proof": "FV/Backend/Proof/StockCountSelected.lean",
+      "validated_batch": "docs/research/stock-count-audit.json"
     },
     {
       "rule": "rule_lower_1982",
@@ -3276,9 +3285,12 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 53,
       "isle_name": "ctz_8",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockCountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
+      "ordinary_source_scope_status": "closure: actual selected record/source value bridge exists under original demand/availability and DFG guards; whole-driver composition remains",
+      "source_value_proof": "FV/Backend/Proof/StockCountSourceValues.lean",
+      "actual_dispatch_proof": "FV/Backend/Proof/StockCountSelected.lean",
+      "validated_batch": "docs/research/stock-count-audit.json"
     },
     {
       "rule": "rule_lower_1986",
@@ -3286,9 +3298,12 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 67,
       "isle_name": "ctz_16",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockCountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
+      "ordinary_source_scope_status": "closure: actual selected record/source value bridge exists under original demand/availability and DFG guards; whole-driver composition remains",
+      "source_value_proof": "FV/Backend/Proof/StockCountSourceValues.lean",
+      "actual_dispatch_proof": "FV/Backend/Proof/StockCountSelected.lean",
+      "validated_batch": "docs/research/stock-count-audit.json"
     },
     {
       "rule": "rule_lower_1989",
@@ -3307,9 +3322,12 @@
       "generated_file": "FV/Isle/Generated/Rules03.lean",
       "generated_line": 95,
       "isle_name": "ctz_32_64",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockCountRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
+      "ordinary_source_scope_status": "closure: actual selected record/source value bridge exists under original demand/availability and DFG guards; whole-driver composition remains",
+      "source_value_proof": "FV/Backend/Proof/StockCountSourceValues.lean",
+      "actual_dispatch_proof": "FV/Backend/Proof/StockCountSelected.lean",
+      "validated_batch": "docs/research/stock-count-audit.json"
     },
     {
       "rule": "rule_lower_2000",
