@@ -1832,3 +1832,12 @@ Updated UTC: 2026-10-14T23:41:16.224182+00:00
 - Actual alias193-to197/result196 at8/32/64; alias193-to198/temporary196/result197 and correct outside-allocation-interval frame at16. Source-memory and postavailability preserved.
 - Combined231-module build: 630 jobs;364 normal standard-only roots,45 fresh MCP audits and319 reused prior results after checking all202 prior source hashes and319 trust sets unchanged;231 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-zero-right-defined-checkpoint.json.
 - Next: remaining comparison forms/all-condition/all-width coverage, minmax/select and complete family gates. Every original whole-driver/effect/deferred-sinking/completeness/production-integration obligation remains required; production legacy, full #140 active/incomplete, no push/merge.
+
+
+## Publication discipline changed; first three batches landed
+
+Updated UTC: 2026-10-14T23:55:33.744899+00:00
+
+The user now authorizes pushes for remote backup and roughly three validated squash-merged PRs per day, superseding the earlier prohibition. #180 fused-NOT, #181 multiplication/fused multiplication and #182 scalar shifts/helper foundations are merged with all three CI checks successful for each. Main 70d187b2fbdb55a1954a9cbcb566b68feab1798b exactly matches the previously validated30f48dc tree. All three measurements preserve671 exact matches with0 gains/0 losses; this proof-only publication does not complete the production cutover.
+
+Validated stack and all comparison WIP were pushed to dedicated remote backup branches, preserving the active worktree branch/index. See docs/plans/stock-driver-publication.md and docs/research/stock-driver-publication-20261014.json. Continue remaining comparison forms/full family gates and every original #140 whole-driver/effect/simulation/completeness/production-integration obligation. Goal active/incomplete; production legacy.
