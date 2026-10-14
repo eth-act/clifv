@@ -301,3 +301,36 @@ Updated UTC: 2026-10-14T00:25:34.544757+00:00
 Original mapped source scope proves372 of517 generated lower roots cannot match ordinary source instructions. Actual first-match and retained-record selection derives membership in the145 remaining closure roots internally. Exact partition counts are kernel-checked; concrete excluded-root and complete emitted-source witnesses pass. This is scope exclusion, not execution coverage; terminator/branch contexts remain separate.
 
 All10 new roots normal/MCP standard-only;342 prior sets unchanged (352 total),0 source warnings. Full1528/crates1171/runtime4672 with0fail/0disagree and7known non-runnable; encoder1292/0; bothE2E1150/0 with full identity/stage parity. Receipt docs/research/stock-source-scope-audit.json; plan docs/plans/stock-source-scope.md. Inventory/family classification now links proof-backed ordinary-source exclusions. No legacy Cov/T6/IselLcf/optimizer interface or production changes. Next remaining closure execution/source transfer, effects/control/deferred semantics, full simulation/completeness and actual production integration/complete stock comparison. Full #140 active/incomplete; no push/merge.
+
+
+## Scalar negation continuation
+
+Updated UTC: 2026-10-14T00:43:19.040804+00:00
+
+Five StockNeg core modules build and the full source witness tail checks.
+The eight-case concrete witness build is live; audits and full gates are
+prepared. See stock-scalar-negation.md. Previous goal turn made concrete
+progress by assembling and launching the full witness module; it was not
+blocked. Full #140 remains active/incomplete, production legacy, no push/merge.
+
+
+## Scalar negation validated locally
+
+Updated UTC: 2026-10-14T00:47:24.136622+00:00
+
+Six modules prove actual scalar negation root857/id756, full state/trace,
+resolved subtraction from zero, real retained result binding and original
+source transfer with existing demand/availability guards. Eight complete
+source/record witnesses cover all four scalar widths, parameter operands and
+earlier constant producers with original source registers unmaterialized and
+dirty upper bits. All8 new roots normal/MCP standard-only;352 prior sets
+unchanged (360total);0 original-source warnings. Full1534/crates1171,
+runtime4672/0fail/0disagree/7known with identical report, encoder1292/0;
+bothE2E1150/0 with complete identity/stage parity. Receipt stock-neg-audit.json.
+
+29 guarded bridges among517 generated roots remains an inventory, not whole-
+driver execution coverage. Next remaining closure arithmetic/count/rotation/
+reversal/comparison/select/extension/look-through families; effects/control and
+deferred invariants; full source/block/whole-driver simulation/completeness;
+actual production integration and fresh complete stock comparison. Full #140
+active/incomplete; production legacy; no push or merge.

@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-14T00:25:34.544757+00:00",
+  "updated_utc": "2026-10-14T00:47:24.136622+00:00",
   "head": "864475ffe1f756063205a3f47c36e558dd7fa951 (local reduction changes uncommitted when inventoried)",
   "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
   "source_sha256": {
@@ -9,7 +9,7 @@
     "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f"
   },
   "generated_lower_roots": 517,
-  "roots_with_identified_guarded_stock_record_value_bridge": 28,
+  "roots_with_identified_guarded_stock_record_value_bridge": 29,
   "roots": [
     {
       "rule": "rule_lower_53",
@@ -1725,8 +1725,8 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 2001,
       "isle_name": "ineg_base_case",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
+      "record_value_proof": "FV/Backend/Proof/StockNegRecordValues.lean",
+      "remaining_obligation": "Compose guarded original-source transfer into whole-driver simulation; discharge original premises internally",
       "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
     },
     {
