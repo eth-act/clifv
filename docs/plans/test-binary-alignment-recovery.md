@@ -5,10 +5,10 @@ The full objective remains **unfinished**: prove the preserved Stock lowering
 driver and switch production while retaining accepted-input and theorem parity.
 This file is the resume entry point; the smaller family plans are supporting records.
 
-Latest validated local batch: scalar high multiplication, all four actual
-signed/unsigned roots777–780, eight complete source/record cases and603 audited
-roots (569 prior +34 new). See the
-[high-multiply receipt](../research/stock-highmul-audit.json) and final checkpoint below.
+Latest validated local batch: scalar division/remainder, all ten actual roots
+786–795,52 complete original source/record success/trap/boundary cases and824
+audited roots (603 prior +221 new). See the
+[division receipt](../research/stock-div-audit.json) and final checkpoint below.
 Whole-driver simulation/completeness, uncovered families/effects and production
 integration remain required; production still uses the legacy driver.
 The initial recovery snapshot and earlier checkpoints are retained as history.
@@ -1263,3 +1263,302 @@ and fresh complete Stock comparison/final production gates. Preserve original
 inputs/old variants/identities/stages/trust sets/#179. Production legacy; full #140
 active/incomplete; local commit next; no push/merge. Earlier partial checkpoints
 are preserved as history and superseded for this high-multiply batch.
+
+## Division/remainder foundations checkpoint
+
+Five saved uncommitted StockDiv modules build393jobs. A42-term pure helper
+closure preserves every scheduling field. Actual signed/unsigned quotient and
+multiply-subtract helpers build; actual divisor-zero and three-instruction
+signed-overflow guard helpers emit runtime checks while retaining the operand/
+original dividend and full state. A generic standard-kernel divisor-minus-one
+flag test leaves old fixed-width variants/trust sets unchanged. Helpers are
+inhabited at signed/unsigned8/16/32/64 with nonzero demand and sunk fields.
+
+Original accepted source data and actual selected membership cover all ten roots:
+udiv786/787, sdiv790/791/788/789 (safe and general), urem792/793, srem794/795.
+Nine fresh normal/MCP roots are standard-only; five original scans have zero
+warnings; prior high-multiply source hashes are unchanged. Receipt/archive:
+[stock-div-foundations-checkpoint.json](../research/stock-div-foundations-checkpoint.json).
+This is partial: helper witnesses are not complete original-source records.
+Next standard-kernel overflow/intmin arithmetic and actual guard trap/success
+semantics, guarded divisor/immediate requests, all ten root matching/selected/
+retained/source transfer, complete success/zero/overflow original-source witnesses
+and603-prior/exact-seven/full gates. Existing oracle-backed flag lemmas are not
+used by these new roots and remain unchanged. All original whole-driver/effect/
+production integration/fresh Stock comparison obligations persist; production
+legacy; full #140 active/incomplete; validated local tip e56bb87. No commit/push/
+merge for this foundation checkpoint.
+
+## Division standard arithmetic and machine guard checkpoint
+
+Eight saved StockDiv modules build396jobs. New standard-kernel integer bounds
+prove the actual subtract-one overflow flag at32/64, narrow8/16 shifted intmin,
+and signed widening/all-ones reflection. Old fixed-width variants and oracle
+proofs remain untouched; new roots do not depend on them. Actual Stock intmin
+helpers shift8/16 into a check register and pass32/64 through, retaining every
+scheduling field. Minimum-check fragment execution preserves earlier registers.
+
+Actual machine zero and overflow guards now prove both trap and normal outcomes.
+Machine witnesses inhabit overflow trap/normal at32/64, zero trap/normal for
+signed/unsigned8/16/32/64; original nonzero scheduling helper witnesses extend to
+all intmin paths. No nonzero-only source-domain condition is introduced.
+Twenty-one fresh normal/MCP public roots are standard-only, including the new
+machine execution proofs; all nine earlier division root sets are unchanged.
+Eight original source scans have zero warnings; validated high-multiply hashes
+unchanged. Receipt/archive:
+[stock-div-guards-checkpoint.json](../research/stock-div-guards-checkpoint.json).
+
+This is partial: helper/machine witnesses are not complete original-source
+records. Next original guarded divisor/immediate requests and success observations,
+all ten canonical root matching/selected/retained binding and original availability/
+source transfer, complete source success/zero/overflow witnesses,603-prior/exact-
+seven/full gates. All original uncovered families/effects/control/deferred,
+source/block/whole-driver simulation/completeness, production integration across
+all consumers and fresh complete Stock comparison remain. Production legacy;
+full #140 active/incomplete; last full batch e56bb87 local/unpublished. Saved
+work/earlier checkpoints retained; no commit/push/merge for this checkpoint.
+
+## Division successful requests and original constants checkpoint
+
+Fourteen saved StockDiv modules build406jobs. Successful immediate materialization
+now preserves all scheduling fields via a27-term interpreter projection closure;
+no legacy machine-value contract or shared movK_ident edit is used. Successful
+real divisor requests expose all five paths: immediate look-through/materialization,
+guarded64-bit register, and signed/unsigned guarded widening plus zero check.
+Their original mapping/safety and exact complete state follow from execution.
+Original mapped context, restricted DFG and source getter connect literal data to
+the actual original iconst value; source observations retain that value and the
+materialization run. Original public width/mode conditions are unchanged.
+
+Sixteen ordinary-kernel request witnesses use original signed/unsigned division
+contexts at8/16/32/64, literals0/9, and validate all five fired helper IDs781–785.
+Immediate forward execution with nonzero demand/sunk fields also inhabits the
+frame observation. These are original-context helper witnesses, not complete
+Stock.lower retained/source-record witnesses. All28 fresh normal/MCP public roots
+are standard-only;21 earlier division axiom sets unchanged;14 original source
+scans have zero warnings; prior validated high-multiply hashes are unchanged.
+Receipt/archive:
+[stock-div-requests-checkpoint.json](../research/stock-div-requests-checkpoint.json).
+
+Next standard-only immediate machine values and fragment/result allocation,
+all ten canonical root matching/success/selected values, retained binding and
+original availability/source success/trap transfer, complete original source/
+record success/zero/overflow witnesses,603-prior/exact-seven/full gates. All
+original uncovered families/effects/control/deferred, source/block/whole-driver
+simulation/completeness, actual production integration and fresh complete Stock
+comparison remain. Production legacy; full #140 active/incomplete; last full
+batch e56bb87 local/unpublished. Saved work and earlier checkpoints preserved;
+no commit/push/merge for this partial checkpoint.
+
+## Division original-source machine-value checkpoint
+
+Eighteen saved StockDiv modules build400jobs. Isolated standard-kernel MOVK
+and constant-loading loop proofs establish machine values for all five immediate
+materialization rules; legacy IselLcf variants remain untouched. A strengthened
+successful divisor observation derives the required immediate fuel bound from
+execution. The old theorem remains. Original mapped context, restricted DFG
+and getter now yield the original constant's ImmOut machine/fragment/allocation
+contract; register/widening paths retain their original guards and complete state.
+Sixteen original signed/unsigned8/16/32/64 zero/nonzero request executions
+inhabit this stronger source contract without new source conditions.
+
+All40 fresh normal/MCP public roots use only standard axioms;28 prior division
+sets unchanged;18 original source scans clean; validated high-multiply source
+hashes unchanged. Receipt/archive:
+[stock-div-source-values-checkpoint.json](../research/stock-div-source-values-checkpoint.json).
+This is partial and not complete source/retained execution. Next all ten actual
+root match/RHS composition and alias-resolved machine execution, retained result
+binding and original availability/source success/trap transfer, complete source/
+record success/zero/overflow witnesses,603-prior/exact-seven/full gates.
+All remaining original families/effects, source/block/whole-driver simulation
+and completeness, production consumers and fresh complete Stock comparison
+remain required. Production legacy; full #140 active/incomplete; last fully
+validated local commit e56bb87. Saved work preserved; no push/merge.
+
+## Division actual matcher/RHS checkpoint
+
+All ten division/remainder roots now have canonical forward matches and actual
+RHS from-parts composition contracts. General signed division retains zero/
+overflow checks; remainder retains divide/multiply-subtract reconstruction;
+safe signed constants retain original zero/minus-one exclusions.32 ordinary-
+kernel original sparse-ID cases successfully match/execute all ten RHSs across
+four operations,8/16/32/64 and literals0/9. These are RHS witnesses, not complete
+retained/source execution. Witness and safe-matcher396-job builds pass.
+53 fresh normal/MCP roots standard-only;40 previous division sets unchanged;
+22 original source scans clean; prior high-multiply hashes unchanged. Evidence:
+[stock-div-rhs-checkpoint.json](../research/stock-div-rhs-checkpoint.json).
+Next derive canonical environment/helper receipts from actual selection,
+alias-resolved machine execution under original demanded/available inputs,
+retained result binding/guarded original source success/trap transfer, complete
+source/record success/zero/overflow witnesses and603-prior/exact-seven/full gates.
+All remaining original families/effects/source/block/whole-driver simulation/
+completeness/production integration/fresh Stock comparison obligations persist.
+Full #140 active/incomplete; production legacy; e56bb87 local/unpublished.
+Saved work/old variants preserved; no push/merge.
+
+## Division selected/retained binding checkpoint
+
+Actual opcode/type matching derives all ten typed root alternatives. Successful
+divisor calls internally derive register results. Unsigned division and both
+remainder families now derive their canonical selected environments, guarded
+source preparations, actual divisor executions, output and complete state from
+original source selection. No caller chosen-root/helper execution certificate.
+Their retained records derive actual result binding and selected receipts under
+original source scope.12 actual whole-driver retained-selection/binding witnesses
+cover8/16/32/64; witness batch412jobs passes. These are not complete source
+machine execution witnesses. Alias-resolved quotient/multiply-subtract proofs
+preserve every nonresult register; four signed/unsigned32/64 alias cases execute
+quotient2/remainder1. Final combined proof build416jobs passes.
+
+70 fresh normal/MCP roots standard-only;53 previous division trust sets and22
+previous division source hashes unchanged;31 original source scans clean;
+validated high-multiply hashes unchanged. Receipt/archive:
+[stock-div-selection-checkpoint.json](../research/stock-div-selection-checkpoint.json).
+Next actual general/safe signed-division selection and retained receipts, compose
+aliased source preparation/zero/overflow guards and quotient/remainder execution,
+guarded original availability/result binding/source success/trap transfer,
+complete source/record success/zero/overflow witnesses and603-prior/exact-seven/
+full validation. Remaining original families/effects/source/block/whole-driver
+simulation/completeness/production consumers/fresh complete Stock comparison
+are still mandatory. Full #140 active/incomplete; production legacy;
+e56bb87 last fully validated local commit. Old variants/saved work preserved;
+no push/merge.
+
+## Signed division complete selection/retained receipt checkpoint
+
+General signed RHSs now internally derive guarded dividend preparation, real
+divisor execution, minimum-value and overflow checks, output and whole state.
+Safe signed RHSs derive guarded preparation and real immediate materialization.
+Successful original safe matching derives the actual looked-through literal,
+original zero/minus-one exclusions, canonical environment and unchanged frame.
+Actual signed source selection and retained records therefore derive both safe/
+general paths and result binding internally; no chosen-root/helper certificate.
+Eight actual whole-driver signed fixtures check all four original root IDs at
+8/16/32/64. With12 earlier unsigned/remainder fixtures, all ten real roots have
+retained-selection/binding witnesses. These are not complete source execution.
+
+Zero/overflow fragments now execute through final aliases with both trap and
+normal outcomes; zero alias witnesses cover signed/unsigned8/16/32/64, overflow
+alias witnesses32/64. New source machine composition remains separate.
+Signed witness kernel build416jobs (180s) and final combined421jobs pass.
+86 fresh normal/MCP roots standard-only;70 prior trust sets and31 prior sources
+unchanged;39 original source scans clean; validated high-multiply hashes unchanged.
+Receipt/archive:
+[stock-div-signed-selection-checkpoint.json](../research/stock-div-signed-selection-checkpoint.json).
+Next compose aliased source preparation/constant materialization/zero/overflow
+checks/quotient/remainder execution, guarded original availability/result binding/
+source success/trap transfer for all ten roots, complete original-source success/
+zero/overflow witnesses and603-prior/exact-seven/full gates. All original remaining
+families/effects/source/block/whole-driver simulation/completeness/production
+integration/fresh complete Stock comparison obligations persist. Full #140
+active/incomplete; production legacy; e56bb87 last fully validated local commit.
+Old variants and saved work preserved; no push/merge.
+
+## Division original operands/guards/body execution checkpoint
+
+Internal alias semantics inherits refinement. Actual driver alias idempotence,
+under the original scope/dominance conditions, derives the invariance required
+by existing renaming machinery internally. No semantic-invariance premise is
+added to the original source contracts. All five immediate paths execute through
+final aliases with full scheduling and outside-allocation register preservation.
+Five ordinary-kernel witnesses check actual fired IDs; LCF32 uses305419896 and
+LCF64 uses81985529216486895, exercising actual MOVK paths at both machine sizes.
+Original mapped context/restricted DFG/getter derives correct original constants
+for unmasked general and masked safe materialization paths.
+
+Actual divisor calls compose original constants or64-bit source registers or
+narrow extension paths with alias-resolved zero checks. Both original source
+zero-trap and nonzero normal outcomes are proved.16 original-context actual
+signed/unsigned8/16/32/64 literal0/9 divisor-fragment witnesses include dirty
+upper bits. Actual extended/plain dividend requests establish original operands
+through aliases, with eight widening/pass-through and one unsigned64 plain
+witness. Quotient and divide/multiply-subtract bodies establish successful
+original source results; eight signed/unsigned negative-numerator cases cover
+8/16/32/64 and unaffected-register preservation. These are component executions,
+not complete retained original-source instruction execution witnesses.
+
+Final combined413-job proof build passes;103 fresh normal/MCP public roots use
+standard axioms only;86 previous trust sets and39 previous source hashes unchanged;
+49 original source scans clean; validated high-multiply hashes unchanged. Evidence:
+[stock-div-operands-body-checkpoint.json](../research/stock-div-operands-body-checkpoint.json).
+Next derive noncapture/held-value transfer from actual original availability and
+record allocation intervals, compose all ten selected operand/zero/overflow/body
+executions, retained result binding/original source success/trap transfer,
+complete retained original-source success/zero/overflow witnesses,603-prior/exact-
+seven/full gates. Remaining original families/effects/source/block/whole-driver
+simulation/completeness/production consumers/fresh complete Stock comparison
+remain mandatory. Full #140 active/incomplete; production legacy; e56bb87 last
+fully validated local commit. Old variants/saved work preserved; no push/merge.
+
+
+## Unsigned64 retained source composition build checkpoint
+
+Division composition status: active; full #140 remains incomplete. Branch agent/stock-logic-not-values-pr, HEAD e56bb87 local/unpublished, worktree driver-proof-resume. The immediate unsigned64 source-transfer build failure (unavailable getAs_of_regs helper) is fixed using its elementary getter proof. Source-transfer target passes453 jobs; actual whole-lowering unsigned64 success and zero-trap witness target passes456 jobs, including ordinary-kernel lowering fixtures. New composition modules remain local/uncommitted; full new-root audits and the division-family batch gates remain pending. Prior103-root checkpoint remains the latest complete division audit. Execution has been too fragmented across small proof/audit slices; no established permission or contributor blocker. Next: finish source/record composition and complete witnesses across the remaining nine division roots, then full family validation; all original remaining families/effects, block/whole-driver simulation/completeness and compiler/checker/linker/generated-proof production integration remain required. Production still legacy. Old saved work preserved; no push/merge. UTC 2026-10-14T13:48:53.755059+00:00
+
+
+## Unsigned division retained original-source execution checkpoint
+
+Actual unsigned division now composes original source operands, zero guards and
+quotient execution through final aliases at8/16/32/64. Original availability and
+record allocation intervals derive operand noncapture internally; caller source
+conditions remain preserved. Actual retained binding derives output registers,
+fresh bounds and emitted code. Original successful source steps preserve the
+updated frame, demanded available values and memory; original zero traps remain
+covered. Common unsigned source entry derives operand getters and wide/narrow
+choice internally. Eight complete actual Stock.lower source/record witnesses
+cover success and zero traps at all four widths with dirty upper bits.
+
+Combined466-job proof build passes.131 normal roots standard-only;28 new MCP
+roots standard-only;103 prior axiom sets and49 prior original source hashes
+unchanged;65 original source scans clean; validated high-multiply hashes unchanged.
+[Receipt](../research/stock-div-udiv-composition-checkpoint.json).
+Archive /home/lee/.clifv-recovery/20261014T140444Z/stock-div-udiv-composition-checkpoint.tar.gz.
+The unsigned checkpoint excludes subsequent remainder work. Signed/unsigned
+remainder selected/retained/source-entry proofs now build; complete original
+remainder witnesses are being validated sequentially. Signed division general/
+safe source composition, zero/overflow/full witnesses and full family gates
+remain required. All original uncovered families/effects, source/block/whole-
+driver simulation/completeness and compiler/checker/linker/generated-proof
+production integration/fresh complete Stock comparison persist. Full #140 active/
+incomplete; production legacy; e56bb87 last fully validated local commit.
+Saved work and old variants preserved; local/uncommitted; no push/merge.
+
+
+## Unsigned division and signed/unsigned remainder original-source checkpoint
+
+Division unsigned/remainder original-source checkpoint: active; full #140 incomplete. Branch agent/stock-logic-not-values-pr, HEAD e56bb87 local/unpublished, worktree driver-proof-resume. All six actual unsigned-division/signed-or-unsigned-remainder roots now have selected/retained/source execution and binding transfers. Shared original-source trap entries derive operand getters and semantic failure internally. Original availability/allocation derives noncapture; original held/available-value guards, frame updates, memory preservation and zero traps retained. Eight unsigned-division success/zero witnesses plus16 remainder success/zero witnesses cover8/16/32/64; eight signed minimum/zero and minimum/minus-one remainder boundary witnesses prove minus-one returns zero without source restriction. Source overflow reflection/alias helper has witnesses at all four widths; actual signed-division general/safe source composition is still pending.
+Combined 518-job proof build;182 standard-only normal public roots;51 new standard-only MCP roots.131 previous trust sets/65 original source hashes unchanged;94 original source scans clean; validated high-multiply hashes unchanged.23 initial MCP transport timeouts were retained and retried successfully against a compact project-local import audit at limited concurrency, with original-source scans separate; no witness build restarted. Receipt docs/research/stock-div-rem-source-checkpoint.json; archive /home/lee/.clifv-recovery/20261014T142722Z/stock-div-rem-source-checkpoint.tar.gz. Unsigned-only receipt and all earlier snapshots preserved.
+Next: compose general/safe signed-division preparations/minimum/overflow/quotient through final aliases; retained binding and guarded original source successes/traps; complete original-source witnesses at8/16/32/64 including zero and overflow; then full division603-prior/exact-seven/build/crates/runtime/encoder/both E2E identity-stage gates. All original uncovered families/effects, source/block/whole-driver simulation/completeness, production compiler/checker/linker/generated-proof integration and fresh complete Stock comparison remain mandatory. Production legacy; IselLcf/T6 untouched; saved work/old variants preserved; local/uncommitted; no push/merge. UTC 2026-10-14T14:28:26.878804+00:00
+
+
+## Scalar division/remainder full local validation
+
+All ten actual roots786–795 now have original selected/retained/source execution
+and binding transfers: unsigned division, general and safe signed division,
+signed and unsigned remainder, narrow8/16/32 and wide64. Minimum/zero/overflow
+preparation, exact helper states, final aliases, complete fresh-write frames,
+original constant definitions and source results are connected. Original scope/
+dominance/restricted DFG/demanded-and-available conditions remain; getters, chosen
+root/helper runs, noncapture, alias/bound/constant/result facts derive internally.
+Old theorem variants and IselLcf/T6 remain untouched.
+
+52 complete original source/record witnesses include normal and zero outcomes,
+signed minimum/zero and overflow, signed minimum/minus-one remainder returning
+zero at every width, and negative safe quotients with constants unmaterialized.
+Full1768/crates1171 pass; runtime4672 with zero failures/disagreements and seven
+unchanged unsupported cases; encoder1292 identical/zero differences. Both E2E
+modes1150 accepted/zero rejected and every identity/stage field unchanged from
+high multiplication; runtime report byte-identical.824 normal roots retain all
+603 prior sets and exact seven final compiler trust sets;221 new standard-only
+MCP roots,122 original clean scans. Earlier checkpoint timeouts were resolved by
+bounded compact-import audit; fresh final221-root MCP checks have zero failures.
+Receipt [stock-div-audit.json](../research/stock-div-audit.json); family plan
+[stock-scalar-division.md](stock-scalar-division.md). Local commit is recorded in
+#44. No compiler/default change; no push/merge. Full #140 active/incomplete.
+
+Next uncovered families: comparison/minmax/select and remaining scalar logical/
+cast forms, then original effects/memory/calls/atomics/traps/control obligations.
+Original source/block/whole-driver simulation and completeness, production
+integration across compiler/checker/linker/generated-proof consumers and a fresh
+complete Stock comparison remain mandatory. Do not substitute scalar family
+completion for the full goal.
