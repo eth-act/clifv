@@ -1,0 +1,86 @@
+{
+  "new_roots": {
+    "Backend.Stock.Proof.ScalarShift.stock_shift_imm_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_shift_imm_match_receipts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_shift_rrr_match_receipts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_shift_mask_match_receipts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_do_shift_values_of_count": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_do_shift_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_do_shift_allocates": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_shift_rhs_receipts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_shift_prep_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_shift_root_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_shift_root_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_shift_selected_root_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarShift.stock_lower_shift_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "status": "Core proofs build; witness/gates pending; full goal unfinished",
+  "base": "b3577ee5c1b273f58c2a0a40af851ad0fc6b227c",
+  "updated_utc": "2026-10-13T16:17:37.931130+00:00",
+  "source_sha256": {
+    "FV/Backend/Proof/StockShiftMatch.lean": "c19b6d6b5146a1759e3b9e62910c32182720b5fa4be726841228e4e529e7b4ca",
+    "FV/Backend/Proof/StockShiftPrepValues.lean": "6d834156d1ab34eb1423c607fe6be4421c43dd5cb2a4d839afb1b44dbd3229d1",
+    "FV/Backend/Proof/StockShiftRecordValues.lean": "49a0432e8ce499422741b122688462b77bd21913c49e8f8d18d7e4d884225b5d",
+    "FV/Backend/Proof/StockShiftRootMatch.lean": "71c7e01cad05db827d00c12cafe366a1ecf7f9cb3a561bf3deef9fe0b16175f7",
+    "FV/Backend/Proof/StockShiftRootReceipts.lean": "5c0a207b5a822cef41db7bebcf8b3864d4c8b284f0241de9b38532c73a845811",
+    "FV/Backend/Proof/StockShiftRootValues.lean": "740b3ee0af812bb14e67436e6cb8df01bd154e8c47e48e5f5d48348d79fe0f73",
+    "FV/Backend/Proof/StockShiftValues.lean": "7b572c9eaafd7a2a6375949ebecb2415cd000f2e9d28a315107038f04a8a28c9"
+  },
+  "mcp_public_roots": 13,
+  "mcp_standard_only": true,
+  "mcp_source_warnings": 0,
+  "witnesses": "Unfinished; split kernel checking confirmed live. Independent native diagnostic confirms all24 expected selection/demand/context/alias observations, but is not proof evidence.",
+  "full_goal": "Active, incomplete; production legacy; no push/merge"
+}

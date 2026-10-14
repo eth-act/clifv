@@ -1,0 +1,96 @@
+{
+  "complete_source_witness": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+      }
+    ],
+    "structuredContent": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "isError": false
+  },
+  "other": [
+    {
+      "name": "Backend.Stock.Proof.ScalarShift.Witness.scope",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "name": "Backend.Stock.Proof.ScalarShift.Witness.inputs",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  ],
+  "run_code": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"success\": true,\n  \"timed_out\": false,\n  \"diagnostics\": [\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarShift.Witness.scope' depends on axioms: [propext, Quot.sound]\",\n      \"line\": 2,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarShift.Witness.inputs' depends on axioms: [propext, Classical.choice, Quot.sound]\",\n      \"line\": 3,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarShift.Witness.stock_lower_shift_source_values_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 4,\n      \"column\": 1,\n      \"lean_tags\": null\n    }\n  ]\n}"
+      }
+    ],
+    "structuredContent": {
+      "success": true,
+      "timed_out": false,
+      "diagnostics": [
+        {
+          "severity": "info",
+          "message": "'Backend.Stock.Proof.ScalarShift.Witness.scope' depends on axioms: [propext, Quot.sound]",
+          "line": 2,
+          "column": 1,
+          "lean_tags": null
+        },
+        {
+          "severity": "info",
+          "message": "'Backend.Stock.Proof.ScalarShift.Witness.inputs' depends on axioms: [propext, Classical.choice, Quot.sound]",
+          "line": 3,
+          "column": 1,
+          "lean_tags": null
+        },
+        {
+          "severity": "info",
+          "message": "'Backend.Stock.Proof.ScalarShift.Witness.stock_lower_shift_source_values_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+          "line": 4,
+          "column": 1,
+          "lean_tags": null
+        }
+      ]
+    },
+    "isError": false
+  }
+}

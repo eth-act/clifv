@@ -1,0 +1,17 @@
+{
+  "scanner": "/home/cody/.cache/uv/archive-v0/txMZz4UJwvitBV53gFJ1J/lib/python3.12/site-packages/lean_lsp_mcp/verify.py",
+  "scanner_sha256": "73a580d98bb202121fca6021fcc611fd6d98d610c49a872924e5389eacf2be40",
+  "adaptation": "Standard-library json.loads replaces orjson.loads; source-warning patterns and scanning logic unchanged.",
+  "files": {
+    "FV/Backend/Proof/StockShiftMatch.lean": [],
+    "FV/Backend/Proof/StockShiftPrepValues.lean": [],
+    "FV/Backend/Proof/StockShiftRecordValues.lean": [],
+    "FV/Backend/Proof/StockShiftRootMatch.lean": [],
+    "FV/Backend/Proof/StockShiftRootReceipts.lean": [],
+    "FV/Backend/Proof/StockShiftRootValues.lean": [],
+    "FV/Backend/Proof/StockShiftValues.lean": [],
+    "FV/Backend/Proof/StockShiftWitness.lean": [],
+    "FV/Backend/Proof/StockShiftWitnessInputs.lean": []
+  },
+  "warnings": 0
+}
