@@ -22,6 +22,7 @@ import FV.Opt.Proof.RuleSelects4
 import FV.Opt.Proof.RuleSelects5
 import FV.Opt.Proof.RuleSelects6
 import FV.Opt.Proof.RuleExtends
+import FV.Opt.Proof.RuleExtends2
 import FV.Opt.Proof.RuleShifts1
 import FV.Opt.Proof.RuleShifts2
 import FV.Opt.Proof.RuleSpaceship
