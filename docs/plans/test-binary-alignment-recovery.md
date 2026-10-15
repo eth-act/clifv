@@ -1852,3 +1852,14 @@ Updated UTC: 2026-10-15T00:05:12.560531+00:00
 - Combined241-module targeted build: 640 jobs;380 normal standard-only roots,16 new MCP checks and364 prior results reused after confirming all231 source hashes/364 trust sets unchanged;241 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-predecessor-checkpoint.json.
 - Next canonical5155/5160 match/selected652, original958/172 and retained/result-binding/guarded source-step integration, then complete actual Stock.lower witnesses. Current witness scope is original-context RHS/715, not complete predecessor retained/source-step coverage. Other comparison forms/minmax/select and full family gates remain.
 - All original #140 whole-driver/effect/completeness/production obligations remain mandatory; goal active/incomplete, production legacy. Publication now authorized; three prior validated families landed #180/#181/#182 on October14, and WIP backups are pushed after checkpoints.
+
+
+## Actual predecessor matching and first-match selection
+
+Updated UTC: 2026-10-15T00:17:35.434426+00:00
+
+- Canonical5155/5160 matching derives the exact normalized four-field environment, wrapping subtraction and unchanged state/trace at32/64 machine widths. No caller normalization premise added.
+- Real652 selection excludes the higher ordinary immediate5165 using nonencodability of the original constant, incompatible zero/opposite-condition rules, and later fallbacks using actual earlier successful matching.
+- Ordinary-kernel selected-helper witnesses use accepted original i64 comparison contexts with4097/8193 and shifted predecessors4096/8192. Earlier unshifted RHS witnesses remain helper witnesses; encodable original constants select the ordinary immediate path.
+- Combined247 modules/646 jobs;386 normal standard-only roots,6 fresh MCP checks and380 reused after confirming all241 prior source hashes/trust sets unchanged;247 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-predecessor-selection-checkpoint.json.
+- Next transport the unused normalized literal slot2 into the existing source-value contract; compose selected652/715 and original958/172, then retained/result binding, guarded source-step transfer and complete Stock.lower witnesses. Other forms/minmax/select/full family gates and every original whole-driver/effect/completeness/production obligation remain required. Goal active/incomplete; production legacy; remote backups/publication cadence authorized.
