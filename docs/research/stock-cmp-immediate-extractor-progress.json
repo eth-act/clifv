@@ -1,0 +1,86 @@
+{
+  "utc": "2026-10-14T20:50:31.701985+00:00",
+  "goal": "#140 original full scope active/incomplete",
+  "checked": "Three raw extractor conversion lemmas compile independently: original constant lookups, nonconstant contradiction, nonzero constant contradiction",
+  "remaining_goals_before": [
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u2074 (w\u271d\u00b3.push 515)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u2074 (w\u271d\u00b3.push 515)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u2074 (w\u271d\u00b3.push 517)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u2074 (w\u271d\u00b3.push 517)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u2074 (w\u271d\u00b3.push 514)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u2074 (w\u271d\u00b3.push 514)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u2074 (w\u271d\u00b3.push 516)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u2074 (w\u271d\u00b3.push 516)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2079 + 20) st tr out w\u271d\u2078 (w\u271d\u2077.push 513)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2079 + 20) st tr out w\u271d\u2078 (w\u271d\u2077.push 513)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5155.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5155.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5160.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5160.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5142.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5142.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5134.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5134.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5128.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5128.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5117.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5117.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5108.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5108.id)"
+  ],
+  "remaining_goals_after": [
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2079 + 20) st tr out w\u271d\u2078 (w\u271d\u2077.push 513)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2079 + 20) st tr out w\u271d\u2078 (w\u271d\u2077.push 513)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5155.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5155.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5160.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5160.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5142.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5142.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5134.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5134.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5128.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5128.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5117.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5117.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size32 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5108.id)",
+    "\u22a2 ImmediateOutcome p ctx cc OperandSize.size64 x imm (w\u271d\u2075 + 20) st tr out w\u271d\u00b2 (w\u271d\u00b9.push rule_inst_5108.id)"
+  ],
+  "zero_case_goals_dispatched": 8,
+  "remaining_selection": "Two direct-immediate goals plus fourteen later-rule goals; still unvalidated",
+  "diagnosis": "Failure-goal application left implicit fuel/after arguments and unconstrained start state; original start state/trace now explicit. Prefix witness extraction still unresolved.",
+  "prior_40_source_hashes_unchanged": true,
+  "validation_scope": "Private helper kernel check and authoritative remaining-goal snapshots only; no new public-root/family/full-repository gate claimed",
+  "production": "legacy",
+  "publication": "local/uncommitted; no push/merge",
+  "logs": [
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-facts.lean",
+      "sha256": "422bc1d2deb9f6ae455154c10ead783c840a28ef54c8ab91729a6993c44b3a98"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-facts.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-goals.log",
+      "sha256": "8f7786180208d37a560a0e7f6cb4b5466e364f84fa67aefb34b0e4110816a444"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-goals2.log",
+      "sha256": "fecf47850ae83c5815d52d2f04ed64b7f3ee7408be9d252076ab0b996215de5b"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-goals6.log",
+      "sha256": "07f12e5cb8b548895ff418df8ffb3a2da199843075117b4cbd220144b7c21987"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-failure-goals.log",
+      "sha256": "d88f957f0d235919ea0bdeb2630c887c3dd5b95ae3cc18f2e1d52182bca82959"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-prefix-error.log",
+      "sha256": "8fc95519bf88bb2c3c8b18ba1485d69326d46a7ce718222aaeb9de2a147f65d4"
+    }
+  ]
+}

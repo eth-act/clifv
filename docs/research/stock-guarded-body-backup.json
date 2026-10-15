@@ -1,0 +1,8 @@
+{
+  "state": "validated; snapshot push pending",
+  "evidence": {
+    "archive": "/home/lee/.clifv-recovery/20261015T110832Z-guarded-body/checkpoint.tar.gz",
+    "sha256": "37ac14ffe2e99f8ec964676e21f2062339c909075d843af598ea6a31d2504ebe",
+    "members": 20
+  }
+}
