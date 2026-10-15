@@ -668,7 +668,7 @@ These don't remove certificates; they shrink the set of functions reported "unve
 | R5 | spaceship | 20 | the 20 `select` rules: two made `icmp`s under `sextend_maybe` blow up the term (>10 min/rule) |
 | R6 | cprop | 0 | **done** (R0) |
 | R7 | bitops | 3 | 79 (needs 64-bit and/not immediate specs), 157/170 (byte-swap timeouts) |
-| R8 | extends | 0 | **done** (`agent/extends-r8`): all 29 roots; sign-extension comparisons against zero with early width and condition-code specialization |
+| R8 | extends | 0 | **done** ([#206](https://github.com/eth-act/clifv/pull/206)): all 29 roots; sign-extension comparisons against zero with early width and condition-code specialization |
 | R9 | skeleton | 0 | **done** (`agent/skeleton-r9`): all 37 roots; signed `div_const` and count-based branches, including i128/reduced counts |
 
 **R0 (shared infrastructure) is done** (`agent/rule-infra`): `iabs` `bif` form, the finish for constants
@@ -777,7 +777,7 @@ label**; list the free ones with
 | R5 | [#19](https://github.com/eth-act/clifv/issues/19) Mid-end rule proofs: spaceship (20 rules left) | open |
 | R6 | [#20](https://github.com/eth-act/clifv/issues/20) Mid-end rule proofs: cprop (0 rules left) | **done** (by R0, `agent/rule-infra`) |
 | R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (3 rules left) | open |
-| R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (0 rules left) | **done** (`agent/extends-r8`) |
+| R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (0 rules left) | **done** ([#206](https://github.com/eth-act/clifv/pull/206)) |
 | R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (0 rules left) | **done** (`agent/skeleton-r9`) |
 | M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | open |
 | S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | open |

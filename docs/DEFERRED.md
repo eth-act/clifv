@@ -21,7 +21,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
-**Status (2026-10-09, R8):** 1095 of 1193 roots are proven: 1058 `simplify` and all 37
+**Status (2026-10-09, R8, merged in [#206](https://github.com/eth-act/clifv/pull/206)):** 1095 of 1193 roots are proven: 1058 `simplify` and all 37
 `simplify_skeleton`. R8 completes all 29 extends roots by proving equality, inequality and
 signed comparisons of sign extensions against zero (40/42/44), without adding premises.
 The targeted 100-function CLI smoke exercises all three roots: 700/700 executions agree,

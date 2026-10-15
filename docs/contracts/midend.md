@@ -734,7 +734,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   136 passed; runtests 4672 passed, zero failed and zero native disagreements (unsupported
   and out-of-scope cases remain reported separately).
 
-**R8 (2026-10-09, `agent/extends-r8`):**
+**R8 (2026-10-09, `agent/extends-r8`, merged in [#206](https://github.com/eth-act/clifv/pull/206)):**
 - `RuleExtends2.lean` proves roots 40, 42 and 44 with their original `RuleOk` statements
   and premises. Masked zero and signed re-extension normalize before graph construction.
   Early width specialization preserves the non-i128 facts needed by `fitsIn64_ofClif`.
