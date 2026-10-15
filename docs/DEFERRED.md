@@ -316,15 +316,12 @@ than per-rule lemmas. Remaining: the input conditions join `InScope` for the tot
 
 Done (L1d, #204, `agent/recursion-exe`; e2e.md "Recursive programs"): `Link.compileExe_correct_depth`
 covers every entry, recursive ones included, with `frameDrop (art S.input f).af + S.input.D * M`
-bytes of stack for a whole-program CLIF run of at most `M + 1` steps (no call-graph premise).
+bytes of stack for a whole-program CLIF run of at most `M + 1` steps (no call-graph premise), and
+`Link.compileExe_correct_peak` with `frameDrop (art S.input f).af + S.input.D * d` bytes for a run
+of peak call depth `d` (`Clif.DepthLe`: no state it reaches has more than `d` callers), whatever
+its fuel: the linked system carries its callee runs (`LinkSys.crun`, `CrunOk`), the induction runs
+on the depth with the fuel fixed (`Clif.runD`, `Clif.linkEnvD`, `Clif.runLoop_linkD`).
 Deferred:
-- **Peak call depth instead of fuel.** `M` is the step fuel of the CLIF run and also the depth
-  index of the linking induction (`LinkSys.mach M`, `Clif.linkEnvN P base M`: a callee runs at
-  most `M` steps, `Clif.runLoop_linkN`; `LinkSys.K M = D * M`). A premise "the run's peak call
-  depth `d` fits in `frameDrop + D·d`" needs an environment with separate depth and fuel, a
-  lemma that a run of depth at most `d` is unchanged under depth `d` (callee runs nested at most
-  `d` deep), and `LinkSys.thm`/`thmG`/`thmX` by induction on that depth with the fuel fixed;
-  then the same wrappers (`binary_correct_depthX`, `runGood_sysS_of`, `exec_of_runGood`).
 - **Exact frames.** Each level is charged the largest frame `D`; charging the frames actually
   live along the executed call derivation needs a budget indexed by the run, not `LinkSys.Budget`
   (which quantifies over every syntactic callee).

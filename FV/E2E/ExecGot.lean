@@ -22,9 +22,12 @@ memory-read facts D2 (`insn`) and D4 (`got`). Here D4 is discharged:
 
 `binary_correct_exec_of_insn`: `binary_correct_exec_of_reads` with D2 only (`RunInsnN`).
 
-The system keeping the slots (`sysS`) takes the callees' stack budget `K`: `runGood_sysS_of` holds
-for any `LinkSys.Budget`; `runGood_sysS` is its instance with the stack bound of a non-recursive
-program, `runGood_sysS_depth` with the depth budget `D * M` of any program. -/
+The system keeping the slots (`sysS`) takes the callees' stack budget `K`; `sysS_entry` gives the
+entry premises of the whole-program theorems for it. `runGood_sysS_of` holds for any
+`LinkSys.Budget`; `runGood_sysS` is its instance with the stack bound of a non-recursive
+program, `runGood_sysS_depth` with the depth budget `D * M` of any program;
+`runGood_sysS_peak` is the same for the run's peak call depth `d` (the budget `D * d`,
+`backend_correct_program_peakX`). -/
 
 namespace E2E
 
@@ -242,6 +245,69 @@ theorem mach_sysS (f : Clif.Function) (K : Nat) (r : Arm.ArmState) (S : BitVec 6
     (M : Nat) (g : Clif.Function) : (sysS I B f K r S).mach M g = (sys I B).mach M g := by
   rw [sysS, LinkSys.mach_extImg, mach_F]
 
+/-- **The entry premises of the whole-program theorems for the system keeping the slots** `S`
+with the callees' stack `K` (the outside caller's stack `frameDrop + K`): what
+`backend_correct_program_budgetX` and `backend_correct_program_peakX` take besides the budget and
+the run premises. -/
+theorem sysS_entry {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinOk I D file)
+    (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs)
+    {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
+    {K : Nat}
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + K) r args cs.mem)
+    {S : BitVec 64 → Prop} (hav : OutsideAvoids S f (frameDrop (art I f).af + K) r args cs.mem)
+    (hr : ClifRun I B f r args cs) :
+    (sysS I B f K r S).Ok ∧
+    AbiEntry (art I f).fb (art I f).base (xreg 30 r) (modelOf I f r) ∧
+    StackAvail K (art I f).af (modelOf I f r) ∧
+    (∀ a, (sysS I B f K r S).Img a →
+      ¬ StackBelow (frameDrop (art I f).af + K) (spv (modelOf I f r)) a) ∧
+    BodyEntry (art I f).af (modelOf I f r) (bodyOf (art I f).af (modelOf I f r)) ∧
+    ArgsIn f.sig args (modelOf I f r) ∧
+    StackArgsAvoid (sysS I B f K r S).Img f.sig args (modelOf I f r) ∧
+    Rel.holds ⟨(sysS I B f K r S).F, (sysS I B f K r S).syms, (art I f).af.slotBase,
+      (RAFrame.compute (art I f).vcp (art I f).rf).intBase⟩ f cs.frame.slots cs.mem
+      (bodyOf (art I f).af (modelOf I f r)) ∧
+    ((sysS I B f K r S).NeedSlots →
+      (sysS I B f K r S).PlaceAt cs.mem (spv (bodyOf (art I f).af (modelOf I f r)))) := by
+  have hB' : BaseOk (LinkSys.ofInput I B (worldF I f K r)) := baseOk_F hB
+  have himgF : ∀ a, (LinkSys.ofInput I B (worldF I f K r)).Img a →
+      worldF I f K r a := fun _ h => .inr h
+  have hL0 := okB_sound hI hB' himgF
+  have hfacts := binFacts_of_checks hI hbin
+  have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
+    hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
+  obtain ⟨hent, hres, hgfree, -, hbe, hargs, hsav, hrel, hpl⟩ := premises hL0 hfm hro ho hr
+  have hL : (sysS I B f K r S).Ok := LinkSys.Ok.extImg hL0
+    (fun a ha => mem_modelOf_img ha) fun a ha => by
+      rcases ha with ha | ha
+      · exact .inr (.inl ha)
+      · exact .inr (.inr ha)
+  obtain ⟨hd, hsb, hib, hsz⟩ := frame_facts hL0 hfm
+  have hN := ho.stack
+  have hsp := (spv r).isLt
+  have hspbN : (spBody (art I f).af r).toNat = (spv r).toNat - frameDrop (art I f).af :=
+    (off_toNat 0 (spv r) _ (by omega)).2.2
+  have hspb : spv (bodyOf (art I f).af (modelOf I f r)) = spBody (art I f).af r := by
+    rw [spv_bodyOf, spv_modelOf]; rfl
+  refine ⟨hL, hent, hres, fun a ha => ?_, hbe, hargs, fun off v hm k hk hx => ?_,
+    ⟨⟨hrel.1.bytes, fun a n hv => ?_, hrel.1.symbols⟩, hrel.2.1, hrel.2.2.1, fun j hj => ?_,
+      hrel.2.2.2.2⟩, hpl⟩
+  · rcases ha with ha | ha
+    · exact hgfree a ha
+    · rw [spv_modelOf]; exact hav.stack a ha
+  · rcases hx with hx | hx
+    · exact hsav off v hm k hk hx
+    · rw [spv_modelOf] at hx; exact hav.args off v hm k hk hx
+  · obtain ⟨hfit, hk⟩ := hrel.1.valid a n hv
+    exact ⟨hfit, fun k hkn => not_worldFS (hk k hkn) (hav.valid a n hv k hkn)⟩
+  · refine not_worldFS (hrel.2.2.2.1 j hj) fun hS => hav.stack _ hS ?_
+    change j < (RAFrame.compute (art I f).vcp (art I f).rf).intBase at hj
+    rw [hspb]
+    show StackBelow (frameDrop (art I f).af + K) _ _
+    simp only [StackBelow, BitVec.toNat_add, BitVec.toNat_ofNat, hspbN]
+    rw [Nat.mod_eq_of_lt (by omega : j < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
+    omega
+
 /-- **`RunGoodL` of the system keeping the slots** for any callees' budget `κ` of the linked
 system (`LinkSys.Budget`) whose value at the entry is `K` (the stack `frameDrop + K`), for a
 returning or trapping outcome. -/
@@ -258,45 +324,10 @@ theorem runGood_sysS_of {D : List Clif.DataObject} (hI : okB I = true) (hbin : B
       (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c)) :
     (sysS I B f K r S).RunGoodL M f (modelOf I f r) := by
   subst hK
-  have hB' : BaseOk (LinkSys.ofInput I B (worldF I f (κ M f) r)) := baseOk_F hB
-  have himgF : ∀ a, (LinkSys.ofInput I B (worldF I f (κ M f) r)).Img a →
-      worldF I f (κ M f) r a := fun _ h => .inr h
-  have hL0 := okB_sound hI hB' himgF
-  have hfacts := binFacts_of_checks hI hbin
-  have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
-    hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
-  obtain ⟨hent, hres, hgfree, -, hbe, hargs, hsav, hrel, hpl⟩ := premises hL0 hfm hro ho hr
-  have hL : (sysS I B f (κ M f) r S).Ok := LinkSys.Ok.extImg hL0
-    (fun a ha => mem_modelOf_img ha) fun a ha => by
-      rcases ha with ha | ha
-      · exact .inr (.inl ha)
-      · exact .inr (.inr ha)
-  obtain ⟨hd, hsb, hib, hsz⟩ := frame_facts hL0 hfm
-  have hN := ho.stack
-  have hsp := (spv r).isLt
-  have hspbN : (spBody (art I f).af r).toNat = (spv r).toNat - frameDrop (art I f).af :=
-    (off_toNat 0 (spv r) _ (by omega)).2.2
-  have hspb : spv (bodyOf (art I f).af (modelOf I f r)) = spBody (art I f).af r := by
-    rw [spv_bodyOf, spv_modelOf]; rfl
-  refine (backend_correct_program_budgetX (sysS I B f (κ M f) r S) hL (hκ.extImg _ _ _) hfm M
-    hent hres rfl (fun a ha => ?_) (fun a _ => rfl) hbe hargs hr.entry
-    (fun off v hm k hk hx => ?_) ⟨⟨hrel.1.bytes, fun a n hv => ?_, hrel.1.symbols⟩, hrel.2.1,
-      hrel.2.2.1, fun j hj => ?_, hrel.2.2.2.2⟩ hpl htr).2 hout
-  · rcases ha with ha | ha
-    · exact hgfree a ha
-    · rw [spv_modelOf]; exact hav.stack a ha
-  · rcases hx with hx | hx
-    · exact hsav off v hm k hk hx
-    · rw [spv_modelOf] at hx; exact hav.args off v hm k hk hx
-  · obtain ⟨hfit, hk⟩ := hrel.1.valid a n hv
-    exact ⟨hfit, fun k hkn => not_worldFS (hk k hkn) (hav.valid a n hv k hkn)⟩
-  · refine not_worldFS (hrel.2.2.2.1 j hj) fun hS => hav.stack _ hS ?_
-    change j < (RAFrame.compute (art I f).vcp (art I f).rf).intBase at hj
-    rw [hspb]
-    show StackBelow (frameDrop (art I f).af + κ M f) _ _
-    simp only [StackBelow, BitVec.toNat_add, BitVec.toNat_ofNat, hspbN]
-    rw [Nat.mod_eq_of_lt (by omega : j < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
-    omega
+  obtain ⟨hL, hent, hres, hgfree, hbe, hargs, hsav, hrel, hpl⟩ :=
+    sysS_entry hI hbin hB hfm hX ho hav hr
+  exact (backend_correct_program_budgetX (sysS I B f (κ M f) r S) hL (hκ.extImg _ _ _) hfm M
+    hent hres rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl htr).2 hout
 
 /-- **`RunGoodL` of the system keeping the slots**, for a returning or trapping outcome: the
 stack bound of a non-recursive program (`goodN`; the budget `StackBound.budget_of`). -/
@@ -336,6 +367,27 @@ theorem runGood_sysS_depth {D : List Clif.DataObject} (hI : okB I = true) (hbin 
     (sysS I B f (I.D * M) r S).RunGoodL M f (modelOf I f r) :=
   runGood_sysS_of hI hbin hB hfm M hX
     (LinkSys.budget_K _ (okB_sound hI (baseOk_F hB) fun _ h => .inr h)) rfl ho hav hr htr hout
+
+/-- **`RunGoodL` of the system keeping the slots for the run's peak call depth** `d` (L1d): the
+whole-program run of at most `F + 1` steps reaches no state with more than `d` callers
+(`Clif.DepthLe`); the budget `D * d` (`LinkSys.budget_K`), the stack `frameDrop + D * d`
+(`backend_correct_program_peakX`). -/
+theorem runGood_sysS_peak {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinOk I D file)
+    (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs) (F d : Nat)
+    {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    {S : BitVec 64 → Prop}
+    (hav : OutsideAvoids S f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
+    (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
+    (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (F + 1) cs = .returned vals cm) ∨
+      (∃ c, Clif.runLoop B.env (prog I) (F + 1) cs = .trapped c)) :
+    (sysS I B f (I.D * d) r S).RunGoodL d f (modelOf I f r) := by
+  obtain ⟨hL, hent, hres, hgfree, hbe, hargs, hsav, hrel, hpl⟩ :=
+    sysS_entry hI hbin hB hfm hX ho hav hr
+  exact (backend_correct_program_peakX (sysS I B f (I.D * d) r S) hL
+    ((LinkSys.budget_K _ (okB_sound hI (baseOk_F hB) fun _ h => .inr h)).extImg _ _ _) hfm F d
+    hent hres rfl hgfree (fun a _ => rfl) hbe hargs hr.entry hsav hrel hpl hd htr).2 hout
 
 /-! ## D4 at a state of the run -/
 

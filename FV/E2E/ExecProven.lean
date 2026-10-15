@@ -15,7 +15,10 @@ the M6 proof:
 * `binary_correct_exec_proven`: no call cycle reachable from the entry, the stack bound
   `stackFn` (`binary_correct_of_checksX`, `runGood_sysS`);
 * `binary_correct_exec_depth_proven`: any program, recursive ones included, the stack
-  `frameDrop + D * M` of the depth-`M` budget (`binary_correct_depthX`, `runGood_sysS_depth`).
+  `frameDrop + D * M` of the depth-`M` budget (`binary_correct_depthX`, `runGood_sysS_depth`);
+* `binary_correct_exec_peak_proven`: the same with the stack `frameDrop + D * d` for the run's
+  peak call depth `d` (`Clif.DepthLe`) instead of its fuel (`binary_correct_peakX`,
+  `runGood_sysS_peak`).
 -/
 
 namespace E2E.ExecBytes
@@ -117,5 +120,32 @@ theorem binary_correct_exec_depth_proven {I : LinkInput} {D : List Clif.DataObje
   obtain ⟨hent, -⟩ := premises hL hfm hro ho hr
   exact exec_of_runGood hI hcm hbin hgot hB hH hfm hX hent hd hA fun hout =>
     ⟨hG hout, runGood_sysS_depth hI hbin hB hfm M hX ho hav hr htr hout⟩
+
+/-- **The binary theorem about the executable's own words for the run's peak call depth** (L1d):
+`binary_correct_exec_depth_proven` with the stack `frameDrop + D * d`, where `d` bounds the call
+depth of the whole-program CLIF run (`Clif.DepthLe`: every state it reaches has at most `d`
+callers), independent of its fuel `F` (at most `F + 1` steps). The run premise `TrapsExplicit` is
+under `Clif.linkEnvD` (program callees with fuel `F` and at most `d - 1` callers of their own). -/
+theorem binary_correct_exec_peak_proven {I : LinkInput} {D : List Clif.DataObject}
+    {file : ByteArray} (hI : okB I = true) (hcm : codeMapB I (tabOf I.results) = true)
+    (hbin : BinCheck.BinOk I D file) (hgot : GotOk I file) (B : BaseEnv) (hB : BaseOk (sys I B))
+    (hH : HooksSim I B) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
+    (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hX : (imageOf file).Intact r)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (hav : OutsideAvoids (GotSlot I file) f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
+    (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs) :
+    ExecRefines (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (RelocAt I)
+      (Clif.runLoop B.env (prog I) (F + 1) cs) := by
+  have hfacts := binFacts_of_checks hI hbin
+  obtain ⟨hA, hdiff, hG⟩ := binary_correct_peakX hfacts B hB hf F d hX ho hr hd htr
+  have hfm := (Clif.Program.func?_some hf).1
+  have hL := okB_sound hI (baseOk_F (F' := worldF I f (I.D * d) r) hB) fun _ h => .inr h
+  have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
+    hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
+  obtain ⟨hent, -⟩ := premises hL hfm hro ho hr
+  exact exec_of_runGood hI hcm hbin hgot hB hH hfm hX hent hdiff hA fun hout =>
+    ⟨hG hout, runGood_sysS_peak hI hbin hB hfm F d hX ho hav hr hd htr hout⟩
 
 end E2E.ExecBytes

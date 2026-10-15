@@ -45,7 +45,8 @@ functions with the oracle's answers, the placement and rust-lld's executable of 
 `Link.compileExe_correct` with the outside-code contracts and "no call cycle reachable from the entry"
 as premises, and `Link.compileExe_correct_depth` (L1d) for every entry, recursive ones included, with
 `frameDrop + D·M` bytes of stack for a CLIF run of at most `M + 1` steps in place of the call-graph
-premise; `Link.compileExe_total` under `InScopeP`, the driver's names/sizes,
+premise (`Link.compileExe_correct_peak`: `frameDrop + D·d` bytes for a run of peak call depth `d`);
+`Link.compileExe_total` under `InScopeP`, the driver's names/sizes,
 the addresses within the relocations' reach and rust-lld's output passing `regionOkB`/`outsideOkB`.
 
 ### 1.2 What "no per-program certificate" means here (decision)
@@ -387,9 +388,14 @@ author's estimate, not measured), **Risk**.
   `binary_correct_exec_depth_proven`. Axioms standard. Witness `crate-proofs/Crates/CompileExeRecWitness.lean`:
   the self-recursive `direct` (`DirectSelf`, `cyclic`) compiled by `compileExe`, `direct(3)` run by the
   executable machine returns `6` (`compileExe_rec_witness`); `stack_needed`: the premise is more than
-  `stackFn` and fails with `sp = 16`. Gap: the stack is proportional to the fuel `M` (whole-program
-  steps), not to the run's peak call depth; a peak-depth premise needs the linking induction re-indexed
-  by a depth independent of the fuel (e2e.md "Recursive programs"; DEFERRED "Recursion").
+  `stackFn` and fails with `sp = 16`. **Peak call depth:** `Link.compileExe_correct_peak` takes
+  `frameDrop + D * d` bytes where `d` bounds the source run's call depth (`Clif.DepthLe`: no reached
+  state has more than `d` callers), independent of the fuel; the linked system carries its callee runs
+  (`LinkSys.crun`, `CrunOk`; default the fuel-`M` runs, so the fuel theorems are unchanged), the
+  peak instance runs callees with a fixed fuel and bounded depth (`Clif.runD`, `linkEnvD`,
+  `runLoop_linkD`). Chain `backend_correct_program_peakX`, `binary_correct_peakX`, `runGood_sysS_peak`,
+  `binary_correct_exec_peak_proven`. Witness `crate-proofs/Crates/CompileExePeakWitness.lean`. Gap: each
+  level is charged the largest frame `D` (e2e.md "Recursive programs"; DEFERRED "Recursion").
 - **L1b (`agent/compile-exe`):** `addrSlotsInB`/`addrSlotsB` relaxed (`|| declSlotsB P`: with a declared
   program callee with slots the run has `NeedSlots`, where `LinkSys.Ok.addrSlots` is not used; the premise
   now takes `¬ NeedSlots`).
@@ -401,8 +407,8 @@ author's estimate, not measured), **Risk**.
   address. Generic shared-code `LinkInput` certificates remain supported.
   `E2E.LinkWitness.DirectSelf` witnesses the scope, declaration and self edge, and proves that
   the actual compiled recursive input has no depth-independent stack budget.
-- **Open:** a peak-call-depth stack premise for recursive programs (L1d delivers the fuel-proportional
-  one); inputs outside `InScopeP` (`lean-link` then
+- **Open:** exact live-frame accounting for recursive programs (L1d charges the largest frame per
+  call level); inputs outside `InScopeP` (`lean-link` then
   falls back to `leanLink`, not covered by `compileExe_correct`, and prints the failing conditions per
   cause). Remaining failures are proof limits (each protects a `LinkSys.Ok` premise `okB` checks the same
   way). `sret` at indirect calls is done (#89 (a), `agent/scope-widen`: `Ok.indSig` asks for equal
@@ -788,7 +794,7 @@ label**; list the free ones with
 | L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | **done** (`agent/stack-complete`): `budOkW_budMap`, `goodN_iff`, `stackB_isSome_iff`, `binary_correct_of_checks_acyclic` |
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | **done** (`agent/compile-exe`): `Link.compileExe`, `compileExe_correct` (no per-program premise, no open hypothesis), `compileExe_total` (address and rust-lld conditions); #88 removes the alias restriction by compiling native self-calls; `lake exe lean-link` runs `compileExe` |
 | L1c | [#88](https://github.com/eth-act/clifv/issues/88) Remove `AliasOut` from executable compiler totality | **done** (`agent/alias-total`): native self-calls in function-free activations; alias-free driver and `LinkSpec`; `compileExe_total` without alias restriction or output hypothesis; recursive own-address smoke passes |
-| L1d | [#204](https://github.com/eth-act/clifv/issues/204) Executable correctness for recursive programs (remove CycleFrom exclusion) | **done** (`agent/recursion-exe`): `Link.compileExe_correct_depth` (no call-graph premise; stack `frameDrop + D·M` for fuel `M`), witness `Crates.CompileExeRecWitness`; open: a peak-call-depth stack premise |
+| L1d | [#204](https://github.com/eth-act/clifv/issues/204) Executable correctness for recursive programs (remove CycleFrom exclusion) | **done** (`agent/recursion-exe`): `Link.compileExe_correct_depth` (no call-graph premise; stack `frameDrop + D·M` for fuel `M`), `Link.compileExe_correct_peak` (stack `frameDrop + D·d` for the run's peak call depth `d`), witnesses `Crates.CompileExeRecWitness`, `Crates.CompileExePeakWitness`; open: exact live-frame accounting |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | **done** (`agent/rule-infra`; 43 + 10 roots) |
 | R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (0 rules left) | **done** ([#211](https://github.com/eth-act/clifv/pull/211)) |
 | R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (0 rules left) | **done** ([#210](https://github.com/eth-act/clifv/pull/210)) |
