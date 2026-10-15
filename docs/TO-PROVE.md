@@ -74,7 +74,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 
 | Stage | Implemented in | Verified today by | Kind (§1.2) | WP |
 | --- | --- | --- | --- | --- |
-| mid-end `simplify` rules | Lean (ISLE data) | 1154 + 37 rule theorems; only false shifts 84/88 disabled (`ruleAllow := .proven`) | proven | R4 locally complete for sound originals |
+| mid-end `simplify` rules | Lean (ISLE data) | 1154 + 37 rule theorems; only false shifts 84/88 disabled (`ruleAllow := .proven`) | proven | R4 done for sound originals ([#212](https://github.com/eth-act/clifv/pull/212)) |
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
@@ -664,7 +664,7 @@ These don't remove certificates; they shrink the set of functions reported "unve
 | R1 | arithmetic | 0 | **done** ([#211](https://github.com/eth-act/clifv/pull/211)): all 258 roots; exact guards, odd modular cancellation, high-half extraction and symbolic product identities; original premises unchanged |
 | R2 | icmp | 0 | **done** ([#210](https://github.com/eth-act/clifv/pull/210)): all 124 roots; typed composition RHS proofs, exact guard/decomposition evaluation and width-parametric identities |
 | R3 | selects | 0 | **done** ([#208](https://github.com/eth-act/clifv/pull/208)): all 100 roots; symbolic select identities and typed RHS evaluation |
-| R4 | shifts | 2 false | **locally complete for sound originals** (`agent/shifts-r4`): 73/75 roots; exact masked-sum guards, modular mixed-width rotation identities and subtraction/shift distribution; publication pending. **84 and 88 remain disabled**; corrected masked rules in kevaundray/wasmtime#2 are not adopted here |
+| R4 | shifts | 2 false | **done for sound originals** ([#212](https://github.com/eth-act/clifv/pull/212)): 73/75 roots; exact masked-sum guards, modular mixed-width rotation identities and subtraction/shift distribution. **84 and 88 remain disabled**; corrected masked rules in kevaundray/wasmtime#2 are not adopted here |
 | R5 | spaceship | 0 | **done** ([#209](https://github.com/eth-act/clifv/pull/209)): all 40 roots; width-parametric signed/unsigned identities and shared typed RHS proofs |
 | R6 | cprop | 0 | **done** (R0) |
 | R7 | bitops | 0 | **done** ([#207](https://github.com/eth-act/clifv/pull/207)): all 450 roots; masked-OR guard and opcode-indexed byte-swap proofs |
@@ -773,7 +773,7 @@ label**; list the free ones with
 | R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (0 rules left) | **done** ([#211](https://github.com/eth-act/clifv/pull/211)) |
 | R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (0 rules left) | **done** ([#210](https://github.com/eth-act/clifv/pull/210)) |
 | R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (0 rules left) | **done** ([#208](https://github.com/eth-act/clifv/pull/208)) |
-| R4 | [#18](https://github.com/eth-act/clifv/issues/18) Mid-end rule proofs: shifts (only false 84/88 left) | **locally complete for sound originals** (`agent/shifts-r4`); verified, publication pending |
+| R4 | [#18](https://github.com/eth-act/clifv/issues/18) Mid-end rule proofs: shifts (only false 84/88 left) | **done for sound originals** ([#212](https://github.com/eth-act/clifv/pull/212)) |
 | R5 | [#19](https://github.com/eth-act/clifv/issues/19) Mid-end rule proofs: spaceship (0 rules left) | **done** ([#209](https://github.com/eth-act/clifv/pull/209)) |
 | R6 | [#20](https://github.com/eth-act/clifv/issues/20) Mid-end rule proofs: cprop (0 rules left) | **done** (by R0, `agent/rule-infra`) |
 | R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (0 rules left) | **done** ([#207](https://github.com/eth-act/clifv/pull/207)) |

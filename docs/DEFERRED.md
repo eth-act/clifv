@@ -21,7 +21,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
-**Status (2026-10-10, R4, locally merge-ready):** 1191 of 1193 roots are proven:
+**Status (2026-10-10, R4, merged in [#212](https://github.com/eth-act/clifv/pull/212)):** 1191 of 1193 roots are proven:
 1154 `simplify` and all 37 `simplify_skeleton`. Shifts reach 73/75; only the documented
 false originals 84/88 remain disabled. R4 closes all seventeen sound remaining roots
 without changing the exported rules, `RuleOk` premises or fuel. Exact masked-sum
@@ -33,7 +33,6 @@ to 9629, versus 12766 before enablement, matching the full-rule diagnostic. Full
 compiler/crate builds, 40 axiom audits, native filetests, encoding and E2E gates pass.
 Proven-only corpus/runtests remain 4668 → 2287 and 3389 → 3043; all 445 file summaries
 are no worse. Legacy unsupported/error cases remain separate. See midend.md "R4".
-Publication remains pending under the agent no-push/no-merge boundary.
 
 **Status (2026-10-10, R1, merged in [#211](https://github.com/eth-act/clifv/pull/211)):** 1174 of 1193 roots are proven:
 1137 `simplify` and all 37 `simplify_skeleton`. All 258 arithmetic roots are enabled.

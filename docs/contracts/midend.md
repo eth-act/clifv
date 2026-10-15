@@ -916,7 +916,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   totals remain seven expectation failures, ten disagreements and two oracle errors.
   The optional survey was absent.
 
-**R4 (2026-10-10, `agent/shifts-r4`, locally merge-ready):**
+**R4 (2026-10-10, `agent/shifts-r4`, merged in [#212](https://github.com/eth-act/clifv/pull/212)):**
 - `RuleShiftsConst`, `RuleShiftsRotate` and `RuleShiftsDistribution` prove all seventeen
   sound remaining roots with unchanged `RuleOk` statements, guards and fuel.
   Shifts reach 73/75; total coverage is 1191/1193. False originals 84/88 stay disabled;
@@ -951,7 +951,6 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   3389 → 3043. All 445 file summaries are no worse; no refinement failures, pass/rule
   errors or verifier rejections. Existing interpreter totals remain seven expectation
   failures, ten disagreements and two oracle errors. The optional survey was absent.
-  Publication remains pending under the agent no-push/no-merge boundary.
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (258): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
