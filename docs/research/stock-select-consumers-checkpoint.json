@@ -1,0 +1,151 @@
+{
+  "updated_utc": "2026-10-15T05:16:35.214480+00:00",
+  "scope": "Actual csel425/lower_select_cond660/lower_select659 helper contracts and alias-resolved consumer values. Independent from comparison publication.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockSelectBuilders.lean": "dbf4d886db2043a014219a0ac24aafa08961d7c8e708dbaabe1c3e1b5c928645",
+    "FV/Backend/Proof/StockSelectConditions.lean": "e21fd2c4796cf2dff8a90500f659b0a6b8b876f435f35bb7730cf57c2868b868",
+    "FV/Backend/Proof/StockSelectValues.lean": "16ddceb34c6c8f6eec2484b297902a92940d5c5d7ccf73decba6d670617cb91a",
+    "FV/Backend/Proof/StockSelectWitness.lean": "a17e947b8934f229b264453bdd90dc7ea99a6c678f5576c17c6a0ad4734fabdd",
+    "FV/Backend/Proof/StockSelectedBindingFlow.lean": "d4a2169b00d030db0b6d6a3e5030e0bdbbdc5cb2182705116550fc81e0e0a67f",
+    "FV/Backend/Proof/StockSelectedFlow.lean": "532fb56fbcf6948a144d48b2c74a6f2a63951dbb5ce07668c63041bf2fa21021",
+    "FV/Backend/Proof/StockSelectedProvenance.lean": "acaf403d3fd9e98f8e1fbf83a11a7c22ce6f69b5afd7eea484bc1452bca41f5f",
+    "FV/Backend/Proof/StockSelectionReceipts.lean": "03933df5f2fa56fcd088cac8d228425a7917037472dab01203de6e1c8e5229e9"
+  },
+  "normal_axioms": {
+    "Backend.Stock.Proof.ScalarSelect.stock_csel_builder": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_cond_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_flags_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_zero_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_flags_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.Witness.stock_select_flags_helper_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.Witness.stock_select_zero_helper_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.Witness.stock_select_resolved_value_witness": [
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "mcp": {
+    "success": true,
+    "timed_out": false,
+    "diagnostics": [
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_csel_builder' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 2,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_cond_run' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 3,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_flags_run' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 4,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_zero_run' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 5,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_flags_resolved' depends on axioms: [propext, Quot.sound]",
+        "line": 6,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.Witness.stock_select_flags_helper_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 7,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.Witness.stock_select_zero_helper_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 8,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.Witness.stock_select_resolved_value_witness' depends on axioms: [propext, Quot.sound]",
+        "line": 9,
+        "column": 1,
+        "lean_tags": null
+      }
+    ]
+  },
+  "source_scan_warnings": {
+    "FV/Backend/Proof/StockSelectBuilders.lean": [],
+    "FV/Backend/Proof/StockSelectConditions.lean": [],
+    "FV/Backend/Proof/StockSelectValues.lean": [],
+    "FV/Backend/Proof/StockSelectWitness.lean": [],
+    "FV/Backend/Proof/StockSelectedBindingFlow.lean": [],
+    "FV/Backend/Proof/StockSelectedFlow.lean": [],
+    "FV/Backend/Proof/StockSelectedProvenance.lean": [],
+    "FV/Backend/Proof/StockSelectionReceipts.lean": []
+  },
+  "build": {
+    "jobs": 377,
+    "log": "/tmp/select-witness-build3.log",
+    "sha256": "60ac66b44463ef707e47e3520caf92bafd50465b25d90164b50ef665d76c3ffc"
+  },
+  "normal_audit": {
+    "log": "/tmp/select-consumers-normal-axioms.log",
+    "sha256": "759713f1ec800f1f730355136d492d6fb5e4a77302914a9fd9516c2cea32b079"
+  },
+  "witnesses": [
+    "Actual425/660/659 explicit flags helper executions on accepted sparse-ID original context; all four scalar widths/all conditions",
+    "Actual659 Zero/NotZero helpers; both machine widths/all four scalar widths",
+    "Distinct selected64-bit values7/9; dirty upper bits; nonidentity aliases; fresh-only write frame"
+  ],
+  "limitations": [
+    "These are helper witnesses; retained select/minmax records and original source-step transfer are pending.",
+    "Original source/whole-driver simulation/completeness and production integration remain unfinished.",
+    "No full repository gates run for these new files; not merge-ready."
+  ],
+  "next": [
+    "Invert actual successful scalar660 requests to derive safe maps internally.",
+    "Minmax strict ult/slt/ugt/sgt conditions take explicit Flags; zero-special eq/ne and adjusted uge/sge paths are unreachable for those CCs.",
+    "Compose actual emitter semantic flag prefixes with659 csel, retained binding, original guarded source transfer and complete Stock.lower/source witnesses."
+  ],
+  "production": "legacy; #140 active/incomplete"
+}
