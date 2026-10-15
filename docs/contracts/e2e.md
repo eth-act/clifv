@@ -1604,6 +1604,24 @@ by totality; the separate acyclicity premise of executable correctness is unchan
 input outside `InScopeP` it prints the failing conditions and links with `leanLink` (not covered
 by `compileExe_correct`).
 
+**The executable on the original source program (S2/S3, `FV/Link/ExeSource.lean`).**
+`compileExe_correct` relates the executable to `prog S.input`, the input's functions after the
+`i128` legalisation (`compileExe` runs no optimiser). `Link.compileExe_correct_source` relates
+it to the **original** parsed program `S.input.srcProg` (`LinkInput.prog_eq : I.prog =
+legalProg I.srcProg`): for an input in the decidable source domain `SrcScopeB`, a return of the
+original program's whole-program CLIF run of a source function `f` on `args` is the
+executable's return of the results split by `f`'s return groups, after an outside call of the
+compiled `legalize f` with the ABI-split arguments; a trap is the same trap. It composes
+`E2E.LegalProgram.legalProg_refines` with `compileExe_correct`; no checker premise. Statement,
+premises and their kinds: `docs/contracts/legalize128.md` ("The executable compiler on the
+original source program"). The premises beyond `compileExe_correct`'s: the outside
+environment's `HelperOk`/`ExtLegal`/`EnvKeepsBounded` when a source function mentions `i128`,
+`sigOf = none` with indirect calls (environment); the source run's memories below `2^64` and,
+for traps, its `NoMemTrap` and the target's `TrapsExplicit` (run conditions). Witness:
+`crate-proofs/Crates/CompileExeSourceWitness.lean` (`g_u128`'s `wmul_u128` calling
+`wrapping_mul` on `i128` values, under `Link.SourceWitness.helperBase`; the executable returns
+the split product in x0, x1).
+
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
 optimised dump of the missing-data retry), `lean-regalloc`'s output for it (`fv-rustc` runs as
