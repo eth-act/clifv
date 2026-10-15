@@ -1,6 +1,6 @@
 {
-  "updated_utc": "2026-10-14T08:41:00.178877+00:00",
-  "head": "3ae4c79 (fully validated local add/subtract batch; local commit pending)",
+  "updated_utc": "2026-10-14T09:48:34.871183+00:00",
+  "head": "22894a1 (fully validated local high-multiply batch; local commit pending)",
   "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
   "source_sha256": {
     "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
@@ -30,10 +30,27 @@
     "FV/Backend/Proof/StockAddSubShiftWitness.lean": "9ec21717182c1c258275ccd70d431b13500fb2c01585971cd5272814a09cec37",
     "FV/Backend/Proof/StockAddSubSourceValues.lean": "b2c74ada0aa877d49e0a2c7c301e0d384a3967273e0f8cd4d3d4ecac4d840846",
     "FV/Backend/Proof/StockAddSubUnifiedValues.lean": "e04186e795d5421063a0ef8c0a20f0948d571d02f65dd40d834b62606329bd81",
-    "FV/Backend/Proof/StockAddSubValues.lean": "b2a2b6219db84d073bd9c38e1c4b63526300493479e940d43cb7994def846e90"
+    "FV/Backend/Proof/StockAddSubValues.lean": "b2a2b6219db84d073bd9c38e1c4b63526300493479e940d43cb7994def846e90",
+    "FV/Backend/Proof/StockHighMulDispatch.lean": "52b11b7a5074fbf3173d01c4cf4fc700f4001c9d20c8e36be951e84019a8cb41",
+    "FV/Backend/Proof/StockHighMulMatch.lean": "04203881c1a85f94648fff3780d54115423234b88644b9a9c0e634379c94d5b8",
+    "FV/Backend/Proof/StockHighMulNarrowRecordValues.lean": "677e8cb138a4453c1c234f5590ce779ad1c26a181d7b802a4f3b9a1380880898",
+    "FV/Backend/Proof/StockHighMulNarrowRhs.lean": "15843ce6b1e723ccd91fbf4f4b1c41504c1f4818e241f105e7c8c4cc5defba83",
+    "FV/Backend/Proof/StockHighMulNarrowSelected.lean": "fc106e51f5ae48767cc450a5c2120264afe273a3015a976875265dbe5df1aebb",
+    "FV/Backend/Proof/StockHighMulNarrowSemantics.lean": "de24f7b5b5c3316a8fe373d3cab875bef63b9cc19d9ffd912b0fc453eba29037",
+    "FV/Backend/Proof/StockHighMulPure.lean": "a2f08dccd56f0def25b907594b71ab995e03061b60ae068c2dca5ff090495e02",
+    "FV/Backend/Proof/StockHighMulRecordIntervals.lean": "5aaa2991a9840b4d68b03dacbd5b12e6988386650da2d073411232b38bb2b2f7",
+    "FV/Backend/Proof/StockHighMulRecordValues.lean": "739597c4944f70d5fac62fe91d7a14511135d5dde5a4a39371e1d6cf0cdd8cb6",
+    "FV/Backend/Proof/StockHighMulRequests.lean": "004f3d75d2cedc1a8973135f758aa986681715787e7c17c16e79a8d573e5bedf",
+    "FV/Backend/Proof/StockHighMulRhs.lean": "1beabd51437b79df5f8c292b3cf54e9ea372e866115792f5712d56ab9a0e3eb7",
+    "FV/Backend/Proof/StockHighMulSelected.lean": "19e4dea0bf250d47116576375240c28f968c5cd85abcaeed45a8660cbe485a78",
+    "FV/Backend/Proof/StockHighMulSemantics.lean": "384771b6e9babdef71576a65d82a5253f0cb682bd77e3408e012c8b5a9efdb66",
+    "FV/Backend/Proof/StockHighMulSourceValues.lean": "d6d1692cf407cf90d730bfe03b422f11425db1b91d12e753ac651d5a11c56acc",
+    "FV/Backend/Proof/StockHighMulWideRecordValues.lean": "d9171e2a1a0b3b8ba226f964a226bcfaddbea08e3c47dfdec0fc06ae7e8566f2",
+    "FV/Backend/Proof/StockHighMulWitness.lean": "20cc303c35acc7a2552c1e954dc962a37a22eb8b31816a7205fee047883071dc",
+    "FV/Backend/Proof/StockHighMulWitnessRuns.lean": "b38aee6aae9ea3ce617ce1b774102b465ac500b7d430c40142ee3b1530f3823c"
   },
   "generated_lower_roots": 517,
-  "roots_with_identified_guarded_stock_record_value_bridge": 69,
+  "roots_with_identified_guarded_stock_record_value_bridge": 73,
   "roots": [
     {
       "rule": "rule_lower_53",
@@ -2042,8 +2059,8 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 2295,
       "isle_name": "smulhi_64",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
+      "record_value_proof": "FV/Backend/Proof/StockHighMulRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness; family source transfer derives getters and original selection internally",
       "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
     },
     {
@@ -2052,8 +2069,8 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 2309,
       "isle_name": "smulhi_fits_in_32",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
+      "record_value_proof": "FV/Backend/Proof/StockHighMulRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness; family source transfer derives getters and original selection internally",
       "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
     },
     {
@@ -2062,8 +2079,8 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 2323,
       "isle_name": "umulhi_64",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
+      "record_value_proof": "FV/Backend/Proof/StockHighMulRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness; family source transfer derives getters and original selection internally",
       "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
     },
     {
@@ -2072,8 +2089,8 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 2337,
       "isle_name": "umulhi_fits_in_32",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
+      "record_value_proof": "FV/Backend/Proof/StockHighMulRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness; family source transfer derives getters and original selection internally",
       "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
     },
     {
