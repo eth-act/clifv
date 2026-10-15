@@ -5,10 +5,10 @@ The full objective remains **unfinished**: prove the preserved Stock lowering
 driver and switch production while retaining accepted-input and theorem parity.
 This file is the resume entry point; the smaller family plans are supporting records.
 
-Latest validated local batch: scalar add/subtract, all17 actual candidates,
-84 complete source/record cases, auxiliary projection witness and569 audited
-roots (509 prior +60 new). See the
-[add/subtract receipt](../research/stock-addsub-audit.json) and final checkpoint below.
+Latest validated local batch: scalar high multiplication, all four actual
+signed/unsigned roots777–780, eight complete source/record cases and603 audited
+roots (569 prior +34 new). See the
+[high-multiply receipt](../research/stock-highmul-audit.json) and final checkpoint below.
 Whole-driver simulation/completeness, uncovered families/effects and production
 integration remain required; production still uses the legacy driver.
 The initial recovery snapshot and earlier checkpoints are retained as history.
@@ -1157,3 +1157,109 @@ consumers, with fresh complete Stock comparison and final production gates.
 Preserve original inputs/old variants/identities/stages/trust sets/#179. Full
 #140 active/incomplete; production legacy; local commit next; no push/merge.
 Earlier pending checkpoints above are historical and superseded for this batch.
+
+## High-multiply foundations checkpoint
+
+Three uncommitted StockHighMul modules build385jobs.22-term pure helper closure
+covers signed/unsigned high multiply, extension and shifts while preserving
+all Stock scheduling fields. Actual64-bit helper/root RHSs request the guarded
+original sources; alias-resolved execution computes original high products and
+preserves every other register. Actual narrow signed/unsigned widening requests
+mark their original operands and allocate64-bit temporaries; final shift helpers
+also build. Existing narrow arithmetic lemmas are reused unchanged.
+
+Seven new roots plus two existing narrow-math roots have matching fresh normal/
+MCP standard-only audits; three original source scans are clean. Preservation
+receipt/archive:
+[stock-highmul-foundations-checkpoint.json](../research/stock-highmul-foundations-checkpoint.json).
+This is partial; no completed family or full-gate claim. Next compose narrow
+four-instruction RHS/execution, original canonical matching/success request
+inversion/all4-root dispatch, retained binding/source transfer, complete witnesses
+and569-prior/exact-seven/full gates. All remaining original families/effects/
+control/deferred, whole-driver simulation/completeness, production integration
+and fresh complete Stock comparison persist. Last full batch22894a1; production
+legacy; #140 active/incomplete; no commit/push/merge for this checkpoint.
+
+## High-multiply narrow composition and dispatch checkpoint
+
+Seven uncommitted StockHighMul modules build393jobs. Both actual narrow RHS
+paths compose the real widening requests, multiply, shift and output while
+preserving full marked state across four writes. Narrow four-instruction
+alias-resolved execution computes signed/unsigned original high products and
+preserves registers outside the allocation interval. Its low-level second-source
+non-capture condition must be derived internally at the actual record/source
+layer; existing stock_lower_available_alias_outside_record supplies the required
+original-availability boundary. No additional source-contract premise is accepted.
+
+Original accepted source data and canonical wide/narrow matches build; actual
+original opcode/type dispatch derives all four selected roots777–780 internally.
+Fourteen public roots have matching fresh normal/MCP standard-only audits; seven
+original source scans have zero warnings. Earlier seven root sets are unchanged.
+Preservation receipt/archive:
+[stock-highmul-composition-checkpoint.json](../research/stock-highmul-composition-checkpoint.json).
+This remains partial. Next success-derived helper source types/guards, selected
+values and real-record alias non-capture, retained binding/source transfer,
+complete non-vacuity witnesses and569-prior/exact-seven/full gates. All remaining
+original families/effects/control/deferred, source/block/whole-driver simulation/
+completeness, actual production integration/fresh complete Stock comparison
+obligations persist. Last full batch22894a1; production legacy; #140 active/
+incomplete; no commit/push/merge for this partial checkpoint.
+
+## High-multiply successful requests and actual record intervals
+
+Ten saved StockHighMul modules build396jobs. Successful real widening calls now
+supply original guarded mappings/full state; original frame typing/getters exclude
+narrow64-bit pass-through internally. Both actual narrow RHS requests derive
+source types/guards/mappings and the exact four-write state. Actual wide requests
+and output/state are observed. Original source selection derives wide/narrow
+roots internally; wide selected values compute the original high product through
+final aliases and preserve all other registers.
+
+Actual narrow retained records allocate input+4, including result binding. The
+original availability invariant and this derived frontier discharge second-source
+non-capture internally, with no additional source-contract premise. Eleven new
+public roots have matching fresh normal/MCP standard-only audits; all ten original
+source scans have zero warnings. Seven earlier source hashes are unchanged.
+Receipt/archive:
+[stock-highmul-request-record-checkpoint.json](../research/stock-highmul-request-record-checkpoint.json).
+This is partial: complete actual non-vacuity witnesses/premise reviews and full
+batch gates have not yet run. Next compose narrow selected machine values using
+the internally derived record non-capture, actual retained result binding/code/
+execution and guarded original-source transfer; then complete witnesses and569
+prior/exact-seven/full batch validation. All uncovered families/effects/control/
+deferred, source/block/whole-driver simulation and completeness, production
+integration across all consumers and fresh complete Stock comparison persist.
+Full #140 active/incomplete; production legacy; last full batch22894a1 local/
+unpublished. Saved work preserved; no commit/push/merge for this checkpoint.
+
+
+## Scalar high-multiply full family validation
+
+All four actual signed/unsigned roots777–780 now compose original typed matching,
+derived dispatch, guarded successful helpers/full state, final-alias original
+machine values, retained result binding/code/allocation and original demanded-
+and-available/source-step transfer. Source-by-instruction derives both getters
+and selection internally. Narrow second-source non-capture follows internally
+from original availability and the actual four-temporary record frontier; no
+extra source-contract premise is accepted. Source memory and post-frame preserved.
+
+Eight complete actual source/record cases cover signed/unsigned8/16/32/64, sparse
+original IDs7/31/result100, source values-7/5 and dirty upper machine bits. All34
+public-root premise reviews and fresh normal/MCP audits pass with standard axioms;
+17 original source scans have zero warnings. All569 prior sets/exact seven final
+compiler trust sets unchanged in603-root audit. Full1646/crates1171/runtime4672/
+0fail/0disagree/seven unchanged known non-runnable/byte-identical report/encoder
+1292identical0different/both E2E1150accepted0rejected pass; all1150 function identity
+and stage fields equal both modes and the add/sub baseline.
+
+Final receipt: [stock-highmul-audit.json](../research/stock-highmul-audit.json).
+Family plan: [stock-scalar-highmul.md](stock-scalar-highmul.md).
+Inventory identifies73 guarded record bridges among517 generated roots; diagnostic
+only, not reachable-rule completeness. Next division, remaining casts/logical/
+comparison/minmax/select, uncovered effects/control/deferred invariants, source/
+block/whole-driver simulation and completeness under original conditions, actual
+production integration across compiler/checker/linker/generated-proof consumers,
+and fresh complete Stock comparison/final production gates. Preserve original
+inputs/old variants/identities/stages/trust sets/#179. Production legacy; full #140
+active/incomplete; local commit next; no push/merge. Earlier partial checkpoints
+are preserved as history and superseded for this high-multiply batch.
