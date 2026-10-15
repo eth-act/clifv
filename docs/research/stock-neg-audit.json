@@ -1,0 +1,171 @@
+{
+  "base": "8a2786e59e71aa6fe0d28a5e953b04df71167a63",
+  "updated_utc": "2026-10-14T00:46:59.463648+00:00",
+  "scope": "Actual scalar negation root857/id756: full match/RHS state, original scalar values through final aliases, retained-record result binding and original guarded source transfer. Eight complete source/record witnesses, four scalar widths, parameter and earlier constant producers. No compiler/default or original accepted-input changes.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockNegRecordValues.lean": "e7bcfb6eaeff49a5ce6dab2c18bb767f3e285474d81c06072289b8835233f69f",
+    "FV/Backend/Proof/StockNegRhs.lean": "4b0d348820e127150053401b29bcab8616d90808458278cf2797f59e6991a22a",
+    "FV/Backend/Proof/StockNegSelected.lean": "42d94742088efa88c353a6c7b93d068ab8808a29abbf7f53ea330578636e7c3e",
+    "FV/Backend/Proof/StockNegSemantics.lean": "1215997741d4b5ac0740a83b438ebdf66a83d5673d7b30c4cda9310cf03efe3f",
+    "FV/Backend/Proof/StockNegSourceValues.lean": "05d3265c8fee7a2fe54c7abea1097a02d5cb20bf1420167359b10ef0e82558ed",
+    "FV/Backend/Proof/StockNegWitness.lean": "93a02a7273e32d03fdfda26377a5f0f55d83a45a48e577bc650e164661a52c68"
+  },
+  "trust": {
+    "previous_audit": "docs/research/stock-source-scope-audit.json",
+    "previous_roots_checked": 352,
+    "previous_axiom_sets_unchanged": true,
+    "new_roots": {
+      "Backend.Stock.Proof.Neg.stock_lower_neg_available_values": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Neg.stock_neg_match": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Neg.stock_neg_rhs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Neg.stock_neg_rhs_requests": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Neg.stock_neg_selected_values": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Neg.stock_neg_resolved": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Neg.stock_lower_neg_available_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Neg.Witness.stock_lower_neg_source_values_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "final_compiler_roots": {
+      "E2E.backend_correct_final_total": {
+        "count": 803,
+        "sorted_axioms_sha256": "7b73dc8531ed895171da5f31e74d7035b770ff2ffe89e5291e8ab25f970eecb3"
+      },
+      "E2E.backend_correct_final_total_emit_input": {
+        "count": 853,
+        "sorted_axioms_sha256": "f0d9e748fc0049607d5c3bb8aa0f82a2bc80c79090f0ea2dac4e18608fd43212"
+      },
+      "E2E.backend_correct_final_total_relaxed": {
+        "count": 803,
+        "sorted_axioms_sha256": "7b73dc8531ed895171da5f31e74d7035b770ff2ffe89e5291e8ab25f970eecb3"
+      },
+      "E2E.LinkCheck.crate_correct_inScope_proven": {
+        "count": 830,
+        "sorted_axioms_sha256": "381a2738f97cbbeb94b17941b6cf3da54f75db1a8316ff26cbc3dfd9167a93fd"
+      },
+      "Link.compileExe_correct": {
+        "count": 830,
+        "sorted_axioms_sha256": "381a2738f97cbbeb94b17941b6cf3da54f75db1a8316ff26cbc3dfd9167a93fd"
+      },
+      "Link.compileExe_total": {
+        "count": 823,
+        "sorted_axioms_sha256": "3375522de295bc8961036d6a8bc5f841cf0fcdef4f32c02282466596f90dac61"
+      },
+      "Link.compileExe_spec": {
+        "count": 3,
+        "sorted_axioms_sha256": "118dbe3070706ccab3cf3c2b619838c8b87613556f4cb9e0b80a8c874e29f1d8"
+      }
+    }
+  },
+  "witnesses": {
+    "complete_cases": 8,
+    "widths": [
+      8,
+      16,
+      32,
+      64
+    ],
+    "operand_forms": [
+      "parameter",
+      "earlier constant producer with original vreg unmaterialized"
+    ],
+    "dirty_upper_bits": true,
+    "kernel_checked_actual_lowering": true
+  },
+  "fresh_mcp": {
+    "public_roots_checked": 8,
+    "standard_only": true,
+    "source_warnings": 0,
+    "artifact": "docs/research/stock-neg-mcp-verify.json",
+    "source_scan": "docs/research/stock-neg-source-scan.json",
+    "method": "Compiled declaration import audit; original sources independently scanned with unchanged MCP patterns."
+  },
+  "gates": {
+    "full_build_jobs": 1534,
+    "crate_proof_jobs": 1171,
+    "runtime_pass": 4672,
+    "runtime_fail": 0,
+    "runtime_disagree": 0,
+    "runtime_known_not_runnable": 7,
+    "runtime_report_identical_to_previous": true,
+    "encoder_identical": 1292,
+    "encoder_differ": 0,
+    "e2e_default_accepted": 1150,
+    "e2e_legacy_accepted": 1150,
+    "e2e_rejected": 0,
+    "full_identity_stage_parity_between_modes_and_previous": true,
+    "identity_sha256": "8cdc10dc3ee93c52e91dff68bd798e607e775f016492f95dc0215a100a8af963",
+    "legacy_identity_sha256": "c6073d7d22cb356ac863dbbcae7e07d92568c47c34b7adee542c40e014a5430b"
+  },
+  "logs": {
+    "full": {
+      "path": "/tmp/driver-resume_neg-full.log",
+      "sha256": "aec0aea641c84063981b354a244e3c28d1808ee1828f665d7c2c35b72090c35b"
+    },
+    "crates": {
+      "path": "/tmp/driver-resume_neg-crates.log",
+      "sha256": "eac0d9b7e8fec967cc1aef0b033e5b426630e9b33e31e0cb010bc353201bab9b"
+    },
+    "runtime": {
+      "path": "/tmp/driver-resume_neg-runtime.log",
+      "sha256": "390e3042cda40fde1899a6c270ea598f44b59ac8c03427c5b20a21ed0af2f876"
+    },
+    "encoder": {
+      "path": "/tmp/driver-resume_neg-encoder.log",
+      "sha256": "6e5c423e505ae964646f9bd37f28c4870bb02c02a47dd8bf8c1ab5d646ff08e6"
+    },
+    "e2e": {
+      "path": "/tmp/driver-resume_neg-e2e.log",
+      "sha256": "de6eb13d54dbde6376a6e6c45f2f4a0b6f3f8edc31a20037e8818926f8458725"
+    },
+    "legacy-e2e": {
+      "path": "/tmp/driver-resume_neg-legacy-e2e.log",
+      "sha256": "782c16a7bf16dfb80fe6a2f7b554249095f514ff5b8dc93f6ccf21b2e4980135"
+    },
+    "axioms": {
+      "path": "/tmp/driver-resume_neg-axioms.log",
+      "sha256": "ef4d1e78193d8a8d9ad333a62a1a3ef17bb75bac0d39ce364266a6cfeb99d59b"
+    },
+    "witness-build": {
+      "path": "/tmp/driver-resume_neg-witness-build.log",
+      "sha256": "793fed0a0fc3f3f50cff471c672df0311721e328c906a4706be2794430367171"
+    }
+  },
+  "remaining": [
+    "Execution/source transfer for remaining closure rules",
+    "Deferred effects and trapping/sinking invariant",
+    "Source/block/whole-driver simulation and completeness under original conditions",
+    "Actual compiler/checker/linker/generated-proof production cutover",
+    "Fresh complete stock comparison"
+  ],
+  "production": "legacy; full #140 active and incomplete; no push or merge"
+}

@@ -1,0 +1,5 @@
+import FV.Backend.Proof.StockNegDispatchWitness
+import FV.Backend.Proof.StockBitrevDispatchWitness
+
+#print axioms Backend.Stock.Proof.Neg.DispatchWitness.stock_lower_neg_dispatch_source_witness
+#print axioms Backend.Stock.Proof.ScalarBit.BitrevDispatchWitness.stock_lower_bitrev_dispatch_source_witness

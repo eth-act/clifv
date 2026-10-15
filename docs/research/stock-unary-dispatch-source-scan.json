@@ -1,0 +1,13 @@
+{
+  "scanner_source": "/home/cody/.cache/uv/archive-v0/txMZz4UJwvitBV53gFJ1J/lib/python3.12/site-packages/lean_lsp_mcp/verify.py",
+  "scanner_sha256": "73a580d98bb202121fca6021fcc611fd6d98d610c49a872924e5389eacf2be40",
+  "adaptation": "Standalone execution: unused orjson loads import replaced with stdlib loads; patterns and scan_warnings unchanged.",
+  "files": {
+    "FV/Backend/Proof/StockRootOpcode.lean": [],
+    "FV/Backend/Proof/StockRootOpcodeMatch.lean": [],
+    "FV/Backend/Proof/StockUnaryDispatch.lean": [],
+    "FV/Backend/Proof/StockNegDispatchWitness.lean": [],
+    "FV/Backend/Proof/StockBitrevDispatchWitness.lean": [],
+    "FV/Backend/Proof/StockBswapDispatchWitness.lean": []
+  }
+}

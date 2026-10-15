@@ -301,3 +301,174 @@ Updated UTC: 2026-10-14T00:25:34.544757+00:00
 Original mapped source scope proves372 of517 generated lower roots cannot match ordinary source instructions. Actual first-match and retained-record selection derives membership in the145 remaining closure roots internally. Exact partition counts are kernel-checked; concrete excluded-root and complete emitted-source witnesses pass. This is scope exclusion, not execution coverage; terminator/branch contexts remain separate.
 
 All10 new roots normal/MCP standard-only;342 prior sets unchanged (352 total),0 source warnings. Full1528/crates1171/runtime4672 with0fail/0disagree and7known non-runnable; encoder1292/0; bothE2E1150/0 with full identity/stage parity. Receipt docs/research/stock-source-scope-audit.json; plan docs/plans/stock-source-scope.md. Inventory/family classification now links proof-backed ordinary-source exclusions. No legacy Cov/T6/IselLcf/optimizer interface or production changes. Next remaining closure execution/source transfer, effects/control/deferred semantics, full simulation/completeness and actual production integration/complete stock comparison. Full #140 active/incomplete; no push/merge.
+
+
+## Scalar negation continuation
+
+Updated UTC: 2026-10-14T00:43:19.040804+00:00
+
+Five StockNeg core modules build and the full source witness tail checks.
+The eight-case concrete witness build is live; audits and full gates are
+prepared. See stock-scalar-negation.md. Previous goal turn made concrete
+progress by assembling and launching the full witness module; it was not
+blocked. Full #140 remains active/incomplete, production legacy, no push/merge.
+
+
+## Scalar negation validated locally
+
+Updated UTC: 2026-10-14T00:47:24.136622+00:00
+
+Six modules prove actual scalar negation root857/id756, full state/trace,
+resolved subtraction from zero, real retained result binding and original
+source transfer with existing demand/availability guards. Eight complete
+source/record witnesses cover all four scalar widths, parameter operands and
+earlier constant producers with original source registers unmaterialized and
+dirty upper bits. All8 new roots normal/MCP standard-only;352 prior sets
+unchanged (360total);0 original-source warnings. Full1534/crates1171,
+runtime4672/0fail/0disagree/7known with identical report, encoder1292/0;
+bothE2E1150/0 with complete identity/stage parity. Receipt stock-neg-audit.json.
+
+29 guarded bridges among517 generated roots remains an inventory, not whole-
+driver execution coverage. Next remaining closure arithmetic/count/rotation/
+reversal/comparison/select/extension/look-through families; effects/control and
+deferred invariants; full source/block/whole-driver simulation/completeness;
+actual production integration and fresh complete stock comparison. Full #140
+active/incomplete; production legacy; no push or merge.
+
+
+## Bit-reversal core saved, family unfinished
+
+Updated UTC: 2026-10-14T00:55:34.220179+00:00
+
+Local/unpublished HEAD 1fd7e7dca84a40136b7ff3bcbb5c672eca57c101. Three untracked modules StockBitHelper,
+StockBitrevRhs and StockBitrevSemantics build. Six new core roots normal/MCP
+standard-only;0 original-source warning patterns. Shared BitRR helper retains
+full scheduling state; all three bit-reversal root matches/RHSs are proved.
+A generic kernel bit-index proof covers narrow reversal followed by shift,
+including dirty upper bits. Exact source hashes and pending steps are saved
+in docs/research/stock-bitrev-core-checkpoint.json. No full bit-reversal witness
+or record/source composition or new full gates claimed. Last complete batch
+remains stock-neg-audit.json (360 audited roots). Next derive guarded RHS
+requests and fallback width restrictions, then resolved execution/selected
+values, retained binding/original source transfer and eight complete witnesses.
+Full #140 active/incomplete, production legacy; no push or merge.
+
+
+## Scalar bit reversal validated locally
+
+Updated UTC: 2026-10-14T01:12:20.511148+00:00
+
+Eight modules cover actual roots1931/1937/1946 (ids915/916/918), complete
+matching/RHS scheduling state, success-derived operand requests, first-match
+wide fallback constraints, resolved scalar values, actual retained result
+binding and original guarded source transfer. Kernel bit-index reasoning proves
+narrow reversal/shift correctness independently of dirty upper bits. Eight
+complete source/record witnesses expose actual selected roots, emitted decisions
+and nonempty bindings at8/16/32/64, including parameter and unmaterialized earlier
+producer operands. The previous partial core checkpoint is historical evidence;
+current complete source hashes and gates are in stock-bitrev-audit.json.
+
+All14 new roots normal/MCP standard-only;360 prior sets unchanged (374total),
+0 source warnings. Full1542/crates1171/runtime4672/0fail/0disagree/7known with
+identical report; encoder1292/0; bothE2E1150/0 with complete identity/stage parity.
+32 identified guarded record bridges among517 roots remains an inventory, not
+whole-driver coverage. Remaining count/byte-swap/rotation, arithmetic/comparison/
+select/extension/look-through families, effects/control/deferred invariants,
+full source/block/whole-driver simulation/completeness and actual production
+integration/complete stock comparison remain required. Full #140 active and
+incomplete; production legacy; no push or merge.
+
+
+## Byte-swap math saved, family unfinished
+
+Updated UTC: 2026-10-14T01:17:54.573264+00:00
+
+Local/unpublished HEAD 0004573d291c0d7b8d17d73d65c56aba7773e43c. StockBswapSemantics builds362jobs.
+Two new math roots pass normal/MCP standard-only audits,0 source warnings.
+Halfword REV16 low-bit correctness uses kernel bit-index reasoning rather
+than legacy bit-blasting; generic word/doubleword contracts use exact operand
+width. Source hashes and pending work: stock-bswap-core-checkpoint.json.
+Next actual roots2035/2038/2041 match/RHS/request contracts, resolved execution
+and selected values, retained binding/original source transfer, six complete
+16/32/64 parameter/earlier-producer source witnesses, full prior-root/gate
+validation. Last complete batch: stock-bitrev-audit.json (374roots).
+Full #140 active/incomplete; production legacy; no push or merge.
+
+
+## Byte swaps and source-driven unary transfer validated locally
+
+Updated UTC: 2026-10-14T01:42:03.876677+00:00
+
+Seven modules cover actual roots2035/2038/2041 (ids932/933/934), full match/RHS
+state, success-derived mapped requests, resolved values, retained binding and
+original source transfer. Kernel bit-index reasoning proves REV16 correctness
+without legacy byte-swap bit-blasting. Six complete16/32/64 source/record
+witnesses expose real selected roots/nonempty bindings, parameters and earlier
+producers with original source registers unmaterialized. Halfword fixtures
+include dirty bits just above16 bits inside the physical32-bit operand.
+
+StockUnarySourceValues derives restricted typed operands from actual original
+source success and unchanged dominance. Getter-free negation/bit-reversal/
+byte-swap variants preserve earlier theorem variants; new byte-swap fixtures
+use the source-driven interface. The older8+8 complete negation/bit-reversal
+fixtures still inhabit their unchanged source/input conditions. Initial witness
+build370jobs and source-driven build403jobs pass. All14 new roots normal/MCP
+standard-only;374 previous sets unchanged (388total),0 source warnings.
+Full1549/crates1171/runtime4672/0fail/0disagree/7known with identical report;
+encoder1292/0; bothE2E1150/0 with complete identity/stage parity. Current source
+hashes/gates: stock-bswap-audit.json; the previous math checkpoint is historical.
+
+35 guarded bridges among517 generated roots remains an inventory, not whole-
+driver coverage. Next derive actual selected-rule families from original source
+opcode/type data, then remaining families/effects, deferred invariants, full
+source/block/whole-driver simulation/completeness, actual production integration
+and fresh complete stock comparison. Full #140 active/incomplete, production
+legacy; no push or merge.
+
+
+## Opcode-based dispatch inventory saved, matching connection pending
+
+Updated UTC: 2026-10-14T01:48:35.817774+00:00
+
+Local/unpublished HEAD b0c23c47dee59996ce0f1e4448599dffa5213e2b. StockRootOpcode builds352jobs.
+Three new inventory roots normal/MCP standard-only,0 source warnings. Kernel
+checks every original closure root has a recognized primary opcode; negation
+candidates exactly[756], byte swaps[932,933,934]. This is syntax coverage, not
+execution or matching correctness. Current hashes/pending work are saved in
+stock-root-opcode-checkpoint.json. Next prove sourceOpcodePattern matching
+soundness via canonical inst_data_value/enum inversions, handle the same bind/and
+wrappers as legacy rootFmt, transport to actual Stock LowerSelection and derive
+selected families from original source data/closure membership. Then remove
+unary source-transfer rule-id premises and provide complete actual witnesses/
+full gates preserving388 prior sets. Last complete batch stock-bswap-audit.json.
+All remaining full #140 obligations persist; production legacy; no push/merge.
+
+
+## Actual opcode dispatch and unary source variants validated locally
+
+Updated UTC: 2026-10-14T02:18:14.895065+00:00
+
+Six modules prove primary-opcode recognition for all145 closure roots, its
+sound actual pattern/matching/retained-record connection, and exact negation,
+bit-reversal and byte-swap selection from original opcode/type data. Wide
+bit-reversal constraints reuse actual rejected-prefix selection. New source-
+by-instruction variants derive operand getter and selected rule id internally;
+old theorem variants and original input conditions are unchanged.22 complete
+source/record witnesses (negation8,bit reversal8,byte swaps6) use the new interface,
+with actual emitted decisions/root ids/nonempty bindings, final-alias execution,
+original post-frames, parameter/unmaterialized-producer forms and dirty upper bits.
+All three witness targets407jobs pass. All16 new roots normal/MCP standard-only;
+388 prior sets unchanged (404total),0 source warnings. Full1555/crates1171/
+runtime4672/0fail/0disagree/7known identical report; encoder1292/0; bothE2E1150/0
+with full identity/stage parity. Receipt stock-unary-dispatch-audit.json;
+plan stock-unary-dispatch.md. Earlier opcode checkpoint is historical.
+
+The complete diagnostic primary-opcode family lists (60groups/145roots) are
+saved in stock-root-opcode-families.json. Source matching is now connected to
+these candidates; remaining families still need execution/source-transfer proofs.
+35 guarded bridges remains an inventory, not whole-driver coverage. Next other
+covered-family source-based dispatch and remaining count/rotation/arithmetic/
+comparison/select/extension/look-through, effects/control/deferred invariants,
+full source/block/whole-driver simulation/completeness, production integration
+and fresh complete stock comparison. Full #140 active/incomplete; production
+legacy; no push or merge.
