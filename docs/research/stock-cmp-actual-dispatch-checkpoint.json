@@ -2,7 +2,7 @@
   "checkpoint_utc": "2026-10-15T04:21:33.713898+00:00",
   "state": "universal scalar icmp original-source dispatch verified; #140 active/incomplete",
   "production": "legacy",
-  "publication": "targeted scalar icmp proof checkpoint; full publication/repository gates remain required before merge-ready",
+  "publication": "Full local publication gates passed; coherent PR review/CI next. Full #140 incomplete, production legacy.",
   "sources": [
     {
       "path": "FV/Backend/Proof/StockCmpActualBothNonzero32AllValuesWitness.lean",
@@ -5575,10 +5575,11 @@
     "path": "/home/lee/.clifv-recovery/20261015T042133Z-actual-cmp-dispatch/checkpoint.tar.gz",
     "sha256": "ab3866c16f66c150b18a0922807b3612eb25f19f1027bf9c7b4fe38aeb4c1ff4"
   },
-  "remote_backup_branch": "agent/stock-driver-wip-backup-20261015T042238Z",
+  "remote_backup_branch": "agent/stock-driver-wip-backup-20261015T042818Z",
   "mcp_validation_method": {
     "bundled_lean_run_code_calls": 1,
     "new_public_roots_covered": 27,
     "original_source_scans": 420
-  }
+  },
+  "full_publication_gates": "docs/research/stock-cmp-publication-gates.json"
 }

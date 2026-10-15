@@ -2015,3 +2015,12 @@ Updated UTC: 2026-10-15T04:21:33.713898+00:00
 - A new complete both-nonzero fixture proves actual lowering and source transfer for original3 and5 defining constants. Left193→197 is materialized, the looked-through right194 remains unmaterialized/demand0 and deliberately contains777 in the initial machine frame; the original DFG5 value supplies immediate semantics.
 -420 modules/819 jobs;589 normal standard-only roots,27 new roots in one bundled MCP audit;395 prior hashes/562 trust sets and122 division sources unchanged. Receipt `docs/research/stock-cmp-actual-dispatch-checkpoint.json`.
 - Next: Run full build/crate/runtime/encoder/both-E2E identity/stage and public/compiler-root gates for publication of completed scalar icmp proofs, preserving824 prior roots and exact seven compiler trust sets; prepare coherent dependency-closed PR chunks and push/squash-merge after checks pass.; Complete minmax/select and other original uncovered closure rule families/effects/deferred sinking; then source/block/whole-driver simulation and completeness under original input conditions.; Switch actual compiler/checker/linker/generated-proof consumers to verified Stock only after whole-driver obligations, original theorem/accepted-input parity and a fresh complete Stock comparison are established.. Full #140 active/incomplete; production legacy.
+
+
+## Scalar icmp full local publication gates passed
+
+Updated UTC: 2026-10-15T04:27:54.571308+00:00
+
+All2188 full build/1171 crate-proof jobs pass. Runtime4672/0/0 plus the same7 known nonrunnable cases/family counts; encoder1292 identical/0 differ. Both E2E modes1150 accepted/0 rejected, byte-exact identity/stage reports match the prior validated baseline. All1413 public-root audits pass:824 prior exact axiom sets including seven compiler trust sets unchanged;589 comparison roots retain standard-only sets. All420 comparison source hashes unchanged. Evidence `docs/research/stock-cmp-publication-gates.json`. The fresh gate runner/session2491 finished successfully.
+
+Next prepare dependency-closed semantic scalar icmp PR chunks, push for CI and squash-merge only after checks pass. Continue minmax/select and all original family/effect/whole-driver simulation/completeness/actual production consumer cutover obligations; fresh complete Stock comparison remains mandatory before cutover. Full #140 active/incomplete; production legacy.
