@@ -21,7 +21,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
-**Status (2026-10-10, R2, locally merge-ready):** 1146 of 1193 roots are proven:
+**Status (2026-10-10, R2, merged in [#210](https://github.com/eth-act/clifv/pull/210)):** 1146 of 1193 roots are proven:
 1109 `simplify` and all 37 `simplify_skeleton`. All 124 icmp roots are enabled.
 R2 closes the fifteen remaining roots with unchanged `RuleOk` premises. Shared
 class/decomposition evaluators, typed composition RHS proofs and width-parametric
@@ -34,8 +34,7 @@ enablement. Full compiler/crate builds, 66 axiom audits, native filetests, encod
 and E2E gates pass. Proven-only corpus instructions now match the all-rules count:
 4668 → 2287; runtests improve from 3063 to 3055 (3389 before optimization).
 All 445 file summaries are no worse; legacy unsupported/error cases remain
-separately reported. See midend.md "R2". Publication remains pending under the
-agent no-push/no-merge boundary.
+separately reported. See midend.md "R2".
 
 **Status (2026-10-10, R5, merged in [#209](https://github.com/eth-act/clifv/pull/209)):** 1131 of 1193 roots are proven:
 1094 `simplify` and all 37 `simplify_skeleton`. All 40 spaceship roots are enabled.

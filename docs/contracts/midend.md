@@ -844,7 +844,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   seven expectation failures, ten disagreements and two oracle errors. The optional survey
   was absent.
 
-**R2 (2026-10-10, `agent/icmp-r2`, locally merge-ready):**
+**R2 (2026-10-10, `agent/icmp-r2`, merged in [#210](https://github.com/eth-act/clifv/pull/210)):**
 - `RuleIcmpIdentity`, `RuleIcmpBounds`, `RuleIcmpArithmetic`, `RuleIcmpSelects` and
   `RuleIcmpCompose` prove all fifteen remaining roots with their original statements
   and premises. The icmp family is complete at 124/124; total coverage is 1146/1193.
@@ -876,8 +876,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   and runtests 3389 → 3055, from 2289/3063 before R2. No refinement failures, pass errors
   or verifier rejections; all 445 file summaries are no worse than unoptimized baselines.
   Existing interpreter/oracle totals remain seven expectation failures, ten disagreements
-  and two oracle errors. The optional survey was absent. Publication remains pending under
-  the agent no-push/no-merge boundary.
+  and two oracle errors. The optional survey was absent.
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (230): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
