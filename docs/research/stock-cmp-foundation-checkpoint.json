@@ -1,0 +1,490 @@
+{
+  "checkpoint_utc": "2026-10-14T15:48:35.849572+00:00",
+  "state": "comparison standard-kernel arithmetic/body/pure-builder foundation; full goal active/incomplete",
+  "normal_axioms": {
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_flag": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_carry_flag": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_ge_flag": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_conditions": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_extension": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_extension": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_predecessor": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_predecessor": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_invert": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_flags_cset": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_original_flags": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_resolved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_alias_machine_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_extension_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "mcp": [
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_flag",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_carry_flag",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_ge_flag",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_conditions",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_extension",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_extension",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_predecessor",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_predecessor",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_invert",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_flags_cset",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_original_flags",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_resolved",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_alias_machine_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_extension_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  ],
+  "sources": [
+    {
+      "path": "FV/Backend/Proof/StockCmpFlags.lean",
+      "sha256": "ea2fd4232851dc9c94372146920e6f6254e93fabe9df5021ef804dee8c3b903a",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpMachineValues.lean",
+      "sha256": "49d733b42cda6bbaa142f81d0c61b12fd833cdd69eec5ff6448583edaa9c7875",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpMachineWitness.lean",
+      "sha256": "5b3425e714339d94e0abea439873fca396c2055b28e4222c322047768f2d6277",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpPure.lean",
+      "sha256": "75e479d04ae5db59a49549d452209041277925d0026e303cfd79d6267f3870a1",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpPureWitness.lean",
+      "sha256": "2c950a663f3d32a83a9be3667ba76e5ba389ded9735ec13f041a9de81d8f2311",
+      "warnings": []
+    }
+  ],
+  "build_jobs": 373,
+  "build_log": {
+    "path": "/tmp/driver-resume-cmp-foundation-build.log",
+    "sha256": "21fbe8725cabf40941445f48dc9b1d7a486f28b67153dede7a3c453e24d4ff07"
+  },
+  "prior_division_122_sources_unchanged": true,
+  "completed": [
+    "Standard-only zero/unsigned carry/signed greater-or-equal flag arithmetic, including both signed subtraction overflow regions",
+    "All ten integer comparison conditions at machine32/64 using only standard-kernel proofs; old native variants untouched",
+    "Signed and unsigned extension comparison preservation; guarded unsigned/signed predecessor rewrites; condition inversion on all valid Arm conditions",
+    "Original narrow/wide comparison operands establish original predicates at actual machine width",
+    "Actual alias-resolved compare/cset pair yields original bool8 and preserves every other machine register",
+    "Machine-body witnesses cover ten conditions/four source widths/six boundaries through two distinct nonidentity source aliases",
+    "Pure29-term comparison/condition builder closure transfers successful legacy execution into Stock with all scheduling fields preserved; six real builder witnesses",
+    "17 normal/fresh MCP standard-only roots;five clean original scans;last fully validated division hashes unchanged"
+  ],
+  "remaining_batch": [
+    "Actual effectful comparison emitter652 source requests/constant/zero/predecessor/extended/register/i128 paths under original conditions",
+    "Actual condition-result715 shape/frame/execution contracts; full closure includes effectful opportunistic-definition/source-register operations, so the pure29-term scope is not a claim about arbitrary715 executions",
+    "Original comparison/fused-extension matching/selection/retained binding/source-step transfer and complete original Stock.lower witnesses",
+    "Minmax/select and their retained/source/witness connections",
+    "824-prior/exact-seven/full build/crates/runtime/encoder/both E2E identity-stage gates for complete family"
+  ],
+  "remaining_full_goal": [
+    "Execution/source transfer for remaining closure rules",
+    "Deferred effects and trapping/sinking invariant",
+    "Source/block/whole-driver simulation and completeness under original conditions",
+    "Actual compiler/checker/linker/generated-proof production cutover",
+    "Fresh complete stock comparison"
+  ],
+  "production": "legacy",
+  "publication": "local/uncommitted; no push/merge",
+  "archive": {
+    "path": "/home/lee/.clifv-recovery/20261014T154835Z/stock-cmp-foundation-checkpoint.tar.gz",
+    "sha256": "38824b2639b866b6e9de0304d053e278f3f92f0ae2f826a4a09667893836591a"
+  }
+}
