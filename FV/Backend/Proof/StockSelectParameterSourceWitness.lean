@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSelectScanRefines
 import FV.Backend.Proof.StockSelectScalarDriverRuns
 import FV.Backend.Proof.StockSelectParameterDerivedSourceValues
 import FV.Backend.Proof.LowerSim
@@ -266,4 +267,59 @@ theorem stock_select_parameter_complete_source_witness (p : Case) (word : BitVec
     self (restrictedDFG p word input) getC getX getY guarded sourceStep
   exact ⟨input.result,input.event,input.record,input.step,d,fr',input.run,scope p,dominated p,input.events,input.records,
     input.recorded,input.emitted,input.selectedId,output,lower,upper,sourceStep,execution⟩
+
+/-- Complete actual drivers inhabit both source-DFG preservation and the select
+scan adapter, for every condition word and all sixteen scalar width pairs.
+The memory relation retains the actual empty source memory. -/
+theorem stock_select_complete_scan_witness (p : Case) (word : BitVec p.cty.width) :
+    ∃ (result : Result) (event : BlockScanEvent) (record : ScanRecord) (fr' : Clif.Frame),
+      Stock.lower (function p) = .ok result ∧ LowerScope (function p) ∧ Dominated (function p) ∧
+      event ∈ result.blockScans.toList ∧ record ∈ event.output.records ∧
+      IndexedSourceInst Clif.Env.empty {funcs := []} (function p) event.ctx 0 record.inst
+        (0,frame p word,Clif.Mem.empty) (1,fr',Clif.Mem.empty) ∧
+      DFGCons event.ctx (restrict (frame p word) (availOf (function p) (availIn (function p) result.ctx) 0 0)) ∧
+      DFGCons event.ctx (restrict fr' (availOf (function p) (availIn (function p) result.ctx) 0 1)) ∧
+      ScanFallRefines (IndexedSourceInst Clif.Env.empty {funcs := []} (function p) event.ctx 0) ispec result.final.alias
+        (GuardedScanRel (function p) result event.ctx 0 (fun _ cm _ => cm = Clif.Mem.empty)) record ∧
+      ∀ world, GuardedScanRel (function p) result event.ctx 0 (fun _ cm _ => cm = Clif.Mem.empty)
+          record.output.state (0,frame p word,Clif.Mem.empty) (registers p word) world ∧
+        ∃ final world', seqRun ispec (record.output.emitted.toList.map
+          (·.mapRegs (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))))
+          (registers p word) world = some (.fall final world') ∧
+          GuardedScanRel (function p) result event.ctx 0 (fun _ cm _ => cm = Clif.Mem.empty)
+            record.input (1,fr',Clif.Mem.empty) final world' := by
+  obtain ⟨input⟩ := inputs p word
+  let value : Clif.Val := ⟨p.ty,Clif.Sem.select word 7 9⟩
+  let fr' : Clif.Frame := {frame p word with regs := (frame p word).regs.set 100 value,body := []}
+  have rawGetC : (frame p word).getAs 7 p.cty = .ok word := by exact getter rfl
+  have rawGetX : (frame p word).getAs 31 p.ty = .ok 7 := by exact getter rfl
+  have rawGetY : (frame p word).getAs 63 p.ty = .ok 9 := by exact getter rfl
+  have evaluated : instOutcome Clif.Env.empty {funcs := []} (frame p word) Clif.Mem.empty (.select p.ty 7 31 63) = .ok ([value],Clif.Mem.empty) := by
+    simp [instOutcome,Clif.evalInst,Clif.Frame.get,getAs_ok rawGetC,rawGetX,rawGetY,value]
+  have sourceStep : SourceInstResult Clif.Env.empty {funcs := []} input.event.ctx input.record.inst
+      (frame p word,Clif.Mem.empty) (fr',Clif.Mem.empty) := by
+    refine ⟨input.info,.select p.ty 7 31 63,[value],(frame p word).regs.set 100 value,[],input.source,input.clif,?_,evaluated,?_,rfl⟩
+    · rw [input.results]; rfl
+    · rw [input.results]; rfl
+  have current : input.record.inst = blockStart (function p) 0 + 0 := by
+    simpa only [blockStart,List.take_zero,List.map_nil,List.sum_nil,Nat.zero_add] using input.current
+  have indexed : IndexedSourceInst Clif.Env.empty {funcs := []} (function p) input.event.ctx 0 input.record.inst
+      (0,frame p word,Clif.Mem.empty) (1,fr',Clif.Mem.empty) := ⟨current,rfl,sourceStep⟩
+  have preDFG := restrictedDFG p word input
+  have postDFG := stock_lower_source_step_dfg input.run (scope p) (dominated p) input.events
+    (bi := 0) (j := 0) (b := (function p).blocks[0]!) rfl rfl current rfl preDFG sourceStep
+  have self : Refines (fun _ => True) ispec := fun _ _ _ _ world _ h => ⟨world,h,SameWorld.refl _ _⟩
+  have stable : MRStable (fun _ => True) (fun _ cm _ => cm = Clif.Mem.empty) := by
+    intro _ _ _ _ _ h; exact h
+  have refines := stock_lower_select_scan_fall_refines input.run (scope p) (dominated p) input.events input.records
+    (bi := 0) (j := 0) (b := (function p).blocks[0]!) rfl rfl current input.source input.clif
+    input.results rfl input.mapped input.recorded input.emitted self stable
+    (env := Clif.Env.empty) (cp := {funcs := []})
+  refine ⟨input.result,input.event,input.record,fr',input.run,scope p,dominated p,input.events,input.records,
+    indexed,preDFG,postDFG,refines,?_⟩
+  intro world
+  have pre : GuardedScanRel (function p) input.result input.event.ctx 0 (fun _ cm _ => cm = Clif.Mem.empty)
+      input.record.output.state (0,frame p word,Clif.Mem.empty) (registers p word) world :=
+    ⟨rfl,preDFG,rfl,input.held.mono (fun _ needed => needed.1)⟩
+  exact ⟨pre, refines _ _ indexed _ _ pre⟩
 end Backend.Stock.Proof.ScalarSelect.ParameterSourceWitness

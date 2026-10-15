@@ -1,5 +1,12 @@
 # Remaining Stock-driver semantic obligations (#140)
 
+## Guarded source-body scan integration
+
+A consolidated proof batch derives source DFG/frame typing, actual select/omission guarded scan semantics, mixed body composition and the whole-driver-derived ordinary-body/terminator split. Complete all-width select, arbitrary-word mixed, empty-body return and implicit sret witnesses pass; eleven new standard-only roots preserve all former theorem variants and exact compiler trust sets. Full2307/crates1171/runtime4672/0/0 with unchanged7 nonrunnable/encoder1292 identical0different/bothE2E1150/0 and original identity/stage bytes pass. Evidence: `docs/research/stock-source-body-integration.json`, `stock-source-body-all-axioms.lean`, `stock-source-body-mcp.json`.
+
+Full #140 remains active/incomplete and production remains legacy. The internal concrete semantic family partition still covers selects/omissions only. Actual Stock/pinned upstream implicit struct return pins x8; legacy LowerTermOk/term_step/RunOk require x0.., so add ABI-aware Stock semantic variants while retaining all old variants and original sret inputs. Branch/control/calls, all other families/effects/deferred traps/sinking, entry/edge/source invariants, whole-driver simulation/completeness and compiler/checker/linker/generated-proof production integration remain. Fresh complete Stock comparison and original parity are mandatory before cutover.
+
+
 Worktree: `/home/lee/clifv/.worktrees/driver-proof-resume`; recover from
 [test-binary-alignment-recovery.md](test-binary-alignment-recovery.md).
 
