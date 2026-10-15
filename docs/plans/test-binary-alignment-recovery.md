@@ -2024,3 +2024,12 @@ Updated UTC: 2026-10-15T04:27:54.571308+00:00
 All2188 full build/1171 crate-proof jobs pass. Runtime4672/0/0 plus the same7 known nonrunnable cases/family counts; encoder1292 identical/0 differ. Both E2E modes1150 accepted/0 rejected, byte-exact identity/stage reports match the prior validated baseline. All1413 public-root audits pass:824 prior exact axiom sets including seven compiler trust sets unchanged;589 comparison roots retain standard-only sets. All420 comparison source hashes unchanged. Evidence `docs/research/stock-cmp-publication-gates.json`. The fresh gate runner/session2491 finished successfully.
 
 Next prepare dependency-closed semantic scalar icmp PR chunks, push for CI and squash-merge only after checks pass. Continue minmax/select and all original family/effect/whole-driver simulation/completeness/actual production consumer cutover obligations; fresh complete Stock comparison remains mandatory before cutover. Full #140 active/incomplete; production legacy.
+
+
+## Comparison publication and min/max consumer boundary
+
+Updated UTC: 2026-10-15T04:49:22.534835+00:00
+
+PR#189 conditions/register source transfer is squash-merged after fresh prefix full/crate/runtime/encoder/both1150 exact identity-stage/public-root gates and all three CI checks. All671 exact code identities remain unchanged,0 gained/0 lost; main tree matches validated source. Remaining dependency-closed publication plan:64/32/8/16 zero forms, ordinary/adjusted immediates and fallbacks, narrow core, mirrored/constant fallbacks, universal actual dispatch. Plan and progress are maintained in the publication receipts and #44; all original420 comparison source hashes are preserved.
+
+Next min/max source roots are1222/1224/1226/1228. The actual RHS calls emitter652 then select659, rather than condition-result715. For zero conditions, select659 emits cmpXzr whereas715 emits cmpImm0; both flags predicates agree, but source-transfer proofs must follow actual code. Start with Stock lower_select_cond660/lower_select659 full-state/request/emission contracts, reuse existing actual emitter match/RHS observations and machine flag predicates, and derive retained input/scratch separation from original availability. Existing IselCmpSelect/IselCmpMinMax supply semantic identities and generic csel lemmas; preserve legacy variants and prove actual guarded Stock runs before whole-driver composition. Full #140 active/incomplete; production legacy.

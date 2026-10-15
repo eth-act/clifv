@@ -89,3 +89,19 @@ All2188 full build/1171 crate-proof jobs pass. Runtime4672/0/0 plus the same7 kn
 Next prepare dependency-closed semantic scalar icmp PR chunks, push for CI and squash-merge only after checks pass. Continue minmax/select and all original family/effect/whole-driver simulation/completeness/actual production consumer cutover obligations; fresh complete Stock comparison remains mandatory before cutover. Full #140 active/incomplete; production legacy.
 
 Full scalar icmp publication-gate evidence and all saved work backed on `agent/stock-driver-wip-backup-20261015T042818Z`. Local gates complete; next prepare dependency-closed semantic PRs for fresh CI.
+
+2026-10-15T04:39:42.646199+00:00: stopped for inspection — conditions-register; branch `agent/stock-cmp-conditions-register-pr`, commit ``, PR pending. #140 active/incomplete, production legacy.
+
+2026-10-15T04:43:37.694003+00:00: committed-local — conditions-register; branch `agent/stock-cmp-conditions-register-pr`, commit `e2fe7c2c198467d0c963eb7c213e64a7d6ac9488`, PR pending. #140 active/incomplete, production legacy.
+
+2026-10-15T04:43:41.979707+00:00: pushed — conditions-register; branch `agent/stock-cmp-conditions-register-pr`, commit `e2fe7c2c198467d0c963eb7c213e64a7d6ac9488`, PR pending. #140 active/incomplete, production legacy.
+
+2026-10-15T04:43:44.373758+00:00: CI running — conditions-register; branch `agent/stock-cmp-conditions-register-pr`, commit `e2fe7c2c198467d0c963eb7c213e64a7d6ac9488`, PR https://github.com/eth-act/clifv/pull/189. #140 active/incomplete, production legacy.
+
+2026-10-15T04:47:40.401292+00:00: CI passed — conditions-register; branch `agent/stock-cmp-conditions-register-pr`, commit `e2fe7c2c198467d0c963eb7c213e64a7d6ac9488`, PR https://github.com/eth-act/clifv/pull/189. #140 active/incomplete, production legacy.
+
+2026-10-15T04:47:45.377202+00:00: MERGED — conditions-register; branch `agent/stock-cmp-conditions-register-pr`, commit `e2fe7c2c198467d0c963eb7c213e64a7d6ac9488`, PR https://github.com/eth-act/clifv/pull/189. #140 active/incomplete, production legacy.
+
+2026-10-15T04:50:53.136781+00:00: committed-local — zero64; branch `agent/stock-cmp-zero64-pr`, commit `244eca5173607f77e92c2f2a981654abf2482c41`, PR pending. #140 active/incomplete, production legacy.
+
+Publication recovery snapshot `agent/stock-driver-wip-backup-20261015T045055Z`: #189 merged with all three CI checks,671 exact identities unchanged; remaining controller unified-exec55511 active on batch2/9. All420 comparison source hashes unchanged; original recovery branch/index preserved.
