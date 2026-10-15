@@ -1841,3 +1841,14 @@ Updated UTC: 2026-10-14T23:55:33.744899+00:00
 The user now authorizes pushes for remote backup and roughly three validated squash-merged PRs per day, superseding the earlier prohibition. #180 fused-NOT, #181 multiplication/fused multiplication and #182 scalar shifts/helper foundations are merged with all three CI checks successful for each. Main 70d187b2fbdb55a1954a9cbcb566b68feab1798b exactly matches the previously validated30f48dc tree. All three measurements preserve671 exact matches with0 gains/0 losses; this proof-only publication does not complete the production cutover.
 
 Validated stack and all comparison WIP were pushed to dedicated remote backup branches, preserving the active worktree branch/index. See docs/plans/stock-driver-publication.md and docs/research/stock-driver-publication-20261014.json. Continue remaining comparison forms/full family gates and every original #140 whole-driver/effect/simulation/completeness/production-integration obligation. Goal active/incomplete; production legacy.
+
+
+## Adjusted-immediate predecessor source-value checkpoint
+
+Updated UTC: 2026-10-15T00:05:12.560531+00:00
+
+- Actual unsigned5155/signed5160 adjusted RHS executions derive guarded source requests, exact flag producers and full marked state. Real715 condition execution preserves original unsigned/signed greater-or-equal predicates at32/64 bits.
+- Original restricted DFG/getters tie the predecessor immediate to the actual source constant. The rule odd-literal guard excludes zero/signed minimum internally. Accepted original-context RHS/715 witnesses cover arbitrary64-bit inputs, shifted/unshifted encodings, sparse7/31, dirty128-bit upper bits, nonidentity192-to1 alias and unmaterialized constant register193=777.
+- Combined241-module targeted build: 640 jobs;380 normal standard-only roots,16 new MCP checks and364 prior results reused after confirming all231 source hashes/364 trust sets unchanged;241 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-predecessor-checkpoint.json.
+- Next canonical5155/5160 match/selected652, original958/172 and retained/result-binding/guarded source-step integration, then complete actual Stock.lower witnesses. Current witness scope is original-context RHS/715, not complete predecessor retained/source-step coverage. Other comparison forms/minmax/select and full family gates remain.
+- All original #140 whole-driver/effect/completeness/production obligations remain mandatory; goal active/incomplete, production legacy. Publication now authorized; three prior validated families landed #180/#181/#182 on October14, and WIP backups are pushed after checkpoints.

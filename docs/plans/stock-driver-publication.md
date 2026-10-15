@@ -24,3 +24,5 @@ After each publication or merge, update #44 and this queue. Keep unfinished comp
 Completed three squash merges on October14. All three CI measurements preserve671 exact code artifacts with0 gained/0 lost matches. Publication evidence: `docs/research/stock-driver-publication-20261014.json`. Next continue comparison proofs and keep validated later families queued for subsequent publication batches.
 
 Latest full WIP/publication backup: `agent/stock-driver-wip-backup-20261014T235611Z`.
+
+Adjusted-immediate predecessor checkpoint:241 modules/380 normal roots,16 fresh MCP checks; source/RHS/715 witnesses pass, retained/complete driver integration pending. Remote backup `agent/stock-driver-wip-backup-20261015T000552Z`. Three-PR October14 delivery remains #180/#181/#182.
