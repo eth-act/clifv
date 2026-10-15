@@ -74,7 +74,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 
 | Stage | Implemented in | Verified today by | Kind (§1.2) | WP |
 | --- | --- | --- | --- | --- |
-| mid-end `simplify` rules | Lean (ISLE data) | 1061 + 37 rule theorems; unproven rules disabled (`ruleAllow := .proven`) | proven | R1–R5 (coverage) |
+| mid-end `simplify` rules | Lean (ISLE data) | 1074 + 37 rule theorems; unproven rules disabled (`ruleAllow := .proven`) | proven | R1, R2, R4, R5 (coverage) |
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
@@ -654,7 +654,7 @@ These don't remove certificates; they shrink the set of functions reported "unve
 
 ### R1–R9. Mid-end rule proofs (the deferred `simplify` rules)
 
-1098 of 1193 rule roots are proven; the rest are disabled in the proven configuration. Status and recipe:
+1111 of 1193 rule roots are proven; the rest are disabled in the proven configuration. Status and recipe:
 `docs/DEFERRED.md` "Mid-end `simplify` rule proofs", per-rule reasons in `docs/contracts/midend.md`
 "Rule proofs" (lines ~570-610). One agent per family; files `FV/Opt/Proof/Rule<Family>.lean`, allow-list in
 `FV/Opt/RuleAllow.lean`, import in `FV/Opt/Proof/RuleAll.lean`.
@@ -663,7 +663,7 @@ These don't remove certificates; they shrink the set of functions reported "unve
 | --- | --- | --- | --- |
 | R1 | arithmetic | 28 | timeouts (200, 206, 251–288 `imul` by odd constants, 615–622 64-bit products); `simp` type mismatch (410–428) |
 | R2 | icmp | 15 | `GraphOk.make_val` unification (49, 77, 91); counterexample after timeouts (155–184, 386–410); 205, 295, 296 |
-| R3 | selects | 13 | literal-match facts lost under `simp_all` (188–202); timeouts (81, 85); 15 nondeterministic in the full build |
+| R3 | selects | 0 | **done** ([#208](https://github.com/eth-act/clifv/pull/208)): all 100 roots; symbolic select identities and typed RHS evaluation |
 | R4 | shifts | 19 | rotate regrouping through `iadd_uextend`/`isub_uextend` (239–266: ~50 of 125 per-type goals fail, 128-bit rotations); 161, 170, 184, 193, 315. **84 and 88 are false**: keep them disabled, or adopt the masked rules of kevaundray/wasmtime#2 in the exported data and prove those |
 | R5 | spaceship | 20 | the 20 `select` rules: two made `icmp`s under `sextend_maybe` blow up the term (>10 min/rule) |
 | R6 | cprop | 0 | **done** (R0) |
@@ -772,7 +772,7 @@ label**; list the free ones with
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | **done** (`agent/rule-infra`; 43 + 10 roots) |
 | R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (28 rules left) | open |
 | R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (15 rules left) | open |
-| R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (13 rules left) | open |
+| R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (0 rules left) | **done** ([#208](https://github.com/eth-act/clifv/pull/208)) |
 | R4 | [#18](https://github.com/eth-act/clifv/issues/18) Mid-end rule proofs: shifts (19 rules left) | open |
 | R5 | [#19](https://github.com/eth-act/clifv/issues/19) Mid-end rule proofs: spaceship (20 rules left) | open |
 | R6 | [#20](https://github.com/eth-act/clifv/issues/20) Mid-end rule proofs: cprop (0 rules left) | **done** (by R0, `agent/rule-infra`) |

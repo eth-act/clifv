@@ -21,6 +21,18 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
+**Status (2026-10-09, R3, merged in [#208](https://github.com/eth-act/clifv/pull/208)):** 1111 of 1193 roots are proven:
+1074 `simplify` and all 37 `simplify_skeleton`. All 100 selects roots are enabled.
+R3 closes roots 15, 81, 85, 188, 189, 193–196 and 199–202 with unchanged `RuleOk`
+premises. The 682-function CLI smoke exercises every new root, all ten integer comparisons
+and widths through i128, including mixed-extension and mixed-source-width controls.
+All 4438 interpreter/native expectations agree; all functions pass the Cranelift verifier.
+Instructions fall from 3146 to 1884, versus 3050 before enablement. Full compiler/crate
+builds, 35 axiom audits, native filetests, encoding and E2E gates pass. Proven-only
+differential counts are corpus 4668 → 2289 and runtests 3389 → 3063, with no new failures
+or verifier rejections. Legacy unsupported/error cases remain separately reported.
+See midend.md "R3".
+
 **Status (2026-10-09, R7, merged in [#207](https://github.com/eth-act/clifv/pull/207)):** 1098 of 1193 roots are proven:
 1061 `simplify` and all 37 `simplify_skeleton`. All 450 bitops roots are enabled.
 R7 closes the masked-OR guard (79) and LLVM-style byte-swap trees (157/170), without
@@ -55,7 +67,7 @@ See midend.md "Skeleton rules" for the proofs, witnesses and verification scope.
 
 **Findings:** `shifts.isle` 84 and 88 are false under the CLIF semantics (shift constants above the type width make `shift_amt_to_type` pick a type wider than `ty`, so the rule builds an ill-typed `ireduce`/`sextend`; midend.md has the example). The skeleton framework gap (node facts of the start state vs. refinement in later valuations) is closed by a reads-defined premise: `SkeletonSound`/`SkelRuleOk` assume the instruction's reads (`Opt.skelReads`) are defined when the rules run, and `runSkel_spec` discharges the undefined case (known values never change, so the original is stuck); see midend.md "Skeleton rules".
 
-**Remaining:** arithmetic 28, icmp 15, selects 13, shifts 19 (2 of them false), spaceship 20. Bitops, extends and skeleton are complete. midend.md lists the remaining roots with reasons. Roots per family:
+**Remaining:** arithmetic 28, icmp 15, shifts 19 (2 of them false), spaceship 20. Selects, bitops, extends and skeleton are complete. midend.md lists the remaining roots with reasons. Roots per family:
 
 | Family | Roots |
 | --- | --- |
