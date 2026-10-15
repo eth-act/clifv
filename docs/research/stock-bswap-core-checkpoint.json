@@ -1,0 +1,31 @@
+{
+  "base": "0004573d291c0d7b8d17d73d65c56aba7773e43c",
+  "updated_utc": "2026-10-14T01:17:54.573264+00:00",
+  "scope": "Partial byte-swap continuation: kernel bit-index proof for low16 REV16; original halfword/word/doubleword value contracts. Does not invoke legacy bv_decide byte-swap lemmas.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockBswapSemantics.lean": "320fcd764a9565678c1f5fb590b5f544a06bd8509e8d8444244f0f41f6603a54"
+  },
+  "normal_mcp_roots": {
+    "Backend.Stock.Proof.ScalarBit.stock_bswap16_bits": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarBit.stock_bswap_wide_bits": [
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "source_warnings": 0,
+  "normal_build": "/tmp/driver-resume_bswap-math3-build.log",
+  "pending": [
+    "Actual roots2035/2038/2041 match/RHS and success-derived requests",
+    "Resolved execution and selected values",
+    "Actual retained binding and original guarded source transfer",
+    "Six complete parameter/earlier-producer source witnesses at16/32/64",
+    "All374 prior trust-set preservation and full batch gates",
+    "Remaining full #140 families/effects/simulation/completeness/production cutover and complete comparison"
+  ],
+  "last_completed_full_batch": "docs/research/stock-bitrev-audit.json",
+  "production": "legacy; full #140 active/incomplete; no push or merge"
+}
