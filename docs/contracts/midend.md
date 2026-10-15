@@ -760,7 +760,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   and unsupported cases remain reported, not counted as new regressions.
   The optional `/tmp/rust-clif-survey` data was absent.
 
-**R7 (2026-10-09, `agent/bitops-r7`, locally merge-ready):**
+**R7 (2026-10-09, `agent/bitops-r7`, merged in [#207](https://github.com/eth-act/clifv/pull/207)):**
 - `RuleBitops9.lean` proves root 79 by relating the 64-bit immediate mask/complement guard
   to bit-vector complementation at i8/i16/i32/i64. The i128 case is excluded by the existing
   matcher, not by a new theorem premise.

@@ -21,7 +21,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
-**Status (2026-10-09, R7, locally merge-ready):** 1098 of 1193 roots are proven:
+**Status (2026-10-09, R7, merged in [#207](https://github.com/eth-act/clifv/pull/207)):** 1098 of 1193 roots are proven:
 1061 `simplify` and all 37 `simplify_skeleton`. All 450 bitops roots are enabled.
 R7 closes the masked-OR guard (79) and LLVM-style byte-swap trees (157/170), without
 changing their `RuleOk` premises. An opcode-indexed decoder avoids the byte-swap
