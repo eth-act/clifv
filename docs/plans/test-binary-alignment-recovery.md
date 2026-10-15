@@ -1948,3 +1948,16 @@ Updated UTC: 2026-10-15T02:30:07.447214+00:00
 - Five complete ordinary-kernel actual Stock.lower/retained/original-source-step witnesses cover arbitrary8/16 inputs against signed0,129,32768 and unsigned8193. Real constant193→197, deliberately unrelated raw193=777, dirty128-bit upper bits, full outside-allocation/postavailability and source memory/frame preservation.
 -330 modules/729 jobs;489 normal standard-only roots,17 fresh MCP checks;314 prior hashes/472 trust sets and122 division source hashes unchanged. Receipt `docs/research/stock-cmp-narrow-constant-checkpoint.json`.
 - Next constant-left classifications, all-condition/all-width dispatch, minmax/select and full family/repository gates; original effects/simulation/completeness/production obligations remain. Full #140 active/incomplete, production legacy.
+
+
+## Nonzero constant-left comparison and total source classification
+
+Updated UTC: 2026-10-15T02:42:15.134959+00:00
+
+- Direct actual5171/5173 failure from original nonzero left constant metadata, for every condition, preserving full state and trace.
+- Actual5117/5108/652/715/original958/172 canonical selection and precise two-register extension/extended-compare/cset execution for nonzero constant left and original nonconstant right at8/16.
+- Retained result binding/copy absence, internally availability-derived scratch separation and guarded original source/getter transfer preserve original source inputs and old theorem variants.
+- Four complete ordinary-kernel actual Stock.lower/retained/original-source-step witnesses cover arbitrary8/16 right operands against signed high-bit left129/32768 and unsigned left3/8193. Real left-constant193→197 alias, raw193 deliberately777, dirty128 upper bits and full outside-allocation/postavailability/memory preservation.
+- Total constant/nonconstant source classification derives original typed iconst metadata and actual exported literal from MappedCtxInv; no caller classification certificate. A real built context inhabits both parameter and constant branches.
+-346 modules/745 jobs;507 normal standard-only roots,18 fresh MCP checks;330 prior source hashes/489 trust sets and122 division hashes unchanged. Receipt `docs/research/stock-cmp-narrow-constant-left-checkpoint.json`.
+- Next: Zero-left relational and remaining32/64 constant-left paths; both-constant nonzero paths; unified all-condition/all-width dispatch; minmax/select; Full comparison-family/repository gates preserving824 prior roots and seven exact compiler trust sets. Every original effect/source-block-whole-driver simulation/completeness and actual production-integration obligation remains. Full #140 active/incomplete, production legacy.
