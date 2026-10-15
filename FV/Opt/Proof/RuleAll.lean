@@ -59,6 +59,10 @@ import FV.Opt.Proof.RuleIcmpArithmetic
 import FV.Opt.Proof.RuleIcmpSelects
 import FV.Opt.Proof.RuleIcmpCompose
 import FV.Opt.Proof.RuleArith8
+import FV.Opt.Proof.RuleArithMulHi
+import FV.Opt.Proof.RuleArithOdd
+import FV.Opt.Proof.RuleArithCancel
+import FV.Opt.Proof.RuleArithProducts
 import FV.Opt.Proof.RuleSkeleton
 import FV.Opt.Proof.RuleSkeleton2
 import FV.Opt.Proof.RuleSkeleton3
