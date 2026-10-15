@@ -28,3 +28,5 @@ Latest full WIP/publication backup: `agent/stock-driver-wip-backup-20261014T2356
 Adjusted-immediate predecessor checkpoint:241 modules/380 normal roots,16 fresh MCP checks; source/RHS/715 witnesses pass, retained/complete driver integration pending. Remote backup `agent/stock-driver-wip-backup-20261015T000552Z`. Three-PR October14 delivery remains #180/#181/#182.
 
 Canonical predecessor selection checkpoint:247 modules/386 normal roots,6 fresh MCP checks; accepted original4097/8193 selected-helper witnesses pass, retained/source-step integration remains next. Remote backup `agent/stock-driver-wip-backup-20261015T001800Z`.
+
+Integrated predecessor retained/source checkpoint:267 modules/412 normal roots,26 fresh MCP checks; eight complete original32/64 signed/unsigned Stock.lower/source-step witnesses pass. Other forms/minmax/select/full family gates pending. Remote backup `agent/stock-driver-wip-backup-20261015T003200Z`.

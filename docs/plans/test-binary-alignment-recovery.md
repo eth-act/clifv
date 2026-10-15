@@ -45,8 +45,9 @@ The initial recovery snapshot and earlier checkpoints are retained as history.
 | Stock alias/domain/termination, availability and fresh-write groundwork | Landed proof slices | Existing Stock modules and plans; these are prerequisites, not whole-driver correctness. |
 | Logical helper/root/record/source proofs #177–178 | Landed | Commits `de405b6`, `cd324c7`; reused by current work. |
 | Scalar NOT and fused LSL/NOT #179 | Landed and validated | `cc29aaa`; GitHub confirms merged PR, all three CI checks successful. |
-| Fused binary logical-NOT batch | Fully validated locally | `a739ad5`; complete NOT-of-XOR/retained/source witnesses and full gates recorded in `stock-logical-not-values-audit.json`. |
-| Subsequent scalar proof families | Fully validated locally | Multiplication, shifts, casts/reduction, source-scope partition, negation, bit reversal/byte swap, unary dispatch and counts; receipts and commits below. |
+| Fused binary logical-NOT batch | Landed #180 | `72f2e57`; exact validated `a739ad5` tree, all CI green, no lost matches. Complete NOT-of-XOR/retained/source witnesses and full gates in `stock-logical-not-values-audit.json`. |
+| Scalar multiplication and shifts | Landed #181–182 | `40805b7` / `70d187b`; exact validated multiplication/shift trees, all CI green, no lost matches. |
+| Subsequent scalar proof families | Fully validated locally | Casts/reduction, source-scope partition, negation, bit reversal/byte swap, unary dispatch and counts; receipts and commits below. |
 | Scalar rotations | Fully validated locally | All12 selected roots/retained/source/dispatch,64 complete witnesses,54 new standard-only roots and all full gates; `728cccb`, `stock-rotate-audit.json`. |
 | Scalar population count | Fully validated locally (`3ae4c79`) | Four actual roots/retained/source/dispatch,16 complete witnesses,27 new standard-only roots and full gates; `stock-popcount-audit.json`. |
 | Production Stock-driver cutover | Pending | No whole-driver simulation/completeness or actual production switch demonstrated. |
@@ -1863,3 +1864,13 @@ Updated UTC: 2026-10-15T00:17:35.434426+00:00
 - Ordinary-kernel selected-helper witnesses use accepted original i64 comparison contexts with4097/8193 and shifted predecessors4096/8192. Earlier unshifted RHS witnesses remain helper witnesses; encodable original constants select the ordinary immediate path.
 - Combined247 modules/646 jobs;386 normal standard-only roots,6 fresh MCP checks and380 reused after confirming all241 prior source hashes/trust sets unchanged;247 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-predecessor-selection-checkpoint.json.
 - Next transport the unused normalized literal slot2 into the existing source-value contract; compose selected652/715 and original958/172, then retained/result binding, guarded source-step transfer and complete Stock.lower witnesses. Other forms/minmax/select/full family gates and every original whole-driver/effect/completeness/production obligation remain required. Goal active/incomplete; production legacy; remote backups/publication cadence authorized.
+
+
+## Integrated predecessor retained/source execution
+
+Updated UTC: 2026-10-15T00:31:20.393472+00:00
+
+- Actual652/715 source semantics, original958/172 selected-root output, retained-result binding and exact compare/cset/copy absence compose for unsigned/signed predecessor comparisons at32/64 bits. Unused normalized literal slot is transported through internally derived RHS replay; old variants preserved.
+- Guarded original-source/getter-derived transfer preserves original restricted DFG, demand, availability and memory. Eight complete ordinary-kernel Stock.lower/retained/source-step witnesses cover signed/unsigned32/64 with4097/8193 originals and4096/8192 shifted predecessors over arbitrary input words. Sparse7/31/100, dirty128-bit upper bits, constant193=777 deliberately unmaterialized, fresh boolean195, all other registers and postavailability preservation checked.
+- Combined267 modules/666 jobs;412 normal standard-only roots,26 fresh MCP checks and386 prior results reused after confirming all247 prior sources/axiom sets unchanged;267 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-predecessor-integrated-checkpoint.json.
+- Next remaining nonencodable/extended/fused comparison alternatives/all-condition/all-width dispatch, minmax/select and complete family/full-repository gates preserving824 prior roots/exact seven compiler sets. Every original whole-driver/effect/completeness/production obligation remains required. Goal active/incomplete; production legacy; remote backups/publication cadence authorized.
