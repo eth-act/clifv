@@ -4876,15 +4876,17 @@
       "name": "zero64",
       "title": "Prove Stock 64-bit zero comparisons through original source transfer",
       "branch": "agent/stock-cmp-zero64-pr",
-      "state": "committed-local",
+      "state": "CI running",
       "new_modules": 50,
       "base": "1b6ce95fc3f4a71981c6a9bcc1c74c5afc6a7cc7",
       "preserved_validated_whitespace": "FV/Backend/Proof/StockCmpNonzero64OriginalValues.lean:8: trailing whitespace.\n+theorem stock_cmp_original_nonzero64_values \nFV/Backend/Proof/StockCmpNonzero64OriginalValues.lean:11: trailing whitespace.\n+    (typed : ctx.valueType? x = some (.int 64)) \nFV/Backend/Proof/StockCmpNonzero64OriginalValues.lean:54: trailing whitespace.\n+theorem stock_cmp_original_equal_zero64_values \nFV/Backend/Proof/StockCmpNonzero64OriginalValues.lean:57: trailing whitespace.\n+    (typed : ctx.valueType? x = some (.int 64)) \nFV/Backend/Proof/StockCmpZero64OriginalLeftEmitterValues.lean:5: trailing whitespace.\n+theorem stock_cmp_zero64_original_left_eq_emitter_values \nFV/Backend/Proof/StockCmpZero64OriginalLeftEmitterValues.lean:8: trailing whitespace.\n+    (typed : ctx.valueType? x = some (.int 64)) \nFV/Backend/Proof/StockCmpZero64OriginalLeftEmitterValues.lean:36: trailing whitespace.\n+theorem stock_cmp_zero64_original_left_ne_emitter_values \nFV/Backend/Proof/StockCmpZero64OriginalLeftEmitterValues.lean:39: trailing whitespace.\n+    (typed : ctx.valueType? x = some (.int 64)) \nFV/Backend/Proof/StockCmpZero64OriginalLeftRecordValues.lean:57: trailing whitespace.\n+    \nFV/Backend/Proof/StockCmpZero64OriginalLeftRecordValues.lean:125: trailing whitespace.\n+    \nFV/Backend/Proof/StockCmpZero64OriginalLeftRootValues.lean:38: trailing whitespace.\n+    (typeX : ctx.valueType? x = some (.int 64)) \nFV/Backend/Proof/StockCmpZero64OriginalLeftTransfer.lean:17: trailing whitespace.\n+    \nFV/Backend/Proof/StockCmpZero64OriginalLeftTransfer.lean:106: trailing whitespace.\n+    \nFV/Backend/Proof/StockCmpZero64OriginalRhsValues.lean:6: trailing whitespace.\n+theorem stock_cmp_zero64_original_ne_rhs_values \nFV/Backend/Proof/StockCmpZero64OriginalRhsValues.lean:9: trailing whitespace.\n+    (typed : ctx.valueType? x = some (.int 64)) \nFV/Backend/Proof/StockCmpZero64OriginalRhsValues.lean:30: trailing whitespace.\n+theorem stock_cmp_zero64_original_eq_rhs_values \nFV/Backend/Proof/StockCmpZero64OriginalRhsValues.lean:33: trailing whitespace.\n+    (typed : ctx.valueType? x = some (.int 64)) \nFV/Backend/Proof/StockCmpZero64OriginalRightEmitterValues.lean:5: trailing whitespace.\n+theorem stock_cmp_zero64_original_right_eq_emitter_values \nFV/Backend/Proof/StockCmpZero64OriginalRightEmitterValues.lean:36: trailing whitespace.\n+theorem stock_cmp_zero64_original_right_ne_emitter_values \n",
       "head": "244eca5173607f77e92c2f2a981654abf2482c41",
-      "tree": "ab5140b3e1f8c8d139df6f1a9a0bedd0be114ac4"
+      "tree": "ab5140b3e1f8c8d139df6f1a9a0bedd0be114ac4",
+      "url": "https://github.com/eth-act/clifv/pull/190",
+      "number": 190
     }
   ],
-  "updated_utc": "2026-10-15T04:50:53.136329+00:00",
+  "updated_utc": "2026-10-15T04:50:59.314403+00:00",
   "recovered_attempts": [
     {
       "ordinal": 1,

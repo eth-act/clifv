@@ -105,3 +105,9 @@ Full scalar icmp publication-gate evidence and all saved work backed on `agent/s
 2026-10-15T04:50:53.136781+00:00: committed-local — zero64; branch `agent/stock-cmp-zero64-pr`, commit `244eca5173607f77e92c2f2a981654abf2482c41`, PR pending. #140 active/incomplete, production legacy.
 
 Publication recovery snapshot `agent/stock-driver-wip-backup-20261015T045055Z`: #189 merged with all three CI checks,671 exact identities unchanged; remaining controller unified-exec55511 active on batch2/9. All420 comparison source hashes unchanged; original recovery branch/index preserved.
+
+2026-10-15T04:50:57.712534+00:00: pushed — zero64; branch `agent/stock-cmp-zero64-pr`, commit `244eca5173607f77e92c2f2a981654abf2482c41`, PR pending. #140 active/incomplete, production legacy.
+
+2026-10-15T04:50:59.315115+00:00: CI running — zero64; branch `agent/stock-cmp-zero64-pr`, commit `244eca5173607f77e92c2f2a981654abf2482c41`, PR https://github.com/eth-act/clifv/pull/190. #140 active/incomplete, production legacy.
+
+Captured publication recovery snapshot `agent/stock-driver-wip-backup-20261015T045251Z`. Publication metadata may advance during CI; immutable staged bytes and all420 source hashes are checked independently. #189 merged; #190 CI active; controller55511 continues the remaining dependency-closed batches.
