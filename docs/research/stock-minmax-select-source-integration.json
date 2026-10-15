@@ -1,0 +1,628 @@
+{
+  "updated_utc": "2026-10-15T10:28:29.286271+00:00",
+  "base": "ce20c38134b8c82cf9addc4dff61c713c704c8a9",
+  "scope": "Consolidated scalar narrow minmax and original select source semantics/retained binding/witnesses; #140 remains incomplete and production remains legacy.",
+  "sources": {
+    "FV/Backend/Proof/StockMinMaxNarrowAllocation.lean": "0c9900b77a7aa8c2c70e3594b3c709f647c6efee12caa91581cfa11f61b76b6f",
+    "FV/Backend/Proof/StockMinMaxNarrowBothConstantDriverRuns.lean": "a9ebfefb3617816e1eaf336376762711d042e9ffe515a06de826900ecaa5a290",
+    "FV/Backend/Proof/StockMinMaxNarrowBothConstantWitness.lean": "a0b90707c835af38697620fa92e0c1691d1d6ad7ac6ddf1e887137ef2a557dca",
+    "FV/Backend/Proof/StockMinMaxNarrowConstantDriverRuns.lean": "0c69ef4f915f9b1e1e1cb6c0a04e88c588f8251b0239f24e14fa1467abac4c84",
+    "FV/Backend/Proof/StockMinMaxNarrowConstantWitness.lean": "4d0c844fc468a272c41aa68424077dbacefe3e97976f88b2c2f3791c59b92ff6",
+    "FV/Backend/Proof/StockMinMaxNarrowDriverRuns.lean": "1d723be5227f036e45273a049a545dec87e12abec7a67952487e34af035cf987",
+    "FV/Backend/Proof/StockMinMaxNarrowDriverWitness.lean": "03d4808a6eb89a17eeaefef1d5fb551e18ecac5f9eb6515a68a086d11d0a5057",
+    "FV/Backend/Proof/StockMinMaxNarrowFixtures.lean": "58f9c908ee2a853119d7b4d208c70405c310892883bb08157c477b0f643255d7",
+    "FV/Backend/Proof/StockMinMaxNarrowOriginalSourceValues.lean": "9294e8e1f5b5a9b29bdef044bc7c90dc48b545b66259d06b865b8bd5ebc389f4",
+    "FV/Backend/Proof/StockMinMaxNarrowRecordValues.lean": "9feaf87ecf340e40afd9c3839b937538f51648c2ad6f64a539e61e04b1f8a6c5",
+    "FV/Backend/Proof/StockMinMaxNarrowRootValues.lean": "96d6b2538146d32b92bb3b641c4feffddf74c182f4f2ae31c785f62dfa0484bd",
+    "FV/Backend/Proof/StockMinMaxNarrowShape.lean": "a30e9fbaae59bd50094a0f0e5bccdc1a38eb5ac3b5c63f47c70051e2450beac9",
+    "FV/Backend/Proof/StockMinMaxNarrowSourceReads.lean": "9f053a5dbcc02cd967bfc70cf1f7ed171c2d2712138862e6ba818c8c39067568",
+    "FV/Backend/Proof/StockMinMaxNarrowValues.lean": "b7a3d9eb9b07e4085d03287dfa08a949e4dff7452be32730e8cb27d3f0e6338d",
+    "FV/Backend/Proof/StockMinMaxActualDispatch.lean": "b56984dd8804362220833d1687ad964c6142bad35f857686933da0a296f27796",
+    "FV/Backend/Proof/StockSelectZeroObserved.lean": "ac955bc8b9f1557f1ce87f616491143652eca3d79e23d88c5404d38f1092596a",
+    "FV/Backend/Proof/StockSelectZeroSourceValues.lean": "93d5b03b8878f743a74f73fbfa03c3c3f3bfc55cd63ddcb4c79e75102d8eec14",
+    "FV/Backend/Proof/StockSelectZeroSourceWitness.lean": "e5bc899b90a8c1b571271769d214245194d35535c52b2bfedd120bdd5697a0be",
+    "FV/Backend/Proof/StockSelectRootCalls.lean": "f91ad408326f5b0694d981d042ee40770d8dc569063133c282f49674d5acef2d",
+    "FV/Backend/Proof/StockSelectOriginalSourceMatch.lean": "bbcae6a52d5cc98c4e27a6bc72176435c46bc64168c618ab6d5f53837b385b65",
+    "FV/Backend/Proof/StockOriginalSelectFixture.lean": "5a32674b9dadcc11413a476c0212d04d3fcb082b6c27ee12a6c232cfa88f0f05",
+    "FV/Backend/Proof/StockSelectOriginalRootWitness.lean": "5240d800437bacb2e1c9b37887acc8bf7c6d3f1aa7f49f54da9bf797b23e0940",
+    "FV/Backend/Proof/StockSelectZeroReplacement.lean": "42ead22ca5a58ddec009ecc5f6e4658c6c6e1aa8d9ce5e5f875cd1b7671486cc",
+    "FV/Backend/Proof/StockSelectZeroReplacementResolved.lean": "6443be12306afb02f0a0f1d8db0cb93d4e1f16d2f8cef87ff298cfdb45dfad19",
+    "FV/Backend/Proof/StockSelectZeroReplacementWitness.lean": "1be0fbd660a3312ed3cb734a38167f9e1732a84f9130c108aa6e0f628b36a48c",
+    "FV/Backend/Proof/StockSelectNonzeroWideShape.lean": "57d0d8079117fc70dc3e76f3dd39a4f133dba5db083ade0c0757fa4d4b2b029f",
+    "FV/Backend/Proof/StockSelectNonzeroWideValues.lean": "b772ac57fc897fe93a5de00c2b76a068d4153c08d42915564f0ba8ca653d16ad",
+    "FV/Backend/Proof/StockSelectNonzero8Values.lean": "4434e319c113b5f49c466bf5a0149b08026f088c0693c0606bcac1ffd6e6e068",
+    "FV/Backend/Proof/StockSelectNonzero16Shape.lean": "5af1ab279b71ce075c0bb108de2d45b3133554d2f7fa2b8619a63c7400e5908c",
+    "FV/Backend/Proof/StockSelectNonzero16Values.lean": "2fce9dc767a131dde35fa3d066f1e87c5b1d1b6244367629b4a5471f6f138d24",
+    "FV/Backend/Proof/StockSelectNonzeroActualValues.lean": "ee57948162e977606a49ca01ebf8a7e7d6a9ab916eda468aff1d1c180479e71b",
+    "FV/Backend/Proof/StockSelectConditionCalls.lean": "925b54d7887ede0dcf24d0d089ee1e976a53dada8d42682bd4ee1977db615d74",
+    "FV/Backend/Proof/StockSelectScalarDriverRuns.lean": "3eed7c6807606302df48b3b3962c16793eabec8db8811f61e7253807795ec86f",
+    "FV/Backend/Proof/StockSelectConditionOriginValues.lean": "1650749196e558826e9175a180b1a2a3a8bb159f3ffb42ffcfa993ef98b861d4",
+    "FV/Backend/Proof/StockSelectNonzeroAllocation.lean": "494a859409537ed2f3a2c82e3a2f9cc265f84a8fb60c8aa78c7844b085377d68",
+    "FV/Backend/Proof/StockSelectParameterRootValues.lean": "72d6c1327a9d06bb17c445b13d4935fd71b7468dde9e1dfd4063cf30c3acf726",
+    "FV/Backend/Proof/StockSelectParameterRecordValues.lean": "50a76cc93f86ee2896034294609e45cf7a081d1678b83988f71dfe1e219893b4",
+    "FV/Backend/Proof/StockSelectParameterOriginalSourceValues.lean": "b05bffb34a65dfd2a8608248142e1d4d4ac164903750d5a941aa7a2aad044dfd",
+    "FV/Backend/Proof/StockSelectParameterSourceWitness.lean": "fb01bbed4e78092cc8eeecd2fd0eae42a013956aa9e5b588f320c4e9fe29f602",
+    "FV/Backend/Proof/StockSelectConditionOriginWitness.lean": "283842cce7c6d79096072869646043c02cbaee92f33382de50d16f1f34391ebe",
+    "FV/Backend/Proof/StockAvailableTypes.lean": "c8a8aaa0fee93262948cbf470c3a4016b73aa2f9c9a8d6b444d230c1d2a33efc",
+    "FV/Backend/Proof/StockSelectParameterDerivedSourceValues.lean": "482fbc70b73e53ddb3c1437c4bab64e690bcf8a7efebffaf6cc8a156885d3834",
+    "FV/Backend/Proof/StockSelectNonzeroConditionShape.lean": "78d15d6efbc9aff6badbbf1e8ac1e931d7fb9c61251aa389444a40cc153c51d9",
+    "FV/Backend/Proof/StockSelectConditionInvertShape.lean": "5da4dfcc740ecd8c25829a486773bc0eba4a30470276c6009aa7b6579b78d004",
+    "FV/Backend/Proof/StockSelectZeroConditionShape.lean": "e28a8d7c0aefa73d069379a2907e269c11ab6b8b9c32330b05493ecf02bf9f54",
+    "FV/Backend/Proof/StockSelectWideComparisonShape.lean": "1050aebed67aafd3f618800cfd6fa4c0956b1cff028de7e55e3b3dc527918696",
+    "FV/Backend/Proof/StockSelectNarrowComparisonShape.lean": "5d5674353b873a0bff3ff1347cfcb86ca47d6c5986196608354d057afeea58b1",
+    "FV/Backend/Proof/StockSelectComparisonConditionShape.lean": "55fbe337d3f1c30f0c5d5a3bb43fb67f807d0e1c23ee7b19c18138d2aa1cece9",
+    "FV/Backend/Proof/StockSelectConditionCompanion.lean": "3408f7ffff5e77dcbfeb596af0b4b23cf83ab18d005fd37a0de66e35e99f73bf",
+    "FV/Backend/Proof/StockSelectComparisonCompanionValues.lean": "fe6a58169079fc6fa2eaa17a393c6c80f8ca2b02c2f9512d52de221be94e4e34",
+    "FV/Backend/Proof/StockSelectConditionShapeWitness.lean": "48a23bd3431fac4ba74964c1a792aa3665a1a38d4f8698073ef01779f9c10db1",
+    "FV/Backend/Proof/StockSelectComparisonCompanionWitness.lean": "c5b42d0d2d5614129a117ff9a293047744ad6383de3ebebc33ce2d2237238c9d",
+    "FV/Backend/Proof/StockSelectConditionReplacement.lean": "d555ec31bd5ec2172ee2f68dbbff688c893665db8c40127e95df545bf67c8d88",
+    "FV/Backend/Proof/StockSelectConditionObserved.lean": "128cd6302df83d3ca6517124e2351ec2a05fe49b49d720e47f7770dc99a99b27",
+    "FV/Backend/Proof/StockSelectComparisonValues.lean": "858e5d89759ef0b31618fe20eb76e112b8e6189a3ca250be3ac337455e673608",
+    "FV/Backend/Proof/StockSelectConditionSuccess.lean": "18df7a01b87099fe21bf7073ac0f0fbe4973d9194fd5ad73cbd563a3ca956ea7",
+    "FV/Backend/Proof/StockSelectComparisonActualFixture.lean": "8743611c8f90943293dc260b3dce85dbbc1301bb43a556a59836203ea014eb53",
+    "FV/Backend/Proof/StockSelectOriginalConditionValues.lean": "bfe49d3a500c57ba840a77f0dd80af814d9577343072707e13254e98017f1928",
+    "FV/Backend/Proof/StockSelectOriginalRootValues.lean": "fedcb00b879e04ce876483fa0356ec429ca72d2b29be87c4e920f85eebd1968c",
+    "FV/Backend/Proof/StockSelectOriginalRecordValues.lean": "b631085ba8a6ec68bbc22336b88f2a1295fbcc86e20f2cb541014e1efe4afb1b",
+    "FV/Backend/Proof/StockSelectOriginalSourceValues.lean": "8b40cecef23da4a3664764b20ebc8f82557902c0608125ce9d8d44206867382c",
+    "FV/Backend/Proof/StockSelectOriginalSourceWitness.lean": "e414be4586f8a8fbb9484f4a8f71e173ec4626356326bb86cc0b4fb395e91c6c",
+    "FV/Backend/Proof/StockSelectComparisonActualWitness.lean": "0dcb181a8bfbd8bd325637dc6255f9854e23e47805b940eac898f6dd837cdd63",
+    "FV/Backend/Proof/StockSelectConditionWitness.lean": "d854749e0ab5e7a4fbe850d72d8fa0cd7363e11d0bbb69e656d0827ad2488506",
+    "FV/Backend/Proof/StockSelectComparisonDriverRuns.lean": "25ca4aac356b941ac464cab236c2a8ae5015e57762fdfe8658b5c5cee420a64c",
+    "FV/Backend/Proof/StockSelectComparisonSourceSetup.lean": "1b0034c9c2e964e72c25fa47ceb864dffbbfc1284f5935ebf9b884a6878003df",
+    "FV/Backend/Proof/StockSelectComparisonSourceWitness.lean": "8ae10d127826f99d9e953d222cea8d3d86e6f673989a8a860b78c6e3137266db"
+  },
+  "roots": [
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_selected_allocation",
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_both_constant_driver_observed",
+    "Backend.Stock.Proof.ScalarSelect.NarrowBothConstantWitness.stock_minmax_narrow_both_constant_complete_source_witness",
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_constant_driver_observed",
+    "Backend.Stock.Proof.ScalarSelect.NarrowConstantWitness.stock_minmax_narrow_constant_complete_source_witness",
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_driver_observed",
+    "Backend.Stock.Proof.ScalarSelect.MinMaxNarrowDriverWitness.stock_minmax_narrow_complete_source_witness",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_by_instruction",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_available_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_selected_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_emitter_shape",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_with_reads",
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_emitter_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_actual_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_actual_source_with_reads",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_zero_observed",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_zero_source_values",
+    "Backend.Stock.Proof.ScalarSelect.ZeroSourceWitness.stock_select_zero_original_consumer_witness",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_rhs_calls",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_source_data",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_match",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_calls",
+    "Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_driver_observed",
+    "Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_root_calls_witness",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_replace_zero_cset",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_replace_zero_cset_resolved",
+    "Backend.Stock.Proof.ScalarSelect.ZeroReplacementWitness.stock_select_zero_replacement_alias_witness",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_wide_emitter_observed",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_wide_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero8_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero16_emitter_observed",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero16_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_calls",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_scalar_driver_observed",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_comparison_origin_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_allocation",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_condition_calls",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_selected_allocation",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_selected_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_available_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_source_values",
+    "Backend.Stock.Proof.ScalarSelect.ParameterSourceWitness.stock_select_parameter_complete_source_witness",
+    "Backend.Stock.Proof.ScalarSelect.ConditionOriginWitness.stock_select_comparison_origin_witness",
+    "Backend.Stock.Proof.stock_lower_record_declared_type",
+    "Backend.Stock.Proof.stock_lower_available_getAs_type",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_source_values_derived_types",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_condition_shape",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_condition_invert_shape",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_zero_rhs_condition_shape",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_wide_comparison_condition_shape",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_narrow_comparison_condition_shape",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_comparison_condition_shape",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_condition_boolean_companion",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_comparison_companion_source_values",
+    "Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_nonzero_condition_shape_witness",
+    "Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_invert_companion_witness",
+    "Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_flags_invert_companion_witness",
+    "Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_rhs_shape_witness",
+    "Backend.Stock.Proof.ScalarSelect.ComparisonCompanionWitness.stock_select_comparison_companion_complete_witness",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_condition_producer_replacement",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_observed",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_comparison_actual_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_success",
+    "Backend.Stock.Proof.ScalarSelect.ComparisonActualFixture.stock_select_comparison_actual_fixture",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_source_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_available_values",
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_source_values",
+    "Backend.Stock.Proof.ScalarSelect.OriginalSourceWitness.stock_select_original_complete_parameter_source_witness",
+    "Backend.Stock.Proof.ScalarSelect.ComparisonActualWitness.stock_select_comparison_actual_complete_witness",
+    "Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_replacement_witness",
+    "Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_observation_witness",
+    "Backend.Stock.Proof.ScalarSelect.ComparisonDriver.stock_select_comparison_driver_observed",
+    "Backend.Stock.Proof.ScalarSelect.ComparisonSourceWitness.stock_select_comparison_source_setup",
+    "Backend.Stock.Proof.ScalarSelect.ComparisonSourceWitness.stock_select_comparison_complete_source_witness"
+  ],
+  "normal_new_axioms": {
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_selected_allocation": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_both_constant_driver_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.NarrowBothConstantWitness.stock_minmax_narrow_both_constant_complete_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_constant_driver_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.NarrowConstantWitness.stock_minmax_narrow_constant_complete_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_driver_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.MinMaxNarrowDriverWitness.stock_minmax_narrow_complete_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_by_instruction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_selected_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_emitter_shape": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_with_reads": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_emitter_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_actual_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_actual_source_with_reads": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_zero_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_zero_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ZeroSourceWitness.stock_select_zero_original_consumer_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_rhs_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_source_data": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_driver_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_root_calls_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_replace_zero_cset": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_replace_zero_cset_resolved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ZeroReplacementWitness.stock_select_zero_replacement_alias_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_wide_emitter_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_wide_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero8_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero16_emitter_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero16_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_scalar_driver_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_comparison_origin_values": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_allocation": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_condition_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_selected_allocation": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_selected_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ParameterSourceWitness.stock_select_parameter_complete_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ConditionOriginWitness.stock_select_comparison_origin_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_record_declared_type": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.stock_lower_available_getAs_type": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_source_values_derived_types": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_condition_shape": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_condition_invert_shape": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_zero_rhs_condition_shape": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_wide_comparison_condition_shape": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_narrow_comparison_condition_shape": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_comparison_condition_shape": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_condition_boolean_companion": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_comparison_companion_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_nonzero_condition_shape_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_invert_companion_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_flags_invert_companion_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_rhs_shape_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ComparisonCompanionWitness.stock_select_comparison_companion_complete_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_condition_producer_replacement": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_comparison_actual_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_success": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ComparisonActualFixture.stock_select_comparison_actual_fixture": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_lower_select_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.OriginalSourceWitness.stock_select_original_complete_parameter_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ComparisonActualWitness.stock_select_comparison_actual_complete_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_replacement_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_observation_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ComparisonDriver.stock_select_comparison_driver_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ComparisonSourceWitness.stock_select_comparison_source_setup": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.ComparisonSourceWitness.stock_select_comparison_complete_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "normal_audit": {
+    "log": "/tmp/select-retained-comparison-axioms.log",
+    "sha256": "6f33a53dc334da7bfaa3e8ac42748b67b9dc65501e710eb8722085858db7f2df",
+    "roots": 1556,
+    "all1553_prior_axiom_sets_exactly_preserved": true,
+    "all7_compiler_trust_sets_exactly_preserved": true
+  },
+  "full_gates": {
+    "full_build_jobs": 2298,
+    "crate_proof_jobs": 1171,
+    "runtime_pass_fail_error": [
+      4672,
+      0,
+      0
+    ],
+    "known_nonrunnable": 7,
+    "runtime_family_counts_preserved": true,
+    "encoder_identical_differ": [
+      1292,
+      0
+    ],
+    "both_E2E_accepted_rejected": [
+      1150,
+      0
+    ],
+    "both_E2E_identity_stage_reports_byte_identical_to_baseline": true,
+    "all420_comparison_source_hashes_unchanged": true
+  },
+  "full_gate_logs": {
+    "full": {
+      "path": "/tmp/select-retained-comparison-full-full.log",
+      "sha256": "b24edf6da673b5fe8cf209564b813d52342b90a9165946794a8227f402c483c4"
+    },
+    "crates": {
+      "path": "/tmp/select-retained-comparison-full-crates.log",
+      "sha256": "eac0d9b7e8fec967cc1aef0b033e5b426630e9b33e31e0cb010bc353201bab9b"
+    },
+    "runtime": {
+      "path": "/tmp/select-retained-comparison-full-runtime.log",
+      "sha256": "390e3042cda40fde1899a6c270ea598f44b59ac8c03427c5b20a21ed0af2f876"
+    },
+    "encoder": {
+      "path": "/tmp/select-retained-comparison-full-encoder.log",
+      "sha256": "6e5c423e505ae964646f9bd37f28c4870bb02c02a47dd8bf8c1ab5d646ff08e6"
+    },
+    "e2e": {
+      "path": "/tmp/select-retained-comparison-full-e2e.log",
+      "sha256": "70dfe716cd44eca628fee361fb760787a2968276fcb2a6106313c472e418c805"
+    },
+    "legacy-e2e": {
+      "path": "/tmp/select-retained-comparison-full-legacy-e2e.log",
+      "sha256": "2285b1bfe80e48973fed704a400c3e71f02fce0507dee3370c5983ce6bb90e89"
+    }
+  },
+  "source_scope": "Universal8/16 minmax and unified8/16/32/64 source transfer; actual scalar select condition/consumer semantics; original direct/uextended comparison truth; unique select root, retained result binding and original guarded source-step/memory/post-frame. Type/scratch/source separation derived from original availability. Existing source/theorem variants unchanged.",
+  "witness_scope": "48 narrow minmax complete source families, joining48 wide source families already on main;16 parameter select and32 direct/uextended ult comparison-select complete source families over arbitrary condition/comparison words;40 comparison/select helper families over arbitrary original word pairs with nonidentity aliases and dirty upper bits; generic zero/flag replacement, allocation, request/state/decoder witnesses. Other comparison/form retained witness variants remain additional coverage.",
+  "preservation": {
+    "all_prior1479_axiom_sets_and7_compiler_sets_unchanged": true,
+    "all463_prior_proof_sources_unchanged": true,
+    "accepted_identity_stage_reports_byte_identical": true,
+    "original_input_conditions_and_theorem_variants_preserved": true,
+    "production": "legacy; #140 remains active/incomplete"
+  },
+  "input_identity": {
+    "manifest_local": "/tmp/stock-minmax-select-publication-inputs.json",
+    "sha256": "1326fdb406461dd96b660bd60db77a199ceeb4b3eaf45dbea3236864ea406e0a",
+    "non_documentation_inputs_identical": 2316
+  },
+  "remaining": [
+    "Additional retained select witness variants for other comparison conditions and constant/fused/mirrored forms.",
+    "Remaining uncovered families/effects and deferred trapping/sinking semantics.",
+    "Source/block/node/whole-driver simulation and completeness under original inputs.",
+    "Compiler/checker/linker/generated-proof production cutover, preserving accepted-input/theorem/identity/stage/trust parity, and fresh complete Stock comparison before cutover."
+  ],
+  "validation_state": "Publication full2298 build and exact1556-root normal audit pass. All1479 main root sets and seven compiler sets preserved exactly; all77 new roots standard-only. Recovery crate/runtime/encoder/both original-identity E2E gates apply to2316 byte-identical non-documentation inputs. CI pending.",
+  "publication_validation": {
+    "full_build_jobs": 2298,
+    "full_build_log_sha256": "40f62562369dfe75af209ecebf4842512a575e4bb34b14637d15e0e2889f0a01",
+    "exact1556_root_normal_audit": true,
+    "normal_audit_log_sha256": "6f33a53dc334da7bfaa3e8ac42748b67b9dc65501e710eb8722085858db7f2df",
+    "all1479_main_root_axiom_sets_exactly_preserved": true,
+    "all77_new_roots_standard_only": true,
+    "identical_non_documentation_inputs": 2316
+  },
+  "recovery_evidence": {
+    "branch": "agent/stock-driver-wip-backup-20261015T102944Z",
+    "commit": "0a206b04313b40225f1eef7980a1e34fdb56fb74",
+    "archive": "docs/research/recovery-evidence/select-retained-comparison-20261015T102944Z.tar.gz",
+    "archive_sha256": "3f4d6b97ec827fe5514ec12c1c273829190491566206227a686234a85c64be39",
+    "raw_evidence_url": "https://github.com/eth-act/clifv/blob/0a206b04313b40225f1eef7980a1e34fdb56fb74/docs/research/recovery-evidence/select-retained-comparison-20261015T102944Z.tar.gz"
+  }
+}
