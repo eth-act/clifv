@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.RuleInfraShiftAmt
 
 /-!
 # `opts/shifts.isle` (part 3): proven `simplify` rules
@@ -13,6 +14,12 @@ set_option linter.unusedSimpArgs false
 namespace Opt.Proof
 
 open Isle Isle.Opt
+
+-- In this module `kbv` first tries `kbv_amt` (`RuleInfraShiftAmt.lean`) on the isolated goal, under
+-- `kbv_guard` (a failure, also a runtime exception, falls through to the general search).
+open Lean Elab Tactic in
+local elab_rules : tactic
+  | `(tactic| kbv) => Opt.Proof.KernelBV.isolate (do evalTactic (← `(tactic| kbv_guard 200000 kbv_amt)))
 
 
 set_option maxHeartbeats 16000000 in

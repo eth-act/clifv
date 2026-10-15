@@ -65,8 +65,8 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 ### 1.3 Trusted by design (not part of this file's goal)
 
 - the frontend: rustc + rustc_codegen_cranelift produce the CLIF; the theorems are relative to it;
-- Lean's kernel; `bv_decide`'s LRAT check and `Lean.ofReduceBool` in the **fixed** rule/encoder proofs
-  (proven once, not per program; see T6 to reduce it);
+- Lean's kernel (since T6 no fixed proof needs compiled evaluation: no `bv_decide` or
+  `native_decide` certificate remains in the compiler theorems);
 - the Arm model and `Clif.run` as specifications (fidelity is tested, not proven: T4, T5);
 - the contracts of code outside the program (std, musl, cg_clif-fallback functions), the OS loader.
 
@@ -136,7 +136,7 @@ author's estimate, not measured), **Risk**.
   `E2E.backend_correct_final_of_lower` (`FV/E2E/FinalDirect.lean`): `backend_correct_final` from the
   pipeline's results and `dominatedB`/`lowerScopeB`, without `Compiled` and `hcov`; only `checkAlloc`
   remains. Decided once over the rule data: an abstract interpretation of the ISLE rules (`IselCov*.lean`,
-  summary table `covTab` from `FVTest/Backend/IselCovGen.lean`, 12 `native_decide` checks).
+  summary table `covTab` from `FVTest/Backend/IselCovGen.lean`, 12 leaf-wise kernel-checked certificates).
   The ISLE-level lemmas use `LogicImmComplete` (every logical immediate `ImmLogic.ofNat?` accepts is
   encodable), proven by `logicImmComplete` (`FV/Backend/Proof/LogicImmComplete.lean`, kernel `decide` over
   the 5334 (element size, run, rotation) triples).
@@ -215,7 +215,7 @@ author's estimate, not measured), **Risk**.
      interpreter, parametric in its transfer functions, re-run with an `emit` precondition checking the
      shapes of `CondBr`/`TrapIf`/`TestBitAndBranch` (`apreS`), oracles for the helpers with fresh defs
      (`load_ext_name_got/near`, `atomic_rmw/cas_loop`, `elf_tls_get_addr`), table `shpTab` (641 entries,
-     `FVTest/Backend/IselShpGen.lean`, 11 `native_decide` checks); the call, `try_call` and `br_table`
+     `FVTest/Backend/IselShpGen.lean`, 11 leaf-wise kernel-checked certificates); the call, `try_call` and `br_table`
      root rules (1031–1036, 1140) by hand (`root_hand`). `IselCtlHyp`'s `try_call` clause is restricted
      to `f`'s terminators: for an arbitrary `try_call_indirect` on an unused signature declaration with
      two `sret` parameters it is false (rule 1036). So step 3 is **done**: `E2E.spillLocalAll`
@@ -255,7 +255,7 @@ author's estimate, not measured), **Risk**.
      monotone under the run relation `RsK`: new kills are fresh); emitted uses likewise (`IsK`). The
      killing forms are built only inside `atomic_rmw_loop`, `atomic_cas_loop`, `br_table_impl`
      (oracles, run inversions in `KillOracle.lean`); the reachable term tables `killTabS`/`killTabB`
-     (`KillTab.lean`, `native_decide`) contain no killing variant and no `invalid_reg` (only the `nop`
+     (`TermSetData.lean`, certified in `KillTab.lean` by kernel checks) contain no killing variant and no `invalid_reg` (only the `nop`
      rule 587, a hand rule with no results, and the I128 rules 636/637, which never match, apply it);
      every extern constructor but `invalid_reg` keeps the invariant (`kp_ctor`, `KillCtor.lean`;
      `MInst.ofV`'s uses are among the value's registers, `ofV_kill`); a `try_call`'s results live only
@@ -436,7 +436,7 @@ author's estimate, not measured), **Risk**.
   | compiled: prepCheck | `compiled` | own output | `prepCheck_complete`, `prepDomain_of_lower` (V2) |
   | compiled: checkAlloc | `compiled` | own output | regalloc2's answer: kept only if accepted (`checkAlloc_allocResult`); spill allocation: `spillCheckAlloc` (completeness of `checkAlloc`'s fixpoint, `FV/E2E/SpillCheckAlloc*.lean`) under **`SpillDefinedHyp`** (on input with `entryParamsB`, now in `fnScopeB`: without it the statement is false, `not_spillDefinedHyp`, `FV/E2E/SpillDefinedFalse.lean`), which follows from **`LowerDefinedHyp`** (`spillDefinedHyp_of_lower`, `FV/E2E/SpillDefined.lean`: availability proven, `prepare` keeps definedness sets, `Spill.defAvail_prepare`; definedness sets from paths, `Spill.defined_of_paths'`). The driver's assembly is proven: `DefRun.lower_defined` (`FV/Backend/Proof/DefAssemble.lean`: `UsesDefined` from a path invariant over CLIF availability and the run segments), so `LowerDefinedHyp` follows from the ISLE run facts (`lowerDefinedHyp_of_runs`, `crate_correct_inScope_runs`). The ISLE run facts are proven too: `DefRun.defRunsHyp` (`FV/Backend/Proof/DefRunsProof.lean`, abstract interpretation `DefGen*.lean`), so `E2E.spillDefinedHyp`, `crate_correct_inScope_proven` |
   | covered | `covered` | own output | `formsCovered_complete` (V3) |
-  | sretRets | `sretRets` | own output | `retsB_of_lower` with `iselNoRets` (`FV/E2E/LinkOwnRets*.lean`; `native_decide` table checks over the ISLE rules, as the Kill tables) |
+  | sretRets | `sretRets` | own output | `retsB_of_lower` with `iselNoRets` (`FV/E2E/LinkOwnRets*.lean`; kernel-checked certificates over the untrusted literal term set, as the Kill tables) |
   | argRegs (distinct, argument registers, width ≤ 64) | `argRegs` | input | `fnScopeB` |
   | entryRegs | `entryRegs` | own output | `entryB_of_lower` |
   | fits | `fits` | linker output | `linkerOkB` |
@@ -587,8 +587,7 @@ author's estimate, not measured), **Risk**.
       of `binary_correct_of_checks_acyclic` + `codeMapB` + `HooksSim` + `GotOk I file` (decidable,
       `gotB`) + `OutsideAvoids (GotSlot I file) …`, no per-state hypothesis; conclusion
       `ExecRefines … (step I B file) r (RelocAt I) (Clif.runLoop …)`. Axioms: `propext`,
-      `Classical.choice`, `Quot.sound` and the project's existing `bv_decide`/`native_decide`
-      certificates. Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
+      `Classical.choice`, `Quot.sound` (since T6 no fixed-proof certificate). Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
       (`a_arith`'s `wrapping_add`; no GOT pair, `noGotPair`).
   - **Done: aliases** (item 6; 2026-10-06, `agent/exec-alias`; e2e.md "The executable's own words",
     "Aliases"): `siteAt` returns the kind of site (`Site`, `siteOf`: real word, call of the
@@ -710,7 +709,7 @@ Large, low priority.
 | T3 | std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | needs S11, S12, inline asm |
 | T4 | Arm model fidelity (ASL-derived, qemu co-simulation) | testing, not proof |
 | T5 | `Clif.run` fidelity (Cranelift interpreter + native runs) | testing, not proof |
-| T6 | `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | replace with kernel-checked reflection where feasible; per-program uses disappear with L1–L4 |
+| T6 | `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | **done** ([#213](https://github.com/eth-act/clifv/pull/213)): every fixed `native_decide` and `bv_decide` replaced by kernel-checked proofs, statements unchanged. Encoder: symbolic field lemmas. Generated tables: leaf-wise `decide +kernel`; closure term sets are untrusted literals (`TermSetGen`) checked by the kernel. Backend bit-vector lemmas (incl. `movK_ident`, for every width): symbolic `BitVec` proofs. Optimizer rules (formerly 934 lemmas): the kernel-checked finisher `kbv` (`FV/Opt/Proof/KernelBV.lean`: bounded per-method heartbeat budgets; `bv_normalize`, bit extensionality, case splits, `toNat`/`toInt` + `omega`, minterms + `grind`, shift/sign lemmas), `kbv_amt`/`kbv_cmp` (`RuleInfraShiftAmt.lean`) and hand proofs. `compileExe_correct`/`_total`, `backend_correct_final`, `binary_correct_exec_proven`, `backend_correct_opt_proven`: 759–9000 `bv_decide` and up to 68 `native_decide` axioms → `propext`, `Classical.choice`, `Quot.sound` only. Lean 4.34's kernel-mode LRAT reflection was infeasible (failed on a 15-node probe). Cost: the Opt proof modules need a serial pre-build (§7) |
 | T7 | `normalize.py`, `clif-data-export` (frontend-side tools) | part of the trusted frontend today |
 
 ## 6. Not needed for the goal
@@ -725,7 +724,13 @@ Large, low priority.
   `/home/kev/work/clifv-wt/<name>`, branch `agent/<name>`. Absolute paths under the worktree. Never push,
   merge, rebase, `git stash`, or pattern-kill processes. Temp files in `/tmp/<name>_*`.
 - Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; full FV build
-  `LEAN_NUM_THREADS=2 FV_MEMCAP=22G`; check the log for "Build completed successfully".
+  `LEAN_NUM_THREADS=2 FV_MEMCAP=22G`; check the log for "Build completed successfully". The
+  `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to 16.5 GB (`RuleBitops7`; `RuleArith`
+  14 GB, a dozen others 7–11 GB) and take up to 34 min each (all 317 modules: 2 h 4 min, three at a time); `lake build` (no `-j` option) runs many
+  at once and exceeds 22G, so first build the `FV.Opt.Proof` modules (317 with their imports) at most
+  three at a time in import order (`FV_MEMCAP=13G LEAN_NUM_THREADS=2 scripts/memcap.sh lake build
+  FV.Opt.Proof.<Module>`, a module killed at 13G again alone at 22G), then the full target, which
+  replays them (docs/contracts/midend.md, build note).
 - No `sorry`, `admit`, hand-written `axiom`, `trace_state`. Allowed axioms: `propext`, `Classical.choice`,
   `Quot.sound`, and generated `*._native.bv_decide.ax_*` / `*._native.native_decide.ax_*` in fixed proofs.
 - Every new top-level theorem gets a non-vacuity witness (they have caught six unsatisfiable premises).
@@ -797,5 +802,5 @@ label**; list the free ones with
 | T3 | [#39](https://github.com/eth-act/clifv/issues/39) Trusted base: std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | open |
 | T4 | [#40](https://github.com/eth-act/clifv/issues/40) Trusted base: Arm model fidelity (ASL-derived, qemu co-simulation) | open |
 | T5 | [#41](https://github.com/eth-act/clifv/issues/41) Trusted base: `Clif.run` fidelity (Cranelift interpreter + native runs) | open |
-| T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | open |
+| T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | **done** ([#213](https://github.com/eth-act/clifv/pull/213)): no compiled-evaluation axiom in the compiler theorems |
 | T7 | [#43](https://github.com/eth-act/clifv/issues/43) Trusted base: `normalize.py`, `clif-data-export` (frontend-side tools) | open |

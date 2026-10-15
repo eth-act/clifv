@@ -33,7 +33,9 @@ first, then update its producer and its consumers together.
   compiled-evaluation trust axioms Lean v4.34.1 auto-generates: `<thm>._native.bv_decide.ax_*`
   (from `bv_decide` when it needs them) and `<thm>._native.native_decide.ax_*` (from `native_decide`).
   These replace `Lean.ofReduceBool` from older toolchains, with the same trust base. Prefer
-  `omega`/`decide`/`simp` in library lemmas; keep `bv_decide` for real bit-blasting goals.
+  `omega`/`decide +kernel`/`simp` in library lemmas; keep `bv_decide` for real bit-blasting goals.
+  T6's encoder proofs use symbolic field lemmas, not compiled certificates. Its fixed table
+  checks split conjunctions into kernel-decided leaves; generated data remains untrusted.
 - Lean: core and `Std` only, no Mathlib (keeps the toolchain pin to `v4.34.1` alone).
 - Lean namespaces follow the directories: `Clif`, `DSL`, `Compile`, `Arm`, `Validate`, `Isle`, `Backend`, `Opt`, `E2E`.
 - Anything executable that is meant as a model must be *checkable* against an external

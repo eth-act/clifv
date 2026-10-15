@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleExtEmbed
+import FV.Opt.Proof.KernelBV
 
 /-!
 # `opts/bitops.isle` (part 10): LLVM-style byte-swap idioms
@@ -34,13 +35,13 @@ def llvmBswap64 (x : BitVec 64) : BitVec 64 :=
 theorem llvmBswap32_eq (x : BitVec 32) : llvmBswap32 x = Sem.bswap x := by
   unfold llvmBswap32
   bswap_unroll
-  bv_decide
+  kbv
 
 /-- Eight disjoint byte lanes, with the source's balanced `bor` association. -/
 theorem llvmBswap64_eq (x : BitVec 64) : llvmBswap64 x = Sem.bswap x := by
   unfold llvmBswap64
   bswap_unroll
-  bv_decide
+  kbv
 
 -- Distinct bytes exercise every lane; the second input places the high bit in
 -- both end bytes, including the logical-right-shift sign boundary.

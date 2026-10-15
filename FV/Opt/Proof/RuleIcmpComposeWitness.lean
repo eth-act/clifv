@@ -121,7 +121,7 @@ set_option hygiene false in
 local macro "compose_fixture " mask:term:max signed:term:max a:term:max b:term:max helper:ident : tactic =>
   `(tactic| (
     refine ⟨graph_ok, initial_ok _ _, rfl, rfl, ?_⟩
-    have hhit : hit $mask $signed $a $b = true := by native_decide
+    have hhit : hit $mask $signed $a $b = true := by decide +kernel
     obtain ⟨ws, s, tr, he, hm⟩ := success_of_hit hhit
     refine ⟨ws, s, tr, he, hm, ?_⟩
     exact $helper data_program graph_ok (initial_ok _ _) he rfl rfl hm))
@@ -131,7 +131,7 @@ example : GraphOk graph invariant den frame memory := graph_ok
 example : invariant (initial (0x8000000000000000#64) 7).inner := initial_ok _ _
 example : V.value 2 ∈ [V.value 2] := member_of_hit (by decide)
 example : ∃ ws s tr, run 0 false (0x8000000000000000#64) 7 = .ok (ws, (s, tr)) ∧
-    V.value 2 ∈ ws := success_of_hit (by native_decide)
+    V.value 2 ∈ ws := success_of_hit (by decide +kernel)
 
 -- High-bit order reverses between signed and unsigned modes. Each of the eight
 -- relation masks is exercised in both modes; equality also has an equal fixture.
