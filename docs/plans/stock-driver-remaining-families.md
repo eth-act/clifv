@@ -1,5 +1,27 @@
 # Remaining Stock-driver semantic obligations (#140)
 
+## Checked narrow minmax and original select continuation — 2026-10-15T08:28:11.519047+00:00
+
+Combined22 modules/25 new public roots pass kernel builds and1504-root audit, preserving all1479 earlier exact axiom sets plus16 narrow sets and seven compiler trust sets. All463 landed comparison/select/minmax proof sources unchanged; source scans clean and two bundled MCP audits agree exactly with all25 normal root sets, standard-only. Full2253/crates1171/runtime4672/0/0 plus same7 nonrunnable and family counts/encoder1292 identical0different/bothE2E1150accepted0rejected with original identity/stage report bytes preserved. Durable receipt: `docs/research/stock-narrow-select-checkpoint.json`. No new PR/merge; zero of maximum nine additional backlog PRs used since corrected discipline.
+
+Narrow minmax is complete at the original retained/source-step level for all8/16 forms with internal two-register scratch/alias separation, unified8/16/32/64 dispatch and48 complete narrow source witness families (32 single-constant over every parameter word). Original select now has actual source data/matching, unique root2267 and650/659/output decomposition; a complete actual Stock.lower run inhabits these results and retained binding. Actual Zero/NotZero659 source-value consumer and dirty-upper-bit/nonidentity-alias witnesses pass. These original select results do not yet establish whole original select source-step execution.
+
+Exact next bridge: `docs/research/stock-select-zero-replacement-draft.lean` has a normal-kernel standard-only proof replacing cmpImm0+cset by actual cmpXzr+csel after an arbitrary executed prefix, with source operands/outside frame and arbitrary refining semantics. It is outside the gated22 modules and still needs complete non-vacuity witnesses, resolver transport and actual650/659 composition. Then prove original650 condition truth for every651 scalar width and direct/uextended-icmp look-through, derive all final alias/scratch separation from original retained availability, compose original select binding/source-step transfer and complete its full witness matrix.
+
+All other original families/effects, deferred trapping/sinking semantics, source/block/whole-driver simulation and completeness, compiler/checker/linker/generated-proof production integration and fresh complete Stock comparison remain. Original input conditions, theorem variants, accepted identities/stages/trust and #179 baseline preserved. #140 active/incomplete; production legacy. Remote backup for this checkpoint follows; previous verified601-path snapshot29dee626 remains retained.
+
+
+## Current continuation 2026-10-15T08:17:03.886047+00:00
+
+Narrow minmax15 modules/16 public roots now pass normal kernel builds and the1495-root combined audit; all1479 prior exact axiom sets and463 landed proof source hashes preserved. Bundled MCP16-root audit passes, all standard-only. Complete48 narrow source families include8 register,32 single-constant over every parameter word and8 both-constant cases. Unified8/16/32/64 original-source dispatch is proved. Receipt: docs/research/stock-minmax-narrow-integrated-checkpoint.json. Full validation remains pending: an early full build was deliberately stopped because it duplicated a live select elaboration; no full-gate pass or merge-ready claim.
+
+Remote prevalidation snapshot agent/stock-driver-wip-backup-20261015T080507Z at29dee6266c368840e66c3c83e43d483dc95173f5 captured601 dirty paths; remote blobs verified and active HEAD/index unchanged. New select additions since this snapshot need a fresh backup.
+
+Original select continuation now derives actual RHS650/659/output calls, source match data and unique root2267. The latter source selector is under validation. Zero/NotZero659 request/state inversion is in progress; its actual cmpXzr producer differs from the715 boolean companion cmpImm0 and needs its own semantic composition. New source consumer/witness drafts depend on successful inversion. Complete650/651 condition truth including icmp/uextend look-through, all condition shapes, retained binding/original guarded source transfer and full source witness matrix remain unfinished. Keep these related changes local for a consolidated semantic batch.
+
+Merge discipline: zero of the maximum nine additional backlog PRs used since2026-10-15T08:03:54Z correction. Thereafter roughly three/day, up to six when justified; backups independent. No new PR or merge. #140 active/incomplete, production legacy. All remaining families/effects, source/block/whole-driver simulation/completeness and compiler/checker/linker/generated-proof integration remain; original conditions/variants/trust/accepted identities/stages and a fresh complete Stock comparison required before cutover.
+
+
 Worktree: `/home/lee/clifv/.worktrees/driver-proof-resume`; recover from
 [test-binary-alignment-recovery.md](test-binary-alignment-recovery.md).
 
