@@ -32,3 +32,5 @@ Canonical predecessor selection checkpoint:247 modules/386 normal roots,6 fresh 
 Integrated predecessor retained/source checkpoint:267 modules/412 normal roots,26 fresh MCP checks; eight complete original32/64 signed/unsigned Stock.lower/source-step witnesses pass. Other forms/minmax/select/full family gates pending. Remote backup `agent/stock-driver-wip-backup-20261015T003200Z`.
 
 Nonencodable register fallback checkpoint:279 modules/429 normal roots,17 fresh MCP checks; four complete arbitrary32/64 signed/unsigned Stock.lower/source-step witnesses pass with actual constant193-to197 alias. Other forms/minmax/select/full family gates pending. Remote backup `agent/stock-driver-wip-backup-20261015T005914Z`.
+
+Narrow comparison core checkpoint:285 modules/439 normal roots,10 fresh MCP checks. Actual555/556 requests,657 right extensions and5117/5108 RHS preserve full state; original8/16 predicates and actual aliased extended-compare/cset machine values pass. Selection/retained/complete source-step coverage and full family gates pending. Remote backup `agent/stock-driver-wip-backup-20261015T011351Z`.

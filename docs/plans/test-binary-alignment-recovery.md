@@ -1885,3 +1885,13 @@ Updated UTC: 2026-10-15T00:59:03.537921+00:00
 - Actual two-instruction constant materialization installs alias193-to197; source-held constant is read from197, raw193=777 deliberately stale. Dirty128-bit upper bits, fresh boolean195, all other registers and postavailability preservation checked. This is a real nonidentity alias crossing the comparison allocation interval.
 - Combined279 modules/678 jobs;429 normal standard-only roots,17 fresh MCP checks and412 prior results reused after confirming all267 prior source hashes/trust sets unchanged;279 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-nonencodable-checkpoint.json.
 - Next extended/fused/narrow alternatives, constant-left classifications and all-condition/all-width dispatch, minmax/select and full family/repository gates. Every original whole-driver/effect/completeness/production obligation remains required. Goal active/incomplete, production legacy, publication/backups authorized.
+
+
+## Narrow comparison RHS and machine core
+
+Updated UTC: 2026-10-15T01:13:29.981409+00:00
+
+- Actual555/556 source requests allocate the32-bit extension temporary and preserve complete scheduling state. Actual657 supplies all four right-extension encodings. Actual5117/5108 RHS composes left extension/right request/exact producer/full state.
+- Standard-kernel narrow flag proof covers arbitrary8/16-bit operands and every condition, deriving Arm register-extension semantics without native lemmas. Actual extended compare/cset execution through final aliases preserves all outside-result registers. Sparse RHS/request witnesses and nonidentity-alias boundary witnesses pass.
+-285 modules/684 jobs;439 normal standard-only roots,10 fresh MCP checks,429 prior results reused after confirming all279 prior source hashes/trust sets unchanged;285 original-source scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-narrow-core-checkpoint.json.
+- Next derive guards from successful RHS and compose actual left-extension execution/715; narrow first-match selection5117/5108/5134,958/172 outputs, retained binding/guarded source/getter transfer and complete actual Stock.lower/source-step witnesses. Helper/RHS/machine-pair witnesses do not discharge complete-driver nonvacuity. Other forms/minmax/select/full family/repository gates and every original effect/whole-driver/completeness/production obligation remain. Goal active/incomplete, production legacy.
