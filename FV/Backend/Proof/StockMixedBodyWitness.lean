@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSourceDefined
 import FV.Backend.Proof.StockActualBodyRefines
 import FV.Backend.Proof.StockBodyScanRefines
 import FV.Backend.Proof.StockMinMaxRegisterDriverRuns
@@ -441,4 +442,38 @@ theorem stock_mixed_actual_body_split_witness (word : BitVec 64) :
       rw [blockIndex,← split.state,bodyState,← oldState]
       exact pre
     exact ⟨actualPre,semantic families _ _ indexed _ _ actualPre⟩
+
+/-- Actual source definedness survives both the ignored load and emitted select
+of the complete mixed driver, including both newly bound source results. -/
+theorem stock_mixed_source_defined_witness (word : BitVec 64) :
+    ∃ (result : Result) (event : BlockScanEvent), Stock.lower function = .ok result ∧
+      LowerScope function ∧ Dominated function ∧ event ∈ result.blockScans.toList ∧
+      SourceDefinedAt function result.ctx 0 0 (frame word) ∧
+      SourceSteps (IndexedSourceInst Clif.Env.empty {funcs := []} function event.ctx 0) [0,1]
+        (0,frame word,memory) (2,selected word,memory) ∧
+      SourceDefinedAt function result.ctx 0 2 (selected word) := by
+  obtain ⟨result,event,sel,dead,oldBody,run,scope,dominated,events,sels,deads,selInst,deadInst,
+    oldRecords,noCode,oldScan,oldFamilies,loadMap,loadAlias,notHeld,loadedValue,loadStep,selectStep,sourceSteps,omitted,executions⟩ :=
+    stock_mixed_load_select_body_witness word
+  have initial : SourceDefinedAt function result.ctx 0 0 (frame word) := by
+    intro x available
+    obtain ⟨present,_⟩ := (mem_av (f := function) (bi := 0) (B := function.blocks[0]!) (by rfl)).mp available
+    rcases present with parameter | incoming | ⟨j,stm,earlier,_,_⟩
+    · change x ∈ [1,7,31,63] at parameter
+      simp only [List.mem_cons,List.not_mem_nil,or_false] at parameter
+      rcases parameter with rfl | rfl | rfl | rfl <;> simp [frame]
+    · have bound := (inFix_fixOk (f := function) (ctx := result.ctx) (gn := id)).cand 0 x incoming
+      omega
+    · omega
+  have final : SourceDefinedAt function result.ctx 0 2 (selected word) := by
+    cases sourceSteps with
+    | cons first tail =>
+      cases tail with
+      | cons second tail =>
+        cases tail
+        have one := stock_lower_source_defined_step run scope dominated events
+          (bi := 0) (j := 0) (i := 0) (b := function.blocks[0]!) rfl rfl rfl initial first.2.2
+        exact stock_lower_source_defined_step run scope dominated events
+          (bi := 0) (j := 1) (i := 1) (b := function.blocks[0]!) rfl rfl rfl one second.2.2
+  exact ⟨result,event,run,scope,dominated,events,initial,sourceSteps,final⟩
 end Backend.Stock.Proof.MixedBodyWitness
