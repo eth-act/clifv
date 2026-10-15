@@ -1,0 +1,13 @@
+{
+  "archive": "/home/lee/.clifv-recovery/20261015T123804Z-return-source/checkpoint.tar.gz",
+  "sha256": "029d5deda3d8cd2eaa600de56d6d51e2ca30921f585d85b4f0f0df23d9da19a2",
+  "members": 24,
+  "remote_backup": "pending",
+  "status_history": {
+    "source_issue": 44,
+    "path": "docs/research/status-history/codygunton-44-20261015T123539Z.md",
+    "sha256": "322a35cf6a653e18839a335746ae461501e93e6ad7995cfc334cdb58e6ee004b",
+    "original_body_characters": 56105,
+    "preserved_complete_body": true
+  }
+}
