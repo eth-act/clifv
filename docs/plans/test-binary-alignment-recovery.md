@@ -1961,3 +1961,15 @@ Updated UTC: 2026-10-15T02:42:15.134959+00:00
 - Total constant/nonconstant source classification derives original typed iconst metadata and actual exported literal from MappedCtxInv; no caller classification certificate. A real built context inhabits both parameter and constant branches.
 -346 modules/745 jobs;507 normal standard-only roots,18 fresh MCP checks;330 prior source hashes/489 trust sets and122 division hashes unchanged. Receipt `docs/research/stock-cmp-narrow-constant-left-checkpoint.json`.
 - Next: Zero-left relational and remaining32/64 constant-left paths; both-constant nonzero paths; unified all-condition/all-width dispatch; minmax/select; Full comparison-family/repository gates preserving824 prior roots and seven exact compiler trust sets. Every original effect/source-block-whole-driver simulation/completeness and actual production-integration obligation remains. Full #140 active/incomplete, production legacy.
+
+
+## All-width nonzero constant-left source dispatch
+
+Updated UTC: 2026-10-15T02:54:59.660293+00:00
+
+- Actual5128/652/715/original958/172 selection and register compare/cset value semantics for32/64 original nonzero constant left and nonconstant right. Earlier zero rules are rejected directly from original defining metadata.
+- Real retained result binding/copy absence and guarded original-source/getter transfer preserve original demand/availability/DFG, memory and the stronger wide one-destination frame. Four complete actual Stock.lower/source-step witnesses cover arbitrary32/64 right operands and both signednesses, actual constant193→196 with raw193 deliberately777.
+- Unified nonzero constant-left transfer derives scalar width from original scope and actual source data, not a caller width/selected-rule certificate. It composes existing8/16 and new32/64 paths, retains all old variants and exposes full outside-allocation preservation with source postavailability.
+- Four further complete actual Stock.lower/source-step witnesses invoke the unified source transfer at8/16/32/64 for arbitrary right operands, dirty128-bit upper input bits, real final aliases and complete original source frame/memory/availability preservation. Both scratch-writing narrow and one-destination wide cases are inhabited.
+-364 modules/763 jobs;528 normal standard-only roots,21 fresh MCP checks;346 prior source hashes/507 trust sets and122 division hashes unchanged. Tracked FV source bytes unchanged. Receipt `docs/research/stock-cmp-constant-left-dispatch-checkpoint.json`.
+- Next: Zero-left relational and both-constant nonzero cases, unified full comparison dispatch and minmax/select; Next derive value semantics by the actual12-way successful emitter-rule split and reuse existing RHS source proofs, rather than require caller classifications; the shared relational zero-rule rejection probe already compiles; Full comparison-family/repository gates preserving824 prior roots and seven exact compiler trust sets; every original effect/deferred-sinking/source-block-whole-driver simulation/completeness and actual production integration obligation remains. Full #140 active/incomplete, production legacy.
