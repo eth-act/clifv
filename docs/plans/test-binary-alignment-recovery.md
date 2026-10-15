@@ -274,3 +274,30 @@ All four actual count selections, six scalar shift roots, retained-record/result
 Full1515/crates1171/runtime4672 with0fail/0disagree and7unchanged known non-runnable; encoder1292 identical/0different; bothE2E1150accepted/0rejected with exact full identity/stage parity. Durable receipt: docs/research/stock-scalar-shift-record-audit.json. Source inventory now identifies25 guarded record bridges among517 generated source roots; this is not whole-driver coverage or a completion percentage.
 
 Full #140 remains active and incomplete. Production remains legacy. Continue extension/reduction roots, remaining families/effects/control, source/block/whole-driver simulation and completeness, and actual compiler/checker/linker/generated-proof production integration. Require fresh complete stock comparison before cutover. No push or merge.
+
+
+## Base zero/sign-extension batch validated locally
+
+Updated UTC: 2026-10-13T23:46:20.013931+00:00
+
+Five modules,11 new standard-only normal/MCP roots, all323 prior sets unchanged (334 total). Actual base roots1261/1315, all six widening pairs, retained binding/original source-step transfer and12 complete dirty-upper-bit source/record witnesses; missing-type rejection has an actual context-build witness. Original successful source evaluation supplies the widening condition internally. Full1520/crates1171/runtime4672 with0fail/0disagree and7known non-runnable; encoder1292/0; bothE2E1150/0 with complete identity/stage parity. Receipt docs/research/stock-scalar-cast-audit.json; continuation docs/plans/stock-scalar-casts.md. Source inventory now identifies27 guarded bridges, not whole-driver coverage. Next reduction aliases using existing final-edge/endpoint proofs, then all remaining full-goal obligations. Production legacy; full #140 active/incomplete, no push/merge.
+
+
+## Reduction batch validated locally
+
+Updated UTC: 2026-10-14T00:13:27.240682+00:00
+
+Five modules prove actual reduction root2146, its complete no-allocation/no-emission state, retained alias binding and final source/result endpoint equality, and original successful narrowing source-step transfer. Existing whole-driver alias edge/endpoint proofs are reused. Twelve complete source/record witnesses cover all six narrowing pairs, both parameter sources and earlier constant producers; the latter deliberately leaves the original source vreg unmaterialized. Machine registers/source memory are unchanged by the actual empty record. No fresh-result or additional accepted-input certificate is assumed.
+
+All8 new public roots pass normal/MCP standard-only audits and original-source scans with0 warnings; all334 earlier sets are unchanged (342 total). Full1525/crates1171/runtime4672 with0fail/0disagree and7unchanged known non-runnable; encoder1292 identical/0different; bothE2E1150accepted/0rejected, every identity/stage equal to previous and each other. Receipt docs/research/stock-reduce-audit.json.28 identified guarded bridges among517 generated roots is an inventory, not whole-driver coverage. Static opcode/type-pattern family classification saved in docs/research/stock-driver-rule-families.json; it does not prove reachability/exclusion.
+
+Full #140 remains active and incomplete. Next: scope-derived exclusions for unsupported opcode/type patterns, remaining arithmetic/logical/count/rotation/reversal, comparisons/selects and extension/look-through families; memory/call/control/trap and deferred-effect semantics; source/block/whole-driver simulation/completeness; actual compiler/checker/linker/generated-proof production integration and fresh complete stock comparison. Production legacy; no push or merge.
+
+
+## Ordinary-source root exclusions validated locally
+
+Updated UTC: 2026-10-14T00:25:34.544757+00:00
+
+Original mapped source scope proves372 of517 generated lower roots cannot match ordinary source instructions. Actual first-match and retained-record selection derives membership in the145 remaining closure roots internally. Exact partition counts are kernel-checked; concrete excluded-root and complete emitted-source witnesses pass. This is scope exclusion, not execution coverage; terminator/branch contexts remain separate.
+
+All10 new roots normal/MCP standard-only;342 prior sets unchanged (352 total),0 source warnings. Full1528/crates1171/runtime4672 with0fail/0disagree and7known non-runnable; encoder1292/0; bothE2E1150/0 with full identity/stage parity. Receipt docs/research/stock-source-scope-audit.json; plan docs/plans/stock-source-scope.md. Inventory/family classification now links proof-backed ordinary-source exclusions. No legacy Cov/T6/IselLcf/optimizer interface or production changes. Next remaining closure execution/source transfer, effects/control/deferred semantics, full simulation/completeness and actual production integration/complete stock comparison. Full #140 active/incomplete; no push/merge.
