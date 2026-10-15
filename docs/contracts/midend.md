@@ -880,7 +880,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   Existing interpreter/oracle totals remain seven expectation failures, ten disagreements
   and two oracle errors. The optional survey was absent.
 
-**R1 (2026-10-10, `agent/arithmetic-r1`, locally merge-ready):**
+**R1 (2026-10-10, `agent/arithmetic-r1`, merged in [#211](https://github.com/eth-act/clifv/pull/211)):**
 - `RuleArithMulHi`, `RuleArithOdd`, `RuleArithCancel` and `RuleArithProducts` prove
   all twenty-eight remaining roots with unchanged `RuleOk` statements and fuel premises.
   Arithmetic is complete at 258/258; total coverage is 1174/1193.
@@ -911,8 +911,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   from 3055 to 3043 (3389 before optimization). All 445 file summaries are no worse;
   no refinement failures, pass/rule errors or verifier rejections. Existing interpreter
   totals remain seven expectation failures, ten disagreements and two oracle errors.
-  The optional survey was absent. Publication remains pending under the agent
-  no-push/no-merge boundary.
+  The optional survey was absent.
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (258): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,

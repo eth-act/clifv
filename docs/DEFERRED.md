@@ -21,7 +21,7 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
-**Status (2026-10-10, R1, locally merge-ready):** 1174 of 1193 roots are proven:
+**Status (2026-10-10, R1, merged in [#211](https://github.com/eth-act/clifv/pull/211)):** 1174 of 1193 roots are proven:
 1137 `simplify` and all 37 `simplify_skeleton`. All 258 arithmetic roots are enabled.
 R1 closes all twenty-eight remaining roots with unchanged `RuleOk` premises.
 High-half extraction, odd modular cancellation and symbolic product identities avoid
@@ -33,7 +33,7 @@ agree; all optimized functions pass the Cranelift verifier. Instructions fall fr
 native filetests, encoding and E2E gates pass. Proven-only corpus remains 4668 → 2287;
 runtests improve from 3055 to 3043 (3389 before optimization). All 445 file summaries
 are no worse; legacy unsupported/error cases remain separately reported. See midend.md
-"R1". Publication remains pending under the agent no-push/no-merge boundary.
+"R1".
 
 **Status (2026-10-10, R2, merged in [#210](https://github.com/eth-act/clifv/pull/210)):** 1146 of 1193 roots are proven:
 1109 `simplify` and all 37 `simplify_skeleton`. All 124 icmp roots are enabled.
