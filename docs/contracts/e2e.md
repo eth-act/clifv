@@ -260,9 +260,13 @@ conditions; `InSubset.of_verifiable` proves these imply `InSubset P.bare f`.
 creating an alias body. Linking supplies the whole-program contract for the callee at `f`'s
 own address; `DeclN` includes the caller's own name. Taking that address is also supported.
 This is a per-activation guarantee, not an assumption that recursion terminates or has a
-fixed stack bound. `compileExe_correct` still requires no reachable call cycle.
+fixed stack bound. `compileExe_correct` requires no reachable call cycle;
+`compileExe_correct_depth` (L1d, #204) covers recursive entries with `frameDrop + D·M` bytes of
+stack for a run of at most `M + 1` steps ("The executable compiler", "Recursive programs").
 `E2E.LinkWitness.DirectSelf` witnesses a native recursive CLIF function's `InScopeP`, local
-verification and self edge, and proves its depth-independent stack budget is `none`.
+verification and self edge, and proves its depth-independent stack budget is `none`;
+`Crates.CompileExeRecWitness` compiles it with `compileExe` and applies
+`compileExe_correct_depth` to a concrete run.
 
 **#88 integration verification:** full Lean/tool build and crate proofs pass; all 14 audited
 theorems use only permitted axioms. Filetests: corpus 114/114, extra 22/22, runtests 4672
@@ -1575,6 +1579,15 @@ theorem Link.compileExe_correct (h : compileExe S file0 = .ok file) (B : BaseEnv
     (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs) :
     ExecRefines (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
       (RelocAt S.input) (Clif.runLoop B.env (prog S.input) (M + 1) cs)
+theorem Link.compileExe_correct_depth (h : compileExe S file0 = .ok file) (B : BaseEnv)
+    (hB : BaseOk (sys S.input B)) (hH : HooksSim S.input B) (hf : (prog S.input).func? n = some f)
+    (M : Nat) (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.input (roByte S.input S.data) f
+      (frameDrop (art S.input f).af + S.input.D * M) r args cs.mem)
+    (hr : ClifRun S.input B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs) :
+    ExecRefines (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
+      (RelocAt S.input) (Clif.runLoop B.env (prog S.input) (M + 1) cs)
 def Link.relocShapeB (a : Art) (r : Reloc) / relocRangeB (I) (tp) (a) (r) : Bool
                                    -- relocOkB = shape (code) ∧ range (addresses): relocOkB_of
 theorem Link.relocShapes_of_pipeT (ha : pipeT g k base o = .ok a) : relocShapesB a = true
@@ -1596,7 +1609,7 @@ reachable from the entered function. `compileExe_total`'s hypotheses are the inp
 the driver's data, the addresses (the relocations' reach) and rust-lld's output.
 `LinkSpec` is alias-free by construction; #88 removes alias generation and `AliasOut` rather
 than assuming or proving renaming invariance of the compiler. Native recursion is admitted
-by totality; the separate acyclicity premise of executable correctness is unchanged. Witnesses:
+by totality, and since L1d (#204) by executable correctness too (below). Witnesses:
 `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
 `total_witness`) and `CompileExeRunWitness.lean` (`compileExe_run_witness`: every premise of
 `compileExe_correct` for one concrete outside call into the panic=abort `a_arith` compiled by
@@ -1621,6 +1634,40 @@ for traps, its `NoMemTrap` and the target's `TrapsExplicit` (run conditions). Wi
 `crate-proofs/Crates/CompileExeSourceWitness.lean` (`g_u128`'s `wmul_u128` calling
 `wrapping_mul` on `i128` values, under `Link.SourceWitness.helperBase`; the executable returns
 the split product in x0, x1).
+
+**Recursive programs (L1d, #204, `agent/recursion-exe`).** `compileExe_correct_depth` drops the
+call-graph premise `¬ CycleFrom`: the outside caller provides `frameDrop (art S.input f).af +
+S.input.D * M` bytes of stack instead of `stackFn` (`S.input.D`: the largest frame of the program,
+`LinkSpec.input`/`depthOf`), for the CLIF run of at most `M + 1` steps. The resource condition
+that replaced acyclicity is the depth budget of the linking induction itself
+(`LinkSys.budget_K`: `frameDrop h + D·M ≤ D·(M+1)` for every call), which needs no call-graph
+fact. The chain: `Binary.binary_correct_depthX` (`FV/E2E/BinaryGood.lean`: `binary_correctX` with
+the depth budget, read-only data facts allowed), `ExecBytes.runGood_sysS_of` (`ExecGot.lean`:
+`RunGoodL` of the system keeping the GOT slots for any `LinkSys.Budget`; `runGood_sysS` with the
+static budget, `runGood_sysS_depth` with `D·M`; `sysS` takes the budget `K`),
+`ExecBytes.exec_of_runGood` (`ExecProven.lean`: the lockstep, D2 and D4 from the model-level facts,
+whatever the budget; `binary_correct_exec_proven` is now its instance too) and
+`ExecBytes.binary_correct_exec_depth_proven`. `compileExe_correct` is unchanged (not a corollary:
+its `stackFn` is less than `frameDrop + D·M` in general). Axioms of the new theorems: `propext`,
+`Classical.choice`, `Quot.sound`. Witness (`crate-proofs/Crates/CompileExeRecWitness.lean`):
+`compileExe` compiles the natively self-recursive `direct` (`E2E.LinkWitness.DirectSelf`; its
+entry reaches a call cycle, `cyclic`), and `compileExe_rec_witness` applies
+`compileExe_correct_depth` to the outside call `direct(3)` (four activations; the CLIF run
+returns `6`): the executable machine returns `6` in x0. `stack_needed`: the premise asks for more
+than `stackFn` and fails for the same call with `sp = 16`.
+
+*Gap: fuel, not peak depth.* `M` bounds the whole-program run's steps (`Clif.runLoop … (M + 1)`)
+and indexes the proof's linked machine (`LinkSys.mach M`) and the callee environment
+(`Clif.linkEnvN P base M`: a program callee runs at most `M` steps); the stack is `D` bytes per
+level of that index, so `D·M` is proportional to the run's length, not to its actual peak call
+depth (a run of `M` steps nests at most `M` calls, usually far fewer), and each level is charged
+the largest frame `D`, not the callee's. A premise "the source run's peak of simultaneously live
+frames fits" needs the linking induction (`LinkSys.thm`/`thmG`, `Budget`, `WorldEntry`/`MachEntry`,
+`Clif.runLoop_linkN`) re-indexed by a call depth independent of the step fuel (an environment
+`linkEnvN` with separate depth and fuel; a monotonicity lemma for runs whose depth is at most
+`d`), and for exact frame accounting a budget along the executed call derivation instead of the
+per-callee `Budget` over all syntactic callees. Not done (an estimated 2–5k lines in `LinkArm`,
+`LinkGood`, `LinkClifN` and the wrappers); the user can choose the smallest `M` the run needs.
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
@@ -2110,7 +2157,7 @@ rewrites to local-exec `movz`/`movk`/`nop`/`nop` in a static executable.
 | `AbiEntry.pc`, `.err`, `.spAligned` | `OutsideCall` | the call (AAPCS64) |
 | `AbiEntry.lr` | discharged | `ra := xreg 30 r` |
 | `AbiEntry.raOutside` | `OutsideCall.ra` (weaker form) | the return address is outside the program's code |
-| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = stackFn I f` (`binary_correct`, `goodN`; `binary_correct_of_checks_acyclic`: the input condition "no call cycle reachable from `f`", `StackBound.goodN_iff`), `S` (`binary_correct_bound`), `frameDrop + D·M` (`binary_correct_depth`) |
+| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = stackFn I f` (`binary_correct`, `goodN`; `binary_correct_of_checks_acyclic`: the input condition "no call cycle reachable from `f`", `StackBound.goodN_iff`), `S` (`binary_correct_bound`), `frameDrop + D·M` (`binary_correct_depth`; with read-only data and `RunGoodL`: `binary_correct_depthX`, up to the executable `compileExe_correct_depth`) |
 | `hF` (addresses outside the world) | discharged | `F := worldF I f K r` (`K = bud I f` / `D·M`) |
 | `himg` | discharged | `modelOf`; `RelocAt` relates it to the file |
 | `BodyEntry` | discharged | the body-entry world is `bodyOf af s` |

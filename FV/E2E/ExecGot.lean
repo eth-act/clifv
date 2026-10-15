@@ -20,7 +20,11 @@ memory-read facts D2 (`insn`) and D4 (`got`). Here D4 is discharged:
   (`OutsideAvoids`): the slots are not in the free stack, the stack arguments, or the live CLIF
   memory (the conditions `OutsideCall` states for the code image).
 
-`binary_correct_exec_of_insn`: `binary_correct_exec_of_reads` with D2 only (`RunInsnN`). -/
+`binary_correct_exec_of_insn`: `binary_correct_exec_of_reads` with D2 only (`RunInsnN`).
+
+The system keeping the slots (`sysS`) takes the callees' stack budget `K`: `runGood_sysS_of` holds
+for any `LinkSys.Budget`; `runGood_sysS` is its instance with the stack bound of a non-recursive
+program, `runGood_sysS_depth` with the depth budget `D * M` of any program. -/
 
 namespace E2E
 
@@ -228,60 +232,54 @@ theorem not_worldFS {f : Clif.Function} {K : Nat} {r : Arm.ArmState} {S : BitVec
   · exact h1 (.inr h)
   · exact h2 h
 
-/-- The proof's linked system of an outside call of `f` in `r` with the slots `S` kept. -/
-noncomputable def sysS (I : LinkInput) (B : BaseEnv) (f : Clif.Function) (r : Arm.ArmState)
-    (S : BitVec 64 → Prop) : LinkSys :=
-  (LinkSys.ofInput I B (worldF I f (StackBound.bud I f) r)).extImg
-    (worldFS I f (StackBound.bud I f) r S) S (modelOf I f r).mem
+/-- The proof's linked system of an outside call of `f` in `r` with the callees' stack budget
+`K` and the slots `S` kept. -/
+noncomputable def sysS (I : LinkInput) (B : BaseEnv) (f : Clif.Function) (K : Nat)
+    (r : Arm.ArmState) (S : BitVec 64 → Prop) : LinkSys :=
+  (LinkSys.ofInput I B (worldF I f K r)).extImg (worldFS I f K r S) S (modelOf I f r).mem
 
-theorem mach_sysS (f : Clif.Function) (r : Arm.ArmState) (S : BitVec 64 → Prop) (M : Nat)
-    (g : Clif.Function) : (sysS I B f r S).mach M g = (sys I B).mach M g := by
+theorem mach_sysS (f : Clif.Function) (K : Nat) (r : Arm.ArmState) (S : BitVec 64 → Prop)
+    (M : Nat) (g : Clif.Function) : (sysS I B f K r S).mach M g = (sys I B).mach M g := by
   rw [sysS, LinkSys.mach_extImg, mach_F]
 
-/-- **`RunGoodL` of the system keeping the slots**, for a returning or trapping outcome. -/
-theorem runGood_sysS {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinOk I D file)
-    (hB : BaseOk (sys I B)) {n : String} (hn : StackBound.goodN I n = true) {f : Clif.Function}
-    (hf : (prog I).func? n = some f) (M : Nat) {r : Arm.ArmState} {args : List Clif.Val}
-    {cs : Clif.State} (hX : (imageOf file).Intact r)
-    (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
-    {S : BitVec 64 → Prop} (hav : OutsideAvoids S f (StackBound.stackFn I f) r args cs.mem)
+/-- **`RunGoodL` of the system keeping the slots** for any callees' budget `κ` of the linked
+system (`LinkSys.Budget`) whose value at the entry is `K` (the stack `frameDrop + K`), for a
+returning or trapping outcome. -/
+theorem runGood_sysS_of {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinOk I D file)
+    (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs) (M : Nat)
+    {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
+    {K : Nat} {κ : Nat → Clif.Function → Nat}
+    (hκ : (LinkSys.ofInput I B (worldF I f K r)).Budget κ) (hK : κ M f = K)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + K) r args cs.mem)
+    {S : BitVec 64 → Prop} (hav : OutsideAvoids S f (frameDrop (art I f).af + K) r args cs.mem)
     (hr : ClifRun I B f r args cs)
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c)) :
-    (sysS I B f r S).RunGoodL M f (modelOf I f r) := by
-  have hB' : BaseOk (LinkSys.ofInput I B (worldF I f (StackBound.bud I f) r)) := baseOk_F hB
-  have himgF : ∀ a, (LinkSys.ofInput I B (worldF I f (StackBound.bud I f) r)).Img a →
-      worldF I f (StackBound.bud I f) r a := fun _ h => .inr h
+    (sysS I B f K r S).RunGoodL M f (modelOf I f r) := by
+  subst hK
+  have hB' : BaseOk (LinkSys.ofInput I B (worldF I f (κ M f) r)) := baseOk_F hB
+  have himgF : ∀ a, (LinkSys.ofInput I B (worldF I f (κ M f) r)).Img a →
+      worldF I f (κ M f) r a := fun _ h => .inr h
   have hL0 := okB_sound hI hB' himgF
-  have hfm := (Clif.Program.func?_some hf).1
   have hfacts := binFacts_of_checks hI hbin
   have hro : ∀ a b, BinCheck.roByte I D a = some b → r.mem a = b := fun a b h =>
     hX a b (hfacts.data a b h).1 (hfacts.data a b h).2
-  obtain ⟨hent, -, hgfree, -, hbe, hargs, hsav, hrel, hpl⟩ := premises hL0 hfm hro ho hr
-  have hL : (sysS I B f r S).Ok := LinkSys.Ok.extImg hL0
+  obtain ⟨hent, hres, hgfree, -, hbe, hargs, hsav, hrel, hpl⟩ := premises hL0 hfm hro ho hr
+  have hL : (sysS I B f (κ M f) r S).Ok := LinkSys.Ok.extImg hL0
     (fun a ha => mem_modelOf_img ha) fun a ha => by
       rcases ha with ha | ha
       · exact .inr (.inl ha)
       · exact .inr (.inr ha)
-  have hf' : (progOf I.results).func? n = some f := hf
-  have hn' := hn
-  unfold StackBound.goodN at hn'
-  rw [hf'] at hn'
-  obtain ⟨b, hb⟩ := Option.isSome_iff_exists.1 hn'
-  have hbud : StackBound.bud I f = b := by simp [StackBound.bud, hb]
   obtain ⟨hd, hsb, hib, hsz⟩ := frame_facts hL0 hfm
   have hN := ho.stack
-  have hN' : frameDrop (art I f).af + StackBound.bud I f ≤ (spv r).toNat := hN
   have hsp := (spv r).isLt
   have hspbN : (spBody (art I f).af r).toNat = (spv r).toNat - frameDrop (art I f).af :=
     (off_toNat 0 (spv r) _ (by omega)).2.2
   have hspb : spv (bodyOf (art I f).af (modelOf I f r)) = spBody (art I f).af r := by
     rw [spv_bodyOf, spv_modelOf]; rfl
-  refine (backend_correct_program_stackX (sysS I B f r S) hL
-    ((StackBound.budget_of hI B (worldF I f (StackBound.bud I f) r)).extImg _ _ _)
-    (StackBound.bud I f) (fun M => by simp [LinkSys.hybrid, hb, hbud]) hfm M hent
-    (by rw [spv_modelOf]; exact hN) (fun a ha => ?_) rfl (fun a _ => rfl) hbe hargs hr.entry
+  refine (backend_correct_program_budgetX (sysS I B f (κ M f) r S) hL (hκ.extImg _ _ _) hfm M
+    hent hres rfl (fun a ha => ?_) (fun a _ => rfl) hbe hargs hr.entry
     (fun off v hm k hk hx => ?_) ⟨⟨hrel.1.bytes, fun a n hv => ?_, hrel.1.symbols⟩, hrel.2.1,
       hrel.2.2.1, fun j hj => ?_, hrel.2.2.2.2⟩ hpl htr).2 hout
   · rcases ha with ha | ha
@@ -295,10 +293,49 @@ theorem runGood_sysS {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinO
   · refine not_worldFS (hrel.2.2.2.1 j hj) fun hS => hav.stack _ hS ?_
     change j < (RAFrame.compute (art I f).vcp (art I f).rf).intBase at hj
     rw [hspb]
-    show StackBelow (frameDrop (art I f).af + StackBound.bud I f) _ _
+    show StackBelow (frameDrop (art I f).af + κ M f) _ _
     simp only [StackBelow, BitVec.toNat_add, BitVec.toNat_ofNat, hspbN]
     rw [Nat.mod_eq_of_lt (by omega : j < 2 ^ 64), Nat.mod_eq_of_lt (by omega)]
     omega
+
+/-- **`RunGoodL` of the system keeping the slots**, for a returning or trapping outcome: the
+stack bound of a non-recursive program (`goodN`; the budget `StackBound.budget_of`). -/
+theorem runGood_sysS {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinOk I D file)
+    (hB : BaseOk (sys I B)) {n : String} (hn : StackBound.goodN I n = true) {f : Clif.Function}
+    (hf : (prog I).func? n = some f) (M : Nat) {r : Arm.ArmState} {args : List Clif.Val}
+    {cs : Clif.State} (hX : (imageOf file).Intact r)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (StackBound.stackFn I f) r args cs.mem)
+    {S : BitVec 64 → Prop} (hav : OutsideAvoids S f (StackBound.stackFn I f) r args cs.mem)
+    (hr : ClifRun I B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
+    (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
+      (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c)) :
+    (sysS I B f (StackBound.bud I f) r S).RunGoodL M f (modelOf I f r) := by
+  have hf' : (progOf I.results).func? n = some f := hf
+  have hn' := hn
+  unfold StackBound.goodN at hn'
+  rw [hf'] at hn'
+  obtain ⟨b, hb⟩ := Option.isSome_iff_exists.1 hn'
+  have hbud : StackBound.bud I f = b := by simp [StackBound.bud, hb]
+  exact runGood_sysS_of hI hbin hB (Clif.Program.func?_some hf).1 M hX
+    (StackBound.budget_of hI B (worldF I f (StackBound.bud I f) r))
+    (by simp [LinkSys.hybrid, hb, hbud]) ho hav hr htr hout
+
+/-- **`RunGoodL` of the system keeping the slots for any program**, recursive ones included: the
+depth-`M` budget `D * M` (`LinkSys.budget_K`), the stack `frameDrop + D * M`. -/
+theorem runGood_sysS_depth {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinOk I D file)
+    (hB : BaseOk (sys I B)) {f : Clif.Function} (hfm : f ∈ (prog I).funcs) (M : Nat)
+    {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : (imageOf file).Intact r)
+    (ho : OutsideCall I (BinCheck.roByte I D) f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    {S : BitVec 64 → Prop}
+    (hav : OutsideAvoids S f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (hr : ClifRun I B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
+    (hout : (∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
+      (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c)) :
+    (sysS I B f (I.D * M) r S).RunGoodL M f (modelOf I f r) :=
+  runGood_sysS_of hI hbin hB hfm M hX
+    (LinkSys.budget_K _ (okB_sound hI (baseOk_F hB) fun _ h => .inr h)) rfl ho hav hr htr hout
 
 /-! ## D4 at a state of the run -/
 
@@ -307,8 +344,8 @@ pair, the slot's bytes are the activation's entry bytes (`RL.GoodX.got`, the slo
 are the model state's, which are the file's (`GotOk`, `img_bytes`, `Image.Intact`). -/
 theorem got_of_good {D : List Clif.DataObject} (hI : okB I = true) (hbin : BinOk I D file)
     (hgot : GotOk I file) {f : Clif.Function} {r : Arm.ArmState} (hX : (imageOf file).Intact r)
-    {g : Clif.Function} (hg : g ∈ (prog I).funcs) (hFg : FnOk I file g) {M : Nat}
-    {c t : Arm.ArmState} (hgood : (sysS I B f r (GotSlot I file)).GoodAt M g c t) :
+    {g : Clif.Function} (hg : g ∈ (prog I).funcs) (hFg : FnOk I file g) {M Kc : Nat}
+    {c t : Arm.ArmState} (hgood : (sysS I B f Kc r (GotSlot I file)).GoodAt M g c t) :
     ∀ rl ∈ (art I g).fb.relocs, rl.type = .adrGotPage →
     Arm.r .PC t = wAt (art I g) (rl.offset + 4) → ∀ (rd G : Nat), rd < 31 → G % 8 = 0 →
     inR (-2 ^ 20) (2 ^ 20) (BinCheck.pageOf G - BinCheck.pageOf (wAt (art I g) rl.offset).toNat) = true →
@@ -399,7 +436,8 @@ theorem binary_correct_exec_of_insn {I : LinkInput} {D : List Clif.DataObject}
       fun M' g t hR he => ⟨hins M' g t hR he, ?_⟩
     obtain ⟨c', hRL, -⟩ := reachL_of_reachN hI hcm hF hR hfm (hG hout)
       (raNotSecond_top (hF f hfm) hent)
-    have hRL' : (sysS I B f r (GotSlot I file)).ReachL M f (modelOf I f r) M' g c' t := by
+    have hRL' : (sysS I B f (StackBound.bud I f) r (GotSlot I file)).ReachL M f (modelOf I f r)
+        M' g c' t := by
       exact LinkSys.reachL_extImg (F := worldFS I f (StackBound.bud I f) r (GotSlot I file))
         (S := GotSlot I file) (m := (modelOf I f r).mem)
         (Binary.reachL_F (F := worldF I f (StackBound.bud I f) r) (F' := fun _ => False) hRL)

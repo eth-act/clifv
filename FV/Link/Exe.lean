@@ -20,6 +20,10 @@ no slot (`leanLink_gotSlot`: `leanLink` resolves every GOT pair to `adrp`+`add`,
   choice of the reference CLIF run `ClifRun`, `TrapsExplicit` of that run;
 * no call cycle reachable from the entered function (`CycleFrom`, a property of the CLIF
   program: the stack bound of a non-recursive call graph).
+
+**`compileExe_correct_depth`** (L1d): the same for recursive programs — no call-graph premise; the
+outside caller provides `frameDrop + D * M` bytes of stack for the CLIF run's fuel `M`
+(`binary_correct_exec_depth_proven`) instead of the static stack bound `stackFn`.
 -/
 
 namespace Link
@@ -129,6 +133,29 @@ theorem compileExe_correct {S : LinkSpec} {file0 file : ByteArray}
   obtain ⟨hin, hl⟩ := compileExe_spec h
   exact binary_correct_exec_proven (okB_leanLink hin hl)
     (codeMap_leanLink hl) (binOk_leanLink hl) (gotOk_leanLink hl) B hB hH hf hc M hX ho
+    (outsideAvoids_leanLink hl _ _ _ _ _) hr htr
+
+/-- **The executable compiler is correct for recursive programs** (L1d): `compileExe_correct`
+without the call-graph premise `¬ CycleFrom`. The outside caller of `f` provides
+`frameDrop (art S.input f).af + S.input.D * M` bytes of stack (`S.input.D`: the largest frame of
+the program, `LinkSpec.input`), where `M + 1` bounds the whole-program CLIF run's steps; for that
+run (returning, or trapping explicitly) the executable machine run of `file`'s own words refines
+it (`ExecRefines`). The stack is proportional to the fuel `M`, not to the run's actual peak call
+depth: an overestimate of what the code uses (docs/contracts/e2e.md, "Recursive programs"). -/
+theorem compileExe_correct_depth {S : LinkSpec} {file0 file : ByteArray}
+    (h : compileExe S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.input B))
+    (hH : HooksSim S.input B) {n : String} {f : Clif.Function} (hf : (prog S.input).func? n = some f)
+    (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) f
+      (frameDrop (art S.input f).af + S.input.D * M) r args cs.mem)
+    (hr : ClifRun S.input B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs) :
+    ExecRefines (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
+      (RelocAt S.input) (Clif.runLoop B.env (prog S.input) (M + 1) cs) := by
+  obtain ⟨hin, hl⟩ := compileExe_spec h
+  exact binary_correct_exec_depth_proven (okB_leanLink hin hl)
+    (codeMap_leanLink hl) (binOk_leanLink hl) (gotOk_leanLink hl) B hB hH hf M hX ho
     (outsideAvoids_leanLink hl _ _ _ _ _) hr htr
 
 end Link
