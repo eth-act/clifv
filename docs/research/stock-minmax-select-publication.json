@@ -1,0 +1,47 @@
+{
+  "updated_utc": "2026-10-15T10:36:02.826512+00:00",
+  "pr": 202,
+  "url": "https://github.com/eth-act/clifv/pull/202",
+  "head": "d4e70db34c78b6d41d29cd09a84e962c54ad8fff",
+  "base": "ce20c38134b8c82cf9addc4dff61c713c704c8a9",
+  "merge": "63fdd773bac9583870442f494625575e7c7a839e",
+  "merged_at": "2026-10-15T10:35:13Z",
+  "squash_parent_verified": true,
+  "merged_tree_equals_validated_pr_tree": true,
+  "all67_source_hashes_preserved": true,
+  "checks": [
+    {
+      "bucket": "pass",
+      "link": "https://github.com/eth-act/clifv/actions/runs/38720810245/job/116375888364",
+      "name": "Check lost matches",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/eth-act/clifv/actions/runs/38720810245/job/116375888278",
+      "name": "Publish PR result",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/eth-act/clifv/actions/runs/38720810245/job/116374595105",
+      "name": "Build and compare",
+      "state": "SUCCESS"
+    }
+  ],
+  "CI_run": 38720810245,
+  "CI_summary_sha256": "0608f7d29421040218e73e9c7674fe0e88bc420c0777a994c3de98c8a0656caa",
+  "measurement_complete": true,
+  "exact_identities": 671,
+  "gained": 0,
+  "lost": 0,
+  "harness_changed": [],
+  "full_stock_corpus_equivalence": false,
+  "premerge_assertion_note": "An extra assertion incorrectly required global full_artifact_equivalence_verified=true, which is false for existing stock-corpus coverage gaps. The shell continued after this Python assertion failure to the user-authorized squash merge. Required CI checks, exact identity/harness parity and actual head/base/source/tree/squash-parent checks are verified above. No full-corpus/whole-goal completion is claimed.",
+  "additional_backlog_merges_used": 1,
+  "additional_backlog_limit": 9,
+  "full_goal": "#140 active/incomplete; production legacy",
+  "main_baseline_summary_sha256": "cbdf2e52401fd79a162585d26f370661f8b26cdb98785543e4028a47e27cbb99",
+  "all_CI_totals_and_full_matched_entries_equal_main": true,
+  "main_baseline_full_stock_corpus_equivalence": false
+}
