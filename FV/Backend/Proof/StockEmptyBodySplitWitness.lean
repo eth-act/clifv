@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockReturnSourceRuns
 import FV.Backend.Proof.StockBodyScanOrigin
 
 namespace Backend.Stock.Proof.EmptyBodySplitWitness
@@ -67,4 +68,73 @@ theorem stock_empty_body_split_witness :
     intro ρ world
     rw [code]
     rfl
+
+private theorem emptyDominated : Dominated function := by
+  constructor
+  · change ([] : List Nat).Nodup; decide +kernel
+  · intro ctx ranges st build bi b found
+    cases bi with
+    | zero =>
+      simp [function] at found
+      subst b
+      constructor
+      · intro j stm statement; simp at statement
+      · intro x member
+        change x ∈ ([] : List Nat) at member
+        cases member
+    | succ bi => simp [function] at found
+  · intro ctx ranges st build tl x incoming notLocal y member
+    have bound := (inFix_fixOk (f := function) (ctx := ctx) (gn := id)).cand tl x incoming
+    have length : function.blocks.length = 1 := rfl
+    omega
+
+/-- The new source/ABI/helper semantics include the zero-operand return case
+of an actual complete original driver and a real successful source activation. -/
+theorem stock_empty_return_helper_source_witness :
+    ∃ (result : Result) (event : BlockScanEvent) (st next : State),
+      Stock.lower function = .ok result ∧ LowerScope function ∧ Dominated function ∧
+      event ∈ result.blockScans.toList ∧ SourceDefinedAt function result.ctx event.block 0 frame ∧
+      Clif.enterFunc function [] Clif.Mem.empty = .ok (frame,Clif.Mem.empty) ∧
+      ApplyInternal program (Stock.sem event.ctx) {} 999 25 294 [.values []]
+        (st,#[]) (.regsVec []) (next,#[rule_prelude_lower_1493.id]) ∧
+      ∀ ρ world,∃ ops world',seqRun ispec [.rets []] ρ world =
+          some (.stop 0 (.rets []) ops ρ world [] world' .ret) ∧ AllHold [] (vuses ops ρ) := by
+  obtain ⟨result,event,b,term,body,run,scope,events,split,blockIndex,empty,termIndex,records,bodyCode,
+    bodyState,code,termCode,sourceDone,actualExecution⟩ := stock_empty_body_split_witness
+  let st := scanState term.input term.inst
+  let next : State := {st with base := st.base.emit (.rets [])}
+  have inv := (stock_lower_record_context run scope events).1
+  have pinSelection : returnPins event.ctx.func 0 = some [] := by rw [inv.func]; rfl
+  have helper : ApplyInternal program (Stock.sem event.ctx) {} 999 25 294 [.values []]
+      (st,#[]) (.regsVec []) (next,#[rule_prelude_lower_1493.id]) :=
+    stock_lower_return_call data_program event.ctx rfl [] [] [] st #[] 940 (by simp) rfl pinSelection
+  have entered : Clif.enterFunc function [] Clif.Mem.empty = .ok (frame,Clif.Mem.empty) := rfl
+  have defined : SourceDefinedAt function result.ctx event.block 0 frame := by
+    rw [blockIndex]; exact source_defined_enterFunc emptyDominated result.ctx entered
+  have sourceReturn : Clif.stepTerm Clif.Env.empty {funcs := []} ⟨frame,[],Clif.Mem.empty⟩ (.ret []) =
+      .done [] Clif.Mem.empty := rfl
+  have block : function.blocks[event.block]? = some b := split.block
+  have sourceRet : b.term = .ret [] := by
+    have found := block
+    rw [blockIndex] at found
+    have equal : b = function.blocks[0]! := Option.some.inj found.symm
+    rw [equal]; rfl
+  refine ⟨result,event,st,next,run,scope,emptyDominated,events,defined,entered,helper,?_⟩
+  intro ρ world
+  have self : Refines (fun _ => True) ispec := fun _ _ _ _ world _ h => ⟨world,h,SameWorld.refl _ _⟩
+  have stable : MRStable (fun _ => True) (fun _ cm _ => cm = Clif.Mem.empty) := by intro _ _ _ _ _ h; exact h
+  obtain ⟨rs,ps,extra,mapped,pinned,count,read,state,output,execution⟩ := stock_lower_return_source_run
+    run scope emptyDominated rfl events block sourceRet rfl rfl sourceReturn
+    (by simpa only [empty,List.length_nil] using defined) (by decide : 60 ≤ 999) helper
+    (ρ := ρ) (by intro x member; cases member) self stable
+  have sameRs : rs = [] := Option.some.inj mapped.symm
+  subst rs
+  have samePs : ps = [] := Option.some.inj pinned.symm
+  subst ps
+  have sameExtra : extra = [] := by
+    change Clif.Res.ok [] = .ok extra at read
+    exact Clif.Res.ok.inj read.symm
+  subst extra
+  obtain ⟨ops,world',executed,values,memory⟩ := execution world rfl
+  exact ⟨ops,world',executed,values⟩
 end Backend.Stock.Proof.EmptyBodySplitWitness
