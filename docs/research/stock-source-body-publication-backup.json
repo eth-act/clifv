@@ -1,0 +1,8 @@
+{
+  "state": "merged/CI verified; recovery snapshot push pending",
+  "evidence": {
+    "archive": "/home/lee/.clifv-recovery/20261015T113822Z-source-body-publication/checkpoint.tar.gz",
+    "sha256": "57f839f82f5327a2ce9f8d0ac247ed75eb31a78d00ef0566381ee8f2dc612165",
+    "members": 19
+  }
+}
