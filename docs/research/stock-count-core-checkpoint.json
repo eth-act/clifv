@@ -1,0 +1,63 @@
+{
+  "base": "9bab3587f95c05902d25209d235dacf9bae50399",
+  "updated_utc": "2026-10-14T02:50:25.819263+00:00",
+  "scope": "Partial CLZ/CTZ core: kernel math for zero-extension/count correction and reverse/sentinel leading count; scoped imm12 helper; all six count matches and full RHS states for all four widths. No selected/retained/source or complete family witness claims yet.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockCountMath.lean": "06f3efd98c4083c787a635e7edffffa0555fd9bc325b538f0c29a6d3415a34e3",
+    "FV/Backend/Proof/StockImm12Helper.lean": "ccce552b51c04c356ae3e2c39676301cdccd7eedd50c3420b697f79eb06559ba",
+    "FV/Backend/Proof/StockCountRhs.lean": "837125ef944c088d33946ab24f3439d977468e4819d33aef34f2d0e3498b270a"
+  },
+  "normal_mcp_roots": {
+    "Backend.Stock.Proof.ScalarCount.stock_ctz_sentinel_bits": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCount.stock_clz_zext_bits": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCount.stock_alu_imm12_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCount.stock_count_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCount.stock_count_wide_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCount.stock_clz_narrow_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCount.stock_ctz_narrow_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "source_warnings": 0,
+  "normal_builds": {
+    "imm12_helper": "/tmp/driver-resume_count-imm12-build.log",
+    "all_count_rhs": "/tmp/driver-resume_count-rhs8-build.log"
+  },
+  "pending": [
+    "Derive mapped/guarded requests from successful actual RHS (CLZ narrow may reuse stock_zext32_out inversion)",
+    "Resolve complete count templates through final aliases and prove fresh-interval preservation",
+    "Derive scalar original source data and typed operand for CLZ extension via original DFGCons/getter (do not silently assume ctx operand type)",
+    "Derive actual rule selection from opcode/type/rejected-prefix inventory, preserving old interfaces",
+    "Actual retained binding and original source transfer under original DFG/demand/availability guards",
+    "Complete witnesses for both operations/all widths/parameter and unmaterialized producers; include zero and nonzero sources to exercise sentinel",
+    "All404 prior trust-set preservation and full gates",
+    "All remaining original full #140 obligations"
+  ],
+  "last_completed_full_batch": "docs/research/stock-unary-dispatch-audit.json",
+  "production": "legacy; full #140 active/incomplete; no push or merge"
+}

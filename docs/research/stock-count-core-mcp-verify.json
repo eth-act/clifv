@@ -1,0 +1,141 @@
+[
+  {
+    "name": "Backend.Stock.Proof.ScalarCount.stock_ctz_sentinel_bits",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.ScalarCount.stock_clz_zext_bits",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.ScalarCount.stock_alu_imm12_helper",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.ScalarCount.stock_count_match",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.ScalarCount.stock_count_wide_rhs",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.ScalarCount.stock_clz_narrow_rhs",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  },
+  {
+    "name": "Backend.Stock.Proof.ScalarCount.stock_ctz_narrow_rhs",
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+        }
+      ],
+      "structuredContent": {
+        "axioms": [
+          "propext",
+          "Classical.choice",
+          "Quot.sound"
+        ],
+        "warnings": []
+      },
+      "isError": false
+    }
+  }
+]

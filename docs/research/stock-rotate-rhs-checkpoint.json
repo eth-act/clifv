@@ -1,0 +1,122 @@
+{
+  "base": "3221a28b0ca89edbb3521250f926312abd391117",
+  "updated_utc": "2026-10-14T04:30:39.885261+00:00",
+  "scope": "Partial scalar rotation family: all12 root RHSs with actual full state/guarded mapped requests, narrow typed zero-extension and exact pure-helper traces; old existential variants retained. Original mapped source data and six canonical register matches. No immediate matching/source constant, selected/retained/source or complete witness/full-gate claims yet.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockRotateMath.lean": "9641d78cb85ddd1893e23ebb1b0fc2ae685abfa359cc4bc01f3bc2f994a5e60b",
+    "FV/Backend/Proof/StockRotateSemantics.lean": "285b5d250d63ebdcdafd3455b50f07b84b94db5622d9e54a723f10cc17a55715",
+    "FV/Backend/Proof/StockRotateRhs.lean": "32bb8a004301a3983f973fb731822f08b3a4b02a9b5e0d39f191337df8b359c7",
+    "FV/Backend/Proof/StockRotatePure.lean": "36b0a0dc89da3af0d0927ddc89235714847492928d2d8462e7d69054cae0ddac",
+    "FV/Backend/Proof/StockRotateNarrowRhs.lean": "c4936276b0502dacdddedc203ccf1c006496c5732d93b292c70abe98266802c8",
+    "FV/Backend/Proof/StockRotateNarrowRoots.lean": "04a548696ca81aa11daa448ad1cabf475185bbaf5173eceb76d5b3b04fb3976e",
+    "FV/Backend/Proof/StockRotateMatch.lean": "af98ee7a820c2e695c8da05a86e887cb0f6dea6a4039c84448c8da8301856bf0"
+  },
+  "normal_mcp_roots": {
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_neg": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_imm_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_rr_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_imm_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_zext32": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_source_data": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_register_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "build": {
+    "target": "FV.Backend.Proof.StockRotateMatch",
+    "jobs": 382,
+    "success": true,
+    "log_sha256": "2e442b17a8402da33104067dde35bde667f578c6c9b79662929a640e2ad5cb84"
+  },
+  "remaining": [
+    "Immediate matches and original constant/count facts from unchanged DFG/frame consistency.",
+    "Success-derived request/type inversion and actual opcode/type/priority selected execution.",
+    "Original availability-derived write protection, retained result binding and guarded source-step transfer.",
+    "Complete non-vacuity witnesses for all12 roots/forms, dirty upper bits, varying amount source types, zero/wrap/masked counts and unmaterialized producers/constants.",
+    "428 prior roots/seven exact compiler trust sets and full batch gates.",
+    "All original remaining rule/effect/control/deferred, source/block/whole-driver simulation/completeness, actual production integration and fresh complete Stock comparison."
+  ],
+  "production": "legacy; full #140 active/incomplete; local/uncommitted; no push/merge"
+}

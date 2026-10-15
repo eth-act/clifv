@@ -1,0 +1,187 @@
+{
+  "base": "3221a28b0ca89edbb3521250f926312abd391117",
+  "updated_utc": "2026-10-14T05:08:40.810765+00:00",
+  "scope": "Partial rotation continuation: all six register-root paths derive guarded mapped source requests from actual execution; narrow source type follows original frame consistency; pure count-negation preserves sunk guard. Selected register values, family witnesses, records/source dispatch and full gates remain incomplete.",
+  "normal_roots": {
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_neg": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_imm_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_rr_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_imm_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_zext32": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_source_data": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_register_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_receipts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_immediate_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_immediate_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_immediate_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_immediate_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_sunk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_register_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "new_normal_mcp_roots": {
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_sunk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_register_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "build": {
+    "target": "FV.Backend.Proof.StockRotateRegisterRequests",
+    "jobs": 393,
+    "success": true,
+    "log_sha256": "f7f078e9260f3a8f685214ce1eebe0b6c653c9777e1e848ca6b9df781e311076"
+  },
+  "source_scan": "stock-rotate-register-source-scan.json",
+  "mcp": "stock-rotate-register-mcp-verify.json",
+  "normal_axioms_log_sha256": "6708681ab3a15dfb9bd0a61cb8cf56889577a3969e114c79a993f27053f3fb18",
+  "previous_26_sets_unchanged": true,
+  "remaining": [
+    "Selected register-count original values for all six paths (request/type inversions now proved).",
+    "Actual opcode/type/priority dispatch; remove selected-rule premises from source-by-instruction interface.",
+    "Original availability-derived write protection, retained result binding and guarded source-step transfer.",
+    "Complete non-vacuity witnesses for all12 roots/forms, dirty upper bits, varying amount source types, zero/wrap/masked counts and unmaterialized producers/constants.",
+    "428 prior roots/seven exact compiler trust sets and full batch gates.",
+    "All original remaining rule/effect/control/deferred, source/block/whole-driver simulation/completeness, actual production integration and fresh complete Stock comparison."
+  ],
+  "production": "legacy; full #140 active/incomplete; local/uncommitted; no push/merge",
+  "archive": {
+    "path": "/home/lee/.clifv-recovery/20261014T050858Z/stock-rotate-register-checkpoint.tar.gz",
+    "sha256": "4cc1ed2be99dbc15ba076251956746d58e473b6dc0d0f2738f2893c595cf7a1a"
+  }
+}

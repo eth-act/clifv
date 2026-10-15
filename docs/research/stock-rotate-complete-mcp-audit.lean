@@ -1,0 +1,61 @@
+import FV.Backend.Proof.StockRotateSourceValues
+import FV.Backend.Proof.StockRotateAuxWitness
+import FV.Backend.Proof.StockRotateLeftRegisterWitness
+import FV.Backend.Proof.StockRotateRightRegisterWitness
+import FV.Backend.Proof.StockRotateLeftImmediateWitness
+import FV.Backend.Proof.StockRotateRightImmediateWitness
+
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_helper_variants_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_selected_rotate_rule
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_match
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_receipts
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_immediate_requests
+#print axioms Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_source_data
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_register_match
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_small_rotate_neg
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_source
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_resolved
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_state
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_run
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_run
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_zext32
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rhs
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_rhs
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_source
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_resolved
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_immediate_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_sunk
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_register_requests
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_requests
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_state
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_rr_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_imm_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_rhs
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_rhs
+#print axioms Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_immediate_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_immediate_requests
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_resolved
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_small_rotate_run
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_small_rotate_imm_run
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_resolved
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_operands
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_source
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_source
