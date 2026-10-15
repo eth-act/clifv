@@ -1895,3 +1895,14 @@ Updated UTC: 2026-10-15T01:13:29.981409+00:00
 - Standard-kernel narrow flag proof covers arbitrary8/16-bit operands and every condition, deriving Arm register-extension semantics without native lemmas. Actual extended compare/cset execution through final aliases preserves all outside-result registers. Sparse RHS/request witnesses and nonidentity-alias boundary witnesses pass.
 -285 modules/684 jobs;439 normal standard-only roots,10 fresh MCP checks,429 prior results reused after confirming all279 prior source hashes/trust sets unchanged;285 original-source scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-narrow-core-checkpoint.json.
 - Next derive guards from successful RHS and compose actual left-extension execution/715; narrow first-match selection5117/5108/5134,958/172 outputs, retained binding/guarded source/getter transfer and complete actual Stock.lower/source-step witnesses. Helper/RHS/machine-pair witnesses do not discharge complete-driver nonvacuity. Other forms/minmax/select/full family/repository gates and every original effect/whole-driver/completeness/production obligation remain. Goal active/incomplete, production legacy.
+
+
+## Narrow comparison source-value composition
+
+Updated UTC: 2026-10-15T01:23:21.032212+00:00
+
+- Actual5117/5108 success derives original guards/mappings through real555/556 inversion; typing and RHS replay derive exact producer/full state.
+- Real left extension and real715 compare/cset compose to original8/16 predicate under final aliases, preserving the outside allocation interval. The internal right-source separation obligation remains explicit and must be derived from original retained-record availability.
+- Constructed real source contexts inhabit the actual RHS/715/value pipeline for arbitrary word pairs, both widths/signednesses, sparse7/31/100 and dirty128-bit upper bits. These are source-pipeline witnesses, not complete retained Stock.lower/source-step witnesses.
+-288 modules/687 jobs;443 normal standard-only roots,4 fresh MCP checks and439 reused after verifying285 prior hashes/trust sets unchanged;288 original-source scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-narrow-values-checkpoint.json.
+- Next narrow first-match5117/5108/5134 and652/715/original958/172, derive right-source scratch separation from original availability, retained result binding/guarded source/getter transfer and complete Stock.lower/source-step witnesses; other forms/minmax/select/all family/repository/full-goal effects/simulation/completeness/production obligations retained. Goal active/incomplete, production legacy.
