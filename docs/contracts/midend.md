@@ -787,7 +787,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   file summaries are no worse than their unoptimized baselines. Existing interpreter/oracle
   expectation failures and unsupported cases remain reported. The optional survey was absent.
 
-**R3 (2026-10-09, `agent/selects-r3`, locally merge-ready):**
+**R3 (2026-10-09, `agent/selects-r3`, merged in [#208](https://github.com/eth-act/clifv/pull/208)):**
 - `RuleSelects9..12.lean` proves the remaining thirteen roots: comparison-to-one/zero,
   matching extension lifting, redundant OR operands, conditional subtraction and
   select-of-equality factoring. All 100 selects roots are enabled, without changing
