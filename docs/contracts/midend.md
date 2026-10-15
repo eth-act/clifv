@@ -217,7 +217,7 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  1058 `simplify` roots, all 37 `simplify_skeleton` roots and their helpers are proven (see "Rule
+  1061 `simplify` roots, all 37 `simplify_skeleton` roots and their helpers are proven (see "Rule
   proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
@@ -342,7 +342,7 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
   rule sets (`E2E.backend_correct_opt_proven`); only the allow-listed rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
-- Proven: the rule interpreter's soundness, 1058 `simplify` roots and all 37 `simplify_skeleton`
+- Proven: the rule interpreter's soundness, 1061 `simplify` roots and all 37 `simplify_skeleton`
   roots ("Rule proofs").
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
@@ -495,7 +495,7 @@ Design decisions (approved by the integrator):
 
 ## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
 
-Status: the framework is complete and proven; **1058 `simplify` roots proven** (see below),
+Status: the framework is complete and proven; **1061 `simplify` roots proven** (see below),
 allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,InterpEval,RuleBase,
 RuleData,RuleNode,RuleEmbed,RuleTactic,RuleImm,RuleCtor,RuleSkel,RuleAuto,RuleArith,RuleCprop,
 RuleAll}.lean`; generator
@@ -535,10 +535,10 @@ Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`
 the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
 agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
 
-**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest, R0, R8): **1058 `simplify` roots** = `Opt.provenSimplifyRules` —
+**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest, R0, R7–R8): **1061 `simplify` roots** = `Opt.provenSimplifyRules` —
 `arithmetic.isle` 230 of 258 (`RuleArith.lean`, `RuleArith2..8.lean`), `cprop.isle` 68 of 68 (`RuleCprop.lean`, `RuleCprop2..4.lean`), `remat.isle` 12 of 12 (`RuleRemat.lean`),
-`bitops.isle` 447 of 450 (`RuleBitops1..8.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
-`rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31; R0: `rule_auto_t`/`_tt` 3). **All 37 `simplify_skeleton` roots**
+`bitops.isle` 450 of 450 (`RuleBitops1..10.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
+`rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31; R0: `rule_auto_t`/`_tt` 3; R7: masked-OR and byte-swap proofs 3). **All 37 `simplify_skeleton` roots**
 (`Opt.provenSkeletonRules`, `RuleSkeleton.lean`, `RuleSkeleton2..6.lean`, see "Skeleton rules" below).
 `icmp.isle` 109 of 124 (`RuleIcmp1..10.lean`, `RuleIcmp12.lean`, `RuleIcmp13.lean`) and `selects.isle` 87 of 100 (`RuleSelects1..8.lean`),
 with the template variants of `RuleIcmpEmbed.lean` (`rule_auto_c`/`_ci`: `arr_step` for a value
@@ -660,10 +660,10 @@ failing — `icmp.isle` 49, 77, 91 (`GraphOk.make_val` does not unify with the g
 170 (`bv_decide` counterexample after the earlier alternatives time out), 180, 184, 386, 394, 402,
 410 (heartbeat timeouts), 205 (`simp` made no progress), 295, 296 (no hypothesis in the
 `bv_decide` fragment).
-Not proven in `bitops.isle` (proof-tooling limits; none is false under the CLIF semantics): rule 79
-(`or(and(x, k), z)` mask condition: needs 64-bit and/not immediate specs), 157 and 170 (32/64-bit
-byte-swap patterns: time out at 12–20M heartbeats); 126/127/129 (`truthy` in an if-let) are proven
-by R0. Build note: changing
+All `bitops.isle` roots are now proven. R7 closes 79 (the masked-OR immediate guard) and
+157/170 (32/64-bit byte-swap trees) using bounded fixed-width identities and an opcode-indexed
+decoder that avoids the earlier graph-matching branch explosion. R0 proved 126/127/129
+(`truthy` in an if-let). Build note: changing
 `FV/Opt/Rules.lean` (or anything under `RuleBase`) rebuilds every rule module; the allow-list lives
 in `FV/Opt/RuleAllow.lean`, which no rule module imports, so extending it rebuilds only
 `Optimize`, `RuleAll` and their dependents. Build the rule modules one at a time (`lake build
@@ -759,6 +759,33 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   no worse than their unoptimized baselines. Existing interpreter/oracle expectation failures
   and unsupported cases remain reported, not counted as new regressions.
   The optional `/tmp/rust-clif-survey` data was absent.
+
+**R7 (2026-10-09, `agent/bitops-r7`, merged in [#207](https://github.com/eth-act/clifv/pull/207)):**
+- `RuleBitops9.lean` proves root 79 by relating the 64-bit immediate mask/complement guard
+  to bit-vector complementation at i8/i16/i32/i64. The i128 case is excluded by the existing
+  matcher, not by a new theorem premise.
+- `RuleBitops10.lean` proves roots 157/170 with their original `RuleOk` statements. Its
+  opcode-indexed `ofInst` inversion retains both binary and `iconcat` instructions, but
+  resolves the opcode before splitting alternatives. The ordinary matcher then terminates
+  without the former product of impossible branches. Immediate casts and intermediate
+  shift results normalize before applying the two closed-width byte-swap identities.
+- Concrete witnesses cover complement guards, both decoder alternatives, distinct bytes,
+  high-bit boundaries and both word widths. The proof module builds with a 4M-heartbeat
+  limit per root; all 450 bitops roots are now enabled.
+- The 82-function CLI smoke includes wrong-mask and i128 controls. Roots 79/157/170 fire
+  24/1/1 times; all 766 executions agree, with no unsupported inputs, ill-formed functions,
+  pass errors or rule errors. Instructions fall from 392 to 250, versus 336 before enablement.
+  All 766 optimized interpreter expectations pass, the Cranelift verifier accepts all 82
+  functions, and all 766 AArch64 executions agree with Cranelift-native.
+- Full compiler/crate builds completed successfully (1293/958 jobs). All 15 audited
+  helper/root/aggregate/E2E/crate theorems use only permitted axioms. Encoding: 1292/1292
+  identical functions, 54842 words and 1332 relocations. E2E: 1150 accepted, zero rejected,
+  97 out of scope. Native filetests: corpus 136 passed; runtests 4672 passed, zero failed
+  and zero native disagreements, with errors and not-compiled cases reported separately.
+- Proven-only differential results: corpus 4668 → 2289 instructions; runtests 3389 → 3069
+  (3071 before R7). No refinement failures, pass errors or verifier rejections; all 445
+  file summaries are no worse than their unoptimized baselines. Existing interpreter/oracle
+  expectation failures and unsupported cases remain reported. The optional survey was absent.
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (230): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
