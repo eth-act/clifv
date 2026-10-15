@@ -1917,3 +1917,14 @@ Updated UTC: 2026-10-15T01:33:43.952021+00:00
 - Four complete ordinary-kernel actual Stock.lower/retained/source-step witnesses cover arbitrary pairs at8/16 signed/unsigned, sparse7/31/100, real958 root, dirty128-bit upper bits, parameter aliases and complete outside-allocation/postavailability preservation. Earlier helper-only limitation is discharged for these nonconstant forms.
 -300 modules/699 jobs;456 normal standard-only roots,13 fresh MCP checks and443 reused after verifying288 prior hashes/trust sets unchanged;300 original-source scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-narrow-integrated-checkpoint.json.
 - Next narrow constant5134 and remaining constant/constant-left classifications, all-condition/all-width dispatch, minmax/select and complete family/repository gates. Every original effects/whole-driver simulation/completeness/production obligation remains; goal active/incomplete, production legacy.
+
+
+## Narrow constant immediate retained/source integration
+
+Updated UTC: 2026-10-15T01:47:42.036839+00:00
+
+- Actual5134 RHS derives guarded original left request/zero-extension, exact immediate producer and full state. Original defining-constant metadata/restricted DFG ties encoded bits to unsigned8/16 source semantics without materializing the constant.
+- Actual5134 first-match selection derives canonical environment/trace for all unsigned/equality conditions under original nonconstant-left/nonzero-encodable-right and narrow typing. Wide-rule rejection uses direct failure proofs instead of expensive inversion. Actual652/715/original958/172, retained binding/copy absence and guarded original-source/getter transfer pass.
+- Four complete ordinary-kernel actual Stock.lower/retained/source-step witnesses cover arbitrary input words against3/129 at8 bits and3/4096 at16 bits. Raw constant slot193=777 is deliberately unrelated and demand31=0; real scratch/boolean allocation, dirty128-bit upper bits and full outside-allocation/postavailability preservation checked.
+-314 modules/713 jobs;472 normal standard-only roots,16 fresh MCP checks and456 reused after verifying300 prior hashes/trust sets unchanged;314 original-source scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-narrow-immediate-checkpoint.json.
+- Next narrow constant register fallbacks, constant-left classifications/all-condition/all-width dispatch, minmax/select and complete comparison-family/repository gates. All original effects/whole-driver simulation/completeness/production obligations retained; goal active/incomplete, production legacy.
