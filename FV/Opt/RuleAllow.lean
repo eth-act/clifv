@@ -15,7 +15,7 @@ namespace Opt
 `RuleIcmp1.lean`..`RuleIcmp10.lean`, `RuleIcmp12.lean`, `RuleIcmp13.lean`,
 `RuleSelects1.lean`..`RuleSelects12.lean`, `RuleExtends.lean`, `RuleExtends2.lean`,
 `RuleShifts1.lean`..`RuleShifts5.lean`,
-`RuleSpaceship.lean`, `RuleArith2.lean`..`RuleArith8.lean`,
+`RuleSpaceship.lean`, `RuleSpaceshipSelects.lean`, `RuleArith2.lean`..`RuleArith8.lean`,
 `RuleCprop2.lean`..`RuleCprop4.lean` and `RuleRemat.lean`. -/
 def provenSimplifyRules : List Nat :=
   [65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 101, 102, 110, 111, 112,
@@ -75,7 +75,9 @@ def provenSimplifyRules : List Nat :=
    1279, 1280, 1281, 1282, 1283, 1284, 1285, 1286, 1287, 1288, 1289, 1290, 1291, 1292, 1298, 1299,
    1300, 1301, 1302, 1303, 1304, 1305, 1306, 1307, 1308, 1309, 1310, 1311, 1312, 1313, 1314, 1315,
    1316, 1317, 1318, 1319, 1324, 1325, 1344, 1345, 1346, 1347, 1348, 1349, 1350, 1351, 1352, 1353,
-   1355, 1356, 1357, 1358, 1359, 1360, 1361, 1362, 1363, 1364, 1365, 1399, 1400, 1401, 1402, 1403,
+   1355, 1356, 1357, 1358, 1359, 1360, 1361, 1362, 1363, 1364, 1365, 1379, 1380, 1381, 1382, 1383,
+   1384, 1385, 1386, 1387, 1388, 1389, 1390, 1391, 1392, 1393, 1394, 1395, 1396, 1397, 1398,
+   1399, 1400, 1401, 1402, 1403,
    1404, 1405, 1406, 1407, 1408, 1409, 1410, 1411, 1412, 1413, 1414, 1415, 1416, 1417, 1418]
 
 /-- Ids of the exported `simplify_skeleton` rules whose correctness is proven
