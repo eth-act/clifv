@@ -1,0 +1,46 @@
+{
+  "scanner_sha256": "73a580d98bb202121fca6021fcc611fd6d98d610c49a872924e5389eacf2be40",
+  "adaptation": "Only unused orjson import replaced by standard json loads; patterns/scan_warnings unchanged.",
+  "sources": {
+    "FV/Backend/Proof/StockRotateMath.lean": {
+      "sha256": "9641d78cb85ddd1893e23ebb1b0fc2ae685abfa359cc4bc01f3bc2f994a5e60b",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockRotateSemantics.lean": {
+      "sha256": "285b5d250d63ebdcdafd3455b50f07b84b94db5622d9e54a723f10cc17a55715",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockRotateRhs.lean": {
+      "sha256": "32bb8a004301a3983f973fb731822f08b3a4b02a9b5e0d39f191337df8b359c7",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockRotatePure.lean": {
+      "sha256": "36b0a0dc89da3af0d0927ddc89235714847492928d2d8462e7d69054cae0ddac",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockRotateNarrowRhs.lean": {
+      "sha256": "c4936276b0502dacdddedc203ccf1c006496c5732d93b292c70abe98266802c8",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockRotateNarrowRoots.lean": {
+      "sha256": "04a548696ca81aa11daa448ad1cabf475185bbaf5173eceb76d5b3b04fb3976e",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockRotateMatch.lean": {
+      "sha256": "af98ee7a820c2e695c8da05a86e887cb0f6dea6a4039c84448c8da8301856bf0",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockRotateImmediateMatch.lean": {
+      "sha256": "8b9bb5e2213cca5af49681810e094f5c01f2f4f665a396169329e75979ad85d4",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockRotateSelectedValues.lean": {
+      "sha256": "1b26d294815c06402c58ec212b620d553ca2989eccf447ccf39b875797e9d417",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockRotateNarrowValues.lean": {
+      "sha256": "9c29a03ae96633ed9fbfb0ff52a315b9fbc409173bab4d46a70fb0103f8ed9f5",
+      "warnings": []
+    }
+  }
+}

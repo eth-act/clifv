@@ -1,0 +1,286 @@
+{
+  "base": "3221a28b0ca89edbb3521250f926312abd391117",
+  "updated_utc": "2026-10-14T05:36:13.999036+00:00",
+  "scope": "Rotation dispatch/source-by-instruction now derive actual selected rule and both restricted getters internally. Eight complete left-register driver/source/retained witnesses pass actual kernel evaluation: four widths \u00d7 parameter/earlier producer data, dirty upper bits,64-bit register count77; earlier data source unmaterialized. Other24 planned complete fixtures typecheck against explicit observation premises in scratch only; final kernel checks pending.",
+  "normal_roots": {
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_neg": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_imm_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_rr_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_imm_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_zext32": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_source_data": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_register_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_receipts": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_immediate_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_immediate_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_immediate_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_immediate_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_sunk": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_register_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_state": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_resolved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_state": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_selected_rotate_rule": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_operands": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_by_instruction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "new_normal_mcp_roots": {
+    "Backend.Stock.Proof.ScalarRotate.stock_selected_rotate_rule": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_operands": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_by_instruction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "previous_42_sets_unchanged": true,
+  "source_scan": "stock-rotate-dispatch-witness-source-scan.json",
+  "mcp": "stock-rotate-dispatch-witness-mcp-verify.json",
+  "normal_log_sha256": "a75eea3fe781b58cd87c778379e19753b99c76730c544af3a38de11e4d0b57ef",
+  "build": {
+    "target": "FV.Backend.Proof.StockRotateLeftRegisterWitness",
+    "jobs": 436,
+    "success": true,
+    "log_sha256": "3e7ea6f2a02746298db40de9e26c5100eb49bda4b266390674ef97c5c9dca9c2"
+  },
+  "complete_witnesses": {
+    "left_register": 8,
+    "right_register": 0,
+    "left_immediate": 0,
+    "right_immediate": 0
+  },
+  "pending_build": {
+    "target": "FV.Backend.Proof.StockRotateRightRegisterWitness",
+    "session_id": 54864,
+    "log": "/tmp/driver-resume-rot10-right-witness.log",
+    "state": "running at checkpoint; re-poll actual handle, do not restart on observation timeout"
+  },
+  "remaining": [
+    "Actual right-register and left/right-immediate kernel driver witnesses; zero/exact-wrap edge counts and public-root non-vacuity review.",
+    "428 prior roots/seven exact compiler trust sets and full build/crates/runtime/encoder/both E2E identity-stage gates.",
+    "All remaining original recovery-plan families/effects/control/deferred, source/block/whole-driver simulation/completeness, actual production integration across consumers and fresh complete Stock comparison."
+  ],
+  "production": "legacy; full #140 active/incomplete; local/uncommitted; no push/merge",
+  "archive": {
+    "path": "/home/lee/.clifv-recovery/20261014T053613Z/stock-rotate-dispatch-witness-checkpoint.tar.gz",
+    "sha256": "084dde9e3e373316c17e859e2fcc740f2252fccd54c3e78914d311fffb6acac8"
+  }
+}

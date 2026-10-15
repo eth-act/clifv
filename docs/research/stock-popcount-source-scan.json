@@ -1,0 +1,42 @@
+{
+  "scanner_sha256": "73a580d98bb202121fca6021fcc611fd6d98d610c49a872924e5389eacf2be40",
+  "adaptation": "Only unused orjson import replaced by standard json loads; patterns/scan_warnings unchanged.",
+  "sources": {
+    "FV/Backend/Proof/StockPopcountMath.lean": {
+      "sha256": "3463889013d3f00f4c31a9176639169bfe84105cb8a4bba173996ccb1b9f95ef",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountNonzeroWitness.lean": {
+      "sha256": "b31a8daf3072959f4328a685fdefb265b35c8f7eb08cc50d48f554299184bf78",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountPure.lean": {
+      "sha256": "cc8f264b0c44d7609e9e06c2ae17bd6b39103e45efedd73c62a4116870f13092",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountRecordValues.lean": {
+      "sha256": "49b846a01a7231320f5a0da6012e000c461bf1d7c67958e6b5ee0bb1c9288a42",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountRhs.lean": {
+      "sha256": "edb0ca0e4f61ceaac7a240d5f9b355bea95d512ec0619f8c6144f2fd0500ba5d",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountSelected.lean": {
+      "sha256": "94820aa4977caaad452ca757ce454e9e868f3e9ff3347ebd68088d9308fe97ea",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountSemantics.lean": {
+      "sha256": "158e2791f1f29d33050befb8bde53646dc526092799ddea394ff96ff781e1bef",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountSourceValues.lean": {
+      "sha256": "9be567664e36e8b4623018d5fb7949fd62a9a1996c3ba9b2fd28a13b85ecf648",
+      "warnings": []
+    },
+    "FV/Backend/Proof/StockPopcountZeroWitness.lean": {
+      "sha256": "6a8449029ff284079e4d65002c9bf1d57639fc9fd572504f0ce762db1cddedb4",
+      "warnings": []
+    }
+  }
+}

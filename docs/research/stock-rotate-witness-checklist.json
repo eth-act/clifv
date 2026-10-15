@@ -1,0 +1,708 @@
+{
+  "updated_utc": "2026-10-14T05:57:14.768770+00:00",
+  "status": "Validated family batch: all64 complete driver/source/retained cases and54 public-root premise reviews/kernel/normal/MCP audits pass; full gates and exact prior identity/stage/trust parity pass. Whole-driver/full-goal obligations remain.",
+  "planned_complete_cases": 64,
+  "cases": {
+    "left_register_wrapped77": 8,
+    "right_register_wrapped77": 8,
+    "left_immediate_wrapped77": 8,
+    "right_immediate_wrapped77": 8,
+    "left_register_zero": 8,
+    "right_register_zero": 8,
+    "left_register_exact_wrap64": 8,
+    "right_register_exact_wrap64": 8
+  },
+  "public_roots": [
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_helper_variants_witness",
+    "Backend.Stock.Proof.ScalarRotate.stock_selected_rotate_rule",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_match",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_receipts",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_immediate_requests",
+    "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+    "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+    "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+    "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_source_data",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_register_match",
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_neg",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_values",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_source",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_values",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_resolved",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_state",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_values",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_helper",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_helper",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_run",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_run",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_zext32",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rhs",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_rhs",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_source",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_resolved",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_immediate_values",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_helper",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_sunk",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_register_requests",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_requests",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_state",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_values",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_rr_helper",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_imm_helper",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_rhs",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_rhs",
+    "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness",
+    "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+    "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+    "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_immediate_values",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_immediate_requests",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_resolved",
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_run",
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_imm_run",
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_resolved",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_operands",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_by_instruction",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_values",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_source",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_values",
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_source"
+  ],
+  "coverage_review": {
+    "all12_selected_roots": "32 base cases: left/right \u00d7 register/immediate \u00d7 four widths \u00d7 parameter/earlier producer data",
+    "original_conditions": [
+      "Sparse original IDs7,13,100; original scope/dominance and restricted DFG/frame consistency",
+      "Actual Stock.lower, matching/requests, retained result binding, original source step and guarded post-frame",
+      "Earlier data source register unmaterialized; immediate literal-count source register unmaterialized",
+      "Dirty upper data/count machine bits;64-bit count source independent of data width",
+      "Register zero and64 exact-wrap counts through both directions",
+      "Fresh-only write preservation including available source producers allocated above the current frontier"
+    ],
+    "root_inhabitation": "54 public roots reviewed against complete actual source call chains and the auxiliary closed helper/subtraction witness; matrix records concrete witness roots and premise boundaries. Final builds/audits still pending.",
+    "auxiliary_variants": "Auxiliary kernel witness explicitly inhabits both existential helper APIs, zero subtraction premise and the three-instruction immediate semantic contract at8/16."
+  },
+  "next": [
+    "Finish right immediate and both register edge module kernel builds in active queue",
+    "Fresh normal/MCP and independent source scan for all53 rotation roots; exact428 prior/seven final compiler trust sets",
+    "Full build/crates/runtime/encoder/both E2E identity-stage gates",
+    "All remaining full-goal obligations unchanged; production legacy"
+  ],
+  "root_inhabitation_matrix": {
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_helper_variants_witness": {
+      "source": "FV/Backend/Proof/StockRotateAuxWitness.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.stock_rotate_helper_variants_witness"
+      ],
+      "premise_review": "Closed witness at explicit list [8,16], both existential helper APIs, zero immediate/count and subtraction-kernel premise. Auxiliary witness explicitly instantiates the immediate pure-kernel CodeShape/emitted/frontier/protected-source/count premises with a concrete three-instruction run at zero.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_selected_rotate_rule": {
+      "source": "FV/Backend/Proof/StockRotateDispatch.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_match": {
+      "source": "FV/Backend/Proof/StockRotateImmediateMatch.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_receipts": {
+      "source": "FV/Backend/Proof/StockRotateImmediateMatch.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_immediate_requests": {
+      "source": "FV/Backend/Proof/StockRotateImmediateMatch.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness": {
+      "source": "FV/Backend/Proof/StockRotateLeftImmediateWitness.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Closed complete driver/source/record witness family; its only finite type/Bool indices are inhabited at each supported width and parameter/producer form.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness": {
+      "source": "FV/Backend/Proof/StockRotateLeftRegisterWitness.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Closed complete driver/source/record witness family; its only finite type/Bool indices are inhabited at each supported width and parameter/producer form.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness": {
+      "source": "FV/Backend/Proof/StockRotateLeftRegisterWitness.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Closed complete driver/source/record witness family; its only finite type/Bool indices are inhabited at each supported width and parameter/producer form.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness": {
+      "source": "FV/Backend/Proof/StockRotateLeftRegisterWitness.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Closed complete driver/source/record witness family; its only finite type/Bool indices are inhabited at each supported width and parameter/producer form.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_source_data": {
+      "source": "FV/Backend/Proof/StockRotateMatch.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_register_match": {
+      "source": "FV/Backend/Proof/StockRotateMatch.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_neg": {
+      "source": "FV/Backend/Proof/StockRotateMath.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.stock_rotate_helper_variants_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Auxiliary closed actual helper executions at8/16 and zero, supplemented by complete selected source cases and zero/exact-wrap register states.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_values": {
+      "source": "FV/Backend/Proof/StockRotateNarrowImmRecordValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_source": {
+      "source": "FV/Backend/Proof/StockRotateNarrowImmSourceValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_values": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRecordValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_resolved": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRegisterSemantics.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_state": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRegisterValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_values": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRegisterValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_helper": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRhs.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.stock_rotate_helper_variants_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Auxiliary closed actual helper executions at8/16 and zero, supplemented by complete selected source cases and zero/exact-wrap register states.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_helper": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRhs.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.stock_rotate_helper_variants_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Auxiliary closed actual helper executions at8/16 and zero, supplemented by complete selected source cases and zero/exact-wrap register states.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_run": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRhs.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_run": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRhs.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_zext32": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRoots.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rhs": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRoots.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_rhs": {
+      "source": "FV/Backend/Proof/StockRotateNarrowRoots.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_source": {
+      "source": "FV/Backend/Proof/StockRotateNarrowSourceValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_resolved": {
+      "source": "FV/Backend/Proof/StockRotateNarrowValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_immediate_values": {
+      "source": "FV/Backend/Proof/StockRotateNarrowValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_helper": {
+      "source": "FV/Backend/Proof/StockRotatePure.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_sunk": {
+      "source": "FV/Backend/Proof/StockRotatePure.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_register_requests": {
+      "source": "FV/Backend/Proof/StockRotateRegisterRequests.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_requests": {
+      "source": "FV/Backend/Proof/StockRotateRegisterRequests.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_state": {
+      "source": "FV/Backend/Proof/StockRotateRegisterValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_values": {
+      "source": "FV/Backend/Proof/StockRotateRegisterValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_rr_helper": {
+      "source": "FV/Backend/Proof/StockRotateRhs.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_imm_helper": {
+      "source": "FV/Backend/Proof/StockRotateRhs.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_rhs": {
+      "source": "FV/Backend/Proof/StockRotateRhs.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_rhs": {
+      "source": "FV/Backend/Proof/StockRotateRhs.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness": {
+      "source": "FV/Backend/Proof/StockRotateRightImmediateWitness.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Closed complete driver/source/record witness family; its only finite type/Bool indices are inhabited at each supported width and parameter/producer form.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness": {
+      "source": "FV/Backend/Proof/StockRotateRightRegisterWitness.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Closed complete driver/source/record witness family; its only finite type/Bool indices are inhabited at each supported width and parameter/producer form.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness": {
+      "source": "FV/Backend/Proof/StockRotateRightRegisterWitness.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Closed complete driver/source/record witness family; its only finite type/Bool indices are inhabited at each supported width and parameter/producer form.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness": {
+      "source": "FV/Backend/Proof/StockRotateRightRegisterWitness.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Closed complete driver/source/record witness family; its only finite type/Bool indices are inhabited at each supported width and parameter/producer form.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_immediate_values": {
+      "source": "FV/Backend/Proof/StockRotateSelectedValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_immediate_requests": {
+      "source": "FV/Backend/Proof/StockRotateSelectedValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_resolved": {
+      "source": "FV/Backend/Proof/StockRotateSemantics.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_run": {
+      "source": "FV/Backend/Proof/StockRotateSemantics.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_small_rotate_imm_run": {
+      "source": "FV/Backend/Proof/StockRotateSemantics.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.stock_rotate_helper_variants_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants. Auxiliary witness explicitly instantiates the immediate pure-kernel CodeShape/emitted/frontier/protected-source/count premises with a concrete three-instruction run at zero.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_resolved": {
+      "source": "FV/Backend/Proof/StockRotateSemantics.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_operands": {
+      "source": "FV/Backend/Proof/StockRotateSourceValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_by_instruction": {
+      "source": "FV/Backend/Proof/StockRotateSourceValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_values": {
+      "source": "FV/Backend/Proof/StockRotateWideImmRecordValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_source": {
+      "source": "FV/Backend/Proof/StockRotateWideImmSourceValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_values": {
+      "source": "FV/Backend/Proof/StockRotateWideRecordValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_source": {
+      "source": "FV/Backend/Proof/StockRotateWideSourceValues.lean",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness",
+        "Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness"
+      ],
+      "premise_review": "Actual complete source proofs call the relevant selected/request/matching/retained/semantic chain. Data=data_program and cfg={} satisfy program/overlap premises; exact original DFG/frame/dominance, guarded requests, held values and final-alias bounds/protection are established in actual retained records. Narrow widths8/16 and wide32/64 branches are instantiated; source forms are parameter/earlier producer and immediates retain unmaterialized original constants.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    }
+  },
+  "actual_complete_cases": 64
+}

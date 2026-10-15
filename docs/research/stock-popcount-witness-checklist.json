@@ -1,0 +1,277 @@
+{
+  "updated_utc": "2026-10-14T06:52:40.133166+00:00",
+  "status": "Validated family batch: all16 complete driver/source/retained cases and27 public-root premise reviews/kernel/normal/MCP audits pass; full gates and exact prior identity/stage/trust parity pass. Whole-driver/full-goal obligations remain.",
+  "planned_complete_cases": 16,
+  "widths": [
+    8,
+    16,
+    32,
+    64
+  ],
+  "values": [
+    "zero",
+    "-91"
+  ],
+  "source_forms": [
+    "parameter",
+    "earlier constant producer; original source register unmaterialized"
+  ],
+  "dirty_upper_bits": true,
+  "root_inhabitation_matrix": {
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_byte": {
+      "module": "StockPopcountMath",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Every mathematical premise inhabited by the closed math witness and the actual SIMD source templates; byte indices bounded0\u20137, byte/word count bounds are unconditional kernel lemmas.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum": {
+      "module": "StockPopcountMath",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Every mathematical premise inhabited by the closed math witness and the actual SIMD source templates; byte indices bounded0\u20137, byte/word count bounds are unconditional kernel lemmas.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum_full": {
+      "module": "StockPopcountMath",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Every mathematical premise inhabited by the closed math witness and the actual SIMD source templates; byte indices bounded0\u20137, byte/word count bounds are unconditional kernel lemmas.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcnt8_fin": {
+      "module": "StockPopcountMath",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Every mathematical premise inhabited by the closed math witness and the actual SIMD source templates; byte indices bounded0\u20137, byte/word count bounds are unconditional kernel lemmas.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcnt32_fin": {
+      "module": "StockPopcountMath",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Every mathematical premise inhabited by the closed math witness and the actual SIMD source templates; byte indices bounded0\u20137, byte/word count bounds are unconditional kernel lemmas.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcnt64_fin": {
+      "module": "StockPopcountMath",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Every mathematical premise inhabited by the closed math witness and the actual SIMD source templates; byte indices bounded0\u20137, byte/word count bounds are unconditional kernel lemmas.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcnt16_fin": {
+      "module": "StockPopcountMath",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Every mathematical premise inhabited by the closed math witness and the actual SIMD source templates; byte indices bounded0\u20137, byte/word count bounds are unconditional kernel lemmas.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness": {
+      "module": "StockPopcountMath",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness"
+      ],
+      "premise_review": "Closed concrete dirty-upper-bit CV/word; every byte index0\u20137 explicitly instantiated.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_pure_helper": {
+      "module": "StockPopcountPure",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Actual RHS/source fixtures invoke all five concrete helper contracts; Data=data_program, cfg={} and all23 closure memberships are checked. Base helper legacy executions are constructed by forward interpreter proofs, so the projection premise is inhabited; all scheduling fields retained.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_to_vec": {
+      "module": "StockPopcountRhs",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Actual RHS/source fixtures invoke all five concrete helper contracts; Data=data_program, cfg={} and all23 closure memberships are checked. Base helper legacy executions are constructed by forward interpreter proofs, so the projection premise is inhabited; all scheduling fields retained.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_count": {
+      "module": "StockPopcountRhs",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Actual RHS/source fixtures invoke all five concrete helper contracts; Data=data_program, cfg={} and all23 closure memberships are checked. Base helper legacy executions are constructed by forward interpreter proofs, so the projection premise is inhabited; all scheduling fields retained.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_pair": {
+      "module": "StockPopcountRhs",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Actual RHS/source fixtures invoke all five concrete helper contracts; Data=data_program, cfg={} and all23 closure memberships are checked. Base helper legacy executions are constructed by forward interpreter proofs, so the projection premise is inhabited; all scheduling fields retained.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum_vec": {
+      "module": "StockPopcountRhs",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Actual RHS/source fixtures invoke all five concrete helper contracts; Data=data_program, cfg={} and all23 closure memberships are checked. Base helper legacy executions are constructed by forward interpreter proofs, so the projection premise is inhabited; all scheduling fields retained.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_from_vec": {
+      "module": "StockPopcountRhs",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Actual RHS/source fixtures invoke all five concrete helper contracts; Data=data_program, cfg={} and all23 closure memberships are checked. Base helper legacy executions are constructed by forward interpreter proofs, so the projection premise is inhabited; all scheduling fields retained.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs": {
+      "module": "StockPopcountRhs",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Actual RHS/source fixtures invoke all five concrete helper contracts; Data=data_program, cfg={} and all23 closure memberships are checked. Base helper legacy executions are constructed by forward interpreter proofs, so the projection premise is inhabited; all scheduling fields retained.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness": {
+      "module": "StockPopcountRhs",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness"
+      ],
+      "premise_review": "Closed local RHS executions at8/16/32/64, mapped source193 and guard proved by no defining instruction; complete source fixtures provide original mapped-context/frame conditions.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_resolved": {
+      "module": "StockPopcountSemantics",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_machine_witness",
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Self refinement/dirty-upper values/alias bounds inhabited directly; actual source fixtures also derive original held values and final aliases. Only initial source read precedes fresh writes; complete allocation preservation covers both sides.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_machine_witness": {
+      "module": "StockPopcountSemantics",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.stock_popcount_machine_witness"
+      ],
+      "premise_review": "Closed mixed-class machine runs at all scalar widths, dirty upper CV, empty aliases/bounded allocation and self refinement; original frames covered by source fixtures.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_match": {
+      "module": "StockPopcountSelected",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Source-driven fixtures use actual successful matches/guarded requests/selection and original scope/dominance/restricted DFG; alias bounds, demand extent and held values established. Retained result binding and source-step/availability post-frame are actual, including earlier producers above current frontier.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_requests": {
+      "module": "StockPopcountSelected",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Source-driven fixtures use actual successful matches/guarded requests/selection and original scope/dominance/restricted DFG; alias bounds, demand extent and held values established. Retained result binding and source-step/availability post-frame are actual, including earlier producers above current frontier.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_popcount_selected_values": {
+      "module": "StockPopcountSelected",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Source-driven fixtures use actual successful matches/guarded requests/selection and original scope/dominance/restricted DFG; alias bounds, demand extent and held values established. Retained result binding and source-step/availability post-frame are actual, including earlier producers above current frontier.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_selected_popcount_rule": {
+      "module": "StockPopcountSelected",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Source-driven fixtures use actual successful matches/guarded requests/selection and original scope/dominance/restricted DFG; alias bounds, demand extent and held values established. Retained result binding and source-step/availability post-frame are actual, including earlier producers above current frontier.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_values": {
+      "module": "StockPopcountRecordValues",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Source-driven fixtures use actual successful matches/guarded requests/selection and original scope/dominance/restricted DFG; alias bounds, demand extent and held values established. Retained result binding and source-step/availability post-frame are actual, including earlier producers above current frontier.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_source": {
+      "module": "StockPopcountSourceValues",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Source-driven fixtures use actual successful matches/guarded requests/selection and original scope/dominance/restricted DFG; alias bounds, demand extent and held values established. Retained result binding and source-step/availability post-frame are actual, including earlier producers above current frontier.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_source_by_instruction": {
+      "module": "StockPopcountSourceValues",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness",
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Source-driven fixtures use actual successful matches/guarded requests/selection and original scope/dominance/restricted DFG; alias bounds, demand extent and held values established. Retained result binding and source-step/availability post-frame are actual, including earlier producers above current frontier.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness": {
+      "module": "StockPopcountZeroWitness",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Actual whole-function Stock.lower/source-step/retained record/result-binding/post-frame witness. Only finite width and parameter/producer indices; every index is kernel observed.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    },
+    "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness": {
+      "module": "StockPopcountNonzeroWitness",
+      "witness_roots": [
+        "Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness"
+      ],
+      "premise_review": "Actual whole-function Stock.lower/source-step/retained record/result-binding/post-frame witness. Only finite width and parameter/producer indices; every index is kernel observed.",
+      "status": "Witness builds, kernel/normal/MCP checks and full family gates passed"
+    }
+  },
+  "full_goal": "active/incomplete; production legacy",
+  "actual_complete_cases": 16
+}
