@@ -1,0 +1,1250 @@
+{
+  "checkpoint_utc": "2026-10-14T11:39:13.552760+00:00",
+  "state": "partial division source request machine values; full goal active/incomplete",
+  "normal_axioms": {
+    "Backend.Stock.Proof.ScalarDiv.stock_div_constant_source_value": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_divisor_source_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_condOn_adds1": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_extension_sub_one": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_condOn_sub1_vs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_helper_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_intmin_helper_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_quotient_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_msub_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_intmin_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_imm_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_imm_pure_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_imm_case_lcf32": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_imm_case_lcf64": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_imm_legacy_ok": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_imm_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_imm_frame_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_signExtend_allOnes": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_shift_intMin": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_operand_allOnes": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_intmin_code_sem": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_movK_val": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_lcf_step": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_lcf_fold": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_lcf_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_source_data": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_selected_div_roots": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_movK_ident": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_pure_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.RequestWitness.stock_div_divisor_request_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.RequestWitness.stock_div_divisor_source_values_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_divisor_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_divisor_observed_with_fuel": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarDiv.stock_div_divisor_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "mcp": [
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_constant_source_value",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_divisor_source_observed",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_condOn_adds1",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_extension_sub_one",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_condOn_sub1_vs",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_run",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_run",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_witness",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_witness",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_helper_witness",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_intmin_helper_witness",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_quotient_helper",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_msub_helper",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_helper",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_helper",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_intmin_helper",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_imm_observed",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_imm_pure_helper",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_imm_case_lcf32",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_imm_case_lcf64",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_imm_legacy_ok",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_imm_values",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_imm_frame_witness",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_signExtend_allOnes",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_shift_intMin",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_operand_allOnes",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_intmin_code_sem",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_movK_val",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_lcf_step",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_lcf_fold",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_lcf_run",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_source_data",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_selected_div_roots",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_movK_ident",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_pure_helper",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.RequestWitness.stock_div_divisor_request_witness",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.RequestWitness.stock_div_divisor_source_values_witness",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_divisor_observed",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_divisor_observed_with_fuel",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "status": "fulfilled",
+      "value": {
+        "root": "Backend.Stock.Proof.ScalarDiv.stock_div_divisor_source_values",
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+            }
+          ],
+          "structuredContent": {
+            "axioms": [
+              "propext",
+              "Classical.choice",
+              "Quot.sound"
+            ],
+            "warnings": []
+          },
+          "isError": false
+        }
+      }
+    }
+  ],
+  "sources": [
+    {
+      "path": "FV/Backend/Proof/StockDivConstant.lean",
+      "sha256": "0037b16127b9f3ec6e6bff0149c5ac6f935877b539eb47bcffa8e85d871994b6",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivFlags.lean",
+      "sha256": "80d4926f232c1a964ac44a20862a3726f9651dd85fec28127cb3456cf2d7d3b1",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivGuardSemantics.lean",
+      "sha256": "82099de6b41f05efb4ea70a20e2d1686697717fb1c630c68a57612cb58f45387",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivGuardWitness.lean",
+      "sha256": "59621685382105723aceddae07394965175dbad46b860318bbfa1ecc1d4380e7",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivHelperWitness.lean",
+      "sha256": "d1683b406f56fee147606492b8c02fff33a04a1ab0cd55982179695b0717d138",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivHelpers.lean",
+      "sha256": "ab70f8591210fe256384fa89fab8f321333f95a9a7d5ef19a49920b3583ac5e1",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivImmFrame.lean",
+      "sha256": "d71949862ec69691c0acd287e5200af3923965db65220822fd3454b91fa0e4e1",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivImmPure.lean",
+      "sha256": "f96d98728124110025ebe9c6f701c4246d9f2bb13d683008e16cfda5a42bf98a",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivImmValues.lean",
+      "sha256": "43f22ec2f93bcd1666c30e681d2c9f576c5049ca47a2bc18cff0f4ea3a2bd353",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivImmWitness.lean",
+      "sha256": "61cefc4f85b545eff2399f6c6cdc5a35f455a8051993a5d7e7e07feee79f1b2d",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivIntmin.lean",
+      "sha256": "d725d0b3353029d5ffe03a1852e8f1ba009178c125e719604ff5c30aca7872ad",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivLcf.lean",
+      "sha256": "be6c4cc04c82442a52d38098441650b740ed1ce0e953a3cf521568493c833c19",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivMatch.lean",
+      "sha256": "74548d9b0fc89876668d236afd897be5151acf445da3808daa5046757cfe4734",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivMovK.lean",
+      "sha256": "41991259f0ea45b2353a5345552d0f2ed053f638cbe2f71e0ea94a12547951ed",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivPure.lean",
+      "sha256": "1b48801920eba2a60e91aa2101ac2718706735a0d91ca389221d86506ba188a5",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivRequestWitness.lean",
+      "sha256": "724df54e348a6e581d43e1abd75611adce05885ca35ddc55f013e2c9c68544f2",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivRequests.lean",
+      "sha256": "ce8fc5a25cfcecaf1861d67d7c4ce5405fe07dd7a420f8d1f38e227ec4c463d0",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockDivSourceRequests.lean",
+      "sha256": "9fdd0cc0e7d262a94bc8f276ba780b27b3556e959450b30fc94ac44844434fd0",
+      "warnings": []
+    }
+  ],
+  "prior_28_division_sets_unchanged": true,
+  "prior_validated_highmul_source_hashes_unchanged": true,
+  "build": {
+    "log": "/tmp/driver-resume-div-source-values-witness.log",
+    "sha256": "ac0346cedbf7cc84081b42c8f9ededf9b10e5fe8fe292cd105e2fa24ee66dfdc",
+    "jobs": 400
+  },
+  "completed": [
+    "Isolated standard-kernel MOVK identity and constant-loading loop contracts; legacy variants untouched",
+    "All five real immediate rules yield machine-value/fragment allocation contracts",
+    "Successful real divisor requests derive immediate fuel bound internally, preserving original theorem and source input conditions",
+    "Original constant source request now establishes ImmOut; mapped register and widening guard paths retained",
+    "16 original signed/unsigned 8/16/32/64 zero/nonzero request executions inhabit source machine contracts",
+    "40 normal/MCP public roots standard-only; 18 original source scans clean"
+  ],
+  "remaining_batch": [
+    "Actual all-ten-root match/RHS composition and alias-resolved machine execution",
+    "Retained-record result binding and original availability/source success/trap transfer",
+    "Complete source/record success/zero/overflow witnesses",
+    "603-prior/exact-seven/full validation gates"
+  ],
+  "remaining_full_goal": [
+    "Execution/source transfer for remaining closure rules",
+    "Deferred effects and trapping/sinking invariant",
+    "Source/block/whole-driver simulation and completeness under original conditions",
+    "Actual compiler/checker/linker/generated-proof production cutover",
+    "Fresh complete stock comparison"
+  ],
+  "production": "legacy",
+  "publication": "local uncommitted; no push/merge",
+  "archive": {
+    "path": "/home/lee/.clifv-recovery/20261014T113913Z/stock-div-source-values-checkpoint.tar.gz",
+    "sha256": "cd4067d4cf809f60438adc544267400033d3090ec526033f2643750c714821d9"
+  }
+}
