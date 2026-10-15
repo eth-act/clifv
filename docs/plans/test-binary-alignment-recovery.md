@@ -1936,3 +1936,15 @@ The previously committed, fully validated backlog was delivered in six semantic 
 Ongoing discipline: aim for roughly three coherent, validated PR merges per day; push reviewed work and recovery snapshots promptly for remote backup. PR count is a delivery target, not a reason to split inseparable proofs or bypass gates. No additional routine permission is required for user-authorized pushes/squash merges.
 
 All314 validated comparison sources remain unchanged. Six newer narrow constant fallback modules are preserved but unvalidated (selection heartbeat timeout). Full #140 remains active/incomplete; production is still legacy. Resume remaining comparison fallback/constant-left/dispatch/minmax/select and full-family gates, then remaining families/effects, source/block/whole-driver simulation/completeness and actual compiler/checker/linker/generated-proof consumer integration under the original conditions. Preserve old variants, identities/stages and exact required axiom sets; require fresh complete Stock comparison before production cutover. Remote recovery branch: `agent/stock-driver-wip-backup-20261015T021951Z`.
+
+
+## Narrow constant register fallback integration
+
+Updated UTC: 2026-10-15T02:30:07.447214+00:00
+
+- Actual5117/5108 first-match selection for original constant RHS at8/16 when predicate is signed or unsigned literal cannot use5134. Signed zero constants are included; no extra nonzero premise.
+- Direct prior-rule failure proofs and explicit selection cases avoid noninjective broad matcher search; the public hypotheses are unchanged.
+- Actual652/715/original958/172 derive precise extension/extended-compare/cset code, two-register allocation, availability-derived scratch separation, retained binding/copy absence and guarded original source/getter transfer.
+- Five complete ordinary-kernel actual Stock.lower/retained/original-source-step witnesses cover arbitrary8/16 inputs against signed0,129,32768 and unsigned8193. Real constant193→197, deliberately unrelated raw193=777, dirty128-bit upper bits, full outside-allocation/postavailability and source memory/frame preservation.
+-330 modules/729 jobs;489 normal standard-only roots,17 fresh MCP checks;314 prior hashes/472 trust sets and122 division source hashes unchanged. Receipt `docs/research/stock-cmp-narrow-constant-checkpoint.json`.
+- Next constant-left classifications, all-condition/all-width dispatch, minmax/select and full family/repository gates; original effects/simulation/completeness/production obligations remain. Full #140 active/incomplete, production legacy.

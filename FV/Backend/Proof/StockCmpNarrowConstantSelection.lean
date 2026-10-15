@@ -290,6 +290,11 @@ private theorem zero_guard_absurd {p : Program} (hp : Data p) (ctx : Ctx) (cc : 
       rw [equal] at absent
       cases absent
     exact zero_absurd hp ctx nonzeroRule cc defined found data nonzero matched
+private def FallbackGuard (cc : Clif.IntCC) (literal : Int) : Prop :=
+  signedCC cc = true ∨ Imm12.ofNat? (u64 literal) = none
+private theorem fallback_guard_elim {cc : Clif.IntCC} {literal : Int}
+    (h : FallbackGuard cc literal) : signedCC cc = true ∨ Imm12.ofNat? (u64 literal) = none := h
+attribute [local irreducible] FallbackGuard
 /-- Actual narrow register fallback for an original constant derives canonical
 selection when the predicate is signed or the unsigned literal cannot use5134.
 Zero constants are included for signed predicates. -/
@@ -320,8 +325,10 @@ theorem stock_cmp_narrow_constant_emitter_selected {p : Program} (hp : Data p) (
   have wide := fun q t n => wide_failure hp ctx cc half typeX typeY false q t n
   have opposite := fun q t n => opposite_match hp ctx cc half (x := x) typeY q t n
   have immediate := fun q t n => immediate_failure hp ctx cc half typeX defined found data guard q t n
+  have guarded : FallbackGuard cc literal := by unfold FallbackGuard; exact guard
+  clear guard
   cases sign : signedCC cc
-  all_goals simp only [narrowRule,sign,Bool.false_eq_true,ite_true,ite_false] at matchProof opposite ⊢
+  all_goals simp only [narrowRule,sign,Bool.false_eq_true,ite_true,ite_false] at matchProof wide opposite ⊢
   all_goals stock_split hp hc run 652
   all_goals simp only [Prod.mk.injEq] at *
   all_goals isel_destruct <;> subst_vars
@@ -332,14 +339,46 @@ theorem stock_cmp_narrow_constant_emitter_selected {p : Program} (hp : Data p) (
   all_goals have savedMatch := save_match hm
   all_goals have savedRhs := save_rhs he
   all_goals try (exact selected (p := p) (ctx := ctx) (st := st) (tr := tr) matchProof savedMatch savedRhs)
-  all_goals first
-    | exact False.elim (left_zero_absurd hp' ctx inv false cc notConstantX hm)
-    | exact False.elim (left_zero_absurd hp' ctx inv true cc notConstantX hm)
-    | exact False.elim (zero_guard_absurd hp' ctx cc false defined found data guard hm)
-    | exact False.elim (zero_guard_absurd hp' ctx cc true defined found data guard hm)
-    | exact False.elim (narrow_wide_absurd hp' ctx cc half typeX (by decide +kernel) hm)
-    | (rw [wide] at hm; cases hm)
-    | (rw [opposite] at hm; cases hm)
-    | (rw [immediate] at hm; cases hm)
+  case false.inl.mk =>
+    exact False.elim (left_zero_absurd hp' ctx inv false cc notConstantX hm)
+  case false.inr.inl.mk =>
+    exact False.elim (left_zero_absurd hp' ctx inv true cc notConstantX hm)
+  case false.inr.inr.inl.mk =>
+    exact False.elim (zero_guard_absurd hp' ctx cc false defined found data (fallback_guard_elim guarded) hm)
+  case false.inr.inr.inr.inl.mk =>
+    exact False.elim (zero_guard_absurd hp' ctx cc true defined found data (fallback_guard_elim guarded) hm)
+  case false.inr.inr.inr.inr.inl.mk =>
+    exact False.elim (narrow_wide_absurd hp' ctx cc half typeX (by decide +kernel) hm)
+  case false.inr.inr.inr.inr.inr.inl.mk =>
+    exact False.elim (narrow_wide_absurd hp' ctx cc half typeX (by decide +kernel) hm)
+  case false.inr.inr.inr.inr.inr.inr.inl.mk =>
+    exact False.elim (narrow_wide_absurd hp' ctx cc half typeX (by decide +kernel) hm)
+  case false.inr.inr.inr.inr.inr.inr.inr.inl.mk =>
+    exact False.elim (narrow_wide_absurd hp' ctx cc half typeX (by decide +kernel) hm)
+  case false.inr.inr.inr.inr.inr.inr.inr.inr.inl.mk =>
+    rw [immediate] at hm; cases hm
+  case false.inr.inr.inr.inr.inr.inr.inr.inr.inr.inl.mk =>
+    rw [wide] at hm; cases hm
+  case true.inl.mk =>
+    exact False.elim (left_zero_absurd hp' ctx inv false cc notConstantX hm)
+  case true.inr.inl.mk =>
+    exact False.elim (left_zero_absurd hp' ctx inv true cc notConstantX hm)
+  case true.inr.inr.inl.mk =>
+    exact False.elim (zero_guard_absurd hp' ctx cc false defined found data (fallback_guard_elim guarded) hm)
+  case true.inr.inr.inr.inl.mk =>
+    exact False.elim (zero_guard_absurd hp' ctx cc true defined found data (fallback_guard_elim guarded) hm)
+  case true.inr.inr.inr.inr.inl.mk =>
+    exact False.elim (narrow_wide_absurd hp' ctx cc half typeX (by decide +kernel) hm)
+  case true.inr.inr.inr.inr.inr.inl.mk =>
+    exact False.elim (narrow_wide_absurd hp' ctx cc half typeX (by decide +kernel) hm)
+  case true.inr.inr.inr.inr.inr.inr.inl.mk =>
+    exact False.elim (narrow_wide_absurd hp' ctx cc half typeX (by decide +kernel) hm)
+  case true.inr.inr.inr.inr.inr.inr.inr.inl.mk =>
+    exact False.elim (narrow_wide_absurd hp' ctx cc half typeX (by decide +kernel) hm)
+  case true.inr.inr.inr.inr.inr.inr.inr.inr.inl.mk =>
+    rw [immediate] at hm; cases hm
+  case true.inr.inr.inr.inr.inr.inr.inr.inr.inr.inl.mk =>
+    rw [wide] at hm; cases hm
+  case true.inr.inr.inr.inr.inr.inr.inr.inr.inr.inr.inl.mk =>
+    rw [opposite] at hm; cases hm
 end Backend.Stock.Proof.ScalarCmp
-
