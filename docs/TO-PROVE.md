@@ -665,7 +665,7 @@ These don't remove certificates; they shrink the set of functions reported "unve
 | R2 | icmp | 15 | `GraphOk.make_val` unification (49, 77, 91); counterexample after timeouts (155–184, 386–410); 205, 295, 296 |
 | R3 | selects | 0 | **done** ([#208](https://github.com/eth-act/clifv/pull/208)): all 100 roots; symbolic select identities and typed RHS evaluation |
 | R4 | shifts | 19 | rotate regrouping through `iadd_uextend`/`isub_uextend` (239–266: ~50 of 125 per-type goals fail, 128-bit rotations); 161, 170, 184, 193, 315. **84 and 88 are false**: keep them disabled, or adopt the masked rules of kevaundray/wasmtime#2 in the exported data and prove those |
-| R5 | spaceship | 0 | **locally complete** (`agent/spaceship-r5`): all 40 roots; width-parametric signed/unsigned identities and shared typed RHS proofs; publication pending |
+| R5 | spaceship | 0 | **done** ([#209](https://github.com/eth-act/clifv/pull/209)): all 40 roots; width-parametric signed/unsigned identities and shared typed RHS proofs |
 | R6 | cprop | 0 | **done** (R0) |
 | R7 | bitops | 0 | **done** ([#207](https://github.com/eth-act/clifv/pull/207)): all 450 roots; masked-OR guard and opcode-indexed byte-swap proofs |
 | R8 | extends | 0 | **done** ([#206](https://github.com/eth-act/clifv/pull/206)): all 29 roots; sign-extension comparisons against zero |
@@ -774,7 +774,7 @@ label**; list the free ones with
 | R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (15 rules left) | open |
 | R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (0 rules left) | **done** ([#208](https://github.com/eth-act/clifv/pull/208)) |
 | R4 | [#18](https://github.com/eth-act/clifv/issues/18) Mid-end rule proofs: shifts (19 rules left) | open |
-| R5 | [#19](https://github.com/eth-act/clifv/issues/19) Mid-end rule proofs: spaceship (0 rules left) | **locally complete** (`agent/spaceship-r5`); verified, publication pending |
+| R5 | [#19](https://github.com/eth-act/clifv/issues/19) Mid-end rule proofs: spaceship (0 rules left) | **done** ([#209](https://github.com/eth-act/clifv/pull/209)) |
 | R6 | [#20](https://github.com/eth-act/clifv/issues/20) Mid-end rule proofs: cprop (0 rules left) | **done** (by R0, `agent/rule-infra`) |
 | R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (0 rules left) | **done** ([#207](https://github.com/eth-act/clifv/pull/207)) |
 | R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (0 rules left) | **done** ([#206](https://github.com/eth-act/clifv/pull/206)) |

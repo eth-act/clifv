@@ -815,7 +815,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   interpreter/oracle totals remain seven expectation failures, ten disagreements and
   two oracle errors. The optional survey was absent.
 
-**R5 (2026-10-10, `agent/spaceship-r5`, locally merge-ready):**
+**R5 (2026-10-10, `agent/spaceship-r5`, merged in [#209](https://github.com/eth-act/clifv/pull/209)):**
 - `RuleSpaceshipSelects.lean` proves all twenty remaining select roots, IDs 1379–1398,
   with unchanged `RuleOk` statements and premises. The spaceship family is complete at 40/40.
 - `RuleSpaceshipUnsigned.lean` and `RuleSpaceshipSigned.lean` prove width-parametric
@@ -841,7 +841,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   No refinement failures, pass errors or verifier rejections; all 445 file summaries are
   no worse than their unoptimized baselines. Existing interpreter/oracle totals remain
   seven expectation failures, ten disagreements and two oracle errors. The optional survey
-  was absent. Publication remains pending under the agent no-push/no-merge boundary.
+  was absent.
 
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
 - `arithmetic.isle` (230): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
