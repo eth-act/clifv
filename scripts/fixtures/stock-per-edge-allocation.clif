@@ -1,0 +1,27 @@
+function %indexed_branch(i64, i64) -> i64 system_v {
+block0(v7: i64, v8: i64):
+    brif v7, block1(v8), block2(v7)
+block1(v31: i64):
+    return v31
+block2(v47: i64):
+    return v47
+}
+
+function %indexed_critical(i64) -> i8 system_v {
+block0(v7: i64):
+    v17 = ireduce.i8 v7
+    brif v7, block1(v17), block1(v17)
+block1(v31: i8):
+    return v31
+}
+
+function %indexed_pair(i64, i64, i64) -> i64 system_v {
+block0(v0: i64, v1: i64, v2: i64):
+    brif v0, block1(v1, v2), block2(v2, v1)
+block1(v31: i64, v32: i64):
+    v33 = isub v31, v32
+    return v33
+block2(v47: i64, v48: i64):
+    v49 = isub v47, v48
+    return v49
+}
