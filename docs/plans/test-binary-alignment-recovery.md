@@ -1874,3 +1874,14 @@ Updated UTC: 2026-10-15T00:31:20.393472+00:00
 - Guarded original-source/getter-derived transfer preserves original restricted DFG, demand, availability and memory. Eight complete ordinary-kernel Stock.lower/retained/source-step witnesses cover signed/unsigned32/64 with4097/8193 originals and4096/8192 shifted predecessors over arbitrary input words. Sparse7/31/100, dirty128-bit upper bits, constant193=777 deliberately unmaterialized, fresh boolean195, all other registers and postavailability preservation checked.
 - Combined267 modules/666 jobs;412 normal standard-only roots,26 fresh MCP checks and386 prior results reused after confirming all247 prior sources/axiom sets unchanged;267 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-predecessor-integrated-checkpoint.json.
 - Next remaining nonencodable/extended/fused comparison alternatives/all-condition/all-width dispatch, minmax/select and complete family/full-repository gates preserving824 prior roots/exact seven compiler sets. Every original whole-driver/effect/completeness/production obligation remains required. Goal active/incomplete; production legacy; remote backups/publication cadence authorized.
+
+
+## Nonencodable constant register fallback
+
+Updated UTC: 2026-10-15T00:59:03.537921+00:00
+
+- Ordinary/predecessor immediate and zero-rule matching failures preserve full state/trace under original source-literal exclusions, for all integer conditions. Actual5128 fallback selection,652/715 values and958/172 output are internally derived. An explicit-case proof replaces expensive matcher backtracking and passes a500000-heartbeat bound.
+- Retained binding/exact compare-cset/copy absence and guarded original-source/getter-derived transfer preserve original DFG, demand, availability and memory. Four complete ordinary-kernel Stock.lower/retained/source-step witnesses cover signed/unsigned32/64 over arbitrary inputs against70003.
+- Actual two-instruction constant materialization installs alias193-to197; source-held constant is read from197, raw193=777 deliberately stale. Dirty128-bit upper bits, fresh boolean195, all other registers and postavailability preservation checked. This is a real nonidentity alias crossing the comparison allocation interval.
+- Combined279 modules/678 jobs;429 normal standard-only roots,17 fresh MCP checks and412 prior results reused after confirming all267 prior source hashes/trust sets unchanged;279 original scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-nonencodable-checkpoint.json.
+- Next extended/fused/narrow alternatives, constant-left classifications and all-condition/all-width dispatch, minmax/select and full family/repository gates. Every original whole-driver/effect/completeness/production obligation remains required. Goal active/incomplete, production legacy, publication/backups authorized.
