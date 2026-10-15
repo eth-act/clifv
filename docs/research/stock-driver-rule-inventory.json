@@ -1,15 +1,39 @@
 {
-  "updated_utc": "2026-10-14T06:53:38.065805+00:00",
-  "head": "728cccb (fully validated local popcount batch; commit pending)",
+  "updated_utc": "2026-10-14T08:41:00.178877+00:00",
+  "head": "3ae4c79 (fully validated local add/subtract batch; local commit pending)",
   "scope": "All generated term686 lower roots; not an in-scope reachable-rule inventory or completion percentage. Rule references and legacy theorems alone are not Stock execution proofs.",
   "source_sha256": {
     "FV/Isle/Generated/Rules00.lean": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
     "FV/Isle/Generated/Rules01.lean": "2f9964c0eec71285d47f1250afd0d610aaaa2df091275ca258a05f760e301550",
     "FV/Isle/Generated/Rules02.lean": "cc5eb3ecef520bd778f7e7b0997334206a9c94e0996c4f1c6960234e0065fcc9",
-    "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f"
+    "FV/Isle/Generated/Rules03.lean": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f",
+    "FV/Backend/Proof/StockAddSubAllSourceValues.lean": "eaaf451376adce8447721a53cde16b1acf77eca03128d9fb757ae875e6965d89",
+    "FV/Backend/Proof/StockAddSubAllValues.lean": "ffc521cd0cb681791ccb997c85de07c5a2cc4413cbc390bad4b1c44c7ee60c52",
+    "FV/Backend/Proof/StockAddSubAuxWitness.lean": "93ba7e8b9f80ed61d2a8528df4de27d81ae20dfff25ece166f90d117298073bd",
+    "FV/Backend/Proof/StockAddSubDispatch.lean": "5041b1f95dcbe7c5da3476841df53d3ebd8813e01b49228d6f3428373210690c",
+    "FV/Backend/Proof/StockAddSubExtensionWitness.lean": "c854f4fd665881f425cd51cf493503b9148ae31193dbf7160ea731586ef33b72",
+    "FV/Backend/Proof/StockAddSubImmediateMatch.lean": "258f36e4a906ac64dca8a407938d95a2c26807462db246862b3630d734f05dca",
+    "FV/Backend/Proof/StockAddSubImmediateValues.lean": "fc8ce0e17a2dab868af7255ca9428d3cad662b593a0cf68f955fcb7588f85b18",
+    "FV/Backend/Proof/StockAddSubImmediateWitness.lean": "3f1082aa755569a8b7400df29f38abf34cea39740151e2644552ae3eca8208a5",
+    "FV/Backend/Proof/StockAddSubMatch.lean": "088b24b41aa1ae5b80f19485d77a1d3ee279be2ce897c2c5df76b5773a476244",
+    "FV/Backend/Proof/StockAddSubNegativeMatch.lean": "a17d09ca5f3df402a1b8aaabb732613466f990f21997a87079e0ef53006781c2",
+    "FV/Backend/Proof/StockAddSubNegativePure.lean": "8394e47bdb5f97bb2da3a52d6629bacd4fc9ffd2a6326e0997abaa87c57ab849",
+    "FV/Backend/Proof/StockAddSubNegativeValues.lean": "b66afd292ede2fe36a304052dcf18f7d368aff7673a36804121d34cdeac40e30",
+    "FV/Backend/Proof/StockAddSubNegativeWitness.lean": "e60787b7631fd5758642c53de434eeaeac1f274e164b4ca8100e2639d7e34d35",
+    "FV/Backend/Proof/StockAddSubObserved.lean": "1aa9ddb69c7ba850a93c6afd256528fca6b0bbb099de90ec8aa84cd93824f184",
+    "FV/Backend/Proof/StockAddSubPure.lean": "c6c8a59015b686eb2191b7c67b92cc80077c4cf900b4663915f00e2d39d23d6e",
+    "FV/Backend/Proof/StockAddSubRecordValues.lean": "46e381ac903953a0dd3e4c14fd40fb046f4a397968ef89c4997c183351a94d50",
+    "FV/Backend/Proof/StockAddSubRhs.lean": "8a248832a4b32b36246d829a77a64ce25d373058a0d795b61f0942043298155f",
+    "FV/Backend/Proof/StockAddSubSelected.lean": "63fc3bdfa38f4677e515883664d10f0c2a6f148ca7f44fdd55cd7aebc2497252",
+    "FV/Backend/Proof/StockAddSubSemantics.lean": "a5a438f3cea2eef2f8416b816f1aa626bfed5816b0738c5f83a4b6359aaf969a",
+    "FV/Backend/Proof/StockAddSubShiftEdgeWitness.lean": "dc20397996f7415a8af561adae4ac56683fcdcc60107e4335a0cac074c61bdc0",
+    "FV/Backend/Proof/StockAddSubShiftWitness.lean": "9ec21717182c1c258275ccd70d431b13500fb2c01585971cd5272814a09cec37",
+    "FV/Backend/Proof/StockAddSubSourceValues.lean": "b2c74ada0aa877d49e0a2c7c301e0d384a3967273e0f8cd4d3d4ecac4d840846",
+    "FV/Backend/Proof/StockAddSubUnifiedValues.lean": "e04186e795d5421063a0ef8c0a20f0948d571d02f65dd40d834b62606329bd81",
+    "FV/Backend/Proof/StockAddSubValues.lean": "b2a2b6219db84d073bd9c38e1c4b63526300493479e940d43cb7994def846e90"
   },
   "generated_lower_roots": 517,
-  "roots_with_identified_guarded_stock_record_value_bridge": 57,
+  "roots_with_identified_guarded_stock_record_value_bridge": 69,
   "roots": [
     {
       "rule": "rule_lower_53",
@@ -82,8 +106,11 @@
       "generated_line": 3950,
       "isle_name": "iadd_base_case",
       "record_value_proof": "FV/Backend/Proof/StockAluRecordValues.lean",
-      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_90",
@@ -91,9 +118,13 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 3964,
       "isle_name": "iadd_imm12_right",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_93",
@@ -101,9 +132,13 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 3978,
       "isle_name": "iadd_imm12_left",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_98",
@@ -111,9 +146,13 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 3992,
       "isle_name": "iadd_imm12_neg_right",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_102",
@@ -121,9 +160,13 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 4006,
       "isle_name": "iadd_imm12_neg_left",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_108",
@@ -131,9 +174,13 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 4020,
       "isle_name": "iadd_extend_right",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_111",
@@ -141,9 +188,13 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 4034,
       "isle_name": "iadd_extend_left",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_116",
@@ -151,9 +202,13 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 4048,
       "isle_name": "iadd_ishl_right",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_120",
@@ -161,9 +216,13 @@
       "generated_file": "FV/Isle/Generated/Rules01.lean",
       "generated_line": 4062,
       "isle_name": "iadd_ishl_left",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_125",
@@ -172,8 +231,11 @@
       "generated_line": 4076,
       "isle_name": "iadd_imul_right",
       "record_value_proof": "FV/Backend/Proof/StockMulFusedRecordValues.lean",
-      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_128",
@@ -182,8 +244,11 @@
       "generated_line": 4090,
       "isle_name": "iadd_imul_left",
       "record_value_proof": "FV/Backend/Proof/StockMulFusedRecordValues.lean",
-      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_132",
@@ -192,8 +257,11 @@
       "generated_line": 4104,
       "isle_name": "isub_imul",
       "record_value_proof": "FV/Backend/Proof/StockMulFusedRecordValues.lean",
-      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_137",
@@ -1610,8 +1678,11 @@
       "generated_line": 1847,
       "isle_name": "isub_base_case",
       "record_value_proof": "FV/Backend/Proof/StockAluRecordValues.lean",
-      "remaining_obligation": "Compose into whole-driver simulation; discharge original guarded premises internally",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_805",
@@ -1619,9 +1690,13 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 1861,
       "isle_name": "isub_imm12",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_810",
@@ -1629,9 +1704,13 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 1875,
       "isle_name": "isub_imm12_neg",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_816",
@@ -1639,9 +1718,13 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 1889,
       "isle_name": "isub_extend",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_821",
@@ -1649,9 +1732,13 @@
       "generated_file": "FV/Isle/Generated/Rules02.lean",
       "generated_line": 1903,
       "isle_name": "isub_ishl",
-      "record_value_proof": null,
-      "remaining_obligation": "Classify against original LowerScope; prove actual selected Stock semantics or scope-derived impossibility",
-      "ordinary_source_scope_status": "closure: actual selection requires membership; execution proof remains"
+      "record_value_proof": "FV/Backend/Proof/StockAddSubRecordValues.lean",
+      "remaining_obligation": "Compose into whole-driver simulation/completeness under original conditions; add/subtract full family gates pass",
+      "ordinary_source_scope_status": "closure: actual guarded record/source/all17-candidate dispatch proved; whole-driver obligations remain",
+      "record_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values",
+      "source_value_proof": "FV/Backend/Proof/StockAddSubAllSourceValues.lean",
+      "source_value_root": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source",
+      "source_by_instruction": "Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction"
     },
     {
       "rule": "rule_lower_826",
