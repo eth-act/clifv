@@ -1,0 +1,477 @@
+{
+  "utc": "2026-10-14T19:19:21.609511+00:00",
+  "state": "incremental actual immediate driver observation; full goal active/incomplete",
+  "production": "legacy",
+  "head": "01081291 local/unpublished",
+  "normal_axioms": {
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_builder": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_imm_builder": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_cset_builder": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_zero": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_flags": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_sets_flags_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_condition_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_condition_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_condition_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_condition_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_extend_builder": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_extend_builder_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_extend_builder_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_flag": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_carry_flag": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_ge_flag": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_conditions": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_extension": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_extension": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_predecessor": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_predecessor": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_invert": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_rhs_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_rhs_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_rhs_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_condition_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_condition_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_condition_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_flags_cset": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_original_flags": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_resolved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_alias_machine_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_extension_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_defined_driver_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.DefinedDriverWitness.stock_cmp_defined_complete_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_record_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_nonconstant_selected_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_nonconstant_emitter_selected": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_source_operands": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_source_by_instruction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_nonconstant_emitter_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_output_run": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_output_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_output_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_driver_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.ParameterDriverWitness.stock_cmp_parameter_complete_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_record_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_available_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_selected_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_root_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_source_operands": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_source_by_instruction": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_emitter_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_emitter_selected": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_condition_source_values_any_trace": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_condition_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_condition_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_root_match": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_root_match_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_root_rhs_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_selected_calls": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_selected_calls_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_source_data": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_selected_cmp_root": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_original_selection_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_with_flags_reg": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_driver_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "fresh_driver_mcp": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+      }
+    ],
+    "structuredContent": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "isError": false
+  },
+  "prior_40_sources_and_78_trust_sets_unchanged": true,
+  "verified_new_source": {
+    "path": "FV/Backend/Proof/StockCmpImmediateDriverRuns.lean",
+    "sha256": "d0aa3c0867c578e3de499f7a17a98d55405592d36a344a3a3d8d43652f690306",
+    "warnings": []
+  },
+  "verified": [
+    "Actual Stock.lower retains comparison record1/root958/result195; original constant record0 is omitted and its demand is zero",
+    "Actual parameter/source aliases and original context/data identities kernel checked",
+    "Complete original frame/DFG/dominance/availability and dirty register witness inputs typechecked independently in scratch Lean file"
+  ],
+  "pending_unvalidated_modules": [
+    "StockCmpImmediateSelection",
+    "StockCmpImmediateEmitterValues",
+    "StockCmpImmediateRootValues",
+    "StockCmpImmediateRecordValues",
+    "StockCmpImmediateTransfer",
+    "StockCmpImmediateDriverWitness"
+  ],
+  "validation_limits": "79 normal roots checked; one new fresh MCP verification; prior78 fresh audits preserved. General selection and dependent source/record/witness modules remain unvalidated. No full family or full-repository gate claim.",
+  "next": "Finish actual652 first-match proof then build record/source transfer and complete witness; continue every original full-goal obligation",
+  "remaining_full_goal": [
+    "Execution/source transfer for remaining closure rules",
+    "Deferred effects and trapping/sinking invariant",
+    "Source/block/whole-driver simulation and completeness under original conditions",
+    "Actual compiler/checker/linker/generated-proof production cutover",
+    "Fresh complete stock comparison"
+  ],
+  "logs": [
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-driver-runs.log",
+      "sha256": "2afd5bb942e0dac0f6600af48e6979ab9551cfca47892be0073a4d8d8b817591"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-driver-axioms.log",
+      "sha256": "8f5b880d938bf7dd795c73ff6441a7af79b877b85e3409afb916bf64957598ba"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-driver-mcp.json",
+      "sha256": "f5e380e5f792357f748d269467949226e4b44cbf0c4f963a85493bbec8259e2c"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-witness-inputs.lean",
+      "sha256": "6811563564dbc0ff3fa5fbb0a5f948bfc15652a9face156ad86fdf0330535be9"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-witness-inputs.log",
+      "sha256": "fb9cbdc7ac4aee89333ff49eaa6354a77cd4e880bb4bef838f6c6a784a09898f"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-imm-driver-inspect.lean",
+      "sha256": "1d14122c29c3e8877d6d4cb70f6967a82aa18500a92b6d908730f2f7facf5395"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-imm-driver-inspect.log",
+      "sha256": "ae77be8a6fe48c8ad766b47be2619d29280e06e051afea128887d492276fb1aa"
+    }
+  ],
+  "archive": {
+    "path": "/home/lee/.clifv-recovery/20261014T191921Z-immediate-driver/evidence.tar.gz",
+    "sha256": "995fcc71a13aaa334231f961136140dd79a6d1ce461d424a1361e03a5ae6fb0c"
+  }
+}
