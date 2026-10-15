@@ -1906,3 +1906,14 @@ Updated UTC: 2026-10-15T01:23:21.032212+00:00
 - Constructed real source contexts inhabit the actual RHS/715/value pipeline for arbitrary word pairs, both widths/signednesses, sparse7/31/100 and dirty128-bit upper bits. These are source-pipeline witnesses, not complete retained Stock.lower/source-step witnesses.
 -288 modules/687 jobs;443 normal standard-only roots,4 fresh MCP checks and439 reused after verifying285 prior hashes/trust sets unchanged;288 original-source scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-narrow-values-checkpoint.json.
 - Next narrow first-match5117/5108/5134 and652/715/original958/172, derive right-source scratch separation from original availability, retained result binding/guarded source/getter transfer and complete Stock.lower/source-step witnesses; other forms/minmax/select/all family/repository/full-goal effects/simulation/completeness/production obligations retained. Goal active/incomplete, production legacy.
+
+
+## Narrow nonconstant comparison retained/source integration
+
+Updated UTC: 2026-10-15T01:33:43.952021+00:00
+
+- Actual5117/5108 first-match selection derives canonical environment/trace under original nonconstant classifications at8/16, for every integer condition. Actual652/715 and original958/172 selected outputs compute original predicates.
+- Structural selected allocation proves exactly two registers independently of machine values. Actual retained-record availability plus this allocation discharges right-source scratch separation internally; result binding/copy absence, exact extension/extended-compare/cset execution and guarded original-source/getter transfer pass with original restricted DFG, demand/availability and memory preserved.
+- Four complete ordinary-kernel actual Stock.lower/retained/source-step witnesses cover arbitrary pairs at8/16 signed/unsigned, sparse7/31/100, real958 root, dirty128-bit upper bits, parameter aliases and complete outside-allocation/postavailability preservation. Earlier helper-only limitation is discharged for these nonconstant forms.
+-300 modules/699 jobs;456 normal standard-only roots,13 fresh MCP checks and443 reused after verifying288 prior hashes/trust sets unchanged;300 original-source scans clean and122 division hashes unchanged. Receipt docs/research/stock-cmp-narrow-integrated-checkpoint.json.
+- Next narrow constant5134 and remaining constant/constant-left classifications, all-condition/all-width dispatch, minmax/select and complete family/repository gates. Every original effects/whole-driver simulation/completeness/production obligation remains; goal active/incomplete, production legacy.
