@@ -1056,6 +1056,144 @@ theorem initState_xinv {P : Program} {n : String} {vals : List Val} {mem : Mem} 
     | trap c => simp [hp, he, Res.ofOption, bind, Res.bind] at h
     | stuck m => simp [hp, he, Res.ofOption, bind, Res.bind] at h
 
+/-! ## The exceptions of a run -/
+
+/-- Every extern of `env` that unwinds raises the exception `e0`. -/
+def XEnv.RaisesOnly (env : XEnv) (e0 : Exn) : Prop :=
+  ∀ n g, env.extern n = some g → ∀ vals mem e m, g vals mem = .unwound e m → e = e0
+
+section
+variable {env : XEnv} {e0 : Exn} (h0 : env.RaisesOnly e0)
+include h0
+
+theorem extern_unwound_only {n : String} {g : List Val → Mem → XOutcome}
+    (hg : env.extern n = some g) {vals : List Val} {mem : Mem} {e : Exn} {m : Mem}
+    (hr : (match g vals mem with
+      | .unwound e m => some (e, m)
+      | _ => none : Option (Exn × Mem)) = some (e, m)) : e = e0 := by
+  cases hu : g vals mem with
+  | unwound e' m' =>
+    rw [hu] at hr
+    simp only [Option.some.injEq, Prod.mk.injEq] at hr
+    obtain ⟨rfl, rfl⟩ := hr
+    exact h0 _ g hg _ _ _ _ hu
+  | _ => rw [hu] at hr; cases hr
+
+theorem extRaise_only {p : Program} {mem : Mem} {ext : ExtFunc} {vals : List Val} {e : Exn}
+    {m : Mem} (hr : extRaise env p mem ext vals = some (e, m)) : e = e0 := by
+  unfold extRaise at hr
+  cases hp : p.func? ext.name with
+  | some _ => rw [hp] at hr; cases hr
+  | none =>
+    rw [hp] at hr
+    cases hg : env.extern ext.name with
+    | none => rw [hg] at hr; cases hr
+    | some g => rw [hg] at hr; exact extern_unwound_only h0 hg hr
+
+theorem externAtRaise_only {p : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals : List Val} {e : Exn} {m : Mem}
+    (hr : externAtRaise env p mem d a vals = some (e, m)) : e = e0 := by
+  unfold externAtRaise at hr
+  split at hr
+  · rename_i name _
+    cases hg : env.extern name with
+    | none => rw [hg] at hr; cases hr
+    | some g =>
+      rw [hg] at hr
+      dsimp only at hr
+      split at hr
+      · exact extern_unwound_only h0 hg hr
+      · cases hr
+  · cases hr
+
+theorem raiseAt_only {p : Program} {s : State} {e : Exn} {m : Mem}
+    (hr : raiseAt? env p s = some (e, m)) : e = e0 := by
+  have hcall : ∀ fr fn args, callRaise env p s.mem fr fn args = some (e, m) → e = e0 := by
+    intro fr fn args h
+    rw [callRaise_eq] at h
+    split at h
+    · exact extRaise_only h0 h
+    · cases h
+  have hind : ∀ fr sig callee args, callIndRaise env p s.mem fr sig callee args = some (e, m) →
+      e = e0 := by
+    intro fr sig callee args h
+    unfold callIndRaise at h
+    split at h
+    · split at h
+      · cases h
+      · exact externAtRaise_only h0 h
+    · cases h
+  unfold raiseAt? at hr
+  split at hr
+  · split at hr
+    · exact hcall _ _ _ hr
+    · exact hind _ _ _ _ hr
+    · cases hr
+  · split at hr
+    · unfold returnCallRaise at hr
+      split at hr
+      · split at hr
+        · cases hr
+        · split at hr
+          · rename_i g hg
+            exact extern_unwound_only h0 hg hr
+          · cases hr
+      · cases hr
+    · rw [tryCallRaise_eq] at hr
+      split at hr
+      · exact hcall _ _ _ hr
+      · cases hr
+    · unfold tryCallIndRaise at hr
+      split at hr
+      · exact hind _ _ _ _ hr
+      · cases hr
+    · cases hr
+
+end
+
+theorem unwindFrom_unwound_exn (e : Exn) :
+    ∀ (fr : Frame) (cs : List (Frame × List ValueId)) (ts : List (Option ExnTable)) (mem : Mem)
+      (e' : Exn) (m : Mem), unwindFrom e fr cs ts mem = .unwound e' m → e' = e
+  | fr, [], _, mem, e', m, h => by simp only [unwindFrom, XStepResult.unwound.injEq] at h; exact h.1.symm
+  | fr, (c, rs) :: cs, t :: ts, mem, e', m, h => by
+    simp only [unwindFrom] at h
+    split at h
+    · rename_i r _
+      cases r <;> simp [XStepResult.ofRes] at h
+    · exact unwindFrom_unwound_exn e c cs ts _ e' m h
+  | fr, _ :: _, [], mem, e', m, h => by simp [unwindFrom] at h
+
+/-- **A run in an environment whose externs raise only `e0` ends by `e0` if it unwinds.** -/
+theorem runLoopX_unwound_only {env : XEnv} {e0 : Exn} (h0 : env.RaisesOnly e0) (p : Program) :
+    ∀ (N : Nat) (xs : XState) (e : Exn) (m : Mem), runLoopX env p N xs = .unwound e m → e = e0
+  | 0, _, _, _, h => by simp [runLoopX] at h
+  | N + 1, xs, e, m, h => by
+    rw [runLoopX_succ'] at h
+    cases hs : stepX env p xs with
+    | next xs' => rw [hs] at h; exact runLoopX_unwound_only h0 p N xs' e m h
+    | unwound e' m' =>
+      rw [hs] at h
+      simp only [afterStepX, XOutcome.unwound.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      unfold stepX at hs
+      split at hs
+      · rename_i e1 mem1 hr
+        unfold raiseIn at hs
+        split at hs
+        · rename_i r _
+          cases r <;> simp [XStepResult.ofRes] at hs
+        · rw [unwindFrom_unwound_exn _ _ _ _ _ _ _ hs]
+          exact raiseAt_only h0 hr
+      · cases hstep : step env.toEnv p xs.s <;> rw [hstep] at hs <;> simp [liftStep] at hs
+    | _ => rw [hs] at h; cases h
+
+theorem runLimX_unwound_only {env : XEnv} {e0 : Exn} (h0 : env.RaisesOnly e0) (p : Program)
+    {xs : XState} {e : Exn} {m : Mem} (h : runLimX env p xs = .unwound e m) : e = e0 := by
+  unfold runLimX at h
+  split at h
+  · exact runLoopX_unwound_only h0 p _ xs e m h
+  · cases h
+
 /-! ## Non-vacuity
 
 `Clif.UnwindWitness` (`FV/Clif/Unwind.lean`): `%main` `try_call`s `%mid`, which calls the extern
