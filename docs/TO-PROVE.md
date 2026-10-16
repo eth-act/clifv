@@ -391,7 +391,7 @@ author's estimate, not measured), **Risk**.
   (`spillWordBound_le`). Witness: `backend_correct_final_total_emit_input_witness`;
   `lean-e2e-check` 1149/1149.
 
-### V7. Lowering and `prepare` totality (the input scope without running the compiler) — **done** (#226)
+### V7. Lowering and `prepare` totality (the input scope without running the compiler) — **done** (#226, #227)
 
 - **Was:** `InScopeP`'s per-function `lowersB` ran `lowerFunction` and `prepare` and required
   their success (§1.2, kind 4): no theorem showed that they succeed on in-scope input.
@@ -914,6 +914,7 @@ label**; list the free ones with
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | **done** (#65) |
 | V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` |
 | V6c | [#76](https://github.com/eth-act/clifv/issues/76) `emitCondsB` from the input | **done**: isel facts (`backend_correct_final_total_emit_in`, input condition `extendsWidenB`), size bound (`backend_correct_final_total_emit_input`, input condition `sizeOkB`) |
+| V7 | [#226](https://github.com/eth-act/clifv/issues/226) `lowerFunction`/`prepare` totality: the input scope without running the compiler | **done** ([#227](https://github.com/eth-act/clifv/pull/227)): `Prg.lowerFunction_ok_input` (input conditions `driverInB`, `iselInB`; ISLE progress analysis, table `IselPrgTab`), `Prep.prepare_ok`, `InScopeIn`/`inScopeP_of_input`, `Link.compileExe_total_reach_input`, `Link.DeadCleanup.compileExe_total_reach_input`, `E2E.backend_correct_final{,_cleanup}_total_input`; `lean-link --verified` checks `fnScopeInB`; left: `addrSlotsInB`'s `outAreaB` |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | **done**: `crate_correct_inScope_proven` (no `okB`, no open hypothesis: `InScopeP` + `linkerOkB`); `SpillDefinedHyp` (its first statement was false, `not_spillDefinedHyp`; `InScopeP` has `entryParamsB`) proven: `LowerDefinedHyp` from the driver's assembly (`DefRun.lower_defined`) and the ISLE run facts (`DefRun.defRunsHyp`, abstract interpretation `DefGen*`) |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | stages 1–2 (`agent/lean-linker`): program part placed/relocated/written by `Link.leanLink`; `linkerOkB` and `ArtOk` proven, `BinOk` of the placed input without premise (rust-lld's bytes checked by the linker); `cargo fv --lean-link` on survey, fv-demo, deps; the binary theorem on its output: L1; open: design (b) for the outside part |
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); aliases done (`agent/exec-alias`: site kinds, `codeMapB` holds on `fv-demo`) |
