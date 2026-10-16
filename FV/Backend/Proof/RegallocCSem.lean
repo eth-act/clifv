@@ -498,6 +498,9 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | .fpuMoveFPImm (.vreg _ .float) _ _ => true
   | .vecDupImm (.vreg _ .float) imm inv _ =>
     !inv && imm.shift == 0 && !imm.shiftOnes && !imm.is64
+  -- S11e1: scalar SIMD&FP loads/stores (`ldr`/`str` of an `s`/`d` register)
+  | .fpuLoad sz (.vreg _ .float) m _ => (sz == .size32 || sz == .size64) && memOk sz.bytes m
+  | .fpuStore sz (.vreg _ .float) m _ => (sz == .size32 || sz == .size64) && memOk sz.bytes m
   | _ => false
 
 /-- The number of use operands. -/

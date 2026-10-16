@@ -152,6 +152,10 @@ theorem formOk_mapRegs (hg : VRenaming g gn) (ctx : FnCtx) (i : MInst) :
   | fpuCSel sz rd rn rm c => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rgc rm <;> rfl
   | fpuMoveFPImm rd imm sz => simp only [MInst.mapRegs]; rgc rd <;> rfl
   | vecDupImm rd imm inv sz => simp only [MInst.mapRegs]; rgc rd <;> rfl
+  | fpuLoad sz rd m fl =>
+    simp only [MInst.mapRegs]; rgc rd <;> simp only [FormOk, memOk_mapRegs hg]
+  | fpuStore sz rd m fl =>
+    simp only [MInst.mapRegs]; rgc rd <;> simp only [FormOk, memOk_mapRegs hg]
   | _ => (try simp only [MInst.mapRegs]) <;> rfl
 
 theorem useCount_rn (ops : Array Operand) : useCount (ops.map (rnOp gn)) = useCount ops := by
