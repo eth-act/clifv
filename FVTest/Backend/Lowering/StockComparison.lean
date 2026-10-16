@@ -10,21 +10,19 @@ receipts, and ELF/dump artifacts follow the existing comparison contract. -/
 open Backend
 
 private def compileStockWith {m : Type → Type} [Monad m]
-    (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
+    (alloc : Array EdgeVCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
     : m FileAsm := do
   -- lowering (per function, in file order)
-  let lowered : Array (String × Except String (Clif.Function × VCode)) :=
+  let lowered : Array (String × Except String (Clif.Function × EdgeVCode)) :=
     pf.funcs.toArray.map fun p => (p.name, match p.func with
       | .error e => .error e.toString
       | .ok f => (do
           let r ← Stock.lower f
           unless r.scans.all Stock.ScanEvent.check && r.blockScans.all Stock.BlockScanEvent.check do
             throw "stock scan replay rejected"
-          for (b, bi) in r.code.blocks.zipIdx do
-            if r.order.successors[bi]!.size > 1 && r.edgeArgs[bi]!.any (!·.isEmpty) then
-              throw "per-successor arguments require the pending VCode proof migration"
+          for b in r.code.blocks do
             if b.insts.isEmpty then throw "empty selected block"
-          pure (f, r.code)))
+          pure (f, (⟨r.code,r.edgeArgs⟩ : EdgeVCode))))
   let vcs := lowered.filterMap fun (_, r) => r.toOption.map (·.2)
   let afs ← alloc vcs
   let mut done : Array (FnAsm × List String) := #[]
@@ -36,7 +34,8 @@ private def compileStockWith {m : Type → Type} [Monad m]
   for ((name, r), k) in lowered.zipIdx do
     match r with
     | .error e => bad := bad.push (name, e)
-    | .ok (f, vc) =>
+    | .ok (f, input) =>
+      let vc := input.code
       let af := afs[j]?.getD (.error "allocator returned too few results")
       j := j + 1
       match af.bind fun af => do
@@ -88,7 +87,7 @@ def main (argv : List String) : IO UInt32 := do
     (source.funcs ++ pf.funcs).filterMap fun p => if p.name == name then p.func.toOption else none
   let rejected ← IO.mkRef (#[] : Array (String × String))
   let some allocator ← Allocator.ofName? "regalloc2" | return 2
-  let fa ← compileStockWith (StockConfig.allocate c clif rejected allocator) pf
+  let fa ← compileStockWith (StockConfig.allocateAt c clif rejected allocator) pf
   IO.FS.writeFile receiptPath
     ((StockConfig.receipt request none (some (← rejected.get).toList)).pretty ++ "\n")
   let fa := if c.unwind then fa else { fa with unwind := [] }
