@@ -10,7 +10,7 @@ slices build on earlier ones; S10a is this plan).
 | --- | --- |
 | S10a | merged (this plan) |
 | S10b | done: `FV/Clif/Unwind.lean` (`Clif.runX`; `runLoopX_of_returned`, `runLoopX_of_trapped`, `runLoopX_toX`; witnesses `Clif.UnwindWitness.caught`/`uncaught`/`old_stuck`), native oracle `scripts/clif-unwind-native.sh` (`rust/crates/clif-throw-native`): 17/17 runs, agree 17, disagree 0 (`docs/contracts/clif.md`) |
-| S10c | in progress (branch `agent/unwinding-s10c`, not merged): emitters made total/structural (`uleb`/`sleb` well-founded, `cfiProgramFrom`, `saveRows`, `scanLines`/`handlerEntry`/`siteEntries`; objects byte-identical on 753 fv-demo/deps `try_call` files), `FV/Unw/Dwarf.lean` (decoder model), `FV/Backend/Proof/UnwindTables.lean`: `uleb?_uleb`, `sleb?_sleb`, `decodeCfa?_cfiProgram`, `decodeLsda?_lsdaBytes`, `callSites_ok` (decidable `CallSitesOk`) proven. Left: `unwindRows` row spec (draft `docs/plans/unwinding-rows-draft.lean.txt`: `store_lines_noCall` done, `saveRows_spec` cons case left, then `rowAtFrom` over `insnsFrom` and the frame row), gates |
+| S10c | done: emitters total/structural (`uleb`/`sleb` well-founded, `cfiProgramFrom`, `saveRows`, `scanLines`/`handlerEntry`/`siteEntries`; objects byte-identical on 753 fv-demo/deps `try_call` files), `FV/Unw/Dwarf.lean` (decoder model), `FV/Backend/Proof/UnwindTables.lean`: `uleb?_uleb`, `sleb?_sleb`, `decodeCfa?_cfiProgram`, `decodeLsda?_lsdaBytes`, `callSites_ok` (decidable `CallSitesOk`), `unwindRows_frame` (the row at every call's return offset − 1 is `frameRow saved`), `unwindRows_leaf`; witness `Witness.call_row`. The `.eh_frame` section as a whole (CIE/FDE framing, `pc_begin`) is read in S10f, where the linker places it |
 | S10d–S10f | open |
 
 ## Where we are
