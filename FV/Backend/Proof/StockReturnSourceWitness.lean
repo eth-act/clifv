@@ -23,10 +23,10 @@ private theorem requests (p : Case) : explicitXs p ++ sretRet (function p) = abi
   cases flag : p.sret <;> simp [explicitXs,abiXs,sretRet,sigRets,function,flag]
 private theorem scope (p : Case) : LowerScope (function p) := by
   apply lowerScope_of
-  rcases p with ⟨sret,ty,width,pointer⟩
+  rcases p with ⟨sret,ty,width,pointer,int⟩
   cases sret with
   | true => have same := pointer rfl; subst ty; rfl
-  | false => cases ty <;> simp [Clif.Ty.width] at width <;> rfl
+  | false => cases ty <;> simp [Clif.Ty.width] at width int <;> rfl
 private theorem abi (p : Case) : sigAbiOk (function p).sig = true := by
   rcases p with ⟨sret,ty,width,pointer⟩
   cases sret with
