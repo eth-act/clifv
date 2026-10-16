@@ -36,7 +36,7 @@ open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 /-- `E2E.instWords`: an upper bound on the words `MInst.lines` emits (including a `trapIf`'s
 deferred trap; for a `Rets`, the epilogue `lowerRFunc` puts in its place). -/
 def szWords : MInst → Nat
-  | .load .. | .store .. | .loadAddr .. => 5
+  | .load .. | .store .. | .loadAddr .. | .fpuLoad .. | .fpuStore .. => 5
   | .atomicRmwLoop .. | .atomicCasLoop .. | .elfTlsGetAddr .. => 7
   | .jtSequence _ ts _ _ _ => 7 + ts.length
   | .condBr .. | .testBitAndBranch .. | .tryCall .. | .trapIf .. | .loadExtNameGot ..

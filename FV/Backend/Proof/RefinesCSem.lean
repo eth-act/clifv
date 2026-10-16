@@ -67,7 +67,8 @@ theorem refAt_of_wf {i : MInst} {us : List CV} (h : csemWF ctx i us = true) : Re
         | apply ref_bitRR | apply ref_movWide' | apply ref_movK | apply ref_extend
         | apply ref_bitfieldMove | apply ref_cset | apply ref_csel | apply ref_ccmpImm
         | apply ref_movToFpu | apply ref_movFromVec | apply ref_vecMisc | apply ref_vecLanes
-        | apply ref_vecRRR | apply ref_csetm | apply ref_fence) <;>
+        | apply ref_vecRRR | apply ref_csetm | apply ref_fence | apply ref_fpuCSel
+        | apply ref_fpuMoveFPImm | apply ref_vecDupImm) <;>
       first | assumption | decide
     | (apply refAt_none'; intro w; simp [ispec]; done)
 

@@ -498,6 +498,22 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
       pure ([.ins (.adrpTlsDesc (.x 0) sym), .ins (.ldrTlsDescLo12 tmp (.x 0) sym),
              .ins (.addTlsDescLo12 (.x 0) (.x 0) sym), .ins (.blrTlsDesc tmp sym),
              .ins (.mrsTpidrEl0 tmp), .ins (.aluRRR .add true (.x 0) (.x 0) tmp)], ps)
+  -- `emit.rs` `FpuLoad32/64`, `FpuStore32/64` (`mem_finalize` as for the integer accesses),
+  -- `FpuCSel32/64`, `FpuMoveFPImm` (`enc_bits` of the immediate)
+  | .fpuLoad s rd mem fl =>
+    let (pre, mem) ← memFinalize c mem s.bytes
+    pure (pre ++ [.ins (.fpuLoad s rd mem) fl.trapCode], ps)
+  | .fpuStore s rd mem fl =>
+    let (pre, mem) ← memFinalize c mem s.bytes
+    pure (pre ++ [.ins (.fpuStore s rd mem) fl.trapCode], ps)
+  | .fpuCSel s rd rn rm cond => one (.fpuCSel s rd rn rm cond)
+  | .fpuMoveFPImm rd imm s => one (.fpuMoveFPImm s rd imm.imm.toNat)
+  -- `emit.rs` `VecDupImm`: the plain `movi vd.<T>, #imm8` (no inversion, no shift, not the
+  -- 64-bit byte mask); the other forms are not expanded
+  | .vecDupImm rd imm invert s =>
+    if invert || imm.shift != 0 || imm.shiftOnes || imm.is64 then
+      throw s!"VecDupImm {repr imm} invert={invert}"
+    else one (.movi s rd imm.imm.toNat)
 where
   /-- `LoadAddr` with an immediate offset (`emit.rs`). -/
   addOff (rd rn : Reg) (off : Int) : List Line :=
@@ -799,10 +815,6 @@ def ScalarSize.fpreg (s : ScalarSize) (n : String) : String :=
   match s with
   | .size8 => "b" ++ n | .size16 => "h" ++ n | .size32 => "s" ++ n | .size64 => "d" ++ n
   | .size128 => "q" ++ n
-
-/-- Bytes of a scalar of size `s`. -/
-def ScalarSize.bytes : ScalarSize → Nat
-  | .size8 => 1 | .size16 => 2 | .size32 => 4 | .size64 => 8 | .size128 => 16
 
 def FPUOp1.asm : FPUOp1 → String
   | .abs => "fabs" | .neg => "fneg" | .sqrt => "fsqrt" | .cvt32To64 | .cvt64To32 => "fcvt"

@@ -240,6 +240,14 @@ def cLoadAddr : List AW → Bool
 def cAtomic : List AW → Bool
   | [tyv, rt, rn, _] => atomOk tyv && rt.isV && rn.isV
   | _ => false
+/-- `fcsel` (S11e1): float vreg destination and sources. -/
+def cFpuCSel : List AW → Bool
+  | [rd, rn, rm, _] => rd.isF && rn.isF && rm.isF
+  | _ => false
+/-- `fmov #imm` (S11e1): a float vreg destination. -/
+def cFpuMoveFPImm : List AW → Bool
+  | [rd, _, _] => rd.isF
+  | _ => false
 def cTrue (_ : List AW) : Bool := true
 
 /-- The coverage checks by variant (loads and stores: `cMem`). -/
@@ -260,10 +268,12 @@ def covTab : List (Nat × (List AW → Bool)) :=
    (VIdx.MInst.Udf, cTrue), (VIdx.MInst.JTSequence, cTrue), (VIdx.MInst.LoadExtNameGot, cTrue),
    (VIdx.MInst.LoadExtNameNear, cTrue), (VIdx.MInst.EmitIsland, cTrue),
    (VIdx.MInst.AtomicRMWLoop, cTrue), (VIdx.MInst.AtomicCASLoop, cTrue),
-   (VIdx.MInst.ElfTlsGetAddr, cTrue)]
+   (VIdx.MInst.ElfTlsGetAddr, cTrue), (VIdx.MInst.FpuCSel32, cFpuCSel),
+   (VIdx.MInst.FpuCSel64, cFpuCSel), (VIdx.MInst.FpuMoveFPImm, cFpuMoveFPImm)]
 
 /-- Loads and stores: the register is an int vreg, the addressing mode is covered at the
-access size. -/
+access size. (The float loads/stores and `VecDupImm`, whose immediate the domain does not
+describe, are not covered: `false`.) -/
 def cMem (k : Nat) : List AW → Bool
   | [rd, m, _] =>
     match loadOpOfIdx? k, storeOpOfIdx? k with

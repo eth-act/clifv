@@ -183,4 +183,18 @@ theorem os_vecRRR (op : VecALUOp) (sz : VectorSize) (d n m : Nat) :
       (.vecRRR op (.vreg d .float) (.vreg n .float) (.vreg m .float) sz) :=
   os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_vecRRR F ctx env op sz d n m)
 
+theorem os_fpuCSel (sz : ScalarSize) (c : Cond) (d n m : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X)
+      (.fpuCSel sz (.vreg d .float) (.vreg n .float) (.vreg m .float) c) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuCSel F ctx env sz c d n m)
+
+theorem os_fpuMoveFPImm (imm : ASIMDFPModImm) (sz : ScalarSize) (d : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.fpuMoveFPImm (.vreg d .float) imm sz) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuMoveFPImm F ctx env imm sz d)
+
+theorem os_vecDupImm (imm : ASIMDMovModImm) (inv : Bool) (sz : VectorSize) (d : Nat)
+    (h : (!inv && imm.shift == 0 && !imm.shiftOnes && !imm.is64) = true) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.vecDupImm (.vreg d .float) imm inv sz) :=
+  os_of_corr rfl _ (by assign_tac) h rfl rfl (corr_vecDupImm F ctx env imm inv sz d)
+
 end Backend.Proof
