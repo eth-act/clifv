@@ -49,6 +49,7 @@ def instOps : Inst → List ValueId
   | .atomicCas _ _ c x y => [c, x, y]
   | .call _ args => args
   | .callIndirect _ c args => c :: args
+  | .float _ _ args => args
 
 /-- Rename the value operands of an instruction. -/
 def renameInst (σ : ValueId → ValueId) : Inst → Inst
@@ -85,6 +86,7 @@ def renameInst (σ : ValueId → ValueId) : Inst → Inst
   | .trapnz c code => .trapnz (σ c) code
   | .nop => .nop
   | .symbolValue t gv => .symbolValue t gv
+  | .float op t args => .float op t (args.map σ)
 
 def renameStmt (σ : ValueId → ValueId) (s : Stmt) : Stmt :=
   { results := s.results.map σ, inst := renameInst σ s.inst }

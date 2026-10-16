@@ -158,6 +158,8 @@ def inst (tys : ValueId → Option Ty) : Inst → String
   | .trapz c code => s!"trapz{sfxOf tys c} {v c}, {code.name}"
   | .trapnz c code => s!"trapnz{sfxOf tys c} {v c}, {code.name}"
   | .nop => "nop"
+  | .float (.fcmp cc) ty args => s!"fcmp.{ty.name} {cc.name} {vs args}"
+  | .float op ty args => s!"{op.name}.{ty.name} {vs args}"
 
 def term (tys : ValueId → Option Ty) : Terminator → String
   | .jump b => s!"jump {blockCall b}"
