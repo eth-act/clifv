@@ -18,11 +18,12 @@ and every theorem about it are unchanged.
     personality installs: x0 := the exception object, x1 := 0 (`payloadOuts`). The supported
     shape: the first handler is a `tag 0` (cleanup) or `tag 1` (catch-all) handler — the
     handlers `Backend.callSites` emits a landing pad for —, the exceptional ABI restores the
-    callee-saved registers (`clobberAll = false`), and every def of the call is in x0 or x1
+    callee-saved registers (`clobberAll = false`), every def of the call is in x0 or x1
     (at most two ABI returns: the defs are then exactly the payload registers,
     `gen_try_call_rets`, so the handler edges keep no def the unwinder leaves unconstrained;
     every `try_call` of the fv-demo, survey and deps crates has at most two returns and a
-    first `tag0` handler).
+    first `tag0` handler), and each of x0, x1 is clobbered by the call or a def's register
+    (`payloadRegOk`: the allocated code keeps nothing live there, which the unwinder overwrites).
 * `driverSem_csemU`: the driver's facts (`DriverSem`) hold for `csemU` as for `csem`.
 -/
 
@@ -61,11 +62,19 @@ def firstHandlerOk : List TryHandler → Bool
   | .tag 0 _ :: _ | .tag 1 _ :: _ => true
   | _ => false
 
+/-- After unwinding, register `r` (x0 or x1: the machine has x0 := the object, x1 := 0) holds
+nothing the allocated code keeps live across the call: it is clobbered by the call or a def
+operand's fixed register. -/
+def payloadRegOk (info : CallInfo) (ti : TryInfo) (r : Reg) : Bool :=
+  (MInst.tryCall info ti).clobbers.contains r || (defCons (.call info)).contains (.fixed r)
+
 /-- **The `try_call` shapes whose exceptional edge is covered**: first handler `tag 0`/`tag 1`,
-callee-saved registers restored by the unwinder, every def operand fixed to x0 or x1. -/
+callee-saved registers restored by the unwinder, every def operand fixed to x0 or x1, and each
+of x0, x1 clobbered or a def's register (`payloadRegOk`). -/
 def tryUOk (info : CallInfo) (ti : TryInfo) : Bool :=
   firstHandlerOk ti.handlers && !ti.clobberAll &&
-    (defCons (.call info)).all fun c => c == .fixed (.x 0) || c == .fixed (.x 1)
+    (defCons (.call info)).all (fun c => c == .fixed (.x 0) || c == .fixed (.x 1)) &&
+    payloadRegOk info ti (.x 0) && payloadRegOk info ti (.x 1)
 
 /-- **The concrete instruction semantics with unwinding.** -/
 noncomputable def csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
@@ -140,14 +149,15 @@ theorem csemU_call_congr {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR
   · rw [hc]
 
 /-- `csemU` of a `tryCall` depends on its callee descriptor, its def operands' constraints,
-its `tryUOk` and `csem`. -/
+its clobbers, its `tryUOk` and `csem`. -/
 theorem csemU_try_congr {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : XRaise}
     {info info' : CallInfo} {ti ti' : TryInfo} (hd : callDest info' = callDest info)
     (hf : defCons (.call info') = defCons (.call info))
+    (hcl : (MInst.tryCall info' ti').clobbers = (MInst.tryCall info ti').clobbers)
     (ht : tryUOk info ti' = tryUOk info ti)
     (hc : csem F ctx X (.tryCall info' ti') = csem F ctx X (.tryCall info ti)) :
     csemU F ctx X XR (.tryCall info' ti') = csemU F ctx X XR (.tryCall info ti) := by
-  have hu : tryUOk info' ti' = tryUOk info ti' := by simp only [tryUOk, hf]
+  have hu : tryUOk info' ti' = tryUOk info ti' := by simp only [tryUOk, payloadRegOk, hf, hcl]
   funext uses w
   simp only [csemU, hd, payloadOuts, hf, hu, ht]
   split
@@ -180,7 +190,8 @@ theorem driverSem_csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR 
       exact csemU_call_congr (by cases dest <;> rfl) (defCons_mapRegs hg (.call ⟨dest, us, ds⟩)) hc
     | tryCall info ti =>
       obtain ⟨dest, us, ds⟩ := info
-      exact csemU_try_congr (by cases dest <;> rfl) (defCons_mapRegs hg (.call ⟨dest, us, ds⟩)) rfl hc
+      exact csemU_try_congr (by cases dest <;> rfl) (defCons_mapRegs hg (.call ⟨dest, us, ds⟩))
+        (by simp [MInst.clobbers, List.any_map, Function.comp_def]) rfl hc
     | _ =>
       rw [csemU_of_not_call (by intro _ h; simp [MInst.mapRegs] at h)
           (by intro _ _ h; simp [MInst.mapRegs] at h),
@@ -216,7 +227,7 @@ theorem driverSem_csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR 
               | tag n l' => rcases n with _ | _ | n <;> rfl
               | default l' => rfl
         · cases h
-      exact csemU_try_congr rfl rfl hti hc
+      exact csemU_try_congr rfl rfl rfl hti hc
 
 /-! ## Non-vacuity -/
 
@@ -231,6 +242,14 @@ def ti : TryInfo := { continuation := 2, handlers := [.tag 0 1], rets := 2 }
 def XR : XRaise := ⟨fun _ _ w => some (77, w)⟩
 
 theorem tryUOk_ok : tryUOk info ti = true := by decide
+
+/-- A `try_call` with one result (x0): x1 is a clobber (`payloadRegOk`'s first case). -/
+def info1 : CallInfo := ⟨.sym "f", [(.vreg 0 .int, .x 0)], [(.x 0, .vreg 1 .int)]⟩
+
+theorem tryUOk_one : tryUOk info1 { ti with rets := 1 } = true := by decide
+
+theorem payloadReg_x1_clobbered : (MInst.tryCall info1 { ti with rets := 1 }).clobbers.contains (.x 1) = true ∧
+    (defCons (.call info1)).contains (.fixed (.x 1)) = false := by decide
 
 /-- The raising callee: the `try_call` continues at its handler with x0 = 77, x1 = 0. -/
 theorem caught (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (w : Arm.ArmState) (uses : List CV) :
