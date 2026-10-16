@@ -369,9 +369,16 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   theorem: the proof assumes the callee behaves as its CLIF (the callee contract), whether the
   callee is Lean-compiled, cg_clif-compiled or in std.
 * **verified (normal returns; unwinding trusted)** = verified as above for a function with
-  `try_call`s: the theorem covers the runs in which every callee of a `try_call` returns
-  normally (with the callee contract `CalleeTryOk` for its results); the unwinding path
-  (landing pads, LSDA, unwind tables) is trusted.
+  `try_call`s whose unwinding is not covered: the theorem covers the runs in which every callee
+  of a `try_call` returns normally (with the callee contract `CalleeTryOk` for its results); the
+  unwinding path (landing pads, LSDA, unwind tables) is trusted. A `try_call` function whose
+  compiled objects pass the unwinding theorem's checks (`unwCheck`, `savedCheck`, `lastCallsOk`,
+  `padsNonzeroB`; S10e) is reported **verified**: `E2E.backend_correct_final_cleanup_unwind`
+  covers its exceptional edges too (a caught exception reaches the handler with the payload, an
+  uncaught one returns to the caller with the exception object and the caller's frame as the
+  ABI requires), with the Itanium unwinder/personality model and the decoding of the emitted
+  tables trusted. `lean-backend` prints `compiled, verified (try_call: unwinding by …)` for it,
+  and for a function failing a check the old label with `unwinding check failed: <check>`.
 * **Non-vacuity.** Every top-level theorem has a witness that its contract premises can all
   hold for realistic callees (docs/contracts/e2e.md, "Non-vacuity";
   `E2E.backend_correct_final_witness`, `E2E.backend_correct_final_id`, and for functions with
