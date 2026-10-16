@@ -789,9 +789,6 @@ theorem evalInst_bmask_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty} {
     obtain ⟨rfl, rfl⟩ := h
     exact ⟨a, rfl, rfl, rfl⟩
 
-/-- `a ↔ b` on bit-vector propositions, by `bv_decide` both ways. -/
-macro "decide_bv_iff" : tactic => `(tactic| (constructor <;> intro h <;> bv_decide))
-
 section BmaskRun
 variable {Rd : BitVec 64 → Prop} {F : BitVec 64 → Prop} {isem : Sem}
 
@@ -865,10 +862,18 @@ theorem opnd_eq_setWidth (sz : OperandSize) (u : CV) : opnd sz u = u.setWidth sz
   simp only [opnd, lo64, BitVec.setWidth_setWidth_of_le _ (opSize_bits_le sz)]
 
 theorem and_mask8 (u : BitVec 128) : u.setWidth 32 &&& 255#32 = 0 ↔ u.setWidth 8 = 0 := by
-  constructor <;> intro h <;> bv_decide
+  rw [← BitVec.toNat_inj, ← BitVec.toNat_inj]
+  simp only [BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  rw [show (255 % 2 ^ 32 : Nat) = 2 ^ 8 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
+    show (0 : BitVec 32).toNat = 0 from rfl, show (0 : BitVec 8).toNat = 0 from rfl]
+  omega
 
 theorem and_mask16 (u : BitVec 128) : u.setWidth 32 &&& 65535#32 = 0 ↔ u.setWidth 16 = 0 := by
-  constructor <;> intro h <;> bv_decide
+  rw [← BitVec.toNat_inj, ← BitVec.toNat_inj]
+  simp only [BitVec.toNat_and, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+  rw [show (65535 % 2 ^ 32 : Nat) = 2 ^ 16 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
+    show (0 : BitVec 32).toNat = 0 from rfl, show (0 : BitVec 16).toNat = 0 from rfl]
+  omega
 
 theorem bmask_cond_3264 {wi : Nat} (hwi : wi = 32 ∨ wi = 64) {a : Clif.Val}
     (hty : CTy.ofClif a.ty = .int wi) {u : CV} (hh : VHolds a u) :
