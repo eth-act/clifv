@@ -46,6 +46,12 @@ def Reg.isVirtual : Reg → Bool
   | .vreg .. => true
   | _ => false
 
+/-- The class of a register: a vreg's own, `float` for a V register, `int` otherwise. -/
+def Reg.homeCls : Reg → RegClass
+  | .vreg _ c => c
+  | .v _ => .float
+  | _ => .int
+
 def Reg.fp : Reg := .x 29
 def Reg.lr : Reg := .x 30
 
