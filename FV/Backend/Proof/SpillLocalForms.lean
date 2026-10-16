@@ -82,6 +82,16 @@ theorem spillInstOk_store {b : Nat} {m : AMode} (h : memOk b m = true) (op : Sto
   unfold memOk at h
   split at h <;> (try cases h) <;> spill_form
 
+theorem spillInstOk_fpuLoad {b : Nat} {m : AMode} (h : memOk b m = true) (sz : ScalarSize) (n : Nat)
+    (fl : Clif.MemFlags) : SpillInstOk (.fpuLoad sz (.vreg n .float) m fl) := by
+  unfold memOk at h
+  split at h <;> (try cases h) <;> spill_form
+
+theorem spillInstOk_fpuStore {b : Nat} {m : AMode} (h : memOk b m = true) (sz : ScalarSize) (n : Nat)
+    (fl : Clif.MemFlags) : SpillInstOk (.fpuStore sz (.vreg n .float) m fl) := by
+  unfold memOk at h
+  split at h <;> (try cases h) <;> spill_form
+
 /-- **Every covered straight-line form meets `SpillInstOk`.** -/
 theorem spillInstOk_of_formOk {ctx : FnCtx} {i : MInst} (h : FormOk ctx i = true) : SpillInstOk i := by
   unfold FormOk at h
@@ -91,6 +101,8 @@ theorem spillInstOk_of_formOk {ctx : FnCtx} {i : MInst} (h : FormOk ctx i = true
     | spill_form
     | exact spillInstOk_load (Bool.and_eq_true _ _ ▸ h).2 _ _ _
     | exact spillInstOk_store (Bool.and_eq_true _ _ ▸ h).2 _ _ _
+    | exact spillInstOk_fpuLoad (Bool.and_eq_true _ _ ▸ h).2 _ _ _
+    | exact spillInstOk_fpuStore (Bool.and_eq_true _ _ ▸ h).2 _ _ _
 
 /-! ## Control forms with fixed registers -/
 
