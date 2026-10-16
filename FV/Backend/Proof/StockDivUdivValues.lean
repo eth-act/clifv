@@ -31,7 +31,9 @@ theorem stock_lower_udiv_record_values {f : Clif.Function} {result : Result}
   have inv := (stock_lower_record_context run scope events).1
   have widths := (stock_div_source_data inv .udiv source clif).1
   by_cases wide : ty.width = 64
-  · have type : ty = .i64 := by cases ty <;> simp [Clif.Ty.width] at wide ⊢
+  · have type : ty = .i64 := by
+      have accepted := inv.instE _ info _ source clif
+      cases ty <;> simp [Clif.Ty.width,Compile.instE,Compile.tyE] at wide accepted ⊢
     subst ty
     exact stock_lower_udiv_wide_record_values run scope dominated events records foundBlock foundStmt current source clif results mapped recorded emitted refines dfg held getX getY
   · have narrow : ty.width ≤ 32 := by omega
@@ -64,7 +66,9 @@ theorem stock_lower_udiv_source_by_instruction {f : Clif.Function} {result : Res
   have inv := (stock_lower_record_context run scope events).1
   have widths := (stock_div_source_data inv .udiv source clif).1
   by_cases wide : ty.width = 64
-  · have type : ty = .i64 := by cases ty <;> simp [Clif.Ty.width] at wide ⊢
+  · have type : ty = .i64 := by
+      have accepted := inv.instE _ info _ source clif
+      cases ty <;> simp [Clif.Ty.width,Compile.instE,Compile.tyE] at wide accepted ⊢
     subst ty
     exact stock_lower_udiv_wide_source_by_instruction run scope dominated events records foundBlock foundStmt current source clif results statementResults mapped recorded emitted refines dfg held sourceStep
   · have narrow : ty.width ≤ 32 := by omega
