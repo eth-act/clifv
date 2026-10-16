@@ -12,24 +12,30 @@ construction against the unwinder's model (`FV/Unw/Dwarf.lean`):
 trips). Using them in the per-function and linking theorems is S10d–S10f
 (`docs/plans/unwinding.md`).
 
-The rows mirror what Cranelift emits for aarch64 SystemV (`isa/aarch64/abi.rs`
+The rows follow what Cranelift emits for aarch64 SystemV (`isa/aarch64/abi.rs`
 `gen_prologue_frame_setup` / `gen_clobber_save` and `isa/unwind/systemv.rs`
-`create_unwind_info_from_insts`), for the backend's own frame (`FV/Backend/Regalloc.lean`):
+`create_unwind_info_from_insts`), for the backend's own frame (`FV/Backend/Regalloc.lean`),
+except that from the end of the prologue on the CFA is defined from sp:
 
 | after | rows | Cranelift's `UnwindInst` |
 | --- | --- | --- |
 | `stp x29, x30, [sp, #-16]!` | `def_cfa_offset 16`, x29 at CFA-16, x30 at CFA-8 | `PushFrameRegs` |
-| `mov x29, sp` | `def_cfa_register x29` (CFA = x29+16 from here on) | `DefineNewFrame` |
+| `mov x29, sp` | `def_cfa_register x29` (CFA = x29+16) | `DefineNewFrame` |
+| the prologue's `sub sp` | `def_cfa_register sp`, `def_cfa_offset frameSize+16` | — |
 | each callee-save store `str r, [sp, #o]` | r at CFA + o - 16 - frameSize | `SaveReg` |
 
+Cranelift keeps the CFA x29-based; the body keeps sp at `entry sp - 16 - frameSize` (it
+never moves sp), so the sp-based rule describes the same CFA, and the proof that unwinding a
+frame restores the caller's state needs only the body's sp, not an invariant on x29
+(`FV/Backend/Proof/UnwindTables.lean` `unwindRows_frame`).
+
 The CIE's initial rule is CFA = sp+0 (return address in x30), so a function without a frame
-(`AFunc.frame = false`) has an FDE without rows. The frame's `sub sp` needs no row: the CFA
-is x29-based by then (Cranelift's `StackAlloc` adds a row only without a frame pointer). The
-epilogue has no rows either, as in Cranelift: unwinding starts only at call sites (Rust panics
-are synchronous), and no call follows the restores. The callee-saved registers are saved in
-block 0 before any other instruction (`buildRFunc`, `ctlCheck`), so their rows cover every call.
-For v8–v15 the frame saves all 128 bits (`str q`); the unwinder restores the callee-saved low
-64 bits (d8–d15, DWARF 72–79) from the slot's first 8 bytes.
+(`AFunc.frame = false`) has an FDE without rows. The epilogue has no rows, as in Cranelift:
+unwinding starts only at call sites (Rust panics are synchronous), and no call follows the
+restores. The callee-saved registers are saved in block 0 before any other instruction
+(`buildRFunc`, `ctlCheck`), so their rows cover every call. For v8–v15 the frame saves all
+128 bits (`str q`); the unwinder restores the callee-saved low 64 bits (d8–d15, DWARF 72–79)
+from the slot's first 8 bytes.
 
 `unwindRows` reads the saves from `AFunc`'s block 0 and checks that the function's final code
 starts with exactly the prologue and those stores (so the byte offsets are the code's).
@@ -86,6 +92,11 @@ def saveRows (c : FnCtx) (frameSize : Nat) : Nat → List AInst →
 def prologueRows : List (Nat × Cfi) :=
   [(4, .defCfaOffset 16), (4, .offset 29 (-16)), (4, .offset 30 (-8)), (8, .defCfaRegister 29)]
 
+/-- The rows at the end of the prologue (byte offset `at_`, after its `sub sp`): CFA = sp +
+`frameSize` + 16. -/
+def frameRows (frameSize at_ : Nat) : List (Nat × Cfi) :=
+  [(at_, .defCfaRegister 31), (at_, .defCfaOffset (frameSize + 16))]
+
 /-- Unwind rows `(code offset, instruction)` of an allocated function `af` whose final code
 is `fa`, in code order. -/
 def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := do
@@ -104,7 +115,7 @@ def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := 
   unless (match fa.lines[0]? with | some (Line.label _) => true | _ => false) &&
       decide (got.map Line.insn? = expect.map Line.insn?) && got.all (·.insn?.isSome) do
     throw "unwind: the code does not start with the prologue and the callee-save stores"
-  return prologueRows ++ srows
+  return prologueRows ++ frameRows af.frameSize (4 * pro.length) ++ srows
 
 /-- Unsigned LEB128. -/
 def uleb (n : Nat) : ByteArray :=
