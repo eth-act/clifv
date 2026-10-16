@@ -116,7 +116,9 @@ private theorem neg_helper_original {p : Program} (hp : Data p) (ctx : Ctx) {f :
   obtain ⟨tys, htys, hres, -⟩ := inv.resTys j infoj _ hij hcl
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
-  exact ⟨j, infoj, ty, c, hj, hij, hcl, hdj, by rw [hres]; simp [ofClif_int_width]⟩
+  have typeE := inv.resTysE j infoj hij (CTy.ofClif ty) (by rw [hres]; simp)
+  exact ⟨j, infoj, ty, c, hj, hij, hcl, hdj, by
+    rw [hres]; simp [ofClif_int_width (isInt_of_ofClif_mem typeE)]⟩
 
 theorem stock_addsub_neg_match_operand {p : Program} (hp : Data p)
     {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx) (subtract left : Bool)

@@ -1,5 +1,6 @@
 import FV.Opt.Proof.Sem
 import FV.Opt.Proof.Dom
+import FV.Clif.FloatFacts
 
 /-!
 # Facts about `Clif.evalInst` used by the pass proofs
@@ -17,11 +18,22 @@ namespace Opt
 
 open Clif
 
+theorem getMany_congr {fr fr' : Frame} {xs : List ValueId}
+    (h : ∀ x ∈ xs, fr'.regs x = fr.regs x) : fr'.getMany xs = fr.getMany xs := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih =>
+    simp only [Frame.getMany, Frame.get, h x (by simp), ih (fun y hy => h y (by simp [hy]))]
+
 theorem evalInst_congr {fr fr' : Frame} {mem : Mem} {i : Inst}
     (hg : fr'.func.globals = fr.func.globals) (hx : fr'.func.externs = fr.func.externs)
     (hs : fr'.slots = fr.slots)
     (hr : ∀ x ∈ operands i, fr'.regs x = fr.regs x) : evalInst fr' mem i = evalInst fr mem i := by
-  cases i <;> simp only [operands, List.mem_cons, or_false, forall_eq_or_imp,
+  cases i
+  case float op ty args =>
+    simp only [operands] at hr
+    simp only [evalInst, getMany_congr hr]
+  all_goals simp only [operands, List.mem_cons, or_false, forall_eq_or_imp,
     forall_eq, List.not_mem_nil, false_imp_iff, imp_true_iff] at hr <;>
     simp only [evalInst, Frame.getAs, Frame.get, Function.extern?, hr, hs, hg, hx]
 
@@ -30,13 +42,6 @@ theorem evalNode_congr {fr fr' : Frame} {mem : Mem} {i : Inst}
     (hs : fr'.slots = fr.slots)
     (hr : ∀ x ∈ operands i, fr'.regs x = fr.regs x) : evalNode fr' mem i = evalNode fr mem i := by
   simp only [evalNode, evalInst_congr hg hx hs hr]
-
-theorem getMany_congr {fr fr' : Frame} {xs : List ValueId}
-    (h : ∀ x ∈ xs, fr'.regs x = fr.regs x) : fr'.getMany xs = fr.getMany xs := by
-  induction xs with
-  | nil => rfl
-  | cons x xs ih =>
-    simp only [Frame.getMany, Frame.get, h x (by simp), ih (fun y hy => h y (by simp [hy]))]
 
 theorem getMany_ok {fr : Frame} {xs : List ValueId} {vs : List Val} (h : fr.getMany xs = .ok vs) :
     vs.length = xs.length ∧ ∀ (n : Nat) x, xs[n]? = some x → fr.regs x = vs[n]? := by
@@ -70,8 +75,15 @@ theorem evalInst_types {fr : Frame} {mem : Mem} {i : Inst} {vals : List Val} {me
     {sigOf : FnRef → Option Signature} {sigDeclOf : Nat → Option Signature} {ts : List Ty}
     (h : evalInst fr mem i = .ok (vals, mem')) (ht : i.resultTypes sigOf sigDeclOf = some ts) :
     vals.map (·.ty) = ts := by
-  cases i <;> simp only [Inst.resultTypes, Option.some.injEq, Option.map_eq_some_iff] at ht <;>
-    simp only [evalInst, Frame.getAs, Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
+  cases i
+  case float op ty args =>
+    rw [resultTypes_float, Option.some.injEq] at ht
+    subst ht
+    simp only [evalInst, Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
+    obtain ⟨_, _, r, hr, rfl, -⟩ := h
+    simp [evalFloat_ty hr]
+  all_goals (simp only [Inst.resultTypes, Option.some.injEq, Option.map_eq_some_iff] at ht <;>
+    simp only [evalInst, Frame.getAs, Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h)
   all_goals (repeat' split at h)
   all_goals (try simp only [Res.bind_eq_ok, Res.pure_eq_ok, Prod.mk.injEq, Res.ofOption_eq_ok] at h)
   all_goals (try obtain ⟨_, _, _, _, rfl, _⟩ := h)
@@ -253,8 +265,12 @@ theorem evalInst_total {f : Function} {tm : ValueId → Option Ty} {fr : Frame} 
     obtain ⟨c, hc⟩ := hg hi ty (by simp [operands]) h4
     simp [evalInst, h2, hb, hc]
   case bitcast ty fl x =>
-    obtain ⟨b, hb⟩ := hg x ty (by simp [operands]) ht
-    simp [evalInst, hb]
+    obtain ⟨a, ha, hta⟩ := hops x (by simp [operands])
+    have hw : a.ty.width = ty.width := by
+      rw [ht] at hta; rw [Option.some.inj hta]
+    refine ⟨⟨ty, hw ▸ a.bits⟩, ?_⟩
+    simp only [evalInst, Frame.get, ha, Res.ofOption_some, Res.ok_bind, dif_pos hw]
+    rfl
   case stackAddr ty s off =>
     obtain ⟨b, hb⟩ := Option.isSome_iff_exists.1 (hsl s (Option.isSome_iff_exists.2 ht))
     simp [evalInst, hb]
@@ -319,13 +335,26 @@ theorem Res.norm_eq_trap {α : Type} {r r' : Res α} (h : r'.norm = r.norm) {c :
     (ha : r = .trap c) : r' = .trap c := by
   subst ha; cases r' <;> simp_all [Res.norm]
 
+theorem getMany_rename {σ : ValueId → ValueId} {fr fr' : Frame} {xs : List ValueId}
+    (h : ∀ x ∈ xs, fr'.regs (σ x) = fr.regs x) :
+    (fr'.getMany (xs.map σ)).norm = (fr.getMany xs).norm := by
+  induction xs with
+  | nil => rfl
+  | cons x xs ih =>
+    simp only [List.map_cons, Frame.getMany, Frame.get, h x (by simp), Res.norm_bind,
+      Res.norm_ofOption, ih (fun y hy => h y (by simp [hy]))]
+
 /-- Evaluating a renamed instruction in a frame that holds, at `σ x`, the value of `x`. -/
 theorem evalInst_rename {σ : ValueId → ValueId} {fr fr' : Frame} {mem : Mem} {i : Inst}
     (hg : fr'.func.globals = fr.func.globals) (hx : fr'.func.externs = fr.func.externs)
     (hs : fr'.slots = fr.slots)
     (hr : ∀ x ∈ operands i, fr'.regs (σ x) = fr.regs x) :
     (evalInst fr' mem (mapOperands σ i)).norm = (evalInst fr mem i).norm := by
-  cases i <;> simp only [operands, List.mem_cons, or_false, forall_eq_or_imp,
+  cases i
+  case float op ty args =>
+    simp only [operands] at hr
+    simp only [evalInst, mapOperands, Res.norm_bind, getMany_rename hr]
+  all_goals simp only [operands, List.mem_cons, or_false, forall_eq_or_imp,
     forall_eq, List.not_mem_nil, false_imp_iff, imp_true_iff] at hr <;>
     simp only [evalInst, mapOperands, Frame.getAs, Frame.get, Function.extern?, hr, hs, hg, hx,
       Res.norm_bind,
@@ -346,14 +375,5 @@ theorem evalNode_rename {σ : ValueId → ValueId} {fr fr' : Frame} {mem : Mem} 
   | stuck m =>
     rw [h1] at h
     cases h2 : evalInst fr' mem (mapOperands σ i) <;> simp_all [Res.norm]
-
-theorem getMany_rename {σ : ValueId → ValueId} {fr fr' : Frame} {xs : List ValueId}
-    (h : ∀ x ∈ xs, fr'.regs (σ x) = fr.regs x) :
-    (fr'.getMany (xs.map σ)).norm = (fr.getMany xs).norm := by
-  induction xs with
-  | nil => rfl
-  | cons x xs ih =>
-    simp only [List.map_cons, Frame.getMany, Frame.get, h x (by simp), Res.norm_bind,
-      Res.norm_ofOption, ih (fun y hy => h y (by simp [hy]))]
 
 end Opt

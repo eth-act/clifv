@@ -78,7 +78,7 @@ theorem stock_rotate_narrow_register_requests {p : Program} (hp : Data p) (ctx :
     obtain ⟨t,typed,safeX,rx,mapX,form⟩ := shape
     have typeEq : t = .int ty.width := by
       have h := (dfg.2 x t ⟨ty,u⟩ typed (getAs_ok getX)).symm
-      exact h.trans (ofClif_int_width (ty := ty))
+      exact h.trans (ofClif_int_width (ty := ty) (isInt_of_width_lt_32 (by omega)))
     rw [typeEq] at typed form
     rcases form with pass | extended
     · rcases pass with ⟨impossible,_,_⟩

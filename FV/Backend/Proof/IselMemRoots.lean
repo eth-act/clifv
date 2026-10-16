@@ -268,7 +268,7 @@ theorem cond_store {ctx : Ctx} {x w : Nat} {ty : Clif.Ty} {aop : StoreOp}
     ∀ (fr : Clif.Frame) (a : BitVec ty.width), DFGCons ctx fr → fr.getAs x ty = .ok a →
       aop.bytes = Clif.StoreOp.size ty .store := by
   intro fr a hd hax
-  have h := hd.2 x _ _ hvt (getAs_ok hax)
+  have h : CTy.ofClif ty = .int w := hd.2 x _ _ hvt (getAs_ok hax)
   replace h := (ofClif_eq_int h).2
   have := ty_bytes8 ty
   simp only [Clif.StoreOp.size]

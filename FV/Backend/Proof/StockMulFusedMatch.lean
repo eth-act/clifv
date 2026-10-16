@@ -29,7 +29,7 @@ private theorem source_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv 
       · simp only [instData,show binaryOpcode .iadd = some "Iadd" from rfl,he,ite_true]; rfl
       · simp only [instData,show binaryOpcode .isub = some "Isub" from rfl,he,ite_true]; rfl
     exact Except.ok.inj (data.symm.trans shape)
-  · rw [typed]; simp [ofClif_int_width]
+  · rw [typed]; simp [ofClif_int_width (isInt_of_eTy he)]
 
 end Data
 private theorem root_patterns {p : Program} (hp : Data p) (ctx : Ctx) {i a b k opT : Nat} {info : IInfo}

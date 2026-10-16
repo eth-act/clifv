@@ -534,7 +534,8 @@ theorem sdiv64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at hty
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, (ofClif_int_width),
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some,
+    ofClif_int_width (isInt_of_eTy hety),
     CTy.int.injEq] at hty
   have hE := sext64_ok hp hco (hn := by omega) h557
   obtain ⟨_, -, rx, hrx, -⟩ := id hE
@@ -600,7 +601,8 @@ theorem sdiv32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at hb32 h698 h562 h561 h493
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, (ofClif_int_width)]
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some,
+    ofClif_int_width (isInt_of_eTy hety)]
     at hb32 h698 h562 h561 h493
   have hw32 : ty.width ≤ 32 := hb32
   have hwid := cmp_eTy_widths hety

@@ -37,7 +37,7 @@ private theorem alu_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f c
       · simp only [ite_true, instData, show binaryOpcode .isub = some "Isub" from rfl, he]
         rfl
     exact Except.ok.inj (data.symm.trans shape)
-  · rw [typed]; simp [ofClif_int_width]
+  · rw [typed]; simp [ofClif_int_width (isInt_of_eTy he)]
 
 end AluData
 

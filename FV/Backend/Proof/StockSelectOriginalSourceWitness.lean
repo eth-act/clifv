@@ -72,15 +72,15 @@ private theorem dfg_base (p : Case) (word : BitVec p.cty.width) : DFGCons (built
   · intro x t v type lookup
     by_cases hc : x = 7
     · subst x; rw [typed p 7 (by simp)] at type; cases type; cases lookup
-      exact ofClif_int_width
+      exact ofClif_int_width (by rfl)
     · by_cases hx : x = 31
       · subst x; rw [typed p 31 (by simp)] at type; cases type
         simp only [frame,show (31:Nat) ≠ 7 by decide,ite_false,ite_true,Option.some.injEq] at lookup
-        subst v; exact ofClif_int_width
+        subst v; exact ofClif_int_width (by rfl)
       · by_cases hy : x = 63
         · subst x; rw [typed p 63 (by simp)] at type; cases type
           simp only [frame,show (63:Nat) ≠ 7 by decide,show (63:Nat) ≠ 31 by decide,ite_false,ite_true,Option.some.injEq] at lookup
-          subst v; exact ofClif_int_width
+          subst v; exact ofClif_int_width (by rfl)
         · simp [frame,hc,hx,hy] at lookup
 private theorem dfg_transport {a b : Ctx} {fr : Clif.Frame}
     (insts : a.insts.map minmaxSourceKey = b.insts.map minmaxSourceKey)

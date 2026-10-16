@@ -317,7 +317,7 @@ theorem binary_root_inv {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {i
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   refine ⟨ty, x, y, e0, e1, rfl, hd, ?_, eTy_width hety, hrest, hil⟩
-  rw [hres]; simp [(ofClif_int_width)]
+  rw [hres]; simp [ofClif_int_width (isInt_of_eTy hety)]
 
 end Root
 
@@ -622,7 +622,9 @@ theorem negated_value_inv {f : Clif.Function} (hctx : CtxInv f ctx) {cfg : Confi
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys j infoj _ hij hcl
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
-  exact ⟨j, infoj, ty, c, hj, hij, hcl, hdj, by rw [hres]; simp [(ofClif_int_width)]⟩
+  have hE := hctx.resTysE j infoj hij (CTy.ofClif ty) (by rw [hres]; simp)
+  exact ⟨j, infoj, ty, c, hj, hij, hcl, hdj, by
+    rw [hres]; simp [ofClif_int_width (isInt_of_ofClif_mem hE)]⟩
 
 end IfLet
 
