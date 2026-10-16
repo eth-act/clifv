@@ -126,7 +126,10 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 - the Arm model and `Clif.run` as specifications (fidelity is tested, not proven: T4, T5);
   for unwinding (S10) also `Clif.runX` (checked against Cranelift's JIT, `scripts/clif-unwind-native.sh`)
   and the DWARF/LSDA decoder and unwinder/personality model (`FV/Unw/Dwarf.lean`,
-  `FV/Unw/Model.lean`: what libunwind/libgcc and Rust's personality do with the tables);
+  `FV/Unw/Model.lean`: what libunwind/libgcc and Rust's personality do with the tables), and
+  how LLVM libunwind finds a pc's tables in the executable (`FV/Unw/EhFrameHdr.lean`: the
+  `PT_GNU_EH_FRAME` header, `decodeEHHdr`'s encodings, `findFDE`'s binary search transcribed,
+  `decodeFDE`, the LSDA read from the file-backed `PT_LOAD` image; S10f);
 - the contracts of code outside the program (std, musl, cg_clif-fallback functions), the OS loader.
 
 ## 2. Where each stage stands
@@ -931,7 +934,7 @@ simplify on. Open: `SimpStageOk` (simplify's own completeness).
 | S7 | `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | DEFERRED "`sret`" |
 | S8 | `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | DEFERRED "Linking", "Remaining" |
 | S9 | Trapping helpers (`__*ti3` division by zero) and traps inside program callees | DEFERRED "i128 legalisation"; `TrapsExplicit` |
-| S10 | Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | S10b (#229), S10c (#230: tables correct by construction), S10d (#231: unwinder/personality model, `restore_frame`) done; plan `docs/plans/unwinding.md` (sub-issues #229–#233) |
+| S10 | Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | S10b–S10f (#229–#233) done: per function `E2E.backend_correct_final_cleanup_unwind` (and through the `i128` legaliser `backend_correct_legal_unwind`), linked programs `backend_correct_program_budgetU'`/`peakU'`, executables `Link.DeadCleanup.compileExe_correct_unwind`/`_peak` (the executable's unwind tables checked, `unwOkB`), bundles `Front.bundle_correct_raw_unwind{,_ren}`. Left: the mid-end (`--opt-proven-only`), the raw `i128` program's exceptional edges (no program-level legalisation with unwinding), an executable-bytes machine with unwinding. Plan `docs/plans/unwinding.md` |
 | S11 | Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | PLAN.md "Next steps" 2; the largest fallback reason (145 of the 158 `examples/deps` fallbacks; 100 of them float data movement only). Plan, semantics decisions and slices S11a–S11g: `docs/plans/floats.md` |
 | S12 | SIMD | after S11 |
 
@@ -1122,7 +1125,7 @@ label**; list the free ones with
 | S7 | [#31](https://github.com/eth-act/clifv/issues/31) `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | open |
 | S8 | [#32](https://github.com/eth-act/clifv/issues/32) `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | open |
 | S9 | [#33](https://github.com/eth-act/clifv/issues/33) Trapping helpers (`__*ti3` division by zero) and traps inside program callees | open |
-| S10 | [#34](https://github.com/eth-act/clifv/issues/34) Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | in progress (S10b–S10d done; `docs/plans/unwinding.md`; sub-issues #229–#233) |
+| S10 | [#34](https://github.com/eth-act/clifv/issues/34) Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | S10b–S10f done (`docs/plans/unwinding.md`; sub-issues #229–#233); left: the mid-end path, raw `i128` programs, exec-bytes machine |
 | S11 | [#35](https://github.com/eth-act/clifv/issues/35) Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | in progress (`docs/plans/floats.md`; sub-issues #234–#240; S11a, S11c, S11d done) |
 | S12 | [#36](https://github.com/eth-act/clifv/issues/36) SIMD | open |
 | T1 | [#37](https://github.com/eth-act/clifv/issues/37) Trusted base: TLS: TLSDESC hook vs lld's local-exec rewrite | open |

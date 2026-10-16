@@ -235,6 +235,46 @@ the `retN`/value arguments).
   `E2E.LegalUnwindWitness.legal_unwind_applies` (`backend_correct_legal_unwind` on the shipped
   pipeline's output for the legalised `%w`, receipt `checks_true`; open as in
   `DeadCleanupUnwindWitness.final_applies`: `hC`/`hCT`, `hsym`, the entry premises).
+* **Linked programs with unwinding (S10f, #233)**: whole-program CLIF runs with unwinding are
+  per-function runs under linked environments (`Clif.runLoopX_link{,R,N,D}`,
+  `FV/Clif/LinkClifX*.lean`); per function with the world and non-interference
+  `E2E.backend_correct_world_pipelineU`/`backend_correct_world_ni_pipelineU`
+  (`FV/E2E/WorldUnwind*.lean`, `PairRaise.lean`, `PairDriverU.lean`, `FV/Backend/Proof/LowerSimUW.lean`).
+  `LinkSysU` (`FV/E2E/LinkArmU.lean`) is `LinkSys` plus the base callees' raising hook `Ub`,
+  their CLIF environment `envX` and Arm-level exceptional results `XRb`; `LinkSysU.OkU` (the
+  base contract: `CalleeUnwOkG` per base call site with the GOT guard, `baseNoRaise`, places and
+  allocations kept by raising externs, the per-function unwinding checks and tables) and
+  `OkUNI` (non-interference of base raises, vacuous when no base callee raises). The depth
+  induction `LinkSysU.thmUN` (`LinkArmUIndNI.lean`; `thmU` with `¬ NeedNI`) gives
+  **`E2E.backend_correct_program_budgetU'`** / **`_peakU'`** (`FV/E2E/LinkArmUProgNI.lean`):
+  the linked machine with unwinding `L.machU M f` refines `Clif.runLoopX L.envX L.P (M+1)
+  cs.toX` (`ArmRefinesU`: returns, traps, and an exception leaving `f` with the object in x0 and
+  the caller's frame restored). Witnesses: `LinkArmUProgWitness.budgetU_applies` (a base callee
+  raises through a program function; `run_unwinds`), `LinkArmUProgNIWitness.budgetU'_applies`
+  (on `NonVacuityLink`'s program, which has `NeedNI`); the entry premises stay open there.
+* **Executables with unwinding (S10f, #233)**: `Link.DeadCleanup.compileExeU S file0 = .ok file`
+  is `compileExe` plus `unwOkB S file` (`FV/Link/ExeUCompile.lean`): `Link.EhCheck.ehOkR`
+  (`FV/Link/EhCheck.lean`: through the trusted lookup model `FV/Unw/EhFrameHdr.lean`, the
+  executable's `.eh_frame_hdr` search finds, for every pc of every Lean-compiled function, an
+  FDE whose CFI and LSDA decode to exactly the tables the theorem uses; `ehOkR_sound`) and
+  `unwFnsB` (the per-function unwinding checks, `unwFnsB_sound`).
+  **`Link.DeadCleanup.compileExe_correct_unwind`** / **`_peak`** (`FV/Link/ExeUnwind.lean`):
+  under `compileExeU` and the base premises (`BaseU`, `OkUNI`), the file's tables are the
+  compiled functions' (`compileExeU_tables`) and `backend_correct_program_budgetU'`/`peakU'`
+  hold for the linked system of the executable. `lean-link` evaluates `unwOkB` (with dead
+  cleanup, not `--opt`): when it holds the `coverage:` line adds `exceptional edges:
+  Link.DeadCleanup.compileExe_correct_unwind, …_peak`, otherwise it prints `exceptional edges
+  not covered (unwOkB: <reason>)` and still writes the file. Bundles:
+  `Front.bundle_correct_raw_unwind` (`FV/Front/RawExeUnwind.lean`: `bundle_correct_raw`'s
+  normal edges for cg_clif's raw program and the exceptional edges for the compiled program) and,
+  for `i128`-free bundles, `bundle_correct_raw_unwind_ren` (the exceptional edges stated on the
+  raw program, by `Clif.runLoopX_ren`, `FV/Front/RenameRunX.lean`). Witnesses:
+  `Link.EhCheck.Witness.unw_call`, `Link.DeadCleanup.UnwindWitness.unwind_applies`,
+  `Front.RenameRunXWitness.renamed_unwinds`, crate-proofs
+  `Crates.FrontendBundleUnwindWitness.bundle_unwind_witness` (g_u128's bundle). Not covered:
+  the raw program's exceptional edges when it has `i128` (no program-level legalisation with
+  unwinding), and an executable-bytes machine with unwinding (the theorem is about the linked
+  machine whose tables are proven to be the file's).
 * **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
   normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
   `normArgReg`, `retN` indices below the callee's return count), and checks that a `tryCall`
