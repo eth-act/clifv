@@ -459,3 +459,21 @@ theorem ctor_value_sound {f : Clif.Function} {ctx : Ctx}
 
 
 end Backend.Stock.Proof.Coverage
+
+namespace Backend.Stock.Proof.Coverage
+open Backend.Proof Backend.Proof.Cov Isle Isle.Interp Isle.Aarch64
+
+/-- Actual Stock constructor evaluation preserves covered emitted forms as
+well as its abstract returned value. This public bridge reuses the existing
+constructor proof; earlier theorem variants and bodies are unchanged. -/
+theorem ctor_emission_coverage {f : Clif.Function} {ctx : Ctx}
+    (mapped : MappedCtxInv f ctx) (hLI : LogicImmComplete)
+    {as : List AW} {vs : List V} {term : Term} {v : V} {st next : State} {initial : LState}
+    (held : Holds2 f (sourceIdentityCtx ctx) as vs) (pre : apre term.id as = true)
+    (run : (Stock.sem ctx).ctor term vs st = .ok (v,next))
+    (covered : CovSince initial st.base) :
+    γ f (sourceIdentityCtx ctx) (Cov.actor term.id as) v ∧ CovSince initial next.base := by
+  exact constructorContract_sound hLI initial as vs term v st.base next.base held covered pre
+    (stock_constructor_contract mapped.valueReg run)
+
+end Backend.Stock.Proof.Coverage
