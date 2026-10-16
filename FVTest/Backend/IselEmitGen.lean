@@ -9,7 +9,7 @@ over the exported ISLE rules, a summary table for every internal term reachable 
 roots of `lower` (without the hand-checked rules `emitHandIds`), the terminator rules of `lower`
 and the rules of `lower_branch` (those ending in a branch, `aRuleLast`, without their final
 `emit_side_effect`), and writes `IselEmitTab.lean`: the
-table as Lean literals and the `native_decide` checks (`chkTab` and the root checks) the proofs
+table as Lean literals and the leaf-wise `decide +kernel` checks (`chkTab` and the root checks) the proofs
 rely on. Prints the failing entries/roots/`emit`s if any.
 
 Regenerate (from the repository root, after `lake build FV.Backend.Proof.IselEmitFns`):
@@ -253,7 +253,7 @@ end Gen
 namespace Gen
 open Backend.Proof.Cov
 
-/-- Entries per chunk of the table (one definition and one `native_decide` per chunk). -/
+/-- Entries per chunk of the table (one definition and one leaf-wise kernel proof per chunk). -/
 def chunk : Nat := 60
 
 def header : String := "import FV.Backend.Proof.IselEmitFns
@@ -273,6 +273,10 @@ terminator rules and of the rules of `lower_branch`. `emitTab_ok`: every rule of
 data.
 -/
 
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
+
 namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Isle Isle.Aarch64
@@ -290,21 +294,33 @@ def render (tab : Tab) : String := Id.run do
     " ++ ".intercalate ((List.range n).map (s!"emitTab{·}")) ++ "\n\n"
   out := out ++ "/-- `chkTab`'s test of one entry. -/\nabbrev emitEntryOk (e : TermId × List AW × AW) : Bool :=\n  (program.rulesOf e.1).all (aRule program emitTab aextE actorE apreE aOracle e.2.1 e.2.2)\n\n"
   for k in [0:n] do
-    out := out ++ s!"theorem emitTab{k}_ok : (emitTab{k}).all emitEntryOk = true := by native_decide\n\n"
+    out := out ++ s!"theorem emitTab{k}_ok : (emitTab{k}).all emitEntryOk = true := by\n  simp only [emitTab{k}, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]\n  repeat' apply And.intro\n  all_goals decide +kernel\n\n"
   out := out ++ "/-- **Every rule of every entry checks.** -/\ntheorem emitTab_ok : chkTab program emitTab aextE actorE apreE aOracle = true := by\n  unfold chkTab\n  show (emitTab).all emitEntryOk = true\n  simp only [emitTab, List.all_append, " ++
     ", ".intercalate ((List.range n).map (s!"emitTab{·}_ok")) ++ ", Bool.and_self]\n\n"
   out := out ++ "/-- The closure roots of `lower` other than the hand-checked ones check. -/
 theorem emitStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
-    emitHandIds.contains r.id || aRule program emitTab aextE actorE apreE aOracle [.xv .inst] AW.top r) = true := by native_decide
+    emitHandIds.contains r.id || aRule program emitTab aextE actorE apreE aOracle [.xv .inst] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `return`, 1037 `trap`) check. -/
 theorem emitTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    aRule program emitTab aextE actorE apreE aOracle [.c0] AW.top r) = true := by native_decide
+    aRule program emitTab aextE actorE apreE aOracle [.c0] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- Every rule of `lower_branch` checks: without branches, or ending in one. -/
 theorem emitBranch_ok : (program.rulesOf TId.lower_branch).all (fun r =>
     aRule program emitTab aextE actorE apreE aOracle [.c0, .c0] AW.top r ||
-    aRuleLast program emitTab aextE actorE apreE aOracle 10 [.c0, .c0] r) = true := by native_decide
+    aRuleLast program emitTab aextE actorE apreE aOracle 10 [.c0, .c0] r) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 end Backend.Proof.Cov
 "
