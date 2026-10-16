@@ -154,7 +154,7 @@ theorem mapM_except_length {α β ε : Type} (g : α → Except ε β) :
 
 theorem sigParamBytes_length {s : Clif.Signature} {bytes : List Nat}
     (h : sigParamBytes s = .ok bytes) : bytes.length = s.params.length :=
-  abiArgs_length (sigArgs_int h).2
+  sigArgs_length h
 
 /-- The non-`sret` byte sizes (`sigArgLocs`' `normal`) are as many as the non-`sret` parameters. -/
 theorem normal_length : ∀ (ps : List Clif.AbiParam) (bs : List Nat), bs.length = ps.length →

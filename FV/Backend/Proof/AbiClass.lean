@@ -66,6 +66,48 @@ theorem argLocsC_int (bytes : List Nat) :
   rw [argLocs_xArgStep]
   simp only [argLocsC, foldl_argLocStep_int]
 
+/-- A location of the typed placement: x0..x8 (x8: the `sret` pointer), v0..v7, or a stack
+slot. -/
+def ArgLocOk : ArgLoc → Prop
+  | .reg r => (∃ n, n ≤ 8 ∧ r = .x n) ∨ (∃ n, n < 8 ∧ r = .v n)
+  | .stack _ => True
+
+theorem argLocStep_push (q : Array ArgLoc × Nat × Nat × Nat) (p : RegClass × Nat) :
+    ∃ l, ArgLocOk l ∧ (argLocStep q p).1 = q.1.push l := by
+  obtain ⟨acc, nx, nv, st⟩ := q
+  obtain ⟨c, b⟩ := p
+  cases c
+  · by_cases h : nx < 8
+    · exact ⟨.reg (.x nx), .inl ⟨nx, by omega, rfl⟩, by simp [argLocStep, h]⟩
+    · exact ⟨.stack (alignTo st (max b 8)), trivial, by simp [argLocStep, h]⟩
+  · by_cases h : nv < 8
+    · exact ⟨.reg (.v nv), .inr ⟨nv, h, rfl⟩, by simp [argLocStep, h]⟩
+    · exact ⟨.stack (alignTo st (max b 8)), trivial, by simp [argLocStep, h]⟩
+
+theorem foldl_argLocStep : ∀ (ps : List (RegClass × Nat)) (q : Array ArgLoc × Nat × Nat × Nat),
+    (∀ l ∈ q.1.toList, ArgLocOk l) →
+    (ps.foldl argLocStep q).1.size = q.1.size + ps.length ∧
+      ∀ l ∈ (ps.foldl argLocStep q).1.toList, ArgLocOk l
+  | [], q, h => ⟨by simp, by simpa using h⟩
+  | p :: ps, q, h => by
+    obtain ⟨l, hl, he⟩ := argLocStep_push q p
+    rw [List.foldl_cons]
+    have := foldl_argLocStep ps (argLocStep q p) (by
+      rw [he]; intro l' hl'
+      simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hl'
+      rcases hl' with hl' | rfl
+      · exact h l' hl'
+      · exact hl)
+    refine ⟨?_, this.2⟩
+    rw [this.1, he]; simp; omega
+
+/-- `argLocsC` places every value: one location per value, each `ArgLocOk`. -/
+theorem argLocsC_shape (ps : List (RegClass × Nat)) :
+    (argLocsC ps).1.length = ps.length ∧ ∀ l ∈ (argLocsC ps).1, ArgLocOk l := by
+  have := foldl_argLocStep ps (#[], 0, 0, 0) (by simp)
+  refine ⟨?_, this.2⟩
+  simp only [argLocsC, Array.length_toList, this.1]; simp
+
 /-- The classes of integer parameters are `.int`. -/
 theorem map_tyClass_int : ∀ (L : List (Clif.AbiParam × Nat)), (∀ q ∈ L, q.1.ty.isInt = true) →
     L.map (fun q => (tyClass q.1.ty, q.2)) = (L.map (·.2)).map fun b => (RegClass.int, b)
@@ -103,10 +145,58 @@ theorem sigArgs_length {s : Clif.Signature} {bytes : List Nat} (h : sigArgs s = 
     bytes.length = s.params.length :=
   mapM_ok_length _ h
 
-/-- A float type is not an integer type. -/
-theorem not_isFloat {t : Clif.Ty} (h : t.isInt = true) : ¬ t.isFloat = true := by
-  show ¬ (!t.isInt) = true
-  rw [h]; decide
+theorem sretLocStep_fold_ok : ∀ (ps : List Clif.AbiParam) (q : Array ArgLoc × List ArgLoc),
+    (∀ l ∈ q.1.toList, ArgLocOk l) → (∀ l ∈ q.2, ArgLocOk l) →
+    ∀ l ∈ (ps.foldl sretLocStep q).1.toList, ArgLocOk l
+  | [], _, h1, _ => h1
+  | p :: ps, ⟨acc, rest⟩, h1, h2 => by
+    rw [List.foldl_cons]
+    apply sretLocStep_fold_ok ps
+    · intro l hl
+      unfold sretLocStep at hl
+      split at hl
+      · simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hl
+        rcases hl with hl | rfl
+        · exact h1 l hl
+        · exact .inl ⟨8, Nat.le_refl _, rfl⟩
+      · split at hl
+        · rename_i l0 r heq
+          simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hl
+          rcases hl with hl | rfl
+          · exact h1 l hl
+          · exact h2 _ (by rw [heq]; simp)
+        · exact h1 l hl
+    · intro l hl
+      unfold sretLocStep at hl
+      split at hl
+      · exact h2 l hl
+      · split at hl
+        · rename_i l0 r heq
+          exact h2 l (by rw [heq]; exact List.mem_cons_of_mem _ hl)
+        · cases hl
+
+/-- **`sigArgLocs` places every parameter**: one location per parameter, each in x0..x8,
+v0..v7 or on the stack. -/
+theorem sigArgLocs_shape {s : Clif.Signature} {locs : List ArgLoc} {n : Nat}
+    (h : sigArgLocs s = .ok (locs, n)) :
+    locs.length = s.params.length ∧ ∀ l ∈ locs, ArgLocOk l := by
+  unfold sigArgLocs at h
+  cases hb : sigArgs s with
+  | error e => rw [hb] at h; cases h
+  | ok bytes =>
+    have hl := sigArgs_length hb
+    simp only [hb, bind, Except.bind, paramLocs] at h
+    split at h
+    · split at h
+      · cases h
+      · rename_i hsz
+        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+        obtain ⟨rfl, -⟩ := h
+        refine ⟨by simpa using hsz, fun l hl => ?_⟩
+        exact sretLocStep_fold_ok s.params _ (by simp) (argLocsC_shape _).2 l (by simpa using hl)
+    · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+      obtain ⟨rfl, -⟩ := h
+      exact ⟨by rw [(argLocsC_shape _).1]; simp [hl], (argLocsC_shape _).2⟩
 
 /-- **The argument locations of an integer signature are the x-register placement.**
 `sigArgLocs` is `paramLocs` with the `sigArgs` sizes; on integer parameters the typed placement
