@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleExtEmbed
+import FV.Opt.Proof.KernelBV
 
 /-! # Templates for the remaining `simplify` roots (RulesRest)
 
@@ -207,7 +208,7 @@ macro "rule_bits_w" : tactic => `(tactic| (
             (try simp only [bif_none_right_eq_some, Option.ite_none_right_eq_some] at *) <;>
             (try opt_destruct) <;>
             (try apply val_congr) <;>
-            first | ac_rfl | bv_decide))))
+            first | ac_rfl | kbv))))
 
 set_option hygiene false in
 macro "rule_finish_w" : tactic => `(tactic| first
