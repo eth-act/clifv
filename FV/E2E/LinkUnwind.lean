@@ -244,7 +244,7 @@ theorem backend_correct_linked_unwind {P : Clif.Program} {env : Clif.XEnv} {f : 
     (hslot : af.slotBase = slotOff)
     (hUnw : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)

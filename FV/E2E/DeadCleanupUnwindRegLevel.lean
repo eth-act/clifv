@@ -28,7 +28,7 @@ theorem realizes_valueU_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true) :
@@ -50,7 +50,8 @@ theorem realizes_valueU_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   have h := realizes_value_allU hR (by rw [hF]; exact (hC s).g _ s _ _)
     (by rw [hF]; exact fun h => (hCT h s).g _ _ s _ _) (by rw [hF]; exact fun h => hTls h s)
     hcov hU'
-    (realizesTryRaise_of_tables hR hU' (tryRaiseSem_valueSemVU _ _ _ _ _) hsites hlsda
+    (realizesTryRaise_of_tables hR hU' (tryRaiseSem_valueSemVU _ _ _ _ _)
+      (gotSem_valueSemVU _ _ _ _ _) hsites hlsda
       (padsNonzero_of_check hpad) hlast)
   have e : (⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
       XR, U, T⟩ : RLU).valueSemU =
@@ -91,7 +92,7 @@ theorem regLevelCorrect_backend_exU_value {vcp : VCode} {rf : RFunc} {af : AFunc
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
@@ -123,7 +124,7 @@ theorem regLevelCorrect_backendU_value {vcp : VCode} {rf : RFunc} {af : AFunc} {
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)

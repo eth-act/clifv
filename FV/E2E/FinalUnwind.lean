@@ -130,7 +130,7 @@ theorem backend_correct_final_unwind_ex {p : Clif.Program} {f : Clif.Function} {
     (hslot : af.slotBase = slotOff)
     (hUnw : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
@@ -189,7 +189,7 @@ theorem backend_correct_final_unwind {p : Clif.Program} {f : Clif.Function} {k :
     (hslot : af.slotBase = slotOff)
     (hUnw : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
@@ -263,7 +263,7 @@ theorem backend_correct_final_of_unwind {p : Clif.Program} {f : Clif.Function} {
     ArmRefines fb base ra (ArmStepX X H fa) s (Clif.runLoop env.toEnv p fuel cs) := by
   have h := backend_correct_final_unwind (U := Unw.UnwHooks.none) hsub hc hunw hcov hC hCT hTls
     hX hXI hXR hXRi hXE hsym hslot
-    (fun _ _ => calleeUnwOkG_none _ _ _ _ _ _ _) hsites hlsda hpad hlast hrows hcie hfde hsaved
+    (fun _ _ => calleeUnwOkG_none _ _ _ _ _ _ _ _) hsites hlsda hpad hlast hrows hcie hfde hsaved
     hent hres hbe hargs hcs hrel htr fuel
   rw [Unw.armStepU_none] at h
   exact armRefines_of_armRefinesU h
@@ -286,7 +286,7 @@ theorem backend_correct_final_unwind_premises (K : Nat) (X : ExtSem) (exts : Lis
         RegLevelCorrectUWitness.rf).intBase (RAFrame.compute RegLevelCorrectUWitness.vc
         RegLevelCorrectUWitness.rf).size RegLevelCorrectUWitness.af s) K (fun _ => False) s
       (CallAt RegLevelCorrectUWitness.fa base) X XRaise.none Unw.UnwHooks.none
-      RegLevelCorrectUWitness.vc.CallSite) ∧
+      RegLevelCorrectUWitness.vc.CallSite (fun _ _ => False)) ∧
     callSites RegLevelCorrectUWitness.af RegLevelCorrectUWitness.fa = .ok none ∧
     padsNonzeroB RegLevelCorrectUWitness.af RegLevelCorrectUWitness.fa = true ∧
     lastCallsOk RegLevelCorrectUWitness.af RegLevelCorrectUWitness.fa = true ∧
