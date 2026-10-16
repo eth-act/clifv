@@ -28,6 +28,27 @@ theorem ite_eq_iff' {α : Type} {c : Prop} [Decidable c] {a b x : α} :
 
 /-! ## Monotonicity of evaluation in the registers -/
 
+private theorem getMany_ok_regs {fr : Frame} :
+    ∀ {xs : List ValueId} {vs : List Val}, fr.getMany xs = .ok vs → ∀ x ∈ xs, ∃ a, fr.regs x = some a
+  | [], _, _, _, hx => by cases hx
+  | y :: ys, vs, h, x, hx => by
+    simp only [Frame.getMany, Frame.get, Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok] at h
+    obtain ⟨a, ha, ws, hws, -⟩ := h
+    simp only [List.mem_cons] at hx
+    rcases hx with rfl | hx
+    · exact ⟨a, ha⟩
+    · exact getMany_ok_regs hws x hx
+
+private theorem getMany_ne_trap' (fr : Frame) : ∀ (xs : List ValueId) (c : TrapCode), fr.getMany xs ≠ .trap c
+  | [], c, h => by simp [Frame.getMany] at h
+  | y :: ys, c, h => by
+    simp only [Frame.getMany, Frame.get, Res.bind_eq_trap] at h
+    rcases h with h | ⟨_, _, h⟩
+    · cases hy : fr.regs y <;> simp [hy, Res.ofOption] at h
+    · rcases h with h | ⟨_, _, h⟩
+      · exact getMany_ne_trap' fr ys c h
+      · simp [pure] at h
+
 /-- An instruction that does not get stuck has read all its operands. -/
 theorem evalInst_ops {fr : Frame} {mem : Mem} {i : Inst}
     (h : ∀ m, evalInst fr mem i ≠ .stuck m) : ∀ x ∈ operands i, ∃ a, fr.regs x = some a := by
@@ -37,13 +58,19 @@ theorem evalInst_ops {fr : Frame} {mem : Mem} {i : Inst}
     cases i <;> simp only [evalInst, Frame.getAs, Frame.get, Res.bind_eq_ok, Res.ofOption_eq_ok,
       Res.pure_eq_ok, ite_eq_iff'] at he <;> simp only [operands, List.mem_cons, or_false,
       forall_eq_or_imp, forall_eq, List.not_mem_nil, false_imp_iff, imp_true_iff]
-    all_goals grind
+    all_goals first
+      | grind
+      | (obtain ⟨w, hw, -⟩ := he; exact getMany_ok_regs hw)
   | trap c =>
     cases i <;> simp only [evalInst, Frame.getAs, Frame.get, Res.bind_eq_ok, Res.ofOption_eq_ok,
       Res.pure_eq_ok, Res.bind_eq_trap, Res.ofOption_ne_trap, Res.check_ne_trap, Res.pure_ne_trap,
       ite_eq_iff'] at he <;> simp only [operands, List.mem_cons, or_false,
       forall_eq_or_imp, forall_eq, List.not_mem_nil, false_imp_iff, imp_true_iff]
-    all_goals grind
+    all_goals first
+      | grind
+      | (rcases he with h | ⟨w, hw, -⟩
+         · exact absurd h (getMany_ne_trap' _ _ _)
+         · exact getMany_ok_regs hw)
 
 theorem evalInst_mono {fr fr' : Frame} {mem : Mem} {i : Inst}
     (hg : fr'.func.globals = fr.func.globals) (hx : fr'.func.externs = fr.func.externs)
