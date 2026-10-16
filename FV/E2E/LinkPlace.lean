@@ -406,19 +406,21 @@ theorem initState_place {P : Program} {n : String} {vals : List Val} {cm : Mem} 
 
 /-- **The linked environment keeps the oracle** (the program's functions' runs give it back)
 when the base externs do. -/
-theorem linkEnvN_keepsPlace {P : Program} {base : Env} {M : Nat} (hP : ∀ g ∈ P.funcs, LinkFree g)
-    (hk : EnvKeepsPlace base) : EnvKeepsPlace (linkEnvN P base M) := by
+theorem linkEnvR_keepsPlace {P : Program} {base : Env} {R : State → Outcome}
+    (hR : RunsOf base P R) (hP : ∀ g ∈ P.funcs, LinkFree g)
+    (hk : EnvKeepsPlace base) : EnvKeepsPlace (linkEnvR P base R) := by
   intro n gsem hg vals m rvals m' hr
   cases hpf : P.func? n with
-  | none => rw [linkEnvN_none hpf] at hg; exact hk n gsem hg vals m rvals m' hr
+  | none => rw [linkEnvR_none hpf] at hg; exact hk n gsem hg vals m rvals m' hr
   | some g =>
-    rw [linkEnvN_some hpf] at hg
+    rw [linkEnvR_some hpf] at hg
     cases hg
     simp only at hr
     cases hi : initState P n vals m with
     | ok s =>
       rw [hi] at hr
       simp only at hr
+      obtain ⟨M, hr⟩ := hR s _ hr (.inl ⟨_, _, rfl⟩)
       have hI : LInv P s := by
         simp only [initState, hpf, Res.ofOption_some, Res.ok_bind] at hi
         cases he : enterFunc g vals m with
@@ -450,6 +452,10 @@ theorem linkEnvN_keepsPlace {P : Program} {base : Env} {M : Nat} (hP : ∀ g ∈
         exact runLoop_place hP hk M s rvals m' hI (initState_place hi hmp) hr
     | trap c => rw [hi] at hr; cases hr
     | stuck msg => rw [hi] at hr; cases hr
+
+theorem linkEnvN_keepsPlace {P : Program} {base : Env} {M : Nat} (hP : ∀ g ∈ P.funcs, LinkFree g)
+    (hk : EnvKeepsPlace base) : EnvKeepsPlace (linkEnvN P base M) :=
+  linkEnvR_keepsPlace (runsOf_runLoop base P M) hP hk
 
 /-! ## The allocations on returning runs -/
 

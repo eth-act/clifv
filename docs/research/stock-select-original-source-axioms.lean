@@ -1,0 +1,25 @@
+import FV.Backend.Proof.StockSelectConditionReplacement
+import FV.Backend.Proof.StockSelectConditionObserved
+import FV.Backend.Proof.StockSelectComparisonValues
+import FV.Backend.Proof.StockSelectConditionSuccess
+import FV.Backend.Proof.StockSelectComparisonActualFixture
+import FV.Backend.Proof.StockSelectOriginalConditionValues
+import FV.Backend.Proof.StockSelectOriginalRootValues
+import FV.Backend.Proof.StockSelectOriginalRecordValues
+import FV.Backend.Proof.StockSelectOriginalSourceValues
+import FV.Backend.Proof.StockSelectOriginalSourceWitness
+import FV.Backend.Proof.StockSelectComparisonActualWitness
+import FV.Backend.Proof.StockSelectConditionWitness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_condition_producer_replacement
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_comparison_actual_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_success
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonActualFixture.stock_select_comparison_actual_fixture
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_available_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.OriginalSourceWitness.stock_select_original_complete_parameter_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonActualWitness.stock_select_comparison_actual_complete_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_replacement_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_observation_witness

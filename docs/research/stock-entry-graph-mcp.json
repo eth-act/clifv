@@ -1,0 +1,69 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_blockOrder_entry' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_sourceTable_nonentry' depends on axioms: [propext, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_blockOrder_edges_nonentry' depends on axioms: [propext, Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_entry_code' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_graph_nonentry' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepare_total_of_graph' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.EntryWitness.stock_conditional_entry_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.EntryWitness.stock_critical_entry_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.EntryWitness.stock_trap_preparation_total_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 14,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}
