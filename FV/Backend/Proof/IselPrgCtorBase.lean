@@ -38,7 +38,8 @@ theorem fin_fail {a : PA} {must : Bool} (h : must = false) : CtorConcl f ctx a m
 theorem ite_t {α : Type} {c : Prop} [Decidable c] {x y : α} (h : c) : (if c then x else y) = x := by
   simp [h]
 
-theorem ite_f {α : Type} {c : Prop} [Decidable c] {x y : α} (h : ¬ c) : (if c then x else y) = y := by
+theorem ite_f {α : Type} {c : Prop} [Decidable c] {x y : α} (h : ¬ c) :
+    (if c then x else y) = y := by
   simp [h]
 
 /-! ## Meanings -/
@@ -250,7 +251,8 @@ theorem tyInt_sh {x a : PA} {must : Bool} {w : V} {g : CTy → Int}
 
 theorem exactTest_sh {tA x r a : PA} {must : Bool} {w1 w2 : V} {ok : CTy → Int → Bool}
     (h : exactTest tA x ok r = some (a, must)) (h1 : γ f ctx tA w1) (h2 : γ f ctx x w2) :
-    ∃ t i, w1 = .ty t ∧ w2 = .int i ∧ (ok t i = true → a = r) ∧ (ok t i = false → must = false) := by
+    ∃ t i, w1 = .ty t ∧ w2 = .int i ∧ (ok t i = true → a = r) ∧
+      (ok t i = false → must = false) := by
   unfold exactTest at h
   split at h
   · rename_i hc
@@ -396,7 +398,8 @@ theorem imm12_small {m : Nat} (h : m < 4096) : Imm12.ofNat? m = some ⟨m, false
 /-- The fresh singleton entries of `gen_call_output`'s fold. -/
 theorem foldOut {α : Type} : ∀ (l : List α) (acc : Array (List Reg)) (st : LState),
     ∃ rss, (l.foldl (fun (x : Array (List Reg) × LState) (_ : α) =>
-        (x.1.push [(x.2.fresh .int).1], (x.2.fresh .int).2)) (acc, st)).1.toList = acc.toList ++ rss ∧
+        (x.1.push [(x.2.fresh .int).1], (x.2.fresh .int).2)) (acc, st)).1.toList =
+          acc.toList ++ rss ∧
       rss.length = l.length ∧ ∀ rs ∈ rss, rs.length = 1
   | [], acc, st => ⟨[], by simp, rfl, by simp⟩
   | _ :: l, acc, st => by

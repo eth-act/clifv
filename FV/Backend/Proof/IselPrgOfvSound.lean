@@ -11,8 +11,9 @@ import FV.Backend.Proof.IselFlowSplit
 (`V.condBrKind?`) and `enumOk` (`V.enum?`): each accepted field gives its accessor's `some`.
 
 The big matchers are split with `gen_match_split` (`IselFlowSplit`); the decoder is evaluated on
-the field shapes by `red_head`, a head reduction that stops at the first `if`/`match` stuck on a
-free variable, so the field facts rewrite what remains.
+the field shapes by `red_safe`, a step-by-step reduction (each step proved, so that the kernel
+never evaluates a stuck discriminant) that stops at the first `if`/`match` stuck on a free
+variable, so the field facts rewrite what remains.
 -/
 
 namespace Backend.Proof.Prg
@@ -23,62 +24,109 @@ namespace CS
 
 open Lean Meta Elab Tactic
 
-/-- Head-reduce `e` (beta, zeta, delta, matchers, `if` on a closed decided condition), stopping
-at an `if` whose condition has free variables or a `match` whose discriminants are stuck. -/
-partial def redHead (e : Lean.Expr) : MetaM Lean.Expr := do
-  let e ← whnfCore e
-  if e.isAppOfArity ``ite 5 then
-    let inst := e.getArg! 2
-    if inst.hasFVar || inst.hasMVar then return e
-    let inst ← whnf inst
-    if inst.isAppOf ``Decidable.isTrue then return ← redHead (e.getArg! 3)
-    if inst.isAppOf ``Decidable.isFalse then return ← redHead (e.getArg! 4)
-    return e
-  if e.isAppOfArity ``dite 5 then
-    let inst := e.getArg! 2
-    if inst.hasFVar || inst.hasMVar then return e
-    let inst ← whnf inst
-    if inst.isAppOf ``Decidable.isTrue then return ← redHead (mkApp (e.getArg! 3) inst.appArg!)
-    if inst.isAppOf ``Decidable.isFalse then return ← redHead (mkApp (e.getArg! 4) inst.appArg!)
-    return e
-  if let some fn := e.getAppFn.constName? then
-    if let some mi ← getMatcherInfo? fn then
-      if let .reduced e' ← reduceMatcher? e then return ← redHead e'
-      let args := e.getAppArgs
-      let lo := mi.numParams + 1
-      let mut args' := args
-      let mut allCtor := true
-      for i in [lo:lo + mi.numDiscrs] do
-        if h : i < args.size then
-          let d ← redHead args[i]
-          args' := args'.set! i d
-          unless d.isRawNatLit || d.isAppOf ``OfNat.ofNat || (← isConstructorApp d) do
-            allCtor := false
-      let e2 := mkAppN e.getAppFn args'
-      if let .reduced e' ← reduceMatcher? e2 then return ← redHead e'
-      if allCtor then
-        if let some e' ← unfoldDefinition? e2 then return ← redHead e'
-      return e
-  match ← unfoldDefinition? e with
-  | some e' => redHead e'
-  | none => return e
+/-- A constructor application or a numeral. -/
+def ctorLike (d : Lean.Expr) : MetaM Bool := do
+  if d.isRawNatLit then return true
+  if d.isAppOfArity ``OfNat.ofNat 3 && (d.getArg! 1).isRawNatLit then return true
+  isConstructorApp d
 
-/-- `red_head c`: head-reduce (`redHead`) every occurrence in the goal of the first application
-of the constant `c`. -/
-elab "red_head " n:ident : tactic => do
+/-- `e = e'` by `rfl`, for a one-step reduct `e'` of `e`. -/
+def reflTo (e e' : Lean.Expr) : MetaM Lean.Expr := do
+  mkExpectedTypeHint (← mkEqRefl e) (← mkEq e e')
+
+/-- One reduction step of `e` with its proof `e = e'`: beta, zeta, a projection of a
+constructor, an `if` on a closed decided condition, a discriminant of a `match` to its
+constructor, a `match` on constructors (proved once for abstract alternatives, so the kernel never
+compares the alternatives' bodies), a definition unfolded. `none`: stuck. -/
+def stepEq (e : Lean.Expr) : MetaM (Option (Lean.Expr × Lean.Expr)) := do
+  if e.isHeadBetaTarget then
+    let e' := e.headBeta
+    return some (e', ← reflTo e e')
+  match e with
+  | .letE _ _ v b _ => let e' := b.instantiate1 v; return some (e', ← reflTo e e')
+  | .mdata _ b => return some (b, ← reflTo e b)
+  | .proj _ i s =>
+    match ← projectCore? (← whnf s) i with
+    | some e' => return some (e', ← reflTo e e')
+    | none => return none
+  | _ => pure ()
+  if let .proj _ i s := e.getAppFn then
+    match ← projectCore? (← whnf s) i with
+    | some h =>
+      let e' := mkAppN h e.getAppArgs
+      return some (e', ← reflTo e e')
+    | none => return none
+  for (n, pos, neg) in [(``ite, ``ite_eq_left, ``ite_eq_right),
+      (``dite, ``dite_eq_left, ``dite_eq_right)] do
+    if e.isAppOfArity n 5 then
+      let inst := e.getArg! 2
+      if inst.hasFVar || inst.hasMVar then return none
+      let instW ← whnf inst
+      let c := e.getArg! 1
+      if instW.isAppOfArity ``Decidable.isTrue 2 then
+        let pf ← mkAppOptM pos #[c, inst, instW.appArg!, e.getArg! 0, e.getArg! 3, e.getArg! 4]
+        let some (_, _, e') := (← inferType pf).eq? | return none
+        return some (e', pf)
+      if instW.isAppOfArity ``Decidable.isFalse 2 then
+        let pf ← mkAppOptM neg #[c, inst, instW.appArg!, e.getArg! 0, e.getArg! 3, e.getArg! 4]
+        let some (_, _, e') := (← inferType pf).eq? | return none
+        return some (e', pf)
+      return none
+  let fn := e.getAppFn
+  let some cn := fn.constName? | return none
+  if let some mi ← getMatcherInfo? cn then
+    let args := e.getAppArgs
+    let d0 := mi.numParams + 1
+    let a0 := d0 + mi.numDiscrs
+    let alts := args.extract a0 (a0 + mi.numAlts)
+    let altTys ← alts.mapM inferType
+    let decls := altTys.mapIdx fun j t => (Name.mkSimple s!"alt{j}", fun _ => pure t)
+    let res : Option (Lean.Expr × Lean.Expr) ← withLocalDeclsD decls fun xs => do
+      let eGen := mkAppN fn (args.extract 0 a0 ++ xs ++ args.extract (a0 + mi.numAlts) args.size)
+      match ← reduceMatcher? eGen with
+      | .reduced r =>
+        let pfGen ← mkLambdaFVars xs (← reflTo eGen r)
+        pure (some (r.replaceFVars xs alts, mkAppN pfGen alts))
+      | _ => pure none
+    if res.isSome then return res
+    for i in [d0:a0] do
+      let d := args[i]!
+      unless ← ctorLike d do
+        let d' ← whnf d
+        if ← ctorLike d' then
+          let e' := mkAppN fn (args.set! i d')
+          return some (e', ← reflTo e e')
+    return none
+  if (← getEnv).isConstructor cn then return none
+  match ← unfoldDefinition? e with
+  | some e' => return some (e', ← reflTo e e')
+  | none => return none
+
+/-- Reduce `e` step by step (`stepEq`), with the proof `e = e'`. -/
+partial def redSafe (e pf : Lean.Expr) (fuel : Nat) : MetaM (Lean.Expr × Lean.Expr) := do
+  if fuel = 0 then return (e, pf)
+  match ← stepEq e with
+  | some (e', p) => redSafe e' (← mkEqTrans pf p) (fuel - 1)
+  | none => return (e, pf)
+
+/-- `red_safe c`: reduce (`redSafe`) the first application of the constant `c` in the goal, down
+to the first `if` or `match` stuck on a free variable, and rewrite the goal with the proof (single
+steps, which the kernel checks without ever reducing a stuck discriminant). -/
+elab "red_safe " n:ident : tactic => do
   let c ← realizeGlobalConstNoOverload n
-  liftMetaTactic1 fun g => do
+  liftMetaTactic1 fun g => g.withContext do
     let t ← instantiateMVars (← g.getType)
-    let some e := t.find? (fun x => x.isAppOf c) | throwError "red_head: no {c} in the goal"
-    let e' ← redHead e
-    let t' := t.replace fun x => if x == e then some e' else none
-    g.replaceTargetDefEq t'
+    let some e := t.find? (fun x => x.isAppOf c) | throwError "red_safe: no {c} in the goal"
+    let (_, pf) ← redSafe e (← mkEqRefl e) 10000
+    let r ← g.rewrite t pf
+    g.replaceTargetEq r.eNew r.eqProof
+
 
 end CS
 
-gen_match_split minstOk_split Backend.Proof.Prg.minstOk.match_6
-gen_match_split amodeOk_split Backend.Proof.Prg.amodeOk.match_1
-gen_match_split condBrOk_split Backend.Proof.Prg.condBrOk.match_1
+gen_match_split Backend.Proof.Prg.CS.minstOk_split Backend.Proof.Prg.minstOk.match_6
+gen_match_split Backend.Proof.Prg.CS.amodeOk_split Backend.Proof.Prg.amodeOk.match_1
+gen_match_split Backend.Proof.Prg.CS.condBrOk_split Backend.Proof.Prg.condBrOk.match_1
 
 variable {f : Clif.Function} {ctx : Ctx}
 
@@ -97,7 +145,8 @@ theorem reg_sh {a : PA} {w : V} (h : isReg a = true) (hw : γ f ctx a w) : ∃ r
   | bot => simp [γ] at hw
   | _ => simp [isReg] at h
 
-theorem label_sh {a : PA} {w : V} (h : isLabel a = true) (hw : γ f ctx a w) : ∃ l, w = .label l := by
+theorem label_sh {a : PA} {w : V} (h : isLabel a = true) (hw : γ f ctx a w) :
+    ∃ l, w = .label l := by
   cases a with
   | label => simpa only [γ] using hw
   | bot => simp [γ] at hw
@@ -122,7 +171,8 @@ theorem ty_sh {a : PA} {w : V} (h : isTy a = true) (hw : γ f ctx a w) :
   | bot => simp [γ] at hw
   | _ => simp [isTy] at h
 
-theorem nat_sh {a : PA} {w : V} (h : isNat a = true) (hw : γ f ctx a w) : ∃ i, w = .int i ∧ 0 ≤ i := by
+theorem nat_sh {a : PA} {w : V} (h : isNat a = true) (hw : γ f ctx a w) :
+    ∃ i, w = .int i ∧ 0 ≤ i := by
   cases a with
   | int lo hi =>
     cases lo with
@@ -147,7 +197,8 @@ theorem op_sh {k : OK} {a : PA} {w : V} (h : isOp k a = true) (hw : γ f ctx a w
   | bot => simp [γ] at hw
   | _ => simp [isOp] at h
 
-theorem simm9_sh {n : Option Nat} {w : V} (hw : γ f ctx (.op .simm9 n) w) : ∃ i, w = .op (.simm9 i) := by
+theorem simm9_sh {n : Option Nat} {w : V} (hw : γ f ctx (.op .simm9 n) w) :
+    ∃ i, w = .op (.simm9 i) := by
   simp only [γ] at hw
   obtain ⟨o, rfl, i, rfl⟩ := hw
   exact ⟨i, rfl⟩
@@ -160,7 +211,8 @@ theorem uimm12Scaled_sh {n : Option Nat} {w : V} (hw : γ f ctx (.op .uimm12Scal
 
 /-! ## Accessors -/
 
-theorem reg_acc {a : PA} {w : V} (h : isReg a = true) (hw : γ f ctx a w) : ∃ r, w.reg? = some r := by
+theorem reg_acc {a : PA} {w : V} (h : isReg a = true) (hw : γ f ctx a w) :
+    ∃ r, w.reg? = some r := by
   obtain ⟨r, rfl⟩ := reg_sh h hw; exact ⟨r, rfl⟩
 
 theorem label_acc {a : PA} {w : V} (h : isLabel a = true) (hw : γ f ctx a w) :
@@ -171,13 +223,15 @@ theorem bool_acc {a : PA} {w : V} (h : isBool a = true) (hw : γ f ctx a w) :
     ∃ b, w.bool? = some b := by
   obtain ⟨b, rfl⟩ := bool_sh h hw; exact ⟨b, rfl⟩
 
-theorem int_acc {a : PA} {w : V} (h : isInt a = true) (hw : γ f ctx a w) : ∃ i, w.int? = some i := by
+theorem int_acc {a : PA} {w : V} (h : isInt a = true) (hw : γ f ctx a w) :
+    ∃ i, w.int? = some i := by
   obtain ⟨i, rfl⟩ := int_sh h hw; exact ⟨i, rfl⟩
 
 theorem ty_acc {a : PA} {w : V} (h : isTy a = true) (hw : γ f ctx a w) : ∃ t, w.ty? = some t := by
   obtain ⟨_, t, -, -, rfl⟩ := ty_sh h hw; exact ⟨t, rfl⟩
 
-theorem nat_acc {a : PA} {w : V} (h : isNat a = true) (hw : γ f ctx a w) : ∃ n, w.nat? = some n := by
+theorem nat_acc {a : PA} {w : V} (h : isNat a = true) (hw : γ f ctx a w) :
+    ∃ n, w.nat? = some n := by
   obtain ⟨i, rfl, hi⟩ := nat_sh h hw; exact ⟨i.toNat, by simp [V.nat?, hi]⟩
 
 theorem labelsM_acc {a : PA} {w : V} (h : (match a with | .labels _ _ => true | _ => false) = true)
@@ -335,7 +389,8 @@ end CS
 
 mutual
 /-- **`amodeOk` is sound.** -/
-theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w → (w.amode?).isSome = true
+theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w →
+    (w.amode?).isSome = true
   | .bot, _, _, hw => by simp [γ] at hw
   | .alts as, w, h, hw => by
     simp only [amodeOk] at h
@@ -348,7 +403,8 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
     obtain ⟨ws, rfl, hws⟩ := hw
     revert ws
     revert hm
-    apply amodeOk_split _ (fun k fs r => r = true → ∀ ws, γL f ctx fs ws → ((V.data tyAMode k ws).amode?).isSome = true)
+    apply CS.amodeOk_split _ (fun k fs r => r = true → ∀ ws, γL f ctx fs ws →
+      ((V.data tyAMode k ws).amode?).isSome = true)
     -- RegReg
     · intro p1 p2 h ws hws
       simp only [Bool.and_eq_true] at h
@@ -358,7 +414,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
       obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1, e2] <;> rfl
     -- RegScaled
     · intro p1 p2 h ws hws
@@ -369,7 +425,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
       obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1, e2] <;> rfl
     -- RegScaledExtended
     · intro p1 p2 p3 h ws hws
@@ -382,7 +438,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
       obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
       obtain ⟨_, e3⟩ := CS.enum_acc h3 hw3 V.extendOp? (fun _ => rfl)
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1, e2, e3] <;> rfl
     -- RegExtended
     · intro p1 p2 p3 h ws hws
@@ -395,7 +451,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
       obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
       obtain ⟨_, e3⟩ := CS.enum_acc h3 hw3 V.extendOp? (fun _ => rfl)
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1, e2, e3] <;> rfl
     -- Unscaled
     · intro p1 p2 h ws hws
@@ -405,7 +461,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, rfl⟩ := CS.simm9_sh hw2
       obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1] <;> rfl
     -- UnsignedOffset
     · intro p1 p2 h ws hws
@@ -415,7 +471,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, rfl⟩ := CS.uimm12Scaled_sh hw2
       obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1] <;> rfl
     -- RegOffset
     · intro p1 p2 h ws hws
@@ -426,7 +482,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
       obtain ⟨_, e2⟩ := CS.int_acc h2 hw2
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1, e2] <;> rfl
     -- SPOffset
     · intro p1 h ws hws
@@ -434,7 +490,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.int_acc h1 hw1
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1] <;> rfl
     -- FPOffset
     · intro p1 h ws hws
@@ -442,7 +498,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.int_acc h1 hw1
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1] <;> rfl
     -- IncomingArg
     · intro p1 h ws hws
@@ -450,7 +506,7 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.int_acc h1 hw1
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1] <;> rfl
     -- SlotOffset
     · intro p1 h ws hws
@@ -458,21 +514,21 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
       obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.int_acc h1 hw1
-      red_head V.amode?
+      red_safe V.amode?
       simp only [e1] <;> rfl
     -- SPPreIndexed
     · intro p1 h ws hws
       obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, rfl⟩ := CS.simm9_sh hw1
-      red_head V.amode?
+      red_safe V.amode?
       rfl
     -- SPPostIndexed
     · intro p1 h ws hws
       obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, rfl⟩ := CS.simm9_sh hw1
-      red_head V.amode?
+      red_safe V.amode?
       rfl
     · intro _ _ h; cases h
   | .any, _, h, _
@@ -492,7 +548,8 @@ theorem amodeOk_sound : ∀ {a : PA} {w : V}, amodeOk a = true → γ f ctx a w 
   | .idata, _, h, _
   | .op _ _, _, h, _ => by simp [amodeOk] at h
 /-- `amodeOk_sound` for alternatives. -/
-theorem amodeOkL_sound : ∀ {as : List PA} {w : V}, amodeOkL as = true → γAny f ctx as w → (w.amode?).isSome = true
+theorem amodeOkL_sound : ∀ {as : List PA} {w : V}, amodeOkL as = true → γAny f ctx as w →
+    (w.amode?).isSome = true
   | [], _, _, hw => by simp [γAny] at hw
   | a :: as, w, h, hw => by
     simp only [amodeOkL, Bool.and_eq_true] at h
@@ -507,7 +564,8 @@ theorem amodeOk_acc {a : PA} {w : V} (h : amodeOk a = true) (hw : γ f ctx a w) 
 
 mutual
 /-- **`condBrOk` is sound.** -/
-theorem condBrOk_sound : ∀ {a : PA} {w : V}, condBrOk a = true → γ f ctx a w → (w.condBrKind?).isSome = true
+theorem condBrOk_sound : ∀ {a : PA} {w : V}, condBrOk a = true → γ f ctx a w →
+    (w.condBrKind?).isSome = true
   | .bot, _, _, hw => by simp [γ] at hw
   | .alts as, w, h, hw => by
     simp only [condBrOk] at h
@@ -520,7 +578,8 @@ theorem condBrOk_sound : ∀ {a : PA} {w : V}, condBrOk a = true → γ f ctx a 
     obtain ⟨ws, rfl, hws⟩ := hw
     revert ws
     revert hm
-    apply condBrOk_split _ (fun k fs r => r = true → ∀ ws, γL f ctx fs ws → ((V.data tyCondBrKind k ws).condBrKind?).isSome = true)
+    apply CS.condBrOk_split _ (fun k fs r => r = true → ∀ ws, γL f ctx fs ws →
+      ((V.data tyCondBrKind k ws).condBrKind?).isSome = true)
     -- Zero
     · intro p1 p2 h ws hws
       simp only [Bool.and_eq_true] at h
@@ -530,7 +589,7 @@ theorem condBrOk_sound : ∀ {a : PA} {w : V}, condBrOk a = true → γ f ctx a 
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
       obtain ⟨_, e2⟩ := CS.enum_acc h2 hw2 V.size? (fun _ => rfl)
-      red_head V.condBrKind?
+      red_safe V.condBrKind?
       simp only [e1, e2] <;> rfl
     -- NotZero
     · intro p1 p2 h ws hws
@@ -541,7 +600,7 @@ theorem condBrOk_sound : ∀ {a : PA} {w : V}, condBrOk a = true → γ f ctx a 
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
       obtain ⟨_, e2⟩ := CS.enum_acc h2 hw2 V.size? (fun _ => rfl)
-      red_head V.condBrKind?
+      red_safe V.condBrKind?
       simp only [e1, e2] <;> rfl
     -- Cond
     · intro p1 h ws hws
@@ -549,7 +608,7 @@ theorem condBrOk_sound : ∀ {a : PA} {w : V}, condBrOk a = true → γ f ctx a 
       obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
       obtain rfl := CS.γL_nil hws
       obtain ⟨_, e1⟩ := CS.enum_acc h1 hw1 V.cond? (fun _ => rfl)
-      red_head V.condBrKind?
+      red_safe V.condBrKind?
       simp only [e1] <;> rfl
     · intro _ _ h; cases h
   | .any, _, h, _
@@ -569,7 +628,8 @@ theorem condBrOk_sound : ∀ {a : PA} {w : V}, condBrOk a = true → γ f ctx a 
   | .idata, _, h, _
   | .op _ _, _, h, _ => by simp [condBrOk] at h
 /-- `condBrOk_sound` for alternatives. -/
-theorem condBrOkL_sound : ∀ {as : List PA} {w : V}, condBrOkL as = true → γAny f ctx as w → (w.condBrKind?).isSome = true
+theorem condBrOkL_sound : ∀ {as : List PA} {w : V}, condBrOkL as = true → γAny f ctx as w →
+    (w.condBrKind?).isSome = true
   | [], _, _, hw => by simp [γAny] at hw
   | a :: as, w, h, hw => by
     simp only [condBrOkL, Bool.and_eq_true] at h
@@ -600,7 +660,8 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
   revert ws
   revert h
   unfold minstOk
-  apply minstOk_split _ (fun k fs r => r = true → ∀ ws, γL f ctx fs ws → (MInst.ofV (.data tyMInst k ws)).isSome = true)
+  apply CS.minstOk_split _ (fun k fs r => r = true → ∀ ws, γL f ctx fs ws →
+    (MInst.ofV (.data tyMInst k ws)).isSome = true)
   -- AluRRR
   · intro p1 p2 p3 p4 p5 h ws hws
     simp only [Bool.and_eq_true] at h
@@ -616,7 +677,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.reg_acc h5 hw5
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- AluRRRR
   · intro p1 p2 p3 p4 p5 p6 h ws hws
@@ -635,7 +696,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.reg_acc h5 hw5
     obtain ⟨_, e6⟩ := CS.reg_acc h6 hw6
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5, e6] <;> rfl
   -- AluRRImm12
   · intro p1 p2 p3 p4 p5 h ws hws
@@ -652,7 +713,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.op_imm12_acc h5 hw5
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- AluRRImmLogic
   · intro p1 p2 p3 p4 p5 h ws hws
@@ -669,7 +730,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.op_immLogic_acc h5 hw5
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- AluRRImmShift
   · intro p1 p2 p3 p4 p5 h ws hws
@@ -686,7 +747,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.op_immShift_acc h5 hw5
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- AluRRRShift
   · intro p1 p2 p3 p4 p5 p6 h ws hws
@@ -705,7 +766,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.reg_acc h5 hw5
     obtain ⟨_, e6⟩ := CS.op_shiftAmt_acc h6 hw6
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5, e6] <;> rfl
   -- AluRRRExtend
   · intro p1 p2 p3 p4 p5 p6 h ws hws
@@ -724,7 +785,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.reg_acc h5 hw5
     obtain ⟨_, e6⟩ := CS.enum_acc h6 hw6 V.extendOp? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5, e6] <;> rfl
   -- BitRR
   · intro p1 p2 p3 p4 h ws hws
@@ -739,7 +800,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e2⟩ := CS.enum_acc h2 hw2 V.size? (fun _ => rfl)
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4] <;> rfl
   -- Mov
   · intro p1 p2 p3 h ws hws
@@ -752,7 +813,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e1⟩ := CS.enum_acc h1 hw1 V.size? (fun _ => rfl)
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3] <;> rfl
   -- MovWide
   · intro p1 p2 p3 p4 h ws hws
@@ -767,7 +828,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.op_mwc_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.enum_acc h4 hw4 V.size? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4] <;> rfl
   -- MovK
   · intro p1 p2 p3 p4 h ws hws
@@ -782,7 +843,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.op_mwc_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.enum_acc h4 hw4 V.size? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4] <;> rfl
   -- Extend
   · intro p1 p2 p3 p4 p5 h ws hws
@@ -799,7 +860,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.bool_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.nat_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.nat_acc h5 hw5
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- BitfieldMove
   · intro p1 p2 p3 p4 p5 p6 h ws hws
@@ -818,7 +879,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.op_uimm6_acc h5 hw5
     obtain ⟨_, e6⟩ := CS.op_uimm6_acc h6 hw6
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5, e6] <;> rfl
   -- CSet
   · intro p1 p2 h ws hws
@@ -829,7 +890,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
     obtain ⟨_, e2⟩ := CS.enum_acc h2 hw2 V.cond? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2] <;> rfl
   -- CSel
   · intro p1 p2 p3 p4 h ws hws
@@ -844,7 +905,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e2⟩ := CS.enum_acc h2 hw2 V.cond? (fun _ => rfl)
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4] <;> rfl
   -- CCmp
   · intro p1 p2 p3 p4 p5 h ws hws
@@ -861,7 +922,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.op_nzcv_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.enum_acc h5 hw5 V.cond? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- CCmpImm
   · intro p1 p2 p3 p4 p5 h ws hws
@@ -878,7 +939,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.op_uimm5_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.op_nzcv_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.enum_acc h5 hw5 V.cond? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- MovToFpu
   · intro p1 p2 p3 h ws hws
@@ -891,7 +952,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.enum_acc h3 hw3 V.scalarSize? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3] <;> rfl
   -- MovFromVec
   · intro p1 p2 p3 p4 h ws hws
@@ -906,7 +967,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.nat_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.enum_acc h4 hw4 V.scalarSize? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4] <;> rfl
   -- VecMisc
   · intro p1 p2 p3 p4 h ws hws
@@ -921,7 +982,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.enum_acc h4 hw4 V.vectorSize? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4] <;> rfl
   -- VecLanes
   · intro p1 p2 p3 p4 h ws hws
@@ -936,7 +997,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.enum_acc h4 hw4 V.vectorSize? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4] <;> rfl
   -- VecRRR
   · intro p1 p2 p3 p4 p5 h ws hws
@@ -953,7 +1014,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.enum_acc h5 hw5 V.vectorSize? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- Call
   · intro p1 h ws hws
@@ -961,7 +1022,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := CS.op_callInfo_acc h1 hw1
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1] <;> rfl
   -- CallInd
   · intro p1 h ws hws
@@ -969,7 +1030,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := CS.op_callInfo_acc h1 hw1
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1] <;> rfl
   -- Jump
   · intro p1 h ws hws
@@ -977,7 +1038,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := CS.label_acc h1 hw1
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1] <;> rfl
   -- CondBr
   · intro p1 p2 p3 h ws hws
@@ -990,7 +1051,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e1⟩ := CS.label_acc h1 hw1
     obtain ⟨_, e2⟩ := CS.label_acc h2 hw2
     obtain ⟨_, e3⟩ := condBrOk_acc h3 hw3
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3] <;> rfl
   -- TestBitAndBranch
   · intro p1 p2 p3 p4 p5 h ws hws
@@ -1007,7 +1068,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.label_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.nat_acc h5 hw5
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- TrapIf
   · intro p1 p2 h ws hws
@@ -1018,7 +1079,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := condBrOk_acc h1 hw1
     obtain ⟨_, e2⟩ := CS.op_trapCode_acc h2 hw2
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2] <;> rfl
   -- Udf
   · intro p1 h ws hws
@@ -1026,7 +1087,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := CS.op_trapCode_acc h1 hw1
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1] <;> rfl
   -- JTSequence
   · intro p1 p2 p3 p4 p5 h ws hws
@@ -1043,7 +1104,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.reg_acc h4 hw4
     obtain ⟨_, e5⟩ := CS.reg_acc h5 hw5
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5] <;> rfl
   -- LoadExtNameGot
   · intro p1 p2 h ws hws
@@ -1054,7 +1115,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
     obtain ⟨_, e2⟩ := CS.op_extName_acc h2 hw2
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2] <;> rfl
   -- LoadExtNameNear
   · intro p1 p2 p3 h ws hws
@@ -1067,7 +1128,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
     obtain ⟨_, e2⟩ := CS.op_extName_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.int_acc h3 hw3
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3] <;> rfl
   -- LoadAddr
   · intro p1 p2 h ws hws
@@ -1078,7 +1139,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
     obtain ⟨_, e2⟩ := amodeOk_acc h2 hw2
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2] <;> rfl
   -- EmitIsland
   · intro p1 h ws hws
@@ -1086,7 +1147,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨w1, ws, rfl, hw1, hws⟩ := CS.γL_cons hws
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := CS.nat_acc h1 hw1
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1] <;> rfl
   -- LoadAcquire
   · intro p1 p2 p3 p4 h ws hws
@@ -1101,7 +1162,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.op_memFlags_acc h4 hw4
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4] <;> rfl
   -- StoreRelease
   · intro p1 p2 p3 p4 h ws hws
@@ -1116,7 +1177,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
     obtain ⟨_, e4⟩ := CS.op_memFlags_acc h4 hw4
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4] <;> rfl
   -- AtomicRMWLoop
   · intro p1 p2 p3 p4 p5 p6 p7 p8 h ws hws
@@ -1139,7 +1200,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e6⟩ := CS.reg_acc h6 hw6
     obtain ⟨_, e7⟩ := CS.reg_acc h7 hw7
     obtain ⟨_, e8⟩ := CS.reg_acc h8 hw8
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5, e6, e7, e8] <;> rfl
   -- AtomicCASLoop
   · intro p1 p2 p3 p4 p5 p6 p7 h ws hws
@@ -1160,7 +1221,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e5⟩ := CS.reg_acc h5 hw5
     obtain ⟨_, e6⟩ := CS.reg_acc h6 hw6
     obtain ⟨_, e7⟩ := CS.reg_acc h7 hw7
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3, e4, e5, e6, e7] <;> rfl
   -- CSetm
   · intro p1 p2 h ws hws
@@ -1171,12 +1232,12 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain rfl := CS.γL_nil hws
     obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
     obtain ⟨_, e2⟩ := CS.enum_acc h2 hw2 V.cond? (fun _ => rfl)
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2] <;> rfl
   -- Fence
   · intro _ h ws hws
     obtain rfl := CS.γL_nil hws
-    red_head MInst.ofV
+    red_safe MInst.ofV
     rfl
   -- ElfTlsGetAddr
   · intro p1 p2 p3 h ws hws
@@ -1189,7 +1250,7 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e1⟩ := CS.op_extName_acc h1 hw1
     obtain ⟨_, e2⟩ := CS.reg_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.reg_acc h3 hw3
-    red_head MInst.ofV
+    red_safe MInst.ofV
     simp only [e1, e2, e3] <;> rfl
   -- loads and stores (`ofV`'s last case)
   · intro k p1 p2 p3 h ws hws
@@ -1207,13 +1268,15 @@ theorem minstOk_sound {k : Nat} {fs : List PA} (h : minstOk k fs = true) {ws : L
     obtain ⟨_, e1⟩ := CS.reg_acc h1 hw1
     obtain ⟨_, e2⟩ := amodeOk_acc h2 hw2
     obtain ⟨_, e3⟩ := CS.op_memFlags_acc h3 hw3
-    rcases CS.loadStore_idx hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-      (red_head MInst.ofV; simp only [e1, e2, e3] <;> rfl)
+    rcases CS.loadStore_idx hk with
+        rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      (red_safe MInst.ofV; simp only [e1, e2, e3] <;> rfl)
   · intro _ _ h; cases h
 
 mutual
 /-- `ofvOk_sound`, by recursion on the abstract value. -/
-theorem ofvOk_sound' : ∀ {a : PA} {v : V}, ofvOk a = true → γ f ctx a v → (MInst.ofV v).isSome = true
+theorem ofvOk_sound' : ∀ {a : PA} {v : V}, ofvOk a = true → γ f ctx a v →
+    (MInst.ofV v).isSome = true
   | .bot, _, _, hv => by simp [γ] at hv
   | .alts as, v, h, hv => by
     simp only [ofvOk] at h
