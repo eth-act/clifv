@@ -164,6 +164,13 @@ def armBits : ArmInst → BitVec 32
   | .DPSFP (.Advanced_simd_modified_immediate x) =>
     0#1 ++ x.Q ++ x.op ++ 0b0111100000#10 ++ x.a ++ x.b ++ x.c ++ x.cmode ++ x.o2 ++ 1#1 ++ x.d ++
       x.e ++ x.f ++ x.g ++ x.h ++ x.Rd
+  | .DPSFP (.FP_data_processing_two_source x) =>
+    x.M ++ 0#1 ++ x.S ++ 0b11110#5 ++ x.ftype ++ 1#1 ++ x.Rm ++ x.opcode ++ 0b10#2 ++ x.Rn ++ x.Rd
+  | .DPSFP (.FP_data_processing_three_source x) =>
+    x.M ++ 0#1 ++ x.S ++ 0b11111#5 ++ x.ftype ++ x.o1 ++ x.Rm ++ x.o0 ++ x.Ra ++ x.Rn ++ x.Rd
+  | .DPSFP (.FP_compare x) =>
+    x.M ++ 0#1 ++ x.S ++ 0b11110#5 ++ x.ftype ++ 1#1 ++ x.Rm ++ x.op ++ 0b1000#4 ++ x.Rn ++
+      x.opcode2
   -- C4.1 Loads and Stores
   | .LDST (.Reg_imm_post_indexed x) =>
     x.size ++ 0b111#3 ++ x.V ++ 0b00#2 ++ x.opc ++ 0#1 ++ x.imm9 ++ 0b01#2 ++ x.Rn ++ x.Rt
@@ -284,6 +291,16 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
                                                 c := x.c, cmode := x.cmode, o2 := x.o2, d := x.d,
                                                 e := x.e, f := x.f, g := x.g, h := x.h,
                                                 Rd := x.Rd })
+  | .DPSFP (.FP_data_processing_two_source x) =>
+    .DPSFP (.FP_data_processing_two_source { M := x.M, S := x.S, ftype := x.ftype, Rm := x.Rm,
+                                             opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.FP_data_processing_three_source x) =>
+    .DPSFP (.FP_data_processing_three_source { M := x.M, S := x.S, ftype := x.ftype, o1 := x.o1,
+                                               Rm := x.Rm, o0 := x.o0, Ra := x.Ra, Rn := x.Rn,
+                                               Rd := x.Rd })
+  | .DPSFP (.FP_compare x) =>
+    .DPSFP (.FP_compare { M := x.M, S := x.S, ftype := x.ftype, Rm := x.Rm, op := x.op,
+                          Rn := x.Rn, opcode2 := x.opcode2 })
   | .LDST (.Reg_imm_post_indexed x) =>
     .LDST (.Reg_imm_post_indexed { size := x.size, V := x.V, opc := x.opc, imm9 := x.imm9,
                                    Rn := x.Rn, Rt := x.Rt })
@@ -731,10 +748,60 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     pure (.DPSFP (.Advanced_simd_three_same { Q := 1, U := 0, size := 2, Rm := Rn, opcode := 3,
                                               Rn, Rd := ← rd.encV }))
   | .fpuRR op s rd rn =>
-    -- C7.2 FABS (scalar) opcode 000001, FNEG (scalar) opcode 000010 (Cranelift `FpuRR`)
-    let opcode : BitVec 6 := match op with | .abs => 1 | .neg => 2
+    -- C7.2 FABS/FNEG/FSQRT (scalar) opcode 000001/000010/000011, FCVT opcode 0001:opc with the
+    -- destination type opc (S→D 01, D→S 00; Cranelift `FpuRR`)
+    let opcode : BitVec 6 ← match op, s with
+      | .abs, _ => pure 1 | .neg, _ => pure 2 | .sqrt, _ => pure 3
+      | .cvt32To64, .size32 => pure 5 | .cvt64To32, .size64 => pure 4
+      | _, _ => throw s!"fcvt source size {repr s}"
     pure (.DPSFP (.FP_data_processing_one_source { M := 0, S := 0, ftype := ← fpFtype s, opcode,
                                                    Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .fpuRRR op s rd rn rm =>
+    -- C7.2 FMUL/FDIV/FADD/FSUB/FMAX/FMIN (scalar): FP data-processing (2 source), opcode
+    -- 0000/0001/0010/0011/0100/0101 (Cranelift `FpuRRR`, `enc_fpurrr`)
+    let opcode : BitVec 4 := match op with
+      | .mul => 0 | .div => 1 | .add => 2 | .sub => 3 | .max => 4 | .min => 5
+    pure (.DPSFP (.FP_data_processing_two_source { M := 0, S := 0, ftype := ← fpFtype s,
+                                                   Rm := ← rm.encV, opcode, Rn := ← rn.encV,
+                                                   Rd := ← rd.encV }))
+  | .fpuRRRR op s rd rn rm ra =>
+    -- C7.2 FMADD (o1 0, o0 0), FMSUB (0, 1), FNMADD (1, 0), FNMSUB (1, 1): FP data-processing
+    -- (3 source) (Cranelift `FpuRRRR`, `enc_fpurrrr`)
+    let (o1, o0) : BitVec 1 × BitVec 1 := match op with
+      | .mAdd => (0, 0) | .mSub => (0, 1) | .nMAdd => (1, 0) | .nMSub => (1, 1)
+    pure (.DPSFP (.FP_data_processing_three_source { M := 0, S := 0, ftype := ← fpFtype s, o1,
+                                                     Rm := ← rm.encV, o0, Ra := ← ra.encV,
+                                                     Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .fpuCmp s rn rm =>
+    -- C7.2 FCMP (register): FP compare, op 00, opcode2 00000 (Cranelift `enc_fcmp`)
+    pure (.DPSFP (.FP_compare { M := 0, S := 0, ftype := ← fpFtype s, Rm := ← rm.encV, op := 0,
+                                Rn := ← rn.encV, opcode2 := 0 }))
+  | .fpuRound op rd rn =>
+    -- C7.2 FRINTN/FRINTP/FRINTM/FRINTZ (scalar): FP data-processing (1 source), opcode
+    -- 001000/001001/001010/001011 (Cranelift `FpuRound`, `enc_fround`)
+    let (ftype, opcode) : BitVec 2 × BitVec 6 := match op with
+      | .nearest32 => (0, 8) | .nearest64 => (1, 8) | .plus32 => (0, 9) | .plus64 => (1, 9)
+      | .minus32 => (0, 10) | .minus64 => (1, 10) | .zero32 => (0, 11) | .zero64 => (1, 11)
+    pure (.DPSFP (.FP_data_processing_one_source { M := 0, S := 0, ftype, opcode,
+                                                   Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .fpuToInt op rd rn =>
+    -- C7.2 FCVTZS (scalar, integer) rmode 11 opcode 000, FCVTZU rmode 11 opcode 001;
+    -- sf = 64-bit integer, ftype = float size (Cranelift `FpuToInt`, `enc_fputoint`)
+    let (sf, ftype, opcode) : BitVec 1 × BitVec 2 × BitVec 3 := match op with
+      | .f32ToI32 => (0, 0, 0) | .f32ToU32 => (0, 0, 1) | .f32ToI64 => (1, 0, 0)
+      | .f32ToU64 => (1, 0, 1) | .f64ToI32 => (0, 1, 0) | .f64ToU32 => (0, 1, 1)
+      | .f64ToI64 => (1, 1, 0) | .f64ToU64 => (1, 1, 1)
+    pure (.DPSFP (.Conversion_between_FP_and_Int { sf, S := 0, ftype, rmode := 3, opcode,
+                                                   Rn := ← rn.encV, Rd := ← rd.encZR }))
+  | .intToFpu op rd rn =>
+    -- C7.2 SCVTF (scalar, integer) rmode 00 opcode 010, UCVTF rmode 00 opcode 011 (Cranelift
+    -- `IntToFpu`, `enc_inttofpu`)
+    let (sf, ftype, opcode) : BitVec 1 × BitVec 2 × BitVec 3 := match op with
+      | .i32ToF32 => (0, 0, 2) | .u32ToF32 => (0, 0, 3) | .i64ToF32 => (1, 0, 2)
+      | .u64ToF32 => (1, 0, 3) | .i32ToF64 => (0, 1, 2) | .u32ToF64 => (0, 1, 3)
+      | .i64ToF64 => (1, 1, 2) | .u64ToF64 => (1, 1, 3)
+    pure (.DPSFP (.Conversion_between_FP_and_Int { sf, S := 0, ftype, rmode := 0, opcode,
+                                                   Rn := ← rn.encZR, Rd := ← rd.encV }))
   | .fpuCSel s rd rn rm c =>
     -- C7.2 FCSEL (Cranelift `enc_fcsel`)
     pure (.DPSFP (.FP_conditional_select { M := 0, S := 0, ftype := ← fpFtype s,

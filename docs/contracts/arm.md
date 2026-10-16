@@ -21,6 +21,11 @@ Producer: M3-model. Model choice: `docs/decisions/arm-model.md`. Attribution:
   Advanced SIMD modified immediate (MOVI/MVNI/ORR/BIC/FMOV vector, ported from LNSym), LDR
   (literal) (GPR and SIMD&FP), SIMD&FP register-offset loads/stores. Co-simulation with IEEE
   edge values: 256 forms × 1000 vectors (seed `0x5eed`) = 256 000 vectors, 0 failures.
+- DONE (S11d #237, phase 2, 2026-10-16): scalar floating-point arithmetic, compare and convert
+  on the IEEE core `FV/Float` (section "Floating point" below): FADD, FSUB, FMUL, FDIV, FMAX,
+  FMIN, FNMUL, FMADD, FMSUB, FNMADD, FNMSUB, FSQRT, FCVT (s↔d), FRINTN/P/M/Z/A/X/I,
+  FCMP/FCMPE (register, `#0.0`), FCVT{N,P,M,Z,A}{S,U}, SCVTF, UCVTF; 72 new forms × 1000
+  vectors, 0 failures (all 328 forms: 328 000 vectors, 0 failures).
 
 ## Public API (namespace `Arm`)
 
@@ -70,7 +75,7 @@ NOPs); memory is flat, total and little-endian, with no alignment faults except 
 | `Arm/Insts/**` (scalar + subset of SIMD) | `FV/Arm/Insts/**` | fixes and additions (below) |
 | `Arm/Memory/{Attr,MemoryProofs,Separate,SeparateProofs}.lean` | `FV/Arm/Memory/…` | ported |
 | `Tactics/{Attr,BvOmegaBench,Common,FetchAndDecode,IntroHyp,Simp,StepThms,Sym}.lean`, `Tactics/Sym/*` | `FV/Arm/Tactics/…` | ported: `sym_n` and `#genStepEqTheorems` |
-| — | `FV/Arm/Decode/Reserved.lean`, `FV/Arm/Insts/Reserved/Udf.lean`, `Insts/BR/Test_branch.lean`, `Insts/DPI/Extract.lean`, `Insts/DPR/{Add_sub_ext_reg,Conditional_compare}.lean`, `Insts/DPSFP/Advanced_simd_across_lanes.lean`, `Insts/DPSFP/{FP_data_processing_one_source,FP_immediate,FP_conditional_select}.lean`, `Insts/LDST/Reg_literal.lean` | FV additions |
+| — | `FV/Arm/Decode/Reserved.lean`, `FV/Arm/Insts/Reserved/Udf.lean`, `Insts/BR/Test_branch.lean`, `Insts/DPI/Extract.lean`, `Insts/DPR/{Add_sub_ext_reg,Conditional_compare}.lean`, `Insts/DPSFP/Advanced_simd_across_lanes.lean`, `Insts/DPSFP/{FP_data_processing_one_source,FP_immediate,FP_conditional_select,FP_data_processing_two_source,FP_data_processing_three_source,FP_compare}.lean`, `Insts/LDST/Reg_literal.lean` | FV additions |
 | `Arm/Insts/DPSFP/Advanced_simd_modified_immediate.lean` | `FV/Arm/Insts/DPSFP/…` | ported for `movi vd.2s, #0` (S11d); the state-returning decode helper made pure |
 
 Ported files keep the Amazon copyright header. Modified files say so in a "Modified by
@@ -197,6 +202,14 @@ Cranelift 0.136.1's aarch64 float lowering (`lower.isle`, `inst.isle`, `inst/emi
 | same 10 — register offset (`[xn, xm{, ext #s}]`) | added | `FpuLoad*`/`FpuStore*` with `RegReg`/`RegScaled*`/`RegExtended` | 10 × 1000/0 |
 | `ldp`/`stp` s/d/q — signed offset, pre-index, post-index | port | callee-saved `d8`–`d15` (`FpuLoadP64`/`FpuStoreP64`) | 18 × 1000/0 |
 | `ldr` (literal) s/d/q, w/x, `ldrsw` (literal) | added | `f64`/`f128` constant pool (`constant_f64` → `AMode::Label`) | 6 × 1000/0 |
+| `fsqrt` s/d (FP data-processing (1 source), opcode 000011; `IEEE.sqrt`) | added | `sqrt` (`FpuRR`) | 2 × 1000/0 |
+| `fcvt d, s` / `fcvt s, d` (opcode 000101 / 000100; `IEEE.convert`) | added | `fpromote`/`fdemote` (`FpuRR` `Cvt32To64`/`Cvt64To32`) | 2 × 1000/0 |
+| `frintn/p/m/z/a/x/i` s/d (opcode 001000–001111; `IEEE.roundInt`) | added | `nearest`/`ceil`/`floor`/`trunc` (`FpuRound`: n/p/m/z) | 14 × 1000/0 |
+| `fmul/fdiv/fadd/fsub/fmax/fmin/fnmul` s/d (FP data-processing (2 source)) | added | `fmul`/`fdiv`/`fadd`/`fsub`/`fmax`/`fmin` (`FpuRRR`; Cranelift emits no FNMUL) | 14 × 1000/0 |
+| `fmadd/fmsub/fnmadd/fnmsub` s/d (FP data-processing (3 source); one rounding, `IEEE.mulAdd`) | added | `fma` and its negations (`FpuRRRR`) | 8 × 1000/0 |
+| `fcmp`/`fcmpe` s/d, register and `#0.0` (FP compare; NZCV only) | added | `fcmp` (`FpuCmp`: register form) | 8 × 1000/0 |
+| `fcvtns/nu/ps/pu/ms/mu/zs/zu/as/au` s/d → w/x (Conversion between FP and integer; ASL `FPToFixed`, `IEEE.toFixed`) | added (in the ported file) | `fcvt_to_{s,u}int{,_sat}` (`FpuToInt`: zs/zu) | 20 × 1000/0 |
+| `scvtf`/`ucvtf` w/x → s/d (Conversion between FP and integer; ASL `FixedToFP`, `IEEE.fromFixed`) | added (in the ported file) | `fcvt_from_{s,u}int` (`IntToFpu`) | 4 × 1000/0 |
 
 `ldr` (literal) reads `mem` at `PC + SignExtend(imm19:'00')`: the model keeps code in
 `program`, apart from `mem`, so a constant pool the backend places after a function's code must

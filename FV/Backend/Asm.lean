@@ -51,9 +51,37 @@ def Lbl.name (k : Nat) : Lbl → String
   | .loop n => s!".L{k}_a{n}"
   | .skip => ".+8"
 
-/-- Scalar floating-point unary operations of `Insn.fpuRR` (Cranelift `FPUOp1`, `inst.isle`). -/
+/-- Scalar floating-point unary operations of `Insn.fpuRR` (Cranelift `FPUOp1`, `inst.isle`).
+`cvt32To64`/`cvt64To32` are FCVT between precisions; their `size` is the source's. -/
 inductive FPUOp1 where
-  | abs | neg
+  | abs | neg | sqrt | cvt32To64 | cvt64To32
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Scalar floating-point binary operations of `Insn.fpuRRR` (Cranelift `FPUOp2`). -/
+inductive FPUOp2 where
+  | add | sub | mul | div | max | min
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Scalar fused multiply-add operations of `Insn.fpuRRRR` (Cranelift `FPUOp3`):
+`fmadd`/`fmsub`/`fnmadd`/`fnmsub`. -/
+inductive FPUOp3 where
+  | mAdd | mSub | nMAdd | nMSub
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Round-to-integral modes of `Insn.fpuRound` with the operand precision (Cranelift
+`FpuRoundMode`): `frintm`/`frintp`/`frintz`/`frintn`. -/
+inductive FpuRoundMode where
+  | minus32 | minus64 | plus32 | plus64 | zero32 | zero64 | nearest32 | nearest64
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Float → integer conversions of `Insn.fpuToInt` (Cranelift `FpuToIntOp`, `fcvtzs`/`fcvtzu`). -/
+inductive FpuToIntOp where
+  | f32ToU32 | f32ToI32 | f32ToU64 | f32ToI64 | f64ToU32 | f64ToI32 | f64ToU64 | f64ToI64
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Integer → float conversions of `Insn.intToFpu` (Cranelift `IntToFpuOp`, `scvtf`/`ucvtf`). -/
+inductive IntToFpuOp where
+  | u32ToF32 | i32ToF32 | u32ToF64 | i32ToF64 | u64ToF32 | i64ToF32 | u64ToF64 | i64ToF64
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- One AArch64 instruction over real registers: one line of assembly, one 4-byte word.
@@ -165,8 +193,21 @@ inductive Insn where
   /-- `mov vd.16b, vn.16b` (ORR (vector, register) with `Rm = Rn`; Cranelift `FpuMove128`, the
   register move of the float class). -/
   | fpuMove128 (rd rn : Reg)
-  /-- `fabs/fneg sd, sn` / `… dd, dn` (Cranelift `FpuRR`). -/
+  /-- `fabs/fneg/fsqrt sd, sn` / `… dd, dn`, `fcvt dd, sn` (`cvt32To64`, `size` 32) and
+  `fcvt sd, dn` (`cvt64To32`, `size` 64) (Cranelift `FpuRR`). -/
   | fpuRR (op : FPUOp1) (size : ScalarSize) (rd rn : Reg)
+  /-- `fadd/fsub/fmul/fdiv/fmax/fmin sd, sn, sm` / `… dd, dn, dm` (Cranelift `FpuRRR`). -/
+  | fpuRRR (op : FPUOp2) (size : ScalarSize) (rd rn rm : Reg)
+  /-- `fmadd/fmsub/fnmadd/fnmsub sd, sn, sm, sa` / `… dd, dn, dm, da` (Cranelift `FpuRRRR`). -/
+  | fpuRRRR (op : FPUOp3) (size : ScalarSize) (rd rn rm ra : Reg)
+  /-- `fcmp sn, sm` / `fcmp dn, dm` (Cranelift `FpuCmp`; writes NZCV). -/
+  | fpuCmp (size : ScalarSize) (rn rm : Reg)
+  /-- `frintm/frintp/frintz/frintn sd, sn` / `… dd, dn` (Cranelift `FpuRound`). -/
+  | fpuRound (op : FpuRoundMode) (rd rn : Reg)
+  /-- `fcvtzs/fcvtzu wd/xd, sn/dn` (Cranelift `FpuToInt`). -/
+  | fpuToInt (op : FpuToIntOp) (rd rn : Reg)
+  /-- `scvtf/ucvtf sd/dd, wn/xn` (Cranelift `IntToFpu`). -/
+  | intToFpu (op : IntToFpuOp) (rd rn : Reg)
   /-- `fcsel sd, sn, sm, cond` / `… dd, dn, dm, cond` (Cranelift `FpuCSel32/64`). -/
   | fpuCSel (size : ScalarSize) (rd rn rm : Reg) (c : Cond)
   /-- `fmov sd/dd, #imm` with the 8-bit encoded immediate `imm8` (`VFPExpandImm`; Cranelift
@@ -764,7 +805,41 @@ def ScalarSize.bytes : ScalarSize → Nat
   | .size8 => 1 | .size16 => 2 | .size32 => 4 | .size64 => 8 | .size128 => 16
 
 def FPUOp1.asm : FPUOp1 → String
-  | .abs => "fabs" | .neg => "fneg"
+  | .abs => "fabs" | .neg => "fneg" | .sqrt => "fsqrt" | .cvt32To64 | .cvt64To32 => "fcvt"
+
+/-- The destination size of `fpuRR op s`: the other precision for FCVT, else `s`. -/
+def FPUOp1.dstSize (op : FPUOp1) (s : ScalarSize) : ScalarSize :=
+  match op with | .cvt32To64 => .size64 | .cvt64To32 => .size32 | _ => s
+
+def FPUOp2.asm : FPUOp2 → String
+  | .add => "fadd" | .sub => "fsub" | .mul => "fmul" | .div => "fdiv" | .max => "fmax"
+  | .min => "fmin"
+
+def FPUOp3.asm : FPUOp3 → String
+  | .mAdd => "fmadd" | .mSub => "fmsub" | .nMAdd => "fnmadd" | .nMSub => "fnmsub"
+
+def FpuRoundMode.asm : FpuRoundMode → String
+  | .minus32 | .minus64 => "frintm" | .plus32 | .plus64 => "frintp"
+  | .zero32 | .zero64 => "frintz" | .nearest32 | .nearest64 => "frintn"
+
+/-- The operand precision of a rounding mode. -/
+def FpuRoundMode.size : FpuRoundMode → ScalarSize
+  | .minus32 | .plus32 | .zero32 | .nearest32 => .size32
+  | .minus64 | .plus64 | .zero64 | .nearest64 => .size64
+
+/-- `(signed, float size, 64-bit integer)` of a float → integer conversion. -/
+def FpuToIntOp.parts : FpuToIntOp → Bool × ScalarSize × Bool
+  | .f32ToU32 => (false, .size32, false) | .f32ToI32 => (true, .size32, false)
+  | .f32ToU64 => (false, .size32, true) | .f32ToI64 => (true, .size32, true)
+  | .f64ToU32 => (false, .size64, false) | .f64ToI32 => (true, .size64, false)
+  | .f64ToU64 => (false, .size64, true) | .f64ToI64 => (true, .size64, true)
+
+/-- `(signed, 64-bit integer, float size)` of an integer → float conversion. -/
+def IntToFpuOp.parts : IntToFpuOp → Bool × Bool × ScalarSize
+  | .u32ToF32 => (false, false, .size32) | .i32ToF32 => (true, false, .size32)
+  | .u32ToF64 => (false, false, .size64) | .i32ToF64 => (true, false, .size64)
+  | .u64ToF32 => (false, true, .size32) | .i64ToF32 => (true, true, .size32)
+  | .u64ToF64 => (false, true, .size64) | .i64ToF64 => (true, true, .size64)
 
 /-- The value of an 8-bit floating-point immediate (`VFPExpandImm`) as exact decimal text:
 `±(16 + imm8<3:0>) · 2^(e - 4)` with `e = imm8<6> ? imm8<5:4> - 3 : imm8<5:4> + 1`, i.e.
@@ -866,7 +941,19 @@ def Insn.asm (k : Nat) : Insn → String
   | .mrsTpidrEl0 rt => s!"mrs {rt.gpr}, tpidr_el0"
   | .fpuMove s rd rn => s!"fmov {s.fpreg rd.vnum}, {s.fpreg rn.vnum}"
   | .fpuMove128 rd rn => s!"mov v{rd.vnum}.16b, v{rn.vnum}.16b"
-  | .fpuRR op s rd rn => s!"{op.asm} {s.fpreg rd.vnum}, {s.fpreg rn.vnum}"
+  | .fpuRR op s rd rn => s!"{op.asm} {(op.dstSize s).fpreg rd.vnum}, {s.fpreg rn.vnum}"
+  | .fpuRRR op s rd rn rm =>
+    s!"{op.asm} {s.fpreg rd.vnum}, {s.fpreg rn.vnum}, {s.fpreg rm.vnum}"
+  | .fpuRRRR op s rd rn rm ra =>
+    s!"{op.asm} {s.fpreg rd.vnum}, {s.fpreg rn.vnum}, {s.fpreg rm.vnum}, {s.fpreg ra.vnum}"
+  | .fpuCmp s rn rm => s!"fcmp {s.fpreg rn.vnum}, {s.fpreg rm.vnum}"
+  | .fpuRound op rd rn => s!"{op.asm} {op.size.fpreg rd.vnum}, {op.size.fpreg rn.vnum}"
+  | .fpuToInt op rd rn =>
+    let (sg, fs, w) := op.parts
+    s!"{if sg then "fcvtzs" else "fcvtzu"} {rd.gpr w}, {fs.fpreg rn.vnum}"
+  | .intToFpu op rd rn =>
+    let (sg, w, fs) := op.parts
+    s!"{if sg then "scvtf" else "ucvtf"} {fs.fpreg rd.vnum}, {rn.gpr w}"
   | .fpuCSel s rd rn rm c =>
     s!"fcsel {s.fpreg rd.vnum}, {s.fpreg rn.vnum}, {s.fpreg rm.vnum}, {c.asm}"
   | .fpuMoveFPImm s rd imm8 => s!"fmov {s.fpreg rd.vnum}, #{fpImm8Text imm8}"
