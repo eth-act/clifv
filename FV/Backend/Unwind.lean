@@ -4,9 +4,13 @@ import FV.Backend.RegallocOps
 /-!
 # Unwind information (DWARF call frame information for `.eh_frame`)
 
-**Not verified** and outside every theorem: the unwind tables only describe the frame to an
-unwinder (a Rust panic unwinding through Lean-compiled code, a debugger, a profiler); the code
-does not read them. `Backend.elfObject` writes them as `.eh_frame` (`FV/Backend/Obj.lean`).
+The code does not read these tables; they describe the frame to an unwinder (a Rust panic
+unwinding through Lean-compiled code, a debugger, a profiler). `Backend.elfObject` writes them
+as `.eh_frame` and `.gcc_except_table` (`FV/Backend/Obj.lean`). They are correct by
+construction against the unwinder's model (`FV/Unw/Dwarf.lean`):
+`FV/Backend/Proof/UnwindTables.lean` (`unwindRows_frame`, `callSites_ok`, the byte round
+trips). Using them in the per-function and linking theorems is S10d–S10f
+(`docs/plans/unwinding.md`).
 
 The rows mirror what Cranelift emits for aarch64 SystemV (`isa/aarch64/abi.rs`
 `gen_prologue_frame_setup` / `gen_clobber_save` and `isa/unwind/systemv.rs`
@@ -41,7 +45,7 @@ inductive Cfi where
   | defCfaRegister (reg : Nat)
   /-- `DW_CFA_offset`: register `reg` is saved at CFA + `off`. -/
   | offset (reg : Nat) (off : Int)
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
 
 /-- DWARF register number ("DWARF for the Arm 64-bit Architecture": x0–x30 = 0–30, sp = 31,
 v0–v31 = 64–95). -/
@@ -94,10 +98,11 @@ def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := 
   let c : FnCtx := { k := fa.k, slotBase := af.slotBase }
   let (sl, srows) ← saveRows c af.frameSize (4 * pro.length) saves
   let expect := pro ++ sl
+  if 4 * expect.length ≥ 2 ^ 32 then throw "unwind: the prologue exceeds the FDE's 32-bit range"
   -- the final code starts with the entry label, then exactly these instructions
   let got := (fa.lines.toList.drop 1).take expect.length
   unless (match fa.lines[0]? with | some (Line.label _) => true | _ => false) &&
-      got.map Line.insn? == expect.map Line.insn? && got.all (·.insn?.isSome) do
+      decide (got.map Line.insn? = expect.map Line.insn?) && got.all (·.insn?.isSome) do
     throw "unwind: the code does not start with the prologue and the callee-save stores"
   return prologueRows ++ srows
 
@@ -168,7 +173,19 @@ structure CallSite where
   len : Nat
   pad : Nat
   action : Nat
-  deriving Repr, BEq, Inhabited
+  deriving Repr, BEq, DecidableEq, Inhabited
+
+/-- The labels after line `ln` at byte offset `off` (latest first). -/
+def labsAfter (ln : Line) (off : Nat) (labs : List (Label × Nat)) : List (Label × Nat) :=
+  match ln with
+  | .label (.block l) => (l, off) :: labs
+  | _ => labs
+
+/-- The return offsets after line `ln` at byte offset `off` (latest first). -/
+def retsAfter (ln : Line) (off : Nat) (rets : List Nat) : List Nat :=
+  match ln with
+  | .ins (.bl _) _ | .ins (.blr _) _ => (off + 4) :: rets
+  | _ => rets
 
 /-- The block labels of `lines` with their byte offsets (latest first: `lookup` finds a
 label's last definition) and the return offsets of its calls (`bl`/`blr`, in code order),
@@ -176,13 +193,7 @@ the lines starting at byte offset `off`. -/
 def scanLines : List Line → Nat → List (Label × Nat) → List Nat → List (Label × Nat) × List Nat
   | [], _, labs, rets => (labs, rets.reverse)
   | ln :: rest, off, labs, rets =>
-    let labs := match ln with
-      | .label (.block l) => (l, off) :: labs
-      | _ => labs
-    let rets := match ln with
-      | .ins (.bl _) _ | .ins (.blr _) _ => (off + 4) :: rets
-      | _ => rets
-    scanLines rest (off + ln.size) labs rets
+    scanLines rest (off + ln.size) (labsAfter ln off labs) (retsAfter ln off rets)
 
 /-- The handlers of a call (`some ti` for a `tryCall`). -/
 def handlersOf : Option TryInfo → List TryHandler
