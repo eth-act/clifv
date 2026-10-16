@@ -1,0 +1,25 @@
+{
+  "utc": "20261016T150246Z",
+  "branch": "agent/stock-driver-wip-backup-20261016T150246Z",
+  "commit": "fa02c3d200bbb5bed43f164e3f4ec7551564467d",
+  "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+  "captured_dirty_paths": 1701,
+  "additional_evidence_paths": 1,
+  "remote_commit_and_all_captured_blobs_verified": true,
+  "index_and_active_head_unchanged": true,
+  "archive": {
+    "utc": "20261016T150206Z",
+    "archive": "/home/lee/.clifv-recovery/20261016T150206Z-source-execution/checkpoint.tar.gz",
+    "sha256": "3226bdbd5ae15fddc6a9d80d8ee9a58ce2b26439491d49c356804258e99b62c0",
+    "bytes": 2999826,
+    "members": 50,
+    "every_member_verified": true,
+    "recovery_chain": {
+      "previous_remote_branch": "agent/stock-driver-wip-backup-20261016T143339Z",
+      "previous_remote_commit": "a47e37b151edc4803a65676950275954df3a359a",
+      "previous_remote_archive_path": "docs/research/recovery-evidence/mandatory-call-sink-20261016T143339Z.tar.gz",
+      "previous_archive_sha256": "07d4c57d5dd8cb70ac710ebdb9f769fee3fe52bc132f6ea224bb05aa9ad3d812",
+      "remote_and_local_chain_verified": true
+    }
+  }
+}
