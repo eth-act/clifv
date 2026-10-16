@@ -15,5 +15,23 @@ agents must follow this discipline.
   conflict in a task/status issue, mention the other contributor, and propose a
   boundary. Pause only conflicting work until resolved.
 - Follow `docs/TO-PROVE.md` §§7–8 for proof-work rules and task claims.
+- Keep all linked worktrees under `~/clifv/.worktrees/<name>` (the primary
+  checkout's `.worktrees/` directory), including worktrees for pinned upstream
+  sources. Create agent worktrees with the primary checkout's
+  `scripts/agent-worktree.sh <name> [base]`;
+  do not create sibling `clifv-wt` directories or nested worktree roots. Keep
+  `.worktrees/` ignored by Git.
+- Keep the disk footprint bounded: check free space and existing worktree/cache
+  usage before creating worktrees or running large/parallel builds. Target at
+  least 100 GiB free on the shared filesystem; keep at least 50 GiB free after
+  projected build growth. If headroom is insufficient, clean this project's
+  expendable outputs or reduce build concurrency before proceeding.
+- At each batch/PR completion or stop, remove unneeded clean worktrees and
+  obsolete build caches/artifacts. Preserve dirty/unpublished source, branches,
+  validation evidence and recovery backups; archive unique ignored evidence
+  before removing a worktree. Retain one warm build cache by default; additional
+  caches must serve active work and be removed when that work ends. Parallel
+  agents share the disk budget; do not clean other projects to meet it. The
+  worktree helper must not copy build caches automatically into each new tree.
 - All merges must be squash merges (`gh pr merge --squash`). This grants no
   permission to push or merge.
