@@ -1,0 +1,322 @@
+{
+  "goal": "#140 active/incomplete;production legacy",
+  "utc": "2026-10-16T06:08:58.639627+00:00",
+  "previous_goal_turn_classification": "progress:cleanup audit verified actual worktree/cache usage and durable resource discipline; no proof changes; this turn backs up22-root producer coverage and proves15 additional class roots",
+  "status": "scratch compiled,normal-standard-only;canonical integration/MCP/fullgates pending",
+  "scope": "Actual initial layout allocation records all integer classes, including overwritten and out-of-range exception reservations. Successful original build internally derives size/source-register/reserved-return/payload class consistency. Every actual Stock constructor/apply/named call/instruction scan/whole block scan appends exactly one class per fresh register. Whole branch/outgoing/core/node/reverse traversal preserves prior classes; actual returned class table is final table, with initial mapped source and reserved-register classes retained. Complete original LowerScope/Dominated/ArityOk source has actual Stock/raw/globalcheckedfallback/physical stages, actual named return root, genuine non-control body instruction and real scans, inhabiting initial/final/named/scan/block growth contracts.",
+  "limits": "Class preservation and initial/final mapped/reserved classes do not prove all emitted operand classes, alias class transport, control ABI validity, universal checker acceptance, register values, source simulation or totality. Full original source/DFG/world/block/whole-driver simulation/completeness and production integration remain mandatory. No new source filters/runtime/old theorem changes.",
+  "scratch_sources": {
+    "/tmp/StockTerminalFormObservation.lean": "3479fd742cca2711d6def6c8bad6c68e2fda22368a7fb7dcc88d24504bcf5756",
+    "/tmp/StockTerminalFormContracts.lean": "43bb50e413da780ad2444bc68a690ae698744a4104ef96caba0b2b68d68818f6",
+    "/tmp/StockTerminalFormWitness.lean": "1a8a011af69fbc3950a658ec73301d74bc4dee2273aa4b1388c00211c02e0f13",
+    "/tmp/StockCoreFormObservation.lean": "aadfbe8f061d12fea9377e38cf4571135c8c233f9dda4901a6c1fbe0d6d0e805",
+    "/tmp/StockCoreFormContracts.lean": "2dee57541c8f579e35963296e1c0dac025bd203340848464a444a75587a84bcc",
+    "/tmp/StockCoreFormWitness.lean": "c06d5ce33a2baca6ef1043600643bcaabd58bb3d41b7d54ca7aa96a5f9f2a03e",
+    "/tmp/StockEntryFormContracts.lean": "ea562b699ef05ff85330bceb79294b6553b09f5cf4b3b19c886ebabaacbdf316",
+    "/tmp/StockWholeFormContracts.lean": "77131d964e7f174e854722fe3083c12a1500c2e47e99f3ac2b80969015dcf16f",
+    "/tmp/StockPreparedFormContracts.lean": "e4d28deb70f227dfa85a11018634050f7476956de97369c7f58e67f0a0a2e969",
+    "/tmp/StockWholeFormSource.lean": "c492d1d5079e6db35a90b9ad27c5a9956c84e48ffa7eb23e38e77e674f01f783",
+    "/tmp/StockWholeFormObservation.lean": "8f677cd537c724371916574a43d2156d65d0008c487b6aea7e521ef3721aabc9",
+    "/tmp/StockWholeFormWitness.lean": "6cdaaa40fd5cdd65c8afb48e4ac2f362c629dba3c8ec4f593158e363e38713e9",
+    "/tmp/StockClassGrowthContracts.lean": "f22a47bc5d319d51c7d6fb7fc70949de80f4873517ce655f9cf3d773d853adef",
+    "/tmp/StockInitialClasses.lean": "a9cf58eb8f2a77612517ff9d05e79c113ea59123181a5d06d1078ca66997b81b",
+    "/tmp/StockWholeClassGrowth.lean": "3c6897e63d216b8140900a348ddc6d565acff32f9b69927b2fc6f894ffed0c36",
+    "/tmp/StockClassGrowthWitness.lean": "d698f1c1e713fa11400619b06e0116bd2c1b4b02f990ec608c6db6512483fc8e"
+  },
+  "scratch_compiled_modules": {
+    "/tmp/StockTerminalFormObservation.olean": "40b095232c49f2bc7f94106c8b71961129105e2b0652ded41aaf0e6f8a57e925",
+    "/tmp/StockTerminalFormContracts.olean": "02e7bcda6dda40790229b2933c0bc9f57a74292b8e08f5c9c0300d68c7e88ab8",
+    "/tmp/StockTerminalFormWitness.olean": "625dda6e0ce46e934e3a7d635f5c445e446a90add778aff793714c68a8b76720",
+    "/tmp/StockCoreFormObservation.olean": "e5acd7d72c858864edead3313253cdc07b3c41532b31e60955f4743ac99a093c",
+    "/tmp/StockCoreFormContracts.olean": "11372d4e0c42ba93dd12a905dac5f3ae3d91b62eb63382e3f215591862e37a19",
+    "/tmp/StockCoreFormWitness.olean": "8cb07c37e1e7dd3df93c16d26777b1a38e434e819439e8e7260fe7f605eb135b",
+    "/tmp/StockEntryFormContracts.olean": "ab9d38a12202a5586e285111a1f77b9fb703d9299a75ef636a4a881bce91fc91",
+    "/tmp/StockWholeFormContracts.olean": "c1b34fd75c6a5a38a806ca09ba9ce049b5209d6f05ca7bfb1cc6ec5d91b3fb13",
+    "/tmp/StockPreparedFormContracts.olean": "f0038d7f8093ffa7f442512864b6a55c061aac3bf9e2965ce66f18bf62c1ad77",
+    "/tmp/StockWholeFormSource.olean": "ebb70403ddf352aab2cd71e2aa8f926e9d970ade3f8d6da268eac09e0afb2e80",
+    "/tmp/StockWholeFormObservation.olean": "1b952baeaab59990bb2fb0515ddf48f0b333302203a6c9563afd3cffa9800a6a",
+    "/tmp/StockWholeFormWitness.olean": "a6a2397b202bad51c1e7b743c680b918f3772ba602dc3b6ce1c56593da282597",
+    "/tmp/StockClassGrowthContracts.olean": "3174f929f50c81a978c931d20c0b2825097bbf468217e97e5ba230b48d104106",
+    "/tmp/StockInitialClasses.olean": "e2c3f9601c462d22431b3e63a669930aea377881febc084245cde44a4ad080c0",
+    "/tmp/StockWholeClassGrowth.olean": "9eb93fec2bd533bc5060781daa66a82e2e443326d247acf11f659b9bd1abf1b8",
+    "/tmp/StockClassGrowthWitness.olean": "e7410c6beab66dbec0e3b0ef28d03c7bd3f949ba412d376f72e2a6d0cadeb515"
+  },
+  "compiled_logs": {
+    "/tmp/stock-terminal-form-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-terminal-contracts-build.log": "c88e90677f244a60b0a51d60d401557f6f4cd15582cf853f9b21438d42c7b320",
+    "/tmp/stock-terminal-witness-build.log": "06328b6e0e2d6a8a55dc69320c9f7dd1bcc9028b71bb9fa9a734380cfc8f2714",
+    "/tmp/stock-core-form-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-core-contracts-build.log": "b03a0a9d20f4539d30de3673d9c2969a3b01e05c1e3c21bf54aee99f5821db56",
+    "/tmp/stock-core-witness-build.log": "6b654de61206404c9dc483c0b4f93e7a95aef82d4b78e790d33057adcaab7a78",
+    "/tmp/stock-entry-contracts-build.log": "020ff3bbfe39db6de916c0ff1039d5910ea5c6bba4080aa3c3db34831ecefc96",
+    "/tmp/stock-whole-contracts-build.log": "296daed9599f435516b317e806bb52bdc7047fb4b549bfad80b42127f10250fb",
+    "/tmp/stock-prepared-forms-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-source-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-form-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-witness-build.log": "ef304946022ed915cdee73c18f3444e6705221fbbc68a91ffeeb1def0ce76e8c",
+    "/tmp/stock-class-growth-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-initial-classes-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-class-growth-build.log": "383eb4ddcf310e3f76b561d4a458b33138b866692a1a0e2951cd7d33c7da91f0",
+    "/tmp/stock-class-growth-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "source_scans": {
+    "/tmp/StockTerminalFormObservation.lean": [],
+    "/tmp/StockTerminalFormContracts.lean": [],
+    "/tmp/StockTerminalFormWitness.lean": [],
+    "/tmp/StockCoreFormObservation.lean": [],
+    "/tmp/StockCoreFormContracts.lean": [],
+    "/tmp/StockCoreFormWitness.lean": [],
+    "/tmp/StockEntryFormContracts.lean": [],
+    "/tmp/StockWholeFormContracts.lean": [],
+    "/tmp/StockPreparedFormContracts.lean": [],
+    "/tmp/StockWholeFormSource.lean": [],
+    "/tmp/StockWholeFormObservation.lean": [],
+    "/tmp/StockWholeFormWitness.lean": [],
+    "/tmp/StockClassGrowthContracts.lean": [],
+    "/tmp/StockInitialClasses.lean": [],
+    "/tmp/StockWholeClassGrowth.lean": [],
+    "/tmp/StockClassGrowthWitness.lean": []
+  },
+  "normal_axiom_audit": {
+    "path": "/tmp/stock-class-all-axioms.log",
+    "sha256": "946c5b5b2dbd1c56d5652cf5439957b55478f7ccaa101f198cac43b9c4c2788d",
+    "roots": {
+      "Backend.Stock.Proof.Coverage.TerminalDraftObservation.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_retTrap_emission_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_emit_retTrap_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scan_retTrap_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scan_slot_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scanBlock_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_built_scanBlock_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraftWitness.stock_complete_terminal_scan_form_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraftObservation.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraft.stock_emitBranch_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraft.stock_blockCore_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraftWitness.stock_complete_core_form_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.EntryDraft.stock_assemble_form_coverage": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsDraft.stock_lower_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsDraft.stock_lower_formsCovered": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.PreparedFormsDraft.stock_prepared_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.PreparedFormsDraft.stock_prepared_formsCovered": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.source_scope": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.source_arity": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.source_dominated": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsWitness.stock_whole_forms_entry_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_ctor_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_apply_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_named_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scan_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scanBlock_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_ctor_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_apply_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scan_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scanBlock_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_allocate_classes": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_build_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_allocate_classes_witness": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_build_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeClassGrowthDraft.stock_lower_class_growth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthWitnessDraft.stock_complete_class_growth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "all37_standard_only": true,
+    "all22_prior_exact_sets_preserved": true
+  },
+  "new_public_roots": [
+    "Backend.Stock.Proof.ClassGrowthDraft.stock_ctor_classGrowth",
+    "Backend.Stock.Proof.ClassGrowthDraft.stock_apply_classGrowth",
+    "Backend.Stock.Proof.ClassGrowthDraft.stock_named_classGrowth",
+    "Backend.Stock.Proof.ClassGrowthDraft.stock_scan_classGrowth",
+    "Backend.Stock.Proof.ClassGrowthDraft.stock_scanBlock_classGrowth",
+    "Backend.Stock.Proof.ClassGrowthDraft.stock_ctor_classGrowth_witness",
+    "Backend.Stock.Proof.ClassGrowthDraft.stock_apply_classGrowth_witness",
+    "Backend.Stock.Proof.ClassGrowthDraft.stock_scan_classGrowth_witness",
+    "Backend.Stock.Proof.ClassGrowthDraft.stock_scanBlock_classGrowth_witness",
+    "Backend.Stock.Proof.InitialClassesDraft.stock_allocate_classes",
+    "Backend.Stock.Proof.InitialClassesDraft.stock_build_classes",
+    "Backend.Stock.Proof.InitialClassesDraft.stock_allocate_classes_witness",
+    "Backend.Stock.Proof.InitialClassesDraft.stock_build_classes_witness",
+    "Backend.Stock.Proof.WholeClassGrowthDraft.stock_lower_class_growth",
+    "Backend.Stock.Proof.ClassGrowthWitnessDraft.stock_complete_class_growth_witness"
+  ],
+  "proof_development": "Reused existing allocation-flow case decomposition and generic class append/transport lemmas. Corrected dependent option annotations, reserved identifier and actual do-loop normalization before final passing compilation. No scratch cold-kernel recomputation; complete witness reuses cached observed source pipeline.",
+  "freeze_preserved": {
+    "all2003_Lean_bytes_and_set": true,
+    "all755_recorded_hashes": true,
+    "validation_scripts": true
+  },
+  "serial": {
+    "state": "running",
+    "pid": 2172773,
+    "index": 381,
+    "total": 1011,
+    "current": "FV.Backend.Proof.StockCastWitness"
+  },
+  "watcher": {
+    "state": "running",
+    "phase": "waiting_serial",
+    "watcher_pid": 2438436,
+    "serial_controller_pid": 2172773
+  },
+  "resources": {
+    "free_GiB": 826,
+    "new_worktrees": 0,
+    "warm_caches": 1,
+    "new_scratch_compiled_bytes": 5027560,
+    "lightweight_cap_GiB": 8,
+    "OMP_LEAN_workers": 2,
+    "cleanup": "No disposable clean tree or obsolete duplicate warm cache; active scratch outputs retained for integration; other projects untouched."
+  },
+  "next_steps": [
+    "Preserve frozen canonical source/scripts until exact deferred watcher terminal; same live serial2172773/session22475 and watcher2438436/session35660; no observation-timeout restart",
+    "Verify queued1992-root audit and all full gates then finalize frozen-batch evidence",
+    "Integrate all16 scratch modules/37roots as one coherent additive coverage/class batch, retain separate kernels, validate renamed imports and complete witnesses, exactly one bundled37-root MCP, then2029-root normal audit preserving all1992 prior exactsets and all full gates",
+    "Derive emitted operand/instruction classes and final-alias class transport, control ABI/operand validity, original-input must-availability/EntryAvailAt/arbitrary blocks/edges/checker fixpoint/fallback acceptance/completeness/allocation/physical readiness and Stock lowering totality",
+    "Complete every original semantic family/effect/call/trap/sinking/TryCall/source/DFG/world/block/whole-driver simulation/completeness obligation, actual compiler/checker/linker/generated-proof cutover, complete production witnesses/final audits/gates/fresh comparison with original input/theorem/axiom/identity/stage/#179 parity"
+  ],
+  "superseding_combined_scratch_evidence": "docs/research/stock-binding-class-scratch.json",
+  "integration_update": "Integrate ALL25scratchmodules/58roots after frozen watcher terminal and receipts verified; one bundled58-rootMCP/consolidated2050normal/fullgates; no scratchMCP yet."
+}

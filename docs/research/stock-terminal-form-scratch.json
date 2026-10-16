@@ -1,0 +1,130 @@
+{
+  "goal": "#140 active/incomplete; production legacy",
+  "updated_utc": "2026-10-16T05:01:42.590677+00:00",
+  "previous_goal_turn_classification": "progress: universal whole-body forms/returned SegAt and complete650-job witness/2normal-MCP; backed upb4cde4ce and installed deferred full validation",
+  "status": "scratch proof development compiled and normal-audited; not integrated or merge-ready; current frozen repository batch unaffected",
+  "scope": "Six contracts: real return/trap CovSince from actual checked state analysis; actual no-copy return/trap binding and emitted-form/static facts; arbitrary scan decisions at return/trap data; all ScanSlot cases; complete scans; actual original build/scope/block/range/terminator-data supplies mapped/clean/slot facts internally. No new executable source check or input filter. Separate kernel observation and complete original-condition source/raw/checked/physical witness with real nonempty return emission and whole scan with a real non-control instruction.",
+  "scratch_sources": {
+    "/tmp/StockTerminalFormObservation.lean": "3479fd742cca2711d6def6c8bad6c68e2fda22368a7fb7dcc88d24504bcf5756",
+    "/tmp/StockTerminalFormContracts.lean": "43bb50e413da780ad2444bc68a690ae698744a4104ef96caba0b2b68d68818f6",
+    "/tmp/StockTerminalFormWitness.lean": "1a8a011af69fbc3950a658ec73301d74bc4dee2273aa4b1388c00211c02e0f13"
+  },
+  "scratch_compiled_modules": {
+    "/tmp/StockTerminalFormObservation.olean": "40b095232c49f2bc7f94106c8b71961129105e2b0652ded41aaf0e6f8a57e925",
+    "/tmp/StockTerminalFormContracts.olean": "02e7bcda6dda40790229b2933c0bc9f57a74292b8e08f5c9c0300d68c7e88ab8",
+    "/tmp/StockTerminalFormWitness.olean": "625dda6e0ce46e934e3a7d635f5c445e446a90add778aff793714c68a8b76720"
+  },
+  "normal_axiom_audit": {
+    "path": "/tmp/stock-terminal-scratch-axioms.log",
+    "sha256": "125e17d9b14192a3c6edb19e372e8056629f74a347ca43b1aca52849cde1adde",
+    "roots": {
+      "Backend.Stock.Proof.Coverage.TerminalDraftObservation.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_retTrap_emission_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_emit_retTrap_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scan_retTrap_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scan_slot_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scanBlock_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_built_scanBlock_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraftWitness.stock_complete_terminal_scan_form_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "all8_standard_only": true
+  },
+  "source_scans": {
+    "/tmp/StockTerminalFormObservation.lean": [],
+    "/tmp/StockTerminalFormContracts.lean": [],
+    "/tmp/StockTerminalFormWitness.lean": []
+  },
+  "compiled_logs": {
+    "/tmp/stock-terminal-form-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-terminal-contracts-build.log": "c88e90677f244a60b0a51d60d401557f6f4cd15582cf853f9b21438d42c7b320",
+    "/tmp/stock-terminal-witness-build.log": "06328b6e0e2d6a8a55dc69320c9f7dd1bcc9028b71bb9fa9a734380cfc8f2714"
+  },
+  "kernel_resource_window": {
+    "controller_pid": 2172773,
+    "started_utc": "2026-10-16T04:54:52.076047+00:00",
+    "reason": "Isolate new scratch complete return/scan kernel while frozen batch sources remain unchanged; resume same controller",
+    "existing_children": [
+      "2484691"
+    ],
+    "returncode": 0,
+    "controller_resumed_utc": "2026-10-16T04:55:40.434642+00:00"
+  },
+  "current_frozen_batch": "docs/research/stock-body-form-checkpoint.json",
+  "freeze_preserved": {
+    "all2003_Lean_source_bytes_and_set": true,
+    "all755_recorded_source_hashes": true,
+    "validation_scripts": true
+  },
+  "serial_rebuild": {
+    "state": "running",
+    "pid": 2172773,
+    "index": 306,
+    "total": 1011,
+    "current": "FV.Backend.Proof.StockReturnDriverRuns"
+  },
+  "deferred_validation": {
+    "state": "running",
+    "phase": "waiting_serial",
+    "watcher_pid": 2438436,
+    "serial_controller_pid": 2172773
+  },
+  "live_sessions": {
+    "serial": 22475,
+    "deferred_validation": 35660
+  },
+  "next_steps": [
+    "Poll same live serial2172773/session22475 and deferred2438436/session35660; do not edit frozen repository source/validation scripts until deferred watcher terminal",
+    "Verify current1992-root audit/all1969 prior/seven exact compiler sets and all full gates from actual deferred receipts, finalize evidence/status/backup; no observation-timeout restart",
+    "After freeze release integrate three scratch modules as additive canonical proof modules, preserving observation cache separation; update imports/namespaces, build and rerun normal audit and exactly one bundled8-root MCP; current draft has no MCP result and is not merge-ready",
+    "Suggested modules StockScanFormCoverageKernel (observation), StockScanFormCoverage (six contracts), StockScanFormCoverageWitness (complete witness); namespace/import changes need target revalidation. Superseded combined /tmp/stock-terminal-form-draft.lean is not the validated entry point",
+    "Consolidate then all2000 roots (1992existing+8new), preserve every old exact axiom set/theorem/input/identity/stage, full gates and durable backup after canonical integration",
+    "Continue universal whole-core/entry/branch/assembly/preparation coverage, control ABI/static validity, class/dataflow/EntryAvailAt/arbitrary block/edge/checker fixpoint/fallback acceptance/completeness/allocation/physical readiness",
+    "Complete all original source/DFG/world/block/whole-driver simulation/completeness, remaining families/effects/traps/sinking and actual compiler/checker/linker/generated-proof production integration; complete production witnesses/final audits/gates/fresh complete stock comparison preserving original parity and at least#179"
+  ],
+  "resources": {
+    "free_GiB": 829,
+    "new_worktrees": 0,
+    "warm_caches": 1,
+    "scratch_olean_bytes": 1668592,
+    "scratch_cache_purpose": "active draft editing until integration after frozen batch; remove after source/evidence preserved and canonical cache warm",
+    "cold_kernel_concurrency": 1,
+    "cold_kernel_cap_GiB": 20,
+    "lightweight_proof_cap_GiB": 8,
+    "OMP_LEAN_workers": 2
+  },
+  "coordination": "All contributor statuses/#140 read; same Backend/Proof boundary with kevaundray FV/Link/default/verified/frontend/totality work. No compiler/linker/frontend/CLI/default/peer branch edits.",
+  "superseding_combined_scratch_evidence": "docs/research/stock-binding-class-scratch.json",
+  "integration_update": "Integrate ALL25scratchmodules/58roots after frozen watcher terminal and receipts verified; one bundled58-rootMCP/consolidated2050normal/fullgates; no scratchMCP yet."
+}
