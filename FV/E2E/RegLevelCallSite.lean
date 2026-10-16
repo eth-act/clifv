@@ -17,7 +17,9 @@ At a `Q` state whose next item is a `call`/`tryCall`, the pc is at the item's ca
   `RL.label_unique`) anchors them, so the pc's call line is the call's.
 * `q_callSite_last`: for the last block, nothing anchors the lines (an identical line
   sequence elsewhere also satisfies `Q`), so the decidable check `lastCallsOk` is assumed:
-  every call of the last block has the handlers of every call of `af` with the same callee.
+  every call of the last block has the handlers of every call line of `fa` with the same
+  callee, unless it is a plain call followed by a trap (`nextLine?`, the `udf` after a call that
+  does not return, e.g. `_Unwind_Resume`) and that call line is not followed by the trap.
 -/
 
 namespace Backend.Proof
@@ -528,7 +530,8 @@ theorem getElem?_mid {α : Type} (X : List α) (a : α) (Z : List α) {n : Nat} 
 /-- **A `Q` state at a call item, taken apart**: the call line `j0` at the pc, the lines `ls` of
 the block's remaining code after it, and the call's index `n` in `af.calls` (with its callee,
 the call line's, at index `n` of the callees), between the calls of the blocks before `b` and
-those of blocks `0..b`. -/
+those of blocks `0..b`; the block's code around the call (`P ++ a :: c2`), and for a plain call
+the lines `ls` = the call line, then the lines of `c2`. -/
 theorem q_call_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
@@ -542,7 +545,11 @@ theorem q_call_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
       (R.af.blocks.toList.flatMap blockKeys)[n]? = (Line.ins x none).callKey ∧
       (∃ p, R.af.blocks[b]? = some p) ∧
       ((R.af.blocks.toList.take b).flatMap blockCalls).length ≤ n ∧
-      n + nCalls ls = ((R.af.blocks.toList.take (b + 1)).flatMap blockCalls).length := by
+      n + nCalls ls = ((R.af.blocks.toList.take (b + 1)).flatMap blockCalls).length ∧
+      ∃ (P : List AInst) (a : AInst) (c2 : List AInst) (ls2 : List Line) (ps ps' : PState),
+        R.af.blocks[b]? = some (vb.label, (P ++ a :: c2).toArray) ∧ aCall a = some c ∧
+        n = ((R.af.blocks.toList.take b).flatMap blockCalls).length + (P.filterMap aCall).length ∧
+        codeLinesE R.ctx R.af c2 ps = .ok (ls2, ps') ∧ (c = none → ls = .ins x none :: ls2) := by
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, hal, hit, hsplit,
     hasg, hc1, -, -, -, hc2, h1, h2, -, hdrop, hpc, -⟩ := q_op hq hvb hi
   -- the allocated call
@@ -610,7 +617,7 @@ theorem q_call_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
     simp [blockKeys, List.filterMap_append, hkI]
   refine ⟨j0, x, .ins x none :: rest1 ++ ls2, T,
     ((R.af.blocks.toList.take b).flatMap blockCalls).length + (P.filterMap aCall).length,
-    hj, hpc, hx, by rw [hdrop, List.append_assoc], ?_, ?_, ⟨_, hab⟩, by omega, ?_⟩
+    hj, hpc, hx, by rw [hdrop, List.append_assoc], ?_, ?_, ⟨_, hab⟩, by omega, ?_, ?_⟩
   · rw [calls_eq, flatMap_mid _ _ b _ hab', hbc, List.append_assoc, ← List.append_assoc]
     exact getElem?_mid _ _ _ (by simp)
   · rw [flatMap_mid _ _ b _ hab', hbk, List.append_assoc, ← List.append_assoc, hkx]
@@ -619,6 +626,12 @@ theorem q_call_core {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs 
       codeLinesE_callKeys h2]
     simp [filterMap_aKey_length]
     omega
+  · refine ⟨P, .inst i', c2, ls2, psm, ps2, by rw [hab, hP]; simp, hcI, rfl, h2, fun hc0 => ?_⟩
+    rcases hic with ⟨rfl, -⟩ | ⟨ti, -, hti⟩
+    · have : rest1 = [] := by
+        cases hd : ic.dest <;> simp [MInst.lines, hd, pure, Except.pure] at hl1 <;> simp [hl1]
+      subst this; rfl
+    · rw [hc0] at hti; cases hti
 
 /-! ## The call-site pair of a `Q` state's call -/
 
@@ -642,7 +655,7 @@ theorem q_callSite {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs :
     ∃ j x, R.L[j]? = some (.ins x none) ∧ Arm.r .PC s = R.pcOf j ∧
       ((∃ n, x = .bl n) ∨ ∃ r, x = .blr r) ∧
       (c, lineOffset R.L j + 4) ∈ R.af.calls.zip (scanLines R.fa.lines.toList 0 [] []).2 := by
-  obtain ⟨j0, x, ls, T, n, hj, hpc, hx, hdrop, hcn, -, -, -, hn⟩ := q_call_core hR hq hvb hi hc
+  obtain ⟨j0, x, ls, T, n, hj, hpc, hx, hdrop, hcn, -, -, -, hn, -⟩ := q_call_core hR hq hvb hi hc
   obtain ⟨⟨l', code'⟩, hb1⟩ := Option.isSome_iff_exists.mp hnl
   obtain ⟨J, hJ, hJk⟩ := label_at hR hb1
   have hnxt : nxtOf R.af b = [.label (.block l')] := by simp [nxtOf, hb1]
@@ -669,18 +682,62 @@ theorem q_callSite {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs :
 
 /-! ## Calls of the last block -/
 
+/-- The line the code after a plain call starts with, where the emitter's state does not matter:
+a trap (`udf`, the code after a call that does not return). -/
+def nextLine? : List AInst → Option (Insn × Option Clif.TrapCode)
+  | .inst (.udf code) :: _ => some (.udf 0xc11f, some code)
+  | _ => none
+
+/-- The line is the instruction line `l`. -/
+def lineIs : Option Line → Insn × Option Clif.TrapCode → Bool
+  | some (.ins i t), l => decide ((i, t) = l)
+  | _, _ => false
+
+/-- The calls of a block's code: the call's index among the block's calls, its handlers, and the
+code after it. -/
+def codeCalls (code : List AInst) : List (Nat × Option TryInfo × List AInst) :=
+  (List.range code.length).filterMap fun q => match code[q]? with
+    | some a => (aCall a).map fun c => (((code.take q).filterMap aCall).length, c, code.drop (q + 1))
+    | none => none
+
 /-- **The check for the calls of the last block** (decidable, on `af` and its final code `fa`):
-every call of the last block shares its handlers (`Option TryInfo`) with every call of `af`
-whose call line has the same callee. -/
+for every call of the last block and every call line of `fa` with the same callee, the call line
+is a call with the same handlers (`Option TryInfo`), or the call of the last block is a plain
+call followed by a line (`nextLine?`) the call line is not followed by. -/
 def lastCallsOk (af : AFunc) (fa : FnAsm) : Bool :=
-  let pairs := af.calls.zip (callKeys fa.lines.toList)
-  let k := ((af.blocks.back?.map blockCalls).getD []).length
-  (pairs.drop (af.calls.length - k)).all fun p1 =>
-    pairs.all fun p2 => decide (p2.2 = p1.2 → p2.1 = p1.1)
+  let L := fa.lines.toList
+  let code := (af.blocks.back?.map (·.2.toList)).getD []
+  let base := af.calls.length - (code.filterMap aCall).length
+  (codeCalls code).all fun q =>
+    (callIdx L).zipIdx.all fun p =>
+      decide ((callKeys L)[p.2]? ≠ (callKeys L)[base + q.1]?) ||
+        decide (af.calls[p.2]? = some q.2.1) ||
+        (q.2.1.isNone && match nextLine? q.2.2 with
+          | some l => !lineIs L[p.1 + 1]? l
+          | none => false)
+
+theorem mem_codeCalls {P c2 : List AInst} {a : AInst} {c : Option TryInfo} (ha : aCall a = some c) :
+    ((P.filterMap aCall).length, c, c2) ∈ codeCalls (P ++ a :: c2) := by
+  simp only [codeCalls, List.mem_filterMap, List.mem_range]
+  refine ⟨P.length, by simp, ?_⟩
+  simp [ha, List.take_left']
+
+theorem nextLine?_some {c : List AInst} {l : Insn × Option Clif.TrapCode} (h : nextLine? c = some l) :
+    ∃ code c3, c = .inst (.udf code) :: c3 ∧ l = (.udf 0xc11f, some code) := by
+  unfold nextLine? at h
+  split at h
+  · exact ⟨_, _, rfl, (Option.some.inj h).symm⟩
+  · cases h
+
+theorem ftStep_trap (i : Insn) (t : Clif.TrapCode) (n1 n2 : Option Line) :
+    ftStep (.ins i (some t)) n1 n2 = ([.ins i (some t)], 1) := by
+  unfold ftStep
+  split <;> simp_all
 
 /-- **The call-site pair of a call in the last block** (S10e): as `q_callSite`, for `af`'s last
 block, under `lastCallsOk`. `Q` does not locate the item's lines there (nothing follows them in
-the block lines), but every call line with the call's callee is a call with the same handlers. -/
+the block lines), but every call line with the call's callee is a call with the same handlers,
+or not followed by the line that follows this (plain) call in `Q`'s lines. -/
 theorem q_callSite_last {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
     {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
@@ -691,7 +748,8 @@ theorem q_callSite_last {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
     ∃ j x, R.L[j]? = some (.ins x none) ∧ Arm.r .PC s = R.pcOf j ∧
       ((∃ n, x = .bl n) ∨ ∃ r, x = .blr r) ∧
       (c, lineOffset R.L j + 4) ∈ R.af.calls.zip (scanLines R.fa.lines.toList 0 [] []).2 := by
-  obtain ⟨j0, x, ls, T, n, hj, hpc, hx, -, hcn, hkn, ⟨p, hp⟩, hA, hn⟩ := q_call_core hR hq hvb hi hc
+  obtain ⟨j0, x, ls, T, n, hj, hpc, hx, hdrop, hcn, hkn, -, -, hn, P, a, c2, ls2, ps, ps', hp, haC,
+    hnP, hc2, hls⟩ := q_call_core hR hq hvb hi hc
   have hxc := isCall_of_call hx
   obtain ⟨kd, hkd⟩ : ∃ kd, (Line.ins x none).callKey = some kd := by
     rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> exact ⟨_, rfl⟩
@@ -703,15 +761,18 @@ theorem q_callSite_last {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
     have h1 := (Array.getElem?_eq_some_iff.mp hp).1
     have h2 := Array.getElem?_eq_none_iff.mp hlast
     omega
-  have hback : R.af.blocks.back? = some p := by
+  have hback : R.af.blocks.back? = some (vb.label, (P ++ a :: c2).toArray) := by
     rw [Array.back?_eq_getElem?, show R.af.blocks.size - 1 = b by omega, hp]
-  have hpL : R.af.blocks.toList[b]? = some p := by rw [Array.getElem?_toList, hp]
+  have hpL : R.af.blocks.toList[b]? = some (vb.label, (P ++ a :: c2).toArray) := by
+    rw [Array.getElem?_toList, hp]
   have hall : (R.af.blocks.toList.take (b + 1)) = R.af.blocks.toList :=
     List.take_of_length_le (by simp; omega)
-  have hcl : R.af.calls.length = n + nCalls ls := by rw [hn, hall, calls_eq]
-  have hk : ((R.af.blocks.toList.take (b + 1)).flatMap blockCalls).length =
-      ((R.af.blocks.toList.take b).flatMap blockCalls).length + (blockCalls p).length := by
-    rw [flatMap_take_succ _ _ b _ hpL, List.length_append]
+  have hk : R.af.calls.length = ((R.af.blocks.toList.take b).flatMap blockCalls).length +
+      ((P ++ a :: c2).filterMap aCall).length := by
+    have h := flatMap_take_succ blockCalls _ b _ hpL
+    rw [hall] at h
+    rw [calls_eq, h, List.length_append]
+    simp [blockCalls]
   -- the call line `j0` is the `n0`-th call line
   have hk0 : (callKeys R.L)[nCalls (R.L.take j0)]? = some kd := by
     rcases callKeys_at hj with h | h
@@ -721,21 +782,40 @@ theorem q_callSite_last {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
     rw [← hlen]; exact (List.getElem?_eq_some_iff.mp hk0).1
   obtain ⟨c0, hc0⟩ : ∃ c0, R.af.calls[nCalls (R.L.take j0)]? = some c0 :=
     ⟨_, List.getElem?_eq_getElem hn0lt⟩
-  -- the check at the pairs of the calls `n` (this one) and `n0` (the pc's)
   have hkn' : (callKeys R.L)[n]? = some kd := by rw [hkeys, hkn, hkd]
+  -- the check at this call and the pc's call line
   simp only [lastCallsOk, hback, Option.map_some, Option.getD_some, List.all_eq_true,
-    decide_eq_true_eq] at hok
-  have hp1 : (c, kd) ∈ (R.af.calls.zip (callKeys R.fa.lines.toList)).drop
-      (R.af.calls.length - (blockCalls p).length) := by
-    apply List.mem_of_getElem? (i := n - (R.af.calls.length - (blockCalls p).length))
-    rw [List.getElem?_drop, show R.af.calls.length - (blockCalls p).length +
-      (n - (R.af.calls.length - (blockCalls p).length)) = n by omega, List.getElem?_zip_eq_some]
-    exact ⟨hcn, hkn'⟩
-  have hp2 : (c0, kd) ∈ R.af.calls.zip (callKeys R.fa.lines.toList) := by
-    apply List.mem_of_getElem? (i := nCalls (R.L.take j0))
-    rw [List.getElem?_zip_eq_some]
-    exact ⟨hc0, hk0⟩
-  obtain rfl : c0 = c := hok _ hp1 _ hp2 rfl
-  exact ⟨j0, x, hj, hpc, hx, mem_calls_zip hj hxc rfl hc0⟩
+    ] at hok
+  have h1 := hok _ (mem_codeCalls (P := P) (c2 := c2) haC) (j0, nCalls (R.L.take j0))
+    (List.mem_zipIdx_iff_getElem?.mpr (callIdx_at R.L j0 _ hj hxc))
+  have hbase : R.af.calls.length - ((P ++ a :: c2).filterMap aCall).length +
+      (P.filterMap aCall).length = n := by omega
+  simp only [hbase, show R.fa.lines.toList = R.L from rfl, hk0, hkn', ne_eq, not_true_eq_false,
+    decide_false, Bool.false_or, Bool.or_eq_true, decide_eq_true_eq, Bool.and_eq_true,
+    Option.isNone_iff_eq_none] at h1
+  rcases h1 with h1 | ⟨rfl, h1⟩
+  · rw [hc0] at h1
+    obtain rfl := Option.some.inj h1
+    exact ⟨j0, x, hj, hpc, hx, mem_calls_zip hj hxc rfl hc0⟩
+  · -- a plain call followed by a trap: the pc's call line is followed by the trap line
+    exfalso
+    obtain ⟨l, hl, h1⟩ : ∃ l, nextLine? c2 = some l ∧ lineIs R.L[j0 + 1]? l = false := by
+      revert h1; cases nextLine? c2 <;> simp
+    obtain ⟨code, c3, rfl, rfl⟩ := nextLine?_some hl
+    simp only [codeLinesE, bind, Except.bind, ainstLines, MInst.lines, pure, Except.pure] at hc2
+    split at hc2
+    · cases hc2
+    · rename_i r hr
+      simp only [Except.ok.injEq, Prod.mk.injEq] at hc2
+      obtain ⟨rfl, -⟩ := hc2
+      have hnx : nxtOf R.af b = [] := by simp [nxtOf, hlast]
+      rw [hls rfl, hnx, List.append_nil, List.singleton_append, ftList_cons, ftStep_call hx] at hdrop
+      simp only [List.drop_one, List.tail_cons, List.singleton_append] at hdrop
+      rw [ftList_cons, ftStep_trap] at hdrop
+      simp only [List.drop_one, List.tail_cons, List.singleton_append] at hdrop
+      rw [relaxLines_cons, relaxLine_of_none (by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl),
+        relaxLines_cons, relaxLine_of_none rfl, List.singleton_append, List.singleton_append,
+        List.cons_append, List.cons_append] at hdrop
+      simp [drop_get1 hdrop, lineIs] at h1
 
 end Backend.Proof
