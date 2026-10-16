@@ -439,11 +439,12 @@ theorem divisor_sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) 
       exact .inr (by simp [hyv])
     have hd : DivOpnd (e == 0) b (ρ y) := by
       have hv := hh ⟨_, hry⟩
-      cases ty <;> simp [Clif.Ty.width] at htw
-      simp only [VHolds, Clif.Ty.width] at hv
-      unfold DivOpnd
-      simp only [Clif.Ty.width, show ¬ (64 : Nat) ≤ 32 by decide, ↓reduceIte, lo64, BitVec.setWidth_eq]
-      exact hv
+      cases ty <;> simp [Clif.Ty.width] at htw <;>
+      · simp only [VHolds, Clif.Ty.width] at hv
+        unfold DivOpnd
+        simp only [Clif.Ty.width, show ¬ (64 : Nat) ≤ 32 by decide, ↓reduceIte, lo64,
+          BitVec.setWidth_eq]
+        exact hv
     have hz := hd.zero_iff (by omega) wd (.vreg y .int)
     rw [show szOf ty.width = .size64 by rw [htw]; rfl] at hz
     refine ⟨fun h0 => trapRun_trapIf_zero hR _ _ _ ρ wd (by rw [hz, h0]; simp), fun h0 => ?_⟩
