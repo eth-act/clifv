@@ -31,7 +31,7 @@ def outOfScopeMsg : String := "the input is outside the verified subset (InScope
 /-- `InScopeIn` with the per-function conditions (`fnScopeInB`, decided on the CLIF function
 alone) evaluated in parallel tasks. -/
 def inScopeInPar (I : LinkInput) : Bool :=
-  progScopeB I.prog (fun n => I.syms.lookup n) && (parMap fnScopeInB I.prog.funcs).all id
+  progScopeInB I.prog (fun n => I.syms.lookup n) && (parMap fnScopeInB I.prog.funcs).all id
 
 theorem inScopeInPar_eq (I : LinkInput) : inScopeInPar I = InScopeIn I := by
   simp only [inScopeInPar, InScopeIn, parMap_eq, List.all_map, Function.comp_def, id]

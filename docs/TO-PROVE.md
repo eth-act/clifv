@@ -79,11 +79,16 @@ after the change) is removed; `Link.compileExeOpt_total_reach_input` now rests o
 `compileExe_total_reach`. The shipped compiler `Link.DeadCleanup.compileExe` still checks
 `InScopeP`; `Link.DeadCleanup.compileExe_total_reach_input` (`FV/Link/ExeInputReachCleanupIn.lean`)
 takes `InScopeIn`.
-`lean-link --verified` checks `fnScopeInB`; on `lean-e2e-check`'s 1150 in-scope functions and the
-`cargo fv` crates (fv-demo 1346, survey 3179 functions) both scopes accept the same functions.
-Left: `progScopeB`'s `addrSlotsInB` (shared by both) reads whether the lowered code has an
-outgoing-argument area (`outAreaB`, by running `lowerFunction`; no acceptance condition: an error
-counts as no area).
+`lean-link --verified` checks `fnScopeInB` and `addrSlotsInputB`; on `lean-e2e-check`'s 1150
+in-scope functions and the `cargo fv` crates (fv-demo 1346, survey 3179 functions) both scopes
+accept the same functions. Since L1g item 2 (#228) `InScopeIn` runs no compiler stage at all:
+`progScopeB`'s `addrSlotsInB` read whether the lowered code has an outgoing-argument area
+(`outAreaB`, by running `lowerFunction`); `InScopeIn` uses `progScopeInB` with `addrSlotsInputB`,
+the same disjunction without `outAreaB` (as if every function had an area: no indirect call, or the
+functions with an address have no stack slots, or a program callee has slots), which implies it
+(`addrSlotsInB_of_input`, `progScopeB_of_input`; `inScopeP_of_input` keeps its statement). Every
+fv-demo and survey executable meets `addrSlotsInputB` (all have an indirect call, address-taken
+functions with slots and a program callee with slots).
 On the frontend bundle (T7d/T7e, docs/contracts/frontend.md): `lean-link` builds `S` in Lean from
 `cargo fv link-proof`'s `bundle.json` (`Front.buildSpec`); its source program is the codegen units'
 program under the linked names (`Front.buildSpec_srcProg`), alpha-equivalent to the units' program
@@ -439,8 +444,9 @@ author's estimate, not measured), **Risk**.
   1150 / 1150, 0 disagreements. `cargo fv test --lean-link --verified` (`lean-link` checks
   `fnScopeInB`): fv-demo (2 executables, 1346 functions) and the survey (18 executables, 3179
   functions) written and tested with the same outcomes as before.
-- **Left:** `addrSlotsInB` (in `progScopeB`, unchanged) reads whether `lowerFunction`'s output has
-  an outgoing-argument area (`outAreaB`); it runs the lowering but assumes no success.
+- **Left (closed by L1g item 2, #228):** `addrSlotsInB` (in `progScopeB`) read whether
+  `lowerFunction`'s output has an outgoing-argument area (`outAreaB`); `InScopeIn` now uses
+  `progScopeInB`/`addrSlotsInputB`, which do not run the lowering (`progScopeB_of_input`).
 
 ### L1. The executable compiler as one Lean function — **done** (`agent/compile-exe`)
 

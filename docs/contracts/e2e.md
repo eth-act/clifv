@@ -3502,11 +3502,22 @@ theorem Backend.Proof.Prep.prepare_ok (hd : dominatedB f = true) (hs : lowerScop
     (hl : lowerFunction f = .ok vc) : ∃ vcp, prepare vc = .ok vcp
 def E2E.LinkCheck.fnScopeInB (g : Clif.Function) : Bool   -- fnScopeB, lowersB replaced by
                                                            -- extendsWidenB, sizeOkB, driverInB, iselInB
+def E2E.LinkCheck.addrSlotsInputB (P : Clif.Program) (S : String → Option Nat) : Bool :=
+  -- addrSlotsInB without outAreaB (L1g #228): no indirect call, or the functions with an
+  -- address have no stack slots, or a program callee has slots (declSlotsB)
+  P.funcs.all indFreeB || P.funcs.all (fun h => (S h.name).isNone || h.slots.isEmpty) ||
+    declSlotsB P
+def E2E.LinkCheck.progScopeInB (P : Clif.Program) (S : String → Option Nat) : Bool
+                                                           -- progScopeB, addrSlotsInB replaced by
+                                                           -- addrSlotsInputB
 def E2E.LinkCheck.InScopeIn (I : LinkInput) : Bool :=
-  progScopeB I.prog (fun n => I.syms.lookup n) && I.prog.funcs.all fnScopeInB
+  progScopeInB I.prog (fun n => I.syms.lookup n) && I.prog.funcs.all fnScopeInB
 theorem E2E.LinkCheck.lowersB_of_input … (hw : extendsWidenB f = true) (hsz : sizeOkB f = true)
     (hdrv : driverInB f = true) (hin : Prg.iselInB f = true) : lowersB f = true
 theorem E2E.LinkCheck.fnScopeB_of_input (h : fnScopeInB g = true) : fnScopeB g = true
+theorem E2E.LinkCheck.addrSlotsInB_of_input (h : addrSlotsInputB P S = true) :
+    addrSlotsInB P S = true
+theorem E2E.LinkCheck.progScopeB_of_input (h : progScopeInB P S = true) : progScopeB P S = true
 theorem E2E.LinkCheck.inScopeP_of_input (h : InScopeIn I = true) : InScopeP I = true
 theorem E2E.backend_correct_final_total_input (hsub : InSubset p f) (hd : dominatedB f = true)
     (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true)

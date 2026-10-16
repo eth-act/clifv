@@ -67,11 +67,32 @@ theorem fnScopeB_of_input {g : Clif.Function} (h : fnScopeInB g = true) : fnScop
   have hl := lowersB_of_input h1 hsig h8 h9 h10 h15 h11 h12 h13 h14
   simp only [fnScopeB, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, hl, h15, Bool.and_self]
 
+/-- **`addrSlotsInputB` implies `addrSlotsInB`**: without an indirect call the outgoing area does
+not matter; the other disjuncts are the same. -/
+theorem addrSlotsInB_of_input {P : Clif.Program} {S : String → Option Nat}
+    (h : addrSlotsInputB P S = true) : addrSlotsInB P S = true := by
+  simp only [addrSlotsInputB, Bool.or_eq_true] at h
+  simp only [addrSlotsInB, Bool.or_eq_true, Bool.not_eq_true', Bool.and_eq_false_iff]
+  rcases h with (h | h) | h
+  · refine .inl (.inl (.inr ?_))
+    rw [List.any_eq_false]
+    intro g hg
+    simp [List.all_eq_true.1 h g hg]
+  · exact .inl (.inr h)
+  · exact .inr h
+
+/-- **The program-level input conditions imply `progScopeB`.** -/
+theorem progScopeB_of_input {P : Clif.Program} {S : String → Option Nat}
+    (h : progScopeInB P S = true) : progScopeB P S = true := by
+  simp only [progScopeInB, Bool.and_eq_true] at h
+  simp only [progScopeB, Bool.and_eq_true]
+  exact ⟨h.1, addrSlotsInB_of_input h.2⟩
+
 /-- **`InScopeIn` implies `InScopeP`**: every theorem taking `InScopeP I` holds under the input
 conditions decided on the CLIF program alone. -/
 theorem inScopeP_of_input {I : LinkInput} (h : InScopeIn I = true) : InScopeP I = true := by
   simp only [InScopeIn, Bool.and_eq_true, List.all_eq_true] at h
   simp only [InScopeP, Bool.and_eq_true, List.all_eq_true]
-  exact ⟨h.1, fun g hg => fnScopeB_of_input (h.2 g hg)⟩
+  exact ⟨progScopeB_of_input h.1, fun g hg => fnScopeB_of_input (h.2 g hg)⟩
 
 end E2E.LinkCheck
