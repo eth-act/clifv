@@ -8,7 +8,11 @@ returning or trapping outcome, `RunGoodL`: the per-state facts of every state of
 whose step ends without error. Here they are carried through the stack-bound wrappers
 (`backend_correct_program_stackX`, `crate_correct_stackNX`) and the binary-level theorems
 (`binary_correctX`, `binary_correct_of_checksX`), across the exterior `F` of the proof's linked
-system (`runGoodL_F`: the linked machine does not depend on it). -/
+system (`runGoodL_F`: the linked machine does not depend on it). `binary_correct_depthX` is the
+same for any program, recursive ones included: the stack premise is the depth-`M` budget
+`frameDrop + D * M` (`LinkSys.budget_K`) instead of the stack bound of a non-recursive program.
+`binary_correct_peakX` takes the budget at the run's peak call depth `d` instead of its fuel
+(`Clif.DepthLe`, `backend_correct_program_peakX`): `frameDrop + D * d`. -/
 
 namespace E2E
 
@@ -149,6 +153,84 @@ theorem binary_correctX {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
     htr
   refine ⟨?_, (binary_correct hbin B hB hn hf M hX ho hr htr).2, fun hout => runGoodL_F (hG hout)⟩
   rw [mach_F I B (fun _ => False) (worldF I f (StackBound.bud I f) r)]
+  exact hA
+
+/-- **The model state differs from `r` only at the bytes `R`** (the binary facts, the loader
+premise). -/
+theorem BinFacts.modelOf_ne {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
+    {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFacts I X R roB) {f : Clif.Function}
+    {r : Arm.ArmState} (hX : X.Intact r) : ∀ a, (modelOf I f r).mem a ≠ r.mem a → R a := by
+  intro a hne
+  by_cases hi : img I a
+  · rw [mem_modelOf_img hi] at hne
+    rcases (hbin.code a hi).2 with h | h
+    · exact absurd (hX a _ (hbin.code a hi).1 h).symm hne
+    · exact h
+  · exact absurd (mem_modelOf_not hi) hne
+
+/-- **`binary_correctX` for any program, recursive ones included**: the stack premise is the
+depth-`M` budget `frameDrop + D * M` (`LinkSys.budget_K`: every frame of a call level is at most
+`D`) instead of the stack bound `stackFn` of a non-recursive program, so no call-graph premise
+(`goodN`) is left; with read-only data facts `roB` (unlike `binary_correct_depth`). `M` is both
+the CLIF run's fuel and the depth of the linked machine. -/
+theorem binary_correct_depthX {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
+    {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFacts I X R roB) (B : BaseEnv)
+    (hB : BaseOk (sys I B)) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
+    (M : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
+    (ho : OutsideCall I roB f (frameDrop (art I f).af + I.D * M) r args cs.mem)
+    (hr : ClifRun I B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
+    ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach M f) (modelOf I f r)
+      (Clif.runLoop B.env (prog I) (M + 1) cs) ∧
+    (∀ a, (modelOf I f r).mem a ≠ r.mem a → R a) ∧
+    ((∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
+      (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c) →
+      (sys I B).RunGoodL M f (modelOf I f r)) := by
+  have hB' : BaseOk (LinkSys.ofInput I B (worldF I f (I.D * M) r)) := baseOk_F hB
+  have himgF : ∀ a, (LinkSys.ofInput I B (worldF I f (I.D * M) r)).Img a →
+      worldF I f (I.D * M) r a := fun _ h => .inr h
+  have hL := okB_sound hbin.ok hB' himgF
+  have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
+    hX a b (hbin.data a b h).1 (hbin.data a b h).2
+  obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
+    premises hL (Clif.Program.func?_some hf).1 hro ho hr
+  obtain ⟨hA, hG⟩ := backend_correct_program_budgetX _ hL (LinkSys.budget_K _ hL)
+    (Clif.Program.func?_some hf).1 M hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl htr
+  refine ⟨?_, hbin.modelOf_ne hX, fun hout => runGoodL_F (hG hout)⟩
+  rw [mach_F I B (fun _ => False) (worldF I f (I.D * M) r)]
+  exact hA
+
+/-- **`binary_correct_depthX` for the run's peak call depth** (L1d): the whole-program CLIF run
+of at most `F + 1` steps reaches no state with more than `d` callers (`Clif.DepthLe`); the stack
+premise is the depth-`d` budget `frameDrop + D * d`, independent of the fuel `F`, and the linked
+machine has depth `d`. The run premise `TrapsExplicit` is under the environment whose program
+callees run with fuel `F` and at most `d - 1` callers of their own (`Clif.linkEnvD`). -/
+theorem binary_correct_peakX {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
+    {roB : BitVec 64 → Option (BitVec 8)} (hbin : BinFacts I X R roB) (B : BaseEnv)
+    (hB : BaseOk (sys I B)) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
+    (F d : Nat) {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (hX : X.Intact r)
+    (ho : OutsideCall I roB f (frameDrop (art I f).af + I.D * d) r args cs.mem)
+    (hr : ClifRun I B f r args cs) (hd : Clif.DepthLe B.env (prog I) d cs)
+    (htr : TrapsExplicit (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs) :
+    ArmRefines (art I f).fb (art I f).base (xreg 30 r) ((sys I B).mach d f) (modelOf I f r)
+      (Clif.runLoop B.env (prog I) (F + 1) cs) ∧
+    (∀ a, (modelOf I f r).mem a ≠ r.mem a → R a) ∧
+    ((∃ vals cm, Clif.runLoop B.env (prog I) (F + 1) cs = .returned vals cm) ∨
+      (∃ c, Clif.runLoop B.env (prog I) (F + 1) cs = .trapped c) →
+      (sys I B).RunGoodL d f (modelOf I f r)) := by
+  have hB' : BaseOk (LinkSys.ofInput I B (worldF I f (I.D * d) r)) := baseOk_F hB
+  have himgF : ∀ a, (LinkSys.ofInput I B (worldF I f (I.D * d) r)).Img a →
+      worldF I f (I.D * d) r a := fun _ h => .inr h
+  have hL := okB_sound hbin.ok hB' himgF
+  have hro : ∀ a b, roB a = some b → r.mem a = b := fun a b h =>
+    hX a b (hbin.data a b h).1 (hbin.data a b h).2
+  obtain ⟨hent, hres, hgfree, himg, hbe, hargs, hsav, hrel, hpl⟩ :=
+    premises hL (Clif.Program.func?_some hf).1 hro ho hr
+  obtain ⟨hA, hG⟩ := backend_correct_program_peakX _ hL (LinkSys.budget_K _ hL)
+    (Clif.Program.func?_some hf).1 F d hent hres rfl hgfree himg hbe hargs hr.entry hsav hrel hpl
+    hd htr
+  refine ⟨?_, hbin.modelOf_ne hX, fun hout => runGoodL_F (hG hout)⟩
+  rw [mach_F I B (fun _ => False) (worldF I f (I.D * d) r)]
   exact hA
 
 /-- `binary_correct_of_checks` with `RunGoodL` of the model's run for a returning or trapping
