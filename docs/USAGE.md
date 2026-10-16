@@ -696,6 +696,12 @@ After S10f's `i128` unwinding theorem (#233, `E2E.backend_correct_legal_unwind`,
 runs `Opt.Legal.exnOk`; debug, panic=unwind, `cargo fv test --no-run`): survey 3179 of 3179
 verified, `verified (normal returns; unwinding trusted)` 5 → 0.
 
+After S10f's mid-end unwinding theorem (#233, `E2E.backend_correct_opt_exe_cleanup_unwind`;
+lean-backend recomputes `Opt.optimizeExe` of the source function; debug, panic=unwind,
+`cargo fv test --no-run --opt-proven-only`): fv-demo 1346 verified of 1352 (6 fallback: skip),
+`verified (normal returns; unwinding trusted)` 246 → 0; survey 3179 of 3179 verified, 456 → 0
+(the 5 `i128`-legalised `g_u128` `values` functions by `E2E.backend_correct_legal_opt_unwind`).
+
 With `--lean-link` (S10f), `lake exe lean-link` also checks the executable's unwind tables
 (`Link.DeadCleanup.unwOkB`: libunwind's `.eh_frame_hdr` search finds, for every Lean-compiled
 function, an FDE and LSDA decoding to the theorem's tables; the per-function unwinding checks)

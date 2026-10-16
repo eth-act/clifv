@@ -213,7 +213,8 @@ the `retN`/value arguments).
   specialises to the normal-return shape (`E2E.backend_correct_final_of_unwind`). `lean-backend`
   labels a function whose checks pass `compiled, verified`. A function failing a check keeps
   `compiled, verified for normal returns (…; unwinding check failed: <check>)`. So does a
-  function compiled with `--opt`, since no unwinding theorem composes the mid-end yet.
+  function compiled with `--opt` with unproven rule sets (no unwinding theorem composes them),
+  or an `i128`-legalised function compiled without the dead cleanup.
 * **`i128` legalisation with unwinding (S10f, #233)**: `E2E.backend_correct_legal_unwind`
   (`FV/E2E/LegalUnwind.lean`) composes `Opt.Legal.X.check_refinesX` (`FV/Opt/Proof/LegalSimX.lean`:
   `Opt.Legal.check` plus the handler-edge check `Opt.Legal.exnOk` (`FV/Opt/LegalExn.lean`) make
@@ -235,6 +236,36 @@ the `retN`/value arguments).
   `E2E.LegalUnwindWitness.legal_unwind_applies` (`backend_correct_legal_unwind` on the shipped
   pipeline's output for the legalised `%w`, receipt `checks_true`; open as in
   `DeadCleanupUnwindWitness.final_applies`: `hC`/`hCT`, `hsym`, the entry premises).
+* **The mid-end with unwinding (S10f, #233)**: `E2E.backend_correct_opt_exe_cleanup_unwind`
+  (`FV/E2E/OptUnwind.lean`; without the dead cleanup `backend_correct_opt_exe_unwind`): the Arm
+  code compiled from `Opt.optimizeExe f cfg` (proven rule sets, `--opt-proven-only`), run on the
+  machine with unwinding, refines the run with unwinding of the *source* program from `f`'s entry
+  (`ArmRefinesU`). It composes `E2E.optExe_entryX` (the optimised program's runs with unwinding
+  refine the source's: `Opt.optimizeProgramExe_refinesU`, `FV/Opt/Proof/PipelineU.lean`, from
+  `Opt.runLoopX_refinesU`, `FV/Opt/Proof/SemSimU.lean`) with
+  `backend_correct_final_cleanup_unwind` at the optimised function. The mid-end's simulations
+  cover the handler edges of `try_call` (`Opt.HCont`: the renamed exception table catches the
+  same exceptions and resumes at related handler blocks, the payload bound at each side's fresh
+  value; `Opt.FunSimU`; per stage `removeUnreachable_simU`, `simpOk_simU`, `editOk_simU`).
+  Premises: `backend_correct_opt_exe_cleanup`'s with the environment with unwinding (externs keep
+  the link-time symbols when they return and when they unwind, `Opt.EnvKeepsSymbolsX`; proven for
+  the trusted Rust environment, `E2E.xenvWith_keepsSymbolsX`), and
+  `backend_correct_final_cleanup_unwind`'s unwinding premises at the optimised function;
+  `TrapsExplicitX` of the optimised program's run. `lean-backend --opt --opt-proven-only` labels
+  a `try_call` function `compiled, verified (try_call: unwinding by
+  backend_correct_opt_exe_cleanup_unwind; …)` when its compiled form is `Opt.optimizeExe` of its
+  source function (recomputed) and the unwinding checks pass on the optimised function.
+  Legalised then optimised: `E2E.backend_correct_legal_opt_unwind` (`FV/E2E/LegalOptUnwind.lean`;
+  `_env` for any environment with `Opt.Legal.X.EnvOkX` and `Opt.EnvKeepsSymbolsX`), labelled
+  `… unwinding by backend_correct_legal_opt_unwind` when the recomputed legalisation (accepted by
+  `check` and `exnOk`) optimises to the compiled function. Non-vacuity
+  (`FV/E2E/OptUnwindWitness.lean`): `E2E.OptUnwindWitness.refines` (`optExe_entryX` on
+  `%w(i64)`: `v2 = v0 + 0; try_call %throw(v2)`, rewritten by the mid-end to
+  `try_call %throw(v0)`; `%throw` raises, the `tag0` handler catches; every premise discharged),
+  `opt_unwind_applies`, `opt_unwind_applies_legacy` and
+  `E2E.LegalOptUnwindWitness.legal_opt_unwind_applies` (the theorems on the shipped pipeline's
+  output; open as in `LegalUnwindWitness.legal_unwind_applies`: `hC`/`hCT`, `hsym`, the entry
+  premises).
 * **Linked programs with unwinding (S10f, #233)**: whole-program CLIF runs with unwinding are
   per-function runs under linked environments (`Clif.runLoopX_link{,R,N,D}`,
   `FV/Clif/LinkClifX*.lean`); per function with the world and non-interference
