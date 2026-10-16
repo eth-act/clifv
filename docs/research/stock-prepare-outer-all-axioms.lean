@@ -1,0 +1,2663 @@
+import FV.Backend.Proof.PerEdgePrepareOuterFacts
+import FV.Backend.Proof.PerEdgePrepareFilterFacts
+import FV.Backend.Proof.PerEdgePrepareOrderFacts
+import FV.Backend.Proof.PerEdgePrepareOuterWitness
+import FV.Backend.Proof.PerEdgePrepareLoopFacts
+import FV.Backend.Proof.PerEdgePrepareLoopWitness
+import FV.Backend.RegallocPerEdgePrepareCheck
+import FV.Backend.Proof.PerEdgePrepareSound
+import FV.Backend.Proof.PerEdgeRegallocFwd
+import FV.Backend.Proof.PerEdgePreparedDriverSound
+import FV.Backend.Proof.PerEdgePrepareFacts
+import FV.Backend.Proof.StockPreparedForwardWitness
+import FV.Backend.Proof.PerEdgePrepSplitWitness
+import FV.Backend.RegallocPerEdgePrepare
+import FV.Backend.RegallocPerEdgeSpill
+import FV.Backend.RegallocPerEdgeDriver
+import FV.Backend.Proof.PerEdgeAllocDriverSound
+import FV.Backend.Proof.StockPerEdgeAllocatorWitness
+import FV.Backend.Proof.StockPerEdgeCriticalAllocatorWitness
+import FV.Backend.Proof.PerEdgePrepareWitness
+import FV.Backend.Proof.PerEdgeRegallocSound
+import FV.Backend.Proof.StockPerEdgeM6Witness
+import FV.Backend.Proof.StockPerEdgeM6HaltWitness
+import FV.Backend.Proof.StockPerEdgeM6DivergenceWitness
+import FV.Backend.Proof.StockPerEdgeM6StuckWitness
+import FV.Backend.Proof.StockPerEdgeCheckerWitness
+import FV.Backend.Proof.StockPerEdgeDirectWitness
+import FV.Backend.Proof.StockSelectedGraphWitness
+import FV.Backend.Proof.StockPerSuccessorWitness
+import FV.Backend.Proof.StockOrderGraphWitness
+import FV.Backend.Proof.StockSourceCallWitness
+import FV.Backend.Proof.StockEdgeValuesWitness
+import FV.Backend.Proof.StockSourceEdgesWitness
+import FV.Backend.Proof.StockBlockCode
+import FV.Backend.Proof.StockReturnVCode
+import FV.Backend.Proof.StockTermContractWitness
+import FV.Backend.Proof.StockTerminalDriverWitness
+import FV.Backend.Proof.StockTerminalSinkWitness
+import FV.Backend.Proof.StockTerminalControlWitness
+import FV.Backend.Proof.StockReturnSourceWitness
+import FV.Backend.Proof.StockMixedBodyWitness
+import FV.Backend.Proof.StockEmptyBodySplitWitness
+import FV.Backend.Proof.StockSretReturnContractWitness
+import FV.Backend.Proof.StockSelectScanRefines
+import FV.Backend.Proof.StockSelectComparisonDriverRuns
+import FV.Backend.Proof.StockSelectComparisonSourceSetup
+import FV.Backend.Proof.StockSelectComparisonSourceWitness
+import FV.Backend.Proof.StockSelectConditionReplacement
+import FV.Backend.Proof.StockSelectConditionObserved
+import FV.Backend.Proof.StockSelectComparisonValues
+import FV.Backend.Proof.StockSelectConditionSuccess
+import FV.Backend.Proof.StockSelectComparisonActualFixture
+import FV.Backend.Proof.StockSelectOriginalConditionValues
+import FV.Backend.Proof.StockSelectOriginalRootValues
+import FV.Backend.Proof.StockSelectOriginalRecordValues
+import FV.Backend.Proof.StockSelectOriginalSourceValues
+import FV.Backend.Proof.StockSelectOriginalSourceWitness
+import FV.Backend.Proof.StockSelectComparisonActualWitness
+import FV.Backend.Proof.StockSelectConditionWitness
+import FV.Backend.Proof.StockSelectNonzeroConditionShape
+import FV.Backend.Proof.StockSelectConditionInvertShape
+import FV.Backend.Proof.StockSelectZeroConditionShape
+import FV.Backend.Proof.StockSelectWideComparisonShape
+import FV.Backend.Proof.StockSelectNarrowComparisonShape
+import FV.Backend.Proof.StockSelectComparisonConditionShape
+import FV.Backend.Proof.StockSelectConditionCompanion
+import FV.Backend.Proof.StockSelectComparisonCompanionValues
+import FV.Backend.Proof.StockSelectConditionShapeWitness
+import FV.Backend.Proof.StockSelectComparisonCompanionWitness
+import FV.Backend.Proof.StockSelectZeroReplacement
+import FV.Backend.Proof.StockSelectZeroReplacementResolved
+import FV.Backend.Proof.StockSelectZeroReplacementWitness
+import FV.Backend.Proof.StockSelectNonzeroWideShape
+import FV.Backend.Proof.StockSelectNonzeroWideValues
+import FV.Backend.Proof.StockSelectNonzero8Values
+import FV.Backend.Proof.StockSelectNonzero16Shape
+import FV.Backend.Proof.StockSelectNonzero16Values
+import FV.Backend.Proof.StockSelectNonzeroActualValues
+import FV.Backend.Proof.StockSelectConditionCalls
+import FV.Backend.Proof.StockSelectScalarDriverRuns
+import FV.Backend.Proof.StockSelectConditionOriginValues
+import FV.Backend.Proof.StockSelectNonzeroAllocation
+import FV.Backend.Proof.StockSelectParameterRootValues
+import FV.Backend.Proof.StockSelectParameterRecordValues
+import FV.Backend.Proof.StockSelectParameterOriginalSourceValues
+import FV.Backend.Proof.StockSelectParameterSourceWitness
+import FV.Backend.Proof.StockSelectConditionOriginWitness
+import FV.Backend.Proof.StockAvailableTypes
+import FV.Backend.Proof.StockSelectParameterDerivedSourceValues
+import FV.Backend.Proof.StockSelectZeroObserved
+import FV.Backend.Proof.StockSelectZeroSourceValues
+import FV.Backend.Proof.StockSelectZeroSourceWitness
+import FV.Backend.Proof.StockSelectRootCalls
+import FV.Backend.Proof.StockSelectOriginalSourceMatch
+import FV.Backend.Proof.StockOriginalSelectFixture
+import FV.Backend.Proof.StockSelectOriginalRootWitness
+import FV.Backend.Proof.StockMinMaxNarrowAllocation
+import FV.Backend.Proof.StockMinMaxNarrowBothConstantDriverRuns
+import FV.Backend.Proof.StockMinMaxNarrowBothConstantWitness
+import FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns
+import FV.Backend.Proof.StockMinMaxNarrowConstantWitness
+import FV.Backend.Proof.StockMinMaxNarrowDriverRuns
+import FV.Backend.Proof.StockMinMaxNarrowDriverWitness
+import FV.Backend.Proof.StockMinMaxNarrowFixtures
+import FV.Backend.Proof.StockMinMaxNarrowOriginalSourceValues
+import FV.Backend.Proof.StockMinMaxNarrowRecordValues
+import FV.Backend.Proof.StockMinMaxNarrowRootValues
+import FV.Backend.Proof.StockMinMaxNarrowShape
+import FV.Backend.Proof.StockMinMaxNarrowSourceReads
+import FV.Backend.Proof.StockMinMaxNarrowValues
+import FV.Backend.Proof.StockMinMaxActualDispatch
+import FV.Backend.Proof.StockSelectCompanionFragment
+import FV.Backend.Proof.StockMinMaxWideCalls
+import FV.Backend.Proof.StockMinMaxWideDriverRuns
+import FV.Backend.Proof.StockMinMaxWideDriverWitness
+import FV.Backend.Proof.StockMinMaxWideOriginalSourceValues
+import FV.Backend.Proof.StockMinMaxWideRecordValues
+import FV.Backend.Proof.StockMinMaxWideRootValues
+import FV.Backend.Proof.StockMinMaxWideShape
+import FV.Backend.Proof.StockMinMaxWideSourceReads
+import FV.Backend.Proof.StockMinMaxWideValues
+import FV.Backend.Proof.StockMinMaxWideConstantDriverRuns
+import FV.Backend.Proof.StockMinMaxWideConstantWitness
+import FV.Backend.Proof.StockMinMaxWideBothConstantDriverRuns
+import FV.Backend.Proof.StockMinMaxWideBothConstantWitness
+import FV.Backend.Proof.StockSelectReplacement
+import FV.Backend.Proof.StockSelectReplacementResolved
+import FV.Backend.Proof.StockSelectReplacementWitness
+import FV.Backend.Proof.StockSelectDecodeFlags
+import FV.Backend.Proof.StockSelectDecodedRequests
+import FV.Backend.Proof.StockSelectDecodedObserved
+import FV.Backend.Proof.StockSelectBooleanCompanion
+import FV.Backend.Proof.StockSelectDecodedWitness
+import FV.Backend.Proof.StockAddSubAllSourceValues
+import FV.Backend.Proof.StockAddSubAllValues
+import FV.Backend.Proof.StockAddSubAuxWitness
+import FV.Backend.Proof.StockAddSubDispatch
+import FV.Backend.Proof.StockAddSubExtensionWitness
+import FV.Backend.Proof.StockAddSubImmediateMatch
+import FV.Backend.Proof.StockAddSubImmediateValues
+import FV.Backend.Proof.StockAddSubImmediateWitness
+import FV.Backend.Proof.StockAddSubMatch
+import FV.Backend.Proof.StockAddSubNegativeMatch
+import FV.Backend.Proof.StockAddSubNegativePure
+import FV.Backend.Proof.StockAddSubNegativeValues
+import FV.Backend.Proof.StockAddSubNegativeWitness
+import FV.Backend.Proof.StockAddSubObserved
+import FV.Backend.Proof.StockAddSubPure
+import FV.Backend.Proof.StockAddSubRecordValues
+import FV.Backend.Proof.StockAddSubRhs
+import FV.Backend.Proof.StockAddSubSelected
+import FV.Backend.Proof.StockAddSubSemantics
+import FV.Backend.Proof.StockAddSubShiftEdgeWitness
+import FV.Backend.Proof.StockAddSubShiftWitness
+import FV.Backend.Proof.StockAddSubSourceValues
+import FV.Backend.Proof.StockAddSubUnifiedValues
+import FV.Backend.Proof.StockAddSubValues
+import FV.Backend.Proof.StockAliasAvailable
+import FV.Backend.Proof.StockAliasDomain
+import FV.Backend.Proof.StockAliasTerminal
+import FV.Backend.Proof.StockAlu
+import FV.Backend.Proof.StockAluOperandCoverage
+import FV.Backend.Proof.StockAluRecordValues
+import FV.Backend.Proof.StockAluSelectedValues
+import FV.Backend.Proof.StockAvailableValues
+import FV.Backend.Proof.StockBitHelper
+import FV.Backend.Proof.StockBitrevDispatchWitness
+import FV.Backend.Proof.StockBitrevForms
+import FV.Backend.Proof.StockBitrevRecordValues
+import FV.Backend.Proof.StockBitrevRhs
+import FV.Backend.Proof.StockBitrevSelected
+import FV.Backend.Proof.StockBitrevSemantics
+import FV.Backend.Proof.StockBitrevSourceValues
+import FV.Backend.Proof.StockBitrevWitness
+import FV.Backend.Proof.StockBnotWitness
+import FV.Backend.Proof.StockBswapDispatchWitness
+import FV.Backend.Proof.StockBswapRecordValues
+import FV.Backend.Proof.StockBswapRhs
+import FV.Backend.Proof.StockBswapSelected
+import FV.Backend.Proof.StockBswapSemantics
+import FV.Backend.Proof.StockBswapSourceValues
+import FV.Backend.Proof.StockBswapWitness
+import FV.Backend.Proof.StockCastBaseValues
+import FV.Backend.Proof.StockCastNoTypeWitness
+import FV.Backend.Proof.StockCastRecordValues
+import FV.Backend.Proof.StockCastSourceValues
+import FV.Backend.Proof.StockCastWitness
+import FV.Backend.Proof.StockCmpActualBothNonzero32AllValuesWitness
+import FV.Backend.Proof.StockCmpActualDispatch
+import FV.Backend.Proof.StockCmpActualImmediateDriverWitness
+import FV.Backend.Proof.StockCmpActualNarrowActual16UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualNarrowActual8SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualNonencodable32SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualNonencodable64UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualPredecessor32K4097SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualPredecessor32K4097UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualPredecessor32K8193SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualPredecessor32K8193UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualPredecessor64K4097SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualPredecessor64K4097UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualPredecessor64K8193SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualPredecessor64K8193UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualWideConstantLeft32UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualWideConstantLeft64SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpActualZero32EqAllValuesWitness
+import FV.Backend.Proof.StockCmpActualZero64DefinedNeAllValuesWitness
+import FV.Backend.Proof.StockCmpBothNonzeroDriverRuns
+import FV.Backend.Proof.StockCmpBuilders
+import FV.Backend.Proof.StockCmpCondition
+import FV.Backend.Proof.StockCmpConditionValues
+import FV.Backend.Proof.StockCmpConditionWitness
+import FV.Backend.Proof.StockCmpConstantLeft16UnifiedAllValuesWitness
+import FV.Backend.Proof.StockCmpConstantLeft32UnifiedAllValuesWitness
+import FV.Backend.Proof.StockCmpConstantLeft64UnifiedAllValuesWitness
+import FV.Backend.Proof.StockCmpConstantLeft8UnifiedAllValuesWitness
+import FV.Backend.Proof.StockCmpConstantLeftDispatch
+import FV.Backend.Proof.StockCmpConstantLeftFailures
+import FV.Backend.Proof.StockCmpEqualZero16Values
+import FV.Backend.Proof.StockCmpEqualZero8Values
+import FV.Backend.Proof.StockCmpEqualZero8Witness
+import FV.Backend.Proof.StockCmpExtendBuilder
+import FV.Backend.Proof.StockCmpFlagInvert
+import FV.Backend.Proof.StockCmpFlags
+import FV.Backend.Proof.StockCmpImmediateDriverRuns
+import FV.Backend.Proof.StockCmpImmediateDriverWitness
+import FV.Backend.Proof.StockCmpImmediateEmission
+import FV.Backend.Proof.StockCmpImmediateEmitterValues
+import FV.Backend.Proof.StockCmpImmediateRecordValues
+import FV.Backend.Proof.StockCmpImmediateRootValues
+import FV.Backend.Proof.StockCmpImmediateSelection
+import FV.Backend.Proof.StockCmpImmediateSourceValues
+import FV.Backend.Proof.StockCmpImmediateTransfer
+import FV.Backend.Proof.StockCmpImmediateValues
+import FV.Backend.Proof.StockCmpImmediateWitness
+import FV.Backend.Proof.StockCmpMachineValues
+import FV.Backend.Proof.StockCmpMachineWitness
+import FV.Backend.Proof.StockCmpMatchedImmediate
+import FV.Backend.Proof.StockCmpMatchedPredecessor
+import FV.Backend.Proof.StockCmpMatchedRegister
+import FV.Backend.Proof.StockCmpMatchedWitness
+import FV.Backend.Proof.StockCmpMatchedZero
+import FV.Backend.Proof.StockCmpNarrow16DriverRuns
+import FV.Backend.Proof.StockCmpNarrow16SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrow16UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrow8DriverRuns
+import FV.Backend.Proof.StockCmpNarrow8SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrow8UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActual16SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActual16UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActual8SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActual8UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualAllocation
+import FV.Backend.Proof.StockCmpNarrowActualAllocationWitness
+import FV.Backend.Proof.StockCmpNarrowActualConstantLeft16SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualConstantLeft16UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualConstantLeft8SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualConstantLeft8UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualImmediate16LargeAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualImmediate16SmallAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualImmediate8LargeAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualImmediate8SmallAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualOriginalSourceValues
+import FV.Backend.Proof.StockCmpNarrowActualRecordValues
+import FV.Backend.Proof.StockCmpNarrowActualRootValues
+import FV.Backend.Proof.StockCmpNarrowActualWitness
+import FV.Backend.Proof.StockCmpNarrowActualZero16EqAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualZero16LeftEqAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualZero16LeftNeAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualZero16NeAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualZero8EqAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualZero8LeftEqAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualZero8LeftNeAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowActualZero8NeAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowAllocation
+import FV.Backend.Proof.StockCmpNarrowConstant16SignedHighAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowConstant16SignedHighDriverRuns
+import FV.Backend.Proof.StockCmpNarrowConstant16SignedZeroAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowConstant16SignedZeroDriverRuns
+import FV.Backend.Proof.StockCmpNarrowConstant16UnsignedLargeAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowConstant16UnsignedLargeDriverRuns
+import FV.Backend.Proof.StockCmpNarrowConstant8SignedHighAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowConstant8SignedHighDriverRuns
+import FV.Backend.Proof.StockCmpNarrowConstant8SignedZeroAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowConstant8SignedZeroDriverRuns
+import FV.Backend.Proof.StockCmpNarrowConstantAllocation
+import FV.Backend.Proof.StockCmpNarrowConstantLeft16SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowConstantLeft16SignedDriverRuns
+import FV.Backend.Proof.StockCmpNarrowConstantLeft16UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowConstantLeft16UnsignedDriverRuns
+import FV.Backend.Proof.StockCmpNarrowConstantLeft8SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowConstantLeft8SignedDriverRuns
+import FV.Backend.Proof.StockCmpNarrowConstantLeft8UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowConstantLeft8UnsignedDriverRuns
+import FV.Backend.Proof.StockCmpNarrowConstantLeftAllocation
+import FV.Backend.Proof.StockCmpNarrowConstantLeftOriginalSourceValues
+import FV.Backend.Proof.StockCmpNarrowConstantLeftRecordValues
+import FV.Backend.Proof.StockCmpNarrowConstantLeftRootValues
+import FV.Backend.Proof.StockCmpNarrowConstantLeftSelection
+import FV.Backend.Proof.StockCmpNarrowConstantLeftValues
+import FV.Backend.Proof.StockCmpNarrowConstantOriginalSourceValues
+import FV.Backend.Proof.StockCmpNarrowConstantRecordValues
+import FV.Backend.Proof.StockCmpNarrowConstantRootValues
+import FV.Backend.Proof.StockCmpNarrowConstantSelection
+import FV.Backend.Proof.StockCmpNarrowConstantValues
+import FV.Backend.Proof.StockCmpNarrowExtendOp
+import FV.Backend.Proof.StockCmpNarrowExtendRequest
+import FV.Backend.Proof.StockCmpNarrowFlags
+import FV.Backend.Proof.StockCmpNarrowImmediate16DriverRuns
+import FV.Backend.Proof.StockCmpNarrowImmediate16LargeAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowImmediate16SmallAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowImmediate8DriverRuns
+import FV.Backend.Proof.StockCmpNarrowImmediate8LargeAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowImmediate8SmallAllValuesWitness
+import FV.Backend.Proof.StockCmpNarrowImmediateObserved
+import FV.Backend.Proof.StockCmpNarrowImmediateOriginalSourceValues
+import FV.Backend.Proof.StockCmpNarrowImmediateRecordValues
+import FV.Backend.Proof.StockCmpNarrowImmediateRhs
+import FV.Backend.Proof.StockCmpNarrowImmediateRootValues
+import FV.Backend.Proof.StockCmpNarrowImmediateSelection
+import FV.Backend.Proof.StockCmpNarrowImmediateSourceValues
+import FV.Backend.Proof.StockCmpNarrowImmediateValues
+import FV.Backend.Proof.StockCmpNarrowMachineValues
+import FV.Backend.Proof.StockCmpNarrowMatchedValues
+import FV.Backend.Proof.StockCmpNarrowOriginalSourceValues
+import FV.Backend.Proof.StockCmpNarrowRecordValues
+import FV.Backend.Proof.StockCmpNarrowRhs
+import FV.Backend.Proof.StockCmpNarrowRhsObserved
+import FV.Backend.Proof.StockCmpNarrowRhsWitness
+import FV.Backend.Proof.StockCmpNarrowRootValues
+import FV.Backend.Proof.StockCmpNarrowSelection
+import FV.Backend.Proof.StockCmpNarrowSourceValues
+import FV.Backend.Proof.StockCmpNarrowSourceWitness
+import FV.Backend.Proof.StockCmpNarrowValues
+import FV.Backend.Proof.StockCmpNonconstantDriverRuns
+import FV.Backend.Proof.StockCmpNonconstantDriverWitness
+import FV.Backend.Proof.StockCmpNonconstantRecordValues
+import FV.Backend.Proof.StockCmpNonconstantRootValues
+import FV.Backend.Proof.StockCmpNonconstantSelection
+import FV.Backend.Proof.StockCmpNonconstantSourceValues
+import FV.Backend.Proof.StockCmpNonconstantValues
+import FV.Backend.Proof.StockCmpNonencodable32DriverRuns
+import FV.Backend.Proof.StockCmpNonencodable32SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNonencodable32UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNonencodable64DriverRuns
+import FV.Backend.Proof.StockCmpNonencodable64SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNonencodable64UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpNonencodableFailures
+import FV.Backend.Proof.StockCmpNonencodableRecordValues
+import FV.Backend.Proof.StockCmpNonencodableRootValues
+import FV.Backend.Proof.StockCmpNonencodableSelection
+import FV.Backend.Proof.StockCmpNonencodableSourceValues
+import FV.Backend.Proof.StockCmpNonencodableValues
+import FV.Backend.Proof.StockCmpNonzero16OriginalSelection
+import FV.Backend.Proof.StockCmpNonzero16OriginalWitness
+import FV.Backend.Proof.StockCmpNonzero16PrefixValues
+import FV.Backend.Proof.StockCmpNonzero16PrefixWitness
+import FV.Backend.Proof.StockCmpNonzero16Selection
+import FV.Backend.Proof.StockCmpNonzero16Values
+import FV.Backend.Proof.StockCmpNonzero16Witness
+import FV.Backend.Proof.StockCmpNonzero32OriginalSelection
+import FV.Backend.Proof.StockCmpNonzero32OriginalValues
+import FV.Backend.Proof.StockCmpNonzero32OriginalWitness
+import FV.Backend.Proof.StockCmpNonzero32RhsValues
+import FV.Backend.Proof.StockCmpNonzero32Selection
+import FV.Backend.Proof.StockCmpNonzero32Values
+import FV.Backend.Proof.StockCmpNonzero64OriginalSelection
+import FV.Backend.Proof.StockCmpNonzero64OriginalValues
+import FV.Backend.Proof.StockCmpNonzero64OriginalWitness
+import FV.Backend.Proof.StockCmpNonzero8Emission
+import FV.Backend.Proof.StockCmpNonzero8OriginalSelection
+import FV.Backend.Proof.StockCmpNonzero8OriginalWitness
+import FV.Backend.Proof.StockCmpNonzero8SelectedValues
+import FV.Backend.Proof.StockCmpNonzero8SelectedWitness
+import FV.Backend.Proof.StockCmpNonzero8Selection
+import FV.Backend.Proof.StockCmpNonzero8Values
+import FV.Backend.Proof.StockCmpNonzero8Witness
+import FV.Backend.Proof.StockCmpNonzeroNarrowCalls
+import FV.Backend.Proof.StockCmpOriginalConstantClassification
+import FV.Backend.Proof.StockCmpOutput
+import FV.Backend.Proof.StockCmpParameterDriverRuns
+import FV.Backend.Proof.StockCmpParameterDriverWitness
+import FV.Backend.Proof.StockCmpParameterRecordValues
+import FV.Backend.Proof.StockCmpParameterRootValues
+import FV.Backend.Proof.StockCmpParameterRootWitness
+import FV.Backend.Proof.StockCmpParameterSourceValues
+import FV.Backend.Proof.StockCmpParameterValues
+import FV.Backend.Proof.StockCmpPredecessor32K4097DriverRuns
+import FV.Backend.Proof.StockCmpPredecessor32K4097SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpPredecessor32K4097UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpPredecessor32K8193DriverRuns
+import FV.Backend.Proof.StockCmpPredecessor32K8193SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpPredecessor32K8193UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpPredecessor64K4097DriverRuns
+import FV.Backend.Proof.StockCmpPredecessor64K4097SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpPredecessor64K4097UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpPredecessor64K8193DriverRuns
+import FV.Backend.Proof.StockCmpPredecessor64K8193SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpPredecessor64K8193UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpPredecessorSignedEmission
+import FV.Backend.Proof.StockCmpPredecessorSignedEmitterValues
+import FV.Backend.Proof.StockCmpPredecessorSignedMatch
+import FV.Backend.Proof.StockCmpPredecessorSignedRecordValues
+import FV.Backend.Proof.StockCmpPredecessorSignedRootValues
+import FV.Backend.Proof.StockCmpPredecessorSignedSelectedWitness
+import FV.Backend.Proof.StockCmpPredecessorSignedSelection
+import FV.Backend.Proof.StockCmpPredecessorSignedSourceValues
+import FV.Backend.Proof.StockCmpPredecessorSignedSourceWitness
+import FV.Backend.Proof.StockCmpPredecessorSignedTransfer
+import FV.Backend.Proof.StockCmpPredecessorSignedValues
+import FV.Backend.Proof.StockCmpPredecessorSignedWitness
+import FV.Backend.Proof.StockCmpPredecessorUnsignedEmission
+import FV.Backend.Proof.StockCmpPredecessorUnsignedEmitterValues
+import FV.Backend.Proof.StockCmpPredecessorUnsignedMatch
+import FV.Backend.Proof.StockCmpPredecessorUnsignedRecordValues
+import FV.Backend.Proof.StockCmpPredecessorUnsignedRootValues
+import FV.Backend.Proof.StockCmpPredecessorUnsignedSelectedWitness
+import FV.Backend.Proof.StockCmpPredecessorUnsignedSelection
+import FV.Backend.Proof.StockCmpPredecessorUnsignedSourceValues
+import FV.Backend.Proof.StockCmpPredecessorUnsignedSourceWitness
+import FV.Backend.Proof.StockCmpPredecessorUnsignedTransfer
+import FV.Backend.Proof.StockCmpPredecessorUnsignedValues
+import FV.Backend.Proof.StockCmpPredecessorUnsignedWitness
+import FV.Backend.Proof.StockCmpPure
+import FV.Backend.Proof.StockCmpPureWitness
+import FV.Backend.Proof.StockCmpRegisterEmission
+import FV.Backend.Proof.StockCmpRegisterSelection
+import FV.Backend.Proof.StockCmpRegisterTraceValues
+import FV.Backend.Proof.StockCmpRegisterValues
+import FV.Backend.Proof.StockCmpRegisterValuesWitness
+import FV.Backend.Proof.StockCmpRootMatch
+import FV.Backend.Proof.StockCmpSelectedCalls
+import FV.Backend.Proof.StockCmpSelectedCallsWitness
+import FV.Backend.Proof.StockCmpSourceMatch
+import FV.Backend.Proof.StockCmpSourceMatchWitness
+import FV.Backend.Proof.StockCmpTestBuilder
+import FV.Backend.Proof.StockCmpTestFlags
+import FV.Backend.Proof.StockCmpWideActualOriginalSourceValues
+import FV.Backend.Proof.StockCmpWideActualRecordValues
+import FV.Backend.Proof.StockCmpWideActualRootValues
+import FV.Backend.Proof.StockCmpWideActualValues
+import FV.Backend.Proof.StockCmpWideConstantLeft32SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpWideConstantLeft32SignedDriverRuns
+import FV.Backend.Proof.StockCmpWideConstantLeft32UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpWideConstantLeft32UnsignedDriverRuns
+import FV.Backend.Proof.StockCmpWideConstantLeft64SignedAllValuesWitness
+import FV.Backend.Proof.StockCmpWideConstantLeft64SignedDriverRuns
+import FV.Backend.Proof.StockCmpWideConstantLeft64UnsignedAllValuesWitness
+import FV.Backend.Proof.StockCmpWideConstantLeft64UnsignedDriverRuns
+import FV.Backend.Proof.StockCmpWideConstantLeftRecordValues
+import FV.Backend.Proof.StockCmpWideConstantLeftRootValues
+import FV.Backend.Proof.StockCmpWideConstantLeftSelection
+import FV.Backend.Proof.StockCmpWideConstantLeftSourceValues
+import FV.Backend.Proof.StockCmpWideConstantLeftValues
+import FV.Backend.Proof.StockCmpWithFlags
+import FV.Backend.Proof.StockCmpZero16ConstantDriverRuns
+import FV.Backend.Proof.StockCmpZero16ConstantThreeEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16ConstantThreeNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16ConstantZeroEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16ConstantZeroNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16DefinedDriverRuns
+import FV.Backend.Proof.StockCmpZero16DefinedEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16DefinedNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16DriverRuns
+import FV.Backend.Proof.StockCmpZero16EmitterValues
+import FV.Backend.Proof.StockCmpZero16EqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16LeftDriverRuns
+import FV.Backend.Proof.StockCmpZero16LeftEmitterValues
+import FV.Backend.Proof.StockCmpZero16LeftEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16LeftNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16LeftRecordValues
+import FV.Backend.Proof.StockCmpZero16LeftRootValues
+import FV.Backend.Proof.StockCmpZero16LeftTransfer
+import FV.Backend.Proof.StockCmpZero16NeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16OriginalLeftEmitterValues
+import FV.Backend.Proof.StockCmpZero16OriginalLeftRecordValues
+import FV.Backend.Proof.StockCmpZero16OriginalLeftRootValues
+import FV.Backend.Proof.StockCmpZero16OriginalLeftTransfer
+import FV.Backend.Proof.StockCmpZero16OriginalRhsValues
+import FV.Backend.Proof.StockCmpZero16OriginalRightEmitterValues
+import FV.Backend.Proof.StockCmpZero16OriginalRightRecordValues
+import FV.Backend.Proof.StockCmpZero16OriginalRightRootValues
+import FV.Backend.Proof.StockCmpZero16OriginalRightTransfer
+import FV.Backend.Proof.StockCmpZero16RecordValues
+import FV.Backend.Proof.StockCmpZero16RhsValues
+import FV.Backend.Proof.StockCmpZero16RightDefinedDriverRuns
+import FV.Backend.Proof.StockCmpZero16RightDefinedEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16RightDefinedNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero16RootValues
+import FV.Backend.Proof.StockCmpZero16Transfer
+import FV.Backend.Proof.StockCmpZero32ConstantDriverRuns
+import FV.Backend.Proof.StockCmpZero32ConstantThreeEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32ConstantThreeNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32ConstantZeroEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32ConstantZeroNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32DefinedDriverRuns
+import FV.Backend.Proof.StockCmpZero32DefinedEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32DefinedNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32DriverRuns
+import FV.Backend.Proof.StockCmpZero32EmitterValues
+import FV.Backend.Proof.StockCmpZero32EqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32LeftDriverRuns
+import FV.Backend.Proof.StockCmpZero32LeftEmitterValues
+import FV.Backend.Proof.StockCmpZero32LeftEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32LeftNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32LeftRecordValues
+import FV.Backend.Proof.StockCmpZero32LeftRootValues
+import FV.Backend.Proof.StockCmpZero32LeftTransfer
+import FV.Backend.Proof.StockCmpZero32NeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32OriginalLeftEmitterValues
+import FV.Backend.Proof.StockCmpZero32OriginalLeftRecordValues
+import FV.Backend.Proof.StockCmpZero32OriginalLeftRootValues
+import FV.Backend.Proof.StockCmpZero32OriginalLeftTransfer
+import FV.Backend.Proof.StockCmpZero32OriginalRhsValues
+import FV.Backend.Proof.StockCmpZero32OriginalRightEmitterValues
+import FV.Backend.Proof.StockCmpZero32OriginalRightRecordValues
+import FV.Backend.Proof.StockCmpZero32OriginalRightRootValues
+import FV.Backend.Proof.StockCmpZero32OriginalRightTransfer
+import FV.Backend.Proof.StockCmpZero32RecordValues
+import FV.Backend.Proof.StockCmpZero32RhsValues
+import FV.Backend.Proof.StockCmpZero32RightDefinedDriverRuns
+import FV.Backend.Proof.StockCmpZero32RightDefinedEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32RightDefinedNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero32RootValues
+import FV.Backend.Proof.StockCmpZero32RuleCalls
+import FV.Backend.Proof.StockCmpZero32Transfer
+import FV.Backend.Proof.StockCmpZero64ConstantDriverRuns
+import FV.Backend.Proof.StockCmpZero64ConstantThreeEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero64ConstantThreeNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero64ConstantZeroEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero64ConstantZeroNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero64DefinedDriverRuns
+import FV.Backend.Proof.StockCmpZero64DefinedEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero64DefinedNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero64OriginalLeftEmitterValues
+import FV.Backend.Proof.StockCmpZero64OriginalLeftRecordValues
+import FV.Backend.Proof.StockCmpZero64OriginalLeftRootValues
+import FV.Backend.Proof.StockCmpZero64OriginalLeftTransfer
+import FV.Backend.Proof.StockCmpZero64OriginalRhsValues
+import FV.Backend.Proof.StockCmpZero64OriginalRightEmitterValues
+import FV.Backend.Proof.StockCmpZero64OriginalRightRecordValues
+import FV.Backend.Proof.StockCmpZero64OriginalRightRootValues
+import FV.Backend.Proof.StockCmpZero64OriginalRightTransfer
+import FV.Backend.Proof.StockCmpZero64RightDefinedDriverRuns
+import FV.Backend.Proof.StockCmpZero64RightDefinedEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero64RightDefinedNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8ConstantDriverRuns
+import FV.Backend.Proof.StockCmpZero8ConstantThreeEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8ConstantThreeNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8ConstantZeroEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8ConstantZeroNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8DefinedDriverRuns
+import FV.Backend.Proof.StockCmpZero8DefinedEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8DefinedNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8DriverRuns
+import FV.Backend.Proof.StockCmpZero8EmitterValues
+import FV.Backend.Proof.StockCmpZero8EqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8LeftDriverRuns
+import FV.Backend.Proof.StockCmpZero8LeftEmitterValues
+import FV.Backend.Proof.StockCmpZero8LeftEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8LeftNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8LeftRecordValues
+import FV.Backend.Proof.StockCmpZero8LeftRootValues
+import FV.Backend.Proof.StockCmpZero8LeftTransfer
+import FV.Backend.Proof.StockCmpZero8NeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8OriginalLeftEmitterValues
+import FV.Backend.Proof.StockCmpZero8OriginalLeftRecordValues
+import FV.Backend.Proof.StockCmpZero8OriginalLeftRootValues
+import FV.Backend.Proof.StockCmpZero8OriginalLeftTransfer
+import FV.Backend.Proof.StockCmpZero8OriginalRhsValues
+import FV.Backend.Proof.StockCmpZero8OriginalRightEmitterValues
+import FV.Backend.Proof.StockCmpZero8OriginalRightRecordValues
+import FV.Backend.Proof.StockCmpZero8OriginalRightRootValues
+import FV.Backend.Proof.StockCmpZero8OriginalRightTransfer
+import FV.Backend.Proof.StockCmpZero8RecordValues
+import FV.Backend.Proof.StockCmpZero8RhsValues
+import FV.Backend.Proof.StockCmpZero8RightDefinedDriverRuns
+import FV.Backend.Proof.StockCmpZero8RightDefinedEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8RightDefinedNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZero8RootValues
+import FV.Backend.Proof.StockCmpZero8Transfer
+import FV.Backend.Proof.StockCmpZeroDriverRuns
+import FV.Backend.Proof.StockCmpZeroEmitterSelection
+import FV.Backend.Proof.StockCmpZeroEmitterValues
+import FV.Backend.Proof.StockCmpZeroEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZeroEqDriverWitness
+import FV.Backend.Proof.StockCmpZeroHelpers
+import FV.Backend.Proof.StockCmpZeroLeftDriverRuns
+import FV.Backend.Proof.StockCmpZeroLeftEmitterSelection
+import FV.Backend.Proof.StockCmpZeroLeftEmitterValues
+import FV.Backend.Proof.StockCmpZeroLeftEqAllValuesWitness
+import FV.Backend.Proof.StockCmpZeroLeftMatch
+import FV.Backend.Proof.StockCmpZeroLeftNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZeroLeftRecordValues
+import FV.Backend.Proof.StockCmpZeroLeftRootValues
+import FV.Backend.Proof.StockCmpZeroLeftTransfer
+import FV.Backend.Proof.StockCmpZeroMatch
+import FV.Backend.Proof.StockCmpZeroNeAllValuesWitness
+import FV.Backend.Proof.StockCmpZeroNeDriverWitness
+import FV.Backend.Proof.StockCmpZeroOriginalEmitterSelection
+import FV.Backend.Proof.StockCmpZeroRecordValues
+import FV.Backend.Proof.StockCmpZeroRhsValues
+import FV.Backend.Proof.StockCmpZeroRootValues
+import FV.Backend.Proof.StockCmpZeroRuleCalls
+import FV.Backend.Proof.StockCmpZeroSelection
+import FV.Backend.Proof.StockCmpZeroTransfer
+import FV.Backend.Proof.StockCmpZeroValues
+import FV.Backend.Proof.StockCmpZeroWitness
+import FV.Backend.Proof.StockConstantRecordValues
+import FV.Backend.Proof.StockCountClzNonzeroWitness
+import FV.Backend.Proof.StockCountClzZeroWitness
+import FV.Backend.Proof.StockCountCtzNonzeroWitness
+import FV.Backend.Proof.StockCountCtzZeroWitness
+import FV.Backend.Proof.StockCountForms
+import FV.Backend.Proof.StockCountMath
+import FV.Backend.Proof.StockCountRecordValues
+import FV.Backend.Proof.StockCountRhs
+import FV.Backend.Proof.StockCountSelected
+import FV.Backend.Proof.StockCountSemantics
+import FV.Backend.Proof.StockCountSourceValues
+import FV.Backend.Proof.StockCoverageRecords
+import FV.Backend.Proof.StockDemandExtent
+import FV.Backend.Proof.StockDemandMono
+import FV.Backend.Proof.StockDivAliasSem
+import FV.Backend.Proof.StockDivBodyValueWitness
+import FV.Backend.Proof.StockDivBodyValues
+import FV.Backend.Proof.StockDivConstant
+import FV.Backend.Proof.StockDivDispatch
+import FV.Backend.Proof.StockDivDividendValueWitness
+import FV.Backend.Proof.StockDivDividendValues
+import FV.Backend.Proof.StockDivDivisorValueWitness
+import FV.Backend.Proof.StockDivDivisorValues
+import FV.Backend.Proof.StockDivFlags
+import FV.Backend.Proof.StockDivGeneralValues
+import FV.Backend.Proof.StockDivGuardSemantics
+import FV.Backend.Proof.StockDivGuardWitness
+import FV.Backend.Proof.StockDivHelperWitness
+import FV.Backend.Proof.StockDivHelpers
+import FV.Backend.Proof.StockDivImmFrame
+import FV.Backend.Proof.StockDivImmOperandValues
+import FV.Backend.Proof.StockDivImmPure
+import FV.Backend.Proof.StockDivImmResolved
+import FV.Backend.Proof.StockDivImmResolvedWitness
+import FV.Backend.Proof.StockDivImmValues
+import FV.Backend.Proof.StockDivImmWitness
+import FV.Backend.Proof.StockDivIntmin
+import FV.Backend.Proof.StockDivLcf
+import FV.Backend.Proof.StockDivMatch
+import FV.Backend.Proof.StockDivMinimumResolved
+import FV.Backend.Proof.StockDivMinimumWitness
+import FV.Backend.Proof.StockDivMovK
+import FV.Backend.Proof.StockDivObservations
+import FV.Backend.Proof.StockDivPure
+import FV.Backend.Proof.StockDivRecordReceiptWitness
+import FV.Backend.Proof.StockDivRecordReceipts
+import FV.Backend.Proof.StockDivRemNarrowRecordValues
+import FV.Backend.Proof.StockDivRemNarrowSourceValues
+import FV.Backend.Proof.StockDivRemNarrowValues
+import FV.Backend.Proof.StockDivRemSelectedWitness
+import FV.Backend.Proof.StockDivRemValues
+import FV.Backend.Proof.StockDivRemWideRecordValues
+import FV.Backend.Proof.StockDivRemWideSourceValues
+import FV.Backend.Proof.StockDivRemWideValues
+import FV.Backend.Proof.StockDivRequestWitness
+import FV.Backend.Proof.StockDivRequests
+import FV.Backend.Proof.StockDivResolved
+import FV.Backend.Proof.StockDivResolvedGuardWitness
+import FV.Backend.Proof.StockDivResolvedGuards
+import FV.Backend.Proof.StockDivResolvedWitness
+import FV.Backend.Proof.StockDivRhs
+import FV.Backend.Proof.StockDivRhsWitness
+import FV.Backend.Proof.StockDivRootMatch
+import FV.Backend.Proof.StockDivSafeMatch
+import FV.Backend.Proof.StockDivSafeMatchObserved
+import FV.Backend.Proof.StockDivSafeObservations
+import FV.Backend.Proof.StockDivSafeValues
+import FV.Backend.Proof.StockDivSdiv16BoundaryWitness
+import FV.Backend.Proof.StockDivSdiv16Witness
+import FV.Backend.Proof.StockDivSdiv16WitnessRuns
+import FV.Backend.Proof.StockDivSdiv32BoundaryWitness
+import FV.Backend.Proof.StockDivSdiv32Witness
+import FV.Backend.Proof.StockDivSdiv32WitnessRuns
+import FV.Backend.Proof.StockDivSdiv64BoundaryWitness
+import FV.Backend.Proof.StockDivSdiv64Witness
+import FV.Backend.Proof.StockDivSdiv64WitnessRuns
+import FV.Backend.Proof.StockDivSdiv8BoundaryWitness
+import FV.Backend.Proof.StockDivSdiv8Witness
+import FV.Backend.Proof.StockDivSdiv8WitnessRuns
+import FV.Backend.Proof.StockDivSdivSafe16Witness
+import FV.Backend.Proof.StockDivSdivSafe16WitnessRuns
+import FV.Backend.Proof.StockDivSdivSafe32Witness
+import FV.Backend.Proof.StockDivSdivSafe32WitnessRuns
+import FV.Backend.Proof.StockDivSdivSafe64Witness
+import FV.Backend.Proof.StockDivSdivSafe64WitnessRuns
+import FV.Backend.Proof.StockDivSdivSafe8Witness
+import FV.Backend.Proof.StockDivSdivSafe8WitnessRuns
+import FV.Backend.Proof.StockDivSelected
+import FV.Backend.Proof.StockDivSelectedWitness
+import FV.Backend.Proof.StockDivSignedObservations
+import FV.Backend.Proof.StockDivSignedRecordReceipts
+import FV.Backend.Proof.StockDivSignedRecordValues
+import FV.Backend.Proof.StockDivSignedSelected
+import FV.Backend.Proof.StockDivSignedSelectedWitness
+import FV.Backend.Proof.StockDivSignedSourceTrap
+import FV.Backend.Proof.StockDivSignedSourceValues
+import FV.Backend.Proof.StockDivSignedValues
+import FV.Backend.Proof.StockDivSourceOverflow
+import FV.Backend.Proof.StockDivSourceRequests
+import FV.Backend.Proof.StockDivSourceTrap
+import FV.Backend.Proof.StockDivSrem16BoundaryWitness
+import FV.Backend.Proof.StockDivSrem16Witness
+import FV.Backend.Proof.StockDivSrem16WitnessRuns
+import FV.Backend.Proof.StockDivSrem32BoundaryWitness
+import FV.Backend.Proof.StockDivSrem32Witness
+import FV.Backend.Proof.StockDivSrem32WitnessRuns
+import FV.Backend.Proof.StockDivSrem64BoundaryWitness
+import FV.Backend.Proof.StockDivSrem64Witness
+import FV.Backend.Proof.StockDivSrem64WitnessRuns
+import FV.Backend.Proof.StockDivSrem8BoundaryWitness
+import FV.Backend.Proof.StockDivSrem8Witness
+import FV.Backend.Proof.StockDivSrem8WitnessRuns
+import FV.Backend.Proof.StockDivUdiv16Witness
+import FV.Backend.Proof.StockDivUdiv16WitnessRuns
+import FV.Backend.Proof.StockDivUdiv32Witness
+import FV.Backend.Proof.StockDivUdiv32WitnessRuns
+import FV.Backend.Proof.StockDivUdiv8Witness
+import FV.Backend.Proof.StockDivUdiv8WitnessRuns
+import FV.Backend.Proof.StockDivUdivNarrowRecordValues
+import FV.Backend.Proof.StockDivUdivNarrowSourceValues
+import FV.Backend.Proof.StockDivUdivNarrowValues
+import FV.Backend.Proof.StockDivUdivValues
+import FV.Backend.Proof.StockDivUdivWideRecordValues
+import FV.Backend.Proof.StockDivUdivWideSourceValues
+import FV.Backend.Proof.StockDivUdivWideValues
+import FV.Backend.Proof.StockDivUdivWideWitness
+import FV.Backend.Proof.StockDivUdivWideWitnessRuns
+import FV.Backend.Proof.StockDivUrem16Witness
+import FV.Backend.Proof.StockDivUrem16WitnessRuns
+import FV.Backend.Proof.StockDivUrem32Witness
+import FV.Backend.Proof.StockDivUrem32WitnessRuns
+import FV.Backend.Proof.StockDivUrem64Witness
+import FV.Backend.Proof.StockDivUrem64WitnessRuns
+import FV.Backend.Proof.StockDivUrem8Witness
+import FV.Backend.Proof.StockDivUrem8WitnessRuns
+import FV.Backend.Proof.StockDivValueTransfer
+import FV.Backend.Proof.StockExtendRequests
+import FV.Backend.Proof.StockExtendSemantics
+import FV.Backend.Proof.StockExtendValues
+import FV.Backend.Proof.StockExtendWitness
+import FV.Backend.Proof.StockFreshRecordValues
+import FV.Backend.Proof.StockGuardedRecordValues
+import FV.Backend.Proof.StockHighMulDispatch
+import FV.Backend.Proof.StockHighMulMatch
+import FV.Backend.Proof.StockHighMulNarrowRecordValues
+import FV.Backend.Proof.StockHighMulNarrowRhs
+import FV.Backend.Proof.StockHighMulNarrowSelected
+import FV.Backend.Proof.StockHighMulNarrowSemantics
+import FV.Backend.Proof.StockHighMulPure
+import FV.Backend.Proof.StockHighMulRecordIntervals
+import FV.Backend.Proof.StockHighMulRecordValues
+import FV.Backend.Proof.StockHighMulRequests
+import FV.Backend.Proof.StockHighMulRhs
+import FV.Backend.Proof.StockHighMulSelected
+import FV.Backend.Proof.StockHighMulSemantics
+import FV.Backend.Proof.StockHighMulSourceValues
+import FV.Backend.Proof.StockHighMulWideRecordValues
+import FV.Backend.Proof.StockHighMulWitness
+import FV.Backend.Proof.StockHighMulWitnessRuns
+import FV.Backend.Proof.StockImm12Helper
+import FV.Backend.Proof.StockLogicalForms
+import FV.Backend.Proof.StockLogicalLookthrough
+import FV.Backend.Proof.StockLogicalNotLookthrough
+import FV.Backend.Proof.StockLogicalNotMatch
+import FV.Backend.Proof.StockLogicalNotReceipts
+import FV.Backend.Proof.StockLogicalNotRecord
+import FV.Backend.Proof.StockLogicalNotRecordWitness
+import FV.Backend.Proof.StockLogicalNotRootValues
+import FV.Backend.Proof.StockLogicalNotSemantics
+import FV.Backend.Proof.StockLogicalNotValues
+import FV.Backend.Proof.StockLogicalNotWitness
+import FV.Backend.Proof.StockLogicalNotXor
+import FV.Backend.Proof.StockLogicalNotXorFusedWitness
+import FV.Backend.Proof.StockLogicalNotXorRecord
+import FV.Backend.Proof.StockLogicalNotXorWitness
+import FV.Backend.Proof.StockLogicalObserved
+import FV.Backend.Proof.StockLogicalRrr
+import FV.Backend.Proof.StockLogicalSelected
+import FV.Backend.Proof.StockLogicalSemantics
+import FV.Backend.Proof.StockLogicalSourceWitness
+import FV.Backend.Proof.StockLogicalValues
+import FV.Backend.Proof.StockMinMaxNonconstantValues
+import FV.Backend.Proof.StockMinMaxRegisterDriverRuns
+import FV.Backend.Proof.StockMinMaxRegisterDriverWitness
+import FV.Backend.Proof.StockMinMaxRegisterOriginalSourceValues
+import FV.Backend.Proof.StockMinMaxRegisterRecordValues
+import FV.Backend.Proof.StockMinMaxRegisterRootValues
+import FV.Backend.Proof.StockMinMaxRegisterRuns
+import FV.Backend.Proof.StockMinMaxRegisterSourceReads
+import FV.Backend.Proof.StockMinMaxRegisterTraceValues
+import FV.Backend.Proof.StockMinMaxRegisterValues
+import FV.Backend.Proof.StockMinMaxRegisterWitness
+import FV.Backend.Proof.StockMinMaxSelectedCalls
+import FV.Backend.Proof.StockMinMaxSourceMatch
+import FV.Backend.Proof.StockMulFusedMatch
+import FV.Backend.Proof.StockMulFusedRecordValues
+import FV.Backend.Proof.StockMulFusedRhs
+import FV.Backend.Proof.StockMulFusedSemantics
+import FV.Backend.Proof.StockMulFusedValues
+import FV.Backend.Proof.StockMulFusedWitness
+import FV.Backend.Proof.StockMulHelper
+import FV.Backend.Proof.StockMulRecordValues
+import FV.Backend.Proof.StockMulRhs
+import FV.Backend.Proof.StockMulSemantics
+import FV.Backend.Proof.StockMulValues
+import FV.Backend.Proof.StockMulWitness
+import FV.Backend.Proof.StockNegDispatchWitness
+import FV.Backend.Proof.StockNegRecordValues
+import FV.Backend.Proof.StockNegRhs
+import FV.Backend.Proof.StockNegSelected
+import FV.Backend.Proof.StockNegSemantics
+import FV.Backend.Proof.StockNegSourceValues
+import FV.Backend.Proof.StockNegWitness
+import FV.Backend.Proof.StockPayloadAliasOrigins
+import FV.Backend.Proof.StockPopcountMath
+import FV.Backend.Proof.StockPopcountNonzeroWitness
+import FV.Backend.Proof.StockPopcountPure
+import FV.Backend.Proof.StockPopcountRecordValues
+import FV.Backend.Proof.StockPopcountRhs
+import FV.Backend.Proof.StockPopcountSelected
+import FV.Backend.Proof.StockPopcountSemantics
+import FV.Backend.Proof.StockPopcountSourceValues
+import FV.Backend.Proof.StockPopcountZeroWitness
+import FV.Backend.Proof.StockRecordIntervals
+import FV.Backend.Proof.StockReduceReceipts
+import FV.Backend.Proof.StockReduceRecord
+import FV.Backend.Proof.StockReduceSelected
+import FV.Backend.Proof.StockReduceSourceValues
+import FV.Backend.Proof.StockReduceWitness
+import FV.Backend.Proof.StockRequestSuccess
+import FV.Backend.Proof.StockReservedTerminal
+import FV.Backend.Proof.StockRootOpcode
+import FV.Backend.Proof.StockRootOpcodeMatch
+import FV.Backend.Proof.StockRotateAuxWitness
+import FV.Backend.Proof.StockRotateLeftImmediateWitness
+import FV.Backend.Proof.StockRotateLeftRegisterWitness
+import FV.Backend.Proof.StockRotateRightImmediateWitness
+import FV.Backend.Proof.StockRotateRightRegisterWitness
+import FV.Backend.Proof.StockRotateSourceValues
+import FV.Backend.Proof.StockScopePartition
+import FV.Backend.Proof.StockScopeRoots
+import FV.Backend.Proof.StockScopeRootsWitness
+import FV.Backend.Proof.StockSelectBuilders
+import FV.Backend.Proof.StockSelectConditions
+import FV.Backend.Proof.StockSelectObserved
+import FV.Backend.Proof.StockSelectRequests
+import FV.Backend.Proof.StockSelectSourceValues
+import FV.Backend.Proof.StockSelectSourceWitness
+import FV.Backend.Proof.StockSelectValues
+import FV.Backend.Proof.StockSelectWitness
+import FV.Backend.Proof.StockSelectionReceipts
+import FV.Backend.Proof.StockShiftHelper
+import FV.Backend.Proof.StockShiftMatch
+import FV.Backend.Proof.StockShiftPrepValues
+import FV.Backend.Proof.StockShiftRecordValues
+import FV.Backend.Proof.StockShiftRequests
+import FV.Backend.Proof.StockShiftRhs
+import FV.Backend.Proof.StockShiftRhsObserved
+import FV.Backend.Proof.StockShiftRhsWitness
+import FV.Backend.Proof.StockShiftRootMatch
+import FV.Backend.Proof.StockShiftRootReceipts
+import FV.Backend.Proof.StockShiftRootValues
+import FV.Backend.Proof.StockShiftSemantics
+import FV.Backend.Proof.StockShiftValues
+import FV.Backend.Proof.StockShiftWitness
+import FV.Backend.Proof.StockSourceAliasRank
+import FV.Backend.Proof.StockSourceAliasRecords
+import FV.Backend.Proof.StockSourceTerminal
+import FV.Backend.Proof.StockUnaryDispatch
+import FV.Backend.Proof.StockUnarySourceValues
+import FV.E2E.LinkArm
+import FV.E2E.RelaxTotal
+import FV.E2E.SizeIn
+import FV.Link.Exe
+import FV.Link.ExeTotal
+#print axioms Backend.Proof.PerEdgePrep.outerStepAt_inv
+#print axioms Backend.Proof.PerEdgePrep.outerLoopAt_inv
+#print axioms Backend.Proof.PerEdgePrep.prepareAt_outer_facts
+#print axioms Backend.Proof.PerEdgePrep.keptAt_blocks
+#print axioms Backend.Proof.PerEdgePrep.keptAt_source
+#print axioms Backend.Proof.PerEdgePrep.prepareAt_input_facts
+#print axioms Backend.Proof.PerEdgePrep.prepareAt_kept_facts
+#print axioms Backend.Proof.PerEdgePrep.outer_order_facts
+#print axioms Backend.Proof.PerEdgePrep.ordered_cfg
+#print axioms Backend.Proof.PerEdgePrep.prepareAt_cfg
+#print axioms Backend.Proof.PerEdgePrep.prepareAt_entry
+#print axioms Backend.Proof.PerEdgePrepOuterWitness.indexed_outer_loop_witness
+#print axioms Backend.Proof.PerEdgePrepOuterWitness.indexed_prepare_outer_facts_witness
+#print axioms Backend.Proof.PerEdgePrepOuterWitness.indexed_prepare_filter_facts_witness
+#print axioms Backend.Proof.PerEdgePrepOuterWitness.indexed_rpo_witness
+#print axioms Backend.Proof.PerEdgePrepOuterWitness.indexed_prepared_entry_cfg_witness
+#print axioms Backend.Proof.PerEdgePrep.innerStepAt_graph
+#print axioms Backend.Proof.PerEdgePrep.innerFoldAt_graph
+#print axioms Backend.Proof.PerEdgePrep.innerForInAt_eq
+#print axioms Backend.Proof.PerEdgePrep.innerStepAt_rows
+#print axioms Backend.Proof.PerEdgePrep.innerFoldAt_rows
+#print axioms Backend.Proof.PerEdgePrep.innerFoldAt_facts
+#print axioms Backend.Proof.PerEdgePrep.innerFoldAt_copies
+#print axioms Backend.Proof.PerEdgePrep.prepareAt_stages
+#print axioms Backend.Proof.PerEdgePrepLoopWitness.indexed_inner_loop_witness
+#print axioms Backend.Proof.PerEdgePrepLoopWitness.indexed_prepare_stages_witness
+#print axioms Backend.Stock.Proof.Bnot.stock_bnot_base_match
+#print axioms Backend.Stock.Proof.Bnot.stock_bnot_base_resolved
+#print axioms Backend.Stock.Proof.Bnot.stock_bnot_data
+#print axioms Backend.Stock.Proof.Bnot.stock_bnot_rhs_observed
+#print axioms Backend.Stock.Proof.Bnot.stock_bnot_rhs_run
+#print axioms Backend.Stock.Proof.Bnot.stock_bnot_selected_root_values
+#print axioms Backend.Stock.Proof.Bnot.stock_bnot_shift_match_receipts
+#print axioms Backend.Stock.Proof.Bnot.stock_bnot_shift_match_value
+#print axioms Backend.Stock.Proof.Bnot.stock_bnot_shift_resolved
+#print axioms Backend.Stock.Proof.Bnot.stock_lower_bnot_available_values
+#print axioms Backend.Stock.Proof.Bnot.stock_lower_bnot_record_values
+#print axioms Backend.Stock.Proof.Bnot.stock_lower_bnot_record_values_witness
+#print axioms Backend.Stock.Proof.Bnot.stock_lower_bnot_source_values_witness
+#print axioms Backend.Stock.Proof.Coverage.bindResults_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.bindResults_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.blockCore_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.blockCore_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.blockCore_records_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.blockCore_records_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.branchArgs_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.branchArgs_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.branch_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.branch_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.buildCtx_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.buildCtx_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.built_scanBlock_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.built_scanBlock_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.built_scan_slots
+#print axioms Backend.Stock.Proof.Coverage.built_scan_slots_witness
+#print axioms Backend.Stock.Proof.Coverage.emission_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.emission_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.emission_retTrap_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.emission_retTrap_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.lower_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.lower_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.lower_record_noOpportunistic
+#print axioms Backend.Stock.Proof.Coverage.lower_record_noOpportunistic_witness
+#print axioms Backend.Stock.Proof.Coverage.lower_records_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.lower_records_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.node_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.node_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.retTrap_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.retTrap_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.scanBlock_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.scanBlock_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.scanBlock_records_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.scanBlock_records_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.scan_noOpportunistic
+#print axioms Backend.Stock.Proof.Coverage.scan_noOpportunistic_witness
+#print axioms Backend.Stock.Proof.Coverage.scan_retTrap_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.scan_retTrap_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.scan_source_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.scan_source_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Coverage.statement_noOpportunity
+#print axioms Backend.Stock.Proof.Coverage.statement_noOpportunity_witness
+#print axioms Backend.Stock.Proof.Extent.apply_demand_size
+#print axioms Backend.Stock.Proof.Extent.ctor_demand_size
+#print axioms Backend.Stock.Proof.Extent.demand_extent_witness
+#print axioms Backend.Stock.Proof.Extent.lower_mapped_demand_bounds
+#print axioms Backend.Stock.Proof.Extent.lower_record_demand_size
+#print axioms Backend.Stock.Proof.Extent.named_demand_size
+#print axioms Backend.Stock.Proof.Extent.scanBlock_demand_size
+#print axioms Backend.Stock.Proof.Extent.scan_demand_size
+#print axioms Backend.Stock.Proof.LogicalForms.stock_logical_forms_witness
+#print axioms Backend.Stock.Proof.LogicalForms.stock_logical_imm_helper
+#print axioms Backend.Stock.Proof.LogicalForms.stock_logical_shift_helper
+#print axioms Backend.Stock.Proof.LogicalForms.stock_rhs_3920
+#print axioms Backend.Stock.Proof.LogicalForms.stock_rhs_3923
+#print axioms Backend.Stock.Proof.LogicalForms.stock_rhs_3928
+#print axioms Backend.Stock.Proof.LogicalForms.stock_rhs_3931
+#print axioms Backend.Stock.Proof.LogicalNot.MirrorWitness.stock_lower_logical_not_record_values_witness
+#print axioms Backend.Stock.Proof.LogicalNot.MirrorWitness.stock_lower_logical_not_source_values_witness
+#print axioms Backend.Stock.Proof.LogicalNot.XorFusedWitness.stock_lower_not_xor_fused_record_values_witness
+#print axioms Backend.Stock.Proof.LogicalNot.XorFusedWitness.stock_lower_not_xor_fused_source_values_witness
+#print axioms Backend.Stock.Proof.LogicalNot.XorWitness.stock_lower_not_xor_record_values_witness
+#print axioms Backend.Stock.Proof.LogicalNot.XorWitness.stock_lower_not_xor_source_values_witness
+#print axioms Backend.Stock.Proof.LogicalNot.stock_lower_logical_not_available_values
+#print axioms Backend.Stock.Proof.LogicalNot.stock_lower_logical_not_record_values
+#print axioms Backend.Stock.Proof.LogicalNot.stock_lower_not_xor_available_values
+#print axioms Backend.Stock.Proof.LogicalNot.stock_lower_not_xor_record_values
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_helper_values
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_helper_values_witness
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_imm_match_receipts
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_imm_resolved
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_imm_rhs_observed
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_pattern_value
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_rhs_helper
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_root_match
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_root_match_receipts
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_root_match_source
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_root_values
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_rrr_resolved
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_rrr_rhs_observed
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_selected_root_values
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_shift_match_receipts
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_shift_resolved
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_shift_rhs_observed
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_xor_match_receipts
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_xor_match_source
+#print axioms Backend.Stock.Proof.LogicalNot.stock_not_xor_selected_root_values
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_logical_helper_witness
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_logical_rhs_helper
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_logical_root_values
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_logical_selected_witness
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_lower_logical_available_values
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_lower_logical_record_inputs_witness
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_lower_logical_record_values
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_lower_logical_record_values_witness
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_lower_logical_selected_receipts
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_lower_logical_source_values_witness
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_match_logical
+#print axioms Backend.Stock.Proof.LogicalSemantics.formBuild
+#print axioms Backend.Stock.Proof.LogicalSemantics.formDFG
+#print axioms Backend.Stock.Proof.LogicalSemantics.formExtent
+#print axioms Backend.Stock.Proof.LogicalSemantics.formHeld
+#print axioms Backend.Stock.Proof.LogicalSemantics.formInv
+#print axioms Backend.Stock.Proof.LogicalSemantics.formRun
+#print axioms Backend.Stock.Proof.LogicalSemantics.formScope
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_constant_match_value
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_constant_match_witness
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_helper_values
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_helper_values_witness
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_imm_match_receipts
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_imm_observed_witness
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_imm_receipts_witness
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_imm_resolved
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_imm_rhs_observed
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_rrr_observed_witness
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_rrr_rhs_observed
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_semantics_witness
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_shift_match_receipts
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_shift_match_value
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_shift_match_witness
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_shift_observed_witness
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_shift_receipts_witness
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_shift_resolved
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_logical_shift_rhs_observed
+#print axioms Backend.Stock.Proof.LogicalSemantics.stock_shift_pattern_value
+#print axioms Backend.Stock.Proof.LowerSelection.last_rule
+#print axioms Backend.Stock.Proof.LowerSelection.rule_mem
+#print axioms Backend.Stock.Proof.Neg.DispatchWitness.stock_lower_neg_dispatch_source_witness
+#print axioms Backend.Stock.Proof.Neg.Witness.stock_lower_neg_source_values_witness
+#print axioms Backend.Stock.Proof.Neg.stock_lower_neg_available_source
+#print axioms Backend.Stock.Proof.Neg.stock_lower_neg_available_values
+#print axioms Backend.Stock.Proof.Neg.stock_neg_match
+#print axioms Backend.Stock.Proof.Neg.stock_neg_resolved
+#print axioms Backend.Stock.Proof.Neg.stock_neg_rhs
+#print axioms Backend.Stock.Proof.Neg.stock_neg_rhs_requests
+#print axioms Backend.Stock.Proof.Neg.stock_neg_selected_values
+#print axioms Backend.Stock.Proof.ScalarAddSub.AuxWitness.stock_addsub_negative_projection_witness
+#print axioms Backend.Stock.Proof.ScalarAddSub.ExtensionWitness.stock_lower_addsub_extension_source_witness
+#print axioms Backend.Stock.Proof.ScalarAddSub.ImmediateWitness.stock_lower_addsub_immediate_source_witness
+#print axioms Backend.Stock.Proof.ScalarAddSub.Negative.stock_addsub_negative_match_project
+#print axioms Backend.Stock.Proof.ScalarAddSub.Negative.stock_addsub_negative_project
+#print axioms Backend.Stock.Proof.ScalarAddSub.Negative.stock_addsub_negative_pure_helper
+#print axioms Backend.Stock.Proof.ScalarAddSub.NegativeWitness.stock_lower_addsub_negative_source_witness
+#print axioms Backend.Stock.Proof.ScalarAddSub.ShiftEdgeWitness.stock_lower_addsub_shift_edge_source_witness
+#print axioms Backend.Stock.Proof.ScalarAddSub.ShiftWitness.stock_lower_addsub_shift_source_witness
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_first_request
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_helper
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_match
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_match_receipts
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_match_value
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_observed
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_reg
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_requests
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_resolved
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_rhs
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extend_selected_values
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_extended_pattern_value
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_fused_selected_values
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_imm_first_request
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_imm_helper
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_imm_match
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_imm_match_receipts
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_imm_observed
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_imm_resolved
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_imm_rhs
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_imm_selected_values
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_neg_helper
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_neg_imm_first_request
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_neg_imm_observed
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_neg_imm_rhs
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_neg_match
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_neg_match_operand
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_neg_match_receipts
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_neg_selected_values
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_pure_helper
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_put_extended_iff
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_selected_rule_ids
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_first_request
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_helper
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_match
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_match_receipts
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_match_value
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_observed
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_requests
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_resolved
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_rhs
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_shift_selected_values
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_addsub_source_data
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_source
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_available_values
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_source
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_available_values
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_record_values
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_fused_source_from_step
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarAddSub.stock_lower_addsub_source_operands
+#print axioms Backend.Stock.Proof.ScalarBit.BitrevDispatchWitness.stock_lower_bitrev_dispatch_source_witness
+#print axioms Backend.Stock.Proof.ScalarBit.BswapDispatchWitness.stock_lower_bswap_dispatch_source_witness
+#print axioms Backend.Stock.Proof.ScalarBit.BswapWitness.stock_lower_bswap_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarBit.Witness.stock_lower_bitrev_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bit_rr_helper
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_fallback_width
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_narrow_bits
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_narrow_match
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_narrow_rhs
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_narrow_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_resolved
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_selected_values
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_wide_match
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_wide_rhs
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bitrev_wide_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bswap16_bits
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bswap_match
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bswap_resolved
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bswap_rhs
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bswap_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bswap_selected_values
+#print axioms Backend.Stock.Proof.ScalarBit.stock_bswap_wide_bits
+#print axioms Backend.Stock.Proof.ScalarBit.stock_lower_bitrev_available_source
+#print axioms Backend.Stock.Proof.ScalarBit.stock_lower_bitrev_available_values
+#print axioms Backend.Stock.Proof.ScalarBit.stock_lower_bswap_available_source
+#print axioms Backend.Stock.Proof.ScalarBit.stock_lower_bswap_available_values
+#print axioms Backend.Stock.Proof.ScalarCast.Reduce.Witness.stock_lower_reduce_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarCast.Reduce.stock_lower_reduce_available_source
+#print axioms Backend.Stock.Proof.ScalarCast.Reduce.stock_lower_reduce_record_receipts
+#print axioms Backend.Stock.Proof.ScalarCast.Reduce.stock_reduce_holds
+#print axioms Backend.Stock.Proof.ScalarCast.Reduce.stock_reduce_match
+#print axioms Backend.Stock.Proof.ScalarCast.Reduce.stock_reduce_rhs
+#print axioms Backend.Stock.Proof.ScalarCast.Reduce.stock_reduce_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarCast.Reduce.stock_reduce_selected_receipts
+#print axioms Backend.Stock.Proof.ScalarCast.Witness.stock_extend_match_no_type_witness
+#print axioms Backend.Stock.Proof.ScalarCast.Witness.stock_lower_extend_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarCast.stock_cast_extend_holds
+#print axioms Backend.Stock.Proof.ScalarCast.stock_cast_extend_resolved
+#print axioms Backend.Stock.Proof.ScalarCast.stock_extend_match
+#print axioms Backend.Stock.Proof.ScalarCast.stock_extend_match_no_type
+#print axioms Backend.Stock.Proof.ScalarCast.stock_extend_rhs
+#print axioms Backend.Stock.Proof.ScalarCast.stock_extend_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarCast.stock_extend_selected_values
+#print axioms Backend.Stock.Proof.ScalarCast.stock_lower_extend_available_source
+#print axioms Backend.Stock.Proof.ScalarCast.stock_lower_extend_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualBothNonzero32AllValuesWitness.stock_cmp_actual_both_nonzero32_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualImmediateDriverWitness.stock_cmp_actual_immediate_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualNarrowActual16UnsignedAllValuesWitness.stock_cmp_actual_narrow_actual16_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualNarrowActual8SignedAllValuesWitness.stock_cmp_actual_narrow_actual8_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualNonencodable32SignedAllValuesWitness.stock_cmp_actual_nonencodable32_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualNonencodable64UnsignedAllValuesWitness.stock_cmp_actual_nonencodable64_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualPredecessor32K4097SignedAllValuesWitness.stock_cmp_actual_predecessor32_4097_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualPredecessor32K4097UnsignedAllValuesWitness.stock_cmp_actual_predecessor32_4097_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualPredecessor32K8193SignedAllValuesWitness.stock_cmp_actual_predecessor32_8193_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualPredecessor32K8193UnsignedAllValuesWitness.stock_cmp_actual_predecessor32_8193_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualPredecessor64K4097SignedAllValuesWitness.stock_cmp_actual_predecessor64_4097_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualPredecessor64K4097UnsignedAllValuesWitness.stock_cmp_actual_predecessor64_4097_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualPredecessor64K8193SignedAllValuesWitness.stock_cmp_actual_predecessor64_8193_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualPredecessor64K8193UnsignedAllValuesWitness.stock_cmp_actual_predecessor64_8193_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualWideConstantLeft32UnsignedAllValuesWitness.stock_cmp_actual_wide_constant_left32_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualWideConstantLeft64SignedAllValuesWitness.stock_cmp_actual_wide_constant_left64_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualZero32EqAllValuesWitness.stock_cmp_actual_zero32_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ActualZero64DefinedNeAllValuesWitness.stock_cmp_actual_zero64_defined_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ConstantLeft16UnifiedAllValuesWitness.stock_cmp_constant_left16_unified_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ConstantLeft32UnifiedAllValuesWitness.stock_cmp_constant_left32_unified_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ConstantLeft64UnifiedAllValuesWitness.stock_cmp_constant_left64_unified_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ConstantLeft8UnifiedAllValuesWitness.stock_cmp_constant_left8_unified_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.DefinedDriverWitness.stock_cmp_defined_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.EqualZero8HelperWitness.stock_cmp_equal_zero8_rhs_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.ImmediateDriverWitness.stock_cmp_immediate_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.MatchedWitness.stock_cmp_match_observations_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Narrow16SignedAllValuesWitness.stock_cmp_narrow16_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Narrow16UnsignedAllValuesWitness.stock_cmp_narrow16_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Narrow8SignedAllValuesWitness.stock_cmp_narrow8_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Narrow8UnsignedAllValuesWitness.stock_cmp_narrow8_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActual16SignedAllValuesWitness.stock_cmp_narrow_actual16_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActual16UnsignedAllValuesWitness.stock_cmp_narrow_actual16_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActual8SignedAllValuesWitness.stock_cmp_narrow_actual8_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActual8UnsignedAllValuesWitness.stock_cmp_narrow_actual8_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualAllocationWitness.stock_cmp_narrow_actual_allocation_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualConstantLeft16SignedAllValuesWitness.stock_cmp_narrow_actual_constant_left16_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualConstantLeft16UnsignedAllValuesWitness.stock_cmp_narrow_actual_constant_left16_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualConstantLeft8SignedAllValuesWitness.stock_cmp_narrow_actual_constant_left8_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualConstantLeft8UnsignedAllValuesWitness.stock_cmp_narrow_actual_constant_left8_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualImmediate16LargeAllValuesWitness.stock_cmp_narrow_actual_immediate16_large_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualImmediate16SmallAllValuesWitness.stock_cmp_narrow_actual_immediate16_small_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualImmediate8LargeAllValuesWitness.stock_cmp_narrow_actual_immediate8_large_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualImmediate8SmallAllValuesWitness.stock_cmp_narrow_actual_immediate8_small_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualWitness.stock_cmp_narrow_actual_values_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualZero16EqAllValuesWitness.stock_cmp_narrow_actual_zero16_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualZero16LeftEqAllValuesWitness.stock_cmp_narrow_actual_zero16_left_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualZero16LeftNeAllValuesWitness.stock_cmp_narrow_actual_zero16_left_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualZero16NeAllValuesWitness.stock_cmp_narrow_actual_zero16_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualZero8EqAllValuesWitness.stock_cmp_narrow_actual_zero8_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualZero8LeftEqAllValuesWitness.stock_cmp_narrow_actual_zero8_left_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualZero8LeftNeAllValuesWitness.stock_cmp_narrow_actual_zero8_left_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowActualZero8NeAllValuesWitness.stock_cmp_narrow_actual_zero8_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowConstant16SignedHighAllValuesWitness.stock_cmp_narrow_constant16_signedhigh_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowConstant16SignedZeroAllValuesWitness.stock_cmp_narrow_constant16_signedzero_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowConstant16UnsignedLargeAllValuesWitness.stock_cmp_narrow_constant16_unsignedlarge_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowConstant8SignedHighAllValuesWitness.stock_cmp_narrow_constant8_signedhigh_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowConstant8SignedZeroAllValuesWitness.stock_cmp_narrow_constant8_signedzero_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowConstantLeft16SignedAllValuesWitness.stock_cmp_narrow_constant_left16_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowConstantLeft16UnsignedAllValuesWitness.stock_cmp_narrow_constant_left16_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowConstantLeft8SignedAllValuesWitness.stock_cmp_narrow_constant_left8_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowConstantLeft8UnsignedAllValuesWitness.stock_cmp_narrow_constant_left8_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowImmediate16LargeAllValuesWitness.stock_cmp_narrow_immediate16_large_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowImmediate16SmallAllValuesWitness.stock_cmp_narrow_immediate16_small_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowImmediate8LargeAllValuesWitness.stock_cmp_narrow_immediate8_large_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowImmediate8SmallAllValuesWitness.stock_cmp_narrow_immediate8_small_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.NarrowSourceWitness.stock_cmp_narrow_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonencodable32SignedAllValuesWitness.stock_cmp_nonencodable32_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonencodable32UnsignedAllValuesWitness.stock_cmp_nonencodable32_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonencodable64SignedAllValuesWitness.stock_cmp_nonencodable64_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonencodable64UnsignedAllValuesWitness.stock_cmp_nonencodable64_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonzero16HelperWitness.stock_cmp_nonzero16_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonzero16OriginalWitness.stock_cmp_nonzero16_original_selection_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonzero16PrefixWitness.stock_cmp_nonzero16_prefix_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonzero32OriginalWitness.stock_cmp_nonzero32_original_selection_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonzero64OriginalWitness.stock_cmp_nonzero64_original_selection_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonzero8HelperWitness.stock_cmp_nonzero8_rhs_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonzero8OriginalWitness.stock_cmp_nonzero8_original_selection_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Nonzero8SelectedWitness.stock_cmp_nonzero8_selected_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.ParameterDriverWitness.stock_cmp_parameter_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.Predecessor32K4097SignedAllValuesWitness.stock_cmp_predecessor32_4097_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Predecessor32K4097UnsignedAllValuesWitness.stock_cmp_predecessor32_4097_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Predecessor32K8193SignedAllValuesWitness.stock_cmp_predecessor32_8193_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Predecessor32K8193UnsignedAllValuesWitness.stock_cmp_predecessor32_8193_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Predecessor64K4097SignedAllValuesWitness.stock_cmp_predecessor64_4097_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Predecessor64K4097UnsignedAllValuesWitness.stock_cmp_predecessor64_4097_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Predecessor64K8193SignedAllValuesWitness.stock_cmp_predecessor64_8193_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Predecessor64K8193UnsignedAllValuesWitness.stock_cmp_predecessor64_8193_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.PredecessorSignedSelectedWitness.stock_cmp_predecessor_signed_selected_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.PredecessorSignedSourceWitness.stock_cmp_predecessor_signed_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.PredecessorUnsignedSelectedWitness.stock_cmp_predecessor_unsigned_selected_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.PredecessorUnsignedSourceWitness.stock_cmp_predecessor_unsigned_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.WideConstantLeft32SignedAllValuesWitness.stock_cmp_wide_constant_left32_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.WideConstantLeft32UnsignedAllValuesWitness.stock_cmp_wide_constant_left32_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.WideConstantLeft64SignedAllValuesWitness.stock_cmp_wide_constant_left64_signed_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.WideConstantLeft64UnsignedAllValuesWitness.stock_cmp_wide_constant_left64_unsigned_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16ConstantThreeEqAllValuesWitness.stock_cmp_zero16_constant_three_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16ConstantThreeNeAllValuesWitness.stock_cmp_zero16_constant_three_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16ConstantZeroEqAllValuesWitness.stock_cmp_zero16_constant_zero_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16ConstantZeroNeAllValuesWitness.stock_cmp_zero16_constant_zero_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16DefinedEqAllValuesWitness.stock_cmp_zero16_defined_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16DefinedNeAllValuesWitness.stock_cmp_zero16_defined_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16EqAllValuesWitness.stock_cmp_zero16_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16LeftEqAllValuesWitness.stock_cmp_zero16_left_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16LeftNeAllValuesWitness.stock_cmp_zero16_left_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16NeAllValuesWitness.stock_cmp_zero16_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16RightDefinedEqAllValuesWitness.stock_cmp_zero16_right_defined_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero16RightDefinedNeAllValuesWitness.stock_cmp_zero16_right_defined_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32ConstantThreeEqAllValuesWitness.stock_cmp_zero32_constant_three_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32ConstantThreeNeAllValuesWitness.stock_cmp_zero32_constant_three_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32ConstantZeroEqAllValuesWitness.stock_cmp_zero32_constant_zero_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32ConstantZeroNeAllValuesWitness.stock_cmp_zero32_constant_zero_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32DefinedEqAllValuesWitness.stock_cmp_zero32_defined_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32DefinedNeAllValuesWitness.stock_cmp_zero32_defined_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32EqAllValuesWitness.stock_cmp_zero32_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32LeftEqAllValuesWitness.stock_cmp_zero32_left_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32LeftNeAllValuesWitness.stock_cmp_zero32_left_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32NeAllValuesWitness.stock_cmp_zero32_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32RightDefinedEqAllValuesWitness.stock_cmp_zero32_right_defined_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero32RightDefinedNeAllValuesWitness.stock_cmp_zero32_right_defined_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero64ConstantThreeEqAllValuesWitness.stock_cmp_zero64_constant_three_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero64ConstantThreeNeAllValuesWitness.stock_cmp_zero64_constant_three_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero64ConstantZeroEqAllValuesWitness.stock_cmp_zero64_constant_zero_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero64ConstantZeroNeAllValuesWitness.stock_cmp_zero64_constant_zero_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero64DefinedEqAllValuesWitness.stock_cmp_zero64_defined_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero64DefinedNeAllValuesWitness.stock_cmp_zero64_defined_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero64RightDefinedEqAllValuesWitness.stock_cmp_zero64_right_defined_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero64RightDefinedNeAllValuesWitness.stock_cmp_zero64_right_defined_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8ConstantThreeEqAllValuesWitness.stock_cmp_zero8_constant_three_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8ConstantThreeNeAllValuesWitness.stock_cmp_zero8_constant_three_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8ConstantZeroEqAllValuesWitness.stock_cmp_zero8_constant_zero_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8ConstantZeroNeAllValuesWitness.stock_cmp_zero8_constant_zero_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8DefinedEqAllValuesWitness.stock_cmp_zero8_defined_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8DefinedNeAllValuesWitness.stock_cmp_zero8_defined_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8EqAllValuesWitness.stock_cmp_zero8_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8LeftEqAllValuesWitness.stock_cmp_zero8_left_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8LeftNeAllValuesWitness.stock_cmp_zero8_left_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8NeAllValuesWitness.stock_cmp_zero8_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8RightDefinedEqAllValuesWitness.stock_cmp_zero8_right_defined_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.Zero8RightDefinedNeAllValuesWitness.stock_cmp_zero8_right_defined_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ZeroEqAllValuesWitness.stock_cmp_zero_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ZeroEqDriverWitness.stock_cmp_zero_eq_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.ZeroHelperWitness.stock_cmp_equal_zero64_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.ZeroHelperWitness.stock_cmp_nonzero64_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.ZeroLeftEqAllValuesWitness.stock_cmp_zero_left_eq_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ZeroLeftNeAllValuesWitness.stock_cmp_zero_left_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ZeroNeAllValuesWitness.stock_cmp_zero_ne_complete_source_witness_all_values
+#print axioms Backend.Stock.Proof.ScalarCmp.ZeroNeDriverWitness.stock_cmp_zero_ne_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_alias_machine_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_both_nonzero32_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_carry_flag
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_flags
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_invert
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_zero
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_conditions
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_constant_left_zero_failure
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_cset_builder
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_defined_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_equal_zero16_rhs_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_equal_zero8_rhs_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_extend_builder
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_extend_builder_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_extend_builder_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_extension_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_condition_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_condition_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_invert
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_invert_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_invert_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_flags_cset
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_imm_builder
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_condition_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_condition_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_condition_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_match_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_rhs
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_immediate_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow16_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow8_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_actual_emitter_growth
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_actual_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_actual_selected_growth
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_actual_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_condition_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant16_signedhigh_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant16_signedzero_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant16_unsignedlarge_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant8_signedhigh_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant8_signedzero_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_left16_signed_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_left16_unsigned_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_left8_signed_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_left8_unsigned_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_left_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_left_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_left_selected_allocation
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_selected_allocation
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_constant_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_extend_op
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_extend_op_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_extend_request
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_extend_request_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_extended_flags
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_extended_flags_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_immediate16_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_immediate8_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_immediate_condition_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_immediate_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_immediate_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_immediate_rhs
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_immediate_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_immediate_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_immediate_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_match_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_resolved
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_resolved_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_rhs
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_selected_allocation
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_narrow_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonconstant_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonconstant_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonconstant_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonencodable32_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonencodable64_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonencodable_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonencodable_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonencodable_ordinary_failure
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonencodable_predecessor_failure
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonencodable_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonencodable_zero_failure
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero16_rhs_prefix_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero16_rhs_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero32_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero32_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero64_rhs
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero64_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero64_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero8_rhs
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero8_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero8_rhs_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_nonzero_narrow_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_constant_cases
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_constant_cases_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_equal_zero32_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_equal_zero64_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_flags
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_nonzero16_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_nonzero32_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_nonzero32_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_nonzero64_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_nonzero64_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_nonzero8_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_original_selection_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_output_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_output_run
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_output_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_equal_zero32_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_equal_zero64_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_nonzero16_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_nonzero32_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_nonzero32_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_nonzero32_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_nonzero64_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_nonzero64_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_nonzero64_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_nonzero8_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_nonzero8_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_root_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_parameter_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor32_4097_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor32_8193_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor64_4097_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor64_8193_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_match_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_condition_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_condition_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_condition_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_match
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_rhs
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_signed_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_condition_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_condition_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_condition_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_match
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_rhs
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_unsigned_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_register_condition_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_register_condition_source_values_any_trace
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_register_condition_source_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_root_match
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_root_match_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_root_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_builder
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_resolved
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_selected_calls
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_selected_calls_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_sets_flags_resolved
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_extension
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_ge_flag
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_predecessor
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_source_data
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_test255_truth
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_test32_builder
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_test32_builder_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_truthy8
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_extension
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_predecessor
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_actual_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_actual_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_constant_left32_signed_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_constant_left32_unsigned_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_constant_left64_signed_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_constant_left64_unsigned_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_constant_left_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_constant_left_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_constant_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_wide_match_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_with_flags_reg
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_eq_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_left_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_left_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_left_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_ne_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_original_eq_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_original_left_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_original_left_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_original_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_original_ne_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_original_right_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_original_right_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_original_right_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero16_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_eq_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_eq_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_left_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_left_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_left_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_ne_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_ne_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_original_eq_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_original_left_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_original_left_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_original_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_original_ne_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_original_right_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_original_right_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_original_right_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero32_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero64_original_eq_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero64_original_left_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero64_original_left_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero64_original_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero64_original_ne_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero64_original_right_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero64_original_right_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero64_original_right_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_eq_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_left_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_left_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_left_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_ne_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_original_eq_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_original_left_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_original_left_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_original_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_original_ne_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_original_right_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_original_right_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_original_right_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero8_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_condition_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_condition_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_constant16_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_constant32_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_constant64_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_constant8_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_defined16_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_defined32_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_defined64_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_defined8_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_eq_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_eq_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_flag
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_helpers_witness
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_invert
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_invert_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_left_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_left_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_left_eq_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_left_match
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_left_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_left_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_match_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_ne_emitter_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_ne_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_ne_rhs_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_original_right_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_right_defined16_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_right_defined32_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_right_defined64_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_right_defined8_driver_observed
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_right_emitter_selected
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_right_match
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_actual_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_actual_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_constant_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_constant_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_immediate_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_immediate_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_immediate_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_immediate_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_immediate_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_actual_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_actual_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_actual_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_constant_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_constant_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_constant_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_constant_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_constant_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_constant_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_immediate_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_immediate_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_immediate_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_narrow_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonconstant_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonencodable_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonencodable_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonencodable_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonencodable_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_nonencodable_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_parameter_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_signed_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_signed_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_signed_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_signed_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_signed_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_unsigned_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_unsigned_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_unsigned_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_unsigned_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_predecessor_unsigned_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_wide_actual_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_wide_actual_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_wide_actual_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_wide_constant_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_wide_constant_left_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_wide_constant_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_wide_constant_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_left_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_left_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_left_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_left_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_right_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_right_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_right_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_right_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_original_right_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero16_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_left_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_left_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_left_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_left_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_right_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_right_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_right_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_right_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_original_right_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero32_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_left_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_left_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_right_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_right_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_right_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_right_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero64_original_right_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_left_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_left_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_left_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_left_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_right_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_right_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_right_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_right_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_original_right_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero8_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_left_available_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_left_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_left_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_left_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_left_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_record_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_source_operands
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_lower_cmp_zero_source_values
+#print axioms Backend.Stock.Proof.ScalarCmp.stock_selected_cmp_root
+#print axioms Backend.Stock.Proof.ScalarCount.ClzNonzeroWitness.stock_lower_count_source_witness
+#print axioms Backend.Stock.Proof.ScalarCount.ClzZeroWitness.stock_lower_count_source_witness
+#print axioms Backend.Stock.Proof.ScalarCount.CtzNonzeroWitness.stock_lower_count_source_witness
+#print axioms Backend.Stock.Proof.ScalarCount.CtzZeroWitness.stock_lower_count_source_witness
+#print axioms Backend.Stock.Proof.ScalarCount.stock_alu_imm12_helper
+#print axioms Backend.Stock.Proof.ScalarCount.stock_clz_narrow_rhs
+#print axioms Backend.Stock.Proof.ScalarCount.stock_clz_zext_bits
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_clz_narrow_requests
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_clz_narrow_resolved
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_clz_narrow_type
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_ctz_narrow_requests
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_ctz_narrow_resolved
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_match
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_resolved
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_selected_values
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_wide_requests
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_wide_resolved
+#print axioms Backend.Stock.Proof.ScalarCount.stock_count_wide_rhs
+#print axioms Backend.Stock.Proof.ScalarCount.stock_ctz_narrow_rhs
+#print axioms Backend.Stock.Proof.ScalarCount.stock_ctz_sentinel_bits
+#print axioms Backend.Stock.Proof.ScalarCount.stock_lower_count_available_source
+#print axioms Backend.Stock.Proof.ScalarCount.stock_lower_count_available_values
+#print axioms Backend.Stock.Proof.ScalarCount.stock_lower_count_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarCount.stock_selected_count_rule
+#print axioms Backend.Stock.Proof.ScalarDiv.BodyValueWitness.stock_div_source_body_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.DividendValueWitness.stock_div_dividend_values_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.DividendValueWitness.stock_div_plain_dividend_values_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.DivisorValueWitness.stock_div_divisor_values_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.ImmResolvedWitness.stock_div_imm_resolved_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.RemSelectedWitness.stock_div_rem_selected_record_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.RequestWitness.stock_div_divisor_request_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.RequestWitness.stock_div_divisor_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.RhsWitness.stock_div_actual_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv16BoundaryWitness.stock_sdiv_16_minimum_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv16BoundaryWitness.stock_sdiv_16_overflow_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv16Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv16Witness.stock_sdiv_16_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv16Witness.stock_sdiv_16_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv32BoundaryWitness.stock_sdiv_32_minimum_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv32BoundaryWitness.stock_sdiv_32_overflow_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv32Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv32Witness.stock_sdiv_32_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv32Witness.stock_sdiv_32_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv64BoundaryWitness.stock_sdiv_64_minimum_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv64BoundaryWitness.stock_sdiv_64_overflow_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv64Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv64Witness.stock_sdiv_64_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv64Witness.stock_sdiv_64_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv8BoundaryWitness.stock_sdiv_8_minimum_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv8BoundaryWitness.stock_sdiv_8_overflow_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv8Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv8Witness.stock_sdiv_8_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Sdiv8Witness.stock_sdiv_8_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.SdivSafe16Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.SdivSafe16Witness.stock_sdiv_safe_16_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.SdivSafe32Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.SdivSafe32Witness.stock_sdiv_safe_32_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.SdivSafe64Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.SdivSafe64Witness.stock_sdiv_safe_64_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.SdivSafe8Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.SdivSafe8Witness.stock_sdiv_safe_8_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.SelectedWitness.stock_div_udiv_selected_record_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.SignedSelectedWitness.stock_div_sdiv_selected_record_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem16BoundaryWitness.stock_srem_16_minimum_minus_one_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem16BoundaryWitness.stock_srem_16_minimum_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem16Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem16Witness.stock_srem_16_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem16Witness.stock_srem_16_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem32BoundaryWitness.stock_srem_32_minimum_minus_one_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem32BoundaryWitness.stock_srem_32_minimum_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem32Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem32Witness.stock_srem_32_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem32Witness.stock_srem_32_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem64BoundaryWitness.stock_srem_64_minimum_minus_one_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem64BoundaryWitness.stock_srem_64_minimum_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem64Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem64Witness.stock_srem_64_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem64Witness.stock_srem_64_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem8BoundaryWitness.stock_srem_8_minimum_minus_one_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem8BoundaryWitness.stock_srem_8_minimum_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem8Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem8Witness.stock_srem_8_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Srem8Witness.stock_srem_8_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Udiv16Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Udiv16Witness.stock_udiv_16_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Udiv16Witness.stock_udiv_16_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Udiv32Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Udiv32Witness.stock_udiv_32_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Udiv32Witness.stock_udiv_32_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Udiv8Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Udiv8Witness.stock_udiv_8_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Udiv8Witness.stock_udiv_8_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.UdivWideWitness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.UdivWideWitness.stock_udiv_wide_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.UdivWideWitness.stock_udiv_wide_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem16Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem16Witness.stock_urem_16_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem16Witness.stock_urem_16_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem32Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem32Witness.stock_urem_32_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem32Witness.stock_urem_32_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem64Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem64Witness.stock_urem_64_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem64Witness.stock_urem_64_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem8Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem8Witness.stock_urem_8_success_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.Urem8Witness.stock_urem_8_zero_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_alias_sem_invariant
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_alias_sem_refines
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_alias_sem_run
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_available_record_outside
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_base_narrow_match
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_base_wide_match
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_condOn_adds1
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_condOn_sub1_vs
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_constant_source_value
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_divisor_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_divisor_observed_with_fuel
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_divisor_reg
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_divisor_source_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_divisor_source_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_divisor_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_driver_alias_idem
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_extended_dividend_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_extension_sub_one
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_general_sdiv_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_held_interval_transfer
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_helper_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_case_lcf32
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_case_lcf64
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_frame_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_legacy_ok
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_operand_resolved
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_pure_helper
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_reg
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_resolved
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_imm_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_intmin_code_sem
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_intmin_helper
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_intmin_helper_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_intmin_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_lcf_fold
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_lcf_run
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_lcf_step
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_minimum_source_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_minimum_source_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_movK_ident
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_movK_val
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_msub_helper
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_msub_resolved
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_operand_allOnes
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_original_imm_operand_resolved
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_overflow_alias_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_helper
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_resolved
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_run
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_overflow_guard_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_overflow_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_overflow_source_resolved
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_plain_dividend_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_pure_helper
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_quotient_helper
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_quotient_resolved
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_quotient_source_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_rem_narrow_from_parts
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_rem_narrow_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_rem_narrow_selected_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_rem_record_receipt_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_rem_selected
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_rem_wide_from_parts
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_rem_wide_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_rem_wide_selected_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_remainder_source_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_resolved_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_safe_narrow_match
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_safe_narrow_match_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_safe_sdiv_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_safe_wide_match
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_safe_wide_match_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_narrow_from_parts
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_narrow_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_safe_narrow_from_parts
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_safe_narrow_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_safe_wide_from_parts
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_safe_wide_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_selected
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_selected_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_wide_from_parts
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_sdiv_wide_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_shift_intMin
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_signExtend_allOnes
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_source_data
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_source_overflow_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_udiv_narrow_from_parts
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_udiv_narrow_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_udiv_narrow_selected_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_udiv_record_receipt_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_udiv_selected
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_udiv_wide_from_parts
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_udiv_wide_observed
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_udiv_wide_selected_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_zero_alias_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_helper
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_resolved
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_run
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_div_zero_guard_witness
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_div_trap_operands
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_narrow_available_source
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_narrow_available_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_narrow_record_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_narrow_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_narrow_source_operands
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_record_receipt
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_record_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_source_trap
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_wide_available_source
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_wide_available_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_wide_record_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_wide_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_rem_wide_source_operands
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_sdiv_available_source
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_sdiv_available_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_sdiv_record_receipt
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_sdiv_record_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_sdiv_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_sdiv_source_operands
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_sdiv_source_trap
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_narrow_available_source
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_narrow_available_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_narrow_record_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_narrow_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_narrow_source_operands
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_record_receipt
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_record_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_source_trap
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_wide_available_source
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_wide_available_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_wide_record_values
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_wide_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_lower_udiv_wide_source_operands
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_selected_div_roots
+#print axioms Backend.Stock.Proof.ScalarDiv.stock_selected_div_typed_roots
+#print axioms Backend.Stock.Proof.ScalarHighMul.Witness.RunData.observed
+#print axioms Backend.Stock.Proof.ScalarHighMul.Witness.stock_lower_highmul_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_extend_observed
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_extend_reg
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_extend_request
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_narrow_from_parts
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_narrow_match
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_narrow_observed
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_narrow_request_observed
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_narrow_requests
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_narrow_resolved
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_narrow_rhs
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_narrow_selected
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_narrow_selected_values
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_pure_helper
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_shift_helper
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_source_data
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_wide_helper
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_wide_match
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_wide_observed
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_wide_requests
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_wide_resolved
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_wide_rhs
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_wide_selected
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_highmul_wide_selected_values
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_lower_highmul_available_source
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_lower_highmul_available_values
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_lower_highmul_narrow_available_values
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_lower_highmul_narrow_frontier
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_lower_highmul_narrow_second_free
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_lower_highmul_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_lower_highmul_source_operands
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_lower_highmul_wide_available_values
+#print axioms Backend.Stock.Proof.ScalarHighMul.stock_selected_highmul_rule
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.Witness.stock_lower_mul_fused_record_values_witness
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.Witness.stock_lower_mul_fused_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.stock_lower_mul_fused_available_values
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.stock_lower_mul_fused_record_values
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.stock_mul_fused_match
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.stock_mul_fused_match_receipts
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.stock_mul_fused_match_source
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.stock_mul_fused_resolved
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.stock_mul_fused_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.stock_mul_fused_rhs_run
+#print axioms Backend.Stock.Proof.ScalarMul.Fused.stock_mul_fused_selected_root_values
+#print axioms Backend.Stock.Proof.ScalarMul.Witness.stock_lower_mul_record_values_witness
+#print axioms Backend.Stock.Proof.ScalarMul.Witness.stock_lower_mul_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarMul.stock_lower_mul_available_values
+#print axioms Backend.Stock.Proof.ScalarMul.stock_lower_mul_record_values
+#print axioms Backend.Stock.Proof.ScalarMul.stock_madd_helper
+#print axioms Backend.Stock.Proof.ScalarMul.stock_msub_helper
+#print axioms Backend.Stock.Proof.ScalarMul.stock_mul_data
+#print axioms Backend.Stock.Proof.ScalarMul.stock_mul_match
+#print axioms Backend.Stock.Proof.ScalarMul.stock_mul_resolved
+#print axioms Backend.Stock.Proof.ScalarMul.stock_mul_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarMul.stock_mul_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarMul.stock_mul_rhs_run
+#print axioms Backend.Stock.Proof.ScalarMul.stock_mul_rrrr_helper
+#print axioms Backend.Stock.Proof.ScalarMul.stock_mul_selected_root_values
+#print axioms Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness
+#print axioms Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_source
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_available_values
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_lower_popcount_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcnt16_fin
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcnt32_fin
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcnt64_fin
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcnt8_fin
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_byte
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_count
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_from_vec
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_machine_witness
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_match
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_math_witness
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_pair
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_pure_helper
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_requests
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_resolved
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_selected_values
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum_full
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_sum_vec
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_popcount_to_vec
+#print axioms Backend.Stock.Proof.ScalarPopcount.stock_selected_popcount_rule
+#print axioms Backend.Stock.Proof.ScalarRotate.LeftImmediateWitness.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.WrappedCount.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.ZeroCount.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.LeftRegisterWitness.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.RightImmediateWitness.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.WrappedCount.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.ZeroCount.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.RightRegisterWitness.stock_lower_rotate_source_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_source
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_immediate_available_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_source
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_narrow_register_available_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_source_operands
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_source
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_immediate_available_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_source
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_lower_rotate_wide_register_available_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_helper_variants_witness
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_imm_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_match
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_immediate_receipts
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_resolved
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_rhs
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_imm_run
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_immediate_requests
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_requests
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_register_resolved
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rhs
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_narrow_rr_run
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_pure_sunk
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_register_match
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_rr_helper
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_immediate_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_state
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_narrow_register_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_immediate_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_state
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_selected_wide_register_values
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_source_data
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_resolved
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_imm_rhs
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_immediate_requests
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_register_requests
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_resolved
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_wide_rhs
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_rotate_zext32
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_selected_rotate_rule
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_small_rotate_imm_run
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_small_rotate_neg
+#print axioms Backend.Stock.Proof.ScalarRotate.stock_small_rotate_run
+#print axioms Backend.Stock.Proof.ScalarSelect.MinMaxDriverWitness.stock_minmax_register_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.MinMaxRegisterFixture.stock_minmax_register_driver_success
+#print axioms Backend.Stock.Proof.ScalarSelect.MinMaxRegisterWitness.stock_minmax_register_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.SourceWitness.stock_select_original_consumer_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.Witness.stock_select_flags_helper_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.Witness.stock_select_resolved_value_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.Witness.stock_select_zero_helper_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_csel_builder
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_register_available_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_register_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_register_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_register_source_with_reads
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_source_operands
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_match
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_nonconstant_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_register_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_register_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_selected_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_source_data
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_cond_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_cond_run
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_flags_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_flags_resolved
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_flags_run
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_flags_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_register_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_register_emitter_source_values_any_trace
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_rhs_requests
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_rhs_run
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_zero_run
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_selected_minmax_rule
+#print axioms Backend.Stock.Proof.ScalarShift.Witness.inputs
+#print axioms Backend.Stock.Proof.ScalarShift.Witness.scope
+#print axioms Backend.Stock.Proof.ScalarShift.Witness.stock_lower_shift_source_values_witness
+#print axioms Backend.Stock.Proof.ScalarShift.stock_do_shift_allocates
+#print axioms Backend.Stock.Proof.ScalarShift.stock_do_shift_values
+#print axioms Backend.Stock.Proof.ScalarShift.stock_do_shift_values_of_count
+#print axioms Backend.Stock.Proof.ScalarShift.stock_ext_helper_values
+#print axioms Backend.Stock.Proof.ScalarShift.stock_ext_helper_values_witness
+#print axioms Backend.Stock.Proof.ScalarShift.stock_ext_passthrough_holds
+#print axioms Backend.Stock.Proof.ScalarShift.stock_ext_values
+#print axioms Backend.Stock.Proof.ScalarShift.stock_extend_helper
+#print axioms Backend.Stock.Proof.ScalarShift.stock_extend_helper_observed
+#print axioms Backend.Stock.Proof.ScalarShift.stock_extend_holds
+#print axioms Backend.Stock.Proof.ScalarShift.stock_extend_resolved
+#print axioms Backend.Stock.Proof.ScalarShift.stock_lower_shift_available_values
+#print axioms Backend.Stock.Proof.ScalarShift.stock_sext32_out
+#print axioms Backend.Stock.Proof.ScalarShift.stock_sext64_out
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_imm_helper
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_imm_match
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_imm_match_receipts
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_imm_resolved
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_imm_rhs
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_imm_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_mask_match_receipts
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_mask_resolved
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_mask_rhs
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_mask_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_mask_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_prep_values
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_put_in_regs_iff
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_rhs_receipts
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_root_match
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_root_values
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_rrr_match_receipts
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_rrr_resolved
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_rrr_rhs
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_rrr_rhs_observed
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_rrr_rhs_witness
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_selected_root_values
+#print axioms Backend.Stock.Proof.ScalarShift.stock_shift_semantics_witness
+#print axioms Backend.Stock.Proof.ScalarShift.stock_zext32_out
+#print axioms Backend.Stock.Proof.ScalarShift.stock_zext64_out
+#print axioms Backend.Stock.Proof.ValuesHeld.resolvedResult_available
+#print axioms Backend.Stock.Proof.ValuesHeld.resolvedResult_change_needed
+#print axioms Backend.Stock.Proof.allocateRequests_returnsPayloadsDisjoint
+#print axioms Backend.Stock.Proof.allocateRequests_returnsPayloadsDisjoint_witness
+#print axioms Backend.Stock.Proof.available_before_of_after_not_result
+#print axioms Backend.Stock.Proof.buildCtx_returnsPayloadsDisjoint
+#print axioms Backend.Stock.Proof.buildCtx_returnsPayloadsDisjoint_witness
+#print axioms Backend.Stock.Proof.source_single_result_values
+#print axioms Backend.Stock.Proof.stock_alu_roots_witness
+#print axioms Backend.Stock.Proof.stock_alu_rrr_helper
+#print axioms Backend.Stock.Proof.stock_alu_rrr_resolved
+#print axioms Backend.Stock.Proof.stock_apply_aliasTargetsAllowed
+#print axioms Backend.Stock.Proof.stock_apply_aliasTargetsAllowed_witness
+#print axioms Backend.Stock.Proof.stock_apply_demand_mono
+#print axioms Backend.Stock.Proof.stock_available_values_witness
+#print axioms Backend.Stock.Proof.stock_bindResults_demand
+#print axioms Backend.Stock.Proof.stock_bindResults_demand_witness
+#print axioms Backend.Stock.Proof.stock_bitrev_opcode_inventory
+#print axioms Backend.Stock.Proof.stock_bswap_opcode_inventory
+#print axioms Backend.Stock.Proof.stock_ctor_aliasTargetsAllowed
+#print axioms Backend.Stock.Proof.stock_ctor_aliasTargetsAllowed_witness
+#print axioms Backend.Stock.Proof.stock_ctor_demand_mono
+#print axioms Backend.Stock.Proof.stock_demand_mono_witness
+#print axioms Backend.Stock.Proof.stock_excluded_root_args
+#print axioms Backend.Stock.Proof.stock_excluded_root_match
+#print axioms Backend.Stock.Proof.stock_excluded_source_roots_witness
+#print axioms Backend.Stock.Proof.stock_iconst_available_resolved
+#print axioms Backend.Stock.Proof.stock_iconst_resolved
+#print axioms Backend.Stock.Proof.stock_logical_rrr_witness
+#print axioms Backend.Stock.Proof.stock_lower_alias_idempotent
+#print axioms Backend.Stock.Proof.stock_lower_alias_key_origin
+#print axioms Backend.Stock.Proof.stock_lower_alias_key_origin_witness
+#print axioms Backend.Stock.Proof.stock_lower_alias_step
+#print axioms Backend.Stock.Proof.stock_lower_alias_terminal
+#print axioms Backend.Stock.Proof.stock_lower_alias_terminal_witness
+#print axioms Backend.Stock.Proof.stock_lower_alias_value
+#print axioms Backend.Stock.Proof.stock_lower_alias_wellFounded
+#print axioms Backend.Stock.Proof.stock_lower_alu_auto_values_witness
+#print axioms Backend.Stock.Proof.stock_lower_alu_available_values
+#print axioms Backend.Stock.Proof.stock_lower_alu_available_values_auto_operands
+#print axioms Backend.Stock.Proof.stock_lower_alu_available_values_witness
+#print axioms Backend.Stock.Proof.stock_lower_alu_operand_coverage
+#print axioms Backend.Stock.Proof.stock_lower_alu_record_shape
+#print axioms Backend.Stock.Proof.stock_lower_alu_selected_receipts
+#print axioms Backend.Stock.Proof.stock_lower_alu_selected_values
+#print axioms Backend.Stock.Proof.stock_lower_alu_selected_values_witness
+#print axioms Backend.Stock.Proof.stock_lower_available_alias_outside_record
+#print axioms Backend.Stock.Proof.stock_lower_available_fresh_frame
+#print axioms Backend.Stock.Proof.stock_lower_bitrev_source_by_instruction
+#print axioms Backend.Stock.Proof.stock_lower_bitrev_source_from_step
+#print axioms Backend.Stock.Proof.stock_lower_blockScanInitialFrontier
+#print axioms Backend.Stock.Proof.stock_lower_blockScanInitialFrontier_witness
+#print axioms Backend.Stock.Proof.stock_lower_bswap_source_by_instruction
+#print axioms Backend.Stock.Proof.stock_lower_bswap_source_from_step
+#print axioms Backend.Stock.Proof.stock_lower_constant_available_source
+#print axioms Backend.Stock.Proof.stock_lower_constant_available_values
+#print axioms Backend.Stock.Proof.stock_lower_constant_available_values_witness
+#print axioms Backend.Stock.Proof.stock_lower_final_source_alias_recorded
+#print axioms Backend.Stock.Proof.stock_lower_final_source_chain_noCycle
+#print axioms Backend.Stock.Proof.stock_lower_final_source_chain_rank
+#print axioms Backend.Stock.Proof.stock_lower_final_source_chain_witness
+#print axioms Backend.Stock.Proof.stock_lower_fresh_record_values
+#print axioms Backend.Stock.Proof.stock_lower_fresh_record_values_auto_demand
+#print axioms Backend.Stock.Proof.stock_lower_fresh_record_values_witness
+#print axioms Backend.Stock.Proof.stock_lower_neg_source_by_instruction
+#print axioms Backend.Stock.Proof.stock_lower_neg_source_from_step
+#print axioms Backend.Stock.Proof.stock_lower_payload_aliasOrigin
+#print axioms Backend.Stock.Proof.stock_lower_payload_resolves
+#print axioms Backend.Stock.Proof.stock_lower_payload_terminal
+#print axioms Backend.Stock.Proof.stock_lower_payload_value
+#print axioms Backend.Stock.Proof.stock_lower_payload_witness
+#print axioms Backend.Stock.Proof.stock_lower_record_args_available
+#print axioms Backend.Stock.Proof.stock_lower_record_context
+#print axioms Backend.Stock.Proof.stock_lower_record_demand_mono
+#print axioms Backend.Stock.Proof.stock_lower_record_fresh_result
+#print axioms Backend.Stock.Proof.stock_lower_record_fresh_result_witness
+#print axioms Backend.Stock.Proof.stock_lower_record_intervals
+#print axioms Backend.Stock.Proof.stock_lower_record_intervals_disjoint
+#print axioms Backend.Stock.Proof.stock_lower_record_intervals_witness
+#print axioms Backend.Stock.Proof.stock_lower_record_selection
+#print axioms Backend.Stock.Proof.stock_lower_record_selection_witness
+#print axioms Backend.Stock.Proof.stock_lower_reservedReturn_resolves
+#print axioms Backend.Stock.Proof.stock_lower_reservedReturn_resolves_witness
+#print axioms Backend.Stock.Proof.stock_lower_reservedReturn_terminal
+#print axioms Backend.Stock.Proof.stock_lower_reservedReturn_terminal_witness
+#print axioms Backend.Stock.Proof.stock_lower_reservedReturn_value
+#print axioms Backend.Stock.Proof.stock_lower_reservedReturn_value_witness
+#print axioms Backend.Stock.Proof.stock_lower_source_alias_available
+#print axioms Backend.Stock.Proof.stock_lower_source_alias_available_witness
+#print axioms Backend.Stock.Proof.stock_lower_source_alias_emitted_record
+#print axioms Backend.Stock.Proof.stock_lower_source_alias_provenance
+#print axioms Backend.Stock.Proof.stock_lower_source_alias_record
+#print axioms Backend.Stock.Proof.stock_lower_source_path_available
+#print axioms Backend.Stock.Proof.stock_lower_source_path_fresh_origin
+#print axioms Backend.Stock.Proof.stock_lower_source_path_fresh_origin_witness
+#print axioms Backend.Stock.Proof.stock_lower_source_record_closure
+#print axioms Backend.Stock.Proof.stock_lower_source_record_opcode_ids
+#print axioms Backend.Stock.Proof.stock_lower_unary_source_operand
+#print axioms Backend.Stock.Proof.stock_lower_undefinedSource_terminal
+#print axioms Backend.Stock.Proof.stock_lower_undefinedSource_terminal_witness
+#print axioms Backend.Stock.Proof.stock_lower_undefinedSource_value
+#print axioms Backend.Stock.Proof.stock_lower_undefinedSource_value_witness
+#print axioms Backend.Stock.Proof.stock_match_801
+#print axioms Backend.Stock.Proof.stock_match_86
+#print axioms Backend.Stock.Proof.stock_named_demand_mono
+#print axioms Backend.Stock.Proof.stock_named_lower_selection
+#print axioms Backend.Stock.Proof.stock_neg_opcode_inventory
+#print axioms Backend.Stock.Proof.stock_put_in_reg_iff
+#print axioms Backend.Stock.Proof.stock_recorded_source_alias_provenance
+#print axioms Backend.Stock.Proof.stock_recorded_source_alias_rank
+#print axioms Backend.Stock.Proof.stock_recorded_source_chain_noCycle
+#print axioms Backend.Stock.Proof.stock_recorded_source_chain_rank
+#print axioms Backend.Stock.Proof.stock_recorded_source_chain_witness
+#print axioms Backend.Stock.Proof.stock_request_success_witness
+#print axioms Backend.Stock.Proof.stock_rhs_3916
+#print axioms Backend.Stock.Proof.stock_rhs_801
+#print axioms Backend.Stock.Proof.stock_rhs_801_observed
+#print axioms Backend.Stock.Proof.stock_rhs_801_requests
+#print axioms Backend.Stock.Proof.stock_rhs_86
+#print axioms Backend.Stock.Proof.stock_rhs_86_observed
+#print axioms Backend.Stock.Proof.stock_rhs_86_requests
+#print axioms Backend.Stock.Proof.stock_selected_bitrev_rule
+#print axioms Backend.Stock.Proof.stock_selected_bswap_rule
+#print axioms Backend.Stock.Proof.stock_selected_neg_rule
+#print axioms Backend.Stock.Proof.stock_selected_source_closure_witness
+#print axioms Backend.Stock.Proof.stock_selected_source_opcode
+#print axioms Backend.Stock.Proof.stock_selected_source_opcode_ids
+#print axioms Backend.Stock.Proof.stock_selected_source_partition_witness
+#print axioms Backend.Stock.Proof.stock_selected_source_root_closure
+#print axioms Backend.Stock.Proof.stock_selected_source_root_partition
+#print axioms Backend.Stock.Proof.stock_source_opcode_inventory
+#print axioms Backend.Stock.Proof.stock_source_provenance_rank
+#print axioms Backend.Stock.Proof.stock_source_provenance_rank_witness
+#print axioms Backend.Stock.Proof.stock_source_root_partition_counts
+#print axioms Backend.Stock.Proof.stock_source_root_partition_witness
+#print axioms Backend.Stock.Proof.stock_statement_selectedConstant_context_receipts
+#print axioms E2E.LinkCheck.crate_correct_inScope_proven
+#print axioms E2E.backend_correct_final_total
+#print axioms E2E.backend_correct_final_total_emit_input
+#print axioms E2E.backend_correct_final_total_relaxed
+#print axioms Link.compileExe_correct
+#print axioms Link.compileExe_spec
+#print axioms Link.compileExe_total
+
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_cset
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_cset_condition_valid
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_cset_from_spec
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_cset_resolved
+#print axioms Backend.Stock.Proof.ScalarSelect.ReplacementWitness.stock_select_replacement_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ReplacementWitness.stock_select_replacement_alias_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_with_flags_decoded
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_with_flags_decoded_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_rhs_producer_decoded
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_cond_decoded_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_flags_decoded_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_flags_boolean_companion
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_decoded_observation_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_boolean_companion_witness
+
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_companion_fragment_code
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_companion_fragment_replace
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_companion_fragment_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_selected_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.MinMaxWideDriverWitness.stock_minmax_wide_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_available_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_selected_allocation
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_emitter_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_source_with_reads
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_constant_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.WideConstantWitness.stock_minmax_wide_constant_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_both_constant_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.WideBothConstantWitness.stock_minmax_wide_both_constant_complete_source_witness
+
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_selected_allocation
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_both_constant_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.NarrowBothConstantWitness.stock_minmax_narrow_both_constant_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_constant_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.NarrowConstantWitness.stock_minmax_narrow_constant_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.MinMaxNarrowDriverWitness.stock_minmax_narrow_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_available_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_emitter_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_with_reads
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_actual_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_actual_source_with_reads
+
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_zero_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_zero_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.ZeroSourceWitness.stock_select_zero_original_consumer_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_source_data
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_match
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_root_calls_witness
+
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_zero_cset
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_zero_cset_resolved
+#print axioms Backend.Stock.Proof.ScalarSelect.ZeroReplacementWitness.stock_select_zero_replacement_alias_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_wide_emitter_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_wide_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero8_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero16_emitter_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero16_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_scalar_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_comparison_origin_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_allocation
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_condition_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_selected_allocation
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_available_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.ParameterSourceWitness.stock_select_parameter_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionOriginWitness.stock_select_comparison_origin_witness
+#print axioms Backend.Stock.Proof.stock_lower_record_declared_type
+#print axioms Backend.Stock.Proof.stock_lower_available_getAs_type
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_source_values_derived_types
+
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_condition_invert_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_zero_rhs_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_wide_comparison_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_narrow_comparison_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_comparison_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_condition_boolean_companion
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_comparison_companion_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_nonzero_condition_shape_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_invert_companion_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_flags_invert_companion_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_rhs_shape_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonCompanionWitness.stock_select_comparison_companion_complete_witness
+
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_condition_producer_replacement
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_comparison_actual_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_success
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonActualFixture.stock_select_comparison_actual_fixture
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_available_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.OriginalSourceWitness.stock_select_original_complete_parameter_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonActualWitness.stock_select_comparison_actual_complete_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_replacement_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_observation_witness
+
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonDriver.stock_select_comparison_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonSourceWitness.stock_select_comparison_source_setup
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonSourceWitness.stock_select_comparison_complete_source_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_source_step_dfg
+#print axioms Backend.Stock.Proof.stock_lower_select_scan_fall_refines
+#print axioms Backend.Stock.Proof.ScalarSelect.ParameterSourceWitness.stock_select_complete_scan_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_omitted_scan_fall_refines
+#print axioms Backend.Stock.Proof.stock_lower_select_omitted_body_fall_refines
+#print axioms Backend.Stock.Proof.MixedBodyWitness.stock_mixed_load_select_body_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_body_scan_split
+#print axioms Backend.Stock.Proof.stock_lower_actual_select_omitted_body_refines
+#print axioms Backend.Stock.Proof.MixedBodyWitness.stock_mixed_actual_body_split_witness
+#print axioms Backend.Stock.Proof.EmptyBodySplitWitness.stock_empty_body_split_witness
+#print axioms Backend.Stock.Proof.SretReturnContractWitness.stock_sret_return_pin_contract_witness
+
+#print axioms Backend.Stock.Proof.stock_gen_return_shape
+#print axioms Backend.Stock.Proof.stock_lower_sret_source_arity
+#print axioms Backend.Stock.Proof.stock_lower_return_observed
+#print axioms Backend.Stock.Proof.stock_gen_return_call
+#print axioms Backend.Stock.Proof.stock_lower_return_call
+#print axioms Backend.Stock.Proof.source_defined_enterFunc
+#print axioms Backend.Stock.Proof.stock_lower_source_defined_step
+#print axioms Backend.Stock.Proof.stock_lower_return_abi_read
+#print axioms Backend.Stock.Proof.stock_lower_return_source_run
+#print axioms Backend.Stock.Proof.ReturnFixture.stock_return_driver_observed
+#print axioms Backend.Stock.Proof.ReturnSourceWitness.stock_return_complete_source_witness
+#print axioms Backend.Stock.Proof.MixedBodyWitness.stock_mixed_source_defined_witness
+#print axioms Backend.Stock.Proof.EmptyBodySplitWitness.stock_empty_return_helper_source_witness
+
+#print axioms Backend.Stock.Proof.stock_return_root_match
+#print axioms Backend.Stock.Proof.stock_return_selected_calls
+#print axioms Backend.Stock.Proof.stock_lower_blockScan_term_data
+#print axioms Backend.Stock.Proof.stock_named_return_helper
+#print axioms Backend.Stock.Proof.stock_lower_return_record_helper
+#print axioms Backend.Stock.Proof.stock_lower_return_guarded_operands
+#print axioms Backend.Stock.Proof.stock_lower_return_record_source_run
+#print axioms Backend.Stock.Proof.ReturnSourceWitness.stock_return_retained_source_witness
+
+#print axioms Backend.Stock.Proof.Coverage.Invariant.soundAt
+#print axioms Backend.Stock.Proof.stock_ctor_noSink
+#print axioms Backend.Stock.Proof.stock_ctor_noSink_witness
+#print axioms Backend.Stock.Proof.stock_sourceSink_table_checked
+#print axioms Backend.Stock.Proof.stock_sourceSink_roots_checked
+#print axioms Backend.Stock.Proof.Coverage.stock_ctor_terminal_unsunk
+#print axioms Backend.Stock.Proof.Coverage.stock_statement_terminal_unsunk
+#print axioms Backend.Stock.Proof.Coverage.stock_branch_terminal_unsunk
+#print axioms Backend.Stock.Proof.Coverage.stock_retTrap_terminal_unsunk
+#print axioms Backend.Stock.Proof.Coverage.bindResults_noSink
+#print axioms Backend.Stock.Proof.TerminalSinkWitness.stock_atomic_sink_terminal_witness
+#print axioms Backend.Stock.Proof.TerminalControlWitness.stock_control_terminal_witness
+
+#print axioms Backend.Stock.Proof.Coverage.stock_buildCtx_terminal_unsunk
+#print axioms Backend.Stock.Proof.Coverage.stock_scanBlock_terminal_unsunk
+#print axioms Backend.Stock.Proof.Coverage.stock_branchArgs_sunk
+#print axioms Backend.Stock.Proof.Coverage.stock_blockCore_terminal_unsunk
+#print axioms Backend.Stock.Proof.Coverage.stock_lower_terminal_unsunk
+#print axioms Backend.Stock.Proof.Coverage.stock_lower_records_terminal_unsunk
+#print axioms Backend.Stock.Proof.stock_lower_retTrap_emitted
+#print axioms Backend.Stock.Proof.stock_lower_retTrap_record_emitted
+#print axioms Backend.Stock.Proof.stock_lower_return_record_source_run_auto
+#print axioms Backend.Stock.Proof.TerminalDriverWitness.stock_atomic_driver_unsunk_witness
+#print axioms Backend.Stock.Proof.TerminalDriverWitness.stock_terminal_arguments_witness
+#print axioms Backend.Stock.Proof.TerminalDriverWitness.stock_critical_driver_unsunk_witness
+#print axioms Backend.Stock.Proof.ReturnSourceWitness.stock_return_auto_source_witness
+
+#print axioms Backend.Stock.Proof.ReturnABI.ordinary
+#print axioms Backend.Stock.Proof.LowerTermOkABI.legacy
+#print axioms Backend.Stock.Proof.RunOkABI.prefix
+#print axioms Backend.Stock.Proof.RunOkABI.legacy
+#print axioms Backend.Stock.Proof.runOkABI_of_return_stop
+#print axioms Backend.Stock.Proof.stock_lower_return_record_runOk
+#print axioms Backend.Stock.Proof.ReturnSourceWitness.stock_return_run_contract_witness
+#print axioms Backend.Stock.Proof.TermContractWitness.stock_trap_term_contract_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_block_scan_code
+#print axioms Backend.Stock.Proof.stock_lower_record_code
+#print axioms Backend.Stock.Proof.stock_lower_record_segment
+#print axioms Backend.Stock.Proof.stock_lower_return_runOk
+#print axioms Backend.Stock.Proof.ReturnSourceWitness.stock_return_vcode_contract_witness
+
+#print axioms Backend.Stock.Proof.source_defined_enterBlock
+#print axioms Backend.Stock.Proof.source_defined_branch_step
+#print axioms Backend.Stock.Proof.SourceEdgesWitness.stock_source_edge_defined_witness
+
+#print axioms Backend.Stock.Proof.source_defined_setMany
+#print axioms Backend.Stock.Proof.source_defined_continueWith
+#print axioms Backend.Stock.Proof.source_defined_returnValues
+#print axioms Backend.Stock.Proof.SourceCallWitness.stock_source_call_result_witness
+#print axioms Backend.Stock.Proof.stock_lower_entry_alias_apart
+#print axioms Backend.Stock.Proof.stock_lower_parameter_resolves
+#print axioms Backend.Stock.Proof.stock_lower_edge_values
+#print axioms Backend.Stock.Proof.EdgeValuesWitness.stock_edge_values_alias_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_order
+#print axioms Backend.Stock.Proof.stock_lower_original_block_params
+#print axioms Backend.Stock.Proof.stock_lower_original_jump_args
+#print axioms Backend.Stock.Proof.stock_branchArgs_jump_numbers
+#print axioms Backend.Stock.Proof.stock_lower_jump_edge_values
+#print axioms Backend.Stock.Proof.EdgeValuesWitness.stock_edge_parameter_field_witness
+#print axioms Backend.Stock.Proof.EdgeValuesWitness.stock_jump_edge_env_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_edge_successor
+#print axioms Backend.Stock.Proof.stock_lower_jump_successor
+#print axioms Backend.Stock.Proof.stock_lower_jump_nonentry_successor
+#print axioms Backend.Stock.Proof.stock_lower_critical_code
+#print axioms Backend.Stock.Proof.OrderGraphWitness.stock_critical_order_witness
+#print axioms Backend.Stock.Proof.OrderGraphWitness.stock_jump_order_witness
+#print axioms Backend.Stock.Proof.OrderGraphWitness.stock_critical_code_witness
+
+#print axioms Backend.Stock.Proof.stock_branchArgs_selected_numbers
+#print axioms Backend.Stock.Proof.stock_lower_critical_edge_values
+#print axioms Backend.Stock.Proof.CriticalValuesWitness.stock_critical_edge_env_witness
+#print axioms Backend.Stock.Proof.stock_lower_selected_successor
+#print axioms Backend.Stock.Proof.SelectedGraphWitness.stock_selected_graph_witness
+#print axioms Backend.Stock.Proof.PerSuccessorWitness.stock_per_successor_migration_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_original_outgoing
+#print axioms Backend.Stock.Proof.stock_lower_critical_outgoing
+#print axioms Backend.Stock.Proof.stock_lower_selected_outgoing
+#print axioms Backend.Stock.Proof.stock_lower_deferred_outgoing
+#print axioms Backend.Stock.Proof.stock_lower_critical_argument_vector
+#print axioms Backend.Proof.edgeEnvAt_eq
+#print axioms Backend.Stock.Proof.stock_lower_direct_per_edge_values
+#print axioms Backend.Stock.Proof.stock_lower_critical_per_edge_values
+#print axioms Backend.Stock.Proof.CriticalValuesWitness.stock_critical_per_edge_step_witness
+#print axioms Backend.Stock.Proof.PerEdgeDirectWitness.stock_direct_per_edge_step_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_selected_route_values
+#print axioms Backend.Proof.PerEdge.verifyBlock_ok
+#print axioms Backend.Proof.PerEdge.verify_ok
+#print axioms Backend.Proof.PerEdge.checkAlloc_ok
+#print axioms Backend.Proof.PerEdge.edgeCopy_ok
+#print axioms Backend.Proof.PerEdge.edge_ok
+#print axioms Backend.Stock.Proof.PerEdgeCheckerWitness.stock_per_edge_checker_witness
+#print axioms Backend.Stock.Proof.PerEdgeCheckerWitness.stock_per_edge_checker_value_witness
+#print axioms Backend.Stock.Proof.CriticalValuesWitness.stock_critical_selected_route_witness
+#print axioms Backend.Stock.Proof.PerEdgeDirectWitness.stock_direct_selected_route_witness
+
+#print axioms Backend.Proof.PerEdge.checked_of_checkAlloc
+#print axioms Backend.Proof.PerEdge.Checked.at
+#print axioms Backend.Proof.PerEdge.allocChecked_of_checkAlloc
+#print axioms Backend.Proof.PerEdge.enter_block_at
+#print axioms Backend.Proof.PerEdge.edgeEnv_lt
+#print axioms Backend.Proof.PerEdge.sim_step_at
+#print axioms Backend.Proof.PerEdge.sim_progress_at
+#print axioms Backend.Proof.PerEdge.enter_block
+#print axioms Backend.Proof.PerEdge.sim_step
+#print axioms Backend.Proof.PerEdge.sim_progress
+#print axioms Backend.Proof.PerEdge.checkedAt_sound
+#print axioms Backend.Proof.PerEdge.checkAlloc_sound
+#print axioms Backend.Proof.PerEdge.allocChecked_sound
+#print axioms Backend.Proof.PerEdge.IsSimulation.star
+#print axioms Backend.Proof.PerEdge.checkAlloc_ret
+#print axioms Backend.Proof.PerEdge.checkAlloc_halt
+#print axioms Backend.Proof.PerEdge.checkAlloc_stuck
+#print axioms Backend.Proof.PerEdge.IsSimulation.next_vstep
+#print axioms Backend.Proof.PerEdge.checkAlloc_diverges
+#print axioms Backend.Stock.Proof.PerEdgeM6Witness.stock_per_edge_m6_return_witness
+#print axioms Backend.Stock.Proof.PerEdgeM6Witness.stock_per_edge_m6_checked_witness
+#print axioms Backend.Stock.Proof.PerEdgeM6HaltWitness.stock_per_edge_m6_halt_witness
+#print axioms Backend.Stock.Proof.PerEdgeM6DivergenceWitness.stock_per_edge_m6_divergence_witness
+#print axioms Backend.Stock.Proof.PerEdgeM6StuckWitness.stock_per_edge_m6_stuck_witness
+
+#print axioms Backend.Proof.PerEdge.allocResultAt_checked
+#print axioms Backend.Proof.PerEdge.lowerAllocAt_ok
+#print axioms Backend.Proof.PerEdge.lowerAllocAt_sound
+#print axioms Backend.Stock.Proof.PerEdgeAllocatorWitness.stock_per_edge_allocator_fallback_witness
+#print axioms Backend.Stock.Proof.PerEdgeCriticalAllocatorWitness.stock_per_edge_critical_allocator_fallback_witness
+#print axioms Backend.Proof.PerEdgePrepareWitness.per_edge_prepare_split_copy_witness
+
+#print axioms Backend.Proof.PerEdgePrep.edgeBlockOkAt_sound
+#print axioms Backend.Proof.PerEdgePrep.keptOkAt_sound
+#print axioms Backend.Proof.PerEdgePrep.prep_step
+#print axioms Backend.Proof.PerEdgePrep.prep_star
+#print axioms Backend.Proof.PerEdgePrep.prep_entry_step
+#print axioms Backend.Proof.PerEdgePrep.prep_ret
+#print axioms Backend.Proof.PerEdgePrep.prep_halt
+#print axioms Backend.Proof.PerEdgePrep.prep_sound
+#print axioms Backend.Proof.PerEdge.VNextAt_det
+#print axioms Backend.Proof.PerEdge.VStepAt_det
+#print axioms Backend.Proof.PerEdge.forward_aux
+#print axioms Backend.Proof.PerEdge.forward
+#print axioms Backend.Proof.PerEdge.forward_op
+#print axioms Backend.Proof.PerEdge.prepareCheckedAt_ok
+#print axioms Backend.Proof.PerEdge.prepared_return_forward
+#print axioms Backend.Proof.PerEdge.prepared_halt_forward
+#print axioms Backend.Proof.PerEdgePrep.prepareAt_fields
+#print axioms Backend.Stock.Proof.PreparedForwardWitness.stock_prepared_return_forward_witness
+#print axioms Backend.Stock.Proof.PreparedForwardWitness.stock_prepared_halt_forward_witness
+#print axioms Backend.Proof.PerEdgePrepSplitWitness.per_edge_prepare_actual_split_step_witness
