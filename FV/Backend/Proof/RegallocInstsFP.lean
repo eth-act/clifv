@@ -4,8 +4,11 @@ import FV.Backend.Proof.RegallocTac
 # `Corr` for the float/vector instructions (M6 proof)
 
 `movToFpu` (`fmov`), `movFromVec` (`umov`, every lane index), `vecMisc cnt`,
-`vecLanes addv/uaddlv`, `vecRRR addp` (the popcount sequence), all sizes/arrangements:
-`corr_tac` with the Arm model's SIMD&FP execution functions added to `csimp_rules`.
+`vecLanes addv/uaddlv`, `vecRRR addp` (the popcount sequence), all sizes/arrangements;
+the scalar FP data movement of S11e1: `fpuCSel` (`fcsel`, every size and condition),
+`fpuMoveFPImm` (`fmov #imm`, symbolic immediate), `vecDupImm` (the plain `movi`, symbolic
+immediate; the other forms do not expand): `corr_tac` with the Arm model's SIMD&FP execution
+functions added to `csimp_rules`.
 Arrangements the encoder rejects or the model reports as illegal have `csem = none`
 (vacuous). `umov`'s lane index is a symbolic immediate whose `match_bv` decoding needs it
 concrete: the valid indices are enumerated.
@@ -29,6 +32,12 @@ attribute [csimp_rules] Arm.DPSFP.exec_conversion_between_FP_and_Int Arm.DPSFP.e
   Arm.DPSFP.exec_advanced_simd_two_reg_misc Arm.DPSFP.exec_cnt
   Arm.DPSFP.exec_advanced_simd_across_lanes Arm.DPSFP.exec_addv Arm.DPSFP.exec_uaddlv
   Arm.DPSFP.exec_advanced_simd_three_same Arm.DPSFP.exec_addp_vector VectorSize.qsize
+
+theorem bv8_toNat_lt (x : BitVec 8) : x.toNat < 256 := x.isLt
+
+attribute [csimp_rules] Arm.DPSFP.exec_fp_conditional_select Arm.DPSFP.exec_fp_immediate
+  Arm.DPSFP.fp_write_result Arm.DPSFP.exec_advanced_simd_modified_immediate
+  Arm.DPSFP.decode_immediate_op Arm.DPSFP.AdvSIMDExpandImm bv8_toNat_lt Insn.armFields.fpFtype
 
 set_option maxHeartbeats 4000000 in
 theorem corr_movFromVec (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (idx : Nat)
@@ -89,5 +98,33 @@ theorem corr_vecRRR (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : Vec
       ⟨m, .float, .use, .early, .reg⟩]
       (fun r => .vecRRR op (r.getD 0 .xzr) (r.getD 1 .xzr) (r.getD 2 .xzr) sz) := by
   cases op <;> cases sz <;> corr_tac
+
+set_option maxHeartbeats 4000000 in
+theorem corr_fpuCSel (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (sz : ScalarSize) (c : Cond)
+    (d n m : Nat) :
+    Corr F ctx env #[⟨d, .float, .def, .late, .reg⟩, ⟨n, .float, .use, .early, .reg⟩,
+      ⟨m, .float, .use, .early, .reg⟩]
+      (fun r => .fpuCSel sz (r.getD 0 .xzr) (r.getD 1 .xzr) (r.getD 2 .xzr) c) := by
+  cases sz <;> cases c <;> corr_tac
+
+set_option maxHeartbeats 4000000 in
+theorem corr_fpuMoveFPImm (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (imm : ASIMDFPModImm)
+    (sz : ScalarSize) (d : Nat) :
+    Corr F ctx env #[⟨d, .float, .def, .late, .reg⟩]
+      (fun r => .fpuMoveFPImm (r.getD 0 .xzr) imm sz) := by
+  cases sz <;> corr_tac
+
+set_option maxRecDepth 8192 in
+set_option maxHeartbeats 4000000 in
+theorem corr_vecDupImm (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (imm : ASIMDMovModImm)
+    (inv : Bool) (sz : VectorSize) (d : Nat) :
+    Corr F ctx env #[⟨d, .float, .def, .late, .reg⟩]
+      (fun r => .vecDupImm (r.getD 0 .xzr) imm inv sz) := by
+  by_cases h : (inv || imm.shift != 0 || imm.shiftOnes || imm.is64) = true
+  · intro regs s w t' _ _ _ _ hex _
+    simp [execMInst, MInst.lines, h, throw, throwThe, MonadExceptOf.throw] at hex
+  · simp only [Bool.or_eq_true, bne_iff_ne, ne_eq, not_or, Bool.not_eq_true, Decidable.not_not] at h
+    obtain ⟨⟨⟨rfl, h2⟩, h3⟩, h4⟩ := h
+    cases sz <;> corr_tac
 
 end Backend.Proof

@@ -199,6 +199,23 @@ def addvBytes (x : BitVec 64) : BitVec 64 :=
   (byteOf x 0 + byteOf x 1 + byteOf x 2 + byteOf x 3 + byteOf x 4 + byteOf x 5 + byteOf x 6 +
     byteOf x 7).setWidth 64
 
+/-- `MOVI Vd.<T>, #imm8` (`LSL #0`): `imm8` zero-extended into every lane of the arrangement
+(8-, 16- or 32-bit lanes), the 64-bit arrangements zeroing the upper half of the register. The
+2D arrangement is not a `movi #imm8` (0). -/
+def moviVal (sz : VectorSize) (imm8 : BitVec 8) : CV :=
+  match sz with
+  | .size8x8 => (BitVec.replicate 8 imm8).setWidth 128
+  | .size8x16 => (BitVec.replicate 16 imm8).setWidth 128
+  | .size16x4 => (BitVec.replicate 4 (imm8.setWidth 16)).setWidth 128
+  | .size16x8 => (BitVec.replicate 8 (imm8.setWidth 16)).setWidth 128
+  | .size32x2 => (BitVec.replicate 2 (imm8.setWidth 32)).setWidth 128
+  | .size32x4 => (BitVec.replicate 4 (imm8.setWidth 32)).setWidth 128
+  | .size64x2 => 0
+
+/-- The zero `movi` (`constant_f32 0`/`constant_f64 0`: `movi vd.2s, #0`) zeroes the register. -/
+theorem moviVal_zero (sz : VectorSize) : moviVal sz 0#8 = 0#128 := by
+  cases sz <;> decide
+
 /-- `UBFM`/`SBFM` at width `n` (`immr`, `imms` below `n`): for `immr ≤ imms` the field
 `x[imms:immr]` moved to bit 0, else the field `x[imms:0]` moved to bit `n - immr`; zero-extended
 (`UBFM`) or sign-extended from the field's top bit (`SBFM`), zeros below. -/
@@ -445,6 +462,23 @@ def ispec : Sem := fun i uses w =>
     else some (defOut rd (ofX (if Arm.ConditionHolds c.invert.bits w then 0#64
       else BitVec.allOnes 64)), w, .next)
   | .fence, [] => some ([], w, .next)
+  -- S11e1: scalar FP data movement. A scalar FP write zeroes the register above the scalar
+  -- (Arm `write_sfp`); `fcsel` selects on the flags, `fmov #imm` expands its 8-bit immediate
+  -- (`VFPExpandImm`), `movi` replicates its 8-bit immediate over the lanes (`moviVal`)
+  | .fpuCSel .size32 rd _ _ c, [a, b] =>
+    some (defOut rd ((if Arm.ConditionHolds c.bits w then a.setWidth 32 else b.setWidth 32).setWidth 128),
+      w, .next)
+  | .fpuCSel .size64 rd _ _ c, [a, b] =>
+    some (defOut rd ((if Arm.ConditionHolds c.bits w then a.setWidth 64 else b.setWidth 64).setWidth 128),
+      w, .next)
+  | .fpuMoveFPImm rd imm .size32, [] =>
+    some (defOut rd ((Arm.DPSFP.VFPExpandImm 8 23 imm.imm).setWidth 128), w, .next)
+  | .fpuMoveFPImm rd imm .size64, [] =>
+    some (defOut rd ((Arm.DPSFP.VFPExpandImm 11 52 imm.imm).setWidth 128), w, .next)
+  | .vecDupImm rd imm false sz, [] =>
+    if imm.shift = 0 ∧ imm.shiftOnes = false ∧ imm.is64 = false ∧ sz ≠ .size64x2 then
+      some (defOut rd (moviVal sz imm.imm), w, .next)
+    else none
   | _, _ => none
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the

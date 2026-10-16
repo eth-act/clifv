@@ -583,6 +583,21 @@ theorem cov_storeRelease {ty : CTy} {rt rn : Reg} {fl : Clif.MemFlags}
   obtain ⟨_, rfl⟩ := V_of h2 g2 r2; obtain ⟨_, rfl⟩ := V_of h3 g3 r3
   simp [Covered, FormOk, this]
 
+
+theorem cov_fpuCSel {sz : ScalarSize} {rd rn rm : Reg} {c : Cond}
+    (hc : AW.cFpuCSel [a1, a2, a3, a4] = true) (g1 : γ f ctx a1 v1) (g2 : γ f ctx a2 v2)
+    (g3 : γ f ctx a3 v3) (r1 : v1.reg? = some rd) (r2 : v2.reg? = some rn) (r3 : v3.reg? = some rm) :
+    Covered (.fpuCSel sz rd rn rm c) = true := by
+  simp only [AW.cFpuCSel, Bool.and_eq_true] at hc
+  obtain ⟨⟨h1, h2⟩, h3⟩ := hc
+  obtain ⟨_, rfl⟩ := F_of h1 g1 r1; obtain ⟨_, rfl⟩ := F_of h2 g2 r2
+  obtain ⟨_, rfl⟩ := F_of h3 g3 r3; rfl
+
+theorem cov_fpuMoveFPImm {rd : Reg} {imm : ASIMDFPModImm} {sz : ScalarSize}
+    (hc : AW.cFpuMoveFPImm [a1, a2, a3] = true) (g1 : γ f ctx a1 v1) (r1 : v1.reg? = some rd) :
+    Covered (.fpuMoveFPImm rd imm sz) = true := by
+  simp only [AW.cFpuMoveFPImm] at hc
+  obtain ⟨_, rfl⟩ := F_of hc g1 r1; rfl
 end simple
 
 /-! ## Loads and stores -/
@@ -664,6 +679,9 @@ theorem covOk_sound {t k : Nat} {as : List AW} {vs : List V} (hc : AW.covOk k as
     | skip
   all_goals first
     | done
+    | (rw [covOk_none rfl] at hc
+       simp [AW.cMem, loadOpOfIdx?, storeOpOfIdx?] at hc
+       done)
     | (rw [covOk_eq rfl] at hc
        first
        | (apply cov_aluRRR hc <;> assumption)
@@ -691,4 +709,6 @@ theorem covOk_sound {t k : Nat} {as : List AW} {vs : List V} (hc : AW.covOk k as
        | (apply cov_vecRRR hc <;> assumption)
        | (apply cov_loadAddr hc <;> assumption)
        | (apply cov_loadAcquire hc <;> assumption)
-       | (apply cov_storeRelease hc <;> assumption))
+       | (apply cov_storeRelease hc <;> assumption)
+       | (apply cov_fpuCSel hc <;> assumption)
+       | (apply cov_fpuMoveFPImm hc <;> assumption))

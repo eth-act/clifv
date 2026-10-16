@@ -82,6 +82,10 @@ theorem ispec_mapRegs (i : MInst) : ispec (i.mapRegs g) us w = ispec i us w := b
   | loadAddr rd m => simp only [MInst.mapRegs]; us_cases <;> rfl
   | condBr a b k => simp only [MInst.mapRegs]; cases k <;> us_cases <;> rfl
   | trapIf k c => simp only [MInst.mapRegs]; cases k <;> us_cases <;> rfl
+  | fpuCSel sz rd rn rm c => simp only [MInst.mapRegs]; rg rd <;> rg rn <;> rg rm <;> ren_fin
+  | fpuMoveFPImm rd imm sz => simp only [MInst.mapRegs]; rg rd <;> ren_fin
+  | vecDupImm rd imm inv sz =>
+    simp only [MInst.mapRegs]; rg rd <;> us_cases <;> cases inv <;> rfl
   | _ => (try simp only [MInst.mapRegs]) <;> us_cases <;> rfl
 
 end Backend.Proof
@@ -145,6 +149,9 @@ theorem formOk_mapRegs (hg : VRenaming g gn) (ctx : FnCtx) (i : MInst) :
   | csetm rd c => simp only [MInst.mapRegs]; rgc rd <;> rfl
   | loadAcquire ty rt rn fl => simp only [MInst.mapRegs]; rgc rt <;> rgc rn <;> rfl
   | storeRelease ty rt rn fl => simp only [MInst.mapRegs]; rgc rt <;> rgc rn <;> rfl
+  | fpuCSel sz rd rn rm c => simp only [MInst.mapRegs]; rgc rd <;> rgc rn <;> rgc rm <;> rfl
+  | fpuMoveFPImm rd imm sz => simp only [MInst.mapRegs]; rgc rd <;> rfl
+  | vecDupImm rd imm inv sz => simp only [MInst.mapRegs]; rgc rd <;> rfl
   | _ => (try simp only [MInst.mapRegs]) <;> rfl
 
 theorem useCount_rn (ops : Array Operand) : useCount (ops.map (rnOp gn)) = useCount ops := by
