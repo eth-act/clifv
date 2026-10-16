@@ -1918,8 +1918,16 @@ and `DeadCleanupExeOptSourceWitness.lean` (`cleanup_opt_source_witness`): `g_u12
 mid-end changes both legalised functions (`legalize fs ≠ f`), no print/parse fallback, and the
 executable returns the split product `15, 5` (via
 `Link.{DeadCleanup.}SourceWitness.compileExeOpt_correct_source_helper`,
-`FV/Link/NonVacuityOptExeSource.lean`). The per-function theorems `E2E.backend_correct_opt_exe`
-and `backend_correct_legal_opt{,_env}` (and their `_cleanup` versions) have the contract
+`FV/Link/NonVacuityOptExeSource.lean`). `CompileExeOptPeakWitness.lean`
+(`compileExeOpt_peak_witness`) and `DeadCleanupExeOptPeakWitness.lean`
+(`cleanup_opt_peak_witness`): `compileExeOpt_correct_peak` on the self-recursive `rec128`, which
+the mid-end changes (`f0 ≠ f`) and whose optimised entry reaches a call cycle; the unoptimised
+legalised run on `3, 1, 3` has call depth `3` and the executable returns `24, 8` with
+`frameDrop + D·3` bytes of stack. `CompileExeOptReachWitness.lean` (`total_reach_opt_witness`,
+`total_reach_opt_cleanup_witness`): every hypothesis of `compileExeOpt_total_reach_input` holds
+on `a_arith`'s 58 functions, all changed by the mid-end. The per-function theorems
+`E2E.backend_correct_opt_exe` and `backend_correct_legal_opt{,_env}` (and their `_cleanup`
+versions) have the contract
 premises of `backend_correct_final` for the optimised function (`final_contracts_witness` at
 `f := Opt.optimizeExe f cfg`, as for `backend_correct_opt_proven`); the mid-end refinement
 `Opt.optimizeProgramExe_refines`: `Opt.PipelineXWitness.optimizeProgramExe_witness`
