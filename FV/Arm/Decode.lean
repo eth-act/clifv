@@ -145,6 +145,14 @@ def decode_data_proc_sfp (i : BitVec 32) : Option ArmInst :=
   -- (FV addition) Advanced SIMD modified immediate (op2 = 0000, op3 = xxxxxxxx1).
   | [0, Q:1, op:1, 0111100000, a:1, b:1, c:1, cmode:4, o2:1, 1, d:1, e:1, f:1, g:1, h:1, Rd:5] =>
     DPSFP (Advanced_simd_modified_immediate {Q, op, a, b, c, cmode, o2, d, e, f, g, h, Rd})
+  -- (FV addition) Scalar floating-point: data-processing (2 source) (op3 = xxxxxxx10),
+  -- compare (op3 = xxxxx1000), data-processing (3 source) (op1 = 1x).
+  | [M:1, 0, S:1, 11110, ftype:2, 1, Rm:5, opcode:4, 10, Rn:5, Rd:5] =>
+    DPSFP (FP_data_processing_two_source {M, S, ftype, Rm, opcode, Rn, Rd})
+  | [M:1, 0, S:1, 11110, ftype:2, 1, Rm:5, op:2, 1000, Rn:5, opcode2:5] =>
+    DPSFP (FP_compare {M, S, ftype, Rm, op, Rn, opcode2})
+  | [M:1, 0, S:1, 11111, ftype:2, o1:1, Rm:5, o0:1, Ra:5, Rn:5, Rd:5] =>
+    DPSFP (FP_data_processing_three_source {M, S, ftype, o1, Rm, o0, Ra, Rn, Rd})
   | _ => none
 
 def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=

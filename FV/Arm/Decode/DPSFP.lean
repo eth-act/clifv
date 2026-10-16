@@ -179,6 +179,58 @@ deriving DecidableEq, Repr
 
 instance : ToString Advanced_simd_modified_immediate_cls where toString a := toString (repr a)
 
+/-- (FV addition) Floating-point data-processing (2 source): FMUL, FDIV, FADD, FSUB, FMAX,
+FMIN, FMAXNM, FMINNM, FNMUL (scalar). -/
+structure FP_data_processing_two_source_cls where
+  M       : BitVec 1               -- [31:31]
+  _fixed1 : BitVec 1 := 0b0#1      -- [30:30]
+  S       : BitVec 1               -- [29:29]
+  _fixed2 : BitVec 5 := 0b11110#5  -- [28:24]
+  ftype   : BitVec 2               -- [23:22]
+  _fixed3 : BitVec 1 := 0b1#1      -- [21:21]
+  Rm      : BitVec 5               -- [20:16]
+  opcode  : BitVec 4               -- [15:12]
+  _fixed4 : BitVec 2 := 0b10#2     -- [11:10]
+  Rn      : BitVec 5               --   [9:5]
+  Rd      : BitVec 5               --   [4:0]
+deriving DecidableEq, Repr
+
+instance : ToString FP_data_processing_two_source_cls where toString a := toString (repr a)
+
+/-- (FV addition) Floating-point data-processing (3 source): FMADD, FMSUB, FNMADD, FNMSUB. -/
+structure FP_data_processing_three_source_cls where
+  M       : BitVec 1               -- [31:31]
+  _fixed1 : BitVec 1 := 0b0#1      -- [30:30]
+  S       : BitVec 1               -- [29:29]
+  _fixed2 : BitVec 5 := 0b11111#5  -- [28:24]
+  ftype   : BitVec 2               -- [23:22]
+  o1      : BitVec 1               -- [21:21]
+  Rm      : BitVec 5               -- [20:16]
+  o0      : BitVec 1               -- [15:15]
+  Ra      : BitVec 5               -- [14:10]
+  Rn      : BitVec 5               --   [9:5]
+  Rd      : BitVec 5               --   [4:0]
+deriving DecidableEq, Repr
+
+instance : ToString FP_data_processing_three_source_cls where toString a := toString (repr a)
+
+/-- (FV addition) Floating-point compare: FCMP, FCMPE (register and `#0.0`). -/
+structure FP_compare_cls where
+  M       : BitVec 1               -- [31:31]
+  _fixed1 : BitVec 1 := 0b0#1      -- [30:30]
+  S       : BitVec 1               -- [29:29]
+  _fixed2 : BitVec 5 := 0b11110#5  -- [28:24]
+  ftype   : BitVec 2               -- [23:22]
+  _fixed3 : BitVec 1 := 0b1#1      -- [21:21]
+  Rm      : BitVec 5               -- [20:16]
+  op      : BitVec 2               -- [15:14]
+  _fixed4 : BitVec 4 := 0b1000#4   -- [13:10]
+  Rn      : BitVec 5               --   [9:5]
+  opcode2 : BitVec 5               --   [4:0]
+deriving DecidableEq, Repr
+
+instance : ToString FP_compare_cls where toString a := toString (repr a)
+
 inductive DataProcSFPInst where
   | Advanced_simd_two_reg_misc :
     Advanced_simd_two_reg_misc_cls → DataProcSFPInst
@@ -198,6 +250,12 @@ inductive DataProcSFPInst where
     FP_conditional_select_cls → DataProcSFPInst
   | Advanced_simd_modified_immediate :
     Advanced_simd_modified_immediate_cls → DataProcSFPInst
+  | FP_data_processing_two_source :
+    FP_data_processing_two_source_cls → DataProcSFPInst
+  | FP_data_processing_three_source :
+    FP_data_processing_three_source_cls → DataProcSFPInst
+  | FP_compare :
+    FP_compare_cls → DataProcSFPInst
 deriving DecidableEq, Repr
 
 instance : ToString DataProcSFPInst where toString a := toString (repr a)

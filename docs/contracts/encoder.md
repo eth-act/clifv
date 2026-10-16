@@ -43,6 +43,13 @@ M5 proven (2026-09-27); no `sorry`, no hand-written `axiom`, no warnings in the 
       `FP_immediate`, `FP_conditional_select`, `Advanced_simd_modified_immediate`,
       `LDST.Reg_literal` with `decode_armBits_*` lemmas; `fpuLoadLit` is a PC-relative form
       (`Insn.pcRelSpec?`, ±1 MiB); random forms 54, `--n 500`: 54/54 identical to `llvm-mc`
+- [x] S11d (#237) phase 2: scalar floating-point arithmetic, compare and convert `Insn`s
+      (`fpuRR` gains `sqrt`/`cvt32To64`/`cvt64To32`; `fpuRRR`, `fpuRRRR`, `fpuCmp`,
+      `fpuRound`, `fpuToInt`, `intToFpu`, mirroring Cranelift's `FpuRR`/`FpuRRR`/`FpuRRRR`/
+      `FpuCmp`/`FpuRound`/`FpuToInt`/`IntToFpu`; Cranelift has no `fnmul` or `fmaxnm`/`fminnm`
+      MInst), new classes `DPSFP.FP_data_processing_two_source`, `FP_data_processing_three_source`,
+      `FP_compare` with `decode_armBits_*` lemmas; random forms 61, `--n 500`: 61/61 identical
+      to `llvm-mc`, decode check 30 561 instructions, 0 failures
 
 ## Pipeline
 
@@ -187,6 +194,14 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `fpuLoad`/`fpuStore` s/d, every final mode | the five single-register `LDST` classes (V 1, size 10/11, opc 01/00) | LDR/STR/LDUR/STUR (SIMD&FP) | `FpuLoad32/64`, `FpuStore32/64` |
 | `fpuLoadP`/`fpuStoreP` s/d/q (sp pre/post-index) | `LDST.Reg_pair_pre_indexed` / `Reg_pair_post_indexed` (V 1, opc 00/01/10) | LDP/STP (SIMD&FP) | `FpuLoadP64/128`, `enc_ldst_vec_pair` |
 | `fpuLoadLit` s/d/q | `LDST.Reg_literal` (V 1, opc 00/01/10), imm19 = offset / 4, ±1 MiB | LDR (literal, SIMD&FP) | `FpuLoad*` with `AMode::Label`, `enc_ldst_imm19` |
+| `fpuRR sqrt` s/d | `DPSFP.FP_data_processing_one_source` (opcode 000011) | FSQRT (scalar) | `FpuRR`, `enc_fpurr` |
+| `fpuRR cvt32To64` (size 32) / `cvt64To32` (size 64); other sizes are an error | `DPSFP.FP_data_processing_one_source` (ftype = source, opcode 000101 / 000100) | FCVT | `FpuRR` (`Cvt32To64`/`Cvt64To32`) |
+| `fpuRRR add/sub/mul/div/max/min` s/d | `DPSFP.FP_data_processing_two_source` (opcode 0010/0011/0000/0001/0100/0101) | FADD, FSUB, FMUL, FDIV, FMAX, FMIN (scalar) | `FpuRRR`, `enc_fpurrr` |
+| `fpuRRRR mAdd/mSub/nMAdd/nMSub` s/d | `DPSFP.FP_data_processing_three_source` (o1:o0 00/01/10/11) | FMADD, FMSUB, FNMADD, FNMSUB | `FpuRRRR`, `enc_fpurrrr` |
+| `fpuCmp` s/d | `DPSFP.FP_compare` (op 00, opcode2 00000) | FCMP (register) | `FpuCmp`, `enc_fcmp` |
+| `fpuRound` minus/plus/zero/nearest × 32/64 | `DPSFP.FP_data_processing_one_source` (opcode 001010/001001/001011/001000) | FRINTM, FRINTP, FRINTZ, FRINTN (scalar) | `FpuRound`, `enc_fround` |
+| `fpuToInt` f32/f64 → i32/u32/i64/u64 | `DPSFP.Conversion_between_FP_and_Int` (rmode 11, opcode 000/001; sf = 64-bit integer; Rd `w`/`x`, 31 = ZR) | FCVTZS, FCVTZU (scalar, integer) | `FpuToInt`, `enc_fputoint` |
+| `intToFpu` i32/u32/i64/u64 → f32/f64 | `DPSFP.Conversion_between_FP_and_Int` (rmode 00, opcode 010/011; Rn `w`/`x`, 31 = ZR) | SCVTF, UCVTF (scalar, integer) | `IntToFpu`, `enc_inttofpu` |
 
 ## Tests and results (2026-09-27)
 
