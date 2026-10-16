@@ -158,7 +158,7 @@ Families are independent and can run in parallel, one agent per opts file.
 Legalised `i128` functions are inside the end-to-end theorem (`E2E.backend_correct_legal`,
 `docs/contracts/legalize128.md`; survey 31 and runtests 159 functions reported verified).
 Deferred:
-- ~~composing the legalisation with the mid-end theorems~~ Done (S2, #26, `agent/optimiser`):
+- ~~composing the legalisation with the mid-end theorems~~ Done (S2, #26, [#245](https://github.com/eth-act/clifv/pull/245)):
   `E2E.backend_correct_legal_opt` (`--opt-proven-only` reports legalised functions verified) and
   the optimising executable compiler's `Link.compileExeOpt_correct_source{,_peak}`;
 - in `Link.compileExe_correct_source` (and `_source_peak`, the `Link.DeadCleanup` variants, L1f
