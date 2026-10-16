@@ -1,0 +1,83 @@
+{
+  "utc": "2026-10-16T11:41:08.583347+00:00",
+  "free_bytes": 877507452928,
+  "worktrees": [
+    {
+      "path": "/home/lee/clifv",
+      "owner": "codygunton / #44",
+      "purpose": "Primary checkout: dirty preserved coordination/helper and comparison evidence",
+      "dirty_paths": 5,
+      "bytes": 37315809280,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume",
+      "owner": "codygunton / #44",
+      "purpose": "Active #140 proof source, single warm Lean cache, live serial validation and Rust tools",
+      "dirty_paths": 1245,
+      "bytes": 31952117760,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty preserved Stock implementation/recovery source; no build cache",
+      "dirty_paths": 34,
+      "bytes": 38064128,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-stock-lowering",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty pinned upstream input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-dupnames",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty pinned upstream input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/review-wasmtime",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty upstream review input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    }
+  ],
+  "policy": {
+    "target_free_gib": 100,
+    "minimum_projected_free_gib": 50,
+    "warm_caches": 1,
+    "cleanup": "after every batch, PR, delegated task, and stop",
+    "aggregate_agent_budget": true,
+    "automatic_cache_copy": false,
+    "cleanup_even_with_ample_headroom": true,
+    "delegated_tasks_require_cleanup_owner_and_shared_limits": true
+  },
+  "removed": [],
+  "reason": "Coherent integration batch: no new tree, agent or cache; one warm cache serves1930-target serial rebuild after published upstream reconciliation. Scratch kernel artifacts kept until canonical proof build/audit/MCP/full gates complete, then reclaim expendable duplicates while preserving unique evidence/backups. All remaining trees dirty/active; other projects untouched.",
+  "helper_shell_syntax": "PASS bash -n",
+  "other_projects": "untouched",
+  "scratch_modules": 110,
+  "scratch_public_roots": 190,
+  "scratch_compiled_bytes": 80815536,
+  "live_validation": {
+    "state": "running",
+    "pid": 1233457,
+    "utc": "2026-10-16T11:41:01.189265+00:00",
+    "total": 1930,
+    "completed_modules": 16,
+    "index": 17,
+    "current": "FV.Backend.Proof.IselData",
+    "log": "/tmp/stock-coherent-build-FV.Backend.Proof.IselData.log",
+    "memcap": "22G"
+  },
+  "warm_cache_bytes": 27699937280
+}
