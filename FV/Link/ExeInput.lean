@@ -36,6 +36,8 @@ places the region's placeholder of the layout's span and the functions at their 
 of the compiled code are in reach. A target is the link-map address of the relocation's symbol
 (plus its addend for `adrp`); deriving reach from the inputs needs which symbols and addends
 the compiled code relocates (a name-provenance analysis of the lowering, docs/DEFERRED.md).
+
+The shipped compiler `Link.DeadCleanup.compileExe`: `FV/Link/ExeInputCleanup.lean`.
 -/
 
 namespace Link
@@ -44,16 +46,17 @@ open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf Backend LinkSpec
 
 /-! ## The layout from the compiler -/
 
+/-- `S` with the names of its CLIF functions and the sizes `sz`. -/
+def LinkSpec.withSizes (S : LinkSpec) (sz : List Nat) : LinkSpec :=
+  { S with names := S.funcs.map (·.func.name), sizes := sz }
+
 /-- **The Lean compiler's layout**: the CLIF functions' names, the compiled code's sizes. -/
-def LinkSpec.placed (S : LinkSpec) : LinkSpec :=
-  { S with names := S.funcs.map (·.func.name), sizes := S.sizesOf }
+def LinkSpec.placed (S : LinkSpec) : LinkSpec := S.withSizes S.sizesOf
 
 /-- **The layout's conditions on the base and the outside part**: `R` is nonzero, word-aligned,
-the region `[R, R + span)` (of the layout's span) is in the address space and holds no outside
-symbol. -/
-def LinkSpec.layoutOkB (S : LinkSpec) : Bool :=
-  decide (0 < S.R) && S.R % 4 == 0 && decide (S.R + span S.sizesOf < 2 ^ 64) &&
-    clearOfB S.R (span S.sizesOf) S.outside
+the region `[R, R + size)` is in the address space and holds no outside symbol. -/
+def LinkSpec.layoutOkB (P : LinkSpec) : Bool :=
+  decide (0 < P.R) && P.R % 4 == 0 && decide (P.R + P.size < 2 ^ 64) && clearOfB P.R P.size P.outside
 
 /-- `l` is the sum's term: a member is at most the sum. -/
 theorem le_sum_of_mem {l : List Nat} {x : Nat} (h : x ∈ l) : x ≤ l.sum := by
@@ -65,14 +68,15 @@ theorem le_sum_of_mem {l : List Nat} {x : Nat} (h : x ∈ l) : x ≤ l.sum := by
     · omega
     · have := ih h; omega
 
-/-- **Compiled code is nonempty**: the entry block starts with the prologue. -/
-theorem pipeT_words_pos {g : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.Json} {a : Art}
-    (h : pipeT g k b o = .ok a) (hc : checkAlloc a.vcp a.rf = .ok ()) : 0 < a.fb.words.size := by
-  obtain ⟨-, -, -, hal, hem, hla, -⟩ := pipeT_spec h
+/-- **Compiled code is nonempty**: the entry block starts with the prologue (any allocation
+`checkAlloc` accepts, lowered and emitted). -/
+theorem words_pos_of {vcp : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm} {fb : FnBin}
+    (hc : checkAlloc vcp rf = .ok ()) (hal : lowerRFunc vcp rf = .ok af)
+    (hem : emitFunc k af = .ok fa) (hla : fa.layout = .ok fb) : 0 < fb.words.size := by
   obtain ⟨c, ins, a0, hc', -⟩ := Backend.Proof.allocChecked_of_checkAlloc hc
-  have h0 : 0 < a.vcp.blocks.size := Nat.pos_of_ne_zero hc'.nonempty
-  obtain ⟨vb, hvb⟩ : ∃ vb, a.vcp.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem h0⟩
-  obtain ⟨items, hit⟩ : ∃ items, a.rf.blocks[0]? = some items :=
+  have h0 : 0 < vcp.blocks.size := Nat.pos_of_ne_zero hc'.nonempty
+  obtain ⟨vb, hvb⟩ : ∃ vb, vcp.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem h0⟩
+  obtain ⟨items, hit⟩ : ∃ items, rf.blocks[0]? = some items :=
     ⟨_, Array.getElem?_eq_getElem (by rw [hc'.size]; exact h0)⟩
   have hframe := lowerRFunc_frame hal
   obtain ⟨⟨-, -, -, hbl⟩, -⟩ := lowerRFunc_ok hal
@@ -84,7 +88,7 @@ theorem pipeT_words_pos {g : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.
   simp only [codeLinesE, ainstLines, hframe, ite_true, bind, Except.bind, pure, Except.pure,
     List.append_nil, Except.ok.injEq, Prod.mk.injEq] at h1
   obtain ⟨rfl, rfl⟩ := h1
-  have hZ : ∀ n, (ls2 ++ Backend.nxtOf a.af 0)[1]? ≠ some (.label (.trap n)) := by
+  have hZ : ∀ n, (ls2 ++ Backend.nxtOf af 0)[1]? ≠ some (.label (.trap n)) := by
     intro n e
     have hm := List.mem_of_getElem? e
     rcases List.mem_append.1 hm with hm | hm
@@ -93,7 +97,7 @@ theorem pipeT_words_pos {g : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.
       split at hm <;> simp at hm
   rw [List.append_assoc, ftR_plain_append _ _ _ (fun ln h => by
     obtain ⟨_, _, _, hp⟩ := Backend.Proof.prologueLines_ins _ ln h; exact hp) hZ] at hdrop
-  have hmem : Line.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))) ∈ a.fa.lines.toList := by
+  have hmem : Line.ins (.stp Reg.fp Reg.lr (.spPreIndexed (-16))) ∈ fa.lines.toList := by
     apply List.mem_of_mem_drop (i := j0 + 1)
     rw [hdrop]
     simp [prologueLines]
@@ -101,6 +105,11 @@ theorem pipeT_words_pos {g : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.
   have := le_sum_of_mem (List.mem_map_of_mem (f := Line.size) hmem)
   simp only [Line.size] at this
   omega
+
+theorem pipeT_words_pos {g : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.Json} {a : Art}
+    (h : pipeT g k b o = .ok a) (hc : checkAlloc a.vcp a.rf = .ok ()) : 0 < a.fb.words.size := by
+  obtain ⟨-, -, -, hal, hem, hla, -⟩ := pipeT_spec h
+  exact words_pos_of hc hal hem hla
 
 /-- `nodupGo` is complete. -/
 theorem nodupGo_complete : ∀ {l : List String} {s : Std.HashSet String}, l.Nodup →
@@ -119,24 +128,38 @@ theorem nodupGo_complete : ∀ {l : List String} {s : Std.HashSet String}, l.Nod
 theorem nodupB_complete {l : List String} (h : l.Nodup) : nodupB l = true :=
   nodupGo_complete h fun _ _ => by simp
 
-/-- **The placement's conditions hold for the Lean compiler's layout.** -/
-theorem placeOkB_placed {S : LinkSpec} (hin : InScopeP S.placed.input0 = true)
-    (hl : S.layoutOkB = true) : S.placed.placeOkB = true := by
-  simp only [InScopeP, progScopeB, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at hin
+/-- `InScopeP` asks for distinct function names. -/
+theorem nodup_of_inScope {S : LinkSpec} {sz : List Nat} (hin : InScopeP (S.withSizes sz).input0 = true) :
+    (S.funcs.map (·.func.name)).Nodup := by
+  simp only [InScopeP, progScopeB, Bool.and_eq_true, decide_eq_true_eq] at hin
+  simpa [LinkInput.prog, LinkSpec.withSizes, input0, List.map_map, Function.comp_def] using hin.1.1.1
+
+/-- `InScopeP` gives every function's `fnScopeB`. -/
+theorem fnScope_of_inScope {S : LinkSpec} {sz : List Nat} (hin : InScopeP (S.withSizes sz).input0 = true)
+    {fi : FnInput} (hfi : fi ∈ S.funcs) : fnScopeB fi.func = true := by
+  simp only [InScopeP, Bool.and_eq_true, List.all_eq_true] at hin
+  exact hin.2 fi.func (by
+    simp only [LinkInput.prog, LinkSpec.withSizes, input0, List.mem_map]; exact ⟨fi, hfi, rfl⟩)
+
+/-- **The placement's conditions hold for a layout of the CLIF functions' names and positive
+sizes, one per function**, under `layoutOkB`. -/
+theorem placeOkB_withSizes {S : LinkSpec} {sz : List Nat} (hnd : (S.funcs.map (·.func.name)).Nodup)
+    (hlen : sz.length = S.funcs.length) (hpos : ∀ n ∈ sz, 0 < n) (hl : (S.withSizes sz).layoutOkB = true) :
+    (S.withSizes sz).placeOkB = true := by
   simp only [layoutOkB, Bool.and_eq_true, decide_eq_true_eq] at hl
   obtain ⟨⟨⟨hR, hal⟩, hfit⟩, hclr⟩ := hl
   simp only [placeOkB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true]
-  have hnd : (S.funcs.map (·.func.name)).Nodup := by
-    have := hin.1.1.1
-    simpa [LinkInput.prog, LinkSpec.placed, input0, List.map_map, Function.comp_def] using this
-  refine ⟨⟨⟨⟨⟨⟨⟨nodupB_complete hnd, by simp [LinkSpec.placed]⟩,
-    by simp [LinkSpec.placed, LinkSpec.sizesOf]⟩, ?_⟩, hR⟩, hal⟩, hfit⟩, hclr⟩
+  exact ⟨⟨⟨⟨⟨⟨⟨nodupB_complete hnd, by simp [LinkSpec.withSizes]⟩, hlen⟩, hpos⟩, hR⟩, hal⟩, hfit⟩, hclr⟩
+
+/-- **The placement's conditions hold for the Lean compiler's layout.** -/
+theorem placeOkB_placed {S : LinkSpec} (hin : InScopeP S.placed.input0 = true)
+    (hl : S.placed.layoutOkB = true) : S.placed.placeOkB = true := by
+  refine placeOkB_withSizes (nodup_of_inScope hin) (by simp [LinkSpec.sizesOf]) ?_ hl
   intro n hn
-  simp only [LinkSpec.placed, LinkSpec.sizesOf, List.mem_map] at hn
+  simp only [LinkSpec.sizesOf, List.mem_map] at hn
   obtain ⟨fi, hfi, rfl⟩ := hn
-  have hsc := hin.2 fi.func (by
-    simp only [LinkInput.prog, LinkSpec.placed, input0, List.mem_map]; exact ⟨fi, hfi, rfl⟩)
-  obtain ⟨a, ha, -, -, hc, -⟩ := pipeT_ok hsc spillDefinedHyp fi.k 0 (raJ fi.ra fi.j)
+  obtain ⟨a, ha, -, -, hc, -⟩ := pipeT_ok (fnScope_of_inScope hin hfi) spillDefinedHyp fi.k 0
+    (raJ fi.ra fi.j)
   rw [ha]
   exact pipeT_words_pos ha hc
 
@@ -164,23 +187,22 @@ def symFootB (file : ByteArray) (hi : Nat) : Bool :=
 
 /-- **The TLS offsets**: every address of the layout's link map, and `0` (the address of a name
 outside it), has a thread-pointer offset (`file0` has a `PT_TLS` segment) below `2 ^ 32`. -/
-def tlsOkB (S : LinkSpec) (phs : List Phdr) : Bool :=
-  (0 :: S.placed.addrs.map (·.2)).all fun v => match tpOff phs v with
+def tlsOkB (P : LinkSpec) (phs : List Phdr) : Bool :=
+  (0 :: P.addrs.map (·.2)).all fun v => match tpOff phs v with
     | some x => decide (x < 2 ^ 32)
     | none => false
 
-/-- **The conditions on rust-lld's executable `file0`** (program headers `phs`), for the Lean
-compiler's layout: the region of the layout's span at `R` is a read-only part of one `PT_LOAD`
-segment (`regionOkB`), the headers are a static AArch64 executable's (`hdrB`), the data objects
-are in place in the bytes outside the region (`dataFastB` on `maskEx`), the symbol table is
-the link map (`symsOkB`) and lies after the region with the section headers (`symFootB`), and
-the TLS offsets fit (`tlsOkB`). -/
-def LinkSpec.file0OkB (S : LinkSpec) (file0 : ByteArray) (phs : List Phdr) : Bool :=
-  let n := span S.sizesOf
-  let off := offsetOf phs S.R
-  regionOkB file0 S.R n off && hdrB [(0, file0)] &&
-    dataFastB S.placed.input0 S.data (maskEx file0 off n) && symsOkB S.placed.input0 file0 &&
-    symFootB file0 (off + n) && tlsOkB S phs
+/-- **The conditions on rust-lld's executable `file0`** (program headers `phs`) for the layout `P`:
+the region of `P`'s size at `R` is a read-only part of one `PT_LOAD` segment (`regionOkB`), the
+headers are a static AArch64 executable's (`hdrB`), the data objects are in place in the bytes
+outside the region (`dataFastB` on `maskEx`), the symbol table is the link map (`symsOkB`) and
+lies after the region with the section headers (`symFootB`), and the TLS offsets fit
+(`tlsOkB`). -/
+def LinkSpec.file0OkB (P : LinkSpec) (file0 : ByteArray) (phs : List Phdr) : Bool :=
+  let off := offsetOf phs P.R
+  regionOkB file0 P.R P.size off && hdrB [(0, file0)] &&
+    dataFastB P.input0 P.data (maskEx file0 off P.size) && symsOkB P.input0 file0 &&
+    symFootB file0 (off + P.size) && tlsOkB P phs
 
 theorem exRd_self (f : ByteArray) : exRd [(0, f)] = fileRd f := by
   funext o
@@ -434,13 +456,13 @@ theorem outsideOkB_patch {I : LinkInput} {D : List Clif.DataObject} {file0 b : B
 
 /-- **Every TLS relocation is in range** under `tlsOkB`: its symbol's address is in the link
 map, or `0`. -/
-theorem tls_range {S : LinkSpec} {phs : List Phdr} (ht : tlsOkB S phs = true) (a : Art)
-    {r : Reloc} (hr : r.type = .tlsDescAdrPage21) :
-    relocRangeB S.placed.input (tpOff phs) a r = true := by
-  have hmem : S.placed.input.addrOf r.sym ∈ 0 :: S.placed.addrs.map (·.2) := by
+theorem tls_range {P : LinkSpec} {I : LinkInput} (hI : I.addrs = P.addrs) {phs : List Phdr}
+    (ht : tlsOkB P phs = true) (a : Art) {r : Reloc} (hr : r.type = .tlsDescAdrPage21) :
+    relocRangeB I (tpOff phs) a r = true := by
+  have hmem : I.addrOf r.sym ∈ 0 :: P.addrs.map (·.2) := by
     unfold LinkInput.addrOf
-    rw [input_addrs]
-    cases hl : S.placed.addrs.lookup r.sym with
+    rw [hI]
+    cases hl : P.addrs.lookup r.sym with
     | none => exact List.mem_cons_self
     | some v =>
       obtain ⟨l1, l2, he, -⟩ := List.lookup_eq_some_iff.1 hl
@@ -461,7 +483,7 @@ def CallPageReach (S : LinkSpec) (phs : List Phdr) : Prop :=
 
 /-- The region's size is the layout's span. -/
 theorem regionOf_placed_size (S : LinkSpec) (tp : Nat → Option Nat) :
-    (regionOf S.placed tp).size = span S.sizesOf := by
+    (regionOf S.placed tp).size = S.placed.size := by
   have hsz := sizes_of (S := S.placed) rfl
   simp only [sizesOkB, decide_eq_true_eq] at hsz
   show (regionBytes S.placed.input tp (placedArts S.placed)).toArray.size = _
@@ -474,8 +496,8 @@ theorem regionOf_placed_size (S : LinkSpec) (tp : Nat → Option Nat) :
 (`InScopeP`), the layout (`layoutOkB`), rust-lld's executable `file0` (`file0OkB`), with the
 Lean compiler's layout (`S.placed`), and the remaining premise `CallPageReach`. -/
 theorem compileExe_total_input {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
-    (hin : InScopeP S.placed.input0 = true) (hl : S.layoutOkB = true)
-    (hph : phdrs (fileRd file0) = some phs) (hf : S.file0OkB file0 phs = true)
+    (hin : InScopeP S.placed.input0 = true) (hl : S.placed.layoutOkB = true)
+    (hph : phdrs (fileRd file0) = some phs) (hf : S.placed.file0OkB file0 phs = true)
     (hreach : CallPageReach S phs) :
     compileExe S.placed file0 =
       .ok (patch file0 (offsetOf phs S.R) (regionOf S.placed (tpOff phs))) := by
@@ -485,7 +507,7 @@ theorem compileExe_total_input {S : LinkSpec} {file0 : ByteArray} {phs : List Ph
   refine compileExe_total hin (placeOkB_placed hin hl) rfl rfl (fun e he r hr => ?_) hph
     (hsz ▸ hreg) (outsideOkB_patch (hsz ▸ hreg) hh (hsz ▸ hd) (by exact hs) (hsz ▸ hft))
   by_cases htls : r.type = .tlsDescAdrPage21
-  · exact tls_range ht e.2 htls
+  · exact tls_range rfl ht e.2 htls
   · exact hreach e he r hr htls
 
 /-- **A successful link has the Lean compiler's layout**: `compileExe` checks the driver's names
@@ -504,7 +526,7 @@ theorem placed_of_compileExe {S : LinkSpec} {file0 file : ByteArray}
       rw [← hs, sizesOf]
       exact List.map_congr_left fun fi _ => by rw [pipeT_fb]
     cases S
-    simp only [LinkSpec.placed, LinkSpec.mk.injEq] at hn hs' ⊢
+    simp only [LinkSpec.placed, LinkSpec.withSizes, LinkSpec.mk.injEq] at hn hs' ⊢
     simp only [hn, hs', and_self]
   · cases h
 

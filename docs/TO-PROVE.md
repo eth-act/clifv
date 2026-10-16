@@ -57,7 +57,8 @@ same four (`Link.DeadCleanup.compileExe_correct{,_peak,_source,_source_peak}`, L
 (`S.placed`) under conditions decided on the inputs `S` and `file0` only (`InScopeP`, `layoutOkB`,
 `file0OkB`: rust-lld's checks moved from the patched file to `file0`, TLS offsets from `PT_TLS`) and
 one remaining output-dependent premise, the `bl`/`adrp` reach of the compiled relocations
-(`CallPageReach`, docs/DEFERRED.md "Totality on input conditions").
+(`CallPageReach`, docs/DEFERRED.md "Totality on input conditions"); the same for the shipped
+compiler, `Link.DeadCleanup.compileExe_total_input` (`FV/Link/ExeInputCleanup.lean`).
 
 ### 1.2 What "no per-program certificate" means here (decision)
 
@@ -399,7 +400,11 @@ author's estimate, not measured), **Risk**.
     `placed_of_compileExe`: a successful `compileExe S file0` has `S.placed = S`. **Remaining
     output premise** `CallPageReach` (`bl`/`adrp` targets in reach): needs which symbols and
     addends the compiled code relocates (docs/DEFERRED.md "Totality on input conditions"). Witness
-    `total_input_witness` (`a_arith`, an executable with a `PT_TLS` segment), `spec_placed`.
+    `total_input_witness` (`a_arith`, an executable with a `PT_TLS` segment), `spec_placed`. The
+    shipped compiler: `Link.DeadCleanup.compileExe_total_input`/`placed_of_compileExe`
+    (`FV/Link/ExeInputCleanup.lean`, layout `DeadCleanup.placed`), witness
+    `total_input_cleanup_witness`. Real executables: the input conditions and `CallPageReach`
+    evaluate to `true` on two survey executables rust-lld linked (66 and 493 functions).
   - Non-vacuity: `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
     `total_witness`); per run: `crate-proofs/Crates/CompileExeRunWitness.lean`
     (`compileExe_run_witness`: the panic=abort `a_arith` compiled by `compileExe`, every premise of
@@ -833,8 +838,8 @@ label**; list the free ones with
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | **done** (`agent/compile-exe`): `Link.compileExe`, `compileExe_correct` (no per-program premise, no open hypothesis), `compileExe_total` (address and rust-lld conditions); #88 removes the alias restriction by compiling native self-calls; `lake exe lean-link` runs `compileExe` |
 | L1c | [#88](https://github.com/eth-act/clifv/issues/88) Remove `AliasOut` from executable compiler totality | **done** (`agent/alias-total`): native self-calls in function-free activations; alias-free driver and `LinkSpec`; `compileExe_total` without alias restriction or output hypothesis; recursive own-address smoke passes |
 | L1d | [#204](https://github.com/eth-act/clifv/issues/204) Executable correctness for recursive programs (remove CycleFrom exclusion) | **done** ([#215](https://github.com/eth-act/clifv/pull/215)): `Link.compileExe_correct_depth` (no call-graph premise; stack `frameDrop + D·M` for fuel `M`), `Link.compileExe_correct_peak` (stack `frameDrop + D·d` for the run's peak call depth `d`), witnesses `Crates.CompileExeRecWitness`, `Crates.CompileExePeakWitness`; open: exact live-frame accounting |
+| L1e | [#216](https://github.com/eth-act/clifv/issues/216) `compileExe` totality from decidable input conditions (layout from Lean, rust-lld checks on `file0`) | **partly done** (`agent/total-input`): `Link.compileExe_total_input` and `Link.DeadCleanup.compileExe_total_input` (layout `placed`, `layoutOkB`, `file0OkB`, TLS from `PT_TLS`), `placed_of_compileExe`, witnesses `total_input_witness`, `total_input_cleanup_witness`; open: `bl`/`adrp` reach (`CallPageReach`, DEFERRED "Totality on input conditions") |
 | L1f | [#217](https://github.com/eth-act/clifv/issues/217) Theorems for the shipped (dead-cleanup) compiler, recursive i128 source theorem, fail-closed `lean-link --verified` | **done** ([#218](https://github.com/eth-act/clifv/pull/218)): `Link.compileExe_correct_source_peak` (`legalProg_refines_depth`), `Link.DeadCleanup.compileExe_correct_peak`/`_source`/`_source_peak`, `lean-link --verified` and `coverage:`; witnesses `Crates.CompileExeSourcePeakWitness`, `Crates.DeadCleanupExePeakWitness`, `Crates.DeadCleanupExeSourceWitness` |
-| L1e | [#216](https://github.com/eth-act/clifv/issues/216) `compileExe` totality from decidable input conditions (layout from Lean, rust-lld checks on `file0`) | **in progress** (`agent/total-input`): `Link.compileExe_total_input` (layout `S.placed`, `layoutOkB`, `file0OkB`, TLS from `PT_TLS`), `placed_of_compileExe`, witness `total_input_witness`; open: `bl`/`adrp` reach (`CallPageReach`, DEFERRED "Relocation reach") |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | **done** (`agent/rule-infra`; 43 + 10 roots) |
 | R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (0 rules left) | **done** ([#211](https://github.com/eth-act/clifv/pull/211)) |
 | R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (0 rules left) | **done** ([#210](https://github.com/eth-act/clifv/pull/210)) |

@@ -2,6 +2,7 @@ import Crates.LeanLinkWitness
 import FV.Link.Exe
 import FV.Link.ExeTotal
 import FV.Link.ExeInput
+import FV.Link.ExeInputCleanup
 
 /-! # Non-vacuity of the executable compiler's theorems (L1) on a survey crate
 
@@ -14,7 +15,8 @@ boundary contract, the reference CLIF run, `TrapsExplicit`, the loader's image),
 `Crates.BinaryExecWitness` shows satisfiable for the panic=abort build of `a_arith`.
 `total_witness`: every hypothesis of `compileExe_total` holds on this input.
 `total_input_witness`: every hypothesis of `compileExe_total_input` holds on this input with the
-Lean compiler's layout (`spec.placed`) and an executable with a `PT_TLS` segment (`file0T`).
+Lean compiler's layout (`spec.placed`) and an executable with a `PT_TLS` segment (`file0T`);
+`total_input_cleanup_witness`: the same for the shipped compiler (`DeadCleanup.compileExe`).
 -/
 
 namespace Crates.CompileExeWitness
@@ -112,7 +114,7 @@ def placeholderTls (R n : Nat) (syms : List (String × Nat)) : ByteArray :=
 /-- rust-lld's executable for the Lean compiler's layout of `a_arith`: the region's placeholder
 of the layout's span, the layout's link map as the symbol table, a `PT_TLS` segment. -/
 def file0T : ByteArray :=
-  placeholderTls spec.R (span spec.sizesOf) (spec.placed.addrs.map fun p => (BinCheck.symName p.1, p.2))
+  placeholderTls spec.R spec.placed.size (spec.placed.addrs.map fun p => (BinCheck.symName p.1, p.2))
 
 def phsT : List Elf.Phdr := (Elf.phdrs (Elf.fileRd file0T)).getD []
 
@@ -120,9 +122,9 @@ theorem hphT : Elf.phdrs (Elf.fileRd file0T) = some phsT := by native_decide
 
 theorem inScopeT : InScopeP spec.placed.input0 = true := by native_decide
 
-theorem layoutT : spec.layoutOkB = true := by native_decide
+theorem layoutT : spec.placed.layoutOkB = true := by native_decide
 
-theorem file0T_ok : spec.file0OkB file0T phsT = true := by native_decide
+theorem file0T_ok : spec.placed.file0OkB file0T phsT = true := by native_decide
 
 theorem reachB : (tabOf spec.placed.input.resultsT).all (fun e => e.2.fb.relocs.all fun r =>
     decide (r.type = .tlsDescAdrPage21) || relocRangeB spec.placed.input (Elf.tpOff phsT) e.2 r) =
@@ -141,5 +143,38 @@ theorem total_input_witness :
 
 /-- `placed_of_compileExe` on `a_arith`: the linked spec has the Lean compiler's layout. -/
 theorem spec_placed : spec.placed = spec := placed_of_compileExe compile_eq
+
+/-! ## `DeadCleanup.compileExe_total_input` on `a_arith` (the shipped compiler) -/
+
+/-- rust-lld's executable for the shipped compiler's layout of `a_arith`. -/
+def file0C : ByteArray :=
+  placeholderTls spec.R (DeadCleanup.placed spec).size
+    ((DeadCleanup.placed spec).addrs.map fun p => (BinCheck.symName p.1, p.2))
+
+def phsC : List Elf.Phdr := (Elf.phdrs (Elf.fileRd file0C)).getD []
+
+theorem hphC : Elf.phdrs (Elf.fileRd file0C) = some phsC := by native_decide
+
+theorem inScopeC : InScopeP (DeadCleanup.placed spec).input0 = true := by native_decide
+
+theorem layoutC : (DeadCleanup.placed spec).layoutOkB = true := by native_decide
+
+theorem file0C_ok : (DeadCleanup.placed spec).file0OkB file0C phsC = true := by native_decide
+
+theorem reachCB : (tabOf (DeadCleanup.placed spec).inputCleanup.resultsCleanupT).all (fun e =>
+    e.2.fb.relocs.all fun r => decide (r.type = .tlsDescAdrPage21) ||
+      relocRangeB (DeadCleanup.placed spec).inputCleanup (Elf.tpOff phsC) e.2 r) = true := by
+  native_decide
+
+theorem reachC : DeadCleanup.CallPageReach spec phsC := fun e he r hr hne => by
+  have := List.all_eq_true.1 (List.all_eq_true.1 reachCB e he) r hr
+  simpa [hne] using this
+
+/-- **Non-vacuity of `DeadCleanup.compileExe_total_input`** on `a_arith`. -/
+theorem total_input_cleanup_witness :
+    DeadCleanup.compileExe (DeadCleanup.placed spec) file0C =
+      .ok (patch file0C (offsetOf phsC spec.R)
+        (DeadCleanup.regionOf (DeadCleanup.placed spec) (Elf.tpOff phsC))) :=
+  DeadCleanup.compileExe_total_input inScopeC layoutC hphC file0C_ok reachC
 
 end Crates.CompileExeWitness

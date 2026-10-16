@@ -1615,22 +1615,32 @@ theorem Link.compileExe_total (hin : InScopeP S.input0 = true)
     (hout : outsideOkB S.input S.data (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) = true) :
     compileExe S file0 = .ok (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs)))
 -- L1e (FV/Link/ExeInput.lean): the Lean compiler's layout, conditions on the inputs only
-def Link.LinkSpec.placed (S : LinkSpec) : LinkSpec :=
-  { S with names := S.funcs.map (·.func.name), sizes := S.sizesOf }
-def Link.LinkSpec.layoutOkB (S : LinkSpec) : Bool        -- 0 < R, 4 ∣ R, R + span < 2^64, clearOfB
-def Link.LinkSpec.file0OkB (S : LinkSpec) (file0 : ByteArray) (phs : List Phdr) : Bool := -- off := offsetOf phs S.R
-  regionOkB file0 S.R (span S.sizesOf) off && hdrB [(0, file0)] &&
-    dataFastB S.placed.input0 S.data (maskEx file0 off (span S.sizesOf)) &&
-    symsOkB S.placed.input0 file0 && symFootB file0 (off + span S.sizesOf) && tlsOkB S phs
+def Link.LinkSpec.withSizes (S : LinkSpec) (sz : List Nat) : LinkSpec :=
+  { S with names := S.funcs.map (·.func.name), sizes := sz }
+def Link.LinkSpec.placed (S : LinkSpec) : LinkSpec := S.withSizes S.sizesOf
+def Link.LinkSpec.layoutOkB (P : LinkSpec) : Bool  -- 0 < R, 4 ∣ R, R + P.size < 2^64, clearOfB
+def Link.LinkSpec.file0OkB (P : LinkSpec) (file0 : ByteArray) (phs : List Phdr) : Bool :=
+  let off := offsetOf phs P.R
+  regionOkB file0 P.R P.size off && hdrB [(0, file0)] &&
+    dataFastB P.input0 P.data (maskEx file0 off P.size) && symsOkB P.input0 file0 &&
+    symFootB file0 (off + P.size) && tlsOkB P phs
 def Link.CallPageReach (S : LinkSpec) (phs : List Phdr) : Prop :=   -- remaining output premise
   ∀ e ∈ tabOf S.placed.input.resultsT, ∀ r ∈ e.2.fb.relocs, r.type ≠ .tlsDescAdrPage21 →
     relocRangeB S.placed.input (tpOff phs) e.2 r = true
 theorem Link.compileExe_total_input (hin : InScopeP S.placed.input0 = true)
-    (hl : S.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
-    (hf : S.file0OkB file0 phs = true) (hreach : CallPageReach S phs) :
+    (hl : S.placed.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : S.placed.file0OkB file0 phs = true) (hreach : CallPageReach S phs) :
     compileExe S.placed file0 =
       .ok (patch file0 (offsetOf phs S.R) (regionOf S.placed (tpOff phs)))
 theorem Link.placed_of_compileExe (h : compileExe S file0 = .ok file) : S.placed = S
+-- the shipped compiler (FV/Link/ExeInputCleanup.lean): DeadCleanup.placed S := S.withSizes
+-- (DeadCleanup.sizesOf S); DeadCleanup.CallPageReach over resultsCleanupT
+theorem Link.DeadCleanup.compileExe_total_input (hin : InScopeP (placed S).input0 = true)
+    (hl : (placed S).layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : (placed S).file0OkB file0 phs = true) (hreach : CallPageReach S phs) :
+    compileExe (placed S) file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf (placed S) (tpOff phs)))
+theorem Link.DeadCleanup.placed_of_compileExe (h : compileExe S file0 = .ok file) : placed S = S
 ```
 
 `compileExe_correct` has no per-program premise and no open hypothesis about the compiler; its
@@ -1642,7 +1652,8 @@ from `InScopeP` and `layoutOkB`, compiled code nonempty: `pipeT_words_pos`) and 
 checks from the patched file to `file0` (`outsideOkB_patch`: the region's bytes are read by none
 of them when the section headers, symbol and string tables lie after it, `symFootB`); TLS offsets
 come from `file0`'s `PT_TLS` (`tlsOkB`). Its one output-dependent premise is `CallPageReach`
-(docs/DEFERRED.md "Totality on input conditions"). Witness: `total_input_witness`.
+(docs/DEFERRED.md "Totality on input conditions"). `Link.DeadCleanup.compileExe_total_input`: the
+same for the shipped compiler. Witnesses: `total_input_witness`, `total_input_cleanup_witness`.
 `LinkSpec` is alias-free by construction; #88 removes alias generation and `AliasOut` rather
 than assuming or proving renaming invariance of the compiler. Native recursion is admitted
 by totality, and since L1d (#204) by executable correctness too (below). Witnesses:
