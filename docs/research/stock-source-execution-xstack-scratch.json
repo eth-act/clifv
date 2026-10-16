@@ -1,0 +1,166 @@
+{
+  "utc": "2026-10-16T16:34:57.563327+00:00",
+  "state": "scratch_kernel_and_normal_public_audit_pass",
+  "modules": {
+    "StockSourceExecutionXStack": {
+      "source": "/tmp/StockSourceExecutionXStack.lean",
+      "source_sha256": "19ba62aae9d7f9ed6e3f5311b37d76731f895daf0bb819cae7ff9fe38980477c",
+      "object": "/tmp/StockSourceExecutionXStack.olean",
+      "object_sha256": "a1bc0c8567a9b4a8c34d2ac87b50b958bd2174b22fd01628b19bc53f3f33ac25",
+      "log": "/tmp/stock-source-execution-xstack.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "public_theorems": [
+        "stock_source_unwindFrom_located",
+        "stock_source_raiseIn_located",
+        "stock_source_caller_tables_length",
+        "stock_source_toX_located"
+      ]
+    },
+    "StockSourceExecutionStackShape": {
+      "source": "/tmp/StockSourceExecutionStackShape.lean",
+      "source_sha256": "5d16c69d02a70b10f7301d20a5cb30db7544fd30b2c055070df7c78f544cfbeb",
+      "object": "/tmp/StockSourceExecutionStackShape.olean",
+      "object_sha256": "5189c9360e2d9a3609752538295ba56af4eee4db40477471bb0638ef256e585f",
+      "log": "/tmp/stock-source-execution-stackshape.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "public_theorems": [
+        "stock_source_step_stack_delta"
+      ]
+    },
+    "StockSourceExecutionXLift": {
+      "source": "/tmp/StockSourceExecutionXLift.lean",
+      "source_sha256": "9f3a719dc741dc84da9749980730dfb4fd40a5bf6c3fb1b415bdd3f2b088e3c4",
+      "object": "/tmp/StockSourceExecutionXLift.olean",
+      "object_sha256": "739f15b67d90004c5027f52dec52edf88d6ae5bb97cbb3a2b72adea44e090ff1",
+      "log": "/tmp/stock-source-execution-xlift.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "public_theorems": [
+        "stock_source_liftStep_located"
+      ]
+    },
+    "StockSourceExecutionXStackWitness": {
+      "source": "/tmp/StockSourceExecutionXStackWitness.lean",
+      "source_sha256": "9df938a052643bb4f0e1bfbe0ce8cf5ed37599e77a0854c7fb836f4221c8af75",
+      "object": "/tmp/StockSourceExecutionXStackWitness.olean",
+      "object_sha256": "99d93fb133b07b9baba03035a8ab6fcb14467ab983053d15f3ea01ffd420bf72",
+      "log": "/tmp/stock-source-execution-xstack-witness.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "public_theorems": [
+        "stock_source_nested_unwind_witness",
+        "stock_source_nested_unwind_complete_witness",
+        "stock_source_actual_lift_witness"
+      ]
+    }
+  },
+  "public_theorem_count": 9,
+  "normal_audit": {
+    "path": "/tmp/stock-source-execution-xstack-axioms.log",
+    "sha256": "f690bb43676db16fdfafe8a7fd5dd3cbd46c635c7413ab4ded42fa715b6714fb",
+    "roots_and_models": {
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.CallerTables": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.XLocated": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.stock_source_unwindFrom_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.stock_source_raiseIn_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.stock_source_caller_tables_length": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.stock_source_toX_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionStackShapeDraft.stock_source_step_stack_delta": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXLiftDraft.stock_source_liftStep_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackWitnessDraft.stock_source_nested_unwind_witness": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackWitnessDraft.stock_source_nested_unwind_complete_witness": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackWitnessDraft.stock_source_actual_lift_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionStackShapeDraft.StackDelta": []
+    }
+  },
+  "witnesses": [
+    "actual source TryCall program push with saved original table",
+    "nested ordinary program call above a TryCall caller",
+    "real raiseIn/unwindFrom skipping ordinary caller and catching lower saved table",
+    "tagged and default handlers with payload42 bound to fresh10",
+    "complete runWithX returns42 for both cases"
+  ],
+  "isolated_inputs": {
+    "utc": "2026-10-16T16:29:04.795054+00:00",
+    "owner": "codygunton/#44",
+    "purpose": "Independent small actual-runtime unwind proof; snapshot avoids concurrent shared-cache reads/writes. Remove after evidence archival.",
+    "objects": {
+      "Syntax": {
+        "sha256": "6730aa9ba2dd6ebd4f8036d90561a9596f4626018713d5be572a4c07f035d531",
+        "bytes": 6482144
+      },
+      "Mem": {
+        "sha256": "6a0cb1a86ce71a28da275451f7b7fb6fce03c672c00c9989ceab873b2c5f08e3",
+        "bytes": 784152
+      },
+      "Sem": {
+        "sha256": "b8facb3ef5f39229e960208a232568158e14314491de42a89ce82b6318484a9e",
+        "bytes": 346584
+      },
+      "Run": {
+        "sha256": "a4cde5d30ea60391ae2b6547a869a9c485a5681117d862fdd3d3c9d2ab31a9cd",
+        "bytes": 1654040
+      },
+      "Unwind": {
+        "sha256": "390c1d4d22b52ee11c78835ab88dae6981567837a3069a5e54cafaa0a40b865f",
+        "bytes": 2090392
+      }
+    }
+  },
+  "canonical2246_source_and_validation_script_freeze_verified": true,
+  "active_delivery_validation": {
+    "worker": 3247835,
+    "current_phase": {
+      "state": "serial_build",
+      "index": 99,
+      "total": 1415,
+      "module": "FV.Backend.Proof.StockGuardedRecordValues",
+      "utc": "2026-10-16T16:34:46.159142+00:00"
+    },
+    "canonical_controller_held": true
+  },
+  "remaining": [
+    "Specialize pending predicate to original reachable Stock source table without new input conditions",
+    "Combine normal source-location proof and catchIn theorem with liftStep/raiseIn to derive full actual stepX and prefix invariant",
+    "Add explicit normal-return pop and propagated-unwound/table-miss witnesses",
+    "Integrate scratch batch after canonical source freeze ends; fresh bundled MCP and complete all-constant/public/kernel/transitive audits",
+    "All original whole-driver value/world simulation AND completeness and production compiler/checker/linker/generated-proof cutover plus full gates and fresh complete Stock comparison"
+  ],
+  "MCP": "Not yet run for this scratch batch; no per-root scratch MCP loops",
+  "production": "legacy",
+  "full_goal": "ACTIVE/incomplete",
+  "previous_verified_backup": {
+    "branch": "agent/stock-driver-wip-backup-20261016T161413Z",
+    "commit": "a94fc7b29b23c7bcc59bd9f28b79bc629d58dae1",
+    "archive": "/home/lee/.clifv-recovery/20261016T161356Z-delivery-gates-handoff/checkpoint.tar.gz",
+    "sha256": "94b5f4f4f54bf0bac2e16818adfe866e33edad84783891ceebbeaae9464d5194"
+  }
+}

@@ -1,0 +1,22 @@
+import FV.Backend.Proof.StockSelectReplacement
+import FV.Backend.Proof.StockSelectReplacementResolved
+import FV.Backend.Proof.StockSelectReplacementWitness
+import FV.Backend.Proof.StockSelectDecodeFlags
+import FV.Backend.Proof.StockSelectDecodedRequests
+import FV.Backend.Proof.StockSelectDecodedObserved
+import FV.Backend.Proof.StockSelectBooleanCompanion
+import FV.Backend.Proof.StockSelectDecodedWitness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_cset
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_cset_condition_valid
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_cset_from_spec
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_cset_resolved
+#print axioms Backend.Stock.Proof.ScalarSelect.ReplacementWitness.stock_select_replacement_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ReplacementWitness.stock_select_replacement_alias_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_with_flags_decoded
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_with_flags_decoded_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_rhs_producer_decoded
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_cond_decoded_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_flags_decoded_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_flags_boolean_companion
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_decoded_observation_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_boolean_companion_witness
