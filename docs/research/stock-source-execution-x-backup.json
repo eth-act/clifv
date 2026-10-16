@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-16T16:46:46.738848+00:00",
+  "archive": "/home/lee/.clifv-recovery/20261016T164646Z-exception-source/checkpoint.tar.gz",
+  "sha256": "ad15ddd8cd194760f9915839cacaa538a2b401821403dd842a6fc03b8f36819c",
+  "bytes": 1655331,
+  "members": 37,
+  "all_members_byte_verified": true,
+  "previous_backup": {
+    "branch": "agent/stock-driver-wip-backup-20261016T163502Z",
+    "commit": "68d26b4e64a298a23da7485e0c1ca25e3ef72318",
+    "archive": "/home/lee/.clifv-recovery/20261016T163457Z-source-xstack/checkpoint.tar.gz",
+    "sha256": "cb7366d2fd4fefceff21fb23b46e8ddf0790a9057d85d079ff1b5729f2c5a0ac"
+  },
+  "cleanup": {
+    "utc": "2026-10-16T16:46:46.738746+00:00",
+    "temporary_dependency_snapshots_removed": true,
+    "duplicate_object_bytes_reclaimed": 2484201568,
+    "canonical_dirty_source_and_shared_warm_cache_retained": true,
+    "active_clean_delivery_view_retained_for_PR246_then247": true,
+    "free_bytes": 870209662976,
+    "other_projects_touched": false
+  },
+  "remote": "PENDING; push archive with alternate-index recovery snapshot"
+}

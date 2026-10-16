@@ -1,0 +1,118 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.outerStepAt_inv' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 5,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.outerLoopAt_inv' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_outer_facts' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.keptAt_blocks' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.keptAt_source' depends on axioms: [propext, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_input_facts' depends on axioms: [propext, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_kept_facts' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.outer_order_facts' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.ordered_cfg' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_cfg' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 14,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_entry' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 15,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrepOuterWitness.indexed_outer_loop_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 16,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrepOuterWitness.indexed_prepare_outer_facts_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 17,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrepOuterWitness.indexed_prepare_filter_facts_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 18,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrepOuterWitness.indexed_rpo_witness' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 19,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrepOuterWitness.indexed_prepared_entry_cfg_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 20,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}

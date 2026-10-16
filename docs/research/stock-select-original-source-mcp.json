@@ -1,0 +1,106 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"success\": true,\n  \"timed_out\": false,\n  \"diagnostics\": [\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_condition_producer_replacement' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 13,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_observed' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 14,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_comparison_actual_source_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 15,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_success' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 16,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ComparisonActualFixture.stock_select_comparison_actual_fixture' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 17,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_source_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 18,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_source_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 19,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_lower_select_available_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 20,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_lower_select_source_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 21,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.OriginalSourceWitness.stock_select_original_complete_parameter_source_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 22,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ComparisonActualWitness.stock_select_comparison_actual_complete_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 23,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_replacement_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 24,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_observation_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 25,\n      \"column\": 1,\n      \"lean_tags\": null\n    }\n  ]\n}"
+    }
+  ],
+  "structuredContent": {
+    "success": true,
+    "timed_out": false,
+    "diagnostics": [
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_condition_producer_replacement' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 13,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_observed' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 14,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_comparison_actual_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 15,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_decoded_condition_success' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 16,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ComparisonActualFixture.stock_select_comparison_actual_fixture' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 17,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 18,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 19,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_lower_select_available_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 20,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_lower_select_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 21,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.OriginalSourceWitness.stock_select_original_complete_parameter_source_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 22,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ComparisonActualWitness.stock_select_comparison_actual_complete_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 23,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_replacement_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 24,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ConditionWitness.stock_select_condition_zero_observation_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 25,
+        "column": 1,
+        "lean_tags": null
+      }
+    ]
+  },
+  "isError": false
+}
