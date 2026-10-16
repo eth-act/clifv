@@ -786,11 +786,11 @@ label**; list the free ones with
 | R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (0 rules left) | **done** (`agent/skeleton-r9`) |
 | M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | open |
 | S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | open |
-| S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | **legalised functions: done locally** (`agent/i128-source`, `Link.compileExe_correct_source`); optimiser composition not needed by `compileExe` |
-| S3 | [#27](https://github.com/eth-act/clifv/issues/27) Whole-program refinement of the original i128 source program | **done locally** with environment/run premises (`agent/i128-source`, `legalProg_refines`) |
+| S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | **legalised functions: done** ([#214](https://github.com/eth-act/clifv/pull/214), `Link.compileExe_correct_source`); optimiser composition (`--opt`) open, not needed by `compileExe` (no optimiser) |
+| S3 | [#27](https://github.com/eth-act/clifv/issues/27) Whole-program refinement of the original i128 source program | **done** with environment/run premises ([#214](https://github.com/eth-act/clifv/pull/214), `legalProg_refines`) |
 | S4 | [#28](https://github.com/eth-act/clifv/issues/28) i128 gaps: `umulhi`/`smulhi`, `try_call`, overflow ops, atomics, stack-passed i128, i128 indirect signatures, `try_call_indirect` | open |
 | S5 | [#29](https://github.com/eth-act/clifv/issues/29) Stack-passed arguments of `call_indirect`/`try_call_indirect` (≤ 8 register params today) | open |
-| S6 | [#30](https://github.com/eth-act/clifv/issues/30) A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | **done locally** (`agent/i128-source`, `9d6e4b1`) |
+| S6 | [#30](https://github.com/eth-act/clifv/issues/30) A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | **done** ([#214](https://github.com/eth-act/clifv/pull/214), `preB_iff`, `check_complete_of_preB`) |
 | S7 | [#31](https://github.com/eth-act/clifv/issues/31) `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | open |
 | S8 | [#32](https://github.com/eth-act/clifv/issues/32) `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | open |
 | S9 | [#33](https://github.com/eth-act/clifv/issues/33) Trapping helpers (`__*ti3` division by zero) and traps inside program callees | open |
