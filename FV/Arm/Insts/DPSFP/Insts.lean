@@ -8,6 +8,10 @@ import FV.Arm.Insts.DPSFP.Advanced_simd_two_reg_misc
 import FV.Arm.Insts.DPSFP.Advanced_simd_three_same
 import FV.Arm.Insts.DPSFP.Conversion_between_FP_and_Int
 import FV.Arm.Insts.DPSFP.Advanced_simd_across_lanes
+import FV.Arm.Insts.DPSFP.Advanced_simd_modified_immediate
+import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
+import FV.Arm.Insts.DPSFP.FP_immediate
+import FV.Arm.Insts.DPSFP.FP_conditional_select
 
 namespace Arm
 

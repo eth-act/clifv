@@ -155,6 +155,15 @@ def armBits : ArmInst → BitVec 32
       x.Rn ++ x.Rd
   | .DPSFP (.Advanced_simd_across_lanes x) =>
     0#1 ++ x.Q ++ x.U ++ 0b01110#5 ++ x.size ++ 0b11000#5 ++ x.opcode ++ 0b10#2 ++ x.Rn ++ x.Rd
+  | .DPSFP (.FP_data_processing_one_source x) =>
+    x.M ++ 0#1 ++ x.S ++ 0b11110#5 ++ x.ftype ++ 1#1 ++ x.opcode ++ 0b10000#5 ++ x.Rn ++ x.Rd
+  | .DPSFP (.FP_immediate x) =>
+    x.M ++ 0#1 ++ x.S ++ 0b11110#5 ++ x.ftype ++ 1#1 ++ x.imm8 ++ 0b100#3 ++ x.imm5 ++ x.Rd
+  | .DPSFP (.FP_conditional_select x) =>
+    x.M ++ 0#1 ++ x.S ++ 0b11110#5 ++ x.ftype ++ 1#1 ++ x.Rm ++ x.cond ++ 0b11#2 ++ x.Rn ++ x.Rd
+  | .DPSFP (.Advanced_simd_modified_immediate x) =>
+    0#1 ++ x.Q ++ x.op ++ 0b0111100000#10 ++ x.a ++ x.b ++ x.c ++ x.cmode ++ x.o2 ++ 1#1 ++ x.d ++
+      x.e ++ x.f ++ x.g ++ x.h ++ x.Rd
   -- C4.1 Loads and Stores
   | .LDST (.Reg_imm_post_indexed x) =>
     x.size ++ 0b111#3 ++ x.V ++ 0b00#2 ++ x.opc ++ 0#1 ++ x.imm9 ++ 0b01#2 ++ x.Rn ++ x.Rt
@@ -175,6 +184,7 @@ def armBits : ArmInst → BitVec 32
       x.Rn ++ x.Rt
   | .LDST (.Reg_exclusive x) =>
     x.size ++ 0b001000#6 ++ x.ord ++ x.L ++ 0#1 ++ x.Rs ++ x.o0 ++ 0b11111#5 ++ x.Rn ++ x.Rt
+  | .LDST (.Reg_literal x) => x.opc ++ 0b011#3 ++ x.V ++ 0b00#2 ++ x.imm19 ++ x.Rt
   -- C4.1 Reserved: UDF
   | .RES (.Udf x) => 0#16 ++ x.imm16
 
@@ -260,6 +270,20 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .DPSFP (.Advanced_simd_across_lanes x) =>
     .DPSFP (.Advanced_simd_across_lanes { Q := x.Q, U := x.U, size := x.size,
                                           opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.FP_data_processing_one_source x) =>
+    .DPSFP (.FP_data_processing_one_source { M := x.M, S := x.S, ftype := x.ftype,
+                                             opcode := x.opcode, Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.FP_immediate x) =>
+    .DPSFP (.FP_immediate { M := x.M, S := x.S, ftype := x.ftype, imm8 := x.imm8, imm5 := x.imm5,
+                            Rd := x.Rd })
+  | .DPSFP (.FP_conditional_select x) =>
+    .DPSFP (.FP_conditional_select { M := x.M, S := x.S, ftype := x.ftype, Rm := x.Rm,
+                                     cond := x.cond, Rn := x.Rn, Rd := x.Rd })
+  | .DPSFP (.Advanced_simd_modified_immediate x) =>
+    .DPSFP (.Advanced_simd_modified_immediate { Q := x.Q, op := x.op, a := x.a, b := x.b,
+                                                c := x.c, cmode := x.cmode, o2 := x.o2, d := x.d,
+                                                e := x.e, f := x.f, g := x.g, h := x.h,
+                                                Rd := x.Rd })
   | .LDST (.Reg_imm_post_indexed x) =>
     .LDST (.Reg_imm_post_indexed { size := x.size, V := x.V, opc := x.opc, imm9 := x.imm9,
                                    Rn := x.Rn, Rt := x.Rt })
@@ -287,6 +311,8 @@ def _root_.Arm.ArmInst.norm : ArmInst → ArmInst
   | .LDST (.Reg_exclusive x) =>
     .LDST (.Reg_exclusive { size := x.size, ord := x.ord, L := x.L, Rs := x.Rs, o0 := x.o0,
                             Rn := x.Rn, Rt := x.Rt })
+  | .LDST (.Reg_literal x) =>
+    .LDST (.Reg_literal { opc := x.opc, V := x.V, imm19 := x.imm19, Rt := x.Rt })
   | .RES (.Udf x) => .RES (.Udf { imm16 := x.imm16 })
 
 /-! ## Instruction → fields (Arm ARM C6/C7 instruction pages) -/
@@ -693,6 +719,73 @@ def Insn.armFields (env : Env) (i : Insn) : Except String ArmInst := do
     -- `0xd53bd040 | rt`)
     pure (.BR (.Mrs { o0 := 1, op1 := 0b011#3, CRn := 0b1101#4, CRm := 0, op2 := 0b010#3,
                       Rt := ← rt.encZR }))
+  | .fpuMove s rd rn =>
+    -- C7.2 FMOV (register): FP data-processing (1 source), opcode 000000 (Cranelift
+    -- `FpuMove32/64`, `enc_fpurr`)
+    pure (.DPSFP (.FP_data_processing_one_source { M := 0, S := 0, ftype := ← fpFtype s,
+                                                   opcode := 0, Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .fpuMove128 rd rn =>
+    -- C7.2 MOV (vector) = ORR Vd.16B, Vn.16B, Vn.16B (Advanced SIMD three same, U 0, size 10,
+    -- opcode 00011; Cranelift `FpuMove128`, `enc_vecmov`)
+    let Rn ← rn.encV
+    pure (.DPSFP (.Advanced_simd_three_same { Q := 1, U := 0, size := 2, Rm := Rn, opcode := 3,
+                                              Rn, Rd := ← rd.encV }))
+  | .fpuRR op s rd rn =>
+    -- C7.2 FABS (scalar) opcode 000001, FNEG (scalar) opcode 000010 (Cranelift `FpuRR`)
+    let opcode : BitVec 6 := match op with | .abs => 1 | .neg => 2
+    pure (.DPSFP (.FP_data_processing_one_source { M := 0, S := 0, ftype := ← fpFtype s, opcode,
+                                                   Rn := ← rn.encV, Rd := ← rd.encV }))
+  | .fpuCSel s rd rn rm c =>
+    -- C7.2 FCSEL (Cranelift `enc_fcsel`)
+    pure (.DPSFP (.FP_conditional_select { M := 0, S := 0, ftype := ← fpFtype s,
+                                           Rm := ← rm.encV, cond := c.bits, Rn := ← rn.encV,
+                                           Rd := ← rd.encV }))
+  | .fpuMoveFPImm s rd imm8 =>
+    -- C7.2 FMOV (scalar, immediate): imm5 = 00000 (Cranelift `FpuMoveFPImm`)
+    pure (.DPSFP (.FP_immediate { M := 0, S := 0, ftype := ← fpFtype s,
+                                  imm8 := ← uField "fmov immediate" 8 imm8, imm5 := 0,
+                                  Rd := ← rd.encV }))
+  | .movi s rd imm8 =>
+    -- C7.2 MOVI, op 0: cmode 1110 (8-bit lanes), 1000 (16-bit, LSL #0), 0000 (32-bit, LSL #0);
+    -- a:b:c:d:e:f:g:h = imm8 (Cranelift `VecDupImm`, `enc_asimd_mod_imm`)
+    let cmode : BitVec 4 ← match s with
+      | .size8x8 | .size8x16 => pure 0b1110 | .size16x4 | .size16x8 => pure 0b1000
+      | .size32x2 | .size32x4 => pure 0 | .size64x2 => throw "movi arrangement 2d"
+    let imm ← uField "movi immediate" 8 imm8
+    pure (.DPSFP (.Advanced_simd_modified_immediate
+      { Q := s.qsize.1, op := 0, a := imm.extractLsb' 7 1, b := imm.extractLsb' 6 1,
+        c := imm.extractLsb' 5 1, cmode, o2 := 0, d := imm.extractLsb' 4 1,
+        e := imm.extractLsb' 3 1, f := imm.extractLsb' 2 1, g := imm.extractLsb' 1 1,
+        h := imm.extractLsb' 0 1, Rd := ← rd.encV }))
+  | .fpuLoad s rt m =>
+    -- C7.2 LDR/LDUR (SIMD&FP), 32-bit (size 10) / 64-bit (size 11), opc 01
+    let size ← fpLdstSize s
+    ldstFields size 1 1 s.bytes (← rt.encV) m
+  | .fpuStore s rt m =>
+    -- C7.2 STR/STUR (SIMD&FP), opc 00
+    let size ← fpLdstSize s
+    ldstFields size 1 0 s.bytes (← rt.encV) m
+  | .fpuLoadP s rt rt2 m | .fpuStoreP s rt rt2 m =>
+    -- C7.2 LDP/STP (SIMD&FP): opc 00 S, 01 D, 10 Q; imm7 = offset / access size (Cranelift
+    -- `enc_ldst_vec_pair`)
+    let L := match i with | .fpuLoadP .. => 1#1 | _ => 0#1
+    let opc ← fpOpc s
+    let Rt ← rt.encV
+    let Rt2 ← rt2.encV
+    let imm (o : Int) : Except String (BitVec 7) :=
+      if o % s.bytes != 0 then throw s!"pair offset {o}" else sField "imm7" 7 (o / s.bytes)
+    match m with
+    | .spPreIndexed o =>
+      pure (.LDST (.Reg_pair_pre_indexed { opc, V := 1, L, imm7 := ← imm o, Rt2, Rn := 31, Rt }))
+    | .spPostIndexed o =>
+      pure (.LDST (.Reg_pair_post_indexed { opc, V := 1, L, imm7 := ← imm o, Rt2, Rn := 31, Rt }))
+    | m => throw s!"ldp/stp mode {repr m}"
+  | .fpuLoadLit s rt t =>
+    -- C7.2 LDR (literal, SIMD&FP): opc 00 S, 01 D, 10 Q; imm19 = offset / 4, ±1 MiB (Cranelift
+    -- `enc_ldst_imm19`)
+    let opc ← fpOpc s
+    pure (.LDST (.Reg_literal { opc, V := 1, imm19 := ← env.pcRel "ldr (literal)" 19 4 t,
+                                Rt := ← rt.encV }))
 where
   /-- `Reg_exclusive` fields of `ldar`/`stlr`/`ldaxr`/`stlxr` (`bits` = the access size;
   `ord`/`L`/`Rs`/`o0` per C6.2 "Load/store exclusive / … acquire-release"). -/
@@ -703,6 +796,17 @@ where
       | _ => throw s!"unsupported atomic access size {bits}"
     pure (.LDST (.Reg_exclusive { size, ord := BitVec.ofNat 1 o2, L := BitVec.ofNat 1 L,
                                   Rs, o0 := 1#1, Rn := ← rn.encSP, Rt := ← rt.encZR }))
+  /-- `ftype` of a scalar floating-point operand (C7.2: 00 single, 01 double). -/
+  fpFtype : ScalarSize → Except String (BitVec 2)
+    | .size32 => pure 0 | .size64 => pure 1 | s => throw s!"floating-point size {repr s}"
+  /-- `size` of a 32- or 64-bit SIMD&FP single-register load/store (C7.2 LDR/STR (SIMD&FP)). -/
+  fpLdstSize : ScalarSize → Except String (BitVec 2)
+    | .size32 => pure 2 | .size64 => pure 3 | s => throw s!"fp load/store size {repr s}"
+  /-- `opc` of a SIMD&FP pair or literal load/store (C7.2 LDP/STP, LDR (literal) (SIMD&FP):
+  00 S, 01 D, 10 Q). -/
+  fpOpc : ScalarSize → Except String (BitVec 2)
+    | .size32 => pure 0 | .size64 => pure 1 | .size128 => pure 2
+    | s => throw s!"fp pair/literal size {repr s}"
   /-- Data-processing (2 source) with `S = 0`. -/
   dp2 (sf : BitVec 1) (opcode : BitVec 6) (Rm Rn Rd : BitVec 5) : ArmInst :=
     .DPR (.Data_processing_two_source { sf, S := 0, Rm, opcode, Rn, Rd })

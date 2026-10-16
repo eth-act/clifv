@@ -134,6 +134,17 @@ def decode_data_proc_sfp (i : BitVec 32) : Option ArmInst :=
   -- (FV addition) Advanced SIMD across lanes.
   | [0, Q:1, U:1, 01110, size:2, 11000, opcode:5, 10, Rn:5, Rd:5] =>
     DPSFP (Advanced_simd_across_lanes {Q, U, size, opcode, Rn, Rd})
+  -- (FV addition) Scalar floating-point: data-processing (1 source), immediate, conditional
+  -- select (Arm ARM C4.1, op3 = xxxx10000 / xxxxxx100 / xxxxxxx11).
+  | [M:1, 0, S:1, 11110, ftype:2, 1, opcode:6, 10000, Rn:5, Rd:5] =>
+    DPSFP (FP_data_processing_one_source {M, S, ftype, opcode, Rn, Rd})
+  | [M:1, 0, S:1, 11110, ftype:2, 1, imm8:8, 100, imm5:5, Rd:5] =>
+    DPSFP (FP_immediate {M, S, ftype, imm8, imm5, Rd})
+  | [M:1, 0, S:1, 11110, ftype:2, 1, Rm:5, cond:4, 11, Rn:5, Rd:5] =>
+    DPSFP (FP_conditional_select {M, S, ftype, Rm, cond, Rn, Rd})
+  -- (FV addition) Advanced SIMD modified immediate (op2 = 0000, op3 = xxxxxxxx1).
+  | [0, Q:1, op:1, 0111100000, a:1, b:1, c:1, cmode:4, o2:1, 1, d:1, e:1, f:1, g:1, h:1, Rd:5] =>
+    DPSFP (Advanced_simd_modified_immediate {Q, op, a, b, c, cmode, o2, d, e, f, g, h, Rd})
   | _ => none
 
 def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=
@@ -160,6 +171,9 @@ def decode_ldst_inst (i : BitVec 32) : Option ArmInst :=
   -- (FV addition) Load/store exclusive / acquire-release: LDXR/LDAXR/STXR/STLXR/LDAR/STLR.
   | [size:2, 001000, o2:1, L:1, 0, Rs:5, o0:1, 11111, Rn:5, Rt:5] =>
     LDST (Reg_exclusive {size, ord := o2, L, Rs, o0, Rn, Rt})
+  -- (FV addition) Load register (literal).
+  | [opc:2, 011, V:1, 00, imm19:19, Rt:5] =>
+    LDST (Reg_literal {opc, V, imm19, Rt})
   | _ => none
 
 /-- (FV addition) Decode the A64 "Reserved" group (`op0 = 0`, `op1 = 0000`). -/

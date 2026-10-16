@@ -156,6 +156,19 @@ deriving DecidableEq, Repr
 
 instance : ToString Reg_reg_offset_cls where toString a := toString (repr a)
 
+/-- (FV addition) Load register (literal): LDR (literal) W/X/S/D/Q, LDRSW (literal),
+PRFM (literal). -/
+structure Reg_literal_cls where
+  opc     : BitVec 2            -- [31:30]
+  _fixed1 : BitVec 3 := 0b011#3 -- [29:27]
+  V       : BitVec 1            -- [26:26]
+  _fixed2 : BitVec 2 := 0b00#2  -- [25:24]
+  imm19   : BitVec 19           -- [23:5]
+  Rt      : BitVec 5            --   [4:0]
+deriving DecidableEq, Repr
+
+instance : ToString Reg_literal_cls where toString a := toString (repr a)
+
 inductive LDSTInst where
   | Reg_imm_post_indexed :
     Reg_imm_post_indexed_cls → LDSTInst
@@ -175,6 +188,8 @@ inductive LDSTInst where
     Reg_reg_offset_cls → LDSTInst
   | Reg_exclusive :
     Reg_exclusive_cls → LDSTInst
+  | Reg_literal :
+    Reg_literal_cls → LDSTInst
 deriving DecidableEq, Repr
 
 instance : ToString LDSTInst where toString a := toString (repr a)

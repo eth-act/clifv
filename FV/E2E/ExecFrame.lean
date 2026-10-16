@@ -7,8 +7,8 @@ outside the set `R` (the program field is not compared). `exec_simR`: **for ever
 instruction `a`, `SimR R` is preserved by `exec_inst a`, provided the instruction's memory reads
 at `m` (`MemReads a m`, a list of byte ranges `(address, length)`) avoid `R`**. Only the loads
 read memory: single-register loads (every addressing mode, GPR and SIMD&FP, incl. the
-register-offset form and the relocated `ldr` of a GOT pair), `ldp`, and the exclusive /
-acquire loads; every other instruction (stores included) needs no side condition.
+register-offset form and the relocated `ldr` of a GOT pair), `ldp`, the exclusive / acquire
+loads and the literal loads; every other instruction (stores included) needs no side condition.
 
 `E2E.ExecBytes.exec_sim` (`ExecFrameSim.lean`) is the instance `R = RelocAt I`, i.e.
 `ExecBytes.Sim`.
@@ -162,7 +162,7 @@ def ofUnscaled (i : Reg_unscaled_imm_cls) : Reg_imm_cls :=
     postindex := false, imm := .simm9 i.imm9 }
 
 def ofRegOffset (i : Reg_reg_offset_cls) : Reg_imm_cls :=
-  { size := i.size, opc := i.opc, Rn := i.Rn, Rt := i.Rt, SIMD? := false, wback := false,
+  { size := i.size, opc := i.opc, Rn := i.Rn, Rt := i.Rt, SIMD? := i.V = 1#1, wback := false,
     postindex := false, imm := .reg i.Rm i.option i.S }
 
 end RegImm
@@ -202,6 +202,17 @@ def ldsturReads (i : Reg_unscaled_imm_cls) (s : ArmState) : List (BitVec 64 × N
 def exclReads (i : Reg_exclusive_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
   if i.L = 1#1 then [(read_gpr 64 i.Rn s, (8 <<< i.size.toNat) / 8)] else []
 
+/-- The bytes an `ldr (literal)` reads (`exec_reg_literal`): 4/8/16 bytes at `PC + offset`;
+none for PRFM and the unallocated SIMD&FP `opc = 11`. -/
+def literalReads (i : Reg_literal_cls) (s : ArmState) : List (BitVec 64 × Nat) :=
+  let a := LDST.literal_address i.imm19 s
+  if i.V = 1#1 then
+    match i.opc with
+    | 0b00#2 => [(a, 4)] | 0b01#2 => [(a, 8)] | 0b10#2 => [(a, 16)] | _ => []
+  else
+    match i.opc with
+    | 0b00#2 => [(a, 4)] | 0b01#2 => [(a, 8)] | 0b10#2 => [(a, 4)] | _ => []
+
 end E2E.ExecFrame
 
 namespace E2E.ExecBytes
@@ -209,8 +220,8 @@ namespace E2E.ExecBytes
 open Arm E2E.ExecFrame
 
 /-- **The byte ranges `(address, length)` the instruction `a` reads at `s`**: the loads' (every
-single-register addressing mode, `ldp`, the exclusive / acquire loads); empty for every other
-instruction. -/
+single-register addressing mode, `ldp`, the exclusive / acquire loads, the literal loads);
+empty for every other instruction. -/
 def MemReads : ArmInst → ArmState → List (BitVec 64 × Nat)
   | .LDST (.Reg_imm_post_indexed i), s => RegImm.reads (RegImm.ofPost i) s
   | .LDST (.Reg_unsigned_imm i), s => RegImm.reads (RegImm.ofUnsigned i) s
@@ -225,6 +236,7 @@ def MemReads : ArmInst → ArmState → List (BitVec 64 × Nat)
   | .LDST (.Reg_imm_pre_indexed i), s => RegImm.reads (RegImm.ofPre i) s
   | .LDST (.Reg_reg_offset i), s => RegImm.reads (RegImm.ofRegOffset i) s
   | .LDST (.Reg_exclusive i), s => exclReads i s
+  | .LDST (.Reg_literal i), s => literalReads i s
   | _, _ => []
 
 end E2E.ExecBytes
@@ -307,6 +319,21 @@ theorem simR_exclusive (i : Reg_exclusive_cls) (hR : Avoids R (exclReads i m)) :
   sim_norm h
   sim_struct h using hR'
 
+theorem simR_literal (i : Reg_literal_cls) (hR : Avoids R (literalReads i m)) :
+    SimR R (LDST.exec_reg_literal i m) (LDST.exec_reg_literal i e) := by
+  have ha : LDST.literal_address i.imm19 e = LDST.literal_address i.imm19 m := by
+    simp only [LDST.literal_address, read_pc, h.1]
+  have hrd : ∀ n, (LDST.literal_address i.imm19 m, n) ∈ literalReads i m →
+      read_mem_bytes n (LDST.literal_address i.imm19 e) e =
+        read_mem_bytes n (LDST.literal_address i.imm19 m) m :=
+    fun n hn => by rw [ha]; exact rmb_simR h n _ (hR _ hn)
+  simp only [LDST.exec_reg_literal]
+  split <;> rename_i hv <;> split <;> rename_i ho
+  all_goals
+    first
+    | (rw [hrd _ (by simp [literalReads, hv, ho])]; sim_auto h)
+    | sim_auto h
+
 theorem simR_ldst (i : LDSTInst) (hR : Avoids R (MemReads (.LDST i) m)) :
     SimR R (exec_inst (.LDST i) m) (exec_inst (.LDST i) e) := by
   cases i with
@@ -315,7 +342,7 @@ theorem simR_ldst (i : LDSTInst) (hR : Avoids R (MemReads (.LDST i) m)) :
   | Reg_imm_pre_indexed i => exact simR_reg_imm_common h _ _ hR
   | Reg_reg_offset i =>
     simp only [exec_inst, LDST.exec_reg_reg_offset]
-    apply simR_ite (fun _ => simR_w h _ _) fun _ => simR_ite (fun _ => simR_w h _ _) fun _ => ?_
+    apply simR_ite (fun _ => simR_w h _ _) fun _ => ?_
     exact simR_reg_imm_common h _ _ hR
   | Reg_unscaled_imm i =>
     simp only [MemReads] at hR
@@ -327,6 +354,7 @@ theorem simR_ldst (i : LDSTInst) (hR : Avoids R (MemReads (.LDST i) m)) :
   | Reg_pair_post_indexed i => exact simR_reg_pair_common h _ _ hR
   | Reg_pair_signed_offset i => exact simR_reg_pair_common h _ _ hR
   | Reg_exclusive i => exact simR_exclusive h i hR
+  | Reg_literal i => exact simR_literal h i hR
 
 end Classes
 
