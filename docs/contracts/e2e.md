@@ -1648,7 +1648,7 @@ for traps, its `NoMemTrap` and the target's `TrapsExplicit` (run conditions). Wi
 `wrapping_mul` on `i128` values, under `Link.SourceWitness.helperBase`; the executable returns
 the split product in x0, x1).
 
-**Recursive programs (L1d, #204, `agent/recursion-exe`).** `compileExe_correct_depth` drops the
+**Recursive programs (L1d, #204, #215).** `compileExe_correct_depth` drops the
 call-graph premise `¬ CycleFrom`: the outside caller provides `frameDrop (art S.input f).af +
 S.input.D * M` bytes of stack instead of `stackFn` (`S.input.D`: the largest frame of the program,
 `LinkSpec.input`/`depthOf`), for the CLIF run of at most `M + 1` steps. The resource condition

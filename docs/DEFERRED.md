@@ -314,7 +314,7 @@ than per-rule lemmas. Remaining: the input conditions join `InScope` for the tot
 
 ## Recursion: the stack premise of `compileExe_correct_depth` (2026-10-15)
 
-Done (L1d, #204, `agent/recursion-exe`; e2e.md "Recursive programs"): `Link.compileExe_correct_depth`
+Done (L1d, #204, #215; e2e.md "Recursive programs"): `Link.compileExe_correct_depth`
 covers every entry, recursive ones included, with `frameDrop (art S.input f).af + S.input.D * M`
 bytes of stack for a whole-program CLIF run of at most `M + 1` steps (no call-graph premise), and
 `Link.compileExe_correct_peak` with `frameDrop (art S.input f).af + S.input.D * d` bytes for a run
