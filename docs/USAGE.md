@@ -95,7 +95,7 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | `--no-fallback` | fail (exit 1, before running anything) unless every function of every workspace member runs Lean code (dependencies may keep fallbacks, e.g. float code; the report lists them) |
 | `--trap-replaced` | overwrite cg_clif's code of every Lean-compiled function (members and dependencies) with `udf` traps (see *Checking that the Lean code runs*) |
 | `--members-only` | only the workspace members go through the Lean backend; dependencies are plain cg_clif (the behaviour before agent/fv-deps; own target directory) |
-| `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`), with what `cargo fv link-proof` needs: per function the CLIF file `lean-backend` compiled, `lean-regalloc`'s output for it and the linked symbol names (`fv-link.json`), per executable the link map |
+| `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`), with what `cargo fv link-proof` needs: per function the CLIF file `lean-backend` compiled, `lean-regalloc`'s output for it, the unit's data objects, the merge's linked names and the object's local symbols (`fv-link.json`), per executable the link map |
 | `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the shipped cg_clif; own target directory; the configuration of the binary-level theorem: no unwinding through Lean frames) |
 | `--no-binary-check` | skip the per-executable binary check (see *The executable as a whole*); without it the build keeps what the check reads (the per-function CLIF and `lean-regalloc` output, `fv-link.json`, the link maps; not the objects) in `target/fv/<mode>/tmp/` |
 | `--lean-link` | the Lean linker writes the Lean-compiled code of every executable (L2b, docs/research/lean-linker.md): the codegen units keep cg_clif's object (our functions weak), each executable gets the Lean code as one region (`.text.fvlean`, rust-lld links the rest around it) whose bytes `lake exe lean-link` computes with the executable compiler `Link.DeadCleanup.compileExe` (the input conditions `InScopeP`, then `Link.DeadCleanup.leanLink`: the pipeline with dead-instruction cleanup, placement, relocation, checks) and writes into the executable; such an executable is covered by `Link.DeadCleanup.compileExe_correct` and `…_correct_peak` (recursive entries), and for a program in the source domain `SrcScopeB` by `…_correct_source` and `…_correct_source_peak` (the original pre-`i128`-legalisation program), with no per-crate proof (L1, L1f; `lean-link` prints `written by Link.DeadCleanup.compileExe` and a `coverage:` line naming them, also recorded as `binary.lean_link` in the report and printed as `cargo fv: lean-link …: covered by …`). On a program outside `InScopeP` it prints the failing conditions and links with `Link.DeadCleanup.leanLink` alone (`written by Link.DeadCleanup.leanLink`, `coverage: none`): the crate's linker facts and the code part of the binary facts are then still theorems (`Link.leanLink_linkerOk`, `Link.leanLink_code`). The facts about rust-lld's output (headers, cg_clif's data objects, the symbol table, the region's segment) are `leanLink`'s checks (`Link.binOk_leanLink`). Unverified functions, and self-calling functions that take their own address, keep cg_clif's code. Needs `lake build lean-link`; implies `--keep-temps`; own target directory |
@@ -486,10 +486,12 @@ $ cd ../../crate-proofs && lake build Crates.GU128
 2. `cargo fv link-proof` picks the executable whose path contains every `--exe` (default: the
    only one linked) and the Lean-compiled, **verified** functions of its codegen units (`--crate NAME`:
    only the crate's own units, `NAME-<hash>`), and writes `--out` (default
-   `target/fv/link-proof`): `fns/<i>.clif` (the CLIF with every name replaced by the symbol it
-   is linked as), `fns/<i>.ra.json` (`lean-regalloc`'s output) and `link.json` (the functions,
-   the data objects they reach, and the link-map addresses of them and of every name they
-   use). It then runs `lake exe link-check` on it (build it once: `lake build link-check`),
+   `target/fv/link-proof`): `bundle.json`, the frontend bundle (docs/contracts/frontend.md:
+   per codegen unit the paths of the functions' CLIF files and `lean-regalloc` outputs, of its
+   data objects, its local symbols and the merge's names; the executable's symbols and the
+   functions' Lean code addresses). It rewrites nothing: the renaming to linked symbols, the
+   data objects the functions reach and the CLIF image's symbols are computed in Lean
+   (`Front.assemble`, proven: `Front.buildSpec_spec`). It then runs `lake exe link-check` on it (build it once: `lake build link-check`),
    passing `--prune`, `--lean`, `--module`, `--entries`.
 3. `lake exe link-check DIR` compiles every function again in Lean from its CLIF and allocation,
    evaluates the checker `E2E.LinkCheck.okB` and prints the failing premises of `LinkSys.Ok` per

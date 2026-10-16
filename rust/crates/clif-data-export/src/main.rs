@@ -344,7 +344,7 @@ fn item_text(i: &Item) -> String {
         Item::Reloc { target, addend } => match *addend {
             0 => format!("%{target}"),
             a if a > 0 => format!("%{target}+{a}"),
-            a => format!("%{target}-{a}"),
+            a => format!("%{target}{a}"),
         },
     }
 }
