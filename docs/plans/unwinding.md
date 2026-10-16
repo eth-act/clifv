@@ -157,13 +157,13 @@ emitters (no per-program certificate):
   each callee-saved `r` saved at `[sp, #o_r]`; `decodeCfi (cfiProgram rows) = some rows`
   (`cfiProgram_decode`) and the `.eh_frame` FDE of `fa` decodes to these rows with `pc_begin` =
   the function's start (`ehFrame_decode`).
-* `restore_frame`: from any Arm state `t` with the frame invariant `FrameAt af s0 t` (x29 = entry
-  sp − 16, `mem[x29] = ` entry x29, `mem[x29 + 8] = ` entry x30 (= the return address),
-  `mem[CFA + o] = ` entry value of each saved callee-saved register), `Unw.restore (rowAt rows
-  o) t` has sp = entry sp, pc = return address, callee-saved registers = entry values: the ABI
-  return condition `ArmRet`'s register part. The frame invariant holds at every call site of a
-  run of the compiled code (S10e: from `StRel`'s `fplr` and the spill invariant's
-  `inState_save`, plus x29 never written by allocated code — x29 is not allocatable).
+* `restore_frame`: from any Arm state `t` with the frame invariant `FrameAt row s0 t` (CFA =
+  the body sp + frameSize + 16 = entry sp, `mem[CFA − 16] = ` entry x29, `mem[CFA − 8] = `
+  entry x30 (= the return address), `mem[CFA + o] = ` entry value of each saved callee-saved
+  register), `Unw.restore (rowAt rows o) t` has sp = entry sp, pc = return address,
+  callee-saved registers = entry values: the ABI return condition `ArmRet`'s register part.
+  The frame invariant holds at every call site of a run of the compiled code (S10e: from
+  `StRel`'s `sp` and `fplr` and the spill invariant's `inState_save`; no x29 invariant).
 
 **The exceptional edge in the per-function theorem (S10e).** Additive variants, normal-return
 theorems unchanged:
@@ -267,9 +267,9 @@ concrete non-vacuity witnesses; axioms stay `[propext, Classical.choice, Quot.so
 * `ExtSem` is a structure used throughout M6; adding `raise` with a default keeps existing
   terms well-typed but changes the `ExtSem` mk arity seen by anonymous constructors (check
   `⟨…⟩` uses; else a separate `ExtSemU := ExtSem × raise`).
-* The frame invariant at call sites needs x29 fixed across the body; the allocated code never
-  names x29 (not in the allocatable set), but the TLSDESC hook and the call hooks must keep it
-  (they do: x29 is callee-saved in `CalleeOk`/`TlsOk`).
+* The frame invariant at call sites needs no x29 invariant (the rows define the CFA from sp
+  after the prologue, `frameRows`); this deviates from Cranelift's x29-based rows, which are
+  equivalent while the frame pointer is kept (checked natively by the panic=unwind tests).
 * cg_clif may emit a `try_call` with both a cleanup and a catch handler; `callSites` then emits
   two entries for the same range and the personality takes the first (cleanup), which matches
   `Clif.stepX`'s "first catching handler" only if `catches 0` holds for every exception — true
