@@ -67,14 +67,9 @@ inductive CTy where
   deriving DecidableEq, Repr, Inhabited, BEq, Hashable
 
 namespace CTy
-/-- The `Type` of a CLIF integer type. A float type maps to the integer type of its width:
-the backend has no float values yet (floats are outside E: `Isel.eTy`, `Compile.tyE`, and
-`buildCtx` rejects them before forming any `CTy`), so the lowering proofs keep
-`CTy.ofClif ty = .int ty.width`. S11e (`docs/plans/floats.md`) gives floats their `.float`
-type together with the float register class. -/
 def ofClif : Clif.Ty → CTy
   | .i8 => .int 8 | .i16 => .int 16 | .i32 => .int 32 | .i64 => .int 64 | .i128 => .int 128
-  | .f32 => .int 32 | .f64 => .int 64
+  | .f32 => .float 32 | .f64 => .float 64
 /-- `Type::bits`. -/
 def bits : CTy → Nat
   | .invalid => 0 | .int b => b | .float b => b | .vec lb n _ => lb * n

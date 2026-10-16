@@ -185,9 +185,8 @@ theorem width_of_resTy {g sd : Nat → Option Clif.Signature} {inst : Clif.Inst}
   rw [hr, Option.some.injEq] at h4
   subst h4
   rw [h3] at h2
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width,
-    CTy.int.injEq] at h2
-  exact h2.symm
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some] at h2
+  exact (ofClif_eq_int h2.symm).2
 
 theorem ty_bytes8 (ty : Clif.Ty) : ty.bytes * 8 = ty.width := by cases ty <;> rfl
 
@@ -270,9 +269,7 @@ theorem cond_store {ctx : Ctx} {x w : Nat} {ty : Clif.Ty} {aop : StoreOp}
       aop.bytes = Clif.StoreOp.size ty .store := by
   intro fr a hd hax
   have h := hd.2 x _ _ hvt (getAs_ok hax)
-  rw [ofClif_int_width] at h
-  injection h with h
-  dsimp only at h
+  replace h := (ofClif_eq_int h).2
   have := ty_bytes8 ty
   simp only [Clif.StoreOp.size]
   omega
@@ -284,9 +281,7 @@ theorem width_stackAddr {g sd : Nat → Option Clif.Signature} {info : IInfo} {t
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at h4
   subst h4
   have := hRE (CTy.ofClif ty) (by rw [h3]; simp)
-  rw [ofClif_int_width] at this
-  simp only [eCTys, List.mem_cons, CTy.int.injEq, List.not_mem_nil, or_false] at this
-  omega
+  cases ty <;> simp_all [CTy.ofClif, eCTys, Clif.Ty.width]
 
 set_option maxHeartbeats 2000000 in
 include hp in

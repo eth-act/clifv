@@ -538,7 +538,7 @@ theorem udiv64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at hty
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width,
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, (ofClif_int_width),
     CTy.int.injEq] at hty
   have hD := put_nonzero_in_reg_ok hp hco hR hctx (hn := by omega) (w := 64) (e := 1) (by decide)
     (by decide) h698
@@ -591,7 +591,7 @@ theorem udiv32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at hb32 h698
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width] at hb32 h698
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, (ofClif_int_width)] at hb32 h698
   have hw32 : ty.width ≤ 32 := hb32
   have hwid := cmp_eTy_widths hety
   have hE := zext32_ok hp hco (hn := by omega) h556
@@ -648,7 +648,7 @@ theorem urem64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at hty
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width,
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, (ofClif_int_width),
     CTy.int.injEq] at hty
   have hwid := cmp_eTy_widths hety
   have hE := zext64_ok hp hco (hn := by omega) h558

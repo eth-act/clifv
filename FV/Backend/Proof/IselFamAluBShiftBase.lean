@@ -78,7 +78,7 @@ theorem binary_front {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hc
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
-  exact ⟨ty, x, y, rfl, hety, hd, by rw [hres]; simp [ofClif_int_width]⟩
+  exact ⟨ty, x, y, rfl, hety, hd, by rw [hres]; simp [(ofClif_int_width)]⟩
 
 /-- **Template: a shift/rotate root rule.** -/
 theorem shift_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp} {n : String}

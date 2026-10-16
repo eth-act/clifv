@@ -128,8 +128,9 @@ theorem binary_value {ctx : Ctx} {fr : Clif.Frame} (hdfg : DFGCons ctx fr) {y j 
   cases hv
   exact ⟨u, w, ha, hb, rfl⟩
 
-theorem ty_i64_of_width {ty : Clif.Ty} (h : ty.width = 64) : ty = .i64 := by
-  cases ty <;> simp [Clif.Ty.width] at h ⊢
+theorem ty_i64_of_width {ty : Clif.Ty} (h : ty.width = 64) (he : eTy ty = true := by assumption) :
+    ty = .i64 := by
+  cases ty <;> simp_all [Clif.Ty.width, eTy]
 
 /-! ## `smulhi_64`, `umulhi_64` -/
 

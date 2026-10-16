@@ -597,8 +597,8 @@ theorem ctz_i8_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Cl
       · exact absurd trivial hx)
     (fun _ _ _ => by omega) (by code_facts) (by code_facts)
     F isem MR env cp hMR
-    (fun ty _ b x ρ u _ _ hP _ _ _ hu => by
-      obtain rfl := ty_eq_of_width (ty' := .i8) hP (by decide)
+    (fun ty _ b x ρ u hE _ hP _ _ _ hu => by
+      obtain rfl := ty_eq_of_width (ty' := .i8) hP (by decide) hE
       refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_rr hR rfl (fun _ => rfl)
         (prun_rr hR rfl (fun _ => rfl) (prun_nil _))), ?_⟩
       have hu' : (ρ x).setWidth 8 = u := hu
@@ -637,8 +637,8 @@ theorem ctz_i16_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : C
       · exact absurd trivial hx)
     (fun _ _ _ => by omega) (by code_facts) (by code_facts)
     F isem MR env cp hMR
-    (fun ty _ b x ρ u _ _ hP _ _ _ hu => by
-      obtain rfl := ty_eq_of_width (ty' := .i16) hP (by decide)
+    (fun ty _ b x ρ u hE _ hP _ _ _ hu => by
+      obtain rfl := ty_eq_of_width (ty' := .i16) hP (by decide) hE
       refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_rr hR rfl (fun _ => rfl)
         (prun_rr hR rfl (fun _ => rfl) (prun_nil _))), ?_⟩
       have hu' : (ρ x).setWidth 16 = u := hu
@@ -703,10 +703,10 @@ theorem clz_i8_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Cl
         obtain ⟨rfl, rfl⟩ := h
         refine ⟨[.extend (.vreg st.nextVreg .int) (.vreg x .int) false t.bits 32, .bitRR .clz .size32 (.vreg (st.nextVreg + 1) .int) (.vreg st.nextVreg .int), .aluRRImm12 .sub .size32 (.vreg (st.nextVreg + 2) .int) (.vreg (st.nextVreg + 1) .int) ⟨24, false⟩], _, rfl, ⟨by st_facts, by st_facts, by st_facts, by code_facts0, by code_facts0⟩,
           ?_⟩
-        intro ty hty _ _ hT' ρ u hu
+        intro ty hty hE _ hT' ρ u hu
         have ht : t = .int 8 := by rcases hT' with h | h <;> simp_all
         subst ht
-        obtain rfl := ty_eq_of_width (ty' := .i8) hty (by decide)
+        obtain rfl := ty_eq_of_width (ty' := .i8) hty (by decide) hE
         refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_rr hR rfl (fun _ => rfl)
           (prun_rr hR rfl (fun _ => rfl) (prun_nil _))), ?_⟩
         have hu' : (ρ x).setWidth 8 = u := hu
@@ -774,10 +774,10 @@ theorem clz_i16_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : C
         obtain ⟨rfl, rfl⟩ := h
         refine ⟨[.extend (.vreg st.nextVreg .int) (.vreg x .int) false t.bits 32, .bitRR .clz .size32 (.vreg (st.nextVreg + 1) .int) (.vreg st.nextVreg .int), .aluRRImm12 .sub .size32 (.vreg (st.nextVreg + 2) .int) (.vreg (st.nextVreg + 1) .int) ⟨16, false⟩], _, rfl, ⟨by st_facts, by st_facts, by st_facts, by code_facts0, by code_facts0⟩,
           ?_⟩
-        intro ty hty _ _ hT' ρ u hu
+        intro ty hty hE _ hT' ρ u hu
         have ht : t = .int 16 := by rcases hT' with h | h <;> simp_all
         subst ht
-        obtain rfl := ty_eq_of_width (ty' := .i16) hty (by decide)
+        obtain rfl := ty_eq_of_width (ty' := .i16) hty (by decide) hE
         refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_rr hR rfl (fun _ => rfl)
           (prun_rr hR rfl (fun _ => rfl) (prun_nil _))), ?_⟩
         have hu' : (ρ x).setWidth 16 = u := hu
