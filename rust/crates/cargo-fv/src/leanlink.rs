@@ -14,10 +14,12 @@
 //! 3. [`patch`]: `cargo fv link-proof --cgus … --no-check` writes the Lean linker's input (the
 //!    functions' CLIF and allocations, the outside part's symbol addresses); `lake exe
 //!    lean-link` computes the region's bytes (`Link.DeadCleanup.compileExe`: input conditions,
-//!    placement, relocation, checks), writes them into the executable and names the theorems
-//!    covering it ([`coverage`]); with `--verified` an input outside the compiler's domain is an
-//!    error (no bare-linker fallback).
-use crate::config::Config;
+//!    placement, relocation, checks; with `--opt-proven-only`, `lean-link --opt`:
+//!    `Link.DeadCleanup.compileExeOpt`, the same on the functions the Lean mid-end optimised with
+//!    the proven rules, as `lean-backend --opt-proven-only` compiled the units), writes them into
+//!    the executable and names the theorems covering it ([`coverage`]); with `--verified` an
+//!    input outside the compiler's domain is an error (no bare-linker fallback).
+use crate::config::{Config, Mode};
 use crate::pipeline::run;
 use object::read::archive::ArchiveFile;
 use std::collections::{BTreeMap, BTreeSet};
@@ -123,7 +125,8 @@ fn write_sizes(obj: &Path, out: &Path) -> Result<(), String> {
 
 /// Write the program part into the linked executable `exe` (its link map recorded by the
 /// linker mode as `link-<tag>.json`): the Lean linker's input, then `lake exe lean-link`
-/// (`--verified` with `cfg.lean_link_verified`). Returns the tool's output.
+/// (`--opt` with `--opt-proven-only`, `--verified` with `cfg.lean_link_verified`). Returns the
+/// tool's output.
 pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
     let fv_dir = cfg.tmp_dir.parent().ok_or("no target/fv/<mode> directory")?;
     let target = fv_dir.parent().and_then(|p| p.parent()).ok_or("no target directory")?;
@@ -147,6 +150,7 @@ pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
         .arg(&dir)
         .arg(&sizes)
         .arg("--dead-cleanup")
+        .args((cfg.mode == Mode::OptProven).then_some("--opt"))
         .args(cfg.lean_link_verified.then_some("--verified"))
         .output()
         .map_err(|e| format!("{}: {e} (lake build lean-link)", tool.display()))?;

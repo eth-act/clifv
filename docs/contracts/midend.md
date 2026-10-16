@@ -25,6 +25,12 @@ the same; stuck or out-of-fuel input runs carry no obligation.
 - [x] Proofs: every pass ("Pass proofs"), the rule interpreter and 1154 `simplify` + 37
   `simplify_skeleton` roots ("Rule proofs"; the false shifts 84/88 stay disabled):
   `Opt.optimize_sim_proven`, `E2E.backend_correct_opt_proven` (`ruleAllow := .proven`).
+- [x] `call_indirect`, `try_call`, `try_call_indirect` (S1, #25): the executable compiler's
+  mid-end `Opt.optimizeExe` (`optimize` with two guards) refines every program, indirect and
+  `try` calls included (`Opt.optimizeProgramExe_refines`, `E2E.backend_correct_opt_exe`); the
+  `i128` legalisation composed with it (S2, #26: `E2E.backend_correct_legal_opt`); the
+  optimising executable compiler `Link.{DeadCleanup.}compileExeOpt` (`lean-link --opt`,
+  `cargo fv --lean-link --opt-proven-only`). See "The executable compiler's mid-end".
 
 ## Using it
 
@@ -389,6 +395,42 @@ proven for sound rule sets (`Opt.simplifyPassSim`) and hence for the proven rule
 `E2E.backend_correct_opt_proven`. `#print axioms E2E.backend_correct_opt_proven` is exactly
 the axiom set of `backend_correct_opt` (`propext`, `Classical.choice`, `Quot.sound`; T6); `simpOk_sim`, `simplify_facts`, `simplifyPassSim`,
 `optimize_sim_proven`: `propext`, `Classical.choice`, `Quot.sound`.
+
+### The executable compiler's mid-end (S1, #25: `call_indirect`, `try_call`)
+
+`Opt.optimizeExe` (`FV/Opt/OptimizeX.lean`) is `optimize` with two guards, under which it refines
+every program, indirect calls and `try_call`/`try_call_indirect` included
+(`Opt.optimizeProgramExe_refines`, `FV/Opt/Proof/PipelineX.lean`; simulations `IsSimX`/`FunSimX`
+in `FV/Opt/Proof/{SemSimX,SimWin,UnreachableX,GvnEditX,SimpSimX}.lean`). `lean-backend --opt`,
+`clif-opt`, `opt-difftest` and `lean-e2e-check --opt` run it (`Opt.optimizeParsedFile`).
+
+- **Fresh-value guard `freshOkB`.** A `try_call` binds its results at the function's fresh
+  value (`Clif.Function.freshValue`, one above every *defined* value). `removeUnreachable` drops
+  blocks, which can lower the fresh value; a reachable block that reads a value it never defines
+  (ill-formed CLIF, rejected by Cranelift's verifier but given a meaning by `Clif.run`) then
+  reads a different register. **`Opt.optimize` alone is unsound there**:
+  `Opt.PipelineXWitness.optimize_not_refines` (`FV/Opt/Proof/PipelineXWitness.lean`): `%bad`
+  (`try_call fn0(v0), sig0, block1, …`, `block1: return v2`, the unreachable `block2` defining
+  `v1`) returns `8` on `5`, and no run of `Opt.optimizeProgram`'s program returns (it is stuck:
+  the result lands in `v1`). `freshOkB` keeps such a function unchanged; on well-formed functions
+  (`Opt.check`) it always holds (`freshOkB_of_check`). **Effect on earlier claims: none.**
+  `Opt.optimizeProgram_refines` assumes `NoCallIndirect` (no `call_indirect`, no `try` terminator)
+  and `E2E.backend_correct_opt_proven{,_cleanup}` assume `hci`/`hnt`, and `lean-backend
+  --opt-proven-only` reported every `try_call`/`call_indirect` function unverified, so no earlier
+  theorem or verified report covered such a function.
+- **Shape guard `keepsShapeB`.** The result keeps the input's `try_call` callees and indirect-call
+  signatures, and a `return_call`/indirect call/block if the input has one (what the backend's
+  subset and the linking facts read); otherwise the input is returned.
+- `Opt.check` rejects `call_indirect`, so such functions only get unreachable-block removal
+  (DEFERRED, mid-end).
+
+Theorems: `Opt.runLoop_refinesX`, `Opt.optimizeExe_simX`, `Opt.optimizeProgramExe_refines`
+(witness `Opt.PipelineXWitness.optimizeProgramExe_witness`: a program with `call_indirect`,
+`try_call` and `try_call_indirect`, all three functions changed, the run of `%main 5` returns `29`
+before and after); `E2E.backend_correct_opt_exe{,_cleanup}` (`FV/E2E/OptX.lean`: no `hci`/`hnt`);
+S2 (#26): `E2E.backend_correct_legal_opt{,_env}{,_cleanup}` (`FV/E2E/LegalOptX.lean`); the
+optimising executable compiler `Link.{DeadCleanup.}compileExeOpt_*` (docs/contracts/e2e.md, "The
+optimising executable compiler"). Axioms: `propext`, `Classical.choice`, `Quot.sound`.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
 

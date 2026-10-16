@@ -147,16 +147,20 @@ Families are independent and can run in parallel, one agent per opts file.
 - alias analysis (redundant-load elimination, store-to-load forwarding);
 - merging identical trapping instructions;
 - elaboration-based sinking and general rematerialisation;
-- full e-class visibility for later matches.
+- full e-class visibility for later matches;
+- the passes on functions with `call_indirect`: the well-formedness check `Opt.check` rejects
+  them, so they only get unreachable-block removal (`Opt.optimizeExe` and its theorems, S1, cover
+  them; accepting them needs the `call_indirect` obligations of `GvnEditX`/`SimpSimX`, vacuous
+  today).
 
 ## i128 legalisation: what `E2E.backend_correct_legal` does not cover (2026-09-30)
 
 Legalised `i128` functions are inside the end-to-end theorem (`E2E.backend_correct_legal`,
 `docs/contracts/legalize128.md`; survey 31 and runtests 159 functions reported verified).
 Deferred:
-- composing the legalisation with the mid-end theorems (`--opt` keeps legalised functions
-  unverified). `compileExe` runs no optimiser, so the executable theorem on the original program
-  (`Link.compileExe_correct_source`, S2/S3, 2026-10-15) does not need it;
+- ~~composing the legalisation with the mid-end theorems~~ Done (S2, #26, `agent/optimiser`):
+  `E2E.backend_correct_legal_opt` (`--opt-proven-only` reports legalised functions verified) and
+  the optimising executable compiler's `Link.compileExeOpt_correct_source{,_peak}`;
 - in `Link.compileExe_correct_source` (and `_source_peak`, the `Link.DeadCleanup` variants, L1f
   #217): the outside environment's `HelperOk`/`ExtLegal`/
   `EnvKeepsBounded` when a source function mentions `i128` and `sigOf = none` with indirect

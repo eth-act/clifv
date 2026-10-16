@@ -43,13 +43,17 @@ def _root_.E2E.LinkCheck.FnInput.opt (fi : FnInput) : FnInput :=
 /-- The input with every function optimised (`FnInput.opt`). -/
 def LinkSpec.opt (S : LinkSpec) : LinkSpec := { S with funcs := S.funcs.map FnInput.opt }
 
-/-- The functions whose optimised input fell back to the unoptimised one (printing and parsing
-did not give the optimised function back), by name. -/
-def LinkSpec.optFallbacks (S : LinkSpec) : List String :=
-  S.funcs.filterMap fun fi =>
-    let f := fi.func
-    if decide (Opt.optimizeExe f Opt.exeConfig = f) then none
-    else if decide ((FnInput.opt fi).func = f) then some f.name else none
+/-- The functions whose optimised input `fo` (of `fi`, `FnInput.opt`) fell back to the
+unoptimised one (printing and parsing did not give the optimised function back), by name: `fo`
+kept `fi`'s text while the mid-end changes `fi`'s function. -/
+def optFallbacksWith (fis fos : List FnInput) : List String :=
+  (fis.zip fos).filterMap fun (fi, fo) =>
+    if fo.clif != fi.clif then none else
+      let f := fi.func
+      if decide (Opt.optimizeExe f Opt.exeConfig = f) then none else some f.name
+
+/-- The functions of `S` whose optimised input fell back to the unoptimised one. -/
+def LinkSpec.optFallbacks (S : LinkSpec) : List String := optFallbacksWith S.funcs S.opt.funcs
 
 /-- **The optimising executable compiler**: `compileExe` on the optimised input. -/
 def compileExeOpt (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=

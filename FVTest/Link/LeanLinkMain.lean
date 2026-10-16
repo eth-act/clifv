@@ -1,10 +1,11 @@
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
+import FV.Link.OptCompile
 import FV.E2E.SrcScopeDefs
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
 
-/-! # `lake exe lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup] [--verified]`: the
+/-! # `lake exe lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified]`: the
 executable compiler on an executable (L1, L2b)
 
 `DIR` is `cargo fv link-proof --cgus … --no-check`'s output for an executable linked by
@@ -36,6 +37,17 @@ the per-function input conditions decided on the CLIF alone (`fnScopeInB`, V7) o
 covered by the four theorems above and its input is in `InScopeIn` (`InScopeP`'s program-level
 conditions with `fnScopeInB`), on which the compiler is proven total
 (`compileExe_total_reach_input`, given the layout, reach and `file0` conditions).
+
+**`--opt`**: the optimising executable compiler — `Link.DeadCleanup.compileExeOpt` (default) or
+`Link.compileExeOpt` (`--no-dead-cleanup`): `compileExe` on the input whose functions the
+mid-end optimised (`Link.LinkSpec.opt`: `Opt.optimizeExe` with the proven rule sets, each
+optimised function printed to CLIF and used only when it parses back to itself; the functions
+where it does not keep their input and are listed, `optFallbacks:`). The input conditions are
+decided on the optimised input, the source domain on the original one; coverage:
+`compileExeOpt_correct`, `compileExeOpt_correct_peak`, `compileExeOpt_correct_source`,
+`compileExeOpt_correct_source_peak`, totality `compileExeOpt_total_reach_input`. `SIZES` are
+then the sizes of the optimised functions' code (`cargo fv --lean-link --opt-proven-only`, whose
+units `lean-backend --opt-proven-only` compiles with the same mid-end).
 -/
 
 open Lean E2E E2E.LinkCheck E2E.Elf Link
@@ -81,13 +93,14 @@ def srcFails (P : Clif.Program) (g : Clif.Function) : List String :=
     (if linkFreeB g then [] else ["linkFreeB"]) ++ (if declSigB P g then [] else ["declSigB"])
 
 def main (args : List String) : IO UInt32 := do
-  let usage := "usage: lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup] [--verified]"
+  let usage := "usage: lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified]"
   let flags := args.filter (·.startsWith "--")
-  if flags.any (fun a => !["--dead-cleanup", "--no-dead-cleanup", "--verified"].contains a) ||
+  if flags.any (fun a => !["--dead-cleanup", "--no-dead-cleanup", "--opt", "--verified"].contains a) ||
       (flags.contains "--dead-cleanup" && flags.contains "--no-dead-cleanup") then
     IO.eprintln usage; return 2
   let deadCleanup := !flags.contains "--no-dead-cleanup"
   let verified := flags.contains "--verified"
+  let opt := flags.contains "--opt"
   let [d, sz] := args.filter (!·.startsWith "--") | do IO.eprintln usage; return 2
   let dir : System.FilePath := d
   let mut sizes : Array (String × Nat) := #[]
@@ -100,16 +113,22 @@ def main (args : List String) : IO UInt32 := do
   let S ← match Front.buildSpec b with
     | .ok S => pure S
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
+  -- the compiler's input: the optimised one under `--opt` (`compileExeOpt S = compileExe S.opt`)
+  let SC := if opt then S.opt else S
   let names := S.names
   let R := S.R
   let file0 ← IO.FS.readBinFile exe
   let summary := s!"{names.length} function(s), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes)"
   let compile := if deadCleanup then Link.DeadCleanup.compileExe else Link.compileExe
   let link := if deadCleanup then Link.DeadCleanup.leanLink else Link.leanLink
-  let theoremName := if deadCleanup then "Link.DeadCleanup.compileExe_correct" else "Link.compileExe_correct"
-  let compilerName := if deadCleanup then "Link.DeadCleanup.compileExe" else "Link.compileExe"
-  let linkerName := if deadCleanup then "Link.DeadCleanup.leanLink" else "Link.leanLink"
   let thm (s : String) := (if deadCleanup then "Link.DeadCleanup." else "Link.") ++ s
+  let exeName := if opt then "compileExeOpt" else "compileExe"
+  let theoremName := thm s!"{exeName}_correct"
+  let compilerName := thm exeName
+  let linkerName := if deadCleanup then "Link.DeadCleanup.leanLink" else "Link.leanLink"
+  if opt then
+    let fb := Link.optFallbacksWith S.funcs SC.funcs
+    IO.println s!"lean-link: {exe}: --opt: optFallbacks: {fb.length} of {S.funcs.length} function(s) {fb.take 5}"
   -- the source domain (`SrcScopeB` reads the parsed functions only, so `S.input0`'s is the
   -- compiler's input's)
   let I := S.input0
@@ -126,7 +145,7 @@ def main (args : List String) : IO UInt32 := do
   -- the input conditions decided on the CLIF alone (`fnScopeInB`); with `InScopeP`'s program
   -- conditions, which `compile` checks, `InScopeIn`
   if verified then
-    let P := I.prog
+    let P := SC.input0.prog
     let bad := P.funcs.filterMap fun g => match fnScopeInFails g with
       | [] => none
       | fs => some (g.name, fs)
@@ -136,15 +155,15 @@ def main (args : List String) : IO UInt32 := do
       for (n, fs) in bad do
         IO.eprintln s!"lean-link:   {n}: {fs}"
       return 1
-  match compile S file0 with
+  match compile SC file0 with
   | .ok file =>
     IO.FS.writeBinFile exe file
     IO.println s!"lean-link: {exe}: {summary} written by {compilerName} ({theoremName})"
     let src := if srcOk then
-        s!"; the original (pre-i128-legalisation) program, in SrcScopeB: {thm "compileExe_correct_source"}, {thm "compileExe_correct_source_peak"}"
+        s!"; the original (pre-i128-legalisation) program, in SrcScopeB: {thm s!"{exeName}_correct_source"}, {thm s!"{exeName}_correct_source_peak"}"
       else "; outside SrcScopeB: about the legalised program only"
-    let scope := if verified then s!"; input in InScopeIn (totality: {thm "compileExe_total_reach_input"}) (--verified)" else ""
-    IO.println s!"lean-link: {exe}: coverage: {thm "compileExe_correct"}, {thm "compileExe_correct_peak"}{src}{scope}"
+    let scope := if verified then s!"; input in InScopeIn (totality: {thm s!"{exeName}_total_reach_input"}) (--verified)" else ""
+    IO.println s!"lean-link: {exe}: coverage: {thm s!"{exeName}_correct"}, {thm s!"{exeName}_correct_peak"}{src}{scope}"
     return 0
   | .error e =>
     if e != outOfScopeMsg then
@@ -153,8 +172,8 @@ def main (args : List String) : IO UInt32 := do
     -- outside `compileExe`'s input conditions: the executable is not covered by
     -- `compileExe_correct`; `Link.leanLink` still links it (its checks, the per-crate proof),
     -- except under `--verified`
-    let P := I.prog
-    let syms := fun n => I.syms.lookup n
+    let P := SC.input0.prog
+    let syms := fun n => SC.input0.syms.lookup n
     let bad := P.funcs.filterMap fun g => match scopeFails P syms g with
       | [] => none
       | fs => some (g.name, fs)
@@ -164,7 +183,7 @@ def main (args : List String) : IO UInt32 := do
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
     if verified then return 1
-    match link S file0 with
+    match link SC file0 with
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
     | .ok file =>
       IO.FS.writeBinFile exe file

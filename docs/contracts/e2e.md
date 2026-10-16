@@ -1859,7 +1859,7 @@ program compiled by `Link.DeadCleanup.compileExe`: `cleanup_peak_witness` (the l
 `Link.DeadCleanup.SourceWitness.compileExe_correct_source{,_peak}_helper`.
 
 *Fail closed (`--verified`).* `lake exe lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup]
-[--verified]` prints after writing the executable the theorems covering it: `coverage:
+[--opt] [--verified]` prints after writing the executable the theorems covering it: `coverage:
 Link.DeadCleanup.compileExe_correct, Link.DeadCleanup.compileExe_correct_peak` and, for an input
 in `SrcScopeB` (decided by the tool: `FV/E2E/SrcScopeDefs.lean`; it reads the parsed functions
 only, so `S.input0`'s is the theorems' `S.inputCleanup`'s), `…_source, …_source_peak`; the bare-
@@ -1871,12 +1871,78 @@ written), so every executable it writes is covered by the four theorems and its 
 Link.DeadCleanup.compileExe_total_reach_input)`. `cargo fv --lean-link --verified` passes it (own
 target dir) and records the coverage in the report (`binary.lean_link`).
 
+**The optimising executable compiler (S1, S2; #25, #26).** `Link.compileExeOpt S file0 :=
+compileExe S.opt file0` and `Link.DeadCleanup.compileExeOpt` (`FV/Link/OptCompile.lean`; what
+`lake exe lean-link --opt` and `cargo fv --lean-link --opt-proven-only` run): parse → `i128`
+legalisation → the mid-end `Opt.optimizeExe` with the proven rule sets (`Opt.exeConfig`;
+`call_indirect` and `try_call`/`try_call_indirect` included, docs/contracts/midend.md "The
+executable compiler's mid-end") → backend. `LinkSpec.opt` prints every optimised function after
+its file's header and uses the text only when it parses (and legalises) back to the optimised
+function (`FnInput.opt`), else keeps the input (`LinkSpec.optFallbacks`, printed by
+`lean-link --opt`: 0 on fv-demo and the survey). Its theorems (`FV/Link/OptExe.lean`,
+`FV/Link/DeadCleanupOptExe.lean`) compose `compileExe`'s, about the optimised input `S.opt`,
+with the mid-end's whole-program refinement (`OptRel.refines`, which keeps the call depth) and,
+for the source theorems, the legalisation's:
+
+```lean
+theorem Link.compileExeOpt_correct {S file0 file} (h : compileExeOpt S file0 = .ok file)
+    (B : BaseEnv) (hB : BaseOk (sys S.opt.input B)) (hH : HooksSim S.opt.input B)
+    (hkeep : Opt.EnvKeepsSymbols B.env)                    -- the mid-end's contract
+    (hf : (prog S.input).func? n = some f) (hf' : (prog S.opt.input).func? n = some f')
+    (hc : ¬ StackBound.CycleFrom (StackBound.Calls S.opt.input S.opt.input.results) f')
+    (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.opt.input (roByte S.opt.input S.opt.data) f'
+      (StackBound.stackFn S.opt.input f') r args cs'.mem)
+    (hr : ClifRun S.opt.input B f' r args cs') (hcs : ClifEntry f args cs)
+    (hregs : cs.frame.regs = cs'.frame.regs) (hsl : …slots…) (hmem : cs.mem = cs'.mem) (M : Nat) :
+    (∀ vals cm, Clif.runLoop B.env (prog S.input) M cs = .returned vals cm →
+      ExecRefines (art S.opt.input f').fb … (.returned vals cm)) ∧
+    ((∀ K, TrapsExplicit (Clif.linkEnvN (prog S.opt.input) B.env K) (prog S.opt.input).bare cs') →
+      ∀ c, Clif.runLoop B.env (prog S.input) M cs = .trapped c → ExecRefines … (.trapped c))
+theorem Link.compileExeOpt_correct_peak         -- frameDrop + D·d for the input run's depth d
+theorem Link.compileExeOpt_correct_source       -- the original program S.input.srcProg (SrcScopeB)
+theorem Link.compileExeOpt_correct_source_peak
+theorem Link.compileExeOpt_total_reach_input    -- compileExeOpt (S.withSizes (sizesOf S.opt)) succeeds
+-- and Link.DeadCleanup.compileExeOpt_{correct,correct_peak,correct_source,correct_source_peak,
+-- total_reach_input} over S.opt.inputCleanup
+```
+
+The premises are `compileExe`'s about the optimised input, plus `EnvKeepsSymbols B.env`; the
+run is the *unoptimised* input's program's (after legalisation, or the original program for the
+source theorems), so a trap needs `TrapsExplicit` at every fuel (the two runs take different
+numbers of steps). Axioms: `propext`, `Classical.choice`, `Quot.sound`.
+
+Witnesses: `crate-proofs/Crates/CompileExeOptSourceWitness.lean` (`compileExeOpt_source_witness`)
+and `DeadCleanupExeOptSourceWitness.lean` (`cleanup_opt_source_witness`): `g_u128`'s
+`wmul_u128`/`wrapping_mul` compiled by `compileExeOpt` and `DeadCleanup.compileExeOpt`; the
+mid-end changes both legalised functions (`legalize fs ≠ f`), no print/parse fallback, and the
+executable returns the split product `15, 5` (via
+`Link.{DeadCleanup.}SourceWitness.compileExeOpt_correct_source_helper`,
+`FV/Link/NonVacuityOptExeSource.lean`). The per-function theorems `E2E.backend_correct_opt_exe`
+and `backend_correct_legal_opt{,_env}` (and their `_cleanup` versions) have the contract
+premises of `backend_correct_final` for the optimised function (`final_contracts_witness` at
+`f := Opt.optimizeExe f cfg`, as for `backend_correct_opt_proven`); the mid-end refinement
+`Opt.optimizeProgramExe_refines`: `Opt.PipelineXWitness.optimizeProgramExe_witness`
+(`FV/Opt/Proof/PipelineXWitness.lean`).
+
+Measured (`cargo fv test --lean-link --verified`, debug, `--opt-proven-only` against the
+default): identical test results (fv-demo 20 passed; survey 53 passed), the same verified counts
+(fv-demo 1346 of 1352, survey 3179 of 3179), every executable written by `compileExeOpt`, no
+print/parse fallback, region bytes fv-demo 193628 → 189036 (−2.4%), survey 564512 → 547428
+(−3.0%). The binary check (`cargo fv link-proof` + `link-check`) recompiles the bundle's
+unoptimised CLIF with the regalloc2 output of the optimised code, so under `--opt-proven-only`
+it reports `not verified` (`checkAlloc`), as it did before without `--lean-link`; the
+guarantee of these executables is `compileExeOpt`'s.
+
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
 optimised dump of the missing-data retry), `lean-regalloc`'s output for it (`fv-rustc` runs as
 the `lean-regalloc` of `lean-backend` and keeps a copy, `cargo_fv::linkproof::regalloc_tee`),
-the merge's names (each CLIF name → the symbol it is linked as) and the object's local symbols;
-and per executable the lld link map (`link-<tag>.map`, `link-<tag>.json`). `cargo fv link-proof`
+the merge's names (each CLIF name → the symbol it is linked as; under `--lean-link` also every
+name the compiled CLIF declares, its local symbols renamed too, so `Front.assemble` can rename
+the dump even when `--opt-proven-only`'s mid-end removed the code using a name) and the object's
+local symbols; and per executable the lld link map (`link-<tag>.map`, `link-<tag>.json`).
+`cargo fv link-proof`
 writes the frontend bundle `bundle.json` (docs/contracts/frontend.md): the files and addresses,
 unchanged; `Front.assemble` (T7d) renames the CLIF to the linked symbols (local symbols renamed by
 the merge, other local symbols as `sym@<unit>`), finds the data objects the functions reach, and

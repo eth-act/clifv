@@ -23,7 +23,8 @@ under qemu-aarch64-static. After a build the report is in target/fv-report.json 
 report` prints it).
 
   --opt               run the Lean mid-end (all rules; nothing is reported verified)
-  --opt-proven-only   run the Lean mid-end with the proven rules (E2E.backend_correct_opt_proven_cleanup)
+  --opt-proven-only   run the Lean mid-end with the proven rules (E2E.backend_correct_opt_exe_cleanup;
+                      i128-legalised functions E2E.backend_correct_legal_opt_cleanup)
   --members-only      only the workspace members go through the Lean backend; dependencies are
                       plain cg_clif (separate target dir). Single dependencies: FV_SKIP_DEPS=a,b
                       or [package.metadata.fv] / [workspace.metadata.fv] skip-deps = [\"a\"]
@@ -38,15 +39,18 @@ report` prints it).
   --lean-link         the Lean linker writes the Lean-compiled code of every executable (L2b,
                       docs/research/lean-linker.md): placed as one region (`.text.fvlean`) and
                       compiled, relocated and written by `lake exe lean-link`
-                      (Link.DeadCleanup.compileExe), which names the theorems covering the
-                      executable (`coverage:`, also in the report); outside the compiler's input
-                      conditions it falls back to the bare Lean linker (no compiler theorem);
-                      implies --keep-temps; separate target dir
+                      (Link.DeadCleanup.compileExe; with --opt-proven-only `lean-link --opt`,
+                      Link.DeadCleanup.compileExeOpt: the same on the functions the mid-end
+                      optimised), which names the theorems covering the executable (`coverage:`,
+                      also in the report); outside the compiler's input conditions it falls back
+                      to the bare Lean linker (no compiler theorem); implies --keep-temps;
+                      separate target dir; not with --opt (unproven rules)
   --verified          (with --lean-link) fail closed: an executable whose Lean-compiled part is
                       outside the compiler's source domain (SrcScopeB) or input conditions
-                      (InScopeP) is a link error instead of the fallback, so every executable
+                      (InScopeIn) is a link error instead of the fallback, so every executable
                       written is covered by Link.DeadCleanup.compileExe_correct{,_peak,_source,
-                      _source_peak}; separate target dir
+                      _source_peak} (with --opt-proven-only Link.DeadCleanup.compileExeOpt_correct{…});
+                      separate target dir
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
   --functions         (report) list every function with its status and reason
@@ -285,6 +289,9 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     }
     if verified && !lean_link {
         die("--verified needs --lean-link (it makes the Lean linker fail closed)");
+    }
+    if lean_link && mode == Mode::Opt {
+        die("--lean-link compiles with the proven mid-end rules only (lean-link --opt); use --opt-proven-only");
     }
     if value_of(&cargo_args, "--target").is_some() {
         die(&format!("cargo fv always builds for {TARGET}; drop --target"));
