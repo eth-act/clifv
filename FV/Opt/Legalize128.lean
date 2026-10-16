@@ -110,6 +110,7 @@ def inst128 (ty : ValueId → Option Ty) : Inst → Bool
   | .trapz c _ | .trapnz c _ => ty c == some .i128
   | .nop => false
   | .symbolValue t _ | .tlsValue t _ => t == .i128
+  | .float _ t args => t == .i128 || args.any (ty · == some .i128)
 
 /-- Does `f` mention `i128` anywhere (its signature, an extern's, a `sigN` declaration, a
 block parameter, or an instruction operand/result)? -/

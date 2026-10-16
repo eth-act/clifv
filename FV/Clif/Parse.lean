@@ -584,6 +584,28 @@ def item (op : String) (sfx : Option Ty) : P Item := do
     let x ← value; expectPunct ','; let p ← value
     let off ← optOffset
     return .inst (.store s (← ctrl sfx x) flags x p off)
+  -- float operations (`Inst.float`): `fcmp cc x, y` and the `FOp.plain` opcodes; the
+  -- controlling type is the operand's for the same-type operations and `fcmp`, the explicit
+  -- suffix (the result type) for the conversions
+  if op == "fcmp" then
+    let w ← anyWord
+    let cc ← match FloatCC.ofName? w with
+      | some cc => pure cc
+      | none => malformed s!"unknown float condition code '{w}'"
+    let x ← value; expectPunct ','; let y ← value
+    return .inst (.float (.fcmp cc) (← ctrl sfx x) [x, y])
+  if let some f := FOp.ofName? op then
+    let x ← value
+    let mut args := #[x]
+    for _ in [1:f.arity] do
+      expectPunct ','
+      args := args.push (← value)
+    let t ← if f.ctrlIsOperand then ctrl sfx x else needTy op sfx
+    -- float ↔ i128 conversions are outside S: no Cranelift backend lowers them, and the
+    -- interpreter (the only oracle) clamps `fcvt_to_*.i128` to the i128 range
+    if !f.ctrlIsOperand && (t == .i128 || (← typeOf x) == .i128) then
+      unsupported s!"{op} with an i128 operand or result"
+    return .inst (.float f t args.toList)
   match op with
   | "iconst" =>
     let t ← needTy op sfx
