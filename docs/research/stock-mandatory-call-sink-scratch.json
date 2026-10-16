@@ -1,0 +1,278 @@
+{
+  "utc": "2026-10-16T13:00:02.252176+00:00",
+  "goal": "#140 original full goal active/incomplete; production legacy",
+  "previous_goal_turn_classification": "progress: actual record through whole returned outgoing area,24compiled/20Std audited,remote56f0cc8d; this turn fixes actual queued witness namespace error and proves atomic helper/source-call protection with10Std roots",
+  "scope": "Actual atomic-load helper full interpretation is inverted at every successful fuel and original overlap setting. Its only sunk update is its actual matched atomic-load input; the following register request preserves the entire table. Actual mapped direct/indirect source slots derive format6/7 internally, so EVERY source call retains its exact sunk bit under this helper regardless of result count. Total helper cannot successfully return no value. Both actual extension-load root matches now identify the SAME ordinary-load source producer, installed format16 and bound source value; actual matching plus FULL RHS yields the real leading sink subexecution and exact update at that SAME producer, with no supplied target/binding/effect certificate. Added CFG-parametric pattern/eligibility/sink receipts and oracle-parametric/checked-selected-rule invariant composition; original fixed-oracle and prior theorem variants unchanged. Eight current modules17public roots compile8GiB and pass standard-only normal audit.",
+  "limits": "Universal whole-root/branch/scan/driver call non-sinking and mandatory call emission remain OPEN: actual extension-load RHS tail framing plus global real-model/root/driver composition still required. Six candidate modules pending checks: original-oracle/selected-rule actual-run witnesses, fixed no-sink partial-helper table/model, isolated-atomic full table/model, and combined original-input atomic/direct/indirect fixture. The stale earlier pure-table binary was archived byte-for-byte then removed; it is NOT current proof evidence. Source CallSinkModel is drafted, not checked. ALL original #140 outgoing/CallsStack/OutArgsOk, remaining families/effects/Try continuations/sinking/traps/availability/static readiness/checker/fallback/Stock totality/source/DFG/world/block/whole-driver simulation/completeness and compiler/checker/linker/generated-proof production cutover remain mandatory. Final witnesses/kernel/MCP/transitive audits/full gates/BOTH E2E identity-stage/FRESH complete comparison required. Full goal active/incomplete; production LEGACY.",
+  "new_scratch_sources": {
+    "/tmp/StockOracleInvariant.lean": "c955b8678362192b1fd50459e3ab24a37e85f0819d97fd345b901f7f069c1c28",
+    "/tmp/StockOracleInvariantWitness.lean": "d9a73b218e697967a1bea74e50ea27f902108545a5315fd4c005b7a660d56f06",
+    "/tmp/StockPureSinkTable.lean": "be355a69f3761f4bac65a9dcb58572e62a9dff94814b6b7443673d3658fde509",
+    "/tmp/StockPureSinkModel.lean": "00a152ce447ce1499c77bf1beb74519ef85b65929b14d2d1457abc381edd5164",
+    "/tmp/StockCallSinkTable.lean": "ce344ca75b30c06b83cff493f5739ee83162a65275eb90b4be222a9cd56556ef",
+    "/tmp/StockCfgLoadSink.lean": "c8901d03e53b6dda9d35b4c49bbe16d2bcfb0e98f9fa318b2e59da773d1ad64a",
+    "/tmp/StockAtomicProtected.lean": "8c6320f57c317bf835cb0b5a16ffbb1eececfc863b6cffac377bfa13651a90cd",
+    "/tmp/StockAtomicCallProtected.lean": "afc8f4548e2eb6d46c3c70e9af908902769d3e4a5d05ea728de82f5e8f0e8319",
+    "/tmp/StockAtomicNoNone.lean": "aab4326da21441c5b04d23a2f3f96754e14d45fc59ab7316183044b748f55e47",
+    "/tmp/StockAtomicCallWitness.lean": "c7756e3e041db6b0cc3e57be9ccbe3bbfa84a238e188183008aa2f0ce4f93600",
+    "/tmp/StockCallSinkModel.lean": "068d8e8efe289bc4ee5b42dbcb73af3212f4f609296df2e453494b67f1306137",
+    "/tmp/StockCfgSinkProvenance.lean": "2f1d49df44c6487a77087f0bd3e8ffea64d36cd2e1d0345b60db8e48c3012305",
+    "/tmp/StockExtensionLoadPattern.lean": "08e3e9115fc01cbf05557da74c9384c26e70bb78737aa3967c0343a9579b0f81",
+    "/tmp/StockExtensionLoadSource.lean": "dbbc78c962139fd665acbf4829d5b2e40539d3dd62e2de64765434621c1ab938"
+  },
+  "new_compiled_modules": {
+    "/tmp/StockOracleInvariant.olean": "3da575cc5a8c1fe705fa7b5083b70b036c2d7a3e0447d016f03d80b18b328f32",
+    "/tmp/StockCfgLoadSink.olean": "b1b78a9a7f2b213a53715590db44f0b1880aca8a155fece8deb34994e1d8e16b",
+    "/tmp/StockAtomicProtected.olean": "b0c087562a79a67aa64f8313efec9763ab4d5c04713d3f3637c14d499551ec23",
+    "/tmp/StockAtomicCallProtected.olean": "21138b617b0c92a7785c44816d70e5c1309b20c3b3f78bab6d212004204b492b",
+    "/tmp/StockAtomicNoNone.olean": "3df6d5af92ab136e256121754891b63be2eb01bdb479f5569b3027e72888dea6",
+    "/tmp/StockCfgSinkProvenance.olean": "0fa8636552619aa2c1942fe87f657ba4b29671c973a3fe762f028dc259302187",
+    "/tmp/StockExtensionLoadPattern.olean": "02ea9e27727bfe9a96b68e4c8ff15230507db9d4bbfb83da4a7edbea84af61ce",
+    "/tmp/StockExtensionLoadSource.olean": "4508a97dd3782ab3bedc7cf3a962553da65d0a67b702f7ad5cf6131491868326"
+  },
+  "new_compiled_logs": {
+    "/tmp/stock-oracle-invariant.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-cfg-load-sink.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-atomic-protected.log": "84306b30cfa4fae1c2d34b5f9cc65aedbd194751e15570f3d30ec6fbfac049a0",
+    "/tmp/stock-atomic-call-protected.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-atomic-no-none.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-cfg-sink-provenance.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-extension-load-pattern.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-extension-load-source.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "source_scans": {
+    "/tmp/StockOracleInvariant.lean": [],
+    "/tmp/StockOracleInvariantWitness.lean": [],
+    "/tmp/StockPureSinkTable.lean": [],
+    "/tmp/StockPureSinkModel.lean": [],
+    "/tmp/StockCallSinkTable.lean": [],
+    "/tmp/StockCfgLoadSink.lean": [],
+    "/tmp/StockAtomicProtected.lean": [],
+    "/tmp/StockAtomicCallProtected.lean": [],
+    "/tmp/StockAtomicNoNone.lean": [],
+    "/tmp/StockAtomicCallWitness.lean": [],
+    "/tmp/StockCallSinkModel.lean": [],
+    "/tmp/StockCfgSinkProvenance.lean": [],
+    "/tmp/StockExtensionLoadPattern.lean": [],
+    "/tmp/StockExtensionLoadSource.lean": []
+  },
+  "new_public_theorem_roots": [
+    "Backend.Stock.Proof.Coverage.OracleInvariant.soundAt",
+    "Backend.Stock.Proof.Coverage.OracleInvariant.selected_rule_sound",
+    "Backend.Stock.Proof.OracleInvariantWitnessDraft.stock_oracle_invariant_original_witness",
+    "Backend.Stock.Proof.OracleInvariantWitnessDraft.stock_oracle_selected_original_witness",
+    "Backend.Stock.Proof.PureSinkDraft.stock_pure_noSink_table_checked",
+    "Backend.Stock.Proof.PureSinkDraft.stock_pure_apply_noSink",
+    "Backend.Stock.Proof.CallSinkDraft.stock_callSink_table_checked",
+    "Backend.Stock.Proof.CallSinkDraft.stock_callSink_roots_checked",
+    "Backend.Stock.Proof.CfgLoadSinkDraft.stock_loadSink_pattern",
+    "Backend.Stock.Proof.CfgLoadSinkDraft.stock_loadSink_binding",
+    "Backend.Stock.Proof.CfgLoadSinkDraft.stock_loadSink_call",
+    "Backend.Stock.Proof.AtomicProtectedDraft.stock_atomic_load_sink_frame",
+    "Backend.Stock.Proof.AtomicProtectedDraft.stock_atomic_load_preserves_other_sunk",
+    "Backend.Stock.Proof.AtomicCallProtectedDraft.stock_atomic_load_preserves_direct_source_call",
+    "Backend.Stock.Proof.AtomicCallProtectedDraft.stock_atomic_load_preserves_indirect_source_call",
+    "Backend.Stock.Proof.AtomicNoNoneDraft.stock_atomic_helper_not_none",
+    "Backend.Stock.Proof.AtomicCallWitnessDraft.stock_atomic_load_both_source_calls_witness",
+    "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_sink_resultful",
+    "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_sink_iflet",
+    "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_iflet_sink_resultful",
+    "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_iflet_rhs_sink_resultful",
+    "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_matched_rule_sink_resultful",
+    "Backend.Stock.Proof.ExtensionLoadPatternDraft.stock_extension_load_match_source",
+    "Backend.Stock.Proof.ExtensionLoadSourceDraft.stock_extension_load_sink_source"
+  ],
+  "foundation_audit": {
+    "path": "/tmp/stock-mandatory-foundation-axioms.log",
+    "sha256": "d203d03dee98df79d2321a058a13c238b7371251fcbc9b3017396293dd0a4a2c",
+    "roots": {
+      "Backend.Stock.Proof.Coverage.OracleInvariant.soundAt": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.OracleInvariant.selected_rule_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgLoadSinkDraft.stock_loadSink_pattern": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgLoadSinkDraft.stock_loadSink_binding": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgLoadSinkDraft.stock_loadSink_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicProtectedDraft.stock_atomic_load_sink_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicProtectedDraft.stock_atomic_load_preserves_other_sunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicCallProtectedDraft.stock_atomic_load_preserves_direct_source_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicCallProtectedDraft.stock_atomic_load_preserves_indirect_source_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicNoNoneDraft.stock_atomic_helper_not_none": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_sink_resultful": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_sink_iflet": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_iflet_sink_resultful": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_iflet_rhs_sink_resultful": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_matched_rule_sink_resultful": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionLoadPatternDraft.stock_extension_load_match_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionLoadSourceDraft.stock_extension_load_sink_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "all17_standard_only": true
+  },
+  "pending_modules": [
+    "StockOracleInvariantWitness",
+    "StockPureSinkTable",
+    "StockPureSinkModel",
+    "StockCallSinkTable",
+    "StockAtomicCallWitness",
+    "StockCallSinkModel"
+  ],
+  "pending_proof_object_roots": [
+    "Backend.Stock.Proof.CallSinkDraft.callSinkModel",
+    "Backend.Stock.Proof.PureSinkDraft.pureModel",
+    "Backend.Stock.Proof.OracleInvariantWitnessDraft.fromFixed"
+  ],
+  "old_outgoing_witness_correction": {
+    "first_terminal_failure": "/tmp/stock-outgoing-first-failure.json",
+    "log": "/tmp/stock-outgoing-first-failure.log",
+    "fix": "qualified CallStaticFixture.arguments in GOT witness section; source and generator corrected; resumed ONLY after actual terminal error, not observation timeout",
+    "updated_source_sha256": "97cdcdc5c0335997be7f6f817b5a5fc5adca238f47b270e64e02c2800f5aeb40"
+  },
+  "processes": {
+    "stock-coherent-serial-progress": {
+      "state": "running",
+      "pid": 1233457,
+      "utc": "2026-10-16T12:51:21.937374+00:00",
+      "total": 1930,
+      "completed_modules": 144,
+      "index": 145,
+      "current": "FV.Backend.Proof.IselTermFactsCall",
+      "log": "/tmp/stock-coherent-build-FV.Backend.Proof.IselTermFactsCall.log",
+      "memcap": "22G"
+    },
+    "stock-outgoing-validation-progress": {
+      "state": "waiting_dependencies",
+      "watcher_pid": 1299673,
+      "utc": "2026-10-16T12:51:22.220582+00:00",
+      "serial": {
+        "state": "running",
+        "pid": 1233457,
+        "total": 1930,
+        "index": 145,
+        "current": "FV.Backend.Proof.IselTermFactsCall"
+      },
+      "missing": [
+        "FV.Backend.Proof.IselTermFactsCall"
+      ],
+      "current_in_required_dependencies": true
+    },
+    "stock-mandatory-candidate-progress": {
+      "state": "waiting_dependencies",
+      "pid": 1570288,
+      "utc": "2026-10-16T12:51:22.722894+00:00",
+      "completed": {},
+      "module": "StockOracleInvariantWitness",
+      "missing": [
+        "FV.Backend.Proof.IselTermFactsCall"
+      ],
+      "canonical": {
+        "state": "running",
+        "pid": 1233457,
+        "total": 1930,
+        "index": 145,
+        "current": "FV.Backend.Proof.IselTermFactsCall"
+      },
+      "current_in_required_dependencies": true
+    }
+  },
+  "canonical_freeze_verified": true,
+  "all190prior_source_compiled_log_hashes_preserved": true,
+  "candidate_counts": {
+    "new_modules": 14,
+    "new_theorem_roots": 24,
+    "compiled_modules": 8,
+    "audited_foundation_roots": 17
+  },
+  "resources": {
+    "free_GiB": 814.6,
+    "new_agents_worktrees_caches": 0,
+    "warm_caches": 1,
+    "new_proof_memcap_GiB": 8,
+    "bounded_proof_checks": true,
+    "no_new_complete_lowering_kernel": true
+  },
+  "next_steps": [
+    "Poll exact live coherent controller1233457/session88401, outgoing watcher1299673/session26708 and candidate builder1570288/session86498. Preserve FV/FVTest/scripts freeze. Inspect actual terminal failure before fixing/restarting; never restart solely on observation timeout.",
+    "Finish corrected outgoing caller witnesses and216root normal audit preserving all190prior exact sets/bases. Finish queued OracleInvariantWitness/PureSinkTable/PureSinkModel/AtomicCallWitness/CallSinkTable checks, then compile CallSinkModel and audit all17 candidate theorem roots plus actual proof-object definitions. Do not claim the pending tables/models/witnesses pass.",
+    "Complete isolated-atomic source/value model, full protected-call framing of both actual extension-load RHS tails, then whole source root/branch/scan/driver non-sinking and universal mandatory emission. Actual extension producer/leading sink provenance is now proved. Never supply source-chosen targets/receipts or reduce to two-result/sret calls.",
+    "After current canonical1930build/2182audit terminal inspected, integrate validated outgoing candidates in same coherent batch, exactly ONE expanded bundled MCP and full gates. New mandatory-call candidate scope joins only after its actual models/witnesses/audits pass. Preserve original source conditions/old variants/required axiom sets/accepted identities/stages/#179; continue every full-goal obligation."
+  ],
+  "cleanup_receipt": {
+    "utc": "20261016T124708Z",
+    "archive": "/home/lee/.clifv-recovery/20261016T124708Z-stale-pure-table/stale-artifacts.tar.gz",
+    "sha256": "e375633a165d2f9c38040a6893ab224b8da3a15e268b34264f1ebbb3218a48c5",
+    "every_member_byte_verified": true,
+    "removed": [
+      {
+        "path": "/tmp/StockPureSinkTable.olean",
+        "bytes": 173264
+      }
+    ],
+    "reason": "Compiled pure-table prototype predates added584 row; not current proof evidence, unused by any live compiler. Source/log/binary archived before removal; queued builder regenerates current source once dependencies restore."
+  }
+}
