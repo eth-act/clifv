@@ -301,7 +301,8 @@ set_option hygiene false in
 /-- The result type of an E instruction is an E type. -/
 macro "prg_ety" : tactic => `(tactic|
   exact mem_eTys (by
-    simp_all [Compile.instE, Compile.tyE, Compile.unaryTyE, Compile.unaryE, Compile.binaryE]))
+    revert hE; cases ty <;>
+      simp [Compile.instE, Compile.tyE, Compile.unaryTyE, Compile.unaryE, Compile.binaryE]))
 
 set_option maxRecDepth 100000 in
 /-- **A statement's root**: the form of its instruction describes `.inst ii`, is a statement
