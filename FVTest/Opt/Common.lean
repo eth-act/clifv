@@ -1,4 +1,5 @@
 import FV.Opt
+import FV.Opt.OptimizeX
 import FV.Clif.Parse
 
 /-!
