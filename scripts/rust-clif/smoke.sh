@@ -5,10 +5,10 @@
 #   - clif-filetest (Lean `Clif.run`, compared with Cranelift's interpreter), and
 #   - scripts/lean-backend-filetests.sh (Lean backend -> llvm-mc -> qemu, compared with
 #     Cranelift's own aarch64 code).
-# The functions come with the `; data:` objects they reference (clif-data-export, transitively
-# through data items, plus every function a data object points at), so `symbol_value`
-# functions (e.g. `%fn_ptr_table`'s panic location) link natively.
-# Needs dump.sh output and the clif-data-export tool.
+# The functions come with the `; data:` objects they reference (clif-data-export's objects,
+# transitively through data items, plus every function a data object points at), so
+# `symbol_value` functions (e.g. `%fn_ptr_table`'s panic location) link natively.
+# Needs dump.sh output and the clif-data-export and clif-decode tools.
 # usage: scripts/rust-clif/smoke.sh [OUT_DIR]   (SMOKE_WORK overrides the work directory)
 set -euo pipefail
 
@@ -25,8 +25,8 @@ mkdir -p "$work"
 "$here/data-export.sh" "$out" >/dev/null
 datadir="$out/../data"
 for c in a_arith c_structs_enums d_loops_iters h_dyn_generic g_u128; do
-  python3 "$here/normalize.py" "$out/release/$c/$c.clif" unopt "$work/release-$c.norm.clif" \
-    --gvmap "$datadir/release-$c.gvmap.tsv" --data-file "$datadir/release-$c.data.clif"
+  "$root/.lake/build/bin/clif-decode" "$out/release/$c/$c.clif" unopt "$work/release-$c.norm.clif" \
+    --data-file "$datadir/release-$c.data.clif"
 done
 
 externs=()
@@ -128,9 +128,8 @@ RUST
   # recover + normalize the release f_crypto crate with its data image
   "$root/scripts/rust-clif/data-export.sh" >/dev/null || exit 1
   datadir="$out/../data"
-  python3 "$here/normalize.py" "$out/release/f_crypto/f_crypto.clif" unopt \
-    "$here_d/f_crypto.norm.clif" --gvmap "$datadir/release-f_crypto.gvmap.tsv" \
-    --data-file "$datadir/release-f_crypto.data.clif"
+  "$root/.lake/build/bin/clif-decode" "$out/release/f_crypto/f_crypto.clif" unopt \
+    "$here_d/f_crypto.norm.clif" --data-file "$datadir/release-f_crypto.data.clif"
 
   python3 - "$here_d" "${E[0]}" "${E[1]}" "${E[2]}" <<'PYEOF'
 import re, sys
@@ -145,7 +144,7 @@ sha_body = "\n".join(lines[sha:end])
 data_lines = [l for l in lines[:starts[0][0]] if l.startswith("; data:")]
 buf = "; data: %demo_buf writable = " + "0" * 32
 ksum_fn = f'''function %ksum() -> i32 system_v {{
-    gv0 = symbol colocated %f_crypto_Ldata40
+    gv0 = symbol colocated %c_Ldata40
 
 block0:
     v1 = iconst.i64 0
