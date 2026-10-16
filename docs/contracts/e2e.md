@@ -255,10 +255,32 @@ the `retN`/value arguments).
   raw program, by `Clif.runLoopX_ren`, `FV/Front/RenameRunX.lean`). Witnesses:
   `Link.EhCheck.Witness.unw_call`, `Link.DeadCleanup.UnwindWitness.unwind_applies`,
   `Front.RenameRunXWitness.renamed_unwinds`, crate-proofs
-  `Crates.FrontendBundleUnwindWitness.bundle_unwind_witness` (g_u128's bundle). Not covered:
-  the raw program's exceptional edges when it has `i128` (no program-level legalisation with
-  unwinding), and an executable-bytes machine with unwinding (the theorem is about the linked
-  machine whose tables are proven to be the file's).
+  `Crates.FrontendBundleUnwindWitness.bundle_unwind_witness` (g_u128's bundle). With `i128`:
+  **`Front.bundle_correct_raw_unwind_src`** (`FV/Front/RawExeUnwindSrc.lean`):
+  `bundle_correct_raw_unwind_ren` without its `i128`-free premise. A return, a trap (of a source
+  run without load/store traps) or an exception leaving `f` of cg_clif's run with unwinding is
+  refined by the linked machine with unwinding of the compiled `legalize (f.rename σ.fwd)`
+  entered with the ABI-split arguments (`MachAt`): the results split by `f`'s return groups, the
+  same trap, the same exception, the memories renamed. It composes `Front.raw_legal_unwind` (the
+  CLIF half: `Clif.runLoopX_ren` and the program-level legalisation with unwinding) with
+  `compileExe_correct_unwind`. Premises beyond `compileExe_correct_unwind`'s: `SrcScopeB`; where
+  a function mentions `i128`, the linked environment's `HelperOk`/`ExtLegal`/`EnvKeepsBounded`
+  and `ExtLegalX`/`EnvKeepsAllocsX`/`ExnArityOk` (`Clif.Rust.xenvWith` has them); `Opt.Legal.exnOk`
+  of every legalised function; the source entry with the compiled entry's slots and renamed
+  memory; the source run's memories below `2^64`; for traps, no load/store trap on the source
+  run. *The program-level legalisation with unwinding* (`FV/E2E/LegalProgX.lean`,
+  **`E2E.LegalProgram.legalProg_refinesX`**): S3's `legalProg_refines` for `Clif.runLoopX` on
+  `ProgCtxX` (`ProgCtx` plus the unwinding contracts where a function mentions `i128`, `IndScopeX`
+  with indirect calls, `exnOk` of every legalisation) from good states (`GoodFromX`); proof: S3's
+  fuel induction, the source run per function under the guarded linked environment
+  (`Clif.runLoopX_linkR`), each activation by `Opt.Legal.X.check_refinesX2`
+  (`FV/Opt/Proof/LegalSimX2.lean`, two environments) or `identX_run`, the target unlinked by
+  `Clif.unlinkX_run` (`FV/E2E/LinkClifRevX.lean`, the converse of `runLoopX_linkR`). Witnesses:
+  `E2E.LegalProgram.XWitness.caught_refines`/`unwound_refines` (`w(i128)` `try_call`s
+  `mid(i128)`, whose call of `%throw` raises; every premise discharged by `decide +kernel`),
+  `Front.RawExeUnwindSrcWitness.raw_caught`/`raw_unwound`. Not covered: an executable-bytes
+  machine with unwinding (the theorem is about the linked machine whose tables are proven to be
+  the file's).
 * **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
   normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
   `normArgReg`, `retN` indices below the callee's return count), and checks that a `tryCall`

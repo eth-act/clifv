@@ -12,9 +12,10 @@ of an executable `compileExeU` writes refines **cg_clif's program's run with unw
 in cg_clif's environment `E` (`L.envX = E.ren σ`), its memories renamed to the linked names: a
 return, a trap, or an exception leaving `f`.
 
-With `i128` the compiled program is the legalised one; carrying its runs with unwinding back to
-the original program needs the program-level legalisation theorem for runs with unwinding (the
-per-function one is `E2E.backend_correct_legal_unwind`), which does not exist yet.
+With `i128` the compiled program is the legalised one; `FV/Front/RawExeUnwindSrc.lean`
+(`bundle_correct_raw_unwind_src`) carries its runs with unwinding back to the original program
+through the program-level legalisation theorem with unwinding
+(`E2E.LegalProgram.legalProg_refinesX`).
 -/
 
 namespace Front
