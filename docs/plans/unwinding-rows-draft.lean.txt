@@ -1,0 +1,110 @@
+
+/-! ## The CFI rows describe the frame -/
+
+/-- A call instruction line (`bl`/`blr`). -/
+def _root_.Backend.Line.isCall : Line → Bool
+  | .ins (.bl _) _ | .ins (.blr _) _ => true
+  | _ => false
+
+theorem loadConst64_noCall (rd : Reg) (v : Nat) : ∀ l ∈ loadConst64 rd v, l.isCall = false := by
+  intro l hl
+  simp only [loadConst64, List.mem_cons, List.mem_filterMap, List.mem_range] at hl
+  rcases hl with rfl | ⟨j, _, hj⟩
+  · rfl
+  · split at hj
+    · cases hj; rfl
+    · cases hj
+
+/-- The lines of a store through `sp` contain no call. -/
+theorem store_lines_noCall {c : FnCtx} {op : StoreOp} {r : Reg} {o : Int} {fl : Clif.MemFlags}
+    {ls : List Line} {ps ps' : PState}
+    (h : MInst.lines c (.store op r (.spOffset o) fl) ps = .ok (ls, ps')) :
+    ∀ l ∈ ls, l.isCall = false := by
+  simp only [MInst.lines, memFinalize, bind, Except.bind, pure, Except.pure] at h
+  intro l hl
+  repeat' split at h
+  all_goals
+    cases h
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
+    rcases hl with hl | rfl
+    · first | simp at hl | exact loadConst64_noCall _ _ l hl
+    · rfl
+
+/-- The DWARF register and CFA offset of a callee-save store of a frame of `frameSize`. -/
+def saveRow (frameSize : Nat) (s : AInst) : Option (Nat × Int) :=
+  s.calleeSave?.bind fun (r, o) => r.dwarf?.map fun d => (d, o - 16 - frameSize)
+
+/-- Rows at nondecreasing offsets from `at_`, a multiple of 4 apart, up to `hi`. -/
+def RowsIn (at_ hi : Nat) : List (Nat × Cfi) → Prop
+  | [] => True
+  | (o, _) :: rs => at_ ≤ o ∧ o ≤ hi ∧ (o - at_) % 4 = 0 ∧ RowsIn o hi rs
+
+theorem RowsIn.mono {at_ hi hi' : Nat} (h : hi ≤ hi') : ∀ {rows}, RowsIn at_ hi rows → RowsIn at_ hi' rows
+  | [], _ => trivial
+  | (o, _) :: rs, ⟨h1, h2, h3, h4⟩ => ⟨h1, by omega, h3, RowsIn.mono h h4⟩
+
+/-- `saveRows` emits the stores' lines (no calls) and, after each, the row of `saveRow`. -/
+theorem saveRows_spec {c : FnCtx} {fs : Nat} :
+    ∀ (off : Nat) (saves : List AInst) (ls : List Line) (rows : List (Nat × Cfi)),
+      saveRows c fs off saves = .ok (ls, rows) →
+      (∀ l ∈ ls, l.isCall = false) ∧ RowsIn off (off + 4 * ls.length) rows ∧
+        saves.mapM (saveRow fs) = some (rows.map fun r => match r.2 with
+          | .offset d o => (d, o) | _ => (0, 0)) ∧
+        (∀ r ∈ rows, ∃ d o, r.2 = .offset d o ∧ o % 8 = 0)
+  | off, [], ls, rows, h => by
+    simp only [saveRows, pure, Except.pure] at h
+    cases h
+    simp [RowsIn]
+  | off, s :: rest, ls, rows, h => by
+    unfold saveRows at h
+    cases hcs : s.calleeSave? with
+    | none => simp only [hcs] at h; cases h
+    | some ro =>
+      obtain ⟨r, o⟩ := ro
+      have hs : ∃ op fl, s = .inst (.store op r (.spOffset o) fl) := by
+        unfold AInst.calleeSave? at hcs
+        split at hcs
+        · split at hcs
+          · cases hcs; exact ⟨_, _, rfl⟩
+          · cases hcs
+        · cases hcs
+      obtain ⟨op, fl, rfl⟩ := hs
+      simp only [hcs] at h
+      cases hl : MInst.lines c (.store op r (.spOffset o) fl) {} with
+      | error e => simp only [hl] at h; cases h
+      | ok lp =>
+        obtain ⟨ls0, ps0⟩ := lp
+        simp only [hl] at h
+        cases hd : r.dwarf? with
+        | none => simp only [hd] at h; cases h
+        | some dr =>
+          simp only [hd] at h
+          by_cases hc : (decide ((o : Int) - 16 - fs ≥ 0) || (o - 16 - fs) % 8 != 0) = true
+          · simp only [hc, ite_true] at h; cases h
+          · simp only [hc, Bool.false_eq_true, ite_false] at h
+            simp only [Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, not_or,
+              Int.not_le, Decidable.not_not] at hc
+            trace_state
+            cases hr : saveRows c fs (off + 4 * ls0.length) rest with
+            | error e => simp only [hr] at h; cases h
+            | ok lr =>
+              obtain ⟨ls', rows'⟩ := lr
+              simp only [hr] at h
+              cases h
+              obtain ⟨hcall, hin, hmap, h8⟩ := saveRows_spec _ rest ls' rows' hr
+              refine ⟨?_, ?_, ?_, ?_⟩
+              · intro l hm
+                rcases List.mem_append.mp hm with hm | hm
+                · exact store_lines_noCall hl l hm
+                · exact hcall l hm
+              · refine ⟨by omega, by simp; omega, by omega, ?_⟩
+                exact RowsIn.mono (by simp; omega) hin
+              · simp only [List.mapM_cons, saveRow, hcs, hd, Option.bind_some, Option.map_some,
+                  hmap, List.map_cons]
+                rfl
+              · intro x hx
+                rcases List.mem_cons.mp hx with rfl | hx
+                · exact ⟨dr, _, rfl, hc.2⟩
+                · exact h8 x hx
+
+end Backend.Proof.UnwindTables

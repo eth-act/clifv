@@ -1,6 +1,5 @@
 import FV.Backend.Asm
 import FV.Backend.RegallocOps
-import Std.Data.HashMap
 
 /-!
 # Unwind information (DWARF call frame information for `.eh_frame`)
@@ -63,6 +62,26 @@ def Line.insn? : Line → Option Insn
   | .ins i _ => some i
   | _ => none
 
+/-- The rows of the callee-save stores `saves` of block 0, emitted from byte offset `off`:
+the stores' lines and, after each, the row saving its register at CFA + `o - 16 - frameSize`. -/
+def saveRows (c : FnCtx) (frameSize : Nat) : Nat → List AInst →
+    Except String (List Line × List (Nat × Cfi))
+  | _, [] => pure ([], [])
+  | off, s :: rest => do
+    let some (r, o) := s.calleeSave? | throw "unwind: not a save"
+    let .inst m := s | throw "unwind: not a save"
+    let (ls, _) ← m.lines c {}
+    let off := off + 4 * ls.length
+    let some dr := r.dwarf? | throw "unwind: register without a DWARF number"
+    let cfaOff : Int := o - 16 - frameSize
+    if cfaOff ≥ 0 || cfaOff % 8 != 0 then throw s!"unwind: save slot at CFA{cfaOff}"
+    let (ls', rows) ← saveRows c frameSize off rest
+    pure (ls ++ ls', (off, .offset dr cfaOff) :: rows)
+
+/-- The rows of the prologue `stp x29, x30, [sp, #-16]!; mov x29, sp`. -/
+def prologueRows : List (Nat × Cfi) :=
+  [(4, .defCfaOffset 16), (4, .offset 29 (-16)), (4, .offset 30 (-8)), (8, .defCfaRegister 29)]
+
 /-- Unwind rows `(code offset, instruction)` of an allocated function `af` whose final code
 is `fa`, in code order. -/
 def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := do
@@ -73,38 +92,35 @@ def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := 
   let saves := (code.drop 1).takeWhile (·.calleeSave?.isSome)
   let pro := prologueLines af.frameSize
   let c : FnCtx := { k := fa.k, slotBase := af.slotBase }
-  let mut expect : Array Line := pro.toArray
-  let mut off := 4 * pro.length
-  let mut rows : Array (Nat × Cfi) :=
-    #[(4, .defCfaOffset 16), (4, .offset 29 (-16)), (4, .offset 30 (-8)), (8, .defCfaRegister 29)]
-  for s in saves do
-    let some (r, o) := s.calleeSave? | throw "unwind: not a save"
-    let .inst m := s | throw "unwind: not a save"
-    let (ls, _) ← m.lines c {}
-    expect := expect ++ ls.toArray
-    off := off + 4 * ls.length
-    let some dr := r.dwarf? | throw "unwind: register without a DWARF number"
-    let cfaOff : Int := o - 16 - af.frameSize
-    if cfaOff ≥ 0 || cfaOff % 8 != 0 then throw s!"unwind: save slot at CFA{cfaOff}"
-    rows := rows.push (off, .offset dr cfaOff)
+  let (sl, srows) ← saveRows c af.frameSize (4 * pro.length) saves
+  let expect := pro ++ sl
   -- the final code starts with the entry label, then exactly these instructions
-  let got := (fa.lines.toList.drop 1).take expect.size
+  let got := (fa.lines.toList.drop 1).take expect.length
   unless (match fa.lines[0]? with | some (Line.label _) => true | _ => false) &&
-      got.map Line.insn? == expect.toList.map Line.insn? && got.all (·.insn?.isSome) do
+      got.map Line.insn? == expect.map Line.insn? && got.all (·.insn?.isSome) do
     throw "unwind: the code does not start with the prologue and the callee-save stores"
-  return rows.toList
+  return prologueRows ++ srows
 
 /-- Unsigned LEB128. -/
-partial def uleb (n : Nat) : ByteArray :=
+def uleb (n : Nat) : ByteArray :=
   if n < 128 then ⟨#[UInt8.ofNat n]⟩ else ⟨#[UInt8.ofNat (n % 128 + 128)]⟩ ++ uleb (n / 128)
+termination_by n
+decreasing_by omega
 
 /-- Signed LEB128. -/
-partial def sleb (n : Int) : ByteArray :=
+def sleb (n : Int) : ByteArray :=
   let b := (n % 128).toNat  -- `Int` `/` and `%` are Euclidean: `b ∈ [0, 128)`, `rest` = ⌊n/128⌋
   let rest := n / 128
   let sign := b ≥ 64
   if (rest == 0 && !sign) || (rest == -1 && sign) then ⟨#[UInt8.ofNat b]⟩
   else ⟨#[UInt8.ofNat (b + 128)]⟩ ++ sleb rest
+termination_by n.natAbs
+decreasing_by
+  -- not a last byte: `n ∉ [-64, 64)`, so `|⌊n/128⌋| < |n|`
+  rename_i h
+  simp only [Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq, Bool.not_eq_eq_eq_not,
+    Bool.not_true, decide_eq_false_iff_not, decide_eq_true_eq, not_or, not_and] at h
+  omega
 
 /-- Code alignment factor 4 and data alignment factor -8 (the CIE's, as Cranelift's). -/
 def Cfi.bytes : Cfi → ByteArray
@@ -126,15 +142,13 @@ def cfiAdvance (delta : Nat) : ByteArray :=
   else if d < 65536 then ⟨#[0x03, UInt8.ofNat d, UInt8.ofNat (d / 256)]⟩
   else ⟨#[0x04, UInt8.ofNat d, UInt8.ofNat (d / 256), UInt8.ofNat (d / 65536), UInt8.ofNat (d / 16777216)]⟩
 
+/-- An FDE's instruction bytes for rows in code order, the location being at `at_`. -/
+def cfiProgramFrom : Nat → List (Nat × Cfi) → ByteArray
+  | _, [] => .empty
+  | at_, (o, i) :: rows => cfiAdvance (o - at_) ++ i.bytes ++ cfiProgramFrom o rows
+
 /-- An FDE's instruction bytes for rows in code order. -/
-def cfiProgram (rows : List (Nat × Cfi)) : ByteArray := Id.run do
-  let mut b : ByteArray := .empty
-  let mut at_ := 0
-  for (o, i) in rows do
-    b := b ++ cfiAdvance (o - at_)
-    at_ := o
-    b := b ++ i.bytes
-  return b
+def cfiProgram (rows : List (Nat × Cfi)) : ByteArray := cfiProgramFrom 0 rows
 
 /-! ## Call sites and landing pads (the LSDA, `.gcc_except_table`)
 
@@ -156,39 +170,59 @@ structure CallSite where
   action : Nat
   deriving Repr, BEq, Inhabited
 
-/-- The call-site table of an allocated function `af` whose final code is `fa` (every `bl`/
-`blr` is a call, in code order, and `af`'s calls are in the same order), or `none` if the
-function has no `try_call` (it needs no LSDA). -/
-def callSites (af : AFunc) (fa : FnAsm) : Except String (Option (List CallSite)) := do
-  let calls : List (Option TryInfo) := af.blocks.toList.flatMap fun (_, code) =>
+/-- The block labels of `lines` with their byte offsets (latest first: `lookup` finds a
+label's last definition) and the return offsets of its calls (`bl`/`blr`, in code order),
+the lines starting at byte offset `off`. -/
+def scanLines : List Line → Nat → List (Label × Nat) → List Nat → List (Label × Nat) × List Nat
+  | [], _, labs, rets => (labs, rets.reverse)
+  | ln :: rest, off, labs, rets =>
+    let labs := match ln with
+      | .label (.block l) => (l, off) :: labs
+      | _ => labs
+    let rets := match ln with
+      | .ins (.bl _) _ | .ins (.blr _) _ => (off + 4) :: rets
+      | _ => rets
+    scanLines rest (off + ln.size) labs rets
+
+/-- The handlers of a call (`some ti` for a `tryCall`). -/
+def handlersOf : Option TryInfo → List TryHandler
+  | some ti => ti.handlers
+  | none => []
+
+/-- The call-site entry of handler `h` of a call returning to `ret`. -/
+def handlerEntry (labs : List (Label × Nat)) (ret : Nat) (h : TryHandler) :
+    Except String CallSite := do
+  let some pad := labs.lookup h.label | throw s!"LSDA: no landing pad label {h.label}"
+  match h with
+  | .tag 0 _ => pure ⟨ret - 1, 1, pad, 0⟩
+  | .tag 1 _ => pure ⟨ret - 1, 1, pad, 1⟩
+  | .tag n _ => throw s!"LSDA: exception tag {n} (cg_clif uses 0 = cleanup, 1 = catch)"
+  | .default _ => throw "LSDA: a `default` handler (cg_clif uses tags 0 and 1)"
+
+/-- The call-site entries of one call (`some ti` for a `tryCall`) returning to `ret`. -/
+def siteEntries (labs : List (Label × Nat)) : Option TryInfo × Nat → Except String (List CallSite)
+  | (c, ret) =>
+    let handlers := handlersOf c
+    if handlers.isEmpty then pure [⟨ret - 1, 1, 0, 0⟩]
+    else handlers.mapM (handlerEntry labs ret)
+
+/-- The calls of an allocated function in code order (`some ti` for a `tryCall`). -/
+def AFunc.calls (af : AFunc) : List (Option TryInfo) :=
+  af.blocks.toList.flatMap fun (_, code) =>
     code.toList.filterMap fun
       | .inst (.call _) => some none
       | .inst (.tryCall _ ti) => some (some ti)
       | _ => none
+
+/-- The call-site table of an allocated function `af` whose final code is `fa` (every `bl`/
+`blr` is a call, in code order, and `af`'s calls are in the same order), or `none` if the
+function has no `try_call` (it needs no LSDA). -/
+def callSites (af : AFunc) (fa : FnAsm) : Except String (Option (List CallSite)) := do
+  let calls := af.calls
   if !calls.any (·.isSome) then return none
-  let mut off := 0
-  let mut labels : Std.HashMap Label Nat := {}
-  let mut rets : Array Nat := #[]
-  for ln in fa.lines do
-    match ln with
-    | .label (.block l) => labels := labels.insert l off
-    | .ins (.bl _) _ | .ins (.blr _) _ => rets := rets.push (off + 4)
-    | _ => pure ()
-    off := off + ln.size
-  if rets.size != calls.length then throw "LSDA: the code's calls differ from the function's"
-  let mut sites : Array CallSite := #[]
-  for (c, ret) in calls.zip rets.toList do
-    let handlers := match c with
-      | some ti => ti.handlers
-      | none => []
-    if handlers.isEmpty then sites := sites.push ⟨ret - 1, 1, 0, 0⟩
-    for h in handlers do
-      let some pad := labels[h.label]? | throw s!"LSDA: no landing pad label {h.label}"
-      match h with
-      | .tag 0 _ => sites := sites.push ⟨ret - 1, 1, pad, 0⟩
-      | .tag 1 _ => sites := sites.push ⟨ret - 1, 1, pad, 1⟩
-      | .tag n _ => throw s!"LSDA: exception tag {n} (cg_clif uses 0 = cleanup, 1 = catch)"
-      | .default _ => throw "LSDA: a `default` handler (cg_clif uses tags 0 and 1)"
-  return some sites.toList
+  let (labs, rets) := scanLines fa.lines.toList 0 [] []
+  if rets.length != calls.length then throw "LSDA: the code's calls differ from the function's"
+  let sites ← (calls.zip rets).mapM (siteEntries labs)
+  return some sites.flatten
 
 end Backend
