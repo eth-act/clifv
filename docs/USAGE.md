@@ -425,7 +425,7 @@ binary check and `link-proof` below still apply. `cargo fv build --lean-link --v
 refuses that case, inputs outside `SrcScopeB` and functions outside the input conditions decided
 on the CLIF alone (`fnScopeInB`, naming the failing ones): every executable it writes is covered,
 and its input is one on which the compiler is proven total (`InScopeIn`,
-`compileExe_total_reach_input`).
+`Link.DeadCleanup.compileExe_total_reach_input`).
 
 With `--opt-proven-only`, `--lean-link` runs `lean-link --opt`: the optimising executable
 compiler `Link.DeadCleanup.compileExeOpt` (the same compiler on the functions the Lean mid-end

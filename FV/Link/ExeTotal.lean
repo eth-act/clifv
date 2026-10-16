@@ -1,12 +1,14 @@
 import FV.Link.Total
 import FV.Link.RelocShapeProof
+import FV.E2E.LinkScopeInput
 
 /-! # The executable compiler is total on its scope (L1)
 
 **`compileExe_total`**: `compileExe S file0` succeeds — with the executable `leanLink` writes —
 on every input satisfying
 
-* the input conditions `InScopeP` (decided on the CLIF program alone; `compileExe` checks them);
+* the input conditions `InScopeIn` (decided on the CLIF program alone; `compileExe` checks them;
+  the proof uses `InScopeP`, which they imply: `inScopeP_of_input`);
 * the driver's data: the placement's conditions (`placeOkB`), the names and sizes are the CLIF
   functions' and their compiled code's (`LinkSpec.sizesOf`);
 * the addresses: every relocation's target in its instruction's reach (`relocRangeB`: `bl`
@@ -36,7 +38,7 @@ theorem shapes_of {S : LinkSpec} (hin : InScopeP S.input0 = true) :
 
 /-- **The executable compiler succeeds on its scope.** -/
 theorem compileExe_total {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
-    (hin : InScopeP S.input0 = true) (hp : S.placeOkB = true)
+    (hin : InScopeIn S.input0 = true) (hp : S.placeOkB = true)
     (hn : S.names = S.funcs.map (·.func.name)) (hs : S.sizes = S.sizesOf)
     (hrange : ∀ e ∈ tabOf S.input.resultsT, ∀ r ∈ e.2.fb.relocs,
       relocRangeB S.input (tpOff phs) e.2 r = true)
@@ -45,8 +47,9 @@ theorem compileExe_total {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
     (hout : outsideOkB S.input S.data (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) =
       true) :
     compileExe S file0 = .ok (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) := by
-  have h := leanLink_total_of hph hin hp hn hs (shapes_of hin) hrange hreg hout
-  simp only [compileExe, inScopePar_eq, hin, ↓reduceIte]
+  have hP := inScopeP_of_input hin
+  have h := leanLink_total_of hph hP hp hn hs (shapes_of hP) hrange hreg hout
+  simp only [compileExe, inScopeInPar_eq, hin, ↓reduceIte]
   exact h
 
 end Link

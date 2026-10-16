@@ -186,15 +186,15 @@ theorem callPageReach_of {S : LinkSpec} {phs : List Phdr} (hin : InScopeP S.plac
 /-! ## Totality -/
 
 /-- **The executable compiler succeeds on decidable input conditions**: on the CLIF input
-(`InScopeP`), the layout (`layoutOkB`), the reach of the CLIF functions' references from the
+(`InScopeIn`: conditions on the CLIF functions alone, no compiler stage run), the layout (`layoutOkB`), the reach of the CLIF functions' references from the
 region (`reachOkB`, on the link map), rust-lld's executable `file0` (`file0OkB`), with the Lean
 compiler's layout (`S.placed`). -/
 theorem compileExe_total_reach {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
-    (hin : InScopeP S.placed.input0 = true) (hl : S.placed.layoutOkB = true)
+    (hin : InScopeIn S.placed.input0 = true) (hl : S.placed.layoutOkB = true)
     (hph : phdrs (fileRd file0) = some phs) (hf : S.placed.file0OkB file0 phs = true)
     (hreach : S.placed.reachOkB = true) :
     compileExe S.placed file0 =
       .ok (patch file0 (offsetOf phs S.R) (regionOf S.placed (tpOff phs))) :=
-  compileExe_total_input hin hl hph hf (callPageReach_of hin hl hreach)
+  compileExe_total_input hin hl hph hf (callPageReach_of (inScopeP_of_input hin) hl hreach)
 
 end Link

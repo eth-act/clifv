@@ -369,7 +369,8 @@ would only matter for executables over 128 MiB of text or offsets near `±4 GiB`
 Done (TO-PROVE V7): `lowerFunction` and `prepare` succeed on input conditions
 (`Prg.lowerFunction_ok_input`, `Prep.prepare_ok`); `InScopeIn` (`fnScopeInB`: `driverInB`,
 `iselInB`, `sizeOkB`, `extendsWidenB` for `lowersB`) implies `InScopeP`, and
-`Link.compileExe_total_reach_input`/`Link.DeadCleanup.compileExe_total_reach_input` take it.
+`Link.DeadCleanup.compileExe_total_reach_input` takes it; since L1g (#228) `Link.compileExe` checks
+`InScopeIn` and its totality theorems (`compileExe_total{,_input,_reach}`) take it.
 `lean-link --verified` checks `fnScopeInB`. Deferred:
 - **`addrSlotsInB`'s outgoing area.** `progScopeB`'s `addrSlotsInB` asks whether `lowerFunction`'s
   output has an outgoing-argument area (`outAreaB`); it runs the lowering (an error counts as no
@@ -378,9 +379,11 @@ Done (TO-PROVE V7): `lowerFunction` and `prepare` succeed on input conditions
 - **`maxTryItems`.** `iselInB` bounds every exception table to 8 items, a proof-convenience bound
   (the table checks the `try_call` roots for up to 8 items), not a Cranelift rule; every corpus
   and crate function meets it.
-- **`compileExe` itself** still checks `InScopeP` (with `lowersB`): the old statements keep their
-  premise; switching `compileExe`'s check to `InScopeIn` would change which inputs it accepts only
-  where `lowersB` holds without the input conditions (none in the corpus or the crates).
+- **The shipped compiler's check.** `Link.DeadCleanup.compileExe` (@codygunton's,
+  `FV/Link/DeadCleanupCompile.lean`) still checks `InScopeP` (with `lowersB`); `Link.compileExe`
+  checks `InScopeIn` since L1g (#228; its totality premises strengthened from `InScopeP` to
+  `InScopeIn`, the acceptance sets equal on the corpus and the crates). The same one-line change
+  (`inScopeInPar` for `inScopePar`) is proposed for the cleanup variant on #140.
 - **Kernel witness of `dominatedB`.** `backend_correct_final_total_input_witness` takes
   `dominatedB` as its premise: the availability fixpoint `inFix` uses `Std.HashMap`/`Std.HashSet`,
   which the kernel does not reduce (`USize`); `lean-e2e-check` evaluates it on every function.

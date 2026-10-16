@@ -51,8 +51,8 @@ theorem inScope : InScopeP spec.opt.input = true := by native_decide
 /-- **The optimising executable compiler compiles `rec128` to `file`.** -/
 theorem compile_eq : compileExeOpt spec file0 = .ok file := by
   show compileExe spec.opt file0 = _
-  have h : InScopeP spec.opt.input0 = true := by rw [← LinkSpec.inScope_input]; exact inScope
-  simp only [compileExe, inScopePar_eq, h, ↓reduceIte, link_eq]
+  have h : InScopeIn spec.opt.input0 = true := by native_decide
+  simp only [compileExe, inScopeInPar_eq, h, ↓reduceIte, link_eq]
 
 /-- The input (the unoptimised side). -/
 abbrev I0 : LinkInput := spec.input
