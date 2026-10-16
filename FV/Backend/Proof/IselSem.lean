@@ -68,11 +68,13 @@ theorem ofNat5_inj {j k : Nat} (hj : j < 32) (hk : k < 32) (h : BitVec.ofNat 5 j
 /-! ## One lemma per emitted instruction form (registers symbolic, `≤ 30`) -/
 
 
-/-- The two bitmask immediates the probe's rules use (UBFM #0, #7 = `uxtb`; AND #7). LNSym's
-`decode_bit_masks` goes through `highest_set_bit`, whose kernel reduction is too deep, so these
-two closed facts are evaluated by `native_decide`. -/
-theorem dbm_uxtb : decode_bit_masks 0#1 7#6 0#6 false 32 = some (255#32, 255#32) := by native_decide
-theorem dbm_and7 : decode_bit_masks 0#1 2#6 0#6 true 32 = some (7#32, 7#32) := by native_decide
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- The `uxtb` bitmask immediate (UBFM #0, #7). -/
+theorem dbm_uxtb : decode_bit_masks 0#1 7#6 0#6 false 32 = some (255#32, 255#32) := by decide +kernel
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+theorem dbm_and7 : decode_bit_masks 0#1 2#6 0#6 true 32 = some (7#32, 7#32) := by decide +kernel
 
 section Insns
 variable {d a b : Nat} (hd : d ≤ 30) (ha : a ≤ 30) (hb : b ≤ 30) (s : ArmState)

@@ -151,6 +151,10 @@ shift amounts by `shift_mask`). With "low bits" the obligation stays local to ea
 `program_term_*`, `program_rulesOf_*` in `data_program`) and the two bitmask facts
 `dbm_uxtb`, `dbm_and7`. No `sorry`, no hand-written axiom.
 
+T6 update: this probe account is historical. The current library's `dbm_uxtb` and
+`dbm_and7` facts are proved with `decide +kernel` and have only standard axioms;
+the native-mask workaround described below is no longer needed there.
+
 ## What worked (the recipe)
 
 1. **Data facts by targeted `native_decide`, over an abstract program.** `IselData.lean` is
@@ -570,8 +574,8 @@ axiom audit `FVTest/Backend/Proof/Ctl/Axioms.lean`.
 | 1140 `br_table` | `brTable_ruleOk` (`IselCtlBrTable`): `emit_island_ok`, `zext32_ok` + `ExtOut.sem` (family C), `br_table_impl_ok` (both rules: `cmp_imm` with `imm12_value`, or `imm` + `cmp`; `JtOut`), `jt_sequence_ok`, `hs_cmp32` (`hs` ⇔ index ≥ `n` on 32 bits), `brTable_termOk_gen` (dispatch against `jtSequence`'s `ispec`) |
 
 The `try_call` rules (1034–1036) are not closure roots (`decide +kernel` on `closureRoot`).
-Axioms: `propext`, `Classical.choice`, `Quot.sound`, plus the `bv_decide` certificates of family
-C/B lemmas (`condOn_cmp_32`, `extHolds_extend`, `ExtOut.sem`, `movK_ident`) for `brif`/`br_table`.
+Axioms: `propext`, `Classical.choice`, `Quot.sound` (T6 replaced the family C/B lemmas'
+`bv_decide` certificates, `condOn_cmp_32`, `extHolds_extend`, `ExtOut.sem`, `movK_ident`, by kernel proofs).
 
 **Contract change #9** (c560b29, integrator-approved): `BrIdxTyped` also gives
 `tbl.length < 2^32`, decided by `brIdxOk` (`lowerCheck`). Without it rule 1140 is false:
@@ -642,8 +646,8 @@ match; `selectRule_some_first`, `applyTerm_internal_some_first`, `lower_rules_no
 **Infrastructure** (`IselFamAluBBase`, `IselTermsAluB`): `PRun` (world-independent
 straight-line runs, `prun_cons`/`prun_rr`/`prun_rrr`), `lowerInstOk_one`, `unary_front`,
 templates `unary_ruleOk` (code a function of width) and `unary_ruleOk'` (per-evaluation
-`CodeShape` + meaning; for `value_type`-dependent code), tactics `wcases`/`wfix` (width lemmas by
-`bv_decide -enums`; `-enums` is needed so two modules can be imported together), `code_facts`,
+`CodeShape` + meaning; for `value_type`-dependent code), width lemmas per type by kernel-checked
+`BitVec` proofs (the former `bv_decide` tactics `wcases`/`wfix` were removed in T6), `code_facts`,
 `st_facts`, `earlier_of_idx` (first-match side conditions from rule indices in `lower`).
 Term contracts: `bit_rr_run`, `alu_rr_imm_shift_run`, `alu_rr_imm12_run`, `alu_rr_imm_logic_run`,
 `extend_run`, `put_in_reg_zext32` (`zext32_pass32/pass64/ext/none/big`, all `value_type`
@@ -668,8 +672,8 @@ contract; merged `main` at `4da7bdc` (only conflict: my additive `ispec` arms).
 | 819 | 1315 | `sextend` | `sextend_ok` (`IselFamAluBExtend`) |
 | 834 | 1406 | `bnot (bxor x y)` | proven by **M4AluA2** on `agent/m4-alu-a` (`6b431d6`, `bnot_bxor_ok`), since it needs their `alu_rs_imm_logic` (term 566) contract |
 
-Axioms: `propext`, `Classical.choice`, `Quot.sound`, plus `bv_decide` certificates
-(`extend_sem`, `bnot_base_case_ok`, and `movK_ident` for `iconst`). No `sorry`, no axiom.
+Axioms: `propext`, `Classical.choice`, `Quot.sound` (T6 replaced the `bv_decide` certificates of
+`extend_sem`, `bnot_base_case_ok` and `movK_ident` by kernel proofs). No `sorry`, no axiom.
 
 * **`imm` contract** (`IselTermsImm.imm_ok`, all five rules, `i8..i64`, `ImmExtend` Zero/Sign;
   shared with M4Cmp2): from `applyTerm … 553 [.ty (.int w), .data 122 e [], .int i] = some v`,
@@ -936,4 +940,4 @@ Contract/infrastructure on branch `agent/m4-mem`, the proofs on `agent/m4-mem2`.
 Remaining: none. `backend_correct(_of_rules)` can now take `memRulesCorrect_program` for
 `hmemRules` (left to the integrator).
 
-**Axioms**: `memRelOk_holds`, `readBits_getLsbD_eq`, `backend_correct_of_rules`: `propext`, `Classical.choice`, `Quot.sound`; `amode_add_ok` and `memRulesCorrect_program` additionally the `bv_decide` certificates of M4AluB's `movK_ident` (via `imm_ok`). No `sorry`.
+**Axioms**: `memRelOk_holds`, `readBits_getLsbD_eq`, `backend_correct_of_rules`, `amode_add_ok`, `memRulesCorrect_program`: `propext`, `Classical.choice`, `Quot.sound` (T6: `movK_ident` is kernel-checked). No `sorry`.
