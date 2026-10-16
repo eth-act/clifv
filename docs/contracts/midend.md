@@ -423,6 +423,10 @@ in `FV/Opt/Proof/{SemSimX,SimWin,UnreachableX,GvnEditX,SimpSimX}.lean`). `lean-b
   subset and the linking facts read); otherwise the input is returned.
 - `Opt.check` rejects `call_indirect`, so such functions only get unreachable-block removal
   (DEFERRED, mid-end).
+- **Measured** (`Opt.optimizeExe` with the proven rule sets on the decoded `cargo fv` dumps):
+  fv-demo 1337 of 1352 functions changed, survey 3151 of 3179; `freshOkB` and `keepsShapeB`
+  never reject (0 and 0 on both), and no optimised function falls back on the print/parse round
+  trip (0 on both).
 
 Theorems: `Opt.runLoop_refinesX`, `Opt.optimizeExe_simX`, `Opt.optimizeProgramExe_refines`
 (witness `Opt.PipelineXWitness.optimizeProgramExe_witness`: a program with `call_indirect`,
