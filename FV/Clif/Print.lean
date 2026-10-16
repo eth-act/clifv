@@ -1,4 +1,5 @@
 import FV.Clif.Syntax
+import FV.Clif.FloatLit
 
 /-!
 # CLIF text printer
@@ -7,7 +8,8 @@ import FV.Clif.Syntax
 Every polymorphic instruction is printed with an explicit `.ty` suffix (so the reader never
 has to infer a controlling type from a value defined later in the layout); the suffix of
 `brif`/`trapz`/`trapnz` is the type of the condition. Run commands are printed as
-`; run: ...` comments after their function. Integers are printed in signed decimal.
+`; run: ...` comments after their function. Integers are printed in signed decimal, floats in
+Cranelift's hexadecimal float form (`Clif.FloatLit.format`).
 -/
 
 namespace Clif
@@ -112,8 +114,15 @@ def sfxOf (tys : ValueId → Option Ty) (x : ValueId) : String :=
   | some t => "." ++ t.name
   | none => ""
 
+/-- Cranelift's text of the bits `x` of a float type of width `w`. -/
+def floatText (w : Nat) (x : BitVec w) : String :=
+  let (e, t) := FloatLit.fields w
+  FloatLit.format x.toNat e t
+
 def inst (tys : ValueId → Option Ty) : Inst → String
-  | .iconst ty imm => s!"iconst.{ty.name} {imm.toInt}"
+  | .iconst ty imm =>
+    if ty.isFloat then s!"{ty.name}const {floatText ty.width imm}"
+    else s!"iconst.{ty.name} {imm.toInt}"
   | .unary op ty x => s!"{UnaryOp.name op}.{ty.name} {v x}"
   | .binary op ty x y => s!"{BinaryOp.name op}.{ty.name} {v x}, {v y}"
   | .div op ty x y => s!"{DivOp.name op}.{ty.name} {v x}, {v y}"
@@ -179,7 +188,8 @@ def globalValue : GlobalValue → String
   | .symbol n off col => s!"symbol {if col then "colocated " else ""}%{n}{offset off}"
   | .tlsSymbol n off col => s!"symbol {if col then "colocated " else ""}tls %{n}{offset off}"
 
-def dataValue (x : Val) : String := toString x.toInt
+def dataValue (x : Val) : String :=
+  if x.ty.isFloat then floatText x.ty.width x.bits else toString x.toInt
 
 def runCommand (sig : Signature) (r : RunCommand) : String :=
   let inv := s!"%{r.func}({", ".intercalate (r.args.map dataValue)})"

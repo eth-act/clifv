@@ -133,8 +133,8 @@ def storeOpcode : Clif.StoreOp → String
 def imm64OfIconst (ty : Clif.Ty) (imm : BitVec ty.width) : Int :=
   if ty.width < 64 then imm.toNat else imm.toInt
 
-/-- Integer types of E: `i8..i64`. -/
-def eTy (ty : Clif.Ty) : Bool := ty != .i128
+/-- Integer types of E: `i8..i64` (not `i128`, no floats). -/
+def eTy (ty : Clif.Ty) : Bool := ty.isInt && ty != .i128
 
 /-- Calling conventions with the AAPCS64 argument/return locations and clobbers:
 `system_v` (also the default of signatures without one) and `fast`, which Cranelift 0.136.1
@@ -151,7 +151,7 @@ instruction is outside E). -/
 def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .iconst ty imm =>
     if eTy ty then pure (instDataV "UnaryImm" [opcodeV "Iconst", .int (imm64OfIconst ty imm)])
-    else throw "iconst.i128"
+    else throw s!"iconst.{ty.name}"
   | .unary op ty x =>
     match unaryOpcode op with
     | some n =>
@@ -179,17 +179,17 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .ireduce ty x => if eTy ty then pure (instDataV "Unary" [opcodeV "Ireduce", .value x])
     else throw "ireduce.i128"
   | .load op ty flags p off =>
-    if !eTy ty then throw "load.i128"
+    if !eTy ty then throw s!"load.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian load"
     else pure (instDataV "Load" [opcodeV (loadOpcode op), .value p, .op (.memFlags flags), .int off])
   | .store op ty flags x p off =>
-    if !eTy ty then throw "store.i128"
+    if !eTy ty then throw s!"store.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian store"
     else pure (instDataV "Store"
       [opcodeV (storeOpcode op), .values [x, p], .op (.memFlags flags), .int off])
   | .select ty c x y =>
     if eTy ty then pure (instDataV "Ternary" [opcodeV "Select", .values [c, x, y]])
-    else throw "select.i128"
+    else throw s!"select.{ty.name}"
   | .nop => pure (instDataV "NullAry" [opcodeV "Nop"])
   | .symbolValue ty gv =>
     if ty != .i64 then throw "symbol_value with a non-i64 address type"
@@ -1050,7 +1050,7 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
   let mut ranges : Array (Nat × Nat) := #[]
   for b in f.blocks do
     for (v, ty) in b.params do
-      if ty == .i128 then throw s!"block parameter v{v} is i128"
+      if !eTy ty then throw s!"block parameter v{v} is {ty.name}"
       valTy := valTy.set! v (some (CTy.ofClif ty))
     let start := insts.size
     for s in b.body do
@@ -1059,7 +1059,7 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
         throw "ill-typed instruction"
       if tys.length != s.results.length then throw "result count mismatch"
       for (r, ty) in s.results.zip tys do
-        if ty == .i128 then throw s!"value v{r} is i128"
+        if !eTy ty then throw s!"value v{r} is {ty.name}"
         valTy := valTy.set! r (some (CTy.ofClif ty))
         valDef := valDef.set! r (some insts.size)
       insts := insts.push ⟨data, s.results, tys.map CTy.ofClif, some s.inst⟩

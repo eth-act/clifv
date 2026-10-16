@@ -17,9 +17,10 @@ abbrev env3 (a b c : V) : Interp.Env V :=
   (((Array.replicate 3 none).setIfInBounds 0 (some a)).setIfInBounds 1 (some b)).setIfInBounds 2 (some c)
 
 set_option maxRecDepth 4000 in
-theorem instData_iadd (f : Clif.Function) (ty : Clif.Ty) (hty : ty ≠ .i128) (x y : Nat) :
+theorem instData_iadd (f : Clif.Function) (ty : Clif.Ty) (hty : ty ≠ .i128) (hi : ty.isInt)
+    (x y : Nat) :
     instData f (.binary .iadd ty x y) = .ok (.data 152 2 [.data 151 73 [], .values [x, y]]) := by
-  cases ty <;> first | rfl | exact absurd rfl hty
+  cases ty <;> first | rfl | exact absurd rfl hty | exact absurd hi (by decide)
 
 variable {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config} (hc : cfg.checkOverlap = false)
 

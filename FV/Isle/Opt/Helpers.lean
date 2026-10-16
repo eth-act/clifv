@@ -110,10 +110,11 @@ def ofName? (s : String) : Option CTy :=
 
 def ofClif : Clif.Ty → CTy
   | .i8 => .int 8 | .i16 => .int 16 | .i32 => .int 32 | .i64 => .int 64 | .i128 => .int 128
+  | .f32 => .float 32 | .f64 => .float 64
 
 def toClif? : CTy → Option Clif.Ty
   | .int 8 => some .i8 | .int 16 => some .i16 | .int 32 => some .i32 | .int 64 => some .i64
-  | .int 128 => some .i128 | _ => none
+  | .int 128 => some .i128 | .float 32 => some .f32 | .float 64 => some .f64 | _ => none
 
 end CTy
 
