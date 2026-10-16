@@ -690,6 +690,15 @@ After S10f's `i128` unwinding theorem (#233, `E2E.backend_correct_legal_unwind`,
 runs `Opt.Legal.exnOk`; debug, panic=unwind, `cargo fv test --no-run`): survey 3179 of 3179
 verified, `verified (normal returns; unwinding trusted)` 5 → 0.
 
+With `--lean-link` (S10f), `lake exe lean-link` also checks the executable's unwind tables
+(`Link.DeadCleanup.unwOkB`: libunwind's `.eh_frame_hdr` search finds, for every Lean-compiled
+function, an FDE and LSDA decoding to the theorem's tables; the per-function unwinding checks)
+and then adds `exceptional edges: Link.DeadCleanup.compileExe_correct_unwind,
+Link.DeadCleanup.compileExe_correct_unwind_peak` to the `coverage:` line (otherwise it prints
+`exceptional edges not covered (unwOkB: …)` and writes the file as before). fv-demo's two
+executables pass it; it adds roughly 0.3–2 s per executable (it recomputes the pipeline's
+results).
+
 With the shipped cg_clif (no landing pads; before the external-name tables, #221, `cargo fv`
 could still use it) or `--panic-abort` there are no landing-pad fallbacks:
 
