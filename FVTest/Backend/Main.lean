@@ -3,6 +3,9 @@ import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
 import FVTest.Backend.AllocChoice
+import FV.Backend.Proof.LowerSimUCheck
+import FV.E2E.RegLevelFrameSaved
+import FV.E2E.RegLevelUTry
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
@@ -74,6 +77,85 @@ structure Opts where
   configReceipt : Option String := none
   deadCleanup : Bool := true
 
+/-- One function's allocation as the backend lowered it: the prepared VCode `vcp`, the
+allocation `rf` with `lowerRFunc vcp rf = .ok af` (`lowerAllocReady_eq`, `lowerAlloc_eq`), and
+`af`; `none` without an `RFunc` (the stack allocator) or when `prepare` failed. -/
+abbrev AllocRecord := Option (VCode × RFunc × AFunc)
+
+/-- `Allocator.run`, also returning each function's `AllocRecord` (the objects the unwinding
+theorems name). The `regalloc2` case is `allocateRegalloc2` with the allocation it lowers
+(`allocResult vcp (readyAnswer vcp ra)`) kept. -/
+def allocRecording (a : Allocator) (vcs : Array VCode) :
+    IO (Array (Except String AFunc) × Array AllocRecord) := do
+  match a with
+  | .stack => pure (vcs.map allocate, vcs.map fun _ => none)
+  | .spill =>
+    let ps := vcs.map prepareChecked
+    let afs := ps.map (·.bind fun vcp => lowerRFunc vcp (spillAlloc vcp))
+    pure (afs, (ps.zip afs).map fun (p, af) => match p, af with
+      | .ok vcp, .ok af => some (vcp, spillAlloc vcp, af)
+      | _, _ => none)
+  | .regalloc2 bin env =>
+    let prepared := vcs.map prepareChecked
+    let ok := prepared.filterMap (·.toOption)
+    let rs : Array (Except String RFunc) ← do
+      try
+        match ← runLeanRegalloc bin env ok with
+        | .error e => pure (ok.map fun _ => .error e)
+        | .ok rs => pure (rs.map (·.bind RAResult.oracle))
+      catch e => pure (ok.map fun _ => .error (toString e))
+    let mut out : Array (Except String AFunc) := #[]
+    let mut recs : Array AllocRecord := #[]
+    let mut j := 0
+    for p in prepared do
+      match p with
+      | .error e =>
+        out := out.push (.error e)
+        recs := recs.push none
+      | .ok vcp =>
+        let ra := rs[j]?.getD (.error "lean-regalloc: missing result")
+        let af := lowerAllocReady vcp ra
+        out := out.push af
+        recs := recs.push (af.toOption.map (vcp, allocResult vcp (readyAnswer vcp ra), ·))
+        j := j + 1
+    pure (out, recs)
+
+/-- `allocRunOfName? n` with the `AllocRecord`s: the Lean allocator (`n = "lean"`:
+`allocateLeanAnswers`, writing the answers to `$FV_RA_OUT` when set) records its allocation as
+the `regalloc2` case does (`allocResult vcp (readyAnswer vcp ra)` with `ra = leanAlloc vcp`);
+other names run `allocRecording a`. -/
+def allocRecordingNamed (n : String) (a : Allocator) (vcs : Array VCode) :
+    IO (Array (Except String AFunc) × Array AllocRecord) := do
+  if n != "lean" then return ← allocRecording a vcs
+  let (afs, ans) := allocateLeanAnswers vcs
+  if let some p ← IO.getEnv "FV_RA_OUT" then
+    IO.FS.writeFile p ("{\"functions\":[" ++ ",".intercalate ans.toList ++ "]}\n")
+  let recs := (vcs.zip afs).map fun (vc, af) => match prepareChecked vc, af with
+    | .ok vcp, .ok af => some (vcp, allocResult vcp (readyAnswer vcp (leanAlloc vcp)), af)
+    | _, _ => none
+  pure (afs, recs)
+
+/-- The first check of the unwinding theorem (`E2E.backend_correct_final_cleanup_unwind`, or
+`E2E.backend_correct_final_unwind` without dead cleanup) that fails for a compiled function `f`
+with a `try_call`, on the objects the theorem names: the lowering `vc` of `f` (`unwCheck`, the
+exceptional-edge half of `lowerCheckU`; `lowerCheck` ran during compilation), the prepared
+VCode and the allocation (`savedCheck vcp rf`), the allocated function and its final code
+(`lastCallsOk af fa`, `padsNonzeroB af fa`). `callSites`/`unwindRows` succeed for every compiled
+function (compilation fails otherwise). -/
+def unwindCheckFailure? (f : Clif.Function) (rec : AllocRecord) (fa? : Option FnAsm) :
+    Option String :=
+  match lowerFunction f with
+  | .error _ => some "lowerFunction"
+  | .ok vc =>
+    if !Proof.Driver.unwCheck f vc then some "unwCheck"
+    else match rec, fa? with
+      | some (vcp, rf, af), some fa =>
+        if !savedCheck vcp rf then some "savedCheck"
+        else if !Proof.lastCallsOk af fa then some "lastCallsOk"
+        else if !Proof.padsNonzeroB af fa then some "padsNonzeroB"
+        else none
+      | _, _ => some "no lowerRFunc allocation (allocator)"
+
 def run (input output : String) (o : Opts) : IO UInt32 := do
   let src ← IO.FS.readFile input
   if o.configReceipt.isSome != o.stockConfig.isSome then
@@ -114,8 +196,13 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let clif (name : String) : List Clif.Function :=
     (source.funcs ++ pf.funcs).filterMap fun p => if p.name == name then p.func.toOption else none
   let rejected ← IO.mkRef (#[] : Array (String × String))
+  -- the allocation of each function as lowered (by VCode name), for the unwinding checks
+  let records ← IO.mkRef (#[] : Array (String × AllocRecord))
   let fa ← match stock with
-    | none => compileFileWith runAlloc pf (unv128 ++ unvTry) o.deadCleanup
+    | none => compileFileWith (fun vcs => do
+        let (afs, recs) ← allocRecordingNamed ra alloc vcs
+        records.set ((vcs.map (·.name)).zip recs)
+        pure afs) pf (unv128 ++ unvTry) o.deadCleanup
     | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
         (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))) o.deadCleanup)
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
@@ -159,12 +246,30 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     IO.eprintln s!"lean-backend: {input}: %{n}: compiled, unverified (validation budget): {why}"
   -- A function with a `try_call` is inside `backend_correct_final` for the runs in which every
   -- callee of a `try_call` returns normally (callee contract `CalleeTryOk`: the results only; the
-  -- exception payload registers are havocked on the normal return); unwinding is trusted.
+  -- exception payload registers are havocked on the normal return). Its unwinding (landing
+  -- pads, the LSDA, the frame unwound by the CFI) is inside the unwinding theorem
+  -- (`E2E.backend_correct_final_cleanup_unwind`, without dead cleanup
+  -- `E2E.backend_correct_final_unwind`) when that theorem's checks pass on its compiled objects
+  -- (`unwindCheckFailure?`); it is not composed with the mid-end (`--opt`) or with the `i128`
+  -- legalisation.
+  let recs ← records.get
+  let thm := if o.deadCleanup then "backend_correct_final_cleanup_unwind"
+    else "backend_correct_final_unwind"
   for p in pf.funcs do
     if let .ok f := p.func then
       if hasTryCall f && fa.funcs.any (·.name == p.name) && !fa.unverified.any (·.1 == p.name) &&
           !fa.unvalidated.any (·.1 == p.name) then
-        IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call: unwinding, landing pads and the LSDA trusted)"
+        let why? : Option String :=
+          if o.opt.isSome then some "--opt: no unwinding theorem composes the mid-end"
+          else if lg.accepted.contains p.name then
+            some "i128 legalized: no unwinding theorem composes the legalisation"
+          else (unwindCheckFailure? f ((recs.find? (·.1 == p.name)).bind (·.2))
+            (fa.funcs.find? (·.name == p.name))).map (s!"unwinding check failed: {·}")
+        match why? with
+        | none =>
+          IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified (try_call: unwinding by {thm}; the unwinder/personality model and the decoding of the emitted tables trusted)"
+        | some why =>
+          IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified for normal returns (try_call: unwinding, landing pads and the LSDA trusted; {why})"
   return 0
 
 def main (args : List String) : IO UInt32 := do
