@@ -1,0 +1,9 @@
+import FV.Backend.Proof.StockSelectReplacement
+import FV.Backend.Proof.StockSelectReplacementResolved
+import FV.Backend.Proof.StockSelectReplacementWitness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_cset
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_cset_condition_valid
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_cset_from_spec
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_cset_resolved
+#print axioms Backend.Stock.Proof.ScalarSelect.ReplacementWitness.stock_select_replacement_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ReplacementWitness.stock_select_replacement_alias_witness
