@@ -53,12 +53,14 @@ On the original (pre-`i128`-legalisation) program: `Link.compileExe_correct_sour
 compiler `lean-link`/`cargo fv --lean-link` ship by default, `Link.DeadCleanup.compileExe`, has the
 same four (`Link.DeadCleanup.compileExe_correct{,_peak,_source,_source_peak}`, L1f #217); its
 `--verified` mode writes only executables they cover (outside `SrcScopeB`/`InScopeP`: an error).
-`Link.compileExe_total_input` (L1e, `FV/Link/ExeInput.lean`): totality for the Lean compiler's layout
-(`S.placed`) under conditions decided on the inputs `S` and `file0` only (`InScopeP`, `layoutOkB`,
-`file0OkB`: rust-lld's checks moved from the patched file to `file0`, TLS offsets from `PT_TLS`) and
-one remaining output-dependent premise, the `bl`/`adrp` reach of the compiled relocations
-(`CallPageReach`, docs/DEFERRED.md "Totality on input conditions"); the same for the shipped
-compiler, `Link.DeadCleanup.compileExe_total_input` (`FV/Link/ExeInputCleanup.lean`).
+`Link.compileExe_total_reach` (L1e, `FV/Link/ExeInputReach.lean`): totality for the Lean
+compiler's layout (`S.placed`) under conditions decided on the inputs `S` (CLIF program, data, link
+map) and `file0` only: `InScopeP`, `layoutOkB`, `file0OkB` (rust-lld's checks moved from the patched
+file to `file0`, TLS offsets from `PT_TLS`) and `reachOkB` (the CLIF functions' declared names and
+offsets within `bl`/`adrp` reach of the region; the compiled code relocates only against them,
+`relocOk_tab`); the same for the shipped compiler, `Link.DeadCleanup.compileExe_total_reach`
+(`FV/Link/ExeInputReachCleanup.lean`). `Link.compileExe_total_input` (`FV/Link/ExeInput.lean`) is
+the intermediate form with the output premise `CallPageReach`.
 On the frontend bundle (T7d/T7e, docs/contracts/frontend.md): `lean-link` builds `S` in Lean from
 `cargo fv link-proof`'s `bundle.json` (`Front.buildSpec`); its source program is the codegen units'
 program under the linked names (`Front.buildSpec_srcProg`), alpha-equivalent to the units' program
@@ -409,14 +411,29 @@ author's estimate, not measured), **Risk**.
     `outsideOkB_patch`: patching the region changes no byte these checks read; `symIndex` is a
     terminating fold, same output as the `while` loop it replaces). TLS reach from `tlsOkB` (a
     `PT_TLS` segment, every link-map address and `0` with a thread-pointer offset below `2^32`).
-    `placed_of_compileExe`: a successful `compileExe S file0` has `S.placed = S`. **Remaining
-    output premise** `CallPageReach` (`bl`/`adrp` targets in reach): needs which symbols and
-    addends the compiled code relocates (docs/DEFERRED.md "Totality on input conditions"). Witness
-    `total_input_witness` (`a_arith`, an executable with a `PT_TLS` segment), `spec_placed`. The
+    `placed_of_compileExe`: a successful `compileExe S file0` has `S.placed = S`. Its one output
+    premise `CallPageReach` (`bl`/`adrp` targets in reach) is discharged by
+    **`Link.compileExe_total_reach`** (`FV/Link/ExeInputReach.lean`): `reachOkB` on the layout
+    (every external function name of every CLIF function has a word-aligned link-map address `bl`
+    reaches from the whole region, every declared name with every declared offset an address whose
+    page `adrp` reaches) and **name provenance** `relocOk_tab`: a `bl` of the compiled code of `f`
+    targets an external function `f` declares, an `adrp` pair a name `f` declares (external
+    function or `symbol`/`symbol tls` global value) with a declared offset (`0` or a global value's
+    offset) (`Backend.Proof.RelocProv.RelocOk`). Names enter ISLE values only through the extractors
+    `func_ref_data` and `symbol_value_data`; an abstract interpretation of the exported rules
+    (`FV/Backend/Proof/RelocProvCheck.lean`, V1's flow analysis over name sources, offsets and the
+    references of the `MInst`s built; table `provTab` and the root rules kernel-checked in chunks,
+    `RelocProvTab.lean`, `RelocProvRoot.lean`; model `RelocProvModel.lean`) gives
+    `lowerFunction_refs` (`RelocProvDriver.lean`); `prepare`, `DeadCleanup.prune`, the allocation,
+    emission and layout keep them (`RelocProvEmit.lean`: `prepare_allInsts`, `prune_allInsts`,
+    `relocs_of_alloc`). Witnesses `total_input_witness`, `spec_placed`
+    (`CompileExeWitness.lean`), `total_reach_witness` (`CompileExeReachWitness.lean`). The
     shipped compiler: `Link.DeadCleanup.compileExe_total_input`/`placed_of_compileExe`
-    (`FV/Link/ExeInputCleanup.lean`, layout `DeadCleanup.placed`), witness
-    `total_input_cleanup_witness`. Real executables: the input conditions and `CallPageReach`
-    evaluate to `true` on two survey executables rust-lld linked (66 and 493 functions).
+    (`FV/Link/ExeInputCleanup.lean`, layout `DeadCleanup.placed`) and
+    `Link.DeadCleanup.compileExe_total_reach` (`FV/Link/ExeInputReachCleanup.lean`), witnesses
+    `total_input_cleanup_witness`, `total_reach_cleanup_witness`. Real executables: the input
+    conditions, `reachOkB` (both compilers) and `RelocOk` of every compiled relocation evaluate to
+    `true` on two survey executables rust-lld linked (66 and 493 functions).
   - Non-vacuity: `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
     `total_witness`); per run: `crate-proofs/Crates/CompileExeRunWitness.lean`
     (`compileExe_run_witness`: the panic=abort `a_arith` compiled by `compileExe`, every premise of
@@ -850,7 +867,7 @@ label**; list the free ones with
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | **done** (`agent/compile-exe`): `Link.compileExe`, `compileExe_correct` (no per-program premise, no open hypothesis), `compileExe_total` (address and rust-lld conditions); #88 removes the alias restriction by compiling native self-calls; `lake exe lean-link` runs `compileExe` |
 | L1c | [#88](https://github.com/eth-act/clifv/issues/88) Remove `AliasOut` from executable compiler totality | **done** (`agent/alias-total`): native self-calls in function-free activations; alias-free driver and `LinkSpec`; `compileExe_total` without alias restriction or output hypothesis; recursive own-address smoke passes |
 | L1d | [#204](https://github.com/eth-act/clifv/issues/204) Executable correctness for recursive programs (remove CycleFrom exclusion) | **done** ([#215](https://github.com/eth-act/clifv/pull/215)): `Link.compileExe_correct_depth` (no call-graph premise; stack `frameDrop + D·M` for fuel `M`), `Link.compileExe_correct_peak` (stack `frameDrop + D·d` for the run's peak call depth `d`), witnesses `Crates.CompileExeRecWitness`, `Crates.CompileExePeakWitness`; open: exact live-frame accounting |
-| L1e | [#216](https://github.com/eth-act/clifv/issues/216) `compileExe` totality from decidable input conditions (layout from Lean, rust-lld checks on `file0`) | **partly done** (`agent/total-input`): `Link.compileExe_total_input` and `Link.DeadCleanup.compileExe_total_input` (layout `placed`, `layoutOkB`, `file0OkB`, TLS from `PT_TLS`), `placed_of_compileExe`, witnesses `total_input_witness`, `total_input_cleanup_witness`; open: `bl`/`adrp` reach (`CallPageReach`, DEFERRED "Totality on input conditions") |
+| L1e | [#216](https://github.com/eth-act/clifv/issues/216) `compileExe` totality from decidable input conditions (layout from Lean, rust-lld checks on `file0`) | **done** ([#220](https://github.com/eth-act/clifv/pull/220), [#223](https://github.com/eth-act/clifv/pull/223)): `Link.compileExe_total_reach` and `Link.DeadCleanup.compileExe_total_reach` (premises `InScopeP`, `layoutOkB`, `file0OkB`, `reachOkB`: decided on the CLIF input, the link map and `file0`), name provenance of the compiled relocations (`relocOk_tab`, `lowerFunction_refs`, `relocs_of_alloc`), witnesses `total_reach_witness`, `total_reach_cleanup_witness`; intermediate `compileExe_total_input` (premise `CallPageReach`) |
 | L1f | [#217](https://github.com/eth-act/clifv/issues/217) Theorems for the shipped (dead-cleanup) compiler, recursive i128 source theorem, fail-closed `lean-link --verified` | **done** ([#218](https://github.com/eth-act/clifv/pull/218)): `Link.compileExe_correct_source_peak` (`legalProg_refines_depth`), `Link.DeadCleanup.compileExe_correct_peak`/`_source`/`_source_peak`, `lean-link --verified` and `coverage:`; witnesses `Crates.CompileExeSourcePeakWitness`, `Crates.DeadCleanupExePeakWitness`, `Crates.DeadCleanupExeSourceWitness` |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | **done** (`agent/rule-infra`; 43 + 10 roots) |
 | R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (0 rules left) | **done** ([#211](https://github.com/eth-act/clifv/pull/211)) |

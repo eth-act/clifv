@@ -1641,6 +1641,35 @@ theorem Link.DeadCleanup.compileExe_total_input (hin : InScopeP (placed S).input
     compileExe (placed S) file0 =
       .ok (patch file0 (offsetOf phs S.R) (regionOf (placed S) (tpOff phs)))
 theorem Link.DeadCleanup.placed_of_compileExe (h : compileExe S file0 = .ok file) : placed S = S
+-- L1e, reach on the inputs (FV/Link/ExeInputReach.lean): the CLIF functions' references
+def Backend.Proof.RelocProv.RelocOk (f : Clif.Function) (r : Reloc) : Prop :=
+  match r.type with
+  | .call26 => r.sym ∈ externNames f                        -- names of f.externs
+  | .adrGotPage | .adrPrelPgHi21 => r.sym ∈ refNames f ∧ r.addend ∈ refOffs f
+  | _ => True                                                -- refNames: externs, symbol gvs
+def Link.LinkSpec.callReachB (P : LinkSpec) (t : Nat) : Bool :=  -- refOffs: 0, gv offsets
+  t % 4 == 0 && decide (P.R + P.size ≤ t + 2 ^ 27) && decide (t < P.R + 2 ^ 27)
+def Link.LinkSpec.pageReachB (P : LinkSpec) (T : Nat) : Bool :=
+  decide (pageOf (P.R + P.size) ≤ pageOf T + 2 ^ 20) && decide (pageOf T < pageOf P.R + 2 ^ 20)
+def Link.LinkSpec.refsReachB (P : LinkSpec) (f : Clif.Function) : Bool :=
+  (externNames f).all (fun n => P.callReachB (P.input0.addrOf n)) &&
+  (refNames f).all fun n => (refOffs f).all fun o => P.pageReachB (P.input0.symAddr n o).toNat
+def Link.LinkSpec.reachOkB (P : LinkSpec) : Bool := P.funcs.all fun fi => P.refsReachB fi.func
+theorem Link.relocOk_tab (hin : InScopeP S.placed.input0 = true) :
+    ∀ e ∈ tabOf S.placed.input.resultsT, ∀ r ∈ e.2.fb.relocs, RelocOk e.1 r
+theorem Link.callPageReach_of (hin : InScopeP S.placed.input0 = true)
+    (hl : S.placed.layoutOkB = true) (hreach : S.placed.reachOkB = true) : CallPageReach S phs
+theorem Link.compileExe_total_reach (hin : InScopeP S.placed.input0 = true)
+    (hl : S.placed.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : S.placed.file0OkB file0 phs = true) (hreach : S.placed.reachOkB = true) :
+    compileExe S.placed file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf S.placed (tpOff phs)))
+-- the shipped compiler (FV/Link/ExeInputReachCleanup.lean)
+theorem Link.DeadCleanup.compileExe_total_reach (hin : InScopeP (placed S).input0 = true)
+    (hl : (placed S).layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : (placed S).file0OkB file0 phs = true) (hreach : (placed S).reachOkB = true) :
+    compileExe (placed S) file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf (placed S) (tpOff phs)))
 ```
 
 `compileExe_correct` has no per-program premise and no open hypothesis about the compiler; its
@@ -1651,9 +1680,15 @@ the driver's data, the addresses (the relocations' reach) and rust-lld's output.
 from `InScopeP` and `layoutOkB`, compiled code nonempty: `pipeT_words_pos`) and moves rust-lld's
 checks from the patched file to `file0` (`outsideOkB_patch`: the region's bytes are read by none
 of them when the section headers, symbol and string tables lie after it, `symFootB`); TLS offsets
-come from `file0`'s `PT_TLS` (`tlsOkB`). Its one output-dependent premise is `CallPageReach`
-(docs/DEFERRED.md "Totality on input conditions"). `Link.DeadCleanup.compileExe_total_input`: the
-same for the shipped compiler. Witnesses: `total_input_witness`, `total_input_cleanup_witness`.
+come from `file0`'s `PT_TLS` (`tlsOkB`). Its one output-dependent premise is `CallPageReach`;
+`compileExe_total_reach` replaces it by `reachOkB`, decided on the CLIF functions and the link
+map: the compiled code of `f` relocates only against `f`'s declarations (`relocOk_tab`; the ISLE
+lowering by an abstract interpretation of the rules, `Backend.Proof.RelocProv.lowerFunction_refs`;
+`prepare`, the allocation, emission and layout, `relocs_of_alloc`), and `reachOkB` puts every
+declared name (with every declared offset) in `bl`/`adrp` reach of the whole region.
+`Link.DeadCleanup.compileExe_total_input`/`_reach`: the same for the shipped compiler. Witnesses:
+`total_input_witness`, `total_input_cleanup_witness`, `total_reach_witness`,
+`total_reach_cleanup_witness`.
 `LinkSpec` is alias-free by construction; #88 removes alias generation and `AliasOut` rather
 than assuming or proving renaming invariance of the compiler. Native recursion is admitted
 by totality, and since L1d (#204) by executable correctness too (below). Witnesses:
