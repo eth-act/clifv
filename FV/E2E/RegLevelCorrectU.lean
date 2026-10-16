@@ -734,18 +734,53 @@ theorem csemU_trap {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : XRa
   csemU_noRaise (noRaise_of_ne (fun info h => by subst h; simp [trapCode?] at ht)
     (fun info ti h => by subst h; simp [trapCode?] at ht) uses w)
 
+/-- A function whose call-site table is empty (`callSites … = .ok none`) has no `try_call`
+among its calls. -/
+theorem callSites_none {af : AFunc} {fa : FnAsm} (h : callSites af fa = .ok none) :
+    af.calls.any (·.isSome) = false := by
+  cases hc : af.calls.any (·.isSome) with
+  | false => rfl
+  | true =>
+    exfalso
+    unfold callSites at h
+    simp only [hc, Bool.not_true, Bool.false_eq_true, ite_false, bind, Except.bind] at h
+    split at h
+    · cases h
+    · split at h
+      · cases h
+      · simp [pure, Except.pure] at h
+
+/-- The tables' LSDA is the emitted call-site table: none, or one `CallSitesOk` describes. -/
+theorem lsda_cases {af : AFunc} {fa : FnAsm} {T : Unw.FnTables}
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry))) :
+    T.lsda = none ∨ ∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry)) := by
+  cases lsda with
+  | none => exact .inl hlsda
+  | some sites => exact .inr ⟨sites, callSites_ok hsites, hlsda⟩
+
 /-- **The raising `tryCall` case of `realizes_allU` from the tables**: `realizes_tryCall_raiseU`
-when the function has an LSDA; vacuous when it has none and no `tryCall`. -/
+when the function has an LSDA (the emitted call-site table, `callSites`); vacuous when it has
+none (no call of the function is a `try_call`, so the call-site bridge `SiteAt` excludes a
+`tryCall` item). -/
 theorem realizesTryRaise_of_tables {R : RLU} (hR : R.Wf) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
-    (hsemT : TryRaiseSem R.XR semU)
-    (hT : LsdaAt R ∨ (R.T.lsda = none ∧ R.vc.hasTryCall = false)) (hpad : PadsNonzero R.af R.fa)
-    (hlast : lastCallsOk R.af R.fa = true) : RealizesTryRaise R semU := by
-  rcases hT with hT | ⟨-, hnt⟩
-  · exact realizes_tryCall_raiseU hR hU hsemT hT hpad (siteAt_of_check hR hlast)
-  · intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hvb hi
-    rw [hasTryCall_of_mem hvb hi] at hnt
-    cases hnt
+    (hsemT : TryRaiseSem R.XR semU) {lsda : Option (List CallSite)}
+    (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : PadsNonzero R.af R.fa) (hlast : lastCallsOk R.af R.fa = true) :
+    RealizesTryRaise R semU := by
+  cases lsda with
+  | some sites =>
+    exact realizes_tryCall_raiseU hR hU hsemT ⟨sites, callSites_ok hsites, hlsda⟩ hpad
+      (siteAt_of_check hR hlast)
+  | none =>
+    intro s b k allocs its m w vb info ti ops c' obj w' hq _ hvb hi
+    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_of_check hR hlast s b k allocs its m w vb _ info
+      (some ti) hq hvb hi (.inr ⟨ti, rfl, rfl⟩)
+    have hn := callSites_none hsites
+    have : (some ti : Option TryInfo) ∈ R.af.calls := (List.of_mem_zip hmem).1
+    rw [List.any_eq_false] at hn
+    exact ((hn _ this) rfl).elim
 
 /-- The realisation of `csemU` for a compiled function's activation (no kept addresses, no GOT
 pinning): `realizes_allU` from `realizes_all` and `realizes_tryCall_raiseU`. -/
@@ -756,13 +791,14 @@ theorem realizes_csemU {R : RLU} (hR : R.Wf)
       CalleeTryOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H) (hcov : FormsCovered R.ctx R.vc)
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
-    (hT : LsdaAt R ∨ (R.T.lsda = none ∧ R.vc.hasTryCall = false)) (hpad : PadsNonzero R.af R.fa)
+    {lsda : Option (List CallSite)} (hsites : callSites R.af R.fa = .ok lsda)
+    (hlsda : R.T.lsda = lsda.map (List.map (·.entry))) (hpad : PadsNonzero R.af R.fa)
     (hlast : lastCallsOk R.af R.fa = true) :
     Realizes R.vc R.rf (csemU R.F R.ctx R.X R.XR) ckeep R.stepU
       (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU := by
   have hreal := realizes_all hR hC hCT hTls hcov
   refine realizes_allU hR hU hreal (fun i uses w h => ?_) (fun info uses w r obj w' h hr => ?_)
-    (realizesTryRaise_of_tables hR hU (tryRaiseSem_csemU _ _ _ _) hT hpad hlast)
+    (realizesTryRaise_of_tables hR hU (tryRaiseSem_csemU _ _ _ _) hsites hlsda hpad hlast)
   · rw [csemU_noRaise h, RL.sem, hgv, csemV_bot]
   · rw [csemU_call_raise hr] at h
     cases h
@@ -782,8 +818,8 @@ theorem realizes_csemU_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnA
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
-    (hlsda : (∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry))) ∨
-      (T.lsda = none ∧ vcp.hasTryCall = false))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true) :
     ∀ base s lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩,
@@ -800,7 +836,7 @@ theorem realizes_csemU_backend {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnA
     frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
   have h := realizes_csemU hR rfl (by rw [hF]; exact (hC s).g _ s _ _)
     (by rw [hF]; exact fun h => (hCT h s).g _ _ s _ _) (by rw [hF]; exact fun h => hTls h s)
-    hcov (by rw [hF]; exact hU base s) hlsda (padsNonzero_of_check hpad) hlast
+    hcov (by rw [hF]; exact hU base s) hsites hlsda (padsNonzero_of_check hpad) hlast
   rw [hF] at h
   exact h
 
@@ -832,8 +868,8 @@ theorem regLevelCorrect_backend_exU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
-    (hlsda : (∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry))) ∨
-      (T.lsda = none ∧ vcp.hasTryCall = false))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
@@ -843,8 +879,8 @@ theorem regLevelCorrect_backend_exU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa 
       XR (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
       (Unw.ArmStepU X H U T fa) vcp af fb :=
   regLevelCorrect_backend_exU_of hcheck halloc hemit hlayout
-    (realizes_csemU_backend hcov hC hCT hTls hU hlsda hpad hlast) (fun _ => csemU_rets)
-    (fun _ _ _ _ _ _ ht h => by rwa [← csemU_trap ht]) hU (hlsda.symm.imp_left And.left) hlast
+    (realizes_csemU_backend hcov hC hCT hTls hU hsites hlsda hpad hlast) (fun _ => csemU_rets)
+    (fun _ _ _ _ _ _ ht h => by rwa [← csemU_trap ht]) hU (lsda_cases hsites hlsda) hlast
     hrows hcie hfde hsaved
 
 /-- **`RegLevelCorrectU` for the backend's code** (a `checkAlloc`-accepted allocation, every
@@ -864,8 +900,8 @@ theorem regLevelCorrect_backendU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
       (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
-    (hlsda : (∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry))) ∨
-      (T.lsda = none ∧ vcp.hasTryCall = false))
+    {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
+    (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true)
     {rows : List (Nat × Cfi)} (hrows : unwindRows af fa = .ok rows) (hcie : T.cie = cieInsns)
     (hfde : T.fde = insnsFrom 0 rows) (hsaved : savedCheck vcp rf = true) :
@@ -875,8 +911,8 @@ theorem regLevelCorrect_backendU {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
       XR (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af) K
       (Unw.ArmStepU X H U T fa) vcp af fb :=
   regLevelCorrect_backendU_of hcheck halloc hemit hlayout
-    (realizes_csemU_backend hcov hC hCT hTls hU hlsda hpad hlast) (fun _ => csemU_rets)
-    (fun _ _ _ _ _ _ ht h => by rwa [← csemU_trap ht]) hU (hlsda.symm.imp_left And.left) hlast
+    (realizes_csemU_backend hcov hC hCT hTls hU hsites hlsda hpad hlast) (fun _ => csemU_rets)
+    (fun _ _ _ _ _ _ ht h => by rwa [← csemU_trap ht]) hU (lsda_cases hsites hlsda) hlast
     hrows hcie hfde hsaved
 
 /-! ## Non-vacuity -/
@@ -923,16 +959,18 @@ theorem premises (K : Nat) (X : ExtSem) :
       (∀ base s, CalleeUnwOkG
         (frameW K (RAFrame.compute vc rf).intBase (RAFrame.compute vc rf).size af s) K
         (fun _ => False) s (CallAt fa base) X XRaise.none Unw.UnwHooks.none vc.CallSite) ∧
-      ((∃ sites, CallSitesOk af fa sites ∧ T.lsda = some (sites.map (·.entry))) ∨
-        (T.lsda = none ∧ vc.hasTryCall = false)) ∧
+      callSites af fa = .ok none ∧ T.lsda = (none : Option (List CallSite)).map (List.map (·.entry)) ∧
       padsNonzeroB af fa = true ∧ lastCallsOk af fa = true ∧ unwindRows af fa = .ok rows ∧
       T.cie = cieInsns ∧ T.fde = insnsFrom 0 rows ∧ savedCheck vc rf = true := by
   have halloc : lowerRFunc vc rf = .ok af := ok_getD (by decide +kernel)
   have hc : savedCheck vc rf = true ∧ lastCallsOk af fa = true ∧ padsNonzeroB af fa = true ∧
-      vc.hasTryCall = false ∧ af.calls.length = 1 := by decide +kernel
+      af.calls.any (·.isSome) = false ∧ af.calls.length = 1 := by decide +kernel
+  have hcs : callSites af fa = .ok none := by
+    unfold callSites
+    simp [hc.2.2.2.1, pure, Except.pure]
   exact ⟨ok_getD (by decide +kernel), halloc, ok_getD (by decide +kernel),
     lowerRFunc_frame halloc, ⟨0, _, 1, rfl, .inl rfl⟩, hc.2.2.2.2,
-    fun base s => calleeUnwOkG_none _ _ _ _ _ _ _, .inr ⟨rfl, hc.2.2.2.1⟩, hc.2.2.1, hc.2.1,
+    fun base s => calleeUnwOkG_none _ _ _ _ _ _ _, hcs, rfl, hc.2.2.1, hc.2.1,
     ok_getD (by decide +kernel), rfl, rfl, hc.1⟩
 
 /-- `regLevelCorrect_backendU` applies to the witness function with `regLevelCorrect_backend`'s
@@ -948,11 +986,12 @@ theorem backendU_applies {X : ExtSem} {H : ArmHooks} {K : Nat} {fb : FnBin}
         ⟨fa.k, af.slotBase⟩ X XRaise.none)
       XRaise.none (frameW K (RAFrame.compute vc rf).intBase (RAFrame.compute vc rf).size af) K
       (Unw.ArmStepU X H Unw.UnwHooks.none T fa) vc af fb := by
-  obtain ⟨hca, halloc, hemit, -, -, -, hU, hlsda, hpad, hlast, hrows, hcie, hfde, hsaved⟩ :=
-    premises K X
+  obtain ⟨hca, halloc, hemit, -, -, -, hU, hsites, hlsda, hpad, hlast, hrows, hcie, hfde,
+    hsaved⟩ := premises K X
   have hnt : vc.hasTryCall = false := by decide +kernel
   exact regLevelCorrect_backendU hca halloc hemit hlayout hcov hC
-    (fun h => absurd h (by rw [hnt]; decide)) hTls hU hlsda hpad hlast hrows hcie hfde hsaved
+    (fun h => absurd h (by rw [hnt]; decide)) hTls hU hsites hlsda hpad hlast hrows hcie hfde
+    hsaved
 
 end RegLevelCorrectUWitness
 
