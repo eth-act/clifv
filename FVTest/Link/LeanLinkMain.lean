@@ -2,6 +2,7 @@ import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.E2E.SrcScopeDefs
 import FV.Front.Read
+import FV.E2E.LinkScopeInputDefs
 
 /-! # `lake exe lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup] [--verified]`: the
 executable compiler on an executable (L1, L2b)
@@ -29,9 +30,12 @@ compiler's `compileExe_correct` (entries without a reachable call cycle) and
 (pre-`i128`-legalisation) program. No per-crate proof needed.
 
 Outside `InScopeP` the default links with the bare Lean linker (`leanLink`, no compiler
-theorem; reported as such). **`--verified`** fails closed: an input outside `SrcScopeB` or
+theorem; reported as such). **`--verified`** fails closed: an input outside `SrcScopeB`, outside
+the per-function input conditions decided on the CLIF alone (`fnScopeInB`, V7) or outside
 `InScopeP` is an error and the executable is not written, so every executable it writes is
-covered by the four theorems above.
+covered by the four theorems above and its input is in `InScopeIn` (`InScopeP`'s program-level
+conditions with `fnScopeInB`), on which the compiler is proven total
+(`compileExe_total_reach_input`, given the layout, reach and `file0` conditions).
 -/
 
 open Lean E2E E2E.LinkCheck E2E.Elf Link
@@ -119,6 +123,19 @@ def main (args : List String) : IO UInt32 := do
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
     return 1
+  -- the input conditions decided on the CLIF alone (`fnScopeInB`); with `InScopeP`'s program
+  -- conditions, which `compile` checks, `InScopeIn`
+  if verified then
+    let P := I.prog
+    let bad := P.funcs.filterMap fun g => match fnScopeInFails g with
+      | [] => none
+      | fs => some (g.name, fs)
+    if !bad.isEmpty then
+      let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
+      IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn): {bad.length} function(s) failing fnScopeInB (by cause: {causes}) {(bad.take 3).map (·.1)}; not written"
+      for (n, fs) in bad do
+        IO.eprintln s!"lean-link:   {n}: {fs}"
+      return 1
   match compile S file0 with
   | .ok file =>
     IO.FS.writeBinFile exe file
@@ -126,7 +143,8 @@ def main (args : List String) : IO UInt32 := do
     let src := if srcOk then
         s!"; the original (pre-i128-legalisation) program, in SrcScopeB: {thm "compileExe_correct_source"}, {thm "compileExe_correct_source_peak"}"
       else "; outside SrcScopeB: about the legalised program only"
-    IO.println s!"lean-link: {exe}: coverage: {thm "compileExe_correct"}, {thm "compileExe_correct_peak"}{src}{if verified then " (--verified)" else ""}"
+    let scope := if verified then s!"; input in InScopeIn (totality: {thm "compileExe_total_reach_input"}) (--verified)" else ""
+    IO.println s!"lean-link: {exe}: coverage: {thm "compileExe_correct"}, {thm "compileExe_correct_peak"}{src}{scope}"
     return 0
   | .error e =>
     if e != outOfScopeMsg then
