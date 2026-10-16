@@ -118,6 +118,28 @@ theorem lframe_of_entry {f : Function} {args : List Val} {cs : State} (hcs : Cli
   refine ⟨by rw [hcs.func]; exact hh, .inl ⟨b, by rw [hcs.func]; exact entry_mem hb, ?_, h3⟩⟩
   rw [h2]; exact List.suffix_refl _
 
+/-- **The source run's memories stay bounded** under `helperEnv`, for a program in the source
+domain without stack slots, from an entry memory with valid ranges below `2^64`
+(`E2E.LegalProgram.Witness.bounded_of_noSlots`). -/
+theorem srcBounded {I : LinkInput} (hsrc : SrcScopeB I = true)
+    (hslots : ∀ g ∈ I.srcProg.funcs, g.slots = []) {f : Clif.Function} (hfP : f ∈ I.srcProg.funcs)
+    {args : List Clif.Val} {cs : Clif.State} (hcs : ClifEntry f args cs) (hM : MemBounded cs.mem) :
+    ∀ s', Opt.Legal.SReach helperEnv I.srcProg cs s' → MemBounded s'.mem := by
+  have hfree : ∀ g ∈ I.srcProg.funcs, LinkFree g := by
+    simp only [SrcScopeB, Bool.and_eq_true, List.all_eq_true] at hsrc
+    exact fun g hg => linkFreeB_sound (hsrc.1.1.2 g hg)
+  have hI : LInv I.srcProg cs :=
+    ⟨lframe_of_entry hcs hfP, fun c hc' => by rw [hcs.callers] at hc'; cases hc'⟩
+  have hsl0 : Witness.SlotsNil cs := by
+    intro fr hfr
+    rw [hcs.callers] at hfr
+    simp only [List.map_nil, List.mem_singleton] at hfr
+    subst hfr
+    have := hcs.slotIds
+    rw [hslots f hfP] at this
+    exact List.map_eq_nil_iff.mp this
+  exact Witness.bounded_of_noSlots hfree hslots clifKeepsAllocs hI hsl0 hM
+
 /-- **`compileExe_correct_source` under `helperBase`**: the base premises decided on the
 program (no TLS, no indirect call, no `__*ti3` helper declared outside the program, no stack
 slot in the source program), the source run's memory bound from an entry memory with valid
@@ -145,23 +167,39 @@ theorem compileExe_correct_source_helper {S : LinkSpec} {file0 file : ByteArray}
       ∃ vals', Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.returns).getD []) vals vals' ∧
         ExecRefines (art S.input (legalize f)).fb (art S.input (legalize f)).base (xreg 30 r)
           (step S.input helperBase file) r (RelocAt S.input) (.returned vals' cm) := by
-  have hfree : ∀ g ∈ S.input.srcProg.funcs, LinkFree g := by
-    simp only [SrcScopeB, Bool.and_eq_true, List.all_eq_true] at hsrc
-    exact fun g hg => linkFreeB_sound (hsrc.1.1.2 g hg)
-  have hfP := (Clif.Program.func?_some hf).1
-  have hI : LInv S.input.srcProg cs :=
-    ⟨lframe_of_entry hcs hfP, fun c hc' => by rw [hcs.callers] at hc'; cases hc'⟩
-  have hsl0 : Witness.SlotsNil cs := by
-    intro fr hfr
-    rw [hcs.callers] at hfr
-    simp only [List.map_nil, List.mem_singleton] at hfr
-    subst hfr
-    have := hcs.slotIds
-    rw [hslots f hfP] at this
-    exact List.map_eq_nil_iff.mp this
-  have hbnd := Witness.bounded_of_noSlots hfree hslots clifKeepsAllocs hI hsl0 hM
+  have hbnd := srcBounded hsrc hslots (Clif.Program.func?_some hf).1 hcs hM
   exact (compileExe_correct_source h hsrc helperBase (baseOk_helper htls hdiv hind hsigs)
     (hooksSim_helper _) (fun _ => ⟨helperOk, extLegal, keepsBounded⟩)
     (fun ⟨g, hg, hn⟩ => absurd (hind g hg) hn) hf hc hX ho hr hcs hexp hsl hmem hbnd M).1
+
+/-- **`compileExe_correct_source_peak` under `helperBase`** (`compileExe_correct_source_helper`
+for recursive programs): the outside caller provides `frameDrop + D * d` bytes of stack for the
+source run's call depth `d` (`Clif.DepthLe`), no call-graph premise. -/
+theorem compileExe_correct_source_peak_helper {S : LinkSpec} {file0 file : ByteArray}
+    (h : compileExe S file0 = .ok file) (hsrc : SrcScopeB S.input = true)
+    (htls : ∀ g ∈ (prog S.input).funcs, Backend.hasTls g = false)
+    (hdiv : ∀ g ∈ (prog S.input).funcs, ∀ e ∈ g.externs, (prog S.input).func? e.2.name = none →
+      Clif.Rust.isDivHelper e.2.name = false)
+    (hind : ∀ g ∈ (prog S.input).funcs, Clif.IndFree g)
+    (hsigs : ∀ g ∈ (prog S.input).funcs, Backend.indSigs g = [])
+    (hslots : ∀ g ∈ S.input.srcProg.funcs, g.slots = [])
+    {n : String} {f : Clif.Function} (hf : S.input.srcProg.func? n = some f) (d : Nat)
+    {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
+    (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) (legalize f)
+      (frameDrop (art S.input (legalize f)).af + S.input.D * d) r args' cs'.mem)
+    (hr : ClifRun S.input helperBase (legalize f) r args' cs')
+    (hcs : ClifEntry f args cs)
+    (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
+    (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
+    (hM : MemBounded cs.mem) (hd : Clif.DepthLe helperEnv S.input.srcProg d cs) (M : Nat) :
+    ∀ vals cm, Clif.runLoop helperEnv S.input.srcProg M cs = .returned vals cm →
+      ∃ vals', Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.returns).getD []) vals vals' ∧
+        ExecRefines (art S.input (legalize f)).fb (art S.input (legalize f)).base (xreg 30 r)
+          (step S.input helperBase file) r (RelocAt S.input) (.returned vals' cm) :=
+  (compileExe_correct_source_peak h hsrc helperBase (baseOk_helper htls hdiv hind hsigs)
+    (hooksSim_helper _) (fun _ => ⟨helperOk, extLegal, keepsBounded⟩)
+    (fun ⟨g, hg, hn⟩ => absurd (hind g hg) hn) hf d hX ho hr hcs hexp hsl hmem
+    (srcBounded hsrc hslots (Clif.Program.func?_some hf).1 hcs hM) hd M).1
 
 end Link.SourceWitness

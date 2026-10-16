@@ -13,8 +13,10 @@
 //! 2. rust-lld links the outside part around it (`-u __fvlean_start` keeps the region);
 //! 3. [`patch`]: `cargo fv link-proof --cgus … --no-check` writes the Lean linker's input (the
 //!    functions' CLIF and allocations, the outside part's symbol addresses); `lake exe
-//!    lean-link` computes the region's bytes (`Link.leanLink`: placement, relocation, checks)
-//!    and writes them into the executable.
+//!    lean-link` computes the region's bytes (`Link.DeadCleanup.compileExe`: input conditions,
+//!    placement, relocation, checks), writes them into the executable and names the theorems
+//!    covering it ([`coverage`]); with `--verified` an input outside the compiler's domain is an
+//!    error (no bare-linker fallback).
 use crate::config::Config;
 use crate::pipeline::run;
 use object::read::archive::ArchiveFile;
@@ -120,7 +122,8 @@ fn write_sizes(obj: &Path, out: &Path) -> Result<(), String> {
 }
 
 /// Write the program part into the linked executable `exe` (its link map recorded by the
-/// linker mode as `link-<tag>.json`): the Lean linker's input, then `lake exe lean-link`.
+/// linker mode as `link-<tag>.json`): the Lean linker's input, then `lake exe lean-link`
+/// (`--verified` with `cfg.lean_link_verified`). Returns the tool's output.
 pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
     let fv_dir = cfg.tmp_dir.parent().ok_or("no target/fv/<mode> directory")?;
     let target = fv_dir.parent().and_then(|p| p.parent()).ok_or("no target directory")?;
@@ -144,6 +147,7 @@ pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
         .arg(&dir)
         .arg(&sizes)
         .arg("--dead-cleanup")
+        .args(cfg.lean_link_verified.then_some("--verified"))
         .output()
         .map_err(|e| format!("{}: {e} (lake build lean-link)", tool.display()))?;
     let text = String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr);
@@ -151,4 +155,10 @@ pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
         return Err(format!("lean-link failed:\n{text}"));
     }
     Ok(text)
+}
+
+/// The theorems covering the executable `lake exe lean-link` wrote (its `coverage:` line), or
+/// `none (…)` for the bare-linker fallback.
+pub fn coverage(text: &str) -> Option<String> {
+    text.lines().find_map(|l| l.split_once(": coverage: ").map(|(_, c)| c.to_string()))
 }
