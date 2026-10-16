@@ -196,7 +196,7 @@ theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
   -- the raising callee (the contract)
   have hsite0 : R.vc.CallSite info := ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩
   have hcpc := callAt_of_q hq hvb hi tryCall_hcall regs i' rfl hasg
-  obtain ⟨-, hraiseU⟩ := hU.os info (.tryCall info ti) hsite0 (.inr ⟨ti, rfl⟩) s
+  have hraiseU := hU.os info (.tryCall info ti) hsite0 (.inr ⟨ti, rfl⟩) s
     (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
     hst.gkeep cc wh ops regs i' w hops hstat hasg hcpc hst.world hst.align hst.err
   obtain ⟨t, hUr, hW, hFK, herrt, hprogt, hoth, hkeep⟩ := hraiseU obj _ hraise

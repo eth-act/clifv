@@ -386,7 +386,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       -- the raising callees' contract: the unwinder's state `t` at our call
       have hsite0 : R.vc.CallSite info := ⟨b, vb, k, hvb, .inl hi⟩
       have hcpc := callAt_of_q hq2 hvb hi call_hcall regs i' rfl hasg
-      obtain ⟨-, hraiseU⟩ := hU.os info (.call info) hsite0 (.inl rfl) u
+      have hraiseU := hU.os info (.call info) hsite0 (.inl rfl) u
         (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
         hst.gkeep cc' wh ops regs i' w1 hops hstat hasg hcpc hst.world hst.align hst.err
       obtain ⟨t, hUr, hW, hFK, herrt, hprogt, hoth, hkc⟩ := hraiseU obj w' hraise'

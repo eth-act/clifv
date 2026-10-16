@@ -128,11 +128,11 @@ theorem calleeUnwOkG_raise (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 →
     (s0 : Arm.ArmState) (Pc : BitVec 64 → MInst → Prop) (X0 : ExtSem) (S : CallInfo → Prop) :
     CalleeUnwOkG F K G s0 Pc (Xr X0) IselSimUWitness.XR Uw S where
   os := by
-    intro info i _ _ s _ _ _ c wh ops regs i' w _ _ _ _ hsw _ herr
-    refine ⟨fun h => by simp [IselSimUWitness.XR] at h, fun obj w' h => ?_⟩
+    intro info i _ _ s _ _ _ c wh ops regs i' w _ _ _ _ hsw _ herr obj w' h
     simp only [IselSimUWitness.XR, Option.some.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
     exact ⟨s, rfl, hsw, ⟨rfl, fun _ _ => rfl⟩, herr, rfl, fun _ _ _ _ => rfl, fun _ _ _ => rfl⟩
+  noRaise := fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h => absurd rfl h
   excl := fun _ _ _ h => absurd rfl h
 
 /-- No extern of `IselSimUWitness.env` returns normally: the normal-return contracts hold. -/

@@ -161,10 +161,12 @@ theorem not_unwExit_of_goodX {R : RLU} (hR : R.Wf)
   rw [hins] at hd
   cases x with
   | bl n =>
-    rw [RLU.noRaise_of_goodX hU g ⟨j, tt, hj, hpc⟩ (.inl ⟨n, rfl⟩) d] at hr
+    simp only [Option.some.injEq] at hd
+    rw [RLU.noRaise_of_goodX hR hU g ⟨j, tt, hj, hpc⟩ (.inl ⟨n, rfl, hd.symm⟩)] at hr
     cases hr
   | blr r =>
-    rw [RLU.noRaise_of_goodX hU g ⟨j, tt, hj, hpc⟩ (.inr ⟨r, rfl⟩) d] at hr
+    simp only [Option.some.injEq] at hd
+    rw [RLU.noRaise_of_goodX hR hU g ⟨j, tt, hj, hpc⟩ (.inr ⟨r, rfl, hd.symm⟩)] at hr
     cases hr
   | _ => cases hd
 
@@ -435,7 +437,7 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       -- the raising callees' contract: the unwinder's state `t` at our call
       have hsite0 : R.vc.CallSite info := ⟨b, vb, k, hvb, .inl hi⟩
       have hcpc := callAt_of_q hq2 hvb hi call_hcall regs i' rfl hasg
-      obtain ⟨-, hraiseU⟩ := hU.os info (.call info) hsite0 (.inl rfl) u
+      have hraiseU := hU.os info (.call info) hsite0 (.inl rfl) u
         (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
         hst.gkeep cc' wh ops regs i' w1 hops hstat hasg hcpc hst.world hst.align hst.err
       obtain ⟨t, hUr, hW, hFK, herrt, hprogt, hoth, hkc⟩ := hraiseU obj w' hraise'
