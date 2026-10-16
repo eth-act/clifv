@@ -1,0 +1,81 @@
+{
+  "checked_utc": "2026-10-16T05:03:09.374017+00:00",
+  "free_bytes": 890016006144,
+  "worktrees": [
+    {
+      "path": "/home/lee/clifv",
+      "dirty_entries": 5,
+      "head": "f866008fb39d02371bf72fb19d6c81480753f796",
+      "owner": "codygunton / #44",
+      "purpose": "preserved dirty source / recovery or pinned upstream inputs",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume",
+      "dirty_entries": 1163,
+      "head": "01081291e566bc4eb80419a526c5725406ed62b7",
+      "owner": "codygunton / #44",
+      "purpose": "active #140 proof development and validation",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering",
+      "dirty_entries": 34,
+      "head": "9e5251d941e42f1f05ad29567573ac0373f84792",
+      "owner": "codygunton / #44",
+      "purpose": "preserved dirty source / recovery or pinned upstream inputs",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-stock-lowering",
+      "dirty_entries": 6,
+      "head": "46c23a87dac1465986a8ad53ba6a7ae49372857b",
+      "owner": "codygunton / #44",
+      "purpose": "preserved dirty source / recovery or pinned upstream inputs",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-dupnames",
+      "dirty_entries": 6,
+      "head": "46c23a87dac1465986a8ad53ba6a7ae49372857b",
+      "owner": "codygunton / #44",
+      "purpose": "preserved dirty source / recovery or pinned upstream inputs",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/review-wasmtime",
+      "dirty_entries": 6,
+      "head": "46c23a87dac1465986a8ad53ba6a7ae49372857b",
+      "owner": "codygunton / #44",
+      "purpose": "preserved dirty source / recovery or pinned upstream inputs",
+      "decision": "preserve saved work"
+    }
+  ],
+  "retained_disk_bytes": {
+    "/home/lee/clifv/.worktrees/driver-proof-resume/.lake": 27699671040,
+    "/home/lee/clifv/.worktrees/driver-proof-resume/rust": 3860746240,
+    "/home/lee/clifv/.worktrees/driver-proof-resume/target": 128897024,
+    "/home/lee/clifv/target/byte-agreement-tools": 3936382976
+  },
+  "removed_this_audit": [],
+  "conclusion": "No disposable clean worktree or obsolete duplicate cache. Same active warm cache and Rust/comparison outputs retained; all dirty source, validation evidence and recovery backups preserved. No new worktree or cache. Latest proof batch backed up remotely and temporary backup index removed.",
+  "discipline": "Check disk before worktree creation/heavy builds; target 100 GiB free and projected 50 GiB floor. Review cleanup after every batch/PR/stop. One warm build cache by default; aggregate CPU/memory/I/O budgets across agents; OMP_NUM_THREADS=2 OMP_THREAD_LIMIT=2 LEAN_NUM_THREADS=2 for validation. Never clean other projects. Every worktree/cache has an owner and purpose; delegated tasks include cleanup; agent count does not increase the shared budget.",
+  "previous_cleanup_receipt": "/home/lee/.clifv-recovery/footprint-20261016T001348Z/receipt.json",
+  "active_validation": {
+    "state": "running",
+    "pid": 2172773,
+    "index": 309,
+    "current": "FV.Backend.Proof.StockReturnSourceWitness",
+    "total": 1011
+  },
+  "deferred_validation": {
+    "state": "running",
+    "phase": "waiting_serial",
+    "watcher_pid": 2438436,
+    "serial_controller_pid": 2172773
+  },
+  "scratch_compiled_modules": {
+    "purpose": "active terminal scan draft until frozen validation finishes and canonical integration; remove after preserving evidence and warming canonical modules",
+    "bytes": 1668592
+  }
+}
