@@ -1,0 +1,16 @@
+{
+  "utc": "20261016T161356Z",
+  "free_GiB": 810.7,
+  "view": "/home/lee/clifv/.worktrees/stock-delivery-gates",
+  "owner": "codygunton/#44",
+  "clean_view_is_active_and_required": true,
+  "all_other_six_dirty_source_trees_preserved": true,
+  "warm_Lean_caches": 1,
+  "additional_Rust_crate_cache_copies": 0,
+  "cache_symlinks_verified": true,
+  "unneeded_clean_worktrees_or_obsolete_duplicate_caches": "none; keep running validation view until gate/PR batch ends, then archive unique ignored evidence and remove",
+  "no_new_Python_cache_created": true,
+  "other_projects": "untouched",
+  "resource_limits": "ONE heavy kernel22GiB (prior isolatedCmp32GiB exception), effective workers2; low priority compression",
+  "lease_release_command": "python3 /tmp/stock-pr246-gates.py --release (only after gate worker terminal review; on failure worker resumes automatically)"
+}
