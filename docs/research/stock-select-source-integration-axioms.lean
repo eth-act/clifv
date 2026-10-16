@@ -1,0 +1,43 @@
+import FV.Backend.Proof.StockSelectZeroReplacement
+import FV.Backend.Proof.StockSelectZeroReplacementResolved
+import FV.Backend.Proof.StockSelectZeroReplacementWitness
+import FV.Backend.Proof.StockSelectNonzeroWideShape
+import FV.Backend.Proof.StockSelectNonzeroWideValues
+import FV.Backend.Proof.StockSelectNonzero8Values
+import FV.Backend.Proof.StockSelectNonzero16Shape
+import FV.Backend.Proof.StockSelectNonzero16Values
+import FV.Backend.Proof.StockSelectNonzeroActualValues
+import FV.Backend.Proof.StockSelectConditionCalls
+import FV.Backend.Proof.StockSelectScalarDriverRuns
+import FV.Backend.Proof.StockSelectConditionOriginValues
+import FV.Backend.Proof.StockSelectNonzeroAllocation
+import FV.Backend.Proof.StockSelectParameterRootValues
+import FV.Backend.Proof.StockSelectParameterRecordValues
+import FV.Backend.Proof.StockSelectParameterOriginalSourceValues
+import FV.Backend.Proof.StockSelectParameterSourceWitness
+import FV.Backend.Proof.StockSelectConditionOriginWitness
+import FV.Backend.Proof.StockAvailableTypes
+import FV.Backend.Proof.StockSelectParameterDerivedSourceValues
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_zero_cset
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_replace_zero_cset_resolved
+#print axioms Backend.Stock.Proof.ScalarSelect.ZeroReplacementWitness.stock_select_zero_replacement_alias_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_wide_emitter_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_wide_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero8_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero16_emitter_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero16_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_condition_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_scalar_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_comparison_origin_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_allocation
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_condition_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_selected_allocation
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_parameter_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_available_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.ParameterSourceWitness.stock_select_parameter_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionOriginWitness.stock_select_comparison_origin_witness
+#print axioms Backend.Stock.Proof.stock_lower_record_declared_type
+#print axioms Backend.Stock.Proof.stock_lower_available_getAs_type
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_select_parameter_source_values_derived_types
