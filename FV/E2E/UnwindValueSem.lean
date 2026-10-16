@@ -310,6 +310,16 @@ theorem tryRaiseSem_valueSemVU (gv : Nat → String → Prop) (F : BitVec 64 →
     (X : ExtSem) (XR : XRaise) : TryRaiseSem XR (valueSemVU gv F ctx X XR) :=
   fun _ _ _ _ _ _ _ h hr => valueSemVU_try_raise h hr
 
+/-- The value semantics with unwinding passes the GOT guard of its pins (`GotSem`). -/
+theorem gotSem_valueSemVU (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx)
+    (X : ExtSem) (XR : XRaise) : GotSem gv X (valueSemVU gv F ctx X XR) := by
+  intro info uses w r
+  refine ⟨fun h => ?_, fun ti h => ?_⟩
+  · rw [valueSemVU_not_pure rfl] at h
+    exact (gotSem_csemVU gv F ctx X XR info uses w r).1 h
+  · rw [valueSemVU_not_pure rfl] at h
+    exact (gotSem_csemVU gv F ctx X XR info uses w r).2 ti h
+
 /-- At a return `valueSemVU` is `csem`. -/
 theorem valueSemVU_rets (us : List (Reg × Reg)) :
     valueSemVU gv F ctx X XR (.rets us) = csem F ctx X (.rets us) := by
@@ -335,7 +345,7 @@ theorem realizes_value_allU {R : RLU} (hR : R.Wf)
       (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
     (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
     (hcov : FormsCovered R.ctx R.vc)
-    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (htry : RealizesTryRaise R R.valueSemU) :
     Realizes R.vc R.rf R.valueSemU ckeep R.stepU
       (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU :=

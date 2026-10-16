@@ -44,7 +44,7 @@ structure ActEntryU (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : F
     (F G : BitVec 64 → Prop) (X : ExtSem) (H : ArmHooks) (XR : XRaise) (U : Unw.UnwHooks)
     (base ra : BitVec 64) (s w₀ : Arm.ArmState) : Prop
     extends ActEntry vcp rf af fa fb K F G X H base ra s w₀ where
-  unw : CalleeUnwOkG F K G s (CallAt fa base) X XR U vcp.CallSite
+  unw : CalleeUnwOkG F K G s (CallAt fa base) X XR U vcp.CallSite (GotV vcp)
 
 /-- **CLIF → VCode with unwinding for an activation inside a linked program** (`RelW`; the
 dead-cleanup pipeline's lowering, value semantics with unwinding). -/
@@ -192,6 +192,7 @@ theorem backend_correct_world_cleanupU {p : Clif.Program} {f : Clif.Function} {k
     fun H U G base ra s he => by
       have h := regLevelCorrect_worldUT hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
         (XR := XR) (U := U) (T := T) (K := K) (G := G) (gv := GotV vcp) he.abi he.stack he.gfree
+        (gotSem_valueSemVU _ _ _ _ _)
         (realizes_valueU_world hcov (by rw [he.hF]; exact he.calls) (by rw [he.hF]; exact he.tries)
           (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.unw) hsites hlsda hpad hlast)
         (fun us uses w => by rw [valueSemVU_rets])
@@ -399,6 +400,7 @@ theorem backend_correct_worldU {p : Clif.Program} {f : Clif.Function} {k : Nat}
     fun H U G base ra s he => by
       have h := regLevelCorrect_worldUT hc.check hc.alloc hc.emit hc.layout (X := X) (H := H)
         (XR := XR) (U := U) (T := T) (K := K) (G := G) (gv := GotV vcp) he.abi he.stack he.gfree
+        (gotSem_csemVU _ _ _ _ _)
         (realizes_csemU_world hcov (by rw [he.hF]; exact he.calls) (by rw [he.hF]; exact he.tries)
           (by rw [he.hF]; exact he.tls) (by rw [he.hF]; exact he.unw) hsites hlsda hpad hlast)
         (fun us uses w => by

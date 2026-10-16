@@ -87,7 +87,7 @@ theorem backend_correct_legal_unwind_env {f g : Clif.Function} {cert : Opt.Legal
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     (hX : ∀ s, XCallsOk env.toEnv (g.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
@@ -193,7 +193,7 @@ theorem backend_correct_legal_unwind {f g : Clif.Function} {cert : Opt.Legalize1
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     (hX : ∀ s, XCallsOk (Clif.Rust.xenvWith raises obj).toEnv (g.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)

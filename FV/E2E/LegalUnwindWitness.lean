@@ -488,7 +488,7 @@ theorem legal_unwind_applies {X0 : ExtSem} {H : ArmHooks} {syms : String → Opt
       rcases hB with rfl | rfl | rfl <;> simp at hst)
     (formsCovered_cleanup_complete (lowerScope_of hs) hcc.lower hcc.prepare _) hC (fun _ => hCT)
     (fun h => absurd h (by rw [ht]; decide))
-    (fun base s => calleeUnwOkG_raise _ _ _ s _ X0 _)
+    (fun base s => calleeUnwOkG_raise _ _ _ s _ X0 _ _)
     (fun _ => xCallsOk_xe _ _) (fun _ => hi ▸ xCallsIndOk_nil _ _ _)
     (fun _ => xRaiseOk_xe _ _) (fun _ => hi ▸ fun _ h => nomatch h)
     hsym rfl hsites rfl hrows rfl rfl hpad hlast hsv hent hres hbe hexp hargs hcs hcs' hsl hmem

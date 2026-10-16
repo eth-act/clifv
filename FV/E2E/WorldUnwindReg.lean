@@ -41,6 +41,7 @@ theorem regLevelCorrect_worldUT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     {gv : Nat → String → Prop} {base ra : BitVec 64} {s : Arm.ArmState}
     (hent : AbiCall fb base ra s) (hres : StackAvail K af s)
     (hG : ∀ a, G a → ¬ StackBelow (frameDrop af + K) (spv s) a) {semU : Sem}
+    (hgot : GotSem gv X semU)
     (hRz : ∀ lm psF (R : RLU),
       R = ⟨⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, G, gv⟩, XR, U, T⟩ → R.Wf →
       Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU)
@@ -51,7 +52,7 @@ theorem regLevelCorrect_worldUT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
       csem (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af G s)
         ⟨fa.k, af.slotBase⟩ X i uses w = some (outs, w', .halt))
     (hU : CalleeUnwOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
-      af G s) K G s (CallAt fa base) X XR U vcp.CallSite)
+      af G s) K G s (CallAt fa base) X XR U vcp.CallSite gv)
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hlast : lastCallsOk af fa = true) {rows : List (Nat × Cfi)}
@@ -80,7 +81,7 @@ theorem regLevelCorrect_worldUT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
     ⟨⟨cc, ins, a0, hat, entryOk_of_le hle⟩, halloc, hemit, hlayout, hlm,
       by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩,
       hent.program, hG⟩
-  obtain ⟨_, h1, h2, h3⟩ := regLevelCorrect_coreUT hR hent hat hU (hRz lm psF _ rfl hR) hrets
+  obtain ⟨_, h1, h2, h3⟩ := regLevelCorrect_coreUT hR hent hat hU hgot (hRz lm psF _ rfl hR) hrets
     hhalt (lsda_cases hsites hlsda) (siteAt_of_check hR hlast) hrows hcie hfde hsaved hbe
     (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)
   refine ⟨fun us vals w hret => ?_, h2, fun obj w hu => ?_⟩
@@ -104,7 +105,7 @@ theorem realizes_valueU_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
     (hTls : vcp.hasTls = true → TlsOk (frameWG K (RAFrame.compute vcp rf).intBase
       (RAFrame.compute vcp rf).size af G s) K X H)
     (hU : CalleeUnwOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
-      af G s) K G s (CallAt fa base) X XR U vcp.CallSite)
+      af G s) K G s (CallAt fa base) X XR U vcp.CallSite gv)
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true) :
@@ -116,7 +117,8 @@ theorem realizes_valueU_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAs
   intro lm psF R hReq hR
   subst hReq
   exact realizes_value_allU hR hC hCT hTls hcov hU
-    (realizesTryRaise_of_tables hR hU (tryRaiseSem_valueSemVU _ _ _ _ _) hsites hlsda
+    (realizesTryRaise_of_tables hR hU (tryRaiseSem_valueSemVU _ _ _ _ _)
+      (gotSem_valueSemVU _ _ _ _ _) hsites hlsda
       (padsNonzero_of_check hpad) hlast)
 
 /-- **The realisation of `csemU` with GOT pins `gv` (`csemVU gv`) at an activation with kept
@@ -132,7 +134,7 @@ theorem realizes_csemU_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm
     (hTls : vcp.hasTls = true → TlsOk (frameWG K (RAFrame.compute vcp rf).intBase
       (RAFrame.compute vcp rf).size af G s) K X H)
     (hU : CalleeUnwOkG (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
-      af G s) K G s (CallAt fa base) X XR U vcp.CallSite)
+      af G s) K G s (CallAt fa base) X XR U vcp.CallSite gv)
     {lsda : Option (List CallSite)} (hsites : callSites af fa = .ok lsda)
     (hlsda : T.lsda = lsda.map (List.map (·.entry)))
     (hpad : padsNonzeroB af fa = true) (hlast : lastCallsOk af fa = true) :
@@ -145,7 +147,8 @@ theorem realizes_csemU_world {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm
   subst hReq
   exact realizes_allU hR hU (realizes_all hR hC hCT hTls hcov) (fun _ _ _ h => csemVU_noRaise h)
     (fun _ _ _ _ _ _ h hr => by rw [csemVU_call_raise h hr])
-    (realizesTryRaise_of_tables hR hU (tryRaiseSem_csemVU _ _ _ _ _) hsites hlsda
+    (realizesTryRaise_of_tables hR hU (tryRaiseSem_csemVU _ _ _ _ _) (gotSem_csemVU _ _ _ _ _)
+      hsites hlsda
       (padsNonzero_of_check hpad) hlast)
 
 end E2E
