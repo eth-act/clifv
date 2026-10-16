@@ -44,7 +44,8 @@ def VUnwFrom (vc : VCode) (sem : Sem) (XR : XRaise) (vs : VState CV Arm.ArmState
     vc.blocks[b]? = some vb ∧ vb.insts[k]? = some (.call info) ∧
     (MInst.call info).operands = .ok ops ∧
     XR.raise (callDest info) (vuses ops ρ) w = some (obj, w') ∧
-    sem (.call info) (vuses ops ρ) w = some (outs, w', .halt)
+    sem (.call info) (vuses ops ρ) w = some (outs, w', .halt) ∧
+    outs.length = (ops.toList.filter Operand.isDef).length
 
 theorem VUnwFrom.prefix {vc : VCode} {sem : Sem} {XR : XRaise} {vs vs' : VState CV Arm.ArmState}
     {obj : BitVec 64} {w' : Arm.ArmState}

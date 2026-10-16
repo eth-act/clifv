@@ -44,10 +44,17 @@ def callDest (info : CallInfo) : Option String :=
   | .sym n => some n
   | .reg _ => none
 
-/-- The values a landing pad finds in the defs of the call (one per def, in def order): the
-exception object in x0, Rust's selector 0 in x1. -/
-def payloadOuts (info : CallInfo) (obj : BitVec 64) : List CV :=
-  info.defs.map fun (r, _) => if r = .x 0 then ofX obj else ofX 0
+/-- The constraints of the def operands of `i`, in operand order (`[]` if its operand view
+fails). -/
+def defCons (i : MInst) : List Constraint :=
+  match i.operands with
+  | .ok ops => (ops.toList.filter Operand.isDef).map (·.con)
+  | .error _ => []
+
+/-- The values a landing pad finds in the defs of the call `i` (one per def operand, in operand
+order): the exception object in x0, Rust's selector 0 in x1. -/
+def payloadOuts (i : MInst) (obj : BitVec 64) : List CV :=
+  (defCons i).map fun c => if c = .fixed (.x 0) then ofX obj else ofX 0
 
 /-- The first handler is a `tag 0` / `tag 1` handler. -/
 def firstHandlerOk : List TryHandler → Bool
@@ -55,9 +62,10 @@ def firstHandlerOk : List TryHandler → Bool
   | _ => false
 
 /-- **The `try_call` shapes whose exceptional edge is covered**: first handler `tag 0`/`tag 1`,
-callee-saved registers restored by the unwinder, every def in x0 or x1. -/
+callee-saved registers restored by the unwinder, every def operand fixed to x0 or x1. -/
 def tryUOk (info : CallInfo) (ti : TryInfo) : Bool :=
-  firstHandlerOk ti.handlers && !ti.clobberAll && info.defs.all fun (r, _) => r == .x 0 || r == .x 1
+  firstHandlerOk ti.handlers && !ti.clobberAll &&
+    (defCons (.call info)).all fun c => c == .fixed (.x 0) || c == .fixed (.x 1)
 
 /-- **The concrete instruction semantics with unwinding.** -/
 noncomputable def csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
@@ -65,11 +73,12 @@ noncomputable def csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR 
   match i with
   | .call info =>
     match XR.raise (callDest info) uses w with
-    | some (_, w') => some (info.defs.map (fun _ => ofX 0), w', .halt)
+    | some (_, w') => some ((defCons (.call info)).map (fun _ => ofX 0), w', .halt)
     | Option.none => csem F ctx X i uses w
   | .tryCall info ti =>
     match XR.raise (callDest info) uses w with
-    | some (obj, w') => if tryUOk info ti then some (payloadOuts info obj, w', .goto 0) else Option.none
+    | some (obj, w') =>
+      if tryUOk info ti then some (payloadOuts (.call info) obj, w', .goto 0) else Option.none
     | Option.none => csem F ctx X i uses w
   | _ => csem F ctx X i uses w
 
@@ -93,7 +102,8 @@ theorem csemU_none (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
 theorem csemU_call_raise {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : XRaise}
     {info : CallInfo} {uses : List CV} {w : Arm.ArmState} {obj : BitVec 64} {w' : Arm.ArmState}
     (h : XR.raise (callDest info) uses w = some (obj, w')) :
-    csemU F ctx X XR (.call info) uses w = some (info.defs.map (fun _ => ofX 0), w', .halt) := by
+    csemU F ctx X XR (.call info) uses w =
+      some ((defCons (.call info)).map (fun _ => ofX 0), w', .halt) := by
   simp only [csemU, h]
 
 /-- A supported `try_call` whose callee raises continues at its first handler with the
@@ -102,7 +112,7 @@ theorem csemU_try_raise {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR 
     {info : CallInfo} {ti : TryInfo} {uses : List CV} {w : Arm.ArmState} {obj : BitVec 64}
     {w' : Arm.ArmState} (h : XR.raise (callDest info) uses w = some (obj, w'))
     (hok : tryUOk info ti = true) :
-    csemU F ctx X XR (.tryCall info ti) uses w = some (payloadOuts info obj, w', .goto 0) := by
+    csemU F ctx X XR (.tryCall info ti) uses w = some (payloadOuts (.call info) obj, w', .goto 0) := by
   simp only [csemU, h, hok, ite_true]
 
 /-- A call whose callee does not raise steps as in `csem`. -/
@@ -116,50 +126,45 @@ theorem csemU_noRaise {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : 
   | tryCall info ti => simp only [csemU, h info (.inr ⟨ti, rfl⟩)]
   | _ => rfl
 
-/-- `csemU` of a call depends on its callee descriptor, its defs' registers and `csem`. -/
+/-- `csemU` of a call depends on its callee descriptor, its def operands' constraints and
+`csem`. -/
 theorem csemU_call_congr {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : XRaise}
     {info info' : CallInfo} (hd : callDest info' = callDest info)
-    (hf : info'.defs.map Prod.fst = info.defs.map Prod.fst)
+    (hf : defCons (.call info') = defCons (.call info))
     (hc : csem F ctx X (.call info') = csem F ctx X (.call info)) :
     csemU F ctx X XR (.call info') = csemU F ctx X XR (.call info) := by
-  have hl : info'.defs.length = info.defs.length := by
-    simpa using congrArg List.length hf
   funext uses w
-  simp only [csemU, hd]
-  split
-  · simp only [Option.some.injEq, Prod.mk.injEq, and_true]
-    exact List.ext_getElem (by simp [hl]) (by simp)
-  · rw [hc]
-
-theorem payloadOuts_congr {info info' : CallInfo}
-    (hf : info'.defs.map Prod.fst = info.defs.map Prod.fst) (obj : BitVec 64) :
-    payloadOuts info' obj = payloadOuts info obj := by
-  have : ∀ i : CallInfo, payloadOuts i obj =
-      (i.defs.map Prod.fst).map (fun r => if r = .x 0 then ofX obj else ofX 0) := by
-    intro i; simp [payloadOuts, List.map_map, Function.comp_def]
-  rw [this, this, hf]
-
-theorem tryUOk_congr {info info' : CallInfo} (ti : TryInfo)
-    (hf : info'.defs.map Prod.fst = info.defs.map Prod.fst) :
-    tryUOk info' ti = tryUOk info ti := by
-  have : ∀ i : CallInfo, tryUOk i ti = (firstHandlerOk ti.handlers && !ti.clobberAll &&
-      (i.defs.map Prod.fst).all fun r => r == .x 0 || r == .x 1) := by
-    intro i; simp [tryUOk, List.all_map, Function.comp_def]
-  rw [this, this, hf]
-
-/-- `csemU` of a `tryCall` depends on its callee descriptor, its defs' registers, its
-`tryUOk` and `csem`. -/
-theorem csemU_try_congr {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : XRaise}
-    {info info' : CallInfo} {ti ti' : TryInfo} (hd : callDest info' = callDest info)
-    (hf : info'.defs.map Prod.fst = info.defs.map Prod.fst)
-    (ht : tryUOk info ti' = tryUOk info ti)
-    (hc : csem F ctx X (.tryCall info' ti') = csem F ctx X (.tryCall info ti)) :
-    csemU F ctx X XR (.tryCall info' ti') = csemU F ctx X XR (.tryCall info ti) := by
-  funext uses w
-  simp only [csemU, hd, payloadOuts_congr hf, tryUOk_congr ti' hf, ht]
+  simp only [csemU, hd, hf]
   split
   · rfl
   · rw [hc]
+
+/-- `csemU` of a `tryCall` depends on its callee descriptor, its def operands' constraints,
+its `tryUOk` and `csem`. -/
+theorem csemU_try_congr {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {XR : XRaise}
+    {info info' : CallInfo} {ti ti' : TryInfo} (hd : callDest info' = callDest info)
+    (hf : defCons (.call info') = defCons (.call info))
+    (ht : tryUOk info ti' = tryUOk info ti)
+    (hc : csem F ctx X (.tryCall info' ti') = csem F ctx X (.tryCall info ti)) :
+    csemU F ctx X XR (.tryCall info' ti') = csemU F ctx X XR (.tryCall info ti) := by
+  have hu : tryUOk info' ti' = tryUOk info ti' := by simp only [tryUOk, hf]
+  funext uses w
+  simp only [csemU, hd, payloadOuts, hf, hu, ht]
+  split
+  · rfl
+  · rw [hc]
+
+/-- Renaming the vregs keeps the def operands' constraints. -/
+theorem defCons_mapRegs {g : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming g gn) (i : MInst) :
+    defCons (i.mapRegs g) = defCons i := by
+  unfold defCons
+  rw [operands_mapRegs hg]
+  cases i.operands with
+  | error e => rfl
+  | ok ops =>
+    simp only [Except.map]
+    simp [List.filter_map, Function.comp_def, Operand.isDef, rnOp]
+    rfl
 
 /-- **`DriverSem` for `csemU`.** -/
 theorem driverSem_csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR : XRaise) :
@@ -172,12 +177,10 @@ theorem driverSem_csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (XR 
     cases i with
     | call info =>
       obtain ⟨dest, us, ds⟩ := info
-      exact csemU_call_congr (by cases dest <;> rfl)
-        (by simp [List.map_map, Function.comp_def]) hc
+      exact csemU_call_congr (by cases dest <;> rfl) (defCons_mapRegs hg (.call ⟨dest, us, ds⟩)) hc
     | tryCall info ti =>
       obtain ⟨dest, us, ds⟩ := info
-      exact csemU_try_congr (by cases dest <;> rfl)
-        (by simp [List.map_map, Function.comp_def]) rfl hc
+      exact csemU_try_congr (by cases dest <;> rfl) (defCons_mapRegs hg (.call ⟨dest, us, ds⟩)) rfl hc
     | _ =>
       rw [csemU_of_not_call (by intro _ h; simp [MInst.mapRegs] at h)
           (by intro _ _ h; simp [MInst.mapRegs] at h),
