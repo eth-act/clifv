@@ -481,17 +481,17 @@ theorem addr_saveRow (x : BitVec 64) (fs o : Nat) :
   simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ofInt]
   omega
 
-/-- **The frame invariant at an `op` item** (in particular at every `call`/`tryCall`) of the
-register-level simulation of a function with a frame: from `Q`, `SavedInv` for the entry
-state's callee-saved values and the check, the unwinder's `FrameSaved`. -/
-theorem frameSaved_of_q {R : RL} (hR : R.Wf) (hf : R.af.frame = true)
+/-- **The frame invariant at a state related to an `op` item's store** (in particular at every
+`call`/`tryCall`, and at the unwinder's restored state of a raising call) of the register-level
+simulation of a function with a frame: from `StRel`, `SavedInv` for the entry state's
+callee-saved values and the check, the unwinder's `FrameSaved`. -/
+theorem frameSaved_of_stRel {R : RL} (hR : R.Wf) (hf : R.af.frame = true)
     (hc : savedCheck R.vc R.rf = true) {e : Reg → CV}
     (he : ∀ r ∈ calleeSaved, e r = regVal R.s0 r) {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
-    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
+    (hst : StRel R s m w)
     (hinv : SavedInv R.rf ckeep e (.run ⟨b, .op k allocs :: its, m, w⟩ : MConf CV Arm.ArmState)) :
     Unw.FrameSaved R.af R.s0 s := by
-  have hst := q_stRel hq
   obtain ⟨-, hA, -, hB⟩ := hinv
   have hls : RItem.leadSaves (.op k allocs :: its) = [] := rfl
   rw [hls] at hB
@@ -584,5 +584,17 @@ theorem frameSaved_of_q {R : RL} (hR : R.Wf) (hf : R.af.frame = true)
     have h64 := congrArg (BitVec.setWidth 64) h
     simp only [BitVec.setWidth_setWidth_of_le _ (show 64 ≤ 128 by decide)] at h64
     exact h64
+
+/-- **The frame invariant at an `op` item** (in particular at every `call`/`tryCall`) of the
+register-level simulation of a function with a frame: from `Q`, `SavedInv` for the entry
+state's callee-saved values and the check, the unwinder's `FrameSaved`. -/
+theorem frameSaved_of_q {R : RL} (hR : R.Wf) (hf : R.af.frame = true)
+    (hc : savedCheck R.vc R.rf = true) {e : Reg → CV}
+    (he : ∀ r ∈ calleeSaved, e r = regVal R.s0 r) {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
+    (hinv : SavedInv R.rf ckeep e (.run ⟨b, .op k allocs :: its, m, w⟩ : MConf CV Arm.ArmState)) :
+    Unw.FrameSaved R.af R.s0 s :=
+  frameSaved_of_stRel hR hf hc he (q_stRel hq) hinv
 
 end Backend.Proof
