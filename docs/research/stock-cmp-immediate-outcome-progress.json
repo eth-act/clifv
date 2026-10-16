@@ -1,0 +1,53 @@
+{
+  "utc": "2026-10-14T20:19:38.473067+00:00",
+  "goal": "#140 original full scope active/incomplete",
+  "verified_finding": "Inverse simplification at all locations expanded the target RHS equation into existential interpreter assertions; authoritative compiler error shows proof of original equation rejected against transformed conclusion",
+  "checked_new_helpers": "ImmediateOutcome protected conclusion and explicit elimination lemma, along with saved match/RHS/source facts, typecheck independently at4M proof limit",
+  "current_change": "Protect original conclusion, retain actual execution facts, use two bounded inverse-decoding passes with ten term facts",
+  "live_build_session": null,
+  "live_build_log": "/tmp/driver-resume-cmp-immediate-chain-bounded-outcome.log",
+  "unvalidated": "General immediate selection and dependent emitter/root/record/source-transfer/complete-witness chain;88-root audit pending",
+  "prior_40_sources_unchanged": true,
+  "production": "legacy",
+  "publication": "local/uncommitted; no push/merge",
+  "logs": [
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-sparse-profile.lean",
+      "sha256": "604516784f29d742d84278014769b585c35687c15c72f15e970d673d49ef3fe3"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-sparse-profile.log",
+      "sha256": "3096fe5984db5153345798c7528f835bcb9350c8fc75d4db440988ef6cb3f24b"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-outcome-profile.lean",
+      "sha256": "fcd4af551d30631e31c55790a37b868d8f2c6eab2e4e4c30b2f8c57f4ce01823"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-outcome-profile.log",
+      "sha256": "d9b61f2300bdb13df729a7ebe251b349cd9aa552ddee71a9051c6cc6c7b7fdc6"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-facts.lean",
+      "sha256": "86ff451d924cf3db23200b83c7ff633066bc3bdbcf6b8ca5a1b51fc4759c3a63"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-facts.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-chain-sparse.log",
+      "sha256": "868cd53e7d721ddbf365a8cf3bcc1dc55dc855d68c597c524cdab533233d1c64"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-chain-outcome.log",
+      "sha256": "e76d6bec8e42720ba995adc74e1a701097b071e44a1ac313d381bd31f6d7f18f"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-chain-conclusion.log",
+      "sha256": "37417f1a6a994ceb254977a070308f8bd0a8b1c8d2cb8a4cb6a0ed69b1c96661"
+    }
+  ],
+  "build_state": "terminal failure",
+  "build_result": "Selection compile reached explicit type mismatch at line240; dependent chain not validated"
+}
