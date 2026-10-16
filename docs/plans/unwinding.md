@@ -10,7 +10,7 @@ slices build on earlier ones; S10a is this plan).
 | --- | --- |
 | S10a | merged (this plan) |
 | S10b | done: `FV/Clif/Unwind.lean` (`Clif.runX`; `runLoopX_of_returned`, `runLoopX_of_trapped`, `runLoopX_toX`; witnesses `Clif.UnwindWitness.caught`/`uncaught`/`old_stuck`), native oracle `scripts/clif-unwind-native.sh` (`rust/crates/clif-throw-native`): 17/17 runs, agree 17, disagree 0 (`docs/contracts/clif.md`) |
-| S10c | done: emitters total/structural (`uleb`/`sleb` well-founded, `cfiProgramFrom`, `saveRows`, `scanLines`/`handlerEntry`/`siteEntries`; objects byte-identical on 753 fv-demo/deps `try_call` files), `FV/Unw/Dwarf.lean` (decoder model), `FV/Backend/Proof/UnwindTables.lean`: `uleb?_uleb`, `sleb?_sleb`, `decodeCfa?_cfiProgram`, `decodeLsda?_lsdaBytes`, `callSites_ok` (decidable `CallSitesOk`), `unwindRows_frame` (the row at every call's return offset − 1 is `frameRow saved`), `unwindRows_leaf`; witness `Witness.call_row`. The `.eh_frame` section as a whole (CIE/FDE framing, `pc_begin`) is read in S10f, where the linker places it |
+| S10c | done: emitters total/structural (`uleb`/`sleb` well-founded, `cfiProgramFrom`, `saveRows`, `scanLines`/`handlerEntry`/`siteEntries`; objects byte-identical on 753 fv-demo/deps `try_call` files), `FV/Unw/Dwarf.lean` (decoder model), `FV/Backend/Proof/UnwindTables.lean`: `uleb?_uleb`, `sleb?_sleb`, `decodeCfa?_cfiProgram`, `decodeLsda?_lsdaBytes`, `callSites_ok` (decidable `CallSitesOk`), `unwindRows_frame` (the row at every call's return offset − 1 is `frameRow frameSize saved`; the rows now define the CFA from sp after the prologue, `frameRows`, so no x29 invariant is needed), `unwindRows_leaf`; witness `Witness.call_row`. The `.eh_frame` section as a whole (CIE/FDE framing, `pc_begin`) is read in S10f, where the linker places it |
 | S10d | done: `FV/Unw/Model.lean` (the outside contract: `restore`, `personality` (Rust's, cleanup phase), `FnTables`, `unwindAt`, `UnwHooks`, the machine `ArmStepU`; `armStepU_none` (no raising callee: `ArmStepX`), `armStepU_raise`, `armStepU_noRaise`, `unwindAt_install`, `unwindAt_continue`, `restore_spec`, `FrameAt`, **`restore_frame`** (a frame satisfying the invariant unwinds to `ArmRet`), the register part of the raising callees' contract `CalleeUnwRegs`); `FV/E2E/RegLevelUnwind.lean` (`frameAt_frameRow`, **`unwind_call_restores`** (S10c's emitted rows at every call restore the ABI return from a frame with `FrameSaved`), `personality_callSite`/`personality_plain` (S10c's emitted LSDA); witness `Unw.Witness.restores`). The world part of `CalleeUnwOk` comes with `ExtSem.raise` (S10e) |
 | S10e–S10f | open |
 
@@ -153,7 +153,7 @@ emitters (no per-program certificate):
   call sites' disjointness, which holds since offsets strictly increase).
 * `FrameRowsOk af fa rows`: for every code offset `o` after the prologue and the callee-save
   stores (every call is there: `ctlCheck` puts the saves first in block 0), `rowAt rows o` is
-  `CFA = x29 + 16`, `x29 ↦ CFA - 16`, `x30 ↦ CFA - 8`, and `r ↦ CFA + o_r - 16 - frameSize` for
+  `CFA = sp + frameSize + 16` (the rows switch to sp after the prologue: the body keeps sp), `x29 ↦ CFA - 16`, `x30 ↦ CFA - 8`, and `r ↦ CFA + o_r - 16 - frameSize` for
   each callee-saved `r` saved at `[sp, #o_r]`; `decodeCfi (cfiProgram rows) = some rows`
   (`cfiProgram_decode`) and the `.eh_frame` FDE of `fa` decodes to these rows with `pc_begin` =
   the function's start (`ehFrame_decode`).
@@ -216,9 +216,8 @@ theorems unchanged:
   of the generic simulations.
 * The frame invariant at calls (`FrameSaved`, `FV/E2E/RegLevelUnwind.lean`) from M6's state
   relation: `StRel.fplr` gives the entry x29/x30 (a 16-byte read, split into the two 8-byte
-  reads `frameAt_frameRow` takes) and `StRel.sp` the body sp; still needed: x29 = entry sp − 16
-  at every body state (x29 is not allocatable and no allocated instruction writes it; not yet
-  an invariant of `StRel`), and the callee-save slots holding the entry values at each call —
+  reads `frameAt_frameRow` takes) and `StRel.sp` the body sp (the CFA); still needed: the
+  callee-save slots holding the entry values at each call —
   the checker's abstract state has `Sym.entry r` there (`SpillCheckAlloc*.lean`), and the M5
   relation (`RegallocSound.lean` `MatchRun`: `Inv keep a ms.m vs.ρ r₀` for the abstract state
   `a` before each item) turns `Sym.entry r ∈ a.get l` into `keep r (m l) = keep r (r₀ r)`. So a
@@ -226,13 +225,9 @@ theorems unchanged:
   `Sym.entry r ∈ a.get (.reg r)` for the other callee-saved `r` — gives the frame's save slots
   (`locVal` of `.save r` = the slot at body sp + `saveOff r` = CFA + `o − 16 − frameSize`,
   S10c's `saveRow`) and unsaved registers, i.e. `FrameSaved`'s hypotheses.
-  x29 is outside `Masked`, so `StRel.world` ties the machine's x29 to the VCode world's, but
-  nothing yet says the world keeps it across calls (`CalleeOk` constrains `calleeSaved`,
-  x19–x28/v8–v15; the return proof reloads x29 from the frame instead). Two routes: add x29 to
-  the callee contracts and carry `x29 = entry sp − 16` through the simulation, or make the
-  rows define the CFA from sp after the prologue's `sub sp` (`def_cfa sp, frameSize + 16`; the
-  body keeps sp = `spB`, `StRel.sp`), which needs no x29 invariant (an emitter change, S10c's
-  `unwindRows_frame` restated).
+  The CFA needs no x29 invariant: the rows define it from sp after the prologue
+  (`frameRows`: `def_cfa_register sp`, `def_cfa_offset frameSize + 16`), and the body keeps
+  sp = `spB` (`StRel.sp`); a raising callee keeps our sp (`CalleeUnwRegs`).
 * LSDA ↔ layout: done in S10d (`scanLines_labelOffsets`: the landing-pad offsets are
   `labelOffsets`'; `scanLines_rets_eq`: the `k`-th return offset is the `k`-th call line's
   `lineOffset` + 4, `callIdx`). Left: the `k`-th call line is the code of `af`'s `k`-th call

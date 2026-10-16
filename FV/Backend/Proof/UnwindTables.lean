@@ -12,9 +12,10 @@ import FV.Unw.Dwarf
   instructions (`insnsFrom 0 rows`) for rows whose CFA offsets are multiples of 8 and whose
   code offsets fit the FDE's 32 bits (`RowsOk`, what `unwindRows` produces).
 * The rows describe the frame: `unwindRows_frame` — for a function with a frame, at every
-  call's return offset − 1 the row (CIE then FDE, `Unw.rowAt cieInsns`) is `frameRow saved`:
-  CFA = x29 + 16, x29 at CFA − 16, x30 at CFA − 8, and each callee-save store of the entry
-  block `(DWARF register, CFA offset)` (`saveRow`); `unwindRows_leaf`: a function without a
+  call's return offset − 1 the row (CIE then FDE, `Unw.rowAt cieInsns`) is `frameRow
+  frameSize saved`: CFA = sp + frameSize + 16 (the entry sp: the body keeps sp), x29 at
+  CFA − 16, x30 at CFA − 8, and each callee-save store of the entry block
+  `(DWARF register, CFA offset)` (`saveRow`); `unwindRows_leaf`: a function without a
   frame has the CIE's row (CFA = sp, return address in x30).
 * LSDA: `decodeLsda?_lsdaBytes` — the call-site table of `lsdaBytes sites` decodes to `sites`;
   `callSites_ok` — the personality's lookup at each call's return offset − 1 finds that
@@ -660,11 +661,11 @@ def cieInsns : List Unw.CfaInsn := [.defCfa 31 0]
 
 theorem decodeCfa?_cie : Unw.decodeCfa? [0x0c, 31, 0] = some cieInsns := by decide
 
-/-- The row of a function with a frame at its call sites: CFA = x29 + 16, x29 at CFA − 16,
-x30 (the return address) at CFA − 8, each saved callee-saved register `(d, off)` at CFA +
-`off` (latest rule first). -/
-def frameRow (saved : List (Nat × Int)) : Unw.Row :=
-  { cfaReg := 29, cfaOff := 16, saved := saved.reverse ++ [(30, -8), (29, -16)] }
+/-- The row of a function with a frame of `frameSize` bytes at its call sites: CFA = sp +
+`frameSize` + 16 (the entry sp), x29 at CFA − 16, x30 (the return address) at CFA − 8, each
+saved callee-saved register `(d, off)` at CFA + `off` (latest rule first). -/
+def frameRow (frameSize : Nat) (saved : List (Nat × Int)) : Unw.Row :=
+  { cfaReg := 31, cfaOff := frameSize + 16, saved := saved.reverse ++ [(30, -8), (29, -16)] }
 
 /-- The row of a function without a frame: the CIE's (CFA = sp, return address in x30). -/
 def leafRow : Unw.Row := { cfaReg := 31, cfaOff := 0 }
@@ -751,7 +752,7 @@ theorem noCall_of_insn? : ∀ (got expect : List Line), got.map Line.insn? = exp
 
 /-- **The CFI rows describe the frame at every call** (`unwindRows`, a function with a frame):
 the rows round-trip through the `.eh_frame` encoding, and at every call's return offset − 1
-(where the unwinder looks up a frame suspended at that call) the row is `frameRow saved`,
+(where the unwinder looks up a frame suspended at that call) the row is `frameRow frameSize saved`,
 `saved` being the `(DWARF register, CFA offset)` of the callee-save stores at the start of the
 entry block. -/
 theorem unwindRows_frame {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
@@ -760,7 +761,7 @@ theorem unwindRows_frame {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
       ((code.toList.drop 1).takeWhile (·.calleeSave?.isSome)).mapM (saveRow af.frameSize) =
         some saved ∧
       ∀ ret ∈ (scanLines fa.lines.toList 0 [] []).2,
-        Unw.rowAt cieInsns (insnsFrom 0 rows) (ret - 1) = frameRow saved := by
+        Unw.rowAt cieInsns (insnsFrom 0 rows) (ret - 1) = frameRow af.frameSize saved := by
   unfold unwindRows at h
   simp only [hf, Bool.not_true, Bool.false_eq_true, ite_false] at h
   cases hb : af.blocks[0]? with
@@ -811,16 +812,18 @@ theorem unwindRows_frame {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
     simp only [List.length_map] at this
     omega
   have hgotNC := noCall_of_insn? got _ hmap hexpNC
-  have hRin : RowsIn 0 (4 * n) (prologueRows ++ srows) := by
-    simp only [prologueRows, List.cons_append, List.nil_append, RowsIn]
-    refine ⟨by omega, by omega, trivial, by omega, by omega, trivial, by omega, by omega,
-      trivial, by omega, by omega, trivial, ?_⟩
-    exact RowsIn.lower (RowsIn.mono (by omega) hin) (by omega) (by omega)
+  have hRin : RowsIn 0 (4 * n) (prologueRows ++ frameRows af.frameSize (4 * pro.length) ++ srows) :=
+    ⟨by omega, by omega, by omega, by omega, by omega, by omega, by omega, by omega, by omega,
+      by omega, by omega, by omega, by omega, by omega, by omega, by omega, by omega, by omega,
+      RowsIn.mono (by omega) hin⟩
   refine ⟨?_, lab, code, srows.map offsetPair, rfl, hsv ▸ hsm, ?_⟩
   · intro r hr
     rcases List.mem_append.mp hr with hr | hr
-    · simp only [prologueRows, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl <;> simp [Cfi.Ok]
+    · rcases List.mem_append.mp hr with hr | hr
+      · simp only [prologueRows, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> simp [Cfi.Ok]
+      · simp only [frameRows, List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> exact ⟨trivial, by omega⟩
     · obtain ⟨d, o, h2, ho⟩ := h8 r hr
       refine ⟨by rw [h2]; exact ho, ?_⟩
       have := hin.le r hr
@@ -848,7 +851,7 @@ theorem unwindRows_frame {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
   simp only [Unw.rowAt, cieInsns]
   rw [rowAtFrom_insnsFrom _ _ _ _ (hRin.mono (by omega)), List.foldl_append,
     foldl_saveRows srows h8]
-  simp [frameRow, prologueRows, Unw.rowAtFrom, Unw.Row.exec, Cfi.insn]
+  simp [frameRow, prologueRows, frameRows, Unw.rowAtFrom, Unw.Row.exec, Cfi.insn]
 
 
 /-- A function without a frame has no rows: the CIE's row (CFA = sp, return address in x30)
@@ -879,7 +882,7 @@ def af : AFunc where
 def fa : FnAsm := (emitFunc 0 af).toOption.getD default
 def rows : List (Nat × Cfi) :=
   [(4, .defCfaOffset 16), (4, .offset 29 (-16)), (4, .offset 30 (-8)), (8, .defCfaRegister 29),
-    (16, .offset 19 (-32))]
+    (12, .defCfaRegister 31), (12, .defCfaOffset 32), (16, .offset 19 (-32))]
 def sites : List CallSite := [⟨19, 1, 32, 1⟩]
 
 theorem ok_of_toOption {ε α : Type} {e : Except ε α} {x : α} (h : e.toOption = some x) :
@@ -900,7 +903,7 @@ theorem rets : (scanLines fa.lines.toList 0 [] []).2 = [20] := by decide +kernel
 and the personality the landing pad at offset 32 (block 2) with the catch action; both tables
 round-trip through their encodings. -/
 theorem call_row :
-    Unw.rowAt cieInsns (insnsFrom 0 rows) (20 - 1) = frameRow [(19, -32)] ∧
+    Unw.rowAt cieInsns (insnsFrom 0 rows) (20 - 1) = frameRow 16 [(19, -32)] ∧
     Unw.lookup (sites.map (·.entry)) (20 - 1) = some ⟨19, 1, 32, 1⟩ ∧
     Unw.decodeCfa? (cfiProgram rows).data.toList = some (insnsFrom 0 rows) ∧
     Unw.decodeLsda? (lsdaBytes sites).data.toList = some (sites.map (·.entry)) := by
