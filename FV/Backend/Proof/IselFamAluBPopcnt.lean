@@ -357,7 +357,7 @@ theorem popcnt_64_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
     prun_rr_c hR rfl (fun w => rfl) (prun_rr_c hR rfl (fun w => rfl)
       (prun_rr_c hR rfl (fun w => rfl) (prun_rr_c hR rfl (fun w => rfl) (prun_nil _)))), ?_⟩
   have hX : (ρ x).setWidth ty.width = u := hvals x _ (getAs_ok hu)
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   simp only [VHolds, upd, Clif.Sem.unary, Clif.Sem.popcnt, ↓reduceIte, Nat.left_eq_add,
     Nat.add_right_cancel_iff, Nat.add_eq_left, Nat.succ_ne_self, LState.emit, LState.fresh,
     Nat.add_left_cancel_iff, show (1 : Nat) ≠ 2 by decide, show (2 : Nat) ≠ 1 by decide,
@@ -438,7 +438,7 @@ theorem popcnt_32_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
     prun_rr_c hR rfl (fun w => rfl) (prun_rr_c hR rfl (fun w => rfl)
       (prun_rr_c hR rfl (fun w => rfl) (prun_rr_c hR rfl (fun w => rfl) (prun_nil _)))), ?_⟩
   have hX : (ρ x).setWidth ty.width = u := hvals x _ (getAs_ok hu)
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   simp only [VHolds, upd, Clif.Sem.unary, Clif.Sem.popcnt, ↓reduceIte, Nat.left_eq_add,
     Nat.add_right_cancel_iff, Nat.add_eq_left, Nat.succ_ne_self, LState.emit, LState.fresh,
     Nat.add_left_cancel_iff, show (1 : Nat) ≠ 2 by decide, show (2 : Nat) ≠ 1 by decide,
@@ -512,7 +512,7 @@ theorem popcnt_8_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
     prun_rr_c hR rfl (fun w => rfl) (prun_rr_c hR rfl (fun w => rfl)
       (prun_rr_c hR rfl (fun w => rfl) (prun_nil _))), ?_⟩
   have hX : (ρ x).setWidth ty.width = u := hvals x _ (getAs_ok hu)
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   simp only [VHolds, upd, Clif.Sem.unary, Clif.Sem.popcnt, ↓reduceIte, Nat.left_eq_add,
     Nat.add_right_cancel_iff, Nat.add_eq_left, Nat.succ_ne_self, LState.emit, LState.fresh,
     Nat.add_left_cancel_iff, show (1 : Nat) ≠ 2 by decide, show (2 : Nat) ≠ 1 by decide,
@@ -594,7 +594,7 @@ theorem popcnt_16_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
     prun_rr_c hR rfl (fun w => rfl) (prun_rr_c hR rfl (fun w => rfl)
       (prun_rrr_c hR rfl (fun w => rfl) (prun_rr_c hR rfl (fun w => rfl) (prun_nil _)))), ?_⟩
   have hX : (ρ x).setWidth ty.width = u := hvals x _ (getAs_ok hu)
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   simp only [VHolds, upd, Clif.Sem.unary, Clif.Sem.popcnt, ↓reduceIte, Nat.left_eq_add,
     Nat.add_right_cancel_iff, Nat.add_eq_left, Nat.succ_ne_self, LState.emit, LState.fresh,
     Nat.add_left_cancel_iff, show (1 : Nat) ≠ 2 by decide, show (2 : Nat) ≠ 1 by decide,
