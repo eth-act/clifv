@@ -124,6 +124,9 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 - Lean's kernel (since T6 no fixed proof needs compiled evaluation: no `bv_decide` or
   `native_decide` certificate remains in the compiler theorems);
 - the Arm model and `Clif.run` as specifications (fidelity is tested, not proven: T4, T5);
+  for unwinding (S10) also `Clif.runX` (checked against Cranelift's JIT, `scripts/clif-unwind-native.sh`)
+  and the DWARF/LSDA decoder and unwinder/personality model (`FV/Unw/Dwarf.lean`,
+  `FV/Unw/Model.lean`: what libunwind/libgcc and Rust's personality do with the tables);
 - the contracts of code outside the program (std, musl, cg_clif-fallback functions), the OS loader.
 
 ## 2. Where each stage stands
@@ -928,7 +931,7 @@ simplify on. Open: `SimpStageOk` (simplify's own completeness).
 | S7 | `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | DEFERRED "`sret`" |
 | S8 | `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | DEFERRED "Linking", "Remaining" |
 | S9 | Trapping helpers (`__*ti3` division by zero) and traps inside program callees | DEFERRED "i128 legalisation"; `TrapsExplicit` |
-| S10 | Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | `docs/contracts/e2e.md` (try_call covers normal returns only); plan `docs/plans/unwinding.md` (sub-issues #229–#233) |
+| S10 | Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | S10b (#229), S10c (#230: tables correct by construction), S10d (#231: unwinder/personality model, `restore_frame`) done; plan `docs/plans/unwinding.md` (sub-issues #229–#233) |
 | S11 | Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | PLAN.md "Next steps" 2; the largest fallback reason (145 of the 158 `examples/deps` fallbacks; 100 of them float data movement only). Plan, semantics decisions and slices S11a–S11g: `docs/plans/floats.md` |
 | S12 | SIMD | after S11 |
 
@@ -1119,7 +1122,7 @@ label**; list the free ones with
 | S7 | [#31](https://github.com/eth-act/clifv/issues/31) `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | open |
 | S8 | [#32](https://github.com/eth-act/clifv/issues/32) `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | open |
 | S9 | [#33](https://github.com/eth-act/clifv/issues/33) Trapping helpers (`__*ti3` division by zero) and traps inside program callees | open |
-| S10 | [#34](https://github.com/eth-act/clifv/issues/34) Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | in progress (`docs/plans/unwinding.md`; sub-issues #229–#233) |
+| S10 | [#34](https://github.com/eth-act/clifv/issues/34) Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | in progress (S10b–S10d done; `docs/plans/unwinding.md`; sub-issues #229–#233) |
 | S11 | [#35](https://github.com/eth-act/clifv/issues/35) Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | in progress (`docs/plans/floats.md`; sub-issues #234–#240; S11a, S11c, S11d done) |
 | S12 | [#36](https://github.com/eth-act/clifv/issues/36) SIMD | open |
 | T1 | [#37](https://github.com/eth-act/clifv/issues/37) Trusted base: TLS: TLSDESC hook vs lld's local-exec rewrite | open |

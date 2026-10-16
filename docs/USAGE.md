@@ -271,15 +271,22 @@ The default is Rust's: `panic=unwind`. A panic unwinds with the DWARF unwinder o
 `panic_unwind` (libunwind), which needs call frame information for every frame it passes
 and, for frames that must run code during unwinding, a landing pad and an LSDA.
 
-* **Lean frames** carry `.eh_frame` rows (`FV/Backend/Unwind.lean`, unverified and outside
-  every theorem; the code never reads them). They mirror Cranelift's aarch64 unwind info for
-  the backend's own frame: CIE as Cranelift's (`zR`, code alignment 4, data alignment -8,
-  return address x30, CFA = sp+0, FDE pointers pc-relative `sdata4`); after
-  `stp x29, x30, [sp, #-16]!` CFA = sp+16 with x29 at CFA-16 and x30 at CFA-8, after
-  `mov x29, sp` CFA = x29+16, and after each callee-save store `str xN/qN, [sp, #o]` (block 0,
-  before any call) the register at CFA + o - 16 - frameSize. `pc_begin` is an
-  `R_AARCH64_PREL32` against `.text`. No epilogue rows, as in Cranelift: unwinding starts only
-  at call sites. The `.text` bytes are unchanged (`scripts/lean-backend-encode-check.sh`).
+* **Lean frames** carry `.eh_frame` rows (`FV/Backend/Unwind.lean`; the code never reads
+  them). They follow Cranelift's aarch64 unwind info for the backend's own frame: CIE as
+  Cranelift's (`zR`, code alignment 4, data alignment -8, return address x30, CFA = sp+0, FDE
+  pointers pc-relative `sdata4`); after `stp x29, x30, [sp, #-16]!` CFA = sp+16 with x29 at
+  CFA-16 and x30 at CFA-8, after `mov x29, sp` CFA = x29+16, after the prologue's `sub sp`
+  CFA = sp + frameSize + 16 (S10c: unlike Cranelift the CFA is sp-based from there on; the
+  body never moves sp, so it is the same CFA), and after each callee-save store
+  `str xN/qN, [sp, #o]` (block 0, before any call) the register at CFA + o - 16 - frameSize.
+  `pc_begin` is an `R_AARCH64_PREL32` against `.text`. No epilogue rows, as in Cranelift:
+  unwinding starts only at call sites. The `.text` bytes are unchanged
+  (`scripts/lean-backend-encode-check.sh`). Since S10c/S10d (#230, #231) the rows and the LSDA
+  are proven against a decoder model (`FV/Unw/Dwarf.lean`; `unwindRows_frame`: the row at
+  every call is the frame row; `callSites_ok`), and unwinding a frame through them restores
+  the caller's registers under the unwinder/personality model `FV/Unw/Model.lean`
+  (`Unw.restore_frame`, `Unw.unwind_call_restores`); the per-function theorem using them is
+  S10e (`docs/plans/unwinding.md`).
 * **Landing pads.** The shipped `rustc-codegen-cranelift-preview` of this nightly is built
   *without* cg_clif's `unwinding` feature: it drops cleanup blocks and compiles the
   `catch_unwind` intrinsic as a plain call, so it runs no `Drop` during unwinding and a
