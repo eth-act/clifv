@@ -165,9 +165,29 @@ the `retN`/value arguments).
   the emitted tables as that model reads them. With `XRaise.none`/`Unw.UnwHooks.none` the theorem
   specialises to the normal-return shape (`E2E.backend_correct_final_of_unwind`). `lean-backend`
   labels a function whose checks pass `compiled, verified`. A function failing a check keeps
-  `compiled, verified for normal returns (…; unwinding check failed: <check>)`. So does an
-  `i128`-legalised function or one compiled with `--opt`, since no unwinding theorem composes
-  the legaliser or the mid-end yet.
+  `compiled, verified for normal returns (…; unwinding check failed: <check>)`. So does a
+  function compiled with `--opt`, since no unwinding theorem composes the mid-end yet.
+* **`i128` legalisation with unwinding (S10f, #233)**: `E2E.backend_correct_legal_unwind`
+  (`FV/E2E/LegalUnwind.lean`) composes `Opt.Legal.X.check_refinesX` (`FV/Opt/Proof/LegalSimX.lean`:
+  `Opt.Legal.check` plus the handler-edge check `Opt.Legal.exnOk` (`FV/Opt/LegalExn.lean`) make
+  the legalisation `g` refine `f`'s run with unwinding: returns by the ABI groups, traps, and
+  exceptions leaving `f` with the same memory) with `backend_correct_final_cleanup_unwind` at
+  `g`, under the trusted Rust environment with unwinding `Clif.Rust.xenvWith raises obj`
+  (`FV/Opt/Proof/LegalRustX.lean`, contracts proven: `xenvWith_envOkX`; `panic=unwind` is
+  `Clif.Rust.xenv`). Conclusion `ArmRefinesLegalU` (returns of the expanded results, traps,
+  `ArmRefinesU`'s exception clause). Premises: `backend_correct_final_cleanup_unwind`'s at `g`,
+  `check`/`exnOk`, the program conditions `hext`/`hext'`/`hind` (as `backend_correct_legal`),
+  the ABI-split arguments `hexp` and the two `ClifEntry`s, `TrapsExplicitX` of both runs;
+  `backend_correct_legal_unwind_env` takes any environment with `Opt.Legal.X.EnvOkX`.
+  `lean-backend` labels an accepted legalised `try_call` function `compiled, verified (try_call:
+  unwinding by backend_correct_legal_unwind; …)` when its legalisation, recomputed from the
+  source function, is the compiled one, `check` and `exnOk` accept it and the unwinding checks
+  pass (dead cleanup only). Non-vacuity (`FV/E2E/LegalUnwindWitness.lean`):
+  `Clif.Rust.LegalXWitness.refines` (`check_refinesX` on `%w(i128)`, a `try_call` whose callee
+  `%throw` raises and whose `tag0` handler catches, `caught`; every premise discharged) and
+  `E2E.LegalUnwindWitness.legal_unwind_applies` (`backend_correct_legal_unwind` on the shipped
+  pipeline's output for the legalised `%w`, receipt `checks_true`; open as in
+  `DeadCleanupUnwindWitness.final_applies`: `hC`/`hCT`, `hsym`, the entry premises).
 * **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
   normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
   `normArgReg`, `retN` indices below the callee's return count), and checks that a `tryCall`
