@@ -4,6 +4,14 @@ Plan of 2026-10-16, base main f29d0c06. Branch prefix `agent/unwinding`. Sub-iss
 S10b #229, S10c #230, S10d #231, S10e #232, S10f #233 (one PR each, merged in order; later
 slices build on earlier ones; S10a is this plan).
 
+## Status
+
+| Slice | State |
+| --- | --- |
+| S10a | merged (this plan) |
+| S10b | done: `FV/Clif/Unwind.lean` (`Clif.runX`; `runLoopX_of_returned`, `runLoopX_of_trapped`, `runLoopX_toX`; witnesses `Clif.UnwindWitness.caught`/`uncaught`/`old_stuck`), native oracle `scripts/clif-unwind-native.sh` (`rust/crates/clif-throw-native`): 17/17 runs, agree 17, disagree 0 (`docs/contracts/clif.md`) |
+| S10c–S10f | open |
+
 ## Where we are
 
 * `try_call`/`try_call_indirect` are inside `E2E.backend_correct_final` and every theorem built
