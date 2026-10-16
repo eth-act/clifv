@@ -53,7 +53,8 @@ theorem stock_ext_values {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f c
       rcases target with rfl | rfl
       · have forbids := passes32 rfl
         rw [typeEq] at notPass
-        cases ty <;> simp [Clif.Ty.width,CTy.ofClif] at width ⊢
+        have int := isInt_of_ofClif_mem (typeEq ▸ inv.valTyE x t typed)
+        cases ty <;> simp [Clif.Ty.width,CTy.ofClif] at width int ⊢
         exact False.elim (notPass forbids)
       · omega
     have operands : ValuesHeld (fun z => z = x) ctx fr (fun k => ρ (aliasNum aliases k)) := by
