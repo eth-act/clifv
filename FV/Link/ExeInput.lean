@@ -34,8 +34,9 @@ places the region's placeholder of the layout's span and the functions at their 
 
 **Remaining premise** `CallPageReach`: the `bl` (±128 MiB, 4-aligned) and `adrp` (±4 GiB) targets
 of the compiled code are in reach. A target is the link-map address of the relocation's symbol
-(plus its addend for `adrp`); deriving reach from the inputs needs which symbols and addends
-the compiled code relocates (a name-provenance analysis of the lowering, docs/DEFERRED.md).
+(plus its addend for `adrp`). `FV/Link/ExeInputReach.lean` derives it from a condition on the CLIF
+functions and the link map (`reachOkB`) by a name-provenance analysis of the compiler
+(`compileExe_total_reach`).
 
 The shipped compiler `Link.DeadCleanup.compileExe`: `FV/Link/ExeInputCleanup.lean`.
 -/

@@ -332,42 +332,31 @@ Deferred:
 - Neither covers divergence or stack overflow (no theorem about a run that exceeds the stack);
   `TrapsExplicit` still restricts traps inside callees (S9).
 
-## Totality on input conditions: relocation reach (L1e, #216, 2026-10-16)
+## Totality on input conditions: what remains (L1e, #216, 2026-10-16)
 
-`Link.compileExe_total_input` (`FV/Link/ExeInput.lean`) decides every premise of
-`compileExe_total` on the inputs (`S`, rust-lld's `file0`) except one: `CallPageReach`, the
-`bl` (4-aligned, ±128 MiB) and `adrp` (±4 GiB) targets of the compiled relocations. A target is
-`addrOf r.sym` (`+ r.addend` for `adrp`), where `addrOf` is a link-map address or `0`. No condition
-on the link map alone suffices: data symbols in the link map are unaligned (a `bl` to one fails
-`blRange`) and addends are arbitrary integers. TLS needs no symbol knowledge (`tlsOkB` bounds
-every link-map address) and is done. Deferred, with this design:
-- **Name provenance of the compiled relocations** (new files, no change to existing proofs):
-  `relocs_of_pipeT : pipeT f k b o = .ok a → r ∈ a.fb.relocs →` `call26 → r.sym` is a name of
-  `f.externs` and `r.addend = 0`; `adrGotPage`/`adrPrelPgHi21 → (r.sym, r.addend)` is a `symbol`
-  global value `(name, offset)` of `f` or `(extern name, 0)`; `tlsDescAdrPage21 → r.sym` is a
-  `tlsSymbol` global value of `f`.
-  1. ISLE: names enter values only through the extractors `symbol_value_data` and
-     `func_ref_data` (`FV/Backend/Isel.lean`, `externExtract`). Add an atom `V.namesIn` (names
-     with their offsets) to the flow framework's extern facts (`IselFlowExt`: `CtorOk`/`ExtOk`
-     gain "the names of the result are the arguments'" / "the input's or the function's
-     references"), an abstract model as `tlsModel`/`flowModel` (`IselFlowGen.soundAt`), and lift
-     to `lowerFunction` as `vcBlocks_all` does (`LowerComplete.lean`; `tryCall` from
-     `tryCallData`'s extern). Program-independent, decided once over the rule data like
-     `stmt_noTls`.
-  2. `prepare`, `lowerRFunc` (regalloc2's answer and the spill allocation), `emitFunc`, `layout`:
-     names only move (`mapRegs`, `assign`, `MInst.lines`: `loadExtName*` → `adrp`/`ldr`/`add`,
-     `call` → `bl`, `elfTlsGetAddr` → the TLSDESC sequence; prologue, epilogue, moves, spills and
-     traps have none); `codeRelocs` reads them off the instructions (`Insn.reloc?`).
-  3. Then `CallPageReach` follows from a decidable condition on `S`: every extern name of a CLIF
-     function has a 4-aligned address (or none: `0`) within `±2^27` of `[R, R + span)`, every
-     `symbol` global value's `addrOf name + offset` (mod `2^64`) within `±2^32` pages of the region.
+Done: `Link.compileExe_total_reach` (`FV/Link/ExeInputReach.lean`, and
+`Link.DeadCleanup.compileExe_total_reach`) decides every premise of `compileExe_total` on the
+inputs: `CallPageReach` (the `bl`/`adrp` targets of the compiled relocations) follows from
+`reachOkB`, a condition on the CLIF functions and the link map, by **name provenance**
+(`relocOk_tab`): the compiled code of `f` relocates a `bl` only against an external function `f`
+declares and an `adrp` pair only against a name `f` declares with a declared offset (`0` or a
+global value's offset). The ISLE part is an abstract interpretation of the exported rules
+(`FV/Backend/Proof/RelocProv*.lean`: names enter values only through `func_ref_data` and
+`symbol_value_data`; table and root rules kernel-checked in chunks), the rest follows the
+instructions through `prepare`, `DeadCleanup.prune`, `lowerRFunc`, `emitFunc` and `layout`.
+Coarseness of `reachOkB`: every external function name is asked to be a `bl` target (also one
+only `func_addr` reads), and every declared name with every declared offset an `adrp` target; the
+abstraction does not pair a name with its own offset nor separate colocated from GOT accesses.
+All hold on the survey executables tried (66 and 493 functions); a finer relational analysis
+would only matter for executables over 128 MiB of text or offsets near `±4 GiB`. Remaining:
 - **The driver's layout.** `lake exe lean-link` still reads the driver's sizes (`sizes.txt`, from
   the per-unit `lean.o` rust-lld placed); `placed_of_compileExe` shows a successful run used the
   Lean compiler's layout. Computing `S.placed` in the driver (and the region object from it)
   would make the theorem's object the shipped one by construction.
 - **`PT_TLS`.** `tlsOkB` asks for a `PT_TLS` segment even when no function has a `tls_value`
-  (every std executable has one); dropping it for TLS-free programs needs step 2 for
-  `elfTlsGetAddr` only (`lowerCheck` already gives `!hasTls f → !vc.hasTls`).
+  (every std executable has one); dropping it for TLS-free programs needs the instruction-level
+  step of the provenance chain (`RelocProvEmit`) for `elfTlsGetAddr` (`lowerCheck` already gives
+  `!hasTls f → !vc.hasTls`).
 - **rust-lld itself** stays a tool whose output `file0` is an input with decidable conditions
   (`file0OkB`); a verified Lean static linker for the outside objects (L2b stage 3) would remove it.
 
