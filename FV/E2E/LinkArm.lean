@@ -472,7 +472,7 @@ theorem locsOf_length (s : Clif.Signature) : (locsOf s).length = s.params.length
     obtain ⟨locs, n⟩ := r
     left
     simp only
-    unfold sigArgLocs at h
+    rw [sigArgLocs_eq] at h
     cases hb : sigArgs s with
     | error e => rw [hb] at h; cases h
     | ok bytes =>

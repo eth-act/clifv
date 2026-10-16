@@ -154,7 +154,7 @@ theorem mapM_except_length {α β ε : Type} (g : α → Except ε β) :
 
 theorem sigParamBytes_length {s : Clif.Signature} {bytes : List Nat}
     (h : sigParamBytes s = .ok bytes) : bytes.length = s.params.length :=
-  mapM_except_length _ h
+  abiArgs_length (sigArgs_int h).2
 
 /-- The non-`sret` byte sizes (`sigArgLocs`' `normal`) are as many as the non-`sret` parameters. -/
 theorem normal_length : ∀ (ps : List Clif.AbiParam) (bs : List Nat), bs.length = ps.length →
@@ -201,7 +201,7 @@ theorem sigArgLocs_regs {s : Clif.Signature} {bytes : List Nat}
     sigArgLocs s = .ok ((abiArgIdx s.params 0).map fun n => ArgLoc.reg (.x n), 0) := by
   have hb' : sigArgs s = .ok bytes := hb
   have hl := sigParamBytes_length hb
-  simp only [sigArgLocs, hb', bind, Except.bind]
+  simp only [sigArgLocs_eq, hb', bind, Except.bind]
   cases hany : s.params.any (·.purpose == .sret) with
   | false =>
     simp only [Bool.false_eq_true, ↓reduceIte, argLocs_eq h8, abiArgIdx_of_noSret _ 0 hany, hl,

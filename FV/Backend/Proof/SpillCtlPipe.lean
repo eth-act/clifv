@@ -134,7 +134,7 @@ theorem nodup_of_count_le_one {α : Type} [BEq α] [LawfulBEq α] :
 theorem sigArgLocs_cases {s : Clif.Signature} {locs : List ArgLoc} {n : Nat}
     (h : sigArgLocs s = .ok (locs, n)) : ∃ bytes, locs = (argLocs bytes).1 ∨
       locs = (s.params.foldl sretLocStep (#[], (argLocs bytes).1)).1.toList := by
-  unfold sigArgLocs at h
+  rw [sigArgLocs_eq] at h
   cases hb : sigArgs s with
   | error e => rw [hb] at h; cases h
   | ok bytes =>

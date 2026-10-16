@@ -1,6 +1,7 @@
 import FV.Backend.Proof.IselGeneric
 import FV.Backend.Proof.IselData
 import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.AbiClass
 
 /-!
 # The isel contract: what M4 proves about the ISLE rules, and what M7 consumes
@@ -1086,7 +1087,7 @@ theorem sigArgs_eq_map : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
 
 theorem sigParamBytes_eq_map {s : Clif.Signature} {bytes : List Nat}
     (hb : sigParamBytes s = .ok bytes) : bytes = s.params.map (·.ty.bytes) :=
-  sigArgs_eq_map hb
+  sigArgs_eq_map (sigArgs_int hb).2
 
 /-- The byte sizes of a signature's parameters are 1, 2, 4 or 8 (`sigArgs` rejects `i128`). -/
 theorem sigArgs_bytes : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
@@ -1124,6 +1125,11 @@ theorem sigArgs_bytes : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
             · cases hb
           · cases hb
         · exact sigArgs_bytes hbs c hc
+
+/-- The byte sizes of the parameters the lowering passes (`sigParamBytes`) are 1, 2, 4 or 8. -/
+theorem sigParamBytes_bytes {s : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes s = .ok bytes) : ∀ b ∈ bytes, b = 1 ∨ b = 2 ∨ b = 4 ∨ b = 8 :=
+  sigArgs_bytes (sigArgs_int hb).2
 
 /-- The arguments of a call of `s` passed in registers, in parameter order. -/
 def regArgVals (s : Clif.Signature) (vals : List Clif.Val) : List Clif.Val :=
