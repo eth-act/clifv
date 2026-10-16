@@ -1,0 +1,22 @@
+{
+  "utc": "20261015T102944Z",
+  "branch": "agent/stock-driver-wip-backup-20261015T102944Z",
+  "commit": "0a206b04313b40225f1eef7980a1e34fdb56fb74",
+  "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+  "captured_dirty_paths": 688,
+  "additional_evidence_paths": 1,
+  "remote_commit_and_all_captured_blobs_verified": true,
+  "index_and_active_head_unchanged": true,
+  "evidence_archive": {
+    "path": "/home/lee/.clifv-recovery/20261015T102928Z-select-retained-comparison/checkpoint.tar.gz",
+    "sha256": "3f4d6b97ec827fe5514ec12c1c273829190491566206227a686234a85c64be39",
+    "members": 33,
+    "bytes": 427521,
+    "gated_modules": 3,
+    "gated_new_roots": 3,
+    "prepared_publication_sources": 67,
+    "prepared_new_standard_roots": 77,
+    "publication": "prepared, not committed/PR/merged; zero additional backlog PRs used",
+    "production": "legacy; #140 active/incomplete"
+  }
+}

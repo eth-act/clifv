@@ -1,0 +1,106 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"success\": true,\n  \"timed_out\": false,\n  \"diagnostics\": [\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.stock_gen_return_shape' depends on axioms: [propext]\",\n      \"line\": 4,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.stock_lower_sret_source_arity' depends on axioms: [propext, Classical.choice, Quot.sound]\",\n      \"line\": 5,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.stock_lower_return_observed' depends on axioms: [propext, Classical.choice, Quot.sound]\",\n      \"line\": 6,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.stock_gen_return_call' depends on axioms: [propext, Quot.sound]\",\n      \"line\": 7,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.stock_lower_return_call' depends on axioms: [propext, Classical.choice, Quot.sound]\",\n      \"line\": 8,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.source_defined_enterFunc' depends on axioms: [propext, Classical.choice, Quot.sound]\",\n      \"line\": 9,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.stock_lower_source_defined_step' depends on axioms: [propext, Classical.choice, Quot.sound]\",\n      \"line\": 10,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.stock_lower_return_abi_read' depends on axioms: [propext, Classical.choice, Quot.sound]\",\n      \"line\": 11,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.stock_lower_return_source_run' depends on axioms: [propext, Classical.choice, Quot.sound]\",\n      \"line\": 12,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ReturnFixture.stock_return_driver_observed' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 13,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ReturnSourceWitness.stock_return_complete_source_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 14,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.MixedBodyWitness.stock_mixed_source_defined_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 15,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.EmptyBodySplitWitness.stock_empty_return_helper_source_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 16,\n      \"column\": 1,\n      \"lean_tags\": null\n    }\n  ]\n}"
+    }
+  ],
+  "structuredContent": {
+    "success": true,
+    "timed_out": false,
+    "diagnostics": [
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.stock_gen_return_shape' depends on axioms: [propext]",
+        "line": 4,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.stock_lower_sret_source_arity' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 5,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.stock_lower_return_observed' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 6,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.stock_gen_return_call' depends on axioms: [propext, Quot.sound]",
+        "line": 7,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.stock_lower_return_call' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 8,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.source_defined_enterFunc' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 9,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.stock_lower_source_defined_step' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 10,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.stock_lower_return_abi_read' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 11,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.stock_lower_return_source_run' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 12,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ReturnFixture.stock_return_driver_observed' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 13,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ReturnSourceWitness.stock_return_complete_source_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 14,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.MixedBodyWitness.stock_mixed_source_defined_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 15,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.EmptyBodySplitWitness.stock_empty_return_helper_source_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 16,
+        "column": 1,
+        "lean_tags": null
+      }
+    ]
+  },
+  "isError": false
+}
