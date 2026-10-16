@@ -11,13 +11,14 @@ and the machine `Unw.ArmStepU` (`ArmStepX` whose calls may raise, the unwinder a
 personality reading the tables `T`).
 
 * `UnwSoundAtI`/`UnwSoundG`/`CalleeUnwOkG`: **the raising callees' contract**, `CalleeOkG`'s
-  counterpart (`OperandsSoundCtlAtI`'s shape): at a call of the activation, where the callees'
-  exceptional semantics `XR` says the callee does not raise, the machine's callee does not raise
-  (`U.raise … = none`); where it raises `obj` with world `w'`, the machine's callee raises the
+  counterpart (`OperandsSoundCtlAtI`'s shape): at a call of the activation where the callees'
+  exceptional semantics `XR` raises `obj` with world `w'`, the machine's callee raises the
   same object and the unwinder restores a state `t` at our call with that world, the frame (and
   `sp`) kept, the allocatable registers outside the clobbers kept and the callee-saved part of
   the clobbered callee-saved registers kept (the unwinder restores them from the callee's CFI),
-  no error, the same program. `excl`: a callee that returns normally (`X.call`) does not raise.
+  no error, the same program. `noRaise`: at a call whose callee returns normally (`X.call`) the
+  machine's callee of that call (its descriptor) does not raise; `excl`: a callee that returns
+  normally does not raise (`XR`).
 * `RLU.stepU_eq`: at every state of the old realisation's trace (`RL.GoodX`) the machine with
   unwinding steps as the old one: a call there is a normal call (`RL.CallPre`, `excl`).
 * `RLU.RaiseX`/`RLU.GoodXU`: a raising-call state (the pc at a `bl`/`blr` whose machine callee
@@ -231,7 +232,6 @@ def UnwSoundAtI (F FK : BitVec 64 → Prop) (P : MInst → Prop) (XR : XRaise) (
     i.operands = .ok ops → c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
     i.assign regs = .ok i' → P i' → SameWorld F s w → Arm.CheckSPAlignment s →
     Arm.r .ERR s = .None →
-    (XR.raise (callDest info) (useVals ops regs s) w = none → ∀ d, U.raise d s = none) ∧
     ∀ obj w', XR.raise (callDest info) (useVals ops regs s) w = some (obj, w') →
       ∃ t, U.raise (callDest info) s = some (obj, t) ∧ SameWorld F t w' ∧ FrameKeep FK s t ∧
         Arm.r .ERR t = .None ∧ t.program = s.program ∧
@@ -255,6 +255,17 @@ structure CalleeUnwOkG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Pro
     (U : Unw.UnwHooks) (S : CallInfo → Prop) : Prop where
   os : ∀ info i, S info → (i = .call info ∨ ∃ ti, i = .tryCall info ti) →
     UnwSoundG F K G s0 Pc XR U info i
+  /-- at a call whose callee returns normally (`X.call`), the machine's callee of that call does
+  not raise (`UnwSoundG`'s states and premises) -/
+  noRaise : ∀ info (i : MInst), S info → (i = .call info ∨ ∃ ti, i = .tryCall info ti) →
+    ∀ s : Arm.ArmState, K ≤ (spOf s).toNat → (∀ a, StackBelow K (spOf s) a → F a) →
+    (∀ a, G a → s.mem a = s0.mem a) →
+    ∀ (c : CheckCtx) (wh : String) (ops : Array Operand) (regs : Array Reg) (i' : MInst)
+      (w : Arm.ArmState),
+      i.operands = .ok ops → c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
+      i.assign regs = .ok i' → Pc (Arm.r .PC s) i' → SameWorld F s w →
+      Arm.CheckSPAlignment s → Arm.r .ERR s = .None →
+      X.call (callDest info) (useVals ops regs s) w ≠ none → U.raise (callDest info) s = none
   /-- a callee that returns normally does not raise -/
   excl : ∀ d uses w, X.call d uses w ≠ none → XR.raise d uses w = none
 
@@ -263,8 +274,9 @@ theorem calleeUnwOkG_none (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → 
     (s0 : Arm.ArmState) (Pc : BitVec 64 → MInst → Prop) (X : ExtSem) (S : CallInfo → Prop) :
     CalleeUnwOkG F K G s0 Pc X XRaise.none Unw.UnwHooks.none S where
   os := by
-    intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-    exact ⟨fun _ _ => rfl, fun _ _ h => by cases h⟩
+    intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h
+    cases h
+  noRaise := fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   excl := fun _ _ _ _ => rfl
 
 /-! ## The trace of the old realisation is a run of the machine with unwinding -/
@@ -278,16 +290,44 @@ theorem csem_call_ne_none {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i
   rcases hi with rfl | ⟨ti, rfl⟩ <;> cases dest <;> simp_all [csem, callDest]
 
 /-- At a call of the old realisation's trace (`RL.GoodX`: the callee contract's premise, a
-normal call) no callee raises. -/
-theorem RLU.noRaise_of_goodX {R : RLU}
+normal call) the callee of the call line does not raise. -/
+theorem RLU.noRaise_of_goodX {R : RLU} (hR : R.Wf)
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
-    {u : Arm.ArmState} (hg : R.GoodX u) {x : Insn} (hx : R.AtLine u x)
-    (hc : (∃ n, x = .bl n) ∨ ∃ r, x = .blr r) (d : Option String) : R.U.raise d u = none := by
+    {u : Arm.ArmState} (hg : R.GoodX u) {x : Insn} (hx : R.AtLine u x) {d : Option String}
+    (hd : (∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) : R.U.raise d u = none := by
+  have hc : (∃ n, x = .bl n) ∨ ∃ r, x = .blr r := by
+    rcases hd with ⟨n, rfl, -⟩ | ⟨r, rfl, -⟩
+    · exact .inl ⟨n, rfl⟩
+    · exact .inr ⟨r, rfl⟩
   obtain ⟨ctx, i, ctl, ⟨info, hsite, hi⟩, hK, hD, hG, c, wh, ops, regs, i', w, outs, w', hops,
     hstat, hasg, hcall, hsw, hal, herr, hsem⟩ := hg.call x hx hc
   have hX := csem_call_ne_none hi (csemV_sub hsem)
-  exact (hU.os info i hsite hi u hK hD hG c wh ops regs i' w hops hstat hasg hcall hsw hal herr).1
-    (hU.excl _ _ _ hX) d
+  have hn := hU.noRaise info i hsite hi u hK hD hG c wh ops regs i' w hops hstat hasg hcall hsw hal
+    herr hX
+  obtain ⟨ic, hic, hdest⟩ : ∃ ic, (i' = .call ic ∨ ∃ ti, i' = .tryCall ic ti) ∧
+      callDest ic = callDest info := by
+    rcases hi with rfl | ⟨ti, rfl⟩
+    · obtain ⟨ic, rfl⟩ := assign_call_form hasg
+      exact ⟨ic, .inl rfl, assign_callDest hasg⟩
+    · obtain ⟨ic, rfl, hc⟩ := (assign_call_tryCall info regs).2 ti i' hasg
+      exact ⟨ic, .inr ⟨ti, rfl⟩, assign_callDest hc⟩
+  obtain ⟨j', x', tt', hj', hx', hpc'⟩ := hcall
+  have hd' : (∃ n, x' = .bl n ∧ callDest ic = some n) ∨ (∃ r, x' = .blr r ∧ callDest ic = none) := by
+    obtain ⟨dest, us, ds⟩ := ic
+    rcases hic with rfl | ⟨ti, rfl⟩ <;> cases dest <;> simp [MInst.callInsn?] at hx' <;>
+      subst hx' <;> simp [callDest]
+  rw [hdest] at hd'
+  obtain ⟨j, t, hj, hpc⟩ := hx
+  have e : x' = x := by
+    have h1 := insnAt_pc hR hj' hg.prog hpc'
+    rw [insnAt_pc hR hj hg.prog hpc] at h1
+    exact (Option.some.inj h1).symm
+  subst e
+  have hdd : d = callDest info := by
+    rcases hd with ⟨n, rfl, rfl⟩ | ⟨r, rfl, rfl⟩ <;>
+      rcases hd' with ⟨n', h1, h2⟩ | ⟨r', h1, h2⟩ <;> simp_all
+  rw [hdd]
+  exact hn
 
 /-- **At a state of the old realisation's trace, the machine with unwinding steps as the old
 one.** -/
@@ -296,11 +336,13 @@ theorem RLU.stepU_eq {R : RLU} (hR : R.Wf)
     {u : Arm.ArmState} (hg : R.GoodX u) : R.stepU u = R.step u := by
   obtain ⟨x, ⟨j, t, hj, hpc⟩, -⟩ := hg.line
   have hins := insnAt_pc hR hj hg.prog hpc
-  have hnr := RLU.noRaise_of_goodX hU hg (x := x) ⟨j, t, hj, hpc⟩
+  have hat : R.AtLine u x := ⟨j, t, hj, hpc⟩
   unfold RLU.stepU RL.step
   cases x with
-  | bl n => simp only [Unw.ArmStepU, ArmStepX, hins, hnr (.inl ⟨n, rfl⟩) (some n)]
-  | blr r => simp only [Unw.ArmStepU, ArmStepX, hins, hnr (.inr ⟨r, rfl⟩) none]
+  | bl n => simp only [Unw.ArmStepU, ArmStepX, hins,
+      RLU.noRaise_of_goodX hR hU hg hat (.inl ⟨n, rfl, rfl⟩)]
+  | blr r => simp only [Unw.ArmStepU, ArmStepX, hins,
+      RLU.noRaise_of_goodX hR hU hg hat (.inr ⟨r, rfl, rfl⟩)]
   | _ => simp only [Unw.ArmStepU, hins]
 
 /-- Along the old realisation's trace both machines run the same states. -/
