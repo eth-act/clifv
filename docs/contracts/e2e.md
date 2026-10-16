@@ -1861,8 +1861,10 @@ program compiled by `Link.DeadCleanup.compileExe`: `cleanup_peak_witness` (the l
 `Link.SourceWitness.compileExe_correct_source_peak_helper`,
 `Link.DeadCleanup.SourceWitness.compileExe_correct_source{,_peak}_helper`.
 
-*Fail closed (`--verified`).* `lake exe lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup]
-[--opt] [--verified]` prints after writing the executable the theorems covering it: `coverage:
+*Fail closed (`--verified`).* `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt]
+[--verified]` (the layout is the Lean compiler's, `Link.DeadCleanup.placedPar`/
+`LinkSpec.placedPar` `= placed`, `FV/Link/PlacedEq.lean`; no sizes are read) prints after writing
+the executable the theorems covering it: `coverage:
 Link.DeadCleanup.compileExe_correct, Link.DeadCleanup.compileExe_correct_peak` and, for an input
 in `SrcScopeB` (decided by the tool: `FV/E2E/SrcScopeDefs.lean`; it reads the parsed functions
 only, so `S.input0`'s is the theorems' `S.inputCleanup`'s), `…_source, …_source_peak`; the bare-

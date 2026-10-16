@@ -353,10 +353,12 @@ only `func_addr` reads), and every declared name with every declared offset an `
 abstraction does not pair a name with its own offset nor separate colocated from GOT accesses.
 All hold on the survey executables tried (66 and 493 functions); a finer relational analysis
 would only matter for executables over 128 MiB of text or offsets near `±4 GiB`. Remaining:
-- **The driver's layout.** `lake exe lean-link` still reads the driver's sizes (`sizes.txt`, from
-  the per-unit `lean.o` rust-lld placed); `placed_of_compileExe` shows a successful run used the
-  Lean compiler's layout. Computing `S.placed` in the driver (and the region object from it)
-  would make the theorem's object the shipped one by construction.
+- **The driver's layout (done, L1g item 3, #228).** `lake exe lean-link` no longer reads sizes
+  (`sizes.txt` is gone): it compiles `placedPar` of the bundle's spec, the Lean compiler's layout
+  (`LinkSpec.placedPar_eq : S.placedPar = S.placed`, `DeadCleanup.placedPar_eq`,
+  `FV/Link/PlacedEq.lean`), so the spec it compiles is the totality theorems' by construction.
+  Still open: the region object rust-lld places is `lean-backend`'s, compiled per unit; `symsOkB`
+  checks that its functions sit at the Lean layout's offsets.
 - **`PT_TLS`.** `tlsOkB` asks for a `PT_TLS` segment even when no function has a `tls_value`
   (every std executable has one); dropping it for TLS-free programs needs the instruction-level
   step of the provenance chain (`RelocProvEmit`) for `elfTlsGetAddr` (`lowerCheck` already gives
