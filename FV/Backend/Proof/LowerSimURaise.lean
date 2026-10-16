@@ -20,20 +20,24 @@ M4's proven rule theorems, what the lowered code does when the CLIF callee unwin
 * the contracts on the callees' exceptional results (`XRaise`), the counterparts of
   `XCallsOk`/`XCallsIndOk`: `XRaiseOk` (direct calls, `bl`/GOT `blr`), `XRaiseIndOk` (indirect
   calls), and the exclusivity with normal returns `XRaiseExcl` (a returning callee does not
-  raise; with it `csemU` refines the callee contract as `csem` does: `callsRefine_csemU`,
-  `indCallsRefine_csemU`);
+  raise; with it `csemU` refines the callee contract as `csem` does: `E2E.callsRefine_csemU`,
+  `E2E.indCallsRefine_csemU`, `FV/E2E/IselSimU.lean`);
+* `RaiseSem F X XR sem`: what the proofs use of the activation semantics with unwinding (the
+  GOT load, the steps of raising calls); `csemU` has it (`raiseSem_csemU`), so does the
+  dead-cleanup chain's `valueSemU`;
 * `stmt_raise`: the code of a `call`/`call_indirect` statement whose extern unwinds runs, under
-  `csemU`, to a `call` instruction whose callee raises (`XRaise`) the exception object `obj`
-  with `ExnRel e obj` and a world related to the extern's memory, where it ends the activation;
+  such a semantics, to a `call` instruction whose callee raises (`XRaise`) the exception object
+  `obj` with `ExnRel e obj` and a world related to the extern's memory, where it ends the
+  activation;
 * `try_raise`: the code of a `try_call`/`try_call_indirect` whose extern unwinds runs to its
-  `tryCall`, which continues at the first handler (`csemU`'s `.goto 0`) with the payload.
+  `tryCall`, which continues at the first handler (`.goto 0`) with the payload.
 
 The proof runs M4's rule theorems (`lowerInstOkP_runTerm`, `tryOkP_runTerm`,
 `tryIndOkP_runTerm`, for every semantics and environment satisfying the callee contracts) on a
 **probe**: the environment in which this one extern call returns (`overEnv`, pinned to the call
 by `pinPc`), and the semantics `probe` in which a call returns only if its callee raises an
 exception related to the CLIF one (`raiseC`). The rule's run then passes through calls whose
-callee raises; `csemU` agrees with the probe up to the first of them, where it ends the
+callee raises; the semantics agrees with the probe up to the first of them, where it ends the
 activation (`probe_fall_stop`) or, at the `tryCall`, enters the landing pad
 (`probe_pre_stop`). The probe's runs exist only in the proof.
 -/
@@ -92,6 +96,28 @@ def XRaiseExcl (env : Clif.XEnv) (exts : List Clif.ExtFunc) (sigs : List Clif.Si
     lo64 u = X.sym n 0 → vals.length ≤ 8 → AllHold vals args → MR sl cm w →
     g vals cm = .returned rvals cm' → vals.map (·.ty) = Clif.AbiParam.tys sig.params →
     XR.raise none (u :: args) w = none)
+
+/-! ## The semantics with unwinding, abstractly -/
+
+/-- **What the proofs of this file and of `LowerSimU` use of the activation semantics with
+unwinding** (beside `Refines`/`MemRefines` and the driver's facts): the GOT load of a symbol
+(`CallsRefine`'s first clause, for the extern symbols `X.sym`), and the steps of a call whose
+callee raises (`XR`): a plain `call` ends the activation (defs 0), a supported `tryCall`
+(`tryUOk`) continues at its first handler with the payload. `csemU` has them
+(`raiseSem_csemU`); so does the dead-cleanup chain's `valueSemU` (`csemU` on calls). -/
+structure RaiseSem (F : BitVec 64 → Prop) (X : ExtSem) (XR : XRaise) (sem : Sem) : Prop where
+  got : ∀ (rd : Reg) (n : String) (w : Arm.ArmState), ∃ w',
+    sem (.loadExtNameGot rd n) [] w = some ([ofX (X.sym n 0)], w', .next) ∧ SameWorldNF F w' w
+  call : ∀ ci uses w obj w', XR.raise (callDest ci) uses w = some (obj, w') →
+    sem (.call ci) uses w = some ((defCons (.call ci)).map (fun _ => ofX 0), w', .halt)
+  tryCall : ∀ ci ti uses w obj w', XR.raise (callDest ci) uses w = some (obj, w') →
+    tryUOk ci ti = true → sem (.tryCall ci ti) uses w = some (payloadOuts (.call ci) obj, w', .goto 0)
+
+theorem raiseSem_csemU (F : BitVec 64 → Prop) (fctx : FnCtx) (X : ExtSem) (XR : XRaise) :
+    RaiseSem F X XR (csemU F fctx X XR) where
+  got := fun _ _ w => ⟨w, rfl, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩
+  call := fun _ _ _ _ _ h => csemU_call_raise h
+  tryCall := fun _ _ _ _ _ _ h hok => csemU_try_raise h hok
 
 /-! ## The probe -/
 
@@ -335,18 +361,22 @@ theorem zeroVals_tys (rs : List Clif.AbiParam) :
   simp [zeroVals, Clif.AbiParam.tys]
 
 section
-variable {F : BitVec 64 → Prop} {fctx : FnCtx} {X : ExtSem} {XR : XRaise} {env : Clif.XEnv}
-  {MR : MemRelT} {slots : List (Clif.SlotId × Nat)}
+variable {F : BitVec 64 → Prop} {X : ExtSem} {XR : XRaise} {env : Clif.XEnv}
+  {MR : MemRelT} {slots : List (Clif.SlotId × Nat)} {sem : Sem}
 
 /-- **The probe satisfies the pinned callee contract** at a call of `n` on `vals` from `cm`
 whose CLIF extern unwinds. -/
-theorem callsRefineP_probe {exts : List Clif.ExtFunc} (hXR : XRaiseOk env exts MR X XR)
+theorem callsRefineP_probe {exts : List Clif.ExtFunc} (hRS : RaiseSem F X XR sem)
+    (hXR : XRaiseOk env exts MR X XR)
     {n : String} {s : Clif.Signature} {vals : List Clif.Val} {cm : Clif.Mem}
     {g : List Clif.Val → Clif.Mem → Clif.XOutcome} {e : Clif.Exn} {m : Clif.Mem}
     (hg : env.extern n = some g) (hu : g vals cm = .unwound e m) :
     CallsRefineP (pinPc n s vals cm) F (overEnv env.toEnv n vals cm (zeroVals s.returns) m) exts
-      (pinMR MR slots) (probe (csemU F fctx X XR) XR (raiseC MR slots e m)) := by
-  refine ⟨fun n => X.sym n 0, fun rd n w => ⟨w, rfl, fun _ _ _ => rfl, fun _ _ => rfl, rfl⟩, ?_, ?_⟩
+      (pinMR MR slots) (probe sem XR (raiseC MR slots e m)) := by
+  refine ⟨fun n => X.sym n 0, fun rd n w => by
+    obtain ⟨w', h1, h2⟩ := hRS.got rd n w
+    exact ⟨w', by rw [probe_other (fun _ h => by cases h) (fun _ _ h => by cases h)]; exact h1, h2⟩,
+    ?_, ?_⟩
   · intro ext hin g' sl cm0 w dest us ds uses args vals' rvals cm' hg' hd hds hargs hmr hpc hret hrl
     obtain ⟨hn, hs, rfl, rfl⟩ := hpc
     obtain ⟨-, rfl, hcm⟩ := overEnv_at hg' hret
@@ -377,7 +407,7 @@ theorem indCallsRefineP_probe {sigs : List Clif.Signature} (hXRi : XRaiseIndOk e
     {g : List Clif.Val → Clif.Mem → Clif.XOutcome} {e : Clif.Exn} {m : Clif.Mem}
     (hg : env.extern n = some g) (hu : g vals cm = .unwound e m) :
     IndCallsRefineP (pinPc n s vals cm) (overEnv env.toEnv n vals cm (zeroVals s.returns) m) sigs
-      (pinMR MR slots) (probe (csemU F fctx X XR) XR (raiseC MR slots e m)) := by
+      (pinMR MR slots) (probe sem XR (raiseC MR slots e m)) := by
   refine ⟨?_, ?_⟩
   · intro sig hin n' g' sl cm0 w a r us ds u args vals' rvals cm' hg' hsg ha hu' hds hlen hall hmr
       hpc hret hrl hty
@@ -566,14 +596,14 @@ end
 /-! ## The lowered code of a raising statement -/
 
 /-- **The code of a `call`/`call_indirect` statement whose CLIF extern unwinds** (with exception
-`e` and memory `m`) runs, under `csemU`, to a `call` instruction whose callee raises an object
-related to `e`, the world after the unwinder related to `m`, where the activation ends — if the
-code contains a call (a decidable property of the recorded lowering). From M4's proven rule
-theorems, run on the probe. -/
-theorem stmt_raise {F : BitVec 64 → Prop} {fctx : FnCtx} {X : ExtSem} {XR : XRaise}
+`e` and memory `m`) runs, under a semantics with unwinding (`RaiseSem`, e.g. `csemU`), to a
+`call` instruction whose callee raises an object related to `e`, the world after the unwinder
+related to `m`, where the activation ends — if the code contains a call (a decidable property
+of the recorded lowering). From M4's proven rule theorems, run on the probe. -/
+theorem stmt_raise {F : BitVec 64 → Prop} {X : ExtSem} {XR : XRaise} {sem : Sem}
     {env : Clif.XEnv} {p : Clif.Program} {f : Clif.Function} {MR : MemRelT} {sb : Nat}
-    {syms : String → Option Nat} {out : Nat}
-    (hRef : Refines F (csemU F fctx X XR)) (hMem : MemRefines F sb syms (csemU F fctx X XR))
+    {syms : String → Option Nat} {out : Nat} (hRS : RaiseSem F X XR sem)
+    (hRef : Refines F sem) (hMem : MemRefines F sb syms sem)
     (hMR : MRStable F MR) (hout : OutArgsOk F out MR) (hMRo : MemRelOk F sb syms f MR)
     (hstk : CallsStack f out)
     (hXR : XRaiseOk env (f.externs.map (·.2)) MR X XR) (hXRi : XRaiseIndOk env (indSigs f) MR X XR)
@@ -591,7 +621,7 @@ theorem stmt_raise {F : BitVec 64 → Prop} {fctx : FnCtx} {X : ExtSem} {XR : XR
     (hf : fr.func = ctx.func) (hvh : ValsHeld fr ρ) (hdc : DFGCons ctx fr) (hmr : MR fr.slots cm w)
     {e : Clif.Exn} {m : Clif.Mem} (hr : instRaise env p fr cm inst = some (e, m)) :
     UsesOk st fr st'.emitted.toList ∧ ∃ k ci ops ρ₁ w₁ obj w',
-      seqRun (csemU F fctx X XR) st'.emitted.toList ρ w =
+      seqRun sem st'.emitted.toList ρ w =
         some (.stop k (.call ci) ops ρ₁ w₁ ((defCons (.call ci)).map fun _ => ofX 0) w' .halt) ∧
       XR.raise (callDest ci) (vuses ops ρ₁) w₁ = some (obj, w') ∧ E2E.ExnRel e obj ∧
       MR fr.slots m w' ∧
@@ -603,8 +633,8 @@ theorem stmt_raise {F : BitVec 64 → Prop} {fctx : FnCtx} {X : ExtSem} {XR : XR
     excludedUnmatchable callRulesCorrectP indRulesCorrectP memRulesCorrectR_program
     (Rd := fun _ => True) (Pc := pinPc n s vals cm) (cp := p)
     (refines_probe (XR := XR) (C := raiseC MR fr.slots e m) hRef) (mrStable_pin hMR fr.slots)
-    (callsRefineP_probe (fctx := fctx) (slots := fr.slots) hXR hg hu)
-    (indCallsRefineP_probe (F := F) (fctx := fctx) (slots := fr.slots) hXRi hsym hMRs hg hu)
+    (callsRefineP_probe (slots := fr.slots) hRS hXR hg hu)
+    (indCallsRefineP_probe (sem := sem) (slots := fr.slots) hXRi hsym hMRs hg hu)
     (memRefinesR_of (memRefines_probe hMem)) hctx (outArgsOk_pin hout fr.slots)
     (externsIn_self f) hE (memRelOk_pin hMRo fr.slots) hi hc hsig
     (fun fn args e' hc' he => hstk B hB stm hstm fn args e' hc' he) hvb hrun
@@ -615,7 +645,90 @@ theorem stmt_raise {F : BitVec 64 → Prop} {fctx : FnCtx} {X : ExtSem} {XR : XR
   rw [hO] at hrun'
   obtain ⟨hU, ρ', w'', hsr, -, -⟩ := hrun'
   obtain ⟨k, ci, ops, ρ₁, w₁, obj, w', h1, h2, ⟨h3, h4⟩, h5⟩ :=
-    probe_fall_stop (fun ci uses w obj w' hra => csemU_call_raise hra) hsr hcall
+    probe_fall_stop (fun ci uses w obj w' hra => hRS.call ci uses w obj w' hra) hsr hcall
   exact ⟨hU, k, ci, ops, ρ₁, w₁, obj, w', h1, h2, h3, h4, h5⟩
+
+/-- **The code of a `try_call`/`try_call_indirect` whose CLIF extern unwinds** (exception `e`,
+memory `m`) runs, under a semantics with unwinding, to its `tryCall`, whose callee raises an
+object related to `e` (the world related to `m`) and which continues at the first handler
+(`.goto 0`) with the payload — if the code before the call contains no call and the call's
+shape is supported (`tryUOk`; decidable properties of the recorded lowering). From M4's proven
+`try_call` rule theorems, run on the probe. `hT`: the direct call's stack arguments fit the
+outgoing area, the indirect call's signature is an indirect-call signature of `f`. -/
+theorem try_raise {F : BitVec 64 → Prop} {X : ExtSem} {XR : XRaise} {sem : Sem}
+    {env : Clif.XEnv} {p : Clif.Program} {f : Clif.Function} {MR : MemRelT} {sb : Nat}
+    {syms : String → Option Nat} {out : Nat} (hRS : RaiseSem F X XR sem)
+    (hRef : Refines F sem) (hMem : MemRefines F sb syms sem)
+    (hMR : MRStable F MR) (hout : OutArgsOk F out MR)
+    (hXR : XRaiseOk env (f.externs.map (·.2)) MR X XR) (hXRi : XRaiseIndOk env (indSigs f) MR X XR)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms)
+    {ctx : Ctx} (hctx : CtxInv f ctx) {ti : Nat} {et : Clif.ExnTable} {data : V}
+    {sig : Clif.Signature} {items : List (Option Nat)} {targets : List Label} {info : TryInfo}
+    {trs : List Reg × List Reg} {lo st1 : LState} {outv : V} {st' : LState}
+    {tr : List Isle.RuleId} {ci : Clif.Inst}
+    (hT : (∃ fn args, ci = .call fn args ∧ tryCallData f (.tryCall fn args et) = .ok data ∧
+        ∀ e, f.extern? fn = some e → SigStackOk e.sig out) ∨
+      (∃ callee args, ci = .callIndirect et.sig callee args ∧
+        tryCallData f (.tryCallIndirect callee args et) = .ok data ∧ sig ∈ indSigs f ∧
+        sig.params.length ≤ 8))
+    (he : exnTableOpnd f et = .ok (sig, items))
+    (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩)
+    (hinfo : tryInfoOf sig items targets = some info) (hregs : tryRegsOf sig lo = some (trs, st1))
+    (hvb : ValsBelow ctx lo)
+    (hrun : runTerm (tryCtx ctx ti data trs) "lower_branch" [.inst ti, .labels targets]
+      { st1 with emitted := #[] } = .ok (some outv, st', tr))
+    {pre : List MInst} {c : CallInfo} (hms : st'.emitted.toList = pre ++ [.call c])
+    (hpre : ∀ m ∈ pre, ∀ ci, m ≠ .call ci) (hok : tryUOk c info = true)
+    {fr : Clif.Frame} {cm : Clif.Mem} {ρ : Nat → CV} {w : Arm.ArmState}
+    (hf : fr.func = ctx.func) (hvh : ValsHeld fr ρ) (hdc : DFGCons (tryCtx ctx ti data trs) fr)
+    (hmr : MR fr.slots cm w) {e : Clif.Exn} {m : Clif.Mem}
+    (hr : instRaise env p fr cm ci = some (e, m)) :
+    UsesOk { st1 with emitted := #[] } fr st'.emitted.toList ∧ ∃ ops ρ₁ w₁ obj w',
+      seqRun sem (pre ++ [.tryCall c info]) ρ w =
+        some (.stop pre.length (.tryCall c info) ops ρ₁ w₁ (payloadOuts (.call c) obj) w'
+          (.goto 0)) ∧
+      XR.raise (callDest c) (vuses ops ρ₁) w₁ = some (obj, w') ∧ E2E.ExnRel e obj ∧
+      MR fr.slots m w' := by
+  obtain ⟨n, s, vals, g, hg, hu, hO, hpin⟩ := instRaise_spec hr
+  have hctx' := ctxInv_tryRegs (ctxInv_termCtx hctx hph data) trs
+  have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
+    termCtx_insts_self hph data
+  have hregs' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := hregs
+  have hvb' : ValsBelow (tryCtx ctx ti data trs) lo := hvb
+  have hR' := refines_probe (XR := XR) (C := raiseC MR fr.slots e m) hRef
+  have hcr := callsRefineP_probe (slots := fr.slots) (s := s) hRS hXR hg hu
+  have hicr := indCallsRefineP_probe (sem := sem) (slots := fr.slots) (s := s) hXRi hsym
+    hMRs hg hu
+  obtain ⟨ms, hem, hlow⟩ : ∃ ms, st'.emitted = ({ st1 with emitted := #[] } : LState).emitted ++
+      ms.toArray ∧ LowerTryOkP (fun _ => True) (pinPc n s vals cm)
+        (probe sem XR (raiseC MR fr.slots e m)) (pinMR MR fr.slots)
+        (overEnv env.toEnv n vals cm (zeroVals s.returns) m) p (tryCtx ctx ti data trs) ci info
+        { st1 with emitted := #[] } st' ms := by
+    rcases hT with ⟨fn, args, rfl, hd, hra⟩ | ⟨callee, args, rfl, hd, hsg, h8⟩
+    · exact tryOkP_runTerm tryRulesCorrectP tryUnmatchable hR' (mrStable_pin hMR fr.slots)
+        (memRefinesR_of (memRefines_probe hMem)) (outArgsOk_pin hout fr.slots) hcr hctx'
+        (externsIn_self f) hra hd he hi hinfo hregs' hvb' (Nat.le_refl _) hrun
+    · exact tryIndOkP_runTerm tryIndRulesCorrectP tryIndUnmatchable hR' (mrStable_pin hMR fr.slots)
+        hicr hctx' hd he hsg h8 hi hinfo hregs' hvb' (Nat.le_refl _) hrun
+  have hms' : ms = st'.emitted.toList := by
+    simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
+  subst hms'
+  have hrun' := hlow.run fr cm ρ w hf hvh hdc ⟨rfl, hmr⟩ (fun _ _ _ => trivial) hpin
+  rw [hO] at hrun'
+  obtain ⟨hU, k, i, ops, ρ₁, w₁, outs, w₂, hsr, hk, -, -⟩ := hrun'
+  rw [hms, tryFix_append] at hsr
+  rw [hms] at hk
+  have hk' : k = pre.length := by simp only [List.length_append, List.length_singleton] at hk; omega
+  obtain ⟨hpre_run, rfl, hops, hprobe, -, -⟩ := probe_pre_stop hpre hsr hk'
+  obtain ⟨obj, hra, ⟨hex, hm⟩, -, -⟩ := probe_tryCall_some hprobe
+  have hsem := hRS.tryCall c info _ _ obj _ hra hok
+  have hops' : (MInst.call c).operands = .ok ops := by rw [← operands_tryCall_call c info]; exact hops
+  have hlen' : (payloadOuts (.call c) obj).length = (ops.toList.filter Operand.isDef).length := by
+    simp [payloadOuts, defCons, hops']
+  refine ⟨hU, ops, ρ₁, w₁, obj, w₂, ?_, hra, hex, hm⟩
+  have := seqRun_append_fall_stop sem hpre_run
+    (seqRun_cons_halt (ms := []) hops hsem hlen' (by intro h; cases h))
+  rwa [Nat.zero_add] at this
 
 end Backend.Proof
