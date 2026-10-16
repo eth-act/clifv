@@ -304,10 +304,14 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
 * **`try_call` is verified for normal returns** (agent/trycall-proof, agent/trycall-contract):
   a function whose `try_call`s call externs is inside `E2E.backend_correct_final` for the path
   where every callee returns normally (the call, its results, the jump to the normal-return
-  successor). The report labels it **`verified (normal returns; unwinding trusted)`** and counts
-  it among the verified functions, with a footnote giving how many there are. Nothing is
-  claimed about unwinding: the landing pads, the payload on the handler edges, the LSDA and the
-  `.eh_frame` rows are trusted. `try_call_indirect` is verified the same way
+  successor). **Since S10e (#232) its unwinding is verified too** when the unwinding theorem's
+  checks pass (`E2E.backend_correct_final_cleanup_unwind`: handler edges, payload, the frame
+  unwound by the emitted CFI; docs/contracts/e2e.md, "`try_call` (the normal return)"). The
+  report then counts it as plain **verified**. Otherwise it is labelled **`verified (normal
+  returns; unwinding trusted)`** (counted among the verified functions, with a footnote giving
+  how many there are). For such a function nothing is claimed about unwinding: the landing pads,
+  the payload on the handler edges, the LSDA and the `.eh_frame` rows are trusted.
+  `try_call_indirect` is verified the same way
   (agent/indirect-proof). A `try_call`'s callee may take stack-passed arguments
   (agent/last-unverified). Under `--opt-proven-only` `try_call` functions are verified too
   (`E2E.backend_correct_opt_exe`, S1; the earlier `E2E.backend_correct_opt_proven` covers
@@ -677,6 +681,14 @@ compiled); of them `verified (normal returns; unwinding trusted)`: fv-demo 253, 
 vendor 886, deps 3144. Between agent/callee-fix and agent/trycall-contract, with the `try_call`
 functions reported unverified: fv-demo 1087, survey 2681, vendor 3641, deps 17677 verified.
 `examples/compare.sh` SAME for all three (fv-demo 19, survey 53, vendor 189 test outcomes).
+
+After S10e (#232, the unwinding theorem, lean-backend's unwinding checks; debug, panic=unwind,
+`cargo fv test --no-run`): fv-demo 1346 verified of 1352 (6 fallback: skip), survey 3179 of
+3179. Of them `verified (normal returns; unwinding trusted)`: fv-demo 254 → 0, survey 498 → 5
+(the `try_call` functions inside `E2E.backend_correct_final_cleanup_unwind` are now plain
+verified). The 5 left are survey's `i128`-legalised g_u128 `values` test functions (`arith#1`,
+`bytes_bits#1`, `compare#1`, `division#1`, `shifts#1`): no unwinding theorem composes the
+`i128` legalisation yet. No function failed an unwinding check.
 
 With the shipped cg_clif (no landing pads; before the external-name tables, #221, `cargo fv`
 could still use it) or `--panic-abort` there are no landing-pad fallbacks:

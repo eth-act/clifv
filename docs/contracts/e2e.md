@@ -184,10 +184,37 @@ the `retN`/value arguments).
   callee leaves in the result registers (the first `ti.rets` defs) the values `csem` gives them.
   `CallsRefine` has a third clause for the `tryCall` (proven for `csem` from `XCallsOk`,
   `callsRefine_csem`), which continues at successor `ti.handlers.length` (the normal return).
-* **Not claimed**: nothing about unwinding. The landing pads (the handler edge blocks and their
-  code), the exception payload on the handler edges, the call-site table and the LSDA
-  (`callSites`, `.gcc_except_table`), the `.eh_frame` rows and the personality routine are
-  trusted and outside every theorem.
+* **Not claimed by `backend_correct_final`**: nothing about unwinding. The unwinding theorem
+  below covers it; for functions outside that theorem the landing pads, the exception payload
+  on the handler edges, the call-site table/LSDA (`callSites`, `.gcc_except_table`), the
+  `.eh_frame` rows and the personality routine stay trusted.
+* **The exceptional edges (S10e, #232)**: `E2E.backend_correct_final_cleanup_unwind` (the
+  shipped dead-cleanup chain; `E2E.backend_correct_final_unwind` without it,
+  `FV/E2E/FinalUnwind.lean`) concludes `ArmRefinesU … (Unw.ArmStepU X H U T fa) s
+  (Clif.runLoopX env p fuel cs.toX)`. An exception caught by a handler reaches the landing pad
+  with the payload (x0 = object, x1 = 0). An uncaught one (`unwound e cm`) is an Arm return to
+  the caller (`ArmRet`: return address, entry sp, callee-saved registers) with the object in x0
+  (`ExnRel`) and the memory agreeing. The premises beyond `backend_correct_final`'s:
+  * the validator `lowerCheckU` (`lowerCheck` and `unwCheck`: the handler edges);
+  * the externs' exceptional results `XRaiseOk`/`XRaiseIndOk` and their exclusivity with normal
+    returns `XRaiseExcl`;
+  * the raising callees' contract `CalleeUnwOkG` (a raising callee keeps sp, the frame and the
+    callee-saved registers; the unwinder restored our call's state);
+  * the tables the unwinder reads, taken as the emitted ones: `T.lsda` from `callSites`, the CIE
+    `cieInsns` and the FDE rows `unwindRows` (S10f discharges these from the linked bytes);
+  * the decidable checks `savedCheck` (the callee-save slots hold the entry values at every
+    call), `lastCallsOk` (the call-site bridge), `padsNonzeroB` (landing pads at non-zero
+    offsets);
+  * `TrapsExplicitX` for the runs with unwinding.
+
+  Trusted by design, like std: the model of the Itanium unwinder and of the personality routine
+  (`FV/Unw/Model.lean`: `Unw.unwindAt`, `Unw.personality`, `Unw.restore`), and the decoding of
+  the emitted tables as that model reads them. With `XRaise.none`/`Unw.UnwHooks.none` the theorem
+  specialises to the normal-return shape (`E2E.backend_correct_final_of_unwind`). `lean-backend`
+  labels a function whose checks pass `compiled, verified`. A function failing a check keeps
+  `compiled, verified for normal returns (…; unwinding check failed: <check>)`. So does an
+  `i128`-legalised function or one compiled with `--opt`, since no unwinding theorem composes
+  the legaliser or the mid-end yet.
 * **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
   normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
   `normArgReg`, `retN` indices below the callee's return count), and checks that a `tryCall`
