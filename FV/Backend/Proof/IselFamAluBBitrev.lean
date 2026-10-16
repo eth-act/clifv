@@ -220,8 +220,8 @@ theorem bitrev_i8_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env :
       · exact absurd trivial hx)
     (fun _ _ _ => by omega) (by code_facts) (by code_facts)
     F isem MR env cp hMR
-    (fun ty _ b x ρ u _ _ hP _ _ _ hu => by
-      obtain rfl := ty_eq_of_width (ty' := .i8) hP (by decide)
+    (fun ty _ b x ρ u hE _ hP _ _ _ hu => by
+      obtain rfl := ty_eq_of_width (ty' := .i8) hP (by decide) hE
       refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_rr hR rfl (fun _ => rfl) (prun_nil _)), ?_⟩
       have hu' : (ρ x).setWidth 8 = u := hu
       subst hu'
@@ -259,8 +259,8 @@ theorem bitrev_i16_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
       · exact absurd trivial hx)
     (fun _ _ _ => by omega) (by code_facts) (by code_facts)
     F isem MR env cp hMR
-    (fun ty _ b x ρ u _ _ hP _ _ _ hu => by
-      obtain rfl := ty_eq_of_width (ty' := .i16) hP (by decide)
+    (fun ty _ b x ρ u hE _ hP _ _ _ hu => by
+      obtain rfl := ty_eq_of_width (ty' := .i16) hP (by decide) hE
       refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_rr hR rfl (fun _ => rfl) (prun_nil _)), ?_⟩
       have hu' : (ρ x).setWidth 16 = u := hu
       subst hu'

@@ -68,8 +68,7 @@ theorem extend_value {ctx : Ctx} {fr : Clif.Frame} (hdfg : DFGCons ctx fr) {y x'
   have hv := lookup_zip_single hl
   cases hv
   have hta := hdfg.2 x' (.int b) a hvt (get_ok ha)
-  rw [ofClif_int_width] at hta
-  injection hta with hta
+  replace hta := (ofClif_eq_int hta).2
   exact ⟨a, get_ok ha, hta, rfl⟩
 
 /-! ## Arm side: the extended operand -/

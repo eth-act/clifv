@@ -238,11 +238,9 @@ theorem partOk_narrow {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
     exact hq
   · intro fr ρ w ty u hdfg hx hw hv
     have ht := hdfg.2 x t _ hvt (getAs_ok hx)
-    simp only [ofClif_int_width] at ht
-    subst ht
-    have hb : (CTy.int ty.width).bits = 8 ∨ (CTy.int ty.width).bits = 16 ∨
-        (CTy.int ty.width).bits = 32 := by
-      cases ty <;> simp [Clif.Ty.width, CTy.bits] at hw ⊢
+    have hbits : t.bits = ty.width := by rw [← ht, bits_ofClif]
+    have hb : t.bits = 8 ∨ t.bits = 16 ∨ t.bits = 32 := by
+      rw [hbits]; cases ty <;> simp [Clif.Ty.width] at hw ⊢
     obtain ⟨w', hrun, hsw⟩ := seqRun_one hR (operands_extend_fa _ _ _ _ _) rfl
       (ispec_extend64 (d := st.nextVreg) (rn := .vreg x .int) (sg := sg) (a := ρ x) (w := w) hb)
     refine ⟨_, w', hrun, hsw, fun q hq => ?_, ?_⟩
@@ -256,7 +254,7 @@ theorem partOk_i64 {F : BitVec 64 → Prop} {isem : Sem} {ctx : Ctx} {st : LStat
   refine ⟨Nat.le_refl _, by simp, by simp, by simp, hxb, .inl rfl, ?_⟩
   intro fr ρ w ty u hdfg hx hw _
   have ht := hdfg.2 x _ _ hvt (getAs_ok hx)
-  simp only [ofClif_int_width, CTy.int.injEq] at ht
+  have := (ofClif_eq_int ht).2
   omega
 
 /-- The two outcomes of `put_in_reg_*ext64` as one operand part. -/
