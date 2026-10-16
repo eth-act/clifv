@@ -25,8 +25,8 @@ open E2E E2E.LinkCheck E2E.Binary E2E.ExecBytes Link Crates.LeanLinkWitness
 
 /-- **The executable compiler compiles `a_arith`.** -/
 theorem compile_eq : compileExe spec file0 = .ok file := by
-  have h : InScopeP spec.input0 = true := by rw [← LinkSpec.inScope_input]; exact inScope
-  simp only [compileExe, inScopePar_eq, h, ↓reduceIte, link_eq]
+  have h : InScopeIn spec.input0 = true := by native_decide
+  simp only [compileExe, inScopeInPar_eq, h, ↓reduceIte, link_eq]
 
 /-- No function of the program uses TLS (the closed base environment has none). -/
 theorem noTls : (progOf spec.input.results).funcs.all (fun g => !Backend.hasTls g) = true := by
@@ -85,7 +85,7 @@ theorem sizes : spec.sizes = spec.sizesOf := by native_decide
 /-- **Non-vacuity of `compileExe_total`**: its hypotheses hold on `a_arith`. -/
 theorem total_witness :
     compileExe spec file0 = .ok (patch file0 (offsetOf phs spec.R) (regionOf spec (Elf.tpOff phs))) :=
-  compileExe_total (by rw [← LinkSpec.inScope_input]; exact inScope) placeOk
+  compileExe_total (by native_decide) placeOk
     names sizes (fun e he r hr => List.all_eq_true.1 (List.all_eq_true.1 rangeB e he) r hr) hph
     regionOk outsideOk
 
@@ -120,7 +120,7 @@ def phsT : List Elf.Phdr := (Elf.phdrs (Elf.fileRd file0T)).getD []
 
 theorem hphT : Elf.phdrs (Elf.fileRd file0T) = some phsT := by native_decide
 
-theorem inScopeT : InScopeP spec.placed.input0 = true := by native_decide
+theorem inScopeT : InScopeIn spec.placed.input0 = true := by native_decide
 
 theorem layoutT : spec.placed.layoutOkB = true := by native_decide
 

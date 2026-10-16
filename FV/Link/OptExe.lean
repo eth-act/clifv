@@ -1,6 +1,6 @@
 import FV.Link.OptFacts
 import FV.Link.ExeTotal
-import FV.Link.ExeInputReachIn
+import FV.Link.ExeInputReach
 
 /-! # The optimising executable compiler is correct (S1, S2, L1)
 
@@ -409,7 +409,7 @@ theorem withSizes_opt (S : LinkSpec) (z : List Nat) : (S.withSizes z).opt = S.op
   exact List.map_congr_left fun fi _ => fi.opt_pair.2.name.symm
 
 /-- **The optimising executable compiler succeeds on input conditions decided without
-compiling** (`compileExe_total_reach_input` on the optimised input): on the optimised input
+compiling** (`compileExe_total_reach` on the optimised input): on the optimised input
 (`InScopeIn`), its layout (`layoutOkB`), the reach of its functions' references from the region
 (`reachOkB`), rust-lld's executable `file0` (`file0OkB`), with the sizes of the optimised
 functions' compiled code. -/
@@ -421,6 +421,6 @@ theorem compileExeOpt_total_reach_input {S : LinkSpec} {file0 : ByteArray} {phs 
       .ok (patch file0 (offsetOf phs S.R) (regionOf S.opt.placed (tpOff phs))) := by
   show compileExe (S.withSizes (sizesOf S.opt)).opt file0 = _
   rw [withSizes_opt]
-  exact compileExe_total_reach_input hin hl hph hf hreach
+  exact compileExe_total_reach hin hl hph hf hreach
 
 end Link

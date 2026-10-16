@@ -16,9 +16,10 @@ alone (`fnScopeInB`, `InScopeIn`, `FV/E2E/LinkScopeInputDefs.lean`):
 * `fnScopeB_of_input`, `inScopeP_of_input`: `fnScopeInB g → fnScopeB g`,
   `InScopeIn I → InScopeP I`.
 
-`inScopeP_of_input` is the conversion for every theorem taking `InScopeP` (the totality theorems
-`compileExe_total_reach_input`, `FV/Link/ExeInputReachIn.lean` and
-`FV/Link/ExeInputReachCleanupIn.lean`; `crate_correct_inScope*`). The dead-instruction cleanup
+`inScopeP_of_input` is the conversion for every theorem taking `InScopeP`: `Link.compileExe`
+checks `InScopeIn` and its proofs use `InScopeP` (`Link.compileExe_spec`, `compileExe_total`); the
+shipped compiler's totality on `InScopeIn` (`FV/Link/ExeInputReachCleanupIn.lean`);
+`crate_correct_inScope*`. The dead-instruction cleanup
 pipeline uses the same `fnScopeB`: its `prepare (prune vc)` succeeds from `prepare vc`
 (`prune_prepare_ok`), so `Prep.prepare_ok` covers it.
 -/

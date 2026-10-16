@@ -21,7 +21,7 @@ x0–x3, returns to the caller with `15, 5` in x0, x1.
 namespace Crates.FrontendBundleWitnessBaseline
 
 open E2E E2E.LinkCheck E2E.Binary E2E.ExecBytes Backend Backend.Proof Opt.Legalize128
-open Link (LinkSpec inScopePar_eq)
+open Link (LinkSpec inScopeInPar_eq)
 open Link.SourceWitness (helperEnv helperBase)
 open Crates.BinaryWitness (memOf)
 open Crates.CompileExeSourceWitness (n args args' M sp0 ra0 sp0_toNat)
@@ -64,8 +64,8 @@ theorem inScope : InScopeP SB.input = true := by native_decide
 
 /-- **The baseline executable compiler compiles the bundle's `LinkSpec` to `file`.** -/
 theorem compile_eq : Link.compileExe SB file0 = .ok file := by
-  have h : InScopeP SB.input0 = true := by rw [← Link.LinkSpec.inScope_input]; exact inScope
-  simp only [Link.compileExe, inScopePar_eq, h, ↓reduceIte, link_eq]
+  have h : InScopeIn SB.input0 = true := by native_decide
+  simp only [Link.compileExe, inScopeInPar_eq, h, ↓reduceIte, link_eq]
 
 /-! ## The compiler's input: the facts of `Crates.CompileExeSourceWitness`, for `SB` -/
 
