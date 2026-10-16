@@ -3,8 +3,10 @@ Copyright (c) 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Author(s): Shilpi Goel, Yan Peng, Nathan Wetzler
 -/
+-- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
+-- namespace Arm; the `bv_decide` proofs of the flag and alignment lemmas replaced by kernel proofs
+-- (`toNat`/`toInt` arithmetic with `omega`).
 
-import Std.Tactic.BVDecide
 import FV.Arm.BitVec
 import FV.Arm.State
 
@@ -108,37 +110,101 @@ def ConditionHolds (cond : BitVec 4) (s : ArmState) : Bool :=
 theorem sgt_iff_n_eq_v_and_z_eq_0_64 (x y : BitVec 64) :
   (((AddWithCarry x (~~~y) 1#1).snd.n = (AddWithCarry x (~~~y) 1#1).snd.v) ∧
    (AddWithCarry x (~~~y) 1#1).snd.z = 0#1) ↔ BitVec.slt y x := by
-  simp [AddWithCarry, make_pstate, lsb]
-  split
-  · bv_decide
-  · bv_decide
+  -- The result is `x - y`; `V = 0` iff `x - y` does not overflow (`(x - y).toInt = x.toInt -
+  -- y.toInt`), `N` is its sign and `Z` whether it is zero.
+  have e1 : setWidth 64 (setWidth 65 x + setWidth 65 (~~~y) + setWidth 65 1#1) = x - y := by
+    bv_omega
+  have e2 : signExtend 65 x + signExtend 65 (~~~y) + setWidth 65 1#1 =
+      signExtend 65 x - signExtend 65 y := by
+    rw [signExtend_not (by omega)]; bv_omega
+  have hn : Arm.BitVec.lsb (x - y) 63 = 0#1 ↔ 0 ≤ (x - y).toInt := by
+    have := (x - y).isLt
+    simp only [Arm.BitVec.lsb, BitVec.toNat_eq, extractLsb'_toNat, toNat_ofNat,
+      Nat.shiftRight_eq_div_pow, toInt_eq_toNat_cond (x := x - y)]
+    split <;> omega
+  have hn1 : Arm.BitVec.lsb (x - y) 63 = 1#1 ↔ (x - y).toInt < 0 := by
+    have := (x - y).isLt
+    simp only [Arm.BitVec.lsb, BitVec.toNat_eq, extractLsb'_toNat, toNat_ofNat,
+      Nat.shiftRight_eq_div_pow, toInt_eq_toNat_cond (x := x - y)]
+    split <;> omega
+  have hv : signExtend 65 (x - y) = signExtend 65 x - signExtend 65 y ↔
+      (x - y).toInt = x.toInt - y.toInt := by
+    rw [← toInt_inj, toInt_sub (x := signExtend 65 x), toInt_signExtend_of_le (by omega),
+      toInt_signExtend_of_le (by omega), toInt_signExtend_of_le (by omega)]
+    have := x.toInt_lt; have := x.le_toInt; have := y.toInt_lt; have := y.le_toInt
+    rw [Int.bmod_eq_of_le (by simp at *; omega) (by simp at *; omega)]
+  have hz : x - y = BitVec.zero 64 ↔ (x - y).toInt = 0 := by
+    rw [← toInt_inj]; simp
+  have hr : (x - y).toInt % (2 ^ 64 : Nat) = (x.toInt - y.toInt) % (2 ^ 64 : Nat) := by
+    rw [toInt_sub, Int.bmod_emod]
+  have := x.toInt_lt; have := x.le_toInt; have := y.toInt_lt; have := y.le_toInt
+  have := (x - y).toInt_lt; have := (x - y).le_toInt
+  simp only [AddWithCarry, make_pstate, zeroExtend_eq_setWidth, e1, e2, slt_iff_toInt_lt]
+  by_cases hc : (x - y).toInt = x.toInt - y.toInt
+  · simp only [hv.mpr hc, ite_true, hn]
+    by_cases hz' : (x - y).toInt = 0
+    · simp only [hz.mpr hz', ite_true]; simp [-toInt_sub]; omega
+    · simp only [mt hz.mp hz', ite_false]; simp [-toInt_sub]; omega
+  · simp only [mt hv.mp hc, ite_false, hn1]
+    have hz' : ¬ (x - y).toInt = 0 := by omega
+    simp only [mt hz.mp hz', ite_false]; simp [-toInt_sub]; omega
 
 /-- `x > y` iff `(N = V) ∧ Z = 0` . -/
 theorem sgt_iff_n_eq_v_and_z_eq_0_32 (x y : BitVec 32) :
   (((AddWithCarry x (~~~y) 1#1).snd.n = (AddWithCarry x (~~~y) 1#1).snd.v) ∧
    (AddWithCarry x (~~~y) 1#1).snd.z = 0#1) ↔ BitVec.slt y x := by
-  simp [AddWithCarry, make_pstate, lsb]
-  split
-  · bv_decide
-  · bv_decide
+  -- The result is `x - y`; `V = 0` iff `x - y` does not overflow (`(x - y).toInt = x.toInt -
+  -- y.toInt`), `N` is its sign and `Z` whether it is zero.
+  have e1 : setWidth 32 (setWidth 33 x + setWidth 33 (~~~y) + setWidth 33 1#1) = x - y := by
+    bv_omega
+  have e2 : signExtend 33 x + signExtend 33 (~~~y) + setWidth 33 1#1 =
+      signExtend 33 x - signExtend 33 y := by
+    rw [signExtend_not (by omega)]; bv_omega
+  have hn : Arm.BitVec.lsb (x - y) 31 = 0#1 ↔ 0 ≤ (x - y).toInt := by
+    have := (x - y).isLt
+    simp only [Arm.BitVec.lsb, BitVec.toNat_eq, extractLsb'_toNat, toNat_ofNat,
+      Nat.shiftRight_eq_div_pow, toInt_eq_toNat_cond (x := x - y)]
+    split <;> omega
+  have hn1 : Arm.BitVec.lsb (x - y) 31 = 1#1 ↔ (x - y).toInt < 0 := by
+    have := (x - y).isLt
+    simp only [Arm.BitVec.lsb, BitVec.toNat_eq, extractLsb'_toNat, toNat_ofNat,
+      Nat.shiftRight_eq_div_pow, toInt_eq_toNat_cond (x := x - y)]
+    split <;> omega
+  have hv : signExtend 33 (x - y) = signExtend 33 x - signExtend 33 y ↔
+      (x - y).toInt = x.toInt - y.toInt := by
+    rw [← toInt_inj, toInt_sub (x := signExtend 33 x), toInt_signExtend_of_le (by omega),
+      toInt_signExtend_of_le (by omega), toInt_signExtend_of_le (by omega)]
+    have := x.toInt_lt; have := x.le_toInt; have := y.toInt_lt; have := y.le_toInt
+    rw [Int.bmod_eq_of_le (by simp at *; omega) (by simp at *; omega)]
+  have hz : x - y = BitVec.zero 32 ↔ (x - y).toInt = 0 := by
+    rw [← toInt_inj]; simp
+  have hr : (x - y).toInt % (2 ^ 32 : Nat) = (x.toInt - y.toInt) % (2 ^ 32 : Nat) := by
+    rw [toInt_sub, Int.bmod_emod]
+  have := x.toInt_lt; have := x.le_toInt; have := y.toInt_lt; have := y.le_toInt
+  have := (x - y).toInt_lt; have := (x - y).le_toInt
+  simp only [AddWithCarry, make_pstate, zeroExtend_eq_setWidth, e1, e2, slt_iff_toInt_lt]
+  by_cases hc : (x - y).toInt = x.toInt - y.toInt
+  · simp only [hv.mpr hc, ite_true, hn]
+    by_cases hz' : (x - y).toInt = 0
+    · simp only [hz.mpr hz', ite_true]; simp [-toInt_sub]; omega
+    · simp only [mt hz.mp hz', ite_false]; simp [-toInt_sub]; omega
+  · simp only [mt hv.mp hc, ite_false, hn1]
+    have hz' : ¬ (x - y).toInt = 0 := by omega
+    simp only [mt hz.mp hz', ite_false]; simp [-toInt_sub]; omega
 
 /-- `x ≤ y` iff `¬ ((N = V) ∧ (Z = 0))`. -/
 theorem sle_iff_not_n_eq_v_and_z_eq_0_64 (x y : BitVec 64) :
   (¬(((AddWithCarry x (~~~y) 1#1).snd.n = (AddWithCarry x (~~~y) 1#1).snd.v) ∧
    (AddWithCarry x (~~~y) 1#1).snd.z = 0#1)) ↔ BitVec.sle x y := by
-  simp [AddWithCarry, make_pstate, lsb]
-  split
-  · bv_decide
-  · bv_decide
+  rw [sgt_iff_n_eq_v_and_z_eq_0_64, sle_eq_not_slt]
+  simp
 
 /-- `x ≤ y` iff `¬ ((N = V) ∧ (Z = 0))`. -/
 theorem sle_iff_not_n_eq_v_and_z_eq_0_32 (x y : BitVec 32) :
   (¬(((AddWithCarry x (~~~y) 1#1).snd.n = (AddWithCarry x (~~~y) 1#1).snd.v) ∧
    (AddWithCarry x (~~~y) 1#1).snd.z = 0#1)) ↔ BitVec.sle x y := by
-  simp [AddWithCarry, make_pstate, lsb]
-  split
-  · bv_decide
-  · bv_decide
+  rw [sgt_iff_n_eq_v_and_z_eq_0_32, sle_eq_not_slt]
+  simp
 
 /--
 `x = 0` iff `Z = 0`.
@@ -147,11 +213,10 @@ This is implemented by testing whether `x + (-1) + 1 = 0`
 theorem zero_iff_z_eq_one (x : BitVec 64) :
   ((AddWithCarry x 0xffffffffffffffff#64 0x1#1).snd.z = 1#1) ↔
   (x = 0#64) := by
-  simp only [AddWithCarry, bitvec_rules, state_simp_rules]
-  repeat split
-  · bv_decide
-  · bv_decide
-  done
+  have e1 : setWidth 64 (setWidth 65 x + setWidth 65 0xffffffffffffffff#64 + setWidth 65 0x1#1) = x := by
+    bv_omega
+  simp only [AddWithCarry, make_pstate, zeroExtend_eq_setWidth, e1]
+  by_cases h : x = 0#64 <;> simp [h, BitVec.zero_eq]
 
 
 /-- `Aligned x a` witnesses that the bitvector `x` is `a`-bit aligned. -/
@@ -166,23 +231,25 @@ theorem Aligned_BitVecSub_64_4 {x : BitVec 64} {y : BitVec 64}
   (x_aligned : Aligned x 4)
   (y_aligned : Aligned y 4)
   : Aligned (x - y) 4 := by
-  simp_all only [Aligned, Nat.sub_zero, zero_eq]
-  bv_decide
+  simp_all only [Aligned, zero_eq, BitVec.toNat_eq, extractLsb'_toNat, toNat_sub, toNat_ofNat]
+  omega
 
 theorem Aligned_BitVecAdd_64_4 {x : BitVec 64} {y : BitVec 64}
   (x_aligned : Aligned x 4)
   (y_aligned : Aligned y 4)
   : Aligned (x + y) 4 := by
-  simp_all only [Aligned, Nat.sub_zero, zero_eq]
-  bv_decide
+  simp_all only [Aligned, zero_eq, BitVec.toNat_eq, extractLsb'_toNat, toNat_add, toNat_ofNat]
+  omega
 
 theorem Aligned_AddWithCarry_64_4 (x : BitVec 64) (y : BitVec 64) (carry_in : BitVec 1)
   (x_aligned : Aligned x 4)
   (y_carry_in_aligned : Aligned (BitVec.add (extractLsb' 0 4 y) (setWidth 4 carry_in)) 4)
   : Aligned (AddWithCarry x y carry_in).fst 4 := by
   unfold AddWithCarry Aligned at *
-  simp_all only [Nat.sub_zero, zero_eq, add_eq]
-  bv_decide
+  simp_all only [zero_eq, add_eq]
+  simp_all only [BitVec.toNat_eq, extractLsb'_toNat, toNat_add, toNat_ofNat, toNat_setWidth,
+    Nat.shiftRight_zero]
+  omega
 
 /-- Check correct stack pointer (SP) alignment for AArch64 state; returns
 true when sp is aligned. -/

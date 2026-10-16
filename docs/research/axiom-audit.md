@@ -19,12 +19,20 @@ the witnesses. Gates run on the same commit are listed in the PR that adds this 
   `SpillCtlWitness.lean`, the `*_witness` theorems of `AllocDirect`/`AllocTotal`/`EmitTotal`/
   `EmitTotalIn`/`SizeIn`/`RelaxTotal`/`LowerDirect`/`FinalDirect`/`SpillAvail`/`SpillKillFree`/
   `SpillLocalWitness`, `Opt.Legal.Complete.Witness` in `FV/Opt/Proof/LegalPre.lean`).
-* Generated `bv_decide` axioms (12) occur in eight lemmas of the Arm model ported from LNSym
+* Generated `bv_decide` axioms (12) occurred in eight lemmas of the Arm model ported from LNSym
   (`FV/Arm/Insts/Common.lean`: `Aligned_AddWithCarry_64_4`, `Aligned_BitVecAdd_64_4`,
   `Aligned_BitVecSub_64_4`, `sgt_iff_n_eq_v_and_z_eq_0_{32,64}`,
   `sle_iff_not_n_eq_v_and_z_eq_0_{32,64}`; `FV/Arm/Insts/DPSFP/Advanced_simd_copy.lean`:
   `DPSFP.dup_aux_0_4_32`) and in `CheckSPAlignment_AddWithCarry_64_4`, which uses one of them.
-  No other constant of `FV` depends on them, so no compiler theorem does.
+  No other constant of `FV` depended on them, so no compiler theorem did. **Since L1g item 4
+  (#228) none is left**: the eight lemmas have kernel proofs (`toNat`/`toInt` arithmetic with
+  `omega`, `bv_omega`, bitwise `getLsbD` for `dup_aux_0_4_32`) with their statements unchanged, and
+  all of them, `zero_iff_z_eq_one` and `CheckSPAlignment_AddWithCarry_64_4` depend on standard
+  axioms only. A re-run of the walk over every `FV` constant (2026-10-17, on `origin/main` =
+  `5a3ad2bb` plus item 4: 2034 modules, 266,200 constants, 208,918 theorems) finds no generated
+  `bv_decide` axiom and no `sorryAx`: the only generated axioms in `FV` are 41 from `native_decide`
+  (the 39 above and two of the witness `Opt.PipelineXWitness` (`badB_true`, `factsB_true`),
+  added since), on which 116 constants depend; the 12 `bv_decide` axioms above are gone.
 * `crate-proofs`: the witnesses (`Crates.*Witness*`, `Crates.FvDemo*`) and the generated per-crate
   files use `native_decide` (by design: they evaluate a concrete program); none of the theorems
   below depends on them.
