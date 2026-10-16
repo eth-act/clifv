@@ -88,3 +88,7 @@ root = "FVTest.Backend.Lowering.StockComparison"
 [[lean_exe]]
 name = "clif-decode"
 root = "FVTest.Front.DecodeMain"
+
+[[lean_exe]]
+name = "float-difftest"
+root = "FVTest.Float.DiffTest"
