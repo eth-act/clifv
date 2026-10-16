@@ -25,10 +25,13 @@ open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
 
 /-! ## The input conditions -/
 
-/-- `SigOk`, decided: the argument locations compute (`sigArgLocs`: `i64`-or-narrower
-`normal` parameters and at most one `sret` one) and at most 8 ABI returns. -/
+/-- `SigOk`, decided: integer parameters and ABI returns (float arguments and results are
+outside the ISLE progress analysis), the argument locations compute (`sigArgLocs`:
+`i64`-or-narrower `normal` parameters and at most one `sret` one) and at most 8 ABI
+returns. -/
 def sigOkB (s : Clif.Signature) : Bool :=
-  (sigArgLocs s).isOk && decide ((sigRets s).length ≤ 8)
+  s.params.all (·.ty.isInt) && (sigRets s).all (·.ty.isInt) &&
+    (sigArgLocs s).isOk && decide ((sigRets s).length ≤ 8)
 
 /-- The statement conditions of `iselInB`. -/
 def stmtIselB (f : Clif.Function) : Clif.Inst → Bool
@@ -76,7 +79,7 @@ theorem sigOk_of {s : Clif.Signature} (h : sigOkB s = true) : SigOk s := by
   refine ⟨?_, h.2⟩
   cases he : sigArgLocs s with
   | ok r => exact ⟨r, rfl⟩
-  | error e => rw [he] at h; exact absurd h.1 (by simp [Except.isOk, Except.toBool])
+  | error e => rw [he] at h; exact absurd h.1.2 (by simp [Except.isOk, Except.toBool])
 
 theorem stmtIsel_of {f : Clif.Function} (h : iselInB f = true) {c : Clif.Inst} (hc : InstOf f c) :
     stmtIselB f c = true := by
