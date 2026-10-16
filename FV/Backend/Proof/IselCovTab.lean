@@ -13,6 +13,10 @@ entry checks (`chkTab`); `covStmt_ok`/`covStmtTop_ok`/`covTerm_ok`/`covBranch_ok
 check (`aRule`). All are decided once over the exported rule data.
 -/
 
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
+
 namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Isle Isle.Aarch64
@@ -753,21 +757,45 @@ def covTab : Tab :=
 abbrev covEntryOk (e : TermId × List AW × AW) : Bool :=
   (program.rulesOf e.1).all (aRule program covTab aext actor apre aOracle e.2.1 e.2.2)
 
-theorem covTab0_ok : (covTab0).all covEntryOk = true := by native_decide
+theorem covTab0_ok : (covTab0).all covEntryOk = true := by
+  simp only [covTab0, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem covTab1_ok : (covTab1).all covEntryOk = true := by native_decide
+theorem covTab1_ok : (covTab1).all covEntryOk = true := by
+  simp only [covTab1, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem covTab2_ok : (covTab2).all covEntryOk = true := by native_decide
+theorem covTab2_ok : (covTab2).all covEntryOk = true := by
+  simp only [covTab2, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem covTab3_ok : (covTab3).all covEntryOk = true := by native_decide
+theorem covTab3_ok : (covTab3).all covEntryOk = true := by
+  simp only [covTab3, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem covTab4_ok : (covTab4).all covEntryOk = true := by native_decide
+theorem covTab4_ok : (covTab4).all covEntryOk = true := by
+  simp only [covTab4, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem covTab5_ok : (covTab5).all covEntryOk = true := by native_decide
+theorem covTab5_ok : (covTab5).all covEntryOk = true := by
+  simp only [covTab5, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem covTab6_ok : (covTab6).all covEntryOk = true := by native_decide
+theorem covTab6_ok : (covTab6).all covEntryOk = true := by
+  simp only [covTab6, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem covTab7_ok : (covTab7).all covEntryOk = true := by native_decide
+theorem covTab7_ok : (covTab7).all covEntryOk = true := by
+  simp only [covTab7, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **Every rule of every entry checks.** -/
 theorem covTab_ok : chkTab program covTab aext actor apre aOracle = true := by
@@ -777,18 +805,34 @@ theorem covTab_ok : chkTab program covTab aext actor apre aOracle = true := by
 
 /-- The closure roots of `lower` other than `nop`'s rule 587 check with int-vreg results. -/
 theorem covStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id || r.id == 587 ||
-    aRule program covTab aext actor apre aOracle [.xv .inst] (.flat 1 true) r) = true := by native_decide
+    aRule program covTab aext actor apre aOracle [.xv .inst] (.flat 1 true) r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The closure roots of `lower` check with any result. -/
 theorem covStmtTop_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
-    aRule program covTab aext actor apre aOracle [.xv .inst] AW.top r) = true := by native_decide
+    aRule program covTab aext actor apre aOracle [.xv .inst] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `return`, 1037 `trap`) check. -/
 theorem covTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    aRule program covTab aext actor apre aOracle [.c0] AW.top r) = true := by native_decide
+    aRule program covTab aext actor apre aOracle [.c0] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- Every rule of `lower_branch` checks. -/
 theorem covBranch_ok : (program.rulesOf TId.lower_branch).all
-    (aRule program covTab aext actor apre aOracle [.c0, .c0] AW.top) = true := by native_decide
+    (aRule program covTab aext actor apre aOracle [.c0, .c0] AW.top) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 end Backend.Proof.Cov
