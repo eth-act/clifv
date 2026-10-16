@@ -4,6 +4,7 @@ import FV.Link.OptCompile
 import FV.E2E.SrcScopeDefs
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
+import FV.Link.ExeUCompile
 
 /-! # `lake exe lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified]`: the
 executable compiler on an executable (L1, L2b)
@@ -50,6 +51,14 @@ decided on the optimised input, the source domain on the original one; coverage:
 `compileExeOpt_correct_source_peak`, totality `compileExeOpt_total_reach_input`. `SIZES` are
 then the sizes of the optimised functions' code (`cargo fv --lean-link --opt-proven-only`, whose
 units `lean-backend --opt-proven-only` compiles with the same mid-end).
+
+**Unwinding** (S10f): with the cleanup compiler the tool then decides `Link.DeadCleanup.unwOkB`
+on the written executable — the unwind tables rust-lld wrote for the region, found as
+libunwind finds them (`.eh_frame_hdr`'s search), are the compiled functions'
+(`Link.EhCheck.ehOkR`), and the compiled functions pass the unwinding checks
+(`Link.EhCheck.unwFnsB`) — so `compileExeU` succeeds and the coverage adds
+`compileExe_correct_unwind`/`_peak` (the exceptional edges); otherwise the executable is still
+written (the theorems above do not depend on unwinding) and the first failing reason is printed.
 -/
 
 open Lean E2E E2E.LinkCheck E2E.Elf Link
@@ -163,6 +172,8 @@ def main (args : List String) : IO UInt32 := do
       return 1
   match compile SC file0 with
   | .ok file =>
+    -- the unwind tables (S10f): with the cleanup compiler, `compileExeU SC file0 = .ok file`
+    let unwOk := deadCleanup && Link.DeadCleanup.unwOkB SC file
     IO.FS.writeBinFile exe file
     IO.println s!"lean-link: {exe}: {summary} written by {compilerName} ({theoremName})"
     let src := if srcOk then
@@ -170,7 +181,12 @@ def main (args : List String) : IO UInt32 := do
       else "; outside SrcScopeB: about the legalised program only"
     let total := if deadCleanup || opt then thm s!"{exeName}_total_reach_input" else "Link.compileExe_total_reach"
     let scope := if verified then s!"; input in InScopeIn (totality: {total}) (--verified)" else ""
-    IO.println s!"lean-link: {exe}: coverage: {thm s!"{exeName}_correct"}, {thm s!"{exeName}_correct_peak"}{src}{scope}"
+    let unw := if unwOk && !opt then
+        s!"; exceptional edges: {thm "compileExe_correct_unwind"}, {thm "compileExe_correct_unwind_peak"}"
+      else ""
+    IO.println s!"lean-link: {exe}: coverage: {thm s!"{exeName}_correct"}, {thm s!"{exeName}_correct_peak"}{src}{scope}{unw}"
+    if deadCleanup && !unwOk then
+      IO.println s!"lean-link: {exe}: exceptional edges not covered (unwOkB: {Link.DeadCleanup.unwFail SC file})"
     return 0
   | .error e =>
     if e != outOfScopeMsg && e != outOfScopeInMsg then
