@@ -24,13 +24,15 @@ pub struct FnReport {
     pub status: Status,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-    /// A verified function with a `try_call`: the theorem covers its normal returns; the
-    /// unwinding path (landing pads, LSDA) is trusted.
+    /// A verified function with a `try_call` whose unwinding is not covered (lean-backend's
+    /// `compiled, verified for normal returns` line: the unwinding theorem's checks failed or do
+    /// not apply): the theorem covers its normal returns; the unwinding path is trusted. A
+    /// `try_call` function passing the checks is plainly verified.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub normal_returns: bool,
 }
 
-/// The label of a verified function with a `try_call`.
+/// The label of a verified function with a `try_call` whose unwinding is not covered.
 pub const NORMAL_RETURNS: &str = "verified (normal returns; unwinding trusted)";
 
 /// Result of checking a linked executable: every function whose Lean code we merged into an
