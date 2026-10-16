@@ -49,6 +49,10 @@ pub struct BinaryCheck {
     /// Where the executable's functions come from (from the link map).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<ExeOrigin>,
+    /// `--lean-link`: the theorems covering the executable the Lean linker wrote (`lake exe
+    /// lean-link`'s `coverage:`; `none (…)` for the bare-linker fallback outside `--verified`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lean_link: Option<String>,
 }
 
 /// The function symbols of a linked executable (distinct addresses), by origin.

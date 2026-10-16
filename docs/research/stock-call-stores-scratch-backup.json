@@ -1,0 +1,22 @@
+{
+  "archive": {
+    "utc": "20261016T110936Z",
+    "path": "/home/lee/.clifv-recovery/20261016T110936Z-call-stores-scratch/checkpoint.tar.gz",
+    "sha256": "1267a4bf9cc869d205eba4d85b00566a7b38cd48892b0f2a26b174166fe4577a",
+    "bytes": 30530522,
+    "members": 510,
+    "every_member_byte_verified": true,
+    "scratch173_normal_and_complete_witnesses": "pass",
+    "canonical_integration_MCP_fullgates": "pending after frozen batch"
+  },
+  "remote_backup": {
+    "utc": "20261016T110949Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T110949Z",
+    "commit": "9e3d56a6c6d63b020bbf9a559ea184be948c0daf",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1250,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  }
+}
