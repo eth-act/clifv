@@ -109,9 +109,8 @@ theorem effAddr_ofInt (pv : Clif.Val) (off : Int) :
 theorem pv_i64 {ctx : Ctx} {fr : Clif.Frame} (hdfg : DFGCons ctx fr) {p : Nat} {pv : Clif.Val}
     (hp64 : ctx.valueType? p = some (.int 64)) (hpv : fr.regs p = some pv) : pv.ty = .i64 := by
   have := hdfg.2 p _ pv hp64 hpv
-  rw [ofClif_int_width] at this
-  injection this with h
-  exact ty_i64_of_width h
+  revert this
+  cases pv.ty <;> simp [CTy.ofClif]
 
 /-! ## Arm side -/
 

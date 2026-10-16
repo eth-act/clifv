@@ -204,7 +204,7 @@ theorem unary_front {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp} 
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hc
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
-  exact ⟨ty, x, rfl, hety, hb, hd, by rw [hres]; simp [ofClif_int_width]⟩
+  exact ⟨ty, x, rfl, hety, hb, hd, by rw [hres]; simp [(ofClif_int_width)]⟩
 
 /-! ## Instruction shapes -/
 
@@ -293,9 +293,9 @@ theorem earlier_of_idx {L : List Rule} {r r' : Rule} {i j : Nat} (hi : L[i]? = s
     rw [← hget']
     exact List.mem_iff_getElem.mpr ⟨j, by simp; omega, by simp⟩
 
-theorem ty_eq_of_width {ty ty' : Clif.Ty} (h : ty.width = ty'.width) (h' : ty'.width ≠ 128) :
-    ty = ty' := by
-  cases ty <;> cases ty' <;> simp_all [Clif.Ty.width]
+theorem ty_eq_of_width {ty ty' : Clif.Ty} (h : ty.width = ty'.width) (h' : eTy ty' = true)
+    (hi : eTy ty = true) : ty = ty' := by
+  cases ty <;> cases ty' <;> simp_all [Clif.Ty.width, eTy]
 
 /-! ## Template: a unary root rule emitting straight-line code into fresh vregs -/
 

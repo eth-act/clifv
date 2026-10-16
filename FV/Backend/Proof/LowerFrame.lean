@@ -41,9 +41,13 @@ theorem getMany_congr {fr fr' : Clif.Frame} :
 theorem evalInst_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func) (hs : fr'.slots = fr.slots)
     (cm : Clif.Mem) (i : Clif.Inst) (h : ∀ x ∈ instArgs i, fr'.regs x = fr.regs x) :
     Clif.evalInst fr' cm i = Clif.evalInst fr cm i := by
-  cases i <;> simp only [instArgs, List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp,
+  cases i
+  case float op ty args =>
+    simp only [instArgs] at h
+    simp only [Clif.evalInst, getMany_congr h]
+  all_goals (simp only [instArgs, List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp,
     forall_eq] at h <;>
-    simp only [Clif.evalInst, Clif.Frame.getAs, Clif.Frame.get, h, hf, hs]
+    simp only [Clif.evalInst, Clif.Frame.getAs, Clif.Frame.get, h, hf, hs])
 
 theorem instOutcome_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func)
     (hs : fr'.slots = fr.slots) (env : Clif.Env) (p : Clif.Program) (cm : Clif.Mem)
@@ -136,6 +140,29 @@ theorem res_ofOption_eq_ok {α : Type} {m : String} {o : Option α} {a : α} :
     Clif.Res.ofOption m o = .ok a ↔ o = some a := by
   cases o <;> simp [Clif.Res.ofOption]
 
+/-- The result type of `Inst.float op ty` (`Clif.Inst.resultTypes`): `i8` for `fcmp`, the
+controlling type otherwise. -/
+def floatResTy : Clif.FOp → Clif.Ty → Clif.Ty
+  | .fcmp _, _ => .i8
+  | _, ty => ty
+
+/-- A float operation's result has the type `floatResTy`. -/
+theorem evalFloat_ty {op : Clif.FOp} {ty : Clif.Ty} {vs : List Clif.Val} {r : Clif.Val}
+    (h : Clif.evalFloat op ty vs = .ok r) : r.ty = floatResTy op ty := by
+  unfold Clif.evalFloat at h
+  split at h
+  all_goals (repeat' (first
+    | (simp only [res_bind_eq_ok, Clif.Res.pure_eq, Clif.Res.ok.injEq, res_ofOption_eq_ok] at h)
+    | (obtain ⟨_, _, h⟩ : ∃ _, _ ∧ _ := h)
+    | (cases hu : Clif.FSem.unary op <;> simp only [hu] at h)
+    | (cases hu : Clif.FSem.binary op <;> simp only [hu] at h)
+    | (split at h)))
+  all_goals first
+    | (cases h; done)
+    | (subst h; simp_all [floatResTy, Clif.Val.ofBool]; done)
+    | (subst h; cases op <;> simp_all [floatResTy, Clif.FSem.unary, Clif.FSem.binary]; done)
+    | (cases op <;> simp_all [floatResTy, Clif.FSem.unary, Clif.FSem.binary]; done)
+
 /-- The CLIF outcome of an indirect call that returns: the call site's signature, the callee
 address (an `i64` value), the extern at that address (whose signature, if the environment knows
 it, the call site's matches), and its results. -/
@@ -201,8 +228,15 @@ theorem evalInst_types {fr : Clif.Frame} {cm cm' : Clif.Mem} {i : Clif.Inst}
     (h : Clif.evalInst fr cm i = .ok (vals, cm'))
     (ht : i.resultTypes sigOf sigDeclOf = some tys) :
     vals.map (·.ty) = tys := by
-  cases i <;> simp only [Clif.evalInst] at h <;>
-    simp only [Clif.Inst.resultTypes, Option.some.injEq] at ht
+  cases i
+  case float op ty args =>
+    simp only [Clif.evalInst, res_bind_eq_ok, Clif.Res.pure_eq, Clif.Res.ok.injEq,
+      Prod.mk.injEq] at h
+    obtain ⟨_, _, r, hr, rfl, -⟩ := h
+    have hty := evalFloat_ty hr
+    cases op <;> simp_all [Clif.Inst.resultTypes, floatResTy]
+  all_goals (simp only [Clif.evalInst] at h <;>
+    simp only [Clif.Inst.resultTypes, Option.some.injEq] at ht)
   all_goals (repeat' (first
     | (obtain ⟨_, _, h⟩ : ∃ _, _ ∧ _ := h)
     | (simp only [res_bind_eq_ok, Clif.Res.pure_eq, Clif.Res.ok.injEq,

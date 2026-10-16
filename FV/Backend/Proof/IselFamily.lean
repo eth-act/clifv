@@ -260,7 +260,26 @@ theorem aluVal_holds {op : ALUOp} {cop : Clif.BinaryOp}
 
 /-! ## The two-register ALU template -/
 
-theorem ofClif_int_width {ty : Clif.Ty} : CTy.ofClif ty = .int ty.width := by cases ty <;> rfl
+/-- `eTy` types are integer types. -/
+theorem isInt_of_eTy {ty : Clif.Ty} (h : eTy ty = true) : ty.isInt = true := by
+  cases ty <;> simp_all [eTy]
+
+/-- The backend type of an integer CLIF type (a float type is `.float`, `CTy.ofClif`). -/
+theorem ofClif_int_width {ty : Clif.Ty} (hi : ty.isInt = true) :
+    CTy.ofClif ty = .int ty.width := by
+  cases ty <;> first | rfl | simp at hi
+
+/-- Inverting `CTy.ofClif` at an integer `CTy`. -/
+theorem ofClif_eq_int {t : Clif.Ty} {w : Nat} (h : CTy.ofClif t = .int w) :
+    t.isInt = true ∧ t.width = w := by
+  cases t <;> simp_all [CTy.ofClif, Clif.Ty.width]
+
+/-- A CLIF type whose backend type is an E type (`eCTys`) is an integer type. -/
+theorem isInt_of_ofClif_mem {t : Clif.Ty} (h : CTy.ofClif t ∈ eCTys) : t.isInt = true := by
+  cases t <;> simp_all [CTy.ofClif, eCTys]
+
+/-- `CTy.ofClif` keeps the width. -/
+theorem bits_ofClif (t : Clif.Ty) : (CTy.ofClif t).bits = t.width := by cases t <;> rfl
 
 theorem eTy_width {ty : Clif.Ty} (h : eTy ty = true) : ty.width ≤ 64 := by
   cases ty <;> first | decide | simp [eTy] at h
@@ -339,7 +358,7 @@ theorem aluRR_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.BinaryOp
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   have hhead : info.resTys.head? = some (.int ty.width) := by
-    rw [hres]; simp [ofClif_int_width]
+    rw [hres]; simp [ofClif_int_width (isInt_of_eTy hety)]
   -- 2. determinism: the environment and the emitted code
   rw [hmatch ctx cfg ii info ty.width x y st tr m' hi hhead hw hd] at hmatch'
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch'
