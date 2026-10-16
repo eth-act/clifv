@@ -894,6 +894,19 @@ Large, low priority.
   three at a time in import order (`FV_MEMCAP=13G LEAN_NUM_THREADS=2 scripts/memcap.sh lake build
   FV.Opt.Proof.<Module>`, a module killed at 13G again alone at 22G), then the full target, which
   replays them (docs/contracts/midend.md, build note).
+- **Shared build cache.** Set `FV_LAKE_CACHE=<dir>` (on the worktrees' filesystem; agents on the shared
+  machine: `/home/kev/work/clifv-lake-cache`); `scripts/memcap.sh` then sets `LAKE_ARTIFACT_CACHE=true
+  LAKE_RESTORE_ARTIFACTS=true LAKE_CACHE_DIR=<dir>`. Lake keys each module's outputs by the hash of its
+  inputs (source, the imports' outputs, options, toolchain) and hard-links them between `<dir>` and
+  `.lake/build`, so any worktree whose sources were built before, anywhere, gets the outputs without
+  building (measured: a fresh worktree at a built commit, `lake build FV lean-backend link-check`:
+  0 of 2332 jobs rebuilt, 0.7 s, 31 MB of new disk instead of 8.5 GB; a module built from a different
+  import graph gets a different key, so old and new worktrees never see each other's outputs).
+  Concurrent builds of the same modules in two worktrees are safe (both build; byte-identical outputs).
+  A fresh worktree needs no `.lake` seeding (`scripts/agent-worktree.sh` skips the copy when
+  `FV_LAKE_CACHE` is set). `lake env lean` needs the restored files, so run `lake build` first (or use
+  `lake lean <file>`). Clean-up: `find <dir>/artifacts -type f -links 1 -mmin +60 -delete` removes
+  outputs no worktree links to (a later miss rebuilds).
 - No `sorry`, `admit`, hand-written `axiom`, `trace_state`. Allowed axioms: `propext`, `Classical.choice`,
   `Quot.sound`, and generated `*._native.bv_decide.ax_*` / `*._native.native_decide.ax_*` in fixed proofs.
 - Every new top-level theorem gets a non-vacuity witness (they have caught six unsatisfiable premises).
