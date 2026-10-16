@@ -11,10 +11,10 @@ the same; stuck or out-of-fuel input runs carry no obligation.
 
 ## Status
 
-- [x] Passes (`FV/Opt/*.lean`), all **unproven** (working first, proofs after, as for the
-  backend): well-formedness check, unreachable-block removal, rule-based simplification of pure
-  nodes and of skeleton instructions (Cranelift's rules via the ISLE interpreter), GVN, DCE,
-  LICM. No `sorry`, no axioms (there are no theorems yet).
+- [x] Passes (`FV/Opt/*.lean`): well-formedness check, unreachable-block removal, rule-based
+  simplification of pure nodes and of skeleton instructions (Cranelift's rules via the ISLE
+  interpreter), GVN, DCE, LICM. Written first and proven afterwards ("Pass proofs"); no `sorry`,
+  no hand-written axioms.
 - [x] Drivers: `clif-opt` (optimised CLIF out; accepted by `clif-oracle check`), `--opt` for
   `lean-backend`, `lean-backend-armrun`, `lean-e2e-check`, `scripts/lean-backend-filetests.sh`.
 - [x] Differential tests: `scripts/opt-difftest.sh` (corpus, runtests, cg_clif survey),
@@ -22,7 +22,9 @@ the same; stuck or out-of-fuel input runs carry no obligation.
   3270/0/0, `lean-e2e-check --opt` 934/934 accepted and `formsCoveredB`-covered.
 - [x] Metrics (`scripts/lean-backend-metrics.sh`): Lean no-opt / `--opt` vs Cranelift
   `opt_level=none` / `speed` ("Results").
-- [ ] Proofs: architecture below ("Planned proof architecture").
+- [x] Proofs: every pass ("Pass proofs"), the rule interpreter and 1154 `simplify` + 37
+  `simplify_skeleton` roots ("Rule proofs"; the false shifts 84/88 stay disabled):
+  `Opt.optimize_sim_proven`, `E2E.backend_correct_opt_proven` (`ruleAllow := .proven`).
 
 ## Using it
 

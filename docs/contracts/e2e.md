@@ -3452,17 +3452,14 @@ extrt and runtests (445 files): no function rejected.
 
 ## Remaining (precise)
 
-1. **M4**: `LowerRulesCorrect` (in progress; `ExcludedUnmatchable` proven) and the terminator
-   statements `LowerTermRulesCorrect`, `TermUnmatchable`, `BranchRulesCorrect`,
-   `BranchExcludedUnmatchable` for `Isle.Aarch64.program`.
-2. **M6**: `RegLevelCorrect` and `DriverSem` are discharged (`regLevelCorrect_backend`,
-   `driverSem_csem`); open: `Refines`/`MemRefines` of `csem` (M6Insts) and the decision of
-   `FormsCovered` by `lean-e2e-check` (`formsCoveredB`).
-3. **Scope extensions**: discharging the program callees' contracts of
-   `backend_correct_linked` from their own theorems (induction on call depth; the dead-stack
-   obstruction is fixed, the exact world, frame locality and slot placement remain, see
-   "Linking" and `docs/DEFERRED.md`); stack-passed arguments of indirect calls (`indSigs`);
-   memory-access traps (need a fault model).
+M4 (`LowerRulesCorrect` and the terminator statements) and M6 (`RegLevelCorrect`, `DriverSem`,
+`Refines`/`MemRefines` of `csem`) are proven, `FormsCovered` follows from `formsCovered_complete`,
+and the program callees' contracts are discharged by `E2E.backend_correct_program` (induction on
+the call depth); the executable theorems are `Link.DeadCleanup.compileExe_correct{,_peak,_source,
+_source_peak}` and, from cg_clif's dumps, `Front.bundle_correct_raw{,_peak}`. What remains is
+listed in `docs/TO-PROVE.md` (§1.1 for totality, §4 for scope, §5 for the trusted base); from this
+file: stack-passed arguments of indirect calls (`indSigs`, S5) and memory-access traps (need a
+fault model; `TrapsExplicit`).
 
 ## Trusted (not proven)
 
@@ -3506,7 +3503,8 @@ extrt and runtests (445 files): no function rejected.
   (`__rust_alloc`, …) and the i128 builtins (`__udivti3`, `__rust_u128_mulo`); both are out
   of scope until `i_alloc`/i128 are taken up (the allocator is the existing flat-runtime
   path).
-* Frontend (pluggable, PLAN.md §4 M7 restatement).
+* Frontend: rustc and the patched cg_clif, and the frontend bundle's faithfulness to what cg_clif
+  compiled (docs/contracts/frontend.md §1, §5).
 
 ## `#print axioms`
 
@@ -3523,7 +3521,7 @@ E2E.backend_correct_linked: those of `backend_correct_final`
 Clif.runLoop_link, E2E.xCallsOk_link: [propext, Classical.choice, Quot.sound]
 E2E.calleeOk_witness, E2E.final_contracts_witness, E2E.witness_saves_lr, E2E.calleeOk_id,
 E2E.final_contracts_id:
-  [propext, Classical.choice, Quot.sound, Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9]
+  [propext, Classical.choice, Quot.sound] (T6)
 E2E.backend_correct_final_witness, E2E.backend_correct_final_id: those of `backend_correct_final`
 E2E.BinCheck.img_bytes, E2E.BinCheck.codeB_sound, E2E.BinCheck.symsB_sound,
 E2E.BinCheck.binOk_of: [propext, Classical.choice, Quot.sound]
@@ -3533,8 +3531,5 @@ Crates.NAME.bin_ok: [propext, Classical.choice, Quot.sound] + `Crates.NAME.{hdr_
   syms_bin, sliceK_bin}._native.native_decide.ax_1_1`
 ```
 
-**Status (M6Insts2, 2026-09-28)**: `hRef`/`hmem` of `backend_correct_m4` are not yet discharged.
-csem now falls back to `mspec` (ispec + memory forms) off error-free aligned worlds; `FormOk` must be
-narrowed (xzr-destination imm/extended add/sub make `Refines` false as is). See regalloc-proof.md
-"Status update (M6Insts2)"; `MemRefines` for `csem` will need `ctx.slotBase = slotOff` and a
-GOT premise `syms n = some b → X.sym n 0 = ofNat b`.
+Every top-level theorem of the compiler (per function, per executable, the frontend theorems) and
+the result of an axiom scan of every constant of `FV`: `docs/research/axiom-audit.md`.
