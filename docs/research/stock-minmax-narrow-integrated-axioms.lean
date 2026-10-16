@@ -1,0 +1,31 @@
+import FV.Backend.Proof.StockMinMaxNarrowAllocation
+import FV.Backend.Proof.StockMinMaxNarrowBothConstantDriverRuns
+import FV.Backend.Proof.StockMinMaxNarrowBothConstantWitness
+import FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns
+import FV.Backend.Proof.StockMinMaxNarrowConstantWitness
+import FV.Backend.Proof.StockMinMaxNarrowDriverRuns
+import FV.Backend.Proof.StockMinMaxNarrowDriverWitness
+import FV.Backend.Proof.StockMinMaxNarrowFixtures
+import FV.Backend.Proof.StockMinMaxNarrowOriginalSourceValues
+import FV.Backend.Proof.StockMinMaxNarrowRecordValues
+import FV.Backend.Proof.StockMinMaxNarrowRootValues
+import FV.Backend.Proof.StockMinMaxNarrowShape
+import FV.Backend.Proof.StockMinMaxNarrowSourceReads
+import FV.Backend.Proof.StockMinMaxNarrowValues
+import FV.Backend.Proof.StockMinMaxActualDispatch
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_selected_allocation
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_both_constant_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.NarrowBothConstantWitness.stock_minmax_narrow_both_constant_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_constant_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.NarrowConstantWitness.stock_minmax_narrow_constant_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.MinMaxNarrowDriverWitness.stock_minmax_narrow_complete_source_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_by_instruction
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_available_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_selected_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_emitter_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_narrow_source_with_reads
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_minmax_narrow_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_actual_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_actual_source_with_reads
