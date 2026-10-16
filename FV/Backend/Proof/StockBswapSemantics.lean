@@ -67,7 +67,7 @@ theorem stock_bswap_resolved {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem}
       VHolds ⟨ty,Clif.Sem.unary .bswap u⟩ (ρ' d) ∧ ∀ n,n ≠ d → ρ' n = ρ n := by
   have input := held.read rfl (getAs_ok source) mapped
   rcases width with half | word | double
-  · obtain rfl := ty_eq_of_width (ty' := .i16) half (by decide)
+  · obtain rfl : ty = .i16 := by revert half; cases ty <;> simp [Clif.Ty.width]
     let r := resX .size32 (rev16w (opnd .size32 (ρ (aliasNum aliases nx))))
     refine ⟨upd ρ d r,?_,?_,?_⟩
     · rw [mapped_code bounded]
@@ -77,24 +77,28 @@ theorem stock_bswap_resolved {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem}
       exact stock_bswap16_bits input
     · intro n different
       simp only [upd,different,ite_false]
-  · obtain rfl := ty_eq_of_width (ty' := .i32) word (by decide)
-    let r := resX .size32 (Clif.Sem.bswap (opnd .size32 (ρ (aliasNum aliases nx))))
-    refine ⟨upd ρ d r,?_,?_,?_⟩
-    · rw [mapped_code bounded]
-      simp only [bswapOp,szOf,Clif.Ty.width,Nat.reduceEqDiff,ite_true,ite_false]
-      exact prun_rr refines rfl (fun _ => rfl) (prun_nil _)
-    · rw [upd_same]
-      exact stock_bswap_wide_bits (Or.inl rfl) input
-    · intro n different
-      simp only [upd,different,ite_false]
-  · obtain rfl := ty_eq_of_width (ty' := .i64) double (by decide)
-    let r := resX .size64 (Clif.Sem.bswap (opnd .size64 (ρ (aliasNum aliases nx))))
-    refine ⟨upd ρ d r,?_,?_,?_⟩
-    · rw [mapped_code bounded]
-      simp only [bswapOp,szOf,Clif.Ty.width,Nat.reduceEqDiff,ite_true,ite_false]
-      exact prun_rr refines rfl (fun _ => rfl) (prun_nil _)
-    · rw [upd_same]
-      exact stock_bswap_wide_bits (Or.inr rfl) input
-    · intro n different
-      simp only [upd,different,ite_false]
+  · rcases (show ty = .i32 ∨ ty = .f32 by revert word; cases ty <;> simp [Clif.Ty.width])
+      with rfl | rfl
+    all_goals
+      let r := resX .size32 (Clif.Sem.bswap (opnd .size32 (ρ (aliasNum aliases nx))))
+      refine ⟨upd ρ d r,?_,?_,?_⟩
+      · rw [mapped_code bounded]
+        simp only [bswapOp,szOf,Clif.Ty.width,Nat.reduceEqDiff,ite_true,ite_false]
+        exact prun_rr refines rfl (fun _ => rfl) (prun_nil _)
+      · rw [upd_same]
+        exact stock_bswap_wide_bits (Or.inl rfl) input
+      · intro n different
+        simp only [upd,different,ite_false]
+  · rcases (show ty = .i64 ∨ ty = .f64 by revert double; cases ty <;> simp [Clif.Ty.width])
+      with rfl | rfl
+    all_goals
+      let r := resX .size64 (Clif.Sem.bswap (opnd .size64 (ρ (aliasNum aliases nx))))
+      refine ⟨upd ρ d r,?_,?_,?_⟩
+      · rw [mapped_code bounded]
+        simp only [bswapOp,szOf,Clif.Ty.width,Nat.reduceEqDiff,ite_true,ite_false]
+        exact prun_rr refines rfl (fun _ => rfl) (prun_nil _)
+      · rw [upd_same]
+        exact stock_bswap_wide_bits (Or.inr rfl) input
+      · intro n different
+        simp only [upd,different,ite_false]
 end Backend.Stock.Proof.ScalarBit

@@ -142,7 +142,7 @@ theorem rotr_32_base_case_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : C
     rw [hst, hs1]
     exact codeShapeU_one rfl (fun u hu => by rw [show vuseNums _ = [x, y] from rfl] at hu; exact hu), ?_⟩
   intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   refine ⟨_, prun_rrr hR (operands_aluRRR _ _ _ _ _) (fun w => ispec_rrr_extr_fb) (prun_nil _), ?_⟩
   simp only [Clif.Sem.shift, Clif.Sem.rotr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
   subst hres
@@ -186,7 +186,7 @@ theorem rotr_64_base_case_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : C
     rw [hst, hs1]
     exact codeShapeU_one rfl (fun u hu => by rw [show vuseNums _ = [x, y] from rfl] at hu; exact hu), ?_⟩
   intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   refine ⟨_, prun_rrr hR (operands_aluRRR _ _ _ _ _) (fun w => ispec_rrr_extr_fb) (prun_nil _), ?_⟩
   simp only [Clif.Sem.shift, Clif.Sem.rotr, Clif.Sem.shiftAmt, Option.some.injEq] at hres
   subst hres
@@ -243,7 +243,7 @@ theorem rotl_32_base_case_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : C
         simp only [List.mem_cons, List.mem_nil_iff, or_false] at hu
         rcases hu with rfl | rfl <;> simp), ?_⟩
   intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   refine ⟨_, prun_rr hR rfl (fun w => ispec_sub_xzr_fb)
     (prun_rrr hR (operands_aluRRR _ _ _ _ _) (fun w => ispec_rrr_extr_fb) (prun_nil _)), ?_⟩
   simp only [Clif.Sem.shift, Clif.Sem.rotl, Clif.Sem.shiftAmt, Option.some.injEq] at hres
@@ -301,7 +301,7 @@ theorem rotl_64_base_case_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : C
         simp only [List.mem_cons, List.mem_nil_iff, or_false] at hu
         rcases hu with rfl | rfl <;> simp), ?_⟩
   intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   refine ⟨_, prun_rr hR rfl (fun w => ispec_sub_xzr64_fb)
     (prun_rrr hR (operands_aluRRR _ _ _ _ _) (fun w => ispec_rrr_extr_fb) (prun_nil _)), ?_⟩
   simp only [Clif.Sem.shift, Clif.Sem.rotl, Clif.Sem.shiftAmt, Option.some.injEq] at hres
@@ -362,7 +362,7 @@ theorem rotr_32_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.En
     exact codeShapeU_one rfl (fun u hu => by
       rw [show vuseNums _ = [x] from rfl] at hu; simp at hu; simp [hu]), ?_⟩
   intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
   subst hyv
   have hlt : imm.toNat % 32 < OperandSize.size32.bits := Nat.mod_lt _ (by decide)
@@ -424,7 +424,7 @@ theorem rotr_64_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.En
     exact codeShapeU_one rfl (fun u hu => by
       rw [show vuseNums _ = [x] from rfl] at hu; simp at hu; simp [hu]), ?_⟩
   intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
   subst hyv
   have hlt : imm.toNat % 64 < OperandSize.size64.bits := Nat.mod_lt _ (by decide)
@@ -489,7 +489,7 @@ theorem rotl_32_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.En
     exact codeShapeU_one rfl (fun u hu => by
       rw [show vuseNums _ = [x] from rfl] at hu; simp at hu; simp [hu]), ?_⟩
   intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
   subst hyv
   have hlt : (32 - imm.toNat % 32) % 32 < OperandSize.size32.bits := Nat.mod_lt _ (by decide)
@@ -555,7 +555,7 @@ theorem rotl_64_imm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.En
     exact codeShapeU_one rfl (fun u hu => by
       rw [show vuseNums _ = [x] from rfl] at hu; simp at hu; simp [hu]), ?_⟩
   intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-  cases ty <;> simp [Clif.Ty.width] at hty
+  cases ty <;> simp [Clif.Ty.width, eTy] at hty hety
   have hyv := dfg_iconst_fb hdfg hdj hij hcl hy
   subst hyv
   have hlt : (64 - imm.toNat % 64) % 64 < OperandSize.size64.bits := Nat.mod_lt _ (by decide)

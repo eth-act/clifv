@@ -28,7 +28,7 @@ private theorem finish_value (kind : Kind) (wide : Bool) {ty : Clif.Ty} {u : Bit
       have prepared := prep.2 gate
       exact fin_lsr .size32 (by change ty.width ≤ 32; exact gate) prepared shift
     · change ty.width = 64 at gate
-      cases ty <;> simp [Clif.Ty.width] at gate
+      cases ty <;> simp [Clif.Ty.width] at gate <;>
       exact fin_lsr .size64 (Nat.le_refl _) (hA64 prep.1) shift
   · cases wide
     · change ty.width ≤ 32 at gate
@@ -37,7 +37,7 @@ private theorem finish_value (kind : Kind) (wide : Bool) {ty : Clif.Ty} {u : Bit
       have prepared := prep.2 gate
       exact fin_asr .size32 (by change ty.width ≤ 32; exact gate) prepared shift
     · change ty.width = 64 at gate
-      cases ty <;> simp [Clif.Ty.width] at gate
+      cases ty <;> simp [Clif.Ty.width] at gate <;>
       exact fin_asr .size64 (Nat.le_refl _) (hA64s prep.1) shift
 private theorem output_run {p : Program} (hp : Data p) (ctx : Ctx) (st : State) (tr : Array RuleId)
     (n : Nat) (r : Reg) :

@@ -13,15 +13,15 @@ private theorem source_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv 
       info.resTys.head? = some (.int ty.width) := by
   have accepted := inv.instE i info _ source clif
   have allowed : Compile.unaryTyE .bswap ty = true := by simpa only [Compile.instE] using accepted
-  have supported : eTy ty = true := by cases ty <;> simp [Compile.unaryTyE,eTy] at allowed ⊢
+  have supported : eTy ty = true := by cases ty <;> simp [Compile.unaryTyE,Compile.tyE,eTy] at allowed ⊢
   have raw := inv.data i info _ source clif
   obtain ⟨types,result,typed,len⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
   refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
-  · cases ty <;> simp [Compile.unaryTyE,Clif.Ty.width] at allowed ⊢
+  · cases ty <;> simp [Compile.unaryTyE,Compile.tyE,Clif.Ty.width] at allowed ⊢
   · have expected : instData f (.unary .bswap ty x) = .ok (.data 152 29 [.data 151 110 [],.value x]) := by
-      cases ty <;> simp [Compile.unaryTyE] at allowed <;> rfl
+      cases ty <;> simp [Compile.unaryTyE,Compile.tyE] at allowed <;> rfl
     exact Except.ok.inj (raw.symm.trans expected)
 end Data
 /-- Actual scalar byte-swap selection derives its width/environment, guarded

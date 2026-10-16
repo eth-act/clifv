@@ -207,11 +207,12 @@ theorem urem_vholds {ty : Clif.Ty} (hw : ty.width ≤ 64) {a b : BitVec ty.width
 
 theorem divOpnd_of_vholds64 {sg : Bool} {ty : Clif.Ty} (hw : ty.width = 64) {a : BitVec ty.width}
     {A : CV} (h : VHolds ⟨ty, a⟩ A) : DivOpnd sg a A := by
-  cases ty <;> simp [Clif.Ty.width] at hw
-  simp only [VHolds, Clif.Ty.width] at h
-  unfold DivOpnd
-  simp only [Clif.Ty.width, show ¬ (64 : Nat) ≤ 32 by decide, ↓reduceIte, lo64, BitVec.setWidth_eq]
-  exact h
+  cases ty <;> simp [Clif.Ty.width] at hw <;>
+  · simp only [VHolds, Clif.Ty.width] at h
+    unfold DivOpnd
+    simp only [Clif.Ty.width, show ¬ (64 : Nat) ≤ 32 by decide, ↓reduceIte, lo64,
+      BitVec.setWidth_eq]
+    exact h
 
 /-- **The dividend**: a `put_in_reg_*ext*` result (or the value's own register) holding the value
 as a division operand. -/
