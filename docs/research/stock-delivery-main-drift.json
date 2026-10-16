@@ -1,0 +1,147 @@
+{
+  "utc": "2026-10-16T18:26:52.249729+00:00",
+  "validated_PR246_base": "032d576442e48aeb5de9062103c970d18b8d0739",
+  "observed_main": "0ec59a028dd3a27911cb22554b3e292b20a5c45f",
+  "commits": [
+    {
+      "sha": "88698589fe5fd46887d2e906c38faf216a69af25",
+      "message": "L1g (#228) item 1: Link.compileExe checks the input-only InScopeIn (#250)\n\n* L1g (#228): Link.compileExe checks the input-only InScopeIn; totality premises InScopeP \u2192 InScopeIn\n\n* L1g (#228): docs for compileExe on InScopeIn"
+    },
+    {
+      "sha": "8ca92f349e2c74e10eabc2d9157118b364342828",
+      "message": "L1g (#228) item 2: InScopeIn runs no compiler stage (addrSlotsInputB, progScopeInB for addrSlotsInB/outAreaB) (#251)"
+    },
+    {
+      "sha": "2095a6d0b39855c94a94c50fbe906f23d1d93fb7",
+      "message": "B1 (#252): shared Lake artifact cache (FV_LAKE_CACHE in scripts/memcap.sh), no .lake seeding with it, TO-PROVE \u00a77 (#253)"
+    },
+    {
+      "sha": "0ec59a028dd3a27911cb22554b3e292b20a5c45f",
+      "message": "L1g (#228) item 3: lean-link computes the Lean compiler's layout (placedPar = placed); sizes.txt removed (#254)"
+    }
+  ],
+  "changed_paths": [
+    {
+      "path": "FV/E2E/LinkScopeInput.lean",
+      "status": "modified"
+    },
+    {
+      "path": "FV/E2E/LinkScopeInputDefs.lean",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/Compile.lean",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/Exe.lean",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/ExeInput.lean",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/ExeInputReach.lean",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/ExeInputReachIn.lean",
+      "status": "removed"
+    },
+    {
+      "path": "FV/Link/ExeTotal.lean",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/OptExe.lean",
+      "status": "modified"
+    },
+    {
+      "path": "FV/Link/Placed.lean",
+      "status": "added"
+    },
+    {
+      "path": "FV/Link/PlacedEq.lean",
+      "status": "added"
+    },
+    {
+      "path": "FVTest/Link/LeanLinkMain.lean",
+      "status": "modified"
+    },
+    {
+      "path": "crate-proofs/Crates/CompileExeOptPeakWitness.lean",
+      "status": "modified"
+    },
+    {
+      "path": "crate-proofs/Crates/CompileExeOptSourceWitness.lean",
+      "status": "modified"
+    },
+    {
+      "path": "crate-proofs/Crates/CompileExeRecWitness.lean",
+      "status": "modified"
+    },
+    {
+      "path": "crate-proofs/Crates/CompileExeRunWitness.lean",
+      "status": "modified"
+    },
+    {
+      "path": "crate-proofs/Crates/CompileExeSourcePeakWitness.lean",
+      "status": "modified"
+    },
+    {
+      "path": "crate-proofs/Crates/CompileExeSourceWitness.lean",
+      "status": "modified"
+    },
+    {
+      "path": "crate-proofs/Crates/CompileExeWitness.lean",
+      "status": "modified"
+    },
+    {
+      "path": "crate-proofs/Crates/FrontendBundleWitnessBaseline.lean",
+      "status": "modified"
+    },
+    {
+      "path": "docs/DEFERRED.md",
+      "status": "modified"
+    },
+    {
+      "path": "docs/PLAN.md",
+      "status": "modified"
+    },
+    {
+      "path": "docs/TO-PROVE.md",
+      "status": "modified"
+    },
+    {
+      "path": "docs/USAGE.md",
+      "status": "modified"
+    },
+    {
+      "path": "docs/contracts/e2e.md",
+      "status": "modified"
+    },
+    {
+      "path": "docs/contracts/frontend.md",
+      "status": "modified"
+    },
+    {
+      "path": "docs/research/lean-linker.md",
+      "status": "modified"
+    },
+    {
+      "path": "rust/crates/cargo-fv/src/leanlink.rs",
+      "status": "modified"
+    },
+    {
+      "path": "scripts/agent-worktree.sh",
+      "status": "modified"
+    },
+    {
+      "path": "scripts/memcap.sh",
+      "status": "modified"
+    }
+  ],
+  "handling": "Do not restart current live exact-commit worker or edit frozen canonical/build view. Preserve exact old-head gate receipts. At terminal, review integration changes, update delivery branches onto current main with old published heads/dirty source preserved, and rerun affected kernel/public/private/compiler trust audits and all final build/crates/runtime/encoder/both-E2E identity-stage gates on actual resulting heads. Recheck main immediately before squash. PR247 dependency must follow actual PR246 squash result. No old-tree evidence can certify changed current-main consumer integrations.",
+  "likely_interaction": "No Stock proof source overlap. Actual Link.compileExe/LinkScopeInput/LeanLinkMain/cargo-fv layout consumers and final theorem-root inventory changed; required integration and identity-stage parity must be reviewed explicitly. Shared Lake artifact-cache policy changed; adopt only after frozen lease ends without mutating current controller source/scripts."
+}
