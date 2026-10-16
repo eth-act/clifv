@@ -56,6 +56,9 @@ theorem stock_lower_minmax_actual_source_values {f : Clif.Function} {result : Re
       foundBlock foundStmt current unsigned maximum source clif true rfl typeX typeY results statementResults mapped
       recorded emitted refines dfg getX getY held sourceStep
   | i128 => simp [Clif.Ty.width] at widths
+  | f32 | f64 =>
+    have accepted := inv.instE _ info _ source clif
+    simp [Compile.instE, Compile.tyE] at accepted
 
 /-- Original source execution supplies both getters internally; the original
 reads are returned explicitly while both earlier source-transfer variants remain unchanged. -/
