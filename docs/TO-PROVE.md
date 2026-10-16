@@ -936,8 +936,9 @@ Large, low priority.
   (corpus 114/114, runtests ≥ 4672/0/0); `scripts/lean-backend-encode-check.sh` (0 differ);
   `lean-e2e-check` (≥ 1149 accepted, 0 rejected); if CLIF semantics change, `scripts/clif-filetests.sh` at
   its baseline and `scripts/opt-difftest.sh` with 0 failures.
-- **Gate policy (proposal, #252).** The full list above costs one machine-wide slot for hours (one run held
-  `/tmp/clifv-heavy.lock` 5.6 h), so run it once per merge batch, not once per PR:
+- **Gate policy (proposed, #252; not adopted: until @kevaundray agrees, the full list above stays required
+  before every PR).** The full list costs one machine-wide slot for hours (one run held
+  `/tmp/clifv-heavy.lock` 5.6 h). The proposal is to run it once per merge batch, not once per PR:
   - *Per PR (author, scheduler budget, no heavy lock):* `scripts/lake-serial-build.py FV FVTest` and the
     executables (with the shared cache only the PR's modules and their dependents build);
     `#print axioms` of new or changed theorems, and of the E2E list when a module they depend on changed;
