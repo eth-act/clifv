@@ -231,6 +231,14 @@ fn obj_name_of(ours: &str) -> String {
     }
 }
 
+/// The CLIF name of the object symbol `obj` (the inverse of `obj_name_of`).
+fn clif_name_of(obj: &str) -> String {
+    match obj.strip_prefix(".Ldata") {
+        Some(hex) => format!("c_Ldata{hex}"),
+        None => obj.to_string(),
+    }
+}
+
 fn fallback_all(funcs: &[(String, Dump)], why: &str) -> Vec<FnReport> {
     funcs
         .iter()
@@ -930,11 +938,21 @@ fn process_in(
             let s = f["symbol"].as_str().unwrap_or_default().to_string();
             f["final"] = serde_json::Value::String(final_name(&s));
         }
+        // the unit's local symbols (CLIF name, object symbol): two units' local symbols of
+        // one name are different symbols (the Lean-built `LinkSpec`'s scoping, `Front.ScopingOk`)
+        let locals: Vec<(String, String)> = syms
+            .local_count
+            .keys()
+            .map(|s| (clif_name_of(s), s.clone()))
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
         let j = serde_json::json!({
             "tag": tag,
             "object": obj.file_name().map(|n| n.to_string_lossy().into_owned()),
             "functions": link_fns,
             "names": clif_names,
+            "locals": locals,
         });
         let p = work.join(crate::linkproof::CGU_FILE);
         fs::write(&p, serde_json::to_string_pretty(&j).unwrap_or_default())

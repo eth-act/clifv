@@ -1825,12 +1825,13 @@ records the coverage in the report (`binary.lean_link`).
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
 optimised dump of the missing-data retry), `lean-regalloc`'s output for it (`fv-rustc` runs as
 the `lean-regalloc` of `lean-backend` and keeps a copy, `cargo_fv::linkproof::regalloc_tee`),
-and the merge's names (each CLIF name → the symbol it is linked as); and per executable the lld
-link map (`link-<tag>.map`, `link-<tag>.json`). `cargo fv link-proof` writes the input
-directory: the CLIF renamed to the linked symbols (local symbols renamed by the merge,
-`c_LdataN` → `__fv_<tag>_LdataN`, self-call aliases with their functions), the functions at
-their `__fvlean$` marker in the map, the data objects they reach (since M9), the other
-referenced names at their address in the executable's symbol table. `lake exe link-check`
+the merge's names (each CLIF name → the symbol it is linked as) and the object's local symbols;
+and per executable the lld link map (`link-<tag>.map`, `link-<tag>.json`). `cargo fv link-proof`
+writes the frontend bundle `bundle.json` (docs/contracts/frontend.md): the files and addresses,
+unchanged; `Front.assemble` (T7d) renames the CLIF to the linked symbols (local symbols renamed by
+the merge, other local symbols as `sym@<unit>`), finds the data objects the functions reach, and
+looks up the other referenced names in the executable's symbol table, with proofs
+(`Front.buildSpec_spec`). `lake exe link-check`
 completes the input (`syms`: every `symbol` global value and `func_addr` target; `D`: the
 largest frame; `raStar = 8`; the self-call aliases), prints the failing checks per function and
 premise with details, prunes (`--prune`: the failing functions and, transitively, their
@@ -1943,8 +1944,9 @@ declared by `fv-demo` functions; vacuous before, every indirect caller having be
 Before agent/link-scope, `blrRegs` at GOT calls of base externs (panics without results next to
 a declared program function of the same arity with results) failed in 8 of the 9 survey crates,
 and `Clif.IndDecl` failed for every indirect caller of `fn` pointers and vtables (vtable methods
-were not CLIF image symbols; `cargo fv link-proof` now adds the program functions held by the
-data objects the program reaches, `data_syms`).
+were not CLIF image symbols; the program functions held by the data objects the program
+reaches are now among them: `data_syms` of `cargo fv link-proof`, since T7d `Front.assemble`'s
+`symNames`, `Front.buildSpec_spec`).
 
 Not blocking: `try_call` between program functions and to base externs (95 `fv-demo` functions
 and every survey crate's landing-pad code pass), `sret` (121 `fv-demo` functions), indirect calls
@@ -2025,11 +2027,11 @@ symbol table and `PairOk` to what the code computes.
 entry); soundness `hdrB_sound`, `codeB_sound`, `dataB_sound`, `symsB_sound`, assembled by
 `binOk_of` (`artsOk_append` over the slices).
 
-**Tooling.** `cargo fv link-proof` writes into `link.json` the data objects the functions reach
-(`data`: `clif-data-export`'s `; data:` lines renamed to the linked symbols, local ones as
-`.LdataN@<unit>` with their address from the link map's entry under the unit's object file) and
-the addresses of every name they refer to; it renames a function's self-call alias with the
-function. `lake exe link-check` reads the executable (`exe`), evaluates the binary checks on the
+**Tooling.** `Front.assemble` (T7d, from `cargo fv link-proof`'s `bundle.json`) gives the data
+objects the functions reach (`clif-data-export`'s `; data:` lines of each unit, renamed to the
+linked symbols, local ones as `.LdataN@<unit>` with their address from the link map's entry under
+the unit's object file; `Front.data_complete`: none reachable is left out) and the addresses of
+every name they refer to. `lake exe link-check` reads the executable (`exe`), evaluates the binary checks on the
 (pruned) program and the data objects its functions reach, prints what differs (`BIN code`: the
 word, the executable's and compiled words, the target; `BIN data`: the byte; `BIN symbol`), the
 relocation forms found and a verdict `binary: ok (…)` / `binary: FAIL code=… data=… syms=…

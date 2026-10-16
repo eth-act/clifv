@@ -77,11 +77,6 @@ def main():
         if not header:
             header = [l for l in lines[:start] if l.startswith(("set ", "target ", "test "))]
         body = lines[start:]
-        sigs = {}
-        for l in body:
-            m = re.match(r"\s+(sig\d+) = (.*?)\s*(;.*)?$", l)
-            if m:
-                sigs[m.group(1)] = m.group(2)
         used_indirect = set(re.findall(r"call_indirect(?:\.\w+)? (sig\d+)", t))
         # File-global sig renumbering: the dumps scope `sigN` per function (and re-declare
         # the same name per call_indirect site); the readers scope it per FILE, so the
@@ -105,11 +100,16 @@ def main():
                 out_lines += ch
                 continue
             local_g = {}
+            # this function's signature declarations, by their renumbered name (first wins),
+            # inlined into its `fn` declarations below
+            sigs_here = {}
             for l in ch:
-                ms = re.match(r"\s+(sig\d+) = ", l)
-                if ms and ms.group(1) not in local_g:
-                    local_g[ms.group(1)] = f"sig{gcount}"
-                    gcount += 1
+                ms = re.match(r"\s+(sig\d+) = (.*?)\s*(;.*)?$", l)
+                if ms:
+                    if ms.group(1) not in local_g:
+                        local_g[ms.group(1)] = f"sig{gcount}"
+                        gcount += 1
+                    sigs_here.setdefault(local_g[ms.group(1)], ms.group(2))
             used_here = set()
             for l in ch:
                 if "call_indirect" in l or "try_call" in l:
@@ -136,7 +136,7 @@ def main():
                     else:
                         q = re.match(r'"([^"]+)"', comment or "")
                         name = q.group(1) if q else fnmap.get(num, f"u0_{num}")
-                    l = f"{pre}{coloc or ''}%{name}{sigs[sig]}"
+                    l = f"{pre}{coloc or ''}%{name}{sigs_here[sig]}"
                 m = re.match(r"(\s+sig\d+) = ", l)
                 if m:
                     if m.group(1).strip() not in used_here:
