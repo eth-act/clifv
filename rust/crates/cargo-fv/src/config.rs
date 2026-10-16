@@ -8,8 +8,9 @@ pub enum Mode {
     /// Backend only: compiled functions outside `unverifiedReason?` are inside
     /// `E2E.backend_correct_final_cleanup`.
     Plain,
-    /// `--opt-proven-only`: the Lean mid-end with the proven rule set; the end-to-end theorem is
-    /// `E2E.backend_correct_opt_proven_cleanup`.
+    /// `--opt-proven-only`: the Lean mid-end (`Opt.optimizeExe`) with the proven rule set; the
+    /// end-to-end theorem is `E2E.backend_correct_opt_exe_cleanup` (`call_indirect` and
+    /// `try_call` included; `i128`-legalised functions: `E2E.backend_correct_legal_opt_cleanup`).
     OptProven,
     /// `--opt`: the Lean mid-end with every simplify rule, most of them unproven, so no
     /// function is reported verified.
@@ -44,7 +45,7 @@ impl Mode {
     pub fn theorem(self) -> Option<&'static str> {
         match self {
             Mode::Plain => Some("E2E.backend_correct_final_cleanup"),
-            Mode::OptProven => Some("E2E.backend_correct_opt_proven_cleanup"),
+            Mode::OptProven => Some("E2E.backend_correct_opt_exe_cleanup"),
             Mode::Opt => None,
         }
     }
@@ -53,7 +54,7 @@ impl Mode {
 /// Everything the wrapper needs; `cargo-fv` fills it in, `fv-rustc` reads it back.
 #[derive(Clone, Debug)]
 pub struct Config {
-    /// The repository root (lean-backend, clif-data-export, lean-regalloc, normalize.py).
+    /// The repository root (lean-backend, clif-decode, clif-data-export, lean-regalloc).
     pub root: PathBuf,
     pub mode: Mode,
     /// `CARGO_MANIFEST_DIR`s of the workspace members.
@@ -71,7 +72,6 @@ pub struct Config {
     pub rust_lld: PathBuf,
     pub objcopy: PathBuf,
     pub ar: PathBuf,
-    pub python: String,
     /// `lean-backend` processes at a time, across all fv-rustc processes of the build.
     pub jobs: usize,
     pub keep_temps: bool,
@@ -85,6 +85,10 @@ pub struct Config {
     /// program part of every executable: the Lean-compiled code is not merged into the codegen
     /// units but linked as one region (`.text.fvlean`), whose bytes the Lean linker computes.
     pub lean_link: bool,
+    /// `--lean-link --verified`: the Lean linker fails closed (`lake exe lean-link --verified`):
+    /// an executable whose program part is outside the compiler's source domain (`SrcScopeB`)
+    /// or input conditions (`InScopeP`) is an error instead of a bare-linker fallback.
+    pub lean_link_verified: bool,
     /// `[package.metadata.fv] skip = [...]` of the members: (manifest dir, pattern); matching
     /// functions keep cg_clif's code.
     pub pkg_skip: Vec<(PathBuf, String)>,
@@ -104,8 +108,8 @@ impl Config {
     pub fn lean_regalloc(&self) -> PathBuf {
         self.root.join("rust/target/release/lean-regalloc")
     }
-    pub fn normalize(&self) -> PathBuf {
-        self.root.join("scripts/rust-clif/normalize.py")
+    pub fn decode(&self) -> PathBuf {
+        self.root.join(".lake/build/bin/clif-decode")
     }
 
     /// Whether the inputs of `cargo fv link-proof` (and of the binary check) are kept.
@@ -127,12 +131,12 @@ impl Config {
             ("FV_RUST_LLD".into(), self.rust_lld.display().to_string()),
             ("FV_OBJCOPY".into(), self.objcopy.display().to_string()),
             ("FV_AR".into(), self.ar.display().to_string()),
-            ("FV_PYTHON".into(), self.python.clone()),
             ("FV_JOBS".into(), self.jobs.to_string()),
             ("FV_KEEP_TEMPS".into(), if self.keep_temps { "1" } else { "0" }.into()),
             ("FV_BIN_CHECK".into(), if self.bin_check { "1" } else { "0" }.into()),
             ("FV_TRAP_REPLACED".into(), if self.trap_replaced { "1" } else { "0" }.into()),
             ("FV_LEAN_LINK".into(), if self.lean_link { "1" } else { "0" }.into()),
+            ("FV_LEAN_LINK_VERIFIED".into(), if self.lean_link_verified { "1" } else { "0" }.into()),
             (
                 "FV_PKG_SKIP".into(),
                 self.pkg_skip.iter().map(|(d, p)| format!("{}\t{p}", d.display())).collect::<Vec<_>>().join("\n"),
@@ -156,12 +160,12 @@ impl Config {
                 rust_lld: var("FV_RUST_LLD")?.into(),
                 objcopy: var("FV_OBJCOPY")?.into(),
                 ar: var("FV_AR")?.into(),
-                python: var("FV_PYTHON")?,
                 jobs: var("FV_JOBS")?.parse().map_err(|_| "FV_JOBS: not a number".to_string())?,
                 keep_temps: var("FV_KEEP_TEMPS")? == "1",
                 bin_check: var("FV_BIN_CHECK")? == "1",
                 trap_replaced: var("FV_TRAP_REPLACED")? == "1",
                 lean_link: var("FV_LEAN_LINK")? == "1",
+                lean_link_verified: var("FV_LEAN_LINK_VERIFIED")? == "1",
                 pkg_skip: var("FV_PKG_SKIP")?
                     .lines()
                     .filter_map(|l| l.split_once('\t').map(|(d, p)| (PathBuf::from(d), p.to_string())))
