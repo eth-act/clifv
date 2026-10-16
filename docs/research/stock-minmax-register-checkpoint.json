@@ -1,0 +1,91 @@
+{
+  "updated_utc": "2026-10-15T05:46:28.120211+00:00",
+  "production": "legacy; #140 active/incomplete",
+  "scope": "Actual5128 register-emitter flags composed with real659 select computes original32/64 selected value; three-module helper checkpoint.",
+  "source_sha256": {
+    "FV/Backend/Proof/StockMinMaxRegisterRuns.lean": "2f6d55a20f063a0dc68809e941c1df6102d39fdbe13c85faee65d5d0f49e7080",
+    "FV/Backend/Proof/StockMinMaxRegisterValues.lean": "b609f185293acd1a5916209f2da276a2d766b620a7768e4b6bf149412052d4ad",
+    "FV/Backend/Proof/StockMinMaxRegisterWitness.lean": "cb1e3a8966a81555aa9b7a09ef23de49746e1980b59aae688ff8d6be93546b0f"
+  },
+  "normal_axioms": {
+    "Backend.Stock.Proof.ScalarSelect.MinMaxRegisterFixture.stock_minmax_register_driver_success": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.MinMaxRegisterWitness.stock_minmax_register_source_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarSelect.stock_select_register_emitter_source_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "trust": {
+    "public_roots_checked": 1431,
+    "all1428_prior_sets_exactly_preserved": true,
+    "seven_compiler_trust_sets_exactly_preserved": true,
+    "all3_new_roots_standard_only": true
+  },
+  "MCP": {
+    "success": true,
+    "timed_out": false,
+    "diagnostics": [
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_register_emitter_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 2,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.MinMaxRegisterFixture.stock_minmax_register_driver_success' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 3,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.MinMaxRegisterWitness.stock_minmax_register_source_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 4,
+        "column": 1,
+        "lean_tags": null
+      }
+    ]
+  },
+  "source_scan_warnings": [],
+  "build": {
+    "jobs": 403,
+    "log": "/tmp/minmax-register-witness-build5.log",
+    "sha256": "ca55645ab8815da258069e051b4b8f17a8c3567e80138742ed46222705ff8f9c",
+    "closed_driver_run_build": {
+      "log": "/tmp/minmax-register-witness-build3.log",
+      "sha256": "4479d5db1070d0d1c57dc276ef24ca5d2ff7a1a8a149cf0fcf6f47f82d87aefb",
+      "interpretation": "StockMinMaxRegisterRuns built successfully (92s). The same log then contains the old witness cast-rewrite error; corrected witness built in the final build log. The closed driver module was reused unchanged."
+    }
+  },
+  "normal_audit": {
+    "log": "/tmp/minmax-register-all-axioms.log",
+    "sha256": "0f8c12bbbd4d35e2cc69df399a03811157d524c7eb57fc9de94266f9c6301134"
+  },
+  "witness_scope": [
+    "All four original64-bit umin/smin/umax/smax functions complete actual Stock.lower.",
+    "Their actual5128-emitter/659 helper composition selects the original binary min/max value for-7/9, through nonidentity aliases with dirty high bits and a fresh-only register write frame."
+  ],
+  "limitations": [
+    "The helper executions have not yet been identified with the actual retained records of the complete Stock.lower runs.",
+    "This is not a selected-root/retained-record/source-step proof for minmax.",
+    "No32-bit or narrow complete driver/source-step witnesses in this checkpoint.",
+    "No full repository gates run for these three new minmax modules; not merge-ready."
+  ],
+  "next": [
+    "Use actual minmax roots1222/1224/1226/1228 and retained records, result binding and original guarded source/getter transfer.",
+    "Preserve old success theorem; add stronger retained-record observations rather than repeatedly reducing the same closed runs during helper edits.",
+    "Cover remaining scalar widths and emitter forms, original select roots, complete Stock.lower/source-step witnesses, then full validation.",
+    "All original effects, source/block/whole-driver simulation/completeness and actual production compiler/checker/linker/generated-proof obligations remain required."
+  ]
+}
