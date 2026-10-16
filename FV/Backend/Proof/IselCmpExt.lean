@@ -246,8 +246,9 @@ theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
       have hne : vty.width < toB := by
         rcases hto with rfl | rfl
         · have := h32 rfl
+          have hE := hctx.valTyE x _ hT
           cases vty <;> simp [Clif.Ty.width, CTy.ofClif] at hb ⊢
-          exact ht this
+          all_goals first | exact ht this | simp [CTy.ofClif, eCTys] at hE
         · omega
       have hfrom : vty.width = 8 ∨ vty.width = 16 ∨ vty.width = 32 := by
         cases vty <;> simp [Clif.Ty.width] at hb ⊢

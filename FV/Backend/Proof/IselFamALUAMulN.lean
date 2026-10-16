@@ -246,14 +246,14 @@ theorem partOk_narrow {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
     refine ⟨_, w', hrun, hsw, fun q hq => ?_, ?_⟩
     · simp only [upd, show ¬ (q = st.nextVreg) by omega, ↓reduceIte]
     · simp only [upd, ↓reduceIte, lo64_ofX]
-      exact extW_holds (by omega) hv
+      rw [hbits]; exact extW_holds (by omega) hv
 
 theorem partOk_i64 {F : BitVec 64 → Prop} {isem : Sem} {ctx : Ctx} {st : LState} {x : Nat}
     {sg : Bool} (hxb : x < st.nextVreg) (hvt : ctx.valueType? x = some (.int 64)) :
     PartOk F isem ctx st st x sg x [] := by
   refine ⟨Nat.le_refl _, by simp, by simp, by simp, hxb, .inl rfl, ?_⟩
   intro fr ρ w ty u hdfg hx hw _
-  have ht := hdfg.2 x _ _ hvt (getAs_ok hx)
+  have ht : CTy.ofClif ty = .int 64 := hdfg.2 x _ _ hvt (getAs_ok hx)
   have := (ofClif_eq_int ht).2
   omega
 

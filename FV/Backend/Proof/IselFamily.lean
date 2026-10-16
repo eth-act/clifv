@@ -269,6 +269,10 @@ theorem ofClif_int_width {ty : Clif.Ty} (hi : ty.isInt = true) :
     CTy.ofClif ty = .int ty.width := by
   cases ty <;> first | rfl | simp at hi
 
+/-- A CLIF type narrower than 32 bits is an integer type (floats are 32 or 64 bits wide). -/
+theorem isInt_of_width_lt_32 {ty : Clif.Ty} (h : ty.width < 32) : ty.isInt = true := by
+  cases ty <;> simp_all [Clif.Ty.width]
+
 /-- Inverting `CTy.ofClif` at an integer `CTy`. -/
 theorem ofClif_eq_int {t : Clif.Ty} {w : Nat} (h : CTy.ofClif t = .int w) :
     t.isInt = true ∧ t.width = w := by

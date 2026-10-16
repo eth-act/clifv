@@ -35,7 +35,7 @@ theorem stock_rotate_source_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCt
   obtain ⟨types,result,typed,len⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
-  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width]⟩
+  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
   · cases ty <;> simp [eTy,Clif.Ty.width,IW] at supported ⊢
   · have expected : instData f (.binary (rotateOp left) ty x y) =
         .ok (.data 152 2 [.data 151 (rotateOpcode left) [],.values [x,y]]) := by

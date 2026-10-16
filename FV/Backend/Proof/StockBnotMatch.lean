@@ -28,7 +28,7 @@ theorem stock_bnot_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ct
   obtain ⟨types,result,typed,len⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
-  exact ⟨eTy_width supported,Except.ok.inj (raw.symm.trans shape),by rw [typed]; simp [ofClif_int_width]⟩
+  exact ⟨eTy_width supported,Except.ok.inj (raw.symm.trans shape),by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
 end Data
 
 /-- The base root matches without changing any scheduling field. -/

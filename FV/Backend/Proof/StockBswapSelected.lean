@@ -18,7 +18,7 @@ private theorem source_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv 
   obtain ⟨types,result,typed,len⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
-  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width]⟩
+  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
   · cases ty <;> simp [Compile.unaryTyE,Clif.Ty.width] at allowed ⊢
   · have expected : instData f (.unary .bswap ty x) = .ok (.data 152 29 [.data 151 110 [],.value x]) := by
       cases ty <;> simp [Compile.unaryTyE] at allowed <;> rfl
