@@ -39,18 +39,23 @@ structure ShapeFacts (f g : Clif.Function) : Prop where
   indSigIds : ∀ i ∈ Opt.indSigIds g, i ∈ Opt.indSigIds f
   retCall : Opt.retCallFreeB g = true → Opt.retCallFreeB f = true
   indCall : Opt.indCallFreeB g = true → Opt.indCallFreeB f = true
+  blocksNil : f.blocks = [] → g.blocks = []
 
 theorem ShapeFacts.refl (f : Clif.Function) : ShapeFacts f f :=
-  ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h, fun _ h => h, fun _ h => h, id, id⟩
+  ⟨rfl, rfl, rfl, rfl, rfl, id, fun _ h => h, fun _ h => h, fun _ h => h, id, id, id⟩
 
 theorem keepsShapeB_spec {f g : Clif.Function} (h : Opt.keepsShapeB f g = true) :
     (∀ fn ∈ Opt.tryCallees g, fn ∈ Opt.tryCallees f) ∧ (∀ i ∈ Opt.indSigIds g, i ∈ Opt.indSigIds f) ∧
       (Opt.retCallFreeB g = true → Opt.retCallFreeB f = true) ∧
-      (Opt.indCallFreeB g = true → Opt.indCallFreeB f = true) := by
+      (Opt.indCallFreeB g = true → Opt.indCallFreeB f = true) ∧ (f.blocks = [] → g.blocks = []) := by
   simp only [Opt.keepsShapeB, Bool.and_eq_true, List.all_eq_true, List.contains_iff_mem,
     Bool.or_eq_true, Bool.not_eq_true'] at h
-  obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
-  refine ⟨h1, h2, fun hg => ?_, fun hg => ?_⟩
+  obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := h
+  refine ⟨h1, h2, fun hg => ?_, fun hg => ?_, fun hf => ?_⟩
+  rotate_left 2
+  · rcases h5 with h5 | h5
+    · rw [hf] at h5; cases h5
+    · exact List.isEmpty_iff.1 h5
   · rcases h3 with h3 | h3
     · exact h3
     · rw [hg] at h3; cases h3
@@ -74,8 +79,8 @@ theorem optimizeExe_shape (cfg : Opt.Config) (f : Clif.Function) :
   · rename_i hk
     simp only [hk, ↓reduceIte] at hsd
     have hF := optimizeX_facts cfg f
-    obtain ⟨h1, h2, h3, h4⟩ := keepsShapeB_spec hk
-    exact ⟨hF.name, hF.sig, hF.slots, hF.externs, hsd, hF.subsetE, hF.callees, h1, h2, h3, h4⟩
+    obtain ⟨h1, h2, h3, h4, h5⟩ := keepsShapeB_spec hk
+    exact ⟨hF.name, hF.sig, hF.slots, hF.externs, hsd, hF.subsetE, hF.callees, h1, h2, h3, h4, h5⟩
   · exact ShapeFacts.refl f
 
 /-- The indirect-call signatures are the declarations of the indirect calls' signature ids. -/

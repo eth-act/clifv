@@ -18,7 +18,8 @@ Its theorems are in `FV/Opt/Proof/PipelineX.lean`.
 `optimizeX` with a guard on the shape of the result (`keepsShapeB`, never observed to fire): the
 callees of its `try_call`s and the signatures of its indirect calls are the input's (what the
 backend's subset `E2E.InSubset` asks of them), and it keeps a `return_call` and an indirect
-call if the input has one (what the linking theorem's program facts `LinkFree`/`IndFree` read).
+call if the input has one (what the linking theorem's program facts `LinkFree`/`IndFree` read),
+and has no block when the input has none.
 -/
 
 namespace Opt
@@ -73,7 +74,8 @@ def indCallFreeB (g : Function) : Bool :=
 /-- The result keeps the shape the backend's and the linker's theorems read (module doc). -/
 def keepsShapeB (f g : Function) : Bool :=
   (tryCallees g).all (tryCallees f).contains && (indSigIds g).all (indSigIds f).contains &&
-    (retCallFreeB f || !retCallFreeB g) && (indCallFreeB f || !indCallFreeB g)
+    (retCallFreeB f || !retCallFreeB g) && (indCallFreeB f || !indCallFreeB g) &&
+    (!f.blocks.isEmpty || g.blocks.isEmpty)
 
 /-- **The mid-end of the executable compiler** (module doc). -/
 def optimizeExe (f : Function) (cfg : Config := {}) : Function :=
