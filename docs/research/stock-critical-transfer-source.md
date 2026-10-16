@@ -1,0 +1,21 @@
+Actual selected successors and critical-edge value transfer — verified2026-10-15
+
+Successful actual branchArgs now yields the selected ordinary source argument vector after mapped allocation and final alias resolution. The theorem covers jump, conditional and table selections through the existing dests interface, deriving all map/helper facts from whole lowering. The generic indexed-array monadic proof also permits whole blockOrder to derive every selected ordinary successor's original source target index, nonentry property from original LowerScope.noEntryPred, and direct-original or corresponding synthetic successor node.
+
+Actual synthetic-node code/argument provenance and original target parameter provenance now compose with the source enterBlock and mapped/final-alias parallel-copy theorem. The critical-edge theorem derives actual edgeEnv and held values after successor binding. Numeric vectors, helper runs, nonentry and assembly certificates are not supplied by callers; the canonical source target index identifies this internal graph case.
+
+A complete four-node conditional driver has an erased ireduce alias193→192 and real192→194 copy. Every64-bit source word, either conditional successor and every Arm world inhabit the theorem. Source7/17/31 retain all demand/availability guards; the machine input has dirty upper bits. Actual source entry/reduction/conditional successor/final return and the synthetic jump's real VStep under ispec are included. The witness proves actual CFG successor lookup with a kernel decision, and uses the general critical-node code placement and copy theorem. It does not claim machine execution from function entry or a general whole-driver VStep theorem.
+
+Per-successor migration is a required production obligation, not a reason to narrow accepted inputs. The complete counterexample StockPerSuccessorWitness has original LowerScope and Dominated:
+
+    block0(v7:i64): brif v7, block1(v7), block2(v7)
+    block1(v31:i64): return v31
+    block2(v47:i64): return v47
+
+Both actual Result.edgeArgs[0] vectors are nonempty [vreg192], while raw code.block0.branchArgs is empty and each original target has one parameter. For every machine register file, legacy VCode.edgeEnv returns none for both direct targets. Source entry, either actual successor binding and return succeed over arbitrary words. This is a normal-kernel theorem, not a native diagnostic or strengthened input condition. Stock's raw per-successor metadata is present; the legacy single-vector consumer model cannot express these accepted edges. FVTest/Backend/Lowering/StockComparison.lean and StockTest.lean explicitly reject this pending migration, while Trace.lean already exports the per-successor vectors to regalloc2.
+
+Next derive general whole-lowering Result.edgeArgs provenance, then per-successor-aware semantic and allocation/checker/production consumer contracts while retaining legacy variants and raw Stock trace/numbering. Derive actual returned VCode CFG/label/target correspondence and compose real source/machine/DFG/world relations across all branches, source bodies/calls/try, remaining accepted families/effects/deferred traps/sinking. Whole-driver simulation/completeness, actual compiler/checker/linker/generated-proof cutover, complete function-entry execution witnesses and a fresh complete Stock comparison remain mandatory under every original input/theorem/axiom/identity/stage/#179 gate. Production is legacy and full#140 remains active/incomplete. The three witness modules contain actual complete original functions, not toy helper inputs.
+
+All581 prior recovery-manifest sources remain byte-identical;587 proof-source hashes recorded (not a repository-wide inventory). See stock-critical-transfer-checkpoint.json for the complete remaining-goal checklist and gate/audit evidence. No new worktree or extra build cache.
+
+Batch gates pass: full2355/crates1171/runtime4672/0/0 (same7 nonrunnable/family counts); encoder1292identical0different; both E2E1150accepted0rejected with byte-identical baseline identity/stage reports.1657-root normal audit preserves all1651 previous/seven exact compiler sets; six new roots standard-only and one bundled MCP agrees; source scans clear. No new PR/merge; remote recovery backup independent of regular merge cadence.
