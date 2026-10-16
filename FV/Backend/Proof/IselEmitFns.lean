@@ -231,6 +231,12 @@ def eCall : List AW → Bool
 def eAtomic : List AW → Bool
   | ty :: _ => atomTyE ty
   | _ => false
+/-- `fmov #imm` (S11e1): a 32- or 64-bit size. -/
+def eFpuMoveFPImm : List AW → Bool
+  | [_, _, s] => s.enumAll fun k => k == VIdx.ScalarSize.Size32 || k == VIdx.ScalarSize.Size64
+  | _ => false
+/-- Never accepted: `VecDupImm`, whose immediate the domain does not describe (S11e1). -/
+def eNever (_ : List AW) : Bool := false
 
 /-- The emission checks by variant (other variants: no condition). -/
 def emTab : List (Nat × (List AW → Bool)) :=
@@ -243,7 +249,8 @@ def emTab : List (Nat × (List AW → Bool)) :=
    (VIdx.MInst.VecLanes, eVecLanes), (VIdx.MInst.TestBitAndBranch, eTbb),
    (VIdx.MInst.CondBr, eCondBr), (VIdx.MInst.TrapIf, eTrapIf), (VIdx.MInst.Call, eCall),
    (VIdx.MInst.CallInd, eCall), (VIdx.MInst.AtomicRMWLoop, eAtomic),
-   (VIdx.MInst.AtomicCASLoop, eAtomic)]
+   (VIdx.MInst.AtomicCASLoop, eAtomic), (VIdx.MInst.FpuMoveFPImm, eFpuMoveFPImm),
+   (VIdx.MInst.VecDupImm, eNever)]
 
 /-- The branch variants (instructions with targets). -/
 def branchKs : List Nat :=

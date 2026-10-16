@@ -445,7 +445,7 @@ theorem mload_reads (ctx : FnCtx) {op : LoadOp} {rt : Reg} {m : AMode} {fl : Cli
 which the model's register-offset class reads as a load). -/
 def _root_.Backend.MInst.memRd : MInst → Bool
   | .load .. | .loadAcquire .. | .jtSequence .. | .atomicRmwLoop .. | .atomicCasLoop ..
-  | .loadExtNameGot .. | .elfTlsGetAddr .. | .store .fpuStore128 .. => true
+  | .loadExtNameGot .. | .elfTlsGetAddr .. | .store .fpuStore128 .. | .fpuLoad .. => true
   | _ => false
 
 /-- A line without a load. -/

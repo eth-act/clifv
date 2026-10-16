@@ -503,4 +503,103 @@ theorem ref_aluRRImmLogic_xn (op : ALUOp) (hop : logicOpOk op = true) (sz : Oper
   cases op <;> simp [logicOpOk] at hop <;> cases sz <;>
     obtain ⟨N, immr, imms, tm, hb, hd, hN⟩ := bitmaskOk_spec hchk <;> clear hchk <;>
     (try (obtain rfl := hN rfl)) <;> clear hN <;> ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_fpuCSel (sz : ScalarSize) (c : Cond) (d n m : Nat) (a b : CV) :
+    RefAt F ctx (.fpuCSel sz (.vreg d .float) (.vreg n .float) (.vreg m .float) c) [a, b] := by
+  rcases sz with _ | _ | _ | _ | _
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · cases c <;> ref_tac_fl
+  · cases c <;> ref_tac_fl
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+
+set_option maxHeartbeats 4000000 in
+theorem ref_fpuMoveFPImm (imm : ASIMDFPModImm) (sz : ScalarSize) (d : Nat) :
+    RefAt F ctx (.fpuMoveFPImm (.vreg d .float) imm sz) [] := by
+  rcases sz with _ | _ | _ | _ | _
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · ref_tac
+  · ref_tac
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+
+/-- The eight one-bit fields `movi` is encoded with reassemble its immediate. -/
+theorem movi_imm8 (x : BitVec 8) :
+    x.extractLsb' 7 1 ++ x.extractLsb' 6 1 ++ x.extractLsb' 5 1 ++ x.extractLsb' 4 1 ++
+      x.extractLsb' 3 1 ++ x.extractLsb' 2 1 ++ x.extractLsb' 1 1 ++ x.extractLsb' 0 1 = x := by
+  bv_bits
+
+/-- The value `MOVI Vd.<T>, #imm8` writes in the Arm model (`op` 0, `cmode` `cmode`): the
+64-bit `AdvSIMDExpandImm` replicated over the vector (once for `Q` = 0, the upper half zeroed). -/
+def moviArm (Q : BitVec 1) (cmode : BitVec 4) (imm8 : BitVec 8) : CV :=
+  if Q = 1#1 then (BitVec.replicate 2 (Arm.DPSFP.AdvSIMDExpandImm 0#1 cmode imm8)).setWidth 128
+  else (BitVec.replicate 1 (Arm.DPSFP.AdvSIMDExpandImm 0#1 cmode imm8)).setWidth 128
+
+set_option maxHeartbeats 4000000 in
+/-- `MOVI` (8-, 16- and 32-bit lanes, no shift) on the Arm model. Stated as a rewrite so that
+`ref_pre` does not unfold the instruction's dependent `datasize` casts. -/
+theorem exec_movi (inst : Arm.Advanced_simd_modified_immediate_cls) (s : Arm.ArmState)
+    (hop : inst.op = 0#1) (ho2 : inst.o2 = 0#1)
+    (hcm : inst.cmode = 0#4 ∨ inst.cmode = 8#4 ∨ inst.cmode = 14#4) :
+    Arm.DPSFP.exec_advanced_simd_modified_immediate inst s =
+      Arm.w (.SFP inst.Rd) (moviArm inst.Q inst.cmode
+          (inst.a ++ inst.b ++ inst.c ++ inst.d ++ inst.e ++ inst.f ++ inst.g ++ inst.h))
+        (Arm.write_pc (Arm.read_pc s + 4#64) s) := by
+  rcases inst with ⟨_, Q, op, _, a, b, c, cmode, o2, _, d, e, f, g, h, Rd⟩
+  simp only at hop ho2 hcm
+  subst hop ho2
+  rcases bv1_cases Q with rfl | rfl <;> rcases hcm with rfl | rfl | rfl
+  all_goals simp (config := {decide := true}) only [Arm.DPSFP.exec_advanced_simd_modified_immediate,
+    Arm.DPSFP.decode_immediate_op, Arm.write_sfp, ite_true, ite_false, ↓reduceIte, moviArm]
+  all_goals rfl
+
+theorem advExp_0 (x : BitVec 8) :
+    Arm.DPSFP.AdvSIMDExpandImm 0#1 0#4 x = BitVec.replicate 2 (0#24 ++ x) := rfl
+theorem advExp_8 (x : BitVec 8) :
+    Arm.DPSFP.AdvSIMDExpandImm 0#1 8#4 x = BitVec.replicate 4 (0#8 ++ x) := rfl
+theorem advExp_14 (x : BitVec 8) :
+    Arm.DPSFP.AdvSIMDExpandImm 0#1 14#4 x = BitVec.replicate 8 x := rfl
+
+/-- The Arm `MOVI` values are `moviVal` (`Q`, `cmode` of each arrangement, as `Insn.movi`
+encodes them). -/
+theorem moviArm_val (x : BitVec 8) :
+    moviArm 0#1 14#4 x = moviVal .size8x8 x ∧ moviArm 1#1 14#4 x = moviVal .size8x16 x ∧
+    moviArm 0#1 8#4 x = moviVal .size16x4 x ∧ moviArm 1#1 8#4 x = moviVal .size16x8 x ∧
+    moviArm 0#1 0#4 x = moviVal .size32x2 x ∧ moviArm 1#1 0#4 x = moviVal .size32x4 x := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+  · simp (config := {decide := true}) only [moviArm, moviVal, advExp_0, advExp_8, advExp_14,
+      ite_true, ite_false, ↓reduceIte]
+    refine BitVec.eq_of_getLsbD_eq fun i hi => ?_
+    simp only [BitVec.getLsbD_setWidth, BitVec.getLsbD_append, BitVec.getLsbD_replicate]
+    revert i
+    simp only [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, implies_true, true_and]
+    simp [BitVec.getLsbD_append, BitVec.getLsbD_replicate, -BitVec.getLsbD_eq_getElem]
+
+attribute [-csimp_rules] Arm.DPSFP.exec_advanced_simd_modified_immediate in
+attribute [local csimp_rules] exec_movi in
+set_option maxHeartbeats 4000000 in
+theorem ref_vecDupImm (imm : ASIMDMovModImm) (inv : Bool) (sz : VectorSize) (d : Nat) :
+    RefAt F ctx (.vecDupImm (.vreg d .float) imm inv sz) [] := by
+  by_cases hc : inv = false ∧ imm.shift = 0 ∧ imm.shiftOnes = false ∧ imm.is64 = false ∧
+      sz ≠ .size64x2
+  · obtain ⟨rfl, h2, h3, h4, h5⟩ := hc
+    obtain ⟨x, sh, i64, so⟩ := imm
+    simp only at h2 h3 h4
+    subst h2 h3 h4
+    cases sz
+    all_goals first
+      | exact absurd rfl h5
+      | (ref_pre
+         all_goals simp only [movi_imm8, defOut, (moviArm_val x).1, (moviArm_val x).2.1,
+           (moviArm_val x).2.2.1, (moviArm_val x).2.2.2.1, (moviArm_val x).2.2.2.2.1,
+           (moviArm_val x).2.2.2.2.2]
+         all_goals ref_fin)
+  · refine refAt_none' F ctx (fun w => ?_)
+    cases inv
+    · simp only [ispec]
+      split
+      · exact absurd ‹_› (by simpa using hc)
+      · rfl
+    · rfl
 end Backend.Proof

@@ -367,6 +367,7 @@ def _root_.Backend.MInst.accesses (ctx : FnCtx) : MInst → Arm.ArmState → Lis
   | .load op _ m _, s => [(m.addr ctx op.bytes s, op.bytes)]
   | .store op _ m _, s => [(m.addr ctx op.bytes s, op.bytes)]
   | .loadAcquire ty _ rn _, s | .storeRelease ty _ rn _, s => [(regX s rn, ty.bytes)]
+  | .fpuLoad sz _ m _, s | .fpuStore sz _ m _, s => [(m.addr ctx sz.bytes s, sz.bytes)]
   | _, _ => []
 
 /-- Every memory access of `i` in state `s` avoids the frame addresses `F`. -/
@@ -492,6 +493,11 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   | .fence => true
   | .loadAcquire ty (.vreg _ .int) (.vreg _ .int) _ => decide (AtomTy ty)
   | .storeRelease ty (.vreg _ .int) (.vreg _ .int) _ => decide (AtomTy ty)
+  -- S11e1: scalar FP data movement (`fcsel`, `fmov #imm`, the plain `movi`)
+  | .fpuCSel _ (.vreg _ .float) (.vreg _ .float) (.vreg _ .float) _ => true
+  | .fpuMoveFPImm (.vreg _ .float) _ _ => true
+  | .vecDupImm (.vreg _ .float) imm inv _ =>
+    !inv && imm.shift == 0 && !imm.shiftOnes && !imm.is64
   | _ => false
 
 /-- The number of use operands. -/

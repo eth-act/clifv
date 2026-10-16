@@ -106,6 +106,14 @@ theorem linesOk_vecRRR (ctx : FnCtx) (op : VecALUOp) (rd rn rm : Reg) (sz : Vect
     LinesOk ctx (.vecRRR op rd rn rm sz) := by
   cases op; one_line
 
+theorem linesOk_vecDupImm (ctx : FnCtx) (rd : Reg) (imm : ASIMDMovModImm) (inv : Bool)
+    (sz : VectorSize) (h : (!inv && imm.shift == 0 && !imm.shiftOnes && !imm.is64) = true) :
+    LinesOk ctx (.vecDupImm rd imm inv sz) := by
+  simp only [Bool.and_eq_true, Bool.not_eq_true', beq_iff_eq] at h
+  obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
+  exact linesOk_of_oneLine ⟨.movi sz rd imm.imm.toNat, none,
+    fun ps => by simp [MInst.lines, h1, h2, h3, h4] <;> rfl, rfl, rfl⟩
+
 theorem interOk_prefix {env : Env} {pre tail : List Line} {s S : Arm.ArmState}
     (h : StepsOk env pre s S) (he : Arm.r .ERR s = .None) (ht : tail.length ≤ 1) :
     InterOk env (pre ++ tail) s := by
@@ -310,7 +318,8 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
         | apply os_aluRRRExtend_rdZ | apply os_bitRR | apply os_mov | apply os_movWide
         | apply os_movK | apply os_extend | apply os_bitfieldMove | apply os_cset | apply os_csel
         | apply os_ccmp | apply os_ccmpImm | apply os_movToFpu | apply os_movFromVec
-        | apply os_vecMisc | apply os_vecLanes | apply os_vecRRR | apply os_loadAddr_slot) <;>
+        | apply os_vecMisc | apply os_vecLanes | apply os_vecRRR | apply os_loadAddr_slot
+        | apply os_fpuCSel | apply os_fpuMoveFPImm | apply os_vecDupImm) <;>
         assumption
     | (assign_inv hasg
        all_goals refine ⟨?_, fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h⟩
@@ -324,6 +333,7 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
          | exact linesOk_vecMisc ..
          | exact linesOk_vecRRR ..
          | exact linesOk_loadAddr_slot ..
+         | exact linesOk_vecDupImm _ _ _ _ _ ‹_›
          | exact linesOk_of_oneLine ⟨_, _, fun _ => rfl, rfl,
              plain_trap _ rfl (fun _ h => Insn.noConfusion h) _⟩)
 

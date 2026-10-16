@@ -45,6 +45,10 @@ def immOkB : MInst → Bool
   | .call info | .tryCall info _ => match info.dest with
     | .sym _ => true
     | .reg r => r.isVregInt
+  | .fpuLoad s .. | .fpuStore s .. | .fpuCSel s .. | .fpuMoveFPImm _ _ s =>
+    s == .size32 || s == .size64
+  | .vecDupImm _ imm inv s =>
+    !inv && imm.shift == 0 && !imm.shiftOnes && !imm.is64 && s != .size64x2
   | _ => true
 
 /-- No `condBr`/`trapIf` with an `al`/`nv` condition. -/
