@@ -1,6 +1,5 @@
 import FV.E2E.LegalProgram
-import FV.E2E.LinkScopeDefs
-import FV.Opt.Legalize128Pre
+import FV.E2E.SrcScopeDefs
 
 /-!
 # The original source program of an input (S2/S3 provenance)
@@ -11,26 +10,18 @@ legalisation (`Opt.Legalize128.parsedFile128`). `FnInput.src` is the function as
 whose legalisation fails, `legalize` too). So the program of an input is the legalisation of its
 source program: `LinkInput.prog_eq : I.prog = legalProg I.srcProg`.
 
-`SrcScopeB I`: **the source domain** of an input, decided on the parsed functions: every
-function in `legalOkB` (the pass is the identity, or `Opt.Legal.Complete.Pre` holds and the
-pass succeeds — no validator involved), no `return_call`, the declarations of the program's
-functions with their signatures, no function named like a `__*ti3` helper. With `InScopeP` (on
-the legalised program, which `compileExe` checks) it gives `E2E.LegalProgram.ProgCtx`, the
-domain of the whole-program refinement `legalProg_refines` (`srcCtx`).
+`SrcScopeB I` (`FV/E2E/SrcScopeDefs.lean`): **the source domain** of an input, decided on the
+parsed functions: every function in `legalOkB` (the pass is the identity, or
+`Opt.Legal.Complete.Pre` holds and the pass succeeds — no validator involved), no
+`return_call`, the declarations of the program's functions with their signatures, no function
+named like a `__*ti3` helper. With `InScopeP` (on the legalised program, which `compileExe`
+checks) it gives `E2E.LegalProgram.ProgCtx`, the domain of the whole-program refinement
+`legalProg_refines` (`srcCtx`).
 -/
 
 namespace E2E.LinkCheck
 
 open Clif Opt.Legalize128 E2E.LegalProgram
-
-/-- The function the file holds at index `k`, as parsed (before the `i128` legalisation). -/
-def FnInput.src (fi : FnInput) : Clif.Function :=
-  match (Clif.parseFile fi.clif).funcs[fi.k]? with
-  | some p => getOk p.func
-  | none => default
-
-/-- **The source program** of an input: its parsed functions. -/
-def LinkInput.srcProg (I : LinkInput) : Clif.Program := { funcs := I.funcs.map (·.src) }
 
 /-- One parsed function as `parsedFile128` leaves it. -/
 def legalizeParsed (p : Clif.ParsedFunction) : Clif.ParsedFunction :=
@@ -103,17 +94,6 @@ theorem LinkInput.prog_eq (I : LinkInput) : I.prog = legalProg I.srcProg := by
   exact List.map_congr_left fun fi _ => FnInput.func_eq fi
 
 /-! ## The source domain -/
-
-/-- No function of `P` is named like a `__*ti3` helper. -/
-def helperFreeB (P : Clif.Program) : Bool :=
-  [DivOp.udiv, DivOp.sdiv, DivOp.urem, DivOp.srem].all fun op => (P.func? (divHelper op)).isNone
-
-/-- **The source domain of an input** (decided on its parsed functions): every function in
-`legalOkB`, no `return_call`, the declarations of the program's functions with their
-signatures, no function named like a `__*ti3` helper. -/
-def SrcScopeB (I : LinkInput) : Bool :=
-  I.srcProg.funcs.all legalOkB && I.srcProg.funcs.all linkFreeB &&
-    I.srcProg.funcs.all (declSigB I.srcProg) && helperFreeB I.srcProg
 
 theorem helperFreeB_sound {P : Clif.Program} (h : helperFreeB P = true) (op : DivOp) :
     P.func? (divHelper op) = none := by

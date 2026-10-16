@@ -98,7 +98,8 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`), with what `cargo fv link-proof` needs: per function the CLIF file `lean-backend` compiled, `lean-regalloc`'s output for it and the linked symbol names (`fv-link.json`), per executable the link map |
 | `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the shipped cg_clif; own target directory; the configuration of the binary-level theorem: no unwinding through Lean frames) |
 | `--no-binary-check` | skip the per-executable binary check (see *The executable as a whole*); without it the build keeps what the check reads (the per-function CLIF and `lean-regalloc` output, `fv-link.json`, the link maps; not the objects) in `target/fv/<mode>/tmp/` |
-| `--lean-link` | the Lean linker writes the Lean-compiled code of every executable (L2b, docs/research/lean-linker.md): the codegen units keep cg_clif's object (our functions weak), each executable gets the Lean code as one region (`.text.fvlean`, rust-lld links the rest around it) whose bytes `lake exe lean-link` computes with the executable compiler `Link.compileExe` (the input conditions `InScopeP`, then `Link.leanLink`: placement, relocation, checks) and writes into the executable; such an executable is covered by `Link.compileExe_correct` with no per-crate proof (L1; `lean-link` prints `written by Link.compileExe`). On a program outside `InScopeP` it prints the failing conditions and links with `Link.leanLink` alone (`written by Link.leanLink`): the crate's linker facts and the code part of the binary facts are then still theorems (`Link.leanLink_linkerOk`, `Link.leanLink_code`). The facts about rust-lld's output (headers, cg_clif's data objects, the symbol table, the region's segment) are `leanLink`'s checks (`Link.binOk_leanLink`). Unverified functions, and self-calling functions that take their own address, keep cg_clif's code. Needs `lake build lean-link`; implies `--keep-temps`; own target directory |
+| `--lean-link` | the Lean linker writes the Lean-compiled code of every executable (L2b, docs/research/lean-linker.md): the codegen units keep cg_clif's object (our functions weak), each executable gets the Lean code as one region (`.text.fvlean`, rust-lld links the rest around it) whose bytes `lake exe lean-link` computes with the executable compiler `Link.DeadCleanup.compileExe` (the input conditions `InScopeP`, then `Link.DeadCleanup.leanLink`: the pipeline with dead-instruction cleanup, placement, relocation, checks) and writes into the executable; such an executable is covered by `Link.DeadCleanup.compileExe_correct` and `…_correct_peak` (recursive entries), and for a program in the source domain `SrcScopeB` by `…_correct_source` and `…_correct_source_peak` (the original pre-`i128`-legalisation program), with no per-crate proof (L1, L1f; `lean-link` prints `written by Link.DeadCleanup.compileExe` and a `coverage:` line naming them, also recorded as `binary.lean_link` in the report and printed as `cargo fv: lean-link …: covered by …`). On a program outside `InScopeP` it prints the failing conditions and links with `Link.DeadCleanup.leanLink` alone (`written by Link.DeadCleanup.leanLink`, `coverage: none`): the crate's linker facts and the code part of the binary facts are then still theorems (`Link.leanLink_linkerOk`, `Link.leanLink_code`). The facts about rust-lld's output (headers, cg_clif's data objects, the symbol table, the region's segment) are `leanLink`'s checks (`Link.binOk_leanLink`). Unverified functions, and self-calling functions that take their own address, keep cg_clif's code. Needs `lake build lean-link`; implies `--keep-temps`; own target directory |
+| `--verified` | with `--lean-link`: fail closed. An executable whose Lean-compiled part is outside the source domain `SrcScopeB` or the input conditions `InScopeP` is a link error (`lean-link … --verified` names the failing functions and conditions and does not write it) instead of the bare-linker fallback, so every executable the build writes is covered by `Link.DeadCleanup.compileExe_correct{,_peak,_source,_source_peak}`. Combine with `--no-fallback` to also require every member function in the Lean region. Own target directory |
 
 `cargo fv report` prints the summary of the last build again. `--functions` lists every
 function with its status and reason, and `--json` prints `target/fv-report.json`.
@@ -129,8 +130,8 @@ skip-deps = ["ring"]           # dependency packages compiled by plain cg_clif
 `FV_SKIP_DEPS` adds to it.)
 
 Artifacts are in `target/fv/<mode>/aarch64-unknown-linux-musl/<profile>/…`, where `<mode>` is
-`plain`, `opt`, `opt-proven-only`, or one of those with `-members` (`--members-only`), `-trap`
-and/or `-abort`. Each configuration has its own target directory because cargo does not see
+`plain`, `opt`, `opt-proven-only`, or one of those with `-members` (`--members-only`), `-trap`,
+`-abort`, `-leanlink` and/or `-verified`. Each configuration has its own target directory because cargo does not see
 the Lean-side settings. For the same reason, `cargo fv` keeps a stamp per profile
 (`target/fv/<mode>/fv-stamp.<profile>`) of the Lean tools (`lean-backend`, `clif-data-export`,
 `lean-regalloc`, `normalize.py`, `fv-rustc`, the codegen backend `.so`), `FV_SKIP`, `FV_ONLY`,
@@ -150,7 +151,9 @@ has `symbol`, `instance` (the Rust item, from cg_clif's dump), `status` (`verifi
 `members` ("your crate(s)") and `deps` ("dependencies"); std is not compiled by us and has no
 function counts. Linked executables also have `binary`: how many function symbols in the
 executable resolve to Lean-compiled code (members and dependencies), plus any check failures,
-and `origin`: the executable's functions (distinct addresses) attributed through the link map
+with `--lean-link` `lean_link` (the theorems covering the executable, `lean-link`'s
+`coverage:`), and `origin`: the executable's functions (distinct addresses) attributed through
+the link map
 to Lean code of the members (`lean_members`) or of the dependencies (`lean_deps`, and per
 package `lean_by_package`), cg_clif code of a crate we compiled (`cg_clif`: fallbacks and
 cg_clif-generated helpers without a CLIF dump), the prebuilt sysroot (`prebuilt`: std, core,
@@ -311,7 +314,9 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   or a renamed copy of the function. Taking one's own function address is supported too.
   Recursive calls use the same per-activation callee contracts as other calls
   (`docs/contracts/e2e.md`, "Calls of the function itself"). This does not supply an
-  unbounded stack: `compileExe_correct` still requires no reachable call cycle.
+  unbounded stack: `compileExe_correct` requires no reachable call cycle, `compileExe_correct_peak`
+  (and `…_source_peak` on the original `i128` program) `frameDrop + D·d` bytes for a run of call
+  depth `d`.
 * With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
   landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
   reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif
@@ -383,25 +388,34 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   code of the crate that uses it. The executable's `exe` line counts the prebuilt functions.
 * The report is per function and per build. For the executable as a whole see below:
   *The executable compiler* (`--lean-link`: the guarantee is the general theorem
-  `Link.compileExe_correct`, no per-executable proof) and the binary check; *Proving a crate*
+  `Link.DeadCleanup.compileExe_correct` and its variants, no per-executable proof) and the binary check; *Proving a crate*
   gives an optional, independent Lean-checked certificate.
 
 ### The executable compiler (`--lean-link`, L1)
 
 With `--lean-link`, the Lean-compiled code of every executable is written by the executable
-compiler `Link.compileExe` (`lake exe lean-link`: the input conditions `InScopeP`, then the Lean
-linker `Link.leanLink`). When `lean-link` prints `written by Link.compileExe`, the executable is
-covered by `Link.compileExe_correct` (docs/contracts/e2e.md, "The executable compiler"), proven
-once for every input: whenever code outside the program calls one of its Lean-compiled
+compiler `Link.DeadCleanup.compileExe` (`lake exe lean-link`: the input conditions `InScopeP`,
+then the Lean linker `Link.DeadCleanup.leanLink`, whose pipeline removes dead pure machine
+instructions, docs/contracts/dead-cleanup.md; `lean-link --no-dead-cleanup` runs the baseline
+`Link.compileExe`). When `lean-link` prints `written by Link.DeadCleanup.compileExe`, the
+executable is covered by the theorems its `coverage:` line names (docs/contracts/e2e.md, "The
+executable compiler" and "The shipped compiler"), proven once for every input:
+`compileExe_correct` (whenever code outside the program calls one of its Lean-compiled
 functions from which no call cycle is reachable, per AAPCS64 and its contract, the
-executable's own instructions refine the whole-program CLIF run. Nothing is generated or
+executable's own instructions refine the whole-program CLIF run), `compileExe_correct_peak`
+(any entry, recursive ones included, given `frameDrop + D·d` bytes of stack for a run of call
+depth `d`) and, for an input in the source domain `SrcScopeB`, `compileExe_correct_source` and
+`compileExe_correct_source_peak` (the same about the original program before the `i128`
+legalisation, the `i128` arguments and results split per the ABI). Nothing is generated or
 checked per executable for that guarantee: the facts about the compiled code are theorems, and
 the facts about the bytes rust-lld wrote (headers, cg_clif's data objects, the symbol table,
 the region's segment) are checks inside `leanLink`, so a failure is a link error, not a weaker
 guarantee. The remaining premises are the contracts of the code outside the program and that
-the CLIF run traps only explicitly. When `lean-link` prints `written by Link.leanLink` (the
-program fails an input condition, which it names), the executable is linked the same way but
-not covered by `compileExe_correct`; the binary check and `link-proof` below still apply.
+the CLIF run traps only explicitly. When `lean-link` prints `written by
+Link.DeadCleanup.leanLink` (`coverage: none`: the program fails an input condition, which it
+names), the executable is linked the same way but not covered by `compileExe_correct`; the
+binary check and `link-proof` below still apply. `cargo fv build --lean-link --verified`
+refuses that case and inputs outside `SrcScopeB`: every executable it writes is covered.
 
 The binary check (below) and `cargo fv link-proof`/`crate-proofs/` (*Proving a crate*) stay
 available as an **independent certificate**: they re-decide the checks on the linked file and

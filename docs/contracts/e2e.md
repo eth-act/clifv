@@ -1626,9 +1626,11 @@ by totality, and since L1d (#204) by executable correctness too (below). Witness
 `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
 `total_witness`) and `CompileExeRunWitness.lean` (`compileExe_run_witness`: every premise of
 `compileExe_correct` for one concrete outside call into the panic=abort `a_arith` compiled by
-`compileExe`; the executable machine returns `5`). `lake exe lean-link` runs `compileExe`; on an
-input outside `InScopeP` it prints the failing conditions and links with `leanLink` (not covered
-by `compileExe_correct`).
+`compileExe`; the executable machine returns `5`). `lake exe lean-link` runs
+`Link.DeadCleanup.compileExe` by default (`--no-dead-cleanup`: `compileExe`; the theorems of the
+cleanup compiler: "The shipped compiler" below); on an input outside `InScopeP` it prints the
+failing conditions and links with the bare Lean linker (not covered by `compileExe_correct`),
+except under `--verified`, where that is an error.
 
 **The executable on the original source program (S2/S3, `FV/Link/ExeSource.lean`).**
 `compileExe_correct` relates the executable to `prog S.input`, the input's functions after the
@@ -1705,6 +1707,85 @@ premise `frameDrop + D·M ≥ 288·24` fails in that machine state for every suc
 *Gap: largest frame.* Each level is charged the largest frame `D` of the program, not the frames
 live along the executed call derivation: exact accounting needs a budget indexed by the run, not
 `LinkSys.Budget` over every syntactic callee.
+
+**The shipped compiler; recursive programs on the original source (L1f, #217).** What
+`lake exe lean-link` and `cargo fv --lean-link` run by default is `Link.DeadCleanup.compileExe`
+(the same `InScopeP`, then `Link.DeadCleanup.leanLink`, whose pipeline `pipeCleanupT` removes dead
+pure machine instructions, docs/contracts/dead-cleanup.md). Its theorems, matching the baseline
+compiler's, composed from the cleanup chain without changing it:
+
+```lean
+theorem Link.DeadCleanup.compileExe_correct_peak       -- FV/Link/DeadCleanupExePeak.lean
+  -- = Link.compileExe_correct_peak over S.inputCleanup (stack frameDrop + D·d, Clif.DepthLe)
+theorem Link.DeadCleanup.compileExe_correct_source     -- FV/Link/DeadCleanupExeSource.lean
+  -- = Link.compileExe_correct_source over S.inputCleanup (¬ CycleFrom, stackFn)
+theorem Link.DeadCleanup.compileExe_correct_source_peak
+  -- = Link.compileExe_correct_source_peak over S.inputCleanup
+theorem Link.compileExe_correct_source_peak {S file0 file} (h : compileExe S file0 = .ok file)
+    (hsrc : SrcScopeB S.input = true) (B) (hB) (hH) (hlegal) (hsig)
+    (hf : S.input.srcProg.func? n = some f) (d : Nat) (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.input (roByte S.input S.data) (legalize f)
+      (frameDrop (art S.input (legalize f)).af + S.input.D * d) r args' cs'.mem)
+    (hr : ClifRun S.input B (legalize f) r args' cs') (hcs : ClifEntry f args cs)
+    (hexp) (hsl) (hmem) (hbnd)
+    (hd : Clif.DepthLe B.env S.input.srcProg d cs)       -- the SOURCE run's call depth
+    (M : Nat) :
+    (∀ vals cm, Clif.runLoop B.env S.input.srcProg M cs = .returned vals cm →
+      ∃ vals', ExpRel (returns groups) vals vals' ∧ ExecRefines … (.returned vals' cm)) ∧
+    ((∀ F, TrapsExplicit (Clif.linkEnvD (prog S.input) B.env F d) (prog S.input).bare cs') →
+      NoMemTrap B.env S.input.srcProg cs → ∀ c, … = .trapped c → ExecRefines … (.trapped c))
+```
+
+The cleanup chain's binary/exec layer is a copy of the baseline's with the cleanup input
+(`LinkSys.ofInputCleanup`, `okBCleanup`, `DeadCleanupBinCheck.BinOk`), while the linking
+induction (`backend_correct_program_peakX`, `LinkSys.budget_K`) is generic in the linked system;
+`FV/E2E/DeadCleanupExecPeak.lean` adds the peak wrappers over it (`DeadCleanupBinary.
+binary_correct_peakX`; `DeadCleanupExecBytes.sysSK`, the GOT-keeping system with any callee budget
+— the cleanup `sysS` fixes `stackFn`'s —, `runGood_sysSK_peak`, `got_of_goodK`,
+`exec_of_runGood`, `binary_correct_exec_peak_proven`). `prog S.inputCleanup` is the input's CLIF
+functions (`progOf_resultsCleanupT`), hence `legalProg S.inputCleanup.srcProg`
+(`Link.DeadCleanup.prog_eq_legal`), so the source theorems compose
+`legalProg_refines`/`legalProg_refines_depth` with the cleanup theorems as `ExeSource` does with
+the baseline's.
+
+*The legalisation keeps the call depth* (`FV/E2E/LegalDepth.lean`,
+`E2E.LegalProgram.legalProg_refines_depth`): if the source run from `h`'s entry has call depth at
+most `d` (`Clif.DepthLe`), so has the legalised program's run that matches it. It is
+`legalProg_refines`' induction on the fuel at every depth (`RefinesD`): the guarded source
+environment `guardEnvD` runs a callee only from a good entry of depth at most `d - 1`
+(`DepthCall`; `guard_runD`: the whole program enters each callee under one more caller,
+`DepthLe.callee`), the target environment `tgtEnvD` runs a callee of `legalProg P` only from an
+entry of depth at most `d - 1` (else stuck), and the induction hypothesis at `d - 1` gives that
+for every callee the target run enters (`prog_callD`). `Clif.unlink_depth`
+(`Clif.UnlinkD`: the environment's program callees return or trap only from entries of depth
+at most `d - 1`) turns the returning or trapping target per-function run into whole-program depth
+`d`: per-function states have no callers, a callee's states are below one caller until it
+returns (`Clif.Reaches.below_cases`, `Reaches.done_outcome`). The legalised run's
+`TrapsExplicit` under `linkEnvD` for a return is `Binary.trapsExplicit_of_runD`. Axioms of all
+new theorems: `propext`, `Classical.choice`, `Quot.sound`.
+
+Witnesses (closed, `native_decide` facts as in the other witnesses): `crate-proofs/Crates/
+CompileExeSourcePeakWitness.lean` — the self-recursive `i128` `rec128(x, n) = n = 0 ? x :
+rec128(x + x, n - 1)` compiled by `compileExe` (`cyclic`: the acyclic theorems do not apply), the
+original program's run of `rec128(2^64 + 3, 3)` has call depth 3 and returns `8·2^64 + 24`, and
+with `frameDrop + D·3` bytes of stack and the split arguments `3, 1, 3` the executable returns
+`24, 8` in x0, x1 (`compileExe_source_peak_witness`); `DeadCleanupExePeakWitness.lean` — the same
+program compiled by `Link.DeadCleanup.compileExe`: `cleanup_peak_witness` (the legalised run, depth
+3, returns `24, 8`) and `cleanup_source_peak_witness`; `DeadCleanupExeSourceWitness.lean` —
+`g_u128`'s `wmul_u128`/`wrapping_mul` compiled by `Link.DeadCleanup.compileExe`
+(`cleanup_source_witness`, split product `15, 5`). Their `helperBase` instances:
+`Link.SourceWitness.compileExe_correct_source_peak_helper`,
+`Link.DeadCleanup.SourceWitness.compileExe_correct_source{,_peak}_helper`.
+
+*Fail closed (`--verified`).* `lake exe lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup]
+[--verified]` prints after writing the executable the theorems covering it: `coverage:
+Link.DeadCleanup.compileExe_correct, Link.DeadCleanup.compileExe_correct_peak` and, for an input
+in `SrcScopeB` (decided by the tool: `FV/E2E/SrcScopeDefs.lean`; it reads the parsed functions
+only, so `S.input0`'s is the theorems' `S.inputCleanup`'s), `…_source, …_source_peak`; the bare-
+linker fallback prints `coverage: none (…)`. With `--verified` an input outside `SrcScopeB` or
+`InScopeP` is an error (exit 1, the executable not written), so every executable it writes is
+covered by the four theorems. `cargo fv --lean-link --verified` passes it (own target dir) and
+records the coverage in the report (`binary.lean_link`).
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the

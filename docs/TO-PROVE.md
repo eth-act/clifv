@@ -48,6 +48,11 @@ as premises, and `Link.compileExe_correct_depth` (L1d) for every entry, recursiv
 premise (`Link.compileExe_correct_peak`: `frameDrop + D·d` bytes for a run of peak call depth `d`);
 `Link.compileExe_total` under `InScopeP`, the driver's names/sizes,
 the addresses within the relocations' reach and rust-lld's output passing `regionOkB`/`outsideOkB`.
+On the original (pre-`i128`-legalisation) program: `Link.compileExe_correct_source` (acyclic) and
+`Link.compileExe_correct_source_peak` (any entry, stack from the source run's call depth). The
+compiler `lean-link`/`cargo fv --lean-link` ship by default, `Link.DeadCleanup.compileExe`, has the
+same four (`Link.DeadCleanup.compileExe_correct{,_peak,_source,_source_peak}`, L1f #217); its
+`--verified` mode writes only executables they cover (outside `SrcScopeB`/`InScopeP`: an error).
 
 ### 1.2 What "no per-program certificate" means here (decision)
 
@@ -79,7 +84,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | --- | --- | --- | --- | --- |
 | mid-end `simplify` rules | Lean (ISLE data) | 1154 + 37 rule theorems; only false shifts 84/88 disabled (`ruleAllow := .proven`) | proven | R4 done for sound originals ([#212](https://github.com/eth-act/clifv/pull/212)) |
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
-| i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`); `Pre` decided (`preB_iff`, `check_complete_of_preB`); the executable refines the original program (`Link.compileExe_correct_source`, `SrcScopeB` decided on the parsed CLIF) | validator, complete on the decidable `Pre` (S6 done); source-level executable theorem with environment and run premises (S2/S3) | S2, S3, S6 |
+| i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`); `Pre` decided (`preB_iff`, `check_complete_of_preB`); the executable refines the original program (`Link.compileExe_correct_source`, recursive entries `…_source_peak` with the source run's depth, `legalProg_refines_depth`; the shipped compiler's `Link.DeadCleanup.…_source{,_peak}`; `SrcScopeB` decided on the parsed CLIF, by `lean-link --verified` too) | validator, complete on the decidable `Pre` (S6 done); source-level executable theorem with environment and run premises (S2/S3) | S2, S3, S6, L1f |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
 | lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`) | validator, complete on decidable input conditions | V1 done |
 | form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`) | validator, complete on decidable input conditions | V3 done |
@@ -91,7 +96,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | linking (program level) | `cargo fv` object merge + **rust-lld**; with `--lean-link` the program part's placement is Lean's (`Link.leanLink`) | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide`; with `--lean-link` `linkerOkB` is proven (`Link.leanLink_linkerOk`) | **validator premise + oracle + per-program proof**; L2b stages 1–2: linker facts proven | L1, L2 |
 | executable bytes | **rust-lld**; with `--lean-link` the program part's bytes are `Link.leanLink`'s | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide`; with `--lean-link` `BinOk` of the placed input (whose results are the compiler's, `LinkInput.fallback`) without premise (`Link.binOk_leanLink`): the code proven, the facts about rust-lld's bytes (`regionOkB`, `Static`, `DataOk`, `SymsOk`) checks inside `leanLink` | **validator premise + oracle + per-program proof**; with `compileExe` (L1): code proven, rust-lld's output checked by the linker | L2, L1 done |
 | executable semantics | — | `E2E.ExecBytes.binary_correct_exec_proven`: the executable's own words (outside calls and TLS by hooks) refine the CLIF run, with **no per-state hypothesis**: the premises of `binary_correct_of_checks_acyclic`, the per-program checks `codeMapB` and `gotB` (`GotOk`), the outside-code contracts `HooksSim` and `OutsideAvoids`; the run's facts come from the M6 proof (`RL.GoodX`, exported through `LinkSys.RunGoodL`); for `compileExe`'s output every per-program fact is proven or a `leanLink` check (`Link.compileExe_correct`: `GotOk` and `OutsideAvoids` vacuous, no GOT slot) | proven; with `compileExe` no per-program premise (L1); the TLS hook (T1) | L3, L1 done |
-| stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); `compileExe_correct` takes the input condition `¬ CycleFrom` directly; `compileExe_correct_depth` (L1d) needs no call-graph condition: the outside caller provides `frameDrop + D·M` bytes (proportional to the fuel `M`, not to the run's peak call depth) | input condition / outside-caller contract | L4, L1d done |
+| stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); `compileExe_correct` takes the input condition `¬ CycleFrom` directly; `compileExe_correct_depth` (L1d) needs no call-graph condition: the outside caller provides `frameDrop + D·M` bytes (proportional to the fuel `M`, not to the run's peak call depth); `compileExe_correct_peak` `frameDrop + D·d` for the run's peak depth `d`, on the source program `…_source_peak` (the source run's depth), for the shipped compiler `Link.DeadCleanup.…_peak`/`…_source_peak` (L1f) | input condition / outside-caller contract | L4, L1d, L1f done |
 
 Mid-end note: the mid-end is already certificate-free in the sense of §1.2, so M1 is optional.
 
@@ -407,10 +412,23 @@ author's estimate, not measured), **Risk**.
   address. Generic shared-code `LinkInput` certificates remain supported.
   `E2E.LinkWitness.DirectSelf` witnesses the scope, declaration and self edge, and proves that
   the actual compiled recursive input has no depth-independent stack budget.
+- **L1f (#217), done:** the theorems of the compiler that ships by default and the recursive
+  source theorem. `Link.compileExe_correct_source_peak` (`FV/Link/ExeSource.lean`): the original
+  `i128` program, no `¬ CycleFrom`, `frameDrop + D·d` bytes for `d` bounding the **source** run's
+  call depth; the legalisation keeps the call depth (`E2E.LegalProgram.legalProg_refines_depth`,
+  `FV/E2E/LegalDepth.lean`: `legalProg_refines`' fuel induction at every depth, `guardEnvD`/
+  `tgtEnvD`, `Clif.unlink_depth`). `Link.DeadCleanup.compileExe_correct_peak`, `_source`,
+  `_source_peak` (`FV/E2E/DeadCleanupExecPeak.lean`, `FV/Link/DeadCleanupExe{Peak,Source}.lean`;
+  the cleanup chain unchanged). `lake exe lean-link` prints the theorems covering the written
+  executable (`coverage:`); `--verified` (`cargo fv --lean-link --verified`) makes an input outside
+  `SrcScopeB` (proof-free in `FV/E2E/SrcScopeDefs.lean`) or `InScopeP` an error. Witnesses:
+  `crate-proofs/Crates/CompileExeSourcePeakWitness.lean`, `DeadCleanupExePeakWitness.lean`,
+  `DeadCleanupExeSourceWitness.lean`. Axioms standard.
 - **Open:** exact live-frame accounting for recursive programs (L1d charges the largest frame per
   call level); inputs outside `InScopeP` (`lean-link` then
   falls back to `leanLink`, not covered by `compileExe_correct`, and prints the failing conditions per
-  cause). Remaining failures are proof limits (each protects a `LinkSys.Ok` premise `okB` checks the same
+  cause; `--verified` refuses them). Remaining failures are proof limits (each protects a
+  `LinkSys.Ok` premise `okB` checks the same
   way). `sret` at indirect calls is done (#89 (a), `agent/scope-widen`: `Ok.indSig` asks for equal
   `sigRets` counts, `LinkCheck.indRetsB`; e2e.md "Widening 12"): fv-demo's test harness 4 → 1,
   `examples/deps` 23 → 15. `try_call` result counts are done (#89 (d): `csem` defines a `try_call`'s
@@ -795,6 +813,7 @@ label**; list the free ones with
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | **done** (`agent/compile-exe`): `Link.compileExe`, `compileExe_correct` (no per-program premise, no open hypothesis), `compileExe_total` (address and rust-lld conditions); #88 removes the alias restriction by compiling native self-calls; `lake exe lean-link` runs `compileExe` |
 | L1c | [#88](https://github.com/eth-act/clifv/issues/88) Remove `AliasOut` from executable compiler totality | **done** (`agent/alias-total`): native self-calls in function-free activations; alias-free driver and `LinkSpec`; `compileExe_total` without alias restriction or output hypothesis; recursive own-address smoke passes |
 | L1d | [#204](https://github.com/eth-act/clifv/issues/204) Executable correctness for recursive programs (remove CycleFrom exclusion) | **done** ([#215](https://github.com/eth-act/clifv/pull/215)): `Link.compileExe_correct_depth` (no call-graph premise; stack `frameDrop + D·M` for fuel `M`), `Link.compileExe_correct_peak` (stack `frameDrop + D·d` for the run's peak call depth `d`), witnesses `Crates.CompileExeRecWitness`, `Crates.CompileExePeakWitness`; open: exact live-frame accounting |
+| L1f | [#217](https://github.com/eth-act/clifv/issues/217) Theorems for the shipped (dead-cleanup) compiler, recursive i128 source theorem, fail-closed `lean-link --verified` | **done**: `Link.compileExe_correct_source_peak` (`legalProg_refines_depth`), `Link.DeadCleanup.compileExe_correct_peak`/`_source`/`_source_peak`, `lean-link --verified` and `coverage:`; witnesses `Crates.CompileExeSourcePeakWitness`, `Crates.DeadCleanupExePeakWitness`, `Crates.DeadCleanupExeSourceWitness` |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | **done** (`agent/rule-infra`; 43 + 10 roots) |
 | R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (0 rules left) | **done** ([#211](https://github.com/eth-act/clifv/pull/211)) |
 | R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (0 rules left) | **done** ([#210](https://github.com/eth-act/clifv/pull/210)) |

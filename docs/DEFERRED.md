@@ -157,7 +157,8 @@ Deferred:
 - composing the legalisation with the mid-end theorems (`--opt` keeps legalised functions
   unverified). `compileExe` runs no optimiser, so the executable theorem on the original program
   (`Link.compileExe_correct_source`, S2/S3, 2026-10-15) does not need it;
-- in `Link.compileExe_correct_source`: the outside environment's `HelperOk`/`ExtLegal`/
+- in `Link.compileExe_correct_source` (and `_source_peak`, the `Link.DeadCleanup` variants, L1f
+  #217): the outside environment's `HelperOk`/`ExtLegal`/
   `EnvKeepsBounded` when a source function mentions `i128` and `sigOf = none` with indirect
   calls (environment contracts); the source run's memories below `2^64` (`Clif.run`'s bump
   allocator can exceed it; proven for slotless programs, `bounded_of_noSlots`) and, for traps,
@@ -320,7 +321,10 @@ bytes of stack for a whole-program CLIF run of at most `M + 1` steps (no call-gr
 `Link.compileExe_correct_peak` with `frameDrop (art S.input f).af + S.input.D * d` bytes for a run
 of peak call depth `d` (`Clif.DepthLe`: no state it reaches has more than `d` callers), whatever
 its fuel: the linked system carries its callee runs (`LinkSys.crun`, `CrunOk`), the induction runs
-on the depth with the fuel fixed (`Clif.runD`, `Clif.linkEnvD`, `Clif.runLoop_linkD`).
+on the depth with the fuel fixed (`Clif.runD`, `Clif.linkEnvD`, `Clif.runLoop_linkD`). On the
+original `i128` program (L1f, #217): `Link.compileExe_correct_source_peak`, stack from the
+**source** run's call depth (the legalisation keeps `DepthLe`, `legalProg_refines_depth`); for
+the shipped compiler `Link.DeadCleanup.compileExe_correct_peak`/`_source_peak`.
 Deferred:
 - **Exact frames.** Each level is charged the largest frame `D`; charging the frames actually
   live along the executed call derivation needs a budget indexed by the run, not `LinkSys.Budget`

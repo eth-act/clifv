@@ -85,6 +85,10 @@ pub struct Config {
     /// program part of every executable: the Lean-compiled code is not merged into the codegen
     /// units but linked as one region (`.text.fvlean`), whose bytes the Lean linker computes.
     pub lean_link: bool,
+    /// `--lean-link --verified`: the Lean linker fails closed (`lake exe lean-link --verified`):
+    /// an executable whose program part is outside the compiler's source domain (`SrcScopeB`)
+    /// or input conditions (`InScopeP`) is an error instead of a bare-linker fallback.
+    pub lean_link_verified: bool,
     /// `[package.metadata.fv] skip = [...]` of the members: (manifest dir, pattern); matching
     /// functions keep cg_clif's code.
     pub pkg_skip: Vec<(PathBuf, String)>,
@@ -133,6 +137,7 @@ impl Config {
             ("FV_BIN_CHECK".into(), if self.bin_check { "1" } else { "0" }.into()),
             ("FV_TRAP_REPLACED".into(), if self.trap_replaced { "1" } else { "0" }.into()),
             ("FV_LEAN_LINK".into(), if self.lean_link { "1" } else { "0" }.into()),
+            ("FV_LEAN_LINK_VERIFIED".into(), if self.lean_link_verified { "1" } else { "0" }.into()),
             (
                 "FV_PKG_SKIP".into(),
                 self.pkg_skip.iter().map(|(d, p)| format!("{}\t{p}", d.display())).collect::<Vec<_>>().join("\n"),
@@ -162,6 +167,7 @@ impl Config {
                 bin_check: var("FV_BIN_CHECK")? == "1",
                 trap_replaced: var("FV_TRAP_REPLACED")? == "1",
                 lean_link: var("FV_LEAN_LINK")? == "1",
+                lean_link_verified: var("FV_LEAN_LINK_VERIFIED")? == "1",
                 pkg_skip: var("FV_PKG_SKIP")?
                     .lines()
                     .filter_map(|l| l.split_once('\t').map(|(d, p)| (PathBuf::from(d), p.to_string())))

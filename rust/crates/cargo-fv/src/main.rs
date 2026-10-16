@@ -9,7 +9,7 @@ use std::process::{Command, Stdio};
 
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
-                                [--panic-abort] [--members-only] [--no-binary-check] [--lean-link]
+                                [--panic-abort] [--members-only] [--no-binary-check] [--lean-link [--verified]]
                                 [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
        cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE --module NAME]
@@ -37,8 +37,16 @@ report` prints it).
                       executable's code, data and symbols checked against the proven program)
   --lean-link         the Lean linker writes the Lean-compiled code of every executable (L2b,
                       docs/research/lean-linker.md): placed as one region (`.text.fvlean`) and
-                      relocated by `lake exe lean-link` (Link.leanLink); implies --keep-temps;
-                      separate target dir
+                      compiled, relocated and written by `lake exe lean-link`
+                      (Link.DeadCleanup.compileExe), which names the theorems covering the
+                      executable (`coverage:`, also in the report); outside the compiler's input
+                      conditions it falls back to the bare Lean linker (no compiler theorem);
+                      implies --keep-temps; separate target dir
+  --verified          (with --lean-link) fail closed: an executable whose Lean-compiled part is
+                      outside the compiler's source domain (SrcScopeB) or input conditions
+                      (InScopeP) is a link error instead of the fallback, so every executable
+                      written is covered by Link.DeadCleanup.compileExe_correct{,_peak,_source,
+                      _source_peak}; separate target dir
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
   --functions         (report) list every function with its status and reason
@@ -255,6 +263,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut members_only = false;
     let mut bin_check = true;
     let mut lean_link = false;
+    let mut verified = false;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -270,8 +279,12 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
                 lean_link = true;
                 keep_temps = true;
             }
+            "--verified" => verified = true,
             _ => cargo_args.push(a),
         }
+    }
+    if verified && !lean_link {
+        die("--verified needs --lean-link (it makes the Lean linker fail closed)");
     }
     if value_of(&cargo_args, "--target").is_some() {
         die(&format!("cargo fv always builds for {TARGET}; drop --target"));
@@ -326,12 +339,13 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     skip_deps.dedup();
     // one target dir per configuration that changes the objects (cargo does not see FV_*)
     let fv_dir = target.join("fv").join(format!(
-        "{}{}{}{}{}",
+        "{}{}{}{}{}{}",
         mode.name(),
         if members_only { "-members" } else { "" },
         if trap_replaced { "-trap" } else { "" },
         if panic_abort { "-abort" } else { "" },
-        if lean_link { "-leanlink" } else { "" }
+        if lean_link { "-leanlink" } else { "" },
+        if verified { "-verified" } else { "" }
     ));
     let cfg = Config {
         root,
@@ -353,6 +367,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         bin_check,
         trap_replaced,
         lean_link,
+        lean_link_verified: verified,
         pkg_skip,
     };
     let wrapper = std::env::current_exe()
@@ -491,6 +506,11 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             exes.len(),
             exes.iter().sum::<usize>()
         );
+    }
+    for b in report.units.iter().filter_map(|u| u.unit.binary.as_ref()) {
+        if let Some(c) = &b.lean_link {
+            eprintln!("cargo fv: lean-link {}: covered by {c}", b.path);
+        }
     }
     if bin_check {
         // the binary-level theorem's checks, per linked executable with Lean-compiled code

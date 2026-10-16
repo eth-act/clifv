@@ -300,7 +300,8 @@ split sum).
 `FnInput.func_eq : fi.func = legalize fi.src` for every input (`parsedFile128` keeps a function
 whose legalisation fails or is rejected by `check`, as `legalize` does), so
 `LinkInput.prog_eq : I.prog = legalProg I.srcProg` (`FV/E2E/LegalSource.lean`). `SrcScopeB I`
-decides the source domain on the parsed functions (`legalOkB`, `linkFreeB`, `declSigB`, no
+(`FV/E2E/SrcScopeDefs.lean`, proof-free so `lake exe lean-link --verified` decides it) decides
+the source domain on the parsed functions (`legalOkB`, `linkFreeB`, `declSigB`, no
 `__*ti3` name); `srcCtx` turns it, with the facts `compileExe` already proves of the legalised
 program (`LinkSys.Ok`), into `ProgCtx`.
 
@@ -364,10 +365,26 @@ original program's run of `wmul_u128` on `2^64 + 3` and `5` returns `5 * 2^64 + 
 executable machine, called with `3, 1, 5, 0` in x0–x3, returns `15, 5` in x0, x1
 (`compileExe_source_witness`).
 
+**Recursive programs and the shipped compiler (L1f, #217).** `Link.compileExe_correct_source_peak`
+(`FV/Link/ExeSource.lean`): the same without `hc`, the outside caller providing `frameDrop (art
+S.input (legalize f)).af + S.input.D * d` bytes where `hd : Clif.DepthLe B.env S.input.srcProg d
+cs` bounds the call depth of the **source** run; the trap half takes `TrapsExplicit` under
+`Clif.linkEnvD … F d` at every `F`. The legalisation keeps the call depth
+(`E2E.LegalProgram.legalProg_refines_depth`, `FV/E2E/LegalDepth.lean`: the matched legalised run
+has depth at most `d`; e2e.md "The shipped compiler"), so it composes with
+`compileExe_correct_peak`. `Link.DeadCleanup.compileExe_correct_source` and
+`…_source_peak` (`FV/Link/DeadCleanupExeSource.lean`) are the two source theorems for the compiler
+`lean-link` runs by default, over `S.inputCleanup` (`prog S.inputCleanup = legalProg
+S.inputCleanup.srcProg`, `Link.DeadCleanup.prog_eq_legal`). Witnesses:
+`crate-proofs/Crates/CompileExeSourcePeakWitness.lean` (the self-recursive `i128`
+`rec128(x, n)`; source depth 3; returns `24, 8`), `DeadCleanupExePeakWitness.lean`
+(`cleanup_source_peak_witness`), `DeadCleanupExeSourceWitness.lean` (`wmul_u128` under the
+cleanup compiler).
+
 ## Not covered
 
 * Legalised functions under `--opt` (no composition of `backend_correct_legal` with the mid-end
-  theorems). `compileExe` runs no optimiser, so `compileExe_correct_source` needs none.
+  theorems). `compileExe` runs no optimiser, so `compileExe_correct_source{,_peak}` need none.
 * The source-level theorem's run conditions (`hbnd`; for traps `NoMemTrap` and the target's
   `TrapsExplicit`) and, with `i128`, the outside environment's `HelperOk`/`ExtLegal`/
   `EnvKeepsBounded` (table above).
