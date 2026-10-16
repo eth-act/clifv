@@ -1,0 +1,19 @@
+{
+  "snapshot": {
+    "utc": "20261015T222627Z",
+    "branch": "agent/stock-driver-wip-backup-20261015T222627Z",
+    "commit": "739488d64d3c49e43c111ebece81faf06045cb2a",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 989,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  },
+  "archive": {
+    "path": "/home/lee/.clifv-recovery/20261015T222627Z-cfg-total/checkpoint.tar.gz",
+    "sha256": "aa60965fdcdd1b3f4ad5b3af50572820858510474a6ae367a7518a9930035f00",
+    "members": 34,
+    "bytes": 430779
+  },
+  "note": "Snapshot captures all dirty sources/evidence and the archive; this separate receipt follows its creation."
+}
