@@ -144,10 +144,14 @@ def main (args : List String) : IO UInt32 := do
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
     return 1
-  -- the input conditions decided on the CLIF alone (`fnScopeInB`); with `InScopeP`'s program
-  -- conditions, which `compile` checks, `InScopeIn`
+  -- the input conditions decided on the CLIF alone (`fnScopeInB`, `addrSlotsInputB`); with
+  -- `InScopeP`'s other program conditions, which `compile` checks, `InScopeIn`
   if verified then
     let P := SC.input0.prog
+    let syms := fun n => SC.input0.syms.lookup n
+    if !addrSlotsInputB P syms then
+      IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn): addrSlotsInputB fails (an indirect call, a function with an address and stack slots, no program callee with slots); not written"
+      return 1
     let bad := P.funcs.filterMap fun g => match fnScopeInFails g with
       | [] => none
       | fs => some (g.name, fs)
@@ -184,7 +188,7 @@ def main (args : List String) : IO UInt32 := do
     let scopeName := if e == outOfScopeInMsg then "InScopeIn" else "InScopeP"
     let fnScope := if e == outOfScopeInMsg then "fnScopeInB" else "fnScopeB"
     let what := if verified then "--verified: not written" else s!"linking with {linkerName} (outside {theoremName} scope)"
-    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions ({scopeName}): {bad.length} function(s) failing the program-level per-function conditions (by cause: {causes}) {(bad.take 3).map (·.1)}, distinct names {decide (P.funcs.map (·.name)).Nodup}, addrSlotsInB {addrSlotsInB P syms} (else {fnScope}); {what}"
+    IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions ({scopeName}): {bad.length} function(s) failing the program-level per-function conditions (by cause: {causes}) {(bad.take 3).map (·.1)}, distinct names {decide (P.funcs.map (·.name)).Nodup}, {if e == outOfScopeInMsg then s!"addrSlotsInputB {addrSlotsInputB P syms}" else s!"addrSlotsInB {addrSlotsInB P syms}"} (else {fnScope}); {what}"
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
     if verified then return 1

@@ -371,11 +371,16 @@ Done (TO-PROVE V7): `lowerFunction` and `prepare` succeed on input conditions
 `iselInB`, `sizeOkB`, `extendsWidenB` for `lowersB`) implies `InScopeP`, and
 `Link.DeadCleanup.compileExe_total_reach_input` takes it; since L1g (#228) `Link.compileExe` checks
 `InScopeIn` and its totality theorems (`compileExe_total{,_input,_reach}`) take it.
-`lean-link --verified` checks `fnScopeInB`. Deferred:
-- **`addrSlotsInB`'s outgoing area.** `progScopeB`'s `addrSlotsInB` asks whether `lowerFunction`'s
-  output has an outgoing-argument area (`outAreaB`); it runs the lowering (an error counts as no
-  area, so it assumes no success). An input-side bound (stack-passed call arguments of `f`) would
-  make `InScopeIn` free of compiler runs.
+`lean-link --verified` checks `fnScopeInB` and `addrSlotsInputB`. Since L1g item 2 (#228)
+`InScopeIn` runs no compiler stage: its program-level part `progScopeInB` replaces `addrSlotsInB`
+(which asked whether `lowerFunction`'s output has an outgoing-argument area, `outAreaB`) by
+`addrSlotsInputB`, the same disjunction as if every function had an area. Deferred:
+- **A sharper `addrSlotsInputB`.** It rejects a program with an indirect call, address-taken
+  functions with stack slots and no program callee with slots even when no function has an
+  outgoing area. Admitting it needs an input-side bound on the lowering's outgoing area (`outAreaB f`
+  → some call of `f` passes arguments on the stack), i.e. signature provenance through the ISLE
+  abstract interpretation (`IselPrg` records only `SigOk` for `.sig` values). No fv-demo or survey
+  executable is in that case.
 - **`maxTryItems`.** `iselInB` bounds every exception table to 8 items, a proof-convenience bound
   (the table checks the `try_call` roots for up to 8 items), not a Cranelift rule; every corpus
   and crate function meets it.
