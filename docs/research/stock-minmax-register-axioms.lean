@@ -1,0 +1,4 @@
+import FV.Backend.Proof.StockMinMaxRegisterWitness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_register_emitter_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.MinMaxRegisterFixture.stock_minmax_register_driver_success
+#print axioms Backend.Stock.Proof.ScalarSelect.MinMaxRegisterWitness.stock_minmax_register_source_witness
