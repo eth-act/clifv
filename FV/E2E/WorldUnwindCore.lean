@@ -39,8 +39,8 @@ theorem not_unwExit_none (T : Unw.FnTables) (fa : FnAsm) (u : Arm.ArmState) :
 
 /-- **The exceptional end of an activation entered in `s` at `t`** (`ActRet`'s counterpart): an
 AAPCS64 return to the caller as the unwinder leaves it (`ArmRet`), the exception object `obj` in
-x0, the memory outside `F` as in the world `w` after the unwinder restored the raising call, the
-kept addresses `G` and the program as at entry. -/
+x0, the memory outside `F` and the unmasked fields but x29/`sp` as in the world `w` after the
+unwinder restored the raising call, the kept addresses `G` and the program as at entry. -/
 structure ActUnw (ra : BitVec 64) (F G : BitVec 64 → Prop) (obj : BitVec 64)
     (w s t : Arm.ArmState) : Prop where
   ret : ArmRet ra s t
@@ -48,12 +48,106 @@ structure ActUnw (ra : BitVec 64) (F G : BitVec 64 → Prop) (obj : BitVec 64)
   mem : ∀ a, ¬ F a → t.mem a = w.mem a
   gkeep : ∀ a, G a → t.mem a = s.mem a
   prog : t.program = s.program
+  fields : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f t = Arm.r f w
 
 end E2E
 
 namespace Backend.Proof
 
 open Backend E2E Backend.Proof.UnwindTables
+/-! ## The frame row restores only callee-saved registers, x29, x30, `sp`, `pc` -/
+
+theorem saveRow_ne18 {fs : Nat} {s : AInst} {p : Nat × Int} (h : saveRow fs s = some p) :
+    p.1 ≠ 18 := by
+  unfold saveRow at h
+  cases hc : s.calleeSave? with
+  | none => rw [hc] at h; cases h
+  | some ro =>
+    obtain ⟨r, o⟩ := ro
+    rw [hc] at h
+    simp only [Option.bind_some, Option.map_eq_some_iff] at h
+    obtain ⟨d, hd, rfl⟩ := h
+    have hmem : calleeSaved.contains r = true := by
+      unfold AInst.calleeSave? at hc
+      split at hc
+      · split at hc
+        · rename_i h; simp only [Option.some.injEq, Prod.mk.injEq] at hc
+          obtain ⟨rfl, -⟩ := hc
+          exact (Bool.and_eq_true _ _).mp h |>.2
+        · cases hc
+      · cases hc
+    intro e
+    simp only at e
+    subst e
+    cases r with
+    | x n =>
+      simp only [Reg.dwarf?, Option.some.injEq] at hd
+      subst hd
+      revert hmem; decide
+    | sp => simp [Reg.dwarf?] at hd
+    | v n => simp only [Reg.dwarf?, Option.some.injEq] at hd; omega
+    | _ => simp [Reg.dwarf?] at hd
+
+theorem mapM_saveRow_ne18 {fs : Nat} :
+    ∀ (L : List AInst) (saved : List (Nat × Int)), L.mapM (saveRow fs) = some saved →
+      ∀ p ∈ saved, p.1 ≠ 18
+  | [], saved, h => by
+    simp only [List.mapM_nil, Option.pure_def, Option.some.injEq] at h
+    subst h; intro p hp; cases hp
+  | a :: L, saved, h => by
+    simp only [List.mapM_cons, Option.bind_eq_bind, Option.pure_def] at h
+    cases ha : saveRow fs a with
+    | none => rw [ha] at h; cases h
+    | some b =>
+      rw [ha] at h
+      simp only [Option.bind_some] at h
+      cases hL : L.mapM (saveRow fs) with
+      | none => rw [hL] at h; cases h
+      | some bs =>
+        rw [hL] at h
+        simp only [Option.bind_some, Option.some.injEq] at h
+        subst h
+        intro p hp
+        rcases List.mem_cons.mp hp with rfl | hp
+        · exact saveRow_ne18 ha
+        · exact mapM_saveRow_ne18 L bs hL p hp
+
+/-- **Unwinding a frame row keeps every unmasked field but x29 and `sp`.** -/
+theorem restore_frameRow_fields {fs : Nat} {L : List AInst} {saved : List (Nat × Int)}
+    (hL : L.mapM (saveRow fs) = some saved) {t t' : Arm.ArmState}
+    (h : Unw.restore (frameRow fs saved) t = some t') :
+    ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f t' = Arm.r f t := by
+  intro f hf h29 h31
+  simp only [Unw.restore, Option.map_eq_some_iff] at h
+  obtain ⟨cfa, -, rfl⟩ := h
+  cases f with
+  | PC => exact absurd trivial hf
+  | SFP i => exact absurd trivial hf
+  | GPR i =>
+    have h18 : i = 18#5 := by
+      have n29 : i.toNat ≠ 29 := fun e =>
+        h29 (by rw [BitVec.eq_of_toNat_eq (x := i) (y := 29#5) (by simp [e])])
+      have n31 : i.toNat ≠ 31 := fun e =>
+        h31 (by rw [BitVec.eq_of_toNat_eq (x := i) (y := 31#5) (by simp [e])])
+      simp only [Masked, not_or, not_and, Decidable.not_not] at hf
+      have hi := i.isLt
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_ofNat]
+      omega
+    subst h18
+    rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
+    have hl : (frameRow fs saved).saved.lookup 18 = none := by
+      simp only [frameRow, List.lookup_append]
+      rw [List.lookup_eq_none_iff.mpr]
+      · rfl
+      · intro p hp
+        simpa [bne_iff_ne] using (mapM_saveRow_ne18 L saved hL p (List.mem_reverse.mp hp)).symm
+    have := Unw.restoreFold_gpr cfa t (n := 18) (by omega) (frameRow fs saved).saved
+    rw [hl] at this
+    exact this
+  | _ =>
+    rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp)]
+    exact Unw.restoreFold_other cfa t _ (by simp) (by simp) _
 
 /-- **At a state of the old trace no step leaves the frame by unwinding** (a call there is a
 normal call: its callee does not raise, `RLU.noRaise_of_goodX`). -/
@@ -111,6 +205,8 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         (∀ a, ¬ R.F a → (E2E.runX R.stepU n R.s0).mem a = w.mem a) ∧
         (∀ a, R.G a → (E2E.runX R.stepU n R.s0).mem a = R.s0.mem a) ∧
         (E2E.runX R.stepU n R.s0).program = R.s0.program ∧
+        (∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 →
+          Arm.r f (E2E.runX R.stepU n R.s0) = Arm.r f w) ∧
         (∀ i < n, R.GoodXU (E2E.runX R.stepU i R.s0)) ∧ 0 < n ∧
         UnwExit R.U R.T R.fa (E2E.runX R.stepU (n - 1) R.s0)) := by
   have hf : R.af.frame = true := lowerRFunc_frame hR.alloc
@@ -413,6 +509,10 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       have hfs : Unw.FrameSaved R.af R.s0 t := frameSaved_of_stRel hR hf hsaved he hst' hinvT
       obtain ⟨-, t', hrest, hretA, hprog', hmem'⟩ :=
         Unw.unwind_call_restores hrows hf (List.of_mem_zip hmem).2 hfs herrt
+      have hfldT : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f t' = Arm.r f t := by
+        obtain ⟨-, lab, code, saved, -, hsv, hrow⟩ := unwindRows_frame hrows hf
+        rw [hrow _ (List.of_mem_zip hmem).2] at hrest
+        exact restore_frameRow_fields hsv hrest
       have hstep : R.stepU u = Arm.w (.GPR 0#5) obj t' := by
         rw [hstepU]
         simp only [Unw.unwindAt, hoff, hpers, hcie, hfde, hrest]
@@ -436,7 +536,7 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       have hlast : E2E.runX R.stepU (n0 + n1 + n2 + 1 - 1) R.s0 = u := by
         rw [show n0 + n1 + n2 + 1 - 1 = n0 + n1 + n2 + 0 by omega, hfin, hu]
         rfl
-      refine ⟨n0 + n1 + n2 + 1, ?_, ?_, ?_, ?_, ?_, htr, by omega, by rw [hlast]; exact hexit⟩
+      refine ⟨n0 + n1 + n2 + 1, ?_, ?_, ?_, ?_, ?_, ?_, htr, by omega, by rw [hlast]; exact hexit⟩
       all_goals rw [hfin, hu]
       all_goals simp only [iterN]
       all_goals rw [hstep]
@@ -451,6 +551,10 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         exact hst.gkeep a ha
       · rw [Arm.w_program, hprog', hprogt, hst.prog]
         exact hent.program.symm
+      · intro f hf' h29 h31
+        have h0 : f ≠ .GPR 0#5 := fun e => hf' (by subst e; simp [Masked])
+        rw [Arm.r_of_w_different h0, hfldT f hf' h29 h31]
+        exact hW.1 f hf'
 
 
 end Backend.Proof
