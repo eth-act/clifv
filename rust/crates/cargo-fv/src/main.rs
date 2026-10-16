@@ -152,7 +152,7 @@ fn repo_root() -> PathBuf {
         (".lake/build/bin/lean-backend", "lake build lean-backend"),
         ("rust/target/release/clif-data-export", "cargo build --release -p clif-data-export (in rust/)"),
         ("rust/target/release/lean-regalloc", "cargo build --release -p lean-regalloc (in rust/)"),
-        ("scripts/rust-clif/normalize.py", "a checkout of the repository"),
+        (".lake/build/bin/clif-decode", "lake build clif-decode"),
     ] {
         if !r.join(p).exists() {
             die(&format!("{} missing (FV_ROOT={}); build it: {how}", r.join(p).display(), r.display()));
@@ -177,7 +177,7 @@ fn value_of(args: &[String], opt: &str) -> Option<String> {
 /// Everything that changes the Lean side of a build but not cargo's fingerprints.
 fn stamp_of(cfg: &Config, wrapper: &Path, backend: &str) -> String {
     let mut s = String::new();
-    for p in [cfg.lean_backend(), cfg.data_export(), cfg.lean_regalloc(), cfg.normalize(), wrapper.to_path_buf()] {
+    for p in [cfg.lean_backend(), cfg.data_export(), cfg.lean_regalloc(), cfg.decode(), wrapper.to_path_buf()] {
         let m = std::fs::metadata(&p).ok();
         s.push_str(&format!(
             "{} {} {:?}\n",
@@ -310,27 +310,27 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         .find_map(|l| l.strip_prefix("host: ").map(String::from))
         .unwrap_or_else(|| die("rustc -vV: no host"));
     let bin = sysroot.join("lib/rustlib").join(&host).join("bin");
-    // Codegen backend: with panic=unwind, cg_clif built with its `unwinding` feature (landing
-    // pads: Drop during unwinding, catch_unwind) if available, else the shipped one (no landing
-    // pads). With panic=abort the shipped one: the unwinding one would turn every call that may
-    // unwind into a `try_call` with a terminate edge (rustc's abort_unwinding_calls), and those
-    // functions would fall back.
-    let unwinding_cg_clif = root.join("target/cg_clif-unwind/librustc_codegen_cranelift.so");
+    // Codegen backend: cg_clif with this repository's patch (scripts/build-cg-clif.sh), which
+    // writes each function's external-name table and the module's declarations into its dump
+    // (the identities `clif-decode` reads; docs/contracts/frontend.md). With panic=unwind the
+    // build with cg_clif's `unwinding` feature (landing pads: Drop during unwinding,
+    // catch_unwind); with panic=abort the one without: the unwinding one would turn every call
+    // that may unwind into a `try_call` with a terminate edge (rustc's abort_unwinding_calls),
+    // and those functions would fall back. The shipped cg_clif writes no tables.
+    let variant = if panic_abort { "abort" } else { "unwind" };
+    let patched = root.join(format!("target/cg_clif/{variant}/librustc_codegen_cranelift.so"));
     let backend: String = match std::env::var("FV_CG_CLIF") {
-        Ok(v) if v == "cranelift" => v,
+        Ok(v) if v == "cranelift" => die("FV_CG_CLIF=cranelift: the shipped cg_clif writes no external-name tables; build the patched one with scripts/build-cg-clif.sh (docs/USAGE.md)"),
         Ok(v) if Path::new(&v).exists() => v,
-        Ok(v) => die(&format!("FV_CG_CLIF={v}: no such file (a cg_clif .so, or `cranelift` for the shipped one)")),
-        Err(_) if !panic_abort && unwinding_cg_clif.exists() => unwinding_cg_clif.display().to_string(),
-        Err(_) => "cranelift".into(),
+        Ok(v) => die(&format!("FV_CG_CLIF={v}: no such file (a cg_clif .so built by scripts/build-cg-clif.sh)")),
+        Err(_) if patched.exists() => patched.display().to_string(),
+        Err(_) => die(&format!("{} missing: build the patched cg_clif with scripts/build-cg-clif.sh (docs/USAGE.md)", patched.display())),
     };
-    let panic_desc = match (panic_abort, backend.as_str()) {
-        (true, b) => format!("abort (cg_clif: {b})"),
-        (false, "cranelift") => "unwind (shipped cg_clif: no landing pads, so no Drop during unwinding and catch_unwind in the crate does not catch)".to_string(),
-        (false, b) => format!("unwind (cg_clif with unwinding: {b})"),
+    let panic_desc = if panic_abort {
+        format!("abort (cg_clif: {backend})")
+    } else {
+        format!("unwind (cg_clif with unwinding: {backend})")
     };
-    if !panic_abort && backend == "cranelift" {
-        eprintln!("cargo fv: note: the shipped cg_clif has no landing pads (Drop during unwinding, catch_unwind in the crate); build the unwinding one with scripts/build-cg-clif-unwind.sh (docs/USAGE.md)");
-    }
     // `FV_SKIP_DEPS=a,b`: more dependency packages that keep plain cg_clif
     skip_deps.extend(
         std::env::var("FV_SKIP_DEPS").unwrap_or_default().split([',', ' ']).filter(|s| !s.is_empty()).map(String::from),
@@ -358,7 +358,6 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         rust_lld: find_tool("FV_RUST_LLD", &[bin.join("rust-lld")]),
         objcopy: find_tool("FV_OBJCOPY", &["/usr/lib/llvm-18/bin/llvm-objcopy".into(), bin.join("rust-objcopy")]),
         ar: find_tool("FV_AR", &["/usr/lib/llvm-18/bin/llvm-ar".into()]),
-        python: std::env::var("FV_PYTHON").unwrap_or("python3".into()),
         jobs: std::env::var("FV_JOBS")
             .ok()
             .and_then(|j| j.parse().ok())

@@ -47,34 +47,40 @@ test tests::perms ... ok
 This host is x86_64 Linux. The binaries are static `aarch64-unknown-linux-musl` executables,
 and they run under `qemu-aarch64-static`.
 
-1. The pinned nightly with cg_clif and the musl target:
+1. The pinned nightly with the `rustc-dev` component (to build cg_clif, step 5) and the musl
+   target:
    ```
    rustup toolchain install nightly-2026-09-26 \
-       --component rustc-codegen-cranelift-preview --target aarch64-unknown-linux-musl
+       --component rustc-dev --target aarch64-unknown-linux-musl
    ```
 2. `qemu-aarch64-static` on `PATH`. With `--panic-abort`, `cargo test` of a `should_panic`
    test needs the binfmt_misc registration too: the test harness then runs the test in a child
    process (`/proc/sys/fs/binfmt_misc/qemu-aarch64`, from the `qemu-user-static` package).
-3. LLVM 18 binutils (`/usr/lib/llvm-18/bin/llvm-objcopy`, `llvm-ar`) and `python3`.
+3. LLVM 18 binutils (`/usr/lib/llvm-18/bin/llvm-objcopy`, `llvm-ar`).
 4. The repository's tools, built once from the repository root:
    ```
-   FV_MEMCAP=16G scripts/memcap.sh lake build lean-backend
+   FV_MEMCAP=16G scripts/memcap.sh lake build lean-backend clif-decode
    cd rust && FV_MEMCAP=16G ../scripts/memcap.sh cargo build --release \
        -p cargo-fv -p clif-data-export -p lean-regalloc
    export PATH=$PWD/target/release:$PATH      # cargo-fv and fv-rustc
    ```
-   `cargo-fv` finds `lean-backend`, `clif-data-export`, `lean-regalloc` and
-   `scripts/rust-clif/normalize.py` through the checkout it was built from (`FV_ROOT`
-   overrides this). `cargo install --path rust/crates/cargo-fv` also works: it installs both
+   `cargo-fv` finds `lean-backend`, `clif-decode`, `clif-data-export` and `lean-regalloc`
+   through the checkout it was built from (`FV_ROOT` overrides this). `cargo install --path rust/crates/cargo-fv` also works: it installs both
    binaries, and they still use that checkout.
-5. Recommended for panic=unwind (the default): cg_clif with landing pads, built once from the
-   nightly's own sources (network access, the `rustc-dev` component, about 40 s):
+5. cg_clif with this repository's patch, built once from the nightly's own sources (network
+   access, the `rustc-dev` component, about 40 s per variant):
    ```
-   FV_MEMCAP=16G scripts/memcap.sh scripts/build-cg-clif-unwind.sh
+   FV_MEMCAP=16G scripts/memcap.sh scripts/build-cg-clif.sh
    ```
-   It writes `target/cg_clif-unwind/librustc_codegen_cranelift.so` in the checkout, which
-   `cargo fv` then uses (see *Panics and unwinding*). Without it, `cargo fv` uses the shipped
-   cg_clif, which has no landing pads, and prints a note.
+   The patch (`scripts/patches/cg-clif-extnames.patch`) makes cg_clif write, after every CLIF
+   dump, which symbol each external name of the function denotes (its external-name table and
+   the module's declarations, docs/contracts/frontend.md §2); `cargo fv` reads the identities
+   from there. The script writes `target/cg_clif/unwind/librustc_codegen_cranelift.so` (with
+   cg_clif's `unwinding` feature: landing pads, for panic=unwind) and
+   `target/cg_clif/abort/librustc_codegen_cranelift.so` (without, for `--panic-abort`) in the
+   checkout; `cargo fv` uses the one for the build's panic strategy (see *Panics and
+   unwinding*) and stops with an error when it is missing. The shipped
+   `rustc-codegen-cranelift-preview` writes no tables and cannot be used.
 
 ## Usage
 
@@ -95,8 +101,8 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | `--no-fallback` | fail (exit 1, before running anything) unless every function of every workspace member runs Lean code (dependencies may keep fallbacks, e.g. float code; the report lists them) |
 | `--trap-replaced` | overwrite cg_clif's code of every Lean-compiled function (members and dependencies) with `udf` traps (see *Checking that the Lean code runs*) |
 | `--members-only` | only the workspace members go through the Lean backend; dependencies are plain cg_clif (the behaviour before agent/fv-deps; own target directory) |
-| `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`), with what `cargo fv link-proof` needs: per function the CLIF file `lean-backend` compiled, `lean-regalloc`'s output for it, the unit's data objects, the merge's linked names and the object's local symbols (`fv-link.json`), per executable the link map |
-| `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the shipped cg_clif; own target directory; the configuration of the binary-level theorem: no unwinding through Lean frames) |
+| `--keep-temps` | keep the per-codegen-unit work directories (`target/fv/<mode>/tmp/`), with what `cargo fv link-proof` needs: per function cg_clif's dump whose decoding `lean-backend` compiled (copied into `c.clif/`), `lean-regalloc`'s output for it, the unit's data objects (`data.clif`), the merge's linked names and the object's local symbols (`fv-link.json`), per executable the link map |
+| `--panic-abort` | build with `-Cpanic=abort -Zpanic-abort-tests` (the pre-unwinding behaviour; the patched cg_clif without its `unwinding` feature; own target directory; the configuration of the binary-level theorem: no unwinding through Lean frames) |
 | `--no-binary-check` | skip the per-executable binary check (see *The executable as a whole*); without it the build keeps what the check reads (the per-function CLIF and `lean-regalloc` output, `fv-link.json`, the link maps; not the objects) in `target/fv/<mode>/tmp/` |
 | `--lean-link` | the Lean linker writes the Lean-compiled code of every executable (L2b, docs/research/lean-linker.md): the codegen units keep cg_clif's object (our functions weak), each executable gets the Lean code as one region (`.text.fvlean`, rust-lld links the rest around it) whose bytes `lake exe lean-link` computes with the executable compiler `Link.DeadCleanup.compileExe` (the input conditions `InScopeP`, then `Link.DeadCleanup.leanLink`: the pipeline with dead-instruction cleanup, placement, relocation, checks) and writes into the executable; such an executable is covered by `Link.DeadCleanup.compileExe_correct` and `…_correct_peak` (recursive entries), and for a program in the source domain `SrcScopeB` by `…_correct_source` and `…_correct_source_peak` (the original pre-`i128`-legalisation program), with no per-crate proof (L1, L1f; `lean-link` prints `written by Link.DeadCleanup.compileExe` and a `coverage:` line naming them, also recorded as `binary.lean_link` in the report and printed as `cargo fv: lean-link …: covered by …`). On a program outside `InScopeP` it prints the failing conditions and links with `Link.DeadCleanup.leanLink` alone (`written by Link.DeadCleanup.leanLink`, `coverage: none`): the crate's linker facts and the code part of the binary facts are then still theorems (`Link.leanLink_linkerOk`, `Link.leanLink_code`). The facts about rust-lld's output (headers, cg_clif's data objects, the symbol table, the region's segment) are `leanLink`'s checks (`Link.binOk_leanLink`). Unverified functions, and self-calling functions that take their own address, keep cg_clif's code. Needs `lake build lean-link`; implies `--keep-temps`; own target directory |
 | `--verified` | with `--lean-link`: fail closed. An executable whose Lean-compiled part is outside the source domain `SrcScopeB` or the input conditions `InScopeP` is a link error (`lean-link … --verified` names the failing functions and conditions and does not write it) instead of the bare-linker fallback, so every executable the build writes is covered by `Link.DeadCleanup.compileExe_correct{,_peak,_source,_source_peak}`. Combine with `--no-fallback` to also require every member function in the Lean region. Own target directory |
@@ -112,9 +118,9 @@ Environment variables:
 | `FV_SKIP_DEPS=a,b` | dependency packages (Cargo package names) that keep plain cg_clif |
 | `FV_SKIP=pat,…` / `FV_ONLY=pat,…` | debugging: functions whose symbol or Rust path contains a pattern fall back / only those are compiled |
 | `FV_TOOLCHAIN` | the nightly (default `nightly-2026-09-26`) |
-| `FV_CG_CLIF` | the codegen backend: a cg_clif `.so`, or `cranelift` for the shipped one (default: `target/cg_clif-unwind/librustc_codegen_cranelift.so` of the checkout if it exists and panic=unwind, else `cranelift`) |
+| `FV_CG_CLIF` | the codegen backend: a cg_clif `.so` built with the patch of `scripts/build-cg-clif.sh` (default: `target/cg_clif/unwind/librustc_codegen_cranelift.so` of the checkout, with `--panic-abort` `target/cg_clif/abort/…`); `cranelift` (the shipped one) is an error, it writes no external-name tables |
 | `FV_ROOT` | the repository checkout with the tools |
-| `FV_OBJCOPY`, `FV_AR`, `FV_RUST_LLD`, `FV_PYTHON` | tool paths |
+| `FV_OBJCOPY`, `FV_AR`, `FV_RUST_LLD` | tool paths |
 | `CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER` | the runner (default `qemu-aarch64-static`) |
 
 Per package, `Cargo.toml` can keep functions on cg_clif, and the workspace's packages can keep
@@ -134,7 +140,7 @@ Artifacts are in `target/fv/<mode>/aarch64-unknown-linux-musl/<profile>/…`, wh
 `-abort`, `-leanlink` and/or `-verified`. Each configuration has its own target directory because cargo does not see
 the Lean-side settings. For the same reason, `cargo fv` keeps a stamp per profile
 (`target/fv/<mode>/fv-stamp.<profile>`) of the Lean tools (`lean-backend`, `clif-data-export`,
-`lean-regalloc`, `normalize.py`, `fv-rustc`, the codegen backend `.so`), `FV_SKIP`, `FV_ONLY`,
+`lean-regalloc`, `clif-decode`, `fv-rustc`, the codegen backend `.so`), `FV_SKIP`, `FV_ONLY`,
 `package.metadata.fv` (`skip`, `skip-deps`) and `FV_SKIP_DEPS`. When the stamp changes, it
 deletes the profile's whole target-side output (`target/fv/<mode>/aarch64-unknown-linux-musl/<profile>/`,
 members and dependencies, including their build-script runs) and the unit reports, so every
@@ -200,15 +206,16 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
 (`rust/crates/cargo-fv/src/pipeline.rs`):
 
 1. **Select**: the CGU's functions are the dumps whose symbol is a text symbol of the object
-   (FuncIds `u0:N` are numbered per CGU, so a CGU is the unit of normalisation).
-2. **Data and callees**: `clif-data-export` pairs every external-name use of the CLIF with
-   cg_clif's relocations in the object. This gives the object symbol of every `symbol_value`
-   (`--gvmap`: `.LdataN`, a named static, or with `--imported` a static of another crate)
-   and of every callee declared only by FuncId
-   (`--fnmap`: a function of another crate or CGU). The FuncId mapping is checked, never
-   guessed: dense ref numbering, target kinds, the CGU's own functions map to their own
-   symbols, one symbol per FuncId across all functions. Then `normalize.py --split --gvmap
-   --fnmap --strip-srcloc` writes one CLIF file per function.
+   (FuncIds `u0:N` are numbered per CGU, so a CGU is the unit of decoding).
+2. **Decode**: `clif-decode` (Lean, `Front.decodeFn`, docs/contracts/frontend.md) reads each
+   dump with the external-name table the patched cg_clif writes after it and replaces every
+   external name — the function's own `u0:N`, callees `u0:N`, global values `userextnameJ`
+   (`.LdataN` as `c_LdataN`, named statics, statics of other crates, thread-locals), libcalls
+   — by the symbol cg_clif's module declared for it, then writes one CLIF file per function
+   (header and printed function, checked to parse back). A dump that does not decode (no table,
+   an undeclared name, a symbol that is no CLIF name) gets `X.clif.err`, and the function falls
+   back with that reason. `clif-data-export` writes the object's data objects (`data.clif`, for
+   `cargo fv link-proof`). Nothing is recovered from relocation order.
 3. **Compile**: `lean-backend f.clif f.o` per function (`FV_JOBS` in parallel). One function
    per file means every call is a call of an extern. The theorem covers extern calls through
    its callee contract, and a function the backend rejects does not make its callers fall
@@ -245,8 +252,8 @@ or an executable's `*.rcgu.o` files at link time) then goes through this pipelin
 statics) and never copies data. Every static, vtable, panic `Location` and string constant
 therefore has exactly one address, shared by cg_clif's code, the Lean code and other crates.
 `static` and `static mut` identity, vtable comparisons (`ptr::eq` on `dyn` pointers) and
-interior mutability all behave as under plain cg_clif. The alternative, `clif-data-export`'s
-`; data:` copies, would give statics a second address and was rejected for that reason.
+interior mutability all behave as under plain cg_clif. The alternative, linking copies of the
+`; data:` objects, would give statics a second address and was rejected for that reason.
 
 **Runtime.** In a cargo build, `memcpy`/`memset`/`memmove`/`memcmp` come from musl, the
 128-bit division helpers from compiler-builtins, and the panic entry points from core/std. The
@@ -269,14 +276,12 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   at call sites. The `.text` bytes are unchanged (`scripts/lean-backend-encode-check.sh`).
 * **Landing pads.** The shipped `rustc-codegen-cranelift-preview` of this nightly is built
   *without* cg_clif's `unwinding` feature: it drops cleanup blocks and compiles the
-  `catch_unwind` intrinsic as a plain call. Plain `cargo test -Zcodegen-backend=cranelift`
-  therefore runs no `Drop` during unwinding and a `catch_unwind` in cg_clif-compiled code
-  does not catch (the panic reaches the test harness, which is LLVM code in the prebuilt
-  libtest, so `#[should_panic]` works). `scripts/build-cg-clif-unwind.sh` builds cg_clif with
-  the feature (the nightly's own cg_clif sources, commit from `rustc -vV`, against the
-  `rustc-dev` component): it emits `try_call` with landing pads and LSDAs
-  (`.gcc_except_table`), and `catch_unwind`/`Drop` behave as with LLVM. `cargo fv` uses it
-  when it exists (`FV_CG_CLIF` overrides).
+  `catch_unwind` intrinsic as a plain call, so it runs no `Drop` during unwinding and a
+  `catch_unwind` in cg_clif-compiled code does not catch. `scripts/build-cg-clif.sh` builds the
+  patched cg_clif with the feature (`target/cg_clif/unwind/`; the nightly's own cg_clif sources,
+  commit from `rustc -vV`, against the `rustc-dev` component): it emits `try_call` with landing
+  pads and LSDAs (`.gcc_except_table`), and `catch_unwind`/`Drop` behave as with LLVM. `cargo
+  fv` uses it with panic=unwind (`FV_CG_CLIF` overrides).
 * **Landing pads are Lean code** (agent/fv-trycall): functions with `try_call`/
   `try_call_indirect` are compiled: the call is a block terminator, the handler successors are
   the landing pads (payload in x0), and the object gets cg_clif's LSDA in `.gcc_except_table`
@@ -317,14 +322,11 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   unbounded stack: `compileExe_correct` requires no reachable call cycle, `compileExe_correct_peak`
   (and `…_source_peak` on the original `i128` program) `frameDrop + D·d` bytes for a run of call
   depth `d`.
-* With the shipped cg_clif (no unwinding build, or `FV_CG_CLIF=cranelift`), no function has a
-  landing pad, `cargo fv` prints a note, and the program behaves as under plain cg_clif: the
-  reference for comparisons is then plain cg_clif, not LLVM (`BASELINE=cg_clif
-  examples/compare.sh`).
 * `--panic-abort` restores the previous behaviour (`-Cpanic=abort -Zpanic-abort-tests`, each
-  test in a child process). It always uses the shipped cg_clif: under panic=abort the unwinding
-  build turns every call that may unwind into a `try_call` with a terminate edge (rustc's
-  `abort_unwinding_calls`), which would fall back.
+  test in a child process). It uses the patched cg_clif built without the `unwinding` feature
+  (`target/cg_clif/abort/`): under panic=abort the unwinding build turns every call that may
+  unwind into a `try_call` with a terminate edge (rustc's `abort_unwinding_calls`), which would
+  fall back.
 
 ## Checking that the Lean code runs
 
@@ -345,8 +347,7 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
 * `--no-fallback`: every function of the workspace members must be Lean-compiled.
 * `examples/compare.sh DIR`: `cargo test` with LLVM (under qemu) against `cargo fv test`,
   test by test. `BASELINE=cg_clif` compares against plain cg_clif instead (the same backend
-  and panic strategy `cargo fv` uses; the right reference with the shipped cg_clif, which has
-  no landing pads).
+  and panic strategy `cargo fv` uses).
 
 ## What is verified, and what is not
 
@@ -377,8 +378,9 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   budget): …`). In `examples/` only the fully unrolled SHA-256/SHA-512 round functions of
   the `sha2` dependency (`sha2::sha{256,512}::soft::unroll::compress_block`, 52–604 M) reach
   it (examples/deps).
-* Not verified (trusted): rustc and cg_clif (Rust → CLIF), `normalize.py`,
-  `clif-data-export`, the object surgery above and the linker (both checked, for the
+* Not verified (trusted): rustc and cg_clif with its patch (Rust → CLIF and the dumps'
+  external-name tables, docs/contracts/frontend.md), `clif-data-export` (the object's data
+  objects), the object surgery above and the linker (both checked, for the
   program's code, data objects and symbols, by the binary check), std (the prebuilt standard
   library: std/core/alloc, compiler_builtins, musl libc; LLVM code), dependencies excluded by
   `--members-only`/skip-deps (cg_clif code), and everything the report lists as unverified
@@ -635,8 +637,8 @@ vendor 886, deps 3144. Between agent/callee-fix and agent/trycall-contract, with
 functions reported unverified: fv-demo 1087, survey 2681, vendor 3641, deps 17677 verified.
 `examples/compare.sh` SAME for all three (fv-demo 19, survey 53, vendor 189 test outcomes).
 
-With the shipped cg_clif (`FV_CG_CLIF=cranelift`, no landing pads) or `--panic-abort`
-there are no landing-pad fallbacks:
+With the shipped cg_clif (no landing pads; before the external-name tables, #221, `cargo fv`
+could still use it) or `--panic-abort` there are no landing-pad fallbacks:
 
 | | configuration | tests | functions | verified | unverified | fallback | Lean in exe |
 |---|---|---|---|---|---|---|---|
@@ -727,9 +729,8 @@ report the same test outcomes as `cargo test` (fv-demo 18/18, survey 53/53, vend
   def (the resolver preserves every other register). The code and relocations are identical
   to cg_clif's and to `llvm-mc`'s (`lean-backend-encode-check.sh`, `corpus/clif-regress/tls_elf_gd.clif`
   and random forms), and `rust-lld` relaxes the sequence in the static executable
-  (`movz`/`movk`/`nop`/`nop`). `clif-data-export` names the variable of each `tls_value`
-  from the function's TLSDESC relocations (paired with the `.vcode`'s `elf_tls_get_addr`
-  lines, in code order).
+  (`movz`/`movk`/`nop`/`nop`). The variable of each `tls_value` is the symbol of its
+  `tls` global value's declaration in the dump's external-name table (`clif-decode`).
 * **Dead blocks.** The lowering validator (`lowerCheck`) rejected functions with blocks that
   have no path from the entry (cg_clif's dead cleanup blocks, e.g. the test instances of
   `once_cell::imp::…::initialize::{closure#0}`): its availability dataflow gave such a block
@@ -870,7 +871,7 @@ the CPU qemu emulates has.)
   skip-deps restrict it); std is the prebuilt LLVM one (rebuilding it with `-Zbuild-std`
   would be the way to cover it, not done).
 * panic=unwind: full unwinding semantics (`Drop` during unwinding, `catch_unwind` in the crate)
-  need the unwinding cg_clif (Install, 5); the shipped one has no landing pads at all. The
+  need the unwinding build of the patched cg_clif (Install, 5). The
   landing pads of Lean-compiled functions and their LSDA are compiled but not verified: the
   theorem covers `try_call`s up to the normal return only.
 * Library crate types `lib`/`rlib`, binaries and test harnesses. `dylib`, `cdylib`,
@@ -906,8 +907,11 @@ the precise contract, retained artifacts, progress tracking and baseline results
 * `toolchain … not found`: install the nightly with the component and target (Install, 1).
 * `--panic-abort`: a `should_panic` test fails with an exec error: register qemu with
   binfmt_misc (Install, 2).
-* `catch_unwind` does not catch or `Drop` does not run during unwinding: the build uses the
-  shipped cg_clif (the summary's `panic=` line says which); build the unwinding one (Install, 5).
+* `catch_unwind` does not catch or `Drop` does not run during unwinding: `FV_CG_CLIF` names a
+  cg_clif built without the `unwinding` feature (the summary's `panic=` line says which); use
+  `target/cg_clif/unwind/` (Install, 5).
+* Every function falls back with `decode: no external-name table`: `FV_CG_CLIF` names a cg_clif
+  without the patch; build it with `scripts/build-cg-clif.sh` (Install, 5).
 * A build script that runs `$RUSTC` (libc, crc32fast, serde, …) fails with `libLLVM….so: cannot
   open shared object file`, or silently sets different `cfg`s than under `cargo test`: fixed in
   agent/fv-deps. `cargo fv` started through another toolchain's rustup proxy (a

@@ -5,8 +5,8 @@ import Lean.Data.Json
 # Reading a frontend bundle (`cargo fv link-proof`'s `bundle.json`, docs/contracts/frontend.md)
 
 `readBundle dir sizes`: the `Front.Bundle` of `dir/bundle.json` (format
-`clifv-frontend-bundle`, version 1): the files it names are read unchanged (each function's
-CLIF file and `lean-regalloc` output, each unit's `; data:` lines). Any missing field, file or
+`clifv-frontend-bundle`, version 2): the files it names are read unchanged (each function's
+cg_clif dump and `lean-regalloc` output, each unit's `; data:` lines). Any missing field, file or
 malformed entry is an error. Everything the compiler's input is computed from them is computed
 by the pure `Front.buildSpec`/`Front.assemble`.
 -/
@@ -16,7 +16,7 @@ namespace Front
 open Lean
 
 /-- The bundle format this reader accepts. -/
-def bundleVersion : Nat := 1
+def bundleVersion : Nat := 2
 
 private def field (j : Json) (k : String) : Except String Json := j.getObjVal? k
 
@@ -62,9 +62,9 @@ def readBundle (dir : System.FilePath) (sizes : List (String × Nat)) :
     let mut fns : Array FnFile := #[]
     for fj in ← liftE w (arr uj "functions") do
       let name ← liftE w (str fj "name")
-      let clif ← liftE w (str fj "clif")
+      let dump ← liftE w (str fj "dump")
       let ra ← liftE w (str fj "ra")
-      fns := fns.push { name, clif := ← IO.FS.readFile clif, ra := ← IO.FS.readFile ra }
+      fns := fns.push { name, dump := ← IO.FS.readFile dump, ra := ← IO.FS.readFile ra }
     let dataPath ← liftE w (str uj "data")
     let data := ((← IO.FS.readFile dataPath).splitOn "\n").filter (·.startsWith "; data:")
     let locals ← liftE w (do (← arr uj "locals").toList.mapM pairStr)

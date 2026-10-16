@@ -53,7 +53,7 @@ impl Mode {
 /// Everything the wrapper needs; `cargo-fv` fills it in, `fv-rustc` reads it back.
 #[derive(Clone, Debug)]
 pub struct Config {
-    /// The repository root (lean-backend, clif-data-export, lean-regalloc, normalize.py).
+    /// The repository root (lean-backend, clif-decode, clif-data-export, lean-regalloc).
     pub root: PathBuf,
     pub mode: Mode,
     /// `CARGO_MANIFEST_DIR`s of the workspace members.
@@ -71,7 +71,6 @@ pub struct Config {
     pub rust_lld: PathBuf,
     pub objcopy: PathBuf,
     pub ar: PathBuf,
-    pub python: String,
     /// `lean-backend` processes at a time, across all fv-rustc processes of the build.
     pub jobs: usize,
     pub keep_temps: bool,
@@ -108,8 +107,8 @@ impl Config {
     pub fn lean_regalloc(&self) -> PathBuf {
         self.root.join("rust/target/release/lean-regalloc")
     }
-    pub fn normalize(&self) -> PathBuf {
-        self.root.join("scripts/rust-clif/normalize.py")
+    pub fn decode(&self) -> PathBuf {
+        self.root.join(".lake/build/bin/clif-decode")
     }
 
     /// Whether the inputs of `cargo fv link-proof` (and of the binary check) are kept.
@@ -131,7 +130,6 @@ impl Config {
             ("FV_RUST_LLD".into(), self.rust_lld.display().to_string()),
             ("FV_OBJCOPY".into(), self.objcopy.display().to_string()),
             ("FV_AR".into(), self.ar.display().to_string()),
-            ("FV_PYTHON".into(), self.python.clone()),
             ("FV_JOBS".into(), self.jobs.to_string()),
             ("FV_KEEP_TEMPS".into(), if self.keep_temps { "1" } else { "0" }.into()),
             ("FV_BIN_CHECK".into(), if self.bin_check { "1" } else { "0" }.into()),
@@ -161,7 +159,6 @@ impl Config {
                 rust_lld: var("FV_RUST_LLD")?.into(),
                 objcopy: var("FV_OBJCOPY")?.into(),
                 ar: var("FV_AR")?.into(),
-                python: var("FV_PYTHON")?,
                 jobs: var("FV_JOBS")?.parse().map_err(|_| "FV_JOBS: not a number".to_string())?,
                 keep_temps: var("FV_KEEP_TEMPS")? == "1",
                 bin_check: var("FV_BIN_CHECK")? == "1",
