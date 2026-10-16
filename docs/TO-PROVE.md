@@ -76,7 +76,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | --- | --- | --- | --- | --- |
 | mid-end `simplify` rules | Lean (ISLE data) | 1154 + 37 rule theorems; only false shifts 84/88 disabled (`ruleAllow := .proven`) | proven | R4 done for sound originals ([#212](https://github.com/eth-act/clifv/pull/212)) |
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
-| i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
+| i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`); `Pre` decided (`preB_iff`, `check_complete_of_preB`); the executable refines the original program (`Link.compileExe_correct_source`, `SrcScopeB` decided on the parsed CLIF) | validator, complete on the decidable `Pre` (S6 done); source-level executable theorem with environment and run premises (S2/S3) | S2, S3, S6 |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
 | lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`) | validator, complete on decidable input conditions | V1 done |
 | form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`) | validator, complete on decidable input conditions | V3 done |
@@ -687,11 +687,11 @@ Large, low priority.
 | WP | Extension | Notes / where recorded |
 | --- | --- | --- |
 | S1 | Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | excluded by `backend_correct_opt_proven` (`FV/E2E/OptProven.lean:29-30`) |
-| S2 | Legalisation + optimisation composed; legalised functions in the linking theorem | DEFERRED "i128 legalisation" |
-| S3 | Whole-program refinement of the original i128 source program | DEFERRED "Linking", first "Remaining" item: per-function `check_refines` under a linked environment, by depth induction |
+| S2 | Legalisation + optimisation composed; legalised functions in the linking theorem | **legalised functions in the executable theorem: done** (`Link.compileExe_correct_source`, `FV/Link/ExeSource.lean`; `FnInput.func_eq`, `LinkInput.prog_eq`, `SrcScopeB`); composition with the optimiser not needed by `compileExe` (no optimiser) and not done for `--opt` (DEFERRED "i128 legalisation") |
+| S3 | Whole-program refinement of the original i128 source program | **done** with premises (`E2E.LegalProgram.legalProg_refines`, `Link.compileExe_correct_source`): environment `HelperOk`/`ExtLegal`/`EnvKeepsBounded` (with `i128`), `sigOf = none` (with indirect calls); run conditions memories below `2^64`, for traps `NoMemTrap`/`TrapsExplicit` (legalize128.md, "The executable compiler on the original source program") |
 | S4 | i128 gaps: `umulhi`/`smulhi`, `try_call`, overflow ops, atomics, stack-passed i128, i128 indirect signatures, `try_call_indirect` | DEFERRED "i128 legalisation", "Completeness of `Opt.Legal.check`" |
 | S5 | Stack-passed arguments of `call_indirect`/`try_call_indirect` (≤ 8 register params today) | `FV/E2E/Statement.lean:84-87` |
-| S6 | A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | DEFERRED "Completeness of `Opt.Legal.check`" |
+| S6 | A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | **done** (`preB_iff`, `check_complete_of_preB`, `legalOkB`; `FV/Opt/Proof/LegalPre.lean`) |
 | S7 | `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | DEFERRED "`sret`" |
 | S8 | `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | DEFERRED "Linking", "Remaining" |
 | S9 | Trapping helpers (`__*ti3` division by zero) and traps inside program callees | DEFERRED "i128 legalisation"; `TrapsExplicit` |
@@ -786,11 +786,11 @@ label**; list the free ones with
 | R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (0 rules left) | **done** (`agent/skeleton-r9`) |
 | M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | open |
 | S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | open |
-| S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | open |
-| S3 | [#27](https://github.com/eth-act/clifv/issues/27) Whole-program refinement of the original i128 source program | open |
+| S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | **legalised functions: done** ([#214](https://github.com/eth-act/clifv/pull/214), `Link.compileExe_correct_source`); optimiser composition (`--opt`) open, not needed by `compileExe` (no optimiser) |
+| S3 | [#27](https://github.com/eth-act/clifv/issues/27) Whole-program refinement of the original i128 source program | **done** with environment/run premises ([#214](https://github.com/eth-act/clifv/pull/214), `legalProg_refines`) |
 | S4 | [#28](https://github.com/eth-act/clifv/issues/28) i128 gaps: `umulhi`/`smulhi`, `try_call`, overflow ops, atomics, stack-passed i128, i128 indirect signatures, `try_call_indirect` | open |
 | S5 | [#29](https://github.com/eth-act/clifv/issues/29) Stack-passed arguments of `call_indirect`/`try_call_indirect` (≤ 8 register params today) | open |
-| S6 | [#30](https://github.com/eth-act/clifv/issues/30) A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | open |
+| S6 | [#30](https://github.com/eth-act/clifv/issues/30) A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | **done** ([#214](https://github.com/eth-act/clifv/pull/214), `preB_iff`, `check_complete_of_preB`) |
 | S7 | [#31](https://github.com/eth-act/clifv/issues/31) `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | open |
 | S8 | [#32](https://github.com/eth-act/clifv/issues/32) `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | open |
 | S9 | [#33](https://github.com/eth-act/clifv/issues/33) Trapping helpers (`__*ti3` division by zero) and traps inside program callees | open |

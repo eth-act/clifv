@@ -155,7 +155,13 @@ Legalised `i128` functions are inside the end-to-end theorem (`E2E.backend_corre
 `docs/contracts/legalize128.md`; survey 31 and runtests 159 functions reported verified).
 Deferred:
 - composing the legalisation with the mid-end theorems (`--opt` keeps legalised functions
-  unverified);
+  unverified). `compileExe` runs no optimiser, so the executable theorem on the original program
+  (`Link.compileExe_correct_source`, S2/S3, 2026-10-15) does not need it;
+- in `Link.compileExe_correct_source`: the outside environment's `HelperOk`/`ExtLegal`/
+  `EnvKeepsBounded` when a source function mentions `i128` and `sigOf = none` with indirect
+  calls (environment contracts); the source run's memories below `2^64` (`Clif.run`'s bump
+  allocator can exceed it; proven for slotless programs, `bounded_of_noSlots`) and, for traps,
+  the source run's `NoMemTrap` and the target run's `TrapsExplicit` (run conditions);
 - runs that trap inside a `__*ti3` helper (`i128` division by zero, `sdiv MIN, -1`): the
   backend theorem excludes extern traps (`TrapsExplicit` of the legalised run); covering them
   needs a trapping-helper contract on the Arm side (natively the helper aborts);
@@ -173,8 +179,9 @@ Deferred:
   soundness proof, or make the pass throw (the functions would become unsupported instead of
   unverified);
 - `noSelf` (a statement reading its own result) and the `f`-only conjuncts of `check` (`defs`,
-  `ids`) are preconditions; a decidable `Pre` (for a runtime report that `check` cannot fail)
-  is not implemented — the compiler keeps running `check`.
+  `ids`) are preconditions; ~~a decidable `Pre` is not implemented~~ done (S6, 2026-10-15):
+  `preB_iff`, `check_complete_of_preB` (`FV/Opt/Proof/LegalPre.lean`); the compiler keeps
+  running `check` as a double-check.
 
 ## `sret`: what `E2E.backend_correct_final` does not cover (2026-09-30)
 
@@ -239,11 +246,12 @@ premises. Deferred, in order:
   a trusted-semantics change, with the entry premise `hpl` placing the reference run's slots at
   the compiled frames — CLIF leaves slot addresses unspecified, so this picks one legitimate CLIF
   behaviour; witness callees `t` and `u`). Remaining:
-  - **The `i128` source program as a whole**: `backend_correct_program` relates the Arm run to
-    the legalised program; relating that to the source program's whole-program run needs a
-    program-level legalisation refinement (`Opt.Legal.check_refines` per function under a
-    linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
-    callee runs, `EnvKeepsAllocs` of the linked environment).
+  - ~~**The `i128` source program as a whole**~~ (done, S3, 2026-10-15):
+    `E2E.LegalProgram.legalProg_refines` (`FV/E2E/LegalProgram.lean`) relates the original
+    program's whole-program run to the legalised program's, by induction on the source fuel
+    with two environments (`check_refines2`); `Link.compileExe_correct_source` composes it with
+    `compileExe_correct` (premises: `docs/contracts/legalize128.md`, "The executable compiler on
+    the original source program").
   - reachable indirect callees (whose
     signature matches an indirect call of the caller, `IndSigMatch`: parameter types and
     purposes, return types since agent/sret-purpose; agent/link-scope2 restricted `indSig` to
