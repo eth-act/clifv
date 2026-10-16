@@ -1,0 +1,174 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.checked_of_checkAlloc' depends on axioms: [propext, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.Checked.at' depends on axioms: [propext]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.allocChecked_of_checkAlloc' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.enter_block_at' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.edgeEnv_lt' depends on axioms: [propext, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.sim_step_at' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.sim_progress_at' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.enter_block' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 14,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.sim_step' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 15,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.sim_progress' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 16,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.checkedAt_sound' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 17,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.checkAlloc_sound' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 18,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.allocChecked_sound' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 19,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.IsSimulation.star' depends on axioms: [propext]",
+      "line": 20,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.checkAlloc_ret' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 21,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.checkAlloc_halt' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 22,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.checkAlloc_stuck' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 23,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.IsSimulation.next_vstep' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 24,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.checkAlloc_diverges' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 25,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PerEdgeM6Witness.stock_per_edge_m6_return_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 26,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PerEdgeM6Witness.stock_per_edge_m6_checked_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 27,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PerEdgeM6HaltWitness.stock_per_edge_m6_halt_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 28,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PerEdgeM6DivergenceWitness.stock_per_edge_m6_divergence_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 29,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PerEdgeM6StuckWitness.stock_per_edge_m6_stuck_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 30,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}
