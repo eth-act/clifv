@@ -1,11 +1,12 @@
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Link.OptCompile
+import FV.Link.Placed
 import FV.E2E.SrcScopeDefs
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
 
-/-! # `lake exe lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified]`: the
+/-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified]`: the
 executable compiler on an executable (L1, L2b)
 
 `DIR` is `cargo fv link-proof --cgus … --no-check`'s output for an executable linked by
@@ -13,12 +14,14 @@ executable compiler on an executable (L1, L2b)
 (docs/contracts/frontend.md; read by `Front.readBundle`: per codegen unit the program's
 functions in placement order — their CLIF as the frontend wrote it and `lean-regalloc`'s
 output — its data objects, local symbols and the merge's names; the executable's symbols and
-the functions' Lean code addresses). `SIZES` has one line `NAME WORDS` per function: its size in
-the region object (`cargo fv`'s `leanlink.rs`; `Link.leanLink` checks it against the compiled
-code, `sizesOkB`). The `Link.LinkSpec` is built in Lean by `Front.buildSpec` (the renaming to
-linked names, the data closure, the CLIF image's symbols; `FV/Front/BundleProof.lean`: its
-source program is the units' program under the linked names, a scoping, alpha-equivalent to the
-units' program under any scoping; the region's base `R`: the first function's address); the
+the functions' Lean code addresses). The `Link.LinkSpec` is built in Lean by `Front.buildSpec`
+(the renaming to linked names, the data closure, the CLIF image's symbols; `FV/Front/BundleProof.lean`:
+its source program is the units' program under the linked names, a scoping, alpha-equivalent to
+the units' program under any scoping; the region's base `R`: the first function's address) and
+given the Lean compiler's layout (`Link.LinkSpec.placedPar`/`Link.DeadCleanup.placedPar`,
+`FV/Link/Placed.lean`: the CLIF functions' names and the sizes of their compiled code, `=
+placed`), the layout the totality theorems are about, by construction; no size is read from
+outside (rust-lld's placement of the region object is checked against it, `symsOkB`). The
 tool then runs the executable
 compiler — `Link.DeadCleanup.compileExe` (default, `--dead-cleanup`; the input conditions
 `InScopeP`) or `Link.compileExe` (`--no-dead-cleanup`; the input conditions `InScopeIn`, decided
@@ -47,9 +50,10 @@ optimised function printed to CLIF and used only when it parses back to itself; 
 where it does not keep their input and are listed, `optFallbacks:`). The input conditions are
 decided on the optimised input, the source domain on the original one; coverage:
 `compileExeOpt_correct`, `compileExeOpt_correct_peak`, `compileExeOpt_correct_source`,
-`compileExeOpt_correct_source_peak`, totality `compileExeOpt_total_reach_input`. `SIZES` are
-then the sizes of the optimised functions' code (`cargo fv --lean-link --opt-proven-only`, whose
-units `lean-backend --opt-proven-only` compiles with the same mid-end).
+`compileExeOpt_correct_source_peak`, totality `compileExeOpt_total_reach_input`. The layout is
+then the optimised functions' (`placedPar S.opt`, the theorem's `S.withSizes (sizesOf S.opt)`
+after `withSizes_opt`; `cargo fv --lean-link --opt-proven-only`, whose units `lean-backend
+--opt-proven-only` compiles with the same mid-end).
 -/
 
 open Lean E2E E2E.LinkCheck E2E.Elf Link
@@ -95,7 +99,7 @@ def srcFails (P : Clif.Program) (g : Clif.Function) : List String :=
     (if linkFreeB g then [] else ["linkFreeB"]) ++ (if declSigB P g then [] else ["declSigB"])
 
 def main (args : List String) : IO UInt32 := do
-  let usage := "usage: lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified]"
+  let usage := "usage: lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified]"
   let flags := args.filter (·.startsWith "--")
   if flags.any (fun a => !["--dead-cleanup", "--no-dead-cleanup", "--opt", "--verified"].contains a) ||
       (flags.contains "--dead-cleanup" && flags.contains "--no-dead-cleanup") then
@@ -103,24 +107,23 @@ def main (args : List String) : IO UInt32 := do
   let deadCleanup := !flags.contains "--no-dead-cleanup"
   let verified := flags.contains "--verified"
   let opt := flags.contains "--opt"
-  let [d, sz] := args.filter (!·.startsWith "--") | do IO.eprintln usage; return 2
+  let [d] := args.filter (!·.startsWith "--") | do IO.eprintln usage; return 2
   let dir : System.FilePath := d
-  let mut sizes : Array (String × Nat) := #[]
-  for l in (← IO.FS.readFile sz).splitOn "\n" do
-    match l.splitOn " " with
-    | [n, w] => sizes := sizes.push (n, w.toNat!)
-    | _ => pure ()
-  let (b, exe) ← try Front.readBundle dir sizes.toList
+  let (b0, exe) ← try Front.readBundle dir []
     catch e => do IO.eprintln s!"lean-link: {e}"; return 2
-  let S ← match Front.buildSpec b with
+  -- `buildSpec` takes a size per function (every region function has a marker); the layout below
+  -- replaces them by the compiled code's
+  let S ← match Front.buildSpec { b0 with sizes := b0.markers.map fun (n, _) => (n, 0) } with
     | .ok S => pure S
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
-  -- the compiler's input: the optimised one under `--opt` (`compileExeOpt S = compileExe S.opt`)
-  let SC := if opt then S.opt else S
-  let names := S.names
-  let R := S.R
+  -- the compiler's input: the optimised one under `--opt` (`compileExeOpt S = compileExe S.opt`),
+  -- with the Lean compiler's layout (`placedPar = placed`: the totality theorems' layout)
+  let SC0 := if opt then S.opt else S
+  let SC := if deadCleanup then Link.DeadCleanup.placedPar SC0 else SC0.placedPar
+  let names := SC.names
+  let R := SC.R
   let file0 ← IO.FS.readBinFile exe
-  let summary := s!"{names.length} function(s), {S.data.length} data object(s), region {hex R}..{hex (R + S.size)} ({S.size} bytes)"
+  let summary := s!"{names.length} function(s), {SC.data.length} data object(s), region {hex R}..{hex (R + SC.size)} ({SC.size} bytes)"
   let compile := if deadCleanup then Link.DeadCleanup.compileExe else Link.compileExe
   let link := if deadCleanup then Link.DeadCleanup.leanLink else Link.leanLink
   let thm (s : String) := (if deadCleanup then "Link.DeadCleanup." else "Link.") ++ s
@@ -129,7 +132,7 @@ def main (args : List String) : IO UInt32 := do
   let compilerName := thm exeName
   let linkerName := if deadCleanup then "Link.DeadCleanup.leanLink" else "Link.leanLink"
   if opt then
-    let fb := Link.optFallbacksWith S.funcs SC.funcs
+    let fb := Link.optFallbacksWith S.funcs SC0.funcs
     IO.println s!"lean-link: {exe}: --opt: optFallbacks: {fb.length} of {S.funcs.length} function(s) {fb.take 5}"
   -- the source domain (`SrcScopeB` reads the parsed functions only, so `S.input0`'s is the
   -- compiler's input's)

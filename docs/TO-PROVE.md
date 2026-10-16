@@ -504,7 +504,12 @@ author's estimate, not measured), **Risk**.
     `Link.DeadCleanup.compileExe_total_reach` (`FV/Link/ExeInputReachCleanup.lean`), witnesses
     `total_input_cleanup_witness`, `total_reach_cleanup_witness`. Real executables: the input
     conditions, `reachOkB` (both compilers) and `RelocOk` of every compiled relocation evaluate to
-    `true` on two survey executables rust-lld linked (66 and 493 functions).
+    `true` on two survey executables rust-lld linked (66 and 493 functions). Since L1g item 3
+    (#228) `lean-link` reads no sizes: it compiles `placedPar` of the bundle's spec
+    (`FV/Link/Placed.lean`, the layout computed with the functions compiled in parallel tasks;
+    `LinkSpec.placedPar_eq : S.placedPar = S.placed`, `DeadCleanup.placedPar_eq`,
+    `placed_placedPar`: a fixpoint of `placed`, `FV/Link/PlacedEq.lean`), so the spec it compiles
+    is the totality theorems' layout by construction; executables byte-identical to before.
   - Non-vacuity: `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
     `total_witness`); per run: `crate-proofs/Crates/CompileExeRunWitness.lean`
     (`compileExe_run_witness`: the panic=abort `a_arith` compiled by `compileExe`, every premise of
