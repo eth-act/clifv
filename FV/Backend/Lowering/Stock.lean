@@ -23,6 +23,7 @@ def instArgs : Clif.Inst → List Nat
   | .atomicCas _ _ x y z => [x, y, z]
   | .call _ args => args
   | .callIndirect _ callee args => callee :: args
+  | .float _ _ args => args
 
 def termArgs : Clif.Terminator → List Nat
   | .jump bc => bc.args
