@@ -1606,7 +1606,7 @@ def Link.relocShapeB (a : Art) (r : Reloc) / relocRangeB (I) (tp) (a) (r) : Bool
 theorem Link.relocShapes_of_pipeT (ha : pipeT g k base o = .ok a) : relocShapesB a = true
 theorem Link.codeMap_place (hp) (hr) (hn) (hs) :
     codeMapB S.input (tabOf S.input.resultsT) = true
-theorem Link.compileExe_total (hin : InScopeP S.input0 = true)
+theorem Link.compileExe_total (hin : InScopeIn S.input0 = true)   -- InScopeP before L1g (#228)
     (hp : S.placeOkB = true) (hn : S.names = S.funcs.map (·.func.name)) (hs : S.sizes = S.sizesOf)
     (hrange : ∀ e ∈ tabOf S.input.resultsT, ∀ r ∈ e.2.fb.relocs,
       relocRangeB S.input (tpOff phs) e.2 r = true)
@@ -1627,7 +1627,7 @@ def Link.LinkSpec.file0OkB (P : LinkSpec) (file0 : ByteArray) (phs : List Phdr) 
 def Link.CallPageReach (S : LinkSpec) (phs : List Phdr) : Prop :=   -- remaining output premise
   ∀ e ∈ tabOf S.placed.input.resultsT, ∀ r ∈ e.2.fb.relocs, r.type ≠ .tlsDescAdrPage21 →
     relocRangeB S.placed.input (tpOff phs) e.2 r = true
-theorem Link.compileExe_total_input (hin : InScopeP S.placed.input0 = true)
+theorem Link.compileExe_total_input (hin : InScopeIn S.placed.input0 = true)
     (hl : S.placed.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
     (hf : S.placed.file0OkB file0 phs = true) (hreach : CallPageReach S phs) :
     compileExe S.placed file0 =
@@ -1659,7 +1659,7 @@ theorem Link.relocOk_tab (hin : InScopeP S.placed.input0 = true) :
     ∀ e ∈ tabOf S.placed.input.resultsT, ∀ r ∈ e.2.fb.relocs, RelocOk e.1 r
 theorem Link.callPageReach_of (hin : InScopeP S.placed.input0 = true)
     (hl : S.placed.layoutOkB = true) (hreach : S.placed.reachOkB = true) : CallPageReach S phs
-theorem Link.compileExe_total_reach (hin : InScopeP S.placed.input0 = true)
+theorem Link.compileExe_total_reach (hin : InScopeIn S.placed.input0 = true)
     (hl : S.placed.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
     (hf : S.placed.file0OkB file0 phs = true) (hreach : S.placed.reachOkB = true) :
     compileExe S.placed file0 =
@@ -1670,13 +1670,8 @@ theorem Link.DeadCleanup.compileExe_total_reach (hin : InScopeP (placed S).input
     (hf : (placed S).file0OkB file0 phs = true) (hreach : (placed S).reachOkB = true) :
     compileExe (placed S) file0 =
       .ok (patch file0 (offsetOf phs S.R) (regionOf (placed S) (tpOff phs)))
--- the same on input conditions decided without compiling (V7, FV/Link/ExeInputReachIn.lean,
+-- the shipped compiler on input conditions decided without compiling (V7,
 -- FV/Link/ExeInputReachCleanupIn.lean; `inScopeP_of_input : InScopeIn I = true → InScopeP I = true`)
-theorem Link.compileExe_total_reach_input (hin : InScopeIn S.placed.input0 = true)
-    (hl : S.placed.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
-    (hf : S.placed.file0OkB file0 phs = true) (hreach : S.placed.reachOkB = true) :
-    compileExe S.placed file0 =
-      .ok (patch file0 (offsetOf phs S.R) (regionOf S.placed (tpOff phs)))
 theorem Link.DeadCleanup.compileExe_total_reach_input (hin : InScopeIn (placed S).input0 = true)
     (hl : (placed S).layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
     (hf : (placed S).file0OkB file0 phs = true) (hreach : (placed S).reachOkB = true) :
@@ -1688,6 +1683,14 @@ theorem Link.DeadCleanup.compileExe_total_reach_input (hin : InScopeIn (placed S
 premises are the outside code's contracts and the CLIF-level condition that no call cycle is
 reachable from the entered function. `compileExe_total`'s hypotheses are the input conditions,
 the driver's data, the addresses (the relocations' reach) and rust-lld's output.
+`Link.compileExe` checks the input-only `InScopeIn` (`inScopeInPar`, L1g #228; before, `InScopeP`,
+whose `lowersB` runs `lowerFunction`/`prepare`): `compileExe_spec` still gives `InScopeP`
+(`inScopeP_of_input`), so the correctness theorems are unchanged; the totality theorems
+`compileExe_total{,_input,_reach}` take `InScopeIn` in place of `InScopeP` — a deliberate premise
+strengthening forced by the definition change (`compileExe` now rejects inputs outside
+`InScopeIn`). The two acceptance sets agree on the corpus (`lean-e2e-check` 1150 / 1150) and on
+fv-demo and the survey; the former `Link.compileExe_total_reach_input` coincided with
+`compileExe_total_reach` and is removed. `Link.DeadCleanup.compileExe` still checks `InScopeP`.
 `compileExe_total_input` (L1e, #216) takes the Lean compiler's layout (`S.placed`; `placeOkB`
 from `InScopeP` and `layoutOkB`, compiled code nonempty: `pipeT_words_pos`) and moves rust-lld's
 checks from the patched file to `file0` (`outsideOkB_patch`: the region's bytes are read by none
@@ -3514,8 +3517,8 @@ theorem E2E.backend_correct_final_total_input (hsub : InSubset p f) (hd : domina
 theorem E2E.backend_correct_final_cleanup_total_input …  -- prepare (DeadCleanup.prune vc)
 ```
 
-`inScopeP_of_input` converts every theorem taking `InScopeP` (`compileExe_total_reach_input`
-above; `crate_correct_inScope*`); the correctness theorems on `compileExe`'s output take its
+`inScopeP_of_input` converts every theorem taking `InScopeP` (`DeadCleanup.compileExe_total_reach_input`
+above, `Link.compileExe_spec`; `crate_correct_inScope*`); the correctness theorems on `compileExe`'s output take its
 success, which the totality theorems give. Non-vacuity: `driverInB_witness`, `iselInB_witness`,
 `backend_correct_final_total_input_witness` (`fnScopeInB` of the loop and `try_call` witnesses,
 kernel-checked, `dominatedB` as premise: its fixpoint uses `Std.HashMap`, which the kernel does
