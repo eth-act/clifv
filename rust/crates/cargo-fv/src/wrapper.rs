@@ -655,10 +655,14 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
         });
         let _ = fs::write(map.with_extension("json"), serde_json::to_string_pretty(&rec).unwrap_or_default());
     }
+    let mut coverage = None;
     if code == 0 {
         if let Some((_, list)) = &part {
             match leanlink::patch(&cfg, &output, list) {
-                Ok(text) => eprint!("{text}"),
+                Ok(text) => {
+                    eprint!("{text}");
+                    coverage = leanlink::coverage(&text);
+                }
                 Err(e) => {
                     eprint_fv(&format!("--lean-link: {e}"));
                     code = 1;
@@ -668,6 +672,7 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     }
     if code == 0 {
         let mut b = check_binary(&output);
+        b.lean_link = coverage;
         if b.note.is_none() {
             match exe_origin(&cfg, &meta, &output, &map) {
                 Ok(o) => b.origin = Some(o),
