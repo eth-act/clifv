@@ -192,12 +192,12 @@ type) -/
 end
 
 @[opt_match, opt_monad] theorem CTy.ofClif_beq_float (t : Ty) (b : Nat) :
-    (CTy.ofClif t == .float b) = false := by
-  cases t <;> rfl
+    (CTy.ofClif t == .float b) = (t.isFloat && b == t.width) := by
+  rw [Bool.eq_iff_iff]; cases t <;> simp [CTy.ofClif, Ty.width] <;> exact ⟨Eq.symm, Eq.symm⟩
 
 @[opt_match, opt_monad] theorem V.beq_ty_ofClif_float (t : Ty) (b : Nat) :
-    V.beq (.ty (CTy.ofClif t)) (.ty (.float b)) = false := by
-  cases t <;> rfl
+    V.beq (.ty (CTy.ofClif t)) (.ty (.float b)) = (t.isFloat && b == t.width) := by
+  rw [← CTy.ofClif_beq_float]; rfl
 
 /-! ## `iconst_u ty 0` and `i128` (the `ty_int` arm of `all_zero` builds `iconst_u ty 0`; at
 `i128` that is `uextend.i128 (iconst_u.i64 0)`) -/
@@ -450,6 +450,8 @@ theorem bswap_bswap (t : Clif.Ty) (x : BitVec t.width) : Clif.Sem.bswap (Clif.Se
   · exact bswap_bswap_32 x
   · exact bswap_bswap_64 x
   · exact bswap_bswap_128 x
+  · exact bswap_bswap_32 x
+  · exact bswap_bswap_64 x
 
 theorem popcnt_bswap (t : Clif.Ty) (x : BitVec t.width) :
     Clif.Sem.popcnt (Clif.Sem.bswap x) = Clif.Sem.popcnt x := by
@@ -459,6 +461,8 @@ theorem popcnt_bswap (t : Clif.Ty) (x : BitVec t.width) :
   · exact popcnt_bswap_32 x
   · exact popcnt_bswap_64 x
   · exact popcnt_bswap_128 x
+  · exact popcnt_bswap_32 x
+  · exact popcnt_bswap_64 x
 
 theorem bitrev_bitrev {w : Nat} (x : BitVec w) : Clif.Sem.bitrev (Clif.Sem.bitrev x) = x :=
   BitVec.reverse_reverse_eq
