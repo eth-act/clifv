@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-16T16:22:50.233563+00:00",
+  "classification": "VERIFIED WAIT plus concrete allocation/proof-premise review; earlier completed targets retained",
+  "worker_pid": 3247835,
+  "worker_live_confirmed": true,
+  "state": "serial_build",
+  "index": 73,
+  "total": 1415,
+  "module": "FV.Backend.Proof.StockNoOpportunityTable",
+  "canonical_source_and_script_freeze_verified": true,
+  "cache": "unchanged exclusive one-cache lease; original canonical queue intentionally held",
+  "new_source_or_worktree_or_cache": false,
+  "review": "docs/research/stock-pr246-allocation-review.json",
+  "full_goal": "original#140 active/incomplete; production legacy",
+  "free_GiB": 810.6,
+  "cleanup": "No unneeded clean worktree or duplicate cache; active validation view remains required. Preserve six dirty source trees and all previous proof/evidence/backup work. Remove clean gate view only after its active batch ends with unique evidence archived."
+}
