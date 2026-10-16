@@ -15,6 +15,10 @@ hand-checked call and `br_table` rules emit at most `szStmtK`/`szTermK`. All are
 over the exported rule data.
 -/
 
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
+
 namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
@@ -762,29 +766,65 @@ def szCTab : CTab :=
 abbrev szCTabEntryOk (e : TermId × List AW × Nat) : Bool :=
   (program.rulesOf e.1).all (cRuleLe program covTab actorW szCTab aext actor apre aOracle e.2.1 e.2.2)
 
-theorem szCTab0_ok : (szCTab0).all szCTabEntryOk = true := by native_decide
+theorem szCTab0_ok : (szCTab0).all szCTabEntryOk = true := by
+  simp only [szCTab0, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab1_ok : (szCTab1).all szCTabEntryOk = true := by native_decide
+theorem szCTab1_ok : (szCTab1).all szCTabEntryOk = true := by
+  simp only [szCTab1, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab2_ok : (szCTab2).all szCTabEntryOk = true := by native_decide
+theorem szCTab2_ok : (szCTab2).all szCTabEntryOk = true := by
+  simp only [szCTab2, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab3_ok : (szCTab3).all szCTabEntryOk = true := by native_decide
+theorem szCTab3_ok : (szCTab3).all szCTabEntryOk = true := by
+  simp only [szCTab3, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab4_ok : (szCTab4).all szCTabEntryOk = true := by native_decide
+theorem szCTab4_ok : (szCTab4).all szCTabEntryOk = true := by
+  simp only [szCTab4, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab5_ok : (szCTab5).all szCTabEntryOk = true := by native_decide
+theorem szCTab5_ok : (szCTab5).all szCTabEntryOk = true := by
+  simp only [szCTab5, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab6_ok : (szCTab6).all szCTabEntryOk = true := by native_decide
+theorem szCTab6_ok : (szCTab6).all szCTabEntryOk = true := by
+  simp only [szCTab6, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab7_ok : (szCTab7).all szCTabEntryOk = true := by native_decide
+theorem szCTab7_ok : (szCTab7).all szCTabEntryOk = true := by
+  simp only [szCTab7, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab8_ok : (szCTab8).all szCTabEntryOk = true := by native_decide
+theorem szCTab8_ok : (szCTab8).all szCTabEntryOk = true := by
+  simp only [szCTab8, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab9_ok : (szCTab9).all szCTabEntryOk = true := by native_decide
+theorem szCTab9_ok : (szCTab9).all szCTabEntryOk = true := by
+  simp only [szCTab9, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab10_ok : (szCTab10).all szCTabEntryOk = true := by native_decide
+theorem szCTab10_ok : (szCTab10).all szCTabEntryOk = true := by
+  simp only [szCTab10, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem szCTab11_ok : (szCTab11).all szCTabEntryOk = true := by native_decide
+theorem szCTab11_ok : (szCTab11).all szCTabEntryOk = true := by
+  simp only [szCTab11, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **Every rule of every entry of `szCTab` checks.** -/
 theorem szCTab_ok : chkCost program covTab actorW szCTab aext actor apre aOracle = true := by
@@ -1537,29 +1577,65 @@ def tgCTab : CTab :=
 abbrev tgCTabEntryOk (e : TermId × List AW × Nat) : Bool :=
   (program.rulesOf e.1).all (cRuleLe program covTab actorT tgCTab aext actor apre aOracle e.2.1 e.2.2)
 
-theorem tgCTab0_ok : (tgCTab0).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab0_ok : (tgCTab0).all tgCTabEntryOk = true := by
+  simp only [tgCTab0, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab1_ok : (tgCTab1).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab1_ok : (tgCTab1).all tgCTabEntryOk = true := by
+  simp only [tgCTab1, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab2_ok : (tgCTab2).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab2_ok : (tgCTab2).all tgCTabEntryOk = true := by
+  simp only [tgCTab2, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab3_ok : (tgCTab3).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab3_ok : (tgCTab3).all tgCTabEntryOk = true := by
+  simp only [tgCTab3, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab4_ok : (tgCTab4).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab4_ok : (tgCTab4).all tgCTabEntryOk = true := by
+  simp only [tgCTab4, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab5_ok : (tgCTab5).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab5_ok : (tgCTab5).all tgCTabEntryOk = true := by
+  simp only [tgCTab5, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab6_ok : (tgCTab6).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab6_ok : (tgCTab6).all tgCTabEntryOk = true := by
+  simp only [tgCTab6, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab7_ok : (tgCTab7).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab7_ok : (tgCTab7).all tgCTabEntryOk = true := by
+  simp only [tgCTab7, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab8_ok : (tgCTab8).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab8_ok : (tgCTab8).all tgCTabEntryOk = true := by
+  simp only [tgCTab8, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab9_ok : (tgCTab9).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab9_ok : (tgCTab9).all tgCTabEntryOk = true := by
+  simp only [tgCTab9, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab10_ok : (tgCTab10).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab10_ok : (tgCTab10).all tgCTabEntryOk = true := by
+  simp only [tgCTab10, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tgCTab11_ok : (tgCTab11).all tgCTabEntryOk = true := by native_decide
+theorem tgCTab11_ok : (tgCTab11).all tgCTabEntryOk = true := by
+  simp only [tgCTab11, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **Every rule of every entry of `tgCTab` checks.** -/
 theorem tgCTab_ok : chkCost program covTab actorT tgCTab aext actor apre aOracle = true := by
@@ -1570,29 +1646,53 @@ theorem tgCTab_ok : chkCost program covTab actorT tgCTab aext actor apre aOracle
 /-- The closure roots of `lower` other than the call rules (1031–1033) emit at most `szStmtK`. -/
 theorem szStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
     r.id == 1031 || r.id == 1032 || r.id == 1033 ||
-    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.xv .inst] szStmtK r) = true := by native_decide
+    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.xv .inst] szStmtK r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `trap`, 1037 `return`) emit at most `szTermK`. -/
 theorem szTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.c0] szTermK r) = true := by native_decide
+    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.c0] szTermK r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The rules of `lower_branch` other than the `try_call` (1034–1036) and `br_table` (1140)
 rules emit at most `szTermK`. -/
 theorem szBranch_ok : (program.rulesOf TId.lower_branch).all (fun r =>
     r.id == 1034 || r.id == 1035 || r.id == 1036 || r.id == 1140 ||
-    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.c0, .c0] szTermK r) = true := by native_decide
+    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.c0, .c0] szTermK r) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The closure roots of `lower` emit at most `tgStmtK` branch targets. -/
 theorem tgStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
-    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.xv .inst] tgStmtK r) = true := by native_decide
+    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.xv .inst] tgStmtK r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `trap`, 1037 `return`) emit at most `tgTermK` branch targets. -/
 theorem tgTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.c0] tgTermK r) = true := by native_decide
+    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.c0] tgTermK r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The rules of `lower_branch` other than the `br_table` rule (1140) emit at most `tgTermK`
 branch targets. -/
 theorem tgBranch_ok : (program.rulesOf TId.lower_branch).all (fun r => r.id == 1140 ||
-    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.c0, .c0] tgTermK r) = true := by native_decide
+    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.c0, .c0] tgTermK r) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 end Backend.Proof.Cov

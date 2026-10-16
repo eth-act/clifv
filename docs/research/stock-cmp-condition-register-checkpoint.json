@@ -1,0 +1,926 @@
+{
+  "checkpoint_utc": "2026-10-14T16:37:38.962576+00:00",
+  "state": "comparison standard-kernel arithmetic/body/pure-builder and guarded condition execution checkpoint; full goal active/incomplete",
+  "normal_axioms": {
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_builder": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_imm_builder": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_cset_builder": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_zero": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_flags": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_sets_flags_resolved": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_condition_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_condition_values": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_condition_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_condition_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_flag": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_carry_flag": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_ge_flag": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_conditions": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_extension": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_extension": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_predecessor": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_predecessor": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_invert": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_flags_cset": [
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_original_flags": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_resolved": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_alias_machine_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_extension_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_requests": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_observed": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.ScalarCmp.stock_cmp_with_flags_reg": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "mcp": [
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_builder",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_imm_builder",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_cset_builder",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_zero",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_flags",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_observed",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_sets_flags_resolved",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_condition_values",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_condition_values",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_condition_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_flag_condition_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_zero_flag",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_carry_flag",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_ge_flag",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_conditions",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_extension",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_extension",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_unsigned_predecessor",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_signed_predecessor",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_condition_invert",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_flags_cset",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_original_flags",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_rr_resolved",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_alias_machine_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_predecessor_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_extension_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_pure_helper_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_requests",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_observed",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_register_rhs_witness",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    },
+    {
+      "root": "Backend.Stock.Proof.ScalarCmp.stock_cmp_with_flags_reg",
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+          }
+        ],
+        "structuredContent": {
+          "axioms": [
+            "propext",
+            "Classical.choice",
+            "Quot.sound"
+          ],
+          "warnings": []
+        },
+        "isError": false
+      }
+    }
+  ],
+  "sources": [
+    {
+      "path": "FV/Backend/Proof/StockCmpBuilders.lean",
+      "sha256": "0e4a65c9c8f68e490559d22ebca416a2fc3c58ef797810c285ae4dcd5c613140",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpCondition.lean",
+      "sha256": "52b060c378229c55595dd8ed36a8a42afd501d751009694bbf0771a68f8496ea",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpConditionValues.lean",
+      "sha256": "822dbe25a4c9493413c5a0c16f9a9a52592513b76fe24f057228a0e8d8ea577a",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpConditionWitness.lean",
+      "sha256": "33ea5c8f886af2f12f0629fb3e82a03a284adf5b0d13dae3ad9a3a1ab884b7a7",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpFlags.lean",
+      "sha256": "ea2fd4232851dc9c94372146920e6f6254e93fabe9df5021ef804dee8c3b903a",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpMachineValues.lean",
+      "sha256": "49d733b42cda6bbaa142f81d0c61b12fd833cdd69eec5ff6448583edaa9c7875",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpMachineWitness.lean",
+      "sha256": "5b3425e714339d94e0abea439873fca396c2055b28e4222c322047768f2d6277",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpPure.lean",
+      "sha256": "75e479d04ae5db59a49549d452209041277925d0026e303cfd79d6267f3870a1",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpPureWitness.lean",
+      "sha256": "2c950a663f3d32a83a9be3667ba76e5ba389ded9735ec13f041a9de81d8f2311",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpRegisterEmission.lean",
+      "sha256": "81bdfaac7d90b28f61cfeb4238b9ab28cdc7f2afd5fd5df3c4cc3ad12dc4c942",
+      "warnings": []
+    },
+    {
+      "path": "FV/Backend/Proof/StockCmpWithFlags.lean",
+      "sha256": "e38c0e5e4995e266d4e38dccaa57a293dfe03550fa91b76a4a19e50daccac27a",
+      "warnings": []
+    }
+  ],
+  "build_jobs": 397,
+  "build_log": {
+    "path": "/tmp/driver-resume-cmp-condition-register-build.log",
+    "sha256": "3109fdecd7cdc7289bf95a8bcc396a043b2687c8488966c5493a78b7035131b9"
+  },
+  "prior_division_122_sources_unchanged": true,
+  "prior_condition_ten_sources_unchanged": true,
+  "completed": [
+    "Standard-only zero/unsigned carry/signed greater-or-equal flag arithmetic, including both signed subtraction overflow regions",
+    "All ten integer comparison conditions at machine32/64 using only standard-kernel proofs; old native variants untouched",
+    "Signed and unsigned extension comparison preservation; guarded unsigned/signed predecessor rewrites; condition inversion on all valid Arm conditions",
+    "Original narrow/wide comparison operands establish original predicates at actual machine width",
+    "Actual alias-resolved compare/cset pair yields original bool8 and preserves every other machine register",
+    "Machine-body witnesses cover ten conditions/four source widths/six boundaries through two distinct nonidentity source aliases",
+    "Pure29-term comparison/condition builder closure transfers successful legacy execution into Stock with all scheduling fields preserved; six real builder witnesses",
+    "33 normal/fresh MCP standard-only roots;eleven clean original scans;last fully validated division hashes unchanged",
+    "Actual rule_inst_5128 emitter RHS performs both guarded source requests and constructs its exact producer with full marked state",
+    "Successful actual register emitter RHS derives both original demand guards and both mapped registers internally",
+    "Register emitter RHS witnesses cover both machine widths and every condition with distinct mapped operands and both demand marks",
+    "Actual Zero/NotZero and explicit-flag condition715 executions expose exact fresh compare/cset code and full Stock state",
+    "Alias-resolved condition helper results preserve other registers without a semantic-invariance premise",
+    "Actual fuel999 condition witnesses cover both boolean outcomes, both machine widths, all ten explicit conditions, nonidentity aliases and dirty upper bits"
+  ],
+  "remaining_batch": [
+    "Actual effectful comparison emitter652 source requests/constant/zero/predecessor/extended/register/i128 paths under original conditions",
+    "Guarded simple-shape715 complete; arbitrary full closure includes effectful opportunistic-definition/source-register operations and Or/And, still required",
+    "Register-emitter RHS observed; actual652 selection/source typing/constant/zero/predecessor/extended/i128 paths still required",
+    "Original comparison/fused-extension matching/selection/retained binding/source-step transfer and complete original Stock.lower witnesses",
+    "Minmax/select and their retained/source/witness connections",
+    "824-prior/exact-seven/full build/crates/runtime/encoder/both E2E identity-stage gates for complete family"
+  ],
+  "remaining_full_goal": [
+    "Execution/source transfer for remaining closure rules",
+    "Deferred effects and trapping/sinking invariant",
+    "Source/block/whole-driver simulation and completeness under original conditions",
+    "Actual compiler/checker/linker/generated-proof production cutover",
+    "Fresh complete stock comparison"
+  ],
+  "production": "legacy",
+  "publication": "local/uncommitted; no push/merge",
+  "archive": {
+    "path": "/home/lee/.clifv-recovery/20261014T163738Z/stock-cmp-condition-register-checkpoint.tar.gz",
+    "sha256": "144c560efa9b34c252e38c2eca27ad15928a71e4331cac7de1e1f0465b87b2d2"
+  }
+}
