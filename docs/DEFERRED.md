@@ -21,6 +21,93 @@ available by proving them and adding them to the allow-list; the theorems don't 
 - Template tactics and the generated constructor lemmas.
 - The exact proven set and the per-family recipe are in `docs/contracts/midend.md`, section "Rule proofs".
 
+**Status (2026-10-10, R4, merged in [#212](https://github.com/eth-act/clifv/pull/212)):** 1191 of 1193 roots are proven:
+1154 `simplify` and all 37 `simplify_skeleton`. Shifts reach 73/75; only the documented
+false originals 84/88 remain disabled. R4 closes all seventeen sound remaining roots
+without changing the exported rules, `RuleOk` premises or fuel. Exact masked-sum
+guards and symbolic mixed-width rotation/shift identities replace wide SAT problems.
+Every new theorem has a concrete witness. All seventeen roots fire in the 3990-function
+smoke: 41430 exact, differential and AArch64/Cranelift-native expectations agree;
+all optimized functions pass the Cranelift verifier. Instructions fall from 13950
+to 9629, versus 12766 before enablement, matching the full-rule diagnostic. Full
+compiler/crate builds, 40 axiom audits, native filetests, encoding and E2E gates pass.
+Proven-only corpus/runtests remain 4668 → 2287 and 3389 → 3043; all 445 file summaries
+are no worse. Legacy unsupported/error cases remain separate. See midend.md "R4".
+
+**Status (2026-10-10, R1, merged in [#211](https://github.com/eth-act/clifv/pull/211)):** 1174 of 1193 roots are proven:
+1137 `simplify` and all 37 `simplify_skeleton`. All 258 arithmetic roots are enabled.
+R1 closes all twenty-eight remaining roots with unchanged `RuleOk` premises.
+High-half extraction, odd modular cancellation and symbolic product identities avoid
+wide-product bit-blasting; early type/guard normalization avoids interpreter expansion.
+Every new theorem has a concrete witness. All twenty-eight roots fire in the
+610-function smoke: 7124 exact, differential and AArch64/Cranelift-native expectations
+agree; all optimized functions pass the Cranelift verifier. Instructions fall from
+2430 to 1626, versus 2154 before enablement. Full compiler/crate builds, 50 axiom audits,
+native filetests, encoding and E2E gates pass. Proven-only corpus remains 4668 → 2287;
+runtests improve from 3055 to 3043 (3389 before optimization). All 445 file summaries
+are no worse; legacy unsupported/error cases remain separately reported. See midend.md
+"R1".
+
+**Status (2026-10-10, R2, merged in [#210](https://github.com/eth-act/clifv/pull/210)):** 1146 of 1193 roots are proven:
+1109 `simplify` and all 37 `simplify_skeleton`. All 124 icmp roots are enabled.
+R2 closes the fifteen remaining roots with unchanged `RuleOk` premises. Shared
+class/decomposition evaluators, typed composition RHS proofs and width-parametric
+predicate identities replace the earlier timeout-prone expansion. Concrete witnesses
+include sixteen actual RHS executions over a proved fresh-allocation graph.
+All fifteen roots fire in the 1890-function smoke: 15740 exact, differential and
+AArch64/Cranelift-native expectations agree, and every optimized function passes
+the Cranelift verifier. Instructions fall from 6597 to 3595, versus 6127 before
+enablement. Full compiler/crate builds, 66 axiom audits, native filetests, encoding
+and E2E gates pass. Proven-only corpus instructions now match the all-rules count:
+4668 → 2287; runtests improve from 3063 to 3055 (3389 before optimization).
+All 445 file summaries are no worse; legacy unsupported/error cases remain
+separately reported. See midend.md "R2".
+
+**Status (2026-10-10, R5, merged in [#209](https://github.com/eth-act/clifv/pull/209)):** 1131 of 1193 roots are proven:
+1094 `simplify` and all 37 `simplify_skeleton`. All 40 spaceship roots are enabled.
+R5 closes all twenty select roots with unchanged `RuleOk` premises, shared typed RHS
+proofs and width-parametric signed/unsigned identities. The 426-function CLI smoke
+exercises every new root, widths 8–128 and distinct-operand controls. All 4236 exact
+interpreter/native expectations agree; the Cranelift verifier accepts all 426 functions.
+Instructions fall from 2682 to 1702, versus 2602 before enablement. Full compiler/crate
+builds, 47 axiom audits, native filetests, encoding and E2E gates pass. Proven-only
+differential counts remain corpus 4668 → 2289 and runtests 3389 → 3063; all 445 summaries
+are no worse than baseline, with no refinement/pass errors or verifier rejections.
+Legacy unsupported/error cases remain separately reported. See midend.md "R5".
+
+**Status (2026-10-09, R3, merged in [#208](https://github.com/eth-act/clifv/pull/208)):** 1111 of 1193 roots are proven:
+1074 `simplify` and all 37 `simplify_skeleton`. All 100 selects roots are enabled.
+R3 closes roots 15, 81, 85, 188, 189, 193–196 and 199–202 with unchanged `RuleOk`
+premises. The 682-function CLI smoke exercises every new root, all ten integer comparisons
+and widths through i128, including mixed-extension and mixed-source-width controls.
+All 4438 interpreter/native expectations agree; all functions pass the Cranelift verifier.
+Instructions fall from 3146 to 1884, versus 3050 before enablement. Full compiler/crate
+builds, 35 axiom audits, native filetests, encoding and E2E gates pass. Proven-only
+differential counts are corpus 4668 → 2289 and runtests 3389 → 3063, with no new failures
+or verifier rejections. Legacy unsupported/error cases remain separately reported.
+See midend.md "R3".
+
+**Status (2026-10-09, R7, merged in [#207](https://github.com/eth-act/clifv/pull/207)):** 1098 of 1193 roots are proven:
+1061 `simplify` and all 37 `simplify_skeleton`. All 450 bitops roots are enabled.
+R7 closes the masked-OR guard (79) and LLVM-style byte-swap trees (157/170), without
+changing their `RuleOk` premises. An opcode-indexed decoder avoids the byte-swap
+matcher's earlier branch explosion. The 82-function CLI smoke exercises all three roots:
+766/766 interpreter and native executions agree; instructions 392 → 250, versus 336
+before enablement; all 82 functions pass the Cranelift verifier. Full compiler/crate builds,
+15 axiom audits, native filetests, encoding and E2E gates pass. Proven-only differential
+counts are corpus 4668 → 2289 and runtests 3389 → 3069, with no new failures or verifier
+rejections; legacy unsupported/error cases remain separately reported. See midend.md "R7".
+
+**Status (2026-10-09, R8, merged in [#206](https://github.com/eth-act/clifv/pull/206)):** 1095 of 1193 roots are proven: 1058 `simplify` and all 37
+`simplify_skeleton`. R8 completes all 29 extends roots by proving equality, inequality and
+signed comparisons of sign extensions against zero (40/42/44), without adding premises.
+The targeted 100-function CLI smoke exercises all three roots: 700/700 executions agree,
+instructions 340 → 268 (304 before enablement), no unsupported inputs or pass errors.
+All 700 optimized native executions agree with Cranelift. The full proven-only differential
+run retains corpus 4668 → 2289 and runtests 3389 → 3071 instructions, with no new failures
+or verifier rejections. Full compiler/crate builds, axiom audits, native filetests, encoding
+comparison and E2E lowering gates pass; see midend.md "R8" for their scope.
+
 **Status (2026-10-09, R9):** 1092 of 1193 roots are proven: 1055 `simplify` and all 37
 `simplify_skeleton`. R9 completes signed i32/i64 `div_const` division/remainder and the four
 leading/trailing-zero branch rules, including i128 and reduced counts. Proven-only differential
@@ -34,7 +121,7 @@ See midend.md "Skeleton rules" for the proofs, witnesses and verification scope.
 
 **Findings:** `shifts.isle` 84 and 88 are false under the CLIF semantics (shift constants above the type width make `shift_amt_to_type` pick a type wider than `ty`, so the rule builds an ill-typed `ireduce`/`sextend`; midend.md has the example). The skeleton framework gap (node facts of the start state vs. refinement in later valuations) is closed by a reads-defined premise: `SkeletonSound`/`SkelRuleOk` assume the instruction's reads (`Opt.skelReads`) are defined when the rules run, and `runSkel_spec` discharges the undefined case (known values never change, so the original is stuck); see midend.md "Skeleton rules".
 
-**Remaining:** arithmetic 28, bitops 3, icmp 15, selects 13, extends 3, shifts 19 (2 of them false), spaceship 20. Skeleton is complete. midend.md lists the remaining roots with reasons. Roots per family:
+**Remaining:** only the two false shift originals 84/88. Every sound original root is proven. Corrected masked upstream variants have not been adopted; midend.md records the counterexample and exact coverage. Roots per family:
 
 | Family | Roots |
 | --- | --- |
@@ -60,15 +147,26 @@ Families are independent and can run in parallel, one agent per opts file.
 - alias analysis (redundant-load elimination, store-to-load forwarding);
 - merging identical trapping instructions;
 - elaboration-based sinking and general rematerialisation;
-- full e-class visibility for later matches.
+- full e-class visibility for later matches;
+- the passes on functions with `call_indirect`: the well-formedness check `Opt.check` rejects
+  them, so they only get unreachable-block removal (`Opt.optimizeExe` and its theorems, S1, cover
+  them; accepting them needs the `call_indirect` obligations of `GvnEditX`/`SimpSimX`, vacuous
+  today).
 
 ## i128 legalisation: what `E2E.backend_correct_legal` does not cover (2026-09-30)
 
 Legalised `i128` functions are inside the end-to-end theorem (`E2E.backend_correct_legal`,
 `docs/contracts/legalize128.md`; survey 31 and runtests 159 functions reported verified).
 Deferred:
-- composing the legalisation with the mid-end theorems (`--opt` keeps legalised functions
-  unverified);
+- ~~composing the legalisation with the mid-end theorems~~ Done (S2, #26, [#245](https://github.com/eth-act/clifv/pull/245)):
+  `E2E.backend_correct_legal_opt` (`--opt-proven-only` reports legalised functions verified) and
+  the optimising executable compiler's `Link.compileExeOpt_correct_source{,_peak}`;
+- in `Link.compileExe_correct_source` (and `_source_peak`, the `Link.DeadCleanup` variants, L1f
+  #217): the outside environment's `HelperOk`/`ExtLegal`/
+  `EnvKeepsBounded` when a source function mentions `i128` and `sigOf = none` with indirect
+  calls (environment contracts); the source run's memories below `2^64` (`Clif.run`'s bump
+  allocator can exceed it; proven for slotless programs, `bounded_of_noSlots`) and, for traps,
+  the source run's `NoMemTrap` and the target run's `TrapsExplicit` (run conditions);
 - runs that trap inside a `__*ti3` helper (`i128` division by zero, `sdiv MIN, -1`): the
   backend theorem excludes extern traps (`TrapsExplicit` of the legalised run); covering them
   needs a trapping-helper contract on the Arm side (natively the helper aborts);
@@ -86,8 +184,9 @@ Deferred:
   soundness proof, or make the pass throw (the functions would become unsupported instead of
   unverified);
 - `noSelf` (a statement reading its own result) and the `f`-only conjuncts of `check` (`defs`,
-  `ids`) are preconditions; a decidable `Pre` (for a runtime report that `check` cannot fail)
-  is not implemented — the compiler keeps running `check`.
+  `ids`) are preconditions; ~~a decidable `Pre` is not implemented~~ done (S6, 2026-10-15):
+  `preB_iff`, `check_complete_of_preB` (`FV/Opt/Proof/LegalPre.lean`); the compiler keeps
+  running `check` as a double-check.
 
 ## `sret`: what `E2E.backend_correct_final` does not cover (2026-09-30)
 
@@ -152,11 +251,12 @@ premises. Deferred, in order:
   a trusted-semantics change, with the entry premise `hpl` placing the reference run's slots at
   the compiled frames — CLIF leaves slot addresses unspecified, so this picks one legitimate CLIF
   behaviour; witness callees `t` and `u`). Remaining:
-  - **The `i128` source program as a whole**: `backend_correct_program` relates the Arm run to
-    the legalised program; relating that to the source program's whole-program run needs a
-    program-level legalisation refinement (`Opt.Legal.check_refines` per function under a
-    linked environment satisfying `ExtLegal`, by induction on the call depth; `NoMemTrap` of
-    callee runs, `EnvKeepsAllocs` of the linked environment).
+  - ~~**The `i128` source program as a whole**~~ (done, S3, 2026-10-15):
+    `E2E.LegalProgram.legalProg_refines` (`FV/E2E/LegalProgram.lean`) relates the original
+    program's whole-program run to the legalised program's, by induction on the source fuel
+    with two environments (`check_refines2`); `Link.compileExe_correct_source` composes it with
+    `compileExe_correct` (premises: `docs/contracts/legalize128.md`, "The executable compiler on
+    the original source program").
   - reachable indirect callees (whose
     signature matches an indirect call of the caller, `IndSigMatch`: parameter types and
     purposes, return types since agent/sret-purpose; agent/link-scope2 restricted `indSig` to
@@ -166,9 +266,9 @@ premises. Deferred, in order:
     (#89 (c)) the per-function run's `callExternAt` checks the purposes against the linked
     environment's `sigOf`, but the non-interference contract's pinned indirect call (`CallLg`,
     `xni`) records only the parameter types, so `indSig`'s `DeclN`/`IndTyMatch` disjunct stays).
-  - a function calling itself under its own name (excluded at the CLIF level by `InSubset (P.only f)`; `cargo fv`'s alias covers it), float parameters; a
-    depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
-    errors).
+  - float parameters; a depth-free machine (monotonicity of `linkedCall` in the depth, needs base
+    hooks preserving errors). (A function calling itself under its own name: done, #88, native
+    self-calls in function-free activations; its executable theorem: L1d, "Recursion" below.)
   - ~~**Indirect calls of a known function admitting an `sret` callee**~~ (done,
     agent/sret-purpose, e2e.md "Widening" 11): `Clif.stepCallIndirect` requires the parameter
     purposes to match (`Clif.Signature.abiMatch`), so `fv-demo`'s two `catch_unwind` shims (and
@@ -216,6 +316,96 @@ completeness would need a per-rule register-class property). The def-set propert
 `stmt_flow`, decided over the rule data by an abstract interpretation (`IselFlowCheck`) rather
 than per-rule lemmas. Remaining: the input conditions join `InScope` for the totality work
 (TO-PROVE L1/L2); `lowerCheck` still runs as a double-check.
+
+## Recursion: the stack premise of `compileExe_correct_depth` (2026-10-15)
+
+Done (L1d, #204, #215; e2e.md "Recursive programs"): `Link.compileExe_correct_depth`
+covers every entry, recursive ones included, with `frameDrop (art S.input f).af + S.input.D * M`
+bytes of stack for a whole-program CLIF run of at most `M + 1` steps (no call-graph premise), and
+`Link.compileExe_correct_peak` with `frameDrop (art S.input f).af + S.input.D * d` bytes for a run
+of peak call depth `d` (`Clif.DepthLe`: no state it reaches has more than `d` callers), whatever
+its fuel: the linked system carries its callee runs (`LinkSys.crun`, `CrunOk`), the induction runs
+on the depth with the fuel fixed (`Clif.runD`, `Clif.linkEnvD`, `Clif.runLoop_linkD`). On the
+original `i128` program (L1f, #217): `Link.compileExe_correct_source_peak`, stack from the
+**source** run's call depth (the legalisation keeps `DepthLe`, `legalProg_refines_depth`); for
+the shipped compiler `Link.DeadCleanup.compileExe_correct_peak`/`_source_peak`.
+Deferred:
+- **Exact frames.** Each level is charged the largest frame `D`; charging the frames actually
+  live along the executed call derivation needs a budget indexed by the run, not `LinkSys.Budget`
+  (which quantifies over every syntactic callee).
+- Neither covers divergence or stack overflow (no theorem about a run that exceeds the stack);
+  `TrapsExplicit` still restricts traps inside callees (S9).
+
+## Totality on input conditions: what remains (L1e, #216, 2026-10-16)
+
+Done: `Link.compileExe_total_reach` (`FV/Link/ExeInputReach.lean`, and
+`Link.DeadCleanup.compileExe_total_reach`) decides every premise of `compileExe_total` on the
+inputs: `CallPageReach` (the `bl`/`adrp` targets of the compiled relocations) follows from
+`reachOkB`, a condition on the CLIF functions and the link map, by **name provenance**
+(`relocOk_tab`): the compiled code of `f` relocates a `bl` only against an external function `f`
+declares and an `adrp` pair only against a name `f` declares with a declared offset (`0` or a
+global value's offset). The ISLE part is an abstract interpretation of the exported rules
+(`FV/Backend/Proof/RelocProv*.lean`: names enter values only through `func_ref_data` and
+`symbol_value_data`; table and root rules kernel-checked in chunks), the rest follows the
+instructions through `prepare`, `DeadCleanup.prune`, `lowerRFunc`, `emitFunc` and `layout`.
+Coarseness of `reachOkB`: every external function name is asked to be a `bl` target (also one
+only `func_addr` reads), and every declared name with every declared offset an `adrp` target; the
+abstraction does not pair a name with its own offset nor separate colocated from GOT accesses.
+All hold on the survey executables tried (66 and 493 functions); a finer relational analysis
+would only matter for executables over 128 MiB of text or offsets near `±4 GiB`. Remaining:
+- **The driver's layout.** `lake exe lean-link` still reads the driver's sizes (`sizes.txt`, from
+  the per-unit `lean.o` rust-lld placed); `placed_of_compileExe` shows a successful run used the
+  Lean compiler's layout. Computing `S.placed` in the driver (and the region object from it)
+  would make the theorem's object the shipped one by construction.
+- **`PT_TLS`.** `tlsOkB` asks for a `PT_TLS` segment even when no function has a `tls_value`
+  (every std executable has one); dropping it for TLS-free programs needs the instruction-level
+  step of the provenance chain (`RelocProvEmit`) for `elfTlsGetAddr` (`lowerCheck` already gives
+  `!hasTls f → !vc.hasTls`).
+- **rust-lld itself** stays a tool whose output `file0` is an input with decidable conditions
+  (`file0OkB`); a verified Lean static linker for the outside objects (L2b stage 3) would remove it.
+
+## Lowering totality: what `InScopeIn` still leaves (V7, #226, 2026-10-16)
+
+Done (TO-PROVE V7): `lowerFunction` and `prepare` succeed on input conditions
+(`Prg.lowerFunction_ok_input`, `Prep.prepare_ok`); `InScopeIn` (`fnScopeInB`: `driverInB`,
+`iselInB`, `sizeOkB`, `extendsWidenB` for `lowersB`) implies `InScopeP`, and
+`Link.compileExe_total_reach_input`/`Link.DeadCleanup.compileExe_total_reach_input` take it.
+`lean-link --verified` checks `fnScopeInB`. Deferred:
+- **`addrSlotsInB`'s outgoing area.** `progScopeB`'s `addrSlotsInB` asks whether `lowerFunction`'s
+  output has an outgoing-argument area (`outAreaB`); it runs the lowering (an error counts as no
+  area, so it assumes no success). An input-side bound (stack-passed call arguments of `f`) would
+  make `InScopeIn` free of compiler runs.
+- **`maxTryItems`.** `iselInB` bounds every exception table to 8 items, a proof-convenience bound
+  (the table checks the `try_call` roots for up to 8 items), not a Cranelift rule; every corpus
+  and crate function meets it.
+- **`compileExe` itself** still checks `InScopeP` (with `lowersB`): the old statements keep their
+  premise; switching `compileExe`'s check to `InScopeIn` would change which inputs it accepts only
+  where `lowersB` holds without the input conditions (none in the corpus or the crates).
+- **Kernel witness of `dominatedB`.** `backend_correct_final_total_input_witness` takes
+  `dominatedB` as its premise: the availability fixpoint `inFix` uses `Std.HashMap`/`Std.HashSet`,
+  which the kernel does not reduce (`USize`); `lean-e2e-check` evaluates it on every function.
+- **Proof engineering.** `IselPrgLe` derives `ReflBEq`/`LawfulBEq` for `CTy`/`OK` globally;
+  `IselPrgHand`'s `handIds_program` decides over the rule ids of all rule lists; the table check
+  could evaluate `aRule` once per rule (the soundness proof would follow).
+
+## Frontend boundary: what stays trusted after T7b/T7c (#221, 2026-10-16)
+
+T7b/T7c are done (docs/contracts/frontend.md): cg_clif, patched by
+`scripts/patches/cg-clif-extnames.patch`, writes each dump's external-name table and the module's
+declarations; the decoding is `Front.decodeFn` (Lean) with `Front.rawLink_eq_link`, and
+`clif-data-export`'s order-based identity recovery and `normalize.py` are gone. Deferred:
+
+- **cg_clif and the patch** stay the trusted frontend (out of scope, TO-PROVE §1.3). The patch is
+  applied to the nightly's own cg_clif sources by `scripts/build-cg-clif.sh`; `cargo fv` needs
+  that build (the shipped `rustc-codegen-cranelift-preview` writes no tables). Upstreaming a dump
+  option to cg_clif would remove the local build; not proposed.
+- **Object reading.** `clif-data-export` still reads the data objects (bytes, `R_AARCH64_ABS64`
+  relocations) from the object; the binary check compares the reached ones with the executable.
+  A structured data export from cg_clif (`DataDescription` at `define_data`) would move this into
+  the frontend too; not needed for identities.
+- **Stage selection.** No theorem relates `*.opt.clif` to `*.unopt.clif`; the retry compiles the
+  optimised dump when the unoptimised code references a symbol cg_clif's object neither defines
+  nor references.
 
 ## Other deferred items
 

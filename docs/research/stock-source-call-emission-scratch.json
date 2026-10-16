@@ -1,0 +1,398 @@
+{
+  "utc": "2026-10-16T14:32:19.828413+00:00",
+  "goal": "ORIGINAL full #140 ACTIVE/INCOMPLETE; production LEGACY",
+  "previous_goal_turn_classification": "NO PROGRESS toward proof/cutover: previous turn recorded merge cadence only. This turn PROGRESS: closes whole-run call unsunkness, original reachable-call emission/actual outgoing bounds and guarded source variants with complete witnesses; publishes second substantive backlog review unit.",
+  "scope": "Original source-call bits remain false through return/trap/branch selectors, binder/scans, original/synthetic nodes and the whole Stock driver. Actual retained calls, including zero-result direct/indirect/GOT calls, are mandatory emitted. Source positions and entry-reachable blocks derive actual nodes/records/emission internally. Every reachable actual direct/GOT call fits actual returned outgoing area. New raw and final-alias guarded source simulations derive emission/branch/stack internally under original source/semantic contracts, preserving all old variants.",
+  "logical_repair": {
+    "counterexample": "StockUnreachableCallStackWitness: original LowerScope/Dominated/ArityOk/AbiSigsOk admits entry return plus an unreachable nine-argument call. Stock.lower succeeds with nodes[original0], outgoing0 and NOT CallsStack f actualOut.",
+    "consequence": "Legacy all-block CallsStack is false for the original accepted inputs. Preserve old theorem variants, input acceptance and output frames. Derive per-actual/per-reachable-call SigStackOk internally, and connect source execution reachability in whole-driver composition. No reachability acceptance filter or enlarged frame.",
+    "compiled_public_counterexample": "Backend.Stock.Proof.UnreachableCallStackDraft.stock_unreachable_call_stack_witness"
+  },
+  "new_scratch_sources": {
+    "/tmp/StockCallSinkControl.lean": "602d1ec47c0610c02397479d8a7f2ca1e5831365506d417d21b28b8291f53337",
+    "/tmp/StockCallSinkScans.lean": "9b87660eb62bd86adbae58b612ba35703d9acbc43cdc98c9cd5520815de15862",
+    "/tmp/StockCallSinkBlocks.lean": "7975cfebb8de0b41b51534078ace7c7efb8cfb0561d6b000a5ad6a8655fbeef8",
+    "/tmp/StockCallSinkDriver.lean": "37e613d1366a76f1fb01164e45046043e7fcd0ae95ef86a9dc491fab730a4b53",
+    "/tmp/StockCallMandatoryEmission.lean": "0d989055c11b22f6a1722ca65af1f2b2500853e075349447800024dac571d52d",
+    "/tmp/StockCallOriginalOutgoing.lean": "865f0d3c1553fa3f18d7d319af7950be0933428eb89037209dba46837fb2e1e3",
+    "/tmp/StockCallActualStackSource.lean": "133a3993a022321b9a520f064a355c36fb5ba298ada8c7075f4c76002364ca1c",
+    "/tmp/StockCallOriginalResolvedSource.lean": "88b926cbea6a9969e7857b527ff6a3461dd94ea07fb7b83497677eca608c61b5",
+    "/tmp/StockUnreachableCallStackWitness.lean": "d9010b41c6b05e5862f9338143735e73a5b8b090ca7fcdc6090ad0ca12dd1f12",
+    "/tmp/StockDirectCallAreaOrdinary.lean": "976d76789f129cd630c0ad771b482822031a19a92300105419c7d47592a52b63",
+    "/tmp/StockDirectCallAreaSret.lean": "a4030a693f88b7fb896eb26333d4996a4e90e573e74f14cde05653439cef0531",
+    "/tmp/StockGotCallAreaOrdinary.lean": "e7634a339622ad99805067eb6338cdef67c4584e59c98b2ccdb44f0d0d01794e",
+    "/tmp/StockGotCallAreaSret.lean": "0a3ac71ff5f685764f63ab9a497388f051f60577b6a2cb6b4eb82e47032133a2",
+    "/tmp/StockCallAreaBounds.lean": "568e2e25dd35d01999cf9f4092931fa7496a7dbc3fd8747454863d380815ea63",
+    "/tmp/StockCallActualStackWitness.lean": "3242e4472562180ef0036b895c80a1ca9c49df507e77512705636d08c9b1330a",
+    "/tmp/StockGotActualStackWitness.lean": "2c879b8f8f3b9d0ca4e0b7a3efaab7111b4d392a7ca388412befd064ec39e154",
+    "/tmp/StockCallSinkControlWitness.lean": "e08d308cd1afbda8397731ad5fd604bef5e61a3fcba786c25181a2d482b21863",
+    "/tmp/StockCallSinkDriverWitness.lean": "e646ced5ea45e4661f5cdc5531793ef65a3d3e16aa61e7c1342c0a51c379f50e",
+    "/tmp/StockCallSourceCoverage.lean": "d9201794e82144cd85841235353186b101df23ba1ff6cc12b3685defb54f54a3",
+    "/tmp/StockCallSourceCoverageWitness.lean": "dc7301b0ea11c6f6d263e17f229d89db1570e79ee8275d81f94abc4f1e9329b2"
+  },
+  "new_compiled_modules": {
+    "/tmp/StockCallSinkControl.olean": "955df7bccd85ab9e88b9e402850e85497d7250308d3097b7cf8bf4309a9bf056",
+    "/tmp/StockCallSinkScans.olean": "b8a5964c1d9f61c468f0e2aa0028031a4f7eb0e9fe708a2e820ad5bc2d00a3d4",
+    "/tmp/StockCallSinkBlocks.olean": "37695a10ac72468938f176e6394b1546795fdb5783fc1ad4f1d34211b191d346",
+    "/tmp/StockCallSinkDriver.olean": "52ca4ea60fcf3c734e61db1042f075095a91e595cdac0f4c5e97921708cc393d",
+    "/tmp/StockCallMandatoryEmission.olean": "5e29efa158b0b3f266917bf6601c98d0f34f5c6594b440741bb2d9c76bc71ec4",
+    "/tmp/StockCallOriginalOutgoing.olean": "b7263d3b70eaebbd9270ca5f795cc425445f3bc30ad8a7072a08419d1a9846b0",
+    "/tmp/StockCallActualStackSource.olean": "f272010b82214980b1ccb83ce6d85976ba92d7c92408ab357d4a2eef52c56982",
+    "/tmp/StockCallOriginalResolvedSource.olean": "2516e4b5ed445413d43f45fbcf89b2a04fc5becdf95991a626fca5582a583d72",
+    "/tmp/StockUnreachableCallStackWitness.olean": "24bc3ccd35474a06dc579302ae3043577aac96eb7dee6754060a057c0314d99d",
+    "/tmp/StockDirectCallAreaOrdinary.olean": "f17aa090f613f00d2899b4aa4994ba5a894f03267b68dde17c8b191a6a9d3e46",
+    "/tmp/StockDirectCallAreaSret.olean": "3969b43dc9d13528b76d96b6c44f309efb6bd9a8887d1644fdfb25585730c370",
+    "/tmp/StockGotCallAreaOrdinary.olean": "fec99f1046119b96b50e53d8c92f989f93930b0fba32e326f944d0a6f1abb904",
+    "/tmp/StockGotCallAreaSret.olean": "c52b3633bf8f082ccbf6bb9706818763390b8b25c4326052c26a3a60d3515cb3",
+    "/tmp/StockCallAreaBounds.olean": "4194ba6063612ce0a3bea02de415bc8c8657636b2c414a578d69fd6287113ceb",
+    "/tmp/StockCallActualStackWitness.olean": "0934285e5117d7f4387e9acad32d0d6782f27acd84806a26719b34a10a9f5096",
+    "/tmp/StockGotActualStackWitness.olean": "bcec874bc46f0c48432e6c80879dcb9e4b062da9981b9b12a1db6085155a1858",
+    "/tmp/StockCallSinkControlWitness.olean": "06217a00525259daaa2f3af2fc0c6bc48b82ae27bfbd91d4b0062d4bf051222a",
+    "/tmp/StockCallSinkDriverWitness.olean": "ebfab99c1a269ca77ddcfb7518324f2696232d26706c1464b8f6746bc6a1fd80",
+    "/tmp/StockCallSourceCoverage.olean": "6362ed2af223bf5b624ce610f60547c621780689bfae92cfa7e60b4a7236d9cc",
+    "/tmp/StockCallSourceCoverageWitness.olean": "513820109f194f303afba79007691e3fcb6d16236625e7703904d900cd3917da"
+  },
+  "module_logs": {
+    "StockCallSinkControl": "/tmp/stock-call-sink-control.log",
+    "StockCallSinkScans": "/tmp/stock-call-sink-scans.log",
+    "StockCallSinkBlocks": "/tmp/stock-call-sink-blocks.log",
+    "StockCallSinkDriver": "/tmp/stock-call-sink-driver.log",
+    "StockCallMandatoryEmission": "/tmp/stock-call-mandatory-emission.log",
+    "StockCallOriginalOutgoing": "/tmp/stock-call-original-outgoing.log",
+    "StockCallActualStackSource": "/tmp/stock-call-actual-stack-source.log",
+    "StockCallOriginalResolvedSource": "/tmp/stock-call-original-resolved-source.log",
+    "StockUnreachableCallStackWitness": "/tmp/stock-unreachable-call-stack-witness.log",
+    "StockCallSinkControlWitness": "/tmp/stock-call-sink-control-witness.log",
+    "StockCallSinkDriverWitness": "/tmp/stock-call-sink-driver-witness.log",
+    "StockCallSourceCoverage": "/tmp/stock-call-source-coverage.log",
+    "StockCallSourceCoverageWitness": "/tmp/stock-source-witness-build-StockCallSourceCoverageWitness.log",
+    "StockDirectCallAreaOrdinary": "/tmp/stock-call-area-build-StockDirectCallAreaOrdinary.log",
+    "StockDirectCallAreaSret": "/tmp/stock-call-area-build-StockDirectCallAreaSret.log",
+    "StockGotCallAreaOrdinary": "/tmp/stock-call-area-build-StockGotCallAreaOrdinary.log",
+    "StockGotCallAreaSret": "/tmp/stock-call-area-build-StockGotCallAreaSret.log",
+    "StockCallAreaBounds": "/tmp/stock-call-area-build-StockCallAreaBounds.log",
+    "StockCallActualStackWitness": "/tmp/stock-call-area-build-StockCallActualStackWitness.log",
+    "StockGotActualStackWitness": "/tmp/stock-call-area-build-StockGotActualStackWitness.log"
+  },
+  "new_compiled_logs": {
+    "/tmp/stock-call-sink-control.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-sink-scans.log": "73b1a9f531f00a829262a8d7e813a3d03e03b57769f49703480250dc255ef98b",
+    "/tmp/stock-call-sink-blocks.log": "bc53a6d46de27a4cca7b40debe286efb43c4eceec7f5e3c406f8ca4c5dca7042",
+    "/tmp/stock-call-sink-driver.log": "9896609740392d26bb374cf0d8f7f0a8ee60dbf7fad86eaf306fb48fe66079e0",
+    "/tmp/stock-call-mandatory-emission.log": "a45532333baa9d36ed8eaac099f19f7e411a3b7e2a5dac4778bf97d45bfa7a4c",
+    "/tmp/stock-call-original-outgoing.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-actual-stack-source.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-original-resolved-source.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-unreachable-call-stack-witness.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-sink-control-witness.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-sink-driver-witness.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-source-coverage.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-source-witness-build-StockCallSourceCoverageWitness.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-area-build-StockDirectCallAreaOrdinary.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-area-build-StockDirectCallAreaSret.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-area-build-StockGotCallAreaOrdinary.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-area-build-StockGotCallAreaSret.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-area-build-StockCallAreaBounds.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-area-build-StockCallActualStackWitness.log": "1675387b0380e5731572e2d4f249cb336c7b3a21e34a93b896eb66478f2f1031",
+    "/tmp/stock-call-area-build-StockGotActualStackWitness.log": "f71e805987f4f90119f5bff3b705605f9d273b49b72b21a8413853a093dd6bb2"
+  },
+  "new_public_theorem_roots": [
+    "Backend.Stock.Proof.CallSinkControlDraft.stock_statement_source_calls_same",
+    "Backend.Stock.Proof.CallSinkControlDraft.stock_branch_source_calls_same",
+    "Backend.Stock.Proof.CallSinkControlDraft.stock_retTrap_source_calls_same",
+    "Backend.Stock.Proof.CallSinkScansDraft.stock_buildCtx_source_calls_unsunk",
+    "Backend.Stock.Proof.CallSinkScansDraft.stock_scanBlock_source_calls_same",
+    "Backend.Stock.Proof.CallSinkScansDraft.stock_scan_original_call_emitted",
+    "Backend.Stock.Proof.CallSinkScansDraft.stock_scanBlock_source_calls_unsunk",
+    "Backend.Stock.Proof.CallSinkBlocksDraft.stock_blockCore_source_calls_unsunk",
+    "Backend.Stock.Proof.CallSinkDriverDraft.stock_lower_source_calls_unsunk",
+    "Backend.Stock.Proof.CallSinkDriverDraft.stock_lower_records_source_calls_unsunk",
+    "Backend.Stock.Proof.CallMandatoryEmissionDraft.stock_lower_source_call_record_emitted",
+    "Backend.Stock.Proof.CallOriginalOutgoingDraft.stock_lower_original_call_code_stack",
+    "Backend.Stock.Proof.CallActualStackSourceDraft.stock_lower_direct_call_record_source_run_original_stack",
+    "Backend.Stock.Proof.CallActualStackSourceDraft.stock_lower_got_call_record_source_run_original_stack",
+    "Backend.Stock.Proof.CallOriginalResolvedSourceDraft.stock_lower_original_call_guarded_source_run",
+    "Backend.Stock.Proof.UnreachableCallStackDraft.stock_unreachable_call_stack_witness",
+    "Backend.Stock.Proof.CallAreaObservationDraft.stock_direct_call_area_false",
+    "Backend.Stock.Proof.CallAreaObservationDraft.stock_direct_call_area_true",
+    "Backend.Stock.Proof.CallAreaObservationDraft.stock_got_call_area_false",
+    "Backend.Stock.Proof.CallAreaObservationDraft.stock_got_call_area_true",
+    "Backend.Stock.Proof.CallAreaBoundsDraft.stock_direct_call_area",
+    "Backend.Stock.Proof.CallAreaBoundsDraft.stock_got_call_area",
+    "Backend.Stock.Proof.CallActualStackWitnessDraft.stock_complete_direct_call_actual_stack_source_witness",
+    "Backend.Stock.Proof.GotActualStackWitnessDraft.stock_complete_got_call_actual_stack_source_witness",
+    "Backend.Stock.Proof.CallSinkControlWitnessDraft.stock_control_both_source_calls_witness",
+    "Backend.Stock.Proof.CallSinkDriverWitnessDraft.stock_complete_direct_call_unsunk_driver_witness",
+    "Backend.Stock.Proof.CallSinkDriverWitnessDraft.stock_complete_got_call_unsunk_driver_witness",
+    "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_original_body_record",
+    "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_reachable_original_node",
+    "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_reachable_source_call_emitted",
+    "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_reachable_direct_call_stack",
+    "Backend.Stock.Proof.CallSourceCoverageWitnessDraft.stock_complete_direct_reachable_call_witness",
+    "Backend.Stock.Proof.CallSourceCoverageWitnessDraft.stock_complete_indirect_reachable_call_witness",
+    "Backend.Stock.Proof.CallSourceCoverageWitnessDraft.stock_complete_got_reachable_call_witness"
+  ],
+  "normal_audit": {
+    "path": "/tmp/stock-source-call-emission-axioms.log",
+    "sha256": "3e691f1aa30f6ff3a9313e7749362e590a99efa5b35bdee0660d4b1627e2ea5d",
+    "roots": {
+      "Backend.Stock.Proof.CallSinkControlDraft.stock_statement_source_calls_same": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkControlDraft.stock_branch_source_calls_same": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkControlDraft.stock_retTrap_source_calls_same": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkScansDraft.stock_buildCtx_source_calls_unsunk": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkScansDraft.stock_scanBlock_source_calls_same": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkScansDraft.stock_scan_original_call_emitted": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkScansDraft.stock_scanBlock_source_calls_unsunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkBlocksDraft.stock_blockCore_source_calls_unsunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDriverDraft.stock_lower_source_calls_unsunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDriverDraft.stock_lower_records_source_calls_unsunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallMandatoryEmissionDraft.stock_lower_source_call_record_emitted": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOriginalOutgoingDraft.stock_lower_original_call_code_stack": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallActualStackSourceDraft.stock_lower_direct_call_record_source_run_original_stack": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallActualStackSourceDraft.stock_lower_got_call_record_source_run_original_stack": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOriginalResolvedSourceDraft.stock_lower_original_call_guarded_source_run": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.UnreachableCallStackDraft.stock_unreachable_call_stack_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaObservationDraft.stock_direct_call_area_false": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaObservationDraft.stock_direct_call_area_true": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaObservationDraft.stock_got_call_area_false": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaObservationDraft.stock_got_call_area_true": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaBoundsDraft.stock_direct_call_area": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaBoundsDraft.stock_got_call_area": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallActualStackWitnessDraft.stock_complete_direct_call_actual_stack_source_witness": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotActualStackWitnessDraft.stock_complete_got_call_actual_stack_source_witness": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkControlWitnessDraft.stock_control_both_source_calls_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDriverWitnessDraft.stock_complete_direct_call_unsunk_driver_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDriverWitnessDraft.stock_complete_got_call_unsunk_driver_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_original_body_record": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_reachable_original_node": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_reachable_source_call_emitted": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_reachable_direct_call_stack": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageWitnessDraft.stock_complete_direct_reachable_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageWitnessDraft.stock_complete_indirect_reachable_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageWitnessDraft.stock_complete_got_reachable_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "all268_prior_exact_sets_preserved": true,
+    "standard_only_new_roots": 29,
+    "five_existing_memory_dependency_sets": {
+      "Backend.Stock.Proof.CallActualStackSourceDraft.stock_lower_direct_call_record_source_run_original_stack": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallActualStackSourceDraft.stock_lower_got_call_record_source_run_original_stack": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOriginalResolvedSourceDraft.stock_lower_original_call_guarded_source_run": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallActualStackWitnessDraft.stock_complete_direct_call_actual_stack_source_witness": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotActualStackWitnessDraft.stock_complete_got_call_actual_stack_source_witness": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "native_dependency_review": "Each of the five sets exactly equals the preserved older direct/GOT source-call root set. No new generated native assumption or expanded allowlist. Canonical upstream reductions still need coherent rebuild review."
+  },
+  "counts": {
+    "modules": 20,
+    "new_public_roots": 34,
+    "prior_checked_roots_and_models": 268,
+    "total_audited": 302
+  },
+  "old_sources_objects_logs_preserved": true,
+  "canonical_frozen_2246_sources_and_scripts_verified": true,
+  "canonical_controller": {
+    "state": "running",
+    "pid": 1233457,
+    "utc": "2026-10-16T14:31:34.611055+00:00",
+    "total": 1930,
+    "completed_modules": 262,
+    "index": 263,
+    "current": "FV.Backend.Proof.IselEmitTab",
+    "log": "/tmp/stock-coherent-build-FV.Backend.Proof.IselEmitTab.log",
+    "memcap": "22G"
+  },
+  "witnesses": {
+    "control": "Original-scope/dominance/arity/fullABI functions containing both source-call forms execute actual return/trap/jump roots and preserve both slots.",
+    "whole_driver": "Ordinary/sret direct and GOT complete lower/prepare/forced-global-checked-fallback/physical pipelines apply new unsunk/emission/stack roots at actual retained endpoints.",
+    "source_semantics": "Ordinary/sret direct and GOT complete source simulations apply NEW unified guarded source root, with actual OutArgsOk for returned outgoing0/16; source/world/result/all-other-demanded-held facts preserved.",
+    "reachable_source_positions": "Ordinary/sret direct, indirect and GOT complete pipelines apply source-position/reachability coverage roots to actual statements, deriving retained emitted records; direct/GOT actual-area bounds also applied.",
+    "area_observations": "Four small kernel observations check ONLY the outgoing field of Stock.lower; previously cached full-stage observations are reused."
+  },
+  "PRs": {
+    "246": "draft44abfd79; all3CI checks PASS; exact-current-PR local gates/trust review pending",
+    "247": "draft e5a9cd6c; base#246; all three CI checks PASS at https://github.com/eth-act/clifv/actions/runs/38915917431; exact-current-PR local gates/trust review pending"
+  },
+  "MCP": "Pending ONE expanded bundled check after coherent canonical integration; no scratch MCP calls",
+  "full_gates": "Pending current frozen rebuild/audit, canonical integration and exact-current-PR validation. Historical prior receipts do not prove current gates.",
+  "resources": {
+    "free_GiB": 812.2,
+    "new_worktrees_or_caches": false,
+    "scratch_cap": "8GiB",
+    "canonical_cap": "22GiB; existing isolated Cmp32GiB exception",
+    "effective_nproc": 2,
+    "cleanup": "No new tree/cache; temporary alternate indexes removed. Retain active scratch kernels and one warm canonical cache; preserve source/evidence/remote recovery; other projects untouched."
+  },
+  "next_steps": [
+    "Inspect exact canonical serial1930build/2182audit terminal receipt and review every trust-set change. Preserve source/script freeze until terminal receipt.",
+    "Integrate all validated outgoing/call-protection/source-emission scratch modules coherently, add only affected builds, ONE expanded bundled MCP and complete normal/kernel/transitive audits.",
+    "Run required exact proposed-tree/full build/crate/runtime/encoder/BOTH E2E identity-stage gates before ready/squash merges of#246 then#247; do not count drafts as merged deliveries.",
+    "Finish original execution-to-CFG reachability, all remaining rule families/effects/Try/availability/checker/fallback/totality and source/DFG/world/block/whole-driver simulation AND completeness; preserve original inputs/theorems/axioms.",
+    "Switch compiler/checker/linker/generated-proof production consumers only after full proof/acceptance parity; complete final witnesses/all audits/full gates/FRESH complete stock comparison retaining at least#179."
+  ],
+  "cleanup_receipt": "docs/research/stock-source-call-emission-cleanup.json"
+}
