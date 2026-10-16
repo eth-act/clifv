@@ -4,12 +4,14 @@
 //! For one CGU object `obj` (cg_clif's output) and the crate's CLIF dump directory:
 //!
 //! 1. The functions of this CGU are the dumps whose `; symbol` is a text symbol defined in
-//!    `obj` (cg_clif numbers `u0:N` per CGU module, so a CGU is the unit of normalisation).
-//! 2. `clif-data-export` maps every `symbol_value` data reference to its symbol in `obj`
-//!    (`.LdataN` or a named static); `normalize.py --split --gvmap` writes one reader-clean
-//!    CLIF file per function. No `; data:` directives: our code references cg_clif's data
-//!    objects themselves, so every data object keeps a single identity (addresses of statics,
-//!    vtables, `Location`s are the ones cg_clif's code and every other crate see).
+//!    `obj` (cg_clif numbers `u0:N` per CGU module, so a CGU is the unit of decoding).
+//! 2. `clif-decode` (Lean, `Front.decodeFn`) decodes every dump of the CGU: each external
+//!    name replaced by the symbol cg_clif's module declared for it (the dump's external-name
+//!    table, written by the patched cg_clif of `scripts/build-cg-clif.sh`), one reader-clean
+//!    CLIF file per function. `clif-data-export` writes the object's data objects (`; data:`,
+//!    for `cargo fv link-proof`). No data is copied: our code references cg_clif's data objects
+//!    themselves, so every data object keeps a single identity (addresses of statics, vtables,
+//!    `Location`s are the ones cg_clif's code and every other crate see).
 //! 3. `lean-backend` compiles each function in its own file, so a call to another function is
 //!    a call of an extern (`E2E.backend_correct_final_cleanup` covers extern calls through its callee
 //!    contract) and a function the backend rejects does not drag its callers along: calls
@@ -312,13 +314,9 @@ fn ref_problem(o: &Path, syms: &ObjSyms) -> Result<(Option<String>, Vec<String>)
         } else if syms.local_count.contains_key(&n) {
             locals.push(n);
         } else if !(syms.defined.contains(&n) || syms.undefined.contains(&n) || RUNTIME_HELPERS.contains(&n.as_str())) {
-            bad = Some(if u.starts_with("alloc") || u.starts_with("data_") || u.starts_with("u0_") {
-                // normalize.py's name for a gv/callee no relocation of cg_clif's
-                // object names, e.g. data only a path Cranelift's optimiser removed uses
-                format!("references `{u}`, which cg_clif's object does not contain (removed by Cranelift's optimiser, or unmapped)")
-            } else {
-                format!("references `{u}`, unknown to cg_clif's object")
-            });
+            // e.g. a callee or static only the unoptimised code uses: Cranelift's optimiser
+            // removed cg_clif's own reference (the retry of `compile_one`)
+            bad = Some(format!("references `{u}`, which cg_clif's object neither defines nor references (unused by its optimised code)"));
         }
         if bad.is_some() {
             break;
@@ -356,16 +354,15 @@ fn backend_slot(cfg: &Config) -> Option<fs::File> {
     }
 }
 
-/// Compile one function from its normalised `.unopt.clif` dump into `o/f{i}.o`.
+/// Compile one function from its decoded `.unopt.clif` dump into `o/f{i}.o`.
 ///
-/// Retry: the unoptimised CLIF may reference data objects that cg_clif's optimiser removed
-/// from its object — the unoptimised dump still holds the (dead) panic paths of e.g.
-/// `rotate_left`, whose `Location` objects cg_clif's object does not contain when the
-/// optimised code dropped them. The optimised dump (`{stem}.opt.clif`, normalised with the
-/// same gvmap) matches the code cg_clif actually emitted, so compiling it references only
-/// data that exists. Only the "removed by Cranelift's optimiser, or unmapped" references
-/// trigger the retry; a failing retry keeps the unopt result (whose reference check then
-/// reports the fallback reason).
+/// Retry: the unoptimised CLIF may reference symbols that cg_clif's object neither defines nor
+/// references — the unoptimised dump still holds paths Cranelift's optimiser removed (e.g. a
+/// call of a panic function only a dead path makes). The optimised dump (`{stem}.opt.clif`,
+/// decoded the same way) matches the code cg_clif actually emitted, so compiling it references
+/// only symbols the object binds. Only such references trigger the retry; a failing retry keeps
+/// the unopt result (whose reference check then reports the fallback reason). A dump that does
+/// not decode (`clif-decode` wrote `X.clif.err`) falls back with the decoder's reason.
 fn compile_one(
     cfg: &Config,
     syms: &ObjSyms,
@@ -376,6 +373,13 @@ fn compile_one(
     sym: &str,
 ) -> Compiled {
     let run_backend = |input: &Path, out: &Path| -> Compiled {
+        if !input.exists() {
+            let err = input.with_file_name(format!("{}.err", input.file_name().unwrap_or_default().to_string_lossy()));
+            return Compiled::Fallback(match fs::read_to_string(&err) {
+                Ok(why) => format!("decode: {}", why.trim()),
+                Err(_) => format!("{}: no decoded CLIF", input.display()),
+            });
+        }
         if let Some(why) = abi_guard(input) {
             return Compiled::Fallback(why);
         }
@@ -411,7 +415,7 @@ fn compile_one(
     if let Compiled::Ok { .. } = &c {
         if let Some(why) = missing_ref(&out, syms) {
             let opt = split.join(format!("{}.opt.clif", d.stem));
-            if why.contains("does not contain") && opt.exists() {
+            if why.contains("neither defines nor references") && opt.exists() {
                 let out_opt = outdir.join(format!("f{i}.opt.o"));
                 let c2 = run_backend(&opt, &out_opt);
                 if let Compiled::Ok { obj, unverified, normal_returns, clif } = c2 {
@@ -425,8 +429,8 @@ fn compile_one(
     c
 }
 
-/// `all`: every function of the CGU (the normalisation input: data-export and the FuncId
-/// naming need the whole CGU); `funcs`: the ones to compile.
+/// `all`: every function of the CGU (the decoding input: the unit's declarations are read from
+/// all its dumps); `funcs`: the ones to compile.
 fn process_selected(
     cfg: &Config,
     index: &DumpIndex,
@@ -628,103 +632,40 @@ fn process_in(
     tag: &str,
     work: &Path,
 ) -> Result<(Vec<FnReport>, bool), String> {
+    // cg_clif's dumps of the CGU's functions: links to them, copies when `cargo fv link-proof`
+    // reads them later (`--keep-temps`: the bundle names the dump each function was compiled
+    // from, and cargo may rewrite the originals)
     let clif = work.join("c.clif");
     fs::create_dir_all(&clif).map_err(|e| format!("{}: {e}", clif.display()))?;
     for d in all {
-        for ext in ["unopt.clif", "opt.clif", "vcode"] {
+        for ext in ["unopt.clif", "opt.clif"] {
             let src = index.dir.join(format!("{}.{ext}", d.stem));
-            if src.exists() {
-                std::os::unix::fs::symlink(&src, clif.join(format!("{}.{ext}", d.stem)))
-                    .map_err(|e| format!("symlink {}: {e}", src.display()))?;
+            let to = clif.join(format!("{}.{ext}", d.stem));
+            if !src.exists() {
+                continue;
+            }
+            if cfg.keep_link() {
+                fs::copy(&src, &to).map(|_| ()).map_err(|e| format!("copy {}: {e}", src.display()))?;
+            } else {
+                std::os::unix::fs::symlink(&src, &to).map_err(|e| format!("symlink {}: {e}", src.display()))?;
             }
         }
     }
-    // 2. data references → cg_clif's own data symbols. Run for both stages: the optimised
-    // dump is the retry input when the unoptimised one references data cg_clif's optimiser
-    // removed (see `compile_one`), and its gvs need the same gvmap (the keys are normalized
-    // to the dump stem by normalize.py, so one merged table serves both stages).
-    let gvmap = work.join("gvmap.tsv");
-    let fnmap = work.join("fnmap.tsv");
-    for stage in ["unopt", "opt"] {
-        let gvm = work.join(format!("gvmap.{stage}.tsv"));
-        if stage == "unopt" {
-            run(Command::new(cfg.data_export())
-                .arg(&clif)
-                .arg(obj)
-                .arg("--stage")
-                .arg(stage)
-                .arg("--out")
-                .arg(work.join(format!("data-{stage}.clif")))
-                .arg("--gvmap")
-                .arg(&gvm)
-                .arg("--fnmap")
-                .arg(&fnmap)
-                .arg("--imported"))?;
-            fs::copy(&gvm, &gvmap).map_err(|e| format!("{}: {e}", gvm.display()))?;
-        } else {
-            // Best effort: a failure only disables the missing-data retry (normalize.py
-            // keeps only the gvmap entries of its own stage; the unopt run's fnmap stays).
-            match run(Command::new(cfg.data_export())
-                .arg(&clif)
-                .arg(obj)
-                .arg("--stage")
-                .arg(stage)
-                .arg("--out")
-                .arg(work.join(format!("data-{stage}.clif")))
-                .arg("--gvmap")
-                .arg(&gvm)
-                .arg("--fnmap")
-                .arg(&fnmap)
-                .arg("--imported"))
-            {
-                Ok(_) => {
-                    let extra =
-                        fs::read_to_string(&gvm).map_err(|e| format!("{}: {e}", gvm.display()))?;
-                    let mut f = fs::OpenOptions::new()
-                        .append(true)
-                        .open(&gvmap)
-                        .map_err(|e| format!("{}: {e}", gvmap.display()))?;
-                    use std::io::Write;
-                    f.write_all(extra.as_bytes()).map_err(|e| format!("{}: {e}", gvmap.display()))?;
-                }
-                Err(e) => eprintln!("cargo fv: warning: {tag}: no gvmap for .opt.clif ({e})"),
-            }
-        }
-    }
+    // 2. the object's data objects (for `cargo fv link-proof`), the decoded functions
+    run(Command::new(cfg.data_export()).arg(obj).arg("--out").arg(work.join("data.clif")))?;
     let split = work.join("split");
-    run(Command::new(&cfg.python)
-        .arg(cfg.normalize())
-        .arg(&clif)
-        .arg("unopt")
-        .arg(&split)
-        .arg("--split")
-        .arg("--strip-srcloc")
-        .arg("--gvmap")
-        .arg(&gvmap)
-        .arg("--fnmap")
-        .arg(&fnmap))?;
-    // The optimised split files: best effort — a failure only disables the
-    // missing-data retry (the unopt compilation and its fallback reason are unaffected).
+    run(Command::new(cfg.decode()).arg(&clif).arg("unopt").arg(&split).arg("--split"))?;
+    // The optimised dumps: best effort — a failure only disables the retry of `compile_one`
+    // (the unopt compilation and its fallback reason are unaffected).
     let split_opt = work.join("split-opt");
-    match run(Command::new(&cfg.python)
-        .arg(cfg.normalize())
-        .arg(&clif)
-        .arg("opt")
-        .arg(&split_opt)
-        .arg("--split")
-        .arg("--strip-srcloc")
-        .arg("--gvmap")
-        .arg(&gvmap)
-        .arg("--fnmap")
-        .arg(&fnmap))
-    {
+    match run(Command::new(cfg.decode()).arg(&clif).arg("opt").arg(&split_opt).arg("--split")) {
         Ok(_) => {
             for e in fs::read_dir(&split_opt).map_err(|e| format!("{}: {e}", split_opt.display()))?.flatten() {
                 let to = split.join(e.file_name());
                 fs::rename(e.path(), &to).map_err(|err| format!("{}: {err}", to.display()))?;
             }
         }
-        Err(e) => eprintln!("cargo fv: warning: {tag}: no .opt.clif split ({e})"),
+        Err(e) => eprintln!("cargo fv: warning: {tag}: the .opt.clif dumps do not decode ({e})"),
     }
 
     // 3. one lean-backend run per function, `cfg.jobs` at a time
@@ -795,9 +736,11 @@ fn process_in(
                     Some(b) => report(Status::Fallback, Some(b), false),
                     None => {
                         referenced_locals.extend(locals);
+                        // the dump the compiled (decoded) file came from: same file name
+                        let dump = clif.file_name().map(|n| work.join("c.clif").join(n)).unwrap_or_default();
                         link_fns.push(serde_json::json!({
                             "symbol": sym,
-                            "clif": clif,
+                            "dump": dump,
                             "ra": o.with_extension("ra.json"),
                             "verified": unverified.is_none(),
                             "reason": unverified,

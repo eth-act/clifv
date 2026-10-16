@@ -4,10 +4,12 @@ import FV.Link.LayoutFacts
 /-!
 # The Lean-built `LinkSpec` is the units' program (T7d, docs/contracts/frontend.md)
 
-* **`Front.parseUnit_spec`**: a parsed unit's functions are its files' (one each, named as the
-  bundle says), its data the objects of its `; data:` lines that its functions reach
-  (**`data_complete`**: every object reachable from the functions' names through relocations is
-  kept; `data_sound`: only the unit's objects are; no line that does not parse is reachable).
+* **`Front.parseUnit_spec`**: a parsed unit's functions are its dumps' decodings (one each,
+  named as the bundle says: `decodeFile_spec`; cg_clif's functions renamed by the unit's
+  declarations: `parseUnit_raw`), its data the objects of its `; data:` lines that its functions
+  reach (**`data_complete`**: every object reachable from the functions' names through
+  relocations is kept; `data_sound`: only the unit's objects are; no line that does not parse is
+  reachable).
 * **`Front.scopingB_sound`**: the linked names are a scoping (`ScopingOk`).
 * **`Front.link_alpha`**: the program (and data) of the units under any two scopings are
   alpha-equivalent: one is the other renamed by a bijection of names (`Clif.Ren`), which maps
@@ -160,52 +162,87 @@ theorem badLine_none {s : Std.HashSet String} {ps : List (String × Except Strin
   · simp only [hc, ↓reduceIte] at this; cases this
   · simpa using hc
 
-/-- What a parsed function file is. -/
-theorem parseFn_spec {fn : FnFile} {r : Clif.Function × List String × String}
-    (h : parseFn fn = .ok r) :
-    (Clif.parseFile fn.clif).funcs.map (·.func) = [.ok r.1] ∧ r.1.name = fn.name ∧
-      r.2.1 = (Clif.parseFile fn.clif).header ∧ r.2.2 = fn.ra := by
-  unfold parseFn at h
-  dsimp only at h
+/-- What a decoded function file is: its dump's function in module identities renamed by the
+unit's declarations, named as the bundle says, with the dump's header and the regalloc output. -/
+theorem decodeFile_spec {ρ : Std.HashMap String String} {fd : FnFile × Dump}
+    {r : Clif.Function × List String × String} (h : decodeFile ρ fd = .ok r) :
+    r.1 = fd.2.raw.rename (lookupRen ρ) ∧ r.1.name = fd.1.name ∧ r.2.1 = fd.2.header ∧
+      r.2.2 = fd.1.ra := by
+  unfold decodeFile at h
   split at h
-  · rename_i p hp
-    split at h
-    · rename_i f hf
-      split at h
-      · rename_i hn
-        cases h
-        exact ⟨by simp [hp, hf], hn, rfl, rfl⟩
-      · cases h
-    · cases h
   · cases h
+  · rename_i g hg
+    split at h
+    · rename_i hn
+      cases h
+      exact ⟨decodeFn_spec hg, hn, rfl, rfl⟩
+    · cases h
 
 /-- **A parsed unit.** -/
 theorem parseUnit_spec {u : Cgu} {pu : PCgu} (h : parseUnit u = .ok pu) :
-    ∃ fs s, u.funcs.mapM parseFn = .ok fs ∧ pu.funcs = fs ∧ pu.tag = u.tag ∧
+    ∃ ds ρ fs s, u.funcs.mapM readFile = .ok ds ∧ unitTable ds = .ok ρ ∧
+      (u.funcs.zip ds).mapM (decodeFile ρ) = .ok fs ∧ pu.funcs = fs ∧
+      pu.raw = ds.map Dump.raw ∧ pu.ren = lookupRen ρ ∧ pu.tag = u.tag ∧
       pu.locals = u.locals ∧ pu.names = u.names ∧
       closedB (okData (dataParsed u.data)) (rootsOf fs) s = true ∧
       pu.data = (okData (dataParsed u.data)).filter (s.contains ·.name) ∧
-      badLine s (dataParsed u.data) = none := by
+      badLine s (dataParsed u.data) = none ∧
+      (pu.data.flatMap (·.names)).all (fun n => lookupRen ρ n == n) = true := by
   unfold parseUnit at h
   split at h
   · cases h
-  · rename_i fs hfs
-    simp only at h
+  · rename_i ds hds
     split at h
     · cases h
-    · rename_i hc
+    · rename_i ρ hρ
       split at h
       · cases h
-      · rename_i hb
-        cases h
-        exact ⟨fs, _, hfs, rfl, rfl, rfl, rfl, by simpa using hc, rfl, hb⟩
+      · rename_i fs hfs
+        simp only at h
+        split at h
+        · cases h
+        · rename_i hc
+          split at h
+          · cases h
+          · rename_i hb
+            split at h
+            · rename_i hfix
+              cases h
+              exact ⟨ds, ρ, fs, _, hds, hρ, hfs, rfl, rfl, rfl, rfl, rfl, rfl,
+                by simpa using hc, rfl, hb, hfix⟩
+            · cases h
+
+/-- **A parsed unit's functions are cg_clif's, renamed by the unit's declarations.** -/
+theorem parseUnit_raw {u : Cgu} {pu : PCgu} (h : parseUnit u = .ok pu) :
+    pu.funcs.map (·.1) = pu.raw.map (·.rename pu.ren) := by
+  obtain ⟨ds, ρ, fs, -, hds, -, hfs, hf, hr, hren, -⟩ := parseUnit_spec h
+  rw [hf, hr, hren, List.map_map]
+  have hlen : ds.length ≤ u.funcs.length := by
+    obtain ⟨ps, h1, h2, -⟩ := mapM_ok hds
+    rw [← h1, ← h2, List.length_map, List.length_map]
+    exact Nat.le_refl _
+  rw [mapM_ok_map (k := fun fd => fd.2.raw.rename (lookupRen ρ))
+    (fun fd r hr => (decodeFile_spec hr).1) hfs]
+  have : (u.funcs.zip ds).map (fun fd => fd.2.raw.rename (lookupRen ρ)) =
+      ((u.funcs.zip ds).map Prod.snd).map (fun d => d.raw.rename (lookupRen ρ)) := by
+    rw [List.map_map]; rfl
+  rw [this, List.map_snd_zip hlen]
+  rfl
+
+/-- A parsed unit's data names are no declared external names: its renaming fixes them. -/
+theorem parseUnit_fix {u : Cgu} {pu : PCgu} (h : parseUnit u = .ok pu) :
+    ∀ n ∈ pu.data.flatMap (·.names), pu.ren n = n := by
+  obtain ⟨ds, ρ, fs, -, -, -, -, -, -, hren, -, -, -, -, -, -, hfix⟩ := parseUnit_spec h
+  intro n hn
+  rw [hren]
+  simpa using List.all_eq_true.mp hfix n hn
 
 /-- **The data closure loses nothing**: every object of the unit's `; data:` lines that is
 reachable from its functions' names through relocations is in the parsed unit's data. -/
 theorem data_complete {u : Cgu} {pu : PCgu} (h : parseUnit u = .ok pu) {o : DataObject}
     (ho : o ∈ okData (dataParsed u.data))
     (hr : Reach (okData (dataParsed u.data)) (rootsOf pu.funcs) o.name) : o ∈ pu.data := by
-  obtain ⟨fs, s, -, hf, -, -, -, hc, hd, -⟩ := parseUnit_spec h
+  obtain ⟨-, -, fs, s, -, -, -, hf, -, -, -, -, -, hc, hd, -⟩ := parseUnit_spec h
   rw [hd]
   rw [hf] at hr
   exact List.mem_filter.mpr ⟨ho, closedB_reach hc hr⟩
@@ -213,7 +250,7 @@ theorem data_complete {u : Cgu} {pu : PCgu} (h : parseUnit u = .ok pu) {o : Data
 /-- **The data closure is the unit's**: its objects are objects of the unit's lines. -/
 theorem data_sound {u : Cgu} {pu : PCgu} (h : parseUnit u = .ok pu) {o : DataObject}
     (ho : o ∈ pu.data) : ∃ l ∈ u.data, Clif.dataDirective l = some (.ok o) := by
-  obtain ⟨fs, s, -, -, -, -, -, -, hd, -⟩ := parseUnit_spec h
+  obtain ⟨-, -, fs, s, -, -, -, -, -, -, -, -, -, -, hd, -⟩ := parseUnit_spec h
   rw [hd] at ho
   exact mem_okData.mp (List.mem_filter.mp ho).1
 
@@ -221,7 +258,7 @@ theorem data_sound {u : Cgu} {pu : PCgu} (h : parseUnit u = .ok pu) {o : DataObj
 theorem data_parses {u : Cgu} {pu : PCgu} (h : parseUnit u = .ok pu) {l e : String}
     (hl : l ∈ u.data) (he : Clif.dataDirective l = some (.error e)) :
     ¬ Reach (okData (dataParsed u.data)) (rootsOf pu.funcs) (dataLineName l) := by
-  obtain ⟨fs, s, -, hf, -, -, -, hc, -, hb⟩ := parseUnit_spec h
+  obtain ⟨-, -, fs, s, -, -, -, hf, -, -, -, -, -, hc, -, hb, -⟩ := parseUnit_spec h
   intro hr
   rw [hf] at hr
   have h1 := closedB_reach hc hr

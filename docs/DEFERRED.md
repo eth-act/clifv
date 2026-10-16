@@ -360,28 +360,24 @@ would only matter for executables over 128 MiB of text or offsets near `±4 GiB`
 - **rust-lld itself** stays a tool whose output `file0` is an input with decidable conditions
   (`file0OkB`); a verified Lean static linker for the outside objects (L2b stage 3) would remove it.
 
-## Frontend boundary: identities and decoding (T7b, T7c, #221, 2026-10-16)
+## Frontend boundary: what stays trusted after T7b/T7c (#221, 2026-10-16)
 
-T7a/T7d/T7e made the frontend bundle the boundary (docs/contracts/frontend.md): from
-`bundle.json` to the executable everything is Lean with theorems. Two producers of the bundle stay
-trusted:
+T7b/T7c are done (docs/contracts/frontend.md): cg_clif, patched by
+`scripts/patches/cg-clif-extnames.patch`, writes each dump's external-name table and the module's
+declarations; the decoding is `Front.decodeFn` (Lean) with `Front.rawLink_eq_link`, and
+`clif-data-export`'s order-based identity recovery and `normalize.py` are gone. Deferred:
 
-- **T7b, identities at the source.** cg_clif's dump prints `gvN = symbol colocated
-  userextnameJ` without the function's external-name table and `fnK = u0:N` without a symbol
-  for functions of other units; `clif-data-export` recovers both from the order of the object's
-  GOT/TLSDESC relocations and of external names in the `.vcode` dump (count, kind and
-  consistency checks; a consistent permutation of two same-kind symbols is not detectable).
-  Removing it needs cg_clif to print, where it writes the dump (`pretty_clif`), each function's
-  `user_named_funcs` and the module's declarations (FuncId/DataId → symbol, linkage): a patch of
-  the frontend, built for every user (the shipped `rustc-codegen-cranelift-preview` cannot), plus
-  a structured sidecar the bundle would carry. Not cheap; deferred.
-- **T7c, the decoding.** With the identities absent from the text, a Lean decoder of the raw dump
-  has nothing to be proven against for global values and foreign callees (the correspondence
-  would hold by definition of the recovered tables); `normalize.py` stays the specified decoding
-  (frontend.md §1). With T7b the remaining rewrite is a renaming of FuncIds/DataIds to symbols,
-  which `Clif.runLoop_ren` already covers for any bijection: the Lean decoding would parse the raw
-  syntax (`u0:N` names, `sigN` references in `fn` declarations, `userextnameJ`, `@XXXX` prefixes)
-  and rename through the exported tables.
+- **cg_clif and the patch** stay the trusted frontend (out of scope, TO-PROVE §1.3). The patch is
+  applied to the nightly's own cg_clif sources by `scripts/build-cg-clif.sh`; `cargo fv` needs
+  that build (the shipped `rustc-codegen-cranelift-preview` writes no tables). Upstreaming a dump
+  option to cg_clif would remove the local build; not proposed.
+- **Object reading.** `clif-data-export` still reads the data objects (bytes, `R_AARCH64_ABS64`
+  relocations) from the object; the binary check compares the reached ones with the executable.
+  A structured data export from cg_clif (`DataDescription` at `define_data`) would move this into
+  the frontend too; not needed for identities.
+- **Stage selection.** No theorem relates `*.opt.clif` to `*.unopt.clif`; the retry compiles the
+  optimised dump when the unoptimised code references a symbol cg_clif's object neither defines
+  nor references.
 
 ## Other deferred items
 

@@ -84,3 +84,7 @@ root = "FVTest.Backend.Lowering.StockTest"
 [[lean_exe]]
 name = "lean-stock-lowering-compare"
 root = "FVTest.Backend.Lowering.StockComparison"
+
+[[lean_exe]]
+name = "clif-decode"
+root = "FVTest.Front.DecodeMain"

@@ -6,11 +6,12 @@ import FV.Front.Exe
 /-! # Non-vacuity of the frontend bundle's theorems on a real codegen unit (T7d, T7e)
 
 The bundle `bw` holds the codegen unit of the survey crate `g_u128` (`Crates.FrontendBundleInput`,
-as `cargo fv link-proof` collected it) restricted to two of its functions, as the frontend wrote
-them: `wmul_u128` (a global symbol) and its callee `core::num::<u128>::wrapping_mul`, a **local**
-symbol of the unit (CLIF name `_RNvMs8_…wrapping_mul`, which the object merge linked as
-`__fv_68444dab8fd4__RNvMs8_…wrapping_mul`). `wmul_u128`'s Lean code is at 16 MiB (the merge's
-marker), the sizes are the cleanup pipeline's.
+as `cargo fv link-proof` collected it) restricted to two of its functions, cg_clif's dumps of
+them decoded in Lean (`Front.parseUnit`): `wmul_u128` (a global symbol) and its callee
+`core::num::<u128>::wrapping_mul`, a **local** symbol of the unit (CLIF name
+`_RNvMs8_…wrapping_mul`, which the object merge linked as `__fv_cc1bb1bbc108__RNvMs8_…wrapping_mul`).
+`wmul_u128`'s Lean code is at 16 MiB (the merge's marker), the sizes are the cleanup pipeline's.
+`Crates.FrontendBundleWitnessRaw`: the same run as cg_clif's program, before the decoding.
 
 * `buildSpec_eq`: `Front.buildSpec bw = .ok S`; `compile_eq`: the shipped compiler
   (`Link.DeadCleanup.compileExe`) compiles `S` into the placeholder executable of
@@ -116,7 +117,7 @@ theorem fin_ok : Front.ScopingOk us (Front.finOf us) := by
 def mulClif : String := fn2.name
 
 /-- `wrapping_mul`'s linked name. -/
-def mulLinked : String := "__fv_68444dab8fd4__RNvMs8_NtCsazjiGSRkgVH_4core3numo12wrapping_mul"
+def mulLinked : String := "__fv_cc1bb1bbc108__RNvMs8_NtCsazjiGSRkgVH_4core3numo12wrapping_mul"
 
 /-- The two programs differ: the pre-renaming one names `wrapping_mul` by its CLIF name, the
 linked one by its linked name. -/

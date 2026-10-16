@@ -2,18 +2,19 @@
 //! (docs/contracts/frontend.md), the input of the Lean-built `LinkSpec` (`Front.buildSpec`,
 //! `FV/Front/Bundle.lean`) that `lake exe lean-link` compiles and `lake exe link-check` checks.
 //!
-//! A build with `--keep-temps` keeps, per codegen unit, the CLIF file `lean-backend` compiled
-//! for every Lean-compiled function, `lean-regalloc`'s output for it (`regalloc_tee`), the
-//! unit's data objects (`data-unopt.clif`), and the merge's record (`fv-link.json`, written by
-//! `pipeline::process_in`: the names the merge gave the symbols it renamed, the object's local
-//! symbols); per linked executable, the lld link map (`link-<tag>.map`, `link-<tag>.json`).
-//! This command only collects them, unchanged, into `DIR/bundle.json`: per unit its tag, the
-//! paths of the function and regalloc files, the path of its data objects, its local symbols
-//! and their link-map addresses, the merge's names; the executable's symbols (those defined
-//! once); the address of each function's Lean code (its `__fvlean$` marker); the functions it
-//! cannot include (unverified, or no unique marker). No CLIF or data text is rewritten here:
-//! the renaming to linked names, the data closure and the CLIF image's symbols are computed in
-//! Lean (`Front.assemble`), with proofs (`FV/Front/BundleProof.lean`).
+//! A build with `--keep-temps` keeps, per codegen unit, cg_clif's dump of every Lean-compiled
+//! function (the stage `lean-backend` compiled the decoding of), `lean-regalloc`'s output for it
+//! (`regalloc_tee`), the unit's data objects (`data.clif`), and the merge's record
+//! (`fv-link.json`, written by `pipeline::process_in`: the names the merge gave the symbols it
+//! renamed, the object's local symbols); per linked executable, the lld link map
+//! (`link-<tag>.map`, `link-<tag>.json`). This command only collects them, unchanged, into
+//! `DIR/bundle.json`: per unit its tag, the paths of the function dumps and regalloc files, the
+//! path of its data objects, its local symbols and their link-map addresses, the merge's names;
+//! the executable's symbols (those defined once); the address of each function's Lean code (its
+//! `__fvlean$` marker); the functions it cannot include (unverified, or no unique marker). No
+//! CLIF or data text is rewritten here: the decoding of the dumps, the renaming to linked names,
+//! the data closure and the CLIF image's symbols are computed in Lean (`Front.assemble`), with
+//! proofs (`FV/Front/BundleProof.lean`, `FV/Front/RawProof.lean`).
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ffi::OsString;
 use std::fs;
@@ -289,9 +290,9 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
                 skipped.push((fin, "no unique Lean code address in the link map (removed by --gc-sections?)".into()));
                 continue;
             };
-            let clif = PathBuf::from(f["clif"].as_str().unwrap_or_default());
+            let dump = PathBuf::from(f["dump"].as_str().unwrap_or_default());
             let ra = PathBuf::from(f["ra"].as_str().unwrap_or_default());
-            for p in [&clif, &ra] {
+            for p in [&dump, &ra] {
                 if !p.is_file() {
                     return Err(format!("{}: missing (rebuild with --keep-temps)", p.display()));
                 }
@@ -300,7 +301,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
             functions.push(serde_json::json!({
                 "name": f["symbol"],
                 "final": fin,
-                "clif": clif,
+                "dump": dump,
                 "ra": ra,
             }));
         }
@@ -320,7 +321,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
                 Some((s.clone(), *a.iter().next()?))
             })
             .collect();
-        let data = dir.join("data-unopt.clif");
+        let data = dir.join("data.clif");
         if !data.is_file() {
             return Err(format!("{}: missing (the unit's data objects)", data.display()));
         }
@@ -342,7 +343,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         .collect();
     let bundle = serde_json::json!({
         "format": "clifv-frontend-bundle",
-        "version": 1,
+        "version": 2,
         "exe": exe,
         "map": map_path,
         "units": units,

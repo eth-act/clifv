@@ -66,7 +66,8 @@ On the frontend bundle (T7d/T7e, docs/contracts/frontend.md): `lean-link` builds
 program under the linked names (`Front.buildSpec_srcProg`), alpha-equivalent to the units' program
 under any scoping of their names (`Front.link_alpha`, `Clif.runLoop_ren`), and
 `Front.bundle_correct_source{,_peak}{,_baseline}` state the four source theorems about the runs of
-that program.
+that program; `Front.bundle_correct_raw{,_peak}{,_baseline}` about cg_clif's program as its dumps
+wrote it (module identities, decoded in Lean: `Front.rawLink_eq_link`, T7b/T7c).
 
 ### 1.2 What "no per-program certificate" means here (decision)
 
@@ -86,12 +87,13 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 
 ### 1.3 Trusted by design (not part of this file's goal)
 
-- the frontend: rustc + rustc_codegen_cranelift produce the CLIF; the theorems are relative to it.
-  Exactly: the frontend bundle (format `clifv-frontend-bundle` 1) faithfully represents the
-  program cg_clif compiled — each function's CLIF file, each unit's data objects and local
-  symbols — which covers `clif-data-export`'s identity recovery and `normalize.py`'s decoding
-  (docs/contracts/frontend.md §1, §4); everything from the bundle to the executable is Lean with
-  theorems (T7d, T7e);
+- the frontend: rustc + rustc_codegen_cranelift (with `scripts/patches/cg-clif-extnames.patch`,
+  which prints each dump's external-name table and the module's declarations) produce the CLIF;
+  the theorems are relative to it. Exactly: the frontend bundle (format `clifv-frontend-bundle` 2)
+  faithfully represents the program cg_clif compiled — each function's dump with its table, each
+  unit's data objects (`clif-data-export` reads them from the object) and local symbols
+  (docs/contracts/frontend.md §1, §5); everything from the bundle to the executable is Lean with
+  theorems (T7b–T7e: the decoding of the dumps, `Front.rawLink_eq_link`, included);
 - Lean's kernel (since T6 no fixed proof needs compiled evaluation: no `bv_decide` or
   `native_decide` certificate remains in the compiler theorems);
 - the Arm model and `Clif.run` as specifications (fidelity is tested, not proven: T4, T5);
@@ -101,7 +103,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 
 | Stage | Implemented in | Verified today by | Kind (§1.2) | WP |
 | --- | --- | --- | --- | --- |
-| frontend bundle → `LinkSpec` (renaming to linked names, data closure, CLIF image symbols, `FnInput`s) | Lean `Front.buildSpec` (`FV/Front/`); Rust `cargo fv link-proof` only collects files and addresses (`bundle.json`) | `Front.buildSpec_spec` (source program = the units' program under the linked names, a scoping), `Front.link_alpha` + `Clif.runLoop_ren` (any scoping, same runs), `Front.data_complete`; composed: `Front.bundle_correct_source{,_peak}{,_baseline}`. Before the bundle (cg_clif, `clif-data-export`'s identities, `normalize.py`'s decoding) trusted: docs/contracts/frontend.md | proven (T7d, T7e); trusted boundary specified (T7a) | T7 |
+| cg_clif dumps → decoded units; frontend bundle → `LinkSpec` (decoding of external names, renaming to linked names, data closure, CLIF image symbols, `FnInput`s) | Lean `Front.parseUnit` / `Front.decodeFn` (`FV/Front/Raw.lean`; the same function decodes at build time: `lake exe clif-decode`) and `Front.buildSpec` (`FV/Front/`); Rust `cargo fv link-proof` only collects files and addresses (`bundle.json`) | `Front.decodeFn_spec`, `Front.parseUnit_raw`, `Front.rawLink_eq_link` (cg_clif's program in module identities = the decoded program, under any naming respecting the declarations), `Front.buildSpec_spec` (source program = the units' program under the linked names, a scoping), `Front.link_alpha` + `Clif.runLoop_ren` (any scoping, same runs), `Front.data_complete`; composed: `Front.bundle_correct_source{,_peak}{,_baseline}`, `Front.bundle_correct_raw{,_peak}{,_baseline}`. Before the bundle (patched cg_clif and its dumps' tables, `clif-data-export`'s object reading) trusted: docs/contracts/frontend.md | proven (T7b–T7e); trusted boundary specified (T7a) | T7 |
 | mid-end `simplify` rules | Lean (ISLE data) | 1154 + 37 rule theorems; only false shifts 84/88 disabled (`ruleAllow := .proven`) | proven | R4 done for sound originals ([#212](https://github.com/eth-act/clifv/pull/212)) |
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`); `Pre` decided (`preB_iff`, `check_complete_of_preB`); the executable refines the original program (`Link.compileExe_correct_source`, recursive entries `…_source_peak` with the source run's depth, `legalProg_refines_depth`; the shipped compiler's `Link.DeadCleanup.…_source{,_peak}`; `SrcScopeB` decided on the parsed CLIF, by `lean-link --verified` too) | validator, complete on the decidable `Pre` (S6 done); source-level executable theorem with environment and run premises (S2/S3) | S2, S3, S6, L1f |
@@ -802,7 +804,7 @@ Large, low priority.
 | T4 | Arm model fidelity (ASL-derived, qemu co-simulation) | testing, not proof |
 | T5 | `Clif.run` fidelity (Cranelift interpreter + native runs) | testing, not proof |
 | T6 | `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | **done** ([#213](https://github.com/eth-act/clifv/pull/213)): every fixed `native_decide` and `bv_decide` replaced by kernel-checked proofs, statements unchanged. Encoder: symbolic field lemmas. Generated tables: leaf-wise `decide +kernel`; closure term sets are untrusted literals (`TermSetGen`) checked by the kernel. Backend bit-vector lemmas (incl. `movK_ident`, for every width): symbolic `BitVec` proofs. Optimizer rules (formerly 934 lemmas): the kernel-checked finisher `kbv` (`FV/Opt/Proof/KernelBV.lean`: bounded per-method heartbeat budgets; `bv_normalize`, bit extensionality, case splits, `toNat`/`toInt` + `omega`, minterms + `grind`, shift/sign lemmas), `kbv_amt`/`kbv_cmp` (`RuleInfraShiftAmt.lean`) and hand proofs. `compileExe_correct`/`_total`, `backend_correct_final`, `binary_correct_exec_proven`, `backend_correct_opt_proven`: 759–9000 `bv_decide` and up to 68 `native_decide` axioms → `propext`, `Classical.choice`, `Quot.sound` only. Lean 4.34's kernel-mode LRAT reflection was infeasible (failed on a 15-node probe). Cost: the Opt proof modules need a serial pre-build (§7) |
-| T7 | `normalize.py`, `clif-data-export` (frontend-side tools) | **T7a/T7d/T7e done** ([#222](https://github.com/eth-act/clifv/pull/222)): the boundary is the frontend bundle (docs/contracts/frontend.md); renaming, data closure, CLIF image symbols and `FnInput`s are Lean with theorems (`Front.buildSpec_spec`, `Front.link_alpha`, `Clif.runLoop_ren`, `Front.data_complete`), composed with the executable theorems (`Front.bundle_correct_source{,_peak}{,_baseline}`, witness `Crates.FrontendBundleWitness` on `g_u128`). Still trusted: `clif-data-export`'s identity recovery (T7b: the dumps lack the external-name tables; needs a cg_clif change) and `normalize.py`'s decoding (T7c: no raw semantics without those identities), frontend.md §4, [#221](https://github.com/eth-act/clifv/issues/221) |
+| T7 | `normalize.py`, `clif-data-export` (frontend-side tools) | **done**: T7a/T7d/T7e ([#222](https://github.com/eth-act/clifv/pull/222)): the boundary is the frontend bundle (docs/contracts/frontend.md); renaming, data closure, CLIF image symbols and `FnInput`s are Lean with theorems (`Front.buildSpec_spec`, `Front.link_alpha`, `Clif.runLoop_ren`, `Front.data_complete`), composed with the executable theorems (`Front.bundle_correct_source{,_peak}{,_baseline}`, witness `Crates.FrontendBundleWitness` on `g_u128`). T7b/T7c ([#224](https://github.com/eth-act/clifv/pull/224), #221): cg_clif with `scripts/patches/cg-clif-extnames.patch` writes each dump's external-name table and the module's declarations; `clif-data-export`'s order-based identity recovery and `normalize.py` are deleted; `Front.decodeFn` decodes the raw dumps in Lean (`decodeFn_spec`, `parseUnit_raw`), and the executable theorems hold for cg_clif's program in module identities under any naming that respects its declarations (`Front.rawLink_eq_link`, `Front.bundle_correct_raw{,_peak}{,_baseline}`, witness `Crates.FrontendBundleWitnessRaw`). Trusted: cg_clif with its patch, `clif-data-export`'s object reading (data checked by the binary check), the parser, stage selection (frontend.md §5) |
 
 ## 6. Not needed for the goal
 
@@ -898,5 +900,5 @@ label**; list the free ones with
 | T4 | [#40](https://github.com/eth-act/clifv/issues/40) Trusted base: Arm model fidelity (ASL-derived, qemu co-simulation) | open |
 | T5 | [#41](https://github.com/eth-act/clifv/issues/41) Trusted base: `Clif.run` fidelity (Cranelift interpreter + native runs) | open |
 | T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | **done** ([#213](https://github.com/eth-act/clifv/pull/213)): no compiled-evaluation axiom in the compiler theorems |
-| T7 | [#43](https://github.com/eth-act/clifv/issues/43) Trusted base: `normalize.py`, `clif-data-export` (frontend-side tools) | **T7a/T7d/T7e done** ([#222](https://github.com/eth-act/clifv/pull/222)): bundle boundary, Lean-built `LinkSpec` with proofs, `Front.bundle_correct_source{,_peak}{,_baseline}`; T7b/T7c split to #221 |
-| T7b/T7c | [#221](https://github.com/eth-act/clifv/issues/221) Trusted base: frontend identities at the source (cg_clif external-name tables) and a Lean decoding of the raw dumps | open (docs/contracts/frontend.md §4) |
+| T7 | [#43](https://github.com/eth-act/clifv/issues/43) Trusted base: `normalize.py`, `clif-data-export` (frontend-side tools) | **T7a/T7d/T7e done** ([#222](https://github.com/eth-act/clifv/pull/222)): bundle boundary, Lean-built `LinkSpec` with proofs, `Front.bundle_correct_source{,_peak}{,_baseline}`; T7b/T7c: #221, done |
+| T7b/T7c | [#221](https://github.com/eth-act/clifv/issues/221) Trusted base: frontend identities at the source (cg_clif external-name tables) and a Lean decoding of the raw dumps | **done** ([#224](https://github.com/eth-act/clifv/pull/224)): patched cg_clif tables, `Front.decodeFn`, `Front.rawLink_eq_link`, `Front.bundle_correct_raw{,_peak}{,_baseline}` (docs/contracts/frontend.md §2, §4) |

@@ -1,34 +1,38 @@
 import FV.Front.Perm
+import FV.Front.Raw
 import FV.Clif.Print
 import FV.Clif.Parse
 import FV.E2E.SrcScopeDefs
 import FV.Link.Layout
 
 /-!
-# The frontend bundle and the Lean-built `LinkSpec` (T7d, docs/contracts/frontend.md)
+# The frontend bundle and the Lean-built `LinkSpec` (T7b–T7d, docs/contracts/frontend.md)
 
 **What enters** (`Bundle`, read from `cargo fv link-proof`'s `bundle.json` by `readBundle`,
-which only reads files): per codegen unit (`Cgu`) the functions of the program part — each a
-CLIF file holding one function, as the frontend wrote it (cg_clif's dump after
-`normalize.py`), with `lean-regalloc`'s output for it — the unit's data objects (`; data:` lines,
-`clif-data-export`), the unit's **local** names (symbols local to its object: two units' local
-symbols of one name are different symbols), and the linked name the object merge gave each
-renamed symbol (`names`); for the executable, its symbols' addresses, the Lean code's addresses
-(the merge's markers), the functions' sizes in the region object, and the functions the
-reconstruction skipped.
+which only reads files): per codegen unit (`Cgu`) the functions of the program part — each
+**cg_clif's dump of it, as cg_clif wrote it** (one function in Cranelift's text syntax with its
+external-name table and the module's declarations of the names it uses, `FV/Front/Raw.lean`),
+with `lean-regalloc`'s output for it — the unit's data objects (`; data:` lines,
+`clif-data-export`: every data object of the unit's object), the unit's **local** names (symbols
+local to its object: two units' local symbols of one name are different symbols), and the linked
+name the object merge gave each renamed symbol (`names`); for the executable, its symbols'
+addresses, the Lean code's addresses (the merge's markers), the functions' sizes in the region
+object, and the functions the reconstruction skipped.
 
 **What is computed here**, by pure functions with explicit errors (no file is written by Rust
-for the compiler's input any more):
+or Python for the compiler's input any more):
 
-* `parseUnit`: each function file parsed (exactly one function, named as the bundle says), the
-  data lines parsed, the unit's **data closure** (`reachSet`: the data objects reachable from
-  the functions' names through relocations, checked closed: `closedB`); a reachable object whose
-  line does not parse is an error;
+* `parseUnit`: each dump read (`readDump`) and **decoded** under the unit's declarations
+  (`unitTable`, `decodeFn`: every external name replaced by the CLIF name of the symbol cg_clif
+  declared for it; named as the bundle says), the data lines parsed, the unit's **data closure**
+  (`reachSet`: the data objects reachable from the functions' names through relocations,
+  checked closed: `closedB`); a reachable object whose line does not parse is an error;
 * the **linked names** `finOf us i n` (the merge's name, or `n` itself), checked to be a
   **scoping** of the program (`scopingB`: a global name keeps its name, two local symbols get
   distinct names no global name has);
 * `link us sc`: the program of the units under a scoping `sc` (every function renamed by
-  `Function.rename (sc i)`), `linkData us sc` its data;
+  `Function.rename (sc i)`), `linkData us sc` its data; `rawLink us sc'`: the units' functions
+  **as cg_clif wrote them** (in module identities, `Dump.raw`) under a naming `sc'` of those;
 * `assemble`: per function the `FnInput` of the renamed function (its printed text, which is
   checked to parse back to it: `FnInput.src = g`), the names the program uses, the outside
   part's addresses, the symbols of the CLIF image (`addrNamesOf` and the program functions whose
@@ -37,7 +41,9 @@ for the compiler's input any more):
 
 `FV/Front/BundleProof.lean`: the spec's source program is `link us (finOf us)`, its data
 `linkData us (finOf us)` (`buildSpec_spec`); every data object reachable from the program is
-in it (`data_complete`); any two scopings give alpha-equivalent programs (`link_alpha`).
+in it (`data_complete`); any two scopings give alpha-equivalent programs (`link_alpha`); the
+decoded units' program under a scoping is cg_clif's program under a naming that identifies two
+module identities exactly when cg_clif declared them as one symbol (`rawLink_eq_link`).
 -/
 
 namespace Front
@@ -46,11 +52,11 @@ open Clif E2E.LinkCheck Link
 
 /-! ## The bundle -/
 
-/-- One function of the program part: its CLIF name (as the unit names it), the CLIF file
-holding it, `lean-regalloc`'s output for that file. -/
+/-- One function of the program part: its CLIF name (as the unit names it), cg_clif's dump of
+it (the file's text, unchanged), `lean-regalloc`'s output for its decoding. -/
 structure FnFile where
   name : String
-  clif : String
+  dump : String
   ra : String
   deriving Inhabited
 
@@ -86,11 +92,15 @@ structure Bundle where
 
 /-! ## Parsing -/
 
-/-- A parsed unit: its functions with their files' header lines and regalloc outputs, its data
-closure, its tag, locals and names. -/
+/-- A parsed unit: its decoded functions with their dumps' header lines and regalloc outputs,
+the same functions as cg_clif wrote them (in module identities, `Dump.raw`) and the renaming of
+the unit's declarations (`lookupRen` of `unitTable`) that decodes them, its data closure, its
+tag, locals and names. -/
 structure PCgu where
   tag : String
   funcs : List (Clif.Function × List String × String)
+  raw : List Clif.Function := []
+  ren : String → String := id
   data : List DataObject
   locals : List (String × String)
   names : List (String × String)
@@ -121,17 +131,20 @@ def reachSet (ds : List DataObject) (roots : List String) : Std.HashSet String :
 def closedB (ds : List DataObject) (roots : List String) (s : Std.HashSet String) : Bool :=
   roots.all s.contains && ds.all fun o => !s.contains o.name || o.refs.all s.contains
 
-/-- Parse one function file: exactly one function, named `fn.name`. -/
-def parseFn (fn : FnFile) : Except String (Clif.Function × List String × String) := do
-  let pf := Clif.parseFile fn.clif
-  match pf.funcs with
-  | [p] =>
-    match p.func with
-    | .ok f =>
-      if f.name = fn.name then pure (f, pf.header, fn.ra)
-      else throw s!"%{fn.name}: its file holds %{f.name}"
-    | .error e => throw s!"%{fn.name}: {repr e}"
-  | fs => throw s!"%{fn.name}: its file holds {fs.length} functions"
+/-- Read one function's dump. -/
+def readFile (fn : FnFile) : Except String Dump :=
+  match readDump fn.dump with
+  | .ok d => .ok d
+  | .error e => .error s!"%{fn.name}: {e}"
+
+/-- Decode one function's dump under the unit's declarations `ρ`: named as the bundle says. -/
+def decodeFile (ρ : Std.HashMap String String) (fd : FnFile × Dump) :
+    Except String (Clif.Function × List String × String) :=
+  match decodeFn ρ fd.2 with
+  | .error e => .error s!"%{fd.1.name}: {e}"
+  | .ok g =>
+    if g.name = fd.1.name then .ok (g, fd.2.header, fd.1.ra)
+    else .error s!"%{fd.1.name}: its dump holds %{g.name}"
 
 /-- The `; data:` lines with their names, parsed. -/
 def dataParsed (ls : List String) : List (String × Except String DataObject) :=
@@ -152,20 +165,31 @@ def badLine (s : Std.HashSet String) (ps : List (String × Except String DataObj
 def rootsOf (fs : List (Clif.Function × List String × String)) : List String :=
   fs.flatMap (·.1.names)
 
-/-- **Parse a unit**: its functions, its data closure (the objects of its `; data:` lines whose
-names its functions reach; every such line must parse). -/
+/-- **Parse a unit**: its dumps read and decoded under its declarations, its data closure (the
+objects of its `; data:` lines whose names its functions reach; every such line must parse, and
+no object's name may be a declared external name, `lookupRen ρ` fixes them). -/
 def parseUnit (u : Cgu) : Except String PCgu :=
-  match u.funcs.mapM parseFn with
+  match u.funcs.mapM readFile with
+  | .error e => .error e
+  | .ok ds =>
+  match unitTable ds with
+  | .error e => .error s!"unit {u.tag}: {e}"
+  | .ok ρ =>
+  match (u.funcs.zip ds).mapM (decodeFile ρ) with
   | .error e => .error e
   | .ok fs =>
     let ps := dataParsed u.data
-    let ds := okData ps
-    let s := reachSet ds (rootsOf fs)
-    if !closedB ds (rootsOf fs) s then .error s!"unit {u.tag}: data closure not closed" else
+    let ds' := okData ps
+    let s := reachSet ds' (rootsOf fs)
+    if !closedB ds' (rootsOf fs) s then .error s!"unit {u.tag}: data closure not closed" else
     match badLine s ps with
     | some (n, e) => .error s!"unit {u.tag}: data object %{n}: {e}"
-    | none => .ok { tag := u.tag, funcs := fs, data := ds.filter (s.contains ·.name),
-                    locals := u.locals, names := u.names }
+    | none =>
+      let data := ds'.filter (s.contains ·.name)
+      if (data.flatMap (·.names)).all (fun n => lookupRen ρ n == n) then
+        .ok { tag := u.tag, funcs := fs, raw := ds.map Dump.raw, ren := lookupRen ρ, data,
+              locals := u.locals, names := u.names }
+      else .error s!"unit {u.tag}: a data object is named like a declared external name"
 
 /-! ## Names -/
 
@@ -224,6 +248,12 @@ def link (us : List PCgu) (sc : Nat → String → String) : Clif.Program :=
 /-- The data of the units under a scoping `sc`: every unit's closure, renamed. -/
 def linkData (us : List PCgu) (sc : Nat → String → String) : List DataObject :=
   us.zipIdx.flatMap fun (u, i) => u.data.map (·.rename (sc i))
+
+/-- **cg_clif's program of the units under a naming `sc`** of their functions' module
+identities: every function as cg_clif wrote it (`PCgu.raw`: `uNS:IDX`, libcall names), renamed
+by its unit's naming. -/
+def rawLink (us : List PCgu) (sc : Nat → String → String) : Clif.Program :=
+  { funcs := us.zipIdx.flatMap fun (u, i) => u.raw.map fun f => f.rename (sc i) }
 
 /-! ## The `LinkSpec` -/
 
