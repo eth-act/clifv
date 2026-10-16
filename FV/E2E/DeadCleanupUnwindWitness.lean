@@ -125,14 +125,15 @@ def Uw : Unw.UnwHooks := ⟨fun _ s => some (77, s)⟩
 /-- **The raising callees' contract holds** for `IselSimUWitness.XR` and `Uw`, at every
 activation. -/
 theorem calleeUnwOkG_raise (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop)
-    (s0 : Arm.ArmState) (Pc : BitVec 64 → MInst → Prop) (X0 : ExtSem) (S : CallInfo → Prop) :
-    CalleeUnwOkG F K G s0 Pc (Xr X0) IselSimUWitness.XR Uw S where
+    (s0 : Arm.ArmState) (Pc : BitVec 64 → MInst → Prop) (X0 : ExtSem) (S : CallInfo → Prop)
+    (gv : Nat → String → Prop) :
+    CalleeUnwOkG F K G s0 Pc (Xr X0) IselSimUWitness.XR Uw S gv where
   os := by
-    intro info i _ _ s _ _ _ c wh ops regs i' w _ _ _ _ hsw _ herr obj w' h
+    intro info i _ _ s _ _ _ c wh ops regs i' w _ _ _ _ hsw _ herr _ obj w' h
     simp only [IselSimUWitness.XR, Option.some.injEq, Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
     exact ⟨s, rfl, hsw, ⟨rfl, fun _ _ => rfl⟩, herr, rfl, fun _ _ _ _ => rfl, fun _ _ _ => rfl⟩
-  noRaise := fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h => absurd rfl h
+  noRaise := fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h => absurd rfl h
   excl := fun _ _ _ h => absurd rfl h
 
 /-- No extern of `IselSimUWitness.env` returns normally: the normal-return contracts hold. -/
@@ -177,7 +178,7 @@ theorem final_applies {X0 : ExtSem} {H : ArmHooks} {syms : String → Option Nat
   exact backend_correct_final_cleanup_unwind (InSubset.of_verifiable hv (fun _ => rfl)) hc hlU
     (formsCovered_cleanup_complete (lowerScope_of hs) hc.lower hc.prepare _) hC (fun _ => hCT)
     (fun h => absurd h (by rw [ht]; decide))
-    (fun base s => calleeUnwOkG_raise _ _ _ s _ X0 _)
+    (fun base s => calleeUnwOkG_raise _ _ _ s _ X0 _ _)
     (fun _ => xCallsOk_env _ _ _) (fun _ => xCallsIndOk_env _ _ _)
     (fun _ => IselSimUWitness.xRaiseOk _ _ _) (fun _ => IselSimUWitness.xRaiseIndOk _ _ _)
     hsym rfl hcs' rfl hrows rfl rfl hpad hlast hsv hent hres hbe hargs hcs hrel htr fuel

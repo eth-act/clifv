@@ -155,8 +155,8 @@ first handler's landing pad, and the machine is at the landing-pad edge block wi
 the call's defs (`RealizesTryRaise`), for any semantics with `csemU`'s raising-`tryCall` clause
 (`TryRaiseSem`: `R.semU`, `csemU`, the dead-cleanup chain's value semantics). -/
 theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
-    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
-    (hsemT : TryRaiseSem R.XR semU)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU)
     (hT : LsdaAt R) (hpad : PadsNonzero R.af R.fa) (hsite : SiteAt R.toRL) :
     RealizesTryRaise R semU := by
   intro s b k allocs its m w vb info ti ops c' obj w2 hq _hA hvb hi hops hraise hm
@@ -179,6 +179,7 @@ theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
   rw [hops] at hops2; cases hops2
   have hsem0 := hsem
   rw [huses] at hsem0
+  have hgg := (hgot _ _ _ _).2 ti hsem0
   obtain ⟨hok, heq⟩ := hsemT _ _ _ _ _ _ _ hsem0 hraise
   simp only [Prod.mk.injEq] at heq
   obtain ⟨rfl, rfl, rfl⟩ := heq
@@ -198,7 +199,7 @@ theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
   have hcpc := callAt_of_q hq hvb hi tryCall_hcall regs i' rfl hasg
   have hraiseU := hU.os info (.tryCall info ti) hsite0 (.inr ⟨ti, rfl⟩) s
     (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
-    hst.gkeep cc wh ops regs i' w hops hstat hasg hcpc hst.world hst.align hst.err
+    hst.gkeep cc wh ops regs i' w hops hstat hasg hcpc hst.world hst.align hst.err hgg
   obtain ⟨t, hUr, hW, hFK, herrt, hprogt, hoth, hkeep⟩ := hraiseU obj _ hraise
   obtain ⟨hstep1, hRX⟩ := RLU.stepU_q_raise hR hq hvb hi (.inr ⟨ti, rfl⟩) hUr
   -- the personality: the first handler's landing pad

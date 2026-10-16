@@ -48,8 +48,8 @@ theorem world_applies {X0 : ExtSem} {K : Nat} {F : BitVec 64 → Prop} {c : BitV
 /-- The raising callees' contract of `ActEntryU` holds for `Uw` at every activation. -/
 theorem unw_holds (X0 : ExtSem) (K : Nat) (F G : BitVec 64 → Prop) (s : Arm.ArmState)
     (base : BitVec 64) :
-    CalleeUnwOkG F K G s (CallAt fa base) (Xr X0) IselSimUWitness.XR Uw vcp.CallSite :=
-  calleeUnwOkG_raise F K G s _ X0 _
+    CalleeUnwOkG F K G s (CallAt fa base) (Xr X0) IselSimUWitness.XR Uw vcp.CallSite (GotV vcp) :=
+  calleeUnwOkG_raise F K G s _ X0 _ _
 
 /-! ## The legacy pipeline -/
 

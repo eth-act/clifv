@@ -39,7 +39,7 @@ theorem backend_correct_final_cleanup_unwind_eh {p : Clif.Program} {f : Clif.Fun
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     (hX : ∀ s, XCallsOk env.toEnv (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
@@ -132,7 +132,7 @@ theorem final_applies_eh {X0 : ExtSem} {H : ArmHooks} {syms : String → Option 
   exact backend_correct_final_cleanup_unwind_eh (InSubset.of_verifiable hv (fun _ => rfl)) hc hlU
     (formsCovered_cleanup_complete (lowerScope_of hs) hc.lower hc.prepare _) hC (fun _ => hCT)
     (fun h => absurd h (by rw [ht]; decide))
-    (fun base s => calleeUnwOkG_raise _ _ _ s _ X0 _)
+    (fun base s => calleeUnwOkG_raise _ _ _ s _ X0 _ _)
     (fun _ => xCallsOk_env _ _ _) (fun _ => xCallsIndOk_env _ _ _)
     (fun _ => IselSimUWitness.xRaiseOk _ _ _) (fun _ => IselSimUWitness.xRaiseIndOk _ _ _)
     hsym rfl hcs' hrows hpad hlast hsv fdes 2 3 0x480000 EhWitness.symAddr

@@ -116,6 +116,25 @@ theorem tryRaiseSem_csemU (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (X
   · exact ⟨by assumption, (Option.some.inj h).symm⟩
   · cases h
 
+/-- **The GOT guard of a semantics**: every `call`/`tryCall` it defines passes the GOT guard of
+`gv` (`gotGuard`: at a call through the GOT the target is the symbol's address). -/
+def GotSem (gv : Nat → String → Prop) (X : ExtSem) (sem : ISem CV Arm.ArmState) : Prop :=
+  ∀ info uses w r, (sem (.call info) uses w = some r → gotGuard gv X info uses) ∧
+    ∀ ti, sem (.tryCall info ti) uses w = some r → gotGuard gv X info uses
+
+theorem gotSem_csemVU (gv : Nat → String → Prop) (F : BitVec 64 → Prop) (ctx : FnCtx)
+    (X : ExtSem) (XR : XRaise) : GotSem gv X (csemVU gv F ctx X XR) := by
+  intro info uses w r
+  refine ⟨fun h => ?_, fun ti h => ?_⟩ <;>
+  · simp only [csemVU] at h
+    split at h
+    · assumption
+    · cases h
+
+/-- Without GOT pins every semantics passes the guard. -/
+theorem gotSem_bot (X : ExtSem) (sem : ISem CV Arm.ArmState) : GotSem (fun _ _ => False) X sem :=
+  fun _ _ _ _ => ⟨fun _ _ _ _ _ h => h.elim, fun _ _ _ _ _ _ h => h.elim⟩
+
 /-! ## The activation with unwinding -/
 
 /-- The fixed data of one activation with unwinding: the callees' exceptional semantics `XR`,
@@ -224,14 +243,16 @@ theorem RLU.stepU_q_raise {R : RLU} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
 /-! ## The raising callees' contract -/
 
 /-- **The raising callees' obligation at one state** (`OperandsSoundCtlAtI`'s shape) for the
-allocated calls `i'` satisfying `P` of the VCode call `i` (with `CallInfo` `info`). -/
-def UnwSoundAtI (F FK : BitVec 64 → Prop) (P : MInst → Prop) (XR : XRaise) (U : Unw.UnwHooks)
-    (info : CallInfo) (i : MInst) (s : Arm.ArmState) : Prop :=
+allocated calls `i'` satisfying `P` of the VCode call `i` (with `CallInfo` `info`), under the
+GOT guard of `gv` (`gotGuard`, as the normal-return contract `CalleeOkG`). -/
+def UnwSoundAtI (F FK : BitVec 64 → Prop) (P : MInst → Prop) (gv : Nat → String → Prop)
+    (X : ExtSem) (XR : XRaise) (U : Unw.UnwHooks) (info : CallInfo) (i : MInst)
+    (s : Arm.ArmState) : Prop :=
   ∀ (c : CheckCtx) (wh : String) (ops : Array Operand) (regs : Array Reg) (i' : MInst)
     (w : Arm.ArmState),
     i.operands = .ok ops → c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
     i.assign regs = .ok i' → P i' → SameWorld F s w → Arm.CheckSPAlignment s →
-    Arm.r .ERR s = .None →
+    Arm.r .ERR s = .None → gotGuard gv X info (useVals ops regs s) →
     ∀ obj w', XR.raise (callDest info) (useVals ops regs s) w = some (obj, w') →
       ∃ t, U.raise (callDest info) s = some (obj, t) ∧ SameWorld F t w' ∧ FrameKeep FK s t ∧
         Arm.r .ERR t = .None ∧ t.program = s.program ∧
@@ -242,19 +263,19 @@ def UnwSoundAtI (F FK : BitVec 64 → Prop) (P : MInst → Prop) (XR : XRaise) (
 /-- `UnwSoundAtI` at the states of an activation with a dead stack of `K` bytes below `sp`
 and kept addresses `G` (`CallSoundCtlG`'s shape). -/
 def UnwSoundG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop) (s0 : Arm.ArmState)
-    (Pc : BitVec 64 → MInst → Prop) (XR : XRaise) (U : Unw.UnwHooks) (info : CallInfo)
-    (i : MInst) : Prop :=
+    (Pc : BitVec 64 → MInst → Prop) (gv : Nat → String → Prop) (X : ExtSem) (XR : XRaise)
+    (U : Unw.UnwHooks) (info : CallInfo) (i : MInst) : Prop :=
   ∀ s, K ≤ (spOf s).toNat → (∀ a, StackBelow K (spOf s) a → F a) →
     (∀ a, G a → s.mem a = s0.mem a) →
-    UnwSoundAtI F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) (Pc (Arm.r .PC s)) XR U info i s
+    UnwSoundAtI F (fun a => F a ∧ ¬ StackBelow K (spOf s) a) (Pc (Arm.r .PC s)) gv X XR U info i s
 
 /-- **The raising callees' contract** of an activation (`CalleeOkG`'s counterpart) for its call
-sites `S`. -/
+sites `S`, under the GOT guard of `gv`. -/
 structure CalleeUnwOkG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop)
     (s0 : Arm.ArmState) (Pc : BitVec 64 → MInst → Prop) (X : ExtSem) (XR : XRaise)
-    (U : Unw.UnwHooks) (S : CallInfo → Prop) : Prop where
+    (U : Unw.UnwHooks) (S : CallInfo → Prop) (gv : Nat → String → Prop) : Prop where
   os : ∀ info i, S info → (i = .call info ∨ ∃ ti, i = .tryCall info ti) →
-    UnwSoundG F K G s0 Pc XR U info i
+    UnwSoundG F K G s0 Pc gv X XR U info i
   /-- at a call whose callee returns normally (`X.call`), the machine's callee of that call does
   not raise (`UnwSoundG`'s states and premises) -/
   noRaise : ∀ info (i : MInst), S info → (i = .call info ∨ ∃ ti, i = .tryCall info ti) →
@@ -264,19 +285,20 @@ structure CalleeUnwOkG (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Pro
       (w : Arm.ArmState),
       i.operands = .ok ops → c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () →
       i.assign regs = .ok i' → Pc (Arm.r .PC s) i' → SameWorld F s w →
-      Arm.CheckSPAlignment s → Arm.r .ERR s = .None →
+      Arm.CheckSPAlignment s → Arm.r .ERR s = .None → gotGuard gv X info (useVals ops regs s) →
       X.call (callDest info) (useVals ops regs s) w ≠ none → U.raise (callDest info) s = none
   /-- a callee that returns normally does not raise -/
   excl : ∀ d uses w, X.call d uses w ≠ none → XR.raise d uses w = none
 
 /-- Without raising callees and without exceptional semantics the contract holds. -/
 theorem calleeUnwOkG_none (F : BitVec 64 → Prop) (K : Nat) (G : BitVec 64 → Prop)
-    (s0 : Arm.ArmState) (Pc : BitVec 64 → MInst → Prop) (X : ExtSem) (S : CallInfo → Prop) :
-    CalleeUnwOkG F K G s0 Pc X XRaise.none Unw.UnwHooks.none S where
+    (s0 : Arm.ArmState) (Pc : BitVec 64 → MInst → Prop) (X : ExtSem) (S : CallInfo → Prop)
+    (gv : Nat → String → Prop) :
+    CalleeUnwOkG F K G s0 Pc X XRaise.none Unw.UnwHooks.none S gv where
   os := by
-    intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h
+    intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ h
     cases h
-  noRaise := fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl
+  noRaise := fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl
   excl := fun _ _ _ _ => rfl
 
 /-! ## The trace of the old realisation is a run of the machine with unwinding -/
@@ -292,7 +314,7 @@ theorem csem_call_ne_none {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i
 /-- At a call of the old realisation's trace (`RL.GoodX`: the callee contract's premise, a
 normal call) the callee of the call line does not raise. -/
 theorem RLU.noRaise_of_goodX {R : RLU} (hR : R.Wf)
-    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     {u : Arm.ArmState} (hg : R.GoodX u) {x : Insn} (hx : R.AtLine u x) {d : Option String}
     (hd : (∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) : R.U.raise d u = none := by
   have hc : (∃ n, x = .bl n) ∨ ∃ r, x = .blr r := by
@@ -302,8 +324,12 @@ theorem RLU.noRaise_of_goodX {R : RLU} (hR : R.Wf)
   obtain ⟨ctx, i, ctl, ⟨info, hsite, hi⟩, hK, hD, hG, c, wh, ops, regs, i', w, outs, w', hops,
     hstat, hasg, hcall, hsw, hal, herr, hsem⟩ := hg.call x hx hc
   have hX := csem_call_ne_none hi (csemV_sub hsem)
+  have hgg : gotGuard R.gv R.X info (useVals ops regs u) := by
+    rcases hi with rfl | ⟨ti, rfl⟩
+    · exact csemV_guard hsem
+    · exact csemV_guard_try hsem
   have hn := hU.noRaise info i hsite hi u hK hD hG c wh ops regs i' w hops hstat hasg hcall hsw hal
-    herr hX
+    herr hgg hX
   obtain ⟨ic, hic, hdest⟩ : ∃ ic, (i' = .call ic ∨ ∃ ti, i' = .tryCall ic ti) ∧
       callDest ic = callDest info := by
     rcases hi with rfl | ⟨ti, rfl⟩
@@ -332,7 +358,7 @@ theorem RLU.noRaise_of_goodX {R : RLU} (hR : R.Wf)
 /-- **At a state of the old realisation's trace, the machine with unwinding steps as the old
 one.** -/
 theorem RLU.stepU_eq {R : RLU} (hR : R.Wf)
-    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     {u : Arm.ArmState} (hg : R.GoodX u) : R.stepU u = R.step u := by
   obtain ⟨x, ⟨j, t, hj, hpc⟩, -⟩ := hg.line
   have hins := insnAt_pc hR hj hg.prog hpc
@@ -347,7 +373,7 @@ theorem RLU.stepU_eq {R : RLU} (hR : R.Wf)
 
 /-- Along the old realisation's trace both machines run the same states. -/
 theorem RLU.iterN_stepU {R : RLU} (hR : R.Wf)
-    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite) :
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv) :
     ∀ (n : Nat) (s : Arm.ArmState), (∀ i < n, R.GoodX (iterN R.step i s)) →
       iterN R.stepU n s = iterN R.step n s
   | 0, _, _ => rfl
@@ -427,7 +453,7 @@ def RealizesTryRaise (R : RLU) (semU : Sem) : Prop :=
 agrees off raising calls and which raises (`.halt`) at a raising `call`; the trace predicate
 `GoodXU` (the old trace's `GoodX` states and the raising-call states). -/
 theorem realizes_allU {R : RLU} (hR : R.Wf) {sem₀ semU : Sem}
-    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hreal : Realizes R.vc R.rf sem₀ ckeep R.step (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodX)
     (hagree : ∀ i uses w, NoRaise R.XR i uses w → semU i uses w = sem₀ i uses w)
     (hcall : ∀ info uses w r obj w', semU (.call info) uses w = some r →

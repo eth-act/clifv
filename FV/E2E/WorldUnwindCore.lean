@@ -152,7 +152,7 @@ theorem restore_frameRow_fields {fs : Nat} {L : List AInst} {saved : List (Nat �
 /-- **At a state of the old trace no step leaves the frame by unwinding** (a call there is a
 normal call: its callee does not raise, `RLU.noRaise_of_goodX`). -/
 theorem not_unwExit_of_goodX {R : RLU} (hR : R.Wf)
-    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     {u : Arm.ArmState} (g : R.GoodX u) : ¬ UnwExit R.U R.T R.fa u := by
   rintro ⟨d, obj, t, hd, hr, -⟩
   obtain ⟨x, ⟨j, tt, hj, hpc⟩, -⟩ := g.line
@@ -176,7 +176,8 @@ addresses `G` and the program, and its last step leaves the frame by unwinding (
 theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {cc : CheckCtx} {ins : Array (Option AState)}
     {a0 : AState} (hcheck : CheckedAt R.vc R.rf cc ins a0) {semU : Sem}
-    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (hgot : GotSem R.gv R.X semU)
     (hRz : Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c)
       R.GoodXU)
     (hrets : ∀ us uses w, semU (.rets us) uses w = csem R.F R.ctx R.X (.rets us) uses w)
@@ -434,12 +435,15 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       have hraise' : R.XR.raise (callDest info) (useVals ops regs u) w1 = some (obj, w') := by
         rw [← useVals_of_store hstat hm', hU0]
         exact hraise
+      have hgg : gotGuard R.gv R.X info (useVals ops regs u) := by
+        rw [← useVals_of_store hstat hm', hU0]
+        exact (hgot _ _ _ _).1 hsem
       -- the raising callees' contract: the unwinder's state `t` at our call
       have hsite0 : R.vc.CallSite info := ⟨b, vb, k, hvb, .inl hi⟩
       have hcpc := callAt_of_q hq2 hvb hi call_hcall regs i' rfl hasg
       have hraiseU := hU.os info (.call info) hsite0 (.inl rfl) u
         (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
-        hst.gkeep cc' wh ops regs i' w1 hops hstat hasg hcpc hst.world hst.align hst.err
+        hst.gkeep cc' wh ops regs i' w1 hops hstat hasg hcpc hst.world hst.align hst.err hgg
       obtain ⟨t, hUr, hW, hFK, herrt, hprogt, hoth, hkc⟩ := hraiseU obj w' hraise'
       obtain ⟨hstepU, hRX⟩ := RLU.stepU_q_raise hR hq2 hvb hi (.inl rfl) hUr
       -- the personality continues at a plain call

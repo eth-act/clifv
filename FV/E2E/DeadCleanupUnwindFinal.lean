@@ -237,7 +237,7 @@ theorem backend_correct_final_cleanup_unwind_ex {p : Clif.Program} {f : Clif.Fun
     -- the raising callees' contract on the machine (unwinder, personality: `FV/Unw/Model.lean`)
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     -- the external contract (callees of `f`, linker)
     (hX : ∀ s, XCallsOk env.toEnv (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
@@ -301,7 +301,7 @@ theorem backend_correct_final_cleanup_unwind {p : Clif.Program} {f : Clif.Functi
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
     (hU : ∀ base s, CalleeUnwOkG
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K
-      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite)
+      (fun _ => False) s (CallAt fa base) X XR U vcp.CallSite (fun _ _ => False))
     (hX : ∀ s, XCallsOk env.toEnv (f.externs.map (·.2)) (fun sl cm w =>
       Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
         slotOff, (RAFrame.compute vcp rf).intBase⟩ f sl cm w) X)
