@@ -241,6 +241,28 @@ fn clif_name_of(obj: &str) -> String {
     }
 }
 
+/// The names a decoded CLIF function declares (`gvN = symbol … %name`, `fnN = … %name(…)`):
+/// every symbol its code may reference.
+fn clif_decl_names(path: &Path) -> Result<Vec<String>, String> {
+    let text = fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let mut names = Vec::new();
+    for l in text.lines() {
+        let t = l.trim_start();
+        let Some((lhs, rhs)) = t.split_once(" = ") else { continue };
+        let decl = (lhs.starts_with("gv") || lhs.starts_with("fn"))
+            && lhs.len() > 2
+            && lhs[2..].chars().all(|c| c.is_ascii_digit());
+        if !decl {
+            continue;
+        }
+        if let Some((_, n)) = rhs.split_once('%') {
+            let end = n.find(|c: char| matches!(c, '(' | ' ' | ',' | ')' | '+' | '-')).unwrap_or(n.len());
+            names.push(n[..end].to_string());
+        }
+    }
+    Ok(names)
+}
+
 fn fallback_all(funcs: &[(String, Dump)], why: &str) -> Vec<FnReport> {
     funcs
         .iter()
@@ -703,6 +725,10 @@ fn process_in(
     // `--keep-temps`: per Lean-compiled function, what `cargo fv link-proof` needs
     let mut link_fns: Vec<serde_json::Value> = Vec::new();
     let mut referenced_locals: BTreeSet<String> = BTreeSet::new();
+    // `--lean-link`: the names the compiled CLIF declares; the Lean linker reads the functions
+    // from their dumps (`Front.buildSpec`), so each needs its linked name even when the Lean
+    // mid-end (`--opt-proven-only`) removed the code referencing it
+    let mut declared: BTreeSet<String> = BTreeSet::new();
     for ((sym, d), c) in funcs.iter().zip(results) {
         let mut report = |status, reason: Option<String>, normal_returns: bool| {
             reports.push(FnReport {
@@ -736,6 +762,15 @@ fn process_in(
                     Some(b) => report(Status::Fallback, Some(b), false),
                     None => {
                         referenced_locals.extend(locals);
+                        if cfg.lean_link {
+                            for n in clif_decl_names(&clif)? {
+                                let o = obj_name_of(&n);
+                                if syms.local_count.get(&o) == Some(&1) {
+                                    referenced_locals.insert(o);
+                                }
+                                declared.insert(n);
+                            }
+                        }
                         // the dump the compiled (decoded) file came from: same file name
                         let dump = clif.file_name().map(|n| work.join("c.clif").join(n)).unwrap_or_default();
                         link_fns.push(serde_json::json!({
@@ -822,6 +857,9 @@ fn process_in(
         if n != *u {
             ours_redef.push(format!("{u} {}", final_name(&n)));
         }
+    }
+    for n in &declared {
+        clif_names.entry(n.clone()).or_insert_with(|| final_name(&obj_name_of(n)));
     }
     let ours_redef_path = work.join("redefine-lean.txt");
     write_list(&ours_redef_path, ours_redef)?;

@@ -12,11 +12,12 @@ for that function. Functions the Lean backend cannot compile keep cg_clif's code
 `target/fv-report.json` and a summary on stderr list every function as one of:
 
 * **verified**: compiled by the Lean backend and inside the end-to-end theorem
-  (`E2E.backend_correct_final`, or `E2E.backend_correct_opt_proven` with `--opt-proven-only`;
-  for `i128` functions `E2E.backend_correct_legal`, without `--opt`);
+  (`E2E.backend_correct_final`, or `E2E.backend_correct_opt_exe` with `--opt-proven-only`;
+  for `i128` functions `E2E.backend_correct_legal`, with `--opt-proven-only`
+  `E2E.backend_correct_legal_opt`);
 * **compiled, unverified**: compiled by the Lean backend but outside the theorem (the reason
-  is given, e.g. an indirect call, or an `i128` function under `--opt`), or over the
-  validation budget (see *What is verified, and what is not*);
+  is given, e.g. an indirect call with stack-passed arguments, or any function under `--opt`),
+  or over the validation budget (see *What is verified, and what is not*);
 * **fallback**: cg_clif's code (the reason is given).
 
 ```
@@ -97,7 +98,7 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | option | effect |
 |---|---|
 | `--opt` | run the Lean mid-end with every rule. Most simplify rules are unproven, so no function is reported verified. |
-| `--opt-proven-only` | run the Lean mid-end with the proven rule set; verified = inside `E2E.backend_correct_opt_proven` |
+| `--opt-proven-only` | run the Lean mid-end (`Opt.optimizeExe`) with the proven rule set; verified = inside `E2E.backend_correct_opt_exe` (`call_indirect` and `try_call` included; `i128` functions `E2E.backend_correct_legal_opt`). With `--lean-link`: `lean-link --opt`, the optimising executable compiler `Link.DeadCleanup.compileExeOpt` (`…compileExeOpt_correct{,_peak,_source,_source_peak}`; `--lean-link` is refused with `--opt`) |
 | `--no-fallback` | fail (exit 1, before running anything) unless every function of every workspace member runs Lean code (dependencies may keep fallbacks, e.g. float code; the report lists them) |
 | `--trap-replaced` | overwrite cg_clif's code of every Lean-compiled function (members and dependencies) with `udf` traps (see *Checking that the Lean code runs*) |
 | `--members-only` | only the workspace members go through the Lean backend; dependencies are plain cg_clif (the behaviour before agent/fv-deps; own target directory) |
@@ -296,9 +297,11 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   claimed about unwinding: the landing pads, the payload on the handler edges, the LSDA and the
   `.eh_frame` rows are trusted. `try_call_indirect` is verified the same way
   (agent/indirect-proof). A `try_call`'s callee may take stack-passed arguments
-  (agent/last-unverified). Every `try_call` function stays unverified under `--opt-proven-only`
-  (that theorem covers `try_call`-free functions only); after `i128` legalisation `try_call` is
-  covered (`E2E.backend_correct_legal`, agent/last-unverified), `try_call_indirect` is not.
+  (agent/last-unverified). Under `--opt-proven-only` `try_call` functions are verified too
+  (`E2E.backend_correct_opt_exe`, S1; the earlier `E2E.backend_correct_opt_proven` covers
+  `try_call`-free functions only); after `i128` legalisation `try_call` is covered
+  (`E2E.backend_correct_legal`, with the mid-end `E2E.backend_correct_legal_opt`),
+  `try_call_indirect` is not.
   Between agent/callee-fix and agent/trycall-contract (2026-10-02) these functions were reported
   **compiled, unverified** (`try_call: callee contract CalleeTryOk not yet satisfiable (theorem
   vacuous)`): the callee contract `CalleeTryOk` fixed the exception payload registers x0/x1 to
@@ -313,8 +316,10 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   special-purpose parameter"). Calls are interpreted in a function-free activation program
   under `XCallsIndOk`/`XCallsOk`; the linking theorem supplies the contracts for compiled
   program callees, including the caller itself. Under `--opt-proven-only` `call_indirect`
-  functions stay unverified (the mid-end simulation does not model them); after `i128`
-  legalisation a `call_indirect` without `i128` operands is covered.
+  functions are verified too (`E2E.backend_correct_opt_exe`, S1; the mid-end's simulation
+  models indirect calls; its well-formedness check still rejects them, so such functions only
+  get unreachable-block removal); after `i128` legalisation a `call_indirect` without `i128`
+  operands is covered.
 * **Recursion**: `cargo fv` compiles the original self-call directly, without an extern alias
   or a renamed copy of the function. Taking one's own function address is supported too.
   Recursive calls use the same per-activation callee contracts as other calls
@@ -421,6 +426,19 @@ refuses that case, inputs outside `SrcScopeB` and functions outside the input co
 on the CLIF alone (`fnScopeInB`, naming the failing ones): every executable it writes is covered,
 and its input is one on which the compiler is proven total (`InScopeIn`,
 `compileExe_total_reach_input`).
+
+With `--opt-proven-only`, `--lean-link` runs `lean-link --opt`: the optimising executable
+compiler `Link.DeadCleanup.compileExeOpt` (the same compiler on the functions the Lean mid-end
+`Opt.optimizeExe` optimised with the proven rules, as `lean-backend --opt-proven-only` compiled
+the units; S1/S2), covered by `compileExeOpt_correct{,_peak}` and, in `SrcScopeB`,
+`compileExeOpt_correct_source{,_peak}` (relating the executable to the **unoptimised** program;
+docs/contracts/e2e.md, "The optimising executable compiler"). `lean-link` prints `--opt:
+optFallbacks: N of M`: the functions whose printed optimised CLIF did not parse back to it and
+were compiled unoptimised (0 on fv-demo and the survey). On fv-demo and the survey the test
+results and verified counts are those of the default, with 2–3% smaller regions (fv-demo
+193628 → 189036 bytes, survey 564512 → 547428). The binary check below recompiles the
+unoptimised CLIF, so it reports `not verified` under `--opt-proven-only` (with or without
+`--lean-link`).
 
 The binary check (below) and `cargo fv link-proof`/`crate-proofs/` (*Proving a crate*) stay
 available as an **independent certificate**: they re-decide the checks on the linked file and

@@ -8,8 +8,9 @@ pub enum Mode {
     /// Backend only: compiled functions outside `unverifiedReason?` are inside
     /// `E2E.backend_correct_final_cleanup`.
     Plain,
-    /// `--opt-proven-only`: the Lean mid-end with the proven rule set; the end-to-end theorem is
-    /// `E2E.backend_correct_opt_proven_cleanup`.
+    /// `--opt-proven-only`: the Lean mid-end (`Opt.optimizeExe`) with the proven rule set; the
+    /// end-to-end theorem is `E2E.backend_correct_opt_exe_cleanup` (`call_indirect` and
+    /// `try_call` included; `i128`-legalised functions: `E2E.backend_correct_legal_opt_cleanup`).
     OptProven,
     /// `--opt`: the Lean mid-end with every simplify rule, most of them unproven, so no
     /// function is reported verified.
@@ -44,7 +45,7 @@ impl Mode {
     pub fn theorem(self) -> Option<&'static str> {
         match self {
             Mode::Plain => Some("E2E.backend_correct_final_cleanup"),
-            Mode::OptProven => Some("E2E.backend_correct_opt_proven_cleanup"),
+            Mode::OptProven => Some("E2E.backend_correct_opt_exe_cleanup"),
             Mode::Opt => None,
         }
     }
