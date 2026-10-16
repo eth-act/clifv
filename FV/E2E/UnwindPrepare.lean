@@ -57,7 +57,7 @@ theorem prep_sound_unw {vc vcp : VCode} {sem : Sem} (hds : DriverSem sem)
       split at h0
       · rename_i vb hvb; exact (Array.getElem?_eq_some_iff.mp hvb).1
       · cases h0
-    intro ⟨b, k, ρ, w1, vb, info, ops, outs, hstar, hvb, hi, hops, hraise, hsem⟩
+    intro ⟨b, k, ρ, w1, vb, info, ops, outs, hstar, hvb, hi, hops, hraise, hsem, hlen⟩
     obtain ⟨b', hLb, hb', hstar'⟩ := prep_star hds hcfg hcfg' hL hk hstar ⟨0, 0, ρ₀, w₀⟩
       ⟨b, k, ρ, w1⟩ 0 rfl rfl hL0 h0
     obtain ⟨vb0, vb', hvb0, hvb', -, -, -, hins, -⟩ := (hk b b' hLb hb').blocks
@@ -68,7 +68,7 @@ theorem prep_sound_unw {vc vcp : VCode} {sem : Sem} (hds : DriverSem sem)
       · rfl
       · exact absurd hst (setTargets_call info _ i')
     subst hi''
-    exact ⟨b', k, ρ, w1, vb', info, ops, outs, hstar', hvb', hi', hops, hraise, hsem⟩
+    exact ⟨b', k, ρ, w1, vb', info, ops, outs, hstar', hvb', hi', hops, hraise, hsem, hlen⟩
   · cases h
 
 /-- **`prepare` preserves returns, traps and exceptional ends**, from the `prepare`
