@@ -299,13 +299,11 @@ theorem restore_spec {row : Row} {t : Arm.ArmState} {cfa : BitVec 64} (hc : row.
     exact (restoreFold_program cfa t row.saved).2
 
 /-- **The frame invariant at a call** of an activation entered in `s0`, for the frame row
-`row` (CFA = x29 + 16): x29 + 16 is the entry sp, and every register the ABI's return
-condition names — x19–x29, x30 (the return address) and the low 64 bits of v8–v15 — is
-where the row says: at its save slot if the row has a rule for it, otherwise unchanged. -/
+`row`: the row's CFA is the entry sp, and every register the ABI's return condition names —
+x19–x29, x30 (the return address) and the low 64 bits of v8–v15 — is where the row says: at
+its save slot if the row has a rule for it, otherwise unchanged. -/
 structure FrameAt (row : Row) (s0 t : Arm.ArmState) : Prop where
-  cfaReg : row.cfaReg = 29
-  cfaOff : row.cfaOff = 16
-  fp : E2E.xreg 29 t + 16#64 = E2E.spv s0
+  cfa : row.cfa? t = some (E2E.spv s0)
   regs : ∀ n ∈ 30 :: E2E.calleeSavedX, restoredX row (E2E.spv s0) t n = E2E.xreg n s0
   vregs : ∀ n, 8 ≤ n → n < 16 →
     restoredV row (E2E.spv s0) t n = (Arm.r (.SFP (BitVec.ofNat 5 n)) s0).setWidth 64
@@ -317,11 +315,7 @@ theorem restore_frame {row : Row} {s0 t : Arm.ArmState} (h : FrameAt row s0 t)
     (herr : Arm.r .ERR t = .None) :
     ∃ t', restore row t = some t' ∧ E2E.ArmRet (E2E.xreg 30 s0) s0 t' ∧
       t'.program = t.program ∧ t'.mem = t.mem := by
-  have hc : row.cfa? t = some (E2E.spv s0) := by
-    simp only [Row.cfa?, regVal?]
-    rw [h.cfaReg, h.cfaOff, if_pos (by omega), Option.map_some, ← h.fp]
-    rfl
-  obtain ⟨t', hr, hsp, hpc, hx, hv, he, hp, hm⟩ := restore_spec hc
+  obtain ⟨t', hr, hsp, hpc, hx, hv, he, hp, hm⟩ := restore_spec h.cfa
   refine ⟨t', hr, ⟨?_, ?_, hsp, ?_, ?_⟩, hp, hm⟩
   · rw [hpc]; exact h.regs 30 (by simp)
   · rw [he, herr]
