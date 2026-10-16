@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleAuto
+import FV.Opt.Proof.KernelBV
 
 /-!
 # Embedding lemmas and template variants for `opts/bitops.isle`
@@ -346,26 +347,101 @@ macro "bswap_unroll" : tactic => `(tactic| simp only [Clif.Sem.bswap, Clif.Sem.p
   List.range_succ, List.range_zero, List.foldl, List.nil_append, List.cons_append, Nat.reduceDiv,
   Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub])
 
-theorem bswap_bswap_8 (x : BitVec 8) : Clif.Sem.bswap (Clif.Sem.bswap x) = x := by
-  bswap_unroll; bv_decide
+/-- Bit `j` after the first `k` steps of the `Sem.bswap` fold (`w` a multiple of 8): the top `k`
+bytes are filled, byte `j / 8` being byte `w / 8 - 1 - j / 8` of `x`. -/
+private theorem bswap_fold_getLsbD {w : Nat} (hw : w % 8 = 0) (x : BitVec w) (j : Nat) :
+    ∀ k, 8 * k ≤ w →
+    ((List.range k).foldl
+      (fun acc i => acc ||| (((x >>> (8 * i)) &&& BitVec.ofNat w 0xff) <<< (w - 8 * (i + 1)))) 0).getLsbD j =
+    (decide (w - 8 * k ≤ j) && decide (j < w) && x.getLsbD (8 * (w / 8 - 1 - j / 8) + j % 8))
+  | 0, _ => by
+    simp only [List.range_zero, List.foldl_nil]
+    by_cases h : w ≤ j <;> simp [h] <;> omega
+  | k + 1, hk => by
+    rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil, BitVec.getLsbD_or,
+      bswap_fold_getLsbD hw x j k (by omega)]
+    simp only [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_and, BitVec.getLsbD_ushiftRight,
+      BitVec.getLsbD_ofNat, show (0xff : Nat) = 2 ^ 8 - 1 from rfl, Nat.testBit_two_pow_sub_one]
+    rcases Nat.lt_or_ge j w with h1 | h1
+    · by_cases h2 : w - 8 * k ≤ j
+      · have h3 : ¬ j < w - 8 * (k + 1) := by omega
+        have h4 : ¬ j - (w - 8 * (k + 1)) < 8 := by omega
+        have h5 : w - 8 * (k + 1) ≤ j := by omega
+        simp [h1, h2, h3, h4, h5]
+      · by_cases h3 : j < w - 8 * (k + 1)
+        · have h5 : ¬ w - 8 * (k + 1) ≤ j := by omega
+          simp [h1, h2, h3, h5]
+        · have heq : 8 * k + (j - (w - 8 * (k + 1))) = 8 * (w / 8 - 1 - j / 8) + j % 8 := by omega
+          have h4 : j - (w - 8 * (k + 1)) < 8 := by omega
+          have h5 : w - 8 * (k + 1) ≤ j := by omega
+          have h6 : j - (w - 8 * (k + 1)) < w := by omega
+          simp [h1, h2, h3, h4, h5, h6, heq]
+    · have h1' : ¬ j < w := by omega
+      simp [h1']
+
+/-- Bit `j` of `Sem.bswap x` (`w` a multiple of 8): bit `j % 8` of byte `w / 8 - 1 - j / 8`. -/
+theorem getLsbD_bswap {w : Nat} (hw : w % 8 = 0) (x : BitVec w) (j : Nat) :
+    (Sem.bswap x).getLsbD j = (decide (j < w) && x.getLsbD (8 * (w / 8 - 1 - j / 8) + j % 8)) := by
+  unfold Sem.bswap
+  rw [bswap_fold_getLsbD hw x j (w / 8) (by omega)]
+  have : w - 8 * (w / 8) ≤ j := by omega
+  simp [this]
+
+example (x : BitVec 32) : (Sem.bswap x).getLsbD 3 = x.getLsbD 27 := by
+  rw [getLsbD_bswap (by decide)]; rfl
+
+private theorem bswap_bswap_of {w : Nat} (hw : w % 8 = 0) (x : BitVec w) :
+    Sem.bswap (Sem.bswap x) = x := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  have h1 : 8 * (w / 8 - 1 - j / 8) + j % 8 < w := by omega
+  have h2 : 8 * (w / 8 - 1 - (8 * (w / 8 - 1 - j / 8) + j % 8) / 8) +
+      (8 * (w / 8 - 1 - j / 8) + j % 8) % 8 = j := by
+    omega
+  rw [getLsbD_bswap hw, getLsbD_bswap hw, h2]
+  simp [hj, h1]
+
+/-- `cpopNatRec` as a sum of bits. -/
+private theorem cpopNatRec_eq_sum {w : Nat} (x : BitVec w) :
+    ∀ n acc, x.cpopNatRec n acc = acc + ((List.range n).map fun i => (x.getLsbD i).toNat).sum
+  | 0, acc => by simp
+  | n + 1, acc => by
+    rw [BitVec.cpopNatRec_succ, cpopNatRec_eq_sum x n, List.range_succ, List.map_append,
+      List.sum_append]
+    simp only [List.map_cons, List.map_nil, List.sum_cons, List.sum_nil]
+    omega
+
+/-- `popcnt (bswap x) = popcnt x` at width `w`: both bit counts as sums over the `w` bits, the
+bits of `bswap x` as bits of `x` (`getLsbD_bswap`), equal up to order (`omega`). -/
+macro "popcnt_bswap_tac " w:term : tactic => `(tactic| (
+  simp only [Sem.popcnt, BitVec.cpop]
+  apply congrArg (BitVec.ofNat _)
+  simp only [cpopNatRec_eq_sum, getLsbD_bswap (by decide : ($w : Nat) % 8 = 0),
+    List.range_succ, List.range_zero, List.nil_append, List.cons_append, List.map_cons, List.map_nil,
+    List.sum_cons, List.sum_nil, Nat.reduceDiv, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub,
+    Nat.reduceMod, Nat.reduceLT, decide_true, Bool.true_and]
+  all_goals omega))
+
+theorem bswap_bswap_8 (x : BitVec 8) : Clif.Sem.bswap (Clif.Sem.bswap x) = x :=
+  bswap_bswap_of (by decide) x
 theorem popcnt_bswap_8 (x : BitVec 8) : Clif.Sem.popcnt (Clif.Sem.bswap x) = Clif.Sem.popcnt x := by
-  bswap_unroll; bv_decide
-theorem bswap_bswap_16 (x : BitVec 16) : Clif.Sem.bswap (Clif.Sem.bswap x) = x := by
-  bswap_unroll; bv_decide
+  popcnt_bswap_tac 8
+theorem bswap_bswap_16 (x : BitVec 16) : Clif.Sem.bswap (Clif.Sem.bswap x) = x :=
+  bswap_bswap_of (by decide) x
 theorem popcnt_bswap_16 (x : BitVec 16) : Clif.Sem.popcnt (Clif.Sem.bswap x) = Clif.Sem.popcnt x := by
-  bswap_unroll; bv_decide
-theorem bswap_bswap_32 (x : BitVec 32) : Clif.Sem.bswap (Clif.Sem.bswap x) = x := by
-  bswap_unroll; bv_decide
+  popcnt_bswap_tac 16
+theorem bswap_bswap_32 (x : BitVec 32) : Clif.Sem.bswap (Clif.Sem.bswap x) = x :=
+  bswap_bswap_of (by decide) x
 theorem popcnt_bswap_32 (x : BitVec 32) : Clif.Sem.popcnt (Clif.Sem.bswap x) = Clif.Sem.popcnt x := by
-  bswap_unroll; bv_decide
-theorem bswap_bswap_64 (x : BitVec 64) : Clif.Sem.bswap (Clif.Sem.bswap x) = x := by
-  bswap_unroll; bv_decide
+  popcnt_bswap_tac 32
+theorem bswap_bswap_64 (x : BitVec 64) : Clif.Sem.bswap (Clif.Sem.bswap x) = x :=
+  bswap_bswap_of (by decide) x
 theorem popcnt_bswap_64 (x : BitVec 64) : Clif.Sem.popcnt (Clif.Sem.bswap x) = Clif.Sem.popcnt x := by
-  bswap_unroll; bv_decide
-theorem bswap_bswap_128 (x : BitVec 128) : Clif.Sem.bswap (Clif.Sem.bswap x) = x := by
-  bswap_unroll; bv_decide
+  popcnt_bswap_tac 64
+theorem bswap_bswap_128 (x : BitVec 128) : Clif.Sem.bswap (Clif.Sem.bswap x) = x :=
+  bswap_bswap_of (by decide) x
 theorem popcnt_bswap_128 (x : BitVec 128) : Clif.Sem.popcnt (Clif.Sem.bswap x) = Clif.Sem.popcnt x := by
-  bswap_unroll; bv_decide
+  popcnt_bswap_tac 128
 
 theorem bswap_bswap (t : Clif.Ty) (x : BitVec t.width) : Clif.Sem.bswap (Clif.Sem.bswap x) = x := by
   cases t
@@ -397,14 +473,14 @@ theorem natCast_toNat_eq_int {w : Nat} (a : BitVec w) (k : Int) :
   omega
 
 /-- The Boolean if-let conditions and `Option` equations of the context, normalised for
-`bv_decide`. -/
+`kbv`. -/
 macro "cond_simp" : tactic => `(tactic| (try simp (config := {decide := true}) only [beq_true,
     beq_iff_eq, natCast_toNat_eq_int, Int.cast_ofNat_Int, Int.reduceSub, Int.reduceToNat, Int.reduceLE,
     toNat_eq_iff_ofNat, true_and, Option.some.injEq, Nat.reducePow, Nat.reduceLT, BitVec.ofInt_ofNat,
     Int.reduceNeg] at *))
 
 /-- `sem_simp` plus the bit-reordering operations (`bswap` unrolled at a literal width,
-`bitrev` = `BitVec.reverse`, `popcnt` = `BitVec.cpop`, both read by `bv_decide`). -/
+`bitrev` = `BitVec.reverse`, `popcnt` = `BitVec.cpop`, both read by `kbv`). -/
 macro "sem_simp_b" : tactic => `(tactic| (
   cond_simp
   (try sem_simp)
@@ -428,7 +504,7 @@ macro "rule_bits_b" : tactic => `(tactic| (
               Clif.Sem.bor, Clif.Sem.bxor]
             ac_rfl)
          | (simp only [Clif.Sem.unary, bswap_bswap, popcnt_bswap, bitrev_bitrev, popcnt_bitrev]; done)
-         | (opt_cases_val <;> opt_cases_ty <;> opt_widths <;> sem_simp_b <;> first | ac_rfl | bv_decide))))
+         | (opt_cases_val <;> opt_cases_ty <;> opt_widths <;> sem_simp_b <;> first | ac_rfl | kbv))))
 
 set_option hygiene false in
 macro "rule_finish_var_b" : tactic => `(tactic| (
