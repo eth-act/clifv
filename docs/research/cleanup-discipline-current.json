@@ -1,0 +1,120 @@
+{
+  "utc": "2026-10-16T13:01:14.364267+00:00",
+  "free_bytes": 874570944512,
+  "worktrees": [
+    {
+      "path": "/home/lee/clifv",
+      "owner": "codygunton / #44",
+      "purpose": "Primary checkout: dirty preserved coordination/helper and comparison evidence",
+      "dirty_paths": 5,
+      "bytes": 37315809280,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume",
+      "owner": "codygunton / #44",
+      "purpose": "Active #140 proof source, single warm Lean cache, live serial validation and Rust tools",
+      "dirty_paths": 1657,
+      "bytes": 31952117760,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty preserved Stock implementation/recovery source; no build cache",
+      "dirty_paths": 34,
+      "bytes": 38064128,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-stock-lowering",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty pinned upstream input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-dupnames",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty pinned upstream input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/review-wasmtime",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty upstream review input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    }
+  ],
+  "policy": {
+    "target_free_gib": 100,
+    "minimum_projected_free_gib": 50,
+    "warm_caches": 1,
+    "cleanup": "after every batch, PR, delegated task, and stop",
+    "aggregate_agent_budget": true,
+    "automatic_cache_copy": false,
+    "cleanup_even_with_ample_headroom": true,
+    "delegated_tasks_require_cleanup_owner_and_shared_limits": true
+  },
+  "removed": [
+    "/home/lee/.clifv-recovery/20261016T113918Z-upstream-reconciliation (empty failed pre-mutation task directory)"
+  ],
+  "reason": "Mandatory call/sink batch:14candidate sources8current compiled modules/17Std audited roots plus6pending modules, source/old190 scratch/frozen canonical bytes preserved. Archived and removed one obsolete173264byte pure-table binary whose source acquired a new584 row; unique old binary/source/log snapshot byteverified and included in recovery archive. One warm cache still serves exact1930 serial; no new agent/tree/cache/complete-pipeline cold kernel. Pending source/kernel artifacts have an active coherent-integration purpose; other projects untouched.",
+  "helper_shell_syntax": "PASS bash -n",
+  "other_projects": "untouched",
+  "scratch_modules": 110,
+  "scratch_public_roots": 190,
+  "scratch_compiled_bytes": 80815536,
+  "live_validation": {
+    "state": "running",
+    "pid": 1233457,
+    "utc": "2026-10-16T11:41:01.189265+00:00",
+    "total": 1930,
+    "completed_modules": 16,
+    "index": 17,
+    "current": "FV.Backend.Proof.IselData",
+    "log": "/tmp/stock-coherent-build-FV.Backend.Proof.IselData.log",
+    "memcap": "22G"
+  },
+  "warm_cache_bytes": 27699937280,
+  "pending_scratch_modules": 8,
+  "pending_scratch_roots": 26,
+  "live_outgoing_watcher": {
+    "state": "waiting_dependencies",
+    "watcher_pid": 1276049,
+    "utc": "2026-10-16T12:00:09.123479+00:00",
+    "serial": {
+      "state": "running",
+      "pid": 1233457,
+      "total": 1930,
+      "index": 66,
+      "current": "FV.Backend.Proof.RegallocAtomic"
+    },
+    "missing": [
+      "FV.Backend.Proof.RegallocAtomic"
+    ],
+    "current_in_required_dependencies": true
+  },
+  "mandatory_candidate_modules": 14,
+  "mandatory_compiled_modules": 8,
+  "mandatory_audited_roots": 17,
+  "pending_mandatory_modules": 6,
+  "mandatory_cleanup_receipt": {
+    "utc": "20261016T124708Z",
+    "archive": "/home/lee/.clifv-recovery/20261016T124708Z-stale-pure-table/stale-artifacts.tar.gz",
+    "sha256": "e375633a165d2f9c38040a6893ab224b8da3a15e268b34264f1ebbb3218a48c5",
+    "every_member_byte_verified": true,
+    "removed": [
+      {
+        "path": "/tmp/StockPureSinkTable.olean",
+        "bytes": 173264
+      }
+    ],
+    "reason": "Compiled pure-table prototype predates added584 row; not current proof evidence, unused by any live compiler. Source/log/binary archived before removal; queued builder regenerates current source once dependencies restore."
+  }
+}

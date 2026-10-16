@@ -1,0 +1,62 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.ReturnABI.ordinary' does not depend on any axioms",
+      "line": 3,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.LowerTermOkABI.legacy' depends on axioms: [propext, Quot.sound]",
+      "line": 4,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.RunOkABI.prefix' depends on axioms: [propext]",
+      "line": 5,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.RunOkABI.legacy' depends on axioms: [propext]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.runOkABI_of_return_stop' depends on axioms: [propext, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_return_record_runOk' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.ReturnSourceWitness.stock_return_run_contract_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.TermContractWitness.stock_trap_term_contract_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}
