@@ -1,14 +1,15 @@
 import FV.Opt.Proof.RuleSkelEmbed
+import FV.Opt.Proof.KernelBV
 
 /-!
 # Rule-proof infrastructure: `iabs` and `truthy` if-lets
 
 **`iabs`** (`rule_auto_a`). `Sem.iabs x = if x.msb then -x else x` is not unfolded by
-`sem_simp`, so `bv_decide` saw it as an atom. `iabs_bif` is its `bif` normal form; `sem_simp_a` is
+`sem_simp`, so `kbv` would see it as an atom. `iabs_bif` is its `bif` normal form; `sem_simp_a` is
 `sem_simp_b` followed by it. `rule_bits_a` cancels products of negations (`arithmetic.isle` 38,
-`imul (ineg x) (ineg y)`) by `BitVec.neg_mul_neg` before any type split (a 128-bit product is out
-of reach of `bv_decide`), and drops `rule_bits_b`'s `rfl`/`ac_rfl` attempts: with them, the
-`iabs` goals stopped at the maximum recursion depth, an error `first` does not catch.
+`imul (ineg x) (ineg y)`) by `BitVec.neg_mul_neg` before any type split, and drops `rule_bits_b`'s
+`rfl`/`ac_rfl` attempts: with them, the `iabs` goals stopped at the maximum recursion depth, an
+error `first` does not catch.
 
 **`truthy` in a `simplify` if-let** (`rule_auto_t`, `rule_auto_tt`). `(if-let x (truthy v))` calls
 the multi term `truthy` (`bitops.isle` 110-122). `truthy_iflets` lifts `truthy_sound`
@@ -27,7 +28,7 @@ namespace Opt.Proof
 
 open Isle Isle.Opt Clif
 
-/-- `iabs` as `bif` on the sign bit (read by `bv_decide`). -/
+/-- `iabs` as `bif` on the sign bit (read by `kbv`). -/
 theorem iabs_bif {w : Nat} (x : BitVec w) : Sem.iabs x = bif x.msb then -x else x := by
   unfold Sem.iabs; cases x.msb <;> rfl
 
@@ -52,7 +53,7 @@ macro "rule_bits_a" : tactic => `(tactic| (
             ac_rfl)
          | (simp only [Clif.Sem.binary, Clif.Sem.unary, Clif.Sem.imul, Clif.Sem.ineg,
               BitVec.neg_mul_neg]; done)
-         | (opt_cases_val <;> opt_cases_ty <;> opt_widths <;> sem_simp_a <;> bv_decide (config := { timeout := 120 })))))
+         | (opt_cases_val <;> opt_cases_ty <;> opt_widths <;> sem_simp_a <;> kbv))))
 
 set_option hygiene false in
 /-- `rule_finish_b` with `rule_bits_a`. -/
@@ -175,7 +176,7 @@ macro "rule_truthy_iflet" : tactic => `(tactic| (
   replace hle3 := Valuation.le_trans hleb hle3
   clear hil' ho' hlab hleb))
 
-/-- `Sem.truthy` as read by `bv_decide` (`!=` is not). -/
+/-- `Sem.truthy` as read by `kbv` (`!(· == 0)`, not `!=`). -/
 theorem truthy_not_beq {w : Nat} (x : BitVec w) : Sem.truthy x = !(x == 0#w) := rfl
 
 set_option hygiene false in
