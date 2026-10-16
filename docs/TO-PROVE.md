@@ -60,12 +60,20 @@ file to `file0`, TLS offsets from `PT_TLS`) and `reachOkB` (the CLIF functions' 
 offsets within `bl`/`adrp` reach of the region; the compiled code relocates only against them,
 `relocOk_tab`); the same for the shipped compiler, `Link.DeadCleanup.compileExe_total_reach`
 (`FV/Link/ExeInputReachCleanup.lean`). `Link.compileExe_total_input` (`FV/Link/ExeInput.lean`) is
-the intermediate form with the output premise `CallPageReach`. Open for totality: `InScopeP`
-contains `lowersB` (`FV/E2E/LinkScopeDefs.lean`): `lowerFunction` and `prepare` accept the function
-and the prepared VCode meets `spillSizeOkB`. It is decidable on the input (it runs those two
-stages), but it is the compiler's own acceptance, an internal rejection kept as a scope condition
-(§1.2, kind 4): no theorem shows that `lowerFunction`/`prepare` succeed on `dominatedB`/
-`lowerScopeB` input (`lean-e2e-check`: 0 rejections among 1150 in-scope functions).
+the intermediate form with the output premise `CallPageReach`. `InScopeP` contains `lowersB`
+(`FV/E2E/LinkScopeDefs.lean`): `lowerFunction` and `prepare` accept the function and the prepared
+VCode meets `spillSizeOkB` — the compiler's own acceptance (§1.2, kind 4). V7 (#226) proves it from
+conditions on the CLIF function alone: `InScopeIn` (`FV/E2E/LinkScopeInputDefs.lean`; per function
+`fnScopeInB`, `fnScopeB` with `lowersB` replaced by `extendsWidenB`, `sizeOkB`, `driverInB`,
+`iselInB`) implies `InScopeP` (`E2E.LinkCheck.inScopeP_of_input`: `Prg.lowerFunction_ok_input`,
+an abstract interpretation of the ISLE rules; `Prep.prepare_ok`; `spillSizeOkB_of_sizeOkB`), so
+`Link.compileExe_total_reach_input` and `Link.DeadCleanup.compileExe_total_reach_input`
+(`FV/Link/ExeInputReachIn.lean`, `FV/Link/ExeInputReachCleanupIn.lean`) take `InScopeIn`.
+`lean-link --verified` checks `fnScopeInB`; on `lean-e2e-check`'s 1150 in-scope functions and the
+`cargo fv` crates (fv-demo 1346, survey 3179 functions) both scopes accept the same functions.
+Left: `progScopeB`'s `addrSlotsInB` (shared by both) reads whether the lowered code has an
+outgoing-argument area (`outAreaB`, by running `lowerFunction`; no acceptance condition: an error
+counts as no area).
 On the frontend bundle (T7d/T7e, docs/contracts/frontend.md): `lean-link` builds `S` in Lean from
 `cargo fv link-proof`'s `bundle.json` (`Front.buildSpec`); its source program is the codegen units'
 program under the linked names (`Front.buildSpec_srcProg`), alpha-equivalent to the units' program
@@ -83,7 +91,7 @@ Every check the compiler runs today falls in one of five kinds. The goal admits 
 | **Proven pass:** the pass is proven correct directly | encoder (`Insn.decode_encode`), `prepare` on `PrepDomain` (`Prep.prepare_correct`) | yes |
 | **Internal check with a proven fallback:** the compiler runs a check and on rejection uses a path that's proven directly; the theorem has no premise about the check | mid-end: every validator failure keeps the last accepted function (`FV/Opt/Optimize.lean:150-156`), so `optimize_sim_proven` has no checker premise | yes; rejections cost only code quality |
 | **Validator as a premise:** the theorem assumes the check returned `true` for this program | `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB` (`Compiled`/`FormsCovered`, `FV/E2E/Statement.lean:160-169`, `FV/E2E/Final.lean:227`); `okB`, `BinOk` (`goodN` was one until L4: now `goodN_iff`, the input condition "no call cycle reachable") | **no**: needs a completeness proof (the check never fails on what the compiler produces for in-scope input), a direct proof of the pass, or a fallback |
-| **Internal rejection without fallback:** compilation fails | function ≥ 128 MiB (`b` out of range after relaxation, `FV/Backend/Encode.lean` `Env.pcRel`; now the input condition `sizeOkB`), `ctlCheck` (the allocator-frame limit is gone, V5); `lowerFunction`/`prepare` rejections (kept in `InScopeP` as `lowersB`, §1.1) | allowed for correctness, but **violates totality**: each must be removed, proven unreachable, or moved into `InScope` as a condition on the input |
+| **Internal rejection without fallback:** compilation fails | function ≥ 128 MiB (`b` out of range after relaxation, `FV/Backend/Encode.lean` `Env.pcRel`; now the input condition `sizeOkB`), `ctlCheck` (the allocator-frame limit is gone, V5); `lowerFunction`/`prepare` rejections (proven unreachable on the input conditions `driverInB`/`iselInB`, V7: `InScopeIn` implies `InScopeP`'s `lowersB`, §1.1) | allowed for correctness, but **violates totality**: each must be removed, proven unreachable, or moved into `InScope` as a condition on the input |
 | **Per-program proof via `native_decide`** | `crate-proofs/Crates/*.lean`: `link_ok`, `bin_ok`, `stack_ok` (`FVTest/E2E/LinkCheckMain.lean:379-438`; since L4 `stack_ok` evaluates an input condition and the bound, `stackB_isSome_iff`) | **no**: disappears once linking, binary and stack checks are proven complete or replaced (WPs L1–L4); `compileExe` (L1) needs none |
 
 An external program (regalloc2, rust-lld) may stay in the loop only as an oracle whose result is checked
@@ -112,7 +120,7 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
 | i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`); `Pre` decided (`preB_iff`, `check_complete_of_preB`); the executable refines the original program (`Link.compileExe_correct_source`, recursive entries `…_source_peak` with the source run's depth, `legalProg_refines_depth`; the shipped compiler's `Link.DeadCleanup.…_source{,_peak}`; `SrcScopeB` decided on the parsed CLIF, by `lean-link --verified` too) | validator, complete on the decidable `Pre` (S6 done); source-level executable theorem with environment and run premises (S2/S3) | S2, S3, S6, L1f |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
-| lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`); `lowerFunction`'s and `prepare`'s own acceptance is an input condition (`lowersB` in `InScopeP`, §1.1), not proven | validator, complete on decidable input conditions; internal rejection kept in scope | V1 done |
+| lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`); `lowerFunction`'s and `prepare`'s acceptance proven on the input conditions `driverInB`/`iselInB` (`Prg.lowerFunction_ok_input`, `Prep.prepare_ok`, V7); `InScopeP` keeps `lowersB`, `InScopeIn` replaces it (§1.1) | validator, complete on decidable input conditions; total on decidable input conditions | V1, V7 done |
 | form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`) | validator, complete on decidable input conditions | V3 done |
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`), Lean fallback `spillAlloc` | `checkAlloc` (`FV/Backend/RegallocCheck.lean:423-441`) on regalloc2's output; on rejection `spillAlloc` (`allocResult`, `E2E.backend_correct_final_alloc`), accepted by `checkAlloc` for every in-scope function (`E2E.spillAccepted`, proven) | fallback; its acceptance proven | V4 (a) done; (b) open |
@@ -382,6 +390,45 @@ author's estimate, not measured), **Risk**.
   `lowerFunction` (`size_lower`), `prepare` (`vcW_prepare`) and `spillAlloc`
   (`spillWordBound_le`). Witness: `backend_correct_final_total_emit_input_witness`;
   `lean-e2e-check` 1149/1149.
+
+### V7. Lowering and `prepare` totality (the input scope without running the compiler) — **done** (#226)
+
+- **Was:** `InScopeP`'s per-function `lowersB` ran `lowerFunction` and `prepare` and required
+  their success (§1.2, kind 4): no theorem showed that they succeed on in-scope input.
+- **Done (2026-10-16):** `Backend.Proof.Prg.lowerFunction_ok_input`
+  (`FV/Backend/Proof/IselPrgDriver.lean`): `lowerFunction f = .ok vc` from `functionE`, `sigAbiOk`,
+  `dominatedB`, `lowerScopeB`, `arityOkB`, `entryParamsB`, `extendsWidenB` and two new decidable
+  input conditions, each a Cranelift verifier/ABI rule the driver or the ISLE rules check on the
+  way: `driverInB` (`LowerTotal.lean`: AAPCS64 convention, at most 8 returns, declared callees,
+  symbols and successor blocks, `i64` load/store addresses, the `try_call` table rules) and
+  `iselInB` (`IselPrgCtx.lean`: callee, `call_indirect` and `try_call` signatures with argument
+  locations and at most 8 ABI returns, declared `func_addr` callees and `stack_addr` slots, return
+  arity; at most 8 `try_call` table items, a proof-convenience bound). The driver part
+  (`lowerFunction_ok`) shows that no loop body returns `.error` given the ISLE side (`IselProg`);
+  the ISLE side is a progress analysis on the exported rules (`IselPrg*.lean`: abstract domain
+  `PA`, sound models of the extern helpers, summary table `IselPrgTab` of 1006 entries generated
+  by `FVTest/Backend/IselPrgGen.lean` and checked leaf-wise by `decide +kernel`, rules 862/863 and
+  `extr_32_or_64` by hand). `Prep.prepare_ok` (`PrepareTotal.lean`): `prepare` succeeds on
+  `lowerFunction`'s output (no new condition; the cleanup pipeline's `prepare (prune vc)` from it,
+  `prune_prepare_ok`).
+- **Scope:** `E2E.LinkCheck.fnScopeInB`/`InScopeIn` (`FV/E2E/LinkScopeInputDefs.lean`): `fnScopeB`/
+  `InScopeP` with `lowersB` replaced by `extendsWidenB`, `sizeOkB`, `driverInB`, `iselInB`;
+  `lowersB_of_input`, `fnScopeB_of_input`, `inScopeP_of_input` (`FV/E2E/LinkScopeInput.lean`) — the
+  conversion for every theorem taking `InScopeP` (the source, peak and bundle theorems take
+  `compileExe … = .ok file`, which the totality theorems give).
+- **Theorems:** `Link.compileExe_total_reach_input`, `Link.DeadCleanup.compileExe_total_reach_input`
+  (`FV/Link/ExeInputReachIn.lean`, `FV/Link/ExeInputReachCleanupIn.lean`: premise `InScopeIn`);
+  `E2E.backend_correct_final_total_input`, `E2E.backend_correct_final_cleanup_total_input`
+  (`FV/E2E/TotalInput.lean`: `backend_correct_final{,_cleanup}_total_emit_input` without the
+  `lowerFunction`/`prepare` success premises). Witnesses: `driverInB_witness`, `iselInB_witness`,
+  `backend_correct_final_total_input_witness` (kernel-checked; `dominatedB` is the witness's
+  premise: its fixpoint uses `Std.HashMap`, which the kernel does not reduce).
+- **Corpus:** `lean-e2e-check` compares both per-function scopes (a disagreement fails the run):
+  1150 / 1150, 0 disagreements. `cargo fv test --lean-link --verified` (`lean-link` checks
+  `fnScopeInB`): fv-demo (2 executables, 1346 functions) and the survey (18 executables, 3179
+  functions) written and tested with the same outcomes as before.
+- **Left:** `addrSlotsInB` (in `progScopeB`, unchanged) reads whether `lowerFunction`'s output has
+  an outgoing-argument area (`outAreaB`); it runs the lowering but assumes no success.
 
 ### L1. The executable compiler as one Lean function — **done** (`agent/compile-exe`)
 

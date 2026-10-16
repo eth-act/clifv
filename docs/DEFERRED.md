@@ -360,6 +360,30 @@ would only matter for executables over 128 MiB of text or offsets near `±4 GiB`
 - **rust-lld itself** stays a tool whose output `file0` is an input with decidable conditions
   (`file0OkB`); a verified Lean static linker for the outside objects (L2b stage 3) would remove it.
 
+## Lowering totality: what `InScopeIn` still leaves (V7, #226, 2026-10-16)
+
+Done (TO-PROVE V7): `lowerFunction` and `prepare` succeed on input conditions
+(`Prg.lowerFunction_ok_input`, `Prep.prepare_ok`); `InScopeIn` (`fnScopeInB`: `driverInB`,
+`iselInB`, `sizeOkB`, `extendsWidenB` for `lowersB`) implies `InScopeP`, and
+`Link.compileExe_total_reach_input`/`Link.DeadCleanup.compileExe_total_reach_input` take it.
+`lean-link --verified` checks `fnScopeInB`. Deferred:
+- **`addrSlotsInB`'s outgoing area.** `progScopeB`'s `addrSlotsInB` asks whether `lowerFunction`'s
+  output has an outgoing-argument area (`outAreaB`); it runs the lowering (an error counts as no
+  area, so it assumes no success). An input-side bound (stack-passed call arguments of `f`) would
+  make `InScopeIn` free of compiler runs.
+- **`maxTryItems`.** `iselInB` bounds every exception table to 8 items, a proof-convenience bound
+  (the table checks the `try_call` roots for up to 8 items), not a Cranelift rule; every corpus
+  and crate function meets it.
+- **`compileExe` itself** still checks `InScopeP` (with `lowersB`): the old statements keep their
+  premise; switching `compileExe`'s check to `InScopeIn` would change which inputs it accepts only
+  where `lowersB` holds without the input conditions (none in the corpus or the crates).
+- **Kernel witness of `dominatedB`.** `backend_correct_final_total_input_witness` takes
+  `dominatedB` as its premise: the availability fixpoint `inFix` uses `Std.HashMap`/`Std.HashSet`,
+  which the kernel does not reduce (`USize`); `lean-e2e-check` evaluates it on every function.
+- **Proof engineering.** `IselPrgLe` derives `ReflBEq`/`LawfulBEq` for `CTy`/`OK` globally;
+  `IselPrgHand`'s `handIds_program` decides over the rule ids of all rule lists; the table check
+  could evaluate `aRule` once per rule (the soundness proof would follow).
+
 ## Frontend boundary: what stays trusted after T7b/T7c (#221, 2026-10-16)
 
 T7b/T7c are done (docs/contracts/frontend.md): cg_clif, patched by

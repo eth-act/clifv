@@ -417,7 +417,10 @@ the CLIF run traps only explicitly. When `lean-link` prints `written by
 Link.DeadCleanup.leanLink` (`coverage: none`: the program fails an input condition, which it
 names), the executable is linked the same way but not covered by `compileExe_correct`; the
 binary check and `link-proof` below still apply. `cargo fv build --lean-link --verified`
-refuses that case and inputs outside `SrcScopeB`: every executable it writes is covered.
+refuses that case, inputs outside `SrcScopeB` and functions outside the input conditions decided
+on the CLIF alone (`fnScopeInB`, naming the failing ones): every executable it writes is covered,
+and its input is one on which the compiler is proven total (`InScopeIn`,
+`compileExe_total_reach_input`).
 
 The binary check (below) and `cargo fv link-proof`/`crate-proofs/` (*Proving a crate*) stay
 available as an **independent certificate**: they re-decide the checks on the linked file and
