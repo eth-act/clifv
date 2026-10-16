@@ -1,0 +1,104 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.live_okAt' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 4,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_no_new_effects' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 5,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepCheckAt_complete' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareCheckedAt_complete' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepare_domain' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepCheckAt_complete' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepareCheckedAt_complete' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepare_return' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepare_halt' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepare_sound' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PrepareCompleteWitness.generic_prepare_complete_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 14,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PrepareCompleteWitness.stock_prepare_complete_return_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 15,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PrepareCompleteWitness.stock_prepare_complete_halt_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 16,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PrepareCompleteWitness.stock_prepare_complete_critical_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 17,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}

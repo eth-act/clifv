@@ -1,0 +1,52 @@
+{
+  "checked_utc": "2026-10-16T03:16:48.187580+00:00",
+  "free_bytes": 894203441152,
+  "worktrees": [
+    {
+      "path": "/home/lee/clifv",
+      "dirty_entries": 5,
+      "head": "f866008fb39d02371bf72fb19d6c81480753f796",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume",
+      "dirty_entries": 1122,
+      "head": "01081291e566bc4eb80419a526c5725406ed62b7",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering",
+      "dirty_entries": 34,
+      "head": "9e5251d941e42f1f05ad29567573ac0373f84792",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-stock-lowering",
+      "dirty_entries": 6,
+      "head": "46c23a87dac1465986a8ad53ba6a7ae49372857b",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-dupnames",
+      "dirty_entries": 6,
+      "head": "46c23a87dac1465986a8ad53ba6a7ae49372857b",
+      "decision": "preserve saved work"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/review-wasmtime",
+      "dirty_entries": 6,
+      "head": "46c23a87dac1465986a8ad53ba6a7ae49372857b",
+      "decision": "preserve saved work"
+    }
+  ],
+  "retained_disk_bytes": {
+    "/home/lee/clifv/.worktrees/driver-proof-resume/.lake": 27688128512,
+    "/home/lee/clifv/.worktrees/driver-proof-resume/rust": 3860746240,
+    "/home/lee/clifv/.worktrees/driver-proof-resume/target": 128897024,
+    "/home/lee/clifv/target/byte-agreement-tools": 3936382976
+  },
+  "removed_this_audit": [],
+  "conclusion": "No unneeded clean worktree or obsolete duplicate build cache identified. Retain active warm Lean/Rust caches and comparison toolchain; preserve all dirty source and archived evidence.",
+  "discipline": "Check disk before worktree creation/heavy builds; target 100 GiB free and projected 50 GiB floor. Review cleanup after every batch/PR/stop. One warm build cache by default; aggregate CPU/memory/I/O budgets across agents; OMP_NUM_THREADS=2 OMP_THREAD_LIMIT=2 LEAN_NUM_THREADS=2 for validation. Never clean other projects.",
+  "previous_cleanup_receipt": "/home/lee/.clifv-recovery/footprint-20261016T001348Z/receipt.json"
+}
