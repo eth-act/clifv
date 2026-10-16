@@ -3,16 +3,16 @@ import FV.Backend.Isel
 /-!
 # Typed AAPCS64 placement: the integer case is the x-register placement
 
-`abiArgLocs`/`abiRetRegs` (`FV/Backend/Isel.lean`, Cranelift's aarch64 `compute_arg_locs`)
+`sigArgLocs`/`abiRetRegs` (`FV/Backend/Isel.lean`, Cranelift's aarch64 `compute_arg_locs`)
 place integer values in x0..x7 and `f32`/`f64` values in v0..v7, with separate counters. On
-integer values that is the placement the lowering always used:
+integer values that is the x-register placement the lowering used before floats:
 
 * `argLocsC_int`: `argLocsC` of integer values is `argLocs`;
 * `retRegsC_int`: `retRegsC` of `n` integer values is `retRegs n`;
-* `sigArgLocs_eq`: the lowering's `sigArgLocs` (`sigArgs` admits integer parameters only) is the
-  x-register placement through `argLocs`, unchanged by the typed ABI;
-* `abiArgLocs_int` / `abiRetRegs_int`: on a signature whose parameters (returns) are all
-  integers, the typed placement is the lowering's `sigArgLocs` (`retRegs`).
+* `sigArgLocs_eq`: on a signature with integer parameters only, `sigArgLocs` is the x-register
+  placement through `argLocs` (the definition of `sigArgLocs` before the typed ABI);
+* `abiRetRegs_int`: on a signature whose ABI returns are all integers, `abiRetRegs` is
+  `retRegs` of their count; `regsClasses_int`: the classes of integer vregs.
 
 Witnesses at the end: `(f64, i64, f32)` parameters go to `[v0, x0, v1]`, as do its returns.
 -/
@@ -98,8 +98,8 @@ theorem mapM_ok_length {α β ε : Type} (g : α → Except ε β) :
         subst h
         simp [mapM_ok_length g hl]
 
-/-- `abiArgs` sizes one byte count per parameter. -/
-theorem abiArgs_length {s : Clif.Signature} {bytes : List Nat} (h : abiArgs s = .ok bytes) :
+/-- `sigArgs` sizes one byte count per parameter. -/
+theorem sigArgs_length {s : Clif.Signature} {bytes : List Nat} (h : sigArgs s = .ok bytes) :
     bytes.length = s.params.length :=
   mapM_ok_length _ h
 
@@ -108,30 +108,12 @@ theorem not_isFloat {t : Clif.Ty} (h : t.isInt = true) : ¬ t.isFloat = true := 
   show ¬ (!t.isInt) = true
   rw [h]; decide
 
-/-- `sigArgs` admits integer parameters only, sized as `abiArgs` sizes them. -/
-theorem sigArgs_int {s : Clif.Signature} {bytes : List Nat} (h : sigArgs s = .ok bytes) :
-    s.params.all (·.ty.isInt) = true ∧ abiArgs s = .ok bytes := by
-  unfold sigArgs at h
-  split at h
-  · cases h
-  · rename_i hf
-    refine ⟨List.all_eq_true.mpr fun p hp => ?_, h⟩
-    have := List.any_eq_false.mp (Bool.not_eq_true _ ▸ hf) p hp
-    revert this
-    show ¬ (!p.ty.isInt) = true → p.ty.isInt = true
-    cases p.ty.isInt <;> decide
-
-theorem sigArgs_of_int {s : Clif.Signature} (h : s.params.all (·.ty.isInt) = true) :
-    sigArgs s = abiArgs s := by
-  have : s.params.any (·.ty.isFloat) = false :=
-    List.any_eq_false.mpr fun p hp => not_isFloat (List.all_eq_true.mp h p hp)
-  simp only [sigArgs, this, Bool.false_eq_true, ↓reduceIte]
-
-/-- **The lowering's argument locations are the x-register placement.** `sigArgLocs` is
-`paramLocs` with the `sigArgs` sizes, which exist for integer parameters only; there the typed
-placement (`argLocsC` of `.int` values) is `argLocs`. The right-hand side is the definition of
+/-- **The argument locations of an integer signature are the x-register placement.**
+`sigArgLocs` is `paramLocs` with the `sigArgs` sizes; on integer parameters the typed placement
+(`argLocsC` of `.int` values) is `argLocs`. The right-hand side is the definition of
 `sigArgLocs` before the typed ABI. -/
-theorem sigArgLocs_eq (s : Clif.Signature) : sigArgLocs s = (do
+theorem sigArgLocs_eq {s : Clif.Signature} (hi : s.params.all (·.ty.isInt) = true) :
+    sigArgLocs s = (do
     let bytes ← sigArgs s
     if s.params.any (·.purpose == .sret) then
       let normal := ((s.params.zip bytes).filter (!·.1.purpose == .sret)).map (·.2)
@@ -143,8 +125,7 @@ theorem sigArgLocs_eq (s : Clif.Signature) : sigArgLocs s = (do
   cases hb : sigArgs s with
   | error e => rfl
   | ok bytes =>
-    obtain ⟨hi, ha⟩ := sigArgs_int hb
-    have hl := abiArgs_length ha
+    have hl := sigArgs_length hb
     simp only [List.all_eq_true] at hi
     have hz : ∀ L : List (Clif.AbiParam × Nat), (∀ q ∈ L, q ∈ s.params.zip bytes) →
         ∀ q ∈ L, q.1.ty.isInt = true := fun L hL q hq => hi q.1 (List.of_mem_zip (hL q hq)).1
@@ -153,13 +134,6 @@ theorem sigArgLocs_eq (s : Clif.Signature) : sigArgLocs s = (do
     have e2 := map_tyClass_int (s.params.zip bytes) (hz _ fun q hq => hq)
     rw [map_snd_zip _ _ (by omega)] at e2
     simp only [bind, Except.bind, paramLocs, e1, e2, argLocsC_int]
-
-/-- **The typed argument locations of an integer signature are the lowering's**: on a
-signature whose parameters are all integers, `abiArgLocs` (x0..x7 for integers, v0..v7 for
-floats) is `sigArgLocs`, the x-register placement of `sigArgLocs_eq`. -/
-theorem abiArgLocs_int {s : Clif.Signature} (h : s.params.all (·.ty.isInt) = true) :
-    abiArgLocs s = sigArgLocs s := by
-  simp only [abiArgLocs, sigArgLocs, sigArgs_of_int h]
 
 /-! ## Returns -/
 
@@ -197,6 +171,19 @@ theorem abiRetRegs_int {s : Clif.Signature} (h : (sigRets s).all (·.ty.isInt) =
     exact tyClass_int (h p hp)
   rw [this, retRegsC_int]
 
+/-- The classes of returned integer vregs are `.int`, so `retRegsC` of them is `retRegs` of
+their count. -/
+theorem regsClasses_int {rss : List (List Reg)}
+    (h : ∀ rs ∈ rss, ∃ n r, rs = .vreg n .int :: r) :
+    retRegsC (regsClasses rss) 0 0 = retRegs rss.length := by
+  have : regsClasses rss = List.replicate rss.length .int := by
+    apply List.eq_replicate_iff.mpr
+    refine ⟨by simp [regsClasses], fun c hc => ?_⟩
+    obtain ⟨rs, hrs, rfl⟩ := List.mem_map.mp hc
+    obtain ⟨n, r, rfl⟩ := h rs hrs
+    rfl
+  rw [this, retRegsC_int]
+
 /-! ## Witnesses -/
 
 /-- `(f64, i64, f32) → (f64, i64, f32)`. -/
@@ -205,14 +192,10 @@ def sigFIF : Clif.Signature :=
     returns := [⟨.f64, .none, .normal⟩, ⟨.i64, .none, .normal⟩, ⟨.f32, .none, .normal⟩] }
 
 /-- Floats and integers count separately: `(f64, i64, f32)` goes to `[v0, x0, v1]`. -/
-theorem abiArgLocs_sigFIF :
-    abiArgLocs sigFIF = .ok ([.reg (.v 0), .reg (.x 0), .reg (.v 1)], 0) := rfl
+theorem sigArgLocs_sigFIF :
+    sigArgLocs sigFIF = .ok ([.reg (.v 0), .reg (.x 0), .reg (.v 1)], 0) := rfl
 
 theorem abiRetRegs_sigFIF : abiRetRegs sigFIF = some [.v 0, .x 0, .v 1] := rfl
-
-/-- The lowering does not pass float parameters. -/
-theorem sigArgLocs_sigFIF :
-    sigArgLocs sigFIF = .error "float parameter (FP argument moves are not lowered)" := rfl
 
 /-- Nine `f64`, an `i64`, an `f32`: v0..v7, the ninth `f64` on the stack, the `i64` in x0 (the
 X counter is untouched by the floats), the `f32` in an 8-byte stack slot. -/
@@ -220,8 +203,8 @@ def sigSpill : Clif.Signature :=
   { params := List.replicate 9 ⟨.f64, .none, .normal⟩ ++
       [⟨.i64, .none, .normal⟩, ⟨.f32, .none, .normal⟩] }
 
-theorem abiArgLocs_sigSpill :
-    abiArgLocs sigSpill = .ok ((List.range 8).map (fun n => .reg (.v n)) ++
+theorem sigArgLocs_sigSpill :
+    sigArgLocs sigSpill = .ok ((List.range 8).map (fun n => .reg (.v n)) ++
       [.stack 0, .reg (.x 0), .stack 8], 16) := rfl
 
 /-- An `sret` pointer in x8 takes neither counter: `(sret i64, f64, i32)` goes to
@@ -229,8 +212,8 @@ theorem abiArgLocs_sigSpill :
 def sigSret : Clif.Signature :=
   { params := [⟨.i64, .none, .sret⟩, ⟨.f64, .none, .normal⟩, ⟨.i32, .none, .normal⟩] }
 
-theorem abiArgLocs_sigSret :
-    abiArgLocs sigSret = .ok ([.reg (.x 8), .reg (.v 0), .reg (.x 0)], 0) := rfl
+theorem sigArgLocs_sigSret :
+    sigArgLocs sigSret = .ok ([.reg (.x 8), .reg (.v 0), .reg (.x 0)], 0) := rfl
 
 theorem abiRetRegs_sigSret : abiRetRegs sigSret = some [.x 0] := rfl
 
@@ -239,8 +222,8 @@ theorem abiRetRegs_nineFloats :
     abiRetRegs { returns := List.replicate 9 ⟨.f32, .none, .normal⟩ } = none := rfl
 
 /-- An integer signature `(i64, sret i64, i8 × 8) → ()`: its hypotheses hold, and both sides of
-`abiArgLocs_int`/`sigArgLocs_eq` are x0..x7 with x8 for the `sret` pointer and the ninth
-integer on the stack. -/
+`sigArgLocs_eq` are x0..x7 with x8 for the `sret` pointer and the ninth integer on the
+stack. -/
 def sigInt : Clif.Signature :=
   { params := ⟨.i64, .none, .normal⟩ :: ⟨.i64, .none, .sret⟩ :: List.replicate 8 ⟨.i8, .none, .normal⟩ }
 
@@ -248,11 +231,10 @@ theorem sigInt_int : sigInt.params.all (·.ty.isInt) = true := rfl
 
 theorem sigInt_rets_int : (sigRets sigInt).all (·.ty.isInt) = true := rfl
 
-theorem abiArgLocs_sigInt :
-    abiArgLocs sigInt = .ok (.reg (.x 0) :: .reg (.x 8) ::
-      ((List.range' 1 7).map (fun n => .reg (.x n)) ++ [.stack 0]), 16) := rfl
-
-theorem sigArgLocs_sigInt : sigArgLocs sigInt = abiArgLocs sigInt := (abiArgLocs_int sigInt_int).symm
+theorem sigArgLocs_sigInt :
+    sigArgLocs sigInt = .ok (.reg (.x 0) :: .reg (.x 8) ::
+      ((List.range' 1 7).map (fun n => .reg (.x n)) ++ [.stack 0]), 16) := by
+  rw [sigArgLocs_eq sigInt_int]; rfl
 
 theorem abiRetRegs_sigInt : abiRetRegs sigInt = retRegs 1 := abiRetRegs_int sigInt_rets_int
 
