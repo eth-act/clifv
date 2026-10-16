@@ -156,7 +156,10 @@ theorem sigArgs_ok {s : Clif.Signature} (hA : sigAbiOk s = true)
   refine lmapM_ok' _ fun p hp => ?_
   simp only [sigAbiOk, Bool.and_eq_true, List.all_eq_true] at hA
   have h1 := hA.1.1.1 p hp
-  have h2 : p.ty ≠ .i128 := by simpa [Compile.tyE] using List.all_eq_true.mp hE p hp
+  have h2 : p.ty ≠ .i128 := by
+    have := List.all_eq_true.mp hE p hp
+    simp only [Compile.tyE, Bool.and_eq_true, bne_iff_ne] at this
+    exact this.2
   simp only [Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true] at h1
   rcases h1 with h1 | ⟨h1, h3⟩ <;> simp [pure, Except.pure, *]
 
@@ -828,7 +831,10 @@ theorem lowerFunction_ok {f : Clif.Function} (hE : Compile.functionE f = true)
   obtain ⟨locs, n, hlocs⟩ := sigArgLocs_ok hbytes
   have h2 : (f.sig.returns.any (·.ty == .i128)) = false := by
     simp only [List.any_eq_false, beq_iff_eq]
-    intro x hx; simpa [Compile.tyE] using hrE x hx
+    intro x hx
+    have := hrE x hx
+    simp only [Compile.tyE, Bool.and_eq_true, bne_iff_ne] at this
+    exact this.2
   have h3 : (f.sig.params.any (·.purpose == .sret) && !f.sig.returns.isEmpty) = false := by
     simp only [sigAbiOk, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at hsig
     rcases hsig.2 with h | h <;> simp [h]

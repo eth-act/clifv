@@ -227,7 +227,9 @@ theorem matchArgsN_nil_eq {V σ : Type} (p : Isle.Program) (msem : MultiSem V σ
     (env : Interp.Env V) : Interp.matchArgsN p msem st [] [] env = pure [env] := by
   simp [Interp.matchArgsN]
 
-theorem tyIntRefScalar64_i128 : Rust.tyIntRefScalar64 (CTy.ofClif .i128) = none := by decide
+theorem tyIntRefScalar64_none {t : Ty} (h : ¬(t.isInt = true ∧ t ≠ .i128)) :
+    Rust.tyIntRefScalar64 (CTy.ofClif t) = none := by
+  cases t <;> simp_all [Ty.isInt] <;> decide
 
 set_option hygiene false in
 /-- A `value_type` if-let on the class `m'` bound by `rule_truthy_iflet`: split its type read;
@@ -242,15 +244,14 @@ macro "truthy_value_type" : tactic => `(tactic| (
     have hty := GraphOk.typeOf_eq hG hPa hTy hm'
     try simp only at hty
     subst hty
-    rcases Classical.em (xt = .i128) with hxt | hxt
+    rcases Classical.em (xt.isInt = true ∧ xt ≠ .i128) with ⟨hxi, hxt⟩ | hxt
     all_goals first
-      | (subst hxt
-         opt_eval hil [tyIntRefScalar64_i128, bindAll_nil_eq]
+      | (opt_eval hil [tyIntRefScalar64_none hxt, bindAll_nil_eq]
          simp only [Except.ok.injEq, Prod.mk.injEq] at hil
          obtain ⟨rfl, rfl, rfl⟩ := hil
          simp only [List.not_mem_nil] at henv2
          done)
-      | (opt_eval hil [tyIntRefScalar64_ofClif hxt, bindAll_cons_eq, bindAll_nil_eq,
+      | (opt_eval hil [tyIntRefScalar64_ofClif hxt hxi, bindAll_cons_eq, bindAll_nil_eq,
            matchArgsN_nil_eq, List.append_nil]
          simp only [Except.ok.injEq, Prod.mk.injEq] at hil
          obtain ⟨rfl, rfl, rfl⟩ := hil

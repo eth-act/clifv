@@ -1,4 +1,5 @@
 import FV.Clif.Syntax
+import FV.Clif.FloatLit
 
 /-!
 # CLIF text parser (subset S)
@@ -192,6 +193,43 @@ def anyInt : P Int := do
     | some i => return i
     | none => malformed s!"bad integer literal '{s}'"
   | t => malformed s!"expected integer, got '{t.show}'"
+
+/-- The text of a float literal (`Clif.FloatLit`), reassembled from the line's tokens: the
+lexer splits `-0x1.8p-3` into `-0x1`, `.`, `8p`, `-3` and `-NaN:0x1` into `-`, `NaN`, `:`,
+`0x1`. -/
+def floatText : P String := do
+  let sign ← do
+    if ← optPunct '-' then pure "-" else if ← optPunct '+' then pure "+" else pure ""
+  match ← next with
+  | .int s =>
+    let mut s := sign ++ s
+    if ← optPunct '.' then
+      match ← next with
+      | .int f | .word f => s := s ++ "." ++ f
+      | t => malformed s!"bad float literal after '{s}.': '{t.show}'"
+    if s.endsWith "p" then
+      match ← peek with
+      | some (.int e) => advance; s := s ++ e
+      | _ => pure ()
+    return s
+  | .word w =>
+    if w == "NaN" || w == "sNaN" then
+      if ← optPunct ':' then
+        match ← next with
+        | .int p => return s!"{sign}{w}:{p}"
+        | t => malformed s!"bad NaN payload '{t.show}'"
+      else return sign ++ w
+    else if w == "Inf" then return sign ++ w
+    else malformed s!"expected a float literal, got '{w}'"
+  | t => malformed s!"expected a float literal, got '{t.show}'"
+
+/-- A float literal of the float type `t`, as its bit pattern. -/
+def floatLit (t : Ty) : P (BitVec t.width) := do
+  let s ← floatText
+  let (w, tb) := FloatLit.fields t.width
+  match FloatLit.parse? s w tb with
+  | some n => return BitVec.ofNat t.width n
+  | none => malformed s!"bad {t.name} literal '{s}'"
 
 /-- A numbered entity `preN`. -/
 def entity (pre : String) : P Nat := do
@@ -549,9 +587,13 @@ def item (op : String) (sfx : Option Ty) : P Item := do
   match op with
   | "iconst" =>
     let t ← needTy op sfx
-    if t == .i128 then malformed "iconst.i128 is not valid CLIF"
+    if t == .i128 || t.isFloat then malformed s!"iconst.{t.name} is not valid CLIF"
     let i ← anyInt
     return .inst (.iconst t (BitVec.ofInt t.width i))
+  -- `f32const`/`f64const` are the constants of the float types: `Inst.iconst` at a float type
+  -- (`docs/contracts/clif.md`, "Floats")
+  | "f32const" => return .inst (.iconst .f32 (← floatLit .f32))
+  | "f64const" => return .inst (.iconst .f64 (← floatLit .f64))
   | "uadd_overflow_trap" =>
     let x ← value; expectPunct ','; let y ← value; expectPunct ','
     let c ← trapCode
@@ -764,6 +806,7 @@ def function : P Function := do
 /-! ## Run commands -/
 
 def dataValue (t : Ty) : P Val := do
+  if t.isFloat then return ⟨t, ← floatLit t⟩
   match ← next with
   | .int s =>
     match parseIntLit s with

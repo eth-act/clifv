@@ -12,7 +12,8 @@ namespace Compile
 
 open Clif
 
-def tyE (t : Ty) : Bool := t != .i128
+/-- Integer types of E: `i8 … i64` (not `i128`, no floats). -/
+def tyE (t : Ty) : Bool := t.isInt && t != .i128
 
 def unaryE : UnaryOp → Bool
   | .ineg | .bnot | .clz | .ctz | .popcnt | .bitrev => true
@@ -20,7 +21,7 @@ def unaryE : UnaryOp → Bool
 
 /-- `bswap` needs at least two bytes (the reader's `iSwappable` = i16..i128). -/
 def unaryTyE : UnaryOp → Ty → Bool
-  | .bswap, t => t != .i8 && t != .i128
+  | .bswap, t => t != .i8 && tyE t
   | op, t => unaryE op && tyE t
 
 def binaryE : BinaryOp → Bool

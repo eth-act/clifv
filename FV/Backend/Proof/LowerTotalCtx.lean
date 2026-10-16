@@ -57,7 +57,7 @@ def stmtInB (f : Clif.Function) (s : Clif.Stmt) : Bool :=
     | some e => aapcsConv e.sig.callConv
     | none => false
   | .callIndirect sig _ _ => match f.sigDecls.lookup sig with
-    | some s => s.returns.all (·.ty != .i128)
+    | some s => s.returns.all (eTy ·.ty)
     | none => false
   | .load _ _ _ p _ | .store _ _ _ _ p _ => (valTysOf f).contains (p, .i64)
   | _ => true
@@ -115,15 +115,16 @@ theorem instData_ok {f : Clif.Function} {s : Clif.Stmt} (hE : Compile.instE s.in
   | _ =>
     simp_all [instData, Compile.instE, Compile.tyE, eTy, Compile.flagsE, pure, Except.pure]
 
-/-- The result types of a statement of subset E satisfying `stmtInB` are not `i128`. -/
+/-- The result types of a statement of subset E satisfying `stmtInB` are integer types of E
+(not `i128`, no floats). -/
 theorem tysOf_ne {f : Clif.Function} (hE : Compile.functionE f = true) {s : Clif.Stmt}
-    (hi : Compile.instE s.inst = true) (hs : stmtInB f s = true) : ∀ t ∈ tysOf f s, t ≠ .i128 := by
-  have hX : ∀ fn e, f.extern? fn = some e → ∀ p ∈ e.sig.returns, p.ty ≠ .i128 := by
+    (hi : Compile.instE s.inst = true) (hs : stmtInB f s = true) : ∀ t ∈ tysOf f s, eTy t = true := by
+  have hX : ∀ fn e, f.extern? fn = some e → ∀ p ∈ e.sig.returns, eTy p.ty = true := by
     intro fn e he p hp
     simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE
     have := hE.1.2 _ (lookup_mem (show f.externs.lookup fn = some e from he))
-    simp only [Compile.sigE, Bool.and_eq_true, List.all_eq_true, Compile.tyE, bne_iff_ne] at this
-    exact this.2 p hp
+    simp only [Compile.sigE, Bool.and_eq_true, List.all_eq_true] at this
+    simpa [eTy, Compile.tyE] using this.2 p hp
   unfold stmtInB at hs
   rcases s with ⟨res, inst⟩
   simp only [Bool.and_eq_true] at hs
@@ -145,14 +146,14 @@ theorem tysOf_ne {f : Clif.Function} (hE : Compile.functionE f = true) {s : Clif
       simp only [tysOf, Clif.Inst.resultTypes, h, Option.map_some, Option.getD_some,
         List.mem_map] at ht
       obtain ⟨p, hp, rfl⟩ := ht
-      simp only [h, List.all_eq_true, bne_iff_ne] at hs
+      simp only [h, List.all_eq_true] at hs
       exact hs p hp
   | unary op ty x =>
     cases op <;> simp_all [tysOf, Clif.Inst.resultTypes, Compile.instE, Compile.unaryTyE,
-      Compile.unaryE, Compile.tyE]
+      Compile.unaryE, Compile.tyE, eTy]
   | _ =>
     simp_all [tysOf, Clif.Inst.resultTypes, Compile.instE, Compile.tyE, Compile.binaryE,
-      Compile.flagsE]
+      Compile.flagsE, eTy]
 
 /-- What `buildCtx` checks of every block holds. -/
 theorem blockC_of {f : Clif.Function} (hE : Compile.functionE f = true)
@@ -161,7 +162,7 @@ theorem blockC_of {f : Clif.Function} (hE : Compile.functionE f = true)
   have hE' := hE
   simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE'
   obtain ⟨⟨hp, hb⟩, -⟩ := hE'.2 B hB
-  refine ⟨fun q hq => by simpa [Compile.tyE] using hp q hq, fun s hs => ?_⟩
+  refine ⟨fun q hq => by simpa [Compile.tyE, eTy] using hp q hq, fun s hs => ?_⟩
   have hi := hb s hs
   have hin := hst B hB s hs
   refine ⟨instData_ok hi hin, ?_, tysOf_ne hE hi hin⟩

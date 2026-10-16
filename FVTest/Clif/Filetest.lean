@@ -40,7 +40,7 @@ def hexBits (v : Val) : String :=
   let h := String.ofList (Nat.toDigits 16 v.toNat)
   "0x" ++ String.ofList (List.replicate (digits - h.length) '0') ++ h
 
-def showVal (v : Val) : String := s!"{v.toInt}:{v.ty.name}"
+def showVal (v : Val) : String := s!"{Clif.Print.dataValue v}:{v.ty.name}"
 
 def showVals (vs : List Val) : String := "[" ++ ", ".intercalate (vs.map showVal) ++ "]"
 
