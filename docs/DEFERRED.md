@@ -261,9 +261,9 @@ premises. Deferred, in order:
     (#89 (c)) the per-function run's `callExternAt` checks the purposes against the linked
     environment's `sigOf`, but the non-interference contract's pinned indirect call (`CallLg`,
     `xni`) records only the parameter types, so `indSig`'s `DeclN`/`IndTyMatch` disjunct stays).
-  - a function calling itself under its own name (excluded at the CLIF level by `InSubset (P.only f)`; `cargo fv`'s alias covers it), float parameters; a
-    depth-free machine (monotonicity of `linkedCall` in the depth, needs base hooks preserving
-    errors).
+  - float parameters; a depth-free machine (monotonicity of `linkedCall` in the depth, needs base
+    hooks preserving errors). (A function calling itself under its own name: done, #88, native
+    self-calls in function-free activations; its executable theorem: L1d, "Recursion" below.)
   - ~~**Indirect calls of a known function admitting an `sret` callee**~~ (done,
     agent/sret-purpose, e2e.md "Widening" 11): `Clif.stepCallIndirect` requires the parameter
     purposes to match (`Clif.Signature.abiMatch`), so `fv-demo`'s two `catch_unwind` shims (and
@@ -311,6 +311,22 @@ completeness would need a per-rule register-class property). The def-set propert
 `stmt_flow`, decided over the rule data by an abstract interpretation (`IselFlowCheck`) rather
 than per-rule lemmas. Remaining: the input conditions join `InScope` for the totality work
 (TO-PROVE L1/L2); `lowerCheck` still runs as a double-check.
+
+## Recursion: the stack premise of `compileExe_correct_depth` (2026-10-15)
+
+Done (L1d, #204, #215; e2e.md "Recursive programs"): `Link.compileExe_correct_depth`
+covers every entry, recursive ones included, with `frameDrop (art S.input f).af + S.input.D * M`
+bytes of stack for a whole-program CLIF run of at most `M + 1` steps (no call-graph premise), and
+`Link.compileExe_correct_peak` with `frameDrop (art S.input f).af + S.input.D * d` bytes for a run
+of peak call depth `d` (`Clif.DepthLe`: no state it reaches has more than `d` callers), whatever
+its fuel: the linked system carries its callee runs (`LinkSys.crun`, `CrunOk`), the induction runs
+on the depth with the fuel fixed (`Clif.runD`, `Clif.linkEnvD`, `Clif.runLoop_linkD`).
+Deferred:
+- **Exact frames.** Each level is charged the largest frame `D`; charging the frames actually
+  live along the executed call derivation needs a budget indexed by the run, not `LinkSys.Budget`
+  (which quantifies over every syntactic callee).
+- Neither covers divergence or stack overflow (no theorem about a run that exceeds the stack);
+  `TrapsExplicit` still restricts traps inside callees (S9).
 
 ## Other deferred items
 
