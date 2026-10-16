@@ -1,6 +1,7 @@
 import Crates.LeanLinkWitness
 import FV.Link.Exe
 import FV.Link.ExeTotal
+import FV.Link.ExeInput
 
 /-! # Non-vacuity of the executable compiler's theorems (L1) on a survey crate
 
@@ -12,6 +13,8 @@ call cycle (`entry`): `correct_closed` leaves only the per-run premises of an ou
 boundary contract, the reference CLIF run, `TrapsExplicit`, the loader's image), which
 `Crates.BinaryExecWitness` shows satisfiable for the panic=abort build of `a_arith`.
 `total_witness`: every hypothesis of `compileExe_total` holds on this input.
+`total_input_witness`: every hypothesis of `compileExe_total_input` holds on this input with the
+Lean compiler's layout (`spec.placed`) and an executable with a `PT_TLS` segment (`file0T`).
 -/
 
 namespace Crates.CompileExeWitness
@@ -83,5 +86,60 @@ theorem total_witness :
   compileExe_total (by rw [← LinkSpec.inScope_input]; exact inScope) placeOk
     names sizes (fun e he r hr => List.all_eq_true.1 (List.all_eq_true.1 rangeB e he) r hr) hph
     regionOk outsideOk
+
+/-! ## `compileExe_total_input` on `a_arith` -/
+
+/-- `Crates.LeanLinkWitness.placeholder` with a `PT_TLS` segment (empty, 16-byte aligned) after
+its `PT_LOAD` segment: the executable rust-lld links for a program with thread-locals. -/
+def placeholderTls (R n : Nat) (syms : List (String × Nat)) : ByteArray :=
+  let (st, os) := strtab (syms.map (·.1))
+  let symtab := List.replicate 24 0 ++ (syms.zip os).flatMap fun ((_, v), o) =>
+    le o 4 ++ [0x10, 0] ++ le 0xfff1 2 ++ le v 8 ++ le 0 8
+  let symOff := 4096 + n
+  let strOff := symOff + symtab.length
+  let shOff := strOff + st.length
+  let shdr (ty off size link ent : Nat) : List UInt8 :=
+    le 0 4 ++ le ty 4 ++ le 0 8 ++ le 0 8 ++ le off 8 ++ le size 8 ++ le link 4 ++ le 0 4 ++
+      le 8 8 ++ le ent 8
+  let ident : List UInt8 := [0x7f, 0x45, 0x4c, 0x46, 2, 1, 1] ++ List.replicate 9 0
+  let ehdr := ident ++ le 2 2 ++ le 183 2 ++ le 1 4 ++ le R 8 ++ le 64 8 ++ le shOff 8 ++ le 0 4 ++
+    le 64 2 ++ le 56 2 ++ le 2 2 ++ le 64 2 ++ le 3 2 ++ le 0 2
+  let phdr := le 1 4 ++ le 5 4 ++ le 4096 8 ++ le R 8 ++ le R 8 ++ le n 8 ++ le n 8 ++ le 65536 8
+  let tls := le 7 4 ++ le 4 4 ++ le 0 8 ++ le 0 8 ++ le 0 8 ++ le 0 8 ++ le 0 8 ++ le 16 8
+  ⟨(ehdr ++ phdr ++ tls ++ List.replicate (4096 - 176) 0 ++ List.replicate n 0 ++ symtab ++ st ++
+    List.replicate 64 0 ++ shdr 2 symOff symtab.length 2 24 ++ shdr 3 strOff st.length 0 0).toArray⟩
+
+/-- rust-lld's executable for the Lean compiler's layout of `a_arith`: the region's placeholder
+of the layout's span, the layout's link map as the symbol table, a `PT_TLS` segment. -/
+def file0T : ByteArray :=
+  placeholderTls spec.R (span spec.sizesOf) (spec.placed.addrs.map fun p => (BinCheck.symName p.1, p.2))
+
+def phsT : List Elf.Phdr := (Elf.phdrs (Elf.fileRd file0T)).getD []
+
+theorem hphT : Elf.phdrs (Elf.fileRd file0T) = some phsT := by native_decide
+
+theorem inScopeT : InScopeP spec.placed.input0 = true := by native_decide
+
+theorem layoutT : spec.layoutOkB = true := by native_decide
+
+theorem file0T_ok : spec.file0OkB file0T phsT = true := by native_decide
+
+theorem reachB : (tabOf spec.placed.input.resultsT).all (fun e => e.2.fb.relocs.all fun r =>
+    decide (r.type = .tlsDescAdrPage21) || relocRangeB spec.placed.input (Elf.tpOff phsT) e.2 r) =
+    true := by native_decide
+
+theorem reach : CallPageReach spec phsT := fun e he r hr hne => by
+  have := List.all_eq_true.1 (List.all_eq_true.1 reachB e he) r hr
+  simpa [hne] using this
+
+/-- **Non-vacuity of `compileExe_total_input`**: its hypotheses hold on `a_arith`, with the Lean
+compiler's layout and an executable with a `PT_TLS` segment. -/
+theorem total_input_witness :
+    compileExe spec.placed file0T =
+      .ok (patch file0T (offsetOf phsT spec.R) (regionOf spec.placed (Elf.tpOff phsT))) :=
+  compileExe_total_input inScopeT layoutT hphT file0T_ok reach
+
+/-- `placed_of_compileExe` on `a_arith`: the linked spec has the Lean compiler's layout. -/
+theorem spec_placed : spec.placed = spec := placed_of_compileExe compile_eq
 
 end Crates.CompileExeWitness

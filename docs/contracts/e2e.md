@@ -1614,12 +1614,35 @@ theorem Link.compileExe_total (hin : InScopeP S.input0 = true)
       (offsetOf phs S.R) = true)
     (hout : outsideOkB S.input S.data (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) = true) :
     compileExe S file0 = .ok (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs)))
+-- L1e (FV/Link/ExeInput.lean): the Lean compiler's layout, conditions on the inputs only
+def Link.LinkSpec.placed (S : LinkSpec) : LinkSpec :=
+  { S with names := S.funcs.map (·.func.name), sizes := S.sizesOf }
+def Link.LinkSpec.layoutOkB (S : LinkSpec) : Bool        -- 0 < R, 4 ∣ R, R + span < 2^64, clearOfB
+def Link.LinkSpec.file0OkB (S : LinkSpec) (file0 : ByteArray) (phs : List Phdr) : Bool := -- off := offsetOf phs S.R
+  regionOkB file0 S.R (span S.sizesOf) off && hdrB [(0, file0)] &&
+    dataFastB S.placed.input0 S.data (maskEx file0 off (span S.sizesOf)) &&
+    symsOkB S.placed.input0 file0 && symFootB file0 (off + span S.sizesOf) && tlsOkB S phs
+def Link.CallPageReach (S : LinkSpec) (phs : List Phdr) : Prop :=   -- remaining output premise
+  ∀ e ∈ tabOf S.placed.input.resultsT, ∀ r ∈ e.2.fb.relocs, r.type ≠ .tlsDescAdrPage21 →
+    relocRangeB S.placed.input (tpOff phs) e.2 r = true
+theorem Link.compileExe_total_input (hin : InScopeP S.placed.input0 = true)
+    (hl : S.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : S.file0OkB file0 phs = true) (hreach : CallPageReach S phs) :
+    compileExe S.placed file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf S.placed (tpOff phs)))
+theorem Link.placed_of_compileExe (h : compileExe S file0 = .ok file) : S.placed = S
 ```
 
 `compileExe_correct` has no per-program premise and no open hypothesis about the compiler; its
 premises are the outside code's contracts and the CLIF-level condition that no call cycle is
 reachable from the entered function. `compileExe_total`'s hypotheses are the input conditions,
 the driver's data, the addresses (the relocations' reach) and rust-lld's output.
+`compileExe_total_input` (L1e, #216) takes the Lean compiler's layout (`S.placed`; `placeOkB`
+from `InScopeP` and `layoutOkB`, compiled code nonempty: `pipeT_words_pos`) and moves rust-lld's
+checks from the patched file to `file0` (`outsideOkB_patch`: the region's bytes are read by none
+of them when the section headers, symbol and string tables lie after it, `symFootB`); TLS offsets
+come from `file0`'s `PT_TLS` (`tlsOkB`). Its one output-dependent premise is `CallPageReach`
+(docs/DEFERRED.md "Totality on input conditions"). Witness: `total_input_witness`.
 `LinkSpec` is alias-free by construction; #88 removes alias generation and `AliasOut` rather
 than assuming or proving renaming invariance of the compiler. Native recursion is admitted
 by totality, and since L1d (#204) by executable correctness too (below). Witnesses:
