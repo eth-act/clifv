@@ -19,7 +19,7 @@ theorem stock_original_select_source_data {f : Clif.Function} {ctx : Ctx} (inv :
   obtain ⟨types,result,typed,_⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
-  refine ⟨cmp_eTy_widths supported,?_,by rw [typed]; simp [ofClif_int_width]⟩
+  refine ⟨cmp_eTy_widths supported,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
   have expected : instData f (.select ty c x y) = .ok (.data 152 24 [.data 151 65 [],.values [c,x,y]]) := by
     simp [instData,supported]; rfl
   exact Except.ok.inj (raw.symm.trans expected)

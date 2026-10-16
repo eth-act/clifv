@@ -54,7 +54,8 @@ theorem vector_size_binary_absurd {f : Clif.Function} (hctx : CtxInv f ctx) {ii 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at h
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, (ofClif_int_width)] at h
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some,
+    ofClif_int_width (isInt_of_eTy hety)] at h
   exact vector_size_scalar hp hc hn (cmp_eTy_widths hety) h
 
 end

@@ -83,7 +83,8 @@ theorem minmax_tail {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at h659
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, (ofClif_int_width)] at h659
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some,
+    ofClif_int_width (isInt_of_eTy hety)] at h659
   have hC := emit_icmp_ok hp hco hR hctx (hn := hn1) hvb h652
   obtain ⟨mf, cond, rx, ry, hflag, hrx, hry, rfl, hs⟩ :=
     lower_select_ok hp hco (hn := hn2) (cmp_eTy_widths hety) hC.shape h659

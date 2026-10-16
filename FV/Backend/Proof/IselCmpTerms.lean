@@ -187,7 +187,7 @@ theorem ofV_extend_32 (rd rn : Reg) (sg : Bool) (a : Nat) :
 theorem opnd32_setWidth (a : CV) : opnd .size32 a = a.setWidth 32 := by
   simp only [opnd, lo64, OperandSize.bits, BitVec.setWidth_setWidth_of_le _ (by decide : 32 ≤ 64)]
 
-theorem ty_width_le_32 {ty : Clif.Ty} (h : ty.width ≤ 32) (he : eTy ty = true := by assumption) :
+theorem ty_width_le_32 {ty : Clif.Ty} (h : ty.width ≤ 32) (he : eTy ty = true) :
     ty = .i8 ∨ ty = .i16 ∨ ty = .i32 := by
   cases ty <;> simp_all [Clif.Ty.width, eTy]
 

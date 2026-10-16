@@ -155,8 +155,9 @@ theorem extOut_prun (hR : Refines F isem) {f : Clif.Function} {ctx : Ctx} (hctx 
       have hne : vty.width < toB := by
         rcases hto with rfl | rfl
         · have := h32 rfl
+          have hE := hctx.valTyE x _ hT
           cases vty <;> simp [Clif.Ty.width, CTy.ofClif] at hb ⊢
-          exact ht this
+          all_goals first | exact ht this | simp [CTy.ofClif, eCTys] at hE
         · omega
       have hfrom : vty.width = 8 ∨ vty.width = 16 ∨ vty.width = 32 := by
         cases vty <;> simp [Clif.Ty.width] at hb ⊢
@@ -458,7 +459,7 @@ theorem ishl_64_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
     obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hOut
     refine ⟨[] ++ ms2, d, rfl, by rw [hst]; exact hsh, ?_⟩
     intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-    cases ty <;> simp [Clif.Ty.width] at hty
+    cases ty <;> simp [Clif.Ty.width] at hty <;> try (simp [eTy] at hety; done)
     obtain ⟨ρ', hrun, hD⟩ := hsem fr ρ ρ yv (prun_nil _) (fun _ _ => rfl) hvals hdfg hy
     refine ⟨ρ', hrun, ?_⟩
     simp only [Clif.Sem.shift, Clif.Sem.ishl, Clif.Sem.shiftAmt, Option.some.injEq] at hres
@@ -536,7 +537,7 @@ theorem ushr_64_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
     obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hOut
     refine ⟨ms1 ++ ms2, d, rfl, by rw [hst]; exact hsh, ?_⟩
     intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-    cases ty <;> simp [Clif.Ty.width] at hty
+    cases ty <;> simp [Clif.Ty.width] at hty <;> try (simp [eTy] at hety; done)
     obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ (hvals x _ hx) hdfg hx
     obtain ⟨ρ', hrun, hD⟩ := hsem fr ρ ρ1 yv hr1 hfr hvals hdfg hy
     refine ⟨ρ', hrun, ?_⟩
@@ -617,7 +618,7 @@ theorem sshr_64_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
     obtain ⟨rfl, hst⟩ := output_reg_ok hp' hco (by omega) hOut
     refine ⟨ms1 ++ ms2, d, rfl, by rw [hst]; exact hsh, ?_⟩
     intro ty hty hety fr ρ u yv res _ hvals hdfg hx hy hres
-    cases ty <;> simp [Clif.Ty.width] at hty
+    cases ty <;> simp [Clif.Ty.width] at hty <;> try (simp [eTy] at hety; done)
     obtain ⟨ρ1, hr1, hfr, hext⟩ := hsem1 fr ρ ⟨_, u⟩ (hvals x _ hx) hdfg hx
     obtain ⟨ρ', hrun, hD⟩ := hsem fr ρ ρ1 yv hr1 hfr hvals hdfg hy
     refine ⟨ρ', hrun, ?_⟩

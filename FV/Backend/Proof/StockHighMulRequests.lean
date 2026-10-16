@@ -21,7 +21,7 @@ theorem stock_highmul_narrow_request_observed {p : Program} (hp : Data p) (ctx :
     (signed : Bool) {cfg : Config} (hc : cfg.checkOverlap = false)
     {n x : Nat} (enough : 60 ≤ n) {s s' : State × Array RuleId} {out : V}
     {fr : Clif.Frame} (typed : FrameTyped ctx fr) {ty : Clif.Ty} {u : BitVec ty.width}
-    (get : fr.getAs x ty = .ok u) (width : ty.width ≤ 32)
+    (get : fr.getAs x ty = .ok u) (width : ty.width ≤ 32) (int : ty.isInt = true)
     (run : ApplyInternal p (Stock.sem ctx) cfg n 27 (if signed then 557 else 558)
       [.value x] s out s') :
     ctx.valueType? x = some (.int ty.width) ∧ DemandAllowed ctx s.1 x ∧
@@ -30,7 +30,7 @@ theorem stock_highmul_narrow_request_observed {p : Program} (hp : Data p) (ctx :
   obtain ⟨t,sourceType,safe,rx,mapped,alternatives⟩ :=
     stock_highmul_extend_observed hp ctx signed hc enough run
   have equal : t = .int ty.width :=
-    (typed x t ⟨ty,u⟩ sourceType (getAs_ok get)).symm.trans (ofClif_int_width (ty := ty))
+    (typed x t ⟨ty,u⟩ sourceType (getAs_ok get)).symm.trans (ofClif_int_width int)
   rw [equal] at sourceType alternatives
   refine ⟨sourceType,safe,rx,mapped,?_,?_⟩
   · rcases alternatives with pass | widened
@@ -51,7 +51,7 @@ private theorem sem_prim (ctx : Ctx) : (Stock.sem ctx).prim 14 "I64" = some (.ty
 /-- Both successful original narrow RHS requests derive their types, guards
 and source mappings using the original typed frame. -/
 theorem stock_highmul_narrow_requests {p : Program} (hp : Data p) (ctx : Ctx)
-    (signed : Bool) {n x y : Nat} {ty : Clif.Ty} (width : ty.width ≤ 32)
+    (signed : Bool) {n x y : Nat} {ty : Clif.Ty} (width : ty.width ≤ 32) (int : ty.isInt = true)
     {fr : Clif.Frame} (typed : FrameTyped ctx fr) {u v : BitVec ty.width}
     (getX : fr.getAs x ty = .ok u) (getY : fr.getAs y ty = .ok v)
     {st next : State} {tr trace : Array RuleId} {out : V}
@@ -68,11 +68,11 @@ theorem stock_highmul_narrow_requests {p : Program} (hp : Data p) (ctx : Ctx)
     all_goals isel_destruct <;> subst_vars
   ·
     have first := stock_highmul_narrow_request_observed hp' ctx false (cfg := {}) rfl
-      (n := n+96) (by omega) typed getX width
+      (n := n+96) (by omega) typed getX width int
       (show ApplyInternal p (Stock.sem ctx) {} (n+96) 27 558 [.value x] (st,tr) _ _ from by assumption)
     obtain ⟨typeX,safeX,rx,mapX,outX,stateX⟩ := first
     have second := stock_highmul_narrow_request_observed hp' ctx false (cfg := {}) rfl
-      (n := n+95) (by omega) typed getY width
+      (n := n+95) (by omega) typed getY width int
       (show ApplyInternal p (Stock.sem ctx) {} (n+95) 27 558 [.value y] _ _ _ from by assumption)
     obtain ⟨typeY,safeY,ry,mapY,outY,stateY⟩ := second
     rw [stateX] at safeY
@@ -80,11 +80,11 @@ theorem stock_highmul_narrow_requests {p : Program} (hp : Data p) (ctx : Ctx)
 
   ·
     have first := stock_highmul_narrow_request_observed hp' ctx true (cfg := {}) rfl
-      (n := n+96) (by omega) typed getX width
+      (n := n+96) (by omega) typed getX width int
       (show ApplyInternal p (Stock.sem ctx) {} (n+96) 27 557 [.value x] (st,tr) _ _ from by assumption)
     obtain ⟨typeX,safeX,rx,mapX,outX,stateX⟩ := first
     have second := stock_highmul_narrow_request_observed hp' ctx true (cfg := {}) rfl
-      (n := n+95) (by omega) typed getY width
+      (n := n+95) (by omega) typed getY width int
       (show ApplyInternal p (Stock.sem ctx) {} (n+95) 27 557 [.value y] _ _ _ from by assumption)
     obtain ⟨typeY,safeY,ry,mapY,outY,stateY⟩ := second
     rw [stateX] at safeY
@@ -92,7 +92,7 @@ theorem stock_highmul_narrow_requests {p : Program} (hp : Data p) (ctx : Ctx)
 /-- Successful actual narrow RHS execution determines both original requests,
 the output, and the complete four-write scheduling state. -/
 theorem stock_highmul_narrow_observed {p : Program} (hp : Data p) (ctx : Ctx)
-    (signed : Bool) {n x y : Nat} {ty : Clif.Ty} (width : ty.width ≤ 32)
+    (signed : Bool) {n x y : Nat} {ty : Clif.Ty} (width : ty.width ≤ 32) (int : ty.isInt = true)
     {fr : Clif.Frame} (typed : FrameTyped ctx fr) {u v : BitVec ty.width}
     (getX : fr.getAs x ty = .ok u) (getY : fr.getAs y ty = .ok v)
     {st next : State} {tr trace : Array RuleId} {out : V}
@@ -105,7 +105,7 @@ theorem stock_highmul_narrow_observed {p : Program} (hp : Data p) (ctx : Ctx)
           ((extendBase st.base signed ty.width rx).fresh .int).1).fresh .int).1]] ∧
         next = {(st.mark x).mark y with base := narrowBase st.base signed ty.width rx ry} := by
   obtain ⟨typeX,typeY,safeX,safeY,rx,ry,mapX,mapY⟩ :=
-    stock_highmul_narrow_requests hp ctx signed width typed getX getY run
+    stock_highmul_narrow_requests hp ctx signed width int typed getX getY run
   obtain ⟨actualTrace,forward⟩ := stock_highmul_narrow_rhs hp ctx signed width
     typeX typeY mapX mapY st safeX safeY tr n
   rw [forward] at run

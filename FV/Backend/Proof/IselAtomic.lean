@@ -1037,7 +1037,7 @@ theorem bmask_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Cli
   isel_destruct; subst_vars
   repeat (mem_inv_simp [ctor_put_in_regs_iff] at * <;> isel_destruct <;> subst_vars)
   simp only [‹_ = List.map CTy.ofClif [ty]›, List.map_cons, List.map_nil, List.head?_cons,
-    Option.getD_some, (ofClif_int_width)] at *
+    Option.getD_some, ofClif_int_width (isInt_of_eTy hety)] at *
   have := hctx.valueReg x _ ‹ctx.valueReg? x = some _›; subst this
   have hvt := ‹ctx.valueType? x = some _›
   have hE := hctx.valTyE x _ hvt

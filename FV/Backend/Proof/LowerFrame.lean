@@ -1,4 +1,5 @@
 import FV.Backend.Proof.LowerContract
+import FV.Clif.FloatFacts
 
 /-!
 # CLIF frames seen by the driver
@@ -140,29 +141,6 @@ theorem res_ofOption_eq_ok {α : Type} {m : String} {o : Option α} {a : α} :
     Clif.Res.ofOption m o = .ok a ↔ o = some a := by
   cases o <;> simp [Clif.Res.ofOption]
 
-/-- The result type of `Inst.float op ty` (`Clif.Inst.resultTypes`): `i8` for `fcmp`, the
-controlling type otherwise. -/
-def floatResTy : Clif.FOp → Clif.Ty → Clif.Ty
-  | .fcmp _, _ => .i8
-  | _, ty => ty
-
-/-- A float operation's result has the type `floatResTy`. -/
-theorem evalFloat_ty {op : Clif.FOp} {ty : Clif.Ty} {vs : List Clif.Val} {r : Clif.Val}
-    (h : Clif.evalFloat op ty vs = .ok r) : r.ty = floatResTy op ty := by
-  unfold Clif.evalFloat at h
-  split at h
-  all_goals (repeat' (first
-    | (simp only [res_bind_eq_ok, Clif.Res.pure_eq, Clif.Res.ok.injEq, res_ofOption_eq_ok] at h)
-    | (obtain ⟨_, _, h⟩ : ∃ _, _ ∧ _ := h)
-    | (cases hu : Clif.FSem.unary op <;> simp only [hu] at h)
-    | (cases hu : Clif.FSem.binary op <;> simp only [hu] at h)
-    | (split at h)))
-  all_goals first
-    | (cases h; done)
-    | (subst h; simp_all [floatResTy, Clif.Val.ofBool]; done)
-    | (subst h; cases op <;> simp_all [floatResTy, Clif.FSem.unary, Clif.FSem.binary]; done)
-    | (cases op <;> simp_all [floatResTy, Clif.FSem.unary, Clif.FSem.binary]; done)
-
 /-- The CLIF outcome of an indirect call that returns: the call site's signature, the callee
 address (an `i64` value), the extern at that address (whose signature, if the environment knows
 it, the call site's matches), and its results. -/
@@ -233,8 +211,8 @@ theorem evalInst_types {fr : Clif.Frame} {cm cm' : Clif.Mem} {i : Clif.Inst}
     simp only [Clif.evalInst, res_bind_eq_ok, Clif.Res.pure_eq, Clif.Res.ok.injEq,
       Prod.mk.injEq] at h
     obtain ⟨_, _, r, hr, rfl, -⟩ := h
-    have hty := evalFloat_ty hr
-    cases op <;> simp_all [Clif.Inst.resultTypes, floatResTy]
+    have hty := Clif.evalFloat_ty hr
+    cases op <;> simp_all [Clif.Inst.resultTypes, Clif.floatResTy]
   all_goals (simp only [Clif.evalInst] at h <;>
     simp only [Clif.Inst.resultTypes, Option.some.injEq] at ht)
   all_goals (repeat' (first

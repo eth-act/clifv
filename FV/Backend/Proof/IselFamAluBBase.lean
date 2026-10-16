@@ -204,7 +204,7 @@ theorem unary_front {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp} 
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hc
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
-  exact ⟨ty, x, rfl, hety, hb, hd, by rw [hres]; simp [(ofClif_int_width)]⟩
+  exact ⟨ty, x, rfl, hety, hb, hd, by rw [hres]; simp [ofClif_int_width (isInt_of_eTy hety)]⟩
 
 /-! ## Instruction shapes -/
 
@@ -373,7 +373,7 @@ theorem unary_ruleOk {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp}
     | none => exact .inl rfl
     | some t =>
       have := hdfg.2 x t _ hT hxv
-      exact .inr (by rw [← this, ofClif_int_width])
+      exact .inr (by rw [← this, ofClif_int_width (isInt_of_eTy hety)])
   obtain ⟨ρ', hrun, hheld⟩ :=
     hsem ty (ctx.valueType? x) st.nextVreg x ρ u hety hbs hP hQ hT hxlt (hvals x _ hxv)
   refine ⟨rfl, usesOk_of [x] ?_ ?_, .inl (hres _ _ _), _, ρ', rfl, hrun, hheld⟩
@@ -467,7 +467,7 @@ theorem unary_ruleOk' {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp
     | none => exact .inl rfl
     | some t =>
       have := hdfg.2 x t _ hT hxv
-      exact .inr (by rw [← this, ofClif_int_width])
+      exact .inr (by rw [← this, ofClif_int_width (isInt_of_eTy hety)])
   obtain ⟨ρ', hrun, hheld⟩ := hsem ty rfl hety hbs hT ρ u (hvals x _ hxv)
   refine ⟨rfl, usesOk_of [x] ?_ ?_, .inl hsh.res, _, ρ', rfl, hrun, hheld⟩
   · intro mi hmi u hu

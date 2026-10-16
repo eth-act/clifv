@@ -18,7 +18,7 @@ private theorem count_source_data {f : Clif.Function} {ctx : Ctx} (inv : MappedC
   obtain ⟨types,result,typed,len⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
-  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width]⟩
+  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
   · cases ty <;> simp [eTy,Clif.Ty.width,IW] at supported ⊢
   · have expected : instData f (.unary (countOp trailing) ty x) = .ok (.data 152 29 [.data 151 (countOpcode trailing) [],.value x]) := by
       cases trailing <;> simp [countOp,countOpcode,instData,unaryOpcode,supported] <;> rfl
@@ -58,7 +58,8 @@ private theorem root_requests {ctx : Ctx} (trailing : Bool) {w x n : Nat} (width
     · obtain ⟨t,typed⟩ := stock_count_clz_narrow_type data_program ctx narrow run
       have eq : t = .int w := by
         have h := (dfg.2 x t ⟨ty,u⟩ typed (getAs_ok get)).symm
-        exact h.trans (by simpa only [same] using ofClif_int_width (ty := ty))
+        exact h.trans (by simpa only [same] using
+          ofClif_int_width (ty := ty) (isInt_of_width_lt_32 (by omega)))
       rw [eq] at typed
       obtain ⟨safe,mapped⟩ := stock_count_clz_narrow_requests data_program ctx narrow typed run
       exact ⟨safe,mapped,fun _ _ => typed⟩

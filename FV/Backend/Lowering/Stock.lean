@@ -42,6 +42,8 @@ def mustLower : Clif.Inst → Bool
   | .div .. | .uaddOverflowTrap .. | .store .. | .call .. | .callIndirect ..
   | .atomicLoad .. | .atomicStore .. | .atomicRmw .. | .atomicCas ..
   | .fence | .trapz .. | .trapnz .. => true
+  -- float operations (`fcvt_to_{u,s}int` trap) are lowered, never omitted
+  | .float .. => true
   | _ => false
 
 def colored (i : Clif.Inst) : Bool :=

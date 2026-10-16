@@ -30,7 +30,7 @@ theorem stock_mul_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx
       simp only [instData,show binaryOpcode .imul = some "Imul" from rfl,he,ite_true]
       rfl
     exact Except.ok.inj (data.symm.trans shape)
-  · rw [typed]; simp [ofClif_int_width]
+  · rw [typed]; simp [ofClif_int_width (isInt_of_eTy he)]
 
 end Data
 /-- The actual Stock multiplication root matches the original instruction data and retains

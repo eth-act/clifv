@@ -205,7 +205,8 @@ theorem extend_rule_ok {p : Program} (hp : Data p) {r : Rule} {op : Clif.ExtendO
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hic
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
-  have hhead : info.resTys.head? = some (.int ty.width) := by rw [hres]; simp [(ofClif_int_width)]
+  have hhead : info.resTys.head? = some (.int ty.width) := by
+    rw [hres]; simp [ofClif_int_width (isInt_of_eTy hety)]
   have hw := eTy_width hety
   cases hT : ctx.valueType? x with
   | none => exact absurd hmatch (match_ext_none hp ctx st tr m' hko hi hhead hw hT hd _ _)

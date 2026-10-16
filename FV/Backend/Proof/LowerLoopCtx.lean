@@ -802,6 +802,17 @@ theorem ofClif_e {ty : Clif.Ty} (h : eTy ty = true) :
     [CTy.int 8, .int 16, .int 32, .int 64].any (fun u => decide (CTy.ofClif ty = u)) = true := by
   cases ty <;> simp_all [CTy.ofClif, eTy, Clif.Ty.isInt]
 
+/-- Every type in `buildCtx`'s context is an E type: `buildCtx` rejects block parameters and
+results outside `eTy` (floats, `i128`). -/
+theorem CtxSpec.valTyE {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (x : Nat) (t : CTy)
+    (ht : ctx.valueType? x = some t) : t ∈ eCTys := by
+  have mem : ∀ ty : Clif.Ty, eTy ty = true → CTy.ofClif ty ∈ eCTys := by
+    intro ty h; cases ty <;> simp_all [eTy, eCTys, CTy.ofClif]
+  rcases spec.tyOf x t ht with ⟨B, hB, q, hq, -, rfl⟩ | ⟨B, hB, s, hs, m, ty, -, hty, rfl⟩
+  · exact mem _ ((spec.blockC B hB).1 q hq)
+  · exact mem _ (((spec.blockC B hB).2 s hs).2.2 ty (List.mem_of_getElem? hty))
+
 /-- `buildCtx`'s context passes `ctxOk` on in-scope input. -/
 theorem ctxOk_of {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx} {ranges : Array (Nat × Nat)}
     {st0 : LState} (hb : buildCtx f = .ok (ctx, ranges, st0)) : ctxOk f ctx = true := by

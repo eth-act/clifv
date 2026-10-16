@@ -16,6 +16,16 @@ theorem stock_lower_record_declared_type {f : Clif.Function} {result : Result}
     simpa only [Ctx.valueType?,view.valTy,Option.isSome_some] using typed.symm
   rw [eventEq,(stock_lowerBlockCore_scanOrigin coreRun).2.1]
   exact actual
+/-- Every type of an actual scan context is an E type (`buildCtx` admits no others). -/
+theorem stock_lower_event_valTyE {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {x : Nat} {t : CTy} (typed : event.ctx.valueType? x = some t) : t ∈ eCTys := by
+  obtain ⟨ranges,params,earlier,suffix,starting,finishing,before,after,label,bi,data,core,
+    build,ordered,initial,empty,parts,folded,final,prefixRun,nodeRun,suffixRun,node,coreRun,eventEq,stateEq⟩ :=
+    stock_lower_blockScanOrigin run events
+  obtain ⟨original,oldState,oldBuild,spec,view⟩ := buildCtx_source build
+  rw [eventEq,(stock_lowerBlockCore_scanOrigin coreRun).2.1] at typed
+  exact spec.valTyE x t (by simpa only [Ctx.valueType?,view.valTy] using typed)
 /-- Original availability, a successful source getter and restricted DFG typing
 derive the actual context type. This discharges recurring family type premises
 internally while keeping earlier theorem interfaces available. -/
@@ -29,5 +39,6 @@ theorem stock_lower_available_getAs_type {f : Clif.Function} {result : Result}
   have declared := avail_vals (fun tl value member => ((inFix_fixOk (f := f) (ctx := result.ctx) (gn := id)).cand tl value member).2.2.2.1) available
   obtain ⟨type,typed⟩ := Option.isSome_iff_exists.mp (stock_lower_record_declared_type run events declared)
   have same := getAs_typed dfg typed get
-  simpa only [same,ofClif_int_width] using typed
+  have int := isInt_of_ofClif_mem (by rw [← same]; exact stock_lower_event_valTyE run events typed)
+  simpa only [same,ofClif_int_width int] using typed
 end Backend.Stock.Proof
