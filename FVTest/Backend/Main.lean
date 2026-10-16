@@ -43,7 +43,13 @@ proven rule sets (`--opt-proven-only`) a legalised function is covered by
 unproven rules every legalised function is reported unverified. The unwinding of a legalised
 function with a `try_call` is covered by `E2E.backend_correct_legal_unwind` when the
 handler-edge check `Opt.Legal.exnOk` and the unwinding theorem's checks pass (dead cleanup,
-no `--opt`).
+no `--opt`). Under `--opt` with the proven rule sets, the unwinding of a function that is not
+legalised is covered by `E2E.backend_correct_opt_exe_cleanup_unwind` (without dead cleanup
+`E2E.backend_correct_opt_exe_unwind`) when its compiled form is the mid-end's output on its
+source function and the unwinding theorem's checks pass on the optimised function; a legalised
+one by `E2E.backend_correct_legal_opt_unwind` (dead cleanup) when its compiled form is the
+mid-end's output on the source function's legalisation, which `Opt.Legal.check` and
+`Opt.Legal.exnOk` accept, and the checks pass.
 
 A function inside the theorem's scope whose size is over the validation budget
 (`Backend.validationBudget`, blocks × values) is compiled without running the lowering
@@ -233,31 +239,61 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- (`unwindCheckFailure?`). An `i128`-legalised function is inside
   -- `E2E.backend_correct_legal_unwind` (dead cleanup only) when, in addition, its legalisation
   -- is recomputed from the source function with the same result, and `Opt.Legal.check` and the
-  -- handler-edge check `Opt.Legal.exnOk` accept it (`legalUnwOk`). No unwinding theorem composes
-  -- the mid-end (`--opt`).
+  -- handler-edge check `Opt.Legal.exnOk` accept it (`legalUnwOk`). Under `--opt` with the proven
+  -- rule sets, a function that is not legalised is inside
+  -- `E2E.backend_correct_opt_exe_cleanup_unwind` (without dead cleanup
+  -- `E2E.backend_correct_opt_exe_unwind`) when its compiled form is `Opt.optimizeExe` of its
+  -- source function, recomputed (`optUnwOk`), and the checks pass on the optimised function; a
+  -- legalised one is inside `E2E.backend_correct_legal_opt_unwind` (dead cleanup only) when its
+  -- compiled form is `Opt.optimizeExe` of the source function's legalisation, recomputed, which
+  -- `Opt.Legal.check` and `Opt.Legal.exnOk` accept (`legalOptUnwOk`). No unwinding theorem
+  -- composes unproven rule sets.
   let recs ← records.get
   let thm := if o.deadCleanup then "backend_correct_final_cleanup_unwind"
     else "backend_correct_final_unwind"
+  let optThm := if o.deadCleanup then "backend_correct_opt_exe_cleanup_unwind"
+    else "backend_correct_opt_exe_unwind"
   let legalUnwOk (name : String) (g : Clif.Function) : Bool :=
     match (source.funcs.find? (·.name == name)).bind (·.func.toOption) with
     | some f => match Opt.Legalize128.function128Cert f with
       | .ok (g', cert) => g' == g && Opt.Legal.check f g cert && Opt.Legal.exnOk f g cert
       | .error _ => false
     | none => false
+  let provenOpt : Bool := match o.opt with
+    | some c => c.rules == .cranelift && c.ruleAllow == .proven
+    | none => false
+  let optUnwOk (name : String) (g : Clif.Function) : Bool :=
+    match o.opt, (source.funcs.find? (·.name == name)).bind (·.func.toOption) with
+    | some c, some f => provenOpt && Opt.optimizeExe f c == g
+    | _, _ => false
+  let legalOptUnwOk (name : String) (g : Clif.Function) : Bool :=
+    match o.opt, (source.funcs.find? (·.name == name)).bind (·.func.toOption) with
+    | some c, some f => match Opt.Legalize128.function128Cert f with
+      | .ok (g', cert) => provenOpt && Opt.optimizeExe g' c == g && Opt.Legal.check f g' cert &&
+        Opt.Legal.exnOk f g' cert
+      | .error _ => false
+    | _, _ => false
   for p in pf.funcs do
     if let .ok f := p.func then
       if hasTryCall f && fa.funcs.any (·.name == p.name) && !fa.unverified.any (·.1 == p.name) &&
           !fa.unvalidated.any (·.1 == p.name) then
         let legal := lg.accepted.contains p.name
         let why? : Option String :=
-          if o.opt.isSome then some "--opt: no unwinding theorem composes the mid-end"
+          if o.opt.isSome && !provenOpt then
+            some "--opt with unproven rule sets: no unwinding theorem composes them (--opt-proven-only)"
           else if legal && !o.deadCleanup then
             some "i128 legalized: no unwinding theorem composes the legalisation without dead cleanup"
-          else if legal && !legalUnwOk p.name f then
+          else if o.opt.isSome && legal && !legalOptUnwOk p.name f then
+            some "--opt, i128 legalized: not Opt.optimizeExe of the source function's legalisation accepted by Opt.Legal.check and Opt.Legal.exnOk"
+          else if o.opt.isSome && !legal && !optUnwOk p.name f then
+            some "--opt: the compiled function is not Opt.optimizeExe of its source function"
+          else if o.opt.isNone && legal && !legalUnwOk p.name f then
             some "i128 legalized: Opt.Legal.exnOk rejects the handler edges"
           else (unwindCheckFailure? f ((recs.find? (·.1 == p.name)).bind (·.2))
             (fa.funcs.find? (·.name == p.name))).map (s!"unwinding check failed: {·}")
-        let thm := if legal then "backend_correct_legal_unwind" else thm
+        let thm := if legal && o.opt.isSome then "backend_correct_legal_opt_unwind"
+          else if legal then "backend_correct_legal_unwind"
+          else if o.opt.isSome then optThm else thm
         match why? with
         | none =>
           IO.eprintln s!"lean-backend: {input}: %{p.name}: compiled, verified (try_call: unwinding by {thm}; the unwinder/personality model and the decoding of the emitted tables trusted)"
