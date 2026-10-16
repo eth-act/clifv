@@ -46,6 +46,10 @@ theorem decode_armBits_Reg_exclusive (x : Reg_exclusive_cls) :
     decode_raw_inst (armBits (.LDST (.Reg_exclusive x))) = some (ArmInst.LDST (.Reg_exclusive x)).norm := by
   decode_class decode_raw_inst_of_ldst decode_ldst_inst
 
+theorem decode_armBits_Reg_literal (x : Reg_literal_cls) :
+    decode_raw_inst (armBits (.LDST (.Reg_literal x))) = some (ArmInst.LDST (.Reg_literal x)).norm := by
+  decode_class decode_raw_inst_of_ldst decode_ldst_inst
+
 theorem decode_armBits_LDST (x : LDSTInst) :
     decode_raw_inst (armBits (.LDST x)) = some (ArmInst.LDST x).norm := by
   cases x with
@@ -58,5 +62,6 @@ theorem decode_armBits_LDST (x : LDSTInst) :
   | Reg_imm_pre_indexed x => exact decode_armBits_Reg_imm_pre_indexed x
   | Reg_reg_offset x => exact decode_armBits_Reg_reg_offset x
   | Reg_exclusive x => exact decode_armBits_Reg_exclusive x
+  | Reg_literal x => exact decode_armBits_Reg_literal x
 
 end Backend

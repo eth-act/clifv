@@ -37,6 +37,12 @@ M5 proven (2026-09-27); no `sorry`, no hand-written `axiom`, no warnings in the 
 - [x] byte-for-byte check against `llvm-mc`: **971/971** functions identical; decode check
       61 133 instructions (74 mnemonics); backend filetests corpus **114/114**, extrt 22/22,
       runtests **3085 pass / 0 fail / 0 disagree** (section "Tests and results")
+- [x] S11d (#237) phase 1: scalar floating-point data movement `Insn`s (`fpuMove`,
+      `fpuMove128`, `fpuRR`, `fpuCSel`, `fpuMoveFPImm`, `movi`, `fpuLoad`, `fpuStore`,
+      `fpuLoadP`, `fpuStoreP`, `fpuLoadLit`), new classes `DPSFP.FP_data_processing_one_source`,
+      `FP_immediate`, `FP_conditional_select`, `Advanced_simd_modified_immediate`,
+      `LDST.Reg_literal` with `decode_armBits_*` lemmas; `fpuLoadLit` is a PC-relative form
+      (`Insn.pcRelSpec?`, ±1 MiB); random forms 54, `--n 500`: 54/54 identical to `llvm-mc`
 
 ## Pipeline
 
@@ -85,7 +91,7 @@ flowchart LR
 `Reg.encZR`/`Reg.encSP`/`Reg.encV` enforce the meaning of register 31 per operand (e.g.
 `xzr` as the base of `add (immediate)` is an error, not silently `sp`). Immediates, shift
 amounts, lane indexes and **branch ranges** are checked (`uField`, `sField`, `Env.pcRel`): an
-out-of-range `b.cond`/`cbz` (±1 MiB), `tbz` (±32 KiB), `b` (±128 MiB), `adr` (±1 MiB) is an
+out-of-range `b.cond`/`cbz`/`ldr (literal)` (±1 MiB), `tbz` (±32 KiB), `b` (±128 MiB), `adr` (±1 MiB) is an
 encoding error, so no branch is ever silently truncated (section "Branch-range policy").
 
 ### Object writer (`FV/Backend/Obj.lean`)
@@ -172,6 +178,15 @@ encoded by `armBits`); "Page" is the instruction description in C6.2 (base) or C
 | `addLo12` | `DPI.Add_sub_imm` (imm12 0) | ADD (immediate) (+ relocation) | `Inst::LoadExtNameNear` |
 | `adrpTlsDesc`, `ldrTlsDescLo12`, `addTlsDescLo12`, `blrTlsDesc` | as `adrp`, `ldrGotLo12`, `addLo12`, `blr` | ADRP, LDR, ADD, BLR (+ `R_AARCH64_TLSDESC_*`) | `Inst::ElfTlsGetAddr` |
 | `mrsTpidrEl0` | `BR.Mrs` (FV addition; the model has no system registers, `exec_mrs` stops with an error) | MRS xt, TPIDR_EL0 | `Inst::ElfTlsGetAddr` (`0xd53bd040 \| rt`) |
+| `fpuMove` s/d | `DPSFP.FP_data_processing_one_source` (opcode 000000) | FMOV (register) | `FpuMove32/64`, `enc_fpurr` |
+| `fpuMove128` | `DPSFP.Advanced_simd_three_same` (Q 1, size 10, opcode 00011, Rm = Rn) | MOV (vector) → ORR Vd.16B, Vn.16B, Vn.16B | `FpuMove128`, `enc_vecmov` |
+| `fpuRR abs/neg` s/d | `DPSFP.FP_data_processing_one_source` (opcode 000001/000010) | FABS, FNEG (scalar) | `FpuRR`, `enc_fpurr` |
+| `fpuCSel` s/d | `DPSFP.FP_conditional_select` | FCSEL | `FpuCSel32/64`, `enc_fcsel` |
+| `fpuMoveFPImm` s/d (8-bit encoded `imm8`; printed as the exact decimal value) | `DPSFP.FP_immediate` (imm5 0) | FMOV (scalar, immediate) | `FpuMoveFPImm` |
+| `movi` 8b/16b/4h/8h/2s/4s | `DPSFP.Advanced_simd_modified_immediate` (op 0; cmode 1110 / 1000 / 0000) | MOVI (LSL #0) | `VecDupImm`, `enc_asimd_mod_imm` |
+| `fpuLoad`/`fpuStore` s/d, every final mode | the five single-register `LDST` classes (V 1, size 10/11, opc 01/00) | LDR/STR/LDUR/STUR (SIMD&FP) | `FpuLoad32/64`, `FpuStore32/64` |
+| `fpuLoadP`/`fpuStoreP` s/d/q (sp pre/post-index) | `LDST.Reg_pair_pre_indexed` / `Reg_pair_post_indexed` (V 1, opc 00/01/10) | LDP/STP (SIMD&FP) | `FpuLoadP64/128`, `enc_ldst_vec_pair` |
+| `fpuLoadLit` s/d/q | `LDST.Reg_literal` (V 1, opc 00/01/10), imm19 = offset / 4, ±1 MiB | LDR (literal, SIMD&FP) | `FpuLoad*` with `AMode::Label`, `enc_ldst_imm19` |
 
 ## Tests and results (2026-09-27)
 

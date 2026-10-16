@@ -6,6 +6,7 @@ Author(s): Shilpi Goel
 import FV.Arm.Insts.LDST.Reg_imm
 import FV.Arm.Insts.LDST.Reg_unscaled_imm
 import FV.Arm.Insts.LDST.Reg_pair
+import FV.Arm.Insts.LDST.Reg_literal
 
 namespace Arm
 

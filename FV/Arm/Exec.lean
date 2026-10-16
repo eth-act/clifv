@@ -74,6 +74,14 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     DPSFP.exec_conversion_between_FP_and_Int i s
   | DPSFP (DataProcSFPInst.Advanced_simd_across_lanes i) =>
     DPSFP.exec_advanced_simd_across_lanes i s
+  | DPSFP (DataProcSFPInst.FP_data_processing_one_source i) =>
+    DPSFP.exec_fp_data_processing_one_source i s
+  | DPSFP (DataProcSFPInst.FP_immediate i) =>
+    DPSFP.exec_fp_immediate i s
+  | DPSFP (DataProcSFPInst.FP_conditional_select i) =>
+    DPSFP.exec_fp_conditional_select i s
+  | DPSFP (DataProcSFPInst.Advanced_simd_modified_immediate i) =>
+    DPSFP.exec_advanced_simd_modified_immediate i s
 
   | LDST (LDSTInst.Reg_imm_post_indexed i) =>
     LDST.exec_reg_imm_post_indexed i s
@@ -93,6 +101,8 @@ def exec_inst (ai : ArmInst) (s : ArmState) : ArmState :=
     LDST.exec_reg_reg_offset i s
   | LDST (LDSTInst.Reg_exclusive i) =>
     LDST.exec_reg_exclusive i s
+  | LDST (LDSTInst.Reg_literal i) =>
+    LDST.exec_reg_literal i s
 
   | RES i =>
     Reserved.exec_reserved i s

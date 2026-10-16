@@ -231,16 +231,16 @@ def exec_reg_unscaled_imm_gpr
       imm       := .simm9 inst.imm9 }
   exec_reg_imm_common extracted_inst s!"{inst}" s
 
-/-- (FV addition) Load/store register (register offset), GPR:
-`LDR/STR/LDRB/STRB/LDRH/STRH/LDRSB/LDRSH/LDRSW Rt, [Xn, Rm{, extend {#amount}}]`.
-ASL decode addition: `if option<1> == '0' then UNDEFINED;`. SIMD&FP register-offset forms are
-not modelled (Cranelift does not emit them for the emitter subset). -/
+/-- (FV addition) Load/store register (register offset), GPR and SIMD&FP:
+`LDR/STR/LDRB/STRB/LDRH/STRH/LDRSB/LDRSH/LDRSW Rt, [Xn, Rm{, extend {#amount}}]` and
+`LDR/STR Bt/Ht/St/Dt/Qt, [Xn, Rm{, extend {#amount}}]`. ASL decode addition (both):
+`if option<1> == '0' then UNDEFINED;`; the SIMD&FP decode ("LDR (register, SIMD&FP)",
+"STR (register, SIMD&FP)") has `scale = UInt(opc<1>:size)`, `if scale > 4 then UNDEFINED;`,
+`shift = if S == '1' then scale else 0`, as `exec_reg_imm_common` with `SIMD? = true`. -/
 @[state_simp_rules]
 def exec_reg_reg_offset
   (inst : Reg_reg_offset_cls) (s : ArmState) : ArmState :=
-  if inst.V = 1#1 then
-    write_err (StateError.Unimplemented s!"Unsupported instruction {inst} encountered!") s
-  else if lsb inst.option 1 = 0#1 then
+  if lsb inst.option 1 = 0#1 then
     write_err (StateError.Illegal s!"Illegal instruction {inst} encountered!") s
   else
     let extracted_inst : Reg_imm_cls :=
@@ -248,7 +248,7 @@ def exec_reg_reg_offset
         opc       := inst.opc,
         Rn        := inst.Rn,
         Rt        := inst.Rt,
-        SIMD?     := false,
+        SIMD?     := inst.V = 1#1,
         wback     := false,
         postindex := false,
         imm       := .reg inst.Rm inst.option inst.S }

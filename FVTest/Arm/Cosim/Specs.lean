@@ -25,6 +25,9 @@ def enc (fs : List (Nat × Nat)) : UInt32 :=
 
 def reg : GenM Nat := below 32
 
+/-- A SIMD&FP register other than v31 (the harness's scratch register). -/
+def vreg : GenM Nat := below 31
+
 /-- Two's-complement `n`-bit encoding of `j`. -/
 def twos (n : Nat) (j : Int) : Nat := (j % (2 ^ n : Int)).toNat
 
@@ -172,6 +175,13 @@ def ldstVariants : List (Nat × Nat × Nat × String) :=
    (2, 0, 4, "str (w)"), (2, 1, 4, "ldr (w)"), (2, 2, 4, "ldrsw"),
    (3, 0, 8, "str (x)"), (3, 1, 8, "ldr (x)")]
 
+/-- `(size, opc, access bytes, mnemonic)` for single-register SIMD&FP loads/stores
+(C7.2 LDR/STR (immediate / register, SIMD&FP), LDUR/STUR (SIMD&FP)). -/
+def ldstSimdVariants : List (Nat × Nat × Nat × String) :=
+  [(0, 0, 1, "str (b)"), (0, 1, 1, "ldr (b)"), (1, 0, 2, "str (h)"), (1, 1, 2, "ldr (h)"),
+   (2, 0, 4, "str (s)"), (2, 1, 4, "ldr (s)"), (3, 0, 8, "str (d)"), (3, 1, 8, "ldr (d)"),
+   (0, 2, 16, "str (q)"), (0, 3, 16, "ldr (q)")]
+
 inductive Mode where
   | uimm | unscaled | pre | post | regoff
 deriving BEq
@@ -200,21 +210,23 @@ def chooseE (bytes : Nat) (off : Int) (spBase : Bool) : GenM Nat := do
     return r + 16 * (← below (kmax + 1))
   else below (64 - bytes + 1)
 
-def ldst (size opc bytes : Nat) (mnem : String) (mode : Mode) : Spec :=
+/-- A single-register load/store; `V = 1`: SIMD&FP (`Rt` a v register, never v31). -/
+def ldst (V size opc bytes : Nat) (mnem : String) (mode : Mode) : Spec :=
   ⟨s!"{mnem} {mode.suffix}", s!"ldst-{mode.suffix}", fun i => do
     let name := s!"{mnem} {mode.suffix}"
+    let scale := Nat.log2 bytes
     let rn ← reg
     let wback := mode == .pre || mode == .post
-    let mut rt0 ← reg
+    let mut rt0 ← if V == 1 then vreg else reg
     for _ in [0:100] do
-      if wback && rt0 == rn && rn != 31 then rt0 ← reg
-    let rt := if wback && rt0 == rn && rn != 31 then (rn + 1) % 31 else rt0
-    let hdr := [(size, 2), (0b111, 3), (0, 1)]
+      if V == 0 && wback && rt0 == rn && rn != 31 then rt0 ← reg
+    let rt := if V == 0 && wback && rt0 == rn && rn != 31 then (rn + 1) % 31 else rt0
+    let hdr := [(size, 2), (0b111, 3), (V, 1)]
     let (inst, off, setRm) ← match mode with
       | .uimm =>
         let imm ← bits 12
         pure (enc (hdr ++ [(0b01, 2), (opc, 2), (imm, 12), (rn, 5), (rt, 5)]),
-          ((imm <<< size : Nat) : Int), (none : Option (Nat × Nat)))
+          ((imm * bytes : Nat) : Int), (none : Option (Nat × Nat)))
       | .unscaled | .pre | .post =>
         let imm ← bits 9
         let tag := match mode with | .unscaled => 0b00 | .pre => 0b11 | _ => 0b01
@@ -231,37 +243,49 @@ def ldst (size opc bytes : Nat) (mnem : String) (mode : Mode) : Spec :=
         let v ← if ← coin then pure (← randVal).toNat else pure ((← bits 12) : Nat)
         let v := if rm == 31 then 0 else v
         pure (enc (hdr ++ [(0b00, 2), (opc, 2), (1, 1), (rm, 5), (option, 3), (S, 1), (0b10, 2),
-          (rn, 5), (rt, 5)]), signed64 (extendVal v option (if S == 1 then size else 0)),
+          (rn, 5), (rt, 5)]), signed64 (extendVal v option (if S == 1 then scale else 0)),
           if rm == 31 then none else some (rm, v))
     let e ← chooseE bytes off (rn == 31)
-    let mut tc ← randomCase name inst
+    let mut tc ← if V == 1 then randomFpCase name (bytes == 8) inst else randomCase name inst
     if let some (rm, v) := setRm then tc := tc.setReg rm (hex v)
     let delta := signed64 (((e : Int) - off) % (2 ^ 64 : Int)).toNat
     return tc.setReg rn (bufPlus i delta)⟩
 
-/-- Load/store pair: `(opc, L, mnemonic)`; `mode` is 0b001 post, 0b011 pre, 0b010 offset. -/
-def ldstPair (opc L : Nat) (mnem : String) (mode : Nat) : Spec :=
+/-- Load/store pair: `(opc, L, mnemonic)`; `mode` is 0b001 post, 0b011 pre, 0b010 offset;
+`V = 1`: SIMD&FP (`opc` 00 S, 01 D, 10 Q). -/
+def ldstPair (V opc L : Nat) (mnem : String) (mode : Nat) : Spec :=
   let suffix := match mode with
     | 0b001 => "[xn], #simm" | 0b011 => "[xn, #simm]!" | _ => "[xn, #simm]"
   ⟨s!"{mnem} {suffix}", "ldst-pair", fun i => do
     let name := s!"{mnem} {suffix}"
-    let scale := if opc == 0b10 then 3 else 2
+    let scale := if V == 1 then 2 + opc else if opc == 0b10 then 3 else 2
     let bytes := 2 * 2 ^ scale
     let wback := mode != 0b010
+    let treg : GenM Nat := if V == 1 then vreg else reg
     let rn ← reg
-    let mut rt ← reg
-    let mut rt2 ← reg
+    let mut rt ← treg
+    let mut rt2 ← treg
     for _ in [0:1000] do
-      if (L == 1 && rt == rt2) || (wback && rn != 31 && (rt == rn || rt2 == rn)) then
-        rt ← reg
-        rt2 ← reg
+      if (L == 1 && rt == rt2) || (V == 0 && wback && rn != 31 && (rt == rn || rt2 == rn)) then
+        rt ← treg
+        rt2 ← treg
     let imm ← bits 7
     let off : Int := if mode == 0b001 then 0 else sext 7 imm * 2 ^ scale
-    let inst := enc [(opc, 2), (0b101, 3), (0, 1), (mode, 3), (L, 1), (imm, 7), (rt2, 5), (rn, 5), (rt, 5)]
+    let inst := enc [(opc, 2), (0b101, 3), (V, 1), (mode, 3), (L, 1), (imm, 7), (rt2, 5), (rn, 5), (rt, 5)]
     let e ← chooseE bytes off (rn == 31)
-    let tc ← randomCase name inst
+    let tc ← if V == 1 then randomFpCase name (scale == 3) inst else randomCase name inst
     let delta := signed64 (((e : Int) - off) % (2 ^ 64 : Int)).toNat
     return tc.setReg rn (bufPlus i delta)⟩
+
+/-- LDR (literal) `(opc, V)`: the target is in one of the test's literal pools
+(`TestCase.pool`: 64 bytes at `pc - 64` and at `pc + 8`), at any word offset there. -/
+def ldrLiteral (opc V bytes : Nat) (mnem : String) : Spec := ⟨mnem, "ldst-literal", fun _ => do
+  let k ← below ((64 - bytes) / 4 + 1)
+  let off : Int := if ← coin then -64 + 4 * k else 8 + 4 * k
+  let rt ← if V == 1 then vreg else reg
+  let inst := enc [(opc, 2), (0b011, 3), (V, 1), (0b00, 2), (twos 19 (off / 4), 19), (rt, 5)]
+  let tc ← if V == 1 then randomFpCase mnem (bytes == 8) inst else randomCase mnem inst
+  return { tc with pool := true }⟩
 
 /-- `ldar`/`stlr`/`ldaxr` (`(o2, L)`; C4.1 "Load/store exclusive"/"Load-acquire/store-release",
 Rs = Rt2 = 11111, o0 = 1): no offset, and the address `bytes`-aligned, which these require.
@@ -279,8 +303,6 @@ def ldstExcl (o2 L : Nat) (mnem : String) : Spec := ⟨mnem, "ldst-excl", fun i 
   return tc.setReg rn (bufPlus i (e - e % bytes : Nat))⟩
 
 /-! ## SIMD&FP (popcnt sequence) -/
-
-def vreg : GenM Nat := below 31
 
 def fmovGen (sf ftype opcode : Nat) (name : String) (toV : Bool) : Spec := ⟨name, "simd", fun _ => do
   let rn ← if toV then reg else vreg
@@ -310,6 +332,61 @@ def umov : Spec := ⟨"umov", "simd", fun _ => do
   let imm5 := imm5 ||| (idx <<< (Nat.log2 imm5 + 1))
   randomCase "umov" (enc [(0, 1), (Q, 1), (0, 1), (0b01110000, 8), (imm5, 5), (0, 1), (0b0111, 4),
     (1, 1), (← vreg, 5), (← reg, 5)])⟩
+
+/-! ## Scalar floating point and SIMD&FP data movement (FV additions) -/
+
+/-- `name (s)` / `name (d)` for `ftype` 00 / 01. -/
+def fpName (name : String) (ftype : Nat) : String :=
+  s!"{name} ({if ftype == 1 then "d" else "s"})"
+
+/-- Floating-point data-processing (1 source) with `opcode` (FMOV/FABS/FNEG …). -/
+def fp1 (opcode : Nat) (name : String) (ftype : Nat) : Spec :=
+  let name := fpName name ftype
+  ⟨name, "fp", fun _ => do
+    randomFpCase name (ftype == 1) (enc [(0, 1), (0, 1), (0, 1), (0b11110, 5), (ftype, 2), (1, 1),
+      (opcode, 6), (0b10000, 5), (← vreg, 5), (← vreg, 5)])⟩
+
+/-- FMOV (scalar, immediate): every `imm8`. -/
+def fmovImm (ftype : Nat) : Spec :=
+  let name := fpName "fmov (imm)" ftype
+  ⟨name, "fp", fun _ => do
+    randomFpCase name (ftype == 1) (enc [(0, 1), (0, 1), (0, 1), (0b11110, 5), (ftype, 2), (1, 1),
+      (← bits 8, 8), (0b100, 3), (0, 5), (← vreg, 5)])⟩
+
+/-- FCSEL: every condition, random NZCV. -/
+def fcsel (ftype : Nat) : Spec :=
+  let name := fpName "fcsel" ftype
+  ⟨name, "fp", fun _ => do
+    randomFpCase name (ftype == 1) (enc [(0, 1), (0, 1), (0, 1), (0b11110, 5), (ftype, 2), (1, 1),
+      (← vreg, 5), (← bits 4, 4), (0b11, 2), (← vreg, 5), (← vreg, 5)])⟩
+
+/-- Advanced SIMD modified immediate: every allocated `(Q, op, cmode, o2)` (C4.1 table:
+`o2 = 1` only with `op:cmode = 0:1111`; `op:cmode = 1:1111` only with `Q = 1`), every `imm8`. -/
+partial def modImm : Spec := ⟨"movi/mvni/orr/bic/fmov (vector, imm)", "simd-imm", fun _ => do
+  let rec go : GenM (Nat × Nat × Nat × Nat) := do
+    let Q ← bits 1
+    let op ← bits 1
+    let cmode ← bits 4
+    let o2 ← bits 1
+    if (cmode == 15 && op == 1 && Q == 0) || (o2 == 1 && !(cmode == 15 && op == 0)) then go
+    else return (Q, op, cmode, o2)
+  let (Q, op, cmode, o2) ← go
+  let imm8 ← bits 8
+  randomCase "movi/mvni/orr/bic/fmov (vector, imm)" (enc [(0, 1), (Q, 1), (op, 1),
+    (0b0111100000, 10), (imm8 >>> 5, 3), (cmode, 4), (o2, 1), (1, 1), (imm8 % 32, 5), (← vreg, 5)])⟩
+
+/-- `movi vd.2s, #0` (Cranelift's zero `f32const`/`f64const`). -/
+def moviZero : Spec := ⟨"movi (2s, #0)", "simd-imm", fun _ => do
+  randomFpCase "movi (2s, #0)" (← coin) (enc [(0, 1), (0, 1), (0, 1), (0b0111100000, 10), (0, 3),
+    (0, 4), (0, 1), (1, 1), (0, 5), (← vreg, 5)])⟩
+
+/-- ORR (vector, register), 8B/16B; half of the cases are `mov vd.<T>, vn.<T>` (`Rm = Rn`,
+Cranelift's `FpuMove128` register move). -/
+def orrVector : Spec := ⟨"orr (vector)", "simd", fun _ => do
+  let rn ← vreg
+  let rm ← if ← coin then pure rn else vreg
+  randomFpCase "orr (vector)" (← coin) (enc [(0, 1), (← bits 1, 1), (0, 1), (0b01110, 5), (0b10, 2),
+    (1, 1), (rm, 5), (0b00011, 5), (1, 1), (rn, 5), (← vreg, 5)])⟩
 
 /-! ## All specs -/
 
@@ -347,10 +424,23 @@ def allSpecs : List Spec :=
     fmovGen 0 0 0b111 "fmov (s, w)" true, fmovGen 1 1 0b111 "fmov (d, x)" true,
     fmovGen 0 0 0b110 "fmov (w, s)" false, fmovGen 1 1 0b110 "fmov (x, d)" false,
     cnt, acrossLanes 0 0b11011 "addv", acrossLanes 1 0b00011 "uaddlv", addp, umov ] ++
+  ([0, 1].flatMap fun ft =>
+    [fp1 0b000000 "fmov (reg)" ft, fp1 0b000001 "fabs" ft, fp1 0b000010 "fneg" ft, fmovImm ft,
+     fcsel ft]) ++
+  [modImm, moviZero, orrVector] ++
   ([Mode.uimm, .unscaled, .pre, .post, .regoff].flatMap fun m =>
-    ldstVariants.map fun (size, opc, bytes, mnem) => ldst size opc bytes mnem m) ++
+    ldstVariants.map fun (size, opc, bytes, mnem) => ldst 0 size opc bytes mnem m) ++
   ([0b010, 0b011, 0b001].flatMap fun mode =>
-    [ldstPair 0b10 0 "stp (x)" mode, ldstPair 0b10 1 "ldp (x)" mode, ldstPair 0b00 0 "stp (w)" mode,
-     ldstPair 0b00 1 "ldp (w)" mode, ldstPair 0b01 1 "ldpsw" mode])
+    [ldstPair 0 0b10 0 "stp (x)" mode, ldstPair 0 0b10 1 "ldp (x)" mode, ldstPair 0 0b00 0 "stp (w)" mode,
+     ldstPair 0 0b00 1 "ldp (w)" mode, ldstPair 0 0b01 1 "ldpsw" mode]) ++
+  ([Mode.uimm, .unscaled, .pre, .post, .regoff].flatMap fun m =>
+    ldstSimdVariants.map fun (size, opc, bytes, mnem) => ldst 1 size opc bytes mnem m) ++
+  ([0b010, 0b011, 0b001].flatMap fun mode =>
+    [0, 1, 2].flatMap fun opc =>
+      let t := match opc with | 0 => "s" | 1 => "d" | _ => "q"
+      [ldstPair 1 opc 0 s!"stp ({t})" mode, ldstPair 1 opc 1 s!"ldp ({t})" mode]) ++
+  [ldrLiteral 0 0 4 "ldr (literal, w)", ldrLiteral 1 0 8 "ldr (literal, x)",
+   ldrLiteral 2 0 4 "ldrsw (literal)", ldrLiteral 0 1 4 "ldr (literal, s)",
+   ldrLiteral 1 1 8 "ldr (literal, d)", ldrLiteral 2 1 16 "ldr (literal, q)"]
 
 end Arm.Cosim

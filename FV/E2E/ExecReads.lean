@@ -22,7 +22,9 @@ open Backend E2E.ExecBytes E2E.ExecFrame
 /-- The loads among the backend's instructions. -/
 def _root_.Backend.Insn.loads : Insn → Bool
   | .load .. | .ldp .. | .ldar .. | .ldaxr .. | .ldrGotLo12 .. | .ldrTlsDescLo12 .. => true
-  -- the model's register-offset class reads for these encodings (`RegImm.ofRegOffset`)
+  | .fpuLoad .. | .fpuLoadP .. | .fpuLoadLit .. => true
+  -- counted as loads (as `MInst.memRd` does), although the model's SIMD&FP register-offset
+  -- store reads no memory
   | .store .fpuStore128 _ (.regReg ..) | .store .fpuStore128 _ (.regScaled ..)
   | .store .fpuStore128 _ (.regScaledExtended ..) | .store .fpuStore128 _ (.regExtended ..) => true
   | _ => false
@@ -38,6 +40,19 @@ theorem ldstFields_store_reads {size : BitVec 2} {V : BitVec 1} {opc : BitVec 2}
     (s : Arm.ArmState) : MemReads a s = [] := by
   rcases hopc with ⟨rfl, rfl⟩ | ⟨rfl, rfl, hm⟩ <;>
   · cases m <;> (try simp at hm) <;> simp only [ldstFields, bind, Except.bind, pure, Except.pure, throw, throwThe,
+      MonadExceptOf.throw] at h <;> (repeat' split at h) <;>
+      (try simp only [reduceCtorEq, Except.ok.injEq] at h) <;> (try subst h) <;>
+      (try contradiction) <;> (try cases h) <;>
+      simp (config := {decide := true}) [MemReads, RegImm.reads, RegImm.memop, RegImm.ofUnsigned,
+        RegImm.ofUnscaled, RegImm.ofPost, RegImm.ofPre, RegImm.ofRegOffset, ldsturReads,
+        Arm.BitVec.lsb]
+
+/-- A SIMD&FP store (`V = 1`, `opc<0> = 0`) reads no memory, in every addressing mode. -/
+theorem ldstFields_simd_store_reads {size : BitVec 2} {opc : BitVec 2} {bytes : Nat}
+    {Rt : BitVec 5} {m : AMode} {a : Arm.ArmInst} (h : ldstFields size 1 opc bytes Rt m = .ok a)
+    (hopc : opc = 0 ∨ opc = 2) (s : Arm.ArmState) : MemReads a s = [] := by
+  rcases hopc with rfl | rfl <;>
+  · cases m <;> simp only [ldstFields, bind, Except.bind, pure, Except.pure, throw, throwThe,
       MonadExceptOf.throw] at h <;> (repeat' split at h) <;>
       (try simp only [reduceCtorEq, Except.ok.injEq] at h) <;> (try subst h) <;>
       (try contradiction) <;> (try cases h) <;>
@@ -67,6 +82,12 @@ theorem Insn.memReads_nil {x : Insn} (hx : x.loads = false) {env : Env} {a : Arm
            | (left; decide)
            | (refine .inr fun rn rm => ⟨?_, ?_, fun e => ⟨?_, ?_⟩⟩ <;> rintro rfl <;>
                simp at hx))
+  case fpuStore sz rt m =>
+    simp only [Insn.armFields, bind, Except.bind] at h0
+    repeat' split at h0
+    all_goals first
+      | cases h0
+      | exact ldstFields_simd_store_reads h0 (.inl rfl) s
   all_goals (simp only [Insn.armFields, Insn.armFields.exclFields, bind, Except.bind, pure,
     Except.pure, throw, throwThe, MonadExceptOf.throw] at h0)
   all_goals (repeat' split at h0) <;> (try simp only [reduceCtorEq, Except.ok.injEq] at h0) <;>
