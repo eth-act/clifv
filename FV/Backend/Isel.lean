@@ -255,7 +255,16 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
       | none => throw s!"unknown gv{gv}"
   | i => throw s!"`{instText i}` is not in E"
 
-/-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`) -/
+/-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`)
+
+Typed placement: an integer value goes in the next of x0..x7, an `f32`/`f64` value in the next
+of v0..v7, with separate counters (Cranelift's `next_xreg`/`next_vreg`); a parameter that finds
+no register of its class goes to the stack. `abiArgLocs`/`abiRetRegs` are that placement for
+every signature. The lowering passes integer values only (`sigArgs` rejects an `f32`/`f64`
+parameter: FP argument moves are not lowered yet), so its `sigArgLocs` places integer
+parameters only, where the typed placement is the x-register placement `argLocs`
+(`Proof.sigArgLocs_eq`, `Proof.abiArgLocs_int`), and its return registers are the integer
+specialisation `retRegs` (`Proof.abiRetRegs_int`). -/
 
 inductive ArgLoc where
   | reg (r : Reg)
@@ -264,8 +273,37 @@ inductive ArgLoc where
 
 def alignTo (n a : Nat) : Nat := (n + a - 1) / a * a
 
+/-- The register class AAPCS64 passes a value of type `t` in (`rc_for_type`): an integer in an
+X register, an `f32`/`f64` in (the low lanes of) a V register. -/
+def tyClass (t : Clif.Ty) : RegClass := if t.isInt then .int else .float
+
+/-- One value of `argLocsC` (`compute_arg_locs`' loop body for a single-register value), on
+(locations, next X register, next V register, next stack offset): a value of class `.int`
+takes `x nx` while `nx < 8`, one of class `.float` takes `v nv` while `nv < 8`; otherwise an
+8-byte-minimum naturally aligned stack slot. -/
+def argLocStep (q : Array ArgLoc × Nat × Nat × Nat) (p : RegClass × Nat) :
+    Array ArgLoc × Nat × Nat × Nat :=
+  let size := max p.2 8
+  let off := alignTo q.2.2.2 size
+  match p.1 with
+  | .int =>
+    if q.2.1 < 8 then (q.1.push (.reg (.x q.2.1)), q.2.1 + 1, q.2.2.1, q.2.2.2)
+    else (q.1.push (.stack off), q.2.1, q.2.2.1, off + size)
+  | .float =>
+    if q.2.2.1 < 8 then (q.1.push (.reg (.v q.2.2.1)), q.2.1, q.2.2.1 + 1, q.2.2.2)
+    else (q.1.push (.stack off), q.2.1, q.2.2.1, off + size)
+
+/-- Argument locations for values of the given register classes and byte sizes
+(`compute_arg_locs`): x0..x7 for integers and v0..v7 for floats (separate counters), then
+8-byte (at least) naturally aligned stack slots; and the stack-argument space rounded up to
+16. -/
+def argLocsC (ps : List (RegClass × Nat)) : List ArgLoc × Nat :=
+  let q := ps.foldl argLocStep (#[], 0, 0, 0)
+  (q.1.toList, alignTo q.2.2.2 16)
+
 /-- Argument locations for integer parameters of the given byte sizes: `x0..x7`, then 8-byte
-(at least) naturally aligned stack slots; and the stack-argument space rounded up to 16. -/
+(at least) naturally aligned stack slots; and the stack-argument space rounded up to 16. The
+integer specialisation of `argLocsC` (`Proof.argLocsC_int`). -/
 def argLocs (bytes : List Nat) : List ArgLoc × Nat :=
   let (locs, _, stack) := bytes.foldl (init := (#[], 0, 0)) fun (acc, nx, st) b =>
     if nx < 8 then (acc.push (.reg (.x nx)), nx + 1, st)
@@ -275,17 +313,28 @@ def argLocs (bytes : List Nat) : List ArgLoc × Nat :=
       (acc.push (.stack off), nx, off + size)
   (locs.toList, alignTo stack 16)
 
-/-- Return registers: `x0..x7` (more than 8 return values is a Cranelift error without
+/-- Return registers for values of the given classes (`compute_arg_locs` on the returns): an
+integer in the next of x0..x7, a float in the next of v0..v7 (separate counters, next `x nx`
+and `v nv`); `none` when a class runs out of its 8 registers (a Cranelift error without
 `enable_multi_ret_implicit_sret`). -/
+def retRegsC : List RegClass → Nat → Nat → Option (List Reg)
+  | [], _, _ => some []
+  | .int :: cs, nx, nv => if nx < 8 then (retRegsC cs (nx + 1) nv).map (.x nx :: ·) else none
+  | .float :: cs, nx, nv => if nv < 8 then (retRegsC cs nx (nv + 1)).map (.v nv :: ·) else none
+
+/-- Return registers of `n` integer values: `x0..x7` (more than 8 return values is a Cranelift
+error without `enable_multi_ret_implicit_sret`). The integer specialisation of `retRegsC`
+(`Proof.retRegsC_int`). -/
 def retRegs (n : Nat) : Option (List Reg) :=
   if n ≤ 8 then some ((List.range n).map .x) else none
 
-/-- The parameters a call or entry passes in registers/stack slots (`compute_arg_locs`,
-AAPCS64): a `normal`/`vmctx` parameter takes the next of x0..x7, then 8-byte-minimum
-naturally aligned stack slots; a **`sret`** parameter is the hidden struct-return pointer,
-in **x8** (Cranelift's aarch64 `compute_arg_locs`: the sret slot does not consume the
-x0..x7 sequence and must be pointer-sized). -/
-def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
+/-- The byte sizes of the parameters of a signature as AAPCS64 places them
+(`compute_arg_locs`): a `normal`/`vmctx` parameter of an integer or float type takes the next
+register of its class (`tyClass`), then 8-byte-minimum naturally aligned stack slots; a
+**`sret`** parameter is the hidden struct-return pointer, in **x8** (Cranelift's aarch64
+`compute_arg_locs`: the sret slot does not consume the x0..x7 sequence and must be
+pointer-sized). -/
+def abiArgs (s : Clif.Signature) : Except String (List Nat) :=
   s.params.mapM fun p =>
     if p.ty == .i128 then throw "i128 parameter"
     else match p.purpose with
@@ -293,8 +342,14 @@ def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
       | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
       | _ => throw "special-purpose parameter (sarg)"
 
-/-- One step of `sigArgLocs`' placement of the parameters of an `sret` signature: the `sret`
-parameter in x8, every other parameter at the next location of `rest` (`argLocs` of the
+/-- The parameters a call or entry of the lowering passes: `abiArgs` of a signature without
+`f32`/`f64` parameters (the lowering moves integer values only). -/
+def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
+  if s.params.any (·.ty.isFloat) then throw "float parameter (FP argument moves are not lowered)"
+  else abiArgs s
+
+/-- One step of `paramLocs`' placement of the parameters of an `sret` signature: the `sret`
+parameter in x8, every other parameter at the next location of `rest` (`argLocsC` of the
 non-`sret` parameters). -/
 def sretLocStep (q : Array ArgLoc × List ArgLoc) (p : Clif.AbiParam) : Array ArgLoc × List ArgLoc :=
   if p.purpose == .sret then (q.1.push (.reg (.x 8)), q.2)
@@ -302,18 +357,32 @@ def sretLocStep (q : Array ArgLoc × List ArgLoc) (p : Clif.AbiParam) : Array Ar
     | l :: r => (q.1.push l, r)
     | [] => (q.1, [])
 
-/-- The argument locations of a signature: `argLocs` over the non-`sret` parameters, with every
-`sret` parameter in x8 (in parameter order). The `sret` parameter does not take a slot of the
-x0..x7 sequence: the next normal parameter still goes in x0 (Cranelift's aarch64
-`compute_arg_locs`). -/
+/-- The locations of parameters `ps` of byte sizes `bytes`: `argLocsC` over the non-`sret`
+parameters (class `tyClass` of their type), with every `sret` parameter in x8 (in parameter
+order). The `sret` parameter does not take a slot of the x0..x7 sequence: the next normal
+integer parameter still goes in x0 (Cranelift's aarch64 `compute_arg_locs`). -/
+def paramLocs (ps : List Clif.AbiParam) (bytes : List Nat) : Except String (List ArgLoc × Nat) := do
+  if ps.any (·.purpose == .sret) then
+    let normal := ((ps.zip bytes).filter (!·.1.purpose == .sret)).map fun q => (tyClass q.1.ty, q.2)
+    let locs := (ps.foldl sretLocStep (#[], (argLocsC normal).1)).1
+    if locs.size != ps.length then throw "sigArgLocs: length"
+    pure (locs.toList, (argLocsC normal).2)
+  else pure (argLocsC ((ps.zip bytes).map fun q => (tyClass q.1.ty, q.2)))
+
+/-- **The AAPCS64 argument locations of a signature** (`compute_arg_locs`): `paramLocs` with
+the `abiArgs` sizes; integer parameters in x0..x7, `f32`/`f64` ones in v0..v7, an `sret`
+parameter in x8, then the stack. -/
+def abiArgLocs (s : Clif.Signature) : Except String (List ArgLoc × Nat) := do
+  let bytes ← abiArgs s
+  paramLocs s.params bytes
+
+/-- The argument locations of a signature as the lowering passes them: `paramLocs` with the
+`sigArgs` sizes (no float parameters), i.e. `abiArgLocs` of a signature without float
+parameters (`Proof.abiArgLocs_int`): x0..x7, an `sret` parameter in x8, then the stack
+(`Proof.sigArgLocs_eq`). -/
 def sigArgLocs (s : Clif.Signature) : Except String (List ArgLoc × Nat) := do
   let bytes ← sigArgs s
-  if s.params.any (·.purpose == .sret) then
-    let normal := ((s.params.zip bytes).filter (!·.1.purpose == .sret)).map (·.2)
-    let locs := (s.params.foldl sretLocStep (#[], (argLocs normal).1)).1
-    if locs.size != s.params.length then throw "sigArgLocs: length"
-    pure (locs.toList, (argLocs normal).2)
-  else pure (argLocs bytes)
+  paramLocs s.params bytes
 
 /-- The locations of the parameters of `s` (`sigArgLocs`: x0..x7, an `sret` parameter in x8,
 then the outgoing stack area; empty where `sigArgLocs` fails). -/
@@ -356,6 +425,11 @@ def sigRets (s : Clif.Signature) : List Clif.AbiParam :=
   match s.params.find? (·.purpose == .sret) with
   | some p => if s.returns.isEmpty then [p] else s.returns
   | none => s.returns
+
+/-- **The AAPCS64 return registers of a signature** (`compute_arg_locs` on `sigRets`): integer
+returns in x0..x7, `f32`/`f64` ones in v0..v7 (`retRegsC`). -/
+def abiRetRegs (s : Clif.Signature) : Option (List Reg) :=
+  retRegsC ((sigRets s).map (tyClass ·.ty)) 0 0
 
 /-- The signatures the end-to-end theorem covers (`E2E.InSubset.abiSigs`): `normal`
 parameters and returns, plus at most one `sret` parameter (an `i64`, in x8), and then no

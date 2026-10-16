@@ -104,6 +104,25 @@ The proof covers them as follows.
   so its extra def is not related to anything (`results_call`). `ExternsNormal` is gone
   (`CallRuleOk` assumes `ExternsIn f exts`).
 
+### Typed ABI placement (`f32`/`f64`, S11e2)
+
+`FV/Backend/Isel.lean` models Cranelift's aarch64 `compute_arg_locs` for both register classes:
+`abiArgLocs` puts an integer parameter in the next of x0..x7 and an `f32`/`f64` one in the next of
+v0..v7 (separate counters), then 8-byte-minimum naturally aligned stack slots (`argLocsC`), the
+`sret` pointer in x8 (`paramLocs`); `abiRetRegs` puts integer returns in x0..x7 and float ones in
+v0..v7 (`retRegsC`, `none` past 8 of a class). Witness: `(f64, i64, f32)` goes to `[v0, x0, v1]`
+(`Proof.abiArgLocs_sigFIF`, `abiRetRegs_sigFIF`; spill and `sret` cases next to them in
+`FV/Backend/Proof/AbiClass.lean`).
+
+The lowering and every theorem above use the integer case only: `sigArgs`/`sigParamBytes`
+reject an `f32`/`f64` parameter (FP argument moves are not lowered yet), so `sigArgLocs` (and
+`locsOf`, `stackBytes`, `stackLayoutOk`) are the x-register placement `argLocs` they always were
+(`Proof.sigArgLocs_eq`), and the return paths use the integer specialisation `retRegs`. On a
+signature with integer parameters (returns) the typed placement is that one
+(`Proof.abiArgLocs_int`, `Proof.abiRetRegs_int`; cores `argLocsC_int`, `retRegsC_int`). `ArgsIn`,
+`ArgsAt` and the linking contracts still speak about x registers only; FP-register contracts come
+with float data movement (S11e).
+
 ### `try_call` (the normal return)
 
 `Clif.run` models a `try_call fnN(args), sigM, block(ret…)[, handlers]` as the call of `fnN`

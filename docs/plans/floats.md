@@ -133,6 +133,21 @@ value-to-register map and the proofs built on `typedReg`'s `.vreg x .int`. In de
 | S11e4 | ISLE float data-movement root rules (`f32const`/`f64const`, float `load`/`store`/`select`, `bitcast`) in the closure with `LowerRulesCorrect`/`MemRulesCorrect` proofs | `Proof/Isel*` families, `IselExclBase`, `IselLowerAll`, coverage tables |
 | S11e5 | E/`functionE`/`InScopeIn` widened to float data movement, `driverInB`/`iselInB` totality kept, call/return/link contracts for FP registers | `Compile/Subset.lean`, `E2E/LinkScopeInputDefs.lean`, `Proof/LowerTotal*.lean`, `E2E/LinkOwn*.lean` |
 
+**S11e2 (typed ABI placement): done.** `FV/Backend/Isel.lean` places values per class as
+Cranelift's aarch64 `compute_arg_locs` does: `argLocsC` (x0..x7 / v0..v7, separate counters,
+then 8-byte-minimum aligned stack slots), `paramLocs` (`sret` in x8), `abiArgLocs` over
+`abiArgs` (which admits `f32`/`f64`), `retRegsC`/`abiRetRegs` (8 per class). `argLocs`/`retRegs`
+stay as the integer specialisations (`Proof.argLocsC_int`, `Proof.retRegsC_int`), and
+`abiArgLocs_int`/`abiRetRegs_int` show the typed placement of an integer signature is the
+lowering's. Interim: the lowering stays integer, `sigArgs` (hence `sigParamBytes`, `sigArgLocs`)
+rejects a float parameter until S11e3 lowers FP argument moves, so `sigArgLocs` is unchanged
+(`Proof.sigArgLocs_eq`) and the integer proofs needed only `unfold sigArgLocs` →
+`rw [sigArgLocs_eq]` and `sigArgs_bytes` → `sigParamBytes_bytes`; no statement changed.
+Witness `(f64, i64, f32)` ↦ `[v0, x0, v1]` (`FV/Backend/Proof/AbiClass.lean`). S11e3/S11e5
+switch the call/entry lowering to `abiArgLocs`/`abiRetRegs` (equal on integer signatures by the
+`*_int` theorems), drop `sigArgs`' float rejection and add the FP-register
+`ArgsIn`/callee/link contracts; floats are not left excluded from calls.
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in
@@ -140,8 +155,9 @@ value-to-register map and the proofs built on `typedReg`'s `.vreg x .int`. In de
   become false with f32/f64 and need an `isInt` premise, not new `cases` arms.
 - `tyE t := t != .i128` and `Isel.eTy` would silently admit floats; they must test
   `isInt` until the float rules are proven.
-- `Isel.argLocs` takes byte sizes only, so it cannot tell `i64` from `f64`; the ABI change
-  touches `ArgsIn`, callee contracts and the linking proofs (`docs/contracts/e2e.md`).
+- `Isel.argLocs` takes byte sizes only, so it cannot tell `i64` from `f64` (S11e2: the typed
+  `argLocsC`/`abiArgLocs` take classes; the lowering's `sigArgLocs` still rejects floats); the
+  ABI change touches `ArgsIn`, callee contracts and the linking proofs (`docs/contracts/e2e.md`).
 - Changing `Clif.Syntax` rebuilds everything downstream, including the heavy
   `FV.Opt.Proof.*` modules (TO-PROVE §7: serial, ≤3 at a time).
 - `clif-native`'s random differential generator rejects float parameters

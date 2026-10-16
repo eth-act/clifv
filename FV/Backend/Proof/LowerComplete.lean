@@ -89,8 +89,7 @@ theorem sretLocStep_fold : ∀ (ps : List Clif.AbiParam) (q : Array ArgLoc × Li
 
 theorem sigArgs_length {s : Clif.Signature} {bytes : List Nat} (h : sigArgs s = .ok bytes) :
     bytes.length = s.params.length := by
-  unfold sigArgs at h
-  exact (Prep.lmapM_ok h).1
+  exact abiArgs_length (sigArgs_int h).2
 
 /-- `entryOkB` holds when the parameter locations and byte sizes compute. -/
 theorem entryOkB_of {f : Clif.Function} {locs : List ArgLoc} {n : Nat} {bytes : List Nat}
@@ -98,7 +97,7 @@ theorem entryOkB_of {f : Clif.Function} {locs : List ArgLoc} {n : Nat} {bytes : 
     entryOkB f = true := by
   have hlocs : locsOf f.sig = locs := by simp [locsOf, hl]
   have key : locs.length = f.sig.params.length ∧ ∀ l ∈ locs, LocOk l := by
-    unfold sigArgLocs at hl
+    rw [sigArgLocs_eq] at hl
     simp only [sigParamBytes] at hb
     rw [hb] at hl
     simp only [bind, Except.bind] at hl

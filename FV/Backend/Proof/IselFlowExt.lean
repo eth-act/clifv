@@ -1,6 +1,7 @@
 import FV.Backend.Proof.IselFlowSplit
 import FV.Backend.Proof.IselFlowCheck
 import FV.Backend.Proof.DriverCheck
+import FV.Backend.Proof.AbiClass
 
 /-!
 # What the extern helpers do to registers, values, instructions and the lowering state
@@ -350,7 +351,7 @@ theorem sretLocStep_phys :
 /-- The register locations of `sigArgLocs` are physical. -/
 theorem sigArgLocs_phys {s : Clif.Signature} {locs : List ArgLoc} {k : Nat}
     (h : sigArgLocs s = .ok (locs, k)) : ∀ l ∈ locs, ∀ p, l = .reg p → ∀ n c, p ≠ .vreg n c := by
-  unfold sigArgLocs at h
+  rw [sigArgLocs_eq] at h
   cases hb : sigArgs s with
   | error e => rw [hb] at h; cases h
   | ok bytes =>

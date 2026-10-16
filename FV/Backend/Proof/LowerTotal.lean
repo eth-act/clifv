@@ -152,7 +152,12 @@ theorem amapM_ok' {ε α β : Type} {g : α → Except ε β} (l : List α)
 /-- `sigArgs` computes on a `sigAbiOk` signature without `i128` parameters. -/
 theorem sigArgs_ok {s : Clif.Signature} (hA : sigAbiOk s = true)
     (hE : s.params.all (Compile.tyE ·.ty) = true) : ∃ bytes, sigArgs s = .ok bytes := by
-  unfold sigArgs
+  have hI : s.params.all (·.ty.isInt) = true := List.all_eq_true.mpr fun p hp => by
+    have := List.all_eq_true.mp hE p hp
+    simp only [Compile.tyE, Bool.and_eq_true] at this
+    exact this.1
+  rw [sigArgs_of_int hI]
+  unfold abiArgs
   refine lmapM_ok' _ fun p hp => ?_
   simp only [sigAbiOk, Bool.and_eq_true, List.all_eq_true] at hA
   have h1 := hA.1.1.1 p hp
@@ -192,7 +197,7 @@ theorem sretFold_size : ∀ (ps : List Clif.AbiParam) (q : Array ArgLoc × List 
 /-- `sigArgLocs` computes where `sigArgs` does. -/
 theorem sigArgLocs_ok {s : Clif.Signature} {bytes : List Nat} (hb : sigArgs s = .ok bytes) :
     ∃ locs n, sigArgLocs s = .ok (locs, n) := by
-  unfold sigArgLocs
+  rw [sigArgLocs_eq]
   simp only [hb, bind, Except.bind]
   split
   · have hn := filter_zip_length (fun p : Clif.AbiParam => !(p.purpose == .sret)) s.params bytes
