@@ -9,9 +9,18 @@ import FV.Unw.Dwarf
 
 * LEB128: `uleb?_uleb`, `sleb?_sleb` (decode ∘ encode).
 * CFI programs: `decodeCfa?_cfiProgram` — the bytes of `cfiProgram rows` decode to the rows'
-  instructions (`insnsOf rows`) for rows at increasing offsets that are multiples of 4, with
-  CFA offsets that are multiples of 8 (what `unwindRows` produces).
-* LSDA: `decodeLsda?_lsdaBytes` — the call-site table of `lsdaBytes sites` decodes to `sites`.
+  instructions (`insnsFrom 0 rows`) for rows whose CFA offsets are multiples of 8 and whose
+  code offsets fit the FDE's 32 bits (`RowsOk`, what `unwindRows` produces).
+* The rows describe the frame: `unwindRows_frame` — for a function with a frame, at every
+  call's return offset − 1 the row (CIE then FDE, `Unw.rowAt cieInsns`) is `frameRow saved`:
+  CFA = x29 + 16, x29 at CFA − 16, x30 at CFA − 8, and each callee-save store of the entry
+  block `(DWARF register, CFA offset)` (`saveRow`); `unwindRows_leaf`: a function without a
+  frame has the CIE's row (CFA = sp, return address in x30).
+* LSDA: `decodeLsda?_lsdaBytes` — the call-site table of `lsdaBytes sites` decodes to `sites`;
+  `callSites_ok` — the personality's lookup at each call's return offset − 1 finds that
+  call's entry (`CallSitesOk`: no landing pad for a plain call; the first handler's landing
+  pad and action for a `try_call`).
+* Non-vacuity: `Witness.call_row` (a function with a frame, a saved x19 and a `try_call`).
 -/
 
 namespace Backend.Proof.UnwindTables
@@ -335,6 +344,7 @@ theorem scanLines_rets : ∀ (ls : List Line) (off : Nat) (labs : List (Label ×
     rw [List.pairwise_reverse]; exact hp
   | ln :: rest, off, labs, rets, hp, hx => by
     simp only [scanLines]
+    unfold retsAfter
     apply scanLines_rets
     · split
       · exact List.Pairwise.cons (fun x hm => by have := hx x hm; omega) hp
@@ -480,5 +490,433 @@ theorem callSites_ok {af : AFunc} {fa : FnAsm} {sites : List CallSite}
         · rw [List.map_snd_zip (by omega)]; exact hsr.1
         · intro p hp
           exact hsr.2 _ (List.of_mem_zip hp).2
+
+/-! ## The CFI rows describe the frame -/
+
+/-- A call instruction (`bl`/`blr`). -/
+def callInsn? : Option Insn → Bool
+  | some (.bl _) | some (.blr _) => true
+  | _ => false
+
+/-- A call instruction line (`bl`/`blr`). -/
+def _root_.Backend.Line.isCall (l : Line) : Bool := callInsn? l.insn?
+
+theorem loadConst64_noCall (rd : Reg) (v : Nat) : ∀ l ∈ loadConst64 rd v, l.isCall = false := by
+  intro l hl
+  simp only [loadConst64, List.mem_cons, List.mem_filterMap, List.mem_range] at hl
+  rcases hl with rfl | ⟨j, _, hj⟩
+  · rfl
+  · split at hj
+    · cases hj; rfl
+    · cases hj
+
+theorem prologueLines_noCall (size : Nat) : ∀ l ∈ prologueLines size, l.isCall = false := by
+  intro l hl
+  simp only [prologueLines, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
+  rcases hl with (rfl | rfl) | hl
+  · rfl
+  · rfl
+  · split at hl
+    · simp at hl
+    · split at hl
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hl; subst hl; rfl
+      · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
+        rcases hl with hl | rfl
+        · exact loadConst64_noCall _ _ l hl
+        · rfl
+
+/-- The lines of a store through `sp` contain no call. -/
+theorem store_lines_noCall {c : FnCtx} {op : StoreOp} {r : Reg} {o : Int} {fl : Clif.MemFlags}
+    {ls : List Line} {ps ps' : PState}
+    (h : MInst.lines c (.store op r (.spOffset o) fl) ps = .ok (ls, ps')) :
+    ∀ l ∈ ls, l.isCall = false := by
+  simp only [MInst.lines, memFinalize, bind, Except.bind, pure, Except.pure] at h
+  intro l hl
+  repeat' split at h
+  all_goals
+    cases h
+    simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hl
+    rcases hl with hl | rfl
+    · first | simp at hl | exact loadConst64_noCall _ _ l hl
+    · rfl
+
+/-- The DWARF register and CFA offset of a callee-save store of a frame of `frameSize`. -/
+def saveRow (frameSize : Nat) (s : AInst) : Option (Nat × Int) :=
+  s.calleeSave?.bind fun (r, o) => r.dwarf?.map fun d => (d, o - 16 - frameSize)
+
+/-- Rows at nondecreasing offsets from `at_`, a multiple of 4 apart, up to `hi`. -/
+def RowsIn (at_ hi : Nat) : List (Nat × Cfi) → Prop
+  | [] => True
+  | (o, _) :: rs => at_ ≤ o ∧ o ≤ hi ∧ (o - at_) % 4 = 0 ∧ RowsIn o hi rs
+
+theorem RowsIn.mono {at_ hi hi' : Nat} (h : hi ≤ hi') : ∀ {rows}, RowsIn at_ hi rows → RowsIn at_ hi' rows
+  | [], _ => trivial
+  | (o, _) :: rs, ⟨h1, h2, h3, h4⟩ => ⟨h1, by omega, h3, RowsIn.mono h h4⟩
+
+theorem RowsIn.le {at_ hi : Nat} : ∀ {rows}, RowsIn at_ hi rows → ∀ r ∈ rows, r.1 ≤ hi
+  | [], _, _, hr => by simp at hr
+  | (o, _) :: rs, ⟨_, h2, _, h4⟩, r, hr => by
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact h2
+    · exact RowsIn.le h4 r hr
+
+theorem RowsIn.lower {a b hi : Nat} : ∀ {rows}, RowsIn a hi rows → b ≤ a → (a - b) % 4 = 0 →
+    RowsIn b hi rows
+  | [], _, _, _ => trivial
+  | (o, _) :: rs, ⟨h1, h2, h3, h4⟩, hb, hm => ⟨by omega, h2, by omega, h4⟩
+
+/-- The `(register, CFA offset)` of an `offset` row. -/
+def offsetPair (r : Nat × Cfi) : Nat × Int :=
+  match r.2 with
+  | .offset d o => (d, o)
+  | _ => (0, 0)
+
+/-- `saveRows` emits the stores' lines (no calls) and, after each, the row of `saveRow`. -/
+theorem saveRows_spec {c : FnCtx} {fs : Nat} :
+    ∀ (off : Nat) (saves : List AInst) (ls : List Line) (rows : List (Nat × Cfi)),
+      saveRows c fs off saves = .ok (ls, rows) →
+      (∀ l ∈ ls, l.isCall = false) ∧ RowsIn off (off + 4 * ls.length) rows ∧
+        saves.mapM (saveRow fs) = some (rows.map offsetPair) ∧
+        (∀ r ∈ rows, ∃ d o, r.2 = .offset d o ∧ o % 8 = 0)
+  | off, [], ls, rows, h => by
+    simp only [saveRows, pure, Except.pure] at h
+    cases h
+    simp [RowsIn]
+  | off, s :: rest, ls, rows, h => by
+    unfold saveRows at h
+    cases hcs : s.calleeSave? with
+    | none => simp only [hcs] at h; cases h
+    | some ro =>
+      obtain ⟨r, o⟩ := ro
+      have hs : ∃ op fl, s = .inst (.store op r (.spOffset o) fl) := by
+        unfold AInst.calleeSave? at hcs
+        split at hcs
+        · split at hcs
+          · cases hcs; exact ⟨_, _, rfl⟩
+          · cases hcs
+        · cases hcs
+      obtain ⟨op, fl, rfl⟩ := hs
+      simp only [hcs] at h
+      cases hl : MInst.lines c (.store op r (.spOffset o) fl) {} with
+      | error e => simp only [hl] at h; cases h
+      | ok lp =>
+        obtain ⟨ls0, ps0⟩ := lp
+        simp only [hl, bind, Except.bind] at h
+        cases hd : r.dwarf? with
+        | none => simp only [hd] at h; cases h
+        | some dr =>
+          simp only [hd] at h
+          by_cases hc : (decide ((o : Int) - 16 - fs ≥ 0) || (o - 16 - fs) % 8 != 0) = true
+          · simp only [hc, ite_true] at h; cases h
+          · simp only [hc, Bool.false_eq_true, ite_false] at h
+            simp only [Bool.or_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, not_or,
+              Int.not_le, Decidable.not_not] at hc
+            cases hr : saveRows c fs (off + 4 * ls0.length) rest with
+            | error e => simp only [hr] at h; cases h
+            | ok lr =>
+              obtain ⟨ls', rows'⟩ := lr
+              simp only [hr, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+              obtain ⟨rfl, rfl⟩ := h
+              obtain ⟨hcall, hin, hmap, h8⟩ := saveRows_spec _ rest ls' rows' hr
+              refine ⟨?_, ?_, ?_, ?_⟩
+              · intro l hm
+                rcases List.mem_append.mp hm with hm | hm
+                · exact store_lines_noCall hl l hm
+                · exact hcall l hm
+              · refine ⟨by omega, by simp; omega, by omega, ?_⟩
+                exact RowsIn.mono (by simp; omega) hin
+              · simp only [List.mapM_cons, saveRow, hcs, hd, Option.bind_some, Option.map_some,
+                  hmap, List.map_cons]
+                rfl
+              · intro x hx
+                rcases List.mem_cons.mp hx with rfl | hx
+                · exact ⟨dr, _, rfl, hc.2⟩
+                · exact h8 x hx
+
+/-! ### Rows to the row at a code offset -/
+
+theorem rowAtFrom_insn (pc : Nat) (row : Unw.Row) (loc : Nat) (i : Cfi) (is : List Unw.CfaInsn) :
+    Unw.rowAtFrom pc row loc (i.insn :: is) = Unw.rowAtFrom pc (row.exec i.insn) loc is := by
+  cases i <;> rfl
+
+/-- Past every row, the row at `pc` is every row's instruction executed in order. -/
+theorem rowAtFrom_insnsFrom (pc : Nat) : ∀ (rows : List (Nat × Cfi)) (row : Unw.Row) (at_ : Nat),
+    RowsIn at_ pc rows →
+    Unw.rowAtFrom pc row at_ (insnsFrom at_ rows) = rows.foldl (fun r x => r.exec x.2.insn) row
+  | [], row, at_, _ => by simp [insnsFrom, Unw.rowAtFrom]
+  | (o, i) :: rows, row, at_, ⟨h1, h2, h3, h4⟩ => by
+    simp only [insnsFrom, advInsns, List.foldl_cons]
+    by_cases h0 : (o - at_) / 4 = 0
+    · have : o = at_ := by omega
+      subst this
+      simp only [h0, ite_true, List.nil_append, rowAtFrom_insn]
+      exact rowAtFrom_insnsFrom pc rows _ _ h4
+    · simp only [h0, ite_false, List.singleton_append, Unw.rowAtFrom]
+      rw [if_pos (by omega), show at_ + 4 * ((o - at_) / 4) = o by omega, rowAtFrom_insn]
+      exact rowAtFrom_insnsFrom pc rows _ _ h4
+
+/-- The CIE's initial instructions (`DW_CFA_def_cfa sp, 0`, both CIEs of `ehFrame`). -/
+def cieInsns : List Unw.CfaInsn := [.defCfa 31 0]
+
+theorem decodeCfa?_cie : Unw.decodeCfa? [0x0c, 31, 0] = some cieInsns := by decide
+
+/-- The row of a function with a frame at its call sites: CFA = x29 + 16, x29 at CFA − 16,
+x30 (the return address) at CFA − 8, each saved callee-saved register `(d, off)` at CFA +
+`off` (latest rule first). -/
+def frameRow (saved : List (Nat × Int)) : Unw.Row :=
+  { cfaReg := 29, cfaOff := 16, saved := saved.reverse ++ [(30, -8), (29, -16)] }
+
+/-- The row of a function without a frame: the CIE's (CFA = sp, return address in x30). -/
+def leafRow : Unw.Row := { cfaReg := 31, cfaOff := 0 }
+
+theorem foldl_saveRows (rows : List (Nat × Cfi)) (h8 : ∀ r ∈ rows, ∃ d o, r.2 = .offset d o ∧ o % 8 = 0)
+    (row : Unw.Row) :
+    rows.foldl (fun r x => r.exec x.2.insn) row =
+      { row with saved := (rows.map offsetPair).reverse ++ row.saved } := by
+  induction rows generalizing row with
+  | nil => simp
+  | cons x rows ih =>
+    obtain ⟨d, o, hx, _⟩ := h8 x (List.mem_cons_self ..)
+    rw [List.foldl_cons, ih (fun r hr => h8 r (List.mem_cons_of_mem _ hr))]
+    obtain ⟨xo, xi⟩ := x
+    simp only at hx
+    subst hx
+    simp [Unw.Row.exec, Cfi.insn, offsetPair]
+
+/-! ### Calls come after the prologue and the saves -/
+
+theorem retsAfter_noCall {ln : Line} {off : Nat} {rets : List Nat} (h : ln.isCall = false) :
+    retsAfter ln off rets = rets := by
+  rcases ln with ⟨i, t⟩ | ⟨t, b⟩ | ⟨l⟩
+  · cases i <;> first | rfl | simp [Line.isCall, Line.insn?, callInsn?] at h
+  · rfl
+  · rfl
+
+theorem scanLines_noCall : ∀ (pre rest : List Line) (off : Nat) (labs : List (Label × Nat))
+    (rets : List Nat), (∀ l ∈ pre, l.isCall = false) →
+    ∃ labs', scanLines (pre ++ rest) off labs rets =
+      scanLines rest (off + (pre.map Line.size).sum) labs' rets
+  | [], rest, off, labs, rets, _ => ⟨labs, by simp⟩
+  | ln :: pre, rest, off, labs, rets, h => by
+    obtain ⟨labs', hs⟩ := scanLines_noCall pre rest (off + ln.size) (labsAfter ln off labs) rets
+      (fun l hm => h l (List.mem_cons_of_mem _ hm))
+    refine ⟨labs', ?_⟩
+    simp only [List.cons_append, scanLines, retsAfter_noCall (h ln (List.mem_cons_self ..)), hs,
+      List.map_cons, List.sum_cons, Nat.add_assoc]
+
+/-- Every return offset `scanLines` collects from offset `off` on is at least `off + 4`. -/
+theorem scanLines_rets_ge : ∀ (ls : List Line) (off lo : Nat) (labs : List (Label × Nat))
+    (rets : List Nat), (∀ x ∈ rets, lo ≤ x) → lo ≤ off + 4 →
+    ∀ x ∈ (scanLines ls off labs rets).2, lo ≤ x
+  | [], off, lo, labs, rets, hx, _ => by
+    simp only [scanLines, List.mem_reverse]; exact hx
+  | ln :: rest, off, lo, labs, rets, hx, hlo => by
+    simp only [scanLines]
+    unfold retsAfter
+    apply scanLines_rets_ge rest _ lo
+    · intro x hm
+      split at hm
+      · rcases List.mem_cons.mp hm with rfl | hm
+        · omega
+        · exact hx x hm
+      · rcases List.mem_cons.mp hm with rfl | hm
+        · omega
+        · exact hx x hm
+      · exact hx x hm
+    · omega
+
+theorem insn?_isCall {l l' : Line} (h : l.insn? = l'.insn?) : l.isCall = l'.isCall := by
+  simp [Line.isCall, h]
+
+theorem size_of_insn? : ∀ (ls : List Line), ls.all (·.insn?.isSome) = true →
+    (ls.map Line.size).sum = 4 * ls.length
+  | [], _ => rfl
+  | l :: ls, h => by
+    simp only [List.all_cons, Bool.and_eq_true] at h
+    have := size_of_insn? ls h.2
+    cases l with
+    | ins i t => simp [Line.size, this]; omega
+    | word t b => simp [Line.insn?] at h
+    | label l => simp [Line.insn?] at h
+
+theorem noCall_of_insn? : ∀ (got expect : List Line), got.map Line.insn? = expect.map Line.insn? →
+    (∀ l ∈ expect, l.isCall = false) → ∀ l ∈ got, l.isCall = false
+  | [], _, _, _, l, hl => by simp at hl
+  | _ :: _, [], h, _, _, _ => by simp at h
+  | g :: got, e :: expect, h, he, l, hl => by
+    simp only [List.map_cons, List.cons.injEq] at h
+    rcases List.mem_cons.mp hl with rfl | hl
+    · rw [insn?_isCall h.1]; exact he e (List.mem_cons_self ..)
+    · exact noCall_of_insn? got expect h.2 (fun l hm => he l (List.mem_cons_of_mem _ hm)) l hl
+
+/-- **The CFI rows describe the frame at every call** (`unwindRows`, a function with a frame):
+the rows round-trip through the `.eh_frame` encoding, and at every call's return offset − 1
+(where the unwinder looks up a frame suspended at that call) the row is `frameRow saved`,
+`saved` being the `(DWARF register, CFA offset)` of the callee-save stores at the start of the
+entry block. -/
+theorem unwindRows_frame {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
+    (h : unwindRows af fa = .ok rows) (hf : af.frame = true) :
+    RowsOk rows ∧ ∃ lab code saved, af.blocks[0]? = some (lab, code) ∧
+      ((code.toList.drop 1).takeWhile (·.calleeSave?.isSome)).mapM (saveRow af.frameSize) =
+        some saved ∧
+      ∀ ret ∈ (scanLines fa.lines.toList 0 [] []).2,
+        Unw.rowAt cieInsns (insnsFrom 0 rows) (ret - 1) = frameRow saved := by
+  unfold unwindRows at h
+  simp only [hf, Bool.not_true, Bool.false_eq_true, ite_false] at h
+  cases hb : af.blocks[0]? with
+  | none => simp [hb] at h
+  | some lc =>
+  obtain ⟨lab, code⟩ := lc
+  simp only [hb] at h
+  by_cases hp : (code.toList.head? != some AInst.prologue) = true
+  · simp [hp, bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at h
+  simp only [hp, Bool.false_eq_true, ite_false] at h
+  generalize hsv : List.takeWhile (fun x => x.calleeSave?.isSome) (List.drop 1 code.toList) = saves
+    at h
+  generalize hpro : prologueLines af.frameSize = pro at h
+  cases hs : saveRows { k := fa.k, slotBase := af.slotBase } af.frameSize (4 * pro.length)
+    saves with
+  | error e => simp [hs, bind, Except.bind] at h
+  | ok sr =>
+  obtain ⟨sl, srows⟩ := sr
+  simp only [hs, bind, Except.bind] at h
+  by_cases hz : 4 * (pro ++ sl).length ≥ 2 ^ 32
+  · rw [if_pos hz] at h
+    simp [throw, throwThe, MonadExceptOf.throw, bind, Except.bind] at h
+  rw [if_neg hz] at h
+  split at h
+  rotate_left
+  · simp [throw, throwThe, MonadExceptOf.throw, bind, Except.bind] at h
+  rename_i l0 hl0
+  split at h
+  rotate_left
+  · simp [throw, throwThe, MonadExceptOf.throw, bind, Except.bind] at h
+  rename_i hc
+  simp only [pure, Except.pure, Except.ok.injEq] at h
+  subst h
+  simp only [Bool.true_and, Bool.and_eq_true, decide_eq_true_eq] at hc
+  obtain ⟨hmap, hall⟩ := hc
+  obtain ⟨hcall, hin, hsm, h8⟩ := saveRows_spec _ _ _ _ hs
+  generalize hn : (pro ++ sl).length = n at hmap hall hz
+  have hn' : n = pro.length + sl.length := by rw [← hn, List.length_append]
+  have hpro2 : 2 ≤ pro.length := by rw [← hpro]; simp [prologueLines]
+  have hexpNC : ∀ l ∈ pro ++ sl, l.isCall = false := by
+    intro l hl
+    rcases List.mem_append.mp hl with hl | hl
+    · exact prologueLines_noCall af.frameSize l (hpro ▸ hl)
+    · exact hcall l hl
+  generalize hgot : List.take n (List.drop 1 fa.lines.toList) = got at hmap hall
+  have hglen : got.length = n := by
+    have := congrArg List.length hmap
+    simp only [List.length_map] at this
+    omega
+  have hgotNC := noCall_of_insn? got _ hmap hexpNC
+  have hRin : RowsIn 0 (4 * n) (prologueRows ++ srows) := by
+    simp only [prologueRows, List.cons_append, List.nil_append, RowsIn]
+    refine ⟨by omega, by omega, trivial, by omega, by omega, trivial, by omega, by omega,
+      trivial, by omega, by omega, trivial, ?_⟩
+    exact RowsIn.lower (RowsIn.mono (by omega) hin) (by omega) (by omega)
+  refine ⟨?_, lab, code, srows.map offsetPair, rfl, hsv ▸ hsm, ?_⟩
+  · intro r hr
+    rcases List.mem_append.mp hr with hr | hr
+    · simp only [prologueRows, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl <;> simp [Cfi.Ok]
+    · obtain ⟨d, o, h2, ho⟩ := h8 r hr
+      refine ⟨by rw [h2]; exact ho, ?_⟩
+      have := hin.le r hr
+      omega
+  intro ret hret
+  have hlines : fa.lines.toList = (Line.label l0 :: got) ++ List.drop n (List.drop 1 fa.lines.toList) := by
+    rw [List.cons_append, ← hgot, List.take_append_drop]
+    have h0 : fa.lines.toList.head? = some (Line.label l0) := by
+      rw [List.head?_eq_getElem?]; simpa using hl0
+    obtain ⟨ys, hys⟩ := List.head?_eq_some_iff.mp h0
+    rw [hys]; rfl
+  rw [hlines] at hret
+  obtain ⟨labs', hsc⟩ := scanLines_noCall (Line.label l0 :: got)
+    (List.drop n (List.drop 1 fa.lines.toList)) 0 [] []
+    (fun l hl => by
+      rcases List.mem_cons.mp hl with rfl | hl
+      · rfl
+      · exact hgotNC l hl)
+  rw [hsc] at hret
+  have hsz : ((Line.label l0 :: got).map Line.size).sum = 4 * n := by
+    simp only [List.map_cons, List.sum_cons, Line.size, Nat.zero_add]
+    rw [size_of_insn? got hall, hglen]
+  rw [hsz] at hret
+  have hge := scanLines_rets_ge _ _ (4 * n + 4) _ _ (by simp) (by omega) ret hret
+  simp only [Unw.rowAt, cieInsns]
+  rw [rowAtFrom_insnsFrom _ _ _ _ (hRin.mono (by omega)), List.foldl_append,
+    foldl_saveRows srows h8]
+  simp [frameRow, prologueRows, Unw.rowAtFrom, Unw.Row.exec, Cfi.insn]
+
+
+/-- A function without a frame has no rows: the CIE's row (CFA = sp, return address in x30)
+holds everywhere. -/
+theorem unwindRows_leaf {af : AFunc} {fa : FnAsm} {rows : List (Nat × Cfi)}
+    (h : unwindRows af fa = .ok rows) (hf : af.frame = false) (pc : Nat) :
+    rows = [] ∧ Unw.rowAt cieInsns (insnsFrom 0 rows) pc = leafRow := by
+  unfold unwindRows at h
+  simp only [hf, Bool.not_false, ite_true, pure, Except.pure, Except.ok.injEq] at h
+  subst h
+  exact ⟨rfl, rfl⟩
+
+
+/-! ## Non-vacuity: a function with a frame, a callee-save and a `try_call` -/
+
+namespace Witness
+
+/-- Block 0: the prologue, `str x19, [sp]` and a `try_call f` whose catch handler is block 2. -/
+def af : AFunc where
+  name := "w"
+  frameSize := 16
+  slotBase := 0
+  blocks := #[(0, #[.prologue, .inst (.store .store64 (.x 19) (.spOffset 0) {}),
+      .inst (.tryCall ⟨.sym "f", [], []⟩ ⟨1, [.tag 1 2], false, 0⟩)]),
+    (1, #[.epilogueRet]), (2, #[.epilogueRet])]
+
+/-- Its final code, unwind rows and call-site table. -/
+def fa : FnAsm := (emitFunc 0 af).toOption.getD default
+def rows : List (Nat × Cfi) :=
+  [(4, .defCfaOffset 16), (4, .offset 29 (-16)), (4, .offset 30 (-8)), (8, .defCfaRegister 29),
+    (16, .offset 19 (-32))]
+def sites : List CallSite := [⟨19, 1, 32, 1⟩]
+
+theorem ok_of_toOption {ε α : Type} {e : Except ε α} {x : α} (h : e.toOption = some x) :
+    e = .ok x := by
+  cases e <;> simp_all [Except.toOption]
+
+theorem rows_ok : unwindRows af fa = .ok rows := ok_of_toOption (by decide +kernel)
+theorem sites_ok : callSites af fa = .ok (some sites) := ok_of_toOption (by decide +kernel)
+theorem calls : af.calls.zip [20] = [(some ⟨1, [.tag 1 2], false, 0⟩, 20)] := by decide +kernel
+theorem rets : (scanLines fa.lines.toList 0 [] []).2 = [20] := by decide +kernel
+
+
+
+
+
+
+/-- At the `bl f` (return offset 20) the unwinder finds the frame row with x19 at CFA − 32,
+and the personality the landing pad at offset 32 (block 2) with the catch action; both tables
+round-trip through their encodings. -/
+theorem call_row :
+    Unw.rowAt cieInsns (insnsFrom 0 rows) (20 - 1) = frameRow [(19, -32)] ∧
+    Unw.lookup (sites.map (·.entry)) (20 - 1) = some ⟨19, 1, 32, 1⟩ ∧
+    Unw.decodeCfa? (cfiProgram rows).data.toList = some (insnsFrom 0 rows) ∧
+    Unw.decodeLsda? (lsdaBytes sites).data.toList = some (sites.map (·.entry)) := by
+  obtain ⟨hok, lab, code, saved, hb, hsv, hrow⟩ := unwindRows_frame rows_ok rfl
+  have hsaved : saved = [(19, -32)] := by
+    simp only [af] at hb
+    cases hb
+    apply Option.some.inj
+    rw [← hsv]
+    rfl
+  obtain ⟨-, hcs⟩ := callSites_ok sites_ok
+  refine ⟨?_, ?_, decodeCfa?_cfiProgram rows hok, decodeLsda?_lsdaBytes sites⟩
+  · rw [← hsaved]; exact hrow 20 (by rw [rets]; simp)
+  · rw [(hcs (some ⟨1, [.tag 1 2], false, 0⟩, 20) (by rw [rets, calls]; simp)).2]
+    decide +kernel
+
+end Witness
 
 end Backend.Proof.UnwindTables
