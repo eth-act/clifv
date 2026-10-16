@@ -19,6 +19,10 @@ if [ ! -d "$wt" ]; then
 fi
 [ -e "$wt/third_party/wasmtime" ] || ln -s "$root/third_party/wasmtime" "$wt/third_party/wasmtime"
 [ -e "$wt/third_party/lnsym-upstream" ] || ln -s "$root/third_party/lnsym-upstream" "$wt/third_party/lnsym-upstream"
-if [ -d "$root/.lake" ] && [ ! -d "$wt/.lake" ]; then cp -a "$root/.lake" "$wt/.lake"; fi
+# With the shared Lake cache (FV_LAKE_CACHE, docs/TO-PROVE.md §7) the first build restores outputs
+# from it, so the .lake copy is skipped.
+if [ -z "${FV_LAKE_CACHE:-}" ] && [ -d "$root/.lake" ] && [ ! -d "$wt/.lake" ]; then
+  cp -a "$root/.lake" "$wt/.lake"
+fi
 if [ -d "$root/rust/target" ] && [ ! -d "$wt/rust/target" ]; then cp -a "$root/rust/target" "$wt/rust/target"; fi
 echo "$wt"
