@@ -387,7 +387,9 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   uncaught one returns to the caller with the exception object and the caller's frame as the
   ABI requires), with the Itanium unwinder/personality model and the decoding of the emitted
   tables trusted. `lean-backend` prints `compiled, verified (try_call: unwinding by …)` for it,
-  and for a function failing a check the old label with `unwinding check failed: <check>`.
+  and for a function failing a check the old label with `unwinding check failed: <check>`. An
+  `i128`-legalised `try_call` function is covered by `E2E.backend_correct_legal_unwind` (S10f)
+  when, in addition, the handler-edge check `Opt.Legal.exnOk` accepts its legalisation.
 * **Non-vacuity.** Every top-level theorem has a witness that its contract premises can all
   hold for realistic callees (docs/contracts/e2e.md, "Non-vacuity";
   `E2E.backend_correct_final_witness`, `E2E.backend_correct_final_id`, and for functions with
@@ -689,6 +691,10 @@ After S10e (#232, the unwinding theorem, lean-backend's unwinding checks; debug,
 verified). The 5 left are survey's `i128`-legalised g_u128 `values` test functions (`arith#1`,
 `bytes_bits#1`, `compare#1`, `division#1`, `shifts#1`): no unwinding theorem composes the
 `i128` legalisation yet. No function failed an unwinding check.
+
+After S10f's `i128` unwinding theorem (#233, `E2E.backend_correct_legal_unwind`, lean-backend
+runs `Opt.Legal.exnOk`; debug, panic=unwind, `cargo fv test --no-run`): survey 3179 of 3179
+verified, `verified (normal returns; unwinding trusted)` 5 → 0.
 
 With the shipped cg_clif (no landing pads; before the external-name tables, #221, `cargo fv`
 could still use it) or `--panic-abort` there are no landing-pad fallbacks:
