@@ -912,6 +912,11 @@ Large, low priority.
   `FV_LAKE_CACHE` is set). `lake env lean` needs the restored files, so run `lake build` first (or use
   `lake lean <file>`). Clean-up: `find <dir>/artifacts -type f -links 1 -mmin +60 -delete` removes
   outputs no worktree links to (a later miss rebuilds).
+- `FV.Opt.Proof.*` imports nothing from `FV/Backend`, `FV/Arm` or `FV/Link` (from `FV/E2E` only the
+  Clif-level `FV.E2E.LinkClif`, in the leaf witness `PipelineXWitness`), so backend, unwinding and E2E
+  changes do not rebuild the rule modules (203 modules with their imports, was 329); keep it so. Until
+  #252, `RuleImm`'s unused import of `FV.Backend.Proof.IselCmpExt` made 99 of the 153 rule modules depend
+  on all of `FV.Backend` and the Arm model.
 - No `sorry`, `admit`, hand-written `axiom`, `trace_state`. Allowed axioms: `propext`, `Classical.choice`,
   `Quot.sound`, and generated `*._native.bv_decide.ax_*` / `*._native.native_decide.ax_*` in fixed proofs.
 - Every new top-level theorem gets a non-vacuity witness (they have caught six unsatisfiable premises).
