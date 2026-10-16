@@ -1,0 +1,311 @@
+{
+  "utc": "2026-10-16T13:20:26.645316+00:00",
+  "modules": {
+    "StockOutgoingFlow": {
+      "source_sha256": "27e5aeddb8632792547e942d0399c223f4683c7cff325341fc0bd2d922cbce11",
+      "compiled_sha256": "48b257da4df2940c254b62fcfeb1cd6289daf25f95268d7d5228a3d341cabcb8"
+    },
+    "StockOutgoingWitness": {
+      "source_sha256": "203b4c8be94ce71869a44d2378791c7515c733ca8d6c6c3d7214f6ebf82ae435",
+      "compiled_sha256": "f08ebb3bedc6b84b372c276935caf0e9bf577b6800e89241cb1c9525579f90c5"
+    },
+    "StockOutgoingDriver": {
+      "source_sha256": "2ccf210ed608314012087f18992b74750d963766ec0991665e692dac1618f8b6",
+      "compiled_sha256": "9149c8572be7205e48c589af04cb101a812d3499a43d4c330829fae3b865f1ae"
+    },
+    "StockOutgoingWhole": {
+      "source_sha256": "b7de049a98e0bb7832612ba96a9d9cc75a6713402c5fe064656370c5172fae34",
+      "compiled_sha256": "37dfc45fe7ef881e5bae479b6d5079fe464c26970f93812d64e690512a8086a9"
+    },
+    "StockOutgoingDriverWitness": {
+      "source_sha256": "2e3a3de4b0ce3945d106fe33a43df33e1b67ebbc149986d90b058d6890523be0",
+      "compiled_sha256": "692eae5edcd89faa2768071314fd4a4e11af7b4c9bb9d4b095e064df9920c0cf"
+    },
+    "StockCallOutgoing": {
+      "source_sha256": "a0a0904e5684cc0def24573638b65c33308c2f055e5b6748019d191843dc5f08",
+      "compiled_sha256": "35d46689660e19075fb7a0d2179ccbbafa66bde8e696d538443f10f0dd66f291"
+    },
+    "StockGotOutgoing": {
+      "source_sha256": "c0e13a2315fc20cc3f406d4105a4b38a486c0fc0d1d89731b3d55f9746990afa",
+      "compiled_sha256": "f2334fe59e4db16c80ffb76ccaa147abba4d12936dc1fced7c4c238418237e8d"
+    },
+    "StockCallOutgoingWitness": {
+      "source_sha256": "97cdcdc5c0335997be7f6f817b5a5fc5adca238f47b270e64e02c2800f5aeb40",
+      "compiled_sha256": "87cd43c788c22a16846e16ea01305e2fb541b32e4d04f6fb16c8175531dbb601"
+    }
+  },
+  "audit_log": {
+    "path": "/tmp/stock-outgoing-all-axioms.log",
+    "sha256": "54cecf292b5abb62ba2134e08bb14bc6b044910120e5508f704885fae67c91f8"
+  },
+  "all26_new_roots_standard_only": true,
+  "all190_prior_root_exact_sets_preserved": true,
+  "all_prior_scratch_bytes_preserved": true,
+  "new_roots": {
+    "Backend.Stock.Proof.OutgoingDraft.stock_ctor_outgoingLe": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDraft.stock_apply_outgoingLe": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDraft.stock_scan_outgoingLe": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDraft.stock_scanBlock_outgoingLe": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDraft.stock_scanBlock_record_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingWitnessDraft.stock_ctor_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingWitnessDraft.stock_apply_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingWitnessDraft.stock_scan_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingWitnessDraft.stock_scanBlock_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDriverDraft.stock_emitBranch_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDriverDraft.stock_lowerBlockCore_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDriverDraft.stock_lowerNode_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingWholeDraft.stock_lowerNodes_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_record_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_code_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_record_code_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_emitBranch_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerNode_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerNodes_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerBlockCore_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.CallOutgoingDraft.stock_lower_direct_call_record_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.CallOutgoingDraft.stock_lower_direct_call_code_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.GotOutgoingDraft.stock_lower_got_call_record_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.GotOutgoingDraft.stock_lower_got_call_code_outgoing": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.CallOutgoingWitnessDraft.stock_complete_direct_call_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.CallOutgoingWitnessDraft.stock_complete_got_call_outgoing_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "base_trust_set_changes": [
+    {
+      "root": "Backend.Proof.refines_csem",
+      "old": [
+        "Backend.Proof.addp_aux_8._native.bv_decide.ax_1_8",
+        "Backend.Proof.bswap_32._native.bv_decide.ax_1_5",
+        "Backend.Proof.bswap_64._native.bv_decide.ax_1_5",
+        "Backend.Proof.cnt_aux_8._native.bv_decide.ax_1_8",
+        "Backend.Proof.hsb32._native.bv_decide.ax_1_7",
+        "Backend.Proof.rv16._native.bv_decide.ax_1_8",
+        "Backend.Proof.rv32._native.bv_decide.ax_1_8",
+        "Backend.Proof.rv64._native.bv_decide.ax_1_8",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "current": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "removed": [
+        "Backend.Proof.addp_aux_8._native.bv_decide.ax_1_8",
+        "Backend.Proof.bswap_32._native.bv_decide.ax_1_5",
+        "Backend.Proof.bswap_64._native.bv_decide.ax_1_5",
+        "Backend.Proof.cnt_aux_8._native.bv_decide.ax_1_8",
+        "Backend.Proof.hsb32._native.bv_decide.ax_1_7",
+        "Backend.Proof.rv16._native.bv_decide.ax_1_8",
+        "Backend.Proof.rv32._native.bv_decide.ax_1_8",
+        "Backend.Proof.rv64._native.bv_decide.ax_1_8"
+      ],
+      "added": []
+    },
+    {
+      "root": "Backend.Proof.memRefines_csem",
+      "old": [
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_18",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_23",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_28",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_34",
+        "Backend.Proof.dbm_sxtb._native.native_decide.ax_1_1",
+        "Backend.Proof.dbm_sxth._native.native_decide.ax_1_1",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_101",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_106",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_111",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_120",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_125",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_130",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_135",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_140",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_145",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_150",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_155",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_160",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_165",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_170",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_175",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_180",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_185",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_190",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_195",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_200",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_205",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_71",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_76",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_86",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_91",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_96",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "current": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "removed": [
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_18",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_23",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_28",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_34",
+        "Backend.Proof.dbm_sxtb._native.native_decide.ax_1_1",
+        "Backend.Proof.dbm_sxth._native.native_decide.ax_1_1",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_101",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_106",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_111",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_120",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_125",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_130",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_135",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_140",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_145",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_150",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_155",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_160",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_165",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_170",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_175",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_180",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_185",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_190",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_195",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_200",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_205",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_71",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_76",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_86",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_91",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_96"
+      ],
+      "added": []
+    },
+    {
+      "root": "Backend.Proof.argsAt_after_stores",
+      "old": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "current": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "removed": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9"
+      ],
+      "added": []
+    }
+  ],
+  "status": "8 modules compile; cumulative audit needs coherent upstream review of 3 base sets reduced to standard-only; no full current-batch gate claim",
+  "canonical_integration_MCP_fullgates": "pending",
+  "full_goal": "active/incomplete; production legacy"
+}

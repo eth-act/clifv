@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-16T16:34:57.563327+00:00",
+  "archive": "/home/lee/.clifv-recovery/20261016T163457Z-source-xstack/checkpoint.tar.gz",
+  "sha256": "cb7366d2fd4fefceff21fb23b46e8ddf0790a9057d85d079ff1b5729f2c5a0ac",
+  "bytes": 4350107,
+  "members": 26,
+  "all_members_byte_verified": true,
+  "snapshot_removed_after_archival": true
+}
