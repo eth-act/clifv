@@ -1,0 +1,10 @@
+{
+  "utc": "20261015T172250Z",
+  "branch": "agent/stock-driver-wip-backup-20261015T172250Z",
+  "commit": "5e79be0eb82194a2d47d19dc05c909b00e5e167a",
+  "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+  "captured_dirty_paths": 851,
+  "additional_evidence_paths": 1,
+  "remote_commit_and_all_captured_blobs_verified": true,
+  "index_and_active_head_unchanged": true
+}
