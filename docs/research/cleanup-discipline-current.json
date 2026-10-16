@@ -1,0 +1,76 @@
+{
+  "utc": "2026-10-16T09:35:08.820926+00:00",
+  "free_bytes": 881533136896,
+  "worktrees": [
+    {
+      "path": "/home/lee/clifv",
+      "owner": "codygunton / #44",
+      "purpose": "Primary checkout: dirty preserved coordination/helper and comparison evidence",
+      "dirty_paths": 5,
+      "bytes": 37232316416,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume",
+      "owner": "codygunton / #44",
+      "purpose": "Active #140 proof source, single warm Lean cache, live serial validation and Rust tools",
+      "dirty_paths": 1224,
+      "bytes": 31951106048,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty preserved Stock implementation/recovery source; no build cache",
+      "dirty_paths": 34,
+      "bytes": 38064128,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-stock-lowering",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty pinned upstream input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-dupnames",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty pinned upstream input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/review-wasmtime",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty upstream review input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    }
+  ],
+  "policy": {
+    "target_free_gib": 100,
+    "minimum_projected_free_gib": 50,
+    "warm_caches": 1,
+    "cleanup": "after every batch, PR, delegated task, and stop",
+    "aggregate_agent_budget": true,
+    "automatic_cache_copy": false
+  },
+  "removed": [],
+  "reason": "Rechecked at batch completion: all remaining trees dirty/active; one warm Lean cache serves live canonical serial validation. Sixty-seven purposeful small compiled scratch modules retained until coherent integration; no duplicate cache/new tree. New cumulative source/compiled/log evidence335members byteverified and backed up remotely at4eb469a5. Other projects untouched.",
+  "helper_shell_syntax": "PASS bash -n",
+  "other_projects": "untouched",
+  "scratch_modules": 67,
+  "scratch_public_roots": 115,
+  "scratch_compiled_bytes": 46959296,
+  "live_validation": {
+    "state": "running",
+    "pid": 2172773,
+    "index": 908,
+    "total": 1011,
+    "current": "FV.Backend.Proof.StockMinMaxNarrowDriverRuns"
+  }
+}
