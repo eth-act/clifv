@@ -86,8 +86,8 @@ theorem regLevelCorrect_worldUT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   refine ⟨fun us vals w hret => ?_, h2, fun obj w hu => ?_⟩
   · obtain ⟨n, a1, a2, a3, a4, a5, a6, htr, hnot⟩ := h1 us vals w hret
     exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU htr, hnot⟩
-  · obtain ⟨n, a1, a2, a3, a4, a5, htr, hn, hx⟩ := h3 obj w hu
-    exact ⟨n, ⟨a1, a2, a3, a4, a5⟩, postTrace_of_goodXU htr, hn, hx⟩
+  · obtain ⟨n, a1, a2, a3, a4, a5, a6, htr, hn, hx⟩ := h3 obj w hu
+    exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU htr, hn, hx⟩
 
 /-- **The realisation of the value semantics with unwinding at an activation with kept addresses
 `G` and GOT pins `gv`**: from the callee contracts relative to `G` (`CalleeOkG`,
