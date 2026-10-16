@@ -111,6 +111,12 @@ theorem ineg_base_case_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (
       (prun_nil _), by
         have hu' : (ρ x).setWidth ty.width = u := hu
         subst hu'
-        wcases ty hety [Clif.Sem.unary, Clif.Sem.ineg]⟩)
+        generalize hs : szOf (Clif.Ty.width ty) = sz at *
+        cases ty <;> simp [eTy] at hety <;> simp [szOf, Clif.Ty.width] at hs <;> subst hs <;>
+          simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary,
+            Clif.Sem.ineg] at * <;>
+          dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+          (try unfold OperandSize.bits Clif.Ty.width at *) <;>
+          bv_omega⟩)
 
 end Backend.Proof
