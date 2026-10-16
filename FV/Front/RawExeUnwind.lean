@@ -18,7 +18,9 @@ cg_clif's program `rawLink us sc` (as in `FV/Front/RawExe.lean`):
 
 The exceptional edges are about the compiled (legalised, renamed) program's runs;
 `FV/Front/RawExeUnwindRen.lean` carries them to cg_clif's program's runs for programs without
-`i128` (renaming invariance of `Clif.runLoopX`).
+`i128` (renaming invariance of `Clif.runLoopX`), `FV/Front/RawExeUnwindSrc.lean` for every
+program (the program-level legalisation theorem with unwinding,
+`E2E.LegalProgram.legalProg_refinesX`).
 -/
 
 namespace Front
