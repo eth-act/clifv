@@ -43,12 +43,14 @@ theorem entryLoop {ctx : Ctx} (hreg : ∀ x r, ctx.valueReg? x = some r → r = 
         simp only [pure, Except.pure, Except.ok.injEq] at hst
         subst hst
         obtain ⟨h1, h2⟩ := entryLoop hreg id rfl l _ _ c' p' h
-        refine ⟨by rw [h1]; simp [List.filterMap_cons, entryLoadOf], by rw [h2]; simp [entryRegOf]⟩
+        refine ⟨by rw [h1]; simp [List.filterMap_cons, entryLoadOf, stackArgLoad, Reg.homeCls],
+          by rw [h2]; simp [entryRegOf]⟩
       | stack off =>
         simp only [pure, Except.pure, Except.ok.injEq] at hst
         subst hst
         obtain ⟨h1, h2⟩ := entryLoop hreg id rfl l _ _ c' p' h
-        refine ⟨by rw [h1]; simp [entryLoadOf], by rw [h2]; simp [List.filterMap_cons, entryRegOf]⟩
+        refine ⟨by rw [h1]; simp [entryLoadOf, stackArgLoad, Reg.homeCls],
+          by rw [h2]; simp [List.filterMap_cons, entryRegOf]⟩
     · cases hst
 
 /-! ## Lists -/

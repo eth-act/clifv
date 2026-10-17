@@ -422,6 +422,32 @@ theorem single_mem {rss : List (List Reg)} {rs : List Reg}
   · cases he; exact List.mem_singleton_self _
   · cases he
 
+theorem single_eq_map : ∀ {rss : List (List Reg)} {rs : List Reg},
+    rss.mapM (fun | [r] => some r | _ => none) = some rs → rss = rs.map fun r => [r]
+  | [], rs, h => by simp [pure] at h; subst h; rfl
+  | l :: rss, rs, h => by
+    rw [List.mapM_cons] at h
+    obtain ⟨y0, h0, h⟩ := bind_some_ex h
+    obtain ⟨ys', h1, h⟩ := bind_some_ex h
+    simp only [pure, Option.some.injEq] at h
+    subst h
+    rw [single_eq_map h1, List.map_cons]
+    congr 1
+    split at h0
+    · cases h0; rfl
+    · cases h0
+
+/-- Returned single integer registers go in x0..x(n-1): `retRegsC` of their classes is
+`retRegs` of their count. -/
+theorem retRegsC_single_int {rss : List (List Reg)} {rs : List Reg}
+    (h : rss.mapM (fun | [r] => some r | _ => none) = some rs) (hi : ∀ r ∈ rs, r.homeCls = .int) :
+    retRegsC (regsClasses rss) 0 0 = retRegs rs.length := by
+  rw [single_eq_map h, regsClasses_single, ← retRegsC_int]
+  congr 1
+  exact List.eq_replicate_iff.mpr ⟨by simp, fun c hc => by
+    obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hc
+    exact hi r hr⟩
+
 /-- `CtorOk` from its parts (no `invalid_reg`, no `try_call` registers). -/
 theorem ctorOk_mk {ctx : Ctx} {id : TermId} {args : List V} {st st' : LState} {v : V}
     (h1 : st.nextVreg ≤ st'.nextVreg) (h2 : st.outgoing ≤ st'.outgoing)

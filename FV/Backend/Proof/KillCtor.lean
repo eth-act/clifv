@@ -707,7 +707,7 @@ theorem kp_extract {ctx : Ctx} {lo : Nat} {s0 s : LState} (hd : DataK ctx) {term
 
 /-! ## The context facts of the driver's contexts -/
 
-theorem valRegK_mk {ctx : Ctx} (hreg : ∀ x r, ctx.valueReg? x = some r → r = .vreg x .int)
+theorem valRegK_mk {ctx : Ctx} (hreg : ∀ x r, ctx.valueReg? x = some r → ∃ c, r = .vreg x c)
     (hs : ctx.valReg.size = ctx.valDef.size) : ValRegK ctx := by
   intro x r hx n c hr
   have hlt : x < ctx.valReg.size := by
@@ -715,19 +715,21 @@ theorem valRegK_mk {ctx : Ctx} (hreg : ∀ x r, ctx.valueReg? x = some r → r =
     cases h : ctx.valReg[x]? with
     | none => rw [h] at hx; cases hx
     | some _ => exact (Array.getElem?_eq_some_iff.mp h).1
-  rw [hreg x r hx] at hr
+  obtain ⟨c', e⟩ := hreg x r hx
+  rw [e] at hr
   cases hr
   omega
 
 /-- `ValRegK` from `CtxInv` (value `x` has vreg `x`) and the length of `valReg`. -/
 theorem valRegK_of {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
     (hs : ctx.valReg.size = ctx.valDef.size) : ValRegK ctx :=
-  valRegK_mk hctx.valueReg hs
+  valRegK_mk (fun x r h => ⟨_, hctx.valueReg x r h⟩) hs
 
 /-- **`buildCtx`'s context** meets `ValRegK`. -/
 theorem valRegK_of_build {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
     {st0 : LState} (hb : buildCtx f = .ok (ctx, ranges, st0)) : ValRegK ctx :=
-  valRegK_mk (ctxSpec_of hb).regEq (ctxFacts_of hb).size.2.1
+  valRegK_mk (fun x r h => let ⟨_, _, e⟩ := (ctxSpec_of hb).regEq x r h; ⟨_, e⟩)
+    (ctxFacts_of hb).size.2.1
 
 theorem valRegK_termCtx {ctx : Ctx} (h : ValRegK ctx) (ti : Nat) (data : V) :
     ValRegK (termCtx ctx ti data) := h

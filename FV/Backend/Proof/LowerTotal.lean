@@ -514,7 +514,7 @@ theorem termPart_ok' {f : Clif.Function} {ctx : Ctx} (hP : IselProg f ctx) {b : 
 
 /-- A block's statements and terminator never fail. -/
 theorem bodyPart_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) (hP : IselProg f ctx) {bi : Nat} {B : Clif.Block}
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) (hP : IselProg f ctx) {bi : Nat} {B : Clif.Block}
     (hB : f.blocks[bi]? = some B) (hdata : ∃ data, DataOk f B.term data)
     (hsret : sretBad f B.term = false)
     (hdests : ∀ bc ∈ dests B.term, ∃ tb, f.block? bc.block = some tb ∧
@@ -540,7 +540,7 @@ theorem bodyPart_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
       obtain ⟨info, hinfo, hc, hr⟩ := sp.facts.stmt bi B j _ hB (List.getElem?_eq_getElem hj)
       refine stmtBody_ok hP.stmt hinfo hc (fun r hr' => ?_) s
       rw [hr] at hr'
-      refine (sp.facts.vals r ?_).2
+      refine (sp.facts.vals_int hE r ?_).2
       simp only [valueDefs, List.mem_flatMap, List.mem_append]
       exact ⟨B, hBm, .inr ⟨_, List.getElem_mem hj, hr'⟩⟩)
   rw [hs]
@@ -568,7 +568,7 @@ theorem bodyPart_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
 
 /-- A block's lowering never fails. -/
 theorem blockBody_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) (hP : IselProg f ctx) {paramBytes : List Nat} {bi : Nat}
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) (hP : IselProg f ctx) {paramBytes : List Nat} {bi : Nat}
     {B : Clif.Block} (hB : f.blocks[bi]? = some B)
     (hent : ∃ locs n, sigArgLocs f.sig = .ok (locs, n)) (hdata : ∃ data, DataOk f B.term data)
     (hsret : sretBad f B.term = false)
@@ -585,8 +585,8 @@ theorem blockBody_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Na
     obtain ⟨s, hs⟩ := entryLoop_ok (ctx := ctx) ((B.params.zip locs).zip paramBytes)
       (fun x hx => hpar _ (List.of_mem_zip (List.of_mem_zip hx).1).1) (#[], #[])
     rw [hs]
-    exact bodyPart_ok' sp hP hB hdata hsret hdests htry hpar _ _
-  · exact bodyPart_ok' sp hP hB hdata hsret hdests htry hpar _ _
+    exact bodyPart_ok' sp hE hP hB hdata hsret hdests htry hpar _ _
+  · exact bodyPart_ok' sp hE hP hB hdata hsret hdests htry hpar _ _
 
 /-! ## From the input conditions to the loop hypotheses -/
 
@@ -781,7 +781,7 @@ theorem lowerFunction_ok {f : Clif.Function} (hE : Compile.functionE f = true)
   have hd := dominated_of hdom
   have hsc := lowerScope_of hs
   have hreg : ∀ x ∈ valueDefs f, ctx.valueReg? x = some (.vreg x .int) :=
-    fun x hx => (sp.facts.vals x hx).2
+    fun x hx => (sp.facts.vals_int (sp.ctxE hE) x hx).2
   have hE' := hE
   simp only [Compile.functionE, Compile.sigE, Bool.and_eq_true, List.all_eq_true] at hE'
   obtain ⟨⟨⟨⟨hpE, hrE⟩, -⟩, -⟩, hbE⟩ := hE'
@@ -799,7 +799,8 @@ theorem lowerFunction_ok {f : Clif.Function} (hE : Compile.functionE f = true)
   rw [lowerFunction_eq]
   unfold lowerFunction'
   simp only [hcc, Bool.not_true, Bool.false_eq_true, ite_false, bind, Except.bind, sigParamBytes,
-    hbytes, h2, h3, retRegs, sigRets_le h8, ite_true, Option.isNone_some, hb]
+    hbytes, h2, h3, abiRetRegs_returns_int (functionE_sig_int hE).2, retRegs, sigRets_le h8,
+    ite_true, Option.isNone_some, hb]
   obtain ⟨dF, hF⟩ := forIn_ok' (blockBody f ctx ranges bytes) f.blocks.zipIdx
     ({ st := st0, alias := #[], nextLabel := f.blocks.length } : DState) (fun x hx d => by
       obtain ⟨B, bi⟩ := x
@@ -807,7 +808,7 @@ theorem lowerFunction_ok {f : Clif.Function} (hE : Compile.functionE f = true)
       have hBm := List.mem_of_getElem? hB
       have huse := (hd.uses ctx ranges st0 hb bi B hB).2
       have hT := (hbl B hBm).2
-      refine blockBody_ok' sp hP hB ⟨locs, n, hlocs⟩ (dataOk_of (hbE B hBm).2 hT)
+      refine blockBody_ok' sp (sp.ctxE hE) hP hB ⟨locs, n, hlocs⟩ (dataOk_of (hbE B hBm).2 hT)
         (sretBad_false hsc.nonempty hent _) (fun bc hbc => ?_) (fun et het => ?_)
         (fun q hq => ⟨_, hreg q.1 ?_⟩) d
       · obtain ⟨tb, htb⟩ := Option.isSome_iff_exists.mp (termInB_dests hT bc hbc)

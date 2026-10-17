@@ -368,6 +368,19 @@ theorem retRegsC_int (n : Nat) : retRegsC (List.replicate n .int) 0 0 = retRegs 
   rw [retRegsC_replicate_int n 0 0 (by omega)]
   simp [retRegs, List.range_eq_range']
 
+/-- At most 8 values of each class fit their return registers. -/
+theorem retRegsC_some : ∀ (cs : List RegClass) (nx nv : Nat), nx + cs.length ≤ 8 →
+    nv + cs.length ≤ 8 → ∃ ps, retRegsC cs nx nv = some ps
+  | [], _, _, _, _ => ⟨[], rfl⟩
+  | .int :: cs, nx, nv, h1, h2 => by
+    simp only [List.length_cons] at h1 h2
+    obtain ⟨ps, hps⟩ := retRegsC_some cs (nx + 1) nv (by omega) (by omega)
+    exact ⟨_, by rw [retRegsC, if_pos (by omega), hps]; rfl⟩
+  | .float :: cs, nx, nv, h1, h2 => by
+    simp only [List.length_cons] at h1 h2
+    obtain ⟨ps, hps⟩ := retRegsC_some cs nx (nv + 1) (by omega) (by omega)
+    exact ⟨_, by rw [retRegsC, if_pos (by omega), hps]; rfl⟩
+
 theorem retClass_int {p : Clif.AbiParam} (h : p.ty.isInt = true) : retClass p = .int := by
   unfold retClass; split
   · rfl

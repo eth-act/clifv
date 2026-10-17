@@ -350,7 +350,9 @@ theorem externCtor_cls (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
          obtain ⟨⟨a, b⟩, hq, hr⟩ := hr
          have hz := List.of_mem_zip hq
          rcases hr with rfl | rfl
-         · exact .inr (.inr (retRegs_phys ‹_› _ hz.1))
+         · first
+           | exact .inr (.inr (retRegs_phys ‹_› _ hz.1))
+           | exact .inr (.inr (retRegsC_phys ‹_› _ hz.1))
          · obtain ⟨l, hl, hrl⟩ := single_mem ‹_› _ hz.2
            exact .inl (by simp [V.regsIn, opRegs]; exact ⟨l, hl, hrl⟩))
       | (refine ctorCls_callArgs rfl _ _ (fun _ _ => rfl) ?_

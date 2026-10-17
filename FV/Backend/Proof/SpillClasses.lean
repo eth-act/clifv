@@ -169,7 +169,7 @@ theorem classesOkM_lower {f : Clif.Function} {vc : VCode} (hs : LowerScope f)
   obtain ⟨-, hspec⟩ := lowBlocks_spec hl
   have hemp := lowBlocks_emptied hl
   obtain ⟨hfin, hLs⟩ := lowB_chain (stepsCls_driver ctx) f.blocks 0 st0 f.blocks.length bl d.st _ hlow
-  have hsz0 : Sz st0 := by rw [hsp.st0]; simp [Sz]
+  have hsz0 : Sz st0 := by rw [hsp.st0_int (hsp.ctxE hs.subsetE)]; simp [Sz]
   have hval0 : ∀ x r, ctx.valueReg? x = some r → RegCls st0.classes r := by
     intro x r hx
     have hr := hctx.valueReg x r hx
@@ -179,7 +179,7 @@ theorem classesOkM_lower {f : Clif.Function} {vc : VCode} (hs : LowerScope f)
       cases h' : ctx.valReg[x]? with
       | none => rw [h'] at hx; cases hx
       | some _ => exact (Array.getElem?_eq_some_iff.mp h').1
-    rw [hsp.st0, regCls_vreg]
+    rw [hsp.st0_int (hsp.ctxE hs.subsetE), regCls_vreg]
     rw [hcf.size.2.1] at hxl
     simp [Array.getElem?_replicate, hxl]
   have hIs : ∀ s, ClsStep st0 s → ClsIs ctx s s := fun s hs0 =>
@@ -187,7 +187,7 @@ theorem classesOkM_lower {f : Clif.Function} {vc : VCode} (hs : LowerScope f)
      (fun r hr => by rw [hcf.tryRegs] at hr; cases hr), (fun r hr => by rw [hcf.tryRegs] at hr; cases hr),
      ⟨[], by simp, by simp⟩⟩
   have hvalF : ∀ x, x ∈ valueDefs f → RegCls d.st.classes (.vreg x .int) := fun x hx =>
-    regCls_step hfin (hval0 x _ (hcf.vals x hx).2)
+    regCls_step hfin (hval0 x _ (hcf.vals_int (hsp.ctxE hs.subsetE) x hx).2)
   -- statements
   have hstm : ∀ (bi : Nat) (B : Clif.Block) (L : BLow) (j : Nat) (stm : Clif.Stmt) (sl : SLow),
       f.blocks[bi]? = some B → bl[bi]? = some L →
