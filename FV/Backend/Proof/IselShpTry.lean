@@ -57,12 +57,13 @@ theorem shpTry_regPairs_sub : ∀ (locs : List ArgLoc) (args bytes : List Nat),
       exact ih
 
 /-- The uses of a call through `gen_call_args`, under at most one `sret` parameter. -/
-theorem shpTry_uses {s : Clif.Signature} (hs : sigAbiOk s = true) {locs : List ArgLoc} {S : Nat}
+theorem shpTry_uses {s : Clif.Signature} (hs : sigAbiOk s = true)
+    (hi : s.params.all (·.ty.isInt) = true) {locs : List ArgLoc} {S : Nat}
     (hl : sigArgLocs s = .ok (locs, S)) (args bytes : List Nat) :
     (∀ q ∈ regPairsOf ((locs.zip args).zip bytes), ArgReg q.2) ∧
       ((regPairsOf ((locs.zip args).zip bytes)).map (·.2)).Nodup := by
   have hlo : locsOf s = locs := by simp [locsOf, hl]
-  obtain ⟨hnd, harg⟩ := locsOf_regs (sret_le_of_sigAbiOk hs)
+  obtain ⟨hnd, harg⟩ := locsOf_regs hi (sret_le_of_sigAbiOk hs)
   rw [hlo] at hnd harg
   have hsub := shpTry_regPairs_sub locs args bytes
   exact ⟨fun q hq => harg _ (hsub.subset (List.mem_map_of_mem hq)), hnd.sublist hsub⟩
@@ -85,10 +86,11 @@ theorem shpTry_defs {N b n : Nat} (hb : N ≤ b) (h8 : n ≤ 8) :
     exact Nat.le_trans hb (Nat.le_add_right _ _)
 
 theorem shpTry_callOk {N b : Nat} (hb : N ≤ b) {s : Clif.Signature} (hs : sigAbiOk s = true)
+    (hi : s.params.all (·.ty.isInt) = true)
     {locs : List ArgLoc} {S : Nat} (hl : sigArgLocs s = .ok (locs, S)) (args bytes : List Nat)
     {n : Nat} (h8 : n ≤ 8) :
     CallOk N (regPairsOf ((locs.zip args).zip bytes)) (outDefs b (max n 2)) :=
-  have hu := shpTry_uses hs hl args bytes
+  have hu := shpTry_uses hs hi hl args bytes
   have hd := shpTry_defs (n := n) hb h8
   ⟨hu.1, hu.2, hd.1, hd.2.1, hd.2.2.1, hd.2.2.2⟩
 
@@ -119,6 +121,7 @@ theorem shpTry_bl {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Functi
     ShpIs N s0 st' := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  have hint := (sigIntB_iff.mp (exnTableOpnd_int he)).1
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_impl_ok hp (ctx := c) hc (n := n)
     (i := i) (s := s) (v := v) (s' := s') hn h
   have kE := fun n (hn : 30 ≤ n) i s v s' h => emit_side_effect_inst_ok hp (ctx := c) hc
@@ -176,7 +179,7 @@ theorem shpTry_bl {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Functi
     rcases List.mem_append.mp hmi with hmi | hmi
     · rw [shpTry_argStores _ mi hmi] at hctl; cases hctl
     · rw [List.mem_singleton.mp hmi]
-      exact .callSym _ _ _ (shpTry_callOk hlo habi hl args bytes hr8)
+      exact .callSym _ _ _ (shpTry_callOk hlo habi hint hl args bytes hr8)
   · rw [hs2, hs1]; simp [LState.emit, freshN_nextVreg]
 
 set_option maxHeartbeats 20000000 in
@@ -198,6 +201,7 @@ theorem shpTry_got {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Funct
     ShpIs N s0 st' := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  have hint := (sigIntB_iff.mp (exnTableOpnd_int he)).1
   -- the start state's counter, under a name the inversion's substitutions keep
   obtain ⟨σ, hσ⟩ : ∃ σ : LState, σ.nextVreg = st.nextVreg := ⟨st, rfl⟩
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_ind_impl_ok hp (ctx := c) hc (n := n)
@@ -268,7 +272,7 @@ theorem shpTry_got {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Funct
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hmi
       rcases hmi with rfl | rfl
       · exact .got _ _ (hσ ▸ hst.2)
-      · exact .callReg _ _ _ (shpTry_callOk hlo habi hl args bytes hr8)
+      · exact .callReg _ _ _ (shpTry_callOk hlo habi hint hl args bytes hr8)
   · rw [hs2, hs1, hs0]; simp [LState.emit, LState.fresh]
 
 set_option maxHeartbeats 20000000 in
@@ -291,6 +295,7 @@ theorem shpTry_ind {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData 
     ShpIs N s0 st' := by
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
+  have hint := (sigIntB_iff.mp (exnTableOpnd_int he)).1
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_ind_impl_ok hp (ctx := c) hc (n := n)
     (i := i) (s := s) (v := v) (s' := s') hn h
   have kE := fun n (hn : 30 ≤ n) i s v s' h => emit_side_effect_inst_ok hp (ctx := c) hc
@@ -343,7 +348,7 @@ theorem shpTry_ind {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData 
     rcases List.mem_append.mp hmi with hmi | hmi
     · rw [shpTry_argStores _ mi hmi] at hctl; cases hctl
     · rw [List.mem_singleton.mp hmi]
-      exact .callReg _ _ _ (shpTry_callOk hlo habi hl args bytes hr8)
+      exact .callReg _ _ _ (shpTry_callOk hlo habi hint hl args bytes hr8)
   · rw [hs2, hs1]; simp [LState.emit]
 
 /-! ## The hand-checked `try_call` rules -/
