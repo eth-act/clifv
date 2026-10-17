@@ -7,6 +7,7 @@ Author(s): Yan Peng
 -- Modified by fv-compiler-rust (2026): DUP (general) and INS (general) read `X[n, esize]` and
 -- SMOV/UMOV write `X[d, datasize]` in the Arm ARM ASL, so register 31 is XZR, not SP (upstream
 -- used the SP-flavoured accessors; found by co-simulation).
+-- `dup_aux_0_4_32` is proved bitwise (`getLsbD`) instead of by `bv_decide`.
 
 import FV.Arm.Decode
 import FV.Arm.Insts.Common
@@ -44,8 +45,22 @@ theorem dup_aux_0_4_32 (element : BitVec 32) (result : BitVec 128) :
   simp [minimal_theory]
   unfold dup_aux
   simp [minimal_theory]
-  simp [state_simp_rules, partInstall]
-  bv_decide
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [elem_set, partInstall, Nat.reduceMul, getLsbD_or, getLsbD_and, getLsbD_not,
+    getLsbD_shiftLeft, hi, decide_true, Bool.true_and, getLsbD_setWidth, getLsbD_allOnes,
+    Bool.not_and, Bool.not_not]
+  rw [getLsbD_append, getLsbD_append, getLsbD_append]
+  by_cases h1 : i < 32
+  · simp [h1, hi, show i < 64 by omega, show i < 96 by omega]
+  by_cases h2 : i < 64
+  · simp [h1, h2, show i < 96 by omega, show i - 32 < 32 by omega, show i - 32 < 128 by omega]
+  by_cases h3 : i < 96
+  · simp [h1, h2, h3, show i - 64 < 32 by omega, show i - 64 < 128 by omega,
+      show ¬ i - 32 < 32 by omega, show i - 32 - 32 = i - 64 by omega]
+  · simp [h1, h2, h3, show i - 96 < 32 by omega, show i - 96 < 128 by omega,
+      show ¬ i - 32 < 32 by omega, show ¬ i - 32 - 32 < 32 by omega,
+      show i - 32 - 32 - 32 = i - 96 by omega]
 
 @[state_simp_rules]
 def exec_dup_element (inst : Advanced_simd_copy_cls) (s : ArmState) : ArmState :=
