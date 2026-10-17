@@ -207,13 +207,25 @@ theorem instData_inv_names {f : Clif.Function} {c : Clif.Inst} {kf ko : Nat} {fs
     injection h4 with _ h5
     rcases hk with hk | hk
     · exact absurd h2 hk.1
-    · exact absurd h5 hk.2.1
+    · exact absurd h5 hk.1
   · injection hd with _ h2 h3
     injection h3 with h4
     injection h4 with _ h5
     rcases hk with hk | hk
     · exact absurd h2 hk.2
-    · exact absurd h5 hk.2.2
+    · exact absurd h5 hk.2
+
+/-- `instData_inv_names` for an instruction of E (no float constant). -/
+theorem instData_inv_namesE {f : Clif.Function} {c : Clif.Inst} {kf ko : Nat} {fs : List V}
+    (hE : Compile.instE c = true) (h : instData f c = .ok (.data 152 kf (.data 151 ko [] :: fs))) :
+    (variantNames 152)[kf]? = some (instNames c).1 ∧ (variantNames 151)[ko]? = some (instNames c).2 := by
+  rcases instData_names h with ⟨rest, hd⟩ | ⟨ty, _, rfl, hfl, -⟩
+  · obtain ⟨h1, -, h3⟩ := mkVariant_eq_data hd.symm
+    injection h3 with h4 _
+    obtain ⟨h5, -, -⟩ := mkVariant_eq_data h4.symm
+    exact ⟨h1, h5⟩
+  · exfalso
+    cases ty <;> simp_all [Compile.instE, Compile.tyE, Clif.Ty.isFloat, Clif.Ty.isInt]
 
 theorem binaryOpcode_inj {a b : Clif.BinaryOp} {n : String} (ha : binaryOpcode a = some n)
     (hb : binaryOpcode b = some n) : a = b := by
