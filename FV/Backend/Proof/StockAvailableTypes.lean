@@ -11,7 +11,7 @@ theorem stock_lower_record_declared_type {f : Clif.Function} {result : Result}
     stock_lower_blockScanOrigin run events
   obtain ⟨original,oldState,oldBuild,spec,view⟩ := buildCtx_source build
   have typed := spec.regTy x
-  obtain ⟨-, -, -, hreg⟩ := spec.facts.vals x declared
+  obtain ⟨-, t, -, hreg⟩ := spec.facts.vals x declared
   rw [hreg] at typed
   have actual : (result.ctx.valueType? x).isSome = true := by
     simpa only [Ctx.valueType?,view.valTy,Option.isSome_some] using typed.symm
