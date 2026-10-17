@@ -48,14 +48,14 @@ theorem mem_outDefs {b k : Nat} {q : Reg × Nat} (h : q ∈ outDefs b k) :
   obtain ⟨j, hj, rfl⟩ := h
   exact ⟨j, hj, rfl⟩
 
-/-- **`CallOk` of a call of `s`**: the register-passed arguments of `gen_call_args` and the
-`k ≤ 8` fresh defs `x_j → b + j` of `gen_call_rets`. -/
+/-- **`CallOk` of a call of an integer signature `s`**: the register-passed arguments of
+`gen_call_args` and the `k ≤ 8` fresh defs `x_j → b + j` of `gen_call_rets`. -/
 theorem callOk_of {N b k : Nat} (hN : N ≤ b) (hk : k ≤ 8) {s : Clif.Signature}
-    (hs : sigAbiOk s = true) {locs : List ArgLoc} {S : Nat} (hl : sigArgLocs s = .ok (locs, S))
-    (args bytes : List Nat) :
+    (hs : sigAbiOk s = true) (hi : s.params.all (·.ty.isInt) = true) {locs : List ArgLoc}
+    {S : Nat} (hl : sigArgLocs s = .ok (locs, S)) (args bytes : List Nat) :
     CallOk N (regPairsOf ((locs.zip args).zip bytes)) (outDefs b k) := by
   have hlocs : locsOf s = locs := by simp [locsOf, hl]
-  obtain ⟨hnd, harg⟩ := locsOf_regs (sret_le_of_sigAbiOk hs)
+  obtain ⟨hnd, harg⟩ := locsOf_regs hi (sret_le_of_sigAbiOk hs)
   rw [hlocs] at hnd harg
   have hsub := regPairsOf_regs locs args bytes
   refine ⟨fun q hq => harg _ (hsub.subset (List.mem_map_of_mem (f := (·.2)) hq)),
@@ -162,6 +162,7 @@ theorem run_2508 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := extern_sigAbiOk ha hext
+  have hint := (sigIntB_iff.mp (instData_call_int hd hext)).1
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
@@ -201,7 +202,7 @@ theorem run_2508 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   rw [callDefs_outDefs] at hs2
   refine ⟨since_emit (since_stores (stackEnts ((locs.zip args).zip bytes))
     (by rw [hs1]; simp [freshN_emitted])) hs2
-    (fun _ => .callSym _ _ _ (callOk_of hN (by simpa using hr8) hsig hl _ _)), ?_⟩
+    (fun _ => .callSym _ _ _ (callOk_of hN (by simpa using hr8) hsig hint hl _ _)), ?_⟩
   rw [hs2, hs1]
   simp [LState.emit, freshN_nextVreg] <;> omega
 
@@ -236,6 +237,7 @@ theorem run_2518 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := extern_sigAbiOk ha hext
+  have hint := (sigIntB_iff.mp (instData_call_int hd hext)).1
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
@@ -280,7 +282,7 @@ theorem run_2518 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   rw [hfr] at hs0
   refine ⟨since_emit (since_congr (since_emit (since_stores (stackEnts ((locs.zip args).zip bytes))
       ?_) hs0 (fun _ => .got _ _ (by omega))) (by rw [hs1])) hs2
-    (fun _ => .callReg _ _ _ (callOk_of hN (by simpa using hr8) hsig hl _ _)), ?_⟩
+    (fun _ => .callReg _ _ _ (callOk_of hN (by simpa using hr8) hsig hint hl _ _)), ?_⟩
   · simp [LState.fresh, freshN_emitted]
   · rw [hs2, hs1, hs0]
     simp [LState.emit, LState.fresh, freshN_nextVreg] <;> omega
@@ -317,6 +319,7 @@ theorem run_2529 {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Functio
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := hsigs sig callee args s rfl hs
+  have hint := (sigIntB_iff.mp (instData_callIndirect_int hd hs)).1
   simp only [ext_value_list_slice_iff, ext_value_slice_unwrap_iff] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
@@ -358,7 +361,7 @@ theorem run_2529 {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Functio
   rw [callDefs_outDefs] at hs2
   refine ⟨since_emit (since_stores (stackEnts ((locs.zip args).zip bytes))
     (by rw [hs1]; simp [freshN_emitted])) hs2
-    (fun _ => .callReg _ _ _ (callOk_of hN (by simpa using hr8) hsig hl _ _)), ?_⟩
+    (fun _ => .callReg _ _ _ (callOk_of hN (by simpa using hr8) hsig hint hl _ _)), ?_⟩
   rw [hs2, hs1]
   simp [LState.emit, freshN_nextVreg] <;> omega
 

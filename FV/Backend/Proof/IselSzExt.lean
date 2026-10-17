@@ -256,6 +256,13 @@ theorem retRegs_zip_len {n : Nat} {ps : List Reg} (h : retRegs n = some ps) (rs 
   · cases h; simp only [List.length_zip, List.length_map, List.length_range]; omega
   · cases h
 
+/-- `gen_return`'s `Rets` pairs at most 8 registers (it returns at most 8 values). -/
+theorem rets_zip_len {rss : List (List Reg)} {rs : List Reg}
+    (hm : rss.mapM (fun | [r] => some r | _ => none) = some rs) (h8 : rss.length ≤ 8)
+    (ps : List Reg) : (rs.zip ps).length ≤ 8 := by
+  have := mapM_option_length _ hm
+  simp only [List.length_zip]; omega
+
 set_option maxHeartbeats 8000000 in
 /-- **Every extern constructor** emits what `SzE` states. -/
 theorem externCtor_sz (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
@@ -281,7 +288,7 @@ theorem externCtor_sz (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | exact .inr (.inr (.inr (.inr ⟨rfl, tgA_of_since (callArgs_em st _ _ (fun _ _ => rfl))⟩)))
       | exact .inr (.inr (.inl ⟨rfl, loadConstantFull_wt _ _ _ _ st,
           tgA_of_since (loadConstantFull_em _ _ _ _ st)⟩))
-      | exact .inr (.inr (.inr (.inl ⟨rfl, _, retRegs_zip_len ‹_› _, rfl⟩)))
+      | exact .inr (.inr (.inr (.inl ⟨rfl, _, rets_zip_len ‹_› ‹_› _, rfl⟩)))
       | exact .inl (callOutput_fold st _ _ (fun _ _ => rfl)).1
 
 /-! ## The facts `ExtW` and `OracleW` -/

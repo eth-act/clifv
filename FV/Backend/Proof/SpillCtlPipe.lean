@@ -253,8 +253,10 @@ theorem params3_sub {α β γ δ : Type} (P : List (α × β)) (L : List γ) (Bs
   exact ⟨((zip_fst_sub _ _).map _).trans (zip_snd_sub _ _),
     (((zip_fst_sub _ _).map _).trans (zip_fst_sub _ _)).map _⟩
 
-/-- **The entry block's `Args`**, renamed by `R` fixing its parameters' vregs. -/
+/-- **The entry block's `Args`** (of an integer signature), renamed by `R` fixing its
+parameters' vregs. -/
 theorem spillInstOk_entryArgs {f : Clif.Function} {R : Reg → Reg} {B : Clif.Block}
+    (hi : f.sig.params.all (·.ty.isInt) = true)
     (hsig : (f.sig.params.filter (·.purpose == .sret)).length ≤ 1)
     (hpar : (B.params.map (·.1)).Nodup)
     (hR : ∀ x ∈ B.params.map (·.1), R (.vreg x .int) = .vreg x .int) :
@@ -265,7 +267,7 @@ theorem spillInstOk_entryArgs {f : Clif.Function} {R : Reg → Reg} {B : Clif.Bl
     unfold entryParams at hq
     exact List.mem_map_of_mem (List.of_mem_zip (List.of_mem_zip hq).1).1
   rw [he]
-  obtain ⟨hnd, harg⟩ := locsOf_regs hsig
+  obtain ⟨hnd, harg⟩ := locsOf_regs hi hsig
   obtain ⟨s1, s2⟩ := entryD_sub (entryParams f B)
   obtain ⟨hE1, hE2⟩ : ((entryParams f B).map (·.1.2)).Sublist (locsOf f.sig) ∧
       ((entryParams f B).map (·.1.1.1)).Sublist (B.params.map (·.1)) := by
@@ -292,12 +294,14 @@ theorem tryInfo_clobberAll {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.
       · rename_i hcc
         simp only [bind, Except.bind, pure, Except.pure] at he
         split at he
-        · cases he
-        · simp only [Except.ok.injEq, Prod.mk.injEq] at he
-          obtain ⟨rfl, -⟩ := he
-          simp only [Bool.not_eq_true, Bool.not_eq_false', Bool.or_eq_true, Option.isNone_iff_eq_none,
-            beq_iff_eq] at hcc
-          exact hcc
+        · simp [throw, throwThe, MonadExceptOf.throw] at he
+        · split at he
+          · cases he
+          · simp only [Except.ok.injEq, Prod.mk.injEq] at he
+            obtain ⟨rfl, -⟩ := he
+            simp only [Bool.not_eq_true, Bool.not_eq_false', Bool.or_eq_true,
+              Option.isNone_iff_eq_none, beq_iff_eq] at hcc
+            exact hcc
   unfold tryInfoOf at hi
   split at hi
   · cases hi
@@ -416,7 +420,8 @@ theorem ctlSpillHyp_of (hI : IselCtlHyp) {f : Clif.Function} {vc : VCode}
             unfold valueDefs at hvd
             have := (List.pairwise_flatMap.mp hvd).1 B0 hB0m
             exact (List.nodup_append.mp this).1
-          refine spillInstOk_entryArgs (sret_le_of_sigAbiOk ha.1.1) hpar (fun x hx => ?_)
+          refine spillInstOk_entryArgs (functionE_sig_int hs.subsetE).1 (sret_le_of_sigAbiOk ha.1.1)
+            hpar (fun x hx => ?_)
           show lowerFunction.resolve _ _ (Reg.vreg x .int) = _
           rw [resolve_vreg]
           congr 1

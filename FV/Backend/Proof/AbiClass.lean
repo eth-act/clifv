@@ -123,6 +123,21 @@ theorem map_snd_zip {α β : Type} : ∀ (l : List α) (m : List β), m.length �
   | _ :: l, _ :: m, h => by
     simp only [List.zip_cons_cons, List.map_cons, map_snd_zip l m (by simpa using h)]
 
+theorem mapM_option_length {α β : Type} (g : α → Option β) :
+    ∀ {l : List α} {r : List β}, l.mapM g = some r → r.length = l.length
+  | [], r, h => by simp at h; subst h; rfl
+  | a :: l, r, h => by
+    rw [List.mapM_cons] at h
+    cases hg : g a with
+    | none => simp [hg] at h
+    | some b =>
+      cases hl : l.mapM g with
+      | none => simp [hg, hl] at h
+      | some r' =>
+        simp [hg, hl] at h
+        subst h
+        simp [mapM_option_length g hl]
+
 theorem mapM_ok_length {α β ε : Type} (g : α → Except ε β) :
     ∀ {l : List α} {r : List β}, l.mapM g = .ok r → r.length = l.length
   | [], r, h => by simp [List.mapM_nil, pure, Except.pure] at h; subst h; rfl

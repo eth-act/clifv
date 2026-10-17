@@ -870,6 +870,22 @@ theorem CtxSpec.valTyE {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × N
     {st0 : LState} (spec : CtxSpec f ctx ranges st0) (hs : LowerScope f) : CtxE ctx :=
   spec.ctxE hs.subsetE
 
+/-- A type `buildCtx` admits whose values go in X registers is an E type. -/
+theorem mem_eCTys_of_valClass {ty : Clif.Ty} (hv : valTyOk ty = true)
+    (hc : (CTy.ofClif ty).valClass = .int) : CTy.ofClif ty ∈ eCTys := by
+  cases ty <;> simp_all [valTyOk, eTy, Clif.Ty.isInt, Clif.Ty.isFloat, CTy.ofClif, eCTys,
+    CTy.valClass, CTy.regClass?]
+
+/-- `buildCtx`'s context is integer (`CtxE`) when its values all go in X registers. -/
+theorem CtxSpec.ctxE_of_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0)
+    (hint : ∀ x t, ctx.valueType? x = some t → t.valClass = .int) : CtxE ctx := by
+  intro x t ht
+  rcases spec.tyOf x t ht with ⟨B, hB, q, hq, -, rfl⟩ | ⟨B, hB, s, hs', m, ty, -, hty, rfl⟩
+  · exact mem_eCTys_of_valClass ((spec.blockC B hB).1 q hq) (hint x _ ht)
+  · exact mem_eCTys_of_valClass (((spec.blockC B hB).2 s hs').2.2 ty (List.mem_of_getElem? hty))
+      (hint x _ ht)
+
 /-- `regEq` on an integer context: value `x` in `vreg x` of class `int`. -/
 theorem CtxSpec.regEq_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
     {st0 : LState} (spec : CtxSpec f ctx ranges st0) (hE : CtxE ctx) :

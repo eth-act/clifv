@@ -906,10 +906,14 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     match ctx.slotOff.lookup s with
     | some base => ok (.int (base + a + b))
     | none => .unmodeled s!"stack slot ss{s}"
+  -- each returned value in the next return register of its class (`retRegsC`); at most 8
+  -- values in all (the backend's bound, as before the typed ABI)
   | TId.gen_return, [.regsVec rss] =>
-    match retRegsC (regsClasses rss) 0 0, rss.mapM (fun | [r] => some r | _ => none) with
-    | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
-    | _, _ => .unmodeled "gen_return: more than 8 return values or multi-register values"
+    if rss.length ≤ 8 then
+      match retRegsC (regsClasses rss) 0 0, rss.mapM (fun | [r] => some r | _ => none) with
+      | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
+      | _, _ => .unmodeled "gen_return: multi-register values"
+    else .unmodeled "gen_return: more than 8 return values"
   -- calls pass integer values only (`instData`/`exnTableOpnd` reject `f32`/`f64` call
   -- signatures): one fresh integer vreg per ABI return, in x0.. (`retRegs`)
   | TId.gen_call_output, [.op (.sig s)] =>
