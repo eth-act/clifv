@@ -159,7 +159,10 @@ theorem extend_sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
   cases aty <;> cases ty <;> simp [eTy, Clif.Ty.width] at hety hlt <;>
     refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_nil _), ?_⟩ <;>
     simp only [VHolds, ofX, lo64, upd, ↓reduceIte, extVal_fb, Clif.Sem.uextend, Clif.Sem.sextend,
-      Clif.Ty.width, Bool.false_eq_true] <;> bv_decide
+      Clif.Ty.width, Bool.false_eq_true] <;>
+    apply BitVec.eq_of_getElem_eq <;> intro i hi <;>
+    repeat (first | omega |
+      (rcases i with _ | i; · simp [BitVec.getElem_signExtend, BitVec.msb_eq_getLsbD_last]))
 
 /-! ## The rule theorems -/
 

@@ -225,7 +225,14 @@ theorem bitrev_i8_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env :
       refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_rr hR rfl (fun _ => rfl) (prun_nil _)), ?_⟩
       have hu' : (ρ x).setWidth 8 = u := hu
       subst hu'
-      wfix [Clif.Sem.unary, Clif.Sem.bitrev])
+      simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary,
+          Clif.Sem.bitrev] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        (try unfold OperandSize.bits at *) <;>
+        apply BitVec.eq_of_getElem_eq <;> intro i hi <;>
+        repeat (first | omega |
+          (rcases i with _ | i; · simp [BitVec.getElem_ushiftRight, BitVec.getElem_reverse,
+            BitVec.getMsbD_setWidth])))
 
 include hp in
 /-- **`bitrev.i16`** (`lower.isle:1937`). -/
@@ -257,7 +264,14 @@ theorem bitrev_i16_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
       refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_rr hR rfl (fun _ => rfl) (prun_nil _)), ?_⟩
       have hu' : (ρ x).setWidth 16 = u := hu
       subst hu'
-      wfix [Clif.Sem.unary, Clif.Sem.bitrev])
+      simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary,
+          Clif.Sem.bitrev] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        (try unfold OperandSize.bits at *) <;>
+        apply BitVec.eq_of_getElem_eq <;> intro i hi <;>
+        repeat (first | omega |
+          (rcases i with _ | i; · simp [BitVec.getElem_ushiftRight, BitVec.getElem_reverse,
+            BitVec.getMsbD_setWidth])))
 
 include hp in
 /-- **`bitrev.i32`/`bitrev.i64`** (`lower.isle:1946`): a single `rbit`. At i8/i16 the rules
@@ -299,7 +313,15 @@ theorem bitrev_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Cl
       have hu' : (ρ x).setWidth ty.width = u := hu
       subst hu'
       revert hP
-      wcases ty hety [Clif.Sem.unary, Clif.Sem.bitrev, Clif.Ty.width, ne_eq, not_true_eq_false,
-        false_and, and_false, false_implies])
+      generalize hs : szOf (Clif.Ty.width ty) = sz at *
+      cases ty <;> simp [eTy] at hety <;> simp [szOf, Clif.Ty.width] at hs <;> subst hs <;>
+        simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary, Clif.Sem.bitrev,
+            Clif.Ty.width, ne_eq, not_true_eq_false, false_and, and_false, false_implies] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        intro _ <;>
+        (try unfold OperandSize.bits at *) <;>
+        apply BitVec.eq_of_getElem_eq <;> intro i hi <;>
+        repeat (first | omega |
+          (rcases i with _ | i; · simp [BitVec.getElem_reverse, BitVec.getMsbD_setWidth])))
 
 end Backend.Proof
