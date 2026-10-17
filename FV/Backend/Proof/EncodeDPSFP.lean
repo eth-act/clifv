@@ -30,6 +30,22 @@ theorem decode_armBits_Advanced_simd_across_lanes (x : Advanced_simd_across_lane
     decode_raw_inst (armBits (.DPSFP (.Advanced_simd_across_lanes x))) = some (ArmInst.DPSFP (.Advanced_simd_across_lanes x)).norm := by
   decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
 
+theorem decode_armBits_FP_data_processing_one_source (x : FP_data_processing_one_source_cls) :
+    decode_raw_inst (armBits (.DPSFP (.FP_data_processing_one_source x))) = some (ArmInst.DPSFP (.FP_data_processing_one_source x)).norm := by
+  decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
+
+theorem decode_armBits_FP_immediate (x : FP_immediate_cls) :
+    decode_raw_inst (armBits (.DPSFP (.FP_immediate x))) = some (ArmInst.DPSFP (.FP_immediate x)).norm := by
+  decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
+
+theorem decode_armBits_FP_conditional_select (x : FP_conditional_select_cls) :
+    decode_raw_inst (armBits (.DPSFP (.FP_conditional_select x))) = some (ArmInst.DPSFP (.FP_conditional_select x)).norm := by
+  decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
+
+theorem decode_armBits_Advanced_simd_modified_immediate (x : Advanced_simd_modified_immediate_cls) :
+    decode_raw_inst (armBits (.DPSFP (.Advanced_simd_modified_immediate x))) = some (ArmInst.DPSFP (.Advanced_simd_modified_immediate x)).norm := by
+  decode_class decode_raw_inst_of_dpsfp decode_data_proc_sfp
+
 theorem decode_armBits_DPSFP (x : DataProcSFPInst) :
     decode_raw_inst (armBits (.DPSFP x)) = some (ArmInst.DPSFP x).norm := by
   cases x with
@@ -38,5 +54,9 @@ theorem decode_armBits_DPSFP (x : DataProcSFPInst) :
   | Advanced_simd_three_same x => exact decode_armBits_Advanced_simd_three_same x
   | Conversion_between_FP_and_Int x => exact decode_armBits_Conversion_between_FP_and_Int x
   | Advanced_simd_across_lanes x => exact decode_armBits_Advanced_simd_across_lanes x
+  | FP_data_processing_one_source x => exact decode_armBits_FP_data_processing_one_source x
+  | FP_immediate x => exact decode_armBits_FP_immediate x
+  | FP_conditional_select x => exact decode_armBits_FP_conditional_select x
+  | Advanced_simd_modified_immediate x => exact decode_armBits_Advanced_simd_modified_immediate x
 
 end Backend

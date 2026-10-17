@@ -217,6 +217,13 @@ theorem Insn.encode_of_encodable {i : Insn} {env : Env} (he : i.encodable = true
       cases hz : rd.encZR
       · cases hp : env0.pcRel "adr" (20 + 1) 1 t <;> simp [hz, hp] at he
       · simp
+    case fpuLoadLit s rt t =>
+      obtain ⟨v, hv⟩ := Env.pcRel_of_range (what := "ldr (literal)") (n := 18) hl (by decide)
+        (by decide) rfl h1 h2 h3
+      simp only [Insn.encode, Insn.toArmInst, Insn.armFields, hv, bind, Except.bind, pure,
+        Except.pure, Functor.map, Except.map] at he ⊢
+      cases ho : Insn.armFields.fpOpc s <;> cases hz : rt.encV <;>
+        cases hp : env0.pcRel "ldr (literal)" (18 + 1) 4 t <;> simp [ho, hz, hp] at he ⊢
 
 /-- The unconditional branch of a relaxed pair is encodable. -/
 theorem Insn.encodable_b (t : Lbl) : (Insn.b t).encodable = true := by

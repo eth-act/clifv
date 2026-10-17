@@ -136,8 +136,10 @@ an error.
   CLIF name of `.LdataN`, `Front.clifName`). `names`: the merge's linked names (local symbols our
   code uses become `__fv_<tag>_<symbol>`, globalised). `local_addrs`: the link map's address of a
   local symbol in this unit's object (one address).
-* `symbols`, `markers`, `skipped`, the `SIZES` file of `lean-link`: link-time facts, checked by the
-  linker (`placeOkB`, `sizesOkB`, `symsOkB`, `outsideOkB`); `skipped` non-empty is an error.
+* `symbols`, `markers`, `skipped`: link-time facts, checked by the linker (`placeOkB`, `sizesOkB`,
+  `symsOkB`, `outsideOkB`); `skipped` non-empty is an error. The functions' sizes are not read:
+  `lean-link` fills `Bundle.sizes` with placeholders and replaces them by the compiled code's
+  (`placedPar`, the Lean compiler's layout).
 
 Version 1 (#222) named the decoded file `normalize.py` wrote (`"clif"`); it is not read any more.
 

@@ -1,11 +1,13 @@
 import FV.Link.Correct
 import FV.Link.Compile
 import FV.E2E.ExecProven
+import FV.E2E.LinkScopeInput
 
 /-! # The executable compiler is correct (L1, docs/TO-PROVE.md §1)
 
-`compileExe S file0` (`FV/Link/Compile.lean`): the input conditions `InScopeP`, then the Lean
-linker `leanLink`.
+`compileExe S file0` (`FV/Link/Compile.lean`): the input conditions `InScopeIn`, then the Lean
+linker `leanLink`. The proofs below use `InScopeP`, which `InScopeIn` implies
+(`inScopeP_of_input`; `compileExe_spec`).
 
 **`compileExe_correct`**: for `compileExe S file0 = .ok file`, the executable machine run of
 `file`'s own words refines the CLIF run of the program (`binary_correct_exec_proven`) — no
@@ -113,7 +115,8 @@ theorem compileExe_spec {S : LinkSpec} {file0 file : ByteArray}
   unfold compileExe at h
   split at h
   · rename_i hs
-    exact ⟨by rw [S.inScope_input, ← inScopePar_eq]; exact hs, h⟩
+    exact ⟨by rw [S.inScope_input]; exact inScopeP_of_input (by rw [← inScopeInPar_eq]; exact hs),
+      h⟩
   · cases h
 
 /-- **The executable compiler is correct** (L1): for `compileExe S file0 = .ok file` and an

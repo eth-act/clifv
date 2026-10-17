@@ -494,10 +494,10 @@ theorem regionOf_placed_size (S : LinkSpec) (tp : Nat → Option Nat) :
   rfl
 
 /-- **The executable compiler succeeds on decidable input conditions**: on the CLIF input
-(`InScopeP`), the layout (`layoutOkB`), rust-lld's executable `file0` (`file0OkB`), with the
+(`InScopeIn`), the layout (`layoutOkB`), rust-lld's executable `file0` (`file0OkB`), with the
 Lean compiler's layout (`S.placed`), and the remaining premise `CallPageReach`. -/
 theorem compileExe_total_input {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
-    (hin : InScopeP S.placed.input0 = true) (hl : S.placed.layoutOkB = true)
+    (hin : InScopeIn S.placed.input0 = true) (hl : S.placed.layoutOkB = true)
     (hph : phdrs (fileRd file0) = some phs) (hf : S.placed.file0OkB file0 phs = true)
     (hreach : CallPageReach S phs) :
     compileExe S.placed file0 =
@@ -505,8 +505,9 @@ theorem compileExe_total_input {S : LinkSpec} {file0 : ByteArray} {phs : List Ph
   simp only [file0OkB, Bool.and_eq_true] at hf
   obtain ⟨⟨⟨⟨⟨hreg, hh⟩, hd⟩, hs⟩, hft⟩, ht⟩ := hf
   have hsz := regionOf_placed_size S (tpOff phs)
-  refine compileExe_total hin (placeOkB_placed hin hl) rfl rfl (fun e he r hr => ?_) hph
-    (hsz ▸ hreg) (outsideOkB_patch (hsz ▸ hreg) hh (hsz ▸ hd) (by exact hs) (hsz ▸ hft))
+  refine compileExe_total hin (placeOkB_placed (inScopeP_of_input hin) hl) rfl rfl
+    (fun e he r hr => ?_) hph (hsz ▸ hreg)
+    (outsideOkB_patch (hsz ▸ hreg) hh (hsz ▸ hd) (by exact hs) (hsz ▸ hft))
   by_cases htls : r.type = .tlsDescAdrPage21
   · exact tls_range rfl ht e.2 htls
   · exact hreach e he r hr htls
@@ -516,7 +517,7 @@ and sizes against the compiled code (`namesOkB`, `sizesOkB`), so whenever `compi
 succeeds, `S` is `S.placed` and `compileExe_total_input` is about the same compilation. -/
 theorem placed_of_compileExe {S : LinkSpec} {file0 file : ByteArray}
     (h : compileExe S file0 = .ok file) : S.placed = S := by
-  simp only [compileExe, inScopePar_eq] at h
+  simp only [compileExe, inScopeInPar_eq] at h
   split at h
   · obtain ⟨-, -, -, -, hn, hs, -⟩ := leanLink_spec h
     simp only [namesOkB, tabOf, LinkInput.resultsT, input_funcs, List.map_map, ← List.map_take,

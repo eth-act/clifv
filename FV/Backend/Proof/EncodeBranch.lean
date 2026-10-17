@@ -63,13 +63,15 @@ theorem Env.target_of_ne {env : Env} {l : Lbl} (h : l ≠ .skip) : env.target l 
   cases l <;> first | rfl | exact absurd rfl h
 
 /-- The byte offset a decoded PC-relative instruction adds to its own address (the model's
-`branch_taken_pc` / ADR result is `PC + SignExtend(…)`, `signExtend_append_zero`). -/
+`branch_taken_pc` / ADR result / literal address is `PC + SignExtend(…)`,
+`signExtend_append_zero`). -/
 def _root_.Arm.ArmInst.pcRelOffset? : ArmInst → Option Int
   | .BR (.Uncond_branch_imm x) => some (4 * x.imm26.toInt)
   | .BR (.Cond_branch_imm x) => some (4 * x.imm19.toInt)
   | .BR (.Compare_branch x) => some (4 * x.imm19.toInt)
   | .BR (.Test_branch x) => some (4 * x.imm14.toInt)
   | .DPI (.PC_rel_addressing x) => if x.op = 0 then some (x.immhi ++ x.immlo).toInt else none
+  | .LDST (.Reg_literal x) => some (4 * x.imm19.toInt)
   | _ => none
 
 theorem signExtend_append_zero {n : Nat} (x : BitVec (n + 1)) :
@@ -131,6 +133,11 @@ theorem Insn.toArmInst_pcRel {env : Env} {i : Insn} {a : ArmInst} {t : Lbl} {rea
     have hv' : BitVec.extractLsb' 2 19 v ++ BitVec.extractLsb' 0 2 v = v :=
       BitVec.extractLsb'_append_extractLsb'
     simp [ArmInst.norm, ArmInst.pcRelOffset?, hv', h1]
+  case fpuLoadLit =>
+    obtain ⟨_, _, v, hv, _, _, rfl⟩ := hb
+    obtain ⟨o, hl, h1, h2, h3, h4⟩ := Env.pcRel_ok' (by decide) hv
+    push_cast at h1 h2 h3 h4 ⊢
+    exact ⟨o, hl, by simp [ArmInst.norm, ArmInst.pcRelOffset?, h1], h2, h3, h4⟩
 
 /-- **Branch-range policy.** Every instruction the encoder accepts has its label operand
 defined, aligned and within the form's reach. -/

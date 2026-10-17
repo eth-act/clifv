@@ -16,6 +16,11 @@ Producer: M3-model. Model choice: `docs/decisions/arm-model.md`. Attribution:
 - DONE: symbolic-simulation demo (`FVTest/Arm/Sym/Demo.lean`); see "Tactic API" below.
 - DONE: `third_party/NOTICE-lnsym.md`.
 - Nothing remains for M3-model. `Arm.encode` is M5.
+- DONE (S11d #237, phase 1, 2026-10-16): scalar floating-point data movement for `f32`/`f64`
+  (section "Floating point" below): FMOV (register, scalar immediate), FABS, FNEG, FCSEL,
+  Advanced SIMD modified immediate (MOVI/MVNI/ORR/BIC/FMOV vector, ported from LNSym), LDR
+  (literal) (GPR and SIMD&FP), SIMD&FP register-offset loads/stores. Co-simulation with IEEE
+  edge values: 256 forms × 1000 vectors (seed `0x5eed`) = 256 000 vectors, 0 failures.
 
 ## Public API (namespace `Arm`)
 
@@ -65,18 +70,19 @@ NOPs); memory is flat, total and little-endian, with no alignment faults except 
 | `Arm/Insts/**` (scalar + subset of SIMD) | `FV/Arm/Insts/**` | fixes and additions (below) |
 | `Arm/Memory/{Attr,MemoryProofs,Separate,SeparateProofs}.lean` | `FV/Arm/Memory/…` | ported |
 | `Tactics/{Attr,BvOmegaBench,Common,FetchAndDecode,IntroHyp,Simp,StepThms,Sym}.lean`, `Tactics/Sym/*` | `FV/Arm/Tactics/…` | ported: `sym_n` and `#genStepEqTheorems` |
-| — | `FV/Arm/Decode/Reserved.lean`, `FV/Arm/Insts/Reserved/Udf.lean`, `Insts/BR/Test_branch.lean`, `Insts/DPI/Extract.lean`, `Insts/DPR/{Add_sub_ext_reg,Conditional_compare}.lean`, `Insts/DPSFP/Advanced_simd_across_lanes.lean` | FV additions |
+| — | `FV/Arm/Decode/Reserved.lean`, `FV/Arm/Insts/Reserved/Udf.lean`, `Insts/BR/Test_branch.lean`, `Insts/DPI/Extract.lean`, `Insts/DPR/{Add_sub_ext_reg,Conditional_compare}.lean`, `Insts/DPSFP/Advanced_simd_across_lanes.lean`, `Insts/DPSFP/{FP_data_processing_one_source,FP_immediate,FP_conditional_select}.lean`, `Insts/LDST/Reg_literal.lean` | FV additions |
+| `Arm/Insts/DPSFP/Advanced_simd_modified_immediate.lean` | `FV/Arm/Insts/DPSFP/…` | ported for `movi vd.2s, #0` (S11d); the state-returning decode helper made pure |
 
 Ported files keep the Amazon copyright header. Modified files say so in a "Modified by
 fv-compiler-rust (2026)" comment. New files are marked "FV addition".
 
 Dropped (not ported):
 
-- The SIMD/crypto instruction files `Arm/Insts/DPSFP/{Advanced_simd_extract, _modified_immediate,
-  _permute, _scalar_copy, _scalar_shift_by_immediate, _shift_by_immediate, _table_lookup,
+- The SIMD/crypto instruction files `Arm/Insts/DPSFP/{Advanced_simd_extract, _permute,
+  _scalar_copy, _scalar_shift_by_immediate, _shift_by_immediate, _table_lookup,
   _three_different}`, `Crypto_*`, and `Arm/Insts/LDST/Advanced_simd_multiple_struct`. Cranelift
-  does not emit them for the integer-only `clif-subset-v1`, and they account for most of LNSym's
-  proof and elaboration cost.
+  does not emit them for the integer-only `clif-subset-v1` or scalar floats, and they account
+  for most of LNSym's proof and elaboration cost.
 - `Arm/Cosim.lean` and `Arm/Insts/CosimM.lean` (LNSym's own co-simulation, which needs native Arm
   hardware), and the per-instruction `.rand` generators that depend on them. Their replacement is
   `FVTest/Arm/Cosim` (QEMU).
@@ -171,6 +177,32 @@ failures.
 | `uaddlv` | added (extra) | — | 200/0 |
 | `umov` (b/h/s/d lanes) | port+fix | popcnt | 200/0 |
 
+### Floating point (S11d, #237)
+
+Cranelift 0.136.1's aarch64 float lowering (`lower.isle`, `inst.isle`, `inst/emit.rs`,
+`abi.rs`), single (`ftype = 00`) and double (`ftype = 01`) precision; half precision
+(`ftype = 11`) is `Unimplemented`. FPCR is fixed to 0 (Linux's initial value: `AH = DN = FZ =
+0`, round to nearest even); FPSR is not modelled. Co-simulation: 1000 vectors per form, seed
+`0x5eed`, with IEEE edge values in v0–v30 (see "Co-simulation").
+
+| Form (encoding class) | Status | Emitted for | Cosim |
+| --- | --- | --- | --- |
+| `fmov s/d, s/d` (FP data-processing (1 source), opcode 000000) | added | `FpuMove32/64` | 2 × 1000/0 |
+| `fabs`, `fneg` s/d (opcode 000001/000010; sign bit only, `FPCR.AH = 0`) | added | `fabs`, `fneg` (`FpuRR`) | 4 × 1000/0 |
+| `fmov s/d, #imm` (FP immediate, `VFPExpandImm`) | added | `f32const`/`f64const` (`FpuMoveFPImm`) | 2 × 1000/0 |
+| `fcsel` s/d (FP conditional select) | added | `select` on floats (`FpuCSel32/64`) | 2 × 1000/0 |
+| `movi`/`mvni`/`orr`/`bic`/`fmov` (vector, immediate) (Advanced SIMD modified immediate), every allocated `Q:op:cmode:o2`; `movi vd.2s, #0` separately | port | zero `f32const`/`f64const` (`VecDupImm`) | 2 × 1000/0 |
+| `orr` (vector) 8b/16b, incl. `mov vd.16b, vn.16b` | port | float-class register moves (`FpuMove128`) | 1000/0 |
+| `ldr`/`str` b/h/s/d/q — unsigned imm, unscaled (`ldur`/`stur`), pre-index, post-index | port | `FpuLoad*`/`FpuStore*`, spills, callee-saved `d8`–`d15` (`str d, [sp, #-16]!`) | 40 × 1000/0 |
+| same 10 — register offset (`[xn, xm{, ext #s}]`) | added | `FpuLoad*`/`FpuStore*` with `RegReg`/`RegScaled*`/`RegExtended` | 10 × 1000/0 |
+| `ldp`/`stp` s/d/q — signed offset, pre-index, post-index | port | callee-saved `d8`–`d15` (`FpuLoadP64`/`FpuStoreP64`) | 18 × 1000/0 |
+| `ldr` (literal) s/d/q, w/x, `ldrsw` (literal) | added | `f64`/`f128` constant pool (`constant_f64` → `AMode::Label`) | 6 × 1000/0 |
+
+`ldr` (literal) reads `mem` at `PC + SignExtend(imm19:'00')`: the model keeps code in
+`program`, apart from `mem`, so a constant pool the backend places after a function's code must
+also be present in `mem` (the ELF `.text` bytes) for a proof about it. `MemReads`
+(`FV/E2E/ExecFrame.lean`) lists the read (`literalReads`).
+
 Sequences, all built from rows above:
 
 - Prologue: `stp x29, x30, [sp, #-16]!; mov x29, sp; stp x19..x28 pairs [sp, #-16]!` (or
@@ -187,8 +219,8 @@ Sequences, all built from rows above:
 - Traps (`trap`, the zero-divisor guard, and signed div/rem overflow via `ccmp` + `b.vs`) are
   `udf #0xc11f`.
 
-Not modelled, because Cranelift does not emit them for the subset: `ldr` (literal), PRFM, SIMD&FP
-register-offset loads and stores, exclusives/atomics, system instructions other than hints.
+Not modelled, because Cranelift does not emit them for the subset: PRFM, exclusives/atomics
+beyond the single-register ones, system instructions other than hints.
 
 ## Co-simulation (`FVTest/Arm/Cosim/*`, `lake exe arm-cosim`)
 
@@ -199,7 +231,13 @@ vector matched. Output has one `form<TAB>vectors<TAB>failures` line per form, th
 
 Per vector: a random valid encoding of the form, with all register fields random, including
 31 (SP or ZR according to the form). The initial state is random: x0–x30 (biased towards edge
-values), SP, NZCV, v0–v30 and a 64-byte data buffer. Batches of vectors (one batch per
+values), SP, NZCV, v0–v30 and a 64-byte data buffer. For the floating-point forms v0–v30 hold
+IEEE values (`randomFpCase`, `Harness.lean`) in the low 32/64 bits, the other bits random:
+±0, ±min/max subnormal, ±min normal, ±1, ±max finite, ±∞, quiet and signalling NaNs with
+payloads, powers of two at the integer-conversion bounds, exact integers, values near 1 and
+short fractions (whose sums and products round, often to ties), subnormals, and exponents near
+overflow and underflow. FPCR is 0: `_start` exits with status 3 unless `mrs fpcr` reads 0, and
+every test writes `msr fpcr, xzr` before it runs. Batches of vectors (one batch per
 instruction class) become one freestanding static aarch64 program (`Harness.lean`), assembled
 by clang, linked by rust-lld, and run under qemu-aarch64-static with raw `write`/`exit`
 syscalls. The program echoes the initial state, runs each instruction, and reports x0–x30, SP,
@@ -210,6 +248,9 @@ for `udf`, where the QEMU side is a `SIGILL` handler reading the signal frame.
 - Memory forms: the base register (or SP, kept 16-byte aligned) is set so that the effective
   address falls inside the buffer, for random immediates and register offsets.
   Writeback/unpredictable register overlaps are avoided.
+- `ldr` (literal): the test's 64-byte buffer is also placed in the code as two literal pools,
+  at `ins - 64` (jumped over) and at `ins + 8` (after the landing pad); the target is any word
+  of either pool, and the model's memory holds the same bytes at those addresses.
 - Branch forms: targets are limited to ±32 instructions, where landing pads record the reached
   PC. The immediate fields therefore span only small magnitudes, in both signs. `br`/`blr`/`ret`
   targets are landing-pad addresses.

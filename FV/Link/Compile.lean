@@ -1,10 +1,11 @@
 import FV.Link.Image
+import FV.E2E.LinkScopeInputDefs
 
 /-! # The executable compiler (L1): the definition
 
 `compileExe S file0`: the whole compiler as one Lean function — the input conditions
-(`InScopeP`, decided on the CLIF program alone, before any compilation; per function in parallel
-tasks, `inScopePar_eq`), then the Lean linker `leanLink` (the compiler's pipeline `pipeT` on every
+(`InScopeIn`, decided on the CLIF program alone without running any compiler stage; per function
+in parallel tasks, `inScopeInPar_eq`), then the Lean linker `leanLink` (the compiler's pipeline `pipeT` on every
 function, the placement, the relocation, the linker's checks of its own output and of
 rust-lld's). Its input is a `LinkSpec` (the CLIF functions with `lean-regalloc`'s oracle answers,
 the placement, the outside part's addresses) and rust-lld's executable `file0` of the outside part
@@ -24,11 +25,22 @@ def inScopePar (I : LinkInput) : Bool :=
 theorem inScopePar_eq (I : LinkInput) : inScopePar I = InScopeP I := by
   simp only [inScopePar, InScopeP, parMap_eq, List.all_map, Function.comp_def, id]
 
-/-- `compileExe`'s error on an input outside the verified subset. -/
+/-- The error on an input outside `InScopeP` (`Link.DeadCleanup.compileExe`'s check). -/
 def outOfScopeMsg : String := "the input is outside the verified subset (InScopeP)"
 
-/-- **The executable compiler**: the input conditions (`InScopeP`), then the Lean linker. -/
+/-- `InScopeIn` with the per-function conditions (`fnScopeInB`, decided on the CLIF function
+alone) evaluated in parallel tasks. -/
+def inScopeInPar (I : LinkInput) : Bool :=
+  progScopeInB I.prog (fun n => I.syms.lookup n) && (parMap fnScopeInB I.prog.funcs).all id
+
+theorem inScopeInPar_eq (I : LinkInput) : inScopeInPar I = InScopeIn I := by
+  simp only [inScopeInPar, InScopeIn, parMap_eq, List.all_map, Function.comp_def, id]
+
+/-- `compileExe`'s error on an input outside the verified subset (`InScopeIn`). -/
+def outOfScopeInMsg : String := "the input is outside the verified subset (InScopeIn)"
+
+/-- **The executable compiler**: the input conditions (`InScopeIn`), then the Lean linker. -/
 def compileExe (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
-  if inScopePar S.input0 then leanLink S file0 else .error outOfScopeMsg
+  if inScopeInPar S.input0 then leanLink S file0 else .error outOfScopeInMsg
 
 end Link

@@ -56,8 +56,8 @@ theorem inScope : InScopeP spec.input = true := by native_decide
 
 /-- **The executable compiler compiles the two functions to `file`.** -/
 theorem compile_eq : compileExe spec file0 = .ok file := by
-  have h : InScopeP spec.input0 = true := by rw [← LinkSpec.inScope_input]; exact inScope
-  simp only [compileExe, inScopePar_eq, h, ↓reduceIte, link_eq]
+  have h : InScopeIn spec.input0 = true := by native_decide
+  simp only [compileExe, inScopeInPar_eq, h, ↓reduceIte, link_eq]
 
 /-- The placed input. -/
 abbrev J : LinkInput := spec.input

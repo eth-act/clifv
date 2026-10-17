@@ -271,7 +271,30 @@ def forms : List (String × G Insn) := [
     | 1 => pure (.ldrTlsDescLo12 (← gprZR) (← gprSP) (← tlsSym))
     | 2 => pure (.addTlsDescLo12 (← gprSP) (← gprSP) (← tlsSym))
     | _ => pure (.blrTlsDesc (← gprZR) (← tlsSym))),
-  ("mrs_tpidr", do pure (.mrsTpidrEl0 (← gprZR)))
+  ("mrs_tpidr", do pure (.mrsTpidrEl0 (← gprZR))),
+  ("fpu_move", do pure (.fpuMove (← pick [.size32, .size64]) (← vr) (← vr))),
+  ("fpu_move128", do pure (.fpuMove128 (← vr) (← vr))),
+  ("fpu_rr", do pure (.fpuRR (← pick [.abs, .neg]) (← pick [.size32, .size64]) (← vr) (← vr))),
+  ("fpu_csel", do pure (.fpuCSel (← pick [.size32, .size64]) (← vr) (← vr) (← vr) (← randCond))),
+  ("fpu_move_fp_imm", do pure (.fpuMoveFPImm (← pick [.size32, .size64]) (← vr) (← rand 256))),
+  ("movi", do
+    pure (.movi (← pick [.size8x8, .size8x16, .size16x4, .size16x8, .size32x2, .size32x4]) (← vr)
+      (← rand 256))),
+  ("fpu_load_store", do
+    let s ← pick [ScalarSize.size32, .size64]
+    if ← coin then pure (.fpuLoad s (← vr) (← amode s.bytes))
+    else pure (.fpuStore s (← vr) (← amode s.bytes))),
+  ("fpu_ldp_stp", do
+    let s ← pick [ScalarSize.size32, .size64, .size128]
+    let rt ← vr
+    let rt2 ← vr
+    let o := (s.bytes : Int) * (← randInt (-64) 63)
+    let m ← if ← coin then pure (AMode.spPreIndexed o) else pure (AMode.spPostIndexed o)
+    -- LDP with Rt = Rt2 is CONSTRAINED UNPREDICTABLE
+    if ← coin then pure (.fpuStoreP s rt rt2 m)
+    else pure (.fpuLoadP s rt (if rt == rt2 then (if rt == .v 0 then .v 1 else .v 0) else rt2) m)),
+  ("fpu_load_lit", do
+    pure (.fpuLoadLit (← pick [.size32, .size64, .size128]) (← vr) (← label)))
 ]
 
 /-- The function of one form: `n` random instances, labels `.block 0..7` at random

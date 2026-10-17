@@ -112,3 +112,21 @@ The register clause is Cranelift's TLSDESC convention (`ElfTlsGetAddr` in
 register allocator keeps values live in every other register across the sequence). `TlsOk` is
 that convention, plus the flags: it lets the resolver change NZCV, so the proof does not rely on
 the flags surviving the sequence.
+
+## Floating point: FPCR fixed to 0, ASL on the shared IEEE core (S11d, #237, 2026-10-16)
+
+The scalar floating-point instructions Cranelift emits for `f32`/`f64` are FV additions in
+LNSym's style (one file per C4.1 class under `FV/Arm/Insts/DPSFP/`, each citing its Arm ARM
+instruction pages and ASL; `docs/contracts/arm.md`, section "Floating point"). The model has no
+FPCR/FPSR state:
+
+- **FPCR is the constant 0**, the value Linux gives a new process (`AH = 0`, `DN = 0`, `FZ = 0`,
+  `FZ16 = 0`, `RMode = RN`). Cranelift never writes FPCR, and cg_clif-compiled Rust does not
+  either; code that changes the rounding mode or flush-to-zero is outside the model. The
+  co-simulation checks the assumption: its programs exit with an error unless FPCR reads 0, and
+  reset it before every vector.
+- **FPSR (cumulative exception flags) is not modelled.** Cranelift code never reads it.
+- Half precision (`ftype = 11`) decodes but is `Unimplemented`.
+- The arithmetic, compare and convert instructions (phase 2) are defined on the IEEE core
+  `FV/Float` (`docs/contracts/float.md`), which the CLIF float semantics use too, so lowering a
+  CLIF float operation to its instruction relates the same function on both sides.

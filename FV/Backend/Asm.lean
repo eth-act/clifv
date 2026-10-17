@@ -51,6 +51,11 @@ def Lbl.name (k : Nat) : Lbl → String
   | .loop n => s!".L{k}_a{n}"
   | .skip => ".+8"
 
+/-- Scalar floating-point unary operations of `Insn.fpuRR` (Cranelift `FPUOp1`, `inst.isle`). -/
+inductive FPUOp1 where
+  | abs | neg
+  deriving DecidableEq, Repr, Inhabited, BEq
+
 /-- One AArch64 instruction over real registers: one line of assembly, one 4-byte word.
 Constructors follow the assembly the backend prints (including the aliases `mov`, `cset`,
 `lsl`/`lsr`/`asr`/`ror #imm`), so that `llvm-mc` checks the alias translation the encoder does.
@@ -155,6 +160,34 @@ inductive Insn where
   | blrTlsDesc (rn : Reg) (sym : String)
   /-- `mrs xt, tpidr_el0` (the thread pointer). -/
   | mrsTpidrEl0 (rt : Reg)
+  /-- `fmov sd, sn` / `fmov dd, dn` (FMOV (register); Cranelift `FpuMove32`/`FpuMove64`). -/
+  | fpuMove (size : ScalarSize) (rd rn : Reg)
+  /-- `mov vd.16b, vn.16b` (ORR (vector, register) with `Rm = Rn`; Cranelift `FpuMove128`, the
+  register move of the float class). -/
+  | fpuMove128 (rd rn : Reg)
+  /-- `fabs/fneg sd, sn` / `… dd, dn` (Cranelift `FpuRR`). -/
+  | fpuRR (op : FPUOp1) (size : ScalarSize) (rd rn : Reg)
+  /-- `fcsel sd, sn, sm, cond` / `… dd, dn, dm, cond` (Cranelift `FpuCSel32/64`). -/
+  | fpuCSel (size : ScalarSize) (rd rn rm : Reg) (c : Cond)
+  /-- `fmov sd/dd, #imm` with the 8-bit encoded immediate `imm8` (`VFPExpandImm`; Cranelift
+  `FpuMoveFPImm`, `ASIMDFPModImm::enc_bits`). -/
+  | fpuMoveFPImm (size : ScalarSize) (rd : Reg) (imm8 : Nat)
+  /-- `movi vd.<T>, #imm8` for 8-, 16- and 32-bit lanes, `lsl #0` (Cranelift `VecDupImm` without
+  shift or inversion; `movi vd.2s, #0` is its zero `f32const`/`f64const`). -/
+  | movi (size : VectorSize) (rd : Reg) (imm8 : Nat)
+  /-- Single-register SIMD&FP load `ldr/ldur st/dt, m` (`size` 32/64; `m` a final mode;
+  Cranelift `FpuLoad32/64`). The 128-bit load is `load .fpuLoad128`. -/
+  | fpuLoad (size : ScalarSize) (rt : Reg) (m : AMode)
+  /-- Single-register SIMD&FP store `str/stur st/dt, m` (Cranelift `FpuStore32/64`). -/
+  | fpuStore (size : ScalarSize) (rt : Reg) (m : AMode)
+  /-- `ldp st/dt/qt, st2/dt2/qt2, m` (`m` = `spPreIndexed`/`spPostIndexed`, byte offset;
+  Cranelift `FpuLoadP64/128`). -/
+  | fpuLoadP (size : ScalarSize) (rt rt2 : Reg) (m : AMode)
+  /-- `stp st/dt/qt, st2/dt2/qt2, m` (Cranelift `FpuStoreP64/128`). -/
+  | fpuStoreP (size : ScalarSize) (rt rt2 : Reg) (m : AMode)
+  /-- `ldr st/dt/qt, target` (LDR (literal, SIMD&FP), ±1 MiB; Cranelift `FpuLoad32/64/128` with
+  `AMode::Label`, the constant pool). -/
+  | fpuLoadLit (size : ScalarSize) (rt : Reg) (target : Lbl)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- One element of a function's code: an instruction (4 bytes, optionally a trap site), a
@@ -553,12 +586,13 @@ def labelOffsets (lines : Array Line) : Except String (Std.HashMap Lbl Nat) :=
 
 /-- The label operand of a PC-relative form, its reach in bytes (`-reach ≤ target - pc <
 reach`) and its alignment (Arm ARM C6.2: B `imm26:'00'`, B.cond/CBZ/CBNZ `imm19:'00'`,
-TBZ/TBNZ `imm14:'00'`, ADR `immhi:immlo`). -/
+TBZ/TBNZ `imm14:'00'`, ADR `immhi:immlo`; C7.2 LDR (literal, SIMD&FP) `imm19:'00'`). -/
 def Insn.pcRelSpec? : Insn → Option (Lbl × Int × Int)
   | .b t => some (t, 128 * 2 ^ 20, 4)
   | .bcond _ t | .cbz _ _ _ t => some (t, 2 ^ 20, 4)
   | .tbz _ _ _ t => some (t, 32 * 2 ^ 10, 4)
   | .adr _ t => some (t, 2 ^ 20, 1)
+  | .fpuLoadLit _ _ t => some (t, 2 ^ 20, 4)
   | _ => none
 
 /-- Whether the PC-relative operand of `i` at byte offset `pc` reaches byte offset `o`. -/
@@ -725,6 +759,25 @@ def ScalarSize.fpreg (s : ScalarSize) (n : String) : String :=
   | .size8 => "b" ++ n | .size16 => "h" ++ n | .size32 => "s" ++ n | .size64 => "d" ++ n
   | .size128 => "q" ++ n
 
+/-- Bytes of a scalar of size `s`. -/
+def ScalarSize.bytes : ScalarSize → Nat
+  | .size8 => 1 | .size16 => 2 | .size32 => 4 | .size64 => 8 | .size128 => 16
+
+def FPUOp1.asm : FPUOp1 → String
+  | .abs => "fabs" | .neg => "fneg"
+
+/-- The value of an 8-bit floating-point immediate (`VFPExpandImm`) as exact decimal text:
+`±(16 + imm8<3:0>) · 2^(e - 4)` with `e = imm8<6> ? imm8<5:4> - 3 : imm8<5:4> + 1`, i.e.
+`n / 2^k` for `k = 4 - e ∈ [0, 7]`, which is `n · 5^k / 10^k`. -/
+def fpImm8Text (imm8 : Nat) : String :=
+  let sign := if imm8 / 128 % 2 == 1 then "-" else ""
+  let b54 := imm8 / 16 % 4
+  let k := if imm8 / 64 % 2 == 1 then 7 - b54 else 3 - b54
+  let num := (16 + imm8 % 16) * 5 ^ k
+  let frac := toString (num % 10 ^ k)
+  let frac := if k == 0 then "0" else "".pushn '0' (k - frac.length) ++ frac
+  s!"{sign}{num / 10 ^ k}.{frac}"
+
 def VectorSize.arr : VectorSize → String
   | .size8x8 => "8b" | .size8x16 => "16b" | .size16x4 => "4h" | .size16x8 => "8h"
   | .size32x2 => "2s" | .size32x4 => "4s" | .size64x2 => "2d"
@@ -811,6 +864,20 @@ def Insn.asm (k : Nat) : Insn → String
   | .addTlsDescLo12 rd rn sym => s!"add {rd.gpr}, {rn.gpr}, :tlsdesc_lo12:{sym}"
   | .blrTlsDesc rn sym => s!".tlsdesccall {sym}\n  blr {rn.gpr}"
   | .mrsTpidrEl0 rt => s!"mrs {rt.gpr}, tpidr_el0"
+  | .fpuMove s rd rn => s!"fmov {s.fpreg rd.vnum}, {s.fpreg rn.vnum}"
+  | .fpuMove128 rd rn => s!"mov v{rd.vnum}.16b, v{rn.vnum}.16b"
+  | .fpuRR op s rd rn => s!"{op.asm} {s.fpreg rd.vnum}, {s.fpreg rn.vnum}"
+  | .fpuCSel s rd rn rm c =>
+    s!"fcsel {s.fpreg rd.vnum}, {s.fpreg rn.vnum}, {s.fpreg rm.vnum}, {c.asm}"
+  | .fpuMoveFPImm s rd imm8 => s!"fmov {s.fpreg rd.vnum}, #{fpImm8Text imm8}"
+  | .movi s rd imm8 => s!"movi v{rd.vnum}.{s.arr}, #{imm8}"
+  | .fpuLoad s rt m =>
+    s!"{if m.isUnscaled then "ldur" else "ldr"} {s.fpreg rt.vnum}, {m.asm s.bytes}"
+  | .fpuStore s rt m =>
+    s!"{if m.isUnscaled then "stur" else "str"} {s.fpreg rt.vnum}, {m.asm s.bytes}"
+  | .fpuLoadP s rt rt2 m => s!"ldp {s.fpreg rt.vnum}, {s.fpreg rt2.vnum}, {m.asm s.bytes}"
+  | .fpuStoreP s rt rt2 m => s!"stp {s.fpreg rt.vnum}, {s.fpreg rt2.vnum}, {m.asm s.bytes}"
+  | .fpuLoadLit s rt t => s!"ldr {s.fpreg rt.vnum}, {t.name k}"
 where
   /-- The `b`/`h`/`` size suffix of the exclusive and acquire-release loads/stores. -/
   sizeSfx : Nat → String

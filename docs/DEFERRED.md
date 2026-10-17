@@ -353,10 +353,12 @@ only `func_addr` reads), and every declared name with every declared offset an `
 abstraction does not pair a name with its own offset nor separate colocated from GOT accesses.
 All hold on the survey executables tried (66 and 493 functions); a finer relational analysis
 would only matter for executables over 128 MiB of text or offsets near `±4 GiB`. Remaining:
-- **The driver's layout.** `lake exe lean-link` still reads the driver's sizes (`sizes.txt`, from
-  the per-unit `lean.o` rust-lld placed); `placed_of_compileExe` shows a successful run used the
-  Lean compiler's layout. Computing `S.placed` in the driver (and the region object from it)
-  would make the theorem's object the shipped one by construction.
+- **The driver's layout (done, L1g item 3, #228).** `lake exe lean-link` no longer reads sizes
+  (`sizes.txt` is gone): it compiles `placedPar` of the bundle's spec, the Lean compiler's layout
+  (`LinkSpec.placedPar_eq : S.placedPar = S.placed`, `DeadCleanup.placedPar_eq`,
+  `FV/Link/PlacedEq.lean`), so the spec it compiles is the totality theorems' by construction.
+  Still open: the region object rust-lld places is `lean-backend`'s, compiled per unit; `symsOkB`
+  checks that its functions sit at the Lean layout's offsets.
 - **`PT_TLS`.** `tlsOkB` asks for a `PT_TLS` segment even when no function has a `tls_value`
   (every std executable has one); dropping it for TLS-free programs needs the instruction-level
   step of the provenance chain (`RelocProvEmit`) for `elfTlsGetAddr` (`lowerCheck` already gives
@@ -369,18 +371,26 @@ would only matter for executables over 128 MiB of text or offsets near `±4 GiB`
 Done (TO-PROVE V7): `lowerFunction` and `prepare` succeed on input conditions
 (`Prg.lowerFunction_ok_input`, `Prep.prepare_ok`); `InScopeIn` (`fnScopeInB`: `driverInB`,
 `iselInB`, `sizeOkB`, `extendsWidenB` for `lowersB`) implies `InScopeP`, and
-`Link.compileExe_total_reach_input`/`Link.DeadCleanup.compileExe_total_reach_input` take it.
-`lean-link --verified` checks `fnScopeInB`. Deferred:
-- **`addrSlotsInB`'s outgoing area.** `progScopeB`'s `addrSlotsInB` asks whether `lowerFunction`'s
-  output has an outgoing-argument area (`outAreaB`); it runs the lowering (an error counts as no
-  area, so it assumes no success). An input-side bound (stack-passed call arguments of `f`) would
-  make `InScopeIn` free of compiler runs.
+`Link.DeadCleanup.compileExe_total_reach_input` takes it; since L1g (#228) `Link.compileExe` checks
+`InScopeIn` and its totality theorems (`compileExe_total{,_input,_reach}`) take it.
+`lean-link --verified` checks `fnScopeInB` and `addrSlotsInputB`. Since L1g item 2 (#228)
+`InScopeIn` runs no compiler stage: its program-level part `progScopeInB` replaces `addrSlotsInB`
+(which asked whether `lowerFunction`'s output has an outgoing-argument area, `outAreaB`) by
+`addrSlotsInputB`, the same disjunction as if every function had an area. Deferred:
+- **A sharper `addrSlotsInputB`.** It rejects a program with an indirect call, address-taken
+  functions with stack slots and no program callee with slots even when no function has an
+  outgoing area. Admitting it needs an input-side bound on the lowering's outgoing area (`outAreaB f`
+  → some call of `f` passes arguments on the stack), i.e. signature provenance through the ISLE
+  abstract interpretation (`IselPrg` records only `SigOk` for `.sig` values). No fv-demo or survey
+  executable is in that case.
 - **`maxTryItems`.** `iselInB` bounds every exception table to 8 items, a proof-convenience bound
   (the table checks the `try_call` roots for up to 8 items), not a Cranelift rule; every corpus
   and crate function meets it.
-- **`compileExe` itself** still checks `InScopeP` (with `lowersB`): the old statements keep their
-  premise; switching `compileExe`'s check to `InScopeIn` would change which inputs it accepts only
-  where `lowersB` holds without the input conditions (none in the corpus or the crates).
+- **The shipped compiler's check.** `Link.DeadCleanup.compileExe` (@codygunton's,
+  `FV/Link/DeadCleanupCompile.lean`) still checks `InScopeP` (with `lowersB`); `Link.compileExe`
+  checks `InScopeIn` since L1g (#228; its totality premises strengthened from `InScopeP` to
+  `InScopeIn`, the acceptance sets equal on the corpus and the crates). The same one-line change
+  (`inScopeInPar` for `inScopePar`) is proposed for the cleanup variant on #140.
 - **Kernel witness of `dominatedB`.** `backend_correct_final_total_input_witness` takes
   `dominatedB` as its premise: the availability fixpoint `inFix` uses `Std.HashMap`/`Std.HashSet`,
   which the kernel does not reduce (`USize`); `lean-e2e-check` evaluates it on every function.

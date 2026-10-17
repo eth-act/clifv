@@ -37,7 +37,7 @@ Per executable (CLIF program + data + outside objects in, ELF bytes out):
 theorem compileExe_correct :
   InScopeP P → compileExe P outside = .ok elf → <every ABI entry into a program function of elf,
   under the outside-code contracts, refines the whole-program CLIF run>
-theorem compileExe_total : InScopeP P → ∃ elf, compileExe P outside = .ok elf
+theorem compileExe_total : InScopeIn P → ∃ elf, compileExe P outside = .ok elf
 ```
 
 Delivered (L1, `FV/Link/Exe.lean`, `FV/Link/ExeTotal.lean`): `Link.compileExe S file0` (the CLIF
@@ -46,34 +46,49 @@ functions with the oracle's answers, the placement and rust-lld's executable of 
 as premises, and `Link.compileExe_correct_depth` (L1d) for every entry, recursive ones included, with
 `frameDrop + D·M` bytes of stack for a CLIF run of at most `M + 1` steps in place of the call-graph
 premise (`Link.compileExe_correct_peak`: `frameDrop + D·d` bytes for a run of peak call depth `d`);
-`Link.compileExe_total` under `InScopeP`, the driver's names/sizes,
+`Link.compileExe_total` under `InScopeIn`, the driver's names/sizes,
 the addresses within the relocations' reach and rust-lld's output passing `regionOkB`/`outsideOkB`.
 On the original (pre-`i128`-legalisation) program: `Link.compileExe_correct_source` (acyclic) and
 `Link.compileExe_correct_source_peak` (any entry, stack from the source run's call depth). The
 compiler `lean-link`/`cargo fv --lean-link` ship by default, `Link.DeadCleanup.compileExe`, has the
 same four (`Link.DeadCleanup.compileExe_correct{,_peak,_source,_source_peak}`, L1f #217); its
-`--verified` mode writes only executables they cover (outside `SrcScopeB`/`InScopeP`: an error).
+`--verified` mode writes only executables they cover (outside `SrcScopeB`/`InScopeIn`: an error).
 `Link.compileExe_total_reach` (L1e, `FV/Link/ExeInputReach.lean`): totality for the Lean
 compiler's layout (`S.placed`) under conditions decided on the inputs `S` (CLIF program, data, link
-map) and `file0` only: `InScopeP`, `layoutOkB`, `file0OkB` (rust-lld's checks moved from the patched
+map) and `file0` only: `InScopeIn`, `layoutOkB`, `file0OkB` (rust-lld's checks moved from the patched
 file to `file0`, TLS offsets from `PT_TLS`) and `reachOkB` (the CLIF functions' declared names and
 offsets within `bl`/`adrp` reach of the region; the compiled code relocates only against them,
 `relocOk_tab`); the same for the shipped compiler, `Link.DeadCleanup.compileExe_total_reach`
-(`FV/Link/ExeInputReachCleanup.lean`). `Link.compileExe_total_input` (`FV/Link/ExeInput.lean`) is
-the intermediate form with the output premise `CallPageReach`. `InScopeP` contains `lowersB`
-(`FV/E2E/LinkScopeDefs.lean`): `lowerFunction` and `prepare` accept the function and the prepared
-VCode meets `spillSizeOkB` — the compiler's own acceptance (§1.2, kind 4). V7 (#226) proves it from
-conditions on the CLIF function alone: `InScopeIn` (`FV/E2E/LinkScopeInputDefs.lean`; per function
-`fnScopeInB`, `fnScopeB` with `lowersB` replaced by `extendsWidenB`, `sizeOkB`, `driverInB`,
-`iselInB`) implies `InScopeP` (`E2E.LinkCheck.inScopeP_of_input`: `Prg.lowerFunction_ok_input`,
-an abstract interpretation of the ISLE rules; `Prep.prepare_ok`; `spillSizeOkB_of_sizeOkB`), so
-`Link.compileExe_total_reach_input` and `Link.DeadCleanup.compileExe_total_reach_input`
-(`FV/Link/ExeInputReachIn.lean`, `FV/Link/ExeInputReachCleanupIn.lean`) take `InScopeIn`.
-`lean-link --verified` checks `fnScopeInB`; on `lean-e2e-check`'s 1150 in-scope functions and the
-`cargo fv` crates (fv-demo 1346, survey 3179 functions) both scopes accept the same functions.
-Left: `progScopeB`'s `addrSlotsInB` (shared by both) reads whether the lowered code has an
-outgoing-argument area (`outAreaB`, by running `lowerFunction`; no acceptance condition: an error
-counts as no area).
+(`FV/Link/ExeInputReachCleanup.lean`, premise `InScopeP`). `Link.compileExe_total_input`
+(`FV/Link/ExeInput.lean`) is the intermediate form with the output premise `CallPageReach`.
+`InScopeP` contains `lowersB` (`FV/E2E/LinkScopeDefs.lean`): `lowerFunction` and `prepare` accept
+the function and the prepared VCode meets `spillSizeOkB` — the compiler's own acceptance (§1.2,
+kind 4). V7 (#226) proves it from conditions on the CLIF function alone: `InScopeIn`
+(`FV/E2E/LinkScopeInputDefs.lean`; per function `fnScopeInB`, `fnScopeB` with `lowersB` replaced by
+`extendsWidenB`, `sizeOkB`, `driverInB`, `iselInB`) implies `InScopeP`
+(`E2E.LinkCheck.inScopeP_of_input`: `Prg.lowerFunction_ok_input`, an abstract interpretation of the
+ISLE rules; `Prep.prepare_ok`; `spillSizeOkB_of_sizeOkB`). **Since L1g (#228) `Link.compileExe`
+checks `InScopeIn`** (`inScopeInPar`, `FV/Link/Compile.lean`): its correctness theorems keep their
+statements (`compileExe_spec` still gives `InScopeP`, through `inScopeP_of_input`); its totality
+theorems `compileExe_total`, `compileExe_total_input`, `compileExe_total_reach` now take `InScopeIn`
+in place of `InScopeP` — a deliberate premise strengthening forced by the definition change (a
+compiler that rejects outside `InScopeIn` is not total on `InScopeP`); on the corpus and the crates
+the two acceptance sets are equal (`lean-e2e-check` 1150 / 1150, fv-demo 1346 and survey 3179
+functions). The former `Link.compileExe_total_reach_input` (identical to `compileExe_total_reach`
+after the change) is removed; `Link.compileExeOpt_total_reach_input` now rests on
+`compileExe_total_reach`. The shipped compiler `Link.DeadCleanup.compileExe` still checks
+`InScopeP`; `Link.DeadCleanup.compileExe_total_reach_input` (`FV/Link/ExeInputReachCleanupIn.lean`)
+takes `InScopeIn`.
+`lean-link --verified` checks `fnScopeInB` and `addrSlotsInputB`; on `lean-e2e-check`'s 1150
+in-scope functions and the `cargo fv` crates (fv-demo 1346, survey 3179 functions) both scopes
+accept the same functions. Since L1g item 2 (#228) `InScopeIn` runs no compiler stage at all:
+`progScopeB`'s `addrSlotsInB` read whether the lowered code has an outgoing-argument area
+(`outAreaB`, by running `lowerFunction`); `InScopeIn` uses `progScopeInB` with `addrSlotsInputB`,
+the same disjunction without `outAreaB` (as if every function had an area: no indirect call, or the
+functions with an address have no stack slots, or a program callee has slots), which implies it
+(`addrSlotsInB_of_input`, `progScopeB_of_input`; `inScopeP_of_input` keeps its statement). Every
+fv-demo and survey executable meets `addrSlotsInputB` (all have an indirect call, address-taken
+functions with slots and a program callee with slots).
 On the frontend bundle (T7d/T7e, docs/contracts/frontend.md): `lean-link` builds `S` in Lean from
 `cargo fv link-proof`'s `bundle.json` (`Front.buildSpec`); its source program is the codegen units'
 program under the linked names (`Front.buildSpec_srcProg`), alpha-equivalent to the units' program
@@ -417,7 +432,9 @@ author's estimate, not measured), **Risk**.
   conversion for every theorem taking `InScopeP` (the source, peak and bundle theorems take
   `compileExe … = .ok file`, which the totality theorems give).
 - **Theorems:** `Link.compileExe_total_reach_input`, `Link.DeadCleanup.compileExe_total_reach_input`
-  (`FV/Link/ExeInputReachIn.lean`, `FV/Link/ExeInputReachCleanupIn.lean`: premise `InScopeIn`);
+  (`FV/Link/ExeInputReachIn.lean`, `FV/Link/ExeInputReachCleanupIn.lean`: premise `InScopeIn`; since
+  L1g, #228, `Link.compileExe` checks `InScopeIn` and `Link.compileExe_total_reach` itself takes it,
+  so the first is removed);
   `E2E.backend_correct_final_total_input`, `E2E.backend_correct_final_cleanup_total_input`
   (`FV/E2E/TotalInput.lean`: `backend_correct_final{,_cleanup}_total_emit_input` without the
   `lowerFunction`/`prepare` success premises). Witnesses: `driverInB_witness`, `iselInB_witness`,
@@ -427,8 +444,9 @@ author's estimate, not measured), **Risk**.
   1150 / 1150, 0 disagreements. `cargo fv test --lean-link --verified` (`lean-link` checks
   `fnScopeInB`): fv-demo (2 executables, 1346 functions) and the survey (18 executables, 3179
   functions) written and tested with the same outcomes as before.
-- **Left:** `addrSlotsInB` (in `progScopeB`, unchanged) reads whether `lowerFunction`'s output has
-  an outgoing-argument area (`outAreaB`); it runs the lowering but assumes no success.
+- **Left (closed by L1g item 2, #228):** `addrSlotsInB` (in `progScopeB`) read whether
+  `lowerFunction`'s output has an outgoing-argument area (`outAreaB`); `InScopeIn` now uses
+  `progScopeInB`/`addrSlotsInputB`, which do not run the lowering (`progScopeB_of_input`).
 
 ### L1. The executable compiler as one Lean function — **done** (`agent/compile-exe`)
 
@@ -447,7 +465,7 @@ author's estimate, not measured), **Risk**.
     `adrp`+`add`), `codeMapB` is a `leanLink` check. Premises left: the outside code's contracts
     (`BaseOk`, `HooksSim`, `OutsideCall`, `ClifRun`'s choice, `TrapsExplicit`) and no call cycle
     reachable from the entered function (`CycleFrom`, a property of the CLIF program).
-  - **`Link.compileExe_total`** (`FV/Link/ExeTotal.lean`): `compileExe` succeeds under `InScopeP`, the
+  - **`Link.compileExe_total`** (`FV/Link/ExeTotal.lean`): `compileExe` succeeds under `InScopeIn` (`InScopeP` before L1g, #228), the
     driver's data (`placeOkB`, names, sizes
     `LinkSpec.sizesOf`), the address condition `relocRangeB` (targets within `bl`/`adrp` reach, TLS
     offsets below `2^32`) and rust-lld's output (`regionOkB`, `outsideOkB`). The compiler's outputs need
@@ -486,7 +504,12 @@ author's estimate, not measured), **Risk**.
     `Link.DeadCleanup.compileExe_total_reach` (`FV/Link/ExeInputReachCleanup.lean`), witnesses
     `total_input_cleanup_witness`, `total_reach_cleanup_witness`. Real executables: the input
     conditions, `reachOkB` (both compilers) and `RelocOk` of every compiled relocation evaluate to
-    `true` on two survey executables rust-lld linked (66 and 493 functions).
+    `true` on two survey executables rust-lld linked (66 and 493 functions). Since L1g item 3
+    (#228) `lean-link` reads no sizes: it compiles `placedPar` of the bundle's spec
+    (`FV/Link/Placed.lean`, the layout computed with the functions compiled in parallel tasks;
+    `LinkSpec.placedPar_eq : S.placedPar = S.placed`, `DeadCleanup.placedPar_eq`,
+    `placed_placedPar`: a fixpoint of `placed`, `FV/Link/PlacedEq.lean`), so the spec it compiles
+    is the totality theorems' layout by construction; executables byte-identical to before.
   - Non-vacuity: `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
     `total_witness`); per run: `crate-proofs/Crates/CompileExeRunWitness.lean`
     (`compileExe_run_witness`: the panic=abort `a_arith` compiled by `compileExe`, every premise of
@@ -876,11 +899,28 @@ Large, low priority.
   three at a time in import order (`FV_MEMCAP=13G LEAN_NUM_THREADS=2 scripts/memcap.sh lake build
   FV.Opt.Proof.<Module>`, a module killed at 13G again alone at 22G), then the full target, which
   replays them (docs/contracts/midend.md, build note).
+- **Shared build cache.** Set `FV_LAKE_CACHE=<dir>` (on the worktrees' filesystem; agents on the shared
+  machine: `/home/kev/work/clifv-lake-cache`); `scripts/memcap.sh` then sets `LAKE_ARTIFACT_CACHE=true
+  LAKE_RESTORE_ARTIFACTS=true LAKE_CACHE_DIR=<dir>`. Lake keys each module's outputs by the hash of its
+  inputs (source, the imports' outputs, options, toolchain) and hard-links them between `<dir>` and
+  `.lake/build`, so any worktree whose sources were built before, anywhere, gets the outputs without
+  building (measured: a fresh worktree at a built commit, `lake build FV lean-backend link-check`:
+  0 of 2332 jobs rebuilt, 0.7 s, 31 MB of new disk instead of 8.5 GB; a module built from a different
+  import graph gets a different key, so old and new worktrees never see each other's outputs).
+  Concurrent builds of the same modules in two worktrees are safe (both build; byte-identical outputs).
+  A fresh worktree needs no `.lake` seeding (`scripts/agent-worktree.sh` skips the copy when
+  `FV_LAKE_CACHE` is set). `lake env lean` needs the restored files, so run `lake build` first (or use
+  `lake lean <file>`). Clean-up: `find <dir>/artifacts -type f -links 1 -mmin +60 -delete` removes
+  outputs no worktree links to (a later miss rebuilds).
 - No `sorry`, `admit`, hand-written `axiom`, `trace_state`. Allowed axioms: `propext`, `Classical.choice`,
   `Quot.sound`, and generated `*._native.bv_decide.ax_*` / `*._native.native_decide.ax_*` in fixed proofs.
 - Every new top-level theorem gets a non-vacuity witness (they have caught six unsatisfiable premises).
 - A WP that removes a premise keeps the old theorem and adds the premise-free variant; cutover of the
   callers and docs (`docs/contracts/e2e.md`, `docs/PLAN.md` status, this file) in the same branch.
+  Exception: a WP that changes what a compiler definition accepts changes the totality theorems
+  about it (a stronger check cannot be total on the weaker scope). L1g (#228) did so once: `Link.compileExe`
+  checks `InScopeIn`, and `Link.compileExe_total{,_input,_reach}` take `InScopeIn` in place of
+  `InScopeP` (names kept; acceptance sets equal on the corpus and the crates, §1.1).
 - Gates before "merge-ready: …": `lake build FV FVTest lean-backend lean-e2e-check link-check lean-link
   clif-decode`; `lake build` in `crate-proofs/`; `#print axioms` of the E2E theorems (all of them:
   docs/research/axiom-audit.md); `scripts/lean-backend-filetests.sh`

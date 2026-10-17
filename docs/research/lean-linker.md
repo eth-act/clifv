@@ -193,11 +193,12 @@ those bytes too (design (b)).
   when it takes its own address; the function-free activation contract needs no alias (#88).
 * At the executable's link (`leanlink.rs`): the work directories of the linked units (own
   objects, rlib members), by object name; `ld -r` of their `lean.o` → one object with section
-  `.text.fvlean` (the region, `__fvlean_start`, strong definitions, the FDEs), and its functions'
-  sizes (`sizes.txt`, from the object's symbols); rust-lld links everything with it
-  (`-u __fvlean_start`); `cargo fv link-proof --cgus … --no-check` writes the Lean linker's
-  input; `lake exe lean-link DIR SIZES` (`FVTest/Link/LeanLinkMain.lean`) builds the
-  `LinkSpec`, runs `Link.leanLink` and writes the result over the executable.
+  `.text.fvlean` (the region, `__fvlean_start`, strong definitions, the FDEs); rust-lld links
+  everything with it (`-u __fvlean_start`); `cargo fv link-proof --cgus … --no-check` writes the
+  Lean linker's input; `lake exe lean-link DIR` (`FVTest/Link/LeanLinkMain.lean`) builds the
+  `LinkSpec` with the Lean compiler's layout (`placedPar`; until L1g item 3, #228, it read the
+  sizes from the object's symbols, `sizes.txt`), runs the executable compiler and writes the
+  result over the executable.
 * The usual binary check then runs on the patched executable (an independent check).
 * Historical stages 1–2 results (before `compileExe` and the alias-free #88 cutover):
   - all nine survey crates (`cd examples/survey && cargo fv test --lean-link`): 18 executables,

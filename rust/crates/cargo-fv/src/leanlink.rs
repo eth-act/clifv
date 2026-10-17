@@ -13,8 +13,9 @@
 //! 2. rust-lld links the outside part around it (`-u __fvlean_start` keeps the region);
 //! 3. [`patch`]: `cargo fv link-proof --cgus … --no-check` writes the Lean linker's input (the
 //!    functions' CLIF and allocations, the outside part's symbol addresses); `lake exe
-//!    lean-link` computes the region's bytes (`Link.DeadCleanup.compileExe`: input conditions,
-//!    placement, relocation, checks; with `--opt-proven-only`, `lean-link --opt`:
+//!    lean-link` computes the region's bytes (`Link.DeadCleanup.compileExe` on the Lean
+//!    compiler's layout, `Link.DeadCleanup.placedPar`: input conditions, placement, relocation,
+//!    checks, among them that rust-lld placed the region object's functions at that layout; with `--opt-proven-only`, `lean-link --opt`:
 //!    `Link.DeadCleanup.compileExeOpt`, the same on the functions the Lean mid-end optimised with
 //!    the proven rules, as `lean-backend --opt-proven-only` compiled the units), writes them into
 //!    the executable and names the theorems covering it ([`coverage`]); with `--verified` an
@@ -85,42 +86,7 @@ pub fn program_part(cfg: &Config, unit: &str, args: &[String]) -> Result<Option<
     let list = work.join("cgus.txt");
     let text: String = dirs.values().map(|(_, d)| format!("{}\n", d.display())).collect();
     fs::write(&list, text).map_err(|e| format!("{}: {e}", list.display()))?;
-    write_sizes(&obj, &work.join(SIZES))?;
     Ok(Some((obj, list)))
-}
-
-/// The region's sizes file (in the work directory, next to `cgus.txt`).
-const SIZES: &str = "sizes.txt";
-
-/// One line `NAME WORDS` per function of the region object `obj`: its words up to the next
-/// function, the gap word excluded (`Link.offs`; `Link.leanLink` checks them, `sizesOkB`).
-fn write_sizes(obj: &Path, out: &Path) -> Result<(), String> {
-    use object::read::{Object, ObjectSection, ObjectSymbol};
-    let data = fs::read(obj).map_err(|e| format!("{}: {e}", obj.display()))?;
-    let file = object::File::parse(&*data).map_err(|e| format!("{}: {e}", obj.display()))?;
-    let sec = file.section_by_name(".text.fvlean").ok_or_else(|| format!("{}: no .text.fvlean", obj.display()))?;
-    let mut fns: Vec<(u64, String)> = Vec::new();
-    for s in file.symbols() {
-        let Ok(n) = s.name() else { continue };
-        if s.section_index() == Some(sec.index())
-            && s.kind() == object::SymbolKind::Text
-            && s.is_global()
-            && !n.starts_with(crate::pipeline::MARKER)
-            && n != START
-        {
-            fns.push((s.address(), n.to_string()));
-        }
-    }
-    fns.sort();
-    let mut text = String::new();
-    for (k, (a, n)) in fns.iter().enumerate() {
-        let end = fns.get(k + 1).map_or(sec.size(), |x| x.0);
-        if end < a + 4 {
-            return Err(format!("{}: `{n}` has no gap word", obj.display()));
-        }
-        text.push_str(&format!("{n} {}\n", (end - a - 4) / 4));
-    }
-    fs::write(out, text).map_err(|e| format!("{}: {e}", out.display()))
 }
 
 /// Write the program part into the linked executable `exe` (its link map recorded by the
@@ -145,10 +111,8 @@ pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
     ];
     crate::linkproof::run(target, &cfg.root, &args)?;
     let tool = cfg.root.join(".lake/build/bin/lean-link");
-    let sizes = list.parent().ok_or("no work directory")?.join(SIZES);
     let out = Command::new(&tool)
         .arg(&dir)
-        .arg(&sizes)
         .arg("--dead-cleanup")
         .args((cfg.mode == Mode::OptProven).then_some("--opt"))
         .args(cfg.lean_link_verified.then_some("--verified"))
