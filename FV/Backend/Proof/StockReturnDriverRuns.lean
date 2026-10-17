@@ -31,7 +31,7 @@ def Observed (p : Case) : Prop := (Stock.lower (function p)).toOption.map (fun r
       decide (record.output.emitted = #[.rets ((registers p).zip (pins p))]) &&
       decide (record.output.state = afterReturn p (scanState record.input record.inst))))) = some true
 private def normal (ty : Clif.Ty) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
-    (int : ty.isInt = true := by decide) : Case := ⟨false,ty,width,by intro h; cases h,int⟩
+    (int : ty.isInt = true := by decide) : Case := ⟨false,ty,width,(by intro h; cases h),int⟩
 private def implicitPointer : Case := ⟨true,.i64,by simp [Clif.Ty.width],fun _ => rfl,rfl⟩
 section Kernel
 attribute [local semireducible] Isle.Aarch64.program Stock.runTerm
@@ -58,6 +58,6 @@ theorem stock_return_driver_observed (p : Case) : Observed p := by
       | exact normal16
       | exact normal32
       | exact normal64
-      | simp at int
-      | simp [Clif.Ty.width] at width
+      | (simp at int; done)
+      | (simp [Clif.Ty.width] at width; done)
 end Backend.Stock.Proof.ReturnFixture

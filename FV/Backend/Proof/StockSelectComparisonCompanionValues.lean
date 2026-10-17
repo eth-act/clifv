@@ -47,4 +47,5 @@ theorem stock_select_comparison_companion_source_values {f : Clif.Function} {ctx
   · exact stock_cmp_wide_actual_emitter_values inv true cc rfl dfg getX getY typeX typeY
       enough (by decide) emitter companion refines bounded extent held
   · simp [Clif.Ty.width] at width
+  all_goals cases getAs_typed dfg typeX getX
 end Backend.Stock.Proof.ScalarSelect

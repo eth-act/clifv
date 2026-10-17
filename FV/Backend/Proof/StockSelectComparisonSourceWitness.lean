@@ -53,7 +53,7 @@ private structure Inputs (p : Case) (a b : BitVec p.cty.width) where
   held : ValuesHeld (Demanded record.output.state) event.ctx (frame p a b)
     (fun key => registers p a b (aliasNum result.final.alias key))
 private theorem inputs (p : Case) (a b : BitVec p.cty.width) : Nonempty (Inputs p a b) := by
-  have actual := ComparisonDriver.stock_select_comparison_driver_observed p.cty p.ty p.extended p.comparisonWidth p.width
+  have actual := ComparisonDriver.stock_select_comparison_driver_observed p.cty p.ty p.extended p.comparisonWidth p.width p.cint p.int
   unfold ComparisonDriver.Observed at actual
   cases run : Stock.lower (function p) with
   | error err => simp only [run,Except.toOption,Option.map_none] at actual; cases actual
