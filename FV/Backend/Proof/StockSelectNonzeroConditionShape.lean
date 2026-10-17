@@ -27,11 +27,11 @@ theorem stock_select_nonzero_actual_condition_shape {f : Clif.Function} {ctx : C
     obtain ⟨_,key,_,producer,_⟩ := stock_select_nonzero16_emitter_observed inv enough typed run
     rw [producer]
     exact Or.inr (Or.inl ⟨st.base.nextVreg,0,.size32,rfl,rfl,trivial⟩)
-  case i32 =>
+  case i32 | f32 =>
     obtain ⟨_,key,_,producer,_⟩ := stock_select_nonzero_wide_emitter_observed inv false enough typed run
     rw [producer]
     exact Or.inr (Or.inl ⟨key,0,.size32,rfl,rfl,trivial⟩)
-  case i64 =>
+  case i64 | f64 =>
     obtain ⟨_,key,_,producer,_⟩ := stock_select_nonzero_wide_emitter_observed inv true enough typed run
     rw [producer]
     exact Or.inr (Or.inl ⟨key,1,.size64,rfl,rfl,trivial⟩)

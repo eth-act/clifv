@@ -42,7 +42,7 @@ theorem stock_select_nonzero_actual_allocation {f : Clif.Function} {ctx : Ctx}
     · rw [finish]; simp [LState.fresh,LState.emit]
     · rw [complete,finish]; rfl
     · rw [complete]; rfl
-  case i32 =>
+  case i32 | f32 =>
     obtain ⟨_,key,_,producer,finish⟩ := stock_select_nonzero_wide_emitter_observed inv false enoughEmit typed emitter
     rw [producer] at consumer
     obtain ⟨_,_,_,_,_,_,output,complete⟩ := stock_select_zero_observed data_program ctx rfl enoughSelect width
@@ -51,7 +51,7 @@ theorem stock_select_nonzero_actual_allocation {f : Clif.Function} {ctx : Ctx}
     · rw [finish]; exact Nat.le_refl _
     · rw [complete,finish]; rfl
     · rw [complete]; rfl
-  case i64 =>
+  case i64 | f64 =>
     obtain ⟨_,key,_,producer,finish⟩ := stock_select_nonzero_wide_emitter_observed inv true enoughEmit typed emitter
     rw [producer] at consumer
     obtain ⟨_,_,_,_,_,_,output,complete⟩ := stock_select_zero_observed data_program ctx rfl enoughSelect width

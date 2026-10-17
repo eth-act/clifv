@@ -40,7 +40,8 @@ attribute [local irreducible] ScalarSelectObserved
 parameter aliases at all16 condition/result width combinations. -/
 theorem stock_select_scalar_driver_observed (cty ty : Clif.Ty)
     (conditionWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) : ScalarSelectObserved cty ty := by
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (conditionInt : cty.isInt = true) (int : ty.isInt = true) : ScalarSelectObserved cty ty := by
   cases cty <;> cases ty
   all_goals first
     | exact observed8.1
@@ -59,5 +60,6 @@ theorem stock_select_scalar_driver_observed (cty ty : Clif.Ty)
     | exact observed64.2.1
     | exact observed64.2.2.1
     | exact observed64.2.2.2
-    | simp [Clif.Ty.width] at conditionWidth width
+    | (simp [Clif.Ty.width] at conditionWidth width; done)
+    | (simp at conditionInt int; done)
 end Backend.Stock.Proof.ScalarSelect

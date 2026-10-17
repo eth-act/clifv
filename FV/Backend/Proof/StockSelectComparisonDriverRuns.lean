@@ -44,7 +44,8 @@ condition/result-width/form combinations. Complete source-step witnesses follow
 from the same actual records in the source witness module. -/
 theorem stock_select_comparison_driver_observed (cty ty : Clif.Ty) (extended : Bool)
     (comparisonWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) : Observed cty ty .ult extended := by
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (conditionInt : cty.isInt = true) (int : ty.isInt = true) : Observed cty ty .ult extended := by
   cases cty <;> cases ty
   all_goals first
     | exact (observed8 extended).1
@@ -63,5 +64,6 @@ theorem stock_select_comparison_driver_observed (cty ty : Clif.Ty) (extended : B
     | exact (observed64 extended).2.1
     | exact (observed64 extended).2.2.1
     | exact (observed64 extended).2.2.2
-    | simp [Clif.Ty.width] at comparisonWidth width
+    | (simp [Clif.Ty.width] at comparisonWidth width; done)
+    | (simp at conditionInt int; done)
 end Backend.Stock.Proof.ScalarSelect.ComparisonDriver
