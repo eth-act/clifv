@@ -97,6 +97,7 @@ theorem evalInst_resultTypes {fr : Frame} {m : Mem} {i : Inst} {vals : List Val}
     (declOf : Nat → Option Signature) : ∃ tys, i.resultTypes sigOf declOf = some tys := by
   cases i <;> simp only [Inst.resultTypes, Option.some.injEq, exists_eq'] <;>
     simp only [evalInst, Res.bind_eq_ok, Res.ofOption_eq_ok] at h
+  case float => cases ‹FOp› <;> simp
   · obtain ⟨t2, ht2, -⟩ := h; simp [ht2]
   · obtain ⟨t2, ht2, -⟩ := h; simp [ht2]
   · cases h
