@@ -69,11 +69,12 @@ theorem ctlNA_setTargets {i i' : MInst} {ls : List Label} (h : i.setTargets ls =
     | (cases h; exact ⟨fun _ e => (by cases e), hc⟩)
     | (cases h; exact ⟨fun _ e => (by cases e), fun b k => ctlInstOk_condBr.trans (hc b k)⟩)
 
-/-- The entry block's `Args` pairs: int vregs in argument registers. -/
+/-- The entry block's `Args` pairs: int vregs in argument registers (integer parameters). -/
 theorem entryRegs_ok {f : Clif.Function} {R : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming R gn)
-    (B : Clif.Block) (hsig : (f.sig.params.filter (·.purpose == .sret)).length ≤ 1) :
+    (B : Clif.Block) (hi : f.sig.params.all (·.ty.isInt) = true)
+    (hsig : (f.sig.params.filter (·.purpose == .sret)).length ≤ 1) :
     (entryRegs f R B).all (fun p => p.1.isVregInt && p.2.isArgReg) = true := by
-  obtain ⟨-, harg⟩ := locsOf_regs hsig
+  obtain ⟨-, harg⟩ := locsOf_regs hi hsig
   rw [List.all_eq_true]
   intro q hq
   unfold entryRegs at hq
@@ -225,7 +226,8 @@ theorem vc_ctl {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerSc
         rcases k with _ | k
         · simp only [List.getElem?_cons_zero, Option.some.injEq] at hl'
           subst hl'
-          exact .inr ⟨rfl, rfl, _, rfl, entryRegs_ok hg B (sret_le_of_sigAbiOk ha.1.1)⟩
+          exact .inr ⟨rfl, rfl, _, rfl,
+            entryRegs_ok hg B (functionE_sig_int hs.subsetE).1 (sret_le_of_sigAbiOk ha.1.1)⟩
         · simp only [List.getElem?_cons_succ] at hl'
           left
           apply ctlNA_of_not_isCtl
