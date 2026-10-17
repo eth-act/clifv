@@ -186,11 +186,12 @@ theorem callArgs_nc (st : LState)
   · exact ncSince_emit ha rfl
 
 /-- An instruction an extern constructor may emit: not a control form, `emit`'s instruction, or
-`gen_return`'s `Rets` of argument registers in the return registers. -/
+`gen_return`'s `Rets` of argument registers in the return registers of their classes. -/
 def EmitS (id : TermId) (args : List V) (m : MInst) : Prop :=
   m.isCtl = false ∨ (id = TId.emit ∧ ∃ i, args = [i] ∧ MInst.ofV i = some m) ∨
-    (id = TId.gen_return ∧ ∃ (rss : List (List Reg)) (ps rs : List Reg), args = [.regsVec rss] ∧ retRegs rss.length = some ps ∧
-      (∀ r ∈ rs, ∃ l ∈ rss, r ∈ l) ∧ m = .rets (rs.zip ps))
+    (id = TId.gen_return ∧ ∃ (rss : List (List Reg)) (ps rs : List Reg), args = [.regsVec rss] ∧
+      retRegsC (regsClasses rss) 0 0 = some ps ∧
+      rss.mapM (fun | [r] => some r | _ => none) = some rs ∧ m = .rets (rs.zip ps))
 
 /-- The emitted instructions of every successful result meet `EmitS`. -/
 def ShpP (st : LState) (id : TermId) (args : List V) (r : ExtResult (V × LState)) : Prop :=
@@ -224,7 +225,7 @@ theorem externCtor_shp (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
     all_goals first
       | (refine ⟨[], ?_, fun _ h => by cases h⟩; simp [LState.fresh]; done)
       | (apply emit_one; exact .inr (.inl ⟨rfl, _, rfl, ‹_›⟩))
-      | (apply emit_one; exact .inr (.inr ⟨rfl, _, _, _, rfl, ‹_›, single_mem ‹_›, rfl⟩))
+      | (apply emit_one; exact .inr (.inr ⟨rfl, _, _, _, rfl, ‹_›, ‹_›, rfl⟩))
       | exact emitS_of_nc (callArgs_nc st _ _ (fun _ _ => rfl))
       | exact emitS_of_nc (loadConstantFull_nc _ _ _ _ st)
       | exact ⟨[], (callOutput_fold st _ _ (fun _ _ => rfl)).1.trans (by simp), by simp⟩
@@ -261,7 +262,7 @@ theorem apre_of_apreS {id : TermId} {as : List AW} (h : apreS id as = true) : ap
 theorem emitS_shape {N : Nat} {id : TermId} {as : List AW} {vs : List V}
     (hvs : Holds2 f ctx as vs) (hpre : apreS id as = true) {m : MInst} (h : EmitS id vs m)
     (hc : m.isCtl = true) : CtlShape N m := by
-  rcases h with h | ⟨rfl, i, rfl, hi⟩ | ⟨rfl, rss, ps, rs, rfl, hps, hrs, rfl⟩
+  rcases h with h | ⟨rfl, i, rfl, hi⟩ | ⟨rfl, rss, ps, rs, rfl, hps, hss, rfl⟩
   · rw [h] at hc; cases hc
   · obtain ⟨a, rfl, ha⟩ := holds2_one hvs
     simp only [apreS, beq_self_eq_true, ite_true, Bool.and_eq_true] at hpre
@@ -270,9 +271,11 @@ theorem emitS_shape {N : Nat} {id : TermId} {as : List AW} {vs : List V}
     have hne : (TId.gen_return == TId.emit) = false := by decide
     simp only [apreS, hne, beq_self_eq_true, ite_true, ite_false, Bool.false_eq_true,
       Bool.and_eq_true, beq_iff_eq] at hpre
-    refine rets_shape N hps fun r hr => ?_
-    obtain ⟨l, hl, hrl⟩ := hrs r hr
-    exact kind_one ((deep_sound a _ ha).1 r (List.mem_flatten.mpr ⟨l, hl, hrl⟩)) hpre.2
+    have hint : ∀ r ∈ rs, ∃ n, r = .vreg n .int := fun r hr => by
+      obtain ⟨l, hl, hrl⟩ := single_mem hss r hr
+      exact kind_one ((deep_sound a _ ha).1 r (List.mem_flatten.mpr ⟨l, hl, hrl⟩)) hpre.2
+    rw [retRegsC_single_int hss (fun r hr => by obtain ⟨n, rfl⟩ := hint r hr; rfl)] at hps
+    exact rets_shape N hps hint
 
 /-- **Constructors** (V4): `actor` describes the result, the state invariant is kept. -/
 theorem ctorS_sound {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (N : Nat) (s0 : LState)

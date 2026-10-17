@@ -108,7 +108,8 @@ variable {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LS
 
 theorem typed_of_def (sp : CtxSpec f ctx ranges st0) {x : Nat} (hx : x ∈ valueDefs f) :
     (ctx.valueType? x).isSome := by
-  rw [← sp.regTy x, (sp.facts.vals x hx).2]; rfl
+  obtain ⟨-, t, ht, -⟩ := sp.facts.vals x hx
+  rw [ht]; rfl
 
 /-- **`PInv` of `buildCtx`'s context.** -/
 theorem pinv_build (hdom : dominatedB f = true) (hs : lowerScopeB f = true)
