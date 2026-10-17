@@ -628,10 +628,10 @@ theorem pat_bmask128 (x : Val) :
   pat_eval; sem_bv
   cases (x.bits != 0) <;> simp <;> constructor <;> nat_route
 
-theorem pat_bmaskc (t : Ty) (xl xh : BitVec 64) :
+theorem pat_bmaskc (t : Ty) (hi : t.isInt = true) (xl xh : BitVec 64) :
     ∃ ρ, runPat (canon [V64 xl, V64 xh]) (Pat.bmaskc t) = some ρ ∧
       ρ 2 = some ⟨t, Sem.bmask (xh ++ xl)⟩ := by
-  cases t <;> (pat_eval; sem_bv; nat_route)
+  cases t <;> simp at hi <;> (pat_eval; sem_bv; nat_route)
 
 /-! ## Width changes and copies -/
 
@@ -659,7 +659,8 @@ theorem pat_extend32 (op : ExtendOp) (x : BitVec 32) :
         | .uextend => Sem.uextend 128 x | .sextend => Sem.sextend 128 x) := by
   cases op <;> (pat_eval; sem_bv; constructor <;> first | nat_route | bit_route)
 
-theorem pat_extendN (op : ExtendOp) (t : Ty) (ht : t.width < 64) (x : BitVec t.width) :
+theorem pat_extendN (op : ExtendOp) (t : Ty) (hi : t.isInt = true) (ht : t.width < 64)
+    (x : BitVec t.width) :
     ∃ ρ, runPat (canon [⟨t, x⟩]) (Pat.extend op false) = some ρ ∧
       Out128 ρ 1 2 (match op with
         | .uextend => Sem.uextend 128 x | .sextend => Sem.sextend 128 x) := by
@@ -667,12 +668,13 @@ theorem pat_extendN (op : ExtendOp) (t : Ty) (ht : t.width < 64) (x : BitVec t.w
   · exact pat_extend8 op x
   · exact pat_extend16 op x
   · exact pat_extend32 op x
-  all_goals simp [Ty.width] at ht
+  all_goals simp [Ty.width] at ht hi
 
-theorem pat_ireduce (t : Ty) (ht : t.width < 128) (xl xh : BitVec 64) :
+theorem pat_ireduce (t : Ty) (hi : t.isInt = true) (ht : t.width < 128) (xl xh : BitVec 64) :
     ∃ ρ, runPat (canon [V64 xl]) (Pat.ireduce t) = some ρ ∧
       ρ 1 = some ⟨t, Sem.ireduce t.width (xh ++ xl)⟩ := by
-  cases t <;> simp only [Ty.width] at ht <;> (try omega) <;> (pat_eval; sem_bv; nat_route)
+  cases t <;> simp only [Ty.width] at ht <;> simp at hi <;> (try omega) <;>
+    (pat_eval; sem_bv; nat_route)
 
 theorem pat_copy2 (a b : BitVec 64) :
     ∃ ρ, runPat (canon [V64 a, V64 b]) Pat.copy2 = some ρ ∧
