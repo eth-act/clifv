@@ -6,9 +6,9 @@ import FV.Backend.Proof.IselAttr
 
 Regenerate: `lake env lean --run FVTest/Backend/Proof/Probe/GenData.lean closure > FV/Backend/Proof/IselData.lean`.
 
-Roots: 150 root rules (closure); 598 terms reachable from them (patterns, if-lets,
+Roots: 160 root rules (closure); 634 terms reachable from them (patterns, if-lets,
 right-hand sides, and the rules of every internal constructor they call, transitively), of
-which the internal constructors have 852 rules. `lower`/`lower_branch` are included with
+which the internal constructors have 873 rules. `lower`/`lower_branch` are included with
 their full rule lists.
 
 `Data p` bundles `Interp.termOf p t = pure T.x` and `p.rulesOf t = [...]` for these terms.
@@ -36,6 +36,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_90_name : T.«ty_mask».name = "ty_mask" := rfl
 @[isel_data] theorem term_93_kind : T.«ty_bytes».kind = (.decl ⟨true, false, false, false⟩ (some (.external "ty_bytes")) none) := rfl
 @[isel_data] theorem term_93_name : T.«ty_bytes».name = "ty_bytes" := rfl
+@[isel_data] theorem term_102_kind : T.«mem_flags_trusted_data».kind = (.decl ⟨true, false, false, false⟩ (some (.external "mem_flags_trusted_data")) none) := rfl
+@[isel_data] theorem term_102_name : T.«mem_flags_trusted_data».name = "mem_flags_trusted_data" := rfl
 @[isel_data] theorem term_103_kind : T.«little_or_native_endian».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "little_or_native_endian" false))) := rfl
 @[isel_data] theorem term_103_name : T.«little_or_native_endian».name = "little_or_native_endian" := rfl
 @[isel_data] theorem term_110_kind : T.«fits_in_16».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "fits_in_16" false))) := rfl
@@ -44,6 +46,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_111_name : T.«fits_in_32».name = "fits_in_32" := rfl
 @[isel_data] theorem term_113_kind : T.«fits_in_64».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "fits_in_64" false))) := rfl
 @[isel_data] theorem term_113_name : T.«fits_in_64».name = "fits_in_64" := rfl
+@[isel_data] theorem term_115_kind : T.«ty_32».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "ty_32" false))) := rfl
+@[isel_data] theorem term_115_name : T.«ty_32».name = "ty_32" := rfl
+@[isel_data] theorem term_116_kind : T.«ty_64».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "ty_64" false))) := rfl
+@[isel_data] theorem term_116_name : T.«ty_64».name = "ty_64" := rfl
 @[isel_data] theorem term_118_kind : T.«ty_int_ref_scalar_64».kind = (.decl ⟨true, false, true, false⟩ (some (.external "ty_int_ref_scalar_64")) none) := rfl
 @[isel_data] theorem term_118_name : T.«ty_int_ref_scalar_64».name = "ty_int_ref_scalar_64" := rfl
 @[isel_data] theorem term_119_kind : T.«ty_int_ref_scalar_64_extract».kind = (.decl ⟨true, false, true, false⟩ none (some (.external "ty_int_ref_scalar_64_extract" false))) := rfl
@@ -54,6 +60,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_126_name : T.«ty_int».name = "ty_int" := rfl
 @[isel_data] theorem term_128_kind : T.«ty_scalar_float».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "ty_scalar_float" false))) := rfl
 @[isel_data] theorem term_128_name : T.«ty_scalar_float».name = "ty_scalar_float" := rfl
+@[isel_data] theorem term_129_kind : T.«ty_float_or_vec».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "ty_float_or_vec" false))) := rfl
+@[isel_data] theorem term_129_name : T.«ty_float_or_vec».name = "ty_float_or_vec" := rfl
 @[isel_data] theorem term_132_kind : T.«ty_vec64».kind = (.decl ⟨true, false, true, false⟩ (some (.external "ty_vec64_ctor")) (some (.external "ty_vec64" false))) := rfl
 @[isel_data] theorem term_132_name : T.«ty_vec64».name = "ty_vec64" := rfl
 @[isel_data] theorem term_133_kind : T.«ty_vec128».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "ty_vec128" false))) := rfl
@@ -64,6 +72,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_144_name : T.«u64_from_imm64».name = "u64_from_imm64" := rfl
 @[isel_data] theorem term_145_kind : T.«nonzero_u64_from_imm64».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "nonzero_u64_from_imm64" false))) := rfl
 @[isel_data] theorem term_145_name : T.«nonzero_u64_from_imm64».name = "nonzero_u64_from_imm64" := rfl
+@[isel_data] theorem term_150_kind : T.«u32_from_ieee32».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "u32_from_ieee32" true))) := rfl
+@[isel_data] theorem term_150_name : T.«u32_from_ieee32».name = "u32_from_ieee32" := rfl
+@[isel_data] theorem term_151_kind : T.«u64_from_ieee64».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "u64_from_ieee64" true))) := rfl
+@[isel_data] theorem term_151_name : T.«u64_from_ieee64».name = "u64_from_ieee64" := rfl
 @[isel_data] theorem term_152_kind : T.«multi_lane».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "multi_lane" false))) := rfl
 @[isel_data] theorem term_152_name : T.«multi_lane».name = "multi_lane" := rfl
 @[isel_data] theorem term_153_kind : T.«dynamic_lane».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "dynamic_lane" false))) := rfl
@@ -90,6 +102,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_170_name : T.«output».name = "output" := rfl
 @[isel_data] theorem term_172_kind : T.«output_reg».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_172_name : T.«output_reg».name = "output_reg" := rfl
+@[isel_data] theorem term_173_kind : T.«output_value».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_173_name : T.«output_value».name = "output_value" := rfl
 @[isel_data] theorem term_174_kind : T.«output_vec».kind = (.decl ⟨false, false, false, false⟩ (some (.external "output_vec")) none) := rfl
 @[isel_data] theorem term_174_name : T.«output_vec».name = "output_vec" := rfl
 @[isel_data] theorem term_175_kind : T.«temp_writable_reg».kind = (.decl ⟨false, false, false, false⟩ (some (.external "temp_writable_reg")) none) := rfl
@@ -135,6 +149,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_235_name : T.«emit».name = "emit" := rfl
 @[isel_data] theorem term_236_kind : T.«sink_inst».kind = (.decl ⟨false, false, false, false⟩ (some (.external "sink_inst")) none) := rfl
 @[isel_data] theorem term_236_name : T.«sink_inst».name = "sink_inst" := rfl
+@[isel_data] theorem term_237_kind : T.«emit_u64_le_const».kind = (.decl ⟨false, false, false, false⟩ (some (.external "emit_u64_le_const")) none) := rfl
+@[isel_data] theorem term_237_name : T.«emit_u64_le_const».name = "emit_u64_le_const" := rfl
 @[isel_data] theorem term_242_kind : T.«emit_side_effect».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_242_name : T.«emit_side_effect».name = "emit_side_effect" := rfl
 @[isel_data] theorem term_243_kind : T.«side_effect».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
@@ -261,6 +277,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_370_name : T.«fpu_cmp».name = "fpu_cmp" := rfl
 @[isel_data] theorem term_371_kind : T.«vec_lanes».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_371_name : T.«vec_lanes».name = "vec_lanes" := rfl
+@[isel_data] theorem term_375_kind : T.«vec_dup_imm».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_375_name : T.«vec_dup_imm».name = "vec_dup_imm" := rfl
 @[isel_data] theorem term_376_kind : T.«alu_rr_imm12».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_376_name : T.«alu_rr_imm12».name = "alu_rr_imm12" := rfl
 @[isel_data] theorem term_377_kind : T.«alu_rrr_shift».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
@@ -297,6 +315,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_409_name : T.«mov_to_fpu».name = "mov_to_fpu" := rfl
 @[isel_data] theorem term_410_kind : T.«size_for_mov_to_fpu».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_410_name : T.«size_for_mov_to_fpu».name = "size_for_mov_to_fpu" := rfl
+@[isel_data] theorem term_411_kind : T.«fpu_move_fp_imm».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_411_name : T.«fpu_move_fp_imm».name = "fpu_move_fp_imm" := rfl
 @[isel_data] theorem term_414_kind : T.«mov_from_vec».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_414_name : T.«mov_from_vec».name = "mov_from_vec" := rfl
 @[isel_data] theorem term_417_kind : T.«extend».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
@@ -409,6 +429,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_534_name : T.«aarch64_sload32».name = "aarch64_sload32" := rfl
 @[isel_data] theorem term_535_kind : T.«aarch64_uload64».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_535_name : T.«aarch64_uload64».name = "aarch64_uload64" := rfl
+@[isel_data] theorem term_537_kind : T.«aarch64_fpuload32».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_537_name : T.«aarch64_fpuload32».name = "aarch64_fpuload32" := rfl
+@[isel_data] theorem term_538_kind : T.«aarch64_fpuload64».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_538_name : T.«aarch64_fpuload64».name = "aarch64_fpuload64" := rfl
 @[isel_data] theorem term_541_kind : T.«aarch64_store8».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_541_name : T.«aarch64_store8».name = "aarch64_store8" := rfl
 @[isel_data] theorem term_542_kind : T.«aarch64_store16».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
@@ -417,6 +441,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_543_name : T.«aarch64_store32».name = "aarch64_store32" := rfl
 @[isel_data] theorem term_544_kind : T.«aarch64_store64».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_544_name : T.«aarch64_store64».name = "aarch64_store64" := rfl
+@[isel_data] theorem term_546_kind : T.«aarch64_fpustore32».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_546_name : T.«aarch64_fpustore32».name = "aarch64_fpustore32" := rfl
+@[isel_data] theorem term_547_kind : T.«aarch64_fpustore64».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_547_name : T.«aarch64_fpustore64».name = "aarch64_fpustore64" := rfl
 @[isel_data] theorem term_553_kind : T.«imm».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_553_name : T.«imm».name = "imm" := rfl
 @[isel_data] theorem term_554_kind : T.«load_constant_full».kind = (.decl ⟨false, false, false, false⟩ (some (.external "load_constant_full")) none) := rfl
@@ -467,6 +495,14 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_581_name : T.«uimm12_scaled_nonzero_from_i64».name = "uimm12_scaled_nonzero_from_i64" := rfl
 @[isel_data] theorem term_582_kind : T.«simm9_from_i64».kind = (.decl ⟨true, false, true, false⟩ (some (.external "simm9_from_i64")) none) := rfl
 @[isel_data] theorem term_582_name : T.«simm9_from_i64».name = "simm9_from_i64" := rfl
+@[isel_data] theorem term_585_kind : T.«constant_f16».kind = (.decl ⟨false, false, false, true⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_585_name : T.«constant_f16».name = "constant_f16" := rfl
+@[isel_data] theorem term_586_kind : T.«constant_f32».kind = (.decl ⟨false, false, false, true⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_586_name : T.«constant_f32».name = "constant_f32" := rfl
+@[isel_data] theorem term_587_kind : T.«constant_f64».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_587_name : T.«constant_f64».name = "constant_f64" := rfl
+@[isel_data] theorem term_588_kind : T.«u64_low32_bits_unset».kind = (.decl ⟨false, false, false, false⟩ none (some (.external "u64_low32_bits_unset" false))) := rfl
+@[isel_data] theorem term_588_name : T.«u64_low32_bits_unset».name = "u64_low32_bits_unset" := rfl
 @[isel_data] theorem term_592_kind : T.«cond_code».kind = (.decl ⟨false, false, false, false⟩ (some (.external "cond_code")) none) := rfl
 @[isel_data] theorem term_592_name : T.«cond_code».name = "cond_code" := rfl
 @[isel_data] theorem term_593_kind : T.«invert_cond».kind = (.decl ⟨false, false, false, false⟩ (some (.external "invert_cond")) none) := rfl
@@ -533,6 +569,12 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_669_name : T.«emit_island».name = "emit_island" := rfl
 @[isel_data] theorem term_670_kind : T.«br_table_impl».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_670_name : T.«br_table_impl».name = "br_table_impl" := rfl
+@[isel_data] theorem term_677_kind : T.«asimd_mov_mod_imm_zero».kind = (.decl ⟨false, false, false, false⟩ (some (.external "asimd_mov_mod_imm_zero")) none) := rfl
+@[isel_data] theorem term_677_name : T.«asimd_mov_mod_imm_zero».name = "asimd_mov_mod_imm_zero" := rfl
+@[isel_data] theorem term_679_kind : T.«asimd_fp_mod_imm_from_u64».kind = (.decl ⟨true, false, true, false⟩ (some (.external "asimd_fp_mod_imm_from_u64")) none) := rfl
+@[isel_data] theorem term_679_name : T.«asimd_fp_mod_imm_from_u64».name = "asimd_fp_mod_imm_from_u64" := rfl
+@[isel_data] theorem term_681_kind : T.«fpu_load64».kind = (.decl ⟨false, false, false, false⟩ (some .internal) none) := rfl
+@[isel_data] theorem term_681_name : T.«fpu_load64».name = "fpu_load64" := rfl
 @[isel_data] theorem term_686_kind : T.«lower».kind = (.decl ⟨false, false, true, false⟩ (some .internal) none) := rfl
 @[isel_data] theorem term_686_name : T.«lower».name = "lower" := rfl
 @[isel_data] theorem term_687_kind : T.«lower_branch».kind = (.decl ⟨false, false, true, false⟩ (some .internal) none) := rfl
@@ -589,10 +631,14 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_1378_name : T.«u8_into_u32».name = "u8_into_u32" := rfl
 @[isel_data] theorem term_1382_kind : T.«u8_into_u64».kind = (.decl ⟨true, false, false, false⟩ (some (.external "u8_into_u64")) none) := rfl
 @[isel_data] theorem term_1382_name : T.«u8_into_u64».name = "u8_into_u64" := rfl
+@[isel_data] theorem term_1427_kind : T.«u16_into_u32».kind = (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_u32")) none) := rfl
+@[isel_data] theorem term_1427_name : T.«u16_into_u32».name = "u16_into_u32" := rfl
 @[isel_data] theorem term_1431_kind : T.«u16_into_u64».kind = (.decl ⟨true, false, false, false⟩ (some (.external "u16_into_u64")) none) := rfl
 @[isel_data] theorem term_1431_name : T.«u16_into_u64».name = "u16_into_u64" := rfl
 @[isel_data] theorem term_1455_kind : T.«i32_into_i64».kind = (.decl ⟨true, false, false, false⟩ (some (.external "i32_into_i64")) none) := rfl
 @[isel_data] theorem term_1455_name : T.«i32_into_i64».name = "i32_into_i64" := rfl
+@[isel_data] theorem term_1478_kind : T.«u16_from_u32».kind = (.decl ⟨true, false, false, false⟩ none (some (.external "u32_from_u16" false))) := rfl
+@[isel_data] theorem term_1478_name : T.«u16_from_u32».name = "u16_from_u32" := rfl
 @[isel_data] theorem term_1485_kind : T.«u32_into_u64».kind = (.decl ⟨true, false, false, false⟩ (some (.external "u32_into_u64")) none) := rfl
 @[isel_data] theorem term_1485_name : T.«u32_into_u64».name = "u32_into_u64" := rfl
 @[isel_data] theorem term_1508_kind : T.«i32_from_i64».kind = (.decl ⟨true, false, false, false⟩ none (some (.external "i64_from_i32" false))) := rfl
@@ -601,6 +647,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_1514_name : T.«i64_cast_unsigned».name = "i64_cast_unsigned" := rfl
 @[isel_data] theorem term_1527_kind : T.«u8_from_u64».kind = (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u8" false))) := rfl
 @[isel_data] theorem term_1527_name : T.«u8_from_u64».name = "u8_from_u64" := rfl
+@[isel_data] theorem term_1541_kind : T.«u32_from_u64».kind = (.decl ⟨true, false, false, false⟩ none (some (.external "u64_from_u32" false))) := rfl
+@[isel_data] theorem term_1541_name : T.«u32_from_u64».name = "u32_from_u64" := rfl
 @[isel_data] theorem term_1614_kind : T.«value_array_2».kind = (.decl ⟨false, false, false, false⟩ (some (.external "pack_value_array_2")) (some (.external "unpack_value_array_2" true))) := rfl
 @[isel_data] theorem term_1614_name : T.«value_array_2».name = "value_array_2" := rfl
 @[isel_data] theorem term_1615_kind : T.«value_array_3».kind = (.decl ⟨false, false, false, false⟩ (some (.external "pack_value_array_3")) (some (.external "unpack_value_array_3" true))) := rfl
@@ -719,6 +767,14 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_1862_name : T.«MInst.Fence».name = "MInst.Fence" := rfl
 @[isel_data] theorem term_1874_kind : T.«MInst.FpuCmp».kind = (.enumVariant 56) := rfl
 @[isel_data] theorem term_1874_name : T.«MInst.FpuCmp».name = "MInst.FpuCmp" := rfl
+@[isel_data] theorem term_1877_kind : T.«MInst.FpuLoad32».kind = (.enumVariant 59) := rfl
+@[isel_data] theorem term_1877_name : T.«MInst.FpuLoad32».name = "MInst.FpuLoad32" := rfl
+@[isel_data] theorem term_1878_kind : T.«MInst.FpuStore32».kind = (.enumVariant 60) := rfl
+@[isel_data] theorem term_1878_name : T.«MInst.FpuStore32».name = "MInst.FpuStore32" := rfl
+@[isel_data] theorem term_1879_kind : T.«MInst.FpuLoad64».kind = (.enumVariant 61) := rfl
+@[isel_data] theorem term_1879_name : T.«MInst.FpuLoad64».name = "MInst.FpuLoad64" := rfl
+@[isel_data] theorem term_1880_kind : T.«MInst.FpuStore64».kind = (.enumVariant 62) := rfl
+@[isel_data] theorem term_1880_name : T.«MInst.FpuStore64».name = "MInst.FpuStore64" := rfl
 @[isel_data] theorem term_1889_kind : T.«MInst.FpuCSel16».kind = (.enumVariant 71) := rfl
 @[isel_data] theorem term_1889_name : T.«MInst.FpuCSel16».name = "MInst.FpuCSel16" := rfl
 @[isel_data] theorem term_1890_kind : T.«MInst.FpuCSel32».kind = (.enumVariant 72) := rfl
@@ -727,8 +783,12 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_1891_name : T.«MInst.FpuCSel64».name = "MInst.FpuCSel64" := rfl
 @[isel_data] theorem term_1893_kind : T.«MInst.MovToFpu».kind = (.enumVariant 75) := rfl
 @[isel_data] theorem term_1893_name : T.«MInst.MovToFpu».name = "MInst.MovToFpu" := rfl
+@[isel_data] theorem term_1894_kind : T.«MInst.FpuMoveFPImm».kind = (.enumVariant 76) := rfl
+@[isel_data] theorem term_1894_name : T.«MInst.FpuMoveFPImm».name = "MInst.FpuMoveFPImm" := rfl
 @[isel_data] theorem term_1896_kind : T.«MInst.MovFromVec».kind = (.enumVariant 78) := rfl
 @[isel_data] theorem term_1896_name : T.«MInst.MovFromVec».name = "MInst.MovFromVec" := rfl
+@[isel_data] theorem term_1901_kind : T.«MInst.VecDupImm».kind = (.enumVariant 83) := rfl
+@[isel_data] theorem term_1901_name : T.«MInst.VecDupImm».name = "MInst.VecDupImm" := rfl
 @[isel_data] theorem term_1911_kind : T.«MInst.VecRRR».kind = (.enumVariant 93) := rfl
 @[isel_data] theorem term_1911_name : T.«MInst.VecRRR».name = "MInst.VecRRR" := rfl
 @[isel_data] theorem term_1914_kind : T.«MInst.VecMisc».kind = (.enumVariant 96) := rfl
@@ -855,6 +915,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_2016_name : T.«AMode.Unscaled».name = "AMode.Unscaled" := rfl
 @[isel_data] theorem term_2017_kind : T.«AMode.UnsignedOffset».kind = (.enumVariant 7) := rfl
 @[isel_data] theorem term_2017_name : T.«AMode.UnsignedOffset».name = "AMode.UnsignedOffset" := rfl
+@[isel_data] theorem term_2022_kind : T.«AMode.Const».kind = (.enumVariant 12) := rfl
+@[isel_data] theorem term_2022_name : T.«AMode.Const».name = "AMode.Const" := rfl
 @[isel_data] theorem term_2024_kind : T.«AMode.SlotOffset».kind = (.enumVariant 14) := rfl
 @[isel_data] theorem term_2024_name : T.«AMode.SlotOffset».name = "AMode.SlotOffset" := rfl
 @[isel_data] theorem term_2028_kind : T.«OperandSize.Size32».kind = (.enumVariant 0) := rfl
@@ -1093,6 +1155,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_2334_name : T.«Opcode.TlsValue».name = "Opcode.TlsValue" := rfl
 @[isel_data] theorem term_2341_kind : T.«Opcode.Iconst».kind = (.enumVariant 57) := rfl
 @[isel_data] theorem term_2341_name : T.«Opcode.Iconst».name = "Opcode.Iconst" := rfl
+@[isel_data] theorem term_2343_kind : T.«Opcode.F32const».kind = (.enumVariant 59) := rfl
+@[isel_data] theorem term_2343_name : T.«Opcode.F32const».name = "Opcode.F32const" := rfl
+@[isel_data] theorem term_2344_kind : T.«Opcode.F64const».kind = (.enumVariant 60) := rfl
+@[isel_data] theorem term_2344_name : T.«Opcode.F64const».name = "Opcode.F64const" := rfl
 @[isel_data] theorem term_2348_kind : T.«Opcode.Nop».kind = (.enumVariant 64) := rfl
 @[isel_data] theorem term_2348_name : T.«Opcode.Nop».name = "Opcode.Nop" := rfl
 @[isel_data] theorem term_2349_kind : T.«Opcode.Select».kind = (.enumVariant 65) := rfl
@@ -1155,6 +1221,8 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_2395_name : T.«Opcode.Popcnt».name = "Opcode.Popcnt" := rfl
 @[isel_data] theorem term_2396_kind : T.«Opcode.Fcmp».kind = (.enumVariant 112) := rfl
 @[isel_data] theorem term_2396_name : T.«Opcode.Fcmp».name = "Opcode.Fcmp" := rfl
+@[isel_data] theorem term_2412_kind : T.«Opcode.Bitcast».kind = (.enumVariant 128) := rfl
+@[isel_data] theorem term_2412_name : T.«Opcode.Bitcast».name = "Opcode.Bitcast" := rfl
 @[isel_data] theorem term_2414_kind : T.«Opcode.Bmask».kind = (.enumVariant 130) := rfl
 @[isel_data] theorem term_2414_name : T.«Opcode.Bmask».name = "Opcode.Bmask" := rfl
 @[isel_data] theorem term_2415_kind : T.«Opcode.Ireduce».kind = (.enumVariant 131) := rfl
@@ -1217,6 +1285,10 @@ open Isle Isle.Aarch64
 @[isel_data] theorem term_2476_name : T.«InstructionData.Unary».name = "InstructionData.Unary" := rfl
 @[isel_data] theorem term_2478_kind : T.«InstructionData.UnaryGlobalValue».kind = (.enumVariant 31) := rfl
 @[isel_data] theorem term_2478_name : T.«InstructionData.UnaryGlobalValue».name = "InstructionData.UnaryGlobalValue" := rfl
+@[isel_data] theorem term_2480_kind : T.«InstructionData.UnaryIeee32».kind = (.enumVariant 33) := rfl
+@[isel_data] theorem term_2480_name : T.«InstructionData.UnaryIeee32».name = "InstructionData.UnaryIeee32" := rfl
+@[isel_data] theorem term_2481_kind : T.«InstructionData.UnaryIeee64».kind = (.enumVariant 34) := rfl
+@[isel_data] theorem term_2481_name : T.«InstructionData.UnaryIeee64».name = "InstructionData.UnaryIeee64" := rfl
 @[isel_data] theorem term_2482_kind : T.«InstructionData.UnaryImm».kind = (.enumVariant 35) := rfl
 @[isel_data] theorem term_2482_name : T.«InstructionData.UnaryImm».name = "InstructionData.UnaryImm" := rfl
 
@@ -1230,20 +1302,26 @@ structure Data (p : Program) : Prop where
   t87 : Interp.termOf p 87 = pure T.«ty_bits»
   t90 : Interp.termOf p 90 = pure T.«ty_mask»
   t93 : Interp.termOf p 93 = pure T.«ty_bytes»
+  t102 : Interp.termOf p 102 = pure T.«mem_flags_trusted_data»
   t103 : Interp.termOf p 103 = pure T.«little_or_native_endian»
   t110 : Interp.termOf p 110 = pure T.«fits_in_16»
   t111 : Interp.termOf p 111 = pure T.«fits_in_32»
   t113 : Interp.termOf p 113 = pure T.«fits_in_64»
+  t115 : Interp.termOf p 115 = pure T.«ty_32»
+  t116 : Interp.termOf p 116 = pure T.«ty_64»
   t118 : Interp.termOf p 118 = pure T.«ty_int_ref_scalar_64»
   t119 : Interp.termOf p 119 = pure T.«ty_int_ref_scalar_64_extract»
   t120 : Interp.termOf p 120 = pure T.«ty_32_or_64»
   t126 : Interp.termOf p 126 = pure T.«ty_int»
   t128 : Interp.termOf p 128 = pure T.«ty_scalar_float»
+  t129 : Interp.termOf p 129 = pure T.«ty_float_or_vec»
   t132 : Interp.termOf p 132 = pure T.«ty_vec64»
   t133 : Interp.termOf p 133 = pure T.«ty_vec128»
   t141 : Interp.termOf p 141 = pure T.«not_i64x2»
   t144 : Interp.termOf p 144 = pure T.«u64_from_imm64»
   t145 : Interp.termOf p 145 = pure T.«nonzero_u64_from_imm64»
+  t150 : Interp.termOf p 150 = pure T.«u32_from_ieee32»
+  t151 : Interp.termOf p 151 = pure T.«u64_from_ieee64»
   t152 : Interp.termOf p 152 = pure T.«multi_lane»
   t153 : Interp.termOf p 153 = pure T.«dynamic_lane»
   t156 : Interp.termOf p 156 = pure T.«offset32_to_i32»
@@ -1259,6 +1337,9 @@ structure Data (p : Program) : Prop where
   t172 : Interp.termOf p 172 = pure T.«output_reg»
   r172 : p.rulesOf 172 =
     [rule_prelude_lower_105]
+  t173 : Interp.termOf p 173 = pure T.«output_value»
+  r173 : p.rulesOf 173 =
+    [rule_prelude_lower_109]
   t174 : Interp.termOf p 174 = pure T.«output_vec»
   t175 : Interp.termOf p 175 = pure T.«temp_writable_reg»
   t178 : Interp.termOf p 178 = pure T.«invalid_reg»
@@ -1282,6 +1363,7 @@ structure Data (p : Program) : Prop where
   t222 : Interp.termOf p 222 = pure T.«maybe_uextend»
   t235 : Interp.termOf p 235 = pure T.«emit»
   t236 : Interp.termOf p 236 = pure T.«sink_inst»
+  t237 : Interp.termOf p 237 = pure T.«emit_u64_le_const»
   t242 : Interp.termOf p 242 = pure T.«emit_side_effect»
   r242 : p.rulesOf 242 =
     [rule_prelude_lower_522, rule_prelude_lower_524, rule_prelude_lower_527]
@@ -1391,6 +1473,9 @@ structure Data (p : Program) : Prop where
   t371 : Interp.termOf p 371 = pure T.«vec_lanes»
   r371 : p.rulesOf 371 =
     [rule_inst_2612]
+  t375 : Interp.termOf p 375 = pure T.«vec_dup_imm»
+  r375 : p.rulesOf 375 =
+    [rule_inst_2640]
   t376 : Interp.termOf p 376 = pure T.«alu_rr_imm12»
   r376 : p.rulesOf 376 =
     [rule_inst_2648]
@@ -1445,6 +1530,9 @@ structure Data (p : Program) : Prop where
   t410 : Interp.termOf p 410 = pure T.«size_for_mov_to_fpu»
   r410 : p.rulesOf 410 =
     [rule_inst_2941, rule_inst_2938]
+  t411 : Interp.termOf p 411 = pure T.«fpu_move_fp_imm»
+  r411 : p.rulesOf 411 =
+    [rule_inst_2948]
   t414 : Interp.termOf p 414 = pure T.«mov_from_vec»
   r414 : p.rulesOf 414 =
     [rule_inst_2970]
@@ -1611,6 +1699,12 @@ structure Data (p : Program) : Prop where
   t535 : Interp.termOf p 535 = pure T.«aarch64_uload64»
   r535 : p.rulesOf 535 =
     [rule_inst_3620]
+  t537 : Interp.termOf p 537 = pure T.«aarch64_fpuload32»
+  r537 : p.rulesOf 537 =
+    [rule_inst_3632]
+  t538 : Interp.termOf p 538 = pure T.«aarch64_fpuload64»
+  r538 : p.rulesOf 538 =
+    [rule_inst_3639]
   t541 : Interp.termOf p 541 = pure T.«aarch64_store8»
   r541 : p.rulesOf 541 =
     [rule_inst_3660]
@@ -1623,6 +1717,12 @@ structure Data (p : Program) : Prop where
   t544 : Interp.termOf p 544 = pure T.«aarch64_store64»
   r544 : p.rulesOf 544 =
     [rule_inst_3678]
+  t546 : Interp.termOf p 546 = pure T.«aarch64_fpustore32»
+  r546 : p.rulesOf 546 =
+    [rule_inst_3684]
+  t547 : Interp.termOf p 547 = pure T.«aarch64_fpustore64»
+  r547 : p.rulesOf 547 =
+    [rule_inst_3689]
   t553 : Interp.termOf p 553 = pure T.«imm»
   r553 : p.rulesOf 553 =
     [rule_inst_3742, rule_inst_3745, rule_inst_3751, rule_inst_3786, rule_inst_3790]
@@ -1688,6 +1788,16 @@ structure Data (p : Program) : Prop where
   t580 : Interp.termOf p 580 = pure T.«uimm12_scaled_from_i64»
   t581 : Interp.termOf p 581 = pure T.«uimm12_scaled_nonzero_from_i64»
   t582 : Interp.termOf p 582 = pure T.«simm9_from_i64»
+  t585 : Interp.termOf p 585 = pure T.«constant_f16»
+  r585 : p.rulesOf 585 =
+    [rule_inst_4221, rule_inst_4224, rule_inst_4228, rule_inst_4231]
+  t586 : Interp.termOf p 586 = pure T.«constant_f32»
+  r586 : p.rulesOf 586 =
+    [rule_inst_4242, rule_inst_4246, rule_inst_4249, rule_inst_4252]
+  t587 : Interp.termOf p 587 = pure T.«constant_f64»
+  r587 : p.rulesOf 587 =
+    [rule_inst_4264, rule_inst_4268, rule_inst_4271, rule_inst_4273, rule_inst_4275]
+  t588 : Interp.termOf p 588 = pure T.«u64_low32_bits_unset»
   t592 : Interp.termOf p 592 = pure T.«cond_code»
   t593 : Interp.termOf p 593 = pure T.«invert_cond»
   t612 : Interp.termOf p 612 = pure T.«atomic_rmw_loop»
@@ -1779,6 +1889,11 @@ structure Data (p : Program) : Prop where
   t670 : Interp.termOf p 670 = pure T.«br_table_impl»
   r670 : p.rulesOf 670 =
     [rule_inst_5450, rule_inst_5454]
+  t677 : Interp.termOf p 677 = pure T.«asimd_mov_mod_imm_zero»
+  t679 : Interp.termOf p 679 = pure T.«asimd_fp_mod_imm_from_u64»
+  t681 : Interp.termOf p 681 = pure T.«fpu_load64»
+  r681 : p.rulesOf 681 =
+    [rule_inst_5548]
   t686 : Interp.termOf p 686 = pure T.«lower»
   r686 : p.rulesOf 686 =
     [rule_lower_419, rule_lower_402, rule_lower_1444, rule_lower_1481, rule_lower_116, rule_lower_125, rule_lower_1442, rule_lower_1479, rule_lower_2779, rule_lower_120, rule_lower_128, rule_lower_165, rule_lower_1439, rule_lower_1476, rule_lower_2784, rule_lower_93, rule_lower_167, rule_lower_1437, rule_lower_1474, rule_lower_1501, rule_lower_1507, rule_lower_2789, rule_lower_3091, rule_lower_3155, rule_lower_90, rule_lower_169, rule_lower_1435, rule_lower_1472, rule_lower_1540, rule_lower_2152, rule_lower_2793, rule_lower_3097, rule_lower_3161, rule_lower_102, rule_lower_171, rule_lower_1408, rule_lower_1434, rule_lower_1471, rule_lower_1539, rule_lower_2158, rule_lower_2185, rule_lower_2798, rule_lower_2828, rule_lower_3008, rule_lower_3101, rule_lower_3165, rule_lower_98, rule_lower_190, rule_lower_437, rule_lower_609, rule_lower_810, rule_lower_861, rule_lower_1163, rule_lower_1222, rule_lower_1224, rule_lower_1226, rule_lower_1228, rule_lower_1406, rule_lower_1431, rule_lower_1468, rule_lower_1536, rule_lower_2120, rule_lower_2164, rule_lower_2191, rule_lower_2386, rule_lower_2404, rule_lower_2419, rule_lower_2435, rule_lower_2815, rule_lower_3018, rule_lower_3036, rule_lower_3056, rule_lower_3076, rule_lower_3126, rule_lower_3140, rule_lower_3190, rule_lower_3204, rule_lower_111, rule_lower_203, rule_lower_205, rule_lower_207, rule_lower_209, rule_lower_211, rule_lower_213, rule_lower_215, rule_lower_217, rule_lower_222, rule_lower_224, rule_lower_226, rule_lower_228, rule_lower_230, rule_lower_232, rule_lower_240, rule_lower_242, rule_lower_244, rule_lower_246, rule_lower_248, rule_lower_250, rule_lower_260, rule_lower_262, rule_lower_264, rule_lower_266, rule_lower_268, rule_lower_270, rule_lower_294, rule_lower_300, rule_lower_440, rule_lower_608, rule_lower_693, rule_lower_699, rule_lower_707, rule_lower_713, rule_lower_730, rule_lower_733, rule_lower_750, rule_lower_753, rule_lower_767, rule_lower_773, rule_lower_787, rule_lower_793, rule_lower_816, rule_lower_857, rule_lower_1056, rule_lower_1068, rule_lower_1116, rule_lower_1167, rule_lower_1236, rule_lower_1242, rule_lower_1248, rule_lower_1254, rule_lower_1266, rule_lower_1272, rule_lower_1281, rule_lower_1283, rule_lower_1401, rule_lower_1429, rule_lower_1466, rule_lower_1534, rule_lower_1704, rule_lower_1707, rule_lower_1803, rule_lower_1808, rule_lower_2138, rule_lower_2170, rule_lower_2197, rule_lower_2288, rule_lower_2328, rule_lower_2331, rule_lower_2334, rule_lower_2337, rule_lower_2340, rule_lower_2343, rule_lower_2346, rule_lower_2349, rule_lower_2352, rule_lower_2381, rule_lower_2400, rule_lower_2415, rule_lower_2431, rule_lower_2451, rule_lower_2466, rule_lower_2508, rule_lower_2580, rule_lower_2803, rule_lower_2822, rule_lower_2837, rule_lower_3014, rule_lower_3031, rule_lower_3051, rule_lower_3071, rule_lower_3110, rule_lower_3174, rule_lower_53, rule_lower_58, rule_lower_63, rule_lower_68, rule_lower_73, rule_lower_78, rule_lower_108, rule_lower_132, rule_lower_273, rule_lower_279, rule_lower_284, rule_lower_308, rule_lower_313, rule_lower_316, rule_lower_336, rule_lower_342, rule_lower_368, rule_lower_375, rule_lower_379, rule_lower_383, rule_lower_387, rule_lower_450, rule_lower_463, rule_lower_477, rule_lower_485, rule_lower_493, rule_lower_501, rule_lower_509, rule_lower_517, rule_lower_525, rule_lower_533, rule_lower_541, rule_lower_549, rule_lower_554, rule_lower_559, rule_lower_567, rule_lower_570, rule_lower_578, rule_lower_581, rule_lower_589, rule_lower_592, rule_lower_600, rule_lower_603, rule_lower_685, rule_lower_690, rule_lower_696, rule_lower_704, rule_lower_710, rule_lower_724, rule_lower_727, rule_lower_744, rule_lower_747, rule_lower_764, rule_lower_770, rule_lower_784, rule_lower_790, rule_lower_805, rule_lower_836, rule_lower_841, rule_lower_846, rule_lower_851, rule_lower_865, rule_lower_906, rule_lower_914, rule_lower_995, rule_lower_1000, rule_lower_1005, rule_lower_1010, rule_lower_1015, rule_lower_1020, rule_lower_1025, rule_lower_1030, rule_lower_1035, rule_lower_1040, rule_lower_1045, rule_lower_1050, rule_lower_1059, rule_lower_1071, rule_lower_1119, rule_lower_1145, rule_lower_1190, rule_lower_1204, rule_lower_1233, rule_lower_1239, rule_lower_1245, rule_lower_1251, rule_lower_1294, rule_lower_1300, rule_lower_1339, rule_lower_1359, rule_lower_1391, rule_lower_1424, rule_lower_1461, rule_lower_1528, rule_lower_1549, rule_lower_1553, rule_lower_1642, rule_lower_1646, rule_lower_1699, rule_lower_1720, rule_lower_1791, rule_lower_1797, rule_lower_1827, rule_lower_1857, rule_lower_1862, rule_lower_1916, rule_lower_1931, rule_lower_1937, rule_lower_1940, rule_lower_1951, rule_lower_1955, rule_lower_1958, rule_lower_1982, rule_lower_1986, rule_lower_1989, rule_lower_2000, rule_lower_2004, rule_lower_2016, rule_lower_2035, rule_lower_2038, rule_lower_2041, rule_lower_2044, rule_lower_2052, rule_lower_2074, rule_lower_2080, rule_lower_2086, rule_lower_2092, rule_lower_2099, rule_lower_2108, rule_lower_2113, rule_lower_2146, rule_lower_2176, rule_lower_2203, rule_lower_2237, rule_lower_2242, rule_lower_2262, rule_lower_2267, rule_lower_2280, rule_lower_2285, rule_lower_2301, rule_lower_2304, rule_lower_2307, rule_lower_2310, rule_lower_2316, rule_lower_2321, rule_lower_2357, rule_lower_2359, rule_lower_2361, rule_lower_2363, rule_lower_2365, rule_lower_2367, rule_lower_2369, rule_lower_2371, rule_lower_2373, rule_lower_2375, rule_lower_2377, rule_lower_2390, rule_lower_2395, rule_lower_2408, rule_lower_2423, rule_lower_2439, rule_lower_2446, rule_lower_2454, rule_lower_2461, rule_lower_2469, rule_lower_2476, rule_lower_2481, rule_lower_2486, rule_lower_2491, rule_lower_2496, rule_lower_2499, rule_lower_2502, rule_lower_2518, rule_lower_2529, rule_lower_2574, rule_lower_2587, rule_lower_2595, rule_lower_2604, rule_lower_2607, rule_lower_2610, rule_lower_2613, rule_lower_2619, rule_lower_2647, rule_lower_2650, rule_lower_2653, rule_lower_2656, rule_lower_2659, rule_lower_2662, rule_lower_2666, rule_lower_2672, rule_lower_2678, rule_lower_2684, rule_lower_2690, rule_lower_2696, rule_lower_2705, rule_lower_2709, rule_lower_2713, rule_lower_2717, rule_lower_2722, rule_lower_2726, rule_lower_2730, rule_lower_2735, rule_lower_2770, rule_lower_2773, rule_lower_2809, rule_lower_2818, rule_lower_2842, rule_lower_2849, rule_lower_2863, rule_lower_2887, rule_lower_2900, rule_lower_2913, rule_lower_2927, rule_lower_3022, rule_lower_3042, rule_lower_3062, rule_lower_3082, rule_lower_3217, rule_lower_3220, rule_lower_3225, rule_lower_3286, rule_lower_3292, rule_lower_dynamic_neon_81, rule_lower_dynamic_neon_87, rule_lower_86, rule_lower_319, rule_lower_359, rule_lower_390, rule_lower_434, rule_lower_472, rule_lower_482, rule_lower_490, rule_lower_498, rule_lower_506, rule_lower_514, rule_lower_522, rule_lower_530, rule_lower_538, rule_lower_546, rule_lower_564, rule_lower_575, rule_lower_586, rule_lower_597, rule_lower_718, rule_lower_721, rule_lower_738, rule_lower_741, rule_lower_758, rule_lower_761, rule_lower_778, rule_lower_781, rule_lower_831, rule_lower_876, rule_lower_956, rule_lower_1153, rule_lower_1197, rule_lower_1211, rule_lower_1289, rule_lower_1349, rule_lower_1387, rule_lower_1421, rule_lower_1458, rule_lower_1525, rule_lower_1545, rule_lower_1638, rule_lower_1736, rule_lower_1778, rule_lower_1844, rule_lower_1848, rule_lower_1946, rule_lower_1961, rule_lower_1995, rule_lower_2030, rule_lower_2179, rule_lower_2209, rule_lower_2294, rule_lower_2622, rule_lower_2742, rule_lower_dynamic_neon_43, rule_lower_dynamic_neon_57, rule_lower_dynamic_neon_71, rule_lower_dynamic_neon_92, rule_lower_dynamic_neon_97, rule_lower_137, rule_lower_322, rule_lower_826, rule_lower_924, rule_lower_1261, rule_lower_1329, rule_lower_1385, rule_lower_1419, rule_lower_1456, rule_lower_1523, rule_lower_1588, rule_lower_1661, rule_lower_1734, rule_lower_1772, rule_lower_1852, rule_lower_2215, rule_lower_2298, rule_lower_2625, rule_lower_2746, rule_lower_dynamic_neon_15, rule_lower_dynamic_neon_19, rule_lower_dynamic_neon_23, rule_lower_dynamic_neon_27, rule_lower_dynamic_neon_31, rule_lower_dynamic_neon_35, rule_lower_dynamic_neon_39, rule_lower_dynamic_neon_53, rule_lower_dynamic_neon_67, rule_lower_142, rule_lower_821, rule_lower_871, rule_lower_1320, rule_lower_1381, rule_lower_1452, rule_lower_1519, rule_lower_1583, rule_lower_1659, rule_lower_1729, rule_lower_1840, rule_lower_2628, rule_lower_2750, rule_lower_dynamic_neon_47, rule_lower_dynamic_neon_61, rule_lower_dynamic_neon_75, rule_lower_801, rule_lower_1315, rule_lower_1377, rule_lower_1415, rule_lower_1449, rule_lower_1516, rule_lower_1654, rule_lower_1695, rule_lower_2633, rule_lower_2754, rule_lower_dynamic_neon_3, rule_lower_dynamic_neon_11, rule_lower_1412, rule_lower_2638, rule_lower_2759, rule_lower_dynamic_neon_7, rule_lower_2643, rule_lower_2763]
@@ -1827,12 +1942,15 @@ structure Data (p : Program) : Prop where
   t1199 : Interp.termOf p 1199 = pure T.«u64_is_odd»
   t1378 : Interp.termOf p 1378 = pure T.«u8_into_u32»
   t1382 : Interp.termOf p 1382 = pure T.«u8_into_u64»
+  t1427 : Interp.termOf p 1427 = pure T.«u16_into_u32»
   t1431 : Interp.termOf p 1431 = pure T.«u16_into_u64»
   t1455 : Interp.termOf p 1455 = pure T.«i32_into_i64»
+  t1478 : Interp.termOf p 1478 = pure T.«u16_from_u32»
   t1485 : Interp.termOf p 1485 = pure T.«u32_into_u64»
   t1508 : Interp.termOf p 1508 = pure T.«i32_from_i64»
   t1514 : Interp.termOf p 1514 = pure T.«i64_cast_unsigned»
   t1527 : Interp.termOf p 1527 = pure T.«u8_from_u64»
+  t1541 : Interp.termOf p 1541 = pure T.«u32_from_u64»
   t1614 : Interp.termOf p 1614 = pure T.«value_array_2»
   t1615 : Interp.termOf p 1615 = pure T.«value_array_3»
   t1616 : Interp.termOf p 1616 = pure T.«block_array_2»
@@ -1892,11 +2010,17 @@ structure Data (p : Program) : Prop where
   t1861 : Interp.termOf p 1861 = pure T.«MInst.StoreRelease»
   t1862 : Interp.termOf p 1862 = pure T.«MInst.Fence»
   t1874 : Interp.termOf p 1874 = pure T.«MInst.FpuCmp»
+  t1877 : Interp.termOf p 1877 = pure T.«MInst.FpuLoad32»
+  t1878 : Interp.termOf p 1878 = pure T.«MInst.FpuStore32»
+  t1879 : Interp.termOf p 1879 = pure T.«MInst.FpuLoad64»
+  t1880 : Interp.termOf p 1880 = pure T.«MInst.FpuStore64»
   t1889 : Interp.termOf p 1889 = pure T.«MInst.FpuCSel16»
   t1890 : Interp.termOf p 1890 = pure T.«MInst.FpuCSel32»
   t1891 : Interp.termOf p 1891 = pure T.«MInst.FpuCSel64»
   t1893 : Interp.termOf p 1893 = pure T.«MInst.MovToFpu»
+  t1894 : Interp.termOf p 1894 = pure T.«MInst.FpuMoveFPImm»
   t1896 : Interp.termOf p 1896 = pure T.«MInst.MovFromVec»
+  t1901 : Interp.termOf p 1901 = pure T.«MInst.VecDupImm»
   t1911 : Interp.termOf p 1911 = pure T.«MInst.VecRRR»
   t1914 : Interp.termOf p 1914 = pure T.«MInst.VecMisc»
   t1915 : Interp.termOf p 1915 = pure T.«MInst.VecLanes»
@@ -1960,6 +2084,7 @@ structure Data (p : Program) : Prop where
   t2015 : Interp.termOf p 2015 = pure T.«AMode.RegExtended»
   t2016 : Interp.termOf p 2016 = pure T.«AMode.Unscaled»
   t2017 : Interp.termOf p 2017 = pure T.«AMode.UnsignedOffset»
+  t2022 : Interp.termOf p 2022 = pure T.«AMode.Const»
   t2024 : Interp.termOf p 2024 = pure T.«AMode.SlotOffset»
   t2028 : Interp.termOf p 2028 = pure T.«OperandSize.Size32»
   t2029 : Interp.termOf p 2029 = pure T.«OperandSize.Size64»
@@ -2079,6 +2204,8 @@ structure Data (p : Program) : Prop where
   t2333 : Interp.termOf p 2333 = pure T.«Opcode.SymbolValue»
   t2334 : Interp.termOf p 2334 = pure T.«Opcode.TlsValue»
   t2341 : Interp.termOf p 2341 = pure T.«Opcode.Iconst»
+  t2343 : Interp.termOf p 2343 = pure T.«Opcode.F32const»
+  t2344 : Interp.termOf p 2344 = pure T.«Opcode.F64const»
   t2348 : Interp.termOf p 2348 = pure T.«Opcode.Nop»
   t2349 : Interp.termOf p 2349 = pure T.«Opcode.Select»
   t2356 : Interp.termOf p 2356 = pure T.«Opcode.Icmp»
@@ -2110,6 +2237,7 @@ structure Data (p : Program) : Prop where
   t2394 : Interp.termOf p 2394 = pure T.«Opcode.Bswap»
   t2395 : Interp.termOf p 2395 = pure T.«Opcode.Popcnt»
   t2396 : Interp.termOf p 2396 = pure T.«Opcode.Fcmp»
+  t2412 : Interp.termOf p 2412 = pure T.«Opcode.Bitcast»
   t2414 : Interp.termOf p 2414 = pure T.«Opcode.Bmask»
   t2415 : Interp.termOf p 2415 = pure T.«Opcode.Ireduce»
   t2425 : Interp.termOf p 2425 = pure T.«Opcode.Uextend»
@@ -2141,6 +2269,8 @@ structure Data (p : Program) : Prop where
   t2473 : Interp.termOf p 2473 = pure T.«InstructionData.Trap»
   t2476 : Interp.termOf p 2476 = pure T.«InstructionData.Unary»
   t2478 : Interp.termOf p 2478 = pure T.«InstructionData.UnaryGlobalValue»
+  t2480 : Interp.termOf p 2480 = pure T.«InstructionData.UnaryIeee32»
+  t2481 : Interp.termOf p 2481 = pure T.«InstructionData.UnaryIeee64»
   t2482 : Interp.termOf p 2482 = pure T.«InstructionData.UnaryImm»
   lower : p.termByName? "lower" = some T.lower
 
@@ -2155,20 +2285,26 @@ theorem program_term_31 : Interp.termOf program 31 = pure T.«i64_sextend_imm64�
 theorem program_term_87 : Interp.termOf program 87 = pure T.«ty_bits» := rfl
 theorem program_term_90 : Interp.termOf program 90 = pure T.«ty_mask» := rfl
 theorem program_term_93 : Interp.termOf program 93 = pure T.«ty_bytes» := rfl
+theorem program_term_102 : Interp.termOf program 102 = pure T.«mem_flags_trusted_data» := rfl
 theorem program_term_103 : Interp.termOf program 103 = pure T.«little_or_native_endian» := rfl
 theorem program_term_110 : Interp.termOf program 110 = pure T.«fits_in_16» := rfl
 theorem program_term_111 : Interp.termOf program 111 = pure T.«fits_in_32» := rfl
 theorem program_term_113 : Interp.termOf program 113 = pure T.«fits_in_64» := rfl
+theorem program_term_115 : Interp.termOf program 115 = pure T.«ty_32» := rfl
+theorem program_term_116 : Interp.termOf program 116 = pure T.«ty_64» := rfl
 theorem program_term_118 : Interp.termOf program 118 = pure T.«ty_int_ref_scalar_64» := rfl
 theorem program_term_119 : Interp.termOf program 119 = pure T.«ty_int_ref_scalar_64_extract» := rfl
 theorem program_term_120 : Interp.termOf program 120 = pure T.«ty_32_or_64» := rfl
 theorem program_term_126 : Interp.termOf program 126 = pure T.«ty_int» := rfl
 theorem program_term_128 : Interp.termOf program 128 = pure T.«ty_scalar_float» := rfl
+theorem program_term_129 : Interp.termOf program 129 = pure T.«ty_float_or_vec» := rfl
 theorem program_term_132 : Interp.termOf program 132 = pure T.«ty_vec64» := rfl
 theorem program_term_133 : Interp.termOf program 133 = pure T.«ty_vec128» := rfl
 theorem program_term_141 : Interp.termOf program 141 = pure T.«not_i64x2» := rfl
 theorem program_term_144 : Interp.termOf program 144 = pure T.«u64_from_imm64» := rfl
 theorem program_term_145 : Interp.termOf program 145 = pure T.«nonzero_u64_from_imm64» := rfl
+theorem program_term_150 : Interp.termOf program 150 = pure T.«u32_from_ieee32» := rfl
+theorem program_term_151 : Interp.termOf program 151 = pure T.«u64_from_ieee64» := rfl
 theorem program_term_152 : Interp.termOf program 152 = pure T.«multi_lane» := rfl
 theorem program_term_153 : Interp.termOf program 153 = pure T.«dynamic_lane» := rfl
 theorem program_term_156 : Interp.termOf program 156 = pure T.«offset32_to_i32» := rfl
@@ -2184,6 +2320,9 @@ theorem program_term_170 : Interp.termOf program 170 = pure T.«output» := rfl
 theorem program_term_172 : Interp.termOf program 172 = pure T.«output_reg» := rfl
 theorem program_rulesOf_172 : program.rulesOf 172 =
     [rule_prelude_lower_105] := rfl
+theorem program_term_173 : Interp.termOf program 173 = pure T.«output_value» := rfl
+theorem program_rulesOf_173 : program.rulesOf 173 =
+    [rule_prelude_lower_109] := rfl
 theorem program_term_174 : Interp.termOf program 174 = pure T.«output_vec» := rfl
 theorem program_term_175 : Interp.termOf program 175 = pure T.«temp_writable_reg» := rfl
 theorem program_term_178 : Interp.termOf program 178 = pure T.«invalid_reg» := rfl
@@ -2207,6 +2346,7 @@ theorem program_term_221 : Interp.termOf program 221 = pure T.«is_sinkable_inst
 theorem program_term_222 : Interp.termOf program 222 = pure T.«maybe_uextend» := rfl
 theorem program_term_235 : Interp.termOf program 235 = pure T.«emit» := rfl
 theorem program_term_236 : Interp.termOf program 236 = pure T.«sink_inst» := rfl
+theorem program_term_237 : Interp.termOf program 237 = pure T.«emit_u64_le_const» := rfl
 theorem program_term_242 : Interp.termOf program 242 = pure T.«emit_side_effect» := rfl
 theorem program_rulesOf_242 : program.rulesOf 242 =
     [rule_prelude_lower_522, rule_prelude_lower_524, rule_prelude_lower_527] := rfl
@@ -2316,6 +2456,9 @@ theorem program_rulesOf_370 : program.rulesOf 370 =
 theorem program_term_371 : Interp.termOf program 371 = pure T.«vec_lanes» := rfl
 theorem program_rulesOf_371 : program.rulesOf 371 =
     [rule_inst_2612] := rfl
+theorem program_term_375 : Interp.termOf program 375 = pure T.«vec_dup_imm» := rfl
+theorem program_rulesOf_375 : program.rulesOf 375 =
+    [rule_inst_2640] := rfl
 theorem program_term_376 : Interp.termOf program 376 = pure T.«alu_rr_imm12» := rfl
 theorem program_rulesOf_376 : program.rulesOf 376 =
     [rule_inst_2648] := rfl
@@ -2370,6 +2513,9 @@ theorem program_rulesOf_409 : program.rulesOf 409 =
 theorem program_term_410 : Interp.termOf program 410 = pure T.«size_for_mov_to_fpu» := rfl
 theorem program_rulesOf_410 : program.rulesOf 410 =
     [rule_inst_2941, rule_inst_2938] := rfl
+theorem program_term_411 : Interp.termOf program 411 = pure T.«fpu_move_fp_imm» := rfl
+theorem program_rulesOf_411 : program.rulesOf 411 =
+    [rule_inst_2948] := rfl
 theorem program_term_414 : Interp.termOf program 414 = pure T.«mov_from_vec» := rfl
 theorem program_rulesOf_414 : program.rulesOf 414 =
     [rule_inst_2970] := rfl
@@ -2536,6 +2682,12 @@ theorem program_rulesOf_534 : program.rulesOf 534 =
 theorem program_term_535 : Interp.termOf program 535 = pure T.«aarch64_uload64» := rfl
 theorem program_rulesOf_535 : program.rulesOf 535 =
     [rule_inst_3620] := rfl
+theorem program_term_537 : Interp.termOf program 537 = pure T.«aarch64_fpuload32» := rfl
+theorem program_rulesOf_537 : program.rulesOf 537 =
+    [rule_inst_3632] := rfl
+theorem program_term_538 : Interp.termOf program 538 = pure T.«aarch64_fpuload64» := rfl
+theorem program_rulesOf_538 : program.rulesOf 538 =
+    [rule_inst_3639] := rfl
 theorem program_term_541 : Interp.termOf program 541 = pure T.«aarch64_store8» := rfl
 theorem program_rulesOf_541 : program.rulesOf 541 =
     [rule_inst_3660] := rfl
@@ -2548,6 +2700,12 @@ theorem program_rulesOf_543 : program.rulesOf 543 =
 theorem program_term_544 : Interp.termOf program 544 = pure T.«aarch64_store64» := rfl
 theorem program_rulesOf_544 : program.rulesOf 544 =
     [rule_inst_3678] := rfl
+theorem program_term_546 : Interp.termOf program 546 = pure T.«aarch64_fpustore32» := rfl
+theorem program_rulesOf_546 : program.rulesOf 546 =
+    [rule_inst_3684] := rfl
+theorem program_term_547 : Interp.termOf program 547 = pure T.«aarch64_fpustore64» := rfl
+theorem program_rulesOf_547 : program.rulesOf 547 =
+    [rule_inst_3689] := rfl
 theorem program_term_553 : Interp.termOf program 553 = pure T.«imm» := rfl
 theorem program_rulesOf_553 : program.rulesOf 553 =
     [rule_inst_3742, rule_inst_3745, rule_inst_3751, rule_inst_3786, rule_inst_3790] := rfl
@@ -2613,6 +2771,16 @@ theorem program_rulesOf_577 : program.rulesOf 577 =
 theorem program_term_580 : Interp.termOf program 580 = pure T.«uimm12_scaled_from_i64» := rfl
 theorem program_term_581 : Interp.termOf program 581 = pure T.«uimm12_scaled_nonzero_from_i64» := rfl
 theorem program_term_582 : Interp.termOf program 582 = pure T.«simm9_from_i64» := rfl
+theorem program_term_585 : Interp.termOf program 585 = pure T.«constant_f16» := rfl
+theorem program_rulesOf_585 : program.rulesOf 585 =
+    [rule_inst_4221, rule_inst_4224, rule_inst_4228, rule_inst_4231] := rfl
+theorem program_term_586 : Interp.termOf program 586 = pure T.«constant_f32» := rfl
+theorem program_rulesOf_586 : program.rulesOf 586 =
+    [rule_inst_4242, rule_inst_4246, rule_inst_4249, rule_inst_4252] := rfl
+theorem program_term_587 : Interp.termOf program 587 = pure T.«constant_f64» := rfl
+theorem program_rulesOf_587 : program.rulesOf 587 =
+    [rule_inst_4264, rule_inst_4268, rule_inst_4271, rule_inst_4273, rule_inst_4275] := rfl
+theorem program_term_588 : Interp.termOf program 588 = pure T.«u64_low32_bits_unset» := rfl
 theorem program_term_592 : Interp.termOf program 592 = pure T.«cond_code» := rfl
 theorem program_term_593 : Interp.termOf program 593 = pure T.«invert_cond» := rfl
 theorem program_term_612 : Interp.termOf program 612 = pure T.«atomic_rmw_loop» := rfl
@@ -2704,6 +2872,11 @@ theorem program_rulesOf_669 : program.rulesOf 669 =
 theorem program_term_670 : Interp.termOf program 670 = pure T.«br_table_impl» := rfl
 theorem program_rulesOf_670 : program.rulesOf 670 =
     [rule_inst_5450, rule_inst_5454] := rfl
+theorem program_term_677 : Interp.termOf program 677 = pure T.«asimd_mov_mod_imm_zero» := rfl
+theorem program_term_679 : Interp.termOf program 679 = pure T.«asimd_fp_mod_imm_from_u64» := rfl
+theorem program_term_681 : Interp.termOf program 681 = pure T.«fpu_load64» := rfl
+theorem program_rulesOf_681 : program.rulesOf 681 =
+    [rule_inst_5548] := rfl
 theorem program_term_686 : Interp.termOf program 686 = pure T.«lower» := rfl
 theorem program_rulesOf_686 : program.rulesOf 686 =
     [rule_lower_419, rule_lower_402, rule_lower_1444, rule_lower_1481, rule_lower_116, rule_lower_125, rule_lower_1442, rule_lower_1479, rule_lower_2779, rule_lower_120, rule_lower_128, rule_lower_165, rule_lower_1439, rule_lower_1476, rule_lower_2784, rule_lower_93, rule_lower_167, rule_lower_1437, rule_lower_1474, rule_lower_1501, rule_lower_1507, rule_lower_2789, rule_lower_3091, rule_lower_3155, rule_lower_90, rule_lower_169, rule_lower_1435, rule_lower_1472, rule_lower_1540, rule_lower_2152, rule_lower_2793, rule_lower_3097, rule_lower_3161, rule_lower_102, rule_lower_171, rule_lower_1408, rule_lower_1434, rule_lower_1471, rule_lower_1539, rule_lower_2158, rule_lower_2185, rule_lower_2798, rule_lower_2828, rule_lower_3008, rule_lower_3101, rule_lower_3165, rule_lower_98, rule_lower_190, rule_lower_437, rule_lower_609, rule_lower_810, rule_lower_861, rule_lower_1163, rule_lower_1222, rule_lower_1224, rule_lower_1226, rule_lower_1228, rule_lower_1406, rule_lower_1431, rule_lower_1468, rule_lower_1536, rule_lower_2120, rule_lower_2164, rule_lower_2191, rule_lower_2386, rule_lower_2404, rule_lower_2419, rule_lower_2435, rule_lower_2815, rule_lower_3018, rule_lower_3036, rule_lower_3056, rule_lower_3076, rule_lower_3126, rule_lower_3140, rule_lower_3190, rule_lower_3204, rule_lower_111, rule_lower_203, rule_lower_205, rule_lower_207, rule_lower_209, rule_lower_211, rule_lower_213, rule_lower_215, rule_lower_217, rule_lower_222, rule_lower_224, rule_lower_226, rule_lower_228, rule_lower_230, rule_lower_232, rule_lower_240, rule_lower_242, rule_lower_244, rule_lower_246, rule_lower_248, rule_lower_250, rule_lower_260, rule_lower_262, rule_lower_264, rule_lower_266, rule_lower_268, rule_lower_270, rule_lower_294, rule_lower_300, rule_lower_440, rule_lower_608, rule_lower_693, rule_lower_699, rule_lower_707, rule_lower_713, rule_lower_730, rule_lower_733, rule_lower_750, rule_lower_753, rule_lower_767, rule_lower_773, rule_lower_787, rule_lower_793, rule_lower_816, rule_lower_857, rule_lower_1056, rule_lower_1068, rule_lower_1116, rule_lower_1167, rule_lower_1236, rule_lower_1242, rule_lower_1248, rule_lower_1254, rule_lower_1266, rule_lower_1272, rule_lower_1281, rule_lower_1283, rule_lower_1401, rule_lower_1429, rule_lower_1466, rule_lower_1534, rule_lower_1704, rule_lower_1707, rule_lower_1803, rule_lower_1808, rule_lower_2138, rule_lower_2170, rule_lower_2197, rule_lower_2288, rule_lower_2328, rule_lower_2331, rule_lower_2334, rule_lower_2337, rule_lower_2340, rule_lower_2343, rule_lower_2346, rule_lower_2349, rule_lower_2352, rule_lower_2381, rule_lower_2400, rule_lower_2415, rule_lower_2431, rule_lower_2451, rule_lower_2466, rule_lower_2508, rule_lower_2580, rule_lower_2803, rule_lower_2822, rule_lower_2837, rule_lower_3014, rule_lower_3031, rule_lower_3051, rule_lower_3071, rule_lower_3110, rule_lower_3174, rule_lower_53, rule_lower_58, rule_lower_63, rule_lower_68, rule_lower_73, rule_lower_78, rule_lower_108, rule_lower_132, rule_lower_273, rule_lower_279, rule_lower_284, rule_lower_308, rule_lower_313, rule_lower_316, rule_lower_336, rule_lower_342, rule_lower_368, rule_lower_375, rule_lower_379, rule_lower_383, rule_lower_387, rule_lower_450, rule_lower_463, rule_lower_477, rule_lower_485, rule_lower_493, rule_lower_501, rule_lower_509, rule_lower_517, rule_lower_525, rule_lower_533, rule_lower_541, rule_lower_549, rule_lower_554, rule_lower_559, rule_lower_567, rule_lower_570, rule_lower_578, rule_lower_581, rule_lower_589, rule_lower_592, rule_lower_600, rule_lower_603, rule_lower_685, rule_lower_690, rule_lower_696, rule_lower_704, rule_lower_710, rule_lower_724, rule_lower_727, rule_lower_744, rule_lower_747, rule_lower_764, rule_lower_770, rule_lower_784, rule_lower_790, rule_lower_805, rule_lower_836, rule_lower_841, rule_lower_846, rule_lower_851, rule_lower_865, rule_lower_906, rule_lower_914, rule_lower_995, rule_lower_1000, rule_lower_1005, rule_lower_1010, rule_lower_1015, rule_lower_1020, rule_lower_1025, rule_lower_1030, rule_lower_1035, rule_lower_1040, rule_lower_1045, rule_lower_1050, rule_lower_1059, rule_lower_1071, rule_lower_1119, rule_lower_1145, rule_lower_1190, rule_lower_1204, rule_lower_1233, rule_lower_1239, rule_lower_1245, rule_lower_1251, rule_lower_1294, rule_lower_1300, rule_lower_1339, rule_lower_1359, rule_lower_1391, rule_lower_1424, rule_lower_1461, rule_lower_1528, rule_lower_1549, rule_lower_1553, rule_lower_1642, rule_lower_1646, rule_lower_1699, rule_lower_1720, rule_lower_1791, rule_lower_1797, rule_lower_1827, rule_lower_1857, rule_lower_1862, rule_lower_1916, rule_lower_1931, rule_lower_1937, rule_lower_1940, rule_lower_1951, rule_lower_1955, rule_lower_1958, rule_lower_1982, rule_lower_1986, rule_lower_1989, rule_lower_2000, rule_lower_2004, rule_lower_2016, rule_lower_2035, rule_lower_2038, rule_lower_2041, rule_lower_2044, rule_lower_2052, rule_lower_2074, rule_lower_2080, rule_lower_2086, rule_lower_2092, rule_lower_2099, rule_lower_2108, rule_lower_2113, rule_lower_2146, rule_lower_2176, rule_lower_2203, rule_lower_2237, rule_lower_2242, rule_lower_2262, rule_lower_2267, rule_lower_2280, rule_lower_2285, rule_lower_2301, rule_lower_2304, rule_lower_2307, rule_lower_2310, rule_lower_2316, rule_lower_2321, rule_lower_2357, rule_lower_2359, rule_lower_2361, rule_lower_2363, rule_lower_2365, rule_lower_2367, rule_lower_2369, rule_lower_2371, rule_lower_2373, rule_lower_2375, rule_lower_2377, rule_lower_2390, rule_lower_2395, rule_lower_2408, rule_lower_2423, rule_lower_2439, rule_lower_2446, rule_lower_2454, rule_lower_2461, rule_lower_2469, rule_lower_2476, rule_lower_2481, rule_lower_2486, rule_lower_2491, rule_lower_2496, rule_lower_2499, rule_lower_2502, rule_lower_2518, rule_lower_2529, rule_lower_2574, rule_lower_2587, rule_lower_2595, rule_lower_2604, rule_lower_2607, rule_lower_2610, rule_lower_2613, rule_lower_2619, rule_lower_2647, rule_lower_2650, rule_lower_2653, rule_lower_2656, rule_lower_2659, rule_lower_2662, rule_lower_2666, rule_lower_2672, rule_lower_2678, rule_lower_2684, rule_lower_2690, rule_lower_2696, rule_lower_2705, rule_lower_2709, rule_lower_2713, rule_lower_2717, rule_lower_2722, rule_lower_2726, rule_lower_2730, rule_lower_2735, rule_lower_2770, rule_lower_2773, rule_lower_2809, rule_lower_2818, rule_lower_2842, rule_lower_2849, rule_lower_2863, rule_lower_2887, rule_lower_2900, rule_lower_2913, rule_lower_2927, rule_lower_3022, rule_lower_3042, rule_lower_3062, rule_lower_3082, rule_lower_3217, rule_lower_3220, rule_lower_3225, rule_lower_3286, rule_lower_3292, rule_lower_dynamic_neon_81, rule_lower_dynamic_neon_87, rule_lower_86, rule_lower_319, rule_lower_359, rule_lower_390, rule_lower_434, rule_lower_472, rule_lower_482, rule_lower_490, rule_lower_498, rule_lower_506, rule_lower_514, rule_lower_522, rule_lower_530, rule_lower_538, rule_lower_546, rule_lower_564, rule_lower_575, rule_lower_586, rule_lower_597, rule_lower_718, rule_lower_721, rule_lower_738, rule_lower_741, rule_lower_758, rule_lower_761, rule_lower_778, rule_lower_781, rule_lower_831, rule_lower_876, rule_lower_956, rule_lower_1153, rule_lower_1197, rule_lower_1211, rule_lower_1289, rule_lower_1349, rule_lower_1387, rule_lower_1421, rule_lower_1458, rule_lower_1525, rule_lower_1545, rule_lower_1638, rule_lower_1736, rule_lower_1778, rule_lower_1844, rule_lower_1848, rule_lower_1946, rule_lower_1961, rule_lower_1995, rule_lower_2030, rule_lower_2179, rule_lower_2209, rule_lower_2294, rule_lower_2622, rule_lower_2742, rule_lower_dynamic_neon_43, rule_lower_dynamic_neon_57, rule_lower_dynamic_neon_71, rule_lower_dynamic_neon_92, rule_lower_dynamic_neon_97, rule_lower_137, rule_lower_322, rule_lower_826, rule_lower_924, rule_lower_1261, rule_lower_1329, rule_lower_1385, rule_lower_1419, rule_lower_1456, rule_lower_1523, rule_lower_1588, rule_lower_1661, rule_lower_1734, rule_lower_1772, rule_lower_1852, rule_lower_2215, rule_lower_2298, rule_lower_2625, rule_lower_2746, rule_lower_dynamic_neon_15, rule_lower_dynamic_neon_19, rule_lower_dynamic_neon_23, rule_lower_dynamic_neon_27, rule_lower_dynamic_neon_31, rule_lower_dynamic_neon_35, rule_lower_dynamic_neon_39, rule_lower_dynamic_neon_53, rule_lower_dynamic_neon_67, rule_lower_142, rule_lower_821, rule_lower_871, rule_lower_1320, rule_lower_1381, rule_lower_1452, rule_lower_1519, rule_lower_1583, rule_lower_1659, rule_lower_1729, rule_lower_1840, rule_lower_2628, rule_lower_2750, rule_lower_dynamic_neon_47, rule_lower_dynamic_neon_61, rule_lower_dynamic_neon_75, rule_lower_801, rule_lower_1315, rule_lower_1377, rule_lower_1415, rule_lower_1449, rule_lower_1516, rule_lower_1654, rule_lower_1695, rule_lower_2633, rule_lower_2754, rule_lower_dynamic_neon_3, rule_lower_dynamic_neon_11, rule_lower_1412, rule_lower_2638, rule_lower_2759, rule_lower_dynamic_neon_7, rule_lower_2643, rule_lower_2763] := rfl
@@ -2752,12 +2925,15 @@ theorem program_term_1182 : Interp.termOf program 1182 = pure T.«u64_wrapping_s
 theorem program_term_1199 : Interp.termOf program 1199 = pure T.«u64_is_odd» := rfl
 theorem program_term_1378 : Interp.termOf program 1378 = pure T.«u8_into_u32» := rfl
 theorem program_term_1382 : Interp.termOf program 1382 = pure T.«u8_into_u64» := rfl
+theorem program_term_1427 : Interp.termOf program 1427 = pure T.«u16_into_u32» := rfl
 theorem program_term_1431 : Interp.termOf program 1431 = pure T.«u16_into_u64» := rfl
 theorem program_term_1455 : Interp.termOf program 1455 = pure T.«i32_into_i64» := rfl
+theorem program_term_1478 : Interp.termOf program 1478 = pure T.«u16_from_u32» := rfl
 theorem program_term_1485 : Interp.termOf program 1485 = pure T.«u32_into_u64» := rfl
 theorem program_term_1508 : Interp.termOf program 1508 = pure T.«i32_from_i64» := rfl
 theorem program_term_1514 : Interp.termOf program 1514 = pure T.«i64_cast_unsigned» := rfl
 theorem program_term_1527 : Interp.termOf program 1527 = pure T.«u8_from_u64» := rfl
+theorem program_term_1541 : Interp.termOf program 1541 = pure T.«u32_from_u64» := rfl
 theorem program_term_1614 : Interp.termOf program 1614 = pure T.«value_array_2» := rfl
 theorem program_term_1615 : Interp.termOf program 1615 = pure T.«value_array_3» := rfl
 theorem program_term_1616 : Interp.termOf program 1616 = pure T.«block_array_2» := rfl
@@ -2817,11 +2993,17 @@ theorem program_term_1860 : Interp.termOf program 1860 = pure T.«MInst.LoadAcqu
 theorem program_term_1861 : Interp.termOf program 1861 = pure T.«MInst.StoreRelease» := rfl
 theorem program_term_1862 : Interp.termOf program 1862 = pure T.«MInst.Fence» := rfl
 theorem program_term_1874 : Interp.termOf program 1874 = pure T.«MInst.FpuCmp» := rfl
+theorem program_term_1877 : Interp.termOf program 1877 = pure T.«MInst.FpuLoad32» := rfl
+theorem program_term_1878 : Interp.termOf program 1878 = pure T.«MInst.FpuStore32» := rfl
+theorem program_term_1879 : Interp.termOf program 1879 = pure T.«MInst.FpuLoad64» := rfl
+theorem program_term_1880 : Interp.termOf program 1880 = pure T.«MInst.FpuStore64» := rfl
 theorem program_term_1889 : Interp.termOf program 1889 = pure T.«MInst.FpuCSel16» := rfl
 theorem program_term_1890 : Interp.termOf program 1890 = pure T.«MInst.FpuCSel32» := rfl
 theorem program_term_1891 : Interp.termOf program 1891 = pure T.«MInst.FpuCSel64» := rfl
 theorem program_term_1893 : Interp.termOf program 1893 = pure T.«MInst.MovToFpu» := rfl
+theorem program_term_1894 : Interp.termOf program 1894 = pure T.«MInst.FpuMoveFPImm» := rfl
 theorem program_term_1896 : Interp.termOf program 1896 = pure T.«MInst.MovFromVec» := rfl
+theorem program_term_1901 : Interp.termOf program 1901 = pure T.«MInst.VecDupImm» := rfl
 theorem program_term_1911 : Interp.termOf program 1911 = pure T.«MInst.VecRRR» := rfl
 theorem program_term_1914 : Interp.termOf program 1914 = pure T.«MInst.VecMisc» := rfl
 theorem program_term_1915 : Interp.termOf program 1915 = pure T.«MInst.VecLanes» := rfl
@@ -2885,6 +3067,7 @@ theorem program_term_2014 : Interp.termOf program 2014 = pure T.«AMode.RegScale
 theorem program_term_2015 : Interp.termOf program 2015 = pure T.«AMode.RegExtended» := rfl
 theorem program_term_2016 : Interp.termOf program 2016 = pure T.«AMode.Unscaled» := rfl
 theorem program_term_2017 : Interp.termOf program 2017 = pure T.«AMode.UnsignedOffset» := rfl
+theorem program_term_2022 : Interp.termOf program 2022 = pure T.«AMode.Const» := rfl
 theorem program_term_2024 : Interp.termOf program 2024 = pure T.«AMode.SlotOffset» := rfl
 theorem program_term_2028 : Interp.termOf program 2028 = pure T.«OperandSize.Size32» := rfl
 theorem program_term_2029 : Interp.termOf program 2029 = pure T.«OperandSize.Size64» := rfl
@@ -3004,6 +3187,8 @@ theorem program_term_2331 : Interp.termOf program 2331 = pure T.«Opcode.StackAd
 theorem program_term_2333 : Interp.termOf program 2333 = pure T.«Opcode.SymbolValue» := rfl
 theorem program_term_2334 : Interp.termOf program 2334 = pure T.«Opcode.TlsValue» := rfl
 theorem program_term_2341 : Interp.termOf program 2341 = pure T.«Opcode.Iconst» := rfl
+theorem program_term_2343 : Interp.termOf program 2343 = pure T.«Opcode.F32const» := rfl
+theorem program_term_2344 : Interp.termOf program 2344 = pure T.«Opcode.F64const» := rfl
 theorem program_term_2348 : Interp.termOf program 2348 = pure T.«Opcode.Nop» := rfl
 theorem program_term_2349 : Interp.termOf program 2349 = pure T.«Opcode.Select» := rfl
 theorem program_term_2356 : Interp.termOf program 2356 = pure T.«Opcode.Icmp» := rfl
@@ -3035,6 +3220,7 @@ theorem program_term_2393 : Interp.termOf program 2393 = pure T.«Opcode.Ctz» :
 theorem program_term_2394 : Interp.termOf program 2394 = pure T.«Opcode.Bswap» := rfl
 theorem program_term_2395 : Interp.termOf program 2395 = pure T.«Opcode.Popcnt» := rfl
 theorem program_term_2396 : Interp.termOf program 2396 = pure T.«Opcode.Fcmp» := rfl
+theorem program_term_2412 : Interp.termOf program 2412 = pure T.«Opcode.Bitcast» := rfl
 theorem program_term_2414 : Interp.termOf program 2414 = pure T.«Opcode.Bmask» := rfl
 theorem program_term_2415 : Interp.termOf program 2415 = pure T.«Opcode.Ireduce» := rfl
 theorem program_term_2425 : Interp.termOf program 2425 = pure T.«Opcode.Uextend» := rfl
@@ -3066,6 +3252,8 @@ theorem program_term_2471 : Interp.termOf program 2471 = pure T.«InstructionDat
 theorem program_term_2473 : Interp.termOf program 2473 = pure T.«InstructionData.Trap» := rfl
 theorem program_term_2476 : Interp.termOf program 2476 = pure T.«InstructionData.Unary» := rfl
 theorem program_term_2478 : Interp.termOf program 2478 = pure T.«InstructionData.UnaryGlobalValue» := rfl
+theorem program_term_2480 : Interp.termOf program 2480 = pure T.«InstructionData.UnaryIeee32» := rfl
+theorem program_term_2481 : Interp.termOf program 2481 = pure T.«InstructionData.UnaryIeee64» := rfl
 theorem program_term_2482 : Interp.termOf program 2482 = pure T.«InstructionData.UnaryImm» := rfl
 
 theorem program_termByName_lower : program.termByName? "lower" = some T.lower := by
@@ -3078,20 +3266,26 @@ theorem data_program : Data program where
   t87 := program_term_87
   t90 := program_term_90
   t93 := program_term_93
+  t102 := program_term_102
   t103 := program_term_103
   t110 := program_term_110
   t111 := program_term_111
   t113 := program_term_113
+  t115 := program_term_115
+  t116 := program_term_116
   t118 := program_term_118
   t119 := program_term_119
   t120 := program_term_120
   t126 := program_term_126
   t128 := program_term_128
+  t129 := program_term_129
   t132 := program_term_132
   t133 := program_term_133
   t141 := program_term_141
   t144 := program_term_144
   t145 := program_term_145
+  t150 := program_term_150
+  t151 := program_term_151
   t152 := program_term_152
   t153 := program_term_153
   t156 := program_term_156
@@ -3106,6 +3300,8 @@ theorem data_program : Data program where
   t170 := program_term_170
   t172 := program_term_172
   r172 := program_rulesOf_172
+  t173 := program_term_173
+  r173 := program_rulesOf_173
   t174 := program_term_174
   t175 := program_term_175
   t178 := program_term_178
@@ -3129,6 +3325,7 @@ theorem data_program : Data program where
   t222 := program_term_222
   t235 := program_term_235
   t236 := program_term_236
+  t237 := program_term_237
   t242 := program_term_242
   r242 := program_rulesOf_242
   t243 := program_term_243
@@ -3215,6 +3412,8 @@ theorem data_program : Data program where
   r370 := program_rulesOf_370
   t371 := program_term_371
   r371 := program_rulesOf_371
+  t375 := program_term_375
+  r375 := program_rulesOf_375
   t376 := program_term_376
   r376 := program_rulesOf_376
   t377 := program_term_377
@@ -3251,6 +3450,8 @@ theorem data_program : Data program where
   r409 := program_rulesOf_409
   t410 := program_term_410
   r410 := program_rulesOf_410
+  t411 := program_term_411
+  r411 := program_rulesOf_411
   t414 := program_term_414
   r414 := program_rulesOf_414
   t417 := program_term_417
@@ -3362,6 +3563,10 @@ theorem data_program : Data program where
   r534 := program_rulesOf_534
   t535 := program_term_535
   r535 := program_rulesOf_535
+  t537 := program_term_537
+  r537 := program_rulesOf_537
+  t538 := program_term_538
+  r538 := program_rulesOf_538
   t541 := program_term_541
   r541 := program_rulesOf_541
   t542 := program_term_542
@@ -3370,6 +3575,10 @@ theorem data_program : Data program where
   r543 := program_rulesOf_543
   t544 := program_term_544
   r544 := program_rulesOf_544
+  t546 := program_term_546
+  r546 := program_rulesOf_546
+  t547 := program_term_547
+  r547 := program_rulesOf_547
   t553 := program_term_553
   r553 := program_rulesOf_553
   t554 := program_term_554
@@ -3415,6 +3624,13 @@ theorem data_program : Data program where
   t580 := program_term_580
   t581 := program_term_581
   t582 := program_term_582
+  t585 := program_term_585
+  r585 := program_rulesOf_585
+  t586 := program_term_586
+  r586 := program_rulesOf_586
+  t587 := program_term_587
+  r587 := program_rulesOf_587
+  t588 := program_term_588
   t592 := program_term_592
   t593 := program_term_593
   t612 := program_term_612
@@ -3477,6 +3693,10 @@ theorem data_program : Data program where
   r669 := program_rulesOf_669
   t670 := program_term_670
   r670 := program_rulesOf_670
+  t677 := program_term_677
+  t679 := program_term_679
+  t681 := program_term_681
+  r681 := program_rulesOf_681
   t686 := program_term_686
   r686 := program_rulesOf_686
   t687 := program_term_687
@@ -3515,12 +3735,15 @@ theorem data_program : Data program where
   t1199 := program_term_1199
   t1378 := program_term_1378
   t1382 := program_term_1382
+  t1427 := program_term_1427
   t1431 := program_term_1431
   t1455 := program_term_1455
+  t1478 := program_term_1478
   t1485 := program_term_1485
   t1508 := program_term_1508
   t1514 := program_term_1514
   t1527 := program_term_1527
+  t1541 := program_term_1541
   t1614 := program_term_1614
   t1615 := program_term_1615
   t1616 := program_term_1616
@@ -3580,11 +3803,17 @@ theorem data_program : Data program where
   t1861 := program_term_1861
   t1862 := program_term_1862
   t1874 := program_term_1874
+  t1877 := program_term_1877
+  t1878 := program_term_1878
+  t1879 := program_term_1879
+  t1880 := program_term_1880
   t1889 := program_term_1889
   t1890 := program_term_1890
   t1891 := program_term_1891
   t1893 := program_term_1893
+  t1894 := program_term_1894
   t1896 := program_term_1896
+  t1901 := program_term_1901
   t1911 := program_term_1911
   t1914 := program_term_1914
   t1915 := program_term_1915
@@ -3648,6 +3877,7 @@ theorem data_program : Data program where
   t2015 := program_term_2015
   t2016 := program_term_2016
   t2017 := program_term_2017
+  t2022 := program_term_2022
   t2024 := program_term_2024
   t2028 := program_term_2028
   t2029 := program_term_2029
@@ -3767,6 +3997,8 @@ theorem data_program : Data program where
   t2333 := program_term_2333
   t2334 := program_term_2334
   t2341 := program_term_2341
+  t2343 := program_term_2343
+  t2344 := program_term_2344
   t2348 := program_term_2348
   t2349 := program_term_2349
   t2356 := program_term_2356
@@ -3798,6 +4030,7 @@ theorem data_program : Data program where
   t2394 := program_term_2394
   t2395 := program_term_2395
   t2396 := program_term_2396
+  t2412 := program_term_2412
   t2414 := program_term_2414
   t2415 := program_term_2415
   t2425 := program_term_2425
@@ -3829,6 +4062,8 @@ theorem data_program : Data program where
   t2473 := program_term_2473
   t2476 := program_term_2476
   t2478 := program_term_2478
+  t2480 := program_term_2480
+  t2481 := program_term_2481
   t2482 := program_term_2482
   lower := program_termByName_lower
 
@@ -3853,6 +4088,8 @@ theorem data_program : Data program where
 @[isel_data] theorem normInt_1_1 : normInt 1 (1) = 1 := rfl
 @[isel_data] theorem normInt_4_1 : normInt 4 (1) = 1 := rfl
 @[isel_data] theorem normInt_9_0 : normInt 9 (0) = 0 := rfl
+@[isel_data] theorem normInt_2_0 : normInt 2 (0) = 0 := rfl
+@[isel_data] theorem normInt_3_0 : normInt 3 (0) = 0 := rfl
 @[isel_data] theorem normInt_4_63 : normInt 4 (63) = 63 := rfl
 @[isel_data] theorem normInt_4_255 : normInt 4 (255) = 255 := rfl
 @[isel_data] theorem normInt_6_1 : normInt 6 (1) = 1 := rfl

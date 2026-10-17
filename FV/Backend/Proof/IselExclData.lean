@@ -159,11 +159,24 @@ theorem instNames_store_ex {c : Clif.Inst} (h : (instNames c).2 = "Store") :
     | (rename_i op _ _; cases op <;> simp at h)
     | simp at h
 
+/-- The opcodes `opShape` describes are not the float constants' (59, 60). -/
+theorem opShape_ne_fconst {ko : Nat} {sh : List AV} (h : opShape ko = some sh) :
+    ko ≠ 59 ∧ ko ≠ 60 := by
+  unfold opShape at h
+  split at h
+  · rename_i hk
+    simp only [Bool.or_eq_true, beq_iff_eq] at hk
+    rcases hk with rfl | rfl <;> decide
+  · split at h
+    · rename_i _ hk
+      rw [beq_iff_eq.mp hk]; decide
+    · cases h
+
 /-- **The fields `opShape` promises.** -/
 theorem instData_fields {f : Clif.Function} {ctx : Ctx} {c : Clif.Inst} {kf ko : Nat}
     {fs : List V} (h : instData f c = .ok (.data 152 kf (.data 151 ko [] :: fs)))
     {sh : List AV} (hsh : opShape ko = some sh) : AV.HoldsAll f ctx sh fs := by
-  have ho := (instData_inv_names h).2
+  have ho := (instData_inv_names h (.inr (opShape_ne_fconst hsh))).2
   unfold opShape at hsh
   split at hsh
   · rename_i hk
