@@ -1,5 +1,6 @@
 import FV.Opt.Proof.RuleShiftsConstSem
 import FV.Opt.Proof.RuleInfraIcmp
+import FV.Opt.Proof.RuleIntRetry
 
 set_option linter.unusedSimpArgs false
 set_option maxHeartbeats 4000000
@@ -11,7 +12,9 @@ open Isle Isle.Opt Clif
 attribute [local implicit_reducible] Ty.width
 
 -- Keep all three types symbolic while evaluating the original guards. In
--- particular the constant presentation excludes i128 only for the two amounts.
+-- particular the constant presentation excludes i128 only for the two amounts. The made
+-- constant's type is split on `isInt` on demand (`RuleIntRetry.lean`): at a float type
+-- `iconst_u` has no rule.
 set_option hygiene false in
 local macro "shifts_const_prefix " r:ident : tactic => `(tactic| (
   rule_intro $r
@@ -32,7 +35,8 @@ local macro "shifts_const_prefix " r:ident : tactic => `(tactic| (
   all_goals subst_vars
   all_goals opt_split_i128
   all_goals try contradiction
-  all_goals rule_rhs_w [Interp.matchAll.eq_1, Interp.matchAll.eq_2]
+  all_goals opt_int_retry
+    rule_rhs_w [Interp.matchAll.eq_1, Interp.matchAll.eq_2, tyInt_ofClif_notInt]
   all_goals opt_some_subst
   all_goals try opt_den_subst
   all_goals (apply GraphOk.make_val hG (by opt_P); opt_node_x)

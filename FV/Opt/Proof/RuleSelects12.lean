@@ -1,5 +1,6 @@
 import FV.Opt.Proof.RuleInfraIcmp
 import FV.Opt.Proof.RuleInfraConst
+import FV.Opt.Proof.RuleIntSplit
 
 set_option linter.unusedSimpArgs false
 
@@ -54,15 +55,17 @@ theorem selects_eq_202 {v w : Nat} (x : BitVec v) (z y k : BitVec w) :
     simp only [Sem.select, hx, Bool.false_eq_true, ite_false, ite_true]
 
 -- Typed constant constructors have an internal optional if-let. Resolve it
--- before continuing to the `typeOf` reads of the outer equality constructor.
+-- before continuing to the `typeOf` reads of the outer equality constructor. The
+-- constants' type is split on `isInt` first (`RuleIntSplit.lean`): at a float type
+-- `iconst_u` has no rule.
 set_option hygiene false in
 macro "selects_compare_rhs" : tactic => `(tactic| (
-  opt_eval hev []
+  opt_eval hev [tyInt_ofClif_notInt]
   repeat' ((first | opt_split_typeof hev | split at hev) <;>
     (try (rename_i hq; opt_split_ite hq <;>
       (try simp only [Option.some.injEq, reduceCtorEq, Bool.false_eq_true,
         ite_false, ↓reduceIte] at hq) <;> (try subst hq))) <;>
-    try opt_eval hev [])
+    try opt_eval hev [tyInt_ofClif_notInt])
   all_goals (try (simp only [reduceCtorEq] at hev; done))
   all_goals (try simp only [Option.map_eq_some_iff, Option.map_eq_none_iff] at *)
   all_goals opt_destruct
@@ -94,6 +97,7 @@ theorem ok_rule_selects_199 {p : Isle.Program} (hd : Data p) : RuleOk p rule_sel
   rule_lhs_g hG
   all_goals rule_no_iflets
   all_goals opt_split_i128
+  all_goals opt_split_int
   all_goals selects_compare_rhs
   all_goals opt_some_subst
   all_goals (try opt_den_subst)
@@ -108,6 +112,7 @@ theorem ok_rule_selects_200 {p : Isle.Program} (hd : Data p) : RuleOk p rule_sel
   rule_lhs_g hG
   all_goals rule_no_iflets
   all_goals opt_split_i128
+  all_goals opt_split_int
   all_goals selects_compare_rhs
   all_goals opt_some_subst
   all_goals (try opt_den_subst)
@@ -122,6 +127,7 @@ theorem ok_rule_selects_201 {p : Isle.Program} (hd : Data p) : RuleOk p rule_sel
   rule_lhs_g hG
   all_goals rule_no_iflets
   all_goals opt_split_i128
+  all_goals opt_split_int
   all_goals selects_compare_rhs
   all_goals opt_some_subst
   all_goals (try opt_den_subst)
@@ -136,6 +142,7 @@ theorem ok_rule_selects_202 {p : Isle.Program} (hd : Data p) : RuleOk p rule_sel
   rule_lhs_g hG
   all_goals rule_no_iflets
   all_goals opt_split_i128
+  all_goals opt_split_int
   all_goals selects_compare_rhs
   all_goals opt_some_subst
   all_goals (try opt_den_subst)
