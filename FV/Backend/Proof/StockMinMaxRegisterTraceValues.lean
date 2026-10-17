@@ -9,16 +9,17 @@ private theorem operand_of_value {ty : Clif.Ty} (width : ty.width = 32 ∨ ty.wi
     {u : BitVec ty.width} {A : CV} (sg : Bool) (held : VHolds ⟨ty,u⟩ A) : DivOpnd sg u A := by
   cases ty <;> simp only [Clif.Ty.width] at width
   all_goals try (omega)
-  · change BitVec 32 at u
-    change A.setWidth 32 = u at held
-    have signed : u.signExtend 32 = u := BitVec.signExtend_eq u
-    have unsigned : u.setWidth 32 = u := BitVec.setWidth_eq u
-    change (lo64 A).setWidth 32 = (if sg then u.signExtend 32 else u.setWidth 32)
-    rw [signed,unsigned,ite_self]
-    change (A.setWidth 64).setWidth 32 = u
-    rw [BitVec.setWidth_setWidth_of_le A (by decide)]
-    exact held
-  · exact divOpnd_of_vholds64 rfl held
+  all_goals first
+    | exact divOpnd_of_vholds64 rfl held
+    | change BitVec 32 at u
+      change A.setWidth 32 = u at held
+      have signed : u.signExtend 32 = u := BitVec.signExtend_eq u
+      have unsigned : u.setWidth 32 = u := BitVec.setWidth_eq u
+      change (lo64 A).setWidth 32 = (if sg then u.signExtend 32 else u.setWidth 32)
+      rw [signed,unsigned,ite_self]
+      change (A.setWidth 64).setWidth 32 = u
+      rw [BitVec.setWidth_setWidth_of_le A (by decide)]
+      exact held
 /-- Actual register-emitter flags and659 selection compose into the selected
 original32/64 source value through final aliases. Producer flag semantics,
 requests, allocation and the outside-result register frame are derived. The real emitted-rule trace and consumer trace need not be identical; the
