@@ -382,14 +382,18 @@ theorem constant_f64_ok (hR : Refines F isem) {N : Nat} (hN : 300 ≤ N) {i : In
     apply BitVec.eq_of_toNat_eq
     rw [fpModImm64_val hmm, BitVec.toNat_ofNat]
   · -- a pattern that fits 32 bits: `constant_f32`
-    obtain ⟨⟨hj0, hj⟩, rfl⟩ :=
+    obtain ⟨⟨hj0, hj⟩, hfs⟩ :=
       (ext_u32_from_u64_iff ctx _ _ _).mp ‹externExtract ctx T.u32_from_u64 _ _ = _›
+    simp only [List.cons.injEq, and_true] at hfs
+    subst hfs
     have h1 := ‹ApplyInternal _ _ _ _ 27 586 _ _ _ _›
     have h32 := constant_f32_ok hp' hc hR (by omega) hj0 hj h1
     exact h32.widen (by omega)
   · -- low 32 bits clear: `fmov d, x` of the `imm` sequence
-    obtain ⟨hlow, rfl⟩ :=
+    obtain ⟨hlow, hfs⟩ :=
       (ext_u64_low32_bits_unset_iff ctx _ _ _).mp ‹externExtract ctx T.u64_low32_bits_unset _ _ = _›
+    simp only [List.cons.injEq, and_true] at hfs
+    subst hfs
     have h1 := ‹ApplyInternal _ _ _ _ 27 553 _ _ _ _›
     obtain ⟨ms, d1, rfl, hsh, hrun⟩ :=
       imm_ok_ai hp' hc hR (.inr (.inr (.inr rfl))) (.inr rfl) (by omega) h1
@@ -481,7 +485,7 @@ theorem lowerInstOk_fconst {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} 
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     have := imm.isLt
     have h2 : 2 ^ ty.width ≤ 2 ^ 128 := Nat.pow_le_pow_right (by decide) hw
-    rw [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt this]
+    simp only [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (show imm.toNat < 2 ^ 128 by omega)]
 
 /-! ## The two roots -/
 
@@ -506,11 +510,13 @@ theorem f32const_okT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem 
   have hp' := hp
   isel_inv' hp [] at hmatch heval
   obtain ⟨rfl, rfl⟩ := fconst_data_eq hi hd ‹ctx.insts[ii]? = some _› ‹V.data 152 33 _ = _›
-  obtain rfl := (ext_u32_from_ieee32_iff ctx _ _ _).mp ‹externExtract ctx T.u32_from_ieee32 _ _ = _›
+  have hfs := (ext_u32_from_ieee32_iff ctx _ _ _).mp ‹externExtract ctx T.u32_from_ieee32 _ _ = _›
+  simp only [List.cons.injEq, and_true] at hfs
+  subst hfs
   have h1 := ‹ApplyInternal _ _ _ _ 27 586 _ _ _ _›
   have hlt := imm.isLt
   obtain ⟨ms, d, rfl, hsh, hrun⟩ :=
-    constant_f32_ok hp' hco hR (by omega) (by omega) (by simpa using hlt) h1
+    constant_f32_ok hp' hco hR (by omega) (by omega) (by have h := hlt; simp at h; omega) h1
   have h2 := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
   obtain ⟨rfl, hs2⟩ := output_reg_ok hp' hco (by omega) h2
   try simp only at hs2
@@ -543,11 +549,13 @@ theorem f64const_okT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem 
   have hp' := hp
   isel_inv' hp [] at hmatch heval
   obtain ⟨rfl, rfl⟩ := fconst_data_eq hi hd ‹ctx.insts[ii]? = some _› ‹V.data 152 34 _ = _›
-  obtain rfl := (ext_u64_from_ieee64_iff ctx _ _ _).mp ‹externExtract ctx T.u64_from_ieee64 _ _ = _›
+  have hfs := (ext_u64_from_ieee64_iff ctx _ _ _).mp ‹externExtract ctx T.u64_from_ieee64 _ _ = _›
+  simp only [List.cons.injEq, and_true] at hfs
+  subst hfs
   have h1 := ‹ApplyInternal _ _ _ _ 27 587 _ _ _ _›
   have hlt := imm.isLt
   obtain ⟨ms, d, rfl, hsh, hrun⟩ :=
-    constant_f64_ok hp' hco hR (by omega) (by omega) (by simpa using hlt) h1
+    constant_f64_ok hp' hco hR (by omega) (by omega) (by have h := hlt; simp at h; omega) h1
   have h2 := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
   obtain ⟨rfl, hs2⟩ := output_reg_ok hp' hco (by omega) h2
   try simp only at hs2
