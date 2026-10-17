@@ -3,6 +3,7 @@ import FV.E2E.LegalOptX
 import FV.E2E.DeadCleanupUnwindFinal
 import FV.E2E.FinalUnwind
 import FV.Opt.Proof.PipelineU
+import FV.Opt.Proof.LegalRustX
 
 /-!
 # The end-to-end theorem with unwinding over the mid-end (S10f, #233)
