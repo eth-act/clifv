@@ -125,7 +125,9 @@ theorem callArgs_em (st : LState)
   split
   · exact ha
   · unfold stackArgStore
-    split <;> exact emSince_push ha rfl rfl
+    split
+    · exact emSince_push ha (by split <;> rfl) rfl
+    · exact emSince_push ha rfl rfl
 
 /-- **Every extern constructor** emits only instructions with the emission conditions and no
 branch targets, and `emit`'s instruction. -/
