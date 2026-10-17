@@ -1860,13 +1860,6 @@ theorem EnvOk.two {env : Env} {C : Ctx} {p p' : Program} (hE : EnvOk env C p p')
   keep := hE.keep.bounded
   ind h := ⟨(hE.ind h).1, fun _ _ _ _ _ _ _ d _ _ => callIndRel_prefix (hE.ind h).2 d⟩
 
-theorem getMany_congr {fr fr' : Frame} : ∀ {xs : List ValueId}, (∀ x ∈ xs, fr'.regs x = fr.regs x) →
-    fr'.getMany xs = fr.getMany xs
-  | [], _ => rfl
-  | x :: xs, h => by
-    simp only [Frame.getMany, Frame.get, h x (List.mem_cons_self ..),
-      getMany_congr (fun y hy => h y (List.mem_cons_of_mem _ hy))]
-
 /-- **An indirect call of an extern** (`callInd`): source and target run the same statement on
 the same values (every operand and result is plain), with the same call-site signature; the
 callee address holds no function of either program (the source by `IndExt`, the target by
