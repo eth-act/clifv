@@ -401,7 +401,7 @@ theorem lines_chunk {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
       | (obtain ⟨rfl, rfl⟩ := h; exact plain_chunk (plain_ins _ _ rfl))
       | cases h
   case args | rets => cases h
-  case load | store =>
+  case load | store | fpuLoad | fpuStore =>
     simp only [bind, Except.bind] at h
     split at h
     · cases h
@@ -431,6 +431,14 @@ theorem lines_chunk {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
       obtain ⟨rfl, rfl⟩ := h
       refine plain_chunk ?_
       simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?]
+  case vecDupImm =>
+    split at h
+    · cases h
+    · simp only [Except.ok.injEq, Prod.mk.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      first
+        | exact plain_chunk (plain_ins _ _ rfl)
+        | (refine plain_chunk ?_; simp [Plain, lineDef, Line.labelsUsed, Insn.pcRelSpec?])
   case jump =>
     obtain ⟨rfl, rfl⟩ := h
     refine chunk_same (by simp [lineDef]) fun x hx => ?_

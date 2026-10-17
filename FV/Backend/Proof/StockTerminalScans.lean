@@ -21,6 +21,10 @@ theorem stock_buildCtx_terminal_unsunk {f : Clif.Function} {ctx : Ctx}
   | ok result =>
     rcases result with ⟨original, ranges, before⟩
     simp only [legacy, bind, Except.bind] at build
+    by_cases hc : (original.valTy.toList.any fun o => o.any (·.valClass != .int)) = true
+    · simp only [hc, ↓reduceIte] at build
+      simp [throw, throwThe, MonadExceptOf.throw] at build
+    simp only [hc, Bool.false_eq_true, ↓reduceIte, pure, Except.pure] at build
     cases requestRun : allocationRequests f ranges with
     | error e => simp only [requestRun, bind, Except.bind] at build; cases build
     | ok requests =>
