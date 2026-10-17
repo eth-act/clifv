@@ -10,8 +10,11 @@ name: Full gate
 on:
   push:
     branches: [main, 'ci-proto/**']  # PROTOTYPE-ONLY
+  # PR check: only the modules the PR changes (and their importers) build, on the baseline of the
+  # newest main build; docs-only PRs skip it
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+    paths-ignore: ['docs/**', '**/*.md']
   schedule:
     # nightly from scratch (no baseline): checks the incremental runs' cache reuse
     - cron: '17 1 * * *'
