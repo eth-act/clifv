@@ -49,7 +49,9 @@ private theorem absent (p : Case) (key : Nat) (present : key = 7 ∨ key = 31 �
     (built p).1.defInst? key = none := by
   rcases present with rfl | rfl | rfl | rfl
   all_goals rcases p with ⟨cty,ty,extended,hc,ht,ci,ti⟩
-  all_goals cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht ci ti <;> rfl
+  all_goals cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht ci ti
+  all_goals dsimp only [built,Case.cty,Case.ty,Case.extended,index,conditionKey]
+  all_goals decide +kernel +revert
 private theorem typed (p : Case) (key : Nat) (present : key = 7 ∨ key = 31 ∨ key = 63 ∨ key = 95 ∨ key = 100) :
     (built p).1.valueType? key = some (.int (if key = 100 then 8 else if key = 7 ∨ key = 31 then p.cty.width else p.ty.width)) := by
   rcases present with rfl | rfl | rfl | rfl | rfl
