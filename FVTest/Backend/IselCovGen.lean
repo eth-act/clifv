@@ -6,7 +6,7 @@ import FV.Backend.Proof.IselCovFns
 Untrusted: computes, by a fixpoint of the disjunctive abstract interpreter (`aRule`, `AW`) over
 the exported ISLE rules, a summary table for every internal term reachable from the closure roots
 of `lower` and from `lower_branch`, and writes `IselCovTab.lean`: the table as Lean literals and
-the `native_decide` checks (`chkTab` and the root checks) the proofs rely on.
+the leaf-wise `decide +kernel` checks (`chkTab` and the root checks) the proofs rely on.
 
 Regenerate (from the repository root, after `lake build FV.Backend.Proof.IselCovFns`):
 
@@ -201,7 +201,7 @@ end Gen
 namespace Gen
 open Backend.Proof.Cov
 
-/-- Entries per chunk of the table (one definition and one `native_decide` per chunk). -/
+/-- Entries per chunk of the table (one definition and one leaf-wise kernel proof per chunk). -/
 def chunk : Nat := 88
 
 def header : String := "import FV.Backend.Proof.IselCovFns
@@ -218,6 +218,10 @@ calls of the closure roots of `lower` and of `lower_branch`. `covTab_ok`: every 
 entry checks (`chkTab`); `covStmt_ok`/`covStmtTop_ok`/`covTerm_ok`/`covBranch_ok`: the roots
 check (`aRule`). All are decided once over the exported rule data.
 -/
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
 
 namespace Backend.Proof.Cov
 
@@ -236,24 +240,40 @@ def render (tab : Tab) : String := Id.run do
     " ++ ".intercalate ((List.range n).map (s!"covTab{·}")) ++ "\n\n"
   out := out ++ "/-- `chkTab`'s test of one entry. -/\nabbrev covEntryOk (e : TermId × List AW × AW) : Bool :=\n  (program.rulesOf e.1).all (aRule program covTab aext actor apre aOracle e.2.1 e.2.2)\n\n"
   for k in [0:n] do
-    out := out ++ s!"theorem covTab{k}_ok : (covTab{k}).all covEntryOk = true := by native_decide\n\n"
+    out := out ++ s!"theorem covTab{k}_ok : (covTab{k}).all covEntryOk = true := by\n  simp only [covTab{k}, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]\n  repeat' apply And.intro\n  all_goals decide +kernel\n\n"
   out := out ++ "/-- **Every rule of every entry checks.** -/\ntheorem covTab_ok : chkTab program covTab aext actor apre aOracle = true := by\n  unfold chkTab\n  show (covTab).all covEntryOk = true\n  simp only [covTab, List.all_append, " ++
     ", ".intercalate ((List.range n).map (s!"covTab{·}_ok")) ++ ", Bool.and_self]\n\n"
   out := out ++ "/-- The closure roots of `lower` other than `nop`'s rule 587 check with int-vreg results. -/
 theorem covStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id || r.id == 587 ||
-    aRule program covTab aext actor apre aOracle [.xv .inst] (.flat 1 true) r) = true := by native_decide
+    aRule program covTab aext actor apre aOracle [.xv .inst] (.flat 1 true) r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The closure roots of `lower` check with any result. -/
 theorem covStmtTop_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
-    aRule program covTab aext actor apre aOracle [.xv .inst] AW.top r) = true := by native_decide
+    aRule program covTab aext actor apre aOracle [.xv .inst] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `return`, 1037 `trap`) check. -/
 theorem covTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    aRule program covTab aext actor apre aOracle [.c0] AW.top r) = true := by native_decide
+    aRule program covTab aext actor apre aOracle [.c0] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- Every rule of `lower_branch` checks. -/
 theorem covBranch_ok : (program.rulesOf TId.lower_branch).all
-    (aRule program covTab aext actor apre aOracle [.c0, .c0] AW.top) = true := by native_decide
+    (aRule program covTab aext actor apre aOracle [.c0, .c0] AW.top) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 end Backend.Proof.Cov
 "

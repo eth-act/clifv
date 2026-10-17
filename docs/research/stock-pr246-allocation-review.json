@@ -1,0 +1,43 @@
+{
+  "utc": "2026-10-16T16:20:29.310655+00:00",
+  "pr": 246,
+  "commit": "44abfd79cbe4cda5ed868054b7f9e166152cf709",
+  "review_kind": "source/interface review; NOT a replacement for pending kernel/runtime/full gates",
+  "sources": {
+    "FV/Backend/RegallocPerEdge.lean": "24d3704d6b5c4b66d767fdd3a0e0f93ee76e08c0c119a07f8630a661a42f542e",
+    "FV/Backend/RegallocPerEdgeDriver.lean": "bc0a31338f178bb80f42cf3c17a90b776b752888cdce6bfaf41ad998c8bcde0c",
+    "FV/Backend/RegallocPerEdgeSpill.lean": "2137ff33cdc2890e9e325c99863e6e2fdae539adaf1ec973cc7d0c80bcdecaec",
+    "FV/Backend/RegallocPerEdgePrepareCheck.lean": "40014ca021035cac7712acd0b289aa6a9dd8f6f05a108d7ee4a05745affa732f",
+    "FV/Backend/Proof/PerEdgeAllocDriverSound.lean": "504cf3ed1bcc899c43b7de1b438b024411c952031d1efa5afd72c4a1ad0be8f9",
+    "FV/Backend/Proof/PerEdgePreparedDriverSound.lean": "73948a4b3561bb09639e96007ece4af15654e8770b4513fc92d4e2e9a4089bea"
+  },
+  "observations": [
+    {
+      "claim": "Actual chosen edge vector is indexed consistently",
+      "evidence": "CheckCtx.roundAt and verifyBlockAt both iterate c.succs[b]!.zipIdx and pass index to edgeAt/edgeCopyAt; source/target parameter arity and target parameter uniqueness are checked."
+    },
+    {
+      "claim": "External allocator status is not trusted for correctness",
+      "evidence": "allocResultAt accepts oracle only after checkAllocAt, lowerRFunc and emitReady; each failure takes checkedSpillAt, which itself requires checkAllocAt. lowerAllocAt_ok and allocResultAt_checked expose the actual checked allocation."
+    },
+    {
+      "claim": "Outgoing-only virtual registers receive spill homes",
+      "evidence": "spillHomesAt folds both block registers and every outgoing edge vector; spillArgMovesAt uses two-phase temporary slots, and maxArgs reserves all edge-vector temporaries."
+    },
+    {
+      "claim": "Actual preparation relation is checked",
+      "evidence": "prepareCheckedAt invokes prepareAt and prepCheckAt. Indexed kept/split relations preserve original row[j] vectors; new split blocks are empty-parameter single jumps."
+    },
+    {
+      "claim": "No whole-driver completeness or physical theorem is established by these wrappers alone",
+      "evidence": "lowerAllocAt_sound conditions on actual success. prepared_return_forward/prepared_halt_forward still take DriverSemG, concrete Realizes and initial Q hypotheses. Those are internal obligations to discharge, never new source acceptance certificates at production cutover."
+    }
+  ],
+  "remaining_original_obligations": [
+    "Universal original-input Stock lowering success and checker/fallback acceptance/completeness",
+    "Actual source/world/DFG/block/whole-driver simulation AND completeness for every original family/effect/Try continuation",
+    "Instantiate driver-semantics/concrete-realization/entry relations at actual source and machine states without adding caller certificates",
+    "Physical/encoder/linker/generated-proof consumer integration, complete witnesses/audits/all gates/fresh complete comparison with original accepted identity-stage and#179 parity"
+  ],
+  "result": "No source edits made by review; retain original full goal and existing theorem variants. Fresh exact-tree gates pending."
+}

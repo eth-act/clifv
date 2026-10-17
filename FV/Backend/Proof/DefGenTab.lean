@@ -1,12 +1,14 @@
 import FV.Backend.Proof.DefGenSound
 import FV.Backend.Proof.KillTab
+import FV.Backend.Proof.TermSetData
 
 /-!
 # Definedness of the ISLE runs: the decided rule tables
 
 The terms whose runs the abstract interpreter describes are `defT` (membership in `defTab`, the
 closure under `Isle.ruleTerms` of the root rules' terms and the oracles, not descending into the
-oracles and the constructor-tree terms). Decided over the exported rule data (`native_decide`):
+oracles and the constructor-tree terms). The generated literal set is untrusted; leaf-wise
+kernel-checked certificates over the exported rule data establish:
 
 * `tabOK`: every rule of every non-oracle, non-wrapper term of `defTab` applies terms of
   `defTab` and checks (`aRule`) with both summaries of its term;
@@ -20,6 +22,8 @@ namespace Backend.Proof.DefGen
 open Backend Isle Isle.Aarch64
 
 set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
 
 /-- **The terms whose runs are described**: membership in `defTab`. -/
 def defT (t : TermId) : Prop := t ∈ defTab
@@ -34,7 +38,10 @@ def termOkB (t : TermId) : Bool :=
         aRule program (term.args.map (tyA true)) (tyA (zp.contains t) term.ret) rl
     | none => true
 
-theorem defTab_termOk : defTab.all termOkB = true := by native_decide
+theorem defTab_termOk : defTab.all termOkB = true := by
+  simp only [defTab, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **The rules of `defTab` check.** -/
 theorem tabOK : TabOK program defT := by
@@ -47,21 +54,34 @@ theorem tabOK : TabOK program defT := by
   obtain ⟨⟨h1, h2⟩, h3⟩ := h rl hrl
   exact ⟨fun u hu => by simpa [defT] using h1 u hu, h2, h3⟩
 
-theorem oracles_ok : oracles.all (defTab.contains ·) = true := by native_decide
+theorem oracles_ok : oracles.all (defTab.contains ·) = true := by
+  simp only [oracles, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The oracles are in `defT`. -/
 theorem oracles_defT : ∀ t ∈ oracles, defT t := by
   intro t ht
   simpa [defT] using List.all_eq_true.mp oracles_ok t ht
 
+-- The root leaves carry whole rule literals; their elaboration exceeds the file-wide bound.
+set_option maxHeartbeats 40000000 in
 theorem rootLower_ok : (program.rulesOf TId.lower).all (fun rl => defExcl.contains rl.id ||
     ((ruleTerms rl).all (defTab.contains ·) &&
-      aRule program [.cl true false] (.cl false false) rl)) = true := by native_decide
+      aRule program [.cl true false] (.cl false false) rl)) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
+set_option maxHeartbeats 40000000 in
 theorem rootBranch_ok : (program.rulesOf TId.lower_branch).all (fun rl =>
     (ruleTerms rl).all (defTab.contains ·) &&
       aRule program [.cl true false, .cl false false] (.cl false false) rl) = true := by
-  native_decide
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **The statement root rules** (but `nop`'s 587 and the I128 rules 636, 637) apply terms of
 `defT` and check with the root summary (`lower : Inst → InstOutput`). -/
