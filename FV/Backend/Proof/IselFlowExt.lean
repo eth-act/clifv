@@ -351,24 +351,11 @@ theorem sretLocStep_phys :
 /-- The register locations of `sigArgLocs` are physical. -/
 theorem sigArgLocs_phys {s : Clif.Signature} {locs : List ArgLoc} {k : Nat}
     (h : sigArgLocs s = .ok (locs, k)) : ∀ l ∈ locs, ∀ p, l = .reg p → ∀ n c, p ≠ .vreg n c := by
-  rw [sigArgLocs_eq] at h
-  cases hb : sigArgs s with
-  | error e => rw [hb] at h; cases h
-  | ok bytes =>
-    rw [hb] at h
-    simp only [bind, Except.bind] at h
-    split at h
-    · split at h
-      · cases h
-      · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, -⟩ := h
-        exact sretLocStep_phys _ _ (by
-          intro l hl
-          simpa using argLocs_phys _ l hl)
-    · simp only [pure, Except.pure, Except.ok.injEq] at h
-      have := argLocs_phys bytes
-      rw [h] at this
-      exact this
+  intro l hl p hp n c he
+  have := (sigArgLocs_shape h).2 l hl
+  subst hp he
+  simp only [ArgLocOk] at this
+  rcases this with ⟨m, -, hm⟩ | ⟨m, -, hm⟩ <;> cases hm
 
 /-! ## Extern constructors -/
 

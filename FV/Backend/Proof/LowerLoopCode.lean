@@ -65,7 +65,7 @@ def entryBody (ctx : Ctx) (x : ((Clif.ValueId × Clif.Ty) × ArgLoc) × Nat)
       match loc with
       | .reg p => pure (.yield (s.1, s.2.push (r, p)))
       | .stack off =>
-        pure (.yield (s.1.push (.load (loadOpOfBytes bytes) r (.fpOffset (16 + off)) trustedFlags), s.2))
+        pure (.yield (s.1.push (stackArgLoad r bytes (.fpOffset (16 + off))), s.2))
     | _ => throw s!"unknown value v{v}"
 
 /-- The state after creating an edge block jumping to `tl` with arguments `args`. -/
@@ -242,7 +242,7 @@ def lowerFunction' (f : Clif.Function) : Except String VCode :=
     if (f.sig.returns.any (·.ty == .i128)) = true then throw "i128 return value"
     else if (f.sig.params.any (·.purpose == .sret) && !f.sig.returns.isEmpty) = true then
       throw "sret parameter together with return values (Cranelift rejects this)"
-    else if (retRegs (sigRets f.sig).length).isNone = true then throw "more than 8 return values"
+    else if (abiRetRegs f.sig).isNone = true then throw "more than 8 return values of a register class"
     else do
       let (ctx, ranges, st0) ← buildCtx f
       let d ← forIn f.blocks.zipIdx ({ st := st0, alias := #[], nextLabel := f.blocks.length } : DState)

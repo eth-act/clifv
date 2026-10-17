@@ -163,49 +163,6 @@ theorem sigArgs_ok {s : Clif.Signature} (hA : sigAbiOk s = true)
   simp only [Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true] at h1
   rcases h1 with h1 | ⟨h1, h3⟩ <;> simp [pure, Except.pure, *]
 
-theorem filter_zip_length {α β : Type} (p : α → Bool) :
-    ∀ (l : List α) (m : List β), m.length = l.length →
-      ((l.zip m).filter fun x => p x.1).length = (l.filter p).length
-  | [], _, _ => by simp
-  | a :: l, [], h => by simp at h
-  | a :: l, b :: m, h => by
-    simp only [List.zip_cons_cons, List.filter_cons]
-    have := filter_zip_length p l m (by simpa using h)
-    split <;> simp [this]
-
-theorem sretFold_size : ∀ (ps : List Clif.AbiParam) (q : Array ArgLoc × List ArgLoc),
-    (ps.filter fun p => !(p.purpose == .sret)).length ≤ q.2.length →
-    (ps.foldl sretLocStep q).1.size = q.1.size + ps.length
-  | [], _, _ => by simp
-  | p :: ps, q, h => by
-    rw [List.foldl_cons]
-    by_cases hp : (p.purpose == .sret) = true
-    · have e : sretLocStep q p = (q.1.push (.reg (.x 8)), q.2) := by simp [sretLocStep, hp]
-      rw [e, sretFold_size ps _ (by simpa [List.filter_cons, hp] using h)]
-      simp; omega
-    · rcases q with ⟨acc, _ | ⟨l, rest⟩⟩
-      · simp [hp] at h
-      · have e : sretLocStep (acc, l :: rest) p = (acc.push l, rest) := by simp [sretLocStep, hp]
-        rw [e, sretFold_size ps _ (by simp [hp] at h; simpa using h)]
-        simp; omega
-
-/-- `sigArgLocs` computes where `sigArgs` does. -/
-theorem sigArgLocs_ok {s : Clif.Signature} {bytes : List Nat} (hb : sigArgs s = .ok bytes) :
-    ∃ locs n, sigArgLocs s = .ok (locs, n) := by
-  unfold sigArgLocs
-  simp only [hb, bind, Except.bind, paramLocs]
-  split
-  · have hn := filter_zip_length (fun p : Clif.AbiParam => !(p.purpose == .sret)) s.params bytes
-      (sigArgs_length hb)
-    have hsz := sretFold_size s.params (#[], (argLocsC (((s.params.zip bytes).filter
-      fun x => !x.1.purpose == .sret).map fun q => (tyClass q.1.ty, q.2))).1) (by
-        rw [(argLocsC_shape _).1]
-        simp [hn])
-    simp only [hsz, Array.size_empty, Nat.zero_add, bne_self_eq_false, Bool.false_eq_true,
-      ite_false]
-    exact ⟨_, _, rfl⟩
-  · exact ⟨_, _, rfl⟩
-
 theorem sigRets_le {s : Clif.Signature} (h : s.returns.length ≤ 8) : (sigRets s).length ≤ 8 := by
   unfold sigRets
   split

@@ -87,17 +87,15 @@ theorem sretLocStep_fold : ∀ (ps : List Clif.AbiParam) (q : Array ArgLoc × Li
           exact h2 l (by rw [hq]; exact List.mem_cons_of_mem _ hl)
         · simp at hl
 
-theorem sigArgs_length {s : Clif.Signature} {bytes : List Nat} (h : sigArgs s = .ok bytes) :
-    bytes.length = s.params.length := by
-  exact abiArgs_length (sigArgs_int h).2
-
-/-- `entryOkB` holds when the parameter locations and byte sizes compute. -/
+/-- `entryOkB` holds when the parameter locations and byte sizes compute, for integer
+parameters (`entryOkB` checks x-register locations). -/
 theorem entryOkB_of {f : Clif.Function} {locs : List ArgLoc} {n : Nat} {bytes : List Nat}
+    (hi : f.sig.params.all (·.ty.isInt) = true)
     (hl : sigArgLocs f.sig = .ok (locs, n)) (hb : sigParamBytes f.sig = .ok bytes) :
     entryOkB f = true := by
   have hlocs : locsOf f.sig = locs := by simp [locsOf, hl]
   have key : locs.length = f.sig.params.length ∧ ∀ l ∈ locs, LocOk l := by
-    rw [sigArgLocs_eq] at hl
+    rw [sigArgLocs_eq hi] at hl
     simp only [sigParamBytes] at hb
     rw [hb] at hl
     simp only [bind, Except.bind] at hl
@@ -636,6 +634,6 @@ theorem lowerCheck_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
   · -- the entry's parameter locations
     obtain ⟨locs, n, hloc⟩ := hlf.entry hs.nonempty
     obtain ⟨bytes, hby⟩ := hlf.paramBytes
-    exact entryOkB_of hloc hby
+    exact entryOkB_of (functionE_sig_int hs.subsetE).1 hloc hby
 
 end Backend.Proof.Driver
