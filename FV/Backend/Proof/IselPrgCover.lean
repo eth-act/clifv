@@ -467,6 +467,8 @@ theorem stmt_root {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) {ii : Nat} {
     simp only [instData, he] at hd
     split at hd
     case isFalse => cases hd
+    split at hd
+    case isFalse => cases hd
     simp only [pure, Except.pure, Except.ok.injEq] at hd
     refine ⟨γ_inst hi (γ_tyCall hctx hi) (by
       rw [← hd]; prg_data
@@ -485,7 +487,10 @@ theorem stmt_root {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) {ii : Nat} {
     | some s =>
       have hs := hP.indSigs sig callee args s hof hsd
       simp only [Clif.Inst.resultTypes, hsd, Option.map_some, Option.some.injEq] at hty
-      simp only [instData, hsd, pure, Except.pure, Except.ok.injEq] at hd
+      simp only [instData, hsd] at hd
+      split at hd
+      case isFalse => cases hd
+      simp only [pure, Except.pure, Except.ok.injEq] at hd
       refine ⟨γ_inst hi (γ_tyCall hctx hi) (by
         rw [← hd]; prg_data
         · exact γ_valsMin (by simp) fun x hx =>
@@ -513,10 +518,12 @@ theorem exnTableOpnd_inv {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.Si
     · cases h
     · split at h
       · cases h
-      · rename_i items' hit
-        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, rfl⟩ := h
-        exact ⟨rfl, (Prep.lmapM_ok hit).1⟩
+      · split at h
+        · cases h
+        · rename_i items' hit
+          simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+          obtain ⟨rfl, rfl⟩ := h
+          exact ⟨rfl, (Prep.lmapM_ok hit).1⟩
 
 theorem tryCallData_call {f : Clif.Function} {fn : Nat} {args : List Nat} {et : Clif.ExnTable}
     {data : V} {sig : Clif.Signature} {items : List (Option Nat)}

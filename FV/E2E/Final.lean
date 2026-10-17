@@ -358,7 +358,8 @@ theorem argsIn_iff_of_locs {sig : Clif.Signature} {locs : List ArgLoc} {n : Nat}
     (hloc : sigArgLocs sig = .ok (locs, n)) (hr : ∀ l ∈ locs, ∃ r, l = .reg r)
     {args : List Clif.Val} {s : Arm.ArmState} :
     ArgsIn sig args s ↔
-      ∀ i r v, locs[i]? = some (.reg r) → args[i]? = some v → VHolds v (regVal s r) := by
+      ∀ (i : Nat) (r : Reg) (v : Clif.Val), locs[i]? = some (ArgLoc.reg r) → args[i]? = some v →
+        VHolds v (regVal s r) := by
   have hL : locsOf sig = locs := by simp [locsOf, hloc]
   rw [ArgsIn, hL]
   constructor
