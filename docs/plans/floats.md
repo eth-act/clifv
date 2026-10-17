@@ -100,7 +100,7 @@ itself is checked by three oracles: qemu (Arm co-simulation, bit-exact including
 Cranelift interpreter (`clif-filetests.sh`, modulo NaN admissibility), and native Cranelift
 code under qemu (`clif-native`, `lean-backend-filetests.sh`).
 
-## 3. Slices (one PR each, merged by the integrator's batch gate, TO-PROVE §7)
+## 3. Slices (one PR each, merged on per-PR gates, TO-PROVE §7)
 
 | slice | issue | content | gates beyond the standard ones |
 |---|---|---|---|
