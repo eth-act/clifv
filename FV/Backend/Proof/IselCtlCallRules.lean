@@ -767,6 +767,7 @@ theorem load_ext_name_got_ok_ctl {n : Nat} (hn : 30 ≤ n) {nm : String} {s s' :
   cases hof
   rfl
 
+set_option maxHeartbeats 800000 in
 include hp hc in
 theorem load_ext_name_ok_ctl {n : Nat} (hn : 40 ≤ n) {nm : String} {d : V} {s s' : LState × Array RuleId}
     {v : V} (h : ApplyInternal p (sem ctx) cfg n 27 570 [.op (.extName nm), .int 0, d] s v s') :

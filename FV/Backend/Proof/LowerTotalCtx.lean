@@ -115,7 +115,7 @@ theorem instData_ok {f : Clif.Function} {s : Clif.Stmt} (hE : Compile.instE s.in
         · simp only [h] at hs; split at hs <;> simp_all
       | _ => simp_all [Compile.instE]
   | _ =>
-    simp_all [instData, Compile.instE, Compile.tyE, eTy, Compile.flagsE, pure, Except.pure]
+    simp_all [instData, Compile.instE, Compile.tyE, eTy, valTyOk, Compile.flagsE, pure, Except.pure]
 
 /-- The result types of a statement of subset E satisfying `stmtInB` are integer types of E
 (not `i128`, no floats). -/
