@@ -147,16 +147,16 @@ private theorem dfg_base (p : Case) (a b : BitVec p.cty.width) : DFGCons (built 
               · simp [frame,h7,h31,h63,h95,h100,h101] at lookup
   · intro x t value type lookup
     by_cases h7 : x = 7
-    · subst x; rw [typed p 7 (by simp)] at type; cases type; cases lookup; exact ofClif_int_width (by rfl)
+    · subst x; rw [typed p 7 (by simp)] at type; cases type; cases lookup; exact ofClif_int_width p.cint
     · by_cases h31 : x = 31
       · subst x; rw [typed p 31 (by simp)] at type; cases type
-        simp [frame] at lookup; subst value; exact ofClif_int_width (by rfl)
+        simp [frame] at lookup; subst value; exact ofClif_int_width p.cint
       · by_cases h63 : x = 63
         · subst x; rw [typed p 63 (by simp)] at type; cases type
-          simp [frame] at lookup; subst value; exact ofClif_int_width (by rfl)
+          simp [frame] at lookup; subst value; exact ofClif_int_width p.int
         · by_cases h95 : x = 95
           · subst x; rw [typed p 95 (by simp)] at type; cases type
-            simp [frame] at lookup; subst value; exact ofClif_int_width (by rfl)
+            simp [frame] at lookup; subst value; exact ofClif_int_width p.int
           · by_cases h100 : x = 100
             · subst x; rw [typed p 100 (by simp)] at type; cases type
               simp [frame] at lookup; subst value; exact ofClif_int_width (by rfl)

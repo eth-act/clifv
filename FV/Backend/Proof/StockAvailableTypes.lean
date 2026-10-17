@@ -25,7 +25,7 @@ theorem stock_lower_event_valTyE {f : Clif.Function} {result : Result}
     stock_lower_blockScanOrigin run events
   obtain ⟨original,oldState,oldBuild,spec,view⟩ := buildCtx_source build
   rw [eventEq,(stock_lowerBlockCore_scanOrigin coreRun).2.1] at typed
-  exact spec.valTyE x t (by simpa only [Ctx.valueType?,view.valTy] using typed)
+  exact spec.valTyE x t (by simpa only [Ctx.valueType?,termCtx,view.valTy] using typed)
 /-- Original availability, a successful source getter and restricted DFG typing
 derive the actual context type. This discharges recurring family type premises
 internally while keeping earlier theorem interfaces available. -/

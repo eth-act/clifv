@@ -28,46 +28,54 @@ private theorem dirty_low {ty : Clif.Ty}
   have upper : 2^100 % 2^ty.width = 0 := by rcases width with h | h | h | h <;> rw [h] <;> decide +kernel
   simp only [BitVec.toNat_ofNat,Nat.add_mod,upper,Nat.zero_add,Nat.mod_eq_of_lt word.isLt]
 private theorem scope (ty : Clif.Ty) (cc : Clif.IntCC)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) : LowerScope (function ty cc) :=
-  lowerScope_of (by cases ty <;> cases cc <;> first | rfl | simp [Clif.Ty.width] at width)
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (int : ty.isInt = true) :
+    LowerScope (function ty cc) :=
+  lowerScope_of (by cases ty <;> cases cc <;> first | rfl | (simp at int; done) | simp [Clif.Ty.width] at width)
 private theorem build (ty : Clif.Ty) (cc : Clif.IntCC)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) :
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (int : ty.isInt = true) :
     Stock.buildCtx (function ty cc) = .ok (built ty cc) := by
-  cases ty <;> cases cc <;> first | rfl | simp [Clif.Ty.width] at width
-private theorem typeX (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) :
-    (built ty cc).1.valueType? 7 = some (.int ty.width) := by cases ty <;> cases cc <;> first | rfl | simp [Clif.Ty.width] at width
-private theorem typeY (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) :
-    (built ty cc).1.valueType? 31 = some (.int ty.width) := by cases ty <;> cases cc <;> first | rfl | simp [Clif.Ty.width] at width
-private theorem mappedX (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) :
-    (built ty cc).1.valueReg? 7 = some (.vreg 192 .int) := by cases ty <;> cases cc <;> first | rfl | simp [Clif.Ty.width] at width
-private theorem mappedY (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) :
-    (built ty cc).1.valueReg? 31 = some (.vreg 193 .int) := by cases ty <;> cases cc <;> first | rfl | simp [Clif.Ty.width] at width
-private theorem absentX (ty : Clif.Ty) (cc : Clif.IntCC) : (built ty cc).1.defInst? 7 = none := by cases ty <;> cases cc <;> first | rfl | simp [Clif.Ty.width] at width
-private theorem absentY (ty : Clif.Ty) (cc : Clif.IntCC) : (built ty cc).1.defInst? 31 = none := by cases ty <;> cases cc <;> first | rfl | simp [Clif.Ty.width] at width
-private theorem dfg (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (a b : BitVec ty.width) : DFGCons (built ty cc).1 (frame ty cc a b) := by
+  cases ty <;> cases cc <;> first | rfl | (simp at int; done) | simp [Clif.Ty.width] at width
+private theorem typeX (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (int : ty.isInt = true) : (built ty cc).1.valueType? 7 = some (.int ty.width) := by
+  cases ty <;> cases cc <;> first | rfl | (simp at int; done) | simp [Clif.Ty.width] at width
+private theorem typeY (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (int : ty.isInt = true) : (built ty cc).1.valueType? 31 = some (.int ty.width) := by
+  cases ty <;> cases cc <;> first | rfl | (simp at int; done) | simp [Clif.Ty.width] at width
+private theorem mappedX (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (int : ty.isInt = true) : (built ty cc).1.valueReg? 7 = some (.vreg 192 .int) := by
+  cases ty <;> cases cc <;> first | rfl | (simp at int; done) | simp [Clif.Ty.width] at width
+private theorem mappedY (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (int : ty.isInt = true) : (built ty cc).1.valueReg? 31 = some (.vreg 193 .int) := by
+  cases ty <;> cases cc <;> first | rfl | (simp at int; done) | simp [Clif.Ty.width] at width
+private theorem absentX (ty : Clif.Ty) (cc : Clif.IntCC) (int : ty.isInt = true) : (built ty cc).1.defInst? 7 = none := by
+  cases ty <;> cases cc <;> first | rfl | (simp at int; done)
+private theorem absentY (ty : Clif.Ty) (cc : Clif.IntCC) (int : ty.isInt = true) : (built ty cc).1.defInst? 31 = none := by
+  cases ty <;> cases cc <;> first | rfl | (simp at int; done)
+private theorem dfg (ty : Clif.Ty) (cc : Clif.IntCC) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (int : ty.isInt = true) (a b : BitVec ty.width) : DFGCons (built ty cc).1 (frame ty cc a b) := by
   constructor
   · intro x j info cl value defined found source pure lookup
     by_cases seven : x = 7
-    · subst x; rw [absentX] at defined; cases defined
+    · subst x; rw [absentX ty cc int] at defined; cases defined
     · by_cases thirtyone : x = 31
-      · subst x; rw [absentY] at defined; cases defined
+      · subst x; rw [absentY ty cc int] at defined; cases defined
       · simp [frame,seven,thirtyone] at lookup
   · intro x cty value typed lookup
     by_cases seven : x = 7
     · subst x
-      rw [typeX ty cc width] at typed
+      rw [typeX ty cc width int] at typed
       cases typed
       simp only [frame,ite_true,Option.some.injEq] at lookup
-      subst value; cases ty <;> rfl
+      subst value; cases ty <;> first | rfl | (simp at int; done)
     · by_cases thirtyone : x = 31
       · subst x
-        rw [typeY ty cc width] at typed
+        rw [typeY ty cc width int] at typed
         cases typed
         simp only [frame,show (31:Nat) ≠ 7 by decide,ite_false,ite_true,Option.some.injEq] at lookup
-        subst value; cases ty <;> rfl
+        subst value; cases ty <;> first | rfl | (simp at int; done)
       · simp [frame,seven,thirtyone] at lookup
 private theorem held (ty : Clif.Ty) (cc : Clif.IntCC)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (int : ty.isInt = true)
     (a b : BitVec ty.width) (st : State) :
     ValuesHeld (Demanded st) (built ty cc).1 (frame ty cc a b) (fun key => regs a b (aliasNum aliases key)) := by
   intro x needed value lookup
@@ -75,14 +83,14 @@ private theorem held (ty : Clif.Ty) (cc : Clif.IntCC)
   · subst x
     simp only [frame,ite_true,Option.some.injEq] at lookup
     subst value
-    refine ⟨192,mappedX ty cc width,?_⟩
+    refine ⟨192,mappedX ty cc width int,?_⟩
     change (dirty a).setWidth ty.width = a
     exact dirty_low width a
   · by_cases thirtyone : x = 31
     · subst x
       simp only [frame,show (31:Nat) ≠ 7 by decide,ite_false,ite_true,Option.some.injEq] at lookup
       subst value
-      refine ⟨193,mappedY ty cc width,?_⟩
+      refine ⟨193,mappedY ty cc width int,?_⟩
       change (dirty b).setWidth ty.width = b
       exact dirty_low width b
     · simp [frame,seven,thirtyone] at lookup
@@ -93,15 +101,15 @@ private def Observed (ty : Clif.Ty) (cc : Clif.IntCC) : Prop :=
 section Kernel
 attribute [local semireducible] Isle.Aarch64.program
 private theorem observed (ty : Clif.Ty) (cc : Clif.IntCC)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) : Observed ty cc := by
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (int : ty.isInt = true) : Observed ty cc := by
   cases ty <;> cases cc
-  all_goals first | (unfold Observed; decide +kernel) | simp [Clif.Ty.width] at width
+  all_goals first | (unfold Observed; decide +kernel) | (simp at int; done) | simp [Clif.Ty.width] at width
 end Kernel
 /-- All forty original width/comparison-condition combinations inhabit the
 constructed comparison companion with arbitrary source words, dirty upper bits,
 nonidentity aliases and the complete execution/frame conclusion. -/
 theorem stock_select_comparison_companion_complete_witness (ty : Clif.Ty) (cc : Clif.IntCC)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (a b : BitVec ty.width) :
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (int : ty.isInt = true) (a b : BitVec ty.width) :
     ∃ f ctx st middle raw trace fr aliases ρ,LowerScope f ∧ MappedCtxInv f ctx ∧ DFGCons ctx fr ∧
       fr.getAs 7 ty = .ok a ∧ fr.getAs 31 ty = .ok b ∧
       ctx.valueType? 7 = some (.int ty.width) ∧ ctx.valueType? 31 = some (.int ty.width) ∧
@@ -119,8 +127,8 @@ theorem stock_select_comparison_companion_complete_witness (ty : Clif.Ty) (cc : 
             (.cset (middle.base.fresh .int).1 condition))} (.reg (middle.base.fresh .int).1) ρ := by
   let ctx := (built ty cc).1
   let st := (built ty cc).2.2
-  have inv : MappedCtxInv (function ty cc) ctx := buildCtx_mappedInv (scope ty cc width) (build ty cc width)
-  have success := observed ty cc width
+  have inv : MappedCtxInv (function ty cc) ctx := buildCtx_mappedInv (scope ty cc width int) (build ty cc width int)
+  have success := observed ty cc width int
   obtain ⟨raw,middle,trace,run⟩ : ∃ raw middle trace,ApplyInternal program (Stock.sem ctx) {} 1000 123 652
       [.data 145 (ccIdx cc) [],.value 7,.value 31] (st,#[]) raw (middle,trace) := by
     unfold Observed at success
@@ -132,10 +140,12 @@ theorem stock_select_comparison_companion_complete_witness (ty : Clif.Ty) (cc : 
       cases output with
       | none => simp [ctx,st] at actual; rw [actual] at success; cases success
       | some raw => exact ⟨raw,middle,trace,actual⟩
-  have bounded : aliases.size ≤ st.base.nextVreg := by cases ty <;> cases cc <;> decide +kernel
+  have bounded : aliases.size ≤ st.base.nextVreg := by
+    cases ty <;> cases cc <;> first | (simp at int; done) | decide +kernel
   have extent : ∀ z r,ctx.valueReg? z = some r → z < st.demand.size := by
     intro z r mapped
-    have bound : ctx.valReg.size ≤ st.demand.size := by cases ty <;> cases cc <;> decide +kernel
+    have bound : ctx.valReg.size ≤ st.demand.size := by
+      cases ty <;> cases cc <;> first | (simp at int; done) | decide +kernel
     have index : z < ctx.valReg.size := by
       by_cases inside : z < ctx.valReg.size
       · exact inside
@@ -145,15 +155,16 @@ theorem stock_select_comparison_companion_complete_witness (ty : Clif.Ty) (cc : 
     omega
   have separated : ∀ r,ctx.valueReg? 31 = some (.vreg r .int) → aliasNum aliases r ≠ st.base.nextVreg := by
     intro r mapped
-    have same := Option.some.inj ((mappedY ty cc width).symm.trans mapped)
+    have same := Option.some.inj ((mappedY ty cc width int).symm.trans mapped)
     have key := (Reg.vreg.inj same).1
     subst r
-    cases ty <;> cases cc <;> decide +kernel
+    cases ty <;> cases cc <;> first | (simp at int; done) | decide +kernel
   have getX : (frame ty cc a b).getAs 7 ty = .ok a := by simp [Clif.Frame.getAs,Clif.Frame.get,frame]
   have getY : (frame ty cc a b).getAs 31 ty = .ok b := by simp [Clif.Frame.getAs,Clif.Frame.get,frame]
-  exact ⟨function ty cc,ctx,st,middle,raw,trace,frame ty cc a b,aliases,regs a b,scope ty cc width,inv,
-    dfg ty cc width a b,getX,getY,typeX ty cc width,typeY ty cc width,run,
-    stock_select_comparison_condition_shape inv width cc (typeX ty cc width) (typeY ty cc width) (by decide) run,
-    stock_select_comparison_companion_source_values inv width cc (dfg ty cc width a b) getX getY (typeX ty cc width)
-      (typeY ty cc width) (by decide) run (fun _ _ _ _ world _ h => ⟨world,h,SameWorld.refl _ _⟩) bounded extent (held ty cc width a b middle) separated⟩
+  exact ⟨function ty cc,ctx,st,middle,raw,trace,frame ty cc a b,aliases,regs a b,scope ty cc width int,inv,
+    dfg ty cc width int a b,getX,getY,typeX ty cc width int,typeY ty cc width int,run,
+    stock_select_comparison_condition_shape inv width cc (typeX ty cc width int) (typeY ty cc width int) (by decide) run,
+    stock_select_comparison_companion_source_values inv width cc (dfg ty cc width int a b) getX getY (typeX ty cc width int)
+      (typeY ty cc width int) (by decide) run (fun _ _ _ _ world _ h => ⟨world,h,SameWorld.refl _ _⟩) bounded extent
+      (held ty cc width int a b middle) separated⟩
 end Backend.Stock.Proof.ScalarSelect.ComparisonCompanionWitness

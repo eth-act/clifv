@@ -74,15 +74,15 @@ private theorem dfg_base (p : Case) (word : BitVec p.cty.width) : DFGCons (built
   · intro x t v type lookup
     by_cases hc : x = 7
     · subst x; rw [typed p 7 (by simp)] at type; cases type; cases lookup
-      exact ofClif_int_width (by rfl)
+      exact ofClif_int_width p.cint
     · by_cases hx : x = 31
       · subst x; rw [typed p 31 (by simp)] at type; cases type
         simp only [frame,show (31:Nat) ≠ 7 by decide,ite_false,ite_true,Option.some.injEq] at lookup
-        subst v; exact ofClif_int_width (by rfl)
+        subst v; exact ofClif_int_width p.int
       · by_cases hy : x = 63
         · subst x; rw [typed p 63 (by simp)] at type; cases type
           simp only [frame,show (63:Nat) ≠ 7 by decide,show (63:Nat) ≠ 31 by decide,ite_false,ite_true,Option.some.injEq] at lookup
-          subst v; exact ofClif_int_width (by rfl)
+          subst v; exact ofClif_int_width p.int
         · simp [frame,hc,hx,hy] at lookup
 private theorem dfg_transport {a b : Ctx} {fr : Clif.Frame}
     (insts : a.insts.map minmaxSourceKey = b.insts.map minmaxSourceKey)
@@ -123,7 +123,7 @@ private structure Inputs (p : Case) (word : BitVec p.cty.width) where
   held : ValuesHeld (Demanded record.output.state) event.ctx (frame p word)
     (fun key => registers p word (aliasNum result.final.alias key))
 private theorem inputs (p : Case) (word : BitVec p.cty.width) : Nonempty (Inputs p word) := by
-  have actual := stock_select_scalar_driver_observed p.cty p.ty p.conditionWidth p.width
+  have actual := stock_select_scalar_driver_observed p.cty p.ty p.conditionWidth p.width p.cint p.int
   unfold ScalarSelectObserved at actual
   cases run : Stock.lower (function p) with
   | error err => simp only [run,Except.toOption,Option.map_none] at actual; cases actual
