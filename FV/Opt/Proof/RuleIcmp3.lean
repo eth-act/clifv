@@ -1,11 +1,11 @@
-import FV.Opt.Proof.RuleIcmpEmbed2
+import FV.Opt.Proof.RuleIntSplit
 
 /-!
 # `opts/icmp.isle` (part 3): proven `simplify` rules
 
 Each rule by the template that closes it (`RuleAuto.lean`, `RuleBitopsEmbed.lean`,
-`RuleIcmpEmbed.lean`, `RuleIcmpEmbed2.lean`); a `first` chain lists the templates the rule was
-checked against, in order.
+`RuleIcmpEmbed.lean`, `RuleIcmpEmbed2.lean`, `RuleIntSplit.lean`); a `first` chain lists the
+templates the rule was checked against, in order.
 -/
 
 set_option linter.unusedSimpArgs false
@@ -42,10 +42,10 @@ theorem ok_rule_icmp_150 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_1
 
 /-- `icmp.isle:190`. -/
 theorem ok_rule_icmp_190 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_190 := by
-  first | rule_auto rule_icmp_190 | rule_auto_b rule_icmp_190 | rule_auto_i rule_icmp_190 | rule_auto_z rule_icmp_190
+  rule_auto_vi rule_icmp_190
 
 /-- `icmp.isle:193`. -/
 theorem ok_rule_icmp_193 {p : Isle.Program} (hd : Data p) : RuleOk p rule_icmp_193 := by
-  first | rule_auto rule_icmp_193 | rule_auto_b rule_icmp_193 | rule_auto_i rule_icmp_193 | rule_auto_z rule_icmp_193
+  rule_auto_vi rule_icmp_193
 
 end Opt.Proof

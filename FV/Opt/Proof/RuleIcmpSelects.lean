@@ -1,12 +1,14 @@
 import FV.Opt.Proof.RuleInfraIcmp
 import FV.Opt.Proof.RuleInfraConst
+import FV.Opt.Proof.RuleIntSplit
 
 /-!
 # Comparisons of a select between distinct constants
 
 Normalize both matched constant encodings before using the select identity. The
 condition's value is opened before RHS type splitting, so an arbitrary condition
-width, including i128's widened-zero constructor, is preserved.
+width, including i128's widened-zero constructor, is preserved. The constants' type variable
+is split on `isInt` (`RuleIntSplit.lean`): at a float type `iconst_u` has no rule.
 -/
 
 set_option maxHeartbeats 4000000
@@ -43,7 +45,8 @@ local macro "icmp_select_prefix " r:ident : tactic => `(tactic| (
   all_goals opt_cases_val
   all_goals (try simp only [Val.ty, Val.bits] at *; subst_vars)
   all_goals opt_split_i128
-  all_goals rule_rhs_y
+  all_goals opt_split_int
+  all_goals rule_rhs_y [tyInt_ofClif_notInt]
   all_goals opt_some_subst
   all_goals try opt_den_subst
   all_goals (apply GraphOk.make_val hG (by opt_P); opt_node_x)
