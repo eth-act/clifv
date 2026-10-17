@@ -19,7 +19,8 @@ Launch rules (checked every second):
   * heavy modules (recorded peak > --heavy, or cap > --budget): run alone, and only when
     MemAvailable >= --heavy-avail, no other lean process has RSS above --heavy and no other memcap
     scope has MemoryMax (with --others-by-usage: current usage) above --heavy; otherwise they are
-    deferred while light work continues;
+    deferred while light work continues (a deferred module is first probed once with
+    `lake build --no-build`: if it is already built or in the cache, it counts as done);
   * nothing new starts while MemAvailable < --pause-avail;
   * a module killed at its cap (exit 137/143, or lean reporting signal 9) is retried alone at
     twice the cap (at most --max-cap).
@@ -223,6 +224,7 @@ def main():
     running = {}           # m -> (Popen, t0, cap)
     solo_set = set()       # running modules that must run alone
     retry_cap = {}         # m -> cap for the solo retry after an OOM kill
+    probed = set()         # deferred heavy modules already checked with `lake build --no-build`
     t_start = time.time()
     built = 0
 
@@ -236,6 +238,14 @@ def main():
         running[m] = (p, time.time(), c)
         say(f"start {m} cap={gib(c)} running={len(running)} "
             f"avail={gib(mem_available())}")
+
+    def up_to_date(m):
+        # `lake build --no-build` fails without building if m is out of date; with the shared
+        # cache it also restores m's artifacts. Lake alone needs little memory.
+        env = dict(os.environ, FV_MEMCAP="4G")
+        r = subprocess.run([str(root / "scripts/memcap.sh"), "lake", "build", "--no-build", m],
+                           cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return r.returncode == 0
 
     def my_pids():
         pids = {os.getpid()}
@@ -310,6 +320,13 @@ def main():
                 if is_heavy(m, c):
                     others = other_heavy_scopes(my_pids(), heavy, a.others_by_usage)
                     if avail < heavy_avail or others:
+                        # a heavy module that is already built (or in the cache) need not wait
+                        if m not in probed:
+                            probed.add(m)
+                            if up_to_date(m):
+                                status[m] = "ok"
+                                say(f"done {m} up-to-date (probe) -> ok")
+                                continue
                         wait = (f"deferring heavy {m} ({gib(c)}): avail {gib(avail)}"
                                 f"{', other heavy scopes ' + ' '.join(others) if others else ''}")
                         continue
