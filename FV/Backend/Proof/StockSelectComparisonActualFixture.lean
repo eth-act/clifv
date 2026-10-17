@@ -107,9 +107,14 @@ private theorem observed (ty : Clif.Ty) (cc : Clif.IntCC)
   all_goals first | (unfold Observed; decide +kernel) | (simp at int; done) | simp [Clif.Ty.width] at width
 end Kernel
 /-- Original sparse-ID scalar contexts inhabit the actual emitter and every
-source-side value/separation/guard premise used by select composition. -/
+source-side value/separation/guard premise used by select composition.
+
+Compatibility boundary (S11b, #140): the statement holds on the original integer domain only
+(`f32` shares width 32 with `i32`); `int` is a trailing auto-parameter, discharged by `decide`
+for every concrete integer type, so the original call shapes are unchanged. -/
 theorem stock_select_comparison_actual_fixture (ty : Clif.Ty) (cc : Clif.IntCC)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (int : ty.isInt = true) (a b : BitVec ty.width) :
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (a b : BitVec ty.width)
+    (int : ty.isInt = true := by decide) :
     ∃ f ctx st middle raw trace fr aliases,∃ (ρ : Nat → CV),LowerScope f ∧ MappedCtxInv f ctx ∧ DFGCons ctx fr ∧
       fr.getAs 7 ty = .ok a ∧ fr.getAs 31 ty = .ok b ∧
       ctx.valueType? 7 = some (.int ty.width) ∧ ctx.valueType? 31 = some (.int ty.width) ∧

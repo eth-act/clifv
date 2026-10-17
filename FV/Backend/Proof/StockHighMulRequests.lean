@@ -16,7 +16,12 @@ theorem stock_highmul_extend_observed {p : Program} (hp : Data p) (ctx : Ctx)
   · exact ScalarShift.stock_sext64_out hp hc enough run
 
 /-- Original frame typing and the original source getter force a narrow source
-helper to widen, excluding the 64-bit pass-through alternative internally. -/
+helper to widen, excluding the 64-bit pass-through alternative internally.
+
+Compatibility boundary (S11b, #140): `int` cannot be derived from the run. The widening
+helper's `fits_in_32` guard also admits an `f32` source, and `FrameTyped` then types `x` as
+`.float 32`, so the conclusion `.int ty.width` holds only on the original integer domain.
+Every caller takes `int` from `isInt_of_eTy` of the instruction's type. -/
 theorem stock_highmul_narrow_request_observed {p : Program} (hp : Data p) (ctx : Ctx)
     (signed : Bool) {cfg : Config} (hc : cfg.checkOverlap = false)
     {n x : Nat} (enough : 60 ≤ n) {s s' : State × Array RuleId} {out : V}
@@ -49,7 +54,8 @@ private theorem sem_ctor (ctx : Ctx) (t : Term) (vs : List V) (st : State) :
 private theorem sem_prim (ctx : Ctx) : (Stock.sem ctx).prim 14 "I64" = some (.ty (.int 64)) := rfl
 
 /-- Both successful original narrow RHS requests derive their types, guards
-and source mappings using the original typed frame. -/
+and source mappings using the original typed frame. Compatibility boundary (S11b, #140):
+original integer domain only, as for `stock_highmul_narrow_request_observed`. -/
 theorem stock_highmul_narrow_requests {p : Program} (hp : Data p) (ctx : Ctx)
     (signed : Bool) {n x y : Nat} {ty : Clif.Ty} (width : ty.width ≤ 32) (int : ty.isInt = true)
     {fr : Clif.Frame} (typed : FrameTyped ctx fr) {u v : BitVec ty.width}
@@ -90,7 +96,8 @@ theorem stock_highmul_narrow_requests {p : Program} (hp : Data p) (ctx : Ctx)
     rw [stateX] at safeY
     exact ⟨typeX,typeY,safeX,safeY,⟨rx,mapX⟩,⟨ry,mapY⟩⟩
 /-- Successful actual narrow RHS execution determines both original requests,
-the output, and the complete four-write scheduling state. -/
+the output, and the complete four-write scheduling state. Compatibility boundary (S11b,
+#140): original integer domain only, as for `stock_highmul_narrow_request_observed`. -/
 theorem stock_highmul_narrow_observed {p : Program} (hp : Data p) (ctx : Ctx)
     (signed : Bool) {n x y : Nat} {ty : Clif.Ty} (width : ty.width ≤ 32) (int : ty.isInt = true)
     {fr : Clif.Frame} (typed : FrameTyped ctx fr) {u v : BitVec ty.width}

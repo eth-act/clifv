@@ -107,9 +107,13 @@ private theorem observed (ty : Clif.Ty) (cc : Clif.IntCC)
 end Kernel
 /-- All forty original width/comparison-condition combinations inhabit the
 constructed comparison companion with arbitrary source words, dirty upper bits,
-nonidentity aliases and the complete execution/frame conclusion. -/
+nonidentity aliases and the complete execution/frame conclusion.
+
+Compatibility boundary (S11b, #140): original integer domain only; `int` is a trailing
+auto-parameter (`decide`) so the original call shapes are unchanged. -/
 theorem stock_select_comparison_companion_complete_witness (ty : Clif.Ty) (cc : Clif.IntCC)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (int : ty.isInt = true) (a b : BitVec ty.width) :
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) (a b : BitVec ty.width)
+    (int : ty.isInt = true := by decide) :
     ∃ f ctx st middle raw trace fr aliases ρ,LowerScope f ∧ MappedCtxInv f ctx ∧ DFGCons ctx fr ∧
       fr.getAs 7 ty = .ok a ∧ fr.getAs 31 ty = .ok b ∧
       ctx.valueType? 7 = some (.int ty.width) ∧ ctx.valueType? 31 = some (.int ty.width) ∧

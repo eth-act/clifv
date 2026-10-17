@@ -41,11 +41,16 @@ attribute [local irreducible] Observed
 /-- Complete direct and zero-extended comparison-select drivers retain the
 original select root, source context and parameter aliases at all32 scalar
 condition/result-width/form combinations. Complete source-step witnesses follow
-from the same actual records in the source witness module. -/
+from the same actual records in the source witness module.
+
+Compatibility boundary (S11b, #140): original integer domain only (`f32`/`f64` share widths
+with `i32`/`i64`); `conditionInt`/`int` are trailing auto-parameters (`decide`), so the
+original call shapes are unchanged. -/
 theorem stock_select_comparison_driver_observed (cty ty : Clif.Ty) (extended : Bool)
     (comparisonWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64)
     (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
-    (conditionInt : cty.isInt = true) (int : ty.isInt = true) : Observed cty ty .ult extended := by
+    (conditionInt : cty.isInt = true := by decide) (int : ty.isInt = true := by decide) :
+    Observed cty ty .ult extended := by
   cases cty <;> cases ty
   all_goals first
     | exact (observed8 extended).1
