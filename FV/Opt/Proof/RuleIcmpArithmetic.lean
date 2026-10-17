@@ -1,5 +1,6 @@
 import FV.Opt.Proof.RuleInfraIcmp
 import FV.Opt.Proof.RuleInfraConst
+import FV.Opt.Proof.RuleIntSplit
 
 /-!
 # Signed-zero and repeated-operand XOR comparisons
@@ -7,7 +8,8 @@ import FV.Opt.Proof.RuleInfraConst
 Preserve repeated-operand denotations before evaluating the RHS. The i128 zero
 constructor makes an i64 constant and widens it; its width obligation is explicit.
 Normalize the signed immediate's Rust mask before bit-blasting, rather than
-abstracting that closed zero expression as an unconstrained bit vector.
+abstracting that closed zero expression as an unconstrained bit vector. The constants' type
+variable is split on `isInt` (`RuleIntSplit.lean`): at a float type the constant has no rule.
 -/
 
 set_option maxHeartbeats 4000000
@@ -26,7 +28,8 @@ local macro "icmp_arithmetic_prefix " r:ident : tactic => `(tactic| (
   all_goals rule_no_iflets
   all_goals try opt_den_subst
   all_goals opt_split_i128
-  all_goals rule_rhs_y
+  all_goals opt_split_int
+  all_goals rule_rhs_y [tyInt_ofClif_notInt]
   all_goals opt_some_subst
   all_goals try opt_den_subst
   all_goals (apply GraphOk.make_val hG (by opt_P); opt_node_x)
