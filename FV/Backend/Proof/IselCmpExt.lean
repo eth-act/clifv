@@ -195,12 +195,16 @@ theorem vuseNums_extend' (d x : Nat) (sg : Bool) (a b : Nat) :
 theorem vdefUpd_extend' (d x : Nat) (y : CV) (ρ : Nat → CV) :
     vdefUpd #[⟨d, .int, .def, .late, .reg⟩, ⟨x, .int, .use, .early, .reg⟩] [y] ρ = upd ρ d y := rfl
 
-/-- **Meaning of a `put_in_reg_*ext*` call**: the returned vreg (the value's own, or a fresh one
-defined by the emitted `extend`) holds the value, extended to `toB` bits when it is at most 32
-bits wide. -/
-theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
-    {ctx : Ctx} (hctx : CtxInv f ctx) {x : Nat} {sg : Bool} {toB : Nat} {pass : List CTy}
-    {s s' : LState} {v : V} (hvb : ValsBelow ctx s) (hto : toB = 32 ∨ toB = 64)
+/-- A subset-E context puts every value in an integer position. -/
+theorem CtxInv.intPos {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (x : Nat) :
+    IntPos ctx x := fun t ht => hctx.valTyE x t ht
+
+/-- **Meaning of a `put_in_reg_*ext*` call** (over a float-capable context, the value in an
+integer position): the returned vreg (the value's own, or a fresh one defined by the emitted
+`extend`) holds the value, extended to `toB` bits when it is at most 32 bits wide. -/
+theorem ExtOut.semT {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
+    {ctx : Ctx} (hctx : CtxInvT f ctx) {x : Nat} (hxi : IntPos ctx x) {sg : Bool} {toB : Nat}
+    {pass : List CTy} {s s' : LState} {v : V} (hvb : ValsBelow ctx s) (hto : toB = 32 ∨ toB = 64)
     (hpass : ∀ t ∈ pass, t = .int 64 ∨ (t = .int 32 ∧ toB = 32)) (h32 : toB = 32 → .int 32 ∈ pass)
     (h : ExtOut ctx x sg toB pass s s' v) :
     ∃ k ms, v = .reg (.vreg k .int) ∧ Frag s s' ms ∧ k < s'.nextVreg ∧ (s.nextVreg ≤ k ∨ k = x) ∧
@@ -208,7 +212,7 @@ theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
         fr.regs x = some vx →
         UsesLo s.nextVreg fr ms ∧ ∀ w, Runs F isem ms ρ w (fun ρ' _ => ExtHolds sg toB vx (ρ' k)) := by
   obtain ⟨t, hT, rx, hx, hcase⟩ := h
-  have hrx := hctx.valueReg x rx hx
+  have hrx := hctx.valueReg_int hx hxi
   subst hrx
   have hxlt := vreg_lt hvb hx
   rcases hcase with ⟨ht, rfl, hs⟩ | ⟨ht, hb, rfl, rfl⟩
@@ -246,7 +250,7 @@ theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
       have hne : vty.width < toB := by
         rcases hto with rfl | rfl
         · have := h32 rfl
-          have hE := hctx.valTyE x _ hT
+          have hE := hxi _ hT
           cases vty <;> simp [Clif.Ty.width, CTy.ofClif] at hb ⊢
           all_goals first | exact ht this | simp [CTy.ofClif, eCTys] at hE
         · omega
@@ -261,4 +265,19 @@ theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
         rw [vdefUpd_extend']
         simp only [upd, ite_true]
         exact extHolds_extend sg vb (by omega) toB hto hne _ hv
+
+/-- **Meaning of a `put_in_reg_*ext*` call**: the returned vreg (the value's own, or a fresh one
+defined by the emitted `extend`) holds the value, extended to `toB` bits when it is at most 32
+bits wide. -/
+theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
+    {ctx : Ctx} (hctx : CtxInv f ctx) {x : Nat} {sg : Bool} {toB : Nat} {pass : List CTy}
+    {s s' : LState} {v : V} (hvb : ValsBelow ctx s) (hto : toB = 32 ∨ toB = 64)
+    (hpass : ∀ t ∈ pass, t = .int 64 ∨ (t = .int 32 ∧ toB = 32)) (h32 : toB = 32 → .int 32 ∈ pass)
+    (h : ExtOut ctx x sg toB pass s s' v) :
+    ∃ k ms, v = .reg (.vreg k .int) ∧ Frag s s' ms ∧ k < s'.nextVreg ∧ (s.nextVreg ≤ k ∨ k = x) ∧
+      ∀ (fr : Clif.Frame) (ρ : Nat → CV) (vx : Clif.Val), VHolds vx (ρ x) → DFGCons ctx fr →
+        fr.regs x = some vx →
+        UsesLo s.nextVreg fr ms ∧ ∀ w, Runs F isem ms ρ w (fun ρ' _ => ExtHolds sg toB vx (ρ' k)) :=
+  ExtOut.semT hR hctx.toT (hctx.intPos x) hvb hto hpass h32 h
+
 end Backend.Proof

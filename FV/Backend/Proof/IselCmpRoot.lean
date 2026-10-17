@@ -17,6 +17,36 @@ set_option maxRecDepth 20000
 /-! ## `LowerInstOk` from a `Runs` fact -/
 
 /-- **`LowerInstOk` for a pure one-result instruction** whose code runs (`Runs`, per world) to
+a vreg file holding the result in `d` (of class `c`). -/
+theorem lowerInstOk_runs_c {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {cp : Clif.Program} {ctx : Ctx} {inst : Clif.Inst} {results : List Nat} {st st' : LState}
+    {ms : List MInst} {d : Nat} {c : RegClass} (hMR : MRStable F MR)
+    (hmono : st.nextVreg ≤ st'.nextVreg)
+    (hdefs : ∀ m ∈ ms, ∀ d ∈ vdefs m, st.nextVreg ≤ d ∧ d < st'.nextVreg)
+    (htrap : explicitTrapInst inst = false)
+    (hrun : ∀ (fr : Clif.Frame) (cm : Clif.Mem) (ρ : Nat → CV) (w : Arm.ArmState) vals cm',
+      fr.func = ctx.func → ValsHeld fr ρ → DFGCons ctx fr →
+      instOutcome env cp fr cm inst = .ok (vals, cm') →
+      cm' = cm ∧ UsesOk st fr ms ∧ (st.nextVreg ≤ d ∨ (fr.regs d).isSome) ∧
+        ∃ v, vals = [v] ∧ Runs F isem ms ρ w (fun ρ' _ => VHolds v (ρ' d))) :
+    LowerInstOk isem MR env cp ctx inst results st [[.vreg d c]] st' ms := by
+  refine ⟨hmono, hdefs, ?_⟩
+  intro fr cm ρ w hf hv hdfg hmr
+  split
+  · rename_i vals cm' ho
+    obtain ⟨rfl, hu, hd, v, rfl, ρ', w', hs, hw, hh⟩ := hrun fr cm ρ w vals cm' hf hv hdfg ho
+    refine ⟨hu, ρ', w', hs, .inr ⟨rfl, ?_⟩, hMR _ _ _ _ hw hmr⟩
+    intro j rs val hrs hval
+    match j, hrs, hval with
+    | 0, hrs, hval =>
+      simp only [List.getElem?_cons_zero, Option.some.injEq] at hrs hval
+      subst hrs; subst hval
+      exact ⟨d, c, rfl, hd, hh⟩
+    | _ + 1, hrs, _ => simp at hrs
+  · intro h; rw [htrap] at h; cases h
+  · trivial
+
+/-- **`LowerInstOk` for a pure one-result instruction** whose code runs (`Runs`, per world) to
 a vreg file holding the result in `d`. -/
 theorem lowerInstOk_runs {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
     {cp : Clif.Program} {ctx : Ctx} {inst : Clif.Inst} {results : List Nat} {st st' : LState}
@@ -29,22 +59,8 @@ theorem lowerInstOk_runs {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {e
       instOutcome env cp fr cm inst = .ok (vals, cm') →
       cm' = cm ∧ UsesOk st fr ms ∧ (st.nextVreg ≤ d ∨ (fr.regs d).isSome) ∧
         ∃ v, vals = [v] ∧ Runs F isem ms ρ w (fun ρ' _ => VHolds v (ρ' d))) :
-    LowerInstOk isem MR env cp ctx inst results st [[.vreg d .int]] st' ms := by
-  refine ⟨hmono, hdefs, ?_⟩
-  intro fr cm ρ w hf hv hdfg hmr
-  split
-  · rename_i vals cm' ho
-    obtain ⟨rfl, hu, hd, v, rfl, ρ', w', hs, hw, hh⟩ := hrun fr cm ρ w vals cm' hf hv hdfg ho
-    refine ⟨hu, ρ', w', hs, .inr ⟨rfl, ?_⟩, hMR _ _ _ _ hw hmr⟩
-    intro j rs val hrs hval
-    match j, hrs, hval with
-    | 0, hrs, hval =>
-      simp only [List.getElem?_cons_zero, Option.some.injEq] at hrs hval
-      subst hrs; subst hval
-      exact ⟨d, .int, rfl, hd, hh⟩
-    | _ + 1, hrs, _ => simp at hrs
-  · intro h; rw [htrap] at h; cases h
-  · trivial
+    LowerInstOk isem MR env cp ctx inst results st [[.vreg d .int]] st' ms :=
+  lowerInstOk_runs_c hMR hmono hdefs htrap hrun
 
 /-! ## A condition turned into a 0/1 register -/
 
@@ -228,10 +244,11 @@ variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkO
 
 set_option maxHeartbeats 8000000 in
 include hp hc in
-/-- **`is_nonzero_cmp`** on an integer value: the condition is the value's truth. -/
-theorem is_nonzero_cmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem)
-    {f : Clif.Function} (hctx : CtxInv f ctx) {n : Nat} (hn : 300 ≤ n) {x : Nat}
-    {s s' : LState × Array RuleId} {c : V} (hvb : ValsBelow ctx s.1)
+/-- **`is_nonzero_cmp`** over a float-capable context, on a value in an integer position: the
+condition is the value's truth. -/
+theorem is_nonzero_cmp_okT {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem)
+    {f : Clif.Function} (hctx : CtxInvT f ctx) {n : Nat} (hn : 300 ≤ n) {x : Nat}
+    (hxi : IntPos ctx x) {s s' : LState × Array RuleId} {c : V} (hvb : ValsBelow ctx s.1)
     (h : ApplyInternal p (sem ctx) cfg n 123 650 [.value x] s c s') :
     CondCode F isem ctx s.1 s'.1 c
       (fun fr b => ∃ v, fr.regs x = some v ∧ b = Clif.Sem.truthy v.bits) := by
@@ -245,7 +262,7 @@ theorem is_nonzero_cmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F 
       obtain ⟨hj⟩ : Nonempty (ctx.defInst? _ = some _) := ⟨‹_›⟩
       obtain ⟨hi⟩ : Nonempty (ctx.insts[_]? = some _) := ⟨‹_›⟩
       obtain ⟨hd⟩ : Nonempty (V.data 152 11 _ = _) := ⟨‹_›⟩
-      exact (opcode_absurd hctx hj hi hd rfl (by decide)).elim
+      exact (opcode_absurdT hctx hj hi hd rfl (by decide)).elim
   · -- 4966 (maybe_uextend (icmp …)): `emit_icmp`
     rcases ‹(∃ _ _, _) ∨ _› with ⟨uty, z, hdc, rfl⟩ | ⟨-, rfl⟩ <;> isel_inv_simp [] at * <;>
       isel_destruct <;> subst_vars <;> isel_inv_simp [] at * <;> isel_destruct <;> subst_vars
@@ -253,14 +270,17 @@ theorem is_nonzero_cmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F 
       obtain ⟨hj⟩ : Nonempty (ctx.defInst? _ = some _) := ⟨‹_›⟩
       obtain ⟨hi⟩ : Nonempty (ctx.insts[_]? = some _) := ⟨‹_›⟩
       obtain ⟨hd⟩ : Nonempty (V.data 152 14 _ = _) := ⟨‹_›⟩
-      obtain ⟨cl, hcl, hdat⟩ := ctxInv_clif hctx hj hi
+      obtain ⟨cl, hcl⟩ := Option.isSome_iff_exists.mp (hctx.defClif _ _ _ hj hi)
+      have hdat := hctx.data _ _ cl hi hcl
       rw [← hd] at hdat
       obtain ⟨cc, ty, a, b, rfl, rfl, rfl⟩ := instData_icmp_inv hdat
+      have hai : IntPos ctx a := hctx.intOps _ _ _ hi hcl a (by simp [intArgs])
+      have hbi : IntPos ctx b := hctx.intOps _ _ _ hi hcl b (by simp [intArgs])
       isel_inv_simp [] at *
       isel_destruct
       subst_vars
       obtain ⟨h652⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 652 _ _ _ _) := ⟨‹_›⟩
-      refine (emit_icmp_ok hp hc hR hctx (hn := by omega) hvb h652).weaken ?_
+      refine (emit_icmp_okT hp hc hR hctx (hn := by omega) hai hbi hvb h652).weaken ?_
       rintro fr ρ bb hh hdf ⟨v, hv, rfl⟩
     · obtain ⟨jx, infox, hjx, hix, hclx⟩ := cmp_defClif_inv hdc
       obtain ⟨vals, hev, hl⟩ := hdf.1 x jx infox _ v hjx hix hclx rfl hv
@@ -280,7 +300,17 @@ theorem is_nonzero_cmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F 
     · exact (icmp_truthy hdf hj hi hcl hv).2
   · -- 4967: `is_nonzero`
     obtain ⟨h651⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 651 _ _ _ _) := ⟨‹_›⟩
-    exact is_nonzero_ok hp hc hR hctx (hn := by omega) hvb h651
+    exact is_nonzero_okT hp hc hR hctx (hn := by omega) hxi hvb h651
+
+include hp hc in
+/-- **`is_nonzero_cmp`** on an integer value: the condition is the value's truth. -/
+theorem is_nonzero_cmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem)
+    {f : Clif.Function} (hctx : CtxInv f ctx) {n : Nat} (hn : 300 ≤ n) {x : Nat}
+    {s s' : LState × Array RuleId} {c : V} (hvb : ValsBelow ctx s.1)
+    (h : ApplyInternal p (sem ctx) cfg n 123 650 [.value x] s c s') :
+    CondCode F isem ctx s.1 s'.1 c
+      (fun fr b => ∃ v, fr.regs x = some v ∧ b = Clif.Sem.truthy v.bits) :=
+  is_nonzero_cmp_okT hp hc hR hctx.toT hn (hctx.intPos x) hvb h
 
 end
 
