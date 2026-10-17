@@ -114,6 +114,19 @@ code under qemu (`clif-native`, `lean-backend-filetests.sh`).
 
 Status: S11a (#242), S11c (#244) and S11d (#248, phase 2 in the S11d (#237) arithmetic PR) are merged.
 
+**S11b (#235): differential results.** `scripts/clif-filetests.sh` reports pass 11714 / fail 8 /
+agree 11679 / disagree 13 / oracle-error 30, with 214 printed files and 0 rejected. Before S11b
+the counts were pass 6072 / fail 7 / disagree 13, so the float runtests now run and pass, and
+there are no new disagreements. The one additional fail is
+`fcvt-sat-small.clif`'s line `; run: %fcvt_to_sint_sat_i8_f64(-0x1.fffffffffffffp1023) == 0`.
+That line sits under `%fcvt_to_uint_sat_i8_f64`, so upstream `test run` calls the unsigned
+function, but our tools call the named function (`docs/contracts/drivers.md`). Our tools and the
+Cranelift interpreter therefore both return -128, which is correct for the signed conversion.
+The line ran for the first time once f64 parsed. The 30 oracle errors are 28 `symbol_value`
+runs and 2 in `try_call.clif`, which the interpreter cannot execute.
+`scripts/opt-difftest.sh` exits 0: 395 runtests are not worse, and 207 + 50 optimised files are
+checked with 0 rejected.
+
 S11c and S11d are independent (exclusive files: `FV/Clif/*` vs `FV/Arm/*`,
 `FVTest/Arm/Cosim/*`, `FV/Backend/Encode.lean`, `FV/Backend/Proof/Encode*.lean`) once the
 `FV/Float` interface is fixed. S11e depends on S11b and the data-movement part of S11d; S11f
