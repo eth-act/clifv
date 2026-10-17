@@ -193,7 +193,7 @@ theorem vc_rets (hI : IselNoRetsHyp) {f : Clif.Function} {vc : VCode} (hs : Lowe
     (hl : lowerFunction f = .ok vc) {b : Nat} {vb : VBlock} {k : Nat} {us : List (Reg × Reg)}
     (hb : vc.blocks[b]? = some vb) (hk : vb.insts[k]? = some (.rets us)) :
     ∃ B ∈ f.blocks, ∃ xs, B.term = .ret xs ∧ us.length = (xs ++ sretRet f).length := by
-  obtain ⟨ctx, ranges, st0, bl, hbc, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hbc, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hbc)
   have hcf := ctxFacts_of hbc
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
@@ -348,7 +348,7 @@ its ABI results. -/
 theorem retsB_of_lower (hI : IselNoRetsHyp) {g : Clif.Function} {vc : VCode}
     (hs : lowerScopeB g = true) (hl : lowerFunction g = .ok vc) : allInsts vc (retsB g) = true := by
   have hS := lowerScope_of hs
-  obtain ⟨_, _, _, _, -, -, -, -, hlf⟩ := lowerFunction_run hl
+  obtain ⟨_, _, _, _, -, -, -, -, hlf⟩ := lowerFunction_run hS.subsetE hl
   unfold allInsts
   rw [Array.all_eq_true_iff_forall_mem]
   intro vb hvb
@@ -400,7 +400,7 @@ theorem vc_entry {f : Clif.Function} {vc : VCode} (hs : LowerScope f)
     ∃ vb0 ds, vc.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) ∧
       ∀ q ∈ ds, q.2 ∈ regLocs f.sig := by
   have hne := (prepDomain_of_lower hs hl hs.nonempty).nonempty
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   obtain ⟨vb0, hvb0⟩ : ∃ vb0, vc.blocks[0]? = some vb0 := ⟨_, Array.getElem?_eq_getElem hne⟩
   have hvb0' := hvb0
   rw [hvb] at hvb0'

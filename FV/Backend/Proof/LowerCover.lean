@@ -108,7 +108,7 @@ theorem formsCovered_of_runs {f : Clif.Function} {vc vcp : VCode}
     (hrun : ∀ ctx ranges st0, buildCtx f = .ok (ctx, ranges, st0) →
       StmtCov ctx ∧ TermCov f ctx ∧ TryCov f ctx)
     (cx : FnCtx) : FormsCovered cx vcp := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   obtain ⟨hS, hT, hY⟩ := hrun ctx ranges st0 hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb

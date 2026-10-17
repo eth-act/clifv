@@ -85,7 +85,7 @@ theorem zip_snoc {α β : Type} {l : List α} {m : List β} {x : β} {a : α} (h
 /-! ## One block -/
 
 theorem bodyPart_ok {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B)
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B)
     {d : DState} {code : Array MInst} {d' : DState} (he : d.st.emitted = #[])
     (h : bodyPart f ctx B k (blockStart f k) (blockStart f k + B.body.length + 1) d code = .ok (.yield d')) :
     ∃ s data, SInv ctx (blockStart f k) B.body d code B.body.length s ∧ DataOk f B.term data ∧
@@ -97,7 +97,7 @@ theorem bodyPart_ok {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
   rename_i s hs
   rw [Std.Legacy.Range.forIn_eq_forIn_range'] at hs
   simp only [Std.Legacy.Range.size, Nat.add_sub_cancel_left, Nat.add_one_sub_one, Nat.div_one] at hs
-  have hS := stmtLoop sp hB he hs
+  have hS := stmtLoop sp hE hB he hs
   refine ⟨s, ?_⟩
   split at h
   · rename_i fn args et ht
@@ -182,11 +182,12 @@ theorem bsl_take (Bs : List Clif.Block) (k : Nat) (hk : k ≤ Bs.length) :
   simp only [bsl, List.length_take, Nat.min_eq_left hk, List.take_take, Nat.min_self]
 
 theorem blockStep {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) {paramBytes : List Nat} (hpb : sigParamBytes f.sig = .ok paramBytes)
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) {paramBytes : List Nat}
+    (hpb : sigParamBytes f.sig = .ok paramBytes)
     {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B) {d d' : DState} {blk : List BLow}
     (hI : LI f ctx st0 k d blk) (h : blockBody f ctx ranges paramBytes (B, k) d = .ok (.yield d')) :
     ∃ L, LI f ctx st0 (k + 1) d' (blk ++ [L]) := by
-  have hreg := sp.regEq
+  have hreg := sp.regEq_int hE
   have hk : k < f.blocks.length := (List.getElem?_eq_some_iff.mp hB).1
   -- the argument setup
   obtain ⟨code0, hc0, hbp, hent⟩ : ∃ code0 : Array MInst, code0.toList = pre f id k ∧
@@ -220,11 +221,11 @@ theorem blockStep {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} 
       refine ⟨#[], ?_, h, fun h' => absurd h' hk0'⟩
       obtain ⟨k', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hk0'
       simp [pre]
-  obtain ⟨s, data, hS, hdata, hT⟩ := bodyPart_ok sp hB hI.em hbp
+  obtain ⟨s, data, hS, hdata, hT⟩ := bodyPart_ok sp hE hB hI.em hbp
   obtain ⟨sls, hl, hbl, hed, hnl, hal, hcode, hem, hres⟩ := hS
   rw [List.take_length] at hl hal hcode hres
   have hsls := lowStmts_len hl
-  obtain ⟨hsret, targets, tl, tst', nl', TO⟩ := termPart_ok sp hem hdata hT
+  obtain ⟨hsret, targets, tl, tst', nl', TO⟩ := termPart_ok sp hE hem hdata hT
   let L : BLow := ⟨blockStart f k, sls, data, targets, s.1.st, tst', tl⟩
   have hLk : (blk ++ [L])[k]? = some L := by
     rw [List.getElem?_append_right (by rw [hI.len]; exact Nat.le_refl k), hI.len]; simp
@@ -452,9 +453,37 @@ theorem lowB_out (f : Clif.Function) (call : StmtCall) (tcall : TermCallF) (ycal
         | cons a l => simp [List.getLast?_cons]
     · cases h
 
+/-- `lowerFunction`'s VCode is `finishVC` of its final loop state (on any input). -/
+theorem lowerFunction_finish {f : Clif.Function} {vc : VCode} (h : lowerFunction f = .ok vc) :
+    ∃ d, vc = finishVC f d (slotLayout f.slots).2 := by
+  rw [lowerFunction_eq] at h
+  unfold lowerFunction' at h
+  split at h
+  · cases h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  split at h
+  · cases h
+  split at h
+  · cases h
+  split at h
+  · cases h
+  split at h
+  · cases h
+  rename_i q hb
+  obtain ⟨ctx, ranges, st0⟩ := q
+  simp only at h
+  split at h
+  · cases h
+  rename_i d hd
+  simp only [pure, Except.pure, Except.ok.injEq] at h
+  exact ⟨d, by rw [← h]⟩
+
 /-- **The loop, run**: `lowerFunction`'s final loop state satisfies the invariant after all
-blocks. -/
-theorem loop_run {f : Clif.Function} {vc : VCode} (h : lowerFunction f = .ok vc) :
+blocks (on a function of subset E: the invariant's VCode model has integer values only). -/
+theorem loop_run {f : Clif.Function} {vc : VCode} (hE : Compile.functionE f = true)
+    (h : lowerFunction f = .ok vc) :
     ∃ ctx ranges st0 paramBytes d bl, buildCtx f = .ok (ctx, ranges, st0) ∧
       sigParamBytes f.sig = .ok paramBytes ∧ LI f ctx st0 f.blocks.length d bl ∧
       vc = finishVC f d (slotLayout f.slots).2 := by
@@ -497,7 +526,7 @@ theorem loop_run {f : Clif.Function} {vc : VCode} (h : lowerFunction f = .ok vc)
       rw [hB] at hx
       simp only [Option.map_some, Option.some.injEq, Nat.zero_add] at hx
       subst hx
-      obtain ⟨L, hL⟩ := blockStep sp hpb hB hI hs
+      obtain ⟨L, hL⟩ := blockStep sp (sp.ctxE hE) hpb hB hI hs
       exact ⟨_, hL⟩
   · intro x b b' hb'
     have := blockBody_yield hb'

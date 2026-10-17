@@ -122,7 +122,7 @@ def argStep (p : Array (Reg × Reg) × LState) (q : (ArgLoc × Reg) × Nat) :
     Array (Reg × Reg) × LState :=
   match q.1.1 with
   | .reg pr => (p.1.push (q.1.2, pr), p.2)
-  | .stack off => (p.1, p.2.emit (stackArgStore q.1.2 q.2 (.spOffset off)))
+  | .stack off => (p.1, p.2.emit (.store (storeOpOfBytes q.2) q.1.2 (.spOffset off) trustedFlags))
 
 theorem foldl_argStep : ∀ (L : List ((ArgLoc × Reg) × Nat)), (∀ q ∈ L, ∃ pr, q.1.1 = .reg pr) →
     ∀ (acc : Array (Reg × Reg)) (st : LState),
@@ -283,7 +283,7 @@ theorem ctor_gen_call_args_small (st : LState) (s : Clif.Signature) (rss : List 
   | none => simp
   | some rs =>
     have hlen : locs.length ≤ bytes.length := by
-      rw [(sigArgLocs_shape hl).1, sigParamBytes_length hb]
+      rw [(sigArgLocs_shape hl).1, sigParamBytes_length hb]; exact Nat.le_refl _
     simp only []
     rw [foldl_argStep _ (zip_regLocs_all hr rs bytes), zip_regLocs _ rs bytes hlen]
     simp [eq_comm]
@@ -382,7 +382,7 @@ def argRegPairs (L : List ((ArgLoc × Reg) × Nat)) : List (Reg × Reg) :=
 /-- The stores `gen_call_args` emits for its triples. -/
 def argStores (L : List ((ArgLoc × Reg) × Nat)) : List MInst :=
   L.filterMap fun q => match q.1.1 with
-    | .stack off => some (stackArgStore q.1.2 q.2 (.spOffset off))
+    | .stack off => some (.store (storeOpOfBytes q.2) q.1.2 (.spOffset off) trustedFlags)
     | .reg _ => none
 
 theorem foldl_argStep_gen : ∀ (L : List ((ArgLoc × Reg) × Nat)) (acc : Array (Reg × Reg))
@@ -396,7 +396,7 @@ theorem foldl_argStep_gen : ∀ (L : List ((ArgLoc × Reg) × Nat)) (acc : Array
     simp [argRegPairs, argStores]
   | ((.stack off, r), b) :: L, acc, st => by
     rw [List.foldl_cons, show argStep (acc, st) ((ArgLoc.stack off, r), b) =
-      (acc, st.emit (stackArgStore r b (.spOffset off))) from rfl,
+      (acc, st.emit (.store (storeOpOfBytes b) r (.spOffset off) trustedFlags)) from rfl,
       foldl_argStep_gen L]
     cases st
     simp [argRegPairs, argStores, LState.emit]
@@ -445,7 +445,8 @@ theorem argStores_map : ∀ (T : List ((ArgLoc × Nat) × Nat)),
     exact argStores_map T
   | ((.stack off, x), b) :: T => by
     simp only [List.map_cons, argStores, stackEnts, List.filterMap_cons, List.map_cons] at *
-    rw [show argStore (off, x, b) = stackArgStore (.vreg x .int) b (.spOffset off) from rfl]
+    rw [show argStore (off, x, b) = .store (storeOpOfBytes b) (.vreg x .int) (.spOffset off)
+      trustedFlags from rfl]
     congr 1
     exact argStores_map T
 

@@ -64,7 +64,8 @@ def tryDestInB (f : Clif.Function) (td : Clif.TryDest) : Bool :=
 /-- **The exception-table conditions** of a `try_call`/`try_call_indirect` — input restrictions
 mirroring Cranelift's verifier and aarch64 ABI:
 
-* the table's signature is declared (`verify_exception_table`), with the `system_v` (or default)
+* the table's signature is declared (`verify_exception_table`), with integer parameters and
+  returns (`sigIntB`: the lowering's calls pass integers only), the `system_v` (or default)
   convention (Cranelift 0.136.1 panics on a `fast` callee; `tail`/`preserve_all` are not lowered
   here), at most 8 returns (the aarch64 return registers x0..x7 without
   `enable_multi_ret_implicit_sret`) and no `i128` return (legalized away before lowering);
@@ -77,7 +78,7 @@ def tryInB (f : Clif.Function) (et : Clif.ExnTable) : Bool :=
   match f.sigDecls.lookup et.sig with
   | none => false
   | some s =>
-    (s.callConv.isNone || s.callConv == some .systemV) && decide (s.returns.length ≤ 8) &&
+    sigIntB s && (s.callConv.isNone || s.callConv == some .systemV) && decide (s.returns.length ≤ 8) &&
     s.returns.all (·.ty != .i128) &&
     et.items.all (fun | .context _ => false | _ => true) &&
     et.handlers.all (fun td => tryDestInB f td && td.args.all fun
@@ -594,14 +595,15 @@ theorem lmapM_ne_error {ε α β : Type} {g : α → Except ε β} {l : List α}
   obtain ⟨ys, hys⟩ := lmapM_ok' l h
   rw [hys] at he; cases he
 
-/-- `exnTableOpnd` computes for a declared `system_v` signature without `context` items. -/
+/-- `exnTableOpnd` computes for a declared `system_v` integer signature without `context`
+items. -/
 theorem exnTableOpnd_ok {f : Clif.Function} {et : Clif.ExnTable} {s : Clif.Signature}
     (hs : f.sigDecls.lookup et.sig = some s)
-    (hcc : (s.callConv.isNone || s.callConv == some .systemV) = true)
+    (hcc : (s.callConv.isNone || s.callConv == some .systemV) = true) (hint : sigIntB s = true)
     (hit : ∀ x ∈ et.items, (match x with | .context _ => false | _ => true) = true) :
     ∃ items, exnTableOpnd f et = .ok (s, items) ∧ items.length = et.items.length := by
   unfold exnTableOpnd
-  simp only [hs, hcc, Bool.not_true, Bool.false_eq_true, ite_false, bind, Except.bind]
+  simp only [hs, hcc, hint, Bool.not_true, Bool.false_eq_true, ite_false, bind, Except.bind]
   split
   · rename_i e he
     refine (lmapM_ne_error (fun x hx => ?_) he).elim
@@ -641,8 +643,8 @@ theorem tryOk_of {f : Clif.Function} {ctx : Ctx} {et : Clif.ExnTable} (hin : try
   | none => simp [hs] at hin
   | some s =>
     simp only [hs, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at hin
-    obtain ⟨⟨⟨⟨⟨⟨hcc, h8⟩, h128⟩, hitems⟩, hhand⟩, hnorm⟩, hnargs⟩ := hin
-    obtain ⟨items, hex, hil⟩ := exnTableOpnd_ok hs hcc hitems
+    obtain ⟨⟨⟨⟨⟨⟨⟨hint, hcc⟩, h8⟩, h128⟩, hitems⟩, hhand⟩, hnorm⟩, hnargs⟩ := hin
+    obtain ⟨items, hex, hil⟩ := exnTableOpnd_ok hs hcc hint hitems
     have hpl := payloadRegs_length hcc
     refine ⟨s, items, hex, h8, ?_, by rw [hil, handlers_length hitems], fun k td hk => ?_⟩
     · simp only [List.any_eq_false, beq_iff_eq]
@@ -696,7 +698,7 @@ theorem dataOk_of {f : Clif.Function} {B : Clif.Block} (hE : Compile.termE B.ter
     | none => simp [hs] at h
     | some s =>
       simp only [hs, Bool.and_eq_true, List.all_eq_true] at h
-      obtain ⟨items, hx, -⟩ := exnTableOpnd_ok hs h.1.1.1.1.1.1 h.1.1.1.2
+      obtain ⟨items, hx, -⟩ := exnTableOpnd_ok hs h.1.1.1.1.1.1.2 h.1.1.1.1.1.1.1 h.1.1.1.2
       exact ⟨s, items, rfl, hx⟩
   unfold DataOk
   cases hb : B.term with

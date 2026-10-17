@@ -641,9 +641,9 @@ theorem ctxSpec_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
   have hm := blockFold f f.blocks (Array.replicate (maxVOf f) none) (Array.replicate (maxVOf f) none)
     #[] #[]
   simp only [List.size_toArray, List.length_nil, Array.empty_append] at hm
-  unfold ctxModel at hctx hrg
-  rw [hm] at hctx hrg
-  simp only at hctx hrg
+  unfold ctxModel at hctx hrg hst
+  rw [hm] at hctx hrg hst
+  simp only at hctx hrg hst
   subst hctx hrg hst
   clear hm hb
   have hWf : (f.blocks.flatMap (blockTyW f)).map Prod.fst = valueDefs f := tyW_fst hC
@@ -808,14 +808,15 @@ theorem eTy_of_valTyOk {ty : Clif.Ty} (hv : valTyOk ty = true) (hi : ty.isInt = 
     eTy ty = true := by
   cases ty <;> simp_all [valTyOk, eTy, Clif.Ty.isInt, Clif.Ty.isFloat]
 
-/-- The result types of a statement of a function of the lowering's scope are integers:
-subset E (`Compile.instE`, the externs' `Compile.sigE`) and the indirect-call signatures
-(`LowerScope.indInt`). -/
-theorem tysOf_int {f : Clif.Function} (hs : LowerScope f) {B : Clif.Block} (hB : B ∈ f.blocks)
-    {s : Clif.Stmt} (hst : s ∈ B.body) : ∀ t ∈ tysOf f s, t.isInt = true := by
-  have hE := hs.subsetE
+/-- The result types of a statement of a function of subset E are integers: subset E
+(`Compile.instE`, the externs' `Compile.sigE`) and the indirect-call signatures (`instData`
+accepts only `sigIntB` ones). -/
+theorem tysOf_int {f : Clif.Function} (hE : Compile.functionE f = true) {B : Clif.Block}
+    (hB : B ∈ f.blocks) {s : Clif.Stmt} (hst : s ∈ B.body) (hsc : StmtC f s) :
+    ∀ t ∈ tysOf f s, t.isInt = true := by
   obtain ⟨res, inst⟩ := s
   have hi := Compile.instE_of_functionE hE hB hst
+  obtain ⟨d, hd⟩ := hsc.1
   intro t ht
   cases inst with
   | call fn args =>
@@ -833,10 +834,7 @@ theorem tysOf_int {f : Clif.Function} (hs : LowerScope f) {B : Clif.Block} (hB :
       simp only [tysOf, Clif.Inst.resultTypes, h, Option.map_some, Option.getD_some,
         List.mem_map] at ht
       obtain ⟨p, hp, rfl⟩ := ht
-      have hmem : sg ∈ indSigs f := by
-        simp only [indSigs, List.mem_flatMap, List.mem_append, List.mem_filterMap]
-        exact ⟨B, hB, .inl ⟨_, hst, by simp [h]⟩⟩
-      exact List.all_eq_true.mp (hs.indInt sg hmem).2 p hp
+      exact List.all_eq_true.mp (sigIntB_iff.mp (instData_callIndirect_int hd h)).2 p hp
   | unary op ty x =>
     cases op <;> simp_all [tysOf, Clif.Inst.resultTypes, Compile.instE, Compile.unaryTyE,
       Compile.unaryE, Compile.tyE]
@@ -844,26 +842,33 @@ theorem tysOf_int {f : Clif.Function} (hs : LowerScope f) {B : Clif.Block} (hB :
     simp_all [tysOf, Clif.Inst.resultTypes, Compile.instE, Compile.tyE, Compile.binaryE,
       Compile.flagsE]
 
-/-- On a function of the lowering's scope every type `buildCtx` admits is an E type. -/
-theorem blockE_of {f : Clif.Function} (hs : LowerScope f) (hC : ∀ B ∈ f.blocks, BlockC f B) :
+/-- On a function of subset E every type `buildCtx` admits is an E type. -/
+theorem blockE_of {f : Clif.Function} (hE : Compile.functionE f = true)
+    (hC : ∀ B ∈ f.blocks, BlockC f B) :
     ∀ B ∈ f.blocks, (∀ q ∈ B.params, eTy q.2 = true) ∧ ∀ s ∈ B.body, ∀ t ∈ tysOf f s, eTy t = true := by
   intro B hB
-  have hE := hs.subsetE
-  simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE
-  refine ⟨fun q hq => by simpa [Compile.tyE, eTy] using (hE.2 B hB).1.1 q hq, fun s hs' t ht => ?_⟩
-  exact eTy_of_valTyOk (((hC B hB).2 s hs').2.2 t ht) (tysOf_int hs hB hs' t ht)
+  have hE' := hE
+  simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE'
+  refine ⟨fun q hq => by simpa [Compile.tyE, eTy] using (hE'.2 B hB).1.1 q hq, fun s hs' t ht => ?_⟩
+  exact eTy_of_valTyOk (((hC B hB).2 s hs').2.2 t ht) (tysOf_int hE hB hs' ((hC B hB).2 s hs') t ht)
 
-/-- Every type in `buildCtx`'s context of a function of the lowering's scope is an E type:
-`buildCtx` admits integers of E and `f32`/`f64`, the scope only integers. -/
-theorem CtxSpec.valTyE {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
-    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (hs : LowerScope f) : CtxE ctx := by
+/-- Every type in `buildCtx`'s context of a function of subset E is an E type: `buildCtx`
+admits integers of E and `f32`/`f64`, subset E only integers. -/
+theorem CtxSpec.ctxE {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (hE : Compile.functionE f = true) :
+    CtxE ctx := by
   intro x t ht
   have mem : ∀ ty : Clif.Ty, eTy ty = true → CTy.ofClif ty ∈ eCTys := by
     intro ty h; cases ty <;> simp_all [eTy, eCTys, CTy.ofClif]
-  have hBE := blockE_of hs spec.blockC
+  have hBE := blockE_of hE spec.blockC
   rcases spec.tyOf x t ht with ⟨B, hB, q, hq, -, rfl⟩ | ⟨B, hB, s, hs', m, ty, -, hty, rfl⟩
   · exact mem _ ((hBE B hB).1 q hq)
   · exact mem _ ((hBE B hB).2 s hs' ty (List.mem_of_getElem? hty))
+
+/-- Every type in `buildCtx`'s context of a function of the lowering's scope is an E type. -/
+theorem CtxSpec.valTyE {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (hs : LowerScope f) : CtxE ctx :=
+  spec.ctxE hs.subsetE
 
 /-- `regEq` on an integer context: value `x` in `vreg x` of class `int`. -/
 theorem CtxSpec.regEq_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
@@ -899,7 +904,7 @@ theorem ctxOk_of {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx} {ranges : A
     {st0 : LState} (hb : buildCtx f = .ok (ctx, ranges, st0)) : ctxOk f ctx = true := by
   have sp := ctxSpec_of hb
   have hE := sp.valTyE hs
-  have hBE := blockE_of hs sp.blockC
+  have hBE := blockE_of hs.subsetE sp.blockC
   have haddr := (hs.ctxFacts ctx ranges st0 hb).2
   simp only [ctxOk, Bool.and_eq_true, decide_eq_true_eq]
   refine ⟨⟨⟨⟨⟨⟨⟨⟨sp.func, ?_⟩, ?_⟩, ?_⟩, ?_⟩, sp.slotOff⟩, ?_⟩, ?_⟩, ?_⟩

@@ -475,7 +475,7 @@ theorem emitted_of_run {ctx : Ctx} {term : String} {args : List V} {s : LState} 
 conditions `Dominated` and `LowerScope`, `lowerCheck` accepts `lowerFunction`'s output. -/
 theorem lowerCheck_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
     (hs : LowerScope f) (h : lowerFunction f = .ok vc) : lowerCheck f vc = true := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_run h
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_run hs.subsetE h
   obtain ⟨hu, -, hwf⟩ := alias_facts hd hs hb hl
   have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hb)
   have hcf := ctxFacts_of hb

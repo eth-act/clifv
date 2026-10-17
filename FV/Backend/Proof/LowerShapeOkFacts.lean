@@ -329,9 +329,12 @@ theorem exnTableOpnd_sig {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.Si
     · simp only [bind, Except.bind, pure, Except.pure] at h
       split at h
       · cases h
-      · simp only [Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, -⟩ := h
-        rfl
+      · try simp only [bind, Except.bind, pure, Except.pure] at h
+        split at h
+        · cases h
+        · simp only [Except.ok.injEq, Prod.mk.injEq] at h
+          obtain ⟨rfl, -⟩ := h
+          rfl
 
 theorem tryFix_ne_nil (info : TryInfo) {ms : List MInst} (h : ms ≠ []) : tryFix info ms ≠ [] := by
   unfold tryFix
