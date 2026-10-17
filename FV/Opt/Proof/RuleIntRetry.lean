@@ -81,4 +81,19 @@ elab "opt_int_retry " t:tactic : tactic => do
     out := out ++ (← getGoals)
   setGoals out
 
+set_option hygiene false in
+/-- `rule_auto_z` with the type variables split on `isInt` (`opt_split_int`), and
+`rule_rhs_x`, whose evaluation after a `split` also uses `tyInt_ofClif_notInt`. -/
+syntax "rule_auto_zi " ident : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| rule_auto_zi $r:ident) => `(tactic| (
+      rule_intro $r
+      rule_no_iflets
+      rule_lhs hG
+      all_goals opt_split_i128
+      all_goals opt_split_int
+      all_goals rule_rhs_x [tyInt_ofClif_notInt]
+      all_goals (opt_some_subst; rule_finish_b)))
+
 end Opt.Proof
