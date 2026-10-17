@@ -1,6 +1,8 @@
 import FV.Backend.Proof.StockReturnAutomaticSource
 import FV.Backend.Proof.StockReturnRecordSource
 import FV.Backend.Proof.StockReturnDriverRuns
+import FV.Backend.Proof.StockReturnContract
+import FV.Backend.Proof.StockReturnVCode
 
 namespace Backend.Stock.Proof.ReturnSourceWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64 ReturnFixture
@@ -361,4 +363,153 @@ theorem stock_return_auto_source_witness (p : Case) (a b : BitVec p.ty.width) :
   intro world
   obtain ⟨ops,world',executed,held,memory⟩ := execution world rfl
   exact ⟨ops,world',executed,held⟩
+
+private def ContractPlacement (p : Case) : Prop :=
+  (Stock.lower (function p)).toOption.map (fun result => decide
+    (0 < result.code.blocks.size ∧ (result.code.blocks[0]!).insts =
+      #[.args ((registers p).zip (pins p)),.rets ((registers p).zip (pins p))])) = some true
+section ContractKernel
+attribute [local semireducible] Isle.Aarch64.program Stock.runTerm
+private theorem contract8 : ContractPlacement ⟨false,.i8,by simp [Clif.Ty.width],by simp⟩ := by
+  unfold ContractPlacement; decide +kernel
+private theorem contract16 : ContractPlacement ⟨false,.i16,by simp [Clif.Ty.width],by simp⟩ := by
+  unfold ContractPlacement; decide +kernel
+private theorem contract32 : ContractPlacement ⟨false,.i32,by simp [Clif.Ty.width],by simp⟩ := by
+  unfold ContractPlacement; decide +kernel
+private theorem contract64 : ContractPlacement ⟨false,.i64,by simp [Clif.Ty.width],by simp⟩ := by
+  unfold ContractPlacement; decide +kernel
+private theorem contractPointer : ContractPlacement ⟨true,.i64,by simp [Clif.Ty.width],fun _ => rfl⟩ := by
+  unfold ContractPlacement; decide +kernel
+end ContractKernel
+private theorem contractPlacement (p : Case) : ContractPlacement p := by
+  rcases p with ⟨sret,ty,width,pointer⟩
+  cases sret with
+  | true => have same := pointer rfl; subst ty; exact contractPointer
+  | false =>
+    cases ty
+    all_goals first
+      | exact contract8
+      | exact contract16
+      | exact contract32
+      | exact contract64
+      | simp [Clif.Ty.width] at width
+
+/-- Every ordinary scalar width and implicit x8 sret case executes the actual
+returned VCode terminator under the new whole-run contract. The source words
+are arbitrary, machine upper bits are dirty, and ordinary cases also recover
+the legacy run contract. Actual placement is computed from complete lowering. -/
+theorem stock_return_run_contract_witness (p : Case) (a b : BitVec p.ty.width) :
+    ∃ result : Result, Stock.lower (function p) = .ok result ∧ LowerScope (function p) ∧
+      Dominated (function p) ∧ sigAbiOk (function p).sig = true ∧
+      Clif.enterFunc (function p) (args p a b) Clif.Mem.empty = .ok (frame p a b,Clif.Mem.empty) ∧
+      Clif.stepTerm Clif.Env.empty {funcs := []} ⟨frame p a b,[],Clif.Mem.empty⟩ (.ret (explicitXs p)) =
+        .done (values p a b) Clif.Mem.empty ∧
+      ∀ world,
+        RunOkABI (function p) result.code ispec (fun _ _ _ => True) []
+          ⟨0,1,machine p a b,world⟩ (.returned (values p a b) Clif.Mem.empty) ∧
+        (p.sret = false → RunOk result.code ispec (fun _ _ _ => True) []
+          ⟨0,1,machine p a b,world⟩ (.returned (values p a b) Clif.Mem.empty)) := by
+  obtain ⟨input⟩ := inputs p
+  have block : (function p).blocks[input.event.block]? = some (function p).blocks[0]! := by rw [input.block]; rfl
+  obtain ⟨original,term,body,split⟩ := stock_lower_body_scan_split input.run (scope p) input.events
+  have same := Option.some.inj (split.block.symm.trans block)
+  subst original
+  have terminal : input.record.inst = input.event.termInst := by
+    rw [input.current,split.termIndex,input.block]; rfl
+  have guarded : ValuesHeld (fun x => Demanded input.record.output.state x ∧
+      x ∈ availOf (function p) (availIn (function p) input.result.ctx) input.event.block 0)
+      input.event.ctx (frame p a b) (fun key => machine p a b (aliasNum input.result.final.alias key)) := by
+    intro x available
+    apply held p input a b x
+    rw [requests p]
+    have availability := available.2
+    rw [input.block] at availability
+    have entry : (function p).blocks[0]? = some (function p).blocks[0]! := rfl
+    obtain ⟨present,_⟩ := (mem_av entry).mp availability
+    rcases present with parameter | incoming | ⟨j,stm,earlier,_,_⟩
+    · cases flag : p.sret <;> simpa [function,abiXs,flag] using parameter
+    · have bound := (inFix_fixOk (f := function p) (ctx := input.result.ctx) (gn := id)).cand 0 x incoming
+      omega
+    · omega
+  have sourceDefined : SourceDefinedAt (function p) input.result.ctx input.event.block 0 (frame p a b) := by
+    rw [input.block]
+    exact source_defined_enterFunc (dominated p) input.result.ctx (entered p a b)
+  have observed := contractPlacement p
+  unfold ContractPlacement at observed
+  rw [input.run] at observed
+  simp only [Except.toOption,Option.map_some,Option.some.injEq,decide_eq_true_eq] at observed
+  obtain ⟨bound,code⟩ := observed
+  have placed : input.result.code.blocks[0]? = some input.result.code.blocks[0]! := by simp [bound]
+  have resolve7 : Backend.lowerFunction.resolve input.result.final.alias (input.result.final.alias.size+1)
+      (.vreg 192 .int) = .vreg 192 .int := by
+    rw [resolve_vreg]
+    change Reg.vreg (aliasNum input.result.final.alias 192) .int = _
+    rw [input.alias7]
+  have resolve31 : Backend.lowerFunction.resolve input.result.final.alias (input.result.final.alias.size+1)
+      (.vreg 193 .int) = .vreg 193 .int := by
+    rw [resolve_vreg]
+    change Reg.vreg (aliasNum input.result.final.alias 193) .int = _
+    rw [input.alias31]
+  have segment : SegAt input.result.code.blocks[0]! 1 (input.record.output.emitted.toList.map
+      (·.mapRegs (Backend.lowerFunction.resolve input.result.final.alias (input.result.final.alias.size+1)))) := by
+    rw [input.code]
+    intro k hk
+    have zero : k = 0 := by simpa using hk
+    subst k
+    rw [code]
+    cases flag : p.sret <;>
+      simp [registers,pins,flag,MInst.mapRegs,resolve7,resolve31]
+  have self : Refines (fun _ => True) ispec := fun _ _ _ _ world _ h => ⟨world,h,SameWorld.refl _ _⟩
+  have stable : MRStable (fun _ => True) (fun _ _ _ => True) := by intro _ _ _ _ _ h; exact h
+  refine ⟨input.result,input.run,scope p,dominated p,abi p,entered p a b,returned p a b,?_⟩
+  intro world
+  have result := stock_lower_return_record_runOk input.run (scope p) (dominated p) (abi p)
+    input.events block rfl input.records terminal rfl rfl (returned p a b) sourceDefined guarded
+    self stable placed segment world trivial
+  have prefixed := RunOkABI.prefix (Star.refl _) result
+  refine ⟨prefixed,fun flag => RunOkABI.legacy prefixed ?_⟩
+  simp [function,sigRets,flag]
+
+/-- Complete actual scalar/sret lowering inhabits automatic VCode return
+refinement. General block and record placement are derived by the theorem;
+the witness supplies no location or emitted-code certificate. -/
+theorem stock_return_vcode_contract_witness (p : Case) (a b : BitVec p.ty.width) :
+    ∃ result : Result, Stock.lower (function p) = .ok result ∧ LowerScope (function p) ∧
+      Dominated (function p) ∧ sigAbiOk (function p).sig = true ∧
+      Clif.enterFunc (function p) (args p a b) Clif.Mem.empty = .ok (frame p a b,Clif.Mem.empty) ∧
+      Clif.stepTerm Clif.Env.empty {funcs := []} ⟨frame p a b,[],Clif.Mem.empty⟩ (.ret (explicitXs p)) =
+        .done (values p a b) Clif.Mem.empty ∧
+      ∀ world,∃ label k, RunOkABI (function p) result.code ispec (fun _ _ _ => True) []
+        ⟨label,k,machine p a b,world⟩ (.returned (values p a b) Clif.Mem.empty) := by
+  obtain ⟨input⟩ := inputs p
+  have block : (function p).blocks[input.event.block]? = some (function p).blocks[0]! := by rw [input.block]; rfl
+  obtain ⟨original,term,body,split⟩ := stock_lower_body_scan_split input.run (scope p) input.events
+  have same := Option.some.inj (split.block.symm.trans block)
+  subst original
+  have terminal : input.record.inst = input.event.termInst := by
+    rw [input.current,split.termIndex,input.block]; rfl
+  have guarded : ValuesHeld (fun x => Demanded input.record.output.state x ∧
+      x ∈ availOf (function p) (availIn (function p) input.result.ctx) input.event.block 0)
+      input.event.ctx (frame p a b) (fun key => machine p a b (aliasNum input.result.final.alias key)) := by
+    intro x available
+    apply held p input a b x
+    rw [requests p]
+    have availability := available.2
+    rw [input.block] at availability
+    have entry : (function p).blocks[0]? = some (function p).blocks[0]! := rfl
+    obtain ⟨present,_⟩ := (mem_av entry).mp availability
+    rcases present with parameter | incoming | ⟨j,stm,earlier,_,_⟩
+    · cases flag : p.sret <;> simpa [function,abiXs,flag] using parameter
+    · have bound := (inFix_fixOk (f := function p) (ctx := input.result.ctx) (gn := id)).cand 0 x incoming
+      omega
+    · omega
+  have sourceDefined : SourceDefinedAt (function p) input.result.ctx input.event.block 0 (frame p a b) := by
+    rw [input.block]
+    exact source_defined_enterFunc (dominated p) input.result.ctx (entered p a b)
+  have self : Refines (fun _ => True) ispec := fun _ _ _ _ world _ h => ⟨world,h,SameWorld.refl _ _⟩
+  have stable : MRStable (fun _ => True) (fun _ _ _ => True) := by intro _ _ _ _ _ h; exact h
+  refine ⟨input.result,input.run,scope p,dominated p,abi p,entered p a b,returned p a b,?_⟩
+  intro world
+  exact stock_lower_return_runOk input.run (scope p) (dominated p) (abi p)
+    input.events block rfl input.records terminal rfl rfl (returned p a b) sourceDefined guarded self stable world trivial
 end Backend.Stock.Proof.ReturnSourceWitness
