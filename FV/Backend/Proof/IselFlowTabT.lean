@@ -30,7 +30,7 @@ def tlsTab0 : Tab :=
 /-- Chunk 1 of `tlsTab`. -/
 def tlsTab1 : Tab :=
   [(306, [⟨0, true⟩], ⟨0, true⟩),
-   (307, [⟨0, true⟩], ⟨0, true⟩),
+   (307, [⟨2, true⟩], ⟨0, true⟩),
    (310, [⟨2, true⟩], ⟨0, true⟩),
    (344, [⟨2, true⟩], ⟨0, true⟩),
    (358, [⟨2, true⟩, ⟨0, true⟩], ⟨0, true⟩),
@@ -65,7 +65,7 @@ def tlsTab3 : Tab :=
    (407, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (409, [⟨2, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (410, [⟨0, true⟩], ⟨0, true⟩),
-   (414, [⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
+   (414, [⟨2, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (417, [⟨2, true⟩, ⟨0, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (418, [⟨0, true⟩, ⟨0, true⟩, ⟨2, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨0, true⟩),
    (422, [⟨0, true⟩, ⟨0, true⟩, ⟨2, true⟩], ⟨0, true⟩),
@@ -207,8 +207,22 @@ def tlsTab12 : Tab :=
    (715, [⟨2, true⟩], ⟨2, true⟩),
    (722, [⟨2, true⟩, ⟨0, true⟩, ⟨0, true⟩], ⟨2, true⟩)]
 
+/-- Chunk 13 of `tlsTab`: the internal terms of the S11e4 float data-movement roots. -/
+def tlsTab13 : Tab :=
+  [(586, [⟨2, true⟩], ⟨2, true⟩),
+   (587, [⟨2, true⟩], ⟨2, true⟩),
+   (537, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (538, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (546, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (547, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (173, [⟨2, true⟩], ⟨2, true⟩),
+   (375, [⟨2, true⟩, ⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (411, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
+   (585, [⟨2, true⟩], ⟨2, true⟩),
+   (681, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩)]
+
 /-- The summary table. -/
-def tlsTab : Tab := tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12
+def tlsTab : Tab := tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13
 
 set_option maxRecDepth 100000 in
 theorem tlsTab0_ok :
@@ -288,11 +302,17 @@ theorem tlsTab12_ok :
       true := by
   decide +kernel
 
+set_option maxRecDepth 100000 in
+theorem tlsTab13_ok :
+    tlsTab13.all (fun e => (program.rulesOf e.1).all (aRule program tlsTab true e.2.1 e.2.2)) =
+      true := by
+  decide +kernel
+
 /-- Every rule of every term of `tlsTab` checks. -/
 theorem tlsTab_ok : chkTab program tlsTab true = true := by
   unfold chkTab
-  show (tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12).all
+  show (tlsTab0 ++ tlsTab1 ++ tlsTab2 ++ tlsTab3 ++ tlsTab4 ++ tlsTab5 ++ tlsTab6 ++ tlsTab7 ++ tlsTab8 ++ tlsTab9 ++ tlsTab10 ++ tlsTab11 ++ tlsTab12 ++ tlsTab13).all
     (fun e => (program.rulesOf e.1).all (aRule program tlsTab true e.2.1 e.2.2)) = true
-  simp only [List.all_append, tlsTab0_ok, tlsTab1_ok, tlsTab2_ok, tlsTab3_ok, tlsTab4_ok, tlsTab5_ok, tlsTab6_ok, tlsTab7_ok, tlsTab8_ok, tlsTab9_ok, tlsTab10_ok, tlsTab11_ok, tlsTab12_ok, Bool.and_self]
+  simp only [List.all_append, tlsTab0_ok, tlsTab1_ok, tlsTab2_ok, tlsTab3_ok, tlsTab4_ok, tlsTab5_ok, tlsTab6_ok, tlsTab7_ok, tlsTab8_ok, tlsTab9_ok, tlsTab10_ok, tlsTab11_ok, tlsTab12_ok, tlsTab13_ok, Bool.and_self]
 
 end Backend.Proof.Flow
