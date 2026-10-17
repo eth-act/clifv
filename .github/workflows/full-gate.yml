@@ -85,9 +85,11 @@ jobs:
         id: plan
         env:
           BASE: ${{ steps.base.outputs.sha }}
-          SHARDS: ${{ github.event_name == 'pull_request' && '6' || '12' }}
+          SHARDS: ${{ github.event_name == 'pull_request' && '8' || '16' }}
         run: |
-          python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} --shards "$SHARDS" --waves 3 \
+          # --time-scale: runner seconds per second recorded in scripts/lake-module-peaks.tsv
+          # (measured on the first full CI build, 2026-10-17)
+          python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} --shards "$SHARDS" --waves 3 --time-scale 2.5 \
             --out ci-plan.json --github-output $LEAN_TARGETS | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -314,7 +316,6 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -yq qemu-user-static llvm-18 clang
           rustup target add aarch64-unknown-linux-musl
-          scripts/fetch-third-party.sh
       - name: Rust build cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

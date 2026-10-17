@@ -69,6 +69,8 @@ def main():
     ap.add_argument("--min-cap", default="3G")
     ap.add_argument("--default-cap", default="6G")
     ap.add_argument("--default-secs", type=float, default=60)
+    ap.add_argument("--time-scale", type=float, default=1.0,
+                    help="runner seconds per recorded second (recorded on the agents' machine)")
     ap.add_argument("--profile", action="append")
     ap.add_argument("--out", default="ci-plan.json")
     ap.add_argument("--github-output", action="store_true")
@@ -112,7 +114,7 @@ def main():
                 planned.add(m)
                 stack.extend(rdeps[m])
 
-    secs = {m: prof[m][1] if m in prof else a.default_secs for m in planned}
+    secs = {m: a.time_scale * (prof[m][1] if m in prof else a.default_secs) for m in planned}
     peak = {m: prof[m][0] if m in prof else 0 for m in planned}
 
     def cap(m):

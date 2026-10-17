@@ -57,6 +57,8 @@ runs:
           echo "LEAN_NUM_THREADS=2"
         } >> "$GITHUB_ENV"
         command -v /usr/bin/time > /dev/null || { sudo apt-get update -q && sudo apt-get install -yq time; }
+        # some FVTest modules read Cranelift's ISLE sources while they elaborate (FVTest.Isle.*)
+        scripts/fetch-third-party.sh wasmtime
     - name: Cache Lean toolchain
       id: lean-cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

@@ -21,7 +21,7 @@ echo "wave $wave shard $shard: ${#mods[@]} modules"
 # most 3 lean processes on 4 vCPUs), modules above 12G alone; caps only steer the packing.
 python3 scripts/lake-serial-build.py --only "$out/modules.txt" --out "$out/sched" \
   --record "$out/peaks.tsv" --budget 15G --heavy 12G --heavy-avail 0 --pause-avail 1G \
-  --max-jobs 3 --margin 1.0 --max-cap 48G "${mods[@]}"
+  --max-jobs 3 --margin 1.0 --max-cap 48G --retry-failed "${mods[@]}"
 lake build --no-build "${mods[@]}" -o "$out/outputs.jsonl"
 lake cache stage "$out/outputs.jsonl" "$out/stage"
 du -sh "$out/stage"
