@@ -407,6 +407,32 @@ variable {σ : Type} (G : EGraph σ)
 @[opt_monad] theorem tyIntVec128_ofClif {t : Ty} (hi : t.isInt) :
     Rust.tyIntVec128 (CTy.ofClif t) = some (CTy.ofClif t) := by
   cases t <;> first | rfl | exact absurd hi (by decide)
+/-! Concrete integer types: `opt_eval` discharges side conditions by `assumption` only, so a
+right-hand side at a fixed type (`ty_int` of `$I64`) needs the unconditional instances. -/
+@[opt_monad] theorem tyInt_ofClif_i8 : Rust.tyInt (CTy.ofClif .i8) = some (CTy.ofClif .i8) := rfl
+@[opt_monad] theorem tyInt_ofClif_i16 : Rust.tyInt (CTy.ofClif .i16) = some (CTy.ofClif .i16) := rfl
+@[opt_monad] theorem tyInt_ofClif_i32 : Rust.tyInt (CTy.ofClif .i32) = some (CTy.ofClif .i32) := rfl
+@[opt_monad] theorem tyInt_ofClif_i64 : Rust.tyInt (CTy.ofClif .i64) = some (CTy.ofClif .i64) := rfl
+@[opt_monad] theorem tyInt_ofClif_i128 :
+    Rust.tyInt (CTy.ofClif .i128) = some (CTy.ofClif .i128) := rfl
+@[opt_monad] theorem tyIntVec128_ofClif_i8 :
+    Rust.tyIntVec128 (CTy.ofClif .i8) = some (CTy.ofClif .i8) := rfl
+@[opt_monad] theorem tyIntVec128_ofClif_i16 :
+    Rust.tyIntVec128 (CTy.ofClif .i16) = some (CTy.ofClif .i16) := rfl
+@[opt_monad] theorem tyIntVec128_ofClif_i32 :
+    Rust.tyIntVec128 (CTy.ofClif .i32) = some (CTy.ofClif .i32) := rfl
+@[opt_monad] theorem tyIntVec128_ofClif_i64 :
+    Rust.tyIntVec128 (CTy.ofClif .i64) = some (CTy.ofClif .i64) := rfl
+@[opt_monad] theorem tyIntVec128_ofClif_i128 :
+    Rust.tyIntVec128 (CTy.ofClif .i128) = some (CTy.ofClif .i128) := rfl
+@[opt_monad] theorem tyIntRefScalar64_ofClif_i8 :
+    Rust.tyIntRefScalar64 (CTy.ofClif .i8) = some (CTy.ofClif .i8) := rfl
+@[opt_monad] theorem tyIntRefScalar64_ofClif_i16 :
+    Rust.tyIntRefScalar64 (CTy.ofClif .i16) = some (CTy.ofClif .i16) := rfl
+@[opt_monad] theorem tyIntRefScalar64_ofClif_i32 :
+    Rust.tyIntRefScalar64 (CTy.ofClif .i32) = some (CTy.ofClif .i32) := rfl
+@[opt_monad] theorem tyIntRefScalar64_ofClif_i64 :
+    Rust.tyIntRefScalar64 (CTy.ofClif .i64) = some (CTy.ofClif .i64) := rfl
 @[opt_match, opt_monad] theorem tyVec128_ofClif (t : Ty) :
     Rust.tyVec128 (CTy.ofClif t) = none := by cases t <;> rfl
 @[opt_match, opt_monad] theorem tyVector_ofClif (t : Ty) :
