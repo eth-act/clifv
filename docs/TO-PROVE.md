@@ -933,7 +933,10 @@ Large, low priority.
   `InScopeP` (names kept; acceptance sets equal on the corpus and the crates, §1.1).
 - **The full gate list:** `lake build FV FVTest lean-backend lean-e2e-check link-check lean-link
   clif-decode` (modules through `scripts/lake-serial-build.py`); `lake build` in `crate-proofs/`;
-  `#print axioms` of the E2E theorems (all of them: docs/research/axiom-audit.md);
+  `scripts/axiom-audit.py`: `#print axioms` of the E2E theorems, the files in `scripts/audit/` (all of
+  them: docs/research/axiom-audit.md; a theorem that joins the E2E list gets a line there; a non-vacuity
+  witness that uses `native_decide` is marked `-- witness: native_decide`, every other theorem must
+  print only `propext`, `Classical.choice`, `Quot.sound`);
   `scripts/lean-backend-filetests.sh` (corpus 114/114, runtests ≥ 4672/0/0);
   `scripts/lean-backend-encode-check.sh` (0 differ); `lean-e2e-check` (≥ 1149 accepted, 0 rejected);
   `cargo fv test --lean-link --verified` on `examples/fv-demo` and the survey; if CLIF semantics change,
@@ -944,7 +947,8 @@ Large, low priority.
   - *Per PR (required before a PR is labelled `merge-ready`; the author, scheduler budget ≤ 16 GB,
     shared cache, no heavy lock):* `scripts/lake-serial-build.py FV FVTest` and the executables the
     change affects (with the shared cache only the PR's modules and their dependents build);
-    `#print axioms` of new or changed theorems, and of the E2E list when a module they depend on changed;
+    `#print axioms` of new or changed theorems, and `scripts/axiom-audit.py` when a module the E2E
+    list depends on changed;
     the run-time gates whose inputs the PR touches: lowering/encoding/regalloc → `lean-backend-filetests.sh`,
     `lean-backend-encode-check.sh`; `FV/E2E`, `FV/Link`, scope predicates → `lean-e2e-check`,
     `link-check`; CLIF semantics → `clif-filetests.sh`, `opt-difftest.sh`; driver or `cargo-fv` →
