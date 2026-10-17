@@ -9,16 +9,17 @@ private theorem operand_of_value {ty : Clif.Ty} (width : ty.width = 32 ∨ ty.wi
     {u : BitVec ty.width} {A : CV} (sg : Bool) (held : VHolds ⟨ty,u⟩ A) : DivOpnd sg u A := by
   cases ty <;> simp only [Clif.Ty.width] at width
   all_goals try (omega)
-  · change BitVec 32 at u
-    change A.setWidth 32 = u at held
-    have signed : u.signExtend 32 = u := BitVec.signExtend_eq u
-    have unsigned : u.setWidth 32 = u := BitVec.setWidth_eq u
-    change (lo64 A).setWidth 32 = (if sg then u.signExtend 32 else u.setWidth 32)
-    rw [signed,unsigned,ite_self]
-    change (A.setWidth 64).setWidth 32 = u
-    rw [BitVec.setWidth_setWidth_of_le A (by decide)]
-    exact held
-  · exact divOpnd_of_vholds64 rfl held
+  all_goals first
+    | exact divOpnd_of_vholds64 rfl held
+    | change BitVec 32 at u
+      change A.setWidth 32 = u at held
+      have signed : u.signExtend 32 = u := BitVec.signExtend_eq u
+      have unsigned : u.setWidth 32 = u := BitVec.setWidth_eq u
+      change (lo64 A).setWidth 32 = (if sg then u.signExtend 32 else u.setWidth 32)
+      rw [signed,unsigned,ite_self]
+      change (A.setWidth 64).setWidth 32 = u
+      rw [BitVec.setWidth_setWidth_of_le A (by decide)]
+      exact held
 /-- The immediate producer is tied to the original defining constant through
 restricted DFG consistency; that constant need not occupy a machine register. -/
 theorem stock_cmp_immediate_condition_source_values {p : Program} (hp : Data p)
@@ -66,23 +67,24 @@ theorem stock_cmp_immediate_condition_source_values {p : Program} (hp : Data p)
         (BitVec.ofNat (szOf ty.width).bits imm.value)) = Clif.Sem.intcc cc u v := by
     cases ty <;> simp only [Clif.Ty.width] at width
     all_goals try omega
-    · change BitVec 32 at u v
-      change imm.value = v.toNat at literal
-      change (lo64 (ρ (aliasNum aliases nx))).setWidth 32 =
-        (if signedCC cc then u.signExtend 32 else u.setWidth 32) at inputX
-      simp only [BitVec.signExtend_eq,BitVec.setWidth_eq,ite_self] at inputX
-      change condOn (condOf cc).bits (cmpFlags
-        ((lo64 (ρ (aliasNum aliases nx))).setWidth 32) (BitVec.ofNat 32 imm.value)) = _
-      rw [literal,BitVec.ofNat_toNat,inputX]
-      exact stock_cmp_conditions (Or.inl rfl) cc u v
-    · change BitVec 64 at u v
-      change imm.value = v.toNat at literal
-      change lo64 (ρ (aliasNum aliases nx)) = u.setWidth 64 at inputX
-      simp only [BitVec.setWidth_eq] at inputX
-      change condOn (condOf cc).bits (cmpFlags
-        ((lo64 (ρ (aliasNum aliases nx))).setWidth 64) (BitVec.ofNat 64 imm.value)) = _
-      rw [literal,BitVec.ofNat_toNat,inputX,BitVec.setWidth_eq]
-      exact stock_cmp_conditions (Or.inr rfl) cc u v
+    all_goals first
+      | change BitVec 32 at u v
+        change imm.value = v.toNat at literal
+        change (lo64 (ρ (aliasNum aliases nx))).setWidth 32 =
+          (if signedCC cc then u.signExtend 32 else u.setWidth 32) at inputX
+        simp only [BitVec.signExtend_eq,BitVec.setWidth_eq,ite_self] at inputX
+        change condOn (condOf cc).bits (cmpFlags
+          ((lo64 (ρ (aliasNum aliases nx))).setWidth 32) (BitVec.ofNat 32 imm.value)) = _
+        rw [literal,BitVec.ofNat_toNat,inputX]
+        exact stock_cmp_conditions (Or.inl rfl) cc u v
+      | change BitVec 64 at u v
+        change imm.value = v.toNat at literal
+        change lo64 (ρ (aliasNum aliases nx)) = u.setWidth 64 at inputX
+        simp only [BitVec.setWidth_eq] at inputX
+        change condOn (condOf cc).bits (cmpFlags
+          ((lo64 (ρ (aliasNum aliases nx))).setWidth 64) (BitVec.ofNat 64 imm.value)) = _
+        rw [literal,BitVec.ofNat_toNat,inputX,BitVec.setWidth_eq]
+        exact stock_cmp_conditions (Or.inr rfl) cc u v
   have flags := setsFlags_cmpImm (szOf ty.width) nx validImm (fun key => ρ (aliasNum aliases key))
   rw [producer] at conditionCall
   have decoded : MInst.ofV (.data 58 4 [.data 59 10 [],
