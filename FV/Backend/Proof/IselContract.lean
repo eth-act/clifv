@@ -453,9 +453,20 @@ def ispec : Sem := fun i uses w =>
     some (defOut rd ((addpBytes (lo64 a) (lo64 b)).setWidth 128), w, .next)
   | .vecLanes .addv rd _ .size8x8, [a] =>
     some (defOut rd ((addvBytes (lo64 a)).setWidth 128), w, .next)
-  | .movFromVec rd _ idx .size8, [a] =>
-    if idx < 16 then some (defOut rd (ofX ((a.extractLsb' (8 * idx) 8).setWidth 64)), w, .next)
-    else none
+  -- `umov` of lane `idx`: bytes (`popcnt`), and (S11e4, the `mov_from_vec` of a float→int
+  -- `bitcast`) `umov wd, vn.s[idx]` / `umov xd, vn.d[idx]`; the lane zero-extended into the X
+  -- register
+  | .movFromVec rd _ idx sz, [a] =>
+    match sz with
+    | .size8 =>
+      if idx < 16 then some (defOut rd (ofX ((a.extractLsb' (8 * idx) 8).setWidth 64)), w, .next)
+      else none
+    | .size32 =>
+      if idx < 4 then some (defOut rd (ofX ((a.extractLsb' (32 * idx) 32).setWidth 64)), w, .next)
+      else none
+    | .size64 =>
+      if idx < 2 then some (defOut rd (ofX (a.extractLsb' (64 * idx) 64)), w, .next) else none
+    | _ => none
   -- agent/atomics-proof: `csetm` (`bmask`: all ones if the condition holds) and `dmb ish`
   -- (`fence`: no effect in the single-threaded model)
   | .csetm rd c, [] =>
@@ -981,12 +992,13 @@ the stores (1064–1067 `store`, 1068–1070 `istore*`), `stack_addr` (1093), an
 atomics (agent/atomics-proof): `atomic_load` (983), `atomic_store` (984), `atomic_rmw`
 (994–1004, one per operation), `atomic_cas` (1007), and `uextend` of an `atomic_load` (810:
 never matches); `tls_value` (agent/stack-tls-proof): the `elf_gd` rule (1129) and the `macho`
-rule (1130: never matches, `tls_model` is `elf_gd`). -/
+rule (1130: never matches, `tls_model` is `elf_gd`); the float loads and stores (S11e4):
+`load.f32`/`load.f64` (1047, 1048), `store` of an `f32`/`f64` value (1073, 1074). -/
 def memRootRule (r : Rule) : Bool :=
   r.id == 1027 || r.id == 1026 || r.id == 1093 || r.id == 815 || r.id == 824 ||
     (1041 ≤ r.id && r.id ≤ 1044) || (1052 ≤ r.id && r.id ≤ 1057) || (1064 ≤ r.id && r.id ≤ 1070) ||
     r.id == 810 || r.id == 983 || r.id == 984 || (994 ≤ r.id && r.id ≤ 1004) || r.id == 1007 ||
-    r.id == 1129 || r.id == 1130
+    r.id == 1129 || r.id == 1130 || r.id == 1047 || r.id == 1048 || r.id == 1073 || r.id == 1074
 
 /-- `LowerRuleOk` for a memory rule: additionally assumes `MemRelOk F sb syms f MR`. -/
 def MemRuleOk (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat) (isem : Sem)
@@ -1056,6 +1068,201 @@ def LowerRulesCorrect (p : Program) : Prop :=
     Refines F isem → MRStable F MR →
     ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → callRootRule r = false →
       indRootRule r = false → memRootRule r = false → LowerRuleOk isem MR env cp p r
+
+/-! ### Float-capable contexts (S11e4, floats #35)
+
+`CtxInv` describes the contexts of subset-E functions: every value is an `i8..i64` in an X
+register, so under it the float data-movement roots (`f32const`/`f64const`, `load`/`store` of
+an `f32`/`f64`, the float `select`, `bitcast`) never match and their `LowerRuleOk`/`MemRuleOkR`
+hold vacuously. Their contracts are therefore also stated over `CtxInvT`, the invariant of the
+class-aware context `buildCtx` builds for a function with `f32`/`f64` values (S11e3): a value's
+vreg has the class of its type (`valClassOf`), value and result types are E's integers or
+`f32`/`f64` (`mCTys`), and the operands in integer positions (`intArgs`, the CLIF verifier's
+typing of them) are integers (`IntPos`). `CtxInv` implies it (`CtxInv.toT`), so the `…T`
+contracts imply the `CtxInv` ones (`LowerRuleOkT.toOk`, `MemRuleOkRT.toR`). S11e5 establishes
+`CtxInvT` for `buildCtx` (with the typing check) and widens the source scope. -/
+
+/-- The value types of the float-capable lowering: E's integers, `f32` and `f64`. -/
+def mCTys : List CTy := eCTys ++ [.float 32, .float 64]
+
+/-- The register class of value `x`: its type's (`CTy.valClass`), `.int` for an untyped
+value (as `buildCtx`'s value map, S11e3). -/
+def valClassOf (ctx : Ctx) (x : Nat) : RegClass := ((ctx.valueType? x).map CTy.valClass).getD .int
+
+/-- `x` is in an integer position: a type it has is one of E's integers. -/
+def IntPos (ctx : Ctx) (x : Nat) : Prop := ∀ t, ctx.valueType? x = some t → t ∈ eCTys
+
+/-- The operands of an instruction the CLIF verifier types as integers: every operand of an
+integer operation, the address of a memory access, the condition of a `select`, the arguments
+of a call (calls are integer-only, `sigIntB`); not the value of a float `store`, the operands of
+a float `select` or the operand of a `bitcast`. -/
+def intArgs : Clif.Inst → List Nat
+  | .unary _ _ x | .extend _ _ x | .ireduce _ x | .bmask _ x => [x]
+  | .binary _ _ x y | .div _ _ x y | .icmp _ _ x y => [x, y]
+  | .load _ _ _ p _ | .atomicLoad _ _ p => [p]
+  | .store _ ty _ x p _ => if ty.isFloat then [p] else [x, p]
+  | .select ty c x y => if ty.isFloat then [c] else [c, x, y]
+  | .atomicStore _ _ x p => [x, p]
+  | .atomicRmw _ _ _ p x => [p, x]
+  | .atomicCas _ _ p e x => [p, e, x]
+  | .call _ args => args
+  | .callIndirect _ c args => c :: args
+  | _ => []
+
+/-- **The invariant of a float-capable lowering context** (`CtxInv` with class-aware vregs,
+`f32`/`f64` types and the integer typing of `intArgs`). -/
+structure CtxInvT (f : Clif.Function) (ctx : Ctx) : Prop where
+  func : ctx.func = f
+  data : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+    instData f inst = .ok info.data
+  resTys : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+    ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys ∧
+      info.resTys = tys.map CTy.ofClif ∧ info.results.length = tys.length
+  /-- value `x` has vreg `x`, of the class of its type -/
+  valueReg : ∀ (x : Nat) (r : Reg), ctx.valueReg? x = some r → r = .vreg x (valClassOf ctx x)
+  typedReg : ∀ (x : Nat) (t : CTy), ctx.valueType? x = some t →
+    ctx.valueReg? x = some (.vreg x t.valClass)
+  defInst : ∀ (x d : Nat), ctx.defInst? x = some d → ∃ info, ctx.insts[d]? = some info ∧ x ∈ info.results
+  defClif : ∀ (x d : Nat) (info : IInfo), ctx.defInst? x = some d → ctx.insts[d]? = some info →
+    info.clif.isSome = true
+  slotOff : ctx.slotOff = (slotLayout f.slots).1
+  /-- result types are `i8..i64`, `f32`, `f64` -/
+  resTysM : ∀ (ii : Nat) (info : IInfo), ctx.insts[ii]? = some info → ∀ t ∈ info.resTys, t ∈ mCTys
+  /-- value types are `i8..i64`, `f32`, `f64` -/
+  valTyM : ∀ (x : Nat) (t : CTy), ctx.valueType? x = some t → t ∈ mCTys
+  addr64 : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst) (x : Nat), ctx.insts[ii]? = some info →
+    info.clif = some inst → memAddr? inst = some x → ctx.valueType? x = some (.int 64)
+  /-- the operands in integer positions are integers -/
+  intOps : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+    info.clif = some inst → ∀ x ∈ intArgs inst, IntPos ctx x
+
+theorem mem_mCTys_of_eCTys {t : CTy} (h : t ∈ eCTys) : t ∈ mCTys :=
+  List.mem_append_left _ h
+
+/-- A subset-E context is a float-capable one. -/
+theorem CtxInv.toT {f : Clif.Function} {ctx : Ctx} (h : CtxInv f ctx) : CtxInvT f ctx where
+  func := h.func
+  data := h.data
+  resTys := h.resTys
+  valueReg x r hr := by
+    rw [h.valueReg x r hr]
+    unfold valClassOf
+    cases ht : ctx.valueType? x with
+    | none => rfl
+    | some t => simp only [Option.map_some, Option.getD_some, valClass_of_eCTys (h.valTyE x t ht)]
+  typedReg x t ht := by rw [valClass_of_eCTys (h.valTyE x t ht)]; exact h.typedReg x t ht
+  defInst := h.defInst
+  defClif := h.defClif
+  slotOff := h.slotOff
+  resTysM ii info hi t ht := mem_mCTys_of_eCTys (h.resTysE ii info hi t ht)
+  valTyM x t ht := mem_mCTys_of_eCTys (h.valTyE x t ht)
+  addr64 := h.addr64
+  intOps _ _ _ _ _ x _ t ht := h.valTyE x t ht
+
+/-- An integer-position value's vreg is an X register. -/
+theorem CtxInvT.valueReg_int {f : Clif.Function} {ctx : Ctx} (h : CtxInvT f ctx) {x : Nat} {r : Reg}
+    (hr : ctx.valueReg? x = some r) (hx : IntPos ctx x) : r = .vreg x .int := by
+  rw [h.valueReg x r hr]
+  unfold valClassOf
+  cases ht : ctx.valueType? x with
+  | none => rfl
+  | some t => simp only [Option.map_some, Option.getD_some, valClass_of_eCTys (hx t ht)]
+
+/-- `LowerRuleOk` over float-capable contexts, for the instructions satisfying `P`. -/
+def LowerRuleOkTP (P : Clif.Inst → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env)
+    (cp : Clif.Program) (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInvT f ctx → ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst),
+  ctx.insts[ii]? = some info → info.clif = some inst → P inst →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOk isem MR env cp ctx inst info.results st rss st' ms
+
+/-- **Root rule correctness over float-capable contexts** (`LowerRuleOk` with `CtxInvT`). -/
+abbrev LowerRuleOkT := LowerRuleOkTP (fun _ => True)
+
+theorem LowerRuleOkT.toOk {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
+    {p : Program} {r : Rule} (h : LowerRuleOkT isem MR env cp p r) :
+    LowerRuleOk isem MR env cp p r := by
+  intro f ctx hctx ii info inst hi hic
+  exact h f ctx hctx.toT ii info inst hi hic trivial
+
+/-- **What the float memory rules need of the VCode semantics** (as `MemRefinesR` for the
+integer accesses): `ldr st/dt` through an addressing mode whose access avoids `F` and whose
+bytes satisfy `Rd` reads the `4`/`8` little-endian bytes at `amodeAddr`, zero-extended into the
+128-bit register (Arm `write_sfp`); `str st/dt` writes the register's low bytes there (M6's
+`execMInst_fpuLoad`/`execMInst_fpuStore`, `RegallocMemFP`). -/
+def MemRefinesFP (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat) (isem : Sem) : Prop :=
+  (∀ (sz : ScalarSize) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (uses : List CV)
+      (w : Arm.ArmState) (a : BitVec 64),
+    (sz = .size32 ∨ sz = .size64) → amodeAddr sb am sz.bytes uses w = some a →
+    Avoids F sz.bytes a → (∀ k < sz.bytes, Rd (a + BitVec.ofNat 64 k)) →
+    ∃ w', isem (.fpuLoad sz (.vreg d .float) am fl) uses w =
+        some ([(Arm.read_mem_bytes sz.bytes a w).setWidth 128], w', .next) ∧
+      SameWorld F w' w) ∧
+  (∀ (sz : ScalarSize) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (v : CV) (uses : List CV)
+      (w : Arm.ArmState) (a : BitVec 64),
+    (sz = .size32 ∨ sz = .size64) → amodeAddr sb am sz.bytes uses w = some a →
+    Avoids F sz.bytes a →
+    ∃ w', isem (.fpuStore sz (.vreg d .float) am fl) (v :: uses) w = some ([], w', .next) ∧
+      SameWorld F w' (Arm.write_mem_bytes sz.bytes a (v.setWidth (sz.bytes * 8)) w))
+
+/-- `MemRuleOkR` over float-capable contexts. -/
+def MemRuleOkRT (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat)
+    (syms : String → Option Nat) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program)
+    (p : Program) (r : Rule) : Prop :=
+  ∀ (f : Clif.Function) (ctx : Ctx), CtxInvT f ctx → MemRelOk F sb syms f MR →
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
+  ∀ (cfg : Config), cfg.checkOverlap = false →
+  ∀ (m n : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V) (s1 : LState × Array RuleId)
+    (out : V) (st' : LState) (tr' : Array RuleId), 1000 ≤ m → 1000 ≤ n → ValsBelow ctx st →
+    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
+      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
+    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) = .ok (some env', s1) →
+    (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
+    ∃ ms rss, st'.emitted = st.emitted ++ ms.toArray ∧ out = .regsVec rss ∧
+      LowerInstOkR Rd isem MR env cp ctx inst info.results st rss st' ms
+
+theorem MemRuleOkRT.toR {Rd F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} {p : Program} {r : Rule}
+    (h : MemRuleOkRT Rd F sb syms isem MR env cp p r) : MemRuleOkR Rd F sb syms isem MR env cp p r := by
+  intro f ctx hctx
+  exact h f ctx hctx.toT
+
+/-- The float data-movement root rules of `lower` that are not memory rules (S11e4):
+`f32const` (584), `f64const` (585) and the scalar `bitcast` rules (1080 SIMD&FP identity, 1083
+GPR→SIMD&FP, 1084 SIMD&FP→GPR, 1085 GPR identity). -/
+def floatMoveRootRule (r : Rule) : Bool :=
+  r.id == 584 || r.id == 585 || r.id == 1080 || r.id == 1083 || r.id == 1084 || r.id == 1085
+
+/-- The float memory root rules (S11e4): `load.f32`/`load.f64` (1047, 1048) and `store` of an
+`f32`/`f64` value (1073, 1074). -/
+def floatMemRootRule (r : Rule) : Bool :=
+  r.id == 1047 || r.id == 1048 || r.id == 1073 || r.id == 1074
+
+/-- **S11e4's target (float data movement, non-memory)**: over float-capable contexts, the
+`f32const`/`f64const`/`bitcast` roots are correct, and so is the float arm of the shared
+`select` root (`rule_lower_2267`, id 971) on a `select` of `f32`/`f64` values. -/
+def LowerRulesCorrectT (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR →
+    (∀ r ∈ p.rulesOf TId.lower, floatMoveRootRule r = true → LowerRuleOkT isem MR env cp p r) ∧
+    ∀ r ∈ p.rulesOf TId.lower, r.id = 971 →
+      LowerRuleOkTP (fun i => ∃ ty c x y, i = .select ty c x y ∧ ty.isFloat = true) isem MR env cp p r
+
+/-- **S11e4's target (float loads and stores)**: over float-capable contexts, under
+`MemRefinesR Rd` and the float accesses' `MemRefinesFP Rd`, the float memory roots are
+correct. -/
+def MemRulesCorrectRT (p : Program) : Prop :=
+  ∀ (Rd : BitVec 64 → Prop) (F : BitVec 64 → Prop) (sb : Nat) (syms : String → Option Nat)
+    (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR → MemRefinesR Rd F sb syms isem → MemRefinesFP Rd F sb isem →
+    ∀ r ∈ p.rulesOf TId.lower, floatMemRootRule r = true → MemRuleOkRT Rd F sb syms isem MR env cp p r
 
 /-! ### Calls (contract change #5; stack-passed arguments: agent/stack-tls-proof) -/
 

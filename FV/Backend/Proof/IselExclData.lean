@@ -68,12 +68,14 @@ theorem binaryOpcode_mem {op : Clif.BinaryOp} {n : String} (h : binaryOpcode op 
   cases op <;> simp only [binaryOpcode, reduceCtorEq, Option.some.injEq] at h <;> subst h <;>
     simp [eNamePairs]
 
-/-- The names of an E instruction's data are among `eNamePairs`. -/
-theorem instNames_mem {f : Clif.Function} {c : Clif.Inst} {d : V} (h : instData f c = .ok d) :
-    instNames c ∈ eNamePairs := by
+/-- The names of an E instruction's data are among `eNamePairs` (a `bitcast`, whose data
+`instData` builds since S11e4, is not in E: `hE`). -/
+theorem instNames_mem {f : Clif.Function} {c : Clif.Inst} {d : V} (hE : Compile.instE c = true)
+    (h : instData f c = .ok d) : instNames c ∈ eNamePairs := by
   cases c
   all_goals first
     | (simp only [instData, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h; done)
+    | (simp only [Compile.instE, reduceCtorEq] at hE; done)
     | skip
   case unary op ty x =>
     simp only [instNames]
@@ -109,22 +111,23 @@ theorem eNamePairs_idx : eNamePairs.all (fun pr =>
   decide +kernel
 
 /-- **The data of an E instruction**: format `kf`, E opcode `ko`, fields `fs`. -/
-theorem instData_shape {f : Clif.Function} {c : Clif.Inst} {d : V} (_hE : Compile.instE c = true)
+theorem instData_shape {f : Clif.Function} {c : Clif.Inst} {d : V} (hE : Compile.instE c = true)
     (h : instData f c = .ok d) :
     ∃ kf ko fs, d = .data 152 kf (.data 151 ko [] :: fs) ∧ ko ∈ eOps := by
-  obtain ⟨rest, hd⟩ := instData_names h
-  have hm := List.all_eq_true.mp eNamePairs_idx _ (instNames_mem h)
-  generalize instNames c = pr at hm hd
-  obtain ⟨n1, n2⟩ := pr
-  unfold instDataV opcodeV mkVariant at hd
-  cases h1 : variantIdx 152 n1 with
-  | none => simp only [h1] at hm; cases hm
-  | some kf =>
-    cases h2 : variantIdx 151 n2 with
-    | none => simp only [h1, h2] at hm; cases hm
-    | some ko =>
-      simp only [h1, h2] at hm hd
-      exact ⟨kf, ko, rest, hd, List.contains_iff_mem.mp hm⟩
+  rcases instData_names h with ⟨rest, hd⟩ | ⟨ty, imm, rfl, hfl, -⟩
+  · have hm := List.all_eq_true.mp eNamePairs_idx _ (instNames_mem hE h)
+    generalize instNames c = pr at hm hd
+    obtain ⟨n1, n2⟩ := pr
+    unfold instDataV opcodeV mkVariant at hd
+    cases h1 : variantIdx 152 n1 with
+    | none => simp only [h1] at hm; cases hm
+    | some kf =>
+      cases h2 : variantIdx 151 n2 with
+      | none => simp only [h1, h2] at hm; cases hm
+      | some ko =>
+        simp only [h1, h2] at hm hd
+        exact ⟨kf, ko, rest, hd, List.contains_iff_mem.mp hm⟩
+  · cases ty <;> simp_all [Compile.instE, Compile.tyE]
 
 set_option maxRecDepth 20000 in
 theorem variantNames_Uextend_ex : (variantNames 151)[VIdx.Opcode.Uextend]? = some "Uextend" := rfl

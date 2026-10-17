@@ -137,7 +137,9 @@ def imm64OfIconst (ty : Clif.Ty) (imm : BitVec ty.width) : Int :=
 def eTy (ty : Clif.Ty) : Bool := ty.isInt && ty != .i128
 
 /-- Types of the values the lowering keeps in registers: the integer types of E and
-`f32`/`f64` (in a V register). -/
+`f32`/`f64` (in a V register). Also the movement predicate of S11e4: the types at which
+`instData` accepts the data-movement instructions (`f32const`/`f64const`, `load`/`store` of
+the full width, `select`, `bitcast`); `eTy` stays the predicate of the integer operations. -/
 def valTyOk (ty : Clif.Ty) : Bool := eTy ty || ty.isFloat
 
 /-- The register class of a value of type `t` (`regClass?`; `.int` where it has none). -/
@@ -161,10 +163,15 @@ def aapcsConv (c : Option Clif.CallConv) : Bool :=
 def instText (i : Clif.Inst) : String := Clif.Print.inst (fun _ => none) i
 
 /-- `InstructionData` of a non-terminator instruction of E (an error with the reason if the
-instruction is outside E). -/
+instruction is outside E). The float data movement of S11e4 (`valTyOk`): `f32const`/`f64const`
+(`UnaryIeee32`/`UnaryIeee64` with the literal's bit pattern, as Cranelift's `Ieee32::bits`),
+`load`/`store` of a whole `f32`/`f64`, `select` of floats and `bitcast` (`LoadNoOffset` with
+its `MemFlags`, as `InstructionData::LoadNoOffset`). -/
 def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .iconst ty imm =>
     if eTy ty then pure (instDataV "UnaryImm" [opcodeV "Iconst", .int (imm64OfIconst ty imm)])
+    else if ty = .f32 then pure (instDataV "UnaryIeee32" [opcodeV "F32const", .int imm.toNat])
+    else if ty = .f64 then pure (instDataV "UnaryIeee64" [opcodeV "F64const", .int imm.toNat])
     else throw s!"iconst.{ty.name}"
   | .unary op ty x =>
     match unaryOpcode op with
@@ -193,17 +200,20 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .ireduce ty x => if eTy ty then pure (instDataV "Unary" [opcodeV "Ireduce", .value x])
     else throw "ireduce.i128"
   | .load op ty flags p off =>
-    if !eTy ty then throw s!"load.{ty.name}"
+    if !eTy ty && !(ty.isFloat && op == .load) then throw s!"load.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian load"
     else pure (instDataV "Load" [opcodeV (loadOpcode op), .value p, .op (.memFlags flags), .int off])
   | .store op ty flags x p off =>
-    if !eTy ty then throw s!"store.{ty.name}"
+    if !eTy ty && !(ty.isFloat && op == .store) then throw s!"store.{ty.name}"
     else if flags.endianness == some .big then throw "big-endian store"
     else pure (instDataV "Store"
       [opcodeV (storeOpcode op), .values [x, p], .op (.memFlags flags), .int off])
   | .select ty c x y =>
-    if eTy ty then pure (instDataV "Ternary" [opcodeV "Select", .values [c, x, y]])
+    if valTyOk ty then pure (instDataV "Ternary" [opcodeV "Select", .values [c, x, y]])
     else throw s!"select.{ty.name}"
+  | .bitcast ty flags x =>
+    if valTyOk ty then pure (instDataV "LoadNoOffset" [opcodeV "Bitcast", .value x, .op (.memFlags flags)])
+    else throw s!"bitcast.{ty.name}"
   | .nop => pure (instDataV "NullAry" [opcodeV "Nop"])
   | .symbolValue ty gv =>
     if ty != .i64 then throw "symbol_value with a non-i64 address type"
@@ -789,7 +799,63 @@ def externExtract (ctx : Ctx) (t : Term) (v : V) (_st : LState) : ExtResult (Lis
   | TId.tls_model, .ty _ => .ok [.data tyTlsModel VIdx.TlsModel.ElfGd []]
   -- `exception_sig` (machinst/isle.rs:387): the exception table's signature
   | TId.exception_sig, .op (.exnTable s _) => .ok [.op (.sig s)]
+  -- S11e4 float constants. `u32_from_ieee32`/`u64_from_ieee64` (isle_prelude.rs:724-730,
+  -- `Ieee32::bits`/`Ieee64::bits`): the literal's bit pattern, which `instData` stores as the
+  -- `UnaryIeee32`/`UnaryIeee64` field.
+  | TId.u32_from_ieee32, .int i => .ok [.int i]
+  | TId.u64_from_ieee64, .int i => .ok [.int i]
+  -- the generated fallible numeric extractors `u16_from_u32`/`u32_from_u64`
+  -- (cranelift-codegen-meta gen_isle.rs:1167-1186: `x.try_into().ok()`)
+  | TId.u16_from_u32, .int i => if 0 ≤ i ∧ i < 2 ^ 16 then .ok [.int i] else .fail
+  | TId.u32_from_u64, .int i => if 0 ≤ i ∧ i < 2 ^ 32 then .ok [.int i] else .fail
+  -- `u64_low32_bits_unset` (aarch64/lower/isle.rs:860-866): `val & 0xffffffff == 0`
+  | TId.u64_low32_bits_unset, .int i => if u64 i % 2 ^ 32 = 0 then .ok [.int i] else .fail
   | _, v => .unmodeled s!"extractor {t.name} on {(repr v).pretty.take 60}"
+
+/-- `ASIMDFPModImm::value16` (aarch64/inst/imms.rs:830-838): the 16-bit value of an 8-bit
+encoding `0b_abcdefgh`, `0b_aBbb_cdef_gh00_0000`. -/
+def fpImmValue16 (imm : Nat) : Nat :=
+  let b05 := imm % 64
+  let b6 := (imm / 64) % 2
+  let b7 := (imm / 128) % 2
+  b05 * 2 ^ 6 + (b6 * 3) * 2 ^ 12 + (1 - b6) * 2 ^ 14 + b7 * 2 ^ 15
+
+/-- `ASIMDFPModImm::value32` (imms.rs:841-850): `0b_aBbb_bbbc_defg_h000 << 16`. -/
+def fpImmValue32 (imm : Nat) : Nat :=
+  let b05 := imm % 64
+  let b6 := (imm / 64) % 2
+  let b7 := (imm / 128) % 2
+  b05 * 2 ^ 19 + (b6 * 31) * 2 ^ 25 + (1 - b6) * 2 ^ 30 + b7 * 2 ^ 31
+
+/-- `ASIMDFPModImm::value64` (imms.rs:852-861): `0b_aBbb_bbbb_bbcd_efgh << 48`. -/
+def fpImmValue64 (imm : Nat) : Nat :=
+  let b05 := imm % 64
+  let b6 := (imm / 64) % 2
+  let b7 := (imm / 128) % 2
+  b05 * 2 ^ 48 + (b6 * 255) * 2 ^ 54 + (1 - b6) * 2 ^ 62 + b7 * 2 ^ 63
+
+/-- `ASIMDFPModImm::maybe_from_u64` (imms.rs:773-823): the candidate encoding gathers bits
+`b0_5` (6 bits from the exponent's low end), `b6` and `b7` (the sign) of the value truncated to
+the size; it is the immediate when its value is the value. Other sizes: `None`. -/
+def fpModImm? (value : Nat) (s : ScalarSize) : Option ASIMDFPModImm :=
+  match s with
+  | .size16 =>
+    let v := value % 2 ^ 16
+    let imm := (v / 2 ^ 6) % 64 + ((v / 2 ^ 12) % 2) * 64 + ((v / 2 ^ 15) % 2) * 128
+    if v == fpImmValue16 imm then some ⟨BitVec.ofNat 8 imm, s⟩ else none
+  | .size32 =>
+    let v := value % 2 ^ 32
+    let imm := (v / 2 ^ 19) % 64 + ((v / 2 ^ 25) % 2) * 64 + ((v / 2 ^ 31) % 2) * 128
+    if v == fpImmValue32 imm then some ⟨BitVec.ofNat 8 imm, s⟩ else none
+  | .size64 =>
+    let v := value % 2 ^ 64
+    let imm := (v / 2 ^ 48) % 64 + ((v / 2 ^ 54) % 2) * 64 + ((v / 2 ^ 63) % 2) * 128
+    if v == fpImmValue64 imm then some ⟨BitVec.ofNat 8 imm, s⟩ else none
+  | _ => none
+
+/-- `ASIMDMovModImm::zero` (imms.rs:748-756): immediate 0, no shift, the 64-bit form iff the
+size is 64 bits. -/
+def movModImmZero (s : ScalarSize) : ASIMDMovModImm := ⟨0#8, 0, s == .size64, false⟩
 
 /-- `load_constant_full` (`aarch64/lower/isle.rs`): a `movz`/`movn` and `movk`s. -/
 def loadConstantFull (bits : Nat) (signExt : Bool) (extendTo : OperandSize) (value : Nat)
@@ -967,6 +1033,18 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
   -- aarch64 inst.isle / lower.isle helpers (aarch64/lower/isle.rs)
   | TId.use_fp16, [] => ok (.bool false)
   | TId.is_pic, [] => ok (.bool true)
+  -- S11e4 float constants: `asimd_mov_mod_imm_zero` (aarch64/lower/isle.rs:844-846,
+  -- `ASIMDMovModImm::zero`) and `asimd_fp_mod_imm_from_u64` (isle.rs:856-858,
+  -- `ASIMDFPModImm::maybe_from_u64`, a partial constructor). `emit_u64_le_const` (the literal
+  -- pool of `constant_f64`'s last rule, machinst/isle.rs:441) is not modelled: an `f64`
+  -- constant that needs the pool makes the lowering fail (`.unmodeled`), so its function
+  -- falls back.
+  | TId.asimd_mov_mod_imm_zero, [s] => match s.scalarSize? with
+    | some sz => ok (.op (.movModImm (movModImmZero sz)))
+    | none => .unmodeled "asimd_mov_mod_imm_zero"
+  | TId.asimd_fp_mod_imm_from_u64, [.int v, s] => match s.scalarSize? with
+    | some sz => optOk ((fpModImm? (u64 v) sz).map (.op ∘ .fpModImm))
+    | none => .unmodeled "asimd_fp_mod_imm_from_u64"
   | TId.move_wide_const_from_u64, [.ty ty, .int n] =>
     let n := if ty.bits < 64 then u64 n % 2 ^ ty.bits else u64 n
     optOk ((MoveWideConst.ofNat? n).map (.op ∘ .moveWideConst))
