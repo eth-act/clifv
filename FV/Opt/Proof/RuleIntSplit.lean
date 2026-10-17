@@ -8,6 +8,8 @@ A constructor such as `iconst_s ty c` or `iconst_u ty c` on the right of a rule 
 integer (`tyInt_ofClif`) or not (`tyInt_ofClif_notInt`); `opt_eval` discharges either side
 condition by `assumption`. `opt_split_int` provides that hypothesis for every type variable.
 At a float type the right-hand constructor has no matching rule and the evaluation throws.
+After `opt_cases_ty` the type is concrete; `tyInt_ofClif_f32`/`tyInt_ofClif_f64` evaluate
+the float arms there.
 -/
 
 namespace Opt.Proof
@@ -17,6 +19,9 @@ open Isle Isle.Opt Clif
 theorem tyInt_ofClif_notInt {t : Ty} (h : ¬t.isInt = true) :
     Rust.tyInt (CTy.ofClif t) = none := by
   cases t <;> first | rfl | exact absurd rfl h
+
+theorem tyInt_ofClif_f32 : Rust.tyInt (CTy.ofClif .f32) = none := rfl
+theorem tyInt_ofClif_f64 : Rust.tyInt (CTy.ofClif .f64) = none := rfl
 
 open Lean Meta Elab Tactic in
 /-- `opt_split_int_one`: for the first local `t : Clif.Ty` without a hypothesis
