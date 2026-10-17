@@ -1,11 +1,11 @@
-import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.RuleIntSplit
 
 /-!
 # `opts/cprop.isle` (part 2): proven `simplify` rules
 
 Each rule by the template that closes it (`RuleAuto.lean`, `RuleBitopsEmbed.lean`,
-`RuleExtEmbed.lean`, `RuleRestEmbed.lean`); a `first` chain lists the templates the rule was
-checked against, in order.
+`RuleExtEmbed.lean`, `RuleRestEmbed.lean`, `RuleIntSplit.lean`); a `first` chain lists the
+templates the rule was checked against, in order.
 -/
 
 set_option linter.unusedSimpArgs false
@@ -48,12 +48,12 @@ theorem ok_rule_cprop_125 {p : Isle.Program} (hd : Data p) : RuleOk p rule_cprop
 set_option maxHeartbeats 4000000 in
 /-- `cprop.isle:130`. -/
 theorem ok_rule_cprop_130 {p : Isle.Program} (hd : Data p) : RuleOk p rule_cprop_130 := by
-  first | rule_auto_xr rule_cprop_130 | rule_auto_xz rule_cprop_130 | rule_auto_w rule_cprop_130
+  rule_auto_xzi rule_cprop_130
 
 set_option maxHeartbeats 4000000 in
 /-- `cprop.isle:132`. -/
 theorem ok_rule_cprop_132 {p : Isle.Program} (hd : Data p) : RuleOk p rule_cprop_132 := by
-  rule_auto_v rule_cprop_132
+  rule_auto_vi rule_cprop_132
 
 set_option maxHeartbeats 4000000 in
 /-- `cprop.isle:135`. -/
