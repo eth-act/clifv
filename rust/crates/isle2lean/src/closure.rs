@@ -54,6 +54,30 @@ pub const BACKEND_EXTRA_OPCODES: &[&str] =
 /// every instruction (the Lean checker's `flagOff`).
 pub const FLAG_OFF: &[&str] = &["use_lse"];
 
+/// Root rules of the backend closure admitted by name (S11e4, floats #35): the scalar float
+/// data movement of `lower`. Their LHS mentions opcodes outside E (`f32const`, `f64const`,
+/// `bitcast`) or float type extractors (`ty_float_or_vec`), so the syntactic test above drops
+/// them; they are listed explicitly instead of widening `E_OPCODES` (shared with the
+/// optimiser's closure) or the type filters (which would admit vector rules too). Each is
+/// proven in Lean (`LowerRulesCorrect`/`MemRulesCorrectR`, and at float contexts
+/// `FV/Backend/Proof/IselFloat*.lean`):
+/// `f32const` (lower.isle:63), `f64const` (68), `load.f32`/`load.f64` (2625, 2628),
+/// `store` of an `f32`/`f64` value (2746, 2750), and the scalar `bitcast` rules: SIMD&FP
+/// identity (2779), GPR→SIMD&FP `mov_to_fpu` (2793), SIMD&FP→GPR `mov_from_vec` (2798), GPR
+/// identity (2803). (`select` of floats is the shared root `lower.isle:2267`, already in.)
+pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
+    "rule_lower_63",
+    "rule_lower_68",
+    "rule_lower_2625",
+    "rule_lower_2628",
+    "rule_lower_2746",
+    "rule_lower_2750",
+    "rule_lower_2779",
+    "rule_lower_2793",
+    "rule_lower_2798",
+    "rule_lower_2803",
+];
+
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];
 
 /// Names of `Type` constants (the lexer drops the `$`) E values can have.
@@ -311,13 +335,20 @@ pub fn render(u: &Unit, rule_names: &[String]) -> Result<String> {
     for t in &roots {
         for &r in rules_of.get(t).map(|v| v.as_slice()).unwrap_or(&[]) {
             let reasons = lhs_reasons(u, &u.termenv.rules[r.index()], &e_ops);
-            if reasons.is_empty() {
+            let float_root = BACKEND_FLOAT_ROOTS.contains(&rule_names[r.index()].as_str());
+            if reasons.is_empty() || float_root {
                 if in_closure.insert(r) {
                     work.push(r);
                 }
             } else {
                 excluded_roots.push((r, reasons));
             }
+        }
+    }
+    // every listed float root exists (a renamed rule must not silently drop out)
+    for name in BACKEND_FLOAT_ROOTS {
+        if !in_closure.iter().any(|r| rule_names[r.index()] == *name) {
+            return Err(anyhow!("backend float root {name} not found"));
         }
     }
     let mut terms: BTreeSet<TermId> = roots.iter().copied().collect();

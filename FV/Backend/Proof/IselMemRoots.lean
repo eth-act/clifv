@@ -24,10 +24,15 @@ theorem mem_variantNames_Store : (variantNames 152)[22]? = some "Store" := rfl
 theorem mem_variantNames_UGV : (variantNames 152)[31]? = some "UnaryGlobalValue" := rfl
 theorem mem_variantNames_SymbolValue : (variantNames 151)[49]? = some "SymbolValue" := rfl
 
+/-- The types `instData` accepts at `load`/`store` (S11e4: also a whole `f32`/`f64`) have at
+most 64 bits. -/
+theorem valTyOk_width {ty : Clif.Ty} (h : valTyOk ty = true) : ty.width ≤ 64 := by
+  cases ty <;> simp_all [valTyOk, eTy, Clif.Ty.width]
+
 theorem inv_load_root {f : Clif.Function} {cl : Clif.Inst} {k : Nat} {w1 w2 w3 : V}
     (h : instData f cl = .ok (.data 152 16 [.data 151 k [], w1, w2, w3])) :
     ∃ op ty fl p off, cl = .load op ty fl p off ∧ (variantNames 151)[k]? = some (loadOpcode op) ∧
-      w1 = .value p ∧ w2 = .op (.memFlags fl) ∧ w3 = .int off ∧ eTy ty = true ∧
+      w1 = .value p ∧ w2 = .op (.memFlags fl) ∧ w3 = .int off ∧ valTyOk ty = true ∧
       fl.endianness ≠ some .big := by
   obtain ⟨hf, ho⟩ := instData_inv_names h
   rw [mem_variantNames_Load] at hf
@@ -46,13 +51,14 @@ theorem inv_load_root {f : Clif.Function} {cl : Clif.Inst} {k : Nat} {w1 w2 w3 :
       simp only [List.cons.injEq, and_true] at h3
       obtain ⟨h0, rfl, rfl, rfl⟩ := h3
       obtain ⟨h4, -, -⟩ := mkVariant_eq_data h0.symm
-      refine ⟨op, ty, fl, p, off, rfl, h4, rfl, rfl, rfl, by simpa using he, by simpa using hb⟩
+      refine ⟨op, ty, fl, p, off, rfl, h4, rfl, rfl, rfl, ?_, by simpa using hb⟩
+      revert he; cases ty <;> cases op <;> simp [valTyOk, eTy]
 
 theorem inv_store_root {f : Clif.Function} {cl : Clif.Inst} {k : Nat} {w1 w2 w3 : V}
     (h : instData f cl = .ok (.data 152 22 [.data 151 k [], w1, w2, w3])) :
     ∃ op ty fl x p off, cl = .store op ty fl x p off ∧
       (variantNames 151)[k]? = some (storeOpcode op) ∧ w1 = .values [x, p] ∧
-      w2 = .op (.memFlags fl) ∧ w3 = .int off ∧ eTy ty = true ∧ fl.endianness ≠ some .big := by
+      w2 = .op (.memFlags fl) ∧ w3 = .int off ∧ valTyOk ty = true ∧ fl.endianness ≠ some .big := by
   obtain ⟨hf, ho⟩ := instData_inv_names h
   rw [mem_variantNames_Store] at hf
   cases cl <;> simp only [instNames, Option.some.injEq] at hf
@@ -70,7 +76,8 @@ theorem inv_store_root {f : Clif.Function} {cl : Clif.Inst} {k : Nat} {w1 w2 w3 
       simp only [List.cons.injEq, and_true] at h3
       obtain ⟨h0, rfl, rfl, rfl⟩ := h3
       obtain ⟨h4, -, -⟩ := mkVariant_eq_data h0.symm
-      refine ⟨op, ty, fl, x, p, off, rfl, h4, rfl, rfl, rfl, by simpa using he, by simpa using hb⟩
+      refine ⟨op, ty, fl, x, p, off, rfl, h4, rfl, rfl, rfl, ?_, by simpa using hb⟩
+      revert he; cases ty <;> cases op <;> simp [valTyOk, eTy]
 
 theorem inv_symbolValue_root {f : Clif.Function} {cl : Clif.Inst} {w : V}
     (h : instData f cl = .ok (.data 152 31 [.data 151 49 [], w])) :
@@ -141,7 +148,7 @@ theorem load_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRe
     {cfg : Config} (hc : cfg.checkOverlap = false) {n1 n2 : Nat} (hn1 : 300 ≤ n1) (hn2 : 20 ≤ n2)
     {st st' : LState} {tr tr' : Array RuleId} (hvb : ValsBelow ctx st)
     {op : Clif.LoadOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {x : Nat} {off : Int} {results : List Nat}
-    (hety : eTy ty = true) (hfl : fl.endianness ≠ some .big)
+    (hety : valTyOk ty = true) (hfl : fl.endianness ≠ some .big)
     (hp64 : ctx.valueType? x = some (.int 64)) {t : CTy} {aop : LoadOp} {kidx : Nat}
     (htb : t.bytes = aop.bytes) (hb : t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8)
     (haop : aop ≠ .fpuLoad128) (hsz : aop.bytes = op.size ty) (hsg : loadSigned aop = op.signed)
@@ -164,7 +171,7 @@ theorem load_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemRe
   subst hs'
   rw [htb] at hok
   have hL := load_lower_ok (env := env) (cp := cp) (results := results) hMR hM hctx hMRo hok haop
-    hsz hsg (eTy_width hety) hfl hp64
+    hsz hsg (valTyOk_width hety) hfl hp64
   refine ⟨_, ?_, _, rfl, hL⟩
   have hfr := hok.frag.append (frag_one s2.1 _ (load_ops aop s2.1.nextVreg hok.vregs fl).defs)
   rw [fresh_fst]
@@ -226,7 +233,7 @@ theorem store_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemR
     {cfg : Config} (hc : cfg.checkOverlap = false) {n1 n3 : Nat} (hn1 : 300 ≤ n1) (hn3 : 60 ≤ n3)
     {st st' : LState} {tr tr' : Array RuleId} (hvb : ValsBelow ctx st)
     {op : Clif.StoreOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {x y : Nat} {off : Int}
-    {results : List Nat} (hety : eTy ty = true) (hfl : fl.endianness ≠ some .big)
+    {results : List Nat} (hety : valTyOk ty = true) (hfl : fl.endianness ≠ some .big)
     (hp64 : ctx.valueType? y = some (.int 64)) (hxr : ctx.valueReg? x = some (.vreg x .int))
     {t : CTy} {aop : StoreOp} {kidx : Nat}
     (htb : t.bytes = aop.bytes) (hb : t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8)
@@ -252,7 +259,7 @@ theorem store_root_finish (hR : Refines F isem) (hMR : MRStable F MR) (hM : MemR
   subst hs'
   rw [htb] at hok
   have hL := store_lower_ok (env := env) (cp := cp) (results := results) hMR hM hctx hMRo hok haop
-    hsz (eTy_width hety) hfl hp64 (hvb x _ hxr)
+    hsz (valTyOk_width hety) hfl hp64 (hvb x _ hxr)
   refine ⟨_, ?_, _, rfl, hL.toR⟩
   exact (hok.frag.append (frag_emit0 s2.1 _ (store_ops aop x hok.vregs fl).defs)).emitted
 

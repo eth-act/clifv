@@ -163,7 +163,7 @@ theorem variantNames_Select : (variantNames 151)[65]? = some "Select" := rfl
 
 theorem instData_select_inv {f : Clif.Function} {cl : Clif.Inst} {w : V}
     (h : instData f cl = .ok (.data 152 24 [.data 151 65 [], w])) :
-    ∃ ty c x y, cl = .select ty c x y ∧ eTy ty = true ∧ w = .values [c, x, y] := by
+    ∃ ty c x y, cl = .select ty c x y ∧ valTyOk ty = true ∧ w = .values [c, x, y] := by
   obtain ⟨hf, ho⟩ := instData_inv_names h
   rw [variantNames_Ternary] at hf
   rw [variantNames_Select] at ho
@@ -182,6 +182,16 @@ theorem instData_select_inv {f : Clif.Function} {cl : Clif.Inst} {w : V}
     simp only [List.cons.injEq] at h3
     exact ⟨he, h3.2.1⟩
   · cases h
+
+/-- A `select` result type of E is an E type (`CtxInv.resTysE`). -/
+theorem select_eTy {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat} {info : IInfo}
+    {ty : Clif.Ty} {c x y : Nat} (hi : ctx.insts[ii]? = some info)
+    (hic : info.clif = some (.select ty c x y)) : eTy ty = true := by
+  obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hic
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
+  subst htys
+  have := hctx.resTysE ii info hi (CTy.ofClif ty) (by rw [hres]; simp)
+  cases ty <;> simp_all [CTy.ofClif, eCTys, eTy]
 
 theorem evalInst_select_ok {fr : Clif.Frame} {cm cm' : Clif.Mem} {ty : Clif.Ty} {c x y : Nat}
     {vals : List Clif.Val} (h : Clif.evalInst fr cm (.select ty c x y) = .ok (vals, cm')) :
@@ -244,7 +254,8 @@ theorem select_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   subst hins
   have hdat := hctx.data ii _ inst hi hic
   rw [← hdd] at hdat
-  obtain ⟨ty, c, x, y, rfl, hety, rfl⟩ := instData_select_inv hdat
+  obtain ⟨ty, c, x, y, rfl, -, rfl⟩ := instData_select_inv hdat
+  have hety := select_eTy hctx hi hic
   rw [ext_value_array_3] at hva
   cases hva
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii _ _ hi hic

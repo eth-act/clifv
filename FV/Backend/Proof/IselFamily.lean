@@ -89,7 +89,9 @@ theorem root_match_data {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config} {
 
 /-! ### Inverting `instData` -/
 
-/-- The `InstructionData` format and opcode *names* `instData` uses for an instruction. -/
+/-- The `InstructionData` format and opcode *names* `instData` uses for an instruction. An
+`f32const`/`f64const` (`iconst` at `f32`/`f64`, format `UnaryIeee32`/`UnaryIeee64`, variant
+index 33/34) has the names of `iconst` here; `instData_names` lists it separately. -/
 def instNames : Clif.Inst → String × String
   | .iconst .. => ("UnaryImm", "Iconst")
   | .unary op .. => ("Unary", (unaryOpcode op).getD "")
@@ -116,13 +118,50 @@ def instNames : Clif.Inst → String × String
   | .fence => ("NullAry", "Fence")
   -- `tls_value` (agent/stack-tls-proof)
   | .tlsValue .. => ("UnaryGlobalValue", "TlsValue")
+  -- `bitcast` (S11e4)
+  | .bitcast .. => ("LoadNoOffset", "Bitcast")
   | _ => ("", "")
 
 set_option maxRecDepth 20000 in
-/-- `instData` builds the data of its format and opcode names. -/
+theorem instDataV_UnaryIeee32 (fs : List V) : instDataV "UnaryIeee32" fs = .data 152 33 fs := rfl
+set_option maxRecDepth 20000 in
+theorem instDataV_UnaryIeee64 (fs : List V) : instDataV "UnaryIeee64" fs = .data 152 34 fs := rfl
+
+/-- The data of an `iconst`: `UnaryImm`/`Iconst`, or (`f32const`/`f64const`) format 33/34. -/
+theorem instData_names_iconst {f : Clif.Function} {ty : Clif.Ty} {imm : BitVec ty.width} {d : V}
+    (h : instData f (.iconst ty imm) = .ok d) :
+    (∃ rest, d = instDataV "UnaryImm" (opcodeV "Iconst" :: rest)) ∨
+      ty.isFloat = true ∧ ∃ rest, d = .data 152 33 rest ∨ d = .data 152 34 rest := by
+  simp only [instData] at h
+  split at h
+  · simp only [pure, Except.pure, Except.ok.injEq] at h
+    exact .inl ⟨_, h.symm⟩
+  · split at h
+    · rename_i hf
+      subst hf
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      exact .inr ⟨rfl, _, .inl (by rw [← h, instDataV_UnaryIeee32])⟩
+    · split at h
+      · rename_i hf
+        subst hf
+        simp only [pure, Except.pure, Except.ok.injEq] at h
+        exact .inr ⟨rfl, _, .inr (by rw [← h, instDataV_UnaryIeee64])⟩
+      · simp only [throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
+
+set_option maxRecDepth 20000 in
+/-- `instData` builds the data of its format and opcode names, or it is a float constant's
+(`f32const`/`f64const`: format 33/34). -/
 theorem instData_names {f : Clif.Function} {c : Clif.Inst} {d : V} (h : instData f c = .ok d) :
-    ∃ rest, d = instDataV (instNames c).1 (opcodeV (instNames c).2 :: rest) := by
-  cases c <;> simp only [instData] at h
+    (∃ rest, d = instDataV (instNames c).1 (opcodeV (instNames c).2 :: rest)) ∨
+      ∃ ty imm, c = .iconst ty imm ∧ ty.isFloat = true ∧
+        ∃ rest, d = .data 152 33 rest ∨ d = .data 152 34 rest := by
+  cases c
+  case iconst ty imm =>
+    rcases instData_names_iconst h with h1 | ⟨h1, h2⟩
+    · exact .inl h1
+    · exact .inr ⟨ty, imm, rfl, h1, h2⟩
+  all_goals refine .inl ?_
+  all_goals simp only [instData] at h
   all_goals (repeat' split at h)
   all_goals first
     | (simp only [throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h)
@@ -143,15 +182,19 @@ theorem mkVariant_eq_data {ty : TypeId} {n : String} {fs : List V} {t k : Nat} {
     obtain ⟨hlt, hget, -⟩ := List.idxOf?_eq_some_iff.mp hk
     exact ⟨by rw [List.getElem?_eq_getElem hlt, hget], rfl, rfl⟩
 
-/-- The names of the instruction whose data has format `kf` and opcode `ko`. -/
+/-- The names of the instruction whose data has format `kf` and opcode `ko` (a format other
+than the float constants' `UnaryIeee32`/`UnaryIeee64`, 33/34: `hk`, by `decide` at a literal). -/
 theorem instData_inv_names {f : Clif.Function} {c : Clif.Inst} {kf ko : Nat} {fs : List V}
-    (h : instData f c = .ok (.data 152 kf (.data 151 ko [] :: fs))) :
+    (h : instData f c = .ok (.data 152 kf (.data 151 ko [] :: fs)))
+    (hk : kf ≠ 33 ∧ kf ≠ 34 := by decide) :
     (variantNames 152)[kf]? = some (instNames c).1 ∧ (variantNames 151)[ko]? = some (instNames c).2 := by
-  obtain ⟨rest, hd⟩ := instData_names h
-  obtain ⟨h1, -, h3⟩ := mkVariant_eq_data hd.symm
-  injection h3 with h4 _
-  obtain ⟨h5, -, -⟩ := mkVariant_eq_data h4.symm
-  exact ⟨h1, h5⟩
+  rcases instData_names h with ⟨rest, hd⟩ | ⟨_, _, -, -, rest, hd | hd⟩
+  · obtain ⟨h1, -, h3⟩ := mkVariant_eq_data hd.symm
+    injection h3 with h4 _
+    obtain ⟨h5, -, -⟩ := mkVariant_eq_data h4.symm
+    exact ⟨h1, h5⟩
+  · injection hd with _ h2; exact absurd h2 hk.1
+  · injection hd with _ h2; exact absurd h2 hk.2
 
 theorem binaryOpcode_inj {a b : Clif.BinaryOp} {n : String} (ha : binaryOpcode a = some n)
     (hb : binaryOpcode b = some n) : a = b := by

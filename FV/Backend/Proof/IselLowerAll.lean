@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselFloatVac
 import FV.Backend.Proof.IselFamAluBIconst
 import FV.Backend.Proof.IselFamAluBMisc
 import FV.Backend.Proof.IselFamilyALU
@@ -55,17 +56,19 @@ theorem eNamePairs_fmt : eNamePairs.all (fun pr =>
   decide +kernel
 
 theorem instData_fmt_ne {f : Clif.Function} {c : Clif.Inst} {kf : Nat} {fs : List V}
-    (h : instData f c = .ok (.data 152 kf fs)) : kf ≠ 26 ∧ kf ≠ 18 := by
-  obtain ⟨rest, hd⟩ := instData_names h
-  have hm := List.all_eq_true.mp eNamePairs_fmt _ (instNames_mem h)
-  unfold instDataV mkVariant at hd
-  split at hd
-  · rename_i k hk
-    cases hd
-    rw [hk] at hm
-    simp only [bne_iff_ne, ne_eq, Option.some.injEq, Bool.and_eq_true, decide_eq_true_eq] at hm
-    exact hm
-  · cases hd
+    (hE : Compile.instE c = true) (h : instData f c = .ok (.data 152 kf fs)) : kf ≠ 26 ∧ kf ≠ 18 := by
+  rcases instData_names h with ⟨rest, hd⟩ | ⟨_, _, -, -, rest, hd | hd⟩
+  · have hm := List.all_eq_true.mp eNamePairs_fmt _ (instNames_mem hE h)
+    unfold instDataV mkVariant at hd
+    split at hd
+    · rename_i k hk
+      cases hd
+      rw [hk] at hm
+      simp only [bne_iff_ne, ne_eq, Option.some.injEq, Bool.and_eq_true, decide_eq_true_eq] at hm
+      exact hm
+    · cases hd
+  · cases hd; decide
+  · cases hd; decide
 
 /-- A rule of `lower` whose root format is `Trap`/`MultiAry` never matches an E instruction. -/
 theorem lowerRuleOk_of_fmt {isem : Sem} {MR : MemRelT} {env : Clif.Env}
@@ -79,7 +82,7 @@ theorem lowerRuleOk_of_fmt {isem : Sem} {MR : MemRelT} {env : Clif.Env}
   cases hinfo
   have hd := hctx.data ii _ inst hi hic
   rw [hdat] at hd
-  have := instData_fmt_ne hd
+  have := instData_fmt_ne (hctx.instE ii _ inst hi hic) hd
   omega
 
 theorem eq_of_mem_of_id' {r r0 : Rule} :
@@ -117,9 +120,13 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
   simp only [closureRootIds, List.contains_cons, List.contains_nil, Bool.or_false,
     Bool.or_eq_true, beq_iff_eq] at hroot
 
-  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  rcases hroot with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   · rw [lower_rule_eq hr (k := 172) (r0 := rule_lower_53) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply iconst_ok <;> assumption
+  · rw [lower_rule_eq hr (k := 174) (r0 := rule_lower_63) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact f32const_ok_vac
+  · rw [lower_rule_eq hr (k := 175) (r0 := rule_lower_68) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact f64const_ok_vac
   · rw [lower_rule_eq hr (k := 177) (r0 := rule_lower_78) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply nop_ok <;> assumption
   · rw [lower_rule_eq hr (k := 396) (r0 := rule_lower_86) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
@@ -363,6 +370,18 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
   · exfalso; simp [memRootRule, h] at hmem
   · exfalso; simp [memRootRule, h] at hmem
   · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · exfalso; simp [memRootRule, h] at hmem
+  · rw [lower_rule_eq hr (k := 8) (r0 := rule_lower_2779) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact bitcast_fp_fp_ok_vac
+  · rw [lower_rule_eq hr (k := 30) (r0 := rule_lower_2793) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact bitcast_gpr_fp_ok_vac
+  · rw [lower_rule_eq hr (k := 41) (r0 := rule_lower_2798) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact bitcast_fp_gpr_ok_vac
+  · rw [lower_rule_eq hr (k := 163) (r0 := rule_lower_2803) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact bitcast_gpr_gpr_ok_vac
   · exfalso; simp [memRootRule, h] at hmem
   · exfalso; simp [memRootRule, h] at hmem
   · exfalso; simp [memRootRule, h] at hmem
