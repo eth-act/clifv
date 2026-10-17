@@ -38,6 +38,18 @@ theorem buildCtx_source {f : Clif.Function} {ctx : Ctx}
   rw [hc]
   exact ⟨rfl, rfl, rfl, rfl, rfl⟩
 
+/-- The original context of a successful stock context is integer (`CtxE`): stock takes
+integer values only (`buildCtx_valClass`). -/
+theorem buildCtx_source_ctxE {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {st : State}
+    (hb : Stock.buildCtx f = .ok (ctx, ranges, st)) {original : Ctx} {st0 : LState}
+    (hold : Backend.buildCtx f = .ok (original, ranges, st0)) : CtxE original := by
+  obtain ⟨original', st0', hold', hint⟩ := buildCtx_valClass hb
+  rw [hold] at hold'
+  simp only [Except.ok.injEq, Prod.mk.injEq] at hold'
+  obtain ⟨rfl, -, rfl⟩ := hold'
+  exact (ctxSpec_of hold).ctxE_of_int hint
+
 private theorem typed_declared {f : Clif.Function} {original : Ctx}
     {ranges : Array (Nat × Nat)} {st0 : LState} (sp : CtxSpec f original ranges st0)
     {x : Nat} {t : CTy} (ht : original.valueType? x = some t) : x ∈ valueDefs f := by
@@ -341,7 +353,13 @@ theorem DFGViewEq.frameTyped_iff_witness :
     fixtureResult.1.valueReg? 2 = some (.vreg 193 .int) ∧
     originalResult.1.valueReg? 2 = some (.vreg 2 .int) :=
   ⟨fixture_view, fixture_typed, (fixture_view.frameTyped_iff _).mp fixture_typed, rfl,
-    ((ctxSpec_of fixture_original_build).facts.vals 2 (by simp [valueDefs, fixture])).2⟩
+    (by
+      obtain ⟨-, t, ht, hr⟩ :=
+        (ctxSpec_of fixture_original_build).facts.vals 2 (by simp [valueDefs, fixture])
+      have h8 : originalResult.1.valueType? 2 = some (.int 8) := by
+        simpa only [Ctx.valueType?, fixture_view.valTy] using
+          (show fixtureResult.1.valueType? 2 = some (.int 8) from rfl)
+      rw [h8] at ht; cases ht; exact hr)⟩
 
 theorem DFGViewEq.dfgCons_iff_witness :
     DFGViewEq fixtureResult.1 originalResult.1 ∧
