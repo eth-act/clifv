@@ -365,7 +365,7 @@ theorem pure_step {C : Ctx} (hG : Good C) {B : Block} (hB : B ∈ C.f.blocks) {s
         simp only [Option.some.injEq, Plan.pure.injEq] at hp
         obtain ⟨rfl, rfl, rfl⟩ := hp
         simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at hc
-        obtain ⟨⟨⟨hsh, -⟩, hpx⟩, hpr⟩ := hc
+        obtain ⟨⟨⟨⟨hsh, hti⟩, -⟩, hpx⟩, hpr⟩ := hc
         simp only [evalInst, Opt.Res.bind_eq_ok, hsh, ite_true, Opt.Res.ofOption_eq_ok,
           Opt.Res.pure_eq_ok, Prod.mk.injEq] at hev
         obtain ⟨a, ha, b, hb, res, hres, rfl, rfl⟩ := hev
@@ -606,10 +606,12 @@ theorem pure_step {C : Ctx} (hG : Good C) {B : Block} (hB : B ∈ C.f.blocks) {s
     -- bitcast at i128
     simp only [bind, Option.bind_eq_some_iff, Option.some.injEq, Plan.pure.injEq] at hp
     obtain ⟨⟨xl, xh⟩, hx, ⟨rl, rh⟩, hr, rfl, rfl, rfl⟩ := hp
-    simp only [evalInst, Opt.Res.bind_eq_ok, Opt.Res.pure_eq_ok, Prod.mk.injEq] at hev
-    obtain ⟨a, ha, rfl, rfl⟩ := hev
-    obtain ⟨l, h, he, hl, hh⟩ := pairVal hV hop hx (getAs_ok ha)
-    cases val_i128 he
+    simp only [evalInst, Opt.Res.bind_eq_ok] at hev
+    obtain ⟨a, ha, hev⟩ := hev
+    obtain ⟨l, h, rfl, hl, hh⟩ := pairVal hV hop hx (get_ok ha)
+    rw [dif_pos rfl] at hev
+    simp only [Opt.Res.pure_eq_ok, Prod.mk.injEq] at hev
+    obtain ⟨rfl, rfl⟩ := hev
     obtain ⟨ρ0, hrun, h2, h3⟩ := pat_copy2 l h
     exact ⟨rfl, outs_pair hr, [V64 l, V64 h], ρ0, ⟨hl, hh, trivial⟩, hrun,
       outsOk_pair hr (out128_append ρ0 2 3 l h h2 h3)⟩

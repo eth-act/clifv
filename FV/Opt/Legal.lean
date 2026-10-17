@@ -547,7 +547,7 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
   | .binary op t x y, [r] =>
     match P y with
     | some (yl, _) =>
-      if op.isShift && t != .i128 && C.plain x && C.plain r then
+      if op.isShift && t.isInt && t != .i128 && C.plain x && C.plain r then
         some (.pure (Pat.shiftNarrow op t) [x, yl] [r])
       else none
     | none => same
