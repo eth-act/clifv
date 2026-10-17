@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleIcmpEmbed2
+import FV.Opt.Proof.KernelBV
 
 /-!
 # Template variants for `extends.isle`, `shifts.isle`, `spaceship.isle`
@@ -82,7 +83,7 @@ macro_rules
 
 The if-let conditions and immediates of shift-amount rules are `Int`s built from bit-vector
 operands (`Rust.band64 (↑k.toNat) 7`, `Rust.asI64 …`). `int_bv` rewrites them into 64-bit
-`BitVec` terms (and `Nat` comparisons of `toNat`s into `BitVec` comparisons) for `bv_decide`. -/
+`BitVec` terms (and `Nat` comparisons of `toNat`s into `BitVec` comparisons) for `kbv`. -/
 
 theorem band64_bv (a b : Int) :
     Rust.band64 a b = ((BitVec.ofInt 64 a &&& BitVec.ofInt 64 b).toNat : Int) := rfl
@@ -178,7 +179,7 @@ macro "int_bv" : tactic => `(tactic| simp (disch := decide) only [band64_bv, bor
   toNat_lt_toNat_wide, decide_eq_true_eq, beq_true, Int.reducePow, Int.reduceSub, Int.reduceAdd,
   Nat.reduceAdd, Nat.reducePow, Int.reduceToNat, ofClif_bits, Ty.width, BitVec.setWidth_eq] at *)
 
-/-- `rule_bits_b` with `int_bv` before `bv_decide`. -/
+/-- `rule_bits_b` with `int_bv` before `kbv`. -/
 macro "rule_bits_xb" : tactic => `(tactic| (
   try simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
     toNat_eq_iff_ofNat, ofInt_imm64OfBits, bne_iff_ne, ne_eq, toNat_eq_zero_iff] at *
@@ -194,7 +195,7 @@ macro "rule_bits_xb" : tactic => `(tactic| (
             ac_rfl)
          | (simp only [Clif.Sem.unary, bswap_bswap, popcnt_bswap, bitrev_bitrev, popcnt_bitrev]; done)
          | (opt_cases_val <;> opt_cases_ty <;> opt_widths <;> sem_simp_b <;> (try int_bv) <;>
-            first | ac_rfl | bv_decide))))
+            first | ac_rfl | kbv))))
 
 set_option hygiene false in
 macro "rule_finish_make_x" : tactic => `(tactic| (

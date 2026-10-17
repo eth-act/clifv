@@ -21,7 +21,8 @@ support are listed on stderr (and in the table), as is every fired rule outside 
 emitter-subset closure (`Isle.Aarch64.Closure.rules`). Exit status 0 unless the arguments are
 wrong, the input cannot be read, or encoding fails (an encoder or backend bug; the message
 names the function and instruction). With `--opt`, every function is first optimised by the
-Lean mid-end (`Opt.optimize`, `docs/contracts/midend.md`; options in `FVTest/Opt/Common.lean`).
+Lean mid-end (`Opt.optimizeExe`, the executable compiler's mid-end, `docs/contracts/midend.md`;
+options in `FVTest/Opt/Common.lean`).
 With `--personality <sym>` (`cargo fv`: `rust_eh_personality`), functions with landing pads
 (`try_call`) get cg_clif's LSDA and a `zLPR` CIE with that personality routine
 (`FV/Backend/Obj.lean`); without it their landing pads have no LSDA (as Cranelift's own
@@ -31,8 +32,11 @@ Every function that mentions `i128` is first legalised by `Opt.Legalize128` (rew
 plain `i8..i64` CLIF before the mid-end and the backend). A legalised function the validator
 `Opt.Legal.check` accepts is covered by `E2E.backend_correct_legal` and treated like any other
 function (`InSubset` and `lowerCheck` decided on the legalised form); a rejected one is
-reported unverified ("i128 legalized (outside backend_correct: …)"), as is every legalised
-function under `--opt` (no theorem composes the legalisation with the mid-end).
+reported unverified ("i128 legalized (outside backend_correct: …)"). Under `--opt` with the
+proven rule sets (`--opt-proven-only`) a legalised function is covered by
+`E2E.backend_correct_legal_opt` (the legalisation composed with the mid-end), every other by
+`E2E.backend_correct_opt_exe` (`call_indirect`, `try_call`, `try_call_indirect` included); with
+unproven rules every legalised function is reported unverified.
 
 A function inside the theorem's scope whose size is over the validation budget
 (`Backend.validationBudget`, blocks × values) is compiled without running the lowering
@@ -89,22 +93,14 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   let source := Clif.parseFile src
   let lg := Opt.Legalize128.parsedFile128 source
   let pf := match o.opt with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
+  -- the mid-end theorems (`E2E.backend_correct_opt_exe`, `E2E.backend_correct_legal_opt`) cover
+  -- every function, legalised ones included, for the proven rule sets
   let unv128 := match o.opt with
-    | some _ => lg.unverified ++ lg.accepted.map
-        (·, "i128 legalized and optimised (outside backend_correct_legal: --opt)")
+    | some c => if c.rules == .cranelift && c.ruleAllow == .proven then lg.unverified
+      else lg.unverified ++ lg.accepted.map
+        (·, "i128 legalized and optimised with unproven rules (outside backend_correct_legal_opt: --opt)")
     | none => lg.unverified
-  -- the mid-end theorems cover functions without `try_call`/`try_call_indirect` and
-  -- `call_indirect` only (`E2E.backend_correct_legal` covers both; `Opt.Legal.check` rejects
-  -- `try_call_indirect`)
-  let unvTry := pf.funcs.filterMap fun p => match p.func with
-    | .ok f =>
-      if o.opt.isNone then none
-      else if hasTryCall f then
-        some (p.name, "try_call (outside backend_correct_opt_proven: try_call-free functions only)")
-      else if Opt.hasCallIndirect f then
-        some (p.name, "call_indirect (outside backend_correct_opt_proven: functions without indirect calls only)")
-      else none
-    | .error _ => none
+  let unvTry : List (String × String) := []
   -- The settings checks see each function before and after `i128` legalisation.
   let clif (name : String) : List Clif.Function :=
     (source.funcs ++ pf.funcs).filterMap fun p => if p.name == name then p.func.toOption else none
