@@ -120,14 +120,21 @@ theorem CondCode.st_eq {F : BitVec 64 → Prop} {isem : Sem} {ctx : Ctx} {st st'
 
 /-! ## `iconst` look-through -/
 
-theorem iconst_data_inv {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {y j : Nat}
+theorem iconst_data_invT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {y j : Nat}
     {info : IInfo} {w : V} (hj : ctx.defInst? y = some j) (hi : ctx.insts[j]? = some info)
     (hd : V.data 152 35 [V.data 151 57 [], w] = info.data) :
     ∃ ty imm, w = .int (imm64OfIconst ty imm) ∧ eTy ty = true ∧ info.clif = some (.iconst ty imm) := by
-  obtain ⟨cl, hcl, hdat⟩ := ctxInv_clif hctx hj hi
+  obtain ⟨cl, hcl⟩ := Option.isSome_iff_exists.mp (hctx.defClif y j info hj hi)
+  have hdat := hctx.data j info cl hi hcl
   rw [← hd] at hdat
   obtain ⟨ty, imm, rfl, hfs⟩ := instData_iconst_inv hdat
   exact ⟨ty, imm, by simpa using hfs, instData_iconst_eTy hdat, hcl⟩
+
+theorem iconst_data_inv {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {y j : Nat}
+    {info : IInfo} {w : V} (hj : ctx.defInst? y = some j) (hi : ctx.insts[j]? = some info)
+    (hd : V.data 152 35 [V.data 151 57 [], w] = info.data) :
+    ∃ ty imm, w = .int (imm64OfIconst ty imm) ∧ eTy ty = true ∧ info.clif = some (.iconst ty imm) :=
+  iconst_data_invT hctx.toT hj hi hd
 
 theorem iconst_val {ctx : Ctx} {fr : Clif.Frame} (hdf : DFGCons ctx fr) {y j : Nat} {info : IInfo}
     {ty : Clif.Ty} {imm : BitVec ty.width} {v : Clif.Val} (hj : ctx.defInst? y = some j)
@@ -354,15 +361,16 @@ theorem mem2 {u a b : Nat} (h : u ∈ [a, b]) : u = a ∨ u = b := by
   simpa using h
 
 /-- Rule 2 (`cmp` of two 32/64-bit registers). -/
-theorem emit_rr (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) (cc : Clif.IntCC)
+theorem emit_rr (hctx : CtxInvT f ctx) {st : LState} (hvb : ValsBelow ctx st) (cc : Clif.IntCC)
     {x y : Nat} {rx ry : Reg} {t : CTy} {sv : V}
     (hx : ctx.valueReg? x = some rx) (hy : ctx.valueReg? y = some ry)
     (hT : ctx.valueType? y = some t) (h3264 : (t.bits == 32 || t.bits == 64) = true)
-    (hsz : (t.bits ≤ 32 ∧ sv = .data 93 0 []) ∨ (32 < t.bits ∧ t.bits ≤ 64 ∧ sv = .data 93 1 [])) :
+    (hsz : (t.bits ≤ 32 ∧ sv = .data 93 0 []) ∨ (32 < t.bits ∧ t.bits ≤ 64 ∧ sv = .data 93 1 []))
+    (hxi : IntPos ctx x) (hyi : IntPos ctx y) :
     CondCode F isem ctx st st (.data 123 2 [.data 47 1 [.data 58 2 [.data 59 10 [], sv, .reg .xzr,
       .reg rx, .reg ry]], .data 96 (condOf cc).idx []]) (IcmpT cc x y) := by
-  have := hctx.valueReg x _ hx; subst this
-  have := hctx.valueReg y _ hy; subst this
+  have := hctx.valueReg_int hx hxi; subst this
+  have := hctx.valueReg_int hy hyi; subst this
   obtain ⟨sz, hsv, hofv⟩ : ∃ sz, ((t.bits = 32 ∧ sz = .size32) ∨ (t.bits = 64 ∧ sz = .size64)) ∧
       MInst.ofV (.data 58 2 [.data 59 10 [], sv, .reg .xzr, .reg (.vreg x .int), .reg (.vreg y .int)]) =
         some (.aluRRR .subS sz .xzr (.vreg x .int) (.vreg y .int)) := by
@@ -381,11 +389,11 @@ theorem emit_rr (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) (cc
       rcases mem2 hu with rfl | rfl
       · exact .inr (by simp [hxv])
       · exact .inr (by simp [hyv])
-    · exact cmp_rr_cond cc (ty_of_bits (vholds_ty hdf hT hyv) (hctx.valTyE y t hT) hsv)
+    · exact cmp_rr_cond cc (ty_of_bits (vholds_ty hdf hT hyv) (hyi t hT) hsv)
         (hh x _ hxv) (hh y _ hyv)
 
 /-- Rule 6 (`cmp` of a 32/64-bit register with an `imm12` constant). -/
-theorem emit_imm (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) (cc : Clif.IntCC)
+theorem emit_imm (hctx : CtxInvT f ctx) {st : LState} (hvb : ValsBelow ctx st) (cc : Clif.IntCC)
     {x y j : Nat} {info : IInfo} {ity : Clif.Ty} {iimm : BitVec ity.width} {rx : Reg} {t : CTy}
     {sv : V} {imm : Imm12}
     (hx : ctx.valueReg? x = some rx) (hT : ctx.valueType? x = some t)
@@ -393,10 +401,11 @@ theorem emit_imm (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) (c
     (hsz : (t.bits ≤ 32 ∧ sv = .data 93 0 []) ∨ (32 < t.bits ∧ t.bits ≤ 64 ∧ sv = .data 93 1 []))
     (hj : ctx.defInst? y = some j) (hi : ctx.insts[j]? = some info)
     (hcl : info.clif = some (.iconst ity iimm)) (hety : eTy ity = true)
-    (himm : Imm12.ofNat? (u64 ((u64 (imm64OfIconst ity iimm) : Nat) : Int)) = some imm) :
+    (himm : Imm12.ofNat? (u64 ((u64 (imm64OfIconst ity iimm) : Nat) : Int)) = some imm)
+    (hxi : IntPos ctx x) :
     CondCode F isem ctx st st (.data 123 2 [.data 47 1 [.data 58 4 [.data 59 10 [], sv, .reg .xzr,
       .reg rx, .op (.imm12 imm)]], .data 96 (condOf cc).idx []]) (IcmpT cc x y) := by
-  have := hctx.valueReg x _ hx; subst this
+  have := hctx.valueReg_int hx hxi; subst this
   rw [u64_iconst hety] at himm
   obtain ⟨hval, hbits⟩ := imm12_ofNat_value himm (imm_lt hety iimm)
   obtain ⟨sz, hsv, hofv⟩ : ∃ sz, ((t.bits = 32 ∧ sz = .size32) ∨ (t.bits = 64 ∧ sz = .size64)) ∧
@@ -416,14 +425,14 @@ theorem emit_imm (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) (c
     · rw [vuseNums_cmpImm, List.mem_singleton] at hu
       subst hu; exact .inr (by simp [hxv])
     · rw [hval]
-      exact cmp_imm_cond cc (ty_of_bits (vholds_ty hdf hT hxv) (hctx.valTyE x t hT) hsv)
+      exact cmp_imm_cond cc (ty_of_bits (vholds_ty hdf hT hxv) (hxi t hT) hsv)
         (hh x _ hxv)
 
 theorem u64_pred {n : Nat} (h1 : 1 ≤ n) (h2 : n < 2 ^ 64) : u64 ((n : Int) - 1) = n - 1 := by
   unfold u64; omega
 
 /-- Rule 5 (`uge`/`sge` against an odd constant `b`: `cmp` with `b - 1`, `hi`/`gt`). -/
-theorem emit_pred (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) {cc : Clif.IntCC}
+theorem emit_pred (hctx : CtxInvT f ctx) {st : LState} (hvb : ValsBelow ctx st) {cc : Clif.IntCC}
     {cd : Cond} (hcc : (cc = .uge ∧ cd = .hi) ∨ (cc = .sge ∧ cd = .gt))
     {x y j : Nat} {info : IInfo} {ity : Clif.Ty} {iimm : BitVec ity.width} {rx : Reg} {t : CTy}
     {sv : V} {imm : Imm12}
@@ -434,10 +443,10 @@ theorem emit_pred (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) {
     (hcl : info.clif = some (.iconst ity iimm)) (hety : eTy ity = true)
     (hodd : ((u64 (imm64OfIconst ity iimm) : Nat) : Int) % 2 = 1)
     (himm : Imm12.ofNat? (u64 ((u64 (((u64 (imm64OfIconst ity iimm) : Nat) : Int) - 1) : Nat) : Int)) =
-      some imm) :
+      some imm) (hxi : IntPos ctx x) :
     CondCode F isem ctx st st (.data 123 2 [.data 47 1 [.data 58 4 [.data 59 10 [], sv, .reg .xzr,
       .reg rx, .op (.imm12 imm)]], .data 96 cd.idx []]) (IcmpT cc x y) := by
-  have := hctx.valueReg x _ hx; subst this
+  have := hctx.valueReg_int hx hxi; subst this
   have hN : u64 (imm64OfIconst ity iimm) = iimm.toNat := u64_imm64OfIconst (eTy_width hety) iimm
   have hlt := imm_lt hety iimm
   rw [hN] at hodd himm
@@ -462,11 +471,11 @@ theorem emit_pred (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) {
     · rw [vuseNums_cmpImm, List.mem_singleton] at hu
       subst hu; exact .inr (by simp [hxv])
     · rw [hval]
-      exact cmp_pred_cond hcc (ty_of_bits (vholds_ty hdf hT hxv) (hctx.valTyE x t hT) hsv)
+      exact cmp_pred_cond hcc (ty_of_bits (vholds_ty hdf hT hxv) (hxi t hT) hsv)
         (hh x _ hxv) hodd'
 
 /-- Rule 3 (8/16-bit, unsigned: `cmp` of the zero-extended register with an `imm12`). -/
-theorem emit_narrow_imm (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LState}
+theorem emit_narrow_imm (hR : Refines F isem) (hctx : CtxInvT f ctx) {st st' : LState}
     (hvb : ValsBelow ctx st) {cc : Clif.IntCC} (hus : signedCC cc = false)
     {x y j : Nat} {info : IInfo} {ity : Clif.Ty} {iimm : BitVec ity.width} {vx : V} {t : CTy}
     {imm : Imm12}
@@ -474,13 +483,14 @@ theorem emit_narrow_imm (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LS
     (h16 : t.bits ≤ 16)
     (hj : ctx.defInst? y = some j) (hi : ctx.insts[j]? = some info)
     (hcl : info.clif = some (.iconst ity iimm)) (hety : eTy ity = true)
-    (himm : Imm12.ofNat? (u64 ((u64 (imm64OfIconst ity iimm) : Nat) : Int)) = some imm) :
+    (himm : Imm12.ofNat? (u64 ((u64 (imm64OfIconst ity iimm) : Nat) : Int)) = some imm)
+    (hxi : IntPos ctx x) :
     CondCode F isem ctx st st' (.data 123 2 [.data 47 1 [.data 58 4 [.data 59 10 [], .data 93 0 [],
       .reg .xzr, vx, .op (.imm12 imm)]], .data 96 (condOf cc).idx []]) (IcmpT cc x y) := by
   rw [u64_iconst hety] at himm
   obtain ⟨hval, hbits⟩ := imm12_ofNat_value himm (imm_lt hety iimm)
   obtain ⟨k, ms, rfl, hf, hk, hkx, hrun⟩ :=
-    ExtOut.sem hR hctx hvb (.inl rfl) (by simp) (fun _ => by simp) hext
+    ExtOut.semT hR hctx hxi hvb (.inl rfl) (by simp) (fun _ => by simp) hext
   refine CondCode.flag hf (ofV_cmpImm32 _ _) (condOf_ne_al cc) rfl ?_ ?_
   · intro u hu
     rw [vuseNums_cmpImm, List.mem_singleton] at hu
@@ -505,16 +515,17 @@ theorem emit_narrow_imm (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LS
 
 /-- Rules 0/1 (8/16-bit: `cmp` of the extended register with the other register extended by the
 compare, `sxt`/`uxt` `b`/`h`). -/
-theorem emit_narrow_ext (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LState}
+theorem emit_narrow_ext (hR : Refines F isem) (hctx : CtxInvT f ctx) {st st' : LState}
     (hvb : ValsBelow ctx st) {cc : Clif.IntCC} {sg : Bool} (hsg : signedCC cc = sg)
     {x y : Nat} {vx ev : V} {ry : Reg} {t : CTy} {ai : Nat}
     (hext : ExtOut ctx x sg 32 [.int 32, .int 64] st st' vx) (hy : ctx.valueReg? y = some ry)
     (hT : ctx.valueType? y = some t) (hai : ai = if sg then 2 else 1)
     (hev : (t = .int 8 ∧ ai = 2 ∧ ev = .data 84 4 []) ∨ (t = .int 16 ∧ ai = 2 ∧ ev = .data 84 5 []) ∨
-      (t = .int 8 ∧ ai = 1 ∧ ev = .data 84 0 []) ∨ (t = .int 16 ∧ ai = 1 ∧ ev = .data 84 1 [])) :
+      (t = .int 8 ∧ ai = 1 ∧ ev = .data 84 0 []) ∨ (t = .int 16 ∧ ai = 1 ∧ ev = .data 84 1 []))
+    (hxi : IntPos ctx x) (hyi : IntPos ctx y) :
     CondCode F isem ctx st st' (.data 123 2 [.data 47 1 [.data 58 8 [.data 59 10 [], .data 93 0 [],
       .reg .xzr, vx, .reg ry, ev]], .data 96 (condOf cc).idx []]) (IcmpT cc x y) := by
-  have := hctx.valueReg y _ hy; subst this
+  have := hctx.valueReg_int hy hyi; subst this
   obtain ⟨e, hofv, hesem, h16⟩ : ∃ e : ExtendOp, (∀ rn : Reg, MInst.ofV (.data 58 8 [.data 59 10 [],
       .data 93 0 [], .reg .xzr, .reg rn, .reg (.vreg y .int), ev]) =
         some (.aluRRRExtend .subS .size32 .xzr rn (.vreg y .int) e)) ∧
@@ -536,7 +547,7 @@ theorem emit_narrow_ext (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LS
       cases ty <;> simp [CTy.ofClif] at ht
       rw [extend_reg_uxth]; simp only [VHolds, Clif.Ty.width] at hb; rw [hb]; rfl
   obtain ⟨k, ms, rfl, hf, hk, hkx, hrun⟩ :=
-    ExtOut.sem hR hctx hvb (.inl rfl) (by simp) (fun _ => by simp) hext
+    ExtOut.semT hR hctx hxi hvb (.inl rfl) (by simp) (fun _ => by simp) hext
   refine CondCode.flag hf (hofv (.vreg k .int)) (condOf_ne_al cc) rfl ?_ ?_
   · intro u hu
     rw [vuseNums_cmpExt] at hu
@@ -634,9 +645,11 @@ theorem lower_extend_op_ok {n : Nat} (hn : 40 ≤ n) {t : CTy} {ai : Nat}
 
 set_option maxHeartbeats 8000000 in
 include hp hc in
-/-- **`emit_icmp`** on integer values: the condition is `intcc cc a b` of the operands' values. -/
-theorem emit_icmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
-    (hctx : CtxInv f ctx) {n : Nat} (hn : 200 ≤ n) {cc : Clif.IntCC} {x y : Nat}
+/-- **`emit_icmp`** over a float-capable context, on values in integer positions: the condition
+is `intcc cc a b` of the operands' values. -/
+theorem emit_icmp_okT {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
+    (hctx : CtxInvT f ctx) {n : Nat} (hn : 200 ≤ n) {cc : Clif.IntCC} {x y : Nat}
+    (hxi : IntPos ctx x) (hyi : IntPos ctx y)
     {s s' : LState × Array RuleId} {c : V} (hvb : ValsBelow ctx s.1)
     (h : ApplyInternal p (sem ctx) cfg n 123 652 [.data 145 (ccIdx cc) [], .value x, .value y] s c s') :
     CondCode F isem ctx s.1 s'.1 c (IcmpT cc x y) := by
@@ -649,7 +662,7 @@ theorem emit_icmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem)
   all_goals isel_call hp hc [operand_size_ok, cmp_ok, cmp_imm_ok, cmp_extend_ok, zext32_ok, sext32_ok,
     lower_extend_op_ok]
   all_goals try (
-    obtain ⟨ity, iimm, rfl, hety, hcl⟩ := iconst_data_inv hctx ‹_› ‹_› ‹V.data 152 35 [V.data 151 57 [], _] = _›
+    obtain ⟨ity, iimm, rfl, hety, hcl⟩ := iconst_data_invT hctx ‹_› ‹_› ‹V.data 152 35 [V.data 151 57 [], _] = _›
     isel_inv_simp [ctor_u64_is_odd_iff, ctor_u64_wrapping_sub_iff] at *
     isel_destruct
     subst_vars
@@ -659,25 +672,26 @@ theorem emit_icmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem)
   all_goals try (dsimp only at *)
   all_goals first
     | (refine (emit_narrow_ext hR hctx hvb (signed_of_idx ‹_›) ‹ExtOut _ _ true _ _ _ _ _› ‹_› ‹_› rfl
-        ‹_›).st_eq ?_; icmp_st)
+        ‹_› (by assumption) (by assumption)).st_eq ?_; icmp_st)
     | (refine (emit_narrow_ext hR hctx hvb (unsigned_of_idx ‹_›) ‹ExtOut _ _ false _ _ _ _ _› ‹_› ‹_› rfl
-        ‹_›).st_eq ?_; icmp_st)
-    | (refine (emit_rr hctx hvb cc ‹ctx.valueReg? x = _› ‹ctx.valueReg? y = _› ‹_› ‹_› ‹_›).st_eq ?_
+        ‹_› (by assumption) (by assumption)).st_eq ?_; icmp_st)
+    | (refine (emit_rr hctx hvb cc ‹ctx.valueReg? x = _› ‹ctx.valueReg? y = _› ‹_› ‹_› ‹_›
+        (by assumption) (by assumption)).st_eq ?_
        icmp_st)
     | (refine (emit_narrow_imm hR hctx hvb (unsigned_of_idx ‹_›) ‹ExtOut _ _ false _ _ _ _ _› ‹_› ‹_›
-        ‹_› ‹_› ‹_› ‹_› ‹_›).st_eq ?_; icmp_st)
-    | (refine (emit_imm hctx hvb cc ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›).st_eq ?_; icmp_st)
+        ‹_› ‹_› ‹_› ‹_› ‹_› (by assumption)).st_eq ?_; icmp_st)
+    | (refine (emit_imm hctx hvb cc ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› ‹_› (by assumption)).st_eq ?_; icmp_st)
     | (exact emit_zero_ne (ccIdx_eq_1 ‹_›) (by omega) hety ‹_› ‹_› hcl (.inl ⟨rfl, rfl⟩)
         (by
           obtain ⟨h651⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 651 _ _ _ _) := ⟨‹_›⟩
-          exact is_nonzero_ok hp hc hR hctx (hn := by omega) hvb h651))
+          exact is_nonzero_okT hp hc hR hctx (hn := by omega) (by assumption) hvb h651))
     | (exact emit_zero_ne (ccIdx_eq_1 ‹_›) (by omega) hety ‹_› ‹_› hcl (.inr ⟨rfl, rfl⟩)
         (by
           obtain ⟨h651⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 651 _ _ _ _) := ⟨‹_›⟩
-          exact is_nonzero_ok hp hc hR hctx (hn := by omega) hvb h651))
+          exact is_nonzero_okT hp hc hR hctx (hn := by omega) (by assumption) hvb h651))
     | (obtain ⟨h651⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 651 _ _ _ _) := ⟨‹_›⟩
        obtain ⟨h649⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 649 _ _ _ _) := ⟨‹_›⟩
-       have hnz := is_nonzero_ok hp hc hR hctx (hn := by omega) hvb h651
+       have hnz := is_nonzero_okT hp hc hR hctx (hn := by omega) (by assumption) hvb h651
        obtain ⟨hst, hinv⟩ := cri_ok hp hc (hn := by omega) hnz.shape h649
        first
         | exact (emit_zero_eq (ccIdx_eq_0 ‹_›) (by omega) hety ‹_› ‹_› hcl (.inl ⟨rfl, rfl⟩)
@@ -691,9 +705,18 @@ theorem emit_icmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem)
          have h := ‹V.bool true = _›; simp at h; omega
        first
         | (refine (emit_pred hctx hvb (cd := .hi) (.inl ⟨ccIdx_eq_7 ‹_›, rfl⟩) ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
-            hcl hety hodd ‹_›).st_eq ?_; icmp_st)
+            hcl hety hodd ‹_› (by assumption)).st_eq ?_; icmp_st)
         | (refine (emit_pred hctx hvb (cd := .gt) (.inr ⟨ccIdx_eq_3 ‹_›, rfl⟩) ‹_› ‹_› ‹_› ‹_› ‹_› ‹_›
-            hcl hety hodd ‹_›).st_eq ?_; icmp_st))
+            hcl hety hodd ‹_› (by assumption)).st_eq ?_; icmp_st))
+
+include hp hc in
+/-- **`emit_icmp`** on integer values: the condition is `intcc cc a b` of the operands' values. -/
+theorem emit_icmp_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
+    (hctx : CtxInv f ctx) {n : Nat} (hn : 200 ≤ n) {cc : Clif.IntCC} {x y : Nat}
+    {s s' : LState × Array RuleId} {c : V} (hvb : ValsBelow ctx s.1)
+    (h : ApplyInternal p (sem ctx) cfg n 123 652 [.data 145 (ccIdx cc) [], .value x, .value y] s c s') :
+    CondCode F isem ctx s.1 s'.1 c (IcmpT cc x y) :=
+  emit_icmp_okT hp hc hR hctx.toT hn (hctx.intPos x) (hctx.intPos y) hvb h
 
 end
 

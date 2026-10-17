@@ -52,6 +52,20 @@ theorem ctor_ty_int_ref_scalar_64_iff (ty : CTy) (v : V) (st' : LState) :
     exact ⟨fun ⟨a, b⟩ => ⟨a.symm, b.symm⟩, fun ⟨a, b⟩ => ⟨a.symm, b.symm⟩⟩
   · rename_i h; simp only [h, reduceCtorEq, false_iff, not_and, Bool.false_eq_true]; intro h'; exact h'.elim
 
+theorem ctor_temp_writable_reg_f32_iff (v : V) (st' : LState) :
+    externCtor ctx T.temp_writable_reg [.ty (.float 32)] st = .ok (v, st') ↔
+      v = .reg (st.fresh .float).1 ∧ st' = (st.fresh .float).2 := by
+  have : externCtor ctx T.temp_writable_reg [.ty (.float 32)] st =
+      .ok (.reg (st.fresh .float).1, (st.fresh .float).2) := rfl
+  rw [this]; simp [eq_comm]
+
+theorem ctor_temp_writable_reg_f64_iff (v : V) (st' : LState) :
+    externCtor ctx T.temp_writable_reg [.ty (.float 64)] st = .ok (v, st') ↔
+      v = .reg (st.fresh .float).1 ∧ st' = (st.fresh .float).2 := by
+  have : externCtor ctx T.temp_writable_reg [.ty (.float 64)] st =
+      .ok (.reg (st.fresh .float).1, (st.fresh .float).2) := rfl
+  rw [this]; simp [eq_comm]
+
 end Ext
 
 /-! ## Instruction data of `bitcast` -/

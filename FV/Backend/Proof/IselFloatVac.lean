@@ -1,16 +1,17 @@
 import FV.Backend.Proof.IselExcl
 
 /-!
-# The float data-movement roots under `CtxInv` (S11e4, floats #35)
+# The float memory roots under `CtxInv` (S11e4, floats #35)
 
-`CtxInv` describes subset-E contexts, whose values are all integers. There the float roots of
-the closure never match: the abstract checker of the excluded roots (`fails`, sound by
-`fails_sound`) rejects each of them (`F32const`/`F64const`/`Bitcast` are not E opcodes; the
-float `load`/`store` patterns test `ty_float_or_vec` on an E type). So their `LowerRuleOk`
-(`f32const` 584, `f64const` 585, `bitcast` 1080/1083/1084/1085) and `MemRuleOkR` (`load.f32`
-1047, `load.f64` 1048, float `store` 1073/1074) hold vacuously under `CtxInv`, which is how
-`LowerRulesCorrect`/`MemRulesCorrectR` cover them. Their contracts over float-capable contexts
-(`CtxInvT`, where they do match) are `LowerRulesCorrectT`/`MemRulesCorrectRT`.
+`CtxInv` describes subset-E contexts, whose values are all integers. There the float memory
+roots of the closure never match: the abstract checker of the excluded roots (`fails`, sound by
+`fails_sound`) rejects each of them (the float `load`/`store` patterns test `ty_float_or_vec` on
+an E type). So their `MemRuleOkR` (`load.f32` 1047, `load.f64` 1048, float `store` 1073/1074)
+holds vacuously under `CtxInv`, which is how `MemRulesCorrectR` covers them (`MemRulesCorrectR`
+has no `MemRefinesFP` for the FP accesses). Their contract over float-capable contexts (`CtxInvT`,
+where they do match) is `MemRulesCorrectRT` (`IselFloatMem`). The non-memory float roots
+(`f32const`/`f64const`/`bitcast`) are proven over `CtxInvT` (`LowerRuleOkT`) and enter
+`LowerRulesCorrect` through `LowerRuleOkT.toOk`.
 -/
 
 namespace Backend.Proof
@@ -32,12 +33,6 @@ theorem match_false_of_fails {r : Rule} {q : Pattern} (hr : r.args = [q])
     obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
     exact fails_sound hctx q .inst _ _ _ _ hf ⟨ii, info, inst, rfl, hi, hc, hctx.data ii info inst hi hc⟩ h1
 
-theorem lowerRuleOk_of_fails {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program}
-    {r : Rule} {q : Pattern} (hr : r.args = [q]) (hf : fails program .inst q = true) :
-    LowerRuleOk isem MR env cp program r := by
-  intro f ctx hctx ii info inst hi hic cfg _ m n st tr env' s1 out st' tr' _ _ _ _ hmatch _
-  exact (match_false_of_fails hr hf hctx hi hic hmatch).elim
-
 theorem memRuleOkR_of_fails {Rd F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} {r : Rule} {q : Pattern}
     (hr : r.args = [q]) (hf : fails program .inst q = true) :
@@ -47,31 +42,12 @@ theorem memRuleOkR_of_fails {Rd F : BitVec 64 → Prop} {sb : Nat} {syms : Strin
 
 set_option maxRecDepth 100000
 
-theorem fails_lower_63 : fails program .inst (rule_lower_63.args.head!) = true := by decide +kernel
-theorem fails_lower_68 : fails program .inst (rule_lower_68.args.head!) = true := by decide +kernel
 theorem fails_lower_2625 : fails program .inst (rule_lower_2625.args.head!) = true := by decide +kernel
 theorem fails_lower_2628 : fails program .inst (rule_lower_2628.args.head!) = true := by decide +kernel
 theorem fails_lower_2746 : fails program .inst (rule_lower_2746.args.head!) = true := by decide +kernel
 theorem fails_lower_2750 : fails program .inst (rule_lower_2750.args.head!) = true := by decide +kernel
-theorem fails_lower_2779 : fails program .inst (rule_lower_2779.args.head!) = true := by decide +kernel
-theorem fails_lower_2793 : fails program .inst (rule_lower_2793.args.head!) = true := by decide +kernel
-theorem fails_lower_2798 : fails program .inst (rule_lower_2798.args.head!) = true := by decide +kernel
-theorem fails_lower_2803 : fails program .inst (rule_lower_2803.args.head!) = true := by decide +kernel
 
-/-! ## The `CtxInv` obligations of the float roots (vacuous) -/
-
-theorem f32const_ok_vac {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} :
-    LowerRuleOk isem MR env cp program rule_lower_63 := lowerRuleOk_of_fails rfl fails_lower_63
-theorem f64const_ok_vac {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} :
-    LowerRuleOk isem MR env cp program rule_lower_68 := lowerRuleOk_of_fails rfl fails_lower_68
-theorem bitcast_fp_fp_ok_vac {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} :
-    LowerRuleOk isem MR env cp program rule_lower_2779 := lowerRuleOk_of_fails rfl fails_lower_2779
-theorem bitcast_gpr_fp_ok_vac {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} :
-    LowerRuleOk isem MR env cp program rule_lower_2793 := lowerRuleOk_of_fails rfl fails_lower_2793
-theorem bitcast_fp_gpr_ok_vac {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} :
-    LowerRuleOk isem MR env cp program rule_lower_2798 := lowerRuleOk_of_fails rfl fails_lower_2798
-theorem bitcast_gpr_gpr_ok_vac {isem : Sem} {MR : MemRelT} {env : Clif.Env} {cp : Clif.Program} :
-    LowerRuleOk isem MR env cp program rule_lower_2803 := lowerRuleOk_of_fails rfl fails_lower_2803
+/-! ## The `CtxInv` obligations of the float memory roots (vacuous) -/
 
 section
 variable {Rd F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat} {isem : Sem}
