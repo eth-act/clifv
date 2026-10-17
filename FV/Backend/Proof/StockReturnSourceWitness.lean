@@ -370,19 +370,19 @@ private def ContractPlacement (p : Case) : Prop :=
       #[.args ((registers p).zip (pins p)),.rets ((registers p).zip (pins p))])) = some true
 section ContractKernel
 attribute [local semireducible] Isle.Aarch64.program Stock.runTerm
-private theorem contract8 : ContractPlacement ⟨false,.i8,by simp [Clif.Ty.width],by simp⟩ := by
+private theorem contract8 : ContractPlacement ⟨false,.i8,by simp [Clif.Ty.width],by simp,rfl⟩ := by
   unfold ContractPlacement; decide +kernel
-private theorem contract16 : ContractPlacement ⟨false,.i16,by simp [Clif.Ty.width],by simp⟩ := by
+private theorem contract16 : ContractPlacement ⟨false,.i16,by simp [Clif.Ty.width],by simp,rfl⟩ := by
   unfold ContractPlacement; decide +kernel
-private theorem contract32 : ContractPlacement ⟨false,.i32,by simp [Clif.Ty.width],by simp⟩ := by
+private theorem contract32 : ContractPlacement ⟨false,.i32,by simp [Clif.Ty.width],by simp,rfl⟩ := by
   unfold ContractPlacement; decide +kernel
-private theorem contract64 : ContractPlacement ⟨false,.i64,by simp [Clif.Ty.width],by simp⟩ := by
+private theorem contract64 : ContractPlacement ⟨false,.i64,by simp [Clif.Ty.width],by simp,rfl⟩ := by
   unfold ContractPlacement; decide +kernel
-private theorem contractPointer : ContractPlacement ⟨true,.i64,by simp [Clif.Ty.width],fun _ => rfl⟩ := by
+private theorem contractPointer : ContractPlacement ⟨true,.i64,by simp [Clif.Ty.width],fun _ => rfl,rfl⟩ := by
   unfold ContractPlacement; decide +kernel
 end ContractKernel
 private theorem contractPlacement (p : Case) : ContractPlacement p := by
-  rcases p with ⟨sret,ty,width,pointer⟩
+  rcases p with ⟨sret,ty,width,pointer,int⟩
   cases sret with
   | true => have same := pointer rfl; subst ty; exact contractPointer
   | false =>
@@ -392,7 +392,8 @@ private theorem contractPlacement (p : Case) : ContractPlacement p := by
       | exact contract16
       | exact contract32
       | exact contract64
-      | simp [Clif.Ty.width] at width
+      | (simp [Clif.Ty.width] at width; done)
+      | (simp at int; done)
 
 /-- Every ordinary scalar width and implicit x8 sret case executes the actual
 returned VCode terminator under the new whole-run contract. The source words
