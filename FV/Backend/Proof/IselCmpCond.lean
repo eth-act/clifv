@@ -278,9 +278,11 @@ def eOpNames : List String :=
    -- `tls_value` (agent/stack-tls-proof)
    "TlsValue"]
 
-theorem instNames_snd_mem (cl : Clif.Inst) : (instNames cl).2 ∈ eOpNames := by
+theorem instNames_snd_mem (cl : Clif.Inst) (hE : Compile.instE cl = true) :
+    (instNames cl).2 ∈ eOpNames := by
   cases cl <;> simp only [instNames] <;> try decide
   all_goals first
+    | (simp [Compile.instE] at hE; done)
     | (rename_i op _ _; cases op <;> decide)
     | (rename_i op _ _ _; cases op <;> decide)
     | (rename_i op _ _ _ _; cases op <;> decide)
@@ -297,10 +299,11 @@ theorem opcode_absurd {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {x j
   obtain ⟨cl, hcl'⟩ := Option.isSome_iff_exists.mp hcl
   have hdata := hctx.data j info cl hi hcl'
   rw [← he] at hdata
-  have := (instData_inv_names hdata).2
+  have hE := hctx.instE j info cl hi hcl'
+  have := (instData_inv_namesE hE hdata).2
   rw [hs] at this
   cases this
-  exact hns (instNames_snd_mem cl)
+  exact hns (instNames_snd_mem cl hE)
 
 open Lean Elab Tactic Meta in
 /-- Close a goal whose hypotheses say an instruction reached through `def_inst` has a non-E

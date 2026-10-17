@@ -876,12 +876,24 @@ theorem land_width_sub_one {ty : Clif.Ty} (hw : ty.width ≤ 64) (s : Nat) :
 
 end Forms2
 
-theorem instData_iconst_eTy {f : Clif.Function} {ty : Clif.Ty} {imm : BitVec ty.width} {d : V}
-    (h : instData f (.iconst ty imm) = .ok d) : eTy ty = true := by
+/-- A matched integer `UnaryImm (Iconst)` has an integer type (the float constants use the
+formats `UnaryIeee32`/`UnaryIeee64`). -/
+theorem instData_iconst_eTy {f : Clif.Function} {ty : Clif.Ty} {imm : BitVec ty.width}
+    {fs : List V} (h : instData f (.iconst ty imm) = .ok (.data 152 35 (.data 151 57 [] :: fs))) :
+    eTy ty = true := by
   simp only [instData] at h
   split at h
   · assumption
-  · cases h
+  · exfalso
+    split at h
+    · simp only [pure, Except.pure, Except.ok.injEq, instDataV_UnaryIeee32] at h
+      injection h with _ h2
+      cases h2
+    · split at h
+      · simp only [pure, Except.pure, Except.ok.injEq, instDataV_UnaryIeee64] at h
+        injection h with _ h2
+        cases h2
+      · cases h
 
 theorem shiftImm_some {n s : Nat} (h : shiftImm? n = some s) : s = n ∧ n ≤ 63 := by
   unfold shiftImm? at h
