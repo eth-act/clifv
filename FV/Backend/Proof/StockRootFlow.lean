@@ -88,7 +88,7 @@ private theorem stock_pinned_names {f : Clif.Function} {ctx original : Ctx}
   rw [hi] at hi'; cases hi'
   have := hctx.data ii info inst hi hc
   rw [hd] at this
-  exact (instData_inv_names this).2
+  exact (instData_inv_namesE (hctx.instE ii info inst hi hc) this).2
 
 private theorem stock_root_flow_rules {f : Clif.Function} {ctx : Ctx}
     (mapped : MappedCtxInv f ctx) {ii : Nat} {info : IInfo} {inst : Clif.Inst}

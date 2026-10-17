@@ -402,7 +402,7 @@ theorem callFmt_inst {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii :
   cases hi'
   have hdat := hctx.data ii info inst hi hc
   rw [hd] at hdat
-  exact (instData_inv_names hdat).1
+  exact (instData_inv_namesE (hctx.instE ii info inst hi hc) hdat).1
 
 theorem variantNames_Call : (variantNames 152)[VIdx.InstructionData.Call]? = some "Call" := rfl
 

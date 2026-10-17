@@ -346,6 +346,217 @@ theorem constant_f32_ok (hR : Refines F isem) {N : Nat} (hN : 200 ≤ N) {i : In
     simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     omega
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 8000000 in
+include hp hc in
+/-- **`constant_f64`** (`inst.isle:4264–4275`) of a 64-bit pattern. The literal-pool rule
+(`emit_u64_le_const`, not modelled) never returns. -/
+theorem constant_f64_ok (hR : Refines F isem) {N : Nat} (hN : 300 ≤ N) {i : Int}
+    (hi0 : 0 ≤ i) (hi : i < 2 ^ 64) {s s' : LState × Array RuleId} {v : V}
+    (h : ApplyInternal p (sem ctx) cfg N 27 587 [.int i] s v s') :
+    FConstOut F isem 64 (u64 i) s.1 s'.1 v := by
+  have hp' := hp
+  have hu64 : u64 i = i.toNat := by unfold u64; omega
+  isel_split hp hc h 587
+  all_goals isel_inv [*, rule_inst_4264, rule_inst_4268, rule_inst_4271, rule_inst_4273,
+    rule_inst_4275] at hm he
+  · -- `0`: `movi vd.2s, #0`
+    obtain ⟨rfl, rfl⟩ :=
+      (ctor_mov_mod_imm_zero32_iff ctx _ _ _).mp ‹externCtor ctx T.asimd_mov_mod_imm_zero _ _ = _›
+    have h1 := ‹ApplyInternal _ _ _ _ 27 375 _ _ _ _›
+    obtain ⟨rfl, m1, hm1, hs1⟩ := vec_dup_imm_ok hp' hc (by omega) h1
+    obtain rfl := ofV_vecDupImm hm1
+    simp only at hs1 ⊢
+    rw [hs1]
+    exact fconst_one hR rfl (fun w => rfl) (by simp [moviVal_zero, movModImmZero]; rfl) rfl rfl
+  · -- an `fmov d` immediate
+    obtain ⟨mm, hmm, rfl, rfl⟩ :=
+      (ctor_fp_mod_imm64_iff ctx _ _ _ _).mp ‹externCtor ctx T.asimd_fp_mod_imm_from_u64 _ _ = _›
+    have h1 := ‹ApplyInternal _ _ _ _ 27 411 _ _ _ _›
+    obtain ⟨rfl, m1, hm1, hs1⟩ := fpu_move_fp_imm_ok hp' hc (by omega) h1
+    obtain rfl := ofV_fpuMoveFPImm64 hm1
+    simp only at hs1 ⊢
+    rw [hs1]
+    refine fconst_one hR rfl (fun w => rfl) ?_ rfl rfl
+    congr 1
+    apply BitVec.eq_of_toNat_eq
+    rw [fpModImm64_val hmm, BitVec.toNat_ofNat]
+  · -- a pattern that fits 32 bits: `constant_f32`
+    obtain ⟨⟨hj0, hj⟩, rfl⟩ :=
+      (ext_u32_from_u64_iff ctx _ _ _).mp ‹externExtract ctx T.u32_from_u64 _ _ = _›
+    have h1 := ‹ApplyInternal _ _ _ _ 27 586 _ _ _ _›
+    have h32 := constant_f32_ok hp' hc hR (by omega) hj0 hj h1
+    exact h32.widen (by omega)
+  · -- low 32 bits clear: `fmov d, x` of the `imm` sequence
+    obtain ⟨hlow, rfl⟩ :=
+      (ext_u64_low32_bits_unset_iff ctx _ _ _).mp ‹externExtract ctx T.u64_low32_bits_unset _ _ = _›
+    have h1 := ‹ApplyInternal _ _ _ _ 27 553 _ _ _ _›
+    obtain ⟨ms, d1, rfl, hsh, hrun⟩ :=
+      imm_ok_ai hp' hc hR (.inr (.inr (.inr rfl))) (.inr rfl) (by omega) h1
+    have h2 := ‹ApplyInternal _ _ _ _ 27 409 _ _ _ _›
+    obtain ⟨k', hk', rfl, m1, hm1, hs1⟩ := mov_to_fpu_any_ok hp' hc (by omega) h2
+    obtain rfl : k' = 3 := by rcases hk' with h | ⟨h, -⟩ <;> omega
+    obtain rfl := ofV_movToFpu64 hm1
+    simp only at hs1 hsh ⊢
+    rw [hs1]
+    refine fconst_snoc hR hsh rfl (fun ρ => ?_) rfl rfl
+    obtain ⟨ρ', X, hp, hx, hX, -⟩ := hrun ρ
+    refine ⟨ρ', _, hp, fun w => rfl, ?_⟩
+    rw [hx]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    omega
+  · -- the literal pool
+    exact absurd ‹externCtor ctx T.emit_u64_le_const _ _ = _› (ctor_emit_u64_le_const_ne ctx _ _ _ _)
+
 end Const
+
+/-! ## The matched `f32const`/`f64const` -/
+
+theorem variantNames_UnaryIeee32 : (variantNames 152)[33]? = some "UnaryIeee32" := rfl
+theorem variantNames_UnaryIeee64 : (variantNames 152)[34]? = some "UnaryIeee64" := rfl
+
+/-- The instruction with `UnaryIeee32`/`F32const` data: an `f32const`, its field the bits. -/
+theorem instData_f32const_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
+    (h : instData f cl = .ok (.data 152 33 (.data 151 59 [] :: fs))) :
+    ∃ imm : BitVec 32, cl = .iconst .f32 imm ∧ fs = [.int imm.toNat] := by
+  rcases instData_names h with ⟨rest, hd⟩ | ⟨ty, imm, rfl, hfl, -⟩
+  · exfalso
+    obtain ⟨h1, -, -⟩ := mkVariant_eq_data hd.symm
+    rw [variantNames_UnaryIeee32] at h1
+    cases cl <;> simp [instNames] at h1
+  · cases ty <;> simp [Clif.Ty.isFloat] at hfl
+    · refine ⟨imm, rfl, ?_⟩
+      simp [instData, eTy, pure, Except.pure, instDataV_UnaryIeee32, opcodeV_F32const] at h
+      first | exact h | exact h.symm
+    · simp [instData, eTy, pure, Except.pure, instDataV_UnaryIeee64, opcodeV_F64const] at h
+
+/-- The instruction with `UnaryIeee64`/`F64const` data: an `f64const`, its field the bits. -/
+theorem instData_f64const_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
+    (h : instData f cl = .ok (.data 152 34 (.data 151 60 [] :: fs))) :
+    ∃ imm : BitVec 64, cl = .iconst .f64 imm ∧ fs = [.int imm.toNat] := by
+  rcases instData_names h with ⟨rest, hd⟩ | ⟨ty, imm, rfl, hfl, -⟩
+  · exfalso
+    obtain ⟨h1, -, -⟩ := mkVariant_eq_data hd.symm
+    rw [variantNames_UnaryIeee64] at h1
+    cases cl <;> simp [instNames] at h1
+  · cases ty <;> simp [Clif.Ty.isFloat] at hfl
+    · simp [instData, eTy, pure, Except.pure, instDataV_UnaryIeee32, opcodeV_F32const] at h
+    · refine ⟨imm, rfl, ?_⟩
+      simp [instData, eTy, pure, Except.pure, instDataV_UnaryIeee64, opcodeV_F64const] at h
+      first | exact h | exact h.symm
+
+/-- The matched data's literal is the instruction's (`inst_data_value` returned `info`). -/
+theorem fconst_data_eq {ctx : Ctx} {ii : Nat} {info info' : IInfo} {k o c : Nat} {w1 : V}
+    (hi : ctx.insts[ii]? = some info) (hd : info.data = .data 152 k [.data 151 o [], .int c])
+    (hi' : ctx.insts[ii]? = some info') (hw : V.data 152 k [.data 151 o [], w1] = info'.data) :
+    info' = info ∧ w1 = .int c := by
+  rw [hi] at hi'
+  cases hi'
+  rw [hd] at hw
+  simp only [V.data.injEq, List.cons.injEq, true_and, and_true] at hw
+  exact ⟨rfl, hw⟩
+
+/-- `LowerInstOk` of a float constant whose code `FConstOut` describes. -/
+theorem lowerInstOk_fconst {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT} {env : Clif.Env}
+    {cp : Clif.Program} {ctx : Ctx} {results : List Nat} {st st' : LState} {ty : Clif.Ty}
+    {imm : BitVec ty.width} {ms : List MInst} {d : Nat} (hMR : MRStable F MR)
+    (hsh : CodeShape st st' ms d st.nextVreg)
+    (hrun : ∀ ρ, ∃ ρ', PRun F isem ms ρ ρ' ∧ ρ' d = (BitVec.ofNat ty.width imm.toNat).setWidth 128)
+    (hw : ty.width ≤ 128) :
+    LowerInstOk isem MR env cp ctx (.iconst ty imm) results st [[.vreg d .float]] st' ms := by
+  refine lowerInstOk_one_c hMR hsh.mono hsh.defs rfl ?_
+  intro fr cm ρ vals cm' _ _ _ ho
+  simp only [instOutcome, Clif.evalInst, pure, Except.pure] at ho
+  cases ho
+  obtain ⟨ρ', hp', hd⟩ := hrun ρ
+  refine ⟨rfl, usesOk_of [] ?_ (by simp), .inl hsh.res, _, ρ', rfl, hp', ?_⟩
+  · intro mi hmi u hu
+    rcases hsh.uses mi hmi u hu with h | h
+    · exact .inl h
+    · exact .inl (by omega)
+  · show (ρ' d).setWidth ty.width = imm
+    rw [hd]
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    have := imm.isLt
+    have h2 : 2 ^ ty.width ≤ 2 ^ 128 := Nat.pow_le_pow_right (by decide) hw
+    rw [Nat.mod_eq_of_lt this, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt this]
+
+/-! ## The two roots -/
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 8000000 in
+/-- **`f32const`** (`rule_lower_63`, `lower.isle:63`): `constant_f32` of the literal's bits
+(`u32_from_ieee32`) into a fresh float vreg. -/
+theorem f32const_okT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem}
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
+    (hMR : MRStable F MR) : LowerRuleOkT isem MR env cp p rule_lower_63 := by
+  intro f ctx hctx ii info inst hi hic _ cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
+    heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨N, rfl⟩ : ∃ N, n = N + 500 := ⟨n - 500, by omega⟩
+  obtain ⟨info', fs, hi', hd⟩ := root_match_data hp ctx (r := rule_lower_63) rfl hp.t2480
+    term_2480_kind hp.t2343 term_2343_kind (m := m' + 9) hmatch
+  rw [hi] at hi'
+  cases hi'
+  have hdat := hctx.data ii info inst hi hic
+  rw [hd] at hdat
+  obtain ⟨imm, rfl, rfl⟩ := instData_f32const_inv hdat
+  have hp' := hp
+  isel_inv' hp [] at hmatch heval
+  obtain ⟨rfl, rfl⟩ := fconst_data_eq hi hd ‹ctx.insts[ii]? = some _› ‹V.data 152 33 _ = _›
+  obtain rfl := (ext_u32_from_ieee32_iff ctx _ _ _).mp ‹externExtract ctx T.u32_from_ieee32 _ _ = _›
+  have h1 := ‹ApplyInternal _ _ _ _ 27 586 _ _ _ _›
+  have hlt := imm.isLt
+  obtain ⟨ms, d, rfl, hsh, hrun⟩ :=
+    constant_f32_ok hp' hco hR (by omega) (by omega) (by simpa using hlt) h1
+  have h2 := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨rfl, hs2⟩ := output_reg_ok hp' hco (by omega) h2
+  try simp only at hs2
+  subst hs2
+  have hu : u64 (imm.toNat : Int) = imm.toNat := by unfold u64; omega
+  rw [hu] at hrun
+  first
+    | refine ⟨ms, hsh.emitted, [[.vreg d .float]], rfl, ?_⟩
+    | refine ⟨ms, [[.vreg d .float]], hsh.emitted, rfl, ?_⟩
+  exact lowerInstOk_fconst hMR hsh hrun (by decide)
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 8000000 in
+/-- **`f64const`** (`rule_lower_68`, `lower.isle:68`): `constant_f64` of the literal's bits
+(`u64_from_ieee64`) into a fresh float vreg. -/
+theorem f64const_okT {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem}
+    (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program) (hR : Refines F isem)
+    (hMR : MRStable F MR) : LowerRuleOkT isem MR env cp p rule_lower_68 := by
+  intro f ctx hctx ii info inst hi hic _ cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
+    heval
+  obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
+  obtain ⟨N, rfl⟩ : ∃ N, n = N + 500 := ⟨n - 500, by omega⟩
+  obtain ⟨info', fs, hi', hd⟩ := root_match_data hp ctx (r := rule_lower_68) rfl hp.t2481
+    term_2481_kind hp.t2344 term_2344_kind (m := m' + 9) hmatch
+  rw [hi] at hi'
+  cases hi'
+  have hdat := hctx.data ii info inst hi hic
+  rw [hd] at hdat
+  obtain ⟨imm, rfl, rfl⟩ := instData_f64const_inv hdat
+  have hp' := hp
+  isel_inv' hp [] at hmatch heval
+  obtain ⟨rfl, rfl⟩ := fconst_data_eq hi hd ‹ctx.insts[ii]? = some _› ‹V.data 152 34 _ = _›
+  obtain rfl := (ext_u64_from_ieee64_iff ctx _ _ _).mp ‹externExtract ctx T.u64_from_ieee64 _ _ = _›
+  have h1 := ‹ApplyInternal _ _ _ _ 27 587 _ _ _ _›
+  have hlt := imm.isLt
+  obtain ⟨ms, d, rfl, hsh, hrun⟩ :=
+    constant_f64_ok hp' hco hR (by omega) (by omega) (by simpa using hlt) h1
+  have h2 := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+  obtain ⟨rfl, hs2⟩ := output_reg_ok hp' hco (by omega) h2
+  try simp only at hs2
+  subst hs2
+  have hu : u64 (imm.toNat : Int) = imm.toNat := by unfold u64; omega
+  rw [hu] at hrun
+  first
+    | refine ⟨ms, hsh.emitted, [[.vreg d .float]], rfl, ?_⟩
+    | refine ⟨ms, [[.vreg d .float]], hsh.emitted, rfl, ?_⟩
+  exact lowerInstOk_fconst hMR hsh hrun (by decide)
 
 end Backend.Proof
