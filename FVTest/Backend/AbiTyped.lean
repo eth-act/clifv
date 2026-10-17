@@ -5,7 +5,10 @@ The typed AAPCS64 placement of a function's own signature (S11e3, #238), on the 
 `lowerFunction` of `(f64, i64, f32) -> f64` defines its parameters by an `Args` pinning the
 values' vregs (class `float`, `int`, `float`) to v0, x0, v1 (X and V registers counted
 separately), and returns the `f64` in v0; an integer signature lowers as before (x0, x1, and
-the return in x0). `lake build FVTest.Backend.AbiTyped`.
+the return in x0). A `call` of an extern `(f64, i64, f32) -> f64` (S11e5a) uses its arguments
+in v0, x0, v1 and defines a fresh `float` vreg from v0, as Cranelift places them (checked
+against Cranelift-native by `scripts/lean-backend-filetests.sh` on such calls).
+`lake build FVTest.Backend.AbiTyped`.
 -/
 
 open Backend
@@ -41,3 +44,30 @@ def entryOf (src : String) : Option (List MInst × List RegClass) :=
 #guard entryOf iiSrc ==
   some ([.args [(.vreg 0 .int, .x 0), (.vreg 1 .int, .x 1)], .rets [(.vreg 1 .int, .x 0)]],
     [.int, .int])
+
+/-- `(f64, i64, f32) -> f64` calling an extern of the same signature with its parameters. -/
+def callFifSrc : String :=
+  "function %callfif(f64, i64, f32) -> f64 {\n    fn0 = %callee(f64, i64, f32) -> f64\n\n" ++
+  "block0(v0: f64, v1: i64, v2: f32):\n    v3 = call fn0(v0, v1, v2)\n    return v3\n}\n"
+
+/-- `(f32, i64, f64) -> f64` calling the same extern with its parameters reversed: the
+`f64` comes in v1 and goes out in v0, the `f32` the other way round. -/
+def callPermSrc : String :=
+  "function %callperm(f32, i64, f64) -> f64 {\n    fn0 = %callee(f64, i64, f32) -> f64\n\n" ++
+  "block0(v0: f32, v1: i64, v2: f64):\n    v3 = call fn0(v2, v1, v0)\n    return v3\n}\n"
+
+/-- The uses and defs of the entry block's call. -/
+def callOf (src : String) : Option (List (Reg × Reg) × List (Reg × Reg)) :=
+  (entryOf src).bind fun (is, _) => is.findSome? fun
+    | .call ci => some (ci.uses, ci.defs)
+    | _ => none
+
+-- the call's arguments in v0, x0, v1, its `f64` result defined from v0 into a `float` vreg
+#guard callOf callFifSrc ==
+  some ([(.vreg 0 .float, .v 0), (.vreg 1 .int, .x 0), (.vreg 2 .float, .v 1)],
+    [(.v 0, .vreg 4 .float)])
+
+-- reversed floats: the `f64` value (vreg 2, entered in v1) goes out in v0, the `f32` in v1
+#guard callOf callPermSrc ==
+  some ([(.vreg 2 .float, .v 0), (.vreg 1 .int, .x 0), (.vreg 0 .float, .v 1)],
+    [(.v 0, .vreg 4 .float)])

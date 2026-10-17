@@ -27,10 +27,8 @@ theorem instData_call_eq {f : Clif.Function} {fn : Clif.FnRef} {args : List Clif
   simp only [instData] at h
   split at h
   · split at h
-    · split at h
-      · simp only [pure, Except.pure, Except.ok.injEq] at h
-        rw [← h]; rfl
-      · cases h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      rw [← h]; rfl
     · cases h
   · cases h
 

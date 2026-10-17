@@ -178,7 +178,7 @@ simulation's driver model (`DriverCheck`) is integer-shaped, so `loop_run`/`lowe
 take `Compile.functionE f` (still integer-only, so no theorem's scope admits a float value
 yet), and Stock's `buildCtx` rejects float values (`f32/f64 value`) until it gets a float path.
 
-**S11e5a (typed calls; WIP on `agent/floats-e5`).** The lowering of a `call` is typed as
+**S11e5a (typed calls, `agent/floats-e5`).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
 (`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
 (x0..x7 / v0..v7, separate counters) and stores stack-passed ones with `stackArgStore`
@@ -190,11 +190,17 @@ stays on `call_indirect` (`instData`) and `try_call`/`try_call_indirect` (`exnTa
 would put a float value into the integer driver model (`CtxSpec.ctxE`/`tysOf_int` →
 `loop_run`), and `LowerTryOk`/`tryRegsOf`/`CallOk`/`ShapeOf` are integer-shaped. Integer proofs
 get the call's integer returns from `CtxInv.call_retClasses` (results `i8..i64`) and the
-externs' integer parameters from `functionE` (`handOk_call`/`stmt_shp` gain `hxi`/`hE`).
-Next: typed `tryRegsOf`/`gen_try_call_rets` + `LowerTryOk` with classes (lifts `try_call`),
-`CallOk`/`ArgReg` with v0..v7 and class-matched fixed operands (spill), `ShapeOf` with typed
-return registers (link), then the typed driver model (`CtxInv`→`CtxInvT` for every rule, or a
-generic transfer) that lifts `call_indirect`/`try_call_indirect`.
+externs' integer parameters from `functionE` (`handOk_call`/`stmt_shp` gain `hxi`/`hE`). The
+coverage interpretation's `gen_call_output` gives an int or float vreg (`.flat 3 true`), so
+`stmt_cov` checks the `call` rules' int results by hand (`IselCovCall`: `out_2508`/`out_2518`/
+`out_2529`, `root_hand_res`; `covStmt_ok` excludes rules 1031..1033). Witnesses:
+`FVTest/Backend/AbiTyped.lean` (a call of `(f64, i64, f32) -> f64` uses v0, x0, v1 and defines
+its result from v0) and Cranelift-native agreement on float calls
+(`scripts/lean-backend-filetests.sh`).
+Next (stages B/C): typed `tryRegsOf`/`gen_try_call_rets` + `LowerTryOk` with classes (lifts
+`try_call`), `CallOk`/`ArgReg` with v0..v7 and class-matched fixed operands (spill), `ShapeOf`
+with typed return registers (link), then the typed driver model (`CtxInv`→`CtxInvT` for every
+rule, or a generic transfer) that lifts `call_indirect`/`try_call_indirect`.
 
 ## 4. Known hazards
 
