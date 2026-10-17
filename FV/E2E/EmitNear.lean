@@ -546,6 +546,36 @@ theorem lines_ok {c : FnCtx} {ps ps' : PState} {m : MInst} {ls : List Line}
       rcases hl with hl | rfl
       · exact memFinalize_nearOkB hmf ln hl
       · simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
+  case fpuLoad sz rd mem fl =>
+    simp only [MInst.lines] at h
+    cases hmf : memFinalize c mem sz.bytes with
+    | error e => simp [hmf, bind, Except.bind] at h
+    | ok r =>
+      obtain ⟨pre, mem'⟩ := r
+      simp [hmf, bind, Except.bind, pure, Except.pure] at h
+      obtain ⟨rfl, -⟩ := h
+      refine good_of_nearOkB fun ln hl => ?_
+      simp only [List.mem_append, List.mem_singleton] at hl
+      rcases hl with hl | rfl
+      · exact memFinalize_nearOkB hmf ln hl
+      · simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
+  case fpuStore sz rd mem fl =>
+    simp only [MInst.lines] at h
+    cases hmf : memFinalize c mem sz.bytes with
+    | error e => simp [hmf, bind, Except.bind] at h
+    | ok r =>
+      obtain ⟨pre, mem'⟩ := r
+      simp [hmf, bind, Except.bind, pure, Except.pure] at h
+      obtain ⟨rfl, -⟩ := h
+      refine good_of_nearOkB fun ln hl => ?_
+      simp only [List.mem_append, List.mem_singleton] at hl
+      rcases hl with hl | rfl
+      · exact memFinalize_nearOkB hmf ln hl
+      · simp [Line.nearOkB, Line.nearTgt, Line.bOk, Insn.pcRelSpec?]
+  case vecDupImm =>
+    simp only [MInst.lines] at h
+    split at h <;> simp [pure, Except.pure, throw, throwThe, MonadExceptOf.throw] at h
+    emitNear_fin
   case loadAddr rd mem =>
     simp only [MInst.lines] at h
     cases hmf : memFinalize c mem 1 with
