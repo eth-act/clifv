@@ -1,5 +1,6 @@
 import FV.Opt.Proof.RuleInfraIcmp
 import FV.Opt.Proof.RuleInfraConst
+import FV.Opt.Proof.RuleIntSplit
 
 /-!
 # `opts/selects.isle` (part 9): boolean results and redundant OR operands
@@ -73,7 +74,8 @@ macro "selects_one_rule " r:ident : tactic => `(tactic| (
   rule_lhs_g hG
   all_goals try opt_den_subst
   all_goals opt_split_i128
-  all_goals rule_rhs_y
+  all_goals opt_split_int
+  all_goals rule_rhs_y [tyInt_ofClif_notInt]
   all_goals opt_some_subst
   all_goals try opt_den_subst
   all_goals try opt_val_ty_subst
