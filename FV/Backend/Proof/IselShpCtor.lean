@@ -175,7 +175,7 @@ theorem callArgs_nc (st : LState)
     (l : List ((ArgLoc × Reg) × Nat))
     (hF : ∀ a b, F a b = match b.1.1 with
       | .reg p => (a.1.push (b.1.2, p), a.2)
-      | .stack off => (a.1, a.2.emit (.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags))) :
+      | .stack off => (a.1, a.2.emit (stackArgStore b.1.2 b.2 (.spOffset off)))) :
     NcSince st (l.foldl F (#[], st)).2 := by
   refine foldl_inv (fun a : Array (Reg × Reg) × LState => NcSince st a.2) F l (#[], st)
     ⟨[], by simp, by simp⟩ ?_
@@ -183,7 +183,8 @@ theorem callArgs_nc (st : LState)
   rw [hF]
   split
   · exact ha
-  · exact ncSince_emit ha rfl
+  · unfold stackArgStore
+    split <;> exact ncSince_emit ha rfl
 
 /-- An instruction an extern constructor may emit: not a control form, `emit`'s instruction, or
 `gen_return`'s `Rets` of argument registers in the return registers of their classes. -/
@@ -228,7 +229,7 @@ theorem externCtor_shp (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | (apply emit_one; exact .inr (.inr ⟨rfl, _, _, _, rfl, ‹_›, ‹_›, rfl⟩))
       | exact emitS_of_nc (callArgs_nc st _ _ (fun _ _ => rfl))
       | exact emitS_of_nc (loadConstantFull_nc _ _ _ _ st)
-      | exact ⟨[], (callOutput_fold st _ _ (fun _ _ => rfl)).1.trans (by simp), by simp⟩
+      | exact ⟨[], (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).1.trans (by simp), by simp⟩
 
 /-! ## `gen_return`'s `Rets` -/
 

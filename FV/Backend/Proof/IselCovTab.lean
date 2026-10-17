@@ -72,8 +72,8 @@ def covTab0 : Tab := [
   (256, [(.data 47 1 [(.data 58 2 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1)])]), (.data 49 0 [(.data 58 128 [(.flat 0 true), (.flat 0 true), (.reg 1), (.reg 1), (.reg 1)])])], (.data 46 1 [(.data 58 2 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 128 [(.flat 0 true), (.flat 0 true), (.reg 1), (.reg 1), (.reg 1)])])),
   (256, [(.data 47 1 [(.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)])]), (.data 49 0 [(.data 58 128 [(.flat 0 true), (.flat 0 true), (.reg 1), (.reg 1), (.reg 1)])])], (.data 46 1 [(.data 58 4 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 128 [(.flat 0 true), (.flat 0 true), (.reg 1), (.reg 1), (.reg 1)])])),
   (294, [(.flat 0 true)], (.flat 0 true)),
-  (306, [(.ty [(.int 16)])], (.flat 0 true)),
-  (306, [(.ty [(.int 8)])], (.flat 0 true)),
+  (306, [(.ty [(.int 16)])], (.num .int 17)),
+  (306, [(.ty [(.int 8)])], (.num .int 25)),
   (306, [(.ty [.invalid])], .bot),
   (310, [(.ty [(.int 16)])], .bot),
   (310, [(.ty [(.int 32)])], .bot),
@@ -319,11 +319,13 @@ def covTab3 : Tab := [
   (409, [(.reg 1), (.data 95 3 [])], (.reg 2)),
   (410, [(.data 95 2 [])], (.data 95 2 [])),
   (410, [(.data 95 3 [])], (.data 95 3 [])),
-  (414, [(.reg 2), (.flat 0 true), (.data 95 0 [])], (.reg 1)),
-  (417, [(.reg 1), (.bool false), (.flat 15 true), (.flat 0 true)], (.reg 1)),
+  (414, [(.reg 2), (.num .int 1), (.data 95 0 [])], (.reg 1)),
   (417, [(.reg 1), (.bool false), (.flat 15 true), (.flat 15 true)], (.reg 1)),
-  (417, [(.reg 1), (.bool true), (.flat 15 true), (.flat 0 true)], (.reg 1)),
+  (417, [(.reg 1), (.bool false), (.flat 15 true), (.num .int 33)], (.reg 1)),
+  (417, [(.reg 1), (.bool false), (.flat 15 true), (.num .int 65)], (.reg 1)),
   (417, [(.reg 1), (.bool true), (.flat 15 true), (.flat 15 true)], (.reg 1)),
+  (417, [(.reg 1), (.bool true), (.flat 15 true), (.num .int 33)], (.reg 1)),
+  (417, [(.reg 1), (.bool true), (.flat 15 true), (.num .int 65)], (.reg 1)),
   (418, [(.ty [(.int 32)]), (.data 62 0 []), (.reg 1), (.flat 15 true), (.flat 15 true)], (.reg 1)),
   (418, [(.ty [(.int 32)]), (.data 62 1 []), (.reg 1), (.flat 15 true), (.flat 15 true)], (.reg 1)),
   (418, [(.ty [(.int 64)]), (.data 62 0 []), (.reg 1), (.flat 15 true), (.flat 15 true)], (.reg 1)),
@@ -381,12 +383,12 @@ def covTab3 : Tab := [
   (438, [(.ty [(.int 8)]), (.reg 1), (.flat 0 true)], (.reg 1)),
   (438, [(.ty [.invalid]), (.reg 1), (.flat 0 true)], (.reg 1)),
   (439, [(.ty [(.int 16)]), (.reg 1), (.flat 0 true)], (.reg 1)),
-  (439, [(.ty [(.int 32)]), (.reg 1), (.flat 0 true)], (.reg 1)),
-  (439, [(.ty [(.int 64)]), (.reg 1), (.flat 0 true)], (.reg 1)),
-  (439, [(.ty [(.int 8)]), (.reg 1), (.flat 0 true)], (.reg 1))]
+  (439, [(.ty [(.int 32)]), (.reg 1), (.flat 0 true)], (.reg 1))]
 
 /-- Chunk 4 of the table. -/
 def covTab4 : Tab := [
+  (439, [(.ty [(.int 64)]), (.reg 1), (.flat 0 true)], (.reg 1)),
+  (439, [(.ty [(.int 8)]), (.reg 1), (.flat 0 true)], (.reg 1)),
   (439, [(.ty [.invalid]), (.reg 1), (.flat 0 true)], (.reg 1)),
   (440, [(.ty [(.int 16)]), (.reg 1), (.reg 1), (.flat 15 true)], (.reg 1)),
   (440, [(.ty [(.int 32)]), (.reg 1), (.reg 1), (.flat 15 true)], (.reg 1)),
@@ -472,12 +474,12 @@ def covTab4 : Tab := [
   (535, [(.alts [(.data 89 7 [(.reg 1), (.scale 8)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true)], (.reg 1)),
   (541, [(.alts [(.data 89 7 [(.reg 1), (.scale 1)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true), (.reg 1)], (.data 46 0 [(.data 58 17 [(.reg 1), (.alts [(.data 89 7 [(.reg 1), (.scale 1)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true)])])),
   (542, [(.alts [(.data 89 7 [(.reg 1), (.scale 2)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true), (.reg 1)], (.data 46 0 [(.data 58 18 [(.reg 1), (.alts [(.data 89 7 [(.reg 1), (.scale 2)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true)])])),
-  (543, [(.alts [(.data 89 7 [(.reg 1), (.scale 4)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true), (.reg 1)], (.data 46 0 [(.data 58 19 [(.reg 1), (.alts [(.data 89 7 [(.reg 1), (.scale 4)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true)])])),
-  (544, [(.alts [(.data 89 7 [(.reg 1), (.scale 8)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true), (.reg 1)], (.data 46 0 [(.data 58 20 [(.reg 1), (.alts [(.data 89 7 [(.reg 1), (.scale 8)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true)])])),
-  (553, [(.ty [(.int 16)]), (.data 122 0 []), (.flat 0 true)], (.reg 1))]
+  (543, [(.alts [(.data 89 7 [(.reg 1), (.scale 4)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true), (.reg 1)], (.data 46 0 [(.data 58 19 [(.reg 1), (.alts [(.data 89 7 [(.reg 1), (.scale 4)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true)])]))]
 
 /-- Chunk 5 of the table. -/
 def covTab5 : Tab := [
+  (544, [(.alts [(.data 89 7 [(.reg 1), (.scale 8)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true), (.reg 1)], (.data 46 0 [(.data 58 20 [(.reg 1), (.alts [(.data 89 7 [(.reg 1), (.scale 8)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]), (.flat 0 true)])])),
+  (553, [(.ty [(.int 16)]), (.data 122 0 []), (.flat 0 true)], (.reg 1)),
   (553, [(.ty [(.int 16)]), (.data 122 0 []), (.flat 15 true)], (.reg 1)),
   (553, [(.ty [(.int 16)]), (.data 122 1 []), (.flat 0 true)], (.reg 1)),
   (553, [(.ty [(.int 32)]), (.data 122 0 []), (.flat 0 true)], (.reg 1)),
@@ -544,6 +546,7 @@ def covTab5 : Tab := [
   (566, [(.data 59 8 []), (.ty [(.int 64)]), (.xv .value), (.xv .value)], (.reg 1)),
   (566, [(.data 59 8 []), (.ty [(.int 8)]), (.xv .value), (.flat 0 true)], (.reg 1)),
   (566, [(.data 59 8 []), (.ty [(.int 8)]), (.xv .value), (.xv .value)], (.reg 1)),
+  (570, [(.flat 15 true), (.num .int 1), (.flat 0 true)], (.reg 1)),
   (570, [(.flat 15 true), (.flat 0 true), (.flat 0 true)], (.reg 1)),
   (571, [(.flat 15 true)], (.reg 1)),
   (574, [(.ty [(.int 16)]), (.xv .value), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 2)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 14 [(.flat 15 true)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
@@ -562,13 +565,13 @@ def covTab5 : Tab := [
   (575, [(.ty [(.int 64)]), (.xv .value), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 8)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
   (575, [(.ty [(.int 64)]), (.flat 0 true), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 8)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
   (575, [(.ty [(.int 8)]), (.xv .value), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 1)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
-  (575, [(.ty [(.int 8)]), (.flat 0 true), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 1)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
-  (575, [(.ty [.invalid]), (.xv .value), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 0)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
-  (575, [(.ty [.invalid]), (.flat 0 true), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 0)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
-  (576, [(.reg 1), (.xv .value)], (.alts [(.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]))]
+  (575, [(.ty [(.int 8)]), (.flat 0 true), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 1)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])]))]
 
 /-- Chunk 6 of the table. -/
 def covTab6 : Tab := [
+  (575, [(.ty [.invalid]), (.xv .value), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 0)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
+  (575, [(.ty [.invalid]), (.flat 0 true), (.flat 15 true)], (.alts [(.data 89 7 [(.reg 1), (.scale 0)]), (.data 89 6 [(.reg 1), .simm9]), (.data 89 2 [(.reg 1), (.reg 1)]), (.data 89 5 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
+  (576, [(.reg 1), (.xv .value)], (.alts [(.data 89 4 [(.reg 1), (.reg 1), (.alts [(.data 84 2 []), (.data 84 6 [])])]), (.data 89 3 [(.reg 1), (.reg 1)])])),
   (577, [(.reg 1), (.flat 15 true)], (.reg 1)),
   (612, [(.data 118 0 []), (.reg 1), (.reg 1), (.ty [(.int 16)]), (.flat 0 true)], (.reg 1)),
   (612, [(.data 118 0 []), (.reg 1), (.reg 1), (.ty [(.int 32)]), (.flat 0 true)], (.reg 1)),
@@ -653,13 +656,13 @@ def covTab6 : Tab := [
   (658, [(.ty [(.int 8)]), (.ty [(.int 64)]), (.flat 1 true)], (.flat 1 true)),
   (658, [(.ty [(.int 8)]), (.ty [(.int 8)]), (.flat 1 true)], (.flat 1 true)),
   (658, [(.ty [.invalid]), (.ty [(.int 16)]), (.flat 1 true)], (.flat 1 true)),
-  (658, [(.ty [.invalid]), (.ty [(.int 32)]), (.flat 1 true)], (.flat 1 true)),
-  (658, [(.ty [.invalid]), (.ty [(.int 64)]), (.flat 1 true)], (.flat 1 true)),
-  (658, [(.ty [.invalid]), (.ty [(.int 8)]), (.flat 1 true)], (.flat 1 true)),
-  (659, [(.ty [(.int 16)]), (.alts [(.data 123 1 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 5 [(.data 59 5 []), (.data 93 0 []), (.reg 4), (.reg 1), (.logic .size32)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 1 []), (.data 84 4 []), (.data 84 5 [])])])])]), (.flat 15 true)]), (.data 123 0 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])])]), (.xv .value), (.xv .value)], (.flat 1 true))]
+  (658, [(.ty [.invalid]), (.ty [(.int 32)]), (.flat 1 true)], (.flat 1 true))]
 
 /-- Chunk 7 of the table. -/
 def covTab7 : Tab := [
+  (658, [(.ty [.invalid]), (.ty [(.int 64)]), (.flat 1 true)], (.flat 1 true)),
+  (658, [(.ty [.invalid]), (.ty [(.int 8)]), (.flat 1 true)], (.flat 1 true)),
+  (659, [(.ty [(.int 16)]), (.alts [(.data 123 1 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 5 [(.data 59 5 []), (.data 93 0 []), (.reg 4), (.reg 1), (.logic .size32)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 1 []), (.data 84 4 []), (.data 84 5 [])])])])]), (.flat 15 true)]), (.data 123 0 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])])]), (.xv .value), (.xv .value)], (.flat 1 true)),
   (659, [(.ty [(.int 16)]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 1 []), (.data 84 4 []), (.data 84 5 [])])])])]), (.flat 15 true)]), (.xv .value), (.xv .value)], (.flat 1 true)),
   (659, [(.ty [(.int 32)]), (.alts [(.data 123 1 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 5 [(.data 59 5 []), (.data 93 0 []), (.reg 4), (.reg 1), (.logic .size32)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 1 []), (.data 84 4 []), (.data 84 5 [])])])])]), (.flat 15 true)]), (.data 123 0 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])])]), (.xv .value), (.xv .value)], (.flat 1 true)),
   (659, [(.ty [(.int 32)]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 1 []), (.data 84 4 []), (.data 84 5 [])])])])]), (.flat 15 true)]), (.xv .value), (.xv .value)], (.flat 1 true)),
@@ -744,14 +747,17 @@ def covTab7 : Tab := [
   (710, [(.ty [.invalid]), (.reg 1), (.reg 1)], (.reg 1)),
   (712, [(.ty [(.int 16)]), (.reg 1), (.flat 15 true)], (.reg 1)),
   (712, [(.ty [(.int 8)]), (.reg 1), (.flat 15 true)], (.reg 1)),
-  (712, [(.ty [.invalid]), (.reg 1), (.flat 15 true)], (.reg 1)),
+  (712, [(.ty [.invalid]), (.reg 1), (.flat 15 true)], (.reg 1))]
+
+/-- Chunk 8 of the table. -/
+def covTab8 : Tab := [
   (715, [(.alts [(.data 123 1 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 5 [(.data 59 5 []), (.data 93 0 []), (.reg 4), (.reg 1), (.logic .size32)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 1 []), (.data 84 4 []), (.data 84 5 [])])])])]), (.flat 15 true)]), (.data 123 0 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])])])], (.reg 1)),
   (715, [(.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 1 []), (.data 84 4 []), (.data 84 5 [])])])])]), (.flat 15 true)])], (.reg 1)),
   (722, [(.alts [(.data 123 1 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])]), (.data 123 2 [(.data 47 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 5 [(.data 59 5 []), (.data 93 0 []), (.reg 4), (.reg 1), (.logic .size32)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 1 []), (.data 84 4 []), (.data 84 5 [])])])])]), (.flat 15 true)]), (.data 123 0 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])])]), (.flat 0 true), (.flat 0 true)], (.alts [(.data 46 0 [(.data 58 118 [(.flat 15 true), (.flat 15 true), (.alts [(.data 83 1 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])]), (.data 83 0 [(.reg 1), (.alts [(.data 93 1 []), (.data 93 0 [])])])])])]), (.data 46 1 [(.alts [(.data 58 4 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.flat 0 true)]), (.data 58 2 [(.data 59 10 []), (.alts [(.data 93 0 []), (.data 93 1 [])]), (.reg 4), (.reg 1), (.reg 1)]), (.data 58 5 [(.data 59 5 []), (.data 93 0 []), (.reg 4), (.reg 1), (.logic .size32)]), (.data 58 8 [(.data 59 10 []), (.data 93 0 []), (.reg 4), (.reg 1), (.reg 1), (.alts [(.data 84 0 []), (.data 84 1 []), (.data 84 4 []), (.data 84 5 [])])])]), (.data 58 118 [(.flat 15 true), (.flat 15 true), (.data 83 2 [(.flat 15 true)])])])]))]
 
 /-- **The summary table.** -/
 def covTab : Tab :=
-  covTab0 ++ covTab1 ++ covTab2 ++ covTab3 ++ covTab4 ++ covTab5 ++ covTab6 ++ covTab7
+  covTab0 ++ covTab1 ++ covTab2 ++ covTab3 ++ covTab4 ++ covTab5 ++ covTab6 ++ covTab7 ++ covTab8
 
 /-- `chkTab`'s test of one entry. -/
 abbrev covEntryOk (e : TermId × List AW × AW) : Bool :=
@@ -797,14 +803,22 @@ theorem covTab7_ok : (covTab7).all covEntryOk = true := by
   repeat' apply And.intro
   all_goals decide +kernel
 
+theorem covTab8_ok : (covTab8).all covEntryOk = true := by
+  simp only [covTab8, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
+
 /-- **Every rule of every entry checks.** -/
 theorem covTab_ok : chkTab program covTab aext actor apre aOracle = true := by
   unfold chkTab
   show (covTab).all covEntryOk = true
-  simp only [covTab, List.all_append, covTab0_ok, covTab1_ok, covTab2_ok, covTab3_ok, covTab4_ok, covTab5_ok, covTab6_ok, covTab7_ok, Bool.and_self]
+  simp only [covTab, List.all_append, covTab0_ok, covTab1_ok, covTab2_ok, covTab3_ok, covTab4_ok, covTab5_ok, covTab6_ok, covTab7_ok, covTab8_ok, Bool.and_self]
 
-/-- The closure roots of `lower` other than `nop`'s rule 587 check with int-vreg results. -/
+/-- The closure roots of `lower` other than `nop`'s rule 587 and the `call` rules 1031, 1032,
+1033 (typed calls, S11e5a: their int-vreg results are checked by hand, `out_call`) check with
+int-vreg results. -/
 theorem covStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id || r.id == 587 ||
+    r.id == 1031 || r.id == 1032 || r.id == 1033 ||
     aRule program covTab aext actor apre aOracle [.xv .inst] (.flat 1 true) r) = true := by
   rw [show TId.lower = 686 from rfl, data_program.r686]
   simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]

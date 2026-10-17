@@ -104,7 +104,7 @@ The proof covers them as follows.
   so its extra def is not related to anything (`results_call`). `ExternsNormal` is gone
   (`CallRuleOk` assumes `ExternsIn f exts`).
 
-### Typed ABI placement (`f32`/`f64`, S11e2/S11e3)
+### Typed ABI placement (`f32`/`f64`, S11e2/S11e3/S11e5a)
 
 `FV/Backend/Isel.lean` models Cranelift's aarch64 `compute_arg_locs` for both register classes:
 `abiArgLocs` puts an integer parameter in the next of x0..x7 and an `f32`/`f64` one in the next of
@@ -121,13 +121,30 @@ parameter in the next of v0..v7, a stack-passed one loaded by `stackArgLoad` int
 (`retRegsC`, at most 8 values in all). Witnesses: `FVTest/Backend/AbiTyped.lean` and
 `E2E.argsIn_sigFIF` (`ArgsIn sigFIF [a, b, c] s` is `a` in v0, `b` in x0, `c` in v1, through
 `E2E.argsIn_iff_of_locs`; `E2E.argsIn_iff_of_regs` keeps the x-register form and takes
-integer parameters, `hi`). Calls stay integer-only until S11e5: `instData` rejects a `call`/
-`call_indirect` with an `f32`/`f64` parameter or return and `exnTableOpnd` such a `try_call`/
-`try_call_indirect` (`sigIntB`; the totality scope `stmtInB`/`tryInB` says so), so `locsOf`,
-`stackBytes`, `stackLayoutOk` of every call site are the x-register placement `argLocs`
-(`Proof.sigArgLocs_eq`). Every theorem above still has the integer scope (`Compile.functionE`
-tests `isInt`); `ArgsAt` and the linking contracts still speak about x registers only;
-FP-register call contracts come with S11e5.
+integer parameters, `hi`).
+
+S11e5a types the direct `call` (Cranelift's `Lower::gen_call_output`, `machinst/lower.rs:630`,
+and `Callee::gen_call_args`/`gen_call_rets`, `machinst/abi.rs:1819`/`1995`): `gen_call_output`
+allocates one fresh vreg per ABI return of the return's class (`retClass`), `gen_call_args`
+puts argument `i` at `sigArgLocs`' location (x0..x7 / v0..v7 by class, separate counters,
+`sret` in x8, then the stack; a stack-passed float is stored by `stackArgStore` with `str s`/
+`str d`), and `gen_call_rets` defines the outputs from the return registers of their classes
+(`retRegsC (regsClasses rss) 0 0`, at most 8 values in all). `instData` no longer rejects a
+`call` with an `f32`/`f64` parameter or return. Witness (`FVTest/Backend/AbiTyped.lean`): a
+`call` of `(f64, i64, f32) -> f64` uses v0, x0, v1 and defines its result from v0, as
+Cranelift's own code (`scripts/lean-backend-filetests.sh` on such calls, Cranelift-native
+agreement).
+
+Remaining interim (S11e5 stages B/C): `instData` still rejects a `call_indirect` and
+`exnTableOpnd` a `try_call`/`try_call_indirect` with an `f32`/`f64` parameter or return
+(`sigIntB`; the totality scope `stmtInB`/`tryInB` says so). `Compile.functionE` does not
+constrain `f.sigDecls`, so a float indirect call would put a float value into the integer driver
+model (`DriverCheck`, `CtxSpec.ctxE`/`tysOf_int` → `loop_run`), and the `try_call` contracts
+(`tryRegsOf`, `LowerTryOk`, `CallOk`/`ArgReg`, `ShapeOf`) are integer-shaped. Every theorem
+above still has the integer scope (`Compile.functionE` tests `isInt`): a `call` in scope has
+integer returns (`CtxInv.call_retClasses`) and integer parameters (`hxi`), so its `locsOf`,
+`stackBytes`, `stackLayoutOk` are the x-register placement `argLocs` (`Proof.sigArgLocs_eq`);
+`ArgsAt` and the linking contracts still speak about x registers only.
 
 ### `try_call` (the normal return)
 

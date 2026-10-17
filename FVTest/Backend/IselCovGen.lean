@@ -243,8 +243,11 @@ def render (tab : Tab) : String := Id.run do
     out := out ++ s!"theorem covTab{k}_ok : (covTab{k}).all covEntryOk = true := by\n  simp only [covTab{k}, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]\n  repeat' apply And.intro\n  all_goals decide +kernel\n\n"
   out := out ++ "/-- **Every rule of every entry checks.** -/\ntheorem covTab_ok : chkTab program covTab aext actor apre aOracle = true := by\n  unfold chkTab\n  show (covTab).all covEntryOk = true\n  simp only [covTab, List.all_append, " ++
     ", ".intercalate ((List.range n).map (s!"covTab{·}_ok")) ++ ", Bool.and_self]\n\n"
-  out := out ++ "/-- The closure roots of `lower` other than `nop`'s rule 587 check with int-vreg results. -/
+  out := out ++ "/-- The closure roots of `lower` other than `nop`'s rule 587 and the `call` rules 1031, 1032,
+1033 (typed calls, S11e5a: their int-vreg results are checked by hand, `out_call`) check with
+int-vreg results. -/
 theorem covStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id || r.id == 587 ||
+    r.id == 1031 || r.id == 1032 || r.id == 1033 ||
     aRule program covTab aext actor apre aOracle [.xv .inst] (.flat 1 true) r) = true := by
   rw [show TId.lower = 686 from rfl, data_program.r686]
   simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
@@ -287,7 +290,7 @@ def main (args : List String) : IO UInt32 := do
   let tab := mkTab
   let ok := chkTab program tab aext actor apre aOracle
   let stmt := stmtRules.all fun r => aRule program tab aext actor apre aOracle [.xv .inst]
-    (if r.id == 587 then AW.top else .flat 1 true) r
+    (if r.id == 587 || r.id == 1031 || r.id == 1032 || r.id == 1033 then AW.top else .flat 1 true) r
   let stmtTop := stmtRules.all (aRule program tab aext actor apre aOracle [.xv .inst] AW.top)
   let term := termRules.all (aRule program tab aext actor apre aOracle [.c0] AW.top)
   let br := branchRules.all (aRule program tab aext actor apre aOracle [.c0, .c0] AW.top)

@@ -54,7 +54,7 @@ private theorem externCtor_cov_mapped (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? 
       | exact callArgs_fold st _ _ _ _ (fun _ _ => rfl) (callArgs_mem ‹_›)
       | (obtain ⟨-, -, ms, h5, h6⟩ := loadConstantFull_cov _ _ _ _ st
          exact ⟨ms, h5, fun m hm => .inl (h6 m hm)⟩)
-      | (refine ⟨[], (callOutput_fold st _ _ (fun _ _ => rfl)).1.trans (by simp), by simp⟩)
+      | (refine ⟨[], (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).1.trans (by simp), by simp⟩)
       | skip
     all_goals first
       | (simp (config := { decide := true }) only [CtorRes, ite_true, ite_false, Bool.false_eq_true,
@@ -71,7 +71,7 @@ private theorem externCtor_cov_mapped (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? 
          | (refine ⟨fun r hr => ?_, rfl⟩
             simp only [V.regsIn, List.mem_flatten] at hr
             obtain ⟨rs, hrs, hr⟩ := hr
-            exact (callOutput_fold st _ _ (fun _ _ => rfl)).2 rs hrs r hr)
+            exact (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).2 rs hrs r hr)
          | (obtain ⟨⟨n, hn⟩, -⟩ := loadConstantFull_cov _ _ _ _ st; exact ⟨n, by rw [hn]⟩)
          | exact ⟨_, _, _, _, rfl, rfl, logicSize_of ‹_›, ofNat?_value ‹_›⟩
          | exact ⟨_, _, _, _, rfl, rfl, logicSize64_lt ‹_›, ofNat?_value ‹_›⟩

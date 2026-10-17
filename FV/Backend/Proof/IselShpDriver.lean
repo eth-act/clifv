@@ -135,10 +135,6 @@ theorem hand_model {ctx : Ctx} {N : Nat} {vs : List V} {rl : Rule} (h : HandOk c
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-theorem lower_len : 1002 + (program.rulesOf T.lower.id).length ≤ 999999 := by decide +kernel
-
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
 theorem lower_branch_len : 1002 + (program.rulesOf T.lower_branch.id).length ≤ 999999 := by
   decide +kernel
 
