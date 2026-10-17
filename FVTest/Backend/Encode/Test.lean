@@ -274,7 +274,27 @@ def forms : List (String × G Insn) := [
   ("mrs_tpidr", do pure (.mrsTpidrEl0 (← gprZR))),
   ("fpu_move", do pure (.fpuMove (← pick [.size32, .size64]) (← vr) (← vr))),
   ("fpu_move128", do pure (.fpuMove128 (← vr) (← vr))),
-  ("fpu_rr", do pure (.fpuRR (← pick [.abs, .neg]) (← pick [.size32, .size64]) (← vr) (← vr))),
+  ("fpu_rr", do
+    pure (.fpuRR (← pick [.abs, .neg, .sqrt]) (← pick [.size32, .size64]) (← vr) (← vr))),
+  ("fpu_cvt", do
+    if ← coin then pure (.fpuRR .cvt32To64 .size32 (← vr) (← vr))
+    else pure (.fpuRR .cvt64To32 .size64 (← vr) (← vr))),
+  ("fpu_rrr", do
+    pure (.fpuRRR (← pick [.add, .sub, .mul, .div, .max, .min]) (← pick [.size32, .size64])
+      (← vr) (← vr) (← vr))),
+  ("fpu_rrrr", do
+    pure (.fpuRRRR (← pick [.mAdd, .mSub, .nMAdd, .nMSub]) (← pick [.size32, .size64])
+      (← vr) (← vr) (← vr) (← vr))),
+  ("fpu_cmp", do pure (.fpuCmp (← pick [.size32, .size64]) (← vr) (← vr))),
+  ("fpu_round", do
+    pure (.fpuRound (← pick [.minus32, .minus64, .plus32, .plus64, .zero32, .zero64, .nearest32,
+      .nearest64]) (← vr) (← vr))),
+  ("fpu_to_int", do
+    pure (.fpuToInt (← pick [.f32ToU32, .f32ToI32, .f32ToU64, .f32ToI64, .f64ToU32, .f64ToI32,
+      .f64ToU64, .f64ToI64]) (← gprZR) (← vr))),
+  ("int_to_fpu", do
+    pure (.intToFpu (← pick [.u32ToF32, .i32ToF32, .u32ToF64, .i32ToF64, .u64ToF32, .i64ToF32,
+      .u64ToF64, .i64ToF64]) (← vr) (← gprZR))),
   ("fpu_csel", do pure (.fpuCSel (← pick [.size32, .size64]) (← vr) (← vr) (← vr) (← randCond))),
   ("fpu_move_fp_imm", do pure (.fpuMoveFPImm (← pick [.size32, .size64]) (← vr) (← rand 256))),
   ("movi", do

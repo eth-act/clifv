@@ -388,6 +388,106 @@ def orrVector : Spec := ⟨"orr (vector)", "simd", fun _ => do
   randomFpCase "orr (vector)" (← coin) (enc [(0, 1), (← bits 1, 1), (0, 1), (0b01110, 5), (0b10, 2),
     (1, 1), (rm, 5), (0b00011, 5), (1, 1), (rn, 5), (← vreg, 5)])⟩
 
+/-! ## Scalar floating-point arithmetic, compare and conversion (FV additions, FPCR = 0) -/
+
+/-- The float (`dbl`: binary64, else binary32) in the low bits of `v{r}`. -/
+def TestCase.fp (tc : TestCase) (r : Nat) (dbl : Bool) : Nat :=
+  (tc.simd[r]!.1.toNat) % 2 ^ (if dbl then 64 else 32)
+
+/-- Set the float in the low bits of `v{r}` (the other bits unchanged). -/
+def TestCase.setFp (tc : TestCase) (r : Nat) (dbl : Bool) (v : Nat) : TestCase :=
+  let (lo, hi) := tc.simd[r]!
+  let lo := if dbl then v.toUInt64 else (lo &&& 0xFFFFFFFF00000000) ||| v.toUInt64
+  { tc with simd := tc.simd.set! r (lo, hi) }
+
+/-- Operand pairs `(v{rn}, v{rm})` that stress rounding: with probability 1/5 each, `v{rm}` is
+half an ulp of `v{rn}` (the sum is a tie), `v{rn} = 3 · 2^j` and `v{rm} = 1 + k · ulp` with `k`
+odd (the product is a tie), `v{rm} = ±v{rn}` (exact cancellation, equal operands), or
+`v{rm}` is a short power-of-two multiple of `v{rn}`'s ulp; otherwise both stay random. -/
+def fpPair (tc : TestCase) (dbl : Bool) (rn rm : Nat) : GenM TestCase := do
+  let (E, F) := if dbl then (11, 52) else (8, 23)
+  let bias := 2 ^ (E - 1) - 1
+  let a := tc.fp rn dbl
+  let ea := a / 2 ^ F % 2 ^ E
+  if rn == rm then return tc
+  match ← below 5 with
+  | 0 =>
+    if ea ≥ F + 2 && ea < 2 ^ E - 1 then
+      return tc.setFp rm dbl (fpBits E F (← bits 1) (ea - F - 1) 0)
+    else return tc
+  | 1 =>
+    let j ← below 9
+    let tc := tc.setFp rn dbl (fpBits E F (← bits 1) (bias + 1 + j - 4) (2 ^ (F - 1)))
+    return tc.setFp rm dbl (fpBits E F (← bits 1) bias (2 * (← below 8) + 1))
+  | 2 => return tc.setFp rm dbl ((a + (← bits 1) * 2 ^ (E + F)) % 2 ^ (1 + E + F))
+  | 3 =>
+    if ea ≥ F + 2 && ea < 2 ^ E - 1 then
+      return tc.setFp rm dbl (fpBits E F (← bits 1) (ea - F + (← below 3) - 1) (← bits 2))
+    else return tc
+  | _ => return tc
+
+/-- Floating-point data-processing (2 source) with `opcode` (FMUL/FDIV/FADD/FSUB/FMAX/FMIN/
+FNMUL). -/
+def fp2 (opcode : Nat) (name : String) (ftype : Nat) : Spec :=
+  let name := fpName name ftype
+  ⟨name, "fp-arith", fun _ => do
+    let rn ← vreg
+    let rm ← vreg
+    let tc ← randomFpCase name (ftype == 1) (enc [(0, 1), (0, 1), (0, 1), (0b11110, 5), (ftype, 2),
+      (1, 1), (rm, 5), (opcode, 4), (0b10, 2), (rn, 5), (← vreg, 5)])
+    fpPair tc (ftype == 1) rn rm⟩
+
+/-- Floating-point data-processing (3 source) `(o1, o0)`: FMADD/FMSUB/FNMADD/FNMSUB. A fifth of
+the cases set `v{ra} = -round(v{rn} · v{rm})` (the fused result is the product's rounding
+error). -/
+def fp3 (o1 o0 : Nat) (name : String) (ftype : Nat) : Spec :=
+  let name := fpName name ftype
+  ⟨name, "fp-arith", fun _ => do
+    let dbl := ftype == 1
+    let rn ← vreg
+    let rm ← vreg
+    let ra ← vreg
+    let tc ← randomFpCase name dbl (enc [(0, 1), (0, 1), (0, 1), (0b11111, 5), (ftype, 2), (o1, 1),
+      (rm, 5), (o0, 1), (ra, 5), (rn, 5), (← vreg, 5)])
+    let tc ← fpPair tc dbl rn rm
+    if ra == rn || ra == rm || (← below 5) != 0 then return tc
+    let p : Nat :=
+      if dbl then (IEEE.neg .b64 (IEEE.mul .b64 .rne (BitVec.ofNat 64 (tc.fp rn true))
+        (BitVec.ofNat 64 (tc.fp rm true)))).toNat
+      else (IEEE.neg .b32 (IEEE.mul .b32 .rne (BitVec.ofNat 32 (tc.fp rn false))
+        (BitVec.ofNat 32 (tc.fp rm false)))).toNat
+    return tc.setFp ra dbl p⟩
+
+/-- FCMP/FCMPE (register, `#0.0`): `opcode2` 00000/01000/10000/11000 (`Rm = 0` for `#0.0`);
+operand pairs as `fpPair`, and a fifth of the register cases compare `±0`. -/
+def fcmp (opcode2 : Nat) (name : String) (ftype : Nat) : Spec :=
+  let name := fpName name ftype
+  ⟨name, "fp-arith", fun _ => do
+    let dbl := ftype == 1
+    let rn ← vreg
+    let rm ← if opcode2 % 16 == 8 then pure 0 else vreg
+    let tc ← randomFpCase name dbl (enc [(0, 1), (0, 1), (0, 1), (0b11110, 5), (ftype, 2), (1, 1),
+      (rm, 5), (0, 2), (0b1000, 4), (rn, 5), (opcode2, 5)])
+    let tc ← fpPair tc dbl rn rm
+    if (← below 5) == 0 then
+      return tc.setFp rn dbl ((← bits 1) * 2 ^ (if dbl then 63 else 31))
+    else return tc⟩
+
+/-- FP → integer conversion (`rmode`, `opcode`; Conversion between floating-point and integer):
+`sf` random, Rd a GPR (31 = ZR). -/
+def fcvtToInt (rmode opcode : Nat) (name : String) (ftype : Nat) : Spec :=
+  let name := fpName name ftype
+  ⟨name, "fp-cvt", fun _ => do
+    randomFpCase name (ftype == 1) (enc [(← bits 1, 1), (0, 1), (0, 1), (0b11110, 5), (ftype, 2),
+      (1, 1), (rmode, 2), (opcode, 3), (0, 6), (← vreg, 5), (← reg, 5)])⟩
+
+/-- SCVTF/UCVTF (integer → FP): `sf` random, Rn a GPR (31 = ZR) with edge-biased values. -/
+def cvtToFp (opcode : Nat) (name : String) (ftype : Nat) : Spec :=
+  let name := fpName name ftype
+  ⟨name, "fp-cvt", fun _ => do
+    randomFpCase name (ftype == 1) (enc [(← bits 1, 1), (0, 1), (0, 1), (0b11110, 5), (ftype, 2),
+      (1, 1), (0, 2), (opcode, 3), (0, 6), (← reg, 5), (← vreg, 5)])⟩
+
 /-! ## All specs -/
 
 def allSpecs : List Spec :=
@@ -441,6 +541,22 @@ def allSpecs : List Spec :=
       [ldstPair 1 opc 0 s!"stp ({t})" mode, ldstPair 1 opc 1 s!"ldp ({t})" mode]) ++
   [ldrLiteral 0 0 4 "ldr (literal, w)", ldrLiteral 1 0 8 "ldr (literal, x)",
    ldrLiteral 2 0 4 "ldrsw (literal)", ldrLiteral 0 1 4 "ldr (literal, s)",
-   ldrLiteral 1 1 8 "ldr (literal, d)", ldrLiteral 2 1 16 "ldr (literal, q)"]
+   ldrLiteral 1 1 8 "ldr (literal, d)", ldrLiteral 2 1 16 "ldr (literal, q)"] ++
+  ([0, 1].flatMap fun ft =>
+    [fp1 0b000011 "fsqrt" ft, fp1 (if ft == 0 then 0b000101 else 0b000100) "fcvt" ft,
+     fp1 0b001000 "frintn" ft, fp1 0b001001 "frintp" ft, fp1 0b001010 "frintm" ft,
+     fp1 0b001011 "frintz" ft, fp1 0b001100 "frinta" ft, fp1 0b001110 "frintx" ft,
+     fp1 0b001111 "frinti" ft,
+     fp2 0b0000 "fmul" ft, fp2 0b0001 "fdiv" ft, fp2 0b0010 "fadd" ft, fp2 0b0011 "fsub" ft,
+     fp2 0b0100 "fmax" ft, fp2 0b0101 "fmin" ft, fp2 0b1000 "fnmul" ft,
+     fp3 0 0 "fmadd" ft, fp3 0 1 "fmsub" ft, fp3 1 0 "fnmadd" ft, fp3 1 1 "fnmsub" ft,
+     fcmp 0b00000 "fcmp (reg)" ft, fcmp 0b01000 "fcmp (#0.0)" ft, fcmp 0b10000 "fcmpe (reg)" ft,
+     fcmp 0b11000 "fcmpe (#0.0)" ft,
+     fcvtToInt 0b00 0b000 "fcvtns" ft, fcvtToInt 0b00 0b001 "fcvtnu" ft,
+     fcvtToInt 0b01 0b000 "fcvtps" ft, fcvtToInt 0b01 0b001 "fcvtpu" ft,
+     fcvtToInt 0b10 0b000 "fcvtms" ft, fcvtToInt 0b10 0b001 "fcvtmu" ft,
+     fcvtToInt 0b11 0b000 "fcvtzs" ft, fcvtToInt 0b11 0b001 "fcvtzu" ft,
+     fcvtToInt 0b00 0b100 "fcvtas" ft, fcvtToInt 0b00 0b101 "fcvtau" ft,
+     cvtToFp 0b010 "scvtf" ft, cvtToFp 0b011 "ucvtf" ft])
 
 end Arm.Cosim

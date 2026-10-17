@@ -12,6 +12,9 @@ import FV.Arm.Insts.DPSFP.Advanced_simd_modified_immediate
 import FV.Arm.Insts.DPSFP.FP_data_processing_one_source
 import FV.Arm.Insts.DPSFP.FP_immediate
 import FV.Arm.Insts.DPSFP.FP_conditional_select
+import FV.Arm.Insts.DPSFP.FP_data_processing_two_source
+import FV.Arm.Insts.DPSFP.FP_data_processing_three_source
+import FV.Arm.Insts.DPSFP.FP_compare
 
 namespace Arm
 

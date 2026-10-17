@@ -127,6 +127,15 @@ FPCR/FPSR state:
   reset it before every vector.
 - **FPSR (cumulative exception flags) is not modelled.** Cranelift code never reads it.
 - Half precision (`ftype = 11`) decodes but is `Unimplemented`.
-- The arithmetic, compare and convert instructions (phase 2) are defined on the IEEE core
-  `FV/Float` (`docs/contracts/float.md`), which the CLIF float semantics use too, so lowering a
-  CLIF float operation to its instruction relates the same function on both sides.
+- The arithmetic, compare and convert instructions (phase 2: FADD/FSUB/FMUL/FDIV/FMAX/FMIN/
+  FNMUL, FMADD/FMSUB/FNMADD/FNMSUB, FSQRT, FCVT, FRINT*, FCMP/FCMPE, FCVT{N,P,M,Z,A}{S,U},
+  SCVTF/UCVTF) are defined on the IEEE core `FV/Float` (`docs/contracts/float.md`) with
+  rounding `.rne` (or the instruction's own rounding), which the CLIF float semantics use too,
+  so lowering a CLIF float operation to its instruction relates the same function on both
+  sides. FMAXNM/FMINNM are not modelled (Cranelift emits neither).
+- **FCMP/FCMPE write only `PSTATE.NZCV`** (`FPCompare`: unordered `0011`, equal `0110`, less
+  `1000`, greater `0010`); FCMPE differs from FCMP only in the Invalid Operation flag, which is
+  in the unmodelled FPSR, so the two are the same function. None of these instructions read
+  memory: `E2E.ExecBytes.MemReads` is `[]` for every new class and `simR_dpsfp`
+  (`FV/E2E/ExecFrame.lean`) covers them unchanged; with no FPCR/FPSR state there is nothing
+  else for the frame to track.
