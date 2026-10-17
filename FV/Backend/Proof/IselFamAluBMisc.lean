@@ -126,7 +126,14 @@ theorem bnot_base_case_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (
       (prun_nil _), by
         have hu' : (ρ x).setWidth ty.width = u := hu
         subst hu'
-        wcases ty hety [Clif.Sem.unary, Clif.Sem.bnot]⟩)
+        generalize hs : szOf (Clif.Ty.width ty) = sz at *
+        cases ty <;> simp [eTy] at hety <;> simp [szOf, Clif.Ty.width] at hs <;> subst hs <;>
+          simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary,
+            Clif.Sem.bnot] at * <;>
+          dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+          (try unfold OperandSize.bits Clif.Ty.width at *) <;>
+          apply BitVec.eq_of_getElem_eq <;> intro i hi <;>
+          repeat (first | omega | (rcases i with _ | i; · simp))⟩)
 
 /-! ## `nop` (`lower.isle:78`) -/
 
