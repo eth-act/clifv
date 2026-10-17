@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleSkelEmbed
+import FV.Opt.Proof.RuleIntSplit
 
 /-!
 # Proven `simplify_skeleton` rules
@@ -14,6 +15,26 @@ namespace Opt.Proof
 
 open Isle Isle.Opt Isle.Interp Clif
 
+attribute [local opt_monad] tyInt_ofClif_notInt panics_throw_bind except_throw_bind toExt_throw
+  except_throw_bind'
+
+set_option hygiene false in
+/-- `skel_auto_div` with the type variables split on `isInt` (`RuleIntSplit.lean`): at a float
+type the made `iconst_u` has no rule (`tyInt_ofClif_notInt`) and the evaluation throws. -/
+local macro "skel_auto_div_int " r:ident : tactic => `(tactic| (
+  skel_intro $r
+  rule_no_iflets
+  rule_lhs hG
+  skel_reads
+  rule_lhs hG
+  all_goals opt_split_int
+  all_goals first
+    | skel_rhs
+    | (opt_eval hev
+       repeat' (split at hev <;> try opt_norm hev)
+       all_goals (simp only [reduceCtorEq] at hev))
+  all_goals (skel_good; skel_div)))
+
 set_option maxHeartbeats 4000000 in
 theorem ok_rule_arithmetic_79 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_arithmetic_79 := by
   skel_auto_div rule_arithmetic_79
@@ -24,15 +45,15 @@ theorem ok_rule_arithmetic_80 {p : Isle.Program} (hd : Data p) : SkelRuleOk p ru
 
 set_option maxHeartbeats 4000000 in
 theorem ok_rule_arithmetic_130 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_arithmetic_130 := by
-  skel_auto_div rule_arithmetic_130
+  skel_auto_div_int rule_arithmetic_130
 
 set_option maxHeartbeats 4000000 in
 theorem ok_rule_arithmetic_131 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_arithmetic_131 := by
-  skel_auto_div rule_arithmetic_131
+  skel_auto_div_int rule_arithmetic_131
 
 set_option maxHeartbeats 4000000 in
 theorem ok_rule_arithmetic_132 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_arithmetic_132 := by
-  skel_auto_div rule_arithmetic_132
+  skel_auto_div_int rule_arithmetic_132
 
 set_option maxHeartbeats 4000000 in
 theorem ok_rule_cprop_32 {p : Isle.Program} (hd : Data p) : SkelRuleOk p rule_cprop_32 := by
