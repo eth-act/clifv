@@ -122,7 +122,7 @@ theorem vc_ctl {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerSc
       CtlNA i ∨ (b = 0 ∧ k = 0 ∧ ArgsOk i)) ∧
     ∃ vb0 ds, vc.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) := by
   have hne := (prepDomain_of_lower hs hl hs.nonempty).nonempty
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   obtain ⟨hS, hT, hY⟩ := iselCtlHyp f ctx ranges st0 hd hs ha hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb

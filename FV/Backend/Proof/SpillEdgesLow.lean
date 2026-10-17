@@ -31,9 +31,9 @@ structure Low (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (bl : 
   lf : LoopFacts f ctx bl
   len : bl.length = f.blocks.length
 
-theorem low_of {f : Clif.Function} {vc : VCode} (h : lowerFunction f = .ok vc) :
-    ∃ ctx st0 bl RR, Low f vc ctx st0 bl RR := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, hlf⟩ := lowerFunction_run h
+theorem low_of {f : Clif.Function} {vc : VCode} (hE : Compile.functionE f = true)
+    (h : lowerFunction f = .ok vc) : ∃ ctx st0 bl RR, Low f vc ctx st0 bl RR := by
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, hlf⟩ := lowerFunction_run hE h
   rw [lowBlocks_eq] at hl
   cases hr : lowB f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length with
   | none => rw [hr] at hl; cases hl
@@ -453,7 +453,7 @@ end
 /-- `lowerFunction`'s VCode meets `LowOk` on `Dominated`, `LowerScope`, `ArityOk` input. -/
 theorem lowOk_of {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScope f)
     (ha : ArityOk f) (h : lowerFunction f = .ok vc) : LowOk vc := by
-  obtain ⟨ctx, st0, bl, RR, H⟩ := low_of h
+  obtain ⟨ctx, st0, bl, RR, H⟩ := low_of hs.subsetE h
   obtain ⟨gn, hRR⟩ := H.ren
   have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
     obtain ⟨ctx', st0', R', gn', bl', A', hshape, -, hbt'⟩ := lowering_of_check (lowerCheck_complete hd hs h)

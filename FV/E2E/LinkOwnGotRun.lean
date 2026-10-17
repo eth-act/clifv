@@ -512,7 +512,7 @@ theorem gotRunHyp_of (hS : SegRangeHyp) (hLoc : GotLocalHyp) : GotRunHyp := by
   obtain ⟨hD1, hOrd1, hRss⟩ := hLoc p f vc hsub hd hs hl ctx ranges st0 bl hbc hlb bi0 B0 L0 ms
     c t n hB0 hL0 hsrc ht hgl hcm hdst
   have hR := hS p f ctx ranges st0 bl hsub hd hs hbc hlb
-  obtain ⟨ctx', ranges', st0', bl', hbc', hlb', hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx', ranges', st0', bl', hbc', hlb', hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   rw [hbc] at hbc'
   cases hbc'
   rw [hlb] at hlb'

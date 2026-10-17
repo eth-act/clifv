@@ -924,7 +924,7 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
       let (uses, st) := ((locs.zip rs).zip bytes).foldl (init := (#[], st))
         fun (acc, st) ((loc, r), b) => match loc with
           | .reg p => (acc.push (r, p), st)
-          | .stack off => (acc, st.emit (stackArgStore r b (.spOffset off)))
+          | .stack off => (acc, st.emit (.store (storeOpOfBytes b) r (.spOffset off) trustedFlags))
       .ok (.op (.callArgs uses.toList), st)
     | .error e, _ => .unmodeled s!"gen_call_args: {e}"
     | _, none => .unmodeled "gen_call_args: multi-register value"

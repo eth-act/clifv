@@ -127,6 +127,7 @@ theorem try_ind_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndD
     TryIndRuleOkP Rd Pc isem MR env cp sigs p rule_lower_2561 := by
   intro f ctx hctx ti callee args et data sig items targets info lo st1 hd he hsig h8' hi hinfo htr
     hvb cfg hc m n st tr env' s1 out st' tr' hm hn hst _ hmatch heval
+  have hint := (sigIntB_iff.mp (exnTableOpnd_int he)).1
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
   have kC := fun n (hn : 30 ≤ n) i s v s' h => call_ind_impl_ok hp (ctx := ctx) hc (n := n) (i := i)
@@ -155,7 +156,7 @@ theorem try_ind_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndD
   subst hrs
   have htgt := hctx.valueReg _ _ ‹ctx.valueReg? callee = some _›
   subst htgt
-  simp only [ctor_gen_call_args_iff _ _ _ hb h8, mapM_single_map, Option.some.injEq,
+  simp only [ctor_gen_call_args_iff _ _ _ hint hb h8, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
   simp only [ctor_gen_call_ind_info_iff _ _ _ _ _ _ hb h8, Option.some.injEq] at *

@@ -31,13 +31,14 @@ theorem lowBlocks_start {call : StmtCall} {tcall : TermCallF} {ycall : TryCallF}
   obtain ⟨h1, h2⟩ := lowBlocks_start_gen f.blocks 0 st nl bl hl
   exact ⟨h1, fun bi L h => by rw [h2 bi L h, Nat.zero_add, blockStart_eq]⟩
 
-/-- **The loop simulation (V1d).** -/
-theorem lowerFunction_run (h : lowerFunction f = .ok vc) :
+/-- **The loop simulation (V1d)** (on a function of subset E: the recorded lowering's model has
+integer values only). -/
+theorem lowerFunction_run (hE : Compile.functionE f = true) (h : lowerFunction f = .ok vc) :
     ∃ ctx ranges st0 bl, buildCtx f = .ok (ctx, ranges, st0) ∧
       lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0 f.blocks.length =
         some bl ∧
       vc.blocks = vcBlocksOf f bl ∧ vc.outgoing = outOf st0 bl ∧ LoopFacts f ctx bl := by
-  obtain ⟨ctx, ranges, st0, pb, d, bl, hb, hpb, hI, rfl⟩ := loop_run h
+  obtain ⟨ctx, ranges, st0, pb, d, bl, hb, hpb, hI, rfl⟩ := loop_run hE h
   have hlow := hI.low
   rw [List.take_of_length_le (Nat.le_refl _)] at hlow
   have hmem : ∀ B ∈ f.blocks, ∃ bi, bi < f.blocks.length ∧ f.blocks[bi]? = some B := by

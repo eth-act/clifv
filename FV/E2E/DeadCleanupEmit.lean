@@ -30,7 +30,7 @@ theorem emitConds_cleanup_lower {f : Clif.Function} {vc vcp : VCode} (hs : Lower
     (hI : IselEmit f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
     immsOkB vcp = true ∧ vcp.noAlwaysB = true ∧ branchTargetsOkB vcp = true := by
   have hd := prune_prepDomain (prepDomain_of_lower hs hl hs.nonempty)
-  have hv := prep_emit hp hd (prune_emit (vc_emit hI hl))
+  have hv := prep_emit hp hd (prune_emit (vc_emit hI hs.subsetE hl))
   have hok : ∀ vb ∈ vcp.blocks.toList, ∀ m ∈ vb.insts.toList,
       immOkB m = true ∧ m.noAlways = true := fun vb hvb m hm => by
     have := (hv vb hvb).1 m hm

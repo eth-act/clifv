@@ -131,10 +131,11 @@ theorem nodup_of_count_le_one {α : Type} [BEq α] [LawfulBEq α] :
       simp at h1; omega
     · have := h a; rw [List.count_cons] at this; omega
 
-theorem sigArgLocs_cases {s : Clif.Signature} {locs : List ArgLoc} {n : Nat}
+theorem sigArgLocs_cases {s : Clif.Signature} (hi : s.params.all (·.ty.isInt) = true)
+    {locs : List ArgLoc} {n : Nat}
     (h : sigArgLocs s = .ok (locs, n)) : ∃ bytes, locs = (argLocs bytes).1 ∨
       locs = (s.params.foldl sretLocStep (#[], (argLocs bytes).1)).1.toList := by
-  rw [sigArgLocs_eq] at h
+  rw [sigArgLocs_eq hi] at h
   cases hb : sigArgs s with
   | error e => rw [hb] at h; cases h
   | ok bytes =>
@@ -149,9 +150,10 @@ theorem sigArgLocs_cases {s : Clif.Signature} {locs : List ArgLoc} {n : Nat}
       obtain ⟨rfl, -⟩ := h
       exact ⟨_, .inl rfl⟩
 
-/-- **The argument registers of a signature with at most one `sret` parameter** are distinct
-registers among x0..x8. -/
-theorem locsOf_regs {s : Clif.Signature} (h1 : (s.params.filter (·.purpose == .sret)).length ≤ 1) :
+/-- **The argument registers of an integer signature with at most one `sret` parameter** are
+distinct registers among x0..x8. -/
+theorem locsOf_regs {s : Clif.Signature} (hi : s.params.all (·.ty.isInt) = true)
+    (h1 : (s.params.filter (·.purpose == .sret)).length ≤ 1) :
     (locRegs (locsOf s)).Nodup ∧ ∀ r ∈ locRegs (locsOf s), ArgReg r := by
   have xsArg : ∀ k, k ≤ 8 → ∀ r ∈ (List.range k).map Reg.x, ArgReg r := by
     intro k hk r hr
@@ -164,7 +166,7 @@ theorem locsOf_regs {s : Clif.Signature} (h1 : (s.params.filter (·.purpose == .
   | ok r =>
     obtain ⟨locs, n⟩ := r
     simp only
-    obtain ⟨bytes, hl | hl⟩ := sigArgLocs_cases hs <;> subst hl
+    obtain ⟨bytes, hl | hl⟩ := sigArgLocs_cases hi hs <;> subst hl
     · obtain ⟨k, hk, hxs⟩ := argLocs_regs bytes
       rw [hxs]
       exact ⟨xs_nodup k, xsArg k hk⟩
@@ -373,7 +375,7 @@ end-to-end subset's ABI check. -/
 theorem ctlSpillHyp_of (hI : IselCtlHyp) {f : Clif.Function} {vc : VCode}
     (hd : Dominated f) (hs : LowerScope f) (ha : AbiSigsOk f) (hl : lowerFunction f = .ok vc) :
     ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   obtain ⟨hS, hT, hY⟩ := hI f ctx ranges st0 hd hs ha hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb

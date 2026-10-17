@@ -452,9 +452,9 @@ theorem edges_le {f : Clif.Function} {B : Clif.Block} {L : BLow} (W : VBlock →
 its weight (with `mIn f` bounding the operands) is at most `vcIn (mIn f) f`, and its branch
 targets at most `tgIn f`. -/
 theorem size_lower {f : Clif.Function} {vc : VCode} (hI : IselSz f)
-    (hl : lowerFunction f = .ok vc) :
+    (hE : Compile.functionE f = true) (hl : lowerFunction f = .ok vc) :
     maxRC vc ≤ mIn f ∧ vcW (mIn f) vc ≤ vcIn (mIn f) f ∧ vcTg vc ≤ tgIn f := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hE hl
   obtain ⟨hS, hT, hY⟩ := hI ctx ranges st0 hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb

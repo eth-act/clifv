@@ -148,8 +148,8 @@ theorem clsIs_termCtx {ctx : Ctx} {s0 s : LState} (h : ClsIs ctx s0 s) (ti : Nat
 /-- **`lowerFunction`'s VCode** meets `ClassesOkM`. -/
 theorem classesOkM_lower {f : Clif.Function} {vc : VCode} (hs : LowerScope f)
     (h : lowerFunction f = .ok vc) : ClassesOkM vc := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, hlf⟩ := lowerFunction_run h
-  obtain ⟨ctx', ranges', st0', pb, d, blk, hb', -, hI, hvc⟩ := loop_run h
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, hlf⟩ := lowerFunction_run hs.subsetE h
+  obtain ⟨ctx', ranges', st0', pb, d, blk, hb', -, hI, hvc⟩ := loop_run hs.subsetE h
   rw [hb] at hb'
   simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
   obtain ⟨rfl, rfl, rfl⟩ := hb'

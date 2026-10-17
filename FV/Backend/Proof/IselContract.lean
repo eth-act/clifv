@@ -1090,6 +1090,31 @@ theorem functionE_extern_int {f : Clif.Function} (h : Compile.functionE f = true
   simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at h
   exact sigE_int (h.1.2 (fn, e) (lookup_some_mem he))
 
+/-- `sigIntB` as the two `List.all` facts. -/
+theorem sigIntB_iff {s : Clif.Signature} :
+    sigIntB s = true ↔ s.params.all (·.ty.isInt) = true ∧ s.returns.all (·.ty.isInt) = true := by
+  simp [sigIntB]
+
+/-- A `call` that `instData` accepts calls an extern with an integer signature. -/
+theorem instData_call_int {f : Clif.Function} {fn : Clif.FnRef} {args : List Nat} {d : V}
+    (h : instData f (.call fn args) = .ok d) {e : Clif.ExtFunc} (he : f.extern? fn = some e) :
+    sigIntB e.sig = true := by
+  simp only [instData, he] at h
+  split at h
+  · split at h
+    · assumption
+    · cases h
+  · cases h
+
+/-- A `call_indirect` that `instData` accepts has a declared integer signature. -/
+theorem instData_callIndirect_int {f : Clif.Function} {sig : Nat} {c : Nat} {args : List Nat}
+    {d : V} (h : instData f (.callIndirect sig c args) = .ok d) {s : Clif.Signature}
+    (hs : f.sigDecls.lookup sig = some s) : sigIntB s = true := by
+  simp only [instData, hs] at h
+  split at h
+  · assumption
+  · cases h
+
 /-- The byte sizes of a signature's parameters (`sigArgs`) are their types' sizes. -/
 theorem sigArgs_eq_map : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
     ps.mapM (fun p => if p.ty == .i128 then throw "i128 parameter"

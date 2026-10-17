@@ -290,6 +290,30 @@ theorem retRegs_phys {k : Nat} {ps : List Reg} (h : retRegs k = some ps) :
     cases he
   · cases h
 
+/-- The class-aware return registers are physical. -/
+theorem retRegsC_phys : ∀ {cs : List RegClass} {nx nv : Nat} {ps : List Reg},
+    retRegsC cs nx nv = some ps → ∀ p ∈ ps, ∀ n c, p ≠ .vreg n c
+  | [], _, _, ps, h => by
+    simp only [retRegsC, Option.some.injEq] at h; subst h; simp
+  | .int :: cs, nx, nv, ps, h => by
+    simp only [retRegsC] at h
+    split at h
+    · obtain ⟨qs, hq, rfl⟩ := Option.map_eq_some_iff.mp h
+      intro p hp n c he
+      rcases List.mem_cons.mp hp with rfl | hp
+      · cases he
+      · exact retRegsC_phys hq p hp n c he
+    · cases h
+  | .float :: cs, nx, nv, ps, h => by
+    simp only [retRegsC] at h
+    split at h
+    · obtain ⟨qs, hq, rfl⟩ := Option.map_eq_some_iff.mp h
+      intro p hp n c he
+      rcases List.mem_cons.mp hp with rfl | hp
+      · cases he
+      · exact retRegsC_phys hq p hp n c he
+    · cases h
+
 theorem payloadRegs_phys (cc : Option Clif.CallConv) : ∀ p ∈ payloadRegs cc, ∀ n c, p ≠ .vreg n c := by
   intro p hp n c he
   unfold payloadRegs at hp
@@ -640,7 +664,9 @@ theorem externCtor_ok (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
          obtain ⟨⟨a, b⟩, hq, hr⟩ := hr
          have hz := List.of_mem_zip hq
          rcases hr with rfl | rfl
-         · exact .inr (.inr (retRegs_phys ‹_› _ hz.1))
+         · first
+           | exact .inr (.inr (retRegs_phys ‹_› _ hz.1))
+           | exact .inr (.inr (retRegsC_phys ‹_› _ hz.1))
          · obtain ⟨l, hl, hrl⟩ := single_mem ‹_› _ hz.2
            exact .inl (by simp [V.regsIn, opRegs]; exact ⟨l, hl, hrl⟩))
       | (refine ctorOk_callArgs _ _ (fun _ _ => rfl) ?_

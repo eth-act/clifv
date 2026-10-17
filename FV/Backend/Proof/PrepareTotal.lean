@@ -490,7 +490,7 @@ the entry (`LowerScope.noEntryPred`) or its edge blocks (labelled from the numbe
 blocks on); an edge block is a `jump` to a CLIF block other than the entry. -/
 theorem prepIn_of_lower {f : Clif.Function} {vc : VCode} (hd : Dominated f) (hs : LowerScope f)
     (h : lowerFunction f = .ok vc) : PrepIn vc := by
-  obtain ⟨ctx, st0, bl, RR, H⟩ := low_of h
+  obtain ⟨ctx, st0, bl, RR, H⟩ := low_of hs.subsetE h
   have hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term := by
     obtain ⟨ctx', st0', R', gn', bl', A', hshape, -, hbt'⟩ :=
       lowering_of_check (lowerCheck_complete hd hs h)

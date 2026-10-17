@@ -324,7 +324,7 @@ theorem lowBlocks_start_gen {f : Clif.Function} {call : StmtCall} {tcall : TermC
 /-- **V2**: `lowerFunction`'s VCode is in `PrepDomain` (on in-scope input). -/
 theorem prepDomain_of {f : Clif.Function} {vc : VCode} (hs : LowerScope f) (h : lowerFunction f = .ok vc) :
     PrepDomain vc := by
-  obtain ⟨ctx, ranges, st0, pb, d, bl, hb, hpb, hI, rfl⟩ := loop_run h
+  obtain ⟨ctx, ranges, st0, pb, d, bl, hb, hpb, hI, rfl⟩ := loop_run hs.subsetE h
   have sp := ctxSpec_of hb
   have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_of hs hb)
   have hlow := hI.low

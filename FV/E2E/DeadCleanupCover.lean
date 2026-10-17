@@ -10,7 +10,7 @@ private theorem lower_covered {f : Clif.Function} {vc : VCode}
       StmtCov ctx ∧ TermCov f ctx ∧ TryCov f ctx)
     : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList,
       i.isCtl = true ∨ FormOk default i = true := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   obtain ⟨hS, hT, hY⟩ := hrun ctx ranges st0 hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
