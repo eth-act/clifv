@@ -469,10 +469,10 @@ theorem loadConstantFull_refs (f : Clif.Function) (bits : Nat) (se : Bool) (sz :
 /-- `gen_call_output`: fresh registers. -/
 theorem ctorSpec_callOutput {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {β : Type}
     (F : Array (List Reg) × LState → β → Array (List Reg) × LState) (l : List β)
-    (hF : ∀ a b, F a b = (a.1.push [(a.2.fresh .int).1], (a.2.fresh .int).2)) :
+    (hF : ∀ a b, ∃ c, F a b = (a.1.push [(a.2.fresh c).1], (a.2.fresh c).2)) :
     CtorSpec ctx id args st (.regsVec (l.foldl F (#[], st)).1.toList) (l.foldl F (#[], st)).2 := by
   have := Flow.foldl_inv (fun a : Array (List Reg) × LState => a.2.emitted = st.emitted)
-    F l (#[], st) rfl (by intro b _ a h; rw [hF]; exact h)
+    F l (#[], st) rfl (by intro b _ a h; obtain ⟨c, hc⟩ := hF a b; rw [hc]; exact h)
   exact ctorSpec_noEmit this (by simp [vNames]) (fun _ => by simp [VGood])
 
 /-- `gen_call_args`: stores of the stack arguments. -/
@@ -481,7 +481,7 @@ theorem ctorSpec_callArgs {ctx : Ctx} {id : TermId} {args : List V} {st : LState
     (l : List ((ArgLoc × Reg) × Nat))
     (hF : ∀ a b, F a b = match b.1.1 with
       | .reg p => (a.1.push (b.1.2, p), a.2)
-      | .stack off => (a.1, a.2.emit (.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags))) :
+      | .stack off => (a.1, a.2.emit (stackArgStore b.1.2 b.2 (.spOffset off)))) :
     CtorSpec ctx id args st (.op (.callArgs (l.foldl F (#[], st)).1.toList)) (l.foldl F (#[], st)).2 := by
   have := Flow.foldl_inv (fun a : Array (Reg × Reg) × LState => RefsSince ctx.func st a.2)
     F l (#[], st) (refsSince_refl _ _) (by
@@ -489,7 +489,7 @@ theorem ctorSpec_callArgs {ctx : Ctx} {id : TermId} {args : List V} {st : LState
       rw [hF]
       split
       · exact h
-      · exact refsSince_emit h trivial)
+      · exact refsSince_emit h (by unfold stackArgStore; split <;> trivial))
   exact ⟨by simp [vNames, opNames], fun _ => by simp [VGood], fun _ => this⟩
 
 /-- `abi_stackslot_addr`: a `LoadAddr` of its register argument. -/

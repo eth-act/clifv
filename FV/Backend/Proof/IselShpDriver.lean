@@ -157,7 +157,8 @@ theorem branch_hand_ids : (program.rulesOf TId.lower_branch).all (fun r => !shpH
 
 set_option maxRecDepth 100000 in
 /-- **A statement's lowering emits control forms of their shapes.** -/
-theorem stmt_shp (hctx : CtxInv f ctx) (hcl : Cov.Clean ctx) (ha : AbiSigsOk f) {ii : Nat} {info : IInfo}
+theorem stmt_shp (hctx : CtxInv f ctx) (hcl : Cov.Clean ctx) (ha : AbiSigsOk f)
+    (hE : Compile.functionE f = true) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hmem : ∃ B ∈ f.blocks, ∃ st ∈ B.body, st.inst = inst) {s : LState} {out : Option V}
     {s' : LState} {tr : List Isle.RuleId} (hN : ctx.valDef.size ≤ s.nextVreg)
@@ -180,7 +181,8 @@ theorem stmt_shp (hctx : CtxInv f ctx) (hcl : Cov.Clean ctx) (ha : AbiSigsOk f) 
     · exact .inl ha
   exact (root_hand (md := shpModel hctx hcl ctx.valDef.size s) rfl (shp_sound hctx hcl _ s rfl)
     (Hand := fun rl => rl ∈ program.rulesOf TId.lower ∧ (rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033))
-    (fun rl ⟨hrl, hid⟩ => hand_model (handOk_call totality hctx ha hi hc hmem hrl hid _) s)
+    (fun rl ⟨hrl, hid⟩ => hand_model (handOk_call totality hctx ha
+      (fun _ _ he => (functionE_extern_int hE he).1) hi hc hmem hrl hid _) s)
     data_program.t686 term_686_kind hrules (holds_inst hctx hi hc) (shpIs_refl hN) (n := 999999)
     lower_len happ).1
 
@@ -327,6 +329,6 @@ theorem iselCtlHyp : IselCtlHyp := by
       rfl | ⟨B, hB, st, hst, rfl⟩
     · cases hc
     · exact ⟨B, hB, st, hst, Option.some.inj hc⟩
-  exact stmt_shp hctx hcl ha hi hc hmem hN h
+  exact stmt_shp hctx hcl ha hs.subsetE hi hc hmem hN h
 
 end Backend.Proof.Driver

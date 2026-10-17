@@ -511,17 +511,18 @@ theorem ctorOk_lc {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {r : R
   subst hr
   exact .inr (.inl ⟨n, c, rfl, h1, h2⟩)
 
-/-- `gen_call_output`: fresh registers. -/
+/-- `gen_call_output`: fresh registers (of any class: typed calls, S11e5a). -/
 theorem ctorOk_callOutput {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {β : Type}
     (F : Array (List Reg) × LState → β → Array (List Reg) × LState) (l : List β)
-    (hF : ∀ a b, F a b = (a.1.push [(a.2.fresh .int).1], (a.2.fresh .int).2)) :
+    (hF : ∀ a b, ∃ c, F a b = (a.1.push [(a.2.fresh c).1], (a.2.fresh c).2)) :
     CtorOk ctx id args st (.regsVec (l.foldl F (#[], st)).1.toList) (l.foldl F (#[], st)).2 := by
   have := foldl_inv (fun a : Array (List Reg) × LState =>
       (∀ rs ∈ a.1.toList, ∀ r ∈ rs, ∃ n c, r = .vreg n c ∧ st.nextVreg ≤ n ∧ n < a.2.nextVreg) ∧
       st.nextVreg ≤ a.2.nextVreg ∧ a.2.outgoing = st.outgoing ∧ a.2.emitted = st.emitted)
     F l (#[], st) (by simp) (by
       intro b _ a ⟨h1, h2, h3, h4⟩
-      rw [hF]
+      obtain ⟨cl, hFb⟩ := hF a b
+      rw [hFb]
       refine ⟨?_, by simp [LState.fresh]; omega, by simp [LState.fresh, h3],
         by simp [LState.fresh, h4]⟩
       intro rs hrs r hr
@@ -531,7 +532,7 @@ theorem ctorOk_callOutput {ctx : Ctx} {id : TermId} {args : List V} {st : LState
         exact ⟨n, c, h, h5, by simp [LState.fresh]; omega⟩
       · simp only [List.mem_singleton] at hr
         subst hr
-        exact ⟨a.2.nextVreg, .int, rfl, h2, by simp [LState.fresh]⟩)
+        exact ⟨a.2.nextVreg, cl, rfl, h2, by simp [LState.fresh]⟩)
   obtain ⟨h1, h2, h3, h4⟩ := this
   refine ctorOk_mk h2 (by omega) ⟨[], by simp [h4], by simp⟩ ?_ (by simp [V.valsIn])
     (by simp [V.instsIn]) (by simp [V.tlsIn])
@@ -546,7 +547,7 @@ theorem ctorOk_callArgs {ctx : Ctx} {id : TermId} {args : List V} {st : LState}
     (l : List ((ArgLoc × Reg) × Nat))
     (hF : ∀ a b, F a b = match b.1.1 with
       | .reg p => (a.1.push (b.1.2, p), a.2)
-      | .stack off => (a.1, a.2.emit (.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags)))
+      | .stack off => (a.1, a.2.emit (stackArgStore b.1.2 b.2 (.spOffset off))))
     (hl : ∀ b ∈ l, (∀ p, b.1.1 = .reg p → ∀ n c, p ≠ .vreg n c) ∧ b.1.2 ∈ regsInL args) :
     CtorOk ctx id args st (.op (.callArgs (l.foldl F (#[], st)).1.toList)) (l.foldl F (#[], st)).2 := by
   have := foldl_inv (fun a : Array (Reg × Reg) × LState =>
@@ -567,14 +568,15 @@ theorem ctorOk_callArgs {ctx : Ctx} {id : TermId} {args : List V} {st : LState}
         · exact ⟨hr, hp p hbp⟩
       · rename_i off _
         refine ⟨h1, by simp [LState.emit, h2], by simp [LState.emit, h3],
-          ms ++ [MInst.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags],
+          ms ++ [stackArgStore b.1.2 b.2 (.spOffset off)],
           by simp [LState.emit, h4], ?_⟩
         intro m hm
         rcases List.mem_append.mp hm with hm | hm
         · exact h5 m hm
         · simp only [List.mem_singleton] at hm
           subst hm
-          exact ⟨fun c ti h => (by cases h), fun ⟨_, _, _, h⟩ => (by cases h)⟩)
+          unfold stackArgStore
+          split <;> exact ⟨fun c ti h => (by cases h), fun ⟨_, _, _, h⟩ => (by cases h)⟩)
   obtain ⟨h1, h2, h3, ms, h4, h5⟩ := this
   refine ctorOk_mk (by omega) (by omega)
     ⟨ms, h4, fun m hm => ⟨(h5 m hm).1, fun ht => absurd ht (h5 m hm).2⟩⟩ ?_ (by simp [V.valsIn, opVals])
@@ -663,7 +665,7 @@ theorem externCtor_ok (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | exact ctorOk_emit rfl ‹_›
       | exact ctorOk_emitBenign ⟨fun c ti h => (by cases h), fun ⟨_, _, _, h⟩ => (by cases h)⟩
       | exact ctorOk_lc (loadConstantFull_ok _ _ _ _ _)
-      | exact ctorOk_callOutput _ _ (fun _ _ => rfl)
+      | exact ctorOk_callOutput _ _ (fun _ _ => ⟨_, rfl⟩)
       | (refine ctorOk_callInfo ?_
          intro r hr
          simp only [opRegs, List.mem_append, List.mem_singleton, List.mem_nil_iff, false_or] at hr

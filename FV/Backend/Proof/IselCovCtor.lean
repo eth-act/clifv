@@ -18,8 +18,10 @@ def CtorRes (id : TermId) (args : List V) (v : V) : Prop :=
     ∃ ty cls n, args = [.ty ty] ∧ ty.regClass? = some cls ∧ v = .reg (.vreg n cls)
   else if id == TId.put_in_reg || id == TId.put_extended_in_reg || id == TId.load_constant_full then
     ∃ n, v = .reg (.vreg n .int)
-  else if id == TId.put_in_regs || id == TId.put_in_regs_vec || id == TId.gen_call_output then
-    (∀ r ∈ v.regsIn, ∃ n, r = .vreg n .int) ∧ covV v = true
+  else if id == TId.put_in_regs || id == TId.put_in_regs_vec then
+    (∀ r ∈ v.regsIn, ∃ n, r = .vreg n .int) ∧ covV v
+  else if id == TId.gen_call_output then
+    (∀ r ∈ v.regsIn, ∃ n c, r = .vreg n c) ∧ covV v
   else if id == TId.zero_reg || id == TId.writable_zero_reg then v = .reg .xzr
   else if id == TId.is_pic then v = .bool true
   else if id == TId.use_fp16 then v = .bool false
@@ -52,10 +54,10 @@ def CtorRes (id : TermId) (args : List V) (v : V) : Prop :=
   else covVL args = true → covV v = true
 
 /-- An instruction a constructor may emit: covered, `emit`'s instruction, or a store of an
-argument register to the outgoing area (`gen_call_args`). -/
+argument register to the outgoing area (`gen_call_args`, `stackArgStore`). -/
 def EmitOk (id : TermId) (args : List V) (m : MInst) : Prop :=
   Covered m = true ∨ (id = TId.emit ∧ ∃ i, args = [i] ∧ MInst.ofV i = some m) ∨
-    (id = TId.gen_call_args ∧ ∃ op r off fl, m = .store op r (.spOffset off) fl ∧ op ≠ .fpuStore128 ∧
+    (id = TId.gen_call_args ∧ ∃ r b off, m = stackArgStore r b (.spOffset off) ∧
       ∃ s rss, args = [.op (.sig s), .regsVec rss] ∧ r ∈ (V.regsVec rss).regsIn)
 
 /-- The contract of one constructor call past the type predicates. -/
@@ -159,22 +161,23 @@ theorem simm9_of {x i : Int} (h : simm9? x = some i) : -256 ≤ i ∧ i < 256 :=
   · cases h; omega
   · cases h
 
-/-- `gen_call_output`'s fold: fresh int vregs, nothing emitted. -/
+/-- `gen_call_output`'s fold: fresh vregs (of the returns' classes), nothing emitted. -/
 theorem callOutput_fold {β : Type} (st : LState)
     (F : Array (List Reg) × LState → β → Array (List Reg) × LState) (l : List β)
-    (hF : ∀ a b, F a b = (a.1.push [(a.2.fresh .int).1], (a.2.fresh .int).2)) :
+    (hF : ∀ a b, ∃ c, F a b = (a.1.push [(a.2.fresh c).1], (a.2.fresh c).2)) :
     (l.foldl F (#[], st)).2.emitted = st.emitted ∧
-      ∀ rs ∈ (l.foldl F (#[], st)).1.toList, ∀ r ∈ rs, ∃ n, r = .vreg n .int := by
+      ∀ rs ∈ (l.foldl F (#[], st)).1.toList, ∀ r ∈ rs, ∃ n c, r = .vreg n c := by
   have := foldl_inv (fun a : Array (List Reg) × LState =>
-      a.2.emitted = st.emitted ∧ ∀ rs ∈ a.1.toList, ∀ r ∈ rs, ∃ n, r = .vreg n .int)
+      a.2.emitted = st.emitted ∧ ∀ rs ∈ a.1.toList, ∀ r ∈ rs, ∃ n c, r = .vreg n c)
     F l (#[], st) ⟨rfl, by simp⟩ (by
       intro b _ a ⟨h1, h2⟩
-      rw [hF]
+      obtain ⟨cl, hFb⟩ := hF a b
+      rw [hFb]
       refine ⟨by simp [LState.fresh, h1], fun rs hrs r hr => ?_⟩
       simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hrs
       rcases hrs with hrs | rfl
       · exact h2 rs hrs r hr
-      · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, rfl⟩)
+      · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, _, rfl⟩)
   exact this
 
 /-- `gen_call_args`' fold: stores of argument registers. -/
@@ -183,7 +186,7 @@ theorem callArgs_fold (st : LState) (s : Clif.Signature) (rss : List (List Reg))
     (l : List ((ArgLoc × Reg) × Nat))
     (hF : ∀ a b, F a b = match b.1.1 with
       | .reg p => (a.1.push (b.1.2, p), a.2)
-      | .stack off => (a.1, a.2.emit (.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags)))
+      | .stack off => (a.1, a.2.emit (stackArgStore b.1.2 b.2 (.spOffset off))))
     (hl : ∀ b ∈ l, b.1.2 ∈ (V.regsVec rss).regsIn) :
     ∃ ms : List MInst, (l.foldl F (#[], st)).2.emitted = st.emitted ++ ms.toArray ∧
       ∀ m ∈ ms, EmitOk TId.gen_call_args [.op (.sig s), .regsVec rss] m := by
@@ -196,14 +199,13 @@ theorem callArgs_fold (st : LState) (s : Clif.Signature) (rss : List (List Reg))
       split
       · exact ⟨ms, h1, h2⟩
       · rename_i off _
-        refine ⟨ms ++ [.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags],
+        refine ⟨ms ++ [stackArgStore b.1.2 b.2 (.spOffset off)],
           by simp [LState.emit, h1], fun m hm => ?_⟩
         rcases List.mem_append.mp hm with hm | hm
         · exact h2 m hm
         · simp only [List.mem_singleton] at hm
           subst hm
-          refine .inr (.inr ⟨rfl, _, _, _, _, rfl, ?_, s, rss, rfl, hl b hb⟩)
-          unfold storeOpOfBytes; split <;> simp)
+          exact .inr (.inr ⟨rfl, _, _, _, rfl, s, rss, rfl, hl b hb⟩))
   exact this
 
 theorem emit_one (st : LState) (m : MInst) (P : MInst → Prop) (hm : P m) :
@@ -266,7 +268,7 @@ theorem externCtor_cov (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? x = some r → 
       | exact callArgs_fold st _ _ _ _ (fun _ _ => rfl) (callArgs_mem ‹_›)
       | (obtain ⟨-, -, ms, h5, h6⟩ := loadConstantFull_cov _ _ _ _ st
          exact ⟨ms, h5, fun m hm => .inl (h6 m hm)⟩)
-      | (refine ⟨[], (callOutput_fold st _ _ (fun _ _ => rfl)).1.trans (by simp), by simp⟩)
+      | (refine ⟨[], (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).1.trans (by simp), by simp⟩)
       | skip
     all_goals first
       | (simp (config := { decide := true }) only [CtorRes, ite_true, ite_false, Bool.false_eq_true,
@@ -283,7 +285,7 @@ theorem externCtor_cov (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? x = some r → 
          | (refine ⟨fun r hr => ?_, rfl⟩
             simp only [V.regsIn, List.mem_flatten] at hr
             obtain ⟨rs, hrs, hr⟩ := hr
-            exact (callOutput_fold st _ _ (fun _ _ => rfl)).2 rs hrs r hr)
+            exact (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).2 rs hrs r hr)
          | (obtain ⟨⟨n, hn⟩, -⟩ := loadConstantFull_cov _ _ _ _ st; exact ⟨n, by rw [hn]⟩)
          | exact ⟨_, _, _, _, rfl, rfl, logicSize_of ‹_›, ofNat?_value ‹_›⟩
          | exact ⟨_, _, _, _, rfl, rfl, logicSize64_lt ‹_›, ofNat?_value ‹_›⟩
@@ -447,7 +449,7 @@ theorem sem_ctor (ctx : Ctx) : (sem ctx).ctor = externCtor ctx := rfl
 /-- The emitted instructions of a constructor call with its precondition are covered. -/
 theorem emitOk_cov {id : TermId} {as : List AW} {vs : List V} (hvs : Holds2 f ctx as vs)
     (hpre : apre id as = true) {m : MInst} (h : EmitOk id vs m) : Covered m = true := by
-  rcases h with h | ⟨rfl, i, rfl, hi⟩ | ⟨rfl, op, r, off, fl, rfl, hop, s, rss, rfl, hr⟩
+  rcases h with h | ⟨rfl, i, rfl, hi⟩ | ⟨rfl, r, b', off, rfl, s, rss, rfl, hr⟩
   · exact h
   · obtain ⟨a, rfl, ha⟩ := holds2_one hvs
     simp only [apre, beq_self_eq_true, ↓reduceIte] at hpre
@@ -456,7 +458,8 @@ theorem emitOk_cov {id : TermId} {as : List AW} {vs : List V} (hvs : Holds2 f ct
     have hne : (TId.gen_call_args == TId.emit) = false := by decide
     simp only [apre, hne, beq_self_eq_true, ↓reduceIte, Bool.false_eq_true, beq_iff_eq] at hpre
     obtain ⟨n, rfl⟩ := kind_one ((deep_sound b _ hb).1 r hr) hpre
-    simp [Covered, FormOk, hop, memOk]
+    have hop : storeOpOfBytes b' ≠ .fpuStore128 := by unfold storeOpOfBytes; split <;> simp
+    simp [stackArgStore, Reg.homeCls, Covered, FormOk, hop, memOk]
 
 set_option maxHeartbeats 4000000 in
 /-- **Constructors**: `actor` describes the result, the emitted instructions are covered. -/
@@ -518,10 +521,15 @@ theorem ctor_sound (hLI : LogicImmComplete) (hctx : CtxInv f ctx) (s0 : LState) 
     obtain ⟨n, rfl⟩ := hr
     exact ⟨_, rfl, by simp [Reg.kind]⟩
   rw [if_neg hid1'] at hr ⊢
-  by_cases hid2' : (term.id == TId.put_in_regs || term.id == TId.put_in_regs_vec || term.id == TId.gen_call_output) = true
+  by_cases hid2' : (term.id == TId.put_in_regs || term.id == TId.put_in_regs_vec) = true
   · rw [if_pos hid2'] at hr ⊢
     exact ⟨fun r hrr => by obtain ⟨n, rfl⟩ := hr.1 r hrr; simp [Reg.kind], fun _ => hr.2⟩
   rw [if_neg hid2'] at hr ⊢
+  by_cases hid2o : (term.id == TId.gen_call_output) = true
+  · rw [if_pos hid2o] at hr ⊢
+    exact ⟨fun r hrr => by obtain ⟨n, c, rfl⟩ := hr.1 r hrr; cases c <;> simp [Reg.kind],
+      fun _ => hr.2⟩
+  rw [if_neg hid2o] at hr ⊢
   by_cases hid3' : (term.id == TId.zero_reg || term.id == TId.writable_zero_reg) = true
   · rw [if_pos hid3'] at hr ⊢
     subst hr

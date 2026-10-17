@@ -135,7 +135,9 @@ theorem since_congr {N : Nat} {st s s' : LState} (h : CtlSince N st s)
 
 set_option maxHeartbeats 5000000 in
 theorem run_2508 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
-    (hctx : CtxInv f ctx) (ha : AbiSigsOk f) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hctx : CtxInv f ctx) (ha : AbiSigsOk f)
+    (hxi : ∀ fn e, f.extern? fn = some e → e.sig.params.all (·.ty.isInt) = true) {ii : Nat}
+    {info : IInfo} {inst : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hcl : info.clif = some inst) {N : Nat} {cfg : Config}
     (hc : cfg.checkOverlap = false) {m n : Nat} {st : LState} {tr : Array RuleId}
     {env' : Isle.Interp.Env V} {s1 : LState × Array RuleId} {out : V} {st' : LState}
@@ -162,7 +164,8 @@ theorem run_2508 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := extern_sigAbiOk ha hext
-  have hint := (sigIntB_iff.mp (instData_call_int hd hext)).1
+  have hrc := hctx.call_retClasses hi hcl hext
+  have hint := hxi fn ext hext
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
@@ -170,14 +173,14 @@ theorem run_2508 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2508] at heval
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
-    ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff,
-    Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ hrc, ctor_put_in_regs_vec_iff,
+    ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, retRegsC_outRegs,
+    outRegs_length, Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
   simp only [show (4:Nat) < 10 from by decide, ite_true] at *
   subst_vars
-  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegs_single, outRegs_length,
-    Option.some.injEq, exists_eq_left'] at *
+  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, retRegsC_outRegs, outRegs_single,
+    outRegs_length, Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
@@ -208,7 +211,9 @@ theorem run_2508 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
 
 set_option maxHeartbeats 5000000 in
 theorem run_2518 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
-    (hctx : CtxInv f ctx) (ha : AbiSigsOk f) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (hctx : CtxInv f ctx) (ha : AbiSigsOk f)
+    (hxi : ∀ fn e, f.extern? fn = some e → e.sig.params.all (·.ty.isInt) = true) {ii : Nat}
+    {info : IInfo} {inst : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hcl : info.clif = some inst) {N : Nat} {cfg : Config}
     (hc : cfg.checkOverlap = false) {m n : Nat} {st : LState} {tr : Array RuleId}
     {env' : Isle.Interp.Env V} {s1 : LState × Array RuleId} {out : V} {st' : LState}
@@ -237,7 +242,8 @@ theorem run_2518 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := extern_sigAbiOk ha hext
-  have hint := (sigIntB_iff.mp (instData_call_int hd hext)).1
+  have hrc := hctx.call_retClasses hi hcl hext
+  have hint := hxi fn ext hext
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
@@ -245,14 +251,15 @@ theorem run_2518 {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2518] at heval
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ hrc, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, ctor_box_external_name_iff,
+    retRegsC_outRegs, outRegs_length,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
   simp only [show (4:Nat) < 10 from by decide, ite_true] at *
   subst_vars
-  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegs_single, outRegs_length,
-    Option.some.injEq, exists_eq_left'] at *
+  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, retRegsC_outRegs, outRegs_single,
+    outRegs_length, Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
@@ -320,6 +327,7 @@ theorem run_2529 {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Functio
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := hsigs sig callee args s rfl hs
   have hint := (sigIntB_iff.mp (instData_callIndirect_int hd hs)).1
+  have hrc := sigRets_classes_int (sigIntB_iff.mp (instData_callIndirect_int hd hs)).2
   simp only [ext_value_list_slice_iff, ext_value_slice_unwrap_iff] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
@@ -328,14 +336,15 @@ theorem run_2529 {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Functio
   isel_destruct; subst_vars
   simp only [ext_value_slice_unwrap_iff, List.cons.injEq, and_true] at *
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ hrc, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, ctor_put_in_reg_iff,
+    retRegsC_outRegs, outRegs_length,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
   simp only [show (4:Nat) < 10 from by decide, ite_true] at *
   subst_vars
-  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegs_single, outRegs_length,
-    Option.some.injEq, exists_eq_left'] at *
+  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, retRegsC_outRegs, outRegs_single,
+    outRegs_length, Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
@@ -384,9 +393,12 @@ theorem handOk_of_run (htot : Totality) {ctx : Ctx} {N ii : Nat} {rl : Rule}
 
 /-- **The `call` rules of `lower` keep `ShpIs`** (rules 1031, 1032, 1033). `hmem`: the
 instruction is a statement of `f`, so that a `call_indirect`'s signature is one of `indSigs f`
-(`AbiSigsOk`). -/
+(`AbiSigsOk`); `hxi`: the externs take integer parameters (subset E, `functionE_extern_int`:
+the typed `call` puts an `f32`/`f64` argument in a V register, S11e5a). -/
 theorem handOk_call (htot : Totality) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
-    (ha : Spill.AbiSigsOk f) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
+    (ha : Spill.AbiSigsOk f)
+    (hxi : ∀ fn e, f.extern? fn = some e → e.sig.params.all (·.ty.isInt) = true) {ii : Nat}
+    {info : IInfo} {inst : Clif.Inst}
     (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
     (hmem : ∃ B ∈ f.blocks, ∃ st ∈ B.body, st.inst = inst) {rl : Rule}
     (hrl : rl ∈ program.rulesOf TId.lower) (hid : rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033)
@@ -394,10 +406,10 @@ theorem handOk_call (htot : Totality) {f : Clif.Function} {ctx : Ctx} (hctx : Ct
   rcases hid with h | h | h
   · obtain rfl := eq_of_mem_of_id lower_ids_nodup hrl mem_lower_2508 (by rw [h]; rfl)
     exact handOk_of_run htot total_2508 fun _ hco _ _ _ _ _ _ _ _ _ hm hn hN =>
-      run_2508 data_program hctx ha hi hc hco hm hn hN
+      run_2508 data_program hctx ha hxi hi hc hco hm hn hN
   · obtain rfl := eq_of_mem_of_id lower_ids_nodup hrl mem_lower_2518 (by rw [h]; rfl)
     exact handOk_of_run htot total_2518 fun _ hco _ _ _ _ _ _ _ _ _ hm hn hN =>
-      run_2518 data_program hctx ha hi hc hco hm hn hN
+      run_2518 data_program hctx ha hxi hi hc hco hm hn hN
   · obtain rfl := eq_of_mem_of_id lower_ids_nodup hrl mem_lower_2529 (by rw [h]; rfl)
     have hsigs : ∀ sig callee args s, inst = .callIndirect sig callee args →
         f.sigDecls.lookup sig = some s → sigAbiOk s = true := fun sig callee args s he hs =>

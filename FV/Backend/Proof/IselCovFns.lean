@@ -54,8 +54,10 @@ def actorRest (id : TermId) (as : List AW) : AW :=
     | _ => .top
   else if id == TId.put_in_reg || id == TId.put_extended_in_reg || id == TId.load_constant_full then
     .reg 1
-  else if id == TId.put_in_regs || id == TId.put_in_regs_vec || id == TId.gen_call_output then
+  else if id == TId.put_in_regs || id == TId.put_in_regs_vec then
     .flat 1 true
+  -- typed calls (S11e5a): one fresh vreg per ABI return, of its class
+  else if id == TId.gen_call_output then .flat 3 true
   else if id == TId.zero_reg || id == TId.writable_zero_reg then .reg 4
   else if id == TId.is_pic then .bool true
   else if id == TId.use_fp16 then .bool false

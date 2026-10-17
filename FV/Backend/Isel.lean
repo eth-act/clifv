@@ -143,10 +143,13 @@ def valTyOk (ty : Clif.Ty) : Bool := eTy ty || ty.isFloat
 /-- The register class of a value of type `t` (`regClass?`; `.int` where it has none). -/
 def CTy.valClass (t : CTy) : RegClass := (t.regClass?).getD .int
 
-/-- A signature with integer parameters and returns only. The lowering's calls (`call`,
-`call_indirect`, `try_call`, `try_call_indirect`) pass integer values only: their
-signatures are checked in `instData`/`exnTableOpnd` (floats in calls and their contracts are
-S11e5). The function's own signature (entry and `return`) may have `f32`/`f64` values. -/
+/-- A signature with integer parameters and returns only: the remaining interim restriction of
+the typed calls (S11e5a). A `call` is typed (`f32`/`f64` parameters and returns in v0..v7,
+`sigArgLocs`/`retRegsC`), but `instData` still rejects a `call_indirect` and `exnTableOpnd` a
+`try_call`/`try_call_indirect` whose signature has an `f32`/`f64` parameter or return:
+`Compile.functionE` does not constrain `f.sigDecls`, so such a call would put float values
+into the integer driver model (`DriverCheck`), and a `try_call`'s returns wait for a typed
+`LowerTryOk` (`docs/plans/floats.md`, S11e5). -/
 def sigIntB (s : Clif.Signature) : Bool :=
   s.params.all (·.ty.isInt) && s.returns.all (·.ty.isInt)
 
@@ -218,9 +221,7 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     match f.extern? fn with
     | some ext =>
       if aapcsConv ext.sig.callConv then
-        if sigIntB ext.sig then
-          pure (instDataV "Call" [opcodeV "Call", .values args, .op (.funcRef fn)])
-        else throw "call with f32/f64 parameters or returns"
+        pure (instDataV "Call" [opcodeV "Call", .values args, .op (.funcRef fn)])
       else throw s!"call with calling convention {repr ext.sig.callConv}"
     | none => throw s!"unknown fn{fn}"
   | .callIndirect sig callee args =>
@@ -554,7 +555,7 @@ def tryCallData (f : Clif.Function) : Clif.Terminator → Except String V
 
 /-- The vregs of a `try_call`'s return values and exception payloads (`lower.rs`
 `try_call_rets`/`try_call_payloads`), allocated from `st`: one fresh vreg per ABI return (the
-return registers `retRegs`: `exnTableOpnd` admits integer signatures only), then per payload
+return registers `retRegs`: `exnTableOpnd` admits integer signatures only, `sigIntB`), then per payload
 register (`payloadRegs`) the vreg of the return in that register (`set_vreg_alias`), else a
 fresh one. `none`: more than 8 return values. -/
 def tryRegsOf (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
@@ -914,13 +915,20 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
       | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
       | _, _ => .unmodeled "gen_return: multi-register values"
     else .unmodeled "gen_return: more than 8 return values"
-  -- calls pass integer values only (`instData`/`exnTableOpnd` reject `f32`/`f64` call
-  -- signatures): one fresh integer vreg per ABI return, in x0.. (`retRegs`)
+  -- typed calls (S11e5a; Cranelift's `Lower::gen_call_output`, `machinst/lower.rs:630`): one
+  -- fresh vreg per ABI return (`sigRets`), of the return's class (`vregs.alloc(ty)`,
+  -- `rc_for_type`: `retClass`)
   | TId.gen_call_output, [.op (.sig s)] =>
-    let (rs, st) := (sigRets s).foldl (init := (#[], st)) fun (acc, st) _ =>
-      let (r, st) := st.fresh .int
+    let (rs, st) := (sigRets s).foldl (init := (#[], st)) fun (acc, st) p =>
+      let (r, st) := st.fresh (retClass p)
       (acc.push [r], st)
     .ok (.regsVec rs.toList, st)
+  -- `Callee::gen_call_args` (`machinst/abi.rs:1819`): each argument at its location of
+  -- `compute_arg_locs` (`sigArgLocs`: x0..x7 / v0..v7 by the parameter's class, x8 for `sret`,
+  -- then the stack); a register one becomes a fixed use (`process_arg_slot`), a stack one a
+  -- store into the outgoing area (`gen_store_stack`, `stackArgStore`: `str`/`strb`/`strh` or
+  -- `str s`/`str d` by the argument register's class, the parameter's for CLIF the verifier
+  -- accepts)
   | TId.gen_call_args, [.op (.sig s), .regsVec rss] =>
     match sigArgLocs s, rss.mapM (fun | [r] => some r | _ => none) with
     | .ok (locs, _), some rs =>
@@ -928,14 +936,20 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
       let (uses, st) := ((locs.zip rs).zip bytes).foldl (init := (#[], st))
         fun (acc, st) ((loc, r), b) => match loc with
           | .reg p => (acc.push (r, p), st)
-          | .stack off => (acc, st.emit (.store (storeOpOfBytes b) r (.spOffset off) trustedFlags))
+          | .stack off => (acc, st.emit (stackArgStore r b (.spOffset off)))
       .ok (.op (.callArgs uses.toList), st)
     | .error e, _ => .unmodeled s!"gen_call_args: {e}"
     | _, none => .unmodeled "gen_call_args: multi-register value"
+  -- `Callee::gen_call_rets` (`machinst/abi.rs:1995`): each output in the return register of
+  -- its class (`compute_arg_locs` on the returns, `retRegsC`; the outputs are
+  -- `gen_call_output`'s, one per return of its class); at most 8 values in all (the
+  -- backend's bound, as `gen_return`)
   | TId.gen_call_rets, [.op (.sig _), .regsVec rss] =>
-    match retRegs rss.length, rss.mapM (fun | [r] => some r | _ => none) with
-    | some ps, some rs => ok (.op (.callRets (ps.zip rs)))
-    | _, _ => .unmodeled "gen_call_rets: more than 8 return values"
+    if rss.length ≤ 8 then
+      match retRegsC (regsClasses rss) 0 0, rss.mapM (fun | [r] => some r | _ => none) with
+      | some ps, some rs => ok (.op (.callRets (ps.zip rs)))
+      | _, _ => .unmodeled "gen_call_rets: multi-register values"
+    else .unmodeled "gen_call_rets: more than 8 return values"
   | TId.try_call_none, [] => ok (.op .tryCallNone)
   | TId.try_call_info, [.op (.exnTable s items), .labels ls] =>
     match tryInfoOf s items ls with

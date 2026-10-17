@@ -178,6 +178,24 @@ simulation's driver model (`DriverCheck`) is integer-shaped, so `loop_run`/`lowe
 take `Compile.functionE f` (still integer-only, so no theorem's scope admits a float value
 yet), and Stock's `buildCtx` rejects float values (`f32/f64 value`) until it gets a float path.
 
+**S11e5a (typed calls; WIP on `agent/floats-e5`).** The lowering of a `call` is typed as
+Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
+(`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
+(x0..x7 / v0..v7, separate counters) and stores stack-passed ones with `stackArgStore`
+(`str s`/`str d` for a float vreg; `abi.rs:1819`), `gen_call_rets` puts outputs in the return
+registers of their classes (`retRegsC (regsClasses rss)`, at most 8 in all; `abi.rs:1995`).
+`instData` no longer rejects a float `call`. **Remaining interim** (parent decision): `sigIntB`
+stays on `call_indirect` (`instData`) and `try_call`/`try_call_indirect` (`exnTableOpnd`):
+`Compile.functionE` does not constrain `f.sigDecls`, so an indirect call with a float return
+would put a float value into the integer driver model (`CtxSpec.ctxE`/`tysOf_int` →
+`loop_run`), and `LowerTryOk`/`tryRegsOf`/`CallOk`/`ShapeOf` are integer-shaped. Integer proofs
+get the call's integer returns from `CtxInv.call_retClasses` (results `i8..i64`) and the
+externs' integer parameters from `functionE` (`handOk_call`/`stmt_shp` gain `hxi`/`hE`).
+Next: typed `tryRegsOf`/`gen_try_call_rets` + `LowerTryOk` with classes (lifts `try_call`),
+`CallOk`/`ArgReg` with v0..v7 and class-matched fixed operands (spill), `ShapeOf` with typed
+return registers (link), then the typed driver model (`CtxInv`→`CtxInvT` for every rule, or a
+generic transfer) that lifts `call_indirect`/`try_call_indirect`.
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in

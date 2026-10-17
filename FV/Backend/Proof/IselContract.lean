@@ -1095,18 +1095,8 @@ theorem sigIntB_iff {s : Clif.Signature} :
     sigIntB s = true ↔ s.params.all (·.ty.isInt) = true ∧ s.returns.all (·.ty.isInt) = true := by
   simp [sigIntB]
 
-/-- A `call` that `instData` accepts calls an extern with an integer signature. -/
-theorem instData_call_int {f : Clif.Function} {fn : Clif.FnRef} {args : List Nat} {d : V}
-    (h : instData f (.call fn args) = .ok d) {e : Clif.ExtFunc} (he : f.extern? fn = some e) :
-    sigIntB e.sig = true := by
-  simp only [instData, he] at h
-  split at h
-  · split at h
-    · assumption
-    · cases h
-  · cases h
-
-/-- A `call_indirect` that `instData` accepts has a declared integer signature. -/
+/-- A `call_indirect` that `instData` accepts has a declared integer signature (`sigIntB`, the
+remaining interim restriction of the typed calls). -/
 theorem instData_callIndirect_int {f : Clif.Function} {sig : Nat} {c : Nat} {args : List Nat}
     {d : V} (h : instData f (.callIndirect sig c args) = .ok d) {s : Clif.Signature}
     (hs : f.sigDecls.lookup sig = some s) : sigIntB s = true := by
@@ -1114,6 +1104,22 @@ theorem instData_callIndirect_int {f : Clif.Function} {sig : Nat} {c : Nat} {arg
   split at h
   · assumption
   · cases h
+
+/-- In an integer context (`CtxInv`: result types `i8..i64`) a `call`'s callee returns
+integers, so its ABI returns (`sigRets`) are all of class `int` (the typed `gen_call_output`
+allocates integer vregs and `gen_call_rets` puts them in x0..). -/
+theorem CtxInv.call_retClasses {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat}
+    {info : IInfo} {fn : Clif.FnRef} {args : List Nat} (hi : ctx.insts[ii]? = some info)
+    (hcl : info.clif = some (.call fn args)) {e : Clif.ExtFunc} (he : f.extern? fn = some e) :
+    (sigRets e.sig).map retClass = List.replicate (sigRets e.sig).length .int := by
+  apply sigRets_classes_int
+  obtain ⟨tys, hty, hres, -⟩ := hctx.resTys ii info _ hi hcl
+  simp only [Clif.Inst.resultTypes, he, Option.map_some, Option.some.injEq] at hty
+  subst hty
+  refine List.all_eq_true.mpr fun p hp => ?_
+  have hm := hctx.resTysE ii info hi (CTy.ofClif p.ty)
+    (by rw [hres]; exact List.mem_map_of_mem (List.mem_map_of_mem hp))
+  cases hpt : p.ty <;> simp_all [eCTys, CTy.ofClif, Clif.Ty.isInt]
 
 /-- The byte sizes of a signature's parameters (`sigArgs`) are their types' sizes. -/
 theorem sigArgs_eq_map : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
