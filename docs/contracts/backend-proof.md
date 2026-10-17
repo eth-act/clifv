@@ -941,3 +941,56 @@ Remaining: none. `backend_correct(_of_rules)` can now take `memRulesCorrect_prog
 `hmemRules` (left to the integrator).
 
 **Axioms**: `memRelOk_holds`, `readBits_getLsbD_eq`, `backend_correct_of_rules`, `amode_add_ok`, `memRulesCorrect_program`: `propext`, `Classical.choice`, `Quot.sound` (T6: `movK_ident` is kernel-checked). No `sorry`.
+
+## Float data movement (S11e4, #238): the `CtxInvT` boundary
+
+The float data-movement root rules are proven over a float-capable context, as variants next to
+the integer contracts (whose statements are unchanged):
+
+* `IntPos ctx x`: every type `x` has is one of E's integers (`eCTys`). `intArgs inst`: the
+  operands the CLIF verifier types as integers (every operand of an integer operation, the
+  address of a memory access, the condition of a `select`, call arguments); not the value of a
+  float `store`, the operands of a float `select`, the operand of a `bitcast`.
+* `CtxInvT f ctx`: `CtxInv` without E's instruction subset (`instE`), with class-aware vregs
+  (`valueReg`: value `x` has `.vreg x (valClassOf ctx x)`), the types `i8..i64`, `f32`, `f64`
+  (`mCTys`, `resTysM`/`valTyM`) and `intOps` (every `intArgs` operand is `IntPos`).
+  `CtxInv.toT` embeds the integer contexts; `CtxInvT.valueReg_int` gives an `IntPos` value an X
+  register. The integer rule lemmas the float roots reuse take `CtxInvT` plus `IntPos` for the
+  operands they read (`ExtOut.semT`, `is_nonzero_okT`, `emit_icmp_okT`, `is_nonzero_cmp_okT`); the
+  `CtxInv` originals are their corollaries (`CtxInv.intPos`).
+* `LowerRuleOkTP P` / `LowerRuleOkT`: `LowerRuleOk` over `CtxInvT` contexts for the
+  instructions satisfying `P`; `LowerRuleOkT.toOk` gives back `LowerRuleOk`. `MemRuleOkRT`
+  likewise for `MemRuleOkR` (`MemRuleOkRT.toR`).
+* `MemRefinesFP Rd F sb isem`: the float accesses' obligation on the instruction semantics (as
+  `MemRefinesR Rd` for the integer ones): `fpuLoad sz (.vreg d .float) am fl` of size 32/64,
+  through an `amodeAddr` address avoiding `F` whose bytes satisfy `Rd`, defines the
+  little-endian bytes zero-extended to 128 bits (`write_sfp`), and `fpuStore` writes the low
+  bytes of its value there.
+
+**Targets** (`IselContract`): `LowerRulesCorrectT p` (under `Refines`, `MRStable`: the
+`floatMoveRootRule` roots 584/585 `f32const`/`f64const` and 1080/1083/1084/1085 `bitcast` are
+`LowerRuleOkT`; the shared `select` root 971 (`rule_lower_2267`) is `LowerRuleOkTP` for a
+`select` of `f32`/`f64` values) and `MemRulesCorrectRT p` (under `Refines`, `MRStable`,
+`MemRefinesR Rd`, `MemRefinesFP Rd`: the `floatMemRootRule` roots 1047/1048 `load.f32`/`load.f64`
+and 1073/1074 `store` of an `f32`/`f64` value are `MemRuleOkRT`). Proven:
+`lowerRulesCorrectT_program` (`IselLowerAll`; `f32const_okT`/`f64const_okT` in
+`IselFloatConst`, `bitcast_*_okT` in `IselFloatBitcast`, `select_float_okT` in
+`IselFloatSelect`) and `memRulesCorrectRT_program` (`IselFloatMem`: `load_f32_okT`,
+`load_f64_okT`, `store_f32_okT`, `store_f64_okT`). `lowerRulesCorrect_program` dispatches the
+float-move roots through `(…_okT …).toOk`; `memRulesCorrectR_program` keeps the float memory
+roots vacuous (`MemRulesCorrectR` has no `MemRefinesFP`, and `CtxInv` has no float value).
+
+**Non-vacuity.** `Driver.ctxOkT` decides `CtxInvT` (`ctxOkT_sound`, `DriverCheckT`);
+`FVTest/Backend/FloatCtxT.lean` checks it on `buildCtx`'s contexts of a `select.f32` and a
+`load.f32`/`store.f64` function (`ctxInvT_select_f32`, `ctxInvT_load_store_f`; `native_decide`,
+witness only) and that `lower` fires rules 971, 1047 and 1074 on them. `E2E.csemGF`
+(`FV/E2E/GuardedFP.lean`) is the guarded semantics `csemG` extended by the guarded float
+accesses (`GuardFP`; `csem` on well-formed, error-free, aligned worlds, the specification
+`fspec` elsewhere): `refines_csemGF`, `memRefinesR_csemGF`, `memRefinesFP_csemGF` (through
+`straight_fpuLoad`/`straight_fpuStore`, from `RegallocMemFP.execMInst_fpuLoad`/
+`execMInst_fpuStore`) give all premises of `MemRulesCorrectRT`.
+
+**Boundary.** Nothing downstream consumes the `T` targets yet: the driver (`DriverCheck.ctxOk`,
+`loop_run`), the lockstep (`csemG_lockstep2`; `csemG` itself leaves the float accesses undefined)
+and the end-to-end theorems keep the integer `CtxInv`/`Compile.functionE` scope. Producing
+`CtxInvT` in the driver, the lockstep of the float accesses and the widened scope are S11e5.

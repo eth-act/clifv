@@ -1,0 +1,131 @@
+test run
+target aarch64
+
+; The S11e4 float data-movement roots behind integer signatures (the register-level control
+; check `ctlCheck` keeps `args`/`rets` integer until S11e5): `f32const`/`f64const`, the float
+; arm of `select`, `load.f32`/`load.f64`, `store` of an f32/f64, `bitcast` both ways.
+
+function %c32() -> i32 {
+block0:
+    v0 = f32const 0x1.0p0
+    v1 = bitcast.i32 v0
+    return v1
+}
+; run: %c32() == 0x3f800000
+
+function %c32n() -> i32 {
+block0:
+    v0 = f32const -0x1.8p1
+    v1 = bitcast.i32 v0
+    return v1
+}
+; run: %c32n() == 0xc0400000
+
+function %c64z() -> i64 {
+block0:
+    v0 = f64const 0.0
+    v1 = bitcast.i64 v0
+    return v1
+}
+; run: %c64z() == 0
+
+function %c64() -> i64 {
+block0:
+    v0 = f64const 0x1.0p-2
+    v1 = bitcast.i64 v0
+    return v1
+}
+; run: %c64() == 0x3fd0000000000000
+
+function %sel32(i8, i32, i32) -> i32 {
+block0(v0: i8, v1: i32, v2: i32):
+    v3 = bitcast.f32 v1
+    v4 = bitcast.f32 v2
+    v5 = select v0, v3, v4
+    v6 = bitcast.i32 v5
+    return v6
+}
+; run: %sel32(1, 0x3f800000, 0x40000000) == 0x3f800000
+; run: %sel32(0, 0x3f800000, 0x40000000) == 0x40000000
+; run: %sel32(-128, 0x3f800000, 0x40000000) == 0x3f800000
+
+function %sel64(i32, i64, i64) -> i64 {
+block0(v0: i32, v1: i64, v2: i64):
+    v3 = bitcast.f64 v1
+    v4 = bitcast.f64 v2
+    v5 = select v0, v3, v4
+    v6 = bitcast.i64 v5
+    return v6
+}
+; run: %sel64(7, 0x4025000000000000, 0xbfd0000000000000) == 0x4025000000000000
+; run: %sel64(0, 0x4025000000000000, 0xbfd0000000000000) == 0xbfd0000000000000
+
+function %sel64c(i64, i64, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64):
+    v8 = iconst.i64 3
+    v7 = icmp sgt v0, v8
+    v3 = bitcast.f64 v1
+    v4 = bitcast.f64 v2
+    v5 = select v7, v3, v4
+    v6 = bitcast.i64 v5
+    return v6
+}
+; run: %sel64c(4, 1, 2) == 1
+; run: %sel64c(3, 1, 2) == 2
+
+function %ldst64(i64) -> i64 {
+    ss0 = explicit_slot 16
+block0(v0: i64):
+    v1 = stack_addr.i64 ss0
+    v3 = bitcast.f64 v0
+    store v3, v1+8
+    v2 = load.f64 v1+8
+    v4 = bitcast.i64 v2
+    return v4
+}
+; run: %ldst64(0x3ff1234567890000) == 0x3ff1234567890000
+; run: %ldst64(0x8000000000000000) == 0x8000000000000000
+
+function %ldst32(i32) -> i32 {
+    ss0 = explicit_slot 8
+block0(v0: i32):
+    v1 = stack_addr.i64 ss0
+    v3 = bitcast.f32 v0
+    store v3, v1+4
+    v2 = load.f32 v1+4
+    v4 = bitcast.i32 v2
+    return v4
+}
+; run: %ldst32(0x3e400000) == 0x3e400000
+
+function %ldbits(i64) -> i32 {
+    ss0 = explicit_slot 8
+block0(v0: i64):
+    v1 = stack_addr.i64 ss0
+    store v0, v1
+    v2 = load.f32 v1+4
+    v3 = bitcast.i32 v2
+    return v3
+}
+; run: %ldbits(0x12345678_9abcdef0) == 0x12345678
+
+function %stbits(i64, i64) -> i64 {
+    ss0 = explicit_slot 16
+block0(v0: i64, v1: i64):
+    v2 = stack_addr.i64 ss0
+    store v0, v2
+    store v0, v2+8
+    v3 = bitcast.f64 v1
+    store v3, v2+4
+    v4 = load.i64 v2
+    return v4
+}
+; run: %stbits(0, 0x1122334455667788) == 0x5566778800000000
+
+function %bc_rt(i64) -> i64 {
+block0(v0: i64):
+    v1 = bitcast.f64 v0
+    v2 = bitcast.i64 v1
+    return v2
+}
+; run: %bc_rt(0xbff0000000000000) == 0xbff0000000000000
