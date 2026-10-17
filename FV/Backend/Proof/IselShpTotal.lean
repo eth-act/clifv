@@ -199,9 +199,12 @@ theorem totAt (htp : totalProg p = true) : ∀ n, TotAt p sm cfg n := by
 
 end Generic
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+set_option cbv.maxSteps 4000000 in
 /-- The exported program: every rule of a non-`partial` internal term has a total right-hand
 side. -/
-theorem totalProg_program : totalProg program = true := by native_decide
+theorem totalProg_program : totalProg program = true := by decide_cbv
 
 /-- **Totality** of the exported program, for every embedding context and configuration. -/
 theorem totality : Totality :=
