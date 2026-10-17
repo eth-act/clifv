@@ -2,6 +2,7 @@ import FV.Backend.Proof.StockCmpSelectedCalls
 import FV.Backend.Proof.StockCmpSourceMatchWitness
 namespace Backend.Stock.Proof.ScalarCmp
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+set_option maxRecDepth 8000 in
 /-- An actual named lower call from an accepted original sparse-ID function
 inhabits canonical matching and every internally derived root helper call. -/
 theorem stock_cmp_selected_calls_witness :
