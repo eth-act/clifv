@@ -21,7 +21,7 @@ theorem stock_original_select_source_data {f : Clif.Function} {ctx : Ctx} (inv :
   cases result
   refine ⟨cmp_eTy_widths supported,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
   have expected : instData f (.select ty c x y) = .ok (.data 152 24 [.data 151 65 [],.values [c,x,y]]) := by
-    simp [instData,supported]; rfl
+    simp [instData,valTyOk,supported]; rfl
   exact Except.ok.inj (raw.symm.trans expected)
 private theorem inventory : sourceOpcodeIds 65 = [rule_lower_2267.id] := by decide +kernel
 end Source
