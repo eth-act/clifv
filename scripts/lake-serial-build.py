@@ -138,6 +138,9 @@ def main():
                     help="peak TSVs (default scripts/lake-module-peaks.tsv, .lake/lake-module-peaks.tsv)")
     ap.add_argument("--record", default=".lake/lake-module-peaks.tsv")
     ap.add_argument("--dry-run", action="store_true", help="print the plan and exit")
+    ap.add_argument("--only", metavar="FILE",
+                    help="build only the modules listed in FILE (whitespace-separated); their "
+                         "other imports count as built (CI: earlier waves, restored from the cache)")
     a = ap.parse_args()
 
     root = pathlib.Path(a.root).resolve()
@@ -167,6 +170,12 @@ def main():
         if m not in want:
             want.add(m)
             stack.extend(imports[m])
+    assumed = set()
+    if a.only:
+        only = set(pathlib.Path(a.only).read_text().split())
+        if only - want:
+            sys.exit(f"--only lists modules outside the targets: {sorted(only - want)[:5]}")
+        assumed = want - only
 
     def est_cap(m):
         if m not in prof:
@@ -220,7 +229,7 @@ def main():
         log.write(line + "\n"); log.flush()
         print(line, flush=True)
 
-    status = {}            # m -> ok | fail | blocked
+    status = {m: "ok" for m in assumed}  # m -> ok | fail | blocked
     running = {}           # m -> (Popen, t0, cap)
     solo_set = set()       # running modules that must run alone
     retry_cap = {}         # m -> cap for the solo retry after an OOM kill
@@ -265,7 +274,8 @@ def main():
             pass
         return pids
 
-    say(f"want {len(want)} modules budget={gib(budget)} max_jobs={a.max_jobs} heavy>{gib(heavy)}")
+    say(f"want {len(want)} modules ({len(assumed)} assumed built) budget={gib(budget)} "
+        f"max_jobs={a.max_jobs} heavy>{gib(heavy)}")
     last_wait = ""
     while True:
         for m, (p, t0, c) in list(running.items()):

@@ -1,0 +1,73 @@
+name: Full gate build shard
+
+# One shard of a full-gate build wave (.github/workflows/full-gate.yml): restore the baseline
+# build and the earlier waves' outputs, build the shard's modules (scripts/ci-build-plan.py,
+# .github/scripts/full-gate-shard.sh), upload their staged Lake outputs and the scheduler logs.
+on:
+  workflow_call:
+    inputs:
+      wave:
+        type: number
+        required: true
+      shard:
+        type: number
+        required: true
+      base-run:
+        description: run id of the baseline `lake-full` artifact ('' = none)
+        type: string
+        default: ''
+      stages:
+        description: artifact pattern of earlier waves' staged outputs ('' = none)
+        type: string
+        default: ''
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build:
+    name: shard ${{ inputs.shard }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/fv-lean
+        with:
+          swap-gb: '24'
+          free-disk: 'true'
+          base-run-id: ${{ inputs.base-run }}
+          stages: ${{ inputs.stages }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ci-plan
+      - name: Build
+        env:
+          WAVE: ${{ inputs.wave }}
+          SHARD: ${{ inputs.shard }}
+        run: .github/scripts/full-gate-shard.sh ci-plan.json "$WAVE" "$SHARD" "$RUNNER_TEMP/shard"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: stage-w${{ inputs.wave }}-${{ inputs.shard }}
+          path: ${{ runner.temp }}/shard/stage
+          # ltar archives are compressed already
+          compression-level: 0
+          retention-days: 2
+      - name: Memory and swap
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/shard"
+          { free -m; cat /proc/vmstat | grep -E '^(pswpin|pswpout) '; } | tee "$RUNNER_TEMP/shard/free.txt"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: shard-logs-w${{ inputs.wave }}-${{ inputs.shard }}
+          path: |
+            ${{ runner.temp }}/shard/modules.txt
+            ${{ runner.temp }}/shard/peaks.tsv
+            ${{ runner.temp }}/shard/free.txt
+            ${{ runner.temp }}/shard/sched
+          retention-days: 14
+          if-no-files-found: ignore
