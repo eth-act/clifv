@@ -85,7 +85,7 @@ theorem pow2_natCast_gt_one (k : Nat) : (((2 ^ k : Nat) : Int) > 1) ↔ 0 < k :=
 
 theorem pow2_checkedSubU_ok {fn : String} {a b : Int} (h : b ≤ a) :
     Rust.checkedSubU fn a b = .ok (a - b) := by
-  simp [Rust.checkedSubU, h]
+  simp [Rust.checkedSubU, h, pure, Except.pure]
 
 theorem pow2_asU64_of_lt {a : Int} (h0 : 0 ≤ a) (h : a < 2 ^ 64) : Rust.asU64 a = a := by
   unfold Rust.asU64

@@ -744,9 +744,9 @@ modules 0.3–5 min / ≤5.2G; 2026-10-07, R0 modules: `RuleCprop3` 5 min / 11.4
 3 min / 5.3G, the others < 2.5 min / ≤ 4.6G), then `RuleAll`/`FV.E2E.OptProven` (parallel builds of the rule modules
 OOM). Since T6 the `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) are heavier, and `lake build`
 (it has no `-j` option) runs many of them at once, which exceeds a 22G `scripts/memcap.sh` cap.
-Build the `FV.Opt.Proof` modules (317 with their imports) a few at a time in import order first
-(`FV_MEMCAP=13G LEAN_NUM_THREADS=2 scripts/memcap.sh lake build FV.Opt.Proof.<Module>` per module,
-at most three at once, a module killed at 13G again alone at 22G); the full target build then
+Build the `FV.Opt.Proof` modules (203 with their imports) first, in import order, one memcapped
+`lake build FV.Opt.Proof.<Module>` per module: `scripts/lake-serial-build.py --budget 16G FV.Opt.Proof.`
+(docs/TO-PROVE.md §7; caps from recorded peaks, modules above 12 GB alone); the full target build then
 replays them. Measured 2026-10-12 (`maxrss`, three at a time): `RuleBitops7` 16.5 GB / 4 min
 (alone at 22G), `RuleArith` 14.0 GB / 6 min, `RuleBitops2`..`5` 9–11 GB / 5–6 min, `RuleExtends2`
 10 GB / 14 min, `RuleShifts2`/`3` 9.7/10 GB / 8/18 min, `RuleIcmp2` 22 min, `RuleSkeleton3`

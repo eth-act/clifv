@@ -891,14 +891,18 @@ Large, low priority.
 - One agent per WP or sub-package, in its own worktree: `scripts/agent-worktree.sh <name> [base]` →
   `/home/kev/work/clifv-wt/<name>`, branch `agent/<name>`. Absolute paths under the worktree. Never push,
   merge, rebase, `git stash`, or pattern-kill processes. Temp files in `/tmp/<name>_*`.
-- Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; full FV build
-  `LEAN_NUM_THREADS=2 FV_MEMCAP=22G`; check the log for "Build completed successfully". The
-  `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to 16.5 GB (`RuleBitops7`; `RuleArith`
-  14 GB, a dozen others 7–11 GB) and take up to 34 min each (all 317 modules: 2 h 4 min, three at a time); `lake build` (no `-j` option) runs many
-  at once and exceeds 22G, so first build the `FV.Opt.Proof` modules (317 with their imports) at most
-  three at a time in import order (`FV_MEMCAP=13G LEAN_NUM_THREADS=2 scripts/memcap.sh lake build
-  FV.Opt.Proof.<Module>`, a module killed at 13G again alone at 22G), then the full target, which
-  replays them (docs/contracts/midend.md, build note).
+- Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; check the log for "Build
+  completed successfully". The `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to 16.5 GB
+  (`RuleBitops7`; `RuleArith` 15 GB, a dozen others 7–11 GB) and take up to 34 min each; `lake build`
+  (no `-j` option) runs every ready module at once and exceeds any sane cap.
+- **Building many modules.** `scripts/lake-serial-build.py --budget 16G <targets>` (targets: `FV`,
+  `FVTest`, a prefix such as `FV.Opt.Proof.`, or modules) runs one memcapped `lake build <M>` per module in
+  import order: cap = recorded peak (`scripts/lake-module-peaks.tsv`, refreshed in
+  `.lake/lake-module-peaks.tsv`) × 1.2 + 0.5 GB; light modules side by side (≤ 6) within the budget,
+  critical path first, backfilling only modules that cannot delay the next one; modules peaking above
+  12 GB alone, and only when ≥ 30 GB is available and no other job's memcap is above 12 GB; nothing
+  starts while less than 10 GB is available; a module killed at its cap is retried alone at twice the
+  cap. Then the full `lake build …` only replays. `--dry-run` prints the plan.
 - **Shared build cache.** Set `FV_LAKE_CACHE=<dir>` (on the worktrees' filesystem; agents on the shared
   machine: `/home/kev/work/clifv-lake-cache`); `scripts/memcap.sh` then sets `LAKE_ARTIFACT_CACHE=true
   LAKE_RESTORE_ARTIFACTS=true LAKE_CACHE_DIR=<dir>`. Lake keys each module's outputs by the hash of its
@@ -912,6 +916,11 @@ Large, low priority.
   `FV_LAKE_CACHE` is set). `lake env lean` needs the restored files, so run `lake build` first (or use
   `lake lean <file>`). Clean-up: `find <dir>/artifacts -type f -links 1 -mmin +60 -delete` removes
   outputs no worktree links to (a later miss rebuilds).
+- `FV.Opt.Proof.*` imports nothing from `FV/Backend`, `FV/Arm` or `FV/Link` (from `FV/E2E` only the
+  Clif-level `FV.E2E.LinkClif`, in the leaf witness `PipelineXWitness`), so backend, unwinding and E2E
+  changes do not rebuild the rule modules (203 modules with their imports, was 329); keep it so. Until
+  #252, `RuleImm`'s unused import of `FV.Backend.Proof.IselCmpExt` made 99 of the 153 rule modules depend
+  on all of `FV.Backend` and the Arm model.
 - No `sorry`, `admit`, hand-written `axiom`, `trace_state`. Allowed axioms: `propext`, `Classical.choice`,
   `Quot.sound`, and generated `*._native.bv_decide.ax_*` / `*._native.native_decide.ax_*` in fixed proofs.
 - Every new top-level theorem gets a non-vacuity witness (they have caught six unsatisfiable premises).
@@ -927,6 +936,22 @@ Large, low priority.
   (corpus 114/114, runtests ≥ 4672/0/0); `scripts/lean-backend-encode-check.sh` (0 differ);
   `lean-e2e-check` (≥ 1149 accepted, 0 rejected); if CLIF semantics change, `scripts/clif-filetests.sh` at
   its baseline and `scripts/opt-difftest.sh` with 0 failures.
+- **Gate policy (proposed, #252; not adopted: until @kevaundray agrees, the full list above stays required
+  before every PR).** The full list costs one machine-wide slot for hours (one run held
+  `/tmp/clifv-heavy.lock` 5.6 h). The proposal is to run it once per merge batch, not once per PR:
+  - *Per PR (author, scheduler budget, no heavy lock):* `scripts/lake-serial-build.py FV FVTest` and the
+    executables (with the shared cache only the PR's modules and their dependents build);
+    `#print axioms` of new or changed theorems, and of the E2E list when a module they depend on changed;
+    the run-time gates whose inputs the PR touches: lowering/encoding/regalloc → `lean-backend-filetests.sh`,
+    `lean-backend-encode-check.sh`; `FV/E2E`, `FV/Link`, scope predicates → `lean-e2e-check`,
+    `link-check`; CLIF semantics → `clif-filetests.sh`, `opt-difftest.sh`; driver or `cargo-fv` →
+    `cargo fv test --lean-link --verified` (fv-demo and the survey); docs/scripts only → none. Then
+    label the PR `merge-ready`.
+  - *Per merge batch (one integrator, the only holder of the heavy lock):* every few hours, or when
+    three PRs are `merge-ready`, rebase them in order onto `origin/main` as one batch branch, run the
+    full list above on its tip (crate-proofs, every axiom audit, the survey), and squash-merge the PRs in
+    order if green. If red, bisect the batch (halves), merge the green prefix, hand the failing PR back to
+    its author with the log. Authors rebase after a batch lands, not before.
 - When a WP lands, mark it here (`**done** (commit)`) and update §2.
 
 ## 8. Issues and claiming
@@ -985,7 +1010,7 @@ label**; list the free ones with
 | S8 | [#32](https://github.com/eth-act/clifv/issues/32) `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | open |
 | S9 | [#33](https://github.com/eth-act/clifv/issues/33) Trapping helpers (`__*ti3` division by zero) and traps inside program callees | open |
 | S10 | [#34](https://github.com/eth-act/clifv/issues/34) Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | in progress (`docs/plans/unwinding.md`; sub-issues #229–#233) |
-| S11 | [#35](https://github.com/eth-act/clifv/issues/35) Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | in progress (`docs/plans/floats.md`; sub-issues #234–#240) |
+| S11 | [#35](https://github.com/eth-act/clifv/issues/35) Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | in progress (`docs/plans/floats.md`; sub-issues #234–#240; S11a, S11c, S11d done) |
 | S12 | [#36](https://github.com/eth-act/clifv/issues/36) SIMD | open |
 | T1 | [#37](https://github.com/eth-act/clifv/issues/37) Trusted base: TLS: TLSDESC hook vs lld's local-exec rewrite | open |
 | T2 | [#38](https://github.com/eth-act/clifv/issues/38) Trusted base: Atomics on a single-core model (`ldar`/`stlr` plain, exclusive store always succeeds, `dmb` no-op) | open |
