@@ -587,7 +587,8 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
     | none => some (.pure Pat.bmask128 [x] [rl, rh])
   | .bmask t x, [r] =>
     match P x with
-    | some (xl, xh) => if C.plain r then some (.pure (Pat.bmaskc t) [xl, xh] [r]) else none
+    | some (xl, xh) =>
+      if t.isInt && C.plain r then some (.pure (Pat.bmaskc t) [xl, xh] [r]) else none
     | none => same
   | .extend op .i128 x, [r] => do
     let (rl, rh) ← P r
@@ -599,7 +600,7 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
     else none
   | .ireduce t x, [r] =>
     match P x with
-    | some (xl, _) => if C.plain r then some (.pure (Pat.ireduce t) [xl] [r]) else none
+    | some (xl, _) => if t.isInt && C.plain r then some (.pure (Pat.ireduce t) [xl] [r]) else none
     | none => same
   | .iconcat .i64 lo hi, [r] => do
     let (rl, rh) ← P r

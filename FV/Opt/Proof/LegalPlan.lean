@@ -481,12 +481,14 @@ theorem pure_step {C : Ctx} (hG : Good C) {B : Block} (hB : B ∈ C.f.blocks) {s
     · rename_i xl xh hx
       split at hp
       · rename_i hpr
+        rw [Bool.and_eq_true] at hpr
+        obtain ⟨hti, hpr⟩ := hpr
         simp only [Option.some.injEq, Plan.pure.injEq] at hp
         obtain ⟨rfl, rfl, rfl⟩ := hp
         simp only [evalInst, Opt.Res.bind_eq_ok, Opt.Res.pure_eq_ok, Prod.mk.injEq] at hev
         obtain ⟨a, ha, rfl, rfl⟩ := hev
         obtain ⟨l, h, rfl, hl, hh⟩ := pairVal hV hop hx (get_ok ha)
-        obtain ⟨ρ0, hrun, hout⟩ := pat_bmaskc t l h
+        obtain ⟨ρ0, hrun, hout⟩ := pat_bmaskc t hti l h
         exact ⟨rfl, outs_plain (plain_iff.1 hpr), [V64 l, V64 h], ρ0, ⟨hl, hh, trivial⟩, hrun,
           outsOk_plain (plain_iff.1 hpr) hout⟩
       · cases hp
@@ -541,6 +543,8 @@ theorem pure_step {C : Ctx} (hG : Good C) {B : Block} (hB : B ∈ C.f.blocks) {s
     · rename_i xl xh hx
       split at hp
       · rename_i hpr
+        rw [Bool.and_eq_true] at hpr
+        obtain ⟨hti, hpr⟩ := hpr
         simp only [Option.some.injEq, Plan.pure.injEq] at hp
         obtain ⟨rfl, rfl, rfl⟩ := hp
         simp only [evalInst, Opt.Res.bind_eq_ok, Opt.Res.pure_eq_ok, Prod.mk.injEq] at hev
@@ -551,7 +555,7 @@ theorem pure_step {C : Ctx} (hG : Good C) {B : Block} (hB : B ∈ C.f.blocks) {s
           split at hu
           · rename_i hw; exact of_decide_eq_true hw
           · cases hu
-        obtain ⟨ρ0, hrun, hout⟩ := pat_ireduce t ht l h
+        obtain ⟨ρ0, hrun, hout⟩ := pat_ireduce t hti ht l h
         exact ⟨rfl, outs_plain (plain_iff.1 hpr), [V64 l], ρ0, ⟨hl, trivial⟩, hrun,
           outsOk_plain (plain_iff.1 hpr) hout⟩
       · cases hp
