@@ -470,25 +470,7 @@ theorem locsOf_length (s : Clif.Signature) : (locsOf s).length = s.params.length
   | error e => exact .inr rfl
   | ok r =>
     obtain ⟨locs, n⟩ := r
-    left
-    simp only
-    rw [sigArgLocs_eq] at h
-    cases hb : sigArgs s with
-    | error e => rw [hb] at h; cases h
-    | ok bytes =>
-      rw [hb] at h
-      simp only [bind, Except.bind] at h
-      have hl := sigParamBytes_length (s := s) hb
-      split at h
-      · split at h
-        · cases h
-        · rename_i hne
-          simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-          obtain ⟨rfl, -⟩ := h
-          simp only [bne_iff_ne, ne_eq, Decidable.not_not] at hne
-          simpa using hne
-      · simp only [pure, Except.pure, Except.ok.injEq] at h
-        rw [← hl, ← argLocs_length bytes, h]
+    exact .inl (sigArgLocs_shape h).1
 
 theorem filterMap_zip_length : ∀ (ls : List ArgLoc) (vs : List Clif.Val), ls.length = vs.length →
     ((ls.zip vs).filterMap fun q => match q.1 with | .reg _ => some q.2 | .stack _ => none).length =
@@ -3512,9 +3494,8 @@ theorem xCallsIndOk (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm
-      rw [locsOf_of_regs hb hb8] at hm
-      obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
-      simp [List.getElem?_zip_eq_some] at hi
+      obtain ⟨r, hr⟩ := (locsOf_small hb hb8).2 _ (List.of_mem_zip hm).1
+      cases hr
     obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
       L.progResult hL hκ ih hg hh (.inr (.inr ⟨hh, hdecl⟩)) himgF hroom hdead halign hargs hsav
         hmr hpl hinit hret

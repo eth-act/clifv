@@ -111,7 +111,7 @@ theorem ret_shape {p : Program} (hp : Data p) : LowerTermShapeOk p rule_lower_25
   intro f ctx hctx ti t data hrt hd hi cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
-  have kR := fun n (hn : 60 ≤ n) xs s v s' h => lower_return_ok hp (ctx := ctx) hc (n := n)
+  have kR := fun n (hn : 60 ≤ n) xs s v s' h => lower_return_ok hp (ctx := ctx) hc hctx.homeCls_int (n := n)
     (xs := xs) (s := s) (v := v) (s' := s') hn h
   cases t with
   | trap c =>

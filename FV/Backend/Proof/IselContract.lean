@@ -505,6 +505,15 @@ def MRStable (F : BitVec 64 → Prop) (MR : MemRelT) : Prop :=
 /-- The types of the E integer types `i8..i64` (`buildCtx` rejects `i128` values). -/
 def eCTys : List CTy := [.int 8, .int 16, .int 32, .int 64]
 
+/-- The value types of E are in X registers. -/
+theorem valClass_of_eCTys {t : CTy} (h : t ∈ eCTys) : t.valClass = .int := by
+  simp only [eCTys, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl | rfl | rfl <;> rfl
+
+/-- Every value type of `ctx` is an E type (`i8..i64`): `buildCtx` on a function of the
+lowering's integer scope (`Driver.ctxE_of`), `CtxInv.valTyE`. -/
+def CtxE (ctx : Ctx) : Prop := ∀ x t, ctx.valueType? x = some t → t ∈ eCTys
+
 /-- The address operand of a load or store (contract change #7), also of an atomic access. -/
 def memAddr? : Clif.Inst → Option Nat
   | .load _ _ _ p _ | .store _ _ _ _ p _ | .atomicLoad _ _ p | .atomicStore _ _ _ p
@@ -1049,6 +1058,37 @@ def LowerRulesCorrect (p : Program) : Prop :=
       indRootRule r = false → memRootRule r = false → LowerRuleOk isem MR env cp p r
 
 /-! ### Calls (contract change #5; stack-passed arguments: agent/stack-tls-proof) -/
+
+/-- A signature of subset E (`Compile.sigE`) has integer parameters and returns. -/
+theorem sigE_int {s : Clif.Signature} (h : Compile.sigE s = true) :
+    s.params.all (·.ty.isInt) = true ∧ s.returns.all (·.ty.isInt) = true := by
+  simp only [Compile.sigE, Compile.tyE, Bool.and_eq_true, List.all_eq_true] at h
+  exact ⟨List.all_eq_true.mpr fun p hp => (h.1 p hp).1,
+    List.all_eq_true.mpr fun p hp => (h.2 p hp).1⟩
+
+/-- A function of subset E has an integer signature. -/
+theorem functionE_sig_int {f : Clif.Function} (h : Compile.functionE f = true) :
+    f.sig.params.all (·.ty.isInt) = true ∧ f.sig.returns.all (·.ty.isInt) = true := by
+  simp only [Compile.functionE, Bool.and_eq_true] at h
+  exact sigE_int h.1.1.1
+
+theorem lookup_some_mem {β : Type} : ∀ {l : List (Nat × β)} {a : Nat} {b : β},
+    l.lookup a = some b → (a, b) ∈ l
+  | [], _, _, h => by simp [List.lookup] at h
+  | (k, v) :: l, a, b, h => by
+    by_cases hk : a = k
+    · subst hk
+      simp [List.lookup] at h
+      simp [h]
+    · simp only [List.lookup, show (a == k) = false from by simpa using hk] at h
+      exact List.mem_cons_of_mem _ (lookup_some_mem h)
+
+/-- The externs of a function of subset E have integer signatures. -/
+theorem functionE_extern_int {f : Clif.Function} (h : Compile.functionE f = true)
+    {fn : Clif.FnRef} {e : Clif.ExtFunc} (he : f.extern? fn = some e) :
+    e.sig.params.all (·.ty.isInt) = true ∧ e.sig.returns.all (·.ty.isInt) = true := by
+  simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at h
+  exact sigE_int (h.1.2 (fn, e) (lookup_some_mem he))
 
 /-- The byte sizes of a signature's parameters (`sigArgs`) are their types' sizes. -/
 theorem sigArgs_eq_map : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},

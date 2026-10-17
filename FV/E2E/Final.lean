@@ -316,13 +316,14 @@ theorem backend_correct_final_ex {p : Clif.Program} {f : Clif.Function} {k : Nat
     (fun _ => memRefines_csem _ _ X hslot hsym) (outgoing_le_intBaseA hc)
     hent hres hbe hargs (stackArgsAvoid_frameWA hc hres hent hargs) hcs hrel htr fuel
 
-/-- **Specialisation**: for a signature with at most 8 parameters (all passed in registers),
-`ArgsIn` is the former premise "argument `i` in `x (argIdx sig i)`" (low bits). -/
+/-- **Specialisation**: for a signature with at most 8 integer parameters (all passed in X
+registers), `ArgsIn` is the former premise "argument `i` in `x (argIdx sig i)`" (low bits). -/
 theorem argsIn_iff_of_regs {sig : Clif.Signature} {bytes : List Nat}
+    (hi : sig.params.all (·.ty.isInt) = true)
     (hb : sigParamBytes sig = .ok bytes) (h8 : bytes.length ≤ 8) {args : List Clif.Val}
     {s : Arm.ArmState} (hl : args.length = sig.params.length) :
     ArgsIn sig args s ↔ ∀ i v, args[i]? = some v → XHolds v (xreg (argIdx sig i) s) := by
-  rw [ArgsIn, locsOf_of_regs hb h8]
+  rw [ArgsIn, locsOf_of_regs hi hb h8]
   have hlen : (abiArgIdx sig.params 0).length = args.length := by rw [abiArgIdx_length, hl]
   constructor
   · intro h i v hv
