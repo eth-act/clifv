@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleSkelEmbed
+import FV.Opt.Proof.RuleIntRetry
 
 /-!
 # Branch conditions made from leading/trailing zero counts
@@ -12,7 +13,8 @@ the next constructor.  In particular the i128 constant constructors make an
 i64 constant followed by `uextend`; repeatedly substituting the resulting
 state into both projections of the next `make` otherwise duplicates the
 entire evaluation prefix.  Local definitions retain the ordinary `opt_den`
-proof and do not add any assumptions about the graph.
+proof and do not add any assumptions about the graph. The made constants' type is split on
+`isInt` on demand (`RuleIntRetry.lean`): at a float type `iconst_u` has no rule.
 -/
 
 namespace Opt.Proof
@@ -125,7 +127,7 @@ macro "skel_count_share " h:ident : tactic =>
   `(tactic| repeat skel_count_share_one $h)
 
 macro "skel_count_norm " h:ident : tactic => `(tactic| (
-  opt_norm $h
+  opt_norm $h [tyInt_ofClif_notInt, panics_throw_bind, except_throw_bind, toExt_throw]
   skel_count_share $h))
 
 macro "skel_count_eval " h:ident : tactic => `(tactic| (
@@ -171,6 +173,7 @@ set_option hygiene false in
 macro "skel_count_rhs" : tactic => `(tactic| (
   skel_count_eval hev
   repeat' (split at hev <;> try skel_count_norm hev)
+  all_goals (try (simp only [reduceCtorEq] at hev; done))
   all_goals (try simp only [Option.map_eq_some_iff, Option.map_eq_none_iff] at *)
   opt_destruct
   all_goals subst_vars
@@ -198,7 +201,7 @@ macro "skel_count_rule " r:ident : tactic => `(tactic| (
   rule_lhs hG
   all_goals rule_no_iflets
   all_goals opt_split_i128
-  all_goals skel_count_rhs
+  all_goals opt_int_retry skel_count_rhs
   all_goals skel_count_good
   all_goals skel_count_finish))
 
