@@ -772,3 +772,324 @@ theorem dce_coreOk : CoreOk (dce g).1 := by
 end DceCheck
 
 end Opt
+
+namespace Opt
+
+open Clif
+
+/-! ## Generic facts on checked functions -/
+
+theorem ancB_refl (idom : Array (Option Nat)) : ∀ fuel a, ancB idom fuel a a = true := by
+  intro fuel a; cases fuel <;> simp [ancB]
+
+/-- A definition site is unique on a function whose values are defined once. -/
+theorem site_unique {g : Function} (hu : UniqueDefs g) {v : ValueId} {s1 s2 : Nat × Nat}
+    (h1 : (v, s1) ∈ defSites g) (h2 : (v, s2) ∈ defSites g) : s1 = s2 := by
+  have e1 := (defMap_get_iff hu v s1).2 h1
+  have e2 := (defMap_get_iff hu v s2).2 h2
+  rw [e1] at e2; cases e2; rfl
+
+/-- `checkCore`'s type of a defined value. -/
+theorem tm_of_defList {f : Function} (hn : ((defList f).map (·.1)).Nodup) {e : DefEv}
+    (he : e ∈ defList f) : (wfData f (coreInfo f)).tm e.1 = some e.2.1 := by
+  simp only [wfData, coreInfo, Std.HashMap.get?_eq_getElem?]
+  exact ((defsState_get f hn).1 e he).1
+
+/-- `checkCore`'s types of the results of a statement. -/
+theorem tm_result {f : Function} (hn : ((defList f).map (·.1)).Nodup) {i : Nat} {b : Block}
+    (hb : f.blocks[i]? = some b) {st : Stmt} (hst : st ∈ b.body) {ts : List Ty}
+    (hts : st.inst.resultTypes (sigOf f) (fun _ => none) = some ts)
+    (hlen : ts.length = st.results.length) {n : Nat} {r : ValueId} (hr : st.results[n]? = some r) :
+    (wfData f (coreInfo f)).tm r = ts[n]? := by
+  have hn' : n < ts.length := by rw [hlen]; exact (List.getElem?_eq_some_iff.1 hr).1
+  have he : (r, ts[n], i) ∈ defList f := by
+    rw [mem_defList]
+    refine ⟨i, b, hb, .inr ⟨st, hst, ?_⟩⟩
+    unfold stmtEvs stmtTys
+    rw [show st.inst.resultTypes (fun r => (f.externs.lookup r).map (·.sig)) (fun _ => none) = some ts
+      from hts]
+    exact List.mem_map.2 ⟨(r, ts[n]),
+      List.mem_iff_getElem?.2 ⟨n, by simp [List.getElem?_zip_eq_some, hr]⟩, rfl⟩
+  rw [tm_of_defList hn he, List.getElem?_eq_getElem hn']
+
+theorem tm_param {f : Function} (hn : ((defList f).map (·.1)).Nodup) {i : Nat} {b : Block}
+    (hb : f.blocks[i]? = some b) {p : ValueId × Ty} (hp : p ∈ b.params) :
+    (wfData f (coreInfo f)).tm p.1 = some p.2 :=
+  tm_of_defList hn (e := (p.1, p.2, i)) (mem_defList.2 ⟨i, b, hb, .inl ⟨p, hp, rfl⟩⟩)
+
+theorem fidx_length {α : Type} (p : α → Bool) (l : List α) : fidx p l l.length = (l.filter p).length := by
+  simp [fidx]
+
+theorem renStmt_id (s : Stmt) : renStmt id s = s := by
+  cases s; simp [renStmt, mapOperands_id]
+
+/-- Alignment of a body with a filtered copy (`σ = id`): kept statements match, the others must be
+deletable. -/
+theorem align_filter (c : EditCtx) (hσ : c.σ = id) (p : Stmt → Bool) :
+    ∀ (l : List Stmt), (∀ s ∈ l, p s = false → ∀ k, c.delOk s k = true) →
+      ∀ k, c.align l (l.filter p) k = true
+  | [], _, k => by simp [EditCtx.align]
+  | s :: l, hd, k => by
+    have ih := align_filter c hσ p l (fun s' hs' => hd s' (List.mem_cons_of_mem _ hs'))
+    have hkeep : ∀ t, c.keepOk s t = true ↔ t = s := by
+      intro t; simp [EditCtx.keepOk, hσ, renStmt_id]
+    by_cases hp : p s = true
+    · simp only [List.filter_cons, hp, ite_true]
+      rw [EditCtx.align]
+      simp only [(hkeep s).2 rfl, ite_true]
+      exact ih _
+    · have hpf : p s = false := by simpa using hp
+      simp only [List.filter_cons, hpf, Bool.false_eq_true, ite_false]
+      have hdel := hd s (List.mem_cons_self ..) hpf k
+      cases hf : l.filter p with
+      | nil => rw [EditCtx.align, hdel, Bool.true_and, ← hf]; exact ih k
+      | cons t ts =>
+        have ht : p t = true := (List.mem_filter.1 (hf ▸ List.mem_cons_self ..)).2
+        have hne : c.keepOk s t = false := by
+          cases hk : c.keepOk s t
+          · rfl
+          · rw [(hkeep t).1 hk, hpf] at ht; cases ht
+        rw [EditCtx.align]
+        simp only [hne, Bool.false_eq_true, ite_false, hdel, ite_true]
+        rw [← hf]
+        exact ih k
+
+/-! ## DCE: definition sites of the output -/
+
+theorem dce_mem_defSites {g : Function} {v : ValueId} {s : Nat × Nat} :
+    (v, s) ∈ defSites (dce g).1 ↔ ∃ i b, g.blocks[i]? = some b ∧
+      ((∃ p ∈ b.params, p.1 = v ∧ s = (i, 0)) ∨
+        ∃ j st, b.body[j]? = some st ∧ dceKeep (dceLive g) st = true ∧ v ∈ st.results ∧
+          s = (i, fidx (dceKeep (dceLive g)) b.body j + 1)) := by
+  rw [mem_defSites]
+  simp only [dce_get, Option.map_eq_some_iff]
+  constructor
+  · rintro ⟨i, b', ⟨b, hb, rfl⟩, h | ⟨j', st, hst, hv, rfl⟩⟩
+    · exact ⟨i, b, hb, .inl h⟩
+    · obtain ⟨j, hj, hk, rfl⟩ := exists_fidx _ b.body j' st hst
+      exact ⟨i, b, hb, .inr ⟨j, st, hj, hk, hv, rfl⟩⟩
+  · rintro ⟨i, b, hb, h | ⟨j, st, hj, hk, hv, rfl⟩⟩
+    · exact ⟨i, _, ⟨b, hb, rfl⟩, .inl h⟩
+    · exact ⟨i, _, ⟨b, hb, rfl⟩, .inr ⟨_, st, getElem?_filter_fidx _ b.body j st hj hk, hv, rfl⟩⟩
+
+/-- The position of a definition site of block `b` after filtering its body with `p`. -/
+def fpos (p : Stmt → Bool) (b : Block) : Nat → Nat
+  | 0 => 0
+  | j + 1 => fidx p b.body j + 1
+
+section DceWf
+
+variable {g : Function} {info : Info} (hc : Checked g info)
+include hc
+
+theorem dce_nodup : ((defList (dce g).1).map (·.1)).Nodup :=
+  (dce_defList_sublist g |>.map (·.1)).nodup hc.nodup
+
+theorem dce_unique : UniqueDefs (dce g).1 := by
+  unfold UniqueDefs
+  rw [defSites_map_fst (dce_arity g hc.arity)]
+  exact dce_nodup hc
+
+omit hc in
+theorem dce_live_site {v : ValueId} {d t : Nat} (hs : (v, (d, t)) ∈ defSites g)
+    (hl : (dceLive g).contains v = true) :
+    ∃ b, g.blocks[d]? = some b ∧ (v, (d, fpos (dceKeep (dceLive g)) b t)) ∈ defSites (dce g).1 ∧
+      ∀ j0, t = j0 + 1 → ∃ st0, b.body[j0]? = some st0 ∧ dceKeep (dceLive g) st0 = true := by
+  obtain ⟨i, b, hb, ⟨p, hp, rfl, he⟩ | ⟨j, st, hj, hv, he⟩⟩ := mem_defSites.1 hs
+  · simp only [Prod.mk.injEq] at he; obtain ⟨rfl, rfl⟩ := he
+    exact ⟨b, hb, dce_mem_defSites.2 ⟨d, b, hb, .inl ⟨p, hp, rfl, rfl⟩⟩, fun j0 h => by cases h⟩
+  · simp only [Prod.mk.injEq] at he; obtain ⟨rfl, rfl⟩ := he
+    have hk : dceKeep (dceLive g) st = true := by
+      simp only [dceKeep, Bool.or_eq_true, Bool.not_eq_true', List.any_eq_true]
+      exact .inr ⟨v, hv, hl⟩
+    refine ⟨b, hb, dce_mem_defSites.2 ⟨d, b, hb, .inr ⟨j, st, hj, hk, hv, rfl⟩⟩, fun j0 h => ?_⟩
+    cases h; exact ⟨st, hj, hk⟩
+
+theorem dce_idom : (wfData (dce g).1 (coreInfo (dce g).1)).idom = (wfData g info).idom := by
+  simp [wfData, coreInfo, dce_build, hc.info_eq]
+
+theorem dce_rank : (wfData (dce g).1 (coreInfo (dce g).1)).rank = (wfData g info).rank := by
+  simp [wfData, coreInfo, dce_build, hc.info_eq]
+
+theorem dce_index : (wfData (dce g).1 (coreInfo (dce g).1)).index = (wfData g info).index := by
+  simp [wfData, coreInfo, dce_build, hc.info_eq]
+
+/-- Availability moves to the filtered position. -/
+theorem dce_avail {i : Nat} {b : Block} (hb : g.blocks[i]? = some b) {j : Nat} {v : ValueId}
+    (hl : (dceLive g).contains v = true) (hA : Avail (wfData g info) i j v) :
+    Avail (wfData (dce g).1 (coreInfo (dce g).1)) i (fidx (dceKeep (dceLive g)) b.body j) v := by
+  obtain ⟨d, t, hd, h⟩ := hA
+  have hs := hc.wf.sitesRev v (d, t) hd
+  obtain ⟨bd, hbd, hs', hk⟩ := dce_live_site hs hl
+  refine ⟨d, fpos (dceKeep (dceLive g)) bd t, (defMap_get_iff (dce_unique hc) v _).2 hs', ?_⟩
+  rcases h with ⟨rfl, ht⟩ | ⟨hne, ha⟩
+  · left
+    refine ⟨rfl, ?_⟩
+    rw [hb] at hbd; cases hbd
+    cases t with
+    | zero => simp [fpos]
+    | succ j0 =>
+      obtain ⟨st0, h0, hk0⟩ := hk j0 rfl
+      exact fidx_lt _ b.body (by omega) h0 hk0
+  · right
+    exact ⟨hne, by rw [dce_idom hc]; exact ha⟩
+
+/-- **The output of DCE satisfies the certificate facts** (over its own `checkCore` data). -/
+theorem dce_wf : Wf (dce g).1 (wfData (dce g).1 (coreInfo (dce g).1)) := by
+  have hW := hc.wf
+  have hn' := dce_nodup hc
+  refine { ids := ?_, sites := ?_, sitesRev := ?_, root := ?_, rank := ?_, params := ?_,
+           uses := ?_, results := ?_, pure := ?_, termUses := ?_, edges := ?_ }
+  · intro i b' hb'
+    rw [dce_get, Option.map_eq_some_iff] at hb'
+    obtain ⟨b, hb, rfl⟩ := hb'
+    rw [dce_index hc]; exact hW.ids i b hb
+  · exact fun v s hs => (defMap_get_iff (dce_unique hc) v s).2 hs
+  · exact fun v s hs => (defMap_get_iff (dce_unique hc) v s).1 hs
+  · rw [dce_idom hc]; exact hW.root
+  · rw [dce_idom hc, dce_rank hc]; exact hW.rank
+  · exact fun i b hb p hp => tm_param hn' hb hp
+  · intro i b' hb' j' st hst v hv
+    rw [dce_get, Option.map_eq_some_iff] at hb'
+    obtain ⟨b, hb, rfl⟩ := hb'
+    obtain ⟨j, hj, hk, rfl⟩ := exists_fidx _ b.body j' st hst
+    exact dce_avail hc hb (dce_ops_live hc.unique (List.mem_of_getElem? hb) (List.mem_of_getElem? hj)
+      hk hv) (hW.uses i b hb j st hj v hv)
+  · intro i b' hb' j' st hst
+    have hb'' := hb'
+    rw [dce_get, Option.map_eq_some_iff] at hb'
+    obtain ⟨b, hb, rfl⟩ := hb'
+    obtain ⟨j, hj, hk, rfl⟩ := exists_fidx _ b.body j' st hst
+    obtain ⟨ts, hts, hlen, -⟩ := hW.results i b hb j st hj
+    have hts' : st.inst.resultTypes (sigOf (dce g).1) (fun _ => none) = some ts := by
+      rw [show sigOf (dce g).1 = sigOf g by rw [dce_eq]; rfl]; exact hts
+    exact ⟨ts, hts', hlen, fun n r hr => tm_result hn' hb'' (List.mem_of_getElem? hst) hts' hlen hr⟩
+  · intro i b' hb' j' st hst hp
+    rw [dce_get, Option.map_eq_some_iff] at hb'
+    obtain ⟨b, hb, rfl⟩ := hb'
+    obtain ⟨j, hj, hk, rfl⟩ := exists_fidx _ b.body j' st hst
+    have hbm := List.mem_of_getElem? hb
+    have hsm := List.mem_of_getElem? hj
+    rw [← hW.pure i b hb j st hj hp]
+    apply pureTyped_congr _ (by rw [dce_eq]) (by rw [dce_eq])
+    intro x hx
+    simp only [wfData, coreInfo, hc.info_eq, Std.HashMap.get?_eq_getElem?]
+    exact (dce_lookup hc (dce_ops_live hc.unique hbm hsm hk hx) (hc.op_defined hb hsm hx)).1
+  · intro i b' hb' v hv
+    rw [dce_get, Option.map_eq_some_iff] at hb'
+    obtain ⟨b, hb, rfl⟩ := hb'
+    have := dce_avail hc hb (dce_term_live g (List.mem_of_getElem? hb) hv) (hW.termUses i b hb v hv)
+    rw [fidx_length] at this
+    exact this
+  · intro i b' hb' id hid
+    rw [dce_get, Option.map_eq_some_iff] at hb'
+    obtain ⟨b, hb, rfl⟩ := hb'
+    obtain ⟨j, b0, hj, hb0, hid0, hanc⟩ := hW.edges i b hb id hid
+    refine ⟨j, fltB (dceLive g) b0, by rw [dce_index hc]; exact hj, by rw [dce_get, hb0]; rfl,
+      hid0, ?_⟩
+    rw [dce_idom hc]; exact hanc
+
+/-- **`check` accepts DCE's output.** -/
+theorem dce_check : check (dce g).1 = .ok (coreInfo (dce g).1) := by
+  have hw : wfCert (dce g).1 (coreInfo (dce g).1).cfg (coreInfo (dce g).1).types = true :=
+    wfCert_complete (dce_wf hc)
+  exact (check_ok_iff (dce g).1 (coreInfo (dce g).1)).2 ⟨dce_coreOk hc, rfl, hw⟩
+
+/-- A deleted statement can be deleted (its results are not defined in the output). -/
+theorem dce_delOk {i : Nat} {b : Block} (hb : g.blocks[i]? = some b) {s : Stmt} (hs : s ∈ b.body)
+    (hk : dceKeep (dceLive g) s = false) (gidom : Array (Option Nat)) (gblocks : Array Block)
+    (k : Nat) :
+    EditCtx.delOk { σ := id, gdm := (defMap (dce g).1).get?, gidom, gblocks, bi := i } s k = true := by
+  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 hs
+  simp only [dceKeep, Bool.or_eq_false_iff, Bool.not_eq_false', List.any_eq_false] at hk
+  simp only [EditCtx.delOk, hk.1, Bool.true_and, Bool.or_eq_true, List.all_eq_true, id,
+    Option.isNone_iff_eq_none]
+  left
+  intro r hr
+  cases hg : (defMap (dce g).1).get? r with
+  | none => rfl
+  | some s' =>
+    exfalso
+    have hs' := (defMap_get_iff (dce_unique hc) r s').1 hg
+    have hsite : (r, (i, j + 1)) ∈ defSites g := mem_defSites.2 ⟨i, b, hb, .inr ⟨j, s, hj, hr, rfl⟩⟩
+    obtain ⟨i', b', hb', ⟨p, hp, hpr, rfl⟩ | ⟨j', st, hj', hk', hr', rfl⟩⟩ := dce_mem_defSites.1 hs'
+    · have := site_unique hc.unique hsite (mem_defSites.2 ⟨i', b', hb', .inl ⟨p, hp, hpr, rfl⟩⟩)
+      simp at this
+    · have := site_unique hc.unique hsite (mem_defSites.2 ⟨i', b', hb', .inr ⟨j', st, hj', hr', rfl⟩⟩)
+      simp only [Prod.mk.injEq, Nat.add_right_cancel_iff] at this
+      obtain ⟨rfl, rfl⟩ := this
+      rw [hb] at hb'; cases hb'
+      rw [hj] at hj'; cases hj'
+      simp only [dceKeep, hk.1, Bool.not_true, Bool.false_or, List.any_eq_true] at hk'
+      obtain ⟨x, hx, hxl⟩ := hk'
+      exact absurd hxl (by simpa using hk.2 x hx)
+
+/-- **The edit validator accepts DCE's output** (renaming `id`). -/
+theorem dce_editOk : editOk id g (dce g).1 info (coreInfo (dce g).1) = true := by
+  have hidom : (coreInfo (dce g).1).cfg.idom = info.cfg.idom := dce_idom hc
+  simp only [editOk, Bool.and_eq_true, List.all_eq_true, beq_iff_eq]
+  refine ⟨⟨⟨⟨?_, hidom⟩, by rw [dce_blocks, List.length_map]⟩, ?_⟩, ?_⟩
+  · simp [sameHeader, dce_eq]
+  · rintro ⟨⟨b, b'⟩, i⟩ hx
+    have hx' := List.mem_zipIdx_iff_getElem?.1 hx
+    simp only [List.getElem?_zip_eq_some] at hx'
+    obtain ⟨hb, hb'⟩ := hx'
+    rw [dce_get, hb] at hb'
+    simp only [Option.map_some, Option.some.injEq] at hb'
+    subst hb'
+    simp only [fltB, id, mapTerm_id, implies_true, and_true, true_and]
+    exact align_filter _ rfl _ b.body
+      (fun s hs hk k => dce_delOk hc hb hs hk _ _ k) 0
+  · rintro ⟨v, d, t⟩ hv
+    rw [Std.HashMap.mem_toList_iff_getElem?_eq_some] at hv
+    have hs : (v, (d, t)) ∈ defSites g := (defMap_get_iff hc.unique v _).1
+      (by rw [Std.HashMap.get?_eq_getElem?]; exact hv)
+    simp only [id]
+    split
+    · rename_i d' t' hg
+      have hs' := (defMap_get_iff (dce_unique hc) v _).1 hg
+      obtain ⟨i', b', hb', ⟨p, hp, hpr, he⟩ | ⟨j', st, hj', -, hr', he⟩⟩ := dce_mem_defSites.1 hs'
+      · simp only [Prod.mk.injEq] at he; obtain ⟨rfl, rfl⟩ := he
+        have := site_unique hc.unique hs (mem_defSites.2 ⟨d', b', hb', .inl ⟨p, hp, hpr, rfl⟩⟩)
+        simp only [Prod.mk.injEq] at this; rw [this.1]; exact ancB_refl _ _ _
+      · simp only [Prod.mk.injEq] at he; obtain ⟨rfl, rfl⟩ := he
+        have := site_unique hc.unique hs (mem_defSites.2 ⟨d', b', hb', .inr ⟨j', st, hj', hr', rfl⟩⟩)
+        simp only [Prod.mk.injEq] at this; rw [this.1]; exact ancB_refl _ _ _
+    · rfl
+
+end DceWf
+
+/-- **Completeness of the DCE stage**: on a well-formed function, DCE's output passes `check` and
+the edit validator, so `Opt.optimizeReport` never stops at a DCE stage. -/
+theorem dce_complete {g : Function} {info : Info} (h : check g = .ok info) :
+    check (dce g).1 = .ok (coreInfo (dce g).1) ∧
+      editOk id g (dce g).1 info (coreInfo (dce g).1) = true :=
+  ⟨dce_check (checked_of_check h), dce_editOk (checked_of_check h)⟩
+
+end Opt
+
+namespace Opt.CompleteDceWitness
+
+open Clif
+
+/-- `v0` is dead; `v1` is returned. -/
+def fn : Function where
+  name := "w"
+  sig := {}
+  blocks := [{ id := 0, body := [{ results := [0], inst := .iconst .i32 1 },
+    { results := [1], inst := .iconst .i32 2 }], term := .ret [1] }]
+
+theorem checks : (match check fn with | .ok _ => true | .error _ => false) = true := by native_decide
+
+/-- Non-vacuity of `dce_complete`: `fn` is well-formed, DCE removes `v0`, and the stage is
+accepted. -/
+theorem witness : (dce fn).2 = 1 ∧ ∃ i i', check fn = .ok i ∧ check (dce fn).1 = .ok i' ∧
+    editOk id fn (dce fn).1 i i' = true := by
+  refine ⟨by native_decide, ?_⟩
+  have h := checks
+  split at h
+  · rename_i i hi
+    exact ⟨i, _, hi, (dce_complete hi).1, (dce_complete hi).2⟩
+  · cases h
+
+end Opt.CompleteDceWitness
