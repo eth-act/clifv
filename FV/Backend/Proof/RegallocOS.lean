@@ -197,4 +197,18 @@ theorem os_vecDupImm (imm : ASIMDMovModImm) (inv : Bool) (sz : VectorSize) (d : 
     OperandsSound F (execMInst ctx env) (csem F ctx X) (.vecDupImm (.vreg d .float) imm inv sz) :=
   os_of_corr rfl _ (by assign_tac) h rfl rfl (corr_vecDupImm F ctx env imm inv sz d)
 
+theorem os_fpuRRR (op : FPUOp2) (sz : ScalarSize) (d n m : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X)
+      (.fpuRRR op sz (.vreg d .float) (.vreg n .float) (.vreg m .float)) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuRRR F ctx env op sz d n m)
+
+theorem os_fpuRR (op : FPUOp1) (sz : ScalarSize) (d n : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X)
+      (.fpuRR op sz (.vreg d .float) (.vreg n .float)) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuRR F ctx env op sz d n)
+
+theorem os_fpuCmp (sz : ScalarSize) (n m : Nat) :
+    OperandsSound F (execMInst ctx env) (csem F ctx X) (.fpuCmp sz (.vreg n .float) (.vreg m .float)) :=
+  os_of_corr rfl _ (by assign_tac) (by fo_tac) rfl rfl (corr_fpuCmp F ctx env sz n m)
+
 end Backend.Proof

@@ -288,6 +288,41 @@ def movKVal {n : Nat} (a : BitVec n) (imm : MoveWideConst) : BitVec n :=
   (a &&& ~~~(BitVec.ofNat n 0xFFFF <<< (16 * imm.shift))) |||
     (BitVec.ofNat n imm.bits <<< (16 * imm.shift))
 
+/-- S11f: the binary scalar FP operations of `fpuRRR` on format `f` (the Arm model's
+`exec_fp_data_processing_two_source` with `FPCR = 0`: the shared IEEE core, round to nearest
+even). -/
+@[simp] def fpu2Val (op : FPUOp2) (f : IEEE.Fmt) (a b : IEEE.Bits f) : IEEE.Bits f :=
+  match op with
+  | .add => IEEE.add f .rne a b
+  | .sub => IEEE.sub f .rne a b
+  | .mul => IEEE.mul f .rne a b
+  | .div => IEEE.div f .rne a b
+  | .max => IEEE.max f .rne a b
+  | .min => IEEE.min f .rne a b
+
+/-- S11f: the unary scalar FP operations of `fpuRR` on a 128-bit register value (the Arm
+model's `exec_fp_data_processing_one_source`): `fabs`/`fneg`/`fsqrt` at single or double
+precision, `fcvt` single → double (`size` 32) and double → single (`size` 64); the result
+zero-extended into the register (`write_sfp`). -/
+@[simp] def fpu1Val (op : FPUOp1) (sz : ScalarSize) (a : CV) : Option CV :=
+  match op, sz with
+  | .abs, .size32 => some ((IEEE.abs .b32 (a.setWidth 32)).setWidth 128)
+  | .abs, .size64 => some ((IEEE.abs .b64 (a.setWidth 64)).setWidth 128)
+  | .neg, .size32 => some ((IEEE.neg .b32 (a.setWidth 32)).setWidth 128)
+  | .neg, .size64 => some ((IEEE.neg .b64 (a.setWidth 64)).setWidth 128)
+  | .sqrt, .size32 => some ((IEEE.sqrt .b32 .rne (a.setWidth 32)).setWidth 128)
+  | .sqrt, .size64 => some ((IEEE.sqrt .b64 .rne (a.setWidth 64)).setWidth 128)
+  | .cvt32To64, .size32 => some ((IEEE.convert .b32 .b64 .rne (a.setWidth 32)).setWidth 128)
+  | .cvt64To32, .size64 => some ((IEEE.convert .b64 .b32 .rne (a.setWidth 64)).setWidth 128)
+  | _, _ => none
+
+/-- S11f: the flags `FCMP` writes (`FPCompare`: unordered `0011`, equal `0110`, less than
+`1000`, greater than `0010`; the Arm model's `exec_fp_compare`). -/
+def fcmpFlags (c : IEEE.Cmp) : Arm.PState :=
+  let nzcv := Arm.DPSFP.fpCompareNZCV c
+  Arm.make_pstate (Arm.BitVec.lsb nzcv 3) (Arm.BitVec.lsb nzcv 2) (Arm.BitVec.lsb nzcv 1)
+    (Arm.BitVec.lsb nzcv 0)
+
 /-- **Value-level meaning of the instruction forms the proven rules emit**, in terms of the
 Arm model's operations (`AddWithCarry`, `write_pstate`, `ConditionHolds`): the def values
 (in operand order) and the world after. `none`: form not specified (yet). A 32-bit operation
@@ -491,6 +526,19 @@ def ispec : Sem := fun i uses w =>
     if imm.shift = 0 ∧ imm.shiftOnes = false ∧ imm.is64 = false ∧ sz ≠ .size64x2 then
       some (defOut rd (moviVal sz imm.imm), w, .next)
     else none
+  -- S11f: scalar FP arithmetic and comparison (the shared IEEE core, `FPCR = 0`); a scalar FP
+  -- result zeroes the register above it (`write_sfp`)
+  | .fpuRRR op .size32 rd _ _, [a, b] =>
+    some (defOut rd ((fpu2Val op .b32 (a.setWidth 32) (b.setWidth 32)).setWidth 128), w, .next)
+  | .fpuRRR op .size64 rd _ _, [a, b] =>
+    some (defOut rd ((fpu2Val op .b64 (a.setWidth 64) (b.setWidth 64)).setWidth 128), w, .next)
+  | .fpuRR op sz rd _, [a] => (fpu1Val op sz a).map fun r => (defOut rd r, w, .next)
+  | .fpuCmp .size32 _ _, [a, b] =>
+    some ([], Arm.write_pstate (fcmpFlags (IEEE.compare .b32 (a.setWidth 32) (b.setWidth 32))) w,
+      .next)
+  | .fpuCmp .size64 _ _, [a, b] =>
+    some ([], Arm.write_pstate (fcmpFlags (IEEE.compare .b64 (a.setWidth 64) (b.setWidth 64))) w,
+      .next)
   | _, _ => none
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
@@ -565,10 +613,11 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
     info.clif = some inst → memAddr? inst = some x → ctx.valueType? x = some (.int 64)
 
 /-- Instructions the rules may look through (`def_inst`): their value is a function of their
-operands (and the frame's slot bases). -/
+operands (and the frame's slot bases). The float operations (S11f) are memory-independent too
+(`fcmp` is looked through by `is_nonzero_cmp`). -/
 def pureInst : Clif.Inst → Bool
   | .iconst .. | .unary .. | .binary .. | .icmp .. | .extend .. | .ireduce .. | .select ..
-  | .stackAddr .. => true
+  | .stackAddr .. | .float .. => true
   | _ => false
 
 /-- The frame is typed as the context says: a defined value's CLIF type is its `valueType?`
