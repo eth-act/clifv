@@ -59,6 +59,15 @@ theorem mspec_world {sb : Nat} {i : MInst} {uses : List CV} {w : Arm.ArmState} {
       rintro ⟨-, rfl, -⟩
       exact ⟨Arm.r_of_write_mem_bytes, Arm.write_mem_bytes_program _ _⟩
     · simp
+  · split
+    · simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq]
+      rintro ⟨_, -, -, rfl, -⟩; exact ⟨rfl, rfl⟩
+    · simp
+  · split
+    · simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq]
+      rintro ⟨_, -, -, rfl, -⟩
+      exact ⟨Arm.r_of_write_mem_bytes, Arm.write_mem_bytes_program _ _⟩
+    · simp
   · exact ispec_world
 
 /-- An LL/SC loop's run ends without error, with the program unchanged, falling through. -/

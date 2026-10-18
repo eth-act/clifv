@@ -15,9 +15,15 @@ satisfying `Rd`); it is then `csem`, the Arm run of the canonical allocation
 `fspec` (as `mspec` for the integer accesses) elsewhere. Every other form is `csemG`'s.
 
 `csemGF` satisfies the three premises of `MemRulesCorrectRT` (`refines_csemGF`,
-`memRefinesR_csemGF`, `memRefinesFP_csemGF`): they are not vacuous. Wiring `csemGF` into the
-lockstep and the end-to-end theorem (the float accesses of two runs agree outside `Z`) is part
-of the float end-to-end work (S11e5+), not of this file.
+`memRefinesR_csemGF`, `memRefinesFP_csemGF`): they are not vacuous.
+
+**Bridge and lockstep (S11e5, Stage C slice 4).** `csem`'s specification fallback `mspec`
+covers the float accesses as `fspec` states them (`fspec_mspec`), so `csem` itself refines them
+(`csem_fpuLoad`/`csem_fpuStore`, `memRefinesFP_csem`), `csemGF` is a sub-semantics of `csem`
+(`csemGF_sub`) extending `csemG` (`csemG_csemGF`), with `csemG`'s pinned call contracts
+(`callsRefineP_csemGF`, `indCallsRefineP_csemGF`), and two `csemGF` runs of one instruction on
+worlds that agree outside `Z` go in lockstep (`csemGF_lockstep2`, the float accesses' reads
+guarded by `¬ Z`).
 -/
 
 namespace Backend.Proof
@@ -316,5 +322,202 @@ theorem memRefinesFP_csemGF {sb : Nat} (hsb : ctx.slotBase = sb) :
       rw [csem_straight rfl, if_pos hc]
       exact straight_fpuStore F ctx sz hsz d am fl v uses w a ha hav hc.2.1 hc.2.2
     · exact ⟨_, by simp [fspec, hsz, ha], SameWorld.refl F _⟩
+
+
+/-! ## The float accesses of `csem` (S11e5, Stage C slice 4) -/
+
+/-- `csem`'s specification fallback states the float accesses as `fspec` does. -/
+theorem fspec_mspec {sb : Nat} {i : MInst} {us : List CV} {w : Arm.ArmState}
+    {r : List CV × Arm.ArmState × Ctl} (h : fspec sb i us w = some r) : mspec sb i us w = some r := by
+  unfold fspec at h
+  split at h
+  · exact h
+  · exact h
+  · cases h
+
+/-- Where `GuardFP` holds, `fspec` is `mspec`. -/
+theorem fspec_eq_mspec {sb : Nat} {i : MInst} {us : List CV} {w : Arm.ArmState}
+    (hg : GuardFP F Rd sb i us w) : fspec sb i us w = mspec sb i us w := by
+  unfold GuardFP at hg
+  split at hg
+  · rfl
+  · rfl
+  · exact hg.elim
+
+/-- **A float load of `csem`** through an addressing mode whose access avoids `F` (any world). -/
+theorem csem_fpuLoad (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (sz : ScalarSize)
+    (hsz : sz = .size32 ∨ sz = .size64) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (us : List CV)
+    (w : Arm.ArmState) (a : BitVec 64) (ha : amodeAddr ctx.slotBase am sz.bytes us w = some a)
+    (hav : Avoids F sz.bytes a) :
+    ∃ w', csem F ctx X (.fpuLoad sz (.vreg d .float) am fl) us w =
+      some ([(Arm.read_mem_bytes sz.bytes a w).setWidth 128], w', .next) ∧ SameWorld F w' w := by
+  rw [csem_straight rfl]
+  split
+  · rename_i hc
+    exact straight_fpuLoad F ctx sz hsz d am fl us w a ha hav hc.2.1 hc.2.2
+  · exact ⟨w, by simp [mspec, hsz, ha], SameWorld.refl F w⟩
+
+/-- **A float store of `csem`** through an addressing mode whose access avoids `F` (any world). -/
+theorem csem_fpuStore (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (sz : ScalarSize)
+    (hsz : sz = .size32 ∨ sz = .size64) (d : Nat) (am : AMode) (fl : Clif.MemFlags) (v : CV)
+    (us : List CV) (w : Arm.ArmState) (a : BitVec 64)
+    (ha : amodeAddr ctx.slotBase am sz.bytes us w = some a) (hav : Avoids F sz.bytes a) :
+    ∃ w', csem F ctx X (.fpuStore sz (.vreg d .float) am fl) (v :: us) w = some ([], w', .next) ∧
+      SameWorld F w' (Arm.write_mem_bytes sz.bytes a (v.setWidth (sz.bytes * 8)) w) := by
+  rw [csem_straight rfl]
+  split
+  · rename_i hc
+    exact straight_fpuStore F ctx sz hsz d am fl v us w a ha hav hc.2.1 hc.2.2
+  · exact ⟨_, by simp [mspec, hsz, ha], SameWorld.refl F _⟩
+
+/-- **`csem` refines the scalar float accesses** (`MemRefinesFP`, for every read guard `Rd`). -/
+theorem memRefinesFP_csem (Rd F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) {sb : Nat}
+    (hsb : ctx.slotBase = sb) : MemRefinesFP Rd F sb (csem F ctx X) := by
+  subst hsb
+  exact ⟨fun sz d am fl us w a hsz ha hav _ => csem_fpuLoad F ctx X sz hsz d am fl us w a ha hav,
+    fun sz d am fl v us w a hsz ha hav => csem_fpuStore F ctx X sz hsz d am fl v us w a ha hav⟩
+
+/-! ## `csemGF` against `csem` and `csemG` -/
+
+open Classical in
+/-- On a float access, `csemGF` is `csem` where `GuardFP` holds, undefined elsewhere. -/
+theorem csemGF_fp {i : MInst}
+    (hfp : (∃ sz rd am fl, i = .fpuLoad sz rd am fl) ∨ ∃ sz rd am fl, i = .fpuStore sz rd am fl)
+    (us : List CV) (w : Arm.ArmState) :
+    csemGF F ctx X Rd syms exts sigs sp0 Pc i us w =
+      if GuardFP F Rd ctx.slotBase i us w then csem F ctx X i us w else none := by
+  rcases hfp with ⟨sz, rd, am, fl, rfl⟩ | ⟨sz, rd, am, fl, rfl⟩ <;>
+  · simp only [csemGF]
+    split
+    · rename_i hg
+      rw [csem_straight rfl]
+      split
+      · rfl
+      · exact fspec_eq_mspec hg
+    · rfl
+
+/-- Off the float accesses, `csemGF` is `csemG`. -/
+theorem csemGF_other {i : MInst} (h1 : ∀ sz rd am fl, i ≠ .fpuLoad sz rd am fl)
+    (h2 : ∀ sz rd am fl, i ≠ .fpuStore sz rd am fl) (us : List CV) (w : Arm.ArmState) :
+    csemGF F ctx X Rd syms exts sigs sp0 Pc i us w = csemG F ctx X Rd syms exts sigs sp0 Pc i us w := by
+  cases i <;> first | rfl | exact absurd rfl (h1 _ _ _ _) | exact absurd rfl (h2 _ _ _ _)
+
+/-- **`csemGF` is a sub-semantics of `csem`**: where it is defined, it is `csem`. -/
+theorem csemGF_sub {i : MInst} {us : List CV} {w : Arm.ArmState} {r : List CV × Arm.ArmState × Ctl}
+    (h : csemGF F ctx X Rd syms exts sigs sp0 Pc i us w = some r) : csem F ctx X i us w = some r := by
+  by_cases hfp : (∃ sz rd am fl, i = .fpuLoad sz rd am fl) ∨ ∃ sz rd am fl, i = .fpuStore sz rd am fl
+  · rw [csemGF_fp hfp] at h
+    split at h
+    · exact h
+    · cases h
+  · rw [csemGF_other (fun sz rd am fl e => hfp (.inl ⟨sz, rd, am, fl, e⟩))
+      (fun sz rd am fl e => hfp (.inr ⟨sz, rd, am, fl, e⟩))] at h
+    exact (csemG_sub h).2.2
+
+/-- **`csemGF` extends `csemG`**: where `csemG` is defined, `csemGF` is too, with its result. -/
+theorem csemG_csemGF {i : MInst} {us : List CV} {w : Arm.ArmState} {r : List CV × Arm.ArmState × Ctl}
+    (h : csemG F ctx X Rd syms exts sigs sp0 Pc i us w = some r) :
+    csemGF F ctx X Rd syms exts sigs sp0 Pc i us w = some r := by
+  by_cases hfp : (∃ sz rd am fl, i = .fpuLoad sz rd am fl) ∨ ∃ sz rd am fl, i = .fpuStore sz rd am fl
+  · obtain ⟨hg, -, -⟩ := csemG_sub h
+    rcases hfp with ⟨sz, rd, am, fl, rfl⟩ | ⟨sz, rd, am, fl, rfl⟩ <;>
+      simp [GuardR] at hg
+  · rw [csemGF_other (fun sz rd am fl e => hfp (.inl ⟨sz, rd, am, fl, e⟩))
+      (fun sz rd am fl e => hfp (.inr ⟨sz, rd, am, fl, e⟩))]
+    exact h
+
+/-- **The pinned callee contract for `csemGF`** (its calls are `csemG`'s). -/
+theorem callsRefineP_csemGF {env : Clif.Env} {MR : MemRelT}
+    (hX : XCallsOk env exts MR X) (hMRm : ∀ sl cm w, MR sl cm w → MemRel F syms cm w)
+    (hMRc : ∀ sl cm w, MR sl cm w → spv w = sp0) :
+    CallsRefineP Pc F env exts MR (csemGF F ctx X Rd syms exts sigs sp0 Pc) := by
+  obtain ⟨sym, h1, h2, h3⟩ := callsRefineP_csemG (ctx := ctx) (Rd := Rd) (sigs := sigs) (Pc := Pc)
+    hX hMRm hMRc
+  exact ⟨sym, h1, h2, h3⟩
+
+/-- **The pinned indirect-call contract for `csemGF`.** -/
+theorem indCallsRefineP_csemGF {env : Clif.Env} {MR : MemRelT}
+    (hX : XCallsIndOk env sigs MR X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hMRm : ∀ sl cm w, MR sl cm w → MemRel F syms cm w)
+    (hMRc : ∀ sl cm w, MR sl cm w → spv w = sp0) :
+    IndCallsRefineP Pc env sigs MR (csemGF F ctx X Rd syms exts sigs sp0 Pc) := by
+  obtain ⟨h1, h2⟩ := indCallsRefineP_csemG (ctx := ctx) (Rd := Rd) (exts := exts) (Pc := Pc)
+    hX hsym hMRm hMRc
+  exact ⟨h1, h2⟩
+
+/-! ## Two `csemGF` runs in lockstep -/
+
+theorem guardFP_fpuLoad {sb : Nat} {sz : ScalarSize} {rd : Reg} {am : AMode} {fl : Clif.MemFlags}
+    {us : List CV} {w : Arm.ArmState} (h : GuardFP F Rd sb (.fpuLoad sz rd am fl) us w) :
+    ∃ d, rd = .vreg d .float ∧ (sz = .size32 ∨ sz = .size64) ∧
+      ∃ a, amodeAddr sb am sz.bytes us w = some a ∧ Avoids F sz.bytes a ∧
+        ∀ k < sz.bytes, Rd (a + BitVec.ofNat 64 k) := by
+  rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _
+  all_goals first | exact ⟨_, rfl, h⟩ | (simp [GuardFP] at h)
+
+theorem guardFP_fpuStore {sb : Nat} {sz : ScalarSize} {rd : Reg} {am : AMode} {fl : Clif.MemFlags}
+    {us : List CV} {w : Arm.ArmState} (h : GuardFP F Rd sb (.fpuStore sz rd am fl) us w) :
+    ∃ d v us', rd = .vreg d .float ∧ us = v :: us' ∧ (sz = .size32 ∨ sz = .size64) ∧
+      ∃ a, amodeAddr sb am sz.bytes us' w = some a ∧ Avoids F sz.bytes a := by
+  rcases us with _ | ⟨v, us'⟩
+  · rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> simp [GuardFP] at h
+  · rcases rd with ⟨d, _ | _⟩ | _ | _ | _ | _
+    all_goals first | exact ⟨_, _, _, rfl, rfl, h⟩ | (simp [GuardFP] at h)
+
+/-- **Two guarded runs of one instruction with the float accesses, in lockstep**
+(`csemG_lockstep2` for `csemGF`): where `csemGF` with the reads guarded by `¬ Z` runs an
+instruction on two worlds that agree outside `Z ⊇ F`, with callees (`hX`) and the TLSDESC
+resolver (`hT`) that keep the agreement: the same outputs and control, worlds that agree outside
+`Z`. A float load reads the same bytes on both worlds (outside `Z`); a float store writes the
+same value at the same address (registers `sp`/`x29` agree). -/
+theorem csemGF_lockstep2 {Z : BitVec 64 → Prop} (hFZ : ∀ a, F a → Z a) {i : MInst} {us : List CV}
+    {w w' : Arm.ArmState} (hw : SameWorld Z w w')
+    (hX : ∀ dest, CallG F syms X exts sigs sp0 Pc dest us w → CallG F syms X exts sigs sp0 Pc dest us w' →
+      ∀ o x o' x', X.call (destName dest) us w = some (o, x) →
+        X.call (destName dest) us w' = some (o', x') → o = o' ∧ SameWorld Z x x')
+    (hT : ∀ n, X.tlsFlags n w = X.tlsFlags n w')
+    {o o' : List CV} {w₁ w₁' : Arm.ArmState} {c c' : Ctl}
+    (h : csemGF F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w = some (o, w₁, c))
+    (h' : csemGF F ctx X (fun b => ¬ Z b) syms exts sigs sp0 Pc i us w' = some (o', w₁', c')) :
+    o = o' ∧ c = c' ∧ SameWorld Z w₁ w₁' := by
+  by_cases hfp : (∃ sz rd am fl, i = .fpuLoad sz rd am fl) ∨ ∃ sz rd am fl, i = .fpuStore sz rd am fl
+  · rw [csemGF_fp hfp] at h h'
+    split at h
+    · rename_i hg
+      split at h'
+      · rcases hfp with ⟨sz, rd, am, fl, rfl⟩ | ⟨sz, rd, am, fl, rfl⟩
+        · obtain ⟨d, rfl, hsz, a, ha, hF, hrd⟩ := guardFP_fpuLoad hg
+          obtain ⟨w₂, h2, hs2⟩ := csem_fpuLoad F ctx X sz hsz d am fl us w a ha hF
+          obtain ⟨w₂', h2', hs2'⟩ := csem_fpuLoad F ctx X sz hsz d am fl us w' a
+            (by rw [← amodeAddr_sameWorld hw]; exact ha) hF
+          rw [h2] at h
+          rw [h2'] at h'
+          simp only [Option.some.injEq, Prod.mk.injEq] at h h'
+          obtain ⟨rfl, rfl, rfl⟩ := h
+          obtain ⟨rfl, rfl, rfl⟩ := h'
+          refine ⟨by rw [read_mem_bytes_sameWorld hw (fun k hk hz => hrd k hk hz)], rfl, ?_⟩
+          exact SameWorld.trans (SameWorld.mono hFZ hs2) (hw.trans (SameWorld.mono hFZ hs2').symm)
+        · obtain ⟨d, v, us', rfl, rfl, hsz, a, ha, hF⟩ := guardFP_fpuStore hg
+          obtain ⟨w₂, h2, hs2⟩ := csem_fpuStore F ctx X sz hsz d am fl v us' w a ha hF
+          obtain ⟨w₂', h2', hs2'⟩ := csem_fpuStore F ctx X sz hsz d am fl v us' w' a
+            (by rw [← amodeAddr_sameWorld hw]; exact ha) hF
+          rw [h2] at h
+          rw [h2'] at h'
+          simp only [Option.some.injEq, Prod.mk.injEq] at h h'
+          obtain ⟨rfl, rfl, rfl⟩ := h
+          obtain ⟨rfl, rfl, rfl⟩ := h'
+          refine ⟨rfl, rfl, ?_⟩
+          exact SameWorld.trans (SameWorld.mono hFZ hs2)
+            ((SameWorld.write_mem_bytes hw _ _ _).trans (SameWorld.mono hFZ hs2').symm)
+      · cases h'
+    · cases h
+  · have e := csemGF_other (F := F) (ctx := ctx) (X := X) (Rd := fun b => ¬ Z b) (syms := syms)
+      (exts := exts) (sigs := sigs) (sp0 := sp0) (Pc := Pc)
+      (fun sz rd am fl e => hfp (.inl ⟨sz, rd, am, fl, e⟩))
+      (fun sz rd am fl e => hfp (.inr ⟨sz, rd, am, fl, e⟩))
+    rw [e] at h
+    rw [e] at h'
+    exact csemG_lockstep2 hFZ hw hX hT h h'
 
 end E2E

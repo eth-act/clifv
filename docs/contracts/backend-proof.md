@@ -991,6 +991,10 @@ accesses (`GuardFP`; `csem` on well-formed, error-free, aligned worlds, the spec
 `execMInst_fpuStore`) give all premises of `MemRulesCorrectRT`.
 
 **Boundary.** Nothing downstream consumes the `T` targets yet: the driver (`DriverCheck.ctxOk`,
-`loop_run`), the lockstep (`csemG_lockstep2`; `csemG` itself leaves the float accesses undefined)
-and the end-to-end theorems keep the integer `CtxInv`/`Compile.functionE` scope. Producing
-`CtxInvT` in the driver, the lockstep of the float accesses and the widened scope are S11e5.
+`loop_run`) and the end-to-end theorems keep the integer `CtxInv`/`Compile.functionE` scope.
+Since S11e5 Stage C slice 4, `csem`'s fallback `mspec` states the float accesses (as `fspec`), so
+`csem` refines them on every world (`memRefinesFP_csem`), `csemGF` is a sub-semantics of `csem`
+(`csemGF_sub`) and its runs go in lockstep (`csemGF_lockstep2`); the guarded simulation
+composition takes `csemGF` contracts (`lowerInstOk_pairF`, `lowerTryOk_pairF`,
+`FV/E2E/GuardedFPPair.lean`; `docs/contracts/e2e.md`). Producing `CtxInvT` in the driver, the
+typed per-step contracts and the widened scope are the remaining S11e5 slices.
