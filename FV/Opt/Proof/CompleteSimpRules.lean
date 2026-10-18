@@ -6,7 +6,7 @@ import FV.Opt.Proof.CompleteSimpMat
 While the rules rewrite a value (`Opt.optimizeAt`, `Opt.skelMake`, `Opt.runSkel`) the output side
 of the state does not change, the graph only grows by fresh well-typed nodes over placeable values,
 and (under `Opt.SimpRulesOk`/`Opt.SkelRulesOk`) every candidate is placeable or the root
-(`opt_spec`, `runSkel_spec`). `RInv` is the state invariant of this phase: the `materialize` facts,
+(`opt_spec`, `runSkel_ok`). `RInv` is the state invariant of this phase: the `materialize` facts,
 no partial node, hash-consing entries mapping to placeable values or to the exceptional values `X`
 (the current statement's value, which `Opt.pureBest` pre-inserts), and e-classes of one type.
 -/
@@ -417,6 +417,103 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
         (hv.imp (fun h => hS1.good v h) id) hvd1 hcands
       refine ⟨hI2, hS1.trans (hS1'.trans hS2), fun hc0 => hC2 ((hC1 hc0).congr rfl rfl rfl rfl rfl),
         hb2.imp id (fun h => ⟨h.1, by rw [h.2]; exact hS1.typesKnown v hvk⟩)⟩
+
+/-- `make` of the skeleton rules (`skelMake`) on a typed node over placeable values. -/
+theorem skelMake_in {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst → Bool)
+    (st0 : SState) :
+    MakeIn (skelMake rules allowed) (fun st x => st.types.get? x) f
+      (fun st => RInv f V B (fun _ => False) st ∧ RStep B st0 st) (fun st x => Good st B x)
+      (fun _ => False) := by
+  intro st1 n hP hn
+  obtain ⟨hI1, hS1⟩ := hP
+  have hnok : st1.nodeOk n = true := by
+    simp only [SState.nodeOk, List.all_eq_true]
+    exact fun y hy => (hn.2.2.2 y hy).known
+  unfold skelMake
+  simp only [hnok, Bool.not_true, Bool.false_eq_true, ite_false]
+  cases hmemo : st1.memo.get? n with
+  | some w =>
+    obtain ⟨e1, e2, e3⟩ := hI1.memo n w hmemo
+    exact ⟨⟨hI1, hS1⟩, ⟨fun _ h => h, fun _ _ h => h⟩, e1, e3⟩
+  | none =>
+    have hsolid : st1.solidNode n = true := by
+      simp only [SState.solidNode, SState.solid, SState.typedNode, Bool.and_eq_true,
+        List.all_eq_true, hI1.noPartial, Bool.not_false]
+      refine ⟨fun y hy => ⟨(hn.2.2.2 y hy).known, trivial⟩, hn.1, ?_⟩
+      rw [hI1.m.fn]; exact hn.2.1
+    simp only [hsolid, Bool.not_true, Bool.false_eq_true, ite_false]
+    obtain ⟨hI2, hS2, hw, hgw, hen2, htw, -, -⟩ := insert_rinv (allowed := allowed) hI1 hn
+    generalize hins : st1.insertNode allowed n = r at hI2 hS2 hw hgw hen2 htw ⊢
+    obtain ⟨w, st2⟩ := r
+    simp only at hw hI2 hS2 hgw hen2 htw ⊢
+    subst hw
+    let st2' : SState := { st2 with memo := st2.memo.insert n st1.next }
+    have hI2' : RInv f V B (fun _ => False) st2' :=
+      hI2.memoInsert (.inl hgw) hgw.known htw
+    have hS2' : RStep B st2 st2' := RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
+    obtain ⟨hI3, hS3, -, hb3⟩ := opt_spec (X := fun _ => False) hR allowed rewriteLimit st2'
+      st1.next hI2' hgw.known (.inl hgw) hgw.defs hen2
+    generalize optimizeAt rules allowed rewriteLimit st2' st1.next = r3 at hI3 hS3 hb3 ⊢
+    obtain ⟨b, st3⟩ := r3
+    simp only at hI3 hS3 hb3 ⊢
+    have hgb : Good st3 B b ∧ st3.types.get? b = SState.nodeTy n := by
+      rcases hb3 with rfl | hb
+      · exact ⟨hS3.good _ (hS2'.good _ hgw), by rw [hS3.typesKnown _ hgw.known]; exact htw⟩
+      · exact ⟨hb.1, by rw [hb.2]; exact htw⟩
+    have hS4 : RStep B st3 ({ st3 with memo := st3.memo.insert n b } : SState) :=
+      RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
+    exact ⟨⟨hI3.memoInsert (.inl hgb.1) hgb.1.known hgb.2,
+      hS1.trans (hS2.trans (hS2'.trans (hS3.trans hS4)))⟩,
+      ⟨fun y hy => hS4.good y (hS3.good y (hS2'.good y (hS2.good y hy))),
+       fun y t hy => hS3.types y t (hS2'.types y t (hS2.types y t hy))⟩, .inl hgb.1, hgb.2⟩
+
+/-- **The skeleton rules** (`runSkel`) under `SkelRulesOk`: the chosen simplification mentions
+only placeable values. -/
+theorem runSkel_ok {rules : SimplifyFn} {skel : SkeletonFn} (hR : SimpRulesOk rules)
+    (hK : SkelRulesOk skel) (allowed : Inst → Bool) {st : SState} {i : Isle.Opt.SkelInst}
+    (h : RInv f V B (fun _ => False) st) (hi : ∀ y ∈ skelOps i, Good st B y) :
+    RInv f V B (fun _ => False) (runSkel skel rules allowed st i).2 ∧
+      RStep B st (runSkel skel rules allowed st i).2 ∧
+      ∀ c, (runSkel skel rules allowed st i).1 = some c →
+        SkelCandOk (fun x => (runSkel skel rules allowed st i).2.types.get? x)
+          (Good (runSkel skel rules allowed st i).2 B) i c := by
+  unfold runSkel
+  by_cases hsk : skelCandidate i = true
+  case neg =>
+    simp only [Bool.not_eq_true] at hsk
+    simp only [hsk, Bool.not_false, ite_true]
+    exact ⟨h, RStep.refl st, fun c hc => by cases hc⟩
+  simp only [hsk, Bool.not_true, Bool.false_eq_true, ite_false]
+  have hI0 : RInv f V B (fun _ => False) ({ st with made := {} } : SState) :=
+    h.congr rfl rfl rfl rfl rfl rfl rfl rfl
+  have hS0 : RStep B st ({ st with made := {} } : SState) :=
+    RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
+  let P : SState → Prop := fun st' => RInv f V B (fun _ => False) st' ∧ RStep B st st'
+  have hG : GraphIn SState.enodes (fun st x => st.types.get? x) f P (fun st x => Good st B x) :=
+    fun st1 x hP hx => enodes_nodeIn hP.1 hx.defs hx.alts
+  cases hr : skel SState.enodes (fun st x => st.types.get? x) (skelMake rules allowed)
+      (fun st b => st.trapBlocks.get? b) ({ st with made := {} } : SState) i with
+  | error e =>
+    simp only
+    exact ⟨h.congr rfl rfl rfl rfl rfl rfl rfl rfl, RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl,
+      fun c hc => by cases hc⟩
+  | ok res =>
+    obtain ⟨cands, names, st1⟩ := res
+    obtain ⟨⟨hI1, hS1⟩, -, hc⟩ := hK SState.enodes (fun st x => st.types.get? x)
+      (skelMake rules allowed) (fun st b => st.trapBlocks.get? b) f P (fun st x => Good st B x)
+      hG (skelMake_in hR allowed st) _ i cands names st1 ⟨hI0, hS0⟩ hi hr
+    simp only
+    cases hch : chooseSkel i cands with
+    | some c' =>
+      simp only
+      refine ⟨hI1.congr rfl rfl rfl rfl rfl rfl rfl rfl,
+        hS1.trans (RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl), fun c hcc => ?_⟩
+      cases hcc
+      exact hc c' (chooseSkel_mem hch)
+    | none =>
+      simp only
+      exact ⟨hI1.congr rfl rfl rfl rfl rfl rfl rfl rfl,
+        hS1.trans (RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl), fun c hcc => by cases hcc⟩
 
 end Rules
 
