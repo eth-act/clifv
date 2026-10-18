@@ -8,7 +8,9 @@ allocator (`leanAlloc`, `FV/Backend/LinearScan.lean`, V4b #57). For every functi
 files that lowers and whose spill allocation `lowerRFunc` lowers (the others have no allocation
 the backend lowers, e.g. `ctlCheck` rejects their control forms: counted apart): whether
 `checkAlloc` accepts `leanAlloc`'s allocation and `lowerRFunc`/`emitReady` accept it (else the
-reason the spill allocation replaces it), and the code size (bytes) of the function the
+backend uses the spill allocation), and its `lean-regalloc`-format answer rebuilds it
+(`raAnswerRoundTrip`, else `lean-link` would use the spill allocation) — else a fallback line
+with the reason —, and the code size (bytes) of the function the
 backend emits with the Lean allocator, with the spill allocation, and (with `--regalloc2`:
 `lean-regalloc`, `$LEAN_REGALLOC` or the checkout's `rust/target/release/lean-regalloc`) with
 regalloc2. Prints one line per fallback (every function with `--verbose`) and a summary line:
@@ -61,7 +63,11 @@ def main (args : List String) : IO UInt32 := do
       let verdict := match la with
         | .ok rf => match checkAlloc vcp rf with
           | .ok () => match lowerRFunc vcp rf with
-            | .ok af => if emitReady af then none else some "not emitReady"
+            | .ok af =>
+              if !emitReady af then some "not emitReady"
+              -- the answer `lean-backend` writes to `$FV_RA_OUT` must rebuild the allocation
+              else if !raAnswerRoundTrip vcp rf then some "raAnswerJson does not rebuild it"
+              else none
             | .error e => some s!"lowerRFunc: {e}"
           | .error e => some s!"checkAlloc: {e}"
         | .error e => some s!"leanAlloc: {e}"

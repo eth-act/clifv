@@ -722,4 +722,69 @@ allocation is used. -/
 def allocateLean (vcs : Array VCode) : Array (Except String AFunc) :=
   vcs.map fun vc => prepareChecked vc >>= fun vcp => lowerAllocReady vcp (leanAlloc vcp)
 
+/-! ## The allocation as a `lean-regalloc` answer
+
+`cargo fv --keep-temps` keeps the allocator's answers of every compiled file (`$FV_RA_OUT`, in
+the schema of `lean-regalloc`'s output, `docs/contracts/regalloc.md`); `lean-link` and
+`link-check` rebuild each allocation from it (`parseRAOut`, `buildRFunc`). -/
+
+def locAnswerName : Loc → String
+  | .reg r => r.pregName
+  | .stack n _ => s!"s{n}"
+  | .save r => s!"<save {r.pregName}>"
+
+def RItem.isSaveMove : RItem → Bool
+  | .move (.save _) _ | .move _ (.save _) => true
+  | _ => false
+
+/-- `rf`, an allocation of the prepared `vc` whose callee-saved saves and restores are those
+`buildRFunc` adds (`Plan.build`), as one entry of a `lean-regalloc` answer's `"functions"`
+array: the operand locations of every instruction, every other move as an edit before the next
+instruction. -/
+def raAnswerJson (vc : VCode) (rf : RFunc) : String := Id.run do
+  let mut allocs : Array String := #[]
+  let mut edits : Array String := #[]
+  let mut g := 0
+  for items in rf.blocks do
+    for it in items do
+      match it with
+      | .op _ ls =>
+        allocs := allocs.push (jlist (ls.toList.map fun l => jstr (locAnswerName l)))
+        g := g + 1
+      | .move a b =>
+        if !it.isSaveMove then
+          edits := edits.push (s!"\{\"inst\":{g},\"pos\":\"before\",\"from\":{jstr (locAnswerName a)}," ++
+            s!"\"to\":{jstr (locAnswerName b)}}")
+  return s!"\{\"name\":{jstr vc.name},\"ok\":true,\"num_spillslots\":{rf.spillSlots}," ++
+    s!"\"allocs\":{jlist allocs.toList},\"edits\":{jlist edits.toList},\"checker\":\"ok\"}"
+
+/-- Does `buildRFunc` rebuild `rf` from `raAnswerJson vc rf`? -/
+def raAnswerRoundTrip (vc : VCode) (rf : RFunc) : Bool :=
+  match Lean.Json.parse (raAnswerJson vc rf) >>= parseRAOut >>= buildRFunc vc with
+  | .ok rf' => rf'.blocks == rf.blocks && rf'.spillSlots == rf.spillSlots && rf'.saved == rf.saved
+  | .error _ => false
+
+/-- A failed answer (the consumer uses the spill allocation). -/
+def raFailJson (name e : String) : String :=
+  s!"\{\"name\":{jstr name},\"ok\":false,\"error\":{jstr e}}"
+
+/-- `allocateLean`, also returning the answer for every function `prepareChecked` accepts, in
+order (the functions `allocateRegalloc2` passes to `lean-regalloc`): `raAnswerJson` of
+`leanAlloc`'s allocation, or a failed answer if there is none or it would not rebuild it. -/
+def allocateLeanAnswers (vcs : Array VCode) : Array (Except String AFunc) × Array String := Id.run do
+  let mut out : Array (Except String AFunc) := #[]
+  let mut ans : Array String := #[]
+  for vc in vcs do
+    match prepareChecked vc with
+    | .error e => out := out.push (.error e)
+    | .ok vcp =>
+      let ra := leanAlloc vcp
+      out := out.push (lowerAllocReady vcp ra)
+      ans := ans.push <| match ra with
+        | .ok rf =>
+          if raAnswerRoundTrip vcp rf then raAnswerJson vcp rf
+          else raFailJson vcp.name "the answer does not rebuild the allocation"
+        | .error e => raFailJson vcp.name e
+  return (out, ans)
+
 end Backend

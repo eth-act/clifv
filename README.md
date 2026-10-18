@@ -1,8 +1,8 @@
 # clifv
 
 clifv compiles Cranelift IR (CLIF) to AArch64 machine code. The compiler is written in Lean 4.
-For register allocation it runs regalloc2, checks the result in Lean, and falls back to a
-proven Lean allocator if the check fails.
+Register allocation is done in Lean too: a linear-scan allocator whose result is checked in
+Lean, with a proven Lean spill allocator as fallback if the check fails.
 
 The end-to-end theorem `E2E.backend_correct_final` states that the Arm code of a function in
 its scope refines the function's CLIF semantics. Its premises include contracts for the
@@ -40,7 +40,7 @@ describes. Then, from the repository root, build the tools and run an example:
 ```
 scripts/memcap.sh lake build lean-backend clif-decode
 scripts/memcap.sh scripts/build-cg-clif.sh
-cd rust && ../scripts/memcap.sh cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc
+cd rust && ../scripts/memcap.sh cargo build --release -p cargo-fv -p clif-data-export
 export PATH=$PWD/target/release:$PATH
 cd ../examples/fv-demo && cargo fv test
 ```

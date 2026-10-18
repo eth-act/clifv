@@ -392,7 +392,7 @@ jobs:
       - name: Build cg_clif and cargo fv
         run: |
           scripts/build-cg-clif.sh
-          (cd rust && cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc)
+          (cd rust && cargo build --release -p cargo-fv -p clif-data-export)
           # the executables cargo fv runs (restored from the assembled build)
           lake build lean-backend lean-link clif-decode 2>&1 | tail -n 1
       - name: Run

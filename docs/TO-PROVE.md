@@ -332,9 +332,14 @@ author's estimate, not measured), **Risk**.
   as `lowerAllocReady vcp (leanAlloc vcp)`, so every theorem for an arbitrary answer covers it.
   `checkAlloc` accepts its allocation of every function of the corpus, runtests, fv-demo and the
   survey that any allocation lowers (5782 functions, no fallback); code size within 1 % of regalloc2 (fv-demo 188232 vs
-  188812 bytes, survey 547432 vs 551796; `docs/contracts/regalloc.md` "Results" (i)). Open: the
-  default switch with regalloc2 dropped from the toolchain (#274), and the completeness proof
-  (a decidable plan condition implying `AllocChecked`, #275; the planner meeting it, #276).
+  188812 bytes, survey 547432 vs 551796; `docs/contracts/regalloc.md` "Results" (i)).
+  **Default since #274:** `lean-backend`/`cargo fv` allocate in Lean (answers written to
+  `$FV_RA_OUT` for `lean-link`/`link-check`); `cargo fv` no longer needs `lean-regalloc`
+  (kept for `--regalloc regalloc2` and the stock comparison); `cargo fv test --lean-link
+  --verified`: fv-demo 20/20 tests, 1346/1352 verified, regions 193628 → 193072 bytes; survey
+  53/53, 3179/3179, 564512 → 560148 bytes, binary checks 2/2 and 18/18 (as with regalloc2).
+  Open: the completeness proof (a decidable plan condition implying `AllocChecked`, #275; the
+  planner meeting it, #276).
 
 ### V5. Frame and control-lowering rejections (totality) — **done**
 

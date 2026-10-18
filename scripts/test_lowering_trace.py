@@ -25,7 +25,8 @@ class LoweringTraceTests(unittest.TestCase):
             input_path.write_text(source)
             env = dict(os.environ, LEAN_REGALLOC=str(self.allocator))
             # Exercise the default cleanup mode and the explicit legacy diagnostic mode.
-            flags = [] if cleanup else ["--no-dead-cleanup"]
+            # the test reads regalloc2's captured input (`LEAN_REGALLOC_KEEP`)
+            flags = ["--regalloc", "regalloc2"] + ([] if cleanup else ["--no-dead-cleanup"])
 
             def compile_at(name):
                 captured = directory / f"{name}.allocator.json"

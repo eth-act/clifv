@@ -31,7 +31,8 @@ Complete (2026-09-27); no `sorry`, no `axiom`, no warnings in `FV/Backend`, `FVT
 - [x] clif-subset-v2 (2026-09-27, `docs/contracts/e-ext-v2.md`): `nop`, `symbol_value`
       (GOT: `adrp :got:` + `ldr :got_lo12:`, + `add` for offsets), `select` (`csel`),
       `smin/smax/umin/umax`, `bswap` (`rev16`/`rev w`/`rev x`), `bitrev` (`rbit` + `lsr`)
-- [x] M6 (2026-09-27): regalloc2 (untrusted, `lean-regalloc`) is the default allocator; every
+- [x] M6 (2026-09-27): regalloc2 (untrusted, `lean-regalloc`) is the default allocator (since
+      V4b-2, 2026-10-18: the Lean allocator `leanAlloc`, `--regalloc lean`, regalloc2 optional); every
       allocation is validated by the Lean checker `checkAlloc`; all results below hold for
       both `--regalloc regalloc2` and `--regalloc stack` (`docs/contracts/regalloc.md`)
 - [x] `lake exe lean-backend-armrun` (`FVTest/Backend/ArmRun.lean`): Arm-model runs agree with

@@ -1996,8 +1996,8 @@ guarantee of these executables is `compileExeOpt`'s.
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
-optimised dump of the missing-data retry), `lean-regalloc`'s output for it (`fv-rustc` runs as
-the `lean-regalloc` of `lean-backend` and keeps a copy, `cargo_fv::linkproof::regalloc_tee`),
+optimised dump of the missing-data retry), the register allocator's answers for it (`lean-backend`
+writes them to `$FV_RA_OUT` in `lean-regalloc`'s schema, `FVTest/Backend/AllocChoice.lean`),
 the merge's names (each CLIF name → the symbol it is linked as; under `--lean-link` also every
 name the compiled CLIF declares, its local symbols renamed too, so `Front.assemble` can rename
 the dump even when `--opt-proven-only`'s mid-end removed the code using a name) and the object's
@@ -2132,7 +2132,7 @@ folded aliases outside the program (`BaseOk.aliasSyms`), data objects
 (base premises), stack-passed and `i128` arguments, direct recursion (one copy, above).
 
 **Trusted** in addition to `backend_correct_program`'s: that `cargo fv` records the file it
-passed to `lean-backend` and the output of the `lean-regalloc` run it made (a different
+passed to `lean-backend` and the allocator answers that run wrote (a different
 allocation would only make `checkAlloc` or the binary check fail), the merge's renaming;
 `imgMem` is the unrelocated encoding (`bl`, `adrp`, GOT and `lo12` fields are zero), while the
 process image has the relocated words: since M9 the crate proofs also prove the executable's

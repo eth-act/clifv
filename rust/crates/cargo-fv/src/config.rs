@@ -54,7 +54,7 @@ impl Mode {
 /// Everything the wrapper needs; `cargo-fv` fills it in, `fv-rustc` reads it back.
 #[derive(Clone, Debug)]
 pub struct Config {
-    /// The repository root (lean-backend, clif-decode, clif-data-export, lean-regalloc).
+    /// The repository root (lean-backend, clif-decode, clif-data-export).
     pub root: PathBuf,
     pub mode: Mode,
     /// `CARGO_MANIFEST_DIR`s of the workspace members.
@@ -108,9 +108,6 @@ impl Config {
     }
     pub fn data_export(&self) -> PathBuf {
         self.root.join("rust/target/release/clif-data-export")
-    }
-    pub fn lean_regalloc(&self) -> PathBuf {
-        self.root.join("rust/target/release/lean-regalloc")
     }
     pub fn decode(&self) -> PathBuf {
         self.root.join(".lake/build/bin/clif-decode")

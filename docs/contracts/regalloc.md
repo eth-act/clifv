@@ -15,10 +15,12 @@ spill fallback, V4), `FV/Backend/Regalloc.lean`
 - [x] `lean-regalloc`: regalloc2 **0.15.2, unchanged crate**, Cranelift 0.136.1's options
       (`Algorithm::Ion`, `validate_ssa`), regalloc2's own checker run as a cross-check;
       `cargo build -p lean-regalloc` warning-free
-- [x] regalloc2 is the **default** allocator of `lean-backend`, `lean-backend-armrun`,
-      `scripts/lean-backend-filetests.sh`, `scripts/lean-backend-encode-check.sh`
-      (`--regalloc regalloc2|spill|stack|regalloc2-small`); the stack-slot allocator is kept as
-      `--regalloc stack`; `--regalloc spill` forces the V4 fallback
+- [x] regalloc2 was the **default** allocator of `lean-backend`, `lean-backend-armrun`,
+      `scripts/lean-backend-filetests.sh`, `scripts/lean-backend-encode-check.sh` until
+      2026-10-18; since V4b-2 (#274) the default is the Lean allocator (`--regalloc lean`,
+      section "The Lean allocator"), and regalloc2 is optional (`--regalloc
+      regalloc2|regalloc2-small`; the default under `--stock-config`); the stack-slot allocator
+      is kept as `--regalloc stack`; `--regalloc spill` forces the V4 fallback
 - [x] every allocation is validated by the executable Lean checker `checkAlloc`; since V4
       (2026-10-05) a rejection (by it, or by regalloc2's checker), a failure of `lean-regalloc`
       or its absence is **no longer a compile error**: the function gets the spill allocation
@@ -201,6 +203,16 @@ replaces it. Every theorem stated for an arbitrary answer `ra`
 (`E2E.backend_correct_final_alloc_proven`, `E2E.backend_correct_final_total_emit`, …) therefore
 covers it with no new proof; no external process runs. Open: a proof that the fallback is never
 taken (#275, #276).
+
+Since V4b-2 (#274) it is the default allocator of `lean-backend`, `lean-backend-armrun`, the
+filetest and encode-check scripts, and so of `cargo fv` (which no longer needs `lean-regalloc`).
+For `cargo fv --keep-temps` (`cargo fv link-proof`, `--lean-link`, the binary check),
+`lean-backend` writes the answers to `$FV_RA_OUT` in the schema of `lean-regalloc`'s output
+(`allocateLeanAnswers`, `raAnswerJson`: every move as an edit before the next instruction,
+saves/restores left to `buildRFunc`); `lean-link` and `link-check` rebuild each allocation from
+it with `parseRAOut`/`buildRFunc` as before. `raAnswerRoundTrip` checks that the rebuilt `RFunc`
+is the allocation (else the answer is a failed one, and the consumer uses the spill
+allocation); `lean-alloc-stats` reports any function where it is not.
 
 Design: an untrusted planner (`Fn.plan`) and a deterministic builder (`Plan.build`).
 

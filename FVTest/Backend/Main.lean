@@ -6,12 +6,15 @@ import FVTest.Backend.AllocChoice
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
-[--dump <dir>] [--regalloc regalloc2|lean|spill|stack|regalloc2-small] [--personality <sym>]
+[--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>]
 [--opt [--opt-* options]]`: compile every function of a `.clif` file with the
-Lean backend (`FV/Backend.lean`). Register allocation: `regalloc2` (default; the
-`lean-regalloc` oracle, `$LEAN_REGALLOC` or `rust/target/release/lean-regalloc`, every
-allocation validated by the Lean checker, `docs/contracts/regalloc.md`), `lean` (the Lean
-allocator `leanAlloc`, `FV/Backend/LinearScan.lean`, validated the same way), `stack` (the
+Lean backend (`FV/Backend.lean`). Register allocation: `lean` (default; the Lean allocator
+`leanAlloc`, `FV/Backend/LinearScan.lean`, every allocation validated by the Lean checker
+`checkAlloc` with the spill allocation as fallback, `docs/contracts/regalloc.md`; with
+`$FV_RA_OUT` set, its answers are written there, `FVTest/Backend/AllocChoice.lean`),
+`regalloc2` (the external `lean-regalloc` oracle, `$LEAN_REGALLOC` or
+`rust/target/release/lean-regalloc`, validated the same way; the default under
+`--stock-config`), `spill` (the fallback for every function), `stack` (the
 stack-slot baseline), or `regalloc2-small` (regalloc2 with the 10-register stress environment
 `smallEnv`, for testing spill code). If the output path ends in `.o`, write an ELF relocatable object encoded
 by the Lean encoder (`FV/Backend/{Encode,Obj}.lean`, no assembler); otherwise write assembly
@@ -48,7 +51,7 @@ validator and listed as `compiled, unverified (validation budget)`.
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|lean|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--stock-config <request.json> --config-receipt <receipt.json>]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--stock-config <request.json> --config-receipt <receipt.json>]"
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
@@ -63,7 +66,8 @@ structure Opts where
   traps : Option String := none
   rules : Option String := none
   dump : Option String := none
-  regalloc : String := "regalloc2"
+  /-- `--regalloc`; default `lean` (`regalloc2` under `--stock-config`). -/
+  regalloc : Option String := none
   opt : Option Opt.Config := none
   personality : Option String := none
   stockConfig : Option String := none
@@ -75,7 +79,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   if o.configReceipt.isSome != o.stockConfig.isSome then
     IO.eprintln "lean-backend: --stock-config and --config-receipt must be supplied together"
     return 2
-  if o.stockConfig.isSome && (o.opt.isSome || o.regalloc != "regalloc2" || o.personality.isSome) then
+  if o.stockConfig.isSome && (o.opt.isSome || o.regalloc.any (· != "regalloc2") || o.personality.isSome) then
     IO.eprintln "lean-backend: stock configuration forbids independent opt/regalloc/personality overrides"
     return 2
   let mut stock : Option StockConfig.Config := none
@@ -90,10 +94,11 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     match checked with
     | .error e => IO.eprintln s!"lean-backend: unsupported stock configuration: {e}"; return 3
     | .ok c => stock := some c
-  let some runAlloc ← allocRunOfName? o.regalloc
-    | do IO.eprintln s!"lean-backend: unknown allocator {o.regalloc}"; return 2
+  let ra := o.regalloc.getD (if o.stockConfig.isSome then "regalloc2" else "lean")
+  let some runAlloc ← allocRunOfName? ra
+    | do IO.eprintln s!"lean-backend: unknown allocator {ra}"; return 2
   -- the stock configuration requires regalloc2 (checked above)
-  let alloc := (← Allocator.ofName? o.regalloc).getD .spill
+  let alloc := (← Allocator.ofName? ra).getD .spill
   let source := Clif.parseFile src
   let lg := Opt.Legalize128.parsedFile128 source
   let pf := match o.opt with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
@@ -168,7 +173,7 @@ def main (args : List String) : IO UInt32 := do
     | "--traps" :: t :: rest => opts { o with traps := some t } rest
     | "--rules" :: r :: rest => opts { o with rules := some r } rest
     | "--dump" :: d :: rest => opts { o with dump := some d } rest
-    | "--regalloc" :: a :: rest => opts { o with regalloc := a } rest
+    | "--regalloc" :: a :: rest => opts { o with regalloc := some a } rest
     | "--personality" :: p :: rest => opts { o with personality := some p } rest
     | "--stock-config" :: c :: rest => opts { o with stockConfig := some c } rest
     | "--config-receipt" :: c :: rest => opts { o with configReceipt := some c } rest
