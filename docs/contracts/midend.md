@@ -459,8 +459,8 @@ its results without the signature table; DEFERRED, mid-end), in the runtests fou
 between integers and floats (`pureTyped`). These are genuine input restrictions: such functions get
 only unreachable-block removal.
 
-Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`, `CheckSpec.lean`, `CompleteDce.lean`;
-axioms `propext`, `Classical.choice`, `Quot.sound`):
+Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`, `CheckSpec.lean`, `CompleteDce.lean`,
+`CheckComplete.lean`, `CompleteGvn.lean`; axioms `propext`, `Classical.choice`, `Quot.sound`):
 
 - `Opt.unreachableOk_raw`: `blocksOkB f = true → unreachableOk f (removeUnreachableRaw f) = true`,
   hence `Opt.removeUnreachable_eq_raw` (`removeUnreachable` never falls back). `blocksOkB` (unique
@@ -482,8 +482,26 @@ axioms `propext`, `Classical.choice`, `Quot.sound`):
   statement, at the filtered position (`Opt.dce_wf`); a deleted statement is removable and its
   results are defined nowhere in the output (values are defined once), which is `delOk`
   (`Opt.dce_delOk`, `Opt.align_filter`). Witness `Opt.CompleteDceWitness.witness`.
+- `checkCore` from the certificate facts: `Opt.coreOk_of_wf` (CFG facts, definitions, entry
+  parameters, branch argument and `br_table` index types, and `Wf f (wfData f (coreInfo f))` make
+  `checkCore` accept; core: `Opt.dominates_complete`, the walk of `Cfg.dominates` finds every tree
+  ancestor within its fuel). CFG facts: `Opt.postorder_nodup` (every block at most once in the
+  postorder), `Opt.domChildren_spec` (the dominator-tree children lists are distinct blocks whose
+  `idom` is the parent), `Opt.build_idom_size`.
+- GVN: `Opt.gvn_complete : check g = .ok info → check (gvnFull g info local?).1 = .ok _ ∧
+  editOk (gvnFull g info local?).2.2.find g (gvnFull g info local?).1 info _ = true`. What GVN
+  does (`Opt.gvnFull_spec`): the walk over the dominator tree processes each block at most once
+  (its stack and the processed blocks stay distinct, children have their parent processed), and
+  every renaming `v ↦ w` deletes a pure `v = m` in favour of a kept pure `w = n` with
+  `mapOperands S.find n = mapOperands S.find m`, `w` earlier in the block or in a strict tree
+  ancestor (the scoped table holds only values of tree ancestors, `Opt.TblOk`); the substitution
+  has no chains. So the output is the input with the renamed statements deleted and every operand
+  renamed (`Opt.gvnF`); a renamed operand moves up the tree and keeps its type (both nodes have
+  the same result types), so `Wf` holds (`Opt.gvn_wf`) and `check` accepts (`Opt.gvn_check`); a
+  deleted statement is `delOk` through its replacement (`Opt.gvn_editOk`, `Opt.align_filter_map`).
+  Witness `Opt.CompleteGvnWitness.witness`.
 
-Open: the stage checks and validators for GVN, LICM (`check`, `editOk`) and simplify (`check`,
+Open: the stage checks and validators for LICM (`check`, `editOk`) and simplify (`check`,
 `simpOk`), `keepsBackendSubset`, `keepsShapeB`.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
