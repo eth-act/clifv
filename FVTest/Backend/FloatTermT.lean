@@ -1,15 +1,18 @@
 import FV.Backend.Proof.SpillEdgesLowT
+import FV.Backend.Proof.LowerCompleteT
 import FV.Backend.Proof.LowerDecide
 import FVTest.Backend.FloatDriverT
 
 /-!
-Non-vacuity of the typed terminator shapes (S11e5 Stage C): on the float-movement function
-`fMv` (float `return`, `brif` on an `i8` with float edge arguments, `jump` with a float
-argument) and on `fTb` (`br_table` on an `i32`, returning an `f64` and an `f32`),
-`lowerShapeT_of_lowerT`/`shapeOkT_completeT` hold without a premise on the terminator rules, and
-`LowT.raw_back` gives the last instruction of each block. A `brif` on a float value is outside
-`Compile.functionET` (`TermIntPos`). Checks by `native_decide` (witness only).
-`lake build FVTest.Backend.FloatTermT`.
+Non-vacuity of the typed terminator shapes and of the typed validator's completeness (S11e5
+Stage C): on the float-movement function `fMv` (float `return`, `brif` on an `i8` with float edge
+arguments, `jump` with a float argument), on `fTb` (`br_table` on an `i32`, returning an `f64`
+and an `f32`) and on `fCall` (an integer `call` between float values),
+`lowerShapeT_of_lowerT`/`shapeOkT_completeT` hold without a premise on the terminator rules,
+`LowT.raw_back` gives the last instruction of each block, and `lowerCheckT_complete` makes
+`lowerCheckT` accept the lowerings (which the integer `lowerCheck` rejects). A `brif` on a
+float value is outside `Compile.functionET` (`TermIntPos`). Checks by `native_decide` (witness
+only). `lake build FVTest.Backend.FloatTermT`.
 -/
 
 open Backend Backend.Proof Backend.Proof.Driver
@@ -159,5 +162,74 @@ theorem rawBack_tb : ∃ ctx st0 bl RR t, Spill.LowT fTb (vcOf fTb) ctx st0 bl R
   have hbt := brIdx_of_ok (scopeT_tb.ctxFacts ctx ranges st0 hb).1
   obtain ⟨t, hback, -, hnt, -⟩ := H.raw_back scopeT_tb hbt (B := fTb.blocks[1]!) (by native_decide) hL1
   exact ⟨ctx, st0, bl, RR, t, H, hback, by rw [(hnt (by native_decide)).1, hnil]⟩
+
+/-- **Witness**: `lowerCheckT_complete` on a float function outside subset E. -/
+theorem lowerCheckT_mv : lowerCheckT fMv (vcOf fMv) = true :=
+  lowerCheckT_complete (dominated_of (by native_decide)) scopeT_mv lowerFunction_mv
+
+/-- **Witness**: `lowerCheckT_complete` on a float `br_table` function. -/
+theorem lowerCheckT_tb : lowerCheckT fTb (vcOf fTb) = true :=
+  lowerCheckT_complete (dominated_of (by native_decide)) scopeT_tb lowerFunction_tb
+
+-- … and the integer validator rejects both
+#guard !lowerCheck fMv (vcOf fMv) && !lowerCheck fTb (vcOf fTb)
+
+/-- An integer `call` between float values (the outgoing area, `callOut_runTermT`). -/
+def fCall : Clif.Function := fnOfText
+  "function %c(f64, i64) -> f64 {
+    fn0 = %g(i64) -> i64
+block0(v0: f64, v1: i64):
+    v2 = call fn0(v1)
+    v3 = bitcast.f64 v2
+    v4 = select v1, v0, v3
+    return v4
+}
+"
+
+#guard Compile.functionET fCall && !Compile.functionE fCall
+#guard (lowerFunction fCall).toBool
+
+theorem lowerFunction_call : lowerFunction fCall = .ok (vcOf fCall) := by
+  have hok : (lowerFunction fCall).toBool = true := by native_decide
+  unfold vcOf
+  cases h : lowerFunction fCall with
+  | error e => rw [h] at hok; cases hok
+  | ok vc => rfl
+
+/-- `fCall` is in the typed lowering's input conditions. -/
+theorem scopeT_call : LowerScopeT fCall where
+  subsetT := by native_decide
+  nonempty := by native_decide
+  noEntryPred := by native_decide
+  ctxFacts := by
+    intro ctx ranges st0 hb
+    have h : (match buildCtx fCall with
+        | .ok (c, _, _) => brIdxOk fCall c && ctxOkT fCall c
+        | .error _ => false) = true := by native_decide
+    rw [hb] at h
+    simp only [Bool.and_eq_true] at h
+    exact ⟨h.1, (ctxOkT_sound h.2).addr64⟩
+  tryRet := by
+    have h : fCall.blocks.all (fun B => !B.term.isTry) = true := by native_decide
+    intro B hB et ht
+    have := List.all_eq_true.mp h B hB
+    rcases ht with ⟨fn, args, he⟩ | ⟨c, args, he⟩ <;> rw [he] at this <;> cases this
+  stackLayout := by
+    have h : fCall.blocks.all (fun B => B.body.all fun st => match st.inst with
+        | .call fn _ => (fCall.extern? fn).all (stackLayoutOk ·.sig)
+        | _ => true) = true := by native_decide
+    have h2 : fCall.blocks.all (fun B => !B.term.isTry) = true := by native_decide
+    refine ⟨fun B hB st hst fn args e hi he => ?_, fun B hB fn args et e ht _ => ?_⟩
+    · have := List.all_eq_true.mp (List.all_eq_true.mp h B hB) st hst
+      rw [hi] at this
+      simpa [he] using this
+    · have := List.all_eq_true.mp h2 B hB
+      rw [ht] at this; cases this
+
+/-- **Witness**: `lowerCheckT_complete` on a float function with an integer `call`. -/
+theorem lowerCheckT_call : lowerCheckT fCall (vcOf fCall) = true :=
+  lowerCheckT_complete (dominated_of (by native_decide)) scopeT_call lowerFunction_call
+
+#guard !lowerCheck fCall (vcOf fCall)
 
 end FloatTermT
