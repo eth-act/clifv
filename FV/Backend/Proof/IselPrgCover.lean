@@ -331,8 +331,10 @@ theorem stmt_root {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) {ii : Nat} {
     obtain ⟨hT, hl⟩ := hT1 ty (by simpa [Clif.Inst.resultTypes] using hty.symm)
     simp only [instData] at hd
     prg_split
-    exact ⟨γ_inst hi hT (by rw [← hd]; prg_data) hR, sf_iconst (by prg_ety) imm,
-      out_n (stmtOut_single (ofClif_ne _) (by decide) (by decide)) fun _ => hl⟩
+    all_goals first
+      | (exfalso; subst_vars; revert hE; simp [Compile.instE, Compile.tyE]; done)
+      | exact ⟨γ_inst hi hT (by rw [← hd]; prg_data) hR, sf_iconst (by prg_ety) imm,
+          out_n (stmtOut_single (ofClif_ne _) (by decide) (by decide)) fun _ => hl⟩
   case unary op ty x =>
     obtain ⟨hT, hl⟩ := hT1 ty (by simpa [Clif.Inst.resultTypes] using hty.symm)
     cases op <;> simp only [instData, unaryOpcode] at hd <;> prg_split
@@ -502,6 +504,8 @@ theorem stmt_root {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) {ii : Nat} {
         intro h; apply hne
         rw [← List.length_eq_zero_iff, hlen, ← hty, h]; rfl
       simp [sigRetsOf, hsd, sigRets_of_ne hr, hlen, ← hty]
+  -- `bitcast` (S11e4) is outside E
+  case bitcast => exact absurd hE (by simp [Compile.instE])
   all_goals simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
 
 /-! ## Terminator roots -/
