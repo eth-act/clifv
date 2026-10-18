@@ -178,29 +178,34 @@ theorem disj_ehdr (a b c d e : Nat) : Disj (ehdrFields a b c d e) := by
 theorem disj_phdr (p : Phdr) : Disj (phdrFields p) := by
   simp [Disj, phdrFields]
 
+/-- A reader that has the file's header bytes (the file itself, or an excerpt of it). -/
+def HdrRd (img : Img) (r : Rd) : Prop := ∀ i < img.hdr.length, r i = fileRd img.write i
+
 /-- A field of the headers' first record, read in the file. -/
-theorem fileRd_ehdr {img : Img} (hb : img.hdr.length ≤ img.body.size) {o n v : Nat}
+theorem fileRd_ehdr {img : Img} (hb : img.hdr.length ≤ img.body.size) {r : Rd} (hr : HdrRd img r)
+    {o n v : Nat}
     (hf : (o, n, v) ∈ ehdrFields img.entry img.phs.length img.tabs.shoff (img.secs.size + 4)
       (img.secs.size + 3)) (hs : o + n ≤ 64) (hv : v < 2 ^ (8 * n)) :
-    le (fileRd img.write) o n = some v := by
+    le r o n = some v := by
   apply le_of_bytes hv
   intro j hj
   have hl := hdr_length img
+  rw [hr _ (by omega)]
   simp only [fileRd]
   rw [write_getElem?_hdr img (i := o + j) (by omega) hb, Img.hdr,
     List.getElem?_append_left (by rw [record_length]; omega),
     record_getElem? (disj_ehdr _ _ _ _ _) hf hs hj, Option.map_some, leByte_toBitVec]
 
-/-- **The ELF header read back.** -/
-theorem ehdr_write {img : Img} (h : img.hdrFitsB = true) :
-    ehdr (fileRd img.write) = some ⟨2, 183, img.entry, 64, img.tabs.shoff, img.phs.length,
+/-- **The ELF header read back** (by any reader with the header bytes). -/
+theorem ehdr_rd {img : Img} (h : img.hdrFitsB = true) {r : Rd} (hr : HdrRd img r) :
+    ehdr r = some ⟨2, 183, img.entry, 64, img.tabs.shoff, img.phs.length,
       img.secs.size + 4⟩ := by
   simp only [Img.hdrFitsB, Bool.and_eq_true, decide_eq_true_eq] at h
   obtain ⟨⟨⟨⟨⟨he, hn⟩, hs⟩, hsh⟩, hb⟩, -⟩ := h
   have hb' : img.hdr.length ≤ img.body.size := by rw [hdr_length]; exact hb
   have F : ∀ o n v, (o, n, v) ∈ ehdrFields img.entry img.phs.length img.tabs.shoff
       (img.secs.size + 4) (img.secs.size + 3) → o + n ≤ 64 → v < 2 ^ (8 * n) →
-      le (fileRd img.write) o n = some v := fun o n v hf hs hv => fileRd_ehdr hb' hf hs hv
+      le r o n = some v := fun o n v hf hs hv => fileRd_ehdr hb' hr hf hs hv
   simp only [ehdr, fields, ehdrSpec, List.mapM_cons, List.mapM_nil, Nat.zero_add]
   rw [F 0 4 0x464c457f (by simp [ehdrFields]) (by omega) (by omega),
     F 4 1 2 (by simp [ehdrFields]) (by omega) (by omega),
@@ -216,11 +221,17 @@ theorem ehdr_write {img : Img} (h : img.hdrFitsB = true) :
     F 60 2 (img.secs.size + 4) (by simp [ehdrFields]) (by omega) (by omega)]
   rfl
 
+/-- **The ELF header read back.** -/
+theorem ehdr_write {img : Img} (h : img.hdrFitsB = true) :
+    ehdr (fileRd img.write) = some ⟨2, 183, img.entry, 64, img.tabs.shoff, img.phs.length,
+      img.secs.size + 4⟩ := ehdr_rd h fun _ _ => rfl
+
 /-- A field of program header `k`, read in the file. -/
-theorem fileRd_phdr {img : Img} (hb : img.hdr.length ≤ img.body.size) {k : Nat} {p : Phdr}
+theorem fileRd_phdr {img : Img} (hb : img.hdr.length ≤ img.body.size) {r : Rd} (hr : HdrRd img r)
+    {k : Nat} {p : Phdr}
     (hk : img.phs[k]? = some p) {o n v : Nat} (hf : (o, n, v) ∈ phdrFields p) (hs : o + n ≤ 56)
     (hv : v < 2 ^ (8 * n)) :
-    le (fileRd img.write) (64 + 56 * k + o) n = some v := by
+    le r (64 + 56 * k + o) n = some v := by
   apply le_of_bytes hv
   intro j hj
   have hl := hdr_length img
@@ -230,6 +241,7 @@ theorem fileRd_phdr {img : Img} (hb : img.hdr.length ≤ img.body.size) {k : Nat
     rw [hl]
     have : 56 * k + 56 ≤ 56 * img.phs.length := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hkl
     omega
+  rw [hr _ hi]
   simp only [fileRd, write_getElem?_hdr img hi hb, Img.hdr]
   rw [List.getElem?_append_right (by rw [record_length]; omega), record_length,
     show 64 + 56 * k + o + j - 64 = 56 * k + (o + j) by omega,
@@ -237,22 +249,23 @@ theorem fileRd_phdr {img : Img} (hb : img.hdr.length ≤ img.body.size) {k : Nat
     record_getElem? (disj_phdr p) hf hs hj]
   simp [leByte_toBitVec]
 
-/-- **The program headers read back.** -/
-theorem phdrs_write {img : Img} (h : img.hdrFitsB = true) : phdrs (fileRd img.write) = some img.phs := by
-  have he := ehdr_write h
+/-- **The program headers read back** (by any reader with the header bytes). -/
+theorem phdrs_rd {img : Img} (h : img.hdrFitsB = true) {r : Rd} (hr : HdrRd img r) :
+    phdrs r = some img.phs := by
+  have he := ehdr_rd h hr
   simp only [Img.hdrFitsB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at h
   obtain ⟨⟨⟨⟨⟨-, -⟩, -⟩, -⟩, hb⟩, hp⟩ := h
   have hb' : img.hdr.length ≤ img.body.size := by rw [hdr_length]; exact hb
   simp only [phdrs, he, Option.bind_some]
   have key : ∀ k, k < img.phs.length → ∀ p, img.phs[k]? = some p →
-      fields (fileRd img.write) (64 + 56 * k) phdrSpec =
+      fields r (64 + 56 * k) phdrSpec =
         some [p.type, p.flags, p.offset, p.vaddr, p.filesz, p.memsz, p.align] := by
     intro k _ p hk
     have hpm : p ∈ img.phs := List.mem_of_getElem? hk
     obtain ⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩ := hp p hpm
     have F : ∀ o n v, (o, n, v) ∈ phdrFields p → o + n ≤ 56 → v < 2 ^ (8 * n) →
-        le (fileRd img.write) (64 + 56 * k + o) n = some v :=
-      fun o n v hf hs hv => fileRd_phdr hb' hk hf hs hv
+        le r (64 + 56 * k + o) n = some v :=
+      fun o n v hf hs hv => fileRd_phdr hb' hr hk hf hs hv
     simp only [fields, phdrSpec, List.mapM_cons, List.mapM_nil]
     rw [show 64 + 56 * k = 64 + 56 * k + 0 by rfl,
       F 0 4 _ (by simp [phdrFields]) (by omega) h1, F 4 4 _ (by simp [phdrFields]) (by omega) h2,
@@ -260,7 +273,7 @@ theorem phdrs_write {img : Img} (h : img.hdrFitsB = true) : phdrs (fileRd img.wr
       F 32 8 _ (by simp [phdrFields]) (by omega) h5, F 40 8 _ (by simp [phdrFields]) (by omega) h6,
       F 48 8 _ (by simp [phdrFields]) (by omega) h7]
     rfl
-  have : (List.range img.phs.length).mapM (fun i => fields (fileRd img.write) (64 + 56 * i) phdrSpec) =
+  have : (List.range img.phs.length).mapM (fun i => fields r (64 + 56 * i) phdrSpec) =
       some (img.phs.map fun p => [p.type, p.flags, p.offset, p.vaddr, p.filesz, p.memsz, p.align]) := by
     rw [List.range_eq_range']
     exact mapM_range' (s := 0) fun k x hk => by
@@ -270,6 +283,10 @@ theorem phdrs_write {img : Img} (h : img.hdrFitsB = true) : phdrs (fileRd img.wr
   congr 1
   conv => rhs; rw [← List.map_id img.phs]
   exact List.map_congr_left fun p _ => by cases p; rfl
+
+/-- **The program headers read back.** -/
+theorem phdrs_write {img : Img} (h : img.hdrFitsB = true) : phdrs (fileRd img.write) = some img.phs :=
+  phdrs_rd h fun _ _ => rfl
 
 /-! ## Non-vacuity -/
 
