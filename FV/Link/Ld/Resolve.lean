@@ -205,18 +205,28 @@ def St.linked (st : St) (s : SecId) : Bool :=
 def isCIdent (n : String) : Bool :=
   !n.isEmpty && n.all fun c => c.isAlphanum || c == '_'
 
-/-- The live sections and, per file, the `.eh_frame` section index and its records. -/
-structure GcOut where
-  live : Array (Array Bool)
-  eh : Array (Option (Nat × Array EhPiece × Array Rela))
+/-- An input `.eh_frame` section: its index, records and relocations (an object may have
+several: `ld -r --unique` keeps one per merged object). -/
+structure EhSec where
+  sec : Nat
+  pieces : Array EhPiece
+  relas : Array Rela
   deriving Inhabited
 
-/-- The `.eh_frame` FDEs of each section: `(file, section)` → `(eh section, record)`s. -/
-def fdeIndex (st : St) (eh : Array (Option (Nat × Array EhPiece × Array Rela))) :
-    Std.HashMap SecId (Array (Nat × Nat)) := Id.run do
-  let mut m : Std.HashMap SecId (Array (Nat × Nat)) := {}
+/-- The live sections and, per file, its `.eh_frame` sections. -/
+structure GcOut where
+  live : Array (Array Bool)
+  eh : Array (Array EhSec)
+  deriving Inhabited
+
+/-- The `.eh_frame` FDEs of each section: `(file, section)` → `(file, eh section, record)`s. -/
+def fdeIndex (st : St) (eh : Array (Array EhSec)) :
+    Std.HashMap SecId (Array (Nat × Nat × Nat)) := Id.run do
+  let mut m : Std.HashMap SecId (Array (Nat × Nat × Nat)) := {}
   for fi in [0:st.files.size] do
-    if let some (_, ps, rs) := eh[fi]! then
+    for ei in [0:eh[fi]!.size] do
+      let ps := eh[fi]![ei]!.pieces
+      let rs := eh[fi]![ei]!.relas
       let mut byOff : Std.HashMap Nat Nat := {}
       for k in [0:rs.size] do
         byOff := byOff.insert rs[k]!.off k
@@ -225,18 +235,20 @@ def fdeIndex (st : St) (eh : Array (Option (Nat × Array EhPiece × Array Rela))
         if !p.cie then
           if let some k := byOff[p.off + 8]? then
             if let .sec t _ _ := st.target fi rs[k]!.sym then
-              m := m.insert t ((m.getD t #[]).push (fi, pi))
+              m := m.insert t ((m.getD t #[]).push (fi, ei, pi))
   return m
 
 /-- **`--gc-sections`** (`gc = false`: every linked section is live). Roots: `roots` (symbol
 names) and the retained sections. -/
 def St.gc (st : St) (roots : List String) (gc : Bool) : Except String GcOut := do
-  let mut eh : Array (Option (Nat × Array EhPiece × Array Rela)) := #[]
-  for o in st.files do
-    match (List.range o.secs.size).find? (fun i => o.secs[i]!.name == ".eh_frame" &&
-        o.secs[i]!.has shfAlloc) with
-    | some i => eh := eh.push (some (i, ← ehPieces (o.secBytes i), o.relas i))
-    | none => eh := eh.push none
+  let mut eh : Array (Array EhSec) := #[]
+  for fi in [0:st.files.size] do
+    let o := st.files[fi]!
+    let mut es : Array EhSec := #[]
+    for i in [0:o.secs.size] do
+      if o.secs[i]!.name == ".eh_frame" && o.secs[i]!.has shfAlloc && !(st.disc[fi]!.contains i) then
+        es := es.push { sec := i, pieces := ← ehPieces (o.secBytes i), relas := o.relas i }
+    eh := eh.push es
   let mut live : Array (Array Bool) :=
     st.files.mapIdx fun fi o => Array.ofFn (n := o.secs.size) fun i => !gc && st.linked (fi, i.1)
   if !gc then return { live, eh }
@@ -280,8 +292,10 @@ def St.gc (st : St) (roots : List String) (gc : Bool) : Except String GcOut := d
       for r in st.files[s.1]!.relas s.2 do
         work := mark s.1 r work
       -- its FDEs: their LSDA and their CIE's personality
-      for (fi, pi) in fdes.getD s #[] do
-        if let some (_, ps, rs) := eh[fi]! then
+      for (fi, ei, pi) in fdes.getD s #[] do
+        if let some e := eh[fi]![ei]? then
+          let ps := e.pieces
+          let rs := e.relas
           let p := ps[pi]!
           for r in rs do
             if (r.off > p.off + 8 && r.off < p.off + p.size) ||

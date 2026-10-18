@@ -93,6 +93,7 @@ structure OSec where
 /-- A kept `.eh_frame` record: file, record, its offset in the output `.eh_frame`. -/
 structure EhOut where
   file : Nat
+  ei : Nat
   piece : EhPiece
   out : Nat
   deriving Inhabited
@@ -123,12 +124,14 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
   let mut ehs : Array EhOut := #[]
   let mut ehSize := 0
   let mut fdeCount := 0
-  let mut cieOut : Std.HashMap (Nat × Nat) Nat := {}
-  let mut pieceOut : Std.HashMap (Nat × Nat) Nat := {}
-  let mut ehStart : Array Nat := Array.replicate files.size 0
+  let mut cieOut : Std.HashMap (Nat × Nat × Nat) Nat := {}
+  let mut pieceOut : Std.HashMap (Nat × Nat × Nat) Nat := {}
+  let mut ehStart : Std.HashMap (Nat × Nat) Nat := {}
   for fi in [0:files.size] do
-    ehStart := ehStart.set! fi ehSize
-    if let some (_, ps, rs) := g.eh[fi]! then
+    for ei in [0:g.eh[fi]!.size] do
+      ehStart := ehStart.insert (fi, ei) ehSize
+      let ps := g.eh[fi]![ei]!.pieces
+      let rs := g.eh[fi]![ei]!.relas
       let mut byOff : Std.HashMap Nat Nat := {}
       for k in [0:rs.size] do
         byOff := byOff.insert rs[k]!.off k
@@ -141,9 +144,9 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
       let used : Std.HashSet Nat := ps.foldl (fun s p => if !p.cie && keep p then s.insert p.cieOff else s) {}
       for p in ps do
         if (p.cie && used.contains p.off) || (!p.cie && keep p) then
-          if p.cie then cieOut := cieOut.insert (fi, p.off) ehSize else fdeCount := fdeCount + 1
-          pieceOut := pieceOut.insert (fi, p.off) ehSize
-          ehs := ehs.push { file := fi, piece := p, out := ehSize }
+          if p.cie then cieOut := cieOut.insert (fi, ei, p.off) ehSize else fdeCount := fdeCount + 1
+          pieceOut := pieceOut.insert (fi, ei, p.off) ehSize
+          ehs := ehs.push { file := fi, ei, piece := p, out := ehSize }
           ehSize := ehSize + p.size
   let ehTotal := if ehs.isEmpty then 0 else ehSize + 4
   if ehTotal > 0 then
@@ -295,15 +298,18 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
     match st.target fi j with
     | .sec t x _ =>
       if placedIn t then pure ((secAddr[t.1]![t.2]! + x : Nat), false)
-      else if (g.eh[t.1]!.map (·.1)) == some t.2 then
+      else match g.eh[t.1]!.findIdx? (·.sec == t.2) with
+      | some ei =>
         -- a place in an input `.eh_frame`: its record's place in the output one
-        let ps := (g.eh[t.1]!.map (·.2.1)).getD #[]
+        let ps := g.eh[t.1]![ei]!.pieces
+        let start := ehAddr + ehStart.getD (t.1, ei) 0
         match ps.find? (fun p => p.off ≤ x ∧ x < p.off + p.size) with
-        | some p => match pieceOut[(t.1, p.off)]? with
+        | some p => match pieceOut[(t.1, ei, p.off)]? with
           | some q => pure ((ehAddr + q + (x - p.off) : Nat), false)
-          | none => pure ((ehAddr + ehStart[t.1]! : Nat), false)
-        | none => pure ((ehAddr + ehStart[t.1]! : Nat), false)
-      else throw s!"{files[fi]!.name}: symbol {files[fi]!.syms[j]!.name} in a discarded section {files[t.1]!.secs[t.2]!.name} of {files[t.1]!.name}"
+          | none => pure ((start : Nat), false)
+        | none => pure ((start : Nat), false)
+      | none =>
+        throw s!"{files[fi]!.name}: symbol {files[fi]!.syms[j]!.name} in a discarded section {files[t.1]!.secs[t.2]!.name} of {files[t.1]!.name}"
     | .abs v => pure (v, false)
     | .common f k => pure (commonAddr.getD (f, k) 0, false)
     | .undef n w => match synth n with
@@ -344,13 +350,14 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
   let ehOff := (outs.find? (·.name == ".eh_frame")).elim 0 (·.off)
   let mut table : Array (Nat × Nat) := #[]
   for e in ehs do
-    if let some (es, _, rs) := g.eh[e.file]! then
+    if let some es := g.eh[e.file]![e.ei]? then
+      let rs := es.relas
       let f := files[e.file]!
-      let src := f.secs[es]!
+      let src := f.secs[es.sec]!
       let fo := ehOff + e.out
       body := f.data.copySlice (src.off + e.piece.off) body fo e.piece.size
       if !e.piece.cie then
-        let c := cieOut.getD (e.file, e.piece.cieOff) 0
+        let c := cieOut.getD (e.file, e.ei, e.piece.cieOff) 0
         body := putLE body (fo + 4) 4 (e.out + 4 - c)
       for r in rs do
         if r.off ≥ e.piece.off && r.off < e.piece.off + e.piece.size then
