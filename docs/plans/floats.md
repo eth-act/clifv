@@ -320,10 +320,13 @@ the generator has given 707 entries since V6c's `.num` leaves (same output on `m
 `(f64, i64, f32) -> f64` uses v0, x0, v1 and defines its result from v0) and a native check
 against Cranelift (qemu, C callees linked: 4/4 runs agree, including a stack-passed `f64` stored
 with `stur d0`).
-Next (stages B/C): typed `tryRegsOf`/`gen_try_call_rets` + `LowerTryOk` with classes (lifts
-`try_call`), `CallOk`/`ArgReg` with v0..v7 and class-matched fixed operands (spill), `ShapeOf`
-with typed return registers (link), then the typed driver model (`CtxInv`→`CtxInvT` for every
-rule, or a generic transfer) that lifts `call_indirect`/`try_call_indirect`.
+On the Stage C typed model (slices 1-3 above), `IselTermFactsCallT`'s `call` proofs take the
+outputs of either class (`ctor_gen_call_output_typed`, `outRegsC_single`), while
+`Compile.functionET` still keeps extern signatures integer. Next: Stage B, typed `try_call`
+(`tryRegsOf`/`gen_try_call_rets` and `LowerTryOk` with classes, `CallOk`/`ArgReg` with v0..v7
+and class-matched fixed operands for the spill chain, `ShapeOf` with typed return registers for
+linking); Stage C, float extern signatures in `functionET` and the typed spill chain (slice 6),
+which lift `call_indirect`/`try_call_indirect` (`sigIntB`).
 
 ## 4. Known hazards
 

@@ -8,7 +8,8 @@ import FV.Backend.Proof.IselTermFactsTy
 `try_call` rules (1034, 1035) raise the outgoing area to the callee's stack-argument size. The
 symbolic executions are `IselTermFactsCall`'s; the arguments' registers are integer vregs because
 the arguments are in integer positions (`CtxInvT.intOps` for a `call`, `TermIntPos` for a
-`try_call`) rather than because every value is an integer.
+`try_call`) rather than because every value is an integer. A `call`'s outputs may be of either
+class (typed calls, S11e5a: `ctor_gen_call_output_typed`, `outRegsC_single`).
 -/
 
 namespace Backend.Proof
@@ -30,6 +31,14 @@ theorem mapM_valueRegI {ctx : Ctx}
     rw [hvr x r hr (hi x List.mem_cons_self),
       mapM_valueRegI hvr (fun y hy => hi y (List.mem_cons_of_mem _ hy)) hrs]
     rfl
+
+/-- `gen_call_output`'s registers are single vregs (of the returns' classes). -/
+theorem outRegsC_single (st : LState) (cs : List RegClass) :
+    (outRegsC st cs).mapM single? =
+      some (cs.zipIdx.map fun q => Reg.vreg (st.nextVreg + q.2) q.1) := by
+  rw [show outRegsC st cs = (cs.zipIdx.map fun q => Reg.vreg (st.nextVreg + q.2) q.1).map
+    (fun r => [r]) by simp [outRegsC, Function.comp_def]]
+  exact mapM_single_map _
 
 /-- `CallOutOk` over float-capable contexts. -/
 def CallOutOkT (p : Program) (r : Rule) : Prop :=
@@ -71,13 +80,13 @@ theorem call_bl_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2508 
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2508] at heval
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
-    ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_typed, ctor_put_in_regs_vec_iff,
+    ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, outRegsC_length,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
   simp only [show (4:Nat) < 10 from by decide, ite_true] at *
   subst_vars
-  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegs_single, outRegs_length,
+  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegsC_single, outRegsC_length,
     Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
@@ -92,7 +101,6 @@ theorem call_bl_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2508 
   simp only [ctor_gen_call_info_gen _ _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
-  obtain ⟨hr8, rfl⟩ := retRegs_eq ‹retRegs _ = some _›
   simp only [ctor_output_vec_iff] at *
   isel_destruct; subst_vars
   have h638 := ‹ApplyInternal _ _ _ _ 46 638 _ _ _ _›
@@ -138,13 +146,14 @@ theorem call_got_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2518
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2518] at heval
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_typed, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, ctor_box_external_name_iff,
+    outRegsC_length,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
   simp only [show (4:Nat) < 10 from by decide, ite_true] at *
   subst_vars
-  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegs_single, outRegs_length,
+  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegsC_single, outRegsC_length,
     Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
@@ -161,7 +170,6 @@ theorem call_got_outT {p : Program} (hp : Data p) : CallOutOkT p rule_lower_2518
     ite_true,
     ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
-  obtain ⟨hr8, rfl⟩ := retRegs_eq ‹retRegs _ = some _›
   simp only [ctor_output_vec_iff] at *
   isel_destruct; subst_vars
   have h639 := ‹ApplyInternal _ _ _ _ 46 639 _ _ _ _›
