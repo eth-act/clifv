@@ -26,13 +26,13 @@ namespace Opt
 open Clif
 
 /-- Reachability from the entry block along `succs`. -/
-inductive Reach (succs : Array (List Nat)) : Nat → Prop
-  | entry : Reach succs 0
-  | step {a x : Nat} : Reach succs a → x ∈ succs[a]! → Reach succs x
+inductive CfgReach (succs : Array (List Nat)) : Nat → Prop
+  | entry : CfgReach succs 0
+  | step {a x : Nat} : CfgReach succs a → x ∈ succs[a]! → CfgReach succs x
 
 /-- **The depth-first search is sound**: every block of the postorder is reachable. -/
 theorem postorder_reach (succs : Array (List Nat)) :
-    ∀ x ∈ (Cfg.postorder succs).toList, Reach succs x := by
+    ∀ x ∈ (Cfg.postorder succs).toList, CfgReach succs x := by
   unfold Cfg.postorder
   simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
   split
@@ -41,9 +41,9 @@ theorem postorder_reach (succs : Array (List Nat)) :
     rw [bind_pure_comp]
     simp only [Functor.map]
     refine forIn_inv' _ _ _
-      (P := fun s : DfsSt => (∀ x ∈ dfsBlocks s, Reach succs x) ∧
+      (P := fun s : DfsSt => (∀ x ∈ dfsBlocks s, CfgReach succs x) ∧
         ∀ fr ∈ s.2.1.toList, ∀ y ∈ fr.2, y ∈ succs[fr.1]!)
-      (Q := fun s : DfsSt => ∀ x ∈ s.2.2.toList, Reach succs x) ?_ ?_ ?_
+      (Q := fun s : DfsSt => ∀ x ∈ s.2.2.toList, CfgReach succs x) ?_ ?_ ?_
     · refine ⟨fun x hx => ?_, fun fr hfr y hy => ?_⟩
       · simp [dfsBlocks] at hx; subst hx; exact .entry
       · simp at hfr; subst hfr; exact hy
@@ -57,7 +57,7 @@ theorem postorder_reach (succs : Array (List Nat)) :
         rw [hst] at hreach hfr
         simp only [List.map_append, List.mem_append, List.map_cons, List.map_nil, List.mem_cons,
           List.not_mem_nil, or_false] at hreach
-        have hbr : Reach succs b := hreach b (.inr (.inr rfl))
+        have hbr : CfgReach succs b := hreach b (.inr (.inr rfl))
         have hfr' : ∀ fr ∈ st.pop.toList, ∀ y ∈ fr.2, y ∈ succs[fr.1]! :=
           fun fr h => hfr fr (List.mem_append_left _ h)
         have hbs : ∀ y ∈ ss, y ∈ succs[b]! := hfr (b, ss) (by simp)
@@ -72,7 +72,7 @@ theorem postorder_reach (succs : Array (List Nat)) :
           · exact hreach x (.inr (.inl h))
         | cons x rest =>
           simp only [hb]
-          have hrx : Reach succs x := .step hbr (hbs x (List.mem_cons_self ..))
+          have hrx : CfgReach succs x := .step hbr (hbs x (List.mem_cons_self ..))
           split <;>
           · simp only [Id.run_pure, ForInStep.value, dfsBlocks, Array.toList_push, List.map_append,
               List.mem_append, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
@@ -532,12 +532,12 @@ theorem build_loops_ok : ∀ lp ∈ (Cfg.build f).loops.toList, LoopOk (Cfg.buil
   loops_ok (build_preds_lt hc) (build_hedge hc) fun x hx => by
     rw [build_size_eq hc]; exact build_rpo_lt f hx
 
-theorem build_reach_lt {z : Nat} (h : Reach (Cfg.build f).succs z) : z < f.blocks.length := by
+theorem build_reach_lt {z : Nat} (h : CfgReach (Cfg.build f).succs z) : z < f.blocks.length := by
   cases h with
   | entry => have := hc.core.1; rwa [build_size_eq hc] at this
   | step _ hx => exact (build_edge hc hx).2.1
 
-theorem build_reach_reachable {z : Nat} (h : Reach (Cfg.build f).succs z) :
+theorem build_reach_reachable {z : Nat} (h : CfgReach (Cfg.build f).succs z) :
     (Cfg.build f).reachable z = true := by
   have hn : (Cfg.build f).succs.size ≠ 0 := by
     rw [build_succs_size]; have := hc.core.1; rw [build_size_eq hc] at this; omega
@@ -549,7 +549,7 @@ theorem build_reach_reachable {z : Nat} (h : Reach (Cfg.build f).succs z) :
   exact (build_reachable_iff f (build_reach_lt hc h)).2 this
 
 theorem build_reachable_reach {z : Nat} (hz : z < f.blocks.length) :
-    Reach (Cfg.build f).succs z := by
+    CfgReach (Cfg.build f).succs z := by
   have := hc.core.2.2.1 z (by rw [build_size_eq hc]; exact hz)
   exact postorder_reach _ z ((build_reachable_iff f hz).1 this)
 
@@ -563,7 +563,7 @@ theorem loop_between {lp : Cfg.Loop} (hlp : LoopOk (Cfg.build f) lp) {y bi : Nat
     have := hc.wf.root; simpa [wfData, checked_cfg hc] using this
   refine Classical.byContradiction fun hyn => ?_
   have hyb : bi ≠ y := by rintro rfl; exact hyn hbi
-  suffices ∀ z, Reach (Cfg.build f).succs z →
+  suffices ∀ z, CfgReach (Cfg.build f).succs z →
       ¬ (lp.body.contains z = true ∧ Anc (Cfg.build f).idom y z ∧ z ≠ y) by
     have hbl : bi < f.blocks.length := by
       have := hlp.2.2.2 bi hbi; rwa [build_size_eq hc] at this
