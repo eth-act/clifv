@@ -1228,4 +1228,66 @@ theorem step_skel {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
 
 end SkelStep
 
+/-! ## The statements of a block -/
+
+section Body
+
+variable {f : Function} {info : Info} {allowed skelOk : Inst → Bool}
+  {logs : Array (Option BlockLog)} {bi : Nat}
+
+/-- **One statement** keeps the invariant. -/
+theorem step_stmt {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
+    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel)
+    (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false) {j : Nat} {lgs : List StmtLog}
+    {st : SState} {S : Subst} (h : RunXInv f info allowed skelOk logs bi j lgs st S) {b0 : Block}
+    {s : Stmt} (hb0 : f.blocks[bi]? = some b0) (hs : b0.body[j]? = some s) :
+    RunXInv f info allowed skelOk logs bi (j + 1)
+      (lgs ++ [(stepStmt rules skel allowed skelOk info.cfg bi (st, S) s).2.2])
+      (stepStmt rules skel allowed skelOk info.cfg bi (st, S) s).1
+      (stepStmt rules skel allowed skelOk info.cfg bi (st, S) s).2.1 := by
+  by_cases hsk : skeletonStmt s = true
+  · exact step_skel hc hR hK hsym h hb0 hs hsk
+  · have h1 : isPure s.inst = true ∧ s.results.length = 1 := by simpa [skeletonStmt] using hsk
+    obtain ⟨v, hv⟩ := List.length_eq_one_iff.1 h1.2
+    exact step_pure hc hR hsym h hb0 hs hv h1.1
+
+/-- The statements of block `bi` from statement `k` on (the fold of `Opt.stepBlock`). -/
+theorem stmts_fold {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
+    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel)
+    (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false) {b0 : Block}
+    (hb0 : f.blocks[bi]? = some b0) :
+    ∀ (rest : List Stmt) (k : Nat) (st : SState) (S : Subst) (lgs : Array StmtLog),
+      b0.body.drop k = rest → RunXInv f info allowed skelOk logs bi k lgs.toList st S →
+      RunXInv f info allowed skelOk logs bi b0.body.length
+        (rest.foldl (fun (acc : SState × Subst × Array StmtLog) s =>
+          let (st, subst, lg) := stepStmt rules skel allowed skelOk info.cfg bi (acc.1, acc.2.1) s
+          (st, subst, acc.2.2.push lg)) (st, S, lgs)).2.2.toList
+        (rest.foldl (fun (acc : SState × Subst × Array StmtLog) s =>
+          let (st, subst, lg) := stepStmt rules skel allowed skelOk info.cfg bi (acc.1, acc.2.1) s
+          (st, subst, acc.2.2.push lg)) (st, S, lgs)).1
+        (rest.foldl (fun (acc : SState × Subst × Array StmtLog) s =>
+          let (st, subst, lg) := stepStmt rules skel allowed skelOk info.cfg bi (acc.1, acc.2.1) s
+          (st, subst, acc.2.2.push lg)) (st, S, lgs)).2.1
+  | [], k, st, S, lgs, hd, h => by
+    have hk : b0.body.length ≤ k := List.drop_eq_nil_iff.1 hd
+    obtain ⟨b1, hb1, hkl, -⟩ := h.cur
+    rw [hb0] at hb1; cases hb1
+    rw [show k = b0.body.length by omega] at h
+    exact h
+  | s :: rest, k, st, S, lgs, hd, h => by
+    have hs : b0.body[k]? = some s := by
+      rw [← List.head?_drop, hd]; rfl
+    have h1 := step_stmt hc hR hK hsym h hb0 hs
+    have hd' : b0.body.drop (k + 1) = rest := by
+      rw [← List.drop_drop, hd]; rfl
+    rw [List.foldl_cons]
+    dsimp only
+    generalize stepStmt rules skel allowed skelOk info.cfg bi (st, S) s = r at h1 ⊢
+    obtain ⟨st', S', lg⟩ := r
+    dsimp only at h1 ⊢
+    refine stmts_fold hc hR hK hsym hb0 rest (k + 1) st' S' (lgs.push lg) hd' ?_
+    rw [Array.toList_push]; exact h1
+
+end Body
+
 end Opt
