@@ -310,9 +310,21 @@ theorem opcode_absurd {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {x j
   cases this
   exact hns (instNames_snd_mem cl hE)
 
-/-- The opcode names `instData` gives (format-generic instructions): E's and `Bitcast`. -/
-theorem instNames_snd_memT (cl : Clif.Inst) : (instNames cl).2 ∈ eOpNames ++ ["Bitcast"] := by
-  cases cl <;> simp only [instNames] <;> try decide
+/-- The opcode names of the float operations `instData` builds (S11f, `fBinaryOpcode`,
+`fUnaryOpcode`, `fcmp`). -/
+def fOpNames : List String :=
+  ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs", "Fpromote", "Fdemote",
+   "Fcmp"]
+
+/-- The opcode names `instData` gives (format-generic instructions): E's, `Bitcast` and the
+float operations'. -/
+theorem instNames_snd_memT (cl : Clif.Inst) :
+    (instNames cl).2 ∈ eOpNames ++ ["Bitcast"] ++ fOpNames := by
+  cases cl
+  case float op ty args =>
+    cases op <;> simp [instNames, fBinaryOpcode, fUnaryOpcode, fOpNames, eOpNames]
+  all_goals simp only [instNames]
+  all_goals try decide
   all_goals first
     | (rename_i op _ _; cases op <;> decide)
     | (rename_i op _ _ _; cases op <;> decide)
@@ -321,11 +333,12 @@ theorem instNames_snd_memT (cl : Clif.Inst) : (instNames cl).2 ∈ eOpNames ++ [
     | (rename_i op _ _ _ _ _ _; cases op <;> decide)
 
 /-- `opcode_absurd` over a float-capable context: an instruction reached through `def_inst` has
-an opcode `instData` produces (E's, `Bitcast`, or a float constant's, excluded by `hk`). -/
+an opcode `instData` produces (E's, `Bitcast`, a float operation's, or a float constant's,
+excluded by `hk`). -/
 theorem opcode_absurdT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {x j : Nat}
     {info : IInfo} (hd : ctx.defInst? x = some j) (hi : ctx.insts[j]? = some info) {kf ko : Nat}
     {fs : List V} (he : V.data 152 kf (V.data 151 ko [] :: fs) = info.data) {s : String}
-    (hs : (variantNames 151)[ko]? = some s) (hns : s ∉ eOpNames ++ ["Bitcast"])
+    (hs : (variantNames 151)[ko]? = some s) (hns : s ∉ eOpNames ++ ["Bitcast"] ++ fOpNames)
     (hk : (kf ≠ 33 ∧ kf ≠ 34) ∨ (ko ≠ 59 ∧ ko ≠ 60) := by
       first | exact Or.inl (by decide) | exact Or.inr (by decide)) : False := by
   have hcl := hctx.defClif x j info hd hi

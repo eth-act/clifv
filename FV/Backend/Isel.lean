@@ -316,20 +316,25 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .float (.fcmp cc) ty args =>
     match args with
     | [x, y] =>
-      if ty.isFloat then
+      -- `one`/`ueq` lower to two conditions (`CondResult.Or`, `emit_fcmp` rule 1), whose
+      -- consumers are not proven: outside the lowering
+      if ty.isFloat && cc != .one && cc != .ueq then
         pure (instDataV "FloatCompare"
           [opcodeV "Fcmp", .values [x, y], mkVariant tyFloatCC (floatccName cc)])
-      else throw s!"fcmp.{ty.name}"
+      else throw s!"fcmp {cc.name}.{ty.name}"
     | _ => throw "fcmp arity"
   | .float op ty args =>
-    match fBinaryOpcode op, fUnaryOpcode op, args with
-    | some n, _, [x, y] =>
+    match fBinaryOpcode op, args with
+    | some n, [x, y] =>
       if fTyOk op ty then pure (instDataV "Binary" [opcodeV n, .values [x, y]])
       else throw s!"{n}.{ty.name}"
-    | _, some n, [x] =>
-      if fTyOk op ty then pure (instDataV "Unary" [opcodeV n, .value x])
-      else throw s!"{n}.{ty.name}"
-    | _, _, _ => throw s!"`{op.name}` is not in the lowering"
+    | some n, _ => throw s!"{n} arity"
+    | none, _ =>
+      match fUnaryOpcode op, args with
+      | some n, [x] =>
+        if fTyOk op ty then pure (instDataV "Unary" [opcodeV n, .value x])
+        else throw s!"{n}.{ty.name}"
+      | _, _ => throw s!"`{op.name}` is not in the lowering"
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`)

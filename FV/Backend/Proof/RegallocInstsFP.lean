@@ -127,4 +127,31 @@ theorem corr_vecDupImm (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (imm :
     obtain ⟨⟨⟨rfl, h2⟩, h3⟩, h4⟩ := h
     cases sz <;> corr_tac
 
+/-! ### S11f: scalar FP arithmetic and comparison -/
+
+attribute [csimp_rules] Arm.DPSFP.exec_fp_data_processing_two_source
+  Arm.DPSFP.exec_fp_data_processing_one_source Arm.DPSFP.exec_fp_compare Arm.DPSFP.fpFmt
+
+set_option maxHeartbeats 4000000 in
+theorem corr_fpuRRR (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : FPUOp2)
+    (sz : ScalarSize) (d n m : Nat) :
+    Corr F ctx env #[⟨d, .float, .def, .late, .reg⟩, ⟨n, .float, .use, .early, .reg⟩,
+      ⟨m, .float, .use, .early, .reg⟩]
+      (fun r => .fpuRRR op sz (r.getD 0 .xzr) (r.getD 1 .xzr) (r.getD 2 .xzr)) := by
+  cases op <;> cases sz <;> corr_tac
+
+set_option maxHeartbeats 4000000 in
+theorem corr_fpuRR (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (op : FPUOp1)
+    (sz : ScalarSize) (d n : Nat) :
+    Corr F ctx env #[⟨d, .float, .def, .late, .reg⟩, ⟨n, .float, .use, .early, .reg⟩]
+      (fun r => .fpuRR op sz (r.getD 0 .xzr) (r.getD 1 .xzr)) := by
+  cases op <;> cases sz <;> corr_tac
+
+set_option maxHeartbeats 4000000 in
+theorem corr_fpuCmp (F : BitVec 64 → Prop) (ctx : FnCtx) (env : Env) (sz : ScalarSize)
+    (n m : Nat) :
+    Corr F ctx env #[⟨n, .float, .use, .early, .reg⟩, ⟨m, .float, .use, .early, .reg⟩]
+      (fun r => .fpuCmp sz (r.getD 0 .xzr) (r.getD 1 .xzr)) := by
+  cases sz <;> corr_tac
+
 end Backend.Proof
