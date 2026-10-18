@@ -27,7 +27,7 @@ def TrapOk (idom : Array (Option Nat)) (V : Nat → Option Block) (bi k : Nat)
 /-- Rules-phase steps and `materialize` runs inside one statement (module doc). -/
 structure SRun (f : Function) (idom : Array (Option Nat)) (allowed skelOk : Inst → Bool) (bi : Nat)
     (B : ValueId → Prop) (V : Nat → Option Block) (st st' : SState) (new : List Stmt) : Prop where
-  inv : RInv f (emitV V bi new) B (fun _ => False) st'
+  inv : RInv f (emitV V bi new) B (fun _ => False) (fun _ => False) st'
   good : ∀ y, Good st B y → Good st' B y
   known : ∀ y, st.known y = true → st'.known y = true
   typesKnown : ∀ y, st.known y = true → st'.types.get? y = st.types.get? y
@@ -44,9 +44,9 @@ structure SRun (f : Function) (idom : Array (Option Nat)) (allowed skelOk : Inst
     NewOk idom (emitV V bi new) bi (b.body.length + j) allowed B st' s ∨
       TrapOk idom (emitV V bi new) bi (b.body.length + j) skelOk B st' s
 
-theorem RInv.of_mrun {V : Nat → Option Block} {X : ValueId → Prop} {st st' : SState}
-    {new : List Stmt} (h : RInv f V B X st) (hm : MRun f idom allowed bi B V st st' new) :
-    RInv f (emitV V bi new) B X st' := by
+theorem RInv.of_mrun {V : Nat → Option Block} {X : ValueId → Prop} {XN : Inst → Prop} {st st' : SState}
+    {new : List Stmt} (h : RInv f V B X XN st) (hm : MRun f idom allowed bi B V st st' new) :
+    RInv f (emitV V bi new) B X XN st' := by
   obtain ⟨d, a, t, c, nx, rfl⟩ := hm.step.shape
   refine ⟨hm.inv, h.noPartial, fun n w hw => ?_, fun x ms hx m hm' => ?_⟩
   · obtain ⟨e1, e2, e3⟩ := h.memo n w hw
@@ -56,7 +56,7 @@ theorem RInv.of_mrun {V : Nat → Option Block} {X : ValueId → Prop} {st st' :
       rw [hm.step.typesKnown m e1, hm.step.typesKnown x (h.m.altsKnown x ms hx)]; exact e2⟩
 
 theorem SRun.of_mrun {V : Nat → Option Block} {st st' : SState} {new : List Stmt}
-    (h : RInv f V B (fun _ => False) st) (hm : MRun f idom allowed bi B V st st' new) :
+    (h : RInv f V B (fun _ => False) (fun _ => False) st) (hm : MRun f idom allowed bi B V st st' new) :
     SRun f idom allowed skelOk bi B V st st' new := by
   obtain ⟨d, a, t, c, nx, rfl⟩ := hm.step.shape
   exact ⟨h.of_mrun hm, hm.good, fun y hy => hm.step.known y hy, hm.step.typesKnown, hm.step.types,
@@ -64,7 +64,7 @@ theorem SRun.of_mrun {V : Nat → Option Block} {st st' : SState} {new : List St
     fun y n' hy _ => hm.nodes y n' hy, rfl, fun b hb j s hs => .inl (hm.stmts b hb j s hs)⟩
 
 theorem SRun.of_rstep {V : Nat → Option Block} {st st' : SState}
-    (h : RInv f V B (fun _ => False) st') (hs : RStep B st st') :
+    (h : RInv f V B (fun _ => False) (fun _ => False) st') (hs : RStep B st st') :
     SRun f idom allowed skelOk bi B V st st' [] := by
   refine ⟨by rw [emitV_nil]; exact h, hs.good, fun y hy => hs.known hy, hs.typesKnown, hs.types,
     fun y d hy => by rw [hs.avail]; exact hy, fun y d hy => .inl (by rw [← hs.avail]; exact hy),
@@ -184,7 +184,7 @@ variable {cfg : Cfg} {rules : SimplifyFn} {skel : SkeletonFn}
 /-- **A skeleton statement** (`skelStmt`) under the rule obligations (module doc). -/
 theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
     ∀ fuel st u stmts sub st' o (V : Nat → Option Block) b,
-      RInv f V B (fun _ => False) st → V bi = some b → (∀ y ∈ operands u.inst, Good st B y) →
+      RInv f V B (fun _ => False) (fun _ => False) st → V bi = some b → (∀ y ∈ operands u.inst, Good st B y) →
       (∀ r ∈ u.results, st.known r = true) →
       skelStmt skel rules allowed skelOk cfg bi fuel st u = (stmts, sub, st', o) →
       ∃ pre fin, stmts.toList = pre ++ fin ∧ SRun f cfg.idom allowed skelOk bi B V st st' pre ∧
@@ -437,7 +437,7 @@ theorem MInv.noResult {V : Nat → Option Block} {st : SState} (h : MInv f V B s
     fun x d t d' t' h1 h2 => h.uniq x d t d' t' (hd x d t h1) (hd x d' t' h2)⟩
 
 theorem SRun.trap {V : Nat → Option Block} {st : SState} {b : Block}
-    (h : RInv f V B (fun _ => False) st) (hb : V bi = some b) {s : Stmt}
+    (h : RInv f V B (fun _ => False) (fun _ => False) st) (hb : V bi = some b) {s : Stmt}
     (hs : TrapOk idom V bi b.body.length skelOk B st s) :
     SRun f idom allowed skelOk bi B V st st [s] := by
   refine ⟨⟨h.m.noResult hs.1, h.noPartial, h.memo, h.alts⟩, fun _ h => h, fun _ h => h,
@@ -542,7 +542,7 @@ theorem termRes_compose {V : Nat → Option Block} {b : Block} {st3 : SState}
 /-- **A terminator** (`skelTerm`) under the rule obligations (module doc). -/
 theorem skelTerm_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
     ∀ fuel st t extra t'' st' ch (V : Nat → Option Block) b,
-      RInv f V B (fun _ => False) st → V bi = some b →
+      RInv f V B (fun _ => False) (fun _ => False) st → V bi = some b →
       (∀ y ∈ termOperands t, Good st B y ∧ AvailHere cfg.idom V bi y) →
       skelTerm skel rules allowed skelOk cfg bi fuel st t = (extra, t'', st', ch) →
       SRun f cfg.idom allowed skelOk bi B V st st' extra.toList ∧
