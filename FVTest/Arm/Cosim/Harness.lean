@@ -169,6 +169,9 @@ structure TestCase where
   /-- Literal pools (for `ldr (literal)`): `buf`'s bytes are also placed in the code, at
   `ins_i - 64` (before the instruction) and at `ins_i + 8` (after its landing pad). -/
   pool : Bool := false
+  /-- Instructions run (by qemu and by the model) right before `inst`, e.g. the `ldaxr` that
+  opens the exclusive monitor a `stlxr` needs. Only for `.normal` cases without `pool`. -/
+  pre : Array UInt32 := #[]
 
 def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
 
@@ -228,7 +231,8 @@ def recSize : Nat := 848
 def emitInit (i : Nat) (tc : TestCase) : String := Id.run do
   let mut s := s!"  .balign 16\nrin_{i}:\n"
   for e in tc.regs do s := s ++ s!"  .quad {e}\n"
-  s := s ++ s!"  .quad {tc.sp}\n  .quad {hex (tc.nzcv <<< 28)}\n  .quad {insLabel i}\n"
+  let start := if tc.pre.isEmpty then insLabel i else s!"pre_{i}"
+  s := s ++ s!"  .quad {tc.sp}\n  .quad {hex (tc.nzcv <<< 28)}\n  .quad {start}\n"
   for (lo, hi) in tc.simd do s := s ++ s!"  .quad {lit lo}, {lit hi}\n"
   s := s ++ s!"  .quad {bufLabel i}\n  .quad 0\n{bufLabel i}:\n"
   s := s ++ "  .byte " ++ ", ".intercalate (tc.buf.toList.map (fun b => toString b.toNat)) ++ "\n"
@@ -262,6 +266,9 @@ def emitCode (i : Nat) (tc : TestCase) (next : String) : String := Id.run do
       s := s ++ s!"{padLabel i j}:\n  b hnd_{padLabel i j}\n"
   let poolBytes := "  .byte " ++ ", ".intercalate (tc.buf.toList.map (fun b => toString b.toNat)) ++ "\n"
   if tc.pool then s := s ++ s!"  b {insLabel i}\n" ++ poolBytes
+  if !tc.pre.isEmpty then
+    s := s ++ s!"pre_{i}:\n"
+    for p in tc.pre do s := s ++ s!"  .inst {hex p.toNat}\n"
   s := s ++ s!"{insLabel i}:\n  .inst {hex tc.inst.toNat}\n"
   for m in [0:fwd] do
     let j : Int := m + 1
@@ -346,10 +353,12 @@ def bv64At (b : ByteArray) (o : Nat) : BitVec 64 := BitVec.ofNat 64 (u64At b o)
 
 def bv128At (b : ByteArray) (o : Nat) : BitVec 128 := bv64At b (o + 8) ++ bv64At b o
 
-/-- The initial model state for the record at offset `o` of `b`, and the buffer's address. -/
-def initState (b : ByteArray) (o : Nat) (inst : UInt32) : ArmState × BitVec 64 := Id.run do
+/-- The initial model state for the record at offset `o` of `b`, and the buffer's address: the
+program is `insts` from the recorded PC on. -/
+def initState (b : ByteArray) (o : Nat) (insts : Array UInt32) : ArmState × BitVec 64 := Id.run do
   let pc := bv64At b (o + offPC)
-  let mut s := set_program ArmState.default [(pc, BitVec.ofNat 32 inst.toNat)]
+  let mut s := set_program ArmState.default <| insts.toList.zipIdx.map fun (ins, k) =>
+    (pc + BitVec.ofNat 64 (4 * k), BitVec.ofNat 32 ins.toNat)
   for k in [0:31] do
     s := w (.GPR (BitVec.ofNat 5 k)) (bv64At b (o + 8 * k)) s
   s := w (.GPR 31#5) (bv64At b (o + offSP)) s
@@ -438,7 +447,7 @@ def checkBatch (tcs : Array TestCase) (out : ByteArray) : Array (TestCase × Arr
     for h : i in [0:n] do
       let tc := tcs[i]
       let o := i * recSize
-      let (s0, buf) := initState out o tc.inst
+      let (s0, buf) := initState out o (tc.pre.push tc.inst)
       -- the literal pools (`TestCase.pool`) are code bytes: at `pc - 64` and `pc + 8`
       let s0 := if !tc.pool then s0 else Id.run do
         let pc := r .PC s0
@@ -448,7 +457,7 @@ def checkBatch (tcs : Array TestCase) (out : ByteArray) : Array (TestCase × Arr
           s := write_mem (pc - 64#64 + BitVec.ofNat 64 k) b s
           s := write_mem (pc + 8#64 + BitVec.ofNat 64 k) b s
         return s
-      let s1 := stepi s0
+      let s1 := (List.range (tc.pre.size + 1)).foldl (fun s _ => stepi s) s0
       rs := rs.push (tc, compare tc s1 buf out (n * recSize + o) out (2 * n * recSize + o))
     return rs
 
