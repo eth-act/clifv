@@ -4,11 +4,8 @@ description: >-
   baseline build and of earlier full-gate jobs (lake cache unstage).
 inputs:
   swap-gb:
-    description: Swap file size in GB (0 keeps the runner's default swap)
+    description: Swap file size in GB (0 keeps the runner's default swap; GitHub-hosted runners only)
     default: '0'
-  free-disk:
-    description: Remove preinstalled SDKs the gate does not use (about 20 GB)
-    default: 'false'
   base-run-id:
     description: Run whose `lake-full` artifact holds the baseline build ('' = none)
     default: ''
@@ -18,15 +15,8 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Free disk
-      if: inputs.free-disk == 'true'
-      shell: bash
-      run: |
-        sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
-          /opt/hostedtoolcache/CodeQL /usr/share/swift
-        df -h / /mnt
     - name: Swap
-      if: inputs.swap-gb != '0'
+      if: inputs.swap-gb != '0' && runner.environment == 'github-hosted'
       shell: bash
       env:
         SWAP_GB: ${{ inputs.swap-gb }}

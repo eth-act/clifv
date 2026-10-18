@@ -965,6 +965,22 @@ Large, low priority.
     only what changed); the culprit's author then opens a fix PR, or the integrator opens a revert PR,
     and it merges first. After a PR touching @codygunton's files or changing CLIF semantics broadly
     (e.g. `Clif.Ty`) merges, the author tells the integrator, who starts a main-gate run right away.
+  - *Full gate in CI (`.github/workflows/full-gate.yml`; post-merge only, never a required check):*
+    every push to `main` (one run at a time, the newest pending push waits), weekly from scratch, and
+    on demand (`workflow_dispatch`, input `fresh`). `scripts/ci-build-plan.py` plans the modules whose
+    sources differ from the newest `lake-full` build (artifact of an earlier run) and their importers,
+    split into up to 3 waves of parallel shards (`.github/workflows/full-gate-shard.yml`,
+    `.github/scripts/full-gate-shard.sh`: `lake-serial-build.py --only … --retry-failed`, outputs passed
+    on as `lake cache stage` directories, 25–65 MB per shard). Then one job assembles every target
+    and executable, and the gate jobs run (`scripts/axiom-audit.py`, crate-proofs, `lean-e2e-check` +
+    `link-check`, filetests, encode-check, `clif-filetests.sh`, `opt-difftest.sh`, cargo fv on fv-demo
+    and the survey). The report job posts the result on #261. On GitHub-hosted runners (4 vCPU, 16 GB,
+    24 GB swap; eth-act's free plan allows 20 jobs at once across all its repositories) a cold build
+    takes most of a day: measured 2026-10-18, wave 1 (16 shards) 3.4 h, wave 2 (14 shards) ≥ 4 h;
+    modules run 1.3–1.7× slower than in `lake-module-peaks.tsv`, `StockCmpWithFlags` (23.6 GB peak)
+    pages to swap and takes 70 min. Repository variables move the build to a larger runner:
+    `FULL_GATE_RUNNER` (JSON `runs-on`), `FULL_GATE_SHARDS`, `FULL_GATE_BUDGET`, `FULL_GATE_HEAVY`,
+    `FULL_GATE_MAX_JOBS`, `FULL_GATE_RAM`, `FULL_GATE_TIME_SCALE`.
 - When a WP lands, mark it here (`**done** (commit)`) and update §2.
 
 ## 8. Issues and claiming

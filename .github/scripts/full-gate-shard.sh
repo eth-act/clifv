@@ -17,11 +17,15 @@ print("\n".join(plan["waves"][int(sys.argv[2]) - 1][int(sys.argv[3])]["modules"]
 EOF
 mapfile -t mods < "$out/modules.txt"
 echo "wave $wave shard $shard: ${#mods[@]} modules"
-# Limits for a 16 GB runner with swap: light modules packed within 15G of recorded peaks (at
-# most 3 lean processes on 4 vCPUs), modules above 12G alone; caps only steer the packing.
+# Default limits for a 16 GB GitHub-hosted runner with swap: light modules packed within 15G of
+# recorded peaks (at most 3 lean processes on 4 vCPUs), modules above 12G alone; caps only steer
+# the packing. A larger runner sets FV_CI_BUDGET / FV_CI_HEAVY / FV_CI_MAX_JOBS (repository
+# variables FULL_GATE_BUDGET / FULL_GATE_HEAVY / FULL_GATE_MAX_JOBS, docs/TO-PROVE.md §7).
 python3 scripts/lake-serial-build.py --only "$out/modules.txt" --out "$out/sched" \
-  --record "$out/peaks.tsv" --budget 15G --heavy 12G --heavy-avail 0 --pause-avail 1G \
-  --max-jobs 3 --margin 1.0 --max-cap 48G --retry-failed "${mods[@]}"
+  --record "$out/peaks.tsv" --budget "${FV_CI_BUDGET:-15G}" --heavy "${FV_CI_HEAVY:-12G}" \
+  --heavy-avail 0 --pause-avail 1G --max-jobs "${FV_CI_MAX_JOBS:-3}" --margin 1.0 --max-cap 48G \
+  --retry-failed \
+  "${mods[@]}"
 lake build --no-build "${mods[@]}" -o "$out/outputs.jsonl"
 lake cache stage "$out/outputs.jsonl" "$out/stage"
 du -sh "$out/stage"

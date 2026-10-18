@@ -9,15 +9,11 @@ name: Full gate
 # differ from the baseline commit, and their importers, are rebuilt.
 on:
   push:
-    branches: [main, 'ci-proto/**']  # PROTOTYPE-ONLY
-  # PR check: only the modules the PR changes (and their importers) build, on the baseline of the
-  # newest main build; docs-only PRs skip it
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths-ignore: ['docs/**', '**/*.md']
+    branches: [main]
   schedule:
-    # nightly from scratch (no baseline): checks the incremental runs' cache reuse
-    - cron: '17 1 * * *'
+    # weekly from scratch (no baseline; Lake does not trace every input, e.g. the ISLE sources
+    # FVTest.Isle reads), in its own concurrency group: a cold build takes most of a day here
+    - cron: '17 1 * * 6'
   workflow_dispatch:
     inputs:
       fresh:
@@ -28,11 +24,11 @@ on:
 permissions:
   contents: read
 
-# main: one run at a time, the newest pending push waits (older pending ones are dropped);
-# PRs: a new commit cancels the running check.
+# Post-merge only (never a required check; authors merge on their per-PR gates, docs/TO-PROVE.md
+# §7). One run per branch at a time: the newest pending push waits, older pending ones are dropped.
 concurrency:
-  group: full-gate-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: full-gate-${{ github.event_name == 'schedule' && 'weekly' || github.ref }}
+  cancel-in-progress: false
 
 env:
   # the continuous main gate's tracking issue (docs/TO-PROVE.md §7)
@@ -42,7 +38,6 @@ env:
 jobs:
   plan:
     name: Plan
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -63,7 +58,7 @@ jobs:
         if: github.event_name != 'schedule' && !inputs.fresh
         env:
           GH_TOKEN: ${{ github.token }}
-          OWN_BRANCH: ${{ github.head_ref || github.ref_name }}
+          OWN_BRANCH: ${{ github.ref_name }}
         run: |
           # newest unexpired `lake-full` of a run on main or on this branch; Lake's cache is
           # content-addressed, so any baseline is safe: the planner rebuilds what differs from it
@@ -85,12 +80,20 @@ jobs:
         id: plan
         env:
           BASE: ${{ steps.base.outputs.sha }}
-          SHARDS: ${{ github.event_name == 'pull_request' && '8' || '16' }}
+          # eth-act (free plan) runs at most 20 jobs at once across all its repositories
+          SHARDS: ${{ vars.FULL_GATE_SHARDS || '10' }}
+          # runner seconds per second recorded in scripts/lake-module-peaks.tsv (GitHub-hosted:
+          # measured on the first full CI build, 2026-10-18) and the shard scheduler's limits
+          TIME_SCALE: ${{ vars.FULL_GATE_TIME_SCALE || '2.5' }}
+          RAM: ${{ vars.FULL_GATE_RAM || '15G' }}
+          FV_CI_BUDGET: ${{ vars.FULL_GATE_BUDGET || '15G' }}
+          FV_CI_HEAVY: ${{ vars.FULL_GATE_HEAVY || '12G' }}
+          FV_CI_MAX_JOBS: ${{ vars.FULL_GATE_MAX_JOBS || '3' }}
         run: |
-          # --time-scale: runner seconds per second recorded in scripts/lake-module-peaks.tsv
-          # (measured on the first full CI build, 2026-10-17)
-          python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} --shards "$SHARDS" --waves 3 --time-scale 2.5 \
-            --out ci-plan.json --github-output $LEAN_TARGETS | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} --shards "$SHARDS" --waves 3 \
+            --time-scale "$TIME_SCALE" --ram "$RAM" --budget "$FV_CI_BUDGET" --heavy "$FV_CI_HEAVY" \
+            --max-jobs "$FV_CI_MAX_JOBS" --out ci-plan.json --github-output $LEAN_TARGETS \
+            | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ci-plan
@@ -155,7 +158,7 @@ jobs:
     name: Assemble build and executables
     needs: [plan, wave1, wave2, wave3]
     if: ${{ !cancelled() && needs.plan.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.wave1.result) && contains(fromJSON('["success","skipped"]'), needs.wave2.result) && contains(fromJSON('["success","skipped"]'), needs.wave3.result) }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 300
     permissions:
       actions: read
@@ -167,7 +170,6 @@ jobs:
       - uses: ./.github/actions/fv-lean
         with:
           swap-gb: '24'
-          free-disk: 'true'
           base-run-id: ${{ needs.plan.outputs.base-run }}
           stages: stage-w*
       - name: Build every Lean target and executable
@@ -220,7 +222,7 @@ jobs:
   crate-proofs:
     name: crate-proofs
     needs: [plan, assemble]
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 240
     permissions:
       actions: read
@@ -232,7 +234,6 @@ jobs:
       - uses: ./.github/actions/fv-lean
         with:
           swap-gb: '24'
-          free-disk: 'true'
           stages: lake-full
       - name: Build crate-proofs
         run: |
@@ -255,7 +256,7 @@ jobs:
   e2e:
     name: lean-e2e-check and link-check
     needs: [plan, assemble]
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 180
     permissions:
       actions: read
@@ -360,7 +361,6 @@ jobs:
       - uses: ./.github/actions/fv-lean
         with:
           swap-gb: '16'
-          free-disk: 'true'
           stages: lake-full
       - name: Tools
         run: |
@@ -436,7 +436,7 @@ jobs:
           NEEDS: ${{ toJSON(needs) }}
         run: python3 .github/scripts/full-gate-report.py report > report.md && cat report.md >> "$GITHUB_STEP_SUMMARY"
       - name: Post to the continuous-gate issue
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh issue comment "$FULL_GATE_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file report.md

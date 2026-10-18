@@ -71,6 +71,12 @@ def main():
     ap.add_argument("--default-secs", type=float, default=60)
     ap.add_argument("--time-scale", type=float, default=1.0,
                     help="runner seconds per recorded second (recorded on the agents' machine)")
+    ap.add_argument("--ram", default="0",
+                    help="runner RAM; a module whose recorded peak exceeds it pages to swap, and "
+                         "its estimate grows by --swap-penalty per GiB above (0: no penalty)")
+    ap.add_argument("--swap-penalty", type=float, default=4.0,
+                    help="extra runner seconds per recorded second and GiB above --ram (GitHub "
+                         "runner, 16 GB + swap: StockCmpWithFlags, 23.6 GB peak, ran 32x longer)")
     ap.add_argument("--profile", action="append")
     ap.add_argument("--out", default="ci-plan.json")
     ap.add_argument("--github-output", action="store_true")
@@ -114,8 +120,10 @@ def main():
                 planned.add(m)
                 stack.extend(rdeps[m])
 
-    secs = {m: a.time_scale * (prof[m][1] if m in prof else a.default_secs) for m in planned}
+    ram = lsb.size(a.ram)
     peak = {m: prof[m][0] if m in prof else 0 for m in planned}
+    secs = {m: a.time_scale * (prof[m][1] if m in prof else a.default_secs)
+               * (1 + a.swap_penalty * max(0, peak[m] - ram) / GiB if ram else 1) for m in planned}
 
     def cap(m):
         if m not in prof:

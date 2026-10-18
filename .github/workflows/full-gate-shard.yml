@@ -28,8 +28,10 @@ permissions:
 jobs:
   build:
     name: shard ${{ inputs.shard }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 350
+    # repository variable FULL_GATE_RUNNER (JSON `runs-on` value, e.g. '["self-hosted","clifv-64g"]')
+    # moves the build to a larger runner; docs/TO-PROVE.md §7
+    runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -37,7 +39,6 @@ jobs:
       - uses: ./.github/actions/fv-lean
         with:
           swap-gb: '24'
-          free-disk: 'true'
           base-run-id: ${{ inputs.base-run }}
           stages: ${{ inputs.stages }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -47,6 +48,9 @@ jobs:
         env:
           WAVE: ${{ inputs.wave }}
           SHARD: ${{ inputs.shard }}
+          FV_CI_BUDGET: ${{ vars.FULL_GATE_BUDGET }}
+          FV_CI_HEAVY: ${{ vars.FULL_GATE_HEAVY }}
+          FV_CI_MAX_JOBS: ${{ vars.FULL_GATE_MAX_JOBS }}
         run: .github/scripts/full-gate-shard.sh ci-plan.json "$WAVE" "$SHARD" "$RUNNER_TEMP/shard"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
