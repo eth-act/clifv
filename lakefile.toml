@@ -92,3 +92,7 @@ root = "FVTest.Front.DecodeMain"
 [[lean_exe]]
 name = "float-difftest"
 root = "FVTest.Float.DiffTest"
+
+[[lean_exe]]
+name = "lean-ld"
+root = "FVTest.Link.LeanLdMain"
