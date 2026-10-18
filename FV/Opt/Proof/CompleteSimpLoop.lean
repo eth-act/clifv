@@ -340,14 +340,14 @@ theorem TermLogFact.mono {b0 : Block} {lg : BlockLog} (h : TermLogFact B st S b0
     · exact .inr (fun hb => e (hp.bad y hb))
   split
   · rename_i hc
-    rw [if_pos hc] at h2
+    rw [ite_eq_left hc] at h2
     obtain ⟨e1, e2, e3⟩ := h2
     refine ⟨e1, fun y hy => hp.good y (e2 y hy), fun t ht => ?_⟩
     rcases e3 t ht with e | ⟨e, e'⟩
     · exact .inl e
     · exact .inr ⟨e, fun y hy => hp.good y (e' y hy)⟩
   · rename_i hc
-    rw [if_neg hc] at h2
+    rw [ite_eq_right hc] at h2
     exact h2
 
 end Mono
@@ -379,9 +379,9 @@ theorem body_fold (body : List Stmt) (bi : Nat) (m : Std.HashMap ValueId Nat) :
     rw [List.foldl_cons, List.filter_cons]
     by_cases hs : skeletonStmt s = true
     · have hs' : (!(isPure s.inst && s.results.length == 1)) = true := hs
-      rw [if_pos hs', if_pos hs, List.flatMap_cons, List.foldl_append, List.foldl_map, ih]
+      rw [ite_eq_left hs', ite_eq_left hs, List.flatMap_cons, List.foldl_append, List.foldl_map, ih]
     · have hs' : ¬ (!(isPure s.inst && s.results.length == 1)) = true := hs
-      rw [if_neg hs', if_neg hs, ih]
+      rw [ite_eq_right hs', ite_eq_right hs, ih]
 
 theorem initAvail_eq (f : Function) :
     initAvail f = (leafList f).foldl (fun m x => m.insert x.1 x.2) {} := by
