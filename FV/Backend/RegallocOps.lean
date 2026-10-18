@@ -276,6 +276,24 @@ def MInst.visitOperands : MInst → m MInst
     let rd ← f .def_ rd; let rn ← f .use rn; let rm ← f .use rm; pure (.fpuCSel s rd rn rm c)
   | .fpuMoveFPImm rd i s => do pure (.fpuMoveFPImm (← f .def_ rd) i s)
   | .vecDupImm rd i inv s => do pure (.vecDupImm (← f .def_ rd) i inv s)
+  -- S11f (`mod.rs`): `FpuRR`/`FpuRound`/`FpuToInt`/`IntToFpu`: `reg_def(rd); reg_use(rn)`;
+  -- `FpuRRR`: `reg_def(rd); reg_use(rn); reg_use(rm)`; `FpuRRRR`: also `reg_use(ra)`;
+  -- `FpuCmp`: `reg_use(rn); reg_use(rm)`
+  | .fpuRR op s rd rn => do
+    let rd ← f .def_ rd; let rn ← f .use rn; pure (.fpuRR op s rd rn)
+  | .fpuRRR op s rd rn rm => do
+    let rd ← f .def_ rd; let rn ← f .use rn; let rm ← f .use rm; pure (.fpuRRR op s rd rn rm)
+  | .fpuRRRR op s rd rn rm ra => do
+    let rd ← f .def_ rd; let rn ← f .use rn; let rm ← f .use rm; let ra ← f .use ra
+    pure (.fpuRRRR op s rd rn rm ra)
+  | .fpuCmp s rn rm => do
+    let rn ← f .use rn; let rm ← f .use rm; pure (.fpuCmp s rn rm)
+  | .fpuRound op rd rn => do
+    let rd ← f .def_ rd; let rn ← f .use rn; pure (.fpuRound op rd rn)
+  | .fpuToInt op rd rn => do
+    let rd ← f .def_ rd; let rn ← f .use rn; pure (.fpuToInt op rd rn)
+  | .intToFpu op rd rn => do
+    let rd ← f .def_ rd; let rn ← f .use rn; pure (.intToFpu op rd rn)
 
 end
 

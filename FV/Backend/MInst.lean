@@ -346,6 +346,39 @@ def AtomicRmwLoopOp.name : AtomicRmwLoopOp → String
   | .or => "Orr" | .smax => "Smax" | .smin => "Smin" | .umax => "Umax" | .umin => "Umin"
   | .xchg => "Xchg"
 
+/-- Scalar floating-point unary operations of `Insn.fpuRR` (Cranelift `FPUOp1`, `inst.isle`).
+`cvt32To64`/`cvt64To32` are FCVT between precisions; their `size` is the source's. -/
+inductive FPUOp1 where
+  | abs | neg | sqrt | cvt32To64 | cvt64To32
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Scalar floating-point binary operations of `Insn.fpuRRR` (Cranelift `FPUOp2`). -/
+inductive FPUOp2 where
+  | add | sub | mul | div | max | min
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Scalar fused multiply-add operations of `Insn.fpuRRRR` (Cranelift `FPUOp3`):
+`fmadd`/`fmsub`/`fnmadd`/`fnmsub`. -/
+inductive FPUOp3 where
+  | mAdd | mSub | nMAdd | nMSub
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Round-to-integral modes of `Insn.fpuRound` with the operand precision (Cranelift
+`FpuRoundMode`): `frintm`/`frintp`/`frintz`/`frintn`. -/
+inductive FpuRoundMode where
+  | minus32 | minus64 | plus32 | plus64 | zero32 | zero64 | nearest32 | nearest64
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Float → integer conversions of `Insn.fpuToInt` (Cranelift `FpuToIntOp`, `fcvtzs`/`fcvtzu`). -/
+inductive FpuToIntOp where
+  | f32ToU32 | f32ToI32 | f32ToU64 | f32ToI64 | f64ToU32 | f64ToI32 | f64ToU64 | f64ToI64
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- Integer → float conversions of `Insn.intToFpu` (Cranelift `IntToFpuOp`, `scvtf`/`ucvtf`). -/
+inductive IntToFpuOp where
+  | u32ToF32 | i32ToF32 | u32ToF64 | i32ToF64 | u64ToF32 | i64ToF32 | u64ToF64 | i64ToF64
+  deriving DecidableEq, Repr, Inhabited, BEq
+
 /-- The aarch64 `MInst` subset. Field order follows `inst.isle`. `args`/`rets` are Cranelift's
 `Args`/`Rets` pseudo-instructions: `(vreg, real register)` pairs defined at entry / used at
 return. -/
@@ -431,6 +464,22 @@ inductive MInst where
   expands the plain form only, `movi … #imm8, lsl #0`, which includes the zero of
   `constant_f32`/`constant_f64`). -/
   | vecDupImm (rd : Reg) (imm : ASIMDMovModImm) (invert : Bool) (size : VectorSize)
+  /-- S11f: `fabs/fneg/fsqrt sd, sn` / `… dd, dn`, `fcvt dd, sn` (`cvt32To64`, `size` 32), `fcvt
+  sd, dn` (`cvt64To32`, `size` 64) (Cranelift `FpuRR`; `size` is the operand's). -/
+  | fpuRR (op : FPUOp1) (size : ScalarSize) (rd rn : Reg)
+  /-- S11f: `fadd/fsub/fmul/fdiv/fmax/fmin sd, sn, sm` / `… dd, dn, dm` (Cranelift `FpuRRR`). -/
+  | fpuRRR (op : FPUOp2) (size : ScalarSize) (rd rn rm : Reg)
+  /-- S11f: `fmadd/fmsub/fnmadd/fnmsub sd, sn, sm, sa` / `… dd, dn, dm, da` (Cranelift
+  `FpuRRRR`). -/
+  | fpuRRRR (op : FPUOp3) (size : ScalarSize) (rd rn rm ra : Reg)
+  /-- S11f: `fcmp sn, sm` / `fcmp dn, dm` (Cranelift `FpuCmp`; writes NZCV). -/
+  | fpuCmp (size : ScalarSize) (rn rm : Reg)
+  /-- S11f: `frintm/frintp/frintz/frintn sd, sn` / `… dd, dn` (Cranelift `FpuRound`). -/
+  | fpuRound (op : FpuRoundMode) (rd rn : Reg)
+  /-- S11f: `fcvtzs/fcvtzu wd/xd, sn/dn` (Cranelift `FpuToInt`). -/
+  | fpuToInt (op : FpuToIntOp) (rd rn : Reg)
+  /-- S11f: `scvtf/ucvtf sd/dd, wn/xn` (Cranelift `IntToFpu`). -/
+  | intToFpu (op : IntToFpuOp) (rd rn : Reg)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-! ### Operands -/
@@ -505,6 +554,10 @@ def MInst.uses : MInst → List Reg
   | .fpuStore _ rd mem _ => rd :: mem.regs
   | .fpuCSel _ _ rn rm _ => [rn, rm]
   | .fpuMoveFPImm .. | .vecDupImm .. => []
+  | .fpuRR _ _ _ rn | .fpuRound _ _ rn | .fpuToInt _ _ rn | .intToFpu _ _ rn => [rn]
+  | .fpuRRR _ _ _ rn rm => [rn, rm]
+  | .fpuRRRR _ _ _ rn rm ra => [rn, rm, ra]
+  | .fpuCmp _ rn rm => [rn, rm]
 
 /-- Registers written by an instruction (excluding `call`/`args` fixed pairs). -/
 def MInst.defs : MInst → List Reg
@@ -522,6 +575,8 @@ def MInst.defs : MInst → List Reg
   | .csetm rd _ => [rd]
   | .elfTlsGetAddr _ rd tmp => [rd, tmp]
   | .fpuLoad _ rd _ _ | .fpuCSel _ rd _ _ _ | .fpuMoveFPImm rd _ _ | .vecDupImm rd _ _ _ => [rd]
+  | .fpuRR _ _ rd _ | .fpuRRR _ _ rd _ _ | .fpuRRRR _ _ rd _ _ _ | .fpuRound _ rd _
+  | .fpuToInt _ rd _ | .intToFpu _ rd _ => [rd]
   | _ => []
 
 /-- Apply `f` to every register occurrence (uses and defs, not the real registers of the
@@ -591,6 +646,13 @@ def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
   | .fpuCSel s rd rn rm c => .fpuCSel s (f rd) (f rn) (f rm) c
   | .fpuMoveFPImm rd i s => .fpuMoveFPImm (f rd) i s
   | .vecDupImm rd i inv s => .vecDupImm (f rd) i inv s
+  | .fpuRR op s rd rn => .fpuRR op s (f rd) (f rn)
+  | .fpuRRR op s rd rn rm => .fpuRRR op s (f rd) (f rn) (f rm)
+  | .fpuRRRR op s rd rn rm ra => .fpuRRRR op s (f rd) (f rn) (f rm) (f ra)
+  | .fpuCmp s rn rm => .fpuCmp s (f rn) (f rm)
+  | .fpuRound op rd rn => .fpuRound op (f rd) (f rn)
+  | .fpuToInt op rd rn => .fpuToInt op (f rd) (f rn)
+  | .intToFpu op rd rn => .intToFpu op (f rd) (f rn)
 
 /-- Is this a block terminator (`is_term`)? -/
 def MInst.isTerm : MInst → Bool
@@ -827,11 +889,18 @@ abbrev tyVecLanesOp : TypeId := TyId.VecLanesOp
 abbrev tyVecALUOp : TypeId := TyId.VecALUOp
 abbrev tyTBKind : TypeId := TyId.TestBitAndBranchKind
 abbrev tyIntCC : TypeId := TyId.IntCC
+abbrev tyFloatCC : TypeId := TyId.FloatCC
 abbrev tyOpcode : TypeId := TyId.Opcode
 abbrev tyInstData : TypeId := TyId.InstructionData
 abbrev tyRelocDistance : TypeId := TyId.RelocDistance
 abbrev tyTlsModel : TypeId := TyId.TlsModel
 abbrev tyImmExtend : TypeId := TyId.ImmExtend
+abbrev tyFPUOp1 : TypeId := TyId.FPUOp1
+abbrev tyFPUOp2 : TypeId := TyId.FPUOp2
+abbrev tyFPUOp3 : TypeId := TyId.FPUOp3
+abbrev tyFpuToIntOp : TypeId := TyId.FpuToIntOp
+abbrev tyIntToFpuOp : TypeId := TyId.IntToFpuOp
+abbrev tyFpuRoundMode : TypeId := TyId.FpuRoundMode
 
 /-- The variant name of an enum value (messages only). -/
 def V.variant? : V → Option (TypeId × String × List V)
@@ -950,6 +1019,36 @@ def V.vecLanesOp? := V.enum? tyVecLanesOp fun
   | VIdx.VecLanesOp.Addv => some VecLanesOp.addv | _ => none
 def V.vecALUOp? := V.enum? tyVecALUOp fun
   | VIdx.VecALUOp.Addp => some VecALUOp.addp | _ => none
+/-- S11f: the scalar FP operation enums (constructor order = the generated ISLE types'). -/
+def V.fpuOp1? := V.enum? tyFPUOp1 fun
+  | VIdx.FPUOp1.Abs => some FPUOp1.abs | VIdx.FPUOp1.Neg => some .neg
+  | VIdx.FPUOp1.Sqrt => some .sqrt | VIdx.FPUOp1.Cvt32To64 => some .cvt32To64
+  | VIdx.FPUOp1.Cvt64To32 => some .cvt64To32 | _ => none
+def V.fpuOp2? := V.enum? tyFPUOp2 fun
+  | VIdx.FPUOp2.Add => some FPUOp2.add | VIdx.FPUOp2.Sub => some .sub
+  | VIdx.FPUOp2.Mul => some .mul | VIdx.FPUOp2.Div => some .div
+  | VIdx.FPUOp2.Max => some .max | VIdx.FPUOp2.Min => some .min | _ => none
+def V.fpuOp3? := V.enum? tyFPUOp3 fun
+  | VIdx.FPUOp3.MAdd => some FPUOp3.mAdd | VIdx.FPUOp3.MSub => some .mSub
+  | VIdx.FPUOp3.NMAdd => some .nMAdd | VIdx.FPUOp3.NMSub => some .nMSub | _ => none
+def V.fpuRoundMode? := V.enum? tyFpuRoundMode fun
+  | VIdx.FpuRoundMode.Minus32 => some FpuRoundMode.minus32
+  | VIdx.FpuRoundMode.Minus64 => some .minus64 | VIdx.FpuRoundMode.Plus32 => some .plus32
+  | VIdx.FpuRoundMode.Plus64 => some .plus64 | VIdx.FpuRoundMode.Zero32 => some .zero32
+  | VIdx.FpuRoundMode.Zero64 => some .zero64 | VIdx.FpuRoundMode.Nearest32 => some .nearest32
+  | VIdx.FpuRoundMode.Nearest64 => some .nearest64 | _ => none
+def V.fpuToIntOp? := V.enum? tyFpuToIntOp fun
+  | VIdx.FpuToIntOp.F32ToU32 => some FpuToIntOp.f32ToU32
+  | VIdx.FpuToIntOp.F32ToI32 => some .f32ToI32 | VIdx.FpuToIntOp.F32ToU64 => some .f32ToU64
+  | VIdx.FpuToIntOp.F32ToI64 => some .f32ToI64 | VIdx.FpuToIntOp.F64ToU32 => some .f64ToU32
+  | VIdx.FpuToIntOp.F64ToI32 => some .f64ToI32 | VIdx.FpuToIntOp.F64ToU64 => some .f64ToU64
+  | VIdx.FpuToIntOp.F64ToI64 => some .f64ToI64 | _ => none
+def V.intToFpuOp? := V.enum? tyIntToFpuOp fun
+  | VIdx.IntToFpuOp.U32ToF32 => some IntToFpuOp.u32ToF32
+  | VIdx.IntToFpuOp.I32ToF32 => some .i32ToF32 | VIdx.IntToFpuOp.U32ToF64 => some .u32ToF64
+  | VIdx.IntToFpuOp.I32ToF64 => some .i32ToF64 | VIdx.IntToFpuOp.U64ToF32 => some .u64ToF32
+  | VIdx.IntToFpuOp.I64ToF32 => some .i64ToF32 | VIdx.IntToFpuOp.U64ToF64 => some .u64ToF64
+  | VIdx.IntToFpuOp.I64ToF64 => some .i64ToF64 | _ => none
 
 def V.reg? : V → Option Reg
   | .reg r => some r
@@ -1158,6 +1257,19 @@ def MInst.ofV (v : V) : Option MInst := do
     return .fpuMoveFPImm (← rd.reg?) (← i.fpModImm?) (← s.scalarSize?)
   | VIdx.MInst.VecDupImm, [rd, i, inv, s] =>
     return .vecDupImm (← rd.reg?) (← i.movModImm?) (← inv.bool?) (← s.vectorSize?)
+  -- S11f: scalar FP arithmetic, comparison, rounding and int↔float conversion
+  | VIdx.MInst.FpuRR, [op, s, rd, rn] =>
+    return .fpuRR (← op.fpuOp1?) (← s.scalarSize?) (← rd.reg?) (← rn.reg?)
+  | VIdx.MInst.FpuRRR, [op, s, rd, rn, rm] =>
+    return .fpuRRR (← op.fpuOp2?) (← s.scalarSize?) (← rd.reg?) (← rn.reg?) (← rm.reg?)
+  | VIdx.MInst.FpuRRRR, [op, s, rd, rn, rm, ra] =>
+    return .fpuRRRR (← op.fpuOp3?) (← s.scalarSize?) (← rd.reg?) (← rn.reg?) (← rm.reg?)
+      (← ra.reg?)
+  | VIdx.MInst.FpuCmp, [s, rn, rm] => return .fpuCmp (← s.scalarSize?) (← rn.reg?) (← rm.reg?)
+  | VIdx.MInst.FpuRound, [op, rd, rn] =>
+    return .fpuRound (← op.fpuRoundMode?) (← rd.reg?) (← rn.reg?)
+  | VIdx.MInst.FpuToInt, [op, rd, rn] => return .fpuToInt (← op.fpuToIntOp?) (← rd.reg?) (← rn.reg?)
+  | VIdx.MInst.IntToFpu, [op, rd, rn] => return .intToFpu (← op.intToFpuOp?) (← rd.reg?) (← rn.reg?)
   | k, [rd, m, fl] =>
     match loadOpOfIdx? k, storeOpOfIdx? k with
     | some op, _ => return .load op (← rd.reg?) (← m.amode?) (← fl.memFlags?)
