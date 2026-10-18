@@ -527,9 +527,15 @@ def groups (ps : List AbiParam) : Option (List (List SlotEl)) := (expandGroups p
 /-- The expanded signature. -/
 def sigExp (s : Signature) : Option Signature := (expandSig s).toOption
 
-/-- The values passed for the arguments `vs` by the groups `gs` (`argsOf`). -/
+/-- The values passed for the arguments `vs` by the groups `gs` (`argsOf`; with `x7`
+placement, `[.val _, .lo, .hi] :: []`, the next argument first, then the pair). -/
 def expandArgs (C : Ctx) : List (List SlotEl) → List ValueId → Option (List ValueId)
   | [], [] => some []
+  | [.val _, .lo, .hi] :: gs, v :: vs =>
+    match gs, vs, C.pair v with
+    | [] :: gs, u :: vs, some (a, b) =>
+      if C.plain u then ([u, a, b] ++ ·) <$> expandArgs C gs vs else none
+    | _, _, _ => none
   | [.val _] :: gs, v :: vs => if C.plain v then (v :: ·) <$> expandArgs C gs vs else none
   | [.lo, .hi] :: gs, v :: vs =>
     match C.pair v with
@@ -908,6 +914,12 @@ def entryParamsOk (C : Ctx) : List (List SlotEl) → List (ValueId × Ty) → Li
   | [.pad, .lo, .hi] :: gs, (v, t) :: ps, (w, tw) :: (a, ta) :: (b, tb) :: ps' =>
     t == .i128 && C.fresh w && tw == .i64 && C.pair v == some (a, b) && ta == .i64 &&
       tb == .i64 && entryParamsOk C gs ps ps'
+  | [.val p, .lo, .hi] :: gs, (v, t) :: ps, (u', tu') :: (a, ta) :: (b, tb) :: ps' =>
+    match gs, ps with
+    | [] :: gs, (u, tu) :: ps =>
+      t == .i128 && u' == u && tu' == tu && tu == p.ty && C.plain u &&
+        C.pair v == some (a, b) && ta == .i64 && tb == .i64 && entryParamsOk C gs ps ps'
+    | _, _ => false
   | _, _, _ => false
 
 /-- The parameters of a non-entry block (`blockParamsOf`). -/

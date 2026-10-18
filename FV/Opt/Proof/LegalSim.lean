@@ -73,6 +73,21 @@ theorem holds_mem {ρ : Regs} : ∀ {xs : List ValueId} {vs : List Val}, Holds �
   | [], _ :: _, h, _, _ => h.elim
   | _ :: _, [], h, _, _ => h.elim
 
+/-- `expandArgs` at an `x7` placement group: the next argument (plain) first, then the pair. -/
+theorem expandArgs_x7 {C : Ctx} {q : AbiParam} {gs : List (List SlotEl)} {v : ValueId}
+    {vs args' : List ValueId} (h : expandArgs C ([.val q, .lo, .hi] :: gs) (v :: vs) = some args') :
+    ∃ gs2 u us a b rest, gs = [] :: gs2 ∧ vs = u :: us ∧ C.pair v = some (a, b) ∧
+      C.plain u = true ∧ expandArgs C gs2 us = some rest ∧ args' = u :: a :: b :: rest := by
+  simp only [expandArgs] at h
+  split at h
+  · rename_i gs2 u us a b hp
+    split at h
+    · rename_i hu
+      obtain ⟨rest, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+      exact ⟨gs2, u, us, a, b, rest, rfl, rfl, hp, hu, hr, rfl⟩
+    · cases h
+  · cases h
+
 /-- The expanded arguments hold the expanded values (the pads the zero). -/
 theorem expandArgs_holds {C : Ctx} {ρ ρ' : Regs} (hV : VRel C ρ ρ')
     (hz : ρ' C.zero = some zeroVal) :
@@ -124,7 +139,27 @@ theorem expandArgs_holds {C : Ctx} {ρ ρ' : Regs} (hV : VRel C ρ ρ')
       | [.pad], h => simp [expandArgs] at h
       | [.lo], h => simp [expandArgs] at h
       | [.hi], h => simp [expandArgs] at h
-      | .val _ :: _ :: _, h => simp [expandArgs] at h
+      | [.val _, .lo, .hi], h =>
+        obtain ⟨gs2, u, us, a, b, rest, rfl, rfl, hp, hu, hr, rfl⟩ := expandArgs_x7 h
+        cases xs with
+        | nil => exact hxs.elim
+        | cons y ys =>
+        obtain ⟨hy, hys⟩ := hxs
+        have hu0 : u < C.T0 := hlt u (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+        have hlt'' : ∀ y ∈ us, y < C.T0 := fun y hy' =>
+          hlt y (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hy'))
+        obtain ⟨vals', h1, h2⟩ := expandArgs_holds hV hz hr hlt'' hys
+        obtain ⟨l, hh, rfl, ha, hb⟩ := hV.get_pair hv0 hp hx
+        exact ⟨y :: ⟨.i64, l⟩ :: ⟨.i64, hh⟩ :: vals', ⟨hV.get_plain hu0 hu hy, ha, hb, h1⟩,
+          ⟨l, hh, rfl, rfl, rfl⟩, rfl, h2⟩
+      | .val _ :: .val _ :: _, h => simp [expandArgs] at h
+      | .val _ :: .pad :: _, h => simp [expandArgs] at h
+      | .val _ :: .hi :: _, h => simp [expandArgs] at h
+      | [.val _, .lo], h => simp [expandArgs] at h
+      | .val _ :: .lo :: .lo :: _, h => simp [expandArgs] at h
+      | .val _ :: .lo :: .pad :: _, h => simp [expandArgs] at h
+      | .val _ :: .lo :: .val _ :: _, h => simp [expandArgs] at h
+      | .val _ :: .lo :: .hi :: _ :: _, h => simp [expandArgs] at h
       | .lo :: .lo :: _, h => simp [expandArgs] at h
       | .lo :: .pad :: _, h => simp [expandArgs] at h
       | .lo :: .val _ :: _, h => simp [expandArgs] at h
@@ -2494,11 +2529,40 @@ theorem expRel_get : ∀ {rg : List (List SlotEl)} {rv rv' : List Val}, ExpRel r
           simp [groupStart, List.take_succ_cons]; omega
         rw [hgs]
         split at ih <;> simp_all [List.getElem?_cons_succ, Nat.add_right_comm]
+    | [.val q, .lo, .hi], u' :: a :: b :: vs', hE =>
+      obtain ⟨hh, hE2⟩ := hE
+      match rg, vs, hE2 with
+      | [] :: rg2, u :: us, hE3 =>
+        obtain ⟨rfl, hE4⟩ := hE3
+        match i with
+        | 0 =>
+          simp only [List.getElem?_cons_zero, Option.some.injEq] at hg
+          subst hg
+          simp
+        | 1 =>
+          simp only [List.getElem?_cons_succ, List.getElem?_cons_zero, Option.some.injEq] at hg
+          subst hg
+          simp
+        | i + 2 =>
+          simp only [List.getElem?_cons_succ] at hg hx
+          have ih := expRel_get hE4 hg hx
+          have hgs : groupStart ([SlotEl.val q, .lo, .hi] :: [] :: rg2) (i + 2) =
+              groupStart rg2 i + 3 := by
+            simp [groupStart, List.take_succ_cons]; omega
+          rw [hgs]
+          split at ih <;> simp_all [List.getElem?_cons_succ, Nat.add_right_comm]
     | [], _, hE => simp [ExpRel] at hE
     | [.pad], _, hE => simp [ExpRel] at hE
     | [.lo], _, hE => simp [ExpRel] at hE
     | [.hi], _, hE => simp [ExpRel] at hE
-    | .val _ :: _ :: _, _, hE => simp [ExpRel] at hE
+    | .val _ :: .val _ :: _, _, hE => simp [ExpRel] at hE
+    | .val _ :: .pad :: _, _, hE => simp [ExpRel] at hE
+    | .val _ :: .hi :: _, _, hE => simp [ExpRel] at hE
+    | [.val _, .lo], _, hE => simp [ExpRel] at hE
+    | .val _ :: .lo :: .lo :: _, _, hE => simp [ExpRel] at hE
+    | .val _ :: .lo :: .pad :: _, _, hE => simp [ExpRel] at hE
+    | .val _ :: .lo :: .val _ :: _, _, hE => simp [ExpRel] at hE
+    | .val _ :: .lo :: .hi :: _ :: _, _, hE => simp [ExpRel] at hE
     | .lo :: .lo :: _, _, hE => simp [ExpRel] at hE
     | .lo :: .pad :: _, _, hE => simp [ExpRel] at hE
     | .lo :: .val _ :: _, _, hE => simp [ExpRel] at hE
@@ -2518,6 +2582,9 @@ theorem expRel_get : ∀ {rg : List (List SlotEl)} {rv rv' : List Val}, ExpRel r
     | [.pad, .lo, .hi], [], hE => simp [ExpRel] at hE
     | [.pad, .lo, .hi], [_], hE => simp [ExpRel] at hE
     | [.pad, .lo, .hi], [_, _], hE => simp [ExpRel] at hE
+    | [.val _, .lo, .hi], [], hE => simp [ExpRel] at hE
+    | [.val _, .lo, .hi], [_], hE => simp [ExpRel] at hE
+    | [.val _, .lo, .hi], [_, _], hE => simp [ExpRel] at hE
   | _ :: _, [], _, he, _, _, _, _, _ => by
     rename_i g0 _ _
     rcases g0 with _ | ⟨e, _ | ⟨e2, _ | ⟨e3, _ | _⟩⟩⟩ <;> (try cases e) <;> (try cases e2) <;>
@@ -2531,6 +2598,9 @@ theorem expRel_length : ∀ {rg : List (List SlotEl)} {rv rv' : List Val}, ExpRe
     | [.val _], _ :: vs', he => simp [expRel_length he.2]
     | [.lo, .hi], _ :: _ :: vs', he => simp [expRel_length he.2]
     | [.pad, .lo, .hi], _ :: _ :: _ :: vs', he => simp [expRel_length he.2.2]
+    | [.val _, .lo, .hi], _ :: _ :: _ :: vs', he =>
+      match rg, vs, he.2 with
+      | [] :: _, _ :: _, he2 => simp [expRel_length he2.2]
   | [], _ :: _, _, he => by simp [ExpRel] at he
   | _ :: _, [], _, he => by
     rename_i g0 _
@@ -3426,7 +3496,37 @@ theorem entry_bind {C : Ctx} {gs : List (List SlotEl)} {ps ps' : List (ValueId �
       · rcases ih3 w hw with h | ⟨u, hu, hwu⟩
         · exact .inl h
         · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
-  case case5 => cases h
+  case case5 p v t u' tu' a ta b tb ps' gs u tu ps ih =>
+    -- `x7` placement: the next parameter first, then the pair
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    obtain ⟨⟨⟨⟨⟨⟨⟨⟨ht, rfl⟩, rfl⟩, htu⟩, hpu⟩, hp⟩, rfl⟩, rfl⟩, h⟩ := h
+    intro vals vals' he hty
+    rcases vals with _ | ⟨x, _ | ⟨y, xs⟩⟩ <;>
+      rcases vals' with _ | ⟨vu, _ | ⟨va, _ | ⟨vb, vs'⟩⟩⟩ <;>
+      try (simp [ExpRel] at he; done)
+    simp only [ExpRel] at he
+    obtain ⟨⟨l, hh, rfl, rfl, rfl⟩, rfl, he⟩ := he
+    simp only [List.map_cons, List.cons.injEq] at hty
+    obtain ⟨ih1, ih2, ih3⟩ := ih h he hty.2.2
+    refine ⟨by simp [ih1, hty.2.1], fun h1 h1' hnd w hw z hz => ?_, fun w hw => ?_⟩
+    · obtain ⟨h1a, h1u, h1b⟩ := h1
+      obtain ⟨h1'u, h1'a, h1'b, h1'c⟩ := h1'
+      simp only [List.map_cons, List.nodup_cons] at hnd
+      rcases List.mem_cons.1 hw with rfl | hw
+      · rw [h1a] at hz; cases hz; rw [RelV.pair hp]; exact ⟨l, hh, rfl, h1'a, h1'b⟩
+      rcases List.mem_cons.1 hw with rfl | hw
+      · rw [h1u] at hz; cases hz; rw [RelV.plain (plain_iff.1 hpu)]; exact h1'u
+      · exact ih2 h1b h1'c hnd.2.2 w hw z hz
+    · simp only [List.map_cons, List.mem_cons] at hw
+      rcases hw with rfl | rfl | rfl | hw
+      · exact .inr ⟨w, by simp, by simp [img, plain_iff.1 hpu]⟩
+      · exact .inr ⟨v, by simp, by simp [img, hp]⟩
+      · exact .inr ⟨v, by simp, by simp [img, hp]⟩
+      · rcases ih3 w hw with h | ⟨u0, hu0, hwu⟩
+        · exact .inl h
+        · exact .inr ⟨u0, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hu0), hwu⟩
+  case case6 => cases h
+  case case7 => cases h
 
 /-- **The refinement theorem of `Opt.Legal.checkW`, source environment `env`, target environment
 `env'`.** For an accepted legalisation `g` of `f`: from entry states of `f` on `args` and of `g`

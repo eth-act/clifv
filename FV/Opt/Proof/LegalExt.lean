@@ -25,9 +25,14 @@ open Clif Opt.Legalize128
 def Halves (v a b : Val) : Prop :=
   ∃ l h : BitVec 64, v = ⟨.i128, h ++ l⟩ ∧ a = ⟨.i64, l⟩ ∧ b = ⟨.i64, h⟩
 
-/-- The values `vs'` represent `vs` by the slot groups `gs` (pads: any `i64`). -/
+/-- The values `vs'` represent `vs` by the slot groups `gs` (pads: any `i64`; `x7` placement:
+the value of the parameter after the pair first). -/
 def ExpRel : List (List SlotEl) → List Val → List Val → Prop
   | [], [], [] => True
+  | [.val _, .lo, .hi] :: gs, v :: vs, u' :: a :: b :: vs' =>
+    Halves v a b ∧ match gs, vs with
+      | [] :: gs, u :: vs => u' = u ∧ ExpRel gs vs vs'
+      | _, _ => False
   | [.val _] :: gs, v :: vs, v' :: vs' => v' = v ∧ ExpRel gs vs vs'
   | [.lo, .hi] :: gs, v :: vs, a :: b :: vs' => Halves v a b ∧ ExpRel gs vs vs'
   | [.pad, .lo, .hi] :: gs, v :: vs, w :: a :: b :: vs' =>
@@ -38,10 +43,14 @@ def ExpRel : List (List SlotEl) → List Val → List Val → Prop
 def GroupOf (p : AbiParam) (g : List SlotEl) : Prop :=
   (g = [.val p] ∧ p.ty ≠ .i128) ∨ (p.ty = .i128 ∧ (g = [.lo, .hi] ∨ g = [.pad, .lo, .hi]))
 
-/-- The groups of a parameter list. -/
+/-- The groups of a parameter list (`x7` placement: an `i128` parameter `p` and the next one
+`q`, groups `[.val q, .lo, .hi]` and `[]`). -/
 def GroupsOf : List AbiParam → List (List SlotEl) → Prop
   | [], [] => True
-  | p :: ps, g :: gs => GroupOf p g ∧ GroupsOf ps gs
+  | p :: ps, g :: gs => (GroupOf p g ∧ GroupsOf ps gs) ∨
+      (p.ty = .i128 ∧ match ps, gs with
+        | q :: ps, [] :: gs => g = [.val q, .lo, .hi] ∧ q.ty ≠ .i128 ∧ GroupsOf ps gs
+        | _, _ => False)
   | _, _ => False
 
 theorem except_bind_ok {ε α β : Type} {x : Except ε α} {f : α → Except ε β} {b : β}
@@ -69,40 +78,51 @@ theorem groupsOf_go : ∀ (ps : List AbiParam) (k v st : Nat) (hole : Bool)
       split at h
       · obtain ⟨rest, hr, h⟩ := except_bind_ok h
         cases h
-        refine ⟨.inr ⟨hpt, ?_⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        refine .inl ⟨.inr ⟨hpt, ?_⟩, groupsOf_go ps _ _ _ _ rest hr⟩
         split <;> simp
       split at h
       · split at h
-        · obtain ⟨rest, hr, h⟩ := except_bind_ok h
-          cases h
-          exact ⟨.inr ⟨hpt, .inr rfl⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        · rcases ps with _ | ⟨q, qs⟩
+          · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+            cases h
+            exact .inl ⟨.inr ⟨hpt, .inr rfl⟩, groupsOf_go [] _ _ _ _ rest hr⟩
+          · dsimp only at h
+            split at h
+            · rename_i hq
+              obtain ⟨rest, hr, h⟩ := except_bind_ok h
+              cases h
+              have hq' : q.ty ≠ .i128 := fun e => by simp [e] at hq
+              exact .inr ⟨hpt, rfl, hq', groupsOf_go qs _ _ _ _ rest hr⟩
+            · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+              cases h
+              exact .inl ⟨.inr ⟨hpt, .inr rfl⟩, groupsOf_go (q :: qs) _ _ _ _ rest hr⟩
         · cases h
       split at h
       · obtain ⟨rest, hr, h⟩ := except_bind_ok h
         cases h
-        exact ⟨.inr ⟨hpt, .inl rfl⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        exact .inl ⟨.inr ⟨hpt, .inl rfl⟩, groupsOf_go ps _ _ _ _ rest hr⟩
       · obtain ⟨rest, hr, h⟩ := except_bind_ok h
         cases h
-        exact ⟨.inr ⟨hpt, .inr rfl⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        exact .inl ⟨.inr ⟨hpt, .inr rfl⟩, groupsOf_go ps _ _ _ _ rest hr⟩
     · rw [if_neg hp] at h
       have hpt : p.ty ≠ .i128 := by simpa using hp
       split at h
       · obtain ⟨rest, hr, h⟩ := except_bind_ok h
         cases h
-        exact ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        exact .inl ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
       split at h
       · obtain ⟨rest, hr, h⟩ := except_bind_ok h
         cases h
-        exact ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        exact .inl ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
       split at h
       · obtain ⟨rest, hr, h⟩ := except_bind_ok h
         cases h
-        exact ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        exact .inl ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
       split at h
       · cases h
       · obtain ⟨rest, hr, h⟩ := except_bind_ok h
         cases h
-        exact ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        exact .inl ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
 
 theorem groups_spec {ps : List AbiParam} {gs : List (List SlotEl)} (h : groups ps = some gs) :
     GroupsOf ps gs := by
@@ -123,8 +143,30 @@ theorem expRel_tys : ∀ {ps : List AbiParam} {gs : List (List SlotEl)} {vs vs' 
     | nil => rfl
     | cons => simp [ExpRel] at he
   | p :: ps, g :: gs, v :: vs, vs', hg, he, ht => by
+    rcases hg with ⟨hg1, hg2⟩ | ⟨hpt, hx⟩
+    rotate_left
+    · -- `x7` placement: the next value first, then the pair
+      rcases ps with _ | ⟨q, qs⟩ <;> rcases gs with _ | ⟨g2, gs2⟩
+      · cases hx
+      · cases hx
+      · cases hx
+      rcases g2 with _ | ⟨e, es⟩
+      rotate_left
+      · cases hx
+      obtain ⟨rfl, -, hg2⟩ := hx
+      rcases vs with _ | ⟨u, vs2⟩
+      · simp at ht
+      rcases vs' with _ | ⟨u', _ | ⟨a, _ | ⟨b, vs3⟩⟩⟩
+      · simp [ExpRel] at he
+      · simp [ExpRel] at he
+      · simp [ExpRel] at he
+      simp only [ExpRel] at he
+      obtain ⟨⟨l, h, -, rfl, rfl⟩, rfl, he⟩ := he
+      simp only [List.map_cons, List.cons.injEq] at ht
+      simp only [List.flatMap_cons, List.map_cons, List.map_nil, List.cons_append,
+        List.nil_append, elTy, ht.2.1]
+      rw [expRel_tys hg2 he ht.2.2]
     simp only [List.map_cons, List.cons.injEq] at ht
-    obtain ⟨hg1, hg2⟩ := hg
     rcases hg1 with ⟨rfl, -⟩ | ⟨hpt, rfl | rfl⟩
     · rcases vs' with _ | ⟨v', vs'⟩
       · simp [ExpRel] at he
@@ -163,7 +205,9 @@ theorem expRel_val : ∀ {ps : List AbiParam} {gs : List (List SlotEl)} {vs vs' 
     | nil => rfl
     | cons => simp [ExpRel] at he
   | p :: ps, g :: gs, v :: vs, vs', hg, hn, he => by
-    obtain ⟨hg1, hg2⟩ := hg
+    rcases hg with ⟨hg1, hg2⟩ | ⟨hpt, -⟩
+    rotate_left
+    · exact absurd hpt (hn p (List.mem_cons_self ..))
     rcases hg1 with ⟨rfl, -⟩ | ⟨hpt, -⟩
     · rcases vs' with _ | ⟨v', vs'⟩
       · simp [ExpRel] at he
@@ -184,7 +228,9 @@ theorem expRel_refl_plain : ∀ {ps : List AbiParam} {gs : List (List SlotEl)} {
     GroupsOf ps gs → (∀ p ∈ ps, p.ty ≠ .i128) → vs.length = ps.length → ExpRel gs vs vs
   | [], [], [], _, _, _ => trivial
   | p :: ps, g :: gs, v :: vs, hg, hn, hl => by
-    obtain ⟨hg1, hg2⟩ := hg
+    rcases hg with ⟨hg1, hg2⟩ | ⟨hpt, -⟩
+    rotate_left
+    · exact absurd hpt (hn p (List.mem_cons_self ..))
     rcases hg1 with ⟨rfl, -⟩ | ⟨hpt, -⟩
     · exact ⟨rfl, expRel_refl_plain hg2 (fun q hq => hn q (List.mem_cons_of_mem _ hq))
         (by simpa using hl)⟩
