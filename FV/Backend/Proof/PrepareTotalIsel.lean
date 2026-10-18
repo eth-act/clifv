@@ -35,6 +35,7 @@ def LowerTermShapeOkR (p : Program) (r : Rule) : Prop :=
     (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
     TermShapeR st st'
 
+set_option maxHeartbeats 800000 in
 /-- **`trap`** (`rule_lower_2237`) ends in `udf`. -/
 theorem trap_shapeR {p : Program} (hp : Data p) : LowerTermShapeOkR p rule_lower_2237 := by
   intro f ctx hctx ti t data hrt hd hi cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch heval

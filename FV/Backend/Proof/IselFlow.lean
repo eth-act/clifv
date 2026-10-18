@@ -225,7 +225,7 @@ theorem pinned_names {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii :
   rw [hi] at hi'; cases hi'
   have := hctx.data ii info inst hi hc
   rw [hd] at this
-  exact (instData_inv_names this).2
+  exact (instData_inv_namesE (hctx.instE ii info inst hi hc) this).2
 
 /-- `lower` on a `return`/`trap`: only the terminator rules can match (by format). -/
 theorem lower_term_nomatch {ctx : Ctx} {ti : Nat} {t : Clif.Terminator} {data : V}

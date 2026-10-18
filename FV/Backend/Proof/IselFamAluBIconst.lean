@@ -25,7 +25,8 @@ theorem fb_instNames_iconst {c : Clif.Inst} (h : instNames c = ("UnaryImm", "Ico
 
 theorem fb_instData_iconst {f : Clif.Function} {ty : Clif.Ty} {imm : BitVec ty.width}
     {k k' : Nat} {fs : List V}
-    (h : instData f (.iconst ty imm) = .ok (.data 152 k (.data 151 k' [] :: fs))) :
+    (h : instData f (.iconst ty imm) = .ok (.data 152 k (.data 151 k' [] :: fs)))
+    (hk : k ≠ 33 ∧ k ≠ 34 := by decide) :
     eTy ty = true ∧ fs = [.int (imm64OfIconst ty imm)] := by
   simp only [instData] at h
   split at h
@@ -34,7 +35,16 @@ theorem fb_instData_iconst {f : Clif.Function} {ty : Clif.Ty} {imm : BitVec ty.w
     obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
     injection h3 with _ h4
     exact ⟨he, h4⟩
-  · cases h
+  · exfalso
+    split at h
+    · simp only [pure, Except.pure, Except.ok.injEq, instDataV_UnaryIeee32] at h
+      injection h with _ h2
+      exact hk.1 h2.symm
+    · split at h
+      · simp only [pure, Except.pure, Except.ok.injEq, instDataV_UnaryIeee64] at h
+        injection h with _ h2
+        exact hk.2 h2.symm
+      · cases h
 
 section
 variable (st : LState) (tr : Array RuleId) (n : Nat)

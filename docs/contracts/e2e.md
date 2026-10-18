@@ -129,6 +129,21 @@ integer parameters, `hi`). Calls stay integer-only until S11e5: `instData` rejec
 tests `isInt`); `ArgsAt` and the linking contracts still speak about x registers only;
 FP-register call contracts come with S11e5.
 
+### Float data movement (S11e4): not yet under the end-to-end theorem
+
+The ISLE float data-movement roots are proven over the float-capable context `CtxInvT` with
+the `IntPos` typing of the integer operands (`lowerRulesCorrectT_program`,
+`memRulesCorrectRT_program`; `docs/contracts/backend-proof.md`, "Float data movement"), and the
+float accesses need the new instruction-semantics obligation `MemRefinesFP Rd`. The
+end-to-end chain does not consume them yet: `backend_correct_final` takes
+`LowerRulesCorrect`/`MemRulesCorrectR` over `CtxInv` (integer values only, `Compile.functionE`),
+and `csemG` leaves `fpuLoad`/`fpuStore` undefined (`GuardR` is `False` there), so the lockstep
+has no float access to relate. `E2E.csemGF` (`FV/E2E/GuardedFP.lean`) is `csemG` extended by the
+guarded float accesses; it satisfies `Refines`, `MemRefinesR Rd` and `MemRefinesFP Rd`
+(`refines_csemGF`, `memRefinesR_csemGF`, `memRefinesFP_csemGF`), which shows the premises of
+`MemRulesCorrectRT` are satisfiable. Producing `CtxInvT` in the driver, the lockstep of the
+float accesses and the widened scope are S11e5.
+
 ### `try_call` (the normal return)
 
 `Clif.run` models a `try_call fnN(args), sigM, block(ret…)[, handlers]` as the call of `fnN`

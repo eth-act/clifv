@@ -383,7 +383,7 @@ theorem sigArgLocs_phys {s : Clif.Signature} {locs : List ArgLoc} {k : Nat}
 
 /-! ## Extern constructors -/
 
-gen_match_split externCtor_split Backend.externCtor.match_25
+gen_match_split externCtor_split Backend.externCtor.match_27
 
 theorem ctorOk_same {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {v : V}
     (hr : ∀ r ∈ v.regsIn, r ∈ regsInL args ∨ (∃ x ∈ valsInL args, ctx.valueReg? x = some r) ∨

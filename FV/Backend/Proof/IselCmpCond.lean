@@ -196,9 +196,9 @@ theorem CondFlag.shape {z : OperandSize → Nat → MInst}
 theorem vdefs_cset (d : Nat) (c : Cond) : vdefs (.cset (.vreg d .int) c) = [d] := rfl
 theorem vuseNums_cset (d : Nat) (c : Cond) : vuseNums (.cset (.vreg d .int) c) = [] := rfl
 
-theorem Frag.fresh_emit2 (s : LState) {m1 m2 : MInst} (hd1 : vdefs m1 = [])
+theorem Frag.fresh_emit2_c (s : LState) (cls : RegClass) {m1 m2 : MInst} (hd1 : vdefs m1 = [])
     (hd2 : vdefs m2 ⊆ [s.nextVreg]) :
-    Frag s (((s.fresh .int).2.emit m1).emit m2) [m1, m2] := by
+    Frag s (((s.fresh cls).2.emit m1).emit m2) [m1, m2] := by
   refine ⟨?_, ?_, ?_⟩
   · apply Array.ext'; simp [LState.emit, LState.fresh]
   · simp [LState.emit, LState.fresh]
@@ -209,6 +209,11 @@ theorem Frag.fresh_emit2 (s : LState) {m1 m2 : MInst} (hd1 : vdefs m1 = [])
     · have := hd2 hd'
       simp only [List.mem_singleton] at this
       simp [LState.emit, LState.fresh, this]
+
+theorem Frag.fresh_emit2 (s : LState) {m1 m2 : MInst} (hd1 : vdefs m1 = [])
+    (hd2 : vdefs m2 ⊆ [s.nextVreg]) :
+    Frag s (((s.fresh .int).2.emit m1).emit m2) [m1, m2] :=
+  Frag.fresh_emit2_c s .int hd1 hd2
 
 /-- **The code of a consumer**: a flag producer `m` then `cset`/`csel` into the fresh vreg. -/
 theorem condFlag_cset_code {z : OperandSize → Nat → MInst}
@@ -278,9 +283,11 @@ def eOpNames : List String :=
    -- `tls_value` (agent/stack-tls-proof)
    "TlsValue"]
 
-theorem instNames_snd_mem (cl : Clif.Inst) : (instNames cl).2 ∈ eOpNames := by
+theorem instNames_snd_mem (cl : Clif.Inst) (hE : Compile.instE cl = true) :
+    (instNames cl).2 ∈ eOpNames := by
   cases cl <;> simp only [instNames] <;> try decide
   all_goals first
+    | (simp [Compile.instE] at hE; done)
     | (rename_i op _ _; cases op <;> decide)
     | (rename_i op _ _ _; cases op <;> decide)
     | (rename_i op _ _ _ _; cases op <;> decide)
@@ -297,10 +304,38 @@ theorem opcode_absurd {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {x j
   obtain ⟨cl, hcl'⟩ := Option.isSome_iff_exists.mp hcl
   have hdata := hctx.data j info cl hi hcl'
   rw [← he] at hdata
-  have := (instData_inv_names hdata).2
+  have hE := hctx.instE j info cl hi hcl'
+  have := (instData_inv_namesE hE hdata).2
   rw [hs] at this
   cases this
-  exact hns (instNames_snd_mem cl)
+  exact hns (instNames_snd_mem cl hE)
+
+/-- The opcode names `instData` gives (format-generic instructions): E's and `Bitcast`. -/
+theorem instNames_snd_memT (cl : Clif.Inst) : (instNames cl).2 ∈ eOpNames ++ ["Bitcast"] := by
+  cases cl <;> simp only [instNames] <;> try decide
+  all_goals first
+    | (rename_i op _ _; cases op <;> decide)
+    | (rename_i op _ _ _; cases op <;> decide)
+    | (rename_i op _ _ _ _; cases op <;> decide)
+    | (rename_i op _ _ _ _ _; cases op <;> decide)
+    | (rename_i op _ _ _ _ _ _; cases op <;> decide)
+
+/-- `opcode_absurd` over a float-capable context: an instruction reached through `def_inst` has
+an opcode `instData` produces (E's, `Bitcast`, or a float constant's, excluded by `hk`). -/
+theorem opcode_absurdT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {x j : Nat}
+    {info : IInfo} (hd : ctx.defInst? x = some j) (hi : ctx.insts[j]? = some info) {kf ko : Nat}
+    {fs : List V} (he : V.data 152 kf (V.data 151 ko [] :: fs) = info.data) {s : String}
+    (hs : (variantNames 151)[ko]? = some s) (hns : s ∉ eOpNames ++ ["Bitcast"])
+    (hk : (kf ≠ 33 ∧ kf ≠ 34) ∨ (ko ≠ 59 ∧ ko ≠ 60) := by
+      first | exact Or.inl (by decide) | exact Or.inr (by decide)) : False := by
+  have hcl := hctx.defClif x j info hd hi
+  obtain ⟨cl, hcl'⟩ := Option.isSome_iff_exists.mp hcl
+  have hdata := hctx.data j info cl hi hcl'
+  rw [← he] at hdata
+  have := (instData_inv_names hdata hk).2
+  rw [hs] at this
+  cases this
+  exact hns (instNames_snd_memT cl)
 
 open Lean Elab Tactic Meta in
 /-- Close a goal whose hypotheses say an instruction reached through `def_inst` has a non-E
@@ -319,7 +354,9 @@ elab "isel_opcode_absurd " hctx:ident : tactic => withMainContext do
           let a ← Term.exprToSyntax (mkFVar hd.fvarId)
           let b ← Term.exprToSyntax (mkFVar hi.fvarId)
           let c ← Term.exprToSyntax (mkFVar he.fvarId)
-          evalTactic (← `(tactic| exact (opcode_absurd $hctx $a $b $c rfl (by decide)).elim))
+          evalTactic (← `(tactic| first
+            | exact (opcode_absurd $hctx $a $b $c rfl (by decide)).elim
+            | exact (opcode_absurdT $hctx $a $b $c rfl (by decide)).elim))
           return
         catch _ => s.restore
   throwError "isel_opcode_absurd: no fitting hypotheses"

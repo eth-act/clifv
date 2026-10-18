@@ -809,7 +809,7 @@ E instruction of `f` is variant `k` of `InstructionData` with fields `aidata k` 
 theorem aidata_sound (hP : PInv f ctx) (v : V) (hv : γ f ctx .idata v) :
     ∃ k fs afs, v = .data tyInstData k fs ∧ aidata k = some afs ∧ γL f ctx afs fs := by
   simp only [γ] at hv
-  obtain ⟨c, hc, -, h⟩ := hv
+  obtain ⟨c, hc, hE, h⟩ := hv
   have hargs := hP.argsTyped c hc
   have hfunc := hP.ctxInv.func
   cases c
@@ -825,6 +825,8 @@ theorem aidata_sound (hP : PInv f ctx) (v : V) (hv : γ f ctx .idata v) :
     rmwOpName] at h
   all_goals (repeat' split at h)
   all_goals try (simp only [throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h; done)
+  -- the float constants of S11e4 are outside E (`Compile.instE`)
+  all_goals try (subst_vars; simp [Compile.instE, Compile.tyE] at hE; done)
   all_goals (simp only [pure, Except.pure, Except.ok.injEq] at h; subst h; idata_fin)
 
 end Backend.Proof.Prg

@@ -194,8 +194,10 @@ theorem tst_imm_ok {n : Nat} (hn : 40 ≤ n) {t : CTy} {a b : V} {s s' : LState 
 
 set_option maxHeartbeats 4000000 in
 include hp hc in
-theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
-    (hctx : CtxInv f ctx) {n : Nat} (hn : 100 ≤ n) {x : Nat} {s s' : LState × Array RuleId} {c : V}
+/-- **`is_nonzero`** over a float-capable context, the value in an integer position. -/
+theorem is_nonzero_okT {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
+    (hctx : CtxInvT f ctx) {n : Nat} (hn : 100 ≤ n) {x : Nat} (hxi : IntPos ctx x)
+    {s s' : LState × Array RuleId} {c : V}
     (hvb : ValsBelow ctx s.1) (h : ApplyInternal p (sem ctx) cfg n 123 651 [.value x] s c s') :
     CondCode F isem ctx s.1 s'.1 c (fun fr b => ∃ v, fr.regs x = some v ∧ b = Clif.Sem.truthy v.bits) := by
   isel_split' hp hc h 651
@@ -207,7 +209,7 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
   · -- I8: `tst x, #255` then `ne`
     have hT : ctx.valueType? x = some (.int 8) := ‹_›
     have hx : ctx.valueReg? x = some _ := ‹_›
-    have hrx := hctx.valueReg x _ hx; subst hrx
+    have hrx := hctx.valueReg_int hx hxi; subst hrx
     rcases ‹(CTy.int 32).bits ≤ 32 ∧ _ ∨ _› with ⟨-, rfl⟩ | ⟨h, -⟩
     · refine CondCode.flag (ms := []) (cond := .ne) (Frag.nil _) (ofV_tst _ _ _) (by decide) rfl ?_ ?_
       · intro u hu; rw [vuseNums_tst, List.mem_singleton] at hu; subst hu; exact vreg_lt hvb hx
@@ -222,7 +224,7 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
   · -- I64: `NotZero x, 64`
     have hT : ctx.valueType? x = some (.int 64) := ‹_›
     have hx : ctx.valueReg? x = some _ := ‹_›
-    have hrx := hctx.valueReg x _ hx; subst hrx
+    have hrx := hctx.valueReg_int hx hxi; subst hrx
     refine CondCode.notZero (ms := []) (i := 1) (sz := .size64) rfl (Frag.nil _) (vreg_lt hvb hx) ?_
     rintro fr ρ b hh hdf ⟨v, hv, rfl⟩
     refine ⟨UsesLo.nil _ _, .inr (by simp [hv]), fun w => Runs.nil ?_⟩
@@ -234,7 +236,7 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
     have hT : ctx.valueType? x = some _ := ‹_›
     have hb := ‹CTy.bits _ ≤ 32›
     have hz : ExtOut ctx x false 32 [.int 32, .int 64] _ _ _ := ‹_›
-    obtain ⟨k, ms, rfl, hf, hk, hkx, hrun⟩ := ExtOut.sem hR hctx hvb (.inl rfl)
+    obtain ⟨k, ms, rfl, hf, hk, hkx, hrun⟩ := ExtOut.semT hR hctx hxi hvb (.inl rfl)
       (by simp) (fun _ => by simp) hz
     refine CondCode.notZero (i := 0) (sz := .size32) rfl hf hk ?_
     rintro fr ρ b hh hdf ⟨v, hv, rfl⟩
@@ -251,6 +253,12 @@ theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem
       rw [show (ρ' k).setWidth 64 = lo64 (ρ' k) from rfl, this]
       exact truthy_setWidth32 hw _
 
+include hp hc in
+theorem is_nonzero_ok {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {f : Clif.Function}
+    (hctx : CtxInv f ctx) {n : Nat} (hn : 100 ≤ n) {x : Nat} {s s' : LState × Array RuleId} {c : V}
+    (hvb : ValsBelow ctx s.1) (h : ApplyInternal p (sem ctx) cfg n 123 651 [.value x] s c s') :
+    CondCode F isem ctx s.1 s'.1 c (fun fr b => ∃ v, fr.regs x = some v ∧ b = Clif.Sem.truthy v.bits) :=
+  is_nonzero_okT hp hc hR hctx.toT hn (hctx.intPos x) hvb h
 
 end
 

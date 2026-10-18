@@ -161,14 +161,24 @@ theorem instNames_iconst {c : Clif.Inst} (h : instNames c = ("UnaryImm", "Iconst
 
 theorem instData_iconst_data {f : Clif.Function} {ty : Clif.Ty} {imm : BitVec ty.width}
     {k k' : Nat} {fs : List V}
-    (h : instData f (.iconst ty imm) = .ok (.data 152 k (.data 151 k' [] :: fs))) :
+    (h : instData f (.iconst ty imm) = .ok (.data 152 k (.data 151 k' [] :: fs)))
+    (hk : k ≠ 33 ∧ k ≠ 34 := by decide) :
     fs = [.int (imm64OfIconst ty imm)] := by
   simp only [instData] at h
   split at h
   · simp only [pure, Except.pure, Except.ok.injEq] at h
     obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
     injection h3 with _ h4
-  · cases h
+  · exfalso
+    split at h
+    · simp only [pure, Except.pure, Except.ok.injEq, instDataV_UnaryIeee32] at h
+      injection h with _ h2
+      exact hk.1 h2.symm
+    · split at h
+      · simp only [pure, Except.pure, Except.ok.injEq, instDataV_UnaryIeee64] at h
+        injection h with _ h2
+        exact hk.2 h2.symm
+      · cases h
 
 /-- The instruction behind a matched data value (`CtxInv.data` needs `info.clif`; for a
 value's definition `CtxInv.defClif` supplies it). -/
@@ -866,12 +876,24 @@ theorem land_width_sub_one {ty : Clif.Ty} (hw : ty.width ≤ 64) (s : Nat) :
 
 end Forms2
 
-theorem instData_iconst_eTy {f : Clif.Function} {ty : Clif.Ty} {imm : BitVec ty.width} {d : V}
-    (h : instData f (.iconst ty imm) = .ok d) : eTy ty = true := by
+/-- A matched integer `UnaryImm (Iconst)` has an integer type (the float constants use the
+formats `UnaryIeee32`/`UnaryIeee64`). -/
+theorem instData_iconst_eTy {f : Clif.Function} {ty : Clif.Ty} {imm : BitVec ty.width}
+    {fs : List V} (h : instData f (.iconst ty imm) = .ok (.data 152 35 (.data 151 57 [] :: fs))) :
+    eTy ty = true := by
   simp only [instData] at h
   split at h
   · assumption
-  · cases h
+  · exfalso
+    split at h
+    · simp only [pure, Except.pure, Except.ok.injEq, instDataV_UnaryIeee32] at h
+      injection h with _ h2
+      cases h2
+    · split at h
+      · simp only [pure, Except.pure, Except.ok.injEq, instDataV_UnaryIeee64] at h
+        injection h with _ h2
+        cases h2
+      · cases h
 
 theorem shiftImm_some {n s : Nat} (h : shiftImm? n = some s) : s = n ∧ n ≤ 63 := by
   unfold shiftImm? at h

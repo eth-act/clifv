@@ -96,6 +96,29 @@ open Backend
   simp [Arm.elem_get, hi, Nat.mul_comm k 8]
   intro; omega
 
+/-- The 32- and 64-bit lanes of `umov` (S11e4, `mov_from_vec` of a float→int `bitcast`). -/
+@[csimp_rules] theorem elem_get_sw64_32 (a : BitVec 128) (k : Nat) (h : k < 2) :
+    Arm.elem_get (a.setWidth 64) k 32 = a.extractLsb' (32 * k) 32 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [Arm.elem_get, hi, Nat.mul_comm k 32]
+  intro; omega
+
+@[csimp_rules] theorem elem_get_sw64_64 (a : BitVec 128) (k : Nat) (h : k < 1) :
+    Arm.elem_get (a.setWidth 64) k 64 = a.extractLsb' (64 * k) 64 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [Arm.elem_get, hi, Nat.mul_comm k 64]
+  intro; omega
+
+@[csimp_rules] theorem elem_get_128_32 (a : BitVec 128) (k : Nat) (h : k < 4) :
+    Arm.elem_get a k 32 = a.extractLsb' (32 * k) 32 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [Arm.elem_get, hi, Nat.mul_comm k 32]
+
+@[csimp_rules] theorem elem_get_128_64 (a : BitVec 128) (k : Nat) (h : k < 2) :
+    Arm.elem_get a k 64 = a.extractLsb' (64 * k) 64 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [Arm.elem_get, hi, Nat.mul_comm k 64]
+
 attribute [csimp_rules] Arm.reduce_lowest_set_bit
 
 /-! ## `movn`, `ror` -/
@@ -452,6 +475,14 @@ theorem ref_movFromVec (idx : Nat) (sz : ScalarSize) (d n : Nat) (a : CV) :
   by_cases hs : sz = .size8 ∧ idx < 16
   · obtain ⟨rfl, hi⟩ := hs
     iterate 16 (rcases idx with _ | idx; · ref_tac)
+    omega
+  by_cases hs32 : sz = .size32 ∧ idx < 4
+  · obtain ⟨rfl, hi⟩ := hs32
+    iterate 4 (rcases idx with _ | idx; · ref_tac)
+    omega
+  by_cases hs64 : sz = .size64 ∧ idx < 2
+  · obtain ⟨rfl, hi⟩ := hs64
+    iterate 2 (rcases idx with _ | idx; · ref_tac)
     omega
   · exact refAt_none' F ctx (fun w => by cases sz <;> simp_all [ispec])
 

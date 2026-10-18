@@ -171,6 +171,7 @@ theorem lower_return_ok (hvr : ∀ x r, ctx.valueReg? x = some r → r.homeCls =
 
 end
 
+set_option maxHeartbeats 800000 in
 /-- **`trap`** (`rule_lower_2237`). -/
 theorem trap_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT}
     (hR : Refines F isem) : LowerTermRuleOk isem MR p rule_lower_2237 := by

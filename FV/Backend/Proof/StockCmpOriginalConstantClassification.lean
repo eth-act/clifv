@@ -21,7 +21,8 @@ theorem stock_cmp_original_constant_cases {f : Clif.Function} {ctx : Ctx}
     intro j info defined found ty c original
     apply absent
     have raw := inv.identityView.data j info (.iconst ty c) found original
-    have valid := instData_iconst_eTy raw
+    have valid : eTy ty = true := by
+      simpa [Compile.instE,Compile.tyE,eTy] using inv.instE j info _ found original
     have encoded : instData f (.iconst ty c) =
         .ok (.data 152 35 [.data 151 57 [],.int (imm64OfIconst ty c)]) := by
       simp only [instData,valid,ite_true]

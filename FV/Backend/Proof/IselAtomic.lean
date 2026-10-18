@@ -4,6 +4,7 @@ import FV.Backend.Proof.IselCmpCond
 import FV.Backend.Proof.IselFamAluBShiftTerms
 import FV.Backend.Proof.IselCtlUnmatch
 import FV.Backend.Proof.IselCmpRoot
+import FV.Backend.Proof.IselFloatVac
 
 /-!
 # `bmask`, the atomics and `fence`
@@ -1520,21 +1521,24 @@ end LoopRoots
 
 /-! ## `MemRulesCorrect` -/
 
-/-- The memory root rules of `lower`, in order. -/
+/-- The memory root rules of `lower`, in order (the float loads and stores of S11e4 last:
+their priorities are negative). -/
 theorem lower_memRoot_filter : (program.rulesOf TId.lower).filter memRootRule =
-    [rule_lower_1272, rule_lower_1300, rule_lower_1359, rule_lower_2316, rule_lower_2321, rule_lower_2357, rule_lower_2359, rule_lower_2361, rule_lower_2363, rule_lower_2365, rule_lower_2367, rule_lower_2369, rule_lower_2371, rule_lower_2373, rule_lower_2375, rule_lower_2377, rule_lower_2390, rule_lower_2486, rule_lower_2491, rule_lower_2604, rule_lower_2607, rule_lower_2610, rule_lower_2613, rule_lower_2647, rule_lower_2650, rule_lower_2653, rule_lower_2656, rule_lower_2659, rule_lower_2662, rule_lower_2705, rule_lower_2709, rule_lower_2713, rule_lower_2717, rule_lower_2722, rule_lower_2726, rule_lower_2730, rule_lower_2849, rule_lower_3217, rule_lower_3220] := by
+    [rule_lower_1272, rule_lower_1300, rule_lower_1359, rule_lower_2316, rule_lower_2321, rule_lower_2357, rule_lower_2359, rule_lower_2361, rule_lower_2363, rule_lower_2365, rule_lower_2367, rule_lower_2369, rule_lower_2371, rule_lower_2373, rule_lower_2375, rule_lower_2377, rule_lower_2390, rule_lower_2486, rule_lower_2491, rule_lower_2604, rule_lower_2607, rule_lower_2610, rule_lower_2613, rule_lower_2647, rule_lower_2650, rule_lower_2653, rule_lower_2656, rule_lower_2659, rule_lower_2662, rule_lower_2705, rule_lower_2709, rule_lower_2713, rule_lower_2717, rule_lower_2722, rule_lower_2726, rule_lower_2730, rule_lower_2849, rule_lower_3217, rule_lower_3220, rule_lower_2625, rule_lower_2746, rule_lower_2628, rule_lower_2750] := by
   rw [program_rulesOf_686]
   rfl
 
 /-- **The memory family (M4)**, with the read footprint: every memory root rule of `lower` is
 correct under `MemRefinesR Rd` (reads guarded by `Rd`), for every function whose memory relation
-is `MemRelOk`, assuming `Rd` at the initialised CLIF bytes. -/
+is `MemRelOk`, assuming `Rd` at the initialised CLIF bytes. The float loads and stores (S11e4)
+never match a `CtxInv` context (`IselFloatVac`); their contract over float-capable contexts is
+`MemRulesCorrectRT`. -/
 theorem memRulesCorrectR_program : MemRulesCorrectR program := by
   intro Rd F sb syms isem MR env cp hR hMR hM r hr hmem
   have hsub : r ∈ (program.rulesOf TId.lower).filter memRootRule := List.mem_filter.2 ⟨hr, hmem⟩
   rw [lower_memRoot_filter] at hsub
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hsub
-  rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  rcases hsub with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact uextend_atomic_load_ok data_program
   · exact uextend_load_ok data_program
   · exact sextend_load_ok data_program
@@ -1574,6 +1578,10 @@ theorem memRulesCorrectR_program : MemRulesCorrectR program := by
   · exact stack_addr_ok data_program hMR hM
   · exact tls_value_ok data_program hMR hM
   · exact tls_value_macho_ok data_program
+  · exact load_f32_ok_vac
+  · exact store_f32_ok_vac
+  · exact load_f64_ok_vac
+  · exact store_f64_ok_vac
 
 /-- **The memory family (M4)**: every memory root rule of `lower` is correct under
 `MemRefines`, for every function whose memory relation is `MemRelOk`. -/

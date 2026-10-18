@@ -178,6 +178,33 @@ simulation's driver model (`DriverCheck`) is integer-shaped, so `loop_run`/`lowe
 take `Compile.functionE f` (still integer-only, so no theorem's scope admits a float value
 yet), and Stock's `buildCtx` rejects float values (`f32/f64 value`) until it gets a float path.
 
+**S11e4 (ISLE float data-movement roots).** The float roots of `lower` are proven over the
+float-capable context `CtxInvT` (class-aware vregs, `f32`/`f64` types, `IntPos` for the
+operands in integer positions, `intArgs`), as variant targets beside the unchanged integer ones
+(`docs/contracts/backend-proof.md`, "Float data movement"): `lowerRulesCorrectT_program :
+LowerRulesCorrectT program` covers `f32const`/`f64const` (584/585: `fmov s/d, #imm`, `movi` for
+zero), `bitcast` (1080/1083/1084/1085: `fmov` between the register files, or no code) and the
+float arm of `select` (971: the condition's flag instruction, then `fcsel`, through the
+`CtxInvT` variants of the integer condition chain, `IselCmp*`); `memRulesCorrectRT_program :
+MemRulesCorrectRT program` covers `load.f32`/`load.f64` (1047/1048: `ldr s/d`) and `store` of an
+`f32`/`f64` (1073/1074: `str s/d`) under the new obligation `MemRefinesFP`. The integer
+`lowerRulesCorrect_program` takes the float-move roots from the `T` theorems (`.toOk`);
+`memRulesCorrectR_program` keeps the float memory roots vacuous on `CtxInv` contexts.
+Non-vacuity: `Driver.ctxOkT`/`ctxOkT_sound` decide `CtxInvT`, checked on `buildCtx`'s contexts of
+a `select.f32` and a `load.f32`/`store.f64` function (`FVTest/Backend/FloatCtxT.lean`, where
+`lower` fires 971/1047/1074); `E2E.csemGF` (`FV/E2E/GuardedFP.lean`), `csemG` with the guarded
+float accesses as their Arm runs (`RegallocMemFP.execMInst_fpuLoad`/`execMInst_fpuStore`),
+satisfies `Refines`, `MemRefinesR` and `MemRefinesFP`. Instruction selection matches Cranelift's
+for the same CLIF (`FVTest/Backend/FloatMove.lean`, Cranelift filetests `select.clif`,
+`constants.clif`, `bitcast.clif`), and the Lean backend's code runs as Cranelift-native's does
+under qemu: `scripts/lean-backend-filetests.sh FVTest/Backend/float_move.clif` gives 17 runs,
+17 pass, 17 agree with Cranelift-native, and the
+object's `.text` is byte-identical to `llvm-mc`'s. Its functions have integer signatures, since
+`ctlCheck` keeps `args`/`rets` integer until S11e5. **Interim, S11e5:** no consumer takes the `T`
+targets yet (driver, lockstep and end-to-end theorems keep `CtxInv`/`Compile.functionE`; `csemG`
+leaves float accesses undefined); the literal-pool `f64const` (`emit_u64_le_const`) is not
+modelled, so such a function is reported unsupported.
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in

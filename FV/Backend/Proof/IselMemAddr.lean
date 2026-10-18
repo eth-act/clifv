@@ -77,9 +77,11 @@ theorem instData_extend_inv {f : Clif.Function} {cl : Clif.Inst} {k : Nat} {w : 
 
 theorem instData_names_eq {f : Clif.Function} {cl : Clif.Inst} {kf ko : Nat} {fs : List V}
     {a b : String} (h : instData f cl = .ok (.data 152 kf (.data 151 ko [] :: fs)))
-    (ha : (variantNames 152)[kf]? = some a) (hb : (variantNames 151)[ko]? = some b) :
+    (ha : (variantNames 152)[kf]? = some a) (hb : (variantNames 151)[ko]? = some b)
+    (hk : (kf ≠ 33 ∧ kf ≠ 34) ∨ (ko ≠ 59 ∧ ko ≠ 60) := by
+      first | exact Or.inl (by decide) | exact Or.inr (by decide)) :
     instNames cl = (a, b) := by
-  obtain ⟨hf, ho⟩ := instData_inv_names h
+  obtain ⟨hf, ho⟩ := instData_inv_names h hk
   rw [ha] at hf; rw [hb] at ho
   exact Prod.ext (Option.some.inj hf).symm (Option.some.inj ho).symm
 
