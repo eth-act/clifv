@@ -443,7 +443,7 @@ the `retN`/value arguments).
   `backend_correct_legal` covers `try_call` since agent/last-unverified
   (`docs/contracts/legalize128.md`).
 
-### `tls_value` (one thread, trusted TLSDESC hook)
+### `tls_value` (one thread; TLSDESC hook in M6, real local-exec words on the executable)
 
 `Clif.run` has one thread: `tls_value.i64 gvN` of `gvN = symbol tls %v` gives the address of
 the memory's symbol `v` (`Clif.Mem.symbols`, as `symbol_value`). The backend lowers it by
@@ -472,6 +472,28 @@ mrs tmp, tpidr_el0; add x0, x0, tmp`.
   with a `tls_value` (`hasTls_of_vcode`); `ctlInstOk` requires both defs to be int vregs.
 * **Mid-end and `i128` theorems**: `backend_correct_opt`/`_opt_proven` take `hTls` for the
   optimised function, `backend_correct_legal` for the legalised `g`.
+* **Executable, hook-free (T1, #37)**: in a static executable rust-lld (and `leanLink`)
+  relaxes the sequence to local exec, `movz x0, #hi, lsl #16; movk x0, #lo; nop; nop; mrs tmp,
+  tpidr_el0; add x0, x0, tmp` with `hi * 2^16 + lo = TpOff` (`BinCheck.RelocOk` checks the four
+  relaxed words). The Arm model has the thread pointer (`StateField.TPIDR`, `MRS TPIDR_EL0`,
+  co-simulated against qemu), so `E2E.ExecBytes.binary_correct_exec_proven_tls` (`_depth_`,
+  `_peak_`; `FV/E2E/ExecTlsProven.lean`) and `Link.compileExe_correct_tls` (`_depth`, `_peak`;
+  `FV/Link/ExeTls.lean`) are about the machine `stepT`, which runs these six words on the
+  processor (only calls of code outside the program are hooks). The M6 machine of the proof
+  still hooks the sequence, with the base environment `leBase I B file`: its hook `leTls` is what
+  the six words do given the thread pointer `B.tp`, so `TlsOk` holds by construction
+  (`tlsOk_le`) and so does `HooksSim`'s TLS clause (`hooksSim_le`); `tls_step` proves the model's
+  two steps against the executable's six; D1 for the TLSDESC `ldr` word (`TlsCf`, from
+  `GoodX.next`: `Insn.pairFirst` includes `adrpTlsDesc`; `emitFunc_tlsClosed`) and the thread
+  pointer being unchanged by every model step (`mach_tpidr`, `Arm.r_TPIDR_exec_inst`) are
+  proven. What stays is the **loader's thread-pointer contract** `TlsLoader I B file r`: the
+  entry state's `TPIDR_EL0` is `B.tp`, code outside the program keeps it, and the running
+  thread's instance of each thread-local variable of a TLSDESC relocation is at
+  `B.tp + TpOff`, the address the CLIF semantics gives it (`I.symAddr`). Since `I.symAddr` of a
+  TLS symbol is its `st_value` (its offset in the TLS segment), the address clause pins
+  `B.tp = -tlsA file` (`tlsLoader_addr_canon`): the theorem is about the thread whose TLS block
+  the CLIF memory's symbols denote. `baseOk_closedLe` shows `BaseOk` of `leBase` satisfiable for
+  programs with `tls_value` (the closed base needs none).
 
 ### Indirect calls and function addresses
 
@@ -2749,7 +2771,8 @@ rewrites to local-exec `movz`/`movk`/`nop`/`nop` in a static executable.
   model, and no branch target lies between a pair's words (the compiled code branches to labels
   only, and the emitter puts each pair in two consecutive instruction lines, which `PairOk` reads
   at `P` and `P + 4`); the TLSDESC hook (`TlsOk`, a `BaseOk` contract) covers lld's local-exec
-  rewrite;
+  rewrite (on the executable, `binary_correct_exec_proven_tls` runs the rewritten words instead,
+  see "`tls_value`");
 * `--panic-abort` for the v1 configuration (no unwinding through Lean frames).
 
 **Non-vacuity** (`crate-proofs/Crates/BinaryWitness.lean`): on the `a_arith` test executable
@@ -2834,8 +2857,9 @@ machine state `r` itself:
   the intermediate state is never compared); (3) no branch between a pair's words — reduced to
   the per-state `RunOk.cf` (D1; entries and return addresses are proven), **proven** in
   `binary_correct_exec_of_reads` (`GoodX.next`, `emitFunc_pairsClosed`); (4) the TLS local-exec
-  rewrite — still the hook (`step` runs the TLS site by `Hb.tls`; the Arm model has no
-  `tpidr_el0`; `BinCheck` checks the `movz`/`movk`/`nop`/`nop` words).
+  rewrite — the hook in `step` (the TLS site by `Hb.tls`); **proven** for the hook-free machine
+  `stepT` (`binary_correct_exec_proven_tls`, T1: the six local-exec words on the processor, under
+  the loader's thread-pointer contract `TlsLoader`; see "`tls_value`").
 * Axioms (`#print axioms E2E.ExecBytes.binary_correct_exec`): `propext`, `Classical.choice`,
   `Quot.sound` (every fixed backend lemma is kernel-checked, T6). `act_sim` and the `ExecWords`
   lemmas: only the first three.
@@ -3930,18 +3954,25 @@ fault model; `TrapsExplicit`).
   `tls_value`): the resolver and `TPIDR_EL0` give the running thread's instance address of the
   variable (`X.sym v 0`, the `syms` address `Clif.run` uses for its one thread), preserve every
   register but x0, x30 and the temporary (Cranelift's TLSDESC convention) and may change the
-  flags (`docs/decisions/arm-model.md`, "Thread-local storage").
+  flags (`docs/decisions/arm-model.md`, "Thread-local storage"). For the executable
+  (`binary_correct_exec_proven_tls`, `compileExe_correct_tls`, T1) the hook is gone: the
+  local-exec words run on the model, and only the loader's thread-pointer contract `TlsLoader`
+  remains (the entry's `TPIDR_EL0`, kept by outside code, and the variables' instances at
+  `TPIDR_EL0 + TpOff`).
 * **Object writing, linking and loading** (`elfObject`, rust-lld, the loader): the words of `fb`
   at `base`, relocations resolved to `syms`/callee addresses (M6's hooks), GOT contents. For a
   crate's executable (M9, "Binary level (M9)") the code, relocations, GOT slots used, data
   objects and symbol addresses are proven from the file (`bin_ok`); the loader (each `PT_LOAD`
   at `p_vaddr`) stays trusted. On the executable machine (`binary_correct_exec_proven`) the
   hooked GOT pair, the slot's value at its `ldr` (check `gotB`) and the "no branch between a
-  pair's words" item are proven; the TLS local-exec rewrite stays the TLSDESC hook.
+  pair's words" item are proven; the TLS local-exec rewrite is the TLSDESC hook there, and runs
+  on the processor in `binary_correct_exec_proven_tls` (T1, loader contract `TlsLoader`).
 * **Runtime/callee contracts**: externs implement `Clif.Env.extern` under AAPCS64
   (`CalleeSound`, stack use); OS behaviour at `udf` (SIGILL reported as the trap-table code).
   For the executable machine (`binary_correct_exec_proven`) also `HooksSim` (the outside-call
-  and TLS hooks read no relocated instruction byte and not the program field) and
+  and TLS hooks read no relocated instruction byte and not the program field; in the hook-free
+  `binary_correct_exec_proven_tls` only its outside-call clause, the TLS one is proven,
+  `hooksSim_le`) and
   `OutsideAvoids` (the outside caller keeps the GOT slots out of its free stack, stack arguments
   and live CLIF memory).
 * **Rust route (trusted contracts, rust-route)**: the `core` panic entry points the corpus
