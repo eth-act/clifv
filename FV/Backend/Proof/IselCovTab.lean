@@ -803,8 +803,11 @@ theorem covTab_ok : chkTab program covTab aext actor apre aOracle = true := by
   show (covTab).all covEntryOk = true
   simp only [covTab, List.all_append, covTab0_ok, covTab1_ok, covTab2_ok, covTab3_ok, covTab4_ok, covTab5_ok, covTab6_ok, covTab7_ok, Bool.and_self]
 
-/-- The closure roots of `lower` other than `nop`'s rule 587 check with int-vreg results. -/
+/-- The closure roots of `lower` other than `nop`'s rule 587 and the `call` rules 1031, 1032,
+1033 (typed calls, S11e5a: their int-vreg results are checked by hand, `out_call`) check with
+int-vreg results. -/
 theorem covStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id || r.id == 587 ||
+    r.id == 1031 || r.id == 1032 || r.id == 1033 ||
     aRule program covTab aext actor apre aOracle [.xv .inst] (.flat 1 true) r) = true := by
   rw [show TId.lower = 686 from rfl, data_program.r686]
   simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]

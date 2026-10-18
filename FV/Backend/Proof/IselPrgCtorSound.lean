@@ -357,7 +357,7 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
     simp only [γ] at hw1
     obtain ⟨_, rfl, s, rfl, hs, hn⟩ := hw1
     red_safe externCtor
-    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut (sigRets s) #[] st
+    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass (sigRets s) #[] st
     refine CS.fin_ok ⟨_, rfl, ?_, ?_⟩ <;> rw [hr]
     · simpa using h1
     · rcases hn with rfl | rfl
@@ -368,7 +368,7 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
     simp only [γ] at hw1
     obtain ⟨_, rfl, s, rfl, hs, -⟩ := hw1
     red_safe externCtor
-    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut (sigRets s) #[] st
+    obtain ⟨rss, hr, hl, h1⟩ := CS.foldOut retClass (sigRets s) #[] st
     refine CS.fin_ok ⟨_, rfl, ?_, .inl rfl⟩
     rw [hr]
     simpa using h1
@@ -411,9 +411,13 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
         rcases h2 with h2 | h2 <;> simp only [reduceCtorEq, Option.some.injEq] at h2; omega
       red_safe externCtor
       split
-      · exact CS.fin_ok ⟨_, rfl, _, rfl⟩
-      · rename_i hno
-        exact absurd (CS.single_mapM_eq (fun _ => rfl) rss h1) (hno _ _ (CS.retRegs_some hlen))
+      · split
+        · exact CS.fin_ok ⟨_, rfl, _, rfl⟩
+        · rename_i hno
+          obtain ⟨ps, hps⟩ := retRegsC_some (regsClasses rss) 0 0 (by simp [regsClasses]; omega)
+            (by simp [regsClasses]; omega)
+          exact absurd (CS.single_mapM_eq (fun _ => rfl) rss h1) (hno _ _ hps)
+      · contradiction
     · cases h
   -- gen_call_rets (`try_call` signature)
   · intro n m; cintro; gl2
@@ -426,9 +430,13 @@ theorem actor_none_sound (hP : PInv f ctx) (id : TermId) (as : List PA) (hp : ty
         rcases h2 with h2 | h2 <;> simp only [reduceCtorEq, Option.some.injEq] at h2; omega
       red_safe externCtor
       split
-      · exact CS.fin_ok ⟨_, rfl, _, rfl⟩
-      · rename_i hno
-        exact absurd (CS.single_mapM_eq (fun _ => rfl) rss h1) (hno _ _ (CS.retRegs_some hlen))
+      · split
+        · exact CS.fin_ok ⟨_, rfl, _, rfl⟩
+        · rename_i hno
+          obtain ⟨ps, hps⟩ := retRegsC_some (regsClasses rss) 0 0 (by simp [regsClasses]; omega)
+            (by simp [regsClasses]; omega)
+          exact absurd (CS.single_mapM_eq (fun _ => rfl) rss h1) (hno _ _ hps)
+      · contradiction
     · cases h
   -- try_call_none
   · intro _; cintro; gl0; cok

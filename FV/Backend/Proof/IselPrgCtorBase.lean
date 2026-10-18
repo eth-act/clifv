@@ -395,16 +395,17 @@ theorem imm12_small {m : Nat} (h : m < 4096) : Imm12.ofNat? m = some ⟨m, false
   unfold Imm12.ofNat?
   simp [mask64, Nat.mod_eq_of_lt (show m < 2 ^ 64 by omega), h]
 
-/-- The fresh singleton entries of `gen_call_output`'s fold. -/
-theorem foldOut {α : Type} : ∀ (l : List α) (acc : Array (List Reg)) (st : LState),
-    ∃ rss, (l.foldl (fun (x : Array (List Reg) × LState) (_ : α) =>
-        (x.1.push [(x.2.fresh .int).1], (x.2.fresh .int).2)) (acc, st)).1.toList =
+/-- The fresh singleton entries of `gen_call_output`'s fold (of the classes `g`: typed calls,
+S11e5a). -/
+theorem foldOut {α : Type} (g : α → RegClass) : ∀ (l : List α) (acc : Array (List Reg)) (st : LState),
+    ∃ rss, (l.foldl (fun (x : Array (List Reg) × LState) (p : α) =>
+        (x.1.push [(x.2.fresh (g p)).1], (x.2.fresh (g p)).2)) (acc, st)).1.toList =
           acc.toList ++ rss ∧
       rss.length = l.length ∧ ∀ rs ∈ rss, rs.length = 1
   | [], acc, st => ⟨[], by simp, rfl, by simp⟩
-  | _ :: l, acc, st => by
-    obtain ⟨rss, h1, h2, h3⟩ := foldOut l (acc.push [(st.fresh .int).1]) (st.fresh .int).2
-    refine ⟨[(st.fresh .int).1] :: rss, ?_, by simp [h2], ?_⟩
+  | p :: l, acc, st => by
+    obtain ⟨rss, h1, h2, h3⟩ := foldOut g l (acc.push [(st.fresh (g p)).1]) (st.fresh (g p)).2
+    refine ⟨[(st.fresh (g p)).1] :: rss, ?_, by simp [h2], ?_⟩
     · simp only [List.foldl_cons]
       rw [h1]
       simp

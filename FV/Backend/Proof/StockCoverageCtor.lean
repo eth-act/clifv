@@ -54,7 +54,7 @@ private theorem externCtor_cov_mapped (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? 
       | exact callArgs_fold st _ _ _ _ (fun _ _ => rfl) (callArgs_mem ‹_›)
       | (obtain ⟨-, -, ms, h5, h6⟩ := loadConstantFull_cov _ _ _ _ st
          exact ⟨ms, h5, fun m hm => .inl (h6 m hm)⟩)
-      | (refine ⟨[], (callOutput_fold st _ _ (fun _ _ => rfl)).1.trans (by simp), by simp⟩)
+      | (refine ⟨[], (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).1.trans (by simp), by simp⟩)
       | skip
     all_goals first
       | (simp (config := { decide := true }) only [CtorRes, ite_true, ite_false, Bool.false_eq_true,
@@ -68,10 +68,10 @@ private theorem externCtor_cov_mapped (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? 
          | exact ⟨_, _, _, rfl, ‹_›, rfl⟩
          | (rename_i heq; obtain ⟨n, rfl⟩ := hvr _ _ heq; exact ⟨n, rfl⟩)
          | exact regsVec_single_vreg_mapped hvr ‹_›
-         | (refine ⟨fun r hr => ?_, rfl⟩
+         | (refine ⟨fun r hr => ?_, rfl, _, rfl⟩
             simp only [V.regsIn, List.mem_flatten] at hr
             obtain ⟨rs, hrs, hr⟩ := hr
-            exact (callOutput_fold st _ _ (fun _ _ => rfl)).2 rs hrs r hr)
+            exact (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).2 rs hrs r hr)
          | (obtain ⟨⟨n, hn⟩, -⟩ := loadConstantFull_cov _ _ _ _ st; exact ⟨n, by rw [hn]⟩)
          | exact ⟨_, _, _, _, rfl, rfl, logicSize_of ‹_›, ofNat?_value ‹_›⟩
          | exact ⟨_, _, _, _, rfl, rfl, logicSize64_lt ‹_›, ofNat?_value ‹_›⟩
@@ -156,10 +156,15 @@ private theorem constructorContract_sound {f : Clif.Function} {ctx : Ctx}
     obtain ⟨n, rfl⟩ := hr
     exact ⟨_, rfl, by simp [Reg.kind]⟩
   rw [if_neg hid1'] at hr ⊢
-  by_cases hid2' : (term.id == TId.put_in_regs || term.id == TId.put_in_regs_vec || term.id == TId.gen_call_output) = true
+  by_cases hid2' : (term.id == TId.put_in_regs || term.id == TId.put_in_regs_vec) = true
   · rw [if_pos hid2'] at hr ⊢
     exact ⟨fun r hrr => by obtain ⟨n, rfl⟩ := hr.1 r hrr; simp [Reg.kind], fun _ => hr.2⟩
   rw [if_neg hid2'] at hr ⊢
+  by_cases hid2o : (term.id == TId.gen_call_output) = true
+  · rw [if_pos hid2o] at hr ⊢
+    exact ⟨fun r hrr => by obtain ⟨n, c, rfl⟩ := hr.1 r hrr; cases c <;> simp [Reg.kind],
+      fun _ => hr.2.1⟩
+  rw [if_neg hid2o] at hr ⊢
   by_cases hid3' : (term.id == TId.zero_reg || term.id == TId.writable_zero_reg) = true
   · rw [if_pos hid3'] at hr ⊢
     subst hr
@@ -432,8 +437,9 @@ private theorem stock_constructor_contract {ctx : Ctx}
     · exact ⟨[], by simpa [callOutputList] using result.1, by simp⟩
     · simpa (config := {decide := true}) only [same, CtorRes, ite_false, ite_true, callOutputList] using
         (show (∀ r ∈ (V.regsVec (callOutputList sig.returns st.base).1).regsIn,
-            ∃ n, r = .vreg n .int) ∧ covV (V.regsVec (callOutputList sig.returns st.base).1) = true from
-          ⟨result.2, rfl⟩)
+            ∃ n c, r = .vreg n c) ∧ covV (V.regsVec (callOutputList sig.returns st.base).1) = true ∧
+            ∃ s, [V.op (.sig sig)] = [V.op (.sig s)] from
+          ⟨fun r hr => by obtain ⟨n, rfl⟩ := result.2 r hr; exact ⟨n, _, rfl⟩, rfl, sig, rfl⟩)
   case h_2 =>
     rename_i _ _ sig _ _ ps _ merged middle regs folded
     cases h
@@ -456,6 +462,59 @@ theorem ctor_value_sound {f : Clif.Function} {ctx : Ctx}
   have contract := stock_constructor_contract mapped.valueReg run
   have initial : CovSince st.base st.base := ⟨[], by simp, by simp⟩
   exact (constructorContract_sound hLI st.base as vs term v st.base next.base held initial pre contract).1
+
+/-- Stock's `gen_call_output` gives int vregs: `Stock.externCtor` allocates one int vreg per
+explicit return (typed calls, S11e5a, type `Backend.externCtor`'s only), and one it delegates (an
+argument other than a signature) fails, since `Backend.externCtor`'s needs a signature
+(`CtorRes`). -/
+private theorem stock_gen_call_output_int {ctx : Ctx}
+    (mapped : ∀ x r, ctx.valueReg? x = some r → ∃ n, r = .vreg n .int)
+    {t : Term} {args : List V} {st next : State} {v : V} (hid : t.id = TId.gen_call_output)
+    (h : Stock.externCtor ctx t args st = .ok (v, next)) :
+    (∀ r ∈ v.regsIn, ∃ n, r = .vreg n .int) ∧ covV v = true := by
+  unfold Stock.externCtor at h
+  split at h
+  all_goals dsimp only at h
+  all_goals try (exfalso; clear h; simp_all (config := {decide := true}); done)
+  all_goals first
+    | (rename_i sig _
+       cases h
+       exact ⟨(callOutputList_fields sig.returns st.base).2, rfl⟩)
+    | (split at h
+       all_goals try (cases h; done)
+       rename_i v' b hb
+       cases h
+       rcases externCtor_cov_mapped ctx mapped _ _ _ _ _ hb with ⟨q, ty, hq, -, -, -, -⟩ | hc
+       · rw [hid] at hq
+         have h0 : tyPred TId.gen_call_output = none := rfl
+         rw [h0] at hq
+         cases hq
+       · have hr := hc.res
+         unfold CtorRes at hr
+         rw [hid] at hr
+         simp (config := { decide := true }) only [↓reduceIte] at hr
+         obtain ⟨-, -, s, hs⟩ := hr
+         exfalso
+         clear hb hc
+         simp_all)
+
+/-- **Stock constructors with integer calls**: actual Stock constructors return the values
+described by `Cov.actorI`, the coverage transfer function whose `gen_call_output` gives int vregs
+(`Cov.actor` before typed calls, S11e5a); `ctor_value_sound` is the same for `Cov.actor`, whose
+`gen_call_output` gives vregs of either class. -/
+theorem ctor_value_sound_int {f : Clif.Function} {ctx : Ctx}
+    (mapped : MappedCtxInv f ctx) (hLI : LogicImmComplete)
+    {as : List AW} {vs : List V} {term : Term} {v : V} {st next : State}
+    (held : Holds2 f (sourceIdentityCtx ctx) as vs) (pre : apre term.id as = true)
+    (run : (Stock.sem ctx).ctor term vs st = .ok (v, next)) :
+    γ f (sourceIdentityCtx ctx) (Cov.actorI term.id as) v := by
+  unfold Cov.actorI
+  by_cases hid : term.id = TId.gen_call_output
+  · rw [if_pos (beq_iff_eq.mpr hid)]
+    obtain ⟨hregs, hcov⟩ := stock_gen_call_output_int mapped.valueReg hid run
+    exact ⟨fun r hr => by obtain ⟨n, rfl⟩ := hregs r hr; simp [Reg.kind], fun _ => hcov⟩
+  · rw [if_neg (fun h => hid (beq_iff_eq.mp h))]
+    exact ctor_value_sound mapped hLI held pre run
 
 
 end Backend.Stock.Proof.Coverage
