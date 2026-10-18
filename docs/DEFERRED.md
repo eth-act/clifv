@@ -423,6 +423,25 @@ declarations; the decoding is `Front.decodeFn` (Lean) with `Front.rawLink_eq_lin
   optimised dump when the unoptimised code references a symbol cg_clif's object neither defines
   nor references.
 
+## Threads: what `E2E.backend_correct_final` does not give (T2, #38, 2026-10-18)
+
+`Concurrency.ProgE2E.program_correct` (#303, `docs/plans/atomics.md` §3c) states program-level
+correctness of race-free multi-threaded programs on Armv8 under the per-thread contract
+`ProgE2E.Realizes` (the compiled thread's memory events embed the CLIF thread's). The per-thread
+`backend_correct_final` cannot discharge it:
+
+- **No interference.** It is a whole-run theorem: `Clif.runLoop` reads its own memory and an
+  extern's result is a function of its arguments and the memory, so other threads' writes between
+  a thread's steps (atomics, spin loops, message passing) are outside it, on both sides.
+- **No footprint.** It constrains only the final memory (`MemAgree`), not what the compiled code
+  touches before it returns, so even non-communicating threads do not compose.
+
+Remaining (T2h, #311): re-prove the isel (`IselSim`/driver), `prepare` and register-level
+(`RegLevelCorrect`) layers as footprint-preserving simulations with interference (CASCompCert,
+Jiang et al. PLDI 2019) and derive `Realizes` per thread. The multi-threaded CLIF semantics has
+per-thread allocation metadata, no step for extern calls that touch memory, and one `tls_value`
+instance; widening those is part of the same item.
+
 ## Other deferred items
 
 - **M3 validator** (Cranelift's own machine code vs CLIF, per function): paused on branch `agent/validator`. Only needed to ship Cranelift's bytes with assurance.

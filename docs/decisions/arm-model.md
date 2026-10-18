@@ -86,8 +86,11 @@ check the model against herd7's verdicts (`FVTest/Concurrency/Litmus.lean`) and 
 `FV/Concurrency/ArmThread.lean`) runs a thread of this model against a shared memory: footprint
 events of the instruction kinds, an exclusive monitor, and store exclusives that may fail
 (`Rs := 1`, no write). The assumption above is exactly its special case against an SC memory with
-a monitor that never fails (`ArmThread.run_sc_stepi`, `ArmThread.exists_run_sc`). It stays trusted
-for `backend_correct_final` until the program-level composition (#303) is done.
+a monitor that never fails (`ArmThread.run_sc_stepi`, `ArmThread.exists_run_sc`). The
+program-level statement (T2e, #303; `ProgE2E.program_correct`) composes the memory model with an
+explicit per-thread contract (`ProgE2E.Realizes`, event-level refinement of compiled code), which
+`backend_correct_final` does not imply; the assumption above stays trusted for
+`backend_correct_final` until that contract is discharged (T2h, #311).
 
 ## Thread-local storage: trusted TLSDESC hook (agent/stack-tls-proof, 2026-10-01)
 
