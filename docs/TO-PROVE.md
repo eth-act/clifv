@@ -931,8 +931,8 @@ Large, low priority.
   about it (a stronger check cannot be total on the weaker scope). L1g (#228) did so once: `Link.compileExe`
   checks `InScopeIn`, and `Link.compileExe_total{,_input,_reach}` take `InScopeIn` in place of
   `InScopeP` (names kept; acceptance sets equal on the corpus and the crates, §1.1).
-- **The full gate list:** `lake build FV FVTest lean-backend lean-e2e-check link-check lean-link
-  clif-decode` (modules through `scripts/lake-serial-build.py`); `lake build` in `crate-proofs/`;
+- **The full gate list:** `lake build FV FVTest` and every `lean_exe` of `lakefile.toml` (modules through
+  `scripts/lake-serial-build.py`); `lake build` in `crate-proofs/`;
   `scripts/axiom-audit.py`: `#print axioms` of the E2E theorems, the files in `scripts/audit/` (all of
   them: docs/research/axiom-audit.md; a theorem that joins the E2E list gets a line there; a non-vacuity
   witness that uses `native_decide` is marked `-- witness: native_decide`, every other theorem must
