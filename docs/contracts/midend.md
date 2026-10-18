@@ -558,9 +558,29 @@ Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`, `CheckSpec.lean`, `Compl
   `Opt.optimizeExe_complete_noSimp`. Witness `Opt.CompleteOptimizeWitness.witness` (GVN, DCE and
   LICM all change the function).
 
-Open: `SimpStageOk cfg` — the simplify stage's own completeness (`simpOk` and the re-check facts
-on its output) for the rule sets of `Config`. Until it lands, `optimize_complete` covers
-simplify-enabled configurations only under that explicit hypothesis.
+- Simplify (`FV/Opt/Proof/CompleteSimp*.lean`): `Opt.simpStageOk_of : SimpRulesOk cfg.simplifyFn →
+  SkelRulesOk cfg.skeletonFn → SimpStageOk cfg`, from `Opt.simplify_complete` (`simpOk`, the
+  re-check after `removeUnreachable`, and `SimpGuard` on the output of `simplify` with
+  `allowedIn`/`skelAllowedIn`), hence `Opt.optimize_complete_of_rules`. The rule-set obligations
+  (`CompleteSimpHyp.lean`) are syntactic: rule candidates and `make` operands stay in the e-graph
+  closure of the root's operands and made values (never the root itself), with the root's type;
+  skeleton candidates are non-pure, non-symbol instructions, and rewritten terminators are branches
+  to the original's blocks with the same argument types (`SkelCandOk`). The pass layers:
+  `materialize` (`mat_spec`), the rule driver (`opt_spec`, `runSkel_ok`), skeleton statements and
+  terminators (`skelStmt_ok`, `skelTerm_ok`), pure statements (`pure_ok`), the run invariant
+  (`SimpInv`, `RunDone`, `simplify_run_inv`) and the assembly (`simp_complete_of_run`). Witness
+  `Opt.CompleteSimpWitness.witness` (hash-consing across dominating blocks, `noRules`). Also
+  `Opt.simplify_incomplete_symbolValue`: with the former `allowedIn` (`isPure`), `simpOk` rejected
+  a well-formed function with `symbol_value` in sibling blocks.
+
+**Narrowed (open, #24 stays open):** the obligations are discharged for the empty rule set
+(`simpRulesOk_noRules`) and the hand skeleton rules (`skelRulesOk_hand`), not for any rule set a
+`Config` can select. `SimpRulesOk HandRules.simplify` fails to follow generically because
+`pureBest` puts `inst ↦ v` into the hash-consing table before the rules run, so a nested `make`
+of the root's node returns `v` itself; dropping that pre-insertion would make it provable.
+`.cranelift` needs both obligations proven over the exported ISLE program. So
+`optimize_complete` is unconditional with simplify off (`optimize_complete_noSimp`) and holds
+with simplify on only under these explicit rule-set premises.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
 
