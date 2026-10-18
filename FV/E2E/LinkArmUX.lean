@@ -360,9 +360,8 @@ theorem xCallsIndOkU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ)
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm
-      rw [locsOf_of_regs hb hb8] at hm
-      obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
-      simp [List.getElem?_zip_eq_some] at hi
+      obtain ⟨r, hr⟩ := (locsOf_small hb hb8).2 _ (List.of_mem_zip hm).1
+      cases hr
     obtain ⟨outs, w', hx, hol, hho, hmr'⟩ :=
       L.progResultU hL hU hκ ih hg hh (.inr (.inr ⟨hh, hdecl⟩)) himgF hroom hdead halign hargs
         hsav hmr hpl hinit hrun
@@ -462,9 +461,8 @@ theorem xRaiseIndOkU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ)
     have hargs : ArgsAt h.sig vals args w := (argsAt_iff_of_regs hb hb8 hvl).mpr hall
     have hsav : StackArgsAvoid F h.sig vals w := by
       intro off v hm
-      rw [locsOf_of_regs hb hb8] at hm
-      obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
-      simp [List.getElem?_zip_eq_some] at hi
+      obtain ⟨r, hr⟩ := (locsOf_small hb hb8).2 _ (List.of_mem_zip hm).1
+      cases hr
     obtain ⟨obj, w', hx, hex, hmr'⟩ :=
       L.progRaiseResultU hL hU hκ ih hg hh (.inr (.inr ⟨hh, hdecl⟩)) himgF hroom hdead halign
         hargs hsav hmr hpl hinit hrun
