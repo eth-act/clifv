@@ -90,25 +90,24 @@ theorem root_match_data {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config} {
 /-! ### Inverting `instData` -/
 
 /-- S11f: the `InstructionData` format name of a float operation `instData` builds (`""`
-for the others). -/
+for the others, `fcmp` included). -/
 def fFmt : Clif.FOp → String
-  | .fcmp _ => "FloatCompare"
   | .fadd | .fsub | .fmul | .fdiv | .fmin | .fmax => "Binary"
   | .sqrt | .fneg | .fabs | .fpromote | .fdemote => "Unary"
   | _ => ""
 
 /-- S11f: the opcode name of a float operation `instData` builds (`""` for the others). -/
 def fOpc : Clif.FOp → String
-  | .fcmp _ => "Fcmp" | .fadd => "Fadd" | .fsub => "Fsub" | .fmul => "Fmul" | .fdiv => "Fdiv"
+  | .fadd => "Fadd" | .fsub => "Fsub" | .fmul => "Fmul" | .fdiv => "Fdiv"
   | .fmin => "Fmin" | .fmax => "Fmax" | .sqrt => "Sqrt" | .fneg => "Fneg" | .fabs => "Fabs"
   | .fpromote => "Fpromote" | .fdemote => "Fdemote"
   | _ => ""
 
-theorem fFmt_mem (op : Clif.FOp) : fFmt op ∈ ["FloatCompare", "Binary", "Unary", ""] := by
+theorem fFmt_mem (op : Clif.FOp) : fFmt op ∈ ["Binary", "Unary", ""] := by
   cases op <;> simp [fFmt]
 
 theorem fOpc_mem (op : Clif.FOp) :
-    fOpc op ∈ ["Fcmp", "Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
+    fOpc op ∈ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
       "Fpromote", "Fdemote", ""] := by
   cases op <;> simp [fOpc]
 
@@ -116,20 +115,20 @@ theorem fOpc_mem (op : Clif.FOp) :
 of an inversion by `instNames` with these, the side condition by evaluation). -/
 
 @[simp] theorem fFmt_eq_false {op : Clif.FOp} {s : String}
-    (h : s ∉ ["FloatCompare", "Binary", "Unary", ""]) : fFmt op = s ↔ False :=
+    (h : s ∉ ["Binary", "Unary", ""]) : fFmt op = s ↔ False :=
   ⟨fun e => h (e ▸ fFmt_mem op), False.elim⟩
 
 @[simp] theorem eq_fFmt_false {op : Clif.FOp} {s : String}
-    (h : s ∉ ["FloatCompare", "Binary", "Unary", ""]) : s = fFmt op ↔ False :=
+    (h : s ∉ ["Binary", "Unary", ""]) : s = fFmt op ↔ False :=
   ⟨fun e => h (e ▸ fFmt_mem op), False.elim⟩
 
 @[simp] theorem fOpc_eq_false {op : Clif.FOp} {s : String}
-    (h : s ∉ ["Fcmp", "Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
+    (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
       "Fpromote", "Fdemote", ""]) : fOpc op = s ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 
 @[simp] theorem eq_fOpc_false {op : Clif.FOp} {s : String}
-    (h : s ∉ ["Fcmp", "Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
+    (h : s ∉ ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs",
       "Fpromote", "Fdemote", ""]) : s = fOpc op ↔ False :=
   ⟨fun e => h (e ▸ fOpc_mem op), False.elim⟩
 

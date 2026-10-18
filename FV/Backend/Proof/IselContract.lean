@@ -1329,6 +1329,21 @@ def MemRulesCorrectRT (p : Program) : Prop :=
     Refines F isem → MRStable F MR → MemRefinesR Rd F sb syms isem → MemRefinesFP Rd F sb isem →
     ∀ r ∈ p.rulesOf TId.lower, floatMemRootRule r = true → MemRuleOkRT Rd F sb syms isem MR env cp p r
 
+/-- The scalar float arithmetic root rules of `lower` (S11f): `fpu_rrr` of `fadd` (662), `fsub`
+(664), `fmul` (666), `fdiv` (668), `fmin` (670), `fmax` (672); `fpu_rr` of `sqrt` (674), `fneg`
+(676), `fabs` (678), `fpromote` (679), `fdemote` (680). -/
+def floatArithRootRule (r : Rule) : Bool :=
+  r.id == 662 || r.id == 664 || r.id == 666 || r.id == 668 || r.id == 670 || r.id == 672 ||
+    r.id == 674 || r.id == 676 || r.id == 678 || r.id == 679 || r.id == 680
+
+/-- **S11f's target (scalar float arithmetic)**: over float-capable contexts, the scalar float
+arithmetic roots are correct (CLIF's `Inst.float` and the emitted `FpuRRR`/`FpuRR` compute the
+same IEEE function). -/
+def LowerRulesCorrectFT (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR →
+    ∀ r ∈ p.rulesOf TId.lower, floatArithRootRule r = true → LowerRuleOkT isem MR env cp p r
+
 /-! ### Calls (contract change #5; stack-passed arguments: agent/stack-tls-proof) -/
 
 /-- A signature of subset E (`Compile.sigE`) has integer parameters and returns. -/
