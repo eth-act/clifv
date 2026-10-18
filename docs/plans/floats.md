@@ -328,6 +328,35 @@ and class-matched fixed operands for the spill chain, `ShapeOf` with typed retur
 linking); Stage C, float extern signatures in `functionET` and the typed spill chain (slice 6),
 which lift `call_indirect`/`try_call_indirect` (`sigIntB`).
 
+**S11f, first part (#239): the scalar float arithmetic roots at `CtxInvT`.** The eleven
+arithmetic roots of `lower` (`floatArithRootRule`: 662 `fadd`, 664 `fsub`, 666 `fmul`, 668
+`fdiv`, 670 `fmin`, 672 `fmax`, 674 `sqrt`, 676 `fneg`, 678 `fabs`, 679 `fpromote`, 680
+`fdemote`; `rule_lower_485`…`rule_lower_559`) are in the closure and proven over float-capable
+contexts: `LowerRulesCorrectFT p` (`IselContract`) says each is `LowerRuleOkT`, and
+`lowerRulesCorrectFT_program` (`IselLowerAll`) proves it from `fadd_okT` … `fdemote_okT`
+(`Proof/IselFloatArith.lean`; `fbin_holds`/`fun_holds`: CLIF's `evalFloat` and the emitted
+`FpuRRR`/`FpuRR` compute the same shared-core function, round to nearest even); the integer
+`lowerRulesCorrect_program` dispatches them through `(…_okT …).toOk`. The machine side: `MInst`
+forms `fpuRR`/`fpuRRR`/`fpuRRRR`/`fpuCmp`/`fpuRound`/`fpuToInt`/`intToFpu` (decoding, operands,
+`mapRegs`, `emitOk`, encodings), `ispecFP` (`ispec`'s fallback: `fpu2Out`, `fpu1Val`,
+`fcmpOut`) with `Refines` by `ref_fpuRRR`/`ref_fpuRR`/`ref_fpuCmp` (`RefinesInsts2`) and the
+regalloc `Corr` lemmas (`RegallocInstsFP`), and `RelocProvTab`'s `provTab15` (terms 364
+`fpu_rr`, 368 `fpu_rrr`). The exclusion checker is generalised to `failsTG p iOps fOps`
+(sound under `InstSplit S`, `failsTG_sound`; `failsT` is its typed-scope instance, statements of
+`failsT_sound`/`lower_nonroot_nomatchT` unchanged) with the variant `lower_nonroot_nomatchTA`
+over `InstScopeTA` (instructions in `Compile.instETA = instET ∨ fArithET`, `FV/Compile/SubsetT`;
+`exclOkTA_program` by one kernel decision). Witnesses: `FVTest/Backend/FloatArithCtxT.lean`
+(`ctxInvT_float_arith`: a function with all eleven operations passes `ctxOkT`; `lower` fires the
+eleven roots on it; `instScopeTA_float_arith`, `float_arith_fcmp_nomatch`). Oracle:
+`FVTest/Backend/float_arith.clif` (NaN propagation and quietening, signalling operand first,
+default NaN, ±∞, ±0, subnormals, rounding ties) through `scripts/lean-backend-filetests.sh`.
+**Deferred: `fcmp`.** `rule_lower_2176` (`fcmp` with `fp_cond_code`) is not a closure root
+(`closure.rs` `BACKEND_FLOAT_ROOTS`, `Closure.lean`: 171 roots, 354 excluded), `instData`
+rejects `fcmp`, and the `fcmp` arm of `is_nonzero_cmp_okT` stays absurd; `fpuCmp`'s `ispecFP`
+arm and `ref_fpuCmp` are in place for it. Open: `fcmp` (the `fp_cond_code` conditions), the
+conversions (`fpu_to_int_cvt{,_sat}`, `int_to_fpu`), `fma`/rounding, and threading
+`LowerRulesCorrectFT`/`InstScopeTA` into the driver and the end-to-end scope.
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in

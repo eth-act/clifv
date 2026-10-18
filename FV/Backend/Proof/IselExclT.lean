@@ -20,6 +20,15 @@ operand).
   decision over the exported rule list);
 * `lower_nonroot_nomatchT`: a root rule outside the closure matches no instruction of a
   float-capable context whose function's externs have integer signatures (`Compile.functionET`).
+
+The checker is stated once over the opcode lists (`failsTG p iOps fOps`) and proven sound
+(`failsTG_sound`) in a context whose instructions `InstSplit S` describes (an instruction of the
+scope `S` has an integer result with an opcode of `iOps` or a float result with one of `fOps`);
+`failsT` is its instance at `opsT`/`floatOps` (`inst_split`, scope `Compile.instET`). S11f:
+
+* `exclOkTA_program`, `lower_nonroot_nomatchTA`: the same with the float arithmetic among the
+  instructions (`InstScopeTA`, scope `Compile.instETA`; float-result opcodes `floatOpsA`,
+  `inst_splitA`).
 -/
 
 namespace Backend.Proof
@@ -31,7 +40,7 @@ inductive AVT where
   /-- `.inst j` for an instruction `j` of the context with CLIF instruction `c` and data
   `instData f c`. -/
   | inst
-  /-- The `InstructionData` of a typed-scope instruction with an opcode of `ops`. -/
+  /-- The `InstructionData` of an instruction of the scope with an opcode of `ops`. -/
   | data (ops : List Nat)
   /-- A CLIF value `.value x`. -/
   | value
@@ -44,11 +53,12 @@ inductive AVT where
   /-- Anything. -/
   | any
 
-/-- The values an abstract value describes, in the context `ctx` of `f`. -/
-def AVT.Holds (f : Clif.Function) (ctx : Ctx) : AVT → V → Prop
+/-- The values an abstract value describes, in the context `ctx` of `f`, for the instruction
+scope `S` (the `.data` of an instruction `c` with `S c`). -/
+def AVT.HoldsS (S : Clif.Inst → Bool) (f : Clif.Function) (ctx : Ctx) : AVT → V → Prop
   | .inst, v => ∃ j info c, v = .inst j ∧ ctx.insts[j]? = some info ∧ info.clif = some c ∧
       instData f c = .ok info.data
-  | .data ops, v => ∃ c, Compile.instET c = true ∧ instData f c = .ok v ∧
+  | .data ops, v => ∃ c, S c = true ∧ instData f c = .ok v ∧
       ∃ kf ko fs, v = .data 152 kf (.data 151 ko [] :: fs) ∧ ko ∈ ops
   | .value, v => ∃ x, v = .value x
   | .values n, v => ∃ xs, v = .values xs ∧ xs.length = n
@@ -56,11 +66,20 @@ def AVT.Holds (f : Clif.Function) (ctx : Ctx) : AVT → V → Prop
   | .exact w, v => v = w
   | .any, _ => True
 
-/-- `AVT.Holds` position by position (lists of the same length). -/
-def AVT.HoldsAll (f : Clif.Function) (ctx : Ctx) : List AVT → List V → Prop
+/-- `AVT.HoldsS` position by position (lists of the same length). -/
+def AVT.HoldsAllS (S : Clif.Inst → Bool) (f : Clif.Function) (ctx : Ctx) :
+    List AVT → List V → Prop
   | [], [] => True
-  | a :: as, v :: vs => a.Holds f ctx v ∧ AVT.HoldsAll f ctx as vs
+  | a :: as, v :: vs => a.HoldsS S f ctx v ∧ AVT.HoldsAllS S f ctx as vs
   | _, _ => False
+
+/-- The values an abstract value describes over the typed scope (`Compile.instET`). -/
+abbrev AVT.Holds (f : Clif.Function) (ctx : Ctx) : AVT → V → Prop :=
+  AVT.HoldsS Compile.instET f ctx
+
+/-- `AVT.Holds` position by position (lists of the same length). -/
+abbrev AVT.HoldsAll (f : Clif.Function) (ctx : Ctx) : List AVT → List V → Prop :=
+  AVT.HoldsAllS Compile.instET f ctx
 
 /-- The opcodes of the typed scope's instructions: E's, `f32const`, `f64const`, `bitcast`. -/
 def opsT : List Nat := eOps ++ [VIdx.Opcode.F32const, VIdx.Opcode.F64const, VIdx.Opcode.Bitcast]
@@ -69,6 +88,15 @@ def opsT : List Nat := eOps ++ [VIdx.Opcode.F32const, VIdx.Opcode.F64const, VIdx
 def floatOps : List Nat :=
   [VIdx.Opcode.F32const, VIdx.Opcode.F64const, VIdx.Opcode.Load, VIdx.Opcode.Select,
    VIdx.Opcode.Bitcast]
+
+/-- The opcodes of the S11f float arithmetic `instData` builds (`fOpc`; float results). -/
+def arithOps : List Nat :=
+  [VIdx.Opcode.Fadd, VIdx.Opcode.Fsub, VIdx.Opcode.Fmul, VIdx.Opcode.Fdiv, VIdx.Opcode.Fmin,
+   VIdx.Opcode.Fmax, VIdx.Opcode.Sqrt, VIdx.Opcode.Fneg, VIdx.Opcode.Fabs, VIdx.Opcode.Fpromote,
+   VIdx.Opcode.Fdemote]
+
+/-- The float-result opcodes with the float arithmetic (`InstScopeTA`). -/
+def floatOpsA : List Nat := floatOps ++ arithOps
 
 /-- The float types. -/
 def fTys : List CTy := [.float 32, .float 64]
@@ -84,10 +112,12 @@ section
 variable (p : Program)
 
 mutual
-/-- `q` cannot match any value that `a` describes (`fails` over float-capable contexts). -/
-def failsT (a : AVT) : Pattern → Bool
-  | .bind _ _ q => failsT a q
-  | .and _ qs => failsAnyT a qs
+/-- `q` cannot match any value that `a` describes (`fails` over float-capable contexts), where an
+instruction with an integer (or no) result has an opcode of `iOps` and one with a float result
+an opcode of `fOps`. -/
+def failsTG (iOps fOps : List Nat) (a : AVT) : Pattern → Bool
+  | .bind _ _ q => failsTG iOps fOps a q
+  | .and _ qs => failsAnyTG iOps fOps a qs
   | .constPrim ty n =>
     match primTy ty n with
     | none => true
@@ -113,13 +143,14 @@ def failsT (a : AVT) : Pattern → Bool
               | .enumVariant ko =>
                 !(ops.contains ko) ||
                   match opShapeT ko with
-                  | some sh => failsArgsT sh rest
+                  | some sh => failsArgsTG iOps fOps sh rest
                   | none => false
               | _ => false
           | _ => false
         | .exact v =>
           match v with
-          | .data ty' k' fs => !(ty' == ty) || !(k == k') || failsArgsT (fs.map .exact) args
+          | .data ty' k' fs =>
+            !(ty' == ty) || !(k == k') || failsArgsTG iOps fOps (fs.map .exact) args
           | _ => false
         | _ => false
       | .decl flags _ (some (.external _ _)) =>
@@ -127,25 +158,25 @@ def failsT (a : AVT) : Pattern → Bool
         match a with
         | .inst =>
           if term.id == TId.inst_data_value then
-            failsArgsT [.tys (.invalid :: eCTys), .data opsT] args &&
-              failsArgsT [.tys fTys, .data floatOps] args
+            failsArgsTG iOps fOps [.tys (.invalid :: eCTys), .data iOps] args &&
+              failsArgsTG iOps fOps [.tys fTys, .data fOps] args
           else flagOff term.id
         | .value =>
-          if term.id == TId.def_inst then failsArgsT [.inst] args
-          else if term.id == TId.value_type then failsArgsT [.tys mCTys] args
+          if term.id == TId.def_inst then failsArgsTG iOps fOps [.inst] args
+          else if term.id == TId.value_type then failsArgsTG iOps fOps [.tys mCTys] args
           else false
         | .values n =>
-          if term.id == TId.value_array_2 && n == 2 then failsArgsT [.value, .value] args
+          if term.id == TId.value_array_2 && n == 2 then failsArgsTG iOps fOps [.value, .value] args
           else false
         | .tys ts =>
           ts.all fun t0 =>
             match tyExtract term.id t0 with
-            | some (.ok fs) => failsArgsT (fs.map .exact) args
+            | some (.ok fs) => failsArgsTG iOps fOps (fs.map .exact) args
             | some _ => true
             | none => false
         | .exact (.ty t0) =>
           match tyExtract term.id t0 with
-          | some (.ok fs) => failsArgsT (fs.map .exact) args
+          | some (.ok fs) => failsArgsTG iOps fOps (fs.map .exact) args
           | some _ => true
           | none => false
         | _ => false
@@ -153,15 +184,23 @@ def failsT (a : AVT) : Pattern → Bool
   | _ => false
 
 /-- Some pattern of `qs` cannot match (an `and`). -/
-def failsAnyT (a : AVT) : List Pattern → Bool
+def failsAnyTG (iOps fOps : List Nat) (a : AVT) : List Pattern → Bool
   | [] => false
-  | q :: qs => failsT a q || failsAnyT a qs
+  | q :: qs => failsTG iOps fOps a q || failsAnyTG iOps fOps a qs
 
 /-- Some pattern of `qs` cannot match the value at its position. -/
-def failsArgsT : List AVT → List Pattern → Bool
-  | a :: as, q :: qs => failsT a q || failsArgsT as qs
+def failsArgsTG (iOps fOps : List Nat) : List AVT → List Pattern → Bool
+  | a :: as, q :: qs => failsTG iOps fOps a q || failsArgsTG iOps fOps as qs
   | _, _ => false
 end
+
+/-- `failsTG` over the typed scope (`InstScopeT`): integer-result opcodes `opsT`, float-result
+opcodes `floatOps`. -/
+abbrev failsT (a : AVT) (q : Pattern) : Bool := failsTG p opsT floatOps a q
+/-- `failsAnyTG` over the typed scope. -/
+abbrev failsAnyT (a : AVT) (qs : List Pattern) : Bool := failsAnyTG p opsT floatOps a qs
+/-- `failsArgsTG` over the typed scope. -/
+abbrev failsArgsT (as : List AVT) (qs : List Pattern) : Bool := failsArgsTG p opsT floatOps as qs
 
 /-- A root rule of `lower` is in the closure or cannot match an instruction of a float-capable
 context. -/
@@ -171,12 +210,27 @@ def exclOkT (r : Rule) : Bool :=
     | [q] => failsT p .inst q
     | _ => false
 
+/-- A root rule of `lower` is in the closure or cannot match an instruction of a float-capable
+context whose instructions may also be the S11f float arithmetic (`InstScopeTA`). -/
+def exclOkTA (r : Rule) : Bool :=
+  closureRootIds.contains r.id ||
+    match r.args with
+    | [q] => failsTG p opsT floatOpsA .inst q
+    | _ => false
+
 end
 
 set_option maxRecDepth 100000 in
 /-- Every root rule of `lower` is a closure root or cannot match an instruction of a
 float-capable context (checked). -/
 theorem exclOkT_program : (program.rulesOf TId.lower).all (exclOkT program) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+/-- Every root rule of `lower` is a closure root or cannot match an instruction of a
+float-capable context with the float arithmetic (checked). -/
+theorem exclOkTA_program : (program.rulesOf TId.lower).all (exclOkTA program) = true := by
   rw [show TId.lower = 686 from rfl, data_program.r686]
   decide +kernel
 
@@ -354,14 +408,14 @@ theorem instNames_bitcast_ex {c : Clif.Inst} (h : (instNames c).2 = "Bitcast") :
     | (rename_i op _ _; cases op <;> simp at h)
     | simp at h
 
-theorem AV.holdsAll_toT {f : Clif.Function} {ctx : Ctx} {fs : List V} :
+theorem AV.holdsAll_toT {S : Clif.Inst → Bool} {f : Clif.Function} {ctx : Ctx} {fs : List V} :
     ∀ {sh : List AV}, (∀ a ∈ sh, a = .value ∨ a = .any ∨ ∃ n, a = .values n) →
       AV.HoldsAll f ctx sh fs → ∀ {sh' : List AVT},
       sh' = sh.map (fun | .value => .value | .values n => .values n | _ => .any) →
-      AVT.HoldsAll f ctx sh' fs := by
+      AVT.HoldsAllS S f ctx sh' fs := by
   intro sh
   induction sh generalizing fs with
-  | nil => intro _ h sh' hs; subst hs; cases fs <;> simp_all [AV.HoldsAll, AVT.HoldsAll]
+  | nil => intro _ h sh' hs; subst hs; cases fs <;> simp_all [AV.HoldsAll, AVT.HoldsAllS]
   | cons a sh ih =>
     intro hsh h sh' hs
     subst hs
@@ -376,9 +430,9 @@ theorem AV.holdsAll_toT {f : Clif.Function} {ctx : Ctx} {fs : List V} :
       · exact ha
 
 /-- **The fields `opShapeT` promises.** -/
-theorem instData_fieldsT {f : Clif.Function} {ctx : Ctx} {c : Clif.Inst} {kf ko : Nat}
-    {fs : List V} (h : instData f c = .ok (.data 152 kf (.data 151 ko [] :: fs)))
-    {sh : List AVT} (hsh : opShapeT ko = some sh) : AVT.HoldsAll f ctx sh fs := by
+theorem instData_fieldsT {S : Clif.Inst → Bool} {f : Clif.Function} {ctx : Ctx} {c : Clif.Inst}
+    {kf ko : Nat} {fs : List V} (h : instData f c = .ok (.data 152 kf (.data 151 ko [] :: fs)))
+    {sh : List AVT} (hsh : opShapeT ko = some sh) : AVT.HoldsAllS S f ctx sh fs := by
   unfold opShapeT at hsh
   split at hsh
   · rename_i hp
@@ -411,25 +465,31 @@ theorem instData_fieldsT {f : Clif.Function} {ctx : Ctx} {c : Clif.Inst} {kf ko 
 
 /-! ## Soundness of the checker -/
 
+/-- **The checker's view of a context's instructions** (scope `S`): an instruction with an
+integer (or no) result has an opcode of `iOps`, one with a float result an opcode of `fOps`. -/
+def InstSplit (S : Clif.Inst → Bool) (f : Clif.Function) (ctx : Ctx) (iOps fOps : List Nat) :
+    Prop :=
+  ∀ {j : Nat} {info : IInfo} {c : Clif.Inst}, ctx.insts[j]? = some info → info.clif = some c →
+    instData f c = .ok info.data →
+    (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧
+        (AVT.data iOps).HoldsS S f ctx info.data) ∨
+      (info.resTys.head?.getD .invalid ∈ fTys ∧ (AVT.data fOps).HoldsS S f ctx info.data)
+
 section
 variable {p : Program} {f : Clif.Function} {ctx : Ctx}
 
-theorem holdsAllT_exact (fs : List V) : AVT.HoldsAll f ctx (fs.map .exact) fs := by
+theorem holdsAllT_exact {S : Clif.Inst → Bool} (fs : List V) :
+    AVT.HoldsAllS S f ctx (fs.map .exact) fs := by
   induction fs with
   | nil => trivial
   | cons v fs ih => exact ⟨rfl, ih⟩
 
-variable (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx)
-  (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
-include hctx hsc hx
-
-/-- **An instruction of the context**: an integer (or no) result with an opcode of the typed
-scope, or a float result with a float-movement opcode. -/
-theorem inst_split {j : Nat} {info : IInfo} {c : Clif.Inst} (hi : ctx.insts[j]? = some info)
-    (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
+/-- `inst_split` for one typed-scope instruction. -/
+theorem inst_split1 (hctx : CtxInvT f ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+    {j : Nat} {info : IInfo} {c : Clif.Inst} (hT : Compile.instET c = true)
+    (hi : ctx.insts[j]? = some info) (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
     (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧ (AVT.data opsT).Holds f ctx info.data) ∨
       (info.resTys.head?.getD .invalid ∈ fTys ∧ (AVT.data floatOps).Holds f ctx info.data) := by
-  have hT := hsc j info c hi hc
   obtain ⟨tys, hty, hres, -⟩ := hctx.resTys j info c hi hc
   cases hh : info.resTys with
   | nil =>
@@ -454,24 +514,41 @@ theorem inst_split {j : Nat} {info : IInfo} {c : Clif.Inst} (hi : ctx.insts[j]? 
       · exact h
       · exact absurd h hf
 
--- `failsAnyT_sound`/`failsArgsT_sound` use the section's hypotheses only through `failsT_sound`
+/-- **An instruction of the context**: an integer (or no) result with an opcode of the typed
+scope, or a float result with a float-movement opcode. -/
+theorem inst_split (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx)
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {j : Nat} {info : IInfo} {c : Clif.Inst}
+    (hi : ctx.insts[j]? = some info)
+    (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
+    (info.resTys.head?.getD .invalid ∈ (.invalid :: eCTys) ∧ (AVT.data opsT).Holds f ctx info.data) ∨
+      (info.resTys.head?.getD .invalid ∈ fTys ∧ (AVT.data floatOps).Holds f ctx info.data) :=
+  inst_split1 hctx hx (hsc j info c hi hc) hi hc hd
+
+section
+variable {S : Clif.Inst → Bool} {iOps fOps : List Nat} (hctx : CtxInvT f ctx)
+  (hsp : InstSplit S f ctx iOps fOps)
+include hctx hsp
+
+-- `failsAnyTG_sound`/`failsArgsTG_sound` use the section's hypotheses only through
+-- `failsTG_sound`
 set_option linter.unusedSectionVars false
 
 mutual
-/-- **Soundness of the checker**: `failsT p a q` means `q` matches no value `a` describes. -/
-theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env env' : Interp.Env V),
-    failsT p a q = true → a.Holds f ctx v →
+/-- **Soundness of the checker**: `failsTG p iOps fOps a q` means `q` matches no value `a`
+describes (scope `S`), in a context whose instructions `InstSplit` describes. -/
+theorem failsTG_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env env' : Interp.Env V),
+    failsTG p iOps fOps a q = true → a.HoldsS S f ctx v →
     matchPat p (sem ctx) st q v env = .ok (some env') → False
   | .bind ty x q, a, v, st, env, env', hf, ha, hm => by
-    rw [failsT.eq_1] at hf
-    exact failsT_sound q a v st _ env' hf ha (matchPat_bind_inv hm).2
+    rw [failsTG.eq_1] at hf
+    exact failsTG_sound q a v st _ env' hf ha (matchPat_bind_inv hm).2
   | .and ty qs, a, v, st, env, env', hf, ha, hm => by
-    rw [failsT.eq_2] at hf
+    rw [failsTG.eq_2] at hf
     rw [matchPat.eq_7] at hm
-    exact failsAnyT_sound qs a v st env env' hf ha hm
+    exact failsAnyTG_sound qs a v st env env' hf ha hm
   | .constPrim ty n, a, v, st, env, env', hf, ha, hm => by
     rw [matchPat.eq_5, prim_sem_ex] at hm
-    rw [failsT.eq_3] at hf
+    rw [failsTG.eq_3] at hf
     cases hp : primTy ty n with
     | none => rw [hp] at hm; cases hm
     | some c =>
@@ -486,7 +563,7 @@ theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env en
         | _ => simp at hf
       simp [hne] at hm
   | .term ty t args, a, v, st, env, env', hf, ha, hm => by
-    rw [failsT.eq_def] at hf
+    rw [failsTG.eq_def] at hf
     try dsimp only at hf
     cases ht : termOf p t with
     | error e => exact matchPat_termOf_error ht hm
@@ -528,7 +605,7 @@ theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env en
                     | none => rw [hsh] at hf; cases hf
                     | some sh =>
                       rw [hsh] at hf
-                      exact failsArgsT_sound rest sh fs0 st e1 env' hf (instData_fieldsT hc hsh) hm2
+                      exact failsArgsTG_sound rest sh fs0 st e1 env' hf (instData_fieldsT hc hsh) hm2
                   · cases hu1
                 | _ => rw [hok] at hf; simp at hf
             · cases hf
@@ -543,7 +620,7 @@ theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env en
             · rename_i hty
               obtain ⟨rfl, rfl⟩ := Option.some.inj hu
               simp only [hty, beq_self_eq_true, Bool.not_true, Bool.false_or] at hf
-              exact failsArgsT_sound args _ _ st env env' hf (holdsAllT_exact _) hma
+              exact failsArgsTG_sound args _ _ st env env' hf (holdsAllT_exact _) hma
             · cases hu
           | _ => simp at hf
         | _ => simp at hf
@@ -571,10 +648,10 @@ theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env en
                   rw [hi] at hi'
                   cases hi'
                   simp only [Bool.and_eq_true] at hf
-                  rcases inst_split hctx hsc hx hi hc hd with ⟨h1, h2⟩ | ⟨h1, h2⟩
-                  · exact failsArgsT_sound args _ [.ty (info.resTys.head?.getD .invalid), info.data] st
+                  rcases hsp hi hc hd with ⟨h1, h2⟩ | ⟨h1, h2⟩
+                  · exact failsArgsTG_sound args _ [.ty (info.resTys.head?.getD .invalid), info.data] st
                       env env' hf.1 ⟨⟨_, h1, rfl⟩, h2, trivial⟩ hma
-                  · exact failsArgsT_sound args _ [.ty (info.resTys.head?.getD .invalid), info.data] st
+                  · exact failsArgsTG_sound args _ [.ty (info.resTys.head?.getD .invalid), info.data] st
                       env env' hf.2 ⟨⟨_, h1, rfl⟩, h2, trivial⟩ hma
                 · rw [ext_flagOff hf] at hx'; cases hx'
               | value =>
@@ -585,12 +662,12 @@ theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env en
                   obtain ⟨i, hdi, rfl⟩ := ext_def_inst_inv (beq_iff_eq.mp hid) hx'
                   obtain ⟨info, hi, -⟩ := hctx.defInst x i hdi
                   obtain ⟨c, hc⟩ := Option.isSome_iff_exists.mp (hctx.defClif x i info hdi hi)
-                  exact failsArgsT_sound args _ [.inst i] st env env' hf
+                  exact failsArgsTG_sound args _ [.inst i] st env env' hf
                     ⟨⟨i, info, c, rfl, hi, hc, hctx.data i info c hi hc⟩, trivial⟩ hma
                 · split at hf
                   · rename_i _ hid
                     obtain ⟨t, hvt, rfl⟩ := ext_value_type_inv (beq_iff_eq.mp hid) hx'
-                    exact failsArgsT_sound args _ [.ty t] st env env' hf
+                    exact failsArgsTG_sound args _ [.ty t] st env env' hf
                       ⟨⟨t, hctx.valTyM x t hvt, rfl⟩, trivial⟩ hma
                   · cases hf
               | values n =>
@@ -604,7 +681,7 @@ theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env en
                   | [x, y], _ =>
                     rw [ext_value_array_2_ex hid] at hx'
                     cases hx'
-                    exact failsArgsT_sound args _ [.value x, .value y] st env env' hf
+                    exact failsArgsTG_sound args _ [.value x, .value y] st env env' hf
                       ⟨⟨x, rfl⟩, ⟨y, rfl⟩, trivial⟩ hma
                 · cases hf
               | tys ts =>
@@ -617,7 +694,7 @@ theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env en
                   rw [tyExtract_sound hte] at hx'
                   subst hx'
                   rw [hte] at h0
-                  exact failsArgsT_sound args _ _ st env env' h0 (holdsAllT_exact _) hma
+                  exact failsArgsTG_sound args _ _ st env env' h0 (holdsAllT_exact _) hma
               | exact w =>
                 cases ha
                 try dsimp only at hf
@@ -630,40 +707,63 @@ theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env en
                     rw [tyExtract_sound hte] at hx'
                     subst hx'
                     rw [hte] at hf
-                    exact failsArgsT_sound args _ _ st env env' hf (holdsAllT_exact _) hma
+                    exact failsArgsTG_sound args _ _ st env env' hf (holdsAllT_exact _) hma
                 | _ => simp at hf
               | _ => simp at hf
             · exact matchPat_multi ht hk hmu hm
-  | .var .., _, _, _, _, _, hf, _, _ => by simp [failsT] at hf
-  | .constBool .., _, _, _, _, _, hf, _, _ => by simp [failsT] at hf
-  | .constInt .., _, _, _, _, _, hf, _, _ => by simp [failsT] at hf
-  | .wildcard .., _, _, _, _, _, hf, _, _ => by simp [failsT] at hf
+  | .var .., _, _, _, _, _, hf, _, _ => by simp [failsTG] at hf
+  | .constBool .., _, _, _, _, _, hf, _, _ => by simp [failsTG] at hf
+  | .constInt .., _, _, _, _, _, hf, _, _ => by simp [failsTG] at hf
+  | .wildcard .., _, _, _, _, _, hf, _, _ => by simp [failsTG] at hf
 
-theorem failsAnyT_sound : ∀ (qs : List Pattern) (a : AVT) (v : V) (st : LState)
-    (env env' : Interp.Env V), failsAnyT p a qs = true → a.Holds f ctx v →
+theorem failsAnyTG_sound : ∀ (qs : List Pattern) (a : AVT) (v : V) (st : LState)
+    (env env' : Interp.Env V), failsAnyTG p iOps fOps a qs = true → a.HoldsS S f ctx v →
     matchAll p (sem ctx) st qs v env = .ok (some env') → False
-  | [], _, _, _, _, _, hf, _, _ => by simp [failsAnyT] at hf
+  | [], _, _, _, _, _, hf, _, _ => by simp [failsAnyTG] at hf
   | q :: qs, a, v, st, env, env', hf, ha, hm => by
-    rw [failsAnyT.eq_2, Bool.or_eq_true] at hf
+    rw [failsAnyTG.eq_2, Bool.or_eq_true] at hf
     obtain ⟨e1, h1, h2⟩ := matchAll_cons_inv_ex hm
     rcases hf with hf | hf
-    · exact failsT_sound q a v st env e1 hf ha h1
-    · exact failsAnyT_sound qs a v st e1 env' hf ha h2
+    · exact failsTG_sound q a v st env e1 hf ha h1
+    · exact failsAnyTG_sound qs a v st e1 env' hf ha h2
 
-theorem failsArgsT_sound : ∀ (qs : List Pattern) (as : List AVT) (vs : List V) (st : LState)
-    (env env' : Interp.Env V), failsArgsT p as qs = true → AVT.HoldsAll f ctx as vs →
+theorem failsArgsTG_sound : ∀ (qs : List Pattern) (as : List AVT) (vs : List V) (st : LState)
+    (env env' : Interp.Env V), failsArgsTG p iOps fOps as qs = true →
+    AVT.HoldsAllS S f ctx as vs →
     matchArgs p (sem ctx) st qs vs env = .ok (some env') → False
-  | [], _, _, _, _, _, hf, _, _ => by cases ‹List AVT› <;> simp [failsArgsT] at hf
-  | q :: qs, [], _, _, _, _, hf, _, _ => by simp [failsArgsT] at hf
+  | [], _, _, _, _, _, hf, _, _ => by cases ‹List AVT› <;> simp [failsArgsTG] at hf
+  | q :: qs, [], _, _, _, _, hf, _, _ => by simp [failsArgsTG] at hf
   | q :: qs, a :: as, vs, st, env, env', hf, hav, hm => by
-    rw [failsArgsT.eq_1, Bool.or_eq_true] at hf
+    rw [failsArgsTG.eq_1, Bool.or_eq_true] at hf
     match vs, hav with
     | v :: vs, ⟨ha, hrest⟩ =>
       obtain ⟨e1, h1, h2⟩ := matchArgs_cons_inv hm
       rcases hf with hf | hf
-      · exact failsT_sound q a _ st env e1 hf ha h1
-      · exact failsArgsT_sound qs as _ st e1 env' hf hrest h2
+      · exact failsTG_sound q a _ st env e1 hf ha h1
+      · exact failsArgsTG_sound qs as _ st e1 env' hf hrest h2
 end
+
+end
+
+variable (hctx : CtxInvT f ctx) (hsc : InstScopeT ctx)
+  (hx : f.externs.all (Compile.sigE ·.2.sig) = true)
+include hctx hsc hx
+
+/-- **Soundness of the checker**: `failsT p a q` means `q` matches no value `a` describes. -/
+theorem failsT_sound : ∀ (q : Pattern) (a : AVT) (v : V) (st : LState) (env env' : Interp.Env V),
+    failsT p a q = true → a.Holds f ctx v →
+    matchPat p (sem ctx) st q v env = .ok (some env') → False :=
+  failsTG_sound (S := Compile.instET) hctx (inst_split hctx hsc hx)
+
+theorem failsAnyT_sound : ∀ (qs : List Pattern) (a : AVT) (v : V) (st : LState)
+    (env env' : Interp.Env V), failsAnyT p a qs = true → a.Holds f ctx v →
+    matchAll p (sem ctx) st qs v env = .ok (some env') → False :=
+  failsAnyTG_sound (S := Compile.instET) hctx (inst_split hctx hsc hx)
+
+theorem failsArgsT_sound : ∀ (qs : List Pattern) (as : List AVT) (vs : List V) (st : LState)
+    (env env' : Interp.Env V), failsArgsT p as qs = true → AVT.HoldsAll f ctx as vs →
+    matchArgs p (sem ctx) st qs vs env = .ok (some env') → False :=
+  failsArgsTG_sound (S := Compile.instET) hctx (inst_split hctx hsc hx)
 
 end
 
@@ -686,6 +786,110 @@ theorem lower_nonroot_nomatchT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f
       rw [hargs] at ha
       obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
       exact failsT_sound hctx hsc hx q .inst _ _ _ _ hok
+        ⟨ii, info, inst, rfl, hi, hc, hctx.data ii info inst hi hc⟩ h1
+    · cases hok
+
+/-! ## With the float arithmetic (S11f) -/
+
+/-- The instructions of a context are in the typed scope with the S11f float arithmetic
+(`Compile.instETA`). -/
+def InstScopeTA (ctx : Ctx) : Prop :=
+  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+    info.clif = some inst → Compile.instETA inst = true
+
+theorem InstScopeT.toA {ctx : Ctx} (h : InstScopeT ctx) : InstScopeTA ctx :=
+  fun ii info inst hi hc => Compile.instETA_of_instET (h ii info inst hi hc)
+
+/-- The format and opcode names of the S11f float arithmetic (`fFmt`, `fOpc`). -/
+def aNamePairs : List (String × String) :=
+  [("Binary", "Fadd"), ("Binary", "Fsub"), ("Binary", "Fmul"), ("Binary", "Fdiv"),
+   ("Binary", "Fmin"), ("Binary", "Fmax"), ("Unary", "Sqrt"), ("Unary", "Fneg"),
+   ("Unary", "Fabs"), ("Unary", "Fpromote"), ("Unary", "Fdemote")]
+
+set_option maxRecDepth 20000 in
+theorem aNamePairs_float : aNamePairs.all (fun pr =>
+    match variantIdx 152 pr.1, variantIdx 151 pr.2 with
+    | some _, some ko => floatOpsA.contains ko
+    | _, _ => false) = true := by
+  decide +kernel
+
+/-- An admitted float arithmetic instruction has a binary or unary float opcode. -/
+theorem fArithET_op {op : Clif.FOp} {ty : Clif.Ty} {args : List Nat}
+    (h : Compile.fArithET (.float op ty args) = true) :
+    (fBinaryOpcode op).isSome = true ∨ (fUnaryOpcode op).isSome = true := by
+  simp only [Compile.fArithET, Bool.and_eq_true] at h
+  obtain ⟨h, -⟩ := h
+  split at h
+  · exact .inl h
+  · exact .inr h
+  · cases h
+
+/-- **The data of an S11f float arithmetic instruction**: a float-result opcode (`floatOpsA`). -/
+theorem instData_shapeA {f : Clif.Function} {c : Clif.Inst} {d : V}
+    (hA : Compile.fArithET c = true) (h : instData f c = .ok d) :
+    ∃ kf ko fs, d = .data 152 kf (.data 151 ko [] :: fs) ∧ ko ∈ floatOpsA := by
+  cases c with
+  | float op ty args =>
+    rcases instData_names h with ⟨rest, hd⟩ | ⟨ty', imm, he, -⟩
+    · refine data_of_names hd ?_ aNamePairs_float
+      rcases fArithET_op hA with ho | ho <;>
+        cases op <;> simp [fBinaryOpcode, fUnaryOpcode] at ho <;> simp [instNames, fFmt, fOpc, aNamePairs]
+    · cases he
+  | _ => simp [Compile.fArithET] at hA
+
+/-- The result type of an S11f float arithmetic instruction is its float controlling type. -/
+theorem fArith_resTy {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : Nat}
+    {info : IInfo} {c : Clif.Inst} (hA : Compile.fArithET c = true) (hi : ctx.insts[j]? = some info)
+    (hc : info.clif = some c) : info.resTys.head?.getD .invalid ∈ fTys := by
+  cases c with
+  | float op ty args =>
+    have hty : ty.isFloat = true := by
+      simp only [Compile.fArithET, Bool.and_eq_true] at hA
+      revert hA; cases op <;> cases ty <;> simp [fTyOk, Clif.Ty.isFloat]
+    obtain ⟨tys, htys, hres, -⟩ := hctx.resTys j info _ hi hc
+    rcases fArithET_op hA with ho | ho <;> cases op <;> simp [fBinaryOpcode, fUnaryOpcode] at ho <;>
+      simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys <;> subst htys <;>
+      rw [hres] <;> revert hty <;> cases ty <;> simp [fTys, CTy.ofClif, Clif.Ty.isFloat]
+  | _ => simp [Compile.fArithET] at hA
+
+/-- **An instruction of a context with the float arithmetic**: as `inst_split`, the arithmetic
+among the float-result opcodes (`floatOpsA`). -/
+theorem inst_splitA {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) (hsc : InstScopeTA ctx)
+    (hx : f.externs.all (Compile.sigE ·.2.sig) = true) :
+    InstSplit Compile.instETA f ctx opsT floatOpsA := by
+  intro j info c hi hc hd
+  have hTA := hsc j info c hi hc
+  have hT := hTA
+  simp only [Compile.instETA, Bool.or_eq_true] at hT
+  rcases hT with hT | hA
+  · rcases inst_split1 hctx hx hT hi hc hd with ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩ |
+      ⟨h1, c', hT', hc', kf, ko, fs, he, hko⟩
+    · exact .inl ⟨h1, c', Compile.instETA_of_instET hT', hc', kf, ko, fs, he, hko⟩
+    · exact .inr ⟨h1, c', Compile.instETA_of_instET hT', hc', kf, ko, fs, he,
+        List.mem_append_left _ hko⟩
+  · obtain ⟨kf, ko, fs, he, hko⟩ := instData_shapeA hA hd
+    exact .inr ⟨fArith_resTy hctx hA hi hc, c, hTA, hd, kf, ko, fs, he, hko⟩
+
+/-- **The root rules of `lower` outside the closure never match an instruction of a
+float-capable context with the float arithmetic** (instructions in `InstScopeTA`, externs with
+integer signatures). -/
+theorem lower_nonroot_nomatchTA {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hsc : InstScopeTA ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) {ii : Nat}
+    {info : IInfo} {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst)
+    {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hroot : closureRootIds.contains r.id = false) :
+    ∀ cfg m s0 env s1, (matchRule program (sem ctx) cfg m r [.inst ii]).run s0 ≠ .ok (some env, s1) := by
+  intro cfg m s0 env' s1 hmatch
+  have hok := List.all_eq_true.mp exclOkTA_program r hr
+  simp only [exclOkTA, hroot, Bool.false_or] at hok
+  cases m with
+  | zero => rw [matchRule.eq_1] at hmatch; cases hmatch
+  | succ m =>
+    obtain ⟨env0, ha, -⟩ := matchRule_some_inv hmatch
+    split at hok
+    · rename_i q hargs
+      rw [hargs] at ha
+      obtain ⟨e1, h1, -⟩ := matchArgs_cons_inv ha
+      exact failsTG_sound hctx (inst_splitA hctx hsc hx) q .inst _ _ _ _ hok
         ⟨ii, info, inst, rfl, hi, hc, hctx.data ii info inst hi hc⟩ h1
     · cases hok
 
