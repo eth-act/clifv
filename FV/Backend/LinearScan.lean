@@ -936,9 +936,9 @@ def usesOk : Bool :=
     | .use => c.pl.covI o.vreg (pos g 0) (pos g (opSlot o))
     | .def => c.pl.covI o.vreg (pos g (opSlot o)) (pos g 3)
 
-/-- Every register of the plan is in its vreg's class pool. -/
+/-- Registers are given to vregs below `nv` only, each in its vreg's class pool. -/
 def regsOk : Bool :=
-  (List.range c.pl.reg.size).all fun v =>
+  c.pl.reg.size ≤ c.fn.nv && (List.range c.pl.reg.size).all fun v =>
     match c.pl.regOf v with
     | some r => (pool (c.fn.clsOf v)).contains r
     | none => true
