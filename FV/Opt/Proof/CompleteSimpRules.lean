@@ -49,10 +49,11 @@ structure RStep (B : ValueId → Prop) (st st' : SState) : Prop where
   types : ∀ y t, st.types.get? y = some t → st'.types.get? y = some t
   typesKnown : ∀ y, st.known y = true → st'.types.get? y = st.types.get? y
   good : ∀ y, Placed st B y → Placed st' B y
+  fresh : ∀ y n, st'.defs.get? y = some n → st.defs.get? y = some n ∨ maxValue st.fn < y
 
 theorem RStep.refl (st : SState) : RStep B st st :=
   ⟨rfl, rfl, rfl, rfl, rfl, Nat.le_refl _, fun _ _ h => h, fun _ _ h => .inl h, fun _ _ h => h,
-   fun _ _ => rfl, fun _ h => h⟩
+   fun _ _ => rfl, fun _ h => h, fun _ _ h => .inl h⟩
 
 theorem RStep.known {st st' : SState} (h : RStep B st st') {x : ValueId}
     (hx : st.known x = true) : st'.known x = true := by
@@ -68,7 +69,11 @@ theorem RStep.trans {st1 st2 st3 : SState} (h1 : RStep B st1 st2) (h2 : RStep B 
    h2.remat.trans h1.remat, Nat.le_trans h1.next h2.next, fun y n h => h2.defs y n (h1.defs y n h),
    fun y n h => ?_, fun y t h => h2.types y t (h1.types y t h),
    fun y hy => (h2.typesKnown y (h1.known hy)).trans (h1.typesKnown y hy),
-   fun y h => h2.good y (h1.good y h)⟩
+   fun y h => h2.good y (h1.good y h), fun y n h => ?_⟩
+  rotate_left
+  · rcases h2.fresh y n h with h | h
+    · exact h1.fresh y n h
+    · exact .inr (by rw [← h1.fn]; exact h)
   rcases h2.defsNew y n h with h | h
   · exact h1.defsNew y n h
   · cases hk : st1.known y with
@@ -110,7 +115,8 @@ theorem RStep.of_fields {st st' : SState} (hd : st'.defs = st.defs)
     (hn : st'.next = st.next) (hf : st'.fn = st.fn) (htr : st'.trapBlocks = st.trapBlocks)
     (hr : st'.rematConst = st.rematConst) : RStep B st st' :=
   ⟨hv, ha, hf, htr, hr, Nat.le_of_eq hn.symm, fun y n h => by rw [hd]; exact h,
-   fun y n h => .inl (by rw [← hd]; exact h), fun y t h => by rw [ht]; exact h, fun y _ => by rw [ht], fun y h => Placed.congr hd ha hv h⟩
+   fun y n h => .inl (by rw [← hd]; exact h), fun y t h => by rw [ht]; exact h, fun y _ => by rw [ht],
+   fun y h => Placed.congr hd ha hv h, fun y n h => .inl (by rw [← hd]; exact h)⟩
 
 theorem CInv.congr {st st' : SState} (h : CInv B st) (hd : st'.defs = st.defs)
     (ha : st'.alts = st.alts) (hv : st'.avail = st.avail) (ht : st'.types = st.types)
@@ -216,11 +222,14 @@ theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → B
     · rw [hal] at hms; exact .inl hms
   have hstep : RStep B st st2 := by
     refine ⟨ha, hal, hf, htr, hr, by rw [hnx]; exact Nat.le_succ _, fun y m hm' => ?_,
-      fun y m hm' => ?_, tgrow, tknown, hgood⟩
+      fun y m hm' => ?_, tgrow, tknown, hgood, fun y m hm' => ?_⟩
     · have hy : st.known y = true := known_iff.2 (.inl (by rw [hm']; rfl))
       rw [hdefs, if_neg (hne y hy)]; exact hm'
     · rw [hdefs] at hm'; split at hm'
       · rename_i he; subst he; exact .inr hwk
+      · exact .inl hm'
+    · rw [hdefs] at hm'; split at hm'
+      · rename_i he; subst he; exact .inr (by rw [h.m.fn]; exact h.m.maxLt)
       · exact .inl hm'
   have hgw : Placed st2 B st.next := by
     refine Placed.mk (fun hb => absurd (Nat.lt_of_lt_of_le h.m.maxLt (h.m.badLe _ hb)) (Nat.lt_irrefl _))

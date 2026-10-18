@@ -43,6 +43,7 @@ structure SRun (f : Function) (idom : Array (Option Nat)) (allowed skelOk : Inst
   stmts : ∀ b, V bi = some b → ∀ j s, new[j]? = some s →
     NewOk idom (emitV V bi new) bi (b.body.length + j) allowed B st' s ∨
       TrapOk idom (emitV V bi new) bi (b.body.length + j) skelOk B st' s
+  fresh : ∀ y n, st'.defs.get? y = some n → st.defs.get? y = some n ∨ maxValue f < y
 
 theorem RInv.of_mrun {V : Nat → Option Block} {X : ValueId → Prop} {XN : Inst → Prop} {st st' : SState}
     {new : List Stmt} (h : RInv f V B X XN st) (hm : MRun f idom allowed bi B V st st' new) :
@@ -58,17 +59,21 @@ theorem RInv.of_mrun {V : Nat → Option Block} {X : ValueId → Prop} {XN : Ins
 theorem SRun.of_mrun {V : Nat → Option Block} {st st' : SState} {new : List Stmt}
     (h : RInv f V B (fun _ => False) (fun _ => False) st) (hm : MRun f idom allowed bi B V st st' new) :
     SRun f idom allowed skelOk bi B V st st' new := by
+  have hfn : st.fn = f := by have := hm.inv.fn; obtain ⟨_, _, _, _, _, e⟩ := hm.step.shape; rw [e] at this; exact this
   obtain ⟨d, a, t, c, nx, rfl⟩ := hm.step.shape
   exact ⟨h.of_mrun hm, hm.good, fun y hy => hm.step.known y hy, hm.step.typesKnown, hm.step.types,
     hm.step.avail, hm.step.availNew, hm.step.defsKeep,
-    fun y n' hy _ => hm.nodes y n' hy, rfl, fun b hb j s hs => .inl (hm.stmts b hb j s hs)⟩
+    fun y n' hy _ => hm.nodes y n' hy, rfl, fun b hb j s hs => .inl (hm.stmts b hb j s hs),
+    fun y n hy => by rw [← hfn]; exact hm.step.fresh y n hy⟩
 
 theorem SRun.of_rstep {V : Nat → Option Block} {st st' : SState}
     (h : RInv f V B (fun _ => False) (fun _ => False) st') (hs : RStep B st st') :
     SRun f idom allowed skelOk bi B V st st' [] := by
+  have hfn : st.fn = f := by rw [← hs.fn]; exact h.m.fn
   refine ⟨by rw [emitV_nil]; exact h, hs.good, fun y hy => hs.known hy, hs.typesKnown, hs.types,
     fun y d hy => by rw [hs.avail]; exact hy, fun y d hy => .inl (by rw [← hs.avail]; exact hy),
-    fun y n hy _ => hs.defs y n hy, fun y n' hy hk => ?_, hs.alts, fun _ _ j s hs => by simp at hs⟩
+    fun y n hy _ => hs.defs y n hy, fun y n' hy hk => ?_, hs.alts, fun _ _ j s hs => by simp at hs,
+    fun y n hy => by rw [← hfn]; exact hs.fresh y n hy⟩
   rcases hs.defsNew y n' hy with h1 | h1
   · exact .inl h1
   · rw [hk] at h1; cases h1
@@ -81,7 +86,11 @@ theorem SRun.trans {V : Nat → Option Block} {st st1 st2 : SState} {n1 n2 : Lis
     fun y hy => (h2.typesKnown y (h1.known y hy)).trans (h1.typesKnown y hy),
     fun y t h => h2.types y t (h1.types y t h), fun y d h => h2.avail y d (h1.avail y d h),
     fun y d h => ?_, fun y n h ha => ?_, fun y n' hy hk => ?_, h2.alts.trans h1.alts,
-    fun b hb j s hs => ?_⟩
+    fun b hb j s hs => ?_, fun y n hy => ?_⟩
+  rotate_right
+  · rcases h2.fresh y n hy with h | h
+    · exact h1.fresh y n h
+    · exact .inr h
   · rcases h2.availNew y d h with h | ⟨rfl, s, hs, hy⟩
     · rcases h1.availNew y d h with h | ⟨rfl, s, hs, hy⟩
       · exact .inl h
@@ -442,7 +451,7 @@ theorem SRun.trap {V : Nat → Option Block} {st : SState} {b : Block}
     SRun f idom allowed skelOk bi B V st st [s] := by
   refine ⟨⟨h.m.noResult hs.1, h.noPartial, h.memo, h.alts⟩, fun _ h => h, fun _ h => h,
     fun _ _ => rfl, fun _ _ h => h, fun _ _ h => h, fun _ _ h => .inl h, fun _ _ h _ => h,
-    fun _ _ h _ => .inl h, rfl, fun b' hb' j s' hj => ?_⟩
+    fun _ _ h _ => .inl h, rfl, fun b' hb' j s' hj => ?_, fun _ _ h => .inl h⟩
   rw [hb] at hb'; cases hb'
   rcases j with _ | j
   · simp only [List.getElem?_cons_zero, Option.some.injEq] at hj
