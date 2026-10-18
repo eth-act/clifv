@@ -22,13 +22,13 @@ variable {f : Function} {idom : Array (Option Nat)} {allowed skelOk : Inst → B
 def TrapOk (idom : Array (Option Nat)) (V : Nat → Option Block) (bi k : Nat)
     (skelOk : Inst → Bool) (B : ValueId → Prop) (st : SState) (s : Stmt) : Prop :=
   s.results = [] ∧ isTrapLike s.inst = true ∧ (∃ n τ, skelOk n = true ∧ s.inst = mapOperands τ n) ∧
-    ∀ y ∈ operands s.inst, Good st B y ∧ AvailAt idom V bi k y
+    ∀ y ∈ operands s.inst, Placed st B y ∧ AvailAt idom V bi k y
 
 /-- Rules-phase steps and `materialize` runs inside one statement (module doc). -/
 structure SRun (f : Function) (idom : Array (Option Nat)) (allowed skelOk : Inst → Bool) (bi : Nat)
     (B : ValueId → Prop) (V : Nat → Option Block) (st st' : SState) (new : List Stmt) : Prop where
   inv : RInv f (emitV V bi new) B (fun _ => False) (fun _ => False) st'
-  good : ∀ y, Good st B y → Good st' B y
+  good : ∀ y, Placed st B y → Placed st' B y
   known : ∀ y, st.known y = true → st'.known y = true
   typesKnown : ∀ y, st.known y = true → st'.types.get? y = st.types.get? y
   types : ∀ y t, st.types.get? y = some t → st'.types.get? y = some t
@@ -38,7 +38,7 @@ structure SRun (f : Function) (idom : Array (Option Nat)) (allowed skelOk : Inst
   defsKeep : ∀ y n, st.defs.get? y = some n → st.avail.contains y = true →
     st'.defs.get? y = some n
   nodes : ∀ y n', st'.defs.get? y = some n' → st.known y = true →
-    st.defs.get? y = some n' ∨ ∀ z ∈ operands n', Good st' B z
+    st.defs.get? y = some n' ∨ ∀ z ∈ operands n', Placed st' B z
   alts : st'.alts = st.alts
   stmts : ∀ b, V bi = some b → ∀ j s, new[j]? = some s →
     NewOk idom (emitV V bi new) bi (b.body.length + j) allowed B st' s ∨
@@ -127,7 +127,7 @@ theorem runSkel_cand {skel : SkeletonFn} {rules : SimplifyFn} {st : SState}
 /-- A replacement instruction `i` of the skeleton instruction `i0`, placed at index `k`. -/
 def RepInst (idom : Array (Option Nat)) (V : Nat → Option Block) (bi k : Nat)
     (skelOk : Inst → Bool) (B : ValueId → Prop) (st : SState) (i0 i : Inst) : Prop :=
-  (∀ y ∈ operands i, Good st B y ∧ AvailAt idom V bi k y) ∧
+  (∀ y ∈ operands i, Placed st B y ∧ AvailAt idom V bi k y) ∧
     i.resultTypes (fun _ => none) (fun _ => none) = i0.resultTypes (fun _ => none) (fun _ => none) ∧
     isPure i = false ∧ notSym i = true ∧
     ((∃ n τ, skelOk n = true ∧ i = mapOperands τ n) ∨ ∃ τ, i = mapOperands τ i0)
@@ -135,7 +135,7 @@ def RepInst (idom : Array (Option Nat)) (V : Nat → Option Block) (bi k : Nat)
 /-- A result-free instruction of a `two` outcome, placed at index `k` or later. -/
 def TwoInst (idom : Array (Option Nat)) (V : Nat → Option Block) (bi k : Nat)
     (skelOk : Inst → Bool) (B : ValueId → Prop) (st : SState) (a : Inst) : Prop :=
-  (∀ y ∈ operands a, Good st B y ∧ AvailAt idom V bi k y) ∧
+  (∀ y ∈ operands a, Placed st B y ∧ AvailAt idom V bi k y) ∧
     a.resultTypes (fun _ => none) (fun _ => none) = some [] ∧ notSym a = true ∧
     ∃ n τ, skelOk n = true ∧ a = mapOperands τ n
 
@@ -147,7 +147,7 @@ def SkelRes (idom : Array (Option Nat)) (V : Nat → Option Block) (bi : Nat)
   | .keep => fin = [u] ∧ sub = []
   | .remove => fin = [] ∧ sub = [] ∧ u.results = [] ∧ skelCandidate (.inst u.inst) = true
   | .removeWithVal v => fin = [] ∧ skelCandidate (.inst u.inst) = true ∧
-      ∃ r, u.results = [r] ∧ sub = [(r, v)] ∧ Good st B v ∧ AvailAt idom V bi k v ∧
+      ∃ r, u.results = [r] ∧ sub = [(r, v)] ∧ Placed st B v ∧ AvailAt idom V bi k v ∧
         st.types.get? v = st.types.get? r
   | .replace i => fin = [{ results := u.results, inst := i }] ∧ sub = [] ∧
       skelCandidate (.inst u.inst) = true ∧ RepInst idom V bi k skelOk B st u.inst i
@@ -171,8 +171,8 @@ theorem SRun.trans0 {V : Nat → Option Block} {st st1 st2 : SState} {n : List S
 available. -/
 theorem renamed_ops {V : Nat → Option Block} {st : SState} {m : List (ValueId × ValueId)}
     {xs : List ValueId} {i : Inst} (hmap : m.map Prod.fst = xs) (hops : operands i ⊆ xs)
-    (hps : ∀ p ∈ m, Good st B p.2 ∧ AvailHere idom V bi p.2) :
-    ∀ y ∈ operands (mapOperands (rename m) i), Good st B y ∧ AvailHere idom V bi y := by
+    (hps : ∀ p ∈ m, Placed st B p.2 ∧ AvailHere idom V bi p.2) :
+    ∀ y ∈ operands (mapOperands (rename m) i), Placed st B y ∧ AvailHere idom V bi y := by
   intro y hy
   rw [operands_mapOperands, List.mem_map] at hy
   obtain ⟨x, hx, rfl⟩ := hy
@@ -184,7 +184,7 @@ variable {cfg : Cfg} {rules : SimplifyFn} {skel : SkeletonFn}
 /-- **A skeleton statement** (`skelStmt`) under the rule obligations (module doc). -/
 theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
     ∀ fuel st u stmts sub st' o (V : Nat → Option Block) b,
-      RInv f V B (fun _ => False) (fun _ => False) st → V bi = some b → (∀ y ∈ operands u.inst, Good st B y) →
+      RInv f V B (fun _ => False) (fun _ => False) st → V bi = some b → (∀ y ∈ operands u.inst, Placed st B y) →
       (∀ r ∈ u.results, st.known r = true) →
       skelStmt skel rules allowed skelOk cfg bi fuel st u = (stmts, sub, st', o) →
       ∃ pre fin, stmts.toList = pre ++ fin ∧ SRun f cfg.idom allowed skelOk bi B V st st' pre ∧
@@ -457,7 +457,7 @@ def TermRes (idom : Array (Option Nat)) (V : Nat → Option Block) (bi k : Nat) 
     (st : SState) (t : Terminator) (extra : List Stmt) (t'' : Terminator) (ch : Bool) : Prop :=
   (ch = false → extra = [] ∧ t'' = t) ∧
   (ch = true → skelCandidate (.term t) = true ∧ isBranch t'' = true ∧
-    (∀ y ∈ termOperands t'', Good st B y ∧ AvailAt idom V bi k y) ∧
+    (∀ y ∈ termOperands t'', Placed st B y ∧ AvailAt idom V bi k y) ∧
     (∀ bc' ∈ termCalls t'', ∃ bc ∈ termCalls t, bc'.block = bc.block ∧
       bc'.args.map (fun x => st.types.get? x) = bc.args.map (fun x => st.types.get? x)) ∧
     ∀ x d tb, t'' = .brTable x d tb → st.types.get? x = some .i32)
@@ -466,19 +466,19 @@ def TermRes (idom : Array (Option Nat)) (V : Nat → Option Block) (bi k : Nat) 
 obligation in the state `st1`, seen in a later state `st3`. -/
 theorem replTerm_facts {st1 st2 st3 : SState} {t t' : Terminator} {m : List (ValueId × ValueId)}
     {V : Nat → Option Block} {xs : List ValueId}
-    (hok : SkelTermOk (fun x => st1.types.get? x) (Good st1 B) t t')
+    (hok : SkelTermOk (fun x => st1.types.get? x) (Placed st1 B) t t')
     (hmap : m.map Prod.fst = xs) (hsub : termOperands t' ⊆ xs)
-    (hps : ∀ p ∈ m, Good st2 B p.2 ∧ AvailHere idom V bi p.2 ∧ st2.types.get? p.2 = st1.types.get? p.1)
+    (hps : ∀ p ∈ m, Placed st2 B p.2 ∧ AvailHere idom V bi p.2 ∧ st2.types.get? p.2 = st1.types.get? p.1)
     (ht : ∀ y ∈ termOperands t, st1.known y = true)
     (hk3 : ∀ y, st1.known y = true → st3.types.get? y = st1.types.get? y)
     (hk23 : ∀ y, st2.known y = true → st3.types.get? y = st2.types.get? y) :
     isBranch (mapTerm (rename m) t') = true ∧
-    (∀ y ∈ termOperands (mapTerm (rename m) t'), Good st2 B y ∧ AvailHere idom V bi y) ∧
+    (∀ y ∈ termOperands (mapTerm (rename m) t'), Placed st2 B y ∧ AvailHere idom V bi y) ∧
     (∀ bc' ∈ termCalls (mapTerm (rename m) t'), ∃ bc ∈ termCalls t, bc'.block = bc.block ∧
       bc'.args.map (fun x => st3.types.get? x) = bc.args.map (fun x => st3.types.get? x)) ∧
     ∀ x d tb, mapTerm (rename m) t' = .brTable x d tb → st3.types.get? x = some .i32 := by
   obtain ⟨hbr, hops, hcalls, hbt⟩ := hok
-  have hren : ∀ y ∈ termOperands t', Good st2 B (rename m y) ∧ AvailHere idom V bi (rename m y) ∧
+  have hren : ∀ y ∈ termOperands t', Placed st2 B (rename m y) ∧ AvailHere idom V bi (rename m y) ∧
       st3.types.get? (rename m y) = st1.types.get? y := by
     intro y hy
     obtain ⟨p, hp, h1, h2⟩ := rename_mem hmap (hsub hy)
@@ -512,7 +512,7 @@ theorem termRes_compose {V : Nat → Option Block} {b : Block} {st3 : SState}
     {t t1 t'' : Terminator} {pre extra2 : List Stmt} {ch2 : Bool}
     (hb : V bi = some b) (hcand : skelCandidate (.term t) = true)
     (h1 : isBranch t1 = true)
-    (h2 : ∀ y ∈ termOperands t1, Good st3 B y ∧ AvailHere idom (emitV V bi pre) bi y)
+    (h2 : ∀ y ∈ termOperands t1, Placed st3 B y ∧ AvailHere idom (emitV V bi pre) bi y)
     (h3 : ∀ bc' ∈ termCalls t1, ∃ bc ∈ termCalls t, bc'.block = bc.block ∧
       bc'.args.map (fun x => st3.types.get? x) = bc.args.map (fun x => st3.types.get? x))
     (h4 : ∀ x d tb, t1 = .brTable x d tb → st3.types.get? x = some .i32)
@@ -543,7 +543,7 @@ theorem termRes_compose {V : Nat → Option Block} {b : Block} {st3 : SState}
 theorem skelTerm_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
     ∀ fuel st t extra t'' st' ch (V : Nat → Option Block) b,
       RInv f V B (fun _ => False) (fun _ => False) st → V bi = some b →
-      (∀ y ∈ termOperands t, Good st B y ∧ AvailHere cfg.idom V bi y) →
+      (∀ y ∈ termOperands t, Placed st B y ∧ AvailHere cfg.idom V bi y) →
       skelTerm skel rules allowed skelOk cfg bi fuel st t = (extra, t'', st', ch) →
       SRun f cfg.idom allowed skelOk bi B V st st' extra.toList ∧
         TermRes cfg.idom (emitV V bi extra.toList) bi (b.body.length + extra.toList.length) B st' t
@@ -629,7 +629,7 @@ theorem skelTerm_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
             · exact List.mem_append_left _ (List.mem_cons_of_mem _ h)
             · exact List.mem_append_right _ h
           have hops2 : ∀ y ∈ termOperands (.brif (rename m c) th el),
-              Good st2 B y ∧ AvailHere cfg.idom (emitV V bi out.toList) bi y := by
+              Placed st2 B y ∧ AvailHere cfg.idom (emitV V bi out.toList) bi y := by
             intro y hy
             change y ∈ (rename m c :: th.args) ++ el.args at hy
             have : y = rename m c ∨ y ∈ th.args ++ el.args := by

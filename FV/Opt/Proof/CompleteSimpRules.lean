@@ -25,7 +25,7 @@ structure RInv (f : Function) (V : Nat → Option Block) (B X : ValueId → Prop
     (st : SState) : Prop where
   m : MInv f V B st
   noPartial : ∀ x, st.partialVals.contains x = false
-  memo : ∀ n w, st.memo.get? n = some w → (Good st B w ∨ (X w ∧ XN n)) ∧ st.known w = true ∧
+  memo : ∀ n w, st.memo.get? n = some w → (Placed st B w ∨ (X w ∧ XN n)) ∧ st.known w = true ∧
     st.types.get? w = SState.nodeTy n
   alts : ∀ x ms, st.alts.get? x = some ms → ∀ m ∈ ms, st.known m = true ∧
     st.types.get? m = st.types.get? x
@@ -34,7 +34,7 @@ structure RInv (f : Function) (V : Nat → Option Block) (B X : ValueId → Prop
 def CInv (B : ValueId → Prop) (st : SState) : Prop :=
   ∀ k ms, st.classes.get? k = some ms → st.known k = true ∧ ∀ m ∈ ms, st.known m = true ∧
     st.types.get? m = st.types.get? k ∧
-      ∀ n, st.defs.get? m = some n → ∀ y ∈ operands n, Good st B y
+      ∀ n, st.defs.get? m = some n → ∀ y ∈ operands n, Placed st B y
 
 /-- How the state moves in the rules phase. -/
 structure RStep (B : ValueId → Prop) (st st' : SState) : Prop where
@@ -48,7 +48,7 @@ structure RStep (B : ValueId → Prop) (st st' : SState) : Prop where
   defsNew : ∀ y n, st'.defs.get? y = some n → st.defs.get? y = some n ∨ st.known y = false
   types : ∀ y t, st.types.get? y = some t → st'.types.get? y = some t
   typesKnown : ∀ y, st.known y = true → st'.types.get? y = st.types.get? y
-  good : ∀ y, Good st B y → Good st' B y
+  good : ∀ y, Placed st B y → Placed st' B y
 
 theorem RStep.refl (st : SState) : RStep B st st :=
   ⟨rfl, rfl, rfl, rfl, rfl, Nat.le_refl _, fun _ _ h => h, fun _ _ h => .inl h, fun _ _ h => h,
@@ -95,7 +95,7 @@ theorem RInv.congr {st st' : SState} (h : RInv f V B X XN st) (hd : st'.defs = s
     (hn : st'.next = st.next) (hf : st'.fn = st.fn) (hm : st'.memo = st.memo)
     (hp : st'.partialVals = st.partialVals) : RInv f V B X XN st' := by
   have hk : ∀ x, st'.known x = st.known x := by intro x; simp [SState.known, hd, hv]
-  have hg : ∀ x, Good st B x → Good st' B x := fun x h => Good.congr hd ha hv h
+  have hg : ∀ x, Placed st B x → Placed st' B x := fun x h => Placed.congr hd ha hv h
   refine ⟨h.m.congr hd ha hv ht hn hf, fun x => by rw [hp]; exact h.noPartial x,
     fun n w hw => ?_, fun x ms hx m hm' => ?_⟩
   · rw [hm] at hw
@@ -110,7 +110,7 @@ theorem RStep.of_fields {st st' : SState} (hd : st'.defs = st.defs)
     (hn : st'.next = st.next) (hf : st'.fn = st.fn) (htr : st'.trapBlocks = st.trapBlocks)
     (hr : st'.rematConst = st.rematConst) : RStep B st st' :=
   ⟨hv, ha, hf, htr, hr, Nat.le_of_eq hn.symm, fun y n h => by rw [hd]; exact h,
-   fun y n h => .inl (by rw [← hd]; exact h), fun y t h => by rw [ht]; exact h, fun y _ => by rw [ht], fun y h => Good.congr hd ha hv h⟩
+   fun y n h => .inl (by rw [← hd]; exact h), fun y t h => by rw [ht]; exact h, fun y _ => by rw [ht], fun y h => Placed.congr hd ha hv h⟩
 
 theorem CInv.congr {st st' : SState} (h : CInv B st) (hd : st'.defs = st.defs)
     (ha : st'.alts = st.alts) (hv : st'.avail = st.avail) (ht : st'.types = st.types)
@@ -123,7 +123,7 @@ theorem CInv.congr {st st' : SState} (h : CInv B st) (hd : st'.defs = st.defs)
   obtain ⟨e1, e2, e3⟩ := h1 m hm
   refine ⟨by rw [hk]; exact e1, by rw [ht]; exact e2, fun n hn y hy => ?_⟩
   rw [hd] at hn
-  exact Good.congr hd ha hv (e3 n hn y hy)
+  exact Placed.congr hd ha hv (e3 n hn y hy)
 
 theorem CInv.step {st st' : SState} (h : CInv B st) (hs : RStep B st st')
     (hc : st'.classes = st.classes) : CInv B st' := by
@@ -140,11 +140,11 @@ theorem CInv.step {st st' : SState} (h : CInv B st) (hs : RStep B st st')
 
 /-- The nodes of a value whose nodes are placeable are typed nodes over placeable values. -/
 theorem enodes_nodeIn {st : SState} (h : RInv f V B X XN st) {x : ValueId}
-    (hd : ∀ n, st.defs.get? x = some n → ∀ y ∈ operands n, Good st B y)
+    (hd : ∀ n, st.defs.get? x = some n → ∀ y ∈ operands n, Placed st B y)
     (ha : ∀ ms, st.alts.get? x = some ms → ∀ m ∈ ms, ∀ n, st.defs.get? m = some n →
-      ∀ y ∈ operands n, Good st B y) :
+      ∀ y ∈ operands n, Placed st B y) :
     ∀ n ∈ SState.enodes st x,
-      NodeIn (fun y => st.types.get? y) f (Good st B) (st.types.get? x) n := by
+      NodeIn (fun y => st.types.get? y) f (Placed st B) (st.types.get? x) n := by
   intro n hn
   simp only [SState.enodes, List.mem_append, Option.mem_toList, List.mem_filterMap] at hn
   rcases hn with hn | ⟨m, hm, hmn⟩
@@ -165,12 +165,12 @@ theorem nodeTy_isSome {ty : ValueId → Option Ty} {fn : Function} {n : Inst} (h
 
 /-- Inserting a typed node over placeable values under the fresh `st.next`. -/
 theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → Bool} {n : Inst}
-    (hn : NodeIn (fun y => st.types.get? y) f (Good st B) (SState.nodeTy n) n) :
+    (hn : NodeIn (fun y => st.types.get? y) f (Placed st B) (SState.nodeTy n) n) :
     RInv f V B X XN (st.insertNode allowed n).2 ∧ RStep B st (st.insertNode allowed n).2 ∧
-      (st.insertNode allowed n).1 = st.next ∧ Good (st.insertNode allowed n).2 B st.next ∧
+      (st.insertNode allowed n).1 = st.next ∧ Placed (st.insertNode allowed n).2 B st.next ∧
       (∀ n' ∈ SState.enodes (st.insertNode allowed n).2 st.next,
         NodeIn (fun y => (st.insertNode allowed n).2.types.get? y) f
-          (Good (st.insertNode allowed n).2 B) ((st.insertNode allowed n).2.types.get? st.next) n') ∧
+          (Placed (st.insertNode allowed n).2 B) ((st.insertNode allowed n).2.types.get? st.next) n') ∧
       (st.insertNode allowed n).2.types.get? st.next = SState.nodeTy n ∧
       (st.insertNode allowed n).2.classes = st.classes ∧
       (st.insertNode allowed n).2.memo = st.memo := by
@@ -208,8 +208,8 @@ theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → B
     · exact hy
   have tknown : ∀ y, st.known y = true → st2.types.get? y = st.types.get? y := by
     intro y hy; rw [htypes, if_neg (hne y hy)]
-  have hgood : ∀ y, Good st B y → Good st2 B y := by
-    refine Good.mono kgrow (fun y hy => hy.not_bad) (fun y m hm' => ?_) (fun y ms hms => ?_)
+  have hgood : ∀ y, Placed st B y → Placed st2 B y := by
+    refine Placed.mono kgrow (fun y hy => hy.not_bad) (fun y m hm' => ?_) (fun y ms hms => ?_)
     · rw [hdefs] at hm'; split at hm'
       · cases hm'; exact .inr hops
       · exact .inl hm'
@@ -222,8 +222,8 @@ theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → B
     · rw [hdefs] at hm'; split at hm'
       · rename_i he; subst he; exact .inr hwk
       · exact .inl hm'
-  have hgw : Good st2 B st.next := by
-    refine Good.mk (fun hb => absurd (Nat.lt_of_lt_of_le h.m.maxLt (h.m.badLe _ hb)) (Nat.lt_irrefl _))
+  have hgw : Placed st2 B st.next := by
+    refine Placed.mk (fun hb => absurd (Nat.lt_of_lt_of_le h.m.maxLt (h.m.badLe _ hb)) (Nat.lt_irrefl _))
       hwk2 (fun m hm' y hy => ?_) (fun ms hms => ?_)
     · rw [hdefs, if_pos rfl] at hm'; cases hm'; exact hgood y (hops y hy)
     · rw [hal] at hms
@@ -267,11 +267,11 @@ theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → B
     have := h.m.altsKnown _ ms hms; rw [hwk] at this; cases this
 
 theorem RInv.memoInsert {st : SState} (h : RInv f V B X XN st) {n : Inst} {b : ValueId}
-    (hb : Good st B b ∨ (X b ∧ XN n)) (hbk : st.known b = true) (hbt : st.types.get? b = SState.nodeTy n) :
+    (hb : Placed st B b ∨ (X b ∧ XN n)) (hbk : st.known b = true) (hbt : st.types.get? b = SState.nodeTy n) :
     RInv f V B X XN ({ st with memo := st.memo.insert n b } : SState) := by
   refine ⟨h.m.congr rfl rfl rfl rfl rfl rfl, h.noPartial, fun n' w hw => ?_, h.alts⟩
   simp only [hm_get?_insert] at hw
-  have hg : ∀ x, Good st B x → Good ({ st with memo := st.memo.insert n b } : SState) B x :=
+  have hg : ∀ x, Placed st B x → Placed ({ st with memo := st.memo.insert n b } : SState) B x :=
     fun x h => h
   split at hw
   · rename_i he; subst he; cases hw; exact ⟨hb.imp (hg b) id, hbk, hbt⟩
@@ -280,13 +280,13 @@ theorem RInv.memoInsert {st : SState} (h : RInv f V B X XN st) {n : Inst} {b : V
 
 /-- `chooseBest` over candidates that are the root or placeable values of its type. -/
 theorem chooseBest_rinv {st : SState} (h : RInv f V B X XN st) {v : ValueId}
-    (hvk : st.known v = true) (hv : Good st B v ∨ X v)
-    (hvd : ∀ n, st.defs.get? v = some n → ∀ y ∈ operands n, Good st B y)
+    (hvk : st.known v = true) (hv : Placed st B v ∨ X v)
+    (hvd : ∀ n, st.defs.get? v = some n → ∀ y ∈ operands n, Placed st B y)
     {cands : List (ValueId × Bool)}
-    (hcands : ∀ c ∈ cands, c.1 = v ∨ (Good st B c.1 ∧ st.types.get? c.1 = st.types.get? v)) :
+    (hcands : ∀ c ∈ cands, c.1 = v ∨ (Placed st B c.1 ∧ st.types.get? c.1 = st.types.get? v)) :
     RInv f V B X XN (chooseBest st v cands).2 ∧ RStep B st (chooseBest st v cands).2 ∧
       (CInv B st → CInv B (chooseBest st v cands).2) ∧
-      ((chooseBest st v cands).1 = v ∨ (Good (chooseBest st v cands).2 B (chooseBest st v cands).1 ∧
+      ((chooseBest st v cands).1 = v ∨ (Placed (chooseBest st v cands).2 B (chooseBest st v cands).1 ∧
         (chooseBest st v cands).2.types.get? (chooseBest st v cands).1 = st.types.get? v)) ∧
       (chooseBest st v cands).2.memo = st.memo := by
   obtain ⟨hbest, ⟨cl, hcl⟩, hcls⟩ := chooseBest_spec st v cands
@@ -294,7 +294,7 @@ theorem chooseBest_rinv {st : SState} (h : RInv f V B X XN st) {v : ValueId}
   obtain ⟨best, st2⟩ := r
   simp only at hbest hcl hcls ⊢
   subst hcl
-  have hbr : best = v ∨ (Good st B best ∧ st.types.get? best = st.types.get? v) := by
+  have hbr : best = v ∨ (Placed st B best ∧ st.types.get? best = st.types.get? v) := by
     rcases hbest with h1 | ⟨c, hc', h1⟩
     · exact .inl h1
     · rw [← h1]; exact hcands c hc'
@@ -325,15 +325,15 @@ theorem chooseBest_rinv {st : SState} (h : RInv f V B X XN st) {v : ValueId}
 /-- **The rewriting of a value** (`optimizeAt`) under `SimpRulesOk`: the invariant is kept, the
 state grows, and the result is the root or a placeable value of its type. -/
 theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst → Bool) :
-    ∀ d st v, RInv f V B X XN st → st.known v = true → (Good st B v ∨ X v) →
-      (∀ n, st.defs.get? v = some n → ∀ y ∈ operands n, Good st B y) →
+    ∀ d st v, RInv f V B X XN st → st.known v = true → (Placed st B v ∨ X v) →
+      (∀ n, st.defs.get? v = some n → ∀ y ∈ operands n, Placed st B y) →
       (∀ n ∈ SState.enodes st v,
-        NodeIn (fun y => st.types.get? y) f (Good st B) (st.types.get? v) n) →
+        NodeIn (fun y => st.types.get? y) f (Placed st B) (st.types.get? v) n) →
       RInv f V B X XN (optimizeAt rules allowed d st v).2 ∧
         RStep B st (optimizeAt rules allowed d st v).2 ∧
         (CInv B st → CInv B (optimizeAt rules allowed d st v).2) ∧
         ((optimizeAt rules allowed d st v).1 = v ∨
-          (Good (optimizeAt rules allowed d st v).2 B (optimizeAt rules allowed d st v).1 ∧
+          (Placed (optimizeAt rules allowed d st v).2 B (optimizeAt rules allowed d st v).1 ∧
             (optimizeAt rules allowed d st v).2.types.get? (optimizeAt rules allowed d st v).1 =
               st.types.get? v)) := by
   intro d
@@ -343,10 +343,10 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
     intro st v h hvk hv hvd hen
     rw [optimizeAt_succ]
     let P : SState → Prop := fun st' => RInv f V B X XN st' ∧ RStep B st st' ∧ (CInv B st → CInv B st')
-    have hG : GraphIn SState.enodes (fun st x => st.types.get? x) f P (fun st x => Good st B x) :=
+    have hG : GraphIn SState.enodes (fun st x => st.types.get? x) f P (fun st x => Placed st B x) :=
       fun st1 x hP hx => enodes_nodeIn hP.1 hx.defs hx.alts
     have hM : MakeIn (optMake rules allowed d) (fun st x => st.types.get? x) f P
-        (fun st x => Good st B x) X := by
+        (fun st x => Placed st B x) X := by
       intro st1 n hP hn
       obtain ⟨hI1, hS1, hC1⟩ := hP
       have hnok : st1.nodeOk n = true := by
@@ -374,7 +374,7 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
         generalize optimizeAt rules allowed d st2 st1.next = r3 at hI3 hS3 hC3 hb3 ⊢
         obtain ⟨b, st3⟩ := r3
         simp only at hI3 hS3 hC3 hb3 ⊢
-        have hgb : Good st3 B b ∧ st3.types.get? b = SState.nodeTy n := by
+        have hgb : Placed st3 B b ∧ st3.types.get? b = SState.nodeTy n := by
           rcases hb3 with rfl | hb
           · exact ⟨hS3.good _ hgw, by rw [hS3.typesKnown _ hgw.known, htw]⟩
           · exact ⟨hb.1, by rw [hb.2, htw]⟩
@@ -395,7 +395,7 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
     | ok res =>
       obtain ⟨cands, names, st1⟩ := res
       obtain ⟨⟨hI1, hS1, hC1⟩, -, hc⟩ := hR SState.enodes (fun st x => st.types.get? x)
-        (optMake rules allowed d) f P (fun st x => Good st B x) X hG hM st v cands names st1 hP0
+        (optMake rules allowed d) f P (fun st x => Placed st B x) X hG hM st v cands names st1 hP0
         hen hr
       simp only
       let st1' : SState := { st1 with stats := { st1.stats with fired :=
@@ -403,13 +403,13 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
       have hI1' : RInv f V B X XN st1' := hI1.congr rfl rfl rfl rfl rfl rfl rfl rfl
       have hS1' : RStep B st1 st1' := RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
       have hvk1 : st1'.known v = true := hS1'.known (hS1.known hvk)
-      have hvd1 : ∀ n, st1'.defs.get? v = some n → ∀ y ∈ operands n, Good st1' B y := by
+      have hvd1 : ∀ n, st1'.defs.get? v = some n → ∀ y ∈ operands n, Placed st1' B y := by
         intro n hn y hy
         rcases hS1.defsNew v n hn with hn0 | hn0
         · exact hS1.good y (hvd n hn0 y hy)
         · rw [hvk] at hn0; cases hn0
       have hcands : ∀ c ∈ cands, c.1 = v ∨
-          (Good st1' B c.1 ∧ st1'.types.get? c.1 = st1'.types.get? v) := by
+          (Placed st1' B c.1 ∧ st1'.types.get? c.1 = st1'.types.get? v) := by
         intro c hc'
         rcases hc c hc' with h1 | h1
         · exact .inl h1
@@ -423,7 +423,7 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
 theorem skelMake_in {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst → Bool)
     (st0 : SState) :
     MakeIn (skelMake rules allowed) (fun st x => st.types.get? x) f
-      (fun st => RInv f V B (fun _ => False) (fun _ => False) st ∧ RStep B st0 st) (fun st x => Good st B x)
+      (fun st => RInv f V B (fun _ => False) (fun _ => False) st ∧ RStep B st0 st) (fun st x => Placed st B x)
       (fun _ => False) := by
   intro st1 n hP hn
   obtain ⟨hI1, hS1⟩ := hP
@@ -457,7 +457,7 @@ theorem skelMake_in {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Ins
     generalize optimizeAt rules allowed rewriteLimit st2' st1.next = r3 at hI3 hS3 hb3 ⊢
     obtain ⟨b, st3⟩ := r3
     simp only at hI3 hS3 hb3 ⊢
-    have hgb : Good st3 B b ∧ st3.types.get? b = SState.nodeTy n := by
+    have hgb : Placed st3 B b ∧ st3.types.get? b = SState.nodeTy n := by
       rcases hb3 with rfl | hb
       · exact ⟨hS3.good _ (hS2'.good _ hgw), by rw [hS3.typesKnown _ hgw.known]; exact htw⟩
       · exact ⟨hb.1, by rw [hb.2]; exact htw⟩
@@ -472,12 +472,12 @@ theorem skelMake_in {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Ins
 only placeable values. -/
 theorem runSkel_ok {rules : SimplifyFn} {skel : SkeletonFn} (hR : SimpRulesOk rules)
     (hK : SkelRulesOk skel) (allowed : Inst → Bool) {st : SState} {i : Isle.Opt.SkelInst}
-    (h : RInv f V B (fun _ => False) (fun _ => False) st) (hi : ∀ y ∈ skelOps i, Good st B y) :
+    (h : RInv f V B (fun _ => False) (fun _ => False) st) (hi : ∀ y ∈ skelOps i, Placed st B y) :
     RInv f V B (fun _ => False) (fun _ => False) (runSkel skel rules allowed st i).2 ∧
       RStep B st (runSkel skel rules allowed st i).2 ∧
       ∀ c, (runSkel skel rules allowed st i).1 = some c →
         SkelCandOk (fun x => (runSkel skel rules allowed st i).2.types.get? x)
-          (Good (runSkel skel rules allowed st i).2 B) i c := by
+          (Placed (runSkel skel rules allowed st i).2 B) i c := by
   unfold runSkel
   by_cases hsk : skelCandidate i = true
   case neg =>
@@ -490,7 +490,7 @@ theorem runSkel_ok {rules : SimplifyFn} {skel : SkeletonFn} (hR : SimpRulesOk ru
   have hS0 : RStep B st ({ st with made := {} } : SState) :=
     RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
   let P : SState → Prop := fun st' => RInv f V B (fun _ => False) (fun _ => False) st' ∧ RStep B st st'
-  have hG : GraphIn SState.enodes (fun st x => st.types.get? x) f P (fun st x => Good st B x) :=
+  have hG : GraphIn SState.enodes (fun st x => st.types.get? x) f P (fun st x => Placed st B x) :=
     fun st1 x hP hx => enodes_nodeIn hP.1 hx.defs hx.alts
   cases hr : skel SState.enodes (fun st x => st.types.get? x) (skelMake rules allowed)
       (fun st b => st.trapBlocks.get? b) ({ st with made := {} } : SState) i with
@@ -501,7 +501,7 @@ theorem runSkel_ok {rules : SimplifyFn} {skel : SkeletonFn} (hR : SimpRulesOk ru
   | ok res =>
     obtain ⟨cands, names, st1⟩ := res
     obtain ⟨⟨hI1, hS1⟩, -, hc⟩ := hK SState.enodes (fun st x => st.types.get? x)
-      (skelMake rules allowed) (fun st b => st.trapBlocks.get? b) f P (fun st x => Good st B x)
+      (skelMake rules allowed) (fun st b => st.trapBlocks.get? b) f P (fun st x => Placed st B x)
       hG (skelMake_in hR allowed st) _ i cands names st1 ⟨hI0, hS0⟩ hi hr
     simp only
     cases hch : chooseSkel i cands with
