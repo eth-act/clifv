@@ -325,8 +325,16 @@ author's estimate, not measured), **Risk**.
      (c) `prepare` keeps `killFreeB` (`Spill.killFreeB_prepare`, `KillPrep.lean`: retargeting keeps
      operands, a single-predecessor target is never split). `lean-e2e-check`: `killFreeB` 1148/1148
      (19 with killed vregs) remains as a double-check.
-- **Option (b), later:** a real allocator (linear scan) written in Lean, proven directly or with
-  `checkAlloc` completeness for its output. Removes the Rust tool entirely. Large `[est]`.
+- **Option (b), in progress (#57; sub-issues #273–#276):** a real allocator written in Lean,
+  proven directly or with `checkAlloc` completeness for its output. Removes the Rust tool entirely.
+  **Allocator done (#273):** `leanAlloc` (`FV/Backend/LinearScan.lean`: linear scan with lifetime
+  holes, one location per vreg, int and float classes; `lean-backend --regalloc lean`), used
+  as `lowerAllocReady vcp (leanAlloc vcp)`, so every theorem for an arbitrary answer covers it.
+  `checkAlloc` accepts its allocation of every function of the corpus, runtests, fv-demo and the
+  survey that any allocation lowers (5782 functions, no fallback); code size within 1 % of regalloc2 (fv-demo 188232 vs
+  188812 bytes, survey 547432 vs 551796; `docs/contracts/regalloc.md` "Results" (i)). Open: the
+  default switch with regalloc2 dropped from the toolchain (#274), and the completeness proof
+  (a decidable plan condition implying `AllocChecked`, #275; the planner meeting it, #276).
 
 ### V5. Frame and control-lowering rejections (totality) — **done**
 
@@ -1010,7 +1018,7 @@ label**; list the free ones with
 | V1+V2 | [#4](https://github.com/eth-act/clifv/issues/4) `lowerCheck` completeness (+ V2, `PrepDomain` of the lowering output) | **done** (`6db15bd`) |
 | V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | **done** (#5) |
 | V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | (a) **done** (#56): `backend_correct_final_alloc_proven`, no allocation premise |
-| V4b | [#57](https://github.com/eth-act/clifv/issues/57) A real register allocator in Lean (removes regalloc2) | open |
+| V4b | [#57](https://github.com/eth-act/clifv/issues/57) A real register allocator in Lean (removes regalloc2) | in progress: Lean allocator `leanAlloc` (#273, `--regalloc lean`); default switch #274, proofs #275/#276 open |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | **done**: `backend_correct_final_total` (no allocation/lowering premise, no frame-size limit) |
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | **done** (#65) |
 | V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` |

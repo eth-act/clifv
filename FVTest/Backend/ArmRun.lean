@@ -1,17 +1,18 @@
 import FV.Backend
 import FV.Arm
 import FVTest.Opt.Common
+import FVTest.Backend.AllocChoice
 
 /-!
 # Running Lean-backend code on the Lean Arm model (seed of M7's execution relation)
 
-`lake exe lean-backend-armrun [--regalloc regalloc2|stack|regalloc2-small] [--bins DIR] [--opt [--opt-* options]] [FILE.clif...]`
+`lake exe lean-backend-armrun [--regalloc regalloc2|lean|spill|stack|regalloc2-small] [--bins DIR] [--opt [--opt-* options]] [FILE.clif...]`
 (default: every `corpus/clif/*.clif`, regalloc2). For every function of the files that makes no
 calls, no memory accesses (other than its own frame) and no `symbol_value`, and has `; run:`
 commands:
 
-1. compile it alone with the Lean backend (`Backend.compileFunctionWith`, the chosen
-   allocator); with `--bins DIR`, take Cranelift's code for it instead (`DIR/NAME.bin`, as
+1. compile it alone with the Lean backend (`lowerForAllocation`, the chosen allocator,
+   `emitFunc`, as `Backend.compileFunctionWith`); with `--bins DIR`, take Cranelift's code for it instead (`DIR/NAME.bin`, as
    `clif2obj` dumps it) to measure Cranelift on the same model; with `--opt`, the Lean backend
    compiles the function optimised by the mid-end (`Opt.optimize`), still compared with
    `Clif.run` of the unoptimised function;
@@ -114,17 +115,22 @@ structure Tally where
 
 /-- The code to run: compiled by the Lean backend, or Cranelift's from `bins`. -/
 inductive Source where
-  | lean (a : Allocator)
+  | lean (run : Array VCode → IO (Array (Except String AFunc)))
   | bins (dir : String)
 
 /-- Code words and trap table (`none`: any `udf` is accepted as a trap). -/
 def codeOf (src : Source) (f : Clif.Function) :
     IO (Except String (Array (BitVec 32) × Option (List TrapSite))) := do
   match src with
-  | .lean a =>
-    match ← compileFunctionWith a 0 f with
+  | .lean run =>
+    let asm : Except String FnAsm ← match lowerForAllocation f (verifiable f) true with
+      | .error e => pure (.error e)
+      | .ok vc => do
+        let rs ← run #[vc]
+        pure ((rs[0]?.getD (Except.error "no allocation")).bind (emitFunc 0 ·))
+    match asm with
     | .error e => pure (.error e)
-    | .ok (asm, _) => match asm.layout with
+    | .ok asm => match asm.layout with
       | .ok fb => pure (.ok (fb.words, some asm.traps))
       | .error e => throw (IO.userError s!"%{f.name}: encoding failed: {e}")
   | .bins dir =>
@@ -177,8 +183,8 @@ def checkFunction (src : Source) (opt : Clif.Function → Clif.Function) (p : Cl
 def main (args : List String) : IO UInt32 := do
   let rec opts (src : Source) : List String → IO (Source × List String)
     | "--regalloc" :: a :: rest => do
-      match ← Allocator.ofName? a with
-      | some al => opts (.lean al) rest
+      match ← allocRunOfName? a with
+      | some run => opts (.lean run) rest
       | none => throw (IO.userError s!"unknown allocator {a}")
     | "--bins" :: d :: rest => opts (.bins d) rest
     | rest => pure (src, rest)
@@ -188,7 +194,7 @@ def main (args : List String) : IO UInt32 := do
   let opt : Clif.Function → Clif.Function := match optCfg with
     | some c => (Opt.optimize · c)
     | none => id
-  let (src, args) ← opts (.lean (.regalloc2 (← defaultRegallocBin))) args
+  let (src, args) ← opts (.lean (Allocator.regalloc2 (← defaultRegallocBin)).run) args
   let files ← if args.isEmpty then do
       let entries ← System.FilePath.readDir "corpus/clif"
       pure ((entries.filter (·.path.extension == some "clif")).map (·.path.toString)

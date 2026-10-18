@@ -191,6 +191,51 @@ allocators.
 Filetests with the fallback forced (`scripts/lean-backend-filetests.sh --regalloc spill`): see
 "Results" (g).
 
+## The Lean allocator (`leanAlloc`, V4b, `--regalloc lean`)
+
+`leanAlloc : VCode → Except String RFunc` (`FV/Backend/LinearScan.lean`, #57/#273) is a
+register allocator written in Lean. Its answer is used exactly as regalloc2's:
+`allocateLean` lowers `lowerAllocReady vcp (leanAlloc vcp)`, so the allocation is kept only if
+`checkAlloc` accepts it (and `lowerRFunc`, `emitReady` accept it), else the spill allocation
+replaces it. Every theorem stated for an arbitrary answer `ra`
+(`E2E.backend_correct_final_alloc_proven`, `E2E.backend_correct_final_total_emit`, …) therefore
+covers it with no new proof; no external process runs. Open: a proof that the fallback is never
+taken (#275, #276).
+
+Design: an untrusted planner (`Fn.plan`) and a deterministic builder (`Plan.build`).
+
+- **Positions**: five per instruction (`pos g s = 5g + s`): 0 move sources and branch arguments
+  read, 1 moves into operand registers and block parameters written, 2 early uses/defs, 3 late
+  uses, clobbers, late defs, 4 moves out of def registers.
+- **Liveness** (backward block dataflow) and **segments**: per vreg the sorted, disjoint position
+  intervals where its location must hold it; a block parameter is written at position 1 of each
+  predecessor's `jump`, a branch argument read at position 0.
+- **Claims**: a fixed use `p` of `v` claims `p` over `[1, 2]`, a fixed def over `[3, 4]` (both owned
+  by `v`), a clobber at 3 (no owner).
+- **Linear scan with lifetime holes, no splitting**: vregs by first position; each gets the first
+  register of its class whose occupied segments and claims (other than its own) miss its
+  segments — hints first (its fixed registers, the registers of its block-parameter/argument and
+  `movk` reuse partners), then caller-saved registers, then callee-saved ones; else lighter vregs
+  (weight: uses/defs × `10^loop depth` per position covered) are evicted from one register, or the
+  vreg is spilled: one stack home for its whole life, homes shared by vregs with disjoint segments.
+  Pools: x0–x15, x19–x28 and v0–v31. A value live across a call avoids the clobbered registers
+  (so floats live across calls are spilled: the checker treats v8–v15 as clobbered).
+- **Builder**: operands in place when their vreg has a register; a fixed operand moved into/out
+  of its register; an operand of a spilled vreg in a scratch register free at that instruction
+  (no segment, claim or other operand register meets it), loaded before / stored after (dead
+  defs are not stored); a `movk` def shares its register with the use it reuses; the block
+  arguments of a `jump` as a parallel copy into the parameters' locations; the live results of a
+  `try_call` moved out of their fixed registers at the start of its successor. Parallel moves are
+  sequentialised (`seqMoves`: a cycle through a free register or a temporary stack slot,
+  memory-to-memory through a free register). Callee-saved registers the allocation uses get the
+  saves and restores of `buildRFunc`. Without a free scratch register the planner retries with 2,
+  then 4, registers per class withheld; then `leanAlloc` fails (spill fallback).
+
+`lake exe lean-alloc-stats [--regalloc2] FILE.clif…` reports, per function that lowers, whether
+`checkAlloc` accepts `leanAlloc`'s allocation and the bytes of the emitted function with it,
+with the spill allocation and with regalloc2 (all three as the backend lowers them, i.e. with
+their fallbacks). Results: "Results" (i).
+
 ## Checker (`checkAlloc`, executable)
 
 Forward symbolic dataflow after regalloc2's `src/checker.rs`. Abstract state: for each
@@ -406,6 +451,30 @@ sequences). Filetests, both allocators: `corpus/clif` 114/114, extrt 22/22, runt
 0 fail / 0 error. `lean-backend-encode-check.sh`: 1292 functions identical, 0 differ (with the new
 forms of `large_frame`). `lean-e2e-check`: 1149 in scope; `lowerRFunc` lowers all 1149 spill
 allocations.
+
+(i) The Lean allocator (V4b, 2026-10-18). `lean-alloc-stats --regalloc2`: `checkAlloc` accepts
+`leanAlloc`'s allocation of every function (no fallback) whose spill allocation lowers (19
+runtest functions with float parameters or returns are lowered by no allocation: `ctlCheck`
+rejects their `Args`/`Rets`); code bytes of the emitted functions:
+
+| Set | functions | accepted | Lean allocator | regalloc2 | spill | Lean / regalloc2 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `corpus/clif` | 156 | 156 | 47052 | 46540 | 140880 | 1.011 |
+| `corpus/clif/extrt` | 18 | 18 | 5512 | 5464 | 11756 | 1.009 |
+| runtests (all 396 files) | 1047 | 1047 | 41708 | 41748 | 244304 | 0.999 |
+| `corpus/clif-regress` | 30 | 30 | 100884 | 79896 | 240724 | 1.263 |
+| fv-demo (decoded CLIF of `cargo fv`) | 1352 | 1352 | 188232 | 188812 | 604024 | 0.997 |
+| survey (decoded CLIF of `cargo fv`) | 3179 | 3179 | 547432 | 551796 | 1754548 | 0.992 |
+
+`clif-regress` is dominated by `large_frame` (4500 values live at once: 99156 bytes; regalloc2
+splits live ranges, the Lean allocator spills whole vregs). Dynamic counts (`lean-backend-armrun`):
+`corpus/clif` 73 runs agree, 5052 executed instructions (regalloc2 5118, spill 16637); the 14
+runtest files of (e): 883 agree, 6284 (regalloc2 6282, spill 48167).
+`scripts/lean-backend-filetests.sh --regalloc lean`: `corpus/clif` 114/114 (114 agree),
+extrt 22/22, runtests 4684 pass / 0 fail / 0 error (7 not-runnable, 9042 unsupported: as with
+regalloc2); `corpus/clif-regress` 39 pass (one disagreement, `atomics_loops`, is
+Cranelift-native's and the same with regalloc2). `scripts/lean-backend-encode-check.sh
+--regalloc lean`: 1312 functions identical, 0 differ.
 
 ## Gaps
 
