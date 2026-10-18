@@ -250,8 +250,12 @@ Done (sorry-free, committed on `agent/m6-rest2`):
   `vecLanes addv/uaddlv`, `vecRRR addp`, all arrangements. `corr_tac` fixed: the operand
   pattern now matches the operand count (a trailing float operand was destructured as `Nat.le`).
 - **`rm = xzr` forms** (M4Cmp's `subs rd, rn, xzr`): `os_aluRRR_rmZ`, `os_aluRRR_rdZ_rmZ`.
-- **umaddl/smaddl**: the Arm model does implement `UMADDL`/`SMADDL`
-  (`Data_processing_three_source.lean`); `corr_aluRRRR` covers them. Non-issue.
+- **umaddl/smaddl**: the Arm model does *not* implement `UMADDL`/`SMADDL`
+  (`FV/Arm/Insts/DPR/Data_processing_three_source.lean` marks op31 = 001/101 `Unimplemented`;
+  the encoder-driven co-simulation, `arm-cosim --encoder`, stops there on 400/400 vectors), so
+  their straight-line `csem` is `none` and the `aluRRRR` cases for them are vacuous (see above).
+  Cranelift emits them only for `umul_overflow`/`smul_overflow`, outside subset E. Tracked by
+  #271 (T4a).
 - **`csem`**: explicit clauses for `emitIsland` (`next`) and `jtSequence` (agreed with M4Ctl:
   `goto 0` on `hs`, else `goto (i+1)` for the index's low 32 bits `< targets.length`, temporaries
   `[0, 0]`). `execLines` now also checks that each instruction advances the pc by 4 (needed to
