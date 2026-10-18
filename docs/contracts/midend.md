@@ -501,8 +501,27 @@ Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`, `CheckSpec.lean`, `Compl
   deleted statement is `delOk` through its replacement (`Opt.gvn_editOk`, `Opt.align_filter_map`).
   Witness `Opt.CompleteGvnWitness.witness`.
 
-Open: the stage checks and validators for LICM (`check`, `editOk`) and simplify (`check`,
-`simpOk`), `keepsBackendSubset`, `keepsShapeB`.
+- LICM: `Opt.licm_complete : check g = .ok info → check (licm hk g info).1 = .ok _ ∧
+  editOk id g (licm hk g info).1 info _ = true` (`FV/Opt/Proof/CompleteLicm.lean`,
+  `CompleteLicmPass.lean`). Graph facts: the depth-first search is sound (`Opt.postorder_reach`),
+  `preds` is the converse of `succs` (`Opt.build_preds_mem`), `Cfg.dominates` is sound, the
+  dominator tree records blocks (`Opt.dominators_lt`), and every loop of `Cfg.loops` has the facts
+  LICM needs (`Opt.loops_ok`: header in the body, body blocks tree descendants of the header, body
+  closed under predecessors; the search's fuel suffices), so a block between the header and a
+  loop block in the tree is in the loop (`Opt.loop_between`). `licmRound` is a fold over the
+  loops (`Opt.licmRound_eq`); `Licm.lean` sorts `cfg.loops.attach` so every loop carries its
+  membership in `cfg.loops` through `Array.qsort` (no reasoning about core's private sort
+  internals). Each hoisted statement is one move to the end of the hoist block `idom header`
+  (`Opt.hoistF_snoc`) with the preconditions of `Opt.MoveOk`: an operand outside the pass's
+  `inside` set is defined in a strict tree ancestor of the header (or earlier in the hoist
+  block), so it is available there (`Opt.hoist_step`). The moves keep the certificate facts
+  (`Opt.Good`) and the relation to the input (`Opt.LRel`: same header, block ids, parameters,
+  terminators and types; each body is the input body without the moved statements, followed by
+  moved statements, each in a strict tree ancestor of its original block) across moves, loops
+  and rounds (`Opt.licm_ok`); `editOk id` follows by `Opt.align_filter_append`, `check` by
+  `Opt.coreOk_of_wf`. Witness `Opt.CompleteLicmWitness.witness`.
+
+Open: simplify (`check`, `simpOk`), `keepsBackendSubset`, `keepsShapeB`.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
 

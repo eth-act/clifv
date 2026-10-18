@@ -2,11 +2,10 @@ import FV.Opt.Proof.CompleteGvn
 import FV.Opt.Licm
 
 /-!
-# Completeness of the LICM stage (M1)
+# Completeness of the LICM stage: graph facts and single moves (M1)
 
-On a well-formed function (`check g = .ok info`), the output of `Opt.licm` passes `check` and the
-edit validator `editOk id` (`licm_complete`), so `Opt.optimizeReport` never stops at the LICM
-stage.
+The graph facts and the single move of the LICM completeness proof (`Opt.licm_complete`,
+`FV/Opt/Proof/CompleteLicmPass.lean`).
 
 CFG facts: the depth-first search is sound (`Opt.postorder_reach`: every block of the postorder is
 reachable along `succs`), `preds` is the converse of `succs` (`Opt.build_preds_mem`),
@@ -15,7 +14,11 @@ needs (`Opt.loops_ok`, `Opt.LoopOk`: the header is in the body, every body block
 descendant of the header, the body is closed under predecessors of its non-header blocks; the
 search's fuel suffices). Hence a block between the header and a loop block in the dominator tree
 is in the loop (`Opt.loop_between`), which is why an operand defined outside the loop is available
-at the end of the header's immediate dominator. `Array.qsort` only permutes (`Opt.mem_qsort`).
+at the end of the header's immediate dominator.
+
+A move (`Opt.moveF`) takes a pure single-result statement to the end of a strict tree ancestor of
+its block; it keeps the certificate facts, unique definitions, arities and types when the operands
+are available there (`Opt.MoveOk`).
 -/
 
 namespace Opt

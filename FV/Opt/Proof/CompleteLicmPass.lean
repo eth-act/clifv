@@ -694,7 +694,7 @@ theorem hoist_step {H : List Stmt} {ins : Std.HashSet ValueId} (hI : LInv g F0 l
   -- `s` in the current state
   have hkb : (hoistF F0 hb H).blocks[bi]? = some (hoistB hb H (b0, bi)) := hoistF_get_some hb0 H
   have hsk : s ∈ (hoistB hb H (b0, bi)).body := by
-    simp only [hoistB, Ne.symm hne, ite_false, List.append_nil, hne]
+    simp only [hoistB, Ne.symm hne, ite_false, List.append_nil]
     exact List.mem_filter.2 ⟨hs, by simpa using hsH⟩
   obtain ⟨jt, hjt⟩ := List.mem_iff_getElem?.1 hsk
   obtain ⟨bh0, hbh0⟩ : ∃ bh0, F0.blocks[hb]? = some bh0 :=
@@ -782,4 +782,373 @@ theorem hoist_step {H : List Stmt} {ins : Std.HashSet ValueId} (hI : LInv g F0 l
 
 end Hoist
 
+/-! ## A block, a loop, a round, the pass -/
+
+theorem foldl_inv {α σ : Type} (P : σ → Prop) (f : σ → α → σ) :
+    ∀ (l : List α) (s : σ), P s → (∀ s a, a ∈ l → P s → P (f s a)) → P (l.foldl f s)
+  | [], _, h, _ => h
+  | a :: l, s, h, hf => foldl_inv P f l _ (hf s a (List.mem_cons_self ..) h)
+      (fun s b hb => hf s b (List.mem_cons_of_mem _ hb))
+
+theorem foldl_contains_mono {α : Type} (step : Std.HashSet ValueId → α → Std.HashSet ValueId)
+    (hstep : ∀ s a x, s.contains x = true → (step s a).contains x = true) :
+    ∀ (l : List α) (s : Std.HashSet ValueId) (x : ValueId), s.contains x = true →
+      (l.foldl step s).contains x = true
+  | [], _, _, h => h
+  | a :: l, s, x, h => foldl_contains_mono step hstep l _ x (hstep s a x h)
+
+theorem foldl_contains_mem {α : Type} (step : Std.HashSet ValueId → α → Std.HashSet ValueId)
+    (hstep : ∀ s a x, s.contains x = true → (step s a).contains x = true) (Q : α → ValueId → Prop)
+    (hQ : ∀ s a x, Q a x → (step s a).contains x = true) :
+    ∀ (l : List α) (s : Std.HashSet ValueId) (a : α) (x : ValueId), a ∈ l → Q a x →
+      (l.foldl step s).contains x = true
+  | [], _, _, _, h, _ => by simp at h
+  | b :: l, s, a, x, h, hq => by
+    rcases List.mem_cons.1 h with rfl | h
+    · exact foldl_contains_mono step hstep l _ x (hQ s a x hq)
+    · exact foldl_contains_mem step hstep Q hQ l _ a x h hq
+
+theorem insert_contains_mono (s : Std.HashSet ValueId) (y z : ValueId) (hy : s.contains y = true) :
+    (s.insert z).contains y = true := by
+  simp [Std.HashSet.contains_insert, hy]
+
+theorem insert_contains_self (s : Std.HashSet ValueId) (y z : ValueId) (hy : z = y) :
+    (s.insert z).contains y = true := by
+  simp [Std.HashSet.contains_insert, hy]
+
+/-- The pass's `inside` set contains every value defined in a loop block. -/
+theorem insideF_notIn {lp : Cfg.Loop} {F : Function} {bs : Array Block} {x : ValueId}
+    (h : (insideF lp bs).contains x = false) : NotIn lp { F with blocks := bs.toList } x := by
+  intro bi b hbi hb
+  have hbs : bs[bi]! = b := by
+    have : bs.toList[bi]? = some b := hb
+    simp only [getElem!_def, ← Array.getElem?_toList, this]
+  have hres : ∀ (l : List Stmt) (s : Std.HashSet ValueId) (y : ValueId), s.contains y = true →
+      (l.foldl (fun s st => st.results.foldl (fun b a => b.insert a) s) s).contains y = true :=
+    foldl_contains_mono _ (fun s st y hy =>
+      foldl_contains_mono _ (fun s a y h => insert_contains_mono s y a h) _ _ _ hy)
+  have hmono : ∀ (s : Std.HashSet ValueId) (bi : Nat) (y : ValueId), s.contains y = true →
+      (bs[bi]!.body.foldl (fun s st => st.results.foldl (fun b a => b.insert a) s)
+        (bs[bi]!.params.foldl (fun b a => b.insert a.1) s)).contains y = true :=
+    fun s bi y hy => hres _ _ _
+      (foldl_contains_mono _ (fun s a y h => insert_contains_mono s y a.1 h) _ _ _ hy)
+  have hmem : bi ∈ lp.body.toList := by simpa [Std.HashSet.mem_toList] using hbi
+  constructor
+  · intro p hp hpx
+    have : (insideF lp bs).contains x = true := by
+      unfold insideF
+      refine foldl_contains_mem _ (fun s a y hy => hmono s a y hy)
+        (fun bi y => ∃ p ∈ bs[bi]!.params, p.1 = y) ?_ _ _ bi x hmem ⟨p, by rw [hbs]; exact hp, hpx⟩
+      rintro s a y ⟨q, hq, rfl⟩
+      exact hres _ _ _ (foldl_contains_mem _ (fun s a y h => insert_contains_mono s y a.1 h)
+        (fun a y => a.1 = y) (fun s a y h => insert_contains_self s y a.1 h) _ _ q q.1 hq rfl)
+    rw [h] at this; cases this
+  · intro st hst hx
+    have : (insideF lp bs).contains x = true := by
+      unfold insideF
+      refine foldl_contains_mem _ (fun s a y hy => hmono s a y hy)
+        (fun bi y => ∃ st ∈ bs[bi]!.body, y ∈ st.results) ?_ _ _ bi x hmem
+        ⟨st, by rw [hbs]; exact hst, hx⟩
+      rintro s a y ⟨st, hst, hy⟩
+      exact foldl_contains_mem _ (fun s st y hy =>
+          foldl_contains_mono _ (fun s a y h => insert_contains_mono s y a h) _ _ _ hy)
+        (fun st y => y ∈ st.results)
+        (fun s st y hy => foldl_contains_mem _ (fun s a y h => insert_contains_mono s y a h)
+          (fun a y => a = y) (fun s a y h => insert_contains_self s y a h) _ _ y y hy rfl) _ _ st y hst hy
+    rw [h] at this; cases this
+
+theorem sublist_flatMap_of_mem {α β : Type} (F : α → List β) {a : α} :
+    ∀ {l : List α}, a ∈ l → (F a).Sublist (l.flatMap F)
+  | x :: l, h => by
+    rw [List.flatMap_cons]
+    rcases List.mem_cons.1 h with rfl | h
+    · exact List.sublist_append_left _ _
+    · exact (sublist_flatMap_of_mem F h).trans (List.sublist_append_right _ _)
+
+/-- The results of a block's statements are distinct. -/
+theorem body_results_nodup {F : Function} (hu : UniqueDefs F) {i : Nat} {b : Block}
+    (hb : F.blocks[i]? = some b) : (b.body.flatMap (·.results)).Nodup := by
+  have h1 : (b.body.flatMap (·.results)).Sublist ((defSites F).map (·.1)) := by
+    rw [defSites_fst]
+    exact (List.sublist_append_right _ _).trans
+      (sublist_flatMap_of_mem (fun b => b.params.map (·.1) ++ b.body.flatMap (·.results))
+        (List.mem_of_getElem? hb))
+  exact h1.nodup hu
+
+theorem not_mem_prefix {L pre suf : List Stmt} {s : Stmt} (hL : (L.flatMap (·.results)).Nodup)
+    (he : pre ++ s :: suf = L) (hr : s.results ≠ []) : s ∉ pre := by
+  have h1 := count_one_of_nodup_flatMap (·.results) L s hL (by rw [← he]; simp) hr
+  rw [← he, List.count_append, List.count_cons_self] at h1
+  intro hs
+  have := List.count_pos_iff.2 hs
+  omega
+
+section Block
+
+variable {g : Function} {info : Info} (hc : Checked g info) {lp : Cfg.Loop}
+  (hlp : LoopOk (Cfg.build g) lp) {hb : Nat} (hhb : (Cfg.build g).idom[lp.header]?.join = some hb)
+  {F0 : Function} (hG0 : Good F0) (h0 : LRel g F0) (hk : Bool)
+include hc hlp hhb hG0 h0
+
+/-- **A loop block**: the hoisted statements grow by statements of the block, and the kept ones are
+the block's statements without the hoisted ones. -/
+theorem blk_fold {H0 : List Stmt} {ins0 : Std.HashSet ValueId} (hI : LInv g F0 lp hb H0 ins0)
+    {bi : Nat} {b0 : Block} (hbi : lp.body.contains bi = true) (hb0 : F0.blocks[bi]? = some b0)
+    (Ha : Array Stmt) (hHa : Ha.toList = H0) :
+    LInv g F0 lp hb ((b0.body.filter (· ∉ H0)).foldl (blkStep hk) (ins0, Ha, #[])).2.1.toList
+        ((b0.body.filter (· ∉ H0)).foldl (blkStep hk) (ins0, Ha, #[])).1 ∧
+      (∃ Hn, ((b0.body.filter (· ∉ H0)).foldl (blkStep hk) (ins0, Ha, #[])).2.1.toList = H0 ++ Hn ∧
+        ∀ t ∈ Hn, t ∈ b0.body) ∧
+      ((b0.body.filter (· ∉ H0)).foldl (blkStep hk) (ins0, Ha, #[])).2.2.toList =
+        b0.body.filter (· ∉ ((b0.body.filter (· ∉ H0)).foldl (blkStep hk) (ins0, Ha, #[])).2.1.toList) := by
+  have hLsub : (b0.body.filter (· ∉ H0)).Sublist b0.body := List.filter_sublist
+  have hLnd : ((b0.body.filter (· ∉ H0)).flatMap (·.results)).Nodup :=
+    (Sublist.flatMap' hLsub _).nodup (body_results_nodup hG0.unique hb0)
+  have hLH : ∀ s ∈ b0.body.filter (· ∉ H0), s ∉ H0 := fun s hs => by
+    simpa using (List.mem_filter.1 hs).2
+  have hfin : ∀ Hn : List Stmt, ((b0.body.filter (· ∉ H0)).filter (· ∉ H0 ++ Hn)) =
+      b0.body.filter (· ∉ H0 ++ Hn) := by
+    intro Hn
+    rw [List.filter_filter]
+    apply List.filter_congr
+    intro a _
+    by_cases ha : a ∈ H0 <;> simp [ha]
+  generalize b0.body.filter (· ∉ H0) = L at hLsub hLnd hLH hfin ⊢
+  -- the invariant along the body
+  let KI : List Stmt → Std.HashSet ValueId × Array Stmt × Array Stmt → Prop := fun pre st =>
+    LInv g F0 lp hb st.2.1.toList st.1 ∧ (∃ Hn, st.2.1.toList = H0 ++ Hn ∧ ∀ t ∈ Hn, t ∈ pre) ∧
+      st.2.2.toList = pre.filter (· ∉ st.2.1.toList)
+  have key : ∀ (suf pre : List Stmt) st, pre ++ suf = L → KI pre st →
+      KI L (suf.foldl (blkStep hk) st) := by
+    intro suf
+    induction suf with
+    | nil => intro pre st he h; simp only [List.append_nil] at he; subst he; exact h
+    | cons s suf ih =>
+      intro pre st he h
+      rw [List.foldl_cons]
+      refine ih (pre ++ [s]) _ (by simpa using he) ?_
+      obtain ⟨hI', ⟨Hn, hHn, hHnpre⟩, hkeep⟩ := h
+      have hsL : s ∈ L := by rw [← he]; simp
+      have hsb : s ∈ b0.body := hLsub.subset hsL
+      have hnp : s.results ≠ [] → s ∉ pre := fun hr => not_mem_prefix hLnd he hr
+      unfold blkStep
+      split
+      · rename_i hh
+        have hlen : s.results.length = 1 := by
+          simp only [Bool.and_eq_true, beq_iff_eq] at hh; exact hh.1.2
+        have hsr : s.results ≠ [] := by intro h; rw [h] at hlen; cases hlen
+        have hspre := hnp hsr
+        have hsH : s ∉ st.2.1.toList := by
+          rw [hHn]; intro hm
+          rcases List.mem_append.1 hm with hm | hm
+          · exact hLH s hsL hm
+          · exact hspre (hHnpre s hm)
+        refine ⟨?_, ⟨Hn ++ [s], by simp [hHn], fun t ht => ?_⟩, ?_⟩
+        · have := hoist_step hc hlp hhb hG0 h0 hI' hbi hb0 hsb hsH hh
+          simpa using this
+        · rcases List.mem_append.1 ht with ht | ht
+          · exact List.mem_append_left _ (hHnpre t ht)
+          · simp at ht; subst ht; simp
+        · simp only [Array.toList_push, List.filter_append]
+          rw [hkeep]
+          have : (pre.filter (· ∉ st.2.1.toList ++ [s])) = pre.filter (· ∉ st.2.1.toList) := by
+            apply List.filter_congr
+            intro a ha
+            have has : a ≠ s := by rintro rfl; exact hspre ha
+            simp [has]
+          rw [this]; simp
+      · have hsH : s ∉ st.2.1.toList := by
+          rw [hHn]; intro hm
+          rcases List.mem_append.1 hm with hm | hm
+          · exact hLH s hsL hm
+          · have h1 := (hI'.hoisted s (by rw [hHn]; exact List.mem_append_right _ hm)).1
+            exact hnp (by intro h; rw [h] at h1; cases h1) (hHnpre s hm)
+        refine ⟨hI', ⟨Hn, hHn, fun t ht => List.mem_append_left _ (hHnpre t ht)⟩, ?_⟩
+        simp only [Array.toList_push, List.filter_append, hkeep]
+        have hsH' : s ∉ st.2.1 := fun h => hsH (Array.mem_toList_iff.2 h)
+        simp [hsH']
+  have hK := key L [] (ins0, Ha, #[]) rfl ⟨by simpa [hHa] using hI, ⟨[], by simp [hHa], by simp⟩, by simp⟩
+  obtain ⟨hK1, ⟨Hn, hHn, hHnL⟩, hK3⟩ := hK
+  refine ⟨hK1, ⟨Hn, hHn, fun t ht => hLsub.subset (hHnL t ht)⟩, ?_⟩
+  rw [hK3, hHn, hfin]
+
+end Block
+
+/-- A body without the hoisted statements. -/
+def filtB (H : List Stmt) (b : Block) : Block := { b with body := b.body.filter (· ∉ H) }
+
+section Loop
+
+variable {g : Function} {info : Info} (hc : Checked g info) (hk : Bool)
+include hc
+
+/-- The invariant of the RPO walk of a loop. -/
+def RI (g F0 : Function) (lp : Cfg.Loop) (hb : Nat) (st : Array Block × Std.HashSet ValueId × Array Stmt) :
+    Prop :=
+  st.1.toList = F0.blocks.map (filtB st.2.2.toList) ∧ LInv g F0 lp hb st.2.2.toList st.2.1
+
+theorem rpo_fold {lp : Cfg.Loop} (hlp : LoopOk (Cfg.build g) lp) {hb : Nat}
+    (hhb : (Cfg.build g).idom[lp.header]?.join = some hb) {F0 : Function} (hG0 : Good F0)
+    (h0 : LRel g F0) (l : List Nat) (st : Array Block × Std.HashSet ValueId × Array Stmt)
+    (hst : RI g F0 lp hb st) : RI g F0 lp hb (l.foldl (rpoStep hk lp) st) := by
+  refine foldl_inv _ _ l st hst fun st bi _ ⟨hbs, hI⟩ => ?_
+  unfold rpoStep
+  split
+  · rename_i hbi
+    have hbil : bi < F0.blocks.length := by
+      rw [h0.len, ← build_size_eq hc]; exact hlp.2.2.2 bi hbi
+    obtain ⟨b0, hb0⟩ : ∃ b0, F0.blocks[bi]? = some b0 := ⟨_, List.getElem?_eq_getElem hbil⟩
+    have hget : st.1[bi]! = filtB st.2.2.toList b0 := by
+      have : st.1.toList[bi]? = some (filtB st.2.2.toList b0) := by
+        rw [hbs, List.getElem?_map, hb0]; rfl
+      simp only [getElem!_def, ← Array.getElem?_toList, this]
+    rw [hget]
+    obtain ⟨hI', ⟨Hn, hHn, hHnb⟩, hkeep⟩ := blk_fold hc hlp hhb hG0 h0 hk hI hbi hb0 st.2.2 rfl
+    simp only [filtB] at hI' hHn hkeep ⊢
+    refine ⟨?_, hI'⟩
+    apply List.ext_getElem?
+    intro j
+    simp only [Array.getElem?_toList, Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds,
+      List.getElem?_map]
+    by_cases hj : bi = j
+    · subst hj
+      have hsz : bi < st.1.size := by
+        have := congrArg List.length hbs
+        simp only [Array.length_toList, List.length_map] at this; omega
+      simp only [hsz, ite_true, hb0, Option.map_some, Option.some.injEq]
+      rw [hkeep]; rfl
+    · simp only [hj, ite_false]
+      rw [← Array.getElem?_toList, hbs, List.getElem?_map]
+      cases hbj : F0.blocks[j]? with
+      | none => rfl
+      | some bj =>
+        simp only [Option.map_some, Option.some.injEq, filtB]
+        congr 1
+        rw [hHn]
+        apply List.filter_congr
+        intro a ha
+        by_cases haH : a ∈ Hn
+        · exfalso
+          have h1 := (hI'.hoisted a (by rw [hHn]; exact List.mem_append_right _ haH)).1
+          have hr : a.results ≠ [] := by intro h; rw [h] at h1; cases h1
+          exact hj (stmt_unique_mem hG0.unique hb0 hbj (hHnb a haH) ha hr)
+        · simp [haH]
+  · exact ⟨hbs, hI⟩
+
+/-- **One loop of `licmRound` keeps the invariants.** -/
+theorem loop_ok {F : Function} {bs : Array Block} (hG : Good { F with blocks := bs.toList })
+    (hR : LRel g { F with blocks := bs.toList }) (m : Nat) (x : {lp // lp ∈ (Cfg.build g).loops})
+    (hlp : LoopOk (Cfg.build g) x.1) :
+    Good { F with blocks := (loopStep hk (Cfg.build g) (bs, m) x).1.toList } ∧
+      LRel g { F with blocks := (loopStep hk (Cfg.build g) (bs, m) x).1.toList } := by
+  unfold loopStep
+  cases h : (Cfg.build g).idom[x.1.header]! with
+  | none => exact ⟨hG, hR⟩
+  | some hb =>
+    have hhb : (Cfg.build g).idom[x.1.header]?.join = some hb := by rw [← getElem!_opt]; exact h
+    simp only []
+    have hfilt0 : ∀ b : Block, filtB [] b = b := fun b => by
+      simp [filtB, List.filter_eq_self.2]
+    have h0 : RI g { F with blocks := bs.toList } x.1 hb (bs, insideF x.1 bs, #[]) := by
+      refine ⟨((List.map_congr_left (fun b _ => hfilt0 b)).trans (List.map_id _)).symm, ?_⟩
+      simp only [Array.toList_empty]
+      refine ⟨by rw [hoistF_nil]; exact hG, by rw [hoistF_nil]; exact hR,
+        fun y hy => .inl (insideF_notIn hy), by simp⟩
+    have hr := rpo_fold hc hk hlp hhb hG hR (Cfg.build g).rpo.toList _ h0
+    generalize (Cfg.build g).rpo.toList.foldl (rpoStep hk x.1) (bs, insideF x.1 bs, #[]) = r at hr
+    obtain ⟨hbs, hI⟩ := hr
+    have hbl : hb < bs.toList.length := by
+      have := hR.len; simp only at this; rw [this]; exact build_idom_lt g hhb
+    split
+    · simp only []
+      have : ({ F with blocks := (r.1.modify hb fun b => { b with body := b.body ++ r.2.2.toList }).toList } :
+          Function) = hoistF { F with blocks := bs.toList } hb r.2.2.toList := by
+        simp only [hoistF]
+        congr 1
+        apply List.ext_getElem?
+        intro j
+        simp only [Array.getElem?_toList, Array.getElem?_modify, List.getElem?_map, List.getElem?_zipIdx]
+        rw [← Array.getElem?_toList, hbs, List.getElem?_map]
+        have e2 : bs[j]? = bs.toList[j]? := by rw [Array.getElem?_toList]
+        rw [e2]
+        cases hj : bs.toList[j]? with
+        | none => simp
+        | some bj =>
+          by_cases hjb : hb = j
+          · subst hjb; simp [hoistB, filtB]
+          · simp [hoistB, filtB, hjb, Ne.symm hjb]
+      rw [this]; exact ⟨hI.good, hI.rel⟩
+    · rename_i hE
+      have hH : r.2.2.toList = [] := by simpa using hE
+      have : ({ F with blocks := r.1.toList } : Function) = hoistF { F with blocks := bs.toList } hb [] := by
+        rw [hoistF_nil, hbs, hH]
+        simp only [(List.map_congr_left (fun b _ => hfilt0 b)).trans (List.map_id _)]
+      rw [this, ← hH]; exact ⟨hI.good, hI.rel⟩
+
+/-- **A round of LICM keeps the invariants.** -/
+theorem licmRound_ok {F : Function} (hG : Good F) (hR : LRel g F) :
+    Good (licmRound hk F info.cfg).1 ∧ LRel g (licmRound hk F info.cfg).1 := by
+  have hcfg : info.cfg = Cfg.build g := by rw [hc.info_eq]; rfl
+  rw [licmRound_eq, hcfg]
+  refine foldl_inv (fun st : Array Block × Nat =>
+      Good { F with blocks := st.1.toList } ∧ LRel g { F with blocks := st.1.toList }) _ _ _
+    (by simpa using And.intro hG hR) ?_
+  rintro ⟨bs, m⟩ x - ⟨hG', hR'⟩
+  exact loop_ok hc hk hG' hR' m x (build_loops_ok hc x.1 (Array.mem_toList_iff.2 x.2))
+
+/-- **LICM keeps the invariants.** -/
+theorem licm_ok : Good (licm hk g info).1 ∧ LRel g (licm hk g info).1 := by
+  unfold licm
+  simp only [Id.run, Std.Legacy.Range.forIn_eq_forIn_range']
+  refine forIn_inv (P := fun s : Function × Nat => Good s.1 ∧ LRel g s.1) _ _ _
+    ⟨hc.good, LRel.refl g⟩ ?_
+  intro _ s ⟨hG, hR⟩
+  have := licmRound_ok hc hk hG hR
+  split <;> exact this
+
+end Loop
+
+/-- **Completeness of the LICM stage**: on a well-formed function, LICM's output passes `check` and
+the edit validator, so `Opt.optimizeReport` never stops at the LICM stage. -/
+theorem licm_complete {g : Function} {info : Info} (h : check g = .ok info) (hk : Bool) :
+    check (licm hk g info).1 = .ok (coreInfo (licm hk g info).1) ∧
+      editOk id g (licm hk g info).1 info (coreInfo (licm hk g info).1) = true := by
+  have hc := checked_of_check h
+  obtain ⟨hG, hR⟩ := licm_ok hc hk
+  exact ⟨hR.check hc hG, hR.editOk hc hG⟩
+
 end Opt
+
+namespace Opt.CompleteLicmWitness
+
+open Clif
+
+/-- A loop `block1` whose `v2 = iconst 7` is invariant: LICM moves it to `block0`. -/
+def fn : Function where
+  name := "w"
+  sig := {}
+  blocks := [
+    { id := 0, body := [{ results := [0], inst := .iconst .i32 5 }],
+      term := .jump { block := 1, args := [0] } },
+    { id := 1, params := [(1, .i32)],
+      body := [{ results := [2], inst := .iconst .i32 7 }, { results := [3], inst := .binary .iadd .i32 1 2 }],
+      term := .brif 3 { block := 1, args := [3] } { block := 2 } },
+    { id := 2, term := .ret [] }]
+
+theorem checks : (match check fn with
+    | .ok i => (licm true fn i).2 == 1 && ((licm true fn i).1.blocks.head?.map (·.body.length)) == some 2
+    | .error _ => false) = true := by native_decide
+
+/-- Non-vacuity of `licm_complete`: `fn` is well-formed, LICM hoists `v2` out of the loop into
+`block0`, and the stage is accepted. -/
+theorem witness : ∃ i i', check fn = .ok i ∧ (licm true fn i).2 = 1 ∧
+    check (licm true fn i).1 = .ok i' ∧ editOk id fn (licm true fn i).1 i i' = true := by
+  have h := checks
+  split at h
+  · rename_i i hi
+    simp only [Bool.and_eq_true, beq_iff_eq] at h
+    exact ⟨i, _, hi, h.1, (licm_complete hi true).1, (licm_complete hi true).2⟩
+  · cases h
+
+end Opt.CompleteLicmWitness
+
