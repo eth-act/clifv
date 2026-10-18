@@ -237,6 +237,24 @@ def eFpuMoveFPImm : List AW → Bool
   | _ => false
 /-- Never accepted: `VecDupImm`, whose immediate the domain does not describe (S11e1). -/
 def eNever (_ : List AW) : Bool := false
+/-- The single/double precision sizes (`fpFtype`). -/
+def fpSzOk (k : Nat) : Bool := k == VIdx.ScalarSize.Size32 || k == VIdx.ScalarSize.Size64
+/-- `fpuRRR`/`fpuRRRR` (S11f, `[op, size, …]`): single or double precision. -/
+def eFpuOpSz : List AW → Bool
+  | _ :: s :: _ => s.enumAll fpSzOk
+  | _ => false
+/-- `fcmp` (S11f, `[size, rn, rm]`): single or double precision. -/
+def eFpuCmp : List AW → Bool
+  | [s, _, _] => s.enumAll fpSzOk
+  | _ => false
+/-- `fpuRR` (S11f, `[op, size, rd, rn]`): single or double precision, and `fcvt` from the size
+its operation names. -/
+def eFpuRR : List AW → Bool
+  | [op, s, _, _] =>
+    s.enumAll fpSzOk &&
+      (op.enumAll (· != VIdx.FPUOp1.Cvt32To64) || s.enumAll (· == VIdx.ScalarSize.Size32)) &&
+      (op.enumAll (· != VIdx.FPUOp1.Cvt64To32) || s.enumAll (· == VIdx.ScalarSize.Size64))
+  | _ => false
 
 /-- The emission checks by variant (other variants: no condition). -/
 def emTab : List (Nat × (List AW → Bool)) :=
@@ -250,7 +268,8 @@ def emTab : List (Nat × (List AW → Bool)) :=
    (VIdx.MInst.CondBr, eCondBr), (VIdx.MInst.TrapIf, eTrapIf), (VIdx.MInst.Call, eCall),
    (VIdx.MInst.CallInd, eCall), (VIdx.MInst.AtomicRMWLoop, eAtomic),
    (VIdx.MInst.AtomicCASLoop, eAtomic), (VIdx.MInst.FpuMoveFPImm, eFpuMoveFPImm),
-   (VIdx.MInst.VecDupImm, eNever)]
+   (VIdx.MInst.VecDupImm, eNever), (VIdx.MInst.FpuRR, eFpuRR), (VIdx.MInst.FpuRRR, eFpuOpSz),
+   (VIdx.MInst.FpuRRRR, eFpuOpSz), (VIdx.MInst.FpuCmp, eFpuCmp)]
 
 /-- The branch variants (instructions with targets). -/
 def branchKs : List Nat :=

@@ -313,28 +313,28 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
       | some (.tlsSymbol ..) => throw s!"tls_value of gv{gv}, a tls symbol with an offset"
       | some _ => throw s!"tls_value of gv{gv}, which is not a `symbol tls`"
       | none => throw s!"unknown gv{gv}"
-  | .float (.fcmp cc) ty args =>
-    match args with
-    | [x, y] =>
+  | .float op ty args =>
+    match op, args with
+    | .fcmp cc, [x, y] =>
       -- `one`/`ueq` lower to two conditions (`CondResult.Or`, `emit_fcmp` rule 1), whose
       -- consumers are not proven: outside the lowering
       if ty.isFloat && cc != .one && cc != .ueq then
         pure (instDataV "FloatCompare"
           [opcodeV "Fcmp", .values [x, y], mkVariant tyFloatCC (floatccName cc)])
       else throw s!"fcmp {cc.name}.{ty.name}"
-    | _ => throw "fcmp arity"
-  | .float op ty args =>
-    match fBinaryOpcode op, args with
-    | some n, [x, y] =>
-      if fTyOk op ty then pure (instDataV "Binary" [opcodeV n, .values [x, y]])
-      else throw s!"{n}.{ty.name}"
-    | some n, _ => throw s!"{n} arity"
-    | none, _ =>
-      match fUnaryOpcode op, args with
-      | some n, [x] =>
+    | op, [x, y] =>
+      match fBinaryOpcode op with
+      | some n =>
+        if fTyOk op ty then pure (instDataV "Binary" [opcodeV n, .values [x, y]])
+        else throw s!"{n}.{ty.name}"
+      | none => throw s!"`{op.name}` with two operands is not in the lowering"
+    | op, [x] =>
+      match fUnaryOpcode op with
+      | some n =>
         if fTyOk op ty then pure (instDataV "Unary" [opcodeV n, .value x])
         else throw s!"{n}.{ty.name}"
-      | _, _ => throw s!"`{op.name}` is not in the lowering"
+      | none => throw s!"`{op.name}` with one operand is not in the lowering"
+    | op, _ => throw s!"`{op.name}` is not in the lowering"
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`)
