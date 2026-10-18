@@ -7,9 +7,10 @@ import FV.Backend.Proof.LowerShapeOkT
 `LowT`: `Low` over the typed loop simulation (typed raw blocks `rawBlockT`, typed edge blocks
 `edgeBlocksT`, typed loop facts `LoopFactsT`). `lowT_of` needs no premise on `f`
 (`low_of` takes `Compile.functionE`). The label, block-position and target facts carry over
-(`LowT.labs`, `cases`, `raw_at`, `edge_at`, `edge_disj`, `raw_tgt`); an edge block's arguments
-are vregs of any class (`LowT.edge_facts`, where `Low.edge_facts` says `.int`). On integer
-contexts `LowT` is `Low` (`Low.toT`, `LowT.toLow`).
+(`LowT.labs`, `cases`, `raw_at`, `edge_at`, `edge_disj`, `raw_tgt`) and so does the last
+instruction of a block (`LowT.raw_back`, by the typed terminator shapes of
+`IselTermFactsTy`); an edge block's arguments are vregs of any class (`LowT.edge_facts`, where
+`Low.edge_facts` says `.int`). On integer contexts `LowT` is `Low` (`Low.toT`, `LowT.toLow`).
 -/
 
 namespace Backend.Proof.Spill
@@ -88,6 +89,15 @@ theorem LowT.toLow (H : LowT f vc ctx st0 bl RR) : Low f vc ctx st0 bl RR :=
   ⟨H.hb, H.low, by rw [H.blocks, blocksT_int hE], H.ren, LoopFactsT.toInt hE H.lf, H.len⟩
 
 end
+
+/-- The last instruction of CLIF block `x`'s typed code is that of its terminator's segment. -/
+theorem raw_backT_of {f : Clif.Function} {ctx : Ctx} {bl : List BLow} {RR : Reg → Reg} {x : Nat}
+    {B : Clif.Block} {L : BLow} (hL : bl[x]? = some L) {i : MInst}
+    (hi : (fixTry L.tl L.tst'.emitted.toList).getLast? = some i) :
+    (fixBlock RR (rawBlockT f ctx bl x B)).insts.back? = some (i.mapRegs RR) := by
+  simp only [fixBlock, rawBlockT, tseg, hL, map_mapRegs_id]
+  rw [Array.back?_map, List.back?_toArray, List.getLast?_append, hi]
+  rfl
 
 /-! ## The CFG facts -/
 
@@ -311,6 +321,116 @@ theorem LowT.edge_facts (hs : LowerScopeT f) {bi : Nat} {B : Clif.Block} {L : BL
         rcases this with rfl | rfl
         · exact ⟨_, _, rfl⟩
         · exact ⟨_, _, rfl⟩
+
+/-- **The terminator of CLIF block `x`'s typed code** (typed scope): a `jump` for a `jump`, a
+branch to the recorded labels otherwise (none for `return`/`trap`), the `tryCall` for a
+`try_call` (`Low.raw_back` over float-capable contexts). -/
+theorem LowT.raw_back (hs : LowerScopeT f) (hbt : ∀ B ∈ f.blocks, BrIdxTyped ctx B.term) {x : Nat}
+    {B : Clif.Block} {L : BLow} (hB : f.blocks[x]? = some B) (hL : bl[x]? = some L) :
+    ∃ t, (fixBlock RR (rawBlockT f ctx bl x B)).insts.back? = some t ∧
+      (∀ bc, B.term = .jump bc → ∃ tl, t = .jump tl ∧ L.targets = [tl]) ∧
+      (B.term.isTry = false → t.targets = L.targets ∧ ∀ c ti, t ≠ .tryCall c ti) ∧
+      (∀ et, IsTryWith B.term et → ∃ c ti, t = .tryCall c ti ∧ t.targets = L.targets) := by
+  obtain ⟨ranges, hb⟩ := H.hb
+  have sp := ctxSpec_of hb
+  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
+  have hip := termIntPos_of hs hb (List.mem_of_getElem? hB)
+  obtain ⟨-, -, hem, nl0, nl1, hlt⟩ := (lowBlocks_spec H.hbl).2 x B L hB hL
+  have hst : L.start = blockStart f x := (lowBlocks_start H.hbl).2 x L hL
+  have hph := sp.facts.term x B hB
+  rw [← hst] at hph
+  rcases try_or B.term with ht | ⟨et, het⟩
+  · obtain ⟨htl, hd, out, tr, hrun⟩ := (lowTerm_spec hlt).1 ht
+    have htg := lowTerm_targets ht hlt
+    obtain ⟨hctx', hi'⟩ := termCtx_factsTy hctx hph L.data
+    have hval : ValsBelow ctx L.tst := by
+      intro y r hy
+      have h1 : y < ctx.valReg.size := by
+        simp only [Ctx.valueReg?] at hy
+        cases hh : ctx.valReg[y]? with
+        | none => rw [hh] at hy; cases hy
+        | some _ => exact (Array.getElem?_eq_some_iff.mp hh).1
+      have h2 := sp.facts.size
+      obtain ⟨stE, nlE, hr⟩ := H.low
+      have h3 := lowB_mono _ _ _ _ _ _ _ hr x L hL
+      omega
+    have hvb' : ValsBelow (termCtx ctx (L.start + B.body.length) L.data) L.tst := hval
+    have hfix : fixTry L.tl L.tst'.emitted.toList = L.tst'.emitted.toList := by rw [htl]; rfl
+    -- the emitted code ends in `i`
+    have last : ∀ (ms : List MInst) (i : MInst), L.tst'.emitted = L.tst.emitted ++ (ms ++ [i]).toArray →
+        (fixBlock RR (rawBlockT f ctx bl x B)).insts.back? = some (i.mapRegs RR) := by
+      intro ms i he
+      apply raw_backT_of hL
+      rw [hfix, he, hem]
+      simp
+    unfold termCallF termCall at hrun
+    cases hT : B.term with
+    | jump bc =>
+      rw [hT] at hrun hd htg
+      obtain ⟨l, he, hlt'⟩ := jumpShape_runTermTy hd hi' hrun
+      refine ⟨_, last _ _ he, fun bc' _ => ⟨l, rfl, hlt'⟩, fun _ => ⟨by rw [hlt']; rfl,
+        fun c ti h => by cases h⟩, fun et h => ?_⟩
+      rcases h with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> cases h
+    | ret xs =>
+      rw [hT] at hrun hd htg
+      obtain ⟨ms, i, he, hit⟩ := termShape_runTermTy (t := .ret (xs ++ sretRet f)) hctx' rfl hd hi'
+        hvb' hrun
+      have hL0 : L.targets = [] := by
+        simp only [targetsOf, dests, edgeTargets, Option.some.injEq, Prod.mk.injEq] at htg
+        exact htg.1.symm
+      refine ⟨_, last _ _ he, (fun _ h => nomatch h), fun _ => ⟨by rw [targets_mapRegs, hit, hL0],
+        fun c ti h => tryCall_targets_ne c ti (by rw [← h, targets_mapRegs, hit])⟩, fun et h => ?_⟩
+      rcases h with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> cases h
+    | trap c =>
+      rw [hT] at hrun hd htg
+      obtain ⟨ms, i, he, hit⟩ := termShape_runTermTy (t := .trap c) hctx' rfl hd hi' hvb' hrun
+      have hL0 : L.targets = [] := by
+        simp only [targetsOf, dests, edgeTargets, Option.some.injEq, Prod.mk.injEq] at htg
+        exact htg.1.symm
+      refine ⟨_, last _ _ he, (fun _ h => nomatch h), fun _ => ⟨by rw [targets_mapRegs, hit, hL0],
+        fun c ti h => tryCall_targets_ne c ti (by rw [← h, targets_mapRegs, hit])⟩, fun et h => ?_⟩
+      rcases h with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> cases h
+    | brif cnd tb eb =>
+      rw [hT] at hrun hd htg hip
+      have hbt' : BrIdxTyped (termCtx ctx (L.start + B.body.length) L.data) (.brif cnd tb eb) := by
+        intro _ _ _ h; cases h
+      obtain ⟨ms, i, he, hit⟩ := branchShape_runTermTy hctx' rfl hd hi' hbt' hip
+        (fun _ _ _ h => by cases h) hvb' hrun
+      have hno := emitted_of_run hrun hem i (by rw [he, hem]; simp)
+      refine ⟨_, last _ _ he, (fun _ h => nomatch h), fun _ => ⟨by rw [targets_mapRegs, hit],
+        notTry_mapRegs RR i hno⟩, fun et h => ?_⟩
+      rcases h with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> cases h
+    | brTable y d tbl =>
+      rw [hT] at hrun hd htg hip
+      have hbt' : BrIdxTyped (termCtx ctx (L.start + B.body.length) L.data) (.brTable y d tbl) := by
+        have := hbt B (List.mem_of_getElem? hB); rw [hT] at this; exact this
+      have htl' : TargetsLen (.brTable y d tbl) L.targets := by
+        intro _ _ _ h
+        cases h
+        have := (edgeTargets_spec (by simpa [targetsOf] using htg)).1
+        simpa [dests] using this
+      obtain ⟨ms, i, he, hit⟩ := branchShape_runTermTy hctx' rfl hd hi' hbt' hip htl' hvb' hrun
+      have hno := emitted_of_run hrun hem i (by rw [he, hem]; simp)
+      refine ⟨_, last _ _ he, (fun _ h => nomatch h), fun _ => ⟨by rw [targets_mapRegs, hit],
+        notTry_mapRegs RR i hno⟩, fun et h => ?_⟩
+      rcases h with ⟨_, _, h⟩ | ⟨_, _, h⟩ <;> cases h
+    | returnCall fn args =>
+      rw [hT] at hd
+      simp [abiTerm, termData, throw, throwThe, MonadExceptOf.throw] at hd
+    | tryCall => rw [hT] at ht; cases ht
+    | tryCallIndirect => rw [hT] at ht; cases ht
+  · obtain ⟨T, hT, -, -, -, -, hinfo, -⟩ := (lowTerm_spec hlt).2 et het
+    obtain ⟨c, hc⟩ := H.lf.tryLast x B L T hB hL hT
+    rw [← back_toList] at hc
+    obtain ⟨ys, hys⟩ := List.getLast?_eq_some_iff.mp hc
+    have hfix : (fixTry L.tl L.tst'.emitted.toList).getLast? = some (.tryCall c T.info) := by
+      rw [hT]
+      show (tryFix T.info L.tst'.emitted.toList).getLast? = _
+      rw [hys, tryFix_append]
+      simp
+    refine ⟨_, raw_backT_of hL hfix, fun bc h => ?_, fun h => absurd (isTry_of het) (by rw [h]; simp),
+      fun et' _ => ⟨_, T.info, rfl, by rw [targets_mapRegs]; exact tryInfo_targets hinfo c⟩⟩
+    rcases het with ⟨_, _, h'⟩ | ⟨_, _, h'⟩ <;> rw [h'] at h <;> cases h
 
 end
 
