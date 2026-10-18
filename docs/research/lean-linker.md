@@ -297,6 +297,15 @@ the static executable, and theorems state that its output meets those conditions
   `ET_EXEC`, `EM_AARCH64`, the entry, `e_phoff = 64`, `e_shoff`, the counts) and
   `phdrs_write` (`phdrs (fileRd img.write) = some img.phs`) for every image whose header
   values fit their fields (`Img.hdrFitsB`, which `lean-ld` checks on its own plan), and
-  `fileRd_write_body` (past the headers the file is the body). Witnesses: `tinyImg_hdrFits`,
-  `ehdr_write_witness`, `phdrs_write_witness`. Axioms: `propext`, `Classical.choice`,
-  `Quot.sound`.
+  `fileRd_write_body` (past the headers the file is the body); `shdr_write` (every section
+  header), `write_getElem?_symtab`/`_strtab`/`_shdrs` (the tables), for images whose table
+  values fit (`Img.tabsFitB`, also checked by `lean-ld`).
+* **`file0OkB` on the writer's output** (`FV/Link/Ld/File0.lean`): `hdrB_write`
+  (`hdrB` = `staticB` of the program headers), `regionOkB_write` (= `regionPhsB` of the program
+  headers), `symFootB_write` (always, for a bound within the body: the tables follow it) and
+  **`file0OkB_write`**: for every link spec `P` whose region lies in the body,
+  `P.file0OkB img.write img.phs` is `regionPhsB ∧ staticB ∧ dataFastB ∧ symsOkB ∧ tlsOkB` —
+  conditions on the plan's program headers, plus the data and symbol checks, which 3b (symbols)
+  and 3c (data) turn into theorems. Witnesses: `tinyImg_hdrFits`, `tinyImg_tabsFit`,
+  `ehdr_write_witness`, `phdrs_write_witness`, `symFootB_write_witness`,
+  `file0OkB_write_witness`. Axioms: `propext`, `Classical.choice`, `Quot.sound`.

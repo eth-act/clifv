@@ -179,6 +179,16 @@ def Img.hdrFitsB (img : Img) : Bool :=
     decide (p.offset < 2 ^ 64) && decide (p.vaddr < 2 ^ 64) && decide (p.filesz < 2 ^ 64) &&
     decide (p.memsz < 2 ^ 64) && decide (p.align < 2 ^ 64)
 
+/-- The values of a record's fields fit their widths. -/
+def fieldsFitB (fs : List (Nat × Nat × Nat)) : Bool := fs.all fun f => decide (f.2.2 < 2 ^ (8 * f.2.1))
+
+/-- **The tables' values fit their fields**: every section header and symbol entry; no output
+section is a symbol table; every symbol is defined (`st_shndx ≠ 0`) and its name has no NUL. -/
+def Img.tabsFitB (img : Img) : Bool :=
+  (img.shdrList img.tabs).all fieldsFitB && img.symList.all fieldsFitB &&
+  img.secs.all (·.type != 2) &&
+  img.syms.all fun s => s.shndx != 0 && !s.name.toUTF8.toList.contains 0
+
 /-- **The executable of an image description**: the padded body and the tables, with the
 headers written over the body's start. -/
 def Img.write (img : Img) : ByteArray :=

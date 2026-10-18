@@ -288,3 +288,192 @@ theorem phdrs_write_witness : phdrs (fileRd tinyImg.write) = some tinyImg.phs :=
   phdrs_write tinyImg_hdrFits
 
 end Link.Ld
+
+namespace Link.Ld
+
+open E2E.Elf
+
+/-! ## The tables after the body -/
+
+theorem strOffsets_length : ∀ (l : List String) (o : Nat), (strOffsets l o).length = l.length
+  | [], _ => rfl
+  | _ :: l, o => by simp [strOffsets, strOffsets_length l]
+
+theorem symList_length (img : Img) : img.symList.length = img.syms.size + 1 := by
+  simp [Img.symList, strOffsets_length]
+
+theorem shdrList_length (img : Img) (t : Tabs) : (img.shdrList t).length = img.secs.size + 4 := by
+  simp [Img.shdrList, strOffsets_length, Img.secNames]
+
+theorem tabs_shoff_ge (img : Img) : img.tabs.shsOff + img.tabs.shsSize ≤ img.tabs.shoff := by
+  simp only [Img.tabs]; omega
+
+theorem tabs_symOff (img : Img) : img.tabs.symOff = (pad8 img.body).size := rfl
+
+/-- The file's bytes after the padded body are the tail's. -/
+theorem write_getElem?_tail (img : Img) (hb : img.hdr.length ≤ img.body.size) (i : Nat) :
+    img.write[(pad8 img.body).size + i]? = img.tail[i]? := by
+  unfold Img.write
+  have hh : (⟨img.hdr.toArray⟩ : ByteArray).size = img.hdr.length := size_mk _
+  have hp := pad8_size img.body
+  rw [overStart_getElem?, hh, if_neg (by omega), byteArray_getElem?, ByteArray.data_append,
+    Array.getElem?_append_right (by show (pad8 img.body).size ≤ _; omega)]
+  show img.tail.toArray[(pad8 img.body).size + i - (pad8 img.body).size]? = _
+  rw [show (pad8 img.body).size + i - (pad8 img.body).size = i by omega]
+  simp
+
+theorem symPart_length (img : Img) :
+    (img.symList.flatMap (record 24)).length = img.tabs.symSize := by
+  rw [flatMap_length_fixed (m := 24) (fun _ => record_length _ _), symList_length]; rfl
+
+/-- **The section header table in the file**, at `e_shoff`. -/
+theorem write_getElem?_shdrs (img : Img) (hb : img.hdr.length ≤ img.body.size) (i : Nat) :
+    img.write[img.tabs.shoff + i]? = (img.shdrs img.tabs)[i]? := by
+  have h := write_getElem?_tail img hb (img.tabs.shoff - img.tabs.symOff + i)
+  have hge := tabs_shoff_ge img
+  have hsym : img.tabs.symOff ≤ img.tabs.shoff := by simp only [Img.tabs] at hge ⊢; omega
+  rw [← tabs_symOff, show img.tabs.symOff + (img.tabs.shoff - img.tabs.symOff + i) =
+    img.tabs.shoff + i by omega] at h
+  rw [h, Img.tail, List.getElem?_append_right]
+  · congr 1
+    simp only [List.length_append, List.length_replicate, symPart_length]
+    simp only [Img.tabs] at hge ⊢; omega
+  · simp only [List.length_append, List.length_replicate, symPart_length]
+    simp only [Img.tabs] at hge ⊢; omega
+
+/-- **The symbol table in the file**, at `.symtab`'s offset. -/
+theorem write_getElem?_symtab (img : Img) (hb : img.hdr.length ≤ img.body.size) {i : Nat}
+    (hi : i < img.tabs.symSize) :
+    img.write[img.tabs.symOff + i]? = (img.symList.flatMap (record 24))[i]? := by
+  rw [tabs_symOff, write_getElem?_tail img hb, Img.tail]
+  simp only [List.append_assoc]
+  rw [List.getElem?_append_left (by rw [symPart_length]; exact hi)]
+
+/-- **The symbols' string table in the file**, at `.strtab`'s offset. -/
+theorem write_getElem?_strtab (img : Img) (hb : img.hdr.length ≤ img.body.size) {i : Nat}
+    (hi : i < img.tabs.strSize) :
+    img.write[img.tabs.strOff + i]? = (strtabOf (img.syms.toList.map (·.name)))[i]? := by
+  have : img.tabs.strOff = (pad8 img.body).size + img.tabs.symSize := rfl
+  rw [this, Nat.add_assoc, write_getElem?_tail img hb, Img.tail]
+  simp only [List.append_assoc]
+  rw [List.getElem?_append_right (by rw [symPart_length]; omega), symPart_length,
+    show img.tabs.symSize + i - img.tabs.symSize = i by omega,
+    List.getElem?_append_left (by exact hi)]
+
+/-! ## Reading records -/
+
+/-- A field of record `k` of a list of `m`-byte records written at `base`. -/
+theorem le_records {f : ByteArray} {L : List (List (Nat × Nat × Nat))} {m base : Nat}
+    (hf : ∀ i < m * L.length, f[base + i]? = (L.flatMap (record m))[i]?)
+    {k : Nat} {fs : List (Nat × Nat × Nat)} (hk : L[k]? = some fs) (hd : Disj fs)
+    {o n v : Nat} (hmem : (o, n, v) ∈ fs) (hs : o + n ≤ m) (hv : v < 2 ^ (8 * n)) :
+    le (fileRd f) (base + m * k + o) n = some v := by
+  have hkl : k < L.length := (List.getElem?_eq_some_iff.1 hk).1
+  apply le_of_bytes hv
+  intro j hj
+  have hlt : m * k + (o + j) < m * L.length := by
+    have : m * k + m ≤ m * L.length := by rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hkl
+    omega
+  simp only [fileRd]
+  rw [show base + m * k + o + j = base + (m * k + (o + j)) by omega, hf _ hlt,
+    flatMap_fixed (fun _ => record_length _ _) fs hk (by omega), record_getElem? hd hmem hs hj]
+  simp [leByte_toBitVec]
+
+theorem fit_of {fs : List (Nat × Nat × Nat)} (h : fieldsFitB fs = true) {o n v : Nat}
+    (hm : (o, n, v) ∈ fs) : v < 2 ^ (8 * n) := by
+  simp only [fieldsFitB, List.all_eq_true, decide_eq_true_eq] at h
+  exact h _ hm
+
+theorem disj_shdr (a b c d e f g h i j : Nat) : Disj (shdrFields a b c d e f g h i j) := by
+  simp [Disj, shdrFields]
+
+theorem disj_sym (nm : Nat) (s : OutSym) : Disj (symFields nm s) := by
+  simp [Disj, symFields]
+
+/-- **A section header read back.** -/
+theorem shdr_write {img : Img} (h : img.hdrFitsB = true) (ht : img.tabsFitB = true) {k : Nat}
+    {a b c d e f g i j l : Nat} (hk : (img.shdrList img.tabs)[k]? = some (shdrFields a b c d e f g i j l)) :
+    shdr (fileRd img.write) ⟨2, 183, img.entry, 64, img.tabs.shoff, img.phs.length,
+      img.secs.size + 4⟩ k = some ⟨b, c, d, e, f, g, l⟩ := by
+  have hkl : k < img.secs.size + 4 := by
+    rw [← shdrList_length img img.tabs]; exact (List.getElem?_eq_some_iff.1 hk).1
+  have hb : img.hdr.length ≤ img.body.size := by
+    simp only [Img.hdrFitsB, Bool.and_eq_true, decide_eq_true_eq] at h
+    rw [hdr_length]; exact h.1.2
+  have hfit : fieldsFitB (shdrFields a b c d e f g i j l) = true := by
+    simp only [Img.tabsFitB, Bool.and_eq_true, List.all_eq_true] at ht
+    exact ht.1.1.1 _ (List.mem_of_getElem? hk)
+  have hf : ∀ x < 64 * (img.shdrList img.tabs).length,
+      img.write[img.tabs.shoff + x]? = ((img.shdrList img.tabs).flatMap (record 64))[x]? :=
+    fun x _ => write_getElem?_shdrs img hb x
+  have F : ∀ o n v, (o, n, v) ∈ shdrFields a b c d e f g i j l → o + n ≤ 64 →
+      le (fileRd img.write) (img.tabs.shoff + 64 * k + o) n = some v :=
+    fun o n v hm hs => le_records hf hk (disj_shdr _ _ _ _ _ _ _ _ _ _) hm hs (fit_of hfit hm)
+  simp only [shdr, hkl, ↓reduceIte, fields, shdrSpec, List.mapM_cons, List.mapM_nil]
+  rw [F 4 4 b (by simp [shdrFields]) (by omega), F 8 8 c (by simp [shdrFields]) (by omega),
+    F 16 8 d (by simp [shdrFields]) (by omega), F 24 8 e (by simp [shdrFields]) (by omega),
+    F 32 8 f (by simp [shdrFields]) (by omega), F 40 4 g (by simp [shdrFields]) (by omega),
+    F 56 8 l (by simp [shdrFields]) (by omega)]
+  rfl
+
+/-! ## The section header list's entries -/
+
+theorem zip_offs_length (img : Img) :
+    (img.secs.toList.zip (strOffsets img.secNames 1)).length = img.secs.size := by
+  rw [List.length_zip, strOffsets_length]; simp [Img.secNames]
+
+theorem shdrList_zero (img : Img) (t : Tabs) :
+    (img.shdrList t)[0]? = some (shdrFields 0 0 0 0 0 0 0 0 0 0) := rfl
+
+theorem shdrList_head_length (img : Img) :
+    (shdrFields 0 0 0 0 0 0 0 0 0 0 :: (img.secs.toList.zip (strOffsets img.secNames 1)).map
+      (fun x : OutSec × Nat => shdrFields x.2 x.1.type x.1.flags x.1.addr x.1.off x.1.size 0 0
+        x.1.align x.1.entsize)).length = img.secs.size + 1 := by
+  rw [List.length_cons, List.length_map, zip_offs_length]
+
+/-- Entry `k + 1`: output section `k`. -/
+theorem shdrList_sec (img : Img) (t : Tabs) {k : Nat} (hk : k < img.secs.size) :
+    ∃ o, (img.shdrList t)[k + 1]? = some (shdrFields o img.secs[k].type img.secs[k].flags
+      img.secs[k].addr img.secs[k].off img.secs[k].size 0 0 img.secs[k].align
+      img.secs[k].entsize) := by
+  refine ⟨(strOffsets img.secNames 1).getD k 0, ?_⟩
+  have hlt : k < (strOffsets img.secNames 1).length := by
+    rw [strOffsets_length]; simp [Img.secNames]; omega
+  have hz : (img.secs.toList.zip (strOffsets img.secNames 1))[k]? =
+      some (img.secs[k], (strOffsets img.secNames 1).getD k 0) := by
+    rw [List.getElem?_zip_eq_some]
+    exact ⟨by simp [hk], by rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hlt]; rfl⟩
+  unfold Img.shdrList
+  rw [List.getElem?_append_left (by rw [shdrList_head_length]; omega), List.getElem?_cons_succ,
+    List.getElem?_map, hz]
+  rfl
+
+/-- The last three entries: `.symtab`, `.strtab`, `.shstrtab`. -/
+theorem shdrList_sym (img : Img) (t : Tabs) :
+    ∃ o, (img.shdrList t)[img.secs.size + 1]? = some (shdrFields o 2 0 0 t.symOff t.symSize
+      (img.secs.size + 2) img.firstGlobal 8 24) := by
+  refine ⟨(strOffsets img.secNames 1).getD img.secs.size 0, ?_⟩
+  unfold Img.shdrList
+  rw [List.getElem?_append_right (by rw [shdrList_head_length]; omega), shdrList_head_length,
+    Nat.sub_self]
+  rfl
+
+theorem shdrList_str (img : Img) (t : Tabs) :
+    ∃ o, (img.shdrList t)[img.secs.size + 2]? = some (shdrFields o 3 0 0 t.strOff t.strSize
+      0 0 1 0) := by
+  refine ⟨(strOffsets img.secNames 1).getD (img.secs.size + 1) 0, ?_⟩
+  unfold Img.shdrList
+  rw [List.getElem?_append_right (by rw [shdrList_head_length]; omega), shdrList_head_length,
+    show img.secs.size + 2 - (img.secs.size + 1) = 1 by omega]
+  rfl
+
+theorem shdrList_shs (img : Img) (t : Tabs) :
+    ∃ o, (img.shdrList t)[img.secs.size + 3]? = some (shdrFields o 3 0 0 t.shsOff t.shsSize
+      0 0 1 0) := by
+  refine ⟨(strOffsets img.secNames 1).getD (img.secs.size + 2) 0, ?_⟩
+  unfold Img.shdrList
+  rw [List.getElem?_append_right (by rw [shdrList_head_length]; omega), shdrList_head_length,
+    show img.secs.size + 3 - (img.secs.size + 1) = 2 by omega]
+  rfl
+
+end Link.Ld
