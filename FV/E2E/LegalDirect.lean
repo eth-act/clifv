@@ -16,8 +16,7 @@ open Backend Backend.Proof Backend.Proof.Driver
 
 /-- **`backend_correct_legal` without `hchk`**: for a function `f` satisfying
 `Opt.Legal.Complete.Pre` (it mentions `i128`, distinct definitions, value ids below
-`maxValueId f`, no statement reads its own result, no `call_indirect` with an `i128` signature,
-no `try_call_indirect`), the Arm code of its legalisation `g` refines the run of `f` (the other
+`maxValueId f`, no statement reads its own result), the Arm code of its legalisation `g` refines the run of `f` (the other
 premises are `backend_correct_legal`'s). -/
 theorem backend_correct_legal_direct {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (hpre : Opt.Legal.Complete.Pre f) (hlg : Opt.Legalize128.function128Cert f = .ok (g, cert))
@@ -28,8 +27,7 @@ theorem backend_correct_legal_direct {f g : Clif.Function} {cert : Opt.Legalize1
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
-    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args) →
+    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk

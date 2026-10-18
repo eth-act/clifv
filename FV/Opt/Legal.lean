@@ -22,6 +22,9 @@ of `g`'s block, decided by its `Plan`:
 * `load`/`store`: two `i64` accesses at `+0`/`+8`;
 * `div`: a call of the `__*ti3` helper on the pairs;
 * `call`: the call with its arguments/results expanded by the ABI groups (pads);
+* `callInd`/`callInd128`: a `call_indirect` without `i128` (the statement itself), or with an
+  `i128` call-site signature (arguments/results expanded by its groups, the expanded signature
+  declared in `g`);
 * `trap`: a pure condition pattern followed by `trapz`/`trapnz`.
 
 Value ids: every value of `f` is below `T0 = maxValueId f`; pair components and the zero are
@@ -496,6 +499,10 @@ inductive Plan where
   /-- A `call_indirect` without `i128` operands or results: the statement itself, with the same
   call-site signature in `g`. -/
   | callInd
+  /-- A `call_indirect` with an `i128` call-site signature `d` (`sigN`): the call with its
+  arguments/results expanded by the ABI groups of `d` (pads), at the expanded signature. -/
+  | callInd128 (sig : Nat) (d : Signature) (callee : ValueId) (args : List ValueId)
+      (rg : List (List SlotEl)) (results : List ValueId)
 
 namespace Plan
 
@@ -509,6 +516,7 @@ def len : Plan → Nat
   | .call .. => 1
   | .trap .. => Pat.cond.length + 1
   | .callInd => 1
+  | .callInd128 .. => 1
 
 end Plan
 
@@ -547,7 +555,7 @@ def retsOk (C : Ctx) : List (List SlotEl) → List ValueId → List ValueId → 
 def constAmt (C : Ctx) (y : ValueId) : Option Nat :=
   if C.plain y then (· % 128) <$> constOf C.f y else (· % 128) <$> concatConst C.f y
 
-/-- The plan of a statement of `f` (mirrors `Opt.Legalize128.rewriteStmt`). -/
+/-- The plan of a statement of `f` (the pass emits its segment, `Opt.Legalize128.emitStmt`). -/
 def planOf (C : Ctx) (s : Stmt) : Option Plan :=
   let P := C.pair
   let same : Option Plan :=
@@ -677,8 +685,16 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
     match P c with
     | some (lo, hi) => some (.trap lo hi true code)
     | none => same
-  | .callIndirect _ callee args, rs =>
-    if (callee :: args ++ rs).all C.plain then some .callInd else none
+  | .callIndirect sig callee args, rs =>
+    match C.f.sigDecls.lookup sig with
+    | some d =>
+      if sig128 d then do
+        let gs ← groups d.params
+        let rg ← groups d.returns
+        let args' ← expandArgs C gs args
+        if C.plain callee then some (.callInd128 sig d callee args' rg rs) else none
+      else if (callee :: args ++ rs).all C.plain then some .callInd else none
+    | none => none
   | .funcAddr _ fn, _ =>
     -- the address of the declaration's symbol: the same name in `g` (`sigExp` keeps names)
     if (C.g.extern? fn).map (·.name) == (C.f.extern? fn).map (·.name) then same else none
@@ -747,6 +763,12 @@ def segOk (C : Ctx) (s : Stmt) : Plan → List Stmt → Bool
     seg == [s] && match s.inst with
       | .callIndirect sig _ _ => C.g.sigDecls.lookup sig == C.f.sigDecls.lookup sig
       | _ => false
+  | .callInd128 sig d callee args rg rs, [st] =>
+    st.inst == .callIndirect sig callee args && retsOk C rg rs st.results &&
+      decide st.results.Nodup &&
+      (match sigExp d with
+       | some d' => C.g.sigDecls.lookup sig == some d'
+       | none => false)
   | .trap lo hi nz code, seg =>
     match seg.getLast? with
     | some { results := [], inst := .trapz c code' } =>
@@ -845,6 +867,23 @@ def termOk (C : Ctx) : Terminator → List Stmt → Terminator → Bool
             expandTry C rg et.normal.args B.params == some et'.normal.args
         | _, _, _ => false
       | _, _, _ => false
+  | .tryCallIndirect c args et, ts, .tryCallIndirect c' args' et' =>
+    -- as `try_call`, at the call-site signature `d` (`call_indirect`): the same plain callee,
+    -- arguments and returns expanded by the groups of `d`, `g` declaring `d`'s expansion at
+    -- the same `sigN`
+    ts.isEmpty && c' == c && C.plain c && et'.sig == et.sig &&
+      et'.normal.block == et.normal.block && C.entryId? != some et.normal.block &&
+      decide (C.T0 ≤ C.f.freshValue) && decide (C.T0 ≤ C.g.freshValue) &&
+      decide (C.zero < C.g.freshValue) && C.comps.all (fun a => decide (a < C.g.freshValue)) &&
+      match C.f.sigDecls.lookup et.sig, C.f.block? et.normal.block with
+      | some d, some B =>
+        match sigExp d, groups d.params, groups d.returns with
+        | some d', some gs, some rg =>
+          C.g.sigDecls.lookup et.sig == some d' &&
+            expandArgs C gs args == some args' &&
+            expandTry C rg et.normal.args B.params == some et'.normal.args
+        | _, _, _ => false
+      | _, _ => false
   | _, _, _ => false
 
 /-- Statements `ss` and terminator `t` of `f` against statements `ts` and terminator `t'` of
@@ -919,5 +958,29 @@ def check (f g : Function) (cert : Cert) : Bool :=
   | b :: bs, b' :: bs' =>
     blockOk C true b b' && (bs.zip bs').all fun (x, y) => blockOk C false x y
   | _, _ => false
+
+/-! ## Signatures without `i128`: the expansion is the identity -/
+
+namespace Complete
+
+theorem go_plain : ∀ (ps : List AbiParam) (k v st : Nat), (∀ p ∈ ps, p.ty ≠ .i128) →
+    expandGroups.go ps k v st false = .ok (ps.map fun p => [SlotEl.val p])
+  | [], _, _, _, _ => rfl
+  | p :: ps, k, v, st, h => by
+    have hp : (p.ty == .i128) = false := by simpa using h p (by simp)
+    have ih := fun k v st => go_plain ps k v st (fun q hq => h q (by simp [hq]))
+    simp only [expandGroups.go, hp, Bool.false_eq_true, ite_false]
+    (repeat' split) <;> simp_all [bind, Except.bind, pure, Except.pure]
+
+theorem sigExp_plain {d : Signature} (h : sig128 d = false) : sigExp d = some d := by
+  simp only [sig128, List.any_eq_false, beq_iff_eq, List.mem_append] at h
+  simp only [sigExp, expandSig, expandGroups, go_plain d.params 0 0 0 (fun p hp => h p (.inl hp)),
+    go_plain d.returns 0 0 0 (fun p hp => h p (.inr hp))]
+  simp only [bind, Except.bind, pure, Except.pure, Except.toOption, List.flatMap_map]
+  congr
+  · simp [elTy]
+  · simp [elTy]
+
+end Complete
 
 end Opt.Legal

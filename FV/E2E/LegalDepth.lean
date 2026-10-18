@@ -769,11 +769,13 @@ theorem root_refinesD {P : Program} {B : Env} {syms : String → Option Nat}
               obtain ⟨h', hb', hrel⟩ := hbase.2.1.at ex.name ex.sig hs he
               exact ⟨h', by rw [tgtEnvD_none (hC.func?_none hpn)]; exact hb', hrel⟩
           keep := keep_guardD hF hbase.2.2
-          ind := fun _ => ⟨rfl, fun B hB st hst sig callee args dsig hi hd =>
-            callIndRel_linkD hC ih d (hp.callInd B hB st hst sig callee args hi dsig hd)⟩ }
+          ind := fun _ => ⟨rfl, fun sig dsig hs hd =>
+            have hd128 := indPlainB_sound (Complete.legalOkB_indPlain (hC.ok h hh) hp.mentions) hs hd
+            callIndRel2_of_plain hd128 (callIndRel_linkD hC ih d hd128)⟩ }
       have hT := noMemTrap_guardD hF M d hh hioG hUI hG
       have hI : NoIndInternal (guardEnvD B P (SomeInd (legalProg P)) syms M d) P.bare h
-          ⟨fr, [], m1⟩ := fun _ _ _ _ _ _ _ _ _ _ _ _ g hg => nomatch hg
+          ⟨fr, [], m1⟩ := fun _ _ => ⟨(fun _ _ _ _ _ _ _ _ _ _ g hg => nomatch hg),
+            (fun _ _ _ _ _ _ _ _ g hg => nomatch hg)⟩
       have href := fun n => legalize_refines2 hp hc hE2 hb hb' hE.func h2 h3 h4 h5 hE.func' h2'
         h3' h5' hE.slots hE.exp (hG _ (.refl _)).1 hT hI n
       exact ⟨fun n rv m2 hr _ => (href n).1 rv m2 hr, fun n c hr => (href n).2 c hr⟩
