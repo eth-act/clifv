@@ -1,6 +1,6 @@
 # Current plan: incremental Stock production delivery
 
-Updated 2026-10-17. The executable roadmap is now
+Refreshed 2026-10-18 against main `73784c9c`. The executable roadmap is now
 [Incremental Stock driver delivery](stock-driver-incremental-delivery.md).
 This supersedes the wholesale-cutover ordering, stale running-process instructions,
 old gate-policy statements and delivery statuses in the historical checkpoints below.
@@ -13,8 +13,17 @@ class; enable Stock for that class with legacy fallback; grow classes incrementa
 Every original #140 obligation, input condition, old theorem variant, accepted
 identity/stage and required axiom set remains required for final completion.
 
-Use current main's adopted per-PR gates and integrator/continuous-main policy
-(TO-PROVE §7, #260/#261/#262), not the superseded full-per-PR backlog rules here.
+Reconcile the landed float/typed-driver ports, Lean allocator default/answer
+receipts, linker changes and Kev's StockSeam boundary before the next small code
+landing. The roadmap records the 32 commits since #263 and a concrete D0-related
+return/static packet candidate, with the pipeline seam as the immediate alternative
+if that packet pulls in unrelated work. No current-main validation of saved scratch
+kernels or production Stock activation is claimed.
+
+Use current main's adopted per-PR gates and author squash-merge policy
+(TO-PROVE §7, #265; continuous main/#261 and post-merge #266 CI). Neither CI nor
+integrator approval is a pre-merge wait; notify the integrator after landing.
+These rules supersede #263's older merge instructions and the backlog rules here.
 No wholesale integration of all scratch proofs is a prerequisite for the first
 production class. The roadmap defines the safety boundary and first landing order.
 
