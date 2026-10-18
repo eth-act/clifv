@@ -135,4 +135,221 @@ def TermLogFact (B : ValueId → Prop) (st : SState) (S : Subst) (b0 : Block) (l
 
 end Facts
 
+/-! ## Progress -/
+
+/-- The view `V'` extends `V`: same blocks, longer bodies. -/
+def VExt (V V' : Nat → Option Block) : Prop :=
+  ∀ d b, V d = some b → ∃ b', V' d = some b' ∧ b'.params = b.params ∧ b'.id = b.id ∧
+    ∃ rest, b'.body = b.body ++ rest
+
+theorem VExt.refl (V : Nat → Option Block) : VExt V V :=
+  fun _ b h => ⟨b, h, rfl, rfl, [], by simp⟩
+
+theorem VExt.trans {V1 V2 V3 : Nat → Option Block} (h1 : VExt V1 V2) (h2 : VExt V2 V3) :
+    VExt V1 V3 := by
+  intro d b hb
+  obtain ⟨b2, hb2, hp2, hi2, r2, hr2⟩ := h1 d b hb
+  obtain ⟨b3, hb3, hp3, hi3, r3, hr3⟩ := h2 d b2 hb2
+  exact ⟨b3, hb3, hp3.trans hp2, hi3.trans hi2, r2 ++ r3, by rw [hr3, hr2, List.append_assoc]⟩
+
+theorem VExt.emit (V : Nat → Option Block) (bi : Nat) (new : List Stmt) : VExt V (emitV V bi new) := by
+  intro d b hb
+  by_cases hd : d = bi
+  · subst hd; exact ⟨{ b with body := b.body ++ new }, by simp [emitV, hb], rfl, rfl, new, rfl⟩
+  · exact ⟨b, by simp [emitV, hd, hb], rfl, rfl, [], by simp⟩
+
+theorem DefAt.ext {V V' : Nat → Option Block} (h : VExt V V') {x : ValueId} {d t : Nat}
+    (hx : DefAt V x d t) : DefAt V' x d t := by
+  obtain ⟨b, hb, hx⟩ := hx
+  obtain ⟨b', hb', hp, -, rest, hr⟩ := h d b hb
+  refine ⟨b', hb', ?_⟩
+  rcases hx with ⟨rfl, p, hp', rfl⟩ | ⟨j, s, rfl, hs, hx⟩
+  · exact .inl ⟨rfl, p, by rw [hp]; exact hp', rfl⟩
+  · refine .inr ⟨j, s, rfl, ?_, hx⟩
+    rw [hr, List.getElem?_append_left (List.getElem?_eq_some_iff.1 hs).1]; exact hs
+
+theorem AvailAt.ext {idom : Array (Option Nat)} {V V' : Nat → Option Block} (h : VExt V V')
+    {i k : Nat} {x : ValueId} (hx : AvailAt idom V i k x) : AvailAt idom V' i k x := by
+  obtain ⟨d, t, hd, h'⟩ := hx
+  exact ⟨d, t, hd.ext h, h'⟩
+
+/-- How the run moves on (module doc). -/
+structure Prog (V V' : Nat → Option Block) (B B' : ValueId → Prop) (st st' : SState)
+    (S S' : Subst) : Prop where
+  vext : VExt V V'
+  good : ∀ y, Placed st B y → Placed st' B' y
+  bad : ∀ y, B' y → B y
+  types : ∀ y t, st.types.get? y = some t → st'.types.get? y = some t
+  defsAv : ∀ x n, st.defs.get? x = some n → st.avail.contains x = true → st'.defs.get? x = some n
+  defsLeaf : ∀ x, st.defs.get? x = none → st.known x = true → st'.defs.get? x = none
+  subst : ∀ y w, S.get? y = some w → S'.get? y = some w
+  newKeys : ∀ y, S'.contains y = true → S.contains y = true ∨ B y
+
+theorem Prog.refl (V : Nat → Option Block) (B : ValueId → Prop) (st : SState) (S : Subst) :
+    Prog V V B B st st S S :=
+  ⟨VExt.refl V, fun _ h => h, fun _ h => h, fun _ _ h => h, fun _ _ h _ => h, fun _ h _ => h,
+   fun _ _ h => h, fun _ h => .inl h⟩
+
+theorem Prog.trans {V1 V2 V3 : Nat → Option Block} {B1 B2 B3 : ValueId → Prop}
+    {st1 st2 st3 : SState} {S1 S2 S3 : Subst} (h1 : Prog V1 V2 B1 B2 st1 st2 S1 S2)
+    (h2 : Prog V2 V3 B2 B3 st2 st3 S2 S3) (hk : ∀ x, st1.known x = true → st2.known x = true)
+    (ha : ∀ x, st1.avail.contains x = true → st2.avail.contains x = true) :
+    Prog V1 V3 B1 B3 st1 st3 S1 S3 :=
+  ⟨h1.vext.trans h2.vext, fun y h => h2.good y (h1.good y h), fun y h => h1.bad y (h2.bad y h),
+   fun y t h => h2.types y t (h1.types y t h),
+   fun x n h hx => h2.defsAv x n (h1.defsAv x n h hx) (ha x hx),
+   fun x h hx => h2.defsLeaf x (h1.defsLeaf x h hx) (hk x hx),
+   fun y w h => h2.subst y w (h1.subst y w h),
+   fun y h => by
+     rcases h2.newKeys y h with h | h
+     · rcases h1.newKeys y h with h | h
+       · exact .inl h
+       · exact .inr h
+     · exact .inr (h1.bad y h)⟩
+
+theorem Prog.step_eq {V V' : Nat → Option Block} {B B' : ValueId → Prop} {st st' : SState}
+    {S S' : Subst} (h : Prog V V' B B' st st' S S') (hkB : ∀ y, S.contains y = true → B y)
+    {y : ValueId} (hy : S.contains y = true ∨ ¬ B y) : S'.step y = S.step y := by
+  unfold Subst.step
+  rcases hy with hy | hy
+  · obtain ⟨w, hw⟩ := Option.isSome_iff_exists.1 ((hm_contains_iff _ _).1 hy)
+    rw [hw, h.subst y w hw]
+  · have h1 : S.get? y = none := by
+      cases hc : S.get? y with
+      | none => rfl
+      | some w => exact absurd (hkB y ((hm_contains_iff _ _).2 (by rw [hc]; rfl))) hy
+    have h2 : S'.get? y = none := by
+      cases hc : S'.get? y with
+      | none => rfl
+      | some w =>
+        rcases h.newKeys y ((hm_contains_iff _ _).2 (by rw [hc]; rfl)) with h3 | h3
+        · rw [← Bool.not_eq_false, ← Bool.not_eq_true, hm_contains_iff, h1] at h3; simp at h3
+        · exact absurd h3 hy
+    rw [h1, h2]
+
+theorem Prog.renStmt_eq {V V' : Nat → Option Block} {B B' : ValueId → Prop} {st st' : SState}
+    {S S' : Subst} (h : Prog V V' B B' st st' S S') (hkB : ∀ y, S.contains y = true → B y)
+    {s : Stmt} (hy : ∀ y ∈ operands s.inst, S.contains y = true ∨ ¬ B y) :
+    renStmt S'.step s = renStmt S.step s := by
+  simp only [renStmt]
+  rw [mapOperands_congr (fun y hy' => h.step_eq hkB (hy y hy'))]
+
+section Mono
+
+variable {f : Function} {info : Info} {allowed skelOk : Inst → Bool} {idom : Array (Option Nat)}
+  {V V' : Nat → Option Block} {B B' : ValueId → Prop} {st st' : SState} {S S' : Subst}
+
+theorem OutStmt.mono {d k : Nat} {t : Stmt} (h : OutStmt f allowed skelOk idom V B st d k t)
+    (hp : Prog V V' B B' st st' S S')
+    (hav : ∀ x d t, DefAt V x d t → st.avail.get? x = some d)
+    (hV : ∃ b, V d = some b ∧ b.body[k]? = some t) :
+    OutStmt f allowed skelOk idom V' B' st' d k t := by
+  obtain ⟨b, hb, hk⟩ := hV
+  have hres : ∀ r ∈ t.results, st.avail.get? r = some d :=
+    fun r hr => hav r d (k + 1) ⟨b, hb, .inr ⟨k, t, rfl, hk, hr⟩⟩
+  obtain ⟨h1, ⟨ts, h2a, h2b, h2c⟩, h3, h4, h5, h6, h7⟩ := h
+  refine ⟨fun y hy => ⟨(h1 y hy).1.ext hp.vext, hp.good y (h1 y hy).2⟩,
+    ⟨ts, h2a, h2b, fun n r hr => ?_⟩, fun hpu => ?_, fun x hx hpu => ?_, fun hs r hr => ?_, h6, h7⟩
+  · have := h2c n r hr
+    have hrm : r ∈ t.results := List.mem_of_getElem? hr
+    cases hts : ts[n]? with
+    | none =>
+      exfalso
+      have := (List.getElem?_eq_some_iff.1 hr).1
+      have : n < ts.length := by omega
+      rw [List.getElem?_eq_getElem this] at hts; cases hts
+    | some u => rw [hts] at this; exact hp.types r u this
+  · exact pureTyped_grow hpu (h3 hpu) hp.types
+  · have hxm : x ∈ t.results := by rw [hx]; simp
+    exact hp.defsAv x _ (h4 x hx hpu) ((hm_contains_iff _ _).2 (by rw [hres x hxm]; rfl))
+  · obtain ⟨e1, e2⟩ := h5 hs r hr
+    exact ⟨hp.defsLeaf r e1 (known_iff.2 (.inr ((hm_contains_iff _ _).2 (by rw [hres r hr]; rfl)))), e2⟩
+
+theorem TermOut.mono {d blen : Nat} {b0 : Block} {t : Terminator}
+    (h : TermOut info idom V B st d blen b0 t) (hp : Prog V V' B B' st st' S S')
+    (hknown : ∀ bc ∈ termCalls t, ∀ y ∈ bc.args, ∃ u, st.types.get? y = some u)
+    (hbr : ∀ x d tb, t = .brTable x d tb → ∃ u, st.types.get? x = some u) :
+    TermOut info idom V' B' st' d blen b0 t := by
+  obtain ⟨h1, h2, h3, h4, h5⟩ := h
+  refine ⟨fun y hy => ⟨(h1 y hy).1.ext hp.vext, hp.good y (h1 y hy).2⟩, h2,
+    fun bc hbc => ?_, ?_, h5⟩
+  · obtain ⟨bc0, hbc0, hbl, ha⟩ := h3 bc hbc
+    refine ⟨bc0, hbc0, hbl, ?_⟩
+    rw [← ha]
+    refine List.map_congr_left (fun y hy => ?_)
+    obtain ⟨u, hu⟩ := hknown bc hbc y hy
+    rw [hu, hp.types y u hu]
+  · cases t <;> simp only [brTableOk] at h4 ⊢
+    exact hp.types _ _ h4
+
+
+theorem SkelLog.mono {d k' : Nat} {s s' : Stmt} {out : Array Stmt} {o : SkelOut}
+    (h : SkelLog idom V B st S d k' s s' out o) (hp : Prog V V' B B' st st' S S') :
+    SkelLog idom V' B' st' S' d k' s s' out o := by
+  cases o with
+  | keep => exact ⟨h.1, fun r hr => hp.good r (h.2 r hr)⟩
+  | remove => exact h
+  | removeWithVal v =>
+    obtain ⟨e1, e2, e3, e4, r, e5, e6⟩ := h
+    exact ⟨e1, e2, e3, e4.ext hp.vext, r, e5, hp.subst r v e6⟩
+  | replace i =>
+    obtain ⟨e1, e2, e3, e4, e5⟩ := h
+    exact ⟨e1, e2, fun r hr => hp.good r (e3 r hr), fun y hy => hp.good y (e4 y hy), e5⟩
+  | two a c =>
+    obtain ⟨e1, e2, e3, e4⟩ := h
+    exact ⟨e1, e2, fun y hy => hp.good y (e3 y hy), e4⟩
+
+theorem SLogFact.mono {d k' : Nat} {s : Stmt} {lg : StmtLog}
+    (h : SLogFact idom V B st S d s k' lg) (hp : Prog V V' B B' st st' S S')
+    (hkB : ∀ y, S.contains y = true → B y) : SLogFact idom V' B' st' S' d s k' lg := by
+  obtain ⟨h0, h⟩ := h
+  have hren := hp.renStmt_eq hkB h0
+  refine ⟨fun y hy => ?_, ?_⟩
+  · rcases h0 y hy with h1 | h1
+    · obtain ⟨w, hw⟩ := Option.isSome_iff_exists.1 ((hm_contains_iff _ _).1 h1)
+      exact .inl ((hm_contains_iff _ _).2 (by rw [hp.subst y w hw]; rfl))
+    · exact .inr (fun hb => h1 (hp.bad y hb))
+  cases lg with
+  | keep s' => exact ⟨by rw [hren]; exact h.1, fun r hr => hp.good r (h.2 r hr)⟩
+  | repl s' w out =>
+    obtain ⟨e1, e2, e3, ⟨v, e4, e5⟩, e6⟩ := h
+    exact ⟨by rw [hren]; exact e1, e2, e3, ⟨v, e4, hp.subst v w e5⟩, e6.ext hp.vext⟩
+  | skel s' o out =>
+    obtain ⟨e1, e2, e3⟩ := h
+    exact ⟨by rw [hren]; exact e1, e2, e3.mono hp⟩
+
+theorem StmtsFact.mono {d : Nat} (hp : Prog V V' B B' st st' S S')
+    (hkB : ∀ y, S.contains y = true → B y) :
+    ∀ (ss : List Stmt) (lgs : List StmtLog) (k' : Nat), StmtsFact idom V B st S d ss lgs k' →
+      StmtsFact idom V' B' st' S' d ss lgs k'
+  | [], [], _, _ => trivial
+  | s :: ss, lg :: lgs, k', ⟨h1, h2⟩ => ⟨h1.mono hp hkB, StmtsFact.mono hp hkB ss lgs _ h2⟩
+  | [], _ :: _, _, h => h.elim
+  | _ :: _, [], _, h => h.elim
+
+theorem TermLogFact.mono {b0 : Block} {lg : BlockLog} (h : TermLogFact B st S b0 lg)
+    (hp : Prog V V' B B' st st' S S') (hkB : ∀ y, S.contains y = true → B y) :
+    TermLogFact B' st' S' b0 lg := by
+  obtain ⟨h0, h1, h2⟩ := h
+  have hterm : mapTerm S'.step b0.term = mapTerm S.step b0.term :=
+    mapTerm_congr (fun y hy => hp.step_eq hkB (h0 y hy))
+  refine ⟨fun y hy => ?_, by rw [hterm]; exact h1, ?_⟩
+  · rcases h0 y hy with e | e
+    · obtain ⟨w, hw⟩ := Option.isSome_iff_exists.1 ((hm_contains_iff _ _).1 e)
+      exact .inl ((hm_contains_iff _ _).2 (by rw [hp.subst y w hw]; rfl))
+    · exact .inr (fun hb => e (hp.bad y hb))
+  split
+  · rename_i hc
+    rw [if_pos hc] at h2
+    obtain ⟨e1, e2, e3⟩ := h2
+    refine ⟨e1, fun y hy => hp.good y (e2 y hy), fun t ht => ?_⟩
+    rcases e3 t ht with e | ⟨e, e'⟩
+    · exact .inl e
+    · exact .inr ⟨e, fun y hy => hp.good y (e' y hy)⟩
+  · rename_i hc
+    rw [if_neg hc] at h2
+    exact h2
+
+end Mono
+
 end Opt
