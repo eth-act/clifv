@@ -479,9 +479,11 @@ purposes, so an `sret` return could change the group shapes). Witnesses
 (`Opt.Legal.Complete.Witness`): `indI128` (a `call_indirect` at `(i128) -> i128`) and `tryInd`
 (a `try_call_indirect` at that signature, the `i128` result as the successor's parameter) are not
 `Pre` (`indI128_not_pre`, `tryInd_not_pre`) but `PreW`, and `checkW` accepts their legalisations
-(`indI128_legal`, `tryInd_legal`). Native check: `FVTest/Clif/fixtures/i128-call-indirect.clif`
-(a `call_indirect` at `(i128, i64) -> i128` and at `(i64, i128) -> i128` (pad in `x1`), a
-`try_call_indirect` at `(i128, i64) -> i128`).
+(`indI128_legal`, `tryInd_legal`); `E2E.LinkWitness.a2_legal_wide` (`FV/E2E/LegalWideWitness.lean`)
+applies `backend_correct_legal_wide` to the witness program's legalised callee with every
+function-level premise discharged. Axiom list: `scripts/audit/i128-wide.lean`. Native check:
+`FVTest/Clif/fixtures/i128-call-indirect.clif` (a `call_indirect` at `(i128, i64) -> i128` and at
+`(i64, i128) -> i128` (pad in `x1`), a `try_call_indirect` at `(i128, i64) -> i128`).
 
 ## Not covered
 
@@ -500,6 +502,12 @@ purposes, so an `sret` return could change the group shapes). Witnesses
   emitted at `i64` only, and 128-bit atomics are a fatal "128bit atomics not yet supported"
   (`intrinsics/mod.rs`)), so no function of the measured crates falls back because of them.
 * Indirect calls at an `i128` signature in the whole-program domain (S3, `legalOkB`: `Pre`).
+* Unwinding through an `i128` `call_indirect` or a `try_call_indirect` of a legalised function:
+  the theorems with unwinding (`Opt.Legal.X.check_refinesX{,2}`, `E2E.backend_correct_legal_unwind`,
+  `backend_correct_legal_opt_unwind`, `LegalProgram.legalProg_refinesX`) keep the domain of
+  `check` (`indOldB`; `LegalSimS`'s `step_sim`/`step_sim_out` exclude `callInd128` and
+  `try_call_indirect` by it). `lean-backend` labels such a function with landing pads verified
+  for normal returns only (`backend_correct_legal_wide`).
 * Stack-passed `i128` arguments followed by an integer argument Cranelift passes in `x7`
   (above): not legalised.
 
