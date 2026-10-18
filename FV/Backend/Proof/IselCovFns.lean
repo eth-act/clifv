@@ -54,8 +54,10 @@ def actorRest (id : TermId) (as : List AW) : AW :=
     | _ => .top
   else if id == TId.put_in_reg || id == TId.put_extended_in_reg || id == TId.load_constant_full then
     .reg 1
-  else if id == TId.put_in_regs || id == TId.put_in_regs_vec || id == TId.gen_call_output then
+  else if id == TId.put_in_regs || id == TId.put_in_regs_vec then
     .flat 1 true
+  -- typed calls (S11e5a): one fresh vreg per ABI return, of its class
+  else if id == TId.gen_call_output then .flat 3 true
   else if id == TId.zero_reg || id == TId.writable_zero_reg then .reg 4
   else if id == TId.is_pic then .bool true
   else if id == TId.use_fp16 then .bool false
@@ -120,6 +122,13 @@ def actor (id : TermId) (as : List AW) : AW :=
 theorem actor_none {id : TermId} (h : tyPred id = none) (as : List AW) :
     actor id as = actorRest id as := by
   unfold actor; rw [h]
+
+/-- **Extern constructors with integer calls**: `actor`, except that `gen_call_output` gives int
+vregs (`.flat 1 true`, as `put_in_regs`), as before typed calls (S11e5a). Stock's
+`gen_call_output` allocates int vregs only, so Stock's constructors satisfy it
+(`Stock.Proof.Coverage.ctor_value_sound_int`). -/
+def actorI (id : TermId) (as : List AW) : AW :=
+  if id == TId.gen_call_output then .flat 1 true else actor id as
 
 /-- **Extern extractors**, output by output. -/
 def aext (id : TermId) (a : AW) : List AW :=

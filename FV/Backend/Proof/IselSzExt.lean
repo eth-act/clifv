@@ -289,7 +289,7 @@ theorem externCtor_sz (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | exact .inr (.inr (.inl ⟨rfl, loadConstantFull_wt _ _ _ _ st,
           tgA_of_since (loadConstantFull_em _ _ _ _ st)⟩))
       | exact .inr (.inr (.inr (.inl ⟨rfl, _, rets_zip_len ‹_› ‹_› _, rfl⟩)))
-      | exact .inl (callOutput_fold st _ _ (fun _ _ => rfl)).1
+      | exact .inl (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).1
 
 /-! ## The facts `ExtW` and `OracleW` -/
 
