@@ -682,3 +682,454 @@ theorem loop_between {lp : Cfg.Loop} (hlp : LoopOk (Cfg.build f) lp) {y bi : Nat
 end BuildLoops
 
 end Opt
+
+namespace Opt
+open Clif
+
+/-! ## Moving one statement to the end of a block -/
+
+/-- Remove `t` from every body and append it to block `hb`. -/
+def moveB (hb : Nat) (t : Stmt) (x : Block × Nat) : Block :=
+  { x.1 with body := x.1.body.filter (· != t) ++ (if x.2 = hb then [t] else []) }
+
+def moveF (g : Function) (hb : Nat) (t : Stmt) : Function :=
+  { g with blocks := g.blocks.zipIdx.map (moveB hb t) }
+
+theorem moveF_get (g : Function) (hb : Nat) (t : Stmt) (i : Nat) :
+    (moveF g hb t).blocks[i]? = (g.blocks[i]?).map fun b => moveB hb t (b, i) := by
+  simp only [moveF, List.getElem?_map, List.getElem?_zipIdx]
+  cases g.blocks[i]? <;> simp
+
+theorem moveF_build (g : Function) (hb : Nat) (t : Stmt) : Cfg.build (moveF g hb t) = Cfg.build g := by
+  apply build_congr
+  apply List.ext_getElem?
+  intro i
+  simp only [cfgShape, List.getElem?_map]
+  rw [moveF_get]
+  cases g.blocks[i]? <;> simp [moveB]
+
+theorem perm_flatMap_congr {α β : Type} (l : List α) {F G : α → List β} (h : ∀ a ∈ l, (F a).Perm (G a)) :
+    (l.flatMap F).Perm (l.flatMap G) := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    simp only [List.flatMap_cons]
+    exact (h a (List.mem_cons_self ..)).append (ih fun x hx => h x (List.mem_cons_of_mem _ hx))
+
+theorem perm_flatMap_append {α β : Type} (l : List α) (F G : α → List β) :
+    (l.flatMap fun x => F x ++ G x).Perm (l.flatMap F ++ l.flatMap G) := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    simp only [List.flatMap_cons, List.append_assoc]
+    refine List.Perm.append_left _ ?_
+    refine (List.Perm.append_left _ ih).trans ?_
+    simp only [← List.append_assoc]
+    exact List.Perm.append_right _ List.perm_append_comm
+
+/-- The data of a move: `t` (`v = …`, pure) is statement `jt` of block `bi`; it goes to the end
+of `hb`, a strict tree ancestor of `bi`. -/
+structure MoveOk (g : Function) (hb : Nat) (t : Stmt) (bi : Nat) (b : Block) (jt : Nat) (v : ValueId) :
+    Prop where
+  unique : UniqueDefs g
+  arity : Arity g
+  nodup : ((defList g).map (·.1)).Nodup
+  wf : Wf g (wfData g (coreInfo g))
+  hb_b : g.blocks[bi]? = some b
+  ht : b.body[jt]? = some t
+  hres : t.results = [v]
+  hne : hb ≠ bi
+  hanc : Anc (Cfg.build g).idom hb bi
+  hbl : hb < g.blocks.length
+
+section Move
+
+variable {g : Function} {hb : Nat} {t : Stmt} {bi : Nat} {b : Block} {jt : Nat} {v : ValueId}
+  (hm : MoveOk g hb t bi b jt v)
+include hm
+
+/-- `t` occurs only at its position. -/
+theorem MoveOk.only {i j : Nat} {b' : Block} (hb' : g.blocks[i]? = some b') (hj : b'.body[j]? = some t) :
+    i = bi ∧ j = jt := by
+  have := site_unique hm.unique (mem_defSites.2 ⟨i, b', hb', .inr ⟨j, t, hj, by simp [hm.hres], rfl⟩⟩)
+    (show (v, (bi, jt + 1)) ∈ defSites g from
+      mem_defSites.2 ⟨bi, b, hm.hb_b, .inr ⟨jt, t, hm.ht, by simp [hm.hres], rfl⟩⟩)
+  simpa using this
+
+theorem MoveOk.not_mem {i : Nat} {b' : Block} (hb' : g.blocks[i]? = some b') (hi : i ≠ bi) :
+    t ∉ b'.body := by
+  intro h
+  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 h
+  exact hi (hm.only hb' hj).1
+
+theorem MoveOk.filter_id {i : Nat} {b' : Block} (hb' : g.blocks[i]? = some b') (hi : i ≠ bi) :
+    b'.body.filter (· != t) = b'.body :=
+  List.filter_eq_self.2 fun st hst => by
+    simp only [bne_iff_ne, ne_eq]; rintro rfl; exact hm.not_mem hb' hi hst
+
+theorem MoveOk.mem_defSites {x : ValueId} {s : Nat × Nat} :
+    (x, s) ∈ defSites (moveF g hb t) ↔ ∃ i b, g.blocks[i]? = some b ∧
+      ((∃ p ∈ b.params, p.1 = x ∧ s = (i, 0)) ∨
+        (∃ j st, b.body[j]? = some st ∧ st ≠ t ∧ x ∈ st.results ∧
+          s = (i, fidx (· != t) b.body j + 1)) ∨
+        (i = hb ∧ x ∈ t.results ∧ s = (i, b.body.length + 1))) := by
+  rw [Opt.mem_defSites]
+  simp only [moveF_get, Option.map_eq_some_iff]
+  constructor
+  · rintro ⟨i, b', ⟨b, hb', rfl⟩, h | ⟨j', st, hst, hx, rfl⟩⟩
+    · exact ⟨i, b, hb', .inl h⟩
+    · simp only [moveB] at hst
+      rcases Nat.lt_or_ge j' (b.body.filter (· != t)).length with hj | hj
+      · rw [List.getElem?_append_left hj] at hst
+        obtain ⟨j, hj', hp, rfl⟩ := exists_fidx _ b.body j' st hst
+        refine ⟨i, b, hb', .inr (.inl ⟨j, st, hj', by simpa using hp, hx, rfl⟩)⟩
+      · rw [List.getElem?_append_right hj] at hst
+        split at hst
+        · rename_i hih
+          have hj0 : j' - (b.body.filter (· != t)).length = 0 := by
+            rcases Nat.eq_zero_or_pos (j' - (b.body.filter (· != t)).length) with h | h
+            · exact h
+            · have : [t][j' - (b.body.filter (· != t)).length]? = none :=
+                List.getElem?_eq_none (by simp only [List.length_singleton]; omega)
+              rw [this] at hst; cases hst
+          rw [hj0] at hst
+          simp only [List.getElem?_cons_zero, Option.some.injEq] at hst
+          subst hst
+          have hfl : (b.body.filter (· != t)).length = b.body.length := by
+            rw [hm.filter_id hb' (by rw [hih]; exact hm.hne)]
+          refine ⟨i, b, hb', .inr (.inr ⟨hih, hx, ?_⟩)⟩
+          congr 1; omega
+        · simp at hst
+  · rintro ⟨i, b, hb', h | ⟨j, st, hj, hne, hx, rfl⟩ | ⟨hih, hx, rfl⟩⟩
+    · exact ⟨i, _, ⟨b, hb', rfl⟩, .inl h⟩
+    · refine ⟨i, _, ⟨b, hb', rfl⟩, .inr ⟨_, st, ?_, hx, rfl⟩⟩
+      simp only [moveB]
+      rw [List.getElem?_append_left (fidx_le_length _ b.body hj (by simpa using hne))]
+      exact getElem?_filter_fidx _ b.body j st hj (by simpa using hne)
+    · refine ⟨i, _, ⟨b, hb', rfl⟩, .inr ⟨b.body.length, t, ?_, hx, rfl⟩⟩
+      simp only [moveB, hih, ite_true]
+      rw [hm.filter_id hb' (by rw [hih]; exact hm.hne)]
+      simp
+
+omit hm in
+theorem count_one_of_nodup_flatMap {α β : Type} [DecidableEq α] (F : α → List β) :
+    ∀ (l : List α) (a : α), (l.flatMap F).Nodup → a ∈ l → F a ≠ [] → l.count a = 1
+  | [], a, _, h, _ => by simp at h
+  | x :: l, a, hn, ha, hF => by
+    rw [List.flatMap_cons, List.nodup_append] at hn
+    by_cases hxa : x = a
+    · subst hxa
+      have : l.count x = 0 := by
+        rw [List.count_eq_zero]
+        intro hx
+        obtain ⟨y, hy⟩ := List.exists_mem_of_ne_nil _ hF
+        exact hn.2.2 y hy y (List.mem_flatMap.2 ⟨x, hx, hy⟩) rfl
+      simp [List.count_cons, this]
+    · rw [List.count_cons]
+      simp only [beq_iff_eq, hxa, ite_false, Nat.add_zero]
+      exact count_one_of_nodup_flatMap F l a hn.2.1 (by simpa [Ne.symm hxa] using ha) hF
+
+omit hm in
+theorem flatMap_zipIdx_single {α β : Type} (L : List β) (k : Nat) :
+    ∀ (l : List α) (n : Nat), ((l.zipIdx n).flatMap fun x => if x.2 = k then L else []) =
+      if n ≤ k ∧ k < n + l.length then L else []
+  | [], n => by simp; omega
+  | a :: l, n => by
+    rw [List.zipIdx_cons, List.flatMap_cons, flatMap_zipIdx_single L k l (n + 1)]
+    simp only [List.length_cons]
+    by_cases h : n = k
+    · subst h; simp; intro h; omega
+    · simp only [h, ite_false, List.nil_append]
+      congr 1
+      apply propext; omega
+
+/-- The defined values are the same (as a multiset). -/
+theorem MoveOk.perm : ((defSites (moveF g hb t)).map (·.1)).Perm ((defSites g).map (·.1)) := by
+  rw [defSites_fst, defSites_fst]
+  simp only [moveF, List.flatMap_map, moveB, Function.comp_def, List.flatMap_append]
+  -- the values defined by `t`'s occurrences
+  have hcnt : (g.blocks.flatMap (·.body)).count t = 1 := by
+    refine count_one_of_nodup_flatMap (·.results) _ t ?_ ?_ (by simp [hm.hres])
+    · have hs : ((g.blocks.flatMap (·.body)).flatMap (·.results)).Sublist ((defSites g).map (·.1)) := by
+        rw [defSites_fst, List.flatMap_assoc]
+        exact flatMap_sublist fun b _ => List.sublist_append_right _ _
+      exact hs.nodup hm.unique
+    · exact List.mem_flatMap.2 ⟨b, List.mem_of_getElem? hm.hb_b, List.mem_of_getElem? hm.ht⟩
+  have hD : (g.blocks.flatMap fun b => (b.body.filter (· == t)).flatMap (·.results)) = t.results := by
+    rw [← List.flatMap_assoc, ← List.filter_flatMap, List.filter_beq, hcnt]
+    simp
+  have hC : (g.blocks.zipIdx.flatMap fun x => (if x.2 = hb then [t] else []).flatMap (·.results)) =
+      t.results := by
+    have : (fun x : Block × Nat => (if x.2 = hb then [t] else []).flatMap (·.results)) =
+        fun x => if x.2 = hb then t.results else [] := by
+      funext x; split <;> simp
+    rw [this, flatMap_zipIdx_single]
+    simp [hm.hbl]
+  -- split both sides into parameters, kept results, and `t`'s results
+  have hR : (g.blocks.flatMap fun b => b.params.map (·.1) ++ b.body.flatMap (·.results)) =
+      (g.blocks.zipIdx.flatMap fun x => x.1.params.map (·.1) ++ x.1.body.flatMap (·.results)) := by
+    conv => lhs; rw [← List.zipIdx_map_fst 0 g.blocks]
+    rw [List.flatMap_map]
+  rw [hR]
+  have hbody : ∀ (l : List Stmt), (l.flatMap (·.results)).Perm
+      ((l.filter (· != t)).flatMap (·.results) ++ (l.filter (· == t)).flatMap (·.results)) := by
+    intro l
+    rw [← List.flatMap_append]
+    refine List.Perm.flatMap_right _ ?_
+    have := List.filter_append_perm (· != t) l
+    have e : (fun x : Stmt => !(x != t)) = (· == t) := by funext x; simp [bne]
+    rw [e] at this
+    exact this.symm
+  refine (perm_flatMap_append _ _ _).trans ?_
+  refine List.Perm.trans ?_ (perm_flatMap_append _ _ _).symm
+  refine List.Perm.append_left _ ?_
+  refine (perm_flatMap_append _ _ _).trans ?_
+  refine List.Perm.trans ?_ (perm_flatMap_congr _ (fun (x : Block × Nat) _ => (hbody x.1.body).symm))
+  refine List.Perm.trans ?_ (perm_flatMap_append _ _ _).symm
+  refine List.Perm.append_left _ ?_
+  rw [hC]
+  have : (g.blocks.zipIdx.flatMap fun x => (x.1.body.filter (· == t)).flatMap (·.results)) =
+      (g.blocks.flatMap fun b => (b.body.filter (· == t)).flatMap (·.results)) := by
+    conv => rhs; rw [← List.zipIdx_map_fst 0 g.blocks]
+    rw [List.flatMap_map]
+  rw [this, hD]
+
+theorem MoveOk.mem_body {i : Nat} {b' : Block} (hb' : g.blocks[i]? = some b') {st : Stmt}
+    (hst : st ∈ (moveB hb t (b', i)).body) : st ∈ b'.body ∨ st = t := by
+  simp only [moveB, List.mem_append, List.mem_filter] at hst
+  rcases hst with ⟨h, -⟩ | h
+  · exact .inl h
+  · split at h
+    · simp at h; exact .inr h
+    · simp at h
+
+theorem MoveOk.arity' : Arity (moveF g hb t) := by
+  intro b' hb' st hst
+  simp only [moveF, List.mem_map] at hb'
+  obtain ⟨⟨b0, i⟩, hi, rfl⟩ := hb'
+  have hb0 : g.blocks[i]? = some b0 := List.mem_zipIdx_iff_getElem?.1 hi
+  have : stmtTys (moveF g hb t) st = stmtTys g st := rfl
+  rw [this]
+  rcases hm.mem_body hb0 hst with h | rfl
+  · exact hm.arity b0 (List.mem_of_getElem? hb0) st h
+  · exact hm.arity b (List.mem_of_getElem? hm.hb_b) _ (List.mem_of_getElem? hm.ht)
+
+theorem MoveOk.unique' : UniqueDefs (moveF g hb t) := hm.perm.nodup_iff.2 hm.unique
+
+theorem MoveOk.nodup' : ((defList (moveF g hb t)).map (·.1)).Nodup := by
+  rw [← defSites_map_fst hm.arity']; exact hm.unique'
+
+/-- Every definition event of `g` has one in the output with the same value and type. -/
+theorem MoveOk.event {e : DefEv} (he : e ∈ defList g) :
+    ∃ e' ∈ defList (moveF g hb t), e'.1 = e.1 ∧ e'.2.1 = e.2.1 := by
+  obtain ⟨i, b', hb', h⟩ := mem_defList.1 he
+  have hb'' : (moveF g hb t).blocks[i]? = some (moveB hb t (b', i)) := by rw [moveF_get, hb']; rfl
+  rcases h with ⟨p, hp, rfl⟩ | ⟨st, hst, hes⟩
+  · exact ⟨_, mem_defList.2 ⟨i, _, hb'', .inl ⟨p, hp, rfl⟩⟩, rfl, rfl⟩
+  · by_cases hst' : st = t
+    · subst hst'
+      obtain ⟨bh, hbh⟩ : ∃ bh, g.blocks[hb]? = some bh := ⟨_, List.getElem?_eq_getElem hm.hbl⟩
+      have hbh' : (moveF g hb st).blocks[hb]? = some (moveB hb st (bh, hb)) := by
+        rw [moveF_get, hbh]; rfl
+      refine ⟨(e.1, e.2.1, hb), mem_defList.2 ⟨hb, _, hbh', .inr ⟨st, by simp [moveB], ?_⟩⟩, rfl, rfl⟩
+      unfold stmtEvs at hes ⊢
+      have : stmtTys (moveF g hb st) st = stmtTys g st := rfl
+      rw [this]
+      split at hes
+      · obtain ⟨⟨r, ty⟩, hz, rfl⟩ := List.mem_map.1 hes
+        exact List.mem_map.2 ⟨(r, ty), hz, rfl⟩
+      · simp at hes
+    · refine ⟨e, mem_defList.2 ⟨i, _, hb'', .inr ⟨st, ?_, hes⟩⟩, rfl, rfl⟩
+      simp [moveB, hst, hst']
+
+theorem MoveOk.event' {e : DefEv} (he : e ∈ defList (moveF g hb t)) :
+    ∃ e0 ∈ defList g, e0.1 = e.1 ∧ e0.2.1 = e.2.1 := by
+  obtain ⟨i, b', hb', h⟩ := mem_defList.1 he
+  rw [moveF_get, Option.map_eq_some_iff] at hb'
+  obtain ⟨b0, hb0, rfl⟩ := hb'
+  rcases h with ⟨p, hp, rfl⟩ | ⟨st, hst, hes⟩
+  · exact ⟨_, mem_defList.2 ⟨i, b0, hb0, .inl ⟨p, hp, rfl⟩⟩, rfl, rfl⟩
+  · have hev : ∀ {f1 f2 : Function} (j : Nat), f1.externs = f2.externs → ∀ e ∈ stmtEvs f1 i st,
+        (e.1, e.2.1, j) ∈ stmtEvs f2 j st := by
+      intro f1 f2 j hx e he
+      unfold stmtEvs stmtTys at he ⊢
+      rw [← hx]
+      split at he
+      · obtain ⟨⟨r, ty⟩, hz, rfl⟩ := List.mem_map.1 he
+        exact List.mem_map.2 ⟨(r, ty), hz, rfl⟩
+      · simp at he
+    rcases hm.mem_body hb0 hst with h | rfl
+    · exact ⟨_, mem_defList.2 ⟨i, b0, hb0, .inr ⟨st, h, hev i rfl e hes⟩⟩, rfl, rfl⟩
+    · exact ⟨_, mem_defList.2 ⟨bi, b, hm.hb_b, .inr ⟨_, List.mem_of_getElem? hm.ht, hev bi rfl e hes⟩⟩,
+        rfl, rfl⟩
+
+/-- **Types are kept.** -/
+theorem MoveOk.tm (x : ValueId) :
+    (wfData (moveF g hb t) (coreInfo (moveF g hb t))).tm x = (wfData g (coreInfo g)).tm x := by
+  simp only [wfData, coreInfo, Std.HashMap.get?_eq_getElem?]
+  have hn' := hm.nodup'
+  by_cases hx : x ∈ (defList g).map (·.1)
+  · obtain ⟨e, he, rfl⟩ := List.mem_map.1 hx
+    obtain ⟨e', he', h1, h2⟩ := hm.event he
+    rw [((defsState_get g hm.nodup).1 e he).1, ← h1, ((defsState_get _ hn').1 e' he').1, h2]
+  · have hx' : x ∉ (defList (moveF g hb t)).map (·.1) := by
+      intro h
+      obtain ⟨e, he, rfl⟩ := List.mem_map.1 h
+      obtain ⟨e0, he0, h1, -⟩ := hm.event' he
+      exact hx (List.mem_map.2 ⟨e0, he0, h1⟩)
+    rw [((defsState_get g hm.nodup).2 x hx).1, ((defsState_get _ hn').2 x hx').1]
+
+theorem MoveOk.dm' {x : ValueId} {s : Nat × Nat} (h : (x, s) ∈ defSites (moveF g hb t)) :
+    (wfData (moveF g hb t) (coreInfo (moveF g hb t))).dm x = some s :=
+  (defMap_get_iff hm.unique' x s).2 h
+
+theorem MoveOk.idom' : (wfData (moveF g hb t) (coreInfo (moveF g hb t))).idom =
+    (wfData g (coreInfo g)).idom := by
+  simp [wfData, coreInfo, moveF_build]
+
+theorem MoveOk.rank' : (wfData (moveF g hb t) (coreInfo (moveF g hb t))).rank =
+    (wfData g (coreInfo g)).rank := by
+  simp [wfData, coreInfo, moveF_build]
+
+theorem MoveOk.index' : (wfData (moveF g hb t) (coreInfo (moveF g hb t))).index =
+    (wfData g (coreInfo g)).index := by
+  simp [wfData, coreInfo, moveF_build]
+
+/-- **Availability moves to the output position.** -/
+theorem MoveOk.avail {i : Nat} {b' : Block} (hb' : g.blocks[i]? = some b') {k : Nat} {x : ValueId}
+    (hA : Avail (wfData g (coreInfo g)) i k x) :
+    Avail (wfData (moveF g hb t) (coreInfo (moveF g hb t))) i (fidx (· != t) b'.body k) x := by
+  have hrank := hm.wf.rank
+  obtain ⟨d, s, hd, h⟩ := hA
+  have hs := hm.wf.sitesRev x (d, s) hd
+  by_cases hxv : x = v
+  · subst hxv
+    have hsv : (x, (bi, jt + 1)) ∈ defSites g :=
+      Opt.mem_defSites.2 ⟨bi, b, hm.hb_b, .inr ⟨jt, t, hm.ht, by simp [hm.hres], rfl⟩⟩
+    have := site_unique hm.unique hs hsv
+    simp only [Prod.mk.injEq] at this
+    obtain ⟨rfl, rfl⟩ := this
+    obtain ⟨bh, hbh⟩ : ∃ bh, g.blocks[hb]? = some bh := ⟨_, List.getElem?_eq_getElem hm.hbl⟩
+    refine ⟨hb, bh.body.length + 1, hm.dm' (hm.mem_defSites.2 ⟨hb, bh, hbh, .inr (.inr ⟨rfl, by simp [hm.hres], rfl⟩)⟩), .inr ?_⟩
+    have hdi : Anc (wfData g (coreInfo g)).idom d i := by
+      rcases h with ⟨rfl, -⟩ | ⟨-, ha⟩
+      · exact .refl _
+      · exact ha
+    have hhi : Anc (wfData g (coreInfo g)).idom hb i := hm.hanc.trans hdi
+    refine ⟨fun he => ?_, by rw [hm.idom']; exact hhi⟩
+    subst he
+    exact hm.hne (Anc.antisymm hrank hm.hanc hdi)
+  · obtain ⟨i0, b0, hb0, ⟨p, hp, hpx, he⟩ | ⟨j0, st, hj0, hx, he⟩⟩ := Opt.mem_defSites.1 hs
+    · simp only [Prod.mk.injEq] at he
+      obtain ⟨rfl, rfl⟩ := he
+      refine ⟨d, 0, hm.dm' (hm.mem_defSites.2 ⟨d, b0, hb0, .inl ⟨p, hp, hpx, rfl⟩⟩), ?_⟩
+      rcases h with ⟨rfl, -⟩ | ⟨hne, ha⟩
+      · exact .inl ⟨rfl, Nat.zero_le _⟩
+      · exact .inr ⟨hne, by rw [hm.idom']; exact ha⟩
+    · simp only [Prod.mk.injEq] at he
+      obtain ⟨rfl, rfl⟩ := he
+      have hst : st ≠ t := by
+        rintro rfl; rw [hm.hres] at hx; simp at hx; exact hxv hx
+      refine ⟨d, fidx (· != t) b0.body j0 + 1,
+        hm.dm' (hm.mem_defSites.2 ⟨d, b0, hb0, .inr (.inl ⟨j0, st, hj0, hst, hx, rfl⟩)⟩), ?_⟩
+      rcases h with ⟨rfl, hle⟩ | ⟨hne, ha⟩
+      · left
+        refine ⟨rfl, ?_⟩
+        rw [hb'] at hb0; cases hb0
+        exact fidx_lt _ b'.body (by omega) hj0 (by simpa using hst)
+      · exact .inr ⟨hne, by rw [hm.idom']; exact ha⟩
+
+theorem fidx_le {α : Type} (p : α → Bool) (l : List α) (k : Nat) : fidx p l k ≤ k := by
+  unfold fidx
+  exact Nat.le_trans (List.length_filter_le _ _) (List.length_take_le _ _)
+
+/-- **A move keeps the certificate facts** when `t`'s operands are available at the end of
+`hb`. -/
+theorem MoveOk.wf' {bh : Block} (hbh : g.blocks[hb]? = some bh)
+    (hops : ∀ x ∈ operands t.inst, Avail (wfData g (coreInfo g)) hb bh.body.length x) :
+    Wf (moveF g hb t) (wfData (moveF g hb t) (coreInfo (moveF g hb t))) := by
+  have hW := hm.wf
+  have hn' := hm.nodup'
+  have hgetm : ∀ i b', (moveF g hb t).blocks[i]? = some b' →
+      ∃ b0, g.blocks[i]? = some b0 ∧ b' = moveB hb t (b0, i) := by
+    intro i b' h
+    rw [moveF_get, Option.map_eq_some_iff] at h
+    obtain ⟨b0, hb0, rfl⟩ := h
+    exact ⟨b0, hb0, rfl⟩
+  have hlenh : (bh.body.filter (· != t)).length = bh.body.length := by
+    rw [hm.filter_id hbh hm.hne]
+  refine { ids := ?_, sites := ?_, sitesRev := ?_, root := ?_, rank := ?_, params := ?_,
+           uses := ?_, results := ?_, pure := ?_, termUses := ?_, edges := ?_ }
+  · intro i b' hb'
+    obtain ⟨b0, hb0, rfl⟩ := hgetm i b' hb'
+    rw [hm.index']; exact hW.ids i b0 hb0
+  · exact fun x s hs => (defMap_get_iff hm.unique' x s).2 hs
+  · exact fun x s hs => (defMap_get_iff hm.unique' x s).1 hs
+  · rw [hm.idom']; exact hW.root
+  · rw [hm.idom', hm.rank']; exact hW.rank
+  · exact fun i b' hb' p hp => tm_param hn' hb' hp
+  · intro i b' hb' j' st hst x hx
+    obtain ⟨b0, hb0, rfl⟩ := hgetm i b' hb'
+    simp only [moveB] at hst
+    rcases Nat.lt_or_ge j' (b0.body.filter (· != t)).length with hj | hj
+    · rw [List.getElem?_append_left hj] at hst
+      obtain ⟨j, hj', -, rfl⟩ := exists_fidx _ b0.body j' st hst
+      exact hm.avail hb0 (hW.uses i b0 hb0 j st hj' x hx)
+    · rw [List.getElem?_append_right hj] at hst
+      split at hst
+      · rename_i hih
+        subst hih
+        rw [hbh] at hb0; cases hb0
+        have hj0 : j' - (bh.body.filter (· != t)).length = 0 := by
+          rcases Nat.eq_zero_or_pos (j' - (bh.body.filter (· != t)).length) with h | h
+          · exact h
+          · have : [t][j' - (bh.body.filter (· != t)).length]? = none :=
+              List.getElem?_eq_none (by simp only [List.length_singleton]; omega)
+            rw [this] at hst; cases hst
+        rw [hj0] at hst
+        simp only [List.getElem?_cons_zero, Option.some.injEq] at hst
+        subst hst
+        have := hm.avail hbh (hops x hx)
+        rw [show fidx (· != t) bh.body bh.body.length = (bh.body.filter (· != t)).length from
+          fidx_length _ _] at this
+        exact this.mono (by omega)
+      · simp at hst
+  · intro i b' hb' j' st hst
+    have hb'' := hb'
+    obtain ⟨b0, hb0, rfl⟩ := hgetm i b' hb'
+    have hsm : st ∈ (moveB hb t (b0, i)).body := List.mem_of_getElem? hst
+    have hsig : sigOf (moveF g hb t) = sigOf g := rfl
+    obtain ⟨ts, hts, hlen⟩ : ∃ ts, st.inst.resultTypes (sigOf g) (fun _ => none) = some ts ∧
+        ts.length = st.results.length := by
+      rcases hm.mem_body hb0 hsm with h | rfl
+      · obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 h
+        obtain ⟨ts, hts, hlen, -⟩ := hW.results i b0 hb0 j st hj
+        exact ⟨ts, hts, hlen⟩
+      · obtain ⟨ts, hts, hlen, -⟩ := hW.results bi b hm.hb_b jt _ hm.ht
+        exact ⟨ts, hts, hlen⟩
+    refine ⟨ts, by rw [hsig]; exact hts, hlen, fun n r hr => ?_⟩
+    exact tm_result hn' hb'' hsm (by rw [hsig]; exact hts) hlen hr
+  · intro i b' hb' j' st hst hp
+    obtain ⟨b0, hb0, rfl⟩ := hgetm i b' hb'
+    have hsm : st ∈ (moveB hb t (b0, i)).body := List.mem_of_getElem? hst
+    have hpt : pureTyped (wfData g (coreInfo g)).tm g st.inst = true := by
+      rcases hm.mem_body hb0 hsm with h | rfl
+      · obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 h
+        exact hW.pure i b0 hb0 j st hj hp
+      · exact hW.pure bi b hm.hb_b jt _ hm.ht hp
+    rw [← hpt]
+    exact pureTyped_congr (fun x _ => hm.tm x) rfl rfl
+  · intro i b' hb' x hx
+    obtain ⟨b0, hb0, rfl⟩ := hgetm i b' hb'
+    have := hm.avail hb0 (hW.termUses i b0 hb0 x hx)
+    rw [fidx_length] at this
+    exact this.mono (by simp [moveB])
+  · intro i b' hb' id hid
+    obtain ⟨b0, hb0, rfl⟩ := hgetm i b' hb'
+    obtain ⟨j, b1, hj, hb1, hid1, hanc⟩ := hW.edges i b0 hb0 id hid
+    refine ⟨j, moveB hb t (b1, j), by rw [hm.index']; exact hj, by rw [moveF_get, hb1]; rfl, hid1, ?_⟩
+    rw [hm.idom']; exact hanc
+
+end Move
+
+end Opt
