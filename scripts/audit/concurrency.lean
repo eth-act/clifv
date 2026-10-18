@@ -54,6 +54,14 @@ import FVTest.Concurrency.Litmus
 #print axioms Concurrency.Armv8.R_acyclic
 #print axioms Concurrency.Mapping.Hom.psc_acyclic
 #print axioms Concurrency.Mapping.armv8_to_clifF
+#print axioms Concurrency.Mapping.plus_restr
+-- the program level with fences and Rust orderings (T2f, #304)
+#print axioms Concurrency.ProgE2E.rmw_sc
+#print axioms Concurrency.ProgE2E.raceFreeProgF_of_raceFreeProg
+#print axioms Concurrency.ProgE2E.raceFreeProgF_of_rust
+#print axioms Concurrency.ProgE2E.consistentCF
+#print axioms Concurrency.ProgE2E.program_correctF
+#print axioms Concurrency.ProgE2E.program_correct_rust
 #print axioms Concurrency.Witness.sbf_contract
 #print axioms Concurrency.Witness.sbf_not_rc11
 #print axioms Concurrency.Witness.mpf_consistentF
@@ -65,6 +73,9 @@ import FVTest.Concurrency.Litmus
 #print axioms Concurrency.ProgWitness.mp_replay
 #print axioms Concurrency.ProgWitness.ret_raceFree
 #print axioms Concurrency.ProgWitness.ret_correct
+#print axioms Concurrency.ProgWitness.ret_rustRaceFree
+#print axioms Concurrency.ProgWitness.ret_correctF
+#print axioms Concurrency.ProgWitness.ret_correct_rust
 #print axioms Concurrency.ArmThread.Witness.retry_run
 #print axioms Concurrency.ArmThread.Witness.retry_succ
 #print axioms Concurrency.ArmThread.Witness.evWrite_eq

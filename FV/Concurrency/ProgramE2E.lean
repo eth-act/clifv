@@ -345,24 +345,34 @@ theorem consistentC (hcA : Armv8.Consistent (PA.exec locsA rfA coA rmwA) (kindA 
 
 /-! ## The program-level statement -/
 
-/-- **Program-level correctness for race-free programs, given the per-thread event-level
-refinement contract `Realizes`.** An execution of Arm threads (`ATStep` under the Arm monitor
-policy) that is Armv8-consistent and realizes the CLIF threads' traces `PC` of a CLIF program
-that is race-free in every contract-consistent execution: the CLIF execution is sequentially
-consistent, the multi-threaded `Clif.run` reaches the CLIF threads' final states (up to their
-local bytes) with final shared bytes holding the `co`-last write of every location, and the
-threads' outcomes are related by `Obs`. **The contract is not discharged by
-`E2E.backend_correct_final`** (module doc; `docs/plans/atomics.md` §5, T2h). -/
-theorem program_correct {env : Clif.Env} {p : Clif.Program} {n : Nat} {s0 : Nat → TState}
-    (hrace : RaceFreeProg env p n s0 MC0)
-    -- the Arm execution: runs of the Arm threads, Armv8-consistent
-    (_hA : PA.Runs (ATStep ArmThread.Policy.arm))
+omit hwfA in
+/-- The CLIF reads read their writes' values. -/
+theorem valC (hvalA : ∀ w r, rfA w r → PA.val bytesI MA0 locsA [] w = PA.val bytesI MA0 locsA [] r) :
+    ∀ w r, pull φ (Valid PC locsC) rfA w r →
+      PC.val bytesI MC0 locsC [] w = PC.val bytesI MC0 locsC [] r := fun w r h => by
+  rw [← hR.val w h.1, ← hR.val r h.2.1]; exact hvalA _ _ h.2.2
+
+omit hwfA in
+/-- The CLIF initial writes are `co`-first. -/
+theorem initC (hiA : InitFirst (PA.exec locsA rfA coA rmwA)) :
+    InitFirst (XC PC locsC φ rfA coA rmwA) := fun w q h => by
+  obtain ⟨-, hq, h⟩ := h
+  obtain ⟨q', e⟩ := hR.init q hq
+  rw [e] at h; exact hiA _ _ h
+
+/-- **The program-level conclusion from race-freedom of the CLIF execution** (the common part of
+`program_correct` and `program_correctF`, `FV/Concurrency/ProgramE2EF.lean`). -/
+theorem correct_of_raceFree {env : Clif.Env} {p : Clif.Program} {s0 : Nat → TState}
     (hcA : Armv8.Consistent (PA.exec locsA rfA coA rmwA) (kindA PA))
     (hvalA : ∀ w r, rfA w r → PA.val bytesI MA0 locsA [] w = PA.val bytesI MA0 locsA [] r)
     (hovA : NoOverlap (PA.exec locsA rfA coA rmwA) (PA.sz locsA))
     (hiA : InitFirst (PA.exec locsA rfA coA rmwA))
-    -- the CLIF threads' traces
-    (hC : PC.Runs (CStep env p)) (hn : PC.n = n) (hs0 : ∀ i, PC.st i 0 = s0 i) :
+    (hC : PC.Runs (CStep env p)) (hs0 : ∀ i, PC.st i 0 = s0 i)
+    (hrfC : ∀ a b, (∀ q, a ≠ .init q) → (∀ q, b ≠ .init q) →
+      ClifMM.Conflict (XC PC locsC φ rfA coA rmwA) a b →
+      ¬ (ClifMM.At (kindC PC) a ∧ ClifMM.At (kindC PC) b) →
+      ClifMM.hb (XC PC locsC φ rfA coA rmwA) (kindC PC) a b ∨
+        ClifMM.hb (XC PC locsC φ rfA coA rmwA) (kindC PC) b a) :
     (XC PC locsC φ rfA coA rmwA).SC ∧
     ∃ ts B, MTRun env p (s0, MC0) (ts, B) ∧
       StripEq ts (fun i => PC.st i (if i < PC.n then (PC.tr i).length else 0)) ∧
@@ -374,14 +384,8 @@ theorem program_correct {env : Clif.Env} {p : Clif.Program} {n : Nat} {s0 : Nat 
       (∀ i < PC.n, Obs i (PA.st i (PA.tr i).length) (PC.st i (PC.tr i).length)) := by
   have hwfC := wfC hR hwfA
   have hcC := consistentC hR hwfA hcA
-  have hvalC : ∀ w r, pull φ (Valid PC locsC) rfA w r →
-      PC.val bytesI MC0 locsC [] w = PC.val bytesI MC0 locsC [] r := fun w r h => by
-    rw [← hR.val w h.1, ← hR.val r h.2.1]; exact hvalA _ _ h.2.2
-  have hiC : InitFirst (XC PC locsC φ rfA coA rmwA) := fun w q h => by
-    obtain ⟨-, hq, h⟩ := h
-    obtain ⟨q', e⟩ := hR.init q hq
-    rw [e] at h; exact hiA _ _ h
-  have hrfC := hrace PC locsC _ _ _ hn hs0 hC hwfC hvalC hiC hcC
+  have hvalC := valC hR hvalA
+  have hiC := initC hR hiA
   -- initial writes have only `po` edges from initial writes coming in
   have hin : ∀ a b, (∃ q, b = PEv.init q) →
       union (XC PC locsC φ rfA coA rmwA).po (XC PC locsC φ rfA coA rmwA).com a b →
@@ -424,6 +428,37 @@ theorem program_correct {env : Clif.Env} {p : Clif.Program} {n : Nat} {s0 : Nat 
   have e0 : (fun i => PC.st i 0) = s0 := funext hs0
   rw [e0] at hmt
   exact ⟨hsc, ts, M', hmt, heq, hmem, hR.obs⟩
+
+/-- **Program-level correctness for race-free programs, given the per-thread event-level
+refinement contract `Realizes`.** An execution of Arm threads (`ATStep` under the Arm monitor
+policy) that is Armv8-consistent and realizes the CLIF threads' traces `PC` of a CLIF program
+that is race-free in every contract-consistent execution: the CLIF execution is sequentially
+consistent, the multi-threaded `Clif.run` reaches the CLIF threads' final states (up to their
+local bytes) with final shared bytes holding the `co`-last write of every location, and the
+threads' outcomes are related by `Obs`. **The contract is not discharged by
+`E2E.backend_correct_final`** (module doc; `docs/plans/atomics.md` §5, T2h). -/
+theorem program_correct {env : Clif.Env} {p : Clif.Program} {n : Nat} {s0 : Nat → TState}
+    (hrace : RaceFreeProg env p n s0 MC0)
+    -- the Arm execution: runs of the Arm threads, Armv8-consistent
+    (_hA : PA.Runs (ATStep ArmThread.Policy.arm))
+    (hcA : Armv8.Consistent (PA.exec locsA rfA coA rmwA) (kindA PA))
+    (hvalA : ∀ w r, rfA w r → PA.val bytesI MA0 locsA [] w = PA.val bytesI MA0 locsA [] r)
+    (hovA : NoOverlap (PA.exec locsA rfA coA rmwA) (PA.sz locsA))
+    (hiA : InitFirst (PA.exec locsA rfA coA rmwA))
+    -- the CLIF threads' traces
+    (hC : PC.Runs (CStep env p)) (hn : PC.n = n) (hs0 : ∀ i, PC.st i 0 = s0 i) :
+    (XC PC locsC φ rfA coA rmwA).SC ∧
+    ∃ ts B, MTRun env p (s0, MC0) (ts, B) ∧
+      StripEq ts (fun i => PC.st i (if i < PC.n then (PC.tr i).length else 0)) ∧
+      (∀ w, (XC PC locsC φ rfA coA rmwA).dir w = .W →
+        (∀ w', (XC PC locsC φ rfA coA rmwA).dir w' = .W →
+          (XC PC locsC φ rfA coA rmwA).loc w' = (XC PC locsC φ rfA coA rmwA).loc w → w' ≠ w →
+          pull φ (Valid PC locsC) coA w' w) →
+        getB B ((XC PC locsC φ rfA coA rmwA).loc w) (PC.sz locsC w) = PC.val bytesI MC0 locsC [] w) ∧
+      (∀ i < PC.n, Obs i (PA.st i (PA.tr i).length) (PC.st i (PC.tr i).length)) :=
+  correct_of_raceFree hR hwfA hcA hvalA hovA hiA hC hs0
+    (hrace PC locsC _ _ _ hn hs0 hC (wfC hR hwfA) (valC hR hvalA) (initC hR hiA)
+      (consistentC hR hwfA hcA))
 
 end clif
 
