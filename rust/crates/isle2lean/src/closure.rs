@@ -65,6 +65,10 @@ pub const FLAG_OFF: &[&str] = &["use_lse"];
 /// `store` of an `f32`/`f64` value (2746, 2750), and the scalar `bitcast` rules: SIMD&FP
 /// identity (2779), GPR→SIMD&FP `mov_to_fpu` (2793), SIMD&FP→GPR `mov_from_vec` (2798), GPR
 /// identity (2803). (`select` of floats is the shared root `lower.isle:2267`, already in.)
+/// S11f (#239) adds the scalar float arithmetic roots (`FV/Backend/Proof/IselFloatArith.lean`,
+/// `LowerRulesCorrectFT`): `fpu_rrr` of `fadd` (485), `fsub` (493), `fmul` (501), `fdiv` (509),
+/// `fmin` (517), `fmax` (525); `fpu_rr` of `sqrt` (533), `fneg` (541), `fabs` (549),
+/// `fpromote` (554), `fdemote` (559); `fcmp` into a register (2176, `emit_fcmp`).
 pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_63",
     "rule_lower_68",
@@ -76,6 +80,18 @@ pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_2793",
     "rule_lower_2798",
     "rule_lower_2803",
+    "rule_lower_485",
+    "rule_lower_493",
+    "rule_lower_501",
+    "rule_lower_509",
+    "rule_lower_517",
+    "rule_lower_525",
+    "rule_lower_533",
+    "rule_lower_541",
+    "rule_lower_549",
+    "rule_lower_554",
+    "rule_lower_559",
+    "rule_lower_2176",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];
