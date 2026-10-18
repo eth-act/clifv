@@ -459,8 +459,8 @@ its results without the signature table; DEFERRED, mid-end), in the runtests fou
 between integers and floats (`pureTyped`). These are genuine input restrictions: such functions get
 only unreachable-block removal.
 
-Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`; axioms `propext`, `Classical.choice`,
-`Quot.sound`):
+Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`, `CheckSpec.lean`, `CompleteDce.lean`;
+axioms `propext`, `Classical.choice`, `Quot.sound`):
 
 - `Opt.unreachableOk_raw`: `blocksOkB f = true → unreachableOk f (removeUnreachableRaw f) = true`,
   hence `Opt.removeUnreachable_eq_raw` (`removeUnreachable` never falls back). `blocksOkB` (unique
@@ -470,9 +470,21 @@ Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`; axioms `propext`, `Class
   fuel suffices, the entry is finished, the finished blocks are closed under successors). Witness
   `Opt.CompleteUnreachableWitness.witness`.
 - `freshOkB`: `Opt.freshOkB_of_check` (S1).
+- A declarative description of `check`: `Opt.checkCore_ok_iff` (`checkCore f = .ok i ↔ CoreOk f ∧
+  i = coreInfo f`), `Opt.check_ok_iff`, and `Opt.wfCert_complete` (the converse of
+  `wfCert_sound`: the certificate facts `Wf f (wfData f info)` make `wfCert` accept; via
+  `Opt.ancB_complete`, the walk up the tree finds every ancestor within `idom.size` steps when ranks
+  decrease along `idom`). `Opt.build_congr`: the CFG depends only on block ids and successors.
+- DCE: `Opt.dce_complete : check g = .ok info → check (dce g).1 = .ok (coreInfo (dce g).1) ∧
+  editOk id g (dce g).1 info (coreInfo (dce g).1) = true`. DCE filters each body with
+  `dceKeep (dceLive g)` (`Opt.dce_eq`); the mark loop's fuel suffices and the live set is closed
+  (`Opt.dceLive_closed`), so every operand of a kept statement or terminator is defined by a kept
+  statement, at the filtered position (`Opt.dce_wf`); a deleted statement is removable and its
+  results are defined nowhere in the output (values are defined once), which is `delOk`
+  (`Opt.dce_delOk`, `Opt.align_filter`). Witness `Opt.CompleteDceWitness.witness`.
 
-Open: the stage checks and validators (`check` and `editOk` for GVN, DCE, LICM; `check` and
-`simpOk` for simplify), `keepsBackendSubset`, `keepsShapeB`.
+Open: the stage checks and validators for GVN, LICM (`check`, `editOk`) and simplify (`check`,
+`simpOk`), `keepsBackendSubset`, `keepsShapeB`.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
 
