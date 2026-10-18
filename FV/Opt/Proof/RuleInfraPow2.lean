@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleSkelEmbed
+import FV.Opt.Proof.KernelBV
 
 /-!
 # Helper specifications: powers of two (`imm64_power_of_two`, `u64_ilog2`, `*_trailing_zeros`)
@@ -394,7 +395,7 @@ theorem pow2_ctz64_neg {k : Nat} (hk : k < 64) : Rust.ctz64 (-((2 ^ k : Nat) : I
 Each rule's bit-level obligation, stated at a symbolic non-`i128` type in the form the
 right-hand side evaluates to (`BitVec.ofInt` of the helpers' `Int` results). Proof: the
 division becomes shifts (above), the exponent `k` a bit vector `s` (`k = s.toNat`), then
-`bv_decide` per width. -/
+`kbv` per width. -/
 
 theorem pow2_exists_toNat {w k : Nat} (h : k < 2 ^ w) : ∃ s : BitVec w, s.toNat = k :=
   ⟨BitVec.ofNat w k, by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]⟩
@@ -486,15 +487,149 @@ theorem pow2_lt_toNat {w : Nat} (s : BitVec w) (n : Nat) (h : n < s.toNat) (hn :
     BitVec.ofNat w n < s := by
   rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hn]; exact h
 
+/-- The bias `(a >>>ₛ (k - 1)) >>> (w - k)` of the signed division by `2 ^ k`: `2 ^ k - 1` for a
+negative `a`, else `0`. -/
+private theorem pow2_bias {w k : Nat} (h0 : 0 < k) (hk : k < w) (a : BitVec w) :
+    (a.sshiftRight (k - 1)) >>> (w - k) =
+      bif a.msb then BitVec.ofNat w (2 ^ k - 1) else 0#w := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_sshiftRight, BitVec.msb_eq_getLsbD_last]
+  cases h : a.getLsbD (w - 1)
+  · simp only [Bool.cond_false, BitVec.getLsbD_zero]
+    by_cases h1 : k - 1 + (w - k + i) < w
+    · simp only [h1, ↓reduceIte]; have : k - 1 + (w - k + i) = w - 1 := by omega
+      rw [this, h]; simp
+    · simp only [h1, ↓reduceIte]; simp
+  · simp only [Bool.cond_true, BitVec.getLsbD_ofNat, Nat.testBit_two_pow_sub_one]
+    by_cases h1 : k - 1 + (w - k + i) < w
+    · simp only [h1, ↓reduceIte]; have : k - 1 + (w - k + i) = w - 1 := by omega
+      rw [this, h]
+      have hi0 : i = 0 := by omega
+      subst hi0
+      have e1 : decide (w ≤ w - k + 0) = false := by simp; omega
+      have e2 : decide (0 < w) = true := by simp; omega
+      have e3 : decide (0 < k) = true := by simp; omega
+      rw [e1, e2, e3]; rfl
+    · simp only [h1, ↓reduceIte]
+      have e1 : decide (w ≤ w - k + i) = decide (k ≤ i) := by
+        apply decide_eq_decide.2; omega
+      have e2 : decide (i < w) = true := by simp; omega
+      rw [e1, e2]
+      cases hh : decide (i < k) <;> simp_all <;> omega
+
+/-- A negative `a` plus the bias, shifted arithmetically by `k`: `a / 2 ^ k` rounded toward zero. -/
+private theorem pow2_sshr_neg {w k : Nat} (h0 : 0 < k) (hk : k < w) (a : BitVec w)
+    (ha : a.msb = true) :
+    (a + BitVec.ofNat w (2 ^ k - 1)).sshiftRight k = -((-a) >>> k) := by
+  have hK := Nat.two_pow_pos k
+  have hKH : 2 ^ k ≤ 2 ^ (w - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+  have hN : 2 ^ w = 2 * 2 ^ (w - 1) := by rw [← Nat.pow_succ']; congr 1; omega
+  have hA := BitVec.toNat_ge_of_msb_true ha
+  have hAl := a.isLt
+  have hm : (BitVec.ofNat w (2 ^ k - 1)).toNat = 2 ^ k - 1 := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have hna : (-a).toNat = 2 ^ w - a.toNat := by
+    rw [BitVec.toNat_neg, Nat.mod_eq_of_lt (by omega)]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_neg, BitVec.toNat_ushiftRight, hna, Nat.shiftRight_eq_div_pow]
+  generalize hq : (2 ^ w - a.toNat) / 2 ^ k = q
+  have hS : (a + BitVec.ofNat w (2 ^ k - 1)).toNat = (a.toNat + (2 ^ k - 1)) % 2 ^ w := by
+    rw [BitVec.toNat_add, hm]
+  by_cases hc : 2 ^ w ≤ a.toNat + (2 ^ k - 1)
+  · have hS' : (a + BitVec.ofNat w (2 ^ k - 1)).toNat = a.toNat + (2 ^ k - 1) - 2 ^ w := by
+      rw [hS, Nat.mod_eq_sub_mod hc, Nat.mod_eq_of_lt (by omega)]
+    have hmsb : (a + BitVec.ofNat w (2 ^ k - 1)).msb = false := by
+      rw [BitVec.msb_eq_decide, hS']; simp; omega
+    rw [BitVec.toNat_sshiftRight_of_msb_false hmsb, hS', Nat.shiftRight_eq_div_pow,
+      Nat.div_eq_of_lt (by omega)]
+    have : q = 0 := by rw [← hq]; exact Nat.div_eq_of_lt (by omega)
+    subst this; simp
+  · have hS' : (a + BitVec.ofNat w (2 ^ k - 1)).toNat = a.toNat + (2 ^ k - 1) := by
+      rw [hS, Nat.mod_eq_of_lt (by omega)]
+    have hmsb : (a + BitVec.ofNat w (2 ^ k - 1)).msb = true := by
+      rw [BitVec.msb_eq_decide, hS']; simp; omega
+    rw [BitVec.toNat_sshiftRight_of_msb_true hmsb, hS', Nat.shiftRight_eq_div_pow]
+    have e : 2 ^ w - a.toNat = (2 ^ w - 1 - (a.toNat + (2 ^ k - 1))) + 2 ^ k := by omega
+    rw [e, Nat.add_div_right _ hK] at hq
+    have hd := Nat.div_le_self (2 ^ w - 1 - (a.toNat + (2 ^ k - 1))) (2 ^ k)
+    generalize (2 ^ w - 1 - (a.toNat + (2 ^ k - 1))) / 2 ^ k = d at hq hd ⊢
+    generalize 2 ^ w = N at *
+    generalize 2 ^ k = K at *
+    generalize a.toNat = A at *
+    subst hq
+    rw [Nat.mod_eq_of_lt (by omega)]
+    omega
+
+private theorem pow2_neg_twoPow_eq {w k : Nat} :
+    -(BitVec.twoPow w k) = BitVec.allOnes w <<< k := by
+  rw [BitVec.shiftLeft_eq_mul_twoPow, ← BitVec.neg_one_eq_allOnes, BitVec.neg_mul, BitVec.one_mul]
+
+private theorem pow2_split {w k : Nat} (hk : k < w) (y : BitVec w) :
+    (y >>> k) <<< k + (y &&& (BitVec.twoPow w k - 1#w)) = y := by
+  have h2 := Nat.two_pow_pos k
+  have h3 : 1 < 2 ^ w := Nat.one_lt_two_pow (by omega)
+  have h1 : 1#w ≤ BitVec.twoPow w k := by
+    rw [BitVec.le_def, BitVec.toNat_twoPow_of_lt hk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h3]
+    omega
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_and,
+    BitVec.toNat_sub_of_le h1, BitVec.toNat_twoPow_of_lt hk, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt h3, Nat.and_two_pow_sub_one_eq_mod, Nat.shiftRight_eq_div_pow,
+    Nat.shiftLeft_eq]
+  have := Nat.div_add_mod y.toNat (2 ^ k)
+  have hy := y.isLt
+  rw [Nat.mod_eq_of_lt (a := y.toNat / 2 ^ k * 2 ^ k) (by rw [Nat.mul_comm]; omega),
+    Nat.mul_comm, Nat.div_add_mod, Nat.mod_eq_of_lt hy]
+
+private theorem pow2_sshr_shl {w k : Nat} (x : BitVec w) :
+    (x.sshiftRight k) <<< k = (x >>> k) <<< k := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_sshiftRight, BitVec.getLsbD_ushiftRight]
+  by_cases h : i < k
+  · simp [h]
+  · have : k + (i - k) < w := by omega
+    simp [h, hi, this]; omega
+
+private theorem pow2_sshr_toNat {w : Nat} (x s : BitVec w) (hk : s.toNat < w) :
+    Sem.sshr x s = x.sshiftRight s.toNat := by
+  rw [Sem.sshr, Sem.shiftAmt, Nat.mod_eq_of_lt hk]
+
+private theorem pow2_bias_sem {w : Nat} (a s : BitVec w) (h0 : 0 < s.toNat) (hk : s.toNat < w) :
+    Sem.ushr (Sem.sshr a (s - BitVec.ofNat w 1)) (BitVec.ofNat w w - s) =
+      bif a.msb then BitVec.ofNat w (2 ^ s.toNat - 1) else 0#w := by
+  have hw := Nat.lt_two_pow_self (n := w)
+  have e1 : (s - BitVec.ofNat w 1).toNat = s.toNat - 1 := by
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; omega),
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have e2 : (BitVec.ofNat w w - s).toNat = w - s.toNat := by
+    rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw]; omega),
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw]
+  rw [Sem.ushr, Sem.sshr, Sem.shiftAmt, Sem.shiftAmt, e1, e2, Nat.mod_eq_of_lt (by omega),
+    Nat.mod_eq_of_lt (by omega)]
+  exact pow2_bias h0 hk a
+
+private theorem pow2_shift_bounds {w : Nat} (s : BitVec w) (n : Nat) (hn : n ≤ w)
+    (h1 : BitVec.ofNat w 0 < s) (h2 : s < BitVec.ofNat w n) : 0 < s.toNat ∧ s.toNat < n := by
+  have hw := Nat.lt_two_pow_self (n := w)
+  rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.zero_mod] at h1
+  rw [BitVec.lt_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)] at h2
+  exact ⟨h1, h2⟩
+
 set_option maxHeartbeats 4000000 in
 theorem pow2_sdiv_bv {w : Nat} (hw : w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64) (a s : BitVec w)
     (h1 : BitVec.ofNat w 0 < s) (h2 : s < BitVec.ofNat w (w - 1)) :
     (bif a.msb then -((-a) >>> s) else a >>> s) =
       Sem.sshr (Sem.binary .iadd a (Sem.ushr (Sem.sshr a (s - BitVec.ofNat w 1))
         (BitVec.ofNat w w - s))) s := by
-  rcases hw with rfl | rfl | rfl | rfl <;>
-    simp (disch := decide) only [sshr_mask, ushr_mask, Sem.binary, Sem.iadd, Nat.reduceSub] <;>
-    bv_decide (config := { timeout := 120 })
+  have _ := hw
+  obtain ⟨hk0, hk⟩ := pow2_shift_bounds s (w - 1) (by omega) h1 h2
+  rw [pow2_bias_sem a s hk0 (by omega), pow2_sshr_toNat _ s (by omega)]
+  simp only [Sem.binary, Sem.iadd, BitVec.ushiftRight_eq']
+  cases h : a.msb
+  · simp only [Bool.cond_false, BitVec.add_zero, BitVec.sshiftRight_eq_of_msb_false h]
+  · simp only [Bool.cond_true]; exact (pow2_sshr_neg hk0 (by omega) a h).symm
 
 /-- `arithmetic.isle` 87: `sdiv x (2 ^ k)` (`0 < k < w - 1`) as the biased shift sequence. -/
 theorem pow2_sdiv_seq {t : Ty} (ht : t ≠ .i128) {k : Nat} (h1 : 0 < k) (h2 : k + 1 < t.width)
@@ -542,10 +677,13 @@ theorem pow2_sdiv_neg_bv {w : Nat} (hw : w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64)
     (bif a.msb then (-a) >>> s else -(a >>> s)) =
       Sem.unary .ineg (Sem.sshr (Sem.binary .iadd a (Sem.ushr (Sem.sshr a (s - BitVec.ofNat w 1))
         (BitVec.ofNat w w - s))) s) := by
-  rcases hw with rfl | rfl | rfl | rfl <;>
-    simp (disch := decide) only [sshr_mask, ushr_mask, Sem.binary, Sem.iadd, Sem.unary, Sem.ineg,
-      Nat.reduceSub] <;>
-    bv_decide (config := { timeout := 120 })
+  have _ := hw
+  obtain ⟨hk0, hk⟩ := pow2_shift_bounds s w (Nat.le_refl w) h1 h2
+  rw [pow2_bias_sem a s hk0 hk, pow2_sshr_toNat _ s hk]
+  simp only [Sem.binary, Sem.iadd, Sem.unary, Sem.ineg, BitVec.ushiftRight_eq']
+  cases h : a.msb
+  · simp only [Bool.cond_false, BitVec.add_zero, BitVec.sshiftRight_eq_of_msb_false h]
+  · simp only [Bool.cond_true]; rw [pow2_sshr_neg hk0 hk a h, BitVec.neg_neg]
 
 /-- `arithmetic.isle` 102: `sdiv x (-2 ^ k)` (`0 < k < w`) as the negated biased shift sequence. -/
 theorem pow2_sdiv_neg_seq {t : Ty} (ht : t ≠ .i128) {k : Nat} (h1 : 0 < k) (h2 : k < t.width)
@@ -700,10 +838,26 @@ theorem pow2_srem_bv {w : Nat} (hw : w = 8 ∨ w = 16 ∨ w = 32 ∨ w = 64) (a 
     (bif a.msb then -((-a) &&& (1#w <<< s - 1#w)) else a &&& (1#w <<< s - 1#w)) =
       Sem.binary .isub a (Sem.binary .band (Sem.binary .iadd a (Sem.ushr (Sem.sshr a
         (s - BitVec.ofNat w 1)) (BitVec.ofNat w w - s))) (-(1#w <<< s))) := by
-  rcases hw with rfl | rfl | rfl | rfl <;>
-    simp (disch := decide) only [sshr_mask, ushr_mask, Sem.binary, Sem.iadd, Sem.isub, Sem.band,
-      Nat.reduceSub] <;>
-    bv_decide (config := { timeout := 120 })
+  have _ := hw
+  obtain ⟨hk0, hk⟩ := pow2_shift_bounds s w (Nat.le_refl w) h1 h2
+  have hT : 1#w <<< s = BitVec.twoPow w s.toNat := rfl
+  rw [pow2_bias_sem a s hk0 hk, hT, pow2_neg_twoPow_eq]
+  simp only [Sem.binary, Sem.iadd, Sem.isub, Sem.band]
+  rw [← BitVec.shiftLeft_ushiftRight]
+  cases h : a.msb
+  · simp only [Bool.cond_false, BitVec.add_zero]
+    have := pow2_split hk a
+    generalize a >>> s.toNat <<< s.toNat = P at this ⊢
+    generalize a &&& (BitVec.twoPow w s.toNat - 1#w) = Q at this ⊢
+    rw [BitVec.eq_sub_iff_add_eq, BitVec.add_comm, this]
+  · simp only [Bool.cond_true]
+    rw [← pow2_sshr_shl, pow2_sshr_neg hk0 hk a h, BitVec.shiftLeft_eq_mul_twoPow,
+      BitVec.neg_mul, ← BitVec.shiftLeft_eq_mul_twoPow]
+    have := pow2_split hk (-a)
+    generalize (-a) >>> s.toNat <<< s.toNat = P at this ⊢
+    generalize (-a) &&& (BitVec.twoPow w s.toNat - 1#w) = Q at this ⊢
+    rw [BitVec.sub_neg, BitVec.neg_eq_iff_eq_neg, BitVec.neg_add, ← this, BitVec.add_comm P Q,
+      BitVec.add_sub_cancel]
 
 theorem pow2_srem_seq {t : Ty} (ht : t ≠ .i128) {k : Nat} (h1 : 0 < k) (h2 : k < t.width)
     (a : BitVec t.width) :
