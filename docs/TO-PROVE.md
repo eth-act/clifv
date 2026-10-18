@@ -338,8 +338,16 @@ author's estimate, not measured), **Risk**.
   (kept for `--regalloc regalloc2` and the stock comparison); `cargo fv test --lean-link
   --verified`: fv-demo 20/20 tests, 1346/1352 verified, regions 193628 → 193072 bytes; survey
   53/53, 3179/3179, 564512 → 560148 bytes, binary checks 2/2 and 18/18 (as with regalloc2).
-  Open: the completeness proof (a decidable plan condition implying `AllocChecked`, #275; the
-  planner meeting it, #276).
+  **Validator (#275, part 1):** the plan (`LinearScan.Plan`: one location per vreg and its
+  segments) is checked by the decidable `Ctx.structOk` (a liveness certificate in position form
+  — segments start at births, edges deliver the vregs live at a block's start, uses and defs
+  covered — and interference freedom of registers, homes, fixed-operand claims and clobbers);
+  `planOk vc pl`: it passes and builds (`buildPlan`). `leanAlloc` uses the first validated plan
+  of the linear scan (0, 2, 4 registers withheld for scratch), else the all-spill plan
+  `Fn.spillPlan`. The validator accepts the first plan of every function of all six sets
+  (`large_frame`: no scratch register, as before; the retry is accepted); code bytes unchanged.
+  Open: `planOk ⇒ AllocChecked` (#275), and `planOk` of the all-spill plan on in-scope input
+  (#276).
 
 ### V5. Frame and control-lowering rejections (totality) — **done**
 
