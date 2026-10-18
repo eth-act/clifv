@@ -104,6 +104,28 @@ theorem add128_legal : ∃ g cert, function128Cert add128 = .ok (g, cert) ∧ ch
 
 theorem add128_legalOkB : legalOkB add128 = true := by decide +kernel
 
+/-- `%stack128(i64 × 8, i128) -> i128`: `return v8`, the pair passed on the stack (`x0..x7`
+used up): `Pre` holds and the legalisation, with the halves as the ninth and tenth `i64`
+parameters (no pad: stack offset 0 is 16-aligned), is accepted. -/
+def stack128 : Function where
+  name := "stack128"
+  sig := { params := (List.replicate 8 { ty := .i64 }) ++ [{ ty := .i128 }],
+           returns := [{ ty := .i128 }] }
+  blocks := [{ id := 0, params := ((List.range 8).map (·, .i64)) ++ [(8, .i128)],
+               body := [], term := .ret [8] }]
+
+theorem stack128_pre : Pre stack128 := preB_iff.1 (by decide +kernel)
+
+theorem stack128_legal : ∃ g cert, function128Cert stack128 = .ok (g, cert) ∧
+    g.sig.params = List.replicate 10 { ty := .i64 } ∧ check stack128 g cert = true := by
+  have ht : ((function128Cert stack128).toOption.map (·.1.sig.params)) =
+      some (List.replicate 10 { ty := .i64 }) := by decide +kernel
+  cases h : function128Cert stack128 with
+  | error e => rw [h] at ht; cases ht
+  | ok r =>
+    rw [h] at ht
+    exact ⟨r.1, r.2, rfl, by simpa [Except.toOption] using ht, check_complete stack128_pre h⟩
+
 def blk (body : List Stmt) (term : Terminator) : Block :=
   { id := 0, params := [(0, .i128), (1, .i128)], body, term }
 

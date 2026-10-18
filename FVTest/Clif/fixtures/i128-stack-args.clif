@@ -1,0 +1,87 @@
+; Stack-passed i128 arguments (S4, #28): `Opt.Legalize128.expandGroups` places the halves of an
+; i128 that does not fit in x0..x7 where Cranelift's aarch64 `compute_arg_locs` puts it (a
+; 16-aligned 16-byte stack slot, `next_xreg` unchanged). scripts/lean-backend-filetests.sh runs
+; this file natively against Cranelift's own code.
+test interpret
+test run
+target aarch64
+
+; registers used up: the pair at stack offset 0
+function %s8(i64, i64, i64, i64, i64, i64, i64, i64, i128) -> i128 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i128):
+    v9 = uextend.i128 v0
+    v10 = uextend.i128 v7
+    v11 = iadd v8, v9
+    v12 = iadd v11, v10
+    return v12
+}
+; run: %s8(1, 2, 3, 4, 5, 6, 7, 8, 0x11111111_22222222_33333333_44444444) == 0x11111111_22222222_33333333_4444444d
+; run: %s8(0, 0, 0, 0, 0, 0, 0, 0, -1) == -1
+
+; only x7 left: Cranelift leaves x7 free, the pair at stack offset 0
+function %s7(i64, i64, i64, i64, i64, i64, i64, i128) -> i128 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i128):
+    v8 = uextend.i128 v6
+    v9 = isub v7, v8
+    return v9
+}
+; run: %s7(1, 2, 3, 4, 5, 6, 7, 0x00000000_00000001_00000000_00000000) == 0x00000000_00000000_FFFFFFFF_FFFFFFF9
+; run: %s7(0, 0, 0, 0, 0, 0, 0, 0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF) == 0x7FFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF
+
+; one i64 on the stack first: the pair at the 16-aligned offset 16
+function %s9(i64, i64, i64, i64, i64, i64, i64, i64, i64, i128) -> i128 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64, v9: i128):
+    v10 = uextend.i128 v8
+    v11 = imul v9, v10
+    return v11
+}
+; run: %s9(1, 2, 3, 4, 5, 6, 7, 8, 3, 0x00000000_00000001_00000000_00000005) == 0x00000000_00000003_00000000_0000000f
+; run: %s9(0, 0, 0, 0, 0, 0, 0, 0, 2, -1) == -2
+
+; four pairs in x0..x7, the fifth on the stack
+function %p5(i128, i128, i128, i128, i128) -> i128 {
+block0(v0: i128, v1: i128, v2: i128, v3: i128, v4: i128):
+    v5 = isub v4, v0
+    v6 = bxor v5, v3
+    return v6
+}
+; run: %p5(1, 2, 3, 4, 0x10000000_00000000_00000000_00000010) == 0x10000000_00000000_00000000_0000000b
+; run: %p5(0, 0, 0, -1, -1) == 0
+
+; a pad in x1, pairs in x2..x7, the fourth pair on the stack, then an i64 on the stack
+function %mix(i64, i128, i128, i128, i128, i64) -> i128 {
+block0(v0: i64, v1: i128, v2: i128, v3: i128, v4: i128, v5: i64):
+    v6 = uextend.i128 v5
+    v7 = iadd v4, v6
+    v8 = uextend.i128 v0
+    v9 = iadd v7, v8
+    return v9
+}
+; run: %mix(1, 2, 3, 4, 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFF0, 15) == 0
+; run: %mix(7, 0, 0, 0, 0x00000000_00000001_00000000_00000000, 9) == 0x00000000_00000001_00000000_00000010
+
+; a call passing a pair on the stack
+function %callee8(i64, i64, i64, i64, i64, i64, i64, i64, i128) -> i128 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i128):
+    v9 = uextend.i128 v1
+    v10 = iadd v8, v9
+    return v10
+}
+
+function %caller8(i128) -> i128 {
+    fn0 = %callee8(i64, i64, i64, i64, i64, i64, i64, i64, i128) -> i128
+block0(v0: i128):
+    v1 = iconst.i64 0
+    v2 = iconst.i64 5
+    v3 = call fn0(v1, v2, v1, v1, v1, v1, v1, v1, v0)
+    return v3
+}
+; run: %caller8(0x00000000_00000002_FFFFFFFF_FFFFFFFF) == 0x00000000_00000003_00000000_00000004
+
+; not legalised: Cranelift passes the pair on the stack and the last i64 in x7, which the
+; legalised signature cannot express (the pad holds x7) — reported unsupported
+function %hole(i64, i64, i64, i64, i64, i64, i64, i128, i64) -> i64 {
+block0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i128, v8: i64):
+    return v8
+}
+; run: %hole(1, 2, 3, 4, 5, 6, 7, 8, 9) == 9

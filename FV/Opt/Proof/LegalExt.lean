@@ -50,42 +50,69 @@ theorem except_bind_ok {ε α β : Type} {x : Except ε α} {f : α → Except �
   | error e => cases h
   | ok a => exact ⟨a, rfl, h⟩
 
-theorem groupsOf_go : ∀ (ps : List AbiParam) (k : Nat) (gs : List (List SlotEl)),
-    expandGroups.go ps k = .ok gs → GroupsOf ps gs
-  | [], k, gs, h => by
+theorem groupsOf_go : ∀ (ps : List AbiParam) (k v st : Nat) (hole : Bool)
+    (gs : List (List SlotEl)), expandGroups.go ps k v st hole = .ok gs → GroupsOf ps gs
+  | [], k, v, st, hole, gs, h => by
     simp only [expandGroups.go] at h
     cases h; trivial
-  | p :: ps, k, gs, h => by
+  | p :: ps, k, v, st, hole, gs, h => by
     rw [expandGroups.go] at h
     by_cases hp : (p.ty == .i128) = true
     · rw [if_pos hp] at h
+      have hpt : p.ty = .i128 := by simpa using hp
       by_cases h1 : (p.ext != .none) = true
       · rw [if_pos h1] at h; cases h
       rw [if_neg h1] at h
       by_cases h2 : (p.purpose != .normal) = true
       · rw [if_pos h2] at h; cases h
       rw [if_neg h2] at h
-      by_cases h3 : 8 < k + 2
-      · rw [if_pos h3] at h; cases h
-      rw [if_neg h3] at h
-      obtain ⟨rest, hr, h⟩ := except_bind_ok h
-      cases h
-      refine ⟨.inr ⟨by simpa using hp, ?_⟩, groupsOf_go ps _ rest hr⟩
-      split <;> simp
+      split at h
+      · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+        cases h
+        refine ⟨.inr ⟨hpt, ?_⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        split <;> simp
+      split at h
+      · split at h
+        · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+          cases h
+          exact ⟨.inr ⟨hpt, .inr rfl⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+        · cases h
+      split at h
+      · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+        cases h
+        exact ⟨.inr ⟨hpt, .inl rfl⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+      · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+        cases h
+        exact ⟨.inr ⟨hpt, .inr rfl⟩, groupsOf_go ps _ _ _ _ rest hr⟩
     · rw [if_neg hp] at h
-      obtain ⟨rest, hr, h⟩ := except_bind_ok h
-      cases h
-      exact ⟨.inl ⟨rfl, by simpa using hp⟩, groupsOf_go ps _ rest hr⟩
+      have hpt : p.ty ≠ .i128 := by simpa using hp
+      split at h
+      · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+        cases h
+        exact ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+      split at h
+      · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+        cases h
+        exact ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+      split at h
+      · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+        cases h
+        exact ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
+      split at h
+      · cases h
+      · obtain ⟨rest, hr, h⟩ := except_bind_ok h
+        cases h
+        exact ⟨.inl ⟨rfl, hpt⟩, groupsOf_go ps _ _ _ _ rest hr⟩
 
 theorem groups_spec {ps : List AbiParam} {gs : List (List SlotEl)} (h : groups ps = some gs) :
     GroupsOf ps gs := by
   simp only [groups, expandGroups] at h
-  cases hr : expandGroups.go ps 0 with
+  cases hr : expandGroups.go ps 0 0 0 false with
   | error e => simp [hr, Except.toOption] at h
   | ok gs' =>
     simp [hr, Except.toOption] at h
     subst h
-    exact groupsOf_go ps 0 gs' hr
+    exact groupsOf_go ps 0 0 0 false gs' hr
 
 /-- The types of the expanded values are those of the expanded parameters. -/
 theorem expRel_tys : ∀ {ps : List AbiParam} {gs : List (List SlotEl)} {vs vs' : List Val},

@@ -749,19 +749,19 @@ theorem retsOf_spec {C : Ctx} (hG : CGood C) (rg : List (List SlotEl)) (rs : Lis
 
 
 
-theorem go_plain : ∀ (ps : List AbiParam) (k : Nat), (∀ p ∈ ps, p.ty ≠ .i128) →
-    expandGroups.go ps k = .ok (ps.map fun p => [SlotEl.val p])
-  | [], _, _ => rfl
-  | p :: ps, k, h => by
+theorem go_plain : ∀ (ps : List AbiParam) (k v st : Nat), (∀ p ∈ ps, p.ty ≠ .i128) →
+    expandGroups.go ps k v st false = .ok (ps.map fun p => [SlotEl.val p])
+  | [], _, _, _, _ => rfl
+  | p :: ps, k, v, st, h => by
     have hp : (p.ty == .i128) = false := by simpa using h p (by simp)
+    have ih := fun k v st => go_plain ps k v st (fun q hq => h q (by simp [hq]))
     simp only [expandGroups.go, hp, Bool.false_eq_true, ite_false]
-    rw [go_plain ps _ (fun q hq => h q (by simp [hq]))]
-    rfl
+    (repeat' split) <;> simp_all [bind, Except.bind, pure, Except.pure]
 
 theorem sigExp_plain {d : Signature} (h : sig128 d = false) : sigExp d = some d := by
   simp only [sig128, List.any_eq_false, beq_iff_eq, List.mem_append] at h
-  simp only [sigExp, expandSig, expandGroups, go_plain d.params 0 (fun p hp => h p (.inl hp)),
-    go_plain d.returns 0 (fun p hp => h p (.inr hp))]
+  simp only [sigExp, expandSig, expandGroups, go_plain d.params 0 0 0 (fun p hp => h p (.inl hp)),
+    go_plain d.returns 0 0 0 (fun p hp => h p (.inr hp))]
   simp only [bind, Except.bind, pure, Except.pure, Except.toOption, List.flatMap_map]
   congr
   · simp [elTy]

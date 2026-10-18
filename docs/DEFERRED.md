@@ -170,8 +170,12 @@ Deferred:
 - runs that trap inside a `__*ti3` helper (`i128` division by zero, `sdiv MIN, -1`): the
   backend theorem excludes extern traps (`TrapsExplicit` of the legalised run); covering them
   needs a trapping-helper contract on the Arm side (natively the helper aborts);
-- a correct `umulhi`/`smulhi` expansion at `i128` (now unsupported), `try_call` with `i128`
-  in the validator, `i128` overflow ops and atomics, stack-passed `i128` arguments.
+- a correct `umulhi`/`smulhi` expansion at `i128` (now unsupported), ~~`try_call` with `i128`
+  in the validator~~ (done, legalize128.md "`try_call` and `call_indirect`"), `i128` overflow
+  ops and atomics; ~~stack-passed `i128` arguments~~ done
+  (S4, #28: `expandGroups` places pairs beyond `x0..x7` on the stack as Cranelift does; still
+  unsupported: a later integer argument Cranelift passes in `x7`, legalize128.md "Stack-passed
+  `i128` arguments").
 
 ## Completeness of `Opt.Legal.check`: what `Opt.Legal.Complete.Pre` excludes (2026-10-02)
 
