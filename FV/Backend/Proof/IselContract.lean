@@ -300,6 +300,14 @@ even). -/
   | .max => IEEE.max f .rne a b
   | .min => IEEE.min f .rne a b
 
+/-- S11f: `fpuRRR op` on 128-bit register values at single (`size32`) or double (`size64`)
+precision; the result zero-extended into the register (`write_sfp`). -/
+@[simp] def fpu2Out (op : FPUOp2) (sz : ScalarSize) (a b : CV) : Option CV :=
+  match sz with
+  | .size32 => some ((fpu2Val op .b32 (a.setWidth 32) (b.setWidth 32)).setWidth 128)
+  | .size64 => some ((fpu2Val op .b64 (a.setWidth 64) (b.setWidth 64)).setWidth 128)
+  | _ => none
+
 /-- S11f: the unary scalar FP operations of `fpuRR` on a 128-bit register value (the Arm
 model's `exec_fp_data_processing_one_source`): `fabs`/`fneg`/`fsqrt` at single or double
 precision, `fcvt` single → double (`size` 32) and double → single (`size` 64); the result
@@ -322,6 +330,26 @@ def fcmpFlags (c : IEEE.Cmp) : Arm.PState :=
   let nzcv := Arm.DPSFP.fpCompareNZCV c
   Arm.make_pstate (Arm.BitVec.lsb nzcv 3) (Arm.BitVec.lsb nzcv 2) (Arm.BitVec.lsb nzcv 1)
     (Arm.BitVec.lsb nzcv 0)
+
+/-- S11f: the IEEE comparison `FCMP` performs at single (`size32`) or double (`size64`)
+precision. -/
+@[simp] def fcmpOut (sz : ScalarSize) (a b : CV) : Option IEEE.Cmp :=
+  match sz with
+  | .size32 => some (IEEE.compare .b32 (a.setWidth 32) (b.setWidth 32))
+  | .size64 => some (IEEE.compare .b64 (a.setWidth 64) (b.setWidth 64))
+  | _ => none
+
+/-- S11f: scalar FP arithmetic and comparison (the shared IEEE core, `FPCR = 0`); a scalar FP
+result zeroes the register above it (`write_sfp`). `ispec`'s fallback: a separate match, so that
+`ispec`'s own match (whose equation lemmas every `simp [ispec]` realizes, within the default
+heartbeats) keeps its size. -/
+@[simp] def ispecFP : Sem := fun i uses w =>
+  match i, uses with
+  | .fpuRRR op sz rd _ _, [a, b] => (fpu2Out op sz a b).map fun r => (defOut rd r, w, .next)
+  | .fpuRR op sz rd _, [a] => (fpu1Val op sz a).map fun r => (defOut rd r, w, .next)
+  | .fpuCmp sz _ _, [a, b] =>
+    (fcmpOut sz a b).map fun c => ([], Arm.write_pstate (fcmpFlags c) w, .next)
+  | _, _ => none
 
 /-- **Value-level meaning of the instruction forms the proven rules emit**, in terms of the
 Arm model's operations (`AddWithCarry`, `write_pstate`, `ConditionHolds`): the def values
@@ -526,20 +554,8 @@ def ispec : Sem := fun i uses w =>
     if imm.shift = 0 ∧ imm.shiftOnes = false ∧ imm.is64 = false ∧ sz ≠ .size64x2 then
       some (defOut rd (moviVal sz imm.imm), w, .next)
     else none
-  -- S11f: scalar FP arithmetic and comparison (the shared IEEE core, `FPCR = 0`); a scalar FP
-  -- result zeroes the register above it (`write_sfp`)
-  | .fpuRRR op .size32 rd _ _, [a, b] =>
-    some (defOut rd ((fpu2Val op .b32 (a.setWidth 32) (b.setWidth 32)).setWidth 128), w, .next)
-  | .fpuRRR op .size64 rd _ _, [a, b] =>
-    some (defOut rd ((fpu2Val op .b64 (a.setWidth 64) (b.setWidth 64)).setWidth 128), w, .next)
-  | .fpuRR op sz rd _, [a] => (fpu1Val op sz a).map fun r => (defOut rd r, w, .next)
-  | .fpuCmp .size32 _ _, [a, b] =>
-    some ([], Arm.write_pstate (fcmpFlags (IEEE.compare .b32 (a.setWidth 32) (b.setWidth 32))) w,
-      .next)
-  | .fpuCmp .size64 _ _, [a, b] =>
-    some ([], Arm.write_pstate (fcmpFlags (IEEE.compare .b64 (a.setWidth 64) (b.setWidth 64))) w,
-      .next)
-  | _, _ => none
+  -- S11f: the scalar FP arithmetic and comparison (`ispecFP`)
+  | _, _ => ispecFP i uses w
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
 VCode semantics gives the same def values and the same control (`ispec` only produces `next`,

@@ -310,8 +310,7 @@ theorem opcode_absurd {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {x j
   cases this
   exact hns (instNames_snd_mem cl hE)
 
-/-- The opcode names of the float operations `instData` builds (S11f, `fBinaryOpcode`,
-`fUnaryOpcode`, `fcmp`). -/
+/-- The opcode names of the float operations `instData` builds (S11f, `fOpc`). -/
 def fOpNames : List String :=
   ["Fadd", "Fsub", "Fmul", "Fdiv", "Fmin", "Fmax", "Sqrt", "Fneg", "Fabs", "Fpromote", "Fdemote",
    "Fcmp"]
@@ -322,7 +321,7 @@ theorem instNames_snd_memT (cl : Clif.Inst) :
     (instNames cl).2 ∈ eOpNames ++ ["Bitcast"] ++ fOpNames := by
   cases cl
   case float op ty args =>
-    cases op <;> simp [instNames, fBinaryOpcode, fUnaryOpcode, fOpNames, eOpNames]
+    cases op <;> simp [instNames, fOpc, fOpNames, eOpNames]
   all_goals simp only [instNames]
   all_goals try decide
   all_goals first

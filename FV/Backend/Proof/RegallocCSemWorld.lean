@@ -17,6 +17,18 @@ theorem write_pstate_err (p : Arm.PState) (w : Arm.ArmState) :
     Arm.r .ERR (Arm.write_pstate p w) = Arm.r .ERR w ∧ (Arm.write_pstate p w).program = w.program := by
   simp [Arm.write_pstate, Arm.r_of_w_different, Arm.w_program]
 
+theorem ispecFP_world {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List CV}
+    {w' : Arm.ArmState} {ctl : Ctl} (h : ispecFP i uses w = some (outs, w', ctl)) :
+    Arm.r .ERR w' = Arm.r .ERR w ∧ w'.program = w.program := by
+  revert h
+  unfold ispecFP
+  split
+  all_goals intro h
+  all_goals simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
+  all_goals first
+    | (obtain ⟨_, -, -, rfl, -⟩ := h; exact ⟨rfl, rfl⟩)
+    | (obtain ⟨_, -, -, rfl, -⟩ := h; exact write_pstate_err _ _)
+
 set_option maxHeartbeats 4000000 in
 theorem ispec_world {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List CV}
     {w' : Arm.ArmState} {ctl : Ctl} (h : ispec i uses w = some (outs, w', ctl)) :
@@ -25,7 +37,7 @@ theorem ispec_world {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List
   unfold ispec
   split
   all_goals (repeat' split)
-  all_goals intro h
+  all_goals first | exact ispecFP_world | intro h
   all_goals simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq, reduceCtorEq,
     false_and, and_false] at h
   all_goals first
