@@ -89,6 +89,10 @@ pub struct Config {
     /// an executable whose program part is outside the compiler's source domain (`SrcScopeB`)
     /// or input conditions (`InScopeP`) is an error instead of a bare-linker fallback.
     pub lean_link_verified: bool,
+    /// `--lean-ld`: the executable is linked by the Lean static linker (`lake exe lean-ld`,
+    /// `Link.Ld.link`, docs/research/lean-linker.md §6) instead of rust-lld; rust-lld stays for
+    /// relocatable links (`ld -r`), and links the executable when `lean-ld` rejects an input.
+    pub lean_ld: bool,
     /// `[package.metadata.fv] skip = [...]` of the members: (manifest dir, pattern); matching
     /// functions keep cg_clif's code.
     pub pkg_skip: Vec<(PathBuf, String)>,
@@ -137,6 +141,7 @@ impl Config {
             ("FV_TRAP_REPLACED".into(), if self.trap_replaced { "1" } else { "0" }.into()),
             ("FV_LEAN_LINK".into(), if self.lean_link { "1" } else { "0" }.into()),
             ("FV_LEAN_LINK_VERIFIED".into(), if self.lean_link_verified { "1" } else { "0" }.into()),
+            ("FV_LEAN_LD".into(), if self.lean_ld { "1" } else { "0" }.into()),
             (
                 "FV_PKG_SKIP".into(),
                 self.pkg_skip.iter().map(|(d, p)| format!("{}\t{p}", d.display())).collect::<Vec<_>>().join("\n"),
@@ -166,6 +171,7 @@ impl Config {
                 trap_replaced: var("FV_TRAP_REPLACED")? == "1",
                 lean_link: var("FV_LEAN_LINK")? == "1",
                 lean_link_verified: var("FV_LEAN_LINK_VERIFIED")? == "1",
+                lean_ld: var("FV_LEAN_LD")? == "1",
                 pkg_skip: var("FV_PKG_SKIP")?
                     .lines()
                     .filter_map(|l| l.split_once('\t').map(|(d, p)| (PathBuf::from(d), p.to_string())))

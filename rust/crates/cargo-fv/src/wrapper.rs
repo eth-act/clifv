@@ -631,17 +631,43 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     // `--no-relax`: lld keeps the address pairs as emitted (`adrp; add`, the GOT `adrp; ldr`),
     // resolving only their immediates, so the executable's code is the compiled words (the
     // binary check, `E2E.BinCheck`); relaxed, they would become `nop; adr`
-    let mut lld = Command::new(&cfg.rust_lld);
-    lld.args(&argv).arg("--no-relax").arg(format!("-Map={}", map.display()));
+    let mut extra: Vec<OsString> = vec!["--no-relax".into(), format!("-Map={}", map.display()).into()];
     if let Some((obj, _)) = &part {
-        lld.arg(obj).arg("-u").arg(leanlink::START);
+        extra.extend([obj.clone().into_os_string(), "-u".into(), leanlink::START.into()]);
     }
-    let mut code = match lld.status() {
-        Ok(s) => s.code().unwrap_or(1),
-        Err(e) => {
-            eprint_fv(&format!("cannot run {}: {e}", cfg.rust_lld.display()));
-            return 1;
+    // `--lean-ld`: the Lean static linker (rustc's `-flavor gnu` dropped); rust-lld when it
+    // rejects the inputs
+    let mut code = None;
+    if cfg.lean_ld {
+        let tool = cfg.root.join(".lake/build/bin/lean-ld");
+        let mut args = Vec::new();
+        let mut it = argv.iter();
+        while let Some(a) = it.next() {
+            if a == "-flavor" {
+                it.next();
+            } else {
+                args.push(a.clone());
+            }
         }
+        match Command::new(&tool).args(&args).args(&extra).output() {
+            Ok(o) if o.status.success() => code = Some(0),
+            Ok(o) => eprint_fv(&format!(
+                "--lean-ld: {} failed, linking with rust-lld: {}",
+                tool.display(),
+                String::from_utf8_lossy(&o.stderr).trim()
+            )),
+            Err(e) => eprint_fv(&format!("--lean-ld: cannot run {} (lake build lean-ld): {e}; linking with rust-lld", tool.display())),
+        }
+    }
+    let mut code = match code {
+        Some(c) => c,
+        None => match Command::new(&cfg.rust_lld).args(&argv).args(&extra).status() {
+            Ok(s) => s.code().unwrap_or(1),
+            Err(e) => {
+                eprint_fv(&format!("cannot run {}: {e}", cfg.rust_lld.display()));
+                return 1;
+            }
+        },
     };
     if cfg.keep_link() {
         // `cargo fv link-proof`: which executable this map is of

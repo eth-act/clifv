@@ -267,6 +267,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut members_only = false;
     let mut bin_check = true;
     let mut lean_link = false;
+    let mut lean_ld = false;
     let mut verified = false;
     let mut cargo_args = Vec::new();
     for a in before {
@@ -284,6 +285,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
                 keep_temps = true;
             }
             "--verified" => verified = true,
+            "--lean-ld" => lean_ld = true,
             _ => cargo_args.push(a),
         }
     }
@@ -346,13 +348,14 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     skip_deps.dedup();
     // one target dir per configuration that changes the objects (cargo does not see FV_*)
     let fv_dir = target.join("fv").join(format!(
-        "{}{}{}{}{}{}",
+        "{}{}{}{}{}{}{}",
         mode.name(),
         if members_only { "-members" } else { "" },
         if trap_replaced { "-trap" } else { "" },
         if panic_abort { "-abort" } else { "" },
         if lean_link { "-leanlink" } else { "" },
-        if verified { "-verified" } else { "" }
+        if verified { "-verified" } else { "" },
+        if lean_ld { "-leanld" } else { "" }
     ));
     let cfg = Config {
         root,
@@ -374,6 +377,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         trap_replaced,
         lean_link,
         lean_link_verified: verified,
+        lean_ld,
         pkg_skip,
     };
     let wrapper = std::env::current_exe()
