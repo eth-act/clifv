@@ -13,9 +13,11 @@ backend uses the spill allocation), and its `lean-regalloc`-format answer rebuil
 with the reason —, and the code size (bytes) of the function the
 backend emits with the Lean allocator, with the spill allocation, and (with `--regalloc2`:
 `lean-regalloc`, `$LEAN_REGALLOC` or the checkout's `rust/target/release/lean-regalloc`) with
-regalloc2. Prints one line per fallback (every function with `--verbose`) and a summary line:
+regalloc2. Prints one line per fallback (every function with `--verbose`), one line per function
+whose first linear-scan plan the validator (`LinearScan.Ctx.structOk`, or the builder) rejects
+(`RETRY`, with the reason), and a summary line:
 
-`lean-alloc-stats: N functions, A accepted, F fallback; bytes lean L, spill S, regalloc2 R; U not lowerable with any allocation`
+`lean-alloc-stats: N functions, A accepted, F fallback; bytes lean L, spill S, regalloc2 R; U not lowerable with any allocation; P first plans rejected by the validator`
 -/
 
 open Backend
@@ -38,6 +40,7 @@ def main (args : List String) : IO UInt32 := do
   let mut bl := 0
   let mut bs := 0
   let mut br := 0
+  let mut rep := 0
   for file in files do
     let pf := (Opt.Legalize128.parsedFile128 (Clif.parseFile (← IO.FS.readFile file))).file
     let vcps : Array (String × VCode) := pf.funcs.toArray.filterMap fun p =>
@@ -60,6 +63,13 @@ def main (args : List String) : IO UInt32 := do
         continue
       n := n + 1
       let la := leanAlloc vcp
+      -- the linear scan's first plan is used unless the validator rejects it
+      let why := match LinearScan.Fn.make vcp with
+        | .ok fn => (LinearScan.Ctx.ofPlan fn (fn.plan (LinearScan.reserved 0))).whyNot
+        | .error e => s!"Fn.make: {e}"
+      if why != "ok" then
+        rep := rep + 1
+        IO.println s!"RETRY {file} %{name}: first plan rejected: {why.take 200}"
       let verdict := match la with
         | .ok rf => match checkAlloc vcp rf with
           | .ok () => match lowerRFunc vcp rf with
@@ -84,5 +94,5 @@ def main (args : List String) : IO UInt32 := do
       | some e =>
         fb := fb + 1
         IO.println s!"FALLBACK {file} %{name}: {e.take 300}"
-  IO.println s!"lean-alloc-stats: {n} functions, {acc} accepted, {fb} fallback; bytes lean {bl}, spill {bs}, regalloc2 {br}; {nl} not lowerable with any allocation"
+  IO.println s!"lean-alloc-stats: {n} functions, {acc} accepted, {fb} fallback; bytes lean {bl}, spill {bs}, regalloc2 {br}; {nl} not lowerable with any allocation; {rep} first plans rejected by the validator"
   pure (if fb == 0 then 0 else 1)

@@ -202,7 +202,7 @@ register allocator written in Lean. Its answer is used exactly as regalloc2's:
 replaces it. Every theorem stated for an arbitrary answer `ra`
 (`E2E.backend_correct_final_alloc_proven`, `E2E.backend_correct_final_total_emit`, …) therefore
 covers it with no new proof; no external process runs. Open: a proof that the fallback is never
-taken (#275, #276).
+taken (#275, #276; the validator below is its first part).
 
 Since V4b-2 (#274) it is the default allocator of `lean-backend`, `lean-backend-armrun`, the
 filetest and encode-check scripts, and so of `cargo fv` (which no longer needs `lean-regalloc`).
@@ -214,7 +214,8 @@ it with `parseRAOut`/`buildRFunc` as before. `raAnswerRoundTrip` checks that the
 is the allocation (else the answer is a failed one, and the consumer uses the spill
 allocation); `lean-alloc-stats` reports any function where it is not.
 
-Design: an untrusted planner (`Fn.plan`) and a deterministic builder (`Plan.build`).
+Design: an untrusted planner (`Fn.plan`), a decidable validator of its plan (`Ctx.structOk`)
+and a deterministic builder (`Ctx.build`).
 
 - **Positions**: five per instruction (`pos g s = 5g + s`): 0 move sources and branch arguments
   read, 1 moves into operand registers and block parameters written, 2 early uses/defs, 3 late
@@ -234,14 +235,24 @@ Design: an untrusted planner (`Fn.plan`) and a deterministic builder (`Plan.buil
   (so floats live across calls are spilled: the checker treats v8–v15 as clobbered).
 - **Builder**: operands in place when their vreg has a register; a fixed operand moved into/out
   of its register; an operand of a spilled vreg in a scratch register free at that instruction
-  (no segment, claim or other operand register meets it), loaded before / stored after (dead
-  defs are not stored); a `movk` def shares its register with the use it reuses; the block
-  arguments of a `jump` as a parallel copy into the parameters' locations; the live results of a
-  `try_call` moved out of their fixed registers at the start of its successor. Parallel moves are
-  sequentialised (`seqMoves`: a cycle through a free register or a temporary stack slot,
-  memory-to-memory through a free register). Callee-saved registers the allocation uses get the
-  saves and restores of `buildRFunc`. Without a free scratch register the planner retries with 2,
-  then 4, registers per class withheld; then `leanAlloc` fails (spill fallback).
+  (no segment of a vreg in it, no fixed operand, clobber or other operand register of the
+  instruction meets it), loaded before / stored after (dead defs are not stored); a `movk` def
+  shares its register with the use it reuses; the block arguments of a `jump` as a parallel
+  copy into the parameters' locations (`seqMoves`: a cycle through a second free register or a
+  temporary stack slot, memory-to-memory through a free register); the live results of a
+  `try_call` moved out of their fixed registers at the start of its successor. The moves
+  around an instruction and out of a `try_call` need no sequencing in a validated plan
+  (`cleanMoves`). Callee-saved registers the allocation uses get the saves and restores of
+  `buildRFunc`.
+- **Validator** (`Ctx.structOk`; `planOk vc pl`: it passes and the plan builds): every segment
+  starts where its vreg gets its value (a block start, its def, a `jump`'s parameter copy),
+  every edge into a block delivers the vregs live at its start (a parameter: its argument live at
+  the `jump`), every use and def is covered, registers are in their vreg's class pool, the
+  segments in one register (`occ`) or home (`homeOcc`) are disjoint and miss the other vregs'
+  fixed-operand claims and the clobbers. `leanAlloc` uses the first plan of the linear scan that
+  passes (0, then 2, then 4 registers per class withheld for scratch), else the all-spill plan
+  (`Fn.spillPlan`). `lean-alloc-stats` reports every function whose first plan is rejected
+  (`whyNot`).
 
 `lake exe lean-alloc-stats [--regalloc2] FILE.clif…` reports, per function that lowers, whether
 `checkAlloc` accepts `leanAlloc`'s allocation and the bytes of the emitted function with it,
