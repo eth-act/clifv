@@ -72,12 +72,14 @@ unordered by `hb`. RC11's `acyclic(po ∪ rf)` (no out-of-thin-air) is deliberat
 contract: Armv8 does not provide it for plain accesses, and a load-buffering cycle through plain
 accesses is a race, undefined behaviour in Rust.
 
-**Why this composes with the single-thread refinement.** The bridge is DRF-SC: for a race-free
-execution every consistent execution is sequentially consistent, and an SC execution is an
-interleaving in which every read sees the latest write to its location. Each thread's slice of an
-interleaving is a run of that thread against a sequential memory, which is what `Clif.run` and
-`E2E.backend_correct_final` already describe (the single-core assumption is exactly "the other
-threads' writes happen between my steps").
+**How this composes with the single-thread refinement.** The bridge is DRF-SC: for a program
+race-free in every consistent execution, every consistent execution is sequentially consistent,
+and an SC execution is an interleaving in which every read sees the latest write to its location
+(`Prog.replay`: a run of the multi-threaded machine). Each thread's slice of an interleaving is a
+run of that thread against a memory that other threads change between its steps. That is *not*
+what `Clif.run` and `E2E.backend_correct_final` describe (a run without interference, and no
+statement about the compiled code's intermediate footprint): the per-thread step needs an
+event-level refinement with interference, the contract `ProgE2E.Realizes` of §3c (T2h).
 
 ## 3. Theorem shape (done: T2a–T2c)
 
@@ -149,6 +151,53 @@ loop as emitted (`ldaxr x27, [x25]; add; stlxr w24, x28, [x25]; cbnz w24`) reads
 `retry_succ` is the successful `stlxr` (a `relXW` event of the sum). `no_xfail_sc`: the
 single-core monitor never fails.
 
+## 3c. Program level (done: T2e; contract open: T2h)
+
+**Why `backend_correct_final` does not compose per thread** (both findings matter to anyone
+extending the E2E theorems to threads):
+
+1. *No interference.* It is a whole-run theorem: `Clif.runLoop` reads its own memory, and an
+   extern call's result is a function of its arguments and the memory (`Clif.Env.extern`). Other
+   threads' writes between a thread's steps (an atomic load in a spin loop, message passing) are
+   not expressible, neither on the CLIF nor on the Arm side (`ArmStepX`, hooks only at calls).
+2. *No footprint.* It says nothing about the memory the compiled code touches before it returns
+   (only the final `MemAgree`), so even threads that never communicate cannot be composed: a
+   transient write to another thread's data is not excluded.
+
+So the program-level statement takes the per-thread *event-level* refinement as an explicit
+contract, and discharging it needs the backend layers re-proven with interference (T2h, #311).
+
+**Files.** `FV/Concurrency/Program.lean`: thread semantics `TSem` with memory events, the
+interleaving machine `MStep`/`MRun` over a memory interface `MemI`, executions of programs
+(`Traces.exec`: initial writes `init q` and positions `thr i j k`), `drf_sc_init` (DRF-SC with
+initial writes, which race with nothing), `sc_of_rank_on`. `FV/Concurrency/Replay.lean`: **replay**
+— a finite SC execution (reads read their writes' values, no partially overlapping accesses,
+steps are single events or atomic updates, initial writes `co`-first) is a run of the interleaving
+machine whose final memory holds the `co`-last writes (greedy on the *step rank*, the largest
+interleaving rank of a thread's events so far). `FV/Concurrency/ClifThread.lean`: the
+**multi-threaded `Clif.run`** `MTStep`/`MTRun` (threads share the bytes; allocation metadata is
+per thread; extern calls that touch memory have no step; `tls_value` is the image's instance), the
+CLIF thread event semantics `CStep` (events by statement: `naR`/`naW`/`scR`/`scW`/`fence`, sizes
+fixed, so the footprint pins the addresses), `mrun_mt`. `FV/Concurrency/ProgramE2E.lean`:
+
+* `ATStep`: the Arm threads (`ArmThread.TStep` of each thread's machine under `Policy.arm`);
+* `RaceFreeProg`: every execution of the CLIF program consistent for the Cranelift contract is
+  race-free. **This is the C++20/Rust definition of a program without undefined behaviour** (a
+  data race in any consistent execution is UB), so no prefix argument is needed — which would fail
+  here anyway: neither the contract nor the Arm fragment excludes load-buffering cycles through
+  plain accesses (no `dob`, no `acyclic(po ∪ rf)`, §2);
+* `Realizes` (**the contract**): the CLIF traces embed into the Arm traces (`φ` preserving program
+  order, thread, direction, location, size, value, initial writes; kinds by `Maps`); CLIF reads read
+  from CLIF writes (frame separation); atomic updates are `rmw`-paired; outcomes related by `Obs`;
+* `program_correct`: Armv8-consistent Arm execution + `Realizes` + `RaceFreeProg` ⇒ the CLIF
+  execution is SC (`wfC`, `consistentC` = theorem 2 along `φ`, `drf_sc_init`), and the
+  multi-threaded `Clif.run` reaches the CLIF threads' final states with the `co`-last values in
+  memory and the outcomes `Obs`.
+
+Non-vacuity (`FV/Concurrency/ProgramWitness.lean`): `mp_replay` (message passing replayed, final
+`x = y = 1`), `ret_correct` (`program_correct` for two returning threads, race-freedom proven
+over all executions of the program, `ret_raceFree`).
+
 ## 4. Testing (the oracle)
 
 qemu is not weak-memory faithful (TCG on an x86 host is close to TSO), so it cannot show that a
@@ -172,11 +221,13 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2b (#300) | Code-level classification of `Backend.Insn`/`MInst.lines` (`FV/Concurrency/Code.lean`) | **done** |
 | T2c (#301) | Litmus tests in Lean + qemu harness | **done** |
 | T2d (#302) | Per-thread event semantics of the Arm model: the run of one thread as a trace of memory events with an exclusive monitor (failing `stlxr`, the `cbnz` retry); the existing single-core model is that semantics against an SC memory with a monitor that never fails | **done** |
-| T2e (#303) | Program level: multi-threaded `Clif.run` (interleavings), DRF-SC for programs (the prefix argument over T2d's traces; `hb` with thread spawn/join edges, so initialising writes are ordered), and the whole-program statement composing theorem 4 with `backend_correct_final` per thread | open, needs T2d |
+| T2e (#303) | Program level: multi-threaded `Clif.run` (`ClifThread.MTRun`), program-level DRF-SC (race-freedom in every contract-consistent execution, initial writes `co`-first), replay of SC executions as interleaving runs, and the program-level statement `ProgE2E.program_correct` with the per-thread contract `Realizes` (§3c) | **done** |
+| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference) | open |
 | T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem | open |
 | T2g (#305) | Widening: LSE atomics (`has_lse`), mixed-size accesses, `i128` atomics, the full `aarch64.cat` (`dob`, `dmb.ld/st`) | open |
 
-The existing single-core assumption stays in the trusted base of `E2E.backend_correct_final` until
-T2e is done. T2a–T2c replace "a multi-core memory model is a project of its own" by a proven
+The existing single-core assumption stays in the trusted base of `E2E.backend_correct_final`, and
+#38 stays open, until T2h is done (§3c: T2e composes the memory-model layer with an explicit
+per-thread contract that `backend_correct_final` does not imply). T2a–T2c replace "a multi-core memory model is a project of its own" by a proven
 mapping at the execution level: every Armv8 execution of Cranelift's atomics code is consistent
 for the Cranelift contract, and SC (an interleaving) when the program is race-free.

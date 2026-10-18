@@ -6,10 +6,11 @@ import FV.Concurrency.Mapping
 A finite sequentially consistent execution has a rank (its position in an interleaving) that
 increases along `po ∪ com`: in any total order refining the rank, every read reads the latest
 write to its location before it, and no write to the location of an atomic update falls between
-its read and its write. This is the interface to the sequential semantics: each thread's slice of
-the interleaving runs against a memory where the other threads' writes happen between its steps,
-which is what `Clif.run` and `E2E.backend_correct_final` describe for one thread. Composed with the
-mapping: `Mapping.armv8_interleaving`. Plan: `docs/plans/atomics.md`.
+its read and its write. Each thread's slice of the interleaving runs against a memory where the
+other threads' writes happen between its steps (`Prog.replay` turns it into a run of the
+multi-threaded machine); relating that to the compiled code needs the per-thread contract
+`ProgE2E.Realizes`, which `E2E.backend_correct_final` (no interference) does not give
+(`docs/plans/atomics.md` §3c). Composed with the mapping: `Mapping.armv8_interleaving`.
 -/
 
 namespace Concurrency

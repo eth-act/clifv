@@ -35,7 +35,18 @@ import FVTest.Concurrency.Litmus
 #print axioms Concurrency.ArmThread.footprint_dmb
 #print axioms Concurrency.ArmThread.footprint_load_excl
 #print axioms Concurrency.ArmThread.footprint_store_excl
+-- program level (T2e, #303)
+#print axioms Concurrency.Prog.drf_sc_init
+#print axioms Concurrency.Prog.sc_of_rank_on
+#print axioms Concurrency.Prog.replay
+#print axioms Concurrency.ClifThread.mrun_mt
+#print axioms Concurrency.ProgE2E.wfC
+#print axioms Concurrency.ProgE2E.consistentC
+#print axioms Concurrency.ProgE2E.program_correct
 -- non-vacuity witnesses
+#print axioms Concurrency.ProgWitness.mp_replay
+#print axioms Concurrency.ProgWitness.ret_raceFree
+#print axioms Concurrency.ProgWitness.ret_correct
 #print axioms Concurrency.ArmThread.Witness.retry_run
 #print axioms Concurrency.ArmThread.Witness.retry_succ
 #print axioms Concurrency.ArmThread.Witness.evWrite_eq
