@@ -394,13 +394,19 @@ longer consume an `x` register), then 8-byte stack slots; an `i128` that does no
 does not advance `next_xreg`. The legalised signature passes the halves as two `i64` parameters,
 which the backend places in the next stack slots once `x0..x7` are used up (`argLocs`):
 registers used up, the pair, after an `i64` pad when the stack offset is not 16-aligned; only
-`x7` left, a pad in `x7` and the pair on the stack (a 16-aligned offset required). Cranelift
-passes a later integer parameter in `x7`, which the legalised signature cannot express: such
-signatures (and the `x7` case at an unaligned stack offset) still make the legalisation fail.
-The groups keep their shapes (`[.lo, .hi]`, `[.pad, .lo, .hi]`), so the validator and its
-soundness and completeness proofs are unchanged (`groupsOf_go`, `go_plain` follow the new
-recursion). Witness: `Opt.Legal.Complete.Witness.stack128` (`(i64 × 8, i128) -> i128`: `Pre`,
-legalised to ten `i64` parameters, accepted). Native check:
+`x7` left (a 16-aligned stack offset required), the pair on the stack and `x7` to the next
+integer parameter, as Cranelift does: when the next parameter is an integer (`x7` placement),
+the legalised signature passes it first, in `x7`, then the halves — the `i128`'s group is
+`[.val q, .lo, .hi]` (`q` that parameter) and `q`'s own group is empty; otherwise a pad takes
+`x7`, and a later integer parameter (which Cranelift would pass in `x7`) still makes the
+legalisation fail, as does the `x7` case at an unaligned stack offset. The validator follows the
+groups: `expandArgs` (call arguments), `entryParamsOk` (entry parameters; the pass's
+`entryParams`), `expandRunArgs` and the proofs' `ExpRel`/`GroupsOf` (`groupsOf_cons`) have the
+`x7` case; returns keep the old shapes (`retsOk` has no `x7` case, more than eight legalised
+returns are rejected by the backend anyway). Witnesses: `Opt.Legal.Complete.Witness.stack128`
+(`(i64 × 8, i128) -> i128`: `Pre`, legalised to ten `i64` parameters, accepted) and `hole128`
+(`(i64 × 7, i128, i64) -> i128`: `Pre`, legalised with the last `i64` as the eighth parameter and
+the halves as the ninth and tenth, accepted, `hole128_legal`). Native check:
 `FVTest/Clif/fixtures/i128-stack-args.clif` (`scripts/lean-backend-filetests.sh`: 11 runs agree
 with Cranelift's code — all registers used, `x7` left, a stack pad, a fifth pair, a pair then
 an `i64` on the stack, a call passing a pair on the stack; the seven functions are verified;
@@ -512,8 +518,9 @@ same holds for `corpus/clif-regress/call_indirect.clif`.
   `check` (`indOldB`; `LegalSimS`'s `step_sim`/`step_sim_out` exclude `callInd128` and
   `try_call_indirect` by it). `lean-backend` labels such a function with landing pads verified
   for normal returns only (`backend_correct_legal_wide`).
-* Stack-passed `i128` arguments followed by an integer argument Cranelift passes in `x7`
-  (above): not legalised.
+* An `i128` at `x7` (only `x7` left) followed by a float or another `i128` and then an integer
+  parameter Cranelift passes in `x7`, and the `x7` case at an unaligned stack offset (above): not
+  legalised (the `x7` placement covers an integer parameter right after the `i128`).
 
 `func_addr` (release survey `g_u128` test functions pass function pointers to the test
 harness; agent/last-unverified "release i128"): planned as `same` when the declaration's name in
