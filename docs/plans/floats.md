@@ -197,8 +197,8 @@ float accesses as their Arm runs (`RegallocMemFP.execMInst_fpuLoad`/`execMInst_f
 satisfies `Refines`, `MemRefinesR` and `MemRefinesFP`. Instruction selection matches Cranelift's
 for the same CLIF (`FVTest/Backend/FloatMove.lean`, Cranelift filetests `select.clif`,
 `constants.clif`, `bitcast.clif`), and the Lean backend's code runs as Cranelift-native's does
-under qemu: the steps of `scripts/lean-backend-filetests.sh` on
-`FVTest/Backend/float_move.clif` give 17 runs, 17 pass, 17 agree with Cranelift-native, and the
+under qemu: `scripts/lean-backend-filetests.sh FVTest/Backend/float_move.clif` gives 17 runs,
+17 pass, 17 agree with Cranelift-native, and the
 object's `.text` is byte-identical to `llvm-mc`'s. Its functions have integer signatures, since
 `ctlCheck` keeps `args`/`rets` integer until S11e5. **Interim, S11e5:** no consumer takes the `T`
 targets yet (driver, lockstep and end-to-end theorems keep `CtxInv`/`Compile.functionE`; `csemG`
