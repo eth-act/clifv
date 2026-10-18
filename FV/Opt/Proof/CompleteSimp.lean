@@ -1,4 +1,4 @@
-import FV.Opt.Proof.CompleteSimpRunDef
+import FV.Opt.Proof.CompleteSimpRun
 import FV.Opt.Proof.CompleteOptimize
 
 /-!
@@ -618,4 +618,70 @@ theorem simplify_complete_of_inv {rules : SimplifyFn} {skel : SkeletonFn} {remat
 
 end Assemble
 
+/-- **Completeness of the simplifier** under the rule hypotheses: on a well-formed function the
+validator accepts the output, `check` accepts it once its unreachable blocks are removed, and the
+guard facts hold (`F0`: the pipeline's input, whose `allowedIn` excludes `symbol_value`). -/
+theorem simplify_complete {rules : SimplifyFn} {skel : SkeletonFn} (rematConst : Bool)
+    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) (F0 g : Function) (info : Info)
+    (hg : check g = .ok info) :
+    simpOk g (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).1 info
+        (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).2.2 = true ∧
+      (∃ i, check (removeUnreachable
+        (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).1) = .ok i) ∧
+      SimpGuard F0 g (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).1 :=
+  have hc := checked_of_check hg
+  simplify_complete_of_inv hc (simplify_run_inv hc hR hK (allowedIn_symbolValue F0))
+
+/-- **Completeness of the simplify stage** (`SimpStageOk`) under the rule hypotheses. -/
+theorem simpStageOk_of {cfg : Config} (hR : SimpRulesOk cfg.simplifyFn)
+    (hK : SkelRulesOk cfg.skeletonFn) : SimpStageOk cfg :=
+  fun F0 g info hg => simplify_complete cfg.rematConst hR hK F0 g info hg
+
+/-- **Completeness of the mid-end under the rule hypotheses** (`optimizeReport_complete` with
+`simpStageOk_of`): on an input that is well formed once its unreachable blocks are removed, no stage
+of `optimizeReport` stops and the result is the unvalidated pipeline. -/
+theorem optimize_complete_of_rules {cfg : Config} (hR : SimpRulesOk cfg.simplifyFn)
+    (hK : SkelRulesOk cfg.skeletonFn) (f0 : Function)
+    (h : ∃ i, check (removeUnreachable f0) = .ok i) :
+    (optimizeReport cfg f0).2.passError = none ∧
+      (optimizeReport cfg f0).1 = runStages cfg (removeUnreachable f0) :=
+  optimizeReport_complete cfg f0 h (.inr (simpStageOk_of hR hK))
+
 end Opt
+
+namespace Opt.CompleteSimpWitness
+
+open Clif
+
+/-- Block 0 computes `iconst.i32 7` and jumps to block 1, which computes it again and returns it. -/
+def fn : Function where
+  name := "w"
+  sig := { returns := [{ ty := .i32 }] }
+  blocks := [
+    { id := 0, body := [{ results := [0], inst := .iconst .i32 7 }], term := .jump ⟨1, []⟩ },
+    { id := 1, body := [{ results := [1], inst := .iconst .i32 7 }], term := .ret [1] }]
+
+/-- The simplifier with the empty rule set and the hand skeleton rules on `fn`. -/
+abbrev run : Function × SimplifyStats × SimpCert :=
+  simplify noRules HandRules.simplifySkeleton (allowedIn fn) (skelAllowedIn fn) false fn (coreInfo fn)
+
+/-- **Non-vacuity of `simplify_complete`**: `fn` is well formed; hash-consing (no rule fires) renames
+`v1` to `v0`, defined in the dominating block 0, so block 1 loses its statement and returns `v0`; and
+the theorem applies (the empty rule set satisfies `SimpRulesOk`, the hand skeleton rules
+`SkelRulesOk`): the validator accepts, `check` accepts after `removeUnreachable`, the guard facts hold. -/
+theorem witness :
+    check fn = .ok (coreInfo fn) ∧
+      run.1.blocks.map (·.body) = [[{ results := [0], inst := .iconst .i32 7 }], []] ∧
+      run.1.blocks.map (·.term) = [.jump ⟨1, []⟩, .ret [0]] ∧
+      run.2.2.subst.get? 1 = some 0 ∧
+      simpOk fn run.1 (coreInfo fn) run.2.2 = true ∧
+      (∃ i, check (removeUnreachable run.1) = .ok i) ∧ SimpGuard fn fn run.1 := by
+  have hc : check fn = .ok (coreInfo fn) := by
+    have h0 : (match check fn with | .ok _ => true | .error _ => false) = true := by native_decide
+    split at h0
+    · rename_i i hi; rw [hi, ← coreInfo_of_check hi]
+    · cases h0
+  exact ⟨hc, by native_decide, by native_decide, by native_decide,
+    simplify_complete false simpRulesOk_noRules skelRulesOk_hand fn fn _ hc⟩
+
+end Opt.CompleteSimpWitness
