@@ -352,4 +352,123 @@ theorem TermLogFact.mono {b0 : Block} {lg : BlockLog} (h : TermLogFact B st S b0
 
 end Mono
 
+/-! ## The leaves -/
+
+/-- The leaves of `f` with their blocks (`initAvail`'s insertions). -/
+def leafList (f : Function) : List (ValueId × Nat) :=
+  f.blocks.zipIdx.flatMap fun x => x.1.params.map (fun p => (p.1, x.2)) ++
+    (x.1.body.filter skeletonStmt).flatMap fun s => s.results.map (·, x.2)
+
+theorem params_fold (ps : List (ValueId × Ty)) (bi : Nat) (m : Std.HashMap ValueId Nat) :
+    ps.foldl (fun av (x : ValueId × Ty) => match x with | (p, _) => av.insert p bi) m =
+      (ps.map fun p => (p.1, bi)).foldl (fun m (x : ValueId × Nat) => m.insert x.1 x.2) m := by
+  induction ps generalizing m with
+  | nil => rfl
+  | cons p ps ih => exact ih _
+
+theorem body_fold (body : List Stmt) (bi : Nat) (m : Std.HashMap ValueId Nat) :
+    body.foldl (fun av s =>
+      if (!(isPure s.inst && s.results.length == 1)) = true then
+        s.results.foldl (fun av r => av.insert r bi) av
+      else av) m =
+      ((body.filter skeletonStmt).flatMap fun s => s.results.map (·, bi)).foldl
+        (fun m (x : ValueId × Nat) => m.insert x.1 x.2) m := by
+  induction body generalizing m with
+  | nil => rfl
+  | cons s ss ih =>
+    rw [List.foldl_cons, List.filter_cons]
+    by_cases hs : skeletonStmt s = true
+    · have hs' : (!(isPure s.inst && s.results.length == 1)) = true := hs
+      rw [if_pos hs', if_pos hs, List.flatMap_cons, List.foldl_append, List.foldl_map, ih]
+    · have hs' : ¬ (!(isPure s.inst && s.results.length == 1)) = true := hs
+      rw [if_neg hs', if_neg hs, ih]
+
+theorem initAvail_eq (f : Function) :
+    initAvail f = (leafList f).foldl (fun m x => m.insert x.1 x.2) {} := by
+  unfold initAvail leafList
+  rw [List.foldl_flatMap]
+  congr 1
+  funext av x
+  obtain ⟨b, bi⟩ := x
+  simp only [List.foldl_append]
+  rw [params_fold, body_fold]
+
+theorem foldl_insert_get2 {l : List (ValueId × Nat)} :
+    ∀ (m : Std.HashMap ValueId Nat) v d,
+      (l.foldl (fun m (x : ValueId × Nat) => m.insert x.1 x.2) m).get? v = some d →
+      m.get? v = some d ∨ (v, d) ∈ l := by
+  induction l with
+  | nil => intro m v d h; exact .inl h
+  | cons x l ih =>
+    intro m v d h0
+    rw [List.foldl_cons] at h0
+    rcases ih _ v d h0 with h1 | h1
+    · rw [hm_get?_insert] at h1
+      split at h1
+      · rename_i he
+        simp only [Option.some.injEq] at h1
+        subst he; subst h1; exact .inr (by simp)
+      · exact .inl h1
+    · exact .inr (List.mem_cons_of_mem _ h1)
+
+theorem sublist_flatMap {α β : Type} {l : List α} {g h : α → List β}
+    (hs : ∀ a ∈ l, (g a).Sublist (h a)) : (l.flatMap g).Sublist (l.flatMap h) := by
+  induction l with
+  | nil => exact List.Sublist.refl _
+  | cons a l ih =>
+    simp only [List.flatMap_cons]
+    exact (hs a (by simp)).append (ih fun a ha => hs a (List.mem_cons_of_mem _ ha))
+
+theorem filter_flatMap_sublist (l : List Stmt) :
+    ((l.filter skeletonStmt).flatMap (·.results)).Sublist (l.flatMap (·.results)) := by
+  induction l with
+  | nil => exact List.Sublist.refl _
+  | cons s ss ih =>
+    rw [List.filter_cons]
+    split
+    · simp only [List.flatMap_cons]; exact ih.append_left _
+    · simp only [List.flatMap_cons]; exact ih.trans (List.sublist_append_right _ _)
+
+theorem leafList_nodup {f : Function} (hu : UniqueDefs f) : ((leafList f).map (·.1)).Nodup := by
+  refine List.Sublist.nodup ?_ hu
+  have e1 : (leafList f).map (·.1) = f.blocks.zipIdx.flatMap fun x =>
+      x.1.params.map (·.1) ++ (x.1.body.filter skeletonStmt).flatMap (·.results) := by
+    simp [leafList, List.map_flatMap, List.map_append, Function.comp_def, List.flatMap_map]
+  have e2 : (defSites f).map (·.1) = f.blocks.zipIdx.flatMap fun x =>
+      x.1.params.map (·.1) ++ x.1.body.flatMap (·.results) := by
+    simp only [defSites, List.map_flatMap, List.map_append, List.map_map]
+    congr 1; funext x
+    have := sites_body_fst x.2 x.1.body 0
+    simp only [List.map_flatMap, List.map_map] at this
+    simp only [Function.comp_def] at this ⊢
+    rw [this]
+  rw [e1, e2]
+  exact sublist_flatMap fun x _ => (List.Sublist.refl _).append (filter_flatMap_sublist _)
+
+/-- **The leaves**: `initAvail` maps each block parameter and skeleton result to its block. -/
+theorem initAvail_get {f : Function} (hu : UniqueDefs f) (x : ValueId) (d : Nat) :
+    (initAvail f).get? x = some d ↔ (x, d) ∈ leafList f := by
+  rw [initAvail_eq]
+  constructor
+  · intro h
+    rcases foldl_insert_get2 _ x d h with h | h
+    · simp at h
+    · exact h
+  · intro h
+    have := foldl_insert_get_nodup _ (leafList_nodup hu) (x, d) h {}
+    rw [Std.HashMap.get?_eq_getElem?]; exact this
+
+theorem mem_leafList {f : Function} {x : ValueId} {d : Nat} :
+    (x, d) ∈ leafList f ↔ ∃ b, f.blocks[d]? = some b ∧
+      ((∃ p ∈ b.params, p.1 = x) ∨ ∃ s ∈ b.body, skeletonStmt s = true ∧ x ∈ s.results) := by
+  simp only [leafList, List.mem_flatMap, List.mem_append, List.mem_map, List.mem_filter,
+    Prod.mk.injEq, List.mem_zipIdx_iff_getElem?]
+  constructor
+  · rintro ⟨⟨b, i⟩, hb, ⟨p, hp, rfl, rfl⟩ | ⟨s, ⟨hs, hsk⟩, r, hr, rfl, rfl⟩⟩
+    · exact ⟨b, hb, .inl ⟨p, hp, rfl⟩⟩
+    · exact ⟨b, hb, .inr ⟨s, hs, hsk, hr⟩⟩
+  · rintro ⟨b, hb, ⟨p, hp, rfl⟩ | ⟨s, hs, hsk, hr⟩⟩
+    · exact ⟨(b, d), hb, .inl ⟨p, hp, rfl, rfl⟩⟩
+    · exact ⟨(b, d), hb, .inr ⟨s, ⟨hs, hsk⟩, x, hr, rfl, rfl⟩⟩
+
 end Opt
