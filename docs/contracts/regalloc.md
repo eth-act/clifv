@@ -201,8 +201,11 @@ register allocator written in Lean. Its answer is used exactly as regalloc2's:
 `checkAlloc` accepts it (and `lowerRFunc`, `emitReady` accept it), else the spill allocation
 replaces it. Every theorem stated for an arbitrary answer `ra`
 (`E2E.backend_correct_final_alloc_proven`, `E2E.backend_correct_final_total_emit`, …) therefore
-covers it with no new proof; no external process runs. Open: a proof that the fallback is never
-taken (#275, #276; the validator below is its first part).
+covers it with no new proof; no external process runs. Completeness (#275, #276) is proven:
+the allocation of every in-scope function is accepted (`E2E.leanAlloc_accepted`:
+`AllocChecked`; `E2E.leanCheckAlloc`: `checkAlloc` accepts it under `SpillDefinedHyp`, as for the
+spill allocation), and `E2E.backend_correct_final_leanAlloc` is the end-to-end theorem for it
+(see "Proof" below).
 
 Since V4b-2 (#274) it is the default allocator of `lean-backend`, `lean-backend-armrun`, the
 filetest and encode-check scripts, and so of `cargo fv` (which no longer needs `lean-regalloc`).
@@ -253,6 +256,19 @@ and a deterministic builder (`Ctx.build`).
   passes (0, then 2, then 4 registers per class withheld for scratch), else the all-spill plan
   (`Fn.spillPlan`). `lean-alloc-stats` reports every function whose first plan is rejected
   (`whyNot`).
+- **Proof** (`FV/Backend/Proof/LS*.lean`, `FV/E2E/LSCheckAlloc.lean`, `FV/E2E/LeanAlloc.lean`):
+  `LS.planOk_allocChecked`: a plan with `planOk` builds an `AllocChecked` allocation, given the
+  local facts and availability sets of `spillStep4` (`SpillLocalOk`, `SpillAvail`). The validator's
+  conditions become `PlanFacts` (`LSFacts.lean`), the builder's instruction step `InstFacts`
+  (`LSInst.lean`), its output `BuildFacts` (`LSBuild.lean`); the explicit in-states
+  `LS.inState` (`LSRun.lean`: every vreg live and available at a block's start in its location, a
+  `try_call` result still in its fixed register, the callee-saved registers' entry values in
+  their registers or save slots) verify block by block (`LSRunEntry`, `LSRunInst`, `LSRunEdge`,
+  `LSRunArgs`, `LSRunMain`). `E2E.planOk_checkAlloc`: `checkAlloc` accepts it when nothing is
+  available on entry (completeness of `checkAlloc`). `LS.leanAlloc_planOk` (`LSSpillPlan*.lean`):
+  the all-spill plan passes `planOk` on in-scope input (`OpsOk.enough` bounds the scratch
+  registers an instruction needs; `seqMoves_ok` the argument copies), so `leanAlloc` never fails
+  and always returns the build of a validated plan.
 
 `lake exe lean-alloc-stats [--regalloc2] FILE.clif…` reports, per function that lowers, whether
 `checkAlloc` accepts `leanAlloc`'s allocation and the bytes of the emitted function with it,

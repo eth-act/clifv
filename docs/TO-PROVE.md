@@ -199,7 +199,7 @@ author's estimate, not measured), **Risk**.
   the 5334 (element size, run, rotation) triples).
 - **Remaining:** the compiler still runs `formsCoveredB` in `lean-e2e-check` as a double-check.
 
-### V4. Register allocation without trusting regalloc2 — (a) **done** (#56, allocation no longer a premise); (b) open as #57
+### V4. Register allocation without trusting regalloc2 — (a) **done** (#56, allocation no longer a premise); (b) **done** (#57)
 
 - **Done (a), 2026-10-05:** the fallback `spillAlloc : VCode → RFunc` (`FV/Backend/SpillAlloc.lean`: every
   vreg in its own stack slot, operands moved into registers that meet their constraints around each
@@ -325,7 +325,7 @@ author's estimate, not measured), **Risk**.
      (c) `prepare` keeps `killFreeB` (`Spill.killFreeB_prepare`, `KillPrep.lean`: retargeting keeps
      operands, a single-predecessor target is never split). `lean-e2e-check`: `killFreeB` 1148/1148
      (19 with killed vregs) remains as a double-check.
-- **Option (b), in progress (#57; sub-issues #273–#276):** a real allocator written in Lean,
+- **Option (b), done (#57; sub-issues #273–#276):** a real allocator written in Lean,
   proven directly or with `checkAlloc` completeness for its output. Removes the Rust tool entirely.
   **Allocator done (#273):** `leanAlloc` (`FV/Backend/LinearScan.lean`: linear scan with lifetime
   holes, one location per vreg, int and float classes; `lean-backend --regalloc lean`), used
@@ -346,8 +346,20 @@ author's estimate, not measured), **Risk**.
   of the linear scan (0, 2, 4 registers withheld for scratch), else the all-spill plan
   `Fn.spillPlan`. The validator accepts the first plan of every function of all six sets
   (`large_frame`: no scratch register, as before; the retry is accepted); code bytes unchanged.
-  Open: `planOk ⇒ AllocChecked` (#275), and `planOk` of the all-spill plan on in-scope input
-  (#276).
+  **Proofs done (#275, #276):** `LS.planOk_allocChecked` (`FV/Backend/Proof/LSMain.lean`): a
+  validated plan builds an `AllocChecked` allocation, given `SpillLocalOk` and `SpillAvail` (the
+  premises of `spillStep4`); explicit in-states `LS.inState` (`LSRun*.lean`, the `SpillStep4`
+  pattern; the builder's instruction step `inst_facts`, `LSInst.lean`). `E2E.planOk_checkAlloc`
+  (`FV/E2E/LSCheckAlloc.lean`): `checkAlloc` itself accepts it when nothing is available on entry
+  and every block is reachable. `LS.leanAlloc_planOk` (`LSSpillPlan*.lean`): the all-spill plan
+  passes `planOk` on in-scope input (scratch registers from `OpsOk.enough`, argument copies by
+  `seqMoves_ok`), so `leanAlloc` always returns the build of a validated plan.
+  `FV/E2E/LeanAlloc.lean`: `leanAlloc_accepted` (`leanAlloc` succeeds and is `AllocChecked` on
+  every in-scope function, no hypothesis), `leanCheckAlloc` (`checkAlloc` accepts it, under
+  `SpillDefinedHyp` as `spillCheckAlloc`), `backend_correct_final_leanAlloc` (the end-to-end
+  theorem for the Lean allocation itself), `lowerAllocReady_leanAlloc`; witnesses on
+  `lowerWitness`/`step4Ex`. Axiom list: `scripts/audit/lean-alloc.lean`. Open (optional):
+  live-range splitting for `large_frame`.
 
 ### V5. Frame and control-lowering rejections (totality) — **done**
 
@@ -1047,7 +1059,7 @@ label**; list the free ones with
 | V1+V2 | [#4](https://github.com/eth-act/clifv/issues/4) `lowerCheck` completeness (+ V2, `PrepDomain` of the lowering output) | **done** (`6db15bd`) |
 | V3 | [#5](https://github.com/eth-act/clifv/issues/5) Form coverage (`formsCoveredB`) | **done** (#5) |
 | V4 | [#6](https://github.com/eth-act/clifv/issues/6) Register allocation without trusting regalloc2 | (a) **done** (#56): `backend_correct_final_alloc_proven`, no allocation premise |
-| V4b | [#57](https://github.com/eth-act/clifv/issues/57) A real register allocator in Lean (removes regalloc2) | in progress: Lean allocator `leanAlloc` (#273, `--regalloc lean`); default switch #274, proofs #275/#276 open |
+| V4b | [#57](https://github.com/eth-act/clifv/issues/57) A real register allocator in Lean (removes regalloc2) | **done**: Lean allocator `leanAlloc` (#273), default (#274), proofs #275/#276 (`E2E.leanAlloc_accepted`, `E2E.backend_correct_final_leanAlloc`) |
 | V5 | [#7](https://github.com/eth-act/clifv/issues/7) Frame and control-lowering rejections (totality) | **done**: `backend_correct_final_total` (no allocation/lowering premise, no frame-size limit) |
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | **done** (#65) |
 | V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` |
