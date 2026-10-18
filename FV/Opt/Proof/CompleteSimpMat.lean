@@ -307,6 +307,17 @@ theorem NewOk.mono {idom : Array (Option Nat)} {V : Nat → Option Block} {bi k 
   refine ⟨r, n', rfl, hs.defsKeep r n' hd ((hm_contains_iff _ _).2 (by rw [ha]; rfl)),
     hs.avail r bi ha, hal, fun y hy => ⟨(hops y hy).1.emit bi more, hg y (hops y hy).2⟩⟩
 
+theorem NewOk.mono' {idom : Array (Option Nat)} {V : Nat → Option Block} {bi k : Nat}
+    {allowed : Inst → Bool} {B : ValueId → Prop} {st st' : SState} {s : Stmt} {more : List Stmt}
+    (h : NewOk idom V bi k allowed B st s)
+    (hd : ∀ y n, st.defs.get? y = some n → st.avail.contains y = true → st'.defs.get? y = some n)
+    (ha : ∀ y d, st.avail.get? y = some d → st'.avail.get? y = some d)
+    (hg : ∀ y, Good st B y → Good st' B y) :
+    NewOk idom (emitV V bi more) bi k allowed B st' s := by
+  obtain ⟨r, n', rfl, hd', ha', hal, hops⟩ := h
+  refine ⟨r, n', rfl, hd r n' hd' ((hm_contains_iff _ _).2 (by rw [ha']; rfl)),
+    ha r bi ha', hal, fun y hy => ⟨(hops y hy).1.emit bi more, hg y (hops y hy).2⟩⟩
+
 /-- A run of `materialize` steps (module doc): the state facts, placeability, the state change and
 the emitted statements. -/
 structure MRun (f : Function) (idom : Array (Option Nat)) (allowed : Inst → Bool) (bi : Nat)
@@ -314,20 +325,28 @@ structure MRun (f : Function) (idom : Array (Option Nat)) (allowed : Inst → Bo
   inv : MInv f (emitV V bi new) B st'
   good : ∀ y, Good st B y → Good st' B y
   step : MStep bi st st' new
+  nodes : ∀ y n', st'.defs.get? y = some n' →
+    st.defs.get? y = some n' ∨ ∀ z ∈ operands n', Good st' B z
   stmts : ∀ b, V bi = some b → ∀ j s, new[j]? = some s →
     NewOk idom (emitV V bi new) bi (b.body.length + j) allowed B st' s
 
 theorem MRun.refl {f : Function} {idom : Array (Option Nat)} {allowed : Inst → Bool} {bi : Nat}
     {B : ValueId → Prop} {V : Nat → Option Block} {st : SState} (h : MInv f V B st) :
     MRun f idom allowed bi B V st st [] :=
-  ⟨by rw [emitV_nil]; exact h, fun _ h => h, MStep.refl bi st, fun _ _ j s hs => by simp at hs⟩
+  ⟨by rw [emitV_nil]; exact h, fun _ h => h, MStep.refl bi st, fun _ _ h => .inl h,
+   fun _ _ j s hs => by simp at hs⟩
 
 theorem MRun.trans {f : Function} {idom : Array (Option Nat)} {allowed : Inst → Bool} {bi : Nat}
     {B : ValueId → Prop} {V : Nat → Option Block} {st st1 st2 : SState} {n1 n2 : List Stmt}
     (h1 : MRun f idom allowed bi B V st st1 n1) (h2 : MRun f idom allowed bi B (emitV V bi n1) st1 st2 n2) :
     MRun f idom allowed bi B V st st2 (n1 ++ n2) := by
   refine ⟨by rw [← emitV_append]; exact h2.inv, fun y h => h2.good y (h1.good y h),
-    h1.step.trans h2.step, fun b hb j s hs => ?_⟩
+    h1.step.trans h2.step, fun y n' hy => ?_, fun b hb j s hs => ?_⟩
+  · rcases h2.nodes y n' hy with h | h
+    · rcases h1.nodes y n' h with h' | h'
+      · exact .inl h'
+      · exact .inr fun z hz => h2.good z (h' z hz)
+    · exact .inr h
   rw [← emitV_append]
   rcases Nat.lt_or_ge j n1.length with hj | hj
   · rw [List.getElem?_append_left hj] at hs
@@ -508,8 +527,11 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
       rw [hdefs] at hn0; split at hn0
       · cases hn0; exact hgood y (hops y hy).2
       · exact hgood y (hralts ms hms m hm n0 hn0 y hy)
-  refine ⟨⟨hinv, hgood, hstep, fun b0 hb0 j s0 hs0 => ?_⟩, hgr, ⟨bi, _, hdefR, .inl rfl⟩,
+  refine ⟨⟨hinv, hgood, hstep, fun y m hm => ?_, fun b0 hb0 j s0 hs0 => ?_⟩, hgr, ⟨bi, _, hdefR, .inl rfl⟩,
     by rw [htypes, if_pos rfl, htx]⟩
+  · rw [hdefs] at hm; split at hm
+    · cases hm; exact .inr fun z hz => hgood z (hops z hz).2
+    · exact .inl hm
   rw [hb] at hb0; cases hb0
   have hj : j = 0 := by
     rcases j with _ | j
@@ -561,7 +583,8 @@ theorem MRun.bump {f : Function} {idom : Array (Option Nat)} {allowed : Inst →
     MRun f idom allowed bi B V st ({ st with next := st.next + 1 } : SState) [] :=
   ⟨by rw [emitV_nil]; exact h.bump, fun _ h => h.bump,
    ⟨⟨_, _, _, _, _, rfl⟩, Nat.le_succ _, fun _ _ h => h, fun _ _ => rfl, fun _ _ h => h,
-    fun _ _ h => .inl h, fun _ _ h _ => h, fun _ h => h⟩, fun _ _ j s hs => by simp at hs⟩
+    fun _ _ h => .inl h, fun _ _ h _ => h, fun _ h => h⟩, fun _ _ h => .inl h,
+   fun _ _ j s hs => by simp at hs⟩
 
 section Mat
 
