@@ -10,6 +10,7 @@ use std::process::{Command, Stdio};
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
                                 [--panic-abort] [--members-only] [--no-binary-check] [--lean-link [--verified]]
+                                [--lean-ld | --rust-lld]
                                 [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
        cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE --module NAME]
@@ -51,6 +52,12 @@ report` prints it).
                       written is covered by Link.DeadCleanup.compileExe_correct{,_peak,_source,
                       _source_peak} (with --opt-proven-only Link.DeadCleanup.compileExeOpt_correct{…});
                       separate target dir
+  --lean-ld           link every executable with the Lean static linker `lake exe lean-ld`
+                      (Link.Ld.link) instead of rust-lld (rust-lld when lean-ld rejects the
+                      inputs, reported); the default with --lean-link, whose totality theorem
+                      on lean-ld's output (Link.DeadCleanup.compileExe_total_ld) needs no check
+                      of the linker's output; separate target dir
+  --rust-lld          (with --lean-link) link with rust-lld instead of lean-ld
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
   --functions         (report) list every function with its status and reason
@@ -267,6 +274,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut bin_check = true;
     let mut lean_link = false;
     let mut lean_ld = false;
+    let mut rust_lld = false;
     let mut verified = false;
     let mut cargo_args = Vec::new();
     for a in before {
@@ -285,9 +293,15 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             }
             "--verified" => verified = true,
             "--lean-ld" => lean_ld = true,
+            "--rust-lld" => rust_lld = true,
             _ => cargo_args.push(a),
         }
     }
+    if lean_ld && rust_lld {
+        die("--lean-ld and --rust-lld exclude each other");
+    }
+    // `--lean-link` links with the Lean static linker `lean-ld` unless `--rust-lld` is given
+    let lean_ld = lean_ld || (lean_link && !rust_lld);
     if verified && !lean_link {
         die("--verified needs --lean-link (it makes the Lean linker fail closed)");
     }

@@ -206,12 +206,39 @@ def isCIdent (n : String) : Bool :=
   !n.isEmpty && n.all fun c => c.isAlphanum || c == '_'
 
 /-- An input `.eh_frame` section: its index, records and relocations (an object may have
-several: `ld -r --unique` keeps one per merged object). -/
+several: `ld -r --unique` keeps one per merged object); the relocations sorted by offset and
+each record's size by offset (lookups, `relasIn`). -/
 structure EhSec where
   sec : Nat
   pieces : Array EhPiece
   relas : Array Rela
+  sorted : Array Rela
+  sizeAt : Std.HashMap Nat Nat
   deriving Inhabited
+
+/-- An `.eh_frame` section's records and relocations. -/
+def EhSec.mk' (sec : Nat) (pieces : Array EhPiece) (relas : Array Rela) : EhSec :=
+  { sec, pieces, relas, sorted := relas.qsort (·.off < ·.off),
+    sizeAt := pieces.foldl (fun m p => m.insertIfNew p.off p.size) {} }
+
+/-- The first index of `rs` (sorted by offset) whose offset is at least `lo`. -/
+def lowerBound (rs : Array Rela) (lo : Nat) : Nat := Id.run do
+  let mut a := 0
+  let mut b := rs.size
+  for _ in [0:64] do
+    if a < b then
+      let m := (a + b) / 2
+      if rs[m]!.off < lo then a := m + 1 else b := m
+  return a
+
+/-- The relocations of an `.eh_frame` section at offsets in `[lo, hi)`. -/
+def EhSec.relasIn (e : EhSec) (lo hi : Nat) : Array Rela := Id.run do
+  let mut out := #[]
+  let mut i := lowerBound e.sorted lo
+  while i < e.sorted.size && e.sorted[i]!.off < hi do
+    out := out.push e.sorted[i]!
+    i := i + 1
+  return out
 
 /-- The live sections and, per file, its `.eh_frame` sections. -/
 structure GcOut where
@@ -247,7 +274,7 @@ def St.gc (st : St) (roots : List String) (gc : Bool) : Except String GcOut := d
     let mut es : Array EhSec := #[]
     for i in [0:o.secs.size] do
       if o.secs[i]!.name == ".eh_frame" && o.secs[i]!.has shfAlloc && !(st.disc[fi]!.contains i) then
-        es := es.push { sec := i, pieces := ← ehPieces (o.secBytes i), relas := o.relas i }
+        es := es.push (EhSec.mk' i (← ehPieces (o.secBytes i)) (o.relas i))
     eh := eh.push es
   let mut live : Array (Array Bool) :=
     st.files.mapIdx fun fi o => Array.ofFn (n := o.secs.size) fun i => !gc && st.linked (fi, i.1)
@@ -294,13 +321,11 @@ def St.gc (st : St) (roots : List String) (gc : Bool) : Except String GcOut := d
       -- its FDEs: their LSDA and their CIE's personality
       for (fi, ei, pi) in fdes.getD s #[] do
         if let some e := eh[fi]![ei]? then
-          let ps := e.pieces
-          let rs := e.relas
-          let p := ps[pi]!
-          for r in rs do
-            if (r.off > p.off + 8 && r.off < p.off + p.size) ||
-                (r.off ≥ p.cieOff && r.off < p.cieOff + (ps.find? (·.off == p.cieOff)).elim 0 (·.size)) then
-              work := mark fi r work
+          let p := e.pieces[pi]!
+          for r in e.relasIn (p.off + 9) (p.off + p.size) do
+            work := mark fi r work
+          for r in e.relasIn p.cieOff (p.cieOff + e.sizeAt.getD p.cieOff 0) do
+            work := mark fi r work
   return { live, eh }
 
 end Link.Ld
