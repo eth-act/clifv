@@ -65,7 +65,7 @@ def provTab3 : Tab :=
    (395, [⟨false, false, false, true, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩),
    (406, [⟨false, false, false, false, true⟩, ⟨false, true, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, true, false, false, true⟩),
    (407, [⟨false, true, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, true, false, false, true⟩),
-   (409, [⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩),
+   (409, [⟨false, true, false, false, true⟩, ⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩),
    (410, [⟨false, false, false, true, true⟩], ⟨false, false, false, true, true⟩),
    (414, [⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩, ⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩),
    (417, [⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
@@ -214,8 +214,25 @@ def provTab13 : Tab :=
   [(715, [⟨false, true, false, false, true⟩], ⟨false, true, false, false, true⟩),
    (722, [⟨false, true, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, true, false, false, true⟩)]
 
+/-- Chunk 14 of `provTab`: the terms the S11e4 float data-movement roots reach (`output_value`,
+`constant_f16/32/64`, `fpu_move_fp_imm`, `vec_dup_imm`, `fpu_load64`, the `aarch64_fpuload*`/
+`aarch64_fpustore*` helpers), from the same fixpoint inference; S11e4 also widens
+`mov_to_fpu`'s (409) first input to symbol names (`constant_f32`/`f64` pass it an `imm`). -/
+def provTab14 : Tab :=
+  [(173, [⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (586, [⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (587, [⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (537, [⟨false, true, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (546, [⟨false, true, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, true, false, false, true⟩),
+   (538, [⟨false, true, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (547, [⟨false, true, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, true, false, false, true⟩),
+   (375, [⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩, ⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩),
+   (411, [⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩),
+   (585, [⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
+   (681, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩)]
+
 /-- The summary table. -/
-def provTab : Tab := provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13
+def provTab : Tab := provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14
 
 set_option maxRecDepth 100000 in
 theorem provTab0_ok :
@@ -301,11 +318,17 @@ theorem provTab13_ok :
       true := by
   decide +kernel
 
+set_option maxRecDepth 100000 in
+theorem provTab14_ok :
+    provTab14.all (fun e => (program.rulesOf e.1).all (aRule program provTab true e.2.1 e.2.2)) =
+      true := by
+  decide +kernel
+
 /-- Every rule of every term of `provTab` checks (strictly). -/
 theorem provTab_ok : chkTab program provTab true = true := by
   unfold chkTab
-  show (provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13).all
+  show (provTab0 ++ provTab1 ++ provTab2 ++ provTab3 ++ provTab4 ++ provTab5 ++ provTab6 ++ provTab7 ++ provTab8 ++ provTab9 ++ provTab10 ++ provTab11 ++ provTab12 ++ provTab13 ++ provTab14).all
     (fun e => (program.rulesOf e.1).all (aRule program provTab true e.2.1 e.2.2)) = true
-  simp only [List.all_append, provTab0_ok, provTab1_ok, provTab2_ok, provTab3_ok, provTab4_ok, provTab5_ok, provTab6_ok, provTab7_ok, provTab8_ok, provTab9_ok, provTab10_ok, provTab11_ok, provTab12_ok, provTab13_ok, Bool.and_self]
+  simp only [List.all_append, provTab0_ok, provTab1_ok, provTab2_ok, provTab3_ok, provTab4_ok, provTab5_ok, provTab6_ok, provTab7_ok, provTab8_ok, provTab9_ok, provTab10_ok, provTab11_ok, provTab12_ok, provTab13_ok, provTab14_ok, Bool.and_self]
 
 end Backend.Proof.RelocProv
