@@ -474,7 +474,6 @@ def rules : Array ClosureRule := #[
   ⟨939, "rule_lower_2086", 686, true, [], [], []⟩,
   ⟨940, "rule_lower_2092", 686, true, [], [], []⟩,
   ⟨946, "rule_lower_2146", 686, true, [], [], []⟩,
-  ⟨951, "rule_lower_2176", 686, true, [], [], ["Opcode.Fcmp", "ty_scalar_float"]⟩,
   ⟨958, "rule_lower_2215", 686, true, [], [], []⟩,
   ⟨959, "rule_lower_2222", 715, false, ["TODO"], [], []⟩,
   ⟨960, "rule_lower_2224", 715, false, ["TODO"], [], []⟩,
@@ -761,6 +760,7 @@ def excludedRootRules : Array (String × List String) := #[
   ("rule_lower_2158", ["Opcode.Fcmp", "multi_lane"]),
   ("rule_lower_2164", ["Opcode.Fcmp", "multi_lane"]),
   ("rule_lower_2170", ["Opcode.Fcmp", "multi_lane"]),
+  ("rule_lower_2176", ["Opcode.Fcmp", "ty_scalar_float"]),
   ("rule_lower_2179", ["Opcode.Fcmp"]),
   ("rule_lower_2185", ["multi_lane"]),
   ("rule_lower_2191", ["multi_lane"]),
@@ -1564,8 +1564,8 @@ def terms : Array ClosureTerm := #[
 
 /-- Summary counts (also in `docs/contracts/isle.md`). -/
 def summary : List (String × Nat) := [
-  ("rules", 522), ("rootRules", 172), ("excludedRootRules", 353),
-  ("rulesExcludedByDefaultTags", 50), ("rulesWithLhsReasons", 60),
+  ("rules", 521), ("rootRules", 171), ("excludedRootRules", 354),
+  ("rulesExcludedByDefaultTags", 50), ("rulesWithLhsReasons", 59),
   ("terms", 660), ("externTerms", 145), ("externConstructors", 102),
   ("externExtractors", 47), ("externTermsWithSpec", 98)]
 
