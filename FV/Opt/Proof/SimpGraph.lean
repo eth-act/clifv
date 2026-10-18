@@ -60,6 +60,7 @@ theorem evalNode_ty {fr : Frame} {mem : Mem} {n : Inst} {a : Val}
     | none =>
       exfalso
       cases n <;> simp only [Inst.resultTypes, Option.map_eq_none_iff, reduceCtorEq] at hr <;>
+        (try (cases ‹FOp› <;> simp only [Inst.resultTypes, reduceCtorEq] at hr)) <;>
         simp [evalInst, hr, Res.ofOption, bind, Res.bind] at he
   · cases h
 

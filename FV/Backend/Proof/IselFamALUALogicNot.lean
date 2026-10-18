@@ -584,7 +584,7 @@ theorem bnot_bxor_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   have hhead : info.resTys.head? = some (.int ty.width) := by
-    rw [hres]; simp [ofClif_int_width]
+    rw [hres]; simp [ofClif_int_width (isInt_of_eTy (instData_unary_eTy hdat))]
   obtain ⟨e2, hpz, -⟩ := matchArgs_cons_inv hrest
   obtain ⟨j, infoj, fs', e3, hj, hij, hdj, -⟩ :=
     defInst_match_inv hp ctx hp.t2449 term_2449_kind hp.t2383 term_2383_kind hpz

@@ -14,9 +14,9 @@ theorem stock_select_comparison_condition_shape {f : Clif.Function} {ctx : Ctx}
       [.data 145 (ccIdx cc) [],.value x,.value y] (st,tr) out (next,trace)) :
     CondShape out (fun _ => True) := by
   cases ty
-  · exact stock_select_narrow_comparison_condition_shape inv cc false typeX typeY enough run
-  · exact stock_select_narrow_comparison_condition_shape inv cc true typeX typeY enough run
-  · exact stock_select_wide_comparison_condition_shape inv cc false typeX typeY enough run
-  · exact stock_select_wide_comparison_condition_shape inv cc true typeX typeY enough run
-  · simp [Clif.Ty.width] at width
+  case i8 => exact stock_select_narrow_comparison_condition_shape inv cc false typeX typeY enough run
+  case i16 => exact stock_select_narrow_comparison_condition_shape inv cc true typeX typeY enough run
+  case i32 | f32 => exact stock_select_wide_comparison_condition_shape inv cc false typeX typeY enough run
+  case i64 | f64 => exact stock_select_wide_comparison_condition_shape inv cc true typeX typeY enough run
+  case i128 => simp [Clif.Ty.width] at width
 end Backend.Stock.Proof.ScalarSelect

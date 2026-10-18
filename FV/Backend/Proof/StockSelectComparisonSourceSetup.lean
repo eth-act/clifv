@@ -11,6 +11,8 @@ structure Case where
   extended : Bool
   comparisonWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64
   width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64
+  cint : cty.isInt = true
+  int : ty.isInt = true
 abbrev function (p : Case) := ComparisonDriver.function p.cty p.ty .ult p.extended
 abbrev built (p : Case) := ComparisonDriver.built p.cty p.ty .ult p.extended
 def index (p : Case) : Nat := if p.extended then 2 else 1
@@ -29,8 +31,8 @@ def registers (p : Case) (a b : BitVec p.cty.width) (key : Nat) : CV :=
   BitVec.ofNat 128 (2^100 + if key = 192 then a.toNat else if key = 193 then b.toNat else if key = 194 then 7 else 9)
 private theorem scope (p : Case) : LowerScope (function p) := by
   apply lowerScope_of
-  rcases p with ⟨cty,ty,extended,hc,ht⟩
-  cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht <;> rfl
+  rcases p with ⟨cty,ty,extended,hc,ht,ci,ti⟩
+  cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht ci ti <;> rfl
 private theorem getter {fr : Clif.Frame} {x : Nat} {ty : Clif.Ty} {bits : BitVec ty.width}
     (read : fr.regs x = some ⟨ty,bits⟩) : fr.getAs x ty = .ok bits := by
   unfold Clif.Frame.getAs Clif.Frame.get
@@ -46,48 +48,48 @@ private theorem dirty_word (ty : Clif.Ty) (width : ty.width = 8 ∨ ty.width = 1
 private theorem absent (p : Case) (key : Nat) (present : key = 7 ∨ key = 31 ∨ key = 63 ∨ key = 95) :
     (built p).1.defInst? key = none := by
   rcases present with rfl | rfl | rfl | rfl
-  all_goals rcases p with ⟨cty,ty,extended,hc,ht⟩
-  all_goals cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht <;> rfl
+  all_goals rcases p with ⟨cty,ty,extended,hc,ht,ci,ti⟩
+  all_goals cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht ci ti <;> rfl
 private theorem typed (p : Case) (key : Nat) (present : key = 7 ∨ key = 31 ∨ key = 63 ∨ key = 95 ∨ key = 100) :
     (built p).1.valueType? key = some (.int (if key = 100 then 8 else if key = 7 ∨ key = 31 then p.cty.width else p.ty.width)) := by
   rcases present with rfl | rfl | rfl | rfl | rfl
-  all_goals rcases p with ⟨cty,ty,extended,hc,ht⟩
-  all_goals cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht
+  all_goals rcases p with ⟨cty,ty,extended,hc,ht,ci,ti⟩
+  all_goals cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht ci ti
   all_goals dsimp only [built,Case.cty,Case.ty,Case.extended,index,conditionKey]
   all_goals decide +kernel +revert
 private theorem extension_typed (p : Case) (extended : p.extended = true) : (built p).1.valueType? 101 = some (.int 64) := by
-  rcases p with ⟨cty,ty,ex,hc,ht⟩
+  rcases p with ⟨cty,ty,ex,hc,ht,ci,ti⟩
   cases ex <;> simp at extended
-  cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht
+  cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht ci ti
   all_goals dsimp only [built,Case.cty,Case.ty,Case.extended,index,conditionKey]
   all_goals decide +kernel +revert
 private theorem mapped_base (p : Case) (key : Nat) (present : key = 7 ∨ key = 31 ∨ key = 63 ∨ key = 95 ∨ key = 102) :
     (built p).1.valueReg? key = some (.vreg (if key = 7 then 192 else if key = 31 then 193 else if key = 63 then 194
       else if key = 95 then 195 else if p.extended then 198 else 197) .int) := by
   rcases present with rfl | rfl | rfl | rfl | rfl
-  all_goals rcases p with ⟨cty,ty,extended,hc,ht⟩
-  all_goals cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht
+  all_goals rcases p with ⟨cty,ty,extended,hc,ht,ci,ti⟩
+  all_goals cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht ci ti
   all_goals dsimp only [built,Case.cty,Case.ty,Case.extended]
   all_goals decide +kernel +revert
 private theorem source_base (p : Case) :
     ((built p).1.insts[index p]?).map minmaxSourceKey = some (some (.select p.ty (conditionKey p) 63 95),[102]) := by
-  rcases p with ⟨cty,ty,extended,hc,ht⟩
-  cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht
+  rcases p with ⟨cty,ty,extended,hc,ht,ci,ti⟩
+  cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht ci ti
   all_goals dsimp only [built,Case.cty,Case.ty,Case.extended,index,conditionKey]
   all_goals decide +kernel +revert
 private theorem comparison_base (p : Case) :
     (built p).1.defInst? 100 = some 0 ∧
       ((built p).1.insts[0]?).map minmaxSourceKey = some (some (.icmp .ult p.cty 7 31),[100]) := by
-  rcases p with ⟨cty,ty,extended,hc,ht⟩
-  cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht
+  rcases p with ⟨cty,ty,extended,hc,ht,ci,ti⟩
+  cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht ci ti
   all_goals dsimp only [built,Case.cty,Case.ty,Case.extended,index,conditionKey]
   all_goals decide +kernel +revert
 private theorem extension_base (p : Case) (extended : p.extended = true) :
     (built p).1.defInst? 101 = some 1 ∧
       ((built p).1.insts[1]?).map minmaxSourceKey = some (some (.extend .uextend .i64 100),[101]) := by
-  rcases p with ⟨cty,ty,ex,hc,ht⟩
+  rcases p with ⟨cty,ty,ex,hc,ht,ci,ti⟩
   cases ex <;> simp at extended
-  cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht
+  cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht ci ti
   all_goals dsimp only [built,Case.cty,Case.ty,Case.extended,index,conditionKey]
   all_goals decide +kernel +revert
 private theorem dfg_base (p : Case) (a b : BitVec p.cty.width) : DFGCons (built p).1 (frame p a b) := by
@@ -145,19 +147,19 @@ private theorem dfg_base (p : Case) (a b : BitVec p.cty.width) : DFGCons (built 
               · simp [frame,h7,h31,h63,h95,h100,h101] at lookup
   · intro x t value type lookup
     by_cases h7 : x = 7
-    · subst x; rw [typed p 7 (by simp)] at type; cases type; cases lookup; exact ofClif_int_width
+    · subst x; rw [typed p 7 (by simp)] at type; cases type; cases lookup; exact ofClif_int_width p.cint
     · by_cases h31 : x = 31
       · subst x; rw [typed p 31 (by simp)] at type; cases type
-        simp [frame] at lookup; subst value; exact ofClif_int_width
+        simp [frame] at lookup; subst value; exact ofClif_int_width p.cint
       · by_cases h63 : x = 63
         · subst x; rw [typed p 63 (by simp)] at type; cases type
-          simp [frame] at lookup; subst value; exact ofClif_int_width
+          simp [frame] at lookup; subst value; exact ofClif_int_width p.int
         · by_cases h95 : x = 95
           · subst x; rw [typed p 95 (by simp)] at type; cases type
-            simp [frame] at lookup; subst value; exact ofClif_int_width
+            simp [frame] at lookup; subst value; exact ofClif_int_width p.int
           · by_cases h100 : x = 100
             · subst x; rw [typed p 100 (by simp)] at type; cases type
-              simp [frame] at lookup; subst value; exact ofClif_int_width
+              simp [frame] at lookup; subst value; exact ofClif_int_width (by rfl)
             · by_cases h101 : x = 101
               · subst x
                 by_cases extended : p.extended = true

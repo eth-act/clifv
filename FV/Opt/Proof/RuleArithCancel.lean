@@ -1,5 +1,6 @@
 import FV.Opt.Proof.RuleInfraIcmp
 import FV.Opt.Proof.RuleInfraConst
+import FV.Opt.Proof.RuleIntSplit
 set_option maxHeartbeats 4000000
 set_option maxRecDepth 8000
 set_option Elab.async false
@@ -14,7 +15,8 @@ local macro "arith_cancel_rule " r:ident : tactic => `(tactic| (
   all_goals rule_no_iflets
   all_goals try opt_den_subst
   all_goals opt_split_i128
-  all_goals rule_rhs_y
+  all_goals opt_split_int
+  all_goals rule_rhs_y [tyInt_ofClif_notInt]
   all_goals opt_some_subst
   all_goals try opt_den_subst
   all_goals (apply GraphOk.make_val hG (by opt_P); opt_node_x)

@@ -349,7 +349,8 @@ theorem ireduce_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : C
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hic
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
-  have hhead : info.resTys.head? = some (.int ty.width) := by rw [hres]; simp [ofClif_int_width]
+  have hhead : info.resTys.head? = some (.int ty.width) := by
+    rw [hres]; simp [ofClif_int_width (isInt_of_eTy hety)]
   have hw := eTy_width hety
   rw [match_2146 hp ctx st tr m' hi hhead hw hd] at hmatch
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch

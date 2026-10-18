@@ -1,4 +1,4 @@
-import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.RuleIntSplit
 
 /-!
 # Comparisons of sign extensions against zero
@@ -7,6 +7,9 @@ The constructor's masked zero and signed re-extension evaluate before graph cons
 Preserve the non-i128 facts used by `fitsIn64_ofClif`, then specialize widths before the
 right-hand side grows. Specialize the condition code before evaluating its if-let, so the
 state-preserving helper reduces and the valuation chain remains connected.
+At a float operand type the right-hand `iconst_s` has no rule (`tyInt_ofClif_f32`/`_f64`) and
+the evaluation throws; a float extension result type (bit-level, like the integer type of its
+width) adds arms, hence the heartbeat budgets.
 The original `RuleOk` statements and premises are unchanged.
 -/
 
@@ -44,21 +47,22 @@ macro "rule_extends_zero " r:ident : tactic => `(tactic| (
   all_goals simp only [Ty.width, Nat.reduceLT] at *
   all_goals try contradiction
   all_goals (first | rule_no_iflets | rule_iflets_c [Rust.signedCondCode])
-  all_goals (rule_rhs_y [reduceCtorEq, Int.reduceBEq]; opt_some_subst)
+  all_goals rule_rhs_y [reduceCtorEq, Int.reduceBEq, tyInt_ofClif_f32, tyInt_ofClif_f64]
+  all_goals opt_some_subst
   all_goals try contradiction
   all_goals rule_finish_x))
 
-set_option maxHeartbeats 4000000 in
+set_option maxHeartbeats 12000000 in
 /-- `extends.isle:40`: equality to zero after sign extension. -/
 theorem ok_rule_extends_40 {p : Isle.Program} (hd : Data p) : RuleOk p rule_extends_40 := by
   extends_noinfo rule_extends_zero rule_extends_40
 
-set_option maxHeartbeats 4000000 in
+set_option maxHeartbeats 12000000 in
 /-- `extends.isle:42`: inequality to zero after sign extension. -/
 theorem ok_rule_extends_42 {p : Isle.Program} (hd : Data p) : RuleOk p rule_extends_42 := by
   extends_noinfo rule_extends_zero rule_extends_42
 
-set_option maxHeartbeats 16000000 in
+set_option maxHeartbeats 48000000 in
 /-- `extends.isle:44`: signed comparisons to zero after sign extension. -/
 theorem ok_rule_extends_44 {p : Isle.Program} (hd : Data p) : RuleOk p rule_extends_44 := by
   extends_noinfo rule_extends_zero rule_extends_44

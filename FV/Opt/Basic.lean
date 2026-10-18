@@ -23,7 +23,7 @@ open Clif
 
 deriving instance Hashable for Clif.Ty, Clif.UnaryOp, Clif.BinaryOp, Clif.DivOp,
   Clif.OverflowOp, Clif.CarryOp, Clif.ExtendOp, Clif.LoadOp, Clif.StoreOp, Clif.AtomicRmwOp,
-  Clif.TrapCode, Clif.Endianness, Clif.MemFlags, Clif.IntCC, Clif.Inst
+  Clif.TrapCode, Clif.Endianness, Clif.MemFlags, Clif.IntCC, Clif.FloatCC, Clif.FOp, Clif.Inst
 
 /-- The values an instruction reads, in operand order. -/
 def operands : Inst → List ValueId
@@ -39,6 +39,7 @@ def operands : Inst → List ValueId
   | .call _ args => args
   | .callIndirect _ callee args => callee :: args
   | .funcAddr _ _ => []
+  | .float _ _ args => args
 
 /-- Rename the operands of an instruction (results are not part of `Inst`). -/
 def mapOperands (f : ValueId → ValueId) : Inst → Inst
@@ -75,6 +76,7 @@ def mapOperands (f : ValueId → ValueId) : Inst → Inst
   | .nop => .nop
   | .symbolValue ty gv => .symbolValue ty gv
   | .tlsValue ty gv => .tlsValue ty gv
+  | .float op ty args => .float op ty (args.map f)
 
 /-- Pure nodes (see the module doc). `select_spectre_guard` is kept in the skeleton, as a
 barrier Cranelift also never rewrites away. -/

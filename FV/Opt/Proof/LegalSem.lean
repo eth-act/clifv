@@ -1,4 +1,5 @@
 import FV.Opt.Proof.LegalBase
+import FV.Clif.FloatFacts
 
 /-!
 # `Clif.evalInst` facts for the legalisation simulation
@@ -13,6 +14,13 @@ namespace Opt.Legal
 
 open Clif
 
+theorem getMany_congr {fr fr' : Frame} :
+    ∀ {xs : List ValueId}, (∀ x ∈ xs, fr'.regs x = fr.regs x) → fr'.getMany xs = fr.getMany xs
+  | [], _ => rfl
+  | y :: ys, h => by
+    simp only [Frame.getMany, Frame.get, h y List.mem_cons_self,
+      getMany_congr (fun x hx => h x (List.mem_cons_of_mem _ hx))]
+
 theorem evalInst_same {fr fr' : Frame} {m : Mem} {i : Inst}
     (hops : ∀ x ∈ instOps i, fr'.regs x = fr.regs x) (hsl : fr'.slots = fr.slots)
     (hgl : fr'.func.globals = fr.func.globals)
@@ -22,6 +30,7 @@ theorem evalInst_same {fr fr' : Frame} {m : Mem} {i : Inst}
   cases i <;> simp only [instOps, List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp,
     forall_eq, List.mem_singleton] at hops <;>
     simp [evalInst, Frame.getAs, Frame.get, Frame.getMany, hops, hsl, hgl]
+  case float => rw [getMany_congr hops]
   rename_i t fn
   have h := hfa t fn rfl
   cases h1 : fr'.func.extern? fn <;> cases h2 : fr.func.extern? fn <;> rw [h1, h2] at h <;>
@@ -79,6 +88,12 @@ theorem evalInst_types {fr : Frame} {m : Mem} {i : Inst} {vals : List Val} {m' :
     · simp only [Res.bind_eq_ok, Res.ofOption_eq_ok, Res.pure_eq_ok, Prod.mk.injEq] at h
       obtain ⟨_, _, h, -⟩ := h; subst h; rfl
     · cases h
+  case float op ty args =>
+    obtain ⟨vs, -, r, hr, h⟩ := h
+    try simp only [Res.pure_eq_ok, pure, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    have hty := evalFloat_ty hr
+    cases op <;> simp_all [floatResTy]
   all_goals
     simp only [Option.some.injEq] at ht; subst ht
     (repeat' split at h) <;>

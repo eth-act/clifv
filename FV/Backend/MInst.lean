@@ -69,6 +69,7 @@ inductive CTy where
 namespace CTy
 def ofClif : Clif.Ty → CTy
   | .i8 => .int 8 | .i16 => .int 16 | .i32 => .int 32 | .i64 => .int 64 | .i128 => .int 128
+  | .f32 => .float 32 | .f64 => .float 64
 /-- `Type::bits`. -/
 def bits : CTy → Nat
   | .invalid => 0 | .int b => b | .float b => b | .vec lb n _ => lb * n

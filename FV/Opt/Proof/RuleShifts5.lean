@@ -1,4 +1,4 @@
-import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.RuleIntRetry
 import FV.Opt.Proof.RuleInfraShiftAmt
 
 /-!
@@ -6,7 +6,9 @@ import FV.Opt.Proof.RuleInfraShiftAmt
 
 Each rule by the template that closes it (`RuleAuto.lean`, `RuleBitopsEmbed.lean`,
 `RuleExtEmbed.lean`, `RuleRestEmbed.lean`); a `first` chain lists the templates the rule was
-checked against, in order.
+checked against, in order. `shifts.isle:152` is `rule_auto_v` whose right-hand side splits the
+amount type `kty` of `iconst_u kty` on `isInt` on demand (`RuleIntRetry.lean`): at a float type
+the constant has no rule.
 -/
 
 set_option linter.unusedSimpArgs false
@@ -23,9 +25,23 @@ local elab_rules : tactic
 
 
 set_option maxHeartbeats 16000000 in
+set_option maxRecDepth 8000 in
+set_option hygiene false in
 /-- `shifts.isle:152`. -/
 theorem ok_rule_shifts_152 {p : Isle.Program} (hd : Data p) : RuleOk p rule_shifts_152 := by
-  first | opt_guard rule_auto_xr rule_shifts_152 | opt_guard rule_auto_xz rule_shifts_152 |
-    rule_auto_v rule_shifts_152
+  rule_intro rule_shifts_152
+  rule_lhs hG
+  all_goals (try opt_val_ty_subst)
+  opt_cases_val
+  all_goals opt_split_i128
+  all_goals (first | rule_no_iflets | rule_iflets_c [tyMask_ofClif, tyMask_ofClif_i128,
+    Rust.tyUmax, panics_throw_bind, except_throw_bind, toExt_throw, Isle.Interp.bindAll,
+    Isle.Interp.matchAllN.eq_1, Isle.Interp.matchAllN.eq_2, Isle.Interp.matchArgsN.eq_1,
+    imm64Masked_i128, tyInt_ofClif_notInt])
+  all_goals opt_int_retry rule_rhs_x [tyMask_ofClif, tyMask_ofClif_i128, Rust.tyUmax,
+    panics_throw_bind, except_throw_bind, toExt_throw, Isle.Interp.bindAll,
+    Isle.Interp.matchAllN.eq_1, Isle.Interp.matchAllN.eq_2, Isle.Interp.matchArgsN.eq_1,
+    imm64Masked_i128, tyInt_ofClif_notInt]
+  all_goals (opt_some_subst; (try opt_heq_ite); rule_finish_w)
 
 end Opt.Proof

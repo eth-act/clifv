@@ -18,7 +18,7 @@ private theorem neg_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f c
   obtain ⟨types,result,typed,len⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
-  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width]⟩
+  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
   · cases ty <;> simp [eTy,Clif.Ty.width,IW] at supported ⊢
   · have expected : instData f (.unary .ineg ty x) = .ok (.data 152 29 [.data 151 75 [],.value x]) := by
       simp only [instData,unaryOpcode,supported,ite_true]; rfl
@@ -33,15 +33,15 @@ private theorem bswap_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f
       info.resTys.head? = some (.int ty.width) := by
   have accepted := inv.instE i info _ source clif
   have allowed : Compile.unaryTyE .bswap ty = true := by simpa only [Compile.instE] using accepted
-  have supported : eTy ty = true := by cases ty <;> simp [Compile.unaryTyE,eTy] at allowed ⊢
+  have supported : eTy ty = true := by cases ty <;> simp [Compile.unaryTyE,Compile.tyE,eTy] at allowed ⊢
   have raw := inv.data i info _ source clif
   obtain ⟨types,result,typed,len⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
-  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width]⟩
-  · cases ty <;> simp [Compile.unaryTyE,Clif.Ty.width] at allowed ⊢
+  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
+  · cases ty <;> simp [Compile.unaryTyE,Compile.tyE,Clif.Ty.width] at allowed ⊢
   · have expected : instData f (.unary .bswap ty x) = .ok (.data 152 29 [.data 151 110 [],.value x]) := by
-      cases ty <;> simp [Compile.unaryTyE] at allowed <;> rfl
+      cases ty <;> simp [Compile.unaryTyE,Compile.tyE] at allowed <;> rfl
     exact Except.ok.inj (raw.symm.trans expected)
 end Data
 /-- Original negation source data and actual first matching select its unique
@@ -93,7 +93,7 @@ private theorem bitrev_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv 
   obtain ⟨types,result,typed,len⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
-  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width]⟩
+  refine ⟨?_,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
   · cases ty <;> simp [eTy,Clif.Ty.width,IW] at supported ⊢
   · have expected : instData f (.unary .bitrev ty x) = .ok (.data 152 29 [.data 151 106 [],.value x]) := by
       simp only [instData,unaryOpcode,supported,ite_true]; rfl

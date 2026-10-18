@@ -293,6 +293,9 @@ theorem evalInst_ren (σ : Ren) (fr : Frame) (m : Mem) (i : Inst) :
     cases h : fr.func.globals.lookup gv with
     | none => simp [evalInst, h]
     | some g => cases g <;> simp [evalInst, h, GlobalValue.rename, map_bind, σ.bwd_fwd]
+  case bitcast =>
+    simp [evalInst, map_bind, bind_map_left, σ.bwd_fwd]
+    congr 1; funext a; split <;> rfl
   all_goals simp [evalInst, map_bind, bind_map_left, σ.bwd_fwd]
 
 namespace Outcome

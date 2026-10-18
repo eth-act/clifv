@@ -52,6 +52,11 @@ theorem stock_highmul_narrow_selected {f : Clif.Function} {ctx : Ctx} (inv : Map
           ((extendBase st.base signed ty.width rx).fresh .int).1).fresh .int).1]] ∧
         next = {(st.mark x).mark y with base := narrowBase st.base signed ty.width rx ry} := by
   obtain ⟨_,data,type⟩ := stock_highmul_source_data inv signed source clif
+  have int : ty.isInt = true := by
+    have accepted := inv.instE i info _ source clif
+    have supported : eTy ty = true := by
+      cases signed <;> simpa [Compile.instE,Compile.binaryE,Compile.tyE,eTy] using accepted
+    exact isInt_of_eTy supported
   have chosen := stock_selected_highmul_rule inv signed source clif selected
   simp only [highmulRule,show ty.width ≠ 64 by omega,ite_false] at chosen
   have count : (program.rulesOf T.lower.id).length = 517 := by
@@ -66,7 +71,7 @@ theorem stock_highmul_narrow_selected {f : Clif.Function} {ctx : Ctx} (inv : Map
   rw [chosen,← envEq,← stateEq,← traceEq] at rhs
   change (evalExpr program (Stock.sem ctx) {} (999899+100) (narrowRule signed).rhs
     (narrowEnv ty.width x y)).run (st,#[]) = .ok (some out,next,selected.rhsTrace) at rhs
-  exact stock_highmul_narrow_observed data_program ctx signed width typed getX getY rhs
+  exact stock_highmul_narrow_observed data_program ctx signed width int typed getX getY rhs
 /-- Actual wide source selection computes the original high product through
 final aliases and preserves every other machine register. -/
 theorem stock_highmul_wide_selected_values {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)

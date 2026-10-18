@@ -251,7 +251,8 @@ theorem select_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at h659
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width] at h659
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some,
+    ofClif_int_width (isInt_of_eTy hety)] at h659
   have hC := is_nonzero_cmp_ok hp hco hR hctx (hn := by omega) hvb h650
   obtain ⟨mf, cond, rx, ry, hflag, hrx, hry, rfl, hs⟩ :=
     lower_select_ok hp hco (hn := by omega) (cmp_eTy_widths hety) hC.shape h659

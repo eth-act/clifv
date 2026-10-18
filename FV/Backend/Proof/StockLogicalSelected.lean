@@ -65,7 +65,7 @@ private theorem logical_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv
         .ok (.data 152 2 [.data 151 kind.opcode [], .values [x,y]]) := by
       cases kind <;> simp only [Kind.cop,Kind.opcode,instData,binaryOpcode,he,ite_true] <;> rfl
     exact Except.ok.inj (data.symm.trans shape)
-  · rw [typed]; simp [ofClif_int_width]
+  · rw [typed]; simp [ofClif_int_width (isInt_of_eTy he)]
 end ContextData
 
 /-- Actual source facts and the final selected root ID determine the typed RHS

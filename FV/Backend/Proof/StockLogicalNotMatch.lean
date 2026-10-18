@@ -21,7 +21,7 @@ private theorem source_data {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv 
   obtain ⟨types,result,typed,len⟩ := inv.resTys i info _ source clif
   simp only [Clif.Inst.resultTypes] at result
   cases result
-  refine ⟨eTy_width supported,?_,by rw [typed]; simp [ofClif_int_width]⟩
+  refine ⟨eTy_width supported,?_,by rw [typed]; simp [ofClif_int_width (isInt_of_eTy supported)]⟩
   have shape : instData f (.binary kind.cop ty x z) = .ok (.data 152 2 [.data 151 (opcode kind) [],.values [x,z]]) := by
     cases kind <;> simp only [Kind.cop,opcode,instData,binaryOpcode,supported,ite_true] <;> rfl
   exact Except.ok.inj (raw.symm.trans shape)

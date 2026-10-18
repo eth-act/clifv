@@ -47,12 +47,12 @@ private theorem wide_register_value {F : BitVec 64 → Prop} {isem : Backend.Pro
       VHolds ⟨ty,rotateWideBits left u amount.bits.toNat⟩ (ρ' (rotateWideResult left d)) ∧
       ∀ z,z < d ∨ d+rotateWideAlloc left ≤ z → ρ' z = ρ z := by
   rcases width with small | large
-  · have same := ty_eq_of_width (ty' := .i32) small (by decide)
-    subst ty
+  · rcases (show ty = .i32 ∨ ty = .f32 by revert small; cases ty <;> simp [Clif.Ty.width])
+      with rfl | rfl <;>
     simpa only [Clif.Ty.width,szOf,Nat.reduceLeDiff,ite_true,VHolds,OperandSize.bits] using
       stock_rotate_wide_resolved refines left .size32 bounded protectedX heldX heldY
-  · have same := ty_eq_of_width (ty' := .i64) large (by decide)
-    subst ty
+  · rcases (show ty = .i64 ∨ ty = .f64 by revert large; cases ty <;> simp [Clif.Ty.width])
+      with rfl | rfl <;>
     simpa only [Clif.Ty.width,szOf,Nat.reduceLeDiff,ite_false,VHolds,OperandSize.bits] using
       stock_rotate_wide_resolved refines left .size64 bounded protectedX heldX heldY
 private theorem requests_demanded (left : Bool) (st : State) (x y : Nat)

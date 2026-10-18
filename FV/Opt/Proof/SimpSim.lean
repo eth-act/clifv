@@ -69,6 +69,7 @@ theorem evalInst_withSyms {fr : Frame} {m : Mem} {i : Inst} (hi : notSym i = tru
     evalInst fr { m with symbols := S } i = resSyms S (evalInst fr m i) := by
   cases i <;> simp only [notSym] at hi <;> (try cases hi) <;>
     simp only [evalInst, resSyms_bind, resSyms_pure, resSyms_trap, apply_ite (resSyms S),
+      apply_dite (resSyms S),
       Mem.load_syms, Mem.store_syms, bind_assoc, pure_bind]
   all_goals try rfl
   rename_i op _ _
@@ -148,6 +149,8 @@ theorem mapOperands_congr {σ τ : ValueId → ValueId} {i : Inst}
     exact List.map_congr_left h
   · simp only [Inst.callIndirect.injEq, true_and]
     exact List.map_congr_left h.2
+  · simp only [Inst.float.injEq, true_and]
+    exact List.map_congr_left h
 
 theorem mapOperands_id (i : Inst) : mapOperands id i = i := by
   cases i <;> simp [mapOperands]
@@ -1291,8 +1294,10 @@ theorem SCore.two {fr fr' : Frame} {bi k k' : Nat} {m : Mem} {s : Stmt} {ss R : 
   -- the graph side of `a` and `b`
   have hra := tgtGraph hS hb' htka hV (M := memPlus m)
   obtain ⟨haok, hatr⟩ := graph_to_tgt hnsa hra
-  have hrb : ∀ M, evalInst (withRegs fr'' V) M b2 = evalInst fr2 M b2 := fun M =>
-    tgtGraph hS hb' htkb hV2 (M := M)
+  have hrb : ∀ M, evalInst (withRegs fr'' V) M b2 = evalInst fr2 M b2 := fun M => by
+    have e1 : evalInst (withRegs fr'' V) M b2 = evalInst (withRegs fr2 V) M b2 :=
+      evalInst_congr rfl rfl rfl (fun _ _ => rfl)
+    exact e1.trans (tgtGraph hS hb' htkb hV2 (M := M))
   -- runs of `a` from the graph side
   have hrun_a : ∀ ma', evalInst (withRegs fr'' V) (memPlus m) a = .ok ([], ma') →
       let ma : Mem := { ma' with symbols := m.symbols }

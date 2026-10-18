@@ -10,6 +10,7 @@ structure Case where
   ty : Clif.Ty
   width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64
   pointer : sret = true → ty = .i64
+  int : ty.isInt = true
 
 def explicitXs (p : Case) : List Nat := if p.sret then [] else [7,31]
 def abiXs (p : Case) : List Nat := if p.sret then [7] else [7,31]
@@ -29,8 +30,9 @@ def Observed (p : Case) : Prop := (Stock.lower (function p)).toOption.map (fun r
     event.output.records.any (fun record => record.inst == 0 && record.output.step.any (fun step => step.decision == .emitted) &&
       decide (record.output.emitted = #[.rets ((registers p).zip (pins p))]) &&
       decide (record.output.state = afterReturn p (scanState record.input record.inst))))) = some true
-private def normal (ty : Clif.Ty) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) : Case := ⟨false,ty,width,by intro h; cases h⟩
-private def implicitPointer : Case := ⟨true,.i64,by simp [Clif.Ty.width],fun _ => rfl⟩
+private def normal (ty : Clif.Ty) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (int : ty.isInt = true := by decide) : Case := ⟨false,ty,width,(by intro h; cases h),int⟩
+private def implicitPointer : Case := ⟨true,.i64,by simp [Clif.Ty.width],fun _ => rfl,rfl⟩
 section Kernel
 attribute [local semireducible] Isle.Aarch64.program Stock.runTerm
 private theorem normal8 : Observed (normal .i8 (by simp [Clif.Ty.width])) := by unfold Observed; decide +kernel
@@ -43,7 +45,7 @@ end Kernel
 full helper state, source maps and final aliases at every scalar width, plus
 the implicit64-bit struct-return case. -/
 theorem stock_return_driver_observed (p : Case) : Observed p := by
-  rcases p with ⟨sret,ty,width,pointer⟩
+  rcases p with ⟨sret,ty,width,pointer,int⟩
   cases sret with
   | true =>
     have same := pointer rfl
@@ -56,5 +58,6 @@ theorem stock_return_driver_observed (p : Case) : Observed p := by
       | exact normal16
       | exact normal32
       | exact normal64
-      | simp [Clif.Ty.width] at width
+      | (simp at int; done)
+      | (simp [Clif.Ty.width] at width; done)
 end Backend.Stock.Proof.ReturnFixture

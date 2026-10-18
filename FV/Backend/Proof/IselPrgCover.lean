@@ -99,8 +99,8 @@ end
 
 theorem ofClif_ne (ty : Clif.Ty) : CTy.ofClif ty ≠ .invalid := by cases ty <;> simp [CTy.ofClif]
 
-theorem mem_eTys {ty : Clif.Ty} (h : ty ≠ .i128) : ty ∈ eTys := by
-  cases ty <;> simp_all [eTys]
+theorem mem_eTys {ty : Clif.Ty} (h : Compile.tyE ty = true) : ty ∈ eTys := by
+  cases ty <;> simp_all [eTys, Compile.tyE, Clif.Ty.isInt]
 
 section
 variable {f : Clif.Function}
@@ -300,8 +300,9 @@ macro "prg_split" : tactic => `(tactic| (
 set_option hygiene false in
 /-- The result type of an E instruction is an E type. -/
 macro "prg_ety" : tactic => `(tactic|
-  exact mem_eTys (fun h => by
-    subst h; simp [Compile.instE, Compile.tyE, Compile.unaryTyE, Compile.binaryE] at hE))
+  exact mem_eTys (by
+    revert hE; cases ty <;>
+      simp [Compile.instE, Compile.tyE, Compile.unaryTyE, Compile.unaryE, Compile.binaryE]))
 
 set_option maxRecDepth 100000 in
 /-- **A statement's root**: the form of its instruction describes `.inst ii`, is a statement

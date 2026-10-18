@@ -53,7 +53,7 @@ private structure Inputs (p : Case) (a b : BitVec p.cty.width) where
   held : ValuesHeld (Demanded record.output.state) event.ctx (frame p a b)
     (fun key => registers p a b (aliasNum result.final.alias key))
 private theorem inputs (p : Case) (a b : BitVec p.cty.width) : Nonempty (Inputs p a b) := by
-  have actual := ComparisonDriver.stock_select_comparison_driver_observed p.cty p.ty p.extended p.comparisonWidth p.width
+  have actual := ComparisonDriver.stock_select_comparison_driver_observed p.cty p.ty p.extended p.comparisonWidth p.width p.cint p.int
   unfold ComparisonDriver.Observed at actual
   cases run : Stock.lower (function p) with
   | error err => simp only [run,Except.toOption,Option.map_none] at actual; cases actual
@@ -147,8 +147,8 @@ private theorem dominated (p : Case) : Dominated (function p) := by
         all_goals simp [availOf,function,ComparisonDriver.function,extended,defsBefore,defsFrom]
       · intro x member
         have members : x ∈ [102] := by
-          rcases p with ⟨cty,ty,extended,hc,ht⟩
-          cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht <;> exact member
+          rcases p with ⟨cty,ty,extended,hc,ht,ci,ti⟩
+          cases cty <;> cases ty <;> cases extended <;> simp [Clif.Ty.width] at hc ht ci ti <;> exact member
         have equal : x = 102 := List.mem_singleton.mp members
         subst x
         cases extended : p.extended <;> simp [availOf,function,ComparisonDriver.function,extended,defsBefore,defsFrom]
@@ -175,7 +175,7 @@ private theorem restrictedDFG (p : Case) (a b : BitVec p.cty.width) (input : Inp
   dfgCons_congr (ctx := input.event.ctx) (fr := frame p a b) rfl rfl (frame_available p a b input.result.ctx) input.dfg
 private theorem condition_read (p : Case) (a b : BitVec p.cty.width) :
     (frame p a b).regs (conditionKey p) = some ⟨conditionTy p,conditionBits p a b⟩ := by
-  rcases p with ⟨cty,ty,extended,hc,ht⟩
+  rcases p with ⟨cty,ty,extended,hc,ht,ci,ti⟩
   cases extended
   all_goals dsimp only [frame,conditionKey,conditionTy,conditionBits,Case.cty,Case.ty,Case.extended]
   all_goals generalize Clif.Sem.intcc .ult a b = result

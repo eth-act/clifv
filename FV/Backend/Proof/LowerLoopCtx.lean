@@ -101,11 +101,11 @@ def maxVOf (f : Clif.Function) : Nat :=
 def StmtC (f : Clif.Function) (s : Clif.Stmt) : Prop :=
   (∃ d, instData f s.inst = .ok d) ∧
   (∃ tys, s.inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys ∧
-    tys.length = s.results.length) ∧ ∀ t ∈ tysOf f s, t ≠ .i128
+    tys.length = s.results.length) ∧ ∀ t ∈ tysOf f s, eTy t = true
 
 /-- What `buildCtx` checks of a block. -/
 def BlockC (f : Clif.Function) (b : Clif.Block) : Prop :=
-  (∀ q ∈ b.params, q.2 ≠ .i128) ∧ ∀ s ∈ b.body, StmtC f s
+  (∀ q ∈ b.params, eTy q.2 = true) ∧ ∀ s ∈ b.body, StmtC f s
 
 /-- **`buildCtx`, functionally.** -/
 theorem buildCtx_model {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
@@ -134,7 +134,7 @@ theorem buildCtx_model {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × N
     split at h
     · cases h
     rename_i vt hvt
-    obtain ⟨evt, hpar⟩ := forIn_foldC _ parStepM (fun q _ => q.2 ≠ .i128) (by
+    obtain ⟨evt, hpar⟩ := forIn_foldC _ parStepM (fun q _ => eTy q.2 = true) (by
       intro q a r h
       split at h
       · split at h
@@ -149,10 +149,10 @@ theorem buildCtx_model {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × N
     have hres : ∀ (n : Nat) (a0 : Array (Option CTy) × Array (Option Nat)) (l : List (Nat × Clif.Ty))
         (body : Nat × Clif.Ty → Array (Option CTy) × Array (Option Nat) →
           Except String (ForInStep (Array (Option CTy) × Array (Option Nat)))) (out : _),
-        (∀ p a r, body p a = .ok r → r = .yield (resStepM n a p) ∧ p.2 ≠ .i128) →
-        forIn l a0 body = .ok out → out = l.foldl (resStepM n) a0 ∧ ∀ p ∈ l, p.2 ≠ .i128 := by
+        (∀ p a r, body p a = .ok r → r = .yield (resStepM n a p) ∧ eTy p.2 = true) →
+        forIn l a0 body = .ok out → out = l.foldl (resStepM n) a0 ∧ ∀ p ∈ l, eTy p.2 = true := by
       intro n a0 l body out hb ho
-      obtain ⟨h1, h2⟩ := forIn_foldC body (resStepM n) (fun p _ => p.2 ≠ .i128) hb l a0 out ho
+      obtain ⟨h1, h2⟩ := forIn_foldC body (resStepM n) (fun p _ => eTy p.2 = true) hb l a0 out ho
       refine ⟨h1, fun p hp => ?_⟩
       obtain ⟨i, hi, e⟩ := List.getElem_of_mem hp
       exact h2 i p (by rw [List.getElem?_eq_getElem hi, e])
@@ -798,9 +798,20 @@ theorem ctxSpec_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
       · cases h
     · cases h
 
-theorem ofClif_e {ty : Clif.Ty} (h : ty ≠ .i128) :
+theorem ofClif_e {ty : Clif.Ty} (h : eTy ty = true) :
     [CTy.int 8, .int 16, .int 32, .int 64].any (fun u => decide (CTy.ofClif ty = u)) = true := by
-  cases ty <;> simp_all [CTy.ofClif]
+  cases ty <;> simp_all [CTy.ofClif, eTy, Clif.Ty.isInt]
+
+/-- Every type in `buildCtx`'s context is an E type: `buildCtx` rejects block parameters and
+results outside `eTy` (floats, `i128`). -/
+theorem CtxSpec.valTyE {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (x : Nat) (t : CTy)
+    (ht : ctx.valueType? x = some t) : t ∈ eCTys := by
+  have mem : ∀ ty : Clif.Ty, eTy ty = true → CTy.ofClif ty ∈ eCTys := by
+    intro ty h; cases ty <;> simp_all [eTy, eCTys, CTy.ofClif]
+  rcases spec.tyOf x t ht with ⟨B, hB, q, hq, -, rfl⟩ | ⟨B, hB, s, hs, m, ty, -, hty, rfl⟩
+  · exact mem _ ((spec.blockC B hB).1 q hq)
+  · exact mem _ (((spec.blockC B hB).2 s hs).2.2 ty (List.mem_of_getElem? hty))
 
 /-- `buildCtx`'s context passes `ctxOk` on in-scope input. -/
 theorem ctxOk_of {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx} {ranges : Array (Nat × Nat)}

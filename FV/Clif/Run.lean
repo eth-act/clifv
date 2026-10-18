@@ -1,5 +1,6 @@
 import FV.Clif.Sem
 import FV.Clif.Mem
+import FV.Clif.FSem
 
 /-!
 # `Clif.run`: executable, fuel-bounded semantics
@@ -177,6 +178,64 @@ def StoreOp.size (ty : Ty) : StoreOp → Nat
   | .istore16 => 2
   | .istore32 => 4
 
+/-- The bits of `v` at type `ty` (`stuck` on another type). -/
+def Val.at (v : Val) (ty : Ty) : Res (BitVec ty.width) :=
+  Res.ofOption s!"operand has type {v.ty.name}, expected {ty.name}" (v.as? ty)
+
+/-- Semantics of `Inst.float op ty` on its operand values (`FV/Clif/FSem.lean`). -/
+def evalFloat (op : FOp) (ty : Ty) (vs : List Val) : Res Val := do
+  let bad : Res Val := .stuck s!"{op.name}.{ty.name}: ill-typed float operation"
+  match op, vs with
+  | .fcmp cc, [a, b] => do
+    let x ← a.at ty
+    let y ← b.at ty
+    let r ← Res.ofOption s!"fcmp.{ty.name}: not a float type" (FSem.fcmp cc ty x y)
+    pure (Val.ofBool r)
+  | .fma, [a, b, c] => do
+    let x ← a.at ty
+    let y ← b.at ty
+    let z ← c.at ty
+    let r ← Res.ofOption s!"fma.{ty.name}: not a float type" (FSem.lift3 FSem.fma ty x y z)
+    pure ⟨ty, r⟩
+  | .fpromote, [a] =>
+    if ty == .f64 then do pure ⟨.f64, FSem.fpromote (← a.at .f32)⟩ else bad
+  | .fdemote, [a] =>
+    if ty == .f32 then do pure ⟨.f32, FSem.fdemote (← a.at .f64)⟩ else bad
+  | .fcvtToUintSat, [a] | .fcvtToSintSat, [a] =>
+    if ty.isInt then do
+      let r ← Res.ofOption s!"{op.name}: operand is not a float"
+        (FSem.toIntSat (op == .fcvtToUintSat) ty.width a.ty a.bits)
+      pure ⟨ty, r⟩
+    else bad
+  | .fcvtToUint, [a] | .fcvtToSint, [a] =>
+    if ty.isInt then do
+      let r ← Res.ofOption s!"{op.name}: operand is not a float"
+        (FSem.toInt (op == .fcvtToUint) ty.width a.ty a.bits)
+      let r ← Res.ofExcept r
+      pure ⟨ty, r⟩
+    else bad
+  | .fcvtFromUint, [a] | .fcvtFromSint, [a] =>
+    if a.ty.isInt then do
+      let r ← Res.ofOption s!"{op.name}: result is not a float type"
+        (FSem.fromInt (op == .fcvtFromUint) a.bits ty)
+      pure ⟨ty, r⟩
+    else bad
+  | op, [a] =>
+    match FSem.unary op with
+    | some g => do
+      let r ← Res.ofOption s!"{op.name}.{ty.name}: not a float type" (FSem.lift1 g ty (← a.at ty))
+      pure ⟨ty, r⟩
+    | none => bad
+  | op, [a, b] =>
+    match FSem.binary op with
+    | some g => do
+      let x ← a.at ty
+      let y ← b.at ty
+      let r ← Res.ofOption s!"{op.name}.{ty.name}: not a float type" (FSem.lift2 g ty x y)
+      pure ⟨ty, r⟩
+    | none => bad
+  | _, _ => bad
+
 /-- Semantics of one non-`call` instruction: its result values and the new memory. -/
 def evalInst (fr : Frame) (mem : Mem) : Inst → Res (List Val × Mem)
   | .iconst ty imm => pure ([⟨ty, imm⟩], mem)
@@ -300,8 +359,14 @@ def evalInst (fr : Frame) (mem : Mem) : Inst → Res (List Val × Mem)
     pure ([], mem')
   | .fence => pure ([], mem)
   | .bitcast ty _ x => do
-    let a ← fr.getAs x ty
-    pure ([⟨ty, a⟩], mem)
+    -- the bits unchanged, at a type of the same width (`i32 ↔ f32`, `i64 ↔ f64`, identity)
+    let a ← fr.get x
+    if h : a.ty.width = ty.width then pure ([⟨ty, h ▸ a.bits⟩], mem)
+    else .stuck s!"bitcast: {a.ty.name} and {ty.name} differ in width"
+  | .float op ty args => do
+    let vs ← fr.getMany args
+    let r ← evalFloat op ty vs
+    pure ([r], mem)
   | .call .. | .callIndirect .. => .stuck "evalInst: call is handled by step"
   | .funcAddr ty fn => do
     -- the runtime address of the function the declaration `fnN` refers to, via the

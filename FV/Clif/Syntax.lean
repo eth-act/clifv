@@ -17,16 +17,19 @@ Conventions:
 
 namespace Clif
 
-/-- CLIF integer types. Floats and vectors are outside the subset. -/
+/-- CLIF scalar types: the integers and the IEEE 754 binary32/binary64 floats (`f32`/`f64`).
+A float value is its raw bit pattern (`Val.bits`); its arithmetic is in `FV/Float`. Vectors
+and `f16`/`f128` are outside the subset. -/
 inductive Ty where
   | i8 | i16 | i32 | i64 | i128
+  | f32 | f64
   deriving DecidableEq, Repr, Inhabited, Hashable
 
 namespace Ty
 
 /-- Bit width of a type. -/
 def width : Ty → Nat
-  | i8 => 8 | i16 => 16 | i32 => 32 | i64 => 64 | i128 => 128
+  | i8 => 8 | i16 => 16 | i32 => 32 | i64 => 64 | i128 => 128 | f32 => 32 | f64 => 64
 
 /-- Byte width of a type. -/
 def bytes (t : Ty) : Nat := t.width / 8
@@ -34,22 +37,39 @@ def bytes (t : Ty) : Nat := t.width / 8
 /-- CLIF spelling of the type. -/
 def name : Ty → String
   | i8 => "i8" | i16 => "i16" | i32 => "i32" | i64 => "i64" | i128 => "i128"
+  | f32 => "f32" | f64 => "f64"
 
 def ofName? : String → Option Ty
   | "i8" => some i8 | "i16" => some i16 | "i32" => some i32 | "i64" => some i64
-  | "i128" => some i128 | _ => none
+  | "i128" => some i128 | "f32" => some f32 | "f64" => some f64 | _ => none
 
+/-- An integer type (`i8 … i128`). -/
+@[simp] def isInt : Ty → Bool
+  | i8 | i16 | i32 | i64 | i128 => true
+  | f32 | f64 => false
+
+/-- A float type (`f32`, `f64`). -/
+@[simp] def isFloat (t : Ty) : Bool := !t.isInt
+
+/-- The integer type of a width. -/
 def ofWidth? : Nat → Option Ty
   | 8 => some i8 | 16 => some i16 | 32 => some i32 | 64 => some i64 | 128 => some i128
   | _ => none
 
-/-- The type of twice the width (`iconcat` result), if any. -/
+/-- The integer type of twice the width (`iconcat` result), if any. -/
 def double? : Ty → Option Ty
   | i8 => some i16 | i16 => some i32 | i32 => some i64 | i64 => some i128 | i128 => none
+  | f32 | f64 => none
 
-/-- The type of half the width (`isplit` results), if any. -/
+/-- The integer type of half the width (`isplit` results), if any. -/
 def half? : Ty → Option Ty
   | i8 => none | i16 => some i8 | i32 => some i16 | i64 => some i32 | i128 => some i64
+  | f32 | f64 => none
+
+/-- The integer type of the same width as a float type (`bitcast` partner); integers map to
+themselves. -/
+def intOfWidth : Ty → Ty
+  | f32 => i32 | f64 => i64 | t => t
 
 @[simp] theorem width_pos (t : Ty) : 0 < t.width := by cases t <;> decide
 
@@ -208,6 +228,77 @@ def ofName? (s : String) : Option AtomicRmwOp := all.find? (·.name == s)
 
 end AtomicRmwOp
 
+/-- Float condition codes of `fcmp` (`FloatCC`). -/
+inductive FloatCC where
+  | eq | ne | lt | le | gt | ge | ord | uno | one | ueq | ult | ule | ugt | uge
+  deriving DecidableEq, Repr, Inhabited
+
+namespace FloatCC
+
+def name : FloatCC → String
+  | eq => "eq" | ne => "ne" | lt => "lt" | le => "le" | gt => "gt" | ge => "ge"
+  | ord => "ord" | uno => "uno" | one => "one" | ueq => "ueq" | ult => "ult" | ule => "ule"
+  | ugt => "ugt" | uge => "uge"
+
+def all : List FloatCC := [eq, ne, lt, le, gt, ge, ord, uno, one, ueq, ult, ule, ugt, uge]
+
+def ofName? (s : String) : Option FloatCC := all.find? (·.name == s)
+
+end FloatCC
+
+/-- Float operations (`Inst.float op ty args`). The operands per operation and the role of
+`ty` (Cranelift's controlling type) are listed in `FOp.arity`/`Inst.resultTypes`:
+* `fadd fsub fmul fdiv fmin fmax fcopysign`: `x, y : ty → ty`;
+* `fneg fabs sqrt ceil floor trunc nearest`: `x : ty → ty`; `fma`: `x, y, z : ty → ty`;
+* `fcmp cc`: `x, y : ty → i8`;
+* `fpromote` (`ty = f64`), `fdemote` (`ty = f32`): `x → ty`;
+* `fcvtToUint fcvtToSint fcvtToUintSat fcvtToSintSat`: float `x` → integer `ty`;
+* `fcvtFromUint fcvtFromSint`: integer `x` → float `ty`. -/
+inductive FOp where
+  | fadd | fsub | fmul | fdiv | fmin | fmax | fcopysign
+  | fneg | fabs | sqrt | ceil | floor | trunc | nearest
+  | fma
+  | fcmp (cc : FloatCC)
+  | fpromote | fdemote
+  | fcvtToUint | fcvtToSint | fcvtToUintSat | fcvtToSintSat
+  | fcvtFromUint | fcvtFromSint
+  deriving DecidableEq, Repr, Inhabited
+
+namespace FOp
+
+/-- The CLIF opcode name. -/
+def name : FOp → String
+  | fadd => "fadd" | fsub => "fsub" | fmul => "fmul" | fdiv => "fdiv" | fmin => "fmin"
+  | fmax => "fmax" | fcopysign => "fcopysign" | fneg => "fneg" | fabs => "fabs"
+  | sqrt => "sqrt" | ceil => "ceil" | floor => "floor" | trunc => "trunc"
+  | nearest => "nearest" | fma => "fma" | fcmp _ => "fcmp" | fpromote => "fpromote"
+  | fdemote => "fdemote" | fcvtToUint => "fcvt_to_uint" | fcvtToSint => "fcvt_to_sint"
+  | fcvtToUintSat => "fcvt_to_uint_sat" | fcvtToSintSat => "fcvt_to_sint_sat"
+  | fcvtFromUint => "fcvt_from_uint" | fcvtFromSint => "fcvt_from_sint"
+
+/-- Number of operands. -/
+def arity : FOp → Nat
+  | fadd | fsub | fmul | fdiv | fmin | fmax | fcopysign | fcmp _ => 2
+  | fma => 3
+  | _ => 1
+
+/-- The operations without a condition code, by name (`fcmp` is parsed separately). -/
+def plain : List FOp :=
+  [fadd, fsub, fmul, fdiv, fmin, fmax, fcopysign, fneg, fabs, sqrt, ceil, floor, trunc,
+    nearest, fma, fpromote, fdemote, fcvtToUint, fcvtToSint, fcvtToUintSat, fcvtToSintSat,
+    fcvtFromUint, fcvtFromSint]
+
+def ofName? (s : String) : Option FOp := plain.find? (·.name == s)
+
+/-- Is `ty` the type of the operands (`true`: the same-type operations and `fcmp`) rather
+than of the result only (conversions)? -/
+def ctrlIsOperand : FOp → Bool
+  | fpromote | fdemote | fcvtToUint | fcvtToSint | fcvtToUintSat | fcvtToSintSat
+  | fcvtFromUint | fcvtFromSint => false
+  | _ => true
+
+end FOp
+
 abbrev ValueId := Nat
 abbrev BlockId := Nat
 abbrev SlotId := Nat
@@ -221,7 +312,8 @@ structure BlockCall where
 
 /-- Non-terminator instructions of the subset. -/
 inductive Inst where
-  /-- `iconst.ty imm` (`ty` ∈ i8..i64). -/
+  /-- `iconst.ty imm` (`ty` ∈ i8..i64); at `f32`/`f64` it is `f32const`/`f64const` with the
+  literal's bit pattern `imm`. -/
   | iconst (ty : Ty) (imm : BitVec ty.width)
   | unary (op : UnaryOp) (ty : Ty) (x : ValueId)
   | binary (op : BinaryOp) (ty : Ty) (x y : ValueId)
@@ -268,7 +360,8 @@ inductive Inst where
   /-- `ty` is the type of the stored value `x`. -/
   | atomicStore (ty : Ty) (flags : MemFlags) (x p : ValueId)
   | fence
-  /-- `bitcast.ty flags x` between integer types of the same width (the identity). -/
+  /-- `bitcast.ty flags x`: `x`'s bits at the type `ty` of the same width (`i32 ↔ f32`,
+  `i64 ↔ f64`, or the identity). -/
   | bitcast (ty : Ty) (flags : MemFlags) (x : ValueId)
   | trapz (c : ValueId) (code : TrapCode)
   | trapnz (c : ValueId) (code : TrapCode)
@@ -281,6 +374,9 @@ inductive Inst where
   variable `gvN`, which must be a `symbol tls %name` declaration. `Clif.run` has one thread,
   whose instance is the symbol of the link-time image. -/
   | tlsValue (ty : Ty) (gv : Nat)
+  /-- A float operation (`FOp`, `FV/Clif/FSem.lean`); `ty` is Cranelift's controlling type:
+  the result type, except for `fcmp` (the operand type; the result is `i8`). -/
+  | float (op : FOp) (ty : Ty) (args : List ValueId)
   deriving DecidableEq, Repr, Inhabited
 
 /-- An argument of a `try_call` successor block call: a value, the `i`-th return value of the
@@ -550,5 +646,7 @@ def Inst.resultTypes (sigOf : FnRef → Option Signature)
   | .call r _ => (sigOf r).map fun s => s.returns.map (·.ty)
   | .callIndirect sig _ _ => (sigDeclOf sig).map fun s => s.returns.map (·.ty)
   | .funcAddr ty _ => some [ty]
+  | .float (.fcmp _) _ _ => some [.i8]
+  | .float _ ty _ => some [ty]
 
 end Clif

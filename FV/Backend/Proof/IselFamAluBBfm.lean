@@ -352,7 +352,7 @@ theorem sbfm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
   subst hr
   subst hres
   have hX : (ρ x).setWidth ty1.width = u1 := hvals x _ (getAs_ok hu1)
-  cases ty1 <;> simp [Clif.Ty.width] at h3264
+  cases ty1 <;> simp [Clif.Ty.width, eTy] at h3264 hety
   · have ha := Nat.mod_lt imma.toNat (show 0 < 32 by decide)
     have hb := Nat.mod_lt immb.toNat (show 0 < 32 by decide)
     refine ⟨_, prun_rr hR rfl (fun w => ispec_bfm_fb (sz := .size32)
@@ -495,7 +495,7 @@ theorem ubfm_ok {p : Program} (hp : Data p) (MR : MemRelT) (env : Clif.Env)
   subst hr
   subst hres
   have hX : (ρ x).setWidth ty1.width = u1 := hvals x _ (getAs_ok hu1)
-  cases ty1 <;> simp [Clif.Ty.width] at h3264
+  cases ty1 <;> simp [Clif.Ty.width, eTy] at h3264 hety
   · have ha := Nat.mod_lt imma.toNat (show 0 < 32 by decide)
     have hb := Nat.mod_lt immb.toNat (show 0 < 32 by decide)
     refine ⟨_, prun_rr hR rfl (fun w => ispec_bfm_fb (sz := .size32)

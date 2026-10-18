@@ -11,6 +11,8 @@ structure Case where
   ty : Clif.Ty
   conditionWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64
   width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64
+  cint : cty.isInt = true
+  int : ty.isInt = true
 private abbrev function (p : Case) := scalarSelectFunction p.cty p.ty
 private abbrev built (p : Case) := scalarSelectBuilt p.cty p.ty
 private def frame (p : Case) (word : BitVec p.cty.width) : Clif.Frame := {
@@ -22,8 +24,8 @@ private def registers (p : Case) (word : BitVec p.cty.width) (key : Nat) : CV :=
   else BitVec.ofNat 128 (2^100+if key = 193 then 7 else 9)
 private theorem scope (p : Case) : LowerScope (function p) := by
   apply lowerScope_of
-  rcases p with ⟨cty,ty,hc,ht⟩
-  cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht <;> rfl
+  rcases p with ⟨cty,ty,hc,ht,ci,ti⟩
+  cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht ci ti <;> rfl
 private theorem dirty_word (ty : Clif.Ty) (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
     (word : BitVec ty.width) : (BitVec.ofNat 128 (2^100+word.toNat)).setWidth ty.width = word := by
   have bound : ty.width ≤ 128 := by omega
@@ -34,24 +36,24 @@ private theorem dirty_word (ty : Clif.Ty) (width : ty.width = 8 ∨ ty.width = 1
 private theorem absent (p : Case) (key : Nat) (present : key = 7 ∨ key = 31 ∨ key = 63) :
     (built p).1.defInst? key = none := by
   rcases present with rfl | rfl | rfl
-  all_goals rcases p with ⟨cty,ty,hc,ht⟩
-  all_goals cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht <;> rfl
+  all_goals rcases p with ⟨cty,ty,hc,ht,ci,ti⟩
+  all_goals cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht ci ti <;> rfl
 private theorem typed (p : Case) (key : Nat) (present : key = 7 ∨ key = 31 ∨ key = 63) :
     (built p).1.valueType? key = some (.int (if key = 7 then p.cty.width else p.ty.width)) := by
   rcases present with rfl | rfl | rfl
-  all_goals rcases p with ⟨cty,ty,hc,ht⟩
-  all_goals cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht <;> rfl
+  all_goals rcases p with ⟨cty,ty,hc,ht,ci,ti⟩
+  all_goals cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht ci ti <;> rfl
 private theorem mapped_base (p : Case) (key : Nat) (present : key = 7 ∨ key = 31 ∨ key = 63 ∨ key = 100) :
     (built p).1.valueReg? key = some (.vreg (if key = 7 then 192 else if key = 31 then 193 else if key = 63 then 194 else 195) .int) := by
   rcases present with rfl | rfl | rfl | rfl
-  all_goals rcases p with ⟨cty,ty,hc,ht⟩
-  all_goals cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht
+  all_goals rcases p with ⟨cty,ty,hc,ht,ci,ti⟩
+  all_goals cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht ci ti
   all_goals dsimp only [built,Case.cty,Case.ty]
   all_goals decide +kernel
 private theorem source_base (p : Case) :
     ((built p).1.insts[0]?).map minmaxSourceKey = some (some (.select p.ty 7 31 63),[100]) := by
-  rcases p with ⟨cty,ty,hc,ht⟩
-  cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht
+  rcases p with ⟨cty,ty,hc,ht,ci,ti⟩
+  cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht ci ti
   all_goals dsimp only [built,Case.cty,Case.ty]
   all_goals rfl
 private theorem getter {fr : Clif.Frame} {x : Nat} {ty : Clif.Ty} {bits : BitVec ty.width}
@@ -72,15 +74,15 @@ private theorem dfg_base (p : Case) (word : BitVec p.cty.width) : DFGCons (built
   · intro x t v type lookup
     by_cases hc : x = 7
     · subst x; rw [typed p 7 (by simp)] at type; cases type; cases lookup
-      exact ofClif_int_width
+      exact ofClif_int_width p.cint
     · by_cases hx : x = 31
       · subst x; rw [typed p 31 (by simp)] at type; cases type
         simp only [frame,show (31:Nat) ≠ 7 by decide,ite_false,ite_true,Option.some.injEq] at lookup
-        subst v; exact ofClif_int_width
+        subst v; exact ofClif_int_width p.int
       · by_cases hy : x = 63
         · subst x; rw [typed p 63 (by simp)] at type; cases type
           simp only [frame,show (63:Nat) ≠ 7 by decide,show (63:Nat) ≠ 31 by decide,ite_false,ite_true,Option.some.injEq] at lookup
-          subst v; exact ofClif_int_width
+          subst v; exact ofClif_int_width p.int
         · simp [frame,hc,hx,hy] at lookup
 private theorem dfg_transport {a b : Ctx} {fr : Clif.Frame}
     (insts : a.insts.map minmaxSourceKey = b.insts.map minmaxSourceKey)
@@ -121,7 +123,7 @@ private structure Inputs (p : Case) (word : BitVec p.cty.width) where
   held : ValuesHeld (Demanded record.output.state) event.ctx (frame p word)
     (fun key => registers p word (aliasNum result.final.alias key))
 private theorem inputs (p : Case) (word : BitVec p.cty.width) : Nonempty (Inputs p word) := by
-  have actual := stock_select_scalar_driver_observed p.cty p.ty p.conditionWidth p.width
+  have actual := stock_select_scalar_driver_observed p.cty p.ty p.conditionWidth p.width p.cint p.int
   unfold ScalarSelectObserved at actual
   cases run : Stock.lower (function p) with
   | error err => simp only [run,Except.toOption,Option.map_none] at actual; cases actual
@@ -200,8 +202,8 @@ private theorem dominated (p : Case) : Dominated (function p) := by
         rcases member with rfl | rfl | rfl <;> simp [availOf,function,scalarSelectFunction,defsBefore,defsFrom]
       · intro x member
         have members : x ∈ [100] := by
-          rcases p with ⟨cty,ty,hc,ht⟩
-          cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht <;> exact member
+          rcases p with ⟨cty,ty,hc,ht,ci,ti⟩
+          cases cty <;> cases ty <;> simp [Clif.Ty.width] at hc ht ci ti <;> exact member
         have equal : x = 100 := List.mem_singleton.mp members
         subst x
         simp [availOf,function,scalarSelectFunction,defsBefore,defsFrom]

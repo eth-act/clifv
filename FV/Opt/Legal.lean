@@ -49,6 +49,7 @@ def instOps : Inst → List ValueId
   | .atomicCas _ _ c x y => [c, x, y]
   | .call _ args => args
   | .callIndirect _ c args => c :: args
+  | .float _ _ args => args
 
 /-- Rename the value operands of an instruction. -/
 def renameInst (σ : ValueId → ValueId) : Inst → Inst
@@ -85,6 +86,7 @@ def renameInst (σ : ValueId → ValueId) : Inst → Inst
   | .trapnz c code => .trapnz (σ c) code
   | .nop => .nop
   | .symbolValue t gv => .symbolValue t gv
+  | .float op t args => .float op t (args.map σ)
 
 def renameStmt (σ : ValueId → ValueId) (s : Stmt) : Stmt :=
   { results := s.results.map σ, inst := renameInst σ s.inst }
@@ -545,7 +547,7 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
   | .binary op t x y, [r] =>
     match P y with
     | some (yl, _) =>
-      if op.isShift && t != .i128 && C.plain x && C.plain r then
+      if op.isShift && t.isInt && t != .i128 && C.plain x && C.plain r then
         some (.pure (Pat.shiftNarrow op t) [x, yl] [r])
       else none
     | none => same
@@ -585,7 +587,8 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
     | none => some (.pure Pat.bmask128 [x] [rl, rh])
   | .bmask t x, [r] =>
     match P x with
-    | some (xl, xh) => if C.plain r then some (.pure (Pat.bmaskc t) [xl, xh] [r]) else none
+    | some (xl, xh) =>
+      if t.isInt && C.plain r then some (.pure (Pat.bmaskc t) [xl, xh] [r]) else none
     | none => same
   | .extend op .i128 x, [r] => do
     let (rl, rh) ← P r
@@ -597,7 +600,7 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
     else none
   | .ireduce t x, [r] =>
     match P x with
-    | some (xl, _) => if C.plain r then some (.pure (Pat.ireduce t) [xl] [r]) else none
+    | some (xl, _) => if t.isInt && C.plain r then some (.pure (Pat.ireduce t) [xl] [r]) else none
     | none => same
   | .iconcat .i64 lo hi, [r] => do
     let (rl, rh) ← P r

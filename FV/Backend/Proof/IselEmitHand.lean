@@ -104,7 +104,8 @@ theorem extend_emit {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hW : 
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hic
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
-  have hhead : info.resTys.head? = some (.int ty.width) := by rw [hres]; simp [ofClif_int_width]
+  have hhead : info.resTys.head? = some (.int ty.width) := by
+    rw [hres]; simp [ofClif_int_width (isInt_of_eTy hety)]
   have hw := eTy_width hety
   rw [match_ext hp ctx st tr m' hr2 hko hi hhead hw hT hd] at hmatch
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch
@@ -118,7 +119,7 @@ theorem extend_emit {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) (hW : 
   rw [h] at heval
   simp only [Except.ok.injEq, Prod.mk.injEq] at heval
   obtain ⟨-, rfl, -⟩ := heval
-  rw [ofClif_int_width] at hlt
+  rw [ofClif_int_width (isInt_of_eTy hety)] at hlt
   exact emSince_emit hE (extend_emitOk (hctx.valTyE x t hT) hlt hw _ _ _) rfl
 
 /-! ## `extr_32_or_64` (862, 863) -/

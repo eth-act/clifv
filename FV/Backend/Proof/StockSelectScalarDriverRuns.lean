@@ -37,10 +37,16 @@ private theorem observed64 : ScalarSelectObserved .i64 .i8 ∧ ScalarSelectObser
 end Kernel
 attribute [local irreducible] ScalarSelectObserved
 /-- Complete original select drivers retain the real root, source context and
-parameter aliases at all16 condition/result width combinations. -/
+parameter aliases at all16 condition/result width combinations.
+
+Compatibility boundary (S11b, #140): original integer domain only (`f32`/`f64` share widths
+with `i32`/`i64`); `conditionInt`/`int` are trailing auto-parameters (`decide`), so the
+original call shapes are unchanged. -/
 theorem stock_select_scalar_driver_observed (cty ty : Clif.Ty)
     (conditionWidth : cty.width = 8 ∨ cty.width = 16 ∨ cty.width = 32 ∨ cty.width = 64)
-    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64) : ScalarSelectObserved cty ty := by
+    (width : ty.width = 8 ∨ ty.width = 16 ∨ ty.width = 32 ∨ ty.width = 64)
+    (conditionInt : cty.isInt = true := by decide) (int : ty.isInt = true := by decide) :
+    ScalarSelectObserved cty ty := by
   cases cty <;> cases ty
   all_goals first
     | exact observed8.1
@@ -59,5 +65,6 @@ theorem stock_select_scalar_driver_observed (cty ty : Clif.Ty)
     | exact observed64.2.1
     | exact observed64.2.2.1
     | exact observed64.2.2.2
-    | simp [Clif.Ty.width] at conditionWidth width
+    | (simp [Clif.Ty.width] at conditionWidth width; done)
+    | (simp at conditionInt int; done)
 end Backend.Stock.Proof.ScalarSelect

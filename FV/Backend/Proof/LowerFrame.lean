@@ -1,4 +1,5 @@
 import FV.Backend.Proof.LowerContract
+import FV.Clif.FloatFacts
 
 /-!
 # CLIF frames seen by the driver
@@ -41,9 +42,13 @@ theorem getMany_congr {fr fr' : Clif.Frame} :
 theorem evalInst_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func) (hs : fr'.slots = fr.slots)
     (cm : Clif.Mem) (i : Clif.Inst) (h : ∀ x ∈ instArgs i, fr'.regs x = fr.regs x) :
     Clif.evalInst fr' cm i = Clif.evalInst fr cm i := by
-  cases i <;> simp only [instArgs, List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp,
+  cases i
+  case float op ty args =>
+    simp only [instArgs] at h
+    simp only [Clif.evalInst, getMany_congr h]
+  all_goals (simp only [instArgs, List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp,
     forall_eq] at h <;>
-    simp only [Clif.evalInst, Clif.Frame.getAs, Clif.Frame.get, h, hf, hs]
+    simp only [Clif.evalInst, Clif.Frame.getAs, Clif.Frame.get, h, hf, hs])
 
 theorem instOutcome_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func)
     (hs : fr'.slots = fr.slots) (env : Clif.Env) (p : Clif.Program) (cm : Clif.Mem)
@@ -201,8 +206,15 @@ theorem evalInst_types {fr : Clif.Frame} {cm cm' : Clif.Mem} {i : Clif.Inst}
     (h : Clif.evalInst fr cm i = .ok (vals, cm'))
     (ht : i.resultTypes sigOf sigDeclOf = some tys) :
     vals.map (·.ty) = tys := by
-  cases i <;> simp only [Clif.evalInst] at h <;>
-    simp only [Clif.Inst.resultTypes, Option.some.injEq] at ht
+  cases i
+  case float op ty args =>
+    simp only [Clif.evalInst, res_bind_eq_ok, Clif.Res.pure_eq, Clif.Res.ok.injEq,
+      Prod.mk.injEq] at h
+    obtain ⟨_, _, r, hr, rfl, -⟩ := h
+    have hty := Clif.evalFloat_ty hr
+    cases op <;> simp_all [Clif.Inst.resultTypes, Clif.floatResTy]
+  all_goals (simp only [Clif.evalInst] at h <;>
+    simp only [Clif.Inst.resultTypes, Option.some.injEq] at ht)
   all_goals (repeat' (first
     | (obtain ⟨_, _, h⟩ : ∃ _, _ ∧ _ := h)
     | (simp only [res_bind_eq_ok, Clif.Res.pure_eq, Clif.Res.ok.injEq,

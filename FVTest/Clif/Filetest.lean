@@ -18,7 +18,10 @@ Per file:
 3. Every `; run` line of a supported function whose program callees are all supported is
    run with `Clif.run` (empty `Env`, the file's `; data:` objects, fuel `1_000_000`) and compared with its expectation.
 4. With an oracle file (JSON lines from `clif-oracle interp`, schema in
-   `docs/contracts/clif.md`), each run is also compared with the Cranelift interpreter.
+   `docs/contracts/clif.md`), each run is also compared with the Cranelift interpreter. Float
+   results agree when their bits are equal; when they differ only in NaN payloads (both NaN of
+   the same type) the run is counted as `nan-agree`, not as a disagreement: the interpreter
+   computes with the host's NaN rules, `Clif.run` with AArch64's (`docs/contracts/float.md`).
 
 `--unwind` (S10b, `docs/plans/unwinding.md`): runs use `Clif.runX` (unwinding), the file's
 `%throw` stub is dropped and `%throw(tag, p1, p2)` is the extern raising an exception caught by
@@ -40,7 +43,7 @@ def hexBits (v : Val) : String :=
   let h := String.ofList (Nat.toDigits 16 v.toNat)
   "0x" ++ String.ofList (List.replicate (digits - h.length) '0') ++ h
 
-def showVal (v : Val) : String := s!"{v.toInt}:{v.ty.name}"
+def showVal (v : Val) : String := s!"{Clif.Print.dataValue v}:{v.ty.name}"
 
 def showVals (vs : List Val) : String := "[" ++ ", ".intercalate (vs.map showVal) ++ "]"
 
@@ -145,6 +148,21 @@ def agree (o : Outcome) (a : OracleActual) : Option Bool :=
   | _, .error _ => none
   | _, _ => some false
 
+/-- Are the bits `n` of type `ty` a NaN (exponent all ones, fraction nonzero)? -/
+def isNaNBits (ty : Ty) (n : Nat) : Bool :=
+  ty.isFloat &&
+    (let (e, t) := FloatLit.fields ty.width
+     n / 2 ^ t % 2 ^ e == 2 ^ e - 1 && n % 2 ^ t != 0)
+
+/-- Our returned values and the interpreter's agree up to NaN payloads: pairwise equal, or both
+NaN of the same float type. -/
+def agreeUpToNaN (o : Outcome) (a : OracleActual) : Bool :=
+  match o, a with
+  | .returned vs _, .returned ws =>
+    vs.length == ws.length && (vs.zip ws).all fun (v, (tn, n)) =>
+      v.ty.name == tn && (v.toNat == n || (isNaNBits v.ty v.toNat && isNaNBits v.ty n))
+  | _, _ => false
+
 /-! ## Per-file driver -/
 
 structure Counts where
@@ -154,6 +172,8 @@ structure Counts where
   roundtripFail : Nat := 0
   agree : Nat := 0
   disagree : Nat := 0
+  /-- Float results that differ from the interpreter's only in NaN payloads. -/
+  nanAgree : Nat := 0
   /-- Disagreements in files the upstream suite interprets (`test interpret` header). -/
   disagreeInterp : Nat := 0
   oracleError : Nat := 0
@@ -170,7 +190,7 @@ def Counts.add (a b : Counts) : Counts :=
   { pass := a.pass + b.pass, fail := a.fail + b.fail,
     unsupported := a.unsupported + b.unsupported,
     roundtripFail := a.roundtripFail + b.roundtripFail,
-    agree := a.agree + b.agree, disagree := a.disagree + b.disagree,
+    agree := a.agree + b.agree, disagree := a.disagree + b.disagree, nanAgree := a.nanAgree + b.nanAgree,
     disagreeInterp := a.disagreeInterp + b.disagreeInterp,
     oracleError := a.oracleError + b.oracleError,
     legalPass := a.legalPass + b.legalPass, legalFail := a.legalFail + b.legalFail,
@@ -293,8 +313,10 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
             match agree o rec.actual with
             | some true => c := { c with agree := c.agree + 1 }
             | some false =>
-              c := { c with disagree := c.disagree + 1 }
-              notes := notes.push s!"  DISAGREE {showRun r}: ours {showOutcome o}"
+              if agreeUpToNaN o rec.actual then c := { c with nanAgree := c.nanAgree + 1 }
+              else
+                c := { c with disagree := c.disagree + 1 }
+                notes := notes.push s!"  DISAGREE {showRun r}: ours {showOutcome o}"
             | none =>
               c := { c with oracleError := c.oracleError + 1 }
               if verbose then
@@ -335,7 +357,7 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
     | none => pure ()
   if pf.header.contains "test interpret" then c := { c with disagreeInterp := c.disagree }
   let oracleText := if oracle.isSome then
-      s!" agree {c.agree} disagree {c.disagree} oracle-error {c.oracleError}" else ""
+      s!" agree {c.agree} nan-agree {c.nanAgree} disagree {c.disagree} oracle-error {c.oracleError}" else ""
   let legalText := if legal then
       s!" | legal pass {c.legalPass} fail {c.legalFail} agree {c.legalAgree} disagree {c.legalDisagree}"
       else ""
@@ -402,5 +424,5 @@ def main (args : List String) : IO UInt32 := do
     total := total.add c
   let legalTotal := if legal then
       s!" legal pass {total.legalPass} fail {total.legalFail} agree {total.legalAgree} disagree {total.legalDisagree}" else ""
-  IO.println s!"TOTAL files {files.size}: pass {total.pass} fail {total.fail} unsupported {total.unsupported} (in {filesWithUnsupported} files) roundtrip-fail {total.roundtripFail} agree {total.agree} disagree {total.disagree} (in `test interpret` files: {total.disagreeInterp}) oracle-error {total.oracleError} oracle-unavailable {badOracle}{legalTotal}"
+  IO.println s!"TOTAL files {files.size}: pass {total.pass} fail {total.fail} unsupported {total.unsupported} (in {filesWithUnsupported} files) roundtrip-fail {total.roundtripFail} agree {total.agree} disagree {total.disagree} (in `test interpret` files: {total.disagreeInterp}) oracle-error {total.oracleError} oracle-unavailable {badOracle}{legalTotal} nan-agree {total.nanAgree}"
   return if total.fail + total.disagree + total.roundtripFail + total.legalFail + total.legalDisagree > 0 then 1 else 0

@@ -207,11 +207,12 @@ theorem urem_vholds {ty : Clif.Ty} (hw : ty.width ≤ 64) {a b : BitVec ty.width
 
 theorem divOpnd_of_vholds64 {sg : Bool} {ty : Clif.Ty} (hw : ty.width = 64) {a : BitVec ty.width}
     {A : CV} (h : VHolds ⟨ty, a⟩ A) : DivOpnd sg a A := by
-  cases ty <;> simp [Clif.Ty.width] at hw
-  simp only [VHolds, Clif.Ty.width] at h
-  unfold DivOpnd
-  simp only [Clif.Ty.width, show ¬ (64 : Nat) ≤ 32 by decide, ↓reduceIte, lo64, BitVec.setWidth_eq]
-  exact h
+  cases ty <;> simp [Clif.Ty.width] at hw <;>
+  · simp only [VHolds, Clif.Ty.width] at h
+    unfold DivOpnd
+    simp only [Clif.Ty.width, show ¬ (64 : Nat) ≤ 32 by decide, ↓reduceIte, lo64,
+      BitVec.setWidth_eq]
+    exact h
 
 /-- **The dividend**: a `put_in_reg_*ext*` result (or the value's own register) holding the value
 as a division operand. -/
@@ -538,7 +539,8 @@ theorem udiv64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at hty
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width,
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some,
+    ofClif_int_width (isInt_of_eTy hety),
     CTy.int.injEq] at hty
   have hD := put_nonzero_in_reg_ok hp hco hR hctx (hn := by omega) (w := 64) (e := 1) (by decide)
     (by decide) h698
@@ -591,7 +593,8 @@ theorem udiv32_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at hb32 h698
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width] at hb32 h698
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some,
+    ofClif_int_width (isInt_of_eTy hety)] at hb32 h698
   have hw32 : ty.width ≤ 32 := hb32
   have hwid := cmp_eTy_widths hety
   have hE := zext32_ok hp hco (hn := by omega) h556
@@ -648,7 +651,8 @@ theorem urem64_ruleOk (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env 
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
   rw [hres] at hty
-  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some, ofClif_int_width,
+  simp only [List.map_cons, List.map_nil, List.head?_cons, Option.getD_some,
+    ofClif_int_width (isInt_of_eTy hety),
     CTy.int.injEq] at hty
   have hwid := cmp_eTy_widths hety
   have hE := zext64_ok hp hco (hn := by omega) h558

@@ -335,11 +335,12 @@ theorem sz_3264 {t : CTy} {sv : V} (h3264 : (t.bits == 32 || t.bits == 64) = tru
   · exact .inl ⟨by omega, rfl⟩
   · exact .inr ⟨by omega, rfl⟩
 
-theorem ty_of_bits {ty : Clif.Ty} {t : CTy} (ht : CTy.ofClif ty = t) {sz : OperandSize}
-    (h : (t.bits = 32 ∧ sz = .size32) ∨ (t.bits = 64 ∧ sz = .size64)) :
+theorem ty_of_bits {ty : Clif.Ty} {t : CTy} (ht : CTy.ofClif ty = t) (hE : t ∈ eCTys)
+    {sz : OperandSize} (h : (t.bits = 32 ∧ sz = .size32) ∨ (t.bits = 64 ∧ sz = .size64)) :
     (ty = .i32 ∧ sz = .size32) ∨ (ty = .i64 ∧ sz = .size64) := by
   subst ht; rw [ofClif_bits] at h
-  rcases h with ⟨h, rfl⟩ | ⟨h, rfl⟩ <;> cases ty <;> simp [Clif.Ty.width] at h ⊢
+  rcases h with ⟨h, rfl⟩ | ⟨h, rfl⟩ <;> cases ty <;>
+    simp [Clif.Ty.width, CTy.ofClif, eCTys] at h hE ⊢
 
 theorem ty_narrow {ty : Clif.Ty} {t : CTy} (ht : CTy.ofClif ty = t) (h : t.bits ≤ 16) :
     ty = .i8 ∨ ty = .i16 := by
@@ -380,7 +381,8 @@ theorem emit_rr (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) (cc
       rcases mem2 hu with rfl | rfl
       · exact .inr (by simp [hxv])
       · exact .inr (by simp [hyv])
-    · exact cmp_rr_cond cc (ty_of_bits (vholds_ty hdf hT hyv) hsv) (hh x _ hxv) (hh y _ hyv)
+    · exact cmp_rr_cond cc (ty_of_bits (vholds_ty hdf hT hyv) (hctx.valTyE y t hT) hsv)
+        (hh x _ hxv) (hh y _ hyv)
 
 /-- Rule 6 (`cmp` of a 32/64-bit register with an `imm12` constant). -/
 theorem emit_imm (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) (cc : Clif.IntCC)
@@ -414,7 +416,8 @@ theorem emit_imm (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) (c
     · rw [vuseNums_cmpImm, List.mem_singleton] at hu
       subst hu; exact .inr (by simp [hxv])
     · rw [hval]
-      exact cmp_imm_cond cc (ty_of_bits (vholds_ty hdf hT hxv) hsv) (hh x _ hxv)
+      exact cmp_imm_cond cc (ty_of_bits (vholds_ty hdf hT hxv) (hctx.valTyE x t hT) hsv)
+        (hh x _ hxv)
 
 theorem u64_pred {n : Nat} (h1 : 1 ≤ n) (h2 : n < 2 ^ 64) : u64 ((n : Int) - 1) = n - 1 := by
   unfold u64; omega
@@ -459,7 +462,8 @@ theorem emit_pred (hctx : CtxInv f ctx) {st : LState} (hvb : ValsBelow ctx st) {
     · rw [vuseNums_cmpImm, List.mem_singleton] at hu
       subst hu; exact .inr (by simp [hxv])
     · rw [hval]
-      exact cmp_pred_cond hcc (ty_of_bits (vholds_ty hdf hT hxv) hsv) (hh x _ hxv) hodd'
+      exact cmp_pred_cond hcc (ty_of_bits (vholds_ty hdf hT hxv) (hctx.valTyE x t hT) hsv)
+        (hh x _ hxv) hodd'
 
 /-- Rule 3 (8/16-bit, unsigned: `cmp` of the zero-extended register with an `imm12`). -/
 theorem emit_narrow_imm (hR : Refines F isem) (hctx : CtxInv f ctx) {st st' : LState}

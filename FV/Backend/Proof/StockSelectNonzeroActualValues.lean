@@ -58,4 +58,5 @@ theorem stock_select_nonzero_actual_source_values {f : Clif.Function} {ctx : Ctx
     intro final _ _ pair
     exact ⟨pair.1,fun k h => pair.2 k (by rcases h with h | h <;> omega)⟩
   case i128 => simp [Clif.Ty.width] at conditionWidth
+  case f32 | f64 => cases getAs_typed dfg typed getC
 end Backend.Stock.Proof.ScalarSelect

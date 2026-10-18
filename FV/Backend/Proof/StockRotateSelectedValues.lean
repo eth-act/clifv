@@ -47,12 +47,12 @@ private theorem wide_imm_value {F : BitVec 64 → Prop} {isem : Backend.Proof.Se
         (Backend.lowerFunction.resolve aliases (aliases.size+1))] ρ ρ' ∧
       VHolds ⟨ty,rotateWideBits left u amount⟩ (ρ' d) ∧ ∀ z,z ≠ d → ρ' z = ρ z := by
   rcases width with small | large
-  · have same := ty_eq_of_width (ty' := .i32) small (by decide)
-    subst ty
+  · rcases (show ty = .i32 ∨ ty = .f32 by revert small; cases ty <;> simp [Clif.Ty.width])
+      with rfl | rfl <;>
     simpa only [Clif.Ty.width,szOf,Nat.reduceLeDiff,ite_true,VHolds,OperandSize.bits] using
       stock_rotate_wide_imm_resolved refines left .size32 count bounded held
-  · have same := ty_eq_of_width (ty' := .i64) large (by decide)
-    subst ty
+  · rcases (show ty = .i64 ∨ ty = .f64 by revert large; cases ty <;> simp [Clif.Ty.width])
+      with rfl | rfl <;>
     simpa only [Clif.Ty.width,szOf,Nat.reduceLeDiff,ite_false,VHolds,OperandSize.bits] using
       stock_rotate_wide_imm_resolved refines left .size64 count bounded held
 /-- Actual selected wide immediate rotations derive width, original constant
@@ -152,7 +152,7 @@ theorem stock_rotate_narrow_immediate_requests {p : Program} (hp : Data p) (ctx 
     obtain ⟨t,typed,safe,rx,mapped,form⟩ := shape
     have typeEq : t = .int ty.width := by
       have h := (dfg.2 x t ⟨ty,u⟩ typed (getAs_ok getX)).symm
-      exact h.trans (ofClif_int_width (ty := ty))
+      exact h.trans (ofClif_int_width (ty := ty) (isInt_of_width_lt_32 (by omega)))
     rw [typeEq] at typed
     exact ⟨typed,safe,rx,mapped⟩
 end Backend.Stock.Proof.ScalarRotate

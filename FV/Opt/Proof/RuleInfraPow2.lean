@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleSkelEmbed
+import FV.Opt.Proof.RuleIntRetry
 import FV.Opt.Proof.KernelBV
 
 /-!
@@ -1087,7 +1088,9 @@ macro_rules
     all_goals (apply val_congr; $e)))
 
 set_option hygiene false in
-/-- The whole template for a power-of-two `div`/`rem` skeleton rule. -/
+/-- The whole template for a power-of-two `div`/`rem` skeleton rule. The right-hand side splits
+the made constant's type on `isInt` on demand (`RuleIntRetry.lean`): at a float type `iconst_u`
+has no rule. -/
 syntax "pow2_auto_div " ident " using " tactic : tactic
 set_option hygiene false in
 macro_rules
@@ -1102,7 +1105,7 @@ macro_rules
   all_goals pow2_facts
   all_goals pow2_lhs
   all_goals pow2_facts
-  all_goals pow2_rhs
+  all_goals opt_int_retry pow2_rhs [tyInt_ofClif_notInt]
   all_goals skel_good
   all_goals pow2_div_fin $e))
 

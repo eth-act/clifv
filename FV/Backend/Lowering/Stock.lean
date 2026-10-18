@@ -23,6 +23,7 @@ def instArgs : Clif.Inst → List Nat
   | .atomicCas _ _ x y z => [x, y, z]
   | .call _ args => args
   | .callIndirect _ callee args => callee :: args
+  | .float _ _ args => args
 
 def termArgs : Clif.Terminator → List Nat
   | .jump bc => bc.args
@@ -41,6 +42,8 @@ def mustLower : Clif.Inst → Bool
   | .div .. | .uaddOverflowTrap .. | .store .. | .call .. | .callIndirect ..
   | .atomicLoad .. | .atomicStore .. | .atomicRmw .. | .atomicCas ..
   | .fence | .trapz .. | .trapnz .. => true
+  -- float operations (`fcvt_to_{u,s}int` trap) are lowered, never omitted
+  | .float .. => true
   | _ => false
 
 def colored (i : Clif.Inst) : Bool :=

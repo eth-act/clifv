@@ -128,8 +128,20 @@ theorem binary_value {ctx : Ctx} {fr : Clif.Frame} (hdfg : DFGCons ctx fr) {y j 
   cases hv
   exact ⟨u, w, ha, hb, rfl⟩
 
-theorem ty_i64_of_width {ty : Clif.Ty} (h : ty.width = 64) : ty = .i64 := by
-  cases ty <;> simp [Clif.Ty.width] at h ⊢
+theorem ty_i64_of_width {ty : Clif.Ty} (h : ty.width = 64) (hi : ty.isInt = true) :
+    ty = .i64 := by
+  cases ty <;> simp_all [Clif.Ty.width]
+
+/-- A `binary` instruction whose first result type is `.int ty.width` has an integer type. -/
+theorem binary_isInt {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : Nat}
+    {info : IInfo} {op : Clif.BinaryOp} {ty : Clif.Ty} {x y : Nat} (hi : ctx.insts[ii]? = some info)
+    (hc : info.clif = some (.binary op ty x y)) (hhead : info.resTys.head? = some (.int ty.width)) :
+    ty.isInt = true := by
+  obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hc
+  simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
+  subst htys
+  rw [hres] at hhead
+  exact (ofClif_eq_int (by simpa using hhead)).1
 
 /-! ## `smulhi_64`, `umulhi_64` -/
 
@@ -147,7 +159,7 @@ theorem smulhi_64_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem 
       variantNames_Smulhi rfl hmatch
   by_cases h64 : ty.width ≠ 64
   · rw [match_1056_ne hp ctx st tr m' hi hhead h64 hd] at hmatch; cases hmatch
-  obtain rfl := ty_i64_of_width (Decidable.of_not_not h64)
+  obtain rfl := ty_i64_of_width (Decidable.of_not_not h64) (binary_isInt hctx hi hc hhead)
   rw [match_1056 hp ctx st tr m' hi hhead hd] at hmatch
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch
   obtain ⟨rfl, rfl⟩ := hmatch
@@ -187,7 +199,7 @@ theorem umulhi_64_ok {p : Program} (hp : Data p) (F : BitVec 64 → Prop) (isem 
       variantNames_Umulhi rfl hmatch
   by_cases h64 : ty.width ≠ 64
   · rw [match_1068_ne hp ctx st tr m' hi hhead h64 hd] at hmatch; cases hmatch
-  obtain rfl := ty_i64_of_width (Decidable.of_not_not h64)
+  obtain rfl := ty_i64_of_width (Decidable.of_not_not h64) (binary_isInt hctx hi hc hhead)
   rw [match_1068 hp ctx st tr m' hi hhead hd] at hmatch
   simp only [Except.ok.injEq, Prod.mk.injEq, Option.some.injEq] at hmatch
   obtain ⟨rfl, rfl⟩ := hmatch

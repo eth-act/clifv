@@ -205,7 +205,8 @@ theorem extend_rule_ok {p : Program} (hp : Data p) {r : Rule} {op : Clif.ExtendO
   obtain ⟨tys, htys, hres, -⟩ := hctx.resTys ii info _ hi hic
   simp only [Clif.Inst.resultTypes, Option.some.injEq] at htys
   subst htys
-  have hhead : info.resTys.head? = some (.int ty.width) := by rw [hres]; simp [ofClif_int_width]
+  have hhead : info.resTys.head? = some (.int ty.width) := by
+    rw [hres]; simp [ofClif_int_width (isInt_of_eTy hety)]
   have hw := eTy_width hety
   cases hT : ctx.valueType? x with
   | none => exact absurd hmatch (match_ext_none hp ctx st tr m' hko hi hhead hw hT hd _ _)
@@ -232,7 +233,9 @@ theorem extend_rule_ok {p : Program} (hp : Data p) {r : Rule} {op : Clif.ExtendO
     simp [LState.emit, LState.fresh]
   intro fr cm ρ vals cm' _ hvals hdfg ho
   obtain ⟨a, ha, hlt, rfl, rfl⟩ := evalInst_extend_ok ho
-  have ht : t = .int a.ty.width := by rw [← hdfg.2 x t a hT ha, ofClif_int_width]
+  have ht : t = .int a.ty.width := by
+    have hta := hdfg.2 x t a hT ha
+    rw [← hta, ofClif_int_width (isInt_of_ofClif_mem (hta ▸ hctx.valTyE x t hT))]
   subst ht
   obtain ⟨aty, u⟩ := a
   have hsg : op = .uextend ∧ sg = false ∨ op = .sextend ∧ sg = true := by
