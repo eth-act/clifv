@@ -1,6 +1,5 @@
 import FV.Opt.Proof.CompleteGvn
 import FV.Opt.Licm
-import Lean
 
 /-!
 # Completeness of the LICM stage (M1)
@@ -18,100 +17,6 @@ search's fuel suffices). Hence a block between the header and a loop block in th
 is in the loop (`Opt.loop_between`), which is why an operand defined outside the loop is available
 at the end of the header's immediate dominator. `Array.qsort` only permutes (`Opt.mem_qsort`).
 -/
-
-namespace Opt
-
-open Lean Elab Term Meta in
-/-- A declaration private to `Init.Data.Array.QSort.Basic` (the internals of `Array.qsort`). -/
-elab "qsortPriv% " id:ident : term => do
-  let n := ((`_private.Init.Data.Array.QSort.Basic).num 0) ++ id.getId
-  let some ci := (← getEnv).find? n | throwError "not found {n}"
-  let us ← ci.levelParams.mapM fun _ => mkFreshLevelMVar
-  return mkConst n us
-
-theorem swap_all {α : Type} {n : Nat} (P : α → Prop) (v : Vector α n) (i j : Nat) (hi : i < n) (hj : j < n)
-    (h : ∀ k (hk : k < n), P v[k]) : ∀ k (hk : k < n), P (v.swap i j hi hj)[k] := by
-  intro k hk
-  rw [Vector.getElem_swap]
-  split
-  · exact h j hj
-  · split
-    · exact h i hi
-    · exact h k hk
-
-theorem qpartition_loop_all {α : Type} {n : Nat} (P : α → Prop) (lt : α → α → Bool) (lo hi : Nat)
-    (hhi : hi < n) (pivot : α) : ∀ (m : Nat) (as : Vector α n) (i k : Nat) (ilo : lo ≤ i) (ik : i ≤ k)
-      (w : k ≤ hi), hi - k = m → (∀ k (hk : k < n), P as[k]) →
-      ∀ k' (hk' : k' < n), P ((qsortPriv% Array.qpartition.loop) lt lo hi hhi pivot as i k ilo ik w).2[k'] := by
-  intro m
-  induction m with
-  | zero =>
-    intro as i k ilo ik w hm h
-    rw [qsortPriv% Array.qpartition.loop.eq_def]
-    simp only [show ¬ k < hi by omega, dite_false]
-    exact swap_all P as i hi _ hhi h
-  | succ m ih =>
-    intro as i k ilo ik w hm h
-    rw [qsortPriv% Array.qpartition.loop.eq_def]
-    have hkh : k < hi := by omega
-    simp only [hkh, dite_true]
-    split
-    · exact ih _ (i + 1) (k + 1) (by omega) (by omega) (by omega) (by omega) (swap_all P as i k _ _ h)
-    · exact ih as i (k + 1) ilo (by omega) (by omega) (by omega) h
-
-theorem qpartition_all {α : Type} {n : Nat} (P : α → Prop) (as : Vector α n) (lt : α → α → Bool)
-    (lo hi : Nat) (w : lo ≤ hi) (hlo : lo < n) (hhi : hi < n) (h : ∀ k (hk : k < n), P as[k]) :
-    ∀ k (hk : k < n), P (Array.qpartition as lt lo hi w hlo hhi).2[k] := by
-  unfold Array.qpartition
-  simp only
-  refine qpartition_loop_all P lt lo hi hhi _ _ _ _ _ _ _ _ rfl ?_
-  have h1 : ∀ (v : Vector α n) (c : Bool) (i j : Nat) (hi : i < n) (hj : j < n),
-      (∀ k (hk : k < n), P v[k]) → ∀ k (hk : k < n), P (if c = true then v.swap i j hi hj else v)[k] := by
-    intro v c i j hi hj hv
-    split
-    · exact swap_all P v i j hi hj hv
-    · exact hv
-  exact h1 _ _ _ _ _ _ (h1 _ _ _ _ _ _ (h1 _ _ _ _ _ _ h))
-
-theorem qsort_sort_all {α : Type} (P : α → Prop) (lt : α → α → Bool) {n : Nat} :
-    ∀ (B : Nat) (as : Vector α n) (lo hi : Nat) (w : lo ≤ hi) (hlo : lo < n) (hhi : hi < n),
-      hi - lo < B → (∀ k (hk : k < n), P as[k]) →
-      ∀ k (hk : k < n), P ((qsortPriv% Array.qsort.sort) lt as lo hi w hlo hhi)[k] := by
-  intro B
-  induction B with
-  | zero => intro _ _ _ _ _ _ hB; omega
-  | succ B ih =>
-    intro as lo hi w hlo hhi hB h
-    rw [qsortPriv% Array.qsort.sort.eq_def]
-    split
-    · rename_i h₁
-      have hq := qpartition_all P as lt lo hi w hlo hhi h
-      generalize Array.qpartition as lt lo hi w hlo hhi = q at hq
-      obtain ⟨⟨mid, hmid⟩, as'⟩ := q
-      simp only at hq ⊢
-      split
-      · exact hq
-      · rename_i h₂
-        exact ih _ _ _ _ _ _ (by omega) (ih _ _ _ _ _ _ (by omega) hq)
-    · exact h
-
-/-- Every element of `Array.qsort as lt` is an element of `as`. -/
-theorem mem_qsort {α : Type} (as : Array α) (lt : α → α → Bool) :
-    ∀ x ∈ (as.qsort lt).toList, x ∈ as.toList := by
-  unfold Array.qsort
-  split
-  · exact fun x hx => hx
-  · rename_i h0
-    intro x hx
-    simp only at hx
-    obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem hx
-    simp only [Array.length_toList, Vector.size_toArray] at hk
-    have := qsort_sort_all (fun y => y ∈ as.toList) lt _ as.toVector (min 0 (as.size - 1))
-      (max (min 0 (as.size - 1)) (min (as.size - 1) (as.size - 1))) (by omega) (by omega) (by omega)
-      (Nat.lt_succ_self _) (fun k hk => by simp) k hk
-    simpa using this
-
-end Opt
 
 namespace Opt
 

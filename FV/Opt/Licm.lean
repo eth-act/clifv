@@ -36,9 +36,10 @@ def licmHoistable (hoistConst : Bool) : Inst → Bool
 def licmRound (hoistConst : Bool) (f : Function) (cfg : Cfg) : Function × Nat := Id.run do
   let mut blocks := f.blocks.toArray
   let mut moved := 0
-  -- innermost (smallest) loops first
-  let loops := cfg.loops.qsort (fun a b => a.body.size < b.body.size)
-  for lp in loops do
+  -- innermost (smallest) loops first (`attach`: each loop carries its membership in
+  -- `cfg.loops` through the sort, for the completeness proof `FV/Opt/Proof/CompleteLicm.lean`)
+  let loops := cfg.loops.attach.qsort (fun a b => a.1.body.size < b.1.body.size)
+  for ⟨lp, _⟩ in loops do
     let some hb := cfg.idom[lp.header]! | continue
     -- values defined inside the loop (current contents)
     let mut inside : Std.HashSet ValueId := {}
