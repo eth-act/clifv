@@ -33,6 +33,14 @@ next to it. It leaves the existing Arm model semantics and theorems untouched.
 
   Between the `ldaxr` and the `stlxr` of a loop there is no other memory access.
 
+  **LSE (`has_lse = 1`) is not emitted in our configuration**: cg_clif sets `has_lse` only through
+  `-Ctarget-cpu` (`native` or a CPU preset; `-Ctarget-feature` is ignored), `cargo fv` passes
+  none, and every bundle says `target aarch64 has_lse=0`; the Lean backend implements only the
+  non-LSE lowering. With `has_lse` Cranelift emits `ld<op>al` for `atomic_rmw` (all but `nand`,
+  `xchg`) and `casal` for `atomic_cas`; their events are an `A` read and an `L` write paired by
+  `rmw` (`amo`), the kinds and pairing of a successful LL/SC iteration, so the execution-level
+  theorems cover them unchanged (`FV/Concurrency/Lse.lean`, `Lse.lse_maps`).
+
 ## 2. The models (decision)
 
 **Executions.** Axiomatic, herd/cat style, in the formulation of the Arm ARM (B2.3) and
@@ -43,7 +51,7 @@ Well-formedness `Exec.Wf`: `po` a strict order within a thread, total on each th
 write to a read of the same location, functional and total on reads (initial writes are events);
 `co` a strict total order on the writes of each location; `rmw` relates a read to its write, same
 thread and location, `po`-adjacent. Locations are abstract (no mixed-size accesses: Rust's atomics
-of a type are accessed at that type; a mixed-size model, Flur et al. POPL 2017, is out of scope).
+of a type are accessed at that type; a mixed-size model, Flur et al. POPL 2017, is T2i, #317).
 
 **Arm side: the Armv8 axiomatic model, restricted to the fragment.** Event kinds `plainR`, `plainW`,
 `acqR` (`ldar`), `relW` (`stlr`), `acqXR` (`ldaxr`), `relXW` (`stlxr`), `dmb` (`dmb ish`, a full
@@ -55,10 +63,14 @@ barrier). `A = acqR ∪ acqXR`, `L = relW ∪ relXW`.
   `bob = po;[dmb];po ∪ [L];po;[A] ∪ [A];po ∪ po;[L]`.
 
 These are clauses of the official `aarch64.cat`; the omitted ones (`dob` dependencies, the
-`rfi;[A|Q]` part of `aob`, `po;[L];coi`, `dmb.ld`/`dmb.st`, `Q`) only *add* order. So the model
-here is weaker than Armv8 and allows a superset of its executions: every theorem of the form "every
-consistent execution …" proven here holds for real Armv8. The cost: tests that rely on dependencies
-(e.g. `MP+dmb+addr`) are allowed here but forbidden by Armv8; the litmus table records them.
+`rfi;[A|Q]` part of `aob`, `po;[L];coi`, `dmb.ld`/`dmb.st`, `Q`, `isb`) only *add* order. This is a
+theorem (T2g): `FV/Concurrency/Armv8Full.lean` states the whole model (`Armv8Full.Consistent`,
+every clause, over all load/store/barrier kinds and any `addr`/`data`/`ctrl` dependencies), and
+`Armv8Full.consistent_frag` shows that an execution of the fragment's kinds consistent for it is
+`Armv8.Consistent`. So every theorem of the form "every consistent execution …" proven here holds
+for real Armv8 (`Mapping.armv8full_to_clif`, `armv8full_to_clifF`). The cost: tests that rely on
+dependencies are allowed here but forbidden by Armv8: `MP+dmb+addr`
+(`FVTest/Concurrency/LitmusFull.lean`: `mp_dmb_addr_frag` consistent, `mp_dmb_addr_full` not).
 
 **CLIF side (the Cranelift contract).** Kinds `naR`, `naW`, `scR`, `scW`, `fence`; `At = scR ∪ scW`.
 `sw = [scW];rf;[scR]`, `hb = (po ∪ sw)⁺`, `eco = com⁺`.
@@ -270,7 +282,8 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2e (#303) | Program level: multi-threaded `Clif.run` (`ClifThread.MTRun`), program-level DRF-SC (race-freedom in every contract-consistent execution, initial writes `co`-first), replay of SC executions as interleaving runs, and the program-level statement `ProgE2E.program_correct` with the per-thread contract `Realizes` (§3c) | **done** |
 | T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference) | open |
 | T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem (§3d), and the program-level chain `program_correct_rust` | **done** |
-| T2g (#305) | Widening: LSE atomics (`has_lse`), mixed-size accesses, `i128` atomics, the full `aarch64.cat` (`dob`, `dmb.ld/st`) | open |
+| T2g (#305) | Widening: LSE atomics (`has_lse`: not emitted in our configuration, covered by the table, `Lse.lse_maps`), the full `aarch64.cat` (`Armv8Full`, monotonicity `consistent_frag`), `i128` atomics (rejected by cg_clif) | **done** |
+| T2i (#317) | Mixed-size accesses (a mixed-size model instead of `NoOverlap`) | open |
 
 The existing single-core assumption stays in the trusted base of `E2E.backend_correct_final`, and
 #38 stays open, until T2h is done (§3c: T2e composes the memory-model layer with an explicit

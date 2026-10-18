@@ -35,7 +35,8 @@ faithful and only checks the other direction (`scripts/litmus-qemu.sh`: observed
 
 The model omits `dob` (dependencies), so tests whose verdict needs a dependency (e.g.
 `MP+dmb+addr`, forbidden by herd7) are allowed here: the model is weaker than Armv8 by
-construction (`docs/plans/atomics.md` §2); Cranelift's atomics never rely on dependencies.
+construction (`docs/plans/atomics.md` §2; `FVTest/Concurrency/LitmusFull.lean`: `MP+dmb+addr` against
+the full model); Cranelift's atomics never rely on dependencies.
 -/
 
 namespace Concurrency.Litmus

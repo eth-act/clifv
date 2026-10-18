@@ -18,8 +18,9 @@ model"; herd's `aarch64.cat`; Pulte et al., *Simplifying ARM concurrency*, POPL 
 
 Each clause is a clause of the official model. The omitted ones (`dob`, the `[range(rmw)];rfi;[A|Q]`
 part of `aob`, `po;[L];coi`, `dmb.ld`/`dmb.st`, `Q`) only add order, so this model allows every
-execution Armv8 allows: a theorem "every `Consistent` execution …" holds for Armv8 itself
-(`docs/plans/atomics.md` §2). The existing single-core Arm model (`docs/decisions/arm-model.md`,
+execution Armv8 allows (`Armv8Full.consistent_frag`, `FV/Concurrency/Armv8Full.lean`): a theorem
+"every `Consistent` execution …" holds for Armv8 itself (`docs/plans/atomics.md` §2). The
+existing single-core Arm model (`docs/decisions/arm-model.md`,
 "Atomics") is not changed.
 -/
 
