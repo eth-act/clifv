@@ -667,6 +667,15 @@ author's estimate, not measured), **Risk**.
   without aliases (#88). The binary theorem on
   `leanLink`'s output is L1's `compileExe_correct`. Open: design (b) for the outside part.
 
+  **Status (L2b stage 3, #10; docs/research/lean-linker.md §6):** design (b) started. `lake exe
+  lean-ld` (`FV/Link/Ld/`) links rustc's inputs into the whole executable; `cargo fv --lean-ld`
+  uses it (survey and fv-demo: binary check and tests pass, with and without `--lean-link`).
+  Proven on its writer: `Link.Ld.file0OkB_write_syms` — `file0OkB` of `lean-ld`'s output is
+  `regionPhsB ∧ staticB` (its plan's program headers), `tlsOkB` and the data check `dataFastB`;
+  the symbol check (`symsOkB_write`) and `symFootB` are theorems. Open: 3c (`dataFastB` from
+  the relocation of the input bytes and an input condition on cg_clif's data objects), the
+  plan conditions by construction, `lean-ld` as `--lean-link`'s default.
+
 - **Depends:** L2a on V1–V6; L2b independent of them. **Risk:** L2b scope (archive handling, all
   relocation types std uses, TLS layout, `.eh_frame`).
 

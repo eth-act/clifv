@@ -1,4 +1,5 @@
 import FV.Link.Ld.WriteProof
+import FV.Link.Ld.Syms
 import FV.Link.ExeInput
 
 /-! # `file0OkB` of the Lean linker's output (L2b stage 3b)
@@ -14,7 +15,9 @@ conditions on the image description and the link map:
 * `symFootB_write`: everything a symbol lookup reads lies after the segments' bytes, for every
   bound `hi` up to the end of the body (always: the writer puts the tables after it);
 * `file0OkB_write`: `file0OkB` is `regionPhsB`, `staticB`, the data check and the symbol check
-  (on the file), and `tlsOkB` (on the program headers).
+  (on the file), and `tlsOkB` (on the program headers);
+* `file0OkB_write_syms`: with every link-map entry a written symbol (`symsOkB_write`,
+  `FV/Link/Ld/Syms.lean`), `file0OkB` is `regionPhsB`, `staticB`, the data check and `tlsOkB`.
 -/
 
 namespace Link.Ld
@@ -84,6 +87,20 @@ theorem file0OkB_write {img : Img} (h : img.hdrFitsB = true) (ht : img.tabsFitB 
   simp only [LinkSpec.file0OkB, regionOkB_write h, hdrB_write h, symFootB_write h ht hhi,
     Bool.and_true]
 
+/-- **`file0OkB` of `lean-ld`'s output, the symbol check discharged**: every link-map entry is a
+written symbol (name and value). -/
+theorem file0OkB_write_syms {img : Img} (h : img.hdrFitsB = true) (ht : img.tabsFitB = true)
+    (P : LinkSpec) (hhi : offsetOf img.phs P.R + P.size ≤ img.tabs.symOff)
+    (hP : ∀ p ∈ P.addrs, ∃ k, ∃ hk : k < img.syms.size,
+      img.syms[k].name = symName p.1 ∧ img.syms[k].value = p.2) :
+    P.file0OkB img.write img.phs =
+      (regionPhsB img.phs P.R P.size (offsetOf img.phs P.R) img.write.size &&
+        staticB ⟨2, 183, img.entry, 64, img.tabs.shoff, img.phs.length, img.secs.size + 4⟩ img.phs &&
+        dataFastB P.input0 P.data (maskEx img.write (offsetOf img.phs P.R) P.size) &&
+        tlsOkB P img.phs) := by
+  rw [file0OkB_write h ht P hhi, symsOkB_write h ht P.input0 fun p hp => Or.inr (hP p hp),
+    Bool.and_true]
+
 /-! ## Non-vacuity -/
 
 theorem tinyImg_tabsFit : tinyImg.tabsFitB = true := by decide +kernel
@@ -99,5 +116,19 @@ theorem file0OkB_write_witness (P : LinkSpec) (hR : P.R = 0) (hs : P.size = 0) :
         dataFastB P.input0 P.data (maskEx tinyImg.write (offsetOf tinyImg.phs P.R) P.size) &&
         symsOkB P.input0 tinyImg.write && tlsOkB P tinyImg.phs) :=
   file0OkB_write tinyImg_hdrFits tinyImg_tabsFit P (by rw [hR, hs]; decide +kernel)
+
+theorem file0OkB_write_syms_witness (P : LinkSpec) (hR : P.R = 0) (hs : P.size = 0)
+    (hA : P.addrs = [("f", 0x200078)]) :
+    P.file0OkB tinySymImg.write tinySymImg.phs =
+      (regionPhsB tinySymImg.phs P.R P.size (offsetOf tinySymImg.phs P.R) tinySymImg.write.size &&
+        staticB ⟨2, 183, tinySymImg.entry, 64, tinySymImg.tabs.shoff, tinySymImg.phs.length,
+          tinySymImg.secs.size + 4⟩ tinySymImg.phs &&
+        dataFastB P.input0 P.data (maskEx tinySymImg.write (offsetOf tinySymImg.phs P.R) P.size) &&
+        tlsOkB P tinySymImg.phs) :=
+  file0OkB_write_syms tinySymImg_hdrFits tinySymImg_tabsFit P (by rw [hR, hs]; decide +kernel)
+    fun p hp => by
+      rw [hA, List.mem_singleton] at hp
+      subst hp
+      exact ⟨0, by decide, by native_decide, rfl⟩
 
 end Link.Ld
