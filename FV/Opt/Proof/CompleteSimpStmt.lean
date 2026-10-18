@@ -111,7 +111,7 @@ theorem pureInsert_ok {st : SState} {v : ValueId} {inst : Inst}
     intro y hy
     rcases known_iff.1 hy with h1 | h1
     · obtain ⟨m, hm⟩ := Option.isSome_iff_exists.1 h1
-      exact known_iff.2 (.inl (by rw [hdefs, if_neg (hne y hy), hm]; rfl))
+      exact known_iff.2 (.inl (by rw [hdefs, ite_eq_right (hne y hy), hm]; rfl))
     · exact known_iff.2 (.inr h1)
   have hgood : ∀ y, Placed st B y → Placed (pureInsert st v inst) B y := by
     refine Placed.mono kgrow (fun y hy => hy.not_bad) (fun y m hm => ?_) (fun _ _ h => .inl h)
@@ -121,8 +121,8 @@ theorem pureInsert_ok {st : SState} {v : ValueId} {inst : Inst}
   refine ⟨⟨⟨hI.m.fn, hI.m.maxLt, fun y hy => ?_, hI.m.typesFresh, fun y m hm => ?_, fun y ms hms =>
       kgrow y (hI.m.altsKnown y ms hms), hI.m.availDef, hI.m.defAvail, fun y m hm ha hb => ?_,
       hI.m.badLe, hI.m.uniq⟩, hI.noPartial, fun n w hw => ?_, fun y ms hms m hm => ?_⟩,
-    fun k ms hk => by simp [pureInsert] at hk, hgood, by rw [hdefs, if_pos rfl],
-    fun y hy => by rw [hdefs, if_neg (Ne.symm hy)], rfl, rfl, rfl, rfl, rfl⟩
+    fun k ms hk => by simp [pureInsert] at hk, hgood, by rw [hdefs, ite_eq_left rfl],
+    fun y hy => by rw [hdefs, ite_eq_right (Ne.symm hy)], rfl, rfl, rfl, rfl, rfl⟩
   · rcases known_iff.1 hy with h1 | h1
     · simp only [hdefs] at h1; split at h1
       · rename_i he; subst he; exact hvn
@@ -295,7 +295,7 @@ theorem keepAvail_ok {X : ValueId → Prop} {XN : Inst → Prop} {st1 : SState} 
       rw [havail]; split
       · rename_i he; subst he; rw [hvav] at this; cases this
       · exact this
-    · rw [havail, if_pos rfl]
+    · rw [havail, ite_eq_left rfl]
   · have hyv : y ≠ v := by
       rintro rfl
       simp at ha
@@ -415,7 +415,7 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
     refine ⟨hIF, fun y h => hgF y (hgK y (hgst1 y h)), fun y h => hkF y (hkK y (hkst1 y h)),
       fun y t h => by rw [htF]; exact htst1 y t h, fun y d h => ?_, fun y d h => ?_,
       fun y n h ha => by rw [hdF]; exact hdst1 y n h ha,
-      .inl ⟨rfl, rfl, by rw [haF, havK, if_pos rfl], hgF v hgvK, by rw [hdF]; exact hd1v⟩,
+      .inl ⟨rfl, rfl, by rw [haF, havK, ite_eq_left rfl], hgF v hgvK, by rw [hdF]; exact hd1v⟩,
       fun y n h => by rw [hdF] at h; exact hfr1 y n h, fun x ms h => ?_⟩
     rotate_right
     · rcases halF x ms h with h | rfl
