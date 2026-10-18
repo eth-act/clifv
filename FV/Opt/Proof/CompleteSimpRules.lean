@@ -18,13 +18,14 @@ open Clif
 section Rules
 
 variable {f : Function} {V : Nat → Option Block} {B : ValueId → Prop} {X : ValueId → Prop}
+  {XN : Inst → Prop}
 
 /-- The state invariant of the rules phase (module doc). -/
-structure RInv (f : Function) (V : Nat → Option Block) (B X : ValueId → Prop) (st : SState) :
-    Prop where
+structure RInv (f : Function) (V : Nat → Option Block) (B X : ValueId → Prop) (XN : Inst → Prop)
+    (st : SState) : Prop where
   m : MInv f V B st
   noPartial : ∀ x, st.partialVals.contains x = false
-  memo : ∀ n w, st.memo.get? n = some w → (Good st B w ∨ X w) ∧ st.known w = true ∧
+  memo : ∀ n w, st.memo.get? n = some w → (Good st B w ∨ (X w ∧ XN n)) ∧ st.known w = true ∧
     st.types.get? w = SState.nodeTy n
   alts : ∀ x ms, st.alts.get? x = some ms → ∀ m ∈ ms, st.known m = true ∧
     st.types.get? m = st.types.get? x
@@ -89,10 +90,10 @@ theorem MInv.congr {st st' : SState} (h : MInv f V B st) (hd : st'.defs = st.def
     h.badLe, h.uniq⟩
 
 /-- States that agree on every field the invariants read. -/
-theorem RInv.congr {st st' : SState} (h : RInv f V B X st) (hd : st'.defs = st.defs)
+theorem RInv.congr {st st' : SState} (h : RInv f V B X XN st) (hd : st'.defs = st.defs)
     (ha : st'.alts = st.alts) (hv : st'.avail = st.avail) (ht : st'.types = st.types)
     (hn : st'.next = st.next) (hf : st'.fn = st.fn) (hm : st'.memo = st.memo)
-    (hp : st'.partialVals = st.partialVals) : RInv f V B X st' := by
+    (hp : st'.partialVals = st.partialVals) : RInv f V B X XN st' := by
   have hk : ∀ x, st'.known x = st.known x := by intro x; simp [SState.known, hd, hv]
   have hg : ∀ x, Good st B x → Good st' B x := fun x h => Good.congr hd ha hv h
   refine ⟨h.m.congr hd ha hv ht hn hf, fun x => by rw [hp]; exact h.noPartial x,
@@ -138,7 +139,7 @@ theorem CInv.step {st st' : SState} (h : CInv B st) (hs : RStep B st st')
   · rw [e1] at hn0; cases hn0
 
 /-- The nodes of a value whose nodes are placeable are typed nodes over placeable values. -/
-theorem enodes_nodeIn {st : SState} (h : RInv f V B X st) {x : ValueId}
+theorem enodes_nodeIn {st : SState} (h : RInv f V B X XN st) {x : ValueId}
     (hd : ∀ n, st.defs.get? x = some n → ∀ y ∈ operands n, Good st B y)
     (ha : ∀ ms, st.alts.get? x = some ms → ∀ m ∈ ms, ∀ n, st.defs.get? m = some n →
       ∀ y ∈ operands n, Good st B y) :
@@ -163,9 +164,9 @@ theorem nodeTy_isSome {ty : ValueId → Option Ty} {fn : Function} {n : Inst} (h
   cases h : t.double? <;> simp_all
 
 /-- Inserting a typed node over placeable values under the fresh `st.next`. -/
-theorem insert_rinv {st : SState} (h : RInv f V B X st) {allowed : Inst → Bool} {n : Inst}
+theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → Bool} {n : Inst}
     (hn : NodeIn (fun y => st.types.get? y) f (Good st B) (SState.nodeTy n) n) :
-    RInv f V B X (st.insertNode allowed n).2 ∧ RStep B st (st.insertNode allowed n).2 ∧
+    RInv f V B X XN (st.insertNode allowed n).2 ∧ RStep B st (st.insertNode allowed n).2 ∧
       (st.insertNode allowed n).1 = st.next ∧ Good (st.insertNode allowed n).2 B st.next ∧
       (∀ n' ∈ SState.enodes (st.insertNode allowed n).2 st.next,
         NodeIn (fun y => (st.insertNode allowed n).2.types.get? y) f
@@ -227,7 +228,7 @@ theorem insert_rinv {st : SState} (h : RInv f V B X st) {allowed : Inst → Bool
     · rw [hdefs, if_pos rfl] at hm'; cases hm'; exact hgood y (hops y hy)
     · rw [hal] at hms
       have := h.m.altsKnown _ ms hms; rw [hwk] at this; cases this
-  have hinv : RInv f V B X st2 := by
+  have hinv : RInv f V B X XN st2 := by
     refine ⟨⟨by rw [hf]; exact h.m.fn, by rw [hnx]; exact Nat.lt_succ_of_lt h.m.maxLt,
       fun y hy => ?_, fun y hy => ?_, fun y m hm' => ?_, fun y ms hms => ?_,
       fun y d hy hb => by rw [ha] at hy; exact h.m.availDef y d hy hb,
@@ -265,9 +266,9 @@ theorem insert_rinv {st : SState} (h : RInv f V B X st) {allowed : Inst → Bool
   · rw [hal] at hms
     have := h.m.altsKnown _ ms hms; rw [hwk] at this; cases this
 
-theorem RInv.memoInsert {st : SState} (h : RInv f V B X st) {n : Inst} {b : ValueId}
-    (hb : Good st B b ∨ X b) (hbk : st.known b = true) (hbt : st.types.get? b = SState.nodeTy n) :
-    RInv f V B X ({ st with memo := st.memo.insert n b } : SState) := by
+theorem RInv.memoInsert {st : SState} (h : RInv f V B X XN st) {n : Inst} {b : ValueId}
+    (hb : Good st B b ∨ (X b ∧ XN n)) (hbk : st.known b = true) (hbt : st.types.get? b = SState.nodeTy n) :
+    RInv f V B X XN ({ st with memo := st.memo.insert n b } : SState) := by
   refine ⟨h.m.congr rfl rfl rfl rfl rfl rfl, h.noPartial, fun n' w hw => ?_, h.alts⟩
   simp only [hm_get?_insert] at hw
   have hg : ∀ x, Good st B x → Good ({ st with memo := st.memo.insert n b } : SState) B x :=
@@ -278,12 +279,12 @@ theorem RInv.memoInsert {st : SState} (h : RInv f V B X st) {n : Inst} {b : Valu
     exact ⟨e1.imp (hg w) id, e2, e3⟩
 
 /-- `chooseBest` over candidates that are the root or placeable values of its type. -/
-theorem chooseBest_rinv {st : SState} (h : RInv f V B X st) {v : ValueId}
+theorem chooseBest_rinv {st : SState} (h : RInv f V B X XN st) {v : ValueId}
     (hvk : st.known v = true) (hv : Good st B v ∨ X v)
     (hvd : ∀ n, st.defs.get? v = some n → ∀ y ∈ operands n, Good st B y)
     {cands : List (ValueId × Bool)}
     (hcands : ∀ c ∈ cands, c.1 = v ∨ (Good st B c.1 ∧ st.types.get? c.1 = st.types.get? v)) :
-    RInv f V B X (chooseBest st v cands).2 ∧ RStep B st (chooseBest st v cands).2 ∧
+    RInv f V B X XN (chooseBest st v cands).2 ∧ RStep B st (chooseBest st v cands).2 ∧
       (CInv B st → CInv B (chooseBest st v cands).2) ∧
       ((chooseBest st v cands).1 = v ∨ (Good (chooseBest st v cands).2 B (chooseBest st v cands).1 ∧
         (chooseBest st v cands).2.types.get? (chooseBest st v cands).1 = st.types.get? v)) ∧
@@ -324,11 +325,11 @@ theorem chooseBest_rinv {st : SState} (h : RInv f V B X st) {v : ValueId}
 /-- **The rewriting of a value** (`optimizeAt`) under `SimpRulesOk`: the invariant is kept, the
 state grows, and the result is the root or a placeable value of its type. -/
 theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst → Bool) :
-    ∀ d st v, RInv f V B X st → st.known v = true → (Good st B v ∨ X v) →
+    ∀ d st v, RInv f V B X XN st → st.known v = true → (Good st B v ∨ X v) →
       (∀ n, st.defs.get? v = some n → ∀ y ∈ operands n, Good st B y) →
       (∀ n ∈ SState.enodes st v,
         NodeIn (fun y => st.types.get? y) f (Good st B) (st.types.get? v) n) →
-      RInv f V B X (optimizeAt rules allowed d st v).2 ∧
+      RInv f V B X XN (optimizeAt rules allowed d st v).2 ∧
         RStep B st (optimizeAt rules allowed d st v).2 ∧
         (CInv B st → CInv B (optimizeAt rules allowed d st v).2) ∧
         ((optimizeAt rules allowed d st v).1 = v ∨
@@ -341,7 +342,7 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
   | succ d ih =>
     intro st v h hvk hv hvd hen
     rw [optimizeAt_succ]
-    let P : SState → Prop := fun st' => RInv f V B X st' ∧ RStep B st st' ∧ (CInv B st → CInv B st')
+    let P : SState → Prop := fun st' => RInv f V B X XN st' ∧ RStep B st st' ∧ (CInv B st → CInv B st')
     have hG : GraphIn SState.enodes (fun st x => st.types.get? x) f P (fun st x => Good st B x) :=
       fun st1 x hP hx => enodes_nodeIn hP.1 hx.defs hx.alts
     have hM : MakeIn (optMake rules allowed d) (fun st x => st.types.get? x) f P
@@ -356,7 +357,7 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
       cases hmemo : st1.memo.get? n with
       | some w =>
         obtain ⟨e1, e2, e3⟩ := hI1.memo n w hmemo
-        exact ⟨⟨hI1, hS1, hC1⟩, ⟨fun _ h => h, fun _ _ h => h⟩, e1, e3⟩
+        exact ⟨⟨hI1, hS1, hC1⟩, ⟨fun _ h => h, fun _ _ h => h⟩, e1.imp id And.left, e3⟩
       | none =>
         have hsolid : st1.solidNode n = true := by
           simp only [SState.solidNode, SState.solid, SState.typedNode, Bool.and_eq_true,
@@ -399,7 +400,7 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
       simp only
       let st1' : SState := { st1 with stats := { st1.stats with fired :=
         (names.foldl (fun m n => m.insert n ((m.get? n).getD 0 + 1)) st1.stats.fired) } }
-      have hI1' : RInv f V B X st1' := hI1.congr rfl rfl rfl rfl rfl rfl rfl rfl
+      have hI1' : RInv f V B X XN st1' := hI1.congr rfl rfl rfl rfl rfl rfl rfl rfl
       have hS1' : RStep B st1 st1' := RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
       have hvk1 : st1'.known v = true := hS1'.known (hS1.known hvk)
       have hvd1 : ∀ n, st1'.defs.get? v = some n → ∀ y ∈ operands n, Good st1' B y := by
@@ -422,7 +423,7 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
 theorem skelMake_in {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst → Bool)
     (st0 : SState) :
     MakeIn (skelMake rules allowed) (fun st x => st.types.get? x) f
-      (fun st => RInv f V B (fun _ => False) st ∧ RStep B st0 st) (fun st x => Good st B x)
+      (fun st => RInv f V B (fun _ => False) (fun _ => False) st ∧ RStep B st0 st) (fun st x => Good st B x)
       (fun _ => False) := by
   intro st1 n hP hn
   obtain ⟨hI1, hS1⟩ := hP
@@ -434,7 +435,7 @@ theorem skelMake_in {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Ins
   cases hmemo : st1.memo.get? n with
   | some w =>
     obtain ⟨e1, e2, e3⟩ := hI1.memo n w hmemo
-    exact ⟨⟨hI1, hS1⟩, ⟨fun _ h => h, fun _ _ h => h⟩, e1, e3⟩
+    exact ⟨⟨hI1, hS1⟩, ⟨fun _ h => h, fun _ _ h => h⟩, e1.imp id And.left, e3⟩
   | none =>
     have hsolid : st1.solidNode n = true := by
       simp only [SState.solidNode, SState.solid, SState.typedNode, Bool.and_eq_true,
@@ -448,7 +449,7 @@ theorem skelMake_in {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Ins
     simp only at hw hI2 hS2 hgw hen2 htw ⊢
     subst hw
     let st2' : SState := { st2 with memo := st2.memo.insert n st1.next }
-    have hI2' : RInv f V B (fun _ => False) st2' :=
+    have hI2' : RInv f V B (fun _ => False) (fun _ => False) st2' :=
       hI2.memoInsert (.inl hgw) hgw.known htw
     have hS2' : RStep B st2 st2' := RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
     obtain ⟨hI3, hS3, -, hb3⟩ := opt_spec (X := fun _ => False) hR allowed rewriteLimit st2'
@@ -471,8 +472,8 @@ theorem skelMake_in {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Ins
 only placeable values. -/
 theorem runSkel_ok {rules : SimplifyFn} {skel : SkeletonFn} (hR : SimpRulesOk rules)
     (hK : SkelRulesOk skel) (allowed : Inst → Bool) {st : SState} {i : Isle.Opt.SkelInst}
-    (h : RInv f V B (fun _ => False) st) (hi : ∀ y ∈ skelOps i, Good st B y) :
-    RInv f V B (fun _ => False) (runSkel skel rules allowed st i).2 ∧
+    (h : RInv f V B (fun _ => False) (fun _ => False) st) (hi : ∀ y ∈ skelOps i, Good st B y) :
+    RInv f V B (fun _ => False) (fun _ => False) (runSkel skel rules allowed st i).2 ∧
       RStep B st (runSkel skel rules allowed st i).2 ∧
       ∀ c, (runSkel skel rules allowed st i).1 = some c →
         SkelCandOk (fun x => (runSkel skel rules allowed st i).2.types.get? x)
@@ -484,11 +485,11 @@ theorem runSkel_ok {rules : SimplifyFn} {skel : SkeletonFn} (hR : SimpRulesOk ru
     simp only [hsk, Bool.not_false, ite_true]
     exact ⟨h, RStep.refl st, fun c hc => by cases hc⟩
   simp only [hsk, Bool.not_true, Bool.false_eq_true, ite_false]
-  have hI0 : RInv f V B (fun _ => False) ({ st with made := {} } : SState) :=
+  have hI0 : RInv f V B (fun _ => False) (fun _ => False) ({ st with made := {} } : SState) :=
     h.congr rfl rfl rfl rfl rfl rfl rfl rfl
   have hS0 : RStep B st ({ st with made := {} } : SState) :=
     RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
-  let P : SState → Prop := fun st' => RInv f V B (fun _ => False) st' ∧ RStep B st st'
+  let P : SState → Prop := fun st' => RInv f V B (fun _ => False) (fun _ => False) st' ∧ RStep B st st'
   have hG : GraphIn SState.enodes (fun st x => st.types.get? x) f P (fun st x => Good st B x) :=
     fun st1 x hP hx => enodes_nodeIn hP.1 hx.defs hx.alts
   cases hr : skel SState.enodes (fun st x => st.types.get? x) (skelMake rules allowed)
