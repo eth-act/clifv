@@ -1,5 +1,6 @@
 import FV.Backend.Proof.LowerLoopT
 import FV.Backend.Proof.LowerShapeOk
+import FV.Backend.Proof.IselTermFactsTy
 
 /-!
 # Completeness of the typed shape check (S11e5 Stage C, slice 3)
@@ -8,9 +9,10 @@ import FV.Backend.Proof.LowerShapeOk
 `shapeOkT` accepts `lowerFunction`'s VCode, so the typed validator's shape `LowerShapeT` holds for
 it (`lowerShapeT_of_lower`). The proof is `shapeOk_complete` over the typed loop simulation
 (`lowerFunction_runT`) with one input fact stated separately: the terminator rules emit code
-(`TermEmitsT`). On integer contexts that is `term_emits` (`termEmitsT_of_ctxInv`); for
-float-capable contexts it is the typed terminator-rule shape (a `return` of float values, a
-branch on an integer condition), which is not proven yet.
+(`TermEmitsT`, or `TermEmitsTI` on terminators whose integer operands are in integer
+positions). On integer contexts that is `term_emits` (`termEmitsT_of_ctxInv`); on float-capable
+contexts it is `term_emitsTy` (`termEmitsTI_of_ctxInvT`), so `shapeOkT_completeT` and
+`lowerShapeT_of_lowerT` need no premise beyond the typed scope.
 -/
 
 namespace Backend.Proof.Driver
@@ -30,6 +32,34 @@ def TermEmitsT (f : Clif.Function) (ctx : Ctx) : Prop :=
 /-- On an integer context the terminator rules emit code (`term_emits`). -/
 theorem termEmitsT_of_ctxInv {ctx : Ctx} (h : CtxInv f ctx) : TermEmitsT f ctx :=
   fun hti hph _ ht _ hd _ htg _ hvb hbt _ _ _ hr => term_emits h hti hph ht hd htg hvb hbt hr
+
+/-- `TermEmitsT` on terminators whose integer operands are in integer positions
+(`TermIntPos`: on a typed-scope function, every terminator's, `termIntPos_of`). -/
+def TermEmitsTI (f : Clif.Function) (ctx : Ctx) : Prop :=
+  ∀ {ti : Nat}, ti < ctx.insts.size → ctx.insts[ti]? = some (⟨.op .unit, [], [], none⟩ : IInfo) →
+    ∀ {t : Clif.Terminator}, t.isTry = false → ∀ {data : V}, termData (abiTerm f t) = .ok data →
+    ∀ {targets : List Label}, TargetsLen t targets → ∀ {s : LState}, ValsBelow ctx s →
+    BrIdxTyped ctx t → TermIntPos ctx t → ∀ {out : V} {s' : LState} {tr : List Isle.RuleId},
+    termCallF ctx ti data t targets s = .ok (some out, s', tr) → s.emitted.size < s'.emitted.size
+
+theorem TermEmitsT.toI {ctx : Ctx} (h : TermEmitsT f ctx) : TermEmitsTI f ctx :=
+  fun hti hph _ ht _ hd _ htg _ hvb hbt _ _ _ _ hr => h hti hph ht hd htg hvb hbt hr
+
+/-- **On a float-capable context the terminator rules emit code** (`term_emitsTy`). -/
+theorem termEmitsTI_of_ctxInvT {ctx : Ctx} (h : CtxInvT f ctx) : TermEmitsTI f ctx :=
+  fun _ hph _ ht _ hd _ htg _ hvb hbt hip _ _ _ hr => term_emitsTy h hph ht hd htg hvb hbt hip hr
+
+/-- The integer operands of a typed-scope function's terminators are in integer positions of
+`buildCtx`'s context (`Compile.opsTypedT`). -/
+theorem termIntPos_of (hs : LowerScopeT f) {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (hb : buildCtx f = .ok (ctx, ranges, st0)) {B : Clif.Block}
+    (hB : B ∈ f.blocks) : TermIntPos ctx B.term := by
+  intro x hx t ht
+  refine (ctxSpec_of hb).eCTys_of_not_floatDef ht fun hfd => ?_
+  have hT := hs.subsetT
+  simp only [Compile.functionET, Compile.opsTypedT, Bool.and_eq_true, List.all_eq_true] at hT
+  have := (hT.1.2 B hB).2 x hx
+  simp [hfd] at this
 
 /-! ## Renaming the typed recorded code -/
 
@@ -157,10 +187,10 @@ theorem edgesT_labels (ctx : Ctx) (ps : List (Clif.Block × BLow)) :
 /-! ## The shape -/
 
 /-- **The shape part of `lowerCheckT`** (typed scope, SSA, well-founded aliases, terminator
-rules that emit code). -/
-theorem shapeOkT_complete (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
+rules that emit code on terminators with integer-position operands). -/
+theorem shapeOkT_completeI (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
     (hssa : (valueDefs f).Nodup) {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    {bl : List BLow} (hb : buildCtx f = .ok (ctx, ranges, st0)) (hte : TermEmitsT f ctx)
+    {bl : List BLow} (hb : buildCtx f = .ok (ctx, ranges, st0)) (hte : TermEmitsTI f ctx)
     (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
       f.blocks.length = some bl)
     (hu : ((aliasOf f bl).map (·.1)).Nodup) (hwf : AliasWF (aliasOf f bl)) :
@@ -279,7 +309,7 @@ theorem shapeOkT_complete (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
         have hbt := brIdx_of_ok (hs.ctxFacts ctx ranges st0 hb).1 B hBmem
         have hti : L.start + B.body.length < ctx.insts.size :=
           (Array.getElem?_eq_some_iff.mp hph).1
-        have hlt' := hte hti hph ht hd htg hvb hbt hrun
+        have hlt' := hte hti hph ht hd htg hvb hbt (termIntPos_of hs hb hBmem) hrun
         intro hnil
         have := Array.length_toList (xs := L.tst'.emitted)
         rw [hnil] at this
@@ -451,6 +481,28 @@ theorem shapeOkT_complete (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
   · rw [buildCtx_fresh hb]
     exact Nat.le_refl _
 
+/-- **The shape part of `lowerCheckT`** (typed scope, SSA, well-founded aliases, terminator
+rules that emit code). -/
+theorem shapeOkT_complete (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
+    (hssa : (valueDefs f).Nodup) {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    {bl : List BLow} (hb : buildCtx f = .ok (ctx, ranges, st0)) (hte : TermEmitsT f ctx)
+    (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length = some bl)
+    (hu : ((aliasOf f bl).map (·.1)).Nodup) (hwf : AliasWF (aliasOf f bl)) :
+    shapeOkT f vc ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl = true :=
+  shapeOkT_completeI h hs hssa hb hte.toI hl hu hwf
+
+/-- **The shape part of `lowerCheckT` on the typed scope** (SSA, well-founded aliases; no
+premise on the terminator rules: `termEmitsTI_of_ctxInvT`). -/
+theorem shapeOkT_completeT (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
+    (hssa : (valueDefs f).Nodup) {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    {bl : List BLow} (hb : buildCtx f = .ok (ctx, ranges, st0))
+    (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length = some bl)
+    (hu : ((aliasOf f bl).map (·.1)).Nodup) (hwf : AliasWF (aliasOf f bl)) :
+    shapeOkT f vc ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl = true :=
+  shapeOkT_completeI h hs hssa hb (termEmitsTI_of_ctxInvT (ctxInvT_of hs hb)) hl hu hwf
+
 /-- **The typed shape of `lowerFunction`'s VCode**: on SSA typed-scope input with well-founded
 aliases whose terminator rules emit code, `lowerFunction f = .ok vc` gives `LowerShapeT`. -/
 theorem lowerShapeT_of_lower (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
@@ -463,6 +515,20 @@ theorem lowerShapeT_of_lower (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
       (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl :=
   lowerShapeT_of_ok hb hl (fun _ hn => gnAt_temp hn)
     (shapeOkT_complete h hs hssa hb hte hl hu hwf)
+
+/-- **The typed shape of `lowerFunction`'s VCode on the typed scope**: on SSA typed-scope input
+with well-founded aliases, `lowerFunction f = .ok vc` gives `LowerShapeT` (floats included; no
+premise on the terminator rules). -/
+theorem lowerShapeT_of_lowerT (h : lowerFunction f = .ok vc) (hs : LowerScopeT f)
+    (hssa : (valueDefs f).Nodup) {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    {bl : List BLow} (hb : buildCtx f = .ok (ctx, ranges, st0))
+    (hl : lowBlocks f (stmtCall ctx) (termCallF ctx) (tryCallF ctx) 0 f.blocks st0
+      f.blocks.length = some bl)
+    (hu : ((aliasOf f bl).map (·.1)).Nodup) (hwf : AliasWF (aliasOf f bl)) :
+    LowerShapeT f vc ctx st0 (renOf (gnAt (gnTable st0.nextVreg (aliasOf f bl))))
+      (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl :=
+  lowerShapeT_of_ok hb hl (fun _ hn => gnAt_temp hn)
+    (shapeOkT_completeT h hs hssa hb hl hu hwf)
 
 /-- **Integer specialization**: on the integer scope the terminator premise holds
 (`term_emits`), so the typed shape check accepts every in-scope lowering `shapeOk` accepts. -/
