@@ -126,6 +126,25 @@ theorem stack128_legal : ∃ g cert, function128Cert stack128 = .ok (g, cert) �
     rw [h] at ht
     exact ⟨r.1, r.2, rfl, by simpa [Except.toOption] using ht, check_complete stack128_pre h⟩
 
+/-- `%saddof128(i128, i128) -> i128, i8`: `v2, v3 = sadd_overflow v0, v1; return v2, v3`:
+`Pre` holds and the legalisation (the pure pattern `Pat.overflow .saddOverflow`) is accepted. -/
+def saddof128 : Function where
+  name := "saddof128"
+  sig := { params := [{ ty := .i128 }, { ty := .i128 }],
+           returns := [{ ty := .i128 }, { ty := .i8 }] }
+  blocks := [{ id := 0, params := [(0, .i128), (1, .i128)],
+               body := [{ results := [2, 3], inst := .overflow .saddOverflow .i128 0 1 }],
+               term := .ret [2, 3] }]
+
+theorem saddof128_pre : Pre saddof128 := preB_iff.1 (by decide +kernel)
+
+theorem saddof128_legal : ∃ g cert, function128Cert saddof128 = .ok (g, cert) ∧
+    check saddof128 g cert = true := by
+  have ht : (function128Cert saddof128).toBool = true := by decide +kernel
+  cases h : function128Cert saddof128 with
+  | error e => rw [h] at ht; cases ht
+  | ok r => exact ⟨r.1, r.2, rfl, check_complete saddof128_pre h⟩
+
 def blk (body : List Stmt) (term : Terminator) : Block :=
   { id := 0, params := [(0, .i128), (1, .i128)], body, term }
 

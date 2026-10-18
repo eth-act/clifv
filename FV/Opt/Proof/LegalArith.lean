@@ -585,6 +585,72 @@ theorem pat_icmp (cc : IntCC) (xl xh yl yh : BitVec 64) :
       ρ 4 = some ⟨.i8, Sem.icmp cc (xh ++ xl) (yh ++ yl)⟩ := by
   cases cc <;> (pat_eval; sem_bv; nat_route)
 
+/-! ## Overflow-flag arithmetic -/
+
+theorem slt0_msb (z : BitVec 64) : z.slt 0#64 = z.msb := by
+  rw [Bool.eq_iff_iff]
+  simp only [slt_nat (show 0 < 64 by decide), BitVec.msb_eq_decide, decide_eq_true_eq,
+    BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod, Nat.add_one_sub_one]
+  bv_bounds; omega
+
+theorem msb128_hi (Z : BitVec 128) : Z.msb = (Z.extractLsb' 64 64).msb := by
+  rw [Bool.eq_iff_iff]
+  simp only [BitVec.msb_eq_decide, decide_eq_true_eq, toNat_hi, Nat.add_one_sub_one,
+    Nat.reducePow]
+  bv_bounds; omega
+
+/-- The high half of an `i128` sum, as `Pat.addPair` computes it. -/
+theorem add128_hi (xl xh yl yh : BitVec 64) : (xh ++ xl + (yh ++ yl)).extractLsb' 64 64 =
+    xh + yh + BitVec.zeroExtend 64 (bif (xl + yl).ult xl then 1#8 else 0#8) := by
+  nat_route
+
+/-- The high half of an `i128` difference, as `Pat.subPair` computes it. -/
+theorem sub128_hi (xl xh yl yh : BitVec 64) : (xh ++ xl - (yh ++ yl)).extractLsb' 64 64 =
+    xh - yh - BitVec.zeroExtend 64 (bif xl.ult (xl - yl) then 1#8 else 0#8) := by
+  nat_route
+
+/-- `*_overflow` at `i128`: the wrapped result's halves at `4`/`5`, the flag at `6`. -/
+theorem pat_overflow {op : OverflowOp} {pat : List Stmt} (h : Pat.overflow op = some pat)
+    (xl xh yl yh : BitVec 64) :
+    ∃ ρ, runPat (canon [V64 xl, V64 xh, V64 yl, V64 yh]) pat = some ρ ∧
+      Out128 ρ 4 5 (Sem.overflow op (xh ++ xl) (yh ++ yl)).1 ∧
+      ρ 6 = some (Val.ofBool (Sem.overflow op (xh ++ xl) (yh ++ yl)).2) := by
+  cases op <;> simp only [Pat.overflow, Option.some.injEq, reduceCtorEq] at h <;> subst h
+  case uaddOverflow =>
+    simp only [Pat.addPair, List.cons_append, List.nil_append, Sem.overflow, Sem.uaddOverflow,
+      BitVec.uaddOverflow, Val.ofBool]
+    pat_eval; sem_bv
+    refine ⟨⟨?_, ?_⟩, ?_⟩ <;> nat_route
+  case usubOverflow =>
+    simp only [Pat.subPair, List.cons_append, List.nil_append, Sem.overflow, Sem.usubOverflow,
+      BitVec.usubOverflow_eq, BitVec.lt_def, Val.ofBool]
+    pat_eval; sem_bv
+    refine ⟨⟨?_, ?_⟩, ?_⟩ <;> nat_route
+  case saddOverflow =>
+    simp only [Pat.addPair, Pat.signOvf, List.cons_append, List.nil_append, Sem.overflow,
+      Sem.saddOverflow, BitVec.saddOverflow_eq, Val.ofBool]
+    pat_eval; sem_bv
+    refine ⟨⟨?_, ?_⟩, ?_⟩
+    · nat_route
+    · nat_route
+    · rw [msb128_hi (xh ++ xl + (yh ++ yl)), add128_hi, msb_app, msb_app]
+      simp only [slt0_msb]
+      generalize xh.msb = a; generalize yh.msb = b
+      generalize (xh + yh + BitVec.zeroExtend 64 (bif (xl + yl).ult xl then 1#8 else 0#8)).msb = c
+      cases a <;> cases b <;> cases c <;> decide
+  case ssubOverflow =>
+    simp only [Pat.subPair, Pat.signOvf, List.cons_append, List.nil_append, Sem.overflow,
+      Sem.ssubOverflow, BitVec.ssubOverflow_eq, Val.ofBool]
+    pat_eval; sem_bv
+    refine ⟨⟨?_, ?_⟩, ?_⟩
+    · nat_route
+    · nat_route
+    · rw [msb128_hi (xh ++ xl - (yh ++ yl)), sub128_hi, msb_app, msb_app]
+      simp only [slt0_msb]
+      generalize xh.msb = a; generalize yh.msb = b
+      generalize (xh - yh - BitVec.zeroExtend 64 (bif xl.ult (xl - yl) then 1#8 else 0#8)).msb = c
+      cases a <;> cases b <;> cases c <;> decide
+
 /-! ## Selects, `bmask`, conditions -/
 
 theorem pat_cond (lo hi : BitVec 64) :

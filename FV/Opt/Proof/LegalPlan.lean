@@ -215,6 +215,36 @@ theorem outs_two {C : Ctx} {r0 r1 : ValueId} (hp0 : C.pair r0 = none) (hp1 : C.p
   simp only [List.mem_cons, List.mem_nil_iff, or_false] at hw
   rcases hw with rfl | rfl <;> simp [img, hp0, hp1]
 
+/-- The images of an `i128` result and a plain flag (`*_overflow`). -/
+theorem outs_pairFlag {C : Ctx} {r o rl rh : ValueId} (hp : C.pair r = some (rl, rh))
+    (ho : C.pair o = none) : ∀ w ∈ [rl, rh, o], ∃ r' ∈ [r, o], w ∈ img C r' := by
+  intro w hw
+  simp only [List.mem_cons, List.mem_nil_iff, or_false] at hw
+  rcases hw with rfl | rfl | rfl
+  · exact ⟨r, by simp, by simp [img, hp]⟩
+  · exact ⟨r, by simp, by simp [img, hp]⟩
+  · exact ⟨w, by simp, by simp [img, ho]⟩
+
+theorem outsOk_pairFlag {C : Ctx} {ρ0 : Regs} {n : Nat} {r o rl rh : ValueId}
+    (hp : C.pair r = some (rl, rh)) (ho : C.pair o = none) {X : BitVec 128}
+    (hX : Out128 ρ0 n (n + 1) X) {v : Val} (hv : ρ0 (n + 2) = some v) :
+    OutsOk C ρ0 n [rl, rh, o] [r, o] [⟨.i128, X⟩, v] := by
+  intro ρ' hρ i r' x hr hx
+  match i, hr, hx with
+  | 0, hr, hx =>
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at hr hx
+    subst hr hx
+    rw [RelV.pair hp]
+    refine ⟨X.extractLsb' 0 64, X.extractLsb' 64 64, by rw [split128], ?_, ?_⟩
+    · exact hρ 0 (by simp) _ hX.1
+    · exact hρ 1 (by simp) _ hX.2
+  | 1, hr, hx =>
+    simp only [List.getElem?_cons_succ, List.getElem?_cons_zero, Option.some.injEq] at hr hx
+    subst hr hx
+    rw [RelV.plain ho]
+    exact hρ 2 (by simp) _ hv
+  | i + 2, hr, _ => simp at hr
+
 /-- The source value of a constant shift amount. -/
 theorem constAmt_val {C : Ctx} {ρ : Regs} (hS : SrcInv C.f ρ) {y : ValueId} {b : Val}
     (hy : ρ y = some b) {n : Nat} (hc : constAmt C y = some n) :
@@ -615,6 +645,24 @@ theorem pure_step {C : Ctx} (hG : Good C) {B : Block} (hB : B ∈ C.f.blocks) {s
     obtain ⟨ρ0, hrun, h2, h3⟩ := pat_copy2 l h
     exact ⟨rfl, outs_pair hr, [V64 l, V64 h], ρ0, ⟨hl, hh, trivial⟩, hrun,
       outsOk_pair hr (out128_append ρ0 2 3 l h h2 h3)⟩
+  case h_18 op x y r o =>
+    -- `*_overflow` at i128
+    simp only [bind, Option.bind_eq_some_iff] at hp
+    obtain ⟨⟨xl, xh⟩, hx, ⟨yl, yh⟩, hy, ⟨rl, rh⟩, hr, hp⟩ := hp
+    split at hp
+    · rename_i hpo
+      simp only [Option.bind_eq_some_iff, Option.some.injEq, Plan.pure.injEq] at hp
+      obtain ⟨pat', hpat, rfl, rfl, rfl⟩ := hp
+      simp only [evalInst, Opt.Res.bind_eq_ok, Opt.Res.pure_eq_ok, Prod.mk.injEq] at hev
+      obtain ⟨a, ha, b, hb, rfl, rfl⟩ := hev
+      obtain ⟨l, h, he, hl, hh⟩ := pairVal hV hop.1 hx (getAs_ok ha)
+      cases val_i128 he
+      obtain ⟨bl, bh, he2, hbl, hbh⟩ := pairVal hV hop.2 hy (getAs_ok hb)
+      cases val_i128 he2
+      obtain ⟨ρ0, hrun, hout, hflag⟩ := pat_overflow hpat l h bl bh
+      exact ⟨rfl, outs_pairFlag hr (plain_iff.1 hpo), [V64 l, V64 h, V64 bl, V64 bh], ρ0,
+        ⟨hl, hh, hbl, hbh, trivial⟩, hrun, outsOk_pairFlag hr (plain_iff.1 hpo) hout hflag⟩
+    · cases hp
   all_goals (split at hp <;> simp at hp)
 
 theorem ofOption_ne_trap {α : Type} (msg : String) (o : Option α) (c : TrapCode) :

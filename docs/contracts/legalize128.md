@@ -402,6 +402,24 @@ with Cranelift's code — all registers used, `x7` left, a stack pad, a fifth pa
 an `i64` on the stack, a call passing a pair on the stack; the seven functions are verified;
 the `x7` case followed by an `i64` is unsupported).
 
+## Overflow ops at `i128` (S4, #28)
+
+`uadd_overflow`/`sadd_overflow`/`usub_overflow`/`ssub_overflow` at `i128` (`v, of = op x, y`)
+have a pure plan (`Opt.Legal.Pat.overflow`, `FV/Opt/Legal.lean`; outputs `rl rh of`): the
+carry/borrow chain of `iadd`/`isub` (`Pat.addPair`/`Pat.subPair`) and the flag from `i64`
+compares only — unsigned: the sum below `x` resp. `x <u y`, lexicographically on the halves;
+signed: the signs of `x`, `y` and the result (`Pat.signOvf`: `x`, `y` of the same sign and `r` of
+the other for addition; of different signs and `r` not of `x`'s for subtraction). No 64-bit
+`*_overflow` instruction is emitted (the Arm model has no `UMADDL`/`SMADDL`, which Cranelift
+uses for `umul_overflow`/`smul_overflow`). `Opt.Legal.pat_overflow` (`LegalArith.lean`): the
+outputs are the halves of `Sem.overflow`'s result and its flag (`BitVec.saddOverflow_eq`,
+`ssubOverflow_eq` reduce the signed flags to signs; the high half by `add128_hi`/`sub128_hi`);
+`pure_step` (`LegalPlan.lean`) covers the plan, `wf_overflow` (`LegalComplete.lean`) the
+completeness. Witness: `Opt.Legal.Complete.Witness.saddof128` (`Pre`, legalisation accepted).
+`umul_overflow`/`smul_overflow` at `i128` stay unsupported (no plan; see `umulhi`/`smulhi`).
+Measured: the four aarch64 runtest functions (`uadd_overflow_128.clif`, `sadd_overflow.clif`,
+`usub_overflow.clif`, `ssub_overflow.clif`).
+
 ## Not covered
 
 * Legalised functions under `--opt` (no composition of `backend_correct_legal` with the mid-end
@@ -410,9 +428,9 @@ the `x7` case followed by an `i64` is unsupported).
   `TrapsExplicit`) and, with `i128`, the outside environment's `HelperOk`/`ExtLegal`/
   `EnvKeepsBounded` (table above).
 * Runs of `g` that trap inside a `__*ti3` helper (see `htr` above).
-* `umulhi`/`smulhi`, atomics, overflow ops at `i128`, `try_call_indirect`, `call_indirect`
-  with `i128` operands: not legalised or rejected. Stack-passed `i128` arguments followed by an
-  integer argument Cranelift passes in `x7` (above): not legalised.
+* `umulhi`/`smulhi`, `umul_overflow`/`smul_overflow`, atomics at `i128`, `try_call_indirect`,
+  `call_indirect` with `i128` operands: not legalised or rejected. Stack-passed `i128` arguments
+  followed by an integer argument Cranelift passes in `x7` (above): not legalised.
 
 `func_addr` (release survey `g_u128` test functions pass function pointers to the test
 harness; agent/last-unverified "release i128"): planned as `same` when the declaration's name in
