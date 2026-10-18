@@ -339,7 +339,187 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
           (pureEmit cfg allowed bi st1 subst s inst v best).2.2) subst
         (pureEmit cfg allowed bi st1 subst s inst v best).2.1 s inst v
         (pureEmit cfg allowed bi st1 subst s inst v best).2.2) := by
-  sorry
+  have hvav : st.avail.get? v = none := by rw [← havst1]; exact hav1
+  -- the members of `best`'s class
+  have hmem : ∀ ms, st1.classes.get? best = some ms → ∀ m ∈ ms, st1.known m = true ∧
+      st1.types.get? m = st1.types.get? v ∧
+      ∀ n, st1.defs.get? m = some n → ∀ y ∈ operands n, Good st1 B y := by
+    intro ms hms m hm
+    obtain ⟨-, h1⟩ := hC1 best ms hms
+    obtain ⟨e1, e2, e3⟩ := h1 m hm
+    refine ⟨e1, ?_, e3⟩
+    rw [e2]; rcases hbest with rfl | h
+    · rfl
+    · exact h.2
+  have keep_case : (pureEmit cfg allowed bi st1 subst s inst v best =
+      (({ st1 with avail := st1.avail.insert v bi } : SState), subst, StmtLog.keep { s with inst })) →
+      ((pureEmit cfg allowed bi st1 subst s inst v best).2.2 = .keep { s with inst } ∧
+      PureOk f cfg.idom allowed bi B (fun y => B y ∧ y ≠ v) V b st
+        (pureAlts st1 (pureEmit cfg allowed bi st1 subst s inst v best).1 v best
+          (pureEmit cfg allowed bi st1 subst s inst v best).2.2) subst
+        (pureEmit cfg allowed bi st1 subst s inst v best).2.1 s inst v
+        (pureEmit cfg allowed bi st1 subst s inst v best).2.2) := by
+    intro he
+    rw [he]
+    refine ⟨rfl, ?_⟩
+    obtain ⟨hMK, hgK, hgvK, hkK⟩ := keepAvail_ok (s := s) (B' := fun y => B y ∧ y ≠ v) hI1 hb hres
+      hd1v hops1 hav1 hal1 (fun y h => h.1) (fun y hy h => ⟨h, hy⟩) (fun h => h.2 rfl)
+    let stK : SState := { st1 with avail := st1.avail.insert v bi }
+    have hIK : RInv f (emitV V bi [{ s with inst }]) (fun y => B y ∧ y ≠ v) (fun _ => False)
+        (fun _ => False) stK := by
+      refine ⟨hMK, hI1.noPartial, fun n w hw => ?_, fun x ms hx m hm => ?_⟩
+      · obtain ⟨e1, e2, e3⟩ := hI1.memo n w hw
+        refine ⟨.inl ?_, hkK w e2, e3⟩
+        rcases e1 with e1 | ⟨rfl, -⟩
+        · exact hgK w e1
+        · exact hgvK
+      · obtain ⟨e1, e2⟩ := hI1.alts x ms hx m hm
+        exact ⟨hkK m e1, e2⟩
+    have havK : ∀ y, stK.avail.get? y = if v = y then some bi else st1.avail.get? y :=
+      fun y => hm_get?_insert' _ _ _ _
+    -- the class of `best` becomes visible from `v`
+    have hfin : ∃ stF, pureAlts st1 stK v best (.keep { s with inst }) = stF ∧
+        RInv f (emitV V bi [{ s with inst }]) (fun y => B y ∧ y ≠ v) (fun _ => False)
+          (fun _ => False) stF ∧
+        (∀ y, Good stK (fun y => B y ∧ y ≠ v) y → Good stF (fun y => B y ∧ y ≠ v) y) ∧
+        stF.avail = stK.avail ∧ stF.defs = stK.defs ∧ stF.types = stK.types ∧
+        (∀ y, stK.known y = true → stF.known y = true) := by
+      unfold pureAlts
+      simp only [StmtLog.rep, beq_self_eq_true, Bool.true_or, ite_true]
+      split
+      · rename_i hne
+        cases hcl : st1.classes.get? best with
+        | none =>
+          rw [Std.HashMap.get?_eq_getElem?] at hcl
+          simp [hcl] at hne
+        | some ms =>
+          have := hmem ms hcl
+          rw [Std.HashMap.get?_eq_getElem?] at hcl
+          simp only [Option.getD_some]
+          obtain ⟨h1, h2⟩ := hIK.altsInsert (x := v) (ms := ms) (hkK v hvk1) (fun m hm =>
+            ⟨hkK m (this m hm).1, (this m hm).2.1,
+             fun n hn y hy => hgK y ((this m hm).2.2 n hn y hy)⟩)
+          exact ⟨_, rfl, h1, h2, rfl, rfl, rfl, fun y h => h⟩
+      · exact ⟨_, rfl, hIK, fun _ h => h, rfl, rfl, rfl, fun _ h => h⟩
+    obtain ⟨stF, hF, hIF, hgF, haF, hdF, htF, hkF⟩ := hfin
+    rw [hF]
+    refine ⟨hIF, fun y h => hgF y (hgK y (hgst1 y h)), fun y h => hkF y (hkK y (hkst1 y h)),
+      fun y t h => by rw [htF]; exact htst1 y t h, fun y d h => ?_, fun y d h => ?_,
+      fun y n h ha => by rw [hdF]; exact hdst1 y n h ha,
+      .inl ⟨rfl, rfl, by rw [haF, havK, if_pos rfl], hgF v hgvK, by rw [hdF]; exact hd1v⟩⟩
+    · rw [haF, havK]; split
+      · rename_i he; subst he; rw [hvav] at h; cases h
+      · rw [havst1]; exact h
+    · rw [haF, havK] at h; split at h
+      · rename_i he; subst he; cases h
+        exact .inr ⟨rfl, { s with inst }, by simp [StmtLog.out], by simp [hres]⟩
+      · rw [havst1] at h; exact .inl h
+  by_cases hbv : best = v
+  · left; apply keep_case; unfold pureEmit; simp [hbv]
+  have hgb := hbest.resolve_left hbv
+  cases hm : materialize cfg allowed bi (st1.defs.size + 1) (st1, #[]) best with
+  | none => left; apply keep_case; unfold pureEmit; simp [hbv, hm]
+  | some r =>
+    obtain ⟨w, st2, emitted⟩ := r
+    right
+    obtain ⟨stR, he, hRd, hRa, hRv, hRt, hRn, hRf, hRm, hRp⟩ : ∃ stR : SState,
+        pureEmit cfg allowed bi st1 subst s inst v best =
+          (stR, subst.insert v w, StmtLog.repl { s with inst } w emitted) ∧
+        stR.defs = st2.defs ∧ stR.alts = st2.alts ∧ stR.avail = st2.avail ∧ stR.types = st2.types ∧
+        stR.next = st2.next ∧ stR.fn = st2.fn ∧ stR.memo = st2.memo ∧
+        stR.partialVals = st2.partialVals :=
+      ⟨{ st2 with stats :=
+          { st2.stats with rewritten := st2.stats.rewritten + 1, emitted := st2.stats.emitted + emitted.size } },
+        by unfold pureEmit; simp [hbv, hm], rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+    rw [he]
+    obtain ⟨new, hout, hrun, hgw, hhw, htw⟩ := mat_spec _ _ _ _ _ _ _ _ b hI1.m hb hgb.1 hm
+    simp only [List.nil_append] at hout
+    have hI2 : RInv f (emitV V bi new) B (fun _ => False) (fun _ => False) stR := by
+      refine ((hI1.of_mrun hrun).congr hRd hRa hRv hRt hRn hRf hRm hRp).dropX ?_
+      intro n w' hw' hx hn
+      rw [hx, hn] at hw'
+      have hm2 : st2.memo = st1.memo := by
+        obtain ⟨_, _, _, _, _, h⟩ := hrun.step.shape; rw [h]
+      rw [hRm, hm2, hmem1] at hw'; cases hw'; exact absurd rfl hbv
+    have hgR : ∀ y, Good st1 B y → Good stR B y := fun y h => Good.congr hRd hRa hRv (hrun.good y h)
+    have hkR : ∀ y, st1.known y = true → stR.known y = true := by
+      intro y hy; have := hrun.step.known y hy
+      simpa [SState.known, hRd, hRv] using this
+    have hwk : stR.known w = true := (Good.congr hRd hRa hRv hgw).known
+    have hwv : w ≠ v := by rintro rfl; exact hgw.not_bad hvB
+    have htwR : stR.types.get? w = stR.types.get? v := by
+      rw [hRt, htw, hrun.step.typesKnown v hvk1]; exact hgb.2
+    have hfin : ∃ stF, pureAlts st1 stR v best (.repl { s with inst } w emitted) = stF ∧
+        RInv f (emitV V bi new) B (fun _ => False) (fun _ => False) stF ∧
+        (∀ y, Good stR B y → Good stF B y) ∧
+        stF.avail = stR.avail ∧ stF.defs = stR.defs ∧ stF.types = stR.types ∧
+        (∀ y, stR.known y = true → stF.known y = true) := by
+      by_cases hc : (w == v || st1.made.contains best) = true
+      · by_cases hne : (!((st1.classes.get? best).getD []).isEmpty) = true
+        · cases hcl : st1.classes.get? best with
+          | none => rw [hcl] at hne; simp at hne
+          | some ms =>
+            have := hmem ms hcl
+            obtain ⟨h1, h2⟩ := hI2.altsInsert (x := w) (ms := ms) hwk (fun m hm' =>
+              ⟨hkR m (this m hm').1, by
+                rw [htwR, hRt, hrun.step.typesKnown m (this m hm').1,
+                  hrun.step.typesKnown v hvk1]; exact (this m hm').2.1,
+               fun n hn y hy => by
+                rw [hRd] at hn
+                rcases hrun.nodes m n hn with hn0 | hn0
+                · exact hgR y ((this m hm').2.2 n hn0 y hy)
+                · exact Good.congr hRd hRa hRv (hn0 y hy)⟩)
+            refine ⟨_, ?_, h1, h2, rfl, rfl, rfl, fun y h => h⟩
+            rw [hcl] at hne
+            have hms : ms ≠ [] := by simpa using hne
+            have hcl' : st1.classes[best]? = some ms := by rw [← Std.HashMap.get?_eq_getElem?]; exact hcl
+            simp [pureAlts, StmtLog.rep, hc, hcl', hms]
+        · refine ⟨_, ?_, hI2, fun _ h => h, rfl, rfl, rfl, fun _ h => h⟩
+          have hE : (st1.classes[best]?).getD [] = [] := by
+            rw [← Std.HashMap.get?_eq_getElem?]; simpa using hne
+          simp [pureAlts, StmtLog.rep, hc, hE]
+      · refine ⟨_, ?_, hI2, fun _ h => h, rfl, rfl, rfl, fun _ h => h⟩
+        simp only [Bool.not_eq_true] at hc
+        simp [pureAlts, StmtLog.rep, hc]
+    obtain ⟨stF, hF, hIF, hgF, haF, hdF, htF, hkF⟩ := hfin
+    rw [hF]
+    refine ⟨⟨w, emitted, rfl⟩, ?_⟩
+    dsimp only
+    have hout2 : (StmtLog.repl { s with inst } w emitted).out.toList = new := hout
+    have hsz : (StmtLog.repl { s with inst } w emitted).out.size = new.length := by
+      rw [← hout2, Array.length_toList]
+    refine ⟨by rw [hout2]; exact hIF, fun y h => hgF y (hgR y (hgst1 y h)),
+      fun y h => hkF y (hkR y (hkst1 y h)),
+      fun y t h => by rw [htF, hRt]; exact hrun.step.types y t (htst1 y t h),
+      fun y d h => by rw [haF, hRv]; exact hrun.step.avail y d (by rw [havst1]; exact h),
+      fun y d h => ?_, fun y n h ha => ?_, .inr ⟨w, rfl, rfl, fun j t hj => ?_, hgF w (Good.congr hRd hRa hRv hgw), ?_,
+        by rw [htF]; exact htwR, ?_⟩⟩
+    · rw [haF, hRv] at h
+      rcases hrun.step.availNew y d h with h | ⟨rfl, t, ht, hy⟩
+      · rw [havst1] at h; exact .inl h
+      · exact .inr ⟨rfl, t, by rw [hout2]; exact ht, hy⟩
+    · rw [hdF, hRd]
+      refine hrun.step.defsKeep y n (hdst1 y n h ha) ?_
+      rw [havst1]; exact ha
+    · rw [hout2] at hj ⊢
+      have := hrun.stmts b hb j t hj
+      exact (this.mono' (more := []) (fun y n hy _ => by rw [hdF, hRd]; exact hy)
+        (fun y d hy => by rw [haF, hRv]; exact hy)
+        (fun y hy => hgF y (Good.congr hRd hRa hRv hy))) |> fun h => by simpa [emitV_nil] using h
+    · rw [hout2, hsz]
+      have := hhw.at_end (b := { b with body := b.body ++ new }) (by simp [emitV, hb])
+      simpa using this
+    · rw [haF, hRv]
+      cases hc : st2.avail.contains v with
+      | false => rfl
+      | true =>
+        obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 ((hm_contains_iff _ _).1 hc)
+        rcases hrun.step.availNew v d hd with h | ⟨-, t, ht, hy⟩
+        · rw [hav1] at h; cases h
+        · obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 ht
+          obtain ⟨r, n', rfl, -, -, hrb, -⟩ := hrun.stmts b hb j t hj
+          simp only [List.mem_singleton] at hy
+          subst hy; exact absurd hvB hrb
 
 /-- **The pure path** (module doc): kept (`v` leaves the bad values) or replaced. -/
 theorem pure_ok {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst → Bool) (cfg : Cfg)
