@@ -188,15 +188,27 @@ theorem renamed_ops {V : Nat → Option Block} {st : SState} {m : List (ValueId 
   obtain ⟨p, hp, -, he⟩ := rename_mem hmap (hops hx)
   rw [he]; exact hps p hp
 
+theorem MRun.results {V : Nat → Option Block} {st st' : SState} {new : List Stmt} {b : Block}
+    (h : MRun f idom allowed bi B V st st' new) (hb : V bi = some b) : ∀ t ∈ new, t.results ≠ [] := by
+  intro t ht
+  obtain ⟨j, hj⟩ := List.mem_iff_getElem?.1 ht
+  obtain ⟨r, n', rfl, -⟩ := h.stmts b hb j t hj
+  simp
+
 variable {cfg : Cfg} {rules : SimplifyFn} {skel : SkeletonFn}
 
-/-- **A skeleton statement** (`skelStmt`) under the rule obligations (module doc). -/
+theorem SkelOut.orReplace_ne_keep (o : SkelOut) (i : Inst) : o.orReplace i ≠ .keep := by
+  cases o <;> simp [SkelOut.orReplace]
+
+/-- **A skeleton statement** (`skelStmt`) under the rule obligations (module doc). The statements
+emitted before the final ones are materialised nodes. -/
 theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
     ∀ fuel st u stmts sub st' o (V : Nat → Option Block) b,
       RInv f V B (fun _ => False) (fun _ => False) st → V bi = some b → (∀ y ∈ operands u.inst, Placed st B y) →
       (∀ r ∈ u.results, st.known r = true) →
       skelStmt skel rules allowed skelOk cfg bi fuel st u = (stmts, sub, st', o) →
       ∃ pre fin, stmts.toList = pre ++ fin ∧ SRun f cfg.idom allowed skelOk bi B V st st' pre ∧
+        (∀ t ∈ pre, t.results ≠ []) ∧ (o = .keep → pre = []) ∧
         SkelRes cfg.idom (emitV V bi pre) bi skelOk B st' (b.body.length + pre.length) u fin sub o := by
   intro fuel
   induction fuel with
@@ -204,7 +216,7 @@ theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
     intro st u stmts sub st' o V b h hb _ _ hs
     simp only [skelStmt, Prod.mk.injEq] at hs
     obtain ⟨rfl, rfl, rfl, rfl⟩ := hs
-    exact ⟨[], [u], by simp, SRun.of_rstep h (RStep.refl st), rfl, rfl⟩
+    exact ⟨[], [u], by simp, SRun.of_rstep h (RStep.refl st), by simp, fun _ => rfl, rfl, rfl⟩
   | succ fuel ih =>
     intro st u stmts sub st' o V b h hb hops hres hs
     rw [skelStmt] at hs
@@ -218,12 +230,13 @@ theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
       SRun.of_rstep hI1 hS1
     have hkeep : ∀ stmts sub st' o, (#[u], ([] : List (ValueId × ValueId)), st1, SkelOut.keep) =
         (stmts, sub, st', o) → ∃ pre fin, stmts.toList = pre ++ fin ∧
-          SRun f cfg.idom allowed skelOk bi B V st st' pre ∧
+          SRun f cfg.idom allowed skelOk bi B V st st' pre ∧ (∀ t ∈ pre, t.results ≠ []) ∧
+          (o = .keep → pre = []) ∧
           SkelRes cfg.idom (emitV V bi pre) bi skelOk B st' (b.body.length + pre.length) u fin sub o := by
       intro stmts sub st' o he
       simp only [Prod.mk.injEq] at he
       obtain ⟨rfl, rfl, rfl, rfl⟩ := he
-      exact ⟨[], [u], by simp, hR1, rfl, rfl⟩
+      exact ⟨[], [u], by simp, hR1, by simp, fun _ => rfl, rfl, rfl⟩
     have hres1 : ∀ r ∈ u.results, st1.known r = true := fun r hr => hS1.known (hres r hr)
     rcases c with _ | c
     · exact hkeep _ _ _ _ hs
@@ -236,7 +249,7 @@ theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
       · rename_i hemp
         simp only [Prod.mk.injEq] at hs
         obtain ⟨rfl, rfl, rfl, rfl⟩ := hs
-        exact ⟨[], [], by simp, hR1, rfl, rfl, by simpa using hemp, hcd⟩
+        exact ⟨[], [], by simp, hR1, by simp, fun _ => rfl, rfl, rfl, by simpa using hemp, hcd⟩
       · exact hkeep _ _ _ _ hs
     · -- removeWithVal
       simp only at hs
@@ -251,7 +264,8 @@ theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
           obtain ⟨rfl, rfl, rfl, rfl⟩ := hs
           obtain ⟨new, hout, hrun, hg2, hh2, ht2⟩ := mat_spec _ _ _ _ _ _ _ _ b hI1.m hb hco hm
           simp only [List.nil_append] at hout
-          refine ⟨new, [], by simp [hout], hR1.trans0 (SRun.of_mrun hI1 hrun), rfl, hcd, r, hr, rfl,
+          refine ⟨new, [], by simp [hout], hR1.trans0 (SRun.of_mrun hI1 hrun), hrun.results hb,
+            (fun h => nomatch h), rfl, hcd, r, hr, rfl,
             hg2, by simpa using hh2.at_end (b := { b with body := b.body ++ new }) (by simp [emitV, hb]), ?_⟩
           have hrk : st1.known r = true := hres1 r (by rw [hr]; simp)
           rw [ht2, hrun.step.typesKnown r hrk]
@@ -279,12 +293,16 @@ theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
           obtain ⟨more, sub2, st3, o2⟩ := rr
           simp only [Prod.mk.injEq] at hs
           obtain ⟨rfl, rfl, rfl, rfl⟩ := hs
-          obtain ⟨pre2, fin2, hmore, hrun2, hres2⟩ := ih st2
+          obtain ⟨pre2, fin2, hmore, hrun2, hne2, -, hres2⟩ := ih st2
             { u with inst := mapOperands (rename m) j } more sub2 st3 o2 _ _
             (hI1.of_mrun hrun) hb2 (fun y hy => (hops2 y hy).1)
             (fun r hr => hrun.step.known r (hres1 r hr)) hrec
           have hall := hR1.trans0 ((SRun.of_mrun hI1 hrun).trans hrun2)
-          refine ⟨out.toList ++ pre2, fin2, by simp [hmore], hall, ?_⟩
+          refine ⟨out.toList ++ pre2, fin2, by simp [hmore], hall, fun t ht => ?_,
+            fun h => absurd h (SkelOut.orReplace_ne_keep _ _), ?_⟩
+          · rcases List.mem_append.1 ht with ht | ht
+            · exact hrun.results hb t ht
+            · exact hne2 t ht
           rw [← emitV_append]
           have hk : b.body.length + (out.toList ++ pre2).length =
               (b.body ++ out.toList).length + pre2.length := by simp; omega
@@ -345,12 +363,16 @@ theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
         obtain ⟨more, sub2, st3, o2⟩ := rr
         simp only [Prod.mk.injEq] at hs
         obtain ⟨rfl, rfl, rfl, rfl⟩ := hs
-        obtain ⟨pre2, fin2, hmore, hrun2, hres2⟩ := ih st2
+        obtain ⟨pre2, fin2, hmore, hrun2, hne2, -, hres2⟩ := ih st2
           { u with inst := mapOperands (rename m) i } more sub2 st3 o2 _ _
           (hI1.of_mrun hrun) hb2 (fun y hy => (hops2 y hy).1)
           (fun r hr => hrun.step.known r (hres1 r hr)) hrec
         have hall := hR1.trans0 ((SRun.of_mrun hI1 hrun).trans hrun2)
-        refine ⟨out.toList ++ pre2, fin2, by simp [hmore], hall, ?_⟩
+        refine ⟨out.toList ++ pre2, fin2, by simp [hmore], hall, fun t ht => ?_,
+          fun h => absurd h (SkelOut.orReplace_ne_keep _ _), ?_⟩
+        · rcases List.mem_append.1 ht with ht | ht
+          · exact hrun.results hb t ht
+          · exact hne2 t ht
         rw [← emitV_append]
         have hk : b.body.length + (out.toList ++ pre2).length =
             (b.body ++ out.toList).length + pre2.length := by simp; omega
@@ -402,7 +424,7 @@ theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
             have hopsc := renamed_ops (i := c) hmap (fun y hy => List.mem_append_right _ hy)
               (fun p hp => ⟨(hps p hp).1, (hps p hp).2.1⟩)
             have hall := hR1.trans0 (SRun.of_mrun hI1 hrun)
-            refine ⟨out.toList, _, by simp, hall, rfl, rfl, hemp, hcd, ⟨fun y hy => ⟨(hopsa y hy).1, ?_⟩,
+            refine ⟨out.toList, _, by simp, hall, hrun.results hb, (fun h => nomatch h), rfl, rfl, hemp, hcd, ⟨fun y hy => ⟨(hopsa y hy).1, ?_⟩,
               by rw [resultTypes_mapOperands]; exact hta, by rw [notSym_mapOperands]; exact hsa,
               a, rename m, hska, rfl⟩, ⟨fun y hy => ⟨(hopsc y hy).1, ?_⟩,
               by rw [resultTypes_mapOperands]; exact htc, by rw [notSym_mapOperands]; exact hsc,
