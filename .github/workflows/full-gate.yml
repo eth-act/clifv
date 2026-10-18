@@ -82,18 +82,19 @@ jobs:
           BASE: ${{ steps.base.outputs.sha }}
           # eth-act (free plan) runs at most 20 jobs at once across all its repositories
           SHARDS: ${{ vars.FULL_GATE_SHARDS || '10' }}
-          # runner seconds per second recorded in scripts/lake-module-peaks.tsv (GitHub-hosted:
-          # measured on the first full CI build, 2026-10-18) and the shard scheduler's limits
-          TIME_SCALE: ${{ vars.FULL_GATE_TIME_SCALE || '2.5' }}
+          # runner seconds per second recorded in scripts/lake-module-peaks.tsv (GitHub-hosted,
+          # 3 lean processes per runner, measured on run 39074925471, 2026-10-18: 1.97, FV.Opt.Proof.*
+          # 2.95, hence --prefix-scale 1.5) and the shard scheduler's limits
+          TIME_SCALE: ${{ vars.FULL_GATE_TIME_SCALE || '2.0' }}
           RAM: ${{ vars.FULL_GATE_RAM || '15G' }}
           FV_CI_BUDGET: ${{ vars.FULL_GATE_BUDGET || '15G' }}
           FV_CI_HEAVY: ${{ vars.FULL_GATE_HEAVY || '12G' }}
           FV_CI_MAX_JOBS: ${{ vars.FULL_GATE_MAX_JOBS || '3' }}
         run: |
           python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} --shards "$SHARDS" --waves 3 \
-            --time-scale "$TIME_SCALE" --ram "$RAM" --budget "$FV_CI_BUDGET" --heavy "$FV_CI_HEAVY" \
-            --max-jobs "$FV_CI_MAX_JOBS" --out ci-plan.json --github-output $LEAN_TARGETS \
-            | tee -a "$GITHUB_STEP_SUMMARY"
+            --time-scale "$TIME_SCALE" --prefix-scale FV.Opt.Proof.=1.5 --ram "$RAM" \
+            --budget "$FV_CI_BUDGET" --heavy "$FV_CI_HEAVY" --max-jobs "$FV_CI_MAX_JOBS" \
+            --out ci-plan.json --github-output $LEAN_TARGETS | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ci-plan

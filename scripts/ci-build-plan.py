@@ -71,12 +71,16 @@ def main():
     ap.add_argument("--default-secs", type=float, default=60)
     ap.add_argument("--time-scale", type=float, default=1.0,
                     help="runner seconds per recorded second (recorded on the agents' machine)")
+    ap.add_argument("--prefix-scale", action="append", default=[], metavar="PREFIX=F",
+                    help="modules starting with PREFIX run F times slower than --time-scale says "
+                         "(repeatable; longest match wins)")
     ap.add_argument("--ram", default="0",
                     help="runner RAM; a module whose recorded peak exceeds it pages to swap, and "
                          "its estimate grows by --swap-penalty per GiB above (0: no penalty)")
-    ap.add_argument("--swap-penalty", type=float, default=4.0,
+    ap.add_argument("--swap-penalty", type=float, default=1.8,
                     help="extra runner seconds per recorded second and GiB above --ram (GitHub "
-                         "runner, 16 GB + swap: StockCmpWithFlags, 23.6 GB peak, ran 32x longer)")
+                         "runner, 16 GB + 24 GB swap: StockCmpWithFlags, 23.6 GB peak, ran "
+                         "27-45x longer, median 31.6x, at time scale 2)")
     ap.add_argument("--profile", action="append")
     ap.add_argument("--out", default="ci-plan.json")
     ap.add_argument("--github-output", action="store_true")
@@ -122,7 +126,13 @@ def main():
 
     ram = lsb.size(a.ram)
     peak = {m: prof[m][0] if m in prof else 0 for m in planned}
-    secs = {m: a.time_scale * (prof[m][1] if m in prof else a.default_secs)
+    prefix_scale = sorted(((p, float(x)) for p, x in (s.split("=", 1) for s in a.prefix_scale)),
+                          key=lambda px: -len(px[0]))
+
+    def scale(m):
+        return a.time_scale * next((f for p, f in prefix_scale if m.startswith(p)), 1.0)
+
+    secs = {m: scale(m) * (prof[m][1] if m in prof else a.default_secs)
                * (1 + a.swap_penalty * max(0, peak[m] - ram) / GiB if ram else 1) for m in planned}
 
     def cap(m):
