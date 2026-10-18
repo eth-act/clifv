@@ -637,6 +637,13 @@ theorem ref_vecDupImm (imm : ASIMDMovModImm) (inv : Bool) (sz : VectorSize) (d :
 
 /-! ### S11f: scalar FP arithmetic and comparison -/
 
+/-- The Arm model reads FP operands at width `Fmt.N`; normalise to the literal width. -/
+theorem setWidth_b32N {n : Nat} (a : BitVec n) :
+    (BitVec.setWidth IEEE.Fmt.b32.N a : BitVec 32) = BitVec.setWidth 32 a := rfl
+theorem setWidth_b64N {n : Nat} (a : BitVec n) :
+    (BitVec.setWidth IEEE.Fmt.b64.N a : BitVec 64) = BitVec.setWidth 64 a := rfl
+
+attribute [local simp] setWidth_b32N setWidth_b64N in
 set_option maxHeartbeats 4000000 in
 theorem ref_fpuRRR (op : FPUOp2) (sz : ScalarSize) (d n m : Nat) (a b : CV) :
     RefAt F ctx (.fpuRRR op sz (.vreg d .float) (.vreg n .float) (.vreg m .float)) [a, b] := by
@@ -647,14 +654,16 @@ theorem ref_fpuRRR (op : FPUOp2) (sz : ScalarSize) (d n m : Nat) (a b : CV) :
   · cases op <;> ref_tac
   · exact refAt_none' F ctx (fun w => by simp [ispec])
 
+attribute [local simp] setWidth_b32N setWidth_b64N in
 set_option maxHeartbeats 4000000 in
 theorem ref_fpuRR (op : FPUOp1) (sz : ScalarSize) (d n : Nat) (a : CV) :
     RefAt F ctx (.fpuRR op sz (.vreg d .float) (.vreg n .float)) [a] := by
   cases op <;> rcases sz with _ | _ | _ | _ | _
   all_goals first
-    | exact refAt_none' F ctx (fun w => by simp [ispec])
     | ref_tac
+    | exact refAt_none' F ctx (fun w => by simp [ispec])
 
+attribute [local simp] setWidth_b32N setWidth_b64N in
 set_option maxHeartbeats 4000000 in
 theorem ref_fpuCmp (sz : ScalarSize) (n m : Nat) (a b : CV) :
     RefAt F ctx (.fpuCmp sz (.vreg n .float) (.vreg m .float)) [a, b] := by

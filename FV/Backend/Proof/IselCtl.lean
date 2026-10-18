@@ -93,6 +93,7 @@ theorem indRulesCorrectP : IndRulesCorrectP program := by
 /-- **`IndRulesCorrect`** (`indRulesCorrectP` with nothing pinned). -/
 theorem indRulesCorrect : IndRulesCorrect program := indRulesCorrect_of_P indRulesCorrectP
 
+set_option maxHeartbeats 400000 in
 /-- **`BranchRulesCorrect`**: the closure root rules of `lower_branch` — `brif` (1132), `tbnz`
 (1137), `tbz` (1138), `jump` (1139), `br_table` (1140) — are correct; the `try_call` rules are
 not closure roots. -/

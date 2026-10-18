@@ -38,6 +38,26 @@ def instET : Inst → Bool
   | .bitcast ty _ _ => tyM ty
   | i => instE i
 
+/-- The S11f float arithmetic whose `lower` roots are proven (`Backend.LowerRulesCorrectFT`):
+`fadd`/`fsub`/`fmul`/`fdiv`/`fmin`/`fmax` with two operands and `sqrt`/`fneg`/`fabs`/`fpromote`/
+`fdemote` with one, at the types `instData` admits (`Backend.fTyOk`: `f32`/`f64`, `fpromote.f64`,
+`fdemote.f32`). Not `fcmp` (its `fp_cond_code` conditions are not proven). -/
+def fArithET : Inst → Bool
+  | .float op ty args =>
+    (match args with
+     | [_, _] => (Backend.fBinaryOpcode op).isSome
+     | [_] => (Backend.fUnaryOpcode op).isSome
+     | _ => false) && Backend.fTyOk op ty
+  | _ => false
+
+/-- The typed scope's instructions with the S11f float arithmetic (`instET`, `fArithET`): the
+instruction set of the arithmetic-admitting exclusion (`Backend.Proof.InstScopeTA`,
+`lower_nonroot_nomatchTA`). -/
+def instETA (i : Inst) : Bool := instET i || fArithET i
+
+theorem instETA_of_instET {i : Inst} (h : instET i = true) : instETA i = true := by
+  simp [instETA, h]
+
 /-- A signature of the typed scope: parameters and returns of admissible types. -/
 def sigET (s : Signature) : Bool :=
   s.params.all (tyM ·.ty) && s.returns.all (tyM ·.ty)
