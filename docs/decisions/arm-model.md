@@ -74,6 +74,17 @@ model concurrent agents: a theorem about a multi-threaded execution would need a
 model and a monitor, and Cranelift's LL/SC retry loops would then be needed. The co-simulation
 (`scripts/arm-cosim.sh`) does not exercise exclusives against another agent.
 
+**Multi-core statement (T2, #38; `docs/plans/atomics.md`).** `FV/Concurrency/*` adds, next to the
+single-core model and without changing it, the Armv8 axiomatic model restricted to these
+instructions and Cranelift's contract for CLIF atomics (all sequentially consistent). Proven at the
+execution level: the mapping (`ldar`, `stlr`, the `ldaxr`/`stlxr` loops, `dmb ish`) is sound
+(`Concurrency.Mapping.armv8_to_clif`), a race-free CLIF execution compiled to Armv8 is
+sequentially consistent (`Mapping.armv8_drf_sc`) and an interleaving (`Mapping.armv8_interleaving`),
+and the emitted code has exactly the table's kinds (`Concurrency.Code.lines_kinds`). Litmus tests
+check the model against herd7's verdicts (`FVTest/Concurrency/Litmus.lean`) and qemu
+(`scripts/litmus-qemu.sh`). The single-core assumption above stays trusted for
+`backend_correct_final` until the program-level composition (#302, #303) is done.
+
 ## Thread-local storage: trusted TLSDESC hook (agent/stack-tls-proof, 2026-10-01)
 
 `E2E.backend_correct_final` covers `tls_value` (`elf_gd`, cg_clif's setting). Its code is
