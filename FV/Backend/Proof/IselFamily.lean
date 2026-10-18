@@ -120,6 +120,11 @@ def instNames : Clif.Inst → String × String
   | .tlsValue .. => ("UnaryGlobalValue", "TlsValue")
   -- `bitcast` (S11e4)
   | .bitcast .. => ("LoadNoOffset", "Bitcast")
+  -- the float arithmetic (S11f)
+  | .float (.fcmp _) .. => ("FloatCompare", "Fcmp")
+  | .float op .. => match fBinaryOpcode op with
+    | some n => ("Binary", n)
+    | none => ("Unary", (fUnaryOpcode op).getD "")
   | _ => ("", "")
 
 set_option maxRecDepth 20000 in
@@ -167,6 +172,15 @@ theorem instData_names {f : Clif.Function} {c : Clif.Inst} {d : V} (h : instData
     rcases instData_names_iconst h with h1 | ⟨h1, h2⟩
     · exact .inl h1
     · exact .inr ⟨ty, imm, rfl, h1, h2⟩
+  case float op ty args =>
+    refine .inl ?_
+    cases op <;> simp only [instData, fBinaryOpcode, fUnaryOpcode] at h <;> (repeat' split at h)
+    all_goals first
+      | (simp only [throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h)
+      | (simp only [pure, Except.pure, Except.ok.injEq] at h
+         subst h
+         simp only [instNames, fBinaryOpcode, fUnaryOpcode, Option.getD_some, *]
+         exact ⟨_, rfl⟩)
   all_goals refine .inl ?_
   all_goals simp only [instData] at h
   all_goals (repeat' split at h)
@@ -245,6 +259,9 @@ theorem instNames_binary {c : Clif.Inst} {cop : Clif.BinaryOp} {n : String}
   case div op ty x y =>
     exfalso; cases op <;> cases cop <;> simp [divOpcode, binaryOpcode] at h hcop <;> subst hcop <;>
       simp at h
+  case float op ty args =>
+    exfalso; cases op <;> cases cop <;>
+      simp [fBinaryOpcode, fUnaryOpcode, binaryOpcode] at h hcop <;> subst hcop <;> simp at h
 
 /-! ## 3. Meaning of the emitted code -/
 

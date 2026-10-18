@@ -391,7 +391,8 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
         | apply os_movK | apply os_extend | apply os_bitfieldMove | apply os_cset | apply os_csel
         | apply os_ccmp | apply os_ccmpImm | apply os_movToFpu | apply os_movFromVec
         | apply os_vecMisc | apply os_vecLanes | apply os_vecRRR | apply os_loadAddr_slot
-        | apply os_fpuCSel | apply os_fpuMoveFPImm | apply os_vecDupImm) <;>
+        | apply os_fpuCSel | apply os_fpuMoveFPImm | apply os_vecDupImm
+        | apply os_fpuRRR | apply os_fpuRR | apply os_fpuCmp) <;>
         assumption
     | (assign_inv hasg
        all_goals refine ⟨?_, fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h⟩

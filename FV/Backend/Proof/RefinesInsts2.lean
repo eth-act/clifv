@@ -634,4 +634,34 @@ theorem ref_vecDupImm (imm : ASIMDMovModImm) (inv : Bool) (sz : VectorSize) (d :
       · exact absurd ‹_› (by simpa using hc)
       · rfl
     · rfl
+
+/-! ### S11f: scalar FP arithmetic and comparison -/
+
+set_option maxHeartbeats 4000000 in
+theorem ref_fpuRRR (op : FPUOp2) (sz : ScalarSize) (d n m : Nat) (a b : CV) :
+    RefAt F ctx (.fpuRRR op sz (.vreg d .float) (.vreg n .float) (.vreg m .float)) [a, b] := by
+  rcases sz with _ | _ | _ | _ | _
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · cases op <;> ref_tac
+  · cases op <;> ref_tac
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+
+set_option maxHeartbeats 4000000 in
+theorem ref_fpuRR (op : FPUOp1) (sz : ScalarSize) (d n : Nat) (a : CV) :
+    RefAt F ctx (.fpuRR op sz (.vreg d .float) (.vreg n .float)) [a] := by
+  cases op <;> rcases sz with _ | _ | _ | _ | _
+  all_goals first
+    | exact refAt_none' F ctx (fun w => by simp [ispec])
+    | ref_tac
+
+set_option maxHeartbeats 4000000 in
+theorem ref_fpuCmp (sz : ScalarSize) (n m : Nat) (a b : CV) :
+    RefAt F ctx (.fpuCmp sz (.vreg n .float) (.vreg m .float)) [a, b] := by
+  rcases sz with _ | _ | _ | _ | _
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
+  · ref_tac
+  · ref_tac
+  · exact refAt_none' F ctx (fun w => by simp [ispec])
 end Backend.Proof

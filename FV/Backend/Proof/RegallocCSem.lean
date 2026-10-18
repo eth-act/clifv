@@ -501,6 +501,10 @@ def FormOk (_ctx : FnCtx) : MInst → Bool
   -- S11e1: scalar SIMD&FP loads/stores (`ldr`/`str` of an `s`/`d` register)
   | .fpuLoad sz (.vreg _ .float) m _ => (sz == .size32 || sz == .size64) && memOk sz.bytes m
   | .fpuStore sz (.vreg _ .float) m _ => (sz == .size32 || sz == .size64) && memOk sz.bytes m
+  -- S11f: scalar FP arithmetic and comparison (`fadd`…, `fabs`/`fneg`/`fsqrt`/`fcvt`, `fcmp`)
+  | .fpuRRR _ _ (.vreg _ .float) (.vreg _ .float) (.vreg _ .float) => true
+  | .fpuRR _ _ (.vreg _ .float) (.vreg _ .float) => true
+  | .fpuCmp _ (.vreg _ .float) (.vreg _ .float) => true
   | _ => false
 
 /-- The number of use operands. -/
