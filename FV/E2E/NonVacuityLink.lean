@@ -2062,8 +2062,11 @@ theorem a2_legal {F : BitVec 64 → Prop} {p : Clif.Program} {K : Nat}
     (slotOff := (A fA2).af.slotBase) (K := K) hchk (hL.subset fA2 hA2) hcompiled
     (fun fn e h => by simp [Clif.Function.extern?, he9] at h)
     (fun fn e h => by simp [Clif.Function.extern?, heA] at h)
-    (fun ⟨B, hB, st, hst, sig, callee, args, hi⟩ =>
-      absurd hi ((indFreeB_sound hi9 B hB).1 st hst sig callee args))
+    (fun ⟨_, h⟩ => h.elim
+      (fun ⟨B, hB, st, hst, callee, args, hi⟩ =>
+        absurd hi ((indFreeB_sound hi9 B hB).1 st hst _ callee args))
+      (fun ⟨B, hB, callee, args, et, ht, _⟩ =>
+        absurd ht ((indFreeB_sound hi9 B hB).2 callee args et)))
     (hL.covered fA2 hA2) (fun _ => ⟨fun ctx info hsite => ?_, fun d u _ _ => by
       simp [Hb, Arm.r_of_w_same], fun d uses w outs w' hx _ => by simp [Xb] at hx⟩)
     (fun ⟨B, hB, ht⟩ => absurd ht (by simpa using hnt B hB))
