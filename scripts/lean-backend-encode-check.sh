@@ -11,14 +11,14 @@
 # and per file the mapping symbols ($x/$d kind and value) and the set of undefined symbols
 # (name and type).
 #
-# usage: scripts/lean-backend-encode-check.sh [-v] [--regalloc regalloc2|spill|stack]
+# usage: scripts/lean-backend-encode-check.sh [-v] [--regalloc lean|regalloc2|spill|stack]
 #                                             [--corpus | --runtests | --random |
 #                                             --n N | --seed S | FILE.clif...]
 #   default: --corpus (corpus/clif/*.clif, corpus/clif/extrt/*.clif, corpus/clif-regress/*.clif), --runtests
 #   (every file of Cranelift's runtests/; functions outside E are not compiled) and --random
 #   (`lean-backend-encode-test random`: every Insn form with N random operand sets
 #   (default 200, seed S default 0x5eed = 24301), one function per form; it also runs the
-#   decode check on them)
+#   decode check on them); --regalloc: the allocator (default lean, the Lean allocator)
 # Output: one line per differing function (every function with -v), then totals.
 # Exit status 0 iff every compiled function is identical and no file fails.
 set -euo pipefail
@@ -29,7 +29,7 @@ RUNTESTS=third_party/wasmtime/cranelift/filetests/filetests/runtests
 LLVM_MC=${LLVM_MC:-/usr/lib/llvm-18/bin/llvm-mc}
 
 VERBOSE=0
-RA=regalloc2
+RA=lean
 FILES=()
 SETS=()
 N=200
@@ -59,7 +59,10 @@ done
 
 echo "== build"
 lake build lean-backend lean-backend-encode-test 2>&1 | tail -1
-cargo build --quiet --release --manifest-path rust/Cargo.toml -p lean-regalloc
+# the external regalloc2 oracle, only when it is asked for
+if [[ $RA == regalloc2* ]]; then
+  cargo build --quiet --release --manifest-path rust/Cargo.toml -p lean-regalloc
+fi
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT

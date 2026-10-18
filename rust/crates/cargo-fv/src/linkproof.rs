@@ -3,8 +3,8 @@
 //! `FV/Front/Bundle.lean`) that `lake exe lean-link` compiles and `lake exe link-check` checks.
 //!
 //! A build with `--keep-temps` keeps, per codegen unit, cg_clif's dump of every Lean-compiled
-//! function (the stage `lean-backend` compiled the decoding of), `lean-regalloc`'s output for it
-//! (`regalloc_tee`), the unit's data objects (`data.clif`), and the merge's record
+//! function (the stage `lean-backend` compiled the decoding of), the register allocator's answers
+//! for it (`lean-backend` writes them to `$FV_RA_OUT`), the unit's data objects (`data.clif`), and the merge's record
 //! (`fv-link.json`, written by `pipeline::process_in`: the names the merge gave the symbols it
 //! renamed, the object's local symbols); per linked executable, the lld link map
 //! (`link-<tag>.map`, `link-<tag>.json`). This command only collects them, unchanged, into
@@ -16,41 +16,17 @@
 //! the data closure and the CLIF image's symbols are computed in Lean (`Front.assemble`), with
 //! proofs (`FV/Front/BundleProof.lean`, `FV/Front/RawProof.lean`).
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::ffi::OsString;
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::pipeline::MARKER;
 
-/// The real `lean-regalloc` (set by `pipeline::compile_one` with `--keep-temps`).
-pub const RA_REAL: &str = "FV_RA_REAL";
-/// Where to keep its output.
+/// Where `lean-backend` keeps its register-allocation answers (set by `pipeline::compile_one`
+/// with `--keep-temps`; the schema of `lean-regalloc`'s output, docs/contracts/regalloc.md).
 pub const RA_OUT: &str = "FV_RA_OUT";
 /// The per-codegen-unit record in its work directory.
 pub const CGU_FILE: &str = "fv-link.json";
-
-/// `fv-rustc` as `lean-regalloc`: run the real one on the same arguments, keep a copy of its
-/// standard output in `$FV_RA_OUT`, and pass its output and status through.
-pub fn regalloc_tee(real: &str, argv: Vec<OsString>) -> i32 {
-    match Command::new(real).args(&argv).output() {
-        Ok(o) => {
-            if let Some(p) = std::env::var_os(RA_OUT) {
-                if let Err(e) = fs::write(&p, &o.stdout) {
-                    eprintln!("fv-rustc: {}: {e}", Path::new(&p).display());
-                }
-            }
-            let _ = std::io::stdout().write_all(&o.stdout);
-            let _ = std::io::stderr().write_all(&o.stderr);
-            o.status.code().unwrap_or(1)
-        }
-        Err(e) => {
-            eprintln!("fv-rustc: cannot run {real}: {e}");
-            2
-        }
-    }
-}
 
 /// One line of an lld link map: address and the (indented) text.
 enum MapLine {

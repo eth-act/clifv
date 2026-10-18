@@ -6,8 +6,8 @@ import FVTest.Backend.AllocChoice
 /-!
 # Running Lean-backend code on the Lean Arm model (seed of M7's execution relation)
 
-`lake exe lean-backend-armrun [--regalloc regalloc2|lean|spill|stack|regalloc2-small] [--bins DIR] [--opt [--opt-* options]] [FILE.clif...]`
-(default: every `corpus/clif/*.clif`, regalloc2). For every function of the files that makes no
+`lake exe lean-backend-armrun [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--bins DIR] [--opt [--opt-* options]] [FILE.clif...]`
+(default: every `corpus/clif/*.clif`, the Lean allocator). For every function of the files that makes no
 calls, no memory accesses (other than its own frame) and no `symbol_value`, and has `; run:`
 commands:
 
@@ -194,7 +194,7 @@ def main (args : List String) : IO UInt32 := do
   let opt : Clif.Function → Clif.Function := match optCfg with
     | some c => (Opt.optimize · c)
     | none => id
-  let (src, args) ← opts (.lean (Allocator.regalloc2 (← defaultRegallocBin)).run) args
+  let (src, args) ← opts (.lean fun vcs => pure (allocateLean vcs)) args
   let files ← if args.isEmpty then do
       let entries ← System.FilePath.readDir "corpus/clif"
       pure ((entries.filter (·.path.extension == some "clif")).map (·.path.toString)

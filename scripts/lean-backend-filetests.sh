@@ -9,7 +9,7 @@
 # The same file is also run through plain `clif-native` (Cranelift's own aarch64 code), and
 # the two record streams are compared (`clif-results compare`).
 #
-# usage: scripts/lean-backend-filetests.sh [-v] [--asm] [--regalloc regalloc2|spill|stack]
+# usage: scripts/lean-backend-filetests.sh [-v] [--asm] [--regalloc lean|regalloc2|spill|stack]
 #                                          [--corpus | --runtests | FILE.clif...]
 #   default: --corpus and --runtests
 #   --corpus:   corpus/clif/*.clif, and corpus/clif/extrt/*.clif linked with the Rust
@@ -18,8 +18,9 @@
 #               clif-subset-v1 E (or i128, floats, vectors) are reported as unsupported
 #   -v: per-file lines for every file, and every non-passing run
 #   --asm: assemble the Lean backend's assembly with llvm-mc instead of using its object
-#   --regalloc: register allocator of the Lean backend (default regalloc2, validated by the
-#               Lean checker, with the spill allocator as fallback; `spill` = the fallback for
+#   --regalloc: register allocator of the Lean backend (default lean: the Lean allocator,
+#               validated by the Lean checker, with the spill allocator as fallback; regalloc2 =
+#               the external regalloc2 oracle, validated the same way; `spill` = the fallback for
 #               every function; `stack` = the stack-slot baseline), docs/contracts/regalloc.md
 #   --opt [--opt-* ...]: run the Lean mid-end (Opt.optimize) before the Lean backend
 #               (lean-backend --opt, docs/contracts/midend.md); Cranelift-native is unchanged
@@ -37,7 +38,7 @@ LLVM_MC=${LLVM_MC:-/usr/lib/llvm-18/bin/llvm-mc}
 
 VERBOSE=0
 ASM=0
-RA=regalloc2
+RA=lean
 OPTARGS=()
 SETS=()
 FILES=()
@@ -60,7 +61,11 @@ if [[ ${#SETS[@]} -eq 0 ]]; then SETS=(corpus runtests); fi
 
 echo "== build (objects: $([[ $ASM == 1 ]] && echo "llvm-mc from the Lean assembly" || echo "Lean encoder, no assembler"); allocator: $RA${OPTARGS[*]:+; mid-end: ${OPTARGS[*]}})"
 lake build lean-backend 2>&1 | tail -1
-cargo build --quiet --release --manifest-path rust/Cargo.toml -p clif-native -p clif-runlines -p lean-regalloc
+cargo build --quiet --release --manifest-path rust/Cargo.toml -p clif-native -p clif-runlines
+# the external regalloc2 oracle, only when it is asked for
+if [[ $RA == regalloc2* ]]; then
+  cargo build --quiet --release --manifest-path rust/Cargo.toml -p lean-regalloc
+fi
 BIN=rust/target/release
 RTLIB=rust/target/aarch64-unknown-linux-musl/release/libflat_runtime.a
 # the `__*ti3` helpers of 128-bit division/remainder (rust-route step 5): the legalised

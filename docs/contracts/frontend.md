@@ -115,7 +115,7 @@ an error.
       "functions": [
         { "name": "<CLIF name>", "final": "<linked name>",
           "dump": "<path: cg_clif's dump of the function, the stage lean-backend compiled>",
-          "ra": "<path: lean-regalloc's output for its decoding>" }
+          "ra": "<path: the register allocator's answers for its decoding (lean-backend, $FV_RA_OUT)>" }
       ],
       "data": "<path: the unit's data.clif, its `; data:` lines (every data object of the object)>",
       "locals": [["<CLIF name>", "<object symbol>"]],

@@ -155,7 +155,6 @@ fn repo_root() -> PathBuf {
     for (p, how) in [
         (".lake/build/bin/lean-backend", "lake build lean-backend"),
         ("rust/target/release/clif-data-export", "cargo build --release -p clif-data-export (in rust/)"),
-        ("rust/target/release/lean-regalloc", "cargo build --release -p lean-regalloc (in rust/)"),
         (".lake/build/bin/clif-decode", "lake build clif-decode"),
     ] {
         if !r.join(p).exists() {
@@ -181,7 +180,7 @@ fn value_of(args: &[String], opt: &str) -> Option<String> {
 /// Everything that changes the Lean side of a build but not cargo's fingerprints.
 fn stamp_of(cfg: &Config, wrapper: &Path, backend: &str) -> String {
     let mut s = String::new();
-    for p in [cfg.lean_backend(), cfg.data_export(), cfg.lean_regalloc(), cfg.decode(), wrapper.to_path_buf()] {
+    for p in [cfg.lean_backend(), cfg.data_export(), cfg.decode(), wrapper.to_path_buf()] {
         let m = std::fs::metadata(&p).ok();
         s.push_str(&format!(
             "{} {} {:?}\n",

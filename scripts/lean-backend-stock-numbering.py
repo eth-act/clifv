@@ -36,5 +36,8 @@ def main():
   except (OSError,ValueError):return subprocess.call([backend,*sys.argv[1:]])
   shim=pathlib.Path(tmp)/'oracle';shim.write_text('#!/bin/sh\nexec '+shlex.quote(sys.executable)+' '+shlex.quote(str(pathlib.Path(__file__).resolve()))+' --alignment-oracle "$@"\n');shim.chmod(0o755)
   env={**os.environ,'LEAN_REGALLOC':str(shim),'CLIFV_ALIGNMENT_TRACE':str(trace),'CLIFV_ALIGNMENT_ORACLE':os.environ.get('CLIFV_ALIGNMENT_ORACLE',os.environ.get('LEAN_REGALLOC',str(ROOT/'rust/target/release/lean-regalloc')))}
-  return subprocess.call([backend,*sys.argv[1:]],env=env)
+  # the numbering hints are an oracle shim of regalloc2 (`lean-backend`'s default is the Lean
+  # allocator since V4b-2, #274): keep regalloc2 unless the options choose an allocator
+  opts=sys.argv[1:] if '--regalloc' in sys.argv or '--stock-config' in sys.argv else [*sys.argv[1:],'--regalloc','regalloc2']
+  return subprocess.call([backend,*opts],env=env)
 if __name__=='__main__':sys.exit(main())

@@ -412,17 +412,12 @@ fn compile_one(
         cmd.arg(input)
             .arg(out)
             .args(cfg.mode.backend_args())
-            .args(["--personality", "rust_eh_personality"])
-            .env("LEAN_REGALLOC", cfg.lean_regalloc());
-        // `--keep-temps`: keep lean-regalloc's output next to the object (`cargo fv
-        // link-proof` rebuilds the allocation from it in Lean): this process (fv-rustc) runs
-        // lean-regalloc and copies its output (`crate::linkproof::regalloc_tee`)
+            .args(["--personality", "rust_eh_personality"]);
+        // `--keep-temps`: keep the register allocator's answers next to the object (`cargo fv
+        // link-proof` and `lean-link` rebuild the allocations from them in Lean): lean-backend's
+        // Lean allocator writes them to `$FV_RA_OUT` (`FVTest/Backend/AllocChoice.lean`)
         if cfg.keep_link() {
-            if let Ok(me) = std::env::current_exe() {
-                cmd.env("LEAN_REGALLOC", me)
-                    .env(crate::linkproof::RA_REAL, cfg.lean_regalloc())
-                    .env(crate::linkproof::RA_OUT, out.with_extension("ra.json"));
-            }
+            cmd.env(crate::linkproof::RA_OUT, out.with_extension("ra.json"));
         }
         match cmd.output() {
             Ok(o) => {
