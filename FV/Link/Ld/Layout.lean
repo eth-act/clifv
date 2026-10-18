@@ -361,14 +361,13 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := 
         let c := cieOut.getD (e.file, e.ei, e.piece.cieOff) 0
         bytes := writeLE bytes 4 4 (e.out + 4 - c)
       let mut rels : Array Rel := #[]
-      for r in es.relas do
-        if r.off ≥ e.piece.off && r.off < e.piece.off + e.piece.size then
-          let P := ehAddr + e.out + (r.off - e.piece.off)
-          let ri ← relIn e.file r P
-          rels := rels.push { off := r.off - e.piece.off, ty := r.type, ri }
-          if !e.piece.cie && r.off == e.piece.off + 8 then
-            let (v, _) ← value e.file r.sym
-            table := table.push (((v + r.addend) % 2 ^ 64).toNat, ehAddr + e.out)
+      for r in es.relasIn e.piece.off (e.piece.off + e.piece.size) do
+        let P := ehAddr + e.out + (r.off - e.piece.off)
+        let ri ← relIn e.file r P
+        rels := rels.push { off := r.off - e.piece.off, ty := r.type, ri }
+        if !e.piece.cie && r.off == e.piece.off + 8 then
+          let (v, _) ← value e.file r.sym
+          table := table.push (((v + r.addend) % 2 ^ 64).toNat, ehAddr + e.out)
       pieces := pieces.push { addr := ehAddr + e.out, fo := ehOff + e.out, bytes, rels := rels.toList }
   if ehTotal > 0 then
     let hAddr := partAddr.getD "ehHdr" 0
@@ -386,7 +385,8 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := 
   -- symbols: locals, then globals (the winners), then linker-defined ones
   let mut locals : Array OutSym := #[]
   let mut globals : Array OutSym := #[]
-  let mut mapSyms : Std.HashMap SecId (Array (Nat × String)) := {}
+  -- per input section, its symbols for the map
+  let mut mapSyms : Array (Array (Array (Nat × String))) := files.map fun f => Array.replicate f.secs.size #[]
   for fi in [0:files.size] do
     let f := files[fi]!
     for j in [1:f.syms.size] do
@@ -403,7 +403,7 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := 
                            info := (if isLocal then 0 else sy.bind) * 16 + sy.type,
                            shndx := secOut[fi]![sy.shndx]! }
       if isLocal then locals := locals.push os else globals := globals.push os
-      mapSyms := mapSyms.insert (fi, sy.shndx) ((mapSyms.getD (fi, sy.shndx) #[]).push (a, sy.name))
+      mapSyms := mapSyms.modify fi (·.modify sy.shndx (·.push (a, sy.name)))
   for (n, d) in st.syms.toList do
     match d with
     | .common f k =>
@@ -428,7 +428,7 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := 
       | .input (f, si) =>
         let s := files[f]!.secs[si]!
         map := map ++ mapLine secAddr[f]![si]! s.size (max s.align 1) 8 s!"{files[f]!.name}:({s.name})"
-        for (a, n) in ((mapSyms.getD (f, si) #[]).qsort fun x y => x.1 < y.1) do
+        for (a, n) in (((mapSyms[f]?.bind (·[si]?)).getD #[]).qsort fun x y => x.1 < y.1) do
           map := map ++ mapLine a 0 0 16 n
       | _ => pure ()
   let plan : Plan :=

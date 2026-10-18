@@ -1,4 +1,5 @@
 import FV.Link.Ld.PlanProof
+import FV.Link.OutsideProof
 
 /-! # The CLIF data objects in `lean-ld`'s plan (L2b stage 3e, #269)
 
@@ -35,21 +36,27 @@ def relsFrom (k : Nat) (rs : List Rel) : List Rel :=
 
 /-- **A data object's items in a piece's input bytes `bs` from offset `k`**, `rs` the piece's
 relocations not before `k`: a byte item is the input byte, unpatched; an address item is an
-`ABS64` at its place with the link map's value. -/
-def itemsB (I : LinkInput) (bs : ByteArray) : Nat → List Rel → List Clif.DataItem → Bool
+`ABS64` at its place with the link map's value (`am`: the link map's `addrMap`). -/
+def itemsB (am : Std.HashMap String Nat) (bs : ByteArray) : Nat → List Rel → List Clif.DataItem → Bool
   | _, _, [] => true
   | k, rs, .byte b :: is =>
     let rs' := relsFrom k rs
     (match rs' with
      | [] => true
      | r :: _ => decide (k < r.off)) &&
-    bs[k]?.map (·.toBitVec) == some b && itemsB I bs (k + 1) rs' is
+    bs[k]?.map (·.toBitVec) == some b && itemsB am bs (k + 1) rs' is
   | k, rs, .addr n a :: is =>
     match relsFrom k rs with
     | [] => false
     | r :: rs' => r.off == k && r.ty == 257 &&
-        BitVec.ofInt 64 (r.ri.S + r.ri.A) == BitVec.ofInt 64 ((I.addrOf n : Int) + a) &&
-        itemsB I bs (k + 8) rs' is
+        BitVec.ofInt 64 (r.ri.S + r.ri.A) == BitVec.ofInt 64 ((am[n]?.getD 0 : Nat) + a) &&
+        itemsB am bs (k + 8) rs' is
+
+/-- The number of resolved bytes of data items (`itemsLen_eq`). -/
+def itemsLen : List Clif.DataItem → Nat
+  | [] => 0
+  | .byte _ :: is => itemsLen is + 1
+  | .addr _ _ :: is => itemsLen is + 8
 
 /-- A piece holding `[a, a + len)`: the hint's (the piece starting at `a`), else the first. -/
 def pieceFor (pa : Array Piece) (hint : Std.HashMap Nat Nat) (a len : Nat) : Option Piece :=
@@ -60,12 +67,12 @@ def pieceFor (pa : Array Piece) (hint : Std.HashMap Nat Nat) (a len : Nat) : Opt
 
 /-- **A CLIF data object in the plan** (`am`: the link map's `addrMap`; `off`, `n`: the region's
 file offset and size). -/
-def objPlanB (am : Std.HashMap String Nat) (I : LinkInput) (pl : Plan) (pa : Array Piece)
+def objPlanB (am : Std.HashMap String Nat) (pl : Plan) (pa : Array Piece)
     (hint : Std.HashMap Nat Nat) (off n : Nat) (o : Clif.DataObject) : Bool :=
   match am[o.name]? with
   | none => false
   | some a =>
-    let len := (objBytes I o).length
+    let len := itemsLen o.items
     len == 0 || (decide (a + len < 2 ^ 64) &&
       match pl.segs.find? (fun s => decide (s.vaddr ≤ a) && decide (a + len ≤ s.vaddr + s.memsz)) with
       | none => false
@@ -76,7 +83,7 @@ def objPlanB (am : Std.HashMap String Nat) (I : LinkInput) (pl : Plan) (pa : Arr
           decide (p.addr ≤ a) && decide (a + len ≤ p.addr + p.bytes.size) &&
             decide (a + len ≤ s.vaddr + s.filesz) && decide (y = s.offset + (a - s.vaddr)) &&
             (decide (y + len ≤ off) || decide (off + n ≤ y)) && chainB relBefore p.rels &&
-            itemsB I p.bytes (a - p.addr) p.rels o.items
+            itemsB am p.bytes (a - p.addr) p.rels o.items
         | none => decide (s.vaddr + s.filesz ≤ a) && o.items.all (· == .byte 0))
 
 /-- The index of the first piece of positive size at each address. -/
@@ -88,7 +95,7 @@ def pieceHint (pa : Array Piece) : Std.HashMap Nat Nat :=
 /-- **The data check on the plan**: every CLIF data object of `D` is in the plan (`objPlanB`). -/
 def dataPlanB (I : LinkInput) (D : List Clif.DataObject) (pl : Plan) (off n : Nat) : Bool :=
   let pa := pl.pieces.toArray
-  D.all (objPlanB (addrMap I.addrs) I pl pa (pieceHint pa) off n)
+  D.all (objPlanB (addrMap I.addrs) pl pa (pieceHint pa) off n)
 
 /-! ## Relocations walked in order -/
 
@@ -130,10 +137,16 @@ theorem leByte_ofInt (x : Int) (i : Nat) :
   simp [BitVec.extractLsb'_toNat, BitVec.toNat_ofInt]
 
 /-- **The items' bytes are the relocated piece's.** -/
+theorem itemsLen_eq (I : LinkInput) : ∀ is : List Clif.DataItem,
+    itemsLen is = (is.flatMap (itemBytes I)).length
+  | [] => rfl
+  | .byte _ :: is => by simp [itemsLen, itemsLen_eq I is, itemBytes]; try omega
+  | .addr _ _ :: is => by simp [itemsLen, itemsLen_eq I is, itemBytes]; try omega
+
 theorem itemsB_sound {I : LinkInput} {p : Piece} {b' : ByteArray} (hb : p.relocated = .ok b')
     (hd : p.rels.Pairwise (fun r r' => relBefore r r' = true)) :
     ∀ (is : List Clif.DataItem) (k : Nat) (rs pre : List Rel), p.rels = pre ++ rs →
-      (∀ r ∈ pre, r.off + relocWidth r.ty ≤ k) → itemsB I p.bytes k rs is = true →
+      (∀ r ∈ pre, r.off + relocWidth r.ty ≤ k) → itemsB (addrMap I.addrs) p.bytes k rs is = true →
       ∀ i (x : BitVec 8), (is.flatMap (itemBytes I))[i]? = some x →
         b'[k + i]?.map (·.toBitVec) = some x
   | [], _, _, _, _, _, _, _, _, hx => by simp at hx
@@ -190,7 +203,9 @@ theorem itemsB_sound {I : LinkInput} {p : Piece} {b' : ByteArray} (hb : p.reloca
         subst hx
         have hdj : p.rels.Pairwise RelDisj := hd.imp fun h => by
           simp only [relBefore, decide_eq_true_eq] at h; exact .inl h
-        rw [← hoff, relocated_abs64 hb hdj hr hty hi, Option.map_some, leByte_ofInt, hbv]
+        rw [← hoff, relocated_abs64 hb hdj hr hty hi, Option.map_some, leByte_ofInt, hbv,
+          addrMap_get]
+        rfl
       · rw [List.getElem?_append_right (by simp [itemBytes]; omega)] at hx
         simp only [itemBytes, List.length_map, List.length_range] at hx
         have hw : relocWidth r.ty = 8 := by rw [hty]; rfl
@@ -269,12 +284,14 @@ theorem objFastB_of_plan {pl : Plan} {img : Img}
     (hdisj : pl.sorted.Pairwise PieceDisj) (hfo : ∀ p ∈ pl.pieces, pl.hdrEnd ≤ p.fo)
     (hbody : buildBody pl.size pl.sorted = .ok img.body) (hbs : img.body.size = pl.size)
     (hhl : img.hdr.length = pl.hdrEnd) (hws : img.body.size ≤ img.write.size)
-    {am : Std.HashMap String Nat} {I : LinkInput} {hint : Std.HashMap Nat Nat} {off n : Nat}
-    {o : Clif.DataObject} (h : objPlanB am I pl pl.pieces.toArray hint off n o = true) :
-    objFastB am I (exRd (maskEx img.write off n)) pl.phdrs o = true := by
+    {I : LinkInput} {hint : Std.HashMap Nat Nat} {off n : Nat}
+    {o : Clif.DataObject} (h : objPlanB (addrMap I.addrs) pl pl.pieces.toArray hint off n o = true) :
+    objFastB (addrMap I.addrs) I (exRd (maskEx img.write off n)) pl.phdrs o = true := by
   unfold objPlanB at h
+  have hlen : itemsLen o.items = (objBytes I o).length := itemsLen_eq I o.items
+  simp only [hlen] at h
   unfold objFastB
-  cases ham : am[o.name]? with
+  cases ham : (addrMap I.addrs)[o.name]? with
   | none => simp only [ham] at h; cases h
   | some a =>
     simp only [ham] at h ⊢

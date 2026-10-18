@@ -24,6 +24,7 @@ use crate::config::{Config, Mode};
 use crate::pipeline::run;
 use object::read::archive::ArchiveFile;
 use std::collections::{BTreeMap, BTreeSet};
+use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -91,9 +92,9 @@ pub fn program_part(cfg: &Config, unit: &str, args: &[String]) -> Result<Option<
 
 /// Write the program part into the linked executable `exe` (its link map recorded by the
 /// linker mode as `link-<tag>.json`): the Lean linker's input, then `lake exe lean-link`
-/// (`--opt` with `--opt-proven-only`, `--verified` with `cfg.lean_link_verified`). Returns the
-/// tool's output.
-pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
+/// (`--opt` with `--opt-proven-only`, `--verified` with `cfg.lean_link_verified`, `--ld` with
+/// `lean-ld`'s argument list when it linked `exe`). Returns the tool's output.
+pub fn patch(cfg: &Config, exe: &Path, list: &Path, ld_args: Option<&Path>) -> Result<String, String> {
     let fv_dir = cfg.tmp_dir.parent().ok_or("no target/fv/<mode> directory")?;
     let target = fv_dir.parent().and_then(|p| p.parent()).ok_or("no target directory")?;
     let mode = fv_dir.file_name().map(|m| m.to_string_lossy().into_owned()).unwrap_or_default();
@@ -116,6 +117,7 @@ pub fn patch(cfg: &Config, exe: &Path, list: &Path) -> Result<String, String> {
         .arg("--dead-cleanup")
         .args((cfg.mode == Mode::OptProven).then_some("--opt"))
         .args(cfg.lean_link_verified.then_some("--verified"))
+        .args(ld_args.map(|p| [OsStr::new("--ld"), p.as_os_str()]).into_iter().flatten())
         .output()
         .map_err(|e| format!("{}: {e} (lake build lean-link)", tool.display()))?;
     let text = String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr);

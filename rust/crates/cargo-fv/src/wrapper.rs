@@ -638,6 +638,9 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     // `--lean-ld`: the Lean static linker (rustc's `-flavor gnu` dropped); rust-lld when it
     // rejects the inputs
     let mut code = None;
+    // `lean-ld`'s argument list, one per line (`lean-link --ld`: its plan checked against the
+    // link spec, `Plan.specOkB`)
+    let mut ld_args = None;
     if cfg.lean_ld {
         let tool = cfg.root.join(".lake/build/bin/lean-ld");
         let mut args = Vec::new();
@@ -649,8 +652,18 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
                 args.push(a.clone());
             }
         }
+        let t0 = std::time::Instant::now();
         match Command::new(&tool).args(&args).args(&extra).output() {
-            Ok(o) if o.status.success() => code = Some(0),
+            Ok(o) if o.status.success() => {
+                code = Some(0);
+                eprint_fv(&format!("{}: linked by lean-ld in {} ms", output.display(), t0.elapsed().as_millis()));
+                let path = map.with_extension("ldargs");
+                let text: Vec<String> =
+                    args.iter().chain(extra.iter()).map(|a| a.to_string_lossy().into_owned()).collect();
+                if fs::write(&path, text.join("\n")).is_ok() {
+                    ld_args = Some(path);
+                }
+            }
             Ok(o) => eprint_fv(&format!(
                 "--lean-ld: {} failed, linking with rust-lld: {}",
                 tool.display(),
@@ -659,10 +672,16 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
             Err(e) => eprint_fv(&format!("--lean-ld: cannot run {} (lake build lean-ld): {e}; linking with rust-lld", tool.display())),
         }
     }
+    let t0 = std::time::Instant::now();
     let mut code = match code {
         Some(c) => c,
         None => match Command::new(&cfg.rust_lld).args(&argv).args(&extra).status() {
-            Ok(s) => s.code().unwrap_or(1),
+            Ok(s) => {
+                if cfg.lean_link || cfg.lean_ld {
+                    eprint_fv(&format!("{}: linked by rust-lld in {} ms", output.display(), t0.elapsed().as_millis()));
+                }
+                s.code().unwrap_or(1)
+            }
             Err(e) => {
                 eprint_fv(&format!("cannot run {}: {e}", cfg.rust_lld.display()));
                 return 1;
@@ -684,7 +703,7 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     let mut coverage = None;
     if code == 0 {
         if let Some((_, list)) = &part {
-            match leanlink::patch(&cfg, &output, list) {
+            match leanlink::patch(&cfg, &output, list, ld_args.as_deref()) {
                 Ok(text) => {
                     eprint!("{text}");
                     coverage = leanlink::coverage(&text);
@@ -710,6 +729,9 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     }
     if !cfg.keep_link() {
         let _ = fs::remove_file(&map);
+        if let Some(p) = &ld_args {
+            let _ = fs::remove_file(p);
+        }
     }
     code
 }

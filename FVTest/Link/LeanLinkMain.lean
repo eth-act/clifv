@@ -5,9 +5,17 @@ import FV.Link.Placed
 import FV.E2E.SrcScopeDefs
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
+import FV.Link.Ld.Spec
+import FVTest.Link.LdArgs
 
-/-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified]`: the
-executable compiler on an executable (L1, L2b)
+/-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
+the executable compiler on an executable (L1, L2b)
+
+`--ld FILE` (`cargo fv` passes it when `lean-ld` linked the executable; `FILE`: `lean-ld`'s
+arguments): after the compiler succeeds, `ldCheck` links again with `Link.Ld.link`, checks that
+the output is the executable read, and decides `Plan.specOkB` of the plan against the link spec:
+the premise of `Link.Ld.file0OkB_ld` and the totality theorems `…compileExe{,Opt}_total_ld`
+(no check of the linker's output); reported, and added to the `--verified` totality note.
 
 `DIR` is `cargo fv link-proof --cgus … --no-check`'s output for an executable linked by
 `cargo fv --lean-link` (docs/research/lean-linker.md): the frontend bundle `bundle.json`
@@ -98,8 +106,39 @@ def srcFails (P : Clif.Program) (g : Clif.Function) : List String :=
   (if Opt.Legalize128.legalOkB g then [] else ["legalOkB"]) ++
     (if linkFreeB g then [] else ["linkFreeB"]) ++ (if declSigB P g then [] else ["declSigB"])
 
-def main (args : List String) : IO UInt32 := do
-  let usage := "usage: lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified]"
+/-- `--key VALUE` taken out of an argument list. -/
+def takeOpt (key : String) : List String → Option String × List String
+  | k :: v :: rest =>
+    if k == key then (some v, rest) else let (o, r) := takeOpt key (v :: rest); (o, k :: r)
+  | l => (none, l)
+
+/-- **`lean-ld`'s plan against the link spec** (`--ld FILE`, `FILE`: `lean-ld`'s arguments, one
+per line): links again (`Link.Ld.link`, deterministic), checks that its output is `file0` and
+decides `Plan.specOkB`, the premise of `Link.Ld.file0OkB_ld` and the `…_total_ld` theorems;
+on failure, the failing conjuncts. -/
+def ldCheck (P : LinkSpec) (file0 : ByteArray) (f : String) : IO (Except String Unit) := do
+  let args := ((← IO.FS.readFile f).splitOn "\n").filter (!·.isEmpty)
+  match ← Link.Ld.parseLdArgs args with
+  | .error e => return .error s!"lean-ld's arguments: {e}"
+  | .ok c => match Link.Ld.link c.opts c.ins with
+    | .error e => return .error s!"lean-ld: {e}"
+    | .ok r =>
+      if r.img.write.data != file0.data then return .error "lean-ld's output is not the executable read"
+      let pl := r.plan
+      if pl.specOkB P then return .ok ()
+      let pa := pl.pieces.toArray
+      let am := addrMap P.input0.addrs
+      let bad := P.data.filter fun o =>
+        !Link.Ld.objPlanB am pl pa (Link.Ld.pieceHint pa) (offsetOf pl.phdrs P.R) P.size o
+      let fails := (if pl.regionInB P.R P.size then [] else ["regionInB"]) ++
+        (if Link.Ld.symsPlanB P.input0 pl then [] else ["symsPlanB"]) ++
+        (if Link.Ld.tlsBoundB P pl then [] else ["tlsBoundB"]) ++
+        (if bad.isEmpty then [] else [s!"dataPlanB ({bad.length} object(s): {(bad.take 3).map (·.name)})"])
+      return .error s!"Plan.specOkB fails: {fails}"
+
+def main (args0 : List String) : IO UInt32 := do
+  let usage := "usage: lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]"
+  let (ldFile, args) := takeOpt "--ld" args0
   let flags := args.filter (·.startsWith "--")
   if flags.any (fun a => !["--dead-cleanup", "--no-dead-cleanup", "--opt", "--verified"].contains a) ||
       (flags.contains "--dead-cleanup" && flags.contains "--no-dead-cleanup") then
@@ -172,7 +211,21 @@ def main (args : List String) : IO UInt32 := do
         s!"; the original (pre-i128-legalisation) program, in SrcScopeB: {thm s!"{exeName}_correct_source"}, {thm s!"{exeName}_correct_source_peak"}"
       else "; outside SrcScopeB: about the legalised program only"
     let total := if deadCleanup || opt then thm s!"{exeName}_total_reach_input" else "Link.compileExe_total_reach"
-    let scope := if verified then s!"; input in InScopeIn (totality: {total}) (--verified)" else ""
+    -- `file0` linked by `lean-ld`: its plan against the link spec (`file0OkB_ld`)
+    let totalLd := thm s!"{exeName}_total_ld"
+    let ldOk ← match ldFile with
+      | none => pure false
+      | some f => do
+        let t0 ← IO.monoMsNow
+        match ← ldCheck SC file0 f with
+        | .ok () =>
+          IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB, {(← IO.monoMsNow) - t0} ms): file0OkB by Link.Ld.file0OkB_ld; totality without checks of the linker's output: {totalLd}"
+          pure true
+        | .error e =>
+          IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e} (totality only with the checks of file0, {total})"
+          pure false
+    let totalAll := if ldOk then s!"{total}; on lean-ld's output {totalLd}" else total
+    let scope := if verified then s!"; input in InScopeIn (totality: {totalAll}) (--verified)" else ""
     IO.println s!"lean-link: {exe}: coverage: {thm s!"{exeName}_correct"}, {thm s!"{exeName}_correct_peak"}{src}{scope}"
     return 0
   | .error e =>

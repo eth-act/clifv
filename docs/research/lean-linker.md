@@ -360,4 +360,22 @@ the static executable, and theorems state that its output meets those conditions
   `dataFastB_plan_witness` (the last two `native_decide`, for `symName`). Axiom audit
   `scripts/audit/lean-ld.lean`. Survey `cargo fv test --lean-link --lean-ld --verified` after
   the change: 18 of 18, 53 tests, no rust-lld fallback.
-* **Next (#270)**: `lean-ld` as `--lean-link`'s default; `Plan.specOkB` evaluated on real links.
+* **`lean-ld` is `--lean-link`'s default** (3d, #270; `--rust-lld` opts out; rust-lld still
+  links when `lean-ld` rejects the inputs, reported). `lean-link --ld FILE` (`cargo fv` passes
+  `lean-ld`'s arguments) links again, checks the output is the executable read and decides
+  `Plan.specOkB` against the executable's link spec: the premise of `file0OkB_ld` and
+  `…compileExe{,Opt}_total_ld` holds on every executable measured. The wrapper reports each link's
+  time (`linked by lean-ld in N ms`). Planner fixes found on `examples/deps`: the `.eh_frame`
+  relocations of a record (gc and layout) were found by scanning all relocations of the section
+  (with a linear CIE lookup per relocation: cubic per object), now by binary search over the
+  sorted relocations (`EhSec.relasIn`); the link map's per-section symbol lists are built in
+  place; `dataPlanB` uses the link map's `addrMap`. Measurements (same `cargo-fv`, rust-lld vs
+  `lean-ld`):
+
+  | | tests | functions verified | binary check | link time (per exe) | `Plan.specOkB` (re-link + check) |
+  |---|---|---|---|---|---|
+  | survey `--lean-link --verified` | 53 / 53 both | same | 18 / 18 both | 56 ms vs 420 ms (max 91 vs 1038) | 18 / 18 hold, avg 487 ms |
+  | fv-demo `--lean-link --verified` | 20 / 20 both | 1346 of 1352 both | 2 / 2 both | 25–30 ms vs 181 ms | 2 / 2 hold, 324–445 ms |
+  | deps `--lean-link --no-binary-check` | 16 / 16 both, same names and outcomes | 20821 of 21021 both; 4 / 4 executables by `compileExe` | not run (link-check takes hours); the `crates` executable (19845 functions) verified by it with `lean-ld` in an earlier run | 155–299 ms vs 2.7–3.6 s | 4 / 4 hold, 7–11 s |
+
+  Before the planner fixes, `lean-ld` took about 100 min on the deps `crates` executable.

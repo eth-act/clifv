@@ -700,8 +700,9 @@ author's estimate, not measured), **Risk**.
   P.file0OkB r.img.write r.img.phs`), hence `Link.compileExe_total_ld`,
   `Link.compileExeOpt_total_ld`, `Link.DeadCleanup.compileExe_total_ld`,
   `Link.DeadCleanup.compileExeOpt_total_ld`: totality on `lean-ld`'s output without checks of the
-  linker's output (`FV/Link/ExeLd.lean`, `FV/Link/DeadCleanupExeLd.lean`). Open: `lean-ld` as
-  `--lean-link`'s default (#270).
+  linker's output (`FV/Link/ExeLd.lean`, `FV/Link/DeadCleanupExeLd.lean`). **3d (#270):** `lean-ld`
+  is `--lean-link`'s default (`--rust-lld` opts out); `lean-link --ld` decides `Plan.specOkB` on
+  every executable (survey 18/18, fv-demo 2/2, deps 4/4 hold; tests identical to rust-lld's).
 
 - **Depends:** L2a on V1–V6; L2b independent of them. **Risk:** L2b scope (archive handling, all
   relocation types std uses, TLS layout, `.eh_frame`).
