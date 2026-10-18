@@ -128,6 +128,35 @@ def storeOpcode : Clif.StoreOp → String
   | .store => "Store" | .istore8 => "Istore8" | .istore16 => "Istore16"
   | .istore32 => "Istore32"
 
+/-- S11f: the `Opcode` of a two-operand float operation whose `lower` root is in the closure
+(`InstructionData::Binary`). -/
+def fBinaryOpcode : Clif.FOp → Option String
+  | .fadd => "Fadd" | .fsub => "Fsub" | .fmul => "Fmul" | .fdiv => "Fdiv" | .fmin => "Fmin"
+  | .fmax => "Fmax"
+  | _ => none
+
+/-- S11f: the `Opcode` of a one-operand float operation whose `lower` root is in the closure
+(`InstructionData::Unary`). -/
+def fUnaryOpcode : Clif.FOp → Option String
+  | .sqrt => "Sqrt" | .fneg => "Fneg" | .fabs => "Fabs" | .fpromote => "Fpromote"
+  | .fdemote => "Fdemote"
+  | _ => none
+
+/-- S11f: the controlling types at which `instData` accepts a float operation: `fpromote.f64`,
+`fdemote.f32`, the others at `f32`/`f64`. -/
+def fTyOk : Clif.FOp → Clif.Ty → Bool
+  | .fpromote, ty => ty == .f64
+  | .fdemote, ty => ty == .f32
+  | _, ty => ty.isFloat
+
+/-- The `FloatCC` variant name of a CLIF float condition. -/
+def floatccName : Clif.FloatCC → String
+  | .eq => "Equal" | .ne => "NotEqual" | .lt => "LessThan" | .le => "LessThanOrEqual"
+  | .gt => "GreaterThan" | .ge => "GreaterThanOrEqual" | .ord => "Ordered"
+  | .uno => "Unordered" | .one => "OrderedNotEqual" | .ueq => "UnorderedOrEqual"
+  | .ult => "UnorderedOrLessThan" | .ule => "UnorderedOrLessThanOrEqual"
+  | .ugt => "UnorderedOrGreaterThan" | .uge => "UnorderedOrGreaterThanOrEqual"
+
 /-- The `Imm64` of `iconst.ty imm`: the reader masks it to the type's width
 (`InstructionData::mask_immediates`), so it is the zero-extended value as an `i64`. -/
 def imm64OfIconst (ty : Clif.Ty) (imm : BitVec ty.width) : Int :=
@@ -169,7 +198,9 @@ def instText (i : Clif.Inst) : String := Clif.Print.inst (fun _ => none) i
 instruction is outside E). The float data movement of S11e4 (`valTyOk`): `f32const`/`f64const`
 (`UnaryIeee32`/`UnaryIeee64` with the literal's bit pattern, as Cranelift's `Ieee32::bits`),
 `load`/`store` of a whole `f32`/`f64`, `select` of floats and `bitcast` (`LoadNoOffset` with
-its `MemFlags`, as `InstructionData::LoadNoOffset`). -/
+its `MemFlags`, as `InstructionData::LoadNoOffset`). The float arithmetic of S11f whose roots
+are proven (`fBinaryOpcode`, `fUnaryOpcode`, `fcmp`): `Binary`/`Unary`/`FloatCompare` with the
+opcode, as Cranelift's `InstructionData`. -/
 def instData (f : Clif.Function) : Clif.Inst → Except String V
   | .iconst ty imm =>
     if eTy ty then pure (instDataV "UnaryImm" [opcodeV "Iconst", .int (imm64OfIconst ty imm)])
@@ -282,6 +313,23 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
       | some (.tlsSymbol ..) => throw s!"tls_value of gv{gv}, a tls symbol with an offset"
       | some _ => throw s!"tls_value of gv{gv}, which is not a `symbol tls`"
       | none => throw s!"unknown gv{gv}"
+  | .float (.fcmp cc) ty args =>
+    match args with
+    | [x, y] =>
+      if ty.isFloat then
+        pure (instDataV "FloatCompare"
+          [opcodeV "Fcmp", .values [x, y], mkVariant tyFloatCC (floatccName cc)])
+      else throw s!"fcmp.{ty.name}"
+    | _ => throw "fcmp arity"
+  | .float op ty args =>
+    match fBinaryOpcode op, fUnaryOpcode op, args with
+    | some n, _, [x, y] =>
+      if fTyOk op ty then pure (instDataV "Binary" [opcodeV n, .values [x, y]])
+      else throw s!"{n}.{ty.name}"
+    | _, some n, [x] =>
+      if fTyOk op ty then pure (instDataV "Unary" [opcodeV n, .value x])
+      else throw s!"{n}.{ty.name}"
+    | _, _, _ => throw s!"`{op.name}` is not in the lowering"
   | i => throw s!"`{instText i}` is not in E"
 
 /-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`)
