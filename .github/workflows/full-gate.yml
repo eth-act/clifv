@@ -194,6 +194,8 @@ jobs:
   audit:
     name: Axiom audits
     needs: [plan, assemble]
+    # explicit: a skipped wave (nothing to build) would otherwise skip every job downstream
+    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -223,6 +225,7 @@ jobs:
   crate-proofs:
     name: crate-proofs
     needs: [plan, assemble]
+    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
     runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 240
     permissions:
@@ -257,6 +260,7 @@ jobs:
   e2e:
     name: lean-e2e-check and link-check
     needs: [plan, assemble]
+    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
     runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 180
     permissions:
@@ -296,6 +300,7 @@ jobs:
   runtime:
     name: ${{ matrix.gate }}
     needs: [plan, assemble]
+    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     permissions:
@@ -346,6 +351,7 @@ jobs:
   cargo-fv:
     name: cargo fv --lean-link --verified (${{ matrix.example }})
     needs: [plan, assemble]
+    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 240
     permissions:
