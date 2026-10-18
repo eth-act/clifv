@@ -267,6 +267,7 @@ structure MStep (bi : Nat) (st st' : SState) (new : List Stmt) : Prop where
   defsKeep : ∀ y n, st.defs.get? y = some n → st.avail.contains y = true →
     st'.defs.get? y = some n
   defsOld : ∀ y, (st.defs.get? y).isSome → (st'.defs.get? y).isSome
+  fresh : ∀ y n, st'.defs.get? y = some n → st.defs.get? y = some n ∨ maxValue st.fn < y
 
 theorem MStep.known {bi : Nat} {st st' : SState} {new : List Stmt} (h : MStep bi st st' new) :
     ∀ x, st.known x = true → st'.known x = true := by
@@ -278,14 +279,14 @@ theorem MStep.known {bi : Nat} {st st' : SState} {new : List Stmt} (h : MStep bi
 
 theorem MStep.refl (bi : Nat) (st : SState) : MStep bi st st [] :=
   ⟨⟨_, _, _, _, _, rfl⟩, Nat.le_refl _, fun _ _ h => h, fun _ _ => rfl, fun _ _ h => h,
-   fun _ _ h => .inl h, fun _ _ h _ => h, fun _ h => h⟩
+   fun _ _ h => .inl h, fun _ _ h _ => h, fun _ h => h, fun _ _ h => .inl h⟩
 
 theorem MStep.trans {bi : Nat} {st st1 st2 : SState} {n1 n2 : List Stmt} (h1 : MStep bi st st1 n1)
     (h2 : MStep bi st1 st2 n2) : MStep bi st st2 (n1 ++ n2) := by
   refine ⟨?_, Nat.le_trans h1.next h2.next, fun y t h => h2.types y t (h1.types y t h),
     fun y hy => (h2.typesKnown y (h1.known y hy)).trans (h1.typesKnown y hy),
     fun y d h => h2.avail y d (h1.avail y d h), fun y d h => ?_, fun y n h ha => ?_,
-    fun y h => h2.defsOld y (h1.defsOld y h)⟩
+    fun y h => h2.defsOld y (h1.defsOld y h), fun y n h => ?_⟩
   · obtain ⟨d1, a1, t1, c1, x1, rfl⟩ := h1.shape
     obtain ⟨d2, a2, t2, c2, x2, rfl⟩ := h2.shape
     exact ⟨d2, a2, t2, c2, x2, rfl⟩
@@ -297,6 +298,10 @@ theorem MStep.trans {bi : Nat} {st st1 st2 : SState} {n1 n2 : List Stmt} (h1 : M
   · refine h2.defsKeep y n (h1.defsKeep y n h ha) ?_
     obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 ((hm_contains_iff _ _).1 ha)
     exact (hm_contains_iff _ _).2 (by rw [h1.avail y d hd]; rfl)
+  · have hfn : st1.fn = st.fn := by obtain ⟨_, _, _, _, _, e⟩ := h1.shape; rw [e]
+    rcases h2.fresh y n h with h | h
+    · exact h1.fresh y n h
+    · exact .inr (by rw [← hfn]; exact h)
 
 theorem NewOk.mono {idom : Array (Option Nat)} {V : Nat → Option Block} {bi k : Nat}
     {allowed : Inst → Bool} {B : ValueId → Prop} {st st' : SState} {s : Stmt} {more : List Stmt}
@@ -395,7 +400,8 @@ theorem MInv.bump {st : SState} (h : MInv f V B st) :
 /-- Emitting `r = n'` (a copy of `x`) at the end of block `bi`. -/
 theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → ValueId} {b : Block}
     (hI : MInv f V B st) (hb : V bi = some b)
-    (hrn : r < st.next) (hra : st.avail.contains r = false) (hrd : ∀ d t, ¬ DefAt V r d t)
+    (hrn : r < st.next) (hrmax : maxValue f < r) (hra : st.avail.contains r = false)
+    (hrd : ∀ d t, ¬ DefAt V r d t)
     (hrb : ¬ B r) (hrt : st.types.get? r = none ∨ st.types.get? r = st.types.get? x)
     (hrk : st.known r = true → st.types.get? r = st.types.get? x)
     (hp : isPure n' = true) (hty : pureTyped (fun y => st.types.get? y) f n' = true)
@@ -517,7 +523,7 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
   have hstep : MStep bi st st' [({ results := [r], inst := n' } : Stmt)] := by
     refine ⟨⟨st.defs.insert r n', st.avail.insert r bi, st'.types, st'.cost, st.next, ?_⟩,
       by rw [en]; exact Nat.le_refl _, tgrow, fun y hy => ?_, agrow, fun y d hy => ?_,
-      fun y m hm ha => ?_, fun y hy => ?_⟩
+      fun y m hm ha => ?_, fun y hy => ?_, fun y m hm => ?_⟩
     · rw [← hst']; rfl
     · rw [htypes]; split
       · rename_i hry; subst hry; rw [hrk hy, htx]
@@ -529,6 +535,9 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
       · rename_i hry; subst hry; rw [ha] at hra; cases hra
       · exact hm
     · rw [hdefs]; split <;> simp_all
+    · rw [hdefs] at hm; split at hm
+      · rename_i hry; subst hry; exact .inr (by rw [hI.fn]; exact hrmax)
+      · exact .inl hm
   have hgr : Placed st' B r := by
     refine Placed.mk hrb (known_iff.2 (.inr (by rw [ea, hm_contains_insert']; exact .inl rfl)))
       (fun m hm y hy => ?_) (fun ms hms m hm n0 hn0 y hy => ?_)
@@ -593,7 +602,7 @@ theorem MRun.bump {f : Function} {idom : Array (Option Nat)} {allowed : Inst →
     MRun f idom allowed bi B V st ({ st with next := st.next + 1 } : SState) [] :=
   ⟨by rw [emitV_nil]; exact h.bump, fun _ h => h.bump,
    ⟨⟨_, _, _, _, _, rfl⟩, Nat.le_succ _, fun _ _ h => h, fun _ _ => rfl, fun _ _ h => h,
-    fun _ _ h => .inl h, fun _ _ h _ => h, fun _ h => h⟩, fun _ _ h => .inl h,
+    fun _ _ h => .inl h, fun _ _ h _ => h, fun _ h => h, fun _ _ h => .inl h⟩, fun _ _ h => .inl h,
    fun _ _ j s hs => by simp at hs⟩
 
 section Mat
@@ -727,7 +736,8 @@ theorem clone_ok {fuel : Nat}
       | true =>
         exact absurd (hrun1.inv.knownLt _ (known_iff.2 (.inr hc))) (Nat.lt_irrefl _)
     obtain ⟨hrun2, hg2, hh2, ht2⟩ := emit_run (V := emitV V bi new1) (idom := cfg.idom)
-      (allowed := allowed) (x := x) (n := n) (τ := τ) hI1 hb1 (Nat.lt_succ_self _) hnext
+      (allowed := allowed) (x := x) (n := n) (τ := τ) hI1 hb1 (Nat.lt_succ_self _)
+      hrun1.inv.maxLt hnext
       (fun d t hd => by
         have h2 := (hm_contains_iff _ _).2 (by rw [hrun1.inv.defAvail _ d t hd]; rfl)
         rw [hnext] at h2; cases h2)
@@ -755,7 +765,16 @@ theorem clone_ok {fuel : Nat}
     have hgx1 := hrun1.good x hx
     obtain ⟨hrun2, -, hh2, ht2⟩ := emit_run (V := emitV V bi new1) (idom := cfg.idom)
       (allowed := allowed) (x := x) (n := n) (τ := τ) hrun1.inv hb1
-      (Nat.lt_of_lt_of_le (hI.knownLt x hx.known) hrun1.step.next) hxa1
+      (Nat.lt_of_lt_of_le (hI.knownLt x hx.known) hrun1.step.next)
+      (by
+        refine hI.newBig x n hxn ?_ hx.not_bad
+        cases hc : st.avail.contains x with
+        | false => rfl
+        | true =>
+          obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 ((hm_contains_iff _ _).1 hc)
+          have h3 := (hm_contains_iff _ _).2 (by rw [hrun1.step.avail x d hd]; rfl)
+          rw [hxa1] at h3; cases h3)
+      hxa1
       (fun d t hd => by
         have h2 := (hm_contains_iff _ _).2 (by rw [hrun1.inv.defAvail _ d t hd]; rfl)
         rw [hxa1] at h2; cases h2)
