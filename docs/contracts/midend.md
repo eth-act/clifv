@@ -436,6 +436,44 @@ S2 (#26): `E2E.backend_correct_legal_opt{,_env}{,_cleanup}` (`FV/E2E/LegalOptX.l
 optimising executable compiler `Link.{DeadCleanup.}compileExeOpt_*` (docs/contracts/e2e.md, "The
 optimising executable compiler"). Axioms: `propext`, `Classical.choice`, `Quot.sound`.
 
+### Completeness of the validators (M1, #24)
+
+The pipeline's checks (`check` after every stage, `unreachableOk` inside `removeUnreachable`,
+`simpOk`, `editOk`, the final `keepsBackendSubset`; in `optimizeExe` also `freshOkB` and
+`keepsShapeB`) all fall back safely, so they are not certificates. M1 proves that they never make
+the optimiser skip a pass on well-formed input.
+
+**Measured** (2026-10-18; a copy of `optimizeReport` that records every fallback point, run on
+the decoded `cargo fv` dumps of fv-demo and the survey with the executable configuration
+`exeConfig`, and on the corpus and runtests with both `exeConfig` and the default configuration):
+
+| set | functions | `unreachableOk` rejects (input / after simplify) | ill-formed input (`check`) | stage `check` / validator rejects | `keepsBackendSubset` | `freshOkB` | `keepsShapeB` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| fv-demo | 1346 | 0 / 0 | 26 | 0 / 0 | 0 | 0 | 0 |
+| survey | 851 | 0 / 0 | 4 | 0 / 0 | 0 | 0 | 0 |
+| corpus | 174 | 0 / 0 | 0 | 0 / 0 | 0 | 0 | 0 |
+| runtests (parsed) | 1507 | 0 / 0 | 4 | 0 / 0 | 0 | 0 | 0 |
+
+The only rejections are of the input: on the crates every one is a `call_indirect` (`check` types
+its results without the signature table; DEFERRED, mid-end), in the runtests four `bitcast`s
+between integers and floats (`pureTyped`). These are genuine input restrictions: such functions get
+only unreachable-block removal.
+
+Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`; axioms `propext`, `Classical.choice`,
+`Quot.sound`):
+
+- `Opt.unreachableOk_raw`: `blocksOkB f = true → unreachableOk f (removeUnreachableRaw f) = true`,
+  hence `Opt.removeUnreachable_eq_raw` (`removeUnreachable` never falls back). `blocksOkB` (unique
+  block ids, every branch target a block) is decidable and follows from `wfCert` against any CFG
+  (`Opt.blocksOkB_of_wfCert`, so from `check`: `Opt.blocksOkB_of_check`, and from `simpOk`). The
+  core is the completeness of the depth-first search `Cfg.postorder` (`Opt.postorder_closed`: its
+  fuel suffices, the entry is finished, the finished blocks are closed under successors). Witness
+  `Opt.CompleteUnreachableWitness.witness`.
+- `freshOkB`: `Opt.freshOkB_of_check` (S1).
+
+Open: the stage checks and validators (`check` and `editOk` for GVN, DCE, LICM; `check` and
+`simpOk` for simplify), `keepsBackendSubset`, `keepsShapeB`.
+
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
 
 Design (validator + driver invariant): `Opt.simplify` returns a certificate `Opt.SimpCert`
