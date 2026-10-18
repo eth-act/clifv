@@ -256,6 +256,66 @@ ldr`: `ConsistentF`, RC11-consistent with the weak orderings, RC11- and contract
 Witnesses (`FV/Concurrency/ProgramFWitness.lean`): `ret_correctF`, `ret_rustRaceFree`,
 `ret_correct_rust` (the two returning threads of `ret_correct`).
 
+## 3e. Discharging `Realizes` (T2h, #311): plan, layer 0 done
+
+`Realizes` (§3c) is a property of a whole execution. It splits per thread into one obligation,
+which each backend layer proves *with interference*, plus a composition. The approach is
+CASCompCert's (Jiang et al., PLDI 2019), specialised to event traces: footprint-preserving
+simulations under a rely (other threads write shared locations between steps) and a guarantee
+(a thread writes only shared locations through source-level events, and private locations
+otherwise). The single-threaded theorems (`E2E.backend_correct_final` and its layers) stay as
+they are; the per-thread layers are new files.
+
+* **Layer 0: reduction and composition (done, `FV/Concurrency/ThreadRefine.lean`).**
+  `ThreadRefine.Refines MK Priv pairT trS trT ψ` is the per-thread obligation. The target trace
+  `trT` is any run of the thread against shared memory, so its reads return arbitrary values:
+  interference is in the statement. It realizes the source run `trS` through a position map `ψ`
+  that is strictly increasing on source events:
+  * same direction, location, size and value, with kinds related by `MK`;
+  * the footprint guarantee: source events never access `Priv`, and target writes outside the
+    image write `Priv` (frame, spills, saved registers); target reads outside the image (a failed
+    LL/SC iteration's `ldaxr`) may read anything;
+  * atomic updates map to the target's atomic pairs `pairT`, and back.
+
+  `realizes_of_threads` assembles the threads' refinements and outcomes into `Realizes`, given
+  that:
+  * the Arm execution's `rmw` are the threads' pairs;
+  * the CLIF initial locations are a prefix of the Arm ones, the rest private, with the same
+    initial values.
+
+  `Refines.trans` composes layers through an intermediate level whose atomic updates are its
+  two-event steps (`StepPair`; kinds compose, private sets unite). Witnesses
+  (`FV/Concurrency/ThreadRefineWitness.lean`):
+  * `ret_threads`, `ret_correct_threads`: `program_correct` with `Realizes` *derived*;
+  * `refines_spill`: an atomic load realized by a private spill and an `ldar`;
+  * `refines_trans_spill`.
+* **Layer 1: event semantics of VCode.** `ISem` with memory events. Each `MInst`'s accesses get
+  the kinds of its `Backend.Insn` image (`Code.lines_kinds`). The pseudo-instructions
+  `atomicRmwLoop`/`atomicCasLoop` carry their CLIF events (`[scR, scW]`/`[scR]`). Footprints are
+  proven as for Arm (`ArmFoot`): `csem` on any world that agrees on the read bytes gives the same
+  outputs and writes exactly the write events.
+* **Layer 2: isel with interference.** The per-statement simulation of the M7 driver (the step
+  lemmas behind `IselSim`) as `Refines` from `ClifThread.CStep` to the VCode event semantics. A
+  CLIF memory statement lowers to one memory `MInst` with the same event. The memory relation
+  `MemRel` must be stable under the rely: both sides receive the same writes at shared locations,
+  and `MemRel` is the identity there.
+* **Layer 3: `prepare`.** Block reordering and edge splitting: the traces are equal up to inserted
+  jumps, which have no events, so `ψ` only shifts step indices.
+* **Layer 4: register level.** `RegLevelCorrect` as `Refines` from VCode to `ATStep`:
+  * kinds by `MInst.lines` (`Code.lines_kinds`);
+  * frame, spill and prologue accesses in `F s` (= `Priv`; the stack is per thread);
+  * atomic loops: failed iterations are extra reads, and the successful `ldaxr`/`stlxr` pair is
+    the monitor pair `pairT`.
+* **Backward from forward.** The layers are forward per-step simulations; `Refines` is
+  backward (from the actual Arm trace to a CLIF run). The bridge is determinism of each level
+  given its read values (receptiveness): the source run is the one reading the target's values.
+* **Widening** (§3c): extern calls that touch memory, per-thread allocation metadata,
+  `tls_value`.
+
+**#38 stays open until layers 1–4 discharge `Realizes`.** Until then `program_correct*` compose
+the memory-model layer with the per-thread contract, and the single-core assumption stays in
+the trusted base of `E2E.backend_correct_final`.
+
 ## 4. Testing (the oracle)
 
 qemu is not weak-memory faithful (TCG on an x86 host is close to TSO), so it cannot show that a
@@ -280,7 +340,7 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2c (#301) | Litmus tests in Lean + qemu harness | **done** |
 | T2d (#302) | Per-thread event semantics of the Arm model: the run of one thread as a trace of memory events with an exclusive monitor (failing `stlxr`, the `cbnz` retry); the existing single-core model is that semantics against an SC memory with a monitor that never fails | **done** |
 | T2e (#303) | Program level: multi-threaded `Clif.run` (`ClifThread.MTRun`), program-level DRF-SC (race-freedom in every contract-consistent execution, initial writes `co`-first), replay of SC executions as interleaving runs, and the program-level statement `ProgE2E.program_correct` with the per-thread contract `Realizes` (§3c) | **done** |
-| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference) | open |
+| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference; §3e) | layer 0 **done** (`ThreadRefine`: reduction `realizes_of_threads`, composition `Refines.trans`); layers 1–4 open |
 | T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem (§3d), and the program-level chain `program_correct_rust` | **done** |
 | T2g (#305) | Widening: LSE atomics (`has_lse`: not emitted in our configuration, covered by the table, `Lse.lse_maps`), the full `aarch64.cat` (`Armv8Full`, monotonicity `consistent_frag`), `i128` atomics (rejected by cg_clif) | **done** |
 | T2i (#317) | Mixed-size accesses (a mixed-size model instead of `NoOverlap`) | open |

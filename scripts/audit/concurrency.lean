@@ -61,6 +61,9 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.Mapping.armv8full_to_clif
 #print axioms Concurrency.Mapping.armv8full_to_clifF
 #print axioms Concurrency.Lse.lse_maps
+-- per-thread refinement with interference (T2h, #311, layer 0)
+#print axioms Concurrency.ThreadRefine.Refines.trans
+#print axioms Concurrency.ThreadRefine.realizes_of_threads
 -- the program level with fences and Rust orderings (T2f, #304)
 #print axioms Concurrency.ProgE2E.rmw_sc
 #print axioms Concurrency.ProgE2E.raceFreeProgF_of_raceFreeProg
@@ -82,6 +85,10 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ProgWitness.ret_rustRaceFree
 #print axioms Concurrency.ProgWitness.ret_correctF
 #print axioms Concurrency.ProgWitness.ret_correct_rust
+#print axioms Concurrency.ProgWitness.ret_threads
+#print axioms Concurrency.ProgWitness.ret_correct_threads
+#print axioms Concurrency.ProgWitness.refines_spill
+#print axioms Concurrency.ProgWitness.refines_trans_spill
 #print axioms Concurrency.ArmThread.Witness.retry_run
 #print axioms Concurrency.ArmThread.Witness.retry_succ
 #print axioms Concurrency.ArmThread.Witness.evWrite_eq
