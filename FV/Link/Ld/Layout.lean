@@ -1,7 +1,6 @@
 import FV.Link.Ld.Resolve
 import FV.Link.Ld.Reloc
-import FV.Link.Ld.Write
-import FV.Link.Ld.Build
+import FV.Link.Ld.Plan
 
 /-! # Lean static linker: layout, synthesized sections, relocation, the image
 
@@ -35,10 +34,12 @@ structure Opts where
   base : Nat := 0x200000
   deriving Inhabited
 
-/-- The result: the image description and the link map's text. -/
+/-- The result: the image description, the link map's text and the plan the image is
+`assemble`d from (`FV/Link/Ld/Plan.lean`). -/
 structure LinkOut where
   img : Img
   map : String
+  plan : Plan
 
 /-- `n` rounded up to a multiple of `a` (`a ≥ 1`). -/
 def alignUp (n a : Nat) : Nat := (n + a - 1) / max a 1 * max a 1
@@ -99,8 +100,8 @@ structure EhOut where
   out : Nat
   deriving Inhabited
 
-/-- **The Lean static linker** on the resolved inputs. -/
-def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
+/-- **The Lean static linker's layout** of the resolved inputs: the plan and the link map. -/
+def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := do
   let files := st.files
   let live := g.live
   -- output sections
@@ -317,7 +318,7 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
       | some v => pure (v, false)
       | none => if w then pure (0, true) else throw s!"undefined symbol {n} (referenced from {files[fi]!.name})"
   -- the pieces of the body: every placed input section, `.eh_frame` record and table, with its
-  -- relocations resolved; the body is `buildBody` of them (`FV/Link/Ld/Build.lean`)
+  -- relocations resolved: the plan's pieces (`assemble` builds the body from them, `FV/Link/Ld/Plan.lean`)
   let gotAddr := partAddr.getD "got" 0
   let relIn (fi : Nat) (r : Rela) (P : Nat) : Except String RelIn := do
     let (S, uw) ← value fi r.sym
@@ -336,6 +337,8 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
         let rels ← (f.relas si).toList.mapM fun r => do
           let ri ← (relIn fi r (a + r.off)).mapError (s!"{f.name}({s.name})+{r.off}: " ++ ·)
           pure ({ off := r.off, ty := r.type, ri } : Rel)
+        -- by offset (the data check, `FV/Link/Ld/Data.lean`, walks them in order)
+        let rels := rels.mergeSort fun r r' => decide (r.off ≤ r'.off)
         pieces := pieces.push { addr := a, fo := oo.off + (a - oo.addr),
                                 bytes := f.data.extract s.off (s.off + s.size), rels }
   -- the GOT
@@ -377,21 +380,9 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
       hdr := hdr ++ leBytes 4 (((pc : Int) - hAddr) % 2 ^ 32).toNat ++
         leBytes 4 (((fde : Int) - hAddr) % 2 ^ 32).toNat
     pieces := pieces.push { addr := hAddr, fo := hOff, bytes := hdr, rels := [] }
-  let body ← buildBody fileEnd pieces.toList
-  -- program headers
-  let segPh (s : Nat × Nat × Nat × Nat × Nat) : Phdr :=
-    let (k, v, of, fs, ms) := s
-    { type := 1, flags := if k == 0 then 4 else if k == 1 then 5 else 6, offset := of, vaddr := v,
-      filesz := fs, memsz := ms, align := 0x10000 }
-  let hdrA := partAddr.getD "ehHdr" 0
-  let phs : List Phdr := [
-    { type := 6, flags := 4, offset := 64, vaddr := o.base + 64, filesz := 56 * (4 + segs.size), memsz := 56 * (4 + segs.size), align := 8 }
-  ] ++ segs.toList.map segPh ++ [
-    { type := 7, flags := 4, offset := tls.2.1, vaddr := tls.1, filesz := tls.2.2.1, memsz := tls.2.2.2.1, align := tls.2.2.2.2 },
-    { type := 0x6474e550, flags := 4, offset := (outs.find? (·.name == ".eh_frame_hdr")).elim 0 (·.off),
-      vaddr := hdrA, filesz := if ehTotal > 0 then 12 + 8 * fdeCount else 0,
-      memsz := if ehTotal > 0 then 12 + 8 * fdeCount else 0, align := 4 },
-    { type := 0x6474e551, flags := 6, offset := 0, vaddr := 0, filesz := 0, memsz := 0, align := 0 }]
+  -- the segments (`Plan.phdrs` adds `PT_PHDR`, `PT_TLS`, `PT_GNU_EH_FRAME`, `PT_GNU_STACK`)
+  let segList : List Seg := segs.toList.map fun (k, v, of, fs, ms) =>
+    { kind := k, vaddr := v, offset := of, filesz := fs, memsz := ms }
   -- symbols: locals, then globals (the winners), then linker-defined ones
   let mut locals : Array OutSym := #[]
   let mut globals : Array OutSym := #[]
@@ -440,18 +431,25 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
         for (a, n) in ((mapSyms.getD (f, si) #[]).qsort fun x y => x.1 < y.1) do
           map := map ++ mapLine a 0 0 16 n
       | _ => pure ()
-  pure { img := { entry, phs, body, secs := outs, syms := locals ++ globals }, map }
+  let plan : Plan :=
+    { base := o.base, entry, segs := segList, tlsAddr := tls.1, tlsOff := tls.2.1,
+      tlsFilesz := tls.2.2.1, tlsMemsz := tls.2.2.2.1, tlsAlign := tls.2.2.2.2,
+      ehOff := (outs.find? (·.name == ".eh_frame_hdr")).elim 0 (·.off),
+      ehAddr := partAddr.getD "ehHdr" 0, ehSize := if ehTotal > 0 then 12 + 8 * fdeCount else 0,
+      size := fileEnd, pieces := pieces.toList, secs := outs, syms := locals ++ globals }
+  pure (plan, map)
 
 /-- **Links** the inputs: resolution (the entry and `-u` symbols as roots), `--gc-sections`,
-layout. -/
+layout, the image of the plan (`assemble`). -/
 def link (o : Opts) (ins : List Input) : Except String LinkOut := do
   let roots := o.entry :: o.undefs
   let st ← resolve roots ins
   let g ← st.gc roots o.gc
-  let r ← layout o st g
+  let (plan, map) ← layout o st g
+  let img ← assemble plan
   -- the writer's theorems (`FV/Link/Ld/WriteProof.lean`) assume the headers' values fit
-  if !r.img.hdrFitsB then throw "the headers' values do not fit their fields (hdrFitsB)"
-  if !r.img.tabsFitB then throw "the tables' values do not fit their fields (tabsFitB)"
-  pure r
+  if !img.hdrFitsB then throw "the headers' values do not fit their fields (hdrFitsB)"
+  if !img.tabsFitB then throw "the tables' values do not fit their fields (tabsFitB)"
+  pure { img, map, plan }
 
 end Link.Ld

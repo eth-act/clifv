@@ -328,8 +328,36 @@ the static executable, and theorems state that its output meets those conditions
   `S + A`), `applyRel_out`/`applyRel_abs64`: the outside part's bytes are its relocated input
   bytes. Witnesses `tinyPiece_relocated`, `relocated_abs64_witness`, `buildBody_piece_witness`.
   Survey under `cargo fv --lean-ld` after the refactor: 18 of 18, 53 tests.
-* **Next (3c, #269)**: `dataFastB` from `buildBody_piece` — relate each CLIF data object to its
-  piece (symbol, offset, `.byte` items = input bytes no relocation patches, `.addr` items =
-  `ABS64`s whose `S` is the link-map address) and the piece to its segment (`loadIn`); then the
-  plan conditions (`regionPhsB`, `staticB`, `tlsOkB`, piece disjointness) by construction of the
-  segment builder, and `lean-ld` as `--lean-link`'s default (#270).
+* **The plan and the totality on `lean-ld`'s output** (3e, #269, `FV/Link/Ld/{Plan,PlanProof,
+  Data,Spec}.lean`, `FV/Link/ExeLd.lean`, `FV/Link/DeadCleanupExeLd.lean`): the layout returns a
+  `Plan` (segments, TLS template, `.eh_frame_hdr` place, body size, pieces, sections, symbols);
+  `assemble` builds the image from it: `Plan.phdrs` (`PT_PHDR`, one `PT_LOAD` per segment,
+  `PT_TLS`, `PT_GNU_EH_FRAME`, `PT_GNU_STACK`) and `buildBody` of the pieces sorted by file
+  offset, after checking the plan's own conditions `Plan.okB` (segments in increasing, disjoint
+  64 KiB pages with `p_filesz ≤ p_memsz` and their file bytes in the body; pieces in disjoint
+  file ranges after the headers — a link error otherwise; it never fails on the survey).
+  Relocations of input sections are sorted by offset. Proven: `assemble_ok`, `link_ok` (a
+  successful link's image is its plan's), `segIn_phdrs`, **`staticB_phdrs`**,
+  **`tpOff_phdrs`** (`PT_TLS` always there), **`regionPhsB_plan`** (a region inside the `R E`
+  segment's file bytes, `Plan.regionInB`), `phdrs_rd` (the headers read back by any reader with
+  their bytes, e.g. the file without the region), and the data objects (#269, `Data.lean`):
+  `dataPlanB` decides on the plan and the input objects that every CLIF data object lies in one
+  segment (writable only if the object is) and either in a piece, outside the region, its byte
+  items the input bytes no relocation patches and its address items `ABS64`s whose `S + A` is
+  the link map's value (`itemsB`, walking the piece's sorted relocations), or past the segment's
+  file bytes with zero bytes only; **`dataFastB_plan`**: then `dataFastB` holds on the written
+  file without the region (`itemsB_sound` with `buildBody_piece`, `relocated_out`,
+  `relocated_abs64`). With the link spec's conditions on the plan `Plan.specOkB` (the region in
+  the `R E` segment, the link map's entries among the plan's symbols, the TLS offsets below
+  `2 ^ 32`, `dataPlanB`; decided on the plan and the spec, reading no output byte):
+  **`file0OkB_assemble`**, **`file0OkB_ld`** (`link o ins = .ok r → r.plan.specOkB P →
+  P.file0OkB r.img.write r.img.phs`) and the totality theorems without rust-lld's checks:
+  **`Link.compileExe_total_ld`**, **`Link.compileExeOpt_total_ld`**,
+  **`Link.DeadCleanup.compileExe_total_ld`**, **`Link.DeadCleanup.compileExeOpt_total_ld`**
+  (`compileExe_total_reach{,_input}` with `phdrs_write` and `file0OkB_ld`). Witnesses
+  (`FV/Link/Ld/Spec.lean`, a plan with a data object of byte and address items):
+  `staticB_phdrs_witness`, `regionPhsB_plan_witness`, `file0OkB_assemble_witness`,
+  `dataFastB_plan_witness` (the last two `native_decide`, for `symName`). Axiom audit
+  `scripts/audit/lean-ld.lean`. Survey `cargo fv test --lean-link --lean-ld --verified` after
+  the change: 18 of 18, 53 tests, no rust-lld fallback.
+* **Next (#270)**: `lean-ld` as `--lean-link`'s default; `Plan.specOkB` evaluated on real links.

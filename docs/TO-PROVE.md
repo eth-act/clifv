@@ -680,9 +680,16 @@ author's estimate, not measured), **Risk**.
   uses it (survey and fv-demo: binary check and tests pass, with and without `--lean-link`).
   Proven on its writer: `Link.Ld.file0OkB_write_syms` — `file0OkB` of `lean-ld`'s output is
   `regionPhsB ∧ staticB` (its plan's program headers), `tlsOkB` and the data check `dataFastB`;
-  the symbol check (`symsOkB_write`) and `symFootB` are theorems. Open: 3c (`dataFastB` from
-  the relocation of the input bytes and an input condition on cg_clif's data objects), the
-  plan conditions by construction, `lean-ld` as `--lean-link`'s default.
+  the symbol check (`symsOkB_write`) and `symFootB` are theorems. **3e (#269):** the layout
+  returns a `Plan`, `assemble` builds the image from it after checking the plan's own conditions
+  (`Plan.okB`); `staticB_phdrs`, `regionPhsB_plan`, `tpOff_phdrs`, `dataFastB_plan` (the CLIF
+  data objects from the relocated input pieces, `dataPlanB` decided on the plan and the input
+  objects) give `Link.Ld.file0OkB_ld` (`link o ins = .ok r → r.plan.specOkB P →
+  P.file0OkB r.img.write r.img.phs`), hence `Link.compileExe_total_ld`,
+  `Link.compileExeOpt_total_ld`, `Link.DeadCleanup.compileExe_total_ld`,
+  `Link.DeadCleanup.compileExeOpt_total_ld`: totality on `lean-ld`'s output without checks of the
+  linker's output (`FV/Link/ExeLd.lean`, `FV/Link/DeadCleanupExeLd.lean`). Open: `lean-ld` as
+  `--lean-link`'s default (#270).
 
 - **Depends:** L2a on V1–V6; L2b independent of them. **Risk:** L2b scope (archive handling, all
   relocation types std uses, TLS layout, `.eh_frame`).
