@@ -205,6 +205,27 @@ targets yet (driver, lockstep and end-to-end theorems keep `CtxInv`/`Compile.fun
 leaves float accesses undefined); the literal-pool `f64const` (`emit_u64_le_const`) is not
 modelled, so such a function is reported unsupported.
 
+**S11e5 Stage C, slices 1-2 (typed scope, typed context, typed driver model).** Variants beside
+the integer ones; no public scope changes. `Compile.functionET` (`FV/Compile/SubsetT.lean`) is
+subset E with `f32`/`f64` (`tyM`) only for data movement: `f32const`, `f64const` without the
+literal pool (`f64PoolFree`), float `load`/`store` (plain ops), float `select`, `bitcast`, block
+parameters, the signature; integer operations keep `tyE`, externs keep integer signatures, and
+the operands in integer positions (`intOperands`/`termIntOperands`, `intArgs_eq_intOperands`) are
+never float-defined values (`floatDefs`, `opsTypedT`); `functionET_of_functionE`. On it
+(`LowerScopeT`, `LowerScope.toT`) `buildCtx` gives `ctxOkT`, `CtxInvT` and the separate
+supported-instruction fact `InstScopeT` (`buildCtx_typed`, `Proof/LowerLoopCtxT.lean`; `intOps`
+comes from the typing check), and `ctxOkT` decides `CtxInvT` (`ctxOkT_complete`, `ctxOkT_iff`).
+`Proof/DriverCheckTy.lean` models `lowerFunction`'s class-aware driver: result copies
+(`extraOfT`), entry `Args` pairs and `stackArgLoad`s (`preT`), block parameters, branch and
+`try_call` normal-return arguments (`vregOf ctx x = .vreg x (valClassOf ctx x)`,
+`normArgRegT`), the validator `lowerCheckT` (`shapeOkT` with `ctxOkT`/`instScopeOk`,
+`entryOkBT` with v0..v7) and `LowerShapeT`, with `loweringT_of_check`; on integer contexts the
+typed model is the integer one (`*_int`, `lowerShapeT_of_lowerShape`, `lowerShape_of_lowerShapeT`,
+`lowerCheckT_of_lowerCheck`). Witnesses: `FVTest/Backend/FloatDriverT.lean` (float parameters,
+loads/stores, constants, `select`, `bitcast`, float block parameters and edge arguments,
+stack-passed `f64`/`f32`: in `functionET`/`LowerScopeT`, accepted by `lowerCheckT`, rejected by
+`lowerCheck`). Next (slice 3): the typed loop simulation over `LowerShapeT`.
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in
