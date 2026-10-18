@@ -1,4 +1,5 @@
 import FV.Opt.Proof.CompleteRecheck
+import FV.Opt.Proof.CompleteLicmPass
 import FV.Opt.OptimizeX
 
 /-!
@@ -118,13 +119,18 @@ theorem allowedIn_instE {f : Function} {n : Inst} (h : allowedIn f n = true)
   simp only [allowedIn, hE, ite_true, Bool.and_eq_true] at h
   exact h.2
 
+/-- The simplifier never emits a `symbol_value` (it is not cloned: `simpOk` would reject it). -/
+theorem allowedIn_symbolValue (f : Function) (ty : Ty) (gv : Nat) :
+    allowedIn f (.symbolValue ty gv) = false := by
+  unfold allowedIn; split <;> rfl
+
 theorem skelAllowedIn_instE {f : Function} {n : Inst} (h : skelAllowedIn f n = true)
     (hE : Compile.functionE f = true) : Compile.instE n = true := by
   simpa only [skelAllowedIn, hE, ite_true] using h
 
 /-! ## The guard functions, restated -/
 
-theorem mem_callees {g : Function} {fn : FnRef} :
+theorem mem_callees_stmt {g : Function} {fn : FnRef} :
     fn ∈ callees g ↔ ∃ b ∈ g.blocks, ∃ s ∈ b.body, callee? s.inst = some fn := by
   simp only [callees, List.mem_flatMap, List.mem_filterMap]
   constructor <;> rintro ⟨b, hb, s, hs, h⟩ <;> refine ⟨b, hb, s, hs, ?_⟩ <;>
@@ -281,10 +287,10 @@ theorem Derived.keepsB {N : Inst → Prop} {f0 f g : Function} (h : KeepsB f0 f)
       · rw [he, termE_mapTerm]; exact hbt
       · exact termE_of_isBranch hbr
   callees fn hfn := by
-    obtain ⟨b', hb', s, hs, hc⟩ := mem_callees.1 hfn
+    obtain ⟨b', hb', s, hs, hc⟩ := mem_callees_stmt.1 hfn
     rcases hd.st b' hb' s hs with ⟨b0, hb0, s0, hs0, σ, he⟩ | hn
     · rw [he, callee?_mapOperands] at hc
-      exact h.callees fn (mem_callees.2 ⟨b0, hb0, s0, hs0, hc⟩)
+      exact h.callees fn (mem_callees_stmt.2 ⟨b0, hb0, s0, hs0, hc⟩)
     · rw [callee?_of_notCall (hN _ hn).2.1] at hc; cases hc
   ind hi := by
     apply h.ind
@@ -675,6 +681,80 @@ theorem shapeK_licm {g g' : Function} (hh : SameHdr g g')
 theorem shapeK_simp {f g g1 : Function} (hs : SimpGuard f g g1) : ShapeK g g1 :=
   hs.derived.shapeK hs.headKeep fun _ hn => (newSimp_ok hn).2.2
 
+/-- The simplify stage keeps `KeepsB f0 ·` for the original input `f0` of `removeUnreachable`,
+when the simplifier uses `allowedIn f` / `skelAllowedIn f` of a function `f` with `KeepsB f0 f`. -/
+theorem keepsB_simp' {f0 f g g1 : Function} (h0 : KeepsB f0 f) (h : KeepsB f0 g)
+    (hs : SimpGuard f g g1) : KeepsB f0 g1 :=
+  hs.derived.keepsB h fun _ hn =>
+    ⟨fun hE => (newSimp_ok hn).1 (h0.subsetE hE), (newSimp_ok hn).2⟩
+
+/-! ## The LICM stage on a well-formed function -/
+
+theorem isPure_of_insOk {t : Stmt} (h : insOk t = true) : isPure t.inst = true := by
+  simp only [insOk, Bool.and_eq_true] at h
+  exact h.1.1
+
+/-- The facts of `LRel` the guards read: same header and skeleton, every statement of an output
+body a statement of an input body, and the statements of the entry block that are not pure stay
+in the entry block. -/
+theorem LRel.guardFacts {g g' : Function} (hR : LRel g g') :
+    SameHdr g g' ∧ g'.blocks.map skel = g.blocks.map skel ∧
+      (∀ b' ∈ g'.blocks, ∀ s ∈ b'.body, ∃ b ∈ g.blocks, s ∈ b.body) ∧
+      (∀ b, g.blocks.head? = some b → ∀ s ∈ b.body, isPure s.inst = false →
+        ∃ b', g'.blocks.head? = some b' ∧ s ∈ b'.body) := by
+  have hh : SameHdr g g' := by
+    have e := hR.hdr
+    exact ⟨congrArg (·.name) e, congrArg (·.sig) e, congrArg (·.slots) e,
+      congrArg (·.globals) e, congrArg (·.externs) e⟩
+  obtain ⟨M, hins, hbody, hM⟩ := hR.moved
+  refine ⟨hh, ?_, ?_, ?_⟩
+  · apply List.ext_getElem?
+    intro i
+    simp only [List.getElem?_map]
+    cases hb : g.blocks[i]? with
+    | none =>
+      have : g'.blocks[i]? = none := by
+        rw [List.getElem?_eq_none_iff] at hb ⊢; rw [hR.len]; exact hb
+      rw [this]
+    | some b =>
+      have hil : i < g'.blocks.length := by
+        rw [hR.len]; exact (List.getElem?_eq_some_iff.1 hb).1
+      obtain ⟨b', hb'⟩ : ∃ b', g'.blocks[i]? = some b' := ⟨_, List.getElem?_eq_getElem hil⟩
+      rw [hb']
+      have he := hR.blk i b b' hb hb'
+      simp only [Option.map_some, Option.some.injEq]
+      rw [he]; rfl
+  · intro b' hb' s hs
+    obtain ⟨i, hi⟩ := List.mem_iff_getElem?.1 hb'
+    obtain ⟨b, hb, -⟩ := hR.get hi
+    obtain ⟨T, hT, hTM⟩ := hbody i b b' hb hi
+    rw [hT, List.mem_append] at hs
+    rcases hs with hs | hs
+    · exact ⟨b, List.mem_of_getElem? hb, (List.mem_filter.1 hs).1⟩
+    · obtain ⟨i0, b0, -, -, hb0, hs0, -⟩ := hM s (hTM s hs)
+      exact ⟨b0, List.mem_of_getElem? hb0, hs0⟩
+  · intro b hb s hs hp
+    have hb0 : g.blocks[0]? = some b := by rw [← List.head?_eq_getElem?]; exact hb
+    have hl : 0 < g'.blocks.length := by rw [hR.len]; exact (List.getElem?_eq_some_iff.1 hb0).1
+    obtain ⟨b', hb'⟩ : ∃ b', g'.blocks[0]? = some b' := ⟨_, List.getElem?_eq_getElem hl⟩
+    obtain ⟨T, hT, -⟩ := hbody 0 b b' hb0 hb'
+    refine ⟨b', by rw [List.head?_eq_getElem?]; exact hb', ?_⟩
+    have hsM : s ∉ M := fun h => by rw [isPure_of_insOk (hins s h)] at hp; cases hp
+    rw [hT]
+    exact List.mem_append_left _ (List.mem_filter.2 ⟨hs, by simpa using hsM⟩)
+
+/-- **LICM keeps `KeepsB`** on a well-formed function. -/
+theorem keepsB_licm_of_check {g : Function} {info : Info} (h : check g = .ok info) (hk : Bool) :
+    KeepsB g (licm hk g info).1 := by
+  obtain ⟨hh, hskel, hS, -⟩ := (licm_ok (checked_of_check h) hk).2.guardFacts
+  exact keepsB_licm hh hskel hS
+
+/-- **LICM keeps `ShapeK`** on a well-formed function. -/
+theorem shapeK_licm_of_check {g : Function} {info : Info} (h : check g = .ok info) (hk : Bool) :
+    ShapeK g (licm hk g info).1 := by
+  obtain ⟨hh, hskel, hS, hK⟩ := (licm_ok (checked_of_check h) hk).2.guardFacts
+  exact shapeK_licm hh hskel hS hK
+
 end Opt
 
 namespace Opt.CompleteGuardsWitness
@@ -743,6 +823,10 @@ theorem witness :
     keepsBackendSubset_of_keepsB ((keepsB_removeUnreachable _).trans (keepsB_dce _)),
     keepsShapeB_of_shapeK hsafe (hLS.trans (shapeK_simp (simpGuard_id fnS fnS))),
     keepsBackendSubset_of_keepsB (keepsB_simp hL (simpGuard_id fnS fnS))⟩
+
+/-- Non-vacuity of `keepsB_simp'` (the identity as a simplify output). -/
+theorem witnessSimp' : KeepsB fnS fnS :=
+  keepsB_simp' (KeepsB.refl fnS) (KeepsB.refl fnS) (simpGuard_id fnS fnS)
 
 /-- `v1` recomputes `v0` (GVN removes it). -/
 def fnG : Function where

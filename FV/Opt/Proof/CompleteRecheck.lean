@@ -1,5 +1,5 @@
 import FV.Opt.Proof.CompleteLicm
-import FV.Opt.Proof.DomFacts
+import FV.Opt.Proof.DomComplete
 
 /-!
 # Re-checking after `removeUnreachable` (M1)
@@ -10,7 +10,8 @@ skeleton rules may have deleted edges, so blocks may have become unreachable and
 have changed. `Opt.check_removeUnreachable_of_wfCert` shows that `check` accepts
 `removeUnreachable f` whenever `f` passes the certificate against *some* CFG (with unique
 definitions, the entry signature, branch arities and argument types, and `br_table` index types),
-given the facts `Opt.DomFacts` of the new dominator tree.
+given the facts `Opt.DomFacts` of the new dominator tree; these always hold (`Opt.build_domFacts`),
+so `Opt.check_removeUnreachable_of_wfCert'` needs no hypothesis on the dominator tree.
 
 The argument:
 * the edge certificate makes every tree ancestor (in `cfg.idom`) of a block a dominator of it in
@@ -42,7 +43,7 @@ theorem anc_zero (hroot : idom[0]?.join = none) {d : Nat} (h : Anc idom d 0) : d
 /-- A tree ancestor of a reachable block is reachable (edge certificate). -/
 theorem reach_anc (hroot : idom[0]?.join = none)
     (hedge : ∀ u x, x ∈ succs[u]! → ∀ y, idom[x]?.join = some y → Anc idom y u) {x : Nat}
-    (h : Reach succs x) : ∀ d, Anc idom d x → Reach succs d := by
+    (h : CfgReach succs x) : ∀ d, Anc idom d x → CfgReach succs d := by
   induction h with
   | entry => intro d hd; rw [anc_zero hroot hd]; exact .entry
   | @step u x hu hx ih =>
@@ -80,7 +81,7 @@ theorem succs_lt_of_mem {g : Function} {u x : Nat} (h : x ∈ (Cfg.build g).succ
     rw [this] at h; cases h
 
 theorem reach_reachable {g : Function} (hn : g.blocks ≠ []) {z : Nat}
-    (h : Reach (Cfg.build g).succs z) : (Cfg.build g).reachable z = true := by
+    (h : CfgReach (Cfg.build g).succs z) : (Cfg.build g).reachable z = true := by
   have hn' : (Cfg.build g).succs.size ≠ 0 := by
     rw [build_succs_size]; intro h0; exact hn (List.eq_nil_of_length_eq_zero h0)
   obtain ⟨h0, hcl⟩ := postorder_closed _ (build_succs_lt g) hn'
@@ -93,7 +94,7 @@ theorem reach_reachable {g : Function} (hn : g.blocks ≠ []) {z : Nat}
   exact (build_reachable_iff g hz).2 hm
 
 theorem reachable_reach {g : Function} {z : Nat} (hz : z < g.blocks.length)
-    (h : (Cfg.build g).reachable z = true) : Reach (Cfg.build g).succs z :=
+    (h : (Cfg.build g).reachable z = true) : CfgReach (Cfg.build g).succs z :=
   postorder_reach _ z ((build_reachable_iff g hz).1 h)
 
 theorem reachable_lt {g : Function} {z : Nat}
@@ -279,8 +280,8 @@ variable {f : Function} {cfg : Cfg} {types : Std.HashMap ValueId Ty}
 
 include hw hn in
 /-- Every kept block is reachable in the output. -/
-theorem raw_reach {x : Nat} (h : Reach (Cfg.build f).succs x) :
-    ∃ x', Corr f x' x ∧ Reach (Cfg.build (removeUnreachableRaw f)).succs x' := by
+theorem raw_reach {x : Nat} (h : CfgReach (Cfg.build f).succs x) :
+    ∃ x', Corr f x' x ∧ CfgReach (Cfg.build (removeUnreachableRaw f)).succs x' := by
   induction h with
   | entry => exact ⟨0, corr_zero hn, .entry⟩
   | @step u x hu' hx ih =>
@@ -555,6 +556,19 @@ theorem check_removeUnreachable_of_wfCert {f : Function} {cfg : Cfg}
     wfCert_complete (raw_wf hD hw hu hn)
   exact (check_ok_iff _ _).2 ⟨raw_coreOk hD hw hu hn hentry hcalls hbr, rfl, hw'⟩
 
+/-- **`check` accepts `removeUnreachable f`** when `f` passes the certificate against some CFG
+(`check_removeUnreachable_of_wfCert`; the dominator facts hold by `build_domFacts`). -/
+theorem check_removeUnreachable_of_wfCert' {f : Function} {cfg : Cfg}
+    {types : Std.HashMap ValueId Ty}
+    (hw : wfCert f cfg types = true) (hu : UniqueDefs f) (hn : f.blocks ≠ [])
+    (hentry : ∀ b, f.blocks.head? = some b → b.params.map (·.2) = f.sig.params.map (·.ty))
+    (hcalls : ∀ b ∈ f.blocks, ∀ bc ∈ termCalls b.term, ∀ b' ∈ f.blocks, b'.id = bc.block →
+      (b'.params.length == bc.args.length &&
+        (b'.params.zip bc.args).all fun x => types.get? x.2 == some x.1.2) = true)
+    (hbr : ∀ b ∈ f.blocks, brTableOk types b.term) :
+    check (removeUnreachable f) = .ok (coreInfo (removeUnreachable f)) :=
+  check_removeUnreachable_of_wfCert (build_domFacts _) hw hu hn hentry hcalls hbr
+
 end Opt
 
 namespace Opt.CompleteRecheckWitness
@@ -577,64 +591,8 @@ def fn : Function :=
     { id := 1, term := .jump { block := 3 } }, { id := 2, term := .jump { block := 3 } },
     { id := 3, term := .ret [0] }] }
 
-theorem idom_eq : (Cfg.build (removeUnreachableRaw fn)).idom = #[none, some 0, some 1] := by
-  native_decide
-
-theorem succs_eq : (Cfg.build (removeUnreachableRaw fn)).succs = #[[1], [2], []] := by
-  native_decide
-
-theorem rpoNum_eq : (Cfg.build (removeUnreachableRaw fn)).rpoNum = #[some 0, some 1, some 2] := by
-  native_decide
-
-theorem size_eq : (Cfg.build (removeUnreachableRaw fn)).size = 3 := by native_decide
-
-theorem idom_lt {b x : Nat} (h : (Cfg.build (removeUnreachableRaw fn)).idom[b]?.join = some x) :
-    (b = 1 ∧ x = 0) ∨ (b = 2 ∧ x = 1) := by
-  rw [idom_eq] at h
-  rcases b with _ | _ | _ | b <;> simp at h
-  · exact .inl ⟨rfl, h.symm⟩
-  · exact .inr ⟨rfl, h.symm⟩
-
-/-- The facts of the output's dominator tree, checked on the concrete CFG. -/
-theorem domFacts : DomFacts (Cfg.build (removeUnreachableRaw fn)) where
-  lt b x h := by
-    rw [size_eq]; rcases idom_lt h with ⟨-, rfl⟩ | ⟨-, rfl⟩ <;> decide
-  root := by rw [idom_eq]; rfl
-  rank b x h := by
-    rw [rpoNum_eq]; rcases idom_lt h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
-  edge u x hu hx y hy := by
-    have hul := reachable_lt hu
-    have hl : (removeUnreachableRaw fn).blocks.length = 3 := by native_decide
-    rw [hl] at hul
-    rw [succs_eq] at hx
-    rcases u with _ | _ | _ | u
-    · simp at hx; subst hx
-      rcases idom_lt hy with ⟨h, rfl⟩ | ⟨h, -⟩
-      · exact .refl _
-      · cases h
-    · simp at hx; subst hx
-      rcases idom_lt hy with ⟨h, -⟩ | ⟨-, rfl⟩
-      · cases h
-      · exact .refl _
-    · simp at hx
-    · omega
-  complete a b hb ha hra := by
-    have hbl := reachable_lt hb
-    have hl : (removeUnreachableRaw fn).blocks.length = 3 := by native_decide
-    rw [hl] at hbl
-    rw [size_eq] at ha
-    have h01 : 1 ∈ (Cfg.build (removeUnreachableRaw fn)).succs[0]! := by rw [succs_eq]; decide
-    have anc : ∀ a b, ancB #[none, some 0, some 1] 3 a b = true →
-        Anc (Cfg.build (removeUnreachableRaw fn)).idom a b := by
-      intro a b h; rw [idom_eq]; exact ancB_sound h
-    rcases a with _ | _ | _ | a <;> rcases b with _ | _ | _ | b
-    all_goals first
-      | omega
-      | exact anc _ _ (by decide)
-      | exact absurd (.entry (by decide)) hra
-      | exact absurd (.step (.entry (by decide)) h01 (by decide)) hra
-
-/-- Non-vacuity of `check_removeUnreachable_of_wfCert`: `fn` (whose branch was rewritten, making
+/-- Non-vacuity of `check_removeUnreachable_of_wfCert'` (and `check_removeUnreachable_of_wfCert`,
+with the dominator facts of `build_domFacts`): `fn` (whose branch was rewritten, making
 `block2` unreachable and changing the dominator of `block3` from `block0` to `block1`) passes the
 certificate against the CFG of `fn0`, and `check` accepts `removeUnreachable fn`. -/
 theorem witness :
@@ -644,7 +602,7 @@ theorem witness :
     check (removeUnreachable fn) = .ok (coreInfo (removeUnreachable fn)) := by
   have hw : wfCert fn (Cfg.build fn0) (defsState fn0).1 = true := by native_decide
   refine ⟨by native_decide, by native_decide, by native_decide, hw, ?_⟩
-  refine check_removeUnreachable_of_wfCert domFacts hw (by unfold UniqueDefs; native_decide)
+  refine check_removeUnreachable_of_wfCert' hw (by unfold UniqueDefs; native_decide)
     (by simp [fn, fn0]) ?_ (by native_decide) ?_
   · intro b hb
     simp only [fn, List.head?_cons, Option.some.injEq] at hb
