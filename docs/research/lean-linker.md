@@ -288,11 +288,13 @@ the static executable, and theorems state that its output meets those conditions
   - A std program with a `HashMap`, a thread and a caught panic (unwinding through
     `.eh_frame_hdr`) prints the same output as with rust-lld; the nine survey crates' tests
     (`cargo test`, LLVM backend) linked by `lean-ld` all pass (53 tests).
-  - **`cargo fv test --lean-link --verified` with `lean-ld` as the final linker** (rust-lld
-    kept only for `ld -r`, through `FV_RUST_LLD` and a dispatching script; the driver flag is
-    3d): all survey executables are written by `Link.DeadCleanup.compileExe`, so `lean-ld`'s
-    output passes `file0OkB` (`regionOkB`, `hdrB`, `dataFastB`, `symsOkB`, `symFootB`,
-    `tlsOkB`). The binary check verifies 18 of 18 executables, and all 53 tests pass.
+  - **`cargo fv test --lean-link --lean-ld --verified`** (3d: `lean-ld` links every
+    executable, rust-lld only the relocatable `ld -r` merges): all survey executables are
+    written by `Link.DeadCleanup.compileExe`, so `lean-ld`'s output passes `file0OkB`
+    (`regionOkB`, `hdrB`, `dataFastB`, `symsOkB`, `symFootB`, `tlsOkB`). The binary check
+    verifies 18 of 18 executables, and all 53 tests pass. Without `--lean-link` (the units'
+    merged objects, two `.eh_frame` sections each): 18 of 18, 53 tests. `examples/fv-demo`
+    with and without `--lean-link`: 2 of 2, 20 tests (panics unwind through Lean code).
 * **The writer read back** (`FV/Link/Ld/WriteProof.lean`): `ehdr_write` (the ELF header:
   `ET_EXEC`, `EM_AARCH64`, the entry, `e_phoff = 64`, `e_shoff`, the counts) and
   `phdrs_write` (`phdrs (fileRd img.write) = some img.phs`) for every image whose header
