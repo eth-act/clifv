@@ -1,4 +1,5 @@
-import FV.Backend
+import FV.Backend.Isel
+import FV.Compile.Subset
 import FV.Backend.Proof.IselAttr
 
 /-!

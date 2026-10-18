@@ -987,6 +987,13 @@ simplify on. Open: `SimpStageOk` (simplify's own completeness).
   changes do not rebuild the rule modules (203 modules with their imports, was 329); keep it so. Until
   #252, `RuleImm`'s unused import of `FV.Backend.Proof.IselCmpExt` made 99 of the 153 rule modules depend
   on all of `FV.Backend` and the Arm model.
+- The isel proofs and Stock reach the rest of the backend only through what they use: the generated
+  `FV/Backend/Proof/IselData.lean` imports `FV.Backend.Isel` and `FV.Compile.Subset`, not the
+  `FV.Backend` umbrella (generator header in `FVTest/Backend/Proof/Probe/GenData.lean`). Changes to
+  `FV.Backend.{Regalloc,SpillAlloc,AllocReady,Obj,Unwind,DeadCleanup}` or branch relaxation rebuild
+  77–111 of the 1,133 Stock/DeadCleanup modules (≈2 h of recorded module time in all, was ≈12 h and
+  1,114–1,126 Stock modules); keep the umbrella out of the isel/Stock closure. Still inherent: `Clif.Syntax`,
+  `Clif.Run`/`FSem`, `Backend.MInst`/`Isel`, `Backend.Encode` and the Arm model (Stock uses them).
 - No `sorry`, `admit`, hand-written `axiom`, `trace_state`. Allowed axioms: `propext`, `Classical.choice`,
   `Quot.sound`, and generated `*._native.bv_decide.ax_*` / `*._native.native_decide.ax_*` in fixed proofs.
 - Every new top-level theorem gets a non-vacuity witness (they have caught six unsatisfiable premises).

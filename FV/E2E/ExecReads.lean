@@ -1,5 +1,7 @@
 import FV.E2E.ExecFrame
 import FV.Backend.Proof.RegallocMem
+import FV.Backend.Proof.EncodeBranch
+import FV.Backend.Proof.EncodeLayout
 
 /-! # The memory reads of the backend's instructions (L3 (c), D2)
 

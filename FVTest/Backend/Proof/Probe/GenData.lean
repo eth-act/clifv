@@ -80,7 +80,8 @@ def rootRules (which : String) : List Rule :=
   else
     Closure.rules.toList.filterMap fun c => if c.isRoot then program.rule? c.rule else none
 
-def header (which : String) (nroots nterms nrules : Nat) : String := s!"import FV.Backend
+def header (which : String) (nroots nterms nrules : Nat) : String := s!"import FV.Backend.Isel
+import FV.Compile.Subset
 import FV.Backend.Proof.IselAttr
 
 /-!
