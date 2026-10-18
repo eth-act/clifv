@@ -556,4 +556,230 @@ theorem LRel.editOk : editOk id g F info (coreInfo F) = true := by
 
 end Final
 
+/-! ## `licmRound` as folds -/
+
+/-- The `inside` set at the start of a loop. -/
+def insideF (lp : Cfg.Loop) (bs : Array Block) : Std.HashSet ValueId :=
+  lp.body.toList.foldl (fun s bi => bs[bi]!.body.foldl (fun s st => st.results.foldl (fun b a => b.insert a) s)
+    (bs[bi]!.params.foldl (fun b a => b.insert a.1) s)) ∅
+
+/-- One statement of a loop block. -/
+def blkStep (hc : Bool) (s : Std.HashSet ValueId × Array Stmt × Array Stmt) (st : Stmt) :
+    Std.HashSet ValueId × Array Stmt × Array Stmt :=
+  if (licmHoistable hc st.inst && st.results.length == 1 &&
+      (operands st.inst).all fun x => !s.1.contains x) = true then
+    (st.results.foldl (fun x1 x2 => x1.erase x2) s.1, s.2.1.push st, s.2.2)
+  else (s.1, s.2.1, s.2.2.push st)
+
+/-- One block (in RPO) of a loop. -/
+def rpoStep (hc : Bool) (lp : Cfg.Loop) (s : Array Block × Std.HashSet ValueId × Array Stmt) (bi : Nat) :
+    Array Block × Std.HashSet ValueId × Array Stmt :=
+  if lp.body.contains bi then
+    let r := s.1[bi]!.body.foldl (blkStep hc) (s.2.1, s.2.2, #[])
+    (s.1.set! bi { s.1[bi]! with body := r.2.2.toList }, r.1, r.2.1)
+  else s
+
+/-- One loop. -/
+def loopStep (hc : Bool) (cfg : Cfg) (st : Array Block × Nat) (x : {lp // lp ∈ cfg.loops}) : Array Block × Nat :=
+  match cfg.idom[x.1.header]! with
+  | some hb =>
+    let r := cfg.rpo.toList.foldl (rpoStep hc x.1) (st.1, insideF x.1 st.1, #[])
+    if !r.2.2.isEmpty then
+      (r.1.modify hb (fun b => { b with body := b.body ++ r.2.2.toList }), st.2 + r.2.2.size)
+    else (r.1, st.2)
+  | none => st
+
+theorem licmRound_eq (hc : Bool) (F : Function) (cfg : Cfg) :
+    (licmRound hc F cfg).1 = { F with blocks := ((cfg.loops.attach.qsort
+      (fun a b => a.1.body.size < b.1.body.size)).toList.foldl (loopStep hc cfg) (F.blocks.toArray, 0)).1.toList } := by
+  unfold licmRound
+  simp only [Id.run, List.forIn_pure_yield_eq_foldl, bind_pure_comp, map_pure, pure_bind]
+  rw [← Array.forIn_toList, forIn_yield_foldl _ (loopStep hc cfg)]
+  · rfl
+  intro x s
+  unfold loopStep
+  cases h : cfg.idom[x.1.header]! with
+  | none => rfl
+  | some hb =>
+    simp only []
+    rw [← Array.forIn_toList, forIn_yield_foldl _ (rpoStep hc x.1)]
+    · simp only [pure_bind]
+      unfold insideF
+      split <;> rfl
+    intro bi s'
+    unfold rpoStep
+    by_cases hbi : x.1.body.contains bi = true
+    · simp only [hbi, Bool.not_true, Bool.false_eq_true, ite_false, ite_true]
+      rw [forIn_yield_foldl _ (blkStep hc)]
+      · rfl
+      intro st s''
+      unfold blkStep
+      split <;> rfl
+    · simp only [hbi, Bool.not_false, ite_true, Bool.false_eq_true, ite_false]
+      skip
+
+/-! ## One hoisted statement -/
+
+/-- `x` is not defined in a block of the loop `lp` of `F0`. -/
+def NotIn (lp : Cfg.Loop) (F0 : Function) (x : ValueId) : Prop :=
+  ∀ (bi : Nat) (b : Block), lp.body.contains bi = true → F0.blocks[bi]? = some b →
+    (∀ p ∈ b.params, p.1 ≠ x) ∧ ∀ st ∈ b.body, x ∉ st.results
+
+/-- The invariant of a loop of `licmRound` (`F0`: the function at the start of the loop, `H`: the
+statements hoisted so far, `ins`: the pass's `inside` set). -/
+structure LInv (g F0 : Function) (lp : Cfg.Loop) (hb : Nat) (H : List Stmt) (ins : Std.HashSet ValueId) :
+    Prop where
+  good : Good (hoistF F0 hb H)
+  rel : LRel g (hoistF F0 hb H)
+  ins : ∀ x, ins.contains x = false → NotIn lp F0 x ∨ ∃ t ∈ H, x ∈ t.results
+  hoisted : ∀ t ∈ H, t.results.length = 1 ∧
+    ∃ (bi : Nat) (b : Block), lp.body.contains bi = true ∧ F0.blocks[bi]? = some b ∧ t ∈ b.body
+
+theorem insOk_of_hoistable {hk : Bool} {s : Stmt} (h1 : licmHoistable hk s.inst = true)
+    (h2 : s.results.length = 1) : insOk s = true := by
+  unfold insOk
+  rw [h2]
+  revert h1
+  cases s.inst <;> simp [licmHoistable, isPure]
+
+theorem erase_fold_contains (l : List ValueId) (S : Std.HashSet ValueId) (x : ValueId)
+    (h : (l.foldl (fun x1 x2 => x1.erase x2) S).contains x = false) : S.contains x = false ∨ x ∈ l := by
+  induction l generalizing S with
+  | nil => exact .inl h
+  | cons y l ih =>
+    rcases ih _ h with h1 | h1
+    · by_cases hxy : y = x
+      · exact .inr (by simp [hxy])
+      · left
+        rw [Std.HashSet.contains_erase] at h1
+        simpa [hxy] using h1
+    · exact .inr (List.mem_cons_of_mem _ h1)
+
+theorem hoistF_get_some {F0 : Function} {hb i : Nat} {b : Block} (h : F0.blocks[i]? = some b) (H : List Stmt) :
+    (hoistF F0 hb H).blocks[i]? = some (hoistB hb H (b, i)) := by
+  rw [hoistF_get, h]; rfl
+
+section Hoist
+
+variable {g : Function} {info : Info} (hc : Checked g info) {lp : Cfg.Loop}
+  (hlp : LoopOk (Cfg.build g) lp) {hb : Nat} (hhb : (Cfg.build g).idom[lp.header]?.join = some hb)
+  {F0 : Function} (hG0 : Good F0) (h0 : LRel g F0)
+include hc hlp hhb hG0 h0
+
+/-- **Hoisting one more statement keeps the loop invariant.** -/
+theorem hoist_step {H : List Stmt} {ins : Std.HashSet ValueId} (hI : LInv g F0 lp hb H ins)
+    {hk : Bool} {bi : Nat} {b0 : Block} (hbi : lp.body.contains bi = true)
+    (hb0 : F0.blocks[bi]? = some b0) {s : Stmt} (hs : s ∈ b0.body) (hsH : s ∉ H)
+    (hh : (licmHoistable hk s.inst && s.results.length == 1 &&
+      (operands s.inst).all fun x => !ins.contains x) = true) :
+    LInv g F0 lp hb (H ++ [s]) (s.results.foldl (fun x1 x2 => x1.erase x2) ins) := by
+  simp only [Bool.and_eq_true, beq_iff_eq, List.all_eq_true, Bool.not_eq_true'] at hh
+  obtain ⟨⟨hpure, hlen⟩, hops⟩ := hh
+  obtain ⟨v, hv⟩ := List.length_eq_one_iff.1 hlen
+  have hins := insOk_of_hoistable hpure hlen
+  have hgG := hc.good
+  have hrank := hgG.wf.rank
+  have hbld0 := h0.build
+  have hbldk := hI.rel.build
+  have hlen0 : F0.blocks.length = g.blocks.length := h0.len
+  -- the hoist block
+  have hhbl : hb < g.blocks.length := build_idom_lt g hhb
+  have hhanc : Anc (Cfg.build g).idom hb lp.header := .up hhb (.refl _)
+  have hbianc : Anc (Cfg.build g).idom lp.header bi := hlp.2.1 bi hbi
+  have hne : hb ≠ bi := by
+    rintro rfl
+    have := Anc.antisymm hrank hhanc hbianc
+    have hr := hrank lp.header hb (by simpa [wfData, coreInfo] using hhb)
+    rw [this] at hr; omega
+  -- `s` in the current state
+  have hkb : (hoistF F0 hb H).blocks[bi]? = some (hoistB hb H (b0, bi)) := hoistF_get_some hb0 H
+  have hsk : s ∈ (hoistB hb H (b0, bi)).body := by
+    simp only [hoistB, Ne.symm hne, ite_false, List.append_nil, hne]
+    exact List.mem_filter.2 ⟨hs, by simpa using hsH⟩
+  obtain ⟨jt, hjt⟩ := List.mem_iff_getElem?.1 hsk
+  obtain ⟨bh0, hbh0⟩ : ∃ bh0, F0.blocks[hb]? = some bh0 :=
+    ⟨_, List.getElem?_eq_getElem (by rw [hlen0]; exact hhbl)⟩
+  have hkh : (hoistF F0 hb H).blocks[hb]? = some (hoistB hb H (bh0, hb)) := hoistF_get_some hbh0 H
+  have hm : MoveOk (hoistF F0 hb H) hb s bi (hoistB hb H (b0, bi)) jt v :=
+    ⟨hI.good.unique, hI.good.arity, hI.good.nodup, hI.good.wf, hkb, hjt, hv, hne,
+      by rw [hbldk]; exact hhanc.trans hbianc, by simp [hoistF, hlen0, hhbl]⟩
+  -- the operands are available at the end of the hoist block
+  have havail : ∀ x ∈ operands s.inst,
+      Avail (wfData (hoistF F0 hb H) (coreInfo (hoistF F0 hb H))) hb (hoistB hb H (bh0, hb)).body.length x := by
+    intro x hx
+    rcases hI.ins x (hops x hx) with hni | ⟨t, htH, hxt⟩
+    · -- defined outside the loop: in a strict tree ancestor of the header
+      obtain ⟨j0, hj0⟩ := List.mem_iff_getElem?.1 hs
+      obtain ⟨d, t0, hdm0, hcase⟩ := hG0.wf.uses bi b0 hb0 j0 s hj0 x hx
+      have hsite := hG0.wf.sitesRev x (d, t0) hdm0
+      obtain ⟨i, bd, hbd, hdef⟩ := mem_defSites.1 hsite
+      have hdi : i = d := by
+        rcases hdef with ⟨_, _, _, he⟩ | ⟨_, _, _, _, he⟩ <;>
+        · simp only [Prod.mk.injEq] at he; exact he.1.symm
+      subst hdi
+      have hdout : lp.body.contains i = false := by
+        cases hcd : lp.body.contains i
+        · rfl
+        · exfalso
+          obtain ⟨h1, h2⟩ := hni i bd hcd hbd
+          rcases hdef with ⟨p, hp, hpx, -⟩ | ⟨j, st, hj, hxs, -⟩
+          · exact h1 p hp hpx
+          · exact h2 st (List.mem_of_getElem? hj) hxs
+      have hdbi : i ≠ bi := by rintro rfl; rw [hbi] at hdout; cases hdout
+      have hanc : Anc (Cfg.build g).idom i bi := by
+        rcases hcase with ⟨h1, -⟩ | ⟨-, h2⟩
+        · exact absurd h1 hdbi
+        · simpa [wfData, coreInfo, hbld0] using h2
+      have hdh : Anc (Cfg.build g).idom i hb := by
+        rcases Anc.total hanc hbianc with h1 | h1
+        · have hih : i ≠ lp.header := by rintro rfl; rw [hlp.1] at hdout; cases hdout
+          obtain ⟨c, hc1, hc2⟩ := h1.strict hih
+          rw [hhb] at hc1; cases hc1; exact hc2
+        · have hih : lp.header ≠ i := by rintro rfl; rw [hlp.1] at hdout; cases hdout
+          have := loop_between hc hlp hbi h1 (Ne.symm hih) hanc
+          rw [this] at hdout; cases hdout
+      -- the definition site in the current state is in block `i`
+      have hki : (hoistF F0 hb H).blocks[i]? = some (hoistB hb H (bd, i)) := hoistF_get_some hbd H
+      obtain ⟨u, hu, hul⟩ : ∃ u, (defMap (hoistF F0 hb H)).get? x = some (i, u) ∧
+          u ≤ (hoistB hb H (bd, i)).body.length := by
+        rcases hdef with ⟨p, hp, hpx, -⟩ | ⟨j, st, hj, hxs, -⟩
+        · exact ⟨0, (defMap_get_iff hI.good.unique x _).2
+            (mem_defSites.2 ⟨i, _, hki, .inl ⟨p, by simpa [hoistB] using hp, hpx, rfl⟩⟩), Nat.zero_le _⟩
+        · have hstH : st ∉ H := by
+            intro hst
+            obtain ⟨-, bi', b', hbi', hb', hst'⟩ := hI.hoisted st hst
+            have := stmt_unique_mem hG0.unique hbd hb' (List.mem_of_getElem? hj) hst'
+              (List.ne_nil_of_mem hxs)
+            subst this; rw [hbi'] at hdout; cases hdout
+          have hstk : st ∈ (hoistB hb H (bd, i)).body := by
+            simp only [hoistB]
+            exact List.mem_append_left _ (List.mem_filter.2 ⟨List.mem_of_getElem? hj, by simpa using hstH⟩)
+          obtain ⟨j', hj', hdm⟩ := site_of_mem hI.good.unique hki hstk hxs
+          exact ⟨j' + 1, hdm, (List.getElem?_eq_some_iff.1 hj').1⟩
+      refine ⟨i, u, hu, ?_⟩
+      by_cases hih : i = hb
+      · subst hih
+        rw [hbd] at hbh0; cases hbh0
+        exact .inl ⟨rfl, hul⟩
+      · exact .inr ⟨hih, by simpa [wfData, coreInfo, hbldk] using hdh⟩
+    · -- defined by a statement hoisted earlier: earlier in the hoist block
+      have htk : t ∈ (hoistB hb H (bh0, hb)).body := by simp [hoistB, htH]
+      obtain ⟨j', hj', hdm⟩ := site_of_mem hI.good.unique hkh htk hxt
+      exact ⟨hb, j' + 1, hdm, .inl ⟨rfl, (List.getElem?_eq_some_iff.1 hj').1⟩⟩
+  have hsnoc := hoistF_snoc F0 hb H s hsH
+  refine ⟨?_, ?_, fun x hx => ?_, fun t ht => ?_⟩
+  · rw [← hsnoc]; exact hm.good hkh havail
+  · rw [← hsnoc]; exact hI.rel.move hgG hm hins
+  · rcases erase_fold_contains _ _ _ hx with h1 | h1
+    · rcases hI.ins x h1 with h2 | ⟨t, htH, hxt⟩
+      · exact .inl h2
+      · exact .inr ⟨t, List.mem_append_left _ htH, hxt⟩
+    · exact .inr ⟨s, by simp, h1⟩
+  · rcases List.mem_append.1 ht with ht | ht
+    · exact hI.hoisted t ht
+    · simp at ht; subst ht
+      exact ⟨hlen, bi, b0, hbi, hb0, hs⟩
+
+end Hoist
+
 end Opt
