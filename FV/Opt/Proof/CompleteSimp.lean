@@ -2,7 +2,26 @@ import FV.Opt.Proof.CompleteSimpRunDef
 import FV.Opt.Proof.CompleteOptimize
 
 /-!
-# Completeness of simplify: from the end of the run to the validator
+# Completeness of simplify (M1, #24)
+
+From the facts at the end of the simplifier's run (`Opt.RunDone`, `FV/Opt/Proof/CompleteSimpRunDef.lean`)
+to what the pipeline needs of the simplify stage (`Opt.SimpStageOk`):
+
+* the final renaming touches no operand of the output blocks, so the output is the output blocks
+  (`RunDone.apply_eq`);
+* the output's values are defined once (`RunDone.unique`) and it is well formed over the input's
+  dominator tree with the final graph's types (`RunDone.wf`, the facts of `wfCert`);
+* the validator accepts it (`RunDone.simpOk`, through `simpOk_of`, the converse of
+  `Opt.simpOk_facts`, and the Prop forms `StmtsFact`/`TermLogFact` of its per-block checks);
+* `check` accepts it once its unreachable blocks are removed (`RunDone.recheck`, by
+  `check_removeUnreachable_of_wfCert'`), and the guard facts `SimpGuard` hold (`RunDone.guard`).
+
+`simp_complete_of_run` combines them; `Opt.simpStageOk_of` instantiates them with the run invariant
+`Opt.simplify_run_inv` (the rule hypotheses `SimpRulesOk`/`SkelRulesOk`, `symbol_value` excluded by
+`allowedIn_symbolValue`), and `Opt.optimize_complete_of_rules` is the mid-end's completeness under
+the rule hypotheses. `Opt.CompleteSimpWitness.witness`: on a function whose two blocks compute the
+same `iconst`, the empty rule set's hash-consing renames the second to the first, and the theorem
+applies.
 -/
 
 namespace Opt
@@ -580,6 +599,22 @@ theorem simp_complete_of_run {F0 : Function} (hc : Checked f info)
       SimpGuard F0 f (S.apply (outFn f out)) := by
   rw [hRun.apply_eq]
   exact ⟨hRun.simpOk hc, ⟨_, hRun.recheck hc⟩, hRun.guard⟩
+
+/-- **Completeness of the simplifier, given the facts at the end of its run** (`simpFold`). -/
+theorem simplify_complete_of_inv {rules : SimplifyFn} {skel : SkeletonFn} {rematConst : Bool}
+    {F0 g : Function} {info : Info} (hc : Checked g info)
+    (hInv : RunDone g info (allowedIn F0) (skelAllowedIn F0)
+      (simpFold rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).1
+      (simpFold rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).2.1
+      (simpFold rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).2.2.1
+      (simpFold rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).2.2.2) :
+    simpOk g (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).1 info
+        (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).2.2 = true ∧
+      (∃ i, check (removeUnreachable
+        (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).1) = .ok i) ∧
+      SimpGuard F0 g (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).1 := by
+  rw [simplify_eq]
+  exact simp_complete_of_run hc hInv
 
 end Assemble
 
