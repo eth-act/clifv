@@ -185,7 +185,9 @@ theorem amodeAddr_mapRegs (hg : VRenaming g gn) (sb : Nat) (m : AMode) (b : Nat)
 theorem mspec_other (sb : Nat) {i : MInst} (h : ∀ op rd am fl, i ≠ .load op rd am fl)
     (h2 : ∀ op rd am fl, i ≠ .store op rd am fl) (h3 : ∀ rd am, i ≠ .loadAddr rd am)
     (h4 : ∀ ty rt rn fl, i ≠ .loadAcquire ty rt rn fl)
-    (h5 : ∀ ty rt rn fl, i ≠ .storeRelease ty rt rn fl) (us : List CV)
+    (h5 : ∀ ty rt rn fl, i ≠ .storeRelease ty rt rn fl)
+    (h6 : ∀ sz rd am fl, i ≠ .fpuLoad sz rd am fl)
+    (h7 : ∀ sz rd am fl, i ≠ .fpuStore sz rd am fl) (us : List CV)
     (w : Arm.ArmState) : mspec sb i us w = ispec i us w := by
   unfold mspec
   split
@@ -194,6 +196,8 @@ theorem mspec_other (sb : Nat) {i : MInst} (h : ∀ op rd am fl, i ≠ .load op 
   · exact absurd rfl (h3 _ _)
   · exact absurd rfl (h4 _ _ _ _)
   · exact absurd rfl (h5 _ _ _ _)
+  · exact absurd rfl (h6 _ _ _ _)
+  · exact absurd rfl (h7 _ _ _ _)
   · rfl
 
 theorem mspec_mapRegs (hg : VRenaming g gn) (sb : Nat) (i : MInst) (us : List CV) (w : Arm.ArmState) :
@@ -209,6 +213,10 @@ theorem mspec_mapRegs (hg : VRenaming g gn) (sb : Nat) (i : MInst) (us : List CV
     simp only [MInst.mapRegs]; rgc rt <;> rgc rn <;> us_cases <;> rfl
   | storeRelease ty rt rn fl =>
     simp only [MInst.mapRegs]; rgc rt <;> rgc rn <;> us_cases <;> rfl
+  | fpuLoad sz rd am fl =>
+    simp only [MInst.mapRegs]; rgc rd <;> first | rfl | simp only [mspec, amodeAddr_mapRegs hg]
+  | fpuStore sz rd am fl =>
+    simp only [MInst.mapRegs]; rgc rd <;> us_cases <;> first | rfl | simp only [mspec, amodeAddr_mapRegs hg]
   | _ =>
     rw [mspec_other, mspec_other, ispec_mapRegs hg] <;>
       (try simp only [MInst.mapRegs]) <;> (intros; exact fun h => by cases h)

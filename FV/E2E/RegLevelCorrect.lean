@@ -69,6 +69,14 @@ theorem mspec_ctl {sb : Nat} {i : MInst} {uses : List CV} {w : Arm.ArmState} {ou
     · simp only [Option.some.injEq, Prod.mk.injEq]
       rintro ⟨-, -, rfl⟩; exact .inl rfl
     · simp
+  · split
+    · simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq]
+      rintro ⟨_, -, -, -, rfl⟩; exact .inl rfl
+    · simp
+  · split
+    · simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq]
+      rintro ⟨_, -, -, -, rfl⟩; exact .inl rfl
+    · simp
   · exact ispec_ctl
 
 /-- A non-control form falls through. -/
