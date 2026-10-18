@@ -1052,7 +1052,7 @@ theorem entryParams_spec {C : Ctx} (hG : CGood C) (gs : List (List SlotEl))
   | case7 gs v t ps ht =>
     intro st st' out h
     simp [entryParams, ht] at h
-  | case8 p v t gs u tu ps hc ih =>
+  | case8 p gs v t u tu ps hc ih =>
     -- `x7` placement: the next parameter first, then the pair
     intro st st' out h hl hn hz
     simp only [entryParams, hc, ite_true] at h
@@ -1099,16 +1099,10 @@ theorem entryParams_spec {C : Ctx} (hG : CGood C) (gs : List (List SlotEl))
       · rcases m1 x hx with ⟨w, hw, hx⟩ | h3
         · exact .inl ⟨w, by simp only [List.map_cons, List.mem_cons]; exact .inr (.inr hw), hx⟩
         · exact .inr h3
-  | case9 p v t gs u tu ps hc =>
+  | case9 p gs v t u tu ps hc =>
     intro st st' out h
     simp [entryParams, hc] at h
   | case10 =>
-    intro st st' out h
-    simp only [entryParams] at h
-    split at h
-    · simp_all
-    · simp at h
-  | case11 =>
     intro st st' out h
     rw [entryParams] at h
     · simp at h

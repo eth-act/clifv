@@ -243,7 +243,7 @@ theorem expRel_refl : ∀ {ps : List AbiParam} {gs : List (List SlotEl)} {vs : L
     GroupsOf ps gs → vs.map (·.ty) = ps.map (·.ty) → (∀ p ∈ ps, p.ty ≠ .i128) → ExpRel gs vs vs
   | [], [], [], _, _, _ => trivial
   | p :: ps, g :: gs, v :: vs, hg, ht, hn => by
-    rcases hg with ⟨hg1, hg2⟩ | ⟨hpt, -⟩
+    rcases groupsOf_cons.1 hg with ⟨hg1, hg2⟩ | ⟨hpt, -⟩
     rotate_left
     · exact absurd hpt (hn p (List.mem_cons_self ..))
     simp only [List.map_cons, List.cons.injEq] at ht
@@ -259,7 +259,7 @@ theorem expRel_cons_val {p : AbiParam} {ps : List AbiParam} {g : List SlotEl}
     {gs : List (List SlotEl)} {v : Val} {vs vs' : List Val}
     (hg : GroupsOf (p :: ps) (g :: gs)) (hp : p.ty ≠ .i128) (h : ExpRel (g :: gs) (v :: vs) vs') :
     ∃ vs'', vs' = v :: vs'' ∧ GroupsOf ps gs ∧ ExpRel gs vs vs'' := by
-  rcases hg with ⟨hg1, hg2⟩ | ⟨hpt, -⟩
+  rcases groupsOf_cons.1 hg with ⟨hg1, hg2⟩ | ⟨hpt, -⟩
   rotate_left
   · exact absurd hpt hp
   rcases hg1 with ⟨rfl, -⟩ | ⟨hpt, -⟩

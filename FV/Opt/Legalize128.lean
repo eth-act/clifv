@@ -181,10 +181,10 @@ where
                 let rest ← go qs 8 v (st + 16) false
                 return [.val q, .lo, .hi] :: [] :: rest
               else do
-                let rest ← go ps 8 v (st + 16) true
+                let rest ← go (q :: qs) 8 v (st + 16) true
                 return [.pad, .lo, .hi] :: rest
             | [] => do
-              let rest ← go ps 8 v (st + 16) true
+              let rest ← go [] 8 v (st + 16) true
               return [.pad, .lo, .hi] :: rest
           else throw "legalize128: i128 argument on an unaligned stack offset while x7 is free"
         else if st % 16 == 0 then do
@@ -261,13 +261,10 @@ def expandRunArgs (orig : Signature) (vs : List Val) : Except String (List Val) 
 where
   go : List (List SlotEl) → List Val → Except String (List Val)
     | [], [] => return []
-    | [.val _, .lo, .hi] :: gs, v :: vs =>
-      match gs, vs with
-      | [] :: gs, u :: vs => do
-        let pair ← groupVal [.lo, .hi] v
-        let rest ← go gs vs
-        return u :: pair ++ rest
-      | _, _ => throw "legalize128: run arguments do not match the signature"
+    | [.val _, .lo, .hi] :: [] :: gs, v :: u :: vs => do
+      let pair ← groupVal [.lo, .hi] v
+      let rest ← go gs vs
+      return u :: pair ++ rest
     | g :: gs, v :: vs => do
       let mine ← groupVal g v
       let rest ← go gs vs
