@@ -1,3 +1,25 @@
+# Current plan: incremental Stock production delivery
+
+Updated 2026-10-17. The executable roadmap is now
+[Incremental Stock driver delivery](stock-driver-incremental-delivery.md).
+This supersedes the wholesale-cutover ordering, stale running-process instructions,
+old gate-policy statements and delivery statuses in the historical checkpoints below.
+Do not resume their retired build queues.
+
+#246 and #247 are merged (`fc4a06f3`, `5a3ad2bb`). Production is still legacy.
+Next: reconcile and land a small saved proof packet; introduce a legacy-compatible
+pipeline seam and additive consumer adapters; prove one simple complete-function
+class; enable Stock for that class with legacy fallback; grow classes incrementally.
+Every original #140 obligation, input condition, old theorem variant, accepted
+identity/stage and required axiom set remains required for final completion.
+
+Use current main's adopted per-PR gates and integrator/continuous-main policy
+(TO-PROVE §7, #260/#261/#262), not the superseded full-per-PR backlog rules here.
+No wholesale integration of all scratch proofs is a prerequisite for the first
+production class. The roadmap defines the safety boundary and first landing order.
+
+---
+
 # Recovery and continuation plan: test-binary-alignment
 
 ## Guarded source-body scan integration
@@ -147,15 +169,16 @@ capture fresh logs rather than overwriting historical receipts.
 
 ## Remaining full-goal obligations
 
-After this batch, inventory the uncovered selected rule families and effectful
-cases. Prove execution semantics for memory, calls, traps, control flow and
-omitted/sunk instructions with a sound deferred-effect invariant. Compose
-source/block/whole-driver simulation and completeness under the original input
-conditions, then integrate the actual driver into compiler, checker, linker and
-generated-proof consumers. Preserve old theorem variants, accepted identities
-and successful stages; validate runtime, encoder and complete stock comparison.
-Only this completed production cutover can satisfy #140. Do not estimate a
-completion percentage from the number of proof slices or merged PRs.
+Use [the incremental roadmap](stock-driver-incremental-delivery.md) for execution.
+Land closed proof packets and additive production-consumer adapters immediately.
+Prove and activate complete function classes one at a time, preserving legacy
+fallback and the original overall input domain. Universal family/effect/source/
+block/whole-driver simulation and completeness remain required for final Stock-only
+replacement, but are not prerequisites for every earlier adapter or proved-class
+landing. Compiler/checker/linker/generated-proof consumers must agree for each
+activated class. Preserve old theorem variants, exact required axioms, accepted
+identities/stages and final complete comparison. Keep #140 open until all original
+obligations are complete; module or PR counts are not a completion percentage.
 
 ## Coordination and stopping rules
 
