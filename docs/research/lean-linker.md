@@ -231,3 +231,48 @@ those bytes too (design (b)).
    `FV/Link/Exe.lean`; docs/contracts/e2e.md "The executable compiler"): the binary chain is
    stated for `I.results`, which with `fallback` are the compiler's; `leanLink` also checks the
    code map `codeMapB`, and its output has no GOT slot (`leanLink_gotSlot`).
+
+## 6. Stage 3: the whole executable written by Lean (plan, #10)
+
+Goal: rust-lld's output `file0` stops being an input with checked conditions (`file0OkB`:
+`regionOkB`, `hdrB`, `dataFastB`, `symsOkB`, `symFootB`, `tlsOkB`; `layoutOkB`; the `PT_TLS`
+requirement). A Lean static linker `Link.Ld` links the same inputs rust-lld gets from rustc
+(crt objects, the units' objects with the region object, rlibs and `libc.a`/`libunwind.a`) into
+the static executable, and theorems state that its output meets those conditions.
+
+**Design: an untrusted planner, a proven writer.**
+
+* *Planner* (`FV/Link/Ld/{Obj,Archive,Resolve,Layout}.lean`): ELF64 relocatable and `ar`
+  readers; lld's resolution (objects in order, archive members extracted lazily, strong over
+  weak, first COMDAT group wins); `--gc-sections` (roots: entry, `-u`, `.init`/`.fini`/arrays,
+  C-identifier sections under `__start_`/`__stop_`; FDEs keep their LSDA and personality);
+  three `PT_LOAD` segments in disjoint 64 KiB pages (R: headers, rodata, `.eh_frame_hdr`,
+  `.eh_frame`, `.gcc_except_table`, `.data.rel.ro`, `.got`, init/fini arrays, `.tdata`; R E:
+  text incl. the region `.text.fvlean`; RW: data, bss), `PT_TLS`, `PT_GNU_EH_FRAME`,
+  `PT_GNU_STACK`; the GOT (static: link-time values); TLSDESC relaxed to local exec as lld does;
+  synthetic symbols (`__init_array_start`, …, `__start_`/`__stop_`, `_end`); the
+  `.eh_frame_hdr` table; an lld-format map for `cargo fv link-proof`. Its result is an image
+  description: segments, placed pieces (address, input bytes, relocations with resolved
+  `S`, `A`, `P`), symbols.
+* *Writer* (`FV/Link/Ld/Write.lean`): the image description → bytes (ELF header, program
+  headers at 64, segment contents, then section headers, `.symtab`, `.strtab` at the end), and
+  the relocation function per AArch64 ELF ABI type (the survey's 18 allocated types + `ABS32`,
+  `PREL16`, `CONDBR19`, `TSTBR14`, `ADR_PREL_LO21`; TLSDESC → `movz`/`movk`/`nop`/`nop`).
+  Before writing, `lean-ld` decides cheap structural invariants of its own plan (`imgOkB`:
+  segments ordered and page-disjoint, pieces inside their segment's file bytes, symbol names
+  NUL-free); the planner is meant to meet them by construction (totality later).
+
+**Theorems** (sub-issues):
+
+* **3a** (engine, no proofs needed): `lake exe lean-ld` links rustc's argument list; std
+  executables (threads, TLS, panics caught by unwinding) and the survey tests run under qemu.
+* **3b** (writer): for every image meeting `imgOkB`, the written file satisfies `hdrB`, the
+  `PT_TLS` requirement and `tlsOkB`, `symFootB` past the segments, `regionOkB` for a region in
+  the text segment, and `symsOkB` for every link map whose entries are written symbols.
+* **3c** (relocation): every placed piece's bytes in the loaded image are its input bytes with
+  its relocations applied (`loadIn` of the file = `relocate`); CLIF data objects whose object
+  bytes and relocations match their items (`dataInB`, decided on the inputs) meet `dataFastB`;
+  `layoutOkB`; hence `file0OkB` for `lean-ld`'s output and `compileExe_total_*` without the
+  rust-lld premise.
+* **3d** (driver): `cargo fv --lean-ld` links with `lean-ld` instead of rust-lld (and as the
+  fallback when rust-lld's output fails `file0OkB`); survey/fv-demo gates.
