@@ -10,7 +10,7 @@ The syntactic side of the simplify pass (`FV/Opt/Simplify.lean`), for its comple
   already processed, and the current block up to the current statement); `DefAt V x d t` is a
   definition site of `x` in it (`defSites` numbering) and `AvailAt` the availability of
   `Opt.wfCert` in it;
-* `Good st B x`: `x` is placeable — not *bad* (`B`: a later leaf, a removed value, the statement
+* `Placed st B x`: `x` is placeable — not *bad* (`B`: a later leaf, a removed value, the statement
   being processed), known, and the operands of its nodes and of the nodes of its e-class are
   placeable. Such values are what `materialize` may meet;
 * `MInv`: the state facts `materialize` needs (fresh numbering, typed nodes, `avail` agrees
@@ -133,29 +133,29 @@ inductive GReach (defs : Std.HashMap ValueId Inst) (alts : Std.HashMap ValueId (
       defs.get? m = some n → y ∈ operands n → GReach defs alts y z → GReach defs alts x z
 
 /-- `x` is placeable (module doc): everything reachable from it is known and not bad. -/
-def Good (st : SState) (B : ValueId → Prop) (x : ValueId) : Prop :=
+def Placed (st : SState) (B : ValueId → Prop) (x : ValueId) : Prop :=
   ∀ z, GReach st.defs st.alts x z → ¬ B z ∧ st.known z = true
 
-theorem Good.not_bad {st : SState} {B : ValueId → Prop} {x : ValueId} (h : Good st B x) : ¬ B x :=
+theorem Placed.not_bad {st : SState} {B : ValueId → Prop} {x : ValueId} (h : Placed st B x) : ¬ B x :=
   (h x (.refl x)).1
 
-theorem Good.known {st : SState} {B : ValueId → Prop} {x : ValueId} (h : Good st B x) :
+theorem Placed.known {st : SState} {B : ValueId → Prop} {x : ValueId} (h : Placed st B x) :
     st.known x = true :=
   (h x (.refl x)).2
 
-theorem Good.defs {st : SState} {B : ValueId → Prop} {x : ValueId} (h : Good st B x) :
-    ∀ n, st.defs.get? x = some n → ∀ y ∈ operands n, Good st B y :=
+theorem Placed.defs {st : SState} {B : ValueId → Prop} {x : ValueId} (h : Placed st B x) :
+    ∀ n, st.defs.get? x = some n → ∀ y ∈ operands n, Placed st B y :=
   fun _ hn _ hy z hz => h z (.node hn hy hz)
 
-theorem Good.alts {st : SState} {B : ValueId → Prop} {x : ValueId} (h : Good st B x) :
+theorem Placed.alts {st : SState} {B : ValueId → Prop} {x : ValueId} (h : Placed st B x) :
     ∀ ms, st.alts.get? x = some ms → ∀ m ∈ ms, ∀ n, st.defs.get? m = some n →
-      ∀ y ∈ operands n, Good st B y :=
+      ∀ y ∈ operands n, Placed st B y :=
   fun _ hms _ hm _ hn _ hy z hz => h z (.alt hms hm hn hy hz)
 
-theorem Good.mk {st : SState} {B : ValueId → Prop} {x : ValueId} (hb : ¬ B x)
-    (hk : st.known x = true) (hd : ∀ n, st.defs.get? x = some n → ∀ y ∈ operands n, Good st B y)
+theorem Placed.mk {st : SState} {B : ValueId → Prop} {x : ValueId} (hb : ¬ B x)
+    (hk : st.known x = true) (hd : ∀ n, st.defs.get? x = some n → ∀ y ∈ operands n, Placed st B y)
     (ha : ∀ ms, st.alts.get? x = some ms → ∀ m ∈ ms, ∀ n, st.defs.get? m = some n →
-      ∀ y ∈ operands n, Good st B y) : Good st B x := by
+      ∀ y ∈ operands n, Placed st B y) : Placed st B x := by
   intro z hz
   cases hz with
   | refl => exact ⟨hb, hk⟩
@@ -164,15 +164,15 @@ theorem Good.mk {st : SState} {B : ValueId → Prop} {x : ValueId} (hb : ¬ B x)
 
 /-- Placeability is kept when the state grows: known values stay known, placeable values do not
 become bad, and changed nodes or classes are over values placeable before. -/
-theorem Good.mono {st st' : SState} {B B' : ValueId → Prop}
+theorem Placed.mono {st st' : SState} {B B' : ValueId → Prop}
     (hk : ∀ x, st.known x = true → st'.known x = true)
-    (hB : ∀ x, Good st B x → ¬ B' x)
+    (hB : ∀ x, Placed st B x → ¬ B' x)
     (hd : ∀ x n', st'.defs.get? x = some n' →
-      st.defs.get? x = some n' ∨ ∀ y ∈ operands n', Good st B y)
+      st.defs.get? x = some n' ∨ ∀ y ∈ operands n', Placed st B y)
     (ha : ∀ x ms', st'.alts.get? x = some ms' → st.alts.get? x = some ms' ∨
-      ∀ m ∈ ms', ∀ n, st'.defs.get? m = some n → ∀ y ∈ operands n, Good st B y) :
-    ∀ x, Good st B x → Good st' B' x := by
-  have key : ∀ x z, GReach st'.defs st'.alts x z → Good st B x → Good st B z := by
+      ∀ m ∈ ms', ∀ n, st'.defs.get? m = some n → ∀ y ∈ operands n, Placed st B y) :
+    ∀ x, Placed st B x → Placed st' B' x := by
+  have key : ∀ x z, GReach st'.defs st'.alts x z → Placed st B x → Placed st B z := by
     intro x z h
     induction h with
     | refl => exact id
@@ -253,7 +253,7 @@ def NewOk (idom : Array (Option Nat)) (V : Nat → Option Block) (bi k : Nat)
     (allowed : Inst → Bool) (B : ValueId → Prop) (st : SState) (s : Stmt) : Prop :=
   ∃ r n', s = { results := [r], inst := n' } ∧ st.defs.get? r = some n' ∧
     st.avail.get? r = some bi ∧ ¬ B r ∧ (∃ n τ, allowed n = true ∧ n' = mapOperands τ n) ∧
-    ∀ y ∈ operands n', AvailAt idom V bi k y ∧ Good st B y
+    ∀ y ∈ operands n', AvailAt idom V bi k y ∧ Placed st B y
 
 /-- How the state moves while materialising (only the graph and output fields change). -/
 structure MStep (bi : Nat) (st st' : SState) (new : List Stmt) : Prop where
@@ -301,7 +301,7 @@ theorem MStep.trans {bi : Nat} {st st1 st2 : SState} {n1 n2 : List Stmt} (h1 : M
 theorem NewOk.mono {idom : Array (Option Nat)} {V : Nat → Option Block} {bi k : Nat}
     {allowed : Inst → Bool} {B : ValueId → Prop} {st st' : SState} {s : Stmt} {more : List Stmt}
     (h : NewOk idom V bi k allowed B st s) (hs : MStep bi st st' more)
-    (hg : ∀ y, Good st B y → Good st' B y) :
+    (hg : ∀ y, Placed st B y → Placed st' B y) :
     NewOk idom (emitV V bi more) bi k allowed B st' s := by
   obtain ⟨r, n', rfl, hd, ha, hrb, hal, hops⟩ := h
   refine ⟨r, n', rfl, hs.defsKeep r n' hd ((hm_contains_iff _ _).2 (by rw [ha]; rfl)),
@@ -312,8 +312,8 @@ theorem NewOk.weakenB {idom : Array (Option Nat)} {V : Nat → Option Block} {bi
     (h : NewOk idom V bi k allowed B st s) (hB : ∀ y, B' y → B y) :
     NewOk idom V bi k allowed B' st s := by
   obtain ⟨r, n', rfl, hd, ha, hrb, hal, hops⟩ := h
-  have hg : ∀ y, Good st B y → Good st B' y :=
-    Good.mono (fun _ h => h) (fun y hy hb => hy.not_bad (hB y hb)) (fun _ _ h => .inl h)
+  have hg : ∀ y, Placed st B y → Placed st B' y :=
+    Placed.mono (fun _ h => h) (fun y hy hb => hy.not_bad (hB y hb)) (fun _ _ h => .inl h)
       (fun _ _ h => .inl h)
   exact ⟨r, n', rfl, hd, ha, fun h => hrb (hB r h), hal, fun y hy => ⟨(hops y hy).1, hg y (hops y hy).2⟩⟩
 
@@ -322,7 +322,7 @@ theorem NewOk.mono' {idom : Array (Option Nat)} {V : Nat → Option Block} {bi k
     (h : NewOk idom V bi k allowed B st s)
     (hd : ∀ y n, st.defs.get? y = some n → st.avail.contains y = true → st'.defs.get? y = some n)
     (ha : ∀ y d, st.avail.get? y = some d → st'.avail.get? y = some d)
-    (hg : ∀ y, Good st B y → Good st' B y) :
+    (hg : ∀ y, Placed st B y → Placed st' B y) :
     NewOk idom (emitV V bi more) bi k allowed B st' s := by
   obtain ⟨r, n', rfl, hd', ha', hrb, hal, hops⟩ := h
   refine ⟨r, n', rfl, hd r n' hd' ((hm_contains_iff _ _).2 (by rw [ha']; rfl)),
@@ -333,10 +333,10 @@ the emitted statements. -/
 structure MRun (f : Function) (idom : Array (Option Nat)) (allowed : Inst → Bool) (bi : Nat)
     (B : ValueId → Prop) (V : Nat → Option Block) (st st' : SState) (new : List Stmt) : Prop where
   inv : MInv f (emitV V bi new) B st'
-  good : ∀ y, Good st B y → Good st' B y
+  good : ∀ y, Placed st B y → Placed st' B y
   step : MStep bi st st' new
   nodes : ∀ y n', st'.defs.get? y = some n' →
-    st.defs.get? y = some n' ∨ ∀ z ∈ operands n', Good st' B z
+    st.defs.get? y = some n' ∨ ∀ z ∈ operands n', Placed st' B z
   stmts : ∀ b, V bi = some b → ∀ j s, new[j]? = some s →
     NewOk idom (emitV V bi new) bi (b.body.length + j) allowed B st' s
 
@@ -401,11 +401,11 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
     (hp : isPure n' = true) (hty : pureTyped (fun y => st.types.get? y) f n' = true)
     (htx : st.types.get? x = SState.nodeTy n') (hsome : (SState.nodeTy n').isSome)
     (hal : allowed n = true) (hn' : n' = mapOperands τ n)
-    (hops : ∀ y ∈ operands n', AvailHere idom V bi y ∧ Good st B y)
+    (hops : ∀ y ∈ operands n', AvailHere idom V bi y ∧ Placed st B y)
     (hralts : ∀ ms, st.alts.get? r = some ms → ∀ m ∈ ms, ∀ n, st.defs.get? m = some n →
-      ∀ y ∈ operands n, Good st B y) :
+      ∀ y ∈ operands n, Placed st B y) :
     MRun f idom allowed bi B V st (st.emit bi x r n') [{ results := [r], inst := n' }] ∧
-      Good (st.emit bi x r n') B r ∧
+      Placed (st.emit bi x r n') B r ∧
       AvailHere idom (emitV V bi [{ results := [r], inst := n' }]) bi r ∧
       (st.emit bi x r n').types.get? r = st.types.get? x := by
   obtain ⟨ed, ea, et, en, eal, emm, efn, -, -, -, -⟩ := emit_fields st bi x r n'
@@ -443,8 +443,8 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
     · refine known_iff.2 (.inr ?_)
       obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 ((hm_contains_iff _ _).1 h)
       exact (hm_contains_iff _ _).2 (by rw [agrow y d hd]; rfl)
-  have hgood : ∀ y, Good st B y → Good st' B y := by
-    refine Good.mono kgrow (fun y hy => hy.not_bad) (fun y m hm => ?_) (fun y ms hms => ?_)
+  have hgood : ∀ y, Placed st B y → Placed st' B y := by
+    refine Placed.mono kgrow (fun y hy => hy.not_bad) (fun y m hm => ?_) (fun y ms hms => ?_)
     · rw [hdefs] at hm; split at hm
       · cases hm; exact .inr fun z hz => (hops z hz).2
       · exact .inl hm
@@ -529,8 +529,8 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
       · rename_i hry; subst hry; rw [ha] at hra; cases hra
       · exact hm
     · rw [hdefs]; split <;> simp_all
-  have hgr : Good st' B r := by
-    refine Good.mk hrb (known_iff.2 (.inr (by rw [ea, hm_contains_insert']; exact .inl rfl)))
+  have hgr : Placed st' B r := by
+    refine Placed.mk hrb (known_iff.2 (.inr (by rw [ea, hm_contains_insert']; exact .inl rfl)))
       (fun m hm y hy => ?_) (fun ms hms m hm n0 hn0 y hy => ?_)
     · rw [hdefs, if_pos rfl] at hm; cases hm; exact hgood y (hops y hy).2
     · rw [eal] at hms
@@ -577,16 +577,16 @@ theorem foldlM_option_mem {α β : Type} (g : β → α → Option β) (I : List
       rw [hg] at h
       exact ih (pre ++ [a]) c b' (by simpa using hl) (hstep pre a as b c hl hb hg) h
 
-theorem Good.congr {st st' : SState} {B : ValueId → Prop} (hd : st'.defs = st.defs)
-    (ha : st'.alts = st.alts) (hv : st'.avail = st.avail) {x : ValueId} (h : Good st B x) :
-    Good st' B x :=
-  Good.mono (fun y hy => by simpa [SState.known, hd, hv] using hy) (fun _ h => h.not_bad)
+theorem Placed.congr {st st' : SState} {B : ValueId → Prop} (hd : st'.defs = st.defs)
+    (ha : st'.alts = st.alts) (hv : st'.avail = st.avail) {x : ValueId} (h : Placed st B x) :
+    Placed st' B x :=
+  Placed.mono (fun y hy => by simpa [SState.known, hd, hv] using hy) (fun _ h => h.not_bad)
     (fun y n hn => .inl (by rw [← hd]; exact hn)) (fun y ms hms => .inl (by rw [← ha]; exact hms))
     x h
 
-theorem Good.bump {st : SState} {B : ValueId → Prop} {k : Nat} {x : ValueId} (h : Good st B x) :
-    Good ({ st with next := k } : SState) B x :=
-  Good.congr (st := st) (st' := ({ st with next := k } : SState)) rfl rfl rfl h
+theorem Placed.bump {st : SState} {B : ValueId → Prop} {k : Nat} {x : ValueId} (h : Placed st B x) :
+    Placed ({ st with next := k } : SState) B x :=
+  Placed.congr (st := st) (st' := ({ st with next := k } : SState)) rfl rfl rfl h
 
 theorem MRun.bump {f : Function} {idom : Array (Option Nat)} {allowed : Inst → Bool} {bi : Nat}
     {B : ValueId → Prop} {V : Nat → Option Block} {st : SState} (h : MInv f V B st) :
@@ -605,15 +605,15 @@ def MatOk (f : Function) (cfg : Cfg) (allowed : Inst → Bool) (bi : Nat) (B : V
     (V : Nat → Option Block) (st : SState) (out : Array Stmt) (x x' : ValueId) (st' : SState)
     (out' : Array Stmt) : Prop :=
   ∃ new, out'.toList = out.toList ++ new ∧ MRun f cfg.idom allowed bi B V st st' new ∧
-    Good st' B x' ∧ AvailHere cfg.idom (emitV V bi new) bi x' ∧ st'.types.get? x' = st.types.get? x
+    Placed st' B x' ∧ AvailHere cfg.idom (emitV V bi new) bi x' ∧ st'.types.get? x' = st.types.get? x
 
 theorem clone_ok {fuel : Nat}
-    (ih : ∀ st out x x' st' out' V b, MInv f V B st → V bi = some b → Good st B x →
+    (ih : ∀ st out x x' st' out' V b, MInv f V B st → V bi = some b → Placed st B x →
       materialize cfg allowed bi fuel (st, out) x = some (x', st', out') →
       MatOk f cfg allowed bi B V st out x x' st' out')
     {st : SState} {out : Array Stmt} {x x' : ValueId} {st' : SState} {out' : Array Stmt}
     {V : Nat → Option Block} {b : Block} (hI : MInv f V B st) (hb : V bi = some b)
-    (hx : Good st B x)
+    (hx : Placed st B x)
     (hc : materialize.clone cfg allowed bi fuel st out x = some (x', st', out')) :
     MatOk f cfg allowed bi B V st out x x' st' out' := by
   rw [materialize.clone] at hc
@@ -636,7 +636,7 @@ theorem clone_ok {fuel : Nat}
     ∃ new1, acc.2.1.toList = out.toList ++ new1 ∧
       MRun f cfg.idom allowed bi B V st acc.1 new1 ∧ acc.2.2.toList.length = pre.length ∧
       ∀ (j : Nat) (y : ValueId), pre[j]? = some y → ∃ y', acc.2.2.toList[j]? = some y' ∧
-        Good acc.1 B y' ∧ AvailHere cfg.idom (emitV V bi new1) bi y' ∧
+        Placed acc.1 B y' ∧ AvailHere cfg.idom (emitV V bi new1) bi y' ∧
           acc.1.types.get? y' = st.types.get? y
   have hfold := foldlM_option_mem (I := I) (l := operands n)
     (g := fun (acc : SState × Array Stmt × Array ValueId) y =>
@@ -651,7 +651,7 @@ theorem clone_ok {fuel : Nat}
       rename_i y' st2 out2 hm
       cases hg
       have ha : a ∈ operands n := by rw [← hl]; simp
-      have hga : Good c.1 B a := hrun1.good a (hx.defs n hxn a ha)
+      have hga : Placed c.1 B a := hrun1.good a (hx.defs n hxn a ha)
       obtain ⟨new2, hout2, hrun2, hg2, hh2, ht2⟩ := ih _ _ _ _ _ _ _
         { b with body := b.body ++ new1 } hrun1.inv (by simp [emitV, hb]) hga hm
       refine ⟨new1 ++ new2, by rw [hout2, hout1]; simp, hrun1.trans hrun2, by simp [hlen1],
@@ -687,7 +687,7 @@ theorem clone_ok {fuel : Nat}
   -- the renaming of the operands
   let τ := fun y => (((operands n).zip ops.toList).lookup y).getD y
   have hren : renameOps n ops.toList = mapOperands τ n := rfl
-  have hτ : ∀ y ∈ operands n, Good st1 B (τ y) ∧ AvailHere cfg.idom (emitV V bi new1) bi (τ y) ∧
+  have hτ : ∀ y ∈ operands n, Placed st1 B (τ y) ∧ AvailHere cfg.idom (emitV V bi new1) bi (τ y) ∧
       st1.types.get? (τ y) = st.types.get? y := by
     intro y hy
     obtain ⟨j, hj, hl⟩ := lookup_zip (operands n) ops.toList hlen.symm hy
@@ -710,7 +710,7 @@ theorem clone_ok {fuel : Nat}
     simp only [Function.comp]
     rw [ht, hg2 _ t (by rw [(hτ y hy).2.2, ht])]
   have hops' : ∀ y ∈ operands (renameOps n ops.toList),
-      AvailHere cfg.idom (emitV V bi new1) bi y ∧ Good st1 B y := by
+      AvailHere cfg.idom (emitV V bi new1) bi y ∧ Placed st1 B y := by
     intro y hy
     rw [hren, operands_mapOperands, List.mem_map] at hy
     obtain ⟨u, hu, rfl⟩ := hy
@@ -767,7 +767,7 @@ theorem clone_ok {fuel : Nat}
 
 /-- **`materialize` of a placeable value** (module doc). -/
 theorem mat_spec : ∀ fuel st out x x' st' out' V b, MInv f V B st → V bi = some b →
-    Good st B x → materialize cfg allowed bi fuel (st, out) x = some (x', st', out') →
+    Placed st B x → materialize cfg allowed bi fuel (st, out) x = some (x', st', out') →
     MatOk f cfg allowed bi B V st out x x' st' out' := by
   intro fuel
   induction fuel with
@@ -794,15 +794,15 @@ theorem mat_spec : ∀ fuel st out x x' st' out' V b, MInv f V B st → V bi = s
 type available at the end of the block. -/
 theorem matAll_spec {st : SState} {xs : List ValueId} {m : List (ValueId × ValueId)}
     {st' : SState} {out : Array Stmt} {V : Nat → Option Block} {b : Block}
-    (hI : MInv f V B st) (hb : V bi = some b) (hxs : ∀ y ∈ xs, Good st B y)
+    (hI : MInv f V B st) (hb : V bi = some b) (hxs : ∀ y ∈ xs, Placed st B y)
     (hm : materializeAll cfg allowed bi st xs = some (m, st', out)) :
     MRun f cfg.idom allowed bi B V st st' out.toList ∧ m.map Prod.fst = xs ∧
-      ∀ p ∈ m, Good st' B p.2 ∧ AvailHere cfg.idom (emitV V bi out.toList) bi p.2 ∧
+      ∀ p ∈ m, Placed st' B p.2 ∧ AvailHere cfg.idom (emitV V bi out.toList) bi p.2 ∧
         st'.types.get? p.2 = st.types.get? p.1 := by
   unfold materializeAll at hm
   let I : List ValueId → List (ValueId × ValueId) × SState × Array Stmt → Prop := fun pre acc =>
     MRun f cfg.idom allowed bi B V st acc.2.1 acc.2.2.toList ∧ acc.1.map Prod.fst = pre ∧
-      ∀ p ∈ acc.1, Good acc.2.1 B p.2 ∧ AvailHere cfg.idom (emitV V bi acc.2.2.toList) bi p.2 ∧
+      ∀ p ∈ acc.1, Placed acc.2.1 B p.2 ∧ AvailHere cfg.idom (emitV V bi acc.2.2.toList) bi p.2 ∧
         acc.2.1.types.get? p.2 = st.types.get? p.1
   have := foldlM_option_mem (I := I) (l := xs)
     (g := fun (acc : List (ValueId × ValueId) × SState × Array Stmt) x => do

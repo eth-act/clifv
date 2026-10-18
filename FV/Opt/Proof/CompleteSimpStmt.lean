@@ -38,8 +38,8 @@ theorem RInv.weakenB {X : ValueId → Prop} {XN : Inst → Prop} {st : SState} {
     (hav : ∀ y d, st.avail.get? y = some d → B y → ¬ B' y → ∃ t, DefAt V y d t)
     (hnb : ∀ y n, st.defs.get? y = some n → st.avail.contains y = false → B y → ¬ B' y →
       maxValue f < y) : RInv f V B' X XN st := by
-  have hg : ∀ y, Good st B y → Good st B' y :=
-    Good.mono (fun _ h => h) (fun y hy hb => hy.not_bad (hB y hb)) (fun _ _ h => .inl h)
+  have hg : ∀ y, Placed st B y → Placed st B' y :=
+    Placed.mono (fun _ h => h) (fun y hy hb => hy.not_bad (hB y hb)) (fun _ _ h => .inl h)
       (fun _ _ h => .inl h)
   exact ⟨h.m.weakenB hB hav hnb, h.noPartial, fun n w hw => by
     obtain ⟨e1, e2, e3⟩ := h.memo n w hw
@@ -47,7 +47,7 @@ theorem RInv.weakenB {X : ValueId → Prop} {XN : Inst → Prop} {st : SState} {
 
 /-- Exceptional hash-consing entries whose values became placeable. -/
 theorem RInv.dropX {X : ValueId → Prop} {XN : Inst → Prop} {st : SState}
-    (h : RInv f V B X XN st) (hx : ∀ n w, st.memo.get? n = some w → X w → XN n → Good st B w) :
+    (h : RInv f V B X XN st) (hx : ∀ n w, st.memo.get? n = some w → X w → XN n → Placed st B w) :
     RInv f V B (fun _ => False) (fun _ => False) st := by
   refine ⟨h.m, h.noPartial, fun n w hw => ?_, h.alts⟩
   obtain ⟨e1, e2, e3⟩ := h.memo n w hw
@@ -59,11 +59,11 @@ theorem RInv.dropX {X : ValueId → Prop} {XN : Inst → Prop} {st : SState}
 theorem RInv.altsInsert {X : ValueId → Prop} {XN : Inst → Prop} {st : SState} {x : ValueId}
     {ms : List ValueId} (h : RInv f V B X XN st) (hx : st.known x = true)
     (hms : ∀ m ∈ ms, st.known m = true ∧ st.types.get? m = st.types.get? x ∧
-      ∀ n, st.defs.get? m = some n → ∀ y ∈ operands n, Good st B y) :
+      ∀ n, st.defs.get? m = some n → ∀ y ∈ operands n, Placed st B y) :
     RInv f V B X XN ({ st with alts := st.alts.insert x ms } : SState) ∧
-      ∀ y, Good st B y → Good ({ st with alts := st.alts.insert x ms } : SState) B y := by
-  have hg : ∀ y, Good st B y → Good ({ st with alts := st.alts.insert x ms } : SState) B y := by
-    refine Good.mono (fun _ h => h) (fun _ h => h.not_bad) (fun _ _ h => .inl h) (fun y ms' hy => ?_)
+      ∀ y, Placed st B y → Placed ({ st with alts := st.alts.insert x ms } : SState) B y := by
+  have hg : ∀ y, Placed st B y → Placed ({ st with alts := st.alts.insert x ms } : SState) B y := by
+    refine Placed.mono (fun _ h => h) (fun _ h => h.not_bad) (fun _ _ h => .inl h) (fun y ms' hy => ?_)
     simp only [hm_get?_insert] at hy
     split at hy
     · cases hy; exact .inr fun m hm n hn z hz => (hms m hm).2.2 n hn z hz
@@ -93,11 +93,11 @@ theorem RInv.anyX {X : ValueId → Prop} {XN : Inst → Prop} {st : SState}
 theorem pureInsert_ok {st : SState} {v : ValueId} {inst : Inst}
     (hI : RInv f V B (fun _ => False) (fun _ => False) st) (hpure : isPure inst = true)
     (hpt : pureTyped (fun y => st.types.get? y) f inst = true)
-    (hty : st.types.get? v = SState.nodeTy inst) (hops : ∀ y ∈ operands inst, Good st B y)
+    (hty : st.types.get? v = SState.nodeTy inst) (hops : ∀ y ∈ operands inst, Placed st B y)
     (hvk : st.known v = false) (hvn : v < st.next) (hvB : B v) :
     RInv f V B (fun _ => False) (fun _ => False) (pureInsert st v inst) ∧
       CInv B (pureInsert st v inst) ∧
-      (∀ y, Good st B y → Good (pureInsert st v inst) B y) ∧
+      (∀ y, Placed st B y → Placed (pureInsert st v inst) B y) ∧
       (pureInsert st v inst).defs.get? v = some inst ∧
       (∀ y, y ≠ v → (pureInsert st v inst).defs.get? y = st.defs.get? y) ∧
       (pureInsert st v inst).avail = st.avail ∧ (pureInsert st v inst).alts = st.alts ∧
@@ -113,8 +113,8 @@ theorem pureInsert_ok {st : SState} {v : ValueId} {inst : Inst}
     · obtain ⟨m, hm⟩ := Option.isSome_iff_exists.1 h1
       exact known_iff.2 (.inl (by rw [hdefs, if_neg (hne y hy), hm]; rfl))
     · exact known_iff.2 (.inr h1)
-  have hgood : ∀ y, Good st B y → Good (pureInsert st v inst) B y := by
-    refine Good.mono kgrow (fun y hy => hy.not_bad) (fun y m hm => ?_) (fun _ _ h => .inl h)
+  have hgood : ∀ y, Placed st B y → Placed (pureInsert st v inst) B y := by
+    refine Placed.mono kgrow (fun y hy => hy.not_bad) (fun y m hm => ?_) (fun _ _ h => .inl h)
     rw [hdefs] at hm; split at hm
     · cases hm; exact .inr hops
     · exact .inl hm
@@ -154,16 +154,16 @@ theorem pureBest_ok {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Ins
     (bi : Nat) {st0 : SState} {v : ValueId} {inst : Inst}
     (hI : RInv f V B (fun _ => False) (fun _ => False) st0) (hC : CInv B st0)
     (hvk : st0.known v = true) (hvd : st0.defs.get? v = some inst)
-    (hops : ∀ y ∈ operands inst, Good st0 B y) (halts : st0.alts.get? v = none)
+    (hops : ∀ y ∈ operands inst, Placed st0 B y) (halts : st0.alts.get? v = none)
     (hty : st0.types.get? v = SState.nodeTy inst)
-    (hnode : NodeIn (fun y => st0.types.get? y) f (Good st0 B) (st0.types.get? v) inst) :
+    (hnode : NodeIn (fun y => st0.types.get? y) f (Placed st0 B) (st0.types.get? v) inst) :
     RInv f V B (· = v) (· = inst) (pureBest rules allowed bi st0 v inst).2 ∧
       CInv B (pureBest rules allowed bi st0 v inst).2 ∧
       RStep B st0 (pureBest rules allowed bi st0 v inst).2 ∧
       (pureBest rules allowed bi st0 v inst).2.memo.get? inst =
         some (pureBest rules allowed bi st0 v inst).1 ∧
       ((pureBest rules allowed bi st0 v inst).1 = v ∨
-        (Good (pureBest rules allowed bi st0 v inst).2 B (pureBest rules allowed bi st0 v inst).1 ∧
+        (Placed (pureBest rules allowed bi st0 v inst).2 B (pureBest rules allowed bi st0 v inst).1 ∧
           (pureBest rules allowed bi st0 v inst).2.types.get? (pureBest rules allowed bi st0 v inst).1 =
             st0.types.get? v)) := by
   unfold pureBest
@@ -181,7 +181,7 @@ theorem pureBest_ok {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Ins
     have hS0 : RStep B st0 ({ st0 with memo := st0.memo.insert inst v } : SState) :=
       RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
     have hen : ∀ n ∈ SState.enodes ({ st0 with memo := st0.memo.insert inst v } : SState) v,
-        NodeIn (fun y => st0.types.get? y) f (Good st0 B) (st0.types.get? v) n := by
+        NodeIn (fun y => st0.types.get? y) f (Placed st0 B) (st0.types.get? v) n := by
       intro n hn
       simp only [SState.enodes, halts, hvd, Option.toList_some, Option.getD_none,
         List.filterMap_nil, List.append_nil, List.mem_singleton] at hn
@@ -217,7 +217,7 @@ structure PureOk (f : Function) (idom : Array (Option Nat)) (allowed : Inst → 
     (B B' : ValueId → Prop) (V : Nat → Option Block) (b : Block) (st stF : SState)
     (subst subst' : Subst) (s : Stmt) (inst : Inst) (v : ValueId) (lg : StmtLog) : Prop where
   inv : RInv f (emitV V bi lg.out.toList) B' (fun _ => False) (fun _ => False) stF
-  good : ∀ y, Good st B y → Good stF B' y
+  good : ∀ y, Placed st B y → Placed stF B' y
   known : ∀ y, st.known y = true → stF.known y = true
   types : ∀ y t, st.types.get? y = some t → stF.types.get? y = some t
   avail : ∀ y d, st.avail.get? y = some d → stF.avail.get? y = some d
@@ -226,11 +226,11 @@ structure PureOk (f : Function) (idom : Array (Option Nat)) (allowed : Inst → 
   defsKeep : ∀ y n, st.defs.get? y = some n → st.avail.contains y = true →
     stF.defs.get? y = some n
   kind : (lg = .keep { s with inst } ∧ subst' = subst ∧ stF.avail.get? v = some bi ∧
-      Good stF B' v ∧ stF.defs.get? v = some inst) ∨
+      Placed stF B' v ∧ stF.defs.get? v = some inst) ∨
     (∃ w, lg = .repl { s with inst } w lg.out ∧ subst' = subst.insert v w ∧
       (∀ j t, lg.out.toList[j]? = some t →
         NewOk idom (emitV V bi lg.out.toList) bi (b.body.length + j) allowed B' stF t) ∧
-      Good stF B' w ∧ AvailAt idom (emitV V bi lg.out.toList) bi (b.body.length + lg.out.size) w ∧
+      Placed stF B' w ∧ AvailAt idom (emitV V bi lg.out.toList) bi (b.body.length + lg.out.size) w ∧
       stF.types.get? w = stF.types.get? v ∧ stF.avail.contains v = false)
 
 /-- The kept statement `v = inst` (`s.results = [v]`) becomes available at the end of block `bi`
@@ -238,12 +238,12 @@ and `v` placeable. -/
 theorem keepAvail_ok {X : ValueId → Prop} {XN : Inst → Prop} {st1 : SState} {v : ValueId}
     {inst : Inst} {s : Stmt} {b : Block} {B' : ValueId → Prop}
     (hI1 : RInv f V B X XN st1) (hb : V bi = some b) (hres : s.results = [v])
-    (hvd : st1.defs.get? v = some inst) (hvops : ∀ y ∈ operands inst, Good st1 B y)
+    (hvd : st1.defs.get? v = some inst) (hvops : ∀ y ∈ operands inst, Placed st1 B y)
     (hvav : st1.avail.get? v = none) (halts : st1.alts.get? v = none)
     (hB'1 : ∀ y, B' y → B y) (hB'2 : ∀ y, y ≠ v → B y → B' y) (hnB' : ¬ B' v) :
     MInv f (emitV V bi [{ s with inst }]) B' ({ st1 with avail := st1.avail.insert v bi } : SState) ∧
-      (∀ y, Good st1 B y → Good ({ st1 with avail := st1.avail.insert v bi } : SState) B' y) ∧
-      Good ({ st1 with avail := st1.avail.insert v bi } : SState) B' v ∧
+      (∀ y, Placed st1 B y → Placed ({ st1 with avail := st1.avail.insert v bi } : SState) B' y) ∧
+      Placed ({ st1 with avail := st1.avail.insert v bi } : SState) B' v ∧
       (∀ y, st1.known y = true → ({ st1 with avail := st1.avail.insert v bi } : SState).known y = true) := by
   have hvk : st1.known v = true := known_iff.2 (.inl (by rw [hvd]; rfl))
   have havail : ∀ y, ({ st1 with avail := st1.avail.insert v bi } : SState).avail.get? y =
@@ -254,8 +254,8 @@ theorem keepAvail_ok {X : ValueId → Prop} {XN : Inst → Prop} {st1 : SState} 
     rcases known_iff.1 hy with h1 | h1
     · exact known_iff.2 (.inl h1)
     · exact known_iff.2 (.inr (by simp only [hm_contains_insert, h1, Bool.or_true]))
-  have hgood : ∀ y, Good st1 B y → Good ({ st1 with avail := st1.avail.insert v bi } : SState) B' y :=
-    Good.mono kgrow (fun y hy hb => hy.not_bad (hB'1 y hb)) (fun _ _ h => .inl h)
+  have hgood : ∀ y, Placed st1 B y → Placed ({ st1 with avail := st1.avail.insert v bi } : SState) B' y :=
+    Placed.mono kgrow (fun y hy hb => hy.not_bad (hB'1 y hb)) (fun _ _ h => .inl h)
       (fun _ _ h => .inl h)
   have hnotV : ∀ d t, ¬ DefAt V v d t := by
     intro d t hd; have := hI1.m.defAvail v d t hd; rw [hvav] at this; cases this
@@ -307,7 +307,7 @@ theorem keepAvail_ok {X : ValueId → Prop} {XN : Inst → Prop} {st1 : SState} 
     · rcases hdefV y d' t' h2 with h2 | ⟨hy2, hd2, ht2⟩
       · rw [hy1] at h2; exact absurd h2 (hnotV _ _)
       · exact ⟨hd1.trans hd2.symm, ht1.trans ht2.symm⟩
-  · refine Good.mk hnB' (kgrow v hvk) (fun n hn y hy => ?_) (fun ms hms => ?_)
+  · refine Placed.mk hnB' (kgrow v hvk) (fun n hn y hy => ?_) (fun ms hms => ?_)
     · change st1.defs.get? v = some n at hn
       rw [hvd] at hn; cases hn; exact hgood y (hvops y hy)
     · change st1.alts.get? v = some ms at hms
@@ -319,11 +319,11 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
     (hb : V bi = some b) (hres : s.results = [v])
     (hI1 : RInv f V B (· = v) (· = inst) st1) (hC1 : CInv B st1)
     (hmem1 : st1.memo.get? inst = some best)
-    (hbest : best = v ∨ (Good st1 B best ∧ st1.types.get? best = st1.types.get? v))
+    (hbest : best = v ∨ (Placed st1 B best ∧ st1.types.get? best = st1.types.get? v))
     (hvB : B v) (hvk1 : st1.known v = true) (hd1v : st1.defs.get? v = some inst)
-    (hops1 : ∀ y ∈ operands inst, Good st1 B y) (hav1 : st1.avail.get? v = none)
+    (hops1 : ∀ y ∈ operands inst, Placed st1 B y) (hav1 : st1.avail.get? v = none)
     (hal1 : st1.alts.get? v = none)
-    (hgst1 : ∀ y, Good st B y → Good st1 B y) (hkst1 : ∀ y, st.known y = true → st1.known y = true)
+    (hgst1 : ∀ y, Placed st B y → Placed st1 B y) (hkst1 : ∀ y, st.known y = true → st1.known y = true)
     (htst1 : ∀ y t, st.types.get? y = some t → st1.types.get? y = some t)
     (havst1 : st1.avail = st.avail)
     (hdst1 : ∀ y n, st.defs.get? y = some n → st.avail.contains y = true → st1.defs.get? y = some n) :
@@ -343,7 +343,7 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
   -- the members of `best`'s class
   have hmem : ∀ ms, st1.classes.get? best = some ms → ∀ m ∈ ms, st1.known m = true ∧
       st1.types.get? m = st1.types.get? v ∧
-      ∀ n, st1.defs.get? m = some n → ∀ y ∈ operands n, Good st1 B y := by
+      ∀ n, st1.defs.get? m = some n → ∀ y ∈ operands n, Placed st1 B y := by
     intro ms hms m hm
     obtain ⟨-, h1⟩ := hC1 best ms hms
     obtain ⟨e1, e2, e3⟩ := h1 m hm
@@ -381,7 +381,7 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
     have hfin : ∃ stF, pureAlts st1 stK v best (.keep { s with inst }) = stF ∧
         RInv f (emitV V bi [{ s with inst }]) (fun y => B y ∧ y ≠ v) (fun _ => False)
           (fun _ => False) stF ∧
-        (∀ y, Good stK (fun y => B y ∧ y ≠ v) y → Good stF (fun y => B y ∧ y ≠ v) y) ∧
+        (∀ y, Placed stK (fun y => B y ∧ y ≠ v) y → Placed stF (fun y => B y ∧ y ≠ v) y) ∧
         stF.avail = stK.avail ∧ stF.defs = stK.defs ∧ stF.types = stK.types ∧
         (∀ y, stK.known y = true → stF.known y = true) := by
       unfold pureAlts
@@ -441,17 +441,17 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
       have hm2 : st2.memo = st1.memo := by
         obtain ⟨_, _, _, _, _, h⟩ := hrun.step.shape; rw [h]
       rw [hRm, hm2, hmem1] at hw'; cases hw'; exact absurd rfl hbv
-    have hgR : ∀ y, Good st1 B y → Good stR B y := fun y h => Good.congr hRd hRa hRv (hrun.good y h)
+    have hgR : ∀ y, Placed st1 B y → Placed stR B y := fun y h => Placed.congr hRd hRa hRv (hrun.good y h)
     have hkR : ∀ y, st1.known y = true → stR.known y = true := by
       intro y hy; have := hrun.step.known y hy
       simpa [SState.known, hRd, hRv] using this
-    have hwk : stR.known w = true := (Good.congr hRd hRa hRv hgw).known
+    have hwk : stR.known w = true := (Placed.congr hRd hRa hRv hgw).known
     have hwv : w ≠ v := by rintro rfl; exact hgw.not_bad hvB
     have htwR : stR.types.get? w = stR.types.get? v := by
       rw [hRt, htw, hrun.step.typesKnown v hvk1]; exact hgb.2
     have hfin : ∃ stF, pureAlts st1 stR v best (.repl { s with inst } w emitted) = stF ∧
         RInv f (emitV V bi new) B (fun _ => False) (fun _ => False) stF ∧
-        (∀ y, Good stR B y → Good stF B y) ∧
+        (∀ y, Placed stR B y → Placed stF B y) ∧
         stF.avail = stR.avail ∧ stF.defs = stR.defs ∧ stF.types = stR.types ∧
         (∀ y, stR.known y = true → stF.known y = true) := by
       by_cases hc : (w == v || st1.made.contains best) = true
@@ -468,7 +468,7 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
                 rw [hRd] at hn
                 rcases hrun.nodes m n hn with hn0 | hn0
                 · exact hgR y ((this m hm').2.2 n hn0 y hy)
-                · exact Good.congr hRd hRa hRv (hn0 y hy)⟩)
+                · exact Placed.congr hRd hRa hRv (hn0 y hy)⟩)
             refine ⟨_, ?_, h1, h2, rfl, rfl, rfl, fun y h => h⟩
             rw [hcl] at hne
             have hms : ms ≠ [] := by simpa using hne
@@ -492,7 +492,7 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
       fun y h => hkF y (hkR y (hkst1 y h)),
       fun y t h => by rw [htF, hRt]; exact hrun.step.types y t (htst1 y t h),
       fun y d h => by rw [haF, hRv]; exact hrun.step.avail y d (by rw [havst1]; exact h),
-      fun y d h => ?_, fun y n h ha => ?_, .inr ⟨w, rfl, rfl, fun j t hj => ?_, hgF w (Good.congr hRd hRa hRv hgw), ?_,
+      fun y d h => ?_, fun y n h ha => ?_, .inr ⟨w, rfl, rfl, fun j t hj => ?_, hgF w (Placed.congr hRd hRa hRv hgw), ?_,
         by rw [htF]; exact htwR, ?_⟩⟩
     · rw [haF, hRv] at h
       rcases hrun.step.availNew y d h with h | ⟨rfl, t, ht, hy⟩
@@ -505,7 +505,7 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
       have := hrun.stmts b hb j t hj
       exact (this.mono' (more := []) (fun y n hy _ => by rw [hdF, hRd]; exact hy)
         (fun y d hy => by rw [haF, hRv]; exact hy)
-        (fun y hy => hgF y (Good.congr hRd hRa hRv hy))) |> fun h => by simpa [emitV_nil] using h
+        (fun y hy => hgF y (Placed.congr hRd hRa hRv hy))) |> fun h => by simpa [emitV_nil] using h
     · rw [hout2, hsz]
       have := hhw.at_end (b := { b with body := b.body ++ new }) (by simp [emitV, hb])
       simpa using this
@@ -527,7 +527,7 @@ theorem pure_ok {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
     (hI : RInv f V B (fun _ => False) (fun _ => False) st) (hb : V bi = some b)
     (hres : s.results = [v]) (hpure : isPure inst = true)
     (hpt : pureTyped (fun y => st.types.get? y) f inst = true)
-    (hty : st.types.get? v = SState.nodeTy inst) (hops : ∀ y ∈ operands inst, Good st B y)
+    (hty : st.types.get? v = SState.nodeTy inst) (hops : ∀ y ∈ operands inst, Placed st B y)
     (hvk : st.known v = false) (hvn : v < st.next) (hvB : B v) :
     ((pureStep rules allowed cfg bi st subst s inst v).2.2 = .keep { s with inst } ∧
       PureOk f cfg.idom allowed bi B (fun y => B y ∧ y ≠ v) V b st
@@ -552,7 +552,7 @@ theorem pure_ok {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
     | none => rfl
     | some ms => have := hI.m.altsKnown v ms h; rw [hvk] at this; cases this
   have hk0 : (pureInsert st v inst).known v = true := known_iff.2 (.inl (by rw [hd0v]; rfl))
-  have hops0 : ∀ y ∈ operands inst, Good (pureInsert st v inst) B y := fun y hy => hg0 y (hops y hy)
+  have hops0 : ∀ y ∈ operands inst, Placed (pureInsert st v inst) B y := fun y hy => hg0 y (hops y hy)
   obtain ⟨hI1, hC1, hS1, hmem1, hbest⟩ := pureBest_ok (V := V) hR allowed bi hI0 hC0 hk0 hd0v hops0
     (by rw [hal0]; exact hvalts) (by rw [ht0]; exact hty)
     ⟨hpure, by rw [ht0]; exact hpt, by rw [ht0]; exact hty.symm, hops0⟩
@@ -566,7 +566,7 @@ theorem pure_ok {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
       exact known_iff.2 (.inl (by rw [hd0 y hyv, hm]; rfl))
     · exact known_iff.2 (.inr (by rw [ha0]; exact h1))
   have hbt : (pureBest rules allowed bi (pureInsert st v inst) v inst).1 = v ∨
-      (Good (pureBest rules allowed bi (pureInsert st v inst) v inst).2 B
+      (Placed (pureBest rules allowed bi (pureInsert st v inst) v inst).2 B
         (pureBest rules allowed bi (pureInsert st v inst) v inst).1 ∧
        (pureBest rules allowed bi (pureInsert st v inst) v inst).2.types.get?
         (pureBest rules allowed bi (pureInsert st v inst) v inst).1 =
