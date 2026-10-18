@@ -270,6 +270,9 @@ whose sampled cube (the bits constant over 400 sampled words, with their values)
 | encoder forms (`--encoder`) | 424 (+ 2 excluded) | 419 (missing: `stlxr` b/h/w/x, `fmov h, w`) | 424 forms, 84 800 vectors, 0 failures |
 | `Specs.lean` + encoder (`--all`) | 752 | — | 150 400 vectors, 0 failures |
 
+Nightly (post-merge, never blocking): `.github/workflows/fidelity-nightly.yml` runs
+`--all --n 1000` with a seed rotating per run and reports to #280.
+
 Per vector: a random valid encoding of the form, with all register fields random, including
 31 (SP or ZR according to the form). The initial state is random: x0–x30 (biased towards edge
 values), SP, NZCV, v0–v30 and a 64-byte data buffer. For the floating-point forms v0–v30 hold

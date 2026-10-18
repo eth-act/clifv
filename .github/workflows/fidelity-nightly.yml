@@ -1,0 +1,172 @@
+name: Fidelity nightly
+
+# T4 (#40) / T5 (#41): random differential testing of the trusted specifications, on the newest
+# main build. Post-merge only (schedule / manual), never a required check.
+# - Arm model vs qemu: scripts/arm-cosim.sh --all (hand-written + encoder-driven forms).
+# - Clif.run vs the Cranelift interpreter and native aarch64: scripts/clif-fuzz.sh, several seeds.
+# - IEEE core vs aarch64 hardware semantics: scripts/float-difftest.sh --aarch64.
+# Seeds rotate with the run number (printed in the report, so a red run is reproducible
+# locally with the same --seed). The report goes to the step summary and to FIDELITY_ISSUE.
+on:
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: Base seed (default the run number)
+        default: ''
+      cosim-n:
+        description: arm-cosim vectors per form
+        default: '1000'
+      fuzz-seeds:
+        description: clif-fuzz seeds per run
+        default: '6'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fidelity-nightly
+  cancel-in-progress: false
+
+env:
+  FIDELITY_ISSUE: '280'
+
+jobs:
+  base:
+    name: Find the main build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      run: ${{ steps.base.outputs.run }}
+      sha: ${{ steps.base.outputs.sha }}
+      seed: ${{ steps.base.outputs.seed }}
+    steps:
+      - name: Newest lake-full of main (full-gate.yml)
+        id: base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SEED_IN: ${{ inputs.seed }}
+        run: |
+          read -r run sha < <(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=lake-full&per_page=100" \
+            --jq '[.artifacts[] | select(.expired | not) | select(.workflow_run.head_branch == "main")]
+                  | sort_by(.created_at) | last | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
+          if [[ -z "${run:-}" ]]; then echo "no main build (lake-full) to test" >&2; exit 1; fi
+          echo "main build: run $run, commit $sha"
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "seed=${SEED_IN:-$GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: ${{ matrix.check }}
+    needs: base
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [arm-cosim, clif-fuzz, float-difftest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # the commit of the build being restored
+          ref: ${{ needs.base.outputs.sha }}
+      - uses: ./.github/actions/fv-lean
+        with:
+          swap-gb: '8'
+          base-run-id: ${{ needs.base.outputs.run }}
+      - name: Tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq qemu-user-static clang
+          rustup target add aarch64-unknown-linux-musl
+      - name: Rust build cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/target
+          key: fidelity-rust-${{ matrix.check }}-${{ hashFiles('rust/rust-toolchain.toml', 'rust/**/Cargo.lock') }}
+      - name: Run
+        env:
+          CHECK: ${{ matrix.check }}
+          SEED: ${{ needs.base.outputs.seed }}
+          COSIM_N: ${{ inputs.cosim-n || '1000' }}
+          FUZZ_SEEDS: ${{ inputs.fuzz-seeds || '6' }}
+          SHA: ${{ needs.base.outputs.sha }}
+        run: |
+          mkdir -p logs
+          start=$(date +%s)
+          rc=0
+          case "$CHECK" in
+            arm-cosim)
+              scripts/arm-cosim.sh --all --n "$COSIM_N" --seed "$SEED" --show 20 > logs/arm-cosim.log 2>&1 || rc=$?
+              scripts/arm-cosim.sh --coverage > logs/arm-cosim-coverage.log 2>&1 || rc=$?
+              line="$(grep -E '^TOTAL' logs/arm-cosim.log | tail -n 1); $(tail -n 1 logs/arm-cosim-coverage.log)" ;;
+            clif-fuzz)
+              line=""
+              for k in $(seq 0 $((FUZZ_SEEDS - 1))); do
+                s=$((SEED * 100 + k))
+                extra=(); [[ $k == 0 ]] && extra=(--coverage)
+                r=0; scripts/clif-fuzz.sh --seed "$s" --per 8 --runs 16 --mix 400 --keep "logs/fuzz-$s" \
+                  "${extra[@]}" > "logs/clif-fuzz-$s.log" 2>&1 || r=$?
+                [[ $r != 0 ]] && rc=$r
+                line="$line seed $s rc=$r: $(grep -E '^TOTAL' "logs/clif-fuzz-$s.log" | tail -n 1 | cut -c1-300);"
+                # keep the generated programs only of a red seed (reproduction); reports always
+                [[ $r == 0 ]] && rm -rf "logs/fuzz-$s/gen" "logs/fuzz-$s/interp" "logs/fuzz-$s/native" "logs/fuzz-$s/check"
+              done ;;
+            float-difftest)
+              scripts/float-difftest.sh --aarch64 --seed "$SEED" > logs/float-difftest.log 2>&1 || rc=$?
+              line=$(grep -E 'TOTAL' logs/float-difftest.log | tail -n 1) ;;
+          esac
+          echo "$CHECK rc=$rc $(( $(date +%s) - start )) s (main $SHA, seed $SEED): $line" | tee logs/summary.txt
+          exit $rc
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: fidelity-${{ matrix.check }}
+          path: logs
+          retention-days: 14
+
+  report:
+    name: Report
+    needs: [base, test]
+    if: ${{ always() && needs.base.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: fidelity-*
+          path: report
+      - name: Summarize
+        env:
+          RESULT: ${{ needs.test.result }}
+          SHA: ${{ needs.base.outputs.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          {
+            if [[ $RESULT == success ]]; then echo "**Fidelity nightly: GREEN** (main \`$SHA\`)"; else echo "**Fidelity nightly: RED** (main \`$SHA\`) — a disagreement is a potential spec bug (T4 #40 / T5 #41)"; fi
+            echo
+            echo "Run: $RUN_URL"
+            echo
+            for f in report/*/summary.txt; do echo "- $(cat "$f")"; done
+          } > report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Post to the fidelity issue
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue comment "$FIDELITY_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file report.md

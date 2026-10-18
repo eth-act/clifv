@@ -401,9 +401,53 @@ x64-bmi1/2 and others (full list: `scripts/clif-filetests.sh -v`).
 - No `func_addr`/`call_indirect`/`return_call_indirect`/`try_call` (function pointers),
   `global_value`/`symbol_value`, pinned register, stack/frame pointer intrinsics, floats,
   vectors.
-- The interpreter comparison covers only the runtests' inputs. Runtests cannot express
-  trap expectations and none of the supported runs traps, so trap outcomes are compared
-  with the interpreter only when run by hand (`clif-filetest` compares trap codes when both
-  engines trap). A manual check at M0 time (`sdiv MIN/-1`, `sdiv x/0`, an out-of-slot load
-  without `notrap`, `uadd_overflow_trap … user7`, `sshr.i8` by 9 and by `-1`): 8 of 8 outcomes
-  agree, including trap codes.
+- The runtest comparison covers only the runtests' inputs, and runtests cannot express trap
+  expectations. `scripts/clif-fuzz.sh` (next section, T5 #41) adds random programs and
+  edge-biased inputs for every subset-E opcode and every float operation, trapping runs
+  included (`; print:` lines, trap codes compared), against the interpreter and native aarch64.
+- `func_addr` (and so `call_indirect` of a program function) is `stuck` in a program without
+  `; data:` objects: `Program.initMem` registers function symbols only next to data objects
+  (`run_of_data_nil`). Compiled Rust programs always have data; `clif-fuzz` adds an 8-byte
+  object to its `call_indirect` programs.
+
+## Random differential testing (`scripts/clif-fuzz.sh`, T5 #41)
+
+```
+scripts/clif-fuzz.sh [--seed S] [--per K] [--runs M] [--mix N] [--keep DIR] [--no-native] [--coverage] [-v]
+```
+
+`clif-fuzz gen` (`FVTest/Clif/Fuzz.lean`) writes runtest files: for every target — each
+subset-E opcode at `i8`–`i64` (arithmetic, bitwise, shifts with every amount type, division,
+`icmp` × 10 conditions, `select` with every condition type, `bmask`, extensions/reductions,
+`load`/`uloadN`/`sloadN`/`store`/`istoreN` at every offset with random flags, `stack_addr`,
+`atomic_rmw` × 11 ops, `atomic_cas`/`atomic_load`/`atomic_store`, `fence`, `call`,
+`call_indirect`/`func_addr`, `symbol_value`, constants, `br_table`, `trap`, `brif`) and each
+float operation at `f32`/`f64` (`fadd`…`fcopysign`, `fneg`…`nearest`, `fma`, `fcmp` × 14,
+`fpromote`/`fdemote`, the 4 float→int conversions to i32/i64, int→float from i8–i64, `bitcast`,
+float loads/stores/`select`/calls) — `K` functions (straight-line or behind a `brif` diamond),
+plus `N` mixed functions chaining random pure operations of all types and folding every result
+into an `i64` (floats through `bitcast`, so NaN payloads are observed). Arguments are
+edge-biased (integer bounds, ±0, ±∞, quiet/signalling NaNs with payloads, subnormals, ties,
+conversion bounds; equal operands a third of the time). Expectations are `Clif.run`'s results
+(trapping runs are `; print:` lines). Every file goes through `clif-oracle check`
+(cranelift-reader + verifier), `clif-oracle interp` and `clif-native` (Cranelift, aarch64,
+qemu); `clif-fuzz compare` reruns `Clif.run` and compares: with the interpreter up to NaN
+payloads, with native **bit-exactly** (NaN payloads and trap codes included). Two documented
+interpreter-only differences are not disagreements: x86-host NaNs exposed by a float→int
+`bitcast` when the native run agrees bit-exactly (`nan-agree`), and `srem MIN, -1`
+(`known-deviation`, above). `--coverage` also computes the static coverage of the existing
+runtests over the same keys (`before-after.tsv`).
+
+Results (2026-10-18; keys = opcode × condition × type × operand type, `instKey`):
+
+| | keys | before: in runtests checked against the interpreter | before: … run natively (`aarch64-native-filetests.sh`) | after: fuzz runs agreeing with the interpreter / native |
+| --- | --- | --- | --- | --- |
+| subset E | 290 | 269 | 266 | 290 / 290 |
+| floats and the rest | 104 | 104 | 12 | 104 / 104 |
+| all | 394 | 373 | 278 | 394 / 394 |
+
+Runs: seeds 2 and 3 with `--per 8 --runs 16 --mix 400`: 2 × 66 480 runs, native 132 960
+agree / 0 disagree; interpreter 131 208 agree, 746 `nan-agree`, 4 `known-deviation`
+(`srem MIN, -1`), 0 disagree, 1 002 noncomparable (`symbol_value`: the interpreter does not
+implement it). No disagreement found. `.github/workflows/fidelity-nightly.yml` runs six seeds
+per night (report: #280).
