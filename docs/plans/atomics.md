@@ -121,6 +121,34 @@ through release/acquire), `Code.lines_kinds_witness`. Axioms: `scripts/audit/con
 (40 theorems, standard axioms only; the model theorems use none or `Classical.choice` for the
 ranks).
 
+## 3b. Thread level (done: T2d)
+
+`FV/Concurrency/ArmThread.lean` (on `FV/Concurrency/ArmFootprint.lean`): one thread of the Arm
+model run against a memory it shares. `TStep P f` steps a single-core machine `f` (`Arm.stepi`, or
+the E2E machine `ArmStepX X H fa`) with a label of **events** (`Ev`: kind, address, size, bytes):
+
+* a step's events form a **footprint** (`Footprint f s evs`): run on any memory holding the read
+  events' bytes, the step writes exactly the write events and leaves the same registers. A read's
+  bytes are the environment's choice (the memory model decides which are consistent). The
+  semantics is sound by construction; precise footprints are lemmas: non-memory instructions
+  have none (`ArmFoot.exec_nonldst`: every non-load/store class commutes with replacing the
+  memory, `ArmFoot.stepi_setMem`), `ldar`/`ldxr`/`ldaxr` read and `stlr`/`stxr`/`stlxr` write
+  their one access (`footprint_load_excl`, `footprint_store_excl`). Kinds come from the decoded
+  instruction (`cls`, `Cls.kind`: `dmb`/`dsb` over all accesses is the full barrier);
+* the **exclusive monitor** (`Mon`) is armed by `ldxr`/`ldaxr` and disarmed by `stxr`/`stlxr` and
+  `clrex`; a store exclusive succeeds (an `f` step, a write event, `Rs := 0`) when the policy
+  allows (`Policy.arm`: monitor armed), or **fails** (`TStep.xfail`: no event, `Rs := 1`), at any
+  time under `Policy.arm`.
+
+The single-core model is the special case `Policy.sc` (never fails) against SC memory (`SCRun`:
+every read returns the current memory's bytes): `step_sc`, `run_sc`, `run_sc_stepi` (such a run is
+`Arm.run`), and conversely `exists_step_sc`/`exists_run_sc` (every run of `f` is one, with
+whole-memory footprints). Non-vacuity: `ArmThread.Witness.retry_run`, Cranelift's `atomic_rmw`
+loop as emitted (`ldaxr x27, [x25]; add; stlxr w24, x28, [x25]; cbnz w24`) reads `5` (an
+`acqXR` event, monitor armed), its `stlxr` fails and `cbnz` branches back to the `ldaxr`;
+`retry_succ` is the successful `stlxr` (a `relXW` event of the sum). `no_xfail_sc`: the
+single-core monitor never fails.
+
 ## 4. Testing (the oracle)
 
 qemu is not weak-memory faithful (TCG on an x86 host is close to TSO), so it cannot show that a
@@ -143,7 +171,7 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2a (#299) | Execution graphs, the Armv8 fragment, the Cranelift contract, theorems 1–5 (`FV/Concurrency/*`) | **done** |
 | T2b (#300) | Code-level classification of `Backend.Insn`/`MInst.lines` (`FV/Concurrency/Code.lean`) | **done** |
 | T2c (#301) | Litmus tests in Lean + qemu harness | **done** |
-| T2d (#302) | Per-thread event semantics of the Arm model: the run of one thread as a trace of memory events with an exclusive monitor (failing `stlxr`, the `cbnz` retry); the existing single-core model is that semantics against an SC memory with a monitor that never fails | open |
+| T2d (#302) | Per-thread event semantics of the Arm model: the run of one thread as a trace of memory events with an exclusive monitor (failing `stlxr`, the `cbnz` retry); the existing single-core model is that semantics against an SC memory with a monitor that never fails | **done** |
 | T2e (#303) | Program level: multi-threaded `Clif.run` (interleavings), DRF-SC for programs (the prefix argument over T2d's traces; `hb` with thread spawn/join edges, so initialising writes are ordered), and the whole-program statement composing theorem 4 with `backend_correct_final` per thread | open, needs T2d |
 | T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem | open |
 | T2g (#305) | Widening: LSE atomics (`has_lse`), mixed-size accesses, `i128` atomics, the full `aarch64.cat` (`dob`, `dmb.ld/st`) | open |

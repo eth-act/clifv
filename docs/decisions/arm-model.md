@@ -82,8 +82,12 @@ execution level: the mapping (`ldar`, `stlr`, the `ldaxr`/`stlxr` loops, `dmb is
 sequentially consistent (`Mapping.armv8_drf_sc`) and an interleaving (`Mapping.armv8_interleaving`),
 and the emitted code has exactly the table's kinds (`Concurrency.Code.lines_kinds`). Litmus tests
 check the model against herd7's verdicts (`FVTest/Concurrency/Litmus.lean`) and qemu
-(`scripts/litmus-qemu.sh`). The single-core assumption above stays trusted for
-`backend_correct_final` until the program-level composition (#302, #303) is done.
+(`scripts/litmus-qemu.sh`). The per-thread event semantics (T2d, #302;
+`FV/Concurrency/ArmThread.lean`) runs a thread of this model against a shared memory: footprint
+events of the instruction kinds, an exclusive monitor, and store exclusives that may fail
+(`Rs := 1`, no write). The assumption above is exactly its special case against an SC memory with
+a monitor that never fails (`ArmThread.run_sc_stepi`, `ArmThread.exists_run_sc`). It stays trusted
+for `backend_correct_final` until the program-level composition (#303) is done.
 
 ## Thread-local storage: trusted TLSDESC hook (agent/stack-tls-proof, 2026-10-01)
 
