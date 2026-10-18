@@ -217,15 +217,32 @@ SC: RC11's `psc` with all of them `seq_cst`).
   even RC11 with no-thin-air);
 * `Mapping.armv8_to_clifF` (`FV/Concurrency/ArmFence.lean`): Armv8-consistent compiled executions
   satisfy `ConsistentF` (`fence` ↦ `dmb ish`): `R = ob ∪ [dmb];po ∪ po;[dmb]` is acyclic
-  (`Armv8.R_acyclic`) and every `psc` edge is an `R⁺` path (`Mapping.Hom.psc_R`, for any
-  `po`/`rf`/`co`-preserving map `Hom`).
+  (`Armv8.R_acyclic`) and every `psc` edge is an `R⁺` path (`Mapping.Hom.psc_R`, for any map
+  `Hom` preserving `rf`/`co` and `po` between the events `V` that matter: accesses, atomics and
+  fences; positions without events are bypassed, `Mapping.plus_restr`).
 
 Witnesses (`FV/Concurrency/RC11Witness.lean`): `sbf_*`; `mpf_*` (message passing through
 `fence(Release)`/`fence(Acquire)` and relaxed atomics, compiled to `str; dmb; stlr ‖ ldar; dmb;
 ldr`: `ConsistentF`, RC11-consistent with the weak orderings, RC11- and contract-race-free);
-`incX_consistentF`. Open: the program-level form (`program_correct` with race-freedom over
-`ConsistentF` executions, derived from Rust race-freedom), which needs the embedding `φ` of
-`Realizes` to preserve program order on positions without events.
+`incX_consistentF`.
+
+**Program level** (`FV/Concurrency/ProgramE2EF.lean`):
+
+* `consistentCF`: the CLIF execution of `program_correct` satisfies `ConsistentF` (`Hom` along
+  `φ` on the CLIF events; `φ` need not preserve program order on positions without events, which
+  is impossible in general: a CLIF step can compile to no instruction, so a CLIF thread can have
+  more event-free steps between two events than its Arm code);
+* `RaceFreeProgF`: race-freedom in every `ConsistentF` execution whose `rmw` pairs exactly the
+  two-event steps (`StepShape`; `rmw_sc`: those are `atomic_rmw`/`atomic_cas` reads and writes);
+* `program_correctF`: `program_correct` with `RaceFreeProgF` (weaker than `RaceFreeProg`,
+  `raceFreeProgF_of_raceFreeProg`);
+* `RustRaceFree` (the Rust program, orderings `ord` that cg_clif strengthens to the CLIF kinds, is
+  race-free in every C++20-consistent execution) implies `RaceFreeProgF`
+  (`raceFreeProgF_of_rust`), and `program_correct_rust` is the composition: **from Rust
+  race-freedom to the multi-threaded `Clif.run`, under the per-thread contract `Realizes`**.
+
+Witnesses (`FV/Concurrency/ProgramFWitness.lean`): `ret_correctF`, `ret_rustRaceFree`,
+`ret_correct_rust` (the two returning threads of `ret_correct`).
 
 ## 4. Testing (the oracle)
 
@@ -252,7 +269,7 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2d (#302) | Per-thread event semantics of the Arm model: the run of one thread as a trace of memory events with an exclusive monitor (failing `stlxr`, the `cbnz` retry); the existing single-core model is that semantics against an SC memory with a monitor that never fails | **done** |
 | T2e (#303) | Program level: multi-threaded `Clif.run` (`ClifThread.MTRun`), program-level DRF-SC (race-freedom in every contract-consistent execution, initial writes `co`-first), replay of SC executions as interleaving runs, and the program-level statement `ProgE2E.program_correct` with the per-thread contract `Realizes` (§3c) | **done** |
 | T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference) | open |
-| T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem (§3d) | **done** (program-level chain with `RaceFreeProgF`: open) |
+| T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem (§3d), and the program-level chain `program_correct_rust` | **done** |
 | T2g (#305) | Widening: LSE atomics (`has_lse`), mixed-size accesses, `i128` atomics, the full `aarch64.cat` (`dob`, `dmb.ld/st`) | open |
 
 The existing single-core assumption stays in the trusted base of `E2E.backend_correct_final`, and

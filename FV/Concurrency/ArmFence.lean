@@ -9,9 +9,15 @@ atomic and fence `seq_cst`), for the table of `FV/Concurrency/Mapping.lean` (`fe
 
 * `Armv8.R` = `ob ∪ [dmb]; po ∪ po; [dmb]` is acyclic (`R_acyclic`): `ob` edges into or out of a
   `dmb` are `po` edges, and `po; [dmb]; po ⊆ ob`, so every `dmb` on a cycle can be bypassed;
-* RC11's `hb` (every atomic SC) is in the Arm `hbA` (`hbY_hbA`);
+* RC11's `hb` (every atomic SC) between mapped events is in the Arm `hbA` (`Mapping.Hom.hb`);
 * every `psc` edge between SC accesses (`ldar`/`ldaxr`/`stlr`/`stlxr`) and fences (`dmb`) is an
-  `R⁺` path (`psc_R`): `po`-runs are absorbed at their acquire/`dmb` start or release/`dmb` end.
+  `R⁺` path (`Mapping.Hom.psc_R`): `po`-runs are absorbed at their acquire/`dmb` start or
+  release/`dmb` end.
+
+The map `Hom` need only preserve `po` between the events `V` that matter (accesses, atomics,
+fences): positions without an event (`dir = F`, plain kind) are bypassed (`plus_restr`). This is
+what the program level needs, where the embedding of CLIF positions into Arm positions cannot be
+order-preserving on positions without events (a CLIF step can compile to no instruction).
 -/
 
 namespace Concurrency
@@ -332,18 +338,57 @@ theorem SKind.strength_liftSC (s : SKind) : s.liftSC.strength = s := by cases s 
 
 namespace Mapping
 
+/-- **Compressing paths**: a path of `r ∪ s` between `V` nodes, `r` transitive and `s` joining `V`
+nodes, is a path of `r|V ∪ s`. -/
+theorem plus_restr {α : Type} {r s : Rel α} {V : α → Prop} (ht : Trans r)
+    (hs : ∀ a b, s a b → V a ∧ V b) {a b : α} (h : Relation.TransGen (union r s) a b)
+    (ha : V a) (hb : V b) :
+    Relation.TransGen (union (fun x y => V x ∧ V y ∧ r x y) s) a b := by
+  have key : ∀ {c}, Relation.TransGen (union r s) a c → r a c ∨
+      ∃ d, V d ∧ Relation.TransGen (union (fun x y => V x ∧ V y ∧ r x y) s) a d ∧ opt r d c := by
+    intro c h
+    induction h with
+    | single h =>
+      rcases h with h | h
+      · exact .inl h
+      · exact .inr ⟨_, (hs _ _ h).2, .single (.inr h), .inl rfl⟩
+    | @tail b c _ h2 ih =>
+      rcases h2 with h2 | h2
+      · rcases ih with ih | ⟨d, hd, p, o⟩
+        · exact .inl (ht _ _ _ ih h2)
+        · refine .inr ⟨d, hd, p, .inr ?_⟩
+          rcases o with rfl | o
+          · exact h2
+          · exact ht _ _ _ o h2
+      · have hbV := (hs _ _ h2).1
+        rcases ih with ih | ⟨d, hd, p, o⟩
+        · exact .inr ⟨c, (hs _ _ h2).2, .tail (.single (.inl ⟨ha, hbV, ih⟩)) (.inr h2), .inl rfl⟩
+        · refine .inr ⟨c, (hs _ _ h2).2, ?_, .inl rfl⟩
+          rcases o with rfl | o
+          · exact p.tail (.inr h2)
+          · exact (p.tail (.inl ⟨hd, hbV, o⟩)).tail (.inr h2)
+  rcases key h with h | ⟨d, hd, p, o⟩
+  · exact .single (.inl ⟨ha, hb, h⟩)
+  · rcases o with rfl | o
+    · exact p
+    · exact p.tail (.inl ⟨hd, hb, o⟩)
+
 variable {E EY : Type} {X : Exec E} {ak : E → AKind} {Y : Exec EY} {sk : EY → SKind}
 
-/-- **A CLIF execution `Y` is mapped into the Arm execution `X` by `ψ`**: `po`, `rf`, `co` are
-preserved, atomics and fences have the table's kinds, and CLIF atomic updates are atomics. -/
-structure Hom (Y : Exec EY) (sk : EY → SKind) (X : Exec E) (ak : E → AKind) (ψ : EY → E) : Prop where
-  po : ∀ a b, Y.po a b → X.po (ψ a) (ψ b)
+/-- **A CLIF execution `Y` is mapped into the Arm execution `X` by `ψ`** on its events `V` (every
+access, atomic and fence): `po` between them, `rf`, `co` are preserved, atomics and fences have
+the table's kinds, and CLIF atomic updates are atomics. -/
+structure Hom (Y : Exec EY) (sk : EY → SKind) (X : Exec E) (ak : E → AKind) (V : EY → Prop)
+    (ψ : EY → E) : Prop where
+  vdir : ∀ e, Y.dir e ≠ .F → V e
+  vat : ∀ e, (sk e = .scR ∨ sk e = .scW ∨ sk e = .fence) → V e
+  po : ∀ a b, V a → V b → Y.po a b → X.po (ψ a) (ψ b)
   rf : ∀ a b, Y.rf a b → X.rf (ψ a) (ψ b)
   co : ∀ a b, Y.co a b → X.co (ψ a) (ψ b)
   kind : ∀ e, (sk e = .scR ∨ sk e = .scW ∨ sk e = .fence) → Maps (sk e) (ak (ψ e))
   rmw : ∀ a b, Y.rmw a b → sk a = .scR ∧ sk b = .scW
 
-variable {ψ : EY → E} (hX : X.Wf) (hY : Y.Wf) (hh : Hom Y sk X ak ψ)
+variable {V : EY → Prop} {ψ : EY → E} (hX : X.Wf) (hY : Y.Wf) (hh : Hom Y sk X ak V ψ)
 include hX hY hh
 
 omit hX hY in
@@ -353,25 +398,45 @@ theorem Hom.com {a b : EY} (h : Y.com a b) : X.com (ψ a) (ψ b) := by
   · exact .inr (.inl (hh.co _ _ h))
   · exact .inr (.inr ⟨ψ w, hh.rf _ _ h1, hh.co _ _ h2⟩)
 
+omit hX in
+theorem Hom.com_V {a b : EY} (h : Y.com a b) : V a ∧ V b :=
+  ⟨hh.vdir _ (hY.com_notF h).1, hh.vdir _ (hY.com_notF h).2⟩
+
+omit hX hY hh in
+theorem esc_sk {u : EY} (h : RC11.Esc (fun e => (sk e).liftSC) u) :
+    sk u = .scR ∨ sk u = .scW := by
+  rcases h with h | h
+  · exact .inl (by cases hs : sk u <;> simp [hs, SKind.liftSC] at h ⊢)
+  · exact .inr (by cases hs : sk u <;> simp [hs, SKind.liftSC] at h ⊢)
+
+omit hX hY hh in
+theorem fsc_sk {u : EY} (h : RC11.Fsc (fun e => (sk e).liftSC) u) : sk u = .fence := by
+  simp only [RC11.Fsc] at h
+  cases hs : sk u <;> simp [hs, SKind.liftSC] at h ⊢
+
 omit hX hY in
 theorem Hom.esc_AL {u : EY} (h : RC11.Esc (fun e => (sk e).liftSC) u) :
     Armv8.A ak (ψ u) ∨ Armv8.L ak (ψ u) := by
-  rcases h with h | h
-  · have : sk u = .scR := by cases hs : sk u <;> simp [hs, SKind.liftSC] at h ⊢
-    have hm := hh.kind u (.inl this); rw [this] at hm; exact .inl hm
-  · have : sk u = .scW := by cases hs : sk u <;> simp [hs, SKind.liftSC] at h ⊢
-    have hm := hh.kind u (.inr (.inl this)); rw [this] at hm; exact .inr hm
+  rcases esc_sk h with h | h
+  · have hm := hh.kind u (.inl h); rw [h] at hm; exact .inl hm
+  · have hm := hh.kind u (.inr (.inl h)); rw [h] at hm; exact .inr hm
 
 omit hX hY in
 theorem Hom.fsc_dmb {u : EY} (h : RC11.Fsc (fun e => (sk e).liftSC) u) : ak (ψ u) = .dmb := by
-  have : sk u = .fence := by
-    simp only [RC11.Fsc] at h
-    cases hs : sk u <;> simp [hs, SKind.liftSC] at h ⊢
+  have := fsc_sk h
   have hm := hh.kind u (.inr (.inr this)); rw [this] at hm; exact hm
 
+omit hX hY in
+theorem Hom.esc_V {u : EY} (h : RC11.Esc (fun e => (sk e).liftSC) u) : V u :=
+  hh.vat u ((esc_sk h).elim .inl (fun h => .inr (.inl h)))
+
+omit hX hY in
+theorem Hom.fsc_V {u : EY} (h : RC11.Fsc (fun e => (sk e).liftSC) u) : V u :=
+  hh.vat u (.inr (.inr (fsc_sk h)))
+
 omit hX in
-/-- RC11's `hb` (atomics and fences `seq_cst`) is in the Arm `hbA`. -/
-theorem Hom.hb {a b : EY} (h : RC11.hb Y (fun e => (sk e).liftSC) a b) :
+/-- RC11's `hb` (atomics and fences `seq_cst`) between events `V` is in the Arm `hbA`. -/
+theorem Hom.hb {a b : EY} (ha : V a) (hb : V b) (h : RC11.hb Y (fun e => (sk e).liftSC) a b) :
     Armv8.hbA X ak (ψ a) (ψ b) := by
   have hra : RC11.RmwAt Y (fun e => (sk e).liftSC) := by
     intro x y hxy
@@ -379,9 +444,12 @@ theorem Hom.hb {a b : EY} (h : RC11.hb Y (fun e => (sk e).liftSC) a b) :
     exact ⟨⟨.sc, by simp [h1, SKind.liftSC]⟩, ⟨.sc, by simp [h2, SKind.liftSC]⟩⟩
   have h' := RC11.hb_strength hY hra h
   simp only [SKind.strength_liftSC] at h'
-  refine plus_map ψ ?_ h'
-  rintro x y (h | ⟨hx, hrf, hy⟩)
-  · exact .inl (hh.po _ _ h)
+  have h'' := plus_restr (V := V) hY.po_trans
+    (fun x y (hxy : ClifMM.sw Y sk x y) => ⟨hh.vat x (.inr (.inl hxy.1)), hh.vat y (.inl hxy.2.2)⟩)
+    h' ha hb
+  refine plus_map ψ ?_ h''
+  rintro x y (⟨hx, hy, h⟩ | ⟨hx, hrf, hy⟩)
+  · exact .inl (hh.po _ _ hx hy h)
   · have hx' : sk x = .scW := hx
     have hy' : sk y = .scR := hy
     have m1 := hh.kind x (.inr (.inl hx'))
@@ -389,62 +457,94 @@ theorem Hom.hb {a b : EY} (h : RC11.hb Y (fun e => (sk e).liftSC) a b) :
     rw [hx'] at m1; rw [hy'] at m2
     exact .inr ⟨m1, hh.rf _ _ hrf, m2⟩
 
-/-- `scb` of the CLIF execution has the Arm shape `SNF`. -/
-theorem Hom.scb_snf (hc : Armv8.Consistent X ak) {x y : EY}
-    (h : RC11.scb Y (fun e => (sk e).liftSC) x y) : Armv8.SNF X ak (ψ x) (ψ y) := by
-  have hbS : ∀ {a b : EY}, RC11.hb Y (fun e => (sk e).liftSC) a b → Armv8.HbS X ak (ψ a) (ψ b) :=
-    fun h => Armv8.hbS_of_hbA hX hc (hh.hb hY h)
-  have hcom : ∀ {a b : EY}, Y.com a b → Armv8.ob X ak (ψ a) (ψ b) ∨ X.po (ψ a) (ψ b) :=
-    fun h => Armv8.com_ob_or_po hX hc (hh.com h)
-  rcases h with h | ⟨c, d, h1, -, h2, h3, -⟩ | ⟨h, -⟩ | h | h
-  · exact .inl (hh.po _ _ h)
-  · have h1 := hh.po _ _ h1
-    have h3 := hh.po _ _ h3
-    rcases hbS h2 with h2 | ⟨l, a', hl1, hl, hob, ha, ha2⟩
-    · exact .inl (hX.po_trans _ _ _ (hX.po_trans _ _ _ h1 h2) h3)
-    · refine .inr (.inr ⟨l, a', .inr ?_, hl, hob, ha, .inr ?_⟩)
-      · rcases hl1 with e | hl1
-        · rw [← e]; exact h1
-        · exact hX.po_trans _ _ _ h1 hl1
-      · rcases ha2 with e | ha2
-        · rw [e]; exact h3
-        · exact hX.po_trans _ _ _ ha2 h3
-  · rcases hbS h with h | ⟨l, a', hl1, hl, hob, ha, ha2⟩
-    · exact .inl h
-    · exact .inr (.inr ⟨l, a', hl1, hl, hob, ha, ha2⟩)
-  · rcases hcom (.inr (.inl h)) with h | h
-    · exact .inr (.inl h)
-    · exact .inl h
-  · rcases hcom (.inr (.inr h)) with h | h
-    · exact .inr (.inl h)
-    · exact .inl h
-
 /-- **Every `psc` edge of the CLIF execution is an `R⁺` path on Arm.** -/
 theorem Hom.psc_R (hc : Armv8.Consistent X ak) {u v : EY}
     (h : RC11.psc Y (fun e => (sk e).liftSC) u v) :
     Relation.TransGen (Armv8.R X ak) (ψ u) (ψ v) := by
-  have hbS : ∀ {a b : EY}, RC11.hb Y (fun e => (sk e).liftSC) a b → Armv8.HbS X ak (ψ a) (ψ b) :=
-    fun h => Armv8.hbS_of_hbA hX hc (hh.hb hY h)
+  let H := RC11.hb Y (fun e => (sk e).liftSC)
+  have hbS : ∀ {a b : EY}, V a → V b → H a b → Armv8.HbS X ak (ψ a) (ψ b) :=
+    fun ha hb h => Armv8.hbS_of_hbA hX hc (hh.hb hY ha hb h)
+  have hcom : ∀ {a b : EY}, Y.com a b → Armv8.ob X ak (ψ a) (ψ b) ∨ X.po (ψ a) (ψ b) :=
+    fun h => Armv8.com_ob_or_po hX hc (hh.com h)
   rcases h with ⟨x, y, hl, hs, hr⟩ | ⟨hu, hv, hh'⟩
-  · have hl' : (ψ x = ψ u ∧ Armv8.Endpt ak (ψ u)) ∨ Armv8.LNA X ak (ψ u) (ψ x) := by
+  · have hu : V u := by
+      rcases hl with ⟨-, he⟩ | ⟨hf, -⟩
+      · exact hh.esc_V he
+      · exact hh.fsc_V hf
+    have hv : V v := by
+      rcases hr with ⟨-, he⟩ | ⟨hf, -⟩
+      · exact hh.esc_V he
+      · exact hh.fsc_V hf
+    -- `scb ⊆ hb ∪ co ∪ fr` (the locations do not matter on Arm)
+    have hM : H x y ∨ Y.co x y ∨ Y.fr x y := by
+      rcases hs with h | ⟨c, d, h1, -, h2, h3, -⟩ | ⟨h, -⟩ | h | h
+      · exact .inl (.single (.inl h))
+      · exact .inl (((Relation.TransGen.single (.inl h1)).trans h2).tail (.inl h3))
+      · exact .inl h
+      · exact .inr (.inl h)
+      · exact .inr (.inr h)
+    -- the middle nodes can be taken in `V`
+    obtain ⟨x, hx, hl, hM⟩ : ∃ x', V x' ∧
+        ((x' = u ∧ RC11.Esc (fun e => (sk e).liftSC) u) ∨
+          (RC11.Fsc (fun e => (sk e).liftSC) u ∧ opt H u x')) ∧
+        (H x' y ∨ Y.co x' y ∨ Y.fr x' y) := by
+      by_cases hxV : V x
+      · exact ⟨x, hxV, hl, hM⟩
+      · rcases hl with ⟨rfl, -⟩ | ⟨hf, rfl | hux⟩
+        · exact absurd hu hxV
+        · exact absurd hu hxV
+        · rcases hM with hxy | hxy | hxy
+          · exact ⟨u, hu, .inr ⟨hf, .inl rfl⟩, .inl (hux.trans hxy)⟩
+          · exact absurd (hh.com_V hY (.inr (.inl hxy))).1 hxV
+          · exact absurd (hh.com_V hY (.inr (.inr hxy))).1 hxV
+    obtain ⟨y, hy, hM, hr⟩ : ∃ y', V y' ∧ (H x y' ∨ Y.co x y' ∨ Y.fr x y') ∧
+        ((y' = v ∧ RC11.Esc (fun e => (sk e).liftSC) v) ∨
+          (RC11.Fsc (fun e => (sk e).liftSC) v ∧ opt H y' v)) := by
+      by_cases hyV : V y
+      · exact ⟨y, hyV, hM, hr⟩
+      · rcases hr with ⟨rfl, -⟩ | ⟨hf, rfl | hyv⟩
+        · exact absurd hv hyV
+        · exact absurd hv hyV
+        · rcases hM with hxy | hxy | hxy
+          · exact ⟨v, hv, .inl (hxy.trans hyv), .inr ⟨hf, .inl rfl⟩⟩
+          · exact absurd (hh.com_V hY (.inr (.inl hxy))).2 hyV
+          · exact absurd (hh.com_V hY (.inr (.inr hxy))).2 hyV
+    have hl' : (ψ x = ψ u ∧ Armv8.Endpt ak (ψ u)) ∨ Armv8.LNA X ak (ψ u) (ψ x) := by
       rcases hl with ⟨rfl, he⟩ | ⟨hf, rfl | hhb⟩
       · exact .inl ⟨rfl, (hh.esc_AL he).elim .inl (fun h => .inr (.inl h))⟩
       · exact .inl ⟨rfl, .inr (.inr (hh.fsc_dmb hf))⟩
-      · exact .inr (Armv8.lna_of_hb (hh.fsc_dmb hf) (hbS hhb))
+      · exact .inr (Armv8.lna_of_hb (hh.fsc_dmb hf) (hbS hu hx hhb))
     have hr' : (ψ y = ψ v ∧ Armv8.Endpt ak (ψ v)) ∨ (ak (ψ v) = .dmb ∧ Armv8.HbS X ak (ψ y) (ψ v)) := by
       rcases hr with ⟨rfl, he⟩ | ⟨hf, rfl | hhb⟩
       · exact .inl ⟨rfl, (hh.esc_AL he).elim .inl (fun h => .inr (.inl h))⟩
       · exact .inl ⟨rfl, .inr (.inr (hh.fsc_dmb hf))⟩
-      · exact .inr ⟨hh.fsc_dmb hf, hbS hhb⟩
-    exact Armv8.combine hX hl' (Armv8.tail_of hX (hh.scb_snf hX hY hc hs) hr')
+      · exact .inr ⟨hh.fsc_dmb hf, hbS hy hv hhb⟩
+    have hs' : Armv8.SNF X ak (ψ x) (ψ y) := by
+      rcases hM with h | h | h
+      · rcases hbS hx hy h with h | ⟨l, a', hl1, hl, hob, ha, ha2⟩
+        · exact .inl h
+        · exact .inr (.inr ⟨l, a', hl1, hl, hob, ha, ha2⟩)
+      · rcases hcom (.inr (.inl h)) with h | h
+        · exact .inr (.inl h)
+        · exact .inl h
+      · rcases hcom (.inr (.inr h)) with h | h
+        · exact .inr (.inl h)
+        · exact .inl h
+    exact Armv8.combine hX hl' (Armv8.tail_of hX hs' hr')
   · have hu' := hh.fsc_dmb hu
     have hv' := hh.fsc_dmb hv
+    have huV := hh.fsc_V hu
+    have hvV := hh.fsc_V hv
     rcases hh' with hh' | ⟨c, d, h1, h2, h3⟩
-    · exact (Armv8.rn_dmb hX hv' (hbS hh')).1
-    · have hl := Armv8.lna_of_hb hu' (hbS h1)
-      obtain ⟨hd, habs⟩ := Armv8.rn_dmb hX hv' (hbS h3)
-      have one : ∀ {a b : EY}, Y.com a b → Armv8.ob X ak (ψ a) (ψ b) ∨ X.po (ψ a) (ψ b) :=
-        fun h => Armv8.com_ob_or_po hX hc (hh.com h)
+    · exact (Armv8.rn_dmb hX hv' (hbS huV hvV hh')).1
+    · have hcV : V c := by
+        obtain ⟨c', hc', -⟩ := plus_head h2
+        exact (hh.com_V hY hc').1
+      have hdV : V d := by
+        obtain ⟨d', hd'⟩ := plus_last h2
+        exact (hh.com_V hY hd').2
+      have hl := Armv8.lna_of_hb hu' (hbS huV hcV h1)
+      obtain ⟨hd, habs⟩ := Armv8.rn_dmb hX hv' (hbS hdV hvV h3)
       have fin1 : ∀ {m : E}, Armv8.LNA X ak (ψ u) m → (Armv8.ob X ak m (ψ d) ∨ X.po m (ψ d)) →
           Relation.TransGen (Armv8.R X ak) (ψ u) (ψ v) := by
         intro m hlm hmd
@@ -454,16 +554,16 @@ theorem Hom.psc_R (hc : Armv8.Consistent X ak) {u v : EY}
       have fin2 : ∀ {m : EY}, Y.com c m → Y.com m d →
           Relation.TransGen (Armv8.R X ak) (ψ u) (ψ v) := by
         intro m e1 e2
-        rcases one e1 with e1 | e1
+        rcases hcom e1 with e1 | e1
         · have hum := Armv8.lna_ob hl e1
-          rcases one e2 with e2 | e2
+          rcases hcom e2 with e2 | e2
           · exact (hum.tail (.inl e2)).trans hd
           · exact hum.trans (habs _ e2)
-        · exact fin1 (Armv8.lna_po hX hl e1) (one e2)
+        · exact fin1 (Armv8.lna_po hX hl e1) (hcom e2)
       rcases hY.eco_shape h2 with e | e | e | ⟨m, e1, e2⟩ | ⟨m, e1, e2⟩
-      · exact fin1 hl (one (.inl e))
-      · exact fin1 hl (one (.inr (.inl e)))
-      · exact fin1 hl (one (.inr (.inr e)))
+      · exact fin1 hl (hcom (.inl e))
+      · exact fin1 hl (hcom (.inr (.inl e)))
+      · exact fin1 hl (hcom (.inr (.inr e)))
       · exact fin2 (.inr (.inl e1)) (.inl e2)
       · exact fin2 (.inr (.inr e1)) (.inl e2)
 
@@ -494,9 +594,9 @@ theorem Mapping.armv8_to_clifF {E : Type} {X : Exec E} {ak : E → AKind} {S : E
     ClifMM.ConsistentF (X.restrict S) (srcKind sk S) where
   toConsistent := armv8_to_clif hX hc hm
   psc := by
-    have hh : Hom (X.restrict S) (srcKind sk S) X ak Subtype.val :=
-      ⟨fun _ _ h => h, fun _ _ h => h, fun _ _ h => h, fun e _ => hm.maps e.1 e.2,
-        fun a b h => hrmw a.1 b.1 a.2 b.2 h⟩
+    have hh : Hom (X.restrict S) (srcKind sk S) X ak (fun _ => True) Subtype.val :=
+      ⟨fun _ _ => trivial, fun _ _ => trivial, fun _ _ _ _ h => h, fun _ _ h => h,
+        fun _ _ h => h, fun e _ => hm.maps e.1 e.2, fun a b h => hrmw a.1 b.1 a.2 b.2 h⟩
     exact hh.psc_acyclic hX (hX.restrict hm.rf_src) hk.dmbF hc
 
 

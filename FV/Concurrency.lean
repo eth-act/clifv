@@ -9,8 +9,9 @@ exclusives (`ArmThread.TStep`; the single-core model as its special case, `ArmTh
 Rust/C++20 orderings (RC11) and the soundness of cg_clif's strengthening
 (`RC11.strength_sound`) with Cranelift's SC fences on Armv8 (`Mapping.armv8_to_clifF`), and the
 program level: the multi-threaded `Clif.run` (`ClifThread.MTRun`), replay of SC executions
-(`Prog.replay`) and `ProgE2E.program_correct` under the per-thread contract `ProgE2E.Realizes`.
-Nothing here changes the Arm model of `FV/Arm`.
+(`Prog.replay`) and `ProgE2E.program_correct` under the per-thread contract `ProgE2E.Realizes`,
+with race-freedom over the executions with fences (`ProgE2E.program_correctF`) or of the Rust
+program (`ProgE2E.program_correct_rust`). Nothing here changes the Arm model of `FV/Arm`.
 -/
 import FV.Concurrency.Rel
 import FV.Concurrency.Exec
@@ -31,3 +32,5 @@ import FV.Concurrency.ProgramWitness
 import FV.Concurrency.RC11
 import FV.Concurrency.ArmFence
 import FV.Concurrency.RC11Witness
+import FV.Concurrency.ProgramE2EF
+import FV.Concurrency.ProgramFWitness

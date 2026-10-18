@@ -216,10 +216,11 @@ theorem cstep_sR {evs : List (Ev SKind BVal)} {t' : TState} (h : CStep env0 p0 (
   | run s => simp [strip] at h2
   | ret v => exact ⟨rfl, v, rfl⟩
 
-/-- **Race-freedom of the program over all its executions**: its threads have no memory events. -/
-theorem ret_raceFree (M0 : Bytes) : RaceFreeProg env0 p0 2 s0 M0 := by
-  intro P locs rf co rmw hn hs0 hruns _ _ _ _ a b ha _ hconf _
-  exfalso
+/-- The program's threads have no memory events: in every execution every non-initial position is
+a position without an event. -/
+theorem ret_dirF {P : Traces TState SKind BVal} {locs : List (Nat × Nat)} {rf co rmw : Rel PEv}
+    (hs0 : ∀ i, P.st i 0 = s0 i) (hruns : P.Runs (CStep env0 p0)) (a : PEv)
+    (ha : ∀ q, a ≠ .init q) : (P.exec locs rf co rmw).dir a = .F := by
   -- every step of every thread has no event
   have hnil : ∀ i < P.n, ∀ j (hj : j < (P.tr i).length), (P.tr i)[j] = [] := by
     intro i hi j hj
@@ -249,15 +250,19 @@ theorem ret_raceFree (M0 : Bytes) : RaceFreeProg env0 p0 2 s0 M0 := by
               rw [hv'] at this; exact this.elim
         obtain ⟨v', hv'⟩ := this (j + 1) (by omega) (by omega)
         rw [hv'] at h1'; exact h1'
-  have hda := hconf.2.2.1
   cases a with
-  | init q => exact ha q rfl
+  | init q => exact absurd rfl (ha q)
   | thr i j k =>
     rcases hx : P.evAt (.thr i j k) with _ | x
-    · exact hda (by simp [Traces.exec, hx])
+    · simp [Traces.exec, hx]
     · obtain ⟨hi, hj, hk, -⟩ := Traces.evAt_some hx
       rw [hnil i hi j hj] at hk
       exact absurd hk (Nat.not_lt_zero _)
+
+/-- **Race-freedom of the program over all its executions**: its threads have no memory events. -/
+theorem ret_raceFree (M0 : Bytes) : RaceFreeProg env0 p0 2 s0 M0 := by
+  intro P locs rf co rmw _ hs0 hruns _ _ _ _ a _ ha _ hconf _
+  exact absurd (ret_dirF hs0 hruns a ha) hconf.2.2.1
 
 /-- The CLIF threads' traces: one step each, to the return. -/
 def PC : Traces TState SKind BVal :=
