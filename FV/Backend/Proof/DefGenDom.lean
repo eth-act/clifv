@@ -107,6 +107,11 @@ def miKinds (k : Nat) : Option (List FK) :=
   | VIdx.MInst.FpuCSel32 | VIdx.MInst.FpuCSel64 => some [.d, .u, .u, .u]
   | VIdx.MInst.FpuMoveFPImm => some [.d, .u, .u]
   | VIdx.MInst.VecDupImm => some [.d, .u, .u, .u]
+  | VIdx.MInst.FpuRR => some [.u, .u, .d, .u]
+  | VIdx.MInst.FpuRRR => some [.u, .u, .d, .u, .u]
+  | VIdx.MInst.FpuRRRR => some [.u, .u, .d, .u, .u, .u]
+  | VIdx.MInst.FpuCmp => some [.u, .u, .u]
+  | VIdx.MInst.FpuRound | VIdx.MInst.FpuToInt | VIdx.MInst.IntToFpu => some [.u, .d, .u]
   | k =>
     match loadOpOfIdx? k, storeOpOfIdx? k with
     | some _, _ => some [.d, .u, .u]
