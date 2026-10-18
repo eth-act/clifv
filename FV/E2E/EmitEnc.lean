@@ -304,6 +304,44 @@ theorem linesEnc_store {c : FnCtx} {op : StoreOp} {rt : Reg} {m : AMode} {fl : C
   split <;> rename_i hV <;> simp only [hV, ite_true, Bool.false_eq_true, ite_false] at hy <;>
     rw [hy] <;> exact ha
 
+/-- An `ldr`/`str` of an `s`/`d` register (`fpuLoad`/`fpuStore`, `opc` 01/00). -/
+theorem linesEnc_fpuMem {c : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode} {fl : Clif.MemFlags}
+    (ld : Bool) (hsz : sz = .size32 ∨ sz = .size64) (hrt : VR rt) (hm : MemOk sz.bytes m) :
+    LinesEnc c (if ld then .fpuLoad sz rt m fl else .fpuStore sz rt m fl) := by
+  cases ld
+  all_goals first
+    | change LinesEnc c (.fpuStore sz rt m fl)
+    | change LinesEnc c (.fpuLoad sz rt m fl)
+  all_goals intro ps ls ps' hl i t hi
+  all_goals simp only [MInst.lines, bind, Except.bind] at hl <;> split at hl <;>
+    (try (cases hl; done)) <;>
+    rename_i r hr <;>
+    obtain ⟨pre, m'⟩ := r <;>
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl <;>
+    obtain ⟨rfl, -⟩ := hl <;>
+    obtain ⟨hpre, hfin⟩ := memFinalize_enc hm hr <;>
+    rcases List.mem_append.mp hi with hi | hi
+  all_goals first
+    | exact hpre i t hi
+    | (simp only [List.mem_singleton, Line.ins.injEq] at hi
+       obtain ⟨rfl, -⟩ := hi
+       rw [encodable_iff]
+       obtain ⟨y, hy⟩ := encV_ok hrt
+       rcases hsz with rfl | rfl
+       all_goals first
+         | (obtain ⟨a, ha⟩ := ldstFields_ok hfin 2 1 1 y
+            exact ⟨a, by simp only [Insn.armFields, Insn.armFields.fpLdstSize, hy, bind,
+              Except.bind, pure, Except.pure]; exact ha⟩)
+         | (obtain ⟨a, ha⟩ := ldstFields_ok hfin 3 1 1 y
+            exact ⟨a, by simp only [Insn.armFields, Insn.armFields.fpLdstSize, hy, bind,
+              Except.bind, pure, Except.pure]; exact ha⟩)
+         | (obtain ⟨a, ha⟩ := ldstFields_ok hfin 2 1 0 y
+            exact ⟨a, by simp only [Insn.armFields, Insn.armFields.fpLdstSize, hy, bind,
+              Except.bind, pure, Except.pure]; exact ha⟩)
+         | (obtain ⟨a, ha⟩ := ldstFields_ok hfin 3 1 0 y
+            exact ⟨a, by simp only [Insn.armFields, Insn.armFields.fpLdstSize, hy, bind,
+              Except.bind, pure, Except.pure]; exact ha⟩))
+
 /-! ## Straight-line forms -/
 
 set_option hygiene false in
@@ -450,6 +488,66 @@ theorem formOk_store_enc {c : FnCtx} {op : StoreOp} {d : Nat} {m : AMode} {fl : 
   all_goals simp_all [MemOk, FinOk, SR, GR, extOk]
   all_goals first | omega | exact ⟨by omega, by omega, of_decide_eq_true hm⟩
 
+theorem formOk_fpuLoad_enc {c : FnCtx} {sz : ScalarSize} {d : Nat} {m : AMode} {fl : Clif.MemFlags}
+    {ops : Array Operand} {regs : Array Reg} {i' : MInst}
+    (h : ((sz == .size32 || sz == .size64) && memOk sz.bytes m) = true)
+    (hops : (MInst.fpuLoad sz (.vreg d .float) m fl).operands = .ok ops) (hal : AllocOk ops regs)
+    (hasg : (MInst.fpuLoad sz (.vreg d .float) m fl).assign regs = .ok i') : LinesEnc c i' := by
+  simp only [Bool.and_eq_true] at h
+  obtain ⟨hszb, hm⟩ := h
+  have hsz := fpSz_of_beq hszb
+  unfold memOk at hm
+  split at hm <;> (try cases hm) <;> inv_op <;>
+    refine linesEnc_fpuMem true hsz ⟨_, rfl, by omega⟩ ?_
+  all_goals simp_all [MemOk, FinOk, SR, GR, extOk]
+  all_goals first | omega | exact ⟨by omega, by omega, of_decide_eq_true hm⟩
+
+theorem formOk_fpuStore_enc {c : FnCtx} {sz : ScalarSize} {d : Nat} {m : AMode} {fl : Clif.MemFlags}
+    {ops : Array Operand} {regs : Array Reg} {i' : MInst}
+    (h : ((sz == .size32 || sz == .size64) && memOk sz.bytes m) = true)
+    (hops : (MInst.fpuStore sz (.vreg d .float) m fl).operands = .ok ops) (hal : AllocOk ops regs)
+    (hasg : (MInst.fpuStore sz (.vreg d .float) m fl).assign regs = .ok i') : LinesEnc c i' := by
+  simp only [Bool.and_eq_true] at h
+  obtain ⟨hszb, hm⟩ := h
+  have hsz := fpSz_of_beq hszb
+  unfold memOk at hm
+  split at hm <;> (try cases hm) <;> inv_op <;>
+    refine linesEnc_fpuMem false hsz ⟨_, rfl, by omega⟩ ?_
+  all_goals simp_all [MemOk, FinOk, SR, GR, extOk]
+  all_goals first | omega | exact ⟨by omega, by omega, of_decide_eq_true hm⟩
+
+theorem linesEnc_fpuCSel {c : FnCtx} {s : ScalarSize} (hs : (s == .size32 || s == .size64) = true)
+    {d a b : Nat} (hd : d < 32) (ha : a < 32) (hb : b < 32) (cc : Cond) :
+    LinesEnc c (.fpuCSel s (.v d) (.v a) (.v b) cc) := by
+  rcases fpSz_of_beq hs with rfl | rfl <;>
+  · refine linesEnc_one (fun _ => rfl) ?_
+    rw [encodable_iff]
+    simp [Insn.armFields, Insn.armFields.fpFtype, encV_v (show d ≤ 31 by omega),
+      encV_v (show a ≤ 31 by omega), encV_v (show b ≤ 31 by omega), bind, Except.bind, pure,
+      Except.pure]
+
+theorem linesEnc_fpuMoveFPImm {c : FnCtx} {s : ScalarSize}
+    (hs : (s == .size32 || s == .size64) = true) {d : Nat} (hd : d < 32) (imm : ASIMDFPModImm) :
+    LinesEnc c (.fpuMoveFPImm (.v d) imm s) := by
+  rcases fpSz_of_beq hs with rfl | rfl <;>
+  · refine linesEnc_one (fun _ => rfl) ?_
+    rw [encodable_iff]
+    simp [Insn.armFields, Insn.armFields.fpFtype, encV_v (show d ≤ 31 by omega), uField,
+      bind, Except.bind, pure, Except.pure, imm.imm.isLt]
+
+/-- The plain `movi` of a `vecDupImm` (S11e1). -/
+theorem linesEnc_vecDupImm {c : FnCtx} {imm : ASIMDMovModImm} {inv : Bool} {s : VectorSize}
+    (h : (!inv && imm.shift == 0 && !imm.shiftOnes && !imm.is64 && s != .size64x2) = true)
+    {d : Nat} (hd : d < 32) : LinesEnc c (.vecDupImm (.v d) imm inv s) := by
+  simp only [Bool.and_eq_true, Bool.not_eq_true', beq_iff_eq, bne_iff_ne, ne_eq] at h
+  obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := h
+  subst h1
+  refine linesEnc_one (x := .movi s (.v d) imm.imm.toNat) (t := none)
+    (fun ps => by simp [MInst.lines, h2, h3, h4] <;> rfl) ?_
+  rw [encodable_iff]
+  cases s <;> simp_all [Insn.armFields, encV_v (show d ≤ 31 by omega), uField, bind,
+    Except.bind, pure, Except.pure, imm.imm.isLt]
+
 set_option maxHeartbeats 4000000 in
 theorem formOk_enc {c cx : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : Array Reg}
     (h : FormOk cx i = true) (himm : immOkB i = true) (hops : i.operands = .ok ops)
@@ -460,6 +558,10 @@ theorem formOk_enc {c cx : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : A
   · exact formOk_load_enc h hops hal hasg
   · exact formOk_store_enc h hops hal hasg
   rotate_left
+  all_goals first
+    | exact formOk_fpuLoad_enc h hops hal hasg
+    | exact formOk_fpuStore_enc h hops hal hasg
+    | skip
   all_goals (try cases h)
   all_goals have himm0 := himm
   all_goals simp [immOkB] at himm
@@ -480,6 +582,9 @@ theorem formOk_enc {c cx : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : A
     | (have h' := of_decide_eq_true h
        simp only [AtomTy] at h'
        rcases h' with rfl | rfl | rfl | rfl <;> (apply linesEnc_one (fun _ => rfl); enc; done))
+    | exact linesEnc_fpuCSel himm0 (by omega) (by omega) (by omega) _
+    | exact linesEnc_fpuMoveFPImm himm0 (by omega) _
+    | exact linesEnc_vecDupImm himm0 (by omega)
 
 
 

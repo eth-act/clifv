@@ -101,11 +101,11 @@ def maxVOf (f : Clif.Function) : Nat :=
 def StmtC (f : Clif.Function) (s : Clif.Stmt) : Prop :=
   (∃ d, instData f s.inst = .ok d) ∧
   (∃ tys, s.inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys ∧
-    tys.length = s.results.length) ∧ ∀ t ∈ tysOf f s, eTy t = true
+    tys.length = s.results.length) ∧ ∀ t ∈ tysOf f s, valTyOk t = true
 
 /-- What `buildCtx` checks of a block. -/
 def BlockC (f : Clif.Function) (b : Clif.Block) : Prop :=
-  (∀ q ∈ b.params, eTy q.2 = true) ∧ ∀ s ∈ b.body, StmtC f s
+  (∀ q ∈ b.params, valTyOk q.2 = true) ∧ ∀ s ∈ b.body, StmtC f s
 
 /-- **`buildCtx`, functionally.** -/
 theorem buildCtx_model {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
@@ -113,10 +113,11 @@ theorem buildCtx_model {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × N
     ctx = { func := f, insts := (ctxModel f (maxVOf f)).2.2.1, valTy := (ctxModel f (maxVOf f)).1,
             valDef := (ctxModel f (maxVOf f)).2.1,
             valReg := (Array.range (maxVOf f)).map fun v =>
-              if ((ctxModel f (maxVOf f)).1[v]?).join.isSome then some (.vreg v .int) else none,
+              (((ctxModel f (maxVOf f)).1[v]?).join).map fun t => .vreg v t.valClass,
             slotOff := (slotLayout f.slots).1 } ∧
     ranges = (ctxModel f (maxVOf f)).2.2.2 ∧
-    st0 = { nextVreg := maxVOf f, classes := Array.replicate (maxVOf f) .int } ∧
+    st0 = { nextVreg := maxVOf f, classes := (Array.range (maxVOf f)).map fun v =>
+              ((((ctxModel f (maxVOf f)).1[v]?).join).map CTy.valClass).getD .int } ∧
     ∀ B ∈ f.blocks, BlockC f B := by
   unfold buildCtx at hb
   simp only [bind, Except.bind, pure, Except.pure] at hb
@@ -134,7 +135,7 @@ theorem buildCtx_model {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × N
     split at h
     · cases h
     rename_i vt hvt
-    obtain ⟨evt, hpar⟩ := forIn_foldC _ parStepM (fun q _ => eTy q.2 = true) (by
+    obtain ⟨evt, hpar⟩ := forIn_foldC _ parStepM (fun q _ => valTyOk q.2 = true) (by
       intro q a r h
       split at h
       · split at h
@@ -149,10 +150,10 @@ theorem buildCtx_model {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × N
     have hres : ∀ (n : Nat) (a0 : Array (Option CTy) × Array (Option Nat)) (l : List (Nat × Clif.Ty))
         (body : Nat × Clif.Ty → Array (Option CTy) × Array (Option Nat) →
           Except String (ForInStep (Array (Option CTy) × Array (Option Nat)))) (out : _),
-        (∀ p a r, body p a = .ok r → r = .yield (resStepM n a p) ∧ eTy p.2 = true) →
-        forIn l a0 body = .ok out → out = l.foldl (resStepM n) a0 ∧ ∀ p ∈ l, eTy p.2 = true := by
+        (∀ p a r, body p a = .ok r → r = .yield (resStepM n a p) ∧ valTyOk p.2 = true) →
+        forIn l a0 body = .ok out → out = l.foldl (resStepM n) a0 ∧ ∀ p ∈ l, valTyOk p.2 = true := by
       intro n a0 l body out hb ho
-      obtain ⟨h1, h2⟩ := forIn_foldC body (resStepM n) (fun p _ => eTy p.2 = true) hb l a0 out ho
+      obtain ⟨h1, h2⟩ := forIn_foldC body (resStepM n) (fun p _ => valTyOk p.2 = true) hb l a0 out ho
       refine ⟨h1, fun p hp => ?_⟩
       obtain ⟨i, hi, e⟩ := List.getElem_of_mem hp
       exact h2 i p (by rw [List.getElem?_eq_getElem hi, e])
@@ -615,12 +616,13 @@ structure CtxSpec (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) 
   facts : CtxFacts f ctx st0
   func : ctx.func = f
   slotOff : ctx.slotOff = (slotLayout f.slots).1
-  st0 : st0 = { nextVreg := ctx.valDef.size, classes := Array.replicate ctx.valDef.size .int }
+  st0 : st0 = { nextVreg := ctx.valDef.size, classes := (Array.range ctx.valDef.size).map fun v =>
+    (((ctx.valTy[v]?).join).map CTy.valClass).getD .int }
   rsize : ranges.size = f.blocks.length
   ranges : ∀ bi B, f.blocks[bi]? = some B →
     ranges[bi]? = some (blockStart f bi, blockStart f bi + B.body.length + 1)
   insts : ∀ info ∈ ctx.insts.toList, info = placeholder ∨ ∃ B ∈ f.blocks, ∃ s ∈ B.body, info = infoOf f s
-  regEq : ∀ x r, ctx.valueReg? x = some r → r = .vreg x .int
+  regEq : ∀ x r, ctx.valueReg? x = some r → ∃ t, ctx.valueType? x = some t ∧ r = .vreg x t.valClass
   regTy : ∀ x, (ctx.valueReg? x).isSome = (ctx.valueType? x).isSome
   tyOf : ∀ x t, ctx.valueType? x = some t →
     (∃ B ∈ f.blocks, ∃ q ∈ B.params, x = q.1 ∧ t = CTy.ofClif q.2) ∨
@@ -639,9 +641,9 @@ theorem ctxSpec_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
   have hm := blockFold f f.blocks (Array.replicate (maxVOf f) none) (Array.replicate (maxVOf f) none)
     #[] #[]
   simp only [List.size_toArray, List.length_nil, Array.empty_append] at hm
-  unfold ctxModel at hctx hrg
-  rw [hm] at hctx hrg
-  simp only at hctx hrg
+  unfold ctxModel at hctx hrg hst
+  rw [hm] at hctx hrg hst
+  simp only at hctx hrg hst
   subst hctx hrg hst
   clear hm hb
   have hWf : (f.blocks.flatMap (blockTyW f)).map Prod.fst = valueDefs f := tyW_fst hC
@@ -678,15 +680,13 @@ theorem ctxSpec_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
     intro x; rw [setW_get]; simp only [Array.size_replicate]
     cases lastOf D x <;> simp [getD_replicate_join]
   have hreg : ∀ x, ((((Array.range M).map fun v =>
-      if ((W.foldl setW (Array.replicate M none))[v]?).join.isSome then some (Reg.vreg v .int)
-      else none)[x]?).join) =
-      if x < M ∧ (lastOf W x).isSome then some (.vreg x .int) else none := by
+      (((W.foldl setW (Array.replicate M none))[v]?).join).map fun t => Reg.vreg v t.valClass)[x]?).join) =
+      (((W.foldl setW (Array.replicate M none))[x]?).join).map fun t => Reg.vreg x t.valClass := by
     intro x
     rw [Array.getElem?_map, Array.getElem?_range]
     by_cases hx : x < M
-    · simp only [hx, ite_true, Option.map_some, Option.join_some, hvt]
-      cases lastOf W x <;> simp [hx]
     · simp [hx]
+    · rw [hvt]; cases lastOf W x <;> simp [hx]
   have hsW : (W.foldl setW (Array.replicate M none)).size = M := by
     rw [setW_size]; simp
   have hsD : (D.foldl setW (Array.replicate M none)).size = M := by
@@ -697,9 +697,15 @@ theorem ctxSpec_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
     rw [← hWf] at hx
     obtain ⟨⟨x', t⟩, hp, rfl⟩ := List.mem_map.mp hx
     exact lastOf_isSome hp
+  have hvalT : ∀ x ∈ valueDefs f, ∃ t, ((W.foldl setW (Array.replicate M none))[x]?).join = some t := by
+    intro x hx
+    obtain ⟨t, ht⟩ := Option.isSome_iff_exists.mp (hval x hx).2
+    exact ⟨t, by rw [hvt, ht]; simp [(hval x hx).1]⟩
   refine ⟨hC, ⟨⟨by simp [hsD], by simp [hsD], by simp [hsW, hsD]⟩, fun x hx => ⟨by
       simpa using (hval x hx).1, by
-      simp only [Ctx.valueReg?]; rw [hreg]; simp [hval x hx]⟩, rfl, ?_, ?_, ?_, ?_, ?_⟩,
+      obtain ⟨t, ht⟩ := hvalT x hx
+      refine ⟨t, ht, ?_⟩
+      simp only [Ctx.valueReg?]; rw [hreg, ht]; rfl⟩, rfl, ?_, ?_, ?_, ?_, ?_⟩,
     rfl, rfl, by simp [hsD], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp [instsOf_len, blockStart_eq]
   · intro bi B j stm hB hs
@@ -771,14 +777,10 @@ theorem ctxSpec_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
     exact instsOf_mem (by simpa using hi)
   · intro x r h
     simp only [Ctx.valueReg?] at h; rw [hreg] at h
-    split at h
-    · cases h; rfl
-    · cases h
+    obtain ⟨t, ht, rfl⟩ := Option.map_eq_some_iff.mp h
+    exact ⟨t, ht, rfl⟩
   · intro x
-    simp only [Ctx.valueReg?, Ctx.valueType?]; rw [hreg, hvt]
-    by_cases hx : x < M
-    · cases lastOf W x <;> simp [hx]
-    · cases lastOf W x <;> simp [hx]
+    simp only [Ctx.valueReg?, Ctx.valueType?]; rw [hreg]; simp
   · intro x t h
     simp only [Ctx.valueType?] at h; rw [hvt] at h
     split at h
@@ -802,21 +804,123 @@ theorem ofClif_e {ty : Clif.Ty} (h : eTy ty = true) :
     [CTy.int 8, .int 16, .int 32, .int 64].any (fun u => decide (CTy.ofClif ty = u)) = true := by
   cases ty <;> simp_all [CTy.ofClif, eTy, Clif.Ty.isInt]
 
-/-- Every type in `buildCtx`'s context is an E type: `buildCtx` rejects block parameters and
-results outside `eTy` (floats, `i128`). -/
-theorem CtxSpec.valTyE {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
-    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (x : Nat) (t : CTy)
-    (ht : ctx.valueType? x = some t) : t ∈ eCTys := by
+theorem eTy_of_valTyOk {ty : Clif.Ty} (hv : valTyOk ty = true) (hi : ty.isInt = true) :
+    eTy ty = true := by
+  cases ty <;> simp_all [valTyOk, eTy, Clif.Ty.isInt, Clif.Ty.isFloat]
+
+/-- The result types of a statement of a function of subset E are integers: subset E
+(`Compile.instE`, the externs' `Compile.sigE`) and the indirect-call signatures (`instData`
+accepts only `sigIntB` ones). -/
+theorem tysOf_int {f : Clif.Function} (hE : Compile.functionE f = true) {B : Clif.Block}
+    (hB : B ∈ f.blocks) {s : Clif.Stmt} (hst : s ∈ B.body) (hsc : StmtC f s) :
+    ∀ t ∈ tysOf f s, t.isInt = true := by
+  obtain ⟨res, inst⟩ := s
+  have hi := Compile.instE_of_functionE hE hB hst
+  obtain ⟨d, hd⟩ := hsc.1
+  intro t ht
+  cases inst with
+  | call fn args =>
+    cases h : f.extern? fn with
+    | none => simp [tysOf, Clif.Inst.resultTypes, h] at ht
+    | some e =>
+      simp only [tysOf, Clif.Inst.resultTypes, h, Option.map_some, Option.getD_some,
+        List.mem_map] at ht
+      obtain ⟨p, hp, rfl⟩ := ht
+      exact List.all_eq_true.mp (functionE_extern_int hE h).2 p hp
+  | callIndirect sig c args =>
+    cases h : f.sigDecls.lookup sig with
+    | none => simp [tysOf, Clif.Inst.resultTypes, h] at ht
+    | some sg =>
+      simp only [tysOf, Clif.Inst.resultTypes, h, Option.map_some, Option.getD_some,
+        List.mem_map] at ht
+      obtain ⟨p, hp, rfl⟩ := ht
+      exact List.all_eq_true.mp (sigIntB_iff.mp (instData_callIndirect_int hd h)).2 p hp
+  | unary op ty x =>
+    cases op <;> simp_all [tysOf, Clif.Inst.resultTypes, Compile.instE, Compile.unaryTyE,
+      Compile.unaryE, Compile.tyE]
+  | _ =>
+    simp_all [tysOf, Clif.Inst.resultTypes, Compile.instE, Compile.tyE, Compile.binaryE,
+      Compile.flagsE]
+
+/-- On a function of subset E every type `buildCtx` admits is an E type. -/
+theorem blockE_of {f : Clif.Function} (hE : Compile.functionE f = true)
+    (hC : ∀ B ∈ f.blocks, BlockC f B) :
+    ∀ B ∈ f.blocks, (∀ q ∈ B.params, eTy q.2 = true) ∧ ∀ s ∈ B.body, ∀ t ∈ tysOf f s, eTy t = true := by
+  intro B hB
+  have hE' := hE
+  simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE'
+  refine ⟨fun q hq => by simpa [Compile.tyE, eTy] using (hE'.2 B hB).1.1 q hq, fun s hs' t ht => ?_⟩
+  exact eTy_of_valTyOk (((hC B hB).2 s hs').2.2 t ht) (tysOf_int hE hB hs' ((hC B hB).2 s hs') t ht)
+
+/-- Every type in `buildCtx`'s context of a function of subset E is an E type: `buildCtx`
+admits integers of E and `f32`/`f64`, subset E only integers. -/
+theorem CtxSpec.ctxE {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (hE : Compile.functionE f = true) :
+    CtxE ctx := by
+  intro x t ht
   have mem : ∀ ty : Clif.Ty, eTy ty = true → CTy.ofClif ty ∈ eCTys := by
     intro ty h; cases ty <;> simp_all [eTy, eCTys, CTy.ofClif]
-  rcases spec.tyOf x t ht with ⟨B, hB, q, hq, -, rfl⟩ | ⟨B, hB, s, hs, m, ty, -, hty, rfl⟩
-  · exact mem _ ((spec.blockC B hB).1 q hq)
-  · exact mem _ (((spec.blockC B hB).2 s hs).2.2 ty (List.mem_of_getElem? hty))
+  have hBE := blockE_of hE spec.blockC
+  rcases spec.tyOf x t ht with ⟨B, hB, q, hq, -, rfl⟩ | ⟨B, hB, s, hs', m, ty, -, hty, rfl⟩
+  · exact mem _ ((hBE B hB).1 q hq)
+  · exact mem _ ((hBE B hB).2 s hs' ty (List.mem_of_getElem? hty))
+
+/-- Every type in `buildCtx`'s context of a function of the lowering's scope is an E type. -/
+theorem CtxSpec.valTyE {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (hs : LowerScope f) : CtxE ctx :=
+  spec.ctxE hs.subsetE
+
+/-- A type `buildCtx` admits whose values go in X registers is an E type. -/
+theorem mem_eCTys_of_valClass {ty : Clif.Ty} (hv : valTyOk ty = true)
+    (hc : (CTy.ofClif ty).valClass = .int) : CTy.ofClif ty ∈ eCTys := by
+  cases ty <;> simp_all [valTyOk, eTy, Clif.Ty.isInt, Clif.Ty.isFloat, CTy.ofClif, eCTys,
+    CTy.valClass, CTy.regClass?]
+
+/-- `buildCtx`'s context is integer (`CtxE`) when its values all go in X registers. -/
+theorem CtxSpec.ctxE_of_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0)
+    (hint : ∀ x t, ctx.valueType? x = some t → t.valClass = .int) : CtxE ctx := by
+  intro x t ht
+  rcases spec.tyOf x t ht with ⟨B, hB, q, hq, -, rfl⟩ | ⟨B, hB, s, hs', m, ty, -, hty, rfl⟩
+  · exact mem_eCTys_of_valClass ((spec.blockC B hB).1 q hq) (hint x _ ht)
+  · exact mem_eCTys_of_valClass (((spec.blockC B hB).2 s hs').2.2 ty (List.mem_of_getElem? hty))
+      (hint x _ ht)
+
+/-- `regEq` on an integer context: value `x` in `vreg x` of class `int`. -/
+theorem CtxSpec.regEq_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (hE : CtxE ctx) :
+    ∀ x r, ctx.valueReg? x = some r → r = .vreg x .int := by
+  intro x r h
+  obtain ⟨t, ht, rfl⟩ := spec.regEq x r h
+  rw [valClass_of_eCTys (hE x t ht)]
+
+/-- `st0` on an integer context: every value's vreg of class `int`. -/
+theorem CtxSpec.st0_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (spec : CtxSpec f ctx ranges st0) (hE : CtxE ctx) :
+    st0 = { nextVreg := ctx.valDef.size, classes := Array.replicate ctx.valDef.size .int } := by
+  rw [spec.st0]
+  congr 1
+  apply Array.ext (by simp)
+  intro v h1 _
+  simp only [Array.getElem_map, Array.getElem_range, Array.getElem_replicate]
+  cases ht : (ctx.valTy[v]?).join with
+  | none => rfl
+  | some t => exact valClass_of_eCTys (hE v t ht)
+
+/-- `CtxFacts.vals` on an integer context. -/
+theorem CtxFacts.vals_int {f : Clif.Function} {ctx : Ctx} {st0 : LState} (hF : CtxFacts f ctx st0)
+    (hE : CtxE ctx) : ∀ x ∈ valueDefs f, x < st0.nextVreg ∧ ctx.valueReg? x = some (.vreg x .int) := by
+  intro x hx
+  obtain ⟨hlt, t, ht, hr⟩ := hF.vals x hx
+  rw [valClass_of_eCTys (hE x t ht)] at hr
+  exact ⟨hlt, hr⟩
 
 /-- `buildCtx`'s context passes `ctxOk` on in-scope input. -/
 theorem ctxOk_of {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx} {ranges : Array (Nat × Nat)}
     {st0 : LState} (hb : buildCtx f = .ok (ctx, ranges, st0)) : ctxOk f ctx = true := by
   have sp := ctxSpec_of hb
+  have hE := sp.valTyE hs
+  have hBE := blockE_of hs.subsetE sp.blockC
   have haddr := (hs.ctxFacts ctx ranges st0 hb).2
   simp only [ctxOk, Bool.and_eq_true, decide_eq_true_eq]
   refine ⟨⟨⟨⟨⟨⟨⟨⟨sp.func, ?_⟩, ?_⟩, ?_⟩, ?_⟩, sp.slotOff⟩, ?_⟩, ?_⟩, ?_⟩
@@ -829,7 +933,7 @@ theorem ctxOk_of {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx} {ranges : A
         beq_self_eq_true, ctxResTysOk, hty, htys, decide_true, hlen]
   · refine List.all_eq_true.mpr fun x _ => ?_
     split
-    · rename_i r hr; simp [sp.regEq x r hr]
+    · rename_i r hr; simp [sp.regEq_int hE x r hr]
     · rfl
   · refine List.all_eq_true.mpr fun x _ => ?_
     split
@@ -838,7 +942,7 @@ theorem ctxOk_of {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx} {ranges : A
       rw [ht] at h1
       cases hr : ctx.valueReg? x with
       | none => rw [hr] at h1; cases h1
-      | some r => simp [sp.regEq x r hr]
+      | some r => simp [sp.regEq_int hE x r hr]
     · rfl
   · refine List.all_eq_true.mpr fun x _ => ?_
     split
@@ -852,13 +956,13 @@ theorem ctxOk_of {f : Clif.Function} (hs : LowerScope f) {ctx : Ctx} {ranges : A
     · simp [placeholder] at ht
     · simp only [infoOf, List.mem_map] at ht
       obtain ⟨ty, hty, rfl⟩ := ht
-      exact ofClif_e (((sp.blockC B hB).2 st hst).2.2 ty hty)
+      exact ofClif_e ((hBE B hB).2 st hst ty hty)
   · refine List.all_eq_true.mpr fun x _ => ?_
     split
     · rename_i t ht
       rcases sp.tyOf x t ht with ⟨B, hB, q, hq, -, rfl⟩ | ⟨B, hB, st, hst, m, ty, -, hty, rfl⟩
-      · exact ofClif_e ((sp.blockC B hB).1 q hq)
-      · exact ofClif_e (((sp.blockC B hB).2 st hst).2.2 ty (List.mem_of_getElem? hty))
+      · exact ofClif_e ((hBE B hB).1 q hq)
+      · exact ofClif_e ((hBE B hB).2 st hst ty (List.mem_of_getElem? hty))
     · rfl
   · refine List.all_eq_true.mpr fun info hi => ?_
     obtain ⟨ii, hii, e⟩ := List.getElem_of_mem hi

@@ -163,7 +163,9 @@ def blockStart (f : Clif.Function) (bi : Nat) : Nat :=
 structure CtxFacts (f : Clif.Function) (ctx : Ctx) (st0 : LState) : Prop where
   size : st0.nextVreg = ctx.valDef.size ∧ ctx.valReg.size = ctx.valDef.size ∧
     ctx.valTy.size = ctx.valDef.size
-  vals : ∀ x ∈ valueDefs f, x < st0.nextVreg ∧ ctx.valueReg? x = some (.vreg x .int)
+  /-- every value of `f` has a type and its own vreg, of the class of its type -/
+  vals : ∀ x ∈ valueDefs f, x < st0.nextVreg ∧
+    ∃ t, ctx.valueType? x = some t ∧ ctx.valueReg? x = some (.vreg x t.valClass)
   tryRegs : ctx.tryRegs = ([], [])
   insts : ctx.insts.size = blockStart f f.blocks.length
   stmt : ∀ bi B j stm, f.blocks[bi]? = some B → B.body[j]? = some stm →

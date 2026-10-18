@@ -265,6 +265,17 @@ def MInst.visitOperands : MInst → m MInst
     let rd ← f (.fixedDef (.x 0)) rd
     let tmp ← f .earlyDef tmp
     pure (.elfTlsGetAddr s rd tmp)
+  -- `mod.rs`: `FpuLoad*`: `reg_def(rd); memarg_operands(mem)`; `FpuStore*`: `reg_use(rd);
+  -- memarg_operands(mem)`; `FpuCSel*`: `reg_def(rd); reg_use(rn); reg_use(rm)`;
+  -- `FpuMoveFPImm`/`VecDupImm`: `reg_def(rd)`
+  | .fpuLoad s rd mem fl => do
+    let rd ← f .def_ rd; let mem ← AMode.visit f mem; pure (.fpuLoad s rd mem fl)
+  | .fpuStore s rd mem fl => do
+    let rd ← f .use rd; let mem ← AMode.visit f mem; pure (.fpuStore s rd mem fl)
+  | .fpuCSel s rd rn rm c => do
+    let rd ← f .def_ rd; let rn ← f .use rn; let rm ← f .use rm; pure (.fpuCSel s rd rn rm c)
+  | .fpuMoveFPImm rd i s => do pure (.fpuMoveFPImm (← f .def_ rd) i s)
+  | .vecDupImm rd i inv s => do pure (.vecDupImm (← f .def_ rd) i inv s)
 
 end
 

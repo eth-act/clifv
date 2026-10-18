@@ -240,7 +240,7 @@ theorem lowStmts_len {call : StmtCall} {ii : Nat} {ss : List Clif.Stmt} {st : LS
   (lowStmts_spec h).1
 
 theorem stmtLoop {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B)
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) {k : Nat} {B : Clif.Block} (hB : f.blocks[k]? = some B)
     {d : DState} {code : Array MInst} (he : d.st.emitted = #[]) {r : DState × Array MInst}
     (h : forIn (List.range' (blockStart f k) B.body.length) (d, code) (stmtBody ctx) = .ok r) :
     SInv ctx (blockStart f k) B.body d code B.body.length r := by
@@ -279,7 +279,7 @@ theorem stmtLoop {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {
         simp only [pure, Except.pure, Except.ok.injEq, ForInStep.yield.injEq] at hs
         subst hs
         obtain ⟨q1, q2⟩ := q
-        obtain ⟨e1, e2, e3⟩ := resLoop sp.regEq _ _ _ _ _ _ hq
+        obtain ⟨e1, e2, e3⟩ := resLoop (sp.regEq_int hE) _ _ _ _ _ _ hq
         subst e1
         have hs0 : { s.1.st with emitted := #[] } = s.1.st := by
           rcases hst : s.1.st; simp only [hst] at hem; simp [hem]
@@ -846,7 +846,7 @@ theorem isTry_of {t : Clif.Terminator} {et : Clif.ExnTable} (h : IsTryWith t et)
   rcases h with ⟨_, _, rfl⟩ | ⟨_, _, rfl⟩ <;> rfl
 
 theorem termOther {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) {B : Clif.Block} {k stop : Nat} {code : Array MInst}
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) {B : Clif.Block} {k stop : Nat} {code : Array MInst}
     {ds : DState} {data : V} {d' : DState} (he : ds.st.emitted = #[])
     (hnj : ∀ bc, B.term ≠ .jump bc) (hnt : B.term.isTry = false)
     (hdata : termData (abiTerm f B.term) = .ok data)
@@ -855,7 +855,7 @@ theorem termOther {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} 
       finishBlock ctx B k (stop - 1) code s.1 (termCtx ctx (stop - 1) data) s.2 #[] none) =
         .ok (.yield d')) :
     ∃ targets tl tst' nl', TermOut f ctx B k (stop - 1) code ds data d' targets tl tst' nl' := by
-  have hreg := sp.regEq
+  have hreg := sp.regEq_int hE
   simp only [bind, Except.bind] at h
   split at h
   · cases h
@@ -881,12 +881,12 @@ theorem termOther {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} 
   · simp [blockD, emOf, tsegOf, fixTry, jumpArgsOf_other hnj, hbl]
 
 theorem termTry {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) {B : Clif.Block} {k stop : Nat} {code : Array MInst}
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) {B : Clif.Block} {k stop : Nat} {code : Array MInst}
     {ds : DState} {data : V} {d' : DState} {et : Clif.ExnTable}
     (ht : IsTryWith B.term et) (hdata : tryCallData f B.term = .ok data)
     (h : tryTerm f ctx B k (stop - 1) code ds (termCtx ctx (stop - 1) data) et = .ok (.yield d')) :
     ∃ targets tl tst' nl', TermOut f ctx B k (stop - 1) code ds data d' targets tl tst' nl' := by
-  have hreg := sp.regEq
+  have hreg := sp.regEq_int hE
   unfold tryTerm at h
   simp only [bind, Except.bind] at h
   split at h
@@ -953,12 +953,12 @@ theorem termTry {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {s
   · cases h
 
 theorem termPart_ok {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) {B : Clif.Block} {k stop : Nat} {code : Array MInst}
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) {B : Clif.Block} {k stop : Nat} {code : Array MInst}
     {ds : DState} {data : V} {d' : DState} (he : ds.st.emitted = #[]) (hdata : DataOk f B.term data)
     (h : termPart f ctx B k stop code ds data = .ok (.yield d')) :
     (∀ vs, B.term = .ret vs → sretRet f = [] → sigRets f.sig = f.sig.returns) ∧
     ∃ targets tl tst' nl', TermOut f ctx B k (stop - 1) code ds data d' targets tl tst' nl' := by
-  have hreg := sp.regEq
+  have hreg := sp.regEq_int hE
   unfold termPart at h
   by_cases hsret : sretBad f B.term = true
   · simp only [hsret, ↓reduceIte] at h; cases h
@@ -1003,27 +1003,27 @@ theorem termPart_ok {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
   | tryCall fn args et =>
     simp only [DataOk] at h hdata
     rw [← ht] at hdata
-    exact termTry sp (.inl ⟨fn, args, ht⟩) hdata h
+    exact termTry sp hE (.inl ⟨fn, args, ht⟩) hdata h
   | tryCallIndirect c args et =>
     simp only [DataOk] at h hdata
     rw [← ht] at hdata
-    exact termTry sp (.inr ⟨c, args, ht⟩) hdata h
+    exact termTry sp hE (.inr ⟨c, args, ht⟩) hdata h
   | brif c t e =>
     simp only [DataOk] at h hdata
     rw [← ht] at h hdata
-    exact termOther sp he (by rw [ht]; intro bc h; cases h) (by rw [ht]; rfl) hdata h
+    exact termOther sp hE he (by rw [ht]; intro bc h; cases h) (by rw [ht]; rfl) hdata h
   | brTable x dflt tbl =>
     simp only [DataOk] at h hdata
     rw [← ht] at h hdata
-    exact termOther sp he (by rw [ht]; intro bc h; cases h) (by rw [ht]; rfl) hdata h
+    exact termOther sp hE he (by rw [ht]; intro bc h; cases h) (by rw [ht]; rfl) hdata h
   | ret vs =>
     simp only [DataOk] at h hdata
     rw [← ht] at h hdata
-    exact termOther sp he (by rw [ht]; intro bc h; cases h) (by rw [ht]; rfl) hdata h
+    exact termOther sp hE he (by rw [ht]; intro bc h; cases h) (by rw [ht]; rfl) hdata h
   | trap c =>
     simp only [DataOk] at h hdata
     rw [← ht] at h hdata
-    exact termOther sp he (by rw [ht]; intro bc h; cases h) (by rw [ht]; rfl) hdata h
+    exact termOther sp hE he (by rw [ht]; intro bc h; cases h) (by rw [ht]; rfl) hdata h
   | returnCall fn args =>
     simp only [DataOk, abiTerm, termData] at hdata
     cases hdata

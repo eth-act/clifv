@@ -39,8 +39,10 @@ verifier (`verifier/mod.rs`) or of its aarch64 ABI:
 * `symbol_value` names a `symbol` global and `tls_value` a `symbol tls` one without offset
   (`verify_global_value`; Cranelift's `elf_gd` TLS rule drops the offset, so one is rejected);
 * a `call`'s callee is declared with an AAPCS64 calling convention (`system_v`/`fast`/default:
-  the conventions the aarch64 ABI lowers as AAPCS64);
-* a `call_indirect`'s signature returns no `i128` (legalized away before lowering);
+  the conventions the aarch64 ABI lowers as AAPCS64) and an integer signature (`sigIntB`: the
+  lowering's calls pass integers only);
+* a `call_indirect`'s signature has integer parameters and returns (`sigIntB`) and returns no
+  `i128` (legalized away before lowering);
 * a `load`/`store` address is a declared `i64` value (`verify_is_address`: the pointer width). -/
 def stmtInB (f : Clif.Function) (s : Clif.Stmt) : Bool :=
   (match s.inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
@@ -54,10 +56,10 @@ def stmtInB (f : Clif.Function) (s : Clif.Stmt) : Bool :=
     | some (.tlsSymbol _ 0 _) => true
     | _ => false
   | .call fn _ => match f.extern? fn with
-    | some e => aapcsConv e.sig.callConv
+    | some e => aapcsConv e.sig.callConv && sigIntB e.sig
     | none => false
   | .callIndirect sig _ _ => match f.sigDecls.lookup sig with
-    | some s => s.returns.all (eTy ·.ty)
+    | some s => s.returns.all (eTy ·.ty) && sigIntB s
     | none => false
   | .load _ _ _ p _ | .store _ _ _ _ p _ => (valTysOf f).contains (p, .i64)
   | _ => true
@@ -146,8 +148,8 @@ theorem tysOf_ne {f : Clif.Function} (hE : Compile.functionE f = true) {s : Clif
       simp only [tysOf, Clif.Inst.resultTypes, h, Option.map_some, Option.getD_some,
         List.mem_map] at ht
       obtain ⟨p, hp, rfl⟩ := ht
-      simp only [h, List.all_eq_true] at hs
-      exact hs p hp
+      simp only [h, Bool.and_eq_true, List.all_eq_true] at hs
+      exact hs.1 p hp
   | unary op ty x =>
     cases op <;> simp_all [tysOf, Clif.Inst.resultTypes, Compile.instE, Compile.unaryTyE,
       Compile.unaryE, Compile.tyE, eTy]
@@ -162,10 +164,11 @@ theorem blockC_of {f : Clif.Function} (hE : Compile.functionE f = true)
   have hE' := hE
   simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at hE'
   obtain ⟨⟨hp, hb⟩, -⟩ := hE'.2 B hB
-  refine ⟨fun q hq => by simpa [Compile.tyE, eTy] using hp q hq, fun s hs => ?_⟩
+  have hv : ∀ t, eTy t = true → valTyOk t = true := fun t h => by simp [valTyOk, h]
+  refine ⟨fun q hq => hv _ (by simpa [Compile.tyE, eTy] using hp q hq), fun s hs => ?_⟩
   have hi := hb s hs
   have hin := hst B hB s hs
-  refine ⟨instData_ok hi hin, ?_, tysOf_ne hE hi hin⟩
+  refine ⟨instData_ok hi hin, ?_, fun t ht => hv t (tysOf_ne hE hi hin t ht)⟩
   have h1 := hin
   unfold stmtInB at h1
   simp only [Bool.and_eq_true] at h1

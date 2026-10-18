@@ -126,7 +126,7 @@ theorem ret_retShape {p : Program} (hp : Data p) : LowerRetShapeOk p rule_lower_
   intro f ctx hctx ti t data hrt hd hi cfg hc m n st tr env' s1 out st' tr' hm hn _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
-  have kR := fun n (hn : 60 ≤ n) xs s v s' h => lower_return_ok hp (ctx := ctx) hc (n := n)
+  have kR := fun n (hn : 60 ≤ n) xs s v s' h => lower_return_ok hp (ctx := ctx) hc hctx.homeCls_int (n := n)
     (xs := xs) (s := s) (v := v) (s' := s') hn h
   cases t with
   | trap c =>
@@ -193,7 +193,7 @@ theorem vc_rets (hI : IselNoRetsHyp) {f : Clif.Function} {vc : VCode} (hs : Lowe
     (hl : lowerFunction f = .ok vc) {b : Nat} {vb : VBlock} {k : Nat} {us : List (Reg × Reg)}
     (hb : vc.blocks[b]? = some vb) (hk : vb.insts[k]? = some (.rets us)) :
     ∃ B ∈ f.blocks, ∃ xs, B.term = .ret xs ∧ us.length = (xs ++ sretRet f).length := by
-  obtain ⟨ctx, ranges, st0, bl, hbc, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hbc, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hbc)
   have hcf := ctxFacts_of hbc
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
@@ -348,7 +348,7 @@ its ABI results. -/
 theorem retsB_of_lower (hI : IselNoRetsHyp) {g : Clif.Function} {vc : VCode}
     (hs : lowerScopeB g = true) (hl : lowerFunction g = .ok vc) : allInsts vc (retsB g) = true := by
   have hS := lowerScope_of hs
-  obtain ⟨_, _, _, _, -, -, -, -, hlf⟩ := lowerFunction_run hl
+  obtain ⟨_, _, _, _, -, -, -, -, hlf⟩ := lowerFunction_run hS.subsetE hl
   unfold allInsts
   rw [Array.all_eq_true_iff_forall_mem]
   intro vb hvb
@@ -400,7 +400,7 @@ theorem vc_entry {f : Clif.Function} {vc : VCode} (hs : LowerScope f)
     ∃ vb0 ds, vc.blocks[0]? = some vb0 ∧ vb0.insts[0]? = some (.args ds) ∧
       ∀ q ∈ ds, q.2 ∈ regLocs f.sig := by
   have hne := (prepDomain_of_lower hs hl hs.nonempty).nonempty
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   obtain ⟨vb0, hvb0⟩ : ∃ vb0, vc.blocks[0]? = some vb0 := ⟨_, Array.getElem?_eq_getElem hne⟩
   have hvb0' := hvb0
   rw [hvb] at hvb0'

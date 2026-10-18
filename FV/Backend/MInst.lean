@@ -46,6 +46,12 @@ def Reg.isVirtual : Reg → Bool
   | .vreg .. => true
   | _ => false
 
+/-- The class of a register: a vreg's own, `float` for a V register, `int` otherwise. -/
+def Reg.homeCls : Reg → RegClass
+  | .vreg _ c => c
+  | .v _ => .float
+  | _ => .int
+
 def Reg.fp : Reg := .x 29
 def Reg.lr : Reg := .x 30
 
@@ -200,6 +206,10 @@ inductive ScalarSize where
   | size8 | size16 | size32 | size64 | size128
   deriving DecidableEq, Repr, Inhabited, BEq
 
+/-- Bytes of a scalar of size `s`. -/
+def ScalarSize.bytes : ScalarSize → Nat
+  | .size8 => 1 | .size16 => 2 | .size32 => 4 | .size64 => 8 | .size128 => 16
+
 inductive VectorSize where
   | size8x8 | size8x16 | size16x4 | size16x8 | size32x2 | size32x4 | size64x2
   deriving DecidableEq, Repr, Inhabited, BEq
@@ -214,6 +224,22 @@ inductive VecLanesOp where
 
 inductive VecALUOp where
   | addp
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- `ASIMDFPModImm` (`isa/aarch64/inst/imms.rs`): the 8-bit encoded floating-point immediate
+(`enc_bits`, expanded by Arm's `VFPExpandImm`) and the scalar size it was built for. -/
+structure ASIMDFPModImm where
+  imm : BitVec 8
+  size : ScalarSize
+  deriving DecidableEq, Repr, Inhabited, BEq
+
+/-- `ASIMDMovModImm` (`imms.rs`): the 8-bit immediate, its left shift, whether it is the 64-bit
+byte-mask form (`is_64bit`), and whether the shift shifts in ones (`MSL`, `shift_ones`). -/
+structure ASIMDMovModImm where
+  imm : BitVec 8
+  shift : Nat
+  is64 : Bool
+  shiftOnes : Bool
   deriving DecidableEq, Repr, Inhabited, BEq
 
 inductive TestBitAndBranchKind where
@@ -391,6 +417,20 @@ inductive MInst where
   `add x0, x0, tmp`). The TLSDESC resolver preserves every register but x0 and x30, so the
   only operands are the fixed def x0 (`rd`, the address) and the early def `tmp`. Unverified. -/
   | elfTlsGetAddr (symbol : String) (rd tmp : Reg)
+  /-- `ldr st/dt, mem` (Cranelift `FpuLoad32`/`FpuLoad64`, one constructor with the size;
+  `size` 32 or 64): the low `size` bits of the float register, the rest zeroed. The 128-bit
+  load of the spill code is `load .fpuLoad128`. -/
+  | fpuLoad (size : ScalarSize) (rd : Reg) (mem : AMode) (flags : Clif.MemFlags)
+  /-- `str st/dt, mem` (Cranelift `FpuStore32`/`FpuStore64`). -/
+  | fpuStore (size : ScalarSize) (rd : Reg) (mem : AMode) (flags : Clif.MemFlags)
+  /-- `fcsel sd/dd, sn/dn, sm/dm, cond` (Cranelift `FpuCSel32`/`FpuCSel64`). -/
+  | fpuCSel (size : ScalarSize) (rd rn rm : Reg) (c : Cond)
+  /-- `fmov sd/dd, #imm` (Cranelift `FpuMoveFPImm`). -/
+  | fpuMoveFPImm (rd : Reg) (imm : ASIMDFPModImm) (size : ScalarSize)
+  /-- `movi vd.<T>, #imm` and its inverted/shifted forms (Cranelift `VecDupImm`; the emitter
+  expands the plain form only, `movi … #imm8, lsl #0`, which includes the zero of
+  `constant_f32`/`constant_f64`). -/
+  | vecDupImm (rd : Reg) (imm : ASIMDMovModImm) (invert : Bool) (size : VectorSize)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-! ### Operands -/
@@ -461,6 +501,10 @@ def MInst.uses : MInst → List Reg
   | .tryCall info _ => match info.dest with
     | .reg r => [r]
     | .sym _ => []
+  | .fpuLoad _ _ mem _ => mem.regs
+  | .fpuStore _ rd mem _ => rd :: mem.regs
+  | .fpuCSel _ _ rn rm _ => [rn, rm]
+  | .fpuMoveFPImm .. | .vecDupImm .. => []
 
 /-- Registers written by an instruction (excluding `call`/`args` fixed pairs). -/
 def MInst.defs : MInst → List Reg
@@ -477,6 +521,7 @@ def MInst.defs : MInst → List Reg
   | .atomicCasLoop _ _ _ _ _ oldval _ => [oldval]
   | .csetm rd _ => [rd]
   | .elfTlsGetAddr _ rd tmp => [rd, tmp]
+  | .fpuLoad _ rd _ _ | .fpuCSel _ rd _ _ _ | .fpuMoveFPImm rd _ _ | .vecDupImm rd _ _ _ => [rd]
   | _ => []
 
 /-- Apply `f` to every register occurrence (uses and defs, not the real registers of the
@@ -541,6 +586,11 @@ def MInst.mapRegs (f : Reg → Reg) : MInst → MInst
       uses := info.uses.map fun (v, p) => (f v, p)
       defs := info.defs.map fun (p, v) => (p, f v) } ti
   | .elfTlsGetAddr s rd tmp => .elfTlsGetAddr s (f rd) (f tmp)
+  | .fpuLoad s rd mem fl => .fpuLoad s (f rd) (mem.mapRegs f) fl
+  | .fpuStore s rd mem fl => .fpuStore s (f rd) (mem.mapRegs f) fl
+  | .fpuCSel s rd rn rm c => .fpuCSel s (f rd) (f rn) (f rm) c
+  | .fpuMoveFPImm rd i s => .fpuMoveFPImm (f rd) i s
+  | .vecDupImm rd i inv s => .vecDupImm (f rd) i inv s
 
 /-- Is this a block terminator (`is_term`)? -/
 def MInst.isTerm : MInst → Bool
@@ -654,6 +704,10 @@ inductive Opnd where
   /-- `OptionTryCallInfo` = `Some(TryCallInfo)` (`try_call_info`). -/
   | tryCallInfo (ti : TryInfo)
   | unit
+  /-- `ASIMDFPModImm` (`asimd_fp_mod_imm_from_u64`). -/
+  | fpModImm (i : ASIMDFPModImm)
+  /-- `ASIMDMovModImm` (`asimd_mov_mod_imm_zero`, `asimd_mov_mod_imm_from_u64`). -/
+  | movModImm (i : ASIMDMovModImm)
   deriving DecidableEq, Repr, Inhabited, BEq
 
 /-- Values of the ISLE interpreter (`Isle.Sem V σ`). ISLE integers of every width are `int`
@@ -963,6 +1017,12 @@ def V.int? : V → Option Int
 def V.ty? : V → Option CTy
   | .ty t => some t
   | _ => none
+def V.fpModImm? : V → Option ASIMDFPModImm
+  | .op (.fpModImm i) => some i
+  | _ => none
+def V.movModImm? : V → Option ASIMDMovModImm
+  | .op (.movModImm i) => some i
+  | _ => none
 /-- `AtomicRmwLoopOp` from its ISLE value (index into `all`). -/
 def V.atomicRmwLoopOp? : V → Option AtomicRmwLoopOp
   | v => (v.enumOf? tyAtomicRmwLoopOp).bind fun (k, _) => AtomicRmwLoopOp.all[k]?
@@ -1082,6 +1142,22 @@ def MInst.ofV (v : V) : Option MInst := do
   | VIdx.MInst.Fence, [] => return .fence
   | VIdx.MInst.ElfTlsGetAddr, [s, rd, tmp] =>
     return .elfTlsGetAddr (← s.extName?) (← rd.reg?) (← tmp.reg?)
+  | VIdx.MInst.FpuLoad32, [rd, m, fl] =>
+    return .fpuLoad .size32 (← rd.reg?) (← m.amode?) (← fl.memFlags?)
+  | VIdx.MInst.FpuLoad64, [rd, m, fl] =>
+    return .fpuLoad .size64 (← rd.reg?) (← m.amode?) (← fl.memFlags?)
+  | VIdx.MInst.FpuStore32, [rd, m, fl] =>
+    return .fpuStore .size32 (← rd.reg?) (← m.amode?) (← fl.memFlags?)
+  | VIdx.MInst.FpuStore64, [rd, m, fl] =>
+    return .fpuStore .size64 (← rd.reg?) (← m.amode?) (← fl.memFlags?)
+  | VIdx.MInst.FpuCSel32, [rd, rn, rm, c] =>
+    return .fpuCSel .size32 (← rd.reg?) (← rn.reg?) (← rm.reg?) (← c.cond?)
+  | VIdx.MInst.FpuCSel64, [rd, rn, rm, c] =>
+    return .fpuCSel .size64 (← rd.reg?) (← rn.reg?) (← rm.reg?) (← c.cond?)
+  | VIdx.MInst.FpuMoveFPImm, [rd, i, s] =>
+    return .fpuMoveFPImm (← rd.reg?) (← i.fpModImm?) (← s.scalarSize?)
+  | VIdx.MInst.VecDupImm, [rd, i, inv, s] =>
+    return .vecDupImm (← rd.reg?) (← i.movModImm?) (← inv.bool?) (← s.vectorSize?)
   | k, [rd, m, fl] =>
     match loadOpOfIdx? k, storeOpOfIdx? k with
     | some op, _ => return .load op (← rd.reg?) (← m.amode?) (← fl.memFlags?)

@@ -136,6 +136,20 @@ def imm64OfIconst (ty : Clif.Ty) (imm : BitVec ty.width) : Int :=
 /-- Integer types of E: `i8..i64` (not `i128`, no floats). -/
 def eTy (ty : Clif.Ty) : Bool := ty.isInt && ty != .i128
 
+/-- Types of the values the lowering keeps in registers: the integer types of E and
+`f32`/`f64` (in a V register). -/
+def valTyOk (ty : Clif.Ty) : Bool := eTy ty || ty.isFloat
+
+/-- The register class of a value of type `t` (`regClass?`; `.int` where it has none). -/
+def CTy.valClass (t : CTy) : RegClass := (t.regClass?).getD .int
+
+/-- A signature with integer parameters and returns only. The lowering's calls (`call`,
+`call_indirect`, `try_call`, `try_call_indirect`) pass integer values only: their
+signatures are checked in `instData`/`exnTableOpnd` (floats in calls and their contracts are
+S11e5). The function's own signature (entry and `return`) may have `f32`/`f64` values. -/
+def sigIntB (s : Clif.Signature) : Bool :=
+  s.params.all (·.ty.isInt) && s.returns.all (·.ty.isInt)
+
 /-- Calling conventions with the AAPCS64 argument/return locations and clobbers:
 `system_v` (also the default of signatures without one) and `fast`, which Cranelift 0.136.1
 treats identically on aarch64 (`compute_arg_locs` and `get_regs_clobbered_by_call` only
@@ -204,14 +218,18 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
     match f.extern? fn with
     | some ext =>
       if aapcsConv ext.sig.callConv then
-        pure (instDataV "Call" [opcodeV "Call", .values args, .op (.funcRef fn)])
+        if sigIntB ext.sig then
+          pure (instDataV "Call" [opcodeV "Call", .values args, .op (.funcRef fn)])
+        else throw "call with f32/f64 parameters or returns"
       else throw s!"call with calling convention {repr ext.sig.callConv}"
     | none => throw s!"unknown fn{fn}"
   | .callIndirect sig callee args =>
     match f.sigDecls.lookup sig with
     | some s =>
-      pure (instDataV "CallIndirect"
-        [opcodeV "CallIndirect", .values (callee :: args), .op (.sig s)])
+      if sigIntB s then
+        pure (instDataV "CallIndirect"
+          [opcodeV "CallIndirect", .values (callee :: args), .op (.sig s)])
+      else throw "call_indirect with f32/f64 parameters or returns"
     | none => throw s!"call_indirect of undeclared sig{sig}"
   | .funcAddr ty fn =>
     if ty != .i64 then throw "func_addr with a non-i64 address type"
@@ -255,7 +273,14 @@ def instData (f : Clif.Function) : Clif.Inst → Except String V
       | none => throw s!"unknown gv{gv}"
   | i => throw s!"`{instText i}` is not in E"
 
-/-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`) -/
+/-! ## ABI (`isa/aarch64/abi.rs` `compute_arg_locs`, AAPCS64 / `system_v`)
+
+Typed placement: an integer value goes in the next of x0..x7, an `f32`/`f64` value in the next
+of v0..v7, with separate counters (Cranelift's `next_xreg`/`next_vreg`); a parameter that finds
+no register of its class goes to the stack. `sigArgLocs` (entry and calls) and `abiRetRegs`
+(returns) are that placement. On a signature with integer parameters only it is the
+x-register placement `argLocs` (`Proof.sigArgLocs_eq`), on integer returns `retRegs`
+(`Proof.abiRetRegs_int`). -/
 
 inductive ArgLoc where
   | reg (r : Reg)
@@ -264,8 +289,37 @@ inductive ArgLoc where
 
 def alignTo (n a : Nat) : Nat := (n + a - 1) / a * a
 
+/-- The register class AAPCS64 passes a value of type `t` in (`rc_for_type`): an integer in an
+X register, an `f32`/`f64` in (the low lanes of) a V register. -/
+def tyClass (t : Clif.Ty) : RegClass := if t.isInt then .int else .float
+
+/-- One value of `argLocsC` (`compute_arg_locs`' loop body for a single-register value), on
+(locations, next X register, next V register, next stack offset): a value of class `.int`
+takes `x nx` while `nx < 8`, one of class `.float` takes `v nv` while `nv < 8`; otherwise an
+8-byte-minimum naturally aligned stack slot. -/
+def argLocStep (q : Array ArgLoc × Nat × Nat × Nat) (p : RegClass × Nat) :
+    Array ArgLoc × Nat × Nat × Nat :=
+  let size := max p.2 8
+  let off := alignTo q.2.2.2 size
+  match p.1 with
+  | .int =>
+    if q.2.1 < 8 then (q.1.push (.reg (.x q.2.1)), q.2.1 + 1, q.2.2.1, q.2.2.2)
+    else (q.1.push (.stack off), q.2.1, q.2.2.1, off + size)
+  | .float =>
+    if q.2.2.1 < 8 then (q.1.push (.reg (.v q.2.2.1)), q.2.1, q.2.2.1 + 1, q.2.2.2)
+    else (q.1.push (.stack off), q.2.1, q.2.2.1, off + size)
+
+/-- Argument locations for values of the given register classes and byte sizes
+(`compute_arg_locs`): x0..x7 for integers and v0..v7 for floats (separate counters), then
+8-byte (at least) naturally aligned stack slots; and the stack-argument space rounded up to
+16. -/
+def argLocsC (ps : List (RegClass × Nat)) : List ArgLoc × Nat :=
+  let q := ps.foldl argLocStep (#[], 0, 0, 0)
+  (q.1.toList, alignTo q.2.2.2 16)
+
 /-- Argument locations for integer parameters of the given byte sizes: `x0..x7`, then 8-byte
-(at least) naturally aligned stack slots; and the stack-argument space rounded up to 16. -/
+(at least) naturally aligned stack slots; and the stack-argument space rounded up to 16. The
+integer specialisation of `argLocsC` (`Proof.argLocsC_int`). -/
 def argLocs (bytes : List Nat) : List ArgLoc × Nat :=
   let (locs, _, stack) := bytes.foldl (init := (#[], 0, 0)) fun (acc, nx, st) b =>
     if nx < 8 then (acc.push (.reg (.x nx)), nx + 1, st)
@@ -275,16 +329,27 @@ def argLocs (bytes : List Nat) : List ArgLoc × Nat :=
       (acc.push (.stack off), nx, off + size)
   (locs.toList, alignTo stack 16)
 
-/-- Return registers: `x0..x7` (more than 8 return values is a Cranelift error without
+/-- Return registers for values of the given classes (`compute_arg_locs` on the returns): an
+integer in the next of x0..x7, a float in the next of v0..v7 (separate counters, next `x nx`
+and `v nv`); `none` when a class runs out of its 8 registers (a Cranelift error without
 `enable_multi_ret_implicit_sret`). -/
+def retRegsC : List RegClass → Nat → Nat → Option (List Reg)
+  | [], _, _ => some []
+  | .int :: cs, nx, nv => if nx < 8 then (retRegsC cs (nx + 1) nv).map (.x nx :: ·) else none
+  | .float :: cs, nx, nv => if nv < 8 then (retRegsC cs nx (nv + 1)).map (.v nv :: ·) else none
+
+/-- Return registers of `n` integer values: `x0..x7` (more than 8 return values is a Cranelift
+error without `enable_multi_ret_implicit_sret`). The integer specialisation of `retRegsC`
+(`Proof.retRegsC_int`). -/
 def retRegs (n : Nat) : Option (List Reg) :=
   if n ≤ 8 then some ((List.range n).map .x) else none
 
-/-- The parameters a call or entry passes in registers/stack slots (`compute_arg_locs`,
-AAPCS64): a `normal`/`vmctx` parameter takes the next of x0..x7, then 8-byte-minimum
-naturally aligned stack slots; a **`sret`** parameter is the hidden struct-return pointer,
-in **x8** (Cranelift's aarch64 `compute_arg_locs`: the sret slot does not consume the
-x0..x7 sequence and must be pointer-sized). -/
+/-- The byte sizes of the parameters of a signature as AAPCS64 places them
+(`compute_arg_locs`): a `normal`/`vmctx` parameter of an integer or float type takes the next
+register of its class (`tyClass`), then 8-byte-minimum naturally aligned stack slots; a
+**`sret`** parameter is the hidden struct-return pointer, in **x8** (Cranelift's aarch64
+`compute_arg_locs`: the sret slot does not consume the x0..x7 sequence and must be
+pointer-sized). -/
 def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
   s.params.mapM fun p =>
     if p.ty == .i128 then throw "i128 parameter"
@@ -293,8 +358,8 @@ def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
       | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
       | _ => throw "special-purpose parameter (sarg)"
 
-/-- One step of `sigArgLocs`' placement of the parameters of an `sret` signature: the `sret`
-parameter in x8, every other parameter at the next location of `rest` (`argLocs` of the
+/-- One step of `paramLocs`' placement of the parameters of an `sret` signature: the `sret`
+parameter in x8, every other parameter at the next location of `rest` (`argLocsC` of the
 non-`sret` parameters). -/
 def sretLocStep (q : Array ArgLoc × List ArgLoc) (p : Clif.AbiParam) : Array ArgLoc × List ArgLoc :=
   if p.purpose == .sret then (q.1.push (.reg (.x 8)), q.2)
@@ -302,18 +367,24 @@ def sretLocStep (q : Array ArgLoc × List ArgLoc) (p : Clif.AbiParam) : Array Ar
     | l :: r => (q.1.push l, r)
     | [] => (q.1, [])
 
-/-- The argument locations of a signature: `argLocs` over the non-`sret` parameters, with every
-`sret` parameter in x8 (in parameter order). The `sret` parameter does not take a slot of the
-x0..x7 sequence: the next normal parameter still goes in x0 (Cranelift's aarch64
-`compute_arg_locs`). -/
+/-- The locations of parameters `ps` of byte sizes `bytes`: `argLocsC` over the non-`sret`
+parameters (class `tyClass` of their type), with every `sret` parameter in x8 (in parameter
+order). The `sret` parameter does not take a slot of the x0..x7 sequence: the next normal
+integer parameter still goes in x0 (Cranelift's aarch64 `compute_arg_locs`). -/
+def paramLocs (ps : List Clif.AbiParam) (bytes : List Nat) : Except String (List ArgLoc × Nat) := do
+  if ps.any (·.purpose == .sret) then
+    let normal := ((ps.zip bytes).filter (!·.1.purpose == .sret)).map fun q => (tyClass q.1.ty, q.2)
+    let locs := (ps.foldl sretLocStep (#[], (argLocsC normal).1)).1
+    if locs.size != ps.length then throw "sigArgLocs: length"
+    pure (locs.toList, (argLocsC normal).2)
+  else pure (argLocsC ((ps.zip bytes).map fun q => (tyClass q.1.ty, q.2)))
+
+/-- **The AAPCS64 argument locations of a signature** (`compute_arg_locs`): `paramLocs` with
+the `sigArgs` sizes; integer parameters in x0..x7, `f32`/`f64` ones in v0..v7, an `sret`
+parameter in x8, then the stack. -/
 def sigArgLocs (s : Clif.Signature) : Except String (List ArgLoc × Nat) := do
   let bytes ← sigArgs s
-  if s.params.any (·.purpose == .sret) then
-    let normal := ((s.params.zip bytes).filter (!·.1.purpose == .sret)).map (·.2)
-    let locs := (s.params.foldl sretLocStep (#[], (argLocs normal).1)).1
-    if locs.size != s.params.length then throw "sigArgLocs: length"
-    pure (locs.toList, (argLocs normal).2)
-  else pure (argLocs bytes)
+  paramLocs s.params bytes
 
 /-- The locations of the parameters of `s` (`sigArgLocs`: x0..x7, an `sret` parameter in x8,
 then the outgoing stack area; empty where `sigArgLocs` fails). -/
@@ -356,6 +427,17 @@ def sigRets (s : Clif.Signature) : List Clif.AbiParam :=
   match s.params.find? (·.purpose == .sret) with
   | some p => if s.returns.isEmpty then [p] else s.returns
   | none => s.returns
+
+/-- The register class of an ABI return (`sigRets`): `tyClass` of its type; the struct pointer
+an `sret` signature returns is a pointer (Cranelift's verifier: the `sret` parameter has the
+pointer type), in an X register. -/
+def retClass (p : Clif.AbiParam) : RegClass :=
+  if p.purpose == .sret then .int else tyClass p.ty
+
+/-- **The AAPCS64 return registers of a signature** (`compute_arg_locs` on `sigRets`): integer
+returns in x0..x7, `f32`/`f64` ones in v0..v7 (`retRegsC` of their `retClass`). -/
+def abiRetRegs (s : Clif.Signature) : Option (List Reg) :=
+  retRegsC ((sigRets s).map retClass) 0 0
 
 /-- The signatures the end-to-end theorem covers (`E2E.InSubset.abiSigs`): `normal`
 parameters and returns, plus at most one `sret` parameter (an `i64`, in x8), and then no
@@ -416,7 +498,8 @@ def abiTerm (f : Clif.Function) : Clif.Terminator → Clif.Terminator
   | .ret vs => .ret (vs ++ sretRet f)
   | t => t
 
-/-- Parameter types of a signature (only integer `normal`/`vmctx` parameters up to 64 bits). -/
+/-- Byte sizes of the parameters of a signature (`sigArgs`: integer `normal`/`vmctx`
+parameters up to 64 bits, `f32`/`f64`, an `i64` `sret` pointer). -/
 def sigParamBytes (s : Clif.Signature) : Except String (List Nat) := sigArgs s
 
 /-- `exception_payload_regs` (`isa/aarch64/abi.rs`): x0 and x1 for `system_v` (the default),
@@ -448,6 +531,7 @@ def exnTableOpnd (f : Clif.Function) (et : Clif.ExnTable) :
   let some sig := f.sigDecls.lookup et.sig | throw s!"try_call of undeclared sig{et.sig}"
   if !(sig.callConv.isNone || sig.callConv == some .systemV) then
     throw s!"try_call with calling convention {repr sig.callConv}"
+  if !sigIntB sig then throw "try_call with f32/f64 parameters or returns"
   let items ← et.items.mapM fun
     | .tag n _ => pure (some n)
     | .default _ => pure none
@@ -470,8 +554,9 @@ def tryCallData (f : Clif.Function) : Clif.Terminator → Except String V
 
 /-- The vregs of a `try_call`'s return values and exception payloads (`lower.rs`
 `try_call_rets`/`try_call_payloads`), allocated from `st`: one fresh vreg per ABI return (the
-return registers `retRegs`), then per payload register (`payloadRegs`) the vreg of the return in
-that register (`set_vreg_alias`), else a fresh one. `none`: more than 8 return values. -/
+return registers `retRegs`: `exnTableOpnd` admits integer signatures only), then per payload
+register (`payloadRegs`) the vreg of the return in that register (`set_vreg_alias`), else a
+fresh one. `none`: more than 8 return values. -/
 def tryRegsOf (sig : Clif.Signature) (st : LState) : Option ((List Reg × List Reg) × LState) := do
   let ps ← retRegs (sigRets sig).length
   let (rets, st) := ps.foldl (init := ((#[] : Array Reg), st)) fun (acc, st) _ =>
@@ -509,6 +594,24 @@ def loadOpOfBytes : Nat → LoadOp
 
 /-- `MemFlagsData::trusted()`: `notrap aligned`. -/
 def trustedFlags : Clif.MemFlags := { trapCode := none, aligned := true }
+
+/-- The load of a stack-passed value of `bytes` bytes into `r`: an integer `ldr`/`ldrb`/`ldrh`
+for an integer register, `ldr s`/`ldr d` for a float one. -/
+def stackArgLoad (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
+  match r.homeCls with
+  | .float => .fpuLoad (if bytes == 4 then .size32 else .size64) r am trustedFlags
+  | .int => .load (loadOpOfBytes bytes) r am trustedFlags
+
+/-- The store of a stack-passed value of `bytes` bytes from `r` (`stackArgLoad`'s inverse). -/
+def stackArgStore (r : Reg) (bytes : Nat) (am : AMode) : MInst :=
+  match r.homeCls with
+  | .float => .fpuStore (if bytes == 4 then .size32 else .size64) r am trustedFlags
+  | .int => .store (storeOpOfBytes bytes) r am trustedFlags
+
+/-- The register classes of returned values (one register each): the class of the first
+register of each (`int` for an empty list), as `retRegsC` places them. -/
+def regsClasses (rss : List (List Reg)) : List RegClass :=
+  rss.map fun rs => (rs.head?.map Reg.homeCls).getD .int
 
 /-! ## Extern helpers -/
 
@@ -803,10 +906,16 @@ def externCtor (ctx : Ctx) (t : Term) (args : List V) (st : LState) : ExtResult 
     match ctx.slotOff.lookup s with
     | some base => ok (.int (base + a + b))
     | none => .unmodeled s!"stack slot ss{s}"
+  -- each returned value in the next return register of its class (`retRegsC`); at most 8
+  -- values in all (the backend's bound, as before the typed ABI)
   | TId.gen_return, [.regsVec rss] =>
-    match retRegs rss.length, rss.mapM (fun | [r] => some r | _ => none) with
-    | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
-    | _, _ => .unmodeled "gen_return: more than 8 return values or multi-register values"
+    if rss.length ≤ 8 then
+      match retRegsC (regsClasses rss) 0 0, rss.mapM (fun | [r] => some r | _ => none) with
+      | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
+      | _, _ => .unmodeled "gen_return: multi-register values"
+    else .unmodeled "gen_return: more than 8 return values"
+  -- calls pass integer values only (`instData`/`exnTableOpnd` reject `f32`/`f64` call
+  -- signatures): one fresh integer vreg per ABI return, in x0.. (`retRegs`)
   | TId.gen_call_output, [.op (.sig s)] =>
     let (rs, st) := (sigRets s).foldl (init := (#[], st)) fun (acc, st) _ =>
       let (r, st) := st.fresh .int
@@ -1034,7 +1143,8 @@ def slotLayout (slots : List (Nat × Clif.StackSlot)) : List (Nat × Nat) × Nat
   (offs.toList, end_)
 
 /-- Build the lowering context of a function: instruction table (statements, then the
-terminator, block by block), value types/definitions, and one vreg per value. -/
+terminator, block by block), value types/definitions, and one vreg per value, of the class of
+its type (`CTy.regClass?`: `.int` for `i8..i64`, `.float` for `f32`/`f64`). -/
 def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × LState) := do
   let sigOf (r : Nat) : Option Clif.Signature := (f.extern? r).map (·.sig)
   -- value ids and types
@@ -1050,7 +1160,7 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
   let mut ranges : Array (Nat × Nat) := #[]
   for b in f.blocks do
     for (v, ty) in b.params do
-      if !eTy ty then throw s!"block parameter v{v} is {ty.name}"
+      if !valTyOk ty then throw s!"block parameter v{v} is {ty.name}"
       valTy := valTy.set! v (some (CTy.ofClif ty))
     let start := insts.size
     for s in b.body do
@@ -1059,7 +1169,7 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
         throw "ill-typed instruction"
       if tys.length != s.results.length then throw "result count mismatch"
       for (r, ty) in s.results.zip tys do
-        if !eTy ty then throw s!"value v{r} is {ty.name}"
+        if !valTyOk ty then throw s!"value v{r} is {ty.name}"
         valTy := valTy.set! r (some (CTy.ofClif ty))
         valDef := valDef.set! r (some insts.size)
       insts := insts.push ⟨data, s.results, tys.map CTy.ofClif, some s.inst⟩
@@ -1074,12 +1184,13 @@ def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × L
     if let some p := addr? then
       if (valTy[p]?).join != some (.int 64) then
         throw s!"`{instText info.clif.get!}`: address v{p} is not i64 (pointer width 64)"
-  -- value registers: vreg n for value n
+  -- value registers: vreg n for value n, of the class of its type
   let valReg : Array (Option Reg) := (Array.range maxV).map fun v =>
-    if (valTy[v]?).join.isSome then some (.vreg v .int) else none
+    ((valTy[v]?).join).map fun t => .vreg v t.valClass
   let (slotOff, _) := slotLayout f.slots
   let ctx : Ctx := { func := f, insts, valTy, valDef, valReg, slotOff }
-  let st : LState := { nextVreg := maxV, classes := Array.replicate maxV .int }
+  let st : LState := { nextVreg := maxV,
+                       classes := (Array.range maxV).map fun v => (((valTy[v]?).join).map CTy.valClass).getD .int }
   pure (ctx, ranges, st)
 
 /-- Run the ISLE term `term` on `args`. -/
@@ -1130,7 +1241,7 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
   if f.sig.returns.any (·.ty == .i128) then throw "i128 return value"
   if f.sig.params.any (·.purpose == .sret) && !f.sig.returns.isEmpty then
     throw "sret parameter together with return values (Cranelift rejects this)"
-  if (retRegs (sigRets f.sig).length).isNone then throw "more than 8 return values"
+  if (abiRetRegs f.sig).isNone then throw "more than 8 return values of a register class"
   let (ctx, ranges, st0) ← buildCtx f
   let blockIdx (b : Nat) : Except String Nat :=
     match f.blocks.findIdx? (·.id == b) with
@@ -1149,7 +1260,7 @@ def lowerFunction (f : Clif.Function) : Except String VCode := do
         match loc with
         | .reg p => pairs := pairs.push (r, p)
         | .stack off =>
-          code := code.push (.load (loadOpOfBytes bytes) r (.fpOffset (16 + off)) trustedFlags)
+          code := code.push (stackArgLoad r bytes (.fpOffset (16 + off)))
       code := #[MInst.args pairs.toList] ++ code
     -- body
     for i in [start:stop - 1] do

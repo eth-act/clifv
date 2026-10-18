@@ -33,7 +33,8 @@ def GuardR (F Rd : BitVec 64 → Prop) (sb : Nat) : MInst → List CV → Arm.Ar
       AtomTy ty ∧ Avoids F ty.bytes (lo64 u)
   | .atomicRmwLoop ty .., u :: _, _ => ∀ k < ty.bytes, Rd (lo64 u + BitVec.ofNat 64 k)
   | .atomicCasLoop ty .., u :: _, _ => ∀ k < ty.bytes, Rd (lo64 u + BitVec.ofNat 64 k)
-  | .load .., _, _ | .store .., _, _ | .loadAcquire .., _, _ | .storeRelease .., _, _ => False
+  | .load .., _, _ | .store .., _, _ | .loadAcquire .., _, _ | .storeRelease .., _, _
+  | .fpuLoad .., _, _ | .fpuStore .., _, _ => False
   | _, _, _ => True
 
 /-- The callee name `csem` passes the external semantics (`bl name`; `none` for `blr`). -/

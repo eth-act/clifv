@@ -29,7 +29,7 @@ open Backend
 /-- An upper bound on the words `MInst.lines` emits for an instruction, including the deferred
 trap of a `trapIf`; for a `Rets`, the epilogue `lowerRFunc` puts in its place. -/
 def instWords : MInst → Nat
-  | .load .. | .store .. | .loadAddr .. => 5
+  | .load .. | .store .. | .loadAddr .. | .fpuLoad .. | .fpuStore .. => 5
   | .atomicRmwLoop .. | .atomicCasLoop .. | .elfTlsGetAddr .. => 7
   | .jtSequence _ ts _ _ _ => 7 + ts.length
   | .condBr .. | .testBitAndBranch .. | .tryCall .. | .trapIf .. | .loadExtNameGot ..

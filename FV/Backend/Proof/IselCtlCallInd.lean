@@ -50,10 +50,13 @@ theorem instData_callIndirect_inv {f : Clif.Function} {cl : Clif.Inst} {fs : Lis
   | none => rw [hs] at h; cases h
   | some s =>
     rw [hs] at h
-    simp only [pure, Except.pure, Except.ok.injEq] at h
-    obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
-    injection h3 with _ h4
-    exact ⟨sig, callee, args, s, rfl, hs, h4⟩
+    try simp only at h
+    split at h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
+      injection h3 with _ h4
+      exact ⟨sig, callee, args, s, rfl, hs, h4⟩
+    · cases h
 
 theorem ext_value_slice_unwrap_iff {ctx : Ctx} (st : LState) (x : Nat) (xs : List Nat)
     (fs : List V) :
@@ -174,6 +177,7 @@ theorem call_ind_ruleOk {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : Bi
   cases hinfo
   rw [← ‹V.data 152 7 _ = info.data›] at hd
   obtain ⟨sig, callee, args, s, rfl, hs, hfs⟩ := instData_callIndirect_inv hd
+  have hint := (sigIntB_iff.mp (instData_callIndirect_int hd hs)).1
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   obtain ⟨hin, h8'⟩ := hsig sig callee args s rfl hs
@@ -201,7 +205,7 @@ theorem call_ind_ruleOk {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : Bi
   subst hrs
   have htgt := hctx.valueReg _ _ ‹ctx.valueReg? callee = some _›
   subst htgt
-  simp only [ctor_gen_call_args_iff _ _ _ hb h8, mapM_single_map, Option.some.injEq,
+  simp only [ctor_gen_call_args_iff _ _ _ hint hb h8, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
   simp only [ctor_gen_call_ind_info_iff _ _ _ _ _ _ hb h8, Nat.reduceEqDiff, Nat.reduceLT,

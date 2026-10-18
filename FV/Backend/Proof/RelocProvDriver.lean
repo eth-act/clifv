@@ -145,7 +145,7 @@ theorem mem_fixTry_call {T : Option TryLow} {ms : List MInst} {m : MInst} (h : m
 references in `f`. -/
 theorem lowerFunction_refs {f : Clif.Function} {vc : VCode} (hs : LowerScope f)
     (h : lowerFunction f = .ok vc) : AllInsts (RefsOk f) vc := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, -⟩ := lowerFunction_run h
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, -, -⟩ := lowerFunction_run hs.subsetE h
   have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hb)
   have hcl : CleanP ctx := cleanP_of_build hb
   have hcf := ctxFacts_of hb

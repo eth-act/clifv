@@ -104,6 +104,31 @@ The proof covers them as follows.
   so its extra def is not related to anything (`results_call`). `ExternsNormal` is gone
   (`CallRuleOk` assumes `ExternsIn f exts`).
 
+### Typed ABI placement (`f32`/`f64`, S11e2/S11e3)
+
+`FV/Backend/Isel.lean` models Cranelift's aarch64 `compute_arg_locs` for both register classes:
+`abiArgLocs` puts an integer parameter in the next of x0..x7 and an `f32`/`f64` one in the next of
+v0..v7 (separate counters), then 8-byte-minimum naturally aligned stack slots (`argLocsC`), the
+`sret` pointer in x8 (`paramLocs`); `abiRetRegs` puts integer returns in x0..x7 and float ones in
+v0..v7 (`retRegsC`, `none` past 8 of a class). Witness: `(f64, i64, f32)` goes to `[v0, x0, v1]`
+(`Proof.abiArgLocs_sigFIF`, `abiRetRegs_sigFIF`; spill and `sret` cases next to them in
+`FV/Backend/Proof/AbiClass.lean`).
+
+S11e3 cuts the function's own entry and return over to the typed placement: `sigArgs`/
+`sigParamBytes` admit `f32`/`f64` parameters, `sigArgLocs` is `paramLocs` (an `f32`/`f64`
+parameter in the next of v0..v7, a stack-passed one loaded by `stackArgLoad` into a float vreg),
+`buildCtx` maps a float value to `.vreg x .float`, and `gen_return` returns per class
+(`retRegsC`, at most 8 values in all). Witnesses: `FVTest/Backend/AbiTyped.lean` and
+`E2E.argsIn_sigFIF` (`ArgsIn sigFIF [a, b, c] s` is `a` in v0, `b` in x0, `c` in v1, through
+`E2E.argsIn_iff_of_locs`; `E2E.argsIn_iff_of_regs` keeps the x-register form and takes
+integer parameters, `hi`). Calls stay integer-only until S11e5: `instData` rejects a `call`/
+`call_indirect` with an `f32`/`f64` parameter or return and `exnTableOpnd` such a `try_call`/
+`try_call_indirect` (`sigIntB`; the totality scope `stmtInB`/`tryInB` says so), so `locsOf`,
+`stackBytes`, `stackLayoutOk` of every call site are the x-register placement `argLocs`
+(`Proof.sigArgLocs_eq`). Every theorem above still has the integer scope (`Compile.functionE`
+tests `isInt`); `ArgsAt` and the linking contracts still speak about x registers only;
+FP-register call contracts come with S11e5.
+
 ### `try_call` (the normal return)
 
 `Clif.run` models a `try_call fnN(args), sigM, block(ret…)[, handlers]` as the call of `fnN`
@@ -122,6 +147,13 @@ the `retN`/value arguments).
   the stores into the outgoing area precede the `tryCall`, `try_sym_lowerTryOk`/
   `try_got_lowerTryOk`; `lowerCheck`'s `callsStackOkB` checks the callee's area against
   `vc.outgoing`).
+* **Float returns (S11e3, a fix)**: a `try_call`/`try_call_indirect` whose signature has an
+  `f32`/`f64` parameter or return now falls back (`exnTableOpnd`: `try_call with f32/f64
+  parameters or returns`). Before, `tryRegsOf`/`gen_try_call_rets` gave every return an integer
+  vreg in x0..x7 (`retRegs`), while AAPCS64 returns a float in v0..v7: a wrong ABI. It was not
+  observable before S11e3 (a float return could not be used: `buildCtx` rejected `f32`/`f64`
+  block parameters, so the wrong x0 def was dead), but with S11e3's float values it would have
+  read the normal-return value from x0. S11e5 types these returns.
 * **Claim**: exactly the normal return. `ArmRefines` is unchanged: when `Clif.runLoop`
   returns or traps, so does the Arm code. A run that passes through a `try_call` is related
   only along the path where the callee returns normally.

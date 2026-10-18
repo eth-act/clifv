@@ -64,7 +64,8 @@ def tryDestInB (f : Clif.Function) (td : Clif.TryDest) : Bool :=
 /-- **The exception-table conditions** of a `try_call`/`try_call_indirect` — input restrictions
 mirroring Cranelift's verifier and aarch64 ABI:
 
-* the table's signature is declared (`verify_exception_table`), with the `system_v` (or default)
+* the table's signature is declared (`verify_exception_table`), with integer parameters and
+  returns (`sigIntB`: the lowering's calls pass integers only), the `system_v` (or default)
   convention (Cranelift 0.136.1 panics on a `fast` callee; `tail`/`preserve_all` are not lowered
   here), at most 8 returns (the aarch64 return registers x0..x7 without
   `enable_multi_ret_implicit_sret`) and no `i128` return (legalized away before lowering);
@@ -77,7 +78,7 @@ def tryInB (f : Clif.Function) (et : Clif.ExnTable) : Bool :=
   match f.sigDecls.lookup et.sig with
   | none => false
   | some s =>
-    (s.callConv.isNone || s.callConv == some .systemV) && decide (s.returns.length ≤ 8) &&
+    sigIntB s && (s.callConv.isNone || s.callConv == some .systemV) && decide (s.returns.length ≤ 8) &&
     s.returns.all (·.ty != .i128) &&
     et.items.all (fun | .context _ => false | _ => true) &&
     et.handlers.all (fun td => tryDestInB f td && td.args.all fun
@@ -162,50 +163,6 @@ theorem sigArgs_ok {s : Clif.Signature} (hA : sigAbiOk s = true)
     exact this.2
   simp only [Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true] at h1
   rcases h1 with h1 | ⟨h1, h3⟩ <;> simp [pure, Except.pure, *]
-
-theorem filter_zip_length {α β : Type} (p : α → Bool) :
-    ∀ (l : List α) (m : List β), m.length = l.length →
-      ((l.zip m).filter fun x => p x.1).length = (l.filter p).length
-  | [], _, _ => by simp
-  | a :: l, [], h => by simp at h
-  | a :: l, b :: m, h => by
-    simp only [List.zip_cons_cons, List.filter_cons]
-    have := filter_zip_length p l m (by simpa using h)
-    split <;> simp [this]
-
-theorem sretFold_size : ∀ (ps : List Clif.AbiParam) (q : Array ArgLoc × List ArgLoc),
-    (ps.filter fun p => !(p.purpose == .sret)).length ≤ q.2.length →
-    (ps.foldl sretLocStep q).1.size = q.1.size + ps.length
-  | [], _, _ => by simp
-  | p :: ps, q, h => by
-    rw [List.foldl_cons]
-    by_cases hp : (p.purpose == .sret) = true
-    · have e : sretLocStep q p = (q.1.push (.reg (.x 8)), q.2) := by simp [sretLocStep, hp]
-      rw [e, sretFold_size ps _ (by simpa [List.filter_cons, hp] using h)]
-      simp; omega
-    · rcases q with ⟨acc, _ | ⟨l, rest⟩⟩
-      · simp [hp] at h
-      · have e : sretLocStep (acc, l :: rest) p = (acc.push l, rest) := by simp [sretLocStep, hp]
-        rw [e, sretFold_size ps _ (by simp [hp] at h; simpa using h)]
-        simp; omega
-
-/-- `sigArgLocs` computes where `sigArgs` does. -/
-theorem sigArgLocs_ok {s : Clif.Signature} {bytes : List Nat} (hb : sigArgs s = .ok bytes) :
-    ∃ locs n, sigArgLocs s = .ok (locs, n) := by
-  unfold sigArgLocs
-  simp only [hb, bind, Except.bind]
-  split
-  · have hn := filter_zip_length (fun p : Clif.AbiParam => !(p.purpose == .sret)) s.params bytes
-      (sigArgs_length hb)
-    have hsz := sretFold_size s.params (#[], (argLocs (((s.params.zip bytes).filter
-      fun x => !x.1.purpose == .sret).map (·.2))).1) (by
-        rw [argLocs_eq, Array.length_toList (xs := (List.foldl argStep _ _).1),
-          (argStep_fold _ _ (by simp)).1]
-        simp [hn])
-    simp only [hsz, Array.size_empty, Nat.zero_add, bne_self_eq_false, Bool.false_eq_true,
-      ite_false]
-    exact ⟨_, _, rfl⟩
-  · exact ⟨_, _, rfl⟩
 
 theorem sigRets_le {s : Clif.Signature} (h : s.returns.length ≤ 8) : (sigRets s).length ≤ 8 := by
   unfold sigRets
@@ -557,7 +514,7 @@ theorem termPart_ok' {f : Clif.Function} {ctx : Ctx} (hP : IselProg f ctx) {b : 
 
 /-- A block's statements and terminator never fail. -/
 theorem bodyPart_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) (hP : IselProg f ctx) {bi : Nat} {B : Clif.Block}
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) (hP : IselProg f ctx) {bi : Nat} {B : Clif.Block}
     (hB : f.blocks[bi]? = some B) (hdata : ∃ data, DataOk f B.term data)
     (hsret : sretBad f B.term = false)
     (hdests : ∀ bc ∈ dests B.term, ∃ tb, f.block? bc.block = some tb ∧
@@ -583,7 +540,7 @@ theorem bodyPart_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
       obtain ⟨info, hinfo, hc, hr⟩ := sp.facts.stmt bi B j _ hB (List.getElem?_eq_getElem hj)
       refine stmtBody_ok hP.stmt hinfo hc (fun r hr' => ?_) s
       rw [hr] at hr'
-      refine (sp.facts.vals r ?_).2
+      refine (sp.facts.vals_int hE r ?_).2
       simp only [valueDefs, List.mem_flatMap, List.mem_append]
       exact ⟨B, hBm, .inr ⟨_, List.getElem_mem hj, hr'⟩⟩)
   rw [hs]
@@ -611,7 +568,7 @@ theorem bodyPart_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat
 
 /-- A block's lowering never fails. -/
 theorem blockBody_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
-    (sp : CtxSpec f ctx ranges st0) (hP : IselProg f ctx) {paramBytes : List Nat} {bi : Nat}
+    (sp : CtxSpec f ctx ranges st0) (hE : CtxE ctx) (hP : IselProg f ctx) {paramBytes : List Nat} {bi : Nat}
     {B : Clif.Block} (hB : f.blocks[bi]? = some B)
     (hent : ∃ locs n, sigArgLocs f.sig = .ok (locs, n)) (hdata : ∃ data, DataOk f B.term data)
     (hsret : sretBad f B.term = false)
@@ -628,8 +585,8 @@ theorem blockBody_ok' {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Na
     obtain ⟨s, hs⟩ := entryLoop_ok (ctx := ctx) ((B.params.zip locs).zip paramBytes)
       (fun x hx => hpar _ (List.of_mem_zip (List.of_mem_zip hx).1).1) (#[], #[])
     rw [hs]
-    exact bodyPart_ok' sp hP hB hdata hsret hdests htry hpar _ _
-  · exact bodyPart_ok' sp hP hB hdata hsret hdests htry hpar _ _
+    exact bodyPart_ok' sp hE hP hB hdata hsret hdests htry hpar _ _
+  · exact bodyPart_ok' sp hE hP hB hdata hsret hdests htry hpar _ _
 
 /-! ## From the input conditions to the loop hypotheses -/
 
@@ -638,14 +595,15 @@ theorem lmapM_ne_error {ε α β : Type} {g : α → Except ε β} {l : List α}
   obtain ⟨ys, hys⟩ := lmapM_ok' l h
   rw [hys] at he; cases he
 
-/-- `exnTableOpnd` computes for a declared `system_v` signature without `context` items. -/
+/-- `exnTableOpnd` computes for a declared `system_v` integer signature without `context`
+items. -/
 theorem exnTableOpnd_ok {f : Clif.Function} {et : Clif.ExnTable} {s : Clif.Signature}
     (hs : f.sigDecls.lookup et.sig = some s)
-    (hcc : (s.callConv.isNone || s.callConv == some .systemV) = true)
+    (hcc : (s.callConv.isNone || s.callConv == some .systemV) = true) (hint : sigIntB s = true)
     (hit : ∀ x ∈ et.items, (match x with | .context _ => false | _ => true) = true) :
     ∃ items, exnTableOpnd f et = .ok (s, items) ∧ items.length = et.items.length := by
   unfold exnTableOpnd
-  simp only [hs, hcc, Bool.not_true, Bool.false_eq_true, ite_false, bind, Except.bind]
+  simp only [hs, hcc, hint, Bool.not_true, Bool.false_eq_true, ite_false, bind, Except.bind]
   split
   · rename_i e he
     refine (lmapM_ne_error (fun x hx => ?_) he).elim
@@ -685,8 +643,8 @@ theorem tryOk_of {f : Clif.Function} {ctx : Ctx} {et : Clif.ExnTable} (hin : try
   | none => simp [hs] at hin
   | some s =>
     simp only [hs, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at hin
-    obtain ⟨⟨⟨⟨⟨⟨hcc, h8⟩, h128⟩, hitems⟩, hhand⟩, hnorm⟩, hnargs⟩ := hin
-    obtain ⟨items, hex, hil⟩ := exnTableOpnd_ok hs hcc hitems
+    obtain ⟨⟨⟨⟨⟨⟨⟨hint, hcc⟩, h8⟩, h128⟩, hitems⟩, hhand⟩, hnorm⟩, hnargs⟩ := hin
+    obtain ⟨items, hex, hil⟩ := exnTableOpnd_ok hs hcc hint hitems
     have hpl := payloadRegs_length hcc
     refine ⟨s, items, hex, h8, ?_, by rw [hil, handlers_length hitems], fun k td hk => ?_⟩
     · simp only [List.any_eq_false, beq_iff_eq]
@@ -740,7 +698,7 @@ theorem dataOk_of {f : Clif.Function} {B : Clif.Block} (hE : Compile.termE B.ter
     | none => simp [hs] at h
     | some s =>
       simp only [hs, Bool.and_eq_true, List.all_eq_true] at h
-      obtain ⟨items, hx, -⟩ := exnTableOpnd_ok hs h.1.1.1.1.1.1 h.1.1.1.2
+      obtain ⟨items, hx, -⟩ := exnTableOpnd_ok hs h.1.1.1.1.1.1.2 h.1.1.1.1.1.1.1 h.1.1.1.2
       exact ⟨s, items, rfl, hx⟩
   unfold DataOk
   cases hb : B.term with
@@ -823,7 +781,7 @@ theorem lowerFunction_ok {f : Clif.Function} (hE : Compile.functionE f = true)
   have hd := dominated_of hdom
   have hsc := lowerScope_of hs
   have hreg : ∀ x ∈ valueDefs f, ctx.valueReg? x = some (.vreg x .int) :=
-    fun x hx => (sp.facts.vals x hx).2
+    fun x hx => (sp.facts.vals_int (sp.ctxE hE) x hx).2
   have hE' := hE
   simp only [Compile.functionE, Compile.sigE, Bool.and_eq_true, List.all_eq_true] at hE'
   obtain ⟨⟨⟨⟨hpE, hrE⟩, -⟩, -⟩, hbE⟩ := hE'
@@ -841,7 +799,8 @@ theorem lowerFunction_ok {f : Clif.Function} (hE : Compile.functionE f = true)
   rw [lowerFunction_eq]
   unfold lowerFunction'
   simp only [hcc, Bool.not_true, Bool.false_eq_true, ite_false, bind, Except.bind, sigParamBytes,
-    hbytes, h2, h3, retRegs, sigRets_le h8, ite_true, Option.isNone_some, hb]
+    hbytes, h2, h3, abiRetRegs_returns_int (functionE_sig_int hE).2, retRegs, sigRets_le h8,
+    ite_true, Option.isNone_some, hb]
   obtain ⟨dF, hF⟩ := forIn_ok' (blockBody f ctx ranges bytes) f.blocks.zipIdx
     ({ st := st0, alias := #[], nextLabel := f.blocks.length } : DState) (fun x hx d => by
       obtain ⟨B, bi⟩ := x
@@ -849,7 +808,7 @@ theorem lowerFunction_ok {f : Clif.Function} (hE : Compile.functionE f = true)
       have hBm := List.mem_of_getElem? hB
       have huse := (hd.uses ctx ranges st0 hb bi B hB).2
       have hT := (hbl B hBm).2
-      refine blockBody_ok' sp hP hB ⟨locs, n, hlocs⟩ (dataOk_of (hbE B hBm).2 hT)
+      refine blockBody_ok' sp (sp.ctxE hE) hP hB ⟨locs, n, hlocs⟩ (dataOk_of (hbE B hBm).2 hT)
         (sretBad_false hsc.nonempty hent _) (fun bc hbc => ?_) (fun et het => ?_)
         (fun q hq => ⟨_, hreg q.1 ?_⟩) d
       · obtain ⟨tb, htb⟩ := Option.isSome_iff_exists.mp (termInB_dests hT bc hbc)

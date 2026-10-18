@@ -316,13 +316,14 @@ theorem backend_correct_final_ex {p : Clif.Program} {f : Clif.Function} {k : Nat
     (fun _ => memRefines_csem _ _ X hslot hsym) (outgoing_le_intBaseA hc)
     hent hres hbe hargs (stackArgsAvoid_frameWA hc hres hent hargs) hcs hrel htr fuel
 
-/-- **Specialisation**: for a signature with at most 8 parameters (all passed in registers),
-`ArgsIn` is the former premise "argument `i` in `x (argIdx sig i)`" (low bits). -/
+/-- **Specialisation**: for a signature with at most 8 integer parameters (all passed in X
+registers), `ArgsIn` is the former premise "argument `i` in `x (argIdx sig i)`" (low bits). -/
 theorem argsIn_iff_of_regs {sig : Clif.Signature} {bytes : List Nat}
+    (hi : sig.params.all (·.ty.isInt) = true)
     (hb : sigParamBytes sig = .ok bytes) (h8 : bytes.length ≤ 8) {args : List Clif.Val}
     {s : Arm.ArmState} (hl : args.length = sig.params.length) :
     ArgsIn sig args s ↔ ∀ i v, args[i]? = some v → XHolds v (xreg (argIdx sig i) s) := by
-  rw [ArgsIn, locsOf_of_regs hb h8]
+  rw [ArgsIn, locsOf_of_regs hi hb h8]
   have hlen : (abiArgIdx sig.params 0).length = args.length := by rw [abiArgIdx_length, hl]
   constructor
   · intro h i v hv
@@ -348,6 +349,42 @@ theorem argsIn_iff_of_regs {sig : Clif.Signature} {bytes : List Nat}
       have := h i v h2
       rw [hai] at this
       exact this
+
+/-- **`ArgsIn` by locations** (typed AAPCS64 placement): for a signature whose arguments are
+all in registers (`sigArgLocs` places each in a register of its class: x0..x7 for integers,
+v0..v7 for `f32`/`f64`, x8 for an `sret` pointer), `ArgsIn` is "argument `i` in the register
+of location `i`". -/
+theorem argsIn_iff_of_locs {sig : Clif.Signature} {locs : List ArgLoc} {n : Nat}
+    (hloc : sigArgLocs sig = .ok (locs, n)) (hr : ∀ l ∈ locs, ∃ r, l = .reg r)
+    {args : List Clif.Val} {s : Arm.ArmState} :
+    ArgsIn sig args s ↔
+      ∀ (i : Nat) (r : Reg) (v : Clif.Val), locs[i]? = some (ArgLoc.reg r) → args[i]? = some v →
+        VHolds v (regVal s r) := by
+  have hL : locsOf sig = locs := by simp [locsOf, hloc]
+  rw [ArgsIn, hL]
+  constructor
+  · intro h i r v hli hai
+    exact h (.reg r) v (List.mem_iff_getElem?.mpr ⟨i, List.getElem?_zip_eq_some.mpr ⟨hli, hai⟩⟩)
+  · intro h loc v hm
+    obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
+    rw [List.getElem?_zip_eq_some] at hi
+    obtain ⟨r, rfl⟩ := hr loc (List.mem_of_getElem? hi.1)
+    exact h i r v hi.1 hi.2
+
+/-- `argsIn_iff_of_locs` on `(f64, i64, f32)`: the floats in v0 and v1, the integer in x0 (the
+X and V registers are counted separately). -/
+theorem argsIn_sigFIF (a b c : Clif.Val) (s : Arm.ArmState) :
+    ArgsIn Backend.Proof.sigFIF [a, b, c] s ↔
+      VHolds a (regVal s (.v 0)) ∧ VHolds b (regVal s (.x 0)) ∧ VHolds c (regVal s (.v 1)) := by
+  rw [argsIn_iff_of_locs Backend.Proof.sigArgLocs_sigFIF (by
+    intro l hl
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
+    rcases hl with rfl | rfl | rfl <;> exact ⟨_, rfl⟩)]
+  constructor
+  · intro h
+    exact ⟨h 0 _ _ rfl rfl, h 1 _ _ rfl rfl, h 2 _ _ rfl rfl⟩
+  · rintro ⟨h0, h1, h2⟩ i r v hl ha
+    rcases i with _ | _ | _ | i <;> simp at hl ha <;> subst_vars <;> assumption
 
 /-- **Specialisation to functions without indirect calls**: `backend_correct_final` with the
 former premises (no indirect-call contract `hXI`), for a function with no `call_indirect`

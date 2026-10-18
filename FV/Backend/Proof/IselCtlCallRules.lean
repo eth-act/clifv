@@ -44,10 +44,12 @@ theorem instData_call_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
     rw [he] at h
     simp only at h
     split at h
-    · simp only [pure, Except.pure, Except.ok.injEq] at h
-      obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
-      injection h3 with _ h4
-      exact ⟨fn, args, ext, rfl, he, h4⟩
+    · split at h
+      · simp only [pure, Except.pure, Except.ok.injEq] at h
+        obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
+        injection h3 with _ h4
+        exact ⟨fn, args, ext, rfl, he, h4⟩
+      · cases h
     · cases h
 
 theorem ctor_gen_call_args_bytes {ctx : Ctx} {st : LState} {s : Clif.Signature}
@@ -618,7 +620,7 @@ theorem argsAt_after_stores {Rd F : BitVec 64 → Prop} {isem : Sem} {MR : MemRe
       | reg _ => cases he
       | stack o =>
         cases he
-        exact sigArgs_bytes hb b (List.of_mem_zip hq).2) hmr
+        exact sigParamBytes_bytes hb b (List.of_mem_zip hq).2) hmr
   have hlocs : locsOf s = locs := by simp [locsOf, hl]
   have hAv := (hout sl cm w hmr).2.1
   refine ⟨w', hrun, hmr', fun w2 hw2 => ⟨hvl, ?_, ?_⟩⟩
@@ -654,7 +656,7 @@ theorem argsAt_after_stores {Rd F : BitVec 64 → Prop} {isem : Sem} {MR : MemRe
     rw [hr2, hr]
     have hvx := hv i v x hvi hx
     have hw : v.ty.width ≤ v.ty.bytes * 8 ∧ v.ty.bytes * 8 ≤ 64 := by
-      have := sigArgs_bytes hb _ (List.mem_of_getElem? hbi)
+      have := sigParamBytes_bytes hb _ (List.mem_of_getElem? hbi)
       cases h : v.ty <;> simp_all [Clif.Ty.bytes, Clif.Ty.width]
     simp only [lo64]
     rw [BitVec.setWidth_setWidth_of_le _ hw.2, BitVec.setWidth_setWidth_of_le _ hw.1]

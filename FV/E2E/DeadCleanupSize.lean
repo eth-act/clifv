@@ -40,9 +40,9 @@ theorem prune_size (vc : VCode) (M : Nat) :
 
 /-- The baseline source size bound still bounds the cleanup pipeline. -/
 theorem spillWordBound_cleanup_le_sizeBoundIn {f : Clif.Function} {vc vcp : VCode}
-    (hI : IselSz f) (hl : lowerFunction f = .ok vc)
+    (hI : IselSz f) (hE : Compile.functionE f = true) (hl : lowerFunction f = .ok vc)
     (hp : Backend.prepare (prune vc) = .ok vcp) : spillWordBound vcp ≤ sizeBoundIn f := by
-  obtain ⟨hM, hW, hT⟩ := size_lower hI hl
+  obtain ⟨hM, hW, hT⟩ := size_lower hI hE hl
   obtain ⟨hMc, hWc, hTc⟩ := prune_size vc (mIn f)
   have h1 := spillWordBound_le vcp
   have h2 := vcW_mono (Nat.le_trans (maxRC_prepare hp) (Nat.le_trans hMc hM)) vcp
@@ -55,7 +55,8 @@ theorem spillSizeOkB_cleanup_of_sizeOkB {f : Clif.Function} {vc vcp : VCode}
     (hs : lowerScopeB f = true) (hsz : sizeOkB f = true)
     (hl : lowerFunction f = .ok vc) (hp : Backend.prepare (prune vc) = .ok vcp) :
     spillSizeOkB vcp = true := by
-  have h := spillWordBound_cleanup_le_sizeBoundIn (iselSz (lowerScope_of hs)) hl hp
+  have h := spillWordBound_cleanup_le_sizeBoundIn (iselSz (lowerScope_of hs))
+    (lowerScope_of hs).subsetE hl hp
   have hs : sizeBoundIn f < 2 ^ 24 := of_decide_eq_true hsz
   exact decide_eq_true (by omega)
 

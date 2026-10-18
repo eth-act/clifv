@@ -1,6 +1,7 @@
 import FV.E2E.RegLevelOp
 import FV.Backend.Proof.RegallocAtomic
 import FV.Backend.Proof.RegallocMemAddr
+import FV.Backend.Proof.RegallocMemFP
 
 /-!
 # Form coverage (M6 interface between the instruction proofs and the control proofs)
@@ -105,6 +106,14 @@ theorem linesOk_vecMisc (ctx : FnCtx) (op : VecMisc2) (rd rn : Reg) (sz : Vector
 theorem linesOk_vecRRR (ctx : FnCtx) (op : VecALUOp) (rd rn rm : Reg) (sz : VectorSize) :
     LinesOk ctx (.vecRRR op rd rn rm sz) := by
   cases op; one_line
+
+theorem linesOk_vecDupImm (ctx : FnCtx) (rd : Reg) (imm : ASIMDMovModImm) (inv : Bool)
+    (sz : VectorSize) (h : (!inv && imm.shift == 0 && !imm.shiftOnes && !imm.is64) = true) :
+    LinesOk ctx (.vecDupImm rd imm inv sz) := by
+  simp only [Bool.and_eq_true, Bool.not_eq_true', beq_iff_eq] at h
+  obtain ⟨⟨⟨h1, h2⟩, h3⟩, h4⟩ := h
+  exact linesOk_of_oneLine ⟨.movi sz rd imm.imm.toNat, none,
+    fun ps => by simp [MInst.lines, h1, h2, h3, h4] <;> rfl, rfl, rfl⟩
 
 theorem interOk_prefix {env : Env} {pre tail : List Line} {s S : Arm.ArmState}
     (h : StepsOk env pre s S) (he : Arm.r .ERR s = .None) (ht : tail.length ≤ 1) :
@@ -276,6 +285,73 @@ theorem formOk_store {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {op : S
       LinesOk ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) := by
   mem_os
 
+theorem linesOk_fpuLoad (ctx : FnCtx) (sz : ScalarSize) (rd : Reg) (m : AMode) (fl : Clif.MemFlags)
+    (hm : ∀ o, m ≠ .incomingArg o) : LinesOk ctx (.fpuLoad sz rd m fl) :=
+  linesOk_mem ctx _ sz.bytes m (fun m' => .fpuLoad sz rd m') fl.trapCode hm (fun _ => rfl)
+    (fun _ => plain_trap _ rfl (fun _ h => Insn.noConfusion h) _)
+    (fun ps pre m' hf => by simp [MInst.lines, hf])
+
+theorem linesOk_fpuStore (ctx : FnCtx) (sz : ScalarSize) (rd : Reg) (m : AMode) (fl : Clif.MemFlags)
+    (hm : ∀ o, m ≠ .incomingArg o) : LinesOk ctx (.fpuStore sz rd m fl) :=
+  linesOk_mem ctx _ sz.bytes m (fun m' => .fpuStore sz rd m') fl.trapCode hm (fun _ => rfl)
+    (fun _ => plain_trap _ rfl (fun _ h => Insn.noConfusion h) _)
+    (fun ps pre m' hf => by simp [MInst.lines, hf])
+
+/-- The SIMD&FP load/store part of `formOk_sound` (S11e1). -/
+syntax "fp_mem_os" : tactic
+set_option hygiene false in
+macro_rules
+  | `(tactic| fp_mem_os) => `(tactic| (
+    simp only [Bool.and_eq_true] at h
+    obtain ⟨hszb, hm⟩ := h
+    have hsz := fpSz_of_beq hszb
+    unfold memOk at hm
+    split at hm <;> (try cases hm) <;> (try simp only [decide_eq_true_eq] at hm) <;>
+      refine ⟨fun env => ?_, fun regs i' hasg => ?_⟩
+    all_goals first
+      | (first
+          | exact os_fpuLoad_slot _ _ _ _ _ hsz _ _ _
+          | exact os_fpuLoad_sp _ _ _ _ _ hsz _ _ _
+          | exact os_fpuLoad_fp _ _ _ _ _ hsz _ _ _
+          | exact os_fpuLoad_unscaled _ _ _ _ _ hsz _ _ _ hm.1 hm.2 _
+          | exact os_fpuLoad_uoff _ _ _ _ _ hsz _ _ _ hm.1 hm.2 _
+          | exact os_fpuLoad_regReg _ _ _ _ _ hsz _ _ _ _
+          | exact os_fpuLoad_regScaled _ _ _ _ _ hsz _ _ _ _
+          | exact os_fpuLoad_regScaledExtended _ _ _ _ _ hsz _ _ _ _ hm _
+          | exact os_fpuLoad_regExtended _ _ _ _ _ hsz _ _ _ _ hm _
+          | exact os_fpuStore_slot _ _ _ _ _ hsz _ _ _
+          | exact os_fpuStore_sp _ _ _ _ _ hsz _ _ _
+          | exact os_fpuStore_fp _ _ _ _ _ hsz _ _ _
+          | exact os_fpuStore_unscaled _ _ _ _ _ hsz _ _ _ hm.1 hm.2 _
+          | exact os_fpuStore_uoff _ _ _ _ _ hsz _ _ _ hm.1 hm.2 _
+          | exact os_fpuStore_regReg _ _ _ _ _ hsz _ _ _ _
+          | exact os_fpuStore_regScaled _ _ _ _ _ hsz _ _ _ _
+          | exact os_fpuStore_regScaledExtended _ _ _ _ _ hsz _ _ _ _ hm _
+          | exact os_fpuStore_regExtended _ _ _ _ _ hsz _ _ _ _ hm _)
+      | (assign_inv hasg
+         all_goals refine ⟨?_, fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h⟩
+         all_goals first
+           | exact linesOk_fpuLoad _ _ _ _ _ (fun _ h => AMode.noConfusion h)
+           | exact linesOk_fpuStore _ _ _ _ _ (fun _ h => AMode.noConfusion h))))
+
+set_option maxHeartbeats 4000000 in
+theorem formOk_fpuLoad {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {sz : ScalarSize}
+    {d : Nat} {m : AMode} {fl : Clif.MemFlags}
+    (h : ((sz == .size32 || sz == .size64) && memOk sz.bytes m) = true) :
+    (∀ env, OperandsSound F (execMInst ctx env) (csem F ctx X) (.fpuLoad sz (.vreg d .float) m fl)) ∧
+    (∀ regs i', (MInst.fpuLoad sz (.vreg d .float) m fl).assign regs = .ok i' →
+      LinesOk ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) := by
+  fp_mem_os
+
+set_option maxHeartbeats 4000000 in
+theorem formOk_fpuStore {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {sz : ScalarSize}
+    {d : Nat} {m : AMode} {fl : Clif.MemFlags}
+    (h : ((sz == .size32 || sz == .size64) && memOk sz.bytes m) = true) :
+    (∀ env, OperandsSound F (execMInst ctx env) (csem F ctx X) (.fpuStore sz (.vreg d .float) m fl)) ∧
+    (∀ regs i', (MInst.fpuStore sz (.vreg d .float) m fl).assign regs = .ok i' →
+      LinesOk ctx i' ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) := by
+  fp_mem_os
+
 theorem logicOpOk_of_and {op : ALUOp} {b : Bool} (h : (logicOpOk op && b) = true) :
     logicOpOk op = true := by
   simp only [Bool.and_eq_true] at h; exact h.1
@@ -296,6 +372,10 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
   · exact formOk_load h
   · exact formOk_store h
   rotate_left
+  all_goals first
+    | exact formOk_fpuLoad h
+    | exact formOk_fpuStore h
+    | skip
   all_goals (try cases h) <;> refine ⟨fun env => ?_, fun regs i' hasg => ?_⟩
   all_goals first
     | exact os_loadAcquire _ _ _ _ _ (of_decide_eq_true h) _ _ _
@@ -310,7 +390,8 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
         | apply os_aluRRRExtend_rdZ | apply os_bitRR | apply os_mov | apply os_movWide
         | apply os_movK | apply os_extend | apply os_bitfieldMove | apply os_cset | apply os_csel
         | apply os_ccmp | apply os_ccmpImm | apply os_movToFpu | apply os_movFromVec
-        | apply os_vecMisc | apply os_vecLanes | apply os_vecRRR | apply os_loadAddr_slot) <;>
+        | apply os_vecMisc | apply os_vecLanes | apply os_vecRRR | apply os_loadAddr_slot
+        | apply os_fpuCSel | apply os_fpuMoveFPImm | apply os_vecDupImm) <;>
         assumption
     | (assign_inv hasg
        all_goals refine ⟨?_, fun _ h => MInst.noConfusion h, fun _ h => MInst.noConfusion h⟩
@@ -324,6 +405,7 @@ theorem formOk_sound {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem} {i : MI
          | exact linesOk_vecMisc ..
          | exact linesOk_vecRRR ..
          | exact linesOk_loadAddr_slot ..
+         | exact linesOk_vecDupImm _ _ _ _ _ ‹_›
          | exact linesOk_of_oneLine ⟨_, _, fun _ => rfl, rfl,
              plain_trap _ rfl (fun _ h => Insn.noConfusion h) _⟩)
 

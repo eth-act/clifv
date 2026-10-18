@@ -284,19 +284,7 @@ theorem tryInd_sig (ha : AbiSigsOk f) {t : Clif.Terminator} {et : Clif.ExnTable}
     ∀ callee args, t = .tryCallIndirect callee args et → sigAbiOk sig = true := by
   intro callee args rfl
   obtain ⟨B, hB, hBt⟩ := hB
-  have hl : f.sigDecls.lookup et.sig = some sig := by
-    unfold exnTableOpnd at he
-    cases hs : f.sigDecls.lookup et.sig with
-    | none => simp [hs] at he
-    | some sig' =>
-      simp only [hs] at he
-      split at he
-      · simp [bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at he
-      · simp only [bind, Except.bind, pure, Except.pure] at he
-        split at he
-        · cases he
-        · simp only [Except.ok.injEq, Prod.mk.injEq] at he
-          rw [he.1]
+  have hl : f.sigDecls.lookup et.sig = some sig := Backend.exnTableOpnd_sig he
   have hmem : sig ∈ indSigs f := by
     simp only [indSigs, List.mem_flatMap, List.mem_append]
     exact ⟨B, hB, .inr (by rw [hBt]; simp [hl])⟩

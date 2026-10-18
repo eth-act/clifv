@@ -1,6 +1,7 @@
 import FV.Backend.Proof.IselFlowSplit
 import FV.Backend.Proof.IselFlowCheck
 import FV.Backend.Proof.DriverCheck
+import FV.Backend.Proof.AbiClass
 
 /-!
 # What the extern helpers do to registers, values, instructions and the lowering state
@@ -289,6 +290,30 @@ theorem retRegs_phys {k : Nat} {ps : List Reg} (h : retRegs k = some ps) :
     cases he
   · cases h
 
+/-- The class-aware return registers are physical. -/
+theorem retRegsC_phys : ∀ {cs : List RegClass} {nx nv : Nat} {ps : List Reg},
+    retRegsC cs nx nv = some ps → ∀ p ∈ ps, ∀ n c, p ≠ .vreg n c
+  | [], _, _, ps, h => by
+    simp only [retRegsC, Option.some.injEq] at h; subst h; simp
+  | .int :: cs, nx, nv, ps, h => by
+    simp only [retRegsC] at h
+    split at h
+    · obtain ⟨qs, hq, rfl⟩ := Option.map_eq_some_iff.mp h
+      intro p hp n c he
+      rcases List.mem_cons.mp hp with rfl | hp
+      · cases he
+      · exact retRegsC_phys hq p hp n c he
+    · cases h
+  | .float :: cs, nx, nv, ps, h => by
+    simp only [retRegsC] at h
+    split at h
+    · obtain ⟨qs, hq, rfl⟩ := Option.map_eq_some_iff.mp h
+      intro p hp n c he
+      rcases List.mem_cons.mp hp with rfl | hp
+      · cases he
+      · exact retRegsC_phys hq p hp n c he
+    · cases h
+
 theorem payloadRegs_phys (cc : Option Clif.CallConv) : ∀ p ∈ payloadRegs cc, ∀ n c, p ≠ .vreg n c := by
   intro p hp n c he
   unfold payloadRegs at hp
@@ -350,24 +375,11 @@ theorem sretLocStep_phys :
 /-- The register locations of `sigArgLocs` are physical. -/
 theorem sigArgLocs_phys {s : Clif.Signature} {locs : List ArgLoc} {k : Nat}
     (h : sigArgLocs s = .ok (locs, k)) : ∀ l ∈ locs, ∀ p, l = .reg p → ∀ n c, p ≠ .vreg n c := by
-  unfold sigArgLocs at h
-  cases hb : sigArgs s with
-  | error e => rw [hb] at h; cases h
-  | ok bytes =>
-    rw [hb] at h
-    simp only [bind, Except.bind] at h
-    split at h
-    · split at h
-      · cases h
-      · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, -⟩ := h
-        exact sretLocStep_phys _ _ (by
-          intro l hl
-          simpa using argLocs_phys _ l hl)
-    · simp only [pure, Except.pure, Except.ok.injEq] at h
-      have := argLocs_phys bytes
-      rw [h] at this
-      exact this
+  intro l hl p hp n c he
+  have := (sigArgLocs_shape h).2 l hl
+  subst hp he
+  simp only [ArgLocOk] at this
+  rcases this with ⟨m, -, hm⟩ | ⟨m, -, hm⟩ <;> cases hm
 
 /-! ## Extern constructors -/
 
@@ -409,6 +421,32 @@ theorem single_mem {rss : List (List Reg)} {rs : List Reg}
   split at he
   · cases he; exact List.mem_singleton_self _
   · cases he
+
+theorem single_eq_map : ∀ {rss : List (List Reg)} {rs : List Reg},
+    rss.mapM (fun | [r] => some r | _ => none) = some rs → rss = rs.map fun r => [r]
+  | [], rs, h => by simp [pure] at h; subst h; rfl
+  | l :: rss, rs, h => by
+    rw [List.mapM_cons] at h
+    obtain ⟨y0, h0, h⟩ := bind_some_ex h
+    obtain ⟨ys', h1, h⟩ := bind_some_ex h
+    simp only [pure, Option.some.injEq] at h
+    subst h
+    rw [single_eq_map h1, List.map_cons]
+    congr 1
+    split at h0
+    · cases h0; rfl
+    · cases h0
+
+/-- Returned single integer registers go in x0..x(n-1): `retRegsC` of their classes is
+`retRegs` of their count. -/
+theorem retRegsC_single_int {rss : List (List Reg)} {rs : List Reg}
+    (h : rss.mapM (fun | [r] => some r | _ => none) = some rs) (hi : ∀ r ∈ rs, r.homeCls = .int) :
+    retRegsC (regsClasses rss) 0 0 = retRegs rs.length := by
+  rw [single_eq_map h, regsClasses_single, ← retRegsC_int]
+  congr 1
+  exact List.eq_replicate_iff.mpr ⟨by simp, fun c hc => by
+    obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hc
+    exact hi r hr⟩
 
 /-- `CtorOk` from its parts (no `invalid_reg`, no `try_call` registers). -/
 theorem ctorOk_mk {ctx : Ctx} {id : TermId} {args : List V} {st st' : LState} {v : V}
@@ -652,7 +690,9 @@ theorem externCtor_ok (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
          obtain ⟨⟨a, b⟩, hq, hr⟩ := hr
          have hz := List.of_mem_zip hq
          rcases hr with rfl | rfl
-         · exact .inr (.inr (retRegs_phys ‹_› _ hz.1))
+         · first
+           | exact .inr (.inr (retRegs_phys ‹_› _ hz.1))
+           | exact .inr (.inr (retRegsC_phys ‹_› _ hz.1))
          · obtain ⟨l, hl, hrl⟩ := single_mem ‹_› _ hz.2
            exact .inl (by simp [V.regsIn, opRegs]; exact ⟨l, hl, hrl⟩))
       | (refine ctorOk_callArgs _ _ (fun _ _ => rfl) ?_

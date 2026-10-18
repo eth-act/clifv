@@ -1146,7 +1146,7 @@ facts of the ISLE runs (`KillRunsHyp`) and the exact defs of a `try_call`'s call
 theorem killFreeB_lower (hK : KillRunsHyp) (hX : TryDefsExact) {f : Clif.Function} {vc : VCode}
     (hd : Dominated f) (hs : LowerScope f) (ha : AbiSigsOk f) (har : ArityOk f)
     (hl : lowerFunction f = .ok vc) : killFreeB vc = true := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, hlf⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, hlf⟩ := lowerFunction_run hs.subsetE hl
   have H : Low f vc ctx st0 bl (asmR f bl) := by
     have hlb' := hlb
     rw [lowBlocks_eq] at hlb'

@@ -1937,7 +1937,7 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : Dr
       rw [ho] at h
       obtain ⟨hav, -⟩ := h
       rw [hqb]
-      exact ⟨hqb ▸ sigArgs_bytes hb _ (List.mem_of_getElem? hqbm), hav⟩) hmr
+      exact ⟨hqb ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hqbm), hav⟩) hmr
   have hseq : seqRun sem (E.filterMap (entryLoadOf R)) ρ₁ w₀ = some (.fall ρ₂ w₂) := hrun
   have hsz : (pre f R 0).length < vb.insts.size := by
     have h1 : vb.insts.size = vb.insts.toList.length := by simp
@@ -1996,7 +1996,7 @@ theorem entry_step (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : Dr
       rw [← hxq, h1, hb']
       obtain ⟨-, hrd⟩ := h
       have hbs : args[m].ty.bytes = 1 ∨ args[m].ty.bytes = 2 ∨ args[m].ty.bytes = 4 ∨
-          args[m].ty.bytes = 8 := hb' ▸ sigArgs_bytes hb _ (List.mem_of_getElem? hbb)
+          args[m].ty.bytes = 8 := hb' ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hbb)
       obtain ⟨hob, -, hsg⟩ := loadOpOfBytes_facts hbs
       have hw : args[m].ty.width ≤ 64 :=
         (show ∀ t : Clif.Ty, (t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8) →
@@ -2162,7 +2162,7 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
     rw [ho] at h
     obtain ⟨hav, -⟩ := h
     rw [hqb, hw]
-    exact ⟨hqb ▸ sigArgs_bytes hb _ (List.mem_of_getElem? hqbm), hav⟩
+    exact ⟨hqb ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hqbm), hav⟩
   obtain ⟨ρ₂, w₂, hrun, hmr₂, hfr, hreg2, hstk2, hsw2⟩ := entryLoads_run hMem hMR E ρ₁ slots
     cs.mem w₀ hRid (by rw [hEids]; exact hnd) (hloadsF w₀ rfl) hmr
   obtain ⟨ρ₂', w₂', hrun', hmr₂', hfr', hreg2', hstk2', hsw2'⟩ := entryLoads_run hMem hMR E ρ₁
@@ -2178,7 +2178,7 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
         obtain ⟨m, v, hm, hv⟩ := hEmem q hq
         obtain ⟨hmem, hqb, hqbm⟩ := hentry q hq m v hm hv
         have hbs : q.2 = 1 ∨ q.2 = 2 ∨ q.2 = 4 ∨ q.2 = 8 :=
-          sigArgs_bytes hb _ (List.mem_of_getElem? hqbm)
+          sigParamBytes_bytes hb _ (List.mem_of_getElem? hqbm)
         congr 1
         unfold loadVal
         rw [show Arm.read_mem_bytes (loadOpOfBytes q.2).bytes
@@ -2253,7 +2253,7 @@ theorem entry_step2 (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p) (hds : D
       rw [← hxq, h1, hb']
       obtain ⟨-, hrd⟩ := h
       have hbs : args[m].ty.bytes = 1 ∨ args[m].ty.bytes = 2 ∨ args[m].ty.bytes = 4 ∨
-          args[m].ty.bytes = 8 := hb' ▸ sigArgs_bytes hb _ (List.mem_of_getElem? hbb)
+          args[m].ty.bytes = 8 := hb' ▸ sigParamBytes_bytes hb _ (List.mem_of_getElem? hbb)
       obtain ⟨hob, -, hsg⟩ := loadOpOfBytes_facts hbs
       have hw : args[m].ty.width ≤ 64 :=
         (show ∀ t : Clif.Ty, (t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8) →

@@ -251,15 +251,50 @@ theorem buildCtx_allocation {f : Clif.Function} {ctx : Ctx}
   | ok q =>
     obtain ⟨original, ranges0, st0⟩ := q
     cases hreq : allocationRequests f ranges0 with
-    | error e => simp [Stock.buildCtx, hold, hreq, bind, Except.bind] at hb
+    | error e =>
+      simp [Stock.buildCtx, hold, hreq, bind, Except.bind] at hb
+      all_goals (split at hb <;> simp [bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at hb)
     | ok requests =>
       have he : finishCtx original ranges0
           (allocateRequests original.valTy.size original.insts.size requests) =
           (ctx, ranges, st) := by
-        simpa [Stock.buildCtx, hold, hreq] using hb
+        simp [Stock.buildCtx, hold, hreq] at hb
+        split at hb
+        · simp [bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at hb
+        · simpa using hb
       have hrg : ranges0 = ranges := congrArg (fun q => q.2.1) he
       subst ranges0
       exact ⟨original, st0, requests, rfl, hreq, he.symm⟩
+
+/-- A successful stock context comes from an original context whose values are all
+integers (`Stock.buildCtx` rejects `f32`/`f64` values). -/
+theorem buildCtx_valClass {f : Clif.Function} {ctx : Ctx}
+    {ranges : Array (Nat × Nat)} {st : State}
+    (hb : Stock.buildCtx f = .ok (ctx, ranges, st)) :
+    ∃ original st0, Backend.buildCtx f = .ok (original, ranges, st0) ∧
+      ∀ x t, original.valueType? x = some t → t.valClass = .int := by
+  obtain ⟨original, st0, requests, hold, -, -⟩ := buildCtx_allocation hb
+  refine ⟨original, st0, hold, fun x t ht => ?_⟩
+  have hc : (original.valTy.toList.any fun o => o.any (·.valClass != .int)) = false := by
+    cases hc : (original.valTy.toList.any fun o => o.any (·.valClass != .int)) with
+    | false => rfl
+    | true =>
+      exfalso
+      simp [Stock.buildCtx, hold] at hb
+      split at hb
+      · simp [bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at hb
+      · rename_i hn
+        exact hn (by simpa using hc)
+  simp only [Ctx.valueType?] at ht
+  cases ho : original.valTy[x]? with
+  | none => rw [ho] at ht; cases ht
+  | some o =>
+    rw [ho] at ht
+    simp only [Option.join_some] at ht
+    subst ht
+    have hm : some t ∈ original.valTy.toList := Array.mem_toList_iff.mpr (Array.mem_of_getElem? ho)
+    have h := List.any_eq_false.mp hc _ hm
+    simpa [Option.any] using h
 
 /-- Every initial value register returned by the driver is virtual, outside
 stock's physical placeholders, below the first temporary, and unique. -/

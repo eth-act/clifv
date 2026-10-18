@@ -119,12 +119,44 @@ theorem getMany_ok {fr : Clif.Frame} :
       | _ => rw [hxs] at h; simp [bind, Clif.Res.bind] at h
     | _ => rw [hx] at h; simp [bind, Clif.Res.bind] at h
 
+theorem mapM_some_mem {α β : Type} {g : α → Option β} :
+    ∀ {xs : List α} {rs : List β}, xs.mapM g = some rs → ∀ r ∈ rs, ∃ x ∈ xs, g x = some r
+  | [], rs, h => by simp at h; subst h; simp
+  | x :: xs, rs, h => by
+    simp only [List.mapM_cons, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.pure_def,
+      Option.some.injEq] at h
+    obtain ⟨r', hr', rs', hrs, rfl⟩ := h
+    intro r hr
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact ⟨x, List.mem_cons_self, hr'⟩
+    · obtain ⟨y, hy, hgy⟩ := mapM_some_mem hrs r hr
+      exact ⟨y, List.mem_cons_of_mem _ hy, hgy⟩
+
+/-- Integer value registers return in x0..x(n-1). -/
+theorem retRegsC_valueRegs {ctx : Ctx}
+    (hvr : ∀ x r, ctx.valueReg? x = some r → r.homeCls = .int)
+    {xs : List Nat} {rs : List Reg} (h : xs.mapM ctx.valueReg? = some rs) :
+    retRegsC (regsClasses (rs.map fun r => [r])) 0 0 = retRegs rs.length := by
+  rw [regsClasses_single, ← retRegsC_int]
+  congr 1
+  apply List.eq_replicate_iff.mpr
+  refine ⟨by simp, fun c hc => ?_⟩
+  obtain ⟨r, hr, rfl⟩ := List.mem_map.mp hc
+  obtain ⟨x, -, hx⟩ := mapM_some_mem h r hr
+  exact hvr x r hx
+
+/-- `CtxInv`'s value registers are integer. -/
+theorem CtxInv.homeCls_int {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) :
+    ∀ x r, ctx.valueReg? x = some r → r.homeCls = .int := fun x r h => by
+  rw [hctx.valueReg x r h]; rfl
+
 section
 variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkOverlap = false)
 
 include hp hc in
-/-- `lower_return`: the value registers, `rets` pinning them to x0.. -/
-theorem lower_return_ok {n : Nat} (hn : 60 ≤ n) {xs : List Nat} {s s' : LState × Array RuleId}
+/-- `lower_return`: the value registers (integer ones), `rets` pinning them to x0.. -/
+theorem lower_return_ok (hvr : ∀ x r, ctx.valueReg? x = some r → r.homeCls = .int)
+    {n : Nat} (hn : 60 ≤ n) {xs : List Nat} {s s' : LState × Array RuleId}
     {v : V} (h : ApplyInternal p (sem ctx) cfg n 25 294 [.values xs] s v s') :
     ∃ rs ps, xs.mapM ctx.valueReg? = some rs ∧ retRegs rs.length = some ps ∧
       s'.1 = s.1.emit (.rets (rs.zip ps)) ∧ v = .regsVec [] := by
@@ -132,7 +164,10 @@ theorem lower_return_ok {n : Nat} (hn : 60 ≤ n) {xs : List Nat} {s s' : LState
   ctl_inv [*, rule_prelude_lower_1493] at hm he
   simp only [mapM_single_map, List.length_map, Option.some.injEq] at *
   subst_vars
-  exact ⟨_, ‹_›, _, ‹_›, rfl⟩
+  have hrs := ‹List.mapM ctx.valueReg? xs = some _›
+  have hps := ‹retRegsC _ 0 0 = some _›
+  rw [retRegsC_valueRegs hvr hrs] at hps
+  exact ⟨_, hrs, _, hps, rfl⟩
 
 end
 
@@ -190,7 +225,7 @@ theorem ret_ruleOk {p : Program} (hp : Data p) {F : BitVec 64 → Prop} {isem : 
   intro f ctx hctx ti t data hrt hd hi cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 100 := ⟨n - 100, by omega⟩
-  have kR := fun n (hn : 60 ≤ n) xs s v s' h => lower_return_ok hp (ctx := ctx) hc (n := n)
+  have kR := fun n (hn : 60 ≤ n) xs s v s' h => lower_return_ok hp (ctx := ctx) hc hctx.homeCls_int (n := n)
     (xs := xs) (s := s) (v := v) (s' := s') hn h
   cases t with
   | trap c =>

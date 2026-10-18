@@ -29,9 +29,9 @@ open Backend Backend.Proof Backend.Proof.Driver
 
 /-- The spill allocation's words are within the input-side bound, given the ISLE contract. -/
 theorem spillWordBound_le_sizeBoundIn {f : Clif.Function} {vc vcp : VCode} (hI : IselSz f)
-    (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
-    spillWordBound vcp ≤ sizeBoundIn f := by
-  obtain ⟨hM, hW, hT⟩ := size_lower hI hl
+    (hE : Compile.functionE f = true) (hl : lowerFunction f = .ok vc)
+    (hp : Backend.prepare vc = .ok vcp) : spillWordBound vcp ≤ sizeBoundIn f := by
+  obtain ⟨hM, hW, hT⟩ := size_lower hI hE hl
   have h1 := spillWordBound_le vcp
   have h2 := vcW_mono (Nat.le_trans (maxRC_prepare hp) hM) vcp
   have h3 := vcW_prepare hp (mIn f)
@@ -45,7 +45,7 @@ theorem spillSizeOkB_of_sizeOkB {f : Clif.Function} {vc vcp : VCode}
     (hs : lowerScopeB f = true) (hsz : sizeOkB f = true)
     (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) : spillSizeOkB vcp = true := by
   have hI := iselSz (lowerScope_of hs)
-  have h := spillWordBound_le_sizeBoundIn hI hl hp
+  have h := spillWordBound_le_sizeBoundIn hI (lowerScope_of hs).subsetE hl hp
   unfold sizeOkB at hsz
   unfold spillSizeOkB
   have := of_decide_eq_true hsz

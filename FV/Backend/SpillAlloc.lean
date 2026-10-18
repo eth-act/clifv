@@ -138,12 +138,6 @@ def spillInst (h : Homes) (k : Nat) (i : MInst) : List RItem :=
       | _ => []
     restores ++ loads ++ [.op k locs] ++ stores
 
-/-- The class of a register (`int` for a non-vreg). -/
-def Reg.homeCls : Reg → RegClass
-  | .vreg _ c => c
-  | .v _ => .float
-  | _ => .int
-
 /-- The vreg number of a register (`0` for a real one). -/
 def Reg.homeNum : Reg → Nat
   | .vreg n _ => n

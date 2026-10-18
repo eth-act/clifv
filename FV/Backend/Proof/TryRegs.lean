@@ -161,12 +161,35 @@ theorem exnTableOpnd_cc {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.Sig
     · rename_i hcc
       simp only [bind, Except.bind, pure, Except.pure] at h
       split at h
-      · cases h
-      · simp only [Except.ok.injEq, Prod.mk.injEq] at h
-        obtain ⟨rfl, -⟩ := h
-        simp only [Bool.not_eq_true, Bool.not_eq_false', Bool.or_eq_true, Option.isNone_iff_eq_none,
-          beq_iff_eq] at hcc
-        rcases hcc with h | h <;> simp [payloadRegs, h]
+      · simp [throw, throwThe, MonadExceptOf.throw] at h
+      · split at h
+        · cases h
+        · simp only [Except.ok.injEq, Prod.mk.injEq] at h
+          obtain ⟨rfl, -⟩ := h
+          simp only [Bool.not_eq_true, Bool.not_eq_false', Bool.or_eq_true, Option.isNone_iff_eq_none,
+            beq_iff_eq] at hcc
+          rcases hcc with h | h <;> simp [payloadRegs, h]
+
+/-- The signature of an exception table has integer parameters and returns (`exnTableOpnd`
+checks `sigIntB`: calls pass integers only). -/
+theorem exnTableOpnd_int {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.Signature}
+    {items : List (Option Nat)} (h : exnTableOpnd f et = .ok (sig, items)) : sigIntB sig = true := by
+  unfold exnTableOpnd at h
+  cases hs : f.sigDecls.lookup et.sig with
+  | none => simp [hs] at h
+  | some sig' =>
+    simp only [hs] at h
+    split at h
+    · simp [bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at h
+    · simp only [bind, Except.bind, pure, Except.pure] at h
+      split at h
+      · simp [throw, throwThe, MonadExceptOf.throw] at h
+      · rename_i hi
+        split at h
+        · cases h
+        · simp only [Except.ok.injEq, Prod.mk.injEq] at h
+          obtain ⟨rfl, -⟩ := h
+          simpa using hi
 
 theorem tryCallData_spec {f : Clif.Function} {fn : Clif.FnRef} {args : List Clif.ValueId}
     {et : Clif.ExnTable} {data : V} (h : tryCallData f (.tryCall fn args et) = .ok data) :
@@ -237,8 +260,10 @@ theorem exnTableOpnd_sig {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.Si
     · simp [bind, Except.bind, throw, throwThe, MonadExceptOf.throw] at h
     · simp only [bind, Except.bind, pure, Except.pure] at h
       split at h
-      · cases h
-      · simp only [Except.ok.injEq, Prod.mk.injEq] at h
-        rw [h.1]
+      · simp [throw, throwThe, MonadExceptOf.throw] at h
+      · split at h
+        · cases h
+        · simp only [Except.ok.injEq, Prod.mk.injEq] at h
+          rw [h.1]
 
 end Backend

@@ -68,19 +68,28 @@ def single? : List Reg → Option Reg
   | [r] => some r
   | _ => none
 
+/-- `gen_return`: at most 8 values, each in the next return register of its class
+(`retRegsC` of the classes of the returned registers, `regsClasses`). -/
 theorem ctor_gen_return_iff (st : LState) (rss : List (List Reg)) (v : V) (st' : LState) :
     externCtor ctx T.gen_return [.regsVec rss] st = .ok (v, st') ↔
-      ∃ ps rs, retRegs rss.length = some ps ∧ rss.mapM single? = some rs ∧ v = .op .unit ∧
-        st' = st.emit (.rets (rs.zip ps)) := by
+      ∃ ps rs, rss.length ≤ 8 ∧ retRegsC (regsClasses rss) 0 0 = some ps ∧
+        rss.mapM single? = some rs ∧ v = .op .unit ∧ st' = st.emit (.rets (rs.zip ps)) := by
   have : externCtor ctx T.gen_return [.regsVec rss] st =
-      match retRegs rss.length, rss.mapM single? with
-      | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
-      | _, _ => .unmodeled "gen_return: more than 8 return values or multi-register values" := by
-    show (match retRegs rss.length, rss.mapM (fun | [r] => some r | _ => none) with
-      | some ps, some rs => _ | _, _ => _) = _
+      if rss.length ≤ 8 then
+        match retRegsC (regsClasses rss) 0 0, rss.mapM single? with
+        | some ps, some rs => .ok (.op .unit, st.emit (.rets (rs.zip ps)))
+        | _, _ => .unmodeled "gen_return: multi-register values"
+      else .unmodeled "gen_return: more than 8 return values" := by
+    show (if rss.length ≤ 8 then
+      (match retRegsC (regsClasses rss) 0 0, rss.mapM (fun | [r] => some r | _ => none) with
+        | some ps, some rs => _ | _, _ => _) else _) = _
     rfl
   rw [this]
-  cases retRegs rss.length <;> cases rss.mapM single? <;> simp [eq_comm]
+  by_cases h8 : rss.length ≤ 8
+  · rw [if_pos h8]
+    cases retRegsC (regsClasses rss) 0 0 <;> cases rss.mapM single? <;> simp [eq_comm, h8]
+  · rw [if_neg h8]
+    simp [h8]
 
 theorem mapM_single_map (rs : List Reg) : (rs.map fun r => [r]).mapM single? = some rs := by
   induction rs with

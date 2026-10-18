@@ -105,9 +105,9 @@ theorem mem_dropLast_append {α : Type} {X T : List α} {m : α} (h : m ∈ (X +
 /-- **The emission conditions of `lowerFunction`'s output**: every instruction has `emitOk`, and
 only a block's last instruction has branch targets. -/
 theorem vc_emit {f : Clif.Function} {vc : VCode} (hI : IselEmit f)
-    (hl : lowerFunction f = .ok vc) :
+    (hE : Compile.functionE f = true) (hl : lowerFunction f = .ok vc) :
     ∀ vb ∈ vc.blocks.toList, (∀ m ∈ vb.insts.toList, m.emitOk = true) ∧ TargetsLast vb := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hb, hlb, hvb, -, -⟩ := lowerFunction_run hE hl
   obtain ⟨hS, hT, hY⟩ := hI ctx ranges st0 hb
   have hcf := ctxFacts_of hb
   obtain ⟨-, hstart⟩ := lowBlocks_start hlb
@@ -288,7 +288,7 @@ theorem emitConds_lower {f : Clif.Function} {vc vcp : VCode} (hs : LowerScope f)
     (hI : IselEmit f) (hl : lowerFunction f = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
     immsOkB vcp = true ∧ vcp.noAlwaysB = true ∧ branchTargetsOkB vcp = true := by
   have hd := prepDomain_of_lower hs hl hs.nonempty
-  have hv := prep_emit hp hd (vc_emit hI hl)
+  have hv := prep_emit hp hd (vc_emit hI hs.subsetE hl)
   have hok : ∀ vb ∈ vcp.blocks.toList, ∀ m ∈ vb.insts.toList,
       immOkB m = true ∧ m.noAlways = true := fun vb hvb m hm => by
     have := (hv vb hvb).1 m hm

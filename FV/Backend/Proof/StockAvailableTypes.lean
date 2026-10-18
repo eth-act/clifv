@@ -11,7 +11,8 @@ theorem stock_lower_record_declared_type {f : Clif.Function} {result : Result}
     stock_lower_blockScanOrigin run events
   obtain ⟨original,oldState,oldBuild,spec,view⟩ := buildCtx_source build
   have typed := spec.regTy x
-  rw [(spec.facts.vals x declared).2] at typed
+  obtain ⟨-, t, -, hreg⟩ := spec.facts.vals x declared
+  rw [hreg] at typed
   have actual : (result.ctx.valueType? x).isSome = true := by
     simpa only [Ctx.valueType?,view.valTy,Option.isSome_some] using typed.symm
   rw [eventEq,(stock_lowerBlockCore_scanOrigin coreRun).2.1]
@@ -25,7 +26,7 @@ theorem stock_lower_event_valTyE {f : Clif.Function} {result : Result}
     stock_lower_blockScanOrigin run events
   obtain ⟨original,oldState,oldBuild,spec,view⟩ := buildCtx_source build
   rw [eventEq,(stock_lowerBlockCore_scanOrigin coreRun).2.1] at typed
-  exact spec.valTyE x t (by simpa only [Ctx.valueType?,termCtx,view.valTy] using typed)
+  exact buildCtx_source_ctxE build oldBuild x t (by simpa only [Ctx.valueType?,termCtx,view.valTy] using typed)
 /-- Original availability, a successful source getter and restricted DFG typing
 derive the actual context type. This discharges recurring family type premises
 internally while keeping earlier theorem interfaces available. -/

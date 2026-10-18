@@ -184,7 +184,7 @@ theorem slotLayout_fits (slots : List (Nat × Clif.StackSlot)) :
 theorem slotBytes_of_lower {g : Clif.Function} {vc vcp : VCode} (hl : lowerFunction g = .ok vc)
     (hp : prepare vc = .ok vcp) : vcp.slotBytes = (slotLayout g.slots).2 := by
   obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, hvcp⟩ := Prep.prepare_facts hp
-  obtain ⟨_, _, _, _, d, _, _, _, _, hvc⟩ := loop_run hl
+  obtain ⟨d, hvc⟩ := lowerFunction_finish hl
   rw [hvcp]
   dsimp only
   rw [hvc]

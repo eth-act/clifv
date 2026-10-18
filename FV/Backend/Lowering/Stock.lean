@@ -269,9 +269,12 @@ def finishCtx (ctx : Ctx) (ranges : Array (Nat × Nat)) (allocation : Allocation
   (ctx, ranges, state)
 
 /-- Dense layout-order allocation, including separately allocated exception
-returns and payloads at the corresponding terminator's position. -/
+returns and payloads at the corresponding terminator's position. Stock allocates
+integer vregs: it takes integer values only (`f32`/`f64` values are S11e5). -/
 def buildCtx (f : Clif.Function) : Except String (Ctx × Array (Nat × Nat) × State) := do
   let (ctx, ranges, _) ← Backend.buildCtx f
+  -- `toList.any` (structural, unlike `Array.any`) keeps the `rfl` witnesses over `buildCtx`
+  if ctx.valTy.toList.any (fun o => o.any (·.valClass != .int)) then throw "f32/f64 value"
   let requests ← allocationRequests f ranges
   pure (finishCtx ctx ranges (allocateRequests ctx.valTy.size ctx.insts.size requests))
 

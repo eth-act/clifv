@@ -258,6 +258,17 @@ theorem ec_movToFpu {rd rn : Reg} {s : ScalarSize} (hc : eMovToFpu [a1, a2, a3] 
   simp only [Bool.or_eq_true, beq_iff_eq] at hp
   rcases hp with (rfl | rfl) | rfl <;> cases s <;> first | rfl | exact absurd hg (by decide)
 
+theorem ec_fpuMoveFPImm {rd : Reg} {imm : ASIMDFPModImm} {s : ScalarSize}
+    (hc : eFpuMoveFPImm [a1, a2, a3] = true) (g3 : γ f ctx a3 v3) (s3 : v3.scalarSize? = some s) :
+    (MInst.fpuMoveFPImm rd imm s).emitOk = true := by
+  simp only [eFpuMoveFPImm] at hc
+  obtain ⟨k, hg, hp⟩ := enum_of hc g3 s3
+  simp only [Bool.or_eq_true, beq_iff_eq] at hp
+  rcases hp with rfl | rfl <;> cases s <;> first | rfl | exact absurd hg (by decide)
+
+theorem ec_never {as : List AW} {P : Prop} (hc : eNever as = true) : P := by
+  simp [eNever] at hc
+
 theorem ec_movFromVec {rd rn : Reg} {i : Nat} {s : ScalarSize}
     (hc : eMovFromVec [a1, a2, a3, a4] = true) (g3 : γ f ctx a3 v3) (g4 : γ f ctx a4 v4)
     (n3 : v3.nat? = some i) (s4 : v4.scalarSize? = some s) :
@@ -430,7 +441,9 @@ theorem em1_sound {nb : Bool} {t k : Nat} {as : List AW} {vs : List V} (hc : em1
        | (apply ec_trapIf hc <;> assumption)
        | (apply ec_call hc <;> assumption)
        | (apply ec_atomicRmw hc <;> assumption)
-       | (apply ec_atomicCas hc <;> assumption))
+       | (apply ec_atomicCas hc <;> assumption)
+       | (apply ec_fpuMoveFPImm hc <;> assumption)
+       | exact ec_never hc)
 
 theorem emA1_sound {nb : Bool} {a : AW} {v : V} {m : MInst} (ha : emA1 nb a = true)
     (hv : γ f ctx a v) (hm : MInst.ofV v = some m) :

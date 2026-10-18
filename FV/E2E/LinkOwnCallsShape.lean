@@ -179,7 +179,7 @@ theorem tryCallData_sig {f : Clif.Function} {fn : Clif.FnRef} {args : List Nat}
 theorem callShapeHyp_of (hR : CallRunHyp) (hG : GotRunHyp) : CallShapeHyp := by
   intro p f vc hsub hd hs hl b vb k hb
   have ha := abiSigsOk_of_inSubset hsub
-  obtain ⟨ctx, ranges, st0, bl, hbc, hlb, hvb, -, -⟩ := lowerFunction_run hl
+  obtain ⟨ctx, ranges, st0, bl, hbc, hlb, hvb, -, -⟩ := lowerFunction_run hs.subsetE hl
   obtain ⟨hS, hT, hY⟩ := hR f ctx ranges st0 hd hs ha hbc
   have hgr := hG p f vc hsub hd hs hl ctx ranges st0 bl hbc hlb
   have hcf := ctxFacts_of hbc

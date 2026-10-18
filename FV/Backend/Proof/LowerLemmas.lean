@@ -1,4 +1,5 @@
 import FV.Backend.Proof.LowerShape
+import FV.Backend.Proof.AbiClass
 
 /-!
 # Auxiliary facts for the driver simulation

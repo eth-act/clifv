@@ -32,7 +32,7 @@ theorem shapeOk_complete (h : lowerFunction f = .ok vc) (hs : LowerScope f)
     (hu : ((aliasOf f bl).map (·.1)).Nodup) (hwf : AliasWF (aliasOf f bl)) :
     shapeOk f vc ctx st0 (gnAt (gnTable st0.nextVreg (aliasOf f bl))) bl = true := by
   -- the run
-  obtain ⟨ctx', ranges', st0', bl', hb', hl', hvc, -, hlf⟩ := lowerFunction_run h
+  obtain ⟨ctx', ranges', st0', bl', hb', hl', hvc, -, hlf⟩ := lowerFunction_run hs.subsetE h
   rw [hb] at hb'
   simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
   obtain ⟨rfl, rfl, rfl⟩ := hb'

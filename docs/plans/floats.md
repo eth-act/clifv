@@ -132,6 +132,52 @@ S11c and S11d are independent (exclusive files: `FV/Clif/*` vs `FV/Arm/*`,
 `FV/Float` interface is fixed. S11e depends on S11b and the data-movement part of S11d; S11f
 on all of them.
 
+**S11e sub-slices.** The machine side already has both register classes (`RegClass.float`,
+`Reg.v`), the `v0..v31` allocation pools, 16-byte FP spill slots and the `d8`–`d15` low-half
+callee-saved contract (`RegallocOps.calleeSaved`, `ArmRet.savedV`), and `ArgsIn` is
+location-generic; what is integer-only is the MInst/ISLE bridge, the ABI placement, the
+value-to-register map and the proofs built on `typedReg`'s `.vreg x .int`. In dependency order:
+
+| sub-slice | content | main files |
+|---|---|---|
+| S11e1 | scalar FP MInst forms used by data movement: `fpuLoad`/`fpuStore` (`FpuLoad32/64`, `FpuStore32/64`; their own `MInst` constructors with the size, so the `op ≠ .fpuLoad128` premises of the integer memory contracts stay as they are), `fpuCSel` (`FpuCSel32/64`), `fpuMoveFPImm` (`ASIMDFPModImm`), `vecDupImm` (`ASIMDMovModImm`; only the plain `movi #imm8` expands, which includes the zero of `constant_f32/64`); ISLE decoding, uses/defs/`mapRegs`, `emitOk`, `MInst.lines` into the S11d `Insn`s, the instruction semantics (`ispec`: `fcsel`, `VFPExpandImm`, `moviVal`) and its refinement/regalloc proofs (`FormOk` covers `fpuCSel`, `fpuMoveFPImm`, `vecDupImm`, and `fpuLoad`/`fpuStore` of size 32/64 with a float data vreg and a `memOk` mode: Arm-model memory proofs, `OperandsSound`/`LinesOk`, encodability, reads). Not yet: `fpuLoad64` of `AMode.Const` (literal pool), and the coverage/emission-check domains of the `asimd_*` immediates (S11e4) | `Backend/MInst.lean`, `Asm.lean`, `EmitOk.lean`, `RegallocOps.lean`, `Proof/{IselContract,RegallocInstsFP,RegallocMemFP,RegallocCSem,RegallocOS,RegallocCover,RefinesInsts2,RefinesCSem,CSemRename,SpillLocalForms,IselEmitChk,IselCovForm}.lean`, `E2E/{EmitEnc,RegLevelOpReads}.lean` |
+| S11e2 | typed ABI placement: `sigArgs` with classes, `argLocs` with separate `x`/`v` counters, typed `retRegs`; `argLocs` of integer-only signatures unchanged (a lemma), so integer proofs transport | `Backend/Isel.lean` ABI section, `E2E/Final.lean` (`argsIn_iff_of_regs`), `LinkOwn*` (`retRegs_eq`) |
+| S11e3 | class-aware value map: `buildCtx`/Stock allocation give a float value `.vreg x .float`; `CtxInv`/`CtxSpec`/`MappedCtxInv.typedReg` state the class of the type; driver entry loads, result copies and block/edge arguments per class; `ClassesHyp` (V4) with float values | `Isel.lean` `buildCtx`, `Lowering/Stock*.lean`, `Proof/{LowerLoopCtx,LowerSpec,DriverCheck,DriverCheckSound,SpillClasses,StockContext,StockDFG}.lean` (Stock files: @codygunton) |
+| S11e4 | ISLE float data-movement root rules (`f32const`/`f64const`, float `load`/`store`/`select`, `bitcast`) in the closure with `LowerRulesCorrect`/`MemRulesCorrect` proofs | `Proof/Isel*` families, `IselExclBase`, `IselLowerAll`, coverage tables |
+| S11e5 | E/`functionE`/`InScopeIn` widened to float data movement, `driverInB`/`iselInB` totality kept, call/return/link contracts for FP registers | `Compile/Subset.lean`, `E2E/LinkScopeInputDefs.lean`, `Proof/LowerTotal*.lean`, `E2E/LinkOwn*.lean` |
+
+**S11e2 (typed ABI placement): done.** `FV/Backend/Isel.lean` places values per class as
+Cranelift's aarch64 `compute_arg_locs` does: `argLocsC` (x0..x7 / v0..v7, separate counters,
+then 8-byte-minimum aligned stack slots), `paramLocs` (`sret` in x8), `abiArgLocs` over
+`abiArgs` (which admits `f32`/`f64`), `retRegsC`/`abiRetRegs` (8 per class). `argLocs`/`retRegs`
+stay as the integer specialisations (`Proof.argLocsC_int`, `Proof.retRegsC_int`), and
+`abiArgLocs_int`/`abiRetRegs_int` show the typed placement of an integer signature is the
+lowering's. Interim: the lowering stays integer, `sigArgs` (hence `sigParamBytes`, `sigArgLocs`)
+rejects a float parameter until S11e3 lowers FP argument moves, so `sigArgLocs` is unchanged
+(`Proof.sigArgLocs_eq`) and the integer proofs needed only `unfold sigArgLocs` →
+`rw [sigArgLocs_eq]` and `sigArgs_bytes` → `sigParamBytes_bytes`; no statement changed.
+Witness `(f64, i64, f32)` ↦ `[v0, x0, v1]` (`FV/Backend/Proof/AbiClass.lean`). S11e3 switches
+the function's own entry/return lowering to the typed placement, S11e5 the calls (see S11e3
+below), with the FP-register `ArgsIn`/callee/link contracts; floats are not left excluded from
+calls.
+
+**S11e3 (class-aware value map, typed entry/return).** `buildCtx` admits `f32`/`f64` values
+(`valTyOk`) and maps each to `.vreg x t.valClass`; `sigArgs` admits `f32`/`f64` parameters, so
+the entry places them per class (`paramLocs`/`argLocsC`: v0..v7, stack-passed ones loaded by
+`stackArgLoad`, `ldr s`/`ldr d` into a float vreg) and `gen_return` returns them per class
+(`retRegsC (regsClasses rss)`, at most 8 values in all, so the size tables are unchanged).
+Witnesses: `FVTest/Backend/AbiTyped.lean` (`(f64, i64, f32) -> f64` lowers to args
+`v0, x0, v1` and return `v0`) and `E2E.argsIn_sigFIF` (`ArgsIn` of that signature through
+`E2E.argsIn_iff_of_locs`). **Interim, to be lifted by S11e5: calls stay integer-only.**
+`instData` rejects a `call`/`call_indirect` whose signature has an `f32`/`f64` parameter or
+return, and `exnTableOpnd` a `try_call`/`try_call_indirect` with one (`sigIntB`); the
+totality scope says so (`stmtInB`'s `call`/`call_indirect` cases and `tryInB` gain `sigIntB`).
+S11e5 types `gen_call_args`/`gen_call_output`/`gen_call_rets`/`gen_try_call_rets`
+(`tryRegsOf`) and the FP call contracts, then drops `sigIntB`. Also interim: the loop
+simulation's driver model (`DriverCheck`) is integer-shaped, so `loop_run`/`lowerFunction_run`
+take `Compile.functionE f` (still integer-only, so no theorem's scope admits a float value
+yet), and Stock's `buildCtx` rejects float values (`f32/f64 value`) until it gets a float path.
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in
@@ -139,8 +185,10 @@ on all of them.
   become false with f32/f64 and need an `isInt` premise, not new `cases` arms.
 - `tyE t := t != .i128` and `Isel.eTy` would silently admit floats; they must test
   `isInt` until the float rules are proven.
-- `Isel.argLocs` takes byte sizes only, so it cannot tell `i64` from `f64`; the ABI change
-  touches `ArgsIn`, callee contracts and the linking proofs (`docs/contracts/e2e.md`).
+- `Isel.argLocs` takes byte sizes only, so it cannot tell `i64` from `f64` (S11e2: the typed
+  `argLocsC`/`abiArgLocs` take classes; S11e3: the lowering's `sigArgLocs` places floats in
+  v registers, and calls reject float signatures until S11e5); the
+  ABI change touches `ArgsIn`, callee contracts and the linking proofs (`docs/contracts/e2e.md`).
 - Changing `Clif.Syntax` rebuilds everything downstream, including the heavy
   `FV.Opt.Proof.*` modules (TO-PROVE §7: serial, ≤3 at a time).
 - `clif-native`'s random differential generator rejects float parameters

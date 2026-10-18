@@ -1,6 +1,7 @@
 import FV.Backend.Proof.IselGeneric
 import FV.Backend.Proof.IselData
 import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.AbiClass
 
 /-!
 # The isel contract: what M4 proves about the ISLE rules, and what M7 consumes
@@ -198,6 +199,23 @@ def addpBytes (n m : BitVec 64) : BitVec 64 :=
 def addvBytes (x : BitVec 64) : BitVec 64 :=
   (byteOf x 0 + byteOf x 1 + byteOf x 2 + byteOf x 3 + byteOf x 4 + byteOf x 5 + byteOf x 6 +
     byteOf x 7).setWidth 64
+
+/-- `MOVI Vd.<T>, #imm8` (`LSL #0`): `imm8` zero-extended into every lane of the arrangement
+(8-, 16- or 32-bit lanes), the 64-bit arrangements zeroing the upper half of the register. The
+2D arrangement is not a `movi #imm8` (0). -/
+def moviVal (sz : VectorSize) (imm8 : BitVec 8) : CV :=
+  match sz with
+  | .size8x8 => (BitVec.replicate 8 imm8).setWidth 128
+  | .size8x16 => (BitVec.replicate 16 imm8).setWidth 128
+  | .size16x4 => (BitVec.replicate 4 (imm8.setWidth 16)).setWidth 128
+  | .size16x8 => (BitVec.replicate 8 (imm8.setWidth 16)).setWidth 128
+  | .size32x2 => (BitVec.replicate 2 (imm8.setWidth 32)).setWidth 128
+  | .size32x4 => (BitVec.replicate 4 (imm8.setWidth 32)).setWidth 128
+  | .size64x2 => 0
+
+/-- The zero `movi` (`constant_f32 0`/`constant_f64 0`: `movi vd.2s, #0`) zeroes the register. -/
+theorem moviVal_zero (sz : VectorSize) : moviVal sz 0#8 = 0#128 := by
+  cases sz <;> decide
 
 /-- `UBFM`/`SBFM` at width `n` (`immr`, `imms` below `n`): for `immr ≤ imms` the field
 `x[imms:immr]` moved to bit 0, else the field `x[imms:0]` moved to bit `n - immr`; zero-extended
@@ -445,6 +463,23 @@ def ispec : Sem := fun i uses w =>
     else some (defOut rd (ofX (if Arm.ConditionHolds c.invert.bits w then 0#64
       else BitVec.allOnes 64)), w, .next)
   | .fence, [] => some ([], w, .next)
+  -- S11e1: scalar FP data movement. A scalar FP write zeroes the register above the scalar
+  -- (Arm `write_sfp`); `fcsel` selects on the flags, `fmov #imm` expands its 8-bit immediate
+  -- (`VFPExpandImm`), `movi` replicates its 8-bit immediate over the lanes (`moviVal`)
+  | .fpuCSel .size32 rd _ _ c, [a, b] =>
+    some (defOut rd ((if Arm.ConditionHolds c.bits w then a.setWidth 32 else b.setWidth 32).setWidth 128),
+      w, .next)
+  | .fpuCSel .size64 rd _ _ c, [a, b] =>
+    some (defOut rd ((if Arm.ConditionHolds c.bits w then a.setWidth 64 else b.setWidth 64).setWidth 128),
+      w, .next)
+  | .fpuMoveFPImm rd imm .size32, [] =>
+    some (defOut rd ((Arm.DPSFP.VFPExpandImm 8 23 imm.imm).setWidth 128), w, .next)
+  | .fpuMoveFPImm rd imm .size64, [] =>
+    some (defOut rd ((Arm.DPSFP.VFPExpandImm 11 52 imm.imm).setWidth 128), w, .next)
+  | .vecDupImm rd imm false sz, [] =>
+    if imm.shift = 0 ∧ imm.shiftOnes = false ∧ imm.is64 = false ∧ sz ≠ .size64x2 then
+      some (defOut rd (moviVal sz imm.imm), w, .next)
+    else none
   | _, _ => none
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
@@ -469,6 +504,15 @@ def MRStable (F : BitVec 64 → Prop) (MR : MemRelT) : Prop :=
 
 /-- The types of the E integer types `i8..i64` (`buildCtx` rejects `i128` values). -/
 def eCTys : List CTy := [.int 8, .int 16, .int 32, .int 64]
+
+/-- The value types of E are in X registers. -/
+theorem valClass_of_eCTys {t : CTy} (h : t ∈ eCTys) : t.valClass = .int := by
+  simp only [eCTys, List.mem_cons, List.not_mem_nil, or_false] at h
+  rcases h with rfl | rfl | rfl | rfl <;> rfl
+
+/-- Every value type of `ctx` is an E type (`i8..i64`): `buildCtx` on a function of the
+lowering's integer scope (`Driver.ctxE_of`), `CtxInv.valTyE`. -/
+def CtxE (ctx : Ctx) : Prop := ∀ x t, ctx.valueType? x = some t → t ∈ eCTys
 
 /-- The address operand of a load or store (contract change #7), also of an atomic access. -/
 def memAddr? : Clif.Inst → Option Nat
@@ -1015,6 +1059,62 @@ def LowerRulesCorrect (p : Program) : Prop :=
 
 /-! ### Calls (contract change #5; stack-passed arguments: agent/stack-tls-proof) -/
 
+/-- A signature of subset E (`Compile.sigE`) has integer parameters and returns. -/
+theorem sigE_int {s : Clif.Signature} (h : Compile.sigE s = true) :
+    s.params.all (·.ty.isInt) = true ∧ s.returns.all (·.ty.isInt) = true := by
+  simp only [Compile.sigE, Compile.tyE, Bool.and_eq_true, List.all_eq_true] at h
+  exact ⟨List.all_eq_true.mpr fun p hp => (h.1 p hp).1,
+    List.all_eq_true.mpr fun p hp => (h.2 p hp).1⟩
+
+/-- A function of subset E has an integer signature. -/
+theorem functionE_sig_int {f : Clif.Function} (h : Compile.functionE f = true) :
+    f.sig.params.all (·.ty.isInt) = true ∧ f.sig.returns.all (·.ty.isInt) = true := by
+  simp only [Compile.functionE, Bool.and_eq_true] at h
+  exact sigE_int h.1.1.1
+
+theorem lookup_some_mem {β : Type} : ∀ {l : List (Nat × β)} {a : Nat} {b : β},
+    l.lookup a = some b → (a, b) ∈ l
+  | [], _, _, h => by simp [List.lookup] at h
+  | (k, v) :: l, a, b, h => by
+    by_cases hk : a = k
+    · subst hk
+      simp [List.lookup] at h
+      simp [h]
+    · simp only [List.lookup, show (a == k) = false from by simpa using hk] at h
+      exact List.mem_cons_of_mem _ (lookup_some_mem h)
+
+/-- The externs of a function of subset E have integer signatures. -/
+theorem functionE_extern_int {f : Clif.Function} (h : Compile.functionE f = true)
+    {fn : Clif.FnRef} {e : Clif.ExtFunc} (he : f.extern? fn = some e) :
+    e.sig.params.all (·.ty.isInt) = true ∧ e.sig.returns.all (·.ty.isInt) = true := by
+  simp only [Compile.functionE, Bool.and_eq_true, List.all_eq_true] at h
+  exact sigE_int (h.1.2 (fn, e) (lookup_some_mem he))
+
+/-- `sigIntB` as the two `List.all` facts. -/
+theorem sigIntB_iff {s : Clif.Signature} :
+    sigIntB s = true ↔ s.params.all (·.ty.isInt) = true ∧ s.returns.all (·.ty.isInt) = true := by
+  simp [sigIntB]
+
+/-- A `call` that `instData` accepts calls an extern with an integer signature. -/
+theorem instData_call_int {f : Clif.Function} {fn : Clif.FnRef} {args : List Nat} {d : V}
+    (h : instData f (.call fn args) = .ok d) {e : Clif.ExtFunc} (he : f.extern? fn = some e) :
+    sigIntB e.sig = true := by
+  simp only [instData, he] at h
+  split at h
+  · split at h
+    · assumption
+    · cases h
+  · cases h
+
+/-- A `call_indirect` that `instData` accepts has a declared integer signature. -/
+theorem instData_callIndirect_int {f : Clif.Function} {sig : Nat} {c : Nat} {args : List Nat}
+    {d : V} (h : instData f (.callIndirect sig c args) = .ok d) {s : Clif.Signature}
+    (hs : f.sigDecls.lookup sig = some s) : sigIntB s = true := by
+  simp only [instData, hs] at h
+  split at h
+  · assumption
+  · cases h
+
 /-- The byte sizes of a signature's parameters (`sigArgs`) are their types' sizes. -/
 theorem sigArgs_eq_map : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
     ps.mapM (fun p => if p.ty == .i128 then throw "i128 parameter"
@@ -1090,6 +1190,11 @@ theorem sigArgs_bytes : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
             · cases hb
           · cases hb
         · exact sigArgs_bytes hbs c hc
+
+/-- The byte sizes of the parameters the lowering passes (`sigParamBytes`) are 1, 2, 4 or 8. -/
+theorem sigParamBytes_bytes {s : Clif.Signature} {bytes : List Nat}
+    (hb : sigParamBytes s = .ok bytes) : ∀ b ∈ bytes, b = 1 ∨ b = 2 ∨ b = 4 ∨ b = 8 :=
+  sigArgs_bytes hb
 
 /-- The arguments of a call of `s` passed in registers, in parameter order. -/
 def regArgVals (s : Clif.Signature) (vals : List Clif.Val) : List Clif.Val :=

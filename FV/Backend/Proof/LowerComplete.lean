@@ -87,18 +87,15 @@ theorem sretLocStep_fold : ∀ (ps : List Clif.AbiParam) (q : Array ArgLoc × Li
           exact h2 l (by rw [hq]; exact List.mem_cons_of_mem _ hl)
         · simp at hl
 
-theorem sigArgs_length {s : Clif.Signature} {bytes : List Nat} (h : sigArgs s = .ok bytes) :
-    bytes.length = s.params.length := by
-  unfold sigArgs at h
-  exact (Prep.lmapM_ok h).1
-
-/-- `entryOkB` holds when the parameter locations and byte sizes compute. -/
+/-- `entryOkB` holds when the parameter locations and byte sizes compute, for integer
+parameters (`entryOkB` checks x-register locations). -/
 theorem entryOkB_of {f : Clif.Function} {locs : List ArgLoc} {n : Nat} {bytes : List Nat}
+    (hi : f.sig.params.all (·.ty.isInt) = true)
     (hl : sigArgLocs f.sig = .ok (locs, n)) (hb : sigParamBytes f.sig = .ok bytes) :
     entryOkB f = true := by
   have hlocs : locsOf f.sig = locs := by simp [locsOf, hl]
   have key : locs.length = f.sig.params.length ∧ ∀ l ∈ locs, LocOk l := by
-    unfold sigArgLocs at hl
+    rw [sigArgLocs_eq hi] at hl
     simp only [sigParamBytes] at hb
     rw [hb] at hl
     simp only [bind, Except.bind] at hl
@@ -478,7 +475,7 @@ theorem emitted_of_run {ctx : Ctx} {term : String} {args : List V} {s : LState} 
 conditions `Dominated` and `LowerScope`, `lowerCheck` accepts `lowerFunction`'s output. -/
 theorem lowerCheck_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
     (hs : LowerScope f) (h : lowerFunction f = .ok vc) : lowerCheck f vc = true := by
-  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_run h
+  obtain ⟨ctx, ranges, st0, bl, hb, hl, hvb, hout, hlf⟩ := lowerFunction_run hs.subsetE h
   obtain ⟨hu, -, hwf⟩ := alias_facts hd hs hb hl
   have hctx : CtxInv f ctx := ctxOk_sound (ctxOk_complete hs hb)
   have hcf := ctxFacts_of hb
@@ -637,6 +634,6 @@ theorem lowerCheck_complete {f : Clif.Function} {vc : VCode} (hd : Dominated f)
   · -- the entry's parameter locations
     obtain ⟨locs, n, hloc⟩ := hlf.entry hs.nonempty
     obtain ⟨bytes, hby⟩ := hlf.paramBytes
-    exact entryOkB_of hloc hby
+    exact entryOkB_of (functionE_sig_int hs.subsetE).1 hloc hby
 
 end Backend.Proof.Driver
