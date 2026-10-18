@@ -471,4 +471,124 @@ theorem mem_leafList {f : Function} {x : ValueId} {d : Nat} :
     · exact ⟨(b, d), hb, .inl ⟨p, hp, rfl, rfl⟩⟩
     · exact ⟨(b, d), hb, .inr ⟨s, ⟨hs, hsk⟩, x, hr, rfl, rfl⟩⟩
 
+/-! ## The invariant of the run -/
+
+/-- The output view at a point of block `bi` with records `lgs`. -/
+def CurV (f : Function) (logs : Array (Option BlockLog)) (bi : Nat) (lgs : List StmtLog) :
+    Nat → Option Block :=
+  emitV (V0 f logs bi) bi (outsOf lgs)
+
+/-- **The invariant of the run** at statement `j` of block `bi` (module doc). -/
+structure SimpInv (f : Function) (info : Info) (allowed skelOk : Inst → Bool)
+    (logs : Array (Option BlockLog)) (bi j : Nat) (lgs : List StmtLog) (st : SState) (S : Subst) :
+    Prop where
+  rinv : RInv f (CurV f logs bi lgs) (Bad f logs bi j S) (fun _ => False) (fun _ => False) st
+  srcTy : ∀ y t, info.types.get? y = some t → st.types.get? y = some t
+  leafAv : ∀ y d, (initAvail f).get? y = some d → st.avail.get? y = some d
+  availSrc : ∀ y d, st.avail.get? y = some d → y ≤ maxValue f →
+    (initAvail f).get? y = some d ∨ ∃ t, (defMap f).get? y = some (d, t) ∧ Done f logs bi j y
+  defsSrc : ∀ y n, st.defs.get? y = some n → y ≤ maxValue f → Done f logs bi j y
+  defsLeaf : ∀ y, (initAvail f).contains y = true → st.defs.get? y = none
+  doneAv : ∀ y, Done f logs bi j y → S.contains y = false →
+    Placed st (Bad f logs bi j S) y ∧ ∃ d t, (defMap f).get? y = some (d, t) ∧ st.avail.get? y = some d
+  substOk : ∀ y w, S.get? y = some w → Done f logs bi j y ∧ Placed st (Bad f logs bi j S) w ∧
+    (∃ d' t', DefAt (CurV f logs bi lgs) w d' t' ∧ ∃ d t, (defMap f).get? y = some (d, t) ∧
+      (d' = d ∨ Anc info.cfg.idom d' d)) ∧ st.types.get? w = st.types.get? y
+  outs : ∀ d b, CurV f logs bi lgs d = some b →
+    (∃ b0, f.blocks[d]? = some b0 ∧ b.params = b0.params ∧ b.id = b0.id) ∧
+    ∀ k t, b.body[k]? = some t →
+      OutStmt f allowed skelOk info.cfg.idom (CurV f logs bi lgs) (Bad f logs bi j S) st d k t
+  done : ∀ d lg, logs[d]? = some (some lg) → ∃ b0 bo, f.blocks[d]? = some b0 ∧
+    blockOf f d lg = some bo ∧
+    StmtsFact info.cfg.idom (CurV f logs bi lgs) (Bad f logs bi j S) st S d b0.body lg.stmts 0 ∧
+    TermLogFact (Bad f logs bi j S) st S b0 lg ∧
+    TermOut info info.cfg.idom (CurV f logs bi lgs) (Bad f logs bi j S) st d bo.body.length b0 lg.term'
+  cur : ∃ b0, f.blocks[bi]? = some b0 ∧ j ≤ b0.body.length ∧
+    StmtsFact info.cfg.idom (CurV f logs bi lgs) (Bad f logs bi j S) st S bi (b0.body.take j) lgs 0
+  size : logs.size = f.blocks.length
+  notbi : logs[bi]? = some none
+  preds : ∀ d, d ≠ bi → Anc info.cfg.idom d bi → ∃ lg, logs[d]? = some (some lg)
+
+section Inv
+
+variable {f : Function} {info : Info} {allowed skelOk : Inst → Bool}
+  {logs : Array (Option BlockLog)} {bi j : Nat} {lgs : List StmtLog} {st : SState} {S : Subst}
+
+theorem SimpInv.keyBad (h : SimpInv f info allowed skelOk logs bi j lgs st S) :
+    ∀ y, S.contains y = true → Bad f logs bi j S y := fun _ hy => .inr hy
+
+theorem SimpInv.chainFree (h : SimpInv f info allowed skelOk logs bi j lgs st S) : ChainFree S := by
+  intro k w hk
+  obtain ⟨-, hw, -⟩ := h.substOk k w hk
+  cases hc : S[w]? with
+  | none => rfl
+  | some u =>
+    exact absurd (.inr ((hm_contains_iff _ _).2 (by rw [Std.HashMap.get?_eq_getElem?, hc]; rfl)))
+      hw.not_bad
+
+theorem SimpInv.find_eq (h : SimpInv f info allowed skelOk logs bi j lgs st S) (x : ValueId) :
+    S.find x = S.step x := by
+  rw [find_chainFree h.chainFree]; rfl
+
+/-- The type of a defined value. -/
+theorem Checked.typed {hc : Checked f info} {y : ValueId} {s : Nat × Nat}
+    (h : (defMap f).get? y = some s) : ∃ t, info.types.get? y = some t := by
+  have hs := hc.wf.sitesRev y s h
+  obtain ⟨i, b, hb, ⟨p, hp, rfl, -⟩ | ⟨k, st, hst, hy, -⟩⟩ := mem_defSites.1 hs
+  · exact ⟨p.2, hc.wf.params i b hb p hp⟩
+  · obtain ⟨ts, -, hlen, hts⟩ := hc.wf.results i b hb k st hst
+    obtain ⟨n, hn⟩ := List.mem_iff_getElem?.1 hy
+    have := hts n y hn
+    have hnl : n < ts.length := by have := (List.getElem?_eq_some_iff.1 hn).1; omega
+    rw [List.getElem?_eq_getElem hnl] at this
+    exact ⟨_, this⟩
+
+/-- A use available (in `f`) at statement `j` of block `bi` reads a done value whose renaming
+is placeable and available at the end of the current block, of the same type. -/
+theorem SimpInv.renOp (hc : Checked f info) (h : SimpInv f info allowed skelOk logs bi j lgs st S)
+    {y : ValueId} (hy : ∃ d t, (defMap f).get? y = some (d, t) ∧
+      ((d = bi ∧ t ≤ j) ∨ (d ≠ bi ∧ Anc info.cfg.idom d bi))) :
+    Done f logs bi j y ∧ (S.contains y = true ∨ ¬ Bad f logs bi j S y) ∧
+      Placed st (Bad f logs bi j S) (S.step y) ∧
+      AvailHere info.cfg.idom (CurV f logs bi lgs) bi (S.step y) ∧
+      st.types.get? (S.step y) = info.types.get? y := by
+  obtain ⟨d, t, hd, hpos⟩ := hy
+  have hdone : Done f logs bi j y := by
+    refine ⟨d, t, hd, ?_⟩
+    rcases hpos with ⟨rfl, ht⟩ | ⟨hne, hanc⟩
+    · exact .inr ⟨rfl, ht⟩
+    · exact .inl (h.preds d hne hanc)
+  obtain ⟨ty, hty⟩ := Checked.typed (hc := hc) hd
+  have hty' := h.srcTy y ty hty
+  cases hS : S.get? y with
+  | some w =>
+    obtain ⟨-, hw, ⟨d', t', hd', d0, t0, hd0, hrel⟩, htw⟩ := h.substOk y w hS
+    rw [hd] at hd0; cases hd0
+    have hstep : S.step y = w := by rw [Std.HashMap.get?_eq_getElem?] at hS; simp [Subst.step, hS]
+    refine ⟨hdone, .inl ((hm_contains_iff _ _).2 (by rw [hS]; rfl)), by rw [hstep]; exact hw,
+      ⟨d', t', by rw [hstep]; exact hd', ?_⟩, by rw [hstep, htw, hty', hty]⟩
+    rcases hpos with ⟨rfl, -⟩ | ⟨hne, hanc⟩
+    · rcases hrel with rfl | hrel
+      · exact .inl rfl
+      · exact .inr hrel
+    · rcases hrel with rfl | hrel
+      · exact .inr hanc
+      · exact .inr (hrel.trans hanc)
+  | none =>
+    have hk : S.contains y = false := by
+      cases hc' : S.contains y with
+      | false => rfl
+      | true => rw [hm_contains_iff, hS] at hc'; cases hc'
+    obtain ⟨hp, d1, t1, hd1, hav⟩ := h.doneAv y hdone hk
+    rw [hd] at hd1; cases hd1
+    have hstep : S.step y = y := by rw [Std.HashMap.get?_eq_getElem?] at hS; simp [Subst.step, hS]
+    obtain ⟨t2, ht2⟩ := h.rinv.m.availDef y d hav hp.not_bad
+    refine ⟨hdone, .inr hp.not_bad, by rw [hstep]; exact hp, ⟨d, t2, by rw [hstep]; exact ht2, ?_⟩,
+      by rw [hstep, hty', hty]⟩
+    rcases hpos with ⟨rfl, -⟩ | ⟨-, hanc⟩
+    · exact .inl rfl
+    · exact .inr hanc
+
+end Inv
+
 end Opt
