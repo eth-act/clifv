@@ -2,14 +2,16 @@ import FV.Backend
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
+import FVTest.Backend.AllocChoice
 
 /-!
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
-[--dump <dir>] [--regalloc regalloc2|spill|stack|regalloc2-small] [--personality <sym>]
+[--dump <dir>] [--regalloc regalloc2|lean|spill|stack|regalloc2-small] [--personality <sym>]
 [--opt [--opt-* options]]`: compile every function of a `.clif` file with the
 Lean backend (`FV/Backend.lean`). Register allocation: `regalloc2` (default; the
 `lean-regalloc` oracle, `$LEAN_REGALLOC` or `rust/target/release/lean-regalloc`, every
-allocation validated by the Lean checker, `docs/contracts/regalloc.md`), `stack` (the
+allocation validated by the Lean checker, `docs/contracts/regalloc.md`), `lean` (the Lean
+allocator `leanAlloc`, `FV/Backend/LinearScan.lean`, validated the same way), `stack` (the
 stack-slot baseline), or `regalloc2-small` (regalloc2 with the 10-register stress environment
 `smallEnv`, for testing spill code). If the output path ends in `.o`, write an ELF relocatable object encoded
 by the Lean encoder (`FV/Backend/{Encode,Obj}.lean`, no assembler); otherwise write assembly
@@ -46,7 +48,7 @@ validator and listed as `compiled, unverified (validation budget)`.
 open Backend
 
 def usage : String :=
-  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--stock-config <request.json> --config-receipt <receipt.json>]"
+  "usage: lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>] [--dump <dir>] [--regalloc regalloc2|lean|spill|stack|regalloc2-small] [--personality <sym>] [--opt] [--dead-cleanup|--no-dead-cleanup] [--stock-config <request.json> --config-receipt <receipt.json>]"
 
 /-- The rules the end-to-end theorem covers: the emitter-subset closure, and the `try_call`
 rules of `lower_branch` (ids 1034 `bl`, 1035 GOT + `blr`: `Backend.Proof.tryRootRule`, proven by
@@ -88,8 +90,10 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     match checked with
     | .error e => IO.eprintln s!"lean-backend: unsupported stock configuration: {e}"; return 3
     | .ok c => stock := some c
-  let some alloc ← Allocator.ofName? o.regalloc
+  let some runAlloc ← allocRunOfName? o.regalloc
     | do IO.eprintln s!"lean-backend: unknown allocator {o.regalloc}"; return 2
+  -- the stock configuration requires regalloc2 (checked above)
+  let alloc := (← Allocator.ofName? o.regalloc).getD .spill
   let source := Clif.parseFile src
   let lg := Opt.Legalize128.parsedFile128 source
   let pf := match o.opt with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
@@ -106,7 +110,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
     (source.funcs ++ pf.funcs).filterMap fun p => if p.name == name then p.func.toOption else none
   let rejected ← IO.mkRef (#[] : Array (String × String))
   let fa ← match stock with
-    | none => compileFileIO alloc pf (unv128 ++ unvTry) o.deadCleanup
+    | none => compileFileWith runAlloc pf (unv128 ++ unvTry) o.deadCleanup
     | some c => (compileFileWith (StockConfig.allocate c clif rejected alloc) pf
         (unv128 ++ unvTry ++ pf.funcs.map (fun p => (p.name, "experimental stock-configured driver (outside backend_correct)"))) o.deadCleanup)
   if let (some request, some receipt) := (stock.map (·.request), o.configReceipt) then
