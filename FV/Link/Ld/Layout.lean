@@ -440,6 +440,9 @@ def link (o : Opts) (ins : List Input) : Except String LinkOut := do
   let roots := o.entry :: o.undefs
   let st ← resolve roots ins
   let g ← st.gc roots o.gc
-  layout o st g
+  let r ← layout o st g
+  -- the writer's theorems (`FV/Link/Ld/WriteProof.lean`) assume the headers' values fit
+  if !r.img.hdrFitsB then throw "the headers' values do not fit their fields (hdrFitsB)"
+  pure r
 
 end Link.Ld

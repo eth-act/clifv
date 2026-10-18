@@ -276,3 +276,27 @@ the static executable, and theorems state that its output meets those conditions
   rust-lld premise.
 * **3d** (driver): `cargo fv --lean-ld` links with `lean-ld` instead of rust-lld (and as the
   fallback when rust-lld's output fails `file0OkB`); survey/fv-demo gates.
+
+### Status: 3a done (#267), 3b started (#268)
+
+* **`lake exe lean-ld`** (`FV/Link/Ld/{Obj,Resolve,Reloc,Layout,Write}.lean`,
+  `FVTest/Link/LeanLdMain.lean`): takes rustc's GNU ld argument list (objects, rlibs, `-lc`,
+  `-lunwind`, `-L`, `-o`, `-e`, `-u`, `--gc-sections`, `-Map`; the rest of rustc's options have
+  no effect on a static non-PIE link and are accepted). Debug sections are not written (the
+  binary theorems do not read them). It links rustc's `aarch64-unknown-linux-musl` std
+  executables in about 0.1 s.
+  - A std program with a `HashMap`, a thread and a caught panic (unwinding through
+    `.eh_frame_hdr`) prints the same output as with rust-lld; the nine survey crates' tests
+    (`cargo test`, LLVM backend) linked by `lean-ld` all pass (53 tests).
+  - **`cargo fv test --lean-link --verified` with `lean-ld` as the final linker** (rust-lld
+    kept only for `ld -r`, through `FV_RUST_LLD` and a dispatching script; the driver flag is
+    3d): all survey executables are written by `Link.DeadCleanup.compileExe`, so `lean-ld`'s
+    output passes `file0OkB` (`regionOkB`, `hdrB`, `dataFastB`, `symsOkB`, `symFootB`,
+    `tlsOkB`). The binary check verifies 18 of 18 executables, and all 53 tests pass.
+* **The writer read back** (`FV/Link/Ld/WriteProof.lean`): `ehdr_write` (the ELF header:
+  `ET_EXEC`, `EM_AARCH64`, the entry, `e_phoff = 64`, `e_shoff`, the counts) and
+  `phdrs_write` (`phdrs (fileRd img.write) = some img.phs`) for every image whose header
+  values fit their fields (`Img.hdrFitsB`, which `lean-ld` checks on its own plan), and
+  `fileRd_write_body` (past the headers the file is the body). Witnesses: `tinyImg_hdrFits`,
+  `ehdr_write_witness`, `phdrs_write_witness`. Axioms: `propext`, `Classical.choice`,
+  `Quot.sound`.

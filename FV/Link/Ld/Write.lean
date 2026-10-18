@@ -48,7 +48,7 @@ structure Img where
   deriving Inhabited
 
 /-- `b` with the little-endian `n`-byte value `v` written at `o` (`b` grown with zeros as
-needed). -/
+needed; the planner's in-place patches). -/
 def putLE (b : ByteArray) (o n v : Nat) : ByteArray := Id.run do
   let mut b := b
   while b.size < o + n do
@@ -57,117 +57,132 @@ def putLE (b : ByteArray) (o n v : Nat) : ByteArray := Id.run do
     b := b.set! (o + i) (UInt8.ofNat (v >>> (8 * i) % 256))
   return b
 
-/-- `b` padded with zeros to a multiple of `a`. -/
-def padTo (b : ByteArray) (a : Nat) : ByteArray := Id.run do
-  let mut b := b
-  while b.size % a != 0 do
-    b := b.push 0
-  return b
+/-- Byte `i` of the little-endian representation of `v`. -/
+def leByte (v i : Nat) : UInt8 := UInt8.ofNat (v >>> (8 * i))
 
-/-- The ELF header fields of an executable with `phnum` program headers at `64`, `shnum` section
-headers at `shoff`, section names in section `shstrndx`. -/
-def ehdrBytes (entry phnum shoff shnum shstrndx : Nat) : ByteArray :=
-  let b := ByteArray.mk (Array.replicate 64 0)
-  let b := putLE b 0 4 0x464c457f
-  let b := putLE b 4 1 2
-  let b := putLE b 5 1 1
-  let b := putLE b 6 1 1
-  let b := putLE b 16 2 2
-  let b := putLE b 18 2 183
-  let b := putLE b 20 4 1
-  let b := putLE b 24 8 entry
-  let b := putLE b 32 8 64
-  let b := putLE b 40 8 shoff
-  let b := putLE b 52 2 64
-  let b := putLE b 54 2 56
-  let b := putLE b 56 2 phnum
-  let b := putLE b 58 2 64
-  let b := putLE b 60 2 shnum
-  putLE b 62 2 shstrndx
+/-- **A record** of `size` bytes: the fields `(offset, width, value)`, little-endian, zeros
+elsewhere (the first field covering a byte wins). -/
+def record (size : Nat) (fs : List (Nat × Nat × Nat)) : List UInt8 :=
+  (List.range size).map fun i =>
+    match fs.find? (fun f => decide (f.1 ≤ i ∧ i < f.1 + f.2.1)) with
+    | some f => leByte f.2.2 (i - f.1)
+    | none => 0
 
-/-- A program header's 56 bytes. -/
-def phdrBytes (p : Phdr) : ByteArray :=
-  let b := ByteArray.mk (Array.replicate 56 0)
-  let b := putLE b 0 4 p.type
-  let b := putLE b 4 4 p.flags
-  let b := putLE b 8 8 p.offset
-  let b := putLE b 16 8 p.vaddr
-  let b := putLE b 24 8 p.vaddr
-  let b := putLE b 32 8 p.filesz
-  let b := putLE b 40 8 p.memsz
-  putLE b 48 8 p.align
+/-- The ELF header's fields: `e_ident` (magic, `ELFCLASS64`, `ELFDATA2LSB`, version), `ET_EXEC`,
+`EM_AARCH64`, `e_version`, `e_entry`, `e_phoff = 64`, `e_shoff`, the header and entry sizes, the
+counts and `e_shstrndx`. -/
+def ehdrFields (entry phnum shoff shnum shstrndx : Nat) : List (Nat × Nat × Nat) :=
+  [(0, 4, 0x464c457f), (4, 1, 2), (5, 1, 1), (6, 1, 1), (16, 2, 2), (18, 2, 183), (20, 4, 1),
+   (24, 8, entry), (32, 8, 64), (40, 8, shoff), (52, 2, 64), (54, 2, 56), (56, 2, phnum),
+   (58, 2, 64), (60, 2, shnum), (62, 2, shstrndx)]
 
-/-- A string table of `names` (a leading NUL) and each name's offset. -/
-def strtab (names : Array String) : ByteArray × Array Nat := Id.run do
-  let mut b := ByteArray.mk #[0]
-  let mut offs : Array Nat := Array.mkEmpty names.size
-  for n in names do
-    offs := offs.push b.size
-    b := b ++ n.toUTF8
-    b := b.push 0
-  return (b, offs)
+/-- A program header's fields. -/
+def phdrFields (p : Phdr) : List (Nat × Nat × Nat) :=
+  [(0, 4, p.type), (4, 4, p.flags), (8, 8, p.offset), (16, 8, p.vaddr), (24, 8, p.vaddr),
+   (32, 8, p.filesz), (40, 8, p.memsz), (48, 8, p.align)]
 
-/-- A section header's 64 bytes. -/
-def shdrBytes (name type flags addr off size link info align entsize : Nat) : ByteArray :=
-  let b := ByteArray.mk (Array.replicate 64 0)
-  let b := putLE b 0 4 name
-  let b := putLE b 4 4 type
-  let b := putLE b 8 8 flags
-  let b := putLE b 16 8 addr
-  let b := putLE b 24 8 off
-  let b := putLE b 32 8 size
-  let b := putLE b 40 4 link
-  let b := putLE b 44 4 info
-  let b := putLE b 48 8 align
-  putLE b 56 8 entsize
+/-- A symbol table entry's fields (`st_name`, `st_info`, `st_shndx`, `st_value`, `st_size`). -/
+def symFields (nm : Nat) (s : OutSym) : List (Nat × Nat × Nat) :=
+  [(0, 4, nm), (4, 1, s.info), (6, 2, s.shndx), (8, 8, s.value), (16, 8, s.size)]
 
-/-- **The executable of an image description.** -/
-def Img.write (img : Img) : ByteArray := Id.run do
+/-- A section header's fields. -/
+def shdrFields (name type flags addr off size link info align entsize : Nat) :
+    List (Nat × Nat × Nat) :=
+  [(0, 4, name), (4, 4, type), (8, 8, flags), (16, 8, addr), (24, 8, off), (32, 8, size),
+   (40, 4, link), (44, 4, info), (48, 8, align), (56, 8, entsize)]
+
+/-- The offsets of `names` in their string table (after the leading NUL). -/
+def strOffsets : List String → Nat → List Nat
+  | [], _ => []
+  | n :: ns, o => o :: strOffsets ns (o + n.toUTF8.size + 1)
+
+/-- A string table: a NUL, then every name followed by a NUL. -/
+def strtabOf (names : List String) : List UInt8 :=
+  0 :: names.flatMap fun n => n.toUTF8.toList ++ [0]
+
+/-- `b` with zeros up to a multiple of 8. -/
+def pad8 (b : ByteArray) : ByteArray :=
+  b ++ ⟨Array.replicate ((8 - b.size % 8) % 8) 0⟩
+
+/-- `file` with `b` written over its start (within the file). -/
+def overStart (file : ByteArray) (b : ByteArray) : ByteArray :=
+  ⟨Array.ofFn (n := file.size) fun i => if h : i.1 < b.size then b[i.1] else file[i.1]'i.2⟩
+
+/-- The layout of the tables after the body: the offsets of `.symtab`, `.strtab`, `.shstrtab`
+and the section header table, from the body's padded size `b`. -/
+structure Tabs where
+  symOff : Nat
+  symSize : Nat
+  strOff : Nat
+  strSize : Nat
+  shsOff : Nat
+  shsSize : Nat
+  shoff : Nat
+  deriving Repr
+
+/-- The section names: the output sections', then `.symtab`, `.strtab`, `.shstrtab`. -/
+def Img.secNames (img : Img) : List String :=
+  img.secs.toList.map (·.name) ++ [".symtab", ".strtab", ".shstrtab"]
+
+/-- The tables' layout. -/
+def Img.tabs (img : Img) : Tabs :=
+  let b := (pad8 img.body).size
+  let symSize := 24 * (img.syms.size + 1)
+  let strSize := (strtabOf (img.syms.toList.map (·.name))).length
+  let shsSize := (strtabOf img.secNames).length
+  let shsEnd := b + symSize + strSize + shsSize
+  { symOff := b, symSize, strOff := b + symSize, strSize, shsOff := b + symSize + strSize,
+    shsSize, shoff := shsEnd + (8 - shsEnd % 8) % 8 }
+
+/-- The index of the first global symbol in `.symtab` (`sh_info`). -/
+def Img.firstGlobal (img : Img) : Nat := 1 + (img.syms.toList.takeWhile (·.info >>> 4 == 0)).length
+
+/-- The section headers' fields: the null entry, the output sections, `.symtab` (linked to
+`.strtab`), `.strtab`, `.shstrtab`. -/
+def Img.shdrList (img : Img) (t : Tabs) : List (List (Nat × Nat × Nat)) :=
   let nsec := img.secs.size
-  -- section indices: 0 null, 1..nsec the output sections, then .symtab, .strtab, .shstrtab
-  let iSym := nsec + 1
-  let iStr := nsec + 2
-  let iShs := nsec + 3
-  let (shs, shOffs) := strtab ((img.secs.map (·.name)) ++ #[".symtab", ".strtab", ".shstrtab"])
-  let (strs, strOffs) := strtab (img.syms.map (·.name))
-  let mut f := padTo img.body 8
-  -- .symtab
-  let symOff := f.size
-  f := f ++ ByteArray.mk (Array.replicate 24 0)
-  for i in [0:img.syms.size] do
-    let s := img.syms[i]!
-    let o := f.size
-    f := putLE f o 4 strOffs[i]!
-    f := putLE f (o + 4) 1 s.info
-    f := putLE f (o + 6) 2 s.shndx
-    f := putLE f (o + 8) 8 s.value
-    f := putLE f (o + 16) 8 s.size
-  let symSize := f.size - symOff
-  let firstGlobal := 1 + (img.syms.toList.takeWhile (·.info >>> 4 == 0)).length
-  let strOff := f.size
-  f := f ++ strs
-  let shsOff := f.size
-  f := padTo (f ++ shs) 8
-  let shoff := f.size
-  f := f ++ ByteArray.mk (Array.replicate 64 0)
-  for i in [0:nsec] do
-    let s := img.secs[i]!
-    f := f ++ shdrBytes shOffs[i]! s.type s.flags s.addr s.off s.size 0 0 s.align s.entsize
-  f := f ++ shdrBytes shOffs[nsec]! 2 0 0 symOff symSize iStr firstGlobal 8 24
-  f := f ++ shdrBytes shOffs[nsec + 1]! 3 0 0 strOff strs.size 0 0 1 0
-  f := f ++ shdrBytes shOffs[nsec + 2]! 3 0 0 shsOff shs.size 0 0 1 0
-  -- the ELF header and the program headers over the start of the body
-  let h := ehdrBytes img.entry img.phs.length shoff (nsec + 4) iShs
-  for i in [0:64] do
-    f := f.set! i h[i]!
-  let mut k := 0
-  for p in img.phs do
-    let pb := phdrBytes p
-    for i in [0:56] do
-      f := f.set! (64 + 56 * k + i) pb[i]!
-    k := k + 1
-  let _ := iSym
-  return f
+  let offs := strOffsets img.secNames 1
+  shdrFields 0 0 0 0 0 0 0 0 0 0 ::
+  ((img.secs.toList.zip offs).map fun (s, o) =>
+    shdrFields o s.type s.flags s.addr s.off s.size 0 0 s.align s.entsize) ++
+  [shdrFields (offs.getD nsec 0) 2 0 0 t.symOff t.symSize (nsec + 2) img.firstGlobal 8 24,
+   shdrFields (offs.getD (nsec + 1) 0) 3 0 0 t.strOff t.strSize 0 0 1 0,
+   shdrFields (offs.getD (nsec + 2) 0) 3 0 0 t.shsOff t.shsSize 0 0 1 0]
+
+/-- The section header table. -/
+def Img.shdrs (img : Img) (t : Tabs) : List UInt8 := (img.shdrList t).flatMap (record 64)
+
+/-- The symbol table's entries' fields: the null entry, then the symbols. -/
+def Img.symList (img : Img) : List (List (Nat × Nat × Nat)) :=
+  symFields 0 default :: (img.syms.toList.zip (strOffsets (img.syms.toList.map (·.name)) 1)).map
+    fun (s, o) => symFields o s
+
+/-- The bytes after the padded body: `.symtab`, `.strtab`, `.shstrtab`, padding, the section
+header table. -/
+def Img.tail (img : Img) : List UInt8 :=
+  let t := img.tabs
+  img.symList.flatMap (record 24) ++ strtabOf (img.syms.toList.map (·.name)) ++
+    strtabOf img.secNames ++ List.replicate (t.shoff - t.shsOff - t.shsSize) 0 ++ img.shdrs t
+
+/-- The headers: the ELF header and the program headers. -/
+def Img.hdr (img : Img) : List UInt8 :=
+  record 64 (ehdrFields img.entry img.phs.length img.tabs.shoff (img.secs.size + 4)
+    (img.secs.size + 3)) ++
+  img.phs.flatMap fun p => record 56 (phdrFields p)
+
+/-- The values of the headers fit their fields, and the body holds the headers' bytes. -/
+def Img.hdrFitsB (img : Img) : Bool :=
+  decide (img.entry < 2 ^ 64) && decide (img.phs.length < 2 ^ 16) &&
+  decide (img.secs.size + 4 < 2 ^ 16) && decide (img.tabs.shoff < 2 ^ 64) &&
+  decide (64 + 56 * img.phs.length ≤ img.body.size) &&
+  img.phs.all fun p => decide (p.type < 2 ^ 32) && decide (p.flags < 2 ^ 32) &&
+    decide (p.offset < 2 ^ 64) && decide (p.vaddr < 2 ^ 64) && decide (p.filesz < 2 ^ 64) &&
+    decide (p.memsz < 2 ^ 64) && decide (p.align < 2 ^ 64)
+
+/-- **The executable of an image description**: the padded body and the tables, with the
+headers written over the body's start. -/
+def Img.write (img : Img) : ByteArray :=
+  overStart (pad8 img.body ++ ⟨img.tail.toArray⟩) ⟨img.hdr.toArray⟩
 
 /-! ## The link map (lld's format, read by `cargo fv link-proof`) -/
 
