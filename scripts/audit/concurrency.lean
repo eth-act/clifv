@@ -43,6 +43,24 @@ import FVTest.Concurrency.Litmus
 #print axioms Concurrency.ProgE2E.wfC
 #print axioms Concurrency.ProgE2E.consistentC
 #print axioms Concurrency.ProgE2E.program_correct
+-- RC11 and cg_clif's strengthening (T2f, #304)
+#print axioms Concurrency.RC11.psc_mono
+#print axioms Concurrency.RC11.hb_strength
+#print axioms Concurrency.RC11.strength_sound
+#print axioms Concurrency.RC11.raceFree_strength
+#print axioms Concurrency.RC11.consistent_of_sc
+#print axioms Concurrency.RC11.strength_sound_drf
+#print axioms Concurrency.ClifMM.consistentF_of_sc
+#print axioms Concurrency.Armv8.R_acyclic
+#print axioms Concurrency.Mapping.Hom.psc_acyclic
+#print axioms Concurrency.Mapping.armv8_to_clifF
+#print axioms Concurrency.Witness.sbf_contract
+#print axioms Concurrency.Witness.sbf_not_rc11
+#print axioms Concurrency.Witness.mpf_consistentF
+#print axioms Concurrency.Witness.mpf_rc11
+#print axioms Concurrency.Witness.mpf_raceFree
+#print axioms Concurrency.Witness.mpf_contract_raceFree
+#print axioms Concurrency.Witness.incX_consistentF
 -- non-vacuity witnesses
 #print axioms Concurrency.ProgWitness.mp_replay
 #print axioms Concurrency.ProgWitness.ret_raceFree
