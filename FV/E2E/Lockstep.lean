@@ -48,15 +48,31 @@ theorem condBrHolds_sameWorld {Z : BitVec 64 → Prop} {w w' : Arm.ArmState} (hw
   unfold condBrHolds
   split <;> simp [ConditionHolds_sameWorld hw]
 
+/-- S11f: `ispecFP` reads no world field and returns the world or rewrites its flags. -/
+theorem ispecFP_lockstep {Z : BitVec 64 → Prop} {i : MInst} {us : List CV} {w w' : Arm.ArmState}
+    (hw : SameWorld Z w w') {o : List CV} {w₁ : Arm.ArmState} {c : Ctl}
+    (h : ispecFP i us w = some (o, w₁, c)) :
+    ∃ w₁', ispecFP i us w' = some (o, w₁', c) ∧ SameWorld Z w₁ w₁' := by
+  unfold ispecFP at h ⊢
+  split at h
+  all_goals simp only [Option.map_eq_some_iff, Prod.mk.injEq, reduceCtorEq] at h
+  all_goals obtain ⟨r, hr, rfl, rfl, rfl⟩ := h
+  all_goals first
+    | (refine ⟨_, ?_, hw⟩; simp only [hr, Option.map_some])
+    | (refine ⟨_, ?_, SameWorld.write_pstate' hw _⟩; simp only [hr, Option.map_some])
+
 set_option maxHeartbeats 4000000 in
 /-- `ispec` reads the world only through the flags and returns it or rewrites its flags. -/
 theorem ispec_lockstep {Z : BitVec 64 → Prop} {i : MInst} {us : List CV} {w w' : Arm.ArmState}
     (hw : SameWorld Z w w') {o : List CV} {w₁ : Arm.ArmState} {c : Ctl}
     (h : ispec i us w = some (o, w₁, c)) :
     ∃ w₁', ispec i us w' = some (o, w₁', c) ∧ SameWorld Z w₁ w₁' := by
+  rcases ispec_fp_or i us with hF | hF
+  · rw [hF] at h ⊢; exact ispecFP_lockstep hw h
   have hc := sameWorld_flag hw
   unfold ispec at h ⊢
   split at h
+  all_goals (try (simp only [hF, reduceCtorEq] at h; done))
   all_goals (try simp only [hc, condBrHolds_sameWorld hw] at h ⊢)
   all_goals (
     try simp only [Option.ite_none_right_eq_some, Option.ite_none_left_eq_some,

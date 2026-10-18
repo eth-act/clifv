@@ -71,6 +71,7 @@ def BranchShapeOk (p : Program) (r : Rule) : Prop :=
 
 /-! ## `return`, `trap` -/
 
+set_option maxHeartbeats 800000 in
 /-- **`trap`** (`rule_lower_2237`): `udf`. -/
 theorem trap_shape {p : Program} (hp : Data p) : LowerTermShapeOk p rule_lower_2237 := by
   intro f ctx hctx ti t data hrt hd hi cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch heval
@@ -412,6 +413,7 @@ theorem termShape_runTerm {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) 
       exact ret_shape data_program f ctx hctx ti t data hrt hd hi {} rfl m n st #[] env' s1 out
         st' tr2 hm hn hvb hfirst hmatch heval
 
+set_option maxHeartbeats 800000 in
 /-- **`lower_branch` on a branch** appends a non-empty list of instructions, the last one
 targeting the branch's labels. -/
 theorem branchShape_runTerm {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ti : Nat}

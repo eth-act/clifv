@@ -557,6 +557,23 @@ def ispec : Sem := fun i uses w =>
   -- S11f: the scalar FP arithmetic and comparison (`ispecFP`)
   | _, _ => ispecFP i uses w
 
+/-- S11f: `ispecFP` only produces `next`. -/
+theorem ispecFP_next {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List CV}
+    {w' : Arm.ArmState} {ctl : Ctl} (h : ispecFP i uses w = some (outs, w', ctl)) :
+    ctl = .next := by
+  revert h
+  unfold ispecFP
+  split
+  all_goals intro h
+  all_goals simp only [Option.map_eq_some_iff, Prod.mk.injEq, reduceCtorEq] at h
+  all_goals (obtain ⟨_, -, -, -, h⟩ := h; exact h.symm)
+
+/-- S11f: on a form, `ispec` is its fallback `ispecFP`, or `ispecFP` does not specify it. -/
+theorem ispec_fp_or (i : MInst) (uses : List CV) :
+    (∀ w, ispec i uses w = ispecFP i uses w) ∨ (∀ w, ispecFP i uses w = none) := by
+  cases i
+  all_goals first | exact .inr fun _ => rfl | exact .inl fun _ => rfl
+
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
 VCode semantics gives the same def values and the same control (`ispec` only produces `next`,
 and `halt` for the trap forms), with a world that agrees with `ispec`'s outside the

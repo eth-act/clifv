@@ -535,6 +535,38 @@ theorem linesEnc_fpuMoveFPImm {c : FnCtx} {s : ScalarSize}
     simp [Insn.armFields, Insn.armFields.fpFtype, encV_v (show d ≤ 31 by omega), uField,
       bind, Except.bind, pure, Except.pure, imm.imm.isLt]
 
+/-- The scalar float binary operations `fadd`/`fsub`/`fmul`/`fdiv`/`fmax`/`fmin` (S11f). -/
+theorem linesEnc_fpuRRR {c : FnCtx} {s : ScalarSize} (hs : (s == .size32 || s == .size64) = true)
+    {d a b : Nat} (hd : d < 32) (ha : a < 32) (hb : b < 32) (op : FPUOp2) :
+    LinesEnc c (.fpuRRR op s (.v d) (.v a) (.v b)) := by
+  rcases fpSz_of_beq hs with rfl | rfl <;>
+  · refine linesEnc_one (fun _ => rfl) ?_
+    rw [encodable_iff]
+    cases op <;>
+    simp [Insn.armFields, Insn.armFields.fpFtype, encV_v (show d ≤ 31 by omega),
+      encV_v (show a ≤ 31 by omega), encV_v (show b ≤ 31 by omega), bind, Except.bind, pure,
+      Except.pure]
+
+/-- The scalar float unary operations `fabs`/`fneg`/`sqrt`/`fpromote`/`fdemote` (S11f). -/
+theorem linesEnc_fpuRR {c : FnCtx} {op : FPUOp1} {s : ScalarSize}
+    (hs : ((s == .size32 || s == .size64) && (op != .cvt32To64 || s == .size32) &&
+      (op != .cvt64To32 || s == .size64)) = true)
+    {d a : Nat} (hd : d < 32) (ha : a < 32) : LinesEnc c (.fpuRR op s (.v d) (.v a)) := by
+  refine linesEnc_one (fun _ => rfl) ?_
+  rw [encodable_iff]
+  cases op <;> cases s <;> revert hs <;>
+  simp [Insn.armFields, Insn.armFields.fpFtype, encV_v (show d ≤ 31 by omega),
+    encV_v (show a ≤ 31 by omega), bind, Except.bind, pure, Except.pure] <;> decide
+
+/-- The scalar float compare `fcmp` (S11f). -/
+theorem linesEnc_fpuCmp {c : FnCtx} {s : ScalarSize} (hs : (s == .size32 || s == .size64) = true)
+    {a b : Nat} (ha : a < 32) (hb : b < 32) : LinesEnc c (.fpuCmp s (.v a) (.v b)) := by
+  rcases fpSz_of_beq hs with rfl | rfl <;>
+  · refine linesEnc_one (fun _ => rfl) ?_
+    rw [encodable_iff]
+    simp [Insn.armFields, Insn.armFields.fpFtype, encV_v (show a ≤ 31 by omega),
+      encV_v (show b ≤ 31 by omega), bind, Except.bind, pure, Except.pure]
+
 /-- The plain `movi` of a `vecDupImm` (S11e1). -/
 theorem linesEnc_vecDupImm {c : FnCtx} {imm : ASIMDMovModImm} {inv : Bool} {s : VectorSize}
     (h : (!inv && imm.shift == 0 && !imm.shiftOnes && !imm.is64 && s != .size64x2) = true)
@@ -585,6 +617,9 @@ theorem formOk_enc {c cx : FnCtx} {i i' : MInst} {ops : Array Operand} {regs : A
     | exact linesEnc_fpuCSel himm0 (by omega) (by omega) (by omega) _
     | exact linesEnc_fpuMoveFPImm himm0 (by omega) _
     | exact linesEnc_vecDupImm himm0 (by omega)
+    | exact linesEnc_fpuRRR himm0 (by omega) (by omega) (by omega) _
+    | exact linesEnc_fpuRR himm0 (by omega) (by omega)
+    | exact linesEnc_fpuCmp himm0 (by omega) (by omega)
 
 
 
