@@ -2,12 +2,13 @@ import FV.E2E.Final
 import FV.Opt.Proof.LegalSim
 import FV.Opt.Proof.LegalRust
 
-/-! # The end-to-end theorem for `i128` functions (`Opt.Legalize128` + `Opt.Legal.check`)
+/-! # The end-to-end theorem for `i128` functions (`Opt.Legalize128` + `Opt.Legal.checkW`)
 
 A function `f` that mentions `i128` is compiled as its legalisation `g`
 (`Opt.Legalize128.function128Cert`, untrusted), accepted by the validator
-`Opt.Legal.check f g cert`. `backend_correct_legal` composes the validator's refinement theorem
-`Opt.Legal.check_refines` (`FV/Opt/Proof/LegalSim.lean`) with `backend_correct_final` at `g`:
+`Opt.Legal.checkW f g cert`. `backend_correct_legal_wide` composes the validator's refinement
+theorem `Opt.Legal.checkW_refines` (`FV/Opt/Proof/LegalSim.lean`) with `backend_correct_final`
+at `g`:
 the Arm code compiled from `g`, entered with the ABI-split arguments (an `i128` argument as its
 low/high `i64` halves in two registers, after an arbitrary pad register where AAPCS64 aligns
 the pair), refines the run of the ORIGINAL function `f`: a return of `f` is an Arm return with
@@ -32,7 +33,10 @@ indirect calls to a function of the activation's program.
 The validator accepts `try_call` and `try_call_indirect` (their arguments, returns and
 normal-return successor arguments split like a `call`'s and a branch's), `call_indirect` (with
 an `i128` call-site signature: its arguments and results split by the signature's groups, the
-expanded signature declared in `g`), and `func_addr` (the same symbol name in `g`). The backend's
+expanded signature declared in `g`), and `func_addr` (the same symbol name in `g`).
+`backend_correct_legal_env`/`backend_correct_legal` are the theorems on the domain of
+`Opt.Legal.check` (no `try_call_indirect`, no `call_indirect` at an `i128` signature), where the
+programs premise `hind` is only needed for a `call_indirect` and `hsigs` is vacuous. The backend's
 `TrapsExplicit` premise stays on the run of `g` (as for `backend_correct_opt_proven`, it is not
 derived from the source's): in particular an `i128` division by zero or `sdiv MIN, -1` traps in
 the source at a `div` (explicit), but in `g` inside the `__*ti3` helper call (an extern trap,
@@ -88,9 +92,9 @@ theorem memBounded_of_holds {Γ : Rel} {f : Clif.Function} {sl : List (Clif.Slot
   fun a n hv => (h.1.valid a n hv).1
 
 /-- **End-to-end theorem for a legalised function, any environment with the contracts of
-`check_refines`.** -/
-theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
-    (hchk : Opt.Legal.check f g cert = true)
+`checkW_refines`** (indirect calls at `i128` signatures and `try_call_indirect` included). -/
+theorem backend_correct_legal_env_wide {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
+    (hchk : Opt.Legal.checkW f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p' g)
@@ -143,7 +147,7 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
   have hT := noMemTrap_of_trapsExplicit htrS hcs.callers
   have hI := noIndInternal_of_trapsExplicit htrS hcs.callers
   rw [hcs.func] at hI
-  obtain ⟨hr1, hr2⟩ := Opt.Legal.check_refines (C := C) hchk hE hb hb' hcs.func h2 h3 h4 h5
+  obtain ⟨hr1, hr2⟩ := Opt.Legal.checkW_refines (C := C) hchk hE hb hb' hcs.func h2 h3 h4 h5
     hcs'.func h2' h3' h5' hsl hexp hM hT hI fuel
   have hst : (⟨cs.frame, [], cs.mem⟩ : Clif.State) = cs := by rw [← hcs.callers]
   have hst' : (⟨cs'.frame, [], cs.mem⟩ : Clif.State) = cs' := by rw [← hcs'.callers, ← hmem]
@@ -165,14 +169,69 @@ theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.
   | stuck _ => trivial
   | outOfFuel => trivial
 
+/-- **End-to-end theorem for a legalised function, any environment with the contracts of
+`check_refines`** (`backend_correct_legal_env_wide` on the domain of `check`: no
+`try_call_indirect`, no `call_indirect` at an `i128` signature). -/
+theorem backend_correct_legal_env {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
+    (hchk : Opt.Legal.check f g cert = true)
+    {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p' g)
+    (hc : Compiled g k vc vcp rf af fa fb)
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat} {env : Clif.Env}
+    -- the environment's contracts (`FV/Opt/Proof/LegalExt.lean`)
+    (hH : Opt.Legal.HelperOk env) (hXL : Opt.Legal.ExtLegal env)
+    (hK : Opt.Legal.EnvKeepsAllocs env)
+    -- calls of `f` and `g` go to the environment
+    (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
+    (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
+    -- an indirect call of `f` resolves to the same extern in both programs
+    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
+      st.inst = .callIndirect sig callee args) →
+      p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
+    -- `backend_correct_final`'s premises about `g`
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : (∃ B ∈ g.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : hasTls g = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hX : ∀ s, XCallsOk env (g.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
+    (hXI : ∀ s, XCallsIndOk env (indSigs g) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    -- the run: `f` on `args`, `g` on the ABI-split `args'` (same slots and memory)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args args' : List Clif.Val}
+    {cs cs' : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
+    (hargs : ArgsIn g.sig args' s) (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
+    (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g cs'.frame.slots cs'.mem w₀)
+    (htrS : TrapsExplicit env p cs) (htr : TrapsExplicit env p' cs') (fuel : Nat) :
+    ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
+      (Clif.runLoop env p fuel cs) :=
+  backend_correct_legal_env_wide (Opt.Legal.checkW_of_check hchk) hsub hc hH hXL hK hext hext'
+    (Opt.Legal.indOldB_ind (Opt.Legal.indOldB_of_check hchk) hind)
+    (Opt.Legal.indOldB_sigs (Opt.Legal.indOldB_of_check hchk)) hcov hC hCT hTls hX hXI hsym
+    hslot hent hres hbe hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
+
 /-- **The end-to-end theorem for `i128` functions** (`docs/contracts/legalize128.md`): for a
-function `f` whose legalisation `g` the validator accepts (`Opt.Legal.check f g cert`) and which
+function `f` whose legalisation `g` the validator accepts (`Opt.Legal.checkW f g cert`) and which
 the backend compiles inside `InSubset`, the Arm code of `g`, entered with the ABI-split
 arguments, refines the run of the original `f` under the trusted Rust environment
 `Clif.Rust.env` (its contracts `HelperOk`/`ExtLegal`/`EnvKeepsAllocs` proven): returns are
-returns of the expanded results with the same memory, traps are traps with the same code. -/
-theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
-    (hchk : Opt.Legal.check f g cert = true)
+returns of the expanded results with the same memory, traps are traps with the same code.
+Indirect calls at `i128` signatures and `try_call_indirect` included; `Clif.Rust.env` knows no
+signature, so `hsigs` is discharged. -/
+theorem backend_correct_legal_wide {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
+    (hchk : Opt.Legal.checkW f g cert = true)
     {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (hsub : InSubset p' g)
@@ -209,8 +268,56 @@ theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert
     (fuel : Nat) :
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop Clif.Rust.env p fuel cs) :=
+  backend_correct_legal_env_wide hchk hsub hc Clif.Rust.helperOk_env Clif.Rust.extLegal_env
+    Clif.Rust.envKeepsAllocs_env hext hext' hind (fun _ _ _ h => by cases h) hcov hC hCT hTls hX
+    hXI hsym hslot hent hres hbe hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
+
+/-- **The end-to-end theorem for `i128` functions** on the domain of `Opt.Legal.check`
+(`backend_correct_legal_wide` without `try_call_indirect` and `call_indirect` at an `i128`
+signature): for a function `f` whose legalisation `g` the validator accepts and which the
+backend compiles inside `InSubset`, the Arm code of `g`, entered with the ABI-split arguments,
+refines the run of the original `f` under the trusted Rust environment `Clif.Rust.env`. -/
+theorem backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
+    (hchk : Opt.Legal.check f g cert = true)
+    {p p' : Clif.Program} {k : Nat} {vc vcp : VCode}
+    {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
+    (hsub : InSubset p' g)
+    (hc : Compiled g k vc vcp rf af fa fb)
+    {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
+    (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
+    (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
+    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
+      st.inst = .callIndirect sig callee args) →
+      p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
+    (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hCT : (∃ B ∈ g.blocks, B.term.isTry = true) → ∀ s, CalleeTryOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) X H vcp.TrySite)
+    (hTls : hasTls g = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (hX : ∀ s, XCallsOk Clif.Rust.env (g.externs.map (·.2)) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
+    (hXI : ∀ s, XCallsIndOk Clif.Rust.env (indSigs g) (fun sl cm w =>
+      Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s, syms,
+        slotOff, (RAFrame.compute vcp rf).intBase⟩ g sl cm w) X)
+    (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
+    (hslot : af.slotBase = slotOff)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args args' : List Clif.Val}
+    {cs cs' : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
+    (hargs : ArgsIn g.sig args' s) (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
+    (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
+    (hrel : Rel.holds ⟨frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s,
+      syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ g cs'.frame.slots cs'.mem w₀)
+    (htrS : TrapsExplicit Clif.Rust.env p cs) (htr : TrapsExplicit Clif.Rust.env p' cs')
+    (fuel : Nat) :
+    ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
+      (Clif.runLoop Clif.Rust.env p fuel cs) :=
   backend_correct_legal_env hchk hsub hc Clif.Rust.helperOk_env Clif.Rust.extLegal_env
-    Clif.Rust.envKeepsAllocs_env hext hext' hind (fun _ _ _ h => by cases h) hcov hC hCT hTls hX hXI hsym hslot hent hres hbe
+    Clif.Rust.envKeepsAllocs_env hext hext' hind hcov hC hCT hTls hX hXI hsym hslot hent hres hbe
     hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
 
 /-- **Specialisation**: for a legalisation without `try_call`/`try_call_indirect` (`hnt`) and
@@ -251,13 +358,8 @@ theorem backend_correct_legal_callFree {f g : Clif.Function} {cert : Opt.Legaliz
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop Clif.Rust.env p fuel cs) :=
   backend_correct_legal hchk hsub hc hext hext'
-    (fun ⟨_, h⟩ => h.elim
-      (fun ⟨B, hB, st, hst, callee, args, hi⟩ =>
-        absurd (Opt.Legal.check_callInd hchk ⟨B, hB, st, hst, _, callee, args, hi⟩)
-          fun ⟨B, hB, st, hst, sig, callee, args, hi⟩ => hci B hB st hst sig callee args hi)
-      (fun ⟨B, hB, c, args, et, ht, _⟩ =>
-        absurd (Opt.Legal.check_tryInd hchk ⟨B, hB, c, args, et, ht⟩)
-          fun ⟨B, hB, c, args, et, ht⟩ => by have := hnt B hB; rw [ht] at this; cases this))
+    (fun h => absurd (Opt.Legal.check_callInd hchk h) fun ⟨B, hB, st, hst, sig, callee, args, hi⟩ =>
+      hci B hB st hst sig callee args hi)
     hcov hC (fun ⟨B, hB, h⟩ => by rw [hnt B hB] at h; cases h) hTls hX
     (fun _ => by
       rw [indSigs_eq_nil hci fun B hB callee args et e => by

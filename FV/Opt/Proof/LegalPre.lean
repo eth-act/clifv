@@ -7,34 +7,75 @@ import FV.Opt.Legalize128Pre
 `preB_iff : preB f = true ↔ Pre f`: the preconditions of `Opt.Legal.Complete.check_complete`
 are decided on `f` alone (`Opt.Legalize128.preB`, `FV/Opt/Legalize128Pre.lean`), so the runtime
 `Opt.Legal.check` is provably redundant on every function with `preB f = true`
-(`check_complete_of_preB`). `legalOkB_cases`: the source domain of one function is the identity
-(no `i128`) or `Pre` with a successful legalisation.
+(`check_complete_of_preB`); likewise `preBW_iff`/`checkW_complete_of_preBW` for `PreW` and
+`Opt.Legal.checkW`. `legalOkB_cases`: the source domain of one function is the identity (no
+`i128`) or `Pre` with a successful legalisation.
 -/
 
 namespace Opt.Legal.Complete
 
 open Clif Opt.Legalize128
 
-/-- **`Pre` is decidable**: `preB` decides it. -/
-theorem preB_iff {f : Function} : preB f = true ↔ Pre f := by
+/-- **`PreW` is decidable**: `preBW` decides it. -/
+theorem preBW_iff {f : Function} : preBW f = true ↔ PreW f := by
   constructor
   · intro h
-    simp only [preB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at h
+    simp only [preBW, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at h
     obtain ⟨⟨⟨hm, hd⟩, hi⟩, hs⟩ := h
     refine ⟨hm, hd, fun v hv => by simpa using hi v hv, ?_⟩
     intro b hb s hs' x hx hr
     exact (by simpa using hs b hb s hs' x hx : x ∉ s.results) hr
   · intro hp
-    simp only [preB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true]
+    simp only [preBW, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true]
     refine ⟨⟨⟨hp.mentions, hp.defs⟩, fun v hv => by simpa using hp.ids v hv⟩, ?_⟩
     intro b hb s hs x hx
     simpa using hp.noSelf b hb s hs x hx
+
+/-- **`Pre` is decidable**: `preB` decides it. -/
+theorem preB_iff {f : Function} : preB f = true ↔ Pre f := by
+  constructor
+  · intro h
+    simp only [preB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true] at h
+    obtain ⟨⟨⟨⟨⟨hm, hd⟩, hi⟩, hs⟩, hc⟩, ht⟩ := h
+    refine ⟨hm, hd, fun v hv => by simpa using hi v hv, ?_, ?_, ?_⟩
+    · intro b hb s hs' x hx hr
+      exact (by simpa using hs b hb s hs' x hx : x ∉ s.results) hr
+    · intro b hb s hs' sig callee args hi' d hd'
+      simpa [hi', hd'] using hc b hb s hs'
+    · intro b hb c args et he
+      have := ht b hb
+      simp only [he] at this
+      exact Bool.false_ne_true this
+  · intro hp
+    simp only [preB, Bool.and_eq_true, decide_eq_true_eq, List.all_eq_true]
+    refine ⟨⟨⟨⟨⟨hp.mentions, hp.defs⟩, fun v hv => by simpa using hp.ids v hv⟩, ?_⟩, ?_⟩, ?_⟩
+    · intro b hb s hs x hx
+      simpa using hp.noSelf b hb s hs x hx
+    · intro b hb s hs
+      split
+      · rename_i sig callee args hi
+        split
+        · rename_i d hd
+          simpa using hp.callInd b hb s hs sig callee args hi d hd
+        · rfl
+      · rfl
+    · intro b hb
+      split
+      · rename_i c args et he
+        exact absurd he (hp.noTryInd b hb c args et)
+      · rfl
 
 /-- **The validator is redundant on `preB`**: it accepts every legalisation of a function with
 `preB f = true`. -/
 theorem check_complete_of_preB {f g : Function} {cert : Cert} (hp : preB f = true)
     (h : function128Cert f = .ok (g, cert)) : check f g cert = true :=
   check_complete (preB_iff.1 hp) h
+
+/-- **`checkW` is redundant on `preBW`**: it accepts every legalisation of a function with
+`preBW f = true`. -/
+theorem checkW_complete_of_preBW {f g : Function} {cert : Cert} (hp : preBW f = true)
+    (h : function128Cert f = .ok (g, cert)) : checkW f g cert = true :=
+  checkW_complete (preBW_iff.1 hp) h
 
 /-- A function without `i128` is its own legalisation. -/
 theorem function128Cert_of_not_mentions {f : Function} (h : mentions128 f = false) :
@@ -55,21 +96,12 @@ theorem legalOkB_cases {f : Function} (h : legalOkB f = true) :
     (mentions128 f = false ∧ function128Cert f = .ok (f, {}) ∧ legalize f = f) ∨
     (Pre f ∧ ∃ cert, function128Cert f = .ok (legalize f, cert)) := by
   simp only [legalOkB, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h
-  obtain ⟨hok, hm | ⟨hp, -⟩⟩ := h
+  obtain ⟨hok, hm | hp⟩ := h
   · exact .inl ⟨hm, function128Cert_of_not_mentions hm, legalize_of_not_mentions hm⟩
   · refine .inr ⟨preB_iff.1 hp, ?_⟩
     cases hc : function128Cert f with
     | error e => simp [hc, Except.toBool] at hok
     | ok gc => exact ⟨gc.2, by simp [legalize, hc]⟩
-
-/-- A function of the source domain that mentions `i128` has no indirect call with an `i128`
-signature. -/
-theorem legalOkB_indPlain {f : Function} (h : legalOkB f = true) (hm : mentions128 f = true) :
-    indPlainB f = true := by
-  simp only [legalOkB, Bool.and_eq_true, Bool.or_eq_true, Bool.not_eq_true'] at h
-  rcases h.2 with h2 | h2
-  · rw [hm] at h2; cases h2
-  · exact h2.2
 
 /-! ## Witnesses -/
 
@@ -170,37 +202,42 @@ theorem selfRead_not_pre : ¬ Pre selfRead := fun h => absurd (preB_iff.2 h) (by
 
 def sig128d : Signature := { params := [{ ty := .i128 }], returns := [{ ty := .i128 }] }
 
-/-- A `call_indirect` with an `i128` signature (`callInd128`): `Pre` holds and the legalisation
-(the call with the pair as two `i64` arguments and results, at the expanded `sig0`) is
-accepted. -/
+/-- Not `Pre`: a `call_indirect` with an `i128` signature (`callInd`). `PreW` holds and `checkW`
+accepts the legalisation (`Plan.callInd128`: the call with the pair as two `i64` arguments and
+results, at the expanded `sig0`). -/
 def indI128 : Function := { add128 with sigDecls := [(0, sig128d)], blocks := [blk
   [{ results := [3], inst := .iconst .i64 0 },
    { results := [2], inst := .callIndirect 0 3 [0] }] (.ret [2])] }
 
-theorem indI128_pre : Pre indI128 := preB_iff.1 (by decide +kernel)
+theorem indI128_not_pre : ¬ Pre indI128 := fun h => absurd (preB_iff.2 h) (by decide +kernel)
+
+theorem indI128_preW : PreW indI128 := preBW_iff.1 (by decide +kernel)
 
 theorem indI128_legal : ∃ g cert, function128Cert indI128 = .ok (g, cert) ∧
-    check indI128 g cert = true := by
+    checkW indI128 g cert = true := by
   have ht : (function128Cert indI128).toBool = true := by decide +kernel
   cases h : function128Cert indI128 with
   | error e => rw [h] at ht; cases ht
-  | ok r => exact ⟨r.1, r.2, rfl, check_complete indI128_pre h⟩
+  | ok r => exact ⟨r.1, r.2, rfl, checkW_complete indI128_preW h⟩
 
-/-- A `try_call_indirect` with an `i128` signature: `Pre` holds and the legalisation (the
-arguments, results and normal-return arguments split) is accepted. -/
+/-- Not `Pre`: a `try_call_indirect` (`noTryInd`). `PreW` holds and `checkW` accepts the
+legalisation (the arguments, results and normal-return arguments split by the groups of the
+`i128` call-site signature). -/
 def tryInd : Function := { add128 with sigDecls := [(0, sig128d)], blocks := [blk
   [{ results := [3], inst := .iconst .i64 0 }]
   (.tryCallIndirect 3 [0] { sig := 0, normal := { block := 1, args := [.ret 0] } }),
   { id := 1, params := [(4, .i128)], term := .ret [4] }] }
 
-theorem tryInd_pre : Pre tryInd := preB_iff.1 (by decide +kernel)
+theorem tryInd_not_pre : ¬ Pre tryInd := fun h => absurd (preB_iff.2 h) (by decide +kernel)
+
+theorem tryInd_preW : PreW tryInd := preBW_iff.1 (by decide +kernel)
 
 theorem tryInd_legal : ∃ g cert, function128Cert tryInd = .ok (g, cert) ∧
-    check tryInd g cert = true := by
+    checkW tryInd g cert = true := by
   have ht : (function128Cert tryInd).toBool = true := by decide +kernel
   cases h : function128Cert tryInd with
   | error e => rw [h] at ht; cases ht
-  | ok r => exact ⟨r.1, r.2, rfl, check_complete tryInd_pre h⟩
+  | ok r => exact ⟨r.1, r.2, rfl, checkW_complete tryInd_preW h⟩
 
 end Witness
 

@@ -1,7 +1,7 @@
 import FV.Opt.Proof.LegalPlan
 
 /-!
-# The refinement theorem of `Opt.Legal.check`
+# The refinement theorem of `Opt.Legal.checkW`
 
 A source frame of `f` and a target frame of its legalisation `g` are related (`FRel`) when
 they run the same block at corresponding positions (`codeOk` of the remaining statements and
@@ -13,8 +13,10 @@ matched by target steps (`step_sim`): pure plans by their pattern instances
 arguments/results expanded by the call-site signature's groups (`CallIndRel2`), the condition
 patterns of `trapz`/`trapnz` and `brif`, and branches with split block parameters. By induction
 on the fuel, the legalised function refines the original under `Clif.runLoop`
-(`check_refines`): a return of the source is a return of the target with the values expanded
-by the ABI groups of the signature's returns, a trap the same trap.
+(`checkW_refines`): a return of the source is a return of the target with the values expanded
+by the ABI groups of the signature's returns, a trap the same trap. `check_refines` is the
+theorem on the domain of `check` (no indirect call at an `i128` signature, no
+`try_call_indirect`: `indOldB`), where `EnvOk.sigs` is vacuous.
 
 Premises: calls of `f`/`g` go to the environment (`EnvOk`: no function of the program has an
 extern's name; for an indirect call, the programs have the same function names and the target
@@ -3426,7 +3428,7 @@ theorem entry_bind {C : Ctx} {gs : List (List SlotEl)} {ps ps' : List (ValueId �
         · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
   case case5 => cases h
 
-/-- **The refinement theorem of `Opt.Legal.check`, source environment `env`, target environment
+/-- **The refinement theorem of `Opt.Legal.checkW`, source environment `env`, target environment
 `env'`.** For an accepted legalisation `g` of `f`: from entry states of `f` on `args` and of `g`
 on `args'` (the arguments expanded by the ABI groups of `f`'s parameters, pads arbitrary; same
 slots and memory), whenever the run of `f` under `env` returns within `fuel` steps, the run of `g`
@@ -3434,7 +3436,7 @@ under `env'` returns the values expanded by the ABI groups of `f`'s returns, wit
 memory; whenever it traps, the run of `g` traps with the same code. Premises: `EnvOk2` (calls go
 to the environments; their contracts), valid ranges below `2^64`, no load/store trap in the
 source run. -/
-theorem check_refines2 {C : Ctx} (hc : check C.f C.g C.cert = true)
+theorem checkW_refines2 {C : Ctx} (hc : checkW C.f C.g C.cert = true)
     {env env' : Env} {p p' : Program} (hE : EnvOk2 env env' C p p') {b b' : Block}
     (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
     {fr0 fr0' : Frame} {m : Mem}
@@ -3452,7 +3454,7 @@ theorem check_refines2 {C : Ctx} (hc : check C.f C.g C.cert = true)
         ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
     (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
       ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .trapped c) := by
-  have hG : Good C := check_good hc
+  have hG : Good C := checkW_good hc
   obtain ⟨b0, bs, b0', bs', hf, hg, -, hok, -⟩ := hG.blocks
   simp only [Function.entry?, hf, List.head?_cons, Option.some.injEq] at hb
   simp only [Function.entry?, hg, List.head?_cons, Option.some.injEq] at hb'
@@ -3521,13 +3523,58 @@ theorem check_refines2 {C : Ctx} (hc : check C.f C.g C.cert = true)
       exact ⟨k + k0, by rw [hk0, hk]⟩
   · cases hok
 
-/-- **The refinement theorem of `Opt.Legal.check`** (one environment: `check_refines2` with
+/-- **The refinement theorem of `Opt.Legal.checkW`** (one environment: `checkW_refines2` with
 `EnvOk.two`). For an accepted legalisation `g` of `f`: from entry states of `f` on `args` and of
 `g` on `args'` (the arguments expanded by the ABI groups of `f`'s parameters, pads arbitrary; same
 slots and memory), whenever the run of `f` returns within `fuel` steps, the run of `g` returns the
 values expanded by the ABI groups of `f`'s returns, with the same memory; whenever it traps, the
 run of `g` traps with the same code. Premises: `EnvOk` (calls go to the environment; its
 contracts), valid ranges below `2^64`, no load/store trap in the source run. -/
+theorem checkW_refines {C : Ctx} (hc : checkW C.f C.g C.cert = true)
+    {env : Env} {p p' : Program} (hE : EnvOk env C p p') {b b' : Block}
+    (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
+    {fr0 fr0' : Frame} {m : Mem}
+    (h1 : fr0.func = C.f) (h2 : fr0.body = b.body) (h3 : fr0.term = b.term)
+    (h4 : b.params.map (·.2) = args.map (·.ty))
+    (h5 : Regs.empty.setMany (b.params.map (·.1)) args = some fr0.regs)
+    (h1' : fr0'.func = C.g) (h2' : fr0'.body = b'.body) (h3' : fr0'.term = b'.term)
+    (h5' : Regs.empty.setMany (b'.params.map (·.1)) args' = some fr0'.regs)
+    (hsl : fr0'.slots = fr0.slots)
+    (hexp : ExpRel ((groups C.f.sig.params).getD []) args args')
+    (hM : MemBounded m) (hT : NoMemTrap env p ⟨fr0, [], m⟩)
+    (hI : NoIndInternal env p C.f ⟨fr0, [], m⟩) (fuel : Nat) :
+    (∀ vals m1, runLoop env p fuel ⟨fr0, [], m⟩ = .returned vals m1 →
+      ∃ vals', ExpRel ((groups C.f.sig.returns).getD []) vals vals' ∧
+        ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
+    (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
+      ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .trapped c) :=
+  checkW_refines2 hc hE.two hb hb' h1 h2 h3 h4 h5 h1' h2' h3' h5' hsl hexp hM hT hI fuel
+
+/-- **`checkW_refines2` on the domain of `check`** (no `try_call_indirect`, no `call_indirect`
+at an `i128` signature, `indOldB`). -/
+theorem check_refines2 {C : Ctx} (hc : check C.f C.g C.cert = true)
+    {env env' : Env} {p p' : Program} (hE : EnvOk2 env env' C p p') {b b' : Block}
+    (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
+    {fr0 fr0' : Frame} {m : Mem}
+    (h1 : fr0.func = C.f) (h2 : fr0.body = b.body) (h3 : fr0.term = b.term)
+    (h4 : b.params.map (·.2) = args.map (·.ty))
+    (h5 : Regs.empty.setMany (b.params.map (·.1)) args = some fr0.regs)
+    (h1' : fr0'.func = C.g) (h2' : fr0'.body = b'.body) (h3' : fr0'.term = b'.term)
+    (h5' : Regs.empty.setMany (b'.params.map (·.1)) args' = some fr0'.regs)
+    (hsl : fr0'.slots = fr0.slots)
+    (hexp : ExpRel ((groups C.f.sig.params).getD []) args args')
+    (hM : MemBounded m) (hT : NoMemTrap env p ⟨fr0, [], m⟩)
+    (hI : NoIndInternal env p C.f ⟨fr0, [], m⟩) (fuel : Nat) :
+    (∀ vals m1, runLoop env p fuel ⟨fr0, [], m⟩ = .returned vals m1 →
+      ∃ vals', ExpRel ((groups C.f.sig.returns).getD []) vals vals' ∧
+        ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
+    (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
+      ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .trapped c) :=
+  checkW_refines2 (checkW_of_check hc) hE hb hb' h1 h2 h3 h4 h5 h1' h2' h3' h5' hsl hexp hM hT hI
+    fuel
+
+/-- **`checkW_refines` on the domain of `check`** (no `try_call_indirect`, no `call_indirect`
+at an `i128` signature, `indOldB`). -/
 theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
     {env : Env} {p p' : Program} (hE : EnvOk env C p p') {b b' : Block}
     (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
@@ -3546,7 +3593,41 @@ theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
         ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
     (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
       ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .trapped c) :=
-  check_refines2 hc hE.two hb hb' h1 h2 h3 h4 h5 h1' h2' h3' h5' hsl hexp hM hT hI fuel
+  checkW_refines (checkW_of_check hc) hE hb hb' h1 h2 h3 h4 h5 h1' h2' h3' h5' hsl hexp hM hT hI
+    fuel
+
+/-! ## The domain of `check` (`indOldB`) -/
+
+/-- On the domain of `check`, an indirect call site is a `call_indirect` statement. -/
+theorem indOldB_indSite {f : Function} (h : indOldB f = true) {sig : Nat} (hs : IndSite f sig) :
+    ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args := by
+  rcases hs with ⟨B, hB, st, hst, callee, args, hi⟩ | ⟨B, hB, c, args, et, ht, -⟩
+  · exact ⟨B, hB, st, hst, sig, callee, args, hi⟩
+  · simp only [indOldB, List.all_eq_true, Bool.and_eq_true] at h
+    have := (h B hB).2
+    simp [ht] at this
+
+/-- On the domain of `check`, no indirect call has an `i128` call-site signature. -/
+theorem indOldB_not_ind128 {f : Function} (h : indOldB f = true) : ¬ Ind128 f := by
+  rintro ⟨sig, d, hs, hd, h128⟩
+  simp only [indOldB, List.all_eq_true, Bool.and_eq_true] at h
+  rcases hs with ⟨B, hB, st, hst, callee, args, hi⟩ | ⟨B, hB, c, args, et, ht, -⟩
+  · have := (h B hB).1 st hst
+    simp [hi, hd, h128] at this
+  · have := (h B hB).2
+    simp [ht] at this
+
+/-- The programs premise of the statements about `check` (an indirect call is a
+`call_indirect`) gives `EnvOk.ind`. -/
+theorem indOldB_ind {f : Function} (h : indOldB f = true) {P : Prop}
+    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
+      st.inst = .callIndirect sig callee args) → P) : (∃ sig, IndSite f sig) → P :=
+  fun ⟨_, hs⟩ => hind (indOldB_indSite h hs)
+
+/-- `EnvOk.sigs` is vacuous on the domain of `check`. -/
+theorem indOldB_sigs {f : Function} (h : indOldB f = true) {env : Env} :
+    Ind128 f → ∀ n s, env.sigOf n = some s → sig128 s = false :=
+  fun h' => absurd h' (indOldB_not_ind128 h)
 
 /-! ## Indirect calls of an accepted legalisation -/
 
@@ -3601,10 +3682,10 @@ theorem mem_zip_of_mem {α β : Type} {l₁ : List α} {l₂ : List β} (hl : l�
 /-- **An accepted legalisation keeps every `call_indirect`** (its plan is the statement itself,
 or the call with expanded arguments): a function `f` with a `call_indirect` has a legalisation
 `g` with one. -/
-theorem check_callInd {f g : Function} {cert : Cert} (hc : check f g cert = true)
+theorem checkW_callInd {f g : Function} {cert : Cert} (hc : checkW f g cert = true)
     (h : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args) :
     ∃ B ∈ g.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args := by
-  have hG : Good ⟨f, g, cert⟩ := check_good hc
+  have hG : Good ⟨f, g, cert⟩ := checkW_good hc
   obtain ⟨b, bs, b', bs', hf, hg, hl, hb, hz⟩ := hG.blocks
   obtain ⟨B, hB, st, hst, sig, callee, args, hi⟩ := h
   simp only at hf hg
@@ -3629,6 +3710,12 @@ theorem check_callInd {f g : Function} {cert : Cert} (hc : check f g cert = true
     refine ⟨B', ?_, st', hm, sig, callee', args', hi'⟩
     rw [hg]; exact List.mem_cons_of_mem _ hB'
 
+/-- `checkW_callInd` for `check`. -/
+theorem check_callInd {f g : Function} {cert : Cert} (hc : check f g cert = true)
+    (h : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args) :
+    ∃ B ∈ g.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args :=
+  checkW_callInd (checkW_of_check hc) h
+
 /-- The rewrite of a `try_call_indirect` terminator is one. -/
 theorem codeOk_tryInd {C : Ctx} : ∀ {ss : List Stmt} {t : Terminator} {ts : List Stmt}
     {t' : Terminator}, codeOk C ss t ts t' = true → ∀ c args et, t = .tryCallIndirect c args et →
@@ -3644,10 +3731,10 @@ theorem codeOk_tryInd {C : Ctx} : ∀ {ss : List Stmt} {t : Terminator} {ts : Li
 
 /-- **An accepted legalisation keeps every `try_call_indirect`**: a function `f` with a
 `try_call_indirect` has a legalisation `g` with one. -/
-theorem check_tryInd {f g : Function} {cert : Cert} (hc : check f g cert = true)
+theorem checkW_tryInd {f g : Function} {cert : Cert} (hc : checkW f g cert = true)
     (h : ∃ B ∈ f.blocks, ∃ c args et, B.term = .tryCallIndirect c args et) :
     ∃ B ∈ g.blocks, ∃ c args et, B.term = .tryCallIndirect c args et := by
-  have hG : Good ⟨f, g, cert⟩ := check_good hc
+  have hG : Good ⟨f, g, cert⟩ := checkW_good hc
   obtain ⟨b, bs, b', bs', hf, hg, hl, hb, hz⟩ := hG.blocks
   obtain ⟨B, hB, c, args, et, ht⟩ := h
   simp only at hf hg

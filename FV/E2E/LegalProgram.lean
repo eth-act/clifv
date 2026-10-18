@@ -120,30 +120,20 @@ theorem legalFacts {f : Function} (h : legalOkB f = true) : LegalFacts f := by
     refine ⟨hG.name, hG.slots, hG.sig, fun fn e hfe => hO.ext fn e hfe,
       ⟨helperNames f, by rw [he, List.map_append, expandExterns_names hes, helperExts_names],
         fun _ h => h⟩, fun hnf => ?_⟩
-    -- an indirect call of `f` is a `call_indirect` statement or a `try_call_indirect`
-    -- terminator; the legalisation keeps both
-    by_cases hci : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-        st.inst = .callIndirect sig callee args
-    · obtain ⟨B, hB, st, hst, sig, callee, args, hi⟩ := check_callInd hchk hci
-      exact fun hif => (hif B hB).1 st hst sig callee args hi
-    · have hti : ∃ B ∈ f.blocks, ∃ c args et, B.term = .tryCallIndirect c args et := by
-        refine Classical.byContradiction fun hno => hnf fun B hB =>
-          ⟨fun st hst sig callee args hi => hci ⟨B, hB, st, hst, sig, callee, args, hi⟩,
-            fun c args et ht => hno ⟨B, hB, c, args, et, ht⟩⟩
-      obtain ⟨B, hB, c, args, et, ht⟩ := check_tryInd hchk hti
-      exact fun hif => (hif B hB).2 c args et ht
+    -- an indirect call of `f` is a `call_indirect` statement (no `try_call_indirect`, `Pre`)
+    have hci : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
+        st.inst = .callIndirect sig callee args := by
+      refine Classical.byContradiction fun hno => hnf fun B hB => ⟨fun st hst sig callee args hi =>
+        hno ⟨B, hB, st, hst, sig, callee, args, hi⟩, fun c args et ht => hp.noTryInd B hB c args et ht⟩
+    obtain ⟨B, hB, st, hst, sig, callee, args, hi⟩ := check_callInd hchk hci
+    exact fun hif => (hif B hB).1 st hst sig callee args hi
 
-/-- `indPlainB`: no indirect call site of `f` has an `i128` signature. -/
-theorem indPlainB_sound {f : Function} (h : indPlainB f = true) {sig : Nat} {d : Signature}
+/-- `Pre`: no indirect call site of `f` has an `i128` signature. -/
+theorem pre_indSite {f : Function} (hp : Complete.Pre f) {sig : Nat} {d : Signature}
     (hs : IndSite f sig) (hd : f.sigDecls.lookup sig = some d) : sig128 d = false := by
-  simp only [indPlainB, List.all_eq_true, Bool.and_eq_true] at h
-  rcases hs with ⟨B, hB, st, hst, callee, args, hi⟩ | ⟨B, hB, c, args, et, ht, rfl⟩
-  · have := (h B hB).1 st hst
-    simp only [hi, hd] at this
-    simpa using this
-  · have := (h B hB).2
-    simp only [ht, hd] at this
-    simpa using this
+  rcases hs with ⟨B, hB, st, hst, callee, args, hi⟩ | ⟨B, hB, c, args, et, ht, -⟩
+  · exact hp.callInd B hB st hst sig callee args hi d hd
+  · exact absurd ht (hp.noTryInd B hB c args et)
 
 theorem legalProg_names (P : Program) :
     (legalProg P).funcs.map (·.name) = P.funcs.map (·.name) ∨
@@ -1251,7 +1241,7 @@ theorem root_refines {P : Program} {B : Env} {syms : String → Option Nat}
               exact ⟨h', by rw [tgtEnv_none (hC.func?_none hpn)]; exact hb', hrel⟩
           keep := keep_guard hF hbase.2.2
           ind := fun _ => ⟨rfl, fun sig d hs hd =>
-            have hd128 := indPlainB_sound (Complete.legalOkB_indPlain (hC.ok h hh) hp.mentions) hs hd
+            have hd128 := pre_indSite hp hs hd
             callIndRel2_of_plain hd128 (callIndRel_link hC ih hd128)⟩ }
       have hT := noMemTrap_guard hF M hh hioG hUI hG
       have hI : NoIndInternal (guardEnv B P (SomeInd (legalProg P)) syms M) P.bare h

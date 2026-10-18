@@ -13,7 +13,8 @@ theorem backend_correct_legal_direct_cleanup {f g : Clif.Function} {cert : Opt.L
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
-    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
+    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
+      st.inst = .callIndirect sig callee args) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
