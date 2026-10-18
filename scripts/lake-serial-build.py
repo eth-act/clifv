@@ -23,7 +23,8 @@ Launch rules (checked every second):
     `lake build --no-build`: if it is already built or in the cache, it counts as done);
   * nothing new starts while MemAvailable < --pause-avail;
   * a module killed at its cap (exit 137/143, or lean reporting signal 9) is retried alone at
-    twice the cap (at most --max-cap).
+    twice the cap (at most --max-cap); with --retry-failed, any other failed module is retried
+    once alone at its cap.
 Ready modules are started longest-remaining-critical-path first (recorded seconds); when the first
 one does not fit the budget, it reserves it and only modules that cannot delay it are backfilled.
 
@@ -138,6 +139,12 @@ def main():
                     help="peak TSVs (default scripts/lake-module-peaks.tsv, .lake/lake-module-peaks.tsv)")
     ap.add_argument("--record", default=".lake/lake-module-peaks.tsv")
     ap.add_argument("--dry-run", action="store_true", help="print the plan and exit")
+    ap.add_argument("--only", metavar="FILE",
+                    help="build only the modules listed in FILE (whitespace-separated); their "
+                         "other imports count as built (CI: earlier waves, restored from the cache)")
+    ap.add_argument("--retry-failed", action="store_true",
+                    help="retry a failed module once, alone (CI: wall-clock limits such as "
+                         "bv_decide's SAT timeout can fail on a loaded runner)")
     a = ap.parse_args()
 
     root = pathlib.Path(a.root).resolve()
@@ -167,6 +174,12 @@ def main():
         if m not in want:
             want.add(m)
             stack.extend(imports[m])
+    assumed = set()
+    if a.only:
+        only = set(pathlib.Path(a.only).read_text().split())
+        if only - want:
+            sys.exit(f"--only lists modules outside the targets: {sorted(only - want)[:5]}")
+        assumed = want - only
 
     def est_cap(m):
         if m not in prof:
@@ -220,10 +233,11 @@ def main():
         log.write(line + "\n"); log.flush()
         print(line, flush=True)
 
-    status = {}            # m -> ok | fail | blocked
+    status = {m: "ok" for m in assumed}  # m -> ok | fail | blocked
     running = {}           # m -> (Popen, t0, cap)
     solo_set = set()       # running modules that must run alone
-    retry_cap = {}         # m -> cap for the solo retry after an OOM kill
+    retry_cap = {}         # m -> cap for the solo retry (after an OOM kill, or --retry-failed)
+    retried = set()        # modules already retried alone after a failure (--retry-failed)
     probed = set()         # deferred heavy modules already checked with `lake build --no-build`
     t_start = time.time()
     built = 0
@@ -265,7 +279,8 @@ def main():
             pass
         return pids
 
-    say(f"want {len(want)} modules budget={gib(budget)} max_jobs={a.max_jobs} heavy>{gib(heavy)}")
+    say(f"want {len(want)} modules ({len(assumed)} assumed built) budget={gib(budget)} "
+        f"max_jobs={a.max_jobs} heavy>{gib(heavy)}")
     last_wait = ""
     while True:
         for m, (p, t0, c) in list(running.items()):
@@ -291,6 +306,9 @@ def main():
                     rec.write(f"{m}\t{rss // 2 ** 20}\t{dt:.0f}\n"); rec.flush()
             elif oom and c < max_cap:
                 retry_cap[m] = min(max_cap, 2 * c)
+            elif a.retry_failed and m not in retried:
+                retried.add(m)
+                retry_cap[m] = c
             else:
                 status[m] = "fail"
             say(f"done {m} rc={rc} {dt:.0f}s maxrss={rss / GiB:.1f}G "

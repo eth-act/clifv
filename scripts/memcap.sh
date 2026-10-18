@@ -4,6 +4,8 @@
 # OOM killer never fires, so the agent harness and the other agents survive.
 #
 # usage: scripts/memcap.sh <cmd> [args...]     cap: $FV_MEMCAP (default 16G)
+#        FV_MEMCAP_OFF=1 runs <cmd> without a scope (CI runners: one job per VM, and swap must
+#        stay usable for the modules that peak above the runner's RAM; .github/workflows/full-gate.yml)
 #
 # Why: runaway Lean elaboration or kernel reduction (e.g. `decide`/`rfl` over the exported ISLE
 # rule data) has reached 37-58 GB RSS on this 62 GB machine, which triggered global OOM kills.
@@ -15,6 +17,9 @@ set -euo pipefail
 # rebuilding. <dir> should be on the worktrees' filesystem (hard links; else Lake copies).
 if [ -n "${FV_LAKE_CACHE:-}" ]; then
   export LAKE_ARTIFACT_CACHE=true LAKE_RESTORE_ARTIFACTS=true LAKE_CACHE_DIR="$FV_LAKE_CACHE"
+fi
+if [ -n "${FV_MEMCAP_OFF:-}" ]; then
+  exec "$@"
 fi
 exec systemd-run --user --scope --quiet \
   -p MemoryMax="${FV_MEMCAP:-16G}" -p MemorySwapMax=0 -p TasksMax=infinity "$@"

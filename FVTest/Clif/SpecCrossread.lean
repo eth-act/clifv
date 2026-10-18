@@ -26,6 +26,10 @@ namespace Clif.SpecCrossread
 
 open Clif
 
+/-- The SAT solver gets 120 s instead of `bv_decide`'s default 10 s: on a loaded CI runner
+(`.github/workflows/full-gate.yml`, 3 Lean processes on 4 vCPUs) the default timed out. -/
+local macro_rules | `(tactic| bv_decide) => `(tactic| bv_decide (config := { timeout := 120 }))
+
 /-! ## SMT-LIB and VeriISLE primitives -/
 
 /-- Outcome of a spec with `(modifies clif_trap)`. -/
