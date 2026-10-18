@@ -64,6 +64,19 @@ import FVTest.Concurrency.LitmusFull
 -- per-thread refinement with interference (T2h, #311, layer 0)
 #print axioms Concurrency.ThreadRefine.Refines.trans
 #print axioms Concurrency.ThreadRefine.realizes_of_threads
+-- precise footprints, the VCode thread semantics (T2h, #311, layer 1)
+#print axioms Concurrency.ArmInstFoot.footprint_exec_inst
+#print axioms Concurrency.ArmInstFoot.footprint_stepi
+#print axioms Concurrency.ArmInstFoot.kindsOk_stepEvs
+#print axioms Concurrency.VCodeThread.ofoot_seq
+#print axioms Concurrency.VCodeThread.sfoot_exec_inst
+#print axioms Concurrency.VCodeThread.ofoot_execLines
+#print axioms Concurrency.VCodeThread.ifoot_csem
+#print axioms Concurrency.VCodeThread.vtstep_sc
+#print axioms Concurrency.VCodeThread.exists_vtstep
+#print axioms Concurrency.VCodeThread.Witness.stepEvs_ldaxr
+#print axioms Concurrency.VCodeThread.Witness.cEvs_ldar
+#print axioms Concurrency.VCodeThread.Witness.ldar_vtstep
 -- the program level with fences and Rust orderings (T2f, #304)
 #print axioms Concurrency.ProgE2E.rmw_sc
 #print axioms Concurrency.ProgE2E.raceFreeProgF_of_raceFreeProg

@@ -256,7 +256,7 @@ ldr`: `ConsistentF`, RC11-consistent with the weak orderings, RC11- and contract
 Witnesses (`FV/Concurrency/ProgramFWitness.lean`): `ret_correctF`, `ret_rustRaceFree`,
 `ret_correct_rust` (the two returning threads of `ret_correct`).
 
-## 3e. Discharging `Realizes` (T2h, #311): plan, layer 0 done
+## 3e. Discharging `Realizes` (T2h, #311): plan, layers 0 and 1 done
 
 `Realizes` (§3c) is a property of a whole execution. It splits per thread into one obligation,
 which each backend layer proves *with interference*, plus a composition. The approach is
@@ -289,11 +289,25 @@ they are; the per-thread layers are new files.
   * `ret_threads`, `ret_correct_threads`: `program_correct` with `Realizes` *derived*;
   * `refines_spill`: an atomic load realized by a private spill and an `ldar`;
   * `refines_trans_spill`.
-* **Layer 1: event semantics of VCode.** `ISem` with memory events. Each `MInst`'s accesses get
-  the kinds of its `Backend.Insn` image (`Code.lines_kinds`). The pseudo-instructions
-  `atomicRmwLoop`/`atomicCasLoop` carry their CLIF events (`[scR, scW]`/`[scR]`). Footprints are
-  proven as for Arm (`ArmFoot`): `csem` on any world that agrees on the read bytes gives the same
-  outputs and writes exactly the write events.
+* **Layer 1: event semantics of VCode (done, `FV/Concurrency/ArmInstFoot.lean`,
+  `FV/Concurrency/VCodeThread.lean`).**
+  * Every Arm instruction has a precise footprint, as a function of the state
+    (`ArmInstFoot.instEvs`, `footprint_exec_inst`; for `stepi`: `stepEvs`, `footprint_stepi`, with
+    the kinds of `ArmThread.KindsOk`, `kindsOk_stepEvs`). The T2d footprints covered only
+    `ldar`/`ldaxr`/`stlr`/`stlxr`; now every load/store class has its access (single register,
+    pair, literal, exclusive).
+  * Footprints of multi-instruction steps use sequential agreement (`SAgrees`: a read sees the
+    step's earlier writes) and compose (`ofoot_seq`, `ofoot_execLines`).
+  * `csem`'s precise footprint `cEvs` (the canonical run's events, the LL/SC loop body's, none for
+    the control forms); `ifoot_csem`: every instruction but calls has it.
+  * `VTStep vc sem ev`: the VCode thread step on the world patched with the read events' bytes,
+    whose events are the instruction's precise footprint (`ev`). **Precision matters**: with
+    arbitrary footprints (any `evs` satisfying `Footprint`, as `ArmThread.TStep` allows) a step
+    could carry a read and a write-back of a location it does not touch, a write to a shared
+    location that no layer can account for. The Arm traces of the final theorem need the same
+    restriction (labels equal to `stepEvs` of the patched state).
+  * Witnesses (`VCodeThreadWitness.lean`): `ldar_vtstep` (an `ldar` reading the environment's `5`
+    while its own memory holds `0`), `cEvs_ldar`, `stepEvs_ldaxr`.
 * **Layer 2: isel with interference.** The per-statement simulation of the M7 driver (the step
   lemmas behind `IselSim`) as `Refines` from `ClifThread.CStep` to the VCode event semantics. A
   CLIF memory statement lowers to one memory `MInst` with the same event. The memory relation
@@ -340,7 +354,7 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2c (#301) | Litmus tests in Lean + qemu harness | **done** |
 | T2d (#302) | Per-thread event semantics of the Arm model: the run of one thread as a trace of memory events with an exclusive monitor (failing `stlxr`, the `cbnz` retry); the existing single-core model is that semantics against an SC memory with a monitor that never fails | **done** |
 | T2e (#303) | Program level: multi-threaded `Clif.run` (`ClifThread.MTRun`), program-level DRF-SC (race-freedom in every contract-consistent execution, initial writes `co`-first), replay of SC executions as interleaving runs, and the program-level statement `ProgE2E.program_correct` with the per-thread contract `Realizes` (§3c) | **done** |
-| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference; §3e) | layer 0 **done** (`ThreadRefine`: reduction `realizes_of_threads`, composition `Refines.trans`); layers 1–4 open |
+| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference; §3e) | layer 0 **done** (`ThreadRefine`: reduction `realizes_of_threads`, composition `Refines.trans`); layer 1 **done** (precise footprints `ArmInstFoot`, VCode thread semantics `VCodeThread.VTStep`); layers 2–4 open |
 | T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem (§3d), and the program-level chain `program_correct_rust` | **done** |
 | T2g (#305) | Widening: LSE atomics (`has_lse`: not emitted in our configuration, covered by the table, `Lse.lse_maps`), the full `aarch64.cat` (`Armv8Full`, monotonicity `consistent_frag`), `i128` atomics (rejected by cg_clif) | **done** |
 | T2i (#317) | Mixed-size accesses (a mixed-size model instead of `NoOverlap`) | open |
