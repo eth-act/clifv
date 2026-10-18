@@ -11,7 +11,9 @@ Rust/C++20 orderings (RC11) and the soundness of cg_clif's strengthening
 program level: the multi-threaded `Clif.run` (`ClifThread.MTRun`), replay of SC executions
 (`Prog.replay`) and `ProgE2E.program_correct` under the per-thread contract `ProgE2E.Realizes`,
 with race-freedom over the executions with fences (`ProgE2E.program_correctF`) or of the Rust
-program (`ProgE2E.program_correct_rust`). Nothing here changes the Arm model of `FV/Arm`.
+program (`ProgE2E.program_correct_rust`). The fragment model is weaker than the whole `aarch64.cat`
+(`Armv8Full.consistent_frag`); LSE atomics map by the same table (`Lse.lse_maps`). Nothing here
+changes the Arm model of `FV/Arm`.
 -/
 import FV.Concurrency.Rel
 import FV.Concurrency.Exec
@@ -34,3 +36,5 @@ import FV.Concurrency.ArmFence
 import FV.Concurrency.RC11Witness
 import FV.Concurrency.ProgramE2EF
 import FV.Concurrency.ProgramFWitness
+import FV.Concurrency.Armv8Full
+import FV.Concurrency.Lse

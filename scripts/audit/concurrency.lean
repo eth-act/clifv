@@ -1,5 +1,6 @@
 import FV.Concurrency
 import FVTest.Concurrency.Litmus
+import FVTest.Concurrency.LitmusFull
 
 -- the memory-model layer (T2, #38; docs/plans/atomics.md)
 #print axioms Concurrency.Armv8.atomics_sc
@@ -55,6 +56,11 @@ import FVTest.Concurrency.Litmus
 #print axioms Concurrency.Mapping.Hom.psc_acyclic
 #print axioms Concurrency.Mapping.armv8_to_clifF
 #print axioms Concurrency.Mapping.plus_restr
+-- the full aarch64.cat and LSE (T2g, #305)
+#print axioms Concurrency.Armv8Full.consistent_frag
+#print axioms Concurrency.Mapping.armv8full_to_clif
+#print axioms Concurrency.Mapping.armv8full_to_clifF
+#print axioms Concurrency.Lse.lse_maps
 -- the program level with fences and Rust orderings (T2f, #304)
 #print axioms Concurrency.ProgE2E.rmw_sc
 #print axioms Concurrency.ProgE2E.raceFreeProgF_of_raceFreeProg
@@ -105,3 +111,7 @@ import FVTest.Concurrency.Litmus
 #print axioms Concurrency.Litmus.inc_both0_b
 #print axioms Concurrency.Litmus.inc_wf
 #print axioms Concurrency.Litmus.inc_ok
+#print axioms Concurrency.Litmus.mp_full
+#print axioms Concurrency.Litmus.mp_dmb_addr_frag
+#print axioms Concurrency.Litmus.mp_dmb_addr_full
+#print axioms Concurrency.Witness.incX_full
