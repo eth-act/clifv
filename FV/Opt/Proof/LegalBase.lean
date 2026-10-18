@@ -68,9 +68,9 @@ structure Good (C : Ctx) : Prop where
     bs.length = bs'.length ∧ blockOk C true b b' = true ∧
     ∀ x y, (x, y) ∈ bs.zip bs' → blockOk C false x y = true
 
-theorem check_good {f g : Function} {cert : Legalize128.Cert} (h : check f g cert = true) :
+theorem checkW_good {f g : Function} {cert : Legalize128.Cert} (h : checkW f g cert = true) :
     Good ⟨f, g, cert⟩ := by
-  simp only [check, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, List.all_eq_true] at h
+  simp only [checkW, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, List.all_eq_true] at h
   obtain ⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩ := h
   refine ⟨h1, h2, h3, h4, h5, h6, h7, ?_⟩
   split at h9
@@ -79,6 +79,20 @@ theorem check_good {f g : Function} {cert : Legalize128.Cert} (h : check f g cer
     refine ⟨b, bs, b', bs', hf, hg, ?_, h9.1, fun x y hxy => h9.2 (x, y) hxy⟩
     rw [hf, hg] at h8; simpa using h8.symm
   · cases h9
+
+theorem checkW_of_check {f g : Function} {cert : Legalize128.Cert} (h : check f g cert = true) :
+    checkW f g cert = true := by
+  simp only [check, Bool.and_eq_true] at h
+  exact h.1
+
+theorem indOldB_of_check {f g : Function} {cert : Legalize128.Cert}
+    (h : check f g cert = true) : indOldB f = true := by
+  simp only [check, Bool.and_eq_true] at h
+  exact h.2
+
+theorem check_good {f g : Function} {cert : Legalize128.Cert} (h : check f g cert = true) :
+    Good ⟨f, g, cert⟩ :=
+  checkW_good (checkW_of_check h)
 
 theorem Good.zero_ge {C : Ctx} (hG : Good C) : C.T0 ≤ C.zero := by
   have := hG.cert

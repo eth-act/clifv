@@ -770,7 +770,7 @@ theorem root_refinesD {P : Program} {B : Env} {syms : String → Option Nat}
               exact ⟨h', by rw [tgtEnvD_none (hC.func?_none hpn)]; exact hb', hrel⟩
           keep := keep_guardD hF hbase.2.2
           ind := fun _ => ⟨rfl, fun sig dsig hs hd =>
-            have hd128 := indPlainB_sound (Complete.legalOkB_indPlain (hC.ok h hh) hp.mentions) hs hd
+            have hd128 := pre_indSite hp hs hd
             callIndRel2_of_plain hd128 (callIndRel_linkD hC ih d hd128)⟩ }
       have hT := noMemTrap_guardD hF M d hh hioG hUI hG
       have hI : NoIndInternal (guardEnvD B P (SomeInd (legalProg P)) syms M d) P.bare h

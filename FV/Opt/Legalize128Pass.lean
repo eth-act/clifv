@@ -9,9 +9,9 @@ The pass is driven by the validator's plans: it first gives every `i128` value o
 fresh `i64` values (`allocPairs`, the certificate), then rewrites each statement by its
 `Opt.Legal.planOf` plan, emitting the plan's canonical pattern with fresh temporaries
 (`emitPat`). A statement without a plan makes the legalisation fail (the function is left alone
-and reported unsupported by the backend). `Opt.Legal.check` validates the result; it accepts
-every legalisation of a function satisfying `Opt.Legal.Complete.Pre`
-(`Opt.Legal.Complete.check_complete`, `FV/Opt/Proof/LegalComplete.lean`).
+and reported unsupported by the backend). `Opt.Legal.checkW` validates the result; it accepts
+every legalisation of a function satisfying `Opt.Legal.Complete.PreW`
+(`Opt.Legal.Complete.checkW_complete`, `FV/Opt/Proof/LegalComplete.lean`).
 -/
 
 namespace Opt.Legalize128
@@ -319,21 +319,21 @@ def function128 (f : Function) : Except String Function :=
 
 
 /-- The unverified reason of a legalised function the validator rejects. -/
-def rejectedReason : String := "i128 legalized (outside backend_correct: Opt.Legal.check rejects)"
+def rejectedReason : String := "i128 legalized (outside backend_correct: Opt.Legal.checkW rejects)"
 
 /-- The result of `parsedFile128`. -/
 structure Legalized where
   /-- The file with every legalisable function replaced by its legalisation. -/
   file : Clif.ParsedFile
-  /-- The legalised functions outside `E2E.backend_correct_legal`, with the reason. -/
+  /-- The legalised functions outside `E2E.backend_correct_legal_wide`, with the reason. -/
   unverified : List (String × String)
-  /-- The legalised functions `Opt.Legal.check` accepts: inside the per-activation theorem
-  `E2E.backend_correct_legal` when the backend's local conditions hold. Source and target
+  /-- The legalised functions `Opt.Legal.checkW` accepts: inside the per-activation theorem
+  `E2E.backend_correct_legal_wide` when the backend's local conditions hold. Source and target
   programs have no functions, so all calls use the environment's contracts. -/
   accepted : List String
 
 /-- Legalise every parsed function of a file. Accepted functions use
-`E2E.backend_correct_legal` with function-free source and target programs: its extern-call
+`E2E.backend_correct_legal_wide` with function-free source and target programs: its extern-call
 and indirect-resolution program conditions then hold independently of names in the file.
 The backend checks the remaining local conditions; rejected legalisations stay unverified. -/
 def parsedFile128 (pf : Clif.ParsedFile) : Legalized :=
@@ -347,7 +347,7 @@ def parsedFile128 (pf : Clif.ParsedFile) : Legalized :=
         if f' == f then { acc with file := push p }
         else
           let acc := { acc with file := push { p with func := .ok f' } }
-          if !Opt.Legal.check f f' cert then
+          if !Opt.Legal.checkW f f' cert then
             { acc with unverified := acc.unverified ++ [(p.name, rejectedReason)] }
           else { acc with accepted := acc.accepted ++ [p.name] }
       | .error _ => { acc with file := push p }

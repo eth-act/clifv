@@ -1,14 +1,15 @@
 import FV.Opt.Legalize128
 
 /-!
-# `Opt.Legal.check`: the validator of `Opt.Legalize128`
+# `Opt.Legal.checkW`: the validator of `Opt.Legalize128`
 
 `Opt.Legalize128` (untrusted) rewrites every `i128` value of a function `f` into a pair of
 `i64` values and returns the legalised function `g` with a certificate (`Cert`: the pair of
-every `i128` value and the shared zero of the pad values). `check f g cert` decides whether
+every `i128` value and the shared zero of the pad values). `checkW f g cert` decides whether
 `g` is a legalisation of `f` this module knows to be correct; the refinement theorem
-(`Opt.Legal.check_refines`, `FV/Opt/Proof/LegalSim.lean`) holds for every accepted pair, and
-`lean-backend` flags the rejected ones unverified.
+(`Opt.Legal.checkW_refines`, `FV/Opt/Proof/LegalSim.lean`) holds for every accepted pair, and
+`lean-backend` flags the rejected ones unverified. `check` is `checkW` on its domain before
+S4 (`indOldB`: no `try_call_indirect`, no `call_indirect` at an `i128` signature).
 
 The check is structural, block by block: `g` has the blocks of `f` (same ids, same order), the
 entry block starts with the shared zero, and every statement of `f` corresponds to a *segment*
@@ -945,8 +946,9 @@ def certOk (C : Ctx) : Bool :=
     v == w || (a != c && a != d && b != c && b != d)
 
 /-- **The validator.** `g` (with certificate `cert`) is a legalisation of `f` covered by the
-refinement theorem. -/
-def check (f g : Function) (cert : Cert) : Bool :=
+refinement theorem (`Opt.Legal.checkW_refines`), including indirect calls with an `i128`
+call-site signature (`Plan.callInd128`) and `try_call_indirect` (`termOk`). -/
+def checkW (f g : Function) (cert : Cert) : Bool :=
   let C : Ctx := ⟨f, g, cert⟩
   g.name == f.name && g.slots == f.slots && g.globals == f.globals &&
   sigExp f.sig == some g.sig &&
@@ -958,6 +960,26 @@ def check (f g : Function) (cert : Cert) : Bool :=
   | b :: bs, b' :: bs' =>
     blockOk C true b b' && (bs.zip bs').all fun (x, y) => blockOk C false x y
   | _, _ => false
+
+/-- The domain of `check` before `i128` indirect calls were validated (S4): no
+`try_call_indirect`, and no `call_indirect` whose declared call-site signature has an `i128`
+parameter or return. -/
+def indOldB (f : Function) : Bool :=
+  f.blocks.all fun b =>
+    b.body.all (fun s => match s.inst with
+      | .callIndirect sig _ _ => match f.sigDecls.lookup sig with
+        | some d => !sig128 d
+        | none => true
+      | _ => true) &&
+    match b.term with
+    | .tryCallIndirect .. => false
+    | _ => true
+
+/-- **The validator on its former domain** (`indOldB`): the statements about `check`
+(`check_refines`, `E2E.backend_correct_legal`, …) keep their pre-S4 meaning; `checkW` is the
+validator `lean-backend` runs. -/
+def check (f g : Function) (cert : Cert) : Bool :=
+  checkW f g cert && indOldB f
 
 /-! ## Signatures without `i128`: the expansion is the identity -/
 

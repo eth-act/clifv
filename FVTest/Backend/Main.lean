@@ -39,11 +39,11 @@ objects, which leave the LSDA to the embedder).
 
 Every function that mentions `i128` is first legalised by `Opt.Legalize128` (rewritten to
 plain `i8..i64` CLIF before the mid-end and the backend). A legalised function the validator
-`Opt.Legal.check` accepts is covered by `E2E.backend_correct_legal` and treated like any other
+`Opt.Legal.checkW` accepts is covered by `E2E.backend_correct_legal_wide` and treated like any other
 function (`InSubset` and `lowerCheck` decided on the legalised form); a rejected one is
 reported unverified ("i128 legalized (outside backend_correct: …)"). Under `--opt` with the
 proven rule sets (`--opt-proven-only`) a legalised function is covered by
-`E2E.backend_correct_legal_opt` (the legalisation composed with the mid-end), every other by
+`E2E.backend_correct_legal_opt_wide` (the legalisation composed with the mid-end), every other by
 `E2E.backend_correct_opt_exe` (`call_indirect`, `try_call`, `try_call_indirect` included); with
 unproven rules every legalised function is reported unverified. The unwinding of a legalised
 function with a `try_call` is covered by `E2E.backend_correct_legal_unwind` when the

@@ -1,10 +1,12 @@
 import FV.Opt.Legalize128Pass
 
 /-!
-# Completeness of `Opt.Legal.check` for `Opt.Legalize128`'s output
+# Completeness of `Opt.Legal.checkW` for `Opt.Legalize128`'s output
 
-`check_complete`: for a function `f` satisfying `Pre`, the validator accepts the legalisation
-`function128Cert f = .ok (g, cert)`. The pass (`FV/Opt/Legalize128Pass.lean`) emits for every
+`checkW_complete`: for a function `f` satisfying `PreW`, the validator accepts the legalisation
+`function128Cert f = .ok (g, cert)` (`check_complete`: `check` accepts it when `f` satisfies
+`Pre`, i.e. `PreW` and the domain of `check`, `indOldB`). The pass
+(`FV/Opt/Legalize128Pass.lean`) emits for every
 statement the segment of its `planOf` plan, so the proof is about the values it writes:
 
 * the certificate (`allocPairs`): pair components are consecutive ids between `maxValueId f`
@@ -1626,16 +1628,16 @@ theorem helperExts_keys (f : Function) :
 
 /-! ## Completeness -/
 
-/-- **The preconditions of completeness**: `f` mentions `i128` (otherwise `function128Cert`
-returns `f` itself), the `f`-only conjuncts of `check` (distinct definitions, every value id
-below `maxValueId f`), no statement reads its own result. -/
-structure Pre (f : Function) : Prop where
+/-- **The preconditions of completeness** of `checkW`: `f` mentions `i128` (otherwise
+`function128Cert` returns `f` itself), the `f`-only conjuncts of `checkW` (distinct definitions,
+every value id below `maxValueId f`), no statement reads its own result. -/
+structure PreW (f : Function) : Prop where
   mentions : mentions128 f = true
   defs : ((defsOf f).map (·.1)).Nodup
   ids : ∀ v ∈ idsOf f, v < maxValueId f
   noSelf : ∀ b ∈ f.blocks, ∀ s ∈ b.body, ∀ x ∈ instOps s.inst, x ∉ s.results
 
-theorem bfacts_of_pre {f : Function} (hp : Pre f) {C : Ctx} (hf : C.f = f) {b : Block}
+theorem bfacts_of_preW {f : Function} (hp : PreW f) {C : Ctx} (hf : C.f = f) {b : Block}
     (hb : b ∈ f.blocks) : BFacts C b := by
   have hT : C.T0 = maxValueId f := by simp [Ctx.T0, hf]
   have hid : ∀ v, (v ∈ b.params.map (·.1) ∨ (∃ s ∈ b.body, v ∈ s.results ∨ v ∈ instOps s.inst) ∨
@@ -1661,6 +1663,42 @@ theorem bfacts_of_pre {f : Function} (hp : Pre f) {C : Ctx} (hf : C.f = f) {b : 
     fun x hx => hid x (.inr (.inr hx))⟩
   exact ((sublist_flatMap_of_mem (f := (·.results)) hs).trans
     (List.sublist_append_right _ _)).nodup hkeys
+
+/-- **The preconditions of completeness** of `check`: `PreW`, and the two constructs outside
+the domain of `check` (`indOldB`) do not occur: `call_indirect` with an `i128` signature and
+`try_call_indirect`. -/
+structure Pre (f : Function) : Prop where
+  mentions : mentions128 f = true
+  defs : ((defsOf f).map (·.1)).Nodup
+  ids : ∀ v ∈ idsOf f, v < maxValueId f
+  noSelf : ∀ b ∈ f.blocks, ∀ s ∈ b.body, ∀ x ∈ instOps s.inst, x ∉ s.results
+  callInd : ∀ b ∈ f.blocks, ∀ s ∈ b.body, ∀ sig callee args,
+    s.inst = .callIndirect sig callee args → ∀ d, f.sigDecls.lookup sig = some d → sig128 d = false
+  noTryInd : ∀ b ∈ f.blocks, ∀ c args et, b.term ≠ .tryCallIndirect c args et
+
+theorem Pre.toW {f : Function} (hp : Pre f) : PreW f :=
+  ⟨hp.mentions, hp.defs, hp.ids, hp.noSelf⟩
+
+/-- `Pre` implies the domain of `check`. -/
+theorem Pre.indOld {f : Function} (hp : Pre f) : Opt.Legal.indOldB f = true := by
+  simp only [Opt.Legal.indOldB, List.all_eq_true, Bool.and_eq_true]
+  intro b hb
+  refine ⟨fun s hs => ?_, ?_⟩
+  · split
+    · rename_i sig callee args hi
+      split
+      · rename_i d hd
+        simpa using hp.callInd b hb s hs sig callee args hi d hd
+      · rfl
+    · rfl
+  · split
+    · rename_i c args et he
+      exact absurd he (hp.noTryInd b hb c args et)
+    · rfl
+
+theorem bfacts_of_pre {f : Function} (hp : Pre f) {C : Ctx} (hf : C.f = f) {b : Block}
+    (hb : b ∈ f.blocks) : BFacts C b :=
+  bfacts_of_preW hp.toW hf hb
 
 /-- The legaliser's certificate. -/
 def certOf (f : Function) : Cert :=
@@ -1688,19 +1726,19 @@ theorem gok_of {f g0 : Function} {es : List (FnRef × ExtFunc)} {ds : List (Nat 
   · obtain ⟨d', hd', hl'⟩ := expandSigDecls_spec hds i d hdi
     exact ⟨d', hd', by simpa [hd] using hl'⟩
 
-theorem check_of_run {f g0 : Function} {pg rg : List (List SlotEl)} {bs' : List Block}
-    {st' : St} (hp : Pre f) (hne : f.blocks ≠ [])
+theorem checkW_of_run {f g0 : Function} {pg rg : List (List SlotEl)} {bs' : List Block}
+    {st' : St} (hp : PreW f) (hne : f.blocks ≠ [])
     (hname : g0.name = f.name) (hslots : g0.slots = f.slots) (hglob : g0.globals = f.globals)
     (hsig : sigExp f.sig = some g0.sig) (hO : GOk ⟨f, g0, certOf f⟩)
     (hpg : groups f.sig.params = some pg) (hrg : groups f.sig.returns = some rg)
     (hrun : (rewriteBlocks ⟨f, g0, certOf f⟩ pg rg true f.blocks).run
       { next := (certOf f).zero + 1 } = .ok (bs', st')) :
-    check f { g0 with blocks := bs' } (certOf f) = true := by
+    checkW f { g0 with blocks := bs' } (certOf f) = true := by
   have A : Agree ⟨f, g0, certOf f⟩ ⟨f, { g0 with blocks := bs' }, certOf f⟩ := ⟨rfl, rfl, rfl, rfl⟩
   have hG : CGood ⟨f, g0, certOf f⟩ := cgood_alloc f g0
   have hGD : CGood ⟨f, { g0 with blocks := bs' }, certOf f⟩ := cgood_alloc f _
   obtain ⟨hlen, hhead, hok1, hok2⟩ := rewriteBlocks_spec A hG hO hpg hrg f.blocks true
-    (fun b hb => bfacts_of_pre hp rfl hb) (by simp [Ctx.zero]) hrun
+    (fun b hb => bfacts_of_preW hp rfl hb) (by simp [Ctx.zero]) hrun
   obtain ⟨b, bs, hfb⟩ : ∃ b bs, f.blocks = b :: bs := by
     cases hf : f.blocks with
     | nil => exact absurd hf hne
@@ -1717,10 +1755,21 @@ theorem check_of_run {f g0 : Function} {pg rg : List (List SlotEl)} {bs' : List 
   have h2 := hok2 hfv
   simp only [List.drop_one, List.tail_cons] at h2
   simp only [List.length_cons, Nat.add_right_cancel_iff] at hlen
-  unfold check
+  unfold checkW
   simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, List.all_eq_true, hfb]
   exact ⟨⟨⟨⟨⟨⟨⟨⟨hname, hslots⟩, hglob⟩, hsig⟩, hp.defs⟩, fun v hv => hp.ids v hv⟩, certOk_of hGD⟩,
     by simp [hlen]⟩, h1, List.all_eq_true.mp h2⟩
+
+theorem check_of_run {f g0 : Function} {pg rg : List (List SlotEl)} {bs' : List Block}
+    {st' : St} (hp : Pre f) (hne : f.blocks ≠ [])
+    (hname : g0.name = f.name) (hslots : g0.slots = f.slots) (hglob : g0.globals = f.globals)
+    (hsig : sigExp f.sig = some g0.sig) (hO : GOk ⟨f, g0, certOf f⟩)
+    (hpg : groups f.sig.params = some pg) (hrg : groups f.sig.returns = some rg)
+    (hrun : (rewriteBlocks ⟨f, g0, certOf f⟩ pg rg true f.blocks).run
+      { next := (certOf f).zero + 1 } = .ok (bs', st')) :
+    check f { g0 with blocks := bs' } (certOf f) = true := by
+  simp only [check, checkW_of_run hp.toW hne hname hslots hglob hsig hO hpg hrg hrun, hp.indOld,
+    Bool.and_self]
 
 theorem except_bind_ok {ε α β : Type} {x : Except ε α} {f : α → Except ε β} {b : β}
     (h : (x >>= f) = .ok b) : ∃ a, x = .ok a ∧ f a = .ok b := by
@@ -1728,10 +1777,10 @@ theorem except_bind_ok {ε α β : Type} {x : Except ε α} {f : α → Except �
   | error e => rw [hx] at h; cases h
   | ok a => rw [hx] at h; exact ⟨a, rfl, h⟩
 
-/-- **Completeness of `Opt.Legal.check`**: the validator accepts every legalisation of a function
-satisfying `Pre`. -/
-theorem check_complete {f g : Function} {cert : Cert} (hp : Pre f)
-    (h : function128Cert f = .ok (g, cert)) : check f g cert = true := by
+/-- **Completeness of `Opt.Legal.checkW`**: the validator accepts every legalisation of a
+function satisfying `PreW`. -/
+theorem checkW_complete {f g : Function} {cert : Cert} (hp : PreW f)
+    (h : function128Cert f = .ok (g, cert)) : checkW f g cert = true := by
   simp only [function128Cert, hp.mentions, Bool.not_true, Bool.false_eq_true, ite_false] at h
   split at h
   · cases h
@@ -1746,8 +1795,14 @@ theorem check_complete {f g : Function} {cert : Cert} (hp : Pre f)
   obtain ⟨rfl, rfl⟩ := h
   have hpg' : groups f.sig.params = some pg := by simp [groups, hpg, Except.toOption]
   have hrg' : groups f.sig.returns = some rg := by simp [groups, hrg, Except.toOption]
-  exact check_of_run (g0 := { f with sig := sig, externs := es ++ helperExts f, sigDecls := ds })
+  exact checkW_of_run (g0 := { f with sig := sig, externs := es ++ helperExts f, sigDecls := ds })
     (st' := st') hp (by simpa using hne) rfl rfl rfl
     (by simp [sigExp, hsig, Except.toOption]) (gok_of hes hds rfl rfl _) hpg' hrg' hrun
+
+/-- **Completeness of `Opt.Legal.check`**: it accepts every legalisation of a function
+satisfying `Pre`. -/
+theorem check_complete {f g : Function} {cert : Cert} (hp : Pre f)
+    (h : function128Cert f = .ok (g, cert)) : check f g cert = true := by
+  simp only [check, checkW_complete hp.toW h, hp.indOld, Bool.and_self]
 
 end Opt.Legal.Complete

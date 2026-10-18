@@ -6,13 +6,13 @@ import FV.Opt.Legalize128Pass
 `preB f`: the preconditions `Opt.Legal.Complete.Pre f` of the validator's completeness, decided
 on `f` alone (`Opt.Legal.Complete.preB_iff`, `FV/Opt/Proof/LegalPre.lean`): `f` mentions `i128`,
 its definitions are distinct, every value id is below `maxValueId f`, no statement reads its own
-result.
+result, no `call_indirect` has an `i128` signature, no `try_call_indirect`. `preBW f` decides
+`Opt.Legal.Complete.PreW f` (the same without the two indirect-call conditions; the validator
+`Opt.Legal.checkW` accepts such calls).
 
 `legalOkB f`: the source domain of one function — the pass succeeds (`function128Cert f = .ok _`)
 and either `f` does not mention `i128` (the pass is the identity) or `preB f` holds (the
-legalisation is proven correct without a validator premise, `Opt.Legal.legalize_refines`) and no
-indirect call has an `i128` signature (`indPlainB`: the whole-program refinement, S3, relates
-the indirect calls' callees for signatures without `i128`).
+legalisation is proven correct without a validator premise, `Opt.Legal.legalize_refines`).
 
 `legalize f`: the function the pass gives for `f` (`f` itself when the pass fails, as
 `parsedFile128` keeps it).
@@ -24,24 +24,25 @@ namespace Opt.Legalize128
 
 open Clif Opt.Legal
 
-/-- **The decidable `Opt.Legal.Complete.Pre`** (`Opt.Legal.Complete.preB_iff`). -/
-def preB (f : Function) : Bool :=
+/-- **The decidable `Opt.Legal.Complete.PreW`** (`Opt.Legal.Complete.preBW_iff`). -/
+def preBW (f : Function) : Bool :=
   mentions128 f && decide (((defsOf f).map (·.1)).Nodup) &&
   (idsOf f).all (· < maxValueId f) &&
   f.blocks.all (fun b => b.body.all fun s => (instOps s.inst).all fun x => !s.results.contains x)
 
-/-- No indirect call of `f` (a `call_indirect` statement, a `try_call_indirect` terminator) has
-a call-site signature with an `i128` parameter or return. The validator accepts such calls
-(`Opt.Legal.Plan.callInd128`, `termOk`) and the per-function theorem covers them
-(`E2E.backend_correct_legal`); the whole-program refinement (S3, `legalOkB`) does not yet. -/
-def indPlainB (f : Function) : Bool :=
-  f.blocks.all fun b =>
-    b.body.all (fun s => match s.inst with
-      | .callIndirect sig _ _ => !((f.sigDecls.lookup sig).any sig128)
-      | _ => true) &&
-    match b.term with
-    | .tryCallIndirect _ _ et => !((f.sigDecls.lookup et.sig).any sig128)
-    | _ => true
+/-- **The decidable `Opt.Legal.Complete.Pre`** (`Opt.Legal.Complete.preB_iff`). -/
+def preB (f : Function) : Bool :=
+  mentions128 f && decide (((defsOf f).map (·.1)).Nodup) &&
+  (idsOf f).all (· < maxValueId f) &&
+  f.blocks.all (fun b => b.body.all fun s => (instOps s.inst).all fun x => !s.results.contains x) &&
+  f.blocks.all (fun b => b.body.all fun s => match s.inst with
+    | .callIndirect sig _ _ => match f.sigDecls.lookup sig with
+      | some d => !sig128 d
+      | none => true
+    | _ => true) &&
+  f.blocks.all (fun b => match b.term with
+    | .tryCallIndirect .. => false
+    | _ => true)
 
 /-- The function the pass gives for `f` (`f` itself when it fails). -/
 def legalize (f : Function) : Function :=
@@ -50,9 +51,8 @@ def legalize (f : Function) : Function :=
   | .error _ => f
 
 /-- **The source domain of one function**: the pass succeeds, and it is the identity (`f` does
-not mention `i128`) or its result is proven correct (`preB`) and its indirect calls have no
-`i128` signature (`indPlainB`). -/
+not mention `i128`) or its result is proven correct (`preB`). -/
 def legalOkB (f : Function) : Bool :=
-  (function128Cert f).toBool && (!mentions128 f || (preB f && indPlainB f))
+  (function128Cert f).toBool && (!mentions128 f || preB f)
 
 end Opt.Legalize128
