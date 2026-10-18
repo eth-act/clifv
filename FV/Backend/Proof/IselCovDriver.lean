@@ -1,3 +1,4 @@
+import FV.Backend.Proof.IselCovCall
 import FV.Backend.Proof.IselCovModel
 import FV.Backend.Proof.IselCovClean
 import FV.Backend.Proof.IselCovTab
@@ -9,10 +10,10 @@ import FV.Backend.Proof.LowerContract
 
 The abstract interpretation (`soundAt` with `covModel`, the table `covTab` and its root checks)
 applied to the driver's three ISLE calls: a statement's `lower` (`stmt_cov`: everything emitted
-is covered, and the result registers of an instruction with results are int vregs), a
-terminator's `lower`/`lower_branch` (`termCall_cov`) and a `try_call`'s `lower_branch`
-(`tryCall_cov`). Rules that are not checked roots never match (`lower_nonroot_nomatch`,
-`lower_term_nomatch`; `nop`'s rule 587 has no results).
+is covered, and the result registers of an instruction with results are int vregs; the `call`
+rules' results by hand, `out_call`), a terminator's `lower`/`lower_branch` (`termCall_cov`) and a
+`try_call`'s `lower_branch` (`tryCall_cov`). Rules that are not checked roots never match
+(`lower_nonroot_nomatch`, `lower_term_nomatch`; `nop`'s rule 587 has no results).
 -/
 
 namespace Backend.Proof.Driver
@@ -31,6 +32,10 @@ theorem holds_inst {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ii : N
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst) :
     Holds2 f ctx [.xv .inst] [.inst ii] :=
   ⟨⟨⟨ii, info, inst, rfl, hi, hc, hctx.data _ _ _ hi hc⟩, rfl, rfl⟩, trivial⟩
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+theorem lower_len : 1002 + (program.rulesOf T.lower.id).length ≤ 999999 := by decide +kernel
 
 set_option maxRecDepth 100000 in
 /-- **A statement's lowering is covered**: every instruction it emits is covered, and the result
@@ -58,17 +63,18 @@ theorem stmt_cov (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hctx 
     · exact .inl ha
   refine ⟨(sa.root T.lower.ret T.lower.id T.lower _ _ [.xv .inst] AW.top [.inst ii] s #[] out s' tr'
     data_program.t686 term_686_kind hrulesTop hins (covSince_refl s) happ).1, ?_⟩
-  intro rss hout hres rs hrs r hr
+  intro rss hout hres
   have hrules : ∀ rl ∈ program.rulesOf T.lower.id,
       aRule program covTab aext actor apre aOracle [.xv .inst] (.flat 1 true) rl = true ∨
-        ∀ m s0 env s1, (matchRule program (sem ctx) {} m rl [.inst ii]).run s0 ≠ .ok (some env, s1) := by
+        (∀ m s0 env s1, (matchRule program (sem ctx) {} m rl [.inst ii]).run s0 ≠ .ok (some env, s1)) ∨
+        (rl ∈ program.rulesOf TId.lower ∧ (rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033)) := by
     intro rl hrl
     have hf := List.all_eq_true.mp covStmt_ok rl hrl
     have hop := List.all_eq_true.mp lower_ops rl hrl
     simp only [Bool.or_eq_true, Bool.not_eq_true', beq_iff_eq] at hf
-    rcases hf with (hcr | h587) | ha
-    · exact .inr (lower_nonroot_nomatch hctx hi hc hrl hcr)
-    · refine .inr fun m s0 env s1 hm => hres ?_
+    rcases hf with ((((hcr | h587) | h1) | h2) | h3) | ha
+    · exact .inr (.inl (lower_nonroot_nomatch hctx hi hc hrl hcr))
+    · refine .inr (.inl fun m s0 env s1 hm => hres ?_)
       simp only [h587, bne_self_eq_false, Bool.false_or, Bool.and_eq_true, beq_iff_eq] at hop
       have hn := pinned_names hctx hi hc hop.1 kind_nullAry kind_nop hm
       rw [variantNames_Nop] at hn
@@ -78,15 +84,27 @@ theorem stmt_cov (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hctx 
       simp [Clif.Inst.resultTypes] at hty
       subst hty
       exact List.eq_nil_of_length_eq_zero hlen
+    · exact .inr (.inr ⟨hrl, .inl h1⟩)
+    · exact .inr (.inr ⟨hrl, .inr (.inl h2)⟩)
+    · exact .inr (.inr ⟨hrl, .inr (.inr h3)⟩)
     · exact .inl ha
-  obtain ⟨-, hv⟩ := sa.root T.lower.ret T.lower.id T.lower _ _ [.xv .inst] (.flat 1 true) [.inst ii] s #[]
-    out s' tr' data_program.t686 term_686_kind hrules hins (covSince_refl s) happ
+  have hv := root_hand_res (md := covModel hLI hctx hcl s) rfl
+    (fun n => soundAt (hctx := hctx) (md := covModel hLI hctx hcl s) (cfg := {}) (tab := covTab)
+      rfl covTab_ok n)
+    (Hand := fun rl => rl ∈ program.rulesOf TId.lower ∧ (rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033))
+    (P := IntOut)
+    (fun rl ⟨hrl, hid⟩ _ _ _ _ _ _ _ _ _ hm hn hmatch heval =>
+      out_call hctx hi hc hrl hid rfl hm hn hmatch heval)
+    data_program.t686 term_686_kind hrules hins (covSince_refl s) (n := 999999) lower_len happ
   subst hout
-  have hk := (hv _ rfl).1 r (mem_regsVec hrs hr)
-  rcases kind_cases r with h1 | h1 | h1 | h1
-  · obtain ⟨n, rfl⟩ := kind_int h1
-    exact ⟨n, rfl⟩
-  all_goals rw [h1] at hk; exact (hk (by decide)).elim
+  rcases hv _ rfl with hγ | hI
+  · intro rs hrs r hr
+    have hk := hγ.1 r (mem_regsVec hrs hr)
+    rcases kind_cases r with h1 | h1 | h1 | h1
+    · obtain ⟨n, rfl⟩ := kind_int h1
+      exact ⟨n, rfl⟩
+    all_goals rw [h1] at hk; exact (hk (by decide)).elim
+  · exact hI rss rfl
 
 set_option maxRecDepth 100000 in
 /-- `lower_branch` in a context with `CtxInv`/`Clean`: everything emitted is covered. -/

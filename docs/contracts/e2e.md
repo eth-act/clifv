@@ -104,7 +104,7 @@ The proof covers them as follows.
   so its extra def is not related to anything (`results_call`). `ExternsNormal` is gone
   (`CallRuleOk` assumes `ExternsIn f exts`).
 
-### Typed ABI placement (`f32`/`f64`, S11e2/S11e3)
+### Typed ABI placement (`f32`/`f64`, S11e2/S11e3/S11e5a)
 
 `FV/Backend/Isel.lean` models Cranelift's aarch64 `compute_arg_locs` for both register classes:
 `abiArgLocs` puts an integer parameter in the next of x0..x7 and an `f32`/`f64` one in the next of
@@ -121,13 +121,43 @@ parameter in the next of v0..v7, a stack-passed one loaded by `stackArgLoad` int
 (`retRegsC`, at most 8 values in all). Witnesses: `FVTest/Backend/AbiTyped.lean` and
 `E2E.argsIn_sigFIF` (`ArgsIn sigFIF [a, b, c] s` is `a` in v0, `b` in x0, `c` in v1, through
 `E2E.argsIn_iff_of_locs`; `E2E.argsIn_iff_of_regs` keeps the x-register form and takes
-integer parameters, `hi`). Calls stay integer-only until S11e5: `instData` rejects a `call`/
-`call_indirect` with an `f32`/`f64` parameter or return and `exnTableOpnd` such a `try_call`/
-`try_call_indirect` (`sigIntB`; the totality scope `stmtInB`/`tryInB` says so), so `locsOf`,
-`stackBytes`, `stackLayoutOk` of every call site are the x-register placement `argLocs`
-(`Proof.sigArgLocs_eq`). Every theorem above still has the integer scope (`Compile.functionE`
-tests `isInt`); `ArgsAt` and the linking contracts still speak about x registers only;
-FP-register call contracts come with S11e5.
+integer parameters, `hi`).
+
+S11e5a types the direct `call` (Cranelift's `Lower::gen_call_output`, `machinst/lower.rs:630`,
+and `Callee::gen_call_args`/`gen_call_rets`, `machinst/abi.rs:1819`/`1995`): `gen_call_output`
+allocates one fresh vreg per ABI return of the return's class (`retClass`), `gen_call_args`
+puts argument `i` at `sigArgLocs`' location (x0..x7 / v0..v7 by class, separate counters,
+`sret` in x8, then the stack; a stack-passed float is stored by `stackArgStore` with `str s`/
+`str d`), and `gen_call_rets` defines the outputs from the return registers of their classes
+(`retRegsC (regsClasses rss) 0 0`, at most 8 values in all). `instData` no longer rejects a
+`call` with an `f32`/`f64` parameter or return. Witness (`FVTest/Backend/AbiTyped.lean`): a
+`call` of `(f64, i64, f32) -> f64` uses v0, x0, v1 and defines its result from v0. Native
+check (qemu, `clif-native --link` of C callees built by clang): integer-signature functions
+that call `(f64, i64, f32) -> f64|i64|f32` and a nine-`f64` callee (the ninth stored by
+`stur d0, [sp]`) return the same values from the Lean backend's object as from Cranelift's
+(4/4 runs). Functions with `f32`/`f64` parameters or returns of their own still fall back
+(`ctlCheck`: `Args`/`Rets` of int vregs only), so the float values come from calls.
+
+Form coverage (V3) with typed calls: the transfer function `Cov.actor` gives `gen_call_output`
+an int or float vreg (`.flat 3 true`; `CtorRes` records the signature argument), so
+`covStmt_ok` excludes the `call` rules 1031..1033 and `stmt_cov` (statement unchanged) gets
+their int results by hand in an integer context (`IselCovCall.out_call`, from
+`CtxInv.call_retClasses`, and `sigIntB` for `call_indirect`; `root_hand_res`). Stock's own
+`gen_call_output` allocates int vregs only: `Cov.actorI` is the integer-call transfer function
+(the one before S11e5a) and `Stock.Proof.Coverage.ctor_value_sound_int` gives Stock's
+constructors that conclusion (`ctor_value_sound` keeps its statement over `Cov.actor`; witness
+`ctor_value_sound_int_witness`).
+
+Remaining interim (S11e5 stages B/C): `instData` still rejects a `call_indirect` and
+`exnTableOpnd` a `try_call`/`try_call_indirect` with an `f32`/`f64` parameter or return
+(`sigIntB`; the totality scope `stmtInB`/`tryInB` says so). `Compile.functionE` does not
+constrain `f.sigDecls`, so a float indirect call would put a float value into the integer driver
+model (`DriverCheck`, `CtxSpec.ctxE`/`tysOf_int` → `loop_run`), and the `try_call` contracts
+(`tryRegsOf`, `LowerTryOk`, `CallOk`/`ArgReg`, `ShapeOf`) are integer-shaped. Every theorem
+above still has the integer scope (`Compile.functionE` tests `isInt`): a `call` in scope has
+integer returns (`CtxInv.call_retClasses`) and integer parameters (`hxi`), so its `locsOf`,
+`stackBytes`, `stackLayoutOk` are the x-register placement `argLocs` (`Proof.sigArgLocs_eq`);
+`ArgsAt` and the linking contracts still speak about x registers only.
 
 ### Float data movement (S11e4): not yet under the end-to-end theorem
 
@@ -3185,7 +3215,9 @@ types, immediates with their range facts, "every `MInst` inside is covered") and
 `FormOk` `covOk` (`covOk_sound`); `aRule` evaluates a rule disjunctively (patterns split
 abstract values, prune impossible variants/constants and the exclusion checker's `fails`),
 internal calls go to the summary table `covTab` (704 entries over the terms reachable from the
-closure roots of `lower` and from `lower_branch`, computed by the untrusted generator) or the
+closure roots of `lower` and from `lower_branch`, computed by the untrusted generator at V3; the
+generator has given 707 entries since V6c's `.num` leaves, both pass, the 704-entry one is kept,
+`FVTest/Backend/IselCovGen.lean`) or the
 `operand_size` oracle, extern helpers to transfer functions whose soundness is `ext_sound`
 (`Clean ctx`: the context's instruction data hold no registers or instructions) and
 `ctor_sound` (every `emit`ted instruction covered: `CovSince`); `soundAt` (induction on the

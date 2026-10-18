@@ -116,7 +116,7 @@ theorem callArgs_em (st : LState)
     (l : List ((ArgLoc × Reg) × Nat))
     (hF : ∀ a b, F a b = match b.1.1 with
       | .reg p => (a.1.push (b.1.2, p), a.2)
-      | .stack off => (a.1, a.2.emit (.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags))) :
+      | .stack off => (a.1, a.2.emit (stackArgStore b.1.2 b.2 (.spOffset off)))) :
     EmSince st (l.foldl F (#[], st)).2 := by
   refine foldl_inv (fun a : Array (Reg × Reg) × LState => EmSince st a.2) F l (#[], st)
     (emSince_self st) ?_
@@ -124,7 +124,10 @@ theorem callArgs_em (st : LState)
   rw [hF]
   split
   · exact ha
-  · exact emSince_push ha rfl rfl
+  · unfold stackArgStore
+    split
+    · exact emSince_push ha (by split <;> rfl) rfl
+    · exact emSince_push ha rfl rfl
 
 /-- **Every extern constructor** emits only instructions with the emission conditions and no
 branch targets, and `emit`'s instruction. -/
@@ -151,7 +154,7 @@ theorem externCtor_em (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | (apply emit_one; exact .inl ⟨rfl, rfl⟩)
       | exact emE_of_since (callArgs_em st _ _ (fun _ _ => rfl))
       | exact emE_of_since (loadConstantFull_em _ _ _ _ st)
-      | exact ⟨[], (callOutput_fold st _ _ (fun _ _ => rfl)).1.trans (by simp), by simp⟩
+      | exact ⟨[], (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).1.trans (by simp), by simp⟩
 
 /-! ## Results of the extern constructors -/
 

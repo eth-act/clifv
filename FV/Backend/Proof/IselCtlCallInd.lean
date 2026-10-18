@@ -178,6 +178,7 @@ theorem call_ind_ruleOk {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : Bi
   rw [← ‹V.data 152 7 _ = info.data›] at hd
   obtain ⟨sig, callee, args, s, rfl, hs, hfs⟩ := instData_callIndirect_inv hd
   have hint := (sigIntB_iff.mp (instData_callIndirect_int hd hs)).1
+  have hrc := sigRets_classes_int (sigIntB_iff.mp (instData_callIndirect_int hd hs)).2
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   obtain ⟨hin, h8'⟩ := hsig sig callee args s rfl hs
@@ -190,14 +191,15 @@ theorem call_ind_ruleOk {p : Program} (hp : Data p) (hpI : IndData p) {Rd F : Bi
   isel_destruct; subst_vars
   simp only [ext_value_slice_unwrap_iff, List.cons.injEq, and_true] at *
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ hrc, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, ctor_put_in_reg_iff,
+    retRegsC_outRegs, outRegs_length,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
   simp only [show (4:Nat) < 10 from by decide, ite_true] at *
   subst_vars
-  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegs_single, outRegs_length,
-    Option.some.injEq, exists_eq_left'] at *
+  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, retRegsC_outRegs, outRegs_single,
+    outRegs_length, Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   have h8 : bytes.length ≤ 8 := sigParamBytes_length hb ▸ h8'

@@ -168,6 +168,32 @@ theorem ctor_value_sound_witness :
     mapped, logicImmComplete, witness_held, pre, ctor, rfl,
     ctor_value_sound mapped logicImmComplete witness_held pre ctor⟩
 
+private def witnessCallSig : Clif.Signature := { returns := [⟨.i64, .none, .normal⟩] }
+private def witnessCallOut : V := .regsVec [[(witnessBuilt.2.2.base.fresh .int).1]]
+private def witnessCallAfter : State :=
+  { witnessBuilt.2.2 with base := (witnessBuilt.2.2.base.fresh .int).2 }
+
+/-- `ctor_value_sound_int` is inhabited by Stock's `gen_call_output` on a signature with one
+`i64` return: one fresh int vreg, which `Cov.actorI` describes (`.flat 1 true`). -/
+theorem ctor_value_sound_int_witness :
+    ∃ (f : Clif.Function) (ctx : Ctx) (initial after : State) (value : V),
+      MappedCtxInv f ctx ∧ LogicImmComplete ∧
+      Holds2 f (sourceIdentityCtx ctx) [AW.top] [.op (.sig witnessCallSig)] ∧
+      apre T.gen_call_output.id [AW.top] = true ∧
+      (Stock.sem ctx).ctor T.gen_call_output [.op (.sig witnessCallSig)] initial =
+        .ok (value, after) ∧
+      (∃ n, value = .regsVec [[.vreg n .int]]) ∧
+      γ f (sourceIdentityCtx ctx) (Cov.actorI T.gen_call_output.id [AW.top]) value := by
+  have mapped := buildCtx_mappedInv witness_scope witness_build
+  have held : Holds2 witnessFunction (sourceIdentityCtx witnessBuilt.1) [AW.top]
+      [.op (.sig witnessCallSig)] := ⟨γ_top _, trivial⟩
+  have pre : apre T.gen_call_output.id [AW.top] = true := by decide +kernel
+  have ctor : (Stock.sem witnessBuilt.1).ctor T.gen_call_output [.op (.sig witnessCallSig)]
+      witnessBuilt.2.2 = .ok (witnessCallOut, witnessCallAfter) := rfl
+  exact ⟨witnessFunction, witnessBuilt.1, witnessBuilt.2.2, witnessCallAfter, witnessCallOut,
+    mapped, logicImmComplete, held, pre, ctor, ⟨_, rfl⟩,
+    ctor_value_sound_int mapped logicImmComplete held pre ctor⟩
+
 private def witnessOracleAbstract : AW :=
   (aOracle TId.operand_size witnessAs).getD .top
 private theorem witness_oracle_run :
