@@ -521,7 +521,46 @@ Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`, `CheckSpec.lean`, `Compl
   and rounds (`Opt.licm_ok`); `editOk id` follows by `Opt.align_filter_append`, `check` by
   `Opt.coreOk_of_wf`. Witness `Opt.CompleteLicmWitness.witness`.
 
-Open: simplify (`check`, `simpOk`), `keepsBackendSubset`, `keepsShapeB`.
+- `Cfg.dominators` computes the dominator tree within its `n + 2` rounds: `Opt.build_domFacts :
+  DomFacts (Cfg.build f)` for every `f` (`FV/Opt/Proof/DomComplete.lean`; `Opt.DomFacts`,
+  `FV/Opt/Proof/DomFacts.lean`: idom entries are blocks, the entry is the root, RPO numbers
+  decrease towards the root, the edge certificate, and every dominator of a reachable block —
+  every block on all paths to it, `Opt.ReachAvoid` — is a tree ancestor). Soundness is a property
+  of each parent edge; completeness: after round `k` every path of fewer than `k` edges avoiding
+  `a` to a block yields one to its parent, and paths of at most `|rpo|` edges suffice. Witness
+  `Opt.DomCompleteWitness.witness` (an irreducible loop and nested loops).
+- Re-checking after simplify: `Opt.check_removeUnreachable_of_wfCert'`
+  (`FV/Opt/Proof/CompleteRecheck.lean`): if `f` passes `wfCert` against *any* CFG (as `simpOk`
+  checks the simplify output against the input's tree), has unique definitions, entry parameters
+  matching the signature, well-typed block-call arguments and `br_table` indices, then `check`
+  accepts `removeUnreachable f`: tree ancestors of the given tree dominate in `f`'s graph,
+  `removeUnreachableRaw` keeps exactly the reachable blocks (the new graph is the old one
+  restricted), and the recomputed tree has every dominator as an ancestor (`build_domFacts`).
+- The final guards (`FV/Opt/Proof/CompleteGuards.lean`): `keepsBackendSubset` follows from the
+  transitive `Opt.KeepsB` (header, backend subset E, callees, no new `call_indirect`), kept by every
+  stage (`keepsB_removeUnreachable`, `keepsB_dce`, `keepsB_gvn`, `keepsB_licm_of_check`, and for
+  simplify `keepsB_simp'` from the stage facts `Opt.SimpGuard`). `keepsShapeB` really can reject:
+  `Opt.CompleteGuardsWitness.counterexample` (branch folding makes the only `return_call` block
+  unreachable; `optimizeExe` falls back to its input). On the decidable input condition
+  `Opt.shapeSafeB` (no `return_call` resp. no indirect call, or one in the entry block, which no
+  folding can remove) it accepts (`Opt.ShapeK`, `keepsShapeB_of_shapeK`).
+- `allowedIn` (FV/Opt/Optimize.lean) no longer allows `symbol_value`: a `symbol_value` hash-consing
+  hit in a block not dominated by its definition was cloned, and `simpOk` rejects an inserted
+  `symbol_value` (`insOk`), so the whole simplify stage fell back on such functions (found by the
+  completeness proof; `Opt.allowedIn_symbolValue`).
+- The whole pipeline (`FV/Opt/Proof/CompleteOptimize.lean`): `Opt.runStages cfg f` is the stage
+  loop of `optimizeReport` with every pass applied unconditionally (no `check`, no validator, no
+  guard). `Opt.optimizeReport_complete : (∃ i, check (removeUnreachable f0) = .ok i) →
+  (cfg.simplify = false ∨ SimpStageOk cfg) → (optimizeReport cfg f0).2.passError = none ∧
+  (optimizeReport cfg f0).1 = runStages cfg (removeUnreachable f0)`, `Opt.optimize_complete`,
+  `Opt.optimizeExe_complete` (with `shapeSafeB f0`), and the hypothesis-free instances for
+  configurations with simplify off, `Opt.optimize_complete_noSimp` and
+  `Opt.optimizeExe_complete_noSimp`. Witness `Opt.CompleteOptimizeWitness.witness` (GVN, DCE and
+  LICM all change the function).
+
+Open: `SimpStageOk cfg` — the simplify stage's own completeness (`simpOk` and the re-check facts
+on its output) for the rule sets of `Config`. Until it lands, `optimize_complete` covers
+simplify-enabled configurations only under that explicit hypothesis.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
 

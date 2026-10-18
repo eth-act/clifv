@@ -906,7 +906,13 @@ rejections are ill-formed inputs (`call_indirect`, int/float `bitcast`). Done:
 `freshOkB` (`freshOkB_of_check`), DCE (`Opt.dce_complete`: `check` + `editOk id`), GVN
 (`Opt.gvn_complete`: `check` + `editOk` with GVN's substitution), LICM (`Opt.licm_complete`:
 `check` + `editOk id`), a declarative `check` (`Opt.check_ok_iff`, `Opt.wfCert_complete`,
-`Opt.coreOk_of_wf`). Open: simplify (`check` + `simpOk`), `keepsBackendSubset`, `keepsShapeB`.
+`Opt.coreOk_of_wf`), the dominator computation (`Opt.build_domFacts`), re-checking after
+simplify (`Opt.check_removeUnreachable_of_wfCert'`), the final guards (`keepsBackendSubset`
+always; `keepsShapeB` on the decidable `Opt.shapeSafeB`, with a counterexample outside it), and the
+composition `Opt.optimizeReport_complete` / `optimize_complete` / `optimizeExe_complete`: the
+optimiser equals its unvalidated pipeline `Opt.runStages` — hypothesis-free with simplify off
+(`Opt.optimize_complete_noSimp`), and under the explicit premise `Opt.SimpStageOk cfg` with
+simplify on. Open: `SimpStageOk` (simplify's own completeness).
 
 ### S1–S12. Scope extensions
 
@@ -1093,7 +1099,7 @@ label**; list the free ones with
 | R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (0 rules left) | **done** ([#207](https://github.com/eth-act/clifv/pull/207)) |
 | R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (0 rules left) | **done** ([#206](https://github.com/eth-act/clifv/pull/206)) |
 | R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (0 rules left) | **done** (`agent/skeleton-r9`) |
-| M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | in progress: `unreachableOk` (`Opt.unreachableOk_raw`), DCE (`Opt.dce_complete`), GVN (`Opt.gvn_complete`), LICM (`Opt.licm_complete`) done |
+| M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | in progress: `unreachableOk` (`Opt.unreachableOk_raw`), DCE (`Opt.dce_complete`), GVN (`Opt.gvn_complete`), LICM (`Opt.licm_complete`), dominators, guards, `optimize_complete` (simplify off; simplify on under `SimpStageOk`) done; open: `SimpStageOk` |
 | S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | **done** ([#245](https://github.com/eth-act/clifv/pull/245)): `Opt.optimizeExe`, `Opt.optimizeProgramExe_refines`, `E2E.backend_correct_opt_exe`, `Link.compileExeOpt_*`; `lean-link --opt` |
 | S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | **done**: legalised functions ([#214](https://github.com/eth-act/clifv/pull/214), `Link.compileExe_correct_source`); with the optimiser ([#245](https://github.com/eth-act/clifv/pull/245)): `E2E.backend_correct_legal_opt`, `Link.compileExeOpt_correct_source` |
 | S3 | [#27](https://github.com/eth-act/clifv/issues/27) Whole-program refinement of the original i128 source program | **done** with environment/run premises ([#214](https://github.com/eth-act/clifv/pull/214), `legalProg_refines`) |
