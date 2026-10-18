@@ -231,3 +231,81 @@ those bytes too (design (b)).
    `FV/Link/Exe.lean`; docs/contracts/e2e.md "The executable compiler"): the binary chain is
    stated for `I.results`, which with `fallback` are the compiler's; `leanLink` also checks the
    code map `codeMapB`, and its output has no GOT slot (`leanLink_gotSlot`).
+
+## 6. Stage 3: the whole executable written by Lean (plan, #10)
+
+Goal: rust-lld's output `file0` stops being an input with checked conditions (`file0OkB`:
+`regionOkB`, `hdrB`, `dataFastB`, `symsOkB`, `symFootB`, `tlsOkB`; `layoutOkB`; the `PT_TLS`
+requirement). A Lean static linker `Link.Ld` links the same inputs rust-lld gets from rustc
+(crt objects, the units' objects with the region object, rlibs and `libc.a`/`libunwind.a`) into
+the static executable, and theorems state that its output meets those conditions.
+
+**Design: an untrusted planner, a proven writer.**
+
+* *Planner* (`FV/Link/Ld/{Obj,Archive,Resolve,Layout}.lean`): ELF64 relocatable and `ar`
+  readers; lld's resolution (objects in order, archive members extracted lazily, strong over
+  weak, first COMDAT group wins); `--gc-sections` (roots: entry, `-u`, `.init`/`.fini`/arrays,
+  C-identifier sections under `__start_`/`__stop_`; FDEs keep their LSDA and personality);
+  three `PT_LOAD` segments in disjoint 64 KiB pages (R: headers, rodata, `.eh_frame_hdr`,
+  `.eh_frame`, `.gcc_except_table`, `.data.rel.ro`, `.got`, init/fini arrays, `.tdata`; R E:
+  text incl. the region `.text.fvlean`; RW: data, bss), `PT_TLS`, `PT_GNU_EH_FRAME`,
+  `PT_GNU_STACK`; the GOT (static: link-time values); TLSDESC relaxed to local exec as lld does;
+  synthetic symbols (`__init_array_start`, …, `__start_`/`__stop_`, `_end`); the
+  `.eh_frame_hdr` table; an lld-format map for `cargo fv link-proof`. Its result is an image
+  description: segments, placed pieces (address, input bytes, relocations with resolved
+  `S`, `A`, `P`), symbols.
+* *Writer* (`FV/Link/Ld/Write.lean`): the image description → bytes (ELF header, program
+  headers at 64, segment contents, then section headers, `.symtab`, `.strtab` at the end), and
+  the relocation function per AArch64 ELF ABI type (the survey's 18 allocated types + `ABS32`,
+  `PREL16`, `CONDBR19`, `TSTBR14`, `ADR_PREL_LO21`; TLSDESC → `movz`/`movk`/`nop`/`nop`).
+  Before writing, `lean-ld` decides cheap structural invariants of its own plan (`imgOkB`:
+  segments ordered and page-disjoint, pieces inside their segment's file bytes, symbol names
+  NUL-free); the planner is meant to meet them by construction (totality later).
+
+**Theorems** (sub-issues):
+
+* **3a** (engine, no proofs needed): `lake exe lean-ld` links rustc's argument list; std
+  executables (threads, TLS, panics caught by unwinding) and the survey tests run under qemu.
+* **3b** (writer): for every image meeting `imgOkB`, the written file satisfies `hdrB`, the
+  `PT_TLS` requirement and `tlsOkB`, `symFootB` past the segments, `regionOkB` for a region in
+  the text segment, and `symsOkB` for every link map whose entries are written symbols.
+* **3c** (relocation): every placed piece's bytes in the loaded image are its input bytes with
+  its relocations applied (`loadIn` of the file = `relocate`); CLIF data objects whose object
+  bytes and relocations match their items (`dataInB`, decided on the inputs) meet `dataFastB`;
+  `layoutOkB`; hence `file0OkB` for `lean-ld`'s output and `compileExe_total_*` without the
+  rust-lld premise.
+* **3d** (driver): `cargo fv --lean-ld` links with `lean-ld` instead of rust-lld (and as the
+  fallback when rust-lld's output fails `file0OkB`); survey/fv-demo gates.
+
+### Status: 3a done (#267), 3b started (#268)
+
+* **`lake exe lean-ld`** (`FV/Link/Ld/{Obj,Resolve,Reloc,Layout,Write}.lean`,
+  `FVTest/Link/LeanLdMain.lean`): takes rustc's GNU ld argument list (objects, rlibs, `-lc`,
+  `-lunwind`, `-L`, `-o`, `-e`, `-u`, `--gc-sections`, `-Map`; the rest of rustc's options have
+  no effect on a static non-PIE link and are accepted). Debug sections are not written (the
+  binary theorems do not read them). It links rustc's `aarch64-unknown-linux-musl` std
+  executables in about 0.1 s.
+  - A std program with a `HashMap`, a thread and a caught panic (unwinding through
+    `.eh_frame_hdr`) prints the same output as with rust-lld; the nine survey crates' tests
+    (`cargo test`, LLVM backend) linked by `lean-ld` all pass (53 tests).
+  - **`cargo fv test --lean-link --verified` with `lean-ld` as the final linker** (rust-lld
+    kept only for `ld -r`, through `FV_RUST_LLD` and a dispatching script; the driver flag is
+    3d): all survey executables are written by `Link.DeadCleanup.compileExe`, so `lean-ld`'s
+    output passes `file0OkB` (`regionOkB`, `hdrB`, `dataFastB`, `symsOkB`, `symFootB`,
+    `tlsOkB`). The binary check verifies 18 of 18 executables, and all 53 tests pass.
+* **The writer read back** (`FV/Link/Ld/WriteProof.lean`): `ehdr_write` (the ELF header:
+  `ET_EXEC`, `EM_AARCH64`, the entry, `e_phoff = 64`, `e_shoff`, the counts) and
+  `phdrs_write` (`phdrs (fileRd img.write) = some img.phs`) for every image whose header
+  values fit their fields (`Img.hdrFitsB`, which `lean-ld` checks on its own plan), and
+  `fileRd_write_body` (past the headers the file is the body); `shdr_write` (every section
+  header), `write_getElem?_symtab`/`_strtab`/`_shdrs` (the tables), for images whose table
+  values fit (`Img.tabsFitB`, also checked by `lean-ld`).
+* **`file0OkB` on the writer's output** (`FV/Link/Ld/File0.lean`): `hdrB_write`
+  (`hdrB` = `staticB` of the program headers), `regionOkB_write` (= `regionPhsB` of the program
+  headers), `symFootB_write` (always, for a bound within the body: the tables follow it) and
+  **`file0OkB_write`**: for every link spec `P` whose region lies in the body,
+  `P.file0OkB img.write img.phs` is `regionPhsB ∧ staticB ∧ dataFastB ∧ symsOkB ∧ tlsOkB` —
+  conditions on the plan's program headers, plus the data and symbol checks, which 3b (symbols)
+  and 3c (data) turn into theorems. Witnesses: `tinyImg_hdrFits`, `tinyImg_tabsFit`,
+  `ehdr_write_witness`, `phdrs_write_witness`, `symFootB_write_witness`,
+  `file0OkB_write_witness`. Axioms: `propext`, `Classical.choice`, `Quot.sound`.
