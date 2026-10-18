@@ -1,7 +1,8 @@
 name: Fidelity nightly
 
-# T4 (#40) / T5 (#41): random differential testing of the trusted specifications, on the newest
-# main build. Post-merge only (schedule / manual), never a required check.
+# T4 (#40) / T5 (#41): random differential testing of the trusted specifications, on main's tip
+# (Lake outputs restored from the newest full-gate build, `lake-full`). Post-merge only
+# (schedule / manual), never a required check.
 # - Arm model vs qemu: scripts/arm-cosim.sh --all (hand-written + encoder-driven forms).
 # - Clif.run vs the Cranelift interpreter and native aarch64: scripts/clif-fuzz.sh, several seeds.
 # - IEEE core vs aarch64 hardware semantics: scripts/float-difftest.sh --aarch64.
