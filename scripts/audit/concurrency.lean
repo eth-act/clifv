@@ -19,7 +19,26 @@ import FVTest.Concurrency.Litmus
 #print axioms Concurrency.Code.kinds_prologueLines
 #print axioms Concurrency.Code.kinds_epilogueLines
 #print axioms Concurrency.Code.kinds_relaxLines
+-- per-thread event semantics of the Arm model (T2d, #302)
+#print axioms Concurrency.ArmFoot.exec_nonldst
+#print axioms Concurrency.ArmFoot.stepi_setMem
+#print axioms Concurrency.ArmFoot.readM_writeM
+#print axioms Concurrency.ArmFoot.readM_full_inj
+#print axioms Concurrency.ArmThread.step_sc
+#print axioms Concurrency.ArmThread.step_mem
+#print axioms Concurrency.ArmThread.no_xfail_sc
+#print axioms Concurrency.ArmThread.run_sc
+#print axioms Concurrency.ArmThread.run_sc_stepi
+#print axioms Concurrency.ArmThread.exists_step_sc
+#print axioms Concurrency.ArmThread.exists_run_sc
+#print axioms Concurrency.ArmThread.footprint_nonldst
+#print axioms Concurrency.ArmThread.footprint_dmb
+#print axioms Concurrency.ArmThread.footprint_load_excl
+#print axioms Concurrency.ArmThread.footprint_store_excl
 -- non-vacuity witnesses
+#print axioms Concurrency.ArmThread.Witness.retry_run
+#print axioms Concurrency.ArmThread.Witness.retry_succ
+#print axioms Concurrency.ArmThread.Witness.evWrite_eq
 #print axioms Concurrency.Witness.incX_premises
 #print axioms Concurrency.Witness.incX_conclusions
 #print axioms Concurrency.Witness.incX_interleaving
