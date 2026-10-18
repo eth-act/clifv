@@ -268,12 +268,19 @@ theorem expRel_cons_val {p : AbiParam} {ps : List AbiParam} {g : List SlotEl}
 theorem groups_two128 {p1 p2 : AbiParam} {gs : List (List SlotEl)} (h1 : p1.ty = .i128)
     (h2 : p2.ty = .i128) (h : groups [p1, p2] = some gs) : gs = [[.lo, .hi], [.lo, .hi]] := by
   simp only [groups, expandGroups, expandGroups.go, h1, h2] at h
-  (repeat' split at h) <;> simp_all [Except.toOption, bind, Except.bind, pure, Except.pure]
+  revert h
+  by_cases a : p1.ext = .none <;> by_cases b : p1.purpose = .normal <;>
+    by_cases c : p2.ext = .none <;> by_cases d : p2.purpose = .normal <;>
+    simp_all [Except.toOption, bind, Except.bind, pure, Except.pure, throw, throwThe,
+      MonadExceptOf.throw]
 
 theorem groups_one128 {p : AbiParam} {gs : List (List SlotEl)} (h1 : p.ty = .i128)
     (h : groups [p] = some gs) : gs = [[.lo, .hi]] := by
   simp only [groups, expandGroups, expandGroups.go, h1] at h
-  (repeat' split at h) <;> simp_all [Except.toOption, bind, Except.bind, pure, Except.pure]
+  revert h
+  by_cases a : p.ext = .none <;> by_cases b : p.purpose = .normal <;>
+    simp_all [Except.toOption, bind, Except.bind, pure, Except.pure, throw, throwThe,
+      MonadExceptOf.throw]
 
 end Opt.Legal
 

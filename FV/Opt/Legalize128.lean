@@ -128,8 +128,22 @@ AAPCS64 passes/returns an `i128` in an even/odd register pair; when the next fre
 is odd one is skipped (Cranelift's aarch64 `compute_arg_locs`: `next_xreg % 2 != 0`). The
 legalised signature reproduces this with an unused `i64` parameter/return occupying exactly
 the skipped register, which the callee ignores. An `sret` parameter does not consume the
-`x0..x7` sequence (`sigArgLocs`). A pair that would not fit in the registers makes the
-legalisation fail (the function stays unsupported, as before). -/
+`x0..x7` sequence (`sigArgLocs`); a float takes the next of `v0..v7` (Cranelift's
+`next_vreg`), not an `x` register.
+
+A pair that does not fit in `x0..x7` goes on the stack (Cranelift: a 16-byte slot at the
+next 16-aligned offset, low half first; `next_xreg` unchanged), as do the integer and float
+parameters after the registers of their class are used up (8-byte slots). The legalised
+signature passes the halves as two `i64` parameters, which the backend places in the next
+8-byte stack slots (`argLocs`) once `x0..x7` are used up, so:
+* registers used up (`k = 8`): the pair, after an `i64` pad when the stack offset is not
+  16-aligned;
+* only `x7` left (`k = 7`): a pad takes `x7` and the halves go on the stack, which needs a
+  16-aligned stack offset; Cranelift leaves `x7` to the next integer parameter, so a later
+  integer parameter makes the legalisation fail (`hole`).
+
+Returns use the same expansion; more than eight legalised returns are rejected by the
+backend (`retRegs`), as Cranelift rejects stack returns. -/
 
 /-- The legalised slots of one parameter/return: itself, or a pair with an optional pad. -/
 inductive SlotEl where
@@ -139,23 +153,45 @@ inductive SlotEl where
   | hi
   deriving Repr, Inhabited
 
-/-- The slots of every parameter, in order; `k` counts the register slots consumed by the
-normal parameters so far. -/
+/-- The slots of every parameter, in order; `k` counts the `x` registers consumed so far
+(`x0..x7`), `v` the float registers (`v0..v7`), `st` the stack bytes (a multiple of 8),
+`hole`: a pair went on the stack while Cranelift still had `x7` free. -/
 def expandGroups (ps : List AbiParam) : Except String (List (List SlotEl)) :=
-  go ps 0
+  go ps 0 0 0 false
 where
-  go : List AbiParam → Nat → Except String (List (List SlotEl))
-    | [], _ => return []
-    | p :: ps, k =>
+  go : List AbiParam → Nat → Nat → Nat → Bool → Except String (List (List SlotEl))
+    | [], _, _, _, _ => return []
+    | p :: ps, k, v, st, hole =>
       if p.ty == .i128 then
         if p.ext != .none then throw "legalize128: i128 argument with an extension"
         else if p.purpose != .normal then throw "legalize128: special-purpose i128 argument"
-        else if 8 < k + 2 then throw "legalize128: i128 argument would be passed on the stack"
-        else do
-          let rest ← go ps (if k % 2 == 1 then k + 3 else k + 2)
+        else if k + 2 ≤ 8 then do
+          let rest ← go ps (if k % 2 == 1 then k + 3 else k + 2) v st hole
           return (if k % 2 == 1 then [.pad, .lo, .hi] else [.lo, .hi]) :: rest
+        else if k == 7 then
+          if st % 16 == 0 then do
+            let rest ← go ps 8 v (st + 16) true
+            return [.pad, .lo, .hi] :: rest
+          else throw "legalize128: i128 argument on an unaligned stack offset while x7 is free"
+        else if st % 16 == 0 then do
+          let rest ← go ps k v (st + 16) hole
+          return [.lo, .hi] :: rest
+        else do
+          let rest ← go ps k v (st + 24) hole
+          return [.pad, .lo, .hi] :: rest
+      else if p.purpose == .sret then do
+        let rest ← go ps k v st hole
+        return [.val p] :: rest
+      else if p.ty.isFloat then do
+        let rest ← go ps k (if v < 8 then v + 1 else v) (if v < 8 then st else st + 8) hole
+        return [.val p] :: rest
+      else if k < 8 then do
+        let rest ← go ps (k + 1) v st hole
+        return [.val p] :: rest
+      else if hole then
+        throw "legalize128: an integer argument Cranelift passes in x7 after a stack-passed i128"
       else do
-        let rest ← go ps (if p.purpose != .sret then k + 1 else k)
+        let rest ← go ps k v (st + 8) hole
         return [.val p] :: rest
 
 /-- The `AbiParam` of a slot. -/

@@ -381,6 +381,27 @@ S.inputCleanup.srcProg`, `Link.DeadCleanup.prog_eq_legal`). Witnesses:
 (`cleanup_source_peak_witness`), `DeadCleanupExeSourceWitness.lean` (`wmul_u128` under the
 cleanup compiler).
 
+## Stack-passed `i128` arguments (S4, #28)
+
+`expandGroups` (`FV/Opt/Legalize128.lean`) follows Cranelift's aarch64 `compute_arg_locs`
+beyond the registers: integers take `x0..x7` and floats `v0..v7` (separate counters; floats no
+longer consume an `x` register), then 8-byte stack slots; an `i128` that does not fit in
+`x0..x7` takes a 16-byte stack slot at the next 16-aligned offset, low half first, and Cranelift
+does not advance `next_xreg`. The legalised signature passes the halves as two `i64` parameters,
+which the backend places in the next stack slots once `x0..x7` are used up (`argLocs`):
+registers used up, the pair, after an `i64` pad when the stack offset is not 16-aligned; only
+`x7` left, a pad in `x7` and the pair on the stack (a 16-aligned offset required). Cranelift
+passes a later integer parameter in `x7`, which the legalised signature cannot express: such
+signatures (and the `x7` case at an unaligned stack offset) still make the legalisation fail.
+The groups keep their shapes (`[.lo, .hi]`, `[.pad, .lo, .hi]`), so the validator and its
+soundness and completeness proofs are unchanged (`groupsOf_go`, `go_plain` follow the new
+recursion). Witness: `Opt.Legal.Complete.Witness.stack128` (`(i64 × 8, i128) -> i128`: `Pre`,
+legalised to ten `i64` parameters, accepted). Native check:
+`FVTest/Clif/fixtures/i128-stack-args.clif` (`scripts/lean-backend-filetests.sh`: 11 runs agree
+with Cranelift's code — all registers used, `x7` left, a stack pad, a fifth pair, a pair then
+an `i64` on the stack, a call passing a pair on the stack; the seven functions are verified;
+the `x7` case followed by an `i64` is unsupported).
+
 ## Not covered
 
 * Legalised functions under `--opt` (no composition of `backend_correct_legal` with the mid-end
@@ -389,8 +410,9 @@ cleanup compiler).
   `TrapsExplicit`) and, with `i128`, the outside environment's `HelperOk`/`ExtLegal`/
   `EnvKeepsBounded` (table above).
 * Runs of `g` that trap inside a `__*ti3` helper (see `htr` above).
-* `umulhi`/`smulhi`, atomics, overflow ops at `i128`, stack-passed `i128` arguments,
-  `try_call_indirect`, `call_indirect` with `i128` operands: not legalised or rejected.
+* `umulhi`/`smulhi`, atomics, overflow ops at `i128`, `try_call_indirect`, `call_indirect`
+  with `i128` operands: not legalised or rejected. Stack-passed `i128` arguments followed by an
+  integer argument Cranelift passes in `x7` (above): not legalised.
 
 `func_addr` (release survey `g_u128` test functions pass function pointers to the test
 harness; agent/last-unverified "release i128"): planned as `same` when the declaration's name in
