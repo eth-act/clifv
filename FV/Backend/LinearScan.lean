@@ -951,15 +951,17 @@ def homesOk : Bool :=
     (c.pl.homeOcc c.fn).all disjointSorted
 
 /-- No vreg's segment in register `p` meets a fixed operand claim of `p` by another vreg; no
-vreg's segment in a clobbered register contains the clobber's position. -/
+vreg's segment in a clobbered register contains the clobber's position, where a `Rets` (whose
+restores precede it) counts as clobbering the callee-saved registers. -/
 def claimsOk : Bool :=
   (List.range c.fn.ops.size).all fun g =>
+    let i := c.fn.insts.getD g default
     ((c.fn.ops.getD g #[]).all fun o => match o.con with
       | .fixed p => match regIdx p with
         | some i => !meetsOther (c.occ.getD i #[]) (opRange g o true).1 (opRange g o true).2 o.vreg
         | none => false
       | _ => true) &&
-    ((c.fn.insts.getD g default).clobbers.all fun r => match regIdx r with
+    ((i.clobbers ++ (if i matches .rets _ then calleeSaved else [])).all fun r => match regIdx r with
       | some i => segFree (c.occ.getD i #[]) (pos g 3) (pos g 3)
       | none => true)
 
