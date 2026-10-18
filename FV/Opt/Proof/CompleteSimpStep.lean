@@ -651,4 +651,581 @@ theorem step_pure {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
 
 end PureStep
 
+/-! ## Skeleton statements -/
+
+section SkelStep
+
+variable {f : Function} {info : Info} {allowed skelOk : Inst → Bool}
+  {logs : Array (Option BlockLog)} {bi j : Nat} {lgs : List StmtLog} {st : SState} {S : Subst}
+
+theorem skelCandidate_map (σ : ValueId → ValueId) (i : Inst) :
+    skelCandidate (.inst (mapOperands σ i)) = skelCandidate (.inst i) := by
+  cases i <;> rfl
+
+theorem cand_facts {i : Inst} (h : skelCandidate (.inst i) = true) :
+    notCall i = true ∧ notSym i = true ∧ isCallInd i = false ∧
+      ∃ ts, i.resultTypes (fun _ => none) (fun _ => none) = some ts := by
+  cases i <;> simp_all [skelCandidate, notCall, notSym, isCallInd, Inst.resultTypes]
+
+theorem not_pure_of_nil {a : Inst} (h : a.resultTypes (fun _ => none) (fun _ => none) = some []) :
+    isPure a = false := by
+  cases a <;> simp_all [isPure, Inst.resultTypes]
+
+theorem Placed.weaken {st : SState} {B B' : ValueId → Prop} {y : ValueId} (h : Placed st B y)
+    (hB : ∀ y, B' y → B y) : Placed st B' y :=
+  Placed.mono (fun _ h => h) (fun y hy hb => hy.not_bad (hB y hb)) (fun _ _ h => .inl h)
+    (fun _ _ h => .inl h) y h
+
+theorem array_eq_of_toList {a : Array Stmt} {l : List Stmt} (h : a.toList = l) : a = l.toArray := by
+  rcases a with ⟨l'⟩; simp only at h; subst h; rfl
+
+/-- Statement `j` of `bi` keeps its results: they leave the bad values. -/
+theorem bad_kept (hc : Checked f info) (h : RunXInv f info allowed skelOk logs bi j lgs st S)
+    {b0 : Block} {s : Stmt} (hb0 : f.blocks[bi]? = some b0) (hs : b0.body[j]? = some s) :
+    Bad f logs bi (j + 1) S = fun y => Bad f logs bi j S y ∧ y ∉ s.results := by
+  funext y; apply propext; constructor
+  · rintro (⟨hy1, hy2⟩ | hy)
+    · exact ⟨.inl ⟨hy1, fun hd => hy2 hd.succ⟩, fun hm => hy2 (done_site (hc.site_res hb0 hs hm))⟩
+    · refine ⟨.inr hy, fun hm => ?_⟩
+      obtain ⟨w, hw⟩ := Option.isSome_iff_exists.1 ((hm_contains_iff _ _).1 hy)
+      exact not_done_site h.notbi (hc.site_res hb0 hs hm) (h.substOk y w hw).1
+  · rintro ⟨hy1 | hy1, hy2⟩
+    · refine .inl ⟨hy1.1, fun hd => ?_⟩
+      rcases hd.cases_succ with hd | hd
+      · exact hy1.2 hd
+      · obtain ⟨b, s2, hb, hs2, hy3⟩ := hc.site_stmt hd
+        rw [hb0] at hb; cases hb; rw [hs] at hs2; cases hs2
+        exact hy2 hy3
+    · exact .inr hy1
+
+/-- Statement `j` of `bi` loses its results (removed, or renamed by `S'`). -/
+theorem bad_gone (hc : Checked f info) (h : RunXInv f info allowed skelOk logs bi j lgs st S)
+    {b0 : Block} {s : Stmt} (hb0 : f.blocks[bi]? = some b0) (hs : b0.body[j]? = some s)
+    {S' : Subst} (hS' : ∀ y, S'.contains y = true ↔ S.contains y = true ∨ y ∈ s.results) :
+    Bad f logs bi (j + 1) S' = Bad f logs bi j S := by
+  funext y; apply propext; constructor
+  · rintro (⟨hy1, hy2⟩ | hy)
+    · exact .inl ⟨hy1, fun hd => hy2 hd.succ⟩
+    · rcases (hS' y).1 hy with hy | hy
+      · exact .inr hy
+      · exact .inl ⟨hc.def_le (hc.site_res hb0 hs hy), not_done_site h.notbi (hc.site_res hb0 hs hy)⟩
+  · rintro (⟨hy1, hy2⟩ | hy)
+    · by_cases hm : y ∈ s.results
+      · exact .inr ((hS' y).2 (.inr hm))
+      · refine .inl ⟨hy1, fun hd => ?_⟩
+        rcases hd.cases_succ with hd | hd
+        · exact hy2 hd
+        · obtain ⟨b, s2, hb, hs2, hy3⟩ := hc.site_stmt hd
+          rw [hb0] at hb; cases hb; rw [hs] at hs2; cases hs2
+          exact hm hy3
+    · exact .inr ((hS' y).2 (.inl hy))
+
+/-- Emitting a statement whose results are available here and not yet defined in the view. -/
+theorem MInv.emitRes {V : Nat → Option Block} {B : ValueId → Prop} {st : SState} {b : Block}
+    (h : MInv f V B st) (hb : V bi = some b) {t : Stmt}
+    (ht : ∀ y ∈ t.results, st.avail.get? y = some bi ∧ ∀ d k, ¬ DefAt V y d k) :
+    MInv f (emitV V bi [t]) B st := by
+  have hdef : ∀ y d k, DefAt (emitV V bi [t]) y d k →
+      DefAt V y d k ∨ (y ∈ t.results ∧ d = bi ∧ k = b.body.length + 1) := by
+    intro y d k hy
+    rcases hy.of_emit with hy | ⟨b1, hb1, hd, m, s1, hk, hs1, hy1⟩
+    · exact .inl hy
+    · rw [hb] at hb1; cases hb1
+      rcases m with _ | m
+      · simp only [List.getElem?_cons_zero, Option.some.injEq] at hs1; subst hs1
+        exact .inr ⟨hy1, hd, by rw [hk]⟩
+      · simp at hs1
+  refine ⟨h.fn, h.maxLt, h.knownLt, h.typesFresh, h.defsTy, h.altsKnown, fun y d hy hb' => ?_,
+    fun y d k hy => ?_, h.newBig, h.badLe, fun y d k d' k' h1 h2 => ?_⟩
+  · obtain ⟨k, hk⟩ := h.availDef y d hy hb'
+    exact ⟨k, hk.emit bi [t]⟩
+  · rcases hdef y d k hy with hy | ⟨hy2, hd, -⟩
+    · exact h.defAvail y d k hy
+    · rw [hd]; exact (ht y hy2).1
+  · rcases hdef y d k h1 with h1 | ⟨hy1, e1, e2⟩ <;> rcases hdef y d' k' h2 with h2 | ⟨hy2, e3, e4⟩
+    · exact h.uniq _ _ _ _ _ h1 h2
+    · exact absurd h1 ((ht y hy2).2 _ _)
+    · exact absurd h2 ((ht y hy1).2 _ _)
+    · exact ⟨e1.trans e3.symm, e2.trans e4.symm⟩
+
+/-- A kept skeleton statement (results `R`, available here and still bad) is emitted: its results
+leave the bad values. -/
+theorem rinv_kept {V : Nat → Option Block} {B : ValueId → Prop} {st : SState} {b : Block}
+    {t : Stmt} {R : List ValueId}
+    (h : RInv f V B (fun _ => False) (fun _ => False) st) (hb : V bi = some b) (htr : t.results = R)
+    (hav : ∀ y ∈ R, st.avail.get? y = some bi) (hbad : ∀ y ∈ R, B y)
+    (hnd : ∀ y d k, DefAt V y d k → ¬ B y) :
+    RInv f (emitV V bi [t]) (fun y => B y ∧ y ∉ R) (fun _ => False) (fun _ => False) st := by
+  have hm : MInv f (emitV V bi [t]) B st :=
+    h.m.emitRes hb fun y hy => ⟨hav y (htr ▸ hy), fun d k hk => hnd y d k hk (hbad y (htr ▸ hy))⟩
+  refine RInv.weakenB ⟨hm, h.noPartial, h.memo, h.alts⟩ (fun y hy => hy.1) (fun y d hy hb1 hb2 => ?_)
+    (fun y n _ ha hb1 hb2 => ?_)
+  · have hyR : y ∈ R := Classical.byContradiction fun hn => hb2 ⟨hb1, hn⟩
+    rw [hav y hyR] at hy; cases hy
+    refine ⟨b.body.length + 1, { b with body := b.body ++ [t] }, by simp [emitV, hb], .inr ⟨b.body.length, t, rfl, by simp, by rw [htr]; exact hyR⟩⟩
+  · have hyR : y ∈ R := Classical.byContradiction fun hn => hb2 ⟨hb1, hn⟩
+    rw [← Bool.not_eq_true, hm_contains_iff, hav y hyR] at ha; simp at ha
+
+theorem stepStmt_skel {rules : SimplifyFn} {skel : SkeletonFn} {cfg : Cfg} {s : Stmt}
+    (hsk : skeletonStmt s = true)
+    (hk : (operands (mapOperands S.find s.inst)).all st.known = true) :
+    ∃ stmts sub st' o, skelStmt skel rules allowed skelOk cfg bi rewriteLimit st
+        { s with inst := mapOperands S.find s.inst } = (stmts, sub, st', o) ∧
+      stepStmt rules skel allowed skelOk cfg bi (st, S) s =
+        (st', sub.foldl (fun m (x : ValueId × ValueId) => m.insert x.1 x.2) S,
+          .skel { s with inst := mapOperands S.find s.inst } o stmts) := by
+  refine ⟨_, _, _, _, rfl, ?_⟩
+  have hk' : (!(operands (mapOperands S.find s.inst)).all st.known) = false := by simp [hk]
+  unfold stepStmt
+  cases hr : s.results with
+  | nil => simp only [hk', Bool.false_eq_true, ↓reduceIte]; rfl
+  | cons v rest =>
+    cases rest with
+    | nil =>
+      have hp : isPure (mapOperands S.find s.inst) = false := by
+        rw [isPure_mapOperands]; simpa [skeletonStmt, hr] using hsk
+      simp only [hp, hk', Bool.false_eq_true, ↓reduceIte]; rfl
+    | cons w rest => simp only [hk', Bool.false_eq_true, ↓reduceIte]; rfl
+
+theorem extract_last {stmts : Array Stmt} {pre fin : List Stmt} (h : stmts.toList = pre ++ fin) :
+    (stmts.extract 0 (stmts.size - fin.length)).toList = pre ∧ stmts.size = pre.length + fin.length ∧
+      ∀ k, stmts[pre.length + k]? = fin[k]? := by
+  have hs : stmts.size = pre.length + fin.length := by rw [← Array.length_toList, h, List.length_append]
+  refine ⟨?_, hs, fun k => ?_⟩
+  · rw [Array.toList_extract, h, hs, Nat.add_sub_cancel]; simp [List.extract]
+  · rw [← Array.getElem?_toList, h, List.getElem?_append_right (Nat.le_add_right _ _),
+      Nat.add_sub_cancel_left]
+
+theorem TwoInst.emit {idom : Array (Option Nat)} {V : Nat → Option Block} {B : ValueId → Prop}
+    {st : SState} {k : Nat} {a : Inst} (h : TwoInst idom V bi k skelOk B st a) (new : List Stmt)
+    {k' : Nat} (hk : k ≤ k') : TwoInst idom (emitV V bi new) bi k' skelOk B st a := by
+  obtain ⟨hops, h2⟩ := h
+  exact ⟨fun y hy => ⟨(hops y hy).1, ((hops y hy).2.emit bi new).le hk⟩, h2⟩
+
+/-- A result-free instruction of a `two` outcome is an output statement. -/
+theorem TwoInst.outStmt {idom : Array (Option Nat)} {V : Nat → Option Block} {B : ValueId → Prop}
+    {st : SState} {k : Nat} {a : Inst} (h : TwoInst idom V bi k skelOk B st a) :
+    OutStmt f allowed skelOk idom V B st bi k { inst := a } := by
+  obtain ⟨hops, hrt, -, n, τ, hsk, rfl⟩ := h
+  have hpa := not_pure_of_nil hrt
+  obtain ⟨hcn, hin⟩ := notCall_of_none (by rw [resultTypes_mapOperands] at hrt; exact hrt)
+  refine ⟨fun y hy => ⟨(hops y hy).2, (hops y hy).1⟩,
+    ⟨[], resultTypes_none hrt _ _, rfl, fun m x hx => (by simp at hx)⟩,
+    fun hp => (by rw [hpa] at hp; cases hp), fun x hx _ => (by simp at hx),
+    fun _ r hr => (by simp at hr), (by simp), .inr ⟨n, τ, .inr hsk, rfl, hcn, hin⟩⟩
+
+/-- The replacement `i` of a skeleton statement `s` is an output statement. -/
+theorem rep_out (hc : Checked f info) {idom : Array (Option Nat)} {V : Nat → Option Block}
+    {B : ValueId → Prop} {st : SState} {j k : Nat} {b0 : Block} {s : Stmt} {σ : ValueId → ValueId}
+    {i : Inst} (hb0 : f.blocks[bi]? = some b0) (hs : b0.body[j]? = some s)
+    (hsk : skeletonStmt s = true) (hcand : skelCandidate (.inst s.inst) = true)
+    (hrep : RepInst idom V bi k skelOk B st (mapOperands σ s.inst) i)
+    (hty : ∀ y t, info.types.get? y = some t → st.types.get? y = some t)
+    (hleaf : ∀ r ∈ s.results, st.defs.get? r = none) :
+    OutStmt f allowed skelOk idom V B st bi k { results := s.results, inst := i } := by
+  obtain ⟨hops, hrt, hpi, -, hg⟩ := hrep
+  obtain ⟨ts, hts, hlen, htys⟩ := hc.wf.results bi b0 hb0 j s hs
+  obtain ⟨-, -, -, ts0, hts0⟩ := cand_facts hcand
+  rw [resultTypes_none hts0] at hts
+  have hi : i.resultTypes (fun _ => none) (fun _ => none) = some ts := by
+    rw [hrt, resultTypes_mapOperands, hts0]; exact hts
+  refine ⟨fun y hy => ⟨(hops y hy).2, (hops y hy).1⟩, ⟨ts, resultTypes_none hi _ _, hlen, fun m r hr => ?_⟩,
+    fun hp => (by rw [hpi] at hp; cases hp), fun x _ hp => (by rw [hpi] at hp; cases hp),
+    fun _ r hr => ⟨hleaf r hr, ?_⟩, (hc.res_nodup hb0 hs :), ?_⟩
+  · have h1 := htys m r hr
+    have hml : m < ts.length := by rw [hlen]; exact (List.getElem?_eq_some_iff.1 hr).1
+    rw [List.getElem?_eq_getElem hml] at h1 ⊢
+    exact hty r _ h1
+  · rw [hm_contains_iff, hc.res_leaf hb0 hs hsk hr]; rfl
+  · rcases hg with ⟨n, τ, hskn, rfl⟩ | ⟨τ, rfl⟩
+    · obtain ⟨hcn, hin⟩ := notCall_of_none (by rw [resultTypes_mapOperands] at hi; exact hi)
+      exact .inr ⟨n, τ, .inr hskn, rfl, hcn, hin⟩
+    · exact .inl ⟨b0, hb0, s, List.mem_of_getElem? hs, τ ∘ σ, mapOperands_comp _ _ _⟩
+
+/-- **A skeleton statement** keeps the invariant. -/
+theorem step_skel {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
+    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel)
+    (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false)
+    (h : RunXInv f info allowed skelOk logs bi j lgs st S) {b0 : Block} {s : Stmt}
+    (hb0 : f.blocks[bi]? = some b0) (hs : b0.body[j]? = some s) (hsk : skeletonStmt s = true) :
+    RunXInv f info allowed skelOk logs bi (j + 1)
+      (lgs ++ [(stepStmt rules skel allowed skelOk info.cfg bi (st, S) s).2.2])
+      (stepStmt rules skel allowed skelOk info.cfg bi (st, S) s).1
+      (stepStmt rules skel allowed skelOk info.cfg bi (st, S) s).2.1 := by
+  have hfind : mapOperands S.find s.inst = mapOperands S.step s.inst :=
+    mapOperands_congr (fun y _ => h.simp.find_eq y)
+  have hplaced : ∀ y ∈ operands (mapOperands S.step s.inst), Placed st (Bad f logs bi j S) y :=
+    fun y hy => (h.opsAt hc hb0 hs [] y hy).2
+  have hk : (operands (mapOperands S.find s.inst)).all st.known = true := by
+    rw [hfind]; exact List.all_eq_true.2 fun y hy => (hplaced y hy).known
+  obtain ⟨stmts, sub, st', o, hsk_eq, hstep⟩ := stepStmt_skel (rules := rules) (skel := skel)
+    (cfg := info.cfg) (allowed := allowed) (skelOk := skelOk) (bi := bi) hsk hk
+  rw [hstep]
+  rw [hfind] at hsk_eq ⊢
+  have hbV := CurV_bi (lgs := lgs) h.notbi hb0
+  have hleaf : ∀ r ∈ s.results, (initAvail f).get? r = some bi :=
+    fun r hr => hc.res_leaf hb0 hs hsk hr
+  have hRav : ∀ r ∈ s.results, st.avail.get? r = some bi := fun r hr => h.leafAv r bi (hleaf r hr)
+  have hRres : ∀ r ∈ s.results, (defMap f).get? r = some (bi, j + 1) :=
+    fun r hr => hc.site_res hb0 hs hr
+  have hRbad : ∀ r ∈ s.results, Bad f logs bi j S r := fun r hr =>
+    .inl ⟨hc.def_le (hRres r hr), not_done_site h.notbi (hRres r hr)⟩
+  have hRS : ∀ r ∈ s.results, S.contains r = false := by
+    intro r hr
+    cases hk' : S.contains r with
+    | false => rfl
+    | true =>
+      obtain ⟨w, hw⟩ := Option.isSome_iff_exists.1 ((hm_contains_iff _ _).1 hk')
+      exact absurd (h.substOk r w hw).1 (not_done_site h.notbi (hRres r hr))
+  obtain ⟨pre, fin, hstm, hrun, hne, hkp, hres2⟩ := skelStmt_ok (f := f) (B := Bad f logs bi j S)
+    (allowed := allowed) (skelOk := skelOk) hR hK rewriteLimit st
+    { s with inst := mapOperands S.step s.inst } stmts sub st' o (CurV f logs bi lgs)
+    { b0 with body := outsOf lgs } h.rinv hbV hplaced
+    (fun r hr => known_iff.2 (.inr ((hm_contains_iff _ _).2 (by rw [hRav r hr]; rfl)))) hsk_eq
+  have hRav' : ∀ r ∈ s.results, st'.avail.get? r = some bi :=
+    fun r hr => hrun.avail r bi (hRav r hr)
+  have hRdefs' : ∀ r ∈ s.results, st'.defs.get? r = none := by
+    intro r hr
+    cases hd : st'.defs.get? r with
+    | none => rfl
+    | some n =>
+      rcases hrun.fresh r n hd with h1 | h1
+      · rw [h.defsLeaf r ((hm_contains_iff _ _).2 (by rw [hleaf r hr]; rfl))] at h1; cases h1
+      · exact absurd (hc.def_le (hRres r hr)) (Nat.not_le.2 h1)
+  have hRalts : ∀ r ∈ s.results, st'.alts.get? r = none := by
+    intro r hr
+    rw [hrun.alts]
+    cases ha : st.alts.get? r with
+    | none => rfl
+    | some ms => exact absurd (hRbad r hr) (h.altsNB r ms ha)
+  have hpreNew : ∀ k t, pre[k]? = some t → NewOk info.cfg.idom (emitV (CurV f logs bi lgs) bi pre) bi
+      ((outsOf lgs).length + k) allowed (Bad f logs bi j S) st' t := by
+    intro k t hk'
+    rcases hrun.stmts _ hbV k t hk' with h1 | ⟨h1, -⟩
+    · simpa using h1
+    · exact absurd h1 (hne t (List.mem_of_getElem? hk'))
+  have hdt := hrun.inv.m.defsTy
+  have hinsPre : ∀ t ∈ pre, insOk t = true := by
+    intro t ht
+    obtain ⟨k, hk'⟩ := List.mem_iff_getElem?.1 ht
+    obtain ⟨r, n', rfl, hd, -, -, ⟨n, τ, hal, rfl⟩, -⟩ := hpreNew k _ hk'
+    exact insOk_of hal hsym (hdt r _ hd).1
+  have hops1 : ∀ y ∈ operands s.inst, S.contains y = true ∨ ¬ Bad f logs bi j S y :=
+    fun y hy => (h.ops hc hb0 hs hy).1
+  have hpt : isPure s.inst = true →
+      pureTyped (fun y => st'.types.get? y) f (mapOperands S.step s.inst) = true := by
+    intro hp
+    refine pureTyped_grow (by rw [isPure_mapOperands]; exact hp) ?_ hrun.types
+    rw [pureTyped_mapOperands, ← hc.wf.pure bi b0 hb0 j s hs hp]
+    exact pureTyped_congr (fun y hy => (h.ops hc hb0 hs hy).2.2.2) rfl rfl
+  have hnode : ∀ x, s.results = [x] → isPure s.inst = true → False := by
+    intro x hx hp; simp [skeletonStmt, hx, hp] at hsk
+  have hRplaced : ∀ (B' : ValueId → Prop), (∀ r ∈ s.results, ¬ B' r) →
+      ∀ r ∈ s.results, Placed st' B' r := by
+    intro B' hB' r hr
+    exact Placed.mk (hB' r hr) (known_iff.2 (.inr ((hm_contains_iff _ _).2 (by rw [hRav' r hr]; rfl))))
+      (fun n hn => by rw [hRdefs' r hr] at hn; cases hn)
+      (fun ms hms => by rw [hRalts r hr] at hms; cases hms)
+  have hnd : ∀ y d k, DefAt (emitV (CurV f logs bi lgs) bi pre) y d k → ¬ Bad f logs bi j S y := by
+    intro y d k hy
+    rcases hy.of_emit with hy | ⟨b, -, -, m, t, -, ht, hyt⟩
+    · exact h.defNB y d k hy
+    · obtain ⟨r, n', rfl, -, -, hrb, -⟩ := hpreNew m t ht
+      simp only [List.mem_singleton] at hyt; subst hyt; exact hrb
+  have hbpre : emitV (CurV f logs bi lgs) bi pre bi = some { b0 with body := outsOf lgs ++ pre } := by
+    simp [emitV, hbV]
+  have hcand : ∀ (hcd : skelCandidate (.inst (mapOperands S.step s.inst)) = true),
+      notCall s.inst = true ∧ notSym s.inst = true ∧ isCallInd s.inst = false ∧
+        ∃ ts, s.inst.resultTypes (fun _ => none) (fun _ => none) = some ts := by
+    intro hcd; rw [skelCandidate_map] at hcd; exact cand_facts hcd
+  have hpreOut : ∀ (B' : ValueId → Prop), (∀ y, B' y → Bad f logs bi j S y) → ∀ (fin' : List Stmt) k t,
+      pre[k]? = some t → OutStmt f allowed skelOk info.cfg.idom
+        (emitV (CurV f logs bi lgs) bi (pre ++ fin')) B' st' bi ((outsOf lgs).length + k) t := by
+    intro B' hB' fin' k t hk'
+    have h1 := (hpreNew k t hk').mono' (more := fin') (fun _ _ h _ => h) (fun _ _ h => h) (fun _ h => h)
+    rw [emitV_append] at h1
+    exact (h1.weakenB hB').outStmt hdt
+  rcases o with _ | _ | v' | i | ⟨a, c⟩
+  · -- kept
+    obtain ⟨rfl, rfl⟩ := hres2
+    have hpre : pre = [] := hkp rfl
+    subst hpre
+    have hstms : stmts = #[{ s with inst := mapOperands S.step s.inst }] :=
+      array_eq_of_toList (by simpa using hstm)
+    subst hstms
+    have hBe := bad_kept hc h hb0 hs
+    have hinv := hrun.inv
+    rw [emitV_nil] at hinv
+    have hRI := rinv_kept (t := { s with inst := mapOperands S.step s.inst }) (R := s.results) hinv hbV
+      rfl hRav' hRbad (fun y d k hy => hnd y d k (by rw [emitV_nil]; exact hy))
+    rw [← hBe] at hRI
+    simp only [List.foldl]
+    refine step_gen hc h hb0 hs hRI
+      (fun y hy => by rw [hBe]; exact (hrun.good y hy).weaken (fun y h => h.1)) hrun.types
+      hrun.avail (fun y d hy => (hrun.availNew y d hy).imp id (fun ⟨_, t, ht, _⟩ => by simp at ht))
+      hrun.defsKeep (fun y n hy => (hrun.fresh y n hy).imp id .inl)
+      (fun x ms hx => .inl (by rw [← hrun.alts]; exact hx)) (fun _ _ h => h) (fun _ _ h => .inl h)
+      (fun k t hk' => ?_) (fun t ht y hy => ?_) ?_ (fun r hr _ => ⟨hRplaced _ (fun r hr h2 => by
+        rw [hBe] at h2; exact h2.2 hr) r hr, hRav' r hr⟩) (fun _ => ⟨_, rfl⟩)
+    · change [{ s with inst := mapOperands S.step s.inst }][k]? = some t at hk'
+      rcases k with _ | k
+      · simp only [List.getElem?_cons_zero, Option.some.injEq] at hk'
+        subst hk'
+        refine src_out hc hb0 hs (fun y hy => ?_) (fun y t hy => hrun.types y t (h.srcTy y t hy)) hpt
+          (fun x hx hp => (hnode x hx hp).elim) (fun _ r hr => hRdefs' r hr)
+        obtain ⟨e1, e2⟩ := h.opsAt hc hb0 hs [{ s with inst := mapOperands S.step s.inst }] y hy
+        exact ⟨e1, by rw [hBe]; exact (hrun.good y e2).weaken (fun y h => h.1)⟩
+      · simp at hk'
+    · change t ∈ [{ s with inst := mapOperands S.step s.inst }] at ht
+      rw [List.mem_singleton] at ht
+      subst ht
+      rw [hBe]; exact fun h2 => h2.2 hy
+    · refine ⟨fun y hy => (hops1 y hy).imp id (fun hnb => by rw [hBe]; exact fun h2 => hnb h2.1),
+        rfl, hsk, rfl, hRplaced _ (fun r hr h2 => by rw [hBe] at h2; exact h2.2 hr)⟩
+  · -- removed
+    obtain ⟨rfl, rfl, hres0, hcd⟩ := hres2
+    have hres0' : s.results = [] := hres0
+    have hstm' : stmts.toList = pre := by simpa using hstm
+    have hBe : Bad f logs bi (j + 1) S = Bad f logs bi j S :=
+      bad_gone hc h hb0 hs (fun y => by simp [hres0'])
+    obtain ⟨hcn, hcs, hci, -⟩ := hcand hcd
+    simp only [List.foldl]
+    have hinv := hrun.inv
+    rw [← hstm', ← hBe] at hinv
+    refine step_gen hc h hb0 hs hinv
+      (fun y hy => by rw [hBe]; exact hrun.good y hy) hrun.types hrun.avail
+      (fun y d hy => (hrun.availNew y d hy).imp id (fun ⟨hd, t, ht, hyt⟩ => ⟨hd, t, by
+        simp only [StmtLog.out]; rw [hstm']; exact ht, hyt⟩))
+      hrun.defsKeep (fun y n hy => (hrun.fresh y n hy).imp id .inl)
+      (fun x ms hx => .inl (by rw [← hrun.alts]; exact hx)) (fun _ _ h => h) (fun _ _ h => .inl h)
+      (fun k t hk' => ?_) (fun t ht y hy => ?_) ?_ (fun r hr _ => by rw [hres0'] at hr; cases hr)
+      (fun hc' => by rw [hci] at hc'; cases hc')
+    · change stmts.toList[k]? = some t at hk'
+      change OutStmt f allowed skelOk _ (emitV _ bi stmts.toList) _ _ _ _ _
+      rw [hstm'] at hk' ⊢
+      have := hpreOut (Bad f logs bi j S) (fun _ h => h) [] k t hk'
+      rw [List.append_nil] at this
+      rw [hBe]; exact this
+    · change t ∈ stmts.toList at ht
+      rw [hstm'] at ht
+      obtain ⟨k, hk'⟩ := List.mem_iff_getElem?.1 ht
+      obtain ⟨r, n', rfl, -, -, hrb, -⟩ := hpreNew k _ hk'
+      simp only [List.mem_singleton] at hy; subst hy; rw [hBe]; exact hrb
+    · refine ⟨fun y hy => (hops1 y hy).imp id (fun hnb => by rw [hBe]; exact hnb), rfl, hsk,
+        hcn, hcs, hres0', fun t ht => hinsPre t (by rw [← hstm']; exact ht)⟩
+  · -- removed, its result renamed
+    obtain ⟨rfl, hcd, r, hr, rfl, hpv, havv, htv⟩ := hres2
+    have hr' : s.results = [r] := hr
+    have hrm : r ∈ s.results := by rw [hr']; simp
+    have hstm' : stmts.toList = pre := by simpa using hstm
+    have hSv : ∀ y, (S.insert r v').contains y = true ↔ S.contains y = true ∨ y ∈ s.results := by
+      intro y; rw [hm_contains_insert', hr', List.mem_singleton]
+      constructor
+      · rintro (h1 | h1)
+        · exact .inr h1.symm
+        · exact .inl h1
+      · rintro (h1 | h1)
+        · exact .inr h1
+        · exact .inl h1.symm
+    have hBe : Bad f logs bi (j + 1) (S.insert r v') = Bad f logs bi j S := bad_gone hc h hb0 hs hSv
+    obtain ⟨hcn, hcs, hci, -⟩ := hcand hcd
+    simp only [List.foldl]
+    have hinv := hrun.inv
+    rw [← hstm', ← hBe] at hinv
+    have hstep_eq : ∀ y ∈ operands s.inst, Subst.step (S.insert r v') y = S.step y := by
+      intro y hy
+      have hyr : ¬ r = y := by
+        rintro rfl
+        rcases hops1 _ hy with h1 | h1
+        · rw [hRS r hrm] at h1; cases h1
+        · exact h1 (hRbad r hrm)
+      simp only [Subst.step, hm_get?_insert, hyr, if_false]
+    refine step_gen hc h hb0 hs hinv
+      (fun y hy => by rw [hBe]; exact hrun.good y hy) hrun.types hrun.avail
+      (fun y d hy => (hrun.availNew y d hy).imp id (fun ⟨hd, t, ht, hyt⟩ => ⟨hd, t, by
+        simp only [StmtLog.out]; rw [hstm']; exact ht, hyt⟩))
+      hrun.defsKeep (fun y n hy => (hrun.fresh y n hy).imp id .inl)
+      (fun x ms hx => .inl (by rw [← hrun.alts]; exact hx)) (fun y w hy => ?_) (fun y w hy => ?_)
+      (fun k t hk' => ?_) (fun t ht y hy => ?_) ?_ (fun r1 hr1 hk1 => ?_)
+      (fun hc' => by rw [hci] at hc'; cases hc')
+    · have hyr : ¬ r = y := by
+        rintro rfl
+        have h3 := (hm_contains_iff S r).2 (by rw [hy]; rfl)
+        rw [hRS r hrm] at h3; cases h3
+      simp only [hm_get?_insert, hyr, if_false]; exact hy
+    · rw [hm_get?_insert] at hy
+      split at hy
+      · rename_i hry
+        cases hy; subst hry
+        refine .inr ⟨hrm, by rw [hBe]; exact hpv, ?_, htv⟩
+        change AvailHere _ (emitV _ bi stmts.toList) _ _
+        rw [hstm']
+        exact havv.here
+      · exact .inl hy
+    · change stmts.toList[k]? = some t at hk'
+      change OutStmt f allowed skelOk _ (emitV _ bi stmts.toList) _ _ _ _ _
+      rw [hstm'] at hk' ⊢
+      have := hpreOut (Bad f logs bi j S) (fun _ h => h) [] k t hk'
+      rw [List.append_nil] at this
+      rw [hBe]; exact this
+    · change t ∈ stmts.toList at ht
+      rw [hstm'] at ht
+      obtain ⟨k, hk'⟩ := List.mem_iff_getElem?.1 ht
+      obtain ⟨r2, n', rfl, -, -, hrb, -⟩ := hpreNew k _ hk'
+      simp only [List.mem_singleton] at hy; subst hy; rw [hBe]; exact hrb
+    · refine ⟨fun y hy => (hops1 y hy).imp (fun h1 => (hSv y).2 (.inl h1))
+        (fun hnb => by rw [hBe]; exact hnb), ?_, hsk, hcn, hcs,
+        fun t ht => hinsPre t (by rw [← hstm']; exact ht), ?_, r, hr', by simp [hm_get?_insert]⟩
+      · simp only [renStmt]; rw [mapOperands_congr hstep_eq]
+      · have hsz : stmts.size = pre.length := by rw [← Array.length_toList, hstm']
+        change AvailAt _ (emitV _ bi stmts.toList) _ _ _
+        rw [hsz, hstm']; exact havv
+    · exact absurd ((hSv r1).2 (.inr hr1)) (by rw [hk1]; simp)
+  · -- replaced by `i`
+    obtain ⟨rfl, rfl, hcd, hrep⟩ := hres2
+    obtain ⟨hcn, hcs, hci, ts0, hts0⟩ := hcand hcd
+    have hBe := bad_kept hc h hb0 hs
+    obtain ⟨hext, hsz, hlast⟩ := extract_last hstm
+    have hRI := rinv_kept (t := { results := s.results, inst := i }) (R := s.results) hrun.inv hbpre
+      rfl hRav' hRbad hnd
+    rw [← hBe, emitV_append] at hRI
+    obtain ⟨hrops, hrt, hrpi, hrsym, hrg⟩ := hrep
+    have hi : i.resultTypes (fun _ => none) (fun _ => none) = some ts0 := by
+      rw [hrt, resultTypes_mapOperands]; exact hts0
+    simp only [List.foldl]
+    refine step_gen hc h hb0 hs (by
+        change RInv f (emitV _ bi stmts.toList) _ _ _ _; rw [hstm]; exact hRI)
+      (fun y hy => by rw [hBe]; exact (hrun.good y hy).weaken (fun y h => h.1)) hrun.types
+      hrun.avail
+      (fun y d hy => (hrun.availNew y d hy).imp id (fun ⟨hd, t, ht, hyt⟩ => ⟨hd, t, by
+        change t ∈ stmts.toList; rw [hstm]; exact List.mem_append_left _ ht, hyt⟩))
+      hrun.defsKeep (fun y n hy => (hrun.fresh y n hy).imp id .inl)
+      (fun x ms hx => .inl (by rw [← hrun.alts]; exact hx)) (fun _ _ h => h) (fun _ _ h => .inl h)
+      (fun k t hk' => ?_) (fun t ht y hy => ?_) ?_
+      (fun r hr _ => ⟨hRplaced _ (fun r hr h2 => by rw [hBe] at h2; exact h2.2 hr) r hr, hRav' r hr⟩)
+      (fun hc' => by rw [hci] at hc'; cases hc')
+    · change stmts.toList[k]? = some t at hk'
+      change OutStmt f allowed skelOk _ (emitV _ bi stmts.toList) _ _ _ _ _
+      rw [hstm] at hk' ⊢
+      rw [hBe]
+      rcases Nat.lt_or_ge k pre.length with hkl | hkl
+      · rw [List.getElem?_append_left hkl] at hk'
+        exact hpreOut _ (fun y h => h.1) _ k t hk'
+      · rw [List.getElem?_append_right hkl] at hk'
+        obtain ⟨m, rfl⟩ : ∃ m, k = pre.length + m := ⟨k - pre.length, by omega⟩
+        rw [Nat.add_sub_cancel_left] at hk'
+        rcases m with _ | m
+        · simp only [List.getElem?_cons_zero, Option.some.injEq] at hk'
+          subst hk'
+          refine rep_out hc hb0 hs hsk (by rw [← skelCandidate_map S.step]; exact hcd)
+            ⟨fun y hy => ⟨((hrops y hy).1).weaken (fun y h => h.1), ?_⟩, hrt, hrpi, hrsym, hrg⟩
+            (fun y t hy => hrun.types y t (h.srcTy y t hy)) hRdefs'
+          have := ((hrops y hy).2).emit bi [{ results := s.results, inst := i }]
+          rw [emitV_append] at this
+          simpa using this
+        · simp at hk'
+    · change t ∈ stmts.toList at ht
+      rw [hstm] at ht
+      rw [hBe]
+      rcases List.mem_append.1 ht with ht | ht
+      · obtain ⟨k, hk'⟩ := List.mem_iff_getElem?.1 ht
+        obtain ⟨r, n', rfl, -, -, hrb, -⟩ := hpreNew k _ hk'
+        simp only [List.mem_singleton] at hy; subst hy; exact fun h2 => hrb h2.1
+      · rw [List.mem_singleton] at ht; subst ht
+        exact fun h2 => h2.2 hy
+    · refine ⟨fun y hy => (hops1 y hy).imp id (fun hnb => by rw [hBe]; exact fun h2 => hnb h2.1),
+        rfl, hsk, hcn, hcs, hRplaced _ (fun r hr h2 => by rw [hBe] at h2; exact h2.2 hr),
+        fun y hy => by rw [hBe]; exact ((hrops y hy).1).weaken (fun y h => h.1), ?_, ?_, ?_,
+        (notCall_of_none hi).1, hrsym⟩
+      · simp [hsz]
+      · intro t ht
+        simp only [List.length_singleton] at hext
+        rw [hext] at ht
+        exact hinsPre t ht
+      · have := hlast 0
+        simp only [List.length_singleton] at hsz
+        rw [hsz, Nat.add_sub_cancel]
+        simpa using this
+  · -- replaced by two result-free instructions
+    obtain ⟨rfl, rfl, hres0, hcd, hta, htc⟩ := hres2
+    have hres0' : s.results = [] := hres0
+    obtain ⟨hcn, hcs, hci, -⟩ := hcand hcd
+    have hBe : Bad f logs bi (j + 1) S = Bad f logs bi j S :=
+      bad_gone hc h hb0 hs (fun y => by simp [hres0'])
+    obtain ⟨hext, hsz, hlast⟩ := extract_last hstm
+    have hRI : RInv f (emitV (CurV f logs bi lgs) bi (pre ++ [{ inst := a }, { inst := c }]))
+        (Bad f logs bi j S) (fun _ => False) (fun _ => False) st' := by
+      have h1 := hrun.inv
+      have h2 := ((h1.m.noResult (bi := bi) (s := { inst := a }) rfl).noResult (bi := bi)
+        (s := { inst := c }) rfl)
+      rw [emitV_append, emitV_append] at h2
+      exact ⟨by simpa using h2, h1.noPartial, h1.memo, h1.alts⟩
+    simp only [List.foldl]
+    refine step_gen hc h hb0 hs (by
+        change RInv f (emitV _ bi stmts.toList) _ _ _ _; rw [hstm, hBe]; exact hRI)
+      (fun y hy => by rw [hBe]; exact hrun.good y hy) hrun.types hrun.avail
+      (fun y d hy => (hrun.availNew y d hy).imp id (fun ⟨hd, t, ht, hyt⟩ => ⟨hd, t, by
+        change t ∈ stmts.toList; rw [hstm]; exact List.mem_append_left _ ht, hyt⟩))
+      hrun.defsKeep (fun y n hy => (hrun.fresh y n hy).imp id .inl)
+      (fun x ms hx => .inl (by rw [← hrun.alts]; exact hx)) (fun _ _ h => h) (fun _ _ h => .inl h)
+      (fun k t hk' => ?_) (fun t ht y hy => ?_) ?_ (fun r hr _ => by rw [hres0'] at hr; cases hr)
+      (fun hc' => by rw [hci] at hc'; cases hc')
+    · change stmts.toList[k]? = some t at hk'
+      change OutStmt f allowed skelOk _ (emitV _ bi stmts.toList) _ _ _ _ _
+      rw [hstm] at hk' ⊢
+      rw [hBe]
+      rcases Nat.lt_or_ge k pre.length with hkl | hkl
+      · rw [List.getElem?_append_left hkl] at hk'
+        exact hpreOut _ (fun y h => h) _ k t hk'
+      · rw [List.getElem?_append_right hkl] at hk'
+        obtain ⟨m, rfl⟩ : ∃ m, k = pre.length + m := ⟨k - pre.length, by omega⟩
+        rw [Nat.add_sub_cancel_left] at hk'
+        rcases m with _ | _ | m
+        · simp only [List.getElem?_cons_zero, Option.some.injEq] at hk'
+          subst hk'
+          have := (hta.emit [{ inst := a }, { inst := c }] (Nat.le_refl _)).outStmt (f := f)
+            (allowed := allowed)
+          rw [emitV_append] at this
+          simpa [Nat.add_assoc] using this
+        · simp only [List.getElem?_cons_succ, List.getElem?_cons_zero, Option.some.injEq] at hk'
+          subst hk'
+          have := (htc.emit [{ inst := a }, { inst := c }] (Nat.le_succ _)).outStmt (f := f)
+            (allowed := allowed)
+          rw [emitV_append] at this
+          simpa [Nat.add_assoc] using this
+        · simp at hk'
+    · change t ∈ stmts.toList at ht
+      rw [hstm] at ht
+      rw [hBe]
+      rcases List.mem_append.1 ht with ht | ht
+      · obtain ⟨k, hk'⟩ := List.mem_iff_getElem?.1 ht
+        obtain ⟨r, n', rfl, -, -, hrb, -⟩ := hpreNew k _ hk'
+        simp only [List.mem_singleton] at hy; subst hy; exact hrb
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at ht
+        rcases ht with rfl | rfl <;> simp at hy
+    · obtain ⟨hopa, hrta, hsa, -⟩ := hta
+      obtain ⟨hopc, hrtc, hsc, -⟩ := htc
+      refine ⟨fun y hy => (hops1 y hy).imp id (fun hnb => by rw [hBe]; exact hnb), rfl, hsk, hcn,
+        hcs, fun y hy => ?_, hres0', ?_, ?_, ?_, ?_, (notCall_of_none hrta).1,
+        (notCall_of_none hrtc).1, hsa, hsc⟩
+      · rw [hBe]
+        rcases List.mem_append.1 hy with hy | hy
+        · exact (hopa y hy).1
+        · exact (hopc y hy).1
+      · simp [hsz]
+      · intro t ht
+        simp only [List.length_cons, List.length_nil] at hext
+        rw [hext] at ht
+        exact hinsPre t ht
+      · have := hlast 0
+        simp only [List.length_cons, List.length_nil] at hsz
+        rw [hsz, show pre.length + (0 + 1 + 1) - 2 = pre.length + 0 by omega]
+        simpa using this
+      · have := hlast 1
+        simp only [List.length_cons, List.length_nil] at hsz
+        rw [hsz, show pre.length + (0 + 1 + 1) - 1 = pre.length + 1 by omega]
+        simpa using this
+
+end SkelStep
+
 end Opt
