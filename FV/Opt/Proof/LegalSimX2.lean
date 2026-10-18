@@ -61,7 +61,8 @@ theorem EnvOkX.two {env : XEnv} {C : Ctx} {p p' : Program} (hE : EnvOkX env C p 
     hE.extX _ h hh _ gs hgs vals vals' m hty hexp e m' hu⟩
   keepX := hE.keepX.bounded
   arity := hE.arity
-  indX h _ _ _ _ _ _ _ _ _ _ _ _ _ _ hr := externAtRaise_prefix (hE.base.ind h).2 hr
+  indX h _ _ _ _ _ _ _ _ _ _ _ _ _ _ hr :=
+    externAtRaise_prefix (hE.base.ind (S.indSite_of_stmt h)).2 hr
 
 /-! ## Raising callees -/
 
@@ -106,7 +107,8 @@ theorem sim_call_raise2 {C : Ctx} (hG : Good C) {E E' : XEnv} {p p' : Program}
     ⟨_, hbody⟩
   simp [stepX, raiseAt?, hb', hr', raiseIn, pendingOf, unwindFrom, leftMem, hR.slots]
 
-theorem sim_callInd_raise2 {C : Ctx} (hG : Good C) {E E' : XEnv} {p p' : Program}
+theorem sim_callInd_raise2 {C : Ctx} (hG : Good C) (hold : indOldB C.f = true) {E E' : XEnv}
+    {p p' : Program}
     (hE : EnvOkX2 E E' C p p') {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') {st : Stmt}
     {rest : List Stmt} (hb : fr.body = st :: rest) {sig : Nat} {callee : ValueId}
     {args : List ValueId} (hi : st.inst = .callIndirect sig callee args) {x : Exn} {m1 : Mem}
@@ -118,14 +120,16 @@ theorem sim_callInd_raise2 {C : Ctx} (hG : Good C) {E E' : XEnv} {p p' : Program
   have hcode0 := hR.code
   rw [hb] at hcode0
   obtain ⟨pl, hpl, hseg, -⟩ := code_cons hcode0
-  obtain rfl := planOf_callIndirect_eq hpl hi
+  rcases planOf_callIndirect_eq hpl hi with rfl | ⟨d, args', rg, rs, rfl⟩
+  rotate_left
+  · exact (S.frel_not_callInd128 hR hold hb hpl).elim
   obtain ⟨hs, hdecl⟩ := segOk_callInd hseg
   have hbody := take_drop_eq (l := fr'.body) (n := 1) rfl
   simp only [Plan.len] at hs
   rw [hs, List.singleton_append] at hbody
   obtain ⟨ts2, hb'⟩ : ∃ ts2, fr'.body = st :: ts2 := ⟨_, hbody⟩
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
-  obtain ⟨sig0, callee0, args0, hi0, hplain⟩ := planOf_callInd hpl
+  obtain ⟨sig0, callee0, args0, d0, hi0, -, -, hplain⟩ := planOf_callInd hpl
   rw [hi] at hi0
   cases hi0
   have hreg : ∀ y ∈ callee :: args, fr'.regs y = fr.regs y := fun y hy => by
@@ -135,7 +139,7 @@ theorem sim_callInd_raise2 {C : Ctx} (hG : Good C) {E E' : XEnv} {p p' : Program
   obtain ⟨declared, cv, cv64, vals, hd, hc, h64, hv, hf, hx⟩ := callIndRaise_inv hr
   have hex : ∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
       st.inst = .callIndirect sig callee args := ⟨B, hB, st, hst, sig, callee, args, hi⟩
-  have hnames := (hE.base.ind hex).1
+  have hnames := (hE.base.ind (S.indSite_of_stmt hex)).1
   have hdf : C.f.sigDecls.lookup sig = some declared := by rw [← hR.func]; exact hd
   have hd' : fr'.func.sigDecls.lookup sig = some declared := by
     rw [hR.func', hdecl sig callee args hi, ← hR.func]; exact hd
@@ -356,7 +360,8 @@ theorem memBounded_raise2 {E : XEnv} (hK : EnvKeepsBoundedX E) {p : Program} {m 
   exact hK _ g hg vals m x m1 hgo hM
 
 /-- **Runs with unwinding, two environments** (`sim_runX`). -/
-theorem sim_runX2 {C : Ctx} (hG : Good C) (hx : exnOk C.f C.g C.cert = true) {E E' : XEnv}
+theorem sim_runX2 {C : Ctx} (hG : Good C) (hx : exnOk C.f C.g C.cert = true)
+    (hold : indOldB C.f = true) {E E' : XEnv}
     {p p' : Program} (hE : EnvOkX2 E E' C p p') :
     ∀ (n : Nat) (fr fr' : Frame) (m : Mem), FRel C fr fr' → InCode C.g fr' → MemBounded m →
       NoMemTrapX E p ⟨fr, [], m⟩ → NoIndInternalX E p C.f ⟨fr, [], m⟩ →
@@ -410,7 +415,7 @@ theorem sim_runX2 {C : Ctx} (hG : Good C) (hx : exnOk C.f C.g C.cert = true) {E 
           fun fr2 fr2' m2 hR2 hIC2 hM2 hs2 => ih n (by omega) fr2 fr2' m2 hR2 hIC2 hM2
             ((hT.next hst1).next hs2) ((hI.next hst1).next hs2)
     · exact xsim_of_simOut2 hnr hst
-        (S.step_sim_out hG hE2 hR hM hT0 hI0 fun hb fn args et h => htc ⟨hb, fn, args, et, h⟩)
+        (S.step_sim_out hG hE2 hold hR hM hT0 hI0 fun hb fn args et h => htc ⟨hb, fn, args, et, h⟩)
         hIC ihn
   | some r =>
     obtain ⟨x, m1⟩ := r
@@ -424,7 +429,7 @@ theorem sim_runX2 {C : Ctx} (hG : Good C) (hx : exnOk C.f C.g C.cert = true) {E 
         rw [runLoopX_unwound h1]
         exact ⟨1, runLoopX_unwound h2 0⟩
       · rename_i sig callee args hi
-        obtain ⟨h1, h2⟩ := sim_callInd_raise2 hG hE hR hb hi hra'
+        obtain ⟨h1, h2⟩ := sim_callInd_raise2 hG hold hE hR hb hi hra'
         rw [runLoopX_unwound h1]
         exact ⟨1, runLoopX_unwound h2 0⟩
       · cases hra'
@@ -457,8 +462,7 @@ theorem sim_runX2 {C : Ctx} (hG : Good C) (hx : exnOk C.f C.g C.cert = true) {E 
             exact ih n (by omega) fr2 fr2' m1 hR2 hIC2 hM1 ((hT.next h1).next h3)
               ((hI.next h1).next h3)
       · rename_i callee args et ht
-        rw [ht] at hcode
-        cases ht' : fr'.term <;> rw [ht'] at hcode <;> simp [termOk] at hcode
+        exact (S.frel_not_tryInd hR hold callee args et ht).elim
       · cases hra'
 
 /-- **The refinement theorem of `Opt.Legal.check` with unwinding, two environments**
@@ -548,7 +552,7 @@ theorem check_refinesX2 {C : Ctx} (hc : check C.f C.g C.cert = true)
     have hIC : InCode C.g { fr0' with regs := fr0'.regs.set C.zero zeroVal, body := rest } := by
       refine ⟨h1', .inl ⟨b0', ?_, h3'⟩⟩
       rw [hg]; exact List.mem_cons_self ..
-    have hS := sim_runX2 hG hx hE fuel fr0 _ m hR hIC hM hT hI
+    have hS := sim_runX2 hG hx (indOldB_of_check hc) hE fuel fr0 _ m hR hIC hM hT hI
     obtain ⟨k0, hk0⟩ := tstep_runLoopX (env := E') hzT
     have hS' := XSimOut.pre hk0 hS
     refine ⟨fun vals m1 h => ?_, fun c h => ?_, fun e m1 h => ?_⟩

@@ -312,7 +312,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
           else if o.opt.isSome && !legal && !optUnwOk p.name f then
             some "--opt: the compiled function is not Opt.optimizeExe of its source function"
           else if o.opt.isNone && legal && !legalUnwOk p.name f then
-            some "i128 legalized: Opt.Legal.exnOk rejects the handler edges"
+            some "i128 legalized: Opt.Legal.check (no try_call_indirect, no call_indirect at an i128 signature) or Opt.Legal.exnOk (the handler edges) rejects"
           else (unwindCheckFailure? f ((recs.find? (·.1 == p.name)).bind (·.2))
             (fa.funcs.find? (·.name == p.name))).map (s!"unwinding check failed: {·}")
         let thm := if legal && o.opt.isSome then "backend_correct_legal_opt_unwind"

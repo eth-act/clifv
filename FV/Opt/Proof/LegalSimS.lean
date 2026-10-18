@@ -586,7 +586,8 @@ theorem sim_enter {C : Ctx} (hG : Good C) {env' : Env} {p' : Program} {fr fr' : 
 /-- **Terminators.** -/
 theorem sim_term {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr fr' : Frame}
     {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) (hb : fr.body = [])
-    (hnt : ∀ fn args et, fr.term ≠ .tryCall fn args et) :
+    (hnt : ∀ fn args et, fr.term ≠ .tryCall fn args et)
+    (hnti : ∀ c args et, fr.term ≠ .tryCallIndirect c args et) :
     SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨B, hB, -, hterm⟩ := hR.blk
   have hcode := hR.code
@@ -600,6 +601,7 @@ theorem sim_term {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr f
   cases ht : fr.term <;> cases ht' : fr'.term <;> rw [ht, ht'] at hcode <;>
     simp only [termOk, Bool.false_eq_true] at hcode
   case tryCall.tryCall fn args et _ _ _ => exact absurd ht (hnt fn args et)
+  case tryCallIndirect.tryCallIndirect c args et _ _ _ => exact absurd ht (hnti c args et)
   case jump.jump bc bc' =>
     simp only [Bool.and_eq_true, List.isEmpty_iff] at hcode
     obtain ⟨hts, hbc⟩ := hcode
@@ -737,7 +739,7 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
       C.g.sigDecls.lookup sig = C.f.sigDecls.lookup sig)
     (hcode : codeOk C rest fr.term ts2 fr'.term = true) (hI : IndExt env p C.f ⟨fr, [], m⟩) :
     SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
-  obtain ⟨sig, callee, args, hi, hplain⟩ := planOf_callInd hpl
+  obtain ⟨sig, callee, args, d0, hi, hd0, h128, hplain⟩ := planOf_callInd hpl
   have hdecl := hdecl sig callee args hi
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
   have hnd := results_nodup hG.defs hB hst
@@ -776,7 +778,7 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
   | stuck msg =>
     simp [stepCallIndirect, hd, hc, hcv, hv, Res.ofOption, bind, Res.bind, StepResult.ofRes, SimOut]
   | ok vals =>
-  have hnf := hI st rest sig callee args cv hb hi ⟨B, hB, hst⟩ hc
+  have hnf := hI.1 st rest sig callee args cv hb hi ⟨B, hB, hst⟩ hc
   rw [← as_i64_toNat hcv] at hnf
   have hsrc : stepCallIndirect env p ⟨fr, [], m⟩ rest st.results sig callee args =
       StepResult.ofRes (callExternAt env p m d b.toNat vals) fun (rv, mem') =>
@@ -784,10 +786,10 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
     simp [stepCallIndirect, hd, hc, hcv, hv, Res.ofOption, bind, Res.bind, StepResult.ofRes,
       find_none_of hnf]
   rw [hsrc]
-  have hname : ∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args := ⟨B, hB, st, hst, sig, callee, args, hi⟩
-  obtain ⟨hfn, hrelI⟩ := hE.ind hname
-  have hrel := hrelI B hB st hst sig callee args d hi (by rw [← hR.func]; exact hd)
+  have hname : IndSite C.f sig := .inl ⟨B, hB, st, hst, callee, args, hi⟩
+  obtain ⟨hfn, hrelI⟩ := hE.ind ⟨sig, hname⟩
+  have hdf : C.f.sigDecls.lookup sig = some d := by rw [← hR.func]; exact hd
+  have hrel := (hrelI sig d hname hdf).plain (by rw [hd0] at hdf; cases hdf; exact h128)
   have hnf' : ∀ g ∈ p'.funcs, m.symbols g.name ≠ some b.toNat := by
     intro g hg
     have : g.name ∈ p'.funcs.map (·.name) := List.mem_map_of_mem hg
@@ -1017,9 +1019,35 @@ theorem sim_try {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
   rw [step_term env' p' _ rfl]
   simp only [stepTerm, hen', StepResult.ofRes_ok]
 
-/-- **One source step**, matched by the target. -/
+/-- A `call_indirect` statement of `f` is an indirect call site (`IndSite`). -/
+theorem indSite_of_stmt {f : Function} (h : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
+    st.inst = .callIndirect sig callee args) : ∃ sig, IndSite f sig := by
+  obtain ⟨B, hB, st, hst, sig, callee, args, hi⟩ := h
+  exact ⟨sig, .inl ⟨B, hB, st, hst, callee, args, hi⟩⟩
+
+/-- On the domain of `check` (`indOldB`), a frame of `f` does not end in a `try_call_indirect`. -/
+theorem frel_not_tryInd {C : Ctx} {fr fr' : Frame} (hR : FRel C fr fr')
+    (hold : indOldB C.f = true) : ∀ c args et, fr.term ≠ .tryCallIndirect c args et := by
+  intro c args et ht
+  obtain ⟨B, hB, -, hterm⟩ := hR.blk
+  simp only [indOldB, List.all_eq_true, Bool.and_eq_true] at hold
+  have := (hold B hB).2
+  rw [← hterm, ht] at this
+  simp at this
+
+/-- On the domain of `check` (`indOldB`), no statement of `f` has the plan `callInd128`. -/
+theorem frel_not_callInd128 {C : Ctx} {fr fr' : Frame} (hR : FRel C fr fr')
+    (hold : indOldB C.f = true) {st : Stmt} {rest : List Stmt} (hb : fr.body = st :: rest)
+    {sig : Nat} {d : Signature} {callee : ValueId} {args : List ValueId}
+    {rg : List (List SlotEl)} {rs : List ValueId}
+    (hpl : planOf C st = some (.callInd128 sig d callee args rg rs)) : False := by
+  obtain ⟨args0, -, hi, -, hd, h128, -⟩ := planOf_callInd128 hpl
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  exact indOldB_not_ind128 hold ⟨sig, d, .inl ⟨B, hB, st, hst, callee, args0, hi⟩, hd, h128⟩
+
+/-- **One source step**, matched by the target (on the domain of `check`, `indOldB`). -/
 theorem step_sim {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
-    (hE : EnvOk2 env env' C p p')
+    (hE : EnvOk2 env env' C p p') (hold : indOldB C.f = true)
     {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m)
     (hT : MemTrapFree env p ⟨fr, [], m⟩) (hI : IndExt env p C.f ⟨fr, [], m⟩) :
     SimStep C env env' p p' fr' m (step env p ⟨fr, [], m⟩) := by
@@ -1028,7 +1056,8 @@ theorem step_sim {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
     by_cases htc : ∃ fn args et, fr.term = .tryCall fn args et
     · obtain ⟨fn, args, et, ht⟩ := htc
       exact sim_try hG hE hR hM hb ht
-    · exact .inl (sim_term hG hR hM hb fun fn args et h => htc ⟨fn, args, et, h⟩)
+    · exact .inl (sim_term hG hR hM hb (fun fn args et h => htc ⟨fn, args, et, h⟩)
+        (frel_not_tryInd hR hold))
   | cons st rest =>
     refine .inl ?_
     have hcode0 := hR.code
@@ -1071,18 +1100,19 @@ theorem step_sim {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
       obtain ⟨hs, hdecl⟩ := segOk_callInd hseg
       rw [hs] at hbody
       exact sim_callInd hG hE hR hM hb hpl hbody hdecl hcode hI
+    | callInd128 sig d callee args rg rs => exact (frel_not_callInd128 hR hold hb hpl).elim
 
 /-- **One source step that is not a `try_call`'s call**, matched by the target (`step_sim`
-without its second case). -/
+without its second case; on the domain of `check`, `indOldB`). -/
 theorem step_sim_out {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
-    (hE : EnvOk2 env env' C p p')
+    (hE : EnvOk2 env env' C p p') (hold : indOldB C.f = true)
     {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m)
     (hT : MemTrapFree env p ⟨fr, [], m⟩) (hI : IndExt env p C.f ⟨fr, [], m⟩)
     (hnt : fr.body = [] → ∀ fn args et, fr.term ≠ .tryCall fn args et) :
     SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   cases hb : fr.body with
   | nil =>
-    exact sim_term hG hR hM hb fun fn args et h => hnt hb fn args et h
+    exact sim_term hG hR hM hb (fun fn args et h => hnt hb fn args et h) (frel_not_tryInd hR hold)
   | cons st rest =>
     have hcode0 := hR.code
     rw [hb] at hcode0
@@ -1124,5 +1154,6 @@ theorem step_sim_out {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
       obtain ⟨hs, hdecl⟩ := segOk_callInd hseg
       rw [hs] at hbody
       exact sim_callInd hG hE hR hM hb hpl hbody hdecl hcode hI
+    | callInd128 sig d callee args rg rs => exact (frel_not_callInd128 hR hold hb hpl).elim
 
 end Opt.Legal.S

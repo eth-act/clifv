@@ -190,7 +190,8 @@ theorem backend_correct_legal_opt_unwind {f g : Clif.Function} {cert : Opt.Legal
     ArmRefinesLegalU ((Opt.Legal.groups f.sig.returns).getD []) fb base ra
       (Unw.ArmStepU X H U T fa) s (Clif.runLoopX (Clif.Rust.xenvWith raises obj) p fuel cs.toX) :=
   backend_correct_legal_opt_unwind_env hchk hexn cfg hr ha hsub hc hlU
-    (Clif.Rust.xenvWith_envOkX raises obj (C := ⟨f, g, cert⟩) hext hext' hind)
+    (Clif.Rust.xenvWith_envOkX raises obj (C := ⟨f, g, cert⟩) (Opt.Legal.indOldB_of_check hchk)
+      hext hext' hind)
     (xenvWith_keepsSymbolsX raises obj) hcov hC hCT hTls hU hX hXI hXR hXRi hsym hslot hsites hlsda
     hrows hcie hfde hpad hlast hsaved hent hres hbe hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
 
