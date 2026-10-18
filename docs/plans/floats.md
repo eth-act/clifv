@@ -241,9 +241,29 @@ position, target and edge facts (`LowT.edge_facts`: arguments are vregs of any c
 (`edgeClassOk`: branch arguments, a `try_call`'s value arguments and returned values have the
 class of their target parameter/return, `defFloats`, `argClassOk`), with `CtxSpec.edgeClass`,
 `tryEdgeClass`, `retClass` in `buildCtx`'s context. Witnesses: `FVTest/Backend/FloatLoopT.lean`.
-Open: `TermEmitsT` and `Low.raw_back` for float-capable contexts (the terminator rules' shapes at
-`CtxInvT`: a `return` of float values, conditions in integer positions), and the typed
-`alias_facts`/`lowerCheckT_complete`.
+The open terminator and completeness items are closed by the next entry.
+
+**S11e5 Stage C, slice 3 completion (typed terminator shapes, typed `lowerCheckT_complete`).**
+The terminator rules run over float-capable contexts (`Proof/IselTermFactsTy.lean`: a `return`
+pins values of either class, `lower_return_okTy`; a `brif` condition and a `br_table` index are in
+integer positions, `TermIntPos`, from `Compile.termIntOperands` via `opsTypedT`;
+`term_emitsTy`, `termShape_runTermTy`, `branchShape_runTermTy`, `jumpShape_runTermTy`), so
+`shapeOkT_completeT`/`lowerShapeT_of_lowerT` need no terminator premise and `LowT.raw_back`
+holds on the typed scope. The root rules outside the closure cannot match an instruction of a
+float-capable context (`Proof/IselExclT.lean`, `lower_nonroot_nomatchT`): the checker `failsT`
+widens value and result types to `mCTys` and keeps the opcode/result-type correlation (a float
+result has a float-movement opcode, `floatOps`, `inst_split`), which excludes the float
+`bnot`/`band`/`bor`/`bxor` rules, and it reads a `bitcast`'s operand (`bitcast_i128_simdfp`).
+On that, the flow and TLS analyses (`Proof/IselFlowT.lean`: `flowModelT`, `stmt_flowT`,
+`stmt_noTlsT`, `termCall_noTlsT`, `tryCall_noTlsT`), the certificate (`Proof/LowerCertT.lean`:
+`alias_factsT`, `certOk_completeT`), the outgoing area (`Proof/IselTermFactsCallT.lean`:
+`callOut_runTermT`, `tryOut_runTermT`, arguments in integer positions) and the entry locations
+(`entryOkBT_of`, any classes) give `lowerCheckT_complete` (`Proof/LowerCompleteT.lean`:
+`Dominated f → LowerScopeT f → lowerFunction f = .ok vc → lowerCheckT f vc = true`).
+Witnesses: `FVTest/Backend/FloatTermT.lean` (`fMv`, a float `br_table` function and a float
+function with an integer `call`; `lowerCheck` rejects all three). Open (slice 6): typed
+`ClassesHyp` and the spill chain (`stmt_cls`/`stmt_cov`/`termCall_cls`/`tryCall_cls` over
+`CtxInvT`, `SpillEdges*`, `SpillDefined`, `SpillAvail`, `SpillLocalPipe` over `LowerScopeT`).
 
 ## 4. Known hazards
 
