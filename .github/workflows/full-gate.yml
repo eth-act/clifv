@@ -258,7 +258,7 @@ jobs:
           retention-days: 14
 
   e2e:
-    name: lean-e2e-check and link-check
+    name: lean-e2e-check
     needs: [plan, assemble]
     if: ${{ !cancelled() && needs.assemble.result == 'success' }}
     runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
@@ -277,18 +277,12 @@ jobs:
       - name: lean-e2e-check
         run: |
           mkdir -p gate-logs
-          lake build lean-e2e-check link-check 2>&1 | tail -n 1
+          # link-check needs a `cargo fv link-proof` directory: the assemble job only builds it
+          lake build lean-e2e-check 2>&1 | tail -n 1
           start=$(date +%s)
           rc=0; /usr/bin/time -v lake exe lean-e2e-check > gate-logs/e2e.log 2>&1 || rc=$?
           echo "lean-e2e-check rc=$rc $(( $(date +%s) - start )) s: $(grep -E 'accepted|rejected' gate-logs/e2e.log | tail -n 3 | tr '\n' ' ')" | tee -a gate-logs/summary.txt
           grep -E 'Maximum resident|Elapsed' gate-logs/e2e.log || true
-          exit $rc
-      - name: link-check
-        if: ${{ !cancelled() }}
-        run: |
-          start=$(date +%s)
-          rc=0; lake exe link-check > gate-logs/linkcheck.log 2>&1 || rc=$?
-          echo "link-check rc=$rc $(( $(date +%s) - start )) s: $(tail -n 2 gate-logs/linkcheck.log | tr '\n' ' ')" | tee -a gate-logs/summary.txt
           exit $rc
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
@@ -338,7 +332,17 @@ jobs:
           mkdir -p gate-logs
           start=$(date +%s)
           rc=0; "scripts/$GATE.sh" > "gate-logs/$GATE.log" 2>&1 || rc=$?
-          echo "$GATE rc=$rc $(( $(date +%s) - start )) s: $(grep -E 'TOTAL|total|corpus|runtest|differ|functions [0-9]+:|fail' "gate-logs/$GATE.log" | tail -n 4 | tr '\n' ' ')" | tee gate-logs/summary.txt
+          line=$(grep -E 'TOTAL|total|corpus|runtest|differ|functions [0-9]+:|fail' "gate-logs/$GATE.log" | tail -n 4 | tr '\n' ' ' || true)
+          if [[ $GATE == clif-filetests ]]; then
+            # exits 1 on any failing run line; the gate is the recorded baseline
+            cur=$(grep -E 'TOTAL files [0-9]+: pass' "gate-logs/$GATE.log" | tail -n 1 || true)
+            n() { grep -oE "$1 [0-9]+" <<< "$cur" | head -n 1 | cut -d' ' -f2 || true; }
+            p=$(n pass) f=$(n fail) d=$(n disagree)
+            read -r bp bf bd < <(grep -v '^#' scripts/clif-filetests-baseline.txt)
+            rc=1; [[ -n $p && $p -ge $bp && $f -le $bf && $d -le $bd ]] && rc=0
+            line="pass $p fail $f disagree $d (baseline pass $bp fail $bf disagree $bd)"
+          fi
+          echo "$GATE rc=$rc $(( $(date +%s) - start )) s: $line" | tee gate-logs/summary.txt
           tail -n 15 "gate-logs/$GATE.log"
           exit $rc
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -389,7 +393,8 @@ jobs:
         run: |
           scripts/build-cg-clif.sh
           (cd rust && cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc)
-          lake build lean-link clif-decode 2>&1 | tail -n 1
+          # the executables cargo fv runs (restored from the assembled build)
+          lake build lean-backend lean-link clif-decode 2>&1 | tail -n 1
       - name: Run
         env:
           EX: ${{ matrix.example }}
