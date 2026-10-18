@@ -68,7 +68,8 @@ pub const FLAG_OFF: &[&str] = &["use_lse"];
 /// S11f (#239) adds the scalar float arithmetic roots (`FV/Backend/Proof/IselFloatArith.lean`,
 /// `LowerRulesCorrectFT`): `fpu_rrr` of `fadd` (485), `fsub` (493), `fmul` (501), `fdiv` (509),
 /// `fmin` (517), `fmax` (525); `fpu_rr` of `sqrt` (533), `fneg` (541), `fabs` (549),
-/// `fpromote` (554), `fdemote` (559); `fcmp` into a register (2176, `emit_fcmp`).
+/// `fpromote` (554), `fdemote` (559). `fcmp` into a register (2176, `emit_fcmp`) stays out until
+/// `fp_cond_code` is proven (`instData` rejects `fcmp`).
 pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_63",
     "rule_lower_68",
@@ -91,7 +92,6 @@ pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_549",
     "rule_lower_554",
     "rule_lower_559",
-    "rule_lower_2176",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];

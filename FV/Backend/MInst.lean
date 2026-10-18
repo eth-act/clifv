@@ -889,7 +889,6 @@ abbrev tyVecLanesOp : TypeId := TyId.VecLanesOp
 abbrev tyVecALUOp : TypeId := TyId.VecALUOp
 abbrev tyTBKind : TypeId := TyId.TestBitAndBranchKind
 abbrev tyIntCC : TypeId := TyId.IntCC
-abbrev tyFloatCC : TypeId := TyId.FloatCC
 abbrev tyOpcode : TypeId := TyId.Opcode
 abbrev tyInstData : TypeId := TyId.InstructionData
 abbrev tyRelocDistance : TypeId := TyId.RelocDistance
