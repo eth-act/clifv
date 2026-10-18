@@ -29,9 +29,10 @@ and the CLIF program reaches the same thread outcomes by a run of the multi-thre
   `E2E.backend_correct_final`**, which is a whole-run theorem without interference (`Clif.runLoop`
   reads its own memory; extern results are a function of the arguments and the memory) and says
   nothing about the compiled code's intermediate memory footprint. Discharging `Realizes` needs the
-  isel/prepare/register-level layers re-proven with interference (`docs/plans/atomics.md` §5,
-  T2h). Until then `program_correct` is the composition of the memory-model layer with that
-  contract, not a multi-threaded compiler theorem.
+  isel/prepare/register-level layers re-proven with interference (`docs/plans/atomics.md` §3e,
+  T2h; the reduction to per-thread refinements is `ThreadRefine.realizes_of_threads`). Until then
+  `program_correct` is the composition of the memory-model layer with that contract, not a
+  multi-threaded compiler theorem.
 
 Proof: the CLIF execution (`φ`-pullback of the Arm relations) is well-formed (`wfC`), consistent
 for the contract (`consistentC`, from `Armv8.coherence`/`atomicity`/`atomics_sc` along `φ`),
@@ -436,7 +437,7 @@ that is race-free in every contract-consistent execution: the CLIF execution is 
 consistent, the multi-threaded `Clif.run` reaches the CLIF threads' final states (up to their
 local bytes) with final shared bytes holding the `co`-last write of every location, and the
 threads' outcomes are related by `Obs`. **The contract is not discharged by
-`E2E.backend_correct_final`** (module doc; `docs/plans/atomics.md` §5, T2h). -/
+`E2E.backend_correct_final`** (module doc; `docs/plans/atomics.md` §3e, T2h). -/
 theorem program_correct {env : Clif.Env} {p : Clif.Program} {n : Nat} {s0 : Nat → TState}
     (hrace : RaceFreeProg env p n s0 MC0)
     -- the Arm execution: runs of the Arm threads, Armv8-consistent

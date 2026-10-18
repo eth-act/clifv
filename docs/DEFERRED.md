@@ -436,9 +436,11 @@ correctness of race-free multi-threaded programs on Armv8 under the per-thread c
 - **No footprint.** It constrains only the final memory (`MemAgree`), not what the compiled code
   touches before it returns, so even non-communicating threads do not compose.
 
-Remaining (T2h, #311): re-prove the isel (`IselSim`/driver), `prepare` and register-level
-(`RegLevelCorrect`) layers as footprint-preserving simulations with interference (CASCompCert,
-Jiang et al. PLDI 2019) and derive `Realizes` per thread. The multi-threaded CLIF semantics has
+Remaining (T2h, #311; plan `docs/plans/atomics.md` §3e): re-prove the isel (`IselSim`/driver),
+`prepare` and register-level (`RegLevelCorrect`) layers as footprint-preserving simulations with
+interference (CASCompCert, Jiang et al. PLDI 2019). Layer 0 is done: `Realizes` follows from
+per-thread refinements (`ThreadRefine.realizes_of_threads`), and refinements compose across
+layers (`ThreadRefine.Refines.trans`). The backend layers 1–4 are open, so #38 stays open. The multi-threaded CLIF semantics has
 per-thread allocation metadata, no step for extern calls that touch memory, and one `tls_value`
 instance; widening those is part of the same item.
 
