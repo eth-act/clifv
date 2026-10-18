@@ -252,7 +252,7 @@ recorded in the graph, with available placeable operands. -/
 def NewOk (idom : Array (Option Nat)) (V : Nat → Option Block) (bi k : Nat)
     (allowed : Inst → Bool) (B : ValueId → Prop) (st : SState) (s : Stmt) : Prop :=
   ∃ r n', s = { results := [r], inst := n' } ∧ st.defs.get? r = some n' ∧
-    st.avail.get? r = some bi ∧ (∃ n τ, allowed n = true ∧ n' = mapOperands τ n) ∧
+    st.avail.get? r = some bi ∧ ¬ B r ∧ (∃ n τ, allowed n = true ∧ n' = mapOperands τ n) ∧
     ∀ y ∈ operands n', AvailAt idom V bi k y ∧ Good st B y
 
 /-- How the state moves while materialising (only the graph and output fields change). -/
@@ -303,9 +303,19 @@ theorem NewOk.mono {idom : Array (Option Nat)} {V : Nat → Option Block} {bi k 
     (h : NewOk idom V bi k allowed B st s) (hs : MStep bi st st' more)
     (hg : ∀ y, Good st B y → Good st' B y) :
     NewOk idom (emitV V bi more) bi k allowed B st' s := by
-  obtain ⟨r, n', rfl, hd, ha, hal, hops⟩ := h
+  obtain ⟨r, n', rfl, hd, ha, hrb, hal, hops⟩ := h
   refine ⟨r, n', rfl, hs.defsKeep r n' hd ((hm_contains_iff _ _).2 (by rw [ha]; rfl)),
-    hs.avail r bi ha, hal, fun y hy => ⟨(hops y hy).1.emit bi more, hg y (hops y hy).2⟩⟩
+    hs.avail r bi ha, hrb, hal, fun y hy => ⟨(hops y hy).1.emit bi more, hg y (hops y hy).2⟩⟩
+
+theorem NewOk.weakenB {idom : Array (Option Nat)} {V : Nat → Option Block} {bi k : Nat}
+    {allowed : Inst → Bool} {B B' : ValueId → Prop} {st : SState} {s : Stmt}
+    (h : NewOk idom V bi k allowed B st s) (hB : ∀ y, B' y → B y) :
+    NewOk idom V bi k allowed B' st s := by
+  obtain ⟨r, n', rfl, hd, ha, hrb, hal, hops⟩ := h
+  have hg : ∀ y, Good st B y → Good st B' y :=
+    Good.mono (fun _ h => h) (fun y hy hb => hy.not_bad (hB y hb)) (fun _ _ h => .inl h)
+      (fun _ _ h => .inl h)
+  exact ⟨r, n', rfl, hd, ha, fun h => hrb (hB r h), hal, fun y hy => ⟨(hops y hy).1, hg y (hops y hy).2⟩⟩
 
 theorem NewOk.mono' {idom : Array (Option Nat)} {V : Nat → Option Block} {bi k : Nat}
     {allowed : Inst → Bool} {B : ValueId → Prop} {st st' : SState} {s : Stmt} {more : List Stmt}
@@ -314,9 +324,9 @@ theorem NewOk.mono' {idom : Array (Option Nat)} {V : Nat → Option Block} {bi k
     (ha : ∀ y d, st.avail.get? y = some d → st'.avail.get? y = some d)
     (hg : ∀ y, Good st B y → Good st' B y) :
     NewOk idom (emitV V bi more) bi k allowed B st' s := by
-  obtain ⟨r, n', rfl, hd', ha', hal, hops⟩ := h
+  obtain ⟨r, n', rfl, hd', ha', hrb, hal, hops⟩ := h
   refine ⟨r, n', rfl, hd r n' hd' ((hm_contains_iff _ _).2 (by rw [ha']; rfl)),
-    ha r bi ha', hal, fun y hy => ⟨(hops y hy).1.emit bi more, hg y (hops y hy).2⟩⟩
+    ha r bi ha', hrb, hal, fun y hy => ⟨(hops y hy).1.emit bi more, hg y (hops y hy).2⟩⟩
 
 /-- A run of `materialize` steps (module doc): the state facts, placeability, the state change and
 the emitted statements. -/
@@ -540,7 +550,7 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
   subst hj
   simp only [List.getElem?_cons_zero, Option.some.injEq] at hs0
   subst hs0
-  refine ⟨r, n', rfl, by rw [hdefs, if_pos rfl], by rw [havail, if_pos rfl], ⟨n, τ, hal, hn'⟩,
+  refine ⟨r, n', rfl, by rw [hdefs, if_pos rfl], by rw [havail, if_pos rfl], hrb, ⟨n, τ, hal, hn'⟩,
     fun y hy => ⟨?_, hgood y (hops y hy).2⟩⟩
   simpa using ((hops y hy).1.at_end hb).emit bi [({ results := [r], inst := n' } : Stmt)]
 
