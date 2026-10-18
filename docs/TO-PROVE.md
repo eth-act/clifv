@@ -890,8 +890,8 @@ Large, low priority.
 
 - One agent per WP or sub-package, in its own worktree: `scripts/agent-worktree.sh <name> [base]` →
   `/home/kev/work/clifv-wt/<name>`, branch `agent/<name>`. Absolute paths under the worktree. Push your
-  branch and open its PR, but never merge it (the integrator does, "Gate policy" below), never force-push
-  main, never `git stash`, never pattern-kill processes. Temp files in `/tmp/<name>_*`.
+  branch, open its PR and squash-merge it once its per-PR gates pass ("Gate policy" below); never
+  force-push main, never `git stash`, never pattern-kill processes. Temp files in `/tmp/<name>_*`.
 - Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; check the log for "Build
   completed successfully". The `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to 16.5 GB
   (`RuleBitops7`; `RuleArith` 15 GB, a dozen others 7–11 GB) and take up to 34 min each; `lake build`
@@ -944,28 +944,27 @@ Large, low priority.
 - **Gate policy (adopted, #252; @kevaundray's decision of 2026-10-17): merge, then verify.** The full
   list costs one machine-wide slot for hours (one run held `/tmp/clifv-heavy.lock` 5.6 h), so PRs merge
   on per-PR gates and the full list runs continuously on `main`:
-  - *Per PR (required before a PR is labelled `merge-ready`; the author, scheduler budget ≤ 16 GB,
-    shared cache, no heavy lock):* `scripts/lake-serial-build.py FV FVTest` and the executables the
-    change affects (with the shared cache only the PR's modules and their dependents build);
-    `#print axioms` of new or changed theorems, and `scripts/axiom-audit.py` when a module the E2E
-    list depends on changed;
+  - *Per PR (the author, scheduler budget ≤ 16 GB, shared cache, no heavy lock):*
+    `scripts/lake-serial-build.py FV FVTest` and the executables the change affects (with the shared
+    cache only the PR's modules and their dependents build); `#print axioms` of new or changed theorems,
+    and `scripts/axiom-audit.py` when a module the E2E list depends on changed;
     the run-time gates whose inputs the PR touches: lowering/encoding/regalloc → `lean-backend-filetests.sh`,
     `lean-backend-encode-check.sh`; `FV/E2E`, `FV/Link`, scope predicates → `lean-e2e-check`,
     `link-check`; CLIF semantics → `clif-filetests.sh`, `opt-difftest.sh`; driver or `cargo-fv` →
-    `cargo fv test --lean-link --verified` (fv-demo and the survey); docs/scripts only → CI only. Then
-    open the PR (not draft) with the gate lines in its body, label it `merge-ready` and tell the
-    integrator. Authors do not merge.
-  - *Merge (one integrator):* as soon as a `merge-ready` PR has its per-PR gate lines in the body and
-    CI is green, the integrator rebases it on `origin/main` and squash-merges it (if the rebase is not
-    trivial, the author re-runs the per-PR gates first). Merges never wait for the full list.
+    `cargo fv test --lean-link --verified` (fv-demo and the survey); docs/scripts only → none.
+  - *Merge (the author, @kevaundray's decision of 2026-10-18):* when the per-PR gates pass, rebase on
+    `origin/main` (re-run the affected gates if the rebase is not trivial), open the PR (not draft) with
+    the gate lines in its body and squash-merge it at once. Merges wait neither for GitHub CI (a
+    post-merge signal, never a required check) nor for the full list. Tell the integrator the PR number
+    and the merge commit.
   - *Continuous main gate (the integrator, the only holder of the heavy lock):* a background loop runs
     the full list above on the newest `origin/main` tip, again and again, and posts each run (commit,
     gate lines, green/red) on the pinned issue
     [#261](https://github.com/eth-act/clifv/issues/261) with the last green commit. A red run is
     bisected between the last green commit and the red tip (with the shared cache each probe rebuilds
     only what changed); the culprit's author then opens a fix PR, or the integrator opens a revert PR,
-    and it merges ahead of the queue. A PR touching @codygunton's files or changing CLIF semantics
-    broadly (e.g. `Clif.Ty`) also merges on its per-PR gates, and a main-gate run starts right after it.
+    and it merges first. After a PR touching @codygunton's files or changing CLIF semantics broadly
+    (e.g. `Clif.Ty`) merges, the author tells the integrator, who starts a main-gate run right away.
 - When a WP lands, mark it here (`**done** (commit)`) and update §2.
 
 ## 8. Issues and claiming
