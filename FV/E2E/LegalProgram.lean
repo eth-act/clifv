@@ -120,13 +120,30 @@ theorem legalFacts {f : Function} (h : legalOkB f = true) : LegalFacts f := by
     refine ⟨hG.name, hG.slots, hG.sig, fun fn e hfe => hO.ext fn e hfe,
       ⟨helperNames f, by rw [he, List.map_append, expandExterns_names hes, helperExts_names],
         fun _ h => h⟩, fun hnf => ?_⟩
-    -- an indirect call of `f` is a `call_indirect` statement (no `try_call_indirect`, `Pre`)
-    have hci : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-        st.inst = .callIndirect sig callee args := by
-      refine Classical.byContradiction fun hno => hnf fun B hB => ⟨fun st hst sig callee args hi =>
-        hno ⟨B, hB, st, hst, sig, callee, args, hi⟩, fun c args et ht => hp.noTryInd B hB c args et ht⟩
-    obtain ⟨B, hB, st, hst, sig, callee, args, hi⟩ := check_callInd hchk hci
-    exact fun hif => (hif B hB).1 st hst sig callee args hi
+    -- an indirect call of `f` is a `call_indirect` statement or a `try_call_indirect`
+    -- terminator; the legalisation keeps both
+    by_cases hci : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
+        st.inst = .callIndirect sig callee args
+    · obtain ⟨B, hB, st, hst, sig, callee, args, hi⟩ := check_callInd hchk hci
+      exact fun hif => (hif B hB).1 st hst sig callee args hi
+    · have hti : ∃ B ∈ f.blocks, ∃ c args et, B.term = .tryCallIndirect c args et := by
+        refine Classical.byContradiction fun hno => hnf fun B hB =>
+          ⟨fun st hst sig callee args hi => hci ⟨B, hB, st, hst, sig, callee, args, hi⟩,
+            fun c args et ht => hno ⟨B, hB, c, args, et, ht⟩⟩
+      obtain ⟨B, hB, c, args, et, ht⟩ := check_tryInd hchk hti
+      exact fun hif => (hif B hB).2 c args et ht
+
+/-- `indPlainB`: no indirect call site of `f` has an `i128` signature. -/
+theorem indPlainB_sound {f : Function} (h : indPlainB f = true) {sig : Nat} {d : Signature}
+    (hs : IndSite f sig) (hd : f.sigDecls.lookup sig = some d) : sig128 d = false := by
+  simp only [indPlainB, List.all_eq_true, Bool.and_eq_true] at h
+  rcases hs with ⟨B, hB, st, hst, callee, args, hi⟩ | ⟨B, hB, c, args, et, ht, rfl⟩
+  · have := (h B hB).1 st hst
+    simp only [hi, hd] at this
+    simpa using this
+  · have := (h B hB).2
+    simp only [ht, hd] at this
+    simpa using this
 
 theorem legalProg_names (P : Program) :
     (legalProg P).funcs.map (·.name) = P.funcs.map (·.name) ∨
@@ -136,55 +153,6 @@ theorem legalProg_names (P : Program) :
     simp only [legalProg_funcs, List.map_map]
     exact List.map_congr_left fun f hf => (legalFacts (h f hf)).name
   · exact .inr h
-
-/-! ## The ABI expansion without `i128` -/
-
-theorem expRel_refl_plain : ∀ {ps : List AbiParam} {gs : List (List SlotEl)} {vs : List Val},
-    GroupsOf ps gs → (∀ p ∈ ps, p.ty ≠ .i128) → vs.length = ps.length → ExpRel gs vs vs
-  | [], [], [], _, _, _ => trivial
-  | p :: ps, g :: gs, v :: vs, hg, hn, hl => by
-    obtain ⟨hg1, hg2⟩ := hg
-    rcases hg1 with ⟨rfl, -⟩ | ⟨hpt, -⟩
-    · exact ⟨rfl, expRel_refl_plain hg2 (fun q hq => hn q (List.mem_cons_of_mem _ hq))
-        (by simpa using hl)⟩
-    · exact absurd hpt (hn p (List.mem_cons_self ..))
-  | [], _ :: _, _, hg, _, _ => by cases hg
-  | _ :: _, [], _, hg, _, _ => by cases hg
-  | [], [], _ :: _, _, _, hl => by simp at hl
-  | _ :: _, _ :: _, [], _, _, hl => by simp at hl
-
-theorem sig128_params {s : Signature} (h : sig128 s = false) : ∀ p ∈ s.params, p.ty ≠ .i128 := by
-  simp only [sig128, List.any_eq_false, beq_iff_eq, List.mem_append] at h
-  exact fun p hp => h p (.inl hp)
-
-theorem sig128_returns {s : Signature} (h : sig128 s = false) : ∀ p ∈ s.returns, p.ty ≠ .i128 := by
-  simp only [sig128, List.any_eq_false, beq_iff_eq, List.mem_append] at h
-  exact fun p hp => h p (.inr hp)
-
-theorem groups_plain {ps : List AbiParam} (h : ∀ p ∈ ps, p.ty ≠ .i128) :
-    ∃ gs, groups ps = some gs ∧ GroupsOf ps gs := by
-  have hs : sig128 { params := ps } = false := by
-    simp only [sig128, List.any_eq_false, beq_iff_eq, List.append_nil]
-    exact h
-  obtain ⟨gs, rg, hgs, -, -, -⟩ := sigExp_spec (Complete.sigExp_plain hs)
-  exact ⟨gs, hgs, groups_spec hgs⟩
-
-/-- A signature without `i128` whose parameter and return types are another's: the other has no
-`i128` either. -/
-theorem sig128_of_tys {d s : Signature} (hd : sig128 d = false)
-    (hp : AbiParam.tys d.params = AbiParam.tys s.params)
-    (hr : AbiParam.tys d.returns = AbiParam.tys s.returns) : sig128 s = false := by
-  simp only [sig128, List.any_eq_false, beq_iff_eq, List.mem_append] at hd ⊢
-  intro p hp'
-  rcases hp' with hp' | hp'
-  · have : p.ty ∈ AbiParam.tys s.params := List.mem_map_of_mem hp'
-    rw [← hp] at this
-    obtain ⟨q, hq, he⟩ := List.mem_map.mp this
-    rw [← he]; exact hd q (.inl hq)
-  · have : p.ty ∈ AbiParam.tys s.returns := List.mem_map_of_mem hp'
-    rw [← hr] at this
-    obtain ⟨q, hq, he⟩ := List.mem_map.mp this
-    rw [← he]; exact hd q (.inr hq)
 
 /-! ## Reachability -/
 
@@ -1282,11 +1250,13 @@ theorem root_refines {P : Program} {B : Env} {syms : String → Option Nat}
               obtain ⟨h', hb', hrel⟩ := hbase.2.1.at ex.name ex.sig hs he
               exact ⟨h', by rw [tgtEnv_none (hC.func?_none hpn)]; exact hb', hrel⟩
           keep := keep_guard hF hbase.2.2
-          ind := fun _ => ⟨rfl, fun B hB st hst sig callee args d hi hd =>
-            callIndRel_link hC ih (hp.callInd B hB st hst sig callee args hi d hd)⟩ }
+          ind := fun _ => ⟨rfl, fun sig d hs hd =>
+            have hd128 := indPlainB_sound (Complete.legalOkB_indPlain (hC.ok h hh) hp.mentions) hs hd
+            callIndRel2_of_plain hd128 (callIndRel_link hC ih hd128)⟩ }
       have hT := noMemTrap_guard hF M hh hioG hUI hG
       have hI : NoIndInternal (guardEnv B P (SomeInd (legalProg P)) syms M) P.bare h
-          ⟨fr, [], m1⟩ := fun _ _ _ _ _ _ _ _ _ _ _ _ g hg => nomatch hg
+          ⟨fr, [], m1⟩ := fun _ _ => ⟨(fun _ _ _ _ _ _ _ _ _ _ g hg => nomatch hg),
+            (fun _ _ _ _ _ _ _ _ g hg => nomatch hg)⟩
       have href := fun n => legalize_refines2 hp hc hE2 hb hb' hE.func h2 h3 h4 h5 hE.func' h2'
         h3' h5' hE.slots hE.exp (hG _ (.refl _)).1 hT hI n
       exact ⟨fun n rv m2 hr _ => (href n).1 rv m2 hr, fun n c hr => (href n).2 c hr⟩

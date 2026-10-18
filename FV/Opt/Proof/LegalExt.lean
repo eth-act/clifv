@@ -178,6 +178,53 @@ theorem expRel_val : ∀ {ps : List AbiParam} {gs : List (List SlotEl)} {vs vs' 
     rcases g with _ | ⟨e, _ | ⟨e2, _ | ⟨e3, _ | _⟩⟩⟩ <;> (try cases e) <;> (try cases e2) <;>
       (try cases e3) <;> simp [ExpRel] at he
 
+/-! ## The ABI expansion without `i128` -/
+
+theorem expRel_refl_plain : ∀ {ps : List AbiParam} {gs : List (List SlotEl)} {vs : List Val},
+    GroupsOf ps gs → (∀ p ∈ ps, p.ty ≠ .i128) → vs.length = ps.length → ExpRel gs vs vs
+  | [], [], [], _, _, _ => trivial
+  | p :: ps, g :: gs, v :: vs, hg, hn, hl => by
+    obtain ⟨hg1, hg2⟩ := hg
+    rcases hg1 with ⟨rfl, -⟩ | ⟨hpt, -⟩
+    · exact ⟨rfl, expRel_refl_plain hg2 (fun q hq => hn q (List.mem_cons_of_mem _ hq))
+        (by simpa using hl)⟩
+    · exact absurd hpt (hn p (List.mem_cons_self ..))
+  | [], _ :: _, _, hg, _, _ => by cases hg
+  | _ :: _, [], _, hg, _, _ => by cases hg
+  | [], [], _ :: _, _, _, hl => by simp at hl
+  | _ :: _, _ :: _, [], _, _, hl => by simp at hl
+
+theorem sig128_params {s : Signature} (h : sig128 s = false) : ∀ p ∈ s.params, p.ty ≠ .i128 := by
+  simp only [sig128, List.any_eq_false, beq_iff_eq, List.mem_append] at h
+  exact fun p hp => h p (.inl hp)
+
+theorem sig128_returns {s : Signature} (h : sig128 s = false) : ∀ p ∈ s.returns, p.ty ≠ .i128 := by
+  simp only [sig128, List.any_eq_false, beq_iff_eq, List.mem_append] at h
+  exact fun p hp => h p (.inr hp)
+
+theorem groups_plain {ps : List AbiParam} (h : ∀ p ∈ ps, p.ty ≠ .i128) :
+    ∃ gs, groups ps = some gs ∧ GroupsOf ps gs := by
+  have hgs : groups ps = some (ps.map fun p => [SlotEl.val p]) := by
+    simp [groups, expandGroups, Complete.go_plain ps 0 0 0 h, Except.toOption]
+  exact ⟨_, hgs, groups_spec hgs⟩
+
+/-- A signature without `i128` whose parameter and return types are another's: the other has no
+`i128` either. -/
+theorem sig128_of_tys {d s : Signature} (hd : sig128 d = false)
+    (hp : AbiParam.tys d.params = AbiParam.tys s.params)
+    (hr : AbiParam.tys d.returns = AbiParam.tys s.returns) : sig128 s = false := by
+  simp only [sig128, List.any_eq_false, beq_iff_eq, List.mem_append] at hd ⊢
+  intro p hp'
+  rcases hp' with hp' | hp'
+  · have : p.ty ∈ AbiParam.tys s.params := List.mem_map_of_mem hp'
+    rw [← hp] at this
+    obtain ⟨q, hq, he⟩ := List.mem_map.mp this
+    rw [← he]; exact hd q (.inl hq)
+  · have : p.ty ∈ AbiParam.tys s.returns := List.mem_map_of_mem hp'
+    rw [← hr] at this
+    obtain ⟨q, hq, he⟩ := List.mem_map.mp this
+    rw [← he]; exact hd q (.inr hq)
+
 /-! ## Environment contracts -/
 
 /-- The `__*ti3` helpers compute `Sem.div` at `i128` on the halves. -/

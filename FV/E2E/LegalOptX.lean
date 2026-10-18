@@ -32,9 +32,9 @@ theorem legal_opt_refines {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (hK : Opt.Legal.EnvKeepsAllocs env) (hE : Opt.EnvKeepsSymbols env)
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
-    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args) →
+    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
+    (hsigs : Opt.Legal.Ind128 f → ∀ n s, env.sigOf n = some s → Opt.Legalize128.sig128 s = false)
     {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
     (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
@@ -47,7 +47,7 @@ theorem legal_opt_refines {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (∀ c, Clif.runLoop env p fuel cs = .trapped c → ∃ n',
       Clif.runLoop env (Opt.optimizeProgramExe p' cfg) n' (optEntryX cfg g cs') = .trapped c) := by
   let C : Opt.Legal.Ctx := ⟨f, g, cert⟩
-  have hEnv : Opt.Legal.EnvOk env C p p' := ⟨hext, hext', hH, hXL, hK, hind⟩
+  have hEnv : Opt.Legal.EnvOk env C p p' := ⟨hext, hext', hH, hXL, hK, hind, hsigs⟩
   obtain ⟨b, hb, h2, h3, h4, h5⟩ := hcs.entry
   obtain ⟨b', hb', h2', h3', -, h5'⟩ := hcs'.entry
   have hT := noMemTrap_of_trapsExplicit htrS hcs.callers
@@ -75,9 +75,9 @@ theorem armRefinesLegal_of {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
     (hK : Opt.Legal.EnvKeepsAllocs env) (hE : Opt.EnvKeepsSymbols env)
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
-    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args) →
+    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
+    (hsigs : Opt.Legal.Ind128 f → ∀ n s, env.sigOf n = some s → Opt.Legalize128.sig128 s = false)
     {args args' : List Clif.Val} {cs cs' : Clif.State}
     (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
     (hcs : ClifEntry f args cs) (hcs' : ClifEntry g args' cs')
@@ -88,7 +88,7 @@ theorem armRefinesLegal_of {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
       (Clif.runLoop env (Opt.optimizeProgramExe p' cfg) n (optEntryX cfg g cs'))) (fuel : Nat) :
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra astep s
       (Clif.runLoop env p fuel cs) := by
-  obtain ⟨hr1, hr2⟩ := legal_opt_refines hchk cfg hr ha hH hXL hK hE hext hext' hind hexp hcs hcs'
+  obtain ⟨hr1, hr2⟩ := legal_opt_refines hchk cfg hr ha hH hXL hK hE hext hext' hind hsigs hexp hcs hcs'
     hsl hmem hM htrS fuel
   cases hrun : Clif.runLoop env p fuel cs with
   | returned vals m1 =>
@@ -120,9 +120,9 @@ theorem backend_correct_legal_opt_env {f g : Clif.Function} {cert : Opt.Legalize
     (hK : Opt.Legal.EnvKeepsAllocs env) (hE : Opt.EnvKeepsSymbols env)
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
-    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args) →
+    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
+    (hsigs : Opt.Legal.Ind128 f → ∀ n s, env.sigOf n = some s → Opt.Legalize128.sig128 s = false)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
@@ -152,7 +152,7 @@ theorem backend_correct_legal_opt_env {f g : Clif.Function} {cert : Opt.Legalize
       (Clif.runLoop env p fuel cs) := by
   have hF := optimizeExe_shape cfg g
   have hM : Opt.Legal.MemBounded cs.mem := hmem ▸ memBounded_of_holds hrel
-  refine armRefinesLegal_of hchk cfg hr ha hH hXL hK hE hext hext' hind hexp hcs hcs' hsl hmem hM
+  refine armRefinesLegal_of hchk cfg hr ha hH hXL hK hE hext hext' hind hsigs hexp hcs hcs' hsl hmem hM
     htrS (fun n => ?_) fuel
   obtain ⟨hcs'', hsl', hmem', -⟩ := optExe_entry cfg hr ha hE hcs' 0 (p := p')
   exact backend_correct_final (inSubset_optExe cfg hsub) hc hcov hC hCT hTls
@@ -174,9 +174,9 @@ theorem backend_correct_legal_opt_env_cleanup {f g : Clif.Function} {cert : Opt.
     (hK : Opt.Legal.EnvKeepsAllocs env) (hE : Opt.EnvKeepsSymbols env)
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
-    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args) →
+    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
+    (hsigs : Opt.Legal.Ind128 f → ∀ n s, env.sigOf n = some s → Opt.Legalize128.sig128 s = false)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
       (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
@@ -206,7 +206,7 @@ theorem backend_correct_legal_opt_env_cleanup {f g : Clif.Function} {cert : Opt.
       (Clif.runLoop env p fuel cs) := by
   have hF := optimizeExe_shape cfg g
   have hM : Opt.Legal.MemBounded cs.mem := hmem ▸ memBounded_of_holds hrel
-  refine armRefinesLegal_of hchk cfg hr ha hH hXL hK hE hext hext' hind hexp hcs hcs' hsl hmem hM
+  refine armRefinesLegal_of hchk cfg hr ha hH hXL hK hE hext hext' hind hsigs hexp hcs hcs' hsl hmem hM
     htrS (fun n => ?_) fuel
   obtain ⟨hcs'', hsl', hmem', -⟩ := optExe_entry cfg hr ha hE hcs' 0 (p := p')
   exact backend_correct_final_cleanup (inSubset_optExe cfg hsub) hc hcov hC hCT hTls
@@ -299,8 +299,7 @@ theorem backend_correct_legal_opt {f g : Clif.Function} {cert : Opt.Legalize128.
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
-    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args) →
+    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
@@ -332,6 +331,7 @@ theorem backend_correct_legal_opt {f g : Clif.Function} {cert : Opt.Legalize128.
       (Clif.runLoop Clif.Rust.env p fuel cs) :=
   backend_correct_legal_opt_env hchk cfg hr ha hsub hc Clif.Rust.helperOk_env
     Clif.Rust.extLegal_env Clif.Rust.envKeepsAllocs_env RustSyms.envKeepsSymbols_env hext hext' hind
+    (fun _ _ _ h => by cases h)
     hcov hC hCT hTls hX hXI hsym hslot hent hres hbe hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
 
 /-- **`backend_correct_legal_opt` for the backend with the dead-instruction cleanup.** -/
@@ -345,8 +345,7 @@ theorem backend_correct_legal_opt_cleanup {f g : Clif.Function} {cert : Opt.Lega
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
-    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args) →
+    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
@@ -378,6 +377,7 @@ theorem backend_correct_legal_opt_cleanup {f g : Clif.Function} {cert : Opt.Lega
       (Clif.runLoop Clif.Rust.env p fuel cs) :=
   backend_correct_legal_opt_env_cleanup hchk cfg hr ha hsub hc Clif.Rust.helperOk_env
     Clif.Rust.extLegal_env Clif.Rust.envKeepsAllocs_env RustSyms.envKeepsSymbols_env hext hext' hind
+    (fun _ _ _ h => by cases h)
     hcov hC hCT hTls hX hXI hsym hslot hent hres hbe hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
 
 end E2E

@@ -19,9 +19,10 @@ theorem backend_correct_legal_env_cleanup {f g : Clif.Function} {cert : Opt.Lega
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
     -- an indirect call of `f` resolves to the same extern in both programs
-    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args) →
+    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
+    -- at an indirect call with an `i128` signature, no known signature has `i128`
+    (hsigs : Opt.Legal.Ind128 f → ∀ n s, env.sigOf n = some s → Opt.Legalize128.sig128 s = false)
     -- `backend_correct_final`'s premises about `g`
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
@@ -51,7 +52,7 @@ theorem backend_correct_legal_env_cleanup {f g : Clif.Function} {cert : Opt.Lega
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop env p fuel cs) := by
   let C : Opt.Legal.Ctx := ⟨f, g, cert⟩
-  have hE : Opt.Legal.EnvOk env C p p' := ⟨hext, hext', hH, hXL, hK, hind⟩
+  have hE : Opt.Legal.EnvOk env C p p' := ⟨hext, hext', hH, hXL, hK, hind, hsigs⟩
   obtain ⟨b, hb, h2, h3, h4, h5⟩ := hcs.entry
   obtain ⟨b', hb', h2', h3', -, h5'⟩ := hcs'.entry
   have hM : Opt.Legal.MemBounded cs.mem := hmem ▸ memBounded_of_holds hrel
@@ -95,8 +96,7 @@ theorem backend_correct_legal_cleanup {f g : Clif.Function} {cert : Opt.Legalize
     {X : ExtSem} {H : ArmHooks} {syms : String → Option Nat} {slotOff K : Nat}
     (hext : ∀ fn e, f.extern? fn = some e → p.func? e.name = none)
     (hext' : ∀ fn e, g.extern? fn = some e → p'.func? e.name = none)
-    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args) →
+    (hind : (∃ sig, Opt.Legal.IndSite f sig) →
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames)
     (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
     (hC : ∀ s, CalleeOk
@@ -126,7 +126,7 @@ theorem backend_correct_legal_cleanup {f g : Clif.Function} {cert : Opt.Legalize
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop Clif.Rust.env p fuel cs) :=
   backend_correct_legal_env_cleanup hchk hsub hc Clif.Rust.helperOk_env Clif.Rust.extLegal_env
-    Clif.Rust.envKeepsAllocs_env hext hext' hind hcov hC hCT hTls hX hXI hsym hslot hent hres hbe
+    Clif.Rust.envKeepsAllocs_env hext hext' hind (fun _ _ _ h => by cases h) hcov hC hCT hTls hX hXI hsym hslot hent hres hbe
     hexp hargs hcs hcs' hsl hmem hrel htrS htr fuel
 
 /-- **Specialisation**: for a legalisation without `try_call`/`try_call_indirect` (`hnt`) and
@@ -167,8 +167,13 @@ theorem backend_correct_legal_callFree_cleanup {f g : Clif.Function} {cert : Opt
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop Clif.Rust.env p fuel cs) :=
   backend_correct_legal_cleanup hchk hsub hc hext hext'
-    (fun h => absurd (Opt.Legal.check_callInd hchk h) fun ⟨B, hB, st, hst, sig, callee, args, hi⟩ =>
-      hci B hB st hst sig callee args hi)
+    (fun ⟨_, h⟩ => h.elim
+      (fun ⟨B, hB, st, hst, callee, args, hi⟩ =>
+        absurd (Opt.Legal.check_callInd hchk ⟨B, hB, st, hst, _, callee, args, hi⟩)
+          fun ⟨B, hB, st, hst, sig, callee, args, hi⟩ => hci B hB st hst sig callee args hi)
+      (fun ⟨B, hB, c, args, et, ht, _⟩ =>
+        absurd (Opt.Legal.check_tryInd hchk ⟨B, hB, c, args, et, ht⟩)
+          fun ⟨B, hB, c, args, et, ht⟩ => by have := hnt B hB; rw [ht] at this; cases this))
     hcov hC (fun ⟨B, hB, h⟩ => by rw [hnt B hB] at h; cases h) hTls hX
     (fun _ => by
       rw [indSigs_eq_nil hci fun B hB callee args et e => by
