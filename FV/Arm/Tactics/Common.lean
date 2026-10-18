@@ -99,6 +99,7 @@ def getStateFieldString? (e : Expr) : MetaM (Option String) := OptionT.run do
   | Arm.StateField.PC         => return "pc"
   | Arm.StateField.FLAG pExpr => getPFlagString? pExpr
   | Arm.StateField.ERR        => return "err"
+  | Arm.StateField.TPIDR      => return "tpidr"
   | _                     => panic! s!"[getStateFieldName?] Unexpected expression: {e}"
 
 /-- Given a ground term `e` of type `Nat`, fully reduce it,
@@ -160,6 +161,7 @@ def reflectStateField (e : Expr) : MetaM StateField :=
     | Arm.StateField.PC     => pure StateField.PC
     | Arm.StateField.FLAG f => StateField.FLAG <$> reflectPFLag f
     | Arm.StateField.ERR    => pure StateField.ERR
+    | Arm.StateField.TPIDR  => pure StateField.TPIDR
     | _ =>
       let sf := mkConst ``Arm.StateField
       throwError "Expected a `{sf}` constructor, found:\n  {e}"

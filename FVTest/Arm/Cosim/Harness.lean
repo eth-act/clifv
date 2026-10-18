@@ -4,26 +4,27 @@ Released under Apache 2.0 license.
 
 Co-simulation harness: the `FV.Arm` model against `qemu-aarch64-static`.
 
-A test case is one instruction word plus an initial machine state (x0–x30, SP, NZCV, v0–v30 and a
-64-byte data buffer). FPCR is 0 (Linux's initial value, checked at `_start` and rewritten before
-every test): the model fixes FPCR = 0. A batch of test cases becomes one freestanding aarch64
-program:
+A test case is one instruction word plus an initial machine state (x0–x30, SP, NZCV, v0–v30,
+TPIDR_EL0 and a 64-byte data buffer). FPCR is 0 (Linux's initial value, checked at `_start` and
+rewritten before every test): the model fixes FPCR = 0. A batch of test cases becomes one
+freestanding aarch64 program:
 
 * The data section holds one *init record* per test (layout below). Register values are
   assembler expressions, so a base register can point into the test's own buffer
   (`buf_i + delta`) and a branch-target register can hold a landing-pad address.
 * `_start` installs a `SIGILL` handler (for `udf`), writes all init records to stdout, then runs
-  each test: load v0–v30, NZCV, SP, x0–x30 from the record, execute the instruction at `ins_i`.
-  Control then reaches a landing pad `pad_i_j = ins_i + 4j` (fall-through is `j = 1`; branch
-  tests get pads on both sides), whose handler stashes x0 in d31 and the pad address in
-  `TPIDR_EL0` and jumps to `dump`, which stores x0–x30, SP, NZCV, PC(= pad address) and v0–v30
-  into the test's *result record*. A `udf` test reaches the `SIGILL` handler instead, which
-  copies the same fields from the signal frame's `ucontext`.
+  each test: load v0–v30, NZCV, TPIDR_EL0, SP, x0–x30 from the record, execute the instruction at
+  `ins_i`. Control then reaches a landing pad `pad_i_j = ins_i + 4j` (fall-through is `j = 1`;
+  branch tests get pads on both sides), whose handler stashes x0 in the low half of v31 and the
+  pad address in its upper half and jumps to `dump`, which stores x0–x30, SP, NZCV, PC(= pad
+  address), TPIDR_EL0 and v0–v30 into the test's *result record*. A `udf` test reaches the
+  `SIGILL` handler instead, which copies the same fields from the signal frame's `ucontext`
+  (TPIDR_EL0, which signal delivery keeps, from the register).
 * Finally the program writes all result records, then the init records again (whose buffers now
   hold the memory after each test), and exits.
 
-The harness itself uses only v31 and `TPIDR_EL0` as scratch, so test instructions may use any of
-x0–x30, SP, NZCV and v0–v30.
+The harness itself uses only v31 as scratch, so test instructions may use any of x0–x30, SP,
+NZCV, TPIDR_EL0 and v0–v30.
 
 Lean then rebuilds each initial state from the echoed init record (so label-valued registers are
 the linked addresses), runs `Arm.stepi` once, and compares every field.
@@ -157,6 +158,8 @@ structure TestCase where
   name : String
   inst : UInt32
   kind : Kind := .normal
+  /-- TPIDR_EL0 (the thread pointer). -/
+  tpidr : UInt64 := 0
   /-- Assembler expressions for x0..x30 (31 entries). -/
   regs : Array String
   sp : String
@@ -192,12 +195,13 @@ def randomCase (name : String) (inst : UInt32) : GenM TestCase := do
   let mut regs := #[]
   for _ in [0:31] do regs := regs.push (lit (← randVal))
   let sp := lit (← randVal)
+  let tpidr ← randVal
   let nzcv ← bits 4
   let mut simd := #[]
   for _ in [0:31] do simd := simd.push ((← randVal), (← randVal))
   let mut buf := #[]
   for _ in [0:64] do buf := buf.push (← bits 8).toUInt8
-  return { name, inst, regs, sp, nzcv, simd, buf }
+  return { name, inst, regs, sp, nzcv, simd, buf, tpidr }
 
 /-- A random float of `dbl ? binary64 : binary32` in the low bits of a 128-bit register value
 (the other bits random). -/
@@ -223,6 +227,7 @@ def offNZCV : Nat := 256
 def offPC : Nat := 264
 def offV : Nat := 272
 def offBufAddr : Nat := 768
+def offTPIDR : Nat := 776
 def offBuf : Nat := 784
 def recSize : Nat := 848
 
@@ -234,7 +239,7 @@ def emitInit (i : Nat) (tc : TestCase) : String := Id.run do
   let start := if tc.pre.isEmpty then insLabel i else s!"pre_{i}"
   s := s ++ s!"  .quad {tc.sp}\n  .quad {hex (tc.nzcv <<< 28)}\n  .quad {start}\n"
   for (lo, hi) in tc.simd do s := s ++ s!"  .quad {lit lo}, {lit hi}\n"
-  s := s ++ s!"  .quad {bufLabel i}\n  .quad 0\n{bufLabel i}:\n"
+  s := s ++ s!"  .quad {bufLabel i}\n  .quad {lit tc.tpidr}\n{bufLabel i}:\n"
   s := s ++ "  .byte " ++ ", ".intercalate (tc.buf.toList.map (fun b => toString b.toNat)) ++ "\n"
   return s
 
@@ -251,7 +256,8 @@ def emitCode (i : Nat) (tc : TestCase) (next : String) : String := Id.run do
   for k in [0:15] do
     s := s ++ s!"  ldp q{2*k}, q{2*k+1}, [x30, #{offV + 32*k}]\n"
   s := s ++ s!"  ldr q30, [x30, #{offV + 16*30}]\n"
-  s := s ++ s!"  ldr x0, [x30, #{offNZCV}]\n  msr nzcv, x0\n  ldr x0, [x30, #{offSP}]\n  mov sp, x0\n"
+  s := s ++ s!"  ldr x0, [x30, #{offNZCV}]\n  msr nzcv, x0\n  ldr x0, [x30, #{offTPIDR}]\n" ++
+    s!"  msr tpidr_el0, x0\n  ldr x0, [x30, #{offSP}]\n  mov sp, x0\n"
   for k in [0:15] do
     s := s ++ s!"  ldp x{2*k}, x{2*k+1}, [x30, #{16*k}]\n"
   s := s ++ "  ldr x30, [x30, #240]\n"
@@ -279,7 +285,7 @@ def emitCode (i : Nat) (tc : TestCase) (next : String) : String := Id.run do
       (List.range fwd).map (fun (m : Nat) => (m : Int) + 1)
   for j in pads do
     s := s ++ s!"hnd_{padLabel i j}:\n  fmov d31, x0\n" ++ adrl "x0" (padLabel i j) ++
-      "  msr tpidr_el0, x0\n  b dump\n"
+      "  mov v31.d[1], x0\n  b dump\n"
   return s
 
 /-- Fixed program text: entry, dump routine, SIGILL handler, write loop. -/
@@ -300,13 +306,14 @@ def prelude : String := Id.run do
   -- writeall(x1 = buf, x2 = len)
   s := s ++ "writeall:\n  cbz x2, 2f\n1:\n  mov x0, #1\n  mov x8, #64\n  svc #0\n  cmp x0, #0\n" ++
     "  b.le fail\n  add x1, x1, x0\n  subs x2, x2, x0\n  b.ne 1b\n2:\n  ret\n"
-  -- dump: x0 in d31, pad address in TPIDR_EL0
+  -- dump: x0 in v31.d[0], pad address in v31.d[1]
   s := s ++ "dump:\n  adrp x0, cur\n  ldr x0, [x0, :lo12:cur]\n  str x1, [x0, #8]\n"
   for k in [1:15] do
     s := s ++ s!"  stp x{2*k}, x{2*k+1}, [x0, #{16*k}]\n"
   s := s ++ "  str x30, [x0, #240]\n  fmov x1, d31\n  str x1, [x0]\n"
   s := s ++ s!"  mov x1, sp\n  str x1, [x0, #{offSP}]\n  mrs x1, nzcv\n  str x1, [x0, #{offNZCV}]\n"
-  s := s ++ s!"  mrs x1, tpidr_el0\n  str x1, [x0, #{offPC}]\n"
+  s := s ++ s!"  mov x1, v31.d[1]\n  str x1, [x0, #{offPC}]\n"
+  s := s ++ s!"  mrs x1, tpidr_el0\n  str x1, [x0, #{offTPIDR}]\n"
   for k in [0:15] do
     s := s ++ s!"  stp q{2*k}, q{2*k+1}, [x0, #{offV + 32*k}]\n"
   s := s ++ s!"  str q30, [x0, #{offV + 16*30}]\n"
@@ -319,6 +326,7 @@ def prelude : String := Id.run do
   s := s ++ s!"  ldr x3, [x2, #432]\n  str x3, [x0, #{offSP}]\n"
   s := s ++ s!"  ldr x3, [x2, #448]\n  and x3, x3, #0xf0000000\n  str x3, [x0, #{offNZCV}]\n"
   s := s ++ s!"  ldr x3, [x2, #440]\n  str x3, [x0, #{offPC}]\n"
+  s := s ++ s!"  mrs x3, tpidr_el0\n  str x3, [x0, #{offTPIDR}]\n"
   for k in [0:31] do
     s := s ++ s!"  ldr q3, [x2, #{480 + 16*k}]\n  str q3, [x0, #{offV + 16*k}]\n"
   s := s ++ "  adrp x1, cur\n  add x1, x1, :lo12:cur\n  ldr x1, [x1, #8]\n  br x1\n"
@@ -370,6 +378,7 @@ def initState (b : ByteArray) (o : Nat) (insts : Array UInt32) : ArmState × Bit
   for k in [0:31] do
     s := w (.SFP (BitVec.ofNat 5 k)) (bv128At b (o + offV + 16 * k)) s
   s := w .PC pc s
+  s := w .TPIDR (bv64At b (o + offTPIDR)) s
   let buf := bv64At b (o + offBufAddr)
   for k in [0:64] do
     s := write_mem (buf + BitVec.ofNat 64 k) (BitVec.ofNat 8 (b.get! (o + offBuf + k)).toNat) s
@@ -398,6 +407,9 @@ def compare (tc : TestCase) (s : ArmState) (bufAddr : BitVec 64)
   let mpc := r .PC s
   let qpc := bv64At res (ro + offPC)
   if mpc != qpc then errs := errs.push s!"pc: model {mpc.toHex} qemu {qpc.toHex}"
+  let mtp := r .TPIDR s
+  let qtp := bv64At res (ro + offTPIDR)
+  if mtp != qtp then errs := errs.push s!"tpidr_el0: model {mtp.toHex} qemu {qtp.toHex}"
   for k in [0:31] do
     let m := r (.SFP (BitVec.ofNat 5 k)) s
     let q := bv128At res (ro + offV + 16 * k)

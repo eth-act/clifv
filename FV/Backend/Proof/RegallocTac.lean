@@ -22,7 +22,7 @@ attribute [csimp_rules] execMInst MInst.lines execLines
   Arm.DPR.exec_data_processing_two_source Arm.DPR.exec_data_processing_shift
   Arm.DPR.exec_data_processing_div Arm.DPR.exec_data_processing_three_source
   Arm.DPR.exec_data_processing_mulh Arm.DPR.exec_data_processing_madd
-  Arm.DPR.exec_data_processing_msub Arm.DPR.exec_add_sub_carry
+  Arm.DPR.exec_data_processing_msub Arm.DPR.exec_data_processing_maddl Arm.DPR.exec_add_sub_carry
   Arm.DPR.exec_add_sub_ext_reg Arm.DPR.exec_conditional_select
   Arm.DPR.exec_conditional_compare_reg Arm.DPR.exec_conditional_compare_imm
   Arm.DPR.conditional_compare Arm.DPR.exec_data_processing_one_source

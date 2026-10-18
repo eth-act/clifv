@@ -5,8 +5,9 @@ Author(s): Nathan Wetzler
 -/
 -- MADD, MSUB (32-, 64-bit); SMADDL, SMSUBL, SMULH, UMADDL, UMSUBL, UMULH
 -- Modified by fv-compiler-rust (2026): ported to Lean v4.34.1, module prefix FV.Arm, wrapped in
--- namespace Arm; MSUB, SMULH and UMULH implemented (upstream: MADD only), transcribed from the
--- Arm ARM (DDI 0487) ASL (see `exec_data_processing_msub` and `exec_data_processing_mulh`).
+-- namespace Arm; MSUB, SMADDL, SMSUBL, UMADDL, UMSUBL, SMULH and UMULH implemented (upstream:
+-- MADD only), transcribed from the Arm ARM (DDI 0487) ASL (see `exec_data_processing_msub`,
+-- `exec_data_processing_maddl` and `exec_data_processing_mulh`).
 
 import FV.Arm.Decode
 import FV.Arm.Insts.Common
@@ -77,6 +78,36 @@ def exec_data_processing_mulh (unsigned : Bool)
   let s := write_pc ((read_pc s) + 4#64) s
   s
 
+/-- (FV addition) SMADDL / SMSUBL / UMADDL / UMSUBL (64-bit only). Arm ARM (DDI 0487)
+"SMADDL"/"SMSUBL"/"UMADDL"/"UMSUBL" ASL (`unsigned = (U == '1')` with `U = op31<2>`,
+`sub_op = (o0 == '1')`):
+```
+bits(32) operand1 = X[n, 32]; bits(32) operand2 = X[m, 32]; bits(64) operand3 = X[a, 64];
+integer result;
+if sub_op then
+    result = Int(operand3, unsigned) - (Int(operand1, unsigned) * Int(operand2, unsigned));
+else
+    result = Int(operand3, unsigned) + (Int(operand1, unsigned) * Int(operand2, unsigned));
+X[d, 64] = result<63:0>;
+```
+The product of two 32-bit integers fits in 64 bits, so `result<63:0>` is the 64-bit modular
+sum/difference of `operand3` and the product of the 64-bit (sign/zero) extensions.
+Cross-checked against VeriISLE `MInst.AluRRRR` (`SMAddL`/`UMAddL`) in
+cranelift/codegen/src/isa/aarch64/spec/alu_rrrr.isle. -/
+@[state_simp_rules]
+def exec_data_processing_maddl (unsigned sub_op : Bool)
+  (inst : Data_processing_three_source_cls) (s : ArmState) : ArmState :=
+  let operand1 := read_gpr_zr 32 inst.Rn s
+  let operand2 := read_gpr_zr 32 inst.Rm s
+  let operand3 := read_gpr_zr 64 inst.Ra s
+  let ext : BitVec 32 → BitVec 64 :=
+    if unsigned then zeroExtend 64 else signExtend 64
+  let product := (ext operand1) * (ext operand2)
+  let result := if sub_op then operand3 - product else operand3 + product
+  let s := write_gpr_zr 64 inst.Rd result s
+  let s := write_pc ((read_pc s) + 4#64) s
+  s
+
 @[state_simp_rules]
 def exec_data_processing_three_source
   (inst : Data_processing_three_source_cls) (s : ArmState) : ArmState :=
@@ -102,11 +133,11 @@ def exec_data_processing_three_source
       => (true, false) -- Unallocated
     | 0b1#1, 0b00#2, 0b000#3, 0b0#1 => (false, false) -- MADD (64-bit)
     | 0b1#1, 0b00#2, 0b000#3, 0b1#1 => (false, false) -- MSUB (64-bit)
-    | 0b1#1, 0b00#2, 0b001#3, 0b0#1 => (false, true)  -- SMADDL
-    | 0b1#1, 0b00#2, 0b001#3, 0b1#1 => (false, true)  -- SMSUBL
+    | 0b1#1, 0b00#2, 0b001#3, 0b0#1 => (false, false) -- SMADDL
+    | 0b1#1, 0b00#2, 0b001#3, 0b1#1 => (false, false) -- SMSUBL
     | 0b1#1, 0b00#2, 0b010#3, 0b0#1 => (false, false) -- SMULH
-    | 0b1#1, 0b00#2, 0b101#3, 0b0#1 => (false, true)  -- UMADDL
-    | 0b1#1, 0b00#2, 0b101#3, 0b1#1 => (false, true)  -- UMSUBL
+    | 0b1#1, 0b00#2, 0b101#3, 0b0#1 => (false, false) -- UMADDL
+    | 0b1#1, 0b00#2, 0b101#3, 0b1#1 => (false, false) -- UMSUBL
     | 0b1#1, 0b00#2, 0b110#3, 0b0#1 => (false, false) -- UMULH
     | _, _, _, _ => (true, false)
   if illegal then
@@ -119,6 +150,10 @@ def exec_data_processing_three_source
     | 0b1#1, 0b00#2, 0b000#3, 0b0#1 => exec_data_processing_madd inst s -- MADD (64-bit)
     | 0b0#1, 0b00#2, 0b000#3, 0b1#1 => exec_data_processing_msub inst s -- MSUB (32-bit)
     | 0b1#1, 0b00#2, 0b000#3, 0b1#1 => exec_data_processing_msub inst s -- MSUB (64-bit)
+    | 0b1#1, 0b00#2, 0b001#3, 0b0#1 => exec_data_processing_maddl false false inst s -- SMADDL
+    | 0b1#1, 0b00#2, 0b001#3, 0b1#1 => exec_data_processing_maddl false true inst s  -- SMSUBL
+    | 0b1#1, 0b00#2, 0b101#3, 0b0#1 => exec_data_processing_maddl true false inst s  -- UMADDL
+    | 0b1#1, 0b00#2, 0b101#3, 0b1#1 => exec_data_processing_maddl true true inst s   -- UMSUBL
     -- SMULH/UMULH: the `Ra` field is should-be-one (`(1)(1)(1)(1)(1)`); other values are
     -- CONSTRAINED UNPREDICTABLE, and the model (like qemu) ignores it.
     | 0b1#1, 0b00#2, 0b010#3, 0b0#1 => exec_data_processing_mulh false inst s -- SMULH

@@ -38,11 +38,12 @@ Names follow LNSym. `docs/ARCHITECTURE.md` uses generic names; they map as follo
 
 | What | API | Module |
 | --- | --- | --- |
-| State | `ArmState` with fields GPR x0–x30, SP (`GPR 31`), v0–v31 (`SFP`, 128-bit), `PC`, `PState` (N Z C V), `mem : Memory` (`BitVec 64 → BitVec 8`, little-endian), `program : Program`, and an error field. `ArmState.default` is all zeros, with an empty program and no error. | `FV.Arm.State` |
-| Generic read/write | `r (fld : StateField) s`, `w fld v s`, where `StateField := GPR i \| SFP i \| PC \| FLAG f \| ERR`. There are simp lemmas `r_of_w_same`, `r_of_w_different`, `w_of_w_shadow`, … | `FV.Arm.State` |
+| State | `ArmState` with fields GPR x0–x30, SP (`GPR 31`), v0–v31 (`SFP`, 128-bit), `PC`, `PState` (N Z C V), the thread pointer `TPIDR_EL0` (`TPIDR`, 64-bit), `mem : Memory` (`BitVec 64 → BitVec 8`, little-endian), `program : Program`, and an error field. `ArmState.default` is all zeros, with an empty program and no error. | `FV.Arm.State` |
+| Generic read/write | `r (fld : StateField) s`, `w fld v s`, where `StateField := GPR i \| SFP i \| PC \| FLAG f \| ERR \| TPIDR`. There are simp lemmas `r_of_w_same`, `r_of_w_different`, `w_of_w_shadow`, … | `FV.Arm.State` |
 | GPRs | `read_gpr n i s` / `write_gpr n i v s` treat register 31 as SP. `read_gpr_zr` / `write_gpr_zr` treat it as XZR (ASL `X[]`). Reads take the low `n` bits; writes zero-extend to 64 bits. | `FV.Arm.State` |
 | SIMD&FP | `read_sfp n i s`, `write_sfp n i v s` (the write zero-extends to 128 bits) | `FV.Arm.State` |
 | PC | `read_pc s`, `write_pc v s` | `FV.Arm.State` |
+| Thread pointer | `r .TPIDR s` (`TPIDR_EL0`). `mrs xt, tpidr_el0` reads it (`exec_mrs_tpidr`: `exec_inst (.BR (.Mrs {o0 := 1, op1 := 0b011#3, CRn := 0b1101#4, CRm := 0, op2 := 0b010#3, Rt := Rt})) s = w .PC (r .PC s + 4) (write_gpr_zr 64 Rt (r .TPIDR s) s)`); no instruction writes it (`r_TPIDR_exec_inst`, `r_TPIDR_stepi`). The loader / OS sets it, outside the model. | `FV.Arm.Insts.BR.Mrs`, `FV.Arm.Tpidr` |
 | Flags | `read_flag f s` / `write_flag f v s` with `f : PFlag := N \| Z \| C \| V`; `read_pstate`, `write_pstate`, `make_pstate`; `ConditionHolds cond s` (ASL) | `FV.Arm.State`, `FV.Arm.Insts.Common` |
 | Memory | `read_mem_bytes n addr s : BitVec (n*8)`, `write_mem_bytes n addr v s` (little-endian, wraps mod 2^64); `Memory.read_bytes`/`write_bytes`; separation theory in `FV.Arm.Memory.{Separate,SeparateProofs,MemoryProofs}` (`mem_separate'`, `mem_subset'`, …) | `FV.Arm.State`, `FV.Arm.Memory.*` |
 | Program | `Program := Map (BitVec 64) (BitVec 32)` (an association list); `def_program`, `set_program s p`; `fetch_inst addr s : Option (BitVec 32)` (`@[irreducible]`). Code is disjoint from data memory: `mem` never holds instructions. | `FV.Arm.Map`, `FV.Arm.State` |

@@ -166,6 +166,10 @@ def hint (w : UInt32) (name : String) : Spec := ⟨name, "misc", fun _ => random
 def udf : Spec := ⟨"udf", "misc", fun _ => do
   return { (← randomCase "udf" (enc [(0, 16), (← bits 16, 16)])) with kind := .udf }⟩
 
+/-- `mrs xt, tpidr_el0` (`0xd53bd040 | Rt`, every `Rt`; 31 = XZR), random thread pointer. -/
+def mrsTpidr : Spec := ⟨"mrs (tpidr_el0)", "misc", fun _ => do
+  randomCase "mrs (tpidr_el0)" (0xd53bd040 ||| (← reg).toUInt32)⟩
+
 /-! ## Loads and stores (GPR) -/
 
 /-- `(size, opc, access bytes, mnemonic)` for single-register GPR loads/stores. -/
@@ -509,6 +513,8 @@ def allSpecs : List Spec :=
     dp2 0b001010 "asrv", dp2 0b001011 "rorv",
     dp3 none 0b000 0 false "madd", dp3 none 0b000 1 false "msub",
     dp3 (some 1) 0b010 0 true "smulh", dp3 (some 1) 0b110 0 true "umulh",
+    dp3 (some 1) 0b001 0 false "smaddl", dp3 (some 1) 0b001 1 false "smsubl",
+    dp3 (some 1) 0b101 0 false "umaddl", dp3 (some 1) 0b101 1 false "umsubl",
     dp1 none 0b000000 "rbit", dp1 none 0b000100 "clz", dp1 none 0b000101 "cls",
     dp1 none 0b000001 "rev16", dp1 (some 0) 0b000010 "rev (32)", dp1 (some 1) 0b000010 "rev32",
     dp1 (some 1) 0b000011 "rev (64)",
@@ -519,7 +525,7 @@ def allSpecs : List Spec :=
     bcond, cbranch 0 "cbz", cbranch 1 "cbnz", tbranch 0 "tbz", tbranch 1 "tbnz",
     uncondImm 0 "b", uncondImm 1 "bl", uncondReg 0 "br", uncondReg 1 "blr",
     uncondReg 2 "ret" (some 30), uncondReg 2 "ret xn",
-    hint 0xd503201f "nop", hint 0xd503229f "csdb", hint 0xd5033bbf "dmb ish", udf,
+    hint 0xd503201f "nop", hint 0xd503229f "csdb", hint 0xd5033bbf "dmb ish", udf, mrsTpidr,
     ldstExcl 1 1 "ldar", ldstExcl 1 0 "stlr", ldstExcl 0 1 "ldaxr",
     fmovGen 0 0 0b111 "fmov (s, w)" true, fmovGen 1 1 0b111 "fmov (d, x)" true,
     fmovGen 0 0 0b110 "fmov (w, s)" false, fmovGen 1 1 0b110 "fmov (x, d)" false,
