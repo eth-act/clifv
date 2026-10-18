@@ -122,17 +122,19 @@ theorem AvailAt.here {idom : Array (Option Nat)} {V : Nat → Option Block} {i k
 
 /-! ## Placeable values -/
 
-/-- `z` is reachable from `x` through the operands of the nodes of `x` and of its e-class. -/
-inductive GReach (st : SState) : ValueId → ValueId → Prop
-  | refl (x : ValueId) : GReach st x x
-  | node {x y z : ValueId} {n : Inst} : st.defs.get? x = some n → y ∈ operands n →
-      GReach st y z → GReach st x z
-  | alt {x y z m : ValueId} {ms : List ValueId} {n : Inst} : st.alts.get? x = some ms → m ∈ ms →
-      st.defs.get? m = some n → y ∈ operands n → GReach st y z → GReach st x z
+/-- `z` is reachable from `x` through the operands of the nodes (`defs`) of `x` and of its e-class
+(`alts`). -/
+inductive GReach (defs : Std.HashMap ValueId Inst) (alts : Std.HashMap ValueId (List ValueId)) :
+    ValueId → ValueId → Prop
+  | refl (x : ValueId) : GReach defs alts x x
+  | node {x y z : ValueId} {n : Inst} : defs.get? x = some n → y ∈ operands n →
+      GReach defs alts y z → GReach defs alts x z
+  | alt {x y z m : ValueId} {ms : List ValueId} {n : Inst} : alts.get? x = some ms → m ∈ ms →
+      defs.get? m = some n → y ∈ operands n → GReach defs alts y z → GReach defs alts x z
 
 /-- `x` is placeable (module doc): everything reachable from it is known and not bad. -/
 def Good (st : SState) (B : ValueId → Prop) (x : ValueId) : Prop :=
-  ∀ z, GReach st x z → ¬ B z ∧ st.known z = true
+  ∀ z, GReach st.defs st.alts x z → ¬ B z ∧ st.known z = true
 
 theorem Good.not_bad {st : SState} {B : ValueId → Prop} {x : ValueId} (h : Good st B x) : ¬ B x :=
   (h x (.refl x)).1
@@ -170,7 +172,7 @@ theorem Good.mono {st st' : SState} {B B' : ValueId → Prop}
     (ha : ∀ x ms', st'.alts.get? x = some ms' → st.alts.get? x = some ms' ∨
       ∀ m ∈ ms', ∀ n, st'.defs.get? m = some n → ∀ y ∈ operands n, Good st B y) :
     ∀ x, Good st B x → Good st' B' x := by
-  have key : ∀ x z, GReach st' x z → Good st B x → Good st B z := by
+  have key : ∀ x z, GReach st'.defs st'.alts x z → Good st B x → Good st B z := by
     intro x z h
     induction h with
     | refl => exact id
