@@ -308,6 +308,15 @@ the static executable, and theorems state that its output meets those conditions
   **`file0OkB_write`**: for every link spec `P` whose region lies in the body,
   `P.file0OkB img.write img.phs` is `regionPhsB ∧ staticB ∧ dataFastB ∧ symsOkB ∧ tlsOkB` —
   conditions on the plan's program headers, plus the data and symbol checks, which 3b (symbols)
-  and 3c (data) turn into theorems. Witnesses: `tinyImg_hdrFits`, `tinyImg_tabsFit`,
+  and 3c (data) turn into theorems.
+* **The symbol check proven** (`FV/Link/Ld/Syms.lean`): `symEntry_write` (entry `k + 1` of
+  `.symtab` is symbol `k`), `symEntry_write_inv` (no other defined entry in any section),
+  `entryKey_write`, `cstrB_write`, the index `symIndex` sound and complete
+  (`symIndex_sound`, `symIndex_complete`), and **`symsOkB_write`**: every link map whose
+  entries are written symbols (name via `symName`, value) passes `symsOkB`. Hence
+  **`file0OkB_write_syms`**: `file0OkB` of `lean-ld`'s output is `regionPhsB ∧ staticB ∧
+  dataFastB ∧ tlsOkB` — the plan's program headers and the data check only. Witnesses
+  `symsOkB_write_witness`, `file0OkB_write_syms_witness` (an image with one symbol; they use
+  `native_decide` for `symName "f" = "f"`, which the kernel does not reduce). Witnesses: `tinyImg_hdrFits`, `tinyImg_tabsFit`,
   `ehdr_write_witness`, `phdrs_write_witness`, `symFootB_write_witness`,
   `file0OkB_write_witness`. Axioms: `propext`, `Classical.choice`, `Quot.sound`.

@@ -98,7 +98,7 @@ def strOffsets : List String → Nat → List Nat
 
 /-- A string table: a NUL, then every name followed by a NUL. -/
 def strtabOf (names : List String) : List UInt8 :=
-  0 :: names.flatMap fun n => n.toUTF8.toList ++ [0]
+  0 :: names.flatMap fun n => n.toUTF8.data.toList ++ [0]
 
 /-- `b` with zeros up to a multiple of 8. -/
 def pad8 (b : ByteArray) : ByteArray :=
@@ -187,7 +187,7 @@ section is a symbol table; every symbol is defined (`st_shndx ≠ 0`) and its na
 def Img.tabsFitB (img : Img) : Bool :=
   (img.shdrList img.tabs).all fieldsFitB && img.symList.all fieldsFitB &&
   img.secs.all (·.type != 2) &&
-  img.syms.all fun s => s.shndx != 0 && !s.name.toUTF8.toList.contains 0
+  img.syms.all fun s => s.shndx != 0 && !s.name.toUTF8.data.contains 0
 
 /-- **The executable of an image description**: the padded body and the tables, with the
 headers written over the body's start. -/
