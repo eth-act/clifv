@@ -498,6 +498,10 @@ theorem wf_binary {op : BinaryOp} {pat : List Stmt} (h : Pat.binary op = some pa
     PatWF pat 4 2 = true := by
   cases op <;> simp [Pat.binary] at h <;> subst h <;> decide
 
+theorem wf_overflow {op : OverflowOp} {pat : List Stmt} (h : Pat.overflow op = some pat) :
+    PatWF pat 4 3 = true := by
+  cases op <;> simp [Pat.overflow] at h <;> subst h <;> decide
+
 @[simp] theorem wf_shiftNarrow (op : BinaryOp) (t : Ty) :
     PatWF (Pat.shiftNarrow op t) 2 1 = true := by
   cases t <;> rfl
@@ -552,6 +556,7 @@ theorem planOf_spec {C : Ctx} {s : Stmt} {pl : Plan} (h : planOf C s = some pl) 
   all_goals (simp_all [PlanSpec, imgOf, instOps, Ctx.plain])
   all_goals first
     | exact wf_binary ‹_›
+    | exact wf_overflow ‹_›
     | exact ⟨_, ‹_›⟩
 
 /-! ## The legaliser's context and the checker's

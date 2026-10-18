@@ -171,8 +171,10 @@ Deferred:
   backend theorem excludes extern traps (`TrapsExplicit` of the legalised run); covering them
   needs a trapping-helper contract on the Arm side (natively the helper aborts);
 - a correct `umulhi`/`smulhi` expansion at `i128` (now unsupported), ~~`try_call` with `i128`
-  in the validator~~ (done, legalize128.md "`try_call` and `call_indirect`"), `i128` overflow
-  ops and atomics; ~~stack-passed `i128` arguments~~ done
+  in the validator~~ (done, legalize128.md "`try_call` and `call_indirect`"), `i128`
+  `umul_overflow`/`smul_overflow` and atomics (~~`uadd`/`sadd`/`usub`/`ssub_overflow`~~ done,
+  S4: pure patterns, legalize128.md "Overflow ops at `i128`"); ~~stack-passed `i128`
+  arguments~~ done
   (S4, #28: `expandGroups` places pairs beyond `x0..x7` on the stack as Cranelift does; still
   unsupported: a later integer argument Cranelift passes in `x7`, legalize128.md "Stack-passed
   `i128` arguments").

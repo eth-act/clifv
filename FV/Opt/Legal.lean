@@ -258,6 +258,41 @@ def binary : BinaryOp → Option (List Stmt)
   | .umax => some (cmp .ult 6 7 ++ [S 4 (.select .i64 6 2 0), S 5 (.select .i64 6 3 1)])
   | _ => none
 
+/-! ### Overflow-flag arithmetic at `i128` (inputs `xl xh yl yh` = `0 1 2 3`, outputs
+`rl rh of` = `4 5 6`) -/
+
+/-- The carry chain of `iadd` (`Pat.binary .iadd`, temporaries from `7`; the low carry in `7`). -/
+def addPair : List Stmt :=
+  [S 4 (bin .iadd .i64 0 2), S 7 (.icmp .ult .i64 4 0), S 8 (.extend .uextend .i64 7),
+   S 9 (bin .iadd .i64 1 3), S 5 (bin .iadd .i64 9 8)]
+
+/-- The borrow chain of `isub` (`Pat.binary .isub`, temporaries from `7`). -/
+def subPair : List Stmt :=
+  [S 4 (bin .isub .i64 0 2), S 7 (.icmp .ult .i64 0 4), S 8 (.extend .uextend .i64 7),
+   S 9 (bin .isub .i64 1 3), S 5 (bin .isub .i64 9 8)]
+
+/-- Signed overflow from the signs of `x`, `y` and the result `r` (high halves `1`, `3`, `5`),
+as the flag `6`: the operands' signs agree (`sameXY`, addition) or differ (subtraction), and
+the result's sign differs from `x`'s. -/
+def signOvf (sameXY : Bool) : List Stmt :=
+  [K 10 0, S 11 (.icmp .slt .i64 1 10), S 12 (.icmp .slt .i64 3 10),
+   S 13 (.icmp .slt .i64 5 10), S 14 (.icmp (if sameXY then .eq else .ne) .i8 11 12),
+   S 15 (.icmp .ne .i8 13 11), S 6 (bin .band .i8 14 15)]
+
+/-- `*_overflow` at `i128`, `none` for the multiplications (not legalised):
+* `uadd_overflow`: the sum wrapped below `x` (`(rh, rl) <u (xh, xl)`);
+* `sadd_overflow`: `x`, `y` of the same sign, `r` of the other;
+* `usub_overflow`: `x <u y`;
+* `ssub_overflow`: `x`, `y` of different signs, `r` of `y`'s. -/
+def overflow : OverflowOp → Option (List Stmt)
+  | .uaddOverflow => some (addPair ++ [S 10 (.icmp .ult .i64 5 1), S 11 (.icmp .eq .i64 5 1),
+      S 12 (bin .band .i8 11 7), S 6 (bin .bor .i8 10 12)])
+  | .saddOverflow => some (addPair ++ signOvf true)
+  | .usubOverflow => some (subPair ++ [S 10 (.icmp .ult .i64 1 3), S 11 (.icmp .eq .i64 1 3),
+      S 12 (.icmp .ult .i64 0 2), S 13 (bin .band .i8 11 12), S 6 (bin .bor .i8 10 13)])
+  | .ssubOverflow => some (subPair ++ signOvf false)
+  | _ => none
+
 /-! ### `icmp` at `i128` (inputs `xl xh yl yh` = `0 1 2 3`, output `r` = `4`) -/
 
 def icmp (cc : IntCC) : List Stmt :=
@@ -612,6 +647,14 @@ def planOf (C : Ctx) (s : Stmt) : Option Plan :=
     let (xl, xh) ← P x
     let (rl, rh) ← P r
     some (.pure Pat.copy2 [xl, xh] [rl, rh])
+  | .overflow op .i128 x y, [r, o] => do
+    let (xl, xh) ← P x
+    let (yl, yh) ← P y
+    let (rl, rh) ← P r
+    if C.plain o then
+      let pat ← Pat.overflow op
+      some (.pure pat [xl, xh, yl, yh] [rl, rh, o])
+    else none
   | .load .load .i128 flags p off, [r] => do
     let (rl, rh) ← P r
     if C.plain p && flags.endianness != some .big then some (.load rl rh p flags off)
