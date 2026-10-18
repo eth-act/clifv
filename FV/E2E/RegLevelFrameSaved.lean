@@ -414,7 +414,7 @@ theorem read16_split {a : BitVec 64} {s : Arm.ArmState} {x y : BitVec 64}
   simp only [show i < 8 * 8 by omega, decide_true, Bool.true_and]
   rw [← hb, BitVec.ofNat_add, BitVec.add_assoc, BitVec.add_comm (BitVec.ofNat 64 8)]
 
-theorem mapM_some_mem {α β : Type} {f : α → Option β} :
+theorem mapM_some_mem_both {α β : Type} {f : α → Option β} :
     ∀ {l : List α} {out : List β}, l.mapM f = some out →
       (∀ p ∈ out, ∃ a ∈ l, f a = some p) ∧ (∀ a ∈ l, ∃ p ∈ out, f a = some p)
   | [], out, h => by simp at h; subst h; simp
@@ -422,7 +422,7 @@ theorem mapM_some_mem {α β : Type} {f : α → Option β} :
     rw [List.mapM_cons] at h
     simp only [bind, Option.bind_eq_some_iff, pure, Option.some.injEq] at h
     obtain ⟨b, hb, bs, hbs, rfl⟩ := h
-    obtain ⟨ih1, ih2⟩ := mapM_some_mem hbs
+    obtain ⟨ih1, ih2⟩ := mapM_some_mem_both hbs
     constructor
     · intro p hp
       rcases List.mem_cons.1 hp with rfl | hp
@@ -461,7 +461,7 @@ theorem saveRowsOf_mem {fr : RAFrame} {fs : Nat} {rs : List Reg} {saved : List (
     (∀ d off, (d, off) ∈ saved → ∃ r ∈ rs, ∃ o, r.dwarf? = some d ∧ fr.saveOff.lookup r = some o ∧
       off = (o : Int) - 16 - fs) ∧
     (∀ r ∈ rs, ∃ d off, r.dwarf? = some d ∧ (d, off) ∈ saved) := by
-  obtain ⟨h1, h2⟩ := mapM_some_mem h
+  obtain ⟨h1, h2⟩ := mapM_some_mem_both h
   refine ⟨fun d off hm => ?_, fun r hr => ?_⟩
   · obtain ⟨r, hr, hf⟩ := h1 _ hm
     simp only [bind, Option.bind_eq_some_iff, pure, Option.some.injEq, Prod.mk.injEq] at hf
