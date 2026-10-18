@@ -4,7 +4,7 @@
 # outcomes against the expectations and, with --compare, against the Cranelift interpreter
 # (clif-oracle). See docs/contracts/drivers.md.
 #
-# usage: scripts/aarch64-native-filetests.sh [-v] [--compare] [--all | FILE.clif...]
+# usage: scripts/aarch64-native-filetests.sh [-v] [--compare] [--list] [--all | FILE.clif...]
 #   default files: the runtests that clif-filetest reports fully supported by Clif.run
 #   (list below; regenerate with `.lake/build/bin/clif-filetest runtests/*.clif` and keep
 #   the files with "unsupported 0"); --all: every file in runtests/.
@@ -43,6 +43,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -v) VERBOSE=(-v) ;;
     --compare) COMPARE=1 ;;
+    --list) LIST=1 ;;
     --all) FILES=("$RUNTESTS"/*.clif) ;;
     -*) echo "unknown option $1" >&2; exit 2 ;;
     *) FILES+=("$1") ;;
@@ -52,6 +53,8 @@ done
 if [[ ${#FILES[@]} -eq 0 ]]; then
   for f in $SUPPORTED; do FILES+=("$RUNTESTS/$f.clif"); done
 fi
+# --list: print the files that would run (used by scripts/clif-fuzz.sh --coverage) and stop
+if [[ ${LIST:-0} -eq 1 ]]; then printf '%s\n' "${FILES[@]}"; exit 0; fi
 
 PKGS=(-p clif-native -p clif-runlines)
 [[ $COMPARE -eq 1 ]] && PKGS+=(-p clif-oracle)

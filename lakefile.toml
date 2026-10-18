@@ -96,3 +96,7 @@ root = "FVTest.Float.DiffTest"
 [[lean_exe]]
 name = "lean-ld"
 root = "FVTest.Link.LeanLdMain"
+
+[[lean_exe]]
+name = "clif-fuzz"
+root = "FVTest.Clif.Fuzz"
