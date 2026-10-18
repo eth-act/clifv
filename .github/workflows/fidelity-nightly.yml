@@ -34,7 +34,7 @@ env:
 
 jobs:
   base:
-    name: Find the main build
+    name: Find a baseline build
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -45,26 +45,29 @@ jobs:
       sha: ${{ steps.base.outputs.sha }}
       seed: ${{ steps.base.outputs.seed }}
     steps:
-      - name: Newest lake-full of main (full-gate.yml)
+      - name: Newest lake-full (main first; full-gate.yml)
         id: base
         env:
           GH_TOKEN: ${{ github.token }}
           SEED_IN: ${{ inputs.seed }}
         run: |
+          # Lake's cache is content-addressed, so any baseline is safe: the tested commit is this
+          # run's (main's tip), and only what differs from the baseline is rebuilt (normally
+          # nothing: the full gate of the tip finishes before the nightly slot)
           read -r run sha < <(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=lake-full&per_page=100" \
-            --jq '[.artifacts[] | select(.expired | not) | select(.workflow_run.head_branch == "main")]
-                  | sort_by(.created_at) | last | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
-          if [[ -z "${run:-}" ]]; then echo "no main build (lake-full) to test" >&2; exit 1; fi
-          echo "main build: run $run, commit $sha"
-          echo "run=$run" >> "$GITHUB_OUTPUT"
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+            --jq '[.artifacts[] | select(.expired | not)]
+                  | sort_by([(.workflow_run.head_branch == "main"), .created_at]) | last
+                  | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
+          echo "baseline: run ${run:-none}, commit ${sha:-none}"
+          echo "run=${run:-}" >> "$GITHUB_OUTPUT"
+          echo "sha=${sha:-}" >> "$GITHUB_OUTPUT"
           echo "seed=${SEED_IN:-$GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
 
   test:
     name: ${{ matrix.check }}
     needs: base
     runs-on: ubuntu-24.04
-    timeout-minutes: 240
+    timeout-minutes: 300
     permissions:
       actions: read
       contents: read
@@ -76,11 +79,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # the commit of the build being restored
-          ref: ${{ needs.base.outputs.sha }}
       - uses: ./.github/actions/fv-lean
         with:
-          swap-gb: '8'
+          swap-gb: '16'
           base-run-id: ${{ needs.base.outputs.run }}
       - name: Tools
         run: |
@@ -101,7 +102,7 @@ jobs:
           SEED: ${{ needs.base.outputs.seed }}
           COSIM_N: ${{ inputs.cosim-n || '1000' }}
           FUZZ_SEEDS: ${{ inputs.fuzz-seeds || '6' }}
-          SHA: ${{ needs.base.outputs.sha }}
+          SHA: ${{ github.sha }}
         run: |
           mkdir -p logs
           start=$(date +%s)
@@ -127,7 +128,7 @@ jobs:
               scripts/float-difftest.sh --aarch64 --seed "$SEED" > logs/float-difftest.log 2>&1 || rc=$?
               line=$(grep -E 'TOTAL' logs/float-difftest.log | tail -n 1) ;;
           esac
-          echo "$CHECK rc=$rc $(( $(date +%s) - start )) s (main $SHA, seed $SEED): $line" | tee logs/summary.txt
+          echo "$CHECK rc=$rc $(( $(date +%s) - start )) s (commit $SHA, seed $SEED): $line" | tee logs/summary.txt
           exit $rc
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
@@ -154,11 +155,14 @@ jobs:
       - name: Summarize
         env:
           RESULT: ${{ needs.test.result }}
-          SHA: ${{ needs.base.outputs.sha }}
+          SHA: ${{ github.sha }}
+          BASE_SHA: ${{ needs.base.outputs.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           {
-            if [[ $RESULT == success ]]; then echo "**Fidelity nightly: GREEN** (main \`$SHA\`)"; else echo "**Fidelity nightly: RED** (main \`$SHA\`) — a disagreement is a potential spec bug (T4 #40 / T5 #41)"; fi
+            if [[ $RESULT == success ]]; then echo "**Fidelity nightly: GREEN** (\`$SHA\`)"; else echo "**Fidelity nightly: RED** (\`$SHA\`) — a disagreement is a potential spec bug (T4 #40 / T5 #41)"; fi
+            echo
+            echo "Lake baseline: ${BASE_SHA:-none} (modules differing from it were rebuilt)"
             echo
             echo "Run: $RUN_URL"
             echo
