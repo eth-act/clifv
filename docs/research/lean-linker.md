@@ -320,3 +320,16 @@ the static executable, and theorems state that its output meets those conditions
   `native_decide` for `symName "f" = "f"`, which the kernel does not reduce). Witnesses: `tinyImg_hdrFits`, `tinyImg_tabsFit`,
   `ehdr_write_witness`, `phdrs_write_witness`, `symFootB_write_witness`,
   `file0OkB_write_witness`. Axioms: `propext`, `Classical.choice`, `Quot.sound`.
+* **The body from relocated pieces** (3c, `FV/Link/Ld/Build.lean`, `BuildProof.lean`): `lean-ld`'s
+  planner now emits pieces (address, file offset, input bytes, resolved relocations) and the
+  body is `buildBody` of them. Proven: `buildBody_piece` (in a body of pieces with disjoint file
+  ranges, each piece's bytes are its relocated bytes), `relocated_out` (bytes no relocation
+  patches are the input bytes), `relocated_abs64` (an `ABS64` writes the little-endian
+  `S + A`), `applyRel_out`/`applyRel_abs64`: the outside part's bytes are its relocated input
+  bytes. Witnesses `tinyPiece_relocated`, `relocated_abs64_witness`, `buildBody_piece_witness`.
+  Survey under `cargo fv --lean-ld` after the refactor: 18 of 18, 53 tests.
+* **Next (3c, #269)**: `dataFastB` from `buildBody_piece` — relate each CLIF data object to its
+  piece (symbol, offset, `.byte` items = input bytes no relocation patches, `.addr` items =
+  `ABS64`s whose `S` is the link-map address) and the piece to its segment (`loadIn`); then the
+  plan conditions (`regionPhsB`, `staticB`, `tlsOkB`, piece disjointness) by construction of the
+  segment builder, and `lean-ld` as `--lean-link`'s default (#270).

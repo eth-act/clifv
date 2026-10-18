@@ -1,6 +1,7 @@
 import FV.Link.Ld.Resolve
 import FV.Link.Ld.Reloc
 import FV.Link.Ld.Write
+import FV.Link.Ld.Build
 
 /-! # Lean static linker: layout, synthesized sections, relocation, the image
 
@@ -315,68 +316,68 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String LinkOut := do
     | .undef n w => match synth n with
       | some v => pure (v, false)
       | none => if w then pure (0, true) else throw s!"undefined symbol {n} (referenced from {files[fi]!.name})"
-  -- the body: segment bytes
-  let mut body := ByteArray.mk (Array.replicate fileEnd 0)
+  -- the pieces of the body: every placed input section, `.eh_frame` record and table, with its
+  -- relocations resolved; the body is `buildBody` of them (`FV/Link/Ld/Build.lean`)
   let gotAddr := partAddr.getD "got" 0
-  let relIn (fi : Nat) (r : Rela) (P : Nat) : Except String (RelIn × Bool) := do
+  let relIn (fi : Nat) (r : Rela) (P : Nat) : Except String RelIn := do
     let (S, uw) ← value fi r.sym
     let G : Int := (gotSlot[gotKey fi r.sym]?.map fun k => (gotAddr + 8 * k : Nat)).getD 0
     let S := if uw && branchType r.type then (P : Int) + 4 - r.addend
       else if uw && (r.type == 275 || r.type == 274) then (P : Int) - r.addend else S
-    pure ({ S, A := r.addend, P, G, tp := tlsBase + (S + r.addend - tlsStart) }, uw)
-  let apply (body : ByteArray) (fi : Nat) (r : Rela) (P fo : Nat) : Except String ByteArray := do
-    let (ri, _) ← relIn fi r P
-    let w := relocWidth r.type
-    let v ← (relocVal r.type ri (rdLE body fo w)).mapError
-      (s!"{files[fi]!.name}+{r.off}: " ++ ·)
-    pure (putLE body fo w v)
+    pure { S, A := r.addend, P, G, tp := tlsBase + (S + r.addend - tlsStart) }
+  let mut pieces : Array Piece := #[]
   for fi in [0:files.size] do
     let f := files[fi]!
     for si in [0:f.secs.size] do
-      if live[fi]![si]! && f.secs[si]!.type != shtNobits && !(f.secs[si]!.has shfTls && f.secs[si]!.type == shtNobits) then
+      if live[fi]![si]! && f.secs[si]!.type != shtNobits then
         let s := f.secs[si]!
         let oo := outs[secOut[fi]![si]! - 1]!
-        let fo := oo.off + (secAddr[fi]![si]! - oo.addr)
-        body := f.data.copySlice s.off body fo s.size
-        for r in f.relas si do
-          body ← apply body fi r (secAddr[fi]![si]! + r.off) (fo + r.off)
+        let a := secAddr[fi]![si]!
+        let rels ← (f.relas si).toList.mapM fun r => do
+          let ri ← (relIn fi r (a + r.off)).mapError (s!"{f.name}({s.name})+{r.off}: " ++ ·)
+          pure ({ off := r.off, ty := r.type, ri } : Rel)
+        pieces := pieces.push { addr := a, fo := oo.off + (a - oo.addr),
+                                bytes := f.data.extract s.off (s.off + s.size), rels }
   -- the GOT
   let gotOff := (outs.find? (·.name == ".got")).elim 0 (·.off)
-  for k in [0:gotSyms.size] do
-    let (fi, j) := gotSyms[k]!
-    let (v, _) ← value fi j
-    body := putLE body (gotOff + 8 * k) 8 (v % 2 ^ 64).toNat
-  -- `.eh_frame` and `.eh_frame_hdr`
+  if !gotSyms.isEmpty then
+    let mut got : ByteArray := .empty
+    for (fi, j) in gotSyms do
+      let (v, _) ← value fi j
+      got := got ++ leBytes 8 (v % 2 ^ 64).toNat
+    pieces := pieces.push { addr := gotAddr, fo := gotOff, bytes := got, rels := [] }
+  -- `.eh_frame` (each record with its CIE pointer rewritten) and `.eh_frame_hdr`
   let ehOff := (outs.find? (·.name == ".eh_frame")).elim 0 (·.off)
   let mut table : Array (Nat × Nat) := #[]
   for e in ehs do
     if let some es := g.eh[e.file]![e.ei]? then
-      let rs := es.relas
       let f := files[e.file]!
       let src := f.secs[es.sec]!
-      let fo := ehOff + e.out
-      body := f.data.copySlice (src.off + e.piece.off) body fo e.piece.size
+      let mut bytes := f.data.extract (src.off + e.piece.off) (src.off + e.piece.off + e.piece.size)
       if !e.piece.cie then
         let c := cieOut.getD (e.file, e.ei, e.piece.cieOff) 0
-        body := putLE body (fo + 4) 4 (e.out + 4 - c)
-      for r in rs do
+        bytes := writeLE bytes 4 4 (e.out + 4 - c)
+      let mut rels : Array Rel := #[]
+      for r in es.relas do
         if r.off ≥ e.piece.off && r.off < e.piece.off + e.piece.size then
           let P := ehAddr + e.out + (r.off - e.piece.off)
-          body ← apply body e.file r P (fo + (r.off - e.piece.off))
+          let ri ← relIn e.file r P
+          rels := rels.push { off := r.off - e.piece.off, ty := r.type, ri }
           if !e.piece.cie && r.off == e.piece.off + 8 then
             let (v, _) ← value e.file r.sym
             table := table.push (((v + r.addend) % 2 ^ 64).toNat, ehAddr + e.out)
+      pieces := pieces.push { addr := ehAddr + e.out, fo := ehOff + e.out, bytes, rels := rels.toList }
   if ehTotal > 0 then
     let hAddr := partAddr.getD "ehHdr" 0
     let hOff := (outs.find? (·.name == ".eh_frame_hdr")).elim 0 (·.off)
     let sortedT := table.qsort (fun a b => a.1 < b.1)
-    body := putLE body hOff 4 (1 + 0x1b * 256 + 0x03 * 65536 + 0x3b * 2 ^ 24)
-    body := putLE body (hOff + 4) 4 (((ehAddr : Int) - (hAddr + 4)) % 2 ^ 32).toNat
-    body := putLE body (hOff + 8) 4 sortedT.size
-    for i in [0:sortedT.size] do
-      let (pc, fde) := sortedT[i]!
-      body := putLE body (hOff + 12 + 8 * i) 4 (((pc : Int) - hAddr) % 2 ^ 32).toNat
-      body := putLE body (hOff + 16 + 8 * i) 4 (((fde : Int) - hAddr) % 2 ^ 32).toNat
+    let mut hdr : ByteArray := leBytes 4 (1 + 0x1b * 256 + 0x03 * 65536 + 0x3b * 2 ^ 24) ++
+      leBytes 4 (((ehAddr : Int) - (hAddr + 4)) % 2 ^ 32).toNat ++ leBytes 4 sortedT.size
+    for (pc, fde) in sortedT do
+      hdr := hdr ++ leBytes 4 (((pc : Int) - hAddr) % 2 ^ 32).toNat ++
+        leBytes 4 (((fde : Int) - hAddr) % 2 ^ 32).toNat
+    pieces := pieces.push { addr := hAddr, fo := hOff, bytes := hdr, rels := [] }
+  let body ← buildBody fileEnd pieces.toList
   -- program headers
   let segPh (s : Nat × Nat × Nat × Nat × Nat) : Phdr :=
     let (k, v, of, fs, ms) := s
