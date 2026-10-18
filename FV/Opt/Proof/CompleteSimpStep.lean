@@ -611,7 +611,7 @@ theorem step_pure {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
         · rw [hvS] at h1; cases h1
         · exact h1 hvB
       have hvy : ¬ v = y := Ne.symm hyv
-      simp only [Subst.step, hm_get?_insert, hvy, if_false]
+      simp only [Subst.step, hm_get?_insert, hvy, ite_false]
     rw [← hBe] at hP hpw hnew
     refine step_gen hc h hb0 hs hP.inv (fun y hy => hP.good y (by rw [hBe]; exact hy)) hP.types
       hP.avail hP.availNew hP.defsKeep
@@ -621,7 +621,7 @@ theorem step_pure {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
         rintro rfl
         rw [(hm_contains_iff _ _).2 (by rw [hy]; rfl)] at hvS; cases hvS
       have hvy : ¬ v = y := Ne.symm hyv
-      simp only [hm_get?_insert, hvy, if_false]; exact hy
+      simp only [hm_get?_insert, hvy, ite_false]; exact hy
     · intro y w' hy
       rw [hm_get?_insert] at hy
       split at hy
@@ -641,7 +641,7 @@ theorem step_pure {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
         · exact .inl ((hSv y).2 (.inr h1))
         · exact .inr (by rw [hBe]; exact h1)
       · rw [hlgw]
-        refine ⟨?_, hpure, fun t ht => ?_, ⟨v, hres, by simp only [hm_get?_insert, if_true]⟩, ?_⟩
+        refine ⟨?_, hpure, fun t ht => ?_, ⟨v, hres, by simp only [hm_get?_insert, ite_true]⟩, ?_⟩
         · simp only [renStmt]; rw [mapOperands_congr hstep_eq]
         · obtain ⟨k, hk⟩ := List.mem_iff_getElem?.1 ht
           obtain ⟨r, n', rfl, hd, -, -, ⟨n, τ, hal, rfl⟩, -⟩ := hnew k _ hk
@@ -1039,7 +1039,7 @@ theorem step_skel {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
         rcases hops1 _ hy with h1 | h1
         · rw [hRS r hrm] at h1; cases h1
         · exact h1 (hRbad r hrm)
-      simp only [Subst.step, hm_get?_insert, hyr, if_false]
+      simp only [Subst.step, hm_get?_insert, hyr, ite_false]
     refine step_gen hc h hb0 hs hinv
       (fun y hy => by rw [hBe]; exact hrun.good y hy) hrun.types hrun.avail
       (fun y d hy => (hrun.availNew y d hy).imp id (fun ⟨hd, t, ht, hyt⟩ => ⟨hd, t, by
@@ -1052,7 +1052,7 @@ theorem step_skel {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
         rintro rfl
         have h3 := (hm_contains_iff S r).2 (by rw [hy]; rfl)
         rw [hRS r hrm] at h3; cases h3
-      simp only [hm_get?_insert, hyr, if_false]; exact hy
+      simp only [hm_get?_insert, hyr, ite_false]; exact hy
     · rw [hm_get?_insert] at hy
       split at hy
       · rename_i hry
@@ -1075,7 +1075,7 @@ theorem step_skel {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
       simp only [List.mem_singleton] at hy; subst hy; rw [hBe]; exact hrb
     · refine ⟨fun y hy => (hops1 y hy).imp (fun h1 => (hSv y).2 (.inl h1))
         (fun hnb => by rw [hBe]; exact hnb), ?_, hsk, hcn, hcs,
-        fun t ht => hinsPre t (by rw [← hstm']; exact ht), ?_, r, hr', by simp [hm_get?_insert]⟩
+        fun t ht => hinsPre t (by rw [← hstm']; exact ht), ?_, r, hr', by simp⟩
       · simp only [renStmt]; rw [mapOperands_congr hstep_eq]
       · have hsz : stmts.size = pre.length := by rw [← Array.length_toList, hstm']
         change AvailAt _ (emitV _ bi stmts.toList) _ _ _

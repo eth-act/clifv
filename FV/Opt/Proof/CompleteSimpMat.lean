@@ -491,17 +491,17 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
       · exact hI.typesFresh y hy
     · rw [hdefs] at hm; split at hm
       · rename_i hry; subst hry; cases hm
-        refine ⟨hp, pureTyped_grow hp hty tgrow, by rw [htypes, if_pos rfl]; exact ht.symm⟩
+        refine ⟨hp, pureTyped_grow hp hty tgrow, by rw [htypes, ite_eq_left rfl]; exact ht.symm⟩
       · rename_i hry
         obtain ⟨h1, h2, h3⟩ := hI.defsTy y m hm
-        exact ⟨h1, pureTyped_grow h1 h2 tgrow, by rw [htypes, if_neg hry]; exact h3⟩
+        exact ⟨h1, pureTyped_grow h1 h2 tgrow, by rw [htypes, ite_eq_right hry]; exact h3⟩
     · rw [eal] at hms; exact kgrow y (hI.altsKnown y ms hms)
     · rw [havail] at hy; split at hy
       · rename_i hry; subst hry; cases hy; exact ⟨_, hdefR⟩
       · obtain ⟨t', h⟩ := hI.availDef y d hy hby; exact ⟨t', h.emit bi [({ results := [r], inst := n' } : Stmt)]⟩
     · rcases hdefV y d t' hy with h | ⟨rfl, rfl, rfl⟩
       · exact agrow y d (hI.defAvail y d t' h)
-      · rw [havail, if_pos rfl]
+      · rw [havail, ite_eq_left rfl]
     · rw [hdefs] at hm; split at hm
       · rename_i hry; subst hry
         rw [ea, Std.HashMap.contains_insert] at ha; simp at ha
@@ -541,13 +541,13 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
   have hgr : Placed st' B r := by
     refine Placed.mk hrb (known_iff.2 (.inr (by rw [ea, hm_contains_insert']; exact .inl rfl)))
       (fun m hm y hy => ?_) (fun ms hms m hm n0 hn0 y hy => ?_)
-    · rw [hdefs, if_pos rfl] at hm; cases hm; exact hgood y (hops y hy).2
+    · rw [hdefs, ite_eq_left rfl] at hm; cases hm; exact hgood y (hops y hy).2
     · rw [eal] at hms
       rw [hdefs] at hn0; split at hn0
       · cases hn0; exact hgood y (hops y hy).2
       · exact hgood y (hralts ms hms m hm n0 hn0 y hy)
   refine ⟨⟨hinv, hgood, hstep, fun y m hm => ?_, fun b0 hb0 j s0 hs0 => ?_⟩, hgr, ⟨bi, _, hdefR, .inl rfl⟩,
-    by rw [htypes, if_pos rfl, htx]⟩
+    by rw [htypes, ite_eq_left rfl, htx]⟩
   · rw [hdefs] at hm; split at hm
     · cases hm; exact .inr fun z hz => hgood z (hops z hz).2
     · exact .inl hm
@@ -559,7 +559,7 @@ theorem emit_run {st : SState} {x r : ValueId} {n n' : Inst} {τ : ValueId → V
   subst hj
   simp only [List.getElem?_cons_zero, Option.some.injEq] at hs0
   subst hs0
-  refine ⟨r, n', rfl, by rw [hdefs, if_pos rfl], by rw [havail, if_pos rfl], hrb, ⟨n, τ, hal, hn'⟩,
+  refine ⟨r, n', rfl, by rw [hdefs, ite_eq_left rfl], by rw [havail, ite_eq_left rfl], hrb, ⟨n, τ, hal, hn'⟩,
     fun y hy => ⟨?_, hgood y (hops y hy).2⟩⟩
   simpa using ((hops y hy).1.at_end hb).emit bi [({ results := [r], inst := n' } : Stmt)]
 

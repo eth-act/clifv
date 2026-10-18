@@ -204,16 +204,16 @@ theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → B
     intro y hy
     rcases known_iff.1 hy with h1 | h1
     · obtain ⟨m, hm'⟩ := Option.isSome_iff_exists.1 h1
-      exact known_iff.2 (.inl (by rw [hdefs, if_neg (hne y hy), hm']; rfl))
+      exact known_iff.2 (.inl (by rw [hdefs, ite_eq_right (hne y hy), hm']; rfl))
     · exact known_iff.2 (.inr (by rw [ha]; exact h1))
-  have hwk2 : st2.known st.next = true := known_iff.2 (.inl (by rw [hdefs, if_pos rfl]; rfl))
+  have hwk2 : st2.known st.next = true := known_iff.2 (.inl (by rw [hdefs, ite_eq_left rfl]; rfl))
   have tgrow : ∀ y u, st.types.get? y = some u → st2.types.get? y = some u := by
     intro y u hy
     rw [htypes]; split
     · rename_i he; subst he; rw [h.m.typesFresh _ (Nat.le_refl _)] at hy; cases hy
     · exact hy
   have tknown : ∀ y, st.known y = true → st2.types.get? y = st.types.get? y := by
-    intro y hy; rw [htypes, if_neg (hne y hy)]
+    intro y hy; rw [htypes, ite_eq_right (hne y hy)]
   have hgood : ∀ y, Placed st B y → Placed st2 B y := by
     refine Placed.mono kgrow (fun y hy => hy.not_bad) (fun y m hm' => ?_) (fun y ms hms => ?_)
     · rw [hdefs] at hm'; split at hm'
@@ -224,7 +224,7 @@ theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → B
     refine ⟨ha, hal, hf, htr, hr, by rw [hnx]; exact Nat.le_succ _, fun y m hm' => ?_,
       fun y m hm' => ?_, tgrow, tknown, hgood, fun y m hm' => ?_⟩
     · have hy : st.known y = true := known_iff.2 (.inl (by rw [hm']; rfl))
-      rw [hdefs, if_neg (hne y hy)]; exact hm'
+      rw [hdefs, ite_eq_right (hne y hy)]; exact hm'
     · rw [hdefs] at hm'; split at hm'
       · rename_i he; subst he; exact .inr hwk
       · exact .inl hm'
@@ -234,7 +234,7 @@ theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → B
   have hgw : Placed st2 B st.next := by
     refine Placed.mk (fun hb => absurd (Nat.lt_of_lt_of_le h.m.maxLt (h.m.badLe _ hb)) (Nat.lt_irrefl _))
       hwk2 (fun m hm' y hy => ?_) (fun ms hms => ?_)
-    · rw [hdefs, if_pos rfl] at hm'; cases hm'; exact hgood y (hops y hy)
+    · rw [hdefs, ite_eq_left rfl] at hm'; cases hm'; exact hgood y (hops y hy)
     · rw [hal] at hms
       have := h.m.altsKnown _ ms hms; rw [hwk] at this; cases this
   have hinv : RInv f V B X XN st2 := by
@@ -251,14 +251,14 @@ theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → B
         · exact Nat.lt_succ_of_lt (h.m.knownLt y (known_iff.2 (.inl h1)))
       · rw [ha] at h1; exact Nat.lt_succ_of_lt (h.m.knownLt y (known_iff.2 (.inr h1)))
     · rw [hnx] at hy
-      rw [htypes, if_neg (Nat.ne_of_lt (Nat.lt_of_succ_le hy))]
+      rw [htypes, ite_eq_right (Nat.ne_of_lt (Nat.lt_of_succ_le hy))]
       exact h.m.typesFresh y (Nat.le_of_succ_le hy)
     · rw [hdefs] at hm'; split at hm'
       · rename_i he; subst he; cases hm'
-        exact ⟨hp, pureTyped_grow hp hty tgrow, by rw [htypes, if_pos rfl, htn]⟩
+        exact ⟨hp, pureTyped_grow hp hty tgrow, by rw [htypes, ite_eq_left rfl, htn]⟩
       · obtain ⟨e1, e2, e3⟩ := h.m.defsTy y m hm'
         rename_i he
-        exact ⟨e1, pureTyped_grow e1 e2 tgrow, by rw [htypes, if_neg he]; exact e3⟩
+        exact ⟨e1, pureTyped_grow e1 e2 tgrow, by rw [htypes, ite_eq_right he]; exact e3⟩
     · rw [hal] at hms; exact kgrow y (h.m.altsKnown y ms hms)
     · rw [hdefs] at hm'; split at hm'
       · rename_i he; subst he; exact h.m.maxLt
@@ -269,9 +269,9 @@ theorem insert_rinv {st : SState} (h : RInv f V B X XN st) {allowed : Inst → B
     · rw [hal] at hms
       obtain ⟨e1, e2⟩ := h.alts y ms hms m hmm
       exact ⟨kgrow m e1, by rw [tknown m e1, tknown y (h.m.altsKnown y ms hms)]; exact e2⟩
-  refine ⟨hinv, hstep, rfl, hgw, ?_, by rw [htypes, if_pos rfl, htn], hcl, hm⟩
+  refine ⟨hinv, hstep, rfl, hgw, ?_, by rw [htypes, ite_eq_left rfl, htn], hcl, hm⟩
   refine enodes_nodeIn hinv (fun m hm' y hy => ?_) (fun ms hms => ?_)
-  · rw [hdefs, if_pos rfl] at hm'; cases hm'; exact hgood y (hops y hy)
+  · rw [hdefs, ite_eq_left rfl] at hm'; cases hm'; exact hgood y (hops y hy)
   · rw [hal] at hms
     have := h.m.altsKnown _ ms hms; rw [hwk] at this; cases this
 
