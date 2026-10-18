@@ -92,9 +92,13 @@ structure Report where
   fired : Std.HashMap String Nat := {}
   deriving Inhabited
 
-/-- Nodes the simplifier may emit into `f`. -/
+/-- Nodes the simplifier may emit into `f`: pure nodes (in the backend subset E when `f` is), but
+never `symbol_value`. A `symbol_value` hash-consing hit in a block its definition does not dominate
+would be cloned, and `simpOk` rejects an inserted `symbol_value` (`insOk`: it is `stuck` on a
+missing symbol), which made the whole simplify stage fall back (#24, M1). -/
 def allowedIn (f : Function) : Inst → Bool :=
-  if Compile.functionE f then fun n => isPure n && Compile.instE n else isPure
+  if Compile.functionE f then fun n => notSym n && isPure n && Compile.instE n
+  else fun n => notSym n && isPure n
 
 /-- Skeleton instructions the simplifier may emit into `f`. -/
 def skelAllowedIn (f : Function) : Inst → Bool :=
