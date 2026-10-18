@@ -191,8 +191,8 @@ theorem read_pstate_of_flags {s t : Arm.ArmState} (h : ∀ fl, Arm.r (.FLAG fl) 
   simp_all
 
 /-- **`leTls` meets the TLSDESC contract** `TlsOk` (no trust: it is the hook's definition). -/
-theorem tlsOk_le (F : BitVec 64 → Prop) (K : Nat) :
-    TlsOk F K (sys I (leBase I B file)).Xb (sys I (leBase I B file)).Hb where
+theorem tlsOk_le {R : Res} {F' : BitVec 64 → Prop} (F : BitVec 64 → Prop) (K : Nat) :
+    TlsOk F K (ofRes I R (leBase I B file) F').Xb (ofRes I R (leBase I B file) F').Hb where
   pc n tmp s _ := by
     show Arm.r .PC (leTls I B file n tmp s) = _
     unfold leTls; split <;> simp [Arm.r_of_w_same]
@@ -222,6 +222,53 @@ theorem tlsOk_le (F : BitVec 64 → Prop) (K : Nat) :
       read_pstate_of_flags fun fl => hw.1 (.FLAG fl) (by simp [Masked])
     unfold leTls
     split <;> simp only [read_pstate_w (fun fl => by simp), hfl]
+
+/-- **Non-vacuity of `BaseOk` with TLS**: the closed base environment with the local-exec TLS
+hook (`leBase I closedBase file`) satisfies every base premise of the linked system of any
+results, `tls_value` included (`baseOk_closedR` needs results without it). -/
+theorem baseOk_closedLe {R : Res} {F : BitVec 64 → Prop} :
+    BaseOk (ofRes I R (leBase I closedBase file) F) where
+  baseNoAlloc := fun _ n gsem hn => by
+    simp [ofRes, leBase, closedBase, Clif.Env.empty] at hn
+  keepSyms := fun _ n f h => by simp [ofRes, leBase, closedBase, Clif.Env.empty] at h
+  aliasSyms := fun _ _ _ _ _ _ _ _ _ _ => by simp [ofRes, leBase, closedBase, Clif.Env.empty]
+  baseOs := fun g hg info hs hb F' K G s0 Pc ctx s _ _ _ c wh ops regs i' w outs w' _ _ _ _ _ _
+      _ hsem => by simp [csem, ofRes, leBase, closedBase] at hsem
+  basePc := fun d s _ _ _ => by simp [ofRes, leBase, closedBase, Arm.r_of_w_same]
+  baseExt := fun d uses w outs w' _ hx => by simp [ofRes, leBase, closedBase] at hx
+  baseX := fun g hg F' slotOff out c => by
+    intro ext _ gs sl cm w d uses args vals rvals cm' he
+    simp [ofRes, leBase, closedBase, Clif.Env.empty] at he
+  baseXI := fun g hg F' slotOff out c sig _ n gsem sl cm w u args vals rvals cm' hgs => by
+    simp [ofRes, leBase, closedBase, Clif.Env.empty] at hgs
+  baseTls := fun _ _ _ F K => tlsOk_le F K
+  baseTry := fun g hg F' ctx info ti _ c wh ops regs i' s w outs w' s' _ _ _ _ _ _ hsem => by
+    simp [csem, ofRes, leBase, closedBase] at hsem
+  baseNI := fun _ g hg F' c n sig vals cm args d uses Z w w' o x o' x' _ _ _ _ _ _ _ _ _ hx _ => by
+    simp [ofRes, leBase, closedBase] at hx
+  baseTlsNI := fun _ F' => closedBase_tlsNI (R := R) (F' := F) F'
+  baseKeepsPlace := fun _ n gsem hn => by
+    simp [ofRes, leBase, closedBase, Clif.Env.empty] at hn
+  baseKeepsAllocs := fun _ n gsem hn => by
+    simp [ofRes, leBase, closedBase, Clif.Env.empty] at hn
+
+/-- The TCB-and-alignment part of the file's thread-pointer offsets (`TpOff file v = A + v`). -/
+def tlsA (file : ByteArray) : Nat :=
+  (((Elf.phdrs (Elf.fileRd file)).bind (·.find? (·.type == 7))).map
+    fun p => let al := max p.align 1; (16 + al - 1) / al * al).getD 0
+
+theorem tpOff_eq {v w : Nat} (h : TpOff file v = some w) : w = tlsA file + v := by
+  simp only [TpOff, Elf.tpOff, Option.bind_eq_some_iff, Option.map_eq_some_iff] at h
+  obtain ⟨phs, hph, p, hp, rfl⟩ := h
+  simp [tlsA, hph, hp]
+
+/-- **The address clause of `TlsLoader` is satisfiable**: with the thread pointer `-(tlsA file)`
+the running thread's instance `tp + TpOff` of every thread-local symbol with an offset is its
+CLIF address (the CLIF memory's symbols are at the symbols' values, `I.symAddr`). -/
+theorem tlsLoader_addr_canon {n : String} {v : Nat} (h : TpOff file (I.addrOf n) = some v) :
+    -BitVec.ofNat 64 (tlsA file) + tpOffOf I file n = I.symAddr n 0 := by
+  rw [tpOffOf, h, Option.getD_some, tpOff_eq h, symAddr_zero, BitVec.ofNat_add, ← BitVec.add_assoc,
+    BitVec.add_comm (-_), BitVec.add_neg_cancel, BitVec.zero_add]
 
 /-- **The outside-code contract `HooksSim` of `leBase`**: its call clause is `B`'s; its TLS clause
 holds (`leTls` writes constants into registers). -/
