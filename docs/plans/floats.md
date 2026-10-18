@@ -224,7 +224,26 @@ typed model is the integer one (`*_int`, `lowerShapeT_of_lowerShape`, `lowerShap
 `lowerCheckT_of_lowerCheck`). Witnesses: `FVTest/Backend/FloatDriverT.lean` (float parameters,
 loads/stores, constants, `select`, `bitcast`, float block parameters and edge arguments,
 stack-passed `f64`/`f32`: in `functionET`/`LowerScopeT`, accepted by `lowerCheckT`, rejected by
-`lowerCheck`). Next (slice 3): the typed loop simulation over `LowerShapeT`.
+`lowerCheck`).
+
+**S11e5 Stage C, slice 3 (typed loop simulation, typed `Low`, edge classes).** `buildCtx` gives
+every value `vregOf ctx x` (`CtxSpec.regEqT`), so the loop simulation over the typed model needs
+no premise: `loop_runT`, `lowerFunction_runT` (`Proof/LowerLoop{Run,Sim,}T.lean`: the VCode is
+`vcBlocksOfT f ctx bl`, typed raw blocks `rawBlockT` and edge blocks `edgeBlocksT`, with
+`LoopFactsT`), and the integer `lowerFunction_run` follows on integer contexts
+(`lowerFunction_run_of_runT`, `vcBlocksOfT_int`, `LoopFactsT.toInt`). `shapeOkT_complete` /
+`lowerShapeT_of_lower` (`Proof/LowerShapeOkT.lean`) give `LowerShapeT` on SSA `LowerScopeT` input
+with well-founded aliases, given that the terminator rules emit code (`TermEmitsT`; on integer
+contexts `termEmitsT_of_ctxInv` from `term_emits`, so `shapeOkT_complete_int` has the integer
+premises only). `Spill.LowT`/`lowT_of` (`Proof/SpillEdgesLowT.lean`, no premise) carry the label,
+position, target and edge facts (`LowT.edge_facts`: arguments are vregs of any class);
+`Low.toT`/`LowT.toLow` on integer contexts. `Compile.functionET` now also checks edge classes
+(`edgeClassOk`: branch arguments, a `try_call`'s value arguments and returned values have the
+class of their target parameter/return, `defFloats`, `argClassOk`), with `CtxSpec.edgeClass`,
+`tryEdgeClass`, `retClass` in `buildCtx`'s context. Witnesses: `FVTest/Backend/FloatLoopT.lean`.
+Open: `TermEmitsT` and `Low.raw_back` for float-capable contexts (the terminator rules' shapes at
+`CtxInvT`: a `return` of float values, conditions in integer positions), and the typed
+`alias_facts`/`lowerCheckT_complete`.
 
 ## 4. Known hazards
 

@@ -90,12 +90,54 @@ def opsTypedT (f : Function) : Bool :=
     b.body.all (fun s => (intOperands s.inst).all fun x => !fd.contains x) &&
       (termIntOperands b.term).all fun x => !fd.contains x
 
+/-- Every definition of `f` with whether its type is a float: block parameters, statement
+results at the result types `buildCtx` uses; a `call_indirect`'s results are integers
+(`instData`'s `sigIntB`). -/
+def defFloats (f : Function) : List (ValueId × Bool) :=
+  f.blocks.flatMap fun b =>
+    b.params.map (fun p => (p.1, p.2.isFloat)) ++
+    b.body.flatMap fun s =>
+      if isCallIndirect s.inst then s.results.map (·, false) else
+        (s.results.zip ((s.inst.resultTypes (fun r => (f.extern? r).map (·.sig))
+          (f.sigDecls.lookup ·)).getD [])).map fun p => (p.1, p.2.isFloat)
+
+/-- Value `a` passed where type `ty` is expected has `ty`'s register class: every definition
+of `a` is a float iff `ty` is. -/
+def argClassOk (df : List (ValueId × Bool)) (a : ValueId) (ty : Ty) : Bool :=
+  df.all fun p => p.1 != a || p.2 == ty.isFloat
+
+/-- The successors of a branch (`jump`, `brif`, `br_table`). -/
+def blockCalls : Terminator → List BlockCall
+  | .jump bc => [bc]
+  | .brif _ t e => [t, e]
+  | .brTable _ d tbl => d :: tbl
+  | _ => []
+
+/-- **Edge and return classes**: branch arguments and a `try_call`'s value arguments have the
+class of their target block's parameters, returned values the class of the signature's
+returns (the CLIF verifier's typing of block calls and `return`). -/
+def edgeClassOk (f : Function) : Bool :=
+  let df := defFloats f
+  f.blocks.all fun b =>
+    (blockCalls b.term).all (fun bc => match f.block? bc.block with
+      | some tb => (bc.args.zip tb.params).all fun (a, p) => argClassOk df a p.2
+      | none => true) &&
+    (match b.term with
+      | .tryCall _ _ et | .tryCallIndirect _ _ et => et.dests.all fun td =>
+        match f.block? td.block with
+        | some tb => (td.args.zip tb.params).all fun
+          | (.val v, p) => argClassOk df v p.2
+          | _ => true
+        | none => true
+      | .ret vs => (vs.zip f.sig.returns).all fun (v, p) => argClassOk df v p.ty
+      | _ => true)
+
 /-- **The typed movement scope.** -/
 def functionET (f : Function) : Bool :=
   sigET f.sig && f.globals.all (globalE ·.2) && f.externs.all (sigE ·.2.sig) &&
     f.blocks.all (fun b =>
       b.params.all (tyM ·.2) && b.body.all (instET ·.inst) && termE b.term) &&
-    opsTypedT f
+    opsTypedT f && edgeClassOk f
 
 /-! ## Integer specialization -/
 
@@ -172,16 +214,71 @@ theorem floatDefs_of_functionE {f : Function} (hE : functionE f = true) : floatD
         (List.of_mem_zip hp).2
       revert this; cases p.2 <;> decide
 
+theorem isFloat_of_tyE {t : Ty} (h : tyE t = true) : t.isFloat = false := by
+  revert h; cases t <;> decide
+
+/-- Subset E defines only integer values. -/
+theorem defFloats_of_functionE {f : Function} (hE : functionE f = true) :
+    ∀ p ∈ defFloats f, p.2 = false := by
+  simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
+  obtain ⟨⟨⟨-, -⟩, hx⟩, hb⟩ := hE
+  intro p hp
+  simp only [defFloats, List.mem_flatMap, List.mem_append, List.mem_map] at hp
+  obtain ⟨b, hbm, hp⟩ := hp
+  rcases hp with ⟨q, hq, rfl⟩ | ⟨s, hs, hp⟩
+  · exact isFloat_of_tyE ((hb b hbm).1.1 q hq)
+  · split at hp
+    · obtain ⟨r, -, rfl⟩ := List.mem_map.mp hp; rfl
+    · rename_i hc
+      obtain ⟨⟨r, t⟩, hm, rfl⟩ := List.mem_map.mp hp
+      exact resTy_not_float_of_instE (List.all_eq_true.mpr hx) ((hb b hbm).1.2 s hs)
+        (by simpa using hc) t (List.of_mem_zip hm).2
+
+theorem argClassOk_of_int {df : List (ValueId × Bool)} (hdf : ∀ p ∈ df, p.2 = false) (a : ValueId)
+    {ty : Ty} (ht : ty.isFloat = false) : argClassOk df a ty = true :=
+  List.all_eq_true.mpr fun p hp => by
+    simp only [hdf p hp, ht, beq_self_eq_true, Bool.or_true]
+
 /-- **Subset E is in the typed scope.** -/
 theorem functionET_of_functionE {f : Function} (hE : functionE f = true) :
     functionET f = true := by
   have hfd := floatDefs_of_functionE hE
+  have hdf := defFloats_of_functionE hE
   simp only [functionE, Bool.and_eq_true, List.all_eq_true] at hE
   obtain ⟨⟨⟨hs, hg⟩, hx⟩, hb⟩ := hE
-  simp only [functionET, opsTypedT, hfd, Bool.and_eq_true, List.all_eq_true]
-  refine ⟨⟨⟨⟨sigET_of_sigE hs, hg⟩, hx⟩, fun b hbm => ?_⟩, fun b _ => ?_⟩
+  have hblk : ∀ {bid tb}, f.block? bid = some tb → ∀ p ∈ tb.params, p.2.isFloat = false :=
+    fun htb p hp => isFloat_of_tyE ((hb _ (List.mem_of_find?_eq_some htb)).1.1 p hp)
+  simp only [functionET, opsTypedT, edgeClassOk, hfd, Bool.and_eq_true, List.all_eq_true]
+  refine ⟨⟨⟨⟨⟨sigET_of_sigE hs, hg⟩, hx⟩, fun b hbm => ?_⟩, fun b _ => ?_⟩, fun b _ => ⟨?_, ?_⟩⟩
   · exact ⟨⟨fun q hq => tyM_of_tyE ((hb b hbm).1.1 q hq),
       fun s hs => instET_of_instE ((hb b hbm).1.2 s hs)⟩, (hb b hbm).2⟩
   · simp
+  · intro bc _
+    split
+    · rename_i tb htb
+      exact List.all_eq_true.mpr fun ap hm =>
+        argClassOk_of_int hdf _ (hblk htb _ (List.of_mem_zip hm).2)
+    · rfl
+  · split
+    · refine List.all_eq_true.mpr fun td _ => ?_
+      split
+      · rename_i tb htb
+        refine List.all_eq_true.mpr fun ap hm => ?_
+        split
+        · exact argClassOk_of_int hdf _ (hblk htb _ (List.of_mem_zip hm).2)
+        · rfl
+      · rfl
+    · refine List.all_eq_true.mpr fun td _ => ?_
+      split
+      · rename_i tb htb
+        refine List.all_eq_true.mpr fun ap hm => ?_
+        split
+        · exact argClassOk_of_int hdf _ (hblk htb _ (List.of_mem_zip hm).2)
+        · rfl
+      · rfl
+    · simp only [sigE, Bool.and_eq_true, List.all_eq_true] at hs
+      exact List.all_eq_true.mpr fun vp hm =>
+        argClassOk_of_int hdf _ (isFloat_of_tyE (hs.2 _ (List.of_mem_zip hm).2))
+    · rfl
 
 end Compile

@@ -212,7 +212,7 @@ theorem CtxSpec.intOps_of (sp : CtxSpec f ctx ranges st0) (hT : Compile.function
   obtain ⟨B, hB, s, hs, -, rfl⟩ := sp.inst_of hi hc
   refine sp.eCTys_of_not_floatDef ht fun hfd => ?_
   simp only [Compile.functionET, Compile.opsTypedT, Bool.and_eq_true, List.all_eq_true] at hT
-  have := (hT.2 B hB).1 s hs x (by rw [← intArgs_eq_intOperands]; exact hx)
+  have := (hT.1.2 B hB).1 s hs x (by rw [← intArgs_eq_intOperands]; exact hx)
   simp [hfd] at this
 
 /-- The instructions of `buildCtx`'s context of a typed-scope function are in the scope. -/
@@ -221,7 +221,7 @@ theorem CtxSpec.instScopeT (sp : CtxSpec f ctx ranges st0) (hT : Compile.functio
   intro ii info inst hi hc
   obtain ⟨B, hB, s, hs, -, rfl⟩ := sp.inst_of hi hc
   simp only [Compile.functionET, Bool.and_eq_true, List.all_eq_true] at hT
-  exact (hT.1.2 B hB).1.2 s hs
+  exact (hT.1.1.2 B hB).1.2 s hs
 
 /-- **`buildCtx` on the typed scope gives a float-capable lowering context.** -/
 theorem ctxInvT_of (hs : LowerScopeT f) (hb : buildCtx f = .ok (ctx, ranges, st0)) :
@@ -283,6 +283,109 @@ theorem buildCtx_typed (hs : LowerScopeT f) (hb : buildCtx f = .ok (ctx, ranges,
 theorem ctxOkT_of_lowerScope (hs : LowerScope f) (hb : buildCtx f = .ok (ctx, ranges, st0)) :
     ctxOkT f ctx = true :=
   ctxOkT_of hs.toT hb
+
+/-! ## Edge classes -/
+
+theorem valClass_ofClif_eq {ty ty' : Clif.Ty} (hv : valTyOk ty = true) (hv' : valTyOk ty' = true)
+    (hf : ty.isFloat = ty'.isFloat) : (CTy.ofClif ty).valClass = (CTy.ofClif ty').valClass := by
+  cases ty <;> cases ty' <;> simp_all [valTyOk, eTy, Clif.Ty.isInt, Clif.Ty.isFloat, CTy.ofClif,
+    CTy.valClass, CTy.regClass?]
+
+theorem valTyOk_of_tyM {ty : Clif.Ty} (h : Compile.tyM ty = true) : valTyOk ty = true := by
+  cases ty <;> simp_all [Compile.tyM, Compile.tyE, valTyOk, eTy, Clif.Ty.isInt, Clif.Ty.isFloat]
+
+/-- **A class-checked argument has its target's class**: a value `a` passed where type `ty` is
+expected (`Compile.argClassOk`) has, in `buildCtx`'s context, a type of `ty`'s class. -/
+theorem CtxSpec.class_of_argClassOk (sp : CtxSpec f ctx ranges st0) {a : Nat} {ty : Clif.Ty}
+    (h : Compile.argClassOk (Compile.defFloats f) a ty = true) (hv : valTyOk ty = true) :
+    ∀ t, ctx.valueType? a = some t → t.valClass = (CTy.ofClif ty).valClass := by
+  intro t ht
+  have hchk : ∀ fl, (a, fl) ∈ Compile.defFloats f → fl = ty.isFloat := by
+    intro fl hm
+    have := List.all_eq_true.mp h _ hm
+    simpa using this
+  rcases sp.tyOf a t ht with ⟨B, hB, q, hq, rfl, rfl⟩ | ⟨B, hB, s, hs, m, ty', hm, hty, rfl⟩
+  · refine valClass_ofClif_eq ((sp.blockC B hB).1 q hq) hv (hchk _ ?_)
+    simp only [Compile.defFloats, List.mem_flatMap, List.mem_append, List.mem_map]
+    exact ⟨B, hB, .inl ⟨q, hq, rfl⟩⟩
+  · have hsc := (sp.blockC B hB).2 s hs
+    refine valClass_ofClif_eq (hsc.2.2 ty' (List.mem_of_getElem? hty)) hv ?_
+    cases hci : Compile.isCallIndirect s.inst
+    · refine hchk _ ?_
+      simp only [Compile.defFloats, List.mem_flatMap, List.mem_append, List.mem_map]
+      refine ⟨B, hB, .inr ⟨s, hs, ?_⟩⟩
+      simp only [hci, Bool.false_eq_true, ite_false, List.mem_map]
+      refine ⟨(a, ty'), ?_, rfl⟩
+      have : (s.results.zip (tysOf f s))[m]? = some (a, ty') := by
+        rw [List.getElem?_zip_eq_some]; exact ⟨hm, hty⟩
+      exact List.mem_of_getElem? this
+    · have h1 : false = ty.isFloat := hchk false (by
+        simp only [Compile.defFloats, List.mem_flatMap, List.mem_append, List.mem_map]
+        refine ⟨B, hB, .inr ⟨s, hs, ?_⟩⟩
+        simp only [hci, ite_true, List.mem_map]
+        exact ⟨a, List.mem_of_getElem? hm, rfl⟩)
+      rw [← h1]
+      obtain ⟨res, inst⟩ := s
+      cases inst with
+      | callIndirect sig c args =>
+        obtain ⟨d, hd⟩ := hsc.1
+        cases hl : f.sigDecls.lookup sig with
+        | none => simp [tysOf, Clif.Inst.resultTypes, hl] at hty
+        | some sg =>
+          have hmem : ty' ∈ tysOf f ⟨res, .callIndirect sig c args⟩ := List.mem_of_getElem? hty
+          simp only [tysOf, Clif.Inst.resultTypes, hl, Option.map_some, Option.getD_some,
+            List.mem_map] at hmem
+          obtain ⟨p, hp, rfl⟩ := hmem
+          have := List.all_eq_true.mp (sigIntB_iff.mp (instData_callIndirect_int hd hl)).2 p hp
+          revert this; cases p.ty <;> decide
+      | _ => simp [Compile.isCallIndirect] at hci
+
+theorem blockCalls_eq_dests (t : Clif.Terminator) : Compile.blockCalls t = dests t := by
+  cases t <;> rfl
+
+theorem block?_mem {f : Clif.Function} {b : Clif.BlockId} {tb : Clif.Block}
+    (h : f.block? b = some tb) : tb ∈ f.blocks := List.mem_of_find?_eq_some h
+
+/-- **Branch arguments have their target parameters' classes** (typed scope). -/
+theorem CtxSpec.edgeClass (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionET f = true)
+    {B : Clif.Block} (hB : B ∈ f.blocks) {bc : Clif.BlockCall} (hbc : bc ∈ dests B.term)
+    {tb : Clif.Block} (htb : f.block? bc.block = some tb) {a : Nat} {p : Clif.ValueId × Clif.Ty}
+    (hap : (a, p) ∈ bc.args.zip tb.params) :
+    ∀ t, ctx.valueType? a = some t → t.valClass = (CTy.ofClif p.2).valClass := by
+  simp only [Compile.functionET, Compile.edgeClassOk, Bool.and_eq_true, List.all_eq_true] at hT
+  have h := (hT.2 B hB).1 bc (by rw [blockCalls_eq_dests]; exact hbc)
+  rw [htb] at h
+  exact sp.class_of_argClassOk (List.all_eq_true.mp h _ hap)
+    ((sp.blockC tb (block?_mem htb)).1 p (List.of_mem_zip hap).2)
+
+/-- **A `try_call`'s value arguments have their target parameters' classes** (typed scope). -/
+theorem CtxSpec.tryEdgeClass (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionET f = true)
+    {B : Clif.Block} (hB : B ∈ f.blocks) {et : Clif.ExnTable} (het : IsTryWith B.term et)
+    {td : Clif.TryDest} (htd : td ∈ et.dests) {tb : Clif.Block} (htb : f.block? td.block = some tb)
+    {v : Nat} {p : Clif.ValueId × Clif.Ty} (hap : (Clif.TryArg.val v, p) ∈ td.args.zip tb.params) :
+    ∀ t, ctx.valueType? v = some t → t.valClass = (CTy.ofClif p.2).valClass := by
+  simp only [Compile.functionET, Compile.edgeClassOk, Bool.and_eq_true, List.all_eq_true] at hT
+  have h := (hT.2 B hB).2
+  have hv := (sp.blockC tb (block?_mem htb)).1 p (List.of_mem_zip hap).2
+  rcases het with ⟨fn, args, he⟩ | ⟨c, args, he⟩ <;> rw [he] at h <;> simp only at h <;>
+  · have h2 := List.all_eq_true.mp h td htd
+    rw [htb] at h2
+    have h3 := List.all_eq_true.mp h2 _ hap
+    exact sp.class_of_argClassOk h3 hv
+
+/-- **Returned values have the signature's return classes** (typed scope). -/
+theorem CtxSpec.retClass (sp : CtxSpec f ctx ranges st0) (hT : Compile.functionET f = true)
+    {B : Clif.Block} (hB : B ∈ f.blocks) {vs : List Nat} (hr : B.term = .ret vs) {v : Nat}
+    {p : Clif.AbiParam} (hvp : (v, p) ∈ vs.zip f.sig.returns) :
+    ∀ t, ctx.valueType? v = some t → t.valClass = (CTy.ofClif p.ty).valClass := by
+  have hsig := hT
+  simp only [Compile.functionET, Compile.edgeClassOk, Bool.and_eq_true, List.all_eq_true] at hT
+  have h := (hT.2 B hB).2
+  rw [hr] at h
+  simp only [List.all_eq_true] at h
+  simp only [Compile.functionET, Compile.sigET, Bool.and_eq_true, List.all_eq_true] at hsig
+  exact sp.class_of_argClassOk (h _ hvp)
+    (valTyOk_of_tyM (hsig.1.1.1.1.1.2 p (List.of_mem_zip hvp).2))
 
 end
 
