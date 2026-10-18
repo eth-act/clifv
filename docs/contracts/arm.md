@@ -26,6 +26,9 @@ Producer: M3-model. Model choice: `docs/decisions/arm-model.md`. Attribution:
   FMIN, FNMUL, FMADD, FMSUB, FNMADD, FNMSUB, FSQRT, FCVT (s↔d), FRINTN/P/M/Z/A/X/I,
   FCMP/FCMPE (register, `#0.0`), FCVT{N,P,M,Z,A}{S,U}, SCVTF, UCVTF; 72 new forms × 1000
   vectors, 0 failures (all 328 forms: 328 000 vectors, 0 failures).
+- DONE (T4 #40, 2026-10-18): encoder-driven co-simulation (`arm-cosim --encoder`, section
+  "Co-simulation"): every `Backend.Insn` form the encoder accepts, 424 forms × 200 vectors, 0
+  failures; it found that the model lacks `umaddl`/`smaddl` (#271, outside subset E).
 
 ## Public API (namespace `Arm`)
 
@@ -237,10 +240,35 @@ beyond the single-register ones, system instructions other than hints.
 
 ## Co-simulation (`FVTest/Arm/Cosim/*`, `lake exe arm-cosim`)
 
-`scripts/arm-cosim.sh [--n N] [--seed S] [--only SUBSTR] [--show K]` builds and runs it.
-Environment: `ARM_COSIM_CLANG` (default `clang`), `ARM_COSIM_LLD` (default: `rust-lld` from the
-active rustc sysroot), `ARM_COSIM_QEMU` (default `qemu-aarch64-static`). Exit 0 means every
-vector matched. Output has one `form<TAB>vectors<TAB>failures` line per form, then a total line.
+`scripts/arm-cosim.sh [--n N] [--seed S] [--only SUBSTR] [--show K] [--encoder | --all]
+[--coverage] [--chunk C]` builds and runs it. Environment: `ARM_COSIM_CLANG` (default `clang`),
+`ARM_COSIM_LLD` (default: `rust-lld` from the active rustc sysroot), `ARM_COSIM_QEMU` (default
+`qemu-aarch64-static`). Exit 0 means every vector matched. Output has one
+`form<TAB>vectors<TAB>failures` line per form, then a total line. At most `C` (default 6000)
+vectors go into one qemu program.
+
+Two sets of forms: the hand-written `Specs.lean` (default; words built from the Arm ARM encoding
+diagrams) and the encoder-driven `Encoder.lean` (`--encoder`; `--all` runs both). The encoder
+set (T4, #40) generates random `Backend.Insn` values of every constructor and operand variant
+the encoder accepts (operation, width, size, addressing mode, register 31 as SP or ZR, condition)
+and co-simulates the words `Insn.encode` produces, i.e. exactly what the backend can emit.
+Relocated immediates (`bl`'s `CALL26`, `adrp`'s page offset, the `:lo12:`/`:got_lo12:`/
+`:tlsdesc_lo12:` fields), which the encoder leaves zero, get the values a linker would write (a
+landing pad, a random page offset, a buffer offset). `stlxr` runs after an `ldaxr` of the same
+address (`TestCase.pre`: instructions run by both qemu and the model before the tested one), so
+qemu's exclusive monitor is set and the store succeeds on both sides. Not co-simulated
+(`Enc.excluded`): `mrs xt, tpidr_el0` (no system registers in the model, by design) and
+`umaddl`/`smaddl`, which the model does not implement (#271; emitted only for
+`umul_overflow`/`smul_overflow`, outside subset E).
+
+`--coverage` (no qemu) reports, per encoder form, the hand-written specs covering it: those
+whose sampled cube (the bits constant over 400 sampled words, with their values) contains all
+300 sampled words of the form. Results (2026-10-18, seed `0x5eed`, 200 vectors per form):
+
+| | forms | covered by `Specs.lean` | co-simulated, failures |
+| --- | --- | --- | --- |
+| encoder forms (`--encoder`) | 424 (+ 2 excluded) | 419 (missing: `stlxr` b/h/w/x, `fmov h, w`) | 424 forms, 84 800 vectors, 0 failures |
+| `Specs.lean` + encoder (`--all`) | 752 | — | 150 400 vectors, 0 failures |
 
 Per vector: a random valid encoding of the form, with all register fields random, including
 31 (SP or ZR according to the form). The initial state is random: x0–x30 (biased towards edge
