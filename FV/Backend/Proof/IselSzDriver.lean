@@ -73,19 +73,27 @@ theorem cApply_ty (aw : TermId → List AW → Option Nat) (ctab : CTab) (ty : T
     cApply program covTab aw ctab apre aOracle ty t as = cApply program covTab aw ctab apre aOracle 0 t as :=
   rfl
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem cApply_556_wt0 : cApply program covTab actorW szCTab apre aOracle 0 556 [.c0] = some 107 := by
-  native_decide
+  decide +kernel
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem cApply_553_wt0 :
     cApply program covTab actorW szCTab apre aOracle 0 553 [.ty [.int 64], .data 122 1 [], .c0] =
-      some 428 := by native_decide
+      some 428 := by decide +kernel
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem cApply_556_tg0 : cApply program covTab actorT tgCTab apre aOracle 0 556 [.c0] = some 0 := by
-  native_decide
+  decide +kernel
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem cApply_553_tg0 :
     cApply program covTab actorT tgCTab apre aOracle 0 553 [.ty [.int 64], .data 122 1 [], .c0] =
-      some 0 := by native_decide
+      some 0 := by decide +kernel
 
 /-! ## `br_table`'s rule on other terminators -/
 

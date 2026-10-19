@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Compile the survey corpus (scripts/rust-clif/corpus/*.rs) with rustc_codegen_cranelift and
-# dump the CLIF it produces.
+# Compile the survey corpus (scripts/rust-clif/corpus/*.rs) with rustc_codegen_cranelift (the
+# patched one of scripts/build-cg-clif.sh, which writes each dump's external-name table; CG_CLIF
+# overrides) and dump the CLIF it produces.
 #
 # usage: scripts/rust-clif/dump.sh [OUT_DIR]      (default /tmp/rust-clif-survey/out)
 #
@@ -20,6 +21,7 @@ set -euo pipefail
 TOOLCHAIN=${TOOLCHAIN:-nightly-2026-09-26}
 TARGET=${TARGET:-aarch64-unknown-linux-gnu}
 here=$(cd "$(dirname "$0")" && pwd)
+CG_CLIF=${CG_CLIF:-$here/../../target/cg_clif/abort/librustc_codegen_cranelift.so}
 out=${1:-/tmp/rust-clif-survey/out}
 
 declare -A PROFILE=(
@@ -35,7 +37,7 @@ for prof in debug release release-oc; do
     rm -rf "$dir"
     mkdir -p "$dir"
     # shellcheck disable=SC2086
-    if ! rustc +"$TOOLCHAIN" -Zcodegen-backend=cranelift --target "$TARGET" \
+    if ! rustc +"$TOOLCHAIN" -Zcodegen-backend="$CG_CLIF" --target "$TARGET" \
         --edition 2021 --crate-type lib --crate-name "$crate" -Cpanic=abort \
         -Zunstable-options -Csymbol-mangling-version=hashed -Ccodegen-units=1 ${PROFILE[$prof]} \
         --emit=llvm-ir,obj --out-dir "$dir" "$src" 2>"$dir/rustc.stderr"; then

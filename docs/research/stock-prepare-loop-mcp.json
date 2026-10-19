@@ -1,0 +1,76 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.innerStepAt_graph' depends on axioms: [propext, Quot.sound]",
+      "line": 3,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.innerFoldAt_graph' depends on axioms: [propext, Quot.sound]",
+      "line": 4,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.innerForInAt_eq' depends on axioms: [propext, Quot.sound]",
+      "line": 5,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.innerStepAt_rows' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.innerFoldAt_rows' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.innerFoldAt_facts' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.innerFoldAt_copies' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_stages' depends on axioms: [propext, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrepLoopWitness.indexed_inner_loop_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrepLoopWitness.indexed_prepare_stages_witness' depends on axioms: [propext, Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "utc": "2026-10-19T14:27:59.946925+00:00",
+  "first_activation_head": "567d1f09",
+  "candidate": "/tmp/StockRuleHistoryBridge.lean",
+  "status": "Candidate kernel PASS, two universal roots use exactly std3; not integrated or landed",
+  "unblocks": "Landing7: real Rust two-block nop/jump identity class whose actual Stock/legacy instructions agree but rulesFired differs",
+  "existing_work": "D0 full-code equality cannot preserve differing true histories. DriverCheck.shapeOk checks instructions/classes/control, not diagnostic history. No matching existing metadata bridge found in the current proof tree.",
+  "preservation": "Retain original Stock rulesFired and original edge payload; never replace metadata or weaken scope. Prove relation internally for complete functions, then propagate unchanged checker/semantic and totality consumers.",
+  "next": "Validate this candidate within shared budget after first D0 gates; after first squash implement full edge-aware prologue class and consumer bridge, including source/nonvacuity/mixed witnesses.",
+  "consumer_review": {
+    "utc": "2026-10-19T14:36:01.190202+00:00",
+    "exact_constraint": "Existing pipe_spec and pipeT_spec explicitly conclude lowerFunction f = .ok a.vc. Real Stock prologues differ in rulesFired, so pointing those same old definitions at a metadata-different dispatcher would make the old statement false. Preserve the old pipeline definitions/theorems as legacy-compatible wrappers; add actual-output production consumer variants, proved through the generic lowering seam and global fixed Stock contract. Never rewrite Stock history to satisfy the old equality.",
+    "files": [
+      "FV/E2E/LinkCheck.lean:120",
+      "FV/E2E/LinkCheck.lean:166",
+      "FV/E2E/LinkScope.lean:198",
+      "FV/Backend/Proof/DriverCheck.lean:745"
+    ],
+    "first_bridge": "lowerCheck is independent of rulesFired; queued candidate proves the invariant without evaluating or comparing production outputs at runtime. Actual internal prologue code relation, complete edge handling, totality and mixed generated-proof integration still required.",
+    "applies_after": "First D0 activation squash; do not mutate current frozen source or wait for the whole semantic bridge before shipping its already complete exact-output class."
+  },
+  "kernel_receipt": {
+    "utc": "2026-10-19T14:39:45.780581+00:00",
+    "pid": 147159,
+    "state": "candidate_kernel_passed",
+    "returncode": 0,
+    "limitation": "General metadata bridge only; actual prologue relation and production consumer integration remain.",
+    "scheduler_dispatch_resumed": true
+  },
+  "kernel_log": "'Backend.Stock.RuleHistoryBridge.lowerCheck_with_rules' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.RuleHistoryBridge.lowerCheck_of_same_code' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+  "preserved_candidate": "docs/research/stock-rule-history-bridge-candidate.lean",
+  "actual_prologue_probe": {
+    "status": "queued, not proved or activated",
+    "source": "docs/research/stock-prologue-code-probe-candidate.lean",
+    "scope": "System V i64 actual two-block nop/jump/nop identity, arbitrary symbol/run metadata; prove actual Stock success, code equality modulo diagnostic metadata and no edge operands",
+    "receipt": {
+      "utc": "2026-10-19T15:09:28.296251+00:00",
+      "pid": 339475,
+      "state": "waiting_on_verified_full_gate",
+      "controller_pid": 113213,
+      "max_combined_reserved_GiB": 14
+    },
+    "resource_boundary": "Run only after current full module/trust controller succeeds; six GiB candidate plus eight GiB affected gate <=14GiB. One60second bounded probe, no automatic retries.",
+    "first_landing": "Probe does not gate earlier complete D0 class; do not mutate frozen production source."
+  }
+}
