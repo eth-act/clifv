@@ -1,0 +1,364 @@
+{
+  "utc": "2026-10-19T14:27:59.946925+00:00",
+  "first_activation_head": "567d1f09",
+  "candidate": "/tmp/StockRuleHistoryBridge.lean",
+  "status": "Candidate kernel PASS, two universal roots use exactly std3; not integrated or landed",
+  "unblocks": "Landing7: real Rust two-block nop/jump identity class whose actual Stock/legacy instructions agree but rulesFired differs",
+  "existing_work": "D0 full-code equality cannot preserve differing true histories. DriverCheck.shapeOk checks instructions/classes/control, not diagnostic history. No matching existing metadata bridge found in the current proof tree.",
+  "preservation": "Retain original Stock rulesFired and original edge payload; never replace metadata or weaken scope. Prove relation internally for complete functions, then propagate unchanged checker/semantic and totality consumers.",
+  "next": "Validate this candidate within shared budget after first D0 gates; after first squash implement full edge-aware prologue class and consumer bridge, including source/nonvacuity/mixed witnesses.",
+  "consumer_review": {
+    "utc": "2026-10-19T14:36:01.190202+00:00",
+    "exact_constraint": "Existing pipe_spec and pipeT_spec explicitly conclude lowerFunction f = .ok a.vc. Real Stock prologues differ in rulesFired, so pointing those same old definitions at a metadata-different dispatcher would make the old statement false. Preserve the old pipeline definitions/theorems as legacy-compatible wrappers; add actual-output production consumer variants, proved through the generic lowering seam and global fixed Stock contract. Never rewrite Stock history to satisfy the old equality.",
+    "files": [
+      "FV/E2E/LinkCheck.lean:120",
+      "FV/E2E/LinkCheck.lean:166",
+      "FV/E2E/LinkScope.lean:198",
+      "FV/Backend/Proof/DriverCheck.lean:745"
+    ],
+    "first_bridge": "lowerCheck is independent of rulesFired; queued candidate proves the invariant without evaluating or comparing production outputs at runtime. Actual internal prologue code relation, complete edge handling, totality and mixed generated-proof integration still required.",
+    "applies_after": "First D0 activation squash; do not mutate current frozen source or wait for the whole semantic bridge before shipping its already complete exact-output class."
+  },
+  "kernel_receipt": {
+    "utc": "2026-10-19T14:39:45.780581+00:00",
+    "pid": 147159,
+    "state": "candidate_kernel_passed",
+    "returncode": 0,
+    "limitation": "General metadata bridge only; actual prologue relation and production consumer integration remain.",
+    "scheduler_dispatch_resumed": true
+  },
+  "kernel_log": "'Backend.Stock.RuleHistoryBridge.lowerCheck_with_rules' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.RuleHistoryBridge.lowerCheck_of_same_code' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+  "preserved_candidate": "docs/research/stock-rule-history-bridge-candidate.lean",
+  "actual_prologue_probe": {
+    "status": "Underlying theorem std3 checked; full module still pending clean recheck after grouped localization fixes for VBlock, VCode and Except.",
+    "source": "docs/research/stock-prologue-code-probe-candidate.lean",
+    "scope": "System V i64 actual two-block nop/jump/nop identity, arbitrary symbol/run metadata; prove actual Stock success, code equality modulo diagnostic metadata and no edge operands",
+    "receipt": {
+      "utc": "2026-10-19T17:05:43.388638+00:00",
+      "pid": 2501240,
+      "state": "waiting_on_verified_witness_then_full_success",
+      "witness_controller_pid": 1667533,
+      "max_combined_reserved_GiB": 14
+    },
+    "resource_boundary": "Clean6GiB recheck follows generic witness4GiB after full gate; native8GiB plus either probe stays <=14GiB.",
+    "first_landing": "Probe does not gate earlier complete D0 class; do not mutate frozen production source.",
+    "first_module_error": "/tmp/StockPrologueCodeProbe.lean:17:22: error(lean.unknownIdentifier): Unknown constant `instDecidableEqVBlock`\n/tmp/StockPrologueCodeProbe.lean:18:27: error(lean.unknownIdentifier): Unknown constant `instDecidableEqVBlock`\n'Backend.Stock.PrologueProbe.systemV_i64_code_and_success' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+    "name_discovery": "Backend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_5\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq.match_1\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_3\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_2\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_4\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_1\n",
+    "corrected_instance": "instDecidableEqVBlock_stockPrologueCodeProbe",
+    "all_names_discovered": "Backend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_5\nBackend.Stock.PrologueProbe.instDecidableEqExcept_stockPrologueInstanceNames.decEq.match_1\nBackend.Stock.PrologueProbe.instDecidableEqExcept_stockPrologueInstanceNames.decEq\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames.decEq.match_1\nBackend.Stock.PrologueProbe.instDecidableEqExcept_stockPrologueInstanceNames\nBackend.Stock.PrologueProbe.instDecidableEqExcept_stockPrologueInstanceNames.decEq._proof_6\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames.decEq._proof_7\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq\nBackend.Stock.PrologueProbe.instDecidableEqExcept_stockPrologueInstanceNames.decEq._proof_4\nBackend.Stock.PrologueProbe.instDecidableEqExcept_stockPrologueInstanceNames.decEq._proof_1\nBackend.Stock.PrologueProbe.instDecidableEqExcept_stockPrologueInstanceNames.decEq._proof_3\nBackend.Stock.PrologueProbe.instDecidableEqExcept_stockPrologueInstanceNames.decEq._proof_2\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames.decEq._proof_5\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames.decEq._proof_4\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames.decEq._proof_1\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames.decEq\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq.match_1\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames.decEq._proof_2\nBackend.Stock.PrologueProbe.instDecidableEqExcept_stockPrologueInstanceNames.decEq._proof_5\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames.decEq._proof_3\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_3\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_2\nBackend.Stock.PrologueProbe.instDecidableEqVCode_stockPrologueInstanceNames.decEq._proof_6\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_4\nBackend.Stock.PrologueProbe.instDecidableEqVBlock_stockPrologueInstanceNames.decEq._proof_1\n",
+    "localization_names": [
+      "instDecidableEqVBlock_stockPrologueCodeProbe",
+      "instDecidableEqVCode_stockPrologueCodeProbe",
+      "instDecidableEqExcept_stockPrologueCodeProbe"
+    ]
+  },
+  "source_prologue_witness_probe": {
+    "status": "Kernel PASS: four universal source lemmas; only propext and Quot.sound",
+    "source": "docs/research/stock-prologue-source-witness-candidate.lean",
+    "scope": "Universal i64 word/memory/oracle entry, all four actual nop/jump/nop/return source steps and complete function witness; no Stock relation or production activation claim",
+    "receipt": {
+      "utc": "2026-10-19T15:44:50.041043+00:00",
+      "pid": 417545,
+      "state": "candidate_kernel_passed",
+      "returncode": 0,
+      "scheduler_dispatch_resumed": true,
+      "source_sha256": "097a1e33142665cf5bb6f1c2056ebd4cea1d00662693c6e12d06f0878b448b24",
+      "olean_sha256": "e6f412bd0ca5b3c76b35eaad6d2e7cf6fbbcff5ea6d2fc0e008dc267221d2b67",
+      "artifact_bytes": 349728
+    },
+    "resource_boundary": "After full gate: source1GiB/15seconds + code6GiB/60seconds + native8GiB <=15GiB; this future-class probe does not gate D0.",
+    "axiom_log": "'Clif.StockPrologueSourceProbe.source_entry' depends on axioms: [propext, Quot.sound]\n'Clif.StockPrologueSourceProbe.source_body' depends on axioms: [propext, Quot.sound]\n'Clif.StockPrologueSourceProbe.source_memory_roundtrip' depends on axioms: [propext, Quot.sound]\n'Clif.StockPrologueSourceProbe.complete_source_witness' depends on axioms: [propext, Quot.sound]\n",
+    "limitation": "Source function only; actual Stock code relation and production consumer integration remain unproved. Corrected scratch record layout before this successful run."
+  },
+  "source_input_binding": {
+    "status": "Kernel PASS: definition identity has no axioms; complete word/memory witness uses only propext/Quot.sound",
+    "source": "docs/research/stock-prologue-input-binding-candidate.lean",
+    "receipt": {
+      "utc": "2026-10-19T15:53:45.795321+00:00",
+      "pid": 475345,
+      "state": "candidate_kernel_passed",
+      "returncode": 0,
+      "scheduler_dispatch_resumed": true
+    },
+    "axioms": "'Backend.Stock.PrologueProbe.systemV_i64_source' does not depend on any axioms\n'Backend.Stock.PrologueProbe.systemV_i64_source_witness' depends on axioms: [propext, Quot.sound]\n",
+    "relationship": "Pending Stock-code probe now imports this exact source definition and its already validated source-execution witness, rather than duplicating the function shape."
+  },
+  "actual_callback_provenance": {
+    "status": "Generic data-provenance lemma kernel/std3 PASS; concrete actual-Stock success witness queued, not yet validated",
+    "core": "docs/research/stock-pipeline-provenance-candidate.lean",
+    "witness": "docs/research/stock-pipeline-actual-code-witness-candidate.lean",
+    "core_receipt": {
+      "utc": "2026-10-19T16:06:33.106923+00:00",
+      "pid": 751073,
+      "state": "candidate_kernel_passed",
+      "returncode": 0,
+      "scheduler_dispatch_resumed": true
+    },
+    "axioms": "'E2E.LinkCheck.ActualCodeProbe.pipeTWithLowering_spec' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+    "witness_receipt": {
+      "utc": "2026-10-19T16:41:51.424261+00:00",
+      "pid": 1667533,
+      "state": "waiting_on_verified_full_gate",
+      "full_controller_pid": 113213,
+      "max_combined_reserved_GiB": 12
+    },
+    "reason": "Old pipeT_spec concludes exact legacy code, which is false for different true Stock history. New callback-specific data facts support actual-output consumer proofs without altering the old theorem variant. No correctness certificate for arbitrary callbacks supplied.",
+    "resource_limit": "Core4GiB/15seconds ran in reserved slot. Witness4GiB/15seconds after code6GiB probe ends, with native8GiB total12GiB; does not gate D0."
+  },
+  "updated_utc": "2026-10-19T18:57:19.577530+00:00",
+  "actual_output_checker_obligation": {
+    "source": "docs/research/stock-prologue-code-probe-candidate.lean",
+    "root": "Backend.Stock.PrologueProbe.systemV_i64_checked_output",
+    "status": "Replacement now consumes the KERNEL-PASSED logical Dominated/LowerScope certificate; no dominatedB computation proof or new caller premise. Full checker module remains UNVALIDATED at existing2501240 after1667533/full gate.",
+    "purpose": "Fixed class proof that actual compacted Stock result passes lowerCheck, retaining actual rule history; no runtime equality comparison or extra caller premise.",
+    "rejected_source": "/tmp/stock-prologue-checker-direct-decide-failed.lean",
+    "rejected_log": "/tmp/stock-prologue-checker-direct-decide-failed.log",
+    "diagnostic": "/tmp/stock-prologue-check-diagnostic/kernel.log",
+    "axiom_policy": "Error-recovery self-axiom in failed log rejected with nonzero kernel result; no admitted theorem accepted."
+  },
+  "checked_consumer_contract": {
+    "source": "docs/research/stock-checked-consumer-candidate.lean",
+    "kernel_receipt": "/tmp/stock-checked-consumer-check/progress.json",
+    "state": "candidate_kernel_passed",
+    "roots": [
+      "E2E.CompiledA.toValidated",
+      "E2E.backend_correct_validated_ex"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "change": "Additive actual-code M7 contract exposes source/SSA checker facts used by the composition proof, without legacy constructor equality. Existing source and theorem variants untouched.",
+    "nonvacuity": "E2E.LinkCheck.ActualCodeProbe.actual_stock_validated_witness added to existing queued positive-witness module; still unvalidated.",
+    "not_yet_done": [
+      "non-vacuity kernel result",
+      "physical/final/world consumer variants",
+      "linker/generated-proof consumers",
+      "new class activation"
+    ]
+  },
+  "concrete_consumer_layers": {
+    "sources": [
+      "docs/research/stock-checked-consumer-candidate.lean",
+      "docs/research/stock-checked-final-consumer-candidate.lean",
+      "docs/research/stock-checked-world-consumer-candidate.lean",
+      "docs/research/stock-checked-noninterference-consumer-candidate.lean",
+      "docs/research/stock-checked-cleanup-consumer-candidate.lean",
+      "docs/research/stock-production-contract-candidate.lean",
+      "docs/research/stock-link-production-candidate.lean",
+      "docs/research/stock-actual-checker-candidate.lean",
+      "docs/research/stock-actual-binary-candidate.lean",
+      "docs/research/stock-actual-modes-candidate.lean"
+    ],
+    "state": "ten modules kernel-pass,110roots std3; concrete total/strict Stock non-vacuity and actual writer/native-binary integration remain",
+    "checks": [
+      "/tmp/stock-checked-consumer-check",
+      "/tmp/stock-checked-final-consumer-check",
+      "/tmp/stock-checked-world-consumer-check"
+    ],
+    "resource": "2GiB reserved beside12GiB active module, dispatch resumed in finally",
+    "coverage": [
+      "actual-code M7 composition",
+      "concrete rule/register-allocation/frame/emission layers",
+      "source/SSA simulation with world relation",
+      "final-world return/trap and per-state facts"
+    ],
+    "pending": [
+      "queued actual successful Stock contract witness",
+      "queued two-block Stock checker proof",
+      "whole-program linker/generated-proof variants",
+      "new class totality/activation"
+    ]
+  },
+  "noninterference_consumers": {
+    "source": "docs/research/stock-checked-noninterference-consumer-candidate.lean",
+    "kernel_receipt": "/tmp/stock-checked-noninterference-consumer-check/progress.json",
+    "state": "candidate_kernel_passed",
+    "roots": 6,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": 0,
+    "coverage": [
+      "paired ordinary/try/indirect call contracts",
+      "VCode non-interference",
+      "final world non-interference",
+      "per-state machine facts for ordinary and non-interference activations"
+    ],
+    "compatibility": "All original source/theorem variants untouched; two new paired-try helpers omit an unused compilation premise.",
+    "pending": "Concrete successful Stock contract witness remains queued; full program linker and generated-proof integration and new class activation remain."
+  },
+  "cleanup_consumers": {
+    "source": "docs/research/stock-checked-cleanup-consumer-candidate.lean",
+    "kernel_receipt": "/tmp/stock-checked-cleanup-consumer-check/progress.json",
+    "state": "candidate_kernel_passed",
+    "roots": 19,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": 0,
+    "coverage": [
+      "actual raw source/SSA validation",
+      "actual pruned preparation",
+      "M7 and concrete machine/final/world/per-state/non-interference consumers"
+    ],
+    "nonvacuity": "Actual cleanup Stock contract and both-production-mode witnesses added to existing queued witness module; unvalidated."
+  },
+  "production_contract": {
+    "source": "docs/research/stock-production-contract-candidate.lean",
+    "kernel_receipt": "/tmp/stock-production-contract-check/progress.json",
+    "state": "candidate_kernel_passed",
+    "roots": 11,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": 0,
+    "constructors": [
+      "retained CompiledEither",
+      "actual CompiledValidated Stock output",
+      "actual CompiledCleanupValidated Stock output"
+    ],
+    "compatibility": "Old CompiledEither and CompiledEither.lower untouched. No false legacy-constructor equality projection on new contract.",
+    "pending": [
+      "concrete positive Stock witness kernel check",
+      "LinkSys.Ok actual-output integration retaining old variants",
+      "linker/checker/generated-proof consumers",
+      "prologue class activation"
+    ]
+  },
+  "whole_program_candidate": {
+    "source": "docs/research/stock-link-production-candidate.lean",
+    "state": "candidate_kernel_passed",
+    "controller": null,
+    "waits_for": 2501240,
+    "root_count_prepared": 39,
+    "condition_fields": 39,
+    "unchanged_non_compilation_fields": 38,
+    "only_field_generalized": "compiled: CompiledEither -> CompiledProduction",
+    "runtime_model_copied": false,
+    "coverage_prepared": [
+      "existing linked calls, indirect calls and non-interference",
+      "callee depth induction",
+      "budget and peak-stack variants",
+      "whole-program returned/source-to-machine correctness"
+    ],
+    "pending": [
+      "positive actual Stock contract witness (existing queue1667533)",
+      "actual compiler/checker/generated-proof integration",
+      "new class activation"
+    ],
+    "kernel_receipt": "/tmp/stock-link-production-check/progress.json",
+    "root_count": 39,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": 19,
+    "warning_detail": "Inherited deprecated if_pos/if_neg names, unused hK binder and two unused simp arguments; no kernel errors.",
+    "retired_unstarted_controller": 3745501,
+    "source_sha256": "414aa1b1b31d92cdf7930181f0f2637fb99d3baaa7abb6ac906f69cb019b822d",
+    "resource": "Verified completion of3GiB backfill worker, then3GiB check alongside12GiB existing job (15GiB total); dispatch resumed."
+  },
+  "actual_checker_candidate": {
+    "source": "docs/research/stock-actual-checker-candidate.lean",
+    "state": "candidate_kernel_passed",
+    "roots": 7,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "kernel_receipt": "/tmp/stock-actual-checker-check/progress.json",
+    "coverage": [
+      "actual callback result/preparation/allocation/emission/index/oracle/base provenance",
+      "same existing checker and source/layout/base conditions in both cleanup modes",
+      "actual results to OkProduction",
+      "same whole-program CrateStmt semantics for generated proof consumers",
+      "exact legacy resultsT compatibility"
+    ],
+    "pending": [
+      "actual successful Stock non-vacuity (existing1667533 queue)",
+      "production source/CLI/proof-writer integration"
+    ]
+  },
+  "prologue_source_domain": {
+    "source": "docs/research/stock-prologue-domain-candidate.lean",
+    "state": "candidate_kernel_passed",
+    "roots": [
+      "Backend.Stock.PrologueProbe.systemV_i64_context_scope",
+      "Backend.Stock.PrologueProbe.systemV_i64_lowering_domain"
+    ],
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "kernel_receipt": "/tmp/stock-prologue-domain-check/progress.json",
+    "method": "Finite legacy Backend.buildCtx/LowerScope facts; explicit two-block availability solution proved via inFix_greatest, deriving Dominated and LowerScope for arbitrary names/run metadata. No new caller premise or runtime fixpoint evaluation.",
+    "rejected_attempts": [
+      "default decide and kernel decide on dominatedB stuck; rejected rc1/sorryAx recovery",
+      "kernel #reduce fixpoint exceeded maxRecDepth100000; diagnostic only",
+      "symbolic proof initially mixed Stock.buildCtx/termArgs with legacy builder/driver arguments; fixed explicit namespaces before complete module pass"
+    ],
+    "pending": "Heavy code/checker module must import and consume this proof; source updated, clean check pending existing2501240."
+  },
+  "actual_binary_candidate": {
+    "source": "docs/research/stock-actual-binary-candidate.lean",
+    "state": "candidate_kernel_passed",
+    "roots": 6,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "kernel_receipt": "/tmp/stock-actual-binary-check/progress.json",
+    "coverage": [
+      "actual lowering/preparation/oracle/index/base to ArtOk via original ELF/relocation checks",
+      "generic actual result table BinOkWithResults and retained BinOk embedding",
+      "actual code-image readonly bytes and resolved-relocation provenance"
+    ],
+    "pending": [
+      "concrete generated proof/ELF fixture using new entrypoints",
+      "generalized native binary simulation consumers"
+    ]
+  },
+  "actual_modes_candidate": {
+    "source": "docs/research/stock-actual-modes-candidate.lean",
+    "state": "candidate_kernel_passed",
+    "roots": 9,
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "kernel_receipt": "/tmp/stock-actual-modes-check/progress.json",
+    "coverage": [
+      "strict actual callback pipeline provenance",
+      "original I.fallback selection with k/j/oracle/base preserved",
+      "all-flags legacy results equality",
+      "mode-aware checker/crate and ELF code/image-byte consumers"
+    ],
+    "pending": [
+      "universal total-mode Stock witness queued1667533; fixed strict Stock witness now passed",
+      "production/proof-writer integration"
+    ]
+  },
+  "strict_stock_nonvacuity": {
+    "source": "docs/research/stock-strict-witness-candidate.lean",
+    "state": "candidate_kernel_passed",
+    "kernel_receipt": "/tmp/stock-strict-stock-witness-check/progress.json",
+    "root": "E2E.LinkCheck.StrictStockProbe.strict_stock_both_cleanup_modes",
+    "axioms": "std3 plus exactly two native_decide witness axioms, explicitly -- witness: native_decide per TO-PROVE\u00a77",
+    "scope": "Fixed SystemV/i64 D0 function; both cleanup modes, actual Stock origin required, strict pipe succeeds and lowerCheck/prepCheck/checkAlloc all pass. Does not replace queued universal metadata/configuration/allocator-answer witnesses.",
+    "oracle": "Actual prepared operand-count extraction produced allocs=[[x0],[x0]], no edits, zero spill slots. Fixed answer checked by existing validator; checker string is not trusted.",
+    "supplement": "docs/research/stock-all-modes-witness-supplement-candidate.lean preserved UNVALIDATED; combined raw+total native extension exceeded3GiB twice and is not required in place of the stronger queued standard-axiom total witness."
+  }
+}
