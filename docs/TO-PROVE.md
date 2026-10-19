@@ -960,7 +960,9 @@ simplify on. Open: `SimpStageOk` (simplify's own completeness).
 - Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; check the log for "Build
   completed successfully". The `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to 16.5 GB
   (`RuleBitops7`; `RuleArith` 15 GB, a dozen others 7–11 GB) and take up to 34 min each; `lake build`
-  (no `-j` option) runs every ready module at once and exceeds any sane cap.
+  (no `-j` option) runs every ready module at once and exceeds any sane cap. Without a reachable
+  systemd user manager, `memcap.sh` falls back (one stderr line) to a non-root watchdog: process-tree
+  RssAnon + RssShmem polled every 0.2 s, SIGKILL and exit 137 above the cap.
 - **Building many modules.** `scripts/lake-serial-build.py --budget 16G <targets>` (targets: `FV`,
   `FVTest`, a prefix such as `FV.Opt.Proof.`, or modules) runs one memcapped `lake build <M>` per module in
   import order: cap = recorded peak (`scripts/lake-module-peaks.tsv`, refreshed in

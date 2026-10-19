@@ -118,6 +118,9 @@ for `Opt.Legalize128`'s output on functions satisfying `Opt.Legal.Complete.Pre`
   `cd <worktree> && scripts/memcap.sh lake build FV.Backend`. A runaway `lean` process then
   dies alone. Without the cap, `lean` processes reaching 37–58 GB triggered global OOM kills
   on this 62 GB machine; those aborted the agent harness and killed every running agent.
+  If the systemd user manager is unreachable ("Failed to connect to bus"), `memcap.sh` says so on
+  stderr and falls back to a watchdog that polls the command's process tree (RssAnon + RssShmem,
+  every 0.2 s) and SIGKILLs it with exit 137 above `FV_MEMCAP`; no root needed.
 - Never reduce the exported ISLE programs (`Isle.Aarch64.program`, `Isle.Opt.program`, the generated rule data)
   wholesale with the kernel or `decide`/`rfl`/`native_decide`. Reason about individual rules
   or per-opcode slices, and keep `maxHeartbeats` and `maxRecDepth` at their defaults, unless
