@@ -3,21 +3,14 @@ import FV.E2E.PipelineCheck
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver
 
-def pipeCleanup (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art := do
-  let vc ← lowerFunction f
-  let vcp ← prepare (DeadCleanup.prune vc)
-  let o ← parseRAOut o
-  let rf ← buildRFunc vcp o
-  let af ← lowerRFunc vcp rf
-  let fa ← emitFunc k af
-  let fb ← fa.layout
-  pure ⟨k, vc, vcp, rf, af, fa, fb, base⟩
+def pipeCleanup (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
+  pipeWithLowering lowerFunction DeadCleanup.prune f k base o
 
 theorem pipeCleanup_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeCleanup f k base o = .ok a) :
     lowerFunction f = .ok a.vc ∧ prepare (DeadCleanup.prune a.vc) = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
       emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧ a.k = k ∧ a.base = base := by
-  unfold pipeCleanup at h
+  unfold pipeCleanup pipeWithLowering at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
   rcases h2 : prepare (DeadCleanup.prune vc) with _ | vcp <;> simp only [h2] at h
@@ -39,14 +32,8 @@ theorem pipeCleanup_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : L
 loaded at `base`: `lowerFunction`, `prepare`, `lowerAllocReady` (regalloc2's allocation if
 accepted and emittable, else the spill allocation), `emitFunc`, `layout`. The artifact's
 allocation is the one lowered, `allocResult vcp (readyAnswer vcp ra)` (`lowerAllocReady_eq`). -/
-def pipeCleanupT (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art := do
-  let vc ← lowerFunction f
-  let vcp ← prepare (DeadCleanup.prune vc)
-  let ra := raAnswer vcp o
-  let af ← lowerAllocReady vcp ra
-  let fa ← emitFunc k af
-  let fb ← fa.layout
-  pure ⟨k, vc, vcp, allocResult vcp (readyAnswer vcp ra), af, fa, fb, base⟩
+def pipeCleanupT (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
+  pipeTWithLowering lowerFunction DeadCleanup.prune f k base o
 
 theorem pipeCleanupT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeCleanupT f k base o = .ok a) :
@@ -54,7 +41,7 @@ theorem pipeCleanupT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : 
       a.rf = allocResult a.vcp (readyAnswer a.vcp (raAnswer a.vcp o)) ∧
       lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
       a.k = k ∧ a.base = base := by
-  unfold pipeCleanupT at h
+  unfold pipeCleanupT pipeTWithLowering at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
   rcases h2 : prepare (DeadCleanup.prune vc) with _ | vcp <;> simp only [h2] at h
