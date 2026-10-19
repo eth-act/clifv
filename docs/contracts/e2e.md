@@ -135,8 +135,11 @@ puts argument `i` at `sigArgLocs`' location (x0..x7 / v0..v7 by class, separate 
 check (qemu, `clif-native --link` of C callees built by clang): integer-signature functions
 that call `(f64, i64, f32) -> f64|i64|f32` and a nine-`f64` callee (the ninth stored by
 `stur d0, [sp]`) return the same values from the Lean backend's object as from Cranelift's
-(4/4 runs). Functions with `f32`/`f64` parameters or returns of their own still fall back
-(`ctlCheck`: `Args`/`Rets` of int vregs only), so the float values come from calls.
+(4/4 runs). At S11e5a, functions with `f32`/`f64` parameters or returns of their own fell back
+(`ctlCheck`: `Args`/`Rets` of int vregs only); since S11e5 Stage C slice 5a `ctlCheck` accepts
+float `Args`/`Rets` in v0–v7 (`argPairOk`, `retPairOk`, `ctlCheck_of_int`;
+`docs/contracts/backend-proof.md`), and the register-level `Args`/`Rets` proofs are
+class-general (`realizes_args`, `ret_machine`), with the end-to-end statements unchanged.
 
 Form coverage (V3) with typed calls: the transfer function `Cov.actor` gives `gen_call_output`
 an int or float vreg (`.flat 3 true`; `CtorRes` records the signature argument), so
