@@ -426,15 +426,15 @@ theorem regLevelCorrect_world_atX {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
     obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret
     obtain ⟨n1, c1, ⟨hq1, hA1⟩, hr1, ht1⟩ := forward hSim hRz hstar hinit ⟨hq0, hA0⟩
     obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
-    rw [operands_rets] at hops
+    rw [operands_retsC] at hops
     cases hops
     have hsem' := hsem
     simp only [csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem'
     obtain ⟨rfl, rfl, -⟩ := hsem'
     have h1 : VStep R.vc R.sem (.run ⟨b, k, ρ, w₁⟩) (.ret vals w₁) := by
       rw [hvals]
-      refine VStep.step hvb hi (operands_rets ns) (by rw [hvals] at hsem; exact hsem) ?_ (VNext.ret rfl)
-      rw [List.toList_toArray, filter_isDef_retOps]; rfl
+      refine VStep.step hvb hi (operands_retsC ns) (by rw [hvals] at hsem; exact hsem) ?_ (VNext.ret rfl)
+      rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
     obtain ⟨n2, c', c'', ⟨hq2, -⟩, hr2, hms, hr3, ht2⟩ :=
       forward_last hSim hRz h1 _ c1 _ (Nat.le_refl _) hr1 ⟨hq1, hA1⟩
     have hfin : ∀ n3, E2E.runX (ArmStepX X H fa) (n0 + n1 + n2 + n3) s =
@@ -452,7 +452,7 @@ theorem regLevelCorrect_world_atX {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
-        rw [operands_rets] at hops'; cases hops'
+        rw [operands_retsC] at hops'; cases hops'
         have hsem3 := hsem2
         simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem3
         obtain ⟨rfl, rfl, rfl⟩ := hsem3
@@ -512,7 +512,7 @@ theorem regLevelCorrect_world_atX {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : 
           have e1 := hSim.ret hr3
           simp only [VConf.ret.injEq] at e1
           rw [e1.1] at hx
-          exact hvalsM _ (operands_rets ns) j v p x hj hx
+          exact hvalsM _ (operands_retsC ns) j v p x hj hx
         · intro a ha
           rw [hmem]
           exact hst.world.2.1 a ha

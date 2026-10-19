@@ -393,6 +393,20 @@ x0, x1, …): a `LinkSysT` beside it (FV/E2E/LinkArmT.lean, LinkGoodT.lean, …)
 integer-only in `functionET`) so call sites keep x0..; `functionET` still excludes float calls and
 the S11f arithmetic.
 
+**S11e5 Stage C, slice 5a (float `Args`/`Rets` in `ctlCheck`).** The executable control-form
+check `ctlInstOk` (`FV/Backend/Regalloc.lean`) accepts class-compatible `Args`/`Rets` pairs
+(`argPairOk`, `retPairOk`: an `f32`/`f64` vreg in v0–v7, an int vreg as before), so a function
+with float parameters or returns is no longer rejected by `lowerRFunc` ("control-form check
+(ctlCheck) failed"); everything else stays int-vreg only. Old acceptance implies new
+(`ctlInstOk_of_int`, `ctlCheck_of_int` over the kept `ctlInstOkInt`/`ctlCheckInt`). The
+register-level `Args`/`Rets` proofs (`realizes_args`, `ret_machine`) run on class-general pairs
+(`argPairsC`, `operands_argsC`/`operands_retsC`, `rets_usesC`), so the register-level and E2E
+statements are unchanged; only d8–d15 (`keep`) are claimed preserved across calls. Witness:
+`FVTest/Backend/FloatCtlT.lean` (`(f64, i64, f32) -> f64`: widened check accepts, integer check
+rejected; `Dominated`, `LowerScopeT`). Open (slice 5b): `ctlSpill_typed`, which needs the
+control-shape analysis (`IselCtlHyp`) over `CtxInvT` on a typed Cov domain (`IselCovT`, shared
+with slice 6's typed form coverage).
+
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
 (`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
