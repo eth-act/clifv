@@ -585,3 +585,11 @@ regalloc2's symbolic checker.
 `FVTest/Backend/Lowering/ScanReplay.lean` stress-tests native scan/replay with
 100,000 linked transitions and checks rejection of five changed certificates,
 including a broken state link.
+
+The file driver `compileFileWithLowering` shares caller rejection, allocation-result
+indexing, emission, rules, unwind/LSDA and verification-budget reporting between
+lowering routes. Its allocator receives the complete route payload; the rule
+projection is used only for diagnostics, so per-successor edge vectors are not
+discarded. `compileFileWith` remains the checked legacy instance, and the Stock
+comparison tool uses the same orchestration with `EdgeVCode`. This adapter adds
+no Stock correctness certificate: development Stock output remains unverified.

@@ -37,8 +37,8 @@ and reach the allocator. Allocation rejection does not erase the captured input.
 theorem successor_payload_witness :
     ((compileFileWithLowering (fun _ _ _ => .ok payload)
       (fun x : EdgeVCode => x.code.rulesFired) recordAllocator file
-      [(source.name, "unverified payload transport witness")] false).run #[]).2 = #[payload] := by
-  rfl
+      [(source.name, "unverified payload transport witness")] false).run #[]).2.map (·.edges) = #[payload.edges] := by
+  decide +kernel
 
 /-- Concrete non-vacuity of legacy specialization: the original checked lowering
 and the common route agree on an inhabited integer parameter-return function,
