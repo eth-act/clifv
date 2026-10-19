@@ -480,6 +480,36 @@ subset E; the typed chain proves `AllocChecked`, the link-level world theorems n
 (`resClassOkB_of`, `ctlSpillB_of`, `formsCovered_complete`, `spillKillFree`) and
 `outOkT_of_inScopeP` (`chks_resultsT`).
 
+**Slice 8, totality half (typed input scope, FloatsTotT).** `E2E/LinkScopeInputDefsT.lean`:
+`fnScopeInTB` keeps every conjunct of `fnScopeInB` over the typed scope (`functionET`,
+`lowerScopeTB`) with `fnScopeTB`'s input checks `storeTypedB`/`tryArgClassOk`; a function outside
+subset E must also meet `resClassOkB` and the run-time decider `lowerOutTB` (`lowerFunction`
+succeeds; `ctlSpillB` of its output; `emitCondsB`, `formsCoveredB default`, `killFreeB` and
+`ctlInstsB` — `ctlInstOk` everywhere, `Args` first in block 0 — of `prepare`'s output), i.e. what
+the typed chain does not prove yet; `InScopeInT`, `fnScopeInFailsT`. Literal-pool `f64const`
+stays outside by `functionET`'s `f64PoolFree`. Proven: `Prep.prepare_okT` (`prepare` is total on
+`Dominated`/`LowerScopeT`: `trap_shapeRT`/`ret_shapeRT`/`termShapeR_runTermT`, `raw_termT`,
+`prepIn_of_lowerT`; `Proof/PrepareTotalT.lean`), the allocation/emission half on the typed
+pipeline (`E2E/EmitTotalT.lean`: `emitReady_spill_of`, `lowerAllocReady_emit_of` from
+`PrepDomain`, `AllocChecked`, `FormsCovered`, `CtlInsts` and `emitCondsB` alone;
+`lowerRFunc_spillAllocT`, `backend_total_emitT`), and in `E2E/LinkScopeInputT.lean` the integer
+inclusion `fnScopeInTB_of_fnScopeInB` (no extra premise) with its converse on subset E
+(`fnScopeInB_of_fnScopeInTB`), `fnScopeTB_of_inT` (outside E the typed input scope is in
+`fnScopeTB`, so `backend_correct_finalT_scope` applies), and **`pipeT_okT`**: `pipeT` succeeds on
+every function of `fnScopeInTB` for every allocator answer, with `lowerCheckT`, `prepCheck`,
+`AllocChecked` and `FormsCovered`; `resultsT_ok_inT` (crates), `resultsT_ok_input` (the integer
+conclusion re-derived). Witnesses `FVTest/E2E/FloatTotalT.lean` (`fW`: float load/const/select/
+store/bitcast, decided in `fnScopeInTB`, compiled by `pipeT_okT`; `crateW`; integer `fInt`).
+Remaining for `Link.compileExe_total_reach_inputT`, in order: typed ISLE progress (`IselProg` for
+the float roots: float forms in `stmtForms`/`prgTab`, `PInvT`, the extern helpers under
+`CtxInvT`), replacing `lowerOutTB`'s `lowerFunction` check; typed size/emission analyses
+(`iselSz`, `iselEmit`) for `emitCondsB`; completeness of `ctlSpillB`/`formsCoveredB`/`killFreeB`/
+`resClassOkB` on the typed scope (slice 6's open items) and typed `vc_ctl` (control-shape
+analysis) for `ctlInstsB`; the dead-cleanup pipeline (`pipeCleanupT_okT`: `prepare (prune vc)`'s
+spill acceptance and emission, typed `DeadCleanup*`); `leanLink`'s per-function checks
+(`chks`: `functionE`, integer `lowerCheck`, `checkAlloc` of the spill allocation) and
+`compileExe`'s gate widened to `InScopeInT`, then the LinkSysT port for correctness.
+
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
 (`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
