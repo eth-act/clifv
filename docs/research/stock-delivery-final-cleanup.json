@@ -1,0 +1,18 @@
+{
+  "utc": "2026-10-17T14:39:46.161539+00:00",
+  "both_drafts_squash_merged": true,
+  "removed_clean_worktree": "/home/lee/clifv/.worktrees/stock-delivery-gates",
+  "shared_cache_targets_preserved": {
+    "rust/target": "/home/lee/clifv/.worktrees/driver-proof-resume/rust/target",
+    ".lake/build": "/home/lee/clifv/.worktrees/driver-proof-resume/.lake/build",
+    "crate-proofs/.lake/build": "/home/lee/clifv/.worktrees/driver-proof-resume/crate-proofs/.lake/build",
+    "third_party/wasmtime": "/home/lee/clifv/third_party/wasmtime",
+    "third_party/lnsym-upstream": "/home/lee/clifv/third_party/lnsym-upstream"
+  },
+  "one_canonical_warm_cache_retained": true,
+  "stale_idle_queue_retired_without_resuming": true,
+  "dirty_worktrees_and_unpublished_sources_preserved": true,
+  "obsolete_input_snapshot_cleanup": "docs/research/stock-delivery-obsolete-inputs-cleanup.json",
+  "free_GiB": 807.9,
+  "no_proof_plan_continuation": true
+}

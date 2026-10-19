@@ -1,0 +1,29 @@
+import FV.Backend.Proof.StockCmpParameterDriverRuns
+namespace Backend.Stock.Proof.ScalarCmp
+open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+set_option maxRecDepth 20000
+set_option maxHeartbeats 4000000
+attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
+def cmpNarrowConstant16SignedHighFunction : Clif.Function := {
+  name := "stock_cmp_complete_immediate_source"
+  sig := {params := [⟨.i16,.none,.normal⟩],returns := [⟨.i8,.none,.normal⟩],callConv := some .systemV}
+  blocks := [{id := 0,params := [(7,.i16)],body := [⟨[31],.iconst .i16 (BitVec.ofNat 16 32768)⟩,
+    ⟨[100],.icmp .sge .i16 7 31⟩],term := .ret [100]}] }
+def cmpNarrowConstant16SignedHighBuilt : Ctx × Array (Nat × Nat) × State :=
+  (Stock.buildCtx (cmpNarrowConstant16SignedHighFunction)).toOption.getD (sinkCtx,#[],sinkState)
+section Kernel
+attribute [local semireducible] Isle.Aarch64.program Stock.runTerm
+/-- A complete actual Stock driver run retains the original comparison record,
+real root958 and original source/context identities with a materialized constant final alias193→197. -/
+theorem stock_cmp_narrow_constant16_signedhigh_driver_observed :
+    (Stock.lower (cmpNarrowConstant16SignedHighFunction)).toOption.map (fun result =>
+      decide (aliasNum result.final.alias 192 = 192) && decide (aliasNum result.final.alias 193 = 197) &&
+      result.blockScans.toList.any (fun event => decide (cmpCtxKey event.ctx = cmpCtxKey (cmpNarrowConstant16SignedHighBuilt).1) &&
+        decide ((event.ctx.insts[0]?).map (·.data) = some (.data 152 35 [.data 151 57 [],.int 32768])) &&
+        event.output.records.any (fun record => record.inst == (1 : Nat) &&
+          decide (0 < record.output.state.demand[31]!) &&
+          record.output.step.any (fun step => step.decision == .emitted &&
+            decide (step.rules.getLast? = some rule_lower_2215.id))))) = some true := by
+  decide +kernel
+end Kernel
+end Backend.Stock.Proof.ScalarCmp
