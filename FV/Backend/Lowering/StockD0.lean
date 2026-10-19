@@ -47,14 +47,14 @@ inductive Origin where
 /-- Internal origin metadata for proving and testing the fixed dispatcher. -/
 def selectWith (stock : Clif.Function → Except String Result) (f : Clif.Function) :
     Except String (Origin × VCode) :=
-  let legacy := (lowerFunction f).map fun vc => (Origin.legacy, vc)
+  let legacy := fun (_ : Unit) => (lowerFunction f).map fun vc => (Origin.legacy, vc)
   if eligible f then
     match stock f with
     | .ok r =>
       if r.edgeArgs.all (·.isEmpty) then .ok (.stockD0, compact f.name r)
-      else legacy
-    | .error _ => legacy
-  else legacy
+      else legacy ()
+    | .error _ => legacy ()
+  else legacy ()
 
 def defaultLower (f : Clif.Function) : Except String VCode :=
   (selectWith Stock.lower f).map Prod.snd

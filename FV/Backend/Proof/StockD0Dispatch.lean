@@ -2,6 +2,18 @@ import FV.Backend.Proof.StockD0Code
 
 namespace Backend.Stock.D0
 
+/-- Deferring legacy work preserves the original selector for every callback and
+input. Successful Stock paths need not evaluate the unused legacy computation. -/
+theorem selectWith_eq_original (stock : Clif.Function → Except String Result)
+    (f : Clif.Function) :
+    selectWith stock f =
+      (let legacy := (lowerFunction f).map fun vc => (Origin.legacy, vc)
+       if eligible f then
+         match stock f with
+         | .ok r => if r.edgeArgs.all (·.isEmpty) then .ok (.stockD0, compact f.name r) else legacy
+         | .error _ => legacy
+       else legacy) := by rfl
+
 /-- All original compiler inputs, errors and outputs are retained. The only
 Stock-output test is the structural zero-successor preparation guard. -/
 theorem defaultLower_eq_legacy (f : Clif.Function) : defaultLower f = lowerFunction f := by
@@ -34,4 +46,5 @@ theorem failed_stock_falls_back (f : Clif.Function) (reason : String) :
 
 #print axioms defaultLower_eq_legacy
 #print axioms failed_stock_falls_back
+#print axioms selectWith_eq_original
 end Backend.Stock.D0
