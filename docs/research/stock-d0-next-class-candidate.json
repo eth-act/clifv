@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-19T14:27:59.946925+00:00",
+  "first_activation_head": "567d1f09",
+  "candidate": "/tmp/StockRuleHistoryBridge.lean",
+  "status": "unvalidated scratch candidate; not production evidence",
+  "unblocks": "Landing7: real Rust two-block nop/jump identity class whose actual Stock/legacy instructions agree but rulesFired differs",
+  "existing_work": "D0 full-code equality cannot preserve differing true histories. DriverCheck.shapeOk checks instructions/classes/control, not diagnostic history. No matching existing metadata bridge found in the current proof tree.",
+  "preservation": "Retain original Stock rulesFired and original edge payload; never replace metadata or weaken scope. Prove relation internally for complete functions, then propagate unchanged checker/semantic and totality consumers.",
+  "next": "Validate this candidate within shared budget after first D0 gates; after first squash implement full edge-aware prologue class and consumer bridge, including source/nonvacuity/mixed witnesses."
+}
