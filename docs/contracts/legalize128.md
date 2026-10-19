@@ -71,8 +71,8 @@ in `i128-load-store.clif`, agreed by the legalised form).
 
 ## The end-to-end theorem
 
-Axioms of every theorem below: `propext`, `Classical.choice`, `Quot.sound` and `_native`
-`bv_decide` certificates only.
+Axioms of every theorem below: `propext`, `Classical.choice`, `Quot.sound` (since T6 no
+`bv_decide`/`native_decide` certificate in the backend or `FV/Opt/Proof/Legal*` proofs).
 
 ```lean
 theorem E2E.backend_correct_legal {f g : Clif.Function} {cert : Opt.Legalize128.Cert}
@@ -205,9 +205,10 @@ Modules: `LegalShift*` (variable shifts/rotates: 7-bit amounts; each module < 20
 `LegalMem` (split load/store), `LegalExt` (ABI expansion `ExpRel`, contracts), `LegalPlan`
 (`pure_step`), `LegalSim` (`enter_sim`, statements, terminators, `step_sim`, `sim_run`,
 `check_refines`), `LegalRust` (the contracts for `Clif.Rust.env`), `FV/E2E/Legal.lean`.
-`LegalArith`/`LegalShift` call `bv_decide -enums`: the enum pass realizes
+Before T6, `LegalArith`/`LegalShift` called `bv_decide -enums`: the enum pass realizes
 `Clif.Ty.enumToBitVec` in the calling module, as `FV.Backend.Proof.IselCmpExt` does, and two
-modules realizing the same constant cannot be imported together.
+modules realizing the same constant cannot be imported together. Their kernel-checked T6 proofs
+realize no such declaration (`LegalArith.lean` header).
 
 ## `try_call` and `call_indirect` (agent/last-unverified, 2026-10-01)
 
@@ -227,10 +228,166 @@ helpers). New premises of `backend_correct_legal`: `hCT` (`try_call` callee cont
 (indirect-call contract), `hind`; all vacuous for functions without such calls
 (`backend_correct_legal_callFree` is the former statement).
 
+## The decidable `Pre` (S6, #30)
+
+`Opt.Legalize128.preB f : Bool` (`FV/Opt/Legalize128Pre.lean`) decides
+`Opt.Legal.Complete.Pre f` (`preB_iff : preB f = true ↔ Pre f`,
+`FV/Opt/Proof/LegalPre.lean`): `mentions128 f`, distinct definitions, every value id below
+`maxValueId f`, no statement reading its own result, no `call_indirect` with an `i128`
+signature, no `try_call_indirect`. `check_complete_of_preB`: the validator accepts every
+legalisation of a function with `preB f = true` — on that domain the runtime `Opt.Legal.check`
+is provably redundant (the compiler still runs it as a double-check). `legalOkB f` (the source
+domain of one function): the pass succeeds and is either the identity (no `i128`) or `preB f`;
+`legalOkB_cases` splits it. Witnesses (`Opt.Legal.Complete.Witness`): `add128` satisfies `Pre`
+and its legalisation is accepted; `add64` (no `i128`), `dupDef` (`defs`), `bigId` (`ids`),
+`selfRead` (`noSelf`), `indI128` (`callInd`), `tryInd` (`noTryInd`) do not.
+
+## Whole-program refinement of the original program (S3, #27)
+
+`E2E.LegalProgram.legalProg P` replaces every function of `P` by `legalize` (the pass's output,
+the function itself where the pass fails). `legalProg_refines` (`FV/E2E/LegalProgram.lean`):
+
+```lean
+theorem E2E.LegalProgram.legalProg_refines {P : Program} {B : Env} {syms : String → Option Nat}
+    (hC : ProgCtx P B syms) {h : Function} (hh : h ∈ P.funcs) {args args' : List Val}
+    {fr fr' : Frame} {m1 : Mem} (hE : EntryRel h args args' fr fr')
+    (hG : GoodFrom B P (SomeInd (legalProg P)) syms ⟨fr, [], m1⟩) (M : Nat) :
+    (∀ rv m2, Clif.runLoop B P M ⟨fr, [], m1⟩ = .returned rv m2 →
+      ∃ rv', ExpRel ((groups h.sig.returns).getD []) rv rv' ∧
+        ∃ k, Clif.runLoop B (legalProg P) k ⟨fr', [], m1⟩ = .returned rv' m2) ∧
+    (∀ c, Clif.runLoop B P M ⟨fr, [], m1⟩ = .trapped c →
+      ∃ k, Clif.runLoop B (legalProg P) k ⟨fr', [], m1⟩ = .trapped c)
+```
+
+* `ProgCtx P B syms` (the source domain): every function `legalOkB`; distinct names; no
+  `return_call` in `P` nor its legalisation; declarations of `P`'s functions carry their
+  signatures (in both programs); no function named like a `__*ti3` helper; where a function
+  mentions `i128`, the base environment's contracts `HelperOk`, `ExtLegal`, `EnvKeepsBounded`;
+  where the legalised program has indirect calls, `IndScope` and no signature known to `B`.
+* `EntryRel`: `h`'s entry frame on `args`, the legalisation's on the ABI-split `args'`
+  (`ExpRel`), the same slots (as `E2E.ClifEntry`, slot addresses free).
+* `GoodFrom` (the source run): every whole-program state reachable from the entry has valid
+  ranges below `2^64` and traps at no load/store (and, with indirect calls, the link-time
+  symbols). For returns the load/store clause is automatic (`memTrapFree_of_returned`).
+
+The proof (by induction on the source fuel, `prog_refines`) runs the per-activation refinement
+with **two environments**: the source activation runs under the linked environment of `P`
+(`runLoop_linkN`), restricted to callee entries whose whole-program states are good
+(`guardEnv`, `guard_run`: the source run enters only such callees), the target activation under
+the linked environment of `legalProg P` (`tgtEnv`, unbounded callee runs).
+`Opt.Legal.check_refines2` / `legalize_refines2` (`LegalSim.lean`, `LegalDirect.lean`) are
+`check_refines`/`legalize_refines` for a source environment `env` and a target environment
+`env'` related by `EnvOk2` (`ExtRelAt`: each extern `f` declares, called with split arguments
+in `env'`, returns the split results of its `env` call; `CallIndRel`: indirect calls resolve
+alike; the source's externs keep valid ranges bounded; `HelperOk env'`); `check_refines` is the
+case `env' = env` (`EnvOk.two`, statement unchanged). A function without `i128` runs the same
+code (`ident_run`). The induction hypothesis relates the two environments at every callee
+(`extRel_prog`, `sameAt_link`, `callIndRel_link`). The target's per-function run is a
+whole-program run (`Clif.unlink_run`, `FV/E2E/LinkClifRev.lean`: the converse of
+`runLoop_linkN` for every environment that unlinks the program, `Unlink`).
+
+Witnesses (`FV/E2E/NonVacuityLegalProgram.lean`, under `Clif.Rust.env`): the closed program
+`{add128, caller, plain}` (`caller` builds an `i128` and calls `add128` twice — an `i128` call
+between program functions, legalised to the split call; `plain` has no `i128` and calls
+`caller`): `ctx` (`ProgCtx`), `plain_refines` (`plain(5)` returns `10` in both programs),
+`add_refines` (`add128` on two `i128` values, legalised on the split arguments, returns the
+split sum).
+
+## The executable compiler on the original source program (S2, #26; S3)
+
+`compileExe` runs no optimiser: `FnInput.func` is the parsed function after `parsedFile128`, and
+`pipeT` is the backend. `E2E.LinkCheck.FnInput.src` is the parsed function before the pass;
+`FnInput.func_eq : fi.func = legalize fi.src` for every input (`parsedFile128` keeps a function
+whose legalisation fails or is rejected by `check`, as `legalize` does), so
+`LinkInput.prog_eq : I.prog = legalProg I.srcProg` (`FV/E2E/LegalSource.lean`). `SrcScopeB I`
+(`FV/E2E/SrcScopeDefs.lean`, proof-free so `lake exe lean-link --verified` decides it) decides
+the source domain on the parsed functions (`legalOkB`, `linkFreeB`, `declSigB`, no
+`__*ti3` name); `srcCtx` turns it, with the facts `compileExe` already proves of the legalised
+program (`LinkSys.Ok`), into `ProgCtx`.
+
+```lean
+theorem Link.compileExe_correct_source {S : LinkSpec} {file0 file : ByteArray}
+    (h : compileExe S file0 = .ok file) (hsrc : SrcScopeB S.input = true)
+    (B : BaseEnv) (hB : BaseOk (sys S.input B)) (hH : HooksSim S.input B)
+    (hlegal : (∃ f ∈ S.input.srcProg.funcs, mentions128 f = true) →
+      Opt.Legal.HelperOk B.env ∧ Opt.Legal.ExtLegal B.env ∧ Opt.Legal.EnvKeepsBounded B.env)
+    (hsig : (∃ g ∈ (prog S.input).funcs, ¬ Clif.IndFree g) → ∀ n, B.env.sigOf n = none)
+    {n : String} {f : Clif.Function} (hf : S.input.srcProg.func? n = some f)
+    (hc : ¬ StackBound.CycleFrom (StackBound.Calls S.input S.input.results) (legalize f))
+    {r : Arm.ArmState} {args args' : List Clif.Val} {cs cs' : Clif.State}
+    (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.input (BinCheck.roByte S.input S.data) (legalize f)
+      (StackBound.stackFn S.input (legalize f)) r args' cs'.mem)
+    (hr : ClifRun S.input B (legalize f) r args' cs')
+    (hcs : ClifEntry f args cs)
+    (hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.params).getD []) args args')
+    (hsl : cs'.frame.slots = cs.frame.slots) (hmem : cs'.mem = cs.mem)
+    (hbnd : ∀ s', Opt.Legal.SReach B.env S.input.srcProg cs s' → Opt.Legal.MemBounded s'.mem)
+    (M : Nat) :
+    (∀ vals cm, Clif.runLoop B.env S.input.srcProg M cs = .returned vals cm →
+      ∃ vals', Opt.Legal.ExpRel ((Opt.Legal.groups f.sig.returns).getD []) vals vals' ∧
+        ExecRefines (art S.input (legalize f)).fb (art S.input (legalize f)).base (xreg 30 r)
+          (step S.input B file) r (RelocAt S.input) (.returned vals' cm)) ∧
+    ((∀ M, TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs') →
+      Opt.Legal.NoMemTrap B.env S.input.srcProg cs → ∀ c,
+      Clif.runLoop B.env S.input.srcProg M cs = .trapped c →
+      ExecRefines (art S.input (legalize f)).fb (art S.input (legalize f)).base (xreg 30 r)
+        (step S.input B file) r (RelocAt S.input) (.trapped c))
+```
+
+(`FV/Link/ExeSource.lean`; axioms `propext`, `Classical.choice`, `Quot.sound`.) A return of the
+**original** program's whole-program CLIF run of `f` on `args` is the executable's return of the
+results split by `f`'s return groups (`ExpRel`), with the same live memory; a trap is the same
+trap. No checker premise: `SrcScopeB` is an input condition decided on the parsed CLIF.
+
+Remaining premises beyond `compileExe_correct`'s (which are stated about the target entry `cs'`
+of `legalize f`):
+
+| Premise | Kind | Notes |
+| --- | --- | --- |
+| `hlegal`: `HelperOk`, `ExtLegal`, `EnvKeepsBounded` of `B.env` when a source function mentions `i128` | environment (outside code) | proven for `Clif.Rust.env` (`helperOk_env`, `extLegal_env`, `envKeepsAllocs_env`) and for `Link.SourceWitness.helperEnv` |
+| `hsig`: `B.env.sigOf = none` when the program has indirect calls | environment | `IndScope` already requires it of the linked system's own resolution |
+| `hcs`, `hexp`, `hsl`, `hmem`: the source entry `cs` on `args`, `args'` its ABI split, the target's slots and memory | choice of the reference runs | as `ClifRun` for the target |
+| `hbnd`: every memory of the source run has valid ranges below `2^64` | run condition | `Clif.run`'s bump allocator can exceed `2^64`; proven for slotless programs under externs keeping allocations (`E2E.LegalProgram.Witness.bounded_of_noSlots`) |
+| traps only: `NoMemTrap` of the source run | run condition | a 16-byte access whose halves lie in two adjacent allocations traps in the source and not after the split; proven for returning runs (`memTrapFree_of_returned`) |
+| traps only: `TrapsExplicit` of the target run at every fuel | run condition | the target fuel is the legalisation's; for returns derived (`trapsExplicit_of_run`) |
+
+Witnesses: `FV/E2E/NonVacuityLegalSource.lean` (`SrcScopeB` of an identity-mixed input
+`{plain, add128}` whose compiled program differs from its source; four inputs outside it, one per
+conjunct: `return_call`, a `__udivti3`-named function, an `i128` indirect call, a declaration
+with another signature). `FV/Link/NonVacuityExeSource.lean`: `helperBase` (the closed base
+environment with the Rust `__*ti3` helpers in CLIF) meets `BaseOk`, `HooksSim` and the `i128`
+contracts for programs without TLS, indirect calls or helper calls
+(`compileExe_correct_source_helper`). `crate-proofs/Crates/CompileExeSourceWitness.lean`:
+`compileExe` compiles `g_u128`'s `wmul_u128(i128, i128) -> i128` and its callee
+`core::num::<u128>::wrapping_mul` (an original `i128` call), the input is in `SrcScopeB`, the
+original program's run of `wmul_u128` on `2^64 + 3` and `5` returns `5 * 2^64 + 15`, and the
+executable machine, called with `3, 1, 5, 0` in x0–x3, returns `15, 5` in x0, x1
+(`compileExe_source_witness`).
+
+**Recursive programs and the shipped compiler (L1f, #217).** `Link.compileExe_correct_source_peak`
+(`FV/Link/ExeSource.lean`): the same without `hc`, the outside caller providing `frameDrop (art
+S.input (legalize f)).af + S.input.D * d` bytes where `hd : Clif.DepthLe B.env S.input.srcProg d
+cs` bounds the call depth of the **source** run; the trap half takes `TrapsExplicit` under
+`Clif.linkEnvD … F d` at every `F`. The legalisation keeps the call depth
+(`E2E.LegalProgram.legalProg_refines_depth`, `FV/E2E/LegalDepth.lean`: the matched legalised run
+has depth at most `d`; e2e.md "The shipped compiler"), so it composes with
+`compileExe_correct_peak`. `Link.DeadCleanup.compileExe_correct_source` and
+`…_source_peak` (`FV/Link/DeadCleanupExeSource.lean`) are the two source theorems for the compiler
+`lean-link` runs by default, over `S.inputCleanup` (`prog S.inputCleanup = legalProg
+S.inputCleanup.srcProg`, `Link.DeadCleanup.prog_eq_legal`). Witnesses:
+`crate-proofs/Crates/CompileExeSourcePeakWitness.lean` (the self-recursive `i128`
+`rec128(x, n)`; source depth 3; returns `24, 8`), `DeadCleanupExePeakWitness.lean`
+(`cleanup_source_peak_witness`), `DeadCleanupExeSourceWitness.lean` (`wmul_u128` under the
+cleanup compiler).
+
 ## Not covered
 
 * Legalised functions under `--opt` (no composition of `backend_correct_legal` with the mid-end
-  theorems).
+  theorems). `compileExe` runs no optimiser, so `compileExe_correct_source{,_peak}` need none.
+* The source-level theorem's run conditions (`hbnd`; for traps `NoMemTrap` and the target's
+  `TrapsExplicit`) and, with `i128`, the outside environment's `HelperOk`/`ExtLegal`/
+  `EnvKeepsBounded` (table above).
 * Runs of `g` that trap inside a `__*ti3` helper (see `htr` above).
 * `umulhi`/`smulhi`, atomics, overflow ops at `i128`, stack-passed `i128` arguments,
   `try_call_indirect`, `call_indirect` with `i128` operands: not legalised or rejected.

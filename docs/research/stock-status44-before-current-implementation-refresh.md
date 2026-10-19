@@ -1,0 +1,96 @@
+# codygunton: current work and intentions
+
+Updated 2026-10-17T14:41:16.459367+00:00. **WAITING / ready for user review.** Immediate request complete: land both existing drafts before continuing any plan. No further proof batch or production cutover started.
+
+## Landed
+
+- #246 squash fc4a06f39f3840f27fc2e41e158b2ada0bbbcf60: Stock per-successor preparation/runtime foundations.
+- #247 squash 5a3ad2bb0ab37d7f97d96b5406541682b3b5352e: CFG correspondence, original-scope preparation totality, retained edges/copies and complete witnesses.
+- Each squash tree equals its exact validated candidate tree. Both passed full FV/FVTest/tool/crate builds, runtime suites (114,22,4672 passes; zero failures/errors/disagreements; same7 nonrunnable), encoding1308/1308 identical, BOTH original1150-identity/stage E2E baselines byte-identical, all-constant audits, ONE bundled MCP per PR, and all3 fresh ready-event CI jobs. #246 audited1640 constants/336 bundled roots; #247 audited3412 constants/389 bundled roots, standard-only with prior exact sets unchanged.
+
+## Main goal remains unfinished
+
+#140 stays open. Production FV.Backend.lowerChecked still calls legacy lowerFunction/lowerCheck. These two foundation PRs do not switch compiler, checker, linker or generated-proof consumers to Stock. Remaining work includes uncovered families/effects/sinking, original-source/block/whole-driver simulation AND completeness, original-input availability/checker/fallback readiness, ABI/TryCall witnesses, and production consumer integration plus final complete comparison. Saved local kernels are not proof of completed whole-driver cutover.
+
+Kev's Arm/FP changes caused broad rebuilds, but he is not blocking our missing whole-driver work. He explicitly held floats-types until these drafts landed. Both actual squash commits were handed off in #140 comment6235191458; preserve old theorem/domain compatibility and list the StockReturnSourceWitness overlap on his rebase. Our delivery scheduling and delayed coordination also contributed to the delay. The full-per-PR gates remain in force; #258's per-batch proposal is not treated as adopted.
+
+## Preserved work and recovery
+
+- Canonical dirty worktree: /home/lee/clifv/.worktrees/driver-proof-resume, branch agent/stock-logic-not-values-pr, local HEAD01081291e566bc4eb80419a526c5725406ed62b7. Frozen2246 FV/FVTest source files and49 validation scripts rehashed unchanged after delivery; active index unchanged.
+- Latest remote recovery branch agent/stock-driver-wip-backup-20261017T143950Z @ 65aa544b7f69d4a81e2fb853a73f415231065c90: all1827 dirty paths and byte-verified7733-member validation archive. Remote commit and every captured Git blob verified. These are recovery snapshots, not merge-ready PRs.
+- Evidence: docs/research/stock-pr246-landed.json, stock-pr247-landed.json, stock-pr246-mcp-audit.json, stock-pr247-mcp-audit.json, stock-drafts-final-evidence.json, stock-drafts-validation-backup.json. Earlier status body retained in stock-status44-before-draft-delivery-final.md.
+- Removed clean stock-delivery-gates validation worktree; retained one physical canonical warm cache. Retired only the idle stopped old canonical queue without resuming its stale-source build; all progress/inputs/logs archived. No background proof-plan continuation.
+- Archived and byte-verified1052 obsolete proof-input objects before removing their temporary expanded snapshot (2.819GB to0.987GB recovery archive); scratch sources/logs preserved. Free space ~808GiB. Dirty primary, canonical and stock-lowering worktrees preserved. Pinned upstream clones retained for source comparison/recovery; no new worktree/cache created.
+
+Tentative next task, not a reservation: user review of the driver completion path, then coordinated original-domain compatibility review and a bounded whole-driver integration batch. Likely modules FV/Backend/Proof/Stock*, FV/Backend.lean and E2E/linker/generated-proof consumers. Do not resume old validation against the overwritten shared cache without source-graph reconciliation. No additional PRs are being merged in this delivery.
+
+
+
+2026-10-18T03:17:34.012025+00:00 ACTIVE — User requests replacing wholesale driver cutover with incremental landable production migration. Scope now plan/coordination only: docs/plans/test-binary-alignment-recovery.md and a concise staged delivery roadmap; inspect current main8a3284bf, peer statuses140/52/71 and compiler/checker/linker boundaries. Canonical agent/stock-logic-not-values-pr localHEAD01081291 and saved sources/index preserved. No new worktree/cache/build/proof batch. Next tentative: smallest dependency-closed adapter/proof landing after plan, not a reservation.
+
+
+
+2026-10-18T03:20:43.745519+00:00 ACTIVE — Incremental delivery roadmap committed/pushed on agent/stock-incremental-delivery-plan @9804f8283352818f603b7fda8c03244ef13ddb95 (base8a3284bf), documentation-only PR opened. Updates docs/plans/test-binary-alignment-recovery.md execution precedence and adds stock-driver-incremental-delivery.md: proof packets → legacy-compatible seam → additive consumer adapters → experimental wiring → proved D0 complete functions → monotone enabled classes → final Stock-only completeness/retirement. Preserve original inputs/theorems/axioms/identity-stage guarantees and legacy fallback; no code changes. Adopt current #260 per-PR/integrator policy; CI pending before integrator handoff. No worktree/cache/build created. Local historical plan checkpoints preserved; primary/canonical HEAD/index unchanged. Tentative next task: inventory first closed proof packet and minimal seam, not a reservation.
+
+
+
+2026-10-18T03:24:32.976747+00:00 WAITING FOR INTEGRATOR — Plan revision complete in #263, agent/stock-incremental-delivery-plan @9804f8283352818f603b7fda8c03244ef13ddb95, labelled merge-ready; docs-only CI run39093279047 PASS, diff/link checks PASS. Handoff posted in #140 mentioning @kevaundray. Adopted main #260 policy now supersedes the older per-PR full-gate statement above. No self-merge, compiler/proof edit or new worktree/cache/build. Updated canonical recovery plan points to the incremental roadmap; all prior local checkpoints preserved. Source/script freeze reverified. Latest verified recovery agent/stock-driver-wip-backup-20261018T032106Z @c40421d46c56209043a0f8a5aa717d7fcbb32740 captures all1828 dirty paths and revised local plans; canonical/primary active HEAD/index unchanged. Disk ~797GiB free, no new cleanup outputs. Tentative next implementation: publish first dependency-closed proof packet, then concrete legacy-preserving seam; no need to finish all call/TryCall proofs before either lands. Next is not a reservation.
+
+
+2026-10-18T16:12:32.707833+00:00 ACTIVE — Refreshing the incremental plan against main73784c9c (#263 already merged0ec908f6). Documentation only: current float/typed-driver/allocator/linker drift, StockSeam coordination and #265 author-self-merge/no-CI-wait policy. Read current contributor statuses140/52/71/252/261. No compiler/proof edits, new worktrees/caches or builds. Will publish and squash the docs-only refresh under current policy; next implementation remains smallest reconciled proof/adapter landing, not a reservation. Canonical saved sources/primary index remain preserved.
+
+
+
+2026-10-18T16:14:43.875956+00:00 ACTIVE — Docs-only plan refresh committed/pushed agent/stock-delivery-plan-refresh-20261018 @b41ad1889df4ced1d1c9ab766e5d89b7efeb5430 from main73784c9c2d8625169f3e6d2a16e378ae0aeaca29. Reconciles 32 post-#263 commits/71 Stock paths, typed/float premise review, Lean allocator/FV_RA_OUT, linker, StockSeam boundary; next candidate is saved return/static proof closure or immediate legacy-compatible seam if unrelated dependencies intervene. Current #265 policy author squash merge/no CI wait now explicit. diff/link checks PASS; no source/build/worktree/cache changes. Creating and squash-merging docs PR under current policy; update follows actual merge.
+
+
+
+2026-10-18T16:15:31.900773+00:00 ACTIVE — #314 SQUASH MERGED 5c8704c85edc7052c12328e516eaae79e888e149; reviewed docs tree matches landed tree. Plan baseline73784c9c and #265 author-self-merge policy current. Diff/link checks PASS; docs-only no build/CI pre-merge requirement. Saved compiler/proof sources and49 validation scripts rehashed unchanged; local plan history retained. Notifying integrator/StockSeam boundary in140 and backing up revised plans/evidence, then stop. Production remains legacy, no implementation progress claimed.
+
+
+
+2026-10-18T16:15:58.484152+00:00 IDLE — Requested plan refresh COMPLETE and landed: #314 /5c8704c85edc7052c12328e516eaae79e888e149, author branch agent/stock-delivery-plan-refresh-20261018 @b41ad188. Both recovery/roadmap docs refreshed against73784c9c; #140 comment6252162719 notifies integrator and proposes boundary with Kev StockSeam. No compiler/proof implementation changed or new production class enabled. Current author-self-merge/no-CI-wait policy supersedes older status prose. Latest remote recovery agent/stock-driver-wip-backup-20261018T161534Z @c6dc6a231d46d4c4300da4787058cf60ededff17 preserves all1829dirty paths, refreshed local historical plans and merge receipt; remote commit/all captured blobs verified, canonical source/scripts/HEAD/index unchanged. No new worktree/cache/build; ~797GiB free, one warm cache retained for next implementation; existing dirty worktrees/recovery sources preserved. Tentative next: time-boxed current-main return/static packet selection for D0, or immediate minimal legacy-compatible pipeline adapter if unrelated proof dependencies intervene. Request StockSeam branch/file list before overlapping implementation; next is not a reservation. Full140 remains incomplete; production legacy.
+
+
+2026-10-19T05:25:16.412505+00:00 ACTIVE — Requested 2026-10-19 plan refresh; inspecting maine63ec13d, eight commits since #314. Docs only: incorporate landed StockSeam #323, lean-ld default #322 and changed optimizer/concurrency contracts; preserve current self-merge policy and saved proof sources. Read statuses44/52/71,140,261. No new build/worktree/cache; next implementation remains D0 adapter/closed proof packet, not a reservation.
+
+
+
+2026-10-19T05:26:37.225257+00:00 ACTIVE — 2026-10-19 docs refresh committed/pushed agent/stock-plan-refresh-20261019 @6052687ae295ef5c1d7add78b3c751d1290a6e80 from e63ec13d58c1d96eca4c8946dcfea6e12126ef51. Incorporates merged #323 narrow Stock/isel imports (coordination wait resolved), #322 default Lean linker, current optimizer/concurrency contracts. No production Stock adapter/class claimed. Diff/link checks PASS, docs-only no build/CI gates. Opening and author-squashing docs PR under current §7; sources/worktrees/index preserved.
+
+
+
+2026-10-19T05:27:01.043578+00:00 ACTIVE — #324 squash merged aaeb49265517e02fbd93902e0b884a219ed60bea; landed tree matches reviewed docs tree. Roadmap/recovery headers now basee63ec13d; #323 import seam resolved, #322 linker default reflected. Frozen compiler/proof sources and validation scripts rehashed unchanged; no runtime Stock progress claimed. Notifying integrator/acknowledging #323 then final remote backup and stop.
+
+
+
+2026-10-19T05:27:21.595717+00:00 IDLE — 2026-10-19 requested plan refresh COMPLETE, #324/aaeb49265517e02fbd93902e0b884a219ed60bea. Roadmap basee63ec13d; #323 narrow-import seam acknowledged/resolved; #322 default Lean linker reflected; no production adapter or Stock class activation claimed. Current author squash/no-CI-wait policy unchanged. diff/link checks PASS; docs-only no required build/runtime gates; integrator notified in140 comment6260350086. All1830 dirty paths including revised historical local plans and merge receipt remotely backed up at agent/stock-driver-wip-backup-20261019T052704Z @69a3df9cf9d9e14f0e141bc84f57e61dd1ba22df; remote commit/all captured blobs verified; frozen compiler/proof source/scripts and active HEAD/index unchanged. No new worktree/cache/build or expendable outputs; three existing dirty worktrees/recovery sources preserved, one warm cache retained, ~797GiB free. Tentative next implementation: D0 return/static closure or direct minimal legacy-compatible runtime adapter if that closure expands; no reservation or new peer hold. Full140 incomplete, production legacy.
+
+
+
+2026-10-19T05:42:35.849805+00:00 ACTIVE IMPLEMENTATION — User authorizes executing full incremental #140 plan through production activation and completion; no stop after docs/fragments/D0. Current baseaaeb4926; existing return-static witness dependency selection underway. Saved canonical agent/stock-logic-not-values-pr HEAD01081291/index/source preserved. Will use one new clean worktree stock-driver-incremental under primary helper; root owns cleanup, one shared warm cache, ≤16GiB author build budget/OMP2, no subagents. Next: minimal legacy-compatible pipeline seam if return-static closure spans unrelated calls/classes. Push backups and author squash after current per-PR gates. All original inputs/variants/axioms/accepted identities/stages retained.
+
+
+
+2026-10-19T05:50:14.460338+00:00 ACTIVE IMPLEMENTATION — Committed/pushed f56ea4d360bb3b9f592dc98bdf0942c77979139f on agent/stock-driver-incremental: actual legacy and experimental Stock compilers share compileFileWithLowering, whose allocator receives full payloads/edge vectors. Added legacy-specialization theorem and unequal-successor-payload witness; experimental unverified labeling retained. This is an unvalidated implementation checkpoint, not merge-ready or production Stock activation. Scope3files FV/Backend.lean, FV/Backend/Proof/LoweringPipeline.lean, FVTest/Backend/Lowering/StockComparison.lean. Canonical saved source/index untouched; return-static witness deferred (41 unpublished modules). Cache restore in progress from CI lake-full39110306482, with newer successful shard stages next; per-PR gates still pending. Worktree stock-driver-incremental/root cleanup owner; one canonical physical build cache, artifact cache active only for validation, author16GiB/OMP2 budget. Next: compile, correct actual failures, validate, squash, then D0 path; no stop at adapter.
+
+
+
+2026-10-19T05:59:31.362225+00:00 ACTIVE IMPLEMENTATION — 5f4f9bf65638071f61db2de3ea27396b6cff8503 pushed, same4-file shared-pipeline packet now includes contract docs. Exact-main targeted graph145/146 passed, with Backend and StockComparison compiling; initial transport witness rfl failed because reducibility blocked evaluation, corrected to a normal-kernel decide proof on the actual captured edge vectors, and LoweringPipeline now builds135jobs successfully. No source/axiom strengthening; successor payload property preserved, experimental output remains unverified. CI hash-keyed baseline and9successful newer shards restored; scratch staging removed. Required full per-PR build/axiom/runtime/encoding/verified-cargo gates next. /usr/bin/time absent on this host: unchanged repo scheduler logic uses a local Python resource-timing wrapper, memory cgroups/16GiB budget/OMP2 retained. Canonical source unchanged; first packet not merge-ready until gates pass. Independent D0 universal code-equivalence prototype remains /tmp-only and not claimed proved.
+
+
+
+2026-10-19T06:26:53.121492+00:00 ACTIVE IMPLEMENTATION — First shared-pipeline packet per-PR FV/FVTest build remains running with no source failures; current-main baseline Stock kernels outside the restored CI shards are rebuilding once under 16GiB scheduler budget. New3-root module already compiles after normal-kernel edge-transport correction. Preparing the required patched cg_clif frontend source for verified cargo gates: root owns regular upstream clone /home/lee/clifv/.worktrees/rust-cgclif-source-20260926 (not a linked clifv worktree), pinned to installed nightly commit with checked-in extern-name patch; shared canonical rust/target will hold its build, canonical target/cg_clif its required output. No extra warm build cache; no frontend compiler launched alongside the Lean kernel. Root removes expendable outputs at packet completion, preserving sources/evidence. Existing canonical dirty source/branches untouched. Next gates include actual default Lean-linked fv-demo/survey; they will not be skipped for missing frontend setup.
+
+
+
+20261019T064425Z ACTIVE IMPLEMENTATION — Partial validation evidence backed up remotely agent/stock-driver-wip-backup-20261019T064425Z @29b7ac05f0544e71ad85e19304152e3c4a0eb4f9 (all canonical dirty paths + byte-verified first-packet progress capsule). Feature5f4f9bf6 already pushed. 510 exact-current-tree module checks recorded; build2408024/scheduler2408034 continue with no source failures, no kernel restart. Source/inputs/logs/prototypes and failed D0 experiments preserved separately; no prototype counted as proof or production activation. Required gates/first squash still pending; next D0 universal equality/consumer bridge then real production dispatch, continuing #140. Root owns active clean implementation worktree and pinned Rust frontend source clone; one physical warm build/cache plus shared rust target, author16GiB aggregate Lean lane, staging scratch removed.
+
+
+
+2026-10-19T07:12:29.795966+00:00 ACTIVE — First substantive runtime adapter agent/stock-driver-incremental @5f4f9bf65638071f61db2de3ea27396b6cff8503 pushed; 702 source-matching module checks passed so far. Full required per-PR gate remains active (controller2408024/scheduler2408034); no implementation PR merged yet, production remains legacy. Exact main aaeb4926. Latest CI full gate also failed in artifact assembly, not an additional Stock semantic rejection; cache gap requires cold upstream proof checks. D0 development in /tmp has standard-three-axiom full output equivalence for six i32/i64 ABI configurations with arbitrary names/run metadata; module export is being repaired for derived-instance attribute names, and explicit Stock-success/non-vacuity/production consumer obligations remain. One dependent D0 draft only; frozen first-packet sources unchanged. Source-preserving recovery backups remain remote; next capsule will include this new prototype. Own pinned frontend clone and implementation view retained for active gates; one physical warm Lean build/shared Rust target, >790GiB disk free, combined author cap <=16GiB. Next: finish required gates and squash adapter, then verified D0 consumer activation, then successive classes/full #140.
+
+
+
+20261019T071449Z ACTIVE IMPLEMENTATION — Partial validation evidence backed up remotely agent/stock-driver-wip-backup-20261019T071449Z @3f807cfbb7fa5ceaee25391bcf4edc2a126d56d5 (all canonical dirty paths + byte-verified first-packet progress capsule). Feature5f4f9bf6 already pushed. 703 exact-current-tree module checks recorded; build2408024/scheduler2408034 continue with no source failures, no kernel restart. Source/inputs/logs/prototypes and failed D0 experiments preserved separately; no prototype counted as proof or production activation. Required gates/first squash still pending; next D0 universal equality/consumer bridge then real production dispatch, continuing #140. Root owns active clean implementation worktree and pinned Rust frontend source clone; one physical warm build/cache plus shared rust target, author16GiB aggregate Lean lane, staging scratch removed.
+
