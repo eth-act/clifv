@@ -30,7 +30,8 @@ def IselSimT (sem : Sem) (Γ : Rel) (env : Clif.Env) (p : Clif.Program) (f : Cli
     (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
       ∃ us outs w, VReturns vc sem ρ₀ w₀ us outs w ∧
         RetRegsOk vals us ∧ us.length = outs.length ∧
-        PrefixHold vals outs ∧ MemRel Γ.F Γ.syms cm w) ∧
+        PrefixHold vals outs ∧ MemRel Γ.F Γ.syms cm w ∧
+        vals.map (·.ty) = Clif.AbiParam.tys f.sig.returns) ∧
     (∀ c, Clif.runLoop env p fuel cs = .trapped c → VTraps vc sem ρ₀ w₀ c)
 
 /-- **What the Arm run does for a CLIF outcome, typed**: a return reaches the return address
@@ -90,7 +91,7 @@ theorem backend_correct_of_layers_exT {p : Clif.Program} {f : Clif.Function} {vc
   have hI := hIsel s args cs w₀ ρ₀ hcs hrel hargs htr fuel
   cases hrun : Clif.runLoop env p fuel cs with
   | returned vals cm =>
-    obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmem⟩ := hI.1 vals cm hrun
+    obtain ⟨us, outs, w, hv, hus, hlen, hhold, hmem, -⟩ := hI.1 vals cm hrun
     obtain ⟨n, hret, hregs, hmemF⟩ := hR.1 us outs w ((hPrep s _ _).1 _ _ _ hv)
     refine ⟨n, hret, ?_, memAgree_ofT hmem hmemF⟩
     intro j v r hj hr
@@ -147,5 +148,30 @@ theorem ArmRefinesT.toArmRefines {fb : FnBin} {base ra : BitVec 64}
   | trapped c => exact h
   | stuck _ => trivial
   | outOfFuel => trivial
+
+/-- The values of a typed CLIF → VCode simulation's returns have the function's return types:
+for integer returns, the typed refinement is `ArmRefines`. -/
+theorem backend_correct_of_layers_ex_ofT {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode}
+    {af : AFunc} {fb : FnBin} {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
+    {syms : String → Option Nat} {slotOff out K : Nat}
+    {astep : Arm.ArmState → Arm.ArmState} {env : Clif.Env}
+    (hint : f.sig.returns.all (·.ty.isInt) = true)
+    (hIsel : ∀ s, IselSimT (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc)
+    (hPrep : ∀ s, PrepareCorrect (sem s) vc vcp)
+    (hReg : RegLevelCorrectEx sem F K astep vcp af fb)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry fb base ra s) (hres : StackAvail K af s) (hbe : BodyEntry af s w₀)
+    (hargs : ArgsAtEntry (F s) f.sig args w₀)
+    (hcs : ClifEntry f args cs) (hrel : Rel.holds ⟨F s, syms, slotOff, out⟩ f cs.frame.slots cs.mem w₀)
+    (htr : TrapsExplicit env p cs) (fuel : Nat) :
+    ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) := by
+  refine (backend_correct_of_layers_exT hIsel hPrep hReg hent hres hbe hargs hcs hrel htr
+    fuel).toArmRefines fun vals cm hrun v hv => ?_
+  obtain ⟨-, -, -, -, -, -, -, -, htys⟩ :=
+    (hIsel s args cs w₀ (fun _ => 0) hcs hrel hargs htr fuel).1 vals cm hrun
+  have hm : v.ty ∈ Clif.AbiParam.tys f.sig.returns := htys ▸ List.mem_map_of_mem hv
+  obtain ⟨q, hq, hqt⟩ := List.mem_map.mp hm
+  rw [← hqt]
+  exact List.all_eq_true.mp hint q hq
 
 end E2E
