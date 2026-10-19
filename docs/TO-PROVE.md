@@ -1,5 +1,13 @@
 # What remains to be proven
 
+Stock #140 now has a default selected entry-parameter-return class (i32/i64,
+default/System V/fast) whose full normalized output equals legacy. The compiler
+and all four E2E pipelines use this dispatcher while preserving old theorem
+variants and input conditions. The broader rule/effect, source/block/whole-driver
+simulation and Stock-only completeness obligations remain open. See the
+[contract](contracts/stock-driver.md) and
+[incremental delivery plan](plans/stock-driver-incremental-delivery.md).
+
 The #60 cleanup implementation in #137 uses the legacy driver and preserves
 baseline source scope and theorem variants. Cleanup and matching consumers are
 enabled by default. Full proof/crate builds, runtime, encoder and E2E identity

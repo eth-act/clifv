@@ -2,6 +2,9 @@
 
 The legacy-driver cleanup stage and its matching proof consumers are described in
 [dead-cleanup.md](dead-cleanup.md); original theorem variants remain available.
+The production lowering dispatcher enables the first structurally selected Stock
+class through full-code compatibility, preserving these theorem statements and
+their input conditions; see [stock-driver.md](stock-driver.md).
 
 Producer: M7 (agents `M7Skeleton`, `M7Driver`; branch `agent/m7-driver`). Consumers: the
 integrator, M4 (rule proofs), M6 (register level). Code: `FV/E2E/{Statement,Compose,Main}.lean`
