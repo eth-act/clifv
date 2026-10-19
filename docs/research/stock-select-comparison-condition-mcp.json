@@ -1,0 +1,106 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"success\": true,\n  \"timed_out\": false,\n  \"diagnostics\": [\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_condition_shape' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 11,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_condition_invert_shape' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 12,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_zero_rhs_condition_shape' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 13,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_wide_comparison_condition_shape' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 14,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_narrow_comparison_condition_shape' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 15,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_comparison_condition_shape' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 16,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_condition_boolean_companion' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 17,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_comparison_companion_source_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 18,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_nonzero_condition_shape_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 19,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_invert_companion_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 20,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_flags_invert_companion_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 21,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_rhs_shape_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 22,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ComparisonCompanionWitness.stock_select_comparison_companion_complete_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 23,\n      \"column\": 1,\n      \"lean_tags\": null\n    }\n  ]\n}"
+    }
+  ],
+  "structuredContent": {
+    "success": true,
+    "timed_out": false,
+    "diagnostics": [
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_condition_shape' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 11,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_condition_invert_shape' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 12,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_zero_rhs_condition_shape' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 13,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_wide_comparison_condition_shape' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 14,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_narrow_comparison_condition_shape' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 15,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_comparison_condition_shape' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 16,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_condition_boolean_companion' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 17,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_comparison_companion_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 18,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_nonzero_condition_shape_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 19,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_invert_companion_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 20,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_flags_invert_companion_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 21,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_rhs_shape_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 22,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ComparisonCompanionWitness.stock_select_comparison_companion_complete_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 23,
+        "column": 1,
+        "lean_tags": null
+      }
+    ]
+  },
+  "isError": false
+}

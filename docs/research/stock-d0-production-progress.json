@@ -1,0 +1,80 @@
+{
+  "utc": "2026-10-19T12:18:12.829189+00:00",
+  "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+  "branch": "agent/stock-d0-production",
+  "remote_backup_verified": true,
+  "base": "693b9b24d8ff32a9421800b6d4bddc50c0c02bc5",
+  "shipped": false,
+  "previous_turn": "Verified latest direct Statement build succeeded; no build restart needed",
+  "author_module_gate": {
+    "pid": 4094834,
+    "checked_so_far": 478,
+    "failed_so_far": 0,
+    "log": "/tmp/stock-d0-complete-witness-controller.log",
+    "scope": "narrow current D0 witnesses and changed consumers, not full FV/FVTest gate"
+  },
+  "heavy_ci": {
+    "run": 39242870268,
+    "conclusion": "",
+    "status": "in_progress"
+  },
+  "old_theorem_declaration_audit": {
+    "utc": "2026-10-19T12:14:21.043774+00:00",
+    "base": "693b9b24d8ff32a9421800b6d4bddc50c0c02bc5",
+    "head": "296f7533648d7791cf7e140939ebd6609f8215fd",
+    "scope": "Exact source-level old theorem declaration preservation in changed existing FV modules; separate kernel compatibility proofs cover changed runtime definitions. Not an expression-hash equivalence claim.",
+    "rows": [
+      {
+        "path": "FV/Backend.lean",
+        "original_theorem_statements_preserved": 0
+      },
+      {
+        "path": "FV/E2E/DeadCleanupLinkCheck.lean",
+        "original_theorem_statements_preserved": 11
+      },
+      {
+        "path": "FV/E2E/DeadCleanupLinkScope.lean",
+        "original_theorem_statements_preserved": 12
+      },
+      {
+        "path": "FV/E2E/LinkCheck.lean",
+        "original_theorem_statements_preserved": 61
+      },
+      {
+        "path": "FV/E2E/LinkScope.lean",
+        "original_theorem_statements_preserved": 22
+      },
+      {
+        "path": "FV/E2E/Statement.lean",
+        "original_theorem_statements_preserved": 15
+      },
+      {
+        "path": "FV/Link/DeadCleanupLayoutFacts.lean",
+        "original_theorem_statements_preserved": 5
+      },
+      {
+        "path": "FV/Link/DeadCleanupTotal.lean",
+        "original_theorem_statements_preserved": 6
+      },
+      {
+        "path": "FV/Link/LayoutFacts.lean",
+        "original_theorem_statements_preserved": 25
+      },
+      {
+        "path": "FV/Link/Total.lean",
+        "original_theorem_statements_preserved": 6
+      }
+    ],
+    "total_preserved": 163,
+    "scope_definitions_verbatim": [
+      "Backend.abiSigs",
+      "Backend.verifiable"
+    ]
+  },
+  "remaining": [
+    "Complete actual D0 pipeline/fallback witness and parser/runtime regression builds",
+    "Run current-source runtime/encoder/both E2E ordered-stage gates, verified mixed fv-demo/survey and generated proof consumers",
+    "Restore exact-source heavy proof through official Lake input keys; finish full required module/audit gates",
+    "One bundled MCP review; fetch/reconcile main; author squash after gates; continue original #140 beyond D0"
+  ]
+}

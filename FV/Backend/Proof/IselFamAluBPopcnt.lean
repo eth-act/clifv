@@ -201,34 +201,83 @@ macro "vec_facts" : tactic => `(tactic| (
       or_false] at he ⊢
     omega)))
 
+private theorem app8 (a7 a6 a5 a4 a3 a2 a1 a0 : BitVec 8) :
+    (a7 ++ a6 ++ a5 ++ a4 ++ a3 ++ a2 ++ a1 ++ a0).extractLsb' 0 8 = a0 ∧
+    (a7 ++ a6 ++ a5 ++ a4 ++ a3 ++ a2 ++ a1 ++ a0).extractLsb' 8 8 = a1 ∧
+    (a7 ++ a6 ++ a5 ++ a4 ++ a3 ++ a2 ++ a1 ++ a0).extractLsb' 16 8 = a2 ∧
+    (a7 ++ a6 ++ a5 ++ a4 ++ a3 ++ a2 ++ a1 ++ a0).extractLsb' 24 8 = a3 ∧
+    (a7 ++ a6 ++ a5 ++ a4 ++ a3 ++ a2 ++ a1 ++ a0).extractLsb' 32 8 = a4 ∧
+    (a7 ++ a6 ++ a5 ++ a4 ++ a3 ++ a2 ++ a1 ++ a0).extractLsb' 40 8 = a5 ∧
+    (a7 ++ a6 ++ a5 ++ a4 ++ a3 ++ a2 ++ a1 ++ a0).extractLsb' 48 8 = a6 ∧
+    (a7 ++ a6 ++ a5 ++ a4 ++ a3 ++ a2 ++ a1 ++ a0).extractLsb' 56 8 = a7 := by
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> apply BitVec.eq_of_getElem_eq <;> intro i hi <;>
+    simp only [BitVec.getElem_extractLsb', BitVec.getLsbD_append] <;>
+    (repeat (first | omega | (rcases i with _ | i; · simp)))
+
+/-- Byte `k` of `CNT`'s result is the population count of byte `k` of its operand. -/
+private theorem cntBytes_byte (y : BitVec 64) {k : Nat} (hk : k < 8) :
+    (cntBytes y).extractLsb' (8 * k) 8 = (y.extractLsb' (8 * k) 8).cpop := by
+  obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7⟩ := app8 (byteOf y 7).cpop (byteOf y 6).cpop
+    (byteOf y 5).cpop (byteOf y 4).cpop (byteOf y 3).cpop (byteOf y 2).cpop (byteOf y 1).cpop
+    (byteOf y 0).cpop
+  have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega
+  unfold cntBytes
+  rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> assumption
+
 set_option maxHeartbeats 4000000 in
 theorem popcnt64_fin (X : CV) :
     (ofX ((((addvBytes (lo64 ((cntBytes (lo64 ((lo64 X).setWidth 128))).setWidth 128))).setWidth
       128).extractLsb' (8 * 0) 8).setWidth 64)).setWidth 64 = (X.setWidth 64).cpop := by
-  simp only [ofX, lo64, addvBytes, cntBytes, byteOf]
-  bv_decide
+  simp only [ofX, lo64, addvBytes, byteOf]
+  simp only [BitVec.extractLsb'_setWidth_of_le, BitVec.setWidth_setWidth_of_le, Nat.reduceLeDiff,
+    Nat.le_refl, BitVec.setWidth_eq, cntBytes_byte _ (by decide : (0 : Nat) < 8), cntBytes_byte _ (by decide : (1 : Nat) < 8),
+    cntBytes_byte _ (by decide : (2 : Nat) < 8), cntBytes_byte _ (by decide : (3 : Nat) < 8),
+    cntBytes_byte _ (by decide : (4 : Nat) < 8), cntBytes_byte _ (by decide : (5 : Nat) < 8),
+    cntBytes_byte _ (by decide : (6 : Nat) < 8), cntBytes_byte _ (by decide : (7 : Nat) < 8)]
+  have hb := BitVec.toNat_cpop_le (X.setWidth 64)
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_cpop] at hb ⊢
+  omega
 
 set_option maxHeartbeats 4000000 in
 theorem popcnt32_fin (X : CV) :
     (ofX ((((addvBytes (lo64 ((cntBytes (lo64 (((lo64 X).setWidth 32).setWidth 128))).setWidth
       128))).setWidth 128).extractLsb' (8 * 0) 8).setWidth 64)).setWidth 32 = (X.setWidth 32).cpop := by
-  simp only [ofX, lo64, addvBytes, cntBytes, byteOf]
-  bv_decide
+  simp only [ofX, lo64, addvBytes, byteOf]
+  simp only [BitVec.extractLsb'_setWidth_of_le, BitVec.setWidth_setWidth_of_le, Nat.reduceLeDiff,
+    Nat.le_refl, BitVec.setWidth_eq, cntBytes_byte _ (by decide : (0 : Nat) < 8), cntBytes_byte _ (by decide : (1 : Nat) < 8),
+    cntBytes_byte _ (by decide : (2 : Nat) < 8), cntBytes_byte _ (by decide : (3 : Nat) < 8),
+    cntBytes_byte _ (by decide : (4 : Nat) < 8), cntBytes_byte _ (by decide : (5 : Nat) < 8),
+    cntBytes_byte _ (by decide : (6 : Nat) < 8), cntBytes_byte _ (by decide : (7 : Nat) < 8)]
+  have hb := BitVec.toNat_cpop_le (X.setWidth 32)
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_cpop] at hb ⊢
+  omega
 
 set_option maxHeartbeats 4000000 in
 theorem popcnt8_fin (X : CV) :
     (ofX ((((cntBytes (lo64 (((lo64 X).setWidth 32).setWidth 128))).setWidth 128).extractLsb'
       (8 * 0) 8).setWidth 64)).setWidth 8 = (X.setWidth 8).cpop := by
   simp only [ofX, lo64, cntBytes, byteOf]
-  bv_decide
+  simp only [Nat.mul_zero, BitVec.extractLsb'_setWidth_of_le (by decide : 0 + 8 ≤ 128),
+    BitVec.extractLsb'_append_eq_right]
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_cpop]
 
 set_option maxHeartbeats 4000000 in
 theorem popcnt16_fin (X : CV) :
     (ofX ((((addpBytes (lo64 ((cntBytes (lo64 (((lo64 X).setWidth 32).setWidth 128))).setWidth 128))
       (lo64 ((cntBytes (lo64 (((lo64 X).setWidth 32).setWidth 128))).setWidth 128))).setWidth
       128).extractLsb' (8 * 0) 8).setWidth 64)).setWidth 16 = (X.setWidth 16).cpop := by
-  simp only [ofX, lo64, addpBytes, cntBytes, byteOf]
-  bv_decide
+  simp only [ofX, lo64, addpBytes]
+  simp only [BitVec.extractLsb'_setWidth_of_le, BitVec.setWidth_setWidth_of_le, Nat.reduceLeDiff,
+    BitVec.setWidth_eq, Nat.mul_zero, (app8 _ _ _ _ _ _ _ _).1]
+  simp only [byteOf, cntBytes_byte _ (by decide : (0 : Nat) < 8),
+    cntBytes_byte _ (by decide : (1 : Nat) < 8)]
+  have hb := BitVec.toNat_cpop_le (X.setWidth 16)
+  apply BitVec.eq_of_toNat_eq
+  simp [BitVec.toNat_cpop] at hb ⊢
+  omega
 
 theorem variantNames_Popcnt_fb : (variantNames 151)[111]? = some "Popcnt" := rfl
 

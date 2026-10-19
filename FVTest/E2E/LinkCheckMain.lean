@@ -3,19 +3,21 @@ import FV.E2E.DeadCleanupStackBound
 import FV.E2E.BinCheck
 import FV.E2E.CodeMap
 import FV.E2E.StackBound
+import FV.Front.Read
 
 /-!
 # `lake exe link-check <dir> [--lean FILE --module NAME] [--entries a,b,…] [--prune]`
 
 Evaluates the checker `E2E.LinkCheck.okB` (every premise of `LinkSys.Ok` about the program and
 its layout, `FV/E2E/LinkCheck.lean`) on the input of a crate-level instance written by
-`cargo fv link-proof` (docs/USAGE.md, "Proving a crate"): `<dir>/link.json` lists the functions
-(`fns/<i>.clif`, the CLIF `lean-backend` compiled, with the link's symbol names, and
-`fns/<i>.ra.json`, `lean-regalloc`'s output for it) and the link-map addresses (`addrs`).
+`cargo fv link-proof` (docs/USAGE.md, "Proving a crate"): `<dir>/bundle.json`, the frontend bundle
+(docs/contracts/frontend.md), from which `Front.assemble` builds the functions (renamed to the
+link's symbol names, with `lean-regalloc`'s output), the data objects they reach and the
+link-map addresses (`Front.linkAddrs`).
 
 It completes the input (the CLIF image's symbols `syms`: every `symbol` global value and
 `func_addr` target of the functions, and the functions of the program in the data objects they
-reach (vtables, `data_syms` of `link.json`), at its link-map address; `D`: the largest frame of a
+reach (vtables), at its link-map address; `D`: the largest frame of a
 function; `raStar = 8`) and prints the failing checks per function and premise (`diagR`, the
 diagnostic version of `okB`), then a count per premise, then the stack bound
 (`E2E.StackBound.budMap`, `FV/E2E/StackBound.lean`: the largest stack an activation of a function
@@ -652,31 +654,19 @@ theorem stack_entries{c} : DeadCleanupStackBound.goodAll input stackEntries{c} =
 def main (args : List String) : IO UInt32 := do
   let some o := parseOpts args none | do IO.eprintln usage; return 2
   let dir : System.FilePath := o.dir
-  let j ← match Json.parse (← IO.FS.readFile (dir / "link.json")) with
-    | .ok j => pure j
-    | .error e => do IO.eprintln s!"link-check: link.json: {e}"; return 2
-  let exe := (j.getObjValAs? String "exe").toOption.getD "?"
+  let (b, exe) ← try Front.readBundle dir []
+    catch e => do IO.eprintln s!"link-check: {e}"; return 2
   IO.println s!"link-check: {exe}"
-  let fjs := ((j.getObjVal? "functions").bind (·.getArr?)).toOption.getD #[]
-  let mut fis : Array FnInput := #[]
-  for fj in fjs do
-    let clif := (fj.getObjValAs? String "clif").toOption.getD ""
-    let ra := (fj.getObjValAs? String "ra").toOption.getD ""
-    fis := fis.push { clif := ← IO.FS.readFile (dir / clif), ra := ← IO.FS.readFile (dir / ra) }
-  -- the executable and the data objects the functions reach (`; data:` lines, renamed to the
-  -- linked symbols)
+  let A ← match Front.assemble b with
+    | .ok A => pure A
+    | .error e => do IO.eprintln s!"link-check: {exe}: {e}"; return 1
+  let fis := A.funcs.toArray
+  -- the executable and the data objects the functions reach (renamed to the linked symbols)
   let file ← IO.FS.readBinFile exe
-  let dataLines : List String := (((j.getObjVal? "data").bind (·.getArr?)).toOption.getD #[]).toList.filterMap
-    (·.getStr?.toOption)
-  let ajs := ((j.getObjVal? "addrs").bind (·.getArr?)).toOption.getD #[]
-  let addrs : List (String × Nat) := ajs.toList.filterMap fun a => do
-    let arr ← a.getArr?.toOption
-    let n ← (arr[0]?.bind (·.getStr?.toOption))
-    let v ← (arr[1]?.bind (·.getNat?.toOption))
-    pure (n, v)
-  -- functions whose address is in a data object the program reaches (vtable methods)
-  let dataSyms : List String := (((j.getObjVal? "data_syms").bind (·.getArr?)).toOption.getD #[]).toList.filterMap
-    (·.getStr?.toOption)
+  let dataLines : List String := A.data.map Clif.dataObject
+  let addrs := Front.linkAddrs b A
+  -- names whose address is in a data object the program reaches (vtable methods)
+  let dataSyms : List String := A.data.flatMap (·.refs)
   let I0 : LinkInput := { funcs := fis.toList, addrs, syms := [], raStar := 8, D := 0 }
   if o.profile then
     -- the slowest functions: the pipeline, the lowering validator, the allocation checker
