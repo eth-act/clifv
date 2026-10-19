@@ -206,32 +206,6 @@ theorem unary_front {p : Program} (hp : Data p) {r : Rule} {cop : Clif.UnaryOp} 
   subst htys
   exact ⟨ty, x, rfl, hety, hb, hd, by rw [hres]; simp [ofClif_int_width]⟩
 
-/-! ## Width lemmas by bit-blasting
-
-`wcases ty hety [defs]` proves a `VHolds` goal about a CLIF type `ty` (not `i128`, `hety`) and
-the operand size `szOf ty.width` chosen by `operand_size`: one case per width, the operand size
-made concrete (`generalize` first: it occurs inside types), then `bv_decide`. -/
-
-syntax "wcases " ident ident (" [" (Lean.Parser.Tactic.simpLemma),* "]")? : tactic
-macro_rules
-  | `(tactic| wcases $ty $hety) => `(tactic| wcases $ty $hety [])
-  | `(tactic| wcases $ty $hety [$ls,*]) => `(tactic| (
-      generalize hs : szOf (Clif.Ty.width $ty) = sz at *
-      cases $ty:ident <;> simp [eTy] at $hety:ident <;> simp [szOf, Clif.Ty.width] at hs <;>
-        subst hs <;>
-        simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, $ls,*] at * <;>
-        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;> bv_decide -enums))
-
-/-- `wfix [defs]`: a `VHolds` goal at a concrete type (and concrete operand sizes). -/
-syntax "wfix" (" [" (Lean.Parser.Tactic.simpLemma),* "]")? : tactic
-macro_rules
-  | `(tactic| wfix) => `(tactic| wfix [])
-  | `(tactic| wfix [$ls,*]) => `(tactic| (
-      simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Nat.left_eq_add,
-        Nat.add_right_cancel_iff, Nat.add_eq_left, Nat.succ_ne_self, $ls,*] at * <;>
-        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;> (try simp only [$ls,*] at *) <;>
-        bv_decide -enums))
-
 /-! ## Instruction shapes -/
 
 theorem vdefs_rr {i : MInst} {d x : Nat}

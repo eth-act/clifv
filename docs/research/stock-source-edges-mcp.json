@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.source_defined_enterBlock' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 2,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.source_defined_branch_step' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 3,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.SourceEdgesWitness.stock_source_edge_defined_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 4,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "utc": "20261015T205625Z",
+  "branch": "agent/stock-driver-wip-backup-20261015T205625Z",
+  "commit": "f05e392e38c549e0b4f54b1b7f21d10aaab74d68",
+  "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+  "captured_dirty_paths": 950,
+  "additional_evidence_paths": 1,
+  "remote_commit_and_all_captured_blobs_verified": true,
+  "index_and_active_head_unchanged": true,
+  "archive": {
+    "path": "/home/lee/.clifv-recovery/20261015T205624Z-emitted-cfg/checkpoint.tar.gz",
+    "sha256": "12f2ae9e176ea2b2dd5eaaf808b98bd5c5f52af5e31da695fa49282b6278803d",
+    "members": 27,
+    "bytes": 397009
+  }
+}
