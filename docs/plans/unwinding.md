@@ -10,7 +10,9 @@ slices build on earlier ones; S10a is this plan).
 | --- | --- |
 | S10a | merged (this plan) |
 | S10b | done: `FV/Clif/Unwind.lean` (`Clif.runX`; `runLoopX_of_returned`, `runLoopX_of_trapped`, `runLoopX_toX`; witnesses `Clif.UnwindWitness.caught`/`uncaught`/`old_stuck`), native oracle `scripts/clif-unwind-native.sh` (`rust/crates/clif-throw-native`): 17/17 runs, agree 17, disagree 0 (`docs/contracts/clif.md`) |
-| S10c–S10f | open |
+| S10c | done: emitters total/structural (`uleb`/`sleb` well-founded, `cfiProgramFrom`, `saveRows`, `scanLines`/`handlerEntry`/`siteEntries`; objects byte-identical on 753 fv-demo/deps `try_call` files), `FV/Unw/Dwarf.lean` (decoder model), `FV/Backend/Proof/UnwindTables.lean`: `uleb?_uleb`, `sleb?_sleb`, `decodeCfa?_cfiProgram`, `decodeLsda?_lsdaBytes`, `callSites_ok` (decidable `CallSitesOk`), `unwindRows_frame` (the row at every call's return offset − 1 is `frameRow frameSize saved`; the rows now define the CFA from sp after the prologue, `frameRows`, so no x29 invariant is needed), `unwindRows_leaf`; witness `Witness.call_row`. The `.eh_frame` section as a whole (CIE/FDE framing, `pc_begin`) is read in S10f, where the linker places it |
+| S10d | done: `FV/Unw/Model.lean` (the outside contract: `restore`, `personality` (Rust's, cleanup phase), `FnTables`, `unwindAt`, `UnwHooks`, the machine `ArmStepU`; `armStepU_none` (no raising callee: `ArmStepX`), `armStepU_raise`, `armStepU_noRaise`, `unwindAt_install`, `unwindAt_continue`, `restore_spec`, `FrameAt`, **`restore_frame`** (a frame satisfying the invariant unwinds to `ArmRet`), the register part of the raising callees' contract `CalleeUnwRegs`); `FV/E2E/RegLevelUnwind.lean` (`frameAt_frameRow`, **`unwind_call_restores`** (S10c's emitted rows at every call restore the ABI return from a frame with `FrameSaved`), `personality_callSite`/`personality_plain` (S10c's emitted LSDA); witness `Unw.Witness.restores`). The world part of `CalleeUnwOk` comes with `ExtSem.raise` (S10e) |
+| S10e–S10f | open |
 
 ## Where we are
 
@@ -151,25 +153,25 @@ emitters (no per-program certificate):
   call sites' disjointness, which holds since offsets strictly increase).
 * `FrameRowsOk af fa rows`: for every code offset `o` after the prologue and the callee-save
   stores (every call is there: `ctlCheck` puts the saves first in block 0), `rowAt rows o` is
-  `CFA = x29 + 16`, `x29 ↦ CFA - 16`, `x30 ↦ CFA - 8`, and `r ↦ CFA + o_r - 16 - frameSize` for
+  `CFA = sp + frameSize + 16` (the rows switch to sp after the prologue: the body keeps sp), `x29 ↦ CFA - 16`, `x30 ↦ CFA - 8`, and `r ↦ CFA + o_r - 16 - frameSize` for
   each callee-saved `r` saved at `[sp, #o_r]`; `decodeCfi (cfiProgram rows) = some rows`
   (`cfiProgram_decode`) and the `.eh_frame` FDE of `fa` decodes to these rows with `pc_begin` =
   the function's start (`ehFrame_decode`).
-* `restore_frame`: from any Arm state `t` with the frame invariant `FrameAt af s0 t` (x29 = entry
-  sp − 16, `mem[x29] = ` entry x29, `mem[x29 + 8] = ` entry x30 (= the return address),
-  `mem[CFA + o] = ` entry value of each saved callee-saved register), `Unw.restore (rowAt rows
-  o) t` has sp = entry sp, pc = return address, callee-saved registers = entry values: the ABI
-  return condition `ArmRet`'s register part. The frame invariant holds at every call site of a
-  run of the compiled code (S10e: from `StRel`'s `fplr` and the spill invariant's
-  `inState_save`, plus x29 never written by allocated code — x29 is not allocatable).
+* `restore_frame`: from any Arm state `t` with the frame invariant `FrameAt row s0 t` (CFA =
+  the body sp + frameSize + 16 = entry sp, `mem[CFA − 16] = ` entry x29, `mem[CFA − 8] = `
+  entry x30 (= the return address), `mem[CFA + o] = ` entry value of each saved callee-saved
+  register), `Unw.restore (rowAt rows o) t` has sp = entry sp, pc = return address,
+  callee-saved registers = entry values: the ABI return condition `ArmRet`'s register part.
+  The frame invariant holds at every call site of a run of the compiled code (S10e: from
+  `StRel`'s `sp` and `fplr` and the spill invariant's `inState_save`; no x29 invariant).
 
 **The exceptional edge in the per-function theorem (S10e).** Additive variants, normal-return
 theorems unchanged:
 
 * `ExtSem.raise`; `csemU`: `csem` plus, for a `tryCall info ti`, the outcome `.goto j` of the
   first handler `j` that catches (payload defs = the payload), and for a plain call a new
-  control outcome `.unwind` (frame exit); `HavocOuts` keeps the payload defs on handler edges
-  (already the case: only the normal edge havocs them, `havocFrom`).
+  control outcome `.unwind` (frame exit); the handler edges must forget the non-payload defs
+  (today they keep every def, see the findings below).
 * `LowerTryOk`'s handler clause: the edge block of handler `j` is the landing pad, its code
   copies the `exnN` arguments from the payload registers and jumps to the handler successor
   (the lowering already builds it: `lowerFunction`'s `et.dests.zipIdx`; proof as the normal
@@ -189,6 +191,49 @@ theorems unchanged:
   exceptional results), conclusion `ArmRefinesU … (ArmStepU X H U fa) s (Clif.runLoopX env p
   fuel cs)`. `backend_correct_final` stays as is (it is the `runLoopX_of_returned`/`_trapped`
   specialisation).
+
+**Findings for S10e (from the S10c/S10d work; precise starting points).**
+
+* The proof chain to extend (normal edge today): `Clif.stepTryCall` (`FV/Clif/Run.lean`) →
+  `LowerTryOk.run` (`FV/Backend/Proof/IselContract.lean`, pinned `LowerTryOkP` in
+  `IselContractP.lean`, proofs `IselCtlTry.lean`/`IselCtlTryInd.lean`) → `term_step_try`,
+  `sim_run`, `driver_correct` (`LowerSim.lean`) → `IselSim` (`E2E/Main.lean`
+  `iselSim_of_driver`) → `PrepareCorrect` → `checkAlloc_sound` (`RegallocSound.lean`, generic
+  in the `ISem`: its `goto` case takes any successor `j`) → `realizes_tryCall`
+  (`E2E/RegLevelTry.lean`, forces `j = ti.handlers.length` from `csem`) / `realizes_all`
+  (`RegLevelCorrect.lean`) → `RegLevelCorrect` → `backend_correct_final`.
+* Handler edges keep **every** def of the `tryCall` (`havocFrom … (.goto j) = none` for
+  `j < handlers.length`; the checker's `CheckCtx.edgeForget` forgets defs only on the normal
+  edge). After unwinding, the machine's caller-saved registers other than x0/x1 are
+  arbitrary, so `csemU` cannot give the return-only defs (x2…) values the machine agrees with.
+  Needed: forget the non-payload defs on handler edges too (an additive `havocFromU` and the
+  checker's `edgeForget` extended to handler successors — a compiler change: rerun the
+  lean-backend gates; the lowering never reads those vregs on a handler edge, `tryRegsOf`).
+* `Ctl` (`VCodeSem.lean`) has no frame-exit outcome; a propagating call (plain `call`, or a
+  `tryCall` without a catching handler) needs one (`.unwind`, with `VUnwinds`/`MUnwinds`
+  observables next to `VReturns`/`VTraps`). Adding a constructor touches every match on `Ctl`
+  (~100 files mention it); alternatively an `ISemU` with its own control type and a lifting
+  of the generic simulations.
+* The frame invariant at calls (`FrameSaved`, `FV/E2E/RegLevelUnwind.lean`) from M6's state
+  relation: `StRel.fplr` gives the entry x29/x30 (a 16-byte read, split into the two 8-byte
+  reads `frameAt_frameRow` takes) and `StRel.sp` the body sp (the CFA); still needed: the
+  callee-save slots holding the entry values at each call —
+  the checker's abstract state has `Sym.entry r` there (`SpillCheckAlloc*.lean`), and the M5
+  relation (`RegallocSound.lean` `MatchRun`: `Inv keep a ms.m vs.ρ r₀` for the abstract state
+  `a` before each item) turns `Sym.entry r ∈ a.get l` into `keep r (m l) = keep r (r₀ r)`. So a
+  decidable check at every call — `Sym.entry r ∈ a.get (.save r)` for `r ∈ rf.saved`,
+  `Sym.entry r ∈ a.get (.reg r)` for the other callee-saved `r` — gives the frame's save slots
+  (`locVal` of `.save r` = the slot at body sp + `saveOff r` = CFA + `o − 16 − frameSize`,
+  S10c's `saveRow`) and unsaved registers, i.e. `FrameSaved`'s hypotheses.
+  The CFA needs no x29 invariant: the rows define it from sp after the prologue
+  (`frameRows`: `def_cfa_register sp`, `def_cfa_offset frameSize + 16`), and the body keeps
+  sp = `spB` (`StRel.sp`); a raising callee keeps our sp (`CalleeUnwRegs`).
+* LSDA ↔ layout: done in S10d (`scanLines_labelOffsets`: the landing-pad offsets are
+  `labelOffsets`'; `scanLines_rets_eq`: the `k`-th return offset is the `k`-th call line's
+  `lineOffset` + 4, `callIdx`). Left: the `k`-th call line is the code of `af`'s `k`-th call
+  (`AFunc.calls`), from the emitter's block layout (`Q`'s `R.L.drop j = …`).
+* Build cost: `FV/Backend/Unwind.lean` is imported (via `FV.Backend` → `IselData` →
+  `IselCmp*`) by `FV.Opt.Proof.*`; every change to it rebuilds those (§7's scheduler).
 
 ### 4. Linking and executables (S10f)
 
@@ -222,9 +267,9 @@ concrete non-vacuity witnesses; axioms stay `[propext, Classical.choice, Quot.so
 * `ExtSem` is a structure used throughout M6; adding `raise` with a default keeps existing
   terms well-typed but changes the `ExtSem` mk arity seen by anonymous constructors (check
   `⟨…⟩` uses; else a separate `ExtSemU := ExtSem × raise`).
-* The frame invariant at call sites needs x29 fixed across the body; the allocated code never
-  names x29 (not in the allocatable set), but the TLSDESC hook and the call hooks must keep it
-  (they do: x29 is callee-saved in `CalleeOk`/`TlsOk`).
+* The frame invariant at call sites needs no x29 invariant (the rows define the CFA from sp
+  after the prologue, `frameRows`); this deviates from Cranelift's x29-based rows, which are
+  equivalent while the frame pointer is kept (checked natively by the panic=unwind tests).
 * cg_clif may emit a `try_call` with both a cleanup and a catch handler; `callSites` then emits
   two entries for the same range and the personality takes the first (cleanup), which matches
   `Clif.stepX`'s "first catching handler" only if `catches 0` holds for every exception — true
