@@ -25,7 +25,7 @@ the rule hypotheses. With the hand rules the hypotheses hold (`Opt.simpRulesProv
 `Opt.CompleteSimpWitness.witness`: on a function whose two blocks compute the same `iconst`, the
 empty rule set's hash-consing renames the second to the first, and the theorem applies;
 `Opt.CompleteSimpWitness.witness_hand`: the hand rule `x + 0 ⇒ x` fires and the hand-rule theorems
-apply.
+apply. Every configuration (the Cranelift rules included): `FV/Opt/Proof/CompleteSimpAll.lean`.
 -/
 
 namespace Opt
