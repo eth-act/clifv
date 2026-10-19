@@ -14,9 +14,10 @@ lowering validator `lowerCheckT`, `prepare` + `prepCheck`, the spill allocation 
 are the premises of `backend_correct_finalT`/`_exT` besides the typed M4 families
 (`TypedRules`) and the run/link contracts.
 
-`fMv` (float parameters and a float return) is in `InSubsetT` and passes the validators and
-`checkAlloc`, but `lowerRFunc`'s control-form check (`ctlCheck`: integer `Args`/`Rets` vregs)
-rejects it until slice 5 widens `ctlInstOk`. Checks by `native_decide` (witness only).
+`fMv` (float parameters and a float return) is in `InSubsetT`, and since slice 5 widened
+`ctlInstOk` (float `Args`/`Rets` in v0–v7) its whole pipeline succeeds as well (`compiledT_mv`,
+`compiledAT_mv`, `formsCovered_mv`); the integer check `ctlCheckInt` rejects it. Checks by
+`native_decide` (witness only).
 `lake build FVTest.E2E.FloatFinalT`.
 With no answer from the untrusted allocator, slice 6's typed spill chain and
 `CompiledAT.of_lowerT` give `CompiledAT` for `fW` without the validator premises
@@ -86,9 +87,11 @@ def fBadStore : Clif.Function :=
 #guard fBadStore.blocks.any fun b => b.body.any fun s => s.inst matches .store _ .f64 _ 0 _ _
 #guard !Compile.storeTypedB fBadStore
 
--- `fMv` passes the validators and `checkAlloc`, not yet `lowerRFunc`'s `ctlCheck` (slice 5)
+-- `fMv` passes the validators, `checkAlloc` and, since slice 5 widened `ctlInstOk` (float
+-- `Args`/`Rets` in v0–v7), `lowerRFunc`'s `ctlCheck`; the integer check `ctlCheckInt` rejects it
 #guard lowerCheckT fMv (vcOf fMv) && (checkAlloc (vcpOf fMv) (rfOf fMv)).isOk &&
-  !(lowerRFunc (vcpOf fMv) (rfOf fMv)).toBool && !ctlCheck (vcpOf fMv) (rfOf fMv)
+  (lowerRFunc (vcpOf fMv) (rfOf fMv)).toBool && ctlCheck (vcpOf fMv) (rfOf fMv) &&
+  !ctlCheckInt (vcpOf fMv) (rfOf fMv)
 
 theorem lowerFunction_w : lowerFunction fW = .ok (vcOf fW) := by
   have hok : (lowerFunction fW).toBool = true := by native_decide
@@ -130,6 +133,51 @@ theorem checkAlloc_w : checkAlloc (vcpOf fW) (rfOf fW) = .ok () := by
   cases h : checkAlloc (vcpOf fW) (rfOf fW) with
   | error e => rw [h] at hok; cases hok
   | ok u => rfl
+
+/-- **Witness** (slice 5): the typed compiled-code premise holds for `fMv` (float parameters, a
+float return, float block parameters): its float `Args`/`Rets` pass the widened `ctlCheck`. -/
+theorem compiledT_mv :
+    CompiledT fMv 0 (vcOf fMv) (vcpOf fMv) (rfOf fMv) (afOf fMv) (faOf fMv) (fbOf fMv) := by
+  refine ⟨?_, by native_decide, ?_, by native_decide, ?_, ?_, ?_, ?_⟩
+  · have hok : (lowerFunction fMv).toBool = true := by native_decide
+    unfold vcOf
+    cases h : lowerFunction fMv with
+    | error e => rw [h] at hok; cases hok
+    | ok vc => rfl
+  · have hok : (Backend.prepare (vcOf fMv)).toBool = true := by native_decide
+    unfold vcpOf
+    cases h : Backend.prepare (vcOf fMv) with
+    | error e => rw [h] at hok; cases hok
+    | ok vcp => rfl
+  · have hok : (checkAlloc (vcpOf fMv) (rfOf fMv)).isOk = true := by native_decide
+    cases h : checkAlloc (vcpOf fMv) (rfOf fMv) with
+    | error e => rw [h] at hok; cases hok
+    | ok u => rfl
+  · have hok : (lowerRFunc (vcpOf fMv) (rfOf fMv)).toBool = true := by native_decide
+    unfold afOf
+    cases h : lowerRFunc (vcpOf fMv) (rfOf fMv) with
+    | error e => rw [h] at hok; cases hok
+    | ok af => rfl
+  · have hok : (emitFunc 0 (afOf fMv)).toBool = true := by native_decide
+    unfold faOf
+    cases h : emitFunc 0 (afOf fMv) with
+    | error e => rw [h] at hok; cases hok
+    | ok fa => rfl
+  · have hok : (faOf fMv).layout.toBool = true := by native_decide
+    unfold fbOf
+    cases h : (faOf fMv).layout with
+    | error e => rw [h] at hok; cases hok
+    | ok fb => rfl
+
+/-- **Witness** (slice 5): … and so the `AllocChecked` form, the compiled-code premise of
+`backend_correct_final_exT` for a function with float parameters and a float return. -/
+theorem compiledAT_mv :
+    CompiledAT fMv 0 (vcOf fMv) (vcpOf fMv) (rfOf fMv) (afOf fMv) (faOf fMv) (fbOf fMv) :=
+  compiledT_mv.toA
+
+/-- **Witness** (slice 5): the prepared code's straight-line forms of `fMv` are covered. -/
+theorem formsCovered_mv : FormsCovered ⟨(faOf fMv).k, (afOf fMv).slotBase⟩ (vcpOf fMv) :=
+  (formsCoveredB_iff _ _).mp (by native_decide)
 
 /-- **Witness**: `fW` is in the typed theorem's subset (outside subset E). -/
 theorem inSubsetT_w (p : Clif.Program) : InSubsetT p fW := by
