@@ -511,7 +511,7 @@ theorem instCalls_pair_value_validated (hc : CompiledCleanupValidated f k vc vcp
     exact ⟨hU, k1, i1, ops1, ρ1, (wa, w1'), outs1, (wb, w2'), hp, htc⟩
   · trivial
 
-theorem tryCalls_pair_value_validated 
+theorem tryCalls_pair_value_validated
     (hX : XCallsOk env (f.externs.map (·.2))
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
@@ -571,7 +571,7 @@ theorem tryCalls_pair_value_validated
   · trivial
   · trivial
 
-theorem tryIndCalls_pair_value_validated 
+theorem tryIndCalls_pair_value_validated
     (hXI : XCallsIndOk env (indSigs f)
       (RelW ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c) X)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
