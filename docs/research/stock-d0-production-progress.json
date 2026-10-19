@@ -1,0 +1,334 @@
+{
+  "utc": "2026-10-19T13:08:23.497136+00:00",
+  "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+  "branch": "agent/stock-d0-production",
+  "remote_backup_verified": true,
+  "base": "693b9b24d8ff32a9421800b6d4bddc50c0c02bc5",
+  "shipped": false,
+  "previous_turn": "Verified latest direct Statement build succeeded; no build restart needed",
+  "author_module_gate": {
+    "pid": 4094834,
+    "checked_so_far": 570,
+    "failed_so_far": 0,
+    "log": "/tmp/stock-d0-complete-witness-controller.log",
+    "scope": "narrow current D0 witnesses and changed consumers, not full FV/FVTest gate",
+    "total": 622,
+    "state": "running; scheduler resumed after resource-bounded independent runtime gates"
+  },
+  "heavy_ci": {
+    "run": 39242870268,
+    "conclusion": "",
+    "status": "in_progress",
+    "current_observation": {
+      "conclusion": "",
+      "status": "in_progress"
+    }
+  },
+  "old_theorem_declaration_audit": {
+    "utc": "2026-10-19T12:14:21.043774+00:00",
+    "base": "693b9b24d8ff32a9421800b6d4bddc50c0c02bc5",
+    "head": "296f7533648d7791cf7e140939ebd6609f8215fd",
+    "scope": "Exact source-level old theorem declaration preservation in changed existing FV modules; separate kernel compatibility proofs cover changed runtime definitions. Not an expression-hash equivalence claim.",
+    "rows": [
+      {
+        "path": "FV/Backend.lean",
+        "original_theorem_statements_preserved": 0
+      },
+      {
+        "path": "FV/E2E/DeadCleanupLinkCheck.lean",
+        "original_theorem_statements_preserved": 11
+      },
+      {
+        "path": "FV/E2E/DeadCleanupLinkScope.lean",
+        "original_theorem_statements_preserved": 12
+      },
+      {
+        "path": "FV/E2E/LinkCheck.lean",
+        "original_theorem_statements_preserved": 61
+      },
+      {
+        "path": "FV/E2E/LinkScope.lean",
+        "original_theorem_statements_preserved": 22
+      },
+      {
+        "path": "FV/E2E/Statement.lean",
+        "original_theorem_statements_preserved": 15
+      },
+      {
+        "path": "FV/Link/DeadCleanupLayoutFacts.lean",
+        "original_theorem_statements_preserved": 5
+      },
+      {
+        "path": "FV/Link/DeadCleanupTotal.lean",
+        "original_theorem_statements_preserved": 6
+      },
+      {
+        "path": "FV/Link/LayoutFacts.lean",
+        "original_theorem_statements_preserved": 25
+      },
+      {
+        "path": "FV/Link/Total.lean",
+        "original_theorem_statements_preserved": 6
+      }
+    ],
+    "total_preserved": 163,
+    "scope_definitions_verbatim": [
+      "Backend.abiSigs",
+      "Backend.verifiable"
+    ]
+  },
+  "remaining": [
+    "Finish actual D0 success/fallback/full-pipeline and changed-linker proof modules; repair errors without weakening old statements",
+    "Build default lean-link; run verified fv-demo (new mixed callable i32/i64 class) and survey, assert actual Stock routing on their decoded input, generate and kernel-check mixed program proof consumers",
+    "Restore source-matched heavy CI output through official Lake keys; full current FV/FVTest and E2E/new-root/all-constant audits",
+    "Fetch/reconcile current main; non-draft PR and author squash after per-PR gates; notify integrator actual merge; continue every original #140 obligation beyond D0"
+  ],
+  "actual_runtime_regression": {
+    "returncode": 0,
+    "log": "/tmp/stock-d0-actual-runtime.log",
+    "six_actual_stock_routes": true,
+    "both_e2e_cleanup_modes_and_arbitrary_bad_allocator_fallback": true,
+    "mixed_verified_file_metadata": true
+  },
+  "mcp_review": {
+    "theorem": "Backend.Stock.D0.Compiler.compileFileWith_eq_legacy",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": [],
+    "scope": "ONE bundled MCP primary root/source scan; bulk new-root and all-constant audits remain separate required gates",
+    "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b"
+  },
+  "heavy_input_parity": {
+    "current_head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+    "ci_source_parent": "5f4f9bf65638071f61db2de3ea27396b6cff8503",
+    "modules": 370,
+    "changed_heavy_inputs": [],
+    "lakefile_and_toolchain_identical": true,
+    "restore_requirement": "Official Lake input-key unstage plus local no-build validation remain mandatory."
+  },
+  "independent_gate_state": {
+    "utc": "2026-10-19T12:29:59.020137+00:00",
+    "state": "running",
+    "pid": 4120084,
+    "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+    "logs": {},
+    "phase": "tool-modules",
+    "log": "/tmp/stock-d0-independent-gates/tool-modules.log"
+  },
+  "scheduler_handoff": {
+    "original_scheduler": 4094834,
+    "state": "launching suspended while original kernels finished; independent8GiB scheduler runs alongside existing5GiB proof slot (that proof has since completed)",
+    "controller": 4120084,
+    "original_scheduler_resumed_in_finally": true
+  },
+  "future_class_requirement": "Full-code equality is a D0-only bridge. Different-code classes require direct Stock source-to-machine soundness and matching consumer adapters with old variants retained, plus transactional downstream fallback. Do not constrain the full goal to code-equal cases.",
+  "current_native_gates": {
+    "utc": "2026-10-19T12:50:53.166629+00:00",
+    "state": "independent_runtime_encoder_e2e_passed",
+    "pid": 4120084,
+    "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+    "logs": {
+      "tool-modules": {
+        "path": "/tmp/stock-d0-independent-gates/tool-modules.log",
+        "sha256": "a142dd3697cdd4b851a87f1d05beb30d84231bd44d7cb8c63a86dc7681412551"
+      },
+      "tools": {
+        "path": "/tmp/stock-d0-independent-gates/tools.log",
+        "sha256": "be2b85a57641c0a1278644faa15fa5834ff562c93880da549da0cbec652557cd"
+      },
+      "runtime": {
+        "path": "/tmp/stock-d0-independent-gates/runtime.log",
+        "sha256": "13aeac3fba217ef8fd55b6b69a22170bd755fc4aa14a9b63969426388a51d397"
+      },
+      "encoder": {
+        "path": "/tmp/stock-d0-independent-gates/encoder.log",
+        "sha256": "ca6678498048f884569c248d061b9718eea8b03fc83a4c375749a0597613b4dc"
+      },
+      "e2e": {
+        "path": "/tmp/stock-d0-independent-gates/e2e.log",
+        "sha256": "fc2c60fc403d97b41cb535bb62d1ea8f3797e132b82eb5bfcc53a63cc5a7dee4"
+      },
+      "legacy-e2e": {
+        "path": "/tmp/stock-d0-independent-gates/legacy-e2e.log",
+        "sha256": "06637dfd529bcee9f891efc232c33ea23cfc322e0d1adde357a600a6dbffb0bc"
+      }
+    },
+    "identity_stage_parity": {
+      "e2e": {
+        "original": 1150,
+        "current": 1154,
+        "all_original_identities_and_ordered_stages_preserved": true,
+        "gained": 4
+      },
+      "legacy-e2e": {
+        "original": 1150,
+        "current": 1154,
+        "all_original_identities_and_ordered_stages_preserved": true,
+        "gained": 4
+      }
+    },
+    "remaining": "formal witness/linker module gate; lean-link and verified crates; trust audit; full FV/FVTest gate and main reconciliation"
+  },
+  "one_bundled_mcp_review": {
+    "theorem": "Backend.Stock.D0.Compiler.compileFileWith_eq_legacy",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": [],
+    "scope": "ONE bundled MCP primary root/source scan; bulk new-root and all-constant audits remain separate required gates",
+    "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b"
+  },
+  "cleanup": {
+    "utc": "2026-10-19T12:41:33.669178+00:00",
+    "path": "/tmp/stock-consumer-adapter-overlay",
+    "archive": "/tmp/stock-consumer-overlay-retired-20261019.tar.gz",
+    "archive_sha256": "aa57d40b4e426175ea1b017d1ed5d5915717085efbf8241d314923eb13936686",
+    "archive_bytes": 2487834,
+    "source_backup": "agent/stock-proof-consumer-adapter@377217049542f678ae3f04f1ab97a2cb094cb756",
+    "cleanup_after_remote_backup": "Preflight overlay is superseded by actual production module compilation; preserve all real source worktrees and the one shared warm cache.",
+    "removed_utc": "2026-10-19T12:41:52.545662+00:00",
+    "remote_recovery_branch": "agent/stock-driver-wip-backup-20261019T124134Z",
+    "remote_recovery_commit": "d0831c762eecc7e3c1e6612ba85a677976ec5b9c",
+    "remote_verified_before_removal": true
+  },
+  "post_narrow_gate_chain": {
+    "pid": 4191767,
+    "controller": "/tmp/stock-d0-post-narrow-gates.py",
+    "state": {
+      "utc": "2026-10-19T13:06:09.060072+00:00",
+      "state": "waiting_on_confirmed_live_narrow_scheduler",
+      "pid": 4191767,
+      "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+      "logs": {},
+      "scheduler_pid": 4094834,
+      "log": "/tmp/stock-d0-complete-witness-controller.log"
+    }
+  },
+  "current_refinement": "a535c080: lazy legacy fallback; verbatim shared proof-emitter adapter; exact-domain mixed linked CLIF fixture. Current build in /tmp/stock-d0-linked-refinement-controller.log; no source-clone/cache duplication.",
+  "prior_head_2ac_gate_counts": {
+    "narrow_modules": "622/622,173built",
+    "public_roots": "34/34 std3",
+    "all_constants": "1382 std3",
+    "verified_fv_demo": "21/21,2/2binaries",
+    "verified_survey": "53/53,18/18binaries",
+    "mixed_rust_route_assertion": "failed correctly: two-block nop/jump Rust prologue is outside one-block D0; preserve legacy and use exact-domain linked CLIF fixture. Prologue class remains next, with actual Stock rule history preserved."
+  },
+  "current_20261019_1422": {
+    "utc": "2026-10-19T14:22:10.486590+00:00",
+    "head": "567d1f0989e5d59d201a2731966660975166025c",
+    "heavy_ci": "39242870268 success; official coherent restore 371 up-to-date",
+    "full_gate": {
+      "utc": "2026-10-19T14:16:04.506196+00:00",
+      "state": "running",
+      "pid": 113213,
+      "head": "567d1f0989e5d59d201a2731966660975166025c",
+      "logs": {
+        "validate-current-heavy-input-key": {
+          "path": "/tmp/stock-d0-full-module-gate/validate-current-heavy-input-key.log",
+          "sha256": "93fb7b49c30aa8e898fb782b57a35510f221b55708c7e72397f0e3347956278c"
+        }
+      },
+      "phase": "all-modules",
+      "log": "/tmp/stock-d0-full-module-gate/all-modules.log"
+    },
+    "affected_gate": {
+      "utc": "2026-10-19T14:18:26.172438+00:00",
+      "state": "waiting_on_verified_live_full_gate",
+      "pid": 118996,
+      "head": "567d1f0989e5d59d201a2731966660975166025c",
+      "logs": {},
+      "controller_pid": 113213
+    },
+    "mixed_linked_kernel_proofs": "both modes PASS; indexed provenance PASS",
+    "shipped": false,
+    "next": "current-head gates, reconcile main, non-draft PR and squash; then full original #140 remainder"
+  },
+  "cache_prefill_20261019_1433": {
+    "utc": "2026-10-19T14:32:55.473261+00:00",
+    "ci_run": 39219555558,
+    "ci_head": "693b9b24d8ff32a9421800b6d4bddc50c0c02bc5",
+    "head": "567d1f0989e5d59d201a2731966660975166025c",
+    "method": "Official lake cache unstage without force-overwrite; no source changes, trace removals, live build output mutations, or assigned input keys. Lake performs current input-key validation.",
+    "stages": [
+      {
+        "path": "/tmp/stock-main-693-cache-handoff/stage-w1-0/outputs.jsonl",
+        "sha256": "00eccadb7c0519c4106e6b167cce2b095d7fd23158f5c8fe966760a16c5ce636",
+        "mappings": 341
+      },
+      {
+        "path": "/tmp/stock-main-693-cache-handoff/stage-w1-1/outputs.jsonl",
+        "sha256": "fcd1ea0d623e815ae25af505c58f038d884a9889e627c0f5c6c6c5c71296b9e9",
+        "mappings": 456
+      },
+      {
+        "path": "/tmp/stock-main-693-cache-handoff/stage-w1-3/outputs.jsonl",
+        "sha256": "8657662edf8e4b9846fb1ce82b4763509ad0fb9e9b930882720f9704a4e0992e",
+        "mappings": 407
+      },
+      {
+        "path": "/tmp/stock-main-693-cache-handoff/stage-w1-4/outputs.jsonl",
+        "sha256": "8c3b6488a7b874aad1d8c7b1b6c451579db3fea45ee0288893c55de3667b21bb",
+        "mappings": 76
+      },
+      {
+        "path": "/tmp/stock-main-693-cache-handoff/stage-w1-5/outputs.jsonl",
+        "sha256": "51b8ee6af273383aed07b98796445d968df1163b4eb771bb13fa1e6f7ccf0938",
+        "mappings": 81
+      },
+      {
+        "path": "/tmp/stock-main-693-cache-handoff/stage-w1-6/outputs.jsonl",
+        "sha256": "0cbed719e48455a3ec3eff8db38f454fd0d2ae68706577cc86738b5c84dd1686",
+        "mappings": 417
+      },
+      {
+        "path": "/tmp/stock-main-693-cache-handoff/stage-w1-7/outputs.jsonl",
+        "sha256": "c49f2e6aab64dd6f4ea2512576de68792fdc5506935990aab2df0a39eb37a416",
+        "mappings": 116
+      },
+      {
+        "path": "/tmp/stock-main-693-cache-handoff/stage-w1-8/outputs.jsonl",
+        "sha256": "2f9054f6b1f0d427096c7a55daa2529fc6998cb5a23ee4a6b3bb95421e88b10a",
+        "mappings": 272
+      },
+      {
+        "path": "/tmp/stock-main-693-cache-handoff/stage-w1-9/outputs.jsonl",
+        "sha256": "46828a4157cf75506447a1742d5a767f77c099bb95e7c7c90707f5ffd6739e36",
+        "mappings": 85
+      }
+    ],
+    "unique_input_keys": 903,
+    "existing_before": 849,
+    "missing_before": 54,
+    "missing_after": [],
+    "observed_existing_mapping_changes": [],
+    "no_force_overwrite": true
+  },
+  "rule_history_bridge_kernel_20261019": {
+    "utc": "2026-10-19T14:39:45.780581+00:00",
+    "pid": 147159,
+    "state": "candidate_kernel_passed",
+    "returncode": 0,
+    "limitation": "General metadata bridge only; actual prologue relation and production consumer integration remain.",
+    "scheduler_dispatch_resumed": true,
+    "axioms": "'Backend.Stock.RuleHistoryBridge.lowerCheck_with_rules' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.RuleHistoryBridge.lowerCheck_of_same_code' depends on axioms: [propext, Classical.choice, Quot.sound]\n"
+  },
+  "latest_full_gate": {
+    "utc": "2026-10-19T14:16:04.506196+00:00",
+    "state": "running",
+    "pid": 113213,
+    "head": "567d1f0989e5d59d201a2731966660975166025c",
+    "logs": {
+      "validate-current-heavy-input-key": {
+        "path": "/tmp/stock-d0-full-module-gate/validate-current-heavy-input-key.log",
+        "sha256": "93fb7b49c30aa8e898fb782b57a35510f221b55708c7e72397f0e3347956278c"
+      }
+    },
+    "phase": "all-modules",
+    "log": "/tmp/stock-d0-full-module-gate/all-modules.log"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "utc": "2026-10-19T14:27:59.946925+00:00",
+  "first_activation_head": "567d1f09",
+  "candidate": "/tmp/StockRuleHistoryBridge.lean",
+  "status": "Candidate kernel PASS, two universal roots use exactly std3; not integrated or landed",
+  "unblocks": "Landing7: real Rust two-block nop/jump identity class whose actual Stock/legacy instructions agree but rulesFired differs",
+  "existing_work": "D0 full-code equality cannot preserve differing true histories. DriverCheck.shapeOk checks instructions/classes/control, not diagnostic history. No matching existing metadata bridge found in the current proof tree.",
+  "preservation": "Retain original Stock rulesFired and original edge payload; never replace metadata or weaken scope. Prove relation internally for complete functions, then propagate unchanged checker/semantic and totality consumers.",
+  "next": "Validate this candidate within shared budget after first D0 gates; after first squash implement full edge-aware prologue class and consumer bridge, including source/nonvacuity/mixed witnesses.",
+  "consumer_review": {
+    "utc": "2026-10-19T14:36:01.190202+00:00",
+    "exact_constraint": "Existing pipe_spec and pipeT_spec explicitly conclude lowerFunction f = .ok a.vc. Real Stock prologues differ in rulesFired, so pointing those same old definitions at a metadata-different dispatcher would make the old statement false. Preserve the old pipeline definitions/theorems as legacy-compatible wrappers; add actual-output production consumer variants, proved through the generic lowering seam and global fixed Stock contract. Never rewrite Stock history to satisfy the old equality.",
+    "files": [
+      "FV/E2E/LinkCheck.lean:120",
+      "FV/E2E/LinkCheck.lean:166",
+      "FV/E2E/LinkScope.lean:198",
+      "FV/Backend/Proof/DriverCheck.lean:745"
+    ],
+    "first_bridge": "lowerCheck is independent of rulesFired; queued candidate proves the invariant without evaluating or comparing production outputs at runtime. Actual internal prologue code relation, complete edge handling, totality and mixed generated-proof integration still required.",
+    "applies_after": "First D0 activation squash; do not mutate current frozen source or wait for the whole semantic bridge before shipping its already complete exact-output class."
+  },
+  "kernel_receipt": {
+    "utc": "2026-10-19T14:39:45.780581+00:00",
+    "pid": 147159,
+    "state": "candidate_kernel_passed",
+    "returncode": 0,
+    "limitation": "General metadata bridge only; actual prologue relation and production consumer integration remain.",
+    "scheduler_dispatch_resumed": true
+  },
+  "kernel_log": "'Backend.Stock.RuleHistoryBridge.lowerCheck_with_rules' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.RuleHistoryBridge.lowerCheck_of_same_code' depends on axioms: [propext, Classical.choice, Quot.sound]\n",
+  "preserved_candidate": "docs/research/stock-rule-history-bridge-candidate.lean",
+  "actual_prologue_probe": {
+    "status": "Queued, not yet kernel validated; now imports validated source proof and states exact source identity",
+    "source": "docs/research/stock-prologue-code-probe-candidate.lean",
+    "scope": "System V i64 actual two-block nop/jump/nop identity, arbitrary symbol/run metadata; prove actual Stock success, code equality modulo diagnostic metadata and no edge operands",
+    "receipt": {
+      "utc": "2026-10-19T15:46:37.867793+00:00",
+      "pid": 424306,
+      "state": "waiting_on_verified_full_gate",
+      "controller_pid": 113213,
+      "max_combined_reserved_GiB": 14
+    },
+    "resource_boundary": "Run only after current full module/trust controller succeeds; six GiB candidate plus eight GiB affected gate <=14GiB. One60second bounded probe, no automatic retries.",
+    "first_landing": "Probe does not gate earlier complete D0 class; do not mutate frozen production source."
+  },
+  "source_prologue_witness_probe": {
+    "status": "Kernel PASS: four universal source lemmas; only propext and Quot.sound",
+    "source": "docs/research/stock-prologue-source-witness-candidate.lean",
+    "scope": "Universal i64 word/memory/oracle entry, all four actual nop/jump/nop/return source steps and complete function witness; no Stock relation or production activation claim",
+    "receipt": {
+      "utc": "2026-10-19T15:44:50.041043+00:00",
+      "pid": 417545,
+      "state": "candidate_kernel_passed",
+      "returncode": 0,
+      "scheduler_dispatch_resumed": true,
+      "source_sha256": "097a1e33142665cf5bb6f1c2056ebd4cea1d00662693c6e12d06f0878b448b24",
+      "olean_sha256": "e6f412bd0ca5b3c76b35eaad6d2e7cf6fbbcff5ea6d2fc0e008dc267221d2b67",
+      "artifact_bytes": 349728
+    },
+    "resource_boundary": "After full gate: source1GiB/15seconds + code6GiB/60seconds + native8GiB <=15GiB; this future-class probe does not gate D0.",
+    "axiom_log": "'Clif.StockPrologueSourceProbe.source_entry' depends on axioms: [propext, Quot.sound]\n'Clif.StockPrologueSourceProbe.source_body' depends on axioms: [propext, Quot.sound]\n'Clif.StockPrologueSourceProbe.source_memory_roundtrip' depends on axioms: [propext, Quot.sound]\n'Clif.StockPrologueSourceProbe.complete_source_witness' depends on axioms: [propext, Quot.sound]\n",
+    "limitation": "Source function only; actual Stock code relation and production consumer integration remain unproved. Corrected scratch record layout before this successful run."
+  },
+  "source_input_binding": {
+    "status": "Kernel PASS: definition identity has no axioms; complete word/memory witness uses only propext/Quot.sound",
+    "source": "docs/research/stock-prologue-input-binding-candidate.lean",
+    "receipt": {
+      "utc": "2026-10-19T15:53:45.795321+00:00",
+      "pid": 475345,
+      "state": "candidate_kernel_passed",
+      "returncode": 0,
+      "scheduler_dispatch_resumed": true
+    },
+    "axioms": "'Backend.Stock.PrologueProbe.systemV_i64_source' does not depend on any axioms\n'Backend.Stock.PrologueProbe.systemV_i64_source_witness' depends on axioms: [propext, Quot.sound]\n",
+    "relationship": "Pending Stock-code probe now imports this exact source definition and its already validated source-execution witness, rather than duplicating the function shape."
+  }
+}
