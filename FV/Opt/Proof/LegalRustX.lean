@@ -121,8 +121,11 @@ theorem xenvWith_exnArityOk (raises : String → Bool) (obj : BitVec 64) :
   obtain ⟨-, rfl, -⟩ := xenvWith_unwound hext hu
   simp [panicExn]
 
-/-- The environment's side of `check_refinesX` for `xenvWith`, from the programs' conditions. -/
+/-- The environment's side of `check_refinesX` for `xenvWith`, from the programs' conditions (on
+the domain of `check`, `indOldB`: every indirect call site is a `call_indirect` at a signature
+without `i128`). -/
 theorem xenvWith_envOkX (raises : String → Bool) (obj : BitVec 64) {C : Ctx} {p p' : Program}
+    (hold : indOldB C.f = true)
     (hsrc : ∀ fn e, C.f.extern? fn = some e → p.func? e.name = none)
     (htgt : ∀ fn e, C.g.extern? fn = some e → p'.func? e.name = none)
     (hind : (∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
@@ -130,7 +133,7 @@ theorem xenvWith_envOkX (raises : String → Bool) (obj : BitVec 64) {C : Ctx} {
       p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames) :
     EnvOkX (xenvWith raises obj) C p p' where
   base := ⟨hsrc, htgt, xenvWith_helperOk raises obj, xenvWith_extLegal raises obj,
-    xenvWith_envKeepsAllocs raises obj, hind⟩
+    xenvWith_envKeepsAllocs raises obj, indOldB_ind hold hind, indOldB_sigs hold⟩
   extX := xenvWith_extLegalX raises obj
   keepX := xenvWith_envKeepsAllocsX raises obj
   arity := xenvWith_exnArityOk raises obj

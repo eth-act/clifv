@@ -1,10 +1,12 @@
 import FV.Opt.Legalize128Pass
 
 /-!
-# Completeness of `Opt.Legal.check` for `Opt.Legalize128`'s output
+# Completeness of `Opt.Legal.checkW` for `Opt.Legalize128`'s output
 
-`check_complete`: for a function `f` satisfying `Pre`, the validator accepts the legalisation
-`function128Cert f = .ok (g, cert)`. The pass (`FV/Opt/Legalize128Pass.lean`) emits for every
+`checkW_complete`: for a function `f` satisfying `PreW`, the validator accepts the legalisation
+`function128Cert f = .ok (g, cert)` (`check_complete`: `check` accepts it when `f` satisfies
+`Pre`, i.e. `PreW` and the domain of `check`, `indOldB`). The pass
+(`FV/Opt/Legalize128Pass.lean`) emits for every
 statement the segment of its `planOf` plan, so the proof is about the values it writes:
 
 * the certificate (`allocPairs`): pair components are consecutive ids between `maxValueId f`
@@ -533,7 +535,10 @@ def PlanSpec (C : Ctx) (s : Stmt) : Plan → Prop
   | .div _ _ _ _ _ rl rh => ∃ r, C.pair r = some (rl, rh)
   | .call fn e _ _ rs => C.f.extern? fn = some e ∧ rs = s.results
   | .trap lo hi _ _ => ∃ c ∈ instOps s.inst, C.pair c = some (lo, hi)
-  | .callInd => ∃ sig callee args, s.inst = .callIndirect sig callee args
+  | .callInd => ∃ sig callee args d, s.inst = .callIndirect sig callee args ∧
+      C.f.sigDecls.lookup sig = some d ∧ sig128 d = false
+  | .callInd128 sig d callee _ _ rs => C.f.sigDecls.lookup sig = some d ∧ rs = s.results ∧
+      ∃ args, s.inst = .callIndirect sig callee args
   | _ => True
 
 set_option maxHeartbeats 1000000 in
@@ -752,26 +757,6 @@ theorem retsOf_spec {C : Ctx} (hG : CGood C) (rg : List (List SlotEl)) (rs : Lis
     · simp at h
     all_goals assumption
 
-
-
-theorem go_plain : ∀ (ps : List AbiParam) (k v st : Nat), (∀ p ∈ ps, p.ty ≠ .i128) →
-    expandGroups.go ps k v st false = .ok (ps.map fun p => [SlotEl.val p])
-  | [], _, _, _, _ => rfl
-  | p :: ps, k, v, st, h => by
-    have hp : (p.ty == .i128) = false := by simpa using h p (by simp)
-    have ih := fun k v st => go_plain ps k v st (fun q hq => h q (by simp [hq]))
-    simp only [expandGroups.go, hp, Bool.false_eq_true, ite_false]
-    (repeat' split) <;> simp_all [bind, Except.bind, pure, Except.pure]
-
-theorem sigExp_plain {d : Signature} (h : sig128 d = false) : sigExp d = some d := by
-  simp only [sig128, List.any_eq_false, beq_iff_eq, List.mem_append] at h
-  simp only [sigExp, expandSig, expandGroups, go_plain d.params 0 0 0 (fun p hp => h p (.inl hp)),
-    go_plain d.returns 0 0 0 (fun p hp => h p (.inr hp))]
-  simp only [bind, Except.bind, pure, Except.pure, Except.toOption, List.flatMap_map]
-  congr
-  · simp [elTy]
-  · simp [elTy]
-
 /-- What the legaliser's `g` declares: `f`'s externs and signature declarations, expanded, and
 the `__*ti3` helpers. -/
 structure GOk (C : Ctx) : Prop where
@@ -783,8 +768,6 @@ structure GOk (C : Ctx) : Prop where
 
 theorem emitPlan_spec {C : Ctx} (hG : CGood C) (hO : GOk C) {s : Stmt} (hs : SFacts C s)
     {pl : Plan} (hpl : planOf C s = some pl)
-    (hci : ∀ sig callee args, s.inst = .callIndirect sig callee args →
-      C.g.sigDecls.lookup sig = C.f.sigDecls.lookup sig)
     {st st' : St} (hz : C.zero < st.next) (h : (emitPlan C s pl).run st = .ok ((), st')) :
     ∃ seg, st'.out = st.out ++ seg ∧ st.next ≤ st'.next ∧ seg.length = pl.len ∧
       segOk C s pl seg = true := by
@@ -798,9 +781,22 @@ theorem emitPlan_spec {C : Ctx} (hG : CGood C) (hO : GOk C) {s : Stmt} (hs : SFa
   | callInd =>
     simp only [emitPlan, emitS_run, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨-, rfl⟩ := h
-    obtain ⟨sig, callee, args, hi⟩ := hsp
+    obtain ⟨sig, callee, args, d, hi, hd, h128⟩ := hsp
+    obtain ⟨d', hd', hg⟩ := hO.decl sig d hd
+    rw [sigExp_plain h128] at hd'
+    cases hd'
     refine ⟨[s], rfl, Nat.le_refl _, rfl, ?_⟩
-    simp [segOk, hi, hci sig callee args hi]
+    simp [segOk, hi, hg, hd]
+  | callInd128 sig d callee args rg rs =>
+    simp only [emitPlan] at h
+    obtain ⟨results, s1, h1, h2⟩ := run_bind h
+    simp only [emitS_run, Except.ok.injEq, Prod.mk.injEq] at h2
+    obtain ⟨-, rfl⟩ := h2
+    obtain ⟨hd, rfl, -⟩ := hsp
+    obtain ⟨o1, n1, ok1, nd1, -⟩ := retsOf_spec hG rg s.results h1 hs.res hs.nd hz
+    obtain ⟨d', hd', hg⟩ := hO.decl sig d hd
+    refine ⟨[{ results, inst := .callIndirect sig callee args }], by simp [o1], n1, rfl, ?_⟩
+    simp [segOk, ok1, nd1, hd', hg]
   | pure pat ins outs =>
     simp only [emitPlan, emitPat_run, Except.ok.injEq, Prod.mk.injEq] at h
     obtain ⟨-, rfl⟩ := h
@@ -884,46 +880,16 @@ theorem emitPlan_spec {C : Ctx} (hG : CGood C) (hO : GOk C) {s : Stmt} (hs : SFa
     have hf := hG.fresh (t := st.next) hz
     cases nz <;> simp [segOk, List.getLast?_append, hf, hpo]
 
-/-- No `call_indirect` with an `i128` signature (`Pre`). -/
-def CiPlain (C : Ctx) (s : Stmt) : Prop :=
-  ∀ sig callee args, s.inst = .callIndirect sig callee args → ∀ d,
-    C.f.sigDecls.lookup sig = some d → sig128 d = false
-
-theorem rewriteStmt_spec {C : Ctx} (hG : CGood C) (hO : GOk C) {s : Stmt} (hs : SFacts C s)
-    (hci : CiPlain C s) {st st' : St} (hz : C.zero < st.next)
-    (h : (rewriteStmt C s).run st = .ok ((), st')) :
+theorem emitStmt_spec {C : Ctx} (hG : CGood C) (hO : GOk C) {s : Stmt} (hs : SFacts C s)
+    {st st' : St} (hz : C.zero < st.next) (h : (emitStmt C s).run st = .ok ((), st')) :
     ∃ pl seg, planOf C s = some pl ∧ st'.out = st.out ++ seg ∧ st.next ≤ st'.next ∧
       seg.length = pl.len ∧ segOk C s pl seg = true := by
-  have hemit : (emitStmt C s).run st = .ok ((), st') →
-      (∀ sig callee args, s.inst = .callIndirect sig callee args →
-        C.g.sigDecls.lookup sig = C.f.sigDecls.lookup sig) →
-      ∃ pl seg, planOf C s = some pl ∧ st'.out = st.out ++ seg ∧ st.next ≤ st'.next ∧
-        seg.length = pl.len ∧ segOk C s pl seg = true := by
-    intro he hci'
-    unfold emitStmt at he
-    split at he
-    · rename_i pl hpl
-      obtain ⟨seg, h1, h2, h3, h4⟩ := emitPlan_spec hG hO hs hpl hci' hz he
-      exact ⟨pl, seg, hpl, h1, h2, h3, h4⟩
-    · simp at he
-  unfold rewriteStmt at h
+  unfold emitStmt at h
   split at h
-  · rename_i sig callee args hi
-    split at h
-    · rename_i d hd
-      have h128 := hci sig callee args hi d hd
-      simp only [h128, Bool.false_eq_true, ite_false] at h
-      refine hemit h fun sig' callee' args' hi' => ?_
-      rw [hi] at hi'
-      cases hi'
-      obtain ⟨d', hd', hg⟩ := hO.decl sig d hd
-      rw [sigExp_plain h128] at hd'
-      cases hd'
-      rw [hg, hd]
-    · simp at h
-  · refine hemit h fun sig callee args hi => ?_
-    rename_i hni
-    exact absurd hi (hni sig callee args)
+  · rename_i pl hpl
+    obtain ⟨seg, h1, h2, h3, h4⟩ := emitPlan_spec hG hO hs hpl hz h
+    exact ⟨pl, seg, hpl, h1, h2, h3, h4⟩
+  · simp at h
 
 /-- The legaliser's context `C` and the checker's `D` agree but on `g`'s blocks. -/
 structure Agree (C D : Ctx) : Prop where
@@ -933,7 +899,7 @@ structure Agree (C D : Ctx) : Prop where
   decls : D.g.sigDecls = C.g.sigDecls
 
 theorem rewriteBody_spec {C D : Ctx} (A : Agree C D) (hG : CGood C) (hO : GOk C) :
-    ∀ (ss : List Stmt), (∀ s ∈ ss, SFacts C s ∧ CiPlain C s) → ∀ {st st' : St},
+    ∀ (ss : List Stmt), (∀ s ∈ ss, SFacts C s) → ∀ {st st' : St},
     C.zero < st.next → (rewriteBody C ss).run st = .ok ((), st') →
     ∃ segs, st'.out = st.out ++ segs ∧ st.next ≤ st'.next ∧
       ∀ t ts t', codeOk D ss t (segs ++ ts) t' = termOk D t ts t'
@@ -944,8 +910,8 @@ theorem rewriteBody_spec {C D : Ctx} (A : Agree C D) (hG : CGood C) (hO : GOk C)
   | s :: ss, hss, st, st', hz, h => by
     simp only [rewriteBody] at h
     obtain ⟨u, s1, h1, h2⟩ := run_bind h
-    obtain ⟨hs, hci⟩ := hss s (by simp)
-    obtain ⟨pl, seg, hpl, o1, n1, hl, hok⟩ := rewriteStmt_spec hG hO hs hci hz h1
+    have hs := hss s (by simp)
+    obtain ⟨pl, seg, hpl, o1, n1, hl, hok⟩ := emitStmt_spec hG hO hs hz h1
     obtain ⟨segs, o2, n2, hc⟩ := rewriteBody_spec A hG hO ss (fun x hx => hss x (by simp [hx]))
       (by vomega) h2
     refine ⟨seg ++ segs, by simp [o2, o1], by vomega, fun t ts t' => ?_⟩
@@ -1211,7 +1177,6 @@ theorem ite_throw_ok {c : Prop} [Decidable c] {e : String} {st st' : St} {u : Un
 
 theorem rewriteTerm_spec {C D : Ctx} (A : Agree C D) (hG : CGood C) (hO : GOk C)
     {t : Terminator} (ht : ∀ x ∈ termOps t, x < C.T0)
-    (hnt : ∀ c args et, t ≠ .tryCallIndirect c args et)
     {rg : List (List SlotEl)} (hrg : groups C.f.sig.returns = some rg) {st st' : St}
     {t' : Terminator} (hz : C.zero < st.next) (h : (rewriteTerm C rg t).run st = .ok (t', st')) :
     ∃ ts, st'.out = st.out ++ ts ∧ st.next ≤ st'.next ∧
@@ -1364,7 +1329,61 @@ theorem rewriteTerm_spec {C D : Ctx} (A : Agree C D) (hG : CGood C) (hO : GOk C)
       Bool.and_eq_true, true_and, beq_iff_eq]
     refine ⟨⟨⟨by vomega, by vomega⟩, List.all_eq_true.mpr fun a ha => decide_eq_true (hcomps hfv a ha)⟩, ?_⟩
     simp
-  | tryCallIndirect c args et => exact absurd rfl (hnt c args et)
+  | tryCallIndirect c args et =>
+    simp only [rewriteTerm] at h
+    split at h
+    rotate_left
+    · simp at h
+    rename_i d hd
+    obtain ⟨gs, s2, h2, k2⟩ := run_bind h
+    obtain ⟨hgs, rfl⟩ := liftE_ok h2
+    obtain ⟨rgs, s3, h3, k3⟩ := run_bind k2
+    obtain ⟨hrgs, rfl⟩ := liftE_ok h3
+    split at k3
+    · simp at k3
+    rename_i hpc
+    split at k3
+    · simp at k3
+    rename_i hent
+    split at k3
+    · simp at k3
+    rename_i hfv0
+    have k6 := k3
+    split at k6
+    rotate_left
+    · simp at k6
+    rename_i B hB
+    split at k6
+    rotate_left
+    · simp at k6
+    rename_i args' hargs
+    split at k6
+    rotate_left
+    · simp at k6
+    rename_i nargs hnargs
+    obtain ⟨items, s7, h7, k7⟩ := run_bind k6
+    obtain ⟨-, rfl⟩ := liftE_ok h7
+    simp only [pure_run, Except.ok.injEq, Prod.mk.injEq] at k7
+    obtain ⟨rfl, rfl⟩ := k7
+    obtain ⟨d', hd', hgd⟩ := hO.decl et.sig d hd
+    have hgD : D.g.sigDecls.lookup et.sig = some d' := by rw [A.decls]; exact hgd
+    have hcomps : C.zero < D.g.freshValue → ∀ a ∈ D.comps, a < D.g.freshValue := fun hfv a ha => by
+      have hc : D.comps = C.comps := by simp [Ctx.comps, A.cert]
+      rw [hc] at ha
+      have := hG.comps ha
+      vomega
+    have hT0 : D.T0 = C.T0 := by simp [Ctx.T0, A.f]
+    have hzD : D.zero = C.zero := by simp [Ctx.zero, A.cert]
+    simp only [Bool.not_eq_true', Bool.not_eq_false', Bool.and_eq_true, beq_iff_eq,
+      decide_eq_true_eq] at hpc hent hfv0
+    refine ⟨[], by simp, Nat.le_refl _, fun hfv => ?_⟩
+    simp only [termOk, List.isEmpty_nil, beq_self_eq_true, Bool.true_and, entryId_congr A, A.f,
+      hd, hB, hd', groups, hgs, hrgs, Except.toOption, hgD, expandArgs_congr A.cert, hargs,
+      expandTry_congr A.cert, hnargs, hT0, hzD, plain_congr A.cert, hpc, List.all_eq_true]
+    simp only [bne_iff_ne, ne_eq, hent, not_false_eq_true, decide_eq_true_eq, hfv0, Bool.true_and,
+      Bool.and_eq_true, true_and, beq_iff_eq]
+    refine ⟨⟨⟨by vomega, by vomega⟩, List.all_eq_true.mpr fun a ha => decide_eq_true (hcomps hfv a ha)⟩, ?_⟩
+    simp
 
 /-! ## Blocks -/
 
@@ -1383,9 +1402,8 @@ theorem paramsOk_congr {C D : Ctx} (h : D.cert = C.cert) (ps ps' : List (ValueId
 structure BFacts (C : Ctx) (b : Block) : Prop where
   params : ∀ p ∈ b.params, p.1 < C.T0
   pnd : (b.params.map (·.1)).Nodup
-  body : ∀ s ∈ b.body, SFacts C s ∧ CiPlain C s
+  body : ∀ s ∈ b.body, SFacts C s
   term : ∀ x ∈ termOps b.term, x < C.T0
-  noTryInd : ∀ c args et, b.term ≠ .tryCallIndirect c args et
 
 theorem rewriteBlock_spec {C D : Ctx} (A : Agree C D) (hG : CGood C) (hO : GOk C)
     {pg rg : List (List SlotEl)} (hpg : groups C.f.sig.params = some pg)
@@ -1410,7 +1428,7 @@ theorem rewriteBlock_spec {C D : Ctx} (A : Agree C D) (hG : CGood C) (hO : GOk C
     obtain ⟨⟨⟩, s3, h3, k3⟩ := run_bind k2
     obtain ⟨segs, o3, n3, hc⟩ := rewriteBody_spec A hG hO b.body hb.body (by simp; vomega) h3
     obtain ⟨t', s4, h4, k4⟩ := run_bind k3
-    obtain ⟨ts, o4, n4, ht⟩ := rewriteTerm_spec A hG hO hb.term hb.noTryInd hrg (by vomega) h4
+    obtain ⟨ts, o4, n4, ht⟩ := rewriteTerm_spec A hG hO hb.term hrg (by vomega) h4
     obtain ⟨s5, s6, h5, k5⟩ := run_bind k4
     simp only [StateT.run_get, Except.ok.injEq, Prod.mk.injEq] at h5
     obtain ⟨rfl, rfl⟩ := h5
@@ -1429,7 +1447,7 @@ theorem rewriteBlock_spec {C D : Ctx} (A : Agree C D) (hG : CGood C) (hO : GOk C
     obtain ⟨⟨⟩, s3, h3, k3⟩ := run_bind k1
     obtain ⟨segs, o3, n3, hc⟩ := rewriteBody_spec A hG hO b.body hb.body (by simp; vomega) h3
     obtain ⟨t', s4, h4, k4⟩ := run_bind k3
-    obtain ⟨ts, o4, n4, ht⟩ := rewriteTerm_spec A hG hO hb.term hb.noTryInd hrg (by vomega) h4
+    obtain ⟨ts, o4, n4, ht⟩ := rewriteTerm_spec A hG hO hb.term hrg (by vomega) h4
     obtain ⟨s5, s6, h5, k5⟩ := run_bind k4
     simp only [StateT.run_get, Except.ok.injEq, Prod.mk.injEq] at h5
     obtain ⟨rfl, rfl⟩ := h5
@@ -1610,21 +1628,16 @@ theorem helperExts_keys (f : Function) :
 
 /-! ## Completeness -/
 
-/-- **The preconditions of completeness**: `f` mentions `i128` (otherwise `function128Cert`
-returns `f` itself), the `f`-only conjuncts of `check` (distinct definitions, every value id
-below `maxValueId f`), no statement reads its own result, and the two constructs the legaliser
-expands outside `check` do not occur: `call_indirect` with an `i128` signature and
-`try_call_indirect`. -/
-structure Pre (f : Function) : Prop where
+/-- **The preconditions of completeness** of `checkW`: `f` mentions `i128` (otherwise
+`function128Cert` returns `f` itself), the `f`-only conjuncts of `checkW` (distinct definitions,
+every value id below `maxValueId f`), no statement reads its own result. -/
+structure PreW (f : Function) : Prop where
   mentions : mentions128 f = true
   defs : ((defsOf f).map (·.1)).Nodup
   ids : ∀ v ∈ idsOf f, v < maxValueId f
   noSelf : ∀ b ∈ f.blocks, ∀ s ∈ b.body, ∀ x ∈ instOps s.inst, x ∉ s.results
-  callInd : ∀ b ∈ f.blocks, ∀ s ∈ b.body, ∀ sig callee args,
-    s.inst = .callIndirect sig callee args → ∀ d, f.sigDecls.lookup sig = some d → sig128 d = false
-  noTryInd : ∀ b ∈ f.blocks, ∀ c args et, b.term ≠ .tryCallIndirect c args et
 
-theorem bfacts_of_pre {f : Function} (hp : Pre f) {C : Ctx} (hf : C.f = f) {b : Block}
+theorem bfacts_of_preW {f : Function} (hp : PreW f) {C : Ctx} (hf : C.f = f) {b : Block}
     (hb : b ∈ f.blocks) : BFacts C b := by
   have hT : C.T0 = maxValueId f := by simp [Ctx.T0, hf]
   have hid : ∀ v, (v ∈ b.params.map (·.1) ∨ (∃ s ∈ b.body, v ∈ s.results ∨ v ∈ instOps s.inst) ∨
@@ -1644,13 +1657,48 @@ theorem bfacts_of_pre {f : Function} (hp : Pre f) {C : Ctx} (hf : C.f = f) {b : 
     exact (sublist_flatMap_of_mem (f := fun b : Block => b.params.map (·.1) ++
       b.body.flatMap (·.results)) hb).nodup this
   refine ⟨fun p hp' => hid p.1 (.inl (List.mem_map.mpr ⟨p, hp', rfl⟩)),
-    (List.sublist_append_left _ _).nodup hkeys, fun s hs => ⟨⟨fun x hx => hid x (.inr (.inl
+    (List.sublist_append_left _ _).nodup hkeys, fun s hs => ⟨fun x hx => hid x (.inr (.inl
       ⟨s, hs, .inr hx⟩)), fun r hr => hid r (.inr (.inl ⟨s, hs, .inl hr⟩)), ?_,
-      hp.noSelf b hb s hs⟩, fun sig callee args hi d hd => hp.callInd b hb s hs sig callee args hi d
-        (by rw [← hf]; exact hd)⟩,
-    fun x hx => hid x (.inr (.inr hx)), hp.noTryInd b hb⟩
+      hp.noSelf b hb s hs⟩,
+    fun x hx => hid x (.inr (.inr hx))⟩
   exact ((sublist_flatMap_of_mem (f := (·.results)) hs).trans
     (List.sublist_append_right _ _)).nodup hkeys
+
+/-- **The preconditions of completeness** of `check`: `PreW`, and the two constructs outside
+the domain of `check` (`indOldB`) do not occur: `call_indirect` with an `i128` signature and
+`try_call_indirect`. -/
+structure Pre (f : Function) : Prop where
+  mentions : mentions128 f = true
+  defs : ((defsOf f).map (·.1)).Nodup
+  ids : ∀ v ∈ idsOf f, v < maxValueId f
+  noSelf : ∀ b ∈ f.blocks, ∀ s ∈ b.body, ∀ x ∈ instOps s.inst, x ∉ s.results
+  callInd : ∀ b ∈ f.blocks, ∀ s ∈ b.body, ∀ sig callee args,
+    s.inst = .callIndirect sig callee args → ∀ d, f.sigDecls.lookup sig = some d → sig128 d = false
+  noTryInd : ∀ b ∈ f.blocks, ∀ c args et, b.term ≠ .tryCallIndirect c args et
+
+theorem Pre.toW {f : Function} (hp : Pre f) : PreW f :=
+  ⟨hp.mentions, hp.defs, hp.ids, hp.noSelf⟩
+
+/-- `Pre` implies the domain of `check`. -/
+theorem Pre.indOld {f : Function} (hp : Pre f) : Opt.Legal.indOldB f = true := by
+  simp only [Opt.Legal.indOldB, List.all_eq_true, Bool.and_eq_true]
+  intro b hb
+  refine ⟨fun s hs => ?_, ?_⟩
+  · split
+    · rename_i sig callee args hi
+      split
+      · rename_i d hd
+        simpa using hp.callInd b hb s hs sig callee args hi d hd
+      · rfl
+    · rfl
+  · split
+    · rename_i c args et he
+      exact absurd he (hp.noTryInd b hb c args et)
+    · rfl
+
+theorem bfacts_of_pre {f : Function} (hp : Pre f) {C : Ctx} (hf : C.f = f) {b : Block}
+    (hb : b ∈ f.blocks) : BFacts C b :=
+  bfacts_of_preW hp.toW hf hb
 
 /-- The legaliser's certificate. -/
 def certOf (f : Function) : Cert :=
@@ -1678,19 +1726,19 @@ theorem gok_of {f g0 : Function} {es : List (FnRef × ExtFunc)} {ds : List (Nat 
   · obtain ⟨d', hd', hl'⟩ := expandSigDecls_spec hds i d hdi
     exact ⟨d', hd', by simpa [hd] using hl'⟩
 
-theorem check_of_run {f g0 : Function} {pg rg : List (List SlotEl)} {bs' : List Block}
-    {st' : St} (hp : Pre f) (hne : f.blocks ≠ [])
+theorem checkW_of_run {f g0 : Function} {pg rg : List (List SlotEl)} {bs' : List Block}
+    {st' : St} (hp : PreW f) (hne : f.blocks ≠ [])
     (hname : g0.name = f.name) (hslots : g0.slots = f.slots) (hglob : g0.globals = f.globals)
     (hsig : sigExp f.sig = some g0.sig) (hO : GOk ⟨f, g0, certOf f⟩)
     (hpg : groups f.sig.params = some pg) (hrg : groups f.sig.returns = some rg)
     (hrun : (rewriteBlocks ⟨f, g0, certOf f⟩ pg rg true f.blocks).run
       { next := (certOf f).zero + 1 } = .ok (bs', st')) :
-    check f { g0 with blocks := bs' } (certOf f) = true := by
+    checkW f { g0 with blocks := bs' } (certOf f) = true := by
   have A : Agree ⟨f, g0, certOf f⟩ ⟨f, { g0 with blocks := bs' }, certOf f⟩ := ⟨rfl, rfl, rfl, rfl⟩
   have hG : CGood ⟨f, g0, certOf f⟩ := cgood_alloc f g0
   have hGD : CGood ⟨f, { g0 with blocks := bs' }, certOf f⟩ := cgood_alloc f _
   obtain ⟨hlen, hhead, hok1, hok2⟩ := rewriteBlocks_spec A hG hO hpg hrg f.blocks true
-    (fun b hb => bfacts_of_pre hp rfl hb) (by simp [Ctx.zero]) hrun
+    (fun b hb => bfacts_of_preW hp rfl hb) (by simp [Ctx.zero]) hrun
   obtain ⟨b, bs, hfb⟩ : ∃ b bs, f.blocks = b :: bs := by
     cases hf : f.blocks with
     | nil => exact absurd hf hne
@@ -1707,10 +1755,21 @@ theorem check_of_run {f g0 : Function} {pg rg : List (List SlotEl)} {bs' : List 
   have h2 := hok2 hfv
   simp only [List.drop_one, List.tail_cons] at h2
   simp only [List.length_cons, Nat.add_right_cancel_iff] at hlen
-  unfold check
+  unfold checkW
   simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, List.all_eq_true, hfb]
   exact ⟨⟨⟨⟨⟨⟨⟨⟨hname, hslots⟩, hglob⟩, hsig⟩, hp.defs⟩, fun v hv => hp.ids v hv⟩, certOk_of hGD⟩,
     by simp [hlen]⟩, h1, List.all_eq_true.mp h2⟩
+
+theorem check_of_run {f g0 : Function} {pg rg : List (List SlotEl)} {bs' : List Block}
+    {st' : St} (hp : Pre f) (hne : f.blocks ≠ [])
+    (hname : g0.name = f.name) (hslots : g0.slots = f.slots) (hglob : g0.globals = f.globals)
+    (hsig : sigExp f.sig = some g0.sig) (hO : GOk ⟨f, g0, certOf f⟩)
+    (hpg : groups f.sig.params = some pg) (hrg : groups f.sig.returns = some rg)
+    (hrun : (rewriteBlocks ⟨f, g0, certOf f⟩ pg rg true f.blocks).run
+      { next := (certOf f).zero + 1 } = .ok (bs', st')) :
+    check f { g0 with blocks := bs' } (certOf f) = true := by
+  simp only [check, checkW_of_run hp.toW hne hname hslots hglob hsig hO hpg hrg hrun, hp.indOld,
+    Bool.and_self]
 
 theorem except_bind_ok {ε α β : Type} {x : Except ε α} {f : α → Except ε β} {b : β}
     (h : (x >>= f) = .ok b) : ∃ a, x = .ok a ∧ f a = .ok b := by
@@ -1718,10 +1777,10 @@ theorem except_bind_ok {ε α β : Type} {x : Except ε α} {f : α → Except �
   | error e => rw [hx] at h; cases h
   | ok a => rw [hx] at h; exact ⟨a, rfl, h⟩
 
-/-- **Completeness of `Opt.Legal.check`**: the validator accepts every legalisation of a function
-satisfying `Pre`. -/
-theorem check_complete {f g : Function} {cert : Cert} (hp : Pre f)
-    (h : function128Cert f = .ok (g, cert)) : check f g cert = true := by
+/-- **Completeness of `Opt.Legal.checkW`**: the validator accepts every legalisation of a
+function satisfying `PreW`. -/
+theorem checkW_complete {f g : Function} {cert : Cert} (hp : PreW f)
+    (h : function128Cert f = .ok (g, cert)) : checkW f g cert = true := by
   simp only [function128Cert, hp.mentions, Bool.not_true, Bool.false_eq_true, ite_false] at h
   split at h
   · cases h
@@ -1736,8 +1795,14 @@ theorem check_complete {f g : Function} {cert : Cert} (hp : Pre f)
   obtain ⟨rfl, rfl⟩ := h
   have hpg' : groups f.sig.params = some pg := by simp [groups, hpg, Except.toOption]
   have hrg' : groups f.sig.returns = some rg := by simp [groups, hrg, Except.toOption]
-  exact check_of_run (g0 := { f with sig := sig, externs := es ++ helperExts f, sigDecls := ds })
+  exact checkW_of_run (g0 := { f with sig := sig, externs := es ++ helperExts f, sigDecls := ds })
     (st' := st') hp (by simpa using hne) rfl rfl rfl
     (by simp [sigExp, hsig, Except.toOption]) (gok_of hes hds rfl rfl _) hpg' hrg' hrun
+
+/-- **Completeness of `Opt.Legal.check`**: it accepts every legalisation of a function
+satisfying `Pre`. -/
+theorem check_complete {f g : Function} {cert : Cert} (hp : Pre f)
+    (h : function128Cert f = .ok (g, cert)) : check f g cert = true := by
+  simp only [check, checkW_complete hp.toW h, hp.indOld, Bool.and_self]
 
 end Opt.Legal.Complete

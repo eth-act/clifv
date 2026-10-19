@@ -9,9 +9,9 @@ The pass is driven by the validator's plans: it first gives every `i128` value o
 fresh `i64` values (`allocPairs`, the certificate), then rewrites each statement by its
 `Opt.Legal.planOf` plan, emitting the plan's canonical pattern with fresh temporaries
 (`emitPat`). A statement without a plan makes the legalisation fail (the function is left alone
-and reported unsupported by the backend). `Opt.Legal.check` validates the result; it accepts
-every legalisation of a function satisfying `Opt.Legal.Complete.Pre`
-(`Opt.Legal.Complete.check_complete`, `FV/Opt/Proof/LegalComplete.lean`).
+and reported unsupported by the backend). `Opt.Legal.checkW` validates the result; it accepts
+every legalisation of a function satisfying `Opt.Legal.Complete.PreW`
+(`Opt.Legal.Complete.checkW_complete`, `FV/Opt/Proof/LegalComplete.lean`).
 -/
 
 namespace Opt.Legalize128
@@ -128,6 +128,9 @@ def emitPlan (C : Ctx) (s : Stmt) : Plan → M Unit
   | .call fn _ args rg rs => do
     let results ← retsOf C rg rs
     emitS { results, inst := .call fn args }
+  | .callInd128 sig _ callee args rg rs => do
+    let results ← retsOf C rg rs
+    emitS { results, inst := .callIndirect sig callee args }
   | .trap lo hi nz code => do
     let c ← fresh
     emitPat Pat.cond [lo, hi] [c]
@@ -139,27 +142,10 @@ def emitStmt (C : Ctx) (s : Stmt) : M Unit :=
   | some pl => emitPlan C s pl
   | none => throw "legalize128: unsupported statement"
 
-/-- The rewrite of one statement. A `call_indirect` with an `i128` signature is expanded by the
-ABI groups (outside `Opt.Legal.check`: such functions are flagged unverified). -/
-def rewriteStmt (C : Ctx) (s : Stmt) : M Unit :=
-  match s.inst with
-  | .callIndirect sig callee args =>
-    match C.f.sigDecls.lookup sig with
-    | some d =>
-      if sig128 d then do
-        let gs ← liftE (expandGroups d.params)
-        let rg ← liftE (expandGroups d.returns)
-        let some args' := expandArgs C gs args | throw "legalize128: call_indirect arguments"
-        let results ← retsOf C rg s.results
-        emitS { results, inst := .callIndirect sig callee args' }
-      else emitStmt C s
-    | none => throw s!"legalize128: unknown sig{sig}"
-  | _ => emitStmt C s
-
 def rewriteBody (C : Ctx) : List Stmt → M Unit
   | [] => pure ()
   | s :: ss => do
-    rewriteStmt C s
+    emitStmt C s
     rewriteBody C ss
 
 /-! ## Block parameters and terminators -/
@@ -203,7 +189,7 @@ def rewriteBC (C : Ctx) (bc : BlockCall) : M BlockCall :=
       | none => throw s!"legalize128: arguments of block{bc.block}"
     | none => throw s!"legalize128: unknown block{bc.block}"
 
-/-- A `try_call` successor (exception handlers, `try_call_indirect`): an `i128` value is split
+/-- An exception-handler successor of a `try_call`/`try_call_indirect`: an `i128` value is split
 into its pair; `retN` of an `i128` return becomes the two return slots of its pair (after a
 pad); payloads (`exnN`, pointer-sized) are unchanged. -/
 def rewriteTryDest (C : Ctx) (rg : List (List SlotEl)) (d : TryDest) :
@@ -241,8 +227,7 @@ def rewriteItems (C : Ctx) (rg : List (List SlotEl)) (items : List ExnItem) :
     | .default d => do return ExnItem.default (← rewriteTryDest C rg d)
     | .context v => do return ExnItem.context v
 
-/-- The rewrite of a terminator (`termOk`; its condition statements are emitted into `out`).
-`try_call_indirect` is expanded outside `Opt.Legal.check`. -/
+/-- The rewrite of a terminator (`termOk`; its condition statements are emitted into `out`). -/
 def rewriteTerm (C : Ctx) (rg : List (List SlotEl)) : Terminator → M Terminator
   | .jump bc => return .jump (← rewriteBC C bc)
   | .brif c t e => do
@@ -280,13 +265,18 @@ def rewriteTerm (C : Ctx) (rg : List (List SlotEl)) : Terminator → M Terminato
     let items ← liftE (rewriteItems C rgs et.items)
     return .tryCall fn args' { et with normal := { et.normal with args := nargs }, items }
   | .tryCallIndirect c args et => do
-    let some sig := C.f.sigDecls.lookup et.sig | throw s!"legalize128: unknown sig{et.sig}"
-    let gs ← liftE (expandGroups sig.params)
-    let rgs ← liftE (expandGroups sig.returns)
-    let some args' := expandArgs C gs args | throw "legalize128: try_call arguments"
-    let normal ← liftE (rewriteTryDest C rgs et.normal)
+    let some d := C.f.sigDecls.lookup et.sig | throw s!"legalize128: unknown sig{et.sig}"
+    let gs ← liftE (expandGroups d.params)
+    let rgs ← liftE (expandGroups d.returns)
+    if !C.plain c then throw "legalize128: i128 try_call_indirect callee"
+    if C.entryId? == some et.normal.block then throw "legalize128: branch to the entry block"
+    if !decide (C.T0 ≤ C.f.freshValue) then throw "legalize128: try_call without values"
+    let some B := C.f.block? et.normal.block | throw s!"legalize128: unknown block{et.normal.block}"
+    let some args' := expandArgs C gs args | throw "legalize128: try_call_indirect arguments"
+    let some nargs := expandTry C rgs et.normal.args B.params
+      | throw "legalize128: try_call_indirect normal-return arguments"
     let items ← liftE (rewriteItems C rgs et.items)
-    return .tryCallIndirect c args' { et with normal, items }
+    return .tryCallIndirect c args' { et with normal := { et.normal with args := nargs }, items }
 
 /-! ## Blocks and the function -/
 
@@ -329,21 +319,21 @@ def function128 (f : Function) : Except String Function :=
 
 
 /-- The unverified reason of a legalised function the validator rejects. -/
-def rejectedReason : String := "i128 legalized (outside backend_correct: Opt.Legal.check rejects)"
+def rejectedReason : String := "i128 legalized (outside backend_correct: Opt.Legal.checkW rejects)"
 
 /-- The result of `parsedFile128`. -/
 structure Legalized where
   /-- The file with every legalisable function replaced by its legalisation. -/
   file : Clif.ParsedFile
-  /-- The legalised functions outside `E2E.backend_correct_legal`, with the reason. -/
+  /-- The legalised functions outside `E2E.backend_correct_legal_wide`, with the reason. -/
   unverified : List (String × String)
-  /-- The legalised functions `Opt.Legal.check` accepts: inside the per-activation theorem
-  `E2E.backend_correct_legal` when the backend's local conditions hold. Source and target
+  /-- The legalised functions `Opt.Legal.checkW` accepts: inside the per-activation theorem
+  `E2E.backend_correct_legal_wide` when the backend's local conditions hold. Source and target
   programs have no functions, so all calls use the environment's contracts. -/
   accepted : List String
 
 /-- Legalise every parsed function of a file. Accepted functions use
-`E2E.backend_correct_legal` with function-free source and target programs: its extern-call
+`E2E.backend_correct_legal_wide` with function-free source and target programs: its extern-call
 and indirect-resolution program conditions then hold independently of names in the file.
 The backend checks the remaining local conditions; rejected legalisations stay unverified. -/
 def parsedFile128 (pf : Clif.ParsedFile) : Legalized :=
@@ -357,7 +347,7 @@ def parsedFile128 (pf : Clif.ParsedFile) : Legalized :=
         if f' == f then { acc with file := push p }
         else
           let acc := { acc with file := push { p with func := .ok f' } }
-          if !Opt.Legal.check f f' cert then
+          if !Opt.Legal.checkW f f' cert then
             { acc with unverified := acc.unverified ++ [(p.name, rejectedReason)] }
           else { acc with accepted := acc.accepted ++ [p.name] }
       | .error _ => { acc with file := push p }

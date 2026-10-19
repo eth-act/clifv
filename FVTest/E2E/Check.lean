@@ -53,8 +53,8 @@ replacement by conditions on the CLIF function alone (`fnScopeInB`: `sizeOkB`, `
 and the other rejects fails the run (`fnScopeInB` implies `fnScopeB`: `fnScopeB_of_input`).
 
 Every file is first legalised (`Opt.Legalize128.parsedFile128`, as `lean-backend` does): a
-legalised `i128` function the validator `Opt.Legal.check` accepts is in scope (covered by
-`E2E.backend_correct_legal`) and checked like any other; the rejected ones are out of scope
+legalised `i128` function the validator `Opt.Legal.checkW` accepts is in scope (covered by
+`E2E.backend_correct_legal_wide`) and checked like any other; the rejected ones are out of scope
 and counted separately.
 
 With `--opt [--opt-* options]`, the functions are first optimised by the mid-end
@@ -257,7 +257,7 @@ def main (args : List String) : IO UInt32 := do
       let index := functionIndex
       functionIndex := functionIndex + 1
       let .ok f := p.func | continue
-      -- legalised functions outside `E2E.backend_correct_legal`
+      -- legalised functions outside `E2E.backend_correct_legal_wide`
       if (lg.unverified.lookup p.name).isSome ||
           (optCfg.isSome && lg.accepted.contains p.name) then
         legalOut := legalOut + 1
@@ -419,7 +419,7 @@ def main (args : List String) : IO UInt32 := do
       [("schema", Lean.toJson (1 : Nat)), ("dead_cleanup", Lean.toJson deadCleanup),
        ("functions", Lean.toJson identities)]).pretty
   IO.println s!"lowerCheck: {ok} accepted, {bad} rejected, {skipped} out of scope (stack-passed arguments of an indirect call, special-purpose parameters other than one sret, outside clif-subset-v2 E, or a try_call/call_indirect under --opt)"
-  IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.check accepts; counted above), {legalOut} out of scope (validator rejects or --opt)"
+  IO.println s!"legalised i128 functions: {legal} in scope (Opt.Legal.checkW accepts; counted above), {legalOut} out of scope (validator rejects or --opt)"
   IO.println s!"dead instruction cleanup: {deadCleanup}"
   IO.println s!"prepCheck: {pok} accepted, {pbad} rejected"
   IO.println s!"lowerCheck_complete conditions: dominatedB {dom}, lowerScopeB {scope}, both {both} (of {ok + bad} checked)"

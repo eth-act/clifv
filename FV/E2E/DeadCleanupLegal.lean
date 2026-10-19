@@ -51,7 +51,9 @@ theorem backend_correct_legal_env_cleanup {f g : Clif.Function} {cert : Opt.Lega
     ArmRefinesLegal ((Opt.Legal.groups f.sig.returns).getD []) fb base ra (ArmStepX X H fa) s
       (Clif.runLoop env p fuel cs) := by
   let C : Opt.Legal.Ctx := ⟨f, g, cert⟩
-  have hE : Opt.Legal.EnvOk env C p p' := ⟨hext, hext', hH, hXL, hK, hind⟩
+  have hE : Opt.Legal.EnvOk env C p p' := ⟨hext, hext', hH, hXL, hK,
+    Opt.Legal.indOldB_ind (Opt.Legal.indOldB_of_check hchk) hind,
+    Opt.Legal.indOldB_sigs (Opt.Legal.indOldB_of_check hchk)⟩
   obtain ⟨b, hb, h2, h3, h4, h5⟩ := hcs.entry
   obtain ⟨b', hb', h2', h3', -, h5'⟩ := hcs'.entry
   have hM : Opt.Legal.MemBounded cs.mem := hmem ▸ memBounded_of_holds hrel

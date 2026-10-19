@@ -1,8 +1,11 @@
-# `Opt.Legalize128` and its validator (`Opt.Legal.check`)
+# `Opt.Legalize128` and its validator (`Opt.Legal.checkW`)
 
-Status: **proven end to end.** `E2E.backend_correct_legal` (`FV/E2E/Legal.lean`) covers every
-function whose legalisation the validator accepts and whose legalised form is inside the
+Status: **proven end to end.** `E2E.backend_correct_legal_wide` (`FV/E2E/Legal.lean`) covers
+every function whose legalisation the validator accepts and whose legalised form is inside the
 backend theorem (`InSubset`, `lowerCheck`); `lean-backend` reports those verified.
+`E2E.backend_correct_legal` is the same theorem on the domain of `Opt.Legal.check` (`checkW`
+without `try_call_indirect` and `call_indirect` at an `i128` signature, "Indirect calls at
+`i128` signatures" below).
 
 ## Design (validator with fallback)
 
@@ -19,11 +22,11 @@ an `i128` value or `retN` as its pair —, the call's fresh result values above 
 `f` resp. of `g`, the pairs and the pad zero), block parameters (AAPCS64 pads), signature,
 value-id layout (values of `f` `< T0 = maxValueId f`; pair components and zero distinct and
 `≥ T0`; temporaries/pads fresh) and unique definitions.
-`lean-backend` (`Opt.Legalize128.parsedFile128`) runs the check on every legalised function:
+`lean-backend` (`Opt.Legalize128.parsedFile128`) runs `checkW` on every legalised function:
 a rejected function is flagged unverified (`i128 legalized (outside backend_correct:
-Opt.Legal.check rejects)`); an accepted one is compiled like any other function — the backend
+Opt.Legal.checkW rejects)`); an accepted one is compiled like any other function — the backend
 decides `InSubset` (`unverifiedReason?`) and `lowerCheck` on the legalised form, and a function
-passing both is reported verified (`E2E.backend_correct_legal`). Source and target
+passing both is reported verified (`E2E.backend_correct_legal_wide`). Source and target
 activations use programs with empty function tables, so the theorem's external-call and
 indirect-resolution program conditions hold even for self-calls. `parsedFile128` no longer
 rejects extern names matching functions in the file. Under `--opt` every legalised function
@@ -168,10 +171,11 @@ theorem E2E.backend_correct_legal_direct (hpre : Opt.Legal.Complete.Pre f)
 
 `Pre`: `mentions` (otherwise `function128Cert` returns `f` itself), the two `f`-only conjuncts of
 `check` (`defs`, `ids`), a statement never reads its own result (`noSelf`: the pattern's outputs
-must not overwrite its inputs), and the two constructs the pass still expands outside the
-validator (`call_indirect` with an `i128` signature, `try_call_indirect`; such functions stay
-"unverified"). Axioms: `propext`, `Classical.choice`, `Quot.sound`. The compiler keeps running
-`check` as a runtime double-check. Behaviour: on the 64 `i128` runtest files `clif-filetest
+must not overwrite its inputs), and no `call_indirect` with an `i128` signature and no
+`try_call_indirect` (the domain of `check`, `indOldB`). `PreW` is `Pre` without the last two
+conditions; `checkW_complete : PreW f → function128Cert f = .ok (g, cert) → checkW f g cert`
+(S4, below). Axioms: `propext`, `Classical.choice`, `Quot.sound`. The compiler keeps running
+`checkW` as a runtime double-check. Behaviour: on the 64 `i128` runtest files `clif-filetest
 --legalize128` gives legal pass 973 / fail 7 / agree 980 / disagree 0 (unchanged), and `check`
 accepts all 163 legalised functions (185 `i128` functions, 22 not legalisable).
 
@@ -420,6 +424,67 @@ completeness. Witness: `Opt.Legal.Complete.Witness.saddof128` (`Pre`, legalisati
 Measured: the four aarch64 runtest functions (`uadd_overflow_128.clif`, `sadd_overflow.clif`,
 `usub_overflow.clif`, `ssub_overflow.clif`).
 
+## Indirect calls at `i128` signatures and `try_call_indirect` (S4, #28)
+
+The validator `Opt.Legal.checkW` (`FV/Opt/Legal.lean`) accepts a `call_indirect` whose
+call-site signature `d` (`sigN`) has an `i128` parameter or return (`Plan.callInd128`: the call
+on the same plain callee with the arguments expanded by the groups of `d`, `expandArgs`, the
+results by `retsOk`, at `sigN`, which `g` declares as `sigExp d`), and a `try_call_indirect`
+(`termOk`: as `try_call`, at the call-site signature; arguments and normal-return successor
+arguments expanded). A `call_indirect` whose signature is not declared is rejected (the source
+is stuck there). The pass emits every statement from its plan (`emitStmt`), so the special case
+outside the validator is gone; completeness `checkW_complete` holds for `PreW` (`Pre` without
+the two indirect-call conditions).
+
+Soundness (`checkW_refines`, `FV/Opt/Proof/LegalSim.lean`): `sim_callInd128` — the source calls
+the extern at the callee address with `vals`, the target the same address with the split
+`vals'` at the expanded signature; `CallIndRel2 env env' p p' d` (the indirect resolution with
+split arguments and results) holds by `EnvOk.ind` (for every indirect call site, `IndSite`: a
+`call_indirect` or a `try_call_indirect`, the programs have the same function names and the
+source's externs are a prefix of the target's) and the new `EnvOk.sigs` (when an indirect call
+site has an `i128` signature, no signature the environment knows has `i128`: `Env.sigOf` gives
+the signature of a function of a linked program, which would match the original call site,
+`Signature.abiMatch`, but not the expanded one); `sim_tryInd` the same for the terminator, with
+the successor arguments as for `try_call`. `IndExt`/`NoIndInternal` cover `try_call_indirect`
+(from `TrapsExplicit.tryIndirect`).
+
+**Statements.** The pre-S4 statements keep their meaning: `Opt.Legal.check f g cert` is
+`checkW f g cert && indOldB f` (`indOldB`: no `try_call_indirect`, no `call_indirect` at a
+declared `i128` signature), and `Complete.Pre`, `preB`, `legalOkB` are unchanged; `check_good`,
+`check_refines{,2}`, `check_callInd`, `Complete.check_complete{,_of_preB}`,
+`legalize_refines{,2}` and the end-to-end theorems below are corollaries (on `indOldB` the
+programs premise for `call_indirect` sites gives `EnvOk.ind`, `indOldB_ind`, and `EnvOk.sigs`
+is vacuous, `indOldB_sigs`). The only difference to the former `check`: a `call_indirect` at an
+undeclared signature, or at a declared `i128` signature with plain operands, is rejected (the
+former accepted both; the pass never produced either). The widened theorems:
+
+| Pre-S4 statement (domain of `check`) | Widened (`checkW`, `PreW`) | File |
+| --- | --- | --- |
+| `Opt.Legal.check_refines`, `check_refines2` | `checkW_refines`, `checkW_refines2` | `FV/Opt/Proof/LegalSim.lean` |
+| `Opt.Legal.Complete.check_complete`, `check_complete_of_preB`, `preB_iff` | `checkW_complete`, `checkW_complete_of_preBW`, `preBW_iff` | `LegalComplete.lean`, `LegalPre.lean` |
+| `E2E.backend_correct_legal_env`, `backend_correct_legal` | `backend_correct_legal_env_wide`, `backend_correct_legal_wide` | `FV/E2E/Legal.lean` |
+| `E2E.backend_correct_legal_direct` | `backend_correct_legal_direct_wide` | `FV/E2E/LegalDirect.lean` |
+| `E2E.backend_correct_legal_env_cleanup`, `_cleanup`, `_direct_cleanup` | `backend_correct_legal_env_wide_cleanup`, `_wide_cleanup`, `_direct_wide_cleanup` | `FV/E2E/LegalWideCleanup.lean` |
+| `E2E.legal_opt_refines`, `armRefinesLegal_of`, `backend_correct_legal_opt_env{,_cleanup}`, `backend_correct_legal_opt{,_cleanup}` | `legal_opt_refines_wide`, `armRefinesLegal_of_wide`, `backend_correct_legal_opt_env_wide{,_cleanup}`, `backend_correct_legal_opt_wide{,_cleanup}` | `FV/E2E/LegalOptX.lean` |
+
+Premises of `backend_correct_legal_env_wide` beyond `backend_correct_legal_env`'s: `hind` for
+every indirect call site (`∃ sig, Opt.Legal.IndSite f sig`, `try_call_indirect` included) and
+`hsigs : Opt.Legal.Ind128 f → ∀ n s, env.sigOf n = some s → sig128 s = false` (discharged for
+`Clif.Rust.env`, which knows no signature: `backend_correct_legal_wide` has no new premise).
+`lean-backend` runs `checkW`; its labels refer to `backend_correct_legal_wide` and
+`backend_correct_legal_opt_wide`. The whole-program domain (S3, `legalOkB`) is unchanged: it
+requires `Pre`, and `callIndRel_link` relates indirect calls at signatures without `i128` only
+(widening it needs the link-level `CallIndRel2`; `Signature.abiMatch` does not compare return
+purposes, so an `sret` return could change the group shapes). Witnesses
+(`Opt.Legal.Complete.Witness`): `indI128` (a `call_indirect` at `(i128) -> i128`) and `tryInd`
+(a `try_call_indirect` at that signature, the `i128` result as the successor's parameter) are not
+`Pre` (`indI128_not_pre`, `tryInd_not_pre`) but `PreW`, and `checkW` accepts their legalisations
+(`indI128_legal`, `tryInd_legal`); `E2E.LinkWitness.a2_legal_wide` (`FV/E2E/LegalWideWitness.lean`)
+applies `backend_correct_legal_wide` to the witness program's legalised callee with every
+function-level premise discharged. Axiom list: `scripts/audit/i128-wide.lean`. Native check:
+`FVTest/Clif/fixtures/i128-call-indirect.clif` (a `call_indirect` at `(i128, i64) -> i128` and at
+`(i64, i128) -> i128` (pad in `x1`), a `try_call_indirect` at `(i128, i64) -> i128`).
+
 ## Not covered
 
 * Legalised functions under `--opt` (no composition of `backend_correct_legal` with the mid-end
@@ -428,9 +493,23 @@ Measured: the four aarch64 runtest functions (`uadd_overflow_128.clif`, `sadd_ov
   `TrapsExplicit`) and, with `i128`, the outside environment's `HelperOk`/`ExtLegal`/
   `EnvKeepsBounded` (table above).
 * Runs of `g` that trap inside a `__*ti3` helper (see `htr` above).
-* `umulhi`/`smulhi`, `umul_overflow`/`smul_overflow`, atomics at `i128`, `try_call_indirect`,
-  `call_indirect` with `i128` operands: not legalised or rejected. Stack-passed `i128` arguments
-  followed by an integer argument Cranelift passes in `x7` (above): not legalised.
+* `umulhi`/`smulhi`, `umul_overflow`/`smul_overflow`, `uadd_sat`/`sadd_sat`/`usub_sat`/`ssub_sat`,
+  atomics at `i128`: not legalised (no plan), deliberately: cg_clif never emits them at `i128`
+  (`rustc_codegen_cranelift/src`: checked `u128`/`i128` addition and subtraction are `iadd`/
+  `isub` with an `icmp` (`num.rs`, `codegen_checked_int_binop`), checked multiplication calls
+  `__rust_u128_mulo`/`__rust_i128_mulo` (`codegen_i128.rs`), saturating arithmetic is the
+  checked operation and a `select` (`codegen_saturating_int_binop`), `umulhi`/`smulhi` are
+  emitted at `i64` only, and 128-bit atomics are a fatal "128bit atomics not yet supported"
+  (`intrinsics/mod.rs`)), so no function of the measured crates falls back because of them.
+* Indirect calls at an `i128` signature in the whole-program domain (S3, `legalOkB`: `Pre`).
+* Unwinding through an `i128` `call_indirect` or a `try_call_indirect` of a legalised function:
+  the theorems with unwinding (`Opt.Legal.X.check_refinesX{,2}`, `E2E.backend_correct_legal_unwind`,
+  `backend_correct_legal_opt_unwind`, `LegalProgram.legalProg_refinesX`) keep the domain of
+  `check` (`indOldB`; `LegalSimS`'s `step_sim`/`step_sim_out` exclude `callInd128` and
+  `try_call_indirect` by it). `lean-backend` labels such a function with landing pads verified
+  for normal returns only (`backend_correct_legal_wide`).
+* Stack-passed `i128` arguments followed by an integer argument Cranelift passes in `x7`
+  (above): not legalised.
 
 `func_addr` (release survey `g_u128` test functions pass function pointers to the test
 harness; agent/last-unverified "release i128"): planned as `same` when the declaration's name in

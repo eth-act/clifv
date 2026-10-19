@@ -287,6 +287,7 @@ theorem pure_step {C : Ctx} (hG : Good C) {B : Block} (hB : B ∈ C.f.blocks) {s
   dsimp only at hp
   split at hp
   all_goals (try (simp [Option.bind_eq_some_iff] at hp; done))
+  all_goals (try (split at hp <;> (try split at hp) <;> simp [Option.bind_eq_some_iff] at hp; done))
   all_goals try simp only [instOps, List.mem_cons, List.mem_nil_iff, or_false, forall_eq_or_imp,
     forall_eq] at hop
   case h_1 op x r =>
@@ -692,6 +693,7 @@ theorem pure_notrap {C : Ctx} {s : Stmt} {pat : List Stmt} {ins outs : List Valu
   intro h
   split at hp
   all_goals (try (simp [Option.bind_eq_some_iff] at hp; done))
+  all_goals (try (split at hp <;> (try split at hp) <;> simp [Option.bind_eq_some_iff] at hp; done))
   all_goals simp only [evalInst, Opt.Res.bind_eq_trap, getAs_ne_trap, get_ne_trap,
     ofOption_ne_trap, check_ne_trap, pure_ne_trap, false_or, exists_and_left, and_false,
     exists_false, or_false, false_and, exists_const] at h

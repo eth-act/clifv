@@ -39,11 +39,11 @@ objects, which leave the LSDA to the embedder).
 
 Every function that mentions `i128` is first legalised by `Opt.Legalize128` (rewritten to
 plain `i8..i64` CLIF before the mid-end and the backend). A legalised function the validator
-`Opt.Legal.check` accepts is covered by `E2E.backend_correct_legal` and treated like any other
+`Opt.Legal.checkW` accepts is covered by `E2E.backend_correct_legal_wide` and treated like any other
 function (`InSubset` and `lowerCheck` decided on the legalised form); a rejected one is
 reported unverified ("i128 legalized (outside backend_correct: …)"). Under `--opt` with the
 proven rule sets (`--opt-proven-only`) a legalised function is covered by
-`E2E.backend_correct_legal_opt` (the legalisation composed with the mid-end), every other by
+`E2E.backend_correct_legal_opt_wide` (the legalisation composed with the mid-end), every other by
 `E2E.backend_correct_opt_exe` (`call_indirect`, `try_call`, `try_call_indirect` included); with
 unproven rules every legalised function is reported unverified. The unwinding of a legalised
 function with a `try_call` is covered by `E2E.backend_correct_legal_unwind` when the
@@ -312,7 +312,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
           else if o.opt.isSome && !legal && !optUnwOk p.name f then
             some "--opt: the compiled function is not Opt.optimizeExe of its source function"
           else if o.opt.isNone && legal && !legalUnwOk p.name f then
-            some "i128 legalized: Opt.Legal.exnOk rejects the handler edges"
+            some "i128 legalized: Opt.Legal.check (no try_call_indirect, no call_indirect at an i128 signature) or Opt.Legal.exnOk (the handler edges) rejects"
           else (unwindCheckFailure? f ((recs.find? (·.1 == p.name)).bind (·.2))
             (fa.funcs.find? (·.name == p.name))).map (s!"unwinding check failed: {·}")
         let thm := if legal && o.opt.isSome then "backend_correct_legal_opt_unwind"

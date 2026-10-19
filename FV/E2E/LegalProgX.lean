@@ -956,8 +956,9 @@ theorem root_refinesX {P : Program} {B : XEnv} {syms : String → Option Nat}
                   obtain ⟨h', hb', hrel⟩ := hbase.2.1.at ex.name ex.sig hs he
                   exact ⟨h', by rw [htE]; exact hb', hrel⟩
               keep := keep_guardX hF hbase.2.2
-              ind := fun _ => ⟨rfl, fun B hB st hst sig callee args d hi hd =>
-                (callIndRelX_link hC ih (hp.callInd B hB st hst sig callee args hi d hd)).1⟩ }
+              ind := fun _ => ⟨rfl, fun sig d hs hd =>
+                have hd128 := pre_indSite hp hs hd
+                callIndRel2_of_plain hd128 (callIndRelX_link hC ih hd128).1⟩ }
           extX := fun fn ex hfe => by
             cases hpn : P.func? ex.name with
             | some h2 => exact (extRel_progX hC ih hpn (hC.ctx.decl h hh fn ex hfe h2 hpn)).2
@@ -973,7 +974,8 @@ theorem root_refinesX {P : Program} {B : XEnv} {syms : String → Option Nat}
             (callIndRelX_link hC ih (hp.callInd B hB st hst sig callee args hi d hd)).2 }
       have hT := noMemTrapX_guard (G := SomeInd (legalProg P)) (M := M) hF hh hioS hUI hG
       have hI : NoIndInternalX (guardEnvX B P (SomeInd (legalProg P)) syms M) P.bare h
-          ⟨fr, [], m1⟩ := fun _ _ _ _ _ _ _ _ _ _ _ _ g hg => nomatch hg
+          ⟨fr, [], m1⟩ := fun _ _ => ⟨(fun _ _ _ _ _ _ _ _ _ _ g hg => nomatch hg),
+            (fun _ _ _ _ _ _ _ _ g hg => nomatch hg)⟩
       have hx := hC.exn h hh hp.mentions (legalize h) cert hc
       have href := fun n => check_refinesX2 (C := ⟨h, legalize h, cert⟩)
         (Complete.check_complete hp hc) hx hE2 hb hb' hE.func h2 h3 h4 h5 hE.func' h2' h3' h5'

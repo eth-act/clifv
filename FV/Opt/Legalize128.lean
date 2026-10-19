@@ -15,11 +15,11 @@ the `__udivti3`/`__divti3`/`__umodti3`/`__modti3` runtime helpers (implemented i
 `scripts/rust-clif/rust-runtime.c` and given a byte-exact semantics in `Clif.Rust.env`).
 
 The output is plain `i8..i64` CLIF, so the existing backend compiles it unchanged. The pass
-is untrusted: `Opt.Legal.check` (`FV/Opt/Legal.lean`) validates each legalised function
+is untrusted: `Opt.Legal.checkW` (`FV/Opt/Legal.lean`) validates each legalised function
 against the original with the certificate `function128Cert` returns, and the refinement
-theorem (`FV/Opt/Proof/Legal*.lean`, `E2E.backend_correct_legal`) covers the functions it
+theorem (`FV/Opt/Proof/Legal*.lean`, `E2E.backend_correct_legal_wide`) covers the functions it
 accepts (reported verified when the legalised form is inside the backend theorem); the others
-are flagged unverified (`i128 legalized (outside backend_correct: Opt.Legal.check rejects)`).
+are flagged unverified (`i128 legalized (outside backend_correct: Opt.Legal.checkW rejects)`).
 
 Semantics (all against `Clif.Sem`, which is what `Clif.run` executes — the differential
 `clif-filetest --legalize128` mode runs every run line through both):
@@ -229,7 +229,7 @@ def maxValueId (f : Function) : ValueId :=
 def maxFnRef (f : Function) : FnRef :=
   f.externs.foldl (fun a e => max a e.1) 0 + 1
 
-/-- What the validator `Opt.Legal.check` needs besides the two functions: the pair of every
+/-- What the validator `Opt.Legal.checkW` needs besides the two functions: the pair of every
 `i128` value and the shared zero of the pad values. -/
 structure Cert where
   pairs : List (ValueId × ValueId × ValueId) := []

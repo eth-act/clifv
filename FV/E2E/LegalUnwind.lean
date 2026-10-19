@@ -61,9 +61,12 @@ theorem noIndInternalX_of_trapsExplicitX {env : Clif.XEnv} {p : Clif.Program} {c
     Opt.Legal.X.NoIndInternalX env p cs.frame.func ⟨cs.frame, [], cs.mem⟩ := by
   have hcs : (⟨⟨cs.frame, [], cs.mem⟩, []⟩ : Clif.XState) = cs.toX := by
     simp [Clif.State.toX, hcl]; rw [← hcl]
-  intro xs hr st rest sig callee args cv hb hi hB hc
+  intro xs hr
   rw [hcs] at hr
-  exact h.indirect xs st rest sig callee args (sreachX_reachX hr) hb hi hB cv hc
+  exact ⟨fun st rest sig callee args cv hb hi hB hc =>
+    h.indirect xs st rest sig callee args (sreachX_reachX hr) hb hi hB cv hc,
+    fun callee args et cv hb ht hB hc =>
+    h.tryIndirect xs callee args et (sreachX_reachX hr) hb ht hB cv hc⟩
 
 /-- **End-to-end theorem with unwinding for a legalised function, any environment with the
 contracts of `check_refinesX`.** -/
@@ -226,7 +229,8 @@ theorem backend_correct_legal_unwind {f g : Clif.Function} {cert : Opt.Legalize1
     ArmRefinesLegalU ((Opt.Legal.groups f.sig.returns).getD []) fb base ra
       (Unw.ArmStepU X H U T fa) s (Clif.runLoopX (Clif.Rust.xenvWith raises obj) p fuel cs.toX) :=
   backend_correct_legal_unwind_env hchk hexn hsub hc hlU
-    (Clif.Rust.xenvWith_envOkX raises obj (C := ⟨f, g, cert⟩) hext hext' hind) hcov hC hCT hTls hU hX hXI hXR
+    (Clif.Rust.xenvWith_envOkX raises obj (C := ⟨f, g, cert⟩) (Opt.Legal.indOldB_of_check hchk)
+      hext hext' hind) hcov hC hCT hTls hU hX hXI hXR
     hXRi hsym hslot hsites hlsda hrows hcie hfde hpad hlast hsaved hent hres hbe hexp hargs hcs hcs'
     hsl hmem hrel htrS htr fuel
 

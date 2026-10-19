@@ -257,7 +257,8 @@ theorem noMemTrapX_of_nil {env : XEnv} {f : Function} (hf : ∀ B ∈ f.blocks, 
 theorem noIndInternalX_of_nil {env : XEnv} {f : Function} (hf : ∀ B ∈ f.blocks, B.body = [])
     {fr : Frame} {m : Mem} (hfn : fr.func = f) (hb : fr.body = []) :
     NoIndInternalX env { funcs := [] } f ⟨fr, [], m⟩ := by
-  intro xs' hr st rest sig callee args cv hst
+  intro xs' hr
+  refine ⟨fun st rest sig callee args cv hst _ _ _ => ?_, fun _ _ _ _ _ _ _ _ g hg => nomatch hg⟩
   rw [reach_body_nil hf hr fr m rfl hfn hb] at hst
   cases hst
 /-! ### The source function and its legalisation -/
@@ -344,7 +345,8 @@ theorem refines : ∃ vals' k M, runLoopX xe { funcs := [] } k ⟨⟨fr0', [], M
     .returned vals' M := by
   obtain ⟨hc, hx⟩ := validators
   have hE : EnvOkX xe C { funcs := [] } { funcs := [] } :=
-    xenvWith_envOkX raises 77 (fun _ _ _ => func?_nil _) (fun _ _ _ => func?_nil _)
+    xenvWith_envOkX raises 77 (indOldB_of_check hc) (fun _ _ _ => func?_nil _)
+      (fun _ _ _ => func?_nil _)
       (fun ⟨B, hB, st, hst, _⟩ => by
         simp only [C, src, List.mem_cons, List.mem_nil_iff, or_false] at hB
         rcases hB with rfl | rfl | rfl <;> simp at hst)

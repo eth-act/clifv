@@ -1,7 +1,7 @@
 import FV.Opt.Proof.LegalPlan
 
 /-!
-# The refinement theorem of `Opt.Legal.check`
+# The refinement theorem of `Opt.Legal.checkW`
 
 A source frame of `f` and a target frame of its legalisation `g` are related (`FRel`) when
 they run the same block at corresponding positions (`codeOk` of the remaining statements and
@@ -9,15 +9,21 @@ terminators), the target represents every source value (`VRel`), the source valu
 with their definitions (`SrcInv`) and the target holds the pad zero. Every source step is
 matched by target steps (`step_sim`): pure plans by their pattern instances
 (`pure_step`), the split `i128` load/store (`LegalMem`), the `__*ti3` helper calls
-(`HelperOk`), expanded extern calls (`ExtLegal`), the condition patterns of `trapz`/`trapnz`
-and `brif`, and branches with split block parameters. By induction on the fuel, the
-legalised function refines the original under `Clif.runLoop` (`check_refines`): a return of
-the source is a return of the target with the values expanded by the ABI groups of the
-signature's returns, a trap the same trap.
+(`HelperOk`), expanded extern calls (`ExtLegal`), indirect calls and `try_call_indirect` with
+arguments/results expanded by the call-site signature's groups (`CallIndRel2`), the condition
+patterns of `trapz`/`trapnz` and `brif`, and branches with split block parameters. By induction
+on the fuel, the legalised function refines the original under `Clif.runLoop`
+(`checkW_refines`): a return of the source is a return of the target with the values expanded
+by the ABI groups of the signature's returns, a trap the same trap. `check_refines` is the
+theorem on the domain of `check` (no indirect call at an `i128` signature, no
+`try_call_indirect`: `indOldB`), where `EnvOk.sigs` is vacuous.
 
 Premises: calls of `f`/`g` go to the environment (`EnvOk`: no function of the program has an
-extern's name), the environment's contracts (`HelperOk`, `ExtLegal`, `EnvKeepsAllocs`), valid
-ranges below `2^64` at entry (`MemBounded`), and no memory-access trap in the source run
+extern's name; for an indirect call, the programs have the same function names and the target
+declares the source's externs first, and no signature the environment knows has `i128` when an
+indirect call site has one), the environment's contracts (`HelperOk`, `ExtLegal`,
+`EnvKeepsAllocs`), valid ranges below `2^64` at entry (`MemBounded`), and no memory-access
+trap in the source run
 (`NoMemTrap`: the 16-byte access of the source and its two 8-byte halves agree whenever the
 source access does not trap; `TrapsExplicit` of the backend theorem implies it).
 -/
@@ -1466,7 +1472,8 @@ theorem bcOk_table {C : Ctx} {tbl tbl' : List BlockCall} {d d' : BlockCall}
 /-- **Terminators.** -/
 theorem sim_term {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr fr' : Frame}
     {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) (hb : fr.body = [])
-    (hnt : ∀ fn args et, fr.term ≠ .tryCall fn args et) :
+    (hnt : ∀ fn args et, fr.term ≠ .tryCall fn args et)
+    (hnti : ∀ c args et, fr.term ≠ .tryCallIndirect c args et) :
     SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨B, hB, -, hterm⟩ := hR.blk
   have hcode := hR.code
@@ -1480,6 +1487,7 @@ theorem sim_term {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr f
   cases ht : fr.term <;> cases ht' : fr'.term <;> rw [ht, ht'] at hcode <;>
     simp only [termOk, Bool.false_eq_true] at hcode
   case tryCall.tryCall fn args et _ _ _ => exact absurd ht (hnt fn args et)
+  case tryCallIndirect.tryCallIndirect c args et _ _ _ => exact absurd ht (hnti c args et)
   case jump.jump bc bc' =>
     simp only [Bool.and_eq_true, List.isEmpty_iff] at hcode
     obtain ⟨hts, hbc⟩ := hcode
@@ -1696,16 +1704,30 @@ def MemTrapFree (env : Env) (p : Program) (s : State) : Prop :=
 def NoMemTrap (env : Env) (p : Program) (s : State) : Prop :=
   ∀ s', SReach env p s s' → MemTrapFree env p s'
 
-/-- At a `call_indirect` of `f` (the next statement of `s`), no function of `p` is at the callee
-address: the run premise `E2E.TrapsExplicit.indirect` (such a call would enter that function). -/
+/-- At an indirect call of `f` (the next statement of `s`, a `call_indirect`, or its
+terminator, a `try_call_indirect`), no function of `p` is at the callee address: the run
+premises `E2E.TrapsExplicit.indirect`/`tryIndirect` (such a call would enter that function). -/
 def IndExt (env : Env) (p : Program) (f : Function) (s : State) : Prop :=
-  ∀ st rest sig callee args cv, s.frame.body = st :: rest →
+  (∀ st rest sig callee args cv, s.frame.body = st :: rest →
     st.inst = .callIndirect sig callee args → (∃ B ∈ f.blocks, st ∈ B.body) →
-    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat
+    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat) ∧
+  (∀ callee args et cv, s.frame.body = [] → s.frame.term = .tryCallIndirect callee args et →
+    (∃ B ∈ f.blocks, B.term = .tryCallIndirect callee args et) →
+    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat)
 
 /-- No state reachable from `s` calls a function of `p` indirectly from `f`. -/
 def NoIndInternal (env : Env) (p : Program) (f : Function) (s : State) : Prop :=
   ∀ s', SReach env p s s' → IndExt env p f s'
+
+/-- `sigN` is the call-site signature of an indirect call of `f`: a `call_indirect` statement
+or a `try_call_indirect` terminator. -/
+def IndSite (f : Function) (sig : Nat) : Prop :=
+  (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ callee args, st.inst = .callIndirect sig callee args) ∨
+  (∃ B ∈ f.blocks, ∃ callee args et, B.term = .tryCallIndirect callee args et ∧ et.sig = sig)
+
+/-- `f` has an indirect call at a call-site signature with an `i128` parameter or return. -/
+def Ind128 (f : Function) : Prop :=
+  ∃ sig d, IndSite f sig ∧ f.sigDecls.lookup sig = some d ∧ sig128 d = true
 
 /-- The environment's side of the refinement. -/
 structure EnvOk (env : Env) (C : Ctx) (p p' : Program) : Prop where
@@ -1714,12 +1736,16 @@ structure EnvOk (env : Env) (C : Ctx) (p p' : Program) : Prop where
   helper : HelperOk env
   ext : ExtLegal env
   keep : EnvKeepsAllocs env
-  /-- for a function with a `call_indirect`: the programs have the same functions (by name;
+  /-- for a function with an indirect call: the programs have the same functions (by name;
   `g`'s program holds the legalisations), and the externs of `p` are a prefix of those of `p'`
   (`g` declares `f`'s externs, then the `__*ti3` helpers): an indirect call resolves to the
   same extern in both -/
-  ind : (∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args) →
+  ind : (∃ sig, IndSite C.f sig) →
     p'.funcs.map (·.name) = p.funcs.map (·.name) ∧ p.externNames <+: p'.externNames
+  /-- for a function with an indirect call at an `i128` signature: no name whose signature the
+  environment knows (`Env.sigOf`: a function of a linked program) has an `i128` signature (such
+  a callee would match the original call site, `Signature.abiMatch`, but not the expanded one) -/
+  sigs : Ind128 C.f → ∀ n s, env.sigOf n = some s → sig128 s = false
 
 theorem take_drop_eq {α : Type} {l seg : List α} {n : Nat} (h : l.take n = seg) :
     l = seg ++ l.drop n := by
@@ -1728,12 +1754,28 @@ theorem take_drop_eq {α : Type} {l seg : List α} {n : Nat} (h : l.take n = seg
 /-! ## Indirect calls of externs -/
 
 theorem planOf_callInd {C : Ctx} {s : Stmt} (hp : planOf C s = some .callInd) :
-    ∃ sig callee args, s.inst = .callIndirect sig callee args ∧
+    ∃ sig callee args d, s.inst = .callIndirect sig callee args ∧
+      C.f.sigDecls.lookup sig = some d ∧ sig128 d = false ∧
       ∀ x ∈ callee :: args ++ s.results, C.plain x = true := by
   plan_inv s hp
-  all_goals rename_i hc
+  all_goals rename_i hd h128 hc
   simp only [List.all_eq_true] at hc
-  exact ⟨_, _, _, rfl, hc⟩
+  exact ⟨_, _, _, _, rfl, hd, by simpa using h128, hc⟩
+
+theorem planOf_callInd128 {C : Ctx} {s : Stmt} {sig : Nat} {d : Signature} {callee : ValueId}
+    {args' : List ValueId} {rg : List (List SlotEl)} {rs : List ValueId}
+    (hp : planOf C s = some (.callInd128 sig d callee args' rg rs)) :
+    ∃ args gs, s.inst = .callIndirect sig callee args ∧ s.results = rs ∧
+      C.f.sigDecls.lookup sig = some d ∧ sig128 d = true ∧
+      groups d.params = some gs ∧ groups d.returns = some rg ∧
+      expandArgs C gs args = some args' ∧ C.plain callee = true := by
+  plan_inv s hp
+  all_goals rename_i hd h128 hc
+  simp only [bind, Option.bind_eq_some_iff] at hp
+  obtain ⟨gs, hg, rg', hrg, a', ha, hp⟩ := hp
+  simp only [Option.some.injEq, Plan.callInd128.injEq] at hp
+  obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ := hp
+  exact ⟨_, gs, rfl, rfl, hd, h128, hg, hrg, ha, hc⟩
 
 theorem segOk_callInd {C : Ctx} {st : Stmt} {seg : List Stmt} (h : segOk C st .callInd seg = true) :
     seg = [st] ∧ ∀ sig callee args, st.inst = .callIndirect sig callee args →
@@ -1743,6 +1785,24 @@ theorem segOk_callInd {C : Ctx} {st : Stmt} {seg : List Stmt} (h : segOk C st .c
   have h2 := h.2
   rw [hi] at h2
   simpa using h2
+
+theorem segOk_callInd128 {C : Ctx} {st : Stmt} {sig : Nat} {d : Signature} {callee : ValueId}
+    {args : List ValueId} {rg : List (List SlotEl)} {rs : List ValueId} {seg : List Stmt}
+    (h : segOk C st (.callInd128 sig d callee args rg rs) seg = true) :
+    ∃ rs', seg = [{ results := rs', inst := .callIndirect sig callee args }] ∧
+      retsOk C rg rs rs' = true ∧ rs'.Nodup ∧
+      ∃ d', sigExp d = some d' ∧ C.g.sigDecls.lookup sig = some d' := by
+  match seg, h with
+  | [st'], h =>
+    simp only [segOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
+    obtain ⟨⟨⟨hi, hr⟩, hnd⟩, hs⟩ := h
+    split at hs
+    · rename_i d' hd'
+      simp only [beq_iff_eq] at hs
+      exact ⟨st'.results, by rw [← hi], hr, hnd, d', hd', hs⟩
+    · cases hs
+  | [], h => simp [segOk] at h
+  | _ :: _ :: _, h => simp [segOk] at h
 
 /-- The address `Clif.stepCallIndirect` calls for an `i64` callee value. -/
 theorem as_i64_toNat {cv : Val} {b : BitVec 64} (h : cv.as? .i64 = some b) : b.toNat = cv.toNat := by
@@ -1813,6 +1873,97 @@ theorem callExternAt_ok {env : Env} {p : Program} {mem : Mem} {d : Signature} {a
         | stuck m => simp [hout] at h
         | outOfFuel => simp [hout] at h
 
+/-- A returning indirect call of an extern, in full: the first name with the callee address, its
+extern, the signature and argument checks, the extern's return with the results' types. -/
+theorem callExternAt_ok_full {env : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals : List Val} {rv : List Val} {m' : Mem} (h : callExternAt env p mem d a vals = .ok (rv, m')) :
+    ∃ n g, (env.names ++ p.externNames).find? (fun n => mem.symbols n == some a) = some n ∧
+      env.extern n = some g ∧ (env.sigOf n).all d.abiMatch = true ∧
+      vals.map (·.ty) = AbiParam.tys d.params ∧ g vals mem = .returned rv m' ∧
+      rv.map (·.ty) = AbiParam.tys d.returns := by
+  simp only [callExternAt, Opt.Res.bind_eq_ok, Opt.Res.ofOption_eq_ok, Opt.Res.check_eq_ok,
+    checkTys, beq_iff_eq] at h
+  obtain ⟨n, hn, g, hg, -, hs, -, hv, h⟩ := h
+  refine ⟨n, g, hn, hg, hs, hv, ?_⟩
+  revert h
+  cases g vals mem with
+  | returned rv0 m0 =>
+    intro h
+    dsimp only at h
+    split at h
+    · rename_i hty
+      simp only [Opt.Res.pure_eq_ok, Prod.mk.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      exact ⟨rfl, by simpa using hty⟩
+    · cases h
+  | trapped c => intro h; cases h
+  | stuck m => intro h; cases h
+  | outOfFuel => intro h; cases h
+
+/-- A trapping indirect call of an extern, in full. -/
+theorem callExternAt_trap_full {env : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals : List Val} {c : TrapCode} (h : callExternAt env p mem d a vals = .trap c) :
+    ∃ n g, (env.names ++ p.externNames).find? (fun n => mem.symbols n == some a) = some n ∧
+      env.extern n = some g ∧ (env.sigOf n).all d.abiMatch = true ∧
+      vals.map (·.ty) = AbiParam.tys d.params ∧ g vals mem = .trapped c := by
+  unfold callExternAt at h
+  cases hn : (env.names ++ p.externNames).find? (fun n => mem.symbols n == some a) with
+  | none => rw [hn] at h; cases h
+  | some n =>
+    rw [hn] at h
+    simp only [Res.ofOption_some, Res.ok_bind] at h
+    cases hg : env.extern n with
+    | none => rw [hg] at h; cases h
+    | some g =>
+      rw [hg] at h
+      simp only [Res.ofOption_some, Res.ok_bind] at h
+      cases hs : (env.sigOf n).all d.abiMatch with
+      | false => rw [hs] at h; cases h
+      | true =>
+        rw [hs] at h
+        simp only [Res.check_true, Res.ok_bind, checkTys] at h
+        cases hv : (vals.map (·.ty) == AbiParam.tys d.params) with
+        | false => rw [hv] at h; cases h
+        | true =>
+          rw [hv] at h
+          simp only [Res.check_true, Res.ok_bind] at h
+          refine ⟨n, g, rfl, hg, hs, by simpa using hv, ?_⟩
+          revert h
+          cases g vals mem with
+          | returned rv m' =>
+            intro h
+            dsimp only at h
+            split at h <;> cases h
+          | trapped c' => intro h; cases h; rfl
+          | stuck m => intro h; cases h
+          | outOfFuel => intro h; cases h
+
+theorem callExternAt_of_ret {env : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals : List Val} {n : String} {g : List Val → Mem → Outcome} {rv : List Val} {m' : Mem}
+    (hn : (env.names ++ p.externNames).find? (fun n => mem.symbols n == some a) = some n)
+    (hg : env.extern n = some g) (hs : (env.sigOf n).all d.abiMatch = true)
+    (hv : vals.map (·.ty) = AbiParam.tys d.params) (ho : g vals mem = .returned rv m')
+    (hrt : rv.map (·.ty) = AbiParam.tys d.returns) :
+    callExternAt env p mem d a vals = .ok (rv, m') := by
+  simp only [callExternAt, hn, hg, hs, checkTys, hv, beq_self_eq_true, Res.ofOption_some,
+    Res.ok_bind, Res.check_true, ho, hrt, ite_true, Res.pure_eq]
+
+theorem callExternAt_of_trap {env : Env} {p : Program} {mem : Mem} {d : Signature} {a : Nat}
+    {vals : List Val} {n : String} {g : List Val → Mem → Outcome} {c : TrapCode}
+    (hn : (env.names ++ p.externNames).find? (fun n => mem.symbols n == some a) = some n)
+    (hg : env.extern n = some g) (hs : (env.sigOf n).all d.abiMatch = true)
+    (hv : vals.map (·.ty) = AbiParam.tys d.params) (ho : g vals mem = .trapped c) :
+    callExternAt env p mem d a vals = .trap c := by
+  simp only [callExternAt, hn, hg, hs, checkTys, hv, beq_self_eq_true, Res.ofOption_some,
+    Res.ok_bind, Res.check_true, ho]
+
+theorem find_prefix {env : Env} {p p' : Program} (hpre : p.externNames <+: p'.externNames)
+    {mem : Mem} {a : Nat} {n : String}
+    (hn : (env.names ++ p.externNames).find? (fun n => mem.symbols n == some a) = some n) :
+    (env.names ++ p'.externNames).find? (fun n => mem.symbols n == some a) = some n := by
+  obtain ⟨t, ht⟩ := hpre
+  rw [← ht, ← List.append_assoc, List.find?_append, hn, Option.some_or]
+
 /-- An indirect call with the call-site signature `d` resolved in the source (`env`, `p`) returns
 (or traps) as in the target (`env'`, `p'`). -/
 def CallIndRel (env env' : Env) (p p' : Program) (d : Signature) : Prop :=
@@ -1834,22 +1985,118 @@ theorem callIndRel_prefix {env : Env} {p p' : Program} (hpre : p.externNames <+:
     rw [heq]
     exact ⟨fun _ h => h, fun _ h => h⟩
 
+/-- **An indirect call with split arguments**: an indirect call with the call-site signature
+`d` resolved in the source (`env`, `p`) returns (or traps) as the call in the target (`env'`,
+`p'`) at the expanded signature `d'` (`sigExp d`) with the arguments expanded by the groups of
+`d`'s parameters: the results expanded by the groups of its returns, the same memory, the same
+trap. Without `i128` it is `CallIndRel` (`callIndRel2_of_plain`, `CallIndRel2.plain`). -/
+def CallIndRel2 (env env' : Env) (p p' : Program) (d : Signature) : Prop :=
+  ∀ d' gs rg, sigExp d = some d' → groups d.params = some gs → groups d.returns = some rg →
+    ∀ mem a vals vals', vals.map (·.ty) = AbiParam.tys d.params → ExpRel gs vals vals' →
+    (∀ rv m', callExternAt env p mem d a vals = .ok (rv, m') →
+      ∃ rv', callExternAt env' p' mem d' a vals' = .ok (rv', m') ∧ ExpRel rg rv rv') ∧
+    (∀ c, callExternAt env p mem d a vals = .trap c → callExternAt env' p' mem d' a vals' = .trap c)
+
+theorem callIndRel2_of_plain {env env' : Env} {p p' : Program} {d : Signature}
+    (hd : sig128 d = false) (h : CallIndRel env env' p p' d) : CallIndRel2 env env' p p' d := by
+  intro d' gs rg hd' hgs hrg mem a vals vals' hty hexp
+  rw [Complete.sigExp_plain hd] at hd'
+  cases hd'
+  obtain ⟨gs0, hgs0, hG⟩ := groups_plain (sig128_params hd)
+  rw [hgs] at hgs0
+  cases hgs0
+  have hvv := expRel_val hG (sig128_params hd) hexp
+  subst vals'
+  obtain ⟨rg0, hrg0, hR⟩ := groups_plain (sig128_returns hd)
+  rw [hrg] at hrg0
+  cases hrg0
+  refine ⟨fun rv m' ho => ⟨rv, (h mem a vals).1 _ ho, expRel_refl_plain hR (sig128_returns hd) ?_⟩,
+    fun c ho => (h mem a vals).2 c ho⟩
+  obtain ⟨-, -, -, -, -, -, -, hrt⟩ := callExternAt_ok_full ho
+  have := congrArg List.length hrt
+  simpa [AbiParam.tys] using this
+
+theorem CallIndRel2.plain {env env' : Env} {p p' : Program} {d : Signature}
+    (h : CallIndRel2 env env' p p' d) (hd : sig128 d = false) : CallIndRel env env' p p' d := by
+  intro mem a vals
+  obtain ⟨gs, hgs, hG⟩ := groups_plain (sig128_params hd)
+  obtain ⟨rg, hrg, hR⟩ := groups_plain (sig128_returns hd)
+  have hexp : vals.map (·.ty) = AbiParam.tys d.params → ExpRel gs vals vals := fun hv => by
+    refine expRel_refl_plain hG (sig128_params hd) ?_
+    have := congrArg List.length hv
+    simpa [AbiParam.tys] using this
+  constructor
+  · intro r hr
+    obtain ⟨rv, m'⟩ := r
+    obtain ⟨-, -, -, -, -, hv, -, -⟩ := callExternAt_ok_full hr
+    obtain ⟨rv', ho', hrel⟩ :=
+      (h d gs rg (Complete.sigExp_plain hd) hgs hrg mem a vals vals hv (hexp hv)).1 rv m' hr
+    rw [expRel_val hR (sig128_returns hd) hrel] at ho'
+    exact ho'
+  · intro c hr
+    obtain ⟨-, -, -, -, -, hv, -⟩ := callExternAt_trap_full hr
+    exact (h d gs rg (Complete.sigExp_plain hd) hgs hrg mem a vals vals hv (hexp hv)).2 c hr
+
+/-- One environment satisfying `ExtLegal`, the externs of `p` a prefix of those of `p'`: an
+indirect call at a signature `d` with `i128` resolves to the same extern, called with the split
+arguments, when no signature the environment knows has `i128` (for one without `i128`, the same
+resolution). -/
+theorem callIndRel2_one {env : Env} {p p' : Program} (hpre : p.externNames <+: p'.externNames)
+    (hX : ExtLegal env) {d : Signature}
+    (hsig : sig128 d = true → ∀ n s, env.sigOf n = some s → sig128 s = false) :
+    CallIndRel2 env env p p' d := by
+  intro d' gs rg hd' hgs hrg mem a vals vals' hty hexp
+  obtain ⟨gs0, rg0, hgs0, hrg0, hpar', hret'⟩ := sigExp_spec hd'
+  rw [hgs] at hgs0
+  cases hgs0
+  rw [hrg] at hrg0
+  cases hrg0
+  have hty' : vals'.map (·.ty) = AbiParam.tys d'.params := by
+    rw [hpar', AbiParam.tys, ← expRel_tys (groups_spec hgs) hexp hty]
+  have hsg : ∀ n, (env.sigOf n).all d.abiMatch = true → (env.sigOf n).all d'.abiMatch = true := by
+    intro n hs
+    cases h128 : sig128 d with
+    | true =>
+      cases hsn : env.sigOf n with
+      | none => rfl
+      | some s =>
+        rw [hsn] at hs
+        have hm := Signature.abiMatch_eq_true.mp (by simpa using hs)
+        have := sig128_of_tys (hsig h128 n s hsn) hm.1.symm hm.2.2.symm
+        rw [this] at h128
+        cases h128
+    | false =>
+      rw [Complete.sigExp_plain h128] at hd'
+      cases hd'
+      exact hs
+  constructor
+  · intro rv m' h
+    obtain ⟨n, g, hn, hg, hs, -, ho, hrt⟩ := callExternAt_ok_full h
+    obtain ⟨hret, -⟩ := hX n g hg d gs rg hgs hrg vals vals' mem hty hexp
+    obtain ⟨rv', ho', hrel⟩ := hret rv m' ho hrt
+    have hrt' : rv'.map (·.ty) = AbiParam.tys d'.returns := by
+      rw [hret', AbiParam.tys, ← expRel_tys (groups_spec hrg) hrel hrt]
+    exact ⟨rv', callExternAt_of_ret (find_prefix hpre hn) hg (hsg n hs) hty' ho' hrt', hrel⟩
+  · intro c h
+    obtain ⟨n, g, hn, hg, hs, -, ho⟩ := callExternAt_trap_full h
+    obtain ⟨-, htrap⟩ := hX n g hg d gs rg hgs hrg vals vals' mem hty hexp
+    exact callExternAt_of_trap (find_prefix hpre hn) hg (hsg n hs) hty' (htrap c ho)
+
 /-- **The environments' side of the refinement, source environment `env`, target environment
 `env'`** (`EnvOk` for one environment: `EnvOk.two`): calls of `f`/`g` go to the environments,
 the target's `__*ti3` helpers (`HelperOk env'`), each extern `f` declares related in the two
 environments (`ExtRelAt`), the source's externs keep valid ranges below `2^64`, and for a
-function with a `call_indirect`, the programs have the same function names and each call site's
-signature resolves alike (`CallIndRel`). -/
+function with an indirect call, the programs have the same function names and each call site's
+signature resolves alike, with split arguments and results (`CallIndRel2`). -/
 structure EnvOk2 (env env' : Env) (C : Ctx) (p p' : Program) : Prop where
   src : ∀ fn e, C.f.extern? fn = some e → p.func? e.name = none
   tgt : ∀ fn e, C.g.extern? fn = some e → p'.func? e.name = none
   helper : HelperOk env'
   ext : ∀ fn e, C.f.extern? fn = some e → ExtRelAt env env' e.name e.sig
   keep : EnvKeepsBounded env
-  ind : (∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args) →
+  ind : (∃ sig, IndSite C.f sig) →
     p'.funcs.map (·.name) = p.funcs.map (·.name) ∧
-    ∀ B ∈ C.f.blocks, ∀ st ∈ B.body, ∀ sig callee args d, st.inst = .callIndirect sig callee args →
-      C.f.sigDecls.lookup sig = some d → CallIndRel env env' p p' d
+    ∀ sig d, IndSite C.f sig → C.f.sigDecls.lookup sig = some d → CallIndRel2 env env' p p' d
 
 theorem EnvOk.two {env : Env} {C : Ctx} {p p' : Program} (hE : EnvOk env C p p') :
     EnvOk2 env env C p p' where
@@ -1858,12 +2105,42 @@ theorem EnvOk.two {env : Env} {C : Ctx} {p p' : Program} (hE : EnvOk env C p p')
   helper := hE.helper
   ext _ e _ := hE.ext.at e.name e.sig
   keep := hE.keep.bounded
-  ind h := ⟨(hE.ind h).1, fun _ _ _ _ _ _ _ d _ _ => callIndRel_prefix (hE.ind h).2 d⟩
+  ind h := ⟨(hE.ind h).1, fun sig d hs hd => callIndRel2_one (hE.ind h).2 hE.ext
+    fun h128 => hE.sigs ⟨sig, d, hs, hd, h128⟩⟩
+
+/-- The call of an extern at an address that holds no function of the program
+(`Clif.stepCallIndirect` after its lookups). -/
+theorem stepCallIndirect_ext {env : Env} {p : Program} {fr : Frame}
+    {cs : List (Frame × List ValueId)} {m : Mem} {rest : List Stmt}
+    {results : List ValueId} {sig : Nat} {callee : ValueId} {args : List ValueId} {d : Signature}
+    {cv : Val} {b : BitVec Ty.i64.width} {vals : List Val}
+    (hd : fr.func.sigDecls.lookup sig = some d) (hc : fr.get callee = .ok cv)
+    (hcv : cv.as? .i64 = some b) (hv : fr.getMany args = .ok vals)
+    (hnf : ∀ g ∈ p.funcs, m.symbols g.name ≠ some b.toNat) :
+    stepCallIndirect env p ⟨fr, cs, m⟩ rest results sig callee args =
+      StepResult.ofRes (callExternAt env p m d b.toNat vals) fun (rv, mem') =>
+        continueWith ⟨fr, cs, m⟩ rest results rv mem' := by
+  simp [stepCallIndirect, hd, hc, hcv, hv, Res.ofOption, bind, Res.bind, StepResult.ofRes]
+  rw [List.find?_eq_none.mpr ?_]
+  intro g hg
+  simpa using hnf g hg
+
+/-- The target's programs have the functions of the source's (by name): an address of no
+function of the source's holds none of the target's. -/
+theorem nf_names {p p' : Program} (hfn : p'.funcs.map (·.name) = p.funcs.map (·.name))
+    {m : Mem} {a : Nat} (hnf : ∀ g ∈ p.funcs, m.symbols g.name ≠ some a) :
+    ∀ g ∈ p'.funcs, m.symbols g.name ≠ some a := by
+  intro g hg
+  have : g.name ∈ p'.funcs.map (·.name) := List.mem_map_of_mem hg
+  rw [hfn] at this
+  obtain ⟨g0, hg0, he⟩ := List.mem_map.mp this
+  rw [← he]
+  exact hnf g0 hg0
 
 /-- **An indirect call of an extern** (`callInd`): source and target run the same statement on
 the same values (every operand and result is plain), with the same call-site signature; the
 callee address holds no function of either program (the source by `IndExt`, the target by
-`EnvOk2.ind`), and the call site's signature resolves alike (`CallIndRel`). -/
+`EnvOk2.ind`), and the call site's signature resolves alike (`CallIndRel2` without `i128`). -/
 theorem sim_callInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
     (hE : EnvOk2 env env' C p p')
     {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt}
@@ -1873,7 +2150,7 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
       C.g.sigDecls.lookup sig = C.f.sigDecls.lookup sig)
     (hcode : codeOk C rest fr.term ts2 fr'.term = true) (hI : IndExt env p C.f ⟨fr, [], m⟩) :
     SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
-  obtain ⟨sig, callee, args, hi, hplain⟩ := planOf_callInd hpl
+  obtain ⟨sig, callee, args, d0, hi, hd0, h128, hplain⟩ := planOf_callInd hpl
   have hdecl := hdecl sig callee args hi
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
   have hnd := results_nodup hG.defs hB hst
@@ -1912,7 +2189,7 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
   | stuck msg =>
     simp [stepCallIndirect, hd, hc, hcv, hv, Res.ofOption, bind, Res.bind, StepResult.ofRes, SimOut]
   | ok vals =>
-  have hnf := hI st rest sig callee args cv hb hi ⟨B, hB, hst⟩ hc
+  have hnf := hI.1 st rest sig callee args cv hb hi ⟨B, hB, hst⟩ hc
   rw [← as_i64_toNat hcv] at hnf
   have hsrc : stepCallIndirect env p ⟨fr, [], m⟩ rest st.results sig callee args =
       StepResult.ofRes (callExternAt env p m d b.toNat vals) fun (rv, mem') =>
@@ -1920,10 +2197,10 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
     simp [stepCallIndirect, hd, hc, hcv, hv, Res.ofOption, bind, Res.bind, StepResult.ofRes,
       find_none_of hnf]
   rw [hsrc]
-  have hname : ∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
-      st.inst = .callIndirect sig callee args := ⟨B, hB, st, hst, sig, callee, args, hi⟩
-  obtain ⟨hfn, hrelI⟩ := hE.ind hname
-  have hrel := hrelI B hB st hst sig callee args d hi (by rw [← hR.func]; exact hd)
+  have hname : IndSite C.f sig := .inl ⟨B, hB, st, hst, callee, args, hi⟩
+  obtain ⟨hfn, hrelI⟩ := hE.ind ⟨sig, hname⟩
+  have hdf : C.f.sigDecls.lookup sig = some d := by rw [← hR.func]; exact hd
+  have hrel := (hrelI sig d hname hdf).plain (by rw [hd0] at hdf; cases hdf; exact h128)
   have hnf' : ∀ g ∈ p'.funcs, m.symbols g.name ≠ some b.toNat := by
     intro g hg
     have : g.name ∈ p'.funcs.map (·.name) := List.mem_map_of_mem hg
@@ -1972,6 +2249,104 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
       refine setMany_other hs' fun hw => ?_
       have hpw := plain_iff.1 (hplain w (List.mem_append_right _ hw))
       exact hni w hw (res_lt hG hB hst hw) (by simp [img, hpw])
+
+/-- **An indirect call with an `i128` call-site signature** (`callInd128`): the target calls the
+same address with the arguments expanded by the groups of the signature `d`, at the expanded
+signature `g` declares; the callee address holds no function of either program (the source by
+`IndExt`, the target by `EnvOk2.ind`), and the call resolves alike with split arguments and
+results (`CallIndRel2`). -/
+theorem sim_callInd128 {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
+    (hE : EnvOk2 env env' C p p')
+    {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt}
+    {rest : List Stmt} (hb : fr.body = st :: rest) {sig : Nat} {d : Signature} {callee : ValueId}
+    {args' : List ValueId} {rg : List (List SlotEl)} {rs : List ValueId}
+    (hpl : planOf C st = some (.callInd128 sig d callee args' rg rs)) {rs' : List ValueId}
+    {ts2 : List Stmt}
+    (hb' : fr'.body = { results := rs', inst := .callIndirect sig callee args' } :: ts2)
+    (hrets : retsOk C rg rs rs' = true) (hnd' : rs'.Nodup) {d' : Signature}
+    (hd' : sigExp d = some d') (hdg : C.g.sigDecls.lookup sig = some d')
+    (hcode : codeOk C rest fr.term ts2 fr'.term = true) (hI : IndExt env p C.f ⟨fr, [], m⟩) :
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨args, gs, hi, hrs, hdf, -, hgs, hrg, hexp, hpc⟩ := planOf_callInd128 hpl
+  rw [← hrs] at hrets
+  obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
+  have hnd := results_nodup hG.defs hB hst
+  have hlt : ∀ x ∈ callee :: args, x < C.T0 := fun x hx => ops_lt hG hB hst (by rw [hi]; exact hx)
+  obtain ⟨gs0, rg0, hgs0, hrg0, -, -⟩ := sigExp_spec hd'
+  rw [hgs] at hgs0
+  cases hgs0
+  rw [hrg] at hrg0
+  cases hrg0
+  have hstep : step env p ⟨fr, [], m⟩ =
+      stepCallIndirect env p ⟨fr, [], m⟩ rest st.results sig callee args := by
+    simp [step, hb, hi]
+  have hstep' : step env' p' ⟨fr', [], m⟩ =
+      stepCallIndirect env' p' ⟨fr', [], m⟩ ts2 rs' sig callee args' := by
+    simp [step, hb']
+  rw [hstep]
+  have hd : fr.func.sigDecls.lookup sig = some d := by rw [hR.func]; exact hdf
+  have hdt : fr'.func.sigDecls.lookup sig = some d' := by rw [hR.func']; exact hdg
+  have hget : fr'.get callee = fr.get callee := by
+    simp only [Frame.get, hR.peq callee (hlt callee (List.mem_cons_self ..)) (plain_iff.1 hpc)]
+  cases hc : fr.get callee with
+  | trap c => exact absurd hc (get_ne_trap fr callee c)
+  | stuck msg =>
+    simp [stepCallIndirect, hd, hc, Res.ofOption, bind, Res.bind, StepResult.ofRes, SimOut]
+  | ok cv =>
+  cases hcv : cv.as? .i64 with
+  | none =>
+    simp [stepCallIndirect, hd, hc, hcv, Res.ofOption, bind, Res.bind, StepResult.ofRes, SimOut]
+  | some b =>
+  cases hv : fr.getMany args with
+  | trap c => exact absurd hv (getMany_ne_trap fr args c)
+  | stuck msg =>
+    simp [stepCallIndirect, hd, hc, hcv, hv, Res.ofOption, bind, Res.bind, StepResult.ofRes, SimOut]
+  | ok vals =>
+  obtain ⟨vals', hv', hexp'⟩ := expandArgs_holds hR.vrel hR.zero hexp
+    (fun x hx => hlt x (List.mem_cons_of_mem _ hx)) (getMany_holds hv)
+  have hnf := hI.1 st rest sig callee args cv hb hi ⟨B, hB, hst⟩ hc
+  rw [← as_i64_toNat hcv] at hnf
+  rw [stepCallIndirect_ext (fr := fr) (cs := []) (m := m) hd hc hcv hv hnf]
+  have hname : IndSite C.f sig := .inl ⟨B, hB, st, hst, callee, args, hi⟩
+  obtain ⟨hfn, hrelI⟩ := hE.ind ⟨sig, hname⟩
+  have hrel := hrelI sig d hname hdf d' gs rg hd' hgs hrg m b.toNat
+  have htgt := stepCallIndirect_ext (env := env') (p := p') (fr := fr') (cs := []) (m := m)
+    (rest := ts2) (results := rs') hdt (by rw [hget]; exact hc) hcv (holds_getMany hv')
+    (nf_names hfn hnf)
+  cases hx : callExternAt env p m d b.toNat vals with
+  | stuck msg => trivial
+  | trap c =>
+    obtain ⟨-, -, -, -, -, hty, -⟩ := callExternAt_trap_full hx
+    refine ⟨1, ?_⟩
+    rw [runLoop_succ, hstep', htgt, (hrel vals vals' hty hexp').2 c hx]
+    rfl
+  | ok r =>
+  obtain ⟨rv, mem'⟩ := r
+  obtain ⟨name, g, -, hg, -, hty, hout, hrt⟩ := callExternAt_ok_full hx
+  obtain ⟨rv', hx', hexr⟩ := (hrel vals vals' hty hexp').1 rv mem' hx
+  simp only [StepResult.ofRes_ok, continueWith]
+  cases hs : fr.regs.setMany st.results rv with
+  | none => trivial
+  | some ρ1 =>
+    obtain ⟨hbind, hcov, hlen⟩ := retsOk_bind hrets hexr
+    obtain ⟨ρ1', hs1'⟩ := setMany_of_len fr'.regs hlen
+    have hstep2 : step env' p' ⟨fr', [], m⟩ =
+        .next ⟨{ fr' with regs := ρ1', body := ts2 }, [], mem'⟩ := by
+      rw [hstep', htgt, hx']
+      simp only [StepResult.ofRes_ok, continueWith, hs1']
+    refine ⟨rfl, hE.keep name g hg vals m rv mem' hout hM, _, ?_, TStep.of_step hstep2⟩
+    have hsrcI : SrcInv C.f ρ1 := by
+      refine srcInv_results hG.defs hB hst hR.src (vals := rv) ?_ (fun _ _ h => by
+        rw [hi] at h; cases h) (fun _ _ _ h => by rw [hi] at h; cases h) hs
+      rw [hi]
+      simp only [Inst.resultTypes, declOfF, hdf, Option.map_some, hrt, AbiParam.tys]
+    refine frel_after hG hR hb hcode hs ?_ ?_ hsrcI
+    · exact fun v hv _ x hx => hbind (holds_setMany hnd hs) (holds_setMany hnd' hs1') hnd v hv x hx
+    · intro w hw hni
+      refine setMany_other hs1' fun hwr => ?_
+      rcases hcov w hwr with hf | ⟨u, hu, hwu⟩
+      · rw [hf] at hw; cases hw
+      · exact hni u hu (res_lt hG hB hst hu) hwu
 
 /-! ## `try_call` (the normal return) -/
 
@@ -2592,6 +2967,207 @@ theorem sim_try {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
   rw [step_term env' p' _ rfl]
   simp only [stepTerm, hen', StepResult.ofRes_ok]
 
+theorem termOk_tryCallInd {C : Ctx} {c : ValueId} {args : List ValueId} {et : ExnTable}
+    {ts : List Stmt} {c' : ValueId} {args' : List ValueId} {et' : ExnTable}
+    (h : termOk C (.tryCallIndirect c args et) ts (.tryCallIndirect c' args' et') = true) :
+    ts = [] ∧ c' = c ∧ C.plain c = true ∧ et'.sig = et.sig ∧
+    et'.normal.block = et.normal.block ∧ C.entryId? ≠ some et.normal.block ∧
+    C.T0 ≤ C.f.freshValue ∧ C.T0 ≤ C.g.freshValue ∧ C.zero < C.g.freshValue ∧
+    (∀ a ∈ C.comps, a < C.g.freshValue) ∧
+    ∃ d B d' gs rg, C.f.sigDecls.lookup et.sig = some d ∧ C.f.block? et.normal.block = some B ∧
+      sigExp d = some d' ∧ groups d.params = some gs ∧ groups d.returns = some rg ∧
+      C.g.sigDecls.lookup et.sig = some d' ∧ expandArgs C gs args = some args' ∧
+      expandTry C rg et.normal.args B.params = some et'.normal.args := by
+  simp only [termOk, Bool.and_eq_true, List.isEmpty_iff, beq_iff_eq, bne_iff_ne, ne_eq,
+    decide_eq_true_eq, List.all_eq_true] at h
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩, h8⟩, h9⟩, h10⟩, h11⟩ := h
+  refine ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, ?_⟩
+  split at h11
+  · rename_i d B hd hB
+    split at h11
+    · rename_i d' gs rg hs hg hr
+      simp only [Bool.and_eq_true, beq_iff_eq] at h11
+      obtain ⟨⟨h12, h13⟩, h14⟩ := h11
+      exact ⟨d, B, d', gs, rg, hd, hB, hs, hg, hr, h12, h13, h14⟩
+    · cases h11
+  · cases h11
+
+/-- **A `try_call_indirect`** (two source steps: the indirect call, then the jump to the
+normal-return successor): the target's `try_call_indirect` calls the same address with the
+arguments expanded by the groups of the call-site signature (`CallIndRel2`), its results at
+fresh values; after the jumps, the frames are related again. -/
+theorem sim_tryInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
+    (hE : EnvOk2 env env' C p p')
+    {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) (hb : fr.body = [])
+    {c : ValueId} {args : List ValueId} {et : ExnTable} (ht : fr.term = .tryCallIndirect c args et)
+    (hI : IndExt env p C.f ⟨fr, [], m⟩) :
+    SimStep C env env' p p' fr' m (step env p ⟨fr, [], m⟩) := by
+  obtain ⟨B0, hB0, -, hterm⟩ := hR.blk
+  have hlt : ∀ x ∈ termOps (.tryCallIndirect c args et), x < C.T0 := fun x hx =>
+    term_ops_lt hG hB0 (by rw [← hterm, ht]; exact hx)
+  have hltc : c < C.T0 := hlt c (by simp [termOps])
+  have hlta : ∀ x ∈ args, x < C.T0 := fun x hx => hlt x (by simp [termOps, hx])
+  have hltv : ∀ x ∈ et.vals, x < C.T0 := fun x hx => hlt x (by simp [termOps, hx])
+  have hcode := hR.code
+  rw [hb, ht] at hcode
+  simp only [codeOk] at hcode
+  cases ht' : fr'.term
+  all_goals first | (rw [ht'] at hcode; simp [termOk] at hcode; done) | skip
+  rename_i c' args' et'
+  rw [ht'] at hcode
+  obtain ⟨hts, hcc, hpc, hsig, hblk, hne, hT0f, hT0g, hzg, hcg, d, B, d', gs, rg, hd, hB, hs',
+    hgs, hrg, hdg, hexp, hexpT⟩ := termOk_tryCallInd hcode
+  subst c'
+  obtain ⟨gs0, rg0, hgs0, hrg0, -, hret'⟩ := sigExp_spec hs'
+  rw [hgs] at hgs0
+  cases hgs0
+  rw [hrg] at hrg0
+  cases hrg0
+  have hdf : fr.func.sigDecls.lookup et.sig = some d := by rw [hR.func]; exact hd
+  have hdt : fr'.func.sigDecls.lookup et'.sig = some d' := by rw [hR.func', hsig]; exact hdg
+  rw [step_term env p _ hb, ht]
+  simp only [stepTerm]
+  cases hbc : tryNormal et fr.func.freshValue with
+  | trap c0 => exact absurd hbc (tryNormal_ne_trap _ _ c0)
+  | stuck msg =>
+    exact .inl (by simp [SimOut, stepTryCallIndirect, hdf, hbc, Res.ofOption, bind, Res.bind])
+  | ok bc =>
+  have hsrcT : stepTryCallIndirect env p ⟨fr, [], m⟩ c args et =
+      stepCallIndirect env p ⟨{ fr with body := [], term := .jump bc }, [], m⟩ []
+        ((List.range d.returns.length).map (fr.func.freshValue + ·)) et.sig c args := by
+    simp only [stepTryCallIndirect, hdf, hbc, Res.ofOption, bind, Res.bind, pure,
+      StepResult.ofRes_ok]
+  rw [hsrcT]
+  have hbcE := tryNormal_eq hbc
+  cases hc : fr.get c with
+  | trap c0 => exact absurd hc (get_ne_trap fr c c0)
+  | stuck msg =>
+    have hcJ : ({ fr with body := [], term := .jump bc } : Frame).get c = .stuck msg := hc
+    exact .inl (by simp [SimOut, stepCallIndirect, hdf, hcJ, Res.ofOption, bind, Res.bind,
+      StepResult.ofRes])
+  | ok cv =>
+  have hcJ : ({ fr with body := [], term := .jump bc } : Frame).get c = .ok cv := hc
+  cases hcv : cv.as? .i64 with
+  | none =>
+    exact .inl (by simp [SimOut, stepCallIndirect, hdf, hcJ, hcv, Res.ofOption, bind, Res.bind,
+      StepResult.ofRes])
+  | some b =>
+  cases hga : fr.getMany args with
+  | trap c0 => exact absurd hga (getMany_ne_trap fr args c0)
+  | stuck msg =>
+    have hgaJ : ({ fr with body := [], term := .jump bc } : Frame).getMany args = .stuck msg :=
+      (getMany_congr (fr := fr) (fr' := { fr with body := [], term := .jump bc })
+        fun _ _ => rfl).trans hga
+    exact .inl (by simp [SimOut, stepCallIndirect, hdf, hcJ, hcv, hgaJ, Res.ofOption, bind,
+      Res.bind, StepResult.ofRes])
+  | ok vals =>
+  have hgaJ : ({ fr with body := [], term := .jump bc } : Frame).getMany args = .ok vals :=
+    (getMany_congr (fr := fr) (fr' := { fr with body := [], term := .jump bc })
+      fun _ _ => rfl).trans hga
+  have hnf := hI.2 c args et cv hb ht ⟨B0, hB0, by rw [← hterm]; exact ht⟩ hc
+  rw [← as_i64_toNat hcv] at hnf
+  rw [stepCallIndirect_ext (fr := { fr with body := [], term := .jump bc }) (cs := []) (m := m)
+    hdf hcJ hcv hgaJ hnf]
+  obtain ⟨vals', hv', hexp'⟩ := expandArgs_holds hR.vrel hR.zero hexp hlta (getMany_holds hga)
+  -- the target's `try_call_indirect`
+  have hnoexn := expandTry_noExn hexpT
+  have hbc2 := tryNormal_of_noExn (base := fr'.func.freshValue) hnoexn
+  generalize hbc'e : (⟨et'.normal.block, et'.normal.args.map (argId fr'.func.freshValue)⟩ :
+    BlockCall) = bc' at hbc2
+  have htT : stepTryCallIndirect env' p' ⟨fr', [], m⟩ c args' et' =
+      stepCallIndirect env' p' ⟨{ fr' with body := [], term := .jump bc' }, [], m⟩ []
+        ((List.range d'.returns.length).map (fr'.func.freshValue + ·)) et'.sig c args' := by
+    simp only [stepTryCallIndirect, hdt, hbc2, Res.ofOption, bind, Res.bind, pure,
+      StepResult.ofRes_ok]
+  have hget' : fr'.get c = fr.get c := by
+    simp only [Frame.get, hR.peq c hltc (plain_iff.1 hpc)]
+  have hgaJ2 : ({ fr' with body := [], term := .jump bc' } : Frame).getMany args' = .ok vals' :=
+    (getMany_congr (fr := fr') (fr' := { fr' with body := [], term := .jump bc' })
+      fun _ _ => rfl).trans (holds_getMany hv')
+  have hname : IndSite C.f et.sig := .inr ⟨B0, hB0, c, args, et, by rw [← hterm]; exact ht, rfl⟩
+  obtain ⟨hfn, hrelI⟩ := hE.ind ⟨et.sig, hname⟩
+  have hrel := hrelI et.sig d hname hd d' gs rg hs' hgs hrg m b.toNat
+  have htgt := stepCallIndirect_ext (env := env') (p := p')
+    (fr := { fr' with body := [], term := .jump bc' }) (cs := []) (m := m) (rest := [])
+    (results := (List.range d'.returns.length).map (fr'.func.freshValue + ·)) hdt
+    (show fr'.get c = .ok cv by rw [hget']; exact hc) hcv hgaJ2 (nf_names hfn hnf)
+  have hT1 : ∀ r, step env' p' ⟨fr', [], m⟩ = r ↔ stepCallIndirect env' p'
+      ⟨{ fr' with body := [], term := .jump bc' }, [], m⟩ []
+      ((List.range d'.returns.length).map (fr'.func.freshValue + ·)) et'.sig c args' = r := by
+    intro r
+    rw [step_term env' p' _ hts, ht']
+    simp only [stepTerm]
+    rw [htT]
+  rw [hsig] at htgt hT1
+  cases hx : callExternAt env p m d b.toNat vals with
+  | stuck msg => exact .inl trivial
+  | trap c0 =>
+    obtain ⟨-, -, -, -, -, hty, -⟩ := callExternAt_trap_full hx
+    refine .inl ⟨1, ?_⟩
+    rw [runLoop_succ, (hT1 (.trapped c0)).2 (by rw [htgt, (hrel vals vals' hty hexp').2 c0 hx]; rfl)]
+  | ok r =>
+  obtain ⟨rv, m'⟩ := r
+  obtain ⟨name, h, -, henv, -, hty, hout, hrt⟩ := callExternAt_ok_full hx
+  obtain ⟨rv', hx', hexr⟩ := (hrel vals vals' hty hexp').1 rv m' hx
+  have hrt' : rv'.map (·.ty) = AbiParam.tys d'.returns := by
+    rw [hret', AbiParam.tys, ← expRel_tys (groups_spec hrg) hexr hrt]
+  simp only [StepResult.ofRes_ok, continueWith]
+  have hnrv : rv.length = d.returns.length := by
+    have := congrArg List.length hrt; simpa [AbiParam.tys] using this
+  have hnrv' : rv'.length = d'.returns.length := by
+    have := congrArg List.length hrt'; simpa [AbiParam.tys] using this
+  cases hs : fr.regs.setMany ((List.range d.returns.length).map (fr.func.freshValue + ·)) rv with
+  | none => exact .inl trivial
+  | some ρ1 =>
+  obtain ⟨ρ1', hs1'⟩ := setMany_of_len fr'.regs
+    (rs := (List.range d'.returns.length).map (fr'.func.freshValue + ·)) (vs := rv')
+    (by simp [hnrv'])
+  have hfv : fr.func.freshValue = C.f.freshValue := by rw [hR.func]
+  have hfv' : fr'.func.freshValue = C.g.freshValue := by rw [hR.func']
+  have hstepT : step env' p' ⟨fr', [], m⟩ =
+      .next ⟨{ fr' with regs := ρ1', body := [], term := .jump bc' }, [], m'⟩ := by
+    refine (hT1 _).2 ?_
+    rw [htgt, hx']
+    simp only [StepResult.ofRes_ok, continueWith, hs1']
+  have hM1 : MemBounded m' := hE.keep name h henv vals m rv m' hout hM
+  refine .inr ⟨_, rfl, rfl, hM1, _, TStep.of_step hstepT, ?_⟩
+  -- the jumps
+  have hCR := crel_bind hG hR.toCRel hs hs1'
+    (fun v hv => by have := (mem_range_map hv).1; rw [hfv] at this; omega)
+    (fun w hw => fresh_of_ge (base' := C.g.freshValue) hT0g hzg hcg
+      (by have := (mem_range_map hw).1; rw [hfv'] at this; exact this))
+    [] (.jump bc) [] (.jump bc')
+  simp only
+  rw [step_term env p _ rfl]
+  simp only [stepTerm]
+  cases hen : enterBlock { fr with regs := ρ1, body := [], term := .jump bc } bc with
+  | trap c0 => exact absurd hen (enterBlock_not_trap _ _ c0)
+  | stuck msg => trivial
+  | ok fr2 =>
+  simp only [StepResult.ofRes_ok]
+  obtain ⟨fr2', hen', hR2⟩ := enter_sim_vals hG hCR (bc' := bc') (by rw [← hbc'e, hbcE]; exact hblk)
+    (by rw [hbcE]; exact hne) (fun B1 vals1 hB1 hv1 => by
+      rw [← hbc'e]
+      rw [hbcE] at hB1 hv1
+      rw [hB] at hB1
+      cases hB1
+      refine expandTry_holds hR.vrel hexr (base := fr.func.freshValue)
+        (base' := fr'.func.freshValue)
+        (fun v hv => setMany_other hs fun hm => by
+          have := (mem_range_map hm).1; rw [hfv] at this
+          exact absurd hv (Nat.not_lt.mpr (Nat.le_trans hT0f this)))
+        (fun i hi => setMany_get hs (range_map_nodup _ _) (getElem?_range_map (hnrv ▸ hi)))
+        (fun a ha => setMany_other hs1' fun hm => absurd ha (Nat.not_lt.mpr (mem_range_map hm).1))
+        (fun j hj => setMany_get hs1' (range_map_nodup _ _) (getElem?_range_map (hnrv' ▸ hj)))
+        (fun v a b hp => by
+          obtain ⟨ha, hb⟩ := mem_comps hp
+          rw [hfv']; exact ⟨hcg a ha, hcg b hb⟩)
+        (by rw [hfv']; exact hT0g) hexpT
+        (fun v hv => hltv v (List.mem_append_left _ (val_mem_vals hv))) hv1) hen
+  refine ⟨rfl, hM1, fr2', hR2, TStep.of_step ?_⟩
+  rw [step_term env' p' _ rfl]
+  simp only [stepTerm, hen', StepResult.ofRes_ok]
+
 /-- **One source step**, matched by the target. -/
 theorem step_sim {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
     (hE : EnvOk2 env env' C p p')
@@ -2603,7 +3179,11 @@ theorem step_sim {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
     by_cases htc : ∃ fn args et, fr.term = .tryCall fn args et
     · obtain ⟨fn, args, et, ht⟩ := htc
       exact sim_try hG hE hR hM hb ht
-    · exact .inl (sim_term hG hR hM hb fun fn args et h => htc ⟨fn, args, et, h⟩)
+    by_cases htci : ∃ c args et, fr.term = .tryCallIndirect c args et
+    · obtain ⟨c, args, et, ht⟩ := htci
+      exact sim_tryInd hG hE hR hM hb ht hI
+    · exact .inl (sim_term hG hR hM hb (fun fn args et h => htc ⟨fn, args, et, h⟩)
+        fun c args et h => htci ⟨c, args, et, h⟩)
   | cons st rest =>
     refine .inl ?_
     have hcode0 := hR.code
@@ -2646,6 +3226,10 @@ theorem step_sim {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
       obtain ⟨hs, hdecl⟩ := segOk_callInd hseg
       rw [hs] at hbody
       exact sim_callInd hG hE hR hM hb hpl hbody hdecl hcode hI
+    | callInd128 sig d callee args rg rs =>
+      obtain ⟨rs', hs, hrets, hnd', d', hd', hdg⟩ := segOk_callInd128 hseg
+      rw [hs] at hbody
+      exact sim_callInd128 hG hE hR hM hb hpl hbody hrets hnd' hd' hdg hcode hI
 
 /-! ## The fuel induction -/
 
@@ -2844,7 +3428,7 @@ theorem entry_bind {C : Ctx} {gs : List (List SlotEl)} {ps ps' : List (ValueId �
         · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
   case case5 => cases h
 
-/-- **The refinement theorem of `Opt.Legal.check`, source environment `env`, target environment
+/-- **The refinement theorem of `Opt.Legal.checkW`, source environment `env`, target environment
 `env'`.** For an accepted legalisation `g` of `f`: from entry states of `f` on `args` and of `g`
 on `args'` (the arguments expanded by the ABI groups of `f`'s parameters, pads arbitrary; same
 slots and memory), whenever the run of `f` under `env` returns within `fuel` steps, the run of `g`
@@ -2852,7 +3436,7 @@ under `env'` returns the values expanded by the ABI groups of `f`'s returns, wit
 memory; whenever it traps, the run of `g` traps with the same code. Premises: `EnvOk2` (calls go
 to the environments; their contracts), valid ranges below `2^64`, no load/store trap in the
 source run. -/
-theorem check_refines2 {C : Ctx} (hc : check C.f C.g C.cert = true)
+theorem checkW_refines2 {C : Ctx} (hc : checkW C.f C.g C.cert = true)
     {env env' : Env} {p p' : Program} (hE : EnvOk2 env env' C p p') {b b' : Block}
     (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
     {fr0 fr0' : Frame} {m : Mem}
@@ -2870,7 +3454,7 @@ theorem check_refines2 {C : Ctx} (hc : check C.f C.g C.cert = true)
         ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
     (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
       ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .trapped c) := by
-  have hG : Good C := check_good hc
+  have hG : Good C := checkW_good hc
   obtain ⟨b0, bs, b0', bs', hf, hg, -, hok, -⟩ := hG.blocks
   simp only [Function.entry?, hf, List.head?_cons, Option.some.injEq] at hb
   simp only [Function.entry?, hg, List.head?_cons, Option.some.injEq] at hb'
@@ -2939,13 +3523,58 @@ theorem check_refines2 {C : Ctx} (hc : check C.f C.g C.cert = true)
       exact ⟨k + k0, by rw [hk0, hk]⟩
   · cases hok
 
-/-- **The refinement theorem of `Opt.Legal.check`** (one environment: `check_refines2` with
+/-- **The refinement theorem of `Opt.Legal.checkW`** (one environment: `checkW_refines2` with
 `EnvOk.two`). For an accepted legalisation `g` of `f`: from entry states of `f` on `args` and of
 `g` on `args'` (the arguments expanded by the ABI groups of `f`'s parameters, pads arbitrary; same
 slots and memory), whenever the run of `f` returns within `fuel` steps, the run of `g` returns the
 values expanded by the ABI groups of `f`'s returns, with the same memory; whenever it traps, the
 run of `g` traps with the same code. Premises: `EnvOk` (calls go to the environment; its
 contracts), valid ranges below `2^64`, no load/store trap in the source run. -/
+theorem checkW_refines {C : Ctx} (hc : checkW C.f C.g C.cert = true)
+    {env : Env} {p p' : Program} (hE : EnvOk env C p p') {b b' : Block}
+    (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
+    {fr0 fr0' : Frame} {m : Mem}
+    (h1 : fr0.func = C.f) (h2 : fr0.body = b.body) (h3 : fr0.term = b.term)
+    (h4 : b.params.map (·.2) = args.map (·.ty))
+    (h5 : Regs.empty.setMany (b.params.map (·.1)) args = some fr0.regs)
+    (h1' : fr0'.func = C.g) (h2' : fr0'.body = b'.body) (h3' : fr0'.term = b'.term)
+    (h5' : Regs.empty.setMany (b'.params.map (·.1)) args' = some fr0'.regs)
+    (hsl : fr0'.slots = fr0.slots)
+    (hexp : ExpRel ((groups C.f.sig.params).getD []) args args')
+    (hM : MemBounded m) (hT : NoMemTrap env p ⟨fr0, [], m⟩)
+    (hI : NoIndInternal env p C.f ⟨fr0, [], m⟩) (fuel : Nat) :
+    (∀ vals m1, runLoop env p fuel ⟨fr0, [], m⟩ = .returned vals m1 →
+      ∃ vals', ExpRel ((groups C.f.sig.returns).getD []) vals vals' ∧
+        ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
+    (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
+      ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .trapped c) :=
+  checkW_refines2 hc hE.two hb hb' h1 h2 h3 h4 h5 h1' h2' h3' h5' hsl hexp hM hT hI fuel
+
+/-- **`checkW_refines2` on the domain of `check`** (no `try_call_indirect`, no `call_indirect`
+at an `i128` signature, `indOldB`). -/
+theorem check_refines2 {C : Ctx} (hc : check C.f C.g C.cert = true)
+    {env env' : Env} {p p' : Program} (hE : EnvOk2 env env' C p p') {b b' : Block}
+    (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
+    {fr0 fr0' : Frame} {m : Mem}
+    (h1 : fr0.func = C.f) (h2 : fr0.body = b.body) (h3 : fr0.term = b.term)
+    (h4 : b.params.map (·.2) = args.map (·.ty))
+    (h5 : Regs.empty.setMany (b.params.map (·.1)) args = some fr0.regs)
+    (h1' : fr0'.func = C.g) (h2' : fr0'.body = b'.body) (h3' : fr0'.term = b'.term)
+    (h5' : Regs.empty.setMany (b'.params.map (·.1)) args' = some fr0'.regs)
+    (hsl : fr0'.slots = fr0.slots)
+    (hexp : ExpRel ((groups C.f.sig.params).getD []) args args')
+    (hM : MemBounded m) (hT : NoMemTrap env p ⟨fr0, [], m⟩)
+    (hI : NoIndInternal env p C.f ⟨fr0, [], m⟩) (fuel : Nat) :
+    (∀ vals m1, runLoop env p fuel ⟨fr0, [], m⟩ = .returned vals m1 →
+      ∃ vals', ExpRel ((groups C.f.sig.returns).getD []) vals vals' ∧
+        ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
+    (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
+      ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .trapped c) :=
+  checkW_refines2 (checkW_of_check hc) hE hb hb' h1 h2 h3 h4 h5 h1' h2' h3' h5' hsl hexp hM hT hI
+    fuel
+
+/-- **`checkW_refines` on the domain of `check`** (no `try_call_indirect`, no `call_indirect`
+at an `i128` signature, `indOldB`). -/
 theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
     {env : Env} {p p' : Program} (hE : EnvOk env C p p') {b b' : Block}
     (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
@@ -2964,35 +3593,83 @@ theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
         ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
     (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
       ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .trapped c) :=
-  check_refines2 hc hE.two hb hb' h1 h2 h3 h4 h5 h1' h2' h3' h5' hsl hexp hM hT hI fuel
+  checkW_refines (checkW_of_check hc) hE hb hb' h1 h2 h3 h4 h5 h1' h2' h3' h5' hsl hexp hM hT hI
+    fuel
+
+/-! ## The domain of `check` (`indOldB`) -/
+
+/-- On the domain of `check`, an indirect call site is a `call_indirect` statement. -/
+theorem indOldB_indSite {f : Function} (h : indOldB f = true) {sig : Nat} (hs : IndSite f sig) :
+    ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args := by
+  rcases hs with ⟨B, hB, st, hst, callee, args, hi⟩ | ⟨B, hB, c, args, et, ht, -⟩
+  · exact ⟨B, hB, st, hst, sig, callee, args, hi⟩
+  · simp only [indOldB, List.all_eq_true, Bool.and_eq_true] at h
+    have := (h B hB).2
+    simp [ht] at this
+
+/-- On the domain of `check`, no indirect call has an `i128` call-site signature. -/
+theorem indOldB_not_ind128 {f : Function} (h : indOldB f = true) : ¬ Ind128 f := by
+  rintro ⟨sig, d, hs, hd, h128⟩
+  simp only [indOldB, List.all_eq_true, Bool.and_eq_true] at h
+  rcases hs with ⟨B, hB, st, hst, callee, args, hi⟩ | ⟨B, hB, c, args, et, ht, -⟩
+  · have := (h B hB).1 st hst
+    simp [hi, hd, h128] at this
+  · have := (h B hB).2
+    simp [ht] at this
+
+/-- The programs premise of the statements about `check` (an indirect call is a
+`call_indirect`) gives `EnvOk.ind`. -/
+theorem indOldB_ind {f : Function} (h : indOldB f = true) {P : Prop}
+    (hind : (∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
+      st.inst = .callIndirect sig callee args) → P) : (∃ sig, IndSite f sig) → P :=
+  fun ⟨_, hs⟩ => hind (indOldB_indSite h hs)
+
+/-- `EnvOk.sigs` is vacuous on the domain of `check`. -/
+theorem indOldB_sigs {f : Function} (h : indOldB f = true) {env : Env} :
+    Ind128 f → ∀ n s, env.sigOf n = some s → sig128 s = false :=
+  fun h' => absurd h' (indOldB_not_ind128 h)
 
 /-! ## Indirect calls of an accepted legalisation -/
 
 theorem planOf_callIndirect_eq {C : Ctx} {s : Stmt} {pl : Plan} (hp : planOf C s = some pl)
     {sig : Nat} {callee : ValueId} {args : List ValueId}
-    (hi : s.inst = .callIndirect sig callee args) : pl = .callInd := by
+    (hi : s.inst = .callIndirect sig callee args) :
+    pl = .callInd ∨ ∃ d args' rg rs, pl = .callInd128 sig d callee args' rg rs := by
   obtain ⟨rs, inst⟩ := s
   simp only at hi
   subst hi
   unfold planOf at hp
   simp only at hp
-  split at hp
-  · cases hp; rfl
-  · cases hp
+  repeat' split at hp
+  all_goals first
+    | exact .inl (Option.some.inj hp).symm
+    | (cases hp; done)
+    | skip
+  all_goals simp only [bind, Option.bind_eq_some_iff] at hp
+  all_goals obtain ⟨gs, -, rg', -, a', -, hp⟩ := hp
+  all_goals first
+    | exact .inr ⟨_, _, _, _, (Option.some.inj hp).symm⟩
+    | cases hp
 
-/-- Every `call_indirect` of a code sequence is in its rewrite. -/
+/-- Every `call_indirect` of a code sequence has a `call_indirect` at the same call-site
+signature in its rewrite. -/
 theorem codeOk_callInd {C : Ctx} : ∀ {ss : List Stmt} {t : Terminator} {ts : List Stmt}
     {t' : Terminator}, codeOk C ss t ts t' = true → ∀ st ∈ ss, ∀ sig callee args,
-    st.inst = .callIndirect sig callee args → st ∈ ts
+    st.inst = .callIndirect sig callee args →
+    ∃ st' ∈ ts, ∃ callee' args', st'.inst = .callIndirect sig callee' args'
   | [], _, _, _, _, st, hst, _, _, _, _ => by cases hst
   | s :: ss, t, ts, t', h, st, hst, sig, callee, args, hi => by
     obtain ⟨pl, hpl, hseg, hcode⟩ := code_cons h
     rcases List.mem_cons.1 hst with rfl | hst
-    · have hpl' := planOf_callIndirect_eq hpl hi
-      subst hpl'
-      have h1 := (segOk_callInd hseg).1
-      exact List.mem_of_mem_take (by rw [h1]; exact List.mem_singleton_self _)
-    · exact List.mem_of_mem_drop (codeOk_callInd hcode st hst sig callee args hi)
+    · rcases planOf_callIndirect_eq hpl hi with rfl | ⟨d, args', rg, rs, rfl⟩
+      · have h1 := (segOk_callInd hseg).1
+        exact ⟨_, List.mem_of_mem_take (by rw [h1]; exact List.mem_singleton_self _), callee,
+          args, hi⟩
+      · obtain ⟨rs', h1, -⟩ := segOk_callInd128 hseg
+        exact ⟨_, List.mem_of_mem_take (by rw [h1]; exact List.mem_singleton_self _), callee,
+          args', rfl⟩
+    · obtain ⟨st', hst', h'⟩ := codeOk_callInd hcode st hst sig callee args hi
+      exact ⟨st', List.mem_of_mem_drop hst', h'⟩
 
 theorem mem_zip_of_mem {α β : Type} {l₁ : List α} {l₂ : List β} (hl : l₁.length = l₂.length)
     {a : α} (ha : a ∈ l₁) : ∃ b ∈ l₂, (a, b) ∈ l₁.zip l₂ := by
@@ -3002,12 +3679,13 @@ theorem mem_zip_of_mem {α β : Type} {l₁ : List α} {l₂ : List β} (hl : l�
   rw [← this]
   exact List.getElem_mem _
 
-/-- **An accepted legalisation keeps every `call_indirect`** (its plan is the statement itself):
-a function `f` with a `call_indirect` has a legalisation `g` with one. -/
-theorem check_callInd {f g : Function} {cert : Cert} (hc : check f g cert = true)
+/-- **An accepted legalisation keeps every `call_indirect`** (its plan is the statement itself,
+or the call with expanded arguments): a function `f` with a `call_indirect` has a legalisation
+`g` with one. -/
+theorem checkW_callInd {f g : Function} {cert : Cert} (hc : checkW f g cert = true)
     (h : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args) :
     ∃ B ∈ g.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args := by
-  have hG : Good ⟨f, g, cert⟩ := check_good hc
+  have hG : Good ⟨f, g, cert⟩ := checkW_good hc
   obtain ⟨b, bs, b', bs', hf, hg, hl, hb, hz⟩ := hG.blocks
   obtain ⟨B, hB, st, hst, sig, callee, args, hi⟩ := h
   simp only at hf hg
@@ -3018,8 +3696,8 @@ theorem check_callInd {f g : Function} {cert : Cert} (hc : check f g cert = true
     split at hok
     · rename_i gs z rest hgs hbody'
       simp only [Bool.and_eq_true] at hok
-      have hm := codeOk_callInd hok.2 st hst sig callee args hi
-      refine ⟨b', ?_, st, ?_, sig, callee, args, hi⟩
+      obtain ⟨st', hm, callee', args', hi'⟩ := codeOk_callInd hok.2 st hst sig callee args hi
+      refine ⟨b', ?_, st', ?_, sig, callee', args', hi'⟩
       · rw [hg]; exact List.mem_cons_self ..
       · rw [hbody']; exact List.mem_cons_of_mem _ hm
     · cases hok
@@ -3028,7 +3706,53 @@ theorem check_callInd {f g : Function} {cert : Cert} (hc : check f g cert = true
     simp only [blockOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, Bool.false_eq_true,
       ite_false] at hok
     obtain ⟨-, -, hcode⟩ := hok
-    refine ⟨B', ?_, st, codeOk_callInd hcode st hst sig callee args hi, sig, callee, args, hi⟩
+    obtain ⟨st', hm, callee', args', hi'⟩ := codeOk_callInd hcode st hst sig callee args hi
+    refine ⟨B', ?_, st', hm, sig, callee', args', hi'⟩
     rw [hg]; exact List.mem_cons_of_mem _ hB'
+
+/-- `checkW_callInd` for `check`. -/
+theorem check_callInd {f g : Function} {cert : Cert} (hc : check f g cert = true)
+    (h : ∃ B ∈ f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args) :
+    ∃ B ∈ g.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args :=
+  checkW_callInd (checkW_of_check hc) h
+
+/-- The rewrite of a `try_call_indirect` terminator is one. -/
+theorem codeOk_tryInd {C : Ctx} : ∀ {ss : List Stmt} {t : Terminator} {ts : List Stmt}
+    {t' : Terminator}, codeOk C ss t ts t' = true → ∀ c args et, t = .tryCallIndirect c args et →
+    ∃ c' args' et', t' = .tryCallIndirect c' args' et'
+  | [], t, ts, t', h, c, args, et, ht => by
+    subst ht
+    simp only [codeOk] at h
+    cases t' <;> simp [termOk] at h
+    all_goals exact ⟨_, _, _, rfl⟩
+  | s :: ss, t, ts, t', h, c, args, et, ht => by
+    obtain ⟨pl, -, -, hcode⟩ := code_cons h
+    exact codeOk_tryInd hcode c args et ht
+
+/-- **An accepted legalisation keeps every `try_call_indirect`**: a function `f` with a
+`try_call_indirect` has a legalisation `g` with one. -/
+theorem checkW_tryInd {f g : Function} {cert : Cert} (hc : checkW f g cert = true)
+    (h : ∃ B ∈ f.blocks, ∃ c args et, B.term = .tryCallIndirect c args et) :
+    ∃ B ∈ g.blocks, ∃ c args et, B.term = .tryCallIndirect c args et := by
+  have hG : Good ⟨f, g, cert⟩ := checkW_good hc
+  obtain ⟨b, bs, b', bs', hf, hg, hl, hb, hz⟩ := hG.blocks
+  obtain ⟨B, hB, c, args, et, ht⟩ := h
+  simp only at hf hg
+  rw [hf] at hB
+  rcases List.mem_cons.1 hB with rfl | hB
+  · simp only [blockOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, ite_true] at hb
+    obtain ⟨-, hok⟩ := hb
+    split at hok
+    · simp only [Bool.and_eq_true] at hok
+      obtain ⟨c', args', et', ht'⟩ := codeOk_tryInd hok.2 c args et ht
+      exact ⟨b', by rw [hg]; exact List.mem_cons_self .., c', args', et', ht'⟩
+    · cases hok
+  · obtain ⟨B', hB', hz'⟩ := mem_zip_of_mem hl hB
+    have hok := hz B B' hz'
+    simp only [blockOk, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq, Bool.false_eq_true,
+      ite_false] at hok
+    obtain ⟨-, -, hcode⟩ := hok
+    obtain ⟨c', args', et', ht'⟩ := codeOk_tryInd hcode c args et ht
+    exact ⟨B', by rw [hg]; exact List.mem_cons_of_mem _ hB', c', args', et', ht'⟩
 
 end Opt.Legal
