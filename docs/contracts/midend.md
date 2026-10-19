@@ -573,14 +573,22 @@ Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`, `CheckSpec.lean`, `Compl
   `Opt.simplify_incomplete_symbolValue`: with the former `allowedIn` (`isPure`), `simpOk` rejected
   a well-formed function with `symbol_value` in sibling blocks.
 
-**Narrowed (open, #24 stays open):** the obligations are discharged for the empty rule set
-(`simpRulesOk_noRules`) and the hand skeleton rules (`skelRulesOk_hand`), not for any rule set a
-`Config` can select. `SimpRulesOk HandRules.simplify` fails to follow generically because
-`pureBest` puts `inst ↦ v` into the hash-consing table before the rules run, so a nested `make`
-of the root's node returns `v` itself; dropping that pre-insertion would make it provable.
-`.cranelift` needs both obligations proven over the exported ISLE program. So
-`optimize_complete` is unconditional with simplify off (`optimize_complete_noSimp`) and holds
-with simplify on only under these explicit rule-set premises.
+The obligations are discharged for the empty rule set (`simpRulesOk_noRules`), the hand skeleton
+rules (`skelRulesOk_hand`) and the hand rules (`Opt.simpRulesOk_hand`,
+`FV/Opt/Proof/CompleteSimpHand.lean`), hence `Opt.simpStageOk_hand` and
+`Opt.optimize_complete_hand cfg (hr : cfg.rules = .hand)`; witness
+`Opt.CompleteSimpWitness.witness_hand` (`x + 0 ⇒ x` fires, no pass error). For that, `pureBest` no
+longer puts `inst ↦ v` into the hash-consing table before the rules run (as in Cranelift's
+`insert_pure_enode`, the node enters the table after its rules ran, mapped to the best value):
+with the pre-insertion a nested `make` of the root's node returned `v` itself, which the
+obligation excludes. Measured with `scripts/opt-compare.py` (both binaries, every input, default,
+`--opt-proven-only` and `--opt-rules hand`): 2642 files (corpus+extrt 50, runtests 395, survey and
+fv-demo dumps 2197); hand: all byte-identical; default and proven: 2497 byte-identical, 145 equal up
+to a per-function renumbering of values with identical `--stats`, 0 other differences.
+
+**Narrowed (open, #24 stays open):** `.cranelift` needs both obligations proven over the exported
+ISLE program, so with the Cranelift rules (the default and `exeConfig`) `optimize_complete` holds
+only under these explicit rule-set premises.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
 
