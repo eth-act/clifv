@@ -1,7 +1,7 @@
 {
-  "utc": "2026-10-19T22:39:53.649911+00:00",
+  "utc": "2026-10-19T22:59:28.675505+00:00",
   "base": "6a1f7d518f76bedc8219204bde40cfa41be876cd",
-  "state": "targeted_build_and_trust_passed_full_per_pr_gates_pending",
+  "state": "per_pr_gates_passed_pending_author_squash",
   "build": "644 jobs passed, autoImplicit false in new modules",
   "public_audit": "62/62 roots pass, std3 for compiler roots; explicit fixed witness native annotations",
   "mcp": {
@@ -29,5 +29,83 @@
     "both E2E modes with original identity/stage parity",
     "actual link-check for saved verified bundle and mixed generated proofs"
   ],
-  "resource_budget": "author aggregate 16 GiB; max 3 build jobs; one warm cache; no new worktrees"
+  "resource_budget": "author aggregate 16 GiB; max 3 build jobs; one warm cache; no new worktrees",
+  "validated_source_head": "bd15409a0e4aa6bd68de6d7dc00dabc12e3a0ee4",
+  "modules": {
+    "passed": 2335,
+    "built": 1,
+    "warm": 2334
+  },
+  "library_affected_tools_jobs": 2899,
+  "axiom_audit_files": {
+    "passed": 11,
+    "total": 11
+  },
+  "owned_constants_standard_only": 124,
+  "identity_stage_parity": {
+    "e2e": {
+      "original": 1150,
+      "current": 1154,
+      "all_original_identities_and_ordered_stages_preserved": true
+    },
+    "legacy-e2e": {
+      "original": 1150,
+      "current": 1154,
+      "all_original_identities_and_ordered_stages_preserved": true
+    }
+  },
+  "link_checks": {
+    "matched_default_verified_binaries": 2,
+    "generated_mixed_program_proofs": [
+      "plain",
+      "cleanup"
+    ]
+  },
+  "gate_logs": {
+    "all-modules": {
+      "path": "/tmp/stock-consumer-per-pr-gates/all-modules.log",
+      "sha256": "b6f800be01de1daf5b5abafd138b8fd62a1bcd0e74e5f104021cbd2517762464"
+    },
+    "library-and-affected-tools": {
+      "path": "/tmp/stock-consumer-per-pr-gates/library-and-affected-tools.log",
+      "sha256": "96454f33dad2e87c3c828a1ffbddc4b9b8335f85dc705d8dc51cd11174ca635a"
+    },
+    "all-axiom-audits": {
+      "path": "/tmp/stock-consumer-per-pr-gates/all-axiom-audits.log",
+      "sha256": "12acc4c53ae2bfe9865b2e5da0c7f6bb406ae9e3b512e8b4fd49c8da60ce26de"
+    },
+    "owned-constants": {
+      "path": "/tmp/stock-consumer-per-pr-gates/owned-constants.log",
+      "sha256": "4ae5c0ee8af648722cb9b3f670530d601f486a8e0b22e87fb75b6e0123ede0bb"
+    },
+    "e2e": {
+      "path": "/tmp/stock-consumer-per-pr-gates/e2e.log",
+      "sha256": "8d98a86765ce5d0c6acca22a8e31a358f478c2e684dd43601e4342a91d1a22d2"
+    },
+    "legacy-e2e": {
+      "path": "/tmp/stock-consumer-per-pr-gates/legacy-e2e.log",
+      "sha256": "b7f7f68b23401ca24c8a704178f15bb993040c98966e1b161029de03e73e7c68"
+    },
+    "link-check-0-cleanup": {
+      "path": "/tmp/stock-consumer-per-pr-gates/link-check-0-cleanup.log",
+      "sha256": "fd76922a5103dba0b1389ea5297c09ca5f9e183304829867c5830b88b5d5a3a0"
+    },
+    "link-check-1-cleanup": {
+      "path": "/tmp/stock-consumer-per-pr-gates/link-check-1-cleanup.log",
+      "sha256": "fb12a3d870cba9a49fa1a07310bd6bc80ff3c4a2bef9ba81e0c115c4ce00769b"
+    },
+    "generated-StockD0MixedPlain": {
+      "path": "/tmp/stock-consumer-per-pr-gates/generated-StockD0MixedPlain.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generated-StockD0MixedCleanup": {
+      "path": "/tmp/stock-consumer-per-pr-gates/generated-StockD0MixedCleanup.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "source_inputs_sha256": "671aaa17432de710d14e376e6e2a524dad313d3f5d74c5bbb5ea29369482d468",
+  "harness_corrections": [
+    "Initial raw dump directory lacked bundle.json; corrected to frontend bin-check bundles",
+    "Plain-mode check of cleanup-built binary rejected the expected byte mismatch; both matched default binaries and actual plain/cleanup generated proofs pass"
+  ]
 }
