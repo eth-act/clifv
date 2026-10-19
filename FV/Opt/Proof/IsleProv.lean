@@ -171,6 +171,7 @@ local macro "exc_norm " h:ident : tactic => `(tactic| repeat' (first
 section
 variable {σ : Type} (G : EGraph σ) {Qv : ValueId → Prop} {QB : BlockCall → Prop}
 
+set_option maxHeartbeats 2000000 in
 theorem ctorPure_good {fn : String} {args : List Isle.Opt.V} {st : St σ} {v : Isle.Opt.V}
     (ha : ∀ a ∈ args, VQ Qv QB a) (h : ctorPure G fn args st = .ok (some v)) : VQ Qv QB v := by
   rcases args with _ | ⟨a, _ | ⟨b, _ | ⟨c, _ | ⟨d, _ | ⟨e, rest⟩⟩⟩⟩⟩ <;>
@@ -183,11 +184,263 @@ theorem ctorPure_good {fn : String} {args : List Isle.Opt.V} {st : St σ} {v : I
     all_goals (try dsimp only at h)
     all_goals exc_norm h
     all_goals first
-      | (subst h; simp_all [dcm, cc])
-      | (obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.1 h; simp_all [dcm, cc])
+      | exact vq_inst_toSkel ha
       | (subst h; exact vq_inst_toSkel (ha _ (by simp)))
-      | skip
+      | (subst h; simp_all [dcm, cc]; done)
+      | (obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.1 h; simp_all [cc]; done)
+      | (cases a <;> simp only [V.beq._sparseCasesOn_11, V.beq._sparseCasesOn_12, reduceCtorEq,
+          Except.ok.injEq, Option.some.injEq] at h <;> subst h <;>
+          simp_all [bcq_getD])
+
+theorem ctorFn_good {P : σ → Prop} {Q : σ → ValueId → Prop} (hM : MakeQ G.make P Q)
+    {fn : String} {args : List Isle.Opt.V} {st st' : St σ} {v : Isle.Opt.V} (hI : P st.inner)
+    (ha : ∀ a ∈ args, VQ (Q st.inner) QB a) (h : ctorFn G fn args st = .ok (some (v, st'))) :
+    P st'.inner ∧ QGrows Q st.inner st'.inner ∧ VQ (Q st'.inner) QB v := by
+  unfold ctorFn at h
+  split at h
+  · rename_i t d
+    simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    · rename_i ty _
+      simp only [pure, Except.pure, Except.ok.injEq, Option.some.injEq, Prod.mk.injEq] at h
+      obtain ⟨rfl, rfl⟩ := h
+      unfold makeInst
+      split
+      · rename_i i hi
+        have hops := toInst_good (ha d (by simp)) hi
+        obtain ⟨h1, h2, h3⟩ := hM st.inner i hI hops
+        exact ⟨h1, h2, .value _ h3⟩
+      · exact ⟨hI, fun _ h => h, .poison _⟩
+  · rename_i w
+    split at h <;> (simp only [pure, Except.pure, Except.ok.injEq, Option.some.injEq,
+      Prod.mk.injEq] at h; obtain ⟨rfl, rfl⟩ := h) <;>
+      exact ⟨hI, fun _ h => h, ha _ (by simp)⟩
+  · rename_i w
+    split at h <;> (simp only [pure, Except.pure, Except.ok.injEq, Option.some.injEq,
+      Prod.mk.injEq] at h; obtain ⟨rfl, rfl⟩ := h) <;>
+      exact ⟨hI, fun _ h => h, ha _ (by simp)⟩
+  · simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    · rename_i o ho
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      obtain ⟨w, hw, hwe⟩ := Option.map_eq_some_iff.1 h
+      cases hwe
+      exact ⟨hI, fun _ h => h, ctorPure_good G ha (by rw [ho, hw])⟩
+
+/-- The nodes `nodesOf` presents for a good value are good (their operands are in `Qv`). -/
+theorem nodesOf_good {st : St σ} {v : Isle.Opt.V} {ns : List (CTy × Isle.Opt.V)}
+    (hE : ∀ n, Qv n → ∀ i ∈ G.enodes st.inner n, ∀ y ∈ operands i, Qv y) (hv : VQ Qv QB v)
+    (h : nodesOf G st v = .ok ns) : ∀ p ∈ ns, VQ Qv QB p.2 := by
+  unfold nodesOf at h
+  split at h
+  · rename_i n
+    simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      intro p hp
+      obtain ⟨i, hi, hm⟩ := List.mem_filterMap.1 hp
+      obtain ⟨d, hd, rfl⟩ := Option.map_eq_some_iff.1 hm
+      exact ofInst_good (hE n (vq_value.1 hv) i hi) hd
+  · simp only [pure, Except.pure, Except.ok.injEq] at h
+    subst h; intro p hp; cases hp
+  · cases h
+
+theorem maybeUnary_good {st : St σ} {op : Nat} {v : Isle.Opt.V} {r : List (List Isle.Opt.V)}
+    (hE : ∀ n, Qv n → ∀ i ∈ G.enodes st.inner n, ∀ y ∈ operands i, Qv y) (hv : VQ Qv QB v)
+    (h : maybeUnary G st op v = .ok r) : ∀ l ∈ r, ∀ w ∈ l, VQ Qv QB w := by
+  unfold maybeUnary at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  · rename_i ns hns
+    have hg := nodesOf_good G hE hv hns
+    split at h
+    · split at h
+      · cases h
+      · simp only [pure, Except.pure, Except.ok.injEq] at h
+        subst h
+        simp only [forall_eq, List.mem_cons, List.not_mem_nil, or_false]
+        rintro w (rfl | rfl)
+        · exact .ty _
+        · exact hv
+    · simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      intro l hl w hw
+      obtain ⟨⟨t, d⟩, hp, hm⟩ := List.mem_filterMap.1 hl
+      have hd := hg _ hp
+      simp only at hm hd
+      split at hm
+      · rename_i x
+        split at hm
+        · cases hm
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+          rcases hw with rfl | rfl
+          · exact .ty _
+          · simp only [vq_data, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+              forall_eq] at hd
+            exact hd.2
+        · cases hm
+      · cases hm
+
+theorem extractMultiFn_good {fn : String} {st : St σ} {v : Isle.Opt.V} {r : List (List Isle.Opt.V)}
+    (hE : ∀ n, Qv n → ∀ i ∈ G.enodes st.inner n, ∀ y ∈ operands i, Qv y) (hv : VQ Qv QB v)
+    (h : extractMultiFn G fn v st = .ok r) : ∀ l ∈ r, ∀ w ∈ l, VQ Qv QB w := by
+  unfold extractMultiFn at h
+  split at h
+  · simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    · rename_i ns hns
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      intro l hl w hw
+      obtain ⟨p, hp, rfl⟩ := List.mem_map.1 hl
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl
+      · exact .ty _
+      · exact nodesOf_good G hE hv hns p hp
+  · simp only [bind, Except.bind] at h
+    split at h
+    · cases h
+    · rename_i ns hns
+      simp only [pure, Except.pure, Except.ok.injEq] at h
+      subst h
+      intro l hl w hw
+      obtain ⟨p, hp, rfl⟩ := List.mem_map.1 hl
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      subst hw
+      exact .pair _ _ (nodesOf_good G hE hv hns p hp)
+  · exact maybeUnary_good G hE hv h
+  · exact maybeUnary_good G hE hv h
+  · cases h
+
+set_option maxHeartbeats 1000000 in
+theorem extractFn_good {fn : String} {st : St σ} {v : Isle.Opt.V} {ws : List Isle.Opt.V}
+    (hv : VQ Qv QB v) (h : extractFn G fn v st = .ok (some ws)) : ∀ w ∈ ws, VQ Qv QB w := by
+  unfold extractFn at h
+  split at h
+  all_goals exc_norm h
+  all_goals first
+    | (subst h; simp_all; done)
+    | (obtain ⟨_, _, rfl⟩ := Option.map_eq_some_iff.1 h; simp_all; done)
+    | (subst h; intro w hw; simp at hw; subst hw; exact hv)
+    | (obtain ⟨d, hd, rfl⟩ := Option.map_eq_some_iff.1 h; intro w hw; simp at hw; subst hw;
+        exact ofSkel_good (vq_instSome.1 hv) hd)
+    | (subst h; cases hv; simp_all)
+
+theorem toExt_ok {α : Type} {r : Except String (Option α)} {a : α} (h : toExt r = .ok a) :
+    r = .ok (some a) := by
+  cases r with
+  | error e => cases h
+  | ok o =>
+    cases o with
+    | none => cases h
+    | some a' => cases h; rfl
 
 end
+
+/-! ## The instance -/
+
+theorem qgrows_preord {σ : Type} (Q : σ → ValueId → Prop) :
+    PreOrd (fun s s' : St σ => QGrows Q s.inner s'.inner) :=
+  ⟨fun _ _ h => h, fun _ _ _ h1 h2 x hx => h2 x (h1 x hx)⟩
+
+/-- **The embedding only passes values on**: "mentions only `Q` values and `QB` block calls" is
+a provenance invariant of `Isle.Opt.sem G` (`ProvMultiSem`), for a graph whose nodes keep
+`Q` (`EnodesIn`) and whose `make` keeps it (`MakeQ`). -/
+theorem provMultiSem {σ : Type} (G : EGraph σ) (P : σ → Prop) (Q : σ → ValueId → Prop)
+    (QB : BlockCall → Prop) (hE : EnodesIn G.enodes P Q) (hM : MakeQ G.make P Q) :
+    ProvMultiSem (fun s : St σ => P s.inner) (fun s s' => QGrows Q s.inner s'.inner)
+      (fun s v => VQ (Q s.inner) QB v) (sem G) where
+  mono _ _ _ hv hR := hv.mono hR
+  int _ _ _ := .int _
+  bool _ b := .bool b
+  prim _ ty n c h := by
+    simp only [sem] at h
+    split at h
+    · obtain ⟨t, -, rfl⟩ := Option.map_eq_some_iff.1 h; exact .ty t
+    · cases h
+  mkData _ ty k fs h := .data ty k fs h
+  unData _ ty v k fs hv h := by
+    simp only [sem] at h
+    split at h
+    · split at h
+      · cases h; exact vq_data.1 hv
+      · cases h
+    · cases h
+  extract t v s fs _ hv h := by
+    simp only [sem] at h
+    split at h
+    · exact extractFn_good G hv (toExt_ok h)
+    · cases h
+  ctor t args s v s' hI ha h := by
+    simp only [sem] at h
+    split at h
+    · exact ctorFn_good G hM hI ha (toExt_ok h)
+    · cases h
+  extractMulti t v s fss hI hv h := by
+    simp only [sem] at h
+    split at h
+    · split at h
+      · cases h; exact extractMultiFn_good G (fun n hn => hE s.inner n hI hn) hv ‹_›
+      · cases h
+    · cases h
+  ctorMulti _ _ _ _ _ _ _ h := by cases h
+
+/-! ## The rule sets -/
+
+/-- **The exported Cranelift `simplify` rules meet the provenance obligation**, with any rule
+allow-list. -/
+theorem simpRulesProv_isle (allow : RuleId → Bool) :
+    SimpRulesProv (fun enodes typeOf make st v => Isle.Opt.simplify enodes typeOf make st v allow) := by
+  intro σ enodes typeOf make P Q hE hM s v cands names s' hP hv h
+  unfold Isle.Opt.simplify at h
+  dsimp only at h
+  split at h
+  · cases h
+  · rename_i r hr
+    cases h
+    obtain ⟨hI, hR, hvals⟩ := runMultiTerm_prov (qgrows_preord Q)
+      (provMultiSem { enodes, typeOf, make } P Q (fun _ => True) hE hM) _ _ _ r hP
+      (by simpa using hv) hr
+    refine ⟨hI, hR, fun c hc => ?_⟩
+    simp only [List.mem_map, List.mem_filterMap] at hc
+    obtain ⟨⟨c', name⟩, ⟨⟨rid, w⟩, hw, hm⟩, rfl⟩ := hc
+    have hw' := hvals _ hw
+    cases w
+    case value n =>
+      dsimp only at hm hw'
+      split at hm
+      · cases hm; exact vq_value.1 hw'
+      · cases hm
+    all_goals cases hm
+
+/-- **The exported Cranelift `simplify_skeleton` rules meet the provenance obligation**, with
+any rule allow-list. -/
+theorem skelRulesProv_isle (allow : RuleId → Bool) :
+    SkelRulesProv (fun enodes typeOf make trapBlock st i =>
+      Isle.Opt.simplifySkeleton enodes typeOf make trapBlock st i allow) := by
+  intro σ enodes typeOf make trapBlock P Q QB hE hM s i cands names s' hP hi h
+  unfold Isle.Opt.simplifySkeleton at h
+  dsimp only at h
+  split at h
+  · cases h
+  · rename_i r hr
+    cases h
+    obtain ⟨hI, hR, hvals⟩ := runMultiTerm_prov (qgrows_preord Q)
+      (provMultiSem ⟨enodes, typeOf, make, trapBlock⟩ P Q QB hE hM) _ _ _ r hP
+      (by simpa using hi) hr
+    refine ⟨hI, hR, fun c hc => ?_⟩
+    simp only [List.mem_map, List.mem_filterMap] at hc
+    obtain ⟨⟨c', name⟩, ⟨⟨rid, w⟩, hw, hm⟩, rfl⟩ := hc
+    split at hm
+    · obtain ⟨ss, hss, hm⟩ := Option.map_eq_some_iff.1 hm
+      cases hm
+      exact skelSimp?_good (hvals _ hw) hss
+    · cases hm
 
 end Opt
