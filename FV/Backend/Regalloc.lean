@@ -308,9 +308,31 @@ def Reg.isVregInt : Reg → Bool
   | .vreg _ .int => true
   | _ => false
 
+/-- An f32/f64 vreg. -/
+def Reg.isVregFloat : Reg → Bool
+  | .vreg _ .float => true
+  | _ => false
+
+/-- The FP argument and return registers v0–v7 (AAPCS64: Cranelift's aarch64 `compute_arg_locs`
+places `f32`/`f64` parameters and returns in the next free `v` register; `Clif.sigArgLocs`,
+`retRegsC`). -/
+def Reg.isFpArgReg : Reg → Bool
+  | .v n => n < 8
+  | _ => false
+
+/-- A class-compatible `Args` pair: an int vreg in an argument register (as before the typed ABI),
+or an f32/f64 vreg in an FP argument register v0–v7. -/
+def argPairOk (p : Reg × Reg) : Bool :=
+  (p.1.isVregInt && p.2.isArgReg) || (p.1.isVregFloat && p.2.isFpArgReg)
+
+/-- A class-compatible `Rets` pair: an int vreg (as before the typed ABI), or an f32/f64 vreg
+returned in an FP return register v0–v7. -/
+def retPairOk (p : Reg × Reg) : Bool :=
+  p.1.isVregInt || (p.1.isVregFloat && p.2.isFpArgReg)
+
 /-- `ctlCheck` on instruction `k` of block `b`. -/
 def ctlInstOk (b k : Nat) : MInst → Bool
-  | .args ds => b == 0 && k == 0 && ds.all (fun p => p.1.isVregInt && p.2.isArgReg)
+  | .args ds => b == 0 && k == 0 && ds.all argPairOk
   | .condBr _ _ (.zero r _) | .condBr _ _ (.notZero r _) | .trapIf (.zero r _) _
   | .trapIf (.notZero r _) _ | .testBitAndBranch _ _ _ r _ | .loadExtNameGot r _
   | .loadExtNameNear r _ _ => r.isVregInt
@@ -319,7 +341,7 @@ def ctlInstOk (b k : Nat) : MInst → Bool
     a.isVregInt && o.isVregInt && d.isVregInt && s1.isVregInt && s2.isVregInt
   | .atomicCasLoop _ _ a e r d s1 =>
     a.isVregInt && e.isVregInt && r.isVregInt && d.isVregInt && s1.isVregInt
-  | .rets us => us.all (·.1.isVregInt)
+  | .rets us => us.all retPairOk
   | .tryCall _ ti => !ti.clobberAll
   | .elfTlsGetAddr _ rd tmp => rd.isVregInt && tmp.isVregInt
   | _ => true
@@ -331,9 +353,11 @@ instruction 0 of block 0, fixed to argument registers; before it, block 0 has on
 memory (the callee-saved saves), and no edge enters block 0. The register a `cbz`/`cbnz`/`tbz`
 tests is an int vreg (the VCode semantics reads it as the instruction's use), and so are the
 destination of a symbol-address load (its def), the index and temporaries of a jump-table
-sequence, the operands of the LL/SC loops (fixed to x24–x28, `E2E.RegLevelAtomic`), and every
-value of a `Rets` (so its `j`-th pair is its `j`-th operand: the returned values are the fixed
-uses in order, `E2E.RegLevelFrame`). -/
+sequence, and the operands of the LL/SC loops (fixed to x24–x28, `E2E.RegLevelAtomic`). Every
+value of a `Rets` is a vreg (so its `j`-th pair is its `j`-th operand: the returned values are the
+fixed uses in order, `E2E.RegLevelFrame`). `Args`/`Rets` pairs are class-compatible
+(`argPairOk`, `retPairOk`): an f32/f64 value is passed and returned in v0–v7 (S11e5 Stage C;
+before, `ctlCheckInt`, they had to be int vregs: `ctlCheck_of_int`). -/
 def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
   (vc.blocks.toList.zipIdx.all fun (vb, b) => vb.insts.toList.zipIdx.all fun (i, k) =>
     ctlInstOk b k i) &&
@@ -343,6 +367,45 @@ def ctlCheck (vc : VCode) (rf : RFunc) : Bool :=
   (match vc.cfg with
    | .ok (ss, _) => ss.all (·.all (· != 0))
    | .error _ => true)
+
+/-- `ctlInstOk` before the typed ABI (S11e5 Stage C): `Args`/`Rets` of int vregs only. -/
+def ctlInstOkInt (b k : Nat) : MInst → Bool
+  | .args ds => b == 0 && k == 0 && ds.all (fun p => p.1.isVregInt && p.2.isArgReg)
+  | .rets us => us.all (·.1.isVregInt)
+  | i => ctlInstOk b k i
+
+/-- `ctlCheck` before the typed ABI (S11e5 Stage C): `Args`/`Rets` of int vregs only. -/
+def ctlCheckInt (vc : VCode) (rf : RFunc) : Bool :=
+  (vc.blocks.toList.zipIdx.all fun (vb, b) => vb.insts.toList.zipIdx.all fun (i, k) =>
+    ctlInstOkInt b k i) &&
+  (let items := (rf.blocks[0]?.getD #[]).toList
+   (items.takeWhile RItem.isMove).all (!·.regDst) &&
+   ((items.dropWhile RItem.isMove).drop 1).all (!·.isOp0)) &&
+  (match vc.cfg with
+   | .ok (ss, _) => ss.all (·.all (· != 0))
+   | .error _ => true)
+
+/-- The widened check accepts every instruction the integer one accepted. -/
+theorem ctlInstOk_of_int {b k : Nat} {i : MInst} (h : ctlInstOkInt b k i = true) :
+    ctlInstOk b k i = true := by
+  cases i with
+  | args ds =>
+    simp only [ctlInstOkInt, ctlInstOk, Bool.and_eq_true, List.all_eq_true] at h ⊢
+    exact ⟨h.1, fun p hp => by simp [argPairOk, h.2 p hp]⟩
+  | rets us =>
+    simp only [ctlInstOkInt, ctlInstOk, List.all_eq_true] at h ⊢
+    exact fun p hp => by simp [retPairOk, h p hp]
+  | _ => exact h
+
+/-- **Old acceptance implies new acceptance**: `ctlCheck` accepts every function the integer
+control-form check accepted. -/
+theorem ctlCheck_of_int {vc : VCode} {rf : RFunc} (h : ctlCheckInt vc rf = true) :
+    ctlCheck vc rf = true := by
+  unfold ctlCheckInt at h
+  unfold ctlCheck
+  simp only [Bool.and_eq_true, List.all_eq_true] at h ⊢
+  obtain ⟨⟨h1, h2⟩, h3⟩ := h
+  refine ⟨⟨fun x hx y hy => ctlInstOk_of_int (h1 x hx y hy), h2⟩, h3⟩
 
 /-- Lower a checked allocated function to `AFunc`. -/
 def lowerRFunc (vc : VCode) (rf : RFunc) : Except String AFunc := do
