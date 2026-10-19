@@ -1,0 +1,35 @@
+{
+  "utc": "2026-10-17T14:34:03.823732+00:00",
+  "pr": 247,
+  "commit": "0ffe7e5830aa240bfb70e3b1f47f72197f922a9a",
+  "success": true,
+  "expected_and_actual_union_axioms_match": true,
+  "actual_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "root_count": 389,
+  "source_sha256": "d9b583eacaf5002f260147f446d0ffe3ff27c849b36f7780474e13fe2ef99b11",
+  "file_path": "/home/lee/clifv/.worktrees/stock-delivery-gates/DeliveryAudit.lean",
+  "theorem_name": "StockDeliveryAudit.pr247_bundle",
+  "raw_tool_result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+      }
+    ],
+    "structuredContent": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "isError": false
+  },
+  "view_and_canonical_manifests_reverified": true,
+  "MCP_calls_this_PR": 1
+}
