@@ -77,6 +77,37 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.VCodeThread.Witness.stepEvs_ldaxr
 #print axioms Concurrency.VCodeThread.Witness.cEvs_ldar
 #print axioms Concurrency.VCodeThread.Witness.ldar_vtstep
+-- event kinds, precise labels, private coherence, prepare, allocation, frame sets (T2h, #311)
+#print axioms Concurrency.VCodeEvents.instEvs_kinds
+#print axioms Concurrency.VCodeEvents.linesEvs_kinds
+#print axioms Concurrency.VCodeEvents.cEvs_kinds
+#print axioms Concurrency.VCodeEvents.cEvs_nil
+#print axioms Concurrency.ArmPrecise.stepEvs_setMem
+#print axioms Concurrency.ArmPrecise.exists_precise_step
+#print axioms Concurrency.ArmPrecise.runs_of_P
+#print axioms Concurrency.PrivCoh.privCoh_of_consistent
+#print axioms Concurrency.PrivCoh.realizes_of_threads_priv
+#print axioms Concurrency.PrivCoh.ownWrites_of_refines
+#print axioms Concurrency.PrepThread.refines_of_thin
+#print axioms Concurrency.PrepThread.prep_back
+#print axioms Concurrency.PrepThread.prep_refines
+#print axioms Concurrency.PrepThread.prep_refines_csem
+#print axioms Concurrency.AllocThread.alloc_back
+#print axioms Concurrency.AllocThread.alloc_refines
+#print axioms Concurrency.FrameMono.csem_mono
+#print axioms Concurrency.FrameMono.cEvs_mono
+#print axioms Concurrency.FrameMono.vtrun_mono
+#print axioms Concurrency.ThreadLayerWitness.instEvs_kinds_ldaxr
+#print axioms Concurrency.ThreadLayerWitness.cEvs_kinds_ldar
+#print axioms Concurrency.ThreadLayerWitness.cEvs_kinds_rmw
+#print axioms Concurrency.ThreadLayerWitness.cEvs_nil_add
+#print axioms Concurrency.ThreadLayerWitness.privCoh_own
+#print axioms Concurrency.ThreadLayerWitness.privCoh_own_read
+#print axioms Concurrency.ThreadLayerWitness.ret_threads_priv
+#print axioms Concurrency.ThreadLayerWitness.ret_ownWrites
+#print axioms Concurrency.ThreadLayerWitness.prep_ldar
+#print axioms Concurrency.ThreadLayerWitness.alloc_ldar
+#print axioms Concurrency.ThreadLayerWitness.precise_ldaxr
 -- the program level with fences and Rust orderings (T2f, #304)
 #print axioms Concurrency.ProgE2E.rmw_sc
 #print axioms Concurrency.ProgE2E.raceFreeProgF_of_raceFreeProg

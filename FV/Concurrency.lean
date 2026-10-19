@@ -15,7 +15,11 @@ program (`ProgE2E.program_correct_rust`); `Realizes` follows from per-thread ref
 interference (`ThreadRefine.realizes_of_threads`), the obligation of the backend layers (T2h);
 its first layer: precise footprints of every Arm instruction (`ArmInstFoot.footprint_exec_inst`)
 and of VCode under `csem` (`VCodeThread.ifoot_csem`), the VCode thread semantics
-(`VCodeThread.VTStep`).
+(`VCodeThread.VTStep`) and its event kinds (`VCodeEvents.cEvs_kinds`); precise Arm labels
+(`ArmPrecise.ATStepP`), private coherence from Armv8 coherence with per-thread private sets
+(`PrivCoh.privCoh_of_consistent`, `PrivCoh.realizes_of_threads_priv`), `prepare` and register
+allocation with interference (`PrepThread.prep_refines_csem`, `AllocThread.alloc_refines`), and
+per-statement frame sets (`FrameMono.vtrun_mono`).
 The fragment model is weaker than the whole `aarch64.cat` (`Armv8Full.consistent_frag`); LSE
 atomics map by the same table (`Lse.lse_maps`). Nothing here changes the Arm model of `FV/Arm`.
 -/
@@ -47,3 +51,10 @@ import FV.Concurrency.ThreadRefineWitness
 import FV.Concurrency.ArmInstFoot
 import FV.Concurrency.VCodeThread
 import FV.Concurrency.VCodeThreadWitness
+import FV.Concurrency.VCodeEvents
+import FV.Concurrency.ArmPrecise
+import FV.Concurrency.PrivCoh
+import FV.Concurrency.PrepThread
+import FV.Concurrency.AllocThread
+import FV.Concurrency.FrameMono
+import FV.Concurrency.ThreadLayerWitness
