@@ -313,6 +313,42 @@ shared with slice 5 as `IselCovT`), `ResClassOk` from it, and the typed kill-fre
 (`KillRunsHyp`/`TryDefsExact`/`killFreeB_lower` over `LowT`, which needs slice 5's typed
 `try_call` exclusion).
 
+**S11e5 Stage C, slice 7, composition (FloatsC7D: typed contracts, driver, Main/Final).** The
+typed obligations (`Proof/LowerContractT.lean`): `CtxT f ctx` (`CtxInvT`, `InstScopeT`, integer
+externs; `CtxInv.toCtxT`); statements on subset-E instructions of a typed context
+(`LowerRulesCorrectTI`, `MemRulesCorrectRTI`, `CallRulesCorrectT`, `IndRulesCorrectT`) and
+`NonEUnmatchableT` (on the other typed-scope instructions only the float roots match);
+terminators `LowerTermOkT` (a `return` puts value `x` in the next return register of its class
+`valClassOf ctx x`: `retRegsT`, `retRegsC_eq`), `LowerTermRulesCorrectT`, `BranchRulesCorrectT`,
+`TryRulesCorrectT`, `TryIndRulesCorrectT` and the four unmatchability Props; dispatchers
+`lowerInstOk_runTermT` (with the proven `LowerRulesCorrectT`/`MemRulesCorrectRT`/
+`LowerRulesCorrectFT` and `lower_nonroot_nomatchT`), `lowerTermOk_runTermT`, `branchOk_runTermT`,
+`tryOk_runTermT`, `tryIndOk_runTermT`; the driver's calls of one context `InstCallsT`/
+`TermCallsT`/`TryCallsT`/`TryIndCallsT` with `*_of_rules` and integer `.toT`. The typed driver
+(`Proof/LowerSimT.lean`): `MatchT` (at `posT`, tracked values typed: `TypedA`), `DriverHypT`,
+`stmt_stepT`, `term_stepT` (returns: `RetRegsOk`, the values' type classes, and the return
+types), `term_step_tryT`, `entryLoads_runT` (an `ldr s`/`ldr d` under `MemRefinesFP`),
+`entry_stepT` (class-aware `Args`, `argPairsT`), `sim_runT`, `driver_correctT`;
+`DriverHyp.toT`. Composition (`E2E/ComposeT.lean`): `IselSimT`, `ArmRefinesT` (returned value
+`j` held by the `j`-th return register of the values' classes: x0.. integers, v0.. floats),
+`backend_correct_of_layers_exT`/`T`; for integer returns `backend_correct_of_layers_ex_ofT`
+and `ArmRefinesT.toArmRefines`. Main/Final (`E2E/MainT.lean`, `E2E/FinalT.lean`,
+`E2E/FinalDirectT.lean`): `InSubsetT`, `CompiledT`/`CompiledAT` (`lowerCheckT`),
+`loweringObligationsT_of_check`, `iselSim_of_driverT`, `argsAtEntry_bodyT` (x0–x8/v0–v7),
+`iselSimT_of_rules`, `backend_correct_of_rules_exT`/`T`, and at `csem` (`memRefinesFP_csem`)
+`backend_correct_m4_exT`, `backend_correct_final_exT`, `backend_correct_finalT` under
+`TypedRules` (the 13 open typed families); integer specialization `backend_correct_final_ofT`
+(`backend_correct_final`'s premises and conclusion through the typed chain);
+`CompiledAT.of_lowerT`, `backend_correct_finalT_alloc` (slice 6's `allocChecked_allocResultT`,
+decided premises `arityOkB`, `tryArgClassOk`, `resClassOkB`, `ctlSpillB`, `formsCoveredB`,
+`killFreeB`). Witness `FVTest/E2E/FloatFinalT.lean`: `fW` (float `load`/`f64const`/`select`/
+`store`/`bitcast` between integer parameters and return) has `InSubsetT`, `CompiledT`,
+`CompiledAT` (also via `CompiledAT.of_lowerT` with the spill allocation) and `FormsCovered`;
+`fMv` (float parameters/return) has `InSubsetT`, but `lowerRFunc`'s `ctlCheck` rejects it until
+slice 5 widens `ctlInstOk`. Open: `TypedRules` (FloatsC7F: integer `lower` and memory roots;
+FloatsC5: control roots), the two-world entry `entry_step2T`, cleanup/world/link consumers;
+`functionET` still excludes float calls and the S11f arithmetic.
+
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
 (`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
