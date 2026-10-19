@@ -304,10 +304,14 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
 * **`try_call` is verified for normal returns** (agent/trycall-proof, agent/trycall-contract):
   a function whose `try_call`s call externs is inside `E2E.backend_correct_final` for the path
   where every callee returns normally (the call, its results, the jump to the normal-return
-  successor). The report labels it **`verified (normal returns; unwinding trusted)`** and counts
-  it among the verified functions, with a footnote giving how many there are. Nothing is
-  claimed about unwinding: the landing pads, the payload on the handler edges, the LSDA and the
-  `.eh_frame` rows are trusted. `try_call_indirect` is verified the same way
+  successor). **Since S10e (#232) its unwinding is verified too** when the unwinding theorem's
+  checks pass (`E2E.backend_correct_final_cleanup_unwind`: handler edges, payload, the frame
+  unwound by the emitted CFI; docs/contracts/e2e.md, "`try_call` (the normal return)"). The
+  report then counts it as plain **verified**. Otherwise it is labelled **`verified (normal
+  returns; unwinding trusted)`** (counted among the verified functions, with a footnote giving
+  how many there are). For such a function nothing is claimed about unwinding: the landing pads,
+  the payload on the handler edges, the LSDA and the `.eh_frame` rows are trusted.
+  `try_call_indirect` is verified the same way
   (agent/indirect-proof). A `try_call`'s callee may take stack-passed arguments
   (agent/last-unverified). Under `--opt-proven-only` `try_call` functions are verified too
   (`E2E.backend_correct_opt_exe`, S1; the earlier `E2E.backend_correct_opt_proven` covers
@@ -374,9 +378,18 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   theorem: the proof assumes the callee behaves as its CLIF (the callee contract), whether the
   callee is Lean-compiled, cg_clif-compiled or in std.
 * **verified (normal returns; unwinding trusted)** = verified as above for a function with
-  `try_call`s: the theorem covers the runs in which every callee of a `try_call` returns
-  normally (with the callee contract `CalleeTryOk` for its results); the unwinding path
-  (landing pads, LSDA, unwind tables) is trusted.
+  `try_call`s whose unwinding is not covered: the theorem covers the runs in which every callee
+  of a `try_call` returns normally (with the callee contract `CalleeTryOk` for its results); the
+  unwinding path (landing pads, LSDA, unwind tables) is trusted. A `try_call` function whose
+  compiled objects pass the unwinding theorem's checks (`unwCheck`, `savedCheck`, `lastCallsOk`,
+  `padsNonzeroB`; S10e) is reported **verified**: `E2E.backend_correct_final_cleanup_unwind`
+  covers its exceptional edges too (a caught exception reaches the handler with the payload, an
+  uncaught one returns to the caller with the exception object and the caller's frame as the
+  ABI requires), with the Itanium unwinder/personality model and the decoding of the emitted
+  tables trusted. `lean-backend` prints `compiled, verified (try_call: unwinding by …)` for it,
+  and for a function failing a check the old label with `unwinding check failed: <check>`. An
+  `i128`-legalised `try_call` function is covered by `E2E.backend_correct_legal_unwind` (S10f)
+  when, in addition, the handler-edge check `Opt.Legal.exnOk` accepts its legalisation.
 * **Non-vacuity.** Every top-level theorem has a witness that its contract premises can all
   hold for realistic callees (docs/contracts/e2e.md, "Non-vacuity";
   `E2E.backend_correct_final_witness`, `E2E.backend_correct_final_id`, and for functions with
@@ -670,6 +683,33 @@ compiled); of them `verified (normal returns; unwinding trusted)`: fv-demo 253, 
 vendor 886, deps 3144. Between agent/callee-fix and agent/trycall-contract, with the `try_call`
 functions reported unverified: fv-demo 1087, survey 2681, vendor 3641, deps 17677 verified.
 `examples/compare.sh` SAME for all three (fv-demo 19, survey 53, vendor 189 test outcomes).
+
+After S10e (#232, the unwinding theorem, lean-backend's unwinding checks; debug, panic=unwind,
+`cargo fv test --no-run`): fv-demo 1346 verified of 1352 (6 fallback: skip), survey 3179 of
+3179. Of them `verified (normal returns; unwinding trusted)`: fv-demo 254 → 0, survey 498 → 5
+(the `try_call` functions inside `E2E.backend_correct_final_cleanup_unwind` are now plain
+verified). The 5 left are survey's `i128`-legalised g_u128 `values` test functions (`arith#1`,
+`bytes_bits#1`, `compare#1`, `division#1`, `shifts#1`): no unwinding theorem composes the
+`i128` legalisation yet. No function failed an unwinding check.
+
+After S10f's `i128` unwinding theorem (#233, `E2E.backend_correct_legal_unwind`, lean-backend
+runs `Opt.Legal.exnOk`; debug, panic=unwind, `cargo fv test --no-run`): survey 3179 of 3179
+verified, `verified (normal returns; unwinding trusted)` 5 → 0.
+
+After S10f's mid-end unwinding theorem (#233, `E2E.backend_correct_opt_exe_cleanup_unwind`;
+lean-backend recomputes `Opt.optimizeExe` of the source function; debug, panic=unwind,
+`cargo fv test --no-run --opt-proven-only`): fv-demo 1346 verified of 1352 (6 fallback: skip),
+`verified (normal returns; unwinding trusted)` 246 → 0; survey 3179 of 3179 verified, 456 → 0
+(the 5 `i128`-legalised `g_u128` `values` functions by `E2E.backend_correct_legal_opt_unwind`).
+
+With `--lean-link` (S10f), `lake exe lean-link` also checks the executable's unwind tables
+(`Link.DeadCleanup.unwOkB`: libunwind's `.eh_frame_hdr` search finds, for every Lean-compiled
+function, an FDE and LSDA decoding to the theorem's tables; the per-function unwinding checks)
+and then adds `exceptional edges: Link.DeadCleanup.compileExe_correct_unwind,
+Link.DeadCleanup.compileExe_correct_unwind_peak` to the `coverage:` line (otherwise it prints
+`exceptional edges not covered (unwOkB: …)` and writes the file as before). fv-demo's two
+executables pass it; it adds roughly 0.3–2 s per executable (it recomputes the pipeline's
+results).
 
 With the shipped cg_clif (no landing pads; before the external-name tables, #221, `cargo fv`
 could still use it) or `--panic-abort` there are no landing-pad fallbacks:

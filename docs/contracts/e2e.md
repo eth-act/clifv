@@ -184,10 +184,150 @@ the `retN`/value arguments).
   callee leaves in the result registers (the first `ti.rets` defs) the values `csem` gives them.
   `CallsRefine` has a third clause for the `tryCall` (proven for `csem` from `XCallsOk`,
   `callsRefine_csem`), which continues at successor `ti.handlers.length` (the normal return).
-* **Not claimed**: nothing about unwinding. The landing pads (the handler edge blocks and their
-  code), the exception payload on the handler edges, the call-site table and the LSDA
-  (`callSites`, `.gcc_except_table`), the `.eh_frame` rows and the personality routine are
-  trusted and outside every theorem.
+* **Not claimed by `backend_correct_final`**: nothing about unwinding. The unwinding theorem
+  below covers it; for functions outside that theorem the landing pads, the exception payload
+  on the handler edges, the call-site table/LSDA (`callSites`, `.gcc_except_table`), the
+  `.eh_frame` rows and the personality routine stay trusted.
+* **The exceptional edges (S10e, #232)**: `E2E.backend_correct_final_cleanup_unwind` (the
+  shipped dead-cleanup chain; `E2E.backend_correct_final_unwind` without it,
+  `FV/E2E/FinalUnwind.lean`) concludes `ArmRefinesU … (Unw.ArmStepU X H U T fa) s
+  (Clif.runLoopX env p fuel cs.toX)`. An exception caught by a handler reaches the landing pad
+  with the payload (x0 = object, x1 = 0). An uncaught one (`unwound e cm`) is an Arm return to
+  the caller (`ArmRet`: return address, entry sp, callee-saved registers) with the object in x0
+  (`ExnRel`) and the memory agreeing. The premises beyond `backend_correct_final`'s:
+  * the validator `lowerCheckU` (`lowerCheck` and `unwCheck`: the handler edges);
+  * the externs' exceptional results `XRaiseOk`/`XRaiseIndOk` and their exclusivity with normal
+    returns `XRaiseExcl`;
+  * the raising callees' contract `CalleeUnwOkG` (a raising callee keeps sp, the frame and the
+    callee-saved registers; the unwinder restored our call's state);
+  * the tables the unwinder reads, taken as the emitted ones: `T.lsda` from `callSites`, the CIE
+    `cieInsns` and the FDE rows `unwindRows` (S10f discharges these from the linked bytes);
+  * the decidable checks `savedCheck` (the callee-save slots hold the entry values at every
+    call), `lastCallsOk` (the call-site bridge), `padsNonzeroB` (landing pads at non-zero
+    offsets);
+  * `TrapsExplicitX` for the runs with unwinding.
+
+  Trusted by design, like std: the model of the Itanium unwinder and of the personality routine
+  (`FV/Unw/Model.lean`: `Unw.unwindAt`, `Unw.personality`, `Unw.restore`), and the decoding of
+  the emitted tables as that model reads them. With `XRaise.none`/`Unw.UnwHooks.none` the theorem
+  specialises to the normal-return shape (`E2E.backend_correct_final_of_unwind`). `lean-backend`
+  labels a function whose checks pass `compiled, verified`. A function failing a check keeps
+  `compiled, verified for normal returns (…; unwinding check failed: <check>)`. So does a
+  function compiled with `--opt` with unproven rule sets (no unwinding theorem composes them),
+  or an `i128`-legalised function compiled without the dead cleanup.
+* **`i128` legalisation with unwinding (S10f, #233)**: `E2E.backend_correct_legal_unwind`
+  (`FV/E2E/LegalUnwind.lean`) composes `Opt.Legal.X.check_refinesX` (`FV/Opt/Proof/LegalSimX.lean`:
+  `Opt.Legal.check` plus the handler-edge check `Opt.Legal.exnOk` (`FV/Opt/LegalExn.lean`) make
+  the legalisation `g` refine `f`'s run with unwinding: returns by the ABI groups, traps, and
+  exceptions leaving `f` with the same memory) with `backend_correct_final_cleanup_unwind` at
+  `g`, under the trusted Rust environment with unwinding `Clif.Rust.xenvWith raises obj`
+  (`FV/Opt/Proof/LegalRustX.lean`, contracts proven: `xenvWith_envOkX`; `panic=unwind` is
+  `Clif.Rust.xenv`). Conclusion `ArmRefinesLegalU` (returns of the expanded results, traps,
+  `ArmRefinesU`'s exception clause). Premises: `backend_correct_final_cleanup_unwind`'s at `g`,
+  `check`/`exnOk`, the program conditions `hext`/`hext'`/`hind` (as `backend_correct_legal`),
+  the ABI-split arguments `hexp` and the two `ClifEntry`s, `TrapsExplicitX` of both runs;
+  `backend_correct_legal_unwind_env` takes any environment with `Opt.Legal.X.EnvOkX`.
+  `lean-backend` labels an accepted legalised `try_call` function `compiled, verified (try_call:
+  unwinding by backend_correct_legal_unwind; …)` when its legalisation, recomputed from the
+  source function, is the compiled one, `check` and `exnOk` accept it and the unwinding checks
+  pass (dead cleanup only). Non-vacuity (`FV/E2E/LegalUnwindWitness.lean`):
+  `Clif.Rust.LegalXWitness.refines` (`check_refinesX` on `%w(i128)`, a `try_call` whose callee
+  `%throw` raises and whose `tag0` handler catches, `caught`; every premise discharged) and
+  `E2E.LegalUnwindWitness.legal_unwind_applies` (`backend_correct_legal_unwind` on the shipped
+  pipeline's output for the legalised `%w`, receipt `checks_true`; open as in
+  `DeadCleanupUnwindWitness.final_applies`: `hC`/`hCT`, `hsym`, the entry premises).
+* **The mid-end with unwinding (S10f, #233)**: `E2E.backend_correct_opt_exe_cleanup_unwind`
+  (`FV/E2E/OptUnwind.lean`; without the dead cleanup `backend_correct_opt_exe_unwind`): the Arm
+  code compiled from `Opt.optimizeExe f cfg` (proven rule sets, `--opt-proven-only`), run on the
+  machine with unwinding, refines the run with unwinding of the *source* program from `f`'s entry
+  (`ArmRefinesU`). It composes `E2E.optExe_entryX` (the optimised program's runs with unwinding
+  refine the source's: `Opt.optimizeProgramExe_refinesU`, `FV/Opt/Proof/PipelineU.lean`, from
+  `Opt.runLoopX_refinesU`, `FV/Opt/Proof/SemSimU.lean`) with
+  `backend_correct_final_cleanup_unwind` at the optimised function. The mid-end's simulations
+  cover the handler edges of `try_call` (`Opt.HCont`: the renamed exception table catches the
+  same exceptions and resumes at related handler blocks, the payload bound at each side's fresh
+  value; `Opt.FunSimU`; per stage `removeUnreachable_simU`, `simpOk_simU`, `editOk_simU`).
+  Premises: `backend_correct_opt_exe_cleanup`'s with the environment with unwinding (externs keep
+  the link-time symbols when they return and when they unwind, `Opt.EnvKeepsSymbolsX`; proven for
+  the trusted Rust environment, `E2E.xenvWith_keepsSymbolsX`), and
+  `backend_correct_final_cleanup_unwind`'s unwinding premises at the optimised function;
+  `TrapsExplicitX` of the optimised program's run. `lean-backend --opt --opt-proven-only` labels
+  a `try_call` function `compiled, verified (try_call: unwinding by
+  backend_correct_opt_exe_cleanup_unwind; …)` when its compiled form is `Opt.optimizeExe` of its
+  source function (recomputed) and the unwinding checks pass on the optimised function.
+  Legalised then optimised: `E2E.backend_correct_legal_opt_unwind` (`FV/E2E/LegalOptUnwind.lean`;
+  `_env` for any environment with `Opt.Legal.X.EnvOkX` and `Opt.EnvKeepsSymbolsX`), labelled
+  `… unwinding by backend_correct_legal_opt_unwind` when the recomputed legalisation (accepted by
+  `check` and `exnOk`) optimises to the compiled function. Non-vacuity
+  (`FV/E2E/OptUnwindWitness.lean`): `E2E.OptUnwindWitness.refines` (`optExe_entryX` on
+  `%w(i64)`: `v2 = v0 + 0; try_call %throw(v2)`, rewritten by the mid-end to
+  `try_call %throw(v0)`; `%throw` raises, the `tag0` handler catches; every premise discharged),
+  `opt_unwind_applies`, `opt_unwind_applies_legacy` and
+  `E2E.LegalOptUnwindWitness.legal_opt_unwind_applies` (the theorems on the shipped pipeline's
+  output; open as in `LegalUnwindWitness.legal_unwind_applies`: `hC`/`hCT`, `hsym`, the entry
+  premises).
+* **Linked programs with unwinding (S10f, #233)**: whole-program CLIF runs with unwinding are
+  per-function runs under linked environments (`Clif.runLoopX_link{,R,N,D}`,
+  `FV/Clif/LinkClifX*.lean`); per function with the world and non-interference
+  `E2E.backend_correct_world_pipelineU`/`backend_correct_world_ni_pipelineU`
+  (`FV/E2E/WorldUnwind*.lean`, `PairRaise.lean`, `PairDriverU.lean`, `FV/Backend/Proof/LowerSimUW.lean`).
+  `LinkSysU` (`FV/E2E/LinkArmU.lean`) is `LinkSys` plus the base callees' raising hook `Ub`,
+  their CLIF environment `envX` and Arm-level exceptional results `XRb`; `LinkSysU.OkU` (the
+  base contract: `CalleeUnwOkG` per base call site with the GOT guard, `baseNoRaise`, places and
+  allocations kept by raising externs, the per-function unwinding checks and tables) and
+  `OkUNI` (non-interference of base raises, vacuous when no base callee raises). The depth
+  induction `LinkSysU.thmUN` (`LinkArmUIndNI.lean`; `thmU` with `¬ NeedNI`) gives
+  **`E2E.backend_correct_program_budgetU'`** / **`_peakU'`** (`FV/E2E/LinkArmUProgNI.lean`):
+  the linked machine with unwinding `L.machU M f` refines `Clif.runLoopX L.envX L.P (M+1)
+  cs.toX` (`ArmRefinesU`: returns, traps, and an exception leaving `f` with the object in x0 and
+  the caller's frame restored). Witnesses: `LinkArmUProgWitness.budgetU_applies` (a base callee
+  raises through a program function; `run_unwinds`), `LinkArmUProgNIWitness.budgetU'_applies`
+  (on `NonVacuityLink`'s program, which has `NeedNI`); the entry premises stay open there.
+* **Executables with unwinding (S10f, #233)**: `Link.DeadCleanup.compileExeU S file0 = .ok file`
+  is `compileExe` plus `unwOkB S file` (`FV/Link/ExeUCompile.lean`): `Link.EhCheck.ehOkR`
+  (`FV/Link/EhCheck.lean`: through the trusted lookup model `FV/Unw/EhFrameHdr.lean`, the
+  executable's `.eh_frame_hdr` search finds, for every pc of every Lean-compiled function, an
+  FDE whose CFI and LSDA decode to exactly the tables the theorem uses; `ehOkR_sound`) and
+  `unwFnsB` (the per-function unwinding checks, `unwFnsB_sound`).
+  **`Link.DeadCleanup.compileExe_correct_unwind`** / **`_peak`** (`FV/Link/ExeUnwind.lean`):
+  under `compileExeU` and the base premises (`BaseU`, `OkUNI`), the file's tables are the
+  compiled functions' (`compileExeU_tables`) and `backend_correct_program_budgetU'`/`peakU'`
+  hold for the linked system of the executable. `lean-link` evaluates `unwOkB` (with dead
+  cleanup, not `--opt`): when it holds the `coverage:` line adds `exceptional edges:
+  Link.DeadCleanup.compileExe_correct_unwind, …_peak`, otherwise it prints `exceptional edges
+  not covered (unwOkB: <reason>)` and still writes the file. Bundles:
+  `Front.bundle_correct_raw_unwind` (`FV/Front/RawExeUnwind.lean`: `bundle_correct_raw`'s
+  normal edges for cg_clif's raw program and the exceptional edges for the compiled program) and,
+  for `i128`-free bundles, `bundle_correct_raw_unwind_ren` (the exceptional edges stated on the
+  raw program, by `Clif.runLoopX_ren`, `FV/Front/RenameRunX.lean`). Witnesses:
+  `Link.EhCheck.Witness.unw_call`, `Link.DeadCleanup.UnwindWitness.unwind_applies`,
+  `Front.RenameRunXWitness.renamed_unwinds`, crate-proofs
+  `Crates.FrontendBundleUnwindWitness.bundle_unwind_witness` (g_u128's bundle). With `i128`:
+  **`Front.bundle_correct_raw_unwind_src`** (`FV/Front/RawExeUnwindSrc.lean`):
+  `bundle_correct_raw_unwind_ren` without its `i128`-free premise. A return, a trap (of a source
+  run without load/store traps) or an exception leaving `f` of cg_clif's run with unwinding is
+  refined by the linked machine with unwinding of the compiled `legalize (f.rename σ.fwd)`
+  entered with the ABI-split arguments (`MachAt`): the results split by `f`'s return groups, the
+  same trap, the same exception, the memories renamed. It composes `Front.raw_legal_unwind` (the
+  CLIF half: `Clif.runLoopX_ren` and the program-level legalisation with unwinding) with
+  `compileExe_correct_unwind`. Premises beyond `compileExe_correct_unwind`'s: `SrcScopeB`; where
+  a function mentions `i128`, the linked environment's `HelperOk`/`ExtLegal`/`EnvKeepsBounded`
+  and `ExtLegalX`/`EnvKeepsAllocsX`/`ExnArityOk` (`Clif.Rust.xenvWith` has them); `Opt.Legal.exnOk`
+  of every legalised function; the source entry with the compiled entry's slots and renamed
+  memory; the source run's memories below `2^64`; for traps, no load/store trap on the source
+  run. *The program-level legalisation with unwinding* (`FV/E2E/LegalProgX.lean`,
+  **`E2E.LegalProgram.legalProg_refinesX`**): S3's `legalProg_refines` for `Clif.runLoopX` on
+  `ProgCtxX` (`ProgCtx` plus the unwinding contracts where a function mentions `i128`, `IndScopeX`
+  with indirect calls, `exnOk` of every legalisation) from good states (`GoodFromX`); proof: S3's
+  fuel induction, the source run per function under the guarded linked environment
+  (`Clif.runLoopX_linkR`), each activation by `Opt.Legal.X.check_refinesX2`
+  (`FV/Opt/Proof/LegalSimX2.lean`, two environments) or `identX_run`, the target unlinked by
+  `Clif.unlinkX_run` (`FV/E2E/LinkClifRevX.lean`, the converse of `runLoopX_linkR`). Witnesses:
+  `E2E.LegalProgram.XWitness.caught_refines`/`unwound_refines` (`w(i128)` `try_call`s
+  `mid(i128)`, whose call of `%throw` raises; every premise discharged by `decide +kernel`),
+  `Front.RawExeUnwindSrcWitness.raw_caught`/`raw_unwound`. Not covered: an executable-bytes
+  machine with unwinding (the theorem is about the linked machine whose tables are proven to be
+  the file's).
 * **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
   normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
   `normArgReg`, `retN` indices below the callee's return count), and checks that a `tryCall`
