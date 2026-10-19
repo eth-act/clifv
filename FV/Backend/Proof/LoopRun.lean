@@ -270,7 +270,7 @@ Unification is reducible-only, so a mismatch fails fast. -/
 syntax "lsw_tac" : tactic
 macro_rules
   | `(tactic| lsw_tac) => `(tactic| repeat (first
-    | assumption
+    | (with_reducible assumption)
     | (with_reducible refine SameWorld.write_mem_bytes' rfl rfl ?_)
     | (with_reducible refine SameWorld.w_left ?_ ?_; · simp [Masked])
     | (with_reducible refine SameWorld.w_right ?_ ?_; · simp [Masked])
