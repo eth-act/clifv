@@ -14,7 +14,8 @@ float-movement opcode, `select` excluded at the `select` root) with `failsArgsTG
 
 The integer `store` roots (`rule_lower_2705`/`2709`/`2713`/`2717`) dispatch on the stored value's
 `value_type`, not on the store's type: on a float `store` they are excluded by the CLIF
-verifier's store typing (`StoreTyped`: the stored value of a float store has a float type).
+verifier's store typing (`StoreTyped`, `LowerContractT.lean`: the stored value of a float
+store has a float type; decided per function by `Compile.storeTypedB`).
 -/
 
 namespace Backend.Proof
@@ -22,11 +23,6 @@ namespace Backend.Proof
 open Backend Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 20000
-
-/-- The CLIF verifier's typing of a float `store`: the stored value has a float type. -/
-def StoreTyped (ctx : Ctx) (i : Clif.Inst) : Prop :=
-  ∀ op ty fl x q off, i = .store op ty fl x q off → ty.isFloat = true →
-    ∀ t, ctx.valueType? x = some t → t ∈ fTys
 
 /-- Opcodes of the non-E typed-scope instructions with an integer or no result. -/
 def neIOps : List Nat := [VIdx.Opcode.Store, VIdx.Opcode.Bitcast]
@@ -318,24 +314,8 @@ theorem intStore_nonE {r : Rule} (hr : r ∈ program.rulesOf TId.lower) (hs : in
 
 /-! ## The theorem -/
 
-/-- **`NonEUnmatchableT` with the store typing** (`StoreTyped`, the premise right after the
-`select` one): on a non-E instruction of a typed context, no closure root of `lower` other than
-the float roots (and the `select` root on a float `select`) matches. -/
-def NonEUnmatchableTS (p : Program) : Prop :=
-  ∀ r ∈ p.rulesOf TId.lower, closureRoot r = true → floatMoveRootRule r = false →
-    floatMemRootRule r = false → floatArithRootRule r = false →
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxT f ctx →
-  ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
-    info.clif = some inst → Compile.instE inst = false → (r.id = 971 → ¬ FloatSelect inst) →
-    StoreTyped ctx inst →
-  ∀ (cfg : Config) (m : Nat) (st : LState) (tr : Array RuleId) (env' : Interp.Env V)
-    (s1 : LState × Array RuleId),
-    (∀ pre post, p.rulesOf TId.lower = pre ++ r :: post → ∀ r' ∈ pre, ∃ m', 1000 ≤ m' ∧
-      ∃ s', (matchRule p (sem ctx) cfg m' r' [.inst ii]).run (st, tr) = .ok (none, s')) →
-    (matchRule p (sem ctx) cfg m r [.inst ii]).run (st, tr) ≠ .ok (some env', s1)
-
 /-- **The integer roots never match the non-E instructions of a typed context.** -/
-theorem nonEUnmatchableTS_program : NonEUnmatchableTS program := by
+theorem nonEUnmatchableT_program : NonEUnmatchableT program := by
   intro r hr hroot hfm hmm hfa f ctx hctx ii info inst hi hc hE hsel hst cfg m st tr env' s1 _
     hmatch
   have hok := List.all_eq_true.mp nonEOk_program r hr

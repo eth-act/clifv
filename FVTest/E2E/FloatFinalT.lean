@@ -72,6 +72,20 @@ def fbOf (f : Clif.Function) : FnBin :=
 #guard (vcOf fW).blocks.any fun vb => vb.insts.any (· matches .fpuLoad ..)
 #guard (lowerRFunc (vcpOf fW) (rfOf fW)).toBool && (emitFunc 0 (afOf fW)).toBool &&
   (faOf fW).layout.toBool
+-- the float stores of `fW` and `fMv` store float values (`InSubsetT.storeTyped`)
+#guard Compile.storeTypedB fW && Compile.storeTypedB fMv
+
+/-- `fW` with its float `store` storing the integer parameter `v0`: the CLIF verifier rejects
+it, and so does `Compile.storeTypedB`. -/
+def fBadStore : Clif.Function :=
+  { fW with blocks := fW.blocks.map fun b => { b with body := b.body.map fun s =>
+      match s.inst with
+      | .store op ty fl _ q off => { s with inst := .store op ty fl 0 q off }
+      | _ => s } }
+
+#guard fBadStore.blocks.any fun b => b.body.any fun s => s.inst matches .store _ .f64 _ 0 _ _
+#guard !Compile.storeTypedB fBadStore
+
 -- `fMv` passes the validators and `checkAlloc`, not yet `lowerRFunc`'s `ctlCheck` (slice 5)
 #guard lowerCheckT fMv (vcOf fMv) && (checkAlloc (vcpOf fMv) (rfOf fMv)).isOk &&
   !(lowerRFunc (vcpOf fMv) (rfOf fMv)).toBool && !ctlCheck (vcpOf fMv) (rfOf fMv)
@@ -126,7 +140,7 @@ theorem inSubsetT_w (p : Clif.Program) : InSubsetT p fW := by
   have hind : _root_.Backend.indSigs fW = [] := by native_decide
   simp only [Bool.and_eq_true, List.all_eq_true] at habi
   refine ⟨by native_decide, fun B hB st hst fn args hi _ _ => ?_, fun B hB fn args et ht _ _ => ?_,
-    ⟨habi.1, fun e he => habi.2 e he⟩, by rw [hind]; simp⟩
+    ⟨habi.1, fun e he => habi.2 e he⟩, by rw [hind]; simp, by native_decide⟩
   · have := List.all_eq_true.mp (List.all_eq_true.mp hnc B hB) st hst
     rw [hi] at this; cases this
   · have := List.all_eq_true.mp hnt B hB
@@ -161,7 +175,7 @@ theorem inSubsetT_mv (p : Clif.Program) : InSubsetT p fMv := by
   have hind : _root_.Backend.indSigs fMv = [] := by native_decide
   simp only [Bool.and_eq_true, List.all_eq_true] at habi
   refine ⟨functionET_mv, fun B hB st hst fn args hi _ _ => ?_, fun B hB fn args et ht _ _ => ?_,
-    ⟨habi.1, fun e he => habi.2 e he⟩, by rw [hind]; simp⟩
+    ⟨habi.1, fun e he => habi.2 e he⟩, by rw [hind]; simp, by native_decide⟩
   · have := List.all_eq_true.mp (List.all_eq_true.mp hnc B hB) st hst
     rw [hi] at this; cases this
   · have := List.all_eq_true.mp hnt B hB
