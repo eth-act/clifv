@@ -1,0 +1,12 @@
+{
+  "mergeCommit": {
+    "oid": "5a3ad2bb0ab37d7f97d96b5406541682b3b5352e"
+  },
+  "mergedAt": "2026-10-17T14:38:39Z",
+  "state": "MERGED",
+  "validated_head": "0ffe7e5830aa240bfb70e3b1f47f72197f922a9a",
+  "validated_tree": "51e0fa5b18690e406984d4b6eca7854dd2007021",
+  "landed_tree_equals_validated_tree": true,
+  "production": "legacy",
+  "full_goal_complete": false
+}
