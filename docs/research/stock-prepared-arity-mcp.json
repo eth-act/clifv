@@ -1,0 +1,69 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_routed_edge_arity' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.Prep.rpo_selected_reachable' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_all_reachable' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_edge_arity' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepare_edge_arity' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_spillArgMovesAt_edge_runs' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PreparedArityWitness.generic_prepared_arity_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PreparedArityWitness.stock_prepared_cyclic_copy_arity_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PreparedArityWitness.stock_prepared_try_arity_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 14,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}
