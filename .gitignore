@@ -7,3 +7,5 @@
 /rust/crates/isle2lean/oracle/target/
 /scripts/__pycache__/
 /tools/prejit-export/target/
+# Shared build-cache symlink (directory-only target/ does not match symlinks).
+/tools/prejit-export/target

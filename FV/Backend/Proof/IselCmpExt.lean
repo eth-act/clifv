@@ -172,7 +172,10 @@ theorem extHolds_extend (sg : Bool) {ty : Clif.Ty} (bits : BitVec ty.width) (hw 
   simp only [VHolds] at hx
   refine ⟨?_, fun _ => ?_⟩ <;> simp only [VHolds] <;> subst hx <;>
     cases ty <;> simp [Clif.Ty.width] at hw hlt ⊢ <;> rcases hb with rfl | rfl <;>
-    simp at hlt <;> cases sg <;> simp only [lo64, ofX, Bool.false_eq_true, ↓reduceIte] <;> bv_decide
+    simp at hlt <;> cases sg <;> simp only [lo64, ofX, Bool.false_eq_true, ↓reduceIte] <;>
+    apply BitVec.eq_of_getLsbD_eq <;> intro i hi <;>
+    simp [BitVec.getLsbD_setWidth, BitVec.getLsbD_signExtend, BitVec.msb_eq_getLsbD_last] <;>
+    simp [hi, show i < 32 by omega, show i < 64 by omega]
 
 theorem ofClif_bits (ty : Clif.Ty) : (CTy.ofClif ty).bits = ty.width := by cases ty <;> rfl
 
@@ -222,7 +225,9 @@ theorem ExtOut.sem {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F isem) {
     · cases vty <;> simp [CTy.ofClif] at h32'
       subst hv
       simp only [lo64, Clif.Ty.width, Bool.false_eq_true, ↓reduceIte]
-      cases sg <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> bv_decide
+      cases sg <;> simp only [Bool.false_eq_true, ↓reduceIte] <;>
+        apply BitVec.eq_of_getLsbD_eq <;> intro i hi <;>
+        simp [hi]
   · have hf : (s.fresh .int).1 = .vreg s.nextVreg .int := rfl
     rw [hf]
     refine ⟨s.nextVreg, _, rfl, Frag.fresh_emit s (by rw [vdefs_extend']; simp), by

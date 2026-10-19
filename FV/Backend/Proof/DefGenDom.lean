@@ -181,19 +181,24 @@ def res (e : AEnv) : Nat → A → A
   | n + 1, .aft [] a => res e n a
   | _, a => a
 
-/-- `a` is clean (root allowed iff `b`, real registers iff `z`). -/
+/-- `p` holds for every element (structural recursion, so the kernel evaluates it). -/
+def allA (p : A → Bool) : List A → Bool
+  | [] => true
+  | a :: as => p a && allA p as
+
+/-- `a` is clean (root allowed iff `b`, real registers iff `z`). Structural in the fuel: the
+list case calls `fitsCl` at the smaller fuel through `allA`. -/
 def fitsCl (e : AEnv) : Nat → Bool → Bool → A → Bool
   | 0, _, _, _ => false
   | n + 1, b, z, a => match res e n a with
     | .cl b' z' => (!b' || b) && (!z' || z)
-    | .data _ _ fs => fitsClL e n b z fs
-    | .regs as => fitsClL e n b z as
+    | .data _ _ fs => allA (fitsCl e n b z) fs
+    | .regs as => allA (fitsCl e n b z) as
     | _ => false
-where
-  /-- `fitsCl` of a list. -/
-  fitsClL (e : AEnv) (n : Nat) (b z : Bool) : List A → Bool
-    | [] => true
-    | a :: as => fitsCl e n b z a && fitsClL e n b z as
+
+/-- `fitsCl` of a list. -/
+def fitsCl.fitsClL (e : AEnv) (n : Nat) (b z : Bool) (as : List A) : Bool :=
+  allA (fitsCl e n b z) as
 
 /-- `a` is a pending or defined register value. -/
 def fitsWr (e : AEnv) (n : Nat) (z : Bool) (a : A) : Bool :=
@@ -308,7 +313,15 @@ def flagOk (e : AEnv) (n : Nat) (z : Bool) (fs : List A) (sh : List SK) : Bool :
   | some e' => restOk e e' n z fs sh
   | none => false
 
-/-- `a` fits the type predicate of `τ` (real result registers iff `z`). -/
+/-- The fields of a `CondResult` value, given the checks of flag (`ft`) and clean (`fc`)
+fields. -/
+def crAll (ft fc : A → Bool) : List A → List Bool → Bool
+  | f :: fs, c :: cs => (if c then ft f else fc f) && crAll ft fc fs cs
+  | [], [] => true
+  | _, _ => false
+
+/-- `a` fits the type predicate of `τ` (real result registers iff `z`). Structural in the
+fuel, as `fitsCl`. -/
 def fitsTy (e : AEnv) : Nat → A → TypeId → Bool → Bool
   | 0, _, _, _ => false
   | n + 1, a, τ, z =>
@@ -321,17 +334,13 @@ def fitsTy (e : AEnv) : Nat → A → TypeId → Bool → Bool
       τ' == τ && (match flagShape τ k with
       | some sh => flagOk e n z fs sh
       | none => match crShape τ k with
-        | some cs => crOk e n z fs cs
+        | some cs => crAll (fun f => fitsTy e n f TyId.«ProducesFlags» z) (fitsCl e n false z) fs cs
         | none => false)
     | _ => false
-where
-  /-- The fields of a `CondResult` value. -/
-  crOk (e : AEnv) (n : Nat) (z : Bool) : List A → List Bool → Bool
-    | f :: fs, c :: cs =>
-      (if c then fitsTy e n f TyId.«ProducesFlags» z else fitsCl e n false z f) &&
-        crOk e n z fs cs
-    | [], [] => true
-    | _, _ => false
+
+/-- The fields of a `CondResult` value. -/
+def fitsTy.crOk (e : AEnv) (n : Nat) (z : Bool) (fs : List A) (cs : List Bool) : Bool :=
+  crAll (fun f => fitsTy e n f TyId.«ProducesFlags» z) (fitsCl e n false z) fs cs
 
 /-- `a` fits the summary `b` (`top`, `cl`, `wr` or `ty`). -/
 def fitsA (e : AEnv) (n : Nat) (a : A) : A → Bool
@@ -706,15 +715,6 @@ end Prog
 
 /-! ## The closure -/
 
-/-- Worklist closure under `Isle.ruleTerms` of the terms whose rules are checked. -/
-def defClose : Nat → List TermId → Std.HashSet TermId → Std.HashSet TermId
-  | 0, _, seen => seen
-  | _ + 1, [], seen => seen
-  | k + 1, t :: ts, seen =>
-    if seen.contains t then defClose k ts seen
-    else if oracles.contains t || (wrapper program t).isSome then defClose k ts (seen.insert t)
-    else defClose k ((program.rulesOf t).flatMap ruleTerms ++ ts) (seen.insert t)
-
 /-- The root rules of `lower` checked by hand: `nop` (587) and the I128 rules 636, 637 (never
 match a statement). -/
 def defExcl : List RuleId := [587, 636, 637]
@@ -723,8 +723,5 @@ def defExcl : List RuleId := [587, 636, 637]
 def defRoots : List TermId :=
   ((program.rulesOf TId.lower).filter fun r => !defExcl.contains r.id).flatMap ruleTerms ++
     (program.rulesOf TId.lower_branch).flatMap ruleTerms
-
-/-- **The terms of the runs.** -/
-def defTab : List TermId := (defClose 10000000 (oracles ++ defRoots) {}).toList
 
 end Backend.Proof.DefGen
