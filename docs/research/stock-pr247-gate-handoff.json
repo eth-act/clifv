@@ -1,0 +1,21 @@
+{
+  "utc": "2026-10-16T16:12:59.095288+00:00",
+  "status": "prepared_NOT_started",
+  "required_preconditions": [
+    "exact PR246 gates success",
+    "completion audit success",
+    "ONE bundled MCP success with exact union axiom match",
+    "PR246 actually squash-merged",
+    "previous worker terminal",
+    "exclusive cache lease held_for_review with canonical controller still held"
+  ],
+  "source_review": "docs/research/stock-pr247-source-review.json",
+  "scripts": [
+    "/tmp/stock-pr247-gates.py",
+    "/tmp/stock-pr247-completion-audit.py",
+    "/tmp/stock-pr247-mcp-bundle.py"
+  ],
+  "checkout_step": "After PR246 merged, archive/remove its untracked DeliveryAudit.lean, require clean validation view, switch only that view to published e5a9cd6c, retarget#247 to main; canonical source/HEAD/index untouched.",
+  "cache": "Same uninterrupted exclusive physical cache lease, no copy. Rebuild PR247 source/import changes/missing artifacts, then independent full --rehash verifies all dependencies.",
+  "full_goal": "original#140 active/incomplete; production legacy"
+}

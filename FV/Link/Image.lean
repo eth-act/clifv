@@ -58,23 +58,35 @@ def offsetOf (phs : List Phdr) (R : Nat) : Nat :=
 /-- The call lines and sizes of a function's laid-out lines (what `raOkB` reads of them). -/
 def callShape (a : Art) : List (Bool × Nat) := a.fa.lines.toList.map fun l => (callLine l, l.size)
 
-/-- The defined symbols of a file: `(name, value) → (section, entry)` (an index only: `symsOkB`
-checks the entries it names). -/
-def symIndex (file : ByteArray) : Std.HashMap (String × Nat) (Nat × Nat) := Id.run do
+/-- The end of the NUL-terminated string at `j`: the offset of its first `0` byte at or after
+`j`, or the end of the file. -/
+def nulFrom (file : ByteArray) (j : Nat) : Nat :=
+  if h : j < file.size then if file[j] != 0 then nulFrom file (j + 1) else j else j
+termination_by file.size - j
+
+/-- Entry `i` of section `s` as an index key: its name (the string at its name offset, up to
+the NUL) and its value. -/
+def entryKey (file : ByteArray) (s i : Nat) : Option (String × Nat) :=
+  match symEntry (fileRd file) s i with
+  | some (o, v) => (String.fromUTF8? (file.extract o (nulFrom file o))).map (·, v)
+  | none => none
+
+/-- The defined symbols of a file: `(name, value) → (section, entry)`, the first entry of each
+key (an index only: `symsOkB` checks the entries it names). -/
+def symIndex (file : ByteArray) : Std.HashMap (String × Nat) (Nat × Nat) :=
   let r := fileRd file
-  let some e := ehdr r | return {}
-  let mut out : Std.HashMap (String × Nat) (Nat × Nat) := {}
-  for s in [0:e.shnum] do
-    let some sh := shdr r e s | continue
-    if sh.type != 2 || sh.entsize != 24 then continue
-    for i in [0:sh.size / 24] do
-      let some (o, v) := symEntry r s i | continue
-      let mut j := o
-      while j < file.size && file[j]! != 0 do j := j + 1
-      match String.fromUTF8? (file.extract o j) with
-      | some n => if !out.contains (n, v) then out := out.insert (n, v) (s, i)
-      | none => pure ()
-  return out
+  match ehdr r with
+  | none => {}
+  | some e =>
+    (List.range e.shnum).foldl (fun out s =>
+      match shdr r e s with
+      | none => out
+      | some sh =>
+        if sh.type != 2 || sh.entsize != 24 then out
+        else (List.range (sh.size / 24)).foldl (fun out i =>
+          match entryKey file s i with
+          | some k => if !out.contains k then out.insert k (s, i) else out
+          | none => out) out) {}
 
 /-- **Every link-map name is a symbol of the file at its address** (`SymsOk`; the self-call
 aliases, whose addresses are fresh, excepted). -/

@@ -1,0 +1,11 @@
+Actual TryCall emission and argument stores — 2026-10-16T19:37:20.960600+00:00
+
+Seven scratch modules, 9 public theorem roots and 5 audited public models pass kernel checks at8GiB. The 516-root/model audit preserves all502prior exact axiom sets. All 498 constants in new modules, including private operational helpers, use only standard axioms. All61previous scratch source/object/log hashes and the frozen2246canonical sources plus scripts are unchanged. Previous goal turn classified PROGRESS: actual-RHS result binding/witness proofs, audits, archive and verified remote backup.
+
+The SAME real direct/GOT/indirect RHS helper definitions are the definitions of its actual last emitted call and retained TryCall terminator. Whole lowering derives original source/selection, layout, exact call defs and final-alias normal value transport internally. Complete original-condition colocated, GOT and true indirect compiler/prepare/forced checked-fallback/checker/physical pipelines instantiate the new roots. Old theorem variants remain unchanged.
+
+Actual source-derived request and argument helper states now give exact ABI register uses and stack-store emission sequences for all three forms. Complete9argumentGOT16byte stack-area and true-indirect compiler-to-physical witnesses pass. These are emitted-code/helper identities and conditional normal value writes. Actual machine operand update, execution of stores/GOT prefix and source-held/world composition remain required. No assertion of exceptional machine execution; shared S10 interfaces remain coordinated with @kevaundray #232/#233.
+
+Every remaining family/effect/source/block/whole-driver simulation AND completeness and production consumer cutover remains required. Production LEGACY. Both draft PRs require exact updated-main full gates before squash. Main freshly rechecked0ec59a028dd3a27911cb22554b3e292b20a5c45f. Same delivery supervisor3247835 LIVE, canonical1233457 intentionally held. Aim roughly eight substantive validated merges/day with backup and cleanup. No new MCP calls; coherent integration/public/private/compiler audits and one bundled provenance check remain pending.
+
+See stock-try-emitted-scratch.json for hashed evidence and the full remaining checklist.
