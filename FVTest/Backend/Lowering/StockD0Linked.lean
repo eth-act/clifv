@@ -19,7 +19,7 @@ private def callerSource : String :=
   "function %legacy_caller(i64) -> i64 system_v {\n    fn0 = colocated %stock_identity(i64) -> i64 system_v\nblock0(v0: i64):\n    v1 = call fn0(v0)\n    v2 = iconst.i64 1\n    v3 = iadd v1, v2\n    return v3\n}\n"
 
 private def initialSpec : LinkSpec := {
-  funcs := [identitySource, callerSource].zipIdx.map fun (clif, k) => {clif, ra := "null", k}
+  funcs := [0, 1].map fun k => {clif := identitySource ++ callerSource, ra := "null", k, j := k}
   names := [], sizes := [], outside := []
   symNames := ["stock_identity", "legacy_caller"]
   R := 0x200160 }
@@ -64,7 +64,7 @@ def check (out : System.FilePath) : IO Unit := do
     require (if cleanup then okBCleanup input else okB input)
       "mixed fixture failed the actual program checker"
     let ex : Excerpt := [(0, file)]
-    let index := symIndex file
+    let index := _root_.symIndex file
     let cert : List (String × Nat × Nat) := input.addrs.filterMap fun p =>
       (index.get? (symName p.1, p.2)).map (p.1, ·)
     require (hdrB ex && symsB input ex cert &&
