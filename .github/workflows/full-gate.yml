@@ -1,456 +1,76 @@
-name: Full gate
-
-# The full gate list of docs/TO-PROVE.md §7 ("Gate policy") on GitHub-hosted runners: every
-# Lean target, crate-proofs, the axiom audits (scripts/audit/), the run-time gates and cargo fv.
-#
-# The Lean build is split by scripts/ci-build-plan.py into up to three waves of parallel shards;
-# Lake outputs move between jobs as `lake cache stage` directories (artifacts). The assembled
-# build of a main commit (`lake-full`) is the baseline of later runs: only modules whose sources
-# differ from the baseline commit, and their importers, are rebuilt.
-on:
-  push:
-    branches: [main]
-  schedule:
-    # weekly from scratch (no baseline; Lake does not trace every input, e.g. the ISLE sources
-    # FVTest.Isle reads), in its own concurrency group: a cold build takes most of a day here
-    - cron: '17 1 * * 6'
-  workflow_dispatch:
-    inputs:
-      fresh:
-        description: Build everything (ignore the baseline build)
-        type: boolean
-        default: false
-
-permissions:
-  contents: read
-
-# Post-merge only (never a required check; authors merge on their per-PR gates, docs/TO-PROVE.md
-# §7). One run per branch at a time: the newest pending push waits, older pending ones are dropped.
-concurrency:
-  group: full-gate-${{ github.event_name == 'schedule' && 'weekly' || github.ref }}
-  cancel-in-progress: false
-
-env:
-  # the continuous main gate's tracking issue (docs/TO-PROVE.md §7)
-  FULL_GATE_ISSUE: '261'
-  LEAN_TARGETS: FV FVTest Corpus
-
-jobs:
-  plan:
-    name: Plan
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions:
-      actions: read
-      contents: read
-    outputs:
-      base-run: ${{ steps.base.outputs.run }}
-      wave1: ${{ steps.plan.outputs.wave1 }}
-      wave2: ${{ steps.plan.outputs.wave2 }}
-      wave3: ${{ steps.plan.outputs.wave3 }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Find baseline build
-        id: base
-        if: github.event_name != 'schedule' && !inputs.fresh
-        env:
-          GH_TOKEN: ${{ github.token }}
-          OWN_BRANCH: ${{ github.ref_name }}
-        run: |
-          # newest unexpired `lake-full` of a run on main or on this branch; Lake's cache is
-          # content-addressed, so any baseline is safe: the planner rebuilds what differs from it
-          read -r run sha < <(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=lake-full&per_page=100" \
-            --jq '[.artifacts[] | select(.expired | not)
-                   | select(.workflow_run.head_branch == "main" or .workflow_run.head_branch == env.OWN_BRANCH)]
-                  | sort_by(.created_at) | last | "\(.workflow_run.id // "") \(.workflow_run.head_sha // "")"') || true
-          if [[ -n "${sha:-}" ]] && ! git cat-file -e "$sha^{commit}" 2>/dev/null; then
-            git fetch -q --depth 1 origin "$sha" || true
-          fi
-          if [[ -n "${run:-}" ]] && git cat-file -e "$sha^{commit}" 2>/dev/null; then
-            echo "baseline: run $run, commit $sha"
-            echo "run=$run" >> "$GITHUB_OUTPUT"
-            echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          else
-            echo "no baseline build: planning everything"
-          fi
-      - name: Plan
-        id: plan
-        env:
-          BASE: ${{ steps.base.outputs.sha }}
-          # eth-act (free plan) runs at most 20 jobs at once across all its repositories
-          SHARDS: ${{ vars.FULL_GATE_SHARDS || '10' }}
-          # runner seconds per second recorded in scripts/lake-module-peaks.tsv (GitHub-hosted,
-          # 3 lean processes per runner, measured on run 39074925471, 2026-10-18: 1.97, FV.Opt.Proof.*
-          # 2.95, hence --prefix-scale 1.5) and the shard scheduler's limits
-          TIME_SCALE: ${{ vars.FULL_GATE_TIME_SCALE || '2.0' }}
-          RAM: ${{ vars.FULL_GATE_RAM || '15G' }}
-          FV_CI_BUDGET: ${{ vars.FULL_GATE_BUDGET || '15G' }}
-          FV_CI_HEAVY: ${{ vars.FULL_GATE_HEAVY || '12G' }}
-          FV_CI_MAX_JOBS: ${{ vars.FULL_GATE_MAX_JOBS || '3' }}
-        run: |
-          python3 scripts/ci-build-plan.py ${BASE:+--base "$BASE"} --shards "$SHARDS" --waves 3 \
-            --time-scale "$TIME_SCALE" --prefix-scale FV.Opt.Proof.=1.5 --ram "$RAM" \
-            --budget "$FV_CI_BUDGET" --heavy "$FV_CI_HEAVY" --max-jobs "$FV_CI_MAX_JOBS" \
-            --out ci-plan.json --github-output $LEAN_TARGETS | tee -a "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ci-plan
-          path: ci-plan.json
-          retention-days: 7
-
-  wave1:
-    name: Build wave 1
-    needs: plan
-    if: needs.plan.outputs.wave1 != '[]'
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: ${{ fromJSON(needs.plan.outputs.wave1) }}
-    uses: ./.github/workflows/full-gate-shard.yml
-    permissions:
-      actions: read
-      contents: read
-    with:
-      wave: 1
-      shard: ${{ matrix.shard }}
-      base-run: ${{ needs.plan.outputs.base-run }}
-      stages: ''
-
-  wave2:
-    name: Build wave 2
-    needs: [plan, wave1]
-    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.wave2 != '[]' && contains(fromJSON('["success","skipped"]'), needs.wave1.result) }}
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: ${{ fromJSON(needs.plan.outputs.wave2) }}
-    uses: ./.github/workflows/full-gate-shard.yml
-    permissions:
-      actions: read
-      contents: read
-    with:
-      wave: 2
-      shard: ${{ matrix.shard }}
-      base-run: ${{ needs.plan.outputs.base-run }}
-      stages: stage-w1-*
-
-  wave3:
-    name: Build wave 3
-    needs: [plan, wave1, wave2]
-    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.wave3 != '[]' && contains(fromJSON('["success","skipped"]'), needs.wave1.result) && contains(fromJSON('["success","skipped"]'), needs.wave2.result) }}
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: ${{ fromJSON(needs.plan.outputs.wave3) }}
-    uses: ./.github/workflows/full-gate-shard.yml
-    permissions:
-      actions: read
-      contents: read
-    with:
-      wave: 3
-      shard: ${{ matrix.shard }}
-      base-run: ${{ needs.plan.outputs.base-run }}
-      stages: stage-w[12]-*
-
-  assemble:
-    name: Assemble build and executables
-    needs: [plan, wave1, wave2, wave3]
-    if: ${{ !cancelled() && needs.plan.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.wave1.result) && contains(fromJSON('["success","skipped"]'), needs.wave2.result) && contains(fromJSON('["success","skipped"]'), needs.wave3.result) }}
-    runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
-    timeout-minutes: 300
-    permissions:
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/fv-lean
-        with:
-          swap-gb: '24'
-          base-run-id: ${{ needs.plan.outputs.base-run }}
-          stages: stage-w*
-      - name: Build every Lean target and executable
-        run: |
-          mapfile -t exes < <(python3 -c 'import tomllib; print("\n".join(e["name"] for e in tomllib.load(open("lakefile.toml", "rb"))["lean_exe"]))')
-          start=$(date +%s)
-          # anything a shard did not cover (none, if the plan is right) builds here
-          lake build $LEAN_TARGETS "${exes[@]}" -o full-outputs.jsonl 2>&1 | tail -n 40
-          echo "lake build: $(( $(date +%s) - start )) s"
-          lake cache stage full-outputs.jsonl "$RUNNER_TEMP/lake-full"
-          echo "lake-full: $(du -sh "$RUNNER_TEMP/lake-full" | cut -f1), $(find "$RUNNER_TEMP/lake-full" -type f | wc -l) files"
-          df -h /
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: lake-full
-          path: ${{ runner.temp }}/lake-full
-          compression-level: 0
-          # main builds are later runs' baselines
-          retention-days: ${{ github.ref == 'refs/heads/main' && 14 || 3 }}
-
-  audit:
-    name: Axiom audits
-    needs: [plan, assemble]
-    # explicit: a skipped wave (nothing to build) would otherwise skip every job downstream
-    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    permissions:
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/fv-lean
-        with:
-          swap-gb: '16'
-          stages: lake-full
-      - name: Audit
-        run: |
-          mkdir -p gate-logs
-          lake build FV 2>&1 | tail -n 1
-          set -o pipefail
-          python3 scripts/axiom-audit.py --log-dir gate-logs | tee gate-logs/summary.txt
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: gate-audit
-          path: gate-logs
-          retention-days: 14
-
-  crate-proofs:
-    name: crate-proofs
-    needs: [plan, assemble]
-    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
-    runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
-    timeout-minutes: 240
-    permissions:
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/fv-lean
-        with:
-          swap-gb: '24'
-          stages: lake-full
-      - name: Build crate-proofs
-        run: |
-          mkdir -p gate-logs
-          set -o pipefail
-          lake build FV 2>&1 | tail -n 1
-          start=$(date +%s)
-          (cd crate-proofs && /usr/bin/time -v lake build) > gate-logs/crate-proofs.log 2>&1
-          rc=$?
-          echo "crate-proofs rc=$rc $(( $(date +%s) - start )) s: $(grep -E 'Build completed|error' gate-logs/crate-proofs.log | tail -n 3 | tr '\n' ' ')" | tee gate-logs/summary.txt
-          grep -E 'Maximum resident|Elapsed' gate-logs/crate-proofs.log || true
-          exit $rc
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: gate-crate-proofs
-          path: gate-logs
-          retention-days: 14
-
-  e2e:
-    name: lean-e2e-check
-    needs: [plan, assemble]
-    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
-    runs-on: ${{ fromJSON(vars.FULL_GATE_RUNNER || '"ubuntu-24.04"') }}
-    timeout-minutes: 180
-    permissions:
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/fv-lean
-        with:
-          swap-gb: '24'
-          stages: lake-full
-      - name: lean-e2e-check
-        run: |
-          mkdir -p gate-logs
-          # link-check needs a `cargo fv link-proof` directory: the assemble job only builds it
-          lake build lean-e2e-check 2>&1 | tail -n 1
-          start=$(date +%s)
-          rc=0; /usr/bin/time -v lake exe lean-e2e-check > gate-logs/e2e.log 2>&1 || rc=$?
-          echo "lean-e2e-check rc=$rc $(( $(date +%s) - start )) s: $(grep -E 'accepted|rejected' gate-logs/e2e.log | tail -n 3 | tr '\n' ' ')" | tee -a gate-logs/summary.txt
-          grep -E 'Maximum resident|Elapsed' gate-logs/e2e.log || true
-          exit $rc
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: gate-e2e
-          path: gate-logs
-          retention-days: 14
-
-  runtime:
-    name: ${{ matrix.gate }}
-    needs: [plan, assemble]
-    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 240
-    permissions:
-      actions: read
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        gate: [lean-backend-filetests, lean-backend-encode-check, clif-filetests, opt-difftest]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/fv-lean
-        with:
-          swap-gb: '16'
-          stages: lake-full
-      - name: Tools
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -yq qemu-user-static llvm-18 clang
-          rustup target add aarch64-unknown-linux-musl
-      - name: Rust build cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            rust/target
-          key: full-gate-rust-${{ matrix.gate }}-${{ hashFiles('rust/rust-toolchain.toml', 'rust/**/Cargo.lock') }}
-      - name: Run
-        env:
-          GATE: ${{ matrix.gate }}
-        run: |
-          mkdir -p gate-logs
-          start=$(date +%s)
-          rc=0; "scripts/$GATE.sh" > "gate-logs/$GATE.log" 2>&1 || rc=$?
-          line=$(grep -E 'TOTAL|total|corpus|runtest|differ|functions [0-9]+:|fail' "gate-logs/$GATE.log" | tail -n 4 | tr '\n' ' ' || true)
-          if [[ $GATE == clif-filetests ]]; then
-            # exits 1 on any failing run line; the gate is the recorded baseline
-            cur=$(grep -E 'TOTAL files [0-9]+: pass' "gate-logs/$GATE.log" | tail -n 1 || true)
-            n() { grep -oE "$1 [0-9]+" <<< "$cur" | head -n 1 | cut -d' ' -f2 || true; }
-            p=$(n pass) f=$(n fail) d=$(n disagree)
-            read -r bp bf bd < <(grep -v '^#' scripts/clif-filetests-baseline.txt)
-            rc=1; [[ -n $p && $p -ge $bp && $f -le $bf && $d -le $bd ]] && rc=0
-            line="pass $p fail $f disagree $d (baseline pass $bp fail $bf disagree $bd)"
-          fi
-          echo "$GATE rc=$rc $(( $(date +%s) - start )) s: $line" | tee gate-logs/summary.txt
-          tail -n 15 "gate-logs/$GATE.log"
-          exit $rc
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: gate-${{ matrix.gate }}
-          path: gate-logs
-          retention-days: 14
-
-  cargo-fv:
-    name: cargo fv --lean-link --verified (${{ matrix.example }})
-    needs: [plan, assemble]
-    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 240
-    permissions:
-      actions: read
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        example: [fv-demo, survey]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: ./.github/actions/fv-lean
-        with:
-          swap-gb: '16'
-          stages: lake-full
-      - name: Tools
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -yq qemu-user-static llvm-18
-          rustup toolchain install nightly-2026-09-26 --profile minimal \
-            --component rustc-dev --target aarch64-unknown-linux-musl
-          rustup target add aarch64-unknown-linux-musl
-      - name: Rust build cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            rust/target
-            target/cg_clif
-          key: full-gate-rust-cargo-fv-${{ hashFiles('rust/rust-toolchain.toml', 'rust/**/Cargo.lock', 'scripts/build-cg-clif.sh', 'scripts/patches/cg-clif-extnames.patch') }}
-      - name: Build cg_clif and cargo fv
-        run: |
-          scripts/build-cg-clif.sh
-          (cd rust && cargo build --release -p cargo-fv -p clif-data-export)
-          # the executables cargo fv runs (restored from the assembled build)
-          lake build lean-backend lean-link clif-decode 2>&1 | tail -n 1
-      - name: Run
-        env:
-          EX: ${{ matrix.example }}
-        run: |
-          mkdir -p gate-logs
-          rm -rf "examples/$EX/target/fv"
-          start=$(date +%s)
-          rc=0
-          PATH="$PWD/rust/target/release:$PATH" FV_ROOT="$PWD" \
-            examples/compare.sh "examples/$EX" --lean-link --verified > "gate-logs/$EX.log" 2>&1 || rc=$?
-          if [[ $rc == 0 ]] && ! grep -q '^SAME' "gate-logs/$EX.log"; then rc=1; fi
-          echo "cargo fv --lean-link --verified $EX rc=$rc $(( $(date +%s) - start )) s: $(grep -E '^SAME|DIFFERENT' "gate-logs/$EX.log" | tr '\n' ' ')" | tee gate-logs/summary.txt
-          tail -n 15 "gate-logs/$EX.log"
-          exit $rc
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
-        with:
-          name: gate-cargo-fv-${{ matrix.example }}
-          path: gate-logs
-          retention-days: 14
-
-  report:
-    name: Report
-    needs: [plan, wave1, wave2, wave3, assemble, audit, crate-proofs, e2e, runtime, cargo-fv]
-    if: ${{ always() && needs.plan.result != 'skipped' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      actions: read
-      contents: read
-      issues: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: gate-*
-          path: report
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: shard-logs-*
-          path: report
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        continue-on-error: true
-        with:
-          name: ci-plan
-          path: report/ci-plan
-      - name: Summarize
-        env:
-          NEEDS: ${{ toJSON(needs) }}
-        run: python3 .github/scripts/full-gate-report.py report > report.md && cat report.md >> "$GITHUB_STEP_SUMMARY"
-      - name: Post to the continuous-gate issue
-        if: github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh issue comment "$FULL_GATE_ISSUE" --repo "$GITHUB_REPOSITORY" --body-file report.md
-      - name: Fail on red
-        run: grep -q '^\*\*Result. GREEN' report.md
+{
+  "name": "Stock proof cache handoff",
+  "run-name": "StockCmpWithFlags exact-source cache 5f4f9bf6",
+  "on": {
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "actions": "read",
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "stock-proof-cache-${{ github.ref }}",
+    "cancel-in-progress": false
+  },
+  "jobs": {
+    "cache": {
+      "name": "Unchanged StockCmpWithFlags, standard CI swap lane",
+      "runs-on": "ubuntu-24.04",
+      "timeout-minutes": 180,
+      "steps": [
+        {
+          "uses": "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
+          "with": {
+            "persist-credentials": false,
+            "fetch-depth": 2
+          }
+        },
+        {
+          "uses": "./.github/actions/fv-lean",
+          "with": {
+            "swap-gb": "24"
+          }
+        },
+        {
+          "name": "Restore matching main wave1 outputs",
+          "uses": "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+          "with": {
+            "pattern": "stage-w1-*",
+            "path": "${{ runner.temp }}/stock-input-stages",
+            "run-id": "39219555558",
+            "github-token": "${{ github.token }}"
+          }
+        },
+        {
+          "name": "Unstage through Lake input keys",
+          "run": "python3 - <<'PYRESTORE'\nfrom pathlib import Path\nimport os,subprocess\nfor p in sorted((Path(os.environ['RUNNER_TEMP'])/'stock-input-stages').rglob('outputs.jsonl')):\n    subprocess.run(['scripts/memcap.sh','lake','cache','unstage',str(p.parent)],check=True)\nPYRESTORE\n"
+        },
+        {
+          "name": "Build and stage unchanged proof",
+          "run": "mkdir -p \"$RUNNER_TEMP/stock-heavy\"\ngit diff --exit-code HEAD^ HEAD -- FV FVTest lakefile.toml lean-toolchain\n{ git rev-parse HEAD HEAD^; lean --version; sha256sum FV/Backend/Proof/StockCmpWithFlags.lean; } | tee \"$RUNNER_TEMP/stock-heavy/source.txt\"\npython3 scripts/lake-serial-build.py --out \"$RUNNER_TEMP/stock-heavy/sched\" --record \"$RUNNER_TEMP/stock-heavy/peaks.tsv\" --budget 15G --heavy 12G --heavy-avail 0 --pause-avail 1G --max-jobs 1 --margin 1.0 --max-cap 48G --retry-failed FV.Backend.Proof.StockCmpWithFlags\nscripts/memcap.sh lake build --no-build FV.Backend.Proof.StockCmpWithFlags -o \"$RUNNER_TEMP/stock-heavy/outputs.jsonl\"\nscripts/memcap.sh lake cache stage \"$RUNNER_TEMP/stock-heavy/outputs.jsonl\" \"$RUNNER_TEMP/stock-heavy/stage\"\n"
+        },
+        {
+          "name": "Publish checked Lake outputs",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "stock-cmp-heavy-cache",
+            "path": "${{ runner.temp }}/stock-heavy/stage",
+            "compression-level": 0,
+            "retention-days": 7
+          }
+        },
+        {
+          "name": "Publish diagnostics",
+          "if": "always()",
+          "uses": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+          "with": {
+            "name": "stock-cmp-heavy-evidence",
+            "path": "${{ runner.temp }}/stock-heavy",
+            "retention-days": 14,
+            "if-no-files-found": "ignore"
+          }
+        }
+      ]
+    }
+  }
+}
