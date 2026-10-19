@@ -186,9 +186,9 @@ theorem argsAtEntry_bodyT {f : Clif.Function} {args : List Clif.Val} {af : AFunc
 hypothesis of the context `buildCtx` builds (`loweringObligationsT_of_check`, `CtxT` from the
 typed shape and `functionET`), with the driver's calls from the typed rule families
 (`instCallsT_of_rules`, `termCallsT_of_rules`, `tryCallsT_of_rules`, `tryIndCallsT_of_rules`). -/
-theorem iselSimT_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat}
-    {vc vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
-    (hsub : InSubsetT p f) (hc : CompiledAT f k vc vcp rf af fa fb)
+theorem iselSimT_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
+    (hsub : InSubsetT p f) (hlow : lowerCheckT f vc = true)
+    (hcfg : ∃ ss ps, vc.cfg = .ok (ss, ps))
     {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
     {syms : String → Option Nat} {slotOff out : Nat} {env : Clif.Env}
     (hrules : LowerRulesCorrectTI Isle.Aarch64.program)
@@ -216,7 +216,7 @@ theorem iselSimT_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat}
     (hFP : ∀ s, MemRefinesFP (fun _ => True) (F s) slotOff (sem s))
     (houtB : vc.outgoing ≤ out) :
     ∀ s, IselSimT (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc := by
-  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligationsT_of_check hc.lowerOk
+  obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligationsT_of_check hlow
   have hctxT : CtxT f ctx := ⟨hshape.ctxInvT, hshape.scope, functionET_externs hsub.subsetET⟩
   intro s'
   refine iselSim_of_driverT (ctx := ctx) (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A) ?_
@@ -228,25 +228,25 @@ theorem iselSimT_of_rules {p : Clif.Program} {f : Clif.Function} {k : Nat}
     insts := instCallsT_of_rules hrules hrulesF hrulesA hnE hcallRules hindRules hmemRules hmemF
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
-      (callsStack_mono (callsStackT_of_check hc.lowerOk) houtB)
+      (callsStack_mono (callsStackT_of_check hlow) houtB)
       (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
     terms := termCallsT_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
     indSig := indSig_of_subsetT hsub
     subET := hsub.subsetET
-    entryLocs := entryOkT_of_check hc.lowerOk
+    entryLocs := entryOkT_of_check hlow
     brIdx := hbr
     noTail := noTail_of_subsetT hsub
     tries := ⟨out, tryCallsT_of_rules htryRules htryUn (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') hctxT,
-      tryStack_mono (tryStackT_of_check hc.lowerOk) houtB⟩
+      tryStack_mono (tryStackT_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCallsT_of_rules htryIndRules htryIndUn (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s') hctxT
     tryIndSig := tryIndSig_of_subsetT hsub
-    cfg := cfg_of_prepare hc.prepare }
+    cfg := hcfg }
 
 /-- **`backend_correct` for the typed scope, from the typed rule families** (`CompiledAT`,
 `RegLevelCorrectEx`): the Arm run refines the CLIF run, each returned value in the ABI return
@@ -300,7 +300,8 @@ theorem backend_correct_of_rules_exT {p : Clif.Program} {f : Clif.Function} {k :
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefinesT fb base ra astep s (Clif.runLoop env p fuel cs) := by
   exact backend_correct_of_layers_exT
-    (iselSimT_of_rules hsub hc hrules hrulesF hrulesA hnE hcallRules hindRules hmemRules hmemF
+    (iselSimT_of_rules hsub hc.lowerOk (cfg_of_prepare hc.prepare) hrules hrulesF hrulesA hnE
+      hcallRules hindRules hmemRules hmemF
       htermRules htermUn hbranch hbranchEx htryRules htryUn htryIndRules htryIndUn hRef hds hcalls
       hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)
@@ -350,7 +351,8 @@ theorem backend_correct_of_rules_ex_ofT {p : Clif.Program} {f : Clif.Function} {
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
   backend_correct_of_layers_ex_ofT hint
-    (iselSimT_of_rules hsub hc hrules hrulesF hrulesA hnE hcallRules hindRules hmemRules hmemF
+    (iselSimT_of_rules hsub hc.lowerOk (cfg_of_prepare hc.prepare) hrules hrulesF hrulesA hnE
+      hcallRules hindRules hmemRules hmemF
       htermRules htermUn hbranch hbranchEx htryRules htryUn htryIndRules htryIndUn hRef hds hcalls
       hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_of_check (hds s') hc.prepOk)

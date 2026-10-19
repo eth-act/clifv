@@ -1,4 +1,5 @@
 import FV.E2E.FinalDirectT
+import FV.E2E.DeadCleanupT
 import FV.Backend.Proof.LowerDecide
 import FVTest.Backend.FloatDriverT
 
@@ -208,5 +209,57 @@ theorem compiledAT_of_lowerT_w :
     (by native_decide) (.error "no allocator")
   exact CompiledAT.of_lowerT (dominated_of (by native_decide)) scopeT_w lowerFunction_w prepare_w
     hch alloc_w emit_w layout_w
+
+/-! ### The dead-cleanup route (`prune`, then `prepare`) -/
+
+def vcpcOf (f : Clif.Function) : VCode :=
+  match Backend.prepare (Backend.DeadCleanup.prune (vcOf f)) with
+  | .ok vcp => vcp
+  | .error _ => default
+
+def afcOf (f : Clif.Function) : AFunc :=
+  match lowerRFunc (vcpcOf f) (spillAlloc (vcpcOf f)) with
+  | .ok af => af
+  | .error _ => default
+
+def facOf (f : Clif.Function) : FnAsm :=
+  match emitFunc 0 (afcOf f) with
+  | .ok fa => fa
+  | .error _ => default
+
+def fbcOf (f : Clif.Function) : FnBin :=
+  match (facOf f).layout with
+  | .ok fb => fb
+  | .error _ => default
+
+/-- **Witness**: the typed dead-cleanup compiled-code premise holds for `fW` (the shipped
+`--lean-link` route: lowering, `prune`, `prepare`, the spill allocation). -/
+theorem compiledCleanupT_w : CompiledCleanupT fW 0 (vcOf fW) (vcpcOf fW)
+    (spillAlloc (vcpcOf fW)) (afcOf fW) (facOf fW) (fbcOf fW) := by
+  have h1 : (Backend.prepare (Backend.DeadCleanup.prune (vcOf fW))).toBool = true := by native_decide
+  have h2 : (lowerRFunc (vcpcOf fW) (spillAlloc (vcpcOf fW))).toBool = true := by native_decide
+  have h3 : (emitFunc 0 (afcOf fW)).toBool = true := by native_decide
+  have h4 : (facOf fW).layout.toBool = true := by native_decide
+  have h5 : (checkAlloc (vcpcOf fW) (spillAlloc (vcpcOf fW))).isOk = true := by native_decide
+  refine ⟨lowerFunction_w, by native_decide, ?_, by native_decide, ?_, ?_, ?_, ?_⟩
+  · unfold vcpcOf
+    cases h : Backend.prepare (Backend.DeadCleanup.prune (vcOf fW)) with
+    | error e => rw [h] at h1; cases h1
+    | ok vcp => rfl
+  · cases h : checkAlloc (vcpcOf fW) (spillAlloc (vcpcOf fW)) with
+    | error e => rw [h] at h5; cases h5
+    | ok u => rfl
+  · unfold afcOf
+    cases h : lowerRFunc (vcpcOf fW) (spillAlloc (vcpcOf fW)) with
+    | error e => rw [h] at h2; cases h2
+    | ok af => rfl
+  · unfold facOf
+    cases h : emitFunc 0 (afcOf fW) with
+    | error e => rw [h] at h3; cases h3
+    | ok fa => rfl
+  · unfold fbcOf
+    cases h : (facOf fW).layout with
+    | error e => rw [h] at h4; cases h4
+    | ok fb => rfl
 
 end FloatFinalT
