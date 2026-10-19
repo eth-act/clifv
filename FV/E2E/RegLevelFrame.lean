@@ -625,12 +625,31 @@ theorem q_init {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base
 
 /-! ## The return on the machine -/
 
+/-- An accepted `Rets` pair: a vreg of either class. -/
+theorem retPairOk_vreg {p : Reg × Reg} (h : retPairOk p = true) : ∃ n c, p.1 = .vreg n c := by
+  obtain ⟨r, q⟩ := p
+  cases r with
+  | vreg n c => exact ⟨n, c, rfl⟩
+  | _ => simp [retPairOk, Reg.isVregInt, Reg.isVregFloat] at h
+
+/-- An accepted `Rets` pair is class-compatible: an int vreg, or an f32/f64 vreg in an FP return
+register v0–v7. -/
+theorem retPairOk_cls {p : Reg × Reg} (h : retPairOk p = true) :
+    (∃ n, p.1 = .vreg n .int) ∨ (∃ n m, p.1 = .vreg n .float ∧ p.2 = .v m ∧ m < 8) := by
+  obtain ⟨r, q⟩ := p
+  cases r with
+  | vreg n c =>
+    cases c
+    · exact .inl ⟨n, rfl⟩
+    · cases q <;> simp_all [retPairOk, Reg.isVregInt, Reg.isVregFloat, Reg.isFpArgReg]
+  | _ => simp [retPairOk, Reg.isVregInt, Reg.isVregFloat] at h
+
 theorem ctlCheck_rets {vc : VCode} {rf : RFunc} (h : ctlCheck vc rf = true) {b k : Nat}
     {vb : VBlock} {us : List (Reg × Reg)} (hvb : vc.blocks[b]? = some vb)
-    (hi : vb.insts[k]? = some (.rets us)) : ∃ ns, us = retPairs ns := by
+    (hi : vb.insts[k]? = some (.rets us)) : ∃ ns, us = argPairsC ns := by
   have h2 := ctlCheck_inst h hvb hi
   simp only [ctlInstOk, List.all_eq_true] at h2
-  obtain ⟨ns, rfl, -⟩ := argPairs_of (fun p hp => isVregInt_iff (h2 p hp))
+  obtain ⟨ns, rfl, -⟩ := argPairsC_of (fun p hp => retPairOk_vreg (h2 p hp))
   exact ⟨ns, rfl⟩
 
 theorem assign_rets {us : List (Reg × Reg)} {regs : Array Reg} {i' : MInst}
@@ -647,20 +666,21 @@ theorem assign_rets {us : List (Reg × Reg)} {regs : Array Reg} {i' : MInst}
     · simp only [Except.ok.injEq] at h
       exact ⟨_, h.symm⟩
 
-/-- The `j`-th use value of a `Rets` is the store's value of its `j`-th fixed register. -/
-theorem rets_uses {ns : List (Nat × Reg)} {allocs : Array Loc} {m : Loc → CV}
-    (hfix : ∀ p ∈ ((retOps ns).toArray.zip allocs).toList, ∀ r, p.1.con = .fixed r → p.2 = .reg r)
-    (_hsz : (retOps ns).toArray.size = allocs.size) :
-    ∀ (j : Nat) (v p : Reg) (x : CV), (retPairs ns)[j]? = some (v, p) →
-      ((((retOps ns).toArray.zip allocs).toList.filter (·.1.isUse)).map (m ·.2))[j]? = some x →
-      x = m (.reg p) ∧ ∃ q ∈ ((retOps ns).toArray.zip allocs).toList, q.2 = .reg p := by
+/-- The `j`-th use value of a `Rets` (of either class) is the store's value of its `j`-th fixed
+register. -/
+theorem rets_usesC {ns : List (Nat × RegClass × Reg)} {allocs : Array Loc} {m : Loc → CV}
+    (hfix : ∀ p ∈ ((retOpsC ns).toArray.zip allocs).toList, ∀ r, p.1.con = .fixed r → p.2 = .reg r)
+    (_hsz : (retOpsC ns).toArray.size = allocs.size) :
+    ∀ (j : Nat) (v p : Reg) (x : CV), (argPairsC ns)[j]? = some (v, p) →
+      ((((retOpsC ns).toArray.zip allocs).toList.filter (·.1.isUse)).map (m ·.2))[j]? = some x →
+      x = m (.reg p) ∧ ∃ q ∈ ((retOpsC ns).toArray.zip allocs).toList, q.2 = .reg p := by
   intro j v p x hj hx
-  have hu : ((retOps ns).toArray.zip allocs).toList.filter (·.1.isUse) =
-      ((retOps ns).toArray.zip allocs).toList := by
+  have hu : ((retOpsC ns).toArray.zip allocs).toList.filter (·.1.isUse) =
+      ((retOpsC ns).toArray.zip allocs).toList := by
     rw [List.filter_eq_self]
     intro q hq
     have := (List.of_mem_zip (by simpa using hq)).1
-    simp only [retOps, List.mem_map] at this
+    simp only [retOpsC, List.mem_map] at this
     obtain ⟨_, -, e⟩ := this
     rw [← e]; rfl
   rw [hu] at hx
@@ -669,14 +689,33 @@ theorem rets_uses {ns : List (Nat × Reg)} {allocs : Array Loc} {m : Loc → CV}
   have hq' := hq
   simp only [Array.toList_zip, List.getElem?_zip_eq_some] at hq'
   obtain ⟨h1, -⟩ := hq'
-  simp only [retPairs, retOps, List.getElem?_map, Option.map_eq_some_iff] at hj h1
+  simp only [argPairsC, retOpsC, List.getElem?_map, Option.map_eq_some_iff] at hj h1
   obtain ⟨q1, hq1, e1⟩ := hj
   obtain ⟨q2, hq2, e2⟩ := h1
   rw [hq1] at hq2; cases hq2
   simp only [Prod.mk.injEq] at e1
   obtain ⟨-, rfl⟩ := e1
-  have e3 := hfix q (List.mem_of_getElem? hq) q1.2 (by rw [← e2])
+  have e3 := hfix q (List.mem_of_getElem? hq) q1.2.2 (by rw [← e2])
   exact ⟨by rw [e3], q, List.mem_of_getElem? hq, e3⟩
+
+theorem retOps_eq_C (ns : List (Nat × Reg)) :
+    retOps ns = retOpsC (ns.map fun q => (q.1, RegClass.int, q.2)) := by
+  simp [retOps, retOpsC, Function.comp_def]
+
+theorem retPairs_eq_C (ns : List (Nat × Reg)) :
+    retPairs ns = argPairsC (ns.map fun q => (q.1, RegClass.int, q.2)) := by
+  simp [retPairs, argPairsC, Function.comp_def]
+
+/-- The `j`-th use value of a `Rets` is the store's value of its `j`-th fixed register. -/
+theorem rets_uses {ns : List (Nat × Reg)} {allocs : Array Loc} {m : Loc → CV}
+    (hfix : ∀ p ∈ ((retOps ns).toArray.zip allocs).toList, ∀ r, p.1.con = .fixed r → p.2 = .reg r)
+    (_hsz : (retOps ns).toArray.size = allocs.size) :
+    ∀ (j : Nat) (v p : Reg) (x : CV), (retPairs ns)[j]? = some (v, p) →
+      ((((retOps ns).toArray.zip allocs).toList.filter (·.1.isUse)).map (m ·.2))[j]? = some x →
+      x = m (.reg p) ∧ ∃ q ∈ ((retOps ns).toArray.zip allocs).toList, q.2 = .reg p := by
+  rw [retOps_eq_C] at hfix _hsz ⊢
+  rw [retPairs_eq_C]
+  exact rets_usesC hfix _hsz
 
 theorem iterN_one_succ {S : Type} (f : S → S) (n : Nat) (s : S) :
     iterN f (n + 1) s = f (iterN f n s) := by
@@ -840,11 +879,11 @@ theorem ret_machine {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R
   · rw [Arm.w_program, hprog1]
   · intro ops' hops' j v p x hj hx
     obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
-    rw [operands_rets] at hops' hops
+    rw [operands_retsC] at hops' hops
     cases hops'
     cases hops
     obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hstat
-    obtain ⟨rfl, q, hq, hq2⟩ := rets_uses (fun q hq r hr => (hloc q hq).2 r hr) hsz j v p x hj hx
+    obtain ⟨rfl, q, hq, hq2⟩ := rets_usesC (fun q hq r hr => (hloc q hq).2 r hr) hsz j v p x hj hx
     have hal : p.allocatable = true := by
       have := (hloc q hq).1
       rw [hq2] at this

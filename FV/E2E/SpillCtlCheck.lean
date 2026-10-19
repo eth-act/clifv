@@ -46,7 +46,7 @@ theorem ctlNA_shape {R : Reg → Reg} {gn : Nat → Nat} (hg : VRenaming R gn) {
   case trapIf kd c hk =>
     rcases kd with ⟨r, s⟩ | ⟨r, s⟩ | c <;> (try obtain ⟨n, rfl⟩ := hk) <;>
       simp [MInst.mapRegs, CondBrKind.mapRegs, ctlInstOk, hg.vreg, Reg.isVregInt]
-  all_goals simp [MInst.mapRegs, ctlInstOk, retPairs, hg.vreg, Reg.isVregInt]
+  all_goals simp [MInst.mapRegs, ctlInstOk, retPairs, retPairOk, hg.vreg, Reg.isVregInt]
 
 /-- The `tryCall` replacing a `try_call` rule's last call. -/
 theorem ctlNA_tryCall (R : Reg → Reg) (c : CallInfo) {info : TryInfo} (h : info.clobberAll = false) :
@@ -382,6 +382,6 @@ theorem ctlInsts_pipeline {p : Clif.Program} {f : Clif.Function} {vc vcp : VCode
   refine ⟨fun b vb k i hvb hi => ?_, prep_entry hp hdom h0⟩
   rcases prep_ctl hp hdom hv b vb k i hvb hi with hc | ⟨rfl, rfl, ds, rfl, hds⟩
   · exact hc.2 b k
-  · simpa [ctlInstOk] using hds
+  · exact ctlInstOk_of_int (by simpa [ctlInstOkInt] using hds)
 
 end E2E
