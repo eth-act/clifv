@@ -1,6 +1,6 @@
 # Incremental Stock driver delivery
 
-Current execution plan, refreshed 2026-10-18; replaces the wholesale-cutover ordering in
+Current execution plan, refreshed 2026-10-19; replaces the wholesale-cutover ordering in
 [test-binary-alignment-recovery.md](test-binary-alignment-recovery.md). Historical
 proof checkpoints remain evidence, not a queue of instructions to resume.
 
@@ -13,7 +13,7 @@ case before shipping the first proved production class.
 
 #246 (`fc4a06f3`) and #247 (`5a3ad2bb`) are merged. Their preparation/CFG foundations
 are available now. The roadmap itself landed in #263 (`0ec908f6`).
-Inspected main: `73784c9c2d8625169f3e6d2a16e378ae0aeaca29` (2026-10-18). Production `Backend.lowerChecked`
+Inspected main: `e63ec13d58c1d96eca4c8946dcfea6e12126ef51` (2026-10-19). Production `Backend.lowerChecked`
 still calls `lowerFunction` and `Proof.Driver.lowerCheck`. The experimental
 `FVTest/Backend/Lowering/StockComparison.lean` runs Stock and marks its output
 unverified; scan replay alone does not prove original-source correctness.
@@ -23,12 +23,20 @@ machine semantics, simulation and completeness, compiler/checker/linker/generate
 proof consumers, original theorem variants and required axiom sets. Staging changes
 implementation order, not the accepted input domain or final obligation.
 
-## Reconciliation baseline: what changed since #263
+## Reconciliation baseline: current main after #314
 
-Main gained 32 commits after the roadmap merge (33 from its inspected `8a3284bf`
-base), touching 71 Stock paths. These are source overlaps, not an asserted merge
-conflict count. Published Stock ports are already on main; private kernels from
-the saved old tree have not been reconciled or revalidated against them.
+The last refresh landed as #314 (`5c8704c8`). Eight further commits are now on main.
+Only two Stock proof files changed in that interval: `StockDivFlags` and
+`StockDivMovK`, each gaining an explicit `DriverCheck` import in #323. No theorem
+statement or proof body changed in those two files. The earlier float/typed-driver
+ports (32 commits and 71 Stock paths at the preceding inspection) remain relevant
+when reconciling the private backlog; they are not eight new semantic Stock ports.
+Saved old-tree kernels have not been reconciled or revalidated on this tip.
+
+No production Stock class or runtime pipeline adapter has landed since #314.
+#323 improves rebuild dependencies; it is not the production adapter or evidence
+that the Stock driver has been activated. The next code landing remains the D0
+return/static packet or the minimal legacy-compatible adapter below.
 
 | Landed change | Consequence for our next landing |
 | --- | --- |
@@ -38,10 +46,18 @@ the saved old tree have not been reconciled or revalidated against them.
 | #287/#289/#295/#298: Lean allocator, now the CLI default, plus completeness proofs | Preserve the current Lean allocation route and `FV_RA_OUT` answers consumed by cargo-fv/link proofs. Stock comparison/numbering and trace tests deliberately select regalloc2; keep that settings-matched oracle path. Derive any Lean allocator completeness hypotheses for Stock's actual prepared code; raw EdgeVCode is not automatically in its domain. |
 | #282/#288/#291/#293/#297: Lean linker and executable-totality integration | Base consumer adapters on current linker/layout/relocation contracts, including the existing `--lean-ld` route where affected. Do not resurrect old generated-proof or linker assumptions, or fold an unrelated linker replacement into the first Stock activation. |
 | #306/#307/#309/#312: atomics/concurrency specifications and contracts | Record the changed Arm/CLIF/world dependencies when porting effectful packets. The first pure D0 class does not depend on proving the Stock atomic path; do not block its adapter on the later effect/concurrency migration. |
+| #323: Stock/isel import seam is merged (`e63ec13d`) | Keep `IselData` importing `FV.Backend.Isel` and `FV.Compile.Subset`, not the Backend umbrella. Keep the explicit `DriverCheck` imports in `StockDivFlags`/`StockDivMovK`. The generator was updated too; preserve its narrow imports when regenerating. This completes the previously pending StockSeam coordination item, not the runtime adapter. |
+| #322: Lean linker is the `--lean-link` default (`8dba4e7b`) | Validate the default Lean-linked executable and its `Plan.specOkB`/proof provenance; the explicit `--rust-lld` path is an opt-out, not the production baseline. Preserve existing rejection/fallback and verified-mode behavior, and do not mask a broken Stock integration by selecting the old linker. |
+| #318/#321: LICM and optimizer completeness; #315/#316/#319/#320: RC11/fences/full Arm and interference refinement | Preserve current optimizer guards/input contracts and world/semantics dependencies when porting affected packets. Reuse landed contracts rather than introducing a parallel model. The pure entry-return D0 does not require completing Stock memory/atomic or cross-thread refinement first. |
 | #265/#266: author squash merges and post-merge full validation | Authors land after per-PR gates; neither CI completion nor the continuous full gate is a pre-merge prerequisite. Tell the integrator the actual merge commit. Docs-only PRs have no required runtime/build/CI wait. |
 
-At inspection, #261 reports last green `a386cbab`, one commit behind `73784c9c`.
+At inspection, #261 reports last green `8dba4e7b`, one commit behind `e63ec13d`.
 This is recorded evidence, not a claim that the inspected tip is fully green.
+Kev reports #323 compared type/value expression hashes over 2,095 modules with
+zero changed constants and checked import closure; those are upstream evidence,
+not our own rebuild or validation of the unpublished proof backlog. His measured
+rebuild reduction applies to allocator/unwind/object/cleanup changes, not genuine
+Clif.Syntax/Isel/Encode/Arm.Exec dependencies. Do not promise those rebuilds vanish.
 Fetch main and re-read #261 before each actual implementation landing; refresh
 only the affected packet and adapters rather than restarting a global port.
 
@@ -94,11 +110,14 @@ which numbered landing it unblocks and why already saved work cannot supply it.
 
 ## First execution batch and divergence control
 
-The next task is a small code/proof reconciliation landing, not another global
-inventory or wholesale rewrite. This refresh does not claim that landing is done.
+The next implementation task is a small code/proof reconciliation landing, not
+another global inventory or wholesale rewrite. This documentation refresh does
+not claim that landing is done. A later main advance alone is not a reason for a
+new standalone plan PR: update affected packet evidence during implementation,
+unless an actual interface or user-requested strategy change requires replanning.
 
 1. Compare the canonical saved tree and latest verified recovery snapshot
-   (`agent/stock-driver-wip-backup-20261018T032106Z`, `c40421d4`) with current main.
+   (`agent/stock-driver-wip-backup-20261018T161534Z`, `c6dc6a23`) with current main.
    Preserve all unpublished sources/evidence. Start with the already-landed return
    path (`StockReturnDriverRuns` / `StockReturnSourceWitness`) and the saved
    `StockReturnStatic*` / `StockReturnPlacedStatic` packet as a concrete D0-related
@@ -114,19 +133,25 @@ inventory or wholesale rewrite. This refresh does not claim that landing is done
    that closure onto main's published float changes; do not overwrite main with the
    old canonical tree or claim old-head kernels are current evidence. Open its
    non-draft PR after per-PR checks and squash-merge promptly under §7.
-3. Coordinate the concrete overlap in #140 before implementation: Kev's floats
-   and register-allocation agents have already posted their ports. His #52 status
-   also lists **StockSeam** for reducing Stock rebuild fan-out. That import/build
-   seam is distinct from our runtime lowering/preparation contract, but may touch
-   the same files. Ask for its branch/file/interface boundary, reuse it when it
-   lands, and pause only actual overlapping edits. Keep his FP/ABI/shared-model
-   work moving; do not create a global freeze or duplicate its port.
+3. Reuse the **landed #323 import seam** immediately; no branch/file-list reply
+   or StockSeam merge is outstanding for that change. Keep `IselData` and Stock
+   proof hubs free of `import FV.Backend`; add the actual defining-module imports
+   when a saved proof relied on accidental umbrella visibility. Keep runtime
+   adapter code in its own module so importing it does not pull allocation,
+   emission, linking or unwind consumers into isel proof hubs. Inspect the changed
+   import closure before building and retain #323's generator changes. The floats/
+   allocator ports and explicit changed-premise review still need reconciliation
+   for our private packet. Flag only a new concrete overlap in #140; keep unrelated
+   FP/ABI/shared-model work moving without a global hold.
 4. Next land the minimal common pipeline boundary instantiated with current-main
    legacy lowering, allocation defaults and answer receipts, with exact legacy
    compatibility. Post a concrete proposed signature and consumers in #140 before
    shared production edits. Use D0's entry-parameter return as the first vertical
    proof target; no new constant/call/TryCall family is a prerequisite. Prepare
-   additive consumers against the typed-driver and current linker APIs.
+   additive consumers against the typed-driver and current default Lean linker
+   APIs, preserving allocation-answer, link-plan and generated-proof provenance.
+   The pending unwind PR #249 is not a prerequisite for pure D0; coordinate only
+   an actual shared metadata/interface change before touching its files.
 5. Reconcile each small PR with a newly fetched main tip before squashing. Re-run
    affected checks for a nontrivial rebase, report actual overlap/failure and retain
    successful source-matching evidence. Keep one active implementation batch and
@@ -151,7 +176,10 @@ The integrator owns continuous full validation on #261 and failure triage.
   kernel instead of launching another full build or weakening a theorem.
 - Lowering/preparation/encoding/allocation changes exercise runtime and encoding;
   E2E/link/scope changes exercise E2E and link-check; driver/cargo changes exercise
-  verified fv-demo and survey. Keep both original 1,150-identity cleanup-mode
+  verified fv-demo and survey using the current default Lean linker. Exercise
+  explicit `--rust-lld` only when that compatibility path is affected; retain the
+  explicit regalloc2 settings for Stock comparison and Lean allocation for the
+  production-default route. Keep both original 1,150-identity cleanup-mode
   reports and exact stage parity as an additional Stock regression requirement.
 - At production-class activation, add the end-to-end tests and complete witnesses
   in rows 5–7, exact artifact/proof provenance and settings-matched comparison for
