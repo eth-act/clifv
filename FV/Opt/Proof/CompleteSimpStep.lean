@@ -409,7 +409,7 @@ theorem RunXInv.opsAt (hc : Checked f info) (h : RunXInv f info allowed skelOk l
 
 theorem stepStmt_pure {rules : SimplifyFn} {skel : SkeletonFn} {cfg : Cfg} {s : Stmt} {v : ValueId}
     (hres : s.results = [v]) (hpi : isPure (mapOperands S.find s.inst) = true)
-    (hchk : (st.known v || decide (st.next ≤ v) ||
+    (hchk : (st.inGraph v || decide (st.next ≤ v) ||
       !(operands (mapOperands S.find s.inst)).all st.avail.contains ||
       !st.typedNode (mapOperands S.find s.inst) ||
       st.types.get? v != SState.nodeTy (mapOperands S.find s.inst)) = false) :
@@ -474,7 +474,12 @@ theorem step_pure {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
     obtain ⟨x, hx, rfl⟩ := mem_ops_map hy
     obtain ⟨d, t, hd, -⟩ := (h.ops hc hb0 hs hx).2.2.1
     exact (hm_contains_iff _ _).2 (by rw [h.rinv.m.defAvail _ d t hd]; rfl)
-  have hchk : (st.known v || decide (st.next ≤ v) ||
+  have hvg : st.inGraph v = false := by
+    simp only [SState.inGraph, hvk, Bool.false_or]
+    cases hp : st.partials.contains v with
+    | false => rfl
+    | true => exact absurd (h.rinv.partialsBig v hp) (Nat.not_lt.2 hvle)
+  have hchk : (st.inGraph v || decide (st.next ≤ v) ||
       !(operands (mapOperands S.find s.inst)).all st.avail.contains ||
       !st.typedNode (mapOperands S.find s.inst) ||
       st.types.get? v != SState.nodeTy (mapOperands S.find s.inst)) = false := by
@@ -485,7 +490,7 @@ theorem step_pure {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
       simp only [SState.typedNode, hpi, h.rinv.m.fn, hpt, Bool.and_self]
     have e3 : (st.types.get? v != SState.nodeTy (mapOperands S.step s.inst)) = false := by
       rw [hty]; simp
-    simp only [hvk, decide_eq_false (Nat.not_le.2 hvn), e1, e2, e3, Bool.not_true, Bool.or_self]
+    simp only [hvg, decide_eq_false (Nat.not_le.2 hvn), e1, e2, e3, Bool.not_true, Bool.or_self]
   rw [stepStmt_pure hres (by rw [hfind]; exact hpi) hchk, hfind]
   have hbV := CurV_bi (lgs := lgs) h.notbi hb0
   have hP0 := pure_ok (V := CurV f logs bi lgs) (B := Bad f logs bi j S)

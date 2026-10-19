@@ -443,7 +443,7 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
           (stR, subst.insert v w, StmtLog.repl { s with inst } w emitted) ∧
         stR.defs = st2.defs ∧ stR.alts = st2.alts ∧ stR.avail = st2.avail ∧ stR.types = st2.types ∧
         stR.next = st2.next ∧ stR.fn = st2.fn ∧ stR.memo = st2.memo ∧
-        stR.partialVals = st2.partialVals :=
+        stR.partials = st2.partials :=
       ⟨{ st2 with stats :=
           { st2.stats with rewritten := st2.stats.rewritten + 1, emitted := st2.stats.emitted + emitted.size } },
         by unfold pureEmit; simp [hbv, hm], rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩

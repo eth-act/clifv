@@ -47,6 +47,7 @@ def SimplifyPassSim (rules : SimplifyFn) (skel : SkeletonFn) : Prop :=
       (simplify rules skel allowed skelOk remat g info).2.2 = true →
     FunSim g (simplify rules skel allowed skelOk remat g info).1
 
+set_option maxHeartbeats 1000000 in
 /-- **The mid-end pipeline refines**, for every function (ill-formed inputs are returned with
 only unreachable blocks removed, validated). -/
 theorem optimizeReport_sim (cfg : Config)
