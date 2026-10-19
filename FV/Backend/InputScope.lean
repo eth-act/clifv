@@ -1,0 +1,18 @@
+import FV.Backend.Isel
+import FV.Compile.Subset
+
+namespace Backend
+
+/-- The signatures of `f` and of every callee are ones the end-to-end theorem covers
+(`sigAbiOk`, `E2E.InSubset.abiSigs`): `normal` parameters plus at most one `sret` pointer (in
+x8, returned in x0), `normal` returns. Other special-purpose parameters (`vmctx`, `sarg`) are
+compiled but flagged unverified. -/
+def abiSigs (f : Clif.Function) : Bool :=
+  sigAbiOk f.sig && f.externs.all (sigAbiOk ·.2.sig)
+
+/-- The theorem's conditions that do not need the rest of the file (`E2E.InSubset.subsetE`,
+`E2E.InSubset.abiSigs`, `E2E.InSubset.indSigs`). -/
+def verifiable (f : Clif.Function) : Bool :=
+  Compile.functionE f && abiSigs f && indSigsOk f
+
+end Backend

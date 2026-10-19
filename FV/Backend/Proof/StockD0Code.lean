@@ -11,8 +11,8 @@ set_option Elab.async false
 deriving instance DecidableEq for VBlock
 deriving instance DecidableEq for VCode
 deriving instance DecidableEq for Except
-attribute [-instance] instDecidableEqVBlock_stockD0Code instDecidableEqVCode_stockD0Code instDecidableEqExcept_stockD0Code
-attribute [local instance] instDecidableEqVBlock_stockD0Code instDecidableEqVCode_stockD0Code instDecidableEqExcept_stockD0Code
+attribute [-instance] instDecidableEqVBlock instDecidableEqVCode instDecidableEqExcept_fV
+attribute [local instance] instDecidableEqVBlock instDecidableEqVCode instDecidableEqExcept_fV
 
 macro "d0_open_kernel_decide" : tactic => `(tactic|
   run_tac do

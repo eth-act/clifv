@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockD0Dispatch
 import FV.E2E.LinkArm
 import FV.Opt.Legalize128Pass
 import FV.Backend.AllocReady
@@ -114,13 +115,14 @@ def pipeWithLowering (lower : Clif.Function → Except String VCode)
   pure ⟨k, vc, vcp, rf, af, fa, fb, base⟩
 
 def pipe (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
-  pipeWithLowering lowerFunction id f k base o
+  pipeWithLowering Backend.Stock.D0.defaultLower id f k base o
 
 theorem pipe_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipe f k base o = .ok a) :
     lowerFunction f = .ok a.vc ∧ prepare a.vc = .ok a.vcp ∧ lowerRFunc a.vcp a.rf = .ok a.af ∧
       emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧ a.k = k ∧ a.base = base := by
   unfold pipe pipeWithLowering id at h
+  rw [Backend.Stock.D0.defaultLower_eq_legacy] at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
   rcases h2 : prepare vc with _ | vcp <;> simp only [h2] at h
@@ -159,7 +161,7 @@ def pipeTWithLowering (lower : Clif.Function → Except String VCode)
   pure ⟨k, vc, vcp, allocResult vcp (readyAnswer vcp ra), af, fa, fb, base⟩
 
 def pipeT (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) : Except String Art :=
-  pipeTWithLowering lowerFunction id f k base o
+  pipeTWithLowering Backend.Stock.D0.defaultLower id f k base o
 
 theorem pipeT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeT f k base o = .ok a) :
@@ -168,6 +170,7 @@ theorem pipeT_spec {f : Clif.Function} {k : Nat} {base : BitVec 64} {o : Lean.Js
       lowerRFunc a.vcp a.rf = .ok a.af ∧ emitFunc a.k a.af = .ok a.fa ∧ a.fa.layout = .ok a.fb ∧
       a.k = k ∧ a.base = base := by
   unfold pipeT pipeTWithLowering id at h
+  rw [Backend.Stock.D0.defaultLower_eq_legacy] at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
   rcases h2 : prepare vc with _ | vcp <;> simp only [h2] at h
