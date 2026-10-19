@@ -1,0 +1,13 @@
+[package]
+name = "float-oracle"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Host IEEE 754 oracle for the Lean float core: recomputes `float-difftest` cases with Rust f32/f64 and compares"
+
+[[bin]]
+name = "float-oracle"
+path = "src/main.rs"
+
+[dependencies]

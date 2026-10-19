@@ -1,0 +1,209 @@
+{
+  "updated_utc": "2026-10-15T14:09:57.118026+00:00",
+  "scope": "user-authorized disk cleanup; original full #140 goal remains active/incomplete",
+  "initial_registered_worktrees": 9,
+  "remaining_registered_worktrees": [
+    "/home/lee/clifv                                f866008 [test-push]",
+    "/home/lee/clifv/.worktrees/driver-proof-resume 0108129 [agent/stock-logic-not-values-pr]",
+    "/home/lee/clifv/.worktrees/stock-lowering      9e5251d [agent/stock-lowering]"
+  ],
+  "removed_worktrees": [
+    {
+      "name": "artifact-sample-96",
+      "head": "f2944363bcaa674ea41e872bca9425a0261355c2",
+      "remote_refs": "origin/agent/artifact-sample-96",
+      "preserved_ignored_archive": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/artifact-sample-96-ignored.tar.gz",
+      "preserved_ignored_files": 5
+    },
+    {
+      "name": "register-alignment",
+      "head": "c8f60b96c686ec9358e6757276b1a5ef1e9774a9",
+      "remote_refs": "origin/agent/register-alignment",
+      "preserved_ignored_archive": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/register-alignment-ignored.tar.gz",
+      "preserved_ignored_files": 74759
+    },
+    {
+      "name": "stock-casts-scope-pr",
+      "head": "9aa1fe52eb29aad32db9eb93f361f8b3e1a4428a",
+      "remote_refs": "origin/agent/stock-return-control-source-pr",
+      "preserved_ignored_archive": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/stock-casts-scope-pr-ignored.tar.gz",
+      "preserved_ignored_files": 2
+    },
+    {
+      "name": "stock-foundations-pr",
+      "head": "5417d3dd894d551513c3bf567daabab2766f57dd",
+      "remote_refs": "origin/agent/stock-input-noalias-pr",
+      "preserved_ignored_archive": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/stock-foundations-pr-ignored.tar.gz",
+      "preserved_ignored_files": 23
+    },
+    {
+      "name": "stock-driver-production",
+      "head": "dbb4f98f152350a899be449934782dad33073ed3",
+      "retained_local_branch": "agent/stock-driver-on-024031f-main",
+      "preserved_ignored_files": 2,
+      "preserved_ignored_archive": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/stock-driver-production-ignored.tar.gz"
+    },
+    {
+      "name": "legacy-dead-cleanup-proof",
+      "head": "0bd8e7cdd9885cd2fe61d805ebb9c62f59aa5a4e",
+      "remote_refs": "origin/agent/legacy-dead-cleanup-proof",
+      "evidence_archive": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/legacy-dead-cleanup-proof-evidence.tar.gz",
+      "archive_sha256": "2b1cdf9e6d117155a317190b3c1eed61915fc2aec42421f8eea803a485dc560d",
+      "archive_entries": 567340
+    }
+  ],
+  "removed_generated_cache_directories": [
+    {
+      "path": "/home/lee/clifv/.worktrees/artifact-sample-96/.lake/build",
+      "freed_bytes": 581632
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/artifact-sample-96/rust/target",
+      "freed_bytes": 1134592
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/register-alignment/.lake/build",
+      "freed_bytes": 3325952
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/register-alignment/rust/target",
+      "freed_bytes": 35295232
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-casts-scope-pr/.lake/build",
+      "freed_bytes": 50778112
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-casts-scope-pr/rust/target",
+      "freed_bytes": 35790848
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-driver-production/.lake/build",
+      "freed_bytes": 24114716672
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-driver-production/rust/target",
+      "freed_bytes": 839680
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-foundations-pr/.lake/build",
+      "freed_bytes": 25937448960
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-foundations-pr/rust/target",
+      "freed_bytes": 35463168
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/.lake/build",
+      "freed_bytes": 29147136
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/legacy-dead-cleanup-proof/rust/target",
+      "freed_bytes": 88739840
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/.lake/build",
+      "freed_bytes": 4247523328
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/rust/target",
+      "freed_bytes": 11141120
+    },
+    {
+      "path": "/home/lee/clifv/tools/prejit-export/target",
+      "freed_bytes": 2401050624
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/tools/prejit-export/target",
+      "freed_bytes": 10018951168
+    },
+    {
+      "path": "/home/lee/clifv/target/byte-agreement/full-investigation/application-builds",
+      "freed_bytes": 356028416
+    },
+    {
+      "path": "/home/lee/clifv/target/byte-agreement/application-pilot/application-builds",
+      "freed_bytes": 24047616
+    },
+    {
+      "path": "/home/lee/clifv/target/byte-agreement/application-pilot-fixed/application-builds",
+      "freed_bytes": 25104384
+    },
+    {
+      "path": "/home/lee/clifv/target/byte-agreement/application-investigation/application-builds",
+      "freed_bytes": 1277501440
+    },
+    {
+      "path": "/home/lee/clifv/target/byte-agreement/applications-final/application-builds",
+      "freed_bytes": 592093184
+    },
+    {
+      "path": "/home/lee/clifv/target/byte-agreement/dependencies-final/application-builds",
+      "freed_bytes": 110794072064
+    },
+    {
+      "path": "/home/lee/clifv/target/byte-agreement/dependencies-release/application-builds",
+      "freed_bytes": 867581952
+    }
+  ],
+  "source_preservation": {
+    "checked_files": 5495,
+    "intentional_changes": [
+      [
+        ".",
+        "AGENTS.md"
+      ],
+      [
+        "driver-proof-resume",
+        "docs/research/stock-driver-merge-discipline.json"
+      ],
+      [
+        "driver-proof-resume",
+        "AGENTS.md"
+      ]
+    ],
+    "verified_utc": "2026-10-15T14:06:13.087893+00:00"
+  },
+  "evidence_archives": [
+    {
+      "path": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/artifact-sample-96-ignored.tar.gz",
+      "bytes": 34596,
+      "sha256": "1a018c3698b19a7238baa71e61528b23cfb27d35ab0bf7f97815d989b4d3b69b"
+    },
+    {
+      "path": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/legacy-dead-cleanup-proof-evidence.tar.gz",
+      "bytes": 156909180,
+      "sha256": "2b1cdf9e6d117155a317190b3c1eed61915fc2aec42421f8eea803a485dc560d"
+    },
+    {
+      "path": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/register-alignment-ignored.tar.gz",
+      "bytes": 8852951,
+      "sha256": "6c07287b49c80a9828f49d73cdae6b4cd3f4079843c5789c5d419528d45be752"
+    },
+    {
+      "path": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/stock-casts-scope-pr-ignored.tar.gz",
+      "bytes": 285,
+      "sha256": "a1701195e9149a01f060218960134f3bd5139cd592c4fbc396d7a2c098a3d3a6"
+    },
+    {
+      "path": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/stock-driver-production-ignored.tar.gz",
+      "bytes": 279,
+      "sha256": "746b80cc356711769481b492ecc9ba6e9b08ab342ce629a137417b40d13d8712"
+    },
+    {
+      "path": "/home/lee/.clifv-recovery/cleanup-20261015T140256Z/stock-foundations-pr-ignored.tar.gz",
+      "bytes": 191344,
+      "sha256": "69cc136030b00408f9abf92e8287aaf6a53225c9f2f1676576c3718f0988294d"
+    }
+  ],
+  "initial_free_reported": "46 GiB",
+  "current_free_bytes": 273207918592,
+  "free_space_note": "Shared filesystem is also changing due to other jobs; per-removal deltas are observations, not exclusive accounting.",
+  "initial_worktree_usage_reported": "182 GiB",
+  "remaining_worktree_bytes": 32511803392,
+  "policy_files": [
+    "AGENTS.md",
+    "docs/research/stock-driver-merge-discipline.json"
+  ],
+  "next": "Resume #140 ABI-aware term/run proofs and guarded source transfer, then full-goal integration. Use one warm cache and clean temporary worktrees after every batch."
+}
