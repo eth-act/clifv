@@ -18,7 +18,7 @@ import FV.Backend.Proof.RegallocInstsFP
 * logical immediates: `bitmaskOk_spec` (from the per-instruction check `logicImmOk` of
   `FormOk`: the encoding exists and decodes to the operand);
 * `cnt`/`addv`/`addp`/`umov`: the element loops of the Arm model unrolled (`cnt_aux_8`,
-  `addv_aux_8`, `addp_aux_8`, `elem_get_sw64`), bit-blasted by `bv_decide`.
+  `addv_aux_8`, `addp_aux_8`, `elem_get_sw64`), checked bit by bit (`bv_bits`).
 -/
 
 namespace Backend.Proof
@@ -47,7 +47,7 @@ open Backend
   generalize (x.extractLsb' 48 8).cpop = c6
   generalize (x.extractLsb' 56 8).cpop = c7
   simp only [Arm.BitVec.partInstall]
-  bv_decide
+  bv_bits
 
 @[csimp_rules] theorem addv_aux_8 (x : BitVec 64) :
     (Arm.DPSFP.addv_aux 0 8 8 x 0#8).setWidth 128 = (addvBytes x).setWidth 128 := by
@@ -60,8 +60,8 @@ open Backend
   rw [Arm.DPSFP.addv_aux, if_neg (by decide)]
   rw [Arm.DPSFP.addv_aux, if_neg (by decide)]
   rw [Arm.DPSFP.addv_aux, if_pos (by decide)]
-  simp only [addvBytes, byteOf, Arm.elem_get]
-  bv_decide
+  simp only [addvBytes, byteOf, Arm.elem_get, Nat.reduceMul, Nat.reduceAdd, BitVec.zero_add]
+  bv_bits
 
 @[csimp_rules] theorem addp_aux_8 (n m : BitVec 64) :
     Arm.DPSFP.addp_aux 0 8 8 (m ++ n) 0#64 = addpBytes n m := by
@@ -75,7 +75,20 @@ open Backend
   rw [Arm.DPSFP.addp_aux, if_neg (by decide)]
   rw [Arm.DPSFP.addp_aux, if_pos (by decide)]
   simp only [addpBytes, byteOf, Arm.elem_get, Arm.elem_set, Arm.BitVec.partInstall]
-  bv_decide
+  -- the bytes of `m ++ n` as bytes of `m` or `n` (before the widths are reduced, so that
+  -- `extractLsb'_append_eq_ite` matches), then the eight sums as atoms
+  simp only [BitVec.extractLsb'_append_eq_ite]
+  simp only [Nat.reduceAdd, Nat.reduceMul, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceSub,
+    dite_true, dite_false, Nat.lt_irrefl, Nat.le_refl]
+  generalize n.extractLsb' 0 8 + n.extractLsb' 8 8 = sn0
+  generalize n.extractLsb' 16 8 + n.extractLsb' 24 8 = sn1
+  generalize n.extractLsb' 32 8 + n.extractLsb' 40 8 = sn2
+  generalize n.extractLsb' 48 8 + n.extractLsb' 56 8 = sn3
+  generalize m.extractLsb' 0 8 + m.extractLsb' 8 8 = sm0
+  generalize m.extractLsb' 16 8 + m.extractLsb' 24 8 = sm1
+  generalize m.extractLsb' 32 8 + m.extractLsb' 40 8 = sm2
+  generalize m.extractLsb' 48 8 + m.extractLsb' 56 8 = sm3
+  bv_bits
 
 @[csimp_rules] theorem elem_get_sw64 (a : BitVec 128) (k : Nat) (h : k < 8) :
     Arm.elem_get (a.setWidth 64) k 8 = a.extractLsb' (8 * k) 8 := by
@@ -112,7 +125,7 @@ theorem hsb64 (s : BitVec 6) : Arm.highest_set_bit (1#1 ++ ~~~s) = 6 := by
   unfold Arm.highest_set_bit
   rw [Arm.highest_set_bit.go]
   have : Arm.BitVec.lsb (1#1 ++ ~~~s) (1 + 6 - 1) = 1#1 := by
-    simp only [Arm.BitVec.lsb]; bv_decide
+    simp only [Arm.BitVec.lsb]; bv_bits
   simp [this]
 
 /-- `decode_bit_masks` (non-immediate) with the element length `len` given. -/
@@ -223,13 +236,13 @@ theorem dbm64 (r s : Nat) (hr : r < 64) (hs : s < 64) :
 theorem hsb32 (s : Nat) (hs : s < 32) : Arm.highest_set_bit (0#1 ++ ~~~BitVec.ofNat 6 s) = 5 := by
   unfold Arm.highest_set_bit
   rw [Arm.highest_set_bit.go, Arm.highest_set_bit.go]
-  have hs' : BitVec.ofNat 6 s < 32#6 := by
-    rw [BitVec.lt_def, BitVec.toNat_ofNat]; simp; omega
   have h6 : Arm.BitVec.lsb (0#1 ++ ~~~BitVec.ofNat 6 s) (1 + 6 - 1) = 0#1 := by
-    simp only [Arm.BitVec.lsb]; bv_decide
+    simp only [Arm.BitVec.lsb]; bv_bits
   have h5 : Arm.BitVec.lsb (0#1 ++ ~~~BitVec.ofNat 6 s) (1 + 6 - 1 - 1) = 1#1 := by
-    generalize BitVec.ofNat 6 s = y at hs' ⊢
-    simp only [Arm.BitVec.lsb]; bv_decide
+    have h : (BitVec.ofNat 6 s)[5] = false := by
+      rw [← BitVec.getLsbD_eq_getElem, BitVec.getLsbD_ofNat,
+        Nat.testBit_lt_two_pow (x := s) (i := 5) (by omega), Bool.and_false]
+    simp only [Arm.BitVec.lsb]; bv_bits; simp [h]
   simp [h6, h5]
 
 theorem ibm32 (s : Nat) (hs : s < 32) : Arm.invalid_bit_masks 0#1 (BitVec.ofNat 6 s) false 32 = false := by

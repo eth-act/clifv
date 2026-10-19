@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleIcmpEmbed2
+import FV.Opt.Proof.KernelBV
 
 /-!
 # Lean templates for the icmp/selects rules that ran out of memory
@@ -10,7 +11,7 @@ has its value fact. The right-hand side is evaluated by `rule_rhs_c`. `opt_den_s
 the `Val` locals that `rule_lhs_g` leaves next to explicit values. The made node is then closed by
 `GraphOk.make_val` with one of three finishers:
 
-- `fin_bits_k`: split the remaining type, then `bv_decide` (`icmp.isle` 160, 175, 365, 368).
+- `fin_bits_k`: split the remaining type, then `kbv` (`icmp.isle` 160, 175, 365, 368).
 - `fin_icmp_not_k`: the comparison of a 0/1 `icmp` result (optionally `uextend`ed) against 0 or 1
   is its complement. These are the generic lemmas `icmp_eq_uext_icmp_zero` & co., with no type
   split of the compared values (`icmp.isle` 63, 70).
@@ -127,7 +128,7 @@ macro "fin_bits_k" : tactic => `(tactic| (
   opt_cases_ty <;> opt_widths <;> sem_simp_b <;>
     (try simp only [Int.reducePow, Int.reduceSub, Int.reduceToNat, Nat.reducePow,
       Nat.reduceSub] at *) <;>
-    (try subst_vars) <;> bv_decide (config := { timeout := 120 })))
+    (try subst_vars) <;> kbv))
 
 /-- An `icmp` result compared against the immediate 0 or 1: the immediate as a `BitVec`, then the
 complement lemmas. -/
