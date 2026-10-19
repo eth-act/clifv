@@ -37,6 +37,7 @@ def LowerTermShapeOkT (p : Program) (r : Rule) : Prop :=
     (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
     TermShapeT st st'
 
+set_option maxHeartbeats 800000 in
 theorem trap_shapeT {p : Program} (hp : Data p) : LowerTermShapeOkT p rule_lower_2237 := by
   intro f ctx hctx ti t data hrt hd hi cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch heval
   obtain ⟨m, rfl⟩ : ∃ m', m = m' + 100 := ⟨m - 100, by omega⟩
@@ -155,6 +156,7 @@ theorem termShapeT_runTerm {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx)
       exact ret_shapeT data_program f ctx hctx ti t data hrt hd hi {} rfl m n st #[] env' s1 out
         st' tr2 hm hn hvb hfirst hmatch heval
 
+set_option maxHeartbeats 800000 in
 /-- **`lower_branch` on a `jump`** appends exactly the `jump`. -/
 theorem jumpShape_runTerm {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f ctx) {ti : Nat}
     {d : Clif.BlockCall} {data : V} {targets : List Label}
