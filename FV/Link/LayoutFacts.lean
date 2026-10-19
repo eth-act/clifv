@@ -26,7 +26,7 @@ open E2E E2E.LinkCheck Backend
 /-- A successful pipeline's artifact: the layout of its assembly and its load address. -/
 theorem pipeT_layout {f : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeT f k b o = .ok a) : a.fa.layout = .ok a.fb ∧ a.base = b := by
-  unfold pipeT at h
+  unfold pipeT pipeTWithLowering id at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
   rcases h2 : prepare vc with _ | vcp <;> simp only [h2] at h
