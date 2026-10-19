@@ -1,0 +1,20 @@
+{
+  "utc": "20261016T090546Z",
+  "branch": "agent/stock-driver-wip-backup-20261016T090546Z",
+  "commit": "80541d85c98fe7451e2918204b63b464088e46f2",
+  "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+  "captured_dirty_paths": 1229,
+  "additional_evidence_paths": 1,
+  "remote_commit_and_all_captured_blobs_verified": true,
+  "index_and_active_head_unchanged": true,
+  "archive": {
+    "utc": "20261016T090541Z",
+    "path": "/home/lee/.clifv-recovery/20261016T090541Z-call-static-scratch/checkpoint.tar.gz",
+    "sha256": "ca0341d945e9a7c352d6e95393e3289bcd7440213f7d610e7e99a23bad54150e",
+    "bytes": 15354927,
+    "members": 293,
+    "every_member_byte_verified": true,
+    "scratch105_normal_and_complete_witnesses": "pass",
+    "canonical_integration_MCP_fullgates": "pending after frozen batch"
+  }
+}

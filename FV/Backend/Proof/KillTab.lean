@@ -1,6 +1,8 @@
 import FV.Backend.Proof.KillGen
 import FV.Backend.Proof.IselFlow
 import FV.Backend.Proof.IselShpOracle
+import FV.Backend.Proof.TermSetRoots
+import FV.Backend.Proof.TermSetData
 
 /-!
 # Killed vregs of the ISLE lowering (V4, `SpillKillFree`): the rule-data facts
@@ -9,7 +11,8 @@ The terms the uniform invariant (`KillGen`) runs over: `killTabS` (reachable thr
 `Isle.ruleTerms` from the rules of `lower` other than `nop`'s 587 and the I128 rules 636, 637)
 and `killTabB` (from the rules of `lower_branch`), not descending into the black-box oracle
 terms `killOracles` (`atomic_rmw_loop`, `atomic_cas_loop`, `br_table_impl`, the only builders of
-`AtomicRMWLoop`/`AtomicCASLoop`/`JTSequence` data). Decided over the exported rule data:
+`AtomicRMWLoop`/`AtomicCASLoop`/`JTSequence` data). The generated literal sets are untrusted;
+leaf-wise kernel-checked certificates over the exported rule data establish:
 
 * closure under the rules of the non-oracle terms, and of the root rules;
 * no call site builds `MInst` data of a variant with killed defs (`killCall`, for the call
@@ -25,39 +28,11 @@ namespace Backend.Proof.Kill
 
 open Backend Backend.Proof Isle Isle.Interp Isle.Aarch64
 
-/-! ## The term sets -/
+/-! ## Certificate bounds -/
 
 set_option maxRecDepth 100000
-
-/-- The black-box oracle terms: the only builders of data with killed defs. -/
-def killOracles : List TermId := [TId.atomic_rmw_loop, TId.atomic_cas_loop, TId.br_table_impl]
-
-/-- Worklist closure under `Isle.ruleTerms` of the non-oracle terms (`k`: fuel; the closure
-property is decided afterwards, so running out of fuel is harmless). -/
-def killClose : Nat → List TermId → Std.HashSet TermId → Std.HashSet TermId
-  | 0, _, seen => seen
-  | _ + 1, [], seen => seen
-  | k + 1, t :: ts, seen =>
-    if seen.contains t then killClose k ts seen
-    else if killOracles.contains t then killClose k ts (seen.insert t)
-    else killClose k ((program.rulesOf t).flatMap ruleTerms ++ ts) (seen.insert t)
-
-/-- The excluded root rules of `lower`: `nop` (587, hand-checked) and the I128 rules 636, 637
-(never match). -/
-def killExcl : List RuleId := [587, 636, 637]
-
-/-- The terms the statement root rules apply. -/
-def killRootsS : List TermId :=
-  ((program.rulesOf TId.lower).filter fun r => !killExcl.contains r.id).flatMap ruleTerms
-
-/-- The terms the branch root rules apply. -/
-def killRootsB : List TermId := (program.rulesOf TId.lower_branch).flatMap ruleTerms
-
-/-- **The terms of statement runs** (and the oracles). -/
-def killTabS : List TermId := (killClose 10000000 (killOracles ++ killRootsS) {}).toList
-
-/-- **The terms of branch runs** (and the oracles). -/
-def killTabB : List TermId := (killClose 10000000 (killOracles ++ killRootsB) {}).toList
+set_option maxHeartbeats 4000000
+set_option Elab.async false
 
 /-! ## The call-site condition -/
 
@@ -111,9 +86,15 @@ theorem closed_of {L : List TermId} (h : tabOkB L = true) :
   rw [ho', Bool.false_or] at h1
   exact ruleOk_of (List.all_eq_true.mp h1 rl hrl)
 
-theorem tabOkB_S : tabOkB killTabS = true := by native_decide
+theorem tabOkB_S : tabOkB killTabS = true := by
+  simp only [tabOkB, killTabS, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem tabOkB_B : tabOkB killTabB = true := by native_decide
+theorem tabOkB_B : tabOkB killTabB = true := by
+  simp only [tabOkB, killTabB, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **`killTabS` is closed** under the rules of its non-oracle terms, whose call sites are
 allowed. -/
@@ -128,10 +109,17 @@ theorem killTabB_closed : ∀ t ∈ killTabB, t ∉ killOracles → ∀ rl ∈ p
   closed_of tabOkB_B
 
 theorem rootS_ok : (program.rulesOf TId.lower).all
-    (fun rl => killExcl.contains rl.id || ruleOkB killTabS rl) = true := by native_decide
+    (fun rl => killExcl.contains rl.id || ruleOkB killTabS rl) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 theorem rootB_ok : (program.rulesOf TId.lower_branch).all (ruleOkB killTabB) = true := by
-  native_decide
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **The statement root rules** (but 587, 636, 637) apply terms of `killTabS` at allowed call
 sites. -/
@@ -149,7 +137,9 @@ theorem killRootB : ∀ rl ∈ program.rulesOf TId.lower_branch,
   fun rl hrl => ruleOk_of (List.all_eq_true.mp rootB_ok rl hrl)
 
 theorem oracles_ok : killOracles.all (fun t => killTabS.contains t && killTabB.contains t) = true := by
-  native_decide
+  simp only [killOracles, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The oracles are in both sets. -/
 theorem killOracles_sub : ∀ t ∈ killOracles, t ∈ killTabS ∧ t ∈ killTabB := by
@@ -160,7 +150,10 @@ theorem killOracles_sub : ∀ t ∈ killOracles, t ∈ killTabS ∧ t ∈ killTa
 
 theorem noX_ok : (killTabS ++ killTabB).all (fun t => t != TId.«MInst.AtomicRMWLoop» &&
     t != TId.«MInst.AtomicCASLoop» && t != TId.«MInst.JTSequence» && t != TId.invalid_reg) = true := by
-  native_decide
+  simp only [List.all_append, killTabS, killTabB, List.all_cons, List.all_nil,
+    Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **No variant term of a variant with killed defs, and no `invalid_reg`**, in either set. -/
 theorem killTab_noX : ∀ t ∈ killTabS ++ killTabB, t ≠ TId.«MInst.AtomicRMWLoop» ∧
@@ -170,7 +163,7 @@ theorem killTab_noX : ∀ t ∈ killTabS ++ killTabB, t ≠ TId.«MInst.AtomicRM
   simp only [Bool.and_eq_true, bne_iff_ne, ne_eq] at h
   exact ⟨h.1.1.1, h.1.1.2, h.1.2, h.2⟩
 
-theorem genCallRets_ok : killTabB.contains TId.gen_call_rets = false := by native_decide
+theorem genCallRets_ok : killTabB.contains TId.gen_call_rets = false := by decide +kernel
 
 /-- **No `gen_call_rets` in branch runs.** -/
 theorem genCallRets_notB : TId.gen_call_rets ∉ killTabB := by
@@ -186,7 +179,11 @@ def varOkB (t : TermId) : Bool :=
     | _ => true
   | none => true
 
-theorem variants_ok : (killTabS ++ killTabB).all varOkB = true := by native_decide
+theorem variants_ok : (killTabS ++ killTabB).all varOkB = true := by
+  simp only [List.all_append, killTabS, killTabB, List.all_cons, List.all_nil,
+    Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **No variant term of either set builds `MInst` data of a variant with killed defs** (for its
 declared result type). -/
@@ -266,7 +263,7 @@ theorem nop_rhs (htot : Cov.Totality) {ctx : Ctx} {r : Rule} (hr : r ∈ program
   exact ⟨rfl, fun _ hv => (Option.some.inj hv).symm⟩
 
 theorem killImm_ok : (killTabS.contains TId.imm && killTabB.contains TId.imm) = true := by
-  native_decide
+  decide +kernel
 
 /-- `imm` (a sub-run of `br_table_impl`) is in both sets. -/
 theorem imm_mem : TId.imm ∈ killTabS ∧ TId.imm ∈ killTabB := by
