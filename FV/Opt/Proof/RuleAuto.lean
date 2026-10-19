@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleImm
+import FV.Opt.Proof.KernelBV
 
 /-!
 # The batching template: `rule_ok`
@@ -13,7 +14,7 @@ A `simplify` rule obligation (`RuleOk p r`) is proven in four mechanical phases:
 3. `opt_eval hil` / `opt_eval hev [helpers]`: evaluate the if-lets and the right-hand side.
 4. `rule_finish`: the candidate is a matched class (`Valuation.Le` chain) or a made node
    (`GraphOk.make_val`), reducing the goal to an equation between bit vectors, closed per
-   type by `simp` or `bv_decide` (`rule_bits`).
+   type by `simp` or `kbv` (`rule_bits`).
 -/
 
 namespace Opt.Proof
@@ -114,7 +115,7 @@ macro_rules
         subst hm)
       all_goals opt_types))
 
-/-- `if` on a `Bool` as `bif` (`bv_decide` reads `cond`, not `ite` on `b = true`). -/
+/-- `if` on a `Bool` as `bif` (`cond`, the normal form read by `kbv`, not `ite` on `b = true`). -/
 theorem ite_eq_true_bif {α : Type} (b : Bool) (x y : α) :
     (if b = true then x else y) = bif b then x else y := by cases b <;> rfl
 
@@ -124,7 +125,7 @@ theorem bool8_bif (b : Bool) : Sem.bool8 b = bif b then 1#8 else 0#8 := by cases
 theorem select_bif {v w : Nat} (c : BitVec v) (x y : BitVec w) :
     Sem.select c x y = bif !(c == 0#v) then x else y := by
   unfold Sem.select Sem.truthy; cases h : (c == 0#v) <;> simp [bne, h]
-/-- `Sem.intcc` per condition code (`!=` as `!(· == ·)`: `bv_decide` does not read `bne`). -/
+/-- `Sem.intcc` per condition code (`!=` as `!(· == ·)`, the form read by `kbv`, not `bne`). -/
 theorem intcc_eq' {w : Nat} (x y : BitVec w) : Sem.intcc .eq x y = (x == y) := rfl
 theorem intcc_ne' {w : Nat} (x y : BitVec w) : Sem.intcc .ne x y = (!(x == y)) := rfl
 theorem intcc_slt' {w : Nat} (x y : BitVec w) : Sem.intcc .slt x y = (x.slt y) := rfl
@@ -162,10 +163,8 @@ macro "sem_simp" : tactic => `(tactic| simp (disch := decide) only [ishl_mask, u
   ite_eq_true_bif, intcc_eq', intcc_ne', intcc_slt', intcc_sge', intcc_sgt', intcc_sle', intcc_ult', intcc_uge', intcc_ugt', intcc_ule',
   Sem.sextend, Sem.ireduce, Sem.clz, Sem.ctz, Rust.intccSwapArgs, Rust.intccComplement, Ty.width] at *)
 
-/-- The bit-level goal: normalise immediates, split the type, decide. Only the goal and the
-bit-vector facts matter; the context is not `simp_all`ed (it holds the whole e-graph model).
-`bv_decide` gets a 120 s SAT timeout instead of the default 10 s: these goals take a few seconds
-alone, but the default made full builds fail intermittently under load. -/
+/-- The bit-level goal: normalise immediates, split the type, close by `kbv`. Only the goal and
+the bit-vector facts matter; the context is not `simp_all`ed (it holds the whole e-graph model). -/
 macro "rule_bits" : tactic => `(tactic| (
   try simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
     toNat_eq_iff_ofNat, ofInt_imm64OfBits, bne_iff_ne, ne_eq, toNat_eq_zero_iff] at *
@@ -179,7 +178,7 @@ macro "rule_bits" : tactic => `(tactic| (
          | (simp only [Sem.binary, Sem.unary, Sem.iadd, Sem.imul, Sem.band, Sem.bor, Sem.bxor]
             ac_rfl)
          | (opt_cases_ty <;> opt_widths <;> (try sem_simp) <;>
-             first | ac_rfl | bv_decide (config := { timeout := 120 })))))
+             first | ac_rfl | kbv))))
 
 set_option hygiene false in
 /-- Phase 4 when the candidate is a class matched by the left-hand side. -/
