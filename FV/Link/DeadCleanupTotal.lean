@@ -9,7 +9,7 @@ open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf Backend LinkSpec
 
 theorem pipeT_fb (f : Clif.Function) (k : Nat) (b b' : BitVec 64) (o : Lean.Json) :
     (getOk (pipeCleanupT f k b o)).fb = (getOk (pipeCleanupT f k b' o)).fb := by
-  simp only [pipeCleanupT, bind, Except.bind, pure, Except.pure]
+  simp only [pipeCleanupT, pipeTWithLowering, bind, Except.bind, pure, Except.pure]
   cases lowerFunction f with
   | error => rfl
   | ok vc =>

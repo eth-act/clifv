@@ -60,7 +60,7 @@ theorem pipeCleanupT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : Spil
     Prep.prepCheck_complete hp' (prune_prepDomain (prepDomain_of_lower hS hl hS.nonempty)),
     checkAlloc_allocResult (spillCheckAlloc_cleanup hD hsub (Spill.arityOk_of har) hD' hS hen hl hp) _,
     formsCovered_cleanup_complete hS hl hp' _⟩
-  simp [pipeCleanupT, hl, hp', clean, ha, he, hla, bind, Except.bind, pure, Except.pure]
+  simp [pipeCleanupT, pipeTWithLowering, hl, hp', clean, ha, he, hla, bind, Except.bind, pure, Except.pure]
 
 theorem chks_resultsCleanupT (hD : SpillDefinedHyp) {I : LinkInput} (hin : InScopeP I = true)
     (hlk : linkerOkR I I.resultsCleanupT = true) {e : Clif.Function × Except String Art} (he : e ∈ I.resultsCleanupT) :
