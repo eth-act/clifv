@@ -8,7 +8,7 @@ Untrusted: computes, by a fixpoint over the entries of V3's value table `covTab`
 (`cRule`, `IselSzDefs`) every entry's rules emit, drops the entries without a bound (those
 reaching a `Call`/`CallInd`/`JTSequence` `emit` or `gen_call_args`, used only by the
 hand-checked rules), and writes `IselSzTab.lean`: the cost table as Lean literals and the
-`native_decide` checks (`chkCost` and the root checks) the proofs rely on. Prints the root costs
+leaf-wise `decide +kernel` checks (`chkCost` and the root checks) the proofs rely on. Prints the root costs
 and failures.
 
 Regenerate (from the repository root, after `lake build FV.Backend.Proof.IselSzDefs
@@ -84,6 +84,10 @@ hand-checked call and `br_table` rules emit at most `szStmtK`/`szTermK`. All are
 over the exported rule data.
 -/
 
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
+
 namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Aarch64
@@ -101,7 +105,7 @@ def renderTab (nm : String) (awn : String) (tab : CTab) : String := Id.run do
     " ++ ".intercalate ((List.range n).map (s!"{nm}{·}")) ++ "\n\n"
   out := out ++ s!"/-- `chkCost`'s test of one entry of `{nm}`. -/\nabbrev {nm}EntryOk (e : TermId × List AW × Nat) : Bool :=\n  (program.rulesOf e.1).all (cRuleLe program covTab {awn} {nm} aext actor apre aOracle e.2.1 e.2.2)\n\n"
   for k in [0:n] do
-    out := out ++ s!"theorem {nm}{k}_ok : ({nm}{k}).all {nm}EntryOk = true := by native_decide\n\n"
+    out := out ++ s!"theorem {nm}{k}_ok : ({nm}{k}).all {nm}EntryOk = true := by\n  simp only [{nm}{k}, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]\n  repeat' apply And.intro\n  all_goals decide +kernel\n\n"
   out := out ++ s!"/-- **Every rule of every entry of `{nm}` checks.** -/\ntheorem {nm}_ok : chkCost program covTab {awn} {nm} aext actor apre aOracle = true := by\n  unfold chkCost\n  show ({nm}).all {nm}EntryOk = true\n  simp only [{nm}, List.all_append, " ++
     ", ".intercalate ((List.range n).map (s!"{nm}{·}_ok")) ++ ", Bool.and_self]\n\n"
   return out
@@ -111,30 +115,54 @@ def render (tab tgt : CTab) : String :=
 "/-- The closure roots of `lower` other than the call rules (1031–1033) emit at most `szStmtK`. -/
 theorem szStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
     r.id == 1031 || r.id == 1032 || r.id == 1033 ||
-    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.xv .inst] szStmtK r) = true := by native_decide
+    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.xv .inst] szStmtK r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `trap`, 1037 `return`) emit at most `szTermK`. -/
 theorem szTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.c0] szTermK r) = true := by native_decide
+    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.c0] szTermK r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The rules of `lower_branch` other than the `try_call` (1034–1036) and `br_table` (1140)
 rules emit at most `szTermK`. -/
 theorem szBranch_ok : (program.rulesOf TId.lower_branch).all (fun r =>
     r.id == 1034 || r.id == 1035 || r.id == 1036 || r.id == 1140 ||
-    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.c0, .c0] szTermK r) = true := by native_decide
+    cRuleLe program covTab actorW szCTab aext actor apre aOracle [.c0, .c0] szTermK r) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The closure roots of `lower` emit at most `tgStmtK` branch targets. -/
 theorem tgStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
-    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.xv .inst] tgStmtK r) = true := by native_decide
+    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.xv .inst] tgStmtK r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `trap`, 1037 `return`) emit at most `tgTermK` branch targets. -/
 theorem tgTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.c0] tgTermK r) = true := by native_decide
+    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.c0] tgTermK r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The rules of `lower_branch` other than the `br_table` rule (1140) emit at most `tgTermK`
 branch targets. -/
 theorem tgBranch_ok : (program.rulesOf TId.lower_branch).all (fun r => r.id == 1140 ||
-    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.c0, .c0] tgTermK r) = true := by native_decide
+    cRuleLe program covTab actorT tgCTab aext actor apre aOracle [.c0, .c0] tgTermK r) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 end Backend.Proof.Cov
 "
