@@ -1069,8 +1069,11 @@ float vregs in v0/v1 and an int one in x0, `Rets` of a float vreg in v0): `ctlCh
 rejected it), `ctlCheck_args_fCtl`, `dominated_fCtl`, `scopeT_fCtl : LowerScopeT fCtl`;
 `ctlCheckInt_fInt` with `ctlCheck_of_int` on an integer function.
 
-**Open (slice 5b).** `ctlSpill_typed` (the control forms of `lowerFunction f` meet
-`Spill.SpillInstOk` on `Dominated`/`LowerScopeT` input) needs the control-shape analysis
-(`IselCtlHyp`, `IselShp*`) over float-capable contexts: a typed abstract domain for the Cov
-interpretation (shared with the typed form coverage of slice 6), `CtlShape`/`SpillInstOk` with
-class-matched fixed v0–v7 `Args`/`Rets` operands.
+**Typed control-form pieces (slice 5b).** `Spill.spillInstOk_retsC`, `Spill.spillInstOk_argsC`
+(`Proof/SpillCtlFormsT.lean`; `spillInstOk_rets_of_C` recovers the integer one),
+`Spill.sigArgLocs_regsC` and `Spill.spillInstOk_entryArgsT` (`Proof/AbiClassRegs.lean`),
+`EntryClassOk`/`entryClassOkB`/`entryClassOk_of` (`Proof/EntryClass.lean`: the entry block's
+parameter classes are the signature's, a CLIF-verifier fact `functionET` does not check).
+`ctlSpill_typed` for every typed-scope input (an `IselCtlHyp` over `CtxInvT`) is deferred: the
+typed chain takes the control-form facts as a run-time-decided premise (`ctlSpillB`); the engine
+work it needs is listed in `docs/plans/floats.md` (slice 5b follow-up).
