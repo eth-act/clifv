@@ -517,7 +517,7 @@ pub mod tls {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn stock_entry_returns_in_mixed_program() {
+    fn entry_returns_preserve_values_in_mixed_program() {
         for value in [0, 1, 0x8000_0000, u32::MAX] {
             assert_eq!(stock_entry_return::identity32(std::hint::black_box(value)), value);
         }

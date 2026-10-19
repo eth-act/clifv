@@ -7,6 +7,13 @@ numbered zero, an empty body, and a return of that parameter, with matching i32 
 i64 signature and default, System V or fast calling convention. Symbol names and
 run-command metadata are arbitrary. Other functions retain legacy lowering.
 
+The unoptimized Rust frontend currently inserts a second block and `nop`/jump
+prologues even for identity functions. Those functions retain legacy lowering;
+the next class must prove that real prologue shape and retain its actual Stock
+rule history. The mixed linked regression uses an exact one-block CLIF identity
+and a legacy caller, the default Lean ELF writer and the production executable
+compiler. Its proof files come from the same emitter as `link-check`.
+
 On a selected input the dispatcher runs the actual Stock driver. It compacts
 Stock's reserved virtual-register prefix and restores the source symbol name.
 It accepts only empty successor-edge rows; a Stock error or nonempty row selects
@@ -38,6 +45,7 @@ production parser/routing/mixed-file regression with:
 
 ```
 FV_MEMCAP=8G scripts/memcap.sh lake env lean --run FVTest/Backend/Lowering/StockD0Runtime.lean
+FV_MEMCAP=8G scripts/memcap.sh lake env lean --run FVTest/Backend/Lowering/StockD0Linked.lean /tmp/stock-d0-linked-fixture
 ```
 
 This class does not complete #140. Pure operations, CFGs/loops, effects, calls,

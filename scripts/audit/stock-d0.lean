@@ -11,6 +11,7 @@ import FV.E2E.LoweringPipeline
 #print axioms Backend.Stock.D0.eligible_sound
 #print axioms Backend.Stock.D0.defaultLower_eq_legacy
 #print axioms Backend.Stock.D0.failed_stock_falls_back
+#print axioms Backend.Stock.D0.selectWith_eq_original
 #print axioms Backend.Stock.D0.source_eligible
 #print axioms Backend.Stock.D0.stock_succeeds
 #print axioms Backend.Stock.D0.stock_edges_empty
