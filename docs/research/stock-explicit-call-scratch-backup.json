@@ -1,0 +1,22 @@
+{
+  "archive": {
+    "utc": "20261016T105303Z",
+    "path": "/home/lee/.clifv-recovery/20261016T105303Z-explicit-call-scratch/checkpoint.tar.gz",
+    "sha256": "d76d3decf8611e51bd05e85770b6bd155738c37661deb8e4016ebc7944c06d19",
+    "bytes": 29509186,
+    "members": 482,
+    "every_member_byte_verified": true,
+    "scratch164_normal_and_complete_witnesses": "pass",
+    "canonical_integration_MCP_fullgates": "pending after frozen batch"
+  },
+  "remote_backup": {
+    "utc": "20261016T105312Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T105312Z",
+    "commit": "fac7d693e0fa8787767b97f10505172ba78cf355",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1247,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  }
+}
