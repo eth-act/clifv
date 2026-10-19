@@ -117,7 +117,7 @@ noncomputable def actRL (κ : Nat → Clif.Function → Nat) (M : Nat) (g : Clif
 /-- **`progCall`'s per-state facts**: from every caller state compatible with `w`
 (`CallerOk`), every state of the callee's run whose step ends without error has the per-state
 facts (from `ThmG` one level down, for the callee activation `progCall` builds). -/
-theorem progCallG (hL : L.Ok) {M : Nat} (hM : 0 < M) (ihG : L.ThmG κ (M - 1)) {n : String}
+theorem progCallG (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ihG : L.ThmG κ (M - 1)) {n : String}
     {h : Clif.Function} (hpf : L.P.func? n = some h) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     (hib : ((RAFrame.compute (L.A h).vcp (L.A h).rf).intBase = 0 ∧
       (RAFrame.compute (L.A h).vcp (L.A h).rf).size = (L.A h).af.frameSize) ∨ L.NeedNI)
@@ -130,7 +130,7 @@ theorem progCallG (hL : L.Ok) {M : Nat} (hM : 0 < M) (ihG : L.ThmG κ (M - 1)) {
     {cm' : Clif.Mem} (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
     (hinit : Clif.initState L.P n vals cm = .ok cs)
-    (hrun : Clif.runLoop L.base L.P M cs = .returned rvals cm') :
+    (hrun : L.crun M cs = .returned rvals cm') :
     ∀ t, L.CallerOk F h uses w t → L.RunGoodL (M - 1) h (enterAt (L.A h) t) := by
   obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
   subst hname
@@ -155,12 +155,10 @@ theorem progCallG (hL : L.Ok) {M : Nat} (hM : 0 < M) (ihG : L.ThmG κ (M - 1)) {
     obtain ⟨g, hg, hcg⟩ := hcal
     exact hL.slotFits g hg h hcg
   have hce : ClifEntry h vals cs := clifEntry_initState hpf hinit
-  -- the run of the program without functions (program callees at most `M - 1` steps)
-  obtain ⟨m, hm⟩ := Clif.runLoop_linkN (base := L.base) (syms := L.syms) (M - 1) hL.names hh
-    hL.free (hL.indScope h hh)
-    (E := L.envR (M - 1) h) rfl rfl (fun _ hn => L.envR_of (.inl hn))
-    (L.envR_link hL.names) M cs (by omega) (runInv_entry hh hce)
+  -- the run of the program without functions (program callees: the callee runs one level down)
+  obtain ⟨m, hm⟩ := hR.link M hM h hh cs (runInv_entry hh hce)
     (runInv_entry (by simp [Clif.Program.only]) hce) (fun _ => hsym'.trans hmr.symbols)
+    (L.envR (M - 1) h) rfl rfl (fun _ hn => L.envR_of (.inl hn)) (L.envR_link hL.names)
     (by rw [hrun]; intro _ e; cases e) (by rw [hrun]; intro e; cases e)
   rw [hrun] at hm
   -- the canonical state and the shared body-entry world
@@ -440,7 +438,7 @@ theorem progCallG (hL : L.Ok) {M : Nat} (hM : 0 < M) (ihG : L.ThmG κ (M - 1)) {
 
 /-- **The callee's states of a returning call of a function of `P`** (`progOsCore`'s premises):
 from `ThmG` one level down. -/
-theorem progGoodCore (hL : L.Ok) {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
+theorem progGoodCore (hL : L.Ok) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
     {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h)
     {F G : BitVec 64 → Prop} {s0 : Arm.ArmState} (himgF : ∀ a, L.Img a → F a)
     (himgG : ∀ a, L.Img a → G a) (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
@@ -588,7 +586,7 @@ at a `bl`/`blr` line) and the machine calls `h` (`CallsAtL`), every state of `h`
 from `u` whose step ends without error has the per-state facts: the premise is the antecedent of
 `progOs`/`progOsReg` (`calleeOk`), whose linked call of `h` is the callee activation of
 `progCall`, whose states `ThmG` one level down covers. -/
-theorem callGood (hL : L.Ok) {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1)) {g : Clif.Function}
+theorem callGood (hL : L.Ok) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1)) {g : Clif.Function}
     (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) {u : Arm.ArmState} {h : Clif.Function}
     (hpre : (L.actRL κ M g F G s).CallPre u) (hprog : u.program = (L.A g).fb.program (L.A g).base)
@@ -712,7 +710,7 @@ theorem callGood (hL : L.Ok) {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1)) {g : 
 register-level `GoodX` of every state before `n`), when every state before its return whose step
 ends without error is before `n`: its own states from the trace, the nested ones from the call
 states (`callGood`). -/
-theorem runGood_of_trace (hL : L.Ok) {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
+theorem runGood_of_trace (hL : L.Ok) [L.CrunOk] {M : Nat} (ihG : 0 < M → L.ThmG κ (M - 1))
     {g : Clif.Function} (hg : g ∈ L.P.funcs) {F G : BitVec 64 → Prop} {ra : BitVec 64}
     {s w₀ : Arm.ArmState} (he : L.MachEntry κ M g F G ra s w₀) {n : Nat}
     (hgood : ∀ i < n, actGoodX (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb
@@ -767,7 +765,7 @@ theorem retL_of_actRet {g : Clif.Function} {ra : BitVec 64} {s t : Arm.ArmState}
   ⟨hret.ret.pc.trans habi.lr.symm, hret.ret.err, hret.prog.trans habi.program, hret.ret.sp⟩
 
 /-- **The per-state part of the induction step.** -/
-theorem thmG_of (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1))
+theorem thmG_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm κ (M - 1))
     (ihG : 0 < M → L.ThmG κ (M - 1)) : L.ThmG κ M := by
   intro g hg F vals cs w₀ fuel rvals cm' hWE hrun
   have hc := hL.compiled g hg
@@ -799,25 +797,53 @@ theorem thmG_of (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.Thm 
       Nat.lt_of_not_le fun hle => hno n hle (L.retL_of_actRet hME.abi hret)
 
 /-- **The per-state part of the linking statement at every depth.** -/
-theorem thmG (hL : L.Ok) (hκ : L.Budget κ) : ∀ M, L.ThmG κ M
+theorem thmG (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) : ∀ M, L.ThmG κ M
   | 0 => L.thmG_of hL hκ (fun h => absurd h (Nat.lt_irrefl 0)) fun h => absurd h (Nat.lt_irrefl 0)
   | M + 1 => L.thmG_of hL hκ (fun _ => L.thm hL hκ M) fun _ => thmG hL hκ M
 
 /-- **The induction step of the linking statement with the per-state facts.** -/
-theorem thmX_of (hL : L.Ok) (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.ThmX κ (M - 1)) :
+theorem thmX_of (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) {M : Nat} (ih : 0 < M → L.ThmX κ (M - 1)) :
     L.ThmX κ M :=
   ⟨L.thm_of hL hκ fun h => (ih h).1, L.thmG_of hL hκ (fun h => (ih h).1) fun h => (ih h).2⟩
 
 /-- **The linking statement with the per-state facts at every depth.** -/
-theorem thmX (hL : L.Ok) (hκ : L.Budget κ) : ∀ M, L.ThmX κ M
+theorem thmX (hL : L.Ok) [L.CrunOk] (hκ : L.Budget κ) : ∀ M, L.ThmX κ M
   | 0 => L.thmX_of hL hκ fun h => absurd h (Nat.lt_irrefl 0)
   | M + 1 => L.thmX_of hL hκ fun _ => thmX hL hκ M
 
+/-! ## `RunGoodL` does not read the callee runs -/
+
+theorem reachL_withCrun {L : LinkSys} {cr : Nat → Clif.State → Clif.Outcome} {M : Nat}
+    {f : Clif.Function} {c : Arm.ArmState} {M' : Nat} {g : Clif.Function} {c' t : Arm.ArmState}
+    (h : L.ReachL M f c M' g c' t) : (L.withCrun cr).ReachL M f c M' g c' t := by
+  induction h with
+  | act hj =>
+    rw [← L.mach_withCrun cr] at hj ⊢
+    exact .act hj
+  | nest hj hc herr _ ih =>
+    rw [← L.mach_withCrun cr] at hj hc herr ih
+    exact .nest hj hc herr ih
+
+theorem goodAt_withCrun {L : LinkSys} {cr : Nat → Clif.State → Clif.Outcome} {M : Nat}
+    {g : Clif.Function} {c t : Arm.ArmState} (h : (L.withCrun cr).GoodAt M g c t) :
+    L.GoodAt M g c t := by
+  obtain ⟨X, K, G, gv, heq, hg, hi⟩ := h
+  rw [L.hooks_withCrun, L.mach_withCrun] at heq
+  rw [L.hooks_withCrun] at hg
+  exact ⟨X, K, G, gv, heq, hg, hi⟩
+
+/-- **`RunGoodL` does not depend on the callee runs** of the linked system (the linked machine
+does not read them). -/
+theorem runGoodL_withCrun {L : LinkSys} {cr : Nat → Clif.State → Clif.Outcome} {M : Nat}
+    {f : Clif.Function} {c : Arm.ArmState} (h : (L.withCrun cr).RunGoodL M f c) :
+    L.RunGoodL M f c := fun M' g c' t hR he =>
+  goodAt_withCrun (h M' g c' t (reachL_withCrun hR) (by rw [L.mach_withCrun]; exact he))
+
 end LinkSys
 
-/-- **`backend_correct_program_budgetX`**: `backend_correct_program_budget` with the run's per-state facts for a returning or
-trapping outcome. -/
-theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
+/-- **`backend_correct_program_core` with the run's per-state facts** for a returning or
+trapping outcome (`RunGoodL`), for any callee runs (`LinkSys.CrunOk`). -/
+theorem backend_correct_program_coreX (L : LinkSys) (hL : L.Ok) [L.CrunOk]
     {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) {f : Clif.Function}
     (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
     {cs : Clif.State}
@@ -831,12 +857,13 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
     (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
       (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
     (hpl : L.NeedSlots → L.PlaceAt cs.mem (spv w₀))
-    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs) :
-    ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs) ∧
-      ((∃ vals cm, Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) ∨
-        (∃ c, Clif.runLoop L.base L.P (M + 1) cs = .trapped c) → L.RunGoodL M f s) := by
-  refine ⟨backend_correct_program_budget L hL hκ hf M hent hres hF hgfree himg hbe hargs hcs hsav
-    hrel hpl htr, fun hout => ?_⟩
+    (htr : TrapsExplicit (Clif.linkEnvR L.P L.base (L.crun M)) L.P.bare cs) {o : Clif.Outcome}
+    (hlink : ((∃ vals cm, o = .returned vals cm) ∨ ∃ c, o = .trapped c) →
+      ∃ m, Clif.runLoop (L.envR M f) L.P.bare m cs = o) :
+    ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s o ∧
+      ((∃ vals cm, o = .returned vals cm) ∨ (∃ c, o = .trapped c) → L.RunGoodL M f s) := by
+  refine ⟨backend_correct_program_core L hL hκ hf M hent hres hF hgfree himg hbe hargs hcs hsav
+    hrel hpl htr hlink, fun hout => ?_⟩
   have hc := hL.compiled f hf
   have hfr := lowerRFunc_frame hc.alloc
   have hst := hres
@@ -869,22 +896,10 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
         ((ctlCheck_args (lowerRFunc_ok hc.alloc).2.2 hvb hi).2.2 _ hv).2⟩
   -- the whole-program run is a run of the program without functions
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
-  have hlink := Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
-    (hL.indScope f hf) (E := L.envR M f)
-    rfl rfl (fun _ hn => L.envR_of (.inl hn))
-    (L.envR_link hL.names) (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
-    (fun _ => hrel.1.symbols)
-  cases ho : Clif.runLoop L.base L.P (M + 1) cs with
-  | stuck m => rw [ho] at hout; simp at hout
-  | outOfFuel => rw [ho] at hout; simp at hout
-  | returned vals cm =>
-    obtain ⟨m, hm⟩ := hlink (by rw [ho]; exact fun _ h => nomatch h) (by rw [ho]; exact fun h => nomatch h)
-    rw [ho] at hm
-    exact (L.thmG hL hκ M f hf L.F args cs w₀ m vals cm hWE hm).1 L.Img ra s hME
-  | trapped c =>
-    obtain ⟨m, hm⟩ := hlink (by rw [ho]; exact fun _ h => nomatch h) (by rw [ho]; exact fun h => nomatch h)
-    rw [ho] at hm
-    have ih : 0 < M → L.Thm κ (M - 1) := fun _ => L.thm hL hκ (M - 1)
+  obtain ⟨m, hm⟩ := hlink hout
+  rcases hout with ⟨vals, cm, rfl⟩ | ⟨c, rfl⟩
+  · exact (L.thmG hL hκ M f hf L.F args cs w₀ m vals cm hWE hm).1 L.Img ra s hME
+  · have ih : 0 < M → L.Thm κ (M - 1) := fun _ => L.thm hL hκ (M - 1)
     have hJ : L.ActInv f (spv w₀) cs := ⟨hIf, hcs.callers, hpl⟩
     have hm' : Clif.runLoop (L.envOf M f (spv w₀)) L.P.bare m cs = .trapped c := by
       rw [L.runLoop_envOf hL hf m cs hJ]; exact hm
@@ -904,5 +919,75 @@ theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
     refine Nat.lt_of_not_le fun hle => hstuck (k - n) ?_
     rw [show n + (k - n) + 1 = k + 1 by omega]
     exact hk
+
+/-- **`backend_correct_program_budgetX`**: `backend_correct_program_budget` with the run's per-state facts for a returning or
+trapping outcome. -/
+theorem backend_correct_program_budgetX (L : LinkSys) (hL : L.Ok)
+    {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) {f : Clif.Function}
+    (hf : f ∈ L.P.funcs) (M : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState} {args : List Clif.Val}
+    {cs : Clif.State}
+    (hent : AbiEntry (L.A f).fb (L.A f).base ra s) (hres : StackAvail (κ M f) (L.A f).af s)
+    (hF : L.F = frameWG (κ M f) (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).size (L.A f).af L.Img s)
+    (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + κ M f) (spv s) a)
+    (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
+    (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hsav : StackArgsAvoid L.Img f.sig args s)
+    (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (hpl : L.NeedSlots → L.PlaceAt cs.mem (spv w₀))
+    (htr : TrapsExplicit (Clif.linkEnvN L.P L.base M) L.P.bare cs) :
+    ArmRefines (L.A f).fb (L.A f).base ra (L.mach M f) s (Clif.runLoop L.base L.P (M + 1) cs) ∧
+      ((∃ vals cm, Clif.runLoop L.base L.P (M + 1) cs = .returned vals cm) ∨
+        (∃ c, Clif.runLoop L.base L.P (M + 1) cs = .trapped c) → L.RunGoodL M f s) := by
+  haveI := L.crunOk_std hL
+  have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
+  have h := backend_correct_program_coreX L.std (hL.withCrun _) hκ hf M hent hres hF hgfree himg
+    hbe hargs hcs hsav hrel hpl htr (o := Clif.runLoop L.base L.P (M + 1) cs) fun ho =>
+    Clif.runLoop_linkN (base := L.base) (syms := L.syms) M hL.names hf hL.free
+      (hL.indScope f hf) (E := L.std.envR M f)
+      rfl rfl (fun _ hn => L.std.envR_of (.inl hn))
+      (L.std.envR_link hL.names) (M + 1) cs (Nat.le_refl _) (runInv_entry hf hcs) hIf
+      (fun _ => hrel.1.symbols)
+      (by rcases ho with ⟨_, _, ho⟩ | ⟨_, ho⟩ <;> rw [ho] <;> exact fun _ h => nomatch h)
+      (by rcases ho with ⟨_, _, ho⟩ | ⟨_, ho⟩ <;> rw [ho] <;> exact fun h => nomatch h)
+  rw [L.mach_std] at h
+  exact ⟨h.1, fun hout => LinkSys.runGoodL_withCrun (h.2 hout)⟩
+
+/-- **`backend_correct_program_peak` with the run's per-state facts** for a returning or
+trapping outcome (L1d): the linked machine of the run's peak call depth `d` (`Clif.DepthLe`),
+the program callees with fuel `F` and bounded depth (`Clif.linkEnvD`). -/
+theorem backend_correct_program_peakX (L : LinkSys) (hL : L.Ok)
+    {κ : Nat → Clif.Function → Nat} (hκ : L.Budget κ) {f : Clif.Function}
+    (hf : f ∈ L.P.funcs) (F d : Nat) {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    {args : List Clif.Val} {cs : Clif.State}
+    (hent : AbiEntry (L.A f).fb (L.A f).base ra s) (hres : StackAvail (κ d f) (L.A f).af s)
+    (hF : L.F = frameWG (κ d f) (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).size (L.A f).af L.Img s)
+    (hgfree : ∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A f).af + κ d f) (spv s) a)
+    (himg : ∀ a, L.Img a → s.mem a = L.imgMem a)
+    (hbe : BodyEntry (L.A f).af s w₀) (hargs : ArgsIn f.sig args s) (hcs : ClifEntry f args cs)
+    (hsav : StackArgsAvoid L.Img f.sig args s)
+    (hrel : Rel.holds ⟨L.F, L.syms, (L.A f).af.slotBase,
+      (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase⟩ f cs.frame.slots cs.mem w₀)
+    (hpl : L.NeedSlots → L.PlaceAt cs.mem (spv w₀))
+    (hd : Clif.DepthLe L.base L.P d cs)
+    (htr : TrapsExplicit (Clif.linkEnvD L.P L.base F d) L.P.bare cs) :
+    ArmRefines (L.A f).fb (L.A f).base ra (L.mach d f) s (Clif.runLoop L.base L.P (F + 1) cs) ∧
+      ((∃ vals cm, Clif.runLoop L.base L.P (F + 1) cs = .returned vals cm) ∨
+        (∃ c, Clif.runLoop L.base L.P (F + 1) cs = .trapped c) → L.RunGoodL d f s) := by
+  haveI := L.crunOk_peak hL F
+  have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
+  have h := backend_correct_program_coreX (L.peak F) (hL.withCrun _) hκ hf d hent hres hF hgfree
+    himg hbe hargs hcs hsav hrel hpl htr (o := Clif.runLoop L.base L.P (F + 1) cs) fun ho =>
+    Clif.runLoop_linkD (base := L.base) (syms := L.syms) F d hL.names hf hL.free
+      (hL.indScope f hf) (E := (L.peak F).envR d f)
+      rfl rfl (fun _ hn => (L.peak F).envR_of (.inl hn))
+      ((L.peak F).envR_link hL.names) (F + 1) cs (Nat.le_refl _) hd (runInv_entry hf hcs) hIf
+      (fun _ => hrel.1.symbols)
+      (by rcases ho with ⟨_, _, ho⟩ | ⟨_, ho⟩ <;> rw [ho] <;> exact fun _ h => nomatch h)
+      (by rcases ho with ⟨_, _, ho⟩ | ⟨_, ho⟩ <;> rw [ho] <;> exact fun h => nomatch h)
+  rw [L.mach_peak] at h
+  exact ⟨h.1, fun hout => LinkSys.runGoodL_withCrun (h.2 hout)⟩
 
 end E2E
