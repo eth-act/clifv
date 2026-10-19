@@ -3,10 +3,10 @@
 # check`), the Lean parser (`Clif.parseFile`, via ParseCheck.lean), `clif2obj` and
 # `lean-backend`. Needs scripts/rust-clif/dump.sh output and built tools:
 #   cargo build --release --manifest-path rust/Cargo.toml -p clif-oracle -p clif2obj
-#   lake build FV.Clif lean-backend
+#   lake build FV.Clif lean-backend clif-decode
 #
 # usage: scripts/rust-clif/tools.sh [OUT_DIR]      (default /tmp/rust-clif-survey/out)
-# Writes OUT_DIR/../tools/: normalised files, `raw-parse.tsv` and `parse*.tsv` (file, function,
+# Writes OUT_DIR/../tools/: decoded files (clif-decode), `raw-parse.tsv` and `parse*.tsv` (file, function,
 # ok|unsupported|malformed, reason), per-file tool logs; prints summaries.
 set -uo pipefail
 
@@ -19,7 +19,7 @@ mkdir -p "$tools"
 oracle="$root/rust/target/release/clif-oracle"
 clif2obj="$root/rust/target/release/clif2obj"
 backend="$root/.lake/build/bin/lean-backend"
-norm() { python3 "$here/normalize.py" "$@"; }
+norm() { "$root/.lake/build/bin/clif-decode" "$@" 2>/dev/null; }
 reasons() { sed -E 's/%[A-Za-z0-9_]+/%X/g; s/\bv[0-9]+/vN/g; s/\bfn[0-9]+/fnN/g; s/\bgv[0-9]+/gvN/g; s/\bsig[0-9]+/sigN/g; s/\bblock[0-9]+/blockN/g' | sort | uniq -c | sort -rn; }
 bystage() { # parse TSV -> "profile stage status count"
   awk -F'\t' '{ n = split($1, p, "/"); f = p[n]; split(f, q, "."); sub(/-[a-i]_[a-z0-9_]*$/, "", q[1]);
@@ -36,14 +36,13 @@ echo "== 2. Lean Clif.parseFile on the raw dumps: first rejection reason"
 (cd "$root" && lake env lean --run "$here/ParseCheck.lean" "$out"/*/*/*.clif/*.unopt.clif) >"$tools/raw-parse.tsv"
 cut -f3,4 "$tools/raw-parse.tsv" | sort | uniq -c | sort -rn
 
-echo "== 3. normalise (normalize.py), pinned reader check, Lean parse"
+echo "== 3. decode (clif-decode), pinned reader check, Lean parse"
 for d in "$out"/*/*/*.clif; do
   prof=$(basename "$(dirname "$(dirname "$d")")")
   crate=$(basename "$d" .clif)
   for stage in unopt opt; do
     base="$tools/$prof-$crate.$stage"
     norm "$d" "$stage" "$base.reader.clif"
-    norm "$d" "$stage" "$base.nonop.clif" --drop-nop
     "$oracle" check "$base.reader.clif" >"$base.check.log" 2>&1 || echo "reader rejects $base.reader.clif"
   done
   norm "$d" unopt "$tools/split/$prof-$crate" --split
@@ -51,10 +50,10 @@ done
 (cd "$root" && lake env lean --run "$here/ParseCheck.lean" "$tools"/*.reader.clif) >"$tools/parse.tsv"
 echo "-- functions by profile/stage and parse status"
 bystage "$tools/parse.tsv"
-echo "-- first rejection reason (normalised unopt, all profiles)"
+echo "-- first rejection reason (decoded unopt, all profiles)"
 grep '\.unopt\.reader\.clif' "$tools/parse.tsv" | cut -f3,4 | grep -v '^ok' | reasons
 
-echo "== 4. clif2obj (pinned Cranelift, aarch64) per function on the normalised unopt files"
+echo "== 4. clif2obj (pinned Cranelift, aarch64) per function on the decoded unopt files"
 : >"$tools/clif2obj.tsv"
 for f in "$tools"/split/*/*.clif; do
   b=${f%.clif}
@@ -71,8 +70,8 @@ done
 echo "-- clif2obj failure reasons (all profiles)"
 awk -F'\t' '$2 == "fail" { print $3 }' "$tools/clif2obj.tsv" | reasons
 
-echo "== 5. lean-backend on the normalised unopt files (as dumped (\`reader\`, nop kept), and with nop dropped)"
-for kind in reader nonop; do
+echo "== 5. lean-backend on the decoded unopt files"
+for kind in reader; do
   for f in "$tools"/*.unopt.$kind.clif; do
     b=${f%.clif}
     "$backend" "$f" "$b.s" --traps "$b.traps.json" >"$b.backend.log" 2>&1
@@ -88,11 +87,10 @@ done
 
 core="$out/../core/clif"
 if [[ -d "$core" ]]; then
-  echo "== 6. core/alloc (scripts/rust-clif/core.sh): Lean parse and lean-backend (nop kept, and dropped)"
+  echo "== 6. core/alloc (scripts/rust-clif/core.sh): Lean parse and lean-backend"
   for c in core alloc; do
     norm "$core/$c" unopt "$tools/lib-$c.unopt.reader.clif"
-    norm "$core/$c" unopt "$tools/lib-$c.unopt.nonop.clif" --drop-nop
-    for kind in reader nonop; do
+    for kind in reader; do
       "$backend" "$tools/lib-$c.unopt.$kind.clif" "$tools/lib-$c.$kind.s" >"$tools/lib-$c.$kind.backend.log" 2>&1
       n=$(grep -c '^function ' "$tools/lib-$c.unopt.$kind.clif")
       u=$(grep -c ': unsupported: ' "$tools/lib-$c.$kind.backend.log")
@@ -104,6 +102,6 @@ if [[ -d "$core" ]]; then
   cut -f3 "$tools/parse-lib.tsv" | sort | uniq -c
   echo "-- first Lean parse rejection reason"
   cut -f3,4 "$tools/parse-lib.tsv" | grep -v '^ok' | reasons
-  echo "-- lean-backend unsupported reasons (nop kept)"
+  echo "-- lean-backend unsupported reasons"
   cat "$tools"/lib-*.reader.backend.log | grep ': unsupported: ' | sed -E 's/.*: unsupported: //' | reasons
 fi

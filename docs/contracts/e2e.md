@@ -30,9 +30,9 @@ contract `IselContract.lean`), `regalloc-proof.md` (M6), `encoder.md` (M5), `cli
 | `PrepareCorrect sem vc vcp` (unreachable blocks, critical-edge splitting, RPO) | **discharged**: `prepCheck vc vcp = true` ⇒ it (`prepareCorrect_of_check`); and without the validator on `PrepDomain` VCode (`prepareCorrect_of_domain`, from `prepCheck_complete`; see "Validator completeness") |
 | Validators run by the compiler (`FV/Backend.lean` `lowerChecked`, `FV/Backend/Regalloc.lean` `allocateRegalloc2`: a rejection is a compile error, except `checkAlloc`'s rejection of regalloc2's allocation, which falls back to the spill allocation, V4) | done |
 | **`backend_correct`**, **`backend_correct_of_rules`** from the hypotheses below | **proven**, sorry-free |
-| **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `indRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`, `tryRulesCorrect`, `tryUnmatchable`, `tryIndRulesCorrect`, `tryIndUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`, `IndCallsRefine` by `indCallsRefine_csem` from `XCallsIndOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + 130 `_native.bv_decide` certificates |
+| **`backend_correct_m4`** (`FV/E2E/Final.lean`): `backend_correct_of_rules` with all M4 predicates discharged (`lowerRulesCorrect_program`, `excludedUnmatchable`, `callRulesCorrect`, `indRulesCorrect`, `memRulesCorrect_program`, `lowerTermRulesCorrect`, `termUnmatchable`, `branchRulesCorrect`, `branchExcludedUnmatchable`, `tryRulesCorrect`, `tryUnmatchable`, `tryIndRulesCorrect`, `tryIndUnmatchable`) and `sem s := csem (F s) (ctx s) (X s)` (discharges `DriverSem` by `driverSem_csem`, `CallsRefine` by `callsRefine_csem` from `XCallsOk`, `IndCallsRefine` by `indCallsRefine_csem` from `XCallsIndOk`) | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` (T6) |
 | **`RegLevelCorrect`** for the backend's code (`regLevelCorrect_backend`, `FV/E2E/RegLevelCorrect.lean`, M6Ctl3): addresses outside the world `frameW K` (frame addresses `frameF` and, since agent/callee-fix, the callees' dead stack), context `⟨fa.k, af.slotBase⟩`, one external semantics `X`, machine `ArmStepX X H fa`; from `FormsCovered` and `CalleeOk` | **proven** |
-| **`backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6` discharged by `regLevelCorrect_backend` | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound` + `_native.bv_decide` certificates (M4's, M5's decoder `decode_armBits_*`/`decode_raw_inst_of_*`, `Arm.Memory.read_write_bytes_different`) |
+| **`backend_correct_final`** (`FV/E2E/Final.lean`): `backend_correct_m4` with `hM6` discharged by `regLevelCorrect_backend` | **proven**; axioms: `propext`, `Classical.choice`, `Quot.sound`; every fixed backend lemma (M4/M5/M6, `Arm.Memory.read_write_bytes_different`) is kernel-checked (T6) |
 | **`sret`** (2026-09-30, `agent/sret-proof`): functions with a struct-return pointer parameter and calls of `sret` callees are inside `backend_correct_final` (`InSubset.abiSigs`; see "`sret`" below) | **proven**; `lean-e2e-check`: all `sret` functions in scope accepted and covered |
 | **`try_call`** (2026-09-30, `agent/trycall-proof`): functions with `try_call` of an extern are inside `backend_correct_final` **for their normal returns** (see "`try_call`" below); nothing is claimed about unwinding, landing pads or the LSDA | **proven** (`term_step_try`, `tryRulesCorrect`, `tryUnmatchable`, `realizes_tryCall`) |
 | **Indirect calls** (2026-10-01, `agent/indirect-proof`): `call_indirect`, `func_addr` and `try_call_indirect` (normal return) are inside `backend_correct_final`: an indirect call of an extern under the contract `XCallsIndOk` (hypothesis `hXI`), an indirect call of a function of the program excluded by the run premise `TrapsExplicit.indirect`/`tryIndirect` (see "Indirect calls" below). Trusted-semantics growth: `Clif.stepCallIndirect` calls the extern at the callee address (`Clif.callExternAt`) where it was stuck | **proven** (`call_ind_ruleOk` 1033, `func_addr_ok` 1026, `try_ind_ruleOk` 1036, `stepCallIndirect_eq`, `term_step_try` over `IsTryWith`); `lean-e2e-check`: 1092 in scope (1083 before, plus the 9 functions of `corpus/clif-regress/call_indirect.clif`), 0 rejected, 0 not covered |
@@ -260,9 +260,16 @@ conditions; `InSubset.of_verifiable` proves these imply `InSubset P.bare f`.
 creating an alias body. Linking supplies the whole-program contract for the callee at `f`'s
 own address; `DeclN` includes the caller's own name. Taking that address is also supported.
 This is a per-activation guarantee, not an assumption that recursion terminates or has a
-fixed stack bound. `compileExe_correct` still requires no reachable call cycle.
+fixed stack bound. `compileExe_correct` requires no reachable call cycle;
+`compileExe_correct_depth` (L1d, #204) covers recursive entries with `frameDrop + D·M` bytes of
+stack for a run of at most `M + 1` steps, and `compileExe_correct_peak` with `frameDrop + D·d`
+bytes for a run of peak call depth `d`, whatever its length ("The executable compiler",
+"Recursive programs").
 `E2E.LinkWitness.DirectSelf` witnesses a native recursive CLIF function's `InScopeP`, local
-verification and self edge, and proves its depth-independent stack budget is `none`.
+verification and self edge, and proves its depth-independent stack budget is `none`;
+`Crates.CompileExeRecWitness` compiles it with `compileExe` and applies
+`compileExe_correct_depth` to a concrete run, `Crates.CompileExePeakWitness`
+`compileExe_correct_peak` to one whose stack is too small for the fuel premise.
 
 **#88 integration verification:** full Lean/tool build and crate proofs pass; all 14 audited
 theorems use only permitted axioms. Filetests: corpus 114/114, extra 22/22, runtests 4672
@@ -1268,8 +1275,8 @@ slot at its frame address), `native_decide`: `entryFactsB_true`, `callChainB_tru
 `blrChainB_true`, `zChainB_true`) for `f` on `41` at depth `M0 = 100` and applies
 `backend_correct_program_returned`. Axioms: standard plus the `_native` axioms of `names`,
 `okB_true`, `entryFactsB_true`, `callChainB_true`, `slotChainB_true`, `vtChainB_true`,
-`gotChainB_true`, `oneCopyB_true`, `sigChainB_true`, `blrChainB_true`, `zChainB_true` (and the existing
-`bv_decide`/`native_decide` ones of the backend proofs). The witness found the former `raCall`
+`gotChainB_true`, `oneCopyB_true`, `sigChainB_true`, `blrChainB_true`, `zChainB_true` (and the
+backend proofs' fixed ones: before T6 `bv_decide`/`native_decide`, now none). The witness found the former `raCall`
 (the return address of every call outside the code of **every** function of `P`, including the
 caller's own) unsatisfiable for every program with a call; it is now stated for the callees of
 the caller's call sites (`LinkSys.ProgSite`).
@@ -1409,8 +1416,8 @@ iteration)), `sretRets` (`retsB_of_lower` with the ISLE inversion `iselNoRets`,
 `GotRunHyp` — `gotRunHyp_of` (`LinkOwnGotRun.lean`) of `segRangeHyp` (`LinkOwnSegRange.lean`)
 and `gotLocalHyp` (`LinkOwnGotLocal.lean`)), `outFits` (`outFits_of_lower`),
 `calleeFrame/slotFits` (`frame_of_lower`, `FV/E2E/LinkOwnFrames.lean`), `depth` (by
-construction). The ISLE facts use `native_decide` table checks over the exported rules, as the
-Kill and Cov tables do. Its one program-independent hypothesis, `SpillDefinedHyp` (definite
+construction). The ISLE facts use leaf-wise kernel checks over the exported rules and
+untrusted literal term sets, as the Kill and Cov tables do. Its one program-independent hypothesis, `SpillDefinedHyp` (definite
 assignment of the prepared VCode: availability sets with nothing available on entry, from which
 `checkAlloc`'s fixpoint, started from no vreg in its home, accepts the spill allocation), for
 input whose entry block has the signature's parameters, is proven (`E2E.spillDefinedHyp`, below),
@@ -1493,7 +1500,7 @@ defined and marks the variables in its def fields defined. Soundness by fuel ind
 (`DefGen.soundAt`, `dRoot`); the extern constructors/extractors, the oracles and the
 constructor-tree terms meet their transfers (`DefGen.dModel`, `dOracle`, `dWrap`); every rule of
 the 1149 terms the roots reach and every root rule of `lower`/`lower_branch` check
-(`DefGen.tabOK`, `rootLower`, `rootBranch`, `native_decide`), but `nop`'s rule 587 (by hand) and
+(`DefGen.tabOK`, `rootLower`, `rootBranch`, kernel-checked certificates), but `nop`'s rule 587 (by hand) and
 636/637 (never match). Non-vacuity: `E2E.spillAvail_defined_witness`; `crate_correct_proven`/
 `crate_correct_fvDemo_proven` (`InScopeWitness`) instantiate `crate_correct_inScope_proven`. Witness of the crate theorem:
 `crate-proofs/Crates/InScopeWitness.lean` decides `InScopeP` (with `entryParamsB`) and
@@ -1575,6 +1582,25 @@ theorem Link.compileExe_correct (h : compileExe S file0 = .ok file) (B : BaseEnv
     (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs) :
     ExecRefines (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
       (RelocAt S.input) (Clif.runLoop B.env (prog S.input) (M + 1) cs)
+theorem Link.compileExe_correct_depth (h : compileExe S file0 = .ok file) (B : BaseEnv)
+    (hB : BaseOk (sys S.input B)) (hH : HooksSim S.input B) (hf : (prog S.input).func? n = some f)
+    (M : Nat) (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.input (roByte S.input S.data) f
+      (frameDrop (art S.input f).af + S.input.D * M) r args cs.mem)
+    (hr : ClifRun S.input B f r args cs)
+    (htr : TrapsExplicit (Clif.linkEnvN (prog S.input) B.env M) (prog S.input).bare cs) :
+    ExecRefines (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
+      (RelocAt S.input) (Clif.runLoop B.env (prog S.input) (M + 1) cs)
+theorem Link.compileExe_correct_peak (h : compileExe S file0 = .ok file) (B : BaseEnv)
+    (hB : BaseOk (sys S.input B)) (hH : HooksSim S.input B) (hf : (prog S.input).func? n = some f)
+    (F d : Nat) (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.input (roByte S.input S.data) f
+      (frameDrop (art S.input f).af + S.input.D * d) r args cs.mem)
+    (hr : ClifRun S.input B f r args cs)
+    (hd : Clif.DepthLe B.env (prog S.input) d cs)        -- no reached state has > d callers
+    (htr : TrapsExplicit (Clif.linkEnvD (prog S.input) B.env F d) (prog S.input).bare cs) :
+    ExecRefines (art S.input f).fb (art S.input f).base (xreg 30 r) (step S.input B file) r
+      (RelocAt S.input) (Clif.runLoop B.env (prog S.input) (F + 1) cs)
 def Link.relocShapeB (a : Art) (r : Reloc) / relocRangeB (I) (tp) (a) (r) : Bool
                                    -- relocOkB = shape (code) ∧ range (addresses): relocOkB_of
 theorem Link.relocShapes_of_pipeT (ha : pipeT g k base o = .ok a) : relocShapesB a = true
@@ -1588,32 +1614,348 @@ theorem Link.compileExe_total (hin : InScopeP S.input0 = true)
       (offsetOf phs S.R) = true)
     (hout : outsideOkB S.input S.data (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs))) = true) :
     compileExe S file0 = .ok (patch file0 (offsetOf phs S.R) (regionOf S (tpOff phs)))
+-- L1e (FV/Link/ExeInput.lean): the Lean compiler's layout, conditions on the inputs only
+def Link.LinkSpec.withSizes (S : LinkSpec) (sz : List Nat) : LinkSpec :=
+  { S with names := S.funcs.map (·.func.name), sizes := sz }
+def Link.LinkSpec.placed (S : LinkSpec) : LinkSpec := S.withSizes S.sizesOf
+def Link.LinkSpec.layoutOkB (P : LinkSpec) : Bool  -- 0 < R, 4 ∣ R, R + P.size < 2^64, clearOfB
+def Link.LinkSpec.file0OkB (P : LinkSpec) (file0 : ByteArray) (phs : List Phdr) : Bool :=
+  let off := offsetOf phs P.R
+  regionOkB file0 P.R P.size off && hdrB [(0, file0)] &&
+    dataFastB P.input0 P.data (maskEx file0 off P.size) && symsOkB P.input0 file0 &&
+    symFootB file0 (off + P.size) && tlsOkB P phs
+def Link.CallPageReach (S : LinkSpec) (phs : List Phdr) : Prop :=   -- remaining output premise
+  ∀ e ∈ tabOf S.placed.input.resultsT, ∀ r ∈ e.2.fb.relocs, r.type ≠ .tlsDescAdrPage21 →
+    relocRangeB S.placed.input (tpOff phs) e.2 r = true
+theorem Link.compileExe_total_input (hin : InScopeP S.placed.input0 = true)
+    (hl : S.placed.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : S.placed.file0OkB file0 phs = true) (hreach : CallPageReach S phs) :
+    compileExe S.placed file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf S.placed (tpOff phs)))
+theorem Link.placed_of_compileExe (h : compileExe S file0 = .ok file) : S.placed = S
+-- the shipped compiler (FV/Link/ExeInputCleanup.lean): DeadCleanup.placed S := S.withSizes
+-- (DeadCleanup.sizesOf S); DeadCleanup.CallPageReach over resultsCleanupT
+theorem Link.DeadCleanup.compileExe_total_input (hin : InScopeP (placed S).input0 = true)
+    (hl : (placed S).layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : (placed S).file0OkB file0 phs = true) (hreach : CallPageReach S phs) :
+    compileExe (placed S) file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf (placed S) (tpOff phs)))
+theorem Link.DeadCleanup.placed_of_compileExe (h : compileExe S file0 = .ok file) : placed S = S
+-- L1e, reach on the inputs (FV/Link/ExeInputReach.lean): the CLIF functions' references
+def Backend.Proof.RelocProv.RelocOk (f : Clif.Function) (r : Reloc) : Prop :=
+  match r.type with
+  | .call26 => r.sym ∈ externNames f                        -- names of f.externs
+  | .adrGotPage | .adrPrelPgHi21 => r.sym ∈ refNames f ∧ r.addend ∈ refOffs f
+  | _ => True                                                -- refNames: externs, symbol gvs
+def Link.LinkSpec.callReachB (P : LinkSpec) (t : Nat) : Bool :=  -- refOffs: 0, gv offsets
+  t % 4 == 0 && decide (P.R + P.size ≤ t + 2 ^ 27) && decide (t < P.R + 2 ^ 27)
+def Link.LinkSpec.pageReachB (P : LinkSpec) (T : Nat) : Bool :=
+  decide (pageOf (P.R + P.size) ≤ pageOf T + 2 ^ 20) && decide (pageOf T < pageOf P.R + 2 ^ 20)
+def Link.LinkSpec.refsReachB (P : LinkSpec) (f : Clif.Function) : Bool :=
+  (externNames f).all (fun n => P.callReachB (P.input0.addrOf n)) &&
+  (refNames f).all fun n => (refOffs f).all fun o => P.pageReachB (P.input0.symAddr n o).toNat
+def Link.LinkSpec.reachOkB (P : LinkSpec) : Bool := P.funcs.all fun fi => P.refsReachB fi.func
+theorem Link.relocOk_tab (hin : InScopeP S.placed.input0 = true) :
+    ∀ e ∈ tabOf S.placed.input.resultsT, ∀ r ∈ e.2.fb.relocs, RelocOk e.1 r
+theorem Link.callPageReach_of (hin : InScopeP S.placed.input0 = true)
+    (hl : S.placed.layoutOkB = true) (hreach : S.placed.reachOkB = true) : CallPageReach S phs
+theorem Link.compileExe_total_reach (hin : InScopeP S.placed.input0 = true)
+    (hl : S.placed.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : S.placed.file0OkB file0 phs = true) (hreach : S.placed.reachOkB = true) :
+    compileExe S.placed file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf S.placed (tpOff phs)))
+-- the shipped compiler (FV/Link/ExeInputReachCleanup.lean)
+theorem Link.DeadCleanup.compileExe_total_reach (hin : InScopeP (placed S).input0 = true)
+    (hl : (placed S).layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : (placed S).file0OkB file0 phs = true) (hreach : (placed S).reachOkB = true) :
+    compileExe (placed S) file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf (placed S) (tpOff phs)))
+-- the same on input conditions decided without compiling (V7, FV/Link/ExeInputReachIn.lean,
+-- FV/Link/ExeInputReachCleanupIn.lean; `inScopeP_of_input : InScopeIn I = true → InScopeP I = true`)
+theorem Link.compileExe_total_reach_input (hin : InScopeIn S.placed.input0 = true)
+    (hl : S.placed.layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : S.placed.file0OkB file0 phs = true) (hreach : S.placed.reachOkB = true) :
+    compileExe S.placed file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf S.placed (tpOff phs)))
+theorem Link.DeadCleanup.compileExe_total_reach_input (hin : InScopeIn (placed S).input0 = true)
+    (hl : (placed S).layoutOkB = true) (hph : phdrs (fileRd file0) = some phs)
+    (hf : (placed S).file0OkB file0 phs = true) (hreach : (placed S).reachOkB = true) :
+    compileExe (placed S) file0 =
+      .ok (patch file0 (offsetOf phs S.R) (regionOf (placed S) (tpOff phs)))
 ```
 
 `compileExe_correct` has no per-program premise and no open hypothesis about the compiler; its
 premises are the outside code's contracts and the CLIF-level condition that no call cycle is
 reachable from the entered function. `compileExe_total`'s hypotheses are the input conditions,
 the driver's data, the addresses (the relocations' reach) and rust-lld's output.
+`compileExe_total_input` (L1e, #216) takes the Lean compiler's layout (`S.placed`; `placeOkB`
+from `InScopeP` and `layoutOkB`, compiled code nonempty: `pipeT_words_pos`) and moves rust-lld's
+checks from the patched file to `file0` (`outsideOkB_patch`: the region's bytes are read by none
+of them when the section headers, symbol and string tables lie after it, `symFootB`); TLS offsets
+come from `file0`'s `PT_TLS` (`tlsOkB`). Its one output-dependent premise is `CallPageReach`;
+`compileExe_total_reach` replaces it by `reachOkB`, decided on the CLIF functions and the link
+map: the compiled code of `f` relocates only against `f`'s declarations (`relocOk_tab`; the ISLE
+lowering by an abstract interpretation of the rules, `Backend.Proof.RelocProv.lowerFunction_refs`;
+`prepare`, the allocation, emission and layout, `relocs_of_alloc`), and `reachOkB` puts every
+declared name (with every declared offset) in `bl`/`adrp` reach of the whole region.
+`Link.DeadCleanup.compileExe_total_input`/`_reach`: the same for the shipped compiler. Witnesses:
+`total_input_witness`, `total_input_cleanup_witness`, `total_reach_witness`,
+`total_reach_cleanup_witness`.
 `LinkSpec` is alias-free by construction; #88 removes alias generation and `AliasOut` rather
 than assuming or proving renaming invariance of the compiler. Native recursion is admitted
-by totality; the separate acyclicity premise of executable correctness is unchanged. Witnesses:
+by totality, and since L1d (#204) by executable correctness too (below). Witnesses:
 `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
 `total_witness`) and `CompileExeRunWitness.lean` (`compileExe_run_witness`: every premise of
 `compileExe_correct` for one concrete outside call into the panic=abort `a_arith` compiled by
-`compileExe`; the executable machine returns `5`). `lake exe lean-link` runs `compileExe`; on an
-input outside `InScopeP` it prints the failing conditions and links with `leanLink` (not covered
-by `compileExe_correct`).
+`compileExe`; the executable machine returns `5`). `lake exe lean-link` runs
+`Link.DeadCleanup.compileExe` by default (`--no-dead-cleanup`: `compileExe`; the theorems of the
+cleanup compiler: "The shipped compiler" below); on an input outside `InScopeP` it prints the
+failing conditions and links with the bare Lean linker (not covered by `compileExe_correct`),
+except under `--verified`, where that is an error.
+
+**The executable on the original source program (S2/S3, `FV/Link/ExeSource.lean`).**
+`compileExe_correct` relates the executable to `prog S.input`, the input's functions after the
+`i128` legalisation (`compileExe` runs no optimiser). `Link.compileExe_correct_source` relates
+it to the **original** parsed program `S.input.srcProg` (`LinkInput.prog_eq : I.prog =
+legalProg I.srcProg`): for an input in the decidable source domain `SrcScopeB`, a return of the
+original program's whole-program CLIF run of a source function `f` on `args` is the
+executable's return of the results split by `f`'s return groups, after an outside call of the
+compiled `legalize f` with the ABI-split arguments; a trap is the same trap. It composes
+`E2E.LegalProgram.legalProg_refines` with `compileExe_correct`; no checker premise. Statement,
+premises and their kinds: `docs/contracts/legalize128.md` ("The executable compiler on the
+original source program"). The premises beyond `compileExe_correct`'s: the outside
+environment's `HelperOk`/`ExtLegal`/`EnvKeepsBounded` when a source function mentions `i128`,
+`sigOf = none` with indirect calls (environment); the source run's memories below `2^64` and,
+for traps, its `NoMemTrap` and the target's `TrapsExplicit` (run conditions). Witness:
+`crate-proofs/Crates/CompileExeSourceWitness.lean` (`g_u128`'s `wmul_u128` calling
+`wrapping_mul` on `i128` values, under `Link.SourceWitness.helperBase`; the executable returns
+the split product in x0, x1).
+
+**Recursive programs (L1d, #204, #215).** `compileExe_correct_depth` drops the
+call-graph premise `¬ CycleFrom`: the outside caller provides `frameDrop (art S.input f).af +
+S.input.D * M` bytes of stack instead of `stackFn` (`S.input.D`: the largest frame of the program,
+`LinkSpec.input`/`depthOf`), for the CLIF run of at most `M + 1` steps. The resource condition
+that replaced acyclicity is the depth budget of the linking induction itself
+(`LinkSys.budget_K`: `frameDrop h + D·M ≤ D·(M+1)` for every call), which needs no call-graph
+fact. The chain: `Binary.binary_correct_depthX` (`FV/E2E/BinaryGood.lean`: `binary_correctX` with
+the depth budget, read-only data facts allowed), `ExecBytes.runGood_sysS_of` (`ExecGot.lean`:
+`RunGoodL` of the system keeping the GOT slots for any `LinkSys.Budget`; `runGood_sysS` with the
+static budget, `runGood_sysS_depth` with `D·M`; `sysS` takes the budget `K`),
+`ExecBytes.exec_of_runGood` (`ExecProven.lean`: the lockstep, D2 and D4 from the model-level facts,
+whatever the budget; `binary_correct_exec_proven` is now its instance too) and
+`ExecBytes.binary_correct_exec_depth_proven`. `compileExe_correct` is unchanged (not a corollary:
+its `stackFn` is less than `frameDrop + D·M` in general). Axioms of the new theorems: `propext`,
+`Classical.choice`, `Quot.sound`. Witness (`crate-proofs/Crates/CompileExeRecWitness.lean`):
+`compileExe` compiles the natively self-recursive `direct` (`E2E.LinkWitness.DirectSelf`; its
+entry reaches a call cycle, `cyclic`), and `compileExe_rec_witness` applies
+`compileExe_correct_depth` to the outside call `direct(3)` (four activations; the CLIF run
+returns `6`): the executable machine returns `6` in x0. `stack_needed`: the premise asks for more
+than `stackFn` and fails for the same call with `sp = 16`.
+
+**Peak call depth instead of fuel (L1d).** `compileExe_correct_peak` replaces `D·M` by `D·d`,
+where `d` bounds the call depth of the source run: `Clif.DepthLe B.env (prog S.input) d cs`
+(every state the whole-program run from `cs` reaches, `Clif.Reaches`, has at most `d` callers,
+i.e. at most `d + 1` live activations), independent of the run's fuel `F`; decidable along a run
+that ends by `Clif.depthB` (`depthLe_of_depthB`). The linking induction (`LinkSys.thm`/`thmG`/
+`thmX`) is unchanged; what it reads of the CLIF side is abstracted: a linked system carries the
+callee runs `crun M` of its depth-`M` callees (a `LinkSys` field, default the whole-program run
+of `M` steps), the per-function environments are `Clif.linkEnvR P base (crun M)`, and
+`LinkSys.CrunOk` states what the induction needs of them (a returning run is a whole-program run;
+a complete one at depth `M` is a run of `P.bare` under the callee runs at depth `M - 1`). The
+default satisfies it (`crunOk_std`, from `Clif.runLoop_linkN`), so the fuel-indexed theorems are
+its instance (`LinkSys.std`); so do the runs of a fixed fuel `F` with at most `M - 1` callers of
+their own (`Clif.runD`, `Clif.linkEnvD`, `crunOk_peak`, from `Clif.runLoop_linkD`): the induction
+runs on the depth with the fuel fixed. `Clif.runLoop_linkR` is the CLIF linking lemma for any
+callee runs that are the callee's whole-program run for every callee entered from a state the run
+reaches (`runLoop_linkN`, `runLoop_linkD` its instances; `DepthLe.callee`: a callee entered under
+`K ≠ []` callers within a run of depth `d` has depth `d - 1`). The machine side does not read the
+callee runs (`mach_withCrun`, `runGoodL_withCrun`). The chain: `backend_correct_program_core`/
+`coreX` (any `CrunOk`), `backend_correct_program_peak`/`peakX` (`LinkSys.peak F`),
+`Binary.binary_correct_peakX`, `ExecBytes.runGood_sysS_peak` (`sysS_entry`: the entry premises
+of the system keeping the GOT slots, shared with `runGood_sysS_of`),
+`ExecBytes.binary_correct_exec_peak_proven`, `Link.compileExe_correct_peak`; for a returning run
+`TrapsExplicit` under `linkEnvD` holds (`Binary.trapsExplicit_of_runD`). Axioms: `propext`,
+`Classical.choice`, `Quot.sound`. `compileExe_correct_depth` is kept (its `TrapsExplicit` is under
+`linkEnvN`, not `linkEnvD`). Witness (`crate-proofs/Crates/CompileExePeakWitness.lean`): the
+executable of `CompileExeRecWitness` (`direct`; `frameDrop` = `D` = 288 bytes, the code at 16 MiB);
+outside code calls `direct(3)` with `sp = 0x480`, exactly `288 + 288·3` bytes; the CLIF run's
+peak call depth is 3 (`Clif.depthB`: four activations) and it returns `6` within 24 steps;
+`compileExe_peak_witness` applies `compileExe_correct_peak` (`d = 3`, fuel 64) and gives the
+executable machine returning `6` in x0. `depth_premise_fails`: the run does not return within 23
+steps, so `compileExe_correct_depth` needs a fuel `M ≥ 23` to say anything about it, and its stack
+premise `frameDrop + D·M ≥ 288·24` fails in that machine state for every such `M`.
+
+*Gap: largest frame.* Each level is charged the largest frame `D` of the program, not the frames
+live along the executed call derivation: exact accounting needs a budget indexed by the run, not
+`LinkSys.Budget` over every syntactic callee.
+
+**The shipped compiler; recursive programs on the original source (L1f, #217).** What
+`lake exe lean-link` and `cargo fv --lean-link` run by default is `Link.DeadCleanup.compileExe`
+(the same `InScopeP`, then `Link.DeadCleanup.leanLink`, whose pipeline `pipeCleanupT` removes dead
+pure machine instructions, docs/contracts/dead-cleanup.md). Its theorems, matching the baseline
+compiler's, composed from the cleanup chain without changing it:
+
+```lean
+theorem Link.DeadCleanup.compileExe_correct_peak       -- FV/Link/DeadCleanupExePeak.lean
+  -- = Link.compileExe_correct_peak over S.inputCleanup (stack frameDrop + D·d, Clif.DepthLe)
+theorem Link.DeadCleanup.compileExe_correct_source     -- FV/Link/DeadCleanupExeSource.lean
+  -- = Link.compileExe_correct_source over S.inputCleanup (¬ CycleFrom, stackFn)
+theorem Link.DeadCleanup.compileExe_correct_source_peak
+  -- = Link.compileExe_correct_source_peak over S.inputCleanup
+theorem Link.compileExe_correct_source_peak {S file0 file} (h : compileExe S file0 = .ok file)
+    (hsrc : SrcScopeB S.input = true) (B) (hB) (hH) (hlegal) (hsig)
+    (hf : S.input.srcProg.func? n = some f) (d : Nat) (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.input (roByte S.input S.data) (legalize f)
+      (frameDrop (art S.input (legalize f)).af + S.input.D * d) r args' cs'.mem)
+    (hr : ClifRun S.input B (legalize f) r args' cs') (hcs : ClifEntry f args cs)
+    (hexp) (hsl) (hmem) (hbnd)
+    (hd : Clif.DepthLe B.env S.input.srcProg d cs)       -- the SOURCE run's call depth
+    (M : Nat) :
+    (∀ vals cm, Clif.runLoop B.env S.input.srcProg M cs = .returned vals cm →
+      ∃ vals', ExpRel (returns groups) vals vals' ∧ ExecRefines … (.returned vals' cm)) ∧
+    ((∀ F, TrapsExplicit (Clif.linkEnvD (prog S.input) B.env F d) (prog S.input).bare cs') →
+      NoMemTrap B.env S.input.srcProg cs → ∀ c, … = .trapped c → ExecRefines … (.trapped c))
+```
+
+The cleanup chain's binary/exec layer is a copy of the baseline's with the cleanup input
+(`LinkSys.ofInputCleanup`, `okBCleanup`, `DeadCleanupBinCheck.BinOk`), while the linking
+induction (`backend_correct_program_peakX`, `LinkSys.budget_K`) is generic in the linked system;
+`FV/E2E/DeadCleanupExecPeak.lean` adds the peak wrappers over it (`DeadCleanupBinary.
+binary_correct_peakX`; `DeadCleanupExecBytes.sysSK`, the GOT-keeping system with any callee budget
+— the cleanup `sysS` fixes `stackFn`'s —, `runGood_sysSK_peak`, `got_of_goodK`,
+`exec_of_runGood`, `binary_correct_exec_peak_proven`). `prog S.inputCleanup` is the input's CLIF
+functions (`progOf_resultsCleanupT`), hence `legalProg S.inputCleanup.srcProg`
+(`Link.DeadCleanup.prog_eq_legal`), so the source theorems compose
+`legalProg_refines`/`legalProg_refines_depth` with the cleanup theorems as `ExeSource` does with
+the baseline's.
+
+*The legalisation keeps the call depth* (`FV/E2E/LegalDepth.lean`,
+`E2E.LegalProgram.legalProg_refines_depth`): if the source run from `h`'s entry has call depth at
+most `d` (`Clif.DepthLe`), so has the legalised program's run that matches it. It is
+`legalProg_refines`' induction on the fuel at every depth (`RefinesD`): the guarded source
+environment `guardEnvD` runs a callee only from a good entry of depth at most `d - 1`
+(`DepthCall`; `guard_runD`: the whole program enters each callee under one more caller,
+`DepthLe.callee`), the target environment `tgtEnvD` runs a callee of `legalProg P` only from an
+entry of depth at most `d - 1` (else stuck), and the induction hypothesis at `d - 1` gives that
+for every callee the target run enters (`prog_callD`). `Clif.unlink_depth`
+(`Clif.UnlinkD`: the environment's program callees return or trap only from entries of depth
+at most `d - 1`) turns the returning or trapping target per-function run into whole-program depth
+`d`: per-function states have no callers, a callee's states are below one caller until it
+returns (`Clif.Reaches.below_cases`, `Reaches.done_outcome`). The legalised run's
+`TrapsExplicit` under `linkEnvD` for a return is `Binary.trapsExplicit_of_runD`. Axioms of all
+new theorems: `propext`, `Classical.choice`, `Quot.sound`.
+
+Witnesses (closed, `native_decide` facts as in the other witnesses): `crate-proofs/Crates/
+CompileExeSourcePeakWitness.lean` — the self-recursive `i128` `rec128(x, n) = n = 0 ? x :
+rec128(x + x, n - 1)` compiled by `compileExe` (`cyclic`: the acyclic theorems do not apply), the
+original program's run of `rec128(2^64 + 3, 3)` has call depth 3 and returns `8·2^64 + 24`, and
+with `frameDrop + D·3` bytes of stack and the split arguments `3, 1, 3` the executable returns
+`24, 8` in x0, x1 (`compileExe_source_peak_witness`); `DeadCleanupExePeakWitness.lean` — the same
+program compiled by `Link.DeadCleanup.compileExe`: `cleanup_peak_witness` (the legalised run, depth
+3, returns `24, 8`) and `cleanup_source_peak_witness`; `DeadCleanupExeSourceWitness.lean` —
+`g_u128`'s `wmul_u128`/`wrapping_mul` compiled by `Link.DeadCleanup.compileExe`
+(`cleanup_source_witness`, split product `15, 5`). Their `helperBase` instances:
+`Link.SourceWitness.compileExe_correct_source_peak_helper`,
+`Link.DeadCleanup.SourceWitness.compileExe_correct_source{,_peak}_helper`.
+
+*Fail closed (`--verified`).* `lake exe lean-link DIR SIZES [--dead-cleanup|--no-dead-cleanup]
+[--opt] [--verified]` prints after writing the executable the theorems covering it: `coverage:
+Link.DeadCleanup.compileExe_correct, Link.DeadCleanup.compileExe_correct_peak` and, for an input
+in `SrcScopeB` (decided by the tool: `FV/E2E/SrcScopeDefs.lean`; it reads the parsed functions
+only, so `S.input0`'s is the theorems' `S.inputCleanup`'s), `…_source, …_source_peak`; the bare-
+linker fallback prints `coverage: none (…)`. With `--verified` an input outside `SrcScopeB`,
+outside `fnScopeInB` (the per-function input conditions decided on the CLIF alone, V7: the tool
+names the failing conjuncts) or outside `InScopeP` is an error (exit 1, the executable not
+written), so every executable it writes is covered by the four theorems and its input is in
+`InScopeIn`; its `coverage:` line adds `input in InScopeIn (totality:
+Link.DeadCleanup.compileExe_total_reach_input)`. `cargo fv --lean-link --verified` passes it (own
+target dir) and records the coverage in the report (`binary.lean_link`).
+
+**The optimising executable compiler (S1, S2; #25, #26).** `Link.compileExeOpt S file0 :=
+compileExe S.opt file0` and `Link.DeadCleanup.compileExeOpt` (`FV/Link/OptCompile.lean`; what
+`lake exe lean-link --opt` and `cargo fv --lean-link --opt-proven-only` run): parse → `i128`
+legalisation → the mid-end `Opt.optimizeExe` with the proven rule sets (`Opt.exeConfig`;
+`call_indirect` and `try_call`/`try_call_indirect` included, docs/contracts/midend.md "The
+executable compiler's mid-end") → backend. `LinkSpec.opt` prints every optimised function after
+its file's header and uses the text only when it parses (and legalises) back to the optimised
+function (`FnInput.opt`), else keeps the input (`LinkSpec.optFallbacks`, printed by
+`lean-link --opt`: 0 on fv-demo and the survey). Its theorems (`FV/Link/OptExe.lean`,
+`FV/Link/DeadCleanupOptExe.lean`) compose `compileExe`'s, about the optimised input `S.opt`,
+with the mid-end's whole-program refinement (`OptRel.refines`, which keeps the call depth) and,
+for the source theorems, the legalisation's:
+
+```lean
+theorem Link.compileExeOpt_correct {S file0 file} (h : compileExeOpt S file0 = .ok file)
+    (B : BaseEnv) (hB : BaseOk (sys S.opt.input B)) (hH : HooksSim S.opt.input B)
+    (hkeep : Opt.EnvKeepsSymbols B.env)                    -- the mid-end's contract
+    (hf : (prog S.input).func? n = some f) (hf' : (prog S.opt.input).func? n = some f')
+    (hc : ¬ StackBound.CycleFrom (StackBound.Calls S.opt.input S.opt.input.results) f')
+    (hX : (imageOf file).Intact r)
+    (ho : OutsideCall S.opt.input (roByte S.opt.input S.opt.data) f'
+      (StackBound.stackFn S.opt.input f') r args cs'.mem)
+    (hr : ClifRun S.opt.input B f' r args cs') (hcs : ClifEntry f args cs)
+    (hregs : cs.frame.regs = cs'.frame.regs) (hsl : …slots…) (hmem : cs.mem = cs'.mem) (M : Nat) :
+    (∀ vals cm, Clif.runLoop B.env (prog S.input) M cs = .returned vals cm →
+      ExecRefines (art S.opt.input f').fb … (.returned vals cm)) ∧
+    ((∀ K, TrapsExplicit (Clif.linkEnvN (prog S.opt.input) B.env K) (prog S.opt.input).bare cs') →
+      ∀ c, Clif.runLoop B.env (prog S.input) M cs = .trapped c → ExecRefines … (.trapped c))
+theorem Link.compileExeOpt_correct_peak         -- frameDrop + D·d for the input run's depth d
+theorem Link.compileExeOpt_correct_source       -- the original program S.input.srcProg (SrcScopeB)
+theorem Link.compileExeOpt_correct_source_peak
+theorem Link.compileExeOpt_total_reach_input    -- compileExeOpt (S.withSizes (sizesOf S.opt)) succeeds
+-- and Link.DeadCleanup.compileExeOpt_{correct,correct_peak,correct_source,correct_source_peak,
+-- total_reach_input} over S.opt.inputCleanup
+```
+
+The premises are `compileExe`'s about the optimised input, plus `EnvKeepsSymbols B.env`; the
+run is the *unoptimised* input's program's (after legalisation, or the original program for the
+source theorems), so a trap needs `TrapsExplicit` at every fuel (the two runs take different
+numbers of steps). Axioms: `propext`, `Classical.choice`, `Quot.sound`.
+
+Witnesses: `crate-proofs/Crates/CompileExeOptSourceWitness.lean` (`compileExeOpt_source_witness`)
+and `DeadCleanupExeOptSourceWitness.lean` (`cleanup_opt_source_witness`): `g_u128`'s
+`wmul_u128`/`wrapping_mul` compiled by `compileExeOpt` and `DeadCleanup.compileExeOpt`; the
+mid-end changes both legalised functions (`legalize fs ≠ f`), no print/parse fallback, and the
+executable returns the split product `15, 5` (via
+`Link.{DeadCleanup.}SourceWitness.compileExeOpt_correct_source_helper`,
+`FV/Link/NonVacuityOptExeSource.lean`). `CompileExeOptPeakWitness.lean`
+(`compileExeOpt_peak_witness`) and `DeadCleanupExeOptPeakWitness.lean`
+(`cleanup_opt_peak_witness`): `compileExeOpt_correct_peak` on the self-recursive `rec128`, which
+the mid-end changes (`f0 ≠ f`) and whose optimised entry reaches a call cycle; the unoptimised
+legalised run on `3, 1, 3` has call depth `3` and the executable returns `24, 8` with
+`frameDrop + D·3` bytes of stack. `CompileExeOptReachWitness.lean` (`total_reach_opt_witness`,
+`total_reach_opt_cleanup_witness`): every hypothesis of `compileExeOpt_total_reach_input` holds
+on `a_arith`'s 58 functions, all changed by the mid-end. The per-function theorems
+`E2E.backend_correct_opt_exe` and `backend_correct_legal_opt{,_env}` (and their `_cleanup`
+versions) have the contract
+premises of `backend_correct_final` for the optimised function (`final_contracts_witness` at
+`f := Opt.optimizeExe f cfg`, as for `backend_correct_opt_proven`); the mid-end refinement
+`Opt.optimizeProgramExe_refines`: `Opt.PipelineXWitness.optimizeProgramExe_witness`
+(`FV/Opt/Proof/PipelineXWitness.lean`).
+
+Measured (`cargo fv test --lean-link --verified`, debug, `--opt-proven-only` against the
+default): identical test results (fv-demo 20 passed; survey 53 passed), the same verified counts
+(fv-demo 1346 of 1352, survey 3179 of 3179), every executable written by `compileExeOpt`, no
+print/parse fallback, region bytes fv-demo 193628 → 189036 (−2.4%), survey 564512 → 547428
+(−3.0%). The binary check (`cargo fv link-proof` + `link-check`) recompiles the bundle's
+unoptimised CLIF with the regalloc2 output of the optimised code, so under `--opt-proven-only`
+it reports `not verified` (`checkAlloc`), as it did before without `--lean-link`; the
+guarantee of these executables is `compileExeOpt`'s.
 
 **Tooling.** `cargo fv build|test --keep-temps` keeps per codegen unit `fv-link.json`: per
 Lean-compiled function the CLIF file `lean-backend` compiled (with the self-call alias, or the
 optimised dump of the missing-data retry), `lean-regalloc`'s output for it (`fv-rustc` runs as
 the `lean-regalloc` of `lean-backend` and keeps a copy, `cargo_fv::linkproof::regalloc_tee`),
-and the merge's names (each CLIF name → the symbol it is linked as); and per executable the lld
-link map (`link-<tag>.map`, `link-<tag>.json`). `cargo fv link-proof` writes the input
-directory: the CLIF renamed to the linked symbols (local symbols renamed by the merge,
-`c_LdataN` → `__fv_<tag>_LdataN`, self-call aliases with their functions), the functions at
-their `__fvlean$` marker in the map, the data objects they reach (since M9), the other
-referenced names at their address in the executable's symbol table. `lake exe link-check`
+the merge's names (each CLIF name → the symbol it is linked as; under `--lean-link` also every
+name the compiled CLIF declares, its local symbols renamed too, so `Front.assemble` can rename
+the dump even when `--opt-proven-only`'s mid-end removed the code using a name) and the object's
+local symbols; and per executable the lld link map (`link-<tag>.map`, `link-<tag>.json`).
+`cargo fv link-proof`
+writes the frontend bundle `bundle.json` (docs/contracts/frontend.md): the files and addresses,
+unchanged; `Front.assemble` (T7d) renames the CLIF to the linked symbols (local symbols renamed by
+the merge, other local symbols as `sym@<unit>`), finds the data objects the functions reach, and
+looks up the other referenced names in the executable's symbol table, with proofs
+(`Front.buildSpec_spec`). `lake exe link-check`
 completes the input (`syms`: every `symbol` global value and `func_addr` target; `D`: the
 largest frame; `raStar = 8`; the self-call aliases), prints the failing checks per function and
 premise with details, prunes (`--prune`: the failing functions and, transitively, their
@@ -1631,8 +1973,8 @@ functions it is one file, beyond that `NAME/Input.lean`, one module per slice
 auxiliary definition, then an axiom `…_native.native_decide.ax_1_1`) runs a definition natively
 when its module's compiled code is loaded, else in the IR interpreter. `precompileModules` on
 the crate library would load the shared library of the whole `FV` library, which cannot be built
-(some `bv_decide` proof modules of `FV.Opt.Proof` produce C files of up to 3.5 GB, more than
-Clang accepts), and Lake's per-module shared libraries are not linked against their imports
+(the `bv_decide` proof modules of `FV.Opt.Proof` produced C files of up to 3.5 GB, more than
+Clang accepts; T6 replaced their `bv_decide` by `kbv`, the C sizes were not re-measured), and Lake's per-module shared libraries are not linked against their imports
 on Linux, so loading `FV.E2E.LinkCheck`'s alone fails. So the proofs live in a separate Lake
 package, `crate-proofs/` (`require fv from ".."`), whose custom target `fvcheck` links the
 object files of the checker modules (`checkRoots`: `FV.E2E.StackBound`, which imports `FV.E2E.LinkCheck`, and `FV.E2E.BinCheck`) and
@@ -1670,8 +2012,8 @@ theorem is about the legalised program, as in "Widening" 6), `HDynGeneric` (43: 
 through vtables, `fn` pointers, closures), `IAlloc` (49) — and `FvDemo`: all 550 of `fv-demo`'s
 functions plus its recursive function's alias (551; 544 + alias before agent/sret-purpose). Axioms of `link_ok`:
 standard plus `globalB_input._native.native_decide.ax_1_1` and one `sliceK_ok._native…` per
-slice; of `correct_i`: those and the backend's existing `bv_decide`/`native_decide` ones
-(`dbm_sxtb`, `dbm_sxth`, the `decode_armBits_*`); `okB_sound`, `okB_of`: standard.
+slice; of `correct_i`: those (every fixed backend lemma is kernel-checked, T6); `okB_sound`,
+`okB_of`: standard.
 
 **Survey** (`link-check --prune`, each crate's codegen unit in its `values` test executable;
 `fv-demo`: its binary, two units), after agent/link-scope (`MayCall`, program-wide indirect
@@ -1726,8 +2068,9 @@ declared by `fv-demo` functions; vacuous before, every indirect caller having be
 Before agent/link-scope, `blrRegs` at GOT calls of base externs (panics without results next to
 a declared program function of the same arity with results) failed in 8 of the 9 survey crates,
 and `Clif.IndDecl` failed for every indirect caller of `fn` pointers and vtables (vtable methods
-were not CLIF image symbols; `cargo fv link-proof` now adds the program functions held by the
-data objects the program reaches, `data_syms`).
+were not CLIF image symbols; the program functions held by the data objects the program
+reaches are now among them: `data_syms` of `cargo fv link-proof`, since T7d `Front.assemble`'s
+`symNames`, `Front.buildSpec_spec`).
 
 Not blocking: `try_call` between program functions and to base externs (95 `fv-demo` functions
 and every survey crate's landing-pad code pass), `sret` (121 `fv-demo` functions), indirect calls
@@ -1808,11 +2151,11 @@ symbol table and `PairOk` to what the code computes.
 entry); soundness `hdrB_sound`, `codeB_sound`, `dataB_sound`, `symsB_sound`, assembled by
 `binOk_of` (`artsOk_append` over the slices).
 
-**Tooling.** `cargo fv link-proof` writes into `link.json` the data objects the functions reach
-(`data`: `clif-data-export`'s `; data:` lines renamed to the linked symbols, local ones as
-`.LdataN@<unit>` with their address from the link map's entry under the unit's object file) and
-the addresses of every name they refer to; it renames a function's self-call alias with the
-function. `lake exe link-check` reads the executable (`exe`), evaluates the binary checks on the
+**Tooling.** `Front.assemble` (T7d, from `cargo fv link-proof`'s `bundle.json`) gives the data
+objects the functions reach (`clif-data-export`'s `; data:` lines of each unit, renamed to the
+linked symbols, local ones as `.LdataN@<unit>` with their address from the link map's entry under
+the unit's object file; `Front.data_complete`: none reachable is left out) and the addresses of
+every name they refer to. `lake exe link-check` reads the executable (`exe`), evaluates the binary checks on the
 (pruned) program and the data objects its functions reach, prints what differs (`BIN code`: the
 word, the executable's and compiled words, the target; `BIN data`: the byte; `BIN symbol`), the
 relocation forms found and a verdict `binary: ok (…)` / `binary: FAIL code=… data=… syms=…
@@ -2092,7 +2435,7 @@ rewrites to local-exec `movz`/`movk`/`nop`/`nop` in a static executable.
 | `AbiEntry.pc`, `.err`, `.spAligned` | `OutsideCall` | the call (AAPCS64) |
 | `AbiEntry.lr` | discharged | `ra := xreg 30 r` |
 | `AbiEntry.raOutside` | `OutsideCall.ra` (weaker form) | the return address is outside the program's code |
-| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = stackFn I f` (`binary_correct`, `goodN`; `binary_correct_of_checks_acyclic`: the input condition "no call cycle reachable from `f`", `StackBound.goodN_iff`), `S` (`binary_correct_bound`), `frameDrop + D·M` (`binary_correct_depth`) |
+| `StackAvail`, `hgfree` | `OutsideCall.stack`/`stackFree` with `N` | `N = stackFn I f` (`binary_correct`, `goodN`; `binary_correct_of_checks_acyclic`: the input condition "no call cycle reachable from `f`", `StackBound.goodN_iff`), `S` (`binary_correct_bound`), `frameDrop + D·M` (`binary_correct_depth`; with read-only data and `RunGoodL`: `binary_correct_depthX`, up to the executable `compileExe_correct_depth`), `frameDrop + D·d` for the run's peak call depth `d` (`binary_correct_peakX`, up to `compileExe_correct_peak`) |
 | `hF` (addresses outside the world) | discharged | `F := worldF I f K r` (`K = bud I f` / `D·M`) |
 | `himg` | discharged | `modelOf`; `RelocAt` relates it to the file |
 | `BodyEntry` | discharged | the body-entry world is `bodyOf af s` |
@@ -2207,8 +2550,8 @@ machine state `r` itself:
   rewrite — still the hook (`step` runs the TLS site by `Hb.tls`; the Arm model has no
   `tpidr_el0`; `BinCheck` checks the `movz`/`movk`/`nop`/`nop` words).
 * Axioms (`#print axioms E2E.ExecBytes.binary_correct_exec`): `propext`, `Classical.choice`,
-  `Quot.sound` and the `_native` certificates `binary_correct_of_checks` already has (M5's decoder,
-  M4); `act_sim` and the `ExecWords` lemmas: only the first three.
+  `Quot.sound` (every fixed backend lemma is kernel-checked, T6). `act_sim` and the `ExecWords`
+  lemmas: only the first three.
 * **Non-vacuity** (`crate-proofs/Crates/BinaryExecWitness.lean`,
   `Crates.BinaryExecWitness.binary_correct_exec_witness`): on the `a_arith` executable of
   `binary_witness`, for every file holding the proof's excerpts (one exists), the call of the
@@ -2313,7 +2656,7 @@ machine state `r` itself:
     of `binary_correct_of_checks_acyclic`, `codeMapB`, `HooksSim`, `GotOk I file` (decidable:
     `gotB`) and `OutsideAvoids (GotSlot I file) …`, with **no per-state hypothesis**, `ExecRefines
     … (step I B file) r (RelocAt I) (Clif.runLoop …)`. Axioms: `propext`, `Classical.choice`,
-    `Quot.sound` and the existing `bv_decide`/`native_decide` certificates. Non-vacuity:
+    `Quot.sound` (T6). Non-vacuity:
     `Crates.BinaryExecWitness.binary_correct_exec_proven_witness` (`a_arith`'s `wrapping_add`;
     no GOT pair, `noGotPair`, so no slot).
   - **Aliases** (TO-PROVE L3 item 6; 2026-10-06, `agent/exec-alias`): `cargo fv`'s self-call
@@ -2777,7 +3120,7 @@ closure roots of `lower` and from `lower_branch`, computed by the untrusted gene
 (`Clean ctx`: the context's instruction data hold no registers or instructions) and
 `ctor_sound` (every `emit`ted instruction covered: `CovSince`); `soundAt` (induction on the
 interpreter's fuel) makes every run of a checked term land in its abstract output. `chkTab`
-and the root checks are `native_decide` (8 table chunks + 4 roots, IselCovTab.lean). Driver:
+and the root checks use leaf-wise `decide +kernel` (8 table chunks + 4 roots, IselCovTab.lean). Driver:
 `stmt_cov` (emitted code covered; result registers of an instruction with results are int
 vregs, so `lowerFunction` adds no result `mov`), `termCall_cov`, `tryCall_cov`; the final
 alias renaming keeps register classes (`resolve_vrenaming`, `covered_mapRegs`), the entry's
@@ -2796,7 +3139,7 @@ int vreg, a `TestBitAndBranch` on an int vreg, `Udf`/`EmitIsland`/`Jump`; `gen_r
 int vregs) and `aOracleS` (the helpers emitting `loadExtNameGot/Near`, the LL/SC loops and
 `ElfTlsGetAddr` with fresh distinct defs, `oracle_ctl`), state invariant `ShpIs N s0`
 (`CtlSince N s0 ∧ N ≤ nextVreg`). Table `shpTab`: 641 entries, 8 chunks + 3 roots by
-`native_decide` (≈13 s, 2 GB). Hand-checked root rules (`root_hand`, `HandOk`): calls 1031–1033
+leaf-wise `decide +kernel`. Hand-checked root rules (`root_hand`, `HandOk`): calls 1031–1033
 (`handOk_call`), `try_call`s 1034–1036 (`handOk_try`), `br_table` 1140 (`handOk_brTable`, its
 `imm`/`put_in_reg_zext32` sub-runs from the table via `SubOk`). `totality`: a non-`partial` term
 never returns `none` (`totalProg_program`). Corollary `E2E.ctlSpillHyp` (under `InSubset`);
@@ -2895,7 +3238,7 @@ state-dependent, monotone along the run relation `RsK`: what a sub-run kills is 
 (`IsK`). The killing forms are built only inside `atomic_rmw_loop`, `atomic_cas_loop` and
 `br_table_impl` (oracles, `KillOracle.lean`); the term tables `killTabS` (from `lower`'s rules but
 587, 636, 637) and `killTabB` (from `lower_branch`'s) are closed and contain no killing variant and
-no `invalid_reg` (`KillTab.lean`, `native_decide`); `nop` (587) is a hand rule with no results,
+no `invalid_reg` (`TermSetData.lean`, kernel-certified by `KillTab.lean`); `nop` (587) is a hand rule with no results,
 the I128 rules 636/637 never match. `kp_ctor` (`KillCtor.lean`): every extern constructor but
 `invalid_reg` keeps the invariant (`MInst.ofV`'s uses are among the value's registers outside call
 defs, `ofV_kill`). The driver assembly (`KillAssemble.lean`) uses the runs' disjoint vreg ranges,
@@ -3043,7 +3386,7 @@ targets (`EmSince`), every terminator's (and `try_call`'s) run only `emitOk` ins
 branch targets only on the last (`EmLast`). Method: V3's abstract interpreter with emission
 transfer functions (`aextE`/`actorE`: numeric leaves `AW.num k b` for immediates, shift amounts,
 move-wide constants, call infos; `apreE`: an `emit`ted instruction passes `emChk`), table
-`emitTab` (740 entries, 13 `native_decide` chunks, `FVTest/Backend/IselEmitGen.lean`); branch
+`emitTab` (740 entries, 13 kernel-checked chunks, `FVTest/Backend/IselEmitGen.lean`); branch
 rules end in their branch (`aRuleLast`/`aLast_sound`, `root_last`: the final `emit_side_effect`'s
 last instruction may be a branch); the `uextend`/`sextend` rules (808, 819) and the `extr` rules
 (862, 863) by hand (`hand_emit`). `emitConds_lower` follows `lowerFunction`'s assembly and
@@ -3081,7 +3424,7 @@ Non-vacuity: `E2E.backend_correct_final_total_emit_in_witness`.
   and extern costs `aw`; `costAt` (`IselSzSound`, by induction on the fuel; failed match phases
   restore the state) is sound given `ExtW` (extern constructors) and `OracleW`. Two
   instantiations (`IselSzExt`, tables `szCTab`/`tgCTab` in `IselSzTab`, 699/701 entries, generated
-  by `FVTest/Backend/IselSzGen.lean`, checked by `native_decide`): weights (`actorW`: an `emit`ted
+  by `FVTest/Backend/IselSzGen.lean`, checked by leaf-wise `decide +kernel`): weights (`actorW`: an `emit`ted
   instruction of a variant other than `Call`/`CallInd`/`JTSequence` weighs at most `emitK = 107`,
   `load_constant_full` 4 of them, `gen_return` a `Rets` of at most 8 registers) and branch targets
   (`actorT`: per variant, none for `JTSequence`). By hand (`IselSzCall`, `IselSzBrTable`): the call
@@ -3115,6 +3458,69 @@ Every premise on the code is now an input condition. Non-vacuity:
 line: 1149 of 1149; the largest bound, 11.7 M words for the 9001-statement `large_frame`, against
 279 k words of the actual spill code). The bound is linear in the statements (about 1300 words
 each), so a function of more than about 12 000 statements is out of scope.
+
+**Lowering and `prepare` totality (V7, #226)** (2026-10-16, `FV/Backend/Proof/LowerTotal*.lean`,
+`FV/Backend/Proof/IselPrg*.lean`, `FV/Backend/Proof/PrepareTotal*.lean`,
+`FV/E2E/LinkScopeInput{Defs,}.lean`, `FV/E2E/TotalInput.lean`). `lowerFunction` and `prepare`
+succeed on decidable input conditions; `InScopeP`'s `lowersB` (which ran them) follows.
+
+* **The driver (`Driver.lowerFunction_ok`).** Every failure path of `lowerFunction`
+  (`FV/Backend/Isel.lean`) is excluded by a hypothesis (the list in `LowerTotal.lean`'s header):
+  the scope conditions of `fnScopeB`, the new `driverInB` (AAPCS64 convention, at most 8 returns,
+  `stmtInB`: result counts, declared AAPCS64 callees and symbols, `tls_value` offset 0, `i64` load/store addresses, no
+  `i128` return in `call_indirect` signatures; `termInB`: successor blocks exist, the `try_call`
+  table rules — declared `system_v` signature with at most 8 returns and no `i128`, no `context`
+  items, `retN`/`exnN` placement, callee signature = table signature), and the ISLE side as
+  `IselProg f ctx` (`StmtProg`: a statement's `lower` returns one register per result;
+  `TermProg`; `TryProg`: a `try_call`'s code ends in its call).
+* **The ISLE side (`Prg.iselProg_of_input`).** A progress analysis of the exported rules: the
+  abstract domain `PA` (`IselPrgDom`), abstract models of the extern helpers sound under the
+  context invariant `PInv` (`aext_sound`, `actor_sound`, `aidata_sound`, `ofvOk_sound`), the
+  abstract interpreter's soundness (`progress`), a summary table for every internal term reachable
+  from the statement and terminator roots (`IselPrgTab`, 1006 entries, generated by
+  `FVTest/Backend/IselPrgGen.lean`, `prgTab_ok`/`stmtRoots_ok`/`termRoots_ok` by leaf-wise
+  `decide +kernel`; the largest fuel an entry needs is 521) and two rules by hand (862/863 and
+  `extr_32_or_64`: they rely on a relation of two matched constants the interval domain drops).
+  `PInv` comes from `lowerScopeB`, `dominatedB`, `extendsWidenB` and `iselInB` (callee,
+  `call_indirect` and `try_call` signatures pass `sigOkB` — argument locations and at most 8 ABI
+  returns —, `func_addr` names a declared callee, `stack_addr` a frame slot, `return` arity, at
+  most `maxTryItems` = 8 exception-table items).
+* **`prepare` (`Prep.prepare_ok`).** No new condition: `prepare` succeeds on `lowerFunction`'s
+  output (`dominatedB`, `lowerScopeB`); the cleanup pipeline's `prepare (prune vc)` from
+  `prepare vc` (`prune_prepare_ok`).
+
+```lean
+theorem Backend.Proof.Prg.lowerFunction_ok_input (hE : Compile.functionE f = true)
+    (hsig : sigAbiOk f.sig = true) (hdom : dominatedB f = true) (hs : lowerScopeB f = true)
+    (har : Spill.arityOkB f = true) (hent : Spill.entryParamsB f = true)
+    (hw : extendsWidenB f = true) (hdrv : driverInB f = true) (hin : iselInB f = true) :
+    ∃ vc, lowerFunction f = .ok vc
+theorem Backend.Proof.Prep.prepare_ok (hd : dominatedB f = true) (hs : lowerScopeB f = true)
+    (hl : lowerFunction f = .ok vc) : ∃ vcp, prepare vc = .ok vcp
+def E2E.LinkCheck.fnScopeInB (g : Clif.Function) : Bool   -- fnScopeB, lowersB replaced by
+                                                           -- extendsWidenB, sizeOkB, driverInB, iselInB
+def E2E.LinkCheck.InScopeIn (I : LinkInput) : Bool :=
+  progScopeB I.prog (fun n => I.syms.lookup n) && I.prog.funcs.all fnScopeInB
+theorem E2E.LinkCheck.lowersB_of_input … (hw : extendsWidenB f = true) (hsz : sizeOkB f = true)
+    (hdrv : driverInB f = true) (hin : Prg.iselInB f = true) : lowersB f = true
+theorem E2E.LinkCheck.fnScopeB_of_input (h : fnScopeInB g = true) : fnScopeB g = true
+theorem E2E.LinkCheck.inScopeP_of_input (h : InScopeIn I = true) : InScopeP I = true
+theorem E2E.backend_correct_final_total_input (hsub : InSubset p f) (hd : dominatedB f = true)
+    (hs : lowerScopeB f = true) (har : Spill.arityOkB f = true)
+    (hent : Spill.entryParamsB f = true) (hw : extendsWidenB f = true) (hsz : sizeOkB f = true)
+    (hdrv : driverInB f = true) (hin : Prg.iselInB f = true) (ra : Except String RFunc) :
+    ∃ vc vcp, lowerFunction f = .ok vc ∧ prepare vc = .ok vcp ∧
+      -- the conclusion of backend_correct_final_total_emit_input
+theorem E2E.backend_correct_final_cleanup_total_input …  -- prepare (DeadCleanup.prune vc)
+```
+
+`inScopeP_of_input` converts every theorem taking `InScopeP` (`compileExe_total_reach_input`
+above; `crate_correct_inScope*`); the correctness theorems on `compileExe`'s output take its
+success, which the totality theorems give. Non-vacuity: `driverInB_witness`, `iselInB_witness`,
+`backend_correct_final_total_input_witness` (`fnScopeInB` of the loop and `try_call` witnesses,
+kernel-checked, `dominatedB` as premise: its fixpoint uses `Std.HashMap`, which the kernel does
+not reduce). `lean-e2e-check` decides both per-function scopes ("per-function scope" line; a
+disagreement fails the run): 1150 / 1150; `lean-link --verified` checks `fnScopeInB`.
 
 **Validator completeness: `Opt.Legalize128` is correct without `Opt.Legal.check`** (2026-10-02,
 `FV/Opt/Proof/LegalComplete.lean`, `FV/Opt/Proof/LegalDirect.lean`, `FV/E2E/LegalDirect.lean`;
@@ -3198,22 +3604,20 @@ extrt and runtests (445 files): no function rejected.
 
 ## Remaining (precise)
 
-1. **M4**: `LowerRulesCorrect` (in progress; `ExcludedUnmatchable` proven) and the terminator
-   statements `LowerTermRulesCorrect`, `TermUnmatchable`, `BranchRulesCorrect`,
-   `BranchExcludedUnmatchable` for `Isle.Aarch64.program`.
-2. **M6**: `RegLevelCorrect` and `DriverSem` are discharged (`regLevelCorrect_backend`,
-   `driverSem_csem`); open: `Refines`/`MemRefines` of `csem` (M6Insts) and the decision of
-   `FormsCovered` by `lean-e2e-check` (`formsCoveredB`).
-3. **Scope extensions**: discharging the program callees' contracts of
-   `backend_correct_linked` from their own theorems (induction on call depth; the dead-stack
-   obstruction is fixed, the exact world, frame locality and slot placement remain, see
-   "Linking" and `docs/DEFERRED.md`); stack-passed arguments of indirect calls (`indSigs`);
-   memory-access traps (need a fault model).
+M4 (`LowerRulesCorrect` and the terminator statements) and M6 (`RegLevelCorrect`, `DriverSem`,
+`Refines`/`MemRefines` of `csem`) are proven, `FormsCovered` follows from `formsCovered_complete`,
+and the program callees' contracts are discharged by `E2E.backend_correct_program` (induction on
+the call depth); the executable theorems are `Link.DeadCleanup.compileExe_correct{,_peak,_source,
+_source_peak}` and, from cg_clif's dumps, `Front.bundle_correct_raw{,_peak}`. What remains is
+listed in `docs/TO-PROVE.md` (§1.1 for totality, §4 for scope, §5 for the trusted base); from this
+file: stack-passed arguments of indirect calls (`indSigs`, S5) and memory-access traps (need a
+fault model; `TrapsExplicit`).
 
 ## Trusted (not proven)
 
-* Lean kernel, `bv_decide`'s LRAT checker / compiled evaluation (M5, M6 axioms); Lean's and the
-  C compiler that run the compiler.
+* Lean kernel; Lean's and the C compiler that run the compiler. Since T6 every fixed backend
+  proof and every optimizer rule proof is kernel-checked (no `bv_decide`/`native_decide`
+  certificate in the compiler theorems; per-crate witness files still use `native_decide`).
 * **Arm model fidelity** (`FV/Arm`, ASL-derived, co-simulated against qemu) and **`Clif.run`
   fidelity** (checked against Cranelift's interpreter and native runs), including the choice
   that CLIF slot addresses are unspecified (`ClifEntry`).
@@ -3251,7 +3655,8 @@ extrt and runtests (445 files): no function rejected.
   (`__rust_alloc`, …) and the i128 builtins (`__udivti3`, `__rust_u128_mulo`); both are out
   of scope until `i_alloc`/i128 are taken up (the allocator is the existing flat-runtime
   path).
-* Frontend (pluggable, PLAN.md §4 M7 restatement).
+* Frontend: rustc and the patched cg_clif, and the frontend bundle's faithfulness to what cg_clif
+  compiled (docs/contracts/frontend.md §1, §5).
 
 ## `#print axioms`
 
@@ -3262,15 +3667,13 @@ Backend.Proof.Driver.termCalls_of_rules:
   [propext, Classical.choice, Quot.sound]
 E2E.clifEntry_initState: [propext, Quot.sound]
 Backend.Proof.regLevelCorrect_backend:
-  [propext, Classical.choice, Quot.sound] + M5's `decode_armBits_*._native.bv_decide` and
-  `decode_raw_inst_of_{br,dpi,dpr,dpsfp,ldst}._native.bv_decide`,
-  `Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9`
+  [propext, Classical.choice, Quot.sound] (T6: no native axioms)
 E2E.backend_correct_final: those of `backend_correct_m4` and `regLevelCorrect_backend`
 E2E.backend_correct_linked: those of `backend_correct_final`
 Clif.runLoop_link, E2E.xCallsOk_link: [propext, Classical.choice, Quot.sound]
 E2E.calleeOk_witness, E2E.final_contracts_witness, E2E.witness_saves_lr, E2E.calleeOk_id,
 E2E.final_contracts_id:
-  [propext, Classical.choice, Quot.sound, Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9]
+  [propext, Classical.choice, Quot.sound] (T6)
 E2E.backend_correct_final_witness, E2E.backend_correct_final_id: those of `backend_correct_final`
 E2E.BinCheck.img_bytes, E2E.BinCheck.codeB_sound, E2E.BinCheck.symsB_sound,
 E2E.BinCheck.binOk_of: [propext, Classical.choice, Quot.sound]
@@ -3280,8 +3683,5 @@ Crates.NAME.bin_ok: [propext, Classical.choice, Quot.sound] + `Crates.NAME.{hdr_
   syms_bin, sliceK_bin}._native.native_decide.ax_1_1`
 ```
 
-**Status (M6Insts2, 2026-09-28)**: `hRef`/`hmem` of `backend_correct_m4` are not yet discharged.
-csem now falls back to `mspec` (ispec + memory forms) off error-free aligned worlds; `FormOk` must be
-narrowed (xzr-destination imm/extended add/sub make `Refines` false as is). See regalloc-proof.md
-"Status update (M6Insts2)"; `MemRefines` for `csem` will need `ctx.slotBase = slotOff` and a
-GOT premise `syms n = some b → X.sym n 0 = ofNat b`.
+Every top-level theorem of the compiler (per function, per executable, the frontend theorems) and
+the result of an axiom scan of every constant of `FV`: `docs/research/axiom-audit.md`.
