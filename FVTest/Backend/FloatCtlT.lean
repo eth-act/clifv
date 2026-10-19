@@ -1,6 +1,8 @@
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.LowerLoopCtxT
 import FV.E2E.RegLevelFrame
+import FV.Backend.Proof.EntryClass
+import FV.Backend.Proof.AbiClassRegs
 
 /-!
 Non-vacuity of the widened control-form check (S11e5 Stage C, slice 5): `ctlCheck` accepts
@@ -132,6 +134,13 @@ theorem ctlCheck_args_fCtl : ∃ vb ds, (vcpOf fCtl).blocks[0]? = some vb ∧ vb
 /-- `fCtl` is `Dominated`. -/
 theorem dominated_fCtl : Dominated fCtl := dominated_of (by native_decide)
 
+/-- `fCtl`'s entry parameters have the classes of its signature's (`entryClassOkB`). -/
+theorem entryClassOk_fCtl : EntryClassOk fCtl := entryClassOk_of (by native_decide)
+
+-- an entry block whose `f64` parameter sits at an `i64` signature position is rejected
+#guard !entryClassOkB (fnOfText
+  "function %bad(i64) -> i64 {\nblock0(v0: f64):\n    v1 = bitcast.i64 v0\n    return v1\n}\n")
+
 theorem functionET_fCtl : Compile.functionET fCtl = true := by native_decide
 
 /-- `fCtl` is in the typed lowering's input conditions. -/
@@ -161,5 +170,51 @@ theorem scopeT_fCtl : LowerScopeT fCtl where
       rw [hi] at this; cases this
     · have := List.all_eq_true.mp h2 B hB
       rw [ht] at this; cases this
+
+/-! ## Slice 5b: float `Args`/`Rets` meet `SpillInstOk` -/
+
+/-- Non-vacuity of `spillInstOk_retsC`: a `Rets` of a float vreg in v0 and an int vreg in x0. -/
+example : Spill.SpillInstOk (.rets (argPairsC [(5, .float, .v 0), (6, .int, .x 0)])) :=
+  Spill.spillInstOk_retsC (fun q hq => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+    rcases hq with rfl | rfl
+    · exact .inr ⟨rfl, 0, by decide, rfl⟩
+    · exact .inl ⟨rfl, 0, by decide, rfl⟩) (by decide)
+
+/-- Non-vacuity of `sigArgLocs_regsC`: `fCtl`'s signature places `[v0, x0, v1]`. -/
+theorem sigArgLocs_regs_fCtl : ∃ locs n, sigArgLocs fCtl.sig = .ok (locs, n) ∧ locs.length = 3 ∧
+    (Spill.locRegs locs).Nodup ∧ Spill.Pw2 Spill.PLoc fCtl.sig.params locs := by
+  have h : (match sigArgLocs fCtl.sig with
+    | .ok r => r.1.length == 3
+    | .error _ => false) = true := by native_decide
+  split at h
+  · rename_i r hr
+    obtain ⟨locs, n⟩ := r
+    exact ⟨locs, n, hr, by simpa using h, Spill.sigArgLocs_regsC (by native_decide) hr⟩
+  · cases h
+
+/-- The entry block of `fCtl`. -/
+def B0 : Clif.Block := fCtl.blocks[0]!
+
+/-- **Non-vacuity of `spillInstOk_entryArgsT`**: the typed entry `Args` of `fCtl` (float
+parameters in v0/v1) in its `buildCtx` context meets `SpillInstOk`. -/
+theorem entryArgsT_fCtl : ∃ ctx r s, buildCtx fCtl = .ok (ctx, r, s) ∧
+    Spill.SpillInstOk (.args (entryRegsT fCtl ctx id B0)) := by
+  have hok : (buildCtx fCtl).toBool = true := by native_decide
+  cases hb : buildCtx fCtl with
+  | error e => rw [hb] at hok; cases hok
+  | ok res =>
+    obtain ⟨ctx, r, s⟩ := res
+    refine ⟨ctx, r, s, rfl, Spill.spillInstOk_entryArgsT (by native_decide) (by native_decide)
+      (by native_decide) (fun _ _ => rfl) ?_⟩
+    have hc : (match buildCtx fCtl with
+        | .ok (c, _, _) => (B0.params.zip fCtl.sig.params).all fun q =>
+            decide (valClassOf c q.1.1 = tyClass q.2.ty)
+        | .error _ => false) = true := by native_decide
+    rw [hb] at hc
+    intro i x t sp hbp hs
+    have hz : (B0.params.zip fCtl.sig.params)[i]? = some ((x, t), sp) := by
+      rw [List.getElem?_zip_eq_some]; exact ⟨hbp, hs⟩
+    simpa using List.all_eq_true.mp hc _ (List.mem_of_getElem? hz)
 
 end FloatCtlT

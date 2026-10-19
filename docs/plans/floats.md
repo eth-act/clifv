@@ -403,9 +403,33 @@ register-level `Args`/`Rets` proofs (`realizes_args`, `ret_machine`) run on clas
 (`argPairsC`, `operands_argsC`/`operands_retsC`, `rets_usesC`), so the register-level and E2E
 statements are unchanged; only d8–d15 (`keep`) are claimed preserved across calls. Witness:
 `FVTest/Backend/FloatCtlT.lean` (`(f64, i64, f32) -> f64`: widened check accepts, integer check
-rejected; `Dominated`, `LowerScopeT`). Open (slice 5b): `ctlSpill_typed`, which needs the
-control-shape analysis (`IselCtlHyp`) over `CtxInvT` on a typed Cov domain (`IselCovT`, shared
-with slice 6's typed form coverage).
+rejected; `Dominated`, `LowerScopeT`).
+
+**Slice 5b (typed control-form facts, parts).** `Proof/SpillCtlFormsT.lean`:
+`spillInstOk_retsC`/`spillInstOk_argsC` (float `Rets`/`Args` pairs fixed to v0–v7, x0–x8 for
+int, meet `Spill.SpillInstOk`; v0–v7 are outside `calleeSaved`). `Proof/AbiClassRegs.lean`:
+`sigArgLocs_regsC` (the typed placement's registers are distinct and each parameter's is x8 for
+`sret` or of its class) and `spillInstOk_entryArgsT` (the typed entry `Args`). `functionET`
+does not check that the entry block's parameter types are the signature's (a CLIF-verifier
+fact): `Proof/EntryClass.lean` states it (`EntryClassOk`) and decides it on the input
+(`entryClassOkB`, `entryClassOk_of`); witness `FloatCtlT.entryClassOk_fCtl`. Parent decision:
+the typed chain takes the control-form/form-coverage/kill-free/class facts as run-time-decided
+premises (`ctlSpillB`, `formsCoveredB`, `killFreeB`, `resClassOkB`, `entryClassOkB`), like
+`lowersB` in `fnScopeB`. **Follow-up (input-only totality for floats):** proving those facts for
+every typed-scope input needs the V3/V4 abstract interpretations over `CtxInvT`. Their soundness
+is tied to E in the engine itself: `aPrune` prunes with the E exclusion checker `fails`, `γ`'s
+`.xv .data` means an `instE` instruction's data, `value_type` gives `eCTys`, and `put_in_reg`
+gives an int vreg (`IselCovSem`, `IselCovCheck`, `IselCovExt`, `IselCovFns`, `IselCovCtor`). The
+follow-up is a parametrised copy of the engine (`IselCov{Dom,Sem,Le,Form,Check,Sound,Fns,Ext,
+Ctor}`, about 3.5k lines) with a typed domain (pruning by `failsT` over `AVT`; a value kind for
+operands in integer positions, from `CtxInvT.intOps`: every `InstructionData` variant of the
+typed scope except `Ternary` (`select`), `Store`, `LoadNoOffset` (`bitcast`, `atomic_load`) and
+the calls has all its values in integer positions, so `put_in_reg` of such a field is an int
+vreg; float forms such as `fcsel` need the dual float fact, which needs the verifier's operand
+typing of `select`/`store`/`bitcast`), regenerated `shpTabT`/`covTabT` with kernel
+certificates (about 7 min, 3 GB each, as `shpTab`), the extern soundness over `CtxInvT`, the
+hand-checked call/`try_call`/`br_table` rules over `CtxInvT` (`IselShp{Call,Try,BrTable}`, about
+1k lines), and `iselCtlHypT`: several days of work.
 
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
