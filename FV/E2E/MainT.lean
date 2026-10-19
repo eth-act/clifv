@@ -23,7 +23,9 @@ namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
 
 /-- **The CLIF functions the typed theorem covers**: `InSubset` with the typed movement scope
-`Compile.functionET` in place of subset E (the other conditions unchanged). -/
+`Compile.functionET` in place of subset E (the other conditions unchanged), and the CLIF
+verifier's typing of float stores (`Compile.storeTypedB`: a float `store` stores a float-defined
+value; `storeTypedB_of_functionE` for subset E). -/
 structure InSubsetT (p : Clif.Program) (f : Clif.Function) : Prop where
   subsetET : Compile.functionET f = true
   externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
@@ -32,10 +34,12 @@ structure InSubsetT (p : Clif.Program) (f : Clif.Function) : Prop where
     ∀ e, f.extern? fn = some e → p.func? e.name = none
   abiSigs : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true
   indSigs : ∀ s ∈ indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true
+  storeTyped : Compile.storeTypedB f = true
 
 /-- **Integer specialization**: the subset is in the typed one. -/
 theorem InSubset.toT {p : Clif.Program} {f : Clif.Function} (h : InSubset p f) : InSubsetT p f :=
-  ⟨Compile.functionET_of_functionE h.subsetE, h.externCalls, h.tryExterns, h.abiSigs, h.indSigs⟩
+  ⟨Compile.functionET_of_functionE h.subsetE, h.externCalls, h.tryExterns, h.abiSigs, h.indSigs,
+    Compile.storeTypedB_of_functionE h.subsetE⟩
 
 theorem noTail_of_subsetT {p : Clif.Program} {f : Clif.Function} (h : InSubsetT p f) :
     ∀ B ∈ f.blocks, ∀ fn args, B.term ≠ .returnCall fn args := by
@@ -184,7 +188,8 @@ theorem argsAtEntry_bodyT {f : Clif.Function} {args : List Clif.Val} {af : AFunc
 
 /-- **CLIF → VCode for the typed scope, from the typed rule families**: the typed driver
 hypothesis of the context `buildCtx` builds (`loweringObligationsT_of_check`, `CtxT` from the
-typed shape and `functionET`), with the driver's calls from the typed rule families
+typed shape and `functionET`; its float stores store float values, `storesTyped_of_buildCtx`),
+with the driver's calls from the typed rule families
 (`instCallsT_of_rules`, `termCallsT_of_rules`, `tryCallsT_of_rules`, `tryIndCallsT_of_rules`). -/
 theorem iselSimT_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     (hsub : InSubsetT p f) (hlow : lowerCheckT f vc = true)
@@ -218,6 +223,8 @@ theorem iselSimT_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
     ∀ s, IselSimT (sem s) ⟨F s, syms, slotOff, out⟩ env p f vc := by
   obtain ⟨ctx, st0, R, gn, bl, A, hshape, hcert, hbr⟩ := loweringObligationsT_of_check hlow
   have hctxT : CtxT f ctx := ⟨hshape.ctxInvT, hshape.scope, functionET_externs hsub.subsetET⟩
+  have hstT : StoresTyped ctx :=
+    storesTyped_of_buildCtx hsub.storeTyped hshape.hctx.choose_spec
   intro s'
   refine iselSim_of_driverT (ctx := ctx) (st0 := st0) (R := R) (gn := gn) (bl := bl) (A := A) ?_
     (hds s') (hmem s') (hFP s')
@@ -229,7 +236,7 @@ theorem iselSimT_of_rules {p : Clif.Program} {f : Clif.Function} {vc : VCode}
       (hRef s') (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s') (hicalls s') (hmem s')
       (hFP s') (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
       (callsStack_mono (callsStackT_of_check hlow) houtB)
-      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
+      (memRelOk_holds ⟨F s', syms, slotOff, out⟩ f) hctxT hstT
     terms := termCallsT_of_rules htermRules htermUn hbranch hbranchEx (hRef s')
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) hctxT
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he

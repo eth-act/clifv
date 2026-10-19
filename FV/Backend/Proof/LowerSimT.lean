@@ -234,6 +234,11 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {sem : ISem CV W} {MR : MemRelTW W} {env : Clif.Env} {p : Clif.Program}
   {slots : List (Clif.SlotId × Nat)}
 
+/-- The integer-position operands of `f`'s terminators (`termIntPos_of_functionET`). -/
+theorem DriverHypT.termIntPos (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
+    {B : Clif.Block} (hB : B ∈ f.blocks) : TermIntPos ctx B.term :=
+  termIntPos_of_functionET H.subET H.shape.hctx.choose_spec hB
+
 theorem DriverHypT.blow (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p) {bi : Nat}
     {B : Clif.Block} (hB : f.blocks[bi]? = some B) : ∃ L, bl[bi]? = some L := by
   have hlt : bi < f.blocks.length := (List.getElem?_eq_some_iff.mp hB).1
@@ -653,6 +658,7 @@ theorem term_stepT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     simp [dests]
   have hok := H.terms (L.start + B.body.length) (abiTerm f B.term) L.data L.targets out
     L.tst L.tst' tr (brIdxTyped_abiTerm (H.brIdx B (List.mem_of_getElem? hB)))
+    (termIntPos_abiTerm (H.termIntPos (List.mem_of_getElem? hB)))
     (targetsLen_abiTerm htlen) (H.shape.tslot b B L hB hL)
     (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0t) hdata htemp
     (by rw [termCall_abiTerm]; exact hrunT)
@@ -957,7 +963,7 @@ theorem term_step_tryT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
           simp only [instArgs] at hy; simp [termArgs, hy], hnd,
         fun s' hs => ?_, H.tries.choose_spec.1 (L.start + B.body.length) fn args et L.data
           T.sig T.items L.targets T.info T.regs L.tst T.st1 out L.tst' tr
-          (H.tries.choose_spec.2 B hBmem fn args et hBT) hdata' hexn
+          (H.tries.choose_spec.2 B hBmem fn args et hBT) hdata' (hBT ▸ H.termIntPos hBmem) hexn
           (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
       obtain ⟨ext, bc, rvals, cm', regs', hx, htn, hO, hset, rfl⟩ := hnx s' hs
       rw [hfunc, hx0] at hx
@@ -976,7 +982,7 @@ theorem term_step_tryT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
           exact List.mem_cons.mpr ((List.mem_cons.mp hy).imp id fun h => List.mem_append_left _ h),
         hnd, fun s' hs => ?_,
         H.tryInd (L.start + B.body.length) callee args et L.data T.sig T.items L.targets
-          T.info T.regs L.tst T.st1 out L.tst' tr hdata' hexn hsin h8
+          T.info T.regs L.tst T.st1 out L.tst' tr hdata' (hBT ▸ H.termIntPos hBmem) hexn hsin h8
           (H.shape.tslot b B L hB hL) hinfo hregs hvbL hrun⟩
       obtain ⟨declared, bc, rvals, cm', regs', hd, htn, hO, hset, rfl⟩ := hnx s' hs
       rw [hfunc, hsd] at hd
