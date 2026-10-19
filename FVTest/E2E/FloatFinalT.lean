@@ -1,4 +1,5 @@
-import FV.E2E.FinalT
+import FV.E2E.FinalDirectT
+import FV.Backend.Proof.LowerDecide
 import FVTest.Backend.FloatDriverT
 
 /-!
@@ -16,9 +17,12 @@ are the premises of `backend_correct_finalT`/`_exT` besides the typed M4 familie
 `checkAlloc`, but `lowerRFunc`'s control-form check (`ctlCheck`: integer `Args`/`Rets` vregs)
 rejects it until slice 5 widens `ctlInstOk`. Checks by `native_decide` (witness only).
 `lake build FVTest.E2E.FloatFinalT`.
+With no answer from the untrusted allocator, slice 6's typed spill chain and
+`CompiledAT.of_lowerT` give `CompiledAT` for `fW` without the validator premises
+(`compiledAT_of_lowerT_w`: the pipeline side of `backend_correct_finalT_alloc`).
 -/
 
-open Backend Backend.Proof Backend.Proof.Driver E2E
+open Backend Backend.Proof Backend.Proof.Driver Backend.Proof.Spill E2E
 
 namespace FloatFinalT
 
@@ -161,5 +165,48 @@ theorem inSubsetT_mv (p : Clif.Program) : InSubsetT p fMv := by
     rw [hi] at this; cases this
   · have := List.all_eq_true.mp hnt B hB
     rw [ht] at this; cases this
+
+/-- `fW` is in the typed lowering's input conditions. -/
+theorem scopeT_w : LowerScopeT fW where
+  subsetT := by native_decide
+  nonempty := by native_decide
+  noEntryPred := by native_decide
+  ctxFacts := by
+    intro ctx ranges st0 hb
+    have h : (match buildCtx fW with
+        | .ok (c, _, _) => brIdxOk fW c && ctxOkT fW c
+        | .error _ => false) = true := by native_decide
+    rw [hb] at h
+    simp only [Bool.and_eq_true] at h
+    exact ⟨h.1, (ctxOkT_sound h.2).addr64⟩
+  tryRet := by
+    have h : fW.blocks.all (fun B => !B.term.isTry) = true := by native_decide
+    intro B hB et ht
+    have := List.all_eq_true.mp h B hB
+    rcases ht with ⟨fn, args, he⟩ | ⟨c, args, he⟩ <;> rw [he] at this <;> cases this
+  stackLayout := by
+    have h : fW.blocks.all (fun B => B.body.all fun st => !(st.inst matches .call ..)) = true := by
+      native_decide
+    have h2 : fW.blocks.all (fun B => !B.term.isTry) = true := by native_decide
+    refine ⟨fun B hB st hst fn args e hi _ => ?_, fun B hB fn args et e ht _ => ?_⟩
+    · have := List.all_eq_true.mp (List.all_eq_true.mp h B hB) st hst
+      rw [hi] at this; cases this
+    · have := List.all_eq_true.mp h2 B hB
+      rw [ht] at this; cases this
+
+/-- **Witness** (direct route): with no answer from the untrusted allocator, slice 6's typed
+spill chain makes the lowered allocation `AllocChecked` under the decided premises, and
+`CompiledAT.of_lowerT` gives `CompiledAT` without the validator premises — the premises of
+`backend_correct_finalT_alloc` on the pipeline's side. -/
+theorem compiledAT_of_lowerT_w :
+    CompiledAT fW 0 (vcOf fW) (vcpOf fW) (allocResult (vcpOf fW) (.error "no allocator"))
+      (afOf fW) (faOf fW) (fbOf fW) := by
+  have hch := allocChecked_allocResultT (dominated_of (by native_decide)) scopeT_w
+    (Spill.arityOk_of (by native_decide)) (by native_decide)
+    (resClassOk_of_resClassOkB (by native_decide)) lowerFunction_w prepare_w
+    (ctlSpill_of_ctlSpillB (by native_decide)) ((formsCoveredB_iff _ _).mp (by native_decide))
+    (by native_decide) (.error "no allocator")
+  exact CompiledAT.of_lowerT (dominated_of (by native_decide)) scopeT_w lowerFunction_w prepare_w
+    hch alloc_w emit_w layout_w
 
 end FloatFinalT
