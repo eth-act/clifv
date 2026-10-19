@@ -295,6 +295,24 @@ function with an integer `call`; `lowerCheck` rejects all three). Open (slice 6)
 `ClassesHyp` and the spill chain (`stmt_cls`/`stmt_cov`/`termCall_cls`/`tryCall_cls` over
 `CtxInvT`, `SpillEdges*`, `SpillDefined`, `SpillAvail`, `SpillLocalPipe` over `LowerScopeT`).
 
+**S11e5 Stage C, slice 6 (typed spill chain; FP spill slots unchanged).** Over `LowerScopeT`:
+CFG facts `Spill.edgesHyp_ofT`/`lowOk_ofT`/`prepDomain_ofT` (`Proof/SpillEdgesT.lean`; branch and
+`try_call` value arguments have their parameter's class by `edgeClassOk`; a `try_call`'s
+`ret`/`exn` arguments go to integer parameters by the new input check `Compile.tryArgClassOk`,
+`FV/Compile/TryArgClass.lean`, true on subset E), classes `Spill.classesHypT`
+(`Proof/SpillClassesT.lean`: `stmt_clsT`, `termCall_clsT`, `resolve_clsT`; premise `ResClassOk f`,
+decided by `resClassOkB`: the lowering returns each result in a vreg of the result's class),
+local facts and acceptance `spillLocalOk_of_pipelineT`, `spillAcceptedT`,
+`allocChecked_allocResultT` (`Proof/SpillLocalPipeT.lean`) with explicit per-function premises
+`hctl` (slice 5; decided by `ctlSpillB`, `Proof/SpillInstCheck.lean`), `hform : FormsCovered
+default vcp` (decided by `formsCoveredB`) and `killFreeB vcp`. Integer corollaries:
+`classesHyp_of_T`, `edgesHyp_of_toT`, `spillLocalOk_of_pipelineT_int`. Witnesses:
+`FVTest/Backend/FloatSpillT.lean`. Open: a typed coverage analysis (`formsCovered_completeT`:
+`IselCov*`'s `aext`/`actor`/`ext_sound`/`ctor_sound` and `covTab` are integer by construction;
+shared with slice 5 as `IselCovT`), `ResClassOk` from it, and the typed kill-free chain
+(`KillRunsHyp`/`TryDefsExact`/`killFreeB_lower` over `LowT`, which needs slice 5's typed
+`try_call` exclusion).
+
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
 (`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
