@@ -18,21 +18,36 @@ theorem variantNames_Bswap : (variantNames 151)[110]? = some "Bswap" := rfl
 
 theorem bswap_16 (x : BitVec 16) : Clif.Sem.bswap x = (x <<< 8) ||| (x >>> 8) := by
   unfold Clif.Sem.bswap
-  simp only [show List.range (16 / 8) = [0, 1] from rfl, List.foldl_cons, List.foldl_nil]
-  bv_decide
+  simp only [show List.range (16 / 8) = [0, 1] from rfl, List.foldl_cons, List.foldl_nil,
+    Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub, BitVec.shiftLeft_zero, BitVec.ushiftRight_zero]
+  apply BitVec.eq_of_getElem_eq; intro i hi
+  simp only [BitVec.getElem_or, BitVec.getElem_and, BitVec.getElem_shiftLeft,
+    BitVec.getElem_ushiftRight]
+  iterate 16 (rcases i with _ | i; · simp)
+  omega
 theorem bswap_32 (x : BitVec 32) : Clif.Sem.bswap x =
     (x <<< 24) ||| ((x <<< 8) &&& 0xFF0000#32) ||| ((x >>> 8) &&& 0xFF00#32) ||| (x >>> 24) := by
   unfold Clif.Sem.bswap
-  simp only [show List.range (32 / 8) = [0, 1, 2, 3] from rfl, List.foldl_cons, List.foldl_nil]
-  bv_decide
+  simp only [show List.range (32 / 8) = [0, 1, 2, 3] from rfl, List.foldl_cons, List.foldl_nil,
+    Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub, BitVec.shiftLeft_zero, BitVec.ushiftRight_zero]
+  apply BitVec.eq_of_getElem_eq; intro i hi
+  simp only [BitVec.getElem_or, BitVec.getElem_and, BitVec.getElem_shiftLeft,
+    BitVec.getElem_ushiftRight]
+  iterate 32 (rcases i with _ | i; · simp)
+  omega
 theorem bswap_64 (x : BitVec 64) : Clif.Sem.bswap x =
     (x <<< 56) ||| ((x <<< 40) &&& 0xFF000000000000#64) ||| ((x <<< 24) &&& 0xFF0000000000#64) |||
     ((x <<< 8) &&& 0xFF00000000#64) ||| ((x >>> 8) &&& 0xFF000000#64) |||
     ((x >>> 24) &&& 0xFF0000#64) ||| ((x >>> 40) &&& 0xFF00#64) ||| (x >>> 56) := by
   unfold Clif.Sem.bswap
   simp only [show List.range (64 / 8) = [0, 1, 2, 3, 4, 5, 6, 7] from rfl, List.foldl_cons,
-    List.foldl_nil]
-  bv_decide
+    List.foldl_nil, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub, BitVec.shiftLeft_zero,
+    BitVec.ushiftRight_zero]
+  apply BitVec.eq_of_getElem_eq; intro i hi
+  simp only [BitVec.getElem_or, BitVec.getElem_and, BitVec.getElem_shiftLeft,
+    BitVec.getElem_ushiftRight]
+  iterate 64 (rcases i with _ | i; · simp)
+  omega
 
 section
 variable (st : LState) (tr : Array RuleId) (n : Nat)
@@ -214,7 +229,13 @@ theorem bswap_i16_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env :
       refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_nil _), ?_⟩
       have hu' : (ρ x).setWidth 16 = u := hu
       subst hu'
-      wfix [Clif.Sem.unary, bswap_16, bswap_32, bswap_64, rev16w])
+      simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary, rev16w] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        simp only [bswap_16] <;>
+        (try unfold OperandSize.bits at *) <;>
+        apply BitVec.eq_of_getElem_eq <;> intro i hi <;>
+        repeat (first | omega |
+          (rcases i with _ | i; · simp [BitVec.getElem_ushiftRight, BitVec.getElem_shiftLeft])))
 
 include hp in
 /-- **`bswap.i32`** (`lower.isle:2038`). -/
@@ -245,7 +266,9 @@ theorem bswap_i32_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env :
       refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_nil _), ?_⟩
       have hu' : (ρ x).setWidth 32 = u := hu
       subst hu'
-      wfix [Clif.Sem.unary, bswap_16, bswap_32, bswap_64, rev16w])
+      simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        simp [BitVec.setWidth_setWidth_of_le])
 
 include hp in
 /-- **`bswap.i64`** (`lower.isle:2041`). -/
@@ -276,6 +299,8 @@ theorem bswap_i64_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env :
       refine ⟨_, prun_rr hR rfl (fun _ => rfl) (prun_nil _), ?_⟩
       have hu' : (ρ x).setWidth 64 = u := hu
       subst hu'
-      wfix [Clif.Sem.unary, bswap_16, bswap_32, bswap_64, rev16w])
+      simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        simp [BitVec.setWidth_setWidth_of_le])
 
 end Backend.Proof

@@ -1,11 +1,12 @@
 import FV.Opt.Proof.RuleIcmpEmbed
+import FV.Opt.Proof.KernelBV
 
 /-!
 # Template variants for `opts/icmp.isle` (part 2): signed immediates
 
 `iconst_s` extractors bind `toInt` of the constant's bits; a variable bound twice gives
 `a.toInt = b.toInt`, and `i64_lt`/`i64_gt_eq` if-lets compare it with `0`. `rule_bits_e` turns
-both into `BitVec` facts (`toInt_inj`, the sign bit) before `bv_decide`. The `uextend_maybe`
+both into `BitVec` facts (`toInt_inj`, the sign bit) before `kbv`. The `uextend_maybe`
 multi-extractor (`extractMulti_uem`).
 -/
 
@@ -158,7 +159,7 @@ theorem toInt_eq_one {t : Ty} (x : BitVec t.width) : x.toInt = 1 ↔ x = 1#t.wid
 macro "sint_simp" : tactic => `(tactic| (try simp only [BitVec.toInt_inj, ge_iff_le, gt_iff_lt,
   toInt_nonneg_iff', toInt_neg_iff', toInt_eq_one, decide_eq_true_eq, beq_true, beq_iff_eq] at *))
 
-/-- `rule_bits_c` with `sint_simp` before `bv_decide`. -/
+/-- `rule_bits_c` with `sint_simp` before `kbv`. -/
 macro "rule_bits_e" : tactic => `(tactic| (
   try simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
     toNat_eq_iff_ofNat, ofInt_imm64OfBits, bne_iff_ne, ne_eq, toNat_eq_zero_iff] at *
@@ -175,7 +176,7 @@ macro "rule_bits_e" : tactic => `(tactic| (
          | (sint_simp
             opt_cases_val <;> opt_cases_ty <;> opt_widths <;> sem_simp_b <;>
             (try simp only [Int.reducePow, Int.reduceSub, Int.reduceToNat, Nat.reducePow,
-              Nat.reduceSub] at *) <;> sint_simp <;> first | ac_rfl | bv_decide))))
+              Nat.reduceSub] at *) <;> sint_simp <;> first | ac_rfl | kbv))))
 
 set_option hygiene false in
 macro "rule_finish_e" : tactic => `(tactic| first
