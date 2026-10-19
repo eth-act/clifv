@@ -602,6 +602,18 @@ theorem enter_match_brT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
   subst hx
   rw [hρ₂ a haA]; exact hh
 
+/-- A `return` that completes returns values of the function's return types. -/
+theorem stepTerm_ret_tys {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
+    {xs : List Clif.ValueId} (hcall : s.callers = []) {vals : List Clif.Val} {cm : Clif.Mem}
+    (h : Clif.stepTerm env p s (.ret xs) = .done vals cm) :
+    vals.map (·.ty) = Clif.AbiParam.tys s.frame.func.sig.returns := by
+  obtain ⟨-, -, hdn⟩ := stepTerm_ret (env := env) (p := p) (s := s) (xs := xs) hcall
+  obtain ⟨hg, -⟩ := hdn vals cm h
+  simp only [Clif.stepTerm, hg, Clif.StepResult.ofRes, Clif.returnValues, hcall] at h
+  rcases checkTys_cases s!"return values of %{s.frame.func.name}" vals
+    (Clif.AbiParam.tys s.frame.func.sig.returns) with ⟨-, hty⟩ | ⟨m, hc⟩
+  · exact hty
+  · rw [hc] at h; cases h
 
 /-- **Terminator step**, typed: returns put each returned value in the ABI return register of its
 type's class (`RetRegsOk`). -/
@@ -615,7 +627,8 @@ theorem term_stepT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
     (∀ vals cm, Clif.step env p s = .done vals cm →
       ∃ us outs w', VRetFrom vc sem ⟨b, k, ρ, w⟩ us outs w' ∧
         RetRegsOk vals us ∧ us.length = outs.length ∧
-        PrefixHold vals outs ∧ MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave) ∧
+        PrefixHold vals outs ∧ MR slots s.mem w' ∧ cm = (s.mem.free (slots.map (·.2))).leave ∧
+        vals.map (·.ty) = Clif.AbiParam.tys f.sig.returns) ∧
     (∀ c, Clif.step env p s = .trapped c → VTrapFrom vc sem ⟨b, k, ρ, w⟩ c) := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons, htyA⟩ := hm
   simp only at hk hheld hcons hB hmem htyA
@@ -839,7 +852,8 @@ theorem term_stepT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p)
       exact ⟨o, ⟨by simpa using ho, hu⟩, rfl⟩
     refine ⟨_, vuses ops ρ₁, w₂, ⟨b, _, ρ₁', w₁, vb, ops.map (rnOp gn), outs, hstar, hvb, hi, hops,
       hvu.symm, by rw [← hvu]; exact hsem⟩, ?_, ?_, hall.prefix_append,
-      by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots]⟩
+      by simpa [fr', restrict, hslots] using hmr, by rw [hcm, hslots],
+      by rw [← hfunc]; exact stepTerm_ret_tys hcall hs⟩
     · refine ⟨(sretRet f).map (valClassOf ctx), ?_⟩
       have hcl : xs.map (valClassOf ctx) = vals.map (fun v => tyClass v.ty) :=
         getMany_classes hcons.2 hg0 (fun x hx => htyA x (hargsTA x (by simp [termArgs, hx])))
@@ -1681,17 +1695,18 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
 
 /-- What a VCode run from `vs` does when the CLIF run from the matching state ends (`RunOk`
 with the returned values in their classes' return registers, `RetRegsOk`). -/
-def RunOkT (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W) (slots : List (Clif.SlotId × Nat))
-    (vs : VState CV W) : Clif.Outcome → Prop
+def RunOkT (rt : List Clif.Ty) (vc : VCode) (sem : ISem CV W) (MR : MemRelTW W)
+    (slots : List (Clif.SlotId × Nat)) (vs : VState CV W) : Clif.Outcome → Prop
   | .returned vals cm => ∃ us outs w cm0, VRetFrom vc sem vs us outs w ∧
       RetRegsOk vals us ∧ us.length = outs.length ∧
-      PrefixHold vals outs ∧ MR slots cm0 w ∧ cm = (cm0.free (slots.map (·.2))).leave
+      PrefixHold vals outs ∧ MR slots cm0 w ∧ cm = (cm0.free (slots.map (·.2))).leave ∧
+      vals.map (·.ty) = rt
   | .trapped c => VTrapFrom vc sem vs c
   | .stuck _ | .outOfFuel => True
 
-theorem RunOkT.prefix {vs vs' : VState CV W} {o : Clif.Outcome}
-    (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : RunOkT vc sem MR slots vs' o) :
-    RunOkT vc sem MR slots vs o := by
+theorem RunOkT.prefix {rt : List Clif.Ty} {vs vs' : VState CV W} {o : Clif.Outcome}
+    (h : Star (VStep vc sem) (.run vs) (.run vs')) (h' : RunOkT rt vc sem MR slots vs' o) :
+    RunOkT rt vc sem MR slots vs o := by
   cases o with
   | returned vals cm =>
     obtain ⟨us, outs, w, cm0, hr, h1⟩ := h'
@@ -1704,7 +1719,8 @@ theorem RunOkT.prefix {vs vs' : VState CV W} {o : Clif.Outcome}
 theorem sim_runT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p) {cs : Clif.State}
     (hP : RunPrem env p f cs) :
     ∀ fuel s (vs : VState CV W), Reach env p cs s →
-      MatchT f ctx R gn bl A MR slots s vs → RunOkT vc sem MR slots vs (Clif.runLoop env p fuel s) := by
+      MatchT f ctx R gn bl A MR slots s vs →
+        RunOkT (Clif.AbiParam.tys f.sig.returns) vc sem MR slots vs (Clif.runLoop env p fuel s) := by
   intro fuel
   induction fuel using Nat.strongRecOn with
   | _ fuel ih =>
@@ -1725,8 +1741,8 @@ theorem sim_runT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p) {cs : Clif
           obtain ⟨vs', hstar, hm'⟩ := T1 s' hs
           exact RunOkT.prefix hstar (ih n (by omega) s' vs' (hr.snoc hs) hm')
         | done vals cm =>
-          obtain ⟨us, outs, w', hret, h1, h2, h3, h4, h5⟩ := T2 vals cm hs
-          exact ⟨us, outs, w', s.mem, hret, h1, h2, h3, h4, h5⟩
+          obtain ⟨us, outs, w', hret, h1, h2, h3, h4, h5, h6⟩ := T2 vals cm hs
+          exact ⟨us, outs, w', s.mem, hret, h1, h2, h3, h4, h5, h6⟩
         | trapped c => exact T3 c hs
         | stuck => trivial
       | true =>
@@ -1747,7 +1763,7 @@ theorem sim_runT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p) {cs : Clif
           cases n with
           | zero => trivial
           | succ m =>
-            show RunOkT vc sem MR slots _ (Clif.runLoop env p (m + 1) s')
+            show RunOkT _ vc sem MR slots _ (Clif.runLoop env p (m + 1) s')
             rw [Clif.runLoop_succ]
             cases hs' : Clif.step env p s' with
             | next s'' =>
@@ -1809,7 +1825,8 @@ theorem driver_correctT (H : DriverHypT f vc ctx st0 R gn bl A sem MR env p) (hd
     {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
     (hargs : ArgsAtEntry F f.sig args w₀)
     (hP : RunPrem env p f cs) (fuel : Nat) :
-    RunOkT vc sem MR slots ⟨0, 0, ρ₀, w₀⟩ (Clif.runLoop env p fuel cs) := by
+    RunOkT (Clif.AbiParam.tys f.sig.returns) vc sem MR slots ⟨0, 0, ρ₀, w₀⟩
+      (Clif.runLoop env p fuel cs) := by
   obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_stepT H hds hMem hFP hMR hB0 hcall hfunc hslots hbody
     hterm hregs hty hsig hmr hargs (ρ₀ := ρ₀)
   exact RunOkT.prefix hstar (sim_runT H hP fuel cs _ (.refl _) hm)
