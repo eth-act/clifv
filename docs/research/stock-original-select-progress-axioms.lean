@@ -1,0 +1,16 @@
+import FV.Backend.Proof.StockSelectZeroObserved
+import FV.Backend.Proof.StockSelectZeroSourceValues
+import FV.Backend.Proof.StockSelectZeroSourceWitness
+import FV.Backend.Proof.StockSelectRootCalls
+import FV.Backend.Proof.StockSelectOriginalSourceMatch
+import FV.Backend.Proof.StockOriginalSelectFixture
+import FV.Backend.Proof.StockSelectOriginalRootWitness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_zero_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_zero_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.ZeroSourceWitness.stock_select_zero_original_consumer_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_rhs_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_source_data
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_match
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_calls
+#print axioms Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_root_calls_witness

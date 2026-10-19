@@ -1,0 +1,41 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_argument_shape' depends on axioms: [propext, Quot.sound]",
+      "line": 4,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepare_copy_metadata' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 5,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_spillArgMovesAt_runs' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.SpillCopyMetadataWitness.stock_spill_copy_metadata_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.SpillCopyMetadataWitness.stock_try_prepared_copy_metadata_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}
