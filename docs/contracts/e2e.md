@@ -191,6 +191,7 @@ shipped value semantics has the same (`valueSemGF`, `valueSemGF_lockstep2`,
 Witnesses: `FV/E2E/GuardedFPWitness.lean`. Remaining: the typed per-step contracts (rules over
 `CtxInvT`, dispatched as `lowerInstOkP_runTerm` is), the typed driver/`vcode_ni` that consumes
 them, and the widened scope.
+
 **The typed end-to-end chain (S11e5 Stage C slice 7).** For the typed movement scope
 (`InSubsetT`: `Compile.functionET`; `CompiledT`/`CompiledAT`: the typed validator
 `lowerCheckT`) the conclusion is `ArmRefinesT` (`FV/E2E/ComposeT.lean`): a returned value is
@@ -204,7 +205,6 @@ float accesses by `memRefinesFP_csem`) take the open typed rule families as one 
 `TypedRules`; `backend_correct_final_ofT` re-derives `backend_correct_final`'s conclusion
 through the typed chain; `backend_correct_finalT_alloc` (`FV/E2E/FinalDirectT.lean`) composes
 slice 6's typed spill chain. Witness: `FVTest/E2E/FloatFinalT.lean`.
-
 
 ### `try_call` (the normal return)
 
