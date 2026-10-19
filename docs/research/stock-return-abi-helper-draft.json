@@ -1,0 +1,10 @@
+{
+  "path": "docs/research/stock-return-abi-helper-draft.lean",
+  "sha256": "25e3d68934d91cb2ce351ff1ee63086dc185588d639dc5ae49131bbc3f5b020f",
+  "log": "/tmp/stock-return-abi-helper-draft.log",
+  "log_sha256": "109b371ee3eb8ffd3bd0302527ea7cd29c8b2e71f40eff1493282f4efa8adb51",
+  "trust": "normal-kernel, propext only for three private prototype roots",
+  "publication": "outside PR203 and outside current full-gated scope",
+  "progress": "actual revised gen_return inversion with all full Stock scheduling state retained; ordinary/x8 helper witnesses; concrete helper-success/arity counterexample",
+  "next": "promote with complete actual source-request witnesses, derive arity from original source/signature/abiTerm facts internally; then Stock-aware helper294/root and ABI-aware LowerTermOk/term_step/RunOk variants preserving old variants and accepted sret inputs"
+}
