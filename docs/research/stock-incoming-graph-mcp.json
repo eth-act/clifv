@@ -1,0 +1,97 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_blockOrder_nodes_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_blockOrder_node_unique' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_nodes_nodup' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_incoming_original' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_incoming_source_unique' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_incoming_critical' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_critical_incoming_unique' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_shared_target_original' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_low_degree_incoming_unique' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 14,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_shared_direct_source_jump' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 15,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_shared_source_kind' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 16,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.IncomingWitness.stock_incoming_cycle_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 17,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.IncomingWitness.stock_incoming_single_try_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 18,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}

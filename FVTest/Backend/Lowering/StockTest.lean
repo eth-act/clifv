@@ -5,7 +5,7 @@ import FVTest.Backend.StockConfig
 
 /-! Development differential harness. Stock lowering is not yet composed with
 the lowering proof. This harness validates allocation using the existing
-allocator checker, and exports bytes for differential tests. The production
+per-successor checker, and exports bytes for differential tests. The production
 compiler continues to use its proved driver. -/
 
 open Backend
@@ -34,19 +34,15 @@ def main (argv : List String) : IO UInt32 := do
       throw (IO.userError s!"{pf.name}: stock backward-scan replay rejected")
     unless r.blockScans.all Stock.BlockScanEvent.check do
       throw (IO.userError s!"{pf.name}: stock complete block-scan replay rejected")
-    -- The production VCode contract attaches arguments to jumps. Test only
-    -- cases representable by that contract until its proof migration lands.
-    for (b, bi) in r.code.blocks.zipIdx do
-      if r.order.successors[bi]!.size > 1 && r.edgeArgs[bi]!.any (!·.isEmpty) then
-        throw (IO.userError "per-successor arguments require the pending VCode proof migration")
+    for b in r.code.blocks do
       if b.insts.isEmpty then throw (IO.userError "empty selected block")
-    vcs := vcs.push r.code
+    vcs := vcs.push (⟨r.code,r.edgeArgs⟩ : EdgeVCode)
   let rejected ← IO.mkRef #[]
   let clif name := parsed.file.funcs.filterMap fun p =>
     if p.name == name then p.func.toOption else none
   let allocated ← match config with
-    | none => allocator.run vcs
-    | some c => StockConfig.allocate c clif rejected allocator vcs
+    | none => allocator.runAt vcs
+    | some c => StockConfig.allocateAt c clif rejected allocator vcs
   for (af, i) in allocated.zipIdx do
     let af ← match af with
       | .ok af => pure af

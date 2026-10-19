@@ -1,0 +1,334 @@
+test run
+set preserve_frame_pointers=true
+target x86_64
+; data: %fv_image = 00
+
+; Exceptional edges of `try_call` (S10b, docs/plans/unwinding.md): run natively by
+; `clif-throw-native` (Cranelift's JIT, `__cranelift_throw`) and by `clif-filetest --unwind`
+; (`Clif.runX`, where `%throw` is the extern `Exn { catches := (· == tag), payload := [p1, p2] }`).
+; `%throw(tag, p1, p2)` is the native stub: it passes the trampoline's frame pointer
+; (`__fv_entry_fp`), its own frame pointer and a pc that matches no handler to
+; `__cranelift_throw`, which searches the frames above it for a `tag` or `default` handler.
+; `Clif.parseFile` does not parse the stub (`get_frame_pointer`): the Lean side drops it. The
+; data object gives the Lean run a link-time image, where `func_addr` resolves (`Program.initMem`).
+
+function %throw(i32, i64, i64) tail {
+  sig0 = (i64, i64, i64, i32, i64, i64)
+  fn0 = %__cranelift_throw(i64, i64, i64, i32, i64, i64)
+  fn1 = %__fv_entry_fp()
+
+block0(v1: i32, v2: i64, v3: i64):
+  v4 = get_frame_pointer.i64
+  v5 = get_return_address.i64
+  v6 = load.i64 v5
+  v8 = func_addr.i64 fn1
+  v0 = load.i64 v8
+  v7 = func_addr.i64 fn0
+  call_indirect sig0, v7(v0, v4, v6, v1, v2, v3)
+  return
+}
+
+; A direct throw caught by the try_call's own handler: exn0 + exn1.
+function %direct(i64) -> i64 tail {
+  sig0 = (i32, i64, i64) tail
+  fn0 = %throw(i32, i64, i64) tail
+
+block0(v0: i64):
+  v1 = iconst.i32 1
+  v2 = iconst.i64 7
+  try_call fn0(v1, v0, v2), sig0, block1(), [ tag1: block2(exn0, exn1) ]
+
+block1:
+  v3 = iconst.i64 -1
+  return v3
+
+block2(v4: i64, v5: i64):
+  v6 = iadd v4, v5
+  return v6
+}
+; run: %direct(10) == 17
+; run: %direct(-7) == 0
+
+; The first matching handler: tag 2 skips `tag1`, takes `tag2`; tag 3 reaches `default`.
+function %select(i32, i64) -> i64 tail {
+  sig0 = (i32, i64, i64) tail
+  fn0 = %throw(i32, i64, i64) tail
+
+block0(v0: i32, v1: i64):
+  v2 = iconst.i64 0
+  try_call fn0(v0, v1, v2), sig0, block1(), [ tag1: block2(exn0), tag2: block3(exn0), default: block4(exn0) ]
+
+block1:
+  v3 = iconst.i64 -1
+  return v3
+
+block2(v4: i64):
+  v5 = iconst.i64 1000
+  v6 = iadd v4, v5
+  return v6
+
+block3(v7: i64):
+  v8 = iconst.i64 2000
+  v9 = iadd v7, v8
+  return v9
+
+block4(v10: i64):
+  v11 = iconst.i64 3000
+  v12 = iadd v10, v11
+  return v12
+}
+; run: %select(1, 5) == 1005
+; run: %select(2, 5) == 2005
+; run: %select(3, 5) == 3005
+; run: %select(9, 5) == 3005
+
+; A plain call does not catch: the exception leaves %mid and reaches the caller's handler.
+function %mid(i32, i64) -> i64 tail {
+  fn0 = %throw(i32, i64, i64) tail
+
+block0(v0: i32, v1: i64):
+  v2 = iconst.i64 100
+  call fn0(v0, v1, v2)
+  v3 = iconst.i64 -5
+  return v3
+}
+
+function %through_call(i64) -> i64 tail {
+  sig0 = (i32, i64) -> i64 tail
+  fn0 = %mid(i32, i64) -> i64 tail
+
+block0(v0: i64):
+  v1 = iconst.i32 4
+  try_call fn0(v1, v0), sig0, block1(ret0), [ tag4: block2(exn0, exn1) ]
+
+block1(v2: i64):
+  return v2
+
+block2(v3: i64, v4: i64):
+  v5 = imul v3, v4
+  return v5
+}
+; run: %through_call(3) == 300
+
+; A try_call whose table does not catch the tag lets the exception through (tag 6 is caught
+; two frames up, not by %inner's `tag5`).
+function %inner(i32, i64) -> i64 tail {
+  sig0 = (i32, i64, i64) tail
+  fn0 = %throw(i32, i64, i64) tail
+
+block0(v0: i32, v1: i64):
+  v2 = iconst.i64 1
+  try_call fn0(v0, v1, v2), sig0, block1(), [ tag5: block2(exn0) ]
+
+block1:
+  v3 = iconst.i64 -1
+  return v3
+
+block2(v4: i64):
+  v5 = iconst.i64 50
+  v6 = iadd v4, v5
+  return v6
+}
+
+function %outer(i32, i64) -> i64 tail {
+  sig0 = (i32, i64) -> i64 tail
+  fn0 = %inner(i32, i64) -> i64 tail
+
+block0(v0: i32, v1: i64):
+  try_call fn0(v0, v1), sig0, block1(ret0), [ tag6: block2(exn0, exn1) ]
+
+block1(v2: i64):
+  v3 = iconst.i64 10000
+  v4 = iadd v2, v3
+  return v4
+
+block2(v5: i64, v6: i64):
+  v7 = isub v5, v6
+  return v7
+}
+; run: %outer(5, 8) == 10058
+; run: %outer(6, 8) == 7
+
+; No exception: the normal return of a try_call.
+function %id(i64) -> i64 tail {
+block0(v0: i64):
+  return v0
+}
+
+function %normal(i64) -> i64 tail {
+  sig0 = (i64) -> i64 tail
+  fn0 = %id(i64) -> i64 tail
+
+block0(v0: i64):
+  try_call fn0(v0), sig0, block1(ret0), [ tag1: block2(exn0) ]
+
+block1(v1: i64):
+  v2 = iconst.i64 1
+  v3 = iadd v1, v2
+  return v3
+
+block2(v4: i64):
+  return v4
+}
+; run: %normal(41) == 42
+
+; A conditional throw: the exception, or the normal return.
+function %maybe(i64) -> i64 tail {
+  fn0 = %throw(i32, i64, i64) tail
+
+block0(v0: i64):
+  v9 = iconst.i64 10
+  v1 = icmp sgt v0, v9
+  brif v1, block1, block2
+
+block1:
+  v2 = iconst.i32 1
+  v3 = iconst.i64 0
+  call fn0(v2, v0, v3)
+  return v0
+
+block2:
+  v4 = iconst.i64 2
+  v5 = imul v0, v4
+  return v5
+}
+
+function %guarded(i64) -> i64 tail {
+  sig0 = (i64) -> i64 tail
+  fn0 = %maybe(i64) -> i64 tail
+
+block0(v0: i64):
+  try_call fn0(v0), sig0, block1(ret0), [ tag1: block2(exn0) ]
+
+block1(v1: i64):
+  return v1
+
+block2(v2: i64):
+  v3 = ineg v2
+  return v3
+}
+; run: %guarded(4) == 8
+; run: %guarded(11) == -11
+
+; Stack slots: %slot_mid writes its own slot before the exception leaves it; the catching
+; frame's slot keeps its value.
+function %slot_mid(i32, i64) -> i64 tail {
+  ss0 = explicit_slot 8
+  fn0 = %throw(i32, i64, i64) tail
+
+block0(v0: i32, v1: i64):
+  v2 = iconst.i64 99
+  v8 = stack_addr.i64 ss0
+  store v2, v8
+  v3 = load.i64 v8
+  call fn0(v0, v1, v3)
+  return v3
+}
+
+function %slots(i64) -> i64 tail {
+  ss0 = explicit_slot 8
+  sig0 = (i32, i64) -> i64 tail
+  fn0 = %slot_mid(i32, i64) -> i64 tail
+
+block0(v0: i64):
+  v8 = stack_addr.i64 ss0
+  store v0, v8
+  v1 = iconst.i32 2
+  try_call fn0(v1, v0), sig0, block1(ret0), [ tag2: block2(exn1) ]
+
+block1(v2: i64):
+  return v2
+
+block2(v3: i64):
+  v9 = stack_addr.i64 ss0
+  v4 = load.i64 v9
+  v5 = iadd v3, v4
+  return v5
+}
+; run: %slots(1) == 100
+
+; A handler that throws again, caught one frame up.
+function %rethrow(i64) -> i64 tail {
+  sig0 = (i32, i64, i64) tail
+  fn0 = %throw(i32, i64, i64) tail
+
+block0(v0: i64):
+  v1 = iconst.i32 1
+  v2 = iconst.i64 0
+  try_call fn0(v1, v0, v2), sig0, block1(), [ tag1: block2(exn0) ]
+
+block1:
+  return v0
+
+block2(v3: i64):
+  v4 = iconst.i32 2
+  v5 = iconst.i64 3
+  v6 = imul v3, v5
+  call fn0(v4, v6, v5)
+  return v3
+}
+
+function %catch_rethrow(i64) -> i64 tail {
+  sig0 = (i64) -> i64 tail
+  fn0 = %rethrow(i64) -> i64 tail
+
+block0(v0: i64):
+  try_call fn0(v0), sig0, block1(ret0), [ tag1: block2(exn0), tag2: block3(exn0, exn1) ]
+
+block1(v1: i64):
+  return v1
+
+block2(v2: i64):
+  return v2
+
+block3(v3: i64, v4: i64):
+  v5 = iadd v3, v4
+  return v5
+}
+; run: %catch_rethrow(5) == 18
+
+; try_call_indirect: through a program function's address (the exception leaves %mid), and
+; of the thrower's address directly.
+function %ind_mid(i64) -> i64 tail {
+  sig0 = (i32, i64) -> i64 tail
+  fn0 = %mid(i32, i64) -> i64 tail
+
+block0(v0: i64):
+  v1 = func_addr.i64 fn0
+  v2 = iconst.i32 3
+  try_call_indirect v1(v2, v0), sig0, block1(ret0), [ tag2: block2(exn0), tag3: block3(exn0, exn1) ]
+
+block1(v3: i64):
+  return v3
+
+block2(v4: i64):
+  return v4
+
+block3(v5: i64, v6: i64):
+  v7 = isub v6, v5
+  return v7
+}
+; run: %ind_mid(30) == 70
+
+function %ind_throw(i32, i64) -> i64 tail {
+  sig0 = (i32, i64, i64) tail
+  fn0 = %throw(i32, i64, i64) tail
+
+block0(v0: i32, v1: i64):
+  v2 = func_addr.i64 fn0
+  v3 = iconst.i64 5
+  try_call_indirect v2(v0, v1, v3), sig0, block1(), [ tag1: block2(exn0, exn1), default: block3(exn1) ]
+
+block1:
+  v4 = iconst.i64 -1
+  return v4
+
+block2(v5: i64, v6: i64):
+  v7 = imul v5, v6
+  return v7
+
+block3(v8: i64):
+  return v8
+}
+; run: %ind_throw(1, 6) == 30
+; run: %ind_throw(7, 6) == 5

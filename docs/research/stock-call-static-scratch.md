@@ -1,0 +1,16 @@
+# Actual call ABI and fresh result-value contracts
+
+Full original #140 remains active/incomplete; production remains legacy.
+
+Actual revised Stock explicit call-output allocation and successful return pins derive fresh/distinct ABI defs and state/emission framing. Actual direct/indirect argument, pin and info helpers derive CallOk/SpillInstOk with arbitrary stack arguments under original sigAbiOk. Writing actual fresh result defs frames every earlier vreg and transports callee AllHold/length to ResultsHeld. Complete four direct/indirect x ordinary/implicit-sret source pipelines preserve original LowerScope/Dominated/ArityOk/ABI and actual Stock/raw/global checked fallback/physical success, actual returned/prepared call instructions, ordinary nonempty outputs, empty explicit sret outputs, and real direct nine-argument stack stores. Auxiliary helper protocol uses the SAME actual built context and initial state. Separate concrete 7/9 result-value witnesses exercise local transport.
+
+Selected-RHS/retained-record binding of the auxiliary helper protocol and whole-call/source/world semantic composition remain OPEN. Local result transport assumes callee AllHold and explicit result length; these must be derived from source call semantics, not added as accepted input conditions. TryCall reserved definition uniqueness/final alias transport, remaining control OpsOk/SpillInstOk/visitor success, availability/checker/fallback completeness and Stock totality remain open. ALL original rule/effect/call/trap/sinking/Try continuations, register/value/source/DFG/world/block/whole-driver simulation/completeness, compiler/checker/linker/generated-proof production integration, final complete witnesses/audits/full gates/both E2E identity-stage parity/fresh complete stock comparison and original input/theorem/axiom/#179 parity remain mandatory.
+
+All 60 scratch modules compile; 105 normal public roots use only standard axioms and all 97 prior exact sets are unchanged. Prior scratch hashes and frozen canonical bytes/scripts are unchanged. No scratch MCP yet. [Hashed receipt](stock-call-static-scratch.json).
+
+Integration counts supersede earlier proposals: 60 modules/105 roots, one bundled 105-root MCP after integration, then 2097 normal roots preserving all 1992 prior sets and every full gate. Integration waits for the existing frozen watcher to finish and its receipts to be verified, then upstream/peer reconciliation.
+
+1. Maintain canonical freeze until exact watcher terminal; inspect actual 1992-root audit and every full gate receipt.
+2. Reconcile upstream f29d0c0 and newer peer variants before integration. Integrate all 60 scratch modules/105 roots as one coherent batch; preserve cached observations; exactly one bundled 105-root MCP, then 2097 normal roots preserving all 1992 prior exact sets and every full gate.
+3. Bind actual call helpers to selected RHS/retained records and source semantics; derive TryCall reserved uniqueness/final alias transport and whole control visitor/static validity.
+4. Finish original input availability/checker/fallback completeness/Stock totality and ALL original whole-driver simulation/completeness and production consumers; final complete witnesses/audits/full gates/both E2E parity/fresh comparison.
