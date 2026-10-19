@@ -1,5 +1,6 @@
 import FV.Backend.InputScope
 import FV.Backend.Encode
+import FV.Backend.Regalloc
 import FV.Backend.Proof.RegallocSound
 import FV.Backend.Proof.RegallocOperands
 import FV.Backend.Proof.EncodeStep
