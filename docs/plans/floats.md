@@ -39,6 +39,21 @@ Per operation (functions using it, among all 157 fallbacks):
 | `load.f32` | 9 | | `store.f32` | 1 |
 | `store.f64` | 7 | | `fmul` | 5 |
 
+**Reproduction (S11g).** `scripts/float-fallbacks.py target/fv-report.json` recomputes these
+numbers from a run's report and cg_clif's dumps (`<unit>.clif/<symbol>.unopt.clif` beside the
+unit's artifact; keep the target directory), and `--before OLD/fv-report.json` follows every
+function by identity (package, crate, symbol; else instance) into a newer run. A fallback is a
+float fallback when its dump has an `f32`/`f64` value, parameter, signature or constant (the
+reasons changed since S11b, e.g. `call with f32/f64 parameters or returns`, `ctlCheck failed`;
+without a dump, when its reason names `f32`/`f64`). On the 2026-10-09 report above it gives
+158 fallbacks = **146 float** (117 `type f64` + 28 `type f32` + 1 `opcode f64const`: the 145
+above are the first two) + 9 SIMD + 3 budget; **100 data movement only, 46 with float
+arithmetic** (the hand count had 45); by package serde_json 50, num-bigint 27, num-integer 27,
+num-traits 14, zmij 10, deps-demo 8, serde_core 8, serde 2. Its sub-rows differ from the
+table's: 91 movement-only functions have an `f32`/`f64` in their own or a declared callee
+signature (the table's 82 counted parameters/returns), 8 only float loads/stores. The per-op
+counts are by function, among the float fallbacks.
+
 Consequences for the order of work:
 
 1. Float *types* with data movement (ABI in `v0`–`v7`, FP loads/stores, FP moves/spills,
