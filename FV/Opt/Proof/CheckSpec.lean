@@ -1,4 +1,5 @@
 import FV.Opt.Proof.CompleteUnreachable
+import FV.Opt.Simplify
 
 /-!
 # A declarative specification of `Opt.checkCore` (M1)
@@ -235,13 +236,6 @@ def termOpBody (f : Function) (defBlock : BlkMap) (b : Block) (i : Nat) (seen : 
   ensure (availCk f defBlock i seen v)
     s!"block{b.id}: terminator uses v{v}, not dominated by its definition"
   pure (ForInStep.yield PUnit.unit)
-
-/-- The block calls of a terminator (`checkCore`'s `calls`). -/
-def termCalls : Terminator → List BlockCall
-  | .jump d => [d]
-  | .brif _ t e => [t, e]
-  | .brTable _ d t => d :: t
-  | _ => []
 
 def callBody (f : Function) (types : TyMap) (b : Block) (bc : BlockCall) (_u : Unit) :
     Except String (ForInStep Unit) :=

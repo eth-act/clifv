@@ -18,7 +18,7 @@ to what the pipeline needs of the simplify stage (`Opt.SimpStageOk`):
   `check_removeUnreachable_of_wfCert'`), and the guard facts `SimpGuard` hold (`RunDone.guard`).
 
 `simp_complete_of_run` combines them; `Opt.simpStageOk_of` instantiates them with the run invariant
-`Opt.simplify_run_inv` (the rule hypotheses `SimpRulesOk`/`SkelRulesOk`, `symbol_value` excluded by
+`Opt.simplify_run_inv` (the rule hypotheses `SimpRulesProv`/`SkelRulesProv`, `symbol_value` excluded by
 `allowedIn_symbolValue`), and `Opt.optimize_complete_of_rules` is the mid-end's completeness under
 the rule hypotheses. With the hand rules the hypotheses hold (`Opt.simpRulesOk_hand`,
 `Opt.skelRulesOk_hand`): `Opt.simpStageOk_hand`, `Opt.optimize_complete_hand`.
@@ -626,7 +626,7 @@ end Assemble
 validator accepts the output, `check` accepts it once its unreachable blocks are removed, and the
 guard facts hold (`F0`: the pipeline's input, whose `allowedIn` excludes `symbol_value`). -/
 theorem simplify_complete {rules : SimplifyFn} {skel : SkeletonFn} (rematConst : Bool)
-    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) (F0 g : Function) (info : Info)
+    (hR : SimpRulesProv rules) (hK : SkelRulesProv skel) (F0 g : Function) (info : Info)
     (hg : check g = .ok info) :
     simpOk g (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).1 info
         (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).2.2 = true ∧
@@ -637,15 +637,15 @@ theorem simplify_complete {rules : SimplifyFn} {skel : SkeletonFn} (rematConst :
   simplify_complete_of_inv hc (simplify_run_inv hc hR hK (allowedIn_symbolValue F0))
 
 /-- **Completeness of the simplify stage** (`SimpStageOk`) under the rule hypotheses. -/
-theorem simpStageOk_of {cfg : Config} (hR : SimpRulesOk cfg.simplifyFn)
-    (hK : SkelRulesOk cfg.skeletonFn) : SimpStageOk cfg :=
+theorem simpStageOk_of {cfg : Config} (hR : SimpRulesProv cfg.simplifyFn)
+    (hK : SkelRulesProv cfg.skeletonFn) : SimpStageOk cfg :=
   fun F0 g info hg => simplify_complete cfg.rematConst hR hK F0 g info hg
 
 /-- **Completeness of the mid-end under the rule hypotheses** (`optimizeReport_complete` with
 `simpStageOk_of`): on an input that is well formed once its unreachable blocks are removed, no stage
 of `optimizeReport` stops and the result is the unvalidated pipeline. -/
-theorem optimize_complete_of_rules {cfg : Config} (hR : SimpRulesOk cfg.simplifyFn)
-    (hK : SkelRulesOk cfg.skeletonFn) (f0 : Function)
+theorem optimize_complete_of_rules {cfg : Config} (hR : SimpRulesProv cfg.simplifyFn)
+    (hK : SkelRulesProv cfg.skeletonFn) (f0 : Function)
     (h : ∃ i, check (removeUnreachable f0) = .ok i) :
     (optimizeReport cfg f0).2.passError = none ∧
       (optimizeReport cfg f0).1 = runStages cfg (removeUnreachable f0) :=
@@ -688,8 +688,8 @@ abbrev run : Function × SimplifyStats × SimpCert :=
 
 /-- **Non-vacuity of `simplify_complete`**: `fn` is well formed; hash-consing (no rule fires) renames
 `v1` to `v0`, defined in the dominating block 0, so block 1 loses its statement and returns `v0`; and
-the theorem applies (the empty rule set satisfies `SimpRulesOk`, the hand skeleton rules
-`SkelRulesOk`): the validator accepts, `check` accepts after `removeUnreachable`, the guard facts hold. -/
+the theorem applies (the empty rule set satisfies `SimpRulesProv`, the hand skeleton rules
+`SkelRulesProv`): the validator accepts, `check` accepts after `removeUnreachable`, the guard facts hold. -/
 theorem witness :
     check fn = .ok (coreInfo fn) ∧
       run.1.blocks.map (·.body) = [[{ results := [0], inst := .iconst .i32 7 }], []] ∧

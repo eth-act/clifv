@@ -5,7 +5,7 @@ import FV.Opt.Proof.CompleteSimpRules
 
 `SRun`: a sequence of rules-phase steps (`RStep`) and `materialize` runs (`MRun`) inside one
 statement, with the statements emitted so far. `skelStmt_ok`/`skelTerm_ok`: under
-`Opt.SkelRulesOk` (and `Opt.SimpRulesOk` for the nodes the skeleton rules make), the outcome of a
+`Opt.SkelRulesProv` (and `Opt.SimpRulesProv` for the nodes the skeleton rules make), the outcome of a
 skeleton statement or terminator is what `Opt.simpOk` expects (`SkelRes`, `TermRes`).
 -/
 
@@ -49,7 +49,7 @@ theorem RInv.of_mrun {V : Nat → Option Block} {X : ValueId → Prop} {XN : Ins
     {new : List Stmt} (h : RInv f V B X XN st) (hm : MRun f idom allowed bi B V st st' new) :
     RInv f (emitV V bi new) B X XN st' := by
   obtain ⟨d, a, t, c, nx, rfl⟩ := hm.step.shape
-  refine ⟨hm.inv, h.noPartial, fun n w hw => ?_, fun x ms hx m hm' => ?_⟩
+  refine ⟨hm.inv, h.partialsBig, fun n w hw => ?_, fun x ms hx m hm' => ?_⟩
   · obtain ⟨e1, e2, e3⟩ := h.memo n w hw
     exact ⟨e1.imp (hm.good w) id, hm.step.known w e2, by rw [hm.step.typesKnown w e2]; exact e3⟩
   · obtain ⟨e1, e2⟩ := h.alts x ms hx m hm'
@@ -202,7 +202,7 @@ theorem SkelOut.orReplace_ne_keep (o : SkelOut) (i : Inst) : o.orReplace i ≠ .
 
 /-- **A skeleton statement** (`skelStmt`) under the rule obligations (module doc). The statements
 emitted before the final ones are materialised nodes. -/
-theorem skelStmt_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
+theorem skelStmt_ok (hR : SimpRulesProv rules) (hK : SkelRulesProv skel) :
     ∀ fuel st u stmts sub st' o (V : Nat → Option Block) b,
       RInv f V B (fun _ => False) (fun _ => False) st → V bi = some b → (∀ y ∈ operands u.inst, Placed st B y) →
       (∀ r ∈ u.results, st.known r = true) →
@@ -471,7 +471,7 @@ theorem SRun.trap {V : Nat → Option Block} {st : SState} {b : Block}
     (h : RInv f V B (fun _ => False) (fun _ => False) st) (hb : V bi = some b) {s : Stmt}
     (hs : TrapOk idom V bi b.body.length skelOk B st s) :
     SRun f idom allowed skelOk bi B V st st [s] := by
-  refine ⟨⟨h.m.noResult hs.1, h.noPartial, h.memo, h.alts⟩, fun _ h => h, fun _ h => h,
+  refine ⟨⟨h.m.noResult hs.1, h.partialsBig, h.memo, h.alts⟩, fun _ h => h, fun _ h => h,
     fun _ _ => rfl, fun _ _ h => h, fun _ _ h => h, fun _ _ h => .inl h, fun _ _ h _ => h,
     fun _ _ h _ => .inl h, rfl, fun b' hb' j s' hj => ?_, fun _ _ h => .inl h⟩
   rw [hb] at hb'; cases hb'
@@ -571,7 +571,7 @@ theorem termRes_compose {V : Nat → Option Block} {b : Block} {st3 : SState}
     exact ⟨bc, hbc, hb1.trans hb2, ha1.trans ha2⟩
 
 /-- **A terminator** (`skelTerm`) under the rule obligations (module doc). -/
-theorem skelTerm_ok (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) :
+theorem skelTerm_ok (hR : SimpRulesProv rules) (hK : SkelRulesProv skel) :
     ∀ fuel st t extra t'' st' ch (V : Nat → Option Block) b,
       RInv f V B (fun _ => False) (fun _ => False) st → V bi = some b →
       (∀ y ∈ termOperands t, Placed st B y ∧ AvailHere cfg.idom V bi y) →

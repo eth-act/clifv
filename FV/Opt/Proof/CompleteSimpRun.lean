@@ -23,7 +23,7 @@ variable {f : Function} {info : Info} {allowed skelOk : Inst → Bool}
 
 /-- **One block** keeps the invariant between blocks. -/
 theorem stepBlock_inv {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
-    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel)
+    (hR : SimpRulesProv rules) (hK : SkelRulesProv skel)
     (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false) {st : SState} {S : Subst}
     {out : Array Block} {logs : Array (Option BlockLog)} {bi : Nat}
     (h : RunBInv f info allowed skelOk st S out logs) (hbi : bi < f.blocks.length)
@@ -47,7 +47,7 @@ theorem stepBlock_inv {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f i
 /-- **The run of `simplify`** on a checked function ends with every block processed and the facts
 `RunDone` (under the rule obligations, and an `allowed` that never admits `symbol_value`). -/
 theorem simplify_run_inv {rules : SimplifyFn} {skel : SkeletonFn} {rematConst : Bool}
-    (hc : Checked f info) (hR : SimpRulesOk rules) (hK : SkelRulesOk skel)
+    (hc : Checked f info) (hR : SimpRulesProv rules) (hK : SkelRulesProv skel)
     (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false) :
     RunDone f info allowed skelOk (simpFold rules skel allowed skelOk rematConst f info).1
       (simpFold rules skel allowed skelOk rematConst f info).2.1

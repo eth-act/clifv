@@ -3,7 +3,7 @@ import FV.Opt.Proof.CompleteSimpHyp
 /-!
 # The hand rules meet the completeness obligation (M1, #24)
 
-`Opt.simpRulesOk_hand : SimpRulesOk HandRules.simplify`. Every candidate of
+`Opt.simpRulesOk_hand : SimpRulesProv HandRules.simplify`. Every candidate of
 `Opt.HandRules.simplify` is an operand of a node of the root (or of a node of such an operand:
 `double_negation`, `iadd_reassoc_const`) of the root's type, or the result of `make` on a
 well-typed pure node over such values (`iconst`, the operands swapped, `x + c`, `x << c`).
@@ -142,7 +142,7 @@ theorem isShift_of_comm {op : BinaryOp} (h : HandRules.isCommutative op = true) 
 end
 
 /-- **The hand rules meet the completeness obligation.** -/
-theorem simpRulesOk_hand : SimpRulesOk HandRules.simplify := by
+theorem simpRulesOk_hand : SimpRulesProv HandRules.simplify := by
   intro σ enodes typeOf make fn P R hG hM st0 v cands names st' hP0 hroot h
   unfold HandRules.simplify at h
   simp only [Id.run, bind, pure, Except.ok.injEq, Prod.mk.injEq] at h

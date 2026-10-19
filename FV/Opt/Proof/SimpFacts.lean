@@ -71,8 +71,14 @@ structure SGood (f : Function) (info : Info) (ρ : Valuation) (fr : Frame) (mem 
   dom : ∀ x, (ρ x).isSome = (initAvail f).contains x
   ty : ∀ x a t, ρ x = some a → info.types.get? x = some t → a.ty = t
 
-/-- The certificate graph as a partial map. -/
-def SimpCert.graph (cert : SimpCert) : ValueId → Option Inst := fun x => cert.defs.get? x
+/-- The certificate graph as a partial map (its nodes and its partial nodes). -/
+def SimpCert.graph (cert : SimpCert) : ValueId → Option Inst := fun x =>
+  (cert.defs.get? x).or (cert.partials.get? x)
+
+theorem SimpCert.graph_of_defs {cert : SimpCert} {x : ValueId} {n : Inst}
+    (h : cert.defs.get? x = some n) : cert.graph x = some n := by
+  show (cert.defs.get? x).or (cert.partials.get? x) = some n
+  rw [h]; rfl
 
 /-- **The facts of a simplify run** (module doc). -/
 structure SimpFacts (f : Function) (info : Info) (cert : SimpCert) : Prop where

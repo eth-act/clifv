@@ -22,7 +22,6 @@ are kept, values become available, and the nodes of available values never chang
 structure MGrow (ρ : Valuation) (fr : Frame) (mem : Mem) (st st' : SState) : Prop where
   fix : ∀ x, st.known x = true → gval ρ fr mem st' x = gval ρ fr mem st x
   known : ∀ x, st.known x = true → st'.known x = true
-  solid : ∀ x, st.solid x = true → st'.solid x = true
   avail : ∀ x, st.avail.contains x = true → st'.avail.contains x = true
   availDefs : ∀ x, st.avail.contains x = true → st'.defs.get? x = st.defs.get? x
   /-- The node of a known value changes only when it becomes available. -/
@@ -33,16 +32,17 @@ structure MGrow (ρ : Valuation) (fr : Frame) (mem : Mem) (st st' : SState) : Pr
   fn : st'.fn = st.fn
   trap : st'.trapBlocks = st.trapBlocks
   remat : st'.rematConst = st.rematConst
-  partialVals : st'.partialVals = st.partialVals
+  partials : st'.partials = st.partials
+  fixG : ∀ x, st.inGraph x = true → gval ρ fr mem st' x = gval ρ fr mem st x
 
 theorem MGrow.refl (st : SState) : MGrow ρ fr mem st st :=
-  ⟨fun _ _ => rfl, fun _ h => h, fun _ h => h, fun _ h => h, fun _ _ => rfl, fun _ _ _ => rfl,
-   fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  ⟨fun _ _ => rfl, fun _ h => h, fun _ h => h, fun _ _ => rfl, fun _ _ _ => rfl,
+   fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
 
 theorem MGrow.trans {st1 st2 st3 : SState} (h1 : MGrow ρ fr mem st1 st2)
     (h2 : MGrow ρ fr mem st2 st3) : MGrow ρ fr mem st1 st3 :=
   ⟨fun x h => (h2.fix x (h1.known x h)).trans (h1.fix x h), fun x h => h2.known x (h1.known x h),
-   fun x h => h2.solid x (h1.solid x h), fun x h => h2.avail x (h1.avail x h),
+   fun x h => h2.avail x (h1.avail x h),
    fun x h => (h2.availDefs x (h1.avail x h)).trans (h1.availDefs x h),
    fun x h ha => by
      have ha2 : st2.avail.contains x = false := by
@@ -52,7 +52,16 @@ theorem MGrow.trans {st1 st2 st3 : SState} (h1 : MGrow ρ fr mem st1 st2)
      exact (h2.defs x (h1.known x h) ha).trans (h1.defs x h ha2),
    fun x h => (h2.types x (h1.known x h)).trans (h1.types x h),
    h2.alts.trans h1.alts, h2.memo.trans h1.memo, h2.fn.trans h1.fn, h2.trap.trans h1.trap,
-   h2.remat.trans h1.remat, h2.partialVals.trans h1.partialVals⟩
+   h2.remat.trans h1.remat, h2.partials.trans h1.partials, fun x h => by
+     refine (h2.fixG x ?_).trans (h1.fixG x h)
+     simp only [SState.inGraph, Bool.or_eq_true, h1.partials] at h ⊢
+     exact h.imp (h1.known x) id⟩
+
+theorem MGrow.inGraph {st st' : SState} (h : MGrow ρ fr mem st st') :
+    ∀ x, st.inGraph x = true → st'.inGraph x = true := by
+  intro x hx
+  simp only [SState.inGraph, Bool.or_eq_true, h.partials] at hx ⊢
+  exact hx.imp (h.known x) id
 
 /-- The available values of a state (the domain of twins). -/
 def SState.availP (st : SState) (x : ValueId) : Prop := st.avail.contains x = true
@@ -62,10 +71,16 @@ theorem Twin.grow {st st' : SState} (g : MGrow ρ fr mem st st') {y y' : ValueId
     Twin (fun x => st'.defs.get? x) st'.availP y y' :=
   h.mono (fun x hx => g.avail x hx) (fun x hx => g.availDefs x hx)
 
+theorem Twin.toGraph {st : SState} {S : ValueId → Prop} {y y' : ValueId}
+    (h : Twin (fun x => st.defs.get? x) S y y') : Twin st.graph S y y' := by
+  induction h with
+  | refl x => exact .refl x
+  | clone τ hy hy' hm hm' _ ih => exact .clone τ hy hy' (graph_of_defs hm) (graph_of_defs hm') ih
+
 theorem gval_twin {st : SState} {y y' : ValueId}
     (h : Twin (fun x => st.defs.get? x) st.availP y y') :
     gval ρ fr mem st y' = gval ρ fr mem st y :=
-  den_twin (D := st.graph) h
+  den_twin (D := st.graph) h.toGraph
 
 theorem pureTyped_ops {tm : ValueId → Option Ty} {f : Function} {n : Inst} (hp : isPure n = true)
     (h : pureTyped tm f n = true) : ∀ u ∈ operands n, (tm u).isSome := by
@@ -114,7 +129,7 @@ theorem emit_fields (st : SState) (bi : Nat) (x x' : ValueId) (n' : Inst) :
     (st.emit bi x x' n').memo = st.memo ∧ (st.emit bi x x' n').fn = st.fn ∧
     (st.emit bi x x' n').trapBlocks = st.trapBlocks ∧
     (st.emit bi x x' n').rematConst = st.rematConst ∧
-    (st.emit bi x x' n').partialVals = st.partialVals ∧
+    (st.emit bi x x' n').partials = st.partials ∧
     (st.emit bi x x' n').classes = st.classes :=
   ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
@@ -142,7 +157,7 @@ theorem emit_fresh_spec {st : SState} (h : GInv f ρ fr mem st) {bi : Nat} {x : 
     | true => exact absurd (h.fresh _ hk) (Nat.lt_irrefl _)
   have hxw : x ≠ st.next := fun he => by rw [he] at hxa; rw [known_of_avail hxa] at hw; cases hw
   have hval : evalNode (withRegs fr (gval ρ fr mem st)) mem (mapOperands τ n) = gval ρ fr mem st x := by
-    rw [gval, den_node (D := st.graph) (by simpa [SState.graph] using hx)]
+    rw [gval, den_node (D := st.graph) (graph_of_defs hx)]
     exact evalNode_rename rfl rfl rfl (fun u hu => gval_twin (hτ u hu).2)
   obtain ⟨t, a, htx, hxv, hta⟩ : ∃ t a, st.types.get? x = some t ∧ gval ρ fr mem st x = some a ∧
       a.ty = t := by
@@ -154,13 +169,13 @@ theorem emit_fresh_spec {st : SState} (h : GInv f ρ fr mem st) {bi : Nat} {x : 
     rw [operands_mapOperands, List.mem_map] at hy
     obtain ⟨u, hu, rfl⟩ := hy
     exact known_of_avail (hτ u hu).1
-  obtain ⟨hI, hfix, hkm, hsm, hkw, hnew⟩ := fresh_spec (st' := st') h hops ed
+  obtain ⟨hI, hfix, hkm, -, hkw, hnew⟩ := fresh_spec (st' := st') h hops ed
     (fun z hz => by rw [et', hm_get?_insert, if_neg (Ne.symm hz)])
     (fun t' a' ht' hv => by
       rw [et', hm_get?_insert, if_pos rfl] at ht'; cases ht'
       rw [hval, hxv] at hv; cases hv; exact hta)
     enx (fun z hz => by rw [ea]; simp [Std.HashMap.contains_insert, Ne.symm hz]) eal em ef ec
-    (fun z _ => by rw [ep]) (fun _ => ⟨a, by rw [hval]; exact hxv, by rw [et', hm_get?_insert]; simp [hta]⟩)
+    ep ⟨a, by rw [hval]; exact hxv, by rw [et', hm_get?_insert]; simp [hta]⟩
   have hwa : st'.avail.contains st.next = true := by rw [ea, hm_contains_insert']; exact .inl rfl
   have hadx : ∀ z, st.avail.contains z = true → st'.defs.get? z = st.defs.get? z := by
     intro z hz
@@ -169,11 +184,11 @@ theorem emit_fresh_spec {st : SState} (h : GInv f ρ fr mem st) {bi : Nat} {x : 
   have hav : ∀ z, st.avail.contains z = true → st'.avail.contains z = true := by
     intro z hz; rw [ea, hm_contains_insert']; exact .inr hz
   have g : MGrow ρ fr mem st st' :=
-    ⟨hfix, hkm, hsm, hav, hadx, fun z hz _ => by
+    ⟨fun z hz => hfix z (inGraph_of_known hz), hkm, hav, hadx, fun z hz _ => by
       have : z ≠ st.next := fun he => by rw [he] at hz; rw [hz] at hw; cases hw
       rw [ed, hm_get?_insert, if_neg (Ne.symm this)], fun z hz => by
       have : z ≠ st.next := fun he => by rw [he] at hz; rw [hz] at hw; cases hw
-      rw [et', hm_get?_insert, if_neg (Ne.symm this)], eal, em, ef, etr, er, ep⟩
+      rw [et', hm_get?_insert, if_neg (Ne.symm this)], eal, em, ef, etr, er, ep, hfix⟩
   refine ⟨hI, g, by rw [hnew, hval], hwa, ?_⟩
   refine .clone τ (hav x hxa) hwa (by rw [hadx x hxa]; exact hx) (by rw [ed, hm_get?_insert]; simp)
     (fun u hu => (hτ u hu).2.grow g)
@@ -200,14 +215,14 @@ theorem emit_over_spec {st : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f f
     · rfl
   have hgr : st'.graph = graphInsert st.graph x (mapOperands τ n) := by
     funext z
-    simp only [SState.graph, graphInsert, ed, hm_get?_insert]
+    simp only [SState.graph, graphInsert, ed, ep, hm_get?_insert]
     by_cases hz : x = z
     · subst hz; simp
     · simp [hz, Ne.symm hz]
   have hg : gval ρ fr mem st' = gval ρ fr mem st := by
     simp only [gval, hgr]
-    exact den_overwrite (S := st.availP) (by simpa [SState.graph] using hx)
-      (by simp [SState.availP, hxa]) (fun u hu => (hτ u hu).2)
+    exact den_overwrite (S := st.availP) (graph_of_defs hx)
+      (by simp [SState.availP, hxa]) (fun u hu => (hτ u hu).2.toGraph)
   have hkx : st.known x = true := known_of_defs hx
   have hk : ∀ z, st'.known z = st.known z := by
     intro z
@@ -225,7 +240,6 @@ theorem emit_over_spec {st : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f f
       simp only [SState.known, ed, ea, Std.HashMap.contains_insert, h1, ha0, Bool.or_false,
         Bool.or_eq_false_iff, beq_eq_false_iff_ne]
       exact ⟨Ne.symm hzx, Ne.symm hzx⟩
-  have hs : ∀ z, st'.solid z = st.solid z := by intro z; simp [SState.solid, hk, ep]
   have hxv : ∃ a, gval ρ fr mem st x = some a ∧ st.types.get? x = some a.ty := by
     have hn : ∀ u ∈ operands n, ∃ a, gval ρ fr mem st u = some a := by
       intro u hu
@@ -233,18 +247,18 @@ theorem emit_over_spec {st : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f f
       exact ⟨a, by rw [← gval_twin (hτ u hu).2]; exact h1⟩
     obtain ⟨a, ha, _⟩ := typed_total h hE hty hn
     have hgx : gval ρ fr mem st x = some a := by
-      rw [gval, den_node (D := st.graph) (by simpa [SState.graph] using hx)]; exact ha
+      rw [gval, den_node (D := st.graph) (graph_of_defs hx)]; exact ha
     exact ⟨a, hgx, by rw [ht, h.types x t a ht hgx]⟩
   have hdx : ∀ z, z ≠ x → st'.defs.get? z = st.defs.get? z := by
     intro z hz; rw [ed, hm_get?_insert, if_neg (Ne.symm hz)]
   have hav : ∀ z, st.avail.contains z = true → st'.avail.contains z = true := by
     intro z hz; rw [ea, hm_contains_insert']; exact .inr hz
-  refine ⟨⟨ef.trans h.fn, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
-    ⟨fun z _ => by rw [hg], fun z hz => by rw [hk]; exact hz, fun z hz => by rw [hs]; exact hz,
+  refine ⟨⟨ef.trans h.fn, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    ⟨fun z _ => by rw [hg], fun z hz => by rw [hk]; exact hz,
      hav, fun z hz => hdx z (fun he => by rw [he] at hz; rw [hz] at hxa; cases hxa),
      fun z _ hz => hdx z (fun he => by
        rw [he, ea, Std.HashMap.contains_insert] at hz; simp at hz),
-     fun z _ => et' z, eal, em, ef, etr, er, ep⟩,
+     fun z _ => et' z, eal, em, ef, etr, er, ep, fun z _ => by rw [hg]⟩,
     by rw [hg], by rw [ea, hm_contains_insert']; exact .inl rfl⟩
   · intro z m hz y hy
     rw [hk]
@@ -272,11 +286,14 @@ theorem emit_over_spec {st : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f f
   · intro n' w hz; rw [hg]; rw [em] at hz
     obtain ⟨h1, h2⟩ := h.memo n' w hz
     exact ⟨fun y hy => by rw [hk]; exact h1 y hy, h2⟩
-  · intro z hz; rw [hk]; rw [ep] at hz; exact h.partialKnown z hz
-  · intro z hz; rw [hg, et']; rw [hs] at hz; exact h.solid z hz
+  · intro z hz; rw [ep] at hz; rw [enx, hk]; exact h.partials z hz
+  · intro z m hz y hy; rw [ep] at hz
+    have := h.partialsClosed z m hz y hy
+    simp only [SState.inGraph, hk, ep] at this ⊢; exact this
+  · intro z hz; rw [hg, et']; rw [hk] at hz; exact h.knownVal z hz
   · intro k ms hz; rw [ec] at hz
     obtain ⟨o, ho, h2⟩ := h.classes k ms hz
-    exact ⟨o, by rw [hs]; exact ho, by rw [hg]; exact h2⟩
+    exact ⟨o, by rw [hk]; exact ho, by rw [hg]; exact h2⟩
 
 theorem foldlM_option_inv {α β : Type} (g : β → α → Option β) (I : List α → β → Prop)
     (hstep : ∀ pre a c c', I pre c → g c a = some c' → I (pre ++ [a]) c') :

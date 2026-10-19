@@ -41,7 +41,7 @@ theorem RInv.weakenB {X : ValueId → Prop} {XN : Inst → Prop} {st : SState} {
   have hg : ∀ y, Placed st B y → Placed st B' y :=
     Placed.mono (fun _ h => h) (fun y hy hb => hy.not_bad (hB y hb)) (fun _ _ h => .inl h)
       (fun _ _ h => .inl h)
-  exact ⟨h.m.weakenB hB hav hnb, h.noPartial, fun n w hw => by
+  exact ⟨h.m.weakenB hB hav hnb, h.partialsBig, fun n w hw => by
     obtain ⟨e1, e2, e3⟩ := h.memo n w hw
     exact ⟨e1.imp (hg w) id, e2, e3⟩, h.alts⟩
 
@@ -49,7 +49,7 @@ theorem RInv.weakenB {X : ValueId → Prop} {XN : Inst → Prop} {st : SState} {
 theorem RInv.dropX {X : ValueId → Prop} {XN : Inst → Prop} {st : SState}
     (h : RInv f V B X XN st) (hx : ∀ n w, st.memo.get? n = some w → X w → XN n → Placed st B w) :
     RInv f V B (fun _ => False) (fun _ => False) st := by
-  refine ⟨h.m, h.noPartial, fun n w hw => ?_, h.alts⟩
+  refine ⟨h.m, h.partialsBig, fun n w hw => ?_, h.alts⟩
   obtain ⟨e1, e2, e3⟩ := h.memo n w hw
   rcases e1 with e1 | ⟨e1, e1'⟩
   · exact ⟨.inl e1, e2, e3⟩
@@ -75,7 +75,7 @@ theorem RInv.altsInsert {X : ValueId → Prop} {XN : Inst → Prop} {st : SState
     split at hy
     · rename_i he; subst he; exact hx
     · exact h.m.altsKnown y ms' hy
-  refine ⟨⟨hm, h.noPartial, fun n w hw => ?_, fun y ms' hy m hm => ?_⟩, hg⟩
+  refine ⟨⟨hm, h.partialsBig, fun n w hw => ?_, fun y ms' hy m hm => ?_⟩, hg⟩
   · obtain ⟨e1, e2, e3⟩ := h.memo n w hw
     exact ⟨e1.imp (hg w) id, e2, e3⟩
   · simp only [hm_get?_insert] at hy
@@ -85,13 +85,13 @@ theorem RInv.altsInsert {X : ValueId → Prop} {XN : Inst → Prop} {st : SState
 
 theorem RInv.anyX {X : ValueId → Prop} {XN : Inst → Prop} {st : SState}
     (h : RInv f V B (fun _ => False) (fun _ => False) st) : RInv f V B X XN st :=
-  ⟨h.m, h.noPartial, fun n w hw => by
+  ⟨h.m, h.partialsBig, fun n w hw => by
     obtain ⟨e1, e2, e3⟩ := h.memo n w hw
     exact ⟨.inl (e1.resolve_right (fun h => h.1)), e2, e3⟩, h.alts⟩
 
 theorem RInv.weakXN {X : ValueId → Prop} {XN : Inst → Prop} {st : SState}
     (h : RInv f V B X (fun _ => False) st) : RInv f V B X XN st :=
-  ⟨h.m, h.noPartial, fun n w hw => by
+  ⟨h.m, h.partialsBig, fun n w hw => by
     obtain ⟨e1, e2, e3⟩ := h.memo n w hw
     exact ⟨.inl (e1.resolve_right (fun h => h.2)), e2, e3⟩, h.alts⟩
 
@@ -126,7 +126,7 @@ theorem pureInsert_ok {st : SState} {v : ValueId} {inst : Inst}
     · exact .inl hm
   refine ⟨⟨⟨hI.m.fn, hI.m.maxLt, fun y hy => ?_, hI.m.typesFresh, fun y m hm => ?_, fun y ms hms =>
       kgrow y (hI.m.altsKnown y ms hms), hI.m.availDef, hI.m.defAvail, fun y m hm ha hb => ?_,
-      hI.m.badLe, hI.m.uniq⟩, hI.noPartial, fun n w hw => ?_, fun y ms hms m hm => ?_⟩,
+      hI.m.badLe, hI.m.uniq⟩, hI.partialsBig, fun n w hw => ?_, fun y ms hms m hm => ?_⟩,
     fun k ms hk => by simp [pureInsert] at hk, hgood, by rw [hdefs, ite_eq_left rfl],
     fun y hy => by rw [hdefs, ite_eq_right (Ne.symm hy)], rfl, rfl, rfl, rfl, rfl⟩
   · rcases known_iff.1 hy with h1 | h1
@@ -156,7 +156,7 @@ theorem memoHit_some {st : SState} {bi : Nat} {inst : Inst} {w : ValueId}
 
 /-- `pureBest`: the best value of `v`'s class is `v` or a placeable value of its type, and the
 hash-consing table maps `inst` to it. -/
-theorem pureBest_ok {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst → Bool)
+theorem pureBest_ok {rules : SimplifyFn} (hR : SimpRulesProv rules) (allowed : Inst → Bool)
     (bi : Nat) {st0 : SState} {v : ValueId} {inst : Inst}
     (hI : RInv f V B (fun _ => False) (fun _ => False) st0) (hC : CInv B st0)
     (hvk : st0.known v = true) (hvd : st0.defs.get? v = some inst)
@@ -373,7 +373,7 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
     let stK : SState := { st1 with avail := st1.avail.insert v bi }
     have hIK : RInv f (emitV V bi [{ s with inst }]) (fun y => B y ∧ y ≠ v) (fun _ => False)
         (fun _ => False) stK := by
-      refine ⟨hMK, hI1.noPartial, fun n w hw => ?_, fun x ms hx m hm => ?_⟩
+      refine ⟨hMK, hI1.partialsBig, fun n w hw => ?_, fun x ms hx m hm => ?_⟩
       · obtain ⟨e1, e2, e3⟩ := hI1.memo n w hw
         refine ⟨.inl ?_, hkK w e2, e3⟩
         rcases e1 with e1 | ⟨rfl, -⟩
@@ -554,7 +554,7 @@ theorem emitAlts_ok {st st1 : SState} {subst : Subst} {s : Stmt} {inst : Inst} {
           subst hy; exact absurd hvB hrb
 
 /-- **The pure path** (module doc): kept (`v` leaves the bad values) or replaced. -/
-theorem pure_ok {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst → Bool) (cfg : Cfg)
+theorem pure_ok {rules : SimplifyFn} (hR : SimpRulesProv rules) (allowed : Inst → Bool) (cfg : Cfg)
     (bi : Nat) {st : SState} {subst : Subst} {s : Stmt} {inst : Inst} {v : ValueId} {b : Block}
     (hI : RInv f V B (fun _ => False) (fun _ => False) st) (hb : V bi = some b)
     (hres : s.results = [v]) (hpure : isPure inst = true)

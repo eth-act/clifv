@@ -321,6 +321,7 @@ structure SOk (f g : Function) (fi : Info) (cert : SimpCert) : Prop where
   len : g.blocks.length = f.blocks.length
   chain : cert.subst.chainFree = true
   leafTypes : ∀ x, (initAvail f).contains x = true → cert.types.get? x = fi.types.get? x
+  partialsLeaf : ∀ x, (initAvail f).contains x = true → cert.partials.contains x = false
   blocks : ∀ (i : Nat) (b : Block), f.blocks[i]? = some b → ∃ (b' : Block) (lg : BlockLog),
     g.blocks[i]? = some b' ∧ cert.logs[i]? = some (some lg) ∧ b'.id = b.id ∧
     b'.params = b.params ∧ b'.body = (outs lg.stmts ++ lg.extra.toList).map (renStmt cert.subst.step) ∧
@@ -335,15 +336,24 @@ structure SOk (f g : Function) (fi : Info) (cert : SimpCert) : Prop where
 theorem simpOk_facts {f g : Function} {fi : Info} {cert : SimpCert}
     (hf : check f = .ok fi) (h : simpOk f g fi cert = true) : SOk f g fi cert := by
   simp only [simpOk, sameHeader, Bool.and_eq_true, beq_iff_eq, List.all_eq_true] at h
-  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨hn, hs⟩, hsl⟩, hgl⟩, hex⟩, hlen⟩, hch⟩, hwf⟩, hlt⟩, hbl⟩ := h
+  obtain ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hn, hs⟩, hsl⟩, hgl⟩, hex⟩, hlen⟩, hch⟩, hwf⟩, hlt⟩, hpl⟩, hbl⟩ := h
   refine ⟨wf_of_check hf, wfCert_sound (info := gInfo fi cert) hwf, hn, hs, hsl, hgl, hex, hlen,
-    hch, ?_, ?_⟩
+    hch, ?_, ?_, ?_⟩
   · intro x hx
     rw [hm_contains_iff] at hx
     obtain ⟨v, hv⟩ := Option.isSome_iff_exists.1 hx
     have := hlt (x, v) (by
       rw [Std.HashMap.mem_toList_iff_getElem?_eq_some]; simpa [Std.HashMap.get?_eq_getElem?] using hv)
     simpa using this
+  · intro x hx
+    cases hc : cert.partials.contains x with
+    | false => rfl
+    | true =>
+      rw [hm_contains_iff] at hc
+      obtain ⟨v, hv⟩ := Option.isSome_iff_exists.1 hc
+      have := hpl (x, v) (by
+        rw [Std.HashMap.mem_toList_iff_getElem?_eq_some]; simpa [Std.HashMap.get?_eq_getElem?] using hv)
+      simp [hx] at this
   intro i b hb
   have hi : i < g.blocks.length := by rw [hlen]; exact (List.getElem?_eq_some_iff.1 hb).1
   have hz : ((b, g.blocks[i]), i) ∈ (f.blocks.zip g.blocks).zipIdx := by
@@ -445,7 +455,9 @@ theorem SOk.site {x : ValueId} {d t : Nat} (hd : (wfData g (gInfo fi cert)).dm x
     subst hpx
     refine .inl ⟨?_, h2⟩
     simp only [SimpCert.graph]
-    rw [Std.HashMap.get?_eq_getElem?, Std.HashMap.getElem?_eq_none_of_contains_eq_false h1]
+    rw [Std.HashMap.get?_eq_getElem?, Std.HashMap.getElem?_eq_none_of_contains_eq_false h1,
+      Option.none_or, Std.HashMap.get?_eq_getElem?,
+      Std.HashMap.getElem?_eq_none_of_contains_eq_false (hS.partialsLeaf _ h2)]
   | succ j =>
     obtain ⟨b', st, hb', hst, hx⟩ := site_stmt hS.wfg hd
     obtain ⟨b, lg, hb, -, -, -, -, -, -, -, -, -, hpure, hskel⟩ := hS.gblock hb'
@@ -455,14 +467,16 @@ theorem SOk.site {x : ValueId} {d t : Nat} (hd : (wfData g (gInfo fi cert)).dm x
       obtain ⟨h1, h2⟩ := hskel st hmem hsk x hx
       refine .inl ⟨?_, h2⟩
       simp only [SimpCert.graph]
-      rw [Std.HashMap.get?_eq_getElem?, Std.HashMap.getElem?_eq_none_of_contains_eq_false h1]
+      rw [Std.HashMap.get?_eq_getElem?, Std.HashMap.getElem?_eq_none_of_contains_eq_false h1,
+        Option.none_or, Std.HashMap.get?_eq_getElem?,
+        Std.HashMap.getElem?_eq_none_of_contains_eq_false (hS.partialsLeaf _ h2)]
     | false =>
       simp only [skeletonStmt, Bool.not_eq_false', Bool.and_eq_true, beq_iff_eq] at hsk
       obtain ⟨hp, hl⟩ := hsk
       have hr : st.results = [x] := by
         match hrs : st.results, hl with
         | [y], _ => rw [hrs] at hx; simp at hx; rw [hx]
-      exact .inr ⟨st.inst, hpure st hmem x hr hp, d, j, b', st, hd, hb', hst, hr, rfl, hp⟩
+      exact .inr ⟨st.inst, SimpCert.graph_of_defs (hpure st hmem x hr hp), d, j, b', st, hd, hb', hst, hr, rfl, hp⟩
 
 /-- **Target values are graph values**: at any point of a run of `g`, every available value is
 the `den` of the certificate graph from the leaves `rhoAt` (in any memory defining the
@@ -1907,7 +1921,7 @@ theorem SCore.runExtras {fr : Frame} {bi k : Nat} {m : Mem} (hm : m.symbols = sy
         · rw [hu, List.mem_singleton] at hr
           subst hr
           simp only [Regs.set_same]
-          rw [den_node (D := cert.graph) hD]
+          rw [den_node (D := cert.graph) (SimpCert.graph_of_defs hD)]
           have hsy : SymsLe m (memPlus m) := memPlus_le m
           rw [← evalNode_symsLe hp hsy hev]
           refine evalNode_congr (by simp only [hf0]) (by simp only [hf0]) (by simp only [hs0]) ?_
