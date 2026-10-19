@@ -4,6 +4,26 @@ Current execution plan, refreshed 2026-10-19; replaces the wholesale-cutover ord
 [test-binary-alignment-recovery.md](test-binary-alignment-recovery.md). Historical
 proof checkpoints remain evidence, not a queue of instructions to resume.
 
+## Landed checkpoint and active implementation (2026-10-19)
+
+#328 squash-merged as `6a1f7d518f76bedc8219204bde40cfa41be876cd`.
+Production now selects actual Stock for all six one-block i32/i64 ordinary
+parameter-return configurations, with legacy fallback. The merge tree exactly
+matches validated `b5e9b15f`. Author gates passed 2326 modules, all 10 axiom-audit
+files, runtime 114/22/4737 with no failures/disagreements, encoding 1316 identical,
+both E2E modes 1154 accepted with all original 1150 identities and ordered stages
+preserved, mixed generated proofs and verified default Lean-linked fv-demo/survey.
+The historical baseline sections below describe pre-#328 reconciliation.
+
+The active next packet adds actual-output E2E contracts, callback provenance,
+world/non-interference composition and successful witnesses in both cleanup modes.
+Old variants remain compatibility wrappers; Stock histories and edge operands are
+retained. This packet alone enables no second production class. Next come actual
+link/checker/binary/generated-proof consumers and the proved two-block prologue
+class. Its source/domain candidates cover all six configurations; actual code and
+checker candidates currently cover SystemV i64 only and need reconciliation.
+All remaining original #140 obligations remain open.
+
 ## Decision and current baseline
 
 Land dependency-closed work on main continuously. Introduce Stock into production

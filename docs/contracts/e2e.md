@@ -6,6 +6,25 @@ The production lowering dispatcher enables the first structurally selected Stock
 class through full-code compatibility, preserving these theorem statements and
 their input conditions; see [stock-driver.md](stock-driver.md).
 
+Additive actual-output consumers use `CompiledValidatedA`/`CompiledValidated`
+(`FV/E2E/ValidatedLowering.lean`, `ValidatedWorld.lean`) and the cleanup variants
+in `ValidatedCleanup.lean`. They require source/SSA validation of the actual raw
+VCode, preparation validation of the actual prepared VCode, and the existing
+allocation/emission/layout facts. They do not require equality with the legacy
+constructor. `CompiledProduction` covers the old `CompiledEither` contract and
+both validated-output modes; its world and non-interference theorems use the same
+source and machine semantics. Old contracts and theorem variants remain available.
+`E2E.LinkCheck.pipeTWithLowering_spec` in `LoweringProvenance.lean` binds the actual lowering callback result to every
+subsequent artifact stage, allocator answer and function/base index.
+
+The actual successful Stock contract witnesses cover all six D0 configurations,
+arbitrary names, run metadata and allocator answers, in both cleanup modes
+(`StockD0ActualConsumerWitness.lean`). Positive try-call and TLS helper witnesses
+use concrete legacy compilations (`ValidatedWitness.lean`). These contracts are
+proof interfaces, not per-program certificates. Broader Stock classes still need
+fixed source-correctness proofs and downstream checker/linker/proof-writer
+integration before production activation.
+
 Producer: M7 (agents `M7Skeleton`, `M7Driver`; branch `agent/m7-driver`). Consumers: the
 integrator, M4 (rule proofs), M6 (register level). Code: `FV/E2E/{Statement,Compose,Main}.lean`
 (namespace `E2E`), the CLIF → VCode driver simulation

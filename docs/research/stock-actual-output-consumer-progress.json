@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-19T22:39:53.649911+00:00",
+  "base": "6a1f7d518f76bedc8219204bde40cfa41be876cd",
+  "state": "targeted_build_and_trust_passed_full_per_pr_gates_pending",
+  "build": "644 jobs passed, autoImplicit false in new modules",
+  "public_audit": "62/62 roots pass, std3 for compiler roots; explicit fixed witness native annotations",
+  "mcp": {
+    "theorem": "E2E.backend_correct_world_niX_production",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": []
+  },
+  "witnesses": [
+    "Actual Stock output and callback provenance for all six D0 configurations, arbitrary names/run metadata/allocator answers, both cleanup modes",
+    "Positive try-call and live TLS compilation witnesses for both modes; paired call helpers instantiated with existing raising environment and TLS-independent flags"
+  ],
+  "limits": [
+    "No second production function class enabled",
+    "New output contracts still require fixed actual-source/SSA correctness proofs",
+    "Whole-program checker/linker/binary/generated-proof consumers are next dependent packet",
+    "Full original #140 scope remains open"
+  ],
+  "per_pr_required": [
+    "scheduler FV FVTest and affected exes",
+    "all axiom audit files and owned constants",
+    "both E2E modes with original identity/stage parity",
+    "actual link-check for saved verified bundle and mixed generated proofs"
+  ],
+  "resource_budget": "author aggregate 16 GiB; max 3 build jobs; one warm cache; no new worktrees"
+}
