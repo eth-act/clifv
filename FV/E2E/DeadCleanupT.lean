@@ -108,9 +108,10 @@ theorem backend_correct_of_rules_cleanup_exT {p : Clif.Program} {f : Clif.Functi
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefinesT fb base ra astep s (Clif.runLoop env p fuel cs) :=
   backend_correct_of_layers_exT
-    (iselSimT_of_rules hsub hc.lowerOk (cfg_of_prepare_prune hc.prepare) hT.lower hrulesF hrulesA
-      hT.nonE hT.calls hT.ind hT.mem hmemF hT.term hT.termUn hT.branch hT.branchEx hT.try_
-      hT.tryUn hT.tryInd hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
+    (iselSimT_of_rules hsub hc.lowerOk (cfg_of_prepare_prune hc.prepare)
+      lowerRulesCorrectTI_program hrulesF hrulesA nonEUnmatchableT_program hT.callsT hT.indT
+      memRulesCorrectRTI_program hmemF hT.term hT.termUn hT.branch hT.branchEx hT.tryT
+      hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_prune (hds s') (hPure s') hc.prepOk)
     hM6 hent hres hbe
     (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
@@ -146,9 +147,10 @@ theorem backend_correct_of_rules_cleanup_ex_ofT {p : Clif.Program} {f : Clif.Fun
     (htr : TrapsExplicit env p cs) (fuel : Nat) :
     ArmRefines fb base ra astep s (Clif.runLoop env p fuel cs) :=
   backend_correct_of_layers_ex_ofT hint
-    (iselSimT_of_rules hsub hc.lowerOk (cfg_of_prepare_prune hc.prepare) hT.lower hrulesF hrulesA
-      hT.nonE hT.calls hT.ind hT.mem hmemF hT.term hT.termUn hT.branch hT.branchEx hT.try_
-      hT.tryUn hT.tryInd hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
+    (iselSimT_of_rules hsub hc.lowerOk (cfg_of_prepare_prune hc.prepare)
+      lowerRulesCorrectTI_program hrulesF hrulesA nonEUnmatchableT_program hT.callsT hT.indT
+      memRulesCorrectRTI_program hmemF hT.term hT.termUn hT.branch hT.branchEx hT.tryT
+      hT.tryUn hT.tryIndT hT.tryIndUn hRef hds hcalls hicalls hmem hFP houtB)
     (fun s' => prepareCorrect_prune (hds s') (hPure s') hc.prepOk)
     hM6 hent hres hbe
     (argsAtEntry_bodyT (lowerRFunc_frame hc.alloc) (entryRegsT_of_check hc.lowerOk) hbe hargs hargF)
