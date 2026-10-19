@@ -125,11 +125,14 @@ theorem data_processing_msub (i) : DPR.exec_data_processing_msub i (setMem m s) 
 theorem data_processing_mulh (u i) : DPR.exec_data_processing_mulh u i (setMem m s) =
     setMem m (DPR.exec_data_processing_mulh u i s) := by
   unfold DPR.exec_data_processing_mulh; memfree
+theorem data_processing_maddl (u o i) : DPR.exec_data_processing_maddl u o i (setMem m s) =
+    setMem m (DPR.exec_data_processing_maddl u o i s) := by
+  unfold DPR.exec_data_processing_maddl; memfree
 theorem data_processing_three_source (i) : DPR.exec_data_processing_three_source i (setMem m s) =
     setMem m (DPR.exec_data_processing_three_source i s) := by
   unfold DPR.exec_data_processing_three_source
   simp only [write_err, w_setMem, data_processing_madd, data_processing_msub,
-    data_processing_mulh]
+    data_processing_mulh, data_processing_maddl]
   repeat' split
   all_goals first | rfl | simp_all | contradiction
 theorem add_sub_ext_reg (i) : DPR.exec_add_sub_ext_reg i (setMem m s) =

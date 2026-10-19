@@ -79,7 +79,7 @@ NOPs); memory is flat, total and little-endian, with no alignment faults except 
 | `Arm/Insts/**` (scalar + subset of SIMD) | `FV/Arm/Insts/**` | fixes and additions (below) |
 | `Arm/Memory/{Attr,MemoryProofs,Separate,SeparateProofs}.lean` | `FV/Arm/Memory/…` | ported |
 | `Tactics/{Attr,BvOmegaBench,Common,FetchAndDecode,IntroHyp,Simp,StepThms,Sym}.lean`, `Tactics/Sym/*` | `FV/Arm/Tactics/…` | ported: `sym_n` and `#genStepEqTheorems` |
-| — | `FV/Arm/Decode/Reserved.lean`, `FV/Arm/Insts/Reserved/Udf.lean`, `Insts/BR/Test_branch.lean`, `Insts/DPI/Extract.lean`, `Insts/DPR/{Add_sub_ext_reg,Conditional_compare}.lean`, `Insts/DPSFP/Advanced_simd_across_lanes.lean`, `Insts/DPSFP/{FP_data_processing_one_source,FP_immediate,FP_conditional_select,FP_data_processing_two_source,FP_data_processing_three_source,FP_compare}.lean`, `Insts/LDST/Reg_literal.lean` | FV additions |
+| — | `FV/Arm/Decode/Reserved.lean`, `FV/Arm/Insts/Reserved/Udf.lean`, `Insts/BR/{Test_branch,Mrs}.lean`, `Insts/DPI/Extract.lean`, `Insts/DPR/{Add_sub_ext_reg,Conditional_compare}.lean`, `Insts/DPSFP/Advanced_simd_across_lanes.lean`, `Insts/DPSFP/{FP_data_processing_one_source,FP_immediate,FP_conditional_select,FP_data_processing_two_source,FP_data_processing_three_source,FP_compare}.lean`, `Insts/LDST/Reg_literal.lean`, `FV/Arm/Tpidr.lean` | FV additions |
 | `Arm/Insts/DPSFP/Advanced_simd_modified_immediate.lean` | `FV/Arm/Insts/DPSFP/…` | ported for `movi vd.2s, #0` (S11d); the state-returning decode helper made pure |
 
 Ported files keep the Amazon copyright header. Modified files say so in a "Modified by
@@ -237,7 +237,8 @@ Sequences, all built from rows above:
   `udf #0xc11f`.
 
 Not modelled, because Cranelift does not emit them for the subset: PRFM, exclusives/atomics
-beyond the single-register ones, system instructions other than hints.
+beyond the single-register ones, system instructions other than hints, barriers and
+`mrs xt, tpidr_el0`.
 
 ## Co-simulation (`FVTest/Arm/Cosim/*`, `lake exe arm-cosim`)
 
@@ -257,10 +258,9 @@ Relocated immediates (`bl`'s `CALL26`, `adrp`'s page offset, the `:lo12:`/`:got_
 `:tlsdesc_lo12:` fields), which the encoder leaves zero, get the values a linker would write (a
 landing pad, a random page offset, a buffer offset). `stlxr` runs after an `ldaxr` of the same
 address (`TestCase.pre`: instructions run by both qemu and the model before the tested one), so
-qemu's exclusive monitor is set and the store succeeds on both sides. Not co-simulated
-(`Enc.excluded`): `mrs xt, tpidr_el0` (no system registers in the model, by design) and
-`umaddl`/`smaddl`, which the model does not implement (#271; emitted only for
-`umul_overflow`/`smul_overflow`, outside subset E).
+qemu's exclusive monitor is set and the store succeeds on both sides. `Enc.excluded` is empty:
+every `Insn` constructor is co-simulated (`mrs xt, tpidr_el0` and `umaddl`/`smaddl` since T1,
+#37 / #271).
 
 `--coverage` (no qemu) reports, per encoder form, the hand-written specs covering it: those
 whose sampled cube (the bits constant over 400 sampled words, with their values) contains all
@@ -276,7 +276,7 @@ Nightly (post-merge, never blocking): `.github/workflows/fidelity-nightly.yml` r
 
 Per vector: a random valid encoding of the form, with all register fields random, including
 31 (SP or ZR according to the form). The initial state is random: x0–x30 (biased towards edge
-values), SP, NZCV, v0–v30 and a 64-byte data buffer. For the floating-point forms v0–v30 hold
+values), SP, NZCV, TPIDR_EL0, v0–v30 and a 64-byte data buffer. For the floating-point forms v0–v30 hold
 IEEE values (`randomFpCase`, `Harness.lean`) in the low 32/64 bits, the other bits random:
 ±0, ±min/max subnormal, ±min normal, ±1, ±max finite, ±∞, quiet and signalling NaNs with
 payloads, powers of two at the integer-conversion bounds, exact integers, values near 1 and
@@ -286,7 +286,7 @@ every test writes `msr fpcr, xzr` before it runs. Batches of vectors (one batch 
 instruction class) become one freestanding static aarch64 program (`Harness.lean`), assembled
 by clang, linked by rust-lld, and run under qemu-aarch64-static with raw `write`/`exit`
 syscalls. The program echoes the initial state, runs each instruction, and reports x0–x30, SP,
-NZCV, PC, v0–v30 and the buffer afterwards. Lean rebuilds the initial state from the echo, runs
+NZCV, PC, TPIDR_EL0, v0–v30 and the buffer afterwards. Lean rebuilds the initial state from the echo, runs
 `stepi`, and compares every field. It also checks the error outcome: `.None`, or `.Trap imm16`
 for `udf`, where the QEMU side is a `SIGILL` handler reading the signal frame.
 
