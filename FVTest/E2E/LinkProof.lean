@@ -277,12 +277,15 @@ open E2E E2E.LinkCheck E2E.BinCheck
   -- the input: the functions, the slices, `input`
   let mut inp := ""
   for (fi, i) in I.funcs.zipIdx do
-    inp := inp ++ s!"/-- `{names[i]!}` -/\ndef fn{i} : FnInput where\n  clif := {leanStr fi.clif}\n  ra := {leanStr fi.ra}\n\n"
+    let indices := (if fi.k == 0 then "" else s!"\n  k := {fi.k}") ++
+      (if fi.j == 0 then "" else s!"\n  j := {fi.j}")
+    inp := inp ++ s!"/-- `{names[i]!}` -/\ndef fn{i} : FnInput where\n  clif := {leanStr fi.clif}\n  ra := {leanStr fi.ra}{indices}\n\n"
   for k in sl do
     inp := inp ++ s!"/-- Slice {k} of the functions. -/\ndef slice{k} : List FnInput := [{slFns k}]\n\n"
   let funcs := " ++ ".intercalate (sl.map (s!"slice{·}"))
   let aliases := if I.aliases.isEmpty then "" else
     "\n  aliases := [" ++ ", ".intercalate (I.aliases.map fun p => s!"({leanStr p.1}, {leanStr p.2})") ++ "]"
+  let fallback := if I.fallback then "\n  fallback := true" else ""
   inp := inp ++ s!"/-- The crate's input. -/
 def input : LinkInput where
   funcs := {funcs}
@@ -291,7 +294,7 @@ def input : LinkInput where
   syms := [
     {pairs I.syms}]
   raStar := {I.raStar}
-  D := {I.D}{aliases}
+  D := {I.D}{aliases}{fallback}
 
 /-- The data objects the program reaches (`cargo fv link-proof`'s `; data:` lines). -/
 def dataObjs : List Clif.DataObject := parseData ({listLean (bg.dataLines.map leanStr)})
@@ -474,7 +477,9 @@ open E2E E2E.LinkCheck E2E.BinCheck
   -- the input: the functions, the slices, `input`
   let mut inp := ""
   for (fi, i) in I.funcs.zipIdx do
-    inp := inp ++ s!"/-- `{names[i]!}` -/\ndef fn{i} : FnInput where\n  clif := {leanStr fi.clif}\n  ra := {leanStr fi.ra}\n\n"
+    let indices := (if fi.k == 0 then "" else s!"\n  k := {fi.k}") ++
+      (if fi.j == 0 then "" else s!"\n  j := {fi.j}")
+    inp := inp ++ s!"/-- `{names[i]!}` -/\ndef fn{i} : FnInput where\n  clif := {leanStr fi.clif}\n  ra := {leanStr fi.ra}{indices}\n\n"
   for k in sl do
     inp := inp ++ s!"/-- Slice {k} of the functions. -/\ndef slice{k} : List FnInput := [{slFns k}]\n\n"
   let funcs := " ++ ".intercalate (sl.map (s!"slice{·}"))
