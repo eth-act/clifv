@@ -1,0 +1,118 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.Spill.cfg_pred_size_le_one_of_unique' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.Spill.cfg_multiple_preds_other' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.Spill.cfg_pred_size_le_one_unique' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.keepOrigin_spec' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.keepOrigin_injective' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.keep_cfg_edge' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.keep_no_critical' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 14,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_no_critical_edges' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 15,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_kept_no_critical_edges' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 16,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.outerLoopAt_no_new_edges' depends on axioms: [propext, Quot.sound]",
+      "line": 17,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_no_new_edges' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 18,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.unsplit_cfg_eq' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 19,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_prepare_no_new_edges' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 20,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PrepareNoSplitWitness.stock_cycle_no_additional_split_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 21,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PrepareNoSplitWitness.stock_forced_try_no_additional_split_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 22,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PrepareNoSplitWitness.stock_cycle_filtered_incoming_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 23,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}

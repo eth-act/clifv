@@ -12,6 +12,7 @@ first, then update its producer and its consumers together.
 | `FV/DSL/` | `flat def` frontend: deep AST, `denote`, checker, elaborator | M1 |
 | `FV/Compile/` | DSL → CLIF emitter (`compile`) and its proof `compile_correct` | M1, M2 |
 | `FV/Arm/` | AArch64 semantics (ASL-derived), decoder, and later the encoder | M3, M5 |
+| `FV/Float/` | IEEE 754 binary32/binary64 core (`namespace IEEE`): ASL `FPAdd`…`FPConvert`/`FPToFixed`/`FixedToFP` with FPCR = 0 except the rounding mode, shared by the CLIF and Arm float semantics (`docs/contracts/float.md`) | S11 |
 | `FV/Validate/` | per-function translation validator: Cranelift AArch64 output against CLIF | M3 |
 | `FV/Isle/` | Lean ISLE syntax, generated rule data (aarch64 lowering; mid-end `opt` in `Generated/Opt`, `Isle.Opt`), rule interpreter (incl. multi terms), `Isle.Opt.simplify` | M4, M7 |
 | `FV/Backend/` | isel, stack-slot allocator, regalloc checker, asm/bytes emission | M4–M6 |
@@ -21,6 +22,7 @@ first, then update its producer and its consumers together.
 | `rust/crates/clif2obj` | Cranelift driver (PLAN.md Appendix A), with relocation dumps | M1, M3 |
 | `rust/crates/clif-oracle` | `clif-oracle interp <file.clif>`: runs the Cranelift interpreter on `; run:` lines, output JSON | M0 |
 | `rust/crates/clif-native` | `clif-native <file.clif>`: compiles with Cranelift for aarch64, runs `; run:` lines natively under qemu, output JSON (same schema as clif-oracle) | M1 |
+| `rust/crates/float-oracle` | host/aarch64 IEEE oracle for `scripts/float-difftest.sh` (Rust `f32`/`f64` against `FV/Float`) | S11 |
 | `rust/crates/isle2lean` | exports ISLE rules and VeriISLE specs to Lean data | M4 |
 | `rust/crates/flat-runtime` | runtime externs (collections), built for aarch64 | M1 |
 | `corpus/` | DSL programs and generated `.clif` for differential testing | M1+ |
@@ -33,7 +35,9 @@ first, then update its producer and its consumers together.
   compiled-evaluation trust axioms Lean v4.34.1 auto-generates: `<thm>._native.bv_decide.ax_*`
   (from `bv_decide` when it needs them) and `<thm>._native.native_decide.ax_*` (from `native_decide`).
   These replace `Lean.ofReduceBool` from older toolchains, with the same trust base. Prefer
-  `omega`/`decide`/`simp` in library lemmas; keep `bv_decide` for real bit-blasting goals.
+  `omega`/`decide +kernel`/`simp` in library lemmas; keep `bv_decide` for real bit-blasting goals.
+  T6's encoder proofs use symbolic field lemmas, not compiled certificates. Its fixed table
+  checks split conjunctions into kernel-decided leaves; generated data remains untrusted.
 - Lean: core and `Std` only, no Mathlib (keeps the toolchain pin to `v4.34.1` alone).
 - Lean namespaces follow the directories: `Clif`, `DSL`, `Compile`, `Arm`, `Validate`, `Isle`, `Backend`, `Opt`, `E2E`.
 - Anything executable that is meant as a model must be *checkable* against an external
