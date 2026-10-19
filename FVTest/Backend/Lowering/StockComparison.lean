@@ -12,57 +12,20 @@ open Backend
 private def compileStockWith {m : Type → Type} [Monad m]
     (alloc : Array EdgeVCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
     : m FileAsm := do
-  -- lowering (per function, in file order)
-  let lowered : Array (String × Except String (Clif.Function × EdgeVCode)) :=
-    pf.funcs.toArray.map fun p => (p.name, match p.func with
-      | .error e => .error e.toString
-      | .ok f => (do
-          let r ← Stock.lower f
-          unless r.scans.all Stock.ScanEvent.check && r.blockScans.all Stock.BlockScanEvent.check do
-            throw "stock scan replay rejected"
-          for b in r.code.blocks do
-            if b.insts.isEmpty then throw "empty selected block"
-          pure (f, (⟨r.code,r.edgeArgs⟩ : EdgeVCode))))
-  let vcs := lowered.filterMap fun (_, r) => r.toOption.map (·.2)
-  let afs ← alloc vcs
-  let mut done : Array (FnAsm × List String) := #[]
-  let mut bad : Array (String × String) := #[]
-  let mut unwind : Array (String × List (Nat × Cfi)) := #[]
-  let mut lsda : Array (String × List CallSite) := #[]
-  let mut rules : Std.HashSet Isle.RuleId := {}
-  let mut j := 0
-  for ((name, r), k) in lowered.zipIdx do
-    match r with
-    | .error e => bad := bad.push (name, e)
-    | .ok (f, input) =>
-      let vc := input.code
-      let af := afs[j]?.getD (.error "allocator returned too few results")
-      j := j + 1
-      match af.bind fun af => do
-          let a ← emitFunc k af
-          pure (a, ← unwindRows af a, ← callSites af a) with
-      | .ok (a, rows, sites) =>
-        done := done.push (a, callees f)
-        unwind := unwind.push (a.name, rows)
-        if let some s := sites then lsda := lsda.push (a.name, s)
-        rules := vc.rulesFired.foldl (·.insert ·) rules
-      | .error e => bad := bad.push (name, e)
-  -- propagate to callers (fixpoint; at most one round per function)
-  for _ in [0:done.size] do
-    let (keep, drop) := done.partition fun (_, cs) => cs.all fun c => (bad.find? (·.1 == c)).isNone
-    if drop.isEmpty then break
-    for (a, cs) in drop do
-      let c := (cs.find? fun c => (bad.find? (·.1 == c)).isSome).getD "?"
-      bad := bad.push (a.name, s!"calls %{c}, which is not compiled")
-    done := keep
-  let funcs := done.toList.map (·.1)
-  let text := "  .text\n" ++ String.join (funcs.map (·.text ++ "\n"))
-  let unverified := funcs.map (fun f => (f.name, "development stock lowering (proof migration incomplete)"))
-  let unvalidated := []
-  pure { text, funcs, unsupported := bad.toList, unverified, unvalidated,
-         rules := rules.toArray.qsort (· < ·) |>.toList,
-         unwind := unwind.toList.filter fun (n, _) => funcs.any (·.name == n),
-         lsda := lsda.toList.filter fun (n, _) => funcs.any (·.name == n) }
+  let preUnverified := pf.funcs.map fun p =>
+    (p.name, "development stock lowering (proof migration incomplete)")
+  let compiled ← compileFileWithLowering (fun f _verify _deadCleanup => do
+      let r ← Stock.lower f
+      unless r.scans.all Stock.ScanEvent.check && r.blockScans.all Stock.BlockScanEvent.check do
+        throw "stock scan replay rejected"
+      for b in r.code.blocks do
+        if b.insts.isEmpty then throw "empty selected block"
+      pure (⟨r.code, r.edgeArgs⟩ : EdgeVCode))
+    (fun input => input.code.rulesFired) alloc pf preUnverified false
+  pure { compiled with
+    unverified := compiled.funcs.map fun f =>
+      (f.name, "development stock lowering (proof migration incomplete)")
+    unvalidated := [] }
 
 def main (argv : List String) : IO UInt32 := do
   let (input, output, configPath, receiptPath, dump, traps) ← match argv with
