@@ -191,6 +191,54 @@ Machine structure and invariants:
   `trapped c` only for CLIF traps (`trap`, `trapz/nz`, division, `uadd_overflow_trap`,
   out-of-bounds accesses that may trap).
 
+### `FV/Clif/Unwind.lean` — `Clif.runX`, `Clif.run` with unwinding (S10b, #229)
+
+```lean
+structure Exn where catches : Nat → Bool; payload : List Val   -- tag matching, exnN values
+inductive XOutcome | returned vals mem | unwound (e : Exn) (mem : Mem) | trapped | stuck | outOfFuel
+structure XEnv where extern : String → Option (List Val → Mem → XOutcome); names; sigOf
+def XEnv.toEnv : XEnv → Env      -- unwound ↦ stuck (Clif.run has no unwinding)
+def Env.toX : Env → XEnv         -- theorem Env.toX_toEnv : env.toX.toEnv = env
+structure XState where s : State; tries : List (Option ExnTable)  -- callers' pending tables
+def ExnTable.catch? (et : ExnTable) (e : Exn) : Option TryDest   -- first tagN with e.catches N, or default
+def raiseAt? (env : XEnv) (p : Program) (s : State) : Option (Exn × Mem)
+def stepX (env : XEnv) (p : Program) (xs : XState) : XStepResult
+def runLoopX (env : XEnv) (p : Program) : Nat → XState → XOutcome
+def runWithX / runX           -- as runWith / run
+theorem runLoopX_of_returned : runLoop env.toEnv p fuel xs.s = .returned vals mem →
+    runLoopX env p fuel xs = .returned vals mem
+theorem runLoopX_of_trapped  : runLoop env.toEnv p fuel xs.s = .trapped c → runLoopX env p fuel xs = .trapped c
+theorem runLoopX_toX : runLoopX env.toX p fuel xs = (runLoop env p fuel xs.s).toX
+```
+
+- `Clif.run` is unchanged. A step whose call (`call`, `call_indirect`, `return_call`,
+  `try_call`, `try_call_indirect`) reaches an extern that ends `unwound e mem` raises `e`
+  (`raiseAt?`, mirroring `step` up to the extern's outcome); every other step is `step
+  env.toEnv` (`liftStep` keeps `tries` aligned with the callers).
+- Raising at a `try_call` whose table catches `e` (`catch?`: items in order, `context`
+  skipped): the payload is bound to `freshValue + i` and the frame continues with the pending
+  `jump` to the handler, `exnN ↦ freshValue + N` (`catchIn`, `tryHandler`: the normal return's
+  two-step shape). Otherwise the frame is left (slots freed, `Mem.leave`) and the exception
+  propagates through the suspended callers (`unwindFrom`): a caller suspended at a `try_call`
+  of a program function consults its table (`XState.tries`), a caller at a plain call is left;
+  with no frame left the run ends `unwound e mem`.
+- Tag matching and the payload belong to the embedder (Cranelift's `try_call` docs):
+  Cranelift's runner (`__cranelift_throw`) catches tag `t` by `tag t` and `default`; cg_clif
+  under Rust's personality is the S10d contract (`docs/plans/unwinding.md`).
+- Non-vacuity: `Clif.UnwindWitness.caught` (an exception from an extern called by a plain call
+  in `%mid` propagates into `%main`'s `try_call`, skips `tag3`, is caught by `tag7`),
+  `uncaught` (ends `unwound`), `old_stuck` (`Clif.run` is `stuck` there).
+- **Oracle** (`scripts/clif-unwind-native.sh`): the Cranelift interpreter has no exceptions,
+  so `rust/crates/clif-throw-native` runs the fixtures natively on the host (Cranelift's JIT,
+  exception tables and `__cranelift_throw`, the runner code of `cranelift-filetests`, plus the
+  `__fv_entry_fp` hostcall for the frame walk's entry frame) and `clif-filetest --unwind` runs
+  them through `Clif.runX` (the `%throw` stub dropped and modelled as the extern raising `tag`
+  with payload `[p1, p2]`). `FVTest/Clif/fixtures/unwind/try_call_unwind.clif` (direct catch,
+  handler order with `default`, propagation through plain calls and through non-matching
+  `try_call`s, stack slots of left frames, a handler that throws again, `try_call_indirect` of a
+  program function and of the thrower, normal returns): native 17/17, `Clif.runX` 17/17,
+  agree 17, disagree 0.
+
 ### `FV/Clif/Print.lean`, `FV/Clif/Parse.lean`
 
 - `Clif.print : Program → String`; `Function.print`; `Function.valueTypes`.
