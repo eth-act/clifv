@@ -385,7 +385,8 @@ registers, `RetRegsOk`, with the return types; `armRefinesT_of_actRet`), `E2E/Pa
 `InScopeIn`/`fnScopeInB`/`compileExe` are unchanged. Witnesses: `FVTest/E2E/FloatFinalT.lean`
 (`storeTypedB` of `fW`/`fMv`; `fBadStore`, a float store of an integer value, is rejected),
 `FVTest/E2E/FloatLinkT.lean` (`StoresTyped`, `TermIntPos`, `CompiledEitherT`, `fnScopeTB fW` and
-its consequences, `lowerScopeTB_of_lowerScopeB`). Open: the ten control families (FloatsC5);
+its consequences, `lowerScopeTB_of_lowerScopeB`). Open: the ten control families (FloatsC5; now
+proven, slice 5c: `typedRules_program`);
 `Link.compileExe_correctT` needs a typed port of the link induction (`LinkSys.Ok` has
 `subset : InSubset`, `compiled : CompiledEither`, and `LinkSys.Thm` fixes `us.map (·.2)` to
 x0, x1, …): a `LinkSysT` beside it (FV/E2E/LinkArmT.lean, LinkGoodT.lean, …) with `InSubsetT`,
@@ -430,6 +431,36 @@ typing of `select`/`store`/`bitcast`), regenerated `shpTabT`/`covTabT` with kern
 certificates (about 7 min, 3 GB each, as `shpTab`), the extern soundness over `CtxInvT`, the
 hand-checked call/`try_call`/`br_table` rules over `CtxInvT` (`IselShp{Call,Try,BrTable}`, about
 1k lines), and `iselCtlHypT`: several days of work.
+
+**Slice 5c (the ten typed control families, FloatsC5R).** `TypedRules` holds for the exported
+program: `E2E.typedRules_program` (`E2E/TypedRulesProg.lean`), so every `hT : TypedRules`
+premise of the typed final, dead-cleanup, world and scope theorems is discharged. The proofs are
+the integer ones (`IselCtl*`) over `CtxT`: `Proof/IselCtlUnmatchTI.lean` (`termUnmatchableT_program`,
+`branchExcludedUnmatchableT_program`, `tryUnmatchableT_program`, `tryIndUnmatchableT_program`:
+format arguments only), `Proof/IselCtlTermTI.lean` (`trap_ruleOkT`, `ret_ruleOkT`: `return` pins
+value `x` to the next return register of `valClassOf ctx x`, `mapM_valueRegT`, `retRegsC_eq`,
+class-general `rets` over `argPairsC`; `lowerTermRulesCorrectT_program`),
+`Proof/IselCtlCallTI.lean` (`call_bl_ruleOkT`, `call_got_ruleOkT`, `call_ind_ruleOkT`: arguments
+and callee integer vregs by `CtxInvT.intOps` (`mapM_valueRegTI`), integer returns by
+`CtxT.resTysE` (`CtxT.call_retClasses`); `callRulesCorrectTP_program`, `indRulesCorrectTP_program`
+and the unpinned `callRulesCorrectT_program`, `indRulesCorrectT_program`),
+`Proof/IselCtlBranchTI.lean` (`brif`, `tbnz`, `tbz`, `jump`, `br_table` on `TermIntPos`
+operands: `is_nonzero_cmp_okT`, `ExtOut.semT`, the `band` operand by `CtxInvT.intOps`;
+`branchRulesCorrectT_program`), `Proof/IselCtlTryTI.lean` (`try_bl_ruleOkT`, `try_got_ruleOkT`,
+`try_ind_ruleOkT` on `TermIntPos` arguments; `tryRulesCorrectTP_program`,
+`tryIndRulesCorrectTP_program`, `tryRulesCorrectT_program`, `tryIndRulesCorrectT_program`).
+Witnesses `FVTest/Backend/FloatCtlRulesT.lean`: typed, non-integer contexts of `fCtl` (the
+terminator families give `TermCallsT`; `return v0` of an `f64` is in v0), `fCall` (the `call`
+and `call_indirect` roots fire on subset-E calls between float values) and `fTry` (an integer
+`try_call` with `TermIntPos` in a function with float values). With slice 5a's widened
+`ctlCheck`, the float-signature witness `fMv` (float parameters, return and block parameters) now
+has `CompiledT`/`CompiledAT` and `FormsCovered` (`FVTest/E2E/FloatFinalT.lean`: `compiledT_mv`,
+`compiledAT_mv`, `formsCovered_mv`); `regLevelCorrect_backend_ex` is unchanged (its `Args`/`Rets`
+steps run on class-general pairs since slice 5a). `entryClassOkB` is not in the typed scope: no
+theorem of the typed chain consumes it (a mismatched entry `Args` pair already fails `ctlCheck`
+and so `lowerRFunc`); it becomes a premise with the typed control-shape analysis (`iselCtlHypT`,
+slice 5b follow-up). Open: `SpillCtlCheck`/`DeadCleanupCtl` rebuild needs `IselShpTotal`
+(about 7.7 GB).
 
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
