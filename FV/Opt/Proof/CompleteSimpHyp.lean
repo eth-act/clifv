@@ -13,16 +13,11 @@ abstract, so a rule set can only change it through `make`):
 
 * `Opt.SimpRulesOk rules`: given a set `R` of values closed under the operands of their nodes
   (`enodes`, every node a well-typed pure node), and a `make` that, for a well-typed pure node over
-  `R`, returns a value of the node's type that is in `R` *or* in an exceptional set `X`, the rules
-  call `make` only on well-typed pure nodes over `R`, and every candidate is the root itself or a
-  value of `R` of the root's type.
-  - The driver instantiates `R` with the values it can place where the root is defined (never a
-    later leaf of the block, a removed value, or the root itself), and `X` with the root of the
-    current source statement: `Opt.pureBest` pre-inserts the hash-consing entry `inst ↦ v`, so
-    `make inst` returns `v` at every nesting depth. A rule set that used such a value as a
-    candidate or operand at a deeper level could make `v` a candidate of a nested node and leave
-    a hash-consing entry to `v` after `v` is replaced (then a later statement's renaming has a
-    chain, which `simpOk` rejects).
+  `R`, returns a value of the node's type in `R`, the rules call `make` only on well-typed pure
+  nodes over `R`, and every candidate is the root itself or a value of `R` of the root's type.
+  The driver instantiates `R` with the values it can place where the root is defined (never a
+  later leaf of the block, a removed value, or the root itself). The root is not in the
+  hash-consing table while its rules run (`Opt.pureBest`), so `make` never returns it.
 * `Opt.SkelRulesOk skel`: the same closure for `simplify_skeleton`, and each candidate the
   driver applies (`Opt.SkelCandOk`) mentions only `R` values; replacement instructions are not
   pure and read no link-time symbol; a new terminator is a branch whose block calls go to blocks
@@ -30,14 +25,8 @@ abstract, so a rule set can only change it through `make`):
   `br_table` index).
 
 Discharged here: `SkelRulesOk` for the hand rules (`HandRules.simplifySkeleton` has no rules),
-`SimpRulesOk` for the empty rule set (`Opt.noRules`, non-vacuity). **Open:** `SimpRulesOk` for
-`HandRules.simplify` (and both obligations for the exported Cranelift rules). The hand rules use
-`make` results as operands (`mkConst`) and as candidates (commutation, reassociation), so they
-satisfy the obligation only together with driver facts the generic statement cannot see (the
-exceptional value is only ever returned for the current statement's own node, hand-made binary
-nodes have a constant right operand so commutation never fires on them, reassociation descends an
-acyclic graph). The clean fix is in the pass: `Opt.pureBest` without the pre-inserted entry
-`inst ↦ v` (then `X` is empty and the obligation is provable rule by rule).
+`SimpRulesOk` for the empty rule set (`Opt.noRules`, non-vacuity). `SimpRulesOk` for
+`HandRules.simplify`: `Opt.simpRulesOk_hand` (`FV/Opt/Proof/CompleteSimpHand.lean`).
 -/
 
 namespace Opt
@@ -72,9 +61,8 @@ def MakeIn {σ : Type} (make : σ → Inst → ValueId × σ) (typeOf : σ → V
 /-- **The completeness obligation of a `simplify` rule set** (module doc). -/
 def SimpRulesOk (rules : SimplifyFn) : Prop :=
   ∀ {σ : Type} (enodes : σ → ValueId → List Inst) (typeOf : σ → ValueId → Option Ty)
-    (make : σ → Inst → ValueId × σ) (fn : Function) (P : σ → Prop) (R : σ → ValueId → Prop)
-    (X : ValueId → Prop),
-    GraphIn enodes typeOf fn P R → MakeIn make typeOf fn P R X →
+    (make : σ → Inst → ValueId × σ) (fn : Function) (P : σ → Prop) (R : σ → ValueId → Prop),
+    GraphIn enodes typeOf fn P R → MakeIn make typeOf fn P R (fun _ => False) →
     ∀ st v cands names st', P st →
       (∀ n ∈ enodes st v, NodeIn (typeOf st) fn (R st) (typeOf st v) n) →
       rules enodes typeOf make st v = .ok (cands, names, st') →
@@ -123,7 +111,7 @@ def SkelRulesOk (skel : SkeletonFn) : Prop :=
 def noRules : SimplifyFn := fun _ _ _ st _ => .ok ([], [], st)
 
 theorem simpRulesOk_noRules : SimpRulesOk noRules := by
-  intro σ enodes typeOf make fn P R X _ _ st v cands names st' hP _ h
+  intro σ enodes typeOf make fn P R _ _ st v cands names st' hP _ h
   simp only [noRules, Except.ok.injEq, Prod.mk.injEq] at h
   obtain ⟨rfl, -, rfl⟩ := h
   exact ⟨hP, ⟨fun _ h => h, fun _ _ h => h⟩, fun c hc => by cases hc⟩

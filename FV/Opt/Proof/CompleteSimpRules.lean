@@ -8,7 +8,8 @@ of the state does not change, the graph only grows by fresh well-typed nodes ove
 and (under `Opt.SimpRulesOk`/`Opt.SkelRulesOk`) every candidate is placeable or the root
 (`opt_spec`, `runSkel_ok`). `RInv` is the state invariant of this phase: the `materialize` facts,
 no partial node, hash-consing entries mapping to placeable values or to the exceptional values `X`
-(the current statement's value, which `Opt.pureBest` pre-inserts), and e-classes of one type.
+(`XN` restricts their nodes; the theorems here take `XN` empty: the pass never maps a node to the
+statement being simplified while its rules run), and e-classes of one type.
 -/
 
 namespace Opt
@@ -332,13 +333,14 @@ theorem chooseBest_rinv {st : SState} (h : RInv f V B X XN st) {v : ValueId}
       · exact ⟨h1.1.known, by rw [h1.2, hbt], fun n hn y hy => (h1.1.defs n hn y hy)⟩
 
 /-- **The rewriting of a value** (`optimizeAt`) under `SimpRulesOk`: the invariant is kept, the
-state grows, and the result is the root or a placeable value of its type. -/
+state grows, and the result is the root or a placeable value of its type. The root may be an
+exceptional value (`X`: the statement being simplified); no hash-consing entry maps to one. -/
 theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst → Bool) :
-    ∀ d st v, RInv f V B X XN st → st.known v = true → (Placed st B v ∨ X v) →
+    ∀ d st v, RInv f V B X (fun _ => False) st → st.known v = true → (Placed st B v ∨ X v) →
       (∀ n, st.defs.get? v = some n → ∀ y ∈ operands n, Placed st B y) →
       (∀ n ∈ SState.enodes st v,
         NodeIn (fun y => st.types.get? y) f (Placed st B) (st.types.get? v) n) →
-      RInv f V B X XN (optimizeAt rules allowed d st v).2 ∧
+      RInv f V B X (fun _ => False) (optimizeAt rules allowed d st v).2 ∧
         RStep B st (optimizeAt rules allowed d st v).2 ∧
         (CInv B st → CInv B (optimizeAt rules allowed d st v).2) ∧
         ((optimizeAt rules allowed d st v).1 = v ∨
@@ -351,11 +353,12 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
   | succ d ih =>
     intro st v h hvk hv hvd hen
     rw [optimizeAt_succ]
-    let P : SState → Prop := fun st' => RInv f V B X XN st' ∧ RStep B st st' ∧ (CInv B st → CInv B st')
+    let P : SState → Prop := fun st' =>
+      RInv f V B X (fun _ => False) st' ∧ RStep B st st' ∧ (CInv B st → CInv B st')
     have hG : GraphIn SState.enodes (fun st x => st.types.get? x) f P (fun st x => Placed st B x) :=
       fun st1 x hP hx => enodes_nodeIn hP.1 hx.defs hx.alts
     have hM : MakeIn (optMake rules allowed d) (fun st x => st.types.get? x) f P
-        (fun st x => Placed st B x) X := by
+        (fun st x => Placed st B x) (fun _ => False) := by
       intro st1 n hP hn
       obtain ⟨hI1, hS1, hC1⟩ := hP
       have hnok : st1.nodeOk n = true := by
@@ -366,7 +369,8 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
       cases hmemo : st1.memo.get? n with
       | some w =>
         obtain ⟨e1, e2, e3⟩ := hI1.memo n w hmemo
-        exact ⟨⟨hI1, hS1, hC1⟩, ⟨fun _ h => h, fun _ _ h => h⟩, e1.imp id And.left, e3⟩
+        exact ⟨⟨hI1, hS1, hC1⟩, ⟨fun _ h => h, fun _ _ h => h⟩,
+          .inl (e1.resolve_right (fun h => h.2)), e3⟩
       | none =>
         have hsolid : st1.solidNode n = true := by
           simp only [SState.solidNode, SState.solid, SState.typedNode, Bool.and_eq_true,
@@ -404,12 +408,12 @@ theorem opt_spec {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Inst �
     | ok res =>
       obtain ⟨cands, names, st1⟩ := res
       obtain ⟨⟨hI1, hS1, hC1⟩, -, hc⟩ := hR SState.enodes (fun st x => st.types.get? x)
-        (optMake rules allowed d) f P (fun st x => Placed st B x) X hG hM st v cands names st1 hP0
+        (optMake rules allowed d) f P (fun st x => Placed st B x) hG hM st v cands names st1 hP0
         hen hr
       simp only
       let st1' : SState := { st1 with stats := { st1.stats with fired :=
         (names.foldl (fun m n => m.insert n ((m.get? n).getD 0 + 1)) st1.stats.fired) } }
-      have hI1' : RInv f V B X XN st1' := hI1.congr rfl rfl rfl rfl rfl rfl rfl rfl
+      have hI1' : RInv f V B X (fun _ => False) st1' := hI1.congr rfl rfl rfl rfl rfl rfl rfl rfl
       have hS1' : RStep B st1 st1' := RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
       have hvk1 : st1'.known v = true := hS1'.known (hS1.known hvk)
       have hvd1 : ∀ n, st1'.defs.get? v = some n → ∀ y ∈ operands n, Placed st1' B y := by
