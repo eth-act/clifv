@@ -345,9 +345,17 @@ decided premises `arityOkB`, `tryArgClassOk`, `resClassOkB`, `ctlSpillB`, `forms
 `store`/`bitcast` between integer parameters and return) has `InSubsetT`, `CompiledT`,
 `CompiledAT` (also via `CompiledAT.of_lowerT` with the spill allocation) and `FormsCovered`;
 `fMv` (float parameters/return) has `InSubsetT`, but `lowerRFunc`'s `ctlCheck` rejects it until
-slice 5 widens `ctlInstOk`. Open: `TypedRules` (FloatsC7F: integer `lower` and memory roots;
-FloatsC5: control roots), the two-world entry `entry_step2T`, cleanup/world/link consumers;
-`functionET` still excludes float calls and the S11f arithmetic.
+slice 5 widens `ctlInstOk`. The dead-cleanup route (`E2E/DeadCleanupT.lean`):
+`CompiledCleanupT`/`AT`, `backend_correct_of_rules_cleanup_exT` (`prune_correct`), at `valueSem`
+(`memRefinesFP_valueSem`) `backend_correct_m4_cleanup_exT`, `backend_correct_final_cleanup_exT`/
+`T`, integer specialization `backend_correct_final_cleanup_ofT`; witness `compiledCleanupT_w`.
+Two-world entry: `entry_step2T`. Open: `TypedRules` (FloatsC7F: `LowerRulesCorrectTI`,
+`MemRulesCorrectRTI` proven on `agent/floats-c7f`; `NonEUnmatchableT` is false as stated — the
+integer store roots 1064–1067 dispatch on the stored value's type, so a float-typed `store` of an
+integer value matches them — and needs the premise `StoreTyped ctx inst` (float stores store
+float values) threaded from a per-function decider; FloatsC5: control roots), the typed
+world/non-interference and link consumers; `functionET` still excludes float calls and the S11f
+arithmetic.
 
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
