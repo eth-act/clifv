@@ -144,6 +144,7 @@ def BranchShapeOkTy (p : Program) (r : Rule) : Prop :=
 
 /-! ## `return`, `trap` -/
 
+set_option maxHeartbeats 800000 in
 /-- **`trap`** (`rule_lower_2237`): `udf`. -/
 theorem trap_shapeTy {p : Program} (hp : Data p) : LowerTermShapeOkTy p rule_lower_2237 := by
   intro f ctx _ ti t data hrt hd hi cfg hc m n st tr env' s1 out st' tr' hm hn hvb _ hmatch heval
@@ -493,6 +494,7 @@ theorem termShape_runTermTy {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ct
       exact ret_shapeTy data_program f ctx hctx ti t data hrt hd hi {} rfl m n st #[] env' s1 out
         st' tr2 hm hn hvb hfirst hmatch heval
 
+set_option maxHeartbeats 800000 in
 /-- **`lower_branch` on a branch** (float-capable context, integer-position operands) appends
 code whose last instruction targets the branch's labels. -/
 theorem branchShape_runTermTy {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {ti : Nat}
@@ -523,6 +525,7 @@ theorem branchShape_runTermTy {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f 
     · exact brTable_shapeTy data_program f ctx hctx ti t data targets hd hi hbt hip htl {} rfl m n st
         #[] env' s1 out st' tr2 hm hn hvb hfirst hmatch heval
 
+set_option maxHeartbeats 800000 in
 /-- **`lower_branch` on a `jump`** appends exactly the `jump` (in any context). -/
 theorem jumpShape_runTermTy {ctx : Ctx} {ti : Nat} {d : Clif.BlockCall} {data : V}
     {targets : List Label} (hd : termData (.jump d) = .ok data)
