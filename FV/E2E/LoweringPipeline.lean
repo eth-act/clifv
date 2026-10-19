@@ -4,16 +4,20 @@ namespace E2E.LinkCheck.LoweringPipeline
 open Backend
 
 theorem pipe_legacy (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) :
-    pipeWithLowering lowerFunction id f k base o = pipe f k base o := rfl
+    pipeWithLowering lowerFunction id f k base o = pipe f k base o := by
+  simp only [pipe, pipeWithLowering, Backend.Stock.D0.defaultLower_eq_legacy]
 
 theorem pipeT_legacy (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) :
-    pipeTWithLowering lowerFunction id f k base o = pipeT f k base o := rfl
+    pipeTWithLowering lowerFunction id f k base o = pipeT f k base o := by
+  simp only [pipeT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy]
 
 theorem pipeCleanup_legacy (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) :
-    pipeWithLowering lowerFunction DeadCleanup.prune f k base o = pipeCleanup f k base o := rfl
+    pipeWithLowering lowerFunction DeadCleanup.prune f k base o = pipeCleanup f k base o := by
+  simp only [pipeCleanup, pipeWithLowering, Backend.Stock.D0.defaultLower_eq_legacy]
 
 theorem pipeCleanupT_legacy (f : Clif.Function) (k : Nat) (base : BitVec 64) (o : Lean.Json) :
-    pipeTWithLowering lowerFunction DeadCleanup.prune f k base o = pipeCleanupT f k base o := rfl
+    pipeTWithLowering lowerFunction DeadCleanup.prune f k base o = pipeCleanupT f k base o := by
+  simp only [pipeCleanupT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy]
 
 /-- Pointwise equality preserves successes, errors and all artifact fields, for
 arbitrary allocator answers and input settings. No successful-output test is used. -/
@@ -42,7 +46,7 @@ theorem legacy_consumer_witness (k : Nat) (base : BitVec 64) (o : Lean.Json) :
     pipeWithLowering lowerFunction DeadCleanup.prune source k base o = pipeCleanup source k base o ∧
     pipeTWithLowering lowerFunction DeadCleanup.prune source k base o = pipeCleanupT source k base o ∧
     (∀ f, lowerFunction f = lowerFunction f) := by
-  exact ⟨rfl, rfl, rfl, rfl, fun _ => rfl⟩
+  exact ⟨pipe_legacy .., pipeT_legacy .., pipeCleanup_legacy .., pipeCleanupT_legacy .., fun _ => rfl⟩
 
 #print axioms pipe_legacy
 #print axioms pipeT_legacy

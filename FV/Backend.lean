@@ -1,5 +1,7 @@
 import FV.Backend.MInst
 import FV.Backend.Isel
+import FV.Backend.InputScope
+import FV.Backend.Lowering.StockD0
 import FV.Backend.StackAlloc
 import FV.Backend.Regalloc
 import FV.Backend.AllocReady
@@ -62,12 +64,12 @@ def Allocator.ofName? (n : String) : IO (Option Allocator) := do
   | "regalloc2-small" => pure (some (.regalloc2 (← defaultRegallocBin) smallEnv))
   | _ => pure none
 
-/-- `lowerFunction`, then (if `verify`) M7's lowering validator (`lowerCheck`, whose acceptance
+/-- The proved D0 Stock dispatcher with legacy fallback, then (if `verify`) M7's lowering validator (`lowerCheck`, whose acceptance
 the end-to-end theorem assumes, `docs/contracts/e2e.md`); a rejection is a compile error.
 Functions outside the theorem (`unverifiedReason?`) are not validated (they are reported as
 unverified instead). -/
 def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
-  let vc ← lowerFunction f
+  let vc ← Stock.D0.defaultLower f
   if verify && !Proof.Driver.lowerCheck f vc then
     throw "lowering rejected by the M7 lowering validator (lowerCheck)"
   pure vc
@@ -76,18 +78,6 @@ def lowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
 every allocator. Cleanup preserves classes and rule history. -/
 def lowerForAllocation (f : Clif.Function) (verify deadCleanup : Bool) : Except String VCode :=
   (lowerChecked f verify).map fun vc => if deadCleanup then DeadCleanup.prune vc else vc
-
-/-- The signatures of `f` and of every callee are ones the end-to-end theorem covers
-(`sigAbiOk`, `E2E.InSubset.abiSigs`): `normal` parameters plus at most one `sret` pointer (in
-x8, returned in x0), `normal` returns. Other special-purpose parameters (`vmctx`, `sarg`) are
-compiled but flagged unverified. -/
-def abiSigs (f : Clif.Function) : Bool :=
-  sigAbiOk f.sig && f.externs.all (sigAbiOk ·.2.sig)
-
-/-- The theorem's conditions that do not need the rest of the file (`E2E.InSubset.subsetE`,
-`E2E.InSubset.abiSigs`, `E2E.InSubset.indSigs`). -/
-def verifiable (f : Clif.Function) : Bool :=
-  Compile.functionE f && abiSigs f && indSigsOk f
 
 /-- The lowering validator's size measure: instructions (statements and terminators) × values.
 `lowerCheck` re-runs the lowering recording every statement's states (their vreg class arrays
@@ -179,20 +169,32 @@ def unverifiedReason? (f : Clif.Function) : Option String :=
     some "indirect call with stack-passed arguments or a special-purpose parameter (outside backend_correct)"
   else none
 
-/-- Compile every function of a parsed `.clif` file: lower each function, allocate all of
+/- Compile every function of a parsed `.clif` file: lower each function, allocate all of
 them with `alloc` (one batch), emit. A function that calls a function of the file that is not
 compiled is not compiled either (its object code would reference an undefined symbol).
 `preUnverified` marks functions already known to be outside the theorem before this check
 (`Opt.Legalize128.parsedFile128`: legalised `i128` functions the validator `Opt.Legal.check`
 rejects, "i128 legalized (outside backend_correct: …)"); they are not lowering-validated. -/
-def compileFileWith {m : Type → Type} [Monad m]
-    (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
+/-- Shared file orchestration for a lowering route. The allocator receives the
+complete lowered payload: callers can retain per-successor arguments or other
+lowering data without projecting it to the legacy `VCode` representation.
+`rulesOf` is used only for reporting rules after successful emission.
+
+This function supplies no correctness certificate for a new lowering route.
+The route must honor `verify`, or mark its inputs in `preUnverified`; Stock's
+experimental replay checks alone do not establish the source-to-machine theorem.
+The production entry point `compileFileWith` below instantiates the proved
+D0/legacy checked lowering and leaves all allocation and artifact reporting unchanged. -/
+def compileFileWithLowering {code : Type} {m : Type → Type} [Monad m]
+    (lower : Clif.Function → Bool → Bool → Except String code)
+    (rulesOf : code → Array Isle.RuleId)
+    (alloc : Array code → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
     (preUnverified : List (String × String) := []) (deadCleanup : Bool := true) : m FileAsm := do
   -- lowering (per function, in file order)
-  let lowered : Array (String × Except String (Clif.Function × VCode)) :=
+  let lowered : Array (String × Except String (Clif.Function × code)) :=
     pf.funcs.toArray.map fun p => (p.name, match p.func with
       | .error e => .error e.toString
-      | .ok f => (lowerForAllocation f
+      | .ok f => (lower f
           ((unverifiedReason? f).isSome || (preUnverified.lookup p.name).isSome ||
             (overBudget? f).isSome).not
           deadCleanup).map (f, ·))
@@ -217,7 +219,7 @@ def compileFileWith {m : Type → Type} [Monad m]
         done := done.push (a, callees f)
         unwind := unwind.push (a.name, rows)
         if let some s := sites then lsda := lsda.push (a.name, s)
-        rules := vc.rulesFired.foldl (·.insert ·) rules
+        rules := (rulesOf vc).foldl (·.insert ·) rules
       | .error e => bad := bad.push (name, e)
   -- propagate to callers (fixpoint; at most one round per function)
   for _ in [0:done.size] do
@@ -244,6 +246,14 @@ def compileFileWith {m : Type → Type} [Monad m]
          rules := rules.toArray.qsort (· < ·) |>.toList,
          unwind := unwind.toList.filter fun (n, _) => funcs.any (·.name == n),
          lsda := lsda.toList.filter fun (n, _) => funcs.any (·.name == n) }
+
+/-- Production instance of the shared file pipeline. The allocator still
+receives exactly the `VCode` from `lowerForAllocation`, with its existing cleanup,
+verification-budget, errors, caller propagation and artifact metadata behavior. -/
+def compileFileWith {m : Type → Type} [Monad m]
+    (alloc : Array VCode → m (Array (Except String AFunc))) (pf : Clif.ParsedFile)
+    (preUnverified : List (String × String) := []) (deadCleanup : Bool := true) : m FileAsm :=
+  compileFileWithLowering lowerForAllocation VCode.rulesFired alloc pf preUnverified deadCleanup
 
 /-- `compileFileWith` the stack-slot allocator (pure). -/
 def compileFile (pf : Clif.ParsedFile) (deadCleanup : Bool := true) : FileAsm :=
