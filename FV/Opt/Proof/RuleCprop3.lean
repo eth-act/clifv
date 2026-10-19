@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.KernelBV
 
 /-!
 # `opts/cprop.isle` (part 3): proven `simplify` rules (R0)
@@ -46,41 +47,64 @@ theorem ofInt_byte {w : Nat} (hw : 8 ≤ w) (x : BitVec w) (k : Nat) :
   rw [show ((x.toNat : Int) / 2 ^ k % 256) = ((x.toNat / 2 ^ k % 256 : Nat) : Int) by rw [Int.natCast_emod, Int.natCast_ediv, Int.natCast_pow]; rfl,
     BitVec.ofInt_natCast, ofNat_byte hw]
 
+/-- The Nat fold of `Rust.bswap` over `range k`, bitwise: bit `j` is bit `j % 8` of byte
+`k - 1 - j / 8` of `N`, below `8 * k`. -/
+private theorem rbswap_fold_testBit (N : Nat) : ∀ k j,
+    ((List.range k).foldl (fun acc i => acc * 256 + N / 2 ^ (8 * i) % 256) 0).testBit j =
+      (decide (j < 8 * k) && N.testBit (8 * (k - 1 - j / 8) + j % 8))
+  | 0, j => by simp
+  | k + 1, j => by
+    rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil, Nat.mul_comm,
+      show (256 : Nat) = 2 ^ 8 from rfl, Nat.testBit_two_pow_mul_add _ (Nat.mod_lt _ (by decide))]
+    by_cases h : j < 8
+    · have h1 : 8 * (k + 1 - 1 - j / 8) + j % 8 = j + 8 * k := by omega
+      simp only [h, ↓reduceIte, h1, show (256 : Nat) = 2 ^ 8 from rfl, Nat.testBit_mod_two_pow,
+        Nat.testBit_div_two_pow, show j < 8 * (k + 1) by omega, decide_true, Bool.true_and]
+    · have h1 : 8 * (k - 1 - (j - 8) / 8) + (j - 8) % 8 = 8 * (k + 1 - 1 - j / 8) + j % 8 := by omega
+      simp only [h, ↓reduceIte]
+      rw [rbswap_fold_testBit N k (j - 8), h1]
+      by_cases h2 : j < 8 * (k + 1)
+      · simp [h2, show j - 8 < 8 * k by omega]
+      · simp [h2, show ¬ j - 8 < 8 * k by omega]
+
+/-- The `Int` fold of `Rust.bswap` on a natural number is the `Nat` fold. -/
+private theorem rbswap_fold_natCast (N : Nat) : ∀ k,
+    (List.range k).foldl (fun (acc : Int) i => acc * 256 + (N : Int) / 2 ^ (8 * i) % 256) 0 =
+      (((List.range k).foldl (fun acc i => acc * 256 + N / 2 ^ (8 * i) % 256) 0 : Nat) : Int)
+  | 0 => by simp
+  | k + 1 => by
+    rw [List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil, List.foldl_append,
+      List.foldl_cons, List.foldl_nil, rbswap_fold_natCast N k]
+    rw [Int.natCast_add, Int.natCast_mul, Int.natCast_emod, Int.natCast_ediv, Int.natCast_pow]
+    rfl
+
+/-- `Rust.bswap n` of a presented `8 * n`-bit immediate is `Sem.bswap` (bitwise:
+`rbswap_fold_testBit`, `getLsbD_bswap`). -/
+private theorem rbswap_spec {w : Nat} (n : Nat) (hn : w = 8 * n) (h64 : w ≤ 64) (x : BitVec w) :
+    BitVec.ofInt w (Rust.asI64 (Rust.bswap n (x.toNat : Int))) = Sem.bswap x := by
+  rw [ofInt_asI64 h64]
+  simp only [Rust.bswap, asU64_natCast_toNat h64]
+  rw [Nat.mod_eq_of_lt (hn ▸ x.isLt), rbswap_fold_natCast, BitVec.ofInt_natCast]
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  rw [BitVec.getLsbD_ofNat, rbswap_fold_testBit, getLsbD_bswap (by omega),
+    show w / 8 = n by omega, ← BitVec.testBit_toNat]
+  simp [hj, show j < 8 * n by omega]
+
 /-- `u64_bswap16` of a presented `i16` immediate is `Sem.bswap`. -/
 theorem bswap16_spec (x : BitVec 16) :
-    BitVec.ofInt 16 (Rust.asI64 (Rust.bswap 2 (x.toNat : Int))) = Sem.bswap x := by
-  rw [ofInt_asI64 (by decide)]
-  simp only [Rust.bswap, asU64_natCast_toNat (by decide : (16 : Nat) ≤ 64)]
-  simp only [List.range_succ, List.range_zero, List.foldl, List.nil_append, List.cons_append,
-    Nat.reduceMul, Nat.mod_eq_of_lt x.isLt]
-  simp only [BitVec.ofInt_add, BitVec.ofInt_mul, ofInt_byte (by decide : 8 ≤ 16)]
-  simp only [Sem.bswap, List.range_succ, List.range_zero, List.foldl, List.nil_append, List.cons_append,
-    Nat.reduceDiv, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub]
-  bv_decide
+    BitVec.ofInt 16 (Rust.asI64 (Rust.bswap 2 (x.toNat : Int))) = Sem.bswap x :=
+  rbswap_spec 2 rfl (by decide) x
 
 /-- `u64_bswap32` of a presented `i32` immediate is `Sem.bswap`. -/
 theorem bswap32_spec (x : BitVec 32) :
-    BitVec.ofInt 32 (Rust.asI64 (Rust.bswap 4 (x.toNat : Int))) = Sem.bswap x := by
-  rw [ofInt_asI64 (by decide)]
-  simp only [Rust.bswap, asU64_natCast_toNat (by decide : (32 : Nat) ≤ 64)]
-  simp only [List.range_succ, List.range_zero, List.foldl, List.nil_append, List.cons_append,
-    Nat.reduceMul, Nat.mod_eq_of_lt x.isLt]
-  simp only [BitVec.ofInt_add, BitVec.ofInt_mul, ofInt_byte (by decide : 8 ≤ 32)]
-  simp only [Sem.bswap, List.range_succ, List.range_zero, List.foldl, List.nil_append, List.cons_append,
-    Nat.reduceDiv, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub]
-  bv_decide
+    BitVec.ofInt 32 (Rust.asI64 (Rust.bswap 4 (x.toNat : Int))) = Sem.bswap x :=
+  rbswap_spec 4 rfl (by decide) x
 
 /-- `u64_bswap64` of a presented `i64` immediate is `Sem.bswap`. -/
 theorem bswap64_spec (x : BitVec 64) :
-    BitVec.ofInt 64 (Rust.asI64 (Rust.bswap 8 (x.toNat : Int))) = Sem.bswap x := by
-  rw [ofInt_asI64 (by decide)]
-  simp only [Rust.bswap, asU64_natCast_toNat (by decide : (64 : Nat) ≤ 64)]
-  simp only [List.range_succ, List.range_zero, List.foldl, List.nil_append, List.cons_append,
-    Nat.reduceMul, Nat.mod_eq_of_lt x.isLt]
-  simp only [BitVec.ofInt_add, BitVec.ofInt_mul, ofInt_byte (by decide : 8 ≤ 64)]
-  simp only [Sem.bswap, List.range_succ, List.range_zero, List.foldl, List.nil_append, List.cons_append,
-    Nat.reduceDiv, Nat.reduceMul, Nat.reduceAdd, Nat.reduceSub]
-  bv_decide
+    BitVec.ofInt 64 (Rust.asI64 (Rust.bswap 8 (x.toNat : Int))) = Sem.bswap x :=
+  rbswap_spec 8 rfl (by decide) x
 
 /-- `rule_bits` with the `u64_bswap*` folds as `Sem.bswap` (`bswap16_spec` …). -/
 macro "rule_bits_bswap" : tactic => `(tactic| (
@@ -94,7 +118,7 @@ macro "rule_bits_bswap" : tactic => `(tactic| (
     | (first | apply some_val_congr | apply val_congr | skip
        opt_cases_ty <;> opt_widths <;> (try sem_simp) <;>
          (try simp only [bswap16_spec, bswap32_spec, bswap64_spec] at *) <;>
-         first | rfl | bv_decide (config := { timeout := 120 }))))
+         first | rfl | kbv)))
 
 set_option hygiene false in
 /-- `rule_auto` with `rule_bits_bswap`. -/
