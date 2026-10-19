@@ -1,0 +1,44 @@
+{
+  "utc": "2026-10-17T14:11:43.556345+00:00",
+  "pr": 246,
+  "commit": "a071e715d1feea0266c86c3b46d5cb96db885c91",
+  "success": true,
+  "expected_and_actual_union_axioms_match": true,
+  "expected_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "actual_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "warnings": [],
+  "root_count": 336,
+  "source_sha256": "26ac8a9bbb00d269be4521519699084725cf3029a0563642b0dde58a9eef11e9",
+  "file_path": "/home/lee/clifv/.worktrees/stock-delivery-gates/DeliveryAudit.lean",
+  "theorem_name": "StockDeliveryAudit.pr246_bundle",
+  "one_bundled_lean_verify_call": true,
+  "raw_tool_result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\"\n  ],\n  \"warnings\": []\n}"
+      }
+    ],
+    "structuredContent": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "warnings": []
+    },
+    "isError": false
+  },
+  "normal_all_constants_count": 1640,
+  "actual_head_runtime_harness": "/tmp/stock-pr246-runtime-harness.json",
+  "source_script_manifest_rechecked": true,
+  "production": "legacy; full140 incomplete"
+}

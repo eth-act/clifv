@@ -1,0 +1,212 @@
+{
+  "utc": "2026-10-19T13:08:23.497136+00:00",
+  "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+  "branch": "agent/stock-d0-production",
+  "remote_backup_verified": true,
+  "base": "693b9b24d8ff32a9421800b6d4bddc50c0c02bc5",
+  "shipped": false,
+  "previous_turn": "Verified latest direct Statement build succeeded; no build restart needed",
+  "author_module_gate": {
+    "pid": 4094834,
+    "checked_so_far": 570,
+    "failed_so_far": 0,
+    "log": "/tmp/stock-d0-complete-witness-controller.log",
+    "scope": "narrow current D0 witnesses and changed consumers, not full FV/FVTest gate",
+    "total": 622,
+    "state": "running; scheduler resumed after resource-bounded independent runtime gates"
+  },
+  "heavy_ci": {
+    "run": 39242870268,
+    "conclusion": "",
+    "status": "in_progress",
+    "current_observation": {
+      "conclusion": "",
+      "status": "in_progress"
+    }
+  },
+  "old_theorem_declaration_audit": {
+    "utc": "2026-10-19T12:14:21.043774+00:00",
+    "base": "693b9b24d8ff32a9421800b6d4bddc50c0c02bc5",
+    "head": "296f7533648d7791cf7e140939ebd6609f8215fd",
+    "scope": "Exact source-level old theorem declaration preservation in changed existing FV modules; separate kernel compatibility proofs cover changed runtime definitions. Not an expression-hash equivalence claim.",
+    "rows": [
+      {
+        "path": "FV/Backend.lean",
+        "original_theorem_statements_preserved": 0
+      },
+      {
+        "path": "FV/E2E/DeadCleanupLinkCheck.lean",
+        "original_theorem_statements_preserved": 11
+      },
+      {
+        "path": "FV/E2E/DeadCleanupLinkScope.lean",
+        "original_theorem_statements_preserved": 12
+      },
+      {
+        "path": "FV/E2E/LinkCheck.lean",
+        "original_theorem_statements_preserved": 61
+      },
+      {
+        "path": "FV/E2E/LinkScope.lean",
+        "original_theorem_statements_preserved": 22
+      },
+      {
+        "path": "FV/E2E/Statement.lean",
+        "original_theorem_statements_preserved": 15
+      },
+      {
+        "path": "FV/Link/DeadCleanupLayoutFacts.lean",
+        "original_theorem_statements_preserved": 5
+      },
+      {
+        "path": "FV/Link/DeadCleanupTotal.lean",
+        "original_theorem_statements_preserved": 6
+      },
+      {
+        "path": "FV/Link/LayoutFacts.lean",
+        "original_theorem_statements_preserved": 25
+      },
+      {
+        "path": "FV/Link/Total.lean",
+        "original_theorem_statements_preserved": 6
+      }
+    ],
+    "total_preserved": 163,
+    "scope_definitions_verbatim": [
+      "Backend.abiSigs",
+      "Backend.verifiable"
+    ]
+  },
+  "remaining": [
+    "Finish actual D0 success/fallback/full-pipeline and changed-linker proof modules; repair errors without weakening old statements",
+    "Build default lean-link; run verified fv-demo (new mixed callable i32/i64 class) and survey, assert actual Stock routing on their decoded input, generate and kernel-check mixed program proof consumers",
+    "Restore source-matched heavy CI output through official Lake keys; full current FV/FVTest and E2E/new-root/all-constant audits",
+    "Fetch/reconcile current main; non-draft PR and author squash after per-PR gates; notify integrator actual merge; continue every original #140 obligation beyond D0"
+  ],
+  "actual_runtime_regression": {
+    "returncode": 0,
+    "log": "/tmp/stock-d0-actual-runtime.log",
+    "six_actual_stock_routes": true,
+    "both_e2e_cleanup_modes_and_arbitrary_bad_allocator_fallback": true,
+    "mixed_verified_file_metadata": true
+  },
+  "mcp_review": {
+    "theorem": "Backend.Stock.D0.Compiler.compileFileWith_eq_legacy",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": [],
+    "scope": "ONE bundled MCP primary root/source scan; bulk new-root and all-constant audits remain separate required gates",
+    "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b"
+  },
+  "heavy_input_parity": {
+    "current_head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+    "ci_source_parent": "5f4f9bf65638071f61db2de3ea27396b6cff8503",
+    "modules": 370,
+    "changed_heavy_inputs": [],
+    "lakefile_and_toolchain_identical": true,
+    "restore_requirement": "Official Lake input-key unstage plus local no-build validation remain mandatory."
+  },
+  "independent_gate_state": {
+    "utc": "2026-10-19T12:29:59.020137+00:00",
+    "state": "running",
+    "pid": 4120084,
+    "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+    "logs": {},
+    "phase": "tool-modules",
+    "log": "/tmp/stock-d0-independent-gates/tool-modules.log"
+  },
+  "scheduler_handoff": {
+    "original_scheduler": 4094834,
+    "state": "launching suspended while original kernels finished; independent8GiB scheduler runs alongside existing5GiB proof slot (that proof has since completed)",
+    "controller": 4120084,
+    "original_scheduler_resumed_in_finally": true
+  },
+  "future_class_requirement": "Full-code equality is a D0-only bridge. Different-code classes require direct Stock source-to-machine soundness and matching consumer adapters with old variants retained, plus transactional downstream fallback. Do not constrain the full goal to code-equal cases.",
+  "current_native_gates": {
+    "utc": "2026-10-19T12:50:53.166629+00:00",
+    "state": "independent_runtime_encoder_e2e_passed",
+    "pid": 4120084,
+    "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+    "logs": {
+      "tool-modules": {
+        "path": "/tmp/stock-d0-independent-gates/tool-modules.log",
+        "sha256": "a142dd3697cdd4b851a87f1d05beb30d84231bd44d7cb8c63a86dc7681412551"
+      },
+      "tools": {
+        "path": "/tmp/stock-d0-independent-gates/tools.log",
+        "sha256": "be2b85a57641c0a1278644faa15fa5834ff562c93880da549da0cbec652557cd"
+      },
+      "runtime": {
+        "path": "/tmp/stock-d0-independent-gates/runtime.log",
+        "sha256": "13aeac3fba217ef8fd55b6b69a22170bd755fc4aa14a9b63969426388a51d397"
+      },
+      "encoder": {
+        "path": "/tmp/stock-d0-independent-gates/encoder.log",
+        "sha256": "ca6678498048f884569c248d061b9718eea8b03fc83a4c375749a0597613b4dc"
+      },
+      "e2e": {
+        "path": "/tmp/stock-d0-independent-gates/e2e.log",
+        "sha256": "fc2c60fc403d97b41cb535bb62d1ea8f3797e132b82eb5bfcc53a63cc5a7dee4"
+      },
+      "legacy-e2e": {
+        "path": "/tmp/stock-d0-independent-gates/legacy-e2e.log",
+        "sha256": "06637dfd529bcee9f891efc232c33ea23cfc322e0d1adde357a600a6dbffb0bc"
+      }
+    },
+    "identity_stage_parity": {
+      "e2e": {
+        "original": 1150,
+        "current": 1154,
+        "all_original_identities_and_ordered_stages_preserved": true,
+        "gained": 4
+      },
+      "legacy-e2e": {
+        "original": 1150,
+        "current": 1154,
+        "all_original_identities_and_ordered_stages_preserved": true,
+        "gained": 4
+      }
+    },
+    "remaining": "formal witness/linker module gate; lean-link and verified crates; trust audit; full FV/FVTest gate and main reconciliation"
+  },
+  "one_bundled_mcp_review": {
+    "theorem": "Backend.Stock.D0.Compiler.compileFileWith_eq_legacy",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "warnings": [],
+    "scope": "ONE bundled MCP primary root/source scan; bulk new-root and all-constant audits remain separate required gates",
+    "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b"
+  },
+  "cleanup": {
+    "utc": "2026-10-19T12:41:33.669178+00:00",
+    "path": "/tmp/stock-consumer-adapter-overlay",
+    "archive": "/tmp/stock-consumer-overlay-retired-20261019.tar.gz",
+    "archive_sha256": "aa57d40b4e426175ea1b017d1ed5d5915717085efbf8241d314923eb13936686",
+    "archive_bytes": 2487834,
+    "source_backup": "agent/stock-proof-consumer-adapter@377217049542f678ae3f04f1ab97a2cb094cb756",
+    "cleanup_after_remote_backup": "Preflight overlay is superseded by actual production module compilation; preserve all real source worktrees and the one shared warm cache.",
+    "removed_utc": "2026-10-19T12:41:52.545662+00:00",
+    "remote_recovery_branch": "agent/stock-driver-wip-backup-20261019T124134Z",
+    "remote_recovery_commit": "d0831c762eecc7e3c1e6612ba85a677976ec5b9c",
+    "remote_verified_before_removal": true
+  },
+  "post_narrow_gate_chain": {
+    "pid": 4191767,
+    "controller": "/tmp/stock-d0-post-narrow-gates.py",
+    "state": {
+      "utc": "2026-10-19T13:06:09.060072+00:00",
+      "state": "waiting_on_confirmed_live_narrow_scheduler",
+      "pid": 4191767,
+      "head": "2ac41456d8de5fa81d26a1d8e98ebf32466cc50b",
+      "logs": {},
+      "scheduler_pid": 4094834,
+      "log": "/tmp/stock-d0-complete-witness-controller.log"
+    }
+  }
+}
