@@ -1,0 +1,42 @@
+{
+  "utc": "2026-10-19T23:06:44.187189+00:00",
+  "base": "c2c5d773e3b64ce0f9625dd74ed403dec78ea19e",
+  "state": "targeted_kernel_and_trust_passed_full_per_pr_gates_pending",
+  "builds": {
+    "whole_program_checker_binary_modes_and_byte_writer": "556 jobs passed",
+    "actual_compiler_to_byte_writer": "557 jobs passed",
+    "nonlegacy_history_prologue_witness": "449 jobs passed"
+  },
+  "public_axiom_audit": {
+    "passed": 69,
+    "compiler_roots_standard_only": 67,
+    "fixed_native_witness_roots": 2
+  },
+  "owned_constants_standard_only": 333,
+  "source_review": {
+    "LinkSys_fields": 39,
+    "non_compilation_fields_verbatim": 38,
+    "byte_writer_checks": "body identical modulo explicit result callback and comments",
+    "compatibility": "exact arbitrary-input old plain/cleanup linker results and errors"
+  },
+  "witness": "Actual Stock two-block SystemV64 prologue succeeds with non-legacy rule history and CompiledProduction in both cleanup modes; fixed native witness only, not a universal class activation proof",
+  "remaining": [
+    "Full per-PR module/affected tools/trust/E2E/link validation before landing this packet",
+    "Actual image correctness and generated-proof writer integration, including global and per-entry stack-bound theorem variants",
+    "Universal prologue selection/source/code/checker/consumer proofs and default compiler/linker activation with legacy fallback",
+    "All remaining original #140 rule/effect, source/block/whole-driver simulation and Stock-only completeness obligations"
+  ],
+  "production_classes_enabled": [
+    "Only landed D0 one-block parameter-return forms; no new activation in this checkpoint"
+  ],
+  "source_sha256": {
+    "FV/E2E/LinkProduction.lean": "bb22c83a1592dd7dfbef607bfb85d4b42a7a5b2de5c8d2bfa2df64543aedf06d",
+    "FV/E2E/ActualPipelineCheck.lean": "37554c30b65d90d9510209800c385d2bd5e70a6caa69f0ca2dbfd32d85a60d75",
+    "FV/E2E/ActualBinCheck.lean": "c7fb86b7769f13b2b9097a02ceacb9f836328538ac30e04f91d5fd2555b8a842",
+    "FV/E2E/ActualCompilerModes.lean": "9d39f8db72267640336fe290be51f8af725a85b148a7d169b922aa8b1613f6ff",
+    "FV/E2E/ActualPrologueWitness.lean": "960f3cafbdaa410afbcd4bff43481d9ecb7aa6855403c6a9f4466f647125e183",
+    "FV/Link/ActualImage.lean": "bf04d59fafeb54daee67f62db6489c29e91d4742b93009002ae1f28636be209d",
+    "FV/Link/ActualCompilerImage.lean": "9659952da89fa53e679363ab0e8753457bcc9a25837820c8a02ac376ca8a6780",
+    "scripts/audit/stock-production-consumers.lean": "992bafa7cb46defaddbf09bfa790d030dc3578f150ac001cc58a2f6bbb9a28cd"
+  }
+}
