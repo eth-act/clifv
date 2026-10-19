@@ -1,0 +1,19 @@
+{
+  "utc": "2026-10-16T16:34:57.563327+00:00",
+  "archive": "/home/lee/.clifv-recovery/20261016T163457Z-source-xstack/checkpoint.tar.gz",
+  "sha256": "cb7366d2fd4fefceff21fb23b46e8ddf0790a9057d85d079ff1b5729f2c5a0ac",
+  "bytes": 4350107,
+  "members": 26,
+  "all_members_byte_verified": true,
+  "snapshot_removed_after_archival": true,
+  "remote": {
+    "utc": "20261016T163502Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T163502Z",
+    "commit": "68d26b4e64a298a23da7485e0c1ca25e3ef72318",
+    "captured_dirty_paths": 1715,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  },
+  "source_frozen_manifest_unchanged": true
+}

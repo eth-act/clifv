@@ -21,6 +21,11 @@ theorem variantNames_Clz : (variantNames 151)[107]? = some "Clz" := rfl
 set_option maxRecDepth 20000 in
 theorem variantNames_Ctz : (variantNames 151)[109]? = some "Ctz" := rfl
 
+/-- Subtraction distributes over the branches of an `if` (to compare unfolded `clz` chains). -/
+private theorem ite_sub_bv {n : Nat} (c : Prop) [Decidable c] (a b k : BitVec n) :
+    (if c then a else b) - k = if c then a - k else b - k := by
+  split <;> rfl
+
 theorem ctor_u8_into_imm12_24 (st : LState) :
     externCtor ctx T.u8_into_imm12 [.int 24] st = .ok (.op (.imm12 ⟨24, false⟩), st) := rfl
 theorem ctor_u8_into_imm12_16 (st : LState) :
@@ -509,8 +514,13 @@ theorem clz_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.
       have hu' : (ρ x).setWidth ty.width = u := hu
       subst hu'
       revert hP
-      wcases ty hety [Clif.Sem.unary, Clif.Sem.clz, Clif.Ty.width, ne_eq, not_true_eq_false,
-        false_and, and_false, false_implies])
+      generalize hs : szOf (Clif.Ty.width ty) = sz at *
+      cases ty <;> simp [eTy] at hety <;> simp [szOf, Clif.Ty.width] at hs <;> subst hs <;>
+        simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary, Clif.Sem.clz,
+            Clif.Ty.width, ne_eq, not_true_eq_false, false_and, and_false, false_implies] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        intro _ <;>
+        simp [BitVec.setWidth_setWidth_of_le])
 
 include hp in
 /-- **`ctz.i32`/`ctz.i64`** (`lower.isle:1995`): `rbit`, `clz`. At i8/i16 the earlier rules `1982`/`1986` match.** -/
@@ -551,8 +561,14 @@ theorem ctz_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.
       have hu' : (ρ x).setWidth ty.width = u := hu
       subst hu'
       revert hP
-      wcases ty hety [Clif.Sem.unary, Clif.Sem.ctz, BitVec.ctz, Clif.Ty.width, ne_eq, not_true_eq_false,
-        false_and, and_false, false_implies])
+      generalize hs : szOf (Clif.Ty.width ty) = sz at *
+      cases ty <;> simp [eTy] at hety <;> simp [szOf, Clif.Ty.width] at hs <;> subst hs <;>
+        simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary, Clif.Sem.ctz,
+            BitVec.ctz, Clif.Ty.width, ne_eq, not_true_eq_false, false_and, and_false,
+            false_implies] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        intro _ <;>
+        simp [BitVec.setWidth_setWidth_of_le])
 
 include hp in
 /-- **`ctz.i8`** (`lower.isle:1982`).** -/
@@ -587,7 +603,12 @@ theorem ctz_i8_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Cl
         (prun_rr hR rfl (fun _ => rfl) (prun_nil _))), ?_⟩
       have hu' : (ρ x).setWidth 8 = u := hu
       subst hu'
-      wfix [Clif.Sem.unary, Clif.Sem.ctz, BitVec.ctz, aluVal])
+      simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary, Clif.Sem.ctz,
+          BitVec.ctz] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        (try unfold OperandSize.bits at *) <;>
+        simp [BitVec.clz, BitVec.clzAuxRec_succ, BitVec.clzAuxRec_zero,
+          BitVec.getElem_reverse, BitVec.getMsbD_setWidth, apply_ite (BitVec.setWidth 8)])
 
 include hp in
 /-- **`ctz.i16`** (`lower.isle:1986`).** -/
@@ -622,7 +643,12 @@ theorem ctz_i16_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : C
         (prun_rr hR rfl (fun _ => rfl) (prun_nil _))), ?_⟩
       have hu' : (ρ x).setWidth 16 = u := hu
       subst hu'
-      wfix [Clif.Sem.unary, Clif.Sem.ctz, BitVec.ctz, aluVal])
+      simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary, Clif.Sem.ctz,
+          BitVec.ctz] at * <;>
+        dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+        (try unfold OperandSize.bits at *) <;>
+        simp [BitVec.clz, BitVec.clzAuxRec_succ, BitVec.clzAuxRec_zero,
+          BitVec.getElem_reverse, BitVec.getMsbD_setWidth, apply_ite (BitVec.setWidth 16)])
 
 set_option maxHeartbeats 1000000 in
 include hp in
@@ -685,7 +711,12 @@ theorem clz_i8_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Cl
           (prun_rr hR rfl (fun _ => rfl) (prun_nil _))), ?_⟩
         have hu' : (ρ x).setWidth 8 = u := hu
         subst hu'
-        wfix [Clif.Sem.unary, Clif.Sem.clz, CTy.bits, Imm12.value]
+        simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary, Clif.Sem.clz,
+            CTy.bits, Imm12.value] at * <;>
+          dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+          (try unfold OperandSize.bits at *) <;>
+          simp [BitVec.clz, BitVec.clzAuxRec_succ, BitVec.clzAuxRec_zero,
+            ite_sub_bv, apply_ite (BitVec.setWidth 8)]
       · have := rhs_1951_fail hp ctx (cfg := cfg) st tr (n + 120) (.inr ⟨t, hT, h32, h64, hb⟩) v s'
         rw [show n + 120 + 80 = n + 200 by omega] at this
         exact absurd he this)
@@ -751,7 +782,12 @@ theorem clz_i16_ok (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : C
           (prun_rr hR rfl (fun _ => rfl) (prun_nil _))), ?_⟩
         have hu' : (ρ x).setWidth 16 = u := hu
         subst hu'
-        wfix [Clif.Sem.unary, Clif.Sem.clz, CTy.bits, Imm12.value]
+        simp only [VHolds, resX, opnd, ofX, lo64, upd, ↓reduceIte, Clif.Sem.unary, Clif.Sem.clz,
+            CTy.bits, Imm12.value] at * <;>
+          dsimp only [Clif.Ty.width, OperandSize.bits] at * <;>
+          (try unfold OperandSize.bits at *) <;>
+          simp [BitVec.clz, BitVec.clzAuxRec_succ, BitVec.clzAuxRec_zero,
+            ite_sub_bv, apply_ite (BitVec.setWidth 16)]
       · have := rhs_1955_fail hp ctx (cfg := cfg) st tr (n + 120) (.inr ⟨t, hT, h32, h64, hb⟩) v s'
         rw [show n + 120 + 80 = n + 200 by omega] at this
         exact absurd he this)

@@ -1,0 +1,146 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.edgeBlockOkAt_sound' depends on axioms: [propext, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.keptOkAt_sound' depends on axioms: [propext, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prep_step' depends on axioms: [propext, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prep_star' depends on axioms: [propext, Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prep_entry_step' depends on axioms: [propext, Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prep_ret' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 14,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prep_halt' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 15,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prep_sound' depends on axioms: [propext, Quot.sound]",
+      "line": 16,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.VNextAt_det' depends on axioms: [propext]",
+      "line": 17,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.VStepAt_det' depends on axioms: [propext]",
+      "line": 18,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.forward_aux' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 19,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.forward' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 20,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.forward_op' depends on axioms: [propext]",
+      "line": 21,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.prepareCheckedAt_ok' depends on axioms: [propext, Quot.sound]",
+      "line": 22,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.prepared_return_forward' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 23,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdge.prepared_halt_forward' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 24,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrep.prepareAt_fields' depends on axioms: [propext, Quot.sound]",
+      "line": 25,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PreparedForwardWitness.stock_prepared_return_forward_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 26,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.PreparedForwardWitness.stock_prepared_halt_forward_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 27,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgePrepSplitWitness.per_edge_prepare_actual_split_step_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 28,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}
