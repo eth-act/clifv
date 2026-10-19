@@ -29,6 +29,11 @@ Producer: M3-model. Model choice: `docs/decisions/arm-model.md`. Attribution:
 - DONE (T4 #40, 2026-10-18): encoder-driven co-simulation (`arm-cosim --encoder`, section
   "Co-simulation"): every `Backend.Insn` form the encoder accepts, 424 forms × 200 vectors, 0
   failures; it found that the model lacks `umaddl`/`smaddl` (#271, outside subset E).
+- DONE (T1 #37 / #271, 2026-10-19): the thread pointer `TPIDR_EL0` (`StateField.TPIDR`), `mrs xt,
+  tpidr_el0`, and SMADDL/SMSUBL/UMADDL/UMSUBL. Co-simulation (seed `0x5eed`, 200 vectors per form):
+  `scripts/arm-cosim.sh` 333 forms, 66 600 vectors, 0 failures (new: `mrs (tpidr_el0)`, `smaddl`,
+  `smsubl`, `umaddl`, `umsubl`, 200/0 each); `--encoder` 427 forms, 85 400 vectors, 0 failures
+  (new: `mrsTpidrEl0`, `aluRRRR uMAddL 64`, `aluRRRR sMAddL 64`, 200/0 each; `Enc.excluded` empty).
 
 ## Public API (namespace `Arm`)
 
@@ -264,12 +269,12 @@ every `Insn` constructor is co-simulated (`mrs xt, tpidr_el0` and `umaddl`/`smad
 
 `--coverage` (no qemu) reports, per encoder form, the hand-written specs covering it: those
 whose sampled cube (the bits constant over 400 sampled words, with their values) contains all
-300 sampled words of the form. Results (2026-10-18, seed `0x5eed`, 200 vectors per form):
+300 sampled words of the form. Results (2026-10-19, seed `0x5eed`, 200 vectors per form):
 
 | | forms | covered by `Specs.lean` | co-simulated, failures |
 | --- | --- | --- | --- |
-| encoder forms (`--encoder`) | 424 (+ 2 excluded) | 419 (missing: `stlxr` b/h/w/x, `fmov h, w`) | 424 forms, 84 800 vectors, 0 failures |
-| `Specs.lean` + encoder (`--all`) | 752 | — | 150 400 vectors, 0 failures |
+| encoder forms (`--encoder`) | 427 (0 excluded) | 422 (missing: `stlxr` b/h/w/x, `fmov h, w`) | 427 forms, 85 400 vectors, 0 failures |
+| `Specs.lean` + encoder (`--all`) | 760 | — | 152 000 vectors, 0 failures |
 
 Nightly (post-merge, never blocking): `.github/workflows/fidelity-nightly.yml` runs
 `--all --n 1000` with a seed rotating per run and reports to #280.
