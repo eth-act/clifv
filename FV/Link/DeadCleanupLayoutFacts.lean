@@ -5,7 +5,8 @@ set_option autoImplicit false
 open E2E E2E.LinkCheck Backend LinkSpec
 theorem pipeT_layout {f : Clif.Function} {k : Nat} {b : BitVec 64} {o : Lean.Json} {a : Art}
     (h : pipeCleanupT f k b o = .ok a) : a.fa.layout = .ok a.fb ∧ a.base = b := by
-  unfold pipeCleanupT at h
+  unfold pipeCleanupT pipeTWithLowering at h
+  rw [Backend.Stock.D0.defaultLower_eq_legacy] at h
   rcases h1 : lowerFunction f with _ | vc <;> simp only [h1, bind, Except.bind] at h
   · cases h
   rcases h2 : prepare (Backend.DeadCleanup.prune vc) with _ | vcp <;> simp only [h2] at h

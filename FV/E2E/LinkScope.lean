@@ -212,7 +212,7 @@ theorem pipeT_ok {g : Clif.Function} (hsc : fnScopeB g = true) (hD : SpillDefine
     Prep.prepCheck_complete hp (prepDomain_of_lower hS hl hS.nonempty),
     checkAlloc_allocResult (spillCheckAlloc hD hsub (Spill.arityOk_of har) hD' hS hen hl hp) _,
     formsCovered_complete hS hl hp _⟩
-  simp [pipeT, hl, hp, ha, he, hla, bind, Except.bind, pure, Except.pure]
+  simp [pipeT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy, hl, hp, ha, he, hla, bind, Except.bind, pure, Except.pure]
 
 /-! ## The checks hold -/
 

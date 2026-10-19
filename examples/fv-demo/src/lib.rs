@@ -1,6 +1,19 @@
 //! A small library for `cargo fv test`: each module exercises one kind of Rust code; the tests
 //! at the bottom check it (their expected values are the ones `cargo test` computes with LLVM).
 
+/// Keep parameter-return functions callable in the mixed verified executable.
+pub mod stock_entry_return {
+    #[inline(never)]
+    pub extern "C" fn identity32(value: u32) -> u32 {
+        value
+    }
+
+    #[inline(never)]
+    pub extern "C" fn identity64(value: u64) -> u64 {
+        value
+    }
+}
+
 pub mod arith {
     pub fn gcd(mut a: u64, mut b: u64) -> u64 {
         while b != 0 {
@@ -503,6 +516,18 @@ pub mod tls {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn entry_returns_preserve_values_in_mixed_program() {
+        for value in [0, 1, 0x8000_0000, u32::MAX] {
+            assert_eq!(stock_entry_return::identity32(std::hint::black_box(value)), value);
+        }
+        for value in [0, 1, 0x8000_0000_0000_0000, u64::MAX] {
+            let actual = stock_entry_return::identity64(std::hint::black_box(value));
+            assert_eq!(actual, value);
+            assert_eq!(arith::mix(actual as i32, 0), arith::mix(value as i32, 0));
+        }
+    }
+
     use super::*;
     use std::hint::black_box as bb;
 

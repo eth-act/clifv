@@ -1,5 +1,12 @@
 # Plan: a verified compiler for a Lean-embedded DSL, via CLIF to AArch64
 
+Incremental #140 delivery enables Stock for the proved i32/i64 entry-parameter
+return class and retains legacy for other inputs. Compiler and E2E routes share
+the dispatcher, with complete-code compatibility preserving downstream consumers.
+Broader simulation/completeness obligations remain open; see the
+[Stock contract](contracts/stock-driver.md) and
+[delivery plan](plans/stock-driver-incremental-delivery.md).
+
 The #60 cleanup implementation in #137 uses the legacy driver and preserves
 baseline source scope and theorem variants. Cleanup and matching consumers are
 enabled by default. Full proof/crate builds, runtime, encoder and E2E identity
