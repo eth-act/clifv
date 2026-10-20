@@ -444,3 +444,49 @@ theorem match_receipt {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx
       first.defined first.found shiftFirst first.countDefined first.countFound literalFirst
       second.defined second.found shiftSecond second.countDefined second.countFound literalSecond matched
 end Backend.Stock.Proof.LogicalExtr
+
+
+namespace Backend.Stock.Proof.LogicalExtr
+open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
+set_option autoImplicit false
+variable {p : Program} (hp : Data p) (ctx : Ctx) {cfg : Config}
+variable (st : State) (tr : Array RuleId) (n : Nat)
+
+include hp in
+/-- The real EXTR source match follows both definition chains without changing Stock state. -/
+theorem match_forward_1501 {i a b x c1 y c2 w j1 j2 j3 j4 : Nat} {kx ky : Int}
+    {info info1 info2 info3 info4 : IInfo} (hi : ctx.insts[i]? = some info)
+    (hty : info.resTys.head? = some (.int w)) (hw : w = 32 ∨ w = 64)
+    (hd : info.data = .data 152 2 [.data 151 98 [], .values [a, b]])
+    (hj1 : ctx.defInst? a = some j1) (hij1 : ctx.insts[j1]? = some info1)
+    (hd1 : info1.data = .data 152 2 [.data 151 103 [], .values [x, c1]])
+    (hj2 : ctx.defInst? c1 = some j2) (hij2 : ctx.insts[j2]? = some info2)
+    (hd2 : info2.data = .data 152 35 [.data 151 57 [], .int kx])
+    (hj3 : ctx.defInst? b = some j3) (hij3 : ctx.insts[j3]? = some info3)
+    (hd3 : info3.data = .data 152 2 [.data 151 104 [], .values [y, c2]])
+    (hj4 : ctx.defInst? c2 = some j4) (hij4 : ctx.insts[j4]? = some info4)
+    (hd4 : info4.data = .data 152 35 [.data 151 57 [], .int ky])
+    (hok : ExtrOk w (u64 kx) (u64 ky)) :
+    (matchRule p (Stock.sem ctx) cfg (n+20) rule_lower_1501 [.inst i]).run (st, tr) =
+      .ok (some (env5 (.ty (.int w)) (.value x) (.int (u64 kx)) (.value y) (.int (u64 ky))), (st, tr)) :=
+  stock_match_1501 (cfg := cfg) hp ctx st tr n hi hty hw hd hj1 hij1 hd1 hj2 hij2 hd2 hj3 hij3 hd3 hj4 hij4 hd4 hok
+
+include hp in
+/-- The real EXTR source match follows both definition chains without changing Stock state. -/
+theorem match_forward_1507 {i a b x c1 y c2 w j1 j2 j3 j4 : Nat} {kx ky : Int}
+    {info info1 info2 info3 info4 : IInfo} (hi : ctx.insts[i]? = some info)
+    (hty : info.resTys.head? = some (.int w)) (hw : w = 32 ∨ w = 64)
+    (hd : info.data = .data 152 2 [.data 151 98 [], .values [a, b]])
+    (hj1 : ctx.defInst? a = some j1) (hij1 : ctx.insts[j1]? = some info1)
+    (hd1 : info1.data = .data 152 2 [.data 151 104 [], .values [y, c1]])
+    (hj2 : ctx.defInst? c1 = some j2) (hij2 : ctx.insts[j2]? = some info2)
+    (hd2 : info2.data = .data 152 35 [.data 151 57 [], .int ky])
+    (hj3 : ctx.defInst? b = some j3) (hij3 : ctx.insts[j3]? = some info3)
+    (hd3 : info3.data = .data 152 2 [.data 151 103 [], .values [x, c2]])
+    (hj4 : ctx.defInst? c2 = some j4) (hij4 : ctx.insts[j4]? = some info4)
+    (hd4 : info4.data = .data 152 35 [.data 151 57 [], .int kx])
+    (hok : ExtrOk w (u64 kx) (u64 ky)) :
+    (matchRule p (Stock.sem ctx) cfg (n+20) rule_lower_1507 [.inst i]).run (st, tr) =
+      .ok (some (env5 (.ty (.int w)) (.value y) (.int (u64 ky)) (.value x) (.int (u64 kx))), (st, tr)) :=
+  stock_match_1507 (cfg := cfg) hp ctx st tr n hi hty hw hd hj1 hij1 hd1 hj2 hij2 hd2 hj3 hij3 hd3 hj4 hij4 hd4 hok
+end Backend.Stock.Proof.LogicalExtr

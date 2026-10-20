@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockLogicalExtrMatchedValues
 import FV.Backend.Proof.StockLogicalExtrMatchReceipt
 import FV.Backend.Proof.StockLogicalExtrValuesWitness
 import FV.Backend.Proof.StockLogicalExtrMatch

@@ -1,3 +1,4 @@
+import FV.E2E.StockLogicalExtrRootWitness
 import FV.E2E.StockLogicalExtrCanonicalWitness
 import FV.E2E.StockLogicalExtrMatchWitness
 import FV.E2E.StockLogicalExtrWitness
@@ -14,3 +15,5 @@ run_cmd do
         throwError "unexpected axiom {ax} in {name}"
     count := count+1
   logInfo m!"STOCK_LOGICAL_EXTR_FIXED_WITNESS_AUDIT {count}"
+#print axioms E2E.StockLogicalExtrWitness.root_values_witness
+#print axioms Backend.Stock.Proof.LogicalExtr.matched_values
