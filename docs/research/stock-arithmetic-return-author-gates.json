@@ -1,0 +1,61 @@
+{
+  "state": "per_pr_gates_passed",
+  "utc": "2026-10-20T06:27:57.292325+00:00",
+  "pid": 3700405,
+  "head": "d53bb5d9f1fc3385e814c81f3f9cbca54972f621",
+  "base": "2fe5fa0febb4ec0460fad4785a5e1e81e7b440a9",
+  "logs": {
+    "affected-scheduler": {
+      "path": "/tmp/stock-arithmetic-return-author-gates/affected-scheduler.log",
+      "sha256": "e7d5848738927244484ccf3783a2bcdfcf4bfceabc08b0838a20781489887c99"
+    },
+    "full-library-replay": {
+      "path": "/tmp/stock-arithmetic-return-author-gates/full-library-replay.log",
+      "sha256": "54567677c9baf17d85d59f75e87c8a60ffbf4ef060e34f18d8c8238a3ce9d569"
+    },
+    "all-axiom-audits": {
+      "path": "/tmp/stock-arithmetic-return-author-gates/all-axiom-audits.log",
+      "sha256": "10d15ef910e72c70d1752da4c23d6dbf69c40baaf87c05f293c9001f6b89b734"
+    },
+    "all-new-owned": {
+      "path": "/tmp/stock-arithmetic-return-author-gates/all-new-owned.log",
+      "sha256": "525de741458e821d2354d60b0ef4c8d1aa50f0a132792736a27af28b367ad59f"
+    }
+  },
+  "reuse_manifest": {
+    "previous_exact_merged_base": "2fe5fa0febb4ec0460fad4785a5e1e81e7b440a9",
+    "previous_modules_passed": 2428,
+    "all_previous_source_and_audit_hashes_unchanged": true,
+    "new_modules": [
+      "FV.Backend.Proof.StockArithmeticReturnRefines",
+      "FV.Backend.Proof.StockArithmeticReturnWitness",
+      "FV.Backend.Proof.StockArithmeticSourceExecution",
+      "FV.Backend.Proof.StockArithmeticSourceExecutionWitness",
+      "FV.Backend.Proof.StockArithmeticSourceFrame",
+      "FV.Backend.Proof.StockArithmeticSourceRefines",
+      "FV.Backend.Proof.StockArithmeticSourceWitness",
+      "FV.Backend.Proof.StockArithmeticTerminalDefined"
+    ],
+    "affected_modules": [
+      "FV.Backend.Proof.StockArithmeticReturnRefines",
+      "FV.Backend.Proof.StockArithmeticReturnWitness",
+      "FV.Backend.Proof.StockArithmeticSourceExecution",
+      "FV.Backend.Proof.StockArithmeticSourceExecutionWitness",
+      "FV.Backend.Proof.StockArithmeticSourceFrame",
+      "FV.Backend.Proof.StockArithmeticSourceRefines",
+      "FV.Backend.Proof.StockArithmeticSourceWitness",
+      "FV.Backend.Proof.StockArithmeticTerminalDefined"
+    ],
+    "affected_executables": [],
+    "runtime_input_changes": false,
+    "reuse": "scheduler --only after exact prior source-hash/merged-tree validation; full FV/FVTest target replay follows"
+  },
+  "axiom_parity": {
+    "previous_roots": 1049,
+    "current_roots": 1060,
+    "missing": [],
+    "changed_sets": {},
+    "all_previous_axiom_sets_preserved": true
+  },
+  "next": "Fetch current main/reconcile, receipt and author squash; continue original source/whole-function simulation/direct semantic consumers."
+}
