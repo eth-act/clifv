@@ -3,6 +3,7 @@ import FV.Backend.Proof.StockActualAddSubBodyRefines
 import FV.Backend.Proof.StockScalarAddWitness
 import FV.Backend.Proof.StockPureUnsunk
 import FV.Backend.Proof.StockPureDriverUnsunk
+import FV.Backend.Proof.StockPureRecordCoverage
 import FV.Backend.Proof.LowerSim
 
 /-! Real retained-record and body non-vacuity witness for the arithmetic scan
@@ -269,5 +270,24 @@ theorem actual_whole_driver_pure_witness :
     subst stm
     rfl
   · decide
+
+
+/-- Actual nonempty pure compilation inhabits source-derived scan-decision
+coverage without a per-record or fixed-native decision premise. -/
+theorem actual_pure_body_decisions_witness :
+    Stock.lower function = .ok result ∧ LowerScope function ∧
+      ∀ e ∈ result.blockScans.toList,
+        ∃ term body, SourceBodySplit function e function.blocks[0]! term body ∧
+          ∀ r ∈ body.records, ∃ step, r.output.step = some step ∧
+            (step.decision = .omitted ∨ step.decision = .emitted) := by
+  have dom := ScalarAdd.lowering_domain "scalar_add_scan" [] .systemVI64
+  refine ⟨run,dom.2,?_⟩
+  intro e events
+  apply stock_lower_pure_body_decisions run dom.2 (b := function.blocks[0]!) rfl ?_ events
+  intro stm member
+  change stm ∈ [⟨[2],.binary .iadd .i64 0 1⟩] at member
+  have same := List.mem_singleton.mp member
+  subst stm
+  rfl
 
 end Backend.Stock.Proof.ScalarAddScanWitness

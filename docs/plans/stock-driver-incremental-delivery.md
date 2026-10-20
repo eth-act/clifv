@@ -60,8 +60,11 @@ whole-driver corollary and its nonempty pure-source witness use standard axioms;
 critical-edge and effectful real-sink witnesses also pass. Targeted656jobs and
 public/all-owned audits pass on main#337; see
 [the driver checkpoint](../research/stock-pure-driver-checkpoint.json).
-Next derive actual emitted/omitted source-family coverage and complete broader
-function value simulation and Stock-only completeness. This is a complete color
+Actual pure-body decision coverage is now derived too: every retained ordinary
+record is emitted or omitted, with no per-record decision premise. The complete
+source/driver invariant and decision-coverage prerequisite will land as one proof
+packet after current per-PR gates, while broader function value simulation,
+Stock-only completeness and production-class integration continue. This is a complete color
 frame, not full driver correctness or a new production activation.
 
 Actual sink_inst rejects zero-color targets; deferred sunk memory/effect
