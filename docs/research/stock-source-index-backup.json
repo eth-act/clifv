@@ -1,0 +1,36 @@
+{
+  "utc": "2026-10-16T21:15:46.148619+00:00",
+  "archive": "/home/lee/.clifv-recovery/20261016T211546Z-source-index/checkpoint.tar.gz",
+  "sha256": "be2cf6d62871ce37a5b2628dfc99a083fb5c54fc24df9fa34fd0d4c7908cd22d",
+  "bytes": 1652053,
+  "members": 45,
+  "all_members_byte_verified": true,
+  "previous_remote_backup": {
+    "utc": "20261016T210506Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T210506Z",
+    "commit": "59fa0e7f6238af6dae3f470c8a4bbc0f8bfb1cba",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1771,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  },
+  "cleanup": {
+    "duplicate_dependency_snapshot_removed": true,
+    "bytes_reclaimed": 2816366584,
+    "unique_sources_objects_logs_checks_audits_preserved": true,
+    "one_shared_warm_cache_retained": true,
+    "other_projects_touched": false,
+    "free_bytes": 865683554304
+  },
+  "remote": {
+    "utc": "20261016T211604Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T211604Z",
+    "commit": "da857e54c62bb292df1a9d2a80627815aed5ffaa",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1774,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  }
+}

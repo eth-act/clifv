@@ -1,4 +1,5 @@
 import FV.Backend
+import FV.Backend.RegallocPerEdgeDriver
 import Lean.Data.Json
 
 /-!
@@ -188,6 +189,21 @@ def allocate (c : Config) (clif : String → List Clif.Function)
       | .ok af => pure (.ok af)
       | .error why =>
         rejected.modify (·.push (vc.name, why))
+        pure (.error (rejectionPrefix ++ why))
+
+/-- Allocate Stock code together with its actual per-successor vectors. -/
+def allocateAt (c : Config) (clif : String → List Clif.Function)
+    (rejected : IO.Ref (Array (String × String))) (a : Allocator) (vcs : Array EdgeVCode) :
+    IO (Array (Except String AFunc)) := do
+  let results ← a.runAt vcs
+  (vcs.zip results).mapM fun (vc, result) => do
+    match result with
+    | .error e => pure (.error e)
+    | .ok af =>
+      match configure c (clif vc.code.name) vc.code af with
+      | .ok af => pure (.ok af)
+      | .error why =>
+        rejected.modify (·.push (vc.code.name, why))
         pure (.error (rejectionPrefix ++ why))
 
 /-- The configuration receipt. `functionRejections` is written after compilation: the
