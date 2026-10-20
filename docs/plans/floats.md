@@ -462,6 +462,24 @@ and so `lowerRFunc`); it becomes a premise with the typed control-shape analysis
 slice 5b follow-up). Open: `SpillCtlCheck`/`DeadCleanupCtl` rebuild needs `IselShpTotal`
 (about 7.7 GB).
 
+**Slice 8, groundwork (typed link layer, FloatsLinkT; in progress).** Completeness of the
+typed spill chain's control-form decider: `Proof/SpillInstCheckComplete.lean`
+(`opsOkB_of_opsOk`, `spillInstOkB_of_spillInstOk`, `ctlSpillB_of`; witness
+`FVTest/Backend/SpillInstCheckCompleteW.lean`), the first step of `InScopeP → InScopePT`
+(`ctlSpillB` on subset-E input from the integer `ctlSpillHyp`). Plan of the rest (drafts on
+`agent/floats-c8l-wip`, unbuilt until the c5f tree is cached): `LinkSys.OkT` (`InSubsetT`,
+`CompiledEitherT`; an `sret` function in subset E with the integer contract, `sretE`; program
+callees return integers, `calleeInt`), `LinkSys.ThmT` with `RetsOkT` (returns by class, x0.. for
+`sret`) and typed copies of the link/binary/exec layers (`*T.lean`, generated from the integer
+modules by their constant dependencies); `Link.compileExe_correctT` and
+`Link.DeadCleanup.compileExe_correctT` under `InScopePT` with `E2E.typedRules_program` inside and
+one decided premise `OutOkT` (`checkAlloc`'s verdict, form coverage with the artifact's frame,
+`sretRets`, `entryRegs`, `outFits`, call sites: facts whose completeness is proven only for
+subset E; the typed chain proves `AllocChecked`, the link-level world theorems need
+`checkAlloc`); integer corollaries `compileExe_correct_viaT` from `inScopePT_of_inScopeP`
+(`resClassOkB_of`, `ctlSpillB_of`, `formsCovered_complete`, `spillKillFree`) and
+`outOkT_of_inScopeP` (`chks_resultsT`).
+
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
 (`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
