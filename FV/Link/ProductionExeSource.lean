@@ -11,7 +11,7 @@ open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf E2E.ProductionBinary E2E.ProductionE
 theorem prog_eq_legal (I : ProductionStackBound.CompilerInput) :
     prog I = legalProg I.toLinkInput.srcProg := by
   rw [← LinkInput.prog_eq]
-  simp [prog, ProductionStackBound.CompilerInput.results, LinkInput.resultsProduction,
+  simp [prog, ProductionStackBound.CompilerInput.results, LinkInput.resultsProductionWith,
     progOf, LinkInput.prog, Function.comp_def]
 
 theorem attempt_correct_source {S : LinkSpec} {cleanup : Bool} {file0 file : ByteArray}
