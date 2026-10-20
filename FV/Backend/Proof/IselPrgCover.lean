@@ -469,8 +469,6 @@ theorem stmt_root {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) {ii : Nat} {
     simp only [instData, he] at hd
     split at hd
     case isFalse => cases hd
-    split at hd
-    case isFalse => cases hd
     simp only [pure, Except.pure, Except.ok.injEq] at hd
     refine ⟨γ_inst hi (γ_tyCall hctx hi) (by
       rw [← hd]; prg_data

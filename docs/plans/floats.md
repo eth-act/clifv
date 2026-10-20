@@ -295,6 +295,39 @@ function with an integer `call`; `lowerCheck` rejects all three). Open (slice 6)
 `ClassesHyp` and the spill chain (`stmt_cls`/`stmt_cov`/`termCall_cls`/`tryCall_cls` over
 `CtxInvT`, `SpillEdges*`, `SpillDefined`, `SpillAvail`, `SpillLocalPipe` over `LowerScopeT`).
 
+**S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
+Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
+(`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
+(x0..x7 / v0..v7, separate counters) and stores stack-passed ones with `stackArgStore`
+(`str s`/`str d` for a float vreg; `abi.rs:1819`), `gen_call_rets` puts outputs in the return
+registers of their classes (`retRegsC (regsClasses rss)`, at most 8 in all; `abi.rs:1995`).
+`instData` no longer rejects a float `call`. **Remaining interim** (parent decision): `sigIntB`
+stays on `call_indirect` (`instData`) and `try_call`/`try_call_indirect` (`exnTableOpnd`):
+`Compile.functionE` does not constrain `f.sigDecls`, so an indirect call with a float return
+would put a float value into the integer driver model (`CtxSpec.ctxE`/`tysOf_int` →
+`loop_run`), and `LowerTryOk`/`tryRegsOf`/`CallOk`/`ShapeOf` are integer-shaped. Integer proofs
+get the call's integer returns from `CtxInv.call_retClasses` (results `i8..i64`) and the
+externs' integer parameters from `functionE` (`handOk_call`/`stmt_shp` gain `hxi`/`hE`). The
+coverage interpretation's `gen_call_output` gives an int or float vreg (`.flat 3 true`), so
+`stmt_cov` checks the `call` rules' int results by hand (`IselCovCall`: `out_2508`/`out_2518`/
+`out_2529`, `root_hand_res`; `covStmt_ok` excludes rules 1031..1033). Stock keeps integer calls
+(its own `gen_call_output` allocates int vregs): `Cov.actorI` is the transfer function before
+typed calls (`gen_call_output` gives int vregs) and `Stock.Proof.Coverage.ctor_value_sound_int`
+restores that conclusion for Stock's constructors (`ctor_value_sound` keeps its statement over
+`Cov.actor`; witness `ctor_value_sound_int_witness`). The checked-in 704-entry `covTab` is kept:
+the generator has given 707 entries since V6c's `.num` leaves (same output on `main`), see
+`FVTest/Backend/IselCovGen.lean`. Witnesses: `FVTest/Backend/AbiTyped.lean` (a call of
+`(f64, i64, f32) -> f64` uses v0, x0, v1 and defines its result from v0) and a native check
+against Cranelift (qemu, C callees linked: 4/4 runs agree, including a stack-passed `f64` stored
+with `stur d0`).
+On the Stage C typed model (slices 1-3 above), `IselTermFactsCallT`'s `call` proofs take the
+outputs of either class (`ctor_gen_call_output_typed`, `outRegsC_single`), while
+`Compile.functionET` still keeps extern signatures integer. Next: Stage B, typed `try_call`
+(`tryRegsOf`/`gen_try_call_rets` and `LowerTryOk` with classes, `CallOk`/`ArgReg` with v0..v7
+and class-matched fixed operands for the spill chain, `ShapeOf` with typed return registers for
+linking); Stage C, float extern signatures in `functionET` and the typed spill chain (slice 6),
+which lift `call_indirect`/`try_call_indirect` (`sigIntB`).
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in
@@ -304,7 +337,8 @@ function with an integer `call`; `lowerCheck` rejects all three). Open (slice 6)
   `isInt` until the float rules are proven.
 - `Isel.argLocs` takes byte sizes only, so it cannot tell `i64` from `f64` (S11e2: the typed
   `argLocsC`/`abiArgLocs` take classes; S11e3: the lowering's `sigArgLocs` places floats in
-  v registers, and calls reject float signatures until S11e5); the
+  v registers; S11e5a: a direct `call` too, `call_indirect`/`try_call*` reject float signatures
+  until stages B/C); the
   ABI change touches `ArgsIn`, callee contracts and the linking proofs (`docs/contracts/e2e.md`).
 - Changing `Clif.Syntax` rebuilds everything downstream, including the heavy
   `FV.Opt.Proof.*` modules (TO-PROVE §7: serial, ≤3 at a time).

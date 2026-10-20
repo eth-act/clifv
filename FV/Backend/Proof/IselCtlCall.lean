@@ -83,6 +83,78 @@ theorem foldl_fresh {α : Type} (L : List α) : ∀ (acc : Array (List Reg)) (st
     simp [outRegs, LState.fresh, List.range_succ_eq_map, Function.comp_def, Nat.add_assoc,
       Nat.add_comm 1]
 
+/-- Fresh vregs of the classes `cs`, in order. -/
+def freshC : LState → List RegClass → LState
+  | st, [] => st
+  | st, c :: cs => freshC (st.fresh c).2 cs
+
+/-- The output registers `gen_call_output` allocates from `st` for returns of the classes `cs`:
+one fresh vreg per return, of its class. -/
+def outRegsC (st : LState) (cs : List RegClass) : List (List Reg) :=
+  cs.zipIdx.map fun q => [Reg.vreg (st.nextVreg + q.2) q.1]
+
+theorem freshC_nextVreg : ∀ (st : LState) (cs : List RegClass),
+    (freshC st cs).nextVreg = st.nextVreg + cs.length
+  | st, [] => rfl
+  | st, c :: cs => by
+    rw [freshC, freshC_nextVreg]; simp [LState.fresh]; omega
+
+theorem freshC_emitted : ∀ (st : LState) (cs : List RegClass), (freshC st cs).emitted = st.emitted
+  | st, [] => rfl
+  | st, c :: cs => by rw [freshC, freshC_emitted]; rfl
+
+theorem outRegsC_length (st : LState) (cs : List RegClass) : (outRegsC st cs).length = cs.length := by
+  simp [outRegsC]
+
+theorem zipIdx_succ_map {β : Type} (cs : List β) (k : Nat) :
+    cs.zipIdx (k + 1) = (cs.zipIdx k).map fun q => (q.1, q.2 + 1) := by
+  induction cs generalizing k with
+  | nil => rfl
+  | cons c cs ih => simp [List.zipIdx_cons, ih]
+
+/-- `outRegsC` from the state after one fresh vreg. -/
+theorem outRegsC_cons (st : LState) (c : RegClass) (cs : List RegClass) :
+    outRegsC st (c :: cs) = [Reg.vreg st.nextVreg c] :: outRegsC (st.fresh c).2 cs := by
+  simp only [outRegsC, List.zipIdx_cons, List.map_cons, Nat.add_zero, zipIdx_succ_map,
+    List.map_map, Function.comp_def, LState.fresh]
+  congr 2
+  funext q
+  congr 2
+  omega
+
+/-- `gen_call_output`'s fold: one fresh vreg per return, of its class. -/
+theorem foldl_freshC (g : Clif.AbiParam → RegClass) (L : List Clif.AbiParam) :
+    ∀ (acc : Array (List Reg)) (st : LState),
+    L.foldl (fun (p : Array (List Reg) × LState) (q : Clif.AbiParam) =>
+      (p.1.push [(p.2.fresh (g q)).1], (p.2.fresh (g q)).2)) (acc, st) =
+      (acc ++ (outRegsC st (L.map g)).toArray, freshC st (L.map g)) := by
+  induction L with
+  | nil => intro acc st; simp [outRegsC, freshC]
+  | cons a L ih =>
+    intro acc st
+    rw [List.foldl_cons, ih, List.map_cons, outRegsC_cons]
+    simp [freshC, LState.fresh]
+
+/-- Integer classes: `outRegsC`/`freshC` are `outRegs`/`freshN`. -/
+theorem outRegsC_replicate (st : LState) (n : Nat) :
+    outRegsC st (List.replicate n .int) = outRegs st n := by
+  induction n generalizing st with
+  | zero => rfl
+  | succ n ih =>
+    rw [List.replicate_succ, outRegsC_cons, ih]
+    simp only [outRegs, List.range_succ_eq_map, List.map_cons, List.map_map, Function.comp_def,
+      LState.fresh, Nat.add_zero]
+    congr 2
+    funext j
+    congr 2
+    omega
+
+theorem freshC_replicate (st : LState) (n : Nat) :
+    freshC st (List.replicate n .int) = freshN st n := by
+  induction n generalizing st with
+  | zero => rfl
+  | succ n ih => rw [List.replicate_succ, freshC, ih, freshN]
+
 /-- With at most 8 arguments, every argument is in a register, `x0 … x(n-1)`. -/
 theorem argLocs_small : ∀ (bytes : List Nat) (acc : Array ArgLoc) (nx st : Nat), nx + bytes.length ≤ 8 →
     bytes.foldl (fun (p : Array ArgLoc × Nat × Nat) (b : Nat) =>
@@ -122,7 +194,7 @@ def argStep (p : Array (Reg × Reg) × LState) (q : (ArgLoc × Reg) × Nat) :
     Array (Reg × Reg) × LState :=
   match q.1.1 with
   | .reg pr => (p.1.push (q.1.2, pr), p.2)
-  | .stack off => (p.1, p.2.emit (.store (storeOpOfBytes q.2) q.1.2 (.spOffset off) trustedFlags))
+  | .stack off => (p.1, p.2.emit (stackArgStore q.1.2 q.2 (.spOffset off)))
 
 theorem foldl_argStep : ∀ (L : List ((ArgLoc × Reg) × Nat)), (∀ q ∈ L, ∃ pr, q.1.1 = .reg pr) →
     ∀ (acc : Array (Reg × Reg)) (st : LState),
@@ -231,15 +303,26 @@ theorem sigRets_cases (s : Clif.Signature) :
     | nil => exact .inr ⟨rfl, rfl⟩
     | cons a l => exact .inl rfl
 
-theorem ctor_gen_call_output_iff (st : LState) (s : Clif.Signature) (v : V) (st' : LState) :
+/-- **`gen_call_output`** (typed, S11e5a): one fresh vreg per ABI return, of its class
+(`retClass`). -/
+theorem ctor_gen_call_output_typed (st : LState) (s : Clif.Signature) (v : V) (st' : LState) :
+    externCtor ctx T.gen_call_output [.op (.sig s)] st = .ok (v, st') ↔
+      v = .regsVec (outRegsC st ((sigRets s).map retClass)) ∧
+        st' = freshC st ((sigRets s).map retClass) := by
+  have : externCtor ctx T.gen_call_output [.op (.sig s)] st =
+      (let r := (sigRets s).foldl (fun (p : Array (List Reg) × LState) (q : Clif.AbiParam) =>
+          (p.1.push [(p.2.fresh (retClass q)).1], (p.2.fresh (retClass q)).2)) (#[], st)
+       .ok (.regsVec r.1.toList, r.2)) := rfl
+  rw [this, foldl_freshC]
+  simp [eq_comm]
+
+/-- `gen_call_output` of a signature whose ABI returns are integers: fresh integer vregs. -/
+theorem ctor_gen_call_output_iff (st : LState) (s : Clif.Signature)
+    (hr : (sigRets s).map retClass = List.replicate (sigRets s).length .int) (v : V)
+    (st' : LState) :
     externCtor ctx T.gen_call_output [.op (.sig s)] st = .ok (v, st') ↔
       v = .regsVec (outRegs st (sigRets s).length) ∧ st' = freshN st (sigRets s).length := by
-  have : externCtor ctx T.gen_call_output [.op (.sig s)] st =
-      (let r := (sigRets s).foldl (fun (p : Array (List Reg) × LState) (_ : Clif.AbiParam) =>
-          (p.1.push [(p.2.fresh .int).1], (p.2.fresh .int).2)) (#[], st)
-       .ok (.regsVec r.1.toList, r.2)) := rfl
-  rw [this, foldl_fresh]
-  simp [eq_comm]
+  rw [ctor_gen_call_output_typed, hr, outRegsC_replicate, freshC_replicate]
 
 /-- The register pairs of `gen_call_args` for register locations. -/
 theorem zip_regLocs : ∀ (locs : List ArgLoc) (rs : List Reg) (bytes : List Nat),
@@ -299,17 +382,40 @@ theorem ctor_gen_call_args_iff (st : LState) (s : Clif.Signature) (rss : List (L
   rw [ctor_gen_call_args_small st s rss hb h8 (sigArgLocs_regs hi hb h8)]
   simp [List.map_map, Function.comp_def, argLocReg]
 
+/-- **`gen_call_rets`** (typed, S11e5a): the outputs in the return registers of their classes
+(`retRegsC`), at most 8. -/
 theorem ctor_gen_call_rets_iff (st : LState) (s : Clif.Signature) (rss : List (List Reg)) (v : V)
     (st' : LState) :
     externCtor ctx T.gen_call_rets [.op (.sig s), .regsVec rss] st = .ok (v, st') ↔
-      ∃ ps rs, retRegs rss.length = some ps ∧ rss.mapM single? = some rs ∧
+      ∃ ps rs, rss.length ≤ 8 ∧ retRegsC (regsClasses rss) 0 0 = some ps ∧
+        rss.mapM single? = some rs ∧
         v = .op (.callRets (ps.zip rs)) ∧ st' = st := by
   have : externCtor ctx T.gen_call_rets [.op (.sig s), .regsVec rss] st =
-      match retRegs rss.length, rss.mapM single? with
-      | some ps, some rs => .ok (.op (.callRets (ps.zip rs)), st)
-      | _, _ => .unmodeled "gen_call_rets: more than 8 return values" := rfl
+      if rss.length ≤ 8 then
+        match retRegsC (regsClasses rss) 0 0, rss.mapM single? with
+        | some ps, some rs => .ok (.op (.callRets (ps.zip rs)), st)
+        | _, _ => .unmodeled "gen_call_rets: multi-register values"
+      else .unmodeled "gen_call_rets: more than 8 return values" := rfl
   rw [this]
-  cases retRegs rss.length <;> cases rss.mapM single? <;> simp [eq_comm]
+  by_cases h8 : rss.length ≤ 8
+  · simp only [h8, ite_true, true_and]
+    cases retRegsC (regsClasses rss) 0 0 <;> cases rss.mapM single? <;> simp [eq_comm]
+  · simp [h8]
+
+/-- The classes of integer output registers are integers: their return registers are
+`retRegs`. -/
+theorem retRegsC_outRegs (st : LState) (n : Nat) :
+    retRegsC (regsClasses (outRegs st n)) 0 0 = retRegs n := by
+  have : regsClasses (outRegs st n) = List.replicate n .int := by
+    apply List.eq_replicate_iff.mpr
+    simp [regsClasses, outRegs, Reg.homeCls]
+  rw [this, retRegsC_int]
+
+theorem retRegs_le {n : Nat} {ps : List Reg} (h : retRegs n = some ps) : n ≤ 8 := by
+  unfold retRegs at h
+  split at h
+  · assumption
+  · cases h
 
 theorem ctor_try_call_none_iff (st : LState) (v : V) (st' : LState) :
     externCtor ctx T.try_call_none [] st = .ok (v, st') ↔ v = .op .tryCallNone ∧ st' = st := by
@@ -382,7 +488,7 @@ def argRegPairs (L : List ((ArgLoc × Reg) × Nat)) : List (Reg × Reg) :=
 /-- The stores `gen_call_args` emits for its triples. -/
 def argStores (L : List ((ArgLoc × Reg) × Nat)) : List MInst :=
   L.filterMap fun q => match q.1.1 with
-    | .stack off => some (.store (storeOpOfBytes q.2) q.1.2 (.spOffset off) trustedFlags)
+    | .stack off => some (stackArgStore q.1.2 q.2 (.spOffset off))
     | .reg _ => none
 
 theorem foldl_argStep_gen : ∀ (L : List ((ArgLoc × Reg) × Nat)) (acc : Array (Reg × Reg))
@@ -396,7 +502,7 @@ theorem foldl_argStep_gen : ∀ (L : List ((ArgLoc × Reg) × Nat)) (acc : Array
     simp [argRegPairs, argStores]
   | ((.stack off, r), b) :: L, acc, st => by
     rw [List.foldl_cons, show argStep (acc, st) ((ArgLoc.stack off, r), b) =
-      (acc, st.emit (.store (storeOpOfBytes b) r (.spOffset off) trustedFlags)) from rfl,
+      (acc, st.emit (stackArgStore r b (.spOffset off))) from rfl,
       foldl_argStep_gen L]
     cases st
     simp [argRegPairs, argStores, LState.emit]
@@ -445,8 +551,7 @@ theorem argStores_map : ∀ (T : List ((ArgLoc × Nat) × Nat)),
     exact argStores_map T
   | ((.stack off, x), b) :: T => by
     simp only [List.map_cons, argStores, stackEnts, List.filterMap_cons, List.map_cons] at *
-    rw [show argStore (off, x, b) = .store (storeOpOfBytes b) (.vreg x .int) (.spOffset off)
-      trustedFlags from rfl]
+    rw [show argStore (off, x, b) = stackArgStore (.vreg x .int) b (.spOffset off) from rfl]
     congr 1
     exact argStores_map T
 

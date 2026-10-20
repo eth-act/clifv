@@ -184,25 +184,26 @@ theorem ctorCls_lc {r : Reg} {st' : LState} (h : LCCls st r st') : CtorCls ctx i
   subst hr
   exact .inr (.inl (h2 hs))
 
-/-- `gen_call_output`: fresh registers. -/
+/-- `gen_call_output`: fresh registers (of any class: typed calls, S11e5a). -/
 theorem ctorCls_callOutput {β : Type}
     (F : Array (List Reg) × LState → β → Array (List Reg) × LState) (l : List β)
-    (hF : ∀ a b, F a b = (a.1.push [(a.2.fresh .int).1], (a.2.fresh .int).2)) :
+    (hF : ∀ a b, ∃ c, F a b = (a.1.push [(a.2.fresh c).1], (a.2.fresh c).2)) :
     CtorCls ctx id args st (.regsVec (l.foldl F (#[], st)).1.toList) (l.foldl F (#[], st)).2 := by
   have := foldl_inv (fun a : Array (List Reg) × LState =>
       ClsStep st a.2 ∧ (Sz st → ∀ rs ∈ a.1.toList, ∀ r ∈ rs, RegCls a.2.classes r) ∧
       a.2.emitted = st.emitted)
     F l (#[], st) ⟨clsStep_refl st, by simp, rfl⟩ (by
       intro b _ a ⟨h1, h2, h3⟩
-      rw [hF]
-      have hs1 := clsStep_fresh a.2 .int
+      obtain ⟨cl, hFb⟩ := hF a b
+      rw [hFb]
+      have hs1 := clsStep_fresh a.2 cl
       refine ⟨clsStep_trans h1 hs1, fun hs rs hrs r hr => ?_, by simp [LState.fresh, h3]⟩
       simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hrs
       rcases hrs with hrs | rfl
       · exact regCls_step hs1 (h2 hs rs hrs r hr)
       · simp only [List.mem_singleton] at hr
         subst hr
-        exact fresh_cls (sz_step h1 hs) .int)
+        exact fresh_cls (sz_step h1 hs) cl)
   obtain ⟨h1, h2, h3⟩ := this
   refine ⟨h1, fun hs r hr => ?_, ⟨[], by simp [h3], by simp⟩⟩
   simp only [V.regsIn, List.mem_flatten] at hr
@@ -213,13 +214,20 @@ theorem store_regsFrom {P : Reg → Prop} {r : Reg} (h : P r) (op : StoreOp) (of
     (fl : Clif.MemFlags) : RegsFrom P (.store op r (.spOffset off) fl) := by
   intro g hg; simp [MInst.mapRegs, AMode.mapRegs, hg r h]
 
+theorem stackArgStore_regsFrom {P : Reg → Prop} {r : Reg} (h : P r) (b : Nat) (off : Int) :
+    RegsFrom P (stackArgStore r b (.spOffset off)) := by
+  unfold stackArgStore
+  split
+  · intro g hg; simp [MInst.mapRegs, AMode.mapRegs, hg r h]
+  · exact store_regsFrom h _ _ _
+
 /-- `gen_call_args`: register uses from the arguments, stores of the stack arguments. -/
 theorem ctorCls_callArgs (hid : id = TId.gen_call_args)
     (F : Array (Reg × Reg) × LState → (ArgLoc × Reg) × Nat → Array (Reg × Reg) × LState)
     (l : List ((ArgLoc × Reg) × Nat))
     (hF : ∀ a b, F a b = match b.1.1 with
       | .reg p => (a.1.push (b.1.2, p), a.2)
-      | .stack off => (a.1, a.2.emit (.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags)))
+      | .stack off => (a.1, a.2.emit (stackArgStore b.1.2 b.2 (.spOffset off))))
     (hl : ∀ b ∈ l, (∀ p, b.1.1 = .reg p → ∀ n c, p ≠ .vreg n c) ∧ b.1.2 ∈ regsInL args) :
     CtorCls ctx id args st (.op (.callArgs (l.foldl F (#[], st)).1.toList)) (l.foldl F (#[], st)).2 := by
   have := foldl_inv (fun a : Array (Reg × Reg) × LState =>
@@ -241,14 +249,14 @@ theorem ctorCls_callArgs (hid : id = TId.gen_call_args)
         · exact ⟨hr, hp p hbp⟩
       · rename_i off _
         refine ⟨h1, by simp [LState.emit, h2], by simp [LState.emit, h3],
-          ms ++ [MInst.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags],
+          ms ++ [stackArgStore b.1.2 b.2 (.spOffset off)],
           by simp [LState.emit, h4], ?_⟩
         intro m hm
         rcases List.mem_append.mp hm with hm | hm
         · exact h5 m hm
         · simp only [List.mem_singleton] at hm
           subst hm
-          exact store_regsFrom hr _ _ _)
+          exact stackArgStore_regsFrom hr _ _)
   obtain ⟨h1, h2, h3, ms, h4, h5⟩ := this
   refine ⟨clsStep_of_eq h2 h3, fun _ r hr => ?_,
     ⟨ms, h4, fun _ m hm => (h5 m hm).mono fun r hr => .inl ⟨by simp [hid, emitIds], hr⟩⟩⟩
@@ -326,7 +334,7 @@ theorem externCtor_cls (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | exact ctorCls_emit rfl ‹_›
       | exact ctorCls_rets rfl ‹_›
       | exact ctorCls_lc (loadConstantFull_cls _ _ _ _ _)
-      | exact ctorCls_callOutput _ _ (fun _ _ => rfl)
+      | exact ctorCls_callOutput _ _ (fun _ _ => ⟨_, rfl⟩)
       | (refine ctorCls_callInfo ?_
          intro r hr
          simp only [opRegs, List.mem_append, List.mem_singleton, List.mem_nil_iff, false_or] at hr

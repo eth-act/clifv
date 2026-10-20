@@ -117,19 +117,21 @@ theorem run_2508_rel {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := Cov.extern_sigAbiOk ha hext
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
+  have hrc := hctx.call_retClasses hi hcl hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2508] at heval
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
-    ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ hrc, ctor_put_in_regs_vec_iff,
+    ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, retRegsC_outRegs,
+    outRegs_length,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
   simp only [show (4:Nat) < 10 from by decide, ite_true] at *
   subst_vars
-  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegs_single, outRegs_length,
+  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, retRegsC_outRegs, outRegs_single, outRegs_length,
     Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
@@ -200,19 +202,21 @@ theorem run_2518_rel {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
   obtain ⟨rfl, rfl⟩ := hfs
   have hsig := Cov.extern_sigAbiOk ha hext
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
+  have hrc := hctx.call_retClasses hi hcl hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
   isel_destruct; subst_vars
   isel_inv_simp [*, rule_lower_2518] at heval
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ hrc, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, ctor_box_external_name_iff,
+    retRegsC_outRegs, outRegs_length,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
   simp only [show (4:Nat) < 10 from by decide, ite_true] at *
   subst_vars
-  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegs_single, outRegs_length,
+  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, retRegsC_outRegs, outRegs_single, outRegs_length,
     Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
@@ -285,6 +289,7 @@ theorem run_2529_rel {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Fun
   obtain ⟨sig, callee, args, s, rfl, hs, hfs⟩ := instData_callIndirect_inv hd
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
+  have hrc := sigRets_classes_int (sigIntB_iff.mp (instData_callIndirect_int hd hs)).2
   have hsig := hsigs sig callee args s rfl hs
   simp only [ext_value_list_slice_iff, ext_value_slice_unwrap_iff] at *
   isel_destruct; subst_vars
@@ -294,13 +299,14 @@ theorem run_2529_rel {p : Program} (hp : Data p) (hpI : IndData p) {f : Clif.Fun
   isel_destruct; subst_vars
   simp only [ext_value_slice_unwrap_iff, List.cons.injEq, and_true] at *
   isel_destruct; subst_vars
-  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff, ctor_put_in_regs_vec_iff,
+  simp only [ctor_abi_sig_iff, ctor_gen_call_output_iff _ _ hrc, ctor_put_in_regs_vec_iff,
     ctor_gen_call_rets_iff, ctor_try_call_none_iff, ctor_output_vec_iff, ctor_put_in_reg_iff,
+    retRegsC_outRegs, outRegs_length,
     Array.getElem?_setIfInBounds, Array.size_setIfInBounds, Array.size_replicate] at *
   isel_destruct; subst_vars
   simp only [show (4:Nat) < 10 from by decide, ite_true] at *
   subst_vars
-  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, outRegs_single, outRegs_length,
+  simp only [ctor_output_vec_iff, ctor_gen_call_rets_iff, retRegsC_outRegs, outRegs_single, outRegs_length,
     Option.some.injEq, exists_eq_left'] at *
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›

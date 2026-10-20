@@ -460,17 +460,18 @@ theorem ctorK_lc {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {r : Re
   obtain ⟨rfl, -⟩ := h
   exact .inr (.inl ⟨h1, h2⟩)
 
-/-- `gen_call_output`: fresh registers. -/
+/-- `gen_call_output`: fresh registers (of any class: typed calls, S11e5a). -/
 theorem ctorK_callOutput {ctx : Ctx} {id : TermId} {args : List V} {st : LState} {β : Type}
     (F : Array (List Reg) × LState → β → Array (List Reg) × LState) (l : List β)
-    (hF : ∀ a b, F a b = (a.1.push [(a.2.fresh .int).1], (a.2.fresh .int).2)) :
+    (hF : ∀ a b, ∃ c, F a b = (a.1.push [(a.2.fresh c).1], (a.2.fresh c).2)) :
     CtorK ctx id args st (.regsVec (l.foldl F (#[], st)).1.toList) (l.foldl F (#[], st)).2 := by
   have := foldl_inv (fun a : Array (List Reg) × LState =>
       (∀ rs ∈ a.1.toList, ∀ r ∈ rs, ∃ n c, r = .vreg n c ∧ st.nextVreg ≤ n ∧ n < a.2.nextVreg) ∧
       st.nextVreg ≤ a.2.nextVreg ∧ a.2.emitted = st.emitted)
     F l (#[], st) (by simp) (by
       intro b _ a ⟨h1, h2, h4⟩
-      rw [hF]
+      obtain ⟨cl, hFb⟩ := hF a b
+      rw [hFb]
       refine ⟨?_, by simp [LState.fresh]; omega, by simp [LState.fresh, h4]⟩
       intro rs hrs r hr
       simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hrs
@@ -479,7 +480,7 @@ theorem ctorK_callOutput {ctx : Ctx} {id : TermId} {args : List V} {st : LState}
         exact ⟨n, c, h, h5, by simp [LState.fresh]; omega⟩
       · simp only [List.mem_singleton] at hr
         subst hr
-        exact ⟨a.2.nextVreg, .int, rfl, h2, by simp [LState.fresh]⟩)
+        exact ⟨a.2.nextVreg, cl, rfl, h2, by simp [LState.fresh]⟩)
   obtain ⟨h1, h2, h4⟩ := this
   refine ⟨h2, ⟨[], by simp [h4], by simp⟩, fun _ => rfl, fun n c hn => ?_,
     fun n c h => by simp [V.regsD] at h⟩
@@ -495,7 +496,7 @@ theorem ctorK_callArgs {ctx : Ctx} {id : TermId} {args : List V} {st : LState}
     (l : List ((ArgLoc × Reg) × Nat))
     (hF : ∀ a b, F a b = match b.1.1 with
       | .reg p => (a.1.push (b.1.2, p), a.2)
-      | .stack off => (a.1, a.2.emit (.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags)))
+      | .stack off => (a.1, a.2.emit (stackArgStore b.1.2 b.2 (.spOffset off))))
     (hl : ∀ b ∈ l, (∀ p, b.1.1 = .reg p → ∀ n c, p ≠ .vreg n c) ∧ b.1.2 ∈ regsKL args) :
     CtorK ctx id args st (.op (.callArgs (l.foldl F (#[], st)).1.toList)) (l.foldl F (#[], st)).2 := by
   have := foldl_inv (fun a : Array (Reg × Reg) × LState =>
@@ -517,19 +518,21 @@ theorem ctorK_callArgs {ctx : Ctx} {id : TermId} {args : List V} {st : LState}
         · exact ⟨hr, hp p hbp⟩
       · rename_i off _
         refine ⟨h1, by simp [LState.emit, h2],
-          ms ++ [MInst.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags],
+          ms ++ [stackArgStore b.1.2 b.2 (.spOffset off)],
           by simp [LState.emit, h4], ?_⟩
         intro m hm
         rcases List.mem_append.mp hm with hm | hm
         · exact h5 m hm
         · simp only [List.mem_singleton] at hm
           subst hm
-          refine instK_of_args trivial (fun c h => by cases h) ?_
+          refine instK_of_args (by unfold stackArgStore; split <;> trivial)
+            (fun c h => by unfold stackArgStore at h; split at h <;> cases h) ?_
           intro r hr' n c _
+          unfold stackArgStore at hr'
+          split at hr' <;>
           simp only [useRegsK, MInst.uses, AMode.regs, pairUses, List.append_nil,
-            List.mem_singleton] at hr'
-          rw [hr']
-          exact hr)
+            List.mem_singleton] at hr' <;>
+          (rw [hr']; exact hr))
   obtain ⟨h1, h2, ms, h4, h5⟩ := this
   refine ⟨by omega, ⟨ms, h4, fun m hm => by rw [h2]; exact h5 m hm⟩, fun _ => rfl, fun n c hn => ?_,
     fun n c h => by simp [V.regsD, opRegsD] at h⟩
@@ -621,7 +624,7 @@ theorem externCtor_k (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | exact ctorK_fresh
       | exact ctorK_emit ‹_›
       | exact ctorK_lc (loadConstantFull_k _ _ _ _ _)
-      | exact ctorK_callOutput _ _ (fun _ _ => rfl)
+      | exact ctorK_callOutput _ _ (fun _ _ => ⟨_, rfl⟩)
       | exact ctorK_tryRets ‹_› _ _
       | (refine ctorK_same (fun _ => rfl) ?_ (by simp [V.regsD])
          intro n c hn

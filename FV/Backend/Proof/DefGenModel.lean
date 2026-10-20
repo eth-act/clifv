@@ -279,10 +279,10 @@ theorem loadConstantFull_d (bits : Nat) (se : Bool) (sz : OperandSize) (value : 
     · simp [useRegsK, defRegsK, MInst.uses, MInst.defs, pairUses, pairDefs, LState.fresh, hrd]
     · simp [defRegsK, MInst.defs, LState.fresh]
 
-/-- `gen_call_output`: fresh registers, nothing emitted. -/
+/-- `gen_call_output`: fresh registers (of any class: typed calls, S11e5a), nothing emitted. -/
 theorem callOutput_d {st : LState} {β : Type}
     (F : Array (List Reg) × LState → β → Array (List Reg) × LState) (l : List β)
-    (hF : ∀ a b, F a b = (a.1.push [(a.2.fresh .int).1], (a.2.fresh .int).2)) :
+    (hF : ∀ a b, ∃ c, F a b = (a.1.push [(a.2.fresh c).1], (a.2.fresh c).2)) :
     ((l.foldl F (#[], st)).2.emitted = st.emitted ∧
       st.nextVreg ≤ (l.foldl F (#[], st)).2.nextVreg) ∧
     ∀ r ∈ regsU (.regsVec (l.foldl F (#[], st)).1.toList), ∃ n cl, r = .vreg n cl ∧
@@ -292,7 +292,8 @@ theorem callOutput_d {st : LState} {β : Type}
       st.nextVreg ≤ a.2.nextVreg ∧ a.2.emitted = st.emitted)
     F l (#[], st) (by simp) (by
       intro b _ a ⟨h1, h2, h4⟩
-      rw [hF]
+      obtain ⟨cl, hFb⟩ := hF a b
+      rw [hFb]
       refine ⟨?_, by simp [LState.fresh]; omega, by simp [LState.fresh, h4]⟩
       intro rs hrs r hr
       simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hrs
@@ -300,7 +301,7 @@ theorem callOutput_d {st : LState} {β : Type}
       · exact h1 rs hrs r hr
       · simp only [List.mem_singleton] at hr
         subst hr
-        exact ⟨a.2.nextVreg, .int, rfl, h2⟩)
+        exact ⟨a.2.nextVreg, cl, rfl, h2⟩)
   obtain ⟨h1, h2, h4⟩ := this
   refine ⟨⟨h4, h2⟩, fun r hr => ?_⟩
   simp only [regsU, List.mem_flatten] at hr
@@ -316,7 +317,7 @@ theorem callArgs_d {args : List V} {st : LState}
     (l : List ((ArgLoc × Reg) × Nat))
     (hF : ∀ a b, F a b = match b.1.1 with
       | .reg p => (a.1.push (b.1.2, p), a.2)
-      | .stack off => (a.1, a.2.emit (.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags)))
+      | .stack off => (a.1, a.2.emit (stackArgStore b.1.2 b.2 (.spOffset off))))
     (hl : ∀ b ∈ l, b.1.2 ∈ regsUL args) :
     (l.foldl F (#[], st)).2.nextVreg = st.nextVreg ∧ ∃ ms : List MInst,
       (l.foldl F (#[], st)).2.emitted = st.emitted ++ ms.toArray ∧ (∀ m ∈ ms, ArgUses args m) ∧
@@ -339,7 +340,7 @@ theorem callArgs_d {args : List V} {st : LState}
         · exact hl b hb
       · rename_i off _
         refine ⟨h1, by simp [LState.emit, h2],
-          ms ++ [MInst.store (storeOpOfBytes b.2) b.1.2 (.spOffset off) trustedFlags],
+          ms ++ [stackArgStore b.1.2 b.2 (.spOffset off)],
           by simp [LState.emit, h4], ?_⟩
         intro m hm
         rcases List.mem_append.mp hm with hm | hm
@@ -348,8 +349,10 @@ theorem callArgs_d {args : List V} {st : LState}
           subst hm
           intro u hu
           obtain ⟨c, hc⟩ := useVregs_mem hu
+          unfold stackArgStore at hc
+          split at hc <;>
           simp only [useRegsK, MInst.uses, AMode.regs, pairUses, List.append_nil,
-            List.mem_singleton] at hc
+            List.mem_singleton] at hc <;>
           exact ⟨c, hc ▸ hl b hb⟩)
   obtain ⟨h1, h2, ms, h4, h5⟩ := this
   refine ⟨h2, ms, h4, h5, fun r hr => ?_, rfl, rfl⟩
@@ -407,18 +410,34 @@ theorem flatten_map_single : ∀ rs : List Reg, (rs.map fun r => [r]).flatten = 
     rw [flatten_map_single rs]
     rfl
 
+/-- `retRegsC` places one register per class. -/
+theorem retRegsC_length : ∀ {cs : List RegClass} {nx nv : Nat} {ps : List Reg},
+    retRegsC cs nx nv = some ps → ps.length = cs.length
+  | [], _, _, ps, h => by
+    simp only [retRegsC, Option.some.injEq] at h; subst h; rfl
+  | .int :: cs, nx, nv, ps, h => by
+    simp only [retRegsC] at h
+    split at h
+    · obtain ⟨qs, hq, rfl⟩ := Option.map_eq_some_iff.mp h
+      simp [retRegsC_length hq]
+    · cases h
+  | .float :: cs, nx, nv, ps, h => by
+    simp only [retRegsC] at h
+    split at h
+    · obtain ⟨qs, hq, rfl⟩ := Option.map_eq_some_iff.mp h
+      simp [retRegsC_length hq]
+    · cases h
+
 /-- `gen_call_rets`: the call's defs are the argument registers. -/
-theorem crets_d {rss : List (List Reg)} {rs ps : List Reg} (hp : retRegs rss.length = some ps)
+theorem crets_d {rss : List (List Reg)} {rs ps : List Reg}
+    (hp : retRegsC (regsClasses rss) 0 0 = some ps)
     (h : rss.mapM (fun | [r] => some r | _ => none) = some rs) :
     (∀ r ∈ regsU (.regsVec rss), r ∈ (ps.zip rs).map (·.2)) ∧
       (∀ r ∈ (ps.zip rs).map (·.2), r ∈ regsU (.regsVec rss)) ∧
       (V.regsVec rss).valsIn = [] ∧ (V.regsVec rss).instsIn = [] := by
   have e := mapM_single_eq h
   have hl : ps.length = rss.length := by
-    unfold retRegs at hp
-    split at hp
-    · cases hp; simp
-    · cases hp
+    rw [retRegsC_length hp]; simp [regsClasses]
   have hz : (ps.zip rs).map (·.2) = rs := map_snd_zip_eq (by rw [hl, e]; simp)
   have hf : regsU (.regsVec rss) = rs := by
     rw [e]; exact flatten_map_single rs
@@ -531,8 +550,8 @@ theorem externCtor_d (ctx : Ctx) (t : Term) (args : List V) (st : LState) :
       | exact ⟨rfl, Nat.le_succ _⟩
       | (rename_i r hr; simp only [regsU, LState.fresh, List.mem_singleton] at hr
          exact ⟨_, _, hr, Nat.le_refl _⟩)
-      | exact (callOutput_d _ _ (fun _ _ => rfl)).1
-      | exact (callOutput_d _ _ (fun _ _ => rfl)).2 _ ‹_›
+      | exact (callOutput_d _ _ (fun _ _ => ⟨_, rfl⟩)).1
+      | exact (callOutput_d _ _ (fun _ _ => ⟨_, rfl⟩)).2 _ ‹_›
       | exact ⟨[_], rfl, rfl⟩
       | exact ⟨[_, _], rfl, rfl⟩
       | exact ⟨_, _, rfl, ‹_›, rfl, rfl⟩
