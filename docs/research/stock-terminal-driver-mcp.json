@@ -1,0 +1,97 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.Coverage.stock_buildCtx_terminal_unsunk' depends on axioms: [propext, Quot.sound]",
+      "line": 3,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.Coverage.stock_scanBlock_terminal_unsunk' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 4,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.Coverage.stock_branchArgs_sunk' depends on axioms: [propext, Quot.sound]",
+      "line": 5,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.Coverage.stock_blockCore_terminal_unsunk' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.Coverage.stock_lower_terminal_unsunk' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.Coverage.stock_lower_records_terminal_unsunk' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_retTrap_emitted' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_retTrap_record_emitted' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_lower_return_record_source_run_auto' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.TerminalDriverWitness.stock_atomic_driver_unsunk_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.TerminalDriverWitness.stock_terminal_arguments_witness' depends on axioms: [propext, Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.TerminalDriverWitness.stock_critical_driver_unsunk_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 14,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.ReturnSourceWitness.stock_return_auto_source_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 15,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}
