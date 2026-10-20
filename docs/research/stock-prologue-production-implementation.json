@@ -1,7 +1,7 @@
 {
   "utc": "2026-10-20T01:37:55.120770+00:00",
   "base": "7954ae1f2a4ebe32a389f6c59695d3b465643300",
-  "state": "implementation_and_targeted_gates_passed_full_author_gates_pending",
+  "state": "full_author_gates_passed",
   "class": "SystemV i64 two-block nop/jump/nop parameter-return, arbitrary names/run metadata/values",
   "runtime_activation": "default compiler and verified linker for unoptimized programs without exceptional edges; retained routes for other settings",
   "public_roots": {
@@ -25,5 +25,36 @@
     "stock-production-runtime.log": "db1d4a80d0eef23cbaa945f70d0074206de752e1af3f5668c4a7c1ff2826f097",
     "stock-production-boundary-witness-build.log": "86ef288851937ccb4303f6c8c1752a5de85859ea8f52d8af7f690615a88e5435",
     "stock-production-boundary-audit.log": "0f8a5ee47c25389d194a58669f7e1e223a078791114ef2fcc18bedfef3e83a55"
+  },
+  "validated_source": "c2defaa785873728f8a91bf9b7223e805a7c9811",
+  "module_gate": {
+    "passed": 2386,
+    "built": 1
+  },
+  "audit_files": 18,
+  "runtime": {
+    "filetests": 114,
+    "extrt": 22,
+    "runtests_passed": 4737,
+    "failures": 0,
+    "disagreements": 0,
+    "unchanged_baseline_errors": 7
+  },
+  "encoder_identical": 1316,
+  "identity_stage_parity": {
+    "e2e": {
+      "original": 1150,
+      "current": 1154,
+      "all_original_identities_and_ordered_stages_preserved": true
+    },
+    "legacy-e2e": {
+      "original": 1150,
+      "current": 1154,
+      "all_original_identities_and_ordered_stages_preserved": true
+    }
+  },
+  "verified_default_lean_link": {
+    "fv_demo_tests": 21,
+    "survey_tests": 53
   }
 }
