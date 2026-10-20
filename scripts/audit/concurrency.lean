@@ -166,3 +166,14 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.Litmus.mp_dmb_addr_frag
 #print axioms Concurrency.Litmus.mp_dmb_addr_full
 #print axioms Concurrency.Witness.incX_full
+-- T2h layer 2a: VCode event addresses within the accesses
+#print axioms Concurrency.VCodeAddr.load_lines_evs
+#print axioms Concurrency.VCodeAddr.store_lines_evs
+#print axioms Concurrency.VCodeAddr.fpuLoad_lines_evs
+#print axioms Concurrency.VCodeAddr.fpuStore_lines_evs
+#print axioms Concurrency.VCodeAddr.rmwBody_evs
+#print axioms Concurrency.VCodeAddr.casHead_evs
+#print axioms Concurrency.VCodeAddr.casStore_evs
+#print axioms Concurrency.VCodeAddr.straightEvs_avoid
+#print axioms Concurrency.VCodeAddr.cEvs_avoid
+#print axioms Concurrency.VCodeAddr.Witness.ldar_avoid
