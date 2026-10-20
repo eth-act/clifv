@@ -36,8 +36,7 @@ consumers with exact old-function compatibility, complete arbitrary-argument mac
 witnesses, default entrypoint selection and emitted proofs. Targeted132standard
 public roots,16boundary roots (nine marked fixed-native data dependencies),650owned
 constants,ten linked cases/sixteen generated files,real verified CLIs and all-six
-forced allocator retry tests pass. Full frozen author gates are next; no merged
-activation is claimed for the added five configurations. See
+forced allocator retry tests pass. Full author gates pass2406modules/21audits/allruntime,encoding,E2E,link,proof andverifiedcratechecks. Reconciled onto#334/7a2ea9bf without Lean/Rust source changes; fresh corpus gates pass1321identicalencodings,both1159E2Emodes/all1150originaland1154prioridentity-stageparity,and the Clif.run recorded baseline. The added five configurations await the immediate author squash on validated6d808c57. See
 [six-configuration implementation evidence](../research/stock-prologue-all-production.md).
 Optimizer and exceptional-edge routes await their consumer adapters.
 All remaining original #140 obligations remain open.

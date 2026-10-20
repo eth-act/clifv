@@ -1,0 +1,214 @@
+{
+  "utc": "2026-10-20T03:00:46.915491+00:00",
+  "state": "full_and_reconciled_author_gates_passed",
+  "validated_reconciled_source": "6d808c572d1c5b5eb5e006465b3d41d12363ec98",
+  "full_gate": {
+    "utc": "2026-10-20T02:52:50.236936+00:00",
+    "state": "per_pr_gates_passed",
+    "pid": 2099646,
+    "head": "8d8f95cf4ddae49949dd925dad03d1e18ead4147",
+    "logs": {
+      "all-modules": {
+        "path": "/tmp/stock-production-all-author-gates/all-modules.log",
+        "sha256": "dba8268a1fee724f5bb709a117e77f577b653e83fffdb0d9ce51184d15c69c35"
+      },
+      "library-and-affected-tools": {
+        "path": "/tmp/stock-production-all-author-gates/library-and-affected-tools.log",
+        "sha256": "9a844a40e48fe091c9972984856acc1a81011b7b6a155a2335288a362d903774"
+      },
+      "all-axiom-audits": {
+        "path": "/tmp/stock-production-all-author-gates/all-axiom-audits.log",
+        "sha256": "997b0102b4032e5fcc1ae8486c9cd6c022cbd019dbe2f47e9a28559c89f4b8f9"
+      },
+      "owned-constants": {
+        "path": "/tmp/stock-production-all-author-gates/owned-constants.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "runtime": {
+        "path": "/tmp/stock-production-all-author-gates/runtime.log",
+        "sha256": "aba8bd8fcd9c3d62574ae1c4e810fa1c7006d9447f534397658a6db92445682d"
+      },
+      "encoder": {
+        "path": "/tmp/stock-production-all-author-gates/encoder.log",
+        "sha256": "51f298a54a51f1a137d36b8801867312aa93555db15fcf7fe9b88d5543c5f74f"
+      },
+      "e2e": {
+        "path": "/tmp/stock-production-all-author-gates/e2e.log",
+        "sha256": "831fc6bc0ba01d4711b6ac9accb1b0832ff4c0dcbf2f9c156b5449fe3e1b26a7"
+      },
+      "legacy-e2e": {
+        "path": "/tmp/stock-production-all-author-gates/legacy-e2e.log",
+        "sha256": "a2d31625ba5eb571ac640ff09097fc1727fa2c9aff1115403bcd66cbff8cbb24"
+      },
+      "link-check-0": {
+        "path": "/tmp/stock-production-all-author-gates/link-check-0.log",
+        "sha256": "6ff435908e4cff2160e85a165b12c5718f5c653f90f2521e05379354acbb0a9d"
+      },
+      "link-check-1": {
+        "path": "/tmp/stock-production-all-author-gates/link-check-1.log",
+        "sha256": "e6f596f90cbc05a711ff013457bed4c0ed0a90f3321f6c0788c9677756623c35"
+      },
+      "generated-StockD0MixedPlain": {
+        "path": "/tmp/stock-production-all-author-gates/generated-StockD0MixedPlain.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "generated-StockD0MixedCleanup": {
+        "path": "/tmp/stock-production-all-author-gates/generated-StockD0MixedCleanup.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "actual-linked-generated-proofs": {
+        "path": "/tmp/stock-production-all-author-gates/actual-linked-generated-proofs.log",
+        "sha256": "259ecfb91508edb55f4191110ae53be3115b2b0d21ebc043953db0f60da0cc99"
+      },
+      "production-runtime": {
+        "path": "/tmp/stock-production-all-author-gates/production-runtime.log",
+        "sha256": "db1d4a80d0eef23cbaa945f70d0074206de752e1af3f5668c4a7c1ff2826f097"
+      },
+      "all-configurations-runtime": {
+        "path": "/tmp/stock-production-all-author-gates/all-configurations-runtime.log",
+        "sha256": "0a09576acf26e882def802224360e9b5abe63e4cb9410364e23a1eb227951a08"
+      },
+      "all-configurations-linked-proofs": {
+        "path": "/tmp/stock-production-all-author-gates/all-configurations-linked-proofs.log",
+        "sha256": "cdf029ecd1908d58e47bb05ce58c51b16d73d722e45aa4560940ab2c56dd6c7a"
+      },
+      "production-cli-original-bundles": {
+        "path": "/tmp/stock-production-all-author-gates/production-cli-original-bundles.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "production-cli-all-configurations": {
+        "path": "/tmp/stock-production-all-author-gates/production-cli-all-configurations.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "verified-fv-demo": {
+        "path": "/tmp/stock-production-all-author-gates/verified-fv-demo.log",
+        "sha256": "00f62a8aa0b428fa241b37e5194367c8a71477c93d7327c91ac15526a1e531de"
+      },
+      "verified-survey": {
+        "path": "/tmp/stock-production-all-author-gates/verified-survey.log",
+        "sha256": "b80d0ec20d56f8ae5d159823c9f7c492fc823cdff1278f085182e1332e908a5a"
+      }
+    },
+    "identity_stage_parity": {
+      "e2e": {
+        "original": 1150,
+        "current": 1154,
+        "all_original_identities_and_ordered_stages_preserved": true
+      },
+      "legacy-e2e": {
+        "original": 1150,
+        "current": 1154,
+        "all_original_identities_and_ordered_stages_preserved": true
+      }
+    },
+    "remaining": "Fetch current main, reconcile if needed, open non-draft implementation PR and author squash promptly. Full original #140 remains active."
+  },
+  "reconcile_gate": {
+    "state": "reconciled_author_gates_passed",
+    "pid": 2260776,
+    "head": "6d808c572d1c5b5eb5e006465b3d41d12363ec98",
+    "validated_code_head": "8d8f95cf4ddae49949dd925dad03d1e18ead4147",
+    "utc": "2026-10-20T02:59:12.783715+00:00",
+    "records": {
+      "source-matching-build": {
+        "rc": 0,
+        "log": "/tmp/stock-all-reconcile-gates/source-matching-build.log",
+        "sha256": "8f6ac9bd41add7eec4d21618b269794c38ffa686c49b0a1f502299471cc022ac"
+      },
+      "encoder": {
+        "rc": 0,
+        "log": "/tmp/stock-all-reconcile-gates/encoder.log",
+        "sha256": "405deff7ac2ddfe9c34031b1ff4ff16b108daada6daa083d3256077b4359b00f"
+      },
+      "moved-fixture-backend-runtime": {
+        "rc": 0,
+        "log": "/tmp/stock-all-reconcile-gates/moved-fixture-backend-runtime.log",
+        "sha256": "fc0e55fdcd56a4ec68bdda8c6bff3dc3018985b9a182b085eb61574208d934fe"
+      },
+      "e2e": {
+        "rc": 0,
+        "log": "/tmp/stock-all-reconcile-gates/e2e.log",
+        "sha256": "7d93311aabe617db994f9aaf84e175145730b57aef1b2b71dca6d5fc1f35ba52"
+      },
+      "legacy-e2e": {
+        "rc": 0,
+        "log": "/tmp/stock-all-reconcile-gates/legacy-e2e.log",
+        "sha256": "8d5a5aca98d01cf8d4fc77e2659feea5cfda0f2757d590bafbbe410d90a63e30"
+      },
+      "clif-filetests-baseline": {
+        "rc": 1,
+        "log": "/tmp/stock-all-reconcile-gates/clif-filetests-baseline.log",
+        "sha256": "23801c31cb435b0e533f1982f582259c231cdfd7eb4aeb81e196d3d52bec1ff3"
+      }
+    },
+    "identity_stage_parity": {
+      "e2e": {
+        "original": 1150,
+        "current": 1159,
+        "all_original_identities_and_ordered_stages_preserved": true
+      },
+      "legacy-e2e": {
+        "original": 1150,
+        "current": 1159,
+        "all_original_identities_and_ordered_stages_preserved": true
+      }
+    },
+    "clif_baseline": {
+      "pass_fail_disagree": [
+        11726,
+        8,
+        13
+      ],
+      "required": [
+        11714,
+        8,
+        13
+      ],
+      "raw_script_rc": 1
+    },
+    "source_hashes_equal_to_full_validated_head": true
+  },
+  "prior_shipped_identity_stage_parity": {
+    "e2e": {
+      "prior_shipped": 1154,
+      "current": 1159,
+      "all_prior_identities_and_ordered_stages_preserved": true
+    },
+    "legacy-e2e": {
+      "prior_shipped": 1154,
+      "current": 1159,
+      "all_prior_identities_and_ordered_stages_preserved": true
+    }
+  },
+  "owned_constant_logs": {
+    "/tmp/stock-all-owned-current/0.log": {
+      "count": 479,
+      "sha256": "183d16f78fb76006bc069815aeeae8fe926d75cc913fc246cdd34e7abf925c0e"
+    },
+    "/tmp/stock-all-owned-current/1.log": {
+      "count": 14,
+      "sha256": "135855ffcaf3fd6d30091db63d08aaa5c64fe9b19704a0ec6c9aa7b1947ad1ee"
+    },
+    "/tmp/stock-all-owned-current/2.log": {
+      "count": 9,
+      "sha256": "0afc4c648b3fc3650ae35b75b76d87b24102031c45a7c99bad1829008d73635e"
+    },
+    "/tmp/stock-all-owned-current/3.log": {
+      "count": 81,
+      "sha256": "f69a6d77541fd3acdb2ae568e8ac6f3c576cc81e8064cc010a9e339945cad146"
+    },
+    "/tmp/stock-all-owned-current/4.log": {
+      "count": 28,
+      "sha256": "e2e0f52cefbe614369af73c6f3f660e58fb175f31ed02b8c2c9e5f5cafa80941"
+    },
+    "/tmp/stock-all-owned-current/5.log": {
+      "count": 5,
+      "sha256": "d28a5902cfa523f4707d8bb6b95e747c2d41fa3a8b5bc7cb8ea04854c694fb7d"
+    },
+    "/tmp/stock-all-owned-current/6.log": {
+      "count": 34,
+      "sha256": "8911c84db16adb7731a0424316cb4faa1943b426e38c108ef844234bfb4fecf3"
+    }
+  },
+  "full_original_goal_complete": false
+}

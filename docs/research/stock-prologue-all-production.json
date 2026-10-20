@@ -1,6 +1,6 @@
 {
   "utc": "2026-10-20T02:27:38.166809+00:00",
-  "state": "implementation_and_targeted_gates_passed_full_author_gates_pending",
+  "state": "full_author_gates_passed_reconciled",
   "base": "00f686f1c1fa2b67f4041372139ecc25db0e0474",
   "standard_compiler_class_public_roots": 132,
   "boundary_witness_roots": 16,
@@ -31,5 +31,27 @@
     "/tmp/stock-all-owned-final-core.log": "183d16f78fb76006bc069815aeeae8fe926d75cc913fc246cdd34e7abf925c0e",
     "/tmp/stock-all-runtime-run.log": "0a09576acf26e882def802224360e9b5abe63e4cb9410364e23a1eb227951a08"
   },
-  "next": "Run frozen full current author gates, fetch/reconcile main, author squash a substantive all-six production-class PR and notify integrator. Then optimizer/unwind consumer adapters and further rule/effect/full-driver original#140 obligations."
+  "next": "Run frozen full current author gates, fetch/reconcile main, author squash a substantive all-six production-class PR and notify integrator. Then optimizer/unwind consumer adapters and further rule/effect/full-driver original#140 obligations.",
+  "validated_source_head": "6d808c572d1c5b5eb5e006465b3d41d12363ec98",
+  "full_gate_source_head": "8d8f95cf4ddae49949dd925dad03d1e18ead4147",
+  "current_main": "7a2ea9bf9610fc1b6ec82c48e0e7c46fc7639a1b",
+  "modules": 2406,
+  "library_and_affected_tool_jobs": 3154,
+  "trust_audit_files": 21,
+  "encoding": "1321identical/0different",
+  "e2e": "bothmodes1159accepted/0rejected,all1150originaland1154prioridentitiesandorderedstagespreserved",
+  "verified_crates": "fv-demo21/survey53outcomesidentical,2/2and18/18binariesverified",
+  "clif_baseline": {
+    "pass_fail_disagree": [
+      11726,
+      8,
+      13
+    ],
+    "required": [
+      11714,
+      8,
+      13
+    ],
+    "raw_script_rc": 1
+  }
 }
