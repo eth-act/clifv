@@ -42,6 +42,14 @@ completeness transports the original prepared-input hypotheses; it does not
 introduce an additional source restriction or a per-program correctness
 certificate.
 
+Consumers composing these theorems without changing them (L1f, #217; e2e.md "The shipped
+compiler"): `Link.DeadCleanup.compileExe_correct_peak` (recursive entries, stack for the run's
+peak call depth), `compileExe_correct_source` and `compileExe_correct_source_peak` (the original
+pre-`i128`-legalisation program), in `FV/E2E/DeadCleanupExecPeak.lean` and
+`FV/Link/DeadCleanupExe{Peak,Source}.lean`. `lean-link` names the theorems covering each
+executable it writes (`coverage:`); `lean-link --verified` / `cargo fv --lean-link --verified`
+make an input outside `SrcScopeB`/`InScopeP` an error instead of the bare-linker fallback.
+
 `link-check --dead-cleanup` selects cleanup artifacts and emits matching checker,
 binary, crate and stack proofs. The generated input retains allocator fallback
 mode. `lean-link --dead-cleanup` selects the matching executable compiler.

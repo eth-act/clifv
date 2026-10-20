@@ -667,11 +667,11 @@ theorem memBounded_eval {fr : Frame} {m m' : Mem} {i : Inst} {vals : List Val}
   memBounded_of_allocs (evalInst_allocs h) hM
 
 /-- **`same`**: the statement itself. -/
-theorem sim_same {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+theorem sim_same {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr fr' : Frame}
     {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
     (hb : fr.body = st :: rest) (hpl : planOf C st = some .same) {ts2 : List Stmt}
     (hb' : fr'.body = st :: ts2) (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨hplain, hnc, hnci, hnfa⟩ := planOf_same hpl
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
   have hnd := results_nodup hG.defs hB hst
@@ -681,7 +681,7 @@ theorem sim_same {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
     evalInst_same hops hR.slots (by rw [hR.func', hR.func]; exact hG.globals)
       (fun t fn h => by rw [hR.func', hR.func]; exact hnfa t fn h)
   rw [step_inst env p ⟨fr, [], m⟩ st rest hb hnc hnci]
-  have hstep' := step_inst env p' ⟨fr', [], m⟩ st ts2 hb' hnc hnci
+  have hstep' := step_inst env' p' ⟨fr', [], m⟩ st ts2 hb' hnc hnci
   rw [hev] at hstep'
   cases hr : evalInst fr m st.inst with
   | ok vm =>
@@ -710,13 +710,13 @@ theorem sim_same {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
   | stuck msg => trivial
 
 /-- **Pure plans**: the segment runs the pattern. -/
-theorem sim_pure {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+theorem sim_pure {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr fr' : Frame}
     {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
     (hb : fr.body = st :: rest) {pat : List Stmt} {ins outs : List ValueId}
     (hpl : planOf C st = some (.pure pat ins outs)) {seg ts2 : List Stmt}
     (hseg : pureOk C pat ins outs seg = true) (hb' : fr'.body = seg ++ ts2)
     (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
   have hnd := results_nodup hG.defs hB hst
   obtain ⟨hnc, hnci⟩ := planOf_pure_inst hpl
@@ -772,7 +772,7 @@ theorem mem_load_valid {m : Mem} {fl : MemFlags} {a n w : Nat} {x : BitVec w}
   · split at hc <;> cases hc
 
 /-- **Split load**: two 8-byte loads of the halves. -/
-theorem sim_load {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+theorem sim_load {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr fr' : Frame}
     {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
     (hb : fr.body = st :: rest) {rl rh q : ValueId} {fl : MemFlags} {off : Int}
     (hpl : planOf C st = some (.load rl rh q fl off)) {ts2 : List Stmt}
@@ -780,7 +780,7 @@ theorem sim_load {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
     (hrl : rl ≠ rh) (hrq : rl ≠ q)
     (hcode : codeOk C rest fr.term ts2 fr'.term = true)
     (hT : ∀ c, step env p ⟨fr, [], m⟩ ≠ .trapped c) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨hi, ⟨r, hrs, hr⟩, hpq, hbig⟩ := planOf_load hpl
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
   have hq : q < C.T0 := ops_lt hG hB hst (by rw [hi]; simp [instOps])
@@ -860,7 +860,7 @@ theorem memBounded_store {w : Nat} {m : Mem} {fl : MemFlags} {a n : Nat} {x : Bi
   memBounded_of_allocs (Mem.store_allocs h) hM
 
 /-- **Split store**: two 8-byte stores of the halves. -/
-theorem sim_store {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+theorem sim_store {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr fr' : Frame}
     {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
     (hb : fr.body = st :: rest) {xl xh q : ValueId} {fl : MemFlags} {off : Int}
     (hpl : planOf C st = some (.store xl xh q fl off)) {ts2 : List Stmt}
@@ -868,7 +868,7 @@ theorem sim_store {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' :
       { results := [], inst := .store .store .i64 fl xh q (off + 8) }] ++ ts2)
     (hcode : codeOk C rest fr.term ts2 fr'.term = true)
     (hT : ∀ c, step env p ⟨fr, [], m⟩ ≠ .trapped c) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨⟨x, hi, hx⟩, hrs, hpq, hbig⟩ := planOf_store hpl
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
   have hx0 : x < C.T0 := ops_lt hG hB hst (by rw [hi]; simp [instOps])
@@ -911,6 +911,33 @@ theorem sim_store {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' :
       (srcInv_stmt hG.defs hB hst hR.src hev hset)
 
 /-! ## Calls of externs -/
+
+/-- **Two environments related at one extern** (`ExtLegal` for a source environment `env` and a
+target environment `env'`): the extern `name` of `env` called with values of the signature
+`sig` has a counterpart in `env'` that, called with the arguments expanded by the groups of
+`sig`, returns the expanded results with the same memory and traps where the source traps.
+With `env' = env` it is `ExtLegal` at `name` (`ExtLegal.at`). -/
+def ExtRelAt (env env' : Env) (name : String) (sig : Signature) : Prop :=
+  ∀ h, env.extern name = some h → ∃ h', env'.extern name = some h' ∧
+    ∀ gs rg, groups sig.params = some gs → groups sig.returns = some rg →
+    ∀ vals vals' m, vals.map (·.ty) = AbiParam.tys sig.params → ExpRel gs vals vals' →
+    (∀ rv m', h vals m = .returned rv m' → rv.map (·.ty) = AbiParam.tys sig.returns →
+      ∃ rv', h' vals' m = .returned rv' m' ∧ ExpRel rg rv rv') ∧
+    (∀ c, h vals m = .trapped c → h' vals' m = .trapped c)
+
+theorem ExtLegal.at {env : Env} (h : ExtLegal env) (name : String) (sig : Signature) :
+    ExtRelAt env env name sig :=
+  fun g hg => ⟨g, hg, fun gs rg hgs hrg vals vals' m hty hexp =>
+    h name g hg sig gs rg hgs hrg vals vals' m hty hexp⟩
+
+/-- Externs returning from a memory with valid ranges below `2^64` return such a memory
+(`EnvKeepsAllocs` implies it). -/
+def EnvKeepsBounded (env : Env) : Prop :=
+  ∀ name h, env.extern name = some h → ∀ vals m rv m', h vals m = .returned rv m' →
+    MemBounded m → MemBounded m'
+
+theorem EnvKeepsAllocs.bounded {env : Env} (h : EnvKeepsAllocs env) : EnvKeepsBounded env :=
+  fun name g hg vals m rv m' hr hM => memBounded_of_allocs (h name g hg vals m rv m' hr) hM
 
 /-- A call of an extern the environment implements (`stepCall`). -/
 theorem stepCall_ext {env : Env} {p : Program} {s : State} {rest : List Stmt}
@@ -957,7 +984,7 @@ theorem truthy_bool8' (b : Bool) : @Sem.truthy Ty.i8.width (Sem.bool8 b) = b := 
   cases b <;> rfl
 
 /-- **`div` at `i128`**: a call of the `__*ti3` helper. -/
-theorem sim_div {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hH : HelperOk env)
+theorem sim_div {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} (hH : HelperOk env')
     (hext' : ∀ fn e, C.g.extern? fn = some e → p'.func? e.name = none)
     {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt}
     {rest : List Stmt} (hb : fr.body = st :: rest) {op : DivOp} {xl xh yl yh rl rh : ValueId}
@@ -965,7 +992,7 @@ theorem sim_div {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hH : Helpe
     (hb' : fr'.body = { results := [rl, rh], inst := .call fn [xl, xh, yl, yh] } :: ts2)
     (hrl : rl ≠ rh) (hfn : C.g.extern? fn = some (helperExt op))
     (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨x, y, r, hi, hrs, hx, hy, hr⟩ := planOf_div hpl
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
   have hx0 : x < C.T0 := ops_lt hG hB hst (by rw [hi]; simp [instOps])
@@ -998,7 +1025,7 @@ theorem sim_div {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hH : Helpe
       | error c => intro hres; cases hres
     rw [hdiv] at hsem'
     simp only [StepResult.ofRes_ok, continueWith, hrs, Regs.setMany_cons, Regs.setMany_nil]
-    have hstep' := step_extcall (env := env) (p := p') (s := ⟨fr', [], m⟩) hb'
+    have hstep' := step_extcall (env := env') (p := p') (s := ⟨fr', [], m⟩) hb'
       (by rw [hR.func']; exact hfn)
       (holds_getMany (show Holds fr'.regs [xl, xh, yl, yh]
         [⟨.i64, l⟩, ⟨.i64, h⟩, ⟨.i64, bl⟩, ⟨.i64, bh⟩] from ⟨hl, hh, hbl, hbh, trivial⟩))
@@ -1044,7 +1071,7 @@ theorem sim_div {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hH : Helpe
       | ok v => intro hres; simp [Res.ofExcept] at hres
       | error c' => intro hres; simp [Opt.Res.bind_eq_trap, Res.ofExcept] at hres; rw [hres]
     rw [hdiv] at hsem'
-    have hstep' := step_extcall (env := env) (p := p') (s := ⟨fr', [], m⟩) hb'
+    have hstep' := step_extcall (env := env') (p := p') (s := ⟨fr', [], m⟩) hb'
       (by rw [hR.func']; exact hfn)
       (holds_getMany (show Holds fr'.regs [xl, xh, yl, yh]
         [⟨.i64, l⟩, ⟨.i64, h⟩, ⟨.i64, bl⟩, ⟨.i64, bh⟩] from ⟨hl, hh, hbl, hbh, trivial⟩))
@@ -1071,7 +1098,7 @@ theorem fresh_ne {C : Ctx} {c w : ValueId} (hc : C.fresh c = true) (hw : C.fresh
   rintro rfl; rw [hc] at hw; cases hw
 
 /-- **`trapz`/`trapnz` on an `i128` condition**: the condition pattern, then the trap. -/
-theorem sim_trap {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+theorem sim_trap {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr fr' : Frame}
     {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt} {rest : List Stmt}
     (hb : fr.body = st :: rest) {lo hi : ValueId} {nz : Bool} {code : TrapCode}
     (hpl : planOf C st = some (.trap lo hi nz code)) {segA ts2 : List Stmt} {c : ValueId}
@@ -1079,7 +1106,7 @@ theorem sim_trap {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
     (hb' : fr'.body = segA ++
       { results := [], inst := if nz then .trapnz c code else .trapz c code } :: ts2)
     (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨c0, hi, hrs, hc0⟩ := planOf_trap hpl
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
   have hc00 : c0 < C.T0 := ops_lt hG hB hst (by rcases hi with ⟨h1, -⟩ | ⟨h1, -⟩ <;> rw [h1] <;> simp [instOps])
@@ -1101,7 +1128,7 @@ theorem sim_trap {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
         { results := [], inst := if nz then .trapnz c code else .trapz c code } :: ts2 } = fr' := by
       rw [← hb']
     rw [hfr] at hls
-    have hT := TStep.of_lstar (env := env) (p' := p') hls
+    have hT := TStep.of_lstar (env := env') (p' := p') hls
     refine SimOut.pre hT (.inl rfl) ?_
     have hset : fr.regs.setMany st.results [] = some fr.regs := by rw [hrs]; rfl
     rcases hi with ⟨h1, rfl⟩ | ⟨h1, rfl⟩
@@ -1126,7 +1153,7 @@ theorem sim_trap {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
           (fun w hw _ => hkeep w hw (fresh_ne hc hw)) (srcInv_stmt hG.defs hB hst hR.src hev hset)
       · rw [if_neg hbt] at hev hev' ⊢
         refine ⟨1, ?_⟩
-        rw [runLoop_succ, step_inst env p' ⟨{ fr' with regs := regs', body := { results := [], inst := .trapz c code } :: ts2 }, [], m⟩ { results := [], inst := .trapz c code }
+        rw [runLoop_succ, step_inst env' p' ⟨{ fr' with regs := regs', body := { results := [], inst := .trapz c code } :: ts2 }, [], m⟩ { results := [], inst := .trapz c code }
           ts2 rfl (fun _ _ h => by cases h) (fun _ _ _ h => by cases h)]
         simp only [hev']
         rfl
@@ -1144,7 +1171,7 @@ theorem sim_trap {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
       by_cases hbt : Sem.truthy (h ++ l) = true
       · rw [if_pos hbt] at hev hev' ⊢
         refine ⟨1, ?_⟩
-        rw [runLoop_succ, step_inst env p' ⟨{ fr' with regs := regs', body := { results := [], inst := .trapnz c code } :: ts2 }, [], m⟩ { results := [], inst := .trapnz c code }
+        rw [runLoop_succ, step_inst env' p' ⟨{ fr' with regs := regs', body := { results := [], inst := .trapnz c code } :: ts2 }, [], m⟩ { results := [], inst := .trapnz c code }
           ts2 rfl (fun _ _ h => by cases h) (fun _ _ _ h => by cases h)]
         simp only [hev']
         rfl
@@ -1304,8 +1331,9 @@ theorem getMany_ne_trap (fr : Frame) : ∀ (xs : List ValueId) (c : TrapCode), f
       · simp [pure] at h
 
 /-- **A call with expanded arguments and results.** -/
-theorem sim_call {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hEx : ExtLegal env)
-    (hKeep : EnvKeepsAllocs env)
+theorem sim_call {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
+    (hEx : ∀ fn e, C.f.extern? fn = some e → ExtRelAt env env' e.name e.sig)
+    (hKeep : EnvKeepsBounded env)
     (hsrc : ∀ fn e, C.f.extern? fn = some e → p.func? e.name = none)
     (htgt : ∀ fn e, C.g.extern? fn = some e → p'.func? e.name = none)
     {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt}
@@ -1316,7 +1344,7 @@ theorem sim_call {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hEx : Ext
     (hrets : retsOk C rg rs rs' = true) (hnd' : rs'.Nodup) {s' : Signature}
     (hs' : sigExp e.sig = some s') (hfn : C.g.extern? fn = some { e with sig := s' })
     (hcode : codeOk C rest fr.term ts2 fr'.term = true) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨args, gs, hi, hrs, hfe, hgs, hrg, hexp⟩ := planOf_call hpl
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
   have hnd := results_nodup hG.defs hB hst
@@ -1350,9 +1378,10 @@ theorem sim_call {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hEx : Ext
     | some h =>
       rw [← step_call env p _ rest rs fn args hb]
       rw [step_extcall hb hfe' hga hty (hsrc fn e hfe) henv]
-      have hstep' := step_extcall (env := env) (p := p') (s := ⟨fr', [], m⟩) hb'
-        (by rw [hR.func']; exact hfn) (holds_getMany hv') hty' (htgt fn _ hfn) henv
-      obtain ⟨hret, htrap⟩ := hEx e.name h henv e.sig gs rg hgs hrg vals vals' m hty hexp'
+      obtain ⟨h', henv', hrel⟩ := hEx fn e hfe h henv
+      have hstep' := step_extcall (env := env') (p := p') (s := ⟨fr', [], m⟩) hb'
+        (by rw [hR.func']; exact hfn) (holds_getMany hv') hty' (htgt fn _ hfn) henv'
+      obtain ⟨hret, htrap⟩ := hrel gs rg hgs hrg vals vals' m hty hexp'
       cases hout : h vals m with
       | stuck msg => trivial
       | outOfFuel => trivial
@@ -1376,7 +1405,7 @@ theorem sim_call {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hEx : Ext
           obtain ⟨hbind, hcov, hlen⟩ := retsOk_bind hrets hexr
           obtain ⟨ρ1', hs1'⟩ := setMany_of_len fr'.regs hlen
           simp only [continueWith, hs1'] at hstep'
-          refine ⟨rfl, memBounded_of_allocs (hKeep e.name h henv vals m rv m' hout) hM, _, ?_,
+          refine ⟨rfl, hKeep e.name h henv vals m rv m' hout hM, _, ?_,
             TStep.of_step hstep'⟩
           have hsrcI : SrcInv C.f ρ1 := by
             refine srcInv_results hG.defs hB hst hR.src (vals := rv) ?_ (fun _ _ h => by
@@ -1408,12 +1437,12 @@ theorem CRel.fresh {C : Ctx} (hG : Good C) {fr fr' : Frame} (hR : CRel C fr fr')
     exact hR.zero
 
 /-- A branch of the source and its rewrite. -/
-theorem sim_enter {C : Ctx} (hG : Good C) {env : Env} {p' : Program} {fr fr' : Frame} {m : Mem}
+theorem sim_enter {C : Ctx} (hG : Good C) {env' : Env} {p' : Program} {fr fr' : Frame} {m : Mem}
     (hR : CRel C fr fr') (hM : MemBounded m) {bc bc' : BlockCall} (hbc : bcOk C bc bc' = true)
     (hlt : ∀ x ∈ bc.args, x < C.T0) {k : Frame → StepResult}
     (hk : ∀ fr1, k fr1 = .next ⟨fr1, [], m⟩)
-    (htgt : ∀ fr1', enterBlock fr' bc' = .ok fr1' → TStep env p' fr' m fr1' m) :
-    SimOut C env p' fr' m (StepResult.ofRes (enterBlock fr bc) k) := by
+    (htgt : ∀ fr1', enterBlock fr' bc' = .ok fr1' → TStep env' p' fr' m fr1' m) :
+    SimOut C env' p' fr' m (StepResult.ofRes (enterBlock fr bc) k) := by
   cases he : enterBlock fr bc with
   | ok fr1 =>
     obtain ⟨fr1', he', hR1⟩ := enter_sim hG hR hbc hlt he
@@ -1435,19 +1464,19 @@ theorem bcOk_table {C : Ctx} {tbl tbl' : List BlockCall} {d d' : BlockCall}
     exact hd
 
 /-- **Terminators.** -/
-theorem sim_term {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : Frame}
+theorem sim_term {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program} {fr fr' : Frame}
     {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) (hb : fr.body = [])
     (hnt : ∀ fn args et, fr.term ≠ .tryCall fn args et) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨B, hB, -, hterm⟩ := hR.blk
   have hcode := hR.code
   rw [hb] at hcode
   simp only [codeOk] at hcode
   have hlt : ∀ x ∈ termOps fr.term, x < C.T0 := fun x hx => term_ops_lt hG hB (hterm ▸ hx)
   rw [step_term env p _ hb]
-  have hstep' : ∀ fr1' m1, fr'.body = [] → stepTerm env p' ⟨fr', [], m⟩ fr'.term = .next ⟨fr1', [], m1⟩ →
-      TStep env p' fr' m fr1' m1 := fun fr1' m1 hb' h =>
-    TStep.of_step (by rw [step_term env p' _ hb']; exact h)
+  have hstep' : ∀ fr1' m1, fr'.body = [] → stepTerm env' p' ⟨fr', [], m⟩ fr'.term = .next ⟨fr1', [], m1⟩ →
+      TStep env' p' fr' m fr1' m1 := fun fr1' m1 hb' h =>
+    TStep.of_step (by rw [step_term env' p' _ hb']; exact h)
   cases ht : fr.term <;> cases ht' : fr'.term <;> rw [ht, ht'] at hcode <;>
     simp only [termOk, Bool.false_eq_true] at hcode
   case tryCall.tryCall fn args et _ _ _ => exact absurd ht (hnt fn args et)
@@ -1460,7 +1489,7 @@ theorem sim_term {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
   case trap.trap c c' =>
     simp only [Bool.and_eq_true, List.isEmpty_iff, beq_iff_eq] at hcode
     obtain ⟨hts, rfl⟩ := hcode
-    exact ⟨1, by rw [runLoop_succ, step_term env p' _ hts, ht']; rfl⟩
+    exact ⟨1, by rw [runLoop_succ, step_term env' p' _ hts, ht']; rfl⟩
   case brif.brif c t e c' t' e' =>
     simp only [Bool.and_eq_true] at hcode
     obtain ⟨⟨hbt, hbe⟩, hcc⟩ := hcode
@@ -1481,7 +1510,7 @@ theorem sim_term {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
         obtain ⟨regs', hls, hcr, hkeep⟩ := cond_run (fr' := fr') (m := m) (rest := []) hseg hl hh
         have hfr : { fr' with body := fr'.body ++ [] } = fr' := by simp
         rw [hfr] at hls
-        refine SimOut.pre (TStep.of_lstar (env := env) (p' := p') hls) (.inl rfl) ?_
+        refine SimOut.pre (TStep.of_lstar (env := env') (p' := p') hls) (.inl rfl) ?_
         have hR' := CRel.fresh hG hR.toCRel (fun w hw => hkeep w hw (fresh_ne hf hw)) [] fr'.term
         have hget' : ({ fr' with regs := regs', body := [] } : Frame).get c' =
             .ok ⟨.i8, Sem.bool8 (Sem.truthy (h ++ l))⟩ := by simp [Frame.get, hcr, Res.ofOption]
@@ -1489,13 +1518,13 @@ theorem sim_term {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
         · have hbt'' : @Sem.truthy (64 + 64) (h ++ l) = true := hbt'
           rw [if_pos hbt']
           refine sim_enter hG hR' hM hbt hltt (fun _ => rfl) fun fr1' he' => TStep.of_step ?_
-          rw [step_term env p' _ rfl]
+          rw [step_term env' p' _ rfl]
           simp only [ht'] at hget' he' ⊢
           simp only [stepTerm, hget', StepResult.ofRes_ok, truthy_bool8', hbt'', ite_true, he']
         · have hbt'' : ¬ @Sem.truthy (64 + 64) (h ++ l) = true := hbt'
           rw [if_neg hbt']
           refine sim_enter hG hR' hM hbe hlte (fun _ => rfl) fun fr1' he' => TStep.of_step ?_
-          rw [step_term env p' _ rfl]
+          rw [step_term env' p' _ rfl]
           simp only [ht'] at hget' he' ⊢
           simp only [stepTerm, hget', StepResult.ofRes_ok, truthy_bool8', hbt'', ite_false,
             Bool.false_eq_true, he']
@@ -1570,7 +1599,7 @@ theorem sim_term {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} {fr fr' : 
           rw [hR.func', hret', AbiParam.tys,
             ← expRel_tys (groups_spec hrg) hexp (by rw [← hR.func]; exact hty)]
         refine ⟨vals', by simp [Ctx.rg, hrg, hexp], 1, ?_⟩
-        rw [runLoop_succ, step_term env p' _ hts, ht']
+        rw [runLoop_succ, step_term env' p' _ hts, ht']
         simp only [stepTerm, holds_getMany hv', StepResult.ofRes_ok, returnValues, checkTys, hty',
           beq_self_eq_true, Res.check, ite_true, hR.slots]
     · cases hcode
@@ -1784,6 +1813,53 @@ theorem callExternAt_ok {env : Env} {p : Program} {mem : Mem} {d : Signature} {a
         | stuck m => simp [hout] at h
         | outOfFuel => simp [hout] at h
 
+/-- An indirect call with the call-site signature `d` resolved in the source (`env`, `p`) returns
+(or traps) as in the target (`env'`, `p'`). -/
+def CallIndRel (env env' : Env) (p p' : Program) (d : Signature) : Prop :=
+  ∀ mem a vals, (∀ r, callExternAt env p mem d a vals = .ok r →
+      callExternAt env' p' mem d a vals = .ok r) ∧
+    (∀ c, callExternAt env p mem d a vals = .trap c → callExternAt env' p' mem d a vals = .trap c)
+
+/-- One environment, the externs of `p` a prefix of those of `p'`: the same resolution. -/
+theorem callIndRel_prefix {env : Env} {p p' : Program} (hpre : p.externNames <+: p'.externNames)
+    (d : Signature) : CallIndRel env env p p' d := by
+  intro mem a vals
+  cases hfx : ((env.names ++ p.externNames).find? fun n => mem.symbols n == some a) with
+  | none =>
+    obtain ⟨msg, hs⟩ := callExternAt_none (env := env) (d := d) (vals := vals) hfx
+    rw [hs]
+    exact ⟨fun _ h => (by cases h), fun _ h => (by cases h)⟩
+  | some n =>
+    have heq := callExternAt_prefix (env := env) (d := d) (vals := vals) hpre (by rw [hfx]; rfl)
+    rw [heq]
+    exact ⟨fun _ h => h, fun _ h => h⟩
+
+/-- **The environments' side of the refinement, source environment `env`, target environment
+`env'`** (`EnvOk` for one environment: `EnvOk.two`): calls of `f`/`g` go to the environments,
+the target's `__*ti3` helpers (`HelperOk env'`), each extern `f` declares related in the two
+environments (`ExtRelAt`), the source's externs keep valid ranges below `2^64`, and for a
+function with a `call_indirect`, the programs have the same function names and each call site's
+signature resolves alike (`CallIndRel`). -/
+structure EnvOk2 (env env' : Env) (C : Ctx) (p p' : Program) : Prop where
+  src : ∀ fn e, C.f.extern? fn = some e → p.func? e.name = none
+  tgt : ∀ fn e, C.g.extern? fn = some e → p'.func? e.name = none
+  helper : HelperOk env'
+  ext : ∀ fn e, C.f.extern? fn = some e → ExtRelAt env env' e.name e.sig
+  keep : EnvKeepsBounded env
+  ind : (∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args, st.inst = .callIndirect sig callee args) →
+    p'.funcs.map (·.name) = p.funcs.map (·.name) ∧
+    ∀ B ∈ C.f.blocks, ∀ st ∈ B.body, ∀ sig callee args d, st.inst = .callIndirect sig callee args →
+      C.f.sigDecls.lookup sig = some d → CallIndRel env env' p p' d
+
+theorem EnvOk.two {env : Env} {C : Ctx} {p p' : Program} (hE : EnvOk env C p p') :
+    EnvOk2 env env C p p' where
+  src := hE.src
+  tgt := hE.tgt
+  helper := hE.helper
+  ext _ e _ := hE.ext.at e.name e.sig
+  keep := hE.keep.bounded
+  ind h := ⟨(hE.ind h).1, fun _ _ _ _ _ _ _ d _ _ => callIndRel_prefix (hE.ind h).2 d⟩
+
 theorem getMany_congr {fr fr' : Frame} : ∀ {xs : List ValueId}, (∀ x ∈ xs, fr'.regs x = fr.regs x) →
     fr'.getMany xs = fr.getMany xs
   | [], _ => rfl
@@ -1794,15 +1870,16 @@ theorem getMany_congr {fr fr' : Frame} : ∀ {xs : List ValueId}, (∀ x ∈ xs,
 /-- **An indirect call of an extern** (`callInd`): source and target run the same statement on
 the same values (every operand and result is plain), with the same call-site signature; the
 callee address holds no function of either program (the source by `IndExt`, the target by
-`EnvOk.ind`), so both call the extern of `p` at that address (`callExternAt_prefix`). -/
-theorem sim_callInd {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p')
+`EnvOk2.ind`), and the call site's signature resolves alike (`CallIndRel`). -/
+theorem sim_callInd {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
+    (hE : EnvOk2 env env' C p p')
     {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) {st : Stmt}
     {rest : List Stmt} (hb : fr.body = st :: rest) (hpl : planOf C st = some .callInd)
     {ts2 : List Stmt} (hb' : fr'.body = st :: ts2)
     (hdecl : ∀ sig callee args, st.inst = .callIndirect sig callee args →
       C.g.sigDecls.lookup sig = C.f.sigDecls.lookup sig)
     (hcode : codeOk C rest fr.term ts2 fr'.term = true) (hI : IndExt env p C.f ⟨fr, [], m⟩) :
-    SimOut C env p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimOut C env' p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨sig, callee, args, hi, hplain⟩ := planOf_callInd hpl
   have hdecl := hdecl sig callee args hi
   obtain ⟨B, hB, hst⟩ := frel_stmt hR hb
@@ -1817,8 +1894,8 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : E
   have hstep : step env p ⟨fr, [], m⟩ =
       stepCallIndirect env p ⟨fr, [], m⟩ rest st.results sig callee args := by
     simp [step, hb, hi]
-  have hstep' : step env p' ⟨fr', [], m⟩ =
-      stepCallIndirect env p' ⟨fr', [], m⟩ ts2 st.results sig callee args := by
+  have hstep' : step env' p' ⟨fr', [], m⟩ =
+      stepCallIndirect env' p' ⟨fr', [], m⟩ ts2 st.results sig callee args := by
     simp [step, hb', hi]
   rw [hstep]
   have hfd : fr'.func.sigDecls.lookup sig = fr.func.sigDecls.lookup sig := by
@@ -1852,7 +1929,8 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : E
   rw [hsrc]
   have hname : ∃ B ∈ C.f.blocks, ∃ st ∈ B.body, ∃ sig callee args,
       st.inst = .callIndirect sig callee args := ⟨B, hB, st, hst, sig, callee, args, hi⟩
-  obtain ⟨hfn, hpre⟩ := hE.ind hname
+  obtain ⟨hfn, hrelI⟩ := hE.ind hname
+  have hrel := hrelI B hB st hst sig callee args d hi (by rw [← hR.func]; exact hd)
   have hnf' : ∀ g ∈ p'.funcs, m.symbols g.name ≠ some b.toNat := by
     intro g hg
     have : g.name ∈ p'.funcs.map (·.name) := List.mem_map_of_mem hg
@@ -1860,26 +1938,19 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : E
     obtain ⟨g0, hg0, he⟩ := List.mem_map.mp this
     rw [← he]
     exact hnf g0 hg0
-  have htgt : stepCallIndirect env p' ⟨fr', [], m⟩ ts2 st.results sig callee args =
-      StepResult.ofRes (callExternAt env p' m d b.toNat vals) fun (rv, mem') =>
+  have htgt : stepCallIndirect env' p' ⟨fr', [], m⟩ ts2 st.results sig callee args =
+      StepResult.ofRes (callExternAt env' p' m d b.toNat vals) fun (rv, mem') =>
         continueWith ⟨fr', [], m⟩ ts2 st.results rv mem' := by
     simp [stepCallIndirect, hfd, hd, hget, hc, hcv, hgm, hv, Res.ofOption, bind, Res.bind,
       StepResult.ofRes]
     rw [List.find?_eq_none.mpr ?_]
     intro g hg
     simpa using hnf' g hg
-
-  cases hfx : ((env.names ++ p.externNames).find? fun n => m.symbols n == some b.toNat) with
-  | none =>
-    obtain ⟨msg, hs⟩ := callExternAt_none (env := env) (d := d) (vals := vals) hfx
-    rw [hs]; trivial
-  | some n =>
-  have heq := callExternAt_prefix (env := env) (d := d) (vals := vals) hpre (by rw [hfx]; rfl)
   cases hx : callExternAt env p m d b.toNat vals with
   | stuck msg => trivial
   | trap c =>
     refine ⟨1, ?_⟩
-    rw [runLoop_succ, hstep', htgt, heq, hx]
+    rw [runLoop_succ, hstep', htgt, (hrel m b.toNat vals).2 c hx]
     rfl
   | ok r =>
   obtain ⟨rv, mem'⟩ := r
@@ -1889,10 +1960,10 @@ theorem sim_callInd {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : E
   | none => trivial
   | some ρ1 =>
     obtain ⟨ρ1', hs'⟩ := setMany_of_len fr'.regs (setMany_len hs)
-    have hstep2 : step env p' ⟨fr', [], m⟩ = .next ⟨{ fr' with regs := ρ1', body := ts2 }, [], mem'⟩ := by
-      rw [hstep', htgt, heq, hx]
+    have hstep2 : step env' p' ⟨fr', [], m⟩ = .next ⟨{ fr' with regs := ρ1', body := ts2 }, [], mem'⟩ := by
+      rw [hstep', htgt, (hrel m b.toNat vals).1 _ hx]
       simp only [StepResult.ofRes_ok, continueWith, hs']
-    refine ⟨rfl, memBounded_of_allocs (hE.keep name g hg vals m rv mem' hout) hM,
+    refine ⟨rfl, hE.keep name g hg vals m rv mem' hout hM,
       { fr' with regs := ρ1', body := ts2 }, ?_, TStep.of_step hstep2⟩
     have hsrcI : SrcInv C.f ρ1 := by
       refine srcInv_results hG.defs hB hst hR.src (vals := rv) ?_ (fun _ _ h => by
@@ -2233,11 +2304,11 @@ theorem expandTry_holds {C : Ctx} {ρ ρ' ρ1 ρ1' : Regs} (hV : VRel C ρ ρ')
 /-- What the target does for a source step, possibly after one more source step: the call of a
 `try_call` leaves the source at its jump to the normal-return successor, where the frames are
 not related (`FRel` is about positions in blocks of `f`); its next step (the jump) is. -/
-def SimStep (C : Ctx) (env : Env) (p p' : Program) (fr' : Frame) (m : Mem) (r : StepResult) :
-    Prop :=
-  SimOut C env p' fr' m r ∨
+def SimStep (C : Ctx) (env env' : Env) (p p' : Program) (fr' : Frame) (m : Mem)
+    (r : StepResult) : Prop :=
+  SimOut C env' p' fr' m r ∨
     ∃ s1, r = .next s1 ∧ s1.callers = [] ∧ MemBounded s1.mem ∧
-      ∃ fr1', TStep env p' fr' m fr1' s1.mem ∧ SimOut C env p' fr1' s1.mem (step env p s1)
+      ∃ fr1', TStep env' p' fr' m fr1' s1.mem ∧ SimOut C env' p' fr1' s1.mem (step env p s1)
 
 /-- A `try_call` whose declaration, call-site signature and normal-return arguments are fine is
 the call with its results at fresh values, then the jump (`Clif.stepTryCall`). -/
@@ -2360,10 +2431,11 @@ theorem val_mem_vals {d : TryDest} {v : ValueId} (h : TryArg.val v ∈ d.args) :
 /-- **A `try_call`** (two source steps: the call, then the jump to the normal-return successor):
 the target's `try_call` calls the extern with the expanded arguments (`ExtLegal`), its results
 at fresh values; after the jumps, the frames are related again. -/
-theorem sim_try {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p')
+theorem sim_try {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
+    (hE : EnvOk2 env env' C p p')
     {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m) (hb : fr.body = [])
     {fn : FnRef} {args : List ValueId} {et : ExnTable} (ht : fr.term = .tryCall fn args et) :
-    SimStep C env p p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimStep C env env' p p' fr' m (step env p ⟨fr, [], m⟩) := by
   obtain ⟨B0, hB0, -, hterm⟩ := hR.blk
   have hlt : ∀ x ∈ args ++ et.vals, x < C.T0 := fun x hx =>
     term_ops_lt hG hB0 (by rw [← hterm, ht]; exact hx)
@@ -2438,21 +2510,22 @@ theorem sim_try {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk
   have hbc2 := tryNormal_of_noExn (base := fr'.func.freshValue) hnoexn
   generalize hbc'e : (⟨et'.normal.block, et'.normal.args.map (argId fr'.func.freshValue)⟩ :
     BlockCall) = bc' at hbc2
-  have htstep := stepTryCall_eq (env := env) (p := p') (s := ⟨fr', [], m⟩) (args := args')
+  obtain ⟨h', henv', hrel⟩ := hE.ext fn e he h henv
+  have htstep := stepTryCall_eq (env := env') (p := p') (s := ⟨fr', [], m⟩) (args := args')
     hfe2 hd2 hck2 hbc2
   have hgaJ2 : ({ fr' with body := [], term := .jump bc' } : Frame).getMany args' = .ok vals' :=
     (getMany_congr (fr := fr') (fr' := { fr' with body := [], term := .jump bc' }) fun _ _ => rfl).trans
       (holds_getMany hv')
-  have hstep2 := stepCall_ext (env := env) (p := p')
+  have hstep2 := stepCall_ext (env := env') (p := p')
     (s := ⟨{ fr' with body := [], term := .jump bc' }, [], m⟩)
     (results := (List.range s'.returns.length).map (fr'.func.freshValue + ·)) (rest := [])
-    (args := args') (fn := fn) hfe2 hgaJ2 hty' (hE.tgt fn _ hfn') henv
-  obtain ⟨hret, htrap⟩ := hE.ext e.name h henv e.sig gs rg hgs hrg vals vals' m hty hexp'
-  have hT1 : ∀ r, step env p' ⟨fr', [], m⟩ = r ↔ stepCall env p'
+    (args := args') (fn := fn) hfe2 hgaJ2 hty' (hE.tgt fn _ hfn') henv'
+  obtain ⟨hret, htrap⟩ := hrel gs rg hgs hrg vals vals' m hty hexp'
+  have hT1 : ∀ r, step env' p' ⟨fr', [], m⟩ = r ↔ stepCall env' p'
       ⟨{ fr' with body := [], term := .jump bc' }, [], m⟩ []
       ((List.range s'.returns.length).map (fr'.func.freshValue + ·)) fn args' = r := by
     intro r
-    rw [step_term env p' _ hts, ht']
+    rw [step_term env' p' _ hts, ht']
     simp only [stepTerm]
     rw [htstep]
   cases hout : h vals m with
@@ -2482,12 +2555,12 @@ theorem sim_try {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk
     (by simp [hnrv'])
   have hfv : fr.func.freshValue = C.f.freshValue := by rw [hR.func]
   have hfv' : fr'.func.freshValue = C.g.freshValue := by rw [hR.func']
-  have hstepT : step env p' ⟨fr', [], m⟩ =
+  have hstepT : step env' p' ⟨fr', [], m⟩ =
       .next ⟨{ fr' with regs := ρ1', body := [], term := .jump bc' }, [], m'⟩ := by
     refine (hT1 _).2 ?_
     rw [hstep2]
     simp only [hout', hrt', beq_self_eq_true, ite_true, continueWith, hs1']
-  have hM1 : MemBounded m' := memBounded_of_allocs (hE.keep e.name h henv vals m rv m' hout) hM
+  have hM1 : MemBounded m' := hE.keep e.name h henv vals m rv m' hout hM
   refine .inr ⟨_, rfl, rfl, hM1, _, TStep.of_step hstepT, ?_⟩
   -- the jumps
   have hCR := crel_bind hG hR.toCRel hs hs1'
@@ -2523,14 +2596,15 @@ theorem sim_try {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk
         (by rw [hfv']; exact hT0g) hexpT
         (fun v hv => hlt v (List.mem_append_right _ (List.mem_append_left _ (val_mem_vals hv)))) hv1) hen
   refine ⟨rfl, hM1, fr2', hR2, TStep.of_step ?_⟩
-  rw [step_term env p' _ rfl]
+  rw [step_term env' p' _ rfl]
   simp only [stepTerm, hen', StepResult.ofRes_ok]
 
 /-- **One source step**, matched by the target. -/
-theorem step_sim {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p')
+theorem step_sim {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
+    (hE : EnvOk2 env env' C p p')
     {fr fr' : Frame} {m : Mem} (hR : FRel C fr fr') (hM : MemBounded m)
     (hT : MemTrapFree env p ⟨fr, [], m⟩) (hI : IndExt env p C.f ⟨fr, [], m⟩) :
-    SimStep C env p p' fr' m (step env p ⟨fr, [], m⟩) := by
+    SimStep C env env' p p' fr' m (step env p ⟨fr, [], m⟩) := by
   cases hb : fr.body with
   | nil =>
     by_cases htc : ∃ fn args et, fr.term = .tryCall fn args et
@@ -2584,13 +2658,14 @@ theorem step_sim {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvO
 
 /-- **Runs.** From related frames, a return of the source within `n` steps is a return of the
 target with the values expanded, a trap the same trap. -/
-theorem sim_run {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk env C p p') :
+theorem sim_run {C : Ctx} (hG : Good C) {env env' : Env} {p p' : Program}
+    (hE : EnvOk2 env env' C p p') :
     ∀ (n : Nat) (fr fr' : Frame) (m : Mem), FRel C fr fr' → MemBounded m →
       NoMemTrap env p ⟨fr, [], m⟩ → NoIndInternal env p C.f ⟨fr, [], m⟩ →
       (∀ vals m1, runLoop env p n ⟨fr, [], m⟩ = .returned vals m1 →
-        ∃ vals', ExpRel C.rg vals vals' ∧ ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .returned vals' m1) ∧
+        ∃ vals', ExpRel C.rg vals vals' ∧ ∃ k, runLoop env' p' k ⟨fr', [], m⟩ = .returned vals' m1) ∧
       (∀ c, runLoop env p n ⟨fr, [], m⟩ = .trapped c →
-        ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .trapped c) := by
+        ∃ k, runLoop env' p' k ⟨fr', [], m⟩ = .trapped c) := by
   intro n
   induction n using Nat.strongRecOn with
   | ind n ih =>
@@ -2600,13 +2675,13 @@ theorem sim_run {C : Ctx} (hG : Good C) {env : Env} {p p' : Program} (hE : EnvOk
   | succ n =>
   -- a run from related frames after `k` target steps
   have hcont : ∀ (j : Nat), j ≤ n → ∀ (sf fr1' : Frame) (sm : Mem) (k : Nat),
-      (∀ q, runLoop env p' (q + k) ⟨fr', [], m⟩ = runLoop env p' q ⟨fr1', [], sm⟩) →
+      (∀ q, runLoop env' p' (q + k) ⟨fr', [], m⟩ = runLoop env' p' q ⟨fr1', [], sm⟩) →
       FRel C sf fr1' → MemBounded sm → NoMemTrap env p ⟨sf, [], sm⟩ →
       NoIndInternal env p C.f ⟨sf, [], sm⟩ →
       (∀ vals m1, runLoop env p j ⟨sf, [], sm⟩ = .returned vals m1 →
-        ∃ vals', ExpRel C.rg vals vals' ∧ ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .returned vals' m1) ∧
+        ∃ vals', ExpRel C.rg vals vals' ∧ ∃ k, runLoop env' p' k ⟨fr', [], m⟩ = .returned vals' m1) ∧
       (∀ c, runLoop env p j ⟨sf, [], sm⟩ = .trapped c →
-        ∃ k, runLoop env p' k ⟨fr', [], m⟩ = .trapped c) := by
+        ∃ k, runLoop env' p' k ⟨fr', [], m⟩ = .trapped c) := by
     intro j hj sf fr1' sm k hk hR1 hM1 hT1 hI1
     obtain ⟨h1, h2⟩ := ih j (by omega) sf fr1' sm hR1 hM1 hT1 hI1
     refine ⟨fun vals m1 h => ?_, fun c h => ?_⟩
@@ -2776,15 +2851,16 @@ theorem entry_bind {C : Ctx} {gs : List (List SlotEl)} {ps ps' : List (ValueId �
         · exact .inr ⟨u, List.mem_cons_of_mem _ hu, hwu⟩
   case case5 => cases h
 
-/-- **The refinement theorem of `Opt.Legal.check`.** For an accepted legalisation `g` of `f`:
-from entry states of `f` on `args` and of `g` on `args'` (the arguments expanded by the ABI
-groups of `f`'s parameters, pads arbitrary; same slots and memory), whenever the run of `f`
-returns within `fuel` steps, the run of `g` returns the values expanded by the ABI groups of
-`f`'s returns, with the same memory; whenever it traps, the run of `g` traps with the same
-code. Premises: `EnvOk` (calls go to the environment; its contracts), valid ranges below
-`2^64`, no load/store trap in the source run. -/
-theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
-    {env : Env} {p p' : Program} (hE : EnvOk env C p p') {b b' : Block}
+/-- **The refinement theorem of `Opt.Legal.check`, source environment `env`, target environment
+`env'`.** For an accepted legalisation `g` of `f`: from entry states of `f` on `args` and of `g`
+on `args'` (the arguments expanded by the ABI groups of `f`'s parameters, pads arbitrary; same
+slots and memory), whenever the run of `f` under `env` returns within `fuel` steps, the run of `g`
+under `env'` returns the values expanded by the ABI groups of `f`'s returns, with the same
+memory; whenever it traps, the run of `g` traps with the same code. Premises: `EnvOk2` (calls go
+to the environments; their contracts), valid ranges below `2^64`, no load/store trap in the
+source run. -/
+theorem check_refines2 {C : Ctx} (hc : check C.f C.g C.cert = true)
+    {env env' : Env} {p p' : Program} (hE : EnvOk2 env env' C p p') {b b' : Block}
     (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
     {fr0 fr0' : Frame} {m : Mem}
     (h1 : fr0.func = C.f) (h2 : fr0.body = b.body) (h3 : fr0.term = b.term)
@@ -2798,9 +2874,9 @@ theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
     (hI : NoIndInternal env p C.f ⟨fr0, [], m⟩) (fuel : Nat) :
     (∀ vals m1, runLoop env p fuel ⟨fr0, [], m⟩ = .returned vals m1 →
       ∃ vals', ExpRel ((groups C.f.sig.returns).getD []) vals vals' ∧
-        ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
+        ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
     (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
-      ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .trapped c) := by
+      ∃ k, runLoop env' p' k ⟨fr0', [], m⟩ = .trapped c) := by
   have hG : Good C := check_good hc
   obtain ⟨b0, bs, b0', bs', hf, hg, -, hok, -⟩ := hG.blocks
   simp only [Function.entry?, hf, List.head?_cons, Option.some.injEq] at hb
@@ -2822,7 +2898,7 @@ theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
     have hz : lstep fr0' m = .next { fr0' with regs := fr0'.regs.set C.zero zeroVal, body := rest } m := by
       have hb0 : fr0'.body = C.zeroStmt :: rest := by rw [h2', hbody']
       rw [lstep_eval (m1 := m) (vals := [zeroVal]) hb0 (fun _ _ h => by cases h) rfl rfl]
-    have hzT : TStep env p' fr0' m { fr0' with regs := fr0'.regs.set C.zero zeroVal, body := rest } m :=
+    have hzT : TStep env' p' fr0' m { fr0' with regs := fr0'.regs.set C.zero zeroVal, body := rest } m :=
       TStep.of_lstar (.single hz)
     -- parameters of the target that are values of `f` are the source parameters
     have hpar : ∀ v, v < C.T0 → v ∉ b0.params.map (·.1) → v ∉ b0'.params.map (·.1) := by
@@ -2869,6 +2945,33 @@ theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
     · obtain ⟨k, hk⟩ := hr2 c h
       exact ⟨k + k0, by rw [hk0, hk]⟩
   · cases hok
+
+/-- **The refinement theorem of `Opt.Legal.check`** (one environment: `check_refines2` with
+`EnvOk.two`). For an accepted legalisation `g` of `f`: from entry states of `f` on `args` and of
+`g` on `args'` (the arguments expanded by the ABI groups of `f`'s parameters, pads arbitrary; same
+slots and memory), whenever the run of `f` returns within `fuel` steps, the run of `g` returns the
+values expanded by the ABI groups of `f`'s returns, with the same memory; whenever it traps, the
+run of `g` traps with the same code. Premises: `EnvOk` (calls go to the environment; its
+contracts), valid ranges below `2^64`, no load/store trap in the source run. -/
+theorem check_refines {C : Ctx} (hc : check C.f C.g C.cert = true)
+    {env : Env} {p p' : Program} (hE : EnvOk env C p p') {b b' : Block}
+    (hb : C.f.entry? = some b) (hb' : C.g.entry? = some b') {args args' : List Val}
+    {fr0 fr0' : Frame} {m : Mem}
+    (h1 : fr0.func = C.f) (h2 : fr0.body = b.body) (h3 : fr0.term = b.term)
+    (h4 : b.params.map (·.2) = args.map (·.ty))
+    (h5 : Regs.empty.setMany (b.params.map (·.1)) args = some fr0.regs)
+    (h1' : fr0'.func = C.g) (h2' : fr0'.body = b'.body) (h3' : fr0'.term = b'.term)
+    (h5' : Regs.empty.setMany (b'.params.map (·.1)) args' = some fr0'.regs)
+    (hsl : fr0'.slots = fr0.slots)
+    (hexp : ExpRel ((groups C.f.sig.params).getD []) args args')
+    (hM : MemBounded m) (hT : NoMemTrap env p ⟨fr0, [], m⟩)
+    (hI : NoIndInternal env p C.f ⟨fr0, [], m⟩) (fuel : Nat) :
+    (∀ vals m1, runLoop env p fuel ⟨fr0, [], m⟩ = .returned vals m1 →
+      ∃ vals', ExpRel ((groups C.f.sig.returns).getD []) vals vals' ∧
+        ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .returned vals' m1) ∧
+    (∀ c, runLoop env p fuel ⟨fr0, [], m⟩ = .trapped c →
+      ∃ k, runLoop env p' k ⟨fr0', [], m⟩ = .trapped c) :=
+  check_refines2 hc hE.two hb hb' h1 h2 h3 h4 h5 h1' h2' h3' h5' hsl hexp hM hT hI fuel
 
 /-! ## Indirect calls of an accepted legalisation -/
 
