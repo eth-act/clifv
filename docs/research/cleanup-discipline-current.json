@@ -1,0 +1,148 @@
+{
+  "utc": "2026-10-16T13:37:44.224281+00:00",
+  "free_bytes": 874084245504,
+  "worktrees": [
+    {
+      "path": "/home/lee/clifv",
+      "owner": "codygunton / #44",
+      "purpose": "Primary checkout: dirty preserved coordination/helper and comparison evidence",
+      "dirty_paths": 5,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume",
+      "owner": "codygunton / #44",
+      "purpose": "Active #140 proof source, single warm Lean cache, live serial validation and Rust tools",
+      "dirty_paths": 1659,
+      "bytes": 31794991104,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty preserved Stock implementation/recovery source; no build cache",
+      "dirty_paths": 34,
+      "bytes": 38064128,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-stock-lowering",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty pinned upstream input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-dupnames",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty pinned upstream input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/review-wasmtime",
+      "owner": "codygunton / #44",
+      "purpose": "Dirty upstream review input",
+      "dirty_paths": 6,
+      "bytes": 96583680,
+      "action": "retain: dirty/active source and evidence"
+    }
+  ],
+  "policy": {
+    "target_free_gib": 100,
+    "minimum_projected_free_gib": 50,
+    "warm_caches": 1,
+    "cleanup": "after every batch, PR, delegated task, and stop",
+    "aggregate_agent_budget": true,
+    "automatic_cache_copy": false,
+    "cleanup_even_with_ample_headroom": true,
+    "delegated_tasks_require_cleanup_owner_and_shared_limits": true
+  },
+  "removed": [
+    "/home/lee/.clifv-recovery/20261016T113918Z-upstream-reconciliation (empty failed pre-mutation task directory)"
+  ],
+  "reason": "Actual call-protection batch checked38scratch modules/49Std public roots+3Std model definitions. No new worktree/cache/agent. Source/kernel/evidence artifacts retained for upcoming coherent integration; completed comparison bulk results already archived/verified and removed this turn; no other expendable clean worktrees/duplicate warm cache. All source/unpublished branches/recovery evidence preserved; other projects untouched.",
+  "helper_shell_syntax": "PASS bash -n",
+  "other_projects": "untouched",
+  "scratch_modules": 110,
+  "scratch_public_roots": 190,
+  "scratch_compiled_bytes": 80815536,
+  "live_validation": {
+    "state": "running",
+    "pid": 1233457,
+    "utc": "2026-10-16T13:33:58.992488+00:00",
+    "total": 1930,
+    "completed_modules": 194,
+    "index": 195,
+    "current": "FV.Backend.Proof.KillTryDefs",
+    "log": "/tmp/stock-coherent-build-FV.Backend.Proof.KillTryDefs.log",
+    "memcap": "22G"
+  },
+  "warm_cache_bytes": 27699937280,
+  "pending_scratch_modules": 8,
+  "pending_scratch_roots": 26,
+  "live_outgoing_watcher": {
+    "state": "terminal_audit_review",
+    "evidence": "docs/research/stock-outgoing-audit-review.json",
+    "new_public_roots": 26,
+    "all_new_standard_only": true,
+    "three_base_native_sets_removed_coherent_review_pending": true
+  },
+  "mandatory_candidate_modules": 38,
+  "mandatory_compiled_modules": 38,
+  "mandatory_audited_roots": 49,
+  "pending_mandatory_modules": 0,
+  "mandatory_cleanup_receipt": {
+    "utc": "20261016T124708Z",
+    "archive": "/home/lee/.clifv-recovery/20261016T124708Z-stale-pure-table/stale-artifacts.tar.gz",
+    "sha256": "e375633a165d2f9c38040a6893ab224b8da3a15e268b34264f1ebbb3218a48c5",
+    "every_member_byte_verified": true,
+    "removed": [
+      {
+        "path": "/tmp/StockPureSinkTable.olean",
+        "bytes": 173264
+      }
+    ],
+    "reason": "Compiled pure-table prototype predates added584 row; not current proof evidence, unused by any live compiler. Source/log/binary archived before removal; queued builder regenerates current source once dependencies restore."
+  },
+  "candidate_validation": {
+    "state": "all38modules_manually_completed_after_actual_errors",
+    "evidence": "docs/research/stock-call-protection-scratch.json",
+    "scratch_public_roots": 49,
+    "audited_model_definitions": 3,
+    "all_standard_only": true,
+    "queued_controller": "terminal; actual failures inspected and corrected; no watcher running"
+  },
+  "comparison_cleanup": {
+    "utc": "20261016T131033Z",
+    "archive": "/home/lee/.clifv-recovery/cleanup-comparison-20261016T131033Z/comparison-results.tar.gz",
+    "archive_bytes": 9455827,
+    "archive_sha256": "0b1703dd54a8f60b1debdcd3b276f64fc9e40284998e439731e77a73748b1820",
+    "archived_files": [
+      {
+        "path": "/home/lee/clifv/.worktrees/driver-proof-resume/target/stock-per-edge-allocator-comparison-20261015T181000Z/results.json",
+        "member": "target/stock-per-edge-allocator-comparison-20261015T181000Z/results.json",
+        "bytes": 42857534,
+        "sha256": "a25d8fa2a393e88beb7d12ec49d8c4cbb9ca512235c1f39471c6b037ab83df5d"
+      },
+      {
+        "path": "/home/lee/clifv/.worktrees/driver-proof-resume/target/stock-per-edge-driver-comparison-20261015T181200Z/results.json",
+        "member": "target/stock-per-edge-driver-comparison-20261015T181200Z/results.json",
+        "bytes": 42814365,
+        "sha256": "a52603f00f3b0de89b121d7e6258bc09c568bc1f12b42a1dbb4e8cde005f728d"
+      },
+      {
+        "path": "/home/lee/clifv/.worktrees/driver-proof-resume/target/stock-prepared-forward-comparison-20261015T190000Z/results.json",
+        "member": "target/stock-prepared-forward-comparison-20261015T190000Z/results.json",
+        "bytes": 42828703,
+        "sha256": "2754a491bccf7463ded6fcb905fd1496a94f9c10b858827345c2bcf06be2389a"
+      }
+    ],
+    "every_member_verified": true,
+    "net_reclaimed_bytes": 119044775,
+    "other_projects": "untouched",
+    "reason": "Completed comparison bulk results archived; summaries, source instrumentation and build logs kept in place."
+  }
+}
