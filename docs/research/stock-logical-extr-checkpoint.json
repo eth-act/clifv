@@ -1,0 +1,27 @@
+{
+  "utc": "2026-10-20T17:54:08.329675+00:00",
+  "parent": "371a3a2d2fc406814ff78814e9d9e13fb579e025",
+  "state": "verified two-input EXTR next-class prerequisite, not complete logical activation or a proof-fragment PR",
+  "core_standard_only_declarations": 111,
+  "fixed_pipeline_declarations": 29,
+  "fixed_pipeline_native_facts": 1,
+  "pipeline_configurations": 24,
+  "source_hashes": {
+    "FV/Backend/Proof/StockLogicalExtrSemantics.lean": "3e65b36482eac7a0d34f1cbc797e55083bc62d84ce88dade17a492f900de819e",
+    "FV/Backend/Proof/StockLogicalExtrRhs.lean": "91f9522859f5eb3db77a19242c69fa84b258a7d289a67677b7b4718555cc6747",
+    "FV/E2E/StockLogicalExtrWitness.lean": "aa9b217fae4e58d55d4062a20fdad0193d866cd4e8e27dee3241085009c15588",
+    "scripts/audit/stock-logical-extr.lean": "65fd145f25a8e00b5cc9861a7e6a3aedab8a22859a96bb7f95748f41c1007f27",
+    "scripts/audit/stock-logical-extr-witness.lean": "41b5f03368015410a74ba66bc121e3d818cdbfc8e7b395cf0d66c69d5bd8a79a"
+  },
+  "logs": {
+    "extr-semantics-witness": "'Backend.Stock.Proof.LogicalExtr.extr_resolved' depends on axioms: [propext, Quot.sound]\n'Backend.Stock.Proof.LogicalExtr.extr_resolved_witness' depends on axioms: [propext, Quot.sound]\nSTOCK_EXTR_SEMANTICS_STANDARD_ONLY 3\n",
+    "extr-rhs-source-compatible-witness-fixed": "/tmp/StockExtrRhs.lean:93:53: warning: This simp argument is unused:\n  ite_true\n\nHint: Omit it from the simp argument list.\n  [apply] simp only [extrRule, extrEnv, Bool.false_eq_true, ite_false]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`\n/tmp/StockExtrRhs.lean:99:34: warning: This simp argument is unused:\n  Bool.false_eq_true\n\nHint: Omit it from the simp argument list.\n  [apply] simp only [extrRule, extrEnv, ite_true, ite_false]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`\n/tmp/StockExtrRhs.lean:99:62: warning: This simp argument is unused:\n  ite_false\n\nHint: Omit it from the simp argument list.\n  [apply] simp only [extrRule, extrEnv, Bool.false_eq_true, ite_true]\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`\n/tmp/StockExtrRhs.lean:115:46: warning: This simp argument is unused:\n  ExtResult.ok.injEq\n\nHint: Omit it from the simp argument list.\n  [apply] simp only [stock_put_in_reg_iff, Prod.mk.injEq] at *\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`\n/tmp/StockExtrRhs.lean:115:65: warning: This simp argument is unused:\n  Prod.mk.injEq\n\nHint: Omit it from the simp argument list.\n  [apply] simp only [stock_put_in_reg_iff, ExtResult.ok.injEq] at *\n\nNote: This linter can be disabled with `set_option linter.unusedSimpArgs false`\n'Backend.Stock.Proof.LogicalExtr.helper_run' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.Proof.LogicalExtr.rhs_forward' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.Proof.LogicalExtr.rhs_requests' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.Proof.LogicalExtr.rhs_observed' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.Proof.LogicalExtr.rhs_witness' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.Proof.LogicalExtr.rhs_observed_witness' depends on axioms: [propext, Classical.choice, Quot.sound]\nSTOCK_EXTR_RHS_STANDARD_ONLY 108\n",
+    "logical-extr-pipeline-selected-witness": "'E2E.StockLogicalExtrWitness.compiled_exists' depends on axioms: [propext,\n Classical.choice,\n Quot.sound,\n E2E.StockLogicalExtrWitness.checks_true._native.native_decide.ax_1]\nSTOCK_LOGICAL_EXTR_PIPELINE_FIXED_WITNESS_AUDIT 29\n"
+  },
+  "proof_scope": "Actual two-register aluRRRShift.extr, arbitrary distinct input words, final alias resolution and fresh-only write frame. Both original1501/1507 RHS routes, internally derived safe requests/maps, exact output and complete demand/emission state. Concrete RHS shifts now positive and sum to supported width.",
+  "pipeline_scope": "24 actual Stock full-pipeline cases:6existing ABI/width configurations x2ORoperandorders x2cleanup. Native facts assert original LowerScope/dominance/ABI, actual862or863selected rule, oldlowerCheckfalse, actualprepare/prepCheck/Leanallocation/checkAlloc/physicalallocation/emission/layout/formcoverage. Consumed ninth stack argument, unused parameters, explicit slot, omitted deadoperation; no legacy fallback substitution.",
+  "limits": "Core proof/helper/RHS scratch checks are standard-only; fixed finite data pipeline witnesses use the one explicitly identified native fact. Normal module/private-name port and shipped-native consumer gates pending. Actual source/lookthrough match+record/resultbinding+guarded source transfer for EXTR still need integration. Full11root logical body/entry/return/NI/classifier/consumer integration and every original#140 family/effect/CFG/whole-driver/completeness obligation remain.",
+  "resources": "No new worktree/FVcache.3GiB scratch beside sole<=13GiB authorchild, strict16GiBaggregate, launcher held/resumed in finally. Existing arithmetic087 and mixed4b source trees unchanged.",
+  "current_main": "ddfeb764",
+  "reconciliation": "Kev#350/#351 float interfaces read; read-only merge-tree arithmetic087+ddfeb764 conflict-free; reconcile affected imports before activation, current old-source gate remains live."
+}
