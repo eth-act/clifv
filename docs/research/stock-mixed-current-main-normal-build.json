@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-20T20:30:29.429011+00:00",
+  "utc": "2026-10-20T21:10:21.314368+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
@@ -28,6 +28,17 @@
     "FV.Backend.Obj",
     "FV.Backend.Production",
     "FV.Backend.ProductionWith",
+    "FV.Backend.Proof.DeadCleanupAdapter",
+    "FV.Backend.Proof.IselAtomic",
+    "FV.Backend.Proof.IselFloatArith",
+    "FV.Backend.Proof.IselFloatConst",
+    "FV.Backend.Proof.IselFloatSelect",
+    "FV.Backend.Proof.IselFloatVac",
+    "FV.Backend.Proof.IselLowerAll",
+    "FV.Backend.Proof.MemRefines",
+    "FV.Backend.Proof.RefinesCSem",
+    "FV.Backend.Proof.RefinesInsts",
+    "FV.Backend.Proof.RefinesInsts2",
     "FV.Backend.Proof.RelaxLayout",
     "FV.Backend.Proof.RelaxReady",
     "FV.Backend.Proof.StockArithmeticCheck",
@@ -36,17 +47,34 @@
     "FV.Backend.StockArithmeticCheck",
     "FV.Backend.StockMixedCheck",
     "FV.Backend.Unwind",
+    "FV.E2E.ABIReadOnlyCheck",
+    "FV.E2E.ABIReadOnlyRealize",
+    "FV.E2E.ABIReadOnlySem",
+    "FV.E2E.ABIReadOnlyTransport",
+    "FV.E2E.DeadCleanupContracts",
+    "FV.E2E.DeadCleanupGuarded",
+    "FV.E2E.DeadCleanupRealizes",
+    "FV.E2E.DeadCleanupRegLevel",
+    "FV.E2E.DeadCleanupRegLevelX",
+    "FV.E2E.DeadCleanupSpillWords",
     "FV.E2E.EmitReady",
     "FV.E2E.EmitSize",
+    "FV.E2E.Guarded",
+    "FV.E2E.Lockstep",
+    "FV.E2E.Pair",
+    "FV.E2E.RegLevelCorrect",
+    "FV.E2E.RegLevelCorrectX",
+    "FV.E2E.SizeDefs",
+    "FV.E2E.SizeVC",
     "FV.E2E.StockProductionFixtures",
     "FVTest.Backend.AllocChoice",
     "FVTest.Backend.Lowering.StockMixedRuntime"
   ],
-  "normal_built_count": 35,
+  "normal_built_count": 63,
   "failed_modules": 0,
   "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
   "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
-  "waiting": "Actual MixedNIProduction and current normal runtime pass. Normal core function proofs, machine consumers, native tools/CLI/linked/generated proof/corpus/identity-stage/axiom/verified example gates remain required. Source fixture extraction retains names/bodies and all old proof/check text. Full original140active; arithmetic activation lands first.",
+  "waiting": "ABI semantics/checker/transport/realization and register-level/cleanup correctness consumers now build on current imports. Source-body/function class proofs and higher machine/link/CLI consumers remain waiting for current shared imports. Complete current per-PR activation gates remain mandatory, arithmetic first/full original140active.",
   "batches": [
     {
       "utc": "2026-10-20T19:14:26.869956+00:00",
@@ -3219,5 +3247,370 @@
   "current_runtime_export_source_sha256": {
     "FVTest/Backend/Lowering/StockMixedRuntime.lean": "bcd70e9c5d50dedcd8299330318d37affb8ac489854de3addfc8fa394664c6ae",
     "scripts/check-stock-mixed-native.py": "6334f76939b499b8d401aa7a91f5d05bc42f6888ebbb58a250d7d1228d3d6b60"
-  }
+  },
+  "later_normal_batches": [
+    {
+      "batch": 7,
+      "utc": "2026-10-20T20:36:32.701153+00:00",
+      "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+      "counts": {
+        "source_key_current_or_restored": 30,
+        "waiting_for_current_imports": 9,
+        "waiting_for_transitive_imports": 148,
+        "built": 3
+      },
+      "built": [
+        {
+          "module": "FV.E2E.SizeDefs",
+          "returncode": 0,
+          "source_sha256": "cacc4325dec14fbcd84aadbe1d06fa7b91fb3a4b766cda7b0f9b4897659a9f83",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch7/FV.E2E.SizeDefs.build.log",
+          "log_sha256": "77f480b32ec2ee5af98379a9535d15a4601abcf9c49badcf20180f8a05399332"
+        },
+        {
+          "module": "FV.E2E.SizeVC",
+          "returncode": 0,
+          "source_sha256": "a9380794498c205e86d5a0b585aa454dfe2c3c62b39b86bfaad1ea5946a19918",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch7/FV.E2E.SizeVC.build.log",
+          "log_sha256": "3d11ed522f873e56ef8f1c6327b8c9a69d4b627417b64bebe3e1e65dc02982d1"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupSpillWords",
+          "returncode": 0,
+          "source_sha256": "78f492f013c687c2a3aa89af83d440c92fd453a7dd61c2edaa9fccd241ed8ca7",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch7/FV.E2E.DeadCleanupSpillWords.build.log",
+          "log_sha256": "85b8de6841631a30c86e6cf30717438fcda2057a077f241a5e0028ff0bbe522a"
+        }
+      ],
+      "full_receipt_sha256": "bfc450134987baf3726f04a3fefe87068e805b1ad15235aa2811ac2b0aa65d2e",
+      "source_snapshot_sha256": "3f30ce52df1f8c61c8e14e0a6a7f1805cb23494df5ab78090e99aeae825f30b9",
+      "aggregate_MiB": 16384,
+      "leaf_cap_MiB": 6144,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 8,
+      "utc": "2026-10-20T20:39:57.878193+00:00",
+      "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+      "counts": {
+        "source_key_current_or_restored": 20,
+        "built": 1
+      },
+      "built": [
+        {
+          "module": "FV.Backend.Proof.RefinesInsts",
+          "returncode": 0,
+          "source_sha256": "b196779adfeb41bc1b73bf874ecc05279c14999e9dbd15d8138e4bd6a750abe3",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch8/FV.Backend.Proof.RefinesInsts.build.log",
+          "log_sha256": "357c5a43f0783d073f702d6722d600de6a54b69ca4d7df6655040c094632c8e8"
+        }
+      ],
+      "full_receipt_sha256": "34f0ab8841ccf4bc570bcc20351bdeb4a802c65ae686e110a46f50577931005e",
+      "source_snapshot_sha256": "88064808860704b07a06ff100c9ace3c071377470f4bb1d3f2c64a5b32ef2ed8",
+      "aggregate_MiB": 16384,
+      "leaf_cap_MiB": 6144,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 9,
+      "utc": "2026-10-20T20:44:34.438504+00:00",
+      "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+      "counts": {
+        "source_key_current_or_restored": 21,
+        "waiting_for_current_imports": 1,
+        "waiting_for_transitive_imports": 1,
+        "built": 1
+      },
+      "built": [
+        {
+          "module": "FV.Backend.Proof.RefinesInsts2",
+          "returncode": 0,
+          "source_sha256": "118fc58d5ee4467e3daa74a3137e4c96b9dc755b5ca2e0b8066aa69982de3fa3",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch9/FV.Backend.Proof.RefinesInsts2.build.log",
+          "log_sha256": "cfe2e7e38b54588b922e9b8628fc0afa7c3efed1e9fa9d944bb8bff3536f84b4"
+        }
+      ],
+      "full_receipt_sha256": "24ff84c9f34a55924e610e2f396a12415b1086437078b5e00b94b17b123d84b6",
+      "source_snapshot_sha256": "88064808860704b07a06ff100c9ace3c071377470f4bb1d3f2c64a5b32ef2ed8",
+      "aggregate_MiB": 16384,
+      "leaf_cap_MiB": 8192,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 10,
+      "utc": "2026-10-20T20:47:48.466084+00:00",
+      "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+      "counts": {
+        "source_key_current_or_restored": 22,
+        "waiting_for_current_imports": 1,
+        "waiting_for_transitive_imports": 1,
+        "built": 8
+      },
+      "built": [
+        {
+          "module": "FV.Backend.Proof.RefinesCSem",
+          "returncode": 0,
+          "source_sha256": "8fa3415f45e6e06050e3d126b3d6afe9dcf7fbeb46ab62d10a161f58db0cddd2",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch10/FV.Backend.Proof.RefinesCSem.build.log",
+          "log_sha256": "9c8315704315d954c655741be742d40376cb40a80e0b027808d8a7f9db66ee7b"
+        },
+        {
+          "module": "FV.Backend.Proof.MemRefines",
+          "returncode": 0,
+          "source_sha256": "a2d7f1feb03601f626d9e0ab8bac03a0da263f24a12f777722d958fc00a56274",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch10/FV.Backend.Proof.MemRefines.build.log",
+          "log_sha256": "f8d3e83f6ae39f0924f69d6540ac97103dca4dd9c99e4a942f5ecd440295b15d"
+        },
+        {
+          "module": "FV.Backend.Proof.DeadCleanupAdapter",
+          "returncode": 0,
+          "source_sha256": "5feba7cc528f86de9390f3808448c6aeb1e229cb8beff57bc9b854e6379804e7",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch10/FV.Backend.Proof.DeadCleanupAdapter.build.log",
+          "log_sha256": "f588fd80d668dcf67cfe74b5ce5601796ada58f62a92cdc21d1c1745730a30d0"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupContracts",
+          "returncode": 0,
+          "source_sha256": "428f7748a74c85928de45806366eaafe63ba065ba219f6f1424ad9011f2afb90",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch10/FV.E2E.DeadCleanupContracts.build.log",
+          "log_sha256": "816a70f7707bcb867a181cc7392ba01f2ac7caf35ad26af7aaab053141c98314"
+        },
+        {
+          "module": "FV.E2E.Lockstep",
+          "returncode": 0,
+          "source_sha256": "cee3dd3b304628eefeb72671fd8920f04cba424a8aa8fb7e415da040a0707066",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch10/FV.E2E.Lockstep.build.log",
+          "log_sha256": "1bae3314052a2df1c74a56d407345952e49992be00864b8c822da5d7eb39a7f8"
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlySem",
+          "returncode": 0,
+          "source_sha256": "6f668d2a8325aaa5ca14da1253d9ac1591c3283aecff81c2ac226170450f6a7b",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch10/FV.E2E.ABIReadOnlySem.build.log",
+          "log_sha256": "60cee96e10792c96e80008ede9979b479df3797215814136100456d0d7471ae9"
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyCheck",
+          "returncode": 0,
+          "source_sha256": "6469008b758c4e8458c5effde2725ccb5386d13944e9e9df0d22a7cf39ca5dbb",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch10/FV.E2E.ABIReadOnlyCheck.build.log",
+          "log_sha256": "91185e8299145eac15efa2a0b8c28d76f27857f0c5992e9005759c3005f256df"
+        },
+        {
+          "module": "FV.E2E.Guarded",
+          "returncode": 0,
+          "source_sha256": "b5a423c70cebe2a3a334d69f2820a3550c50ac52cde65c1dd11cc1364c8c5d09",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch10/FV.E2E.Guarded.build.log",
+          "log_sha256": "40e5506b7712fa8c10996b264796c769d0a1ffa03c0a85091441e743fb26963a"
+        }
+      ],
+      "full_receipt_sha256": "eaf9fd356311e47d1237dad33eaa8c08322abd5e1aa10973818f9337b6ddc94c",
+      "source_snapshot_sha256": "88064808860704b07a06ff100c9ace3c071377470f4bb1d3f2c64a5b32ef2ed8",
+      "aggregate_MiB": 16384,
+      "leaf_cap_MiB": 8192,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 11,
+      "utc": "2026-10-20T20:52:28.440457+00:00",
+      "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+      "counts": {},
+      "built": [],
+      "full_receipt_sha256": "f901d17f5e34204daa762d45f3b1d06cff0b1593649ad6cbf9fea4689f9b44e7",
+      "source_snapshot_sha256": "88064808860704b07a06ff100c9ace3c071377470f4bb1d3f2c64a5b32ef2ed8",
+      "aggregate_MiB": 16384,
+      "leaf_cap_MiB": 8192,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": "two existing author kernels retained; no available slot"
+    },
+    {
+      "batch": 12,
+      "utc": "2026-10-20T20:56:50.507804+00:00",
+      "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+      "counts": {
+        "source_key_current_or_restored": 43,
+        "waiting_for_current_imports": 8,
+        "waiting_for_transitive_imports": 185,
+        "built": 4
+      },
+      "built": [
+        {
+          "module": "FV.E2E.Pair",
+          "returncode": 0,
+          "source_sha256": "829e69abd81f08bedfdcd67b67f4e5eb19a59a9483b19a2e4e4a8680642ea339",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch12/FV.E2E.Pair.build.log",
+          "log_sha256": "67d4ae80d7142a1120b42c4c551cea4addf5874a9a5e81307135f381034bac98"
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyTransport",
+          "returncode": 0,
+          "source_sha256": "a2885abe2390903a65b6a543d027b0ad23e284c974e5805ebfdf6b31acbfcf99",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch12/FV.E2E.ABIReadOnlyTransport.build.log",
+          "log_sha256": "d724194cdd1d577d1c0d30abb9e5ce239f2963a988115541ac82e1c055292314"
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyRealize",
+          "returncode": 0,
+          "source_sha256": "94499c209577d7882b7e188736a06fc8b495d2da41430f6f2e51efb342be3f07",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch12/FV.E2E.ABIReadOnlyRealize.build.log",
+          "log_sha256": "136ecc162da3ecf62b38ed2a126ed5486bdc18e2ee6c5ff18f84451f92686622"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupGuarded",
+          "returncode": 0,
+          "source_sha256": "68b2dd4a1befeb0cf2f4f7c2e906a5caa7a9312e25c467158de6d4797906500c",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch12/FV.E2E.DeadCleanupGuarded.build.log",
+          "log_sha256": "45e41d9922db36c34975223ac2d50fbb2a3aa97d2e7c213aaa5ac04fde0c7602"
+        }
+      ],
+      "full_receipt_sha256": "723ed8b431472262961c7ad635ae483dd7fdac9810483fad04d0db7a3e2e427e",
+      "source_snapshot_sha256": "88064808860704b07a06ff100c9ace3c071377470f4bb1d3f2c64a5b32ef2ed8",
+      "aggregate_MiB": 16384,
+      "leaf_cap_MiB": 4096,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 13,
+      "utc": "2026-10-20T21:00:34.912970+00:00",
+      "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+      "counts": {
+        "source_key_current_or_restored": 47,
+        "waiting_for_current_imports": 7,
+        "waiting_for_transitive_imports": 183,
+        "built": 5
+      },
+      "built": [
+        {
+          "module": "FV.E2E.RegLevelCorrect",
+          "returncode": 0,
+          "source_sha256": "13d8d94cd626326066277c7b46f961309b632e3bd61f4d4708d58bed55c0eb2b",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch13/FV.E2E.RegLevelCorrect.build.log",
+          "log_sha256": "b0fe0a74942d530481d4f77bc0dc3e9daea9648ba73085176e6b9666d2185ea8"
+        },
+        {
+          "module": "FV.E2E.RegLevelCorrectX",
+          "returncode": 0,
+          "source_sha256": "c0923fb204eaf35de6017f74daeb3d83412701610a63e0a789ab849852afe372",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch13/FV.E2E.RegLevelCorrectX.build.log",
+          "log_sha256": "0686d225e8717410006ab525e6a5bc3e0de12487b6876d7305f8f6d141726b34"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupRealizes",
+          "returncode": 0,
+          "source_sha256": "d033122b280c51d2e401b1836363c46031f7538bf0aaeaffc4010ced2e7dc081",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch13/FV.E2E.DeadCleanupRealizes.build.log",
+          "log_sha256": "5b29306a8fcbb72a093d67419aa12079952154db4a492393aa01d910e65a855a"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupRegLevel",
+          "returncode": 0,
+          "source_sha256": "8d93883ffa455002fcf4018a6cb43abb72a138bebf28e62061357501aaf1e0f7",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch13/FV.E2E.DeadCleanupRegLevel.build.log",
+          "log_sha256": "12509e9f6090d3e8422e004b68f6a6cfbbbe685ccaf3aafcabc5e3d748eab0bf"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupRegLevelX",
+          "returncode": 0,
+          "source_sha256": "42540e7283b53a89e2a34b1d1e427637d620af849e34b8a6b6ef34c84f87ba55",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch13/FV.E2E.DeadCleanupRegLevelX.build.log",
+          "log_sha256": "4420b0c09a0505e1a41b02e869f7fa8c56522963b10d977a3a52837fc5417712"
+        }
+      ],
+      "full_receipt_sha256": "5022c68da2a27ce52efd70e9a63504a6f11a07c397d157b76ef7a683b866a04b",
+      "source_snapshot_sha256": "694cecb544e4da3c682f578877ed2de6bf93be73232a2225e032cb20e587ae61",
+      "aggregate_MiB": 16384,
+      "leaf_cap_MiB": 5120,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 14,
+      "utc": "2026-10-20T21:05:11.622586+00:00",
+      "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+      "counts": {
+        "source_key_current_or_restored": 42,
+        "built": 6,
+        "waiting_for_current_imports": 2,
+        "waiting_for_transitive_imports": 3
+      },
+      "built": [
+        {
+          "module": "FV.Backend.Proof.IselFloatVac",
+          "returncode": 0,
+          "source_sha256": "6b9679b934db9f18dc369124b54041444ac6d45e438d707ae24d566f7aa33744",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch14/FV.Backend.Proof.IselFloatVac.build.log",
+          "log_sha256": "be219945787c9a18c1a66685b515e5bf733174fa6e3686c062e8cdee5d757f4c"
+        },
+        {
+          "module": "FV.Backend.Proof.IselFloatConst",
+          "returncode": 0,
+          "source_sha256": "3899593fae5af04f9e0bf61e7e93c584012c00f82c07659575c4248384186fe3",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch14/FV.Backend.Proof.IselFloatConst.build.log",
+          "log_sha256": "99d76483c7b2d0bdbc4064d1bffda8aaabad88982e315b6bb16a48aa534cf016"
+        },
+        {
+          "module": "FV.Backend.Proof.IselFloatArith",
+          "returncode": 0,
+          "source_sha256": "ea08b95ce24f48a17fc6079cae00655c9b09f413f3760c658ab691630cb14804",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch14/FV.Backend.Proof.IselFloatArith.build.log",
+          "log_sha256": "5667cd6184449fa0727dc963a999cbabc7436a1177e963fd833dc6c0bb5859cc"
+        },
+        {
+          "module": "FV.Backend.Proof.IselFloatSelect",
+          "returncode": 0,
+          "source_sha256": "7c993ddd3762606c88357d9326930382765a86984b1c7a7247bedd81e172ca61",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch14/FV.Backend.Proof.IselFloatSelect.build.log",
+          "log_sha256": "8a0bced1f51b11a7511fa43bb99aaaf5e1c9e97f9461e427c6c85ec7bd579bbb"
+        },
+        {
+          "module": "FV.Backend.Proof.IselAtomic",
+          "returncode": 0,
+          "source_sha256": "1658015b98539279f6b42f4b189a5aa4c72e2e6425ec1242a254d85bcfb083b4",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch14/FV.Backend.Proof.IselAtomic.build.log",
+          "log_sha256": "8db1950a307a889e0495828888039c4a34fb8fa0eec76ef37ee29930ce54bef6"
+        },
+        {
+          "module": "FV.Backend.Proof.IselLowerAll",
+          "returncode": 0,
+          "source_sha256": "395b6a989482a4dd46bc7dfd705a947a44ebff7495a570ccc9d60be7e5c9495e",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch14/FV.Backend.Proof.IselLowerAll.build.log",
+          "log_sha256": "4c44f09c8ebbec757f0c1e5fe5d00eaf59bfd681dc0f6d7fe91269eeedf5960d"
+        }
+      ],
+      "full_receipt_sha256": "123ded03103393d5b7324c00473d10081752df50a532585fb8b15d546c51f12a",
+      "source_snapshot_sha256": "0456bd71ba7afc00b52828696f71fa4d4d4a9451fc5eac189c35c0d8cac0ab4b",
+      "aggregate_MiB": 16384,
+      "leaf_cap_MiB": 5120,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 15,
+      "utc": "2026-10-20T21:09:05.244278+00:00",
+      "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+      "counts": {},
+      "built": [],
+      "full_receipt_sha256": "3a4f660e2198c53674237444326b902a14668fd20d913fdd1291c4e956211253",
+      "source_snapshot_sha256": "0456bd71ba7afc00b52828696f71fa4d4d4a9451fc5eac189c35c0d8cac0ab4b",
+      "aggregate_MiB": 16384,
+      "leaf_cap_MiB": 7168,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": "two existing author kernels retained; no available slot"
+    }
+  ],
+  "current_abi_review_receipt": "docs/research/stock-mixed-abi-normal-review.json"
 }
