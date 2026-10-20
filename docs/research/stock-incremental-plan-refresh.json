@@ -1,0 +1,16 @@
+{
+  "utc": "2026-10-18T16:14:07.183317+00:00",
+  "base": "73784c9c2d8625169f3e6d2a16e378ae0aeaca29",
+  "original_local_plans_backup": "/home/lee/.clifv-recovery/20261018T161407Z-plan-refresh",
+  "scope": "docs only",
+  "last_green_at_inspection": "a386cbab",
+  "branch": "agent/stock-delivery-plan-refresh-20261018",
+  "head": "b41ad1889df4ced1d1c9ab766e5d89b7efeb5430",
+  "validation": "Docs-only per \u00a77: no required gates; git diff --check PASS, new/current roadmap links resolve",
+  "compiler_proof_sources_changed": false,
+  "PR": 314,
+  "merge_commit": "5c8704c85edc7052c12328e516eaae79e888e149",
+  "landed_tree_equals_reviewed_docs_tree": true,
+  "frozen_compiler_proof_source_scripts_unchanged": true,
+  "free_GiB": 796.0
+}

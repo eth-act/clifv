@@ -129,7 +129,8 @@ theorem extOut_prun (hR : Refines F isem) {f : Clif.Function} {ctx : Ctx} (hctx 
     · cases vty <;> simp [CTy.ofClif] at h32'
       subst hv
       simp only [lo64, Clif.Ty.width, Bool.false_eq_true, ↓reduceIte]
-      cases sg <;> simp only [Bool.false_eq_true, ↓reduceIte] <;> bv_decide
+      cases sg <;> simp only [Bool.false_eq_true, ↓reduceIte] <;>
+        simp [BitVec.setWidth_setWidth_of_le]
   · have hf : (s.fresh .int).1 = .vreg s.nextVreg .int := rfl
     rw [hf]
     refine ⟨s.nextVreg, [.extend (.vreg s.nextVreg .int) (.vreg x .int) sg t.bits toB], rfl, by simp only [LState.emit, LState.fresh]; apply Array.ext'; simp,

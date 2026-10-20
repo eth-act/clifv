@@ -94,15 +94,34 @@ theorem mod64_of_lt32 {a : Nat} (h : a < 32) : a % 64 = a := Nat.mod_eq_of_lt (b
 
 theorem mod_of_lt' {a b : Nat} (h : a < b) : a % b = a := Nat.mod_eq_of_lt h
 
+/-- A bit-vector identity of fixed width `w` built from appends, extractions, shifts by
+constants, extensions and bitwise operations, proved in the kernel: each of the `w` result bits
+is checked separately. The `getLsbD_append` rewrites go through `rw`: `simp` does not match the
+lemma on literal widths (`1 + 6`), nor on the appends from `rev_elems`, whose instances carry
+unreduced widths. -/
+macro "bv_bits" : tactic => `(tactic| (
+  refine BitVec.eq_of_getLsbD_eq ?_
+  intro i hi
+  repeat rw [BitVec.getLsbD_append]
+  try simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
+    BitVec.getLsbD_shiftLeft, BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not]
+  repeat rw [BitVec.getLsbD_append]
+  revert i
+  simp only [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, implies_true, true_and]
+  simp [BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_allOnes,
+    -BitVec.getLsbD_eq_getElem]))
+
 theorem rv16 (x : BitVec 32) (h0 h1 h2 h3 h4) : Arm.rev_vector 32 16 8 x h0 h1 h2 h3 h4 = rev16w x := by
   simp [Arm.rev_vector, Arm.rev_elems, rev16w]
-  bv_decide
+  bv_bits
 theorem rv32 (x : BitVec 32) (h0 h1 h2 h3 h4) : Arm.rev_vector 32 32 8 x h0 h1 h2 h3 h4 = Clif.Sem.bswap x := by
-  simp [Arm.rev_vector, Arm.rev_elems, bswap_32]
-  bv_decide
+  simp [Arm.rev_vector, Arm.rev_elems, Clif.Sem.bswap, show List.range 4 = [0, 1, 2, 3] from rfl]
+  bv_bits
 theorem rv64 (x : BitVec 64) (h0 h1 h2 h3 h4) : Arm.rev_vector 64 64 8 x h0 h1 h2 h3 h4 = Clif.Sem.bswap x := by
-  simp [Arm.rev_vector, Arm.rev_elems, bswap_64]
-  bv_decide
+  simp [Arm.rev_vector, Arm.rev_elems, Clif.Sem.bswap,
+    show List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] from rfl]
+  bv_bits
 
 theorem nzcv_n (f : NZCV) : Arm.BitVec.lsb (BitVec.ofNat 4 f.bits) 3 = BitVec.ofBool f.n := by
   obtain ⟨n, z, c, v⟩ := f; cases n <;> cases z <;> cases c <;> cases v <;> rfl
