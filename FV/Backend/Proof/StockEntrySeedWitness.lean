@@ -1,5 +1,7 @@
+import FV.Backend.Proof.MemRefines
 import FV.Backend.Proof.StockEntrySeed
 import FV.Backend.Proof.StockEntryArgs
+import FV.Backend.Proof.StockEntryPrelude
 import FV.E2E.RegLevelDriverSem
 import FV.Backend.Proof.StockArithmeticReturnRefines
 import FV.Backend.Lowering.StockScalarAdd
@@ -168,5 +170,29 @@ theorem unused_parameter_csem_args_witness (u v : BitVec 64) (X : ExtSem) (base 
     (driverSem_csem (fun _ => False) ⟨0,0⟩ X) [(192,Reg.x 0)] (by decide) held physical
   refine ⟨world,ρ',arguments,execution,values,?_⟩
   exact values.read (x := 1) trivial rfl unused_parameter_trace.2.2.1
+
+/-- The actual whole-driver prelude also covers arbitrary register arguments
+when the second source parameter is unused; no row certificates are supplied. -/
+theorem unused_whole_entry_prelude_witness (u v : BitVec 64) (X : ExtSem) (baseWorld : Arm.ArmState) :
+    ∃ (w : Arm.ArmState) (actual : BlockScanEvent) (block : VBlock) (prelude body : Array MInst)
+      (ρ' : Nat → CV) (w' : Arm.ArmState),
+      ArgsAtEntry (fun _ => False) function.sig [⟨.i64,u⟩,⟨.i64,v⟩] w ∧
+      actual ∈ result.blockScans.toList ∧ actual.block = 0 ∧
+      result.code.blocks[0]? = some block ∧ block.insts = prelude ++ body ∧
+      seqRun (csem (fun _ => False) ⟨0,0⟩ X) prelude.toList
+        (entrySeed actual.ctx (frame u v)) w = some (.fall ρ' w') ∧
+      ValuesHeld (fun _ => True) actual.ctx (frame u v) ρ' ∧ SameWorld (fun _ => False) w' w := by
+  obtain ⟨w,_,arguments,_,_,_⟩ := unused_parameter_csem_args_witness u v X baseWorld
+  have entered : Clif.enterFunc function [⟨.i64,u⟩,⟨.i64,v⟩] Clif.Mem.empty =
+      .ok (frame u v,Clif.Mem.empty) := rfl
+  have memSem : MemRefines (fun _ => False) 0 (fun _ => none) (csem (fun _ => False) ⟨0,0⟩ X) :=
+    memRefines_csem (fun _ => False) ⟨0,0⟩ X rfl (fun _ _ h => by cases h)
+  have stable : MRStable (fun _ => False) (fun _ _ _ => True) := by
+    intro _ _ _ _ _ _
+    trivial
+  obtain ⟨actual,block,prelude,body,ρ',w',events,zero,placed,code,execution,_,values,same,_⟩ :=
+    stock_lower_entry_prelude_refines run domain.2 domain.1 entered
+      (driverSem_csem (fun _ => False) ⟨0,0⟩ X) memSem stable trivial arguments
+  exact ⟨w,actual,block,prelude,body,ρ',w',arguments,events,zero,placed,code,execution,values,same⟩
 
 end Backend.Stock.Proof.EntrySeedWitness
