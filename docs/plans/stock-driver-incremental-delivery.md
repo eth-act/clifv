@@ -30,14 +30,18 @@ gates passed2386modules,18trust audits,both1154E2Emodes/all1150originalidentity-
 parity,runtime4737/0/0,encoder1316identical,linked/emitted proofs and verified default
 Lean-linked fv-demo/survey. Integrator notified of the actual squash commit.
 
-The active batch on `agent/stock-prologue-all-configurations` extends that class to
-all six existing ABI/type configurations. It adds shared lowerer-parametric actual
-consumers with exact old-function compatibility, complete arbitrary-argument machine
-witnesses, default entrypoint selection and emitted proofs. Targeted132standard
-public roots,16boundary roots (nine marked fixed-native data dependencies),650owned
-constants,ten linked cases/sixteen generated files,real verified CLIs and all-six
-forced allocator retry tests pass. Full author gates pass2406modules/21audits/allruntime,encoding,E2E,link,proof andverifiedcratechecks. Reconciled onto#334/7a2ea9bf without Lean/Rust source changes; fresh corpus gates pass1321identicalencodings,both1159E2Emodes/all1150originaland1154prioridentity-stageparity,and the Clif.run recorded baseline. The added five configurations await the immediate author squash on validated6d808c57. See
-[six-configuration implementation evidence](../research/stock-prologue-all-production.md).
+#335 (`5a143135fca1b3565085f7cf403dc475c85cfc24`) landed all six
+prologue configurations after the recorded author and reconciliation gates.
+See [six-configuration evidence](../research/stock-prologue-all-production.md).
+
+The active implementation batch on `agent/stock-scalar-production` adds complete
+two-argument scalar-add functions across those six configurations. Actual
+retained-record/body and arbitrary-argument/dirty-upper-bit executable witnesses
+compile. The three entrypoints and generated proofs select the new lowerer while
+retaining earlier classes and whole-file/executable legacy retry. Targeted actual
+mixed linking, split proofs, runtime/retry and real verified CLI checks pass;
+public/owned trust audits and frozen current author gates precede the next squash.
+See [scalar-add evidence](../research/stock-scalar-add-core.md).
 Optimizer and exceptional-edge routes await their consumer adapters.
 All remaining original #140 obligations remain open.
 

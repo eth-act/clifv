@@ -6,6 +6,20 @@ The source class is one ordinary two-parameter integer function, one iadd result
 
 Targeted backend builds and trust audits pass:28publicroots/all99ownedconstants standard-only. Code success/diagnostic-erased code agreement/empty edge operands are checked in separate kernel declarations to bound memory. The domain proof derives SSA and operand/parameter independence constructively; it does not reduce the opaque dataflow computation. Complete source execution, placement-oracle memory roundtrip, dirty ABI upper-bit handling, and simultaneous successful lowering/checking/source witnesses cover every argument pair. Selection falls back to the shipped all-six prologue selector and preserves all previously enabled D0/prologue classes. The equality to legacy output is proof transport, with no runtime legacy-output comparison or normalization added.
 
-This is a pushed recovery checkpoint, not a landable production-class PR. Arithmetic is not enabled in the entrypoints. Next: complete actual machine/ABI/loader/stack witnesses for every argument pair and dirty bits, inhabit the new scan/body premises with real records, then connect generic compiler/checker/linker/generated-proof consumers and the three entrypoints. The generic renderer must import the new lowerer explicitly while retaining existing defaults. Run mixed D0/prologue/legacy/arithmetic and forced-allocation retry tests, actual linked/sliced/emitted/real CLI proof gates, full current author gates, reconcile main and squash one substantive batch. Do not stop at this proof checkpoint.
+The follow-on implementation now includes the complete machine/ABI/loader/stack
+witness for every argument pair and arbitrary dirty upper bits, and an actual
+retained arithmetic record/body witness. Fixed compiler-trace facts are explicit
+native-data witnesses; compiler and general scan-composition roots retain standard
+axioms. One body execution inhabits both the record and body composition premises.
+
+The three production entrypoints now select ScalarAdd.lower/activationEligible;
+the generic renderer has an explicit lowerer import with its previous default
+preserved. Targeted checks pass ten actual linked cases and sixteen generated Lean
+files, including 33-function global/per-entry slicing and mixed arithmetic/prologue/
+D0/legacy functions. Runtime tests cover six configurations, both cleanup modes and
+forced allocation failure with exact legacy retry. Real verified linker/checker
+CLIs and both emitted proofs pass. This implementation is local pending its frozen
+author gates, current-main reconciliation and substantive class squash; arithmetic
+activation on main is not yet claimed.
 
 The broader full-driver rule/effect/source/block/whole-driver simulation and Stock-only completeness, optimizer/unwind consumers and final production replacement remain open. All saved canonical work, prior theorem variants, input conditions, required axiom sets and original/current identity-stage baselines remain required.
