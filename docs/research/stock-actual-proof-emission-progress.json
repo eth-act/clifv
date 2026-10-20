@@ -1,0 +1,65 @@
+{
+  "utc": "2026-10-20T00:34:51.886760+00:00",
+  "state": "per_pr_gates_passed",
+  "pid": 3400949,
+  "head": "ee7ddcc6ff8b782f68568731117cdfd9f35e3bae",
+  "logs": {
+    "all-modules": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/all-modules.log",
+      "sha256": "256456b125c2e2e4c5ff678e40ee7aaafe9e20b7aef3e9bc97cf6718f8a59285"
+    },
+    "library-and-affected-tools": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/library-and-affected-tools.log",
+      "sha256": "de52b0392eb604e6a19123e5d0226bc44703b18619b167cb0a9fbb0ea94679b8"
+    },
+    "all-axiom-audits": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/all-axiom-audits.log",
+      "sha256": "1681f8a34a7298567fd309debf2691320eaa8badcd812c7a566c469ea43f4bc7"
+    },
+    "owned-constants": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/owned-constants.log",
+      "sha256": "accc52a2c724772e1819949dbe07f19b9ae04d45913cacd50ba5402846d33264"
+    },
+    "e2e": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/e2e.log",
+      "sha256": "c63adf12e4349a2cf00ca48665b657d4088ebf0c2386ee924bc47bbe9863f5d5"
+    },
+    "legacy-e2e": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/legacy-e2e.log",
+      "sha256": "4405b490e80f88328ffda730dfcab23f459c5548def59ef9bc74076e5189b60d"
+    },
+    "link-check-0": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/link-check-0.log",
+      "sha256": "09bd8eb84b9df50649a17675df8c2938811b988132ad0b4a509b192a77d7a2d5"
+    },
+    "link-check-1": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/link-check-1.log",
+      "sha256": "6e977c186344756198967490c50b1c1f3426c5e6711f7ae11fd69ebacb12c8f0"
+    },
+    "generated-StockD0MixedPlain": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/generated-StockD0MixedPlain.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generated-StockD0MixedCleanup": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/generated-StockD0MixedCleanup.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "actual-linked-generated-proofs": {
+      "path": "/tmp/stock-proof-emission-per-pr-gates/actual-linked-generated-proofs.log",
+      "sha256": "72547410f13bba0fd3643512cd49ec9bcb994871637827c3cd2719a93c294964"
+    }
+  },
+  "identity_stage_parity": {
+    "e2e": {
+      "original": 1150,
+      "current": 1154,
+      "all_original_identities_and_ordered_stages_preserved": true
+    },
+    "legacy-e2e": {
+      "original": 1150,
+      "current": 1154,
+      "all_original_identities_and_ordered_stages_preserved": true
+    }
+  },
+  "remaining": "Fetch current main, reconcile if needed, open non-draft implementation PR and author squash promptly. Full original #140 remains active."
+}
