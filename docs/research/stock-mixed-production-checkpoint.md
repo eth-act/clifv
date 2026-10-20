@@ -94,3 +94,19 @@ Recovery7090fb6d on agent/stock-driver-wip-backup-20261020T162211Z preserves
 all1874saveddirtypaths and exact generated artifacts/logs/scratch sources; canonical
 HEAD/index unchanged. These checks do not replace normal module/tool/CLI gates,
 ALL generated variants, corpus or previous axiom/identity/stage parity.
+
+All12emitted fixture variants now pass combined-source kernel checks;589generated
+declarations in the remaining10 use only standard/generated-native facts.
+Actual backend CLI entrypoint passes Lean/regalloc2 x2cleanup with ordinary CLIF,
+actual function/select/bytes/rules and no unsupported/unverified diagnostics.
+Verified linker entrypoint passes2cleanup modes on copiedELFs; checker entrypoint
+passes4current/retained cases and all4emittedCLIproofs pass kernel checks.
+A production routing fix probes the requested lowerer before transactional
+legacy retry can mask retained artifacts with incompatible saved allocator
+answers. Original valid answers and all checked reconstruction stages remain.
+Plain retained bytes now explicitly select lowerWithFallbacks.
+[Exact inputs, logs, rejected fixture attempts, artifacts and backup](stock-mixed-cli-check.json).
+Recovery148835a6 on agent/stock-driver-wip-backup-20261020T163431Z preserves
+all1874dirtypaths and744863byte archive (including prior nested evidence).
+Normal module/tool/rebuilt-native-binary/corpus/oldaxiom/identity/stage/verified
+example gates remain pending before mixed activation landing.

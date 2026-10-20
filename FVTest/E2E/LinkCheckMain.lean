@@ -29,7 +29,10 @@ def main (args : List String) : IO UInt32 := do
     for fi in I0.funcs do
       let f := fi.func
       if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f) && !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
-        let bytesMatch := match I0.pipeProductionWith Stock.Mixed.lowerValidated o.deadCleanup fi with
+        -- Probe this candidate before the transactional legacy retry. Otherwise
+        -- an incompatible saved allocator answer can hide a retained artifact.
+        let bytesMatch := match I0.pipeOfWithLowering Stock.Mixed.lowerValidated
+            (productionStage o.deadCleanup) fi with
           | .error _ => false
           | .ok a => artB I0 (fileRd file) phs a
         if !bytesMatch then retained := retained ++ [f.name]
