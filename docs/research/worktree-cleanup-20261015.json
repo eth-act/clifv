@@ -1,0 +1,49 @@
+{
+  "utc": "2026-10-15T17:38:25.367720+00:00",
+  "archive": "/home/lee/.clifv-recovery/cleanup-20261015T173640Z/stock-lowering-target.tar.gz",
+  "archive_bytes": 110741885,
+  "archive_sha256": "1b1679951a6385180dcd97f5cd46478ca8314ed9f72a55af839c800b7eb9043a",
+  "verification": "tar -dzf compared complete archive with original target: exit 0 before deleting expanded files",
+  "removed": [
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/target/stock-lowering-before-isolated/files",
+      "bytes": 91382089
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/target/stock-lowering-comparison-block-core/files",
+      "bytes": 91132341
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/target/stock-lowering-comparison-default/files",
+      "bytes": 91779792
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/target/stock-lowering-comparison-demand-experiment/files",
+      "bytes": 91172596
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/target/stock-lowering-comparison-development/files",
+      "bytes": 90965648
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/target/stock-lowering-comparison-driver/files",
+      "bytes": 91017381
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/target/stock-lowering-comparison-integrated/files",
+      "bytes": 91132251
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering/target/stock-lowering-comparison-pilot/files",
+      "bytes": 2474917
+    }
+  ],
+  "removed_logical_bytes": 641057015,
+  "preserved": "All reports, summaries, logs and source remain accessible; complete original target retained in verified archive. Dirty/unpublished source and worktree branches unchanged.",
+  "helper_validation": [
+    "bash -n both scripts",
+    "isolated fixture: caches not copied",
+    "isolated fixture: linked invocation resolves primary root",
+    "isolated fixture: low-space creation rejected before mutation"
+  ]
+}

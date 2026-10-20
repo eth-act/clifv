@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.KernelBV
 
 /-!
 # 128-bit comparisons rebuilt from 64-bit halves (`icmp.isle` 254–289)
@@ -13,7 +14,7 @@ The earlier proofs (`rule_auto_f`, `RuleIcmpEmbed2.lean`) ran out of memory (16G
   every class value and type is known before the right-hand side (no `Clif.Ty` variables left to split).
 - the made `iconcat`s are evaluated by `evalNode_iconcat_i64` (`opt_node_cat`), so `opt_types_cat` can
   fix the operand type of the made `icmp` (`i128`), and the result is closed by one of the
-  `cat128_*` lemmas (`bv_decide` once, on 64-bit halves, outside the rule's context) instead of
+  `cat128_*` lemmas (by the `toNat` of the 64-bit halves, outside the rule's context) instead of
   bit-blasting 128-bit comparisons per type combination.
 
 `rule_auto_i128cmp r`: the template. Rule modules using it set `Elab.async false`: theorems are
@@ -41,10 +42,37 @@ theorem evalNode_iconcat_i64 {fr : Frame} {mem : Mem} {lo hi : ValueId} {a : Val
 /-! The 128-bit comparison as LLVM decomposes it (`icmp.isle` 254–289): equal high halves pick
 the unsigned comparison of the low halves, otherwise the comparison of the high halves. -/
 
+/-- Unsigned `<` of 128-bit concatenations: by the high halves, then the low halves. -/
+private theorem ult_append64 (ah bh al bl : BitVec 64) :
+    (ah ++ al).ult (bh ++ bl) = (ah.ult bh || (ah == bh && al.ult bl)) := by
+  have hn (x y : BitVec 64) : (x ++ y).toNat = x.toNat * 2 ^ 64 + y.toNat := by
+    rw [BitVec.toNat_append, ← Nat.shiftLeft_add_eq_or_of_lt y.isLt, Nat.shiftLeft_eq]
+  rw [Bool.eq_iff_iff]
+  simp only [BitVec.ult_eq_decide, hn, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq,
+    beq_iff_eq, ← BitVec.toNat_inj]
+  have := al.isLt; have := bl.isLt
+  omega
+
+private theorem msb_append64 (ah al : BitVec 64) : (ah ++ al).msb = ah.msb := by
+  rw [BitVec.msb_append]
+  rfl
+
+private theorem ult_self' {w : Nat} (x : BitVec w) : x.ult x = false := by
+  simp [BitVec.ult_eq_decide]
+
+set_option hygiene false in
+/-- Signed comparisons as `msb` and unsigned `<` (`slt_eq_ult`), the 128-bit `<` by the halves
+(`ult_append64`), then by cases on `ah = bh` and the remaining `Bool` atoms. -/
 macro "cat_bits" : tactic => `(tactic| (
   simp only [select_bif, Sem.truthy, icmp_eq, icmp_ne, icmp_slt, icmp_sge, icmp_sgt, icmp_sle,
-    icmp_ult, icmp_uge, icmp_ugt, icmp_ule]
-  bv_decide (config := { timeout := 120 })))
+    icmp_ult, icmp_uge, icmp_ugt, icmp_ule, BitVec.sle_eq_not_slt, BitVec.ule_eq_not_ult,
+    BitVec.slt_eq_ult, ult_append64, msb_append64]
+  by_cases h : ah = bh
+  · subst h
+    simp only [beq_self_eq_true, ult_self', bne_self_eq_false]
+    cases al.ult bl <;> cases bl.ult al <;> rfl
+  · simp only [beq_false_of_ne h, Bool.false_and, Bool.or_false]
+    cases ah.ult bh <;> cases bh.ult ah <;> cases ah.msb <;> cases bh.msb <;> simp [Ne.symm h]))
 
 theorem cat128_uge (ah bh al bl : BitVec 64) :
     Sem.select (Sem.icmp .eq ah bh) (Sem.icmp .uge al bl) (Sem.icmp .uge ah bh) =

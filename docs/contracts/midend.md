@@ -11,10 +11,10 @@ the same; stuck or out-of-fuel input runs carry no obligation.
 
 ## Status
 
-- [x] Passes (`FV/Opt/*.lean`), all **unproven** (working first, proofs after, as for the
-  backend): well-formedness check, unreachable-block removal, rule-based simplification of pure
-  nodes and of skeleton instructions (Cranelift's rules via the ISLE interpreter), GVN, DCE,
-  LICM. No `sorry`, no axioms (there are no theorems yet).
+- [x] Passes (`FV/Opt/*.lean`): well-formedness check, unreachable-block removal, rule-based
+  simplification of pure nodes and of skeleton instructions (Cranelift's rules via the ISLE
+  interpreter), GVN, DCE, LICM. Written first and proven afterwards ("Pass proofs"); no `sorry`,
+  no hand-written axioms.
 - [x] Drivers: `clif-opt` (optimised CLIF out; accepted by `clif-oracle check`), `--opt` for
   `lean-backend`, `lean-backend-armrun`, `lean-e2e-check`, `scripts/lean-backend-filetests.sh`.
 - [x] Differential tests: `scripts/opt-difftest.sh` (corpus, runtests, cg_clif survey),
@@ -22,7 +22,15 @@ the same; stuck or out-of-fuel input runs carry no obligation.
   3270/0/0, `lean-e2e-check --opt` 934/934 accepted and `formsCoveredB`-covered.
 - [x] Metrics (`scripts/lean-backend-metrics.sh`): Lean no-opt / `--opt` vs Cranelift
   `opt_level=none` / `speed` ("Results").
-- [ ] Proofs: architecture below ("Planned proof architecture").
+- [x] Proofs: every pass ("Pass proofs"), the rule interpreter and 1154 `simplify` + 37
+  `simplify_skeleton` roots ("Rule proofs"; the false shifts 84/88 stay disabled):
+  `Opt.optimize_sim_proven`, `E2E.backend_correct_opt_proven` (`ruleAllow := .proven`).
+- [x] `call_indirect`, `try_call`, `try_call_indirect` (S1, #25): the executable compiler's
+  mid-end `Opt.optimizeExe` (`optimize` with two guards) refines every program, indirect and
+  `try` calls included (`Opt.optimizeProgramExe_refines`, `E2E.backend_correct_opt_exe`); the
+  `i128` legalisation composed with it (S2, #26: `E2E.backend_correct_legal_opt`); the
+  optimising executable compiler `Link.{DeadCleanup.}compileExeOpt` (`lean-link --opt`,
+  `cargo fv --lean-link --opt-proven-only`). See "The executable compiler's mid-end".
 
 ## Using it
 
@@ -217,7 +225,7 @@ def Isle.Opt.simplifySkeleton {σ} (enodes …) (typeOf …) (make …)
   `simplify` calls, 12 `simplify_skeleton` calls and 930 `simplify` calls over the CLIF corpus
   fire the same rules as a `trace-log` build at `opt_level=speed` (per call, on e-classes whose
   operands are single original nodes).
-  1055 `simplify` roots, all 37 `simplify_skeleton` roots and their helpers are proven (see "Rule
+  1154 `simplify` roots, all 37 `simplify_skeleton` roots and their helpers are proven (see "Rule
   proofs").
 
 ## Results (2026-09-28, default configuration: Cranelift rules, 1 round)
@@ -299,8 +307,9 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
 2. **Per-rule `simplify` correctness vs `Clif.Sem`** (PLAN: "prove each one before enabling
    it"). For each rule of the E closure (`Isle.Opt.Closure`, 1357 rules), the statement is:
    for all bindings satisfying the LHS pattern and if-lets, the RHS denotes the same value as
-   the LHS, per type `i8`..`i64`; the proofs split on the type and close with `bv_decide`, like
-   the isel proofs (`docs/contracts/backend-proof.md`), with the Lean transcriptions of the
+   the LHS, per type `i8`..`i64`; the proofs split on the type and close with `kbv`
+   (kernel-checked bit-vector decision, `FV/Opt/Proof/KernelBV.lean`; until T6 `bv_decide`, like
+   the isel proofs, `docs/contracts/backend-proof.md`), with the Lean transcriptions of the
    extern helpers (`FV/Isle/Opt/Helpers.lean`) specified by lemmas first. Then an
    *interpreter soundness* lemma for `Isle.Interp.runMultiTerm` (a returned value comes from a
    rule whose LHS matched with some bindings and whose RHS evaluated to it) lifts the per-rule
@@ -342,7 +351,7 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
   rule sets (`E2E.backend_correct_opt_proven`); only the allow-listed rules are proven, so the
   default configuration (all rules) still rests on the differential tests for the rule
   obligations (`SimplifySound`/`SkeletonSound` of the full rule set).
-- Proven: the rule interpreter's soundness, 1055 `simplify` roots and all 37 `simplify_skeleton`
+- Proven: the rule interpreter's soundness, 1154 `simplify` roots and all 37 `simplify_skeleton`
   roots ("Rule proofs").
 - Missing Cranelift mid-end features: alias analysis (redundant-load elimination,
   store-to-load forwarding), merging of identical trapping instructions, elaboration-based
@@ -360,8 +369,8 @@ Goal: `Opt.optimize` refines `Clif.run`, and `E2E.backend_correct_final` extends
 ## Pass proofs (2026-09-28, MidPassProofs)
 
 Proven (no `sorry`, no hand-written axioms; `#print axioms` = `propext`, `Classical.choice`,
-`Quot.sound`, plus for `E2E.backend_correct_opt` the `bv_decide`/`native_decide` trust axioms
-inherited from `backend_correct_final`):
+`Quot.sound`; since T6 no `bv_decide` certificate, neither in the rule proofs nor inherited from
+`backend_correct_final`):
 
 | Theorem | File | Statement |
 | --- | --- | --- |
@@ -384,9 +393,48 @@ configuration given `Opt.SimplifyPassSim cfg.simplifyFn cfg.skeletonFn`; that hy
 proven for sound rule sets (`Opt.simplifyPassSim`) and hence for the proven rule sets
 (`simplifyPassSim_proven`), which gives `optimize_sim_proven` and
 `E2E.backend_correct_opt_proven`. `#print axioms E2E.backend_correct_opt_proven` is exactly
-the axiom set of `backend_correct_opt` (`propext`, `Classical.choice`, `Quot.sound` and the
-backend's `bv_decide` trust axioms); `simpOk_sim`, `simplify_facts`, `simplifyPassSim`,
+the axiom set of `backend_correct_opt` (`propext`, `Classical.choice`, `Quot.sound`; T6); `simpOk_sim`, `simplify_facts`, `simplifyPassSim`,
 `optimize_sim_proven`: `propext`, `Classical.choice`, `Quot.sound`.
+
+### The executable compiler's mid-end (S1, #25: `call_indirect`, `try_call`)
+
+`Opt.optimizeExe` (`FV/Opt/OptimizeX.lean`) is `optimize` with two guards, under which it refines
+every program, indirect calls and `try_call`/`try_call_indirect` included
+(`Opt.optimizeProgramExe_refines`, `FV/Opt/Proof/PipelineX.lean`; simulations `IsSimX`/`FunSimX`
+in `FV/Opt/Proof/{SemSimX,SimWin,UnreachableX,GvnEditX,SimpSimX}.lean`). `lean-backend --opt`,
+`clif-opt`, `opt-difftest` and `lean-e2e-check --opt` run it (`Opt.optimizeParsedFile`).
+
+- **Fresh-value guard `freshOkB`.** A `try_call` binds its results at the function's fresh
+  value (`Clif.Function.freshValue`, one above every *defined* value). `removeUnreachable` drops
+  blocks, which can lower the fresh value; a reachable block that reads a value it never defines
+  (ill-formed CLIF, rejected by Cranelift's verifier but given a meaning by `Clif.run`) then
+  reads a different register. **`Opt.optimize` alone is unsound there**:
+  `Opt.PipelineXWitness.optimize_not_refines` (`FV/Opt/Proof/PipelineXWitness.lean`): `%bad`
+  (`try_call fn0(v0), sig0, block1, …`, `block1: return v2`, the unreachable `block2` defining
+  `v1`) returns `8` on `5`, and no run of `Opt.optimizeProgram`'s program returns (it is stuck:
+  the result lands in `v1`). `freshOkB` keeps such a function unchanged; on well-formed functions
+  (`Opt.check`) it always holds (`freshOkB_of_check`). **Effect on earlier claims: none.**
+  `Opt.optimizeProgram_refines` assumes `NoCallIndirect` (no `call_indirect`, no `try` terminator)
+  and `E2E.backend_correct_opt_proven{,_cleanup}` assume `hci`/`hnt`, and `lean-backend
+  --opt-proven-only` reported every `try_call`/`call_indirect` function unverified, so no earlier
+  theorem or verified report covered such a function.
+- **Shape guard `keepsShapeB`.** The result keeps the input's `try_call` callees and indirect-call
+  signatures, and a `return_call`/indirect call/block if the input has one (what the backend's
+  subset and the linking facts read); otherwise the input is returned.
+- `Opt.check` rejects `call_indirect`, so such functions only get unreachable-block removal
+  (DEFERRED, mid-end).
+- **Measured** (`Opt.optimizeExe` with the proven rule sets on the decoded `cargo fv` dumps):
+  fv-demo 1337 of 1352 functions changed, survey 3151 of 3179; `freshOkB` and `keepsShapeB`
+  never reject (0 and 0 on both), and no optimised function falls back on the print/parse round
+  trip (0 on both).
+
+Theorems: `Opt.runLoop_refinesX`, `Opt.optimizeExe_simX`, `Opt.optimizeProgramExe_refines`
+(witness `Opt.PipelineXWitness.optimizeProgramExe_witness`: a program with `call_indirect`,
+`try_call` and `try_call_indirect`, all three functions changed, the run of `%main 5` returns `29`
+before and after); `E2E.backend_correct_opt_exe{,_cleanup}` (`FV/E2E/OptX.lean`: no `hci`/`hnt`);
+S2 (#26): `E2E.backend_correct_legal_opt{,_env}{,_cleanup}` (`FV/E2E/LegalOptX.lean`); the
+optimising executable compiler `Link.{DeadCleanup.}compileExeOpt_*` (docs/contracts/e2e.md, "The
+optimising executable compiler"). Axioms: `propext`, `Classical.choice`, `Quot.sound`.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
 
@@ -473,9 +521,9 @@ environment), `TrapsExplicit` of the optimised program's run from `optEntry` (th
 simulation says nothing about the optimised run once the source gets stuck, so it is not
 derived from the source's), `FormsCovered` of the compiled optimised code (decided per function).
 
-Build note: `FV/Opt/Proof/RuleImm.lean` imports `FV.Backend.Proof.IselCmpExt` so that both
-`bv_decide` users share one generated `Clif.Ty.enumToBitVec` (otherwise no module can import the
-rule proofs and the backend together).
+Build note: `FV/Opt/Proof/RuleImm.lean` imports `FV.Backend.Proof.IselCmpExt`; while both
+called `bv_decide` (before T6) this let them share one generated `Clif.Ty.enumToBitVec` (otherwise
+no module could import the rule proofs and the backend together).
 
 Design decisions (approved by the integrator):
 
@@ -495,15 +543,31 @@ Design decisions (approved by the integrator):
 
 ## Rule proofs (MidRulesFoundation, branch `agent/mid-rules`)
 
-Status: the framework is complete and proven; **1055 `simplify` roots proven** (see below),
+Status: the framework is complete and proven; **1154 `simplify` roots proven** (see below),
 allow-list embedding done. Files `FV/Opt/Proof/{Sem,InterpMatch,InterpState,InterpEval,RuleBase,
 RuleData,RuleNode,RuleEmbed,RuleTactic,RuleImm,RuleCtor,RuleSkel,RuleAuto,RuleArith,RuleCprop,
 RuleAll}.lean`; generator
 `FVTest/Opt/Proof/GenData.lean` (`lake env lean --run FVTest/Opt/Proof/GenData.lean >
-FV/Opt/Proof/RuleData.lean`, 33 s build). No `sorry`; axioms of every theorem below:
-`propext`, `Classical.choice`, `Quot.sound`, plus the `*._native.bv_decide.ax_*` certificates of
-the `bv_decide` calls (as in the backend proofs); `RuleAll` uses no `native_decide`. Full build of
+FV/Opt/Proof/RuleData.lean`, 33 s build). No `sorry`; axioms of every theorem below
+(`RuleAll.simplifyRulesCorrect_proven` and the rule theorems): `propext`, `Classical.choice`,
+`Quot.sound` only. No `bv_decide`, `native_decide` or `Lean.ofReduceBool` under `FV/Opt` (T6;
+before, the `*._native.bv_decide.ax_*` certificates of the `bv_decide` calls). Full build of
 the rule modules: see the build note under "Proven rules" (`RuleArith.lean` dominates).
+
+**`kbv`** (T6, `FV/Opt/Proof/KernelBV.lean`): kernel-checked decision for the concrete-width
+bit-vector goals of the rule proofs, in place of `bv_decide`. It restates the goal over its
+bit-vector context (bit-vector/`Bool`/`Nat`/`Int` locals and facts) and tries, under heartbeat
+budgets (`kbv_guard`: 20 000 to 2 000 000 `maxHeartbeats` units per method, 4 000 000 for the
+whole search of a goal), kernel-checked methods: `bv_normalize`
+(`bv_decide`'s `simp` preprocessing), bit extensionality + a Boolean tautology over the bits
+(`decide`), case splits on `if`/`bif` conditions, `toNat`/`toInt` arithmetic with `omega`,
+minterm decomposition + `grind`, case splits on constant shift amounts, sign-mask lemmas
+(`sshiftRight` by `w-1`, `(x ||| -x).msb`), per-index bit evaluation. The shift and spaceship
+modules (`RuleShifts1`..`5`, `RuleSpaceship`) first try a targeted method on each goal
+(`kbv_amt`/`kbv_cmp`, `FV/Opt/Proof/RuleInfraShiftAmt.lean`, through a module-`local`
+`elab_rules` for `kbv`): shift amounts as `Nat` arithmetic, rotations as `rotateLeft`, comparison
+results by case split. Some lemmas are proved by hand instead (bswap/popcount, pow2
+`sdiv`/`srem`, the immediate specs of `RuleImm.lean`).
 
 **Interface** (`Sem.lean`, owned by MidPassProofs, copied byte-identical): `Opt.evalNode`,
 `Opt.Valuation`, `GraphModel` (A1 nodes, A2 types), `MakeSound` (A3), `SimplifySound`,
@@ -535,12 +599,16 @@ Driver: `Opt.RuleAllow` (`all` default | `proven` | `ids`), `RuleSetId.fnWith`/`
 the `simplify` call's arguments), option `--opt-proven-only`. Corpus difftest: default 114/114
 agree, 4321 → 2018 insts; `--opt-proven-only` 114/114, 4321 → 2475 (skeleton rules off).
 
-**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest, R0): **1055 `simplify` roots** = `Opt.provenSimplifyRules` —
-`arithmetic.isle` 230 of 258 (`RuleArith.lean`, `RuleArith2..8.lean`), `cprop.isle` 68 of 68 (`RuleCprop.lean`, `RuleCprop2..4.lean`), `remat.isle` 12 of 12 (`RuleRemat.lean`),
-`bitops.isle` 447 of 450 (`RuleBitops1..8.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
-`rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31; R0: `rule_auto_t`/`_tt` 3). **All 37 `simplify_skeleton` roots**
+**Proven rules** (MidRulesInfra2, RulesBitops, RulesIcmpSel, RuleAllScale, RulesShiftsExt, RulesRest, R0–R5, R7–R8): **1154 `simplify` roots** = `Opt.provenSimplifyRules` —
+`arithmetic.isle` 258 of 258 (`RuleArith.lean`, `RuleArith2..8.lean`, `RuleArithMulHi`,
+`RuleArithOdd`, `RuleArithCancel`, `RuleArithProducts`, with `MulHiSem`/`OddSem` helpers),
+`cprop.isle` 68 of 68 (`RuleCprop.lean`, `RuleCprop2..4.lean`), `remat.isle` 12 of 12 (`RuleRemat.lean`),
+`bitops.isle` 450 of 450 (`RuleBitops1..10.lean`, tactics/lemmas in `RuleBitopsEmbed.lean`:
+`rule_auto` 393, `rule_auto_b` 18, `rule_auto_i` 2, `rule_auto_z` 31; R0: `rule_auto_t`/`_tt` 3; R7: masked-OR and byte-swap proofs 3). **All 37 `simplify_skeleton` roots**
 (`Opt.provenSkeletonRules`, `RuleSkeleton.lean`, `RuleSkeleton2..6.lean`, see "Skeleton rules" below).
-`icmp.isle` 109 of 124 (`RuleIcmp1..10.lean`, `RuleIcmp12.lean`, `RuleIcmp13.lean`) and `selects.isle` 87 of 100 (`RuleSelects1..8.lean`),
+`icmp.isle` 124 of 124 (`RuleIcmp1..10.lean`, `RuleIcmp12.lean`, `RuleIcmp13.lean`,
+`RuleIcmpIdentity.lean`, `RuleIcmpBounds.lean`, `RuleIcmpArithmetic.lean`,
+`RuleIcmpSelects.lean`, `RuleIcmpCompose.lean`) and `selects.isle` 100 of 100 (`RuleSelects1..12.lean`),
 with the template variants of `RuleIcmpEmbed.lean` (`rule_auto_c`/`_ci`: `arr_step` for a value
 variable bound twice, `opt_split_typeof` for a made `icmp` under `subsume`; `_d`/`_di`: `Int`
 literals of if-lets reduced, `ty_smin`/`ty_smax` specs passed as extra lemmas) and
@@ -549,7 +617,10 @@ signed immediates as sign-bit facts; `_f`/`_fi`/`_fz`/`_fiz`: the left-hand side
 `simp_all`, which rewrites a literal-match fact such as `asU64 imm = 0` away with a copy of itself;
 `_g`: `_f` plus the `P s0`-guarded model facts and `opt_den_merge`). Each theorem names the
 `first` chain it was checked with.
-`extends.isle` 26 of 29 (`RuleExtends.lean`), `shifts.isle` 56 of 75 (`RuleShifts1..5.lean`), `spaceship.isle` 20 of 40 (`RuleSpaceship.lean`), with the templates of
+`extends.isle` 29 of 29 (`RuleExtends.lean`, `RuleExtends2.lean`), `shifts.isle` 73 of 75
+(`RuleShifts1..5.lean`, `RuleShiftsConst`, `RuleShiftsRotate`, `RuleShiftsDistribution`,
+with `ConstSem`/`RotateSem` helpers), `spaceship.isle` 40 of 40
+(`RuleSpaceship.lean`, `RuleSpaceshipSelects.lean`), with the templates of
 `RuleExtEmbed.lean` (`rule_auto_x`: width side conditions of made `ireduce`/extends, `Val` type
 equalities substituted, `int_bv` turning `Int` immediates/if-let conditions into `BitVec`;
 `_xr`: if-let results of internal constructors such as `iconst_u` split; `_xz`: `Val`s split and
@@ -581,7 +652,7 @@ imports, so the older modules did not rebuild.
   an extend of an `i64` constant). The old templates failed at the finish (`ac_rfl` recursion
   depth, `bv_decide` after the `Val` split, symbolic products). `rule_bits_tv` (no `Val` split,
   impossible `i128` cases by `contradiction`, `BitVec.neg_mul`/`mul_neg`/`neg_neg` first, then
-  `bv_decide`), `rule_auto_tv`; `imm64Neg_ofInt` (`imm64_neg` of any immediate, for the sign-cast
+  `kbv`), `rule_auto_tv`; `imm64Neg_ofInt` (`imm64_neg` of any immediate, for the sign-cast
   immediate of `cprop.isle` 269), `asI64_asU64_cast`, `ofInt_asI64_low`. Proves `arithmetic.isle`
   50, 333, 334, 343, 349, 587, 590, 593, 596, 603 (`RuleArith7.lean`) and `cprop.isle` 269
   (`RuleCprop4.lean`).
@@ -595,7 +666,7 @@ imports, so the older modules did not rebuild.
   match `simp` does not reduce, copied into every later state. Now `rule_lhs_g` opens the guards,
   `↓binaryOfIdx?_iconcat` removes the stuck match, `evalNode_iconcat_i64` evaluates the made
   `iconcat`, `cat128_*` (`select (eq ah bh) (icmp cc_lo al bl) (icmp cc ah bh) = icmp cc (ah ++ al)
-  (bh ++ bl)`, by `bv_decide` on 64-bit halves) closes the 128-bit comparisons, and
+  (bh ++ bl)`, by `cat_bits` on the 64-bit halves; until T6 `bv_decide`) closes the 128-bit comparisons, and
   `intcc_complement`/`icmp_eq_uext_icmp_zero`/… close the complemented comparisons without
   splitting the compared type (`rule_pre_k`, `fin_icmp_not_k`, `fin_bits_k`, `fin_sel_bmask_k`,
   `rule_auto_i128cmp`). Lean elaborates the theorems of a file in parallel whatever
@@ -606,7 +677,7 @@ imports, so the older modules did not rebuild.
   (`imm64PowerOfTwo (imm64OfBits b) = some e ↔ ∃ k < min w 63, b = twoPow w k ∧ e = k`), the
   `i64_is_*_power_of_two`, `ctz`, `u64_ilog2`, `u64_shl`/`i64_shl` specs, division by `±2^k` as
   shifts and masks (`pow2_sdiv_twoPow`, `pow2_umod_twoPow`, `pow2_srem_*`), per-rule sequence lemmas
-  with the exponent as a `BitVec` (`bv_decide` per width), templates `pow2_auto_simp`,
+  with the exponent as a `BitVec` (per width; until T6 `bv_decide`), templates `pow2_auto_simp`,
   `pow2_auto_div`. Proves `arithmetic.isle` 181 (`RuleArith8.lean`) and the skeleton rules
   `arithmetic.isle` 83, 87, 102, 135 and `skeleton.isle` 80 (`RuleSkeleton2.lean`), 142
   (`RuleSkeleton4.lean`, 6 min / 6.3G alone).
@@ -633,45 +704,53 @@ constants above the type width, e.g. `ishl.i8 x, v` / `sshr.i8 _, v` with `v = i
 (or `-24`; `i16` with `-16`): `ty_small` becomes `i16`/`i32`, wider than `ty`, so the rule builds
 `ireduce.i16` of an `i8` value and `sextend.i8` of it — ill-typed IR with no value, while the
 original is `x` (shift amount `-8 mod 8 = 0`). The proof fails exactly in these cases.
-Not proven after RulesRest (proof-tooling limits unless stated; R0 proved 38, 42, 46, 50, 181, 333,
-334, 343, 349, 587, 590, 593, 596, 603 and all of `cprop.isle`, see above): `arithmetic.isle` 200,
-206 (heartbeat timeout), 251–288 (the 8 `eq`/`ne` of `imul` by an odd constant: timeout), 410–421,
-427, 428 (`icmp` of `isub`/`iadd` with a variable bound twice: `simp` type mismatch at the icmp
-result width with every template), 615–622 (64-bit products: SAT timeout); `icmp.isle` 196, 199,
-202 are now proven (`rule_auto_v`). Skeleton rules: see "Skeleton rules" below.
-Still not proven from the RulesShiftsExt list: `extends.isle` 40, 42, 44 (`eq`/`ne`/signed
-`icmp` of a `sextend` against `iconst_s 0`: timeout also at 16M heartbeats); `shifts.isle` 161
-(killed after 5 min at 16M, twice), 170 (maximum recursion depth), 184, 193 (unsolved goals), 239–242,
-244–247, 259, 261, 264, 266 (rotate regrouping through `iadd_uextend`/`isub_uextend`: `rule_auto_w`
-now evaluates the right-hand side and closes most type combinations; about 50 of the 125 per-type
-goals still fail — `bv_decide` timeouts on 128-bit rotations and nested made operands left
-unreduced), 315 (SAT timeout); `spaceship.isle` 13–137 (the 20 `select` rules: the right-hand
-side's two made `icmp`s under `sextend_maybe` blow up the term; >10 min per rule even with eager
-`typeOf` splitting). Proven by RulesRest: `shifts.isle` 41, 50, 61, 71, 152, 270, 280, 285.
-Not proven (proof-tooling limits; none is false under the CLIF semantics): `selects.isle` 15 (`select(icmp, 1, 0)` to `uextend_maybe`: its `simp_all`-free proof passed
-once and then failed deterministically in the full build; left out), 81, 85 (`select` of two `uextend`/`sextend`s with `value_type`: heartbeat timeout at
-4M), 188, 189, 193–196, 199–202 (literal-match facts lost under `simp_all`, and the
-`simp_all`-free variants exceed 12G / 50 min per rule); 97–100 are proven by R0.
+All arithmetic roots are now proven. R1 closes the remaining RulesRest/R0 gaps:
+200/206 (high products), 251–288 (eight odd-multiplier comparisons), 410–421
+(eight repeated-operand cancellations), 427/428 (negated products), and 615–622
+(squared signed/unsigned maxima). Exact guard normalization and symbolic identities
+replace the earlier heartbeat, type-unification and wide-product SAT failures.
+The original `RuleOk` statements and fuel premises are unchanged. See "R1" below.
+R8 proves the remaining `extends.isle` roots 40, 42, 44 (`eq`/`ne`/signed `icmp` of a
+`sextend` against `iconst_s 0`), completing that family. R4 proves every sound original
+shift root left by RulesShiftsExt: 161, 170, 184, 193, 239–242, 244–247, 259, 261,
+264, 266 and 315. Exact masked-sum guards, modular amount arithmetic, symbolic
+rotation indices and shift/subtraction distribution replace the earlier recursion,
+heartbeat and SAT failures. Original `RuleOk` statements and fuel are unchanged.
+Only the documented false roots 84 and 88 remain disabled. Proven by RulesRest:
+`shifts.isle` 41, 50, 61, 71, 152, 270, 280, 285.
+All `spaceship.isle` roots are now proven. R5 factors the two comparison constructors and
+`sextend_maybe` into shared typed RHS proofs, avoiding the earlier per-root term explosion.
+All `selects.isle` roots are now proven. R3 closes 15, 81, 85, 188, 189, 193–196 and
+199–202 in `RuleSelects9..12.lean`, preserving the original `RuleOk` premises.
+Early denotation substitution, unsigned-literal normalization and width-parametric
+select identities replace the earlier timeout-prone case splitting; see "R3" below.
 Removed from the icmp/selects modules (RuleAllScale, 2026-10-01) because the modules ran out of
 memory: `icmp.isle` 63, 70, 160, 175, 254–289, 365, 368, `selects.isle` 20 — all proven again by
-R0 in their own modules at ≤ 5.3G (see above). Still
-failing — `icmp.isle` 49, 77, 91 (`GraphOk.make_val` does not unify with the goal), 155, 165,
-170 (`bv_decide` counterexample after the earlier alternatives time out), 180, 184, 386, 394, 402,
-410 (heartbeat timeouts), 205 (`simp` made no progress), 295, 296 (no hypothesis in the
-`bv_decide` fragment).
-Not proven in `bitops.isle` (proof-tooling limits; none is false under the CLIF semantics): rule 79
-(`or(and(x, k), z)` mask condition: needs 64-bit and/not immediate specs), 157 and 170 (32/64-bit
-byte-swap patterns: time out at 12–20M heartbeats); 126/127/129 (`truthy` in an if-let) are proven
-by R0. Build note: changing
+R0 in their own modules at ≤ 5.3G (see above). R2 now proves all remaining icmp roots:
+49, 77, 91, 155, 165, 170, 180, 184, 205, 295, 296, 386, 394, 402 and 410.
+The earlier unification failures, timeouts and solver counterexamples were proof-tooling
+failures, not counterexamples to these original rules; no `RuleOk` premise was added.
+All `bitops.isle` roots are now proven. R7 closes 79 (the masked-OR immediate guard) and
+157/170 (32/64-bit byte-swap trees) using bounded fixed-width identities and an opcode-indexed
+decoder that avoids the earlier graph-matching branch explosion. R0 proved 126/127/129
+(`truthy` in an if-let). Build note: changing
 `FV/Opt/Rules.lean` (or anything under `RuleBase`) rebuilds every rule module; the allow-list lives
 in `FV/Opt/RuleAllow.lean`, which no rule module imports, so extending it rebuilds only
 `Optimize`, `RuleAll` and their dependents. Build the rule modules one at a time (`lake build
-FV.Opt.Proof.RuleArith`, …, `RuleSelects6`; `LEAN_NUM_THREADS=2`, 16G cap; 2026-10-01: `RuleArith`
+FV.Opt.Proof.RuleArith`, …, `RuleSelects6`; `LEAN_NUM_THREADS=2`, 16G cap; with `bv_decide`, 2026-10-01: `RuleArith`
 14 min / 15.4G, `RuleBitops1..7` 1–11 min / 3–11.7G, `RuleCprop` 3 min / 7.4G, icmp/selects
 modules 0.3–5 min / ≤5.2G; 2026-10-07, R0 modules: `RuleCprop3` 5 min / 11.4G, `RuleSkeleton3`
 13.5 min / 7.6G, `RuleSkeleton4` 6 min / 6.6G, `RuleSkeleton2` 4.3 min / 3.6G, `RuleIcmp12`/`13`
 3 min / 5.3G, the others < 2.5 min / ≤ 4.6G), then `RuleAll`/`FV.E2E.OptProven` (parallel builds of the rule modules
-OOM). Check the log for "Build completed successfully": `memcap.sh` under `/usr/bin/time` can
+OOM). Since T6 the `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) are heavier, and `lake build`
+(it has no `-j` option) runs many of them at once, which exceeds a 22G `scripts/memcap.sh` cap.
+Build the `FV.Opt.Proof` modules (317 with their imports) a few at a time in import order first
+(`FV_MEMCAP=13G LEAN_NUM_THREADS=2 scripts/memcap.sh lake build FV.Opt.Proof.<Module>` per module,
+at most three at once, a module killed at 13G again alone at 22G); the full target build then
+replays them. Measured 2026-10-12 (`maxrss`, three at a time): `RuleBitops7` 16.5 GB / 4 min
+(alone at 22G), `RuleArith` 14.0 GB / 6 min, `RuleBitops2`..`5` 9–11 GB / 5–6 min, `RuleExtends2`
+10 GB / 14 min, `RuleShifts2`/`3` 9.7/10 GB / 8/18 min, `RuleIcmp2` 22 min, `RuleSkeleton3`
+18 min, `RuleSkeleton5` 34 min, the others less; all 317 in 2 h 4 min. Check the log for "Build completed successfully": `memcap.sh` under `/usr/bin/time` can
 report rc=0 for an OOM-killed build. `RuleAll` itself: 16 s, 3.6G (`LEAN_NUM_THREADS=1`; kernel
 check of the `allowed_ok%` term, ~0.3 s to build it). Its previous form (`rfl` on the
 `List.filter` of the 1281 `simplify` rules by `provenSimplifyRules.contains`, elaborated by
@@ -681,7 +760,7 @@ Helper specifications (`RuleImm.lean`, simp set `opt_imm`): `imm64_add/sub/mul/a
 umin/umax/smin/smax/icmp/masked/clz/ctz/shl/ushr` at every non-`i128` type, in the normal form
 `Rust.imm64X (ofClif t) (imm64OfBits b) … = .ok (imm64OfBits (<BitVec op> b …))` (proof: `imm_pre`
 unfolds the helper, `imm_cases` splits the widths, `imm_solve` turns `Int` arithmetic into
-`BitVec 64` and runs `bv_decide`; `clz`/`ctz` bridge `Nat.log2`/the Rust loop to `BitVec.clz`/`ctz`).
+`BitVec 64` and runs `kbv`, until T6 `bv_decide`; some specs are proved by hand; `clz`/`ctz` bridge `Nat.log2`/the Rust loop to `BitVec.clz`/`ctz`).
 
 **Skeleton rules** (SkeletonProof, 2026-10-01). *Framework fix:* `SkelRuleOk` could not be met:
 the left-hand side's node facts hold in the start state, but `SkelRefines` is checked in later
@@ -733,39 +812,257 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
   136 passed; runtests 4672 passed, zero failed and zero native disagreements (unsupported
   and out-of-scope cases remain reported separately).
 
+**R8 (2026-10-09, `agent/extends-r8`, merged in [#206](https://github.com/eth-act/clifv/pull/206)):**
+- `RuleExtends2.lean` proves roots 40, 42 and 44 with their original `RuleOk` statements
+  and premises. Masked zero and signed re-extension normalize before graph construction.
+  Early width specialization preserves the non-i128 facts needed by `fitsIn64_ofClif`.
+  Specializing the condition code before evaluating its if-let preserves the state identity
+  needed by the valuation chain; the existing graph-denotation and bitvector tactics finish.
+- Concrete witnesses cover zero, signed extrema and all four signed conditions. The matched
+  wide constant is non-i128, so the new roots cover the six widening pairs among i8/i16/i32/i64.
+- CLI smoke: all three roots fire in 100 functions spanning all ten comparisons and widening
+  pairs through i128 (the latter provides non-matching controls). All 700 executions agree,
+  with zero unsupported inputs, ill-formed functions, pass errors or rule errors. Instructions
+  fall from 340 to 268, versus 304 with the new roots disabled.
+- The optimized smoke passes all 700 exact interpreter expectations, the Cranelift verifier
+  accepts all 100 functions, and all 700 AArch64 executions agree with Cranelift-native.
+- Full compiler and crate-proofs builds completed successfully (1291 and 958 jobs).
+  All 11 audited helper/root/aggregate/E2E/crate theorems use only permitted axioms.
+  Encoding comparison: 1292/1292 identical functions, 54842 words and 1332 relocations.
+  E2E lowering: 1150 accepted, zero rejected, 97 out of scope. Native filetests: corpus
+  136 passed; runtests 4672 passed, zero failed and zero native disagreements; unsupported
+  and out-of-scope cases remain reported separately.
+- Proven-only differential run: corpus 4668 → 2289 instructions, runtests 3389 → 3071.
+  Zero refinement failures, pass errors or verifier rejections; all 445 file summaries are
+  no worse than their unoptimized baselines. Existing interpreter/oracle expectation failures
+  and unsupported cases remain reported, not counted as new regressions.
+  The optional `/tmp/rust-clif-survey` data was absent.
+
+**R7 (2026-10-09, `agent/bitops-r7`, merged in [#207](https://github.com/eth-act/clifv/pull/207)):**
+- `RuleBitops9.lean` proves root 79 by relating the 64-bit immediate mask/complement guard
+  to bit-vector complementation at i8/i16/i32/i64. The i128 case is excluded by the existing
+  matcher, not by a new theorem premise.
+- `RuleBitops10.lean` proves roots 157/170 with their original `RuleOk` statements. Its
+  opcode-indexed `ofInst` inversion retains both binary and `iconcat` instructions, but
+  resolves the opcode before splitting alternatives. The ordinary matcher then terminates
+  without the former product of impossible branches. Immediate casts and intermediate
+  shift results normalize before applying the two closed-width byte-swap identities.
+- Concrete witnesses cover complement guards, both decoder alternatives, distinct bytes,
+  high-bit boundaries and both word widths. The proof module builds with a 4M-heartbeat
+  limit per root; all 450 bitops roots are now enabled.
+- The 82-function CLI smoke includes wrong-mask and i128 controls. Roots 79/157/170 fire
+  24/1/1 times; all 766 executions agree, with no unsupported inputs, ill-formed functions,
+  pass errors or rule errors. Instructions fall from 392 to 250, versus 336 before enablement.
+  All 766 optimized interpreter expectations pass, the Cranelift verifier accepts all 82
+  functions, and all 766 AArch64 executions agree with Cranelift-native.
+- Full compiler/crate builds completed successfully (1293/958 jobs). All 15 audited
+  helper/root/aggregate/E2E/crate theorems use only permitted axioms. Encoding: 1292/1292
+  identical functions, 54842 words and 1332 relocations. E2E: 1150 accepted, zero rejected,
+  97 out of scope. Native filetests: corpus 136 passed; runtests 4672 passed, zero failed
+  and zero native disagreements, with errors and not-compiled cases reported separately.
+- Proven-only differential results: corpus 4668 → 2289 instructions; runtests 3389 → 3069
+  (3071 before R7). No refinement failures, pass errors or verifier rejections; all 445
+  file summaries are no worse than their unoptimized baselines. Existing interpreter/oracle
+  expectation failures and unsupported cases remain reported. The optional survey was absent.
+
+**R3 (2026-10-09, `agent/selects-r3`, merged in [#208](https://github.com/eth-act/clifv/pull/208)):**
+- `RuleSelects9..12.lean` proves the remaining thirteen roots: comparison-to-one/zero,
+  matching extension lifting, redundant OR operands, conditional subtraction and
+  select-of-equality factoring. All 100 selects roots are enabled, without changing
+  the original `RuleOk` statements or premises.
+- Duplicate denotation facts are substituted before RHS type reads. Literal-match
+  facts survive until constant normalization; symbolic select identities avoid
+  unnecessary width enumeration. The comparison RHS resolves the typed constant
+  constructor's optional if-let before the enclosing equality's `typeOf` reads.
+- Concrete witnesses cover both condition outcomes, signed/high-bit values, equal-width
+  semantic boundaries and strict widening guards. The CLI smoke covers all ten integer
+  comparisons and widths through i128, with mixed-extension and mixed-source-width controls.
+- All thirteen roots fire across 682 functions. All 4438 original/optimized interpreter
+  expectations and AArch64/Cranelift-native comparisons agree, with no unsupported cases,
+  ill-formed functions, pass errors or rule errors. The Cranelift verifier accepts all
+  682 optimized functions. Instructions fall from 3146 to 1884, versus 3050 before enablement.
+- Full compiler/crate builds completed successfully (1297/958 jobs). All 35 audited
+  helper/root/witness/aggregate/E2E/crate theorems use only permitted axioms.
+  Encoding: 1292/1292 identical functions, 54842 words and 1332 relocations.
+  E2E: 1150 accepted, zero rejected, 97 out of scope. Native filetests: corpus 136 passed;
+  runtests 4672 passed, zero failed and zero native disagreements; existing errors and
+  not-compiled cases remain reported separately.
+- Proven-only differential results: corpus 4668 → 2289 instructions; runtests 3389 → 3063
+  (3069 before R3). No refinement failures, pass errors or verifier rejections; all 445
+  file summaries are no worse than their unoptimized baselines. The existing runtest
+  interpreter/oracle totals remain seven expectation failures, ten disagreements and
+  two oracle errors. The optional survey was absent.
+
+**R5 (2026-10-10, `agent/spaceship-r5`, merged in [#209](https://github.com/eth-act/clifv/pull/209)):**
+- `RuleSpaceshipSelects.lean` proves all twenty remaining select roots, IDs 1379–1398,
+  with unchanged `RuleOk` statements and premises. The spaceship family is complete at 40/40.
+- `RuleSpaceshipUnsigned.lean` and `RuleSpaceshipSigned.lean` prove width-parametric
+  three-way comparison identities by unsigned/signed order trichotomy.
+  `RuleSpaceshipInfra.lean` proves each common RHS once, with direct subtraction/poison
+  decoding and reuse of established `typeOf` equations. ISLE's comparison result type
+  remains separate from the operands' actual width; the four negation forms return i8
+  but accept operands of every integer width.
+- Concrete witnesses cover less/equal/greater, signed extrema, high bits, zero-width
+  semantic boundaries, widening and truncation. The CLI smoke covers input/output widths
+  8–128 and distinct-operand controls. All twenty roots fire across 426 functions.
+  All 4236 exact interpreter expectations and AArch64/Cranelift-native comparisons agree;
+  no unsupported cases, ill-formed functions, pass errors or rule errors occur.
+  The Cranelift verifier accepts all 426 optimized functions. Instructions fall from
+  2682 to 1702, versus 2602 before enablement.
+- Full compiler/crate builds completed successfully (1301/958 jobs). All 47 audited
+  semantic-helper/RHS/root/aggregate/E2E/crate theorems use only permitted axioms.
+  Encoding: 1292/1292 identical functions, 54842 words and 1332 relocations.
+  E2E: 1150 accepted, zero rejected, 97 out of scope. Native filetests: corpus 136 passed;
+  runtests 4672 passed, zero failed and zero native disagreements. Existing runtest
+  errors (7) and not-compiled cases (9054) remain reported separately.
+- Proven-only differential counts remain corpus 4668 → 2289 and runtests 3389 → 3063.
+  No refinement failures, pass errors or verifier rejections; all 445 file summaries are
+  no worse than their unoptimized baselines. Existing interpreter/oracle totals remain
+  seven expectation failures, ten disagreements and two oracle errors. The optional survey
+  was absent.
+
+**R2 (2026-10-10, `agent/icmp-r2`, merged in [#210](https://github.com/eth-act/clifv/pull/210)):**
+- `RuleIcmpIdentity`, `RuleIcmpBounds`, `RuleIcmpArithmetic`, `RuleIcmpSelects` and
+  `RuleIcmpCompose` prove all fifteen remaining roots with their original statements
+  and premises. The icmp family is complete at 124/124; total coverage is 1146/1193.
+- Composition proofs separate exact interpreter evaluation from arithmetic.
+  `RuleIcmpComposeEval` proves twenty fixed-code lookup facts and two generic dispatchers.
+  `RuleIcmpComposeGuard` proves compatibility, including failed-guard state/trace rollback.
+  `RuleIcmpComposeRhs` proves all eight relation masks with operand width independent of
+  the i8 result. The root tactic holds only the outer composition function opaque while
+  evaluating its arguments, then uses the typed RHS theorem. Predicate identities
+  remain width-parametric. Neither the heartbeat limit nor the original fuel premise
+  is increased.
+- Every new theorem has a concrete non-vacuity witness. `RuleIcmpComposeWitness` supplies
+  sixteen full-premise RHS fixtures, including actual interpreter success and result
+  membership, over a genuine fresh-allocation graph with proved `GraphOk` and invariant.
+  Signed/unsigned modes, high-bit ordering and equality/inequality are covered.
+- CLI smoke: all fifteen roots fire across 1890 functions and widths 8–128, including
+  every condition-code pair, incompatible-class and distinct-operand controls.
+  All 15740 exact interpreter expectations, differential runs and AArch64/Cranelift-native
+  comparisons agree, with no unsupported cases or pass/rule errors. The Cranelift verifier
+  accepts all 1890 optimized functions. Instructions fall from 6597 to 3595, versus 6127
+  before enablement.
+- Full compiler/crate builds completed successfully (1310/958 jobs). All 66 audited
+  helper/root/aggregate/E2E/crate theorems use only permitted axioms. Encoding:
+  1292/1292 identical functions, 54842 words and 1332 relocations. E2E: 1150 accepted,
+  zero rejected, 97 out of scope. Native filetests: corpus 136 passed; runtests 4672 passed,
+  zero failed and zero native disagreements. Existing runtest errors (7) and not-compiled
+  cases (9054) remain reported separately.
+- Proven-only differential instructions improve to corpus 4668 → 2287 (matching all rules)
+  and runtests 3389 → 3055, from 2289/3063 before R2. No refinement failures, pass errors
+  or verifier rejections; all 445 file summaries are no worse than unoptimized baselines.
+  Existing interpreter/oracle totals remain seven expectation failures, ten disagreements
+  and two oracle errors. The optional survey was absent.
+
+**R1 (2026-10-10, `agent/arithmetic-r1`, merged in [#211](https://github.com/eth-act/clifv/pull/211)):**
+- `RuleArithMulHi`, `RuleArithOdd`, `RuleArithCancel` and `RuleArithProducts` prove
+  all twenty-eight remaining roots with unchanged `RuleOk` statements and fuel premises.
+  Arithmetic is complete at 258/258; total coverage is 1174/1193.
+- `RuleArithMulHiSem` derives signed/unsigned high products from high-half extraction,
+  without expanding multiplication. The root tactic splits only the matched extensions'
+  output type before interpreting the half-width guard, rather than every operand type.
+- `RuleArithOddSem` proves odd multiplication injective modulo powers of two and connects
+  exact unsigned division to the signed Imm64 representation. The width bound comes from
+  the original constant's presentation: `iconst.i128` is not presented. No new rule guard
+  or premise is assumed. Pure guard results and their unchanged states are normalized
+  before constructing the RHS.
+- Product identities remain width-parametric, including signed minima and wrapping
+  multiplication. Repeated-operand comparisons handle the i128 zero constructor.
+  Every new theorem has a concrete non-vacuity witness.
+- All twenty-eight roots fire across 610 functions and widths 8–128, including both
+  comparison/multiplication orders, all max operand orders, distinct-operand controls,
+  exact/inexact division, odd/even/zero multipliers, negative Imm64 values, and high-product
+  width/shift controls. All 7124 exact interpreter expectations, differential runs and
+  AArch64/Cranelift-native comparisons agree. All 610 optimized functions pass the
+  Cranelift verifier. Instructions fall from 2430 to 1626, versus 2154 before enablement.
+- Full compiler/crate builds completed successfully (1307/958 jobs). All 50 audited
+  helper/root/aggregate/E2E/crate theorems use only permitted axioms. Encoding:
+  1292/1292 identical functions, 54842 words and 1332 relocations. E2E: 1150 accepted,
+  zero rejected, 97 out of scope. Native filetests: corpus 136 passed; runtests 4672 passed,
+  zero failed and zero native disagreements. Existing runtest errors (7) and not-compiled
+  cases (9054) remain separately reported.
+- Proven-only differential instructions remain corpus 4668 → 2287 and improve runtests
+  from 3055 to 3043 (3389 before optimization). All 445 file summaries are no worse;
+  no refinement failures, pass/rule errors or verifier rejections. Existing interpreter
+  totals remain seven expectation failures, ten disagreements and two oracle errors.
+  The optional survey was absent.
+
+**R4 (2026-10-10, `agent/shifts-r4`, merged in [#212](https://github.com/eth-act/clifv/pull/212)):**
+- `RuleShiftsConst`, `RuleShiftsRotate` and `RuleShiftsDistribution` prove all seventeen
+  sound remaining roots with unchanged `RuleOk` statements, guards and fuel.
+  Shifts reach 73/75; total coverage is 1191/1193. False originals 84/88 stay disabled;
+  the exported ISLE data is unchanged.
+- `RuleShiftsConstSem` normalizes unsigned masking and wrapping addition to the exact
+  sum of two reduced amounts. Symbolic right-shift composition and shift-to-zero
+  identities cover both sides of the width guard, including i128 data and its
+  extension-produced zero.
+- `RuleShiftsRotateSem` proves rotation composition by bit indices. Every scalar data
+  width divides the modulus of every scalar amount type: even an i8 amount may rotate
+  i128 data. Wrapping amount addition/subtraction therefore preserves rotation modulo
+  the data width; zero extension preserves the amount. Root tactics select the exact
+  composition theorem and close impossible equal-type extension branches before
+  arithmetic, avoiding speculative unification and variable-shift bit-blasting.
+- Distribution315 is multiplication/subtraction modulo `2^width`. Every new
+  helper and root has a concrete non-vacuity witness.
+- All seventeen roots fire across 3990 functions and widths 8–128. The smoke includes
+  independently typed constants, masked/high-bit counts, sums below/at/above width,
+  every rotate orientation and constant position, equal/unequal dynamic amount types,
+  wrapping addition, subtraction underflow, and shared/distinct SSA shift amounts.
+  All 41430 exact interpreter expectations, differential runs and AArch64/Cranelift-native
+  comparisons agree; all 3990 optimized functions pass the Cranelift verifier.
+  Instructions fall from 13950 to 9629, versus 12766 before enablement. Proven-only
+  statistics exactly match the full-rule diagnostic on this fixture.
+- Full compiler/crate builds completed successfully (1312/958 jobs). All 40 audited
+  helper/root/aggregate/E2E/crate theorems use only permitted axioms. Encoding:
+  1292/1292 identical functions, 54842 words and 1332 relocations. E2E: 1150 accepted,
+  zero rejected, 97 out of scope. Native filetests: corpus 136 passed; runtests 4672 passed,
+  zero failed and zero native disagreements. Existing runtest errors (7) and not-compiled
+  cases (9054) remain separately reported.
+- Full proven-only differential counts remain corpus 4668 → 2287 and runtests
+  3389 → 3043. All 445 file summaries are no worse; no refinement failures, pass/rule
+  errors or verifier rejections. Existing interpreter totals remain seven expectation
+  failures, ten disagreements and two oracle errors. The optional survey was absent.
+
 **Proven rule lines** (`rule_<file>_<line>`, ISLE source lines):
-- `arithmetic.isle` (230): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
-  173, 181, 226, 233, 236, 239, 240, 243, 244, 247, 295, 296, 297, 298, 301, 302, 303, 304, 307,
+- `arithmetic.isle` (258): 8, 13, 18, 24, 26, 28, 31, 35, 38, 42, 46, 50, 53, 59, 65, 69, 73, 75,
+  173, 181, 200, 206, 226, 233, 236, 239, 240, 243, 244, 247, 251, 256, 261, 266, 273, 278, 283, 288,
+  295, 296, 297, 298, 301, 302, 303, 304, 307,
   308, 311, 312, 313, 314, 317, 318, 319, 320, 323, 324, 327, 328, 329, 330, 333, 334, 337, 338,
   339, 340, 343, 346, 349, 352, 353, 354, 355, 356, 357, 358, 359, 362, 363, 364, 365, 366, 367,
   368, 369, 372, 373, 374, 375, 378, 379, 380, 381, 384, 385, 388, 389, 390, 391, 404, 405, 406,
-  407, 424, 431, 432, 433, 434, 435, 436, 437, 438, 441, 442, 443, 444, 445, 446, 447, 448, 451,
+  407, 410, 411, 414, 415, 418, 419, 420, 421, 424, 427, 428, 431, 432, 433, 434, 435, 436, 437, 438,
+  441, 442, 443, 444, 445, 446, 447, 448, 451,
   452, 453, 454, 457, 458, 459, 460, 461, 462, 463, 464, 467, 468, 469, 470, 471, 472, 473, 474,
   477, 478, 479, 480, 481, 482, 483, 484, 485, 486, 487, 488, 489, 490, 491, 492, 495, 496, 497,
   498, 500, 501, 502, 503, 505, 506, 507, 508, 510, 511, 512, 513, 515, 516, 517, 518, 520, 521,
   522, 523, 525, 526, 527, 528, 530, 531, 532, 533, 536, 537, 538, 539, 541, 542, 543, 544, 546,
   547, 548, 549, 551, 552, 553, 554, 556, 557, 558, 559, 561, 562, 563, 564, 566, 567, 568, 569,
   571, 572, 573, 574, 577, 578, 579, 580, 581, 582, 583, 584, 587, 590, 593, 596, 599, 603, 607,
-  610, 611, 612.
+  610, 611, 612, 615, 616, 617, 618, 619, 620, 621, 622.
 - `cprop.isle` (68): 3, 9, 14, 20, 26, 56, 62, 68, 74, 79, 84, 89, 94, 99, 104, 109, 114, 119, 125,
   130, 132, 135, 147, 152, 155, 159, 162, 165, 169, 170, 171, 172, 174, 183, 193, 197, 201, 205,
   209, 214, 217, 220, 223, 227, 229, 232, 235, 238, 241, 247, 249, 252, 254, 257, 259, 269, 320,
   322, 324, 333, 337, 341, 345, 349, 375, 377, 379, 521.
-- `icmp.isle` (109): 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 23, 25, 27, 29, 31, 33, 35, 41, 43, 63,
-  70, 84, 96, 104, 108, 112, 116, 120, 125, 130, 135, 140, 145, 150, 160, 175, 190, 193, 196, 199,
-  202, 254, 259, 264, 269, 274, 279, 284, 289, 299, 300, 303, 304, 306, 307, 310, 311, 312, 313,
+- `icmp.isle` (124): 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 23, 25, 27, 29, 31, 33, 35, 41, 43, 49, 63,
+  70, 77, 84, 91, 96, 104, 108, 112, 116, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175, 180, 184, 190, 193, 196, 199,
+  202, 205, 254, 259, 264, 269, 274, 279, 284, 289, 295, 296, 299, 300, 303, 304, 306, 307, 310, 311, 312, 313,
   314, 315, 316, 317, 325, 329, 333, 337, 341, 345, 349, 353, 359, 362, 365, 368, 371, 374, 377,
-  380, 438, 442, 447, 451, 479, 482, 485, 486, 489, 490, 491, 492, 495, 498, 501, 502, 505, 506,
+  380, 386, 394, 402, 410, 438, 442, 447, 451, 479, 482, 485, 486, 489, 490, 491, 492, 495, 498, 501, 502, 505, 506,
   509, 510, 513, 514, 517, 520, 523, 526, 529, 532, 535.
-- `selects.isle` (87): 4, 9, 20, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43, 91,
+- `selects.isle` (100): 4, 9, 15, 20, 26, 27, 28, 29, 30, 31, 32, 33, 36, 37, 38, 39, 40, 41, 42, 43,
+  81, 85, 91,
   95, 97, 98, 99, 100, 103, 109, 110, 113, 114, 115, 116, 117, 118, 119, 120, 124, 125, 126, 127,
   130, 131, 132, 133, 137, 138, 139, 140, 141, 142, 143, 144, 148, 149, 150, 151, 152, 153, 154,
   155, 159, 160, 161, 162, 163, 164, 165, 166, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179,
-  180, 181, 182, 183, 184, 185, 205, 209, 213.
+  180, 181, 182, 183, 184, 185, 188, 189, 193, 194, 195, 196, 199, 200, 201, 202, 205, 209, 213.
 - `remat.isle` (12): 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26.
+- `spaceship.isle` (40): 13, 19, 25, 32, 39, 46, 55, 59, 65, 69, 78, 84, 90, 97, 104,
+  111, 120, 124, 130, 134, 146, 148, 151, 153, 157, 159, 162, 164, 167, 169, 172, 174,
+  179, 181, 183, 185, 187, 189, 191, 193.
 - `shifts.isle`, added by RulesRest: 41, 50, 61, 71, 152, 270, 280, 285.
-- Not proven in `arithmetic.isle`: the 28 roots listed under "Not proven after RulesRest" that R0
-  did not prove.
+- `shifts.isle`, added by R4: 161, 170, 184, 193, 239, 240, 241, 242, 244, 245,
+  246, 247, 259, 261, 264, 266, 315.
 
 **Template** (`RuleAuto.lean`): `rule_auto r` = `rule_intro` (fuel `k+1000`), `rule_no_iflets`,
 `rule_lhs hG`, `rule_rhs`, `rule_finish`.
@@ -781,10 +1078,10 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
 - `rule_finish`: a matched class (`Valuation.Le` chain) or a made node (`GraphOk.make_val`,
   `opt_node` operand by operand, made operands recursively), then `rule_bits`: `val_congr`
   (not `simp`: `BitVec 8` vs `BitVec Ty.i8.width`), `ac_rfl` for AC identities (64-bit `*`
-  commutation times out in `bv_decide`), else `opt_cases_ty` (types and `IntCC`s),
+  commutation timed out in `bv_decide`), else `opt_cases_ty` (types and `IntCC`s),
   `opt_widths` (locals to literal widths), `sem_simp` (`bif` forms of `select`/`bmask`/`icmp`/
   min/max — an `if` would carry a stale `Decidable` instance; shifts as `<<< (y &&& (w-1))`,
-  `ishl_mask` etc.), `bv_decide`. The context is never `simp_all`ed in `rule_bits`.
+  `ishl_mask` etc.), `kbv` (until T6 `bv_decide` with a 120 s SAT timeout). The context is never `simp_all`ed in `rule_bits`.
 - Embedding lemmas added: `evalNode` of `select`/`bitselect`/`bmask`/`uextend`/`sextend`/
   `ireduce`; `ofInst` inversion of `icmp`/ternary; type predicates on `ofClif t` and forward
   `extractFn` lemmas (internal-constructor rule selection); `CTy.ofName?` matches `I8`..`I128`
@@ -793,7 +1090,7 @@ statements. `RuleBase`: `RuleSpecAt fm` / `applyMulti_genAt` (fuel-general lifti
 **Cost** (32 cores, `lake env lean` on one file): `cprop` 68 roots 3 m 18 s wall / 62 CPU-min;
 `arithmetic` 258 roots 21 m wall. A passing rule costs 5-30 s (LHS unfolding dominates:
 ~1 s per `simp_all` pass, 5-10 passes for two-level patterns); failing rules cost most of the CPU
-(`bv_decide` timeouts, heartbeat limit). Use `maxHeartbeats 4000000` per declaration.
+(then `bv_decide` timeouts, heartbeat limit). Use `maxHeartbeats 4000000` per declaration.
 
 **Fan-out recipe** (one agent per opts file; ids come from `Isle.Opt.Closure.rules`, roots of
 term 177 = `simplify`):
@@ -804,15 +1101,15 @@ term 177 = `simplify`):
 2. For the failures, debug one rule with the phases spelled out (`rule_intro r; rule_no_iflets;
    rule_lhs hG; all_goals rule_rhs; trace_state`): a stuck `hev` names the missing evaluation
    lemma (helper spec → `RuleImm.lean` in the normal form above; extractor/type predicate →
-   `RuleEmbed.lean`; `evalNode` form → `RuleNode.lean`); a failing `bv_decide` names the
-   missing `sem_simp` normal form.
+   `RuleEmbed.lean`; `evalNode` form → `RuleNode.lean`); the goal a failing `kbv` (formerly
+   `bv_decide`) reports names the missing `sem_simp` normal form.
 3. Append the proven ids to `Opt.provenSimplifyRules` (`FV/Opt/RuleAllow.lean`, rule ids from
    `Closure.rules`) and import the new file in `RuleAll.lean`; nothing else in `RuleAll.lean`
    names rules (`allowed_ok%` fails with "`rule_X` is allow-listed but there is no theorem
    `ok_rule_X`" if an id has no proof). Shared files
    (`RuleAuto`, `RuleEmbed`, `RuleNode`, `RuleImm`) need one owner or serialized merges.
 
-Known gaps, by frequency in the failed roots (as of the first fan-out; arithmetic 86, cprop 16 — now 28 and 0, see above; R0 closed items 2 and 3, item 4 for `iabs` and products of negations; R9 completes item 5):
+Historical gaps from the first fan-out (arithmetic 86, cprop 16 — both now complete; R0 closed items 2 and 3, R1 completes arithmetic guard/product proofs, and R9 completes item 5):
 1. If-lets (`rule_no_iflets` only handles `[]`; 30+ arithmetic roots): evaluate `hil` like `hev`
    and split on the `Bool` condition — the right-hand side then runs under that fact.
 2. Internal constructors with if-lets on the right (`iconst_u`/`iconst_s ty k` with `k ≠ 0`,
