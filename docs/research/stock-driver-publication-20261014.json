@@ -1,0 +1,436 @@
+{
+  "updated_utc": "2026-10-14T23:55:33.744899+00:00",
+  "publication_policy": "User authorizes remote backup pushes and roughly three validated squash-merged PRs per day",
+  "merged_prs": [
+    {
+      "headRefOid": "a739ad525b0277f45717da92785d6ef7ccaaadea",
+      "mergeCommit": {
+        "oid": "72f2e574eb718903f2534d0b06ddce4b662672f0"
+      },
+      "mergedAt": "2026-10-14T23:47:12Z",
+      "number": 180,
+      "state": "MERGED",
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-14T23:46:29Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/38655797222/job/116165133201",
+          "name": "Build and compare",
+          "startedAt": "2026-10-14T23:43:19Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-14T23:46:41Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/38655797222/job/116166180271",
+          "name": "Check lost matches",
+          "startedAt": "2026-10-14T23:46:32Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-14T23:46:41Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/38655797222/job/116166180223",
+          "name": "Publish PR result",
+          "startedAt": "2026-10-14T23:46:31Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        }
+      ],
+      "title": "Prove retained fused-NOT records and guarded source transfer",
+      "url": "https://github.com/eth-act/clifv/pull/180",
+      "validated_local_tip": "a739ad525b0277f45717da92785d6ef7ccaaadea",
+      "ci_summary": {
+        "head_sha": "a739ad525b0277f45717da92785d6ef7ccaaadea",
+        "run_id": 38655797222,
+        "measurement_complete": true,
+        "totals": {
+          "official_test_files": 1302,
+          "inventoried_test_files": 1302,
+          "files_by_category": {
+            "alias": 46,
+            "cfg": 3,
+            "domtree": 5,
+            "egraph": 76,
+            "inline": 18,
+            "isa": 704,
+            "parser": 11,
+            "runtests": 396,
+            "verifier": 24,
+            "wasm": 19
+          },
+          "file_statuses": {
+            "non_binary_test": 180,
+            "binary_test": 484,
+            "no_lean_target": 630,
+            "stock_parser_warning_skip": 8
+          },
+          "files_with_lean_compilation_attempts": 483,
+          "files_with_compared_function_outputs": 151,
+          "files_all_aarch64_code_artifacts_identical": 32,
+          "stock_binary_stages_by_command": {
+            "run": 387,
+            "compile": 141
+          },
+          "declared_stock_commands": {
+            "alias-analysis": 10,
+            "optimize": 102,
+            "interpret": 318,
+            "run": 392,
+            "print-cfg": 3,
+            "verifier": 30,
+            "domtree": 5,
+            "compile": 730,
+            "inline": 18,
+            "cat": 11
+          },
+          "accepted_lean_configuration_requests": 2012,
+          "unsupported_configuration_reasons": {
+            "unsupported setting opt_level=speed; implemented policy is none": 238,
+            "unsupported setting opt_level=speed_and_size; implemented policy is none": 5,
+            "has_lse=true changes the lowering of this function's atomic_rmw/atomic_cas; Lean does not implement LSE atomics": 114,
+            "unsupported ISA setting use_bti=true": 11,
+            "is_pic=false requires a non-PIC far-symbol lowering that Lean does not implement": 40,
+            "unsupported setting enable_compact_unwind_abi=true; implemented policy is false": 1,
+            "use_csdb=true adds csdb to this function's select_spectre_guard/br_table; Lean does not implement it": 6,
+            "unsupported setting probestack_strategy=inline; implemented policy is outline": 5,
+            "unsupported setting enable_table_access_spectre_mitigation=false; implemented policy is true": 1,
+            "unsupported setting enable_pinned_reg=true; implemented policy is false": 1,
+            "unsupported setting tls_model=elf_gd; implemented policy is none": 1,
+            "unsupported setting tls_model=macho; implemented policy is none": 1,
+            "unsupported setting bb_padding_log2_minus_one=21; implemented policy is 0": 2,
+            "sign_return_address=true signs this function's return address; Lean does not implement pointer authentication": 2,
+            "unsupported setting probestack_size_log2=16; implemented policy is 12": 2,
+            "unsupported setting probestack_size_log2=6; implemented policy is 12": 1,
+            "unsupported setting bb_padding_log2_minus_one=12; implemented policy is 0": 1
+          },
+          "test_function_compilations": 4501,
+          "function_statuses": {
+            "unsupported_configuration": 432,
+            "different_code_artifact": 939,
+            "identical_code_artifact": 671,
+            "lean_unsupported": 2413,
+            "expected_stock_rejection_no_binary": 46
+          },
+          "distinct_test_function_names": 3872,
+          "distinct_test_functions": 4105,
+          "byte_and_relocation_matches_under_accepted_settings": 671,
+          "exact_code_artifacts": 671,
+          "full_artifact_equivalence_verified": false,
+          "failed_stock_compile_assertions": 0,
+          "nonrepeatable_reference_stages": 1,
+          "source_files_modified": 0
+        },
+        "full_artifact_equivalence_verified": false,
+        "baseline_comparison": {
+          "available": true,
+          "run_id": 38345987220,
+          "run_attempt": 1,
+          "head_sha": "cc29aaa494ddea10a8e38b5dd5fad707dcee47b6",
+          "baseline_exact_code_artifacts": 671,
+          "gained_count": 0,
+          "lost_count": 0,
+          "gained": [],
+          "lost": [],
+          "harness_changed": []
+        }
+      },
+      "ci_summary_sha256": "ca97f4a3bce7f2076bf623a366fc7546c73e8ba0c326f77944245b6ccbde4bec"
+    },
+    {
+      "headRefOid": "e2a13efb8e6d77f0558de2d8256e1bd4f5e5d256",
+      "mergeCommit": {
+        "oid": "40805b7ecccb10942da89aca3193ad41108e8488"
+      },
+      "mergedAt": "2026-10-14T23:51:24Z",
+      "number": 181,
+      "state": "MERGED",
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-14T23:50:47Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/38656206721/job/116166466583",
+          "name": "Build and compare",
+          "startedAt": "2026-10-14T23:47:27Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-14T23:50:57Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/38656206721/job/116167537695",
+          "name": "Check lost matches",
+          "startedAt": "2026-10-14T23:50:50Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-14T23:51:01Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/38656206721/job/116167537714",
+          "name": "Publish PR result",
+          "startedAt": "2026-10-14T23:50:50Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        }
+      ],
+      "title": "Prove Stock multiply and fused multiply-add source values",
+      "url": "https://github.com/eth-act/clifv/pull/181",
+      "validated_local_tip": "5eb7315a68a26f2695905a390c73f2b75d7aa463",
+      "ci_summary": {
+        "head_sha": "e2a13efb8e6d77f0558de2d8256e1bd4f5e5d256",
+        "run_id": 38656206721,
+        "measurement_complete": true,
+        "totals": {
+          "official_test_files": 1302,
+          "inventoried_test_files": 1302,
+          "files_by_category": {
+            "alias": 46,
+            "cfg": 3,
+            "domtree": 5,
+            "egraph": 76,
+            "inline": 18,
+            "isa": 704,
+            "parser": 11,
+            "runtests": 396,
+            "verifier": 24,
+            "wasm": 19
+          },
+          "file_statuses": {
+            "non_binary_test": 180,
+            "binary_test": 484,
+            "no_lean_target": 630,
+            "stock_parser_warning_skip": 8
+          },
+          "files_with_lean_compilation_attempts": 483,
+          "files_with_compared_function_outputs": 151,
+          "files_all_aarch64_code_artifacts_identical": 32,
+          "stock_binary_stages_by_command": {
+            "run": 387,
+            "compile": 141
+          },
+          "declared_stock_commands": {
+            "alias-analysis": 10,
+            "optimize": 102,
+            "interpret": 318,
+            "run": 392,
+            "print-cfg": 3,
+            "verifier": 30,
+            "domtree": 5,
+            "compile": 730,
+            "inline": 18,
+            "cat": 11
+          },
+          "accepted_lean_configuration_requests": 2012,
+          "unsupported_configuration_reasons": {
+            "unsupported setting opt_level=speed; implemented policy is none": 238,
+            "unsupported setting opt_level=speed_and_size; implemented policy is none": 5,
+            "has_lse=true changes the lowering of this function's atomic_rmw/atomic_cas; Lean does not implement LSE atomics": 114,
+            "unsupported ISA setting use_bti=true": 11,
+            "is_pic=false requires a non-PIC far-symbol lowering that Lean does not implement": 40,
+            "unsupported setting enable_compact_unwind_abi=true; implemented policy is false": 1,
+            "use_csdb=true adds csdb to this function's select_spectre_guard/br_table; Lean does not implement it": 6,
+            "unsupported setting probestack_strategy=inline; implemented policy is outline": 5,
+            "unsupported setting enable_table_access_spectre_mitigation=false; implemented policy is true": 1,
+            "unsupported setting enable_pinned_reg=true; implemented policy is false": 1,
+            "unsupported setting tls_model=elf_gd; implemented policy is none": 1,
+            "unsupported setting tls_model=macho; implemented policy is none": 1,
+            "unsupported setting bb_padding_log2_minus_one=21; implemented policy is 0": 2,
+            "sign_return_address=true signs this function's return address; Lean does not implement pointer authentication": 2,
+            "unsupported setting probestack_size_log2=16; implemented policy is 12": 2,
+            "unsupported setting probestack_size_log2=6; implemented policy is 12": 1,
+            "unsupported setting bb_padding_log2_minus_one=12; implemented policy is 0": 1
+          },
+          "test_function_compilations": 4501,
+          "function_statuses": {
+            "unsupported_configuration": 432,
+            "different_code_artifact": 939,
+            "identical_code_artifact": 671,
+            "lean_unsupported": 2413,
+            "expected_stock_rejection_no_binary": 46
+          },
+          "distinct_test_function_names": 3872,
+          "distinct_test_functions": 4105,
+          "byte_and_relocation_matches_under_accepted_settings": 671,
+          "exact_code_artifacts": 671,
+          "full_artifact_equivalence_verified": false,
+          "failed_stock_compile_assertions": 0,
+          "nonrepeatable_reference_stages": 1,
+          "source_files_modified": 0
+        },
+        "full_artifact_equivalence_verified": false,
+        "baseline_comparison": {
+          "available": true,
+          "run_id": 38345987220,
+          "run_attempt": 1,
+          "head_sha": "cc29aaa494ddea10a8e38b5dd5fad707dcee47b6",
+          "baseline_exact_code_artifacts": 671,
+          "gained_count": 0,
+          "lost_count": 0,
+          "gained": [],
+          "lost": [],
+          "harness_changed": []
+        }
+      },
+      "ci_summary_sha256": "f37562862d5fa62951d8e04501421835641f096f73f8d79164d47342216f21cd"
+    },
+    {
+      "headRefOid": "6799c7906fe745337f0943c90dac1c5f0dcda7dd",
+      "mergeCommit": {
+        "oid": "70d187b2fbdb55a1954a9cbcb566b68feab1798b"
+      },
+      "mergedAt": "2026-10-14T23:55:31Z",
+      "number": 182,
+      "state": "MERGED",
+      "statusCheckRollup": [
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-14T23:54:25Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/38656620504/job/116167798128",
+          "name": "Build and compare",
+          "startedAt": "2026-10-14T23:51:38Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-14T23:54:36Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/38656620504/job/116168675683",
+          "name": "Check lost matches",
+          "startedAt": "2026-10-14T23:54:28Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        },
+        {
+          "__typename": "CheckRun",
+          "completedAt": "2026-10-14T23:54:38Z",
+          "conclusion": "SUCCESS",
+          "detailsUrl": "https://github.com/eth-act/clifv/actions/runs/38656620504/job/116168675796",
+          "name": "Publish PR result",
+          "startedAt": "2026-10-14T23:54:28Z",
+          "status": "COMPLETED",
+          "workflowName": "Stock compiler comparison"
+        }
+      ],
+      "title": "Prove Stock scalar shifts through actual records and source transfer",
+      "url": "https://github.com/eth-act/clifv/pull/182",
+      "validated_local_tip": "30f48dc7b6174b32db31b1c10f020e3b9496898a",
+      "ci_summary": {
+        "head_sha": "6799c7906fe745337f0943c90dac1c5f0dcda7dd",
+        "run_id": 38656620504,
+        "measurement_complete": true,
+        "totals": {
+          "official_test_files": 1302,
+          "inventoried_test_files": 1302,
+          "files_by_category": {
+            "alias": 46,
+            "cfg": 3,
+            "domtree": 5,
+            "egraph": 76,
+            "inline": 18,
+            "isa": 704,
+            "parser": 11,
+            "runtests": 396,
+            "verifier": 24,
+            "wasm": 19
+          },
+          "file_statuses": {
+            "non_binary_test": 180,
+            "binary_test": 484,
+            "no_lean_target": 630,
+            "stock_parser_warning_skip": 8
+          },
+          "files_with_lean_compilation_attempts": 483,
+          "files_with_compared_function_outputs": 151,
+          "files_all_aarch64_code_artifacts_identical": 32,
+          "stock_binary_stages_by_command": {
+            "run": 387,
+            "compile": 141
+          },
+          "declared_stock_commands": {
+            "alias-analysis": 10,
+            "optimize": 102,
+            "interpret": 318,
+            "run": 392,
+            "print-cfg": 3,
+            "verifier": 30,
+            "domtree": 5,
+            "compile": 730,
+            "inline": 18,
+            "cat": 11
+          },
+          "accepted_lean_configuration_requests": 2012,
+          "unsupported_configuration_reasons": {
+            "unsupported setting opt_level=speed; implemented policy is none": 238,
+            "unsupported setting opt_level=speed_and_size; implemented policy is none": 5,
+            "has_lse=true changes the lowering of this function's atomic_rmw/atomic_cas; Lean does not implement LSE atomics": 114,
+            "unsupported ISA setting use_bti=true": 11,
+            "is_pic=false requires a non-PIC far-symbol lowering that Lean does not implement": 40,
+            "unsupported setting enable_compact_unwind_abi=true; implemented policy is false": 1,
+            "use_csdb=true adds csdb to this function's select_spectre_guard/br_table; Lean does not implement it": 6,
+            "unsupported setting probestack_strategy=inline; implemented policy is outline": 5,
+            "unsupported setting enable_table_access_spectre_mitigation=false; implemented policy is true": 1,
+            "unsupported setting enable_pinned_reg=true; implemented policy is false": 1,
+            "unsupported setting tls_model=elf_gd; implemented policy is none": 1,
+            "unsupported setting tls_model=macho; implemented policy is none": 1,
+            "unsupported setting bb_padding_log2_minus_one=21; implemented policy is 0": 2,
+            "sign_return_address=true signs this function's return address; Lean does not implement pointer authentication": 2,
+            "unsupported setting probestack_size_log2=16; implemented policy is 12": 2,
+            "unsupported setting probestack_size_log2=6; implemented policy is 12": 1,
+            "unsupported setting bb_padding_log2_minus_one=12; implemented policy is 0": 1
+          },
+          "test_function_compilations": 4501,
+          "function_statuses": {
+            "unsupported_configuration": 432,
+            "different_code_artifact": 939,
+            "identical_code_artifact": 671,
+            "lean_unsupported": 2413,
+            "expected_stock_rejection_no_binary": 46
+          },
+          "distinct_test_function_names": 3872,
+          "distinct_test_functions": 4105,
+          "byte_and_relocation_matches_under_accepted_settings": 671,
+          "exact_code_artifacts": 671,
+          "full_artifact_equivalence_verified": false,
+          "failed_stock_compile_assertions": 0,
+          "nonrepeatable_reference_stages": 1,
+          "source_files_modified": 0
+        },
+        "full_artifact_equivalence_verified": false,
+        "baseline_comparison": {
+          "available": true,
+          "run_id": 38656192243,
+          "run_attempt": 1,
+          "head_sha": "72f2e574eb718903f2534d0b06ddce4b662672f0",
+          "baseline_exact_code_artifacts": 671,
+          "gained_count": 0,
+          "lost_count": 0,
+          "gained": [],
+          "lost": [],
+          "harness_changed": []
+        }
+      },
+      "ci_summary_sha256": "f0615671d1ea61f16223cd7d57078fa5c5742023d309f2c1b79ab5f0e4eef9c5"
+    }
+  ],
+  "current_main": "70d187b2fbdb55a1954a9cbcb566b68feab1798b",
+  "current_main_tree_matches_validated_30f48dc": true,
+  "active_worktree_branch": "agent/stock-logic-not-values-pr",
+  "active_worktree_head": "01081291e566bc4eb80419a526c5725406ed62b7",
+  "remote_backups": [
+    "agent/stock-driver-validated-backup",
+    "agent/stock-driver-wip-backup-20261014T234241Z",
+    "agent/stock-driver-wip-backup-20261014T235611Z"
+  ],
+  "full_goal": "active/incomplete; production legacy; remaining comparisons/families/effects, whole-driver simulation/completeness and actual production integration still required"
+}
