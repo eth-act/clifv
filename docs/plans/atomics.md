@@ -339,13 +339,24 @@ they are; the per-thread layers are new files.
   buffering through plain accesses (no dependency ordering, §2), so a consistent execution need
   not have a prefix in which all threads behaved. It is a property of the program (its stacks
   are disjoint and nobody else writes them), as in CASCompCert's rely/guarantee premise.
-* **Layer 2: isel with interference (open).** The per-statement simulation of the M7 driver (the
-  step lemmas behind `IselSim`) as `Refines` from `ClifThread.CStep` to the VCode event
-  semantics. `stmt_step` does not reveal which addresses the VCode segment accesses (finding 3).
-  Plan: instantiate the driver per statement with the frame set `F_t` = every address outside
-  the CLIF event's bytes and the CLIF memory restricted to those bytes (`refines_csem`,
-  `memRefines_csem` and `driverSem_csem` are generic in `F`); `csem F_t`'s `AccessOk` then makes
-  every successful VCode access lie in the event's bytes, and `cEvs_kinds` gives its kind.
+* **Layer 2: isel with interference (open; 2a done).** The per-statement simulation of the M7
+  driver (the step lemmas behind `IselSim`) as `Refines` from `ClifThread.CStep` to the VCode
+  event semantics. `stmt_step` does not reveal which addresses the VCode segment accesses
+  (finding 3). Plan: instantiate the driver per statement with the frame set `F_t` = every
+  address outside the CLIF event's bytes and the CLIF memory restricted to those bytes
+  (`refines_csem`, `memRefines_csem` and `driverSem_csem` are generic in `F`); `csem F_t`'s
+  access check then places every VCode event in the event's bytes, and `cEvs_kinds` gives its
+  kind.
+  * **2a (done, `FV/Concurrency/VCodeAddr.lean`, `VCodeAddrAtomic.lean`, `VCodeFrame.lean`):
+    `VCodeAddr.cEvs_avoid`: when `csem F` steps, every event of its footprint `cEvs` avoids
+    `F`.** The canonical run's one event of a load/store (GPR and SIMD&FP, every covered
+    addressing mode, including `memFinalize`'s `x16` offsets: `memFinalize_evs`) is at
+    `AMode.addr` with the access size, i.e. the access `MInst.accesses` that `straightSem`
+    checks (`straight_avoid_of`); `ldar`/`stlr` access x0 (`ldar_evs`, `stlr_evs`); `dmb ish`'s
+    event has size 0; every event of the LL/SC loop bodies is at x25, the address operand that
+    `loopSem` checks (`rmwBody_evs`, `casHead_evs`, `casStore_evs`). Witness
+    (`VCodeFrameWitness.lean`): `ldar_avoid`, the `ldar` of 8 bytes at `0x8000` under the frame
+    of every address outside them.
 * **Layer 3: `prepare` (done, `FV/Concurrency/PrepThread.lean`).** `VTRun`: runs of the VCode
   thread semantics. `prep_back`: a step of the prepared code from a matched configuration
   (`PMatch`: counterpart block, same vreg file and world; a branch into an edge block pends until
