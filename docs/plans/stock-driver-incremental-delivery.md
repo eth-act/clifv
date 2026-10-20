@@ -376,3 +376,25 @@ Next finish stack-load nonvacuity, derive exact filtered source/ABI rows and pre
 from actual assembleOriginalBlock, then compose machine entry/body/return and add
 direct semantic consumers. Production class selection is unchanged. All original
 full-goal rule/effect/simulation/completeness/integration obligations remain active.
+
+The entry foundation now includes actual stack-load preservation and source-
+preserving constructor rows. A real nine-parameter source returns its ninth,
+stack-passed parameter; its first eight entry copies are omitted. The witness
+satisfies ArgsAtEntry on arbitrary machine worlds, executes the actual stack load,
+and derives nonempty source rows/exact entry code from the successful real
+constructor. Constructor equivalence preserves label, parameters, branch arguments,
+exception order, row order, unused filtering and register lookup provenance.
+
+Together with seeded initialization/register copies, normal builds and27public
+roots pass;94core-owned constants use standard axioms,67fixed-witness constants
+use explicitly marked own native facts. One bundled MCP constructor/load check
+passes/no warnings; owned LSP processes stopped.
+[Assembly checkpoint](../research/stock-entry-assembly-checkpoint.json).
+
+Main advanced to#3417a18184a (concurrency proof layers only). Reconcile this tip
+without rewriting published entry checkpoints, validate the changed concurrency
+closure plus new entry leaves and full FV/FVTest replay, then land the complete
+source/ABI-entry foundation. Next derive typed ABI agreement from source entry and
+actual node origin, compose entry at VCode0 with body/return, and instantiate direct
+semantic consumers. No new production class is activated by this proof packet;
+all original full-goal obligations remain active.
