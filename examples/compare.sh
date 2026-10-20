@@ -2,15 +2,14 @@
 # Run a crate's (or workspace's) tests twice and compare the per-test outcomes:
 #   1. the reference: `cargo test` with rustc's LLVM backend (default, BASELINE=llvm; target dir
 #      target/llvm) or, with BASELINE=cg_clif, with plain rustc_codegen_cranelift — the same
-#      cg_clif `cargo fv` uses (FV_CG_CLIF, else with panic=unwind target/cg_clif-unwind/… if
-#      built, else the shipped one; target dir target/cg_clif). Both use the pinned nightly,
+#      cg_clif `cargo fv` uses (FV_CG_CLIF, else the patched build of scripts/build-cg-clif.sh,
+#      target/cg_clif/{unwind,abort}/…; target dir target/cg_clif). Both use the pinned nightly,
 #      aarch64-unknown-linux-musl, qemu-aarch64-static, and the panic strategy of the fv run
 #      (unwind, or abort with --panic-abort);
 #   2. `cargo fv test [FV_ARGS…]` (cg_clif + the Lean backend).
 # BASELINE=llvm: exit 0 iff both runs pass and report the same tests with the same outcomes.
 # BASELINE=cg_clif: exit 0 iff both runs report the same outcomes and both pass or both fail
-# (the shipped cg_clif has no landing pads, so catch_unwind/Drop-during-unwinding tests fail
-# under plain cg_clif too; cargo fv must not change that).
+# (cargo fv must not change cg_clif's outcomes).
 #
 #   examples/compare.sh DIR [FV_ARGS…]     e.g. examples/compare.sh examples/survey --release
 # `cargo fv` must be on PATH (rust/target/release, see docs/USAGE.md).
@@ -34,10 +33,9 @@ done
 case "$baseline" in
   llvm) flags="${panic[*]}"; tdir=llvm ;;
   cg_clif)
-    backend=${FV_CG_CLIF:-}
-    [[ -z "$backend" && ${#panic[@]} -eq 0 && -f "$root/target/cg_clif-unwind/librustc_codegen_cranelift.so" ]] &&
-      backend=$root/target/cg_clif-unwind/librustc_codegen_cranelift.so
-    backend=${backend:-cranelift}
+    variant=unwind
+    [[ ${#panic[@]} -gt 0 ]] && variant=abort
+    backend=${FV_CG_CLIF:-$root/target/cg_clif/$variant/librustc_codegen_cranelift.so}
     flags="-Zcodegen-backend=$backend ${panic[*]}"; tdir=cg_clif ;;
   *) echo "BASELINE must be llvm or cg_clif" >&2; exit 2 ;;
 esac
