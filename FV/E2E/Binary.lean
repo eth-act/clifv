@@ -447,6 +447,25 @@ theorem trapsExplicit_of_run {L : LinkSys} (hL : L.Ok) {f : Clif.Function} (hf :
   rw [hrun] at hm
   exact trapsExplicit_of_returned hm
 
+/-- `trapsExplicit_of_run` for the environment of the run's peak call depth: a returning
+whole-program CLIF run of `f` of at most `F + 1` steps and call depth at most `d`
+(`Clif.DepthLe`) satisfies `TrapsExplicit` under `Clif.linkEnvD` (`Clif.runLoop_linkD`). -/
+theorem trapsExplicit_of_runD {L : LinkSys} (hL : L.Ok) {f : Clif.Function} (hf : f ∈ L.P.funcs)
+    {F d : Nat} {args : List Clif.Val} {cs : Clif.State} {vals : List Clif.Val} {cm : Clif.Mem}
+    (hcs : ClifEntry f args cs) (hsym : cs.mem.symbols = L.syms)
+    (hd : Clif.DepthLe L.base L.P d cs)
+    (hrun : Clif.runLoop L.base L.P (F + 1) cs = .returned vals cm) :
+    TrapsExplicit (Clif.linkEnvD L.P L.base F d) L.P.bare cs := by
+  have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
+  obtain ⟨m, hm⟩ := Clif.runLoop_linkD (base := L.base) (syms := L.syms) F d hL.names hf hL.free
+    (hL.indScope f hf)
+    (E := Clif.linkEnvD L.P L.base F d) rfl rfl (fun _ _ => rfl) (fun _ _ _ => rfl)
+    (F + 1) cs (Nat.le_refl _) hd (runInv_entry hf hcs) hIf
+    (fun _ => hsym) (by rw [hrun]; exact fun _ h => nomatch h)
+    (by rw [hrun]; exact fun h => nomatch h)
+  rw [hrun] at hm
+  exact trapsExplicit_of_returned hm
+
 /-! ## The binary facts -/
 
 /-- **The executable's loaded segments** as the binary checks read them: the byte at each loaded
