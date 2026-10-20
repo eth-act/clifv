@@ -1,0 +1,39 @@
+{
+  "utc": "2026-10-20T08:51:47.122579+00:00",
+  "base": "f9e9aad1effc75000e7e1f42dfb79fde77e8dc3e",
+  "state": "complete direct semantic consumers, nonlegacy artifact witness and full current author gates passed",
+  "compiler_roots": [
+    "E2E.backend_correct_stock_arithmetic_return",
+    "E2E.backend_correct_stock_arithmetic"
+  ],
+  "entry_domain": "Original E2E.ClifEntry; arbitrary related source-slot addresses retained. All enterFunc variants remain compatibility wrappers.",
+  "semantic_domain": "Actual raw Stock output, checked preparation/Lean allocation/physical lowering/emission/layout. Full ordinary arithmetic outcomes; ABI-aware return variant retains implicit pins.",
+  "targeted_build_jobs": 751,
+  "public_roots_passed": 27,
+  "core_owned_standard_only": 224,
+  "fixed_witness_constants": 30,
+  "witness_native_facts": [
+    "E2E.StockArithmeticArtifactWitness.checks_true._native.native_decide.ax_1"
+  ],
+  "old_public_statement_headers_retained": 18,
+  "witness": "Unused third parameter plus explicit source stack slot; completes raw Stock/Lean allocation/emission/layout, while compact Stock output fails legacy lowerCheck. Universal-value/caller-slot consumer witness.",
+  "mcp": "One bundled check: three compiler roots standard3, one explicitly fixed native witness, no warnings; owned server1728610/worker1728828 stopped.",
+  "production_activation": "unchanged from #336; checker/linker/generated-proof adapters and next complete class activation remain next",
+  "next": [
+    "Run current per-PR full library/affected modules/all audits/exact prior axiom parity/E2E identity-stage/link checks",
+    "Publish and author squash the complete actual semantic consumer packet",
+    "Connect the raw Stock semantic artifact to actual runtime/checker/linker/generated-proof consumers and enable the complete class with transactional fallback",
+    "Complete every original #140 family/effect/simulation/Stock-only-completeness/integration obligation"
+  ],
+  "evidence_sha256": {
+    "/tmp/stock-source-entry-generalized-build.log": "03d90971cbfe074b0f39a123cb341599cba87caca86e23903a874b800b3f54a4",
+    "/tmp/stock-arithmetic-artifact-build.log": "9e13649586eebcefc8ebad51ba62812719b064cdf21630ca18791b3a3b315130",
+    "/tmp/stock-arithmetic-artifact-witness-build.log": "6d4947c16de823c4c75e7a260a286c12a357ddcf79035c834558d26808c716ce",
+    "/tmp/stock-semantic-public-audit.log": "a6ab1d83294af4d8219c9bb1f2e940b8c387a9ee5d6515dd1c4b3a15231d7cd0",
+    "/tmp/stock-semantic-all-owned.log": "f71f9cef5df88dc775e94f9daf2786e356251b987e6ca98c893745a29759ddb8",
+    "/tmp/stock-semantic-mcp.json": "558855e9b9bd401569ce6c8070da9870a0cce1af81814aad0ff6826cc41cc6a0",
+    "/tmp/stock-semantic-old-statements.json": "f5f635c83ea469353502c3e35ce36e31d91dea5e6098c9c51fbba9f895f439ef"
+  },
+  "author_gates_receipt": "docs/research/stock-arithmetic-semantic-author-gates.json",
+  "reconciled_base": "4d0156407bdfd1d65c4c40dac2c1b1055a41334e"
+}

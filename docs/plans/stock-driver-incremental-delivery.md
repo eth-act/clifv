@@ -433,3 +433,37 @@ original rule/effect, source/block/whole-driver simulation, Stock-only
 completeness and production-consumer obligations remain mandatory.
 
 Actual entry-to-return author gates passed on `5199a6a930d840f8e7c934bd537f16b4de736df3`: 63 affected modules scheduled after exact source/import-closure reuse checks, complete FV/FVTest replay (2459 jobs), all 33 audit files, 150 standard-only core constants and 68 fixed-witness constants with no new native axioms. All 1129 prior public axiom sets are retained exactly (1144 current roots), and all 15 prior public theorem headers in changed modules are unchanged. No runtime consumer or executable is affected. [Terminal author receipt](../research/stock-entry-abi-author-gates.json). Next actual preparation/allocation and direct semantic production consumers; all original #140 obligations remain active.
+
+
+#343 (`f9e9aad1effc75000e7e1f42dfb79fde77e8dc3e`) landed the complete actual
+VCode arithmetic entry-to-return proof after its recorded author gates; exact
+merge tree and integrator notification were verified.
+
+The next semantic-consumer batch preserves the existing production entry domain.
+`ClifEntry` leaves source-slot addresses free, so entry proofs now use the same
+source binding facts independently of executable `enterSlots`. All 18 old public
+theorem statements in changed modules are retained as compatibility variants.
+Preparation preserves the internally chosen virtual file; actual `checkAlloc`,
+physical lowering, emission and layout instantiate the existing universal-file
+M6 machine theorem. New additive consumers prove ABI-aware actual machine returns
+and full ordinary arithmetic outcome refinement, without a legacy lowering verdict.
+The source no-trap argument is proved, and stuck/outOfFuel keep their existing
+refinement convention. `CompiledProduction.lowerOk` is unchanged.
+
+A concrete raw Stock artifact with an unused third argument and explicit source
+slot completes Lean allocation/emission/layout; its compact Stock code is
+rejected by the legacy lowering validator. The complete consumer witness allows
+arbitrary argument values and caller slot addresses under the original ABI
+activation preconditions. Normal builds pass 751 jobs; 27 public roots and all
+224 core-owned constants pass trust checks, with 30 witness constants using one
+explicit fixed native fact. One bundled MCP check passes without warnings and
+its owned LSP processes are stopped. [Semantic checkpoint](../research/stock-arithmetic-semantic-checkpoint.json).
+
+Current full author gates remain pending. Next connect this semantic artifact to
+the actual runtime/checker/linker/generated-proof paths, derive rollout premises
+from the input classifier and enable the complete next function class with legacy
+fallback. Production activation remains #336 until that same artifact is proved
+through every consumer. The raw semantic witness does not establish Stock-only
+completeness or discharge any remaining original rule/effect/CFG obligation.
+
+Direct semantic-consumer author gates passed on `823ecbb19e6a1e7ec2708afbdfe7612e91fa5b76`: 21 affected modules scheduled with exact source/import-closure reuse, full FV/FVTest/checker tools (3052 jobs), all 34 audit files, 224 standard-only core constants and 30 witness constants with one explicitly marked fixed native fact. All 1144 prior public axiom sets are retained exactly (1181 current roots); 18 prior public theorem headers are unchanged. Both E2E modes retain all 1,150 original and 1,159 prior identities and ordered stages, with 1,159 accepted/0 rejected, and real verified fv-demo link checks pass. [Terminal author receipt](../research/stock-arithmetic-semantic-author-gates.json). Reconciled main #344 concurrency proof additions; all 1,171 pre-reconcile public axiom sets are also preserved exactly. Next world/trace and cleanup adapters plus actual runtime/checker/linker/generated-proof integration before new activation; all original #140 obligations remain active.

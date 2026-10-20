@@ -9,9 +9,9 @@ set_option Elab.async false
 
 /-- Original source entry fixes the value, ABI location and supported byte width
 of each source-preserving entry row. No per-row value certificate is required. -/
-theorem entered_source_abi_row {f : Clif.Function} {args : List Clif.Val}
-    {cm0 cm : Clif.Mem} {fr : Clif.Frame} {b : Clif.Block}
-    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+theorem entered_source_abi_row_frame {f : Clif.Function} {args : List Clif.Val}
+    {fr : Clif.Frame} {b : Clif.Block}
+    (entered : SourceEntry f args fr)
     (ssa : (valueDefs f).Nodup) (block : f.blocks[0]? = some b)
     {locs : List ArgLoc} {stack : Nat}
     (locations : sigArgLocs f.sig = .ok (locs,stack))
@@ -20,7 +20,8 @@ theorem entered_source_abi_row {f : Clif.Function} {args : List Clif.Val}
     {v : Clif.Val} (found : fr.regs row.1.1.1 = some v) :
     (row.1.2,v) ∈ (locsOf f.sig).zip args ∧ row.2 = v.ty.bytes ∧
       (row.2 = 1 ∨ row.2 = 2 ∨ row.2 = 4 ∨ row.2 = 8) := by
-  obtain ⟨b',regs,entry,argTypes,paramTypes,set,slots,frame⟩ := Opt.enterFunc_ok entered
+  have entryFacts := entered
+  obtain ⟨b',regs,entry,argTypes,paramTypes,set,frame⟩ := entryFacts
   have sameBlock : b' = b := by
     have entryBlock : f.blocks[0]? = some b' := by
       simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using entry
@@ -58,16 +59,31 @@ theorem entered_source_abi_row {f : Clif.Function} {args : List Clif.Val}
   exact ⟨by simpa only [locsOf,locations] using located,byteValue,
     sigParamBytes_bytes sizes _ (List.mem_of_getElem? atSize)⟩
 
-/-- Every original parameter row has its entered source value, including rows
-whose machine copy is omitted as unused. -/
-theorem entered_source_row_value {f : Clif.Function} {args : List Clif.Val}
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem entered_source_abi_row {f : Clif.Function} {args : List Clif.Val}
     {cm0 cm : Clif.Mem} {fr : Clif.Frame} {b : Clif.Block}
     (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    (ssa : (valueDefs f).Nodup) (block : f.blocks[0]? = some b)
+    {locs : List ArgLoc} {stack : Nat}
+    (locations : sigArgLocs f.sig = .ok (locs,stack))
+    {bytes : List Nat} (sizes : sigParamBytes f.sig = .ok bytes)
+    {row : EntryInput} (member : row ∈ (b.params.zip locs).zip bytes)
+    {v : Clif.Val} (found : fr.regs row.1.1.1 = some v) :
+    (row.1.2,v) ∈ (locsOf f.sig).zip args ∧ row.2 = v.ty.bytes ∧
+      (row.2 = 1 ∨ row.2 = 2 ∨ row.2 = 4 ∨ row.2 = 8) := by
+  exact entered_source_abi_row_frame (SourceEntry.of_enterFunc entered) ssa block locations sizes member found
+
+/-- Every original parameter row has its entered source value, including rows
+whose machine copy is omitted as unused. -/
+theorem entered_source_row_value_frame {f : Clif.Function} {args : List Clif.Val}
+    {fr : Clif.Frame} {b : Clif.Block}
+    (entered : SourceEntry f args fr)
     (ssa : (valueDefs f).Nodup) (block : f.blocks[0]? = some b)
     {locs : List ArgLoc} {bytes : List Nat} {row : EntryInput}
     (member : row ∈ (b.params.zip locs).zip bytes) :
     ∃ v, fr.regs row.1.1.1 = some v := by
-  obtain ⟨b',regs,entry,argTypes,paramTypes,set,slots,frame⟩ := Opt.enterFunc_ok entered
+  have entryFacts := entered
+  obtain ⟨b',regs,entry,argTypes,paramTypes,set,frame⟩ := entryFacts
   have sameBlock : b' = b := by
     have entryBlock : f.blocks[0]? = some b' := by
       simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using entry
@@ -79,6 +95,16 @@ theorem entered_source_row_value {f : Clif.Function} {args : List Clif.Val}
   obtain ⟨i,v,_,_,lookup⟩ := setMany_mem set nd row.1.1.1
     (List.mem_map.mpr ⟨row.1.1,parameter,rfl⟩)
   exact ⟨v,frameRegs ▸ lookup⟩
+
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem entered_source_row_value {f : Clif.Function} {args : List Clif.Val}
+    {cm0 cm : Clif.Mem} {fr : Clif.Frame} {b : Clif.Block}
+    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    (ssa : (valueDefs f).Nodup) (block : f.blocks[0]? = some b)
+    {locs : List ArgLoc} {bytes : List Nat} {row : EntryInput}
+    (member : row ∈ (b.params.zip locs).zip bytes) :
+    ∃ v, fr.regs row.1.1.1 = some v := by
+  exact entered_source_row_value_frame (SourceEntry.of_enterFunc entered) ssa block member
 
 def entryRowKey (row : MappedEntryRow) : Nat :=
   match row.reg with
@@ -158,10 +184,10 @@ theorem mapped_entry_code {rows : List MappedEntryRow}
 /-- Execute the actual filtered ABI prelude from an entered source frame.
 Source SSA, mapping and ABI facts discharge every copy/load side condition;
 unused parameters retain their seeded values without extra input conditions. -/
-theorem mapped_entry_prelude_preserves {f : Clif.Function} {ctx : Ctx}
-    (inv : MappedCtxInv f ctx) {args : List Clif.Val} {cm0 cm : Clif.Mem}
+theorem mapped_entry_prelude_preserves_frame {f : Clif.Function} {ctx : Ctx}
+    (inv : MappedCtxInv f ctx) {args : List Clif.Val} {cm : Clif.Mem}
     {fr : Clif.Frame} {b : Clif.Block}
-    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    (entered : SourceEntry f args fr)
     (ssa : (valueDefs f).Nodup) (block : f.blocks[0]? = some b)
     {locs : List ArgLoc} {stack : Nat}
     (locations : sigArgLocs f.sig = .ok (locs,stack))
@@ -190,8 +216,8 @@ theorem mapped_entry_prelude_preserves {f : Clif.Function} {ctx : Ctx}
       (row.input.1.2,v) ∈ (locsOf f.sig).zip args ∧ row.input.2 = v.ty.bytes ∧
       (row.input.2 = 1 ∨ row.input.2 = 2 ∨ row.input.2 = 4 ∨ row.input.2 = 8) := by
     intro row member
-    obtain ⟨v,found⟩ := entered_source_row_value entered ssa block (rowMember row member)
-    exact ⟨v,found,entered_source_abi_row entered ssa block locations sizes
+    obtain ⟨v,found⟩ := entered_source_row_value_frame entered ssa block (rowMember row member)
+    exact ⟨v,found,entered_source_abi_row_frame entered ssa block locations sizes
       (rowMember row member) found⟩
   have copies : ∀ x v key pin, fr.regs x = some v →
       ctx.valueReg? x = some (.vreg key .int) →
@@ -206,7 +232,7 @@ theorem mapped_entry_prelude_preserves {f : Clif.Function} {ctx : Ctx}
         simpa [denseEntryRow,loc] using qp
       have same : row.input.1.1.1 = x := inv.injective _ _ key
         (by simpa only [pair.1] using (mapped_entry_reg inv mapped rowmem).2) lookup
-      have abi := entered_source_abi_row entered ssa block locations sizes
+      have abi := entered_source_abi_row_frame entered ssa block locations sizes
         (rowMember row rowmem) (by simpa only [same] using found)
       have arg := arguments _ _ abi.1
       simpa only [loc,pair.2] using arg
@@ -227,7 +253,7 @@ theorem mapped_entry_prelude_preserves {f : Clif.Function} {ctx : Ctx}
       have keyEq : entryRowKey row = key := equal
       have same : row.input.1.1.1 = x := inv.injective _ _ key
         (by simpa only [keyEq] using (mapped_entry_reg inv mapped rowmem).2) lookup
-      obtain ⟨located,width,supported⟩ := entered_source_abi_row entered ssa block locations sizes
+      obtain ⟨located,width,supported⟩ := entered_source_abi_row_frame entered ssa block locations sizes
         (rowMember row rowmem) (by simpa only [same] using found)
       have sourceLoc : row.input.1.2 = .stack off := loc
       have abi := arguments _ _ located
@@ -254,6 +280,28 @@ theorem mapped_entry_prelude_preserves {f : Clif.Function} {ctx : Ctx}
       | cons pair pairs => rfl
     simpa [entryPrelude,pairsCode,nonempty,loadsCode] using
       seqRun_append_fall' isem copied loaded
+
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem mapped_entry_prelude_preserves {f : Clif.Function} {ctx : Ctx}
+    (inv : MappedCtxInv f ctx) {args : List Clif.Val} {cm0 cm : Clif.Mem}
+    {fr : Clif.Frame} {b : Clif.Block}
+    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    (ssa : (valueDefs f).Nodup) (block : f.blocks[0]? = some b)
+    {locs : List ArgLoc} {stack : Nat}
+    (locations : sigArgLocs f.sig = .ok (locs,stack))
+    {bytes : List Nat} (sizes : sigParamBytes f.sig = .ok bytes)
+    {uses : Array UseState} {rows : List MappedEntryRow}
+    (mapped : mappedEntryRows ctx uses ((b.params.zip locs).zip bytes) = .ok rows)
+    {isem : Backend.Proof.Sem} (driver : DriverSem isem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
+    {ρ : Nat → CV} {w : Arm.ArmState}
+    (held : ValuesHeld (fun _ => True) ctx fr ρ) (memory : MR fr.slots cm w)
+    (arguments : ArgsAtEntry F f.sig args w) :
+    ∃ ρ' w', seqRun isem (entryPrelude (mappedEntryPairs rows) (mappedEntryLoads rows)).toList
+        ρ w = some (.fall ρ' w') ∧ MR fr.slots cm w' ∧
+      ValuesHeld (fun _ => True) ctx fr ρ' ∧ SameWorld F w' w := by
+  exact mapped_entry_prelude_preserves_frame inv (SourceEntry.of_enterFunc entered) ssa block locations sizes mapped driver memorySem stable held memory arguments
 
 /-- Final resolution of source parameters leaves the actual entry prelude
 unchanged. Physical ABI source registers are deliberately not virtual uses. -/

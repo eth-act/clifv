@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockSourceEntry
 import FV.Backend.Proof.StockDFG
 import FV.Backend.Proof.StockConstantRecordValues
 import FV.Backend.Proof.StockEntryAliases
@@ -57,11 +58,11 @@ private theorem scalar_width (ty : Clif.Ty) (supported : CTy.ofClif ty ∈ eCTys
 
 /-- Successful original source entry and Stock construction derive all mapping
 and width premises of proof-selected initialization internally. -/
-theorem stock_lower_entered_value_type {f : Clif.Function} {result : Result}
+theorem stock_lower_entered_value_type_frame {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
-    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
-    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm)) :
+    {args : List Clif.Val} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr) :
     ∀ x v, fr.regs x = some v → event.ctx.valueType? x = some (CTy.ofClif v.ty) := by
   obtain ⟨ranges,params,earlier,suffix,starting,finishing,before,after,
     label,bi,data,core,build,ordered,initial,empty,parts,folded,
@@ -71,7 +72,8 @@ theorem stock_lower_entered_value_type {f : Clif.Function} {result : Result}
   have types : event.ctx.valTy = original.valTy := by
     rw [eventEq,(stock_lowerBlockCore_scanOrigin coreRun).2.1]
     exact view.valTy
-  obtain ⟨b,regs,entry,argTypes,paramTypes,set,slots,frame⟩ := Opt.enterFunc_ok entered
+  have entryFacts := entered
+  obtain ⟨b,regs,entry,argTypes,paramTypes,set,frame⟩ := entryFacts
   have frameRegs : fr.regs = regs := congrArg (fun frame : Clif.Frame => frame.regs) frame
   have block : f.blocks[0]? = some b := by
     simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using entry
@@ -86,31 +88,50 @@ theorem stock_lower_entered_value_type {f : Clif.Function} {result : Result}
     simpa only [Ctx.valueType?,types] using originalTy
   exact typed
 
-theorem entrySeed_entered_values {f : Clif.Function} {result : Result}
-    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem stock_lower_entered_value_type {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
     {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
     (entered : Clif.enterFunc f args cm0 = .ok (fr,cm)) :
+    ∀ x v, fr.regs x = some v → event.ctx.valueType? x = some (CTy.ofClif v.ty) := by
+  exact stock_lower_entered_value_type_frame run dominated events (SourceEntry.of_enterFunc entered)
+
+theorem entrySeed_entered_values_frame {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {args : List Clif.Val} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr) :
     ValuesHeld (fun _ => True) event.ctx fr (entrySeed event.ctx fr) := by
   have inv := (stock_lower_record_context run scope events).1
-  have typed := stock_lower_entered_value_type run dominated events entered
+  have typed := stock_lower_entered_value_type_frame run dominated events entered
   apply entrySeed_values inv.injective
   · intro x v found
     exact inv.typedReg x _ (typed x v found)
   · intro x v found
     exact scalar_width v.ty (inv.valTyE x _ (typed x v found))
 
-/-- Original parameters are fixed by final alias resolution, so initialization
-also establishes the actual whole-driver resolved source relation. -/
-theorem entrySeed_entered_resolved_values {f : Clif.Function} {result : Result}
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem entrySeed_entered_values {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
     {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
     (entered : Clif.enterFunc f args cm0 = .ok (fr,cm)) :
+    ValuesHeld (fun _ => True) event.ctx fr (entrySeed event.ctx fr) := by
+  exact entrySeed_entered_values_frame run scope dominated events (SourceEntry.of_enterFunc entered)
+
+/-- Original parameters are fixed by final alias resolution, so initialization
+also establishes the actual whole-driver resolved source relation. -/
+theorem entrySeed_entered_resolved_values_frame {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {args : List Clif.Val} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr) :
     ValuesHeld (fun _ => True) event.ctx fr
       (fun key => entrySeed event.ctx fr (aliasNum result.final.alias key)) := by
-  have held := entrySeed_entered_values run scope dominated events entered
-  obtain ⟨b,regs,entry,argTypes,paramTypes,set,slots,frame⟩ := Opt.enterFunc_ok entered
+  have held := entrySeed_entered_values_frame run scope dominated events entered
+  have entryFacts := entered
+  obtain ⟨b,regs,entry,argTypes,paramTypes,set,frame⟩ := entryFacts
   have frameRegs : fr.regs = regs := congrArg (fun frame : Clif.Frame => frame.regs) frame
   have block : f.blocks[0]? = some b := by
     simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using entry
@@ -127,22 +148,40 @@ theorem entrySeed_entered_resolved_values {f : Clif.Function} {result : Result}
   rw [fixed]
   exact value
 
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem entrySeed_entered_resolved_values {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm)) :
+    ValuesHeld (fun _ => True) event.ctx fr
+      (fun key => entrySeed event.ctx fr (aliasNum result.final.alias key)) := by
+  exact entrySeed_entered_resolved_values_frame run scope dominated events (SourceEntry.of_enterFunc entered)
+
 /-- Actual source entry is typed in the actual Stock scan context. -/
+theorem stock_lower_entered_frame_typed_frame {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {args : List Clif.Val} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr) : FrameTyped event.ctx fr := by
+  intro x ty v type found
+  have expected := stock_lower_entered_value_type_frame run dominated events entered x v found
+  exact Option.some.inj (expected.symm.trans type)
+
+/-- Executable-entry compatibility variant; retains the original statement. -/
 theorem stock_lower_entered_frame_typed {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
     {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
     (entered : Clif.enterFunc f args cm0 = .ok (fr,cm)) : FrameTyped event.ctx fr := by
-  intro x ty v type found
-  have expected := stock_lower_entered_value_type run dominated events entered x v found
-  exact Option.some.inj (expected.symm.trans type)
+  exact stock_lower_entered_frame_typed_frame run dominated events (SourceEntry.of_enterFunc entered)
 
 /-- Original entry values are parameters and have no source instruction definition. -/
-theorem stock_lower_entered_definition_none {f : Clif.Function} {result : Result}
+theorem stock_lower_entered_definition_none_frame {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
-    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
-    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm)) :
+    {args : List Clif.Val} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr) :
     ∀ x v, fr.regs x = some v → event.ctx.defInst? x = none := by
   obtain ⟨ranges,params,earlier,suffix,starting,finishing,before,after,
     label,bi,data,core,build,ordered,initial,empty,parts,folded,
@@ -152,7 +191,8 @@ theorem stock_lower_entered_definition_none {f : Clif.Function} {result : Result
   have defs : event.ctx.valDef = original.valDef := by
     rw [eventEq,(stock_lowerBlockCore_scanOrigin coreRun).2.1]
     exact view.valDef
-  obtain ⟨b,regs,entry,argTypes,paramTypes,set,slots,frame⟩ := Opt.enterFunc_ok entered
+  have entryFacts := entered
+  obtain ⟨b,regs,entry,argTypes,paramTypes,set,frame⟩ := entryFacts
   have frameRegs : fr.regs = regs := congrArg (fun frame : Clif.Frame => frame.regs) frame
   have block : f.blocks[0]? = some b := by
     simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using entry
@@ -162,16 +202,25 @@ theorem stock_lower_entered_definition_none {f : Clif.Function} {result : Result
   have originalNone := defInst_par spec.facts dominated.ssa block parameter
   simpa only [Ctx.defInst?,defs] using originalNone
 
-/-- The source entry frame satisfies restricted DFG consistency for any
-availability set, without an external consistency certificate. -/
-theorem stock_lower_entered_restrict_dfg {f : Clif.Function} {result : Result}
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem stock_lower_entered_definition_none {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
     {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
-    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm)) (available : List Nat) :
+    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm)) :
+    ∀ x v, fr.regs x = some v → event.ctx.defInst? x = none := by
+  exact stock_lower_entered_definition_none_frame run dominated events (SourceEntry.of_enterFunc entered)
+
+/-- The source entry frame satisfies restricted DFG consistency for any
+availability set, without an external consistency certificate. -/
+theorem stock_lower_entered_restrict_dfg_frame {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {args : List Clif.Val} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr) (available : List Nat) :
     DFGCons event.ctx (restrict fr available) := by
-  have defined := stock_lower_entered_definition_none run dominated events entered
-  have typed := stock_lower_entered_frame_typed run dominated events entered
+  have defined := stock_lower_entered_definition_none_frame run dominated events entered
+  have typed := stock_lower_entered_frame_typed_frame run dominated events entered
   have original : ∀ x v, (restrict fr available).regs x = some v → fr.regs x = some v := by
     intro x v found
     have member := restrict_regs_isSome (by rw [found]; rfl)
@@ -185,8 +234,33 @@ theorem stock_lower_entered_restrict_dfg {f : Clif.Function} {result : Result}
   · intro x ty v type found
     exact typed x ty v type (original x v found)
 
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem stock_lower_entered_restrict_dfg {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm)) (available : List Nat) :
+    DFGCons event.ctx (restrict fr available) := by
+  exact stock_lower_entered_restrict_dfg_frame run dominated events (SourceEntry.of_enterFunc entered) available
+
 /-- Original entry establishes the complete guarded source relation in the
 proof-selected initial virtual file, independently of demand and unused parameters. -/
+theorem stock_lower_entered_seed_guarded_frame {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr)
+    (st : State) {MR : MemRelT} (w : Arm.ArmState) (memory : MR fr.slots cm w) :
+    GuardedScanRel f result event.ctx event.block MR st (0,fr,cm) (entrySeed event.ctx fr) w := by
+  have entryFacts := entered
+  obtain ⟨b,regs,entry,argTypes,paramTypes,set,frame⟩ := entryFacts
+  refine ⟨congrArg (fun frame : Clif.Frame => frame.func) frame,
+    stock_lower_entered_restrict_dfg_frame run dominated events entered _,memory,?_⟩
+  have values := entrySeed_entered_resolved_values_frame run scope dominated events entered
+  intro x needed
+  exact values x trivial
+
+/-- Executable-entry compatibility variant; retains the original statement. -/
 theorem stock_lower_entered_seed_guarded {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
@@ -194,11 +268,6 @@ theorem stock_lower_entered_seed_guarded {f : Clif.Function} {result : Result}
     (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
     (st : State) {MR : MemRelT} (w : Arm.ArmState) (memory : MR fr.slots cm w) :
     GuardedScanRel f result event.ctx event.block MR st (0,fr,cm) (entrySeed event.ctx fr) w := by
-  obtain ⟨b,regs,entry,argTypes,paramTypes,set,slots,frame⟩ := Opt.enterFunc_ok entered
-  refine ⟨congrArg (fun frame : Clif.Frame => frame.func) frame,
-    stock_lower_entered_restrict_dfg run dominated events entered _,memory,?_⟩
-  have values := entrySeed_entered_resolved_values run scope dominated events entered
-  intro x needed
-  exact values x trivial
+  exact stock_lower_entered_seed_guarded_frame run scope dominated events (SourceEntry.of_enterFunc entered) st w memory
 
 end Backend.Stock.Proof
