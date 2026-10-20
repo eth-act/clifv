@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-19T10:44:09.779207+00:00",
+  "status": "isolated prototype terminated rc-9 under8GiB, no passing proof; current checked-in theorem/source unchanged",
+  "source_sha256": "1e4063bda5006ccbddb8ecbdf7efcec61c8780a0b72a5c10d1faf699eff46b9d",
+  "lane_log": "{\"utc\": \"2026-10-19T10:40:18.189596+00:00\", \"current_build_caps\": 11811160064, \"groups\": {\"/sys/fs/cgroup/user.slice/user-30034.slice/user@30034.service/app.slice/run-p2970076-i334013246.scope\": 11811160064}, \"reserved_prototype_bytes\": 8589934592}\n{\"file\": \"/tmp/StockCmpWithFlagsLightDraft.lean\", \"returncode\": -9}\nScheduler resumed; running validation kernels never interrupted.\n",
+  "source_and_controller_archive": "/home/lee/.clifv-recovery/20261019T104131Z-stock-pipeline-progress/evidence.tar.gz",
+  "remote_archive_backup": "fcc0912e33c9f07748a9c222c6eab3bf04ac7a02",
+  "next": "Factor argument-match decisions into separate checked leaves before interpreting selected RHS, or obtain exact-source integrator heavy/cache handoff; do not exceed author16GiB budget or weaken theorem",
+  "other_progress": "D0 complete pipeline/actual Stock-dispatch/zero-edge/consumer proofs passstd3; runtime/encoding/bothE2E/originalstageparity/verifiedfv-demo+survey/MCP/all116constants pass; module gate running and broad audit waitsmissingoutputs"
+}
