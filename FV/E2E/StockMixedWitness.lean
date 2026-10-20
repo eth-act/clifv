@@ -1,3 +1,4 @@
+import FV.E2E.StockProductionFixtures
 import FV.E2E.StockMixedNI
 import FV.E2E.CompiledSemanticNI
 import FV.Backend.LinearScan
@@ -10,23 +11,6 @@ set_option Elab.async false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 10000000
 attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
-
-/-- Dependent add/select/sub, a consumed ninth stack argument, five unused
-parameters, an explicit source slot and an omitted dead operation. -/
-def function (config : Configuration) : Clif.Function :=
-  let ty := valueType config
-  {source "stock_mixed_ni" config [] with
-    sig := {
-      params := List.replicate 9 ⟨ty,.none,.normal⟩
-      returns := [⟨ty,.none,.normal⟩]
-      callConv := convention config}
-    slots := [(7,⟨8,some 8⟩)]
-    blocks := [{
-      id := 0
-      params := (List.range 9).map (fun i => (i,ty))
-      body := [⟨[9],.binary .iadd ty 1 8⟩,⟨[10],.select ty 0 9 1⟩,
-        ⟨[11],.binary .isub ty 10 2⟩,⟨[12],.binary .iadd ty 1 8⟩]
-      term := .ret [11]}]}
 
 private def checks (config : Configuration) (cleanup : Bool) : Bool :=
   lowerScopeB (function config) && dominatedB (function config) && sigAbiOk (function config).sig &&

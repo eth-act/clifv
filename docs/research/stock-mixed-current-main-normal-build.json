@@ -1,14 +1,19 @@
 {
-  "utc": "2026-10-20T19:52:41.090108+00:00",
+  "utc": "2026-10-20T20:09:10.125423+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
   "reconciled_source": "3a9814b7d75fe833befeb8bd19ef80532ed0550b",
   "dependency_fix_source": "8d13b4de250185cbc094be28f4d44e74c1df94b1",
   "built_modules": [
+    "FV.Backend",
     "FV.Backend.ABIReadFlags",
     "FV.Backend.ABIReadOnly",
+    "FV.Backend.AllocReady",
+    "FV.Backend.ArithmeticNIProduction",
+    "FV.Backend.ArithmeticProduction",
     "FV.Backend.DeadCleanup",
+    "FV.Backend.LinearScan",
     "FV.Backend.Lowering.StockArithmetic",
     "FV.Backend.Lowering.StockArithmeticNI",
     "FV.Backend.Lowering.StockD0",
@@ -19,16 +24,29 @@
     "FV.Backend.Lowering.StockPrologueAll",
     "FV.Backend.Lowering.StockScalarAdd",
     "FV.Backend.Lowering.StockScalarProduction",
+    "FV.Backend.MixedNIProduction",
+    "FV.Backend.Obj",
+    "FV.Backend.Production",
+    "FV.Backend.ProductionWith",
+    "FV.Backend.Proof.RelaxLayout",
+    "FV.Backend.Proof.RelaxReady",
     "FV.Backend.Proof.StockArithmeticCheck",
+    "FV.Backend.ScalarProduction",
     "FV.Backend.SemanticNICheck",
     "FV.Backend.StockArithmeticCheck",
-    "FV.Backend.StockMixedCheck"
+    "FV.Backend.StockMixedCheck",
+    "FV.Backend.Unwind",
+    "FV.E2E.EmitReady",
+    "FV.E2E.EmitSize",
+    "FV.E2E.StockProductionFixtures",
+    "FVTest.Backend.AllocChoice",
+    "FVTest.Backend.Lowering.StockMixedRuntime"
   ],
-  "normal_built_count": 17,
+  "normal_built_count": 35,
   "failed_modules": 0,
   "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
   "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
-  "waiting": "Four direct import boundaries and44transitive consumers remain deferred: ArithmeticProduction, StockMixedBodyRefines, ABIReadOnlySem, StockArithmeticWorldX. First LowerLoopRun/LowerDecide prerequisites now passed; six additional normal modules built. Full current proof/consumer/tool/native/corpus/identity-stage/trust/example gates still required. No activation claim.",
+  "waiting": "Actual MixedNIProduction and current normal runtime pass. Normal core function proofs, machine consumers, native tools/CLI/linked/generated proof/corpus/identity-stage/axiom/verified example gates remain required. Source fixture extraction retains names/bodies and all old proof/check text. Full original140active; arithmetic activation lands first.",
   "batches": [
     {
       "utc": "2026-10-20T19:14:26.869956+00:00",
@@ -1351,6 +1369,1826 @@
       "max_active_builds": 2,
       "cache": "own ignored .lake view, shared source-keyed artifactstore/hardlinks; no cachecopy",
       "remaining": "Continue source-keyed normalmixedproof/consumer/tool/runtime gates; arithmeticcandidate must landfirst."
+    },
+    {
+      "utc": "2026-10-20T19:57:36.553055+00:00",
+      "head": "c1ce8e3d35eae33d21ed37a5abc6d9b3064e1dc2",
+      "primary_head": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
+      "source_sha256": {
+        "FV.Backend.ABIReadOnly": "50b2785490b7c2b8b1859c4df7e974079476dd0ed876e9cf60ddff2b890f3200",
+        "FV.Backend.ABIReadFlags": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89",
+        "FV.Backend.Lowering.StockMixed": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c",
+        "FV.Backend.StockArithmeticCheck": "94233aa8d45ea4f2651de3dd908388a2563c0e3ccd8a9c9e0e5df8295bee97eb",
+        "FV.Backend.StockMixedCheck": "7f728e8c0810db75b423dd1f5e4b95488ff11e7014403a1f4c93cf5f25684da1",
+        "FV.Backend.SemanticNICheck": "881835f4a3a88bb840bedcebccb780ac6c903fc42b270e93f3ce88ad420e5fbb",
+        "FV.Backend.Lowering.StockArithmeticNI": "19ba7ff09c01b874b13969e93f71d8360c33e37aa5d00bd88d4e1e7659c82783",
+        "FV.Backend.Lowering.StockMixedNI": "015b3c09f35e93ffb307f7ea3176606e0d35470a741d79573206ab72a73577a9",
+        "FV.Backend.Proof.RelaxLayout": "346d60075f26c8ca1e60f4991c8954092c961f9394173efafdc2d9e51b892e45",
+        "FV.Backend.Proof.RelaxReady": "16e1cd74c8ec4ffd858a2f05a1c115c809e3d9da29c1f47f4f30cc6803372c01",
+        "FV.Backend.AllocReady": "ba30aaea8699b5945d9911ea2ce4d2c129423724bcf8b26fb91253308a41ba87",
+        "FV.Backend.Unwind": "a69a2c686698b4532e085117f939883100c262fa07768b48292b3dbf3d281e55",
+        "FV.Backend.Obj": "4ae149bbc0eb33798f97b08989c1664c4e55e3b44b50d0250285bb9a70706292",
+        "FV.Backend": "21b64fa450f4e2bc3bf90faffdb92b1077faff48b148c7b22bc638dcb614af08",
+        "FV.Backend.Production": "1d9cc47458b128417bc5006e15f8f9619a8ba8f2c690ec8196e6bef496ab2d4b",
+        "FV.Backend.ProductionWith": "215f7c4395b76a617583fee96eb2a61e21aa6ddeae117abb49d488ecc4d6b215",
+        "FV.Backend.ScalarProduction": "077aa9abe2641f4bdacb1d4bbccf54d70d0fa0b109be222c014eafae7a05cdf9",
+        "FV.Backend.ArithmeticProduction": "bd92b1fa62e7b0dbc1b1997ba41466b69c8603f103dbf9b057403437552f46ac",
+        "FV.Backend.ArithmeticNIProduction": "3e63913d7f68a5e85400b15d75d9408455dafb4b01ad0dd163b3f609977fc600",
+        "FV.Backend.MixedNIProduction": "28a2adf73c7eb8b24b96acfd9f6cd6c0597ebdd75c52fd8d3dc4170e868899ff",
+        "FV.Backend.Proof.StockMixedBodyRefines": "8843866a09637538e38392715eb39685e5cb97b12be1144c3a3e7298dbd40d92",
+        "FV.Backend.Proof.StockMixedCheck": "290a5c92d37dfab7dff7578938fc32c40596aaa6715e7a022efdb1c6bcd1a534",
+        "FV.E2E.ABIReadOnlySem": "6f668d2a8325aaa5ca14da1253d9ac1591c3283aecff81c2ac226170450f6a7b",
+        "FV.E2E.ABIReadOnlyCheck": "6469008b758c4e8458c5effde2725ccb5386d13944e9e9df0d22a7cf39ca5dbb",
+        "FV.E2E.ABIReadOnlyTransport": "a2885abe2390903a65b6a543d027b0ad23e284c974e5805ebfdf6b31acbfcf99",
+        "FV.E2E.ABIReadOnlyRealize": "94499c209577d7882b7e188736a06fc8b495d2da41430f6f2e51efb342be3f07",
+        "FV.E2E.ABIReadOnlyMachine": "f13556eb9024a78838d984f9c4ef7ee56b6bfa56f7a7e18697a03751b6fbfc99",
+        "FV.E2E.ABIReadFlags": "63c98b3f73a9063dc04a6d457a15c787a23e24a79c0d3db57b77ce834de2dcdd",
+        "FV.Backend.Proof.StockArithmeticCheck": "8ef990729c2a93aaeaaa657f58a74d73a22c47bbd64b2c3685a77673b2bdaa5f",
+        "FV.E2E.StockArithmeticWorldX": "2fd5b09787216b53f2b82113c2484f4d14c981fba51e6e7f0099f4566b22c70a",
+        "FV.E2E.StockMixedWorldX": "01dbc79c99032acb4cd911dedbbc5707c8c73d3c957e98e98360ab3e3bee9ac0",
+        "FV.E2E.CompiledSemantic": "3f97dc68e613c739fbb075d9c6773bff23a9665d6736d359e37e3810b407beb8",
+        "FV.E2E.StockArithmeticNI": "feec67e0f0d700da278e4c5ff3aad93a91f64e0f16a7fce5b86e4148beba1ca4",
+        "FV.E2E.StockMixedNI": "422f5ba002fd40ed61ac55e4230bbd33cd355d6014ace8a2a47db8cdfc39f1c4",
+        "FV.E2E.CompiledSemanticNI": "6239f1c2045a4a6bfcddf957f68d0be88294029bbf7cbd87359f791e1456eded",
+        "FV.E2E.LinkCheck": "17c409d565b675eb108e7b8516738b8bd34494a43225aa5146374fbb047228b1",
+        "FV.E2E.LinkOwnCallsDefs": "9277de3804b118603f9951a4df20ffc97b6fb9d313a219f1f2bc041839888c66",
+        "FV.E2E.LinkOwnFramesDefs": "b1c5b43baaf788f2ebf99409851078de688e3da49fe2ced7505d87ea39e43fd0",
+        "FV.E2E.EmitSize": "2e8fc5820a4372bde076f2fa8103510505c198557b459bbf42a62949bb8d9ceb",
+        "FV.E2E.LinkScopeDefs": "3d9fb489bbd16b5e0cfcddba7510c0f52505057a7ea2a08996ebfdb5d05d65de",
+        "FV.Link.Layout": "148b3f2f63a28093d422540155198a7205c77f6207141e082d64da7a7e581d17",
+        "FV.E2E.BinCheck": "ad38c433944b82a0e3a51a7991dcdcb475ee0e512f9c81f68c33d7a81e1d2f7a",
+        "FV.Link.Reloc": "0e289f682fa20ee338649399aeb1d9933839421ca5b8c39b0336f2a0bc8b2249",
+        "FV.E2E.CodeMap": "32854f7a587fce3fa411e4f7fe09e8f5ffd0b01254fc8a3af50cdd893b52841f",
+        "FV.Link.Image": "1ddcec95ecfac83f4580b28053428d0081dadbdaea5881e705bbe0058f22a62e",
+        "FV.Link.RelocProof": "0b948c6df622bc24962c52e369f07543451bcfdf0b11edf705a3432870b5296d",
+        "FV.Link.LayoutFacts": "51d820aad5602ce84310bcbcb61b839234dcec0df9b199b06e8dc877fe7f975a",
+        "FV.Link.ImageProof": "d863d36c0ba27ac166e8d4db621759df405eff49e2cc5c2f438b960eddbee979",
+        "FV.Link.OutsideProof": "d28c7ab53a4541b31eef4bd54a16ae476a1a8299adb240c85b4fcb3beec35e87",
+        "FV.Link.LayoutProof": "3a1325675f2d1a4a87765600304c9e720de00751092e0aeb9f301439df84dcb6",
+        "FV.E2E.RelaxTotal": "cc794c933da5fa9e05a1ad6772fa50b70ea82e722d148e40fc3e78b133ea4cee",
+        "FV.E2E.EmitReady": "97f8008aa761895a890e9ad92bf20064eb9ec9ded6442bf0b963deb132c89d5b",
+        "FV.E2E.EmitCondsDefs": "7220f4bec65e1abddb49e80c5ba0804d0126fc885fb47b336464aa6af42a1db5",
+        "FV.E2E.EmitEnc": "4f82a2b93e2a25e3e82637673db47eb68572eb33801cca8e206c0a1e5bee0f2a",
+        "FV.E2E.EmitLabels": "6e796512199cb3ec3e8d7fe0afa86239d312679ee6318ad44e25fa296c925989",
+        "FV.E2E.EmitNear": "e5f94c2f7e332e6d68712d97038ac77b45e204da15994524ea442868c11112df",
+        "FV.E2E.EmitTotal": "ebe3113b0e26b45bc64d129cb0f2fc861c52f0108b5fe11084e889a7a74c5f08",
+        "FV.E2E.EmitCondsLower": "8d214b76c7897df8b389f3f1661ffb0f332a134396917cb16263f80b95e42f07",
+        "FV.E2E.EmitTotalIn": "8fee65e5a79f552404c4994a95d785eb77ef25d97bfa0c3f321cf035209650da",
+        "FV.E2E.LinkOwnCalls": "81b3411ab81d37089c719cd5928f80740ebe298e56d2c014f09471f21b790f92",
+        "FV.E2E.LinkOwnCallsShape": "4545de1d3f74617c20ab14f006bcfd5b5b2abcabe0662aee4367038fa7f9aa97",
+        "FV.E2E.LinkOwnCallsRun": "95a057d73a631e2c6d404e7e2aa7548ed6af975ec866d1babc1653a68c478c83",
+        "FV.E2E.LinkOwnCallsShapeOf": "30e32207cafdd0467782fcdf5d31fb3c45cbddb8eaccb75e7752aa681731431f",
+        "FV.E2E.LinkOwnCallsStmt": "f2402ddcea71e6bf0035e4e701c081dc4f018c80c8eb6cd3ffd1837e0ee91cfe",
+        "FV.E2E.LinkOwnCallsStmtHyp": "93d97e2971387491422c48dd9716abd52f3ce09b385e46b037b8d6b1ea47a24e",
+        "FV.E2E.LinkOwnCallsTry": "7db28fd145158d4086c49bd6ccc71fbd9747d35ee43dcab89ba599bcae8bb8a5",
+        "FV.E2E.LinkOwnCallsTryHyp": "0f443888349bbff87d97e729f7b851b2cf4f3628c6527664fd882dfb55033e3c",
+        "FV.E2E.LinkOwnGotRun": "a9db861d8397c829c0d79dbe90f11f29fdf728d162ca0b314dce71e24c3c046b",
+        "FV.E2E.LinkOwnGotLocal": "de7031f4a257a32c4217ba9a2b38e610924655c91c2b3e4faf38ffbc49da956e",
+        "FV.E2E.LinkOwnSegRange": "b36f9d9ca6d55a9b127a215539af70216554a392dbeb989411629ef667602ea4",
+        "FV.E2E.LinkOwnFrames": "21d00724ddae653f338b80527db6e005f1cacde589b5f0e6d6f7690511356156",
+        "FV.E2E.LinkOwnRets": "fd804cdd566f9062af50f1da68b204a951f50d8d4966709a23fbc702e3b2e4d5",
+        "FV.E2E.LinkOwnRetsIsel": "4d5f6ab91369630776333d97ae35d0e1fa09ab0d42c452c2184e00d499b47be4",
+        "FV.E2E.LinkScope": "7b372cba4b2c1fb47c19ae2e79ada84addca3b72bc785c196508d661b2d84f9d",
+        "FV.E2E.SpillDefined": "8f6c9a3cd69a4d0a6ff95cd1f6d94862720d4f911b0fd2c109242ebffab92ee9",
+        "FV.Link.Correct": "85b97d1fcb08ecbbc6fd69d79da294a09d5d7bb73d24849b37f2564dea154344",
+        "FV.E2E.SizeDefs": "cacc4325dec14fbcd84aadbe1d06fa7b91fb3a4b766cda7b0f9b4897659a9f83",
+        "FV.E2E.LinkScopeInputDefs": "341e8abe94914abba34b057f124d58315b38729763be7dae70995d36b7f8b1dd",
+        "FV.Link.Compile": "dd0733f0be2e6df35c8e3f0fb01539880440c02f5540775dd89cab1a708abf07",
+        "FV.E2E.StackBound": "f23bfac3c4eb90eb8bf2b4f86d32b55b3b83c24dc988a5aec013186ef24c43e0",
+        "FV.E2E.Binary": "e5db1b853ffe8d84a34a5afe004d601b6e3b3de45af0a4945fdfbc9893b5c0ae",
+        "FV.E2E.BinaryGood": "02d15b834e15aa7f91af81dec2239d5f080d8db2caf27c76cd53a231ff1ac3df",
+        "FV.E2E.ExecWords": "e42fcc48e89ab468d8441a7d377aebb702f162e715dc46384d77f134b08cea75",
+        "FV.E2E.ExecBytes": "594bb08f45354ee1c225043b89b5dbe929602fac26745b26bdf1f06868e362b8",
+        "FV.E2E.ExecStatic": "5575c1ee8f68bde960ffff10b929175714e5f5f527a680c2be7ece4c7d2ec9c8",
+        "FV.E2E.ExecFrameSim": "3662a005822bc88408d6c43bf70b4de6a61afeac85a1199752457c8295d23c5d",
+        "FV.E2E.ExecRunN": "1198661f1d99bd327c83f1fa3d1141a1110464ccb96a5707bbbe5c6d1390ec6d",
+        "FV.E2E.ExecGoodRun": "d190bae59b8665d2f0084833f9429283315c0799af88373eb148609f037f15a4",
+        "FV.E2E.ExecGot": "4d8ef832a1a90448c757f2d674be3826519a99ecc5574adeab8f12345284e098",
+        "FV.E2E.ExecGoodReads": "7a3079560d76ed3843d534c79820251f6da92aa9144b1d45b0fa4760e1bb70ff",
+        "FV.E2E.ExecProven": "f6ffc1ecd830d30dc21230294bc32bd138989aa0078d624596e4e06616729cdb",
+        "FV.E2E.SizeVC": "a9380794498c205e86d5a0b585aa454dfe2c3c62b39b86bfaad1ea5946a19918",
+        "FV.E2E.SizeLower": "3290958715bda39ecd56049318ab6e2fe6103c8326e2cba0ec26fa8e9f0409d9",
+        "FV.E2E.SizeIn": "da7a01316dd7723852243cb0713643b98bb2e39e9ae8e5d5e611dfdc312bb9d9",
+        "FV.E2E.LinkScopeInput": "275523e27e97013631753f37cb1ec2721f41dd76aa9caae9c2297c5af3e08a2e",
+        "FV.Link.Exe": "147828031f3273efa8c920ce3b44551259b1a0866f23f5e0768d3709a9f824a6",
+        "FV.E2E.SrcScopeDefs": "d171715ad110f8acde11288184ef982eed88711a5f7d9822d7f5656f97715e54",
+        "FV.E2E.LegalSource": "81c2c9707d1729c07f4f313d7def03eac9f3c9959f8d6964e4ac2ea1bcf4d688",
+        "FV.Link.ExeSource": "3c5d4f10280e9bf9f471095b57a5e54e203b6ec7d9604a4699e6c0c50a5f6917",
+        "FV.E2E.PipelineCheck": "1637ed83191de9ada3caa1f11f18b07a9cb54f7825d2c89ea3ac4d5d21141652",
+        "FV.E2E.DeadCleanupLinkCheck": "478a7b0f87db406b380c9ed97a11e221f8905f04618dd9b253b5b161b6191692",
+        "FV.E2E.DeadCleanupSpillWords": "78f492f013c687c2a3aa89af83d440c92fd453a7dd61c2edaa9fccd241ed8ca7",
+        "FV.E2E.DeadCleanupPreparedSize": "f10899ccf18b55479495556bdfaad86972c65e57f997f2cf441c394f399d85bb",
+        "FV.E2E.DeadCleanupLinkCalls": "d1ab7780e345a04461540315649bd76872cd42e9d6bfadd8cfb2ea15a53eac3d",
+        "FV.E2E.DeadCleanupLinkFrames": "55295fa657964399f9ec42270ba26d0f32d2c1243c281f392da4288699e40315",
+        "FV.E2E.DeadCleanupEmit": "ecb3ed728f3c567baaebdf515be5037448ca6efe4ffcaaf2e547c520ac0621ef",
+        "FV.E2E.DeadCleanupEmitReady": "1a6a9318f7659982552e6b2ed1e5e6a630cf21a45d45d36479cc95b2323b67d3",
+        "FV.E2E.DeadCleanupTotal": "d76e57f950eb06b766b5317f63f7036343518895147b43d36dc905609e0ac34d",
+        "FV.E2E.DeadCleanupLinkScope": "b1204343a8d3d7d9b6704e66c698a0201794cbdff73a73379c667d875ae27075",
+        "FV.Link.DeadCleanupImage": "14f0e8bc7f65caa40c55811ada6def4739978383f3b2b631340205ee49de12b4",
+        "FV.Link.ActualImage": "bf04d59fafeb54daee67f62db6489c29e91d4742b93009002ae1f28636be209d",
+        "FV.Link.CodeMapProof": "97a5bc00a659128fcb27a439199f919e18460083cc8f0616b0d58584e7f998a4",
+        "FV.Link.RelocShape": "244aa2d52b053d9c5786681010ab831ce7c5b46a60de5bec77caf41813ae7a77",
+        "FV.Link.Total": "4953e4e3f9ffb5ae368c5e4013db1d0fb854b3c5e6387479d3392e6c7cd2ff80",
+        "FV.Link.RelocShapeProof": "5600370f3ee08f2f47b7fcc16da50f1423f5de6539ab9ca504bf7894fbe8244d",
+        "FV.Link.ExeTotal": "f546cfe1109c079bac90f5a1cfb7b6d775a4d5dbd2b8281e8d68d7f530d101aa",
+        "FV.Link.ExeInput": "5ebe2f8e7deb5ef5c8b86c9711291586f2dadbe0ebc8a3145c2ef1670e874f9f",
+        "FV.E2E.LoweringProvenance": "66b420d8edb7a77718c9addc96a4afffd6e71e12456d0ed8352b95f112e92c46",
+        "FV.E2E.ActualPipelineCheck": "37554c30b65d90d9510209800c385d2bd5e70a6caa69f0ca2dbfd32d85a60d75",
+        "FV.E2E.PreparedPipeline": "064955c242c5689e16618f80db586418fcd35de69d4c3ab96eec02c8229e01ab",
+        "FV.E2E.ActualBinCheck": "c7fb86b7769f13b2b9097a02ceacb9f836328538ac30e04f91d5fd2555b8a842",
+        "FV.E2E.ActualCompilerModes": "9d39f8db72267640336fe290be51f8af725a85b148a7d169b922aa8b1613f6ff",
+        "FV.E2E.ProductionPipeline": "d9334cf3396d995d2da3dcba5edcaa660e749ec93ba66f5adb17ad5c59f9ddb5",
+        "FV.E2E.ProductionCheck": "0be19ec8d53670589c3d4011f8412ac6c940b8eaec44bc5d39842381e6bc829b",
+        "FV.Link.ProductionImage": "11db9d1a65ca677373199bc927ce4acb6f967da6c5bf98d2f4dea551e2363cff",
+        "FV.E2E.ProductionPipelineWith": "469cf87955ac900d000eba7b85c71db8e31d78d292730949c960756ed5c07fb4",
+        "FV.Link.ProductionImageWith": "8f4f33d78e0a30977a16e93f9836de3884a319ae87de8ad2dac04cf1efa4ed01",
+        "FV.E2E.DeadCleanupStackBound": "bfb6e8b4c7accfeb65a79eaa498e447a7fa20e3333cae2b7a0a1ccbe6210b493",
+        "FV.E2E.ProductionStackBound": "4aa93eb99207d7a77133d3dfd95274b70d6aa2a940afbab5861045c0e6c6b519",
+        "FV.E2E.SemanticNIBoundary": "3d3fe26c06fb8ac65a57a6b45b26bb8e7769fcf56cc3c5bfc8274fe7c2dfc9d3",
+        "FV.E2E.LinkSemanticNI": "96147f225ada9ab5f98d8467ee03557905d82dcf996e5cf6c013a8144b5bda41",
+        "FV.E2E.SemanticPipelineCheck": "71558acbb347a8c7de014c9db82f299b829bec6285b6d1720eab6d5116f0c45a",
+        "FV.E2E.SemanticPreparedPipeline": "d52a4a7617335dde067978c5cdbfd6758d7276a252d426acaaca22a72a875f93",
+        "FV.E2E.SemanticStackBound": "024f498240f127b624a4e4795eedecaa34889a09b8d8e8a5790cc9a62e347e89",
+        "FV.Link.DeadCleanupCompile": "bd1e95a58e54d21a882a9887c953f8b7f82380709b70d23f6341f9dd4c22a43f",
+        "FV.Link.Placed": "e893c32edd9ae8ff03f23cd3435bd2652047739a418643eaddf2e938626a6f4e",
+        "FV.Link.SemanticCompileWith": "764d6b32ab745d5dfc001c32c97f41b7fef840667db9d988a405092faf1a5352",
+        "FV.Link.ProductionImageWithProof": "da20bf997374caefaa4e85cb118faa9eb2412671ccdb61af8bc69e8f291b2679",
+        "FV.E2E.SemanticLinkGood": "1917a9cf471aebabd5e9503515a900781a7e70e86709b7c8eca1fb450d77a495",
+        "FV.E2E.ProductionChecksWith": "1f6fd47f2b21f94c3912d53e7651fb2034df458e2fa1411d6910132084c2b7fc",
+        "FV.E2E.SemanticBinary": "5f8426b81e0760b165005c479edb8f2ecfbe138973c5386342f617ac510d9a37",
+        "FV.E2E.SemanticBinaryGood": "6b7639cb88096fc4204649c6e898a479d285291e023e9554a1f2bbfdebf6aadb",
+        "FV.E2E.SemanticExecBytes": "09f393f0dcac6eadd4ae7dab27cf1283610ca216770d8d5a167b47754692b67f",
+        "FV.E2E.SemanticExecStatic": "03155e5c04b60080213163be90dd2f8eb27935402ec9cf8414263ce987906351",
+        "FV.E2E.SemanticExecFrameSim": "41e7c481e9f6f882f1eb71e7a6a5b9cba4d14cc3de49e1410ea7c2f85327e2bd",
+        "FV.E2E.SemanticExecRunN": "c463cd58b4dc760a165f345c00c458071d9b5b41475f72c84e93b2df38ece81e",
+        "FV.E2E.SemanticExecGoodRun": "4add061a769d0fabb4dc1cd7d6bc90ac6fde9f833e678286ff39fb64f98014fc",
+        "FV.E2E.SemanticExecGot": "3dddd3a0d20b1bd4aa1fc7133a8d210ba190562798cca5ff1bc74f6eb51da661",
+        "FV.E2E.SemanticExecGoodReads": "1df37eab84af7eca52b6e716f2d2f7f204e5f80295cd6dc4f290cbb222c98485",
+        "FV.E2E.SemanticExecProven": "fef63bb6f78be27b862de1abafb186cd2d1205285dce21d062179f5fb731e3b7",
+        "FV.Link.SemanticExeWith": "59e46819d4b367d90a784fc7442376b8710d25177bfaa04779e1e4971fbe3fba",
+        "FV.Link.SemanticExeSourceWith": "45c90a8c26c589565c9928b145733850199ab263a9dcc785cfb9a67147391cfb",
+        "FV.Backend.LinearScan": "8a18a345b7c78db0fe4fef0b9d6aa9fd54b643f0c355563dbda3d9e33a3d0562",
+        "FV.E2E.StockArithmeticNIWitness": "32ea235df1f2e1f3b867f0ffda62efa8864e6e8142e40dfc0c7ba7a90dd933c4",
+        "FV.Link.Ld.Syms": "297db6161b0d9c0fd90e3b65020fd62cb73f2a314b8b72bfe861acd2f79d0855",
+        "FV.Link.Ld.File0": "9d7703439d9042befe458696e8677764c99a2f47e504309bc5f33fbab0f01074",
+        "FV.Link.Ld.PlanProof": "85f26a23f2edf9928696a2252a941c0176b5cb625a8d206b723d0cd9635056c2",
+        "FV.Link.Ld.Data": "c4aceecfca8fd4448f9b0b3eed543455ba7a3a65fee7cc68ffb67e2e7e3864db",
+        "FV.Link.Ld.Spec": "2ccd3a42204ef4031aeced6b8b63680f00013d37e65e0f785b8490f43f5e36fb",
+        "FV.E2E.SemanticCompilerWitness": "ed6f674e5a07395c8230b00fecd2c4d9252dfe31c4bddeeba0dc68594c280e7d",
+        "FV.E2E.StockMixedWitness": "f802c93b967d7c00defc1d3fcd4e4e1e9f5c03c65458290c8dd56d53a5a27eda",
+        "FV.E2E.SemanticMixedCompilerWitness": "a1ed6445aa1ff7fd864b745419ff1239b5e78f2210a23337bd328526e8e5b315",
+        "FV.E2E.SemanticFallbackWitness": "5fe9ea7e002523afba7bbe83e19feee6b034ba87ce457bba16cc9fc02d642603",
+        "FV.E2E.DeadCleanupBinCheck": "4b334ad48baf01a95399b093c4aac41a89b0dbdbb038fde3004826159c46d1e9",
+        "FV.Front.Bundle": "b42fad6a56cdb1df2de7d9dd82a2e73c698f8c807649a4f5a04c663a6036a777",
+        "FV.Front.Read": "15cc8baa064b21747ac0f6a1e5920dd7e805751143a18199954b7696cb1e204c",
+        "FVTest.E2E.LinkProof": "499c5d7ffac339e8ca2f45edbf79cad9d5eb0447a4b57cc2bdb4c1137646dd25",
+        "FV.E2E.SemanticChecksWith": "080634ebe0360e88c0a690dd7a6559c64caf6f53df8c279aa26a1d8ecaefe954",
+        "FVTest.E2E.SemanticLinkProofWith": "d37e8d9cc2b084a1777520a06f4dde317d96d97fe9c4e31a77d5aab98cc60f32",
+        "FVTest.Backend.Lowering.StockMixedLinked": "15dcef863ab62d81af55c6a843470a5966a043d67330ca36f7db8cb93363530a",
+        "FVTest.Backend.Lowering.StockMixedRuntime": "c79f25a10718359c108d202b313dc9817030a1a43268a5d0f1252c3da89512ee",
+        "FV.Backend.RegallocPerEdgeDriver": "bc0a31338f178bb80f42cf3c17a90b776b752888cdce6bfaf41ad998c8bcde0c",
+        "FVTest.Backend.StockConfig": "8c06bca647a8fc7339a7dddddc39875a542f950e845b8a03ab569a2b779b1bbc",
+        "FVTest.Backend.AllocChoice": "efe920f9beb6f8f17bb076c53873f7fec4931c200d5fb7b64324650ac3af2534",
+        "FV.Backend.Proof.UnwindTables": "59431b5cca146f62059703d829eb0600795301dfb0986e7acd9b0561997f1e94",
+        "FV.E2E.RegLevelUnwind": "b5d4b5d4c051376db963a934eacfbc6227c69649a483b24c6ffcb1bb464dfdd1",
+        "FV.E2E.RegLevelFrameSaved": "72a066f1892ffdd07ca3a45d6c918d420b96b9830f75776435e9daaeaf34598d",
+        "FV.E2E.RegLevelU": "287a259a902e478e1ec90255ea24ee521477626f55c779df4ba192238c89c700",
+        "FV.E2E.RegLevelCallSite": "c9cd6384c47e14d9c6728e3050e36fbce69e37c7775758c34fc61c833358e13d",
+        "FV.E2E.RegLevelUTry": "1d2b6fb1ab86f46ca50aed075e24513ce868292a5d0fd7e8650dce88c0b3fbd9",
+        "FVTest.Backend.Main": "f1d894ac2691c5021ef34492117e0ed56f52d35976d4d9c7d8ee9c43786a7683",
+        "FVTest.E2E.LinkCheckMain": "12f6db91df25a10c00efdcc9227224fbc0a244a57e5aa3fbe3c51de73edfbfaa",
+        "FV.Link.OptCompile": "3561049230e355d7f370bbdace3500b615ed5613044f96885a9f93ddff4fed0e",
+        "FV.E2E.DeadCleanupBinary": "4686ca0e32672b02f465b0e02b0c0328a8d05dff96556f7a110d0ac4349678db",
+        "FV.Backend.Proof.EhFrameDecode": "8bdbf5ca7001edfc2dce67c85d0b4c6dda663ba982b27e2457aac783595d91e9",
+        "FV.Link.EhCheck": "0380075fcc9f9ea18f72302c0342cce4a6b9b3bd7ae077ca52dd2567b9e798b9",
+        "FV.Link.UnwFns": "640c73aedd37bb13e9f6c38cd607dc08a890a363feb4f7681836da03a54af8c0",
+        "FV.Link.ExeUCompile": "f5a2086721509a0466bac0cfa45571fdcaac1059bcdc66b941d8cd73ac39eb8a",
+        "FVTest.Link.LeanLinkMain": "99354df383a1a6f559213d10d3514a0c4d9c73ad4f0a982eb849988fbcaa27a7"
+      },
+      "records": [
+        {
+          "module": "FV.Backend.ABIReadOnly",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.ABIReadOnly.probe.log",
+          "probe_log_sha256": "3fe3427694b7a0f0af619c3861ae93cf970855aab04d787749613003d7e3eaa0"
+        },
+        {
+          "module": "FV.Backend.ABIReadFlags",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.ABIReadFlags.probe.log",
+          "probe_log_sha256": "ee969b7c3d38c118f2a1d0ff7fc4134d469ad91b1826751cbf418a4d3dde6b65"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockMixed",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.Lowering.StockMixed.probe.log",
+          "probe_log_sha256": "81a5ea94a7fd4260441b5c41ce5f078540d4a1e133c4b843674c46244a5e4994"
+        },
+        {
+          "module": "FV.Backend.StockArithmeticCheck",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.StockArithmeticCheck.probe.log",
+          "probe_log_sha256": "33268c14471a689909eb09ef55dcffd391948f03d6fb9f6c7a454a15bd853452"
+        },
+        {
+          "module": "FV.Backend.StockMixedCheck",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.StockMixedCheck.probe.log",
+          "probe_log_sha256": "c2ac9302131e59d84003fbdd419ce7113a8e81067f934b7ab84f9eebdd096c54"
+        },
+        {
+          "module": "FV.Backend.SemanticNICheck",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.SemanticNICheck.probe.log",
+          "probe_log_sha256": "587a1facd802858d4fb63e126b740a05644a8c82c529dcf8b40cc41e6f9651d5"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockArithmeticNI",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.Lowering.StockArithmeticNI.probe.log",
+          "probe_log_sha256": "735cf9000ef9fcbc680f08dc57716c78f97489140cec64f6b69ac1edc8af0614"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockMixedNI",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.Lowering.StockMixedNI.probe.log",
+          "probe_log_sha256": "c3f74ed22a999d18cb207e283a1a13012dc207cec386efe559581d8e97f45e86"
+        },
+        {
+          "module": "FV.Backend.Proof.RelaxLayout",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.Proof.RelaxLayout.build.log",
+          "returncode": 0,
+          "log_sha256": "42cb71c1cfd48698bcd69c23cbe40f5183359ca08ec5320d1903df0a36d32a96"
+        },
+        {
+          "module": "FV.Backend.Proof.RelaxReady",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.Proof.RelaxReady.build.log",
+          "returncode": 0,
+          "log_sha256": "b25c3e4e763b53a5bbc36880dbf2ddf7f77507f080c0df1b8c2b71e42bc4e936"
+        },
+        {
+          "module": "FV.Backend.AllocReady",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.AllocReady.build.log",
+          "returncode": 0,
+          "log_sha256": "01878ec2133573616107066c4146f362f0b758dd71a75d8ab116ef08859d8c4e"
+        },
+        {
+          "module": "FV.Backend.Unwind",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.Unwind.build.log",
+          "returncode": 0,
+          "log_sha256": "a06cc6b64635e163f4cd6b68607c4c31d55441f5cc37a1ba6682dfe2bf3ede70"
+        },
+        {
+          "module": "FV.Backend.Obj",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.Obj.build.log",
+          "returncode": 0,
+          "log_sha256": "5ff4bcb973d9151ac300e48e6a81084b360699466fa358faa45d1a21c8d687a9"
+        },
+        {
+          "module": "FV.Backend",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.build.log",
+          "returncode": 0,
+          "log_sha256": "3762b5574e1e0b96161f75a1875f048d59b06d9a566b5bedadefd3f83654e41d"
+        },
+        {
+          "module": "FV.Backend.Production",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.Production.build.log",
+          "returncode": 0,
+          "log_sha256": "906e4b8cfb89ddf9ca10a87671ecf66536b7b9621648342803c196a6157b7cd3"
+        },
+        {
+          "module": "FV.Backend.ProductionWith",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch4/FV.Backend.ProductionWith.build.log",
+          "returncode": 0,
+          "log_sha256": "12d830721e4d88fcdc1bdd05af86d3ee4e89f81879f5b69bbb3000cb2a84ab6e"
+        }
+      ],
+      "skip_reason": null,
+      "scheduler_resumed": true,
+      "budget_GiB": 16,
+      "normal_leaf_cap_MiB": 8192,
+      "max_active_builds": 2,
+      "cache": "own ignored .lake view, shared source-keyed artifactstore/hardlinks; no cachecopy",
+      "remaining": "Continue source-keyed normalmixedproof/consumer/tool/runtime gates; arithmeticcandidate must landfirst."
+    },
+    {
+      "utc": "2026-10-20T19:58:58.921774+00:00",
+      "head": "c1ce8e3d35eae33d21ed37a5abc6d9b3064e1dc2",
+      "primary_head": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
+      "source_sha256": {
+        "FV.Backend.ABIReadOnly": "50b2785490b7c2b8b1859c4df7e974079476dd0ed876e9cf60ddff2b890f3200",
+        "FV.Backend.ABIReadFlags": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89",
+        "FV.Backend.Lowering.StockMixed": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c",
+        "FV.Backend.StockArithmeticCheck": "94233aa8d45ea4f2651de3dd908388a2563c0e3ccd8a9c9e0e5df8295bee97eb",
+        "FV.Backend.StockMixedCheck": "7f728e8c0810db75b423dd1f5e4b95488ff11e7014403a1f4c93cf5f25684da1",
+        "FV.Backend.SemanticNICheck": "881835f4a3a88bb840bedcebccb780ac6c903fc42b270e93f3ce88ad420e5fbb",
+        "FV.Backend.Lowering.StockArithmeticNI": "19ba7ff09c01b874b13969e93f71d8360c33e37aa5d00bd88d4e1e7659c82783",
+        "FV.Backend.Lowering.StockMixedNI": "015b3c09f35e93ffb307f7ea3176606e0d35470a741d79573206ab72a73577a9",
+        "FV.Backend.Proof.RelaxLayout": "346d60075f26c8ca1e60f4991c8954092c961f9394173efafdc2d9e51b892e45",
+        "FV.Backend.Proof.RelaxReady": "16e1cd74c8ec4ffd858a2f05a1c115c809e3d9da29c1f47f4f30cc6803372c01",
+        "FV.Backend.AllocReady": "ba30aaea8699b5945d9911ea2ce4d2c129423724bcf8b26fb91253308a41ba87",
+        "FV.Backend.Unwind": "a69a2c686698b4532e085117f939883100c262fa07768b48292b3dbf3d281e55",
+        "FV.Backend.Obj": "4ae149bbc0eb33798f97b08989c1664c4e55e3b44b50d0250285bb9a70706292",
+        "FV.Backend": "21b64fa450f4e2bc3bf90faffdb92b1077faff48b148c7b22bc638dcb614af08",
+        "FV.Backend.Production": "1d9cc47458b128417bc5006e15f8f9619a8ba8f2c690ec8196e6bef496ab2d4b",
+        "FV.Backend.ProductionWith": "215f7c4395b76a617583fee96eb2a61e21aa6ddeae117abb49d488ecc4d6b215",
+        "FV.Backend.ScalarProduction": "077aa9abe2641f4bdacb1d4bbccf54d70d0fa0b109be222c014eafae7a05cdf9",
+        "FV.Backend.ArithmeticProduction": "bd92b1fa62e7b0dbc1b1997ba41466b69c8603f103dbf9b057403437552f46ac",
+        "FV.Backend.ArithmeticNIProduction": "3e63913d7f68a5e85400b15d75d9408455dafb4b01ad0dd163b3f609977fc600",
+        "FV.Backend.MixedNIProduction": "28a2adf73c7eb8b24b96acfd9f6cd6c0597ebdd75c52fd8d3dc4170e868899ff",
+        "FV.Backend.Proof.StockMixedBodyRefines": "8843866a09637538e38392715eb39685e5cb97b12be1144c3a3e7298dbd40d92",
+        "FV.Backend.Proof.StockMixedCheck": "290a5c92d37dfab7dff7578938fc32c40596aaa6715e7a022efdb1c6bcd1a534",
+        "FV.E2E.ABIReadOnlySem": "6f668d2a8325aaa5ca14da1253d9ac1591c3283aecff81c2ac226170450f6a7b",
+        "FV.E2E.ABIReadOnlyCheck": "6469008b758c4e8458c5effde2725ccb5386d13944e9e9df0d22a7cf39ca5dbb",
+        "FV.E2E.ABIReadOnlyTransport": "a2885abe2390903a65b6a543d027b0ad23e284c974e5805ebfdf6b31acbfcf99",
+        "FV.E2E.ABIReadOnlyRealize": "94499c209577d7882b7e188736a06fc8b495d2da41430f6f2e51efb342be3f07",
+        "FV.E2E.ABIReadOnlyMachine": "f13556eb9024a78838d984f9c4ef7ee56b6bfa56f7a7e18697a03751b6fbfc99",
+        "FV.E2E.ABIReadFlags": "63c98b3f73a9063dc04a6d457a15c787a23e24a79c0d3db57b77ce834de2dcdd",
+        "FV.Backend.Proof.StockArithmeticCheck": "8ef990729c2a93aaeaaa657f58a74d73a22c47bbd64b2c3685a77673b2bdaa5f",
+        "FV.E2E.StockArithmeticWorldX": "2fd5b09787216b53f2b82113c2484f4d14c981fba51e6e7f0099f4566b22c70a",
+        "FV.E2E.StockMixedWorldX": "01dbc79c99032acb4cd911dedbbc5707c8c73d3c957e98e98360ab3e3bee9ac0",
+        "FV.E2E.CompiledSemantic": "3f97dc68e613c739fbb075d9c6773bff23a9665d6736d359e37e3810b407beb8",
+        "FV.E2E.StockArithmeticNI": "feec67e0f0d700da278e4c5ff3aad93a91f64e0f16a7fce5b86e4148beba1ca4",
+        "FV.E2E.StockMixedNI": "422f5ba002fd40ed61ac55e4230bbd33cd355d6014ace8a2a47db8cdfc39f1c4",
+        "FV.E2E.CompiledSemanticNI": "6239f1c2045a4a6bfcddf957f68d0be88294029bbf7cbd87359f791e1456eded",
+        "FV.E2E.LinkCheck": "17c409d565b675eb108e7b8516738b8bd34494a43225aa5146374fbb047228b1",
+        "FV.E2E.LinkOwnCallsDefs": "9277de3804b118603f9951a4df20ffc97b6fb9d313a219f1f2bc041839888c66",
+        "FV.E2E.LinkOwnFramesDefs": "b1c5b43baaf788f2ebf99409851078de688e3da49fe2ced7505d87ea39e43fd0",
+        "FV.E2E.EmitSize": "2e8fc5820a4372bde076f2fa8103510505c198557b459bbf42a62949bb8d9ceb",
+        "FV.E2E.LinkScopeDefs": "3d9fb489bbd16b5e0cfcddba7510c0f52505057a7ea2a08996ebfdb5d05d65de",
+        "FV.Link.Layout": "148b3f2f63a28093d422540155198a7205c77f6207141e082d64da7a7e581d17",
+        "FV.E2E.BinCheck": "ad38c433944b82a0e3a51a7991dcdcb475ee0e512f9c81f68c33d7a81e1d2f7a",
+        "FV.Link.Reloc": "0e289f682fa20ee338649399aeb1d9933839421ca5b8c39b0336f2a0bc8b2249",
+        "FV.E2E.CodeMap": "32854f7a587fce3fa411e4f7fe09e8f5ffd0b01254fc8a3af50cdd893b52841f",
+        "FV.Link.Image": "1ddcec95ecfac83f4580b28053428d0081dadbdaea5881e705bbe0058f22a62e",
+        "FV.Link.RelocProof": "0b948c6df622bc24962c52e369f07543451bcfdf0b11edf705a3432870b5296d",
+        "FV.Link.LayoutFacts": "51d820aad5602ce84310bcbcb61b839234dcec0df9b199b06e8dc877fe7f975a",
+        "FV.Link.ImageProof": "d863d36c0ba27ac166e8d4db621759df405eff49e2cc5c2f438b960eddbee979",
+        "FV.Link.OutsideProof": "d28c7ab53a4541b31eef4bd54a16ae476a1a8299adb240c85b4fcb3beec35e87",
+        "FV.Link.LayoutProof": "3a1325675f2d1a4a87765600304c9e720de00751092e0aeb9f301439df84dcb6",
+        "FV.E2E.RelaxTotal": "cc794c933da5fa9e05a1ad6772fa50b70ea82e722d148e40fc3e78b133ea4cee",
+        "FV.E2E.EmitReady": "97f8008aa761895a890e9ad92bf20064eb9ec9ded6442bf0b963deb132c89d5b",
+        "FV.E2E.EmitCondsDefs": "7220f4bec65e1abddb49e80c5ba0804d0126fc885fb47b336464aa6af42a1db5",
+        "FV.E2E.EmitEnc": "4f82a2b93e2a25e3e82637673db47eb68572eb33801cca8e206c0a1e5bee0f2a",
+        "FV.E2E.EmitLabels": "6e796512199cb3ec3e8d7fe0afa86239d312679ee6318ad44e25fa296c925989",
+        "FV.E2E.EmitNear": "e5f94c2f7e332e6d68712d97038ac77b45e204da15994524ea442868c11112df",
+        "FV.E2E.EmitTotal": "ebe3113b0e26b45bc64d129cb0f2fc861c52f0108b5fe11084e889a7a74c5f08",
+        "FV.E2E.EmitCondsLower": "8d214b76c7897df8b389f3f1661ffb0f332a134396917cb16263f80b95e42f07",
+        "FV.E2E.EmitTotalIn": "8fee65e5a79f552404c4994a95d785eb77ef25d97bfa0c3f321cf035209650da",
+        "FV.E2E.LinkOwnCalls": "81b3411ab81d37089c719cd5928f80740ebe298e56d2c014f09471f21b790f92",
+        "FV.E2E.LinkOwnCallsShape": "4545de1d3f74617c20ab14f006bcfd5b5b2abcabe0662aee4367038fa7f9aa97",
+        "FV.E2E.LinkOwnCallsRun": "95a057d73a631e2c6d404e7e2aa7548ed6af975ec866d1babc1653a68c478c83",
+        "FV.E2E.LinkOwnCallsShapeOf": "30e32207cafdd0467782fcdf5d31fb3c45cbddb8eaccb75e7752aa681731431f",
+        "FV.E2E.LinkOwnCallsStmt": "f2402ddcea71e6bf0035e4e701c081dc4f018c80c8eb6cd3ffd1837e0ee91cfe",
+        "FV.E2E.LinkOwnCallsStmtHyp": "93d97e2971387491422c48dd9716abd52f3ce09b385e46b037b8d6b1ea47a24e",
+        "FV.E2E.LinkOwnCallsTry": "7db28fd145158d4086c49bd6ccc71fbd9747d35ee43dcab89ba599bcae8bb8a5",
+        "FV.E2E.LinkOwnCallsTryHyp": "0f443888349bbff87d97e729f7b851b2cf4f3628c6527664fd882dfb55033e3c",
+        "FV.E2E.LinkOwnGotRun": "a9db861d8397c829c0d79dbe90f11f29fdf728d162ca0b314dce71e24c3c046b",
+        "FV.E2E.LinkOwnGotLocal": "de7031f4a257a32c4217ba9a2b38e610924655c91c2b3e4faf38ffbc49da956e",
+        "FV.E2E.LinkOwnSegRange": "b36f9d9ca6d55a9b127a215539af70216554a392dbeb989411629ef667602ea4",
+        "FV.E2E.LinkOwnFrames": "21d00724ddae653f338b80527db6e005f1cacde589b5f0e6d6f7690511356156",
+        "FV.E2E.LinkOwnRets": "fd804cdd566f9062af50f1da68b204a951f50d8d4966709a23fbc702e3b2e4d5",
+        "FV.E2E.LinkOwnRetsIsel": "4d5f6ab91369630776333d97ae35d0e1fa09ab0d42c452c2184e00d499b47be4",
+        "FV.E2E.LinkScope": "7b372cba4b2c1fb47c19ae2e79ada84addca3b72bc785c196508d661b2d84f9d",
+        "FV.E2E.SpillDefined": "8f6c9a3cd69a4d0a6ff95cd1f6d94862720d4f911b0fd2c109242ebffab92ee9",
+        "FV.Link.Correct": "85b97d1fcb08ecbbc6fd69d79da294a09d5d7bb73d24849b37f2564dea154344",
+        "FV.E2E.SizeDefs": "cacc4325dec14fbcd84aadbe1d06fa7b91fb3a4b766cda7b0f9b4897659a9f83",
+        "FV.E2E.LinkScopeInputDefs": "341e8abe94914abba34b057f124d58315b38729763be7dae70995d36b7f8b1dd",
+        "FV.Link.Compile": "dd0733f0be2e6df35c8e3f0fb01539880440c02f5540775dd89cab1a708abf07",
+        "FV.E2E.StackBound": "f23bfac3c4eb90eb8bf2b4f86d32b55b3b83c24dc988a5aec013186ef24c43e0",
+        "FV.E2E.Binary": "e5db1b853ffe8d84a34a5afe004d601b6e3b3de45af0a4945fdfbc9893b5c0ae",
+        "FV.E2E.BinaryGood": "02d15b834e15aa7f91af81dec2239d5f080d8db2caf27c76cd53a231ff1ac3df",
+        "FV.E2E.ExecWords": "e42fcc48e89ab468d8441a7d377aebb702f162e715dc46384d77f134b08cea75",
+        "FV.E2E.ExecBytes": "594bb08f45354ee1c225043b89b5dbe929602fac26745b26bdf1f06868e362b8",
+        "FV.E2E.ExecStatic": "5575c1ee8f68bde960ffff10b929175714e5f5f527a680c2be7ece4c7d2ec9c8",
+        "FV.E2E.ExecFrameSim": "3662a005822bc88408d6c43bf70b4de6a61afeac85a1199752457c8295d23c5d",
+        "FV.E2E.ExecRunN": "1198661f1d99bd327c83f1fa3d1141a1110464ccb96a5707bbbe5c6d1390ec6d",
+        "FV.E2E.ExecGoodRun": "d190bae59b8665d2f0084833f9429283315c0799af88373eb148609f037f15a4",
+        "FV.E2E.ExecGot": "4d8ef832a1a90448c757f2d674be3826519a99ecc5574adeab8f12345284e098",
+        "FV.E2E.ExecGoodReads": "7a3079560d76ed3843d534c79820251f6da92aa9144b1d45b0fa4760e1bb70ff",
+        "FV.E2E.ExecProven": "f6ffc1ecd830d30dc21230294bc32bd138989aa0078d624596e4e06616729cdb",
+        "FV.E2E.SizeVC": "a9380794498c205e86d5a0b585aa454dfe2c3c62b39b86bfaad1ea5946a19918",
+        "FV.E2E.SizeLower": "3290958715bda39ecd56049318ab6e2fe6103c8326e2cba0ec26fa8e9f0409d9",
+        "FV.E2E.SizeIn": "da7a01316dd7723852243cb0713643b98bb2e39e9ae8e5d5e611dfdc312bb9d9",
+        "FV.E2E.LinkScopeInput": "275523e27e97013631753f37cb1ec2721f41dd76aa9caae9c2297c5af3e08a2e",
+        "FV.Link.Exe": "147828031f3273efa8c920ce3b44551259b1a0866f23f5e0768d3709a9f824a6",
+        "FV.E2E.SrcScopeDefs": "d171715ad110f8acde11288184ef982eed88711a5f7d9822d7f5656f97715e54",
+        "FV.E2E.LegalSource": "81c2c9707d1729c07f4f313d7def03eac9f3c9959f8d6964e4ac2ea1bcf4d688",
+        "FV.Link.ExeSource": "3c5d4f10280e9bf9f471095b57a5e54e203b6ec7d9604a4699e6c0c50a5f6917",
+        "FV.E2E.PipelineCheck": "1637ed83191de9ada3caa1f11f18b07a9cb54f7825d2c89ea3ac4d5d21141652",
+        "FV.E2E.DeadCleanupLinkCheck": "478a7b0f87db406b380c9ed97a11e221f8905f04618dd9b253b5b161b6191692",
+        "FV.E2E.DeadCleanupSpillWords": "78f492f013c687c2a3aa89af83d440c92fd453a7dd61c2edaa9fccd241ed8ca7",
+        "FV.E2E.DeadCleanupPreparedSize": "f10899ccf18b55479495556bdfaad86972c65e57f997f2cf441c394f399d85bb",
+        "FV.E2E.DeadCleanupLinkCalls": "d1ab7780e345a04461540315649bd76872cd42e9d6bfadd8cfb2ea15a53eac3d",
+        "FV.E2E.DeadCleanupLinkFrames": "55295fa657964399f9ec42270ba26d0f32d2c1243c281f392da4288699e40315",
+        "FV.E2E.DeadCleanupEmit": "ecb3ed728f3c567baaebdf515be5037448ca6efe4ffcaaf2e547c520ac0621ef",
+        "FV.E2E.DeadCleanupEmitReady": "1a6a9318f7659982552e6b2ed1e5e6a630cf21a45d45d36479cc95b2323b67d3",
+        "FV.E2E.DeadCleanupTotal": "d76e57f950eb06b766b5317f63f7036343518895147b43d36dc905609e0ac34d",
+        "FV.E2E.DeadCleanupLinkScope": "b1204343a8d3d7d9b6704e66c698a0201794cbdff73a73379c667d875ae27075",
+        "FV.Link.DeadCleanupImage": "14f0e8bc7f65caa40c55811ada6def4739978383f3b2b631340205ee49de12b4",
+        "FV.Link.ActualImage": "bf04d59fafeb54daee67f62db6489c29e91d4742b93009002ae1f28636be209d",
+        "FV.Link.CodeMapProof": "97a5bc00a659128fcb27a439199f919e18460083cc8f0616b0d58584e7f998a4",
+        "FV.Link.RelocShape": "244aa2d52b053d9c5786681010ab831ce7c5b46a60de5bec77caf41813ae7a77",
+        "FV.Link.Total": "4953e4e3f9ffb5ae368c5e4013db1d0fb854b3c5e6387479d3392e6c7cd2ff80",
+        "FV.Link.RelocShapeProof": "5600370f3ee08f2f47b7fcc16da50f1423f5de6539ab9ca504bf7894fbe8244d",
+        "FV.Link.ExeTotal": "f546cfe1109c079bac90f5a1cfb7b6d775a4d5dbd2b8281e8d68d7f530d101aa",
+        "FV.Link.ExeInput": "5ebe2f8e7deb5ef5c8b86c9711291586f2dadbe0ebc8a3145c2ef1670e874f9f",
+        "FV.E2E.LoweringProvenance": "66b420d8edb7a77718c9addc96a4afffd6e71e12456d0ed8352b95f112e92c46",
+        "FV.E2E.ActualPipelineCheck": "37554c30b65d90d9510209800c385d2bd5e70a6caa69f0ca2dbfd32d85a60d75",
+        "FV.E2E.PreparedPipeline": "064955c242c5689e16618f80db586418fcd35de69d4c3ab96eec02c8229e01ab",
+        "FV.E2E.ActualBinCheck": "c7fb86b7769f13b2b9097a02ceacb9f836328538ac30e04f91d5fd2555b8a842",
+        "FV.E2E.ActualCompilerModes": "9d39f8db72267640336fe290be51f8af725a85b148a7d169b922aa8b1613f6ff",
+        "FV.E2E.ProductionPipeline": "d9334cf3396d995d2da3dcba5edcaa660e749ec93ba66f5adb17ad5c59f9ddb5",
+        "FV.E2E.ProductionCheck": "0be19ec8d53670589c3d4011f8412ac6c940b8eaec44bc5d39842381e6bc829b",
+        "FV.Link.ProductionImage": "11db9d1a65ca677373199bc927ce4acb6f967da6c5bf98d2f4dea551e2363cff",
+        "FV.E2E.ProductionPipelineWith": "469cf87955ac900d000eba7b85c71db8e31d78d292730949c960756ed5c07fb4",
+        "FV.Link.ProductionImageWith": "8f4f33d78e0a30977a16e93f9836de3884a319ae87de8ad2dac04cf1efa4ed01",
+        "FV.E2E.DeadCleanupStackBound": "bfb6e8b4c7accfeb65a79eaa498e447a7fa20e3333cae2b7a0a1ccbe6210b493",
+        "FV.E2E.ProductionStackBound": "4aa93eb99207d7a77133d3dfd95274b70d6aa2a940afbab5861045c0e6c6b519",
+        "FV.E2E.SemanticNIBoundary": "3d3fe26c06fb8ac65a57a6b45b26bb8e7769fcf56cc3c5bfc8274fe7c2dfc9d3",
+        "FV.E2E.LinkSemanticNI": "96147f225ada9ab5f98d8467ee03557905d82dcf996e5cf6c013a8144b5bda41",
+        "FV.E2E.SemanticPipelineCheck": "71558acbb347a8c7de014c9db82f299b829bec6285b6d1720eab6d5116f0c45a",
+        "FV.E2E.SemanticPreparedPipeline": "d52a4a7617335dde067978c5cdbfd6758d7276a252d426acaaca22a72a875f93",
+        "FV.E2E.SemanticStackBound": "024f498240f127b624a4e4795eedecaa34889a09b8d8e8a5790cc9a62e347e89",
+        "FV.Link.DeadCleanupCompile": "bd1e95a58e54d21a882a9887c953f8b7f82380709b70d23f6341f9dd4c22a43f",
+        "FV.Link.Placed": "e893c32edd9ae8ff03f23cd3435bd2652047739a418643eaddf2e938626a6f4e",
+        "FV.Link.SemanticCompileWith": "764d6b32ab745d5dfc001c32c97f41b7fef840667db9d988a405092faf1a5352",
+        "FV.Link.ProductionImageWithProof": "da20bf997374caefaa4e85cb118faa9eb2412671ccdb61af8bc69e8f291b2679",
+        "FV.E2E.SemanticLinkGood": "1917a9cf471aebabd5e9503515a900781a7e70e86709b7c8eca1fb450d77a495",
+        "FV.E2E.ProductionChecksWith": "1f6fd47f2b21f94c3912d53e7651fb2034df458e2fa1411d6910132084c2b7fc",
+        "FV.E2E.SemanticBinary": "5f8426b81e0760b165005c479edb8f2ecfbe138973c5386342f617ac510d9a37",
+        "FV.E2E.SemanticBinaryGood": "6b7639cb88096fc4204649c6e898a479d285291e023e9554a1f2bbfdebf6aadb",
+        "FV.E2E.SemanticExecBytes": "09f393f0dcac6eadd4ae7dab27cf1283610ca216770d8d5a167b47754692b67f",
+        "FV.E2E.SemanticExecStatic": "03155e5c04b60080213163be90dd2f8eb27935402ec9cf8414263ce987906351",
+        "FV.E2E.SemanticExecFrameSim": "41e7c481e9f6f882f1eb71e7a6a5b9cba4d14cc3de49e1410ea7c2f85327e2bd",
+        "FV.E2E.SemanticExecRunN": "c463cd58b4dc760a165f345c00c458071d9b5b41475f72c84e93b2df38ece81e",
+        "FV.E2E.SemanticExecGoodRun": "4add061a769d0fabb4dc1cd7d6bc90ac6fde9f833e678286ff39fb64f98014fc",
+        "FV.E2E.SemanticExecGot": "3dddd3a0d20b1bd4aa1fc7133a8d210ba190562798cca5ff1bc74f6eb51da661",
+        "FV.E2E.SemanticExecGoodReads": "1df37eab84af7eca52b6e716f2d2f7f204e5f80295cd6dc4f290cbb222c98485",
+        "FV.E2E.SemanticExecProven": "fef63bb6f78be27b862de1abafb186cd2d1205285dce21d062179f5fb731e3b7",
+        "FV.Link.SemanticExeWith": "59e46819d4b367d90a784fc7442376b8710d25177bfaa04779e1e4971fbe3fba",
+        "FV.Link.SemanticExeSourceWith": "45c90a8c26c589565c9928b145733850199ab263a9dcc785cfb9a67147391cfb",
+        "FV.Backend.LinearScan": "8a18a345b7c78db0fe4fef0b9d6aa9fd54b643f0c355563dbda3d9e33a3d0562",
+        "FV.E2E.StockArithmeticNIWitness": "32ea235df1f2e1f3b867f0ffda62efa8864e6e8142e40dfc0c7ba7a90dd933c4",
+        "FV.Link.Ld.Syms": "297db6161b0d9c0fd90e3b65020fd62cb73f2a314b8b72bfe861acd2f79d0855",
+        "FV.Link.Ld.File0": "9d7703439d9042befe458696e8677764c99a2f47e504309bc5f33fbab0f01074",
+        "FV.Link.Ld.PlanProof": "85f26a23f2edf9928696a2252a941c0176b5cb625a8d206b723d0cd9635056c2",
+        "FV.Link.Ld.Data": "c4aceecfca8fd4448f9b0b3eed543455ba7a3a65fee7cc68ffb67e2e7e3864db",
+        "FV.Link.Ld.Spec": "2ccd3a42204ef4031aeced6b8b63680f00013d37e65e0f785b8490f43f5e36fb",
+        "FV.E2E.SemanticCompilerWitness": "ed6f674e5a07395c8230b00fecd2c4d9252dfe31c4bddeeba0dc68594c280e7d",
+        "FV.E2E.StockMixedWitness": "f802c93b967d7c00defc1d3fcd4e4e1e9f5c03c65458290c8dd56d53a5a27eda",
+        "FV.E2E.SemanticMixedCompilerWitness": "a1ed6445aa1ff7fd864b745419ff1239b5e78f2210a23337bd328526e8e5b315",
+        "FV.E2E.SemanticFallbackWitness": "5fe9ea7e002523afba7bbe83e19feee6b034ba87ce457bba16cc9fc02d642603",
+        "FV.E2E.DeadCleanupBinCheck": "4b334ad48baf01a95399b093c4aac41a89b0dbdbb038fde3004826159c46d1e9",
+        "FV.Front.Bundle": "b42fad6a56cdb1df2de7d9dd82a2e73c698f8c807649a4f5a04c663a6036a777",
+        "FV.Front.Read": "15cc8baa064b21747ac0f6a1e5920dd7e805751143a18199954b7696cb1e204c",
+        "FVTest.E2E.LinkProof": "499c5d7ffac339e8ca2f45edbf79cad9d5eb0447a4b57cc2bdb4c1137646dd25",
+        "FV.E2E.SemanticChecksWith": "080634ebe0360e88c0a690dd7a6559c64caf6f53df8c279aa26a1d8ecaefe954",
+        "FVTest.E2E.SemanticLinkProofWith": "d37e8d9cc2b084a1777520a06f4dde317d96d97fe9c4e31a77d5aab98cc60f32",
+        "FVTest.Backend.Lowering.StockMixedLinked": "15dcef863ab62d81af55c6a843470a5966a043d67330ca36f7db8cb93363530a",
+        "FVTest.Backend.Lowering.StockMixedRuntime": "c79f25a10718359c108d202b313dc9817030a1a43268a5d0f1252c3da89512ee",
+        "FV.Backend.RegallocPerEdgeDriver": "bc0a31338f178bb80f42cf3c17a90b776b752888cdce6bfaf41ad998c8bcde0c",
+        "FVTest.Backend.StockConfig": "8c06bca647a8fc7339a7dddddc39875a542f950e845b8a03ab569a2b779b1bbc",
+        "FVTest.Backend.AllocChoice": "efe920f9beb6f8f17bb076c53873f7fec4931c200d5fb7b64324650ac3af2534",
+        "FV.Backend.Proof.UnwindTables": "59431b5cca146f62059703d829eb0600795301dfb0986e7acd9b0561997f1e94",
+        "FV.E2E.RegLevelUnwind": "b5d4b5d4c051376db963a934eacfbc6227c69649a483b24c6ffcb1bb464dfdd1",
+        "FV.E2E.RegLevelFrameSaved": "72a066f1892ffdd07ca3a45d6c918d420b96b9830f75776435e9daaeaf34598d",
+        "FV.E2E.RegLevelU": "287a259a902e478e1ec90255ea24ee521477626f55c779df4ba192238c89c700",
+        "FV.E2E.RegLevelCallSite": "c9cd6384c47e14d9c6728e3050e36fbce69e37c7775758c34fc61c833358e13d",
+        "FV.E2E.RegLevelUTry": "1d2b6fb1ab86f46ca50aed075e24513ce868292a5d0fd7e8650dce88c0b3fbd9",
+        "FVTest.Backend.Main": "f1d894ac2691c5021ef34492117e0ed56f52d35976d4d9c7d8ee9c43786a7683",
+        "FVTest.E2E.LinkCheckMain": "12f6db91df25a10c00efdcc9227224fbc0a244a57e5aa3fbe3c51de73edfbfaa",
+        "FV.Link.OptCompile": "3561049230e355d7f370bbdace3500b615ed5613044f96885a9f93ddff4fed0e",
+        "FV.E2E.DeadCleanupBinary": "4686ca0e32672b02f465b0e02b0c0328a8d05dff96556f7a110d0ac4349678db",
+        "FV.Backend.Proof.EhFrameDecode": "8bdbf5ca7001edfc2dce67c85d0b4c6dda663ba982b27e2457aac783595d91e9",
+        "FV.Link.EhCheck": "0380075fcc9f9ea18f72302c0342cce4a6b9b3bd7ae077ca52dd2567b9e798b9",
+        "FV.Link.UnwFns": "640c73aedd37bb13e9f6c38cd607dc08a890a363feb4f7681836da03a54af8c0",
+        "FV.Link.ExeUCompile": "f5a2086721509a0466bac0cfa45571fdcaac1059bcdc66b941d8cd73ac39eb8a",
+        "FVTest.Link.LeanLinkMain": "99354df383a1a6f559213d10d3514a0c4d9c73ad4f0a982eb849988fbcaa27a7"
+      },
+      "records": [
+        {
+          "module": "FV.Backend.ABIReadOnly",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.ABIReadOnly.probe.log",
+          "probe_log_sha256": "3fe3427694b7a0f0af619c3861ae93cf970855aab04d787749613003d7e3eaa0"
+        },
+        {
+          "module": "FV.Backend.ABIReadFlags",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.ABIReadFlags.probe.log",
+          "probe_log_sha256": "ee969b7c3d38c118f2a1d0ff7fc4134d469ad91b1826751cbf418a4d3dde6b65"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockMixed",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Lowering.StockMixed.probe.log",
+          "probe_log_sha256": "81a5ea94a7fd4260441b5c41ce5f078540d4a1e133c4b843674c46244a5e4994"
+        },
+        {
+          "module": "FV.Backend.StockArithmeticCheck",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.StockArithmeticCheck.probe.log",
+          "probe_log_sha256": "33268c14471a689909eb09ef55dcffd391948f03d6fb9f6c7a454a15bd853452"
+        },
+        {
+          "module": "FV.Backend.StockMixedCheck",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.StockMixedCheck.probe.log",
+          "probe_log_sha256": "c2ac9302131e59d84003fbdd419ce7113a8e81067f934b7ab84f9eebdd096c54"
+        },
+        {
+          "module": "FV.Backend.SemanticNICheck",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.SemanticNICheck.probe.log",
+          "probe_log_sha256": "587a1facd802858d4fb63e126b740a05644a8c82c529dcf8b40cc41e6f9651d5"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockArithmeticNI",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Lowering.StockArithmeticNI.probe.log",
+          "probe_log_sha256": "735cf9000ef9fcbc680f08dc57716c78f97489140cec64f6b69ac1edc8af0614"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockMixedNI",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Lowering.StockMixedNI.probe.log",
+          "probe_log_sha256": "c3f74ed22a999d18cb207e283a1a13012dc207cec386efe559581d8e97f45e86"
+        },
+        {
+          "module": "FV.Backend.Proof.RelaxLayout",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Proof.RelaxLayout.probe.log",
+          "probe_log_sha256": "e68fc16efa3e5e33429a13c4572647ffb6f976c19298c867f88dbf5a14407a5b"
+        },
+        {
+          "module": "FV.Backend.Proof.RelaxReady",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Proof.RelaxReady.probe.log",
+          "probe_log_sha256": "75484ec4bca46a40a87c70199bd025cc81aa67c3b7a6094d4f3c582c907b2b91"
+        },
+        {
+          "module": "FV.Backend.AllocReady",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.AllocReady.probe.log",
+          "probe_log_sha256": "77ccf95093995d218b54833307c87cc79096775571d05738fffc6fa0bd6b34e6"
+        },
+        {
+          "module": "FV.Backend.Unwind",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Unwind.probe.log",
+          "probe_log_sha256": "3fe3427694b7a0f0af619c3861ae93cf970855aab04d787749613003d7e3eaa0"
+        },
+        {
+          "module": "FV.Backend.Obj",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Obj.probe.log",
+          "probe_log_sha256": "4ef0b2851cb2eaf0d36c9b4cff249c825552384f5624b0e0d838f078f7c90b32"
+        },
+        {
+          "module": "FV.Backend",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.probe.log",
+          "probe_log_sha256": "897c3acea37d7e611a408d5fbed7be1fd1e4303bb7277ca952edca53d5dd1a20"
+        },
+        {
+          "module": "FV.Backend.Production",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Production.probe.log",
+          "probe_log_sha256": "705d44191ece711223cb467fb0e8f9de50ec5f46fc78c601a0e6a06a7c1c33e9"
+        },
+        {
+          "module": "FV.Backend.ProductionWith",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.ProductionWith.probe.log",
+          "probe_log_sha256": "489dede37a6a630c2e10a44051bff6f3864f4a376119849823b955c9142349e2"
+        },
+        {
+          "module": "FV.Backend.ScalarProduction",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.ScalarProduction.build.log",
+          "returncode": 0,
+          "log_sha256": "62520c86590bdab685f24750bd2a1d32c92ad3eb06c93e298e8b9357114ae2e5"
+        },
+        {
+          "module": "FV.Backend.ArithmeticProduction",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.ArithmeticProduction.build.log",
+          "returncode": 0,
+          "log_sha256": "771353c1f3bf2112966a4900d843aae43a85cd5dfe088b45f8bca0698ecb3862"
+        },
+        {
+          "module": "FV.Backend.ArithmeticNIProduction",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.ArithmeticNIProduction.build.log",
+          "returncode": 0,
+          "log_sha256": "307b7c6e7697d7bfc0924358afc5dd80a126eb3456cbef4d36059f5104d3fb1e"
+        },
+        {
+          "module": "FV.Backend.MixedNIProduction",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.MixedNIProduction.build.log",
+          "returncode": 0,
+          "log_sha256": "3011f7782971ca356502fd069abb976e973b678d869868b2a08c9ea4cbad631c"
+        },
+        {
+          "module": "FV.Backend.Proof.StockMixedBodyRefines",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Proof.StockMixedBodyRefines.imports.log",
+          "log_sha256": "c82ed6fda15b28be6d0eb9409d3ef60a19f75543459b0b8e78e07f666bc8e1ab"
+        },
+        {
+          "module": "FV.Backend.Proof.StockMixedCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Backend.Proof.StockMixedBodyRefines"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlySem",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.E2E.ABIReadOnlySem.imports.log",
+          "log_sha256": "4bb7b47b224cd65ed08094770f9f8a0818dd4b7f5c20339853b5fb9dcac053ba"
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlySem"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyTransport",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyRealize",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyTransport"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyMachine",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyRealize"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadFlags",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyMachine"
+          ]
+        },
+        {
+          "module": "FV.Backend.Proof.StockArithmeticCheck",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.Proof.StockArithmeticCheck.probe.log",
+          "probe_log_sha256": "c5d687b93b57b4ca3464c2ca1339bb89943f58bef2888b667e5d5d258ed89a57"
+        },
+        {
+          "module": "FV.E2E.StockArithmeticWorldX",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.E2E.StockArithmeticWorldX.imports.log",
+          "log_sha256": "c641af1fd71fe16b03aa6de414dc5cb217869710ebdaa883665a04aeef890004"
+        },
+        {
+          "module": "FV.E2E.StockMixedWorldX",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Backend.Proof.StockMixedCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.CompiledSemantic",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.StockArithmeticWorldX",
+            "FV.E2E.StockMixedWorldX"
+          ]
+        },
+        {
+          "module": "FV.E2E.StockArithmeticNI",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyMachine"
+          ]
+        },
+        {
+          "module": "FV.E2E.StockMixedNI",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadFlags",
+            "FV.Backend.Proof.StockMixedCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.CompiledSemanticNI",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.CompiledSemantic",
+            "FV.E2E.StockArithmeticNI",
+            "FV.E2E.StockMixedNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkCheck",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.E2E.LinkCheck.imports.log",
+          "log_sha256": "6ee3297da913ed4756b3317d7ef960407bbe8774275cc306dfd03bcf4362424f"
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsDefs",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnFramesDefs",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.EmitSize",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.E2E.EmitSize.build.log",
+          "returncode": 0,
+          "log_sha256": "c2b2e8590c9ee2047d8a4593596d5faddb9d92fcf904d57267482ed9728382cd"
+        },
+        {
+          "module": "FV.E2E.LinkScopeDefs",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck",
+            "FV.E2E.LinkOwnCallsDefs",
+            "FV.E2E.LinkOwnFramesDefs"
+          ]
+        },
+        {
+          "module": "FV.Link.Layout",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkScopeDefs"
+          ]
+        },
+        {
+          "module": "FV.E2E.BinCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.Link.Reloc",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Layout",
+            "FV.E2E.BinCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.CodeMap",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.Link.Image",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Reloc",
+            "FV.E2E.CodeMap"
+          ]
+        },
+        {
+          "module": "FV.Link.RelocProof",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Reloc"
+          ]
+        },
+        {
+          "module": "FV.Link.LayoutFacts",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Layout"
+          ]
+        },
+        {
+          "module": "FV.Link.ImageProof",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Image",
+            "FV.Link.RelocProof",
+            "FV.Link.LayoutFacts"
+          ]
+        },
+        {
+          "module": "FV.Link.OutsideProof",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Image"
+          ]
+        },
+        {
+          "module": "FV.Link.LayoutProof",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.LayoutFacts",
+            "FV.Link.OutsideProof"
+          ]
+        },
+        {
+          "module": "FV.E2E.RelaxTotal",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.E2E.RelaxTotal.imports.log",
+          "log_sha256": "1ae8db6050c7fea83679857490a34bcd132e7a449367ffa05aac576724b9398a"
+        },
+        {
+          "module": "FV.E2E.EmitReady",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.E2E.EmitReady.build.log",
+          "returncode": 0,
+          "log_sha256": "0ab6299101573f75f7535f55561847113b674e5db9454279220b950a3fcba4b1"
+        },
+        {
+          "module": "FV.E2E.EmitCondsDefs",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.E2E.EmitCondsDefs.imports.log",
+          "log_sha256": "55efa1a2f7aad13daf678cc15b572560ea0b24ef9524933dd1a02166f03cd7ab"
+        },
+        {
+          "module": "FV.E2E.EmitEnc",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.EmitCondsDefs"
+          ]
+        },
+        {
+          "module": "FV.E2E.EmitLabels",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.EmitCondsDefs"
+          ]
+        },
+        {
+          "module": "FV.E2E.EmitNear",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.EmitCondsDefs"
+          ]
+        },
+        {
+          "module": "FV.E2E.EmitTotal",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.RelaxTotal",
+            "FV.E2E.EmitEnc",
+            "FV.E2E.EmitLabels",
+            "FV.E2E.EmitNear"
+          ]
+        },
+        {
+          "module": "FV.E2E.EmitCondsLower",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.EmitEnc",
+            "FV.E2E.EmitNear",
+            "FV.E2E.EmitLabels"
+          ]
+        },
+        {
+          "module": "FV.E2E.EmitTotalIn",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.EmitTotal",
+            "FV.E2E.EmitCondsLower"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnCalls",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCallsDefs"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsShape",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCalls"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsRun",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCallsShape"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsShapeOf",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCallsRun"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsStmt",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCallsShapeOf"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsStmtHyp",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCallsStmt"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsTry",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCallsShapeOf"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsTryHyp",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCallsTry"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnGotRun",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCallsShape"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnGotLocal",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnCallsStmtHyp",
+            "FV.E2E.LinkOwnCallsTryHyp",
+            "FV.E2E.LinkOwnGotRun"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnSegRange",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnGotRun"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnFrames",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnFramesDefs"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnRets",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkOwnRetsIsel",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnRets"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkScope",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkScopeDefs",
+            "FV.E2E.EmitTotalIn",
+            "FV.E2E.LinkOwnGotLocal",
+            "FV.E2E.LinkOwnSegRange",
+            "FV.E2E.LinkOwnFrames",
+            "FV.E2E.LinkOwnRetsIsel"
+          ]
+        },
+        {
+          "module": "FV.E2E.SpillDefined",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkScope"
+          ]
+        },
+        {
+          "module": "FV.Link.Correct",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.ImageProof",
+            "FV.Link.OutsideProof",
+            "FV.Link.LayoutProof",
+            "FV.E2E.SpillDefined"
+          ]
+        },
+        {
+          "module": "FV.E2E.SizeDefs",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.E2E.SizeDefs.imports.log",
+          "log_sha256": "4f1c5ee4d92d4aad5e51af8c05d825a355a7f5ec2fcb35dadad8e25da39df11c"
+        },
+        {
+          "module": "FV.E2E.LinkScopeInputDefs",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkScopeDefs",
+            "FV.E2E.SizeDefs"
+          ]
+        },
+        {
+          "module": "FV.Link.Compile",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Image",
+            "FV.E2E.LinkScopeInputDefs"
+          ]
+        },
+        {
+          "module": "FV.E2E.StackBound",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.Binary",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.StackBound",
+            "FV.E2E.BinCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.BinaryGood",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.Binary"
+          ]
+        },
+        {
+          "module": "FV.E2E.ExecWords",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.BinCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.ExecBytes",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.Binary",
+            "FV.E2E.ExecWords"
+          ]
+        },
+        {
+          "module": "FV.E2E.ExecStatic",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ExecBytes",
+            "FV.E2E.CodeMap"
+          ]
+        },
+        {
+          "module": "FV.E2E.ExecFrameSim",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ExecStatic"
+          ]
+        },
+        {
+          "module": "FV.E2E.ExecRunN",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ExecFrameSim"
+          ]
+        },
+        {
+          "module": "FV.E2E.ExecGoodRun",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.BinaryGood",
+            "FV.E2E.ExecRunN"
+          ]
+        },
+        {
+          "module": "FV.E2E.ExecGot",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ExecGoodRun"
+          ]
+        },
+        {
+          "module": "FV.E2E.ExecGoodReads",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ExecGoodRun",
+            "FV.E2E.ExecFrameSim"
+          ]
+        },
+        {
+          "module": "FV.E2E.ExecProven",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ExecGot",
+            "FV.E2E.ExecGoodReads"
+          ]
+        },
+        {
+          "module": "FV.E2E.SizeVC",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SizeDefs"
+          ]
+        },
+        {
+          "module": "FV.E2E.SizeLower",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SizeDefs",
+            "FV.E2E.EmitCondsLower"
+          ]
+        },
+        {
+          "module": "FV.E2E.SizeIn",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.EmitTotalIn",
+            "FV.E2E.SizeVC",
+            "FV.E2E.SizeLower"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkScopeInput",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkScopeInputDefs",
+            "FV.E2E.LinkScope",
+            "FV.E2E.SizeIn"
+          ]
+        },
+        {
+          "module": "FV.Link.Exe",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Correct",
+            "FV.Link.Compile",
+            "FV.E2E.ExecProven",
+            "FV.E2E.LinkScopeInput"
+          ]
+        },
+        {
+          "module": "FV.E2E.SrcScopeDefs",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkScopeDefs"
+          ]
+        },
+        {
+          "module": "FV.E2E.LegalSource",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SrcScopeDefs"
+          ]
+        },
+        {
+          "module": "FV.Link.ExeSource",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Exe",
+            "FV.E2E.LegalSource"
+          ]
+        },
+        {
+          "module": "FV.E2E.PipelineCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupLinkCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.PipelineCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupSpillWords",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.E2E.DeadCleanupSpillWords.imports.log",
+          "log_sha256": "6d11bbea2c890e7116ad7c550a469eedfab1f9989302fe0e00c7d40c83dbf3cd"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupPreparedSize",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.DeadCleanupSpillWords"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupLinkCalls",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupLinkFrames",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkOwnFrames",
+            "FV.E2E.LinkOwnRets"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupEmit",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.EmitTotalIn"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupEmitReady",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.DeadCleanupEmit"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupTotal",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.DeadCleanupEmitReady"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupLinkScope",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkScope",
+            "FV.E2E.DeadCleanupLinkCheck",
+            "FV.E2E.DeadCleanupPreparedSize",
+            "FV.E2E.DeadCleanupLinkCalls",
+            "FV.E2E.DeadCleanupLinkFrames",
+            "FV.E2E.DeadCleanupTotal"
+          ]
+        },
+        {
+          "module": "FV.Link.DeadCleanupImage",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Image",
+            "FV.Link.LayoutFacts",
+            "FV.E2E.DeadCleanupLinkScope"
+          ]
+        },
+        {
+          "module": "FV.Link.ActualImage",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.DeadCleanupImage"
+          ]
+        },
+        {
+          "module": "FV.Link.CodeMapProof",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.LayoutFacts",
+            "FV.E2E.CodeMap"
+          ]
+        },
+        {
+          "module": "FV.Link.RelocShape",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Reloc"
+          ]
+        },
+        {
+          "module": "FV.Link.Total",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Compile",
+            "FV.Link.CodeMapProof",
+            "FV.Link.RelocShape",
+            "FV.Link.OutsideProof",
+            "FV.E2E.SpillDefined"
+          ]
+        },
+        {
+          "module": "FV.Link.RelocShapeProof",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.RelocShape",
+            "FV.E2E.ExecWords",
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.Link.ExeTotal",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Total",
+            "FV.Link.RelocShapeProof",
+            "FV.E2E.LinkScopeInput"
+          ]
+        },
+        {
+          "module": "FV.Link.ExeInput",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.ExeTotal",
+            "FV.Link.ImageProof"
+          ]
+        },
+        {
+          "module": "FV.E2E.LoweringProvenance",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.ActualPipelineCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.PipelineCheck",
+            "FV.E2E.LoweringProvenance"
+          ]
+        },
+        {
+          "module": "FV.E2E.PreparedPipeline",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ActualPipelineCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.ActualBinCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.BinCheck",
+            "FV.E2E.ActualPipelineCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.ActualCompilerModes",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ActualBinCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.ProductionPipeline",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.PreparedPipeline",
+            "FV.E2E.ActualCompilerModes"
+          ]
+        },
+        {
+          "module": "FV.E2E.ProductionCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ProductionPipeline"
+          ]
+        },
+        {
+          "module": "FV.Link.ProductionImage",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.ActualImage",
+            "FV.Link.ExeInput",
+            "FV.E2E.ProductionCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.ProductionPipelineWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ProductionPipeline"
+          ]
+        },
+        {
+          "module": "FV.Link.ProductionImageWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.ProductionImage",
+            "FV.E2E.ProductionPipelineWith"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupStackBound",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.StackBound",
+            "FV.E2E.DeadCleanupLinkCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.ProductionStackBound",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.DeadCleanupStackBound",
+            "FV.E2E.ProductionPipelineWith"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticNIBoundary",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.CompiledSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkSemanticNI",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticNIBoundary"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticPipelineCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.PreparedPipeline",
+            "FV.E2E.LinkSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticPreparedPipeline",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticPipelineCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticStackBound",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ProductionStackBound",
+            "FV.E2E.SemanticPreparedPipeline"
+          ]
+        },
+        {
+          "module": "FV.Link.DeadCleanupCompile",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Compile",
+            "FV.Link.DeadCleanupImage"
+          ]
+        },
+        {
+          "module": "FV.Link.Placed",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Compile",
+            "FV.Link.DeadCleanupCompile"
+          ]
+        },
+        {
+          "module": "FV.Link.SemanticCompileWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.ProductionImageWith",
+            "FV.E2E.SemanticStackBound",
+            "FV.Link.Placed"
+          ]
+        },
+        {
+          "module": "FV.Link.ProductionImageWithProof",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.ProductionImageWith",
+            "FV.Link.OutsideProof",
+            "FV.Link.ImageProof"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticLinkGood",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.ProductionChecksWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ProductionPipelineWith"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticBinary",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticStackBound",
+            "FV.E2E.ProductionCheck",
+            "FV.E2E.ProductionChecksWith"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticBinaryGood",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticLinkGood",
+            "FV.E2E.SemanticBinary"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecBytes",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticBinary",
+            "FV.E2E.ExecWords"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecStatic",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecBytes",
+            "FV.E2E.CodeMap"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecFrameSim",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecStatic"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecRunN",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecFrameSim"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecGoodRun",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticBinaryGood",
+            "FV.E2E.SemanticExecRunN"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecGot",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecGoodRun"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecGoodReads",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecGoodRun",
+            "FV.E2E.SemanticExecFrameSim"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecProven",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecGot",
+            "FV.E2E.SemanticExecGoodReads"
+          ]
+        },
+        {
+          "module": "FV.Link.SemanticExeWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Exe",
+            "FV.Link.SemanticCompileWith",
+            "FV.Link.ProductionImageWithProof",
+            "FV.E2E.SemanticExecProven"
+          ]
+        },
+        {
+          "module": "FV.Link.SemanticExeSourceWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.ExeSource",
+            "FV.Link.SemanticExeWith"
+          ]
+        },
+        {
+          "module": "FV.Backend.LinearScan",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.LinearScan.build.log",
+          "returncode": 0,
+          "log_sha256": "aa411622267be9fea7399614eae91dad205a4b4fa980563dde10f43c396662d5"
+        },
+        {
+          "module": "FV.E2E.StockArithmeticNIWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.CompiledSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.Link.Ld.Syms",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Image"
+          ]
+        },
+        {
+          "module": "FV.Link.Ld.File0",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Ld.Syms",
+            "FV.Link.ExeInput"
+          ]
+        },
+        {
+          "module": "FV.Link.Ld.PlanProof",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Ld.File0"
+          ]
+        },
+        {
+          "module": "FV.Link.Ld.Data",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Ld.PlanProof",
+            "FV.Link.OutsideProof"
+          ]
+        },
+        {
+          "module": "FV.Link.Ld.Spec",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.Ld.Data"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticCompilerWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.SemanticExeSourceWith",
+            "FV.E2E.StockArithmeticNIWitness",
+            "FV.Link.Ld.Spec"
+          ]
+        },
+        {
+          "module": "FV.E2E.StockMixedWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.StockMixedNI",
+            "FV.E2E.CompiledSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticMixedCompilerWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.SemanticExeSourceWith",
+            "FV.E2E.StockMixedWitness",
+            "FV.Link.Ld.Spec"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticFallbackWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticCompilerWitness",
+            "FV.E2E.SemanticMixedCompilerWitness"
+          ]
+        },
+        {
+          "module": "FV.E2E.DeadCleanupBinCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.BinCheck",
+            "FV.E2E.DeadCleanupLinkCheck"
+          ]
+        },
+        {
+          "module": "FV.Front.Bundle",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SrcScopeDefs",
+            "FV.Link.Layout"
+          ]
+        },
+        {
+          "module": "FV.Front.Read",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Front.Bundle"
+          ]
+        },
+        {
+          "module": "FVTest.E2E.LinkProof",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.DeadCleanupBinCheck",
+            "FV.E2E.DeadCleanupStackBound",
+            "FV.E2E.BinCheck",
+            "FV.E2E.CodeMap",
+            "FV.E2E.StackBound",
+            "FV.Front.Read"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticChecksWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticStackBound"
+          ]
+        },
+        {
+          "module": "FVTest.E2E.SemanticLinkProofWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FVTest.E2E.LinkProof",
+            "FV.E2E.SemanticStackBound",
+            "FV.E2E.SemanticChecksWith",
+            "FV.E2E.SemanticChecksWith",
+            "FV.E2E.SemanticStackBound"
+          ]
+        },
+        {
+          "module": "FVTest.Backend.Lowering.StockMixedLinked",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.ProductionImageWith",
+            "FV.Link.Ld.Spec",
+            "FVTest.E2E.SemanticLinkProofWith",
+            "FV.E2E.StockArithmeticNIWitness",
+            "FV.E2E.StockMixedWitness"
+          ]
+        },
+        {
+          "module": "FVTest.Backend.Lowering.StockMixedRuntime",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.StockArithmeticNIWitness",
+            "FV.E2E.StockMixedWitness"
+          ]
+        },
+        {
+          "module": "FV.Backend.RegallocPerEdgeDriver",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FV.Backend.RegallocPerEdgeDriver.imports.log",
+          "log_sha256": "9716f670cb425fc8a36e0198dc1718235af002b17f72456a3010fcd1ee7c016d"
+        },
+        {
+          "module": "FVTest.Backend.StockConfig",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Backend.RegallocPerEdgeDriver"
+          ]
+        },
+        {
+          "module": "FVTest.Backend.AllocChoice",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch5/FVTest.Backend.AllocChoice.build.log",
+          "returncode": 0,
+          "log_sha256": "e1ece88007246a055d1c07bb206bed5bf0f5549e626ad3bde90d9f0b89072131"
+        }
+      ],
+      "skip_reason": null,
+      "scheduler_resumed": true,
+      "budget_GiB": 16,
+      "normal_leaf_cap_MiB": 8192,
+      "max_active_builds": 2,
+      "cache": "own ignored .lake view, shared source-keyed artifactstore/hardlinks; no cachecopy",
+      "remaining": "Continue source-keyed normalmixedproof/consumer/tool/runtime gates; arithmeticcandidate must landfirst."
     }
   ],
   "limits": "3a/8dmodulecachekeys validonlyforexactsource+importclosure; metadataonlyreceiptcommitdoesnotmodifyLean/Rust. Allnormalclassproof/tool/runtime/encoder/identitystage/trust/nativegenerated/verifiedexamplegatesremainmandatorybeforemixedactivation. Arithmeticlandsfirst. Original140fullgoalactive.",
@@ -1375,5 +3213,6 @@
     "verified_referenced_artifacts": 369,
     "receipt_sha256": "ce4580980fcf2d9f223e68ff784d0f91d58f7075f2d60ff2aef35e2bffe982eb",
     "not_a_gate_pass": true
-  }
+  },
+  "normal_runtime_receipt": "docs/research/stock-mixed-current-normal-runtime.json"
 }
