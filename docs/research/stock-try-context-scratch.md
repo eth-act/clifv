@@ -1,0 +1,11 @@
+# Actual TryCall source context and first-match selection
+
+Three scratch modules, seven public roots and two internally derived receipt types pass normal kernel checks under8GiB. The actual Stock build and reverse traversal derive the scheduled branch's exact original terminal index, prepared TryCall data, installed placeholder slot, mapped source context, value-map/DFG transport and exception registers. Actual lower_branch first-match/RHS execution, raw call-to-TryCall replacement and the schedule step's before/after/rules/emitted code refer to that same branch. Direct/indirect decoded data and signatures are derived internally; no source numbering identity or caller acceptance certificate is assumed.
+
+Complete original LowerScope/Dominated/ArityOk direct/indirect compiler pipelines reuse existing preparation, checked forced-spill fallback and physical lowering witnesses. Their exact terminal indices1/2, source slot/mapped context and real exception registers inhabit the new results. A concrete source frame holding9 and indirect target4096 satisfies both original and branch-context DFGCons, exercising the transport with inhabited live source values.
+
+The392-root/model audit preserves all383 prior axiom sets exactly. All seven current public roots, two receipt types and159 new-module constants including private/proof-valued helpers use only standard axioms. The previous13 scratch modules remain byte-identical. Canonical2,246FV/FVTest sources and validation scripts remain frozen during exact-PR delivery gates. Unique evidence is archived and temporary duplicate input objects removed at batch completion.
+
+Specific selected-rule/helper classification, mapped normal/exceptional TryCall value/world semantics and outgoing bounds, complete handler-body call witnesses, all remaining effects/sinking and source/block/whole-driver simulation AND completeness, coherent integration/MCP/full gates and actual compiler/checker/linker/generated-proof production cutover remain open. Legacy identity-based CtxInv must not be asserted for Stock's dense mapping. A fresh complete Stock comparison is required at final cutover. Full original#140 remains active; production remains legacy.
+
+[Hashed evidence and full remaining checklist](stock-try-context-scratch.json).
