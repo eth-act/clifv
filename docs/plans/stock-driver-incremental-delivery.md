@@ -19,12 +19,9 @@ The actual-output E2E contracts, callback provenance, world/non-interference
 composition and successful witnesses landed in #329 (`c2c5d773`). Its 2335-module,
 11-file trust audit, both-mode E2E identity/stage and link/generated-proof gates
 passed. Old variants remain compatibility wrappers; no second class is enabled.
-The active next packet adds whole-program/checker/binary/compiler-mode consumers
-and an actual-result byte-writer bridge, with standard-only compiler proofs and
-a fixed successful Stock prologue witness retaining non-legacy diagnostic history.
-Actual generated-proof/stack-bound/image integration and universal prologue
-activation remain next. Its source/domain candidates cover all six configurations; actual code and
-checker candidates currently cover SystemV i64 only and need reconciliation.
+#331 (`fd857be3`) landed whole-program/checker/binary/compiler-mode consumers and the actual-result byte writer, with standard-only compiler proofs and a fixed successful Stock prologue retaining non-legacy history.
+
+The active packet adds actual image correctness, stack bounds, sliced generated proofs and six actual linked fixture cases (twelve emitted Lean files). Targeted builds and trust checks pass; per-PR validation is next. Full binary execution adapters, CLI migration and universal prologue activation remain. Source/domain candidates cover all six configurations; actual code/checker candidates currently cover SystemV i64 only and need reconciliation.
 All remaining original #140 obligations remain open.
 
 ## Decision and current baseline
