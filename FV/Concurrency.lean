@@ -21,7 +21,8 @@ and of VCode under `csem` (`VCodeThread.ifoot_csem`), the VCode thread semantics
 allocation with interference (`PrepThread.prep_refines_csem`, `AllocThread.alloc_refines`),
 per-statement frame sets (`FrameMono.vtrun_mono`), and the run level of the Arm machine against
 the allocated code (`ArmAllocThread.refines_of_itemSim`: per-item obligations give `Refines`
-with the Arm trace's monitor pairs).
+with the Arm trace's monitor pairs; discharged for the functions without memory instructions,
+`ArmAllocThread.arm_alloc_refines_noev`).
 The fragment model is weaker than the whole `aarch64.cat` (`Armv8Full.consistent_frag`); LSE
 atomics map by the same table (`Lse.lse_maps`). Nothing here changes the Arm model of `FV/Arm`.
 -/
@@ -66,3 +67,9 @@ import FV.Concurrency.VCodeFrame
 import FV.Concurrency.VCodeFrameWitness
 import FV.Concurrency.ArmAllocThread
 import FV.Concurrency.ArmAllocThreadWitness
+import FV.Concurrency.ArmAllocSeg
+import FV.Concurrency.ArmAllocSegWitness
+import FV.Concurrency.ArmAllocLines
+import FV.Concurrency.ArmAllocItem
+import FV.Concurrency.ArmAllocStraight
+import FV.Concurrency.ArmAllocWitness

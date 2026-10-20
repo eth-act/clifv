@@ -114,6 +114,21 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.refines_of_itemSim
 #print axioms Concurrency.ArmAllocThread.Witness.itemSim
 #print axioms Concurrency.ArmAllocThread.Witness.refines_ldaxr
+#print axioms Concurrency.ArmAllocThread.prun_own
+#print axioms Concurrency.ArmAllocThread.prun_nil
+#print axioms Concurrency.ArmAllocThread.prun_one_read
+#print axioms Concurrency.ArmAllocThread.segEvs_execLines
+#print axioms Concurrency.ArmAllocThread.step_execLines
+#print axioms Concurrency.ArmAllocThread.nomem_execLines
+#print axioms Concurrency.ArmAllocThread.q_patch
+#print axioms Concurrency.ArmAllocThread.realizes_op_lines
+#print axioms Concurrency.ArmAllocThread.itemSim_noev
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_noev
+#print axioms Concurrency.ArmAllocThread.Witness.one_read_ldaxr
+#print axioms Concurrency.ArmAllocThread.Witness.labelOffsets_one
+#print axioms Concurrency.ArmAllocThread.Witness.wfN
+#print axioms Concurrency.ArmAllocThread.Witness.qN
+#print axioms Concurrency.ArmAllocThread.Witness.noev_premises
 -- the program level with fences and Rust orderings (T2f, #304)
 #print axioms Concurrency.ProgE2E.rmw_sc
 #print axioms Concurrency.ProgE2E.raceFreeProgF_of_raceFreeProg
