@@ -8,3 +8,5 @@ import FV.Backend.Proof.StockPureUnsunk
 #print axioms Backend.Stock.Proof.stock_scans_zeroColorLe
 #print axioms Backend.Stock.Proof.stock_zeroColor_sink_witness
 #print axioms Backend.Stock.Proof.stock_zeroColor_apply_witness
+
+#print axioms Backend.Stock.Proof.stock_runTerm_zeroColorLe

@@ -2,6 +2,7 @@ import FV.Backend.Proof.StockAddSubScanRefines
 import FV.Backend.Proof.StockActualAddSubBodyRefines
 import FV.Backend.Proof.StockScalarAddWitness
 import FV.Backend.Proof.StockPureUnsunk
+import FV.Backend.Proof.StockPureDriverUnsunk
 import FV.Backend.Proof.LowerSim
 
 /-! Real retained-record and body non-vacuity witness for the arithmetic scan
@@ -250,5 +251,23 @@ theorem actual_zeroColor_body_witness :
   intro r member
   obtain ⟨pre,post⟩ := frames.2 r member
   exact ⟨pre.2 0 termZero termSafe,post.2 0 termZero termSafe⟩
+
+
+/-- The whole-driver source corollary is inhabited by an actual compiled pure
+function, with standard axioms only rather than fixed native trace premises. -/
+theorem actual_whole_driver_pure_witness :
+    Stock.lower function = .ok result ∧ LowerScope function ∧ Dominated function ∧
+    result.initial.entryColor[0]! = 0 ∧ result.final.sunk[0]! = false ∧
+      ∀ e ∈ result.blockScans.toList, e.input.sunk[0]! = false ∧
+        ∀ r ∈ e.output.records, r.input.sunk[0]! = false ∧ r.output.state.sunk[0]! = false := by
+  have dom := ScalarAdd.lowering_domain "scalar_add_scan" [] .systemVI64
+  refine ⟨run,dom.2,dom.1,?_⟩
+  apply stock_lower_pure_single_block_unsunk run (b := function.blocks[0]!) rfl
+  · intro stm member
+    change stm ∈ [⟨[2],.binary .iadd .i64 0 1⟩] at member
+    have same := List.mem_singleton.mp member
+    subst stm
+    rfl
+  · decide
 
 end Backend.Stock.Proof.ScalarAddScanWitness

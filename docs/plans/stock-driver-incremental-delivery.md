@@ -54,9 +54,15 @@ pass normal builds and trust audits.
 StockPureSourceColors now derives zero colors from the actual metadata loop for
 arbitrary pure single-block bodies, then from successful original buildCtx. Its
 three public roots/all16owned constants, including the nonempty actual-build
-witness, use standard axioms without native-data premises. Next propagate the
-invariant through complete original/critical-edge nodes and whole traversal,
-derive source-family coverage and complete broader function simulation.
+witness, use standard axioms without native-data premises. The invariant now propagates through actual original/critical-edge nodes and the
+entire reverse traversal, including every retained boundary. The source-derived
+whole-driver corollary and its nonempty pure-source witness use standard axioms;
+critical-edge and effectful real-sink witnesses also pass. Targeted656jobs and
+public/all-owned audits pass on main#337; see
+[the driver checkpoint](../research/stock-pure-driver-checkpoint.json).
+Next derive actual emitted/omitted source-family coverage and complete broader
+function value simulation and Stock-only completeness. This is a complete color
+frame, not full driver correctness or a new production activation.
 
 Actual sink_inst rejects zero-color targets; deferred sunk memory/effect
 invariants remain a separate mandatory obligation. Optimized Stock outputs also

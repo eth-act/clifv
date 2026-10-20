@@ -201,6 +201,13 @@ private theorem named_zeroColorLe {ctx : Ctx} {term : String} {args : List V}
         exact stock_apply_zeroColorLe ha
 
 
+/-- Named entry into the real Stock interpreter retains the same invariant. -/
+theorem stock_runTerm_zeroColorLe {ctx : Ctx} {term : String} {args : List V}
+    {st next : State} {out : Option V} {trace : List RuleId}
+    (h : Stock.runTerm ctx term args st = .ok (out,next,trace)) : ZeroColorLe st next :=
+  named_zeroColorLe h
+
+
 private def stableFields (st : State) := (st.entryColor,st.sunk)
 private theorem stableFields_rel {st next : State} (h : stableFields next = stableFields st) :
     ZeroColorLe st next := by
