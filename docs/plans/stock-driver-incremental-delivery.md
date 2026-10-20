@@ -34,14 +34,47 @@ Lean-linked fv-demo/survey. Integrator notified of the actual squash commit.
 prologue configurations after the recorded author and reconciliation gates.
 See [six-configuration evidence](../research/stock-prologue-all-production.md).
 
-The active implementation batch on `agent/stock-scalar-production` adds complete
-two-argument scalar-add functions across those six configurations. Actual
-retained-record/body and arbitrary-argument/dirty-upper-bit executable witnesses
-compile. The three entrypoints and generated proofs select the new lowerer while
-retaining earlier classes and whole-file/executable legacy retry. Targeted actual
-mixed linking, split proofs, runtime/retry and real verified CLI checks pass;
-public/owned trust audits and frozen current author gates precede the next squash.
-See [scalar-add evidence](../research/stock-scalar-add-core.md).
+#336 (`d18ba0391ee09d9333e12d555f3e4ab93111c2ee`) landed the complete
+two-argument scalar-add class across all six configurations. Its frozen author
+gates passed2420modules/3171library-tooljobs/23audits,271standard-owned and136fixed-
+witness constants,runtime4737/0/0,encoder1321identical,both1159E2Emodes with all
+original1150/prior1159 identities and ordered stages retained, old/new mixed linked
+and generated proofs, actual verified CLIs, matchedregalloc2/retry and verified
+defaultLean-linkedfv-demo21/survey53 (2/2and18/18binaries).
+[Scalar-add evidence](../research/stock-scalar-add-core.md) links the terminal receipt.
+
+The active batch on `agent/stock-straight-line-production` connects the actual
+arithmetic body adapter to a complete real body-split/execution witness. The
+StockPureUnsunk leaf proves immutable colors and zero-color unsunk preservation
+through every constructor, arbitrary interpreter runs, actual scans, complete
+blocks and retained-record boundaries. Eight public roots/all126owned constants
+are standard-only; real sink/interpreter and complete arithmetic-body witnesses
+pass normal builds and trust audits.
+
+StockPureSourceColors now derives zero colors from the actual metadata loop for
+arbitrary pure single-block bodies, then from successful original buildCtx. Its
+three public roots/all16owned constants, including the nonempty actual-build
+witness, use standard axioms without native-data premises. The invariant now propagates through actual original/critical-edge nodes and the
+entire reverse traversal, including every retained boundary. The source-derived
+whole-driver corollary and its nonempty pure-source witness use standard axioms;
+critical-edge and effectful real-sink witnesses also pass. Targeted656jobs and
+public/all-owned audits pass on main#337; see
+[the driver checkpoint](../research/stock-pure-driver-checkpoint.json).
+Actual pure-body decision coverage is now derived too: every retained ordinary
+record is emitted or omitted, with no per-record decision premise. The complete
+source/driver invariant and decision-coverage prerequisite will land as one proof
+packet after current per-PR gates, while broader function value simulation,
+Stock-only completeness and production-class integration continue. This is a complete color
+frame, not full driver correctness or a new production activation.
+
+Actual sink_inst rejects zero-color targets; deferred sunk memory/effect
+invariants remain a separate mandatory obligation. Optimized Stock outputs also
+need direct semantic checker/consumer contracts: the retained
+CompiledProduction.lowerOk still proves the legacy lowerCheck and code equality
+cannot complete #140. Retain that old contract and its theorem variants. Do not
+publish these proof checkpoints as a substitute for complete function activation.
+All original rule/effect, source/block/whole-driver simulation and Stock-only
+completeness obligations remain open.
 Optimizer and exceptional-edge routes await their consumer adapters.
 All remaining original #140 obligations remain open.
 
@@ -258,3 +291,12 @@ Incremental replacement is possible. What cannot safely be separated is enabling
 a Stock-produced function while its source-to-machine argument or any consumer
 still reasons about legacy output. That coupling sets the size of each activation
 PR; it does not require a single all-families, all-programs wholesale swap.
+
+The complete derived color-frame/decision-coverage prerequisite passed frozen
+author gates on `9cab610f1cc1bcff39aa70b049acee1c7d2710fb`, including the full FV/FVTest scheduler, all
+checked-in trust audits, all owned constants and exact prior theorem axiom-set
+parity. The proof-only dependency manifest reaches no runtime consumer or
+executable; no new production class is claimed. The terminal
+[author receipt](../research/stock-pure-body-author-gates.json) records the scope.
+Continue arithmetic-family/value simulation and direct semantic consumer work
+immediately after the prerequisite squash; all original #140 obligations remain.

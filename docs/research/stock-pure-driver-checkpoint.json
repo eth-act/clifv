@@ -1,0 +1,77 @@
+{
+  "utc": "2026-10-20T05:03:50.807122+00:00",
+  "base_main": "fcdaefe001c53ed87020aea1e2c35e2b01301efb",
+  "reconcile": "additive main#337 merge7da25a3b preserved published checkpoints",
+  "state": "targeted_complete_driver_color_frame_not_full_simulation_or_activation",
+  "build": "656 jobs passed",
+  "standard_public_roots": {
+    "primitive_and_named": 9,
+    "driver_and_critical_effect_witnesses": 7,
+    "boundary_file": 30
+  },
+  "owned_constants": {
+    "primitive_standard": 127,
+    "driver_standard": 96,
+    "driver_witness_standard": 2,
+    "changed_boundary_standard_or_explicit_own_native": 51
+  },
+  "mcp": {
+    "root": "Backend.Stock.Proof.stock_lower_pure_single_block_unsunk",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "source_warnings": [],
+    "calls": 1
+  },
+  "logs": {
+    "/tmp/stock-pure-main-337-reconcile-build.log": "be395e97fd40f2fcbe90dc3c7d121b65206a359de515be27adebd50e011e68d9",
+    "/tmp/stock-pure-driver-traversal-fixed-build.log": "4870c82b5f26d61b85bc35e3ab0b5cdeda1b3b1c97068b5d82ecf1badd42fd79",
+    "/tmp/stock-pure-driver-complete-witness-build.log": "501c1aff610b2a01687ae21be347f07390cdd82af66f2c5df667427d9ce53430",
+    "/tmp/stock-pure-driver-public-audit.log": "1e0c9381aaf0d63fc189984d9f76389a0ed5a23c3760974e151a305442b58779"
+  },
+  "owned_receipt": {
+    "state": "passed",
+    "records": [
+      {
+        "file": "/tmp/stock-pure-unsunk-owned.lean",
+        "rc": 0,
+        "log": "/tmp/stock-pure-driver-owned-audit/0.log",
+        "sha256": "3e30aa193fc7fad32a98f1c7f617eb33b6cac9bf9d2507287dc53e2738a4143d"
+      },
+      {
+        "file": "/tmp/stock-pure-driver-core-owned.lean",
+        "rc": 0,
+        "log": "/tmp/stock-pure-driver-owned-audit/1.log",
+        "sha256": "6efe5d906d05b482d828f76c9302a2e863c1910c690904622c8cf1b54708fd49"
+      },
+      {
+        "file": "/tmp/stock-pure-driver-witness-owned.lean",
+        "rc": 0,
+        "log": "/tmp/stock-pure-driver-owned-audit/2.log",
+        "sha256": "244ca84aada8080bec14bbc8828ceee64c37f2b692021806f0753566533bfee4"
+      },
+      {
+        "file": "/tmp/stock-scalar-native-owned-1.lean",
+        "rc": 0,
+        "log": "/tmp/stock-pure-driver-owned-audit/3.log",
+        "sha256": "aee1bbc7e5e448eedb38aa22f1fe41aca4ea90e23709c5f9014e207720f4a3ef"
+      }
+    ]
+  },
+  "proved": [
+    "Unconditional color/zero-color-unsunk preorder through actual original block core, original/critical-edge nodes and complete reverse traversal",
+    "Every retained event/record boundary derives the initial invariant from the actual driver",
+    "Arbitrary pure single-block source derives zero colors/unsunk from actual metadata/buildCtx and carries them through the whole actual Stock driver",
+    "Standard-only nonempty pure-source whole-driver witness; real critical-edge CFG and effectful sink witnesses allow nonzero-color sinks"
+  ],
+  "remaining": [
+    "Derive ordinary pure-source step-decision/family coverage using zero-color unsunk plus existing NoOpportunity",
+    "Complete broader original-source/block/function value simulation and Stock-only completeness",
+    "Add direct optimized-Stock semantic checker/consumer contracts while retaining legacy lowerOk and variants",
+    "Deferred sunk memory/effects, every uncovered family/branches/loops/calls/exceptions, optimizer/unwind and all original#140 integration obligations"
+  ],
+  "new_production_activation": false,
+  "full_140_complete": false
+}

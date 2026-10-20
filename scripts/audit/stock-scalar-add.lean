@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockActualAddSubBodyRefines
 import FV.Backend.Lowering.StockScalarAdd
 import FV.Backend.Lowering.StockScalarProduction
 import FV.Backend.Proof.StockAddSubScanRefines
@@ -36,3 +37,5 @@ import FV.Backend.Proof.StockScalarAddWitness
 #print axioms Backend.Stock.ScalarAdd.Source.complete_source_witness
 #print axioms Backend.Stock.ScalarAdd.Source.dirty_machine_bits
 #print axioms Backend.Stock.ScalarAdd.complete_lowering_source_witness
+
+#print axioms Backend.Stock.Proof.stock_lower_actual_select_addsub_omitted_body_refines
