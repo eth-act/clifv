@@ -70,4 +70,12 @@ theorem preserves_d0 {f : Clif.Function} (h : D0.eligible f = true) :
   rw [lower, outside_class _ _ (d0_outside_class h)]
   exact Production.preserves_d0 h
 
+/-- The widened selector retains the exact published output for every member
+of the already shipped prologue class, including its rule history. -/
+theorem preserves_systemV_i64 (name : String) (runs : List Clif.RunCommand) :
+    lower (Prologue.source name .systemVI64 runs) =
+      Production.lower (Prologue.source name .systemVI64 runs) := by
+  rw [eligible_output (source_eligible name runs .systemVI64),
+    Production.eligible_output (Prologue.source_eligible name runs)]
+
 end Backend.Stock.Prologue.AllConfigurations
