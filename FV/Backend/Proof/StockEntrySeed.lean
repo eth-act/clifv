@@ -202,4 +202,3 @@ theorem stock_lower_entered_seed_guarded {f : Clif.Function} {result : Result}
   exact values x trivial
 
 end Backend.Stock.Proof
-

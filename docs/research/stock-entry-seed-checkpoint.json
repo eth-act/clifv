@@ -9,7 +9,7 @@
     "fixed_witness_constants": 21
   },
   "source_sha256": {
-    "FV/Backend/Proof/StockEntrySeed.lean": "5c8fe949f16976f0152771b1c99c7446f4bf932bb058238a672cd6123798aa51",
+    "FV/Backend/Proof/StockEntrySeed.lean": "1bc385deb7ec364b93dc12f256e40f58c088740d1c75e1852106026008b380d6",
     "FV/Backend/Proof/StockEntryArgs.lean": "780b81882ebbdaf33b56686f19eba25d6312eb50737ad6c2dfc881ae5edd4756",
     "FV/Backend/Proof/StockEntrySeedWitness.lean": "ad080381f9333e0875cd9af16e4f1c914dd720cd14352ca420f47e583fce753d",
     "scripts/audit/stock-entry-seed.lean": "4f9844789f3644f8581b3dbcff2f602852dfe97d59dc0c9c740d6fc87208bb00"
@@ -27,5 +27,6 @@
     "compose machine entry at VCode position0 with source/body/return simulation",
     "direct optimized-Stock semantic checker/consumer integration and complete production classes",
     "all original#140 broader rule/effect, whole-driver simulation/Stock-only completeness and full integration obligations"
-  ]
+  ],
+  "formatting_after_validation": "removed trailing blank line at EOF; all Lean tokens unchanged"
 }
