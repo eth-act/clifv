@@ -497,3 +497,16 @@ through every consumer. The raw semantic witness does not establish Stock-only
 completeness or discharge any remaining original rule/effect/CFG obligation.
 
 Direct semantic-consumer author gates passed on `823ecbb19e6a1e7ec2708afbdfe7612e91fa5b76`: 21 affected modules scheduled with exact source/import-closure reuse, full FV/FVTest/checker tools (3052 jobs), all 34 audit files, 224 standard-only core constants and 30 witness constants with one explicitly marked fixed native fact. All 1144 prior public axiom sets are retained exactly (1181 current roots); 18 prior public theorem headers are unchanged. Both E2E modes retain all 1,150 original and 1,159 prior identities and ordered stages, with 1,159 accepted/0 rejected, and real verified fv-demo link checks pass. [Terminal author receipt](../research/stock-arithmetic-semantic-author-gates.json). Reconciled main #344 concurrency proof additions; all 1,171 pre-reconcile public axiom sets are also preserved exactly. Next world/trace and cleanup adapters plus actual runtime/checker/linker/generated-proof integration before new activation; all original #140 obligations remain active.
+
+## Next mixed class: implementation prepared, validation pending (2026-10-20)
+
+`agent/stock-mixed-production` prepares complete select/add/sub production adapters
+while the arithmetic delivery source stays frozen for its author gates. The
+verified prototype has full source-machine NI, executable classifier soundness,
+all six source/output acceptance checks and twelve full pipeline configurations;
+the new module split and actual default adapters still require normal gates.
+See [the mixed checkpoint](../research/stock-mixed-production-checkpoint.md).
+Land arithmetic first. Preserve prior semantic/compiler retries, accepted
+identities/stages and exact old axiom sets; do not merge this class from prototype
+proof evidence alone. Cleanup owns the additional source-only checkout and the
+old clean delivery checkout after its evidence is archived.
