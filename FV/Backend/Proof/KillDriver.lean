@@ -6,6 +6,8 @@ import FV.Backend.Proof.DriverCheckSound
 import FV.Backend.Proof.IselShpTotal
 import FV.Backend.Proof.IselCovModel
 
+set_option Elab.async false
+
 /-!
 # Killed vregs of the ISLE lowering (V4, `SpillKillFree`): the driver's runs, `KillRunsHyp`
 
@@ -88,9 +90,13 @@ theorem trs_ne {f : Clif.Function} {et : Clif.ExnTable} {sig : Clif.Signature}
 
 /-! ## The model -/
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem noBrT_ok : killTabS.all (fun t => !killTabB.contains t || killOracles.contains t ||
     (program.rulesOf t).all fun rl => !(ruleTerms rl).contains TId.br_table_impl) = true := by
-  native_decide
+  simp only [killTabS, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- No non-oracle term of both sets applies `br_table_impl`. -/
 theorem noBrT : ∀ t ∈ killTabS, t ∈ killTabB → t ∉ killOracles → ∀ rl ∈ program.rulesOf t,
@@ -106,9 +112,12 @@ theorem noBrT : ∀ t ∈ killTabS, t ∈ killTabB → t ∉ killOracles → ∀
   simp [hm] at this
 
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+set_option cbv.maxSteps 4000000 in
 theorem termIds_ok : (List.range program.terms.size).all
     (fun i => (program.term? i).all (·.id == i)) = true := by
-  native_decide
+  decide_cbv
 
 /-- A term of the program has its index as id. -/
 theorem termOf_id_eq {t : TermId} {term : Term} (h : termOf program t = .ok term) : term.id = t := by

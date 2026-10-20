@@ -1,0 +1,21 @@
+{
+  "catch_up_complete_for_validated_proof_backlog": true,
+  "additional_backlog_merges_used": 3,
+  "additional_backlog_limit": 9,
+  "merged_prs": [
+    202,
+    203,
+    205
+  ],
+  "daily_rough_target": 3,
+  "daily_maximum": 6,
+  "phase": "regular cadence; do not treat unused backlog allowance as a quota",
+  "backup_pushes_independent": true,
+  "resource_discipline": {
+    "free_space_target_gib": 100,
+    "minimum_projected_free_gib": 50,
+    "warm_caches_default": 1,
+    "cleanup": "after each batch/PR or stop; retire unused clean worktrees and obsolete generated outputs; preserve unpublished source, unique evidence and backup refs",
+    "parallelism": "shared disk budget; reduce concurrent builds if projected headroom is insufficient; do not clean other projects"
+  }
+}

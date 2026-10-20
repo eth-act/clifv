@@ -1,0 +1,13 @@
+# Actual TryCall rules, helpers and reserved-state effects
+
+Ten scratch modules,26 public roots and12 models pass kernel and normal transitive audits. Actual source data and actual matching derive direct/GOT rules1034/1035 or indirect1036 without identity CtxInv. First-match priority determines the direct/GOT case internally. Canonical environments and every real RHS helper are connected to the SAME source branch/selection, including ABI/exception info, argument requests, reserved definitions, GOT target load, call and emitter. Exhaustive direct/GOT dispatch adds no input filter or caller colocation/rule certificate.
+
+The reserved return/payload generator changes aliases only: all base-machine, demand, sinking, reservation and scheduling fields are preserved. ABI signature is identity; exception-info generation preserves state. Those effects are exercised in the actual helper protocols.
+
+Complete original LowerScope/Dominated/ArityOk direct BL, GOT/BLR and indirect compiler pipelines pass preparation, checked forced-spill fallback and physical lowering. Their real normal/exception source runs bind ordinary/payload arguments and return17/42. The newly added near fixture required an isolated22GiB kernel observation after genuine8GiB OOM; it then reused that checked observation under8GiB. The first empty-log shell wrapper had masked failure; the passing claim was corrected and is NOT used as evidence. Captured exit0, actual proof object and standard axiom audit now verify the observation. The delivery kernel finished normally before the retry and the SAME delivery supervisor resumed afterwards.
+
+The430-root/model audit preserves all392 prior exact sets; all26 current public roots,12 models and526 new-module constants including private/proof-valued helpers use standard axioms only. Previous16 scratch-module source bytes and canonical2,246FV/FVTest/script freeze remain unchanged. Unique source/object/kernel/audit/failure/recovery evidence is archived; duplicate input snapshot removed at batch completion.
+
+These are actual rule/helper and COMPILER-state facts. Actual machine-call/handler value/world semantics, outgoing bounds, reserved-write noninterference, explicit/sret/x8 compatibility, remaining effects/sinking and whole-driver simulation AND completeness, coherent integration/MCP/full gates and actual compiler/checker/linker/generated-proof production cutover remain open. A fresh complete Stock comparison is required at cutover. Full original#140 is active; production remains legacy.
+
+[Hashed evidence and full remaining checklist](stock-try-rule-scratch.json).
