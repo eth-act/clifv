@@ -13,7 +13,6 @@
   "maxrss_KiB": 2169444,
   "elapsed_seconds": 1.8366825049743056,
   "old_recorded_peak_MiB": 23645,
-  "repository_source_changed": false,
   "normal_module_build_passed": true,
   "normal_module_build_jobs": 371,
   "normal_leaf_seconds": 1.8,
@@ -33,5 +32,7 @@
       "sha256": "e04f34665ef1f832dd419da0cba6cfa00c4acef24d6900f3f5553d344722bf04"
     }
   },
-  "remaining": "Resume all pending/affected modules and complete all activation author gates; reconcile current main; do not infer merge readiness or full#140 completion from this resource repair."
+  "remaining": "Resume all pending/affected modules and complete all activation author gates; reconcile current main; do not infer merge readiness or full#140 completion from this resource repair.",
+  "prototype_repository_source_changed": false,
+  "applied_proof_only_change": true
 }
