@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-20T21:10:21.314368+00:00",
+  "utc": "2026-10-20T21:41:22.402517+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
@@ -30,6 +30,7 @@
     "FV.Backend.ProductionWith",
     "FV.Backend.Proof.DeadCleanupAdapter",
     "FV.Backend.Proof.IselAtomic",
+    "FV.Backend.Proof.IselEmitDefs",
     "FV.Backend.Proof.IselFloatArith",
     "FV.Backend.Proof.IselFloatConst",
     "FV.Backend.Proof.IselFloatSelect",
@@ -51,15 +52,25 @@
     "FV.E2E.ABIReadOnlyRealize",
     "FV.E2E.ABIReadOnlySem",
     "FV.E2E.ABIReadOnlyTransport",
+    "FV.E2E.BinCheck",
+    "FV.E2E.CodeMap",
+    "FV.E2E.CompiledProduction",
     "FV.E2E.DeadCleanupContracts",
     "FV.E2E.DeadCleanupGuarded",
     "FV.E2E.DeadCleanupRealizes",
     "FV.E2E.DeadCleanupRegLevel",
     "FV.E2E.DeadCleanupRegLevelX",
     "FV.E2E.DeadCleanupSpillWords",
+    "FV.E2E.EmitCondsDefs",
     "FV.E2E.EmitReady",
     "FV.E2E.EmitSize",
     "FV.E2E.Guarded",
+    "FV.E2E.LinkOwnCallsShapeOf",
+    "FV.E2E.LinkOwnCallsStmt",
+    "FV.E2E.LinkOwnCallsStmtHyp",
+    "FV.E2E.LinkOwnCallsTry",
+    "FV.E2E.LinkOwnFramesDefs",
+    "FV.E2E.LinkScopeDefs",
     "FV.E2E.Lockstep",
     "FV.E2E.Pair",
     "FV.E2E.RegLevelCorrect",
@@ -67,14 +78,27 @@
     "FV.E2E.SizeDefs",
     "FV.E2E.SizeVC",
     "FV.E2E.StockProductionFixtures",
+    "FV.E2E.ValidatedCleanup",
+    "FV.E2E.ValidatedFinal",
+    "FV.E2E.ValidatedLowering",
+    "FV.E2E.ValidatedNoninterference",
+    "FV.E2E.ValidatedWorld",
+    "FV.Link.Image",
+    "FV.Link.ImageProof",
+    "FV.Link.Layout",
+    "FV.Link.LayoutFacts",
+    "FV.Link.LayoutProof",
+    "FV.Link.OutsideProof",
+    "FV.Link.Reloc",
+    "FV.Link.RelocProof",
     "FVTest.Backend.AllocChoice",
     "FVTest.Backend.Lowering.StockMixedRuntime"
   ],
-  "normal_built_count": 63,
+  "normal_built_count": 87,
   "failed_modules": 0,
   "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
   "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
-  "waiting": "ABI semantics/checker/transport/realization and register-level/cleanup correctness consumers now build on current imports. Source-body/function class proofs and higher machine/link/CLI consumers remain waiting for current shared imports. Complete current per-PR activation gates remain mandatory, arithmetic first/full original140active.",
+  "waiting": "Normal source-body/function proof and higher ABI machine/linked/generated/CLI consumers still await current shared imports. Existing linked-call, validation/world/NI/cleanup, image/layout/relocation consumer modules now build. No whole-class or activation claim; arithmetic current gates first and all original140active.",
   "batches": [
     {
       "utc": "2026-10-20T19:14:26.869956+00:00",
@@ -3610,7 +3634,278 @@
       "max_active_builds": 2,
       "scheduler_resumed": true,
       "skip_reason": "two existing author kernels retained; no available slot"
+    },
+    {
+      "batch": 16,
+      "utc": "2026-10-20T21:15:51.021715+00:00",
+      "head": "0c242106f277dff0b874806da5ae0bc000a7e3b5",
+      "counts": {},
+      "built": [],
+      "full_receipt_sha256": "634f3e2901350627856ec10b246ff6a71c4cf3c93f60e98b4a4cd51cc533e862",
+      "leaf_cap_MiB": 8192,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": "two existing author kernels retained; no available slot"
+    },
+    {
+      "batch": 17,
+      "utc": "2026-10-20T21:24:28.492530+00:00",
+      "head": "0c242106f277dff0b874806da5ae0bc000a7e3b5",
+      "counts": {
+        "source_key_current_or_restored": 78,
+        "waiting_for_current_imports": 6,
+        "waiting_for_transitive_imports": 35,
+        "built": 6
+      },
+      "built": [
+        {
+          "module": "FV.E2E.LinkOwnFramesDefs",
+          "source_sha256": "b1c5b43baaf788f2ebf99409851078de688e3da49fe2ced7505d87ea39e43fd0",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch17/FV.E2E.LinkOwnFramesDefs.build.log",
+          "log_sha256": "6f53d561db216bd97e8c02aa5dfc0d0daeebda42468c04391aa847401382a323"
+        },
+        {
+          "module": "FV.E2E.BinCheck",
+          "source_sha256": "ad38c433944b82a0e3a51a7991dcdcb475ee0e512f9c81f68c33d7a81e1d2f7a",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch17/FV.E2E.BinCheck.build.log",
+          "log_sha256": "557cc3d85d7edb3c7e93aef2383b65b4a7807cb673f0e37bf694dc072f530497"
+        },
+        {
+          "module": "FV.E2E.CodeMap",
+          "source_sha256": "32854f7a587fce3fa411e4f7fe09e8f5ffd0b01254fc8a3af50cdd893b52841f",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch17/FV.E2E.CodeMap.build.log",
+          "log_sha256": "a3bb606255d2abf795ba3e7d89e215aa71d921f39f993edcf1ee0c1c54ef8ee0"
+        },
+        {
+          "module": "FV.E2E.EmitCondsDefs",
+          "source_sha256": "7220f4bec65e1abddb49e80c5ba0804d0126fc885fb47b336464aa6af42a1db5",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch17/FV.E2E.EmitCondsDefs.build.log",
+          "log_sha256": "4f87d49ff6ee50a10e24d40faf9442f3a217718c653beed1c50616162cb8eab1"
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsShapeOf",
+          "source_sha256": "30e32207cafdd0467782fcdf5d31fb3c45cbddb8eaccb75e7752aa681731431f",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch17/FV.E2E.LinkOwnCallsShapeOf.build.log",
+          "log_sha256": "1f71bb5e047c074b871d199f3083b5ba46c7d0b61f83d023d3f8ccf8d8e88b38"
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsStmt",
+          "source_sha256": "f2402ddcea71e6bf0035e4e701c081dc4f018c80c8eb6cd3ffd1837e0ee91cfe",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch17/FV.E2E.LinkOwnCallsStmt.build.log",
+          "log_sha256": "470a1d1b4b845287f532c51032f8d8811333d3eccad51ca08397c42fd26c6fe3"
+        }
+      ],
+      "full_receipt_sha256": "19de401c6f33032126506746e6f0f7b50e67275a5f6b9584ba3e8a9f5cb0a6fd",
+      "leaf_cap_MiB": 8192,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 18,
+      "utc": "2026-10-20T21:26:41.633476+00:00",
+      "head": "0c242106f277dff0b874806da5ae0bc000a7e3b5",
+      "counts": {
+        "source_key_current_or_restored": 71,
+        "built": 8,
+        "waiting_for_current_imports": 2,
+        "waiting_for_transitive_imports": 11
+      },
+      "built": [
+        {
+          "module": "FV.Backend.Proof.IselEmitDefs",
+          "source_sha256": "d7d82d285e176c3fe1c6041ad465d3532614d8c40c5abc73800c9aed5d3191ef",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch18/FV.Backend.Proof.IselEmitDefs.build.log",
+          "log_sha256": "7c2c7ed937167c8f1886e000a046e5e817efbbd8dfb08a478204155b29edfc88"
+        },
+        {
+          "module": "FV.E2E.ValidatedLowering",
+          "source_sha256": "0c7a3fd05a3b1d77f36b939fd35449514106e2bdb406e809d636ea9a129e8738",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch18/FV.E2E.ValidatedLowering.build.log",
+          "log_sha256": "d32aa6ce97cb0cba92054df338d983cc3fe1dcfad14e33c4f9626ea7bb98a2c3"
+        },
+        {
+          "module": "FV.E2E.ValidatedFinal",
+          "source_sha256": "2f7dbedf84d8dab87515140f1060ec5e89b13106297487018fd50db4f9311e85",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch18/FV.E2E.ValidatedFinal.build.log",
+          "log_sha256": "ed7a96bdf8090822f57a7f8178bbc5f2048033721a89b81f20071fdf3c73b348"
+        },
+        {
+          "module": "FV.E2E.ValidatedWorld",
+          "source_sha256": "55e1850d5dc1680dcc3b222d0e5c1d963fa909794199a836eefe7c89d0b2de62",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch18/FV.E2E.ValidatedWorld.build.log",
+          "log_sha256": "c417f855e8239398853af65d932bb7657ab0418f083714e8f0eba70b5343def0"
+        },
+        {
+          "module": "FV.E2E.ValidatedNoninterference",
+          "source_sha256": "749d040d84af781ca6606b69f8aa7debb5be6fab2d1863bf04350759fc327846",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch18/FV.E2E.ValidatedNoninterference.build.log",
+          "log_sha256": "17eaf17e2000104f7580128856cdbd7939f4702626447790d13fc2823d833f2c"
+        },
+        {
+          "module": "FV.E2E.ValidatedCleanup",
+          "source_sha256": "af5e5f4ef2315f40a2b02594eb1b58d8dbc9a3830c6d7d8f501f87510e5a9089",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch18/FV.E2E.ValidatedCleanup.build.log",
+          "log_sha256": "4e6e2606df568a66d703b3cad0e9962289a7c1a90d5a02ccd3034bda76bf495c"
+        },
+        {
+          "module": "FV.E2E.CompiledProduction",
+          "source_sha256": "317ec3d982d7dad721ad5e89b69a1bbb11d8c19894ef0141eeb78754dc6af59e",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch18/FV.E2E.CompiledProduction.build.log",
+          "log_sha256": "52aef66d12674d3bfae4d32825a5b81e034ac62082810a8ed023c10c5f14a95c"
+        },
+        {
+          "module": "FV.E2E.LinkScopeDefs",
+          "source_sha256": "3d9fb489bbd16b5e0cfcddba7510c0f52505057a7ea2a08996ebfdb5d05d65de",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch18/FV.E2E.LinkScopeDefs.build.log",
+          "log_sha256": "bed11c67b73b9705cc2ea94e033f3ca634dc71828d2c020b1a343c1da62a13d0"
+        }
+      ],
+      "full_receipt_sha256": "2db85fbc4410f64ac5d48fd1916d7f55eb5a305556cfdf4b00b783c8439b9882",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 19,
+      "utc": "2026-10-20T21:27:46.593032+00:00",
+      "head": "0c242106f277dff0b874806da5ae0bc000a7e3b5",
+      "counts": {
+        "source_key_current_or_restored": 81,
+        "waiting_for_current_imports": 2,
+        "waiting_for_transitive_imports": 11,
+        "built": 8
+      },
+      "built": [
+        {
+          "module": "FV.Link.Layout",
+          "source_sha256": "148b3f2f63a28093d422540155198a7205c77f6207141e082d64da7a7e581d17",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch19/FV.Link.Layout.build.log",
+          "log_sha256": "79fed1f88c84ec2a50878d3d1a7589c2d4fdb0a8e3ff2deaec70029f363a7bee"
+        },
+        {
+          "module": "FV.Link.Reloc",
+          "source_sha256": "0e289f682fa20ee338649399aeb1d9933839421ca5b8c39b0336f2a0bc8b2249",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch19/FV.Link.Reloc.build.log",
+          "log_sha256": "f52044d7f2d6309cb6c442eca45e069ccc03ea6545bc7db8421e9101f9e26580"
+        },
+        {
+          "module": "FV.Link.Image",
+          "source_sha256": "1ddcec95ecfac83f4580b28053428d0081dadbdaea5881e705bbe0058f22a62e",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch19/FV.Link.Image.build.log",
+          "log_sha256": "5d8ec67cf8746df1974080b65752c5e31e913eeb60921f63a89dfdfc87ae1fc3"
+        },
+        {
+          "module": "FV.Link.RelocProof",
+          "source_sha256": "0b948c6df622bc24962c52e369f07543451bcfdf0b11edf705a3432870b5296d",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch19/FV.Link.RelocProof.build.log",
+          "log_sha256": "befb2a873ee7466c451e7e34611213f33a982ae8ac1e61d3cd08a0b6026d7d41"
+        },
+        {
+          "module": "FV.Link.LayoutFacts",
+          "source_sha256": "51d820aad5602ce84310bcbcb61b839234dcec0df9b199b06e8dc877fe7f975a",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch19/FV.Link.LayoutFacts.build.log",
+          "log_sha256": "a2815259b514f49b34fdf64125a6f988a241e376563212020d569950a257272f"
+        },
+        {
+          "module": "FV.Link.ImageProof",
+          "source_sha256": "d863d36c0ba27ac166e8d4db621759df405eff49e2cc5c2f438b960eddbee979",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch19/FV.Link.ImageProof.build.log",
+          "log_sha256": "205f417d9ff002edcbf5044715bcfe0bb49faf7a09e3d2acf0eb990ffec9ed4f"
+        },
+        {
+          "module": "FV.Link.OutsideProof",
+          "source_sha256": "d28c7ab53a4541b31eef4bd54a16ae476a1a8299adb240c85b4fcb3beec35e87",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch19/FV.Link.OutsideProof.build.log",
+          "log_sha256": "fee4403e427204375ff8edfd1931f0619a3620defb97306550c17202bed925fb"
+        },
+        {
+          "module": "FV.Link.LayoutProof",
+          "source_sha256": "3a1325675f2d1a4a87765600304c9e720de00751092e0aeb9f301439df84dcb6",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch19/FV.Link.LayoutProof.build.log",
+          "log_sha256": "f20fcb1da583e5e71c440d5267b67f6435c00d6c2d546521b63245ca5bfd7841"
+        }
+      ],
+      "full_receipt_sha256": "bc36f89fb5cdb32ff3e462dfe008e17f986885ba8bc039262f341d6e859e4e58",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 20,
+      "utc": "2026-10-20T21:39:38.616573+00:00",
+      "head": "0c242106f277dff0b874806da5ae0bc000a7e3b5",
+      "counts": {
+        "source_key_current_or_restored": 100,
+        "waiting_for_current_imports": 6,
+        "waiting_for_transitive_imports": 24,
+        "built": 2
+      },
+      "built": [
+        {
+          "module": "FV.E2E.LinkOwnCallsStmtHyp",
+          "source_sha256": "93d97e2971387491422c48dd9716abd52f3ce09b385e46b037b8d6b1ea47a24e",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch20/FV.E2E.LinkOwnCallsStmtHyp.build.log",
+          "log_sha256": "0d44cbdf5739d959e258d65ebf9eee0f401dadf272f2140fe10a7eeb798a3463"
+        },
+        {
+          "module": "FV.E2E.LinkOwnCallsTry",
+          "source_sha256": "7db28fd145158d4086c49bd6ccc71fbd9747d35ee43dcab89ba599bcae8bb8a5",
+          "returncode": 0,
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch20/FV.E2E.LinkOwnCallsTry.build.log",
+          "log_sha256": "72aabff429091dd161ca7ee46130d0805164488333ee76845e7d052ab9c5119b"
+        }
+      ],
+      "full_receipt_sha256": "580e2fe5d8075f4671d0b7d4197d614e9ff1cda0094d3acb83f5273b95f881b3",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
     }
   ],
-  "current_abi_review_receipt": "docs/research/stock-mixed-abi-normal-review.json"
+  "current_abi_review_receipt": "docs/research/stock-mixed-abi-normal-review.json",
+  "late_ci_reuse": {
+    "run": 39464556827,
+    "main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
+    "stages": [
+      "stage-w1-5",
+      "stage-w1-6"
+    ],
+    "unique_keys_verified": 459,
+    "referenced_artifacts_verified": 975,
+    "receipt_sha256": "02d9c2946ee5def4d18abe4cc1355422d8b0a79b983ad0a951efb514544a88f5",
+    "duplicate_downloads_removed": true,
+    "not_a_gate_pass": true
+  },
+  "future_short_shared_batch_policy": "Known >120s prerequisites whose source/import closure is unaffected by Mixed are left to the primary source-identical gate to avoid holding its launcher during long secondary builds. Actual changed Mixed proof closures remain eligible; no gate is skipped."
 }
