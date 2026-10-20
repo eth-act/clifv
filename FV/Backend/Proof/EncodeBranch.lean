@@ -128,7 +128,8 @@ theorem Insn.toArmInst_pcRel {env : Env} {i : Insn} {a : ArmInst} {t : Lbl} {rea
     obtain ⟨o, hl, h1, h2, h3, h4⟩ := Env.pcRel_ok' (by decide) hv
     push_cast at h1 h2 h3 h4 ⊢; simp only [Int.one_mul] at h1
     refine ⟨o, hl, ?_, h2, h3, h4⟩
-    have hv' : BitVec.extractLsb' 2 19 v ++ BitVec.extractLsb' 0 2 v = v := by bv_decide
+    have hv' : BitVec.extractLsb' 2 19 v ++ BitVec.extractLsb' 0 2 v = v :=
+      BitVec.extractLsb'_append_extractLsb'
     simp [ArmInst.norm, ArmInst.pcRelOffset?, hv', h1]
 
 /-- **Branch-range policy.** Every instruction the encoder accepts has its label operand

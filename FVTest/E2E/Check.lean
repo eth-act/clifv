@@ -15,6 +15,7 @@ import FV.E2E.EmitEnc
 import FV.Backend.Proof.IselEmitDefs
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
+import FV.E2E.LinkScopeInputDefs
 
 /-!
 # The M7 validators on real code (`lake exe lean-e2e-check [FILE.clif...]`)
@@ -44,6 +45,13 @@ It reports how many in-scope functions satisfy the input conditions of `lowerChe
 (`dominatedB`, `lowerScopeB`: on these the lowering validator is a theorem, `Compiled.of_lower`),
 and names the others.
 
+It compares the two per-function scopes of `lean-link` (`docs/TO-PROVE.md` §3 V7): `lowersB`
+(`E2E.LinkCheck.fnScopeB`: `lowerFunction` and `prepare` accept, `spillSizeOkB`) and its
+replacement by conditions on the CLIF function alone (`fnScopeInB`: `sizeOkB`, `driverInB`,
+`iselInB`), both with the other per-function conditions of the backend's totality theorems
+(`dominatedB`, `lowerScopeB`, `arityOkB`, `entryParamsB`, `extendsWidenB`). A function one accepts
+and the other rejects fails the run (`fnScopeInB` implies `fnScopeB`: `fnScopeB_of_input`).
+
 Every file is first legalised (`Opt.Legalize128.parsedFile128`, as `lean-backend` does): a
 legalised `i128` function the validator `Opt.Legal.check` accepts is in scope (covered by
 `E2E.backend_correct_legal`) and checked like any other; the rejected ones are out of scope
@@ -60,6 +68,22 @@ open Backend Backend.Proof.Driver
 /-- An instruction's `repr` on one line. -/
 def oneLine (i : MInst) : String :=
   String.intercalate " " (((toString (repr i)).splitOn "\n").map String.trim)
+
+/-- The per-function conditions shared by `fnScopeB` and `fnScopeInB` (beside `functionE` and the
+signatures, which `main` checks first). -/
+def sharedScopeB (f : Clif.Function) : Bool :=
+  dominatedB f && lowerScopeB f && Proof.Spill.arityOkB f && Proof.Spill.entryParamsB f &&
+    extendsWidenB f
+
+/-- `fnScopeInB`'s per-function conditions in place of `lowersB` (V7). -/
+def inputScopeB (f : Clif.Function) : Bool :=
+  sharedScopeB f && E2E.sizeOkB f && driverInB f && Proof.Prg.iselInB f
+
+/-- `fnScopeB`'s per-function conditions with `lowersB`, given `lowerFunction f = .ok vc`. -/
+def lowersScopeB (f : Clif.Function) (vc : VCode) : Bool :=
+  sharedScopeB f && match prepare vc with
+    | .ok vcp => E2E.spillSizeOkB vcp
+    | .error _ => false
 
 /-- The form of an instruction: constructor and first argument of its `repr`. -/
 def formKey (i : MInst) : String :=
@@ -221,6 +245,9 @@ def main (args : List String) : IO UInt32 := do
   let mut tgtBad := 0
   let mut immOk := 0
   let mut immBad := 0
+  let mut scopeOld := 0
+  let mut scopeIn := 0
+  let mut scopeMis := 0
   let mut identities : Array Lean.Json := #[]
   for file in files do
     let lg := Opt.Legalize128.parsedFile128 (Clif.parseFile (← IO.FS.readFile file))
@@ -241,7 +268,13 @@ def main (args : List String) : IO UInt32 := do
         skipped := skipped + 1
         continue
       let t0 ← IO.monoMsNow
-      let .ok vc ← IO.lazyPure (fun _ => lowerFunction f) | continue
+      let lw ← IO.lazyPure (fun _ => lowerFunction f)
+      let .ok vc := lw | do
+        -- the input conditions imply `lowerFunction`'s success (`lowerFunction_ok_input`)
+        if Compile.functionE f && Backend.abiSigs f && Backend.indSigsOk f && inputScopeB f then
+          scopeMis := scopeMis + 1
+          IO.println s!"{file}: %{f.name}: input scope (fnScopeInB) accepts, lowerFunction rejects"
+        continue
       let t1 ← IO.monoMsNow
       -- the end-to-end theorem covers `E2E.InSubset` functions only; functions outside
       -- clif-subset-v2 E (i128, floats, vectors — which `lowerFunction` rejects anyway —
@@ -270,6 +303,13 @@ def main (args : List String) : IO UInt32 := do
       if bIn > szInMax then szInMax := bIn
       if E2E.sizeOkB f then szIn := szIn + 1
       else IO.println s!"{file}: %{f.name}: sizeOkB fails ({bIn} words, need < 2^24): out of scope"
+      let sOld ← IO.lazyPure (fun _ => lowersScopeB f vc)
+      let sIn := inputScopeB f
+      if sOld then scopeOld := scopeOld + 1
+      if sIn then scopeIn := scopeIn + 1
+      if sOld != sIn then
+        scopeMis := scopeMis + 1
+        IO.println s!"{file}: %{f.name}: lowersB scope {sOld}, input scope {sIn} (sizeOkB {E2E.sizeOkB f}, driverInB {driverInB f}, iselInB {Proof.Prg.iselInB f})"
       let r ← IO.lazyPure (fun _ => lowerCheck f vc)
       let mut stages : Array String := #["checked"]
       if r then stages := stages.push "lowerCheck"
@@ -387,6 +427,7 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"entryParamsB (entry block parameters = signature parameters; input condition of definite assignment) {entryP} of {ok + bad}"
   IO.println s!"extendsWidenB (IselEmitDefs, every uextend/sextend widens; input condition of backend_correct_final_total_emit_in) {extW} of {ok + bad}"
   IO.println s!"sizeOkB (SizeDefs, input-side size bound; input condition of backend_correct_final_total_emit_input) {szIn} of {ok + bad}; largest bound {szInMax} words (limit 2^24)"
+  IO.println s!"per-function scope (lean-link): lowersB (fnScopeB, runs lowerFunction/prepare) {scopeOld}, input conditions (fnScopeInB: sizeOkB, driverInB, iselInB) {scopeIn} of {ok + bad}; disagreements {scopeMis}"
   IO.println s!"formsCoveredB: {cov} covered, {uncov} not covered"
   for (k, n) in forms.toList.mergeSort (fun a b => a.2 ≥ b.2) do
     IO.println s!"  uncovered form {k}: {n} instructions"
@@ -399,4 +440,4 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"immsOkB (EmitEnc, encodable immediates): {immOk} pass, {immBad} fail"
   IO.println s!"killFreeB (SpillKillFree, gives SpillAvailable): {kfOk} accepted ({kfKilled} with killed vregs: scratch or terminator defs), {kfBad} rejected"
   IO.println s!"time (ms): lowerFunction {tLower}, lowerCheck {tCheck}, prepare {tPrep}, prepCheck {tPCheck}, spill fallback {tSpill}"
-  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 && spillRej == 0 && emitBad == 0 && readyBad == 0 && naBad == 0 && tgtBad == 0 && immBad == 0 then 0 else 1
+  return if bad == 0 && pbad == 0 && spillBad == 0 && kfBad == 0 && spillRej == 0 && emitBad == 0 && readyBad == 0 && naBad == 0 && tgtBad == 0 && immBad == 0 && scopeMis == 0 then 0 else 1
