@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockAddSubScanRefines
+import FV.Backend.Proof.StockActualAddSubBodyRefines
 import FV.Backend.Proof.StockScalarAddWitness
 import FV.Backend.Proof.LowerSim
 
@@ -164,4 +165,56 @@ theorem actual_scan_body_witness :
     .cons source_step (.nil t)
   exact stock_lower_select_addsub_omitted_body_fall_refines run dom.2 dom.1 events scanned retained families
     self stable s t steps registers w (pre w)
+theorem actual_record_tail : event.output.records.drop 1 = [record] := by native_decide
+theorem actual_body_state : event.output.state = body.state := by native_decide
+theorem actual_event_block : event.block = 0 := by native_decide
+
+theorem actual_body_split_witness :
+    ∃ b term scanned, SourceBodySplit function event b term scanned ∧
+      (∀ r ∈ scanned.records, SelectAddSubOrOmittedRecord function event.ctx event.block r) ∧
+      ∀ w, GuardedScanRel function result event.ctx event.block
+        (fun _ cm _ => cm = Clif.Mem.empty) event.output.state s registers w ∧
+        ∃ ρ' w', seqRun ispec (scanned.code.toList.map (·.mapRegs
+          (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) registers w =
+            some (.fall ρ' w') ∧
+          GuardedScanRel function result event.ctx event.block
+            (fun _ cm _ => cm = Clif.Mem.empty) term.output.state t ρ' w' := by
+  have self : Refines (fun _ => True) ispec := fun _ _ _ _ w' _ h => ⟨w',h,SameWorld.refl _ _⟩
+  have stable : MRStable (fun _ => True) (fun _ cm _ => cm = Clif.Mem.empty) := by
+    intro _ _ _ _ _ h; exact h
+  have dom := ScalarAdd.lowering_domain "scalar_add_scan" [] .systemVI64
+  obtain ⟨b,term,scanned,split,refines⟩ :=
+    stock_lower_actual_select_addsub_omitted_body_refines run dom.2 dom.1 events self stable
+  have recs : scanned.records = [record] := by
+    have h := congrArg (List.drop 1) split.records
+    simpa only [List.drop_succ_cons,List.drop_zero,actual_record_tail] using h.symm
+  obtain ⟨_,_,_,_,_,_,family,source,behaviour⟩ := actual_scan_body_witness
+  have families : ∀ r ∈ scanned.records,
+      SelectAddSubOrOmittedRecord function event.ctx event.block r := by
+    intro r member
+    rw [recs] at member
+    have same := List.mem_singleton.mp member
+    subst r
+    rw [actual_event_block]
+    exact family record (by simp [body])
+  have block := split.block
+  rw [actual_event_block] at block
+  have lookup : function.blocks[0]? = some function.blocks[0]! := rfl
+  rw [lookup] at block
+  have beq := (Option.some.inj block).symm
+  subst b
+  have indices : (List.range (function.blocks[0]!).body.length).map (blockStart function 0 + ·) = [0] := rfl
+  have steps : SourceSteps (IndexedSourceInst Clif.Env.empty {funcs := []} function event.ctx 0) [0] s t :=
+    .cons source (.nil t)
+  refine ⟨_,term,scanned,split,families,?_⟩
+  intro w
+  have pre : GuardedScanRel function result event.ctx event.block
+      (fun _ cm _ => cm = Clif.Mem.empty) event.output.state s registers w := by
+    rw [actual_event_block,actual_body_state]
+    exact (behaviour w).1
+  refine ⟨pre,?_⟩
+  apply refines families s t ?_ registers w pre
+  simpa only [actual_event_block,indices] using steps
+
+
 end Backend.Stock.Proof.ScalarAddScanWitness

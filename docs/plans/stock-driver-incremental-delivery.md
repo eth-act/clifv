@@ -34,14 +34,25 @@ Lean-linked fv-demo/survey. Integrator notified of the actual squash commit.
 prologue configurations after the recorded author and reconciliation gates.
 See [six-configuration evidence](../research/stock-prologue-all-production.md).
 
-The active implementation batch on `agent/stock-scalar-production` adds complete
-two-argument scalar-add functions across those six configurations. Actual
-retained-record/body and arbitrary-argument/dirty-upper-bit executable witnesses
-compile. The three entrypoints and generated proofs select the new lowerer while
-retaining earlier classes and whole-file/executable legacy retry. Targeted actual
-mixed linking, split proofs, runtime/retry and real verified CLI checks pass;
-public/owned trust audits and frozen current author gates precede the next squash.
-See [scalar-add evidence](../research/stock-scalar-add-core.md).
+#336 (`d18ba0391ee09d9333e12d555f3e4ab93111c2ee`) landed the complete
+two-argument scalar-add class across all six configurations. Its frozen author
+gates passed2420modules/3171library-tooljobs/23audits,271standard-owned and136fixed-
+witness constants,runtime4737/0/0,encoder1321identical,both1159E2Emodes with all
+original1150/prior1159 identities and ordered stages retained, old/new mixed linked
+and generated proofs, actual verified CLIs, matchedregalloc2/retry and verified
+defaultLean-linkedfv-demo21/survey53 (2/2and18/18binaries).
+[Scalar-add evidence](../research/stock-scalar-add-core.md) links the terminal receipt.
+
+The active batch on `agent/stock-straight-line-production` generalizes real body
+composition beyond the initial complete arithmetic function. The actual add/sub
+body adapter and its real full-body nonvacuity witness kernel-check off-tree;
+reconcile those into the existing modules, then derive pure-source zero-color/unsunk and emitted/omitted coverage and
+complete broader straight-line production classes. Actual `sink_inst` rejects
+zero-color targets; deferred sunk effects remain a separate mandatory obligation.
+Classes whose actual Stock code differs from legacy also require a direct Stock
+semantic checker/consumer contract: legacy-code equality cannot complete #140. Do not publish the adapter
+as a replacement for complete function activation. All original rule/effect,
+source/block/whole-driver simulation and Stock-only completeness remain open.
 Optimizer and exceptional-edge routes await their consumer adapters.
 All remaining original #140 obligations remain open.
 

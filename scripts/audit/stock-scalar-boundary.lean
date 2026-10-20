@@ -31,3 +31,11 @@ import FV.E2E.ScalarAddBoundaryWitness
 #print axioms Backend.Stock.Proof.ScalarAddScanWitness.info_bound -- witness: native_decide
 
 #print axioms Backend.Stock.Proof.ScalarAddScanWitness.facts -- witness: native_decide
+
+#print axioms Backend.Stock.Proof.ScalarAddScanWitness.actual_record_tail -- witness: native_decide
+
+#print axioms Backend.Stock.Proof.ScalarAddScanWitness.actual_body_state -- witness: native_decide
+
+#print axioms Backend.Stock.Proof.ScalarAddScanWitness.actual_event_block -- witness: native_decide
+
+#print axioms Backend.Stock.Proof.ScalarAddScanWitness.actual_body_split_witness -- witness: native_decide
