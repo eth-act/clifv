@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-20T22:19:15.381929+00:00",
+  "utc": "2026-10-20T22:33:26.947690+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
@@ -29,10 +29,13 @@
     "FV.Backend.Production",
     "FV.Backend.ProductionWith",
     "FV.Backend.Proof.DeadCleanupAdapter",
+    "FV.Backend.Proof.DeadCleanupAvailability",
     "FV.Backend.Proof.DeadCleanupDeletion",
     "FV.Backend.Proof.DeadCleanupPositions",
     "FV.Backend.Proof.DeadCleanupPrepareMap",
+    "FV.Backend.Proof.DefGenModel",
     "FV.Backend.Proof.DefGenOracle",
+    "FV.Backend.Proof.DefGenSoundAt",
     "FV.Backend.Proof.EhFrameDecode",
     "FV.Backend.Proof.IselAtomic",
     "FV.Backend.Proof.IselEmitChk",
@@ -47,20 +50,33 @@
     "FV.Backend.Proof.IselFloatSelect",
     "FV.Backend.Proof.IselFloatVac",
     "FV.Backend.Proof.IselLowerAll",
+    "FV.Backend.Proof.IselSzBrTable",
     "FV.Backend.Proof.IselSzExt",
+    "FV.Backend.Proof.IselSzSound",
     "FV.Backend.Proof.MemRefines",
+    "FV.Backend.Proof.PerEdgePrepareComplete",
+    "FV.Backend.Proof.PerEdgeVCodeSem",
     "FV.Backend.Proof.RefinesCSem",
     "FV.Backend.Proof.RefinesInsts",
     "FV.Backend.Proof.RefinesInsts2",
     "FV.Backend.Proof.RelaxLayout",
     "FV.Backend.Proof.RelaxReady",
+    "FV.Backend.Proof.SpillClsCheck",
+    "FV.Backend.Proof.SpillClsInst",
     "FV.Backend.Proof.SpillStep4Args",
     "FV.Backend.Proof.SpillStep4Edge",
     "FV.Backend.Proof.StockAddSubScanRefines",
+    "FV.Backend.Proof.StockArithmeticBodyRefines",
     "FV.Backend.Proof.StockArithmeticCheck",
+    "FV.Backend.Proof.StockArithmeticSourceExecution",
+    "FV.Backend.Proof.StockArithmeticSourceFrame",
+    "FV.Backend.Proof.StockArithmeticSourceRefines",
+    "FV.Backend.Proof.StockArithmeticTerminalDefined",
+    "FV.Backend.Proof.StockBlockCode",
     "FV.Backend.Proof.StockBodyScanOrigin",
     "FV.Backend.Proof.StockBodyScanRefines",
     "FV.Backend.Proof.StockBranchArgumentCode",
+    "FV.Backend.Proof.StockEdgeCode",
     "FV.Backend.Proof.StockEdgeValues",
     "FV.Backend.Proof.StockEntryABI",
     "FV.Backend.Proof.StockEntryAliases",
@@ -71,7 +87,10 @@
     "FV.Backend.Proof.StockEntrySeed",
     "FV.Backend.Proof.StockGuardedOmission",
     "FV.Backend.Proof.StockPreparedSemantics",
+    "FV.Backend.Proof.StockPureDriverUnsunk",
+    "FV.Backend.Proof.StockPureRecordCoverage",
     "FV.Backend.Proof.StockPureSourceColors",
+    "FV.Backend.Proof.StockPureUnsunk",
     "FV.Backend.Proof.StockReturnABI",
     "FV.Backend.Proof.StockReturnArity",
     "FV.Backend.Proof.StockReturnHelpers",
@@ -195,7 +214,7 @@
     "FVTest.Backend.Lowering.StockMixedRuntime",
     "FVTest.E2E.LinkProof"
   ],
-  "normal_built_count": 188,
+  "normal_built_count": 207,
   "failed_modules": 0,
   "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
   "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
@@ -4867,6 +4886,68 @@
       "built": [],
       "skip_reason": "two existing author kernels retained; no available slot",
       "scheduler_resumed": true
+    },
+    {
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch39/receipt.json",
+      "utc": "2026-10-20T22:20:58.948588+00:00",
+      "head": "b49872de5dd150bcd969ae9eb6455b5b8d3cd5a2",
+      "built": [],
+      "skip_reason": "two existing author kernels retained; no available slot",
+      "scheduler_resumed": true
+    },
+    {
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch40/receipt.json",
+      "utc": "2026-10-20T22:27:00.649330+00:00",
+      "head": "b49872de5dd150bcd969ae9eb6455b5b8d3cd5a2",
+      "built": [],
+      "skip_reason": "two existing author kernels retained; no available slot",
+      "scheduler_resumed": true
+    },
+    {
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch41/receipt.json",
+      "utc": "2026-10-20T22:30:23.112129+00:00",
+      "head": "b49872de5dd150bcd969ae9eb6455b5b8d3cd5a2",
+      "built": [
+        "FV.Backend.Proof.StockBlockCode",
+        "FV.Backend.Proof.StockPureUnsunk",
+        "FV.Backend.Proof.StockPureDriverUnsunk",
+        "FV.Backend.Proof.StockPureRecordCoverage",
+        "FV.Backend.Proof.StockArithmeticBodyRefines"
+      ],
+      "skip_reason": null,
+      "scheduler_resumed": true
+    },
+    {
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch42/receipt.json",
+      "utc": "2026-10-20T22:32:04.600882+00:00",
+      "head": "b49872de5dd150bcd969ae9eb6455b5b8d3cd5a2",
+      "built": [
+        "FV.Backend.Proof.StockEdgeCode",
+        "FV.Backend.Proof.StockArithmeticSourceRefines",
+        "FV.Backend.Proof.StockArithmeticSourceExecution",
+        "FV.Backend.Proof.StockArithmeticSourceFrame",
+        "FV.Backend.Proof.StockArithmeticTerminalDefined",
+        "FV.Backend.Proof.DefGenModel"
+      ],
+      "skip_reason": null,
+      "scheduler_resumed": true
+    },
+    {
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch43/receipt.json",
+      "utc": "2026-10-20T22:33:18.178640+00:00",
+      "head": "b49872de5dd150bcd969ae9eb6455b5b8d3cd5a2",
+      "built": [
+        "FV.Backend.Proof.DeadCleanupAvailability",
+        "FV.Backend.Proof.DefGenSoundAt",
+        "FV.Backend.Proof.IselSzBrTable",
+        "FV.Backend.Proof.IselSzSound",
+        "FV.Backend.Proof.PerEdgePrepareComplete",
+        "FV.Backend.Proof.PerEdgeVCodeSem",
+        "FV.Backend.Proof.SpillClsCheck",
+        "FV.Backend.Proof.SpillClsInst"
+      ],
+      "skip_reason": null,
+      "scheduler_resumed": true
     }
   ],
   "current_abi_review_receipt": "docs/research/stock-mixed-abi-normal-review.json",
@@ -4919,5 +5000,17 @@
       "state": "preflight_deferred_not_launched"
     },
     "policy_fix": "Read current worktree and primary .lake/lake-module-peaks.tsv as well as checked-in records; restore exact keys first, defer builds whose known peaks plus margin exceed available reserved leaf budget. No aggregate cap increase."
+  },
+  "resource_deferrals_resolved": {
+    "StockBlockCode": {
+      "normal_build_passed": true,
+      "cap_MiB": 8192,
+      "batch": 41
+    },
+    "StockPureUnsunk": {
+      "normal_build_passed": true,
+      "cap_MiB": 8192,
+      "batch": 41
+    }
   }
 }
