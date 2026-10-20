@@ -353,3 +353,26 @@ Then instantiate direct optimized-Stock checker/consumer semantics and complete
 function production activation. No new class is enabled by this proof packet.
 
 Source/return author gates passed on `d53bb5d9f1fc3385e814c81f3f9cbca54972f621`: all prior2428verified modules reused only after exact source/audit hash checks,8newmodules scheduled, completeFV/FVTest replay2439jobs,30audits,53standardcore/3fixedwitnessownedconstants. All1049previouspublicaxiomsets retained exactly,11newpublicroots audited. No runtime/consumer input or executable changed. Receipt: [source/return author gates](../research/stock-arithmetic-return-author-gates.json). Machine entry prelude, direct optimized-Stock consumers and full function production activation remain next.
+
+#340 (`348fa0a8cad6e55c7f6374a6fa782a21cd8d3d6e`) landed original reference
+execution/body/return composition in actual Stock VCode after all per-PR gates;
+exact source+receipt tree verified and integrator notified.
+
+The next entry checkpoint derives source typing, mappings, widths, final-alias
+resolution and restricted DFG consistency from original enterFunc and successful
+Stock construction. Proof-selected virtual initialization establishes the guarded
+source relation, including parameters omitted as unused; ABI register copies
+preserve it. A real two-parameter/one-copy function and arbitrary-value csem ABI
+world witness exercise the unused argument. PASS653jobs,14publicroots and all15
+standard-only core constants;21fixed witness constants use explicitly marked own
+native facts. One bundled MCP semantic check passes/no warnings; owned LSP stopped.
+[Entry checkpoint](../research/stock-entry-seed-checkpoint.json).
+
+This uses checkAlloc_sound's universal initial virtual file internally. The weaker
+AllocChecked interface cannot silently replace that guarantee; retain existing
+contracts and prove the appropriate compatibility in new semantic consumers.
+There is no all-parameters-used rollout condition or caller entry-value certificate.
+Next finish stack-load nonvacuity, derive exact filtered source/ABI rows and prelude
+from actual assembleOriginalBlock, then compose machine entry/body/return and add
+direct semantic consumers. Production class selection is unchanged. All original
+full-goal rule/effect/simulation/completeness/integration obligations remain active.
