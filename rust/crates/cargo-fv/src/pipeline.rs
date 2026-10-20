@@ -930,8 +930,12 @@ fn process_in(
             "names": clif_names,
             "locals": locals,
         });
+        // written whole, then renamed: the link of another crate built in parallel scans every
+        // unit's work directory (`leanlink::program_part`) and must never read a partial record
         let p = work.join(crate::linkproof::CGU_FILE);
-        fs::write(&p, serde_json::to_string_pretty(&j).unwrap_or_default())
+        let tmp = work.join(format!("{}.tmp", crate::linkproof::CGU_FILE));
+        fs::write(&tmp, serde_json::to_string_pretty(&j).unwrap_or_default())
+            .and_then(|()| fs::rename(&tmp, &p))
             .map_err(|e| format!("{}: {e}", p.display()))?;
     }
     Ok((reports, true))
