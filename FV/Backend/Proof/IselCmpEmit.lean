@@ -283,32 +283,44 @@ theorem extend_reg_uxtb (Y : CV) :
       (Y.setWidth 8).setWidth 32 := by
   rw [decode_uxtb]
   show (BitVec.setWidth 32 (BitVec.extractLsb' 0 8 (opnd .size32 Y))) <<< 0 = _
-  simp only [opnd, lo64, OperandSize.bits]
-  bv_decide
+  simp only [opnd, lo64, OperandSize.bits, BitVec.shiftLeft_zero]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', hi]
 
 theorem extend_reg_uxth (Y : CV) :
     Arm.extend_reg (opnd .size32 Y) (Arm.decode_reg_extend ExtendOp.uxth.bits) 0 =
       (Y.setWidth 16).setWidth 32 := by
   rw [decode_uxth]
   show (BitVec.setWidth 32 (BitVec.extractLsb' 0 16 (opnd .size32 Y))) <<< 0 = _
-  simp only [opnd, lo64, OperandSize.bits]
-  bv_decide
+  simp only [opnd, lo64, OperandSize.bits, BitVec.shiftLeft_zero]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', hi]
 
 theorem extend_reg_sxtb (Y : CV) :
     Arm.extend_reg (opnd .size32 Y) (Arm.decode_reg_extend ExtendOp.sxtb.bits) 0 =
       (Y.setWidth 8).signExtend 32 := by
   rw [decode_sxtb]
   show (BitVec.signExtend 32 (BitVec.extractLsb' 0 8 (opnd .size32 Y))) <<< 0 = _
-  simp only [opnd, lo64, OperandSize.bits]
-  bv_decide
+  simp only [opnd, lo64, OperandSize.bits, BitVec.shiftLeft_zero]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', BitVec.getLsbD_signExtend,
+    BitVec.msb_eq_getLsbD_last]
+  by_cases h : i < 8 <;> simp [h, hi]
 
 theorem extend_reg_sxth (Y : CV) :
     Arm.extend_reg (opnd .size32 Y) (Arm.decode_reg_extend ExtendOp.sxth.bits) 0 =
       (Y.setWidth 16).signExtend 32 := by
   rw [decode_sxth]
   show (BitVec.signExtend 32 (BitVec.extractLsb' 0 16 (opnd .size32 Y))) <<< 0 = _
-  simp only [opnd, lo64, OperandSize.bits]
-  bv_decide
+  simp only [opnd, lo64, OperandSize.bits, BitVec.shiftLeft_zero]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp [BitVec.getLsbD_setWidth, BitVec.getLsbD_extractLsb', BitVec.getLsbD_signExtend,
+    BitVec.msb_eq_getLsbD_last]
+  by_cases h : i < 16 <;> simp [h, hi]
 
 /-! ## The code of each `emit_icmp` rule -/
 

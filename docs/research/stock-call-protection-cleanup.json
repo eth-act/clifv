@@ -1,0 +1,27 @@
+{
+  "utc": "2026-10-16T13:46:50.831191+00:00",
+  "removed_archived_obsolete_source_snapshots": [
+    {
+      "path": "/tmp/StockPureSinkModel-before-bool-fix.txt",
+      "bytes": 2254
+    },
+    {
+      "path": "/tmp/StockCallSinkModel-before-bool-fix.txt",
+      "bytes": 4262
+    },
+    {
+      "path": "/tmp/StockCallSinkTable-before-partitions.txt",
+      "bytes": 3250
+    },
+    {
+      "path": "/tmp/StockCallSinkTable-before-root-split.txt",
+      "bytes": 1930
+    }
+  ],
+  "archive": "/home/lee/.clifv-recovery/20261016T133821Z-call-protection/checkpoint.tar.gz",
+  "archive_every_member_verified": true,
+  "free_GiB": 813.8,
+  "active_canonical_source_and_scripts": "unchanged/frozen",
+  "new_worktrees_or_caches": 0,
+  "other_projects": "untouched"
+}
