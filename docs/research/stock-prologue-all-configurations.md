@@ -1,0 +1,9 @@
+# Six-configuration prologue extension (active batch)
+
+#333 landed the actual SystemV-i64 two-block prologue production route as `00f686f1c1fa2b67f4041372139ecc25db0e0474`, with all author gates passing and exact merge-tree equality. The full #140 goal is still active.
+
+This unpublished extension reconciles universal actual Stock success/code/edge-vector proofs, CFG dominance/domain, checker acceptance and complete source execution for all six existing i32/i64/default/SystemV/fast configurations. Names, run metadata, argument words, dirty upper bits, initial memory and placement oracles are arbitrary. A combined witness establishes successful lowering/checking and whole source execution simultaneously. Twenty public roots and all 71 owned constants use only the three standard axioms. Targeted builds pass; see the JSON receipt.
+
+`StockPrologueAll` is an additive selector. The published SystemV predicate, selector and theorem variants keep their meaning. It preserves D0 and falls back to the published production selector on any failed attempt. No new acceptance premise or runtime comparison with legacy code is introduced. Code equality after erasing diagnostics is proof evidence only.
+
+The wider selector is not enabled in production. Next: connect it through compiler/actual-result/checker/linker/generated-proof consumers, supply complete actual-machine witnesses for the added configurations and run the affected author gates. Preserve the old consumer variants; do not silently change their lowerer provenance statements. Do not submit this intermediate proof checkpoint as a completed production-class landing. Optimizer/unwind consumers and all other original #140 rule/effect/whole-driver simulation/completeness obligations remain.

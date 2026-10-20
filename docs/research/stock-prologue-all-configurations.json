@@ -1,0 +1,16 @@
+{
+  "utc": "2026-10-20T02:11:20.232534+00:00",
+  "state": "targeted_proofs_passed_not_production_activated",
+  "base": "00f686f1c1fa2b67f4041372139ecc25db0e0474",
+  "public_roots_standard_only": 20,
+  "owned_constants_standard_only": 71,
+  "full_per_pr_gates_run": false,
+  "logs": {
+    "/tmp/stock-prologue-all-proper-build.log": "9b8138c09541992713b18133dfadfbf58bf150543c4a018c71409e7f39a0e672",
+    "/tmp/stock-prologue-all-class-build.log": "1e7bac7e787354690519b40729749815759c1bc4882e21b8d7d9a68836c4840c",
+    "/tmp/stock-prologue-all-witness-build.log": "4635a85927c6d949187367f5f33fc7ae385ffa7910596e037b60c38bd54e1d97",
+    "/tmp/stock-prologue-all-public-audit.log": "0ff1ad3cd261ec6d0d759aa70e92762f9896157529528e0e153cf4a69ec4ed12",
+    "/tmp/stock-prologue-all-owned-audit.log": "e8fcdb25fa9f1d5dccd3b472a53a84c2454f12e682779e4cfd0abd73e062c1d4"
+  },
+  "next": "Connect the additive six-configuration selector through actual production consumers without changing retained theorem variants; complete machine witnesses and full affected author gates before activation/merge. Full original #140 remains open."
+}
