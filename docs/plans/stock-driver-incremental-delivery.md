@@ -21,9 +21,25 @@ composition and successful witnesses landed in #329 (`c2c5d773`). Its 2335-modul
 passed. Old variants remain compatibility wrappers; no second class is enabled.
 #331 (`fd857be3`) landed whole-program/checker/binary/compiler-mode consumers and the actual-result byte writer, with standard-only compiler proofs and a fixed successful Stock prologue retaining non-legacy history.
 
-The active packet adds actual image correctness, stack bounds, sliced generated proofs and six actual linked fixture cases (twelve emitted Lean files). All per-PR gates passed on ee7ddcc6: 2350 modules,14 trust audits,both1154 E2E modes with1150 original identity/stage parity,two matched binary links,and all twelve emitted files. Full binary execution adapters, CLI migration and universal prologue activation remain. Source/domain candidates cover all six configurations; actual code/checker candidates currently cover SystemV i64 only and need reconciliation.
-The next class implementation is on `agent/stock-actual-binary-production`: universal SystemV i64 prologue selector, actual transactional pipeline and image proofs, concrete executable/original-source/peak consumers, and default compiler/checker/linker/proof emission. Targeted gates, the complete all-value machine witness and all author gates pass on c2defaa7:2386modules,18trust files, runtime/encoding, both E2E modes/original identity-stage parity, linked/emitted proofs and default verified Lean-linked crates. The rollout retains optimizer and exceptional-edge routes until their adapters are complete; baseline acceptance is preserved by legacy retry. See [implementation evidence](../research/stock-prologue-production-implementation.md).
+#332 (`7954ae1f`) landed actual image, stack and sliced generated proofs. #333
+(`00f686f1c1fa2b67f4041372139ecc25db0e0474`) landed concrete byte execution,
+original-source/peak consumers and default SystemV-i64 two-block prologue production
+activation, with transactional legacy fallback across compiler/checker/linker/proof
+emission. Its exact merge tree matches validated source plus the receipt. Author
+gates passed2386modules,18trust audits,both1154E2Emodes/all1150originalidentity-stage
+parity,runtime4737/0/0,encoder1316identical,linked/emitted proofs and verified default
+Lean-linked fv-demo/survey. Integrator notified of the actual squash commit.
 
+The active batch on `agent/stock-prologue-all-configurations` extends that class to
+all six existing ABI/type configurations. It adds shared lowerer-parametric actual
+consumers with exact old-function compatibility, complete arbitrary-argument machine
+witnesses, default entrypoint selection and emitted proofs. Targeted132standard
+public roots,16boundary roots (nine marked fixed-native data dependencies),650owned
+constants,ten linked cases/sixteen generated files,real verified CLIs and all-six
+forced allocator retry tests pass. Full frozen author gates are next; no merged
+activation is claimed for the added five configurations. See
+[six-configuration implementation evidence](../research/stock-prologue-all-production.md).
+Optimizer and exceptional-edge routes await their consumer adapters.
 All remaining original #140 obligations remain open.
 
 ## Decision and current baseline

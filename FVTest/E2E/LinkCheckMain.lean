@@ -1,5 +1,5 @@
 import FVTest.E2E.LinkProof
-import FVTest.E2E.ProductionLinkProof
+import FVTest.E2E.ProductionLinkProofWith
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -26,7 +26,7 @@ def main (args : List String) : IO UInt32 := do
     for fi in fis do
       let t0 ← IO.monoMsNow
       let f := fi.func
-      let r := I0.pipeProduction o.deadCleanup fi
+      let r := I0.pipeProductionWith Stock.Prologue.AllConfigurations.lower o.deadCleanup fi
       let ok := r.toBool
       let t1 ← IO.monoMsNow
       let a := getOk r
@@ -40,7 +40,7 @@ def main (args : List String) : IO UInt32 := do
       IO.println s!"  profile: {t} ms {n} (pipeline {a}, lowerCheck {b}, checkAlloc {c})"
     IO.println s!"  profile: {(tot.map (·.1)).foldl (· + ·) 0} ms in total"
   let t0 ← IO.monoMsNow
-  let R0 := I0.resultsProduction o.deadCleanup
+  let R0 := I0.resultsProductionWith Stock.Prologue.AllConfigurations.lower o.deadCleanup
   -- the CLIF image's symbols and the call-level stack
   -- the checks that do not depend on the rest of the program, once (`staticChks`: the
   -- validators); then `diagR` with them (`chks = staticChks ++ linkChks`)
@@ -242,7 +242,7 @@ def main (args : List String) : IO UInt32 := do
     let stackAll := Pk.funcs.all fun g => (stackOf g).isSome
     let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
       else none
-    for (p, t) in FVTest.E2E.ProductionLinkProof.leanFilesProduction I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg do
+    for (p, t) in FVTest.E2E.ProductionLinkProofWith.leanFilesProductionWith "Backend.Stock.Prologue.AllConfigurations.lower" I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
       IO.FS.writeFile p t
       IO.println s!"  wrote {p}"

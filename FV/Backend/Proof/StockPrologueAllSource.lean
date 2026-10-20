@@ -4,10 +4,10 @@ import FV.Clif.Run
 namespace Backend.Stock.Prologue.AllConfigurations.Source
 open D0
 
-private def argument (c : Configuration) (word : BitVec (valueType c).width) : Clif.Val :=
+def argument (c : Configuration) (word : BitVec (valueType c).width) : Clif.Val :=
   ⟨valueType c, word⟩
 
-private def sourceFrame (name : String) (c : Configuration) (runs : List Clif.RunCommand)
+def sourceFrame (name : String) (c : Configuration) (runs : List Clif.RunCommand)
     (word : BitVec (valueType c).width) : Clif.Frame := {
   func := source name c runs
   slots := [], body := [{inst := .nop}], term := .jump {block := 1, args := []}

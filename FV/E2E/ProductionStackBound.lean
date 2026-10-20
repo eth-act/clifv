@@ -1,5 +1,5 @@
 import FV.E2E.DeadCleanupStackBound
-import FV.E2E.ProductionPipeline
+import FV.E2E.ProductionPipelineWith
 
 /-! Actual-output stack-bound adapters. Reuses the original graph,
 budget algorithm, machine semantics and successful generated-proof stages. -/
@@ -10,11 +10,12 @@ open Backend Backend.Proof Backend.Proof.Driver E2E.LinkCheck E2E.StackBound
 /-- Runtime inputs contain data and the fixed lowering function, no certificates. -/
 structure CompilerInput extends LinkInput where
   cleanup : Bool := true
+  lower : ProductionLowering := Stock.Production.lower
 instance : Coe CompilerInput LinkInput := ⟨CompilerInput.toLinkInput⟩
 def CompilerInput.stage (I : CompilerInput) : VCode → VCode :=
   cond I.cleanup DeadCleanup.prune id
 def CompilerInput.results (I : CompilerInput) : Res :=
-  I.toLinkInput.resultsProduction I.cleanup
+  I.toLinkInput.resultsProductionWith I.lower I.cleanup
 
 def okB (I : CompilerInput) : Bool := okRWith I.stage I.toLinkInput I.results
 
@@ -33,13 +34,13 @@ theorem facts {I : CompilerInput} (hI : okB I = true) {g : Clif.Function}
     (hg : g ∈ (progOf I.results).funcs) :
     PreparedFacts I.stage I.toLinkInput I.results g (artOf I.results g) :=
   preparedFacts I.stage
-    (I.toLinkInput.resultsProduction_prepared I.cleanup) hI hg
+    (I.toLinkInput.resultsProductionWith_prepared I.lower I.cleanup) hI hg
 
 theorem okB_sound {I : CompilerInput} (hI : okB I = true)
     {B : BaseEnv} {F : BitVec 64 → Prop}
     (hB : BaseOk (ofInput I B F)) (hF : ∀ a, (ofInput I B F).Img a → F a) :
     (ofInput I B F).OkProduction :=
-  I.toLinkInput.resultsProduction_sound I.cleanup hI hB hF
+  I.toLinkInput.resultsProductionWith_sound I.lower I.cleanup hI hB hF
 
 theorem backend_correct_program_stack (L : LinkSys) (hL : L.OkProduction) {κ : Nat → Clif.Function → Nat}
     (hκ : L.Budget κ) {f : Clif.Function} (b : Nat) (hb : ∀ M, κ M f = b)
