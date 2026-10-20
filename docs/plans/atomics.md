@@ -373,8 +373,23 @@ they are; the per-thread layers are new files.
   backward simulation (`sim_step_at`) lifted to events (the uses are equal, `op_sound`);
   **`alloc_refines`**: if `checkAlloc vc rf` accepts, a run of the allocated code from the entry,
   reading any bytes, is realized by a VCode thread run with the same events up to the moves.
-* **Layer 4b: the Arm machine against the allocated code (open).** `RegLevelCorrect` as `Refines`
-  from the allocated code to `ATStepP`:
+* **Layer 4b: the Arm machine against the allocated code (open; run level done).**
+  `RegLevelCorrect` as `Refines` from the allocated code to `ATStepP`:
+  * **run level (done, `FV/Concurrency/ArmAllocThread.lean`)**: `PRun P f ok`, precise Arm
+    thread runs whose steps satisfy `ok` (e.g. reads of the private set return the thread's own
+    bytes), deterministic given the labels; `MonPair`, the Arm trace's monitor pairs (an `ldaxr`
+    and a later successful `stlxr` with no exclusive event in between: a failed iteration's
+    `ldaxr` pairs with nothing); `ItemSim`, the per-item obligation (from related states, every
+    precise Arm run completes the item — the source step's events are events of the Arm segment,
+    in order, its other writes private, an atomic update `[acqXR, relXW]` a monitor pair, the
+    states after related; an item without Arm instructions decreases a measure — or ends inside
+    it, or the source has terminated). **`refines_of_itemSim`**: under `ItemSim`, every precise
+    Arm run from related states realizes a source run with
+    `Refines (·=·) Priv (MonPair trT)` on the prefix up to the source's termination (`pair_inv`
+    from the step shapes: a `relXW` is the second event of an atomic update). Witness
+    (`ArmAllocThreadWitness.lean`): `refines_ldaxr`, the `ldaxr` of `ArmThread.Witness` reading
+    the environment's `5` against a one-step source (`itemSim` holds for every precise run).
+  * open: `ItemSim` for `Rel := Q ∧ AInv` of the register-level proof (the per-item lemmas below);
   * kinds by `MInst.lines` (`Code.lines_kinds`, `VCodeEvents.cEvs_kinds`);
   * frame, spill and prologue accesses in `F s` (= `Priv`; the stack is per thread), read under
     `PrivCoh`;
@@ -418,7 +433,7 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2c (#301) | Litmus tests in Lean + qemu harness | **done** |
 | T2d (#302) | Per-thread event semantics of the Arm model: the run of one thread as a trace of memory events with an exclusive monitor (failing `stlxr`, the `cbnz` retry); the existing single-core model is that semantics against an SC memory with a monitor that never fails | **done** |
 | T2e (#303) | Program level: multi-threaded `Clif.run` (`ClifThread.MTRun`), program-level DRF-SC (race-freedom in every contract-consistent execution, initial writes `co`-first), replay of SC executions as interleaving runs, and the program-level statement `ProgE2E.program_correct` with the per-thread contract `Realizes` (§3c) | **done** |
-| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference; §3e) | layer 0 **done** (`ThreadRefine`: reduction `realizes_of_threads`, composition `Refines.trans`); layer 1 **done** (precise footprints `ArmInstFoot`, VCode thread semantics `VCodeThread.VTStep`); layer 1b **done** (event kinds `VCodeEvents.cEvs_kinds`); precise Arm labels (`ArmPrecise`) and private coherence (`PrivCoh.privCoh_of_consistent`) **done**; layer 3 **done** (`PrepThread.prep_refines_csem`); layer 4a **done** (`AllocThread.alloc_refines`); layers 2 and 4b open |
+| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference; §3e) | layer 0 **done** (`ThreadRefine`: reduction `realizes_of_threads`, composition `Refines.trans`); layer 1 **done** (precise footprints `ArmInstFoot`, VCode thread semantics `VCodeThread.VTStep`); layer 1b **done** (event kinds `VCodeEvents.cEvs_kinds`); precise Arm labels (`ArmPrecise`) and private coherence (`PrivCoh.privCoh_of_consistent`) **done**; layer 3 **done** (`PrepThread.prep_refines_csem`); layer 4a **done** (`AllocThread.alloc_refines`); layer 4b run level **done** (`ArmAllocThread.refines_of_itemSim`); layer 2 and 4b's per-item obligations open |
 | T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem (§3d), and the program-level chain `program_correct_rust` | **done** |
 | T2g (#305) | Widening: LSE atomics (`has_lse`: not emitted in our configuration, covered by the table, `Lse.lse_maps`), the full `aarch64.cat` (`Armv8Full`, monotonicity `consistent_frag`), `i128` atomics (rejected by cg_clif) | **done** |
 | T2i (#317) | Mixed-size accesses (a mixed-size model instead of `NoOverlap`) | open |
