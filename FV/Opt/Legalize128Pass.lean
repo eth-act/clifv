@@ -167,6 +167,11 @@ def entryParams (C : Ctx) : List (List SlotEl) → List (ValueId × Ty) → M (L
       let (a, b) ← pairOf C v
       return (w, .i64) :: (a, .i64) :: (b, .i64) :: (← entryParams C gs ps)
     else throw "legalize128: entry parameter does not match the signature"
+  | [.val p, .lo, .hi] :: [] :: gs, (v, t) :: (u, tu) :: ps =>
+    if t == .i128 && tu == p.ty && C.plain u then do
+      let (a, b) ← pairOf C v
+      return (u, tu) :: (a, .i64) :: (b, .i64) :: (← entryParams C gs ps)
+    else throw "legalize128: entry parameter does not match the signature"
   | _, _ => throw "legalize128: parameter slots do not match the signature"
 
 /-- The parameters of a non-entry block (`paramsOk`). -/

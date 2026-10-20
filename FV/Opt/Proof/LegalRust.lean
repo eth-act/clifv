@@ -243,7 +243,9 @@ theorem expRel_refl : ∀ {ps : List AbiParam} {gs : List (List SlotEl)} {vs : L
     GroupsOf ps gs → vs.map (·.ty) = ps.map (·.ty) → (∀ p ∈ ps, p.ty ≠ .i128) → ExpRel gs vs vs
   | [], [], [], _, _, _ => trivial
   | p :: ps, g :: gs, v :: vs, hg, ht, hn => by
-    obtain ⟨hg1, hg2⟩ := hg
+    rcases groupsOf_cons.1 hg with ⟨hg1, hg2⟩ | ⟨hpt, -⟩
+    rotate_left
+    · exact absurd hpt (hn p (List.mem_cons_self ..))
     simp only [List.map_cons, List.cons.injEq] at ht
     rcases hg1 with ⟨rfl, -⟩ | ⟨hpt, -⟩
     · exact ⟨rfl, expRel_refl hg2 ht.2 fun q hq => hn q (List.mem_cons_of_mem _ hq)⟩
@@ -257,7 +259,9 @@ theorem expRel_cons_val {p : AbiParam} {ps : List AbiParam} {g : List SlotEl}
     {gs : List (List SlotEl)} {v : Val} {vs vs' : List Val}
     (hg : GroupsOf (p :: ps) (g :: gs)) (hp : p.ty ≠ .i128) (h : ExpRel (g :: gs) (v :: vs) vs') :
     ∃ vs'', vs' = v :: vs'' ∧ GroupsOf ps gs ∧ ExpRel gs vs vs'' := by
-  obtain ⟨hg1, hg2⟩ := hg
+  rcases groupsOf_cons.1 hg with ⟨hg1, hg2⟩ | ⟨hpt, -⟩
+  rotate_left
+  · exact absurd hpt hp
   rcases hg1 with ⟨rfl, -⟩ | ⟨hpt, -⟩
   · rcases vs' with _ | ⟨v', vs'⟩
     · simp [ExpRel] at h
@@ -477,12 +481,15 @@ theorem extLegal_env : ExtLegal env := by
             rcases hps : sig.params with _ | ⟨p1, _ | ⟨p2, _ | ⟨p3, ps⟩⟩⟩ <;>
               simp [hps, AbiParam.tys] at hty
             rw [hps] at hG
-            rcases gs with _ | ⟨g1, _ | ⟨g2, _ | ⟨g3, gs⟩⟩⟩ <;> try (simp [GroupsOf] at hG; done)
+            rcases gs with _ | ⟨g1, _ | ⟨g2, gs⟩⟩ <;> try (simp [GroupsOf] at hG; done)
             obtain ⟨v1, rfl, hG1, he1⟩ := expRel_cons_val hG (by simp [← hty.1, ha]) hexp
             obtain ⟨v2, rfl, hG2, he2⟩ := expRel_cons_val hG1 (by simp [← hty.2.1, hb]) he1
-            obtain ⟨v3, rfl, -, -⟩ := expRel_cons_val hG2 (by simp [← hty.2.2.1, hc]) he2
-            rw [← ho]
-            exact memOutcome_prefix ..
+            cases gs with
+            | nil => simp [GroupsOf] at hG2
+            | cons g3 gs =>
+              obtain ⟨v3, rfl, -, -⟩ := expRel_cons_val hG2 (by simp [← hty.2.2.1, hc]) he2
+              rw [← ho]
+              exact memOutcome_prefix ..
         exact ⟨fun rv m' hr hrt =>
             ⟨rv, key _ hr (by simp), expRel_refl hR hrt (noI128_of_tys hrt (memOutcome_ret hr).1)⟩,
           fun c hc => key _ hc (by simp)⟩
