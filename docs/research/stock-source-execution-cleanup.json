@@ -1,0 +1,75 @@
+{
+  "utc": "2026-10-16T15:02:46.409937+00:00",
+  "free_GiB": 811.8,
+  "worktrees": [
+    {
+      "path": "/home/lee/clifv",
+      "owner": "codygunton / #44",
+      "dirty_status_entries": 5,
+      "action": "retain dirty/unpublished source and unique evidence",
+      "purpose": "preserved primary/recovery/pinned upstream source; no duplicate warm Lean cache"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume",
+      "owner": "codygunton / #44",
+      "dirty_status_entries": 1674,
+      "action": "retain dirty/unpublished source and unique evidence",
+      "purpose": "active canonical build/Rust+comparison tools"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/stock-lowering",
+      "owner": "codygunton / #44",
+      "dirty_status_entries": 34,
+      "action": "retain dirty/unpublished source and unique evidence",
+      "purpose": "preserved primary/recovery/pinned upstream source; no duplicate warm Lean cache"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-stock-lowering",
+      "owner": "codygunton / #44",
+      "dirty_status_entries": 6,
+      "action": "retain dirty/unpublished source and unique evidence",
+      "purpose": "preserved primary/recovery/pinned upstream source; no duplicate warm Lean cache"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/wasmtime-dupnames",
+      "owner": "codygunton / #44",
+      "dirty_status_entries": 6,
+      "action": "retain dirty/unpublished source and unique evidence",
+      "purpose": "preserved primary/recovery/pinned upstream source; no duplicate warm Lean cache"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/review-wasmtime",
+      "owner": "codygunton / #44",
+      "dirty_status_entries": 6,
+      "action": "retain dirty/unpublished source and unique evidence",
+      "purpose": "preserved primary/recovery/pinned upstream source; no duplicate warm Lean cache"
+    }
+  ],
+  "new_worktree_cache_agent": false,
+  "warm_Lean_cache_count": 1,
+  "removed_after_archive_hash_verification": [
+    {
+      "path": "/tmp/stock-make-executing-call-witness.py",
+      "bytes": 5202,
+      "archived_member": "tmp/stock-make-executing-call-witness.py"
+    }
+  ],
+  "archive": {
+    "utc": "20261016T150206Z",
+    "archive": "/home/lee/.clifv-recovery/20261016T150206Z-source-execution/checkpoint.tar.gz",
+    "sha256": "3226bdbd5ae15fddc6a9d80d8ee9a58ce2b26439491d49c356804258e99b62c0",
+    "bytes": 2999826,
+    "members": 50,
+    "every_member_verified": true,
+    "recovery_chain": {
+      "previous_remote_branch": "agent/stock-driver-wip-backup-20261016T143339Z",
+      "previous_remote_commit": "a47e37b151edc4803a65676950275954df3a359a",
+      "previous_remote_archive_path": "docs/research/recovery-evidence/mandatory-call-sink-20261016T143339Z.tar.gz",
+      "previous_archive_sha256": "07d4c57d5dd8cb70ac710ebdb9f769fee3fe52bc132f6ea224bb05aa9ad3d812",
+      "remote_and_local_chain_verified": true
+    }
+  },
+  "cleanup": "No unneeded clean worktree or obsolete duplicate cache available. Finished witness generator archived/verified then removed; active checked modules and unique proof evidence retained. Other projects untouched.",
+  "resources": "effective workers2; scratch8GiB, one canonical22GiB kernel with prior isolatedCmp32GiB exception; low priority bounded compression",
+  "policy": "cleanup after every batch/PR/stop even with ample free space; preserve source/evidence/backups; target100GiB/projected50GiB free"
+}
