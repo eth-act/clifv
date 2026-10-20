@@ -482,8 +482,12 @@ purposes, so an `sret` return could change the group shapes). Witnesses
 (`indI128_legal`, `tryInd_legal`); `E2E.LinkWitness.a2_legal_wide` (`FV/E2E/LegalWideWitness.lean`)
 applies `backend_correct_legal_wide` to the witness program's legalised callee with every
 function-level premise discharged. Axiom list: `scripts/audit/i128-wide.lean`. Native check:
-`FVTest/Clif/fixtures/i128-call-indirect.clif` (a `call_indirect` at `(i128, i64) -> i128` and at
-`(i64, i128) -> i128` (pad in `x1`), a `try_call_indirect` at `(i128, i64) -> i128`).
+`corpus/clif-regress/i128-call-indirect.clif` (a `call_indirect` at `(i128, i64) -> i128` and at
+`(i64, i128) -> i128` (pad in `x1`), a `try_call_indirect` at `(i128, i64) -> i128`; run with
+`scripts/lean-backend-filetests.sh FILE`, 6 runs agree with Cranelift's code). It is not in
+`FVTest/Clif/fixtures`, because `Clif.run` resolves `func_addr` through the link-time image's
+symbols and the filetest harness has none, so `scripts/clif-filetests.sh` cannot run it. The
+same holds for `corpus/clif-regress/call_indirect.clif`.
 
 ## Not covered
 
