@@ -216,9 +216,24 @@ under qemu: `scripts/lean-backend-filetests.sh FVTest/Backend/float_move.clif` g
 17 pass, 17 agree with Cranelift-native, and the
 object's `.text` is byte-identical to `llvm-mc`'s. Its functions have integer signatures, since
 `ctlCheck` keeps `args`/`rets` integer until S11e5. **Interim, S11e5:** no consumer takes the `T`
-targets yet (driver, lockstep and end-to-end theorems keep `CtxInv`/`Compile.functionE`; `csemG`
-leaves float accesses undefined); the literal-pool `f64const` (`emit_u64_le_const`) is not
-modelled, so such a function is reported unsupported.
+targets yet (driver and end-to-end theorems keep `CtxInv`/`Compile.functionE`); the
+literal-pool `f64const` (`emit_u64_le_const`) is not modelled, so such a function is reported
+unsupported.
+
+**S11e5 Stage C slice 4 (FP memory bridge, GF lockstep).** `csem`'s specification fallback
+`mspec` has the scalar float load/store arms (as `fspec` states them), so `csem` itself refines
+the float accesses on every world (`csem_fpuLoad`/`csem_fpuStore`, `memRefinesFP_csem`);
+`csemGF` is a sub-semantics of `csem` (`csemGF_sub`) extending `csemG` (`csemG_csemGF`), with
+`csemG`'s pinned call contracts, and its runs go in lockstep (`csemGF_lockstep2`;
+`FV/E2E/GuardedFP.lean`). On pairs of worlds: `guardedStepF`/`guardedStep0F` and the guarded
+simulation composition of a statement / `try_call` from per-step `csemGF` contracts
+(`lowerInstOk_pair_of`/`lowerInstOk_pairF`, `lowerTryOk_pair_of`/`lowerTryOk_pairF`;
+`FV/E2E/GuardedFPPair.lean`), with `instCalls_pair`, `tryCalls_pair`, `tryIndCalls_pair` as
+instances (`…_viaF`, the integer contracts lifted by `LowerInstOkP.sem_ext`/`LowerTryOkP.sem_ext`);
+the same for the shipped value semantics (`valueSemGF`, `valueSemGF_lockstep2`,
+`lowerInstOk_pairF_value`, `instCalls_pair_value_viaF`; `FV/E2E/DeadCleanupGuardedFP.lean`).
+Witnesses: `FV/E2E/GuardedFPWitness.lean`. The typed per-step contracts (`T` dispatch at
+`CtxInvT`) and the typed driver that consumes the composition are slices 2/3/7.
 
 **S11e5 Stage C, slices 1-2 (typed scope, typed context, typed driver model).** Variants beside
 the integer ones; no public scope changes. `Compile.functionET` (`FV/Compile/SubsetT.lean`) is

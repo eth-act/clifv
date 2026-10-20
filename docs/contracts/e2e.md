@@ -170,12 +170,30 @@ the `IntPos` typing of the integer operands (`lowerRulesCorrectT_program`,
 float accesses need the new instruction-semantics obligation `MemRefinesFP Rd`. The
 end-to-end chain does not consume them yet: `backend_correct_final` takes
 `LowerRulesCorrect`/`MemRulesCorrectR` over `CtxInv` (integer values only, `Compile.functionE`),
-and `csemG` leaves `fpuLoad`/`fpuStore` undefined (`GuardR` is `False` there), so the lockstep
-has no float access to relate. `E2E.csemGF` (`FV/E2E/GuardedFP.lean`) is `csemG` extended by the
-guarded float accesses; it satisfies `Refines`, `MemRefinesR Rd` and `MemRefinesFP Rd`
-(`refines_csemGF`, `memRefinesR_csemGF`, `memRefinesFP_csemGF`), which shows the premises of
-`MemRulesCorrectRT` are satisfiable. Producing `CtxInvT` in the driver, the lockstep of the
-float accesses and the widened scope are S11e5.
+and `csemG` leaves `fpuLoad`/`fpuStore` undefined (`GuardR` is `False` there). `E2E.csemGF`
+(`FV/E2E/GuardedFP.lean`) is `csemG` extended by the guarded float accesses; it satisfies
+`Refines`, `MemRefinesR Rd` and `MemRefinesFP Rd` (`refines_csemGF`, `memRefinesR_csemGF`,
+`memRefinesFP_csemGF`), which shows the premises of `MemRulesCorrectRT` are satisfiable.
+
+**The float lockstep (S11e5 Stage C slice 4).** `csem`'s specification fallback `mspec` states
+the scalar float loads/stores (the arms of `fspec`), so `csem` refines them on every world
+(`csem_fpuLoad`, `csem_fpuStore`, `memRefinesFP_csem`) and `csemGF` is a sub-semantics of `csem`
+(`csemGF_sub`) that extends `csemG` (`csemG_csemGF`) with its pinned call contracts
+(`callsRefineP_csemGF`, `indCallsRefineP_csemGF`). Two `csemGF` runs of one instruction on
+worlds that agree outside `Z ⊇ F`, reads guarded by `¬ Z`, go in lockstep
+(`csemGF_lockstep2`): a float load reads the same bytes, a float store writes the same value at
+the same address (`sp`/`x29` agree). On pairs of worlds (`FV/E2E/GuardedFPPair.lean`):
+`guardedStepF`, `guardedStep0F`, and the guarded simulation composition of a statement and of a
+`try_call` from per-step contracts at any guarded sub-semantics with the lockstep
+(`lowerInstOk_pair_of`, `lowerTryOk_pair_of`), instantiated at `csemGF` (`lowerInstOk_pairF`,
+`lowerTryOk_pairF`); `instCalls_pair_viaF`, `tryCalls_pair_viaF`, `tryIndCalls_pair_viaF` derive
+the statements of `instCalls_pair`, `tryCalls_pair`, `tryIndCalls_pair` through it (the integer
+contracts lifted along `csemG ⊑ csemGF` by `LowerInstOkP.sem_ext`/`LowerTryOkP.sem_ext`). The
+shipped value semantics has the same (`valueSemGF`, `valueSemGF_lockstep2`,
+`lowerInstOk_pairF_value`, `instCalls_pair_value_viaF`; `FV/E2E/DeadCleanupGuardedFP.lean`).
+Witnesses: `FV/E2E/GuardedFPWitness.lean`. Remaining: the typed per-step contracts (rules over
+`CtxInvT`, dispatched as `lowerInstOkP_runTerm` is), the typed driver/`vcode_ni` that consumes
+them, and the widened scope.
 
 ### `try_call` (the normal return)
 

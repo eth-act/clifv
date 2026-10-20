@@ -543,7 +543,8 @@ def _root_.Backend.CondBrKind.holds (k : CondBrKind) (uses : List CV) (w : Arm.A
 
 /-- The specification fallback of `csem` (worlds with an error or a misaligned `sp`, forms
 not covered by `FormOk`): `ispec`, extended by the memory forms as `MemRefines` states them
-(slot offsets at slot base `sb`). -/
+(slot offsets at slot base `sb`), and by the scalar float loads and stores (`ldr`/`str` of an
+`s`/`d` register) as `MemRefinesFP` states them (S11e5, #238). -/
 def mspec (sb : Nat) : Sem := fun i uses w =>
   match i, uses with
   | .load op (.vreg _ .int) am _, us =>
@@ -561,6 +562,16 @@ def mspec (sb : Nat) : Sem := fun i uses w =>
   | .storeRelease ty (.vreg _ .int) (.vreg _ .int) _, [u, v] =>
     if AtomTy ty then
       some ([], Arm.write_mem_bytes ty.bytes (lo64 u) ((lo64 v).setWidth (ty.bytes * 8)) w, .next)
+    else none
+  | .fpuLoad sz (.vreg _ .float) am _, us =>
+    if sz = .size32 ∨ sz = .size64 then
+      (amodeAddr sb am sz.bytes us w).map fun a =>
+        ([(Arm.read_mem_bytes sz.bytes a w).setWidth 128], w, .next)
+    else none
+  | .fpuStore sz (.vreg _ .float) am _, v :: us =>
+    if sz = .size32 ∨ sz = .size64 then
+      (amodeAddr sb am sz.bytes us w).map fun a =>
+        ([], Arm.write_mem_bytes sz.bytes a (v.setWidth (sz.bytes * 8)) w, .next)
     else none
   | i, us => ispec i us w
 
