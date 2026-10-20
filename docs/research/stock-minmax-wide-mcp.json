@@ -1,0 +1,120 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"success\": true,\n  \"timed_out\": false,\n  \"diagnostics\": [\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_companion_fragment_code' depends on axioms: [propext, Quot.sound]\",\n      \"line\": 11,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_companion_fragment_replace' depends on axioms: [propext, Quot.sound]\",\n      \"line\": 12,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_companion_fragment_witness' depends on axioms: [propext, Quot.sound]\",\n      \"line\": 13,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_rhs_calls' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 14,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_selected_calls' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 15,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_driver_observed' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 16,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.MinMaxWideDriverWitness.stock_minmax_wide_complete_source_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 17,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_source_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 18,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_source_by_instruction' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 19,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_available_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 20,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_selected_allocation' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 21,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_selected_source_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 22,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_emitter_shape' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 23,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_source_with_reads' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 24,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_emitter_source_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 25,\n      \"column\": 1,\n      \"lean_tags\": null\n    }\n  ]\n}"
+    }
+  ],
+  "structuredContent": {
+    "success": true,
+    "timed_out": false,
+    "diagnostics": [
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_companion_fragment_code' depends on axioms: [propext, Quot.sound]",
+        "line": 11,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_companion_fragment_replace' depends on axioms: [propext, Quot.sound]",
+        "line": 12,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_companion_fragment_witness' depends on axioms: [propext, Quot.sound]",
+        "line": 13,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_rhs_calls' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 14,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_selected_calls' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 15,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_driver_observed' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 16,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.MinMaxWideDriverWitness.stock_minmax_wide_complete_source_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 17,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 18,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_source_by_instruction' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 19,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_available_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 20,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_selected_allocation' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 21,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_selected_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 22,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_emitter_shape' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 23,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_lower_minmax_wide_source_with_reads' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 24,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_minmax_wide_emitter_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 25,
+        "column": 1,
+        "lean_tags": null
+      }
+    ]
+  },
+  "isError": false
+}

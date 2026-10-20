@@ -80,7 +80,7 @@ theorem Memory.read_write_bytes_different (hn1 : n ≤ 2^64)
         generalize hn' : BitVec.ofNat 64 n = n' at *
         have : n' ≠ -1 := by bv_omega
         clear hn1 ih
-        bv_decide
+        bv_omega
       have h_neq : addr1 ≠ addr2 :=
         mem_separate_starting_addresses_neq h
       rw [write_bytes, ih (by omega) h_sep, Memory.read_write_different h_neq]
