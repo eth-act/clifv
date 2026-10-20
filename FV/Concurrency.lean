@@ -18,8 +18,10 @@ and of VCode under `csem` (`VCodeThread.ifoot_csem`), the VCode thread semantics
 (`VCodeThread.VTStep`) and its event kinds (`VCodeEvents.cEvs_kinds`); precise Arm labels
 (`ArmPrecise.ATStepP`), private coherence from Armv8 coherence with per-thread private sets
 (`PrivCoh.privCoh_of_consistent`, `PrivCoh.realizes_of_threads_priv`), `prepare` and register
-allocation with interference (`PrepThread.prep_refines_csem`, `AllocThread.alloc_refines`), and
-per-statement frame sets (`FrameMono.vtrun_mono`).
+allocation with interference (`PrepThread.prep_refines_csem`, `AllocThread.alloc_refines`),
+per-statement frame sets (`FrameMono.vtrun_mono`), and the run level of the Arm machine against
+the allocated code (`ArmAllocThread.refines_of_itemSim`: per-item obligations give `Refines`
+with the Arm trace's monitor pairs).
 The fragment model is weaker than the whole `aarch64.cat` (`Armv8Full.consistent_frag`); LSE
 atomics map by the same table (`Lse.lse_maps`). Nothing here changes the Arm model of `FV/Arm`.
 -/
@@ -62,3 +64,5 @@ import FV.Concurrency.VCodeAddr
 import FV.Concurrency.VCodeAddrAtomic
 import FV.Concurrency.VCodeFrame
 import FV.Concurrency.VCodeFrameWitness
+import FV.Concurrency.ArmAllocThread
+import FV.Concurrency.ArmAllocThreadWitness

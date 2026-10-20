@@ -108,6 +108,12 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ThreadLayerWitness.prep_ldar
 #print axioms Concurrency.ThreadLayerWitness.alloc_ldar
 #print axioms Concurrency.ThreadLayerWitness.precise_ldaxr
+-- the Arm machine against the allocated code, run level (T2h, #311, layer 4b)
+#print axioms Concurrency.ArmAllocThread.RefA.cons
+#print axioms Concurrency.ArmAllocThread.RefA.refines
+#print axioms Concurrency.ArmAllocThread.refines_of_itemSim
+#print axioms Concurrency.ArmAllocThread.Witness.itemSim
+#print axioms Concurrency.ArmAllocThread.Witness.refines_ldaxr
 -- the program level with fences and Rust orderings (T2f, #304)
 #print axioms Concurrency.ProgE2E.rmw_sc
 #print axioms Concurrency.ProgE2E.raceFreeProgF_of_raceFreeProg
