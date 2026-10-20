@@ -50,4 +50,3 @@ theorem artsOkWithCompilerModes_append {I : LinkInput}
   · exact ha fi h
   · exact hb fi h
 end E2E.BinCheck
-
