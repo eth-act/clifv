@@ -164,7 +164,7 @@ theorem load_touched {isem : Sem} {MR : MemRelT} {env : Clif.Env} {p : Clif.Prog
   simp only [c2, Clif.Mem.writeBits] at this
   rw [ite_eq_left_iff.mpr (fun h => absurd ⟨Nat.le_refl _, by omega⟩ h)] at this
   simp only [Nat.sub_self, Clif.Mem.byteIndex, Option.some.injEq] at this
-  have e : b0 = b0 + 1 := by simp [y] at this; exact this
+  have e : b0 = b0 + 1 := by simpa [y] using this
   exact ne_succ b0 e.symm
 
 end Concurrency.IselVary
