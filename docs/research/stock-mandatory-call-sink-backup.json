@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-16T13:03:06.009492+00:00",
+  "backup": {
+    "utc": "20261016T130224Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T130224Z",
+    "commit": "096bee360dc492e58272cfd8e95331d17040e35e",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1683,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  },
+  "archive": {
+    "utc": "20261016T130157Z",
+    "path": "/home/lee/.clifv-recovery/20261016T130157Z-mandatory-call-sink/checkpoint.tar.gz",
+    "sha256": "ac353a0a18805f17e9fa3e9898ff0c5995db68fe4c361723da26e8511194aed9",
+    "bytes": 43031959,
+    "members": 66,
+    "every_member_byte_verified": true,
+    "state": "17Std audited roots/6candidate modules pending/canonical freeze preserved;full goal incomplete/production legacy"
+  },
+  "goal": "#140 original full goal active/incomplete; production legacy",
+  "pending": "6candidate modules/complete witnesses/global sink and mandatory emission/coherent canonical validation/MCP/full gates"
+}

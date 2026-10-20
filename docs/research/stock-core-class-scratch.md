@@ -1,0 +1,11 @@
+# Actual branch and original block-core operand classes
+
+The original #140 goal remains active/incomplete; production still uses the legacy driver.
+
+Three compiled scratch modules add three public roots. Actual `emitBranch` derives complete emitted operand classes, including real final-call replacement by `tryCall`. Actual original cores derive selected context classes from source construction and original scope, compose outgoing collection and complete backward body scans, and transport branch code to the final core class table. Prefix class growth and unchanged reservations are internal traversal invariants; global instruction-class composition still must derive them inside the whole-driver result.
+
+The complete original comparing-branch witness includes successful actual Stock/raw/globalcheckedfallback/physical stages, actual branch/core calls, construction-derived class inputs and nonempty ordinary instructions with class facts in both outputs. It reuses cached pipeline observations. All three modules compile exit0 at8GiB; combined81normalroots are standard-only and all78prior exactsets are unchanged. All prior scratch source/compiled/log hashes and frozen canonical source/scripts remain unchanged. See [hashed JSON receipt](stock-core-class-scratch.json).
+
+Latest integration proposal supersedes previous counts:39modules/81roots, exactly ONE bundled81-root MCP after integration and2073normalroots preserving all1992prior exactsets, then every full gate and remote backup. No scratch MCP yet; live frozen batch still1992roots. Integrate only after its watcher is terminal and receipts verified; reconcile/preserve newer main218–227/f29d0c0 variants first.
+
+Next derive entry/parameter/outgoing/critical-node and global returned/prepared instruction classes, controlABI validity and original-input availability/checker/fallback completeness/Stock totality. All original register/value/source/DFG/world/block/whole-driver simulation/completeness, remaining rule families/effects/calls/traps/sinking/TryCall continuations and actual compiler/checker/linker/generated-proof production integration remain mandatory. Final witnesses/audits/full gates/BOTH E2E identity-stage parity/fresh complete stock comparison preserve original input conditions, old theoremvariants/axiomsets, accepted identities/successful stages and at least#179.

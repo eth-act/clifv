@@ -7,7 +7,7 @@ Untrusted: computes, by a fixpoint of V3's disjunctive abstract interpreter (`aR
 the control-shape precondition `apreS` and oracles `aOracleS` over the exported ISLE rules, a
 summary table for every internal term reachable from the closure roots of `lower` and from
 `lower_branch` (without the hand-checked rules `shpHandIds`), and writes `IselShpTab.lean`: the
-table as Lean literals and the `native_decide` checks (`chkTab` and the root checks) the proofs
+table as Lean literals and the leaf-wise `decide +kernel` checks (`chkTab` and the root checks) the proofs
 rely on. Prints the failing entries/roots/`emit`s if any.
 
 Regenerate (from the repository root, after `lake build FV.Backend.Proof.IselShpFns`):
@@ -204,7 +204,7 @@ end Gen
 namespace Gen
 open Backend.Proof.Cov
 
-/-- Entries per chunk of the table (one definition and one `native_decide` per chunk). -/
+/-- Entries per chunk of the table (one definition and one leaf-wise kernel proof per chunk). -/
 def chunk : Nat := 88
 
 def header : String := "import FV.Backend.Proof.IselShpFns
@@ -223,6 +223,10 @@ calls of the closure roots of `lower` and of `lower_branch` other than the hand-
 decided once over the exported rule data.
 -/
 
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
+
 namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Isle Isle.Aarch64
@@ -240,21 +244,32 @@ def render (tab : Tab) : String := Id.run do
     " ++ ".intercalate ((List.range n).map (s!"shpTab{·}")) ++ "\n\n"
   out := out ++ "/-- `chkTab`'s test of one entry. -/\nabbrev shpEntryOk (e : TermId × List AW × AW) : Bool :=\n  (program.rulesOf e.1).all (aRule program shpTab aext actor apreS aOracleS e.2.1 e.2.2)\n\n"
   for k in [0:n] do
-    out := out ++ s!"theorem shpTab{k}_ok : (shpTab{k}).all shpEntryOk = true := by native_decide\n\n"
+    out := out ++ s!"theorem shpTab{k}_ok : (shpTab{k}).all shpEntryOk = true := by\n  simp only [shpTab{k}, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]\n  repeat' apply And.intro\n  all_goals decide +kernel\n\n"
   out := out ++ "/-- **Every rule of every entry checks.** -/\ntheorem shpTab_ok : chkTab program shpTab aext actor apreS aOracleS = true := by\n  unfold chkTab\n  show (shpTab).all shpEntryOk = true\n  simp only [shpTab, List.all_append, " ++
     ", ".intercalate ((List.range n).map (s!"shpTab{·}_ok")) ++ ", Bool.and_self]\n\n"
   out := out ++ "/-- The closure roots of `lower` other than the hand-checked ones check. -/
 theorem shpStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
     shpHandIds.contains r.id || aRule program shpTab aext actor apreS aOracleS [.xv .inst] AW.top r) = true := by
-  native_decide
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `return`, 1037 `trap`) check. -/
 theorem shpTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    aRule program shpTab aext actor apreS aOracleS [.c0] AW.top r) = true := by native_decide
+    aRule program shpTab aext actor apreS aOracleS [.c0] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The rules of `lower_branch` other than the hand-checked ones check. -/
 theorem shpBranch_ok : (program.rulesOf TId.lower_branch).all (fun r => shpHandIds.contains r.id ||
-    aRule program shpTab aext actor apreS aOracleS [.c0, .c0] AW.top r) = true := by native_decide
+    aRule program shpTab aext actor apreS aOracleS [.c0, .c0] AW.top r) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 end Backend.Proof.Cov
 "
