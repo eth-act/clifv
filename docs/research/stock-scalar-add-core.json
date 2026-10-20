@@ -1,0 +1,50 @@
+{
+  "utc": "2026-10-20T03:52:18.239578+00:00",
+  "state": "author_gates_passed_pending_author_squash",
+  "base": "5a143135fca1b3565085f7cf403dc475c85cfc24",
+  "standard_public_roots": 28,
+  "standard_owned_constants": 248,
+  "code": "six separately checked arbitrary-name/metadata configuration roots and universal composition; actual Stock code/edges, diagnostic-only equality to legacy used in proof transport only",
+  "domain": "source SSA and use/parameter independence derived constructively without evaluating the opaque fixed point",
+  "source": "all pairs of argument words, all initial memory/placement oracles, exact wrapped addition, dirty machine upper bits",
+  "selector": "actual Stock attempt with complete earlier-selector fallback; preserves D0 and all six shipped prologues",
+  "scan": "actual add/sub scan and select/addsub/omitted whole-body composition, reusing existing selected-rule and original-source proofs",
+  "complete_machine_witness": true,
+  "new_scan_nonvacuity_witness": true,
+  "entrypoint_activation": "local implementation; not yet main",
+  "full_author_gates_run": true,
+  "full_original_goal_complete": false,
+  "logs": {
+    "/tmp/stock-scalar-add-proper-code-domain-build.log": "5024669552d1723a33566b69871ee3e8b44ef471512f5b6daaa3e683bbb8d41a",
+    "/tmp/stock-scalar-add-domain-fixed-build.log": "a7ca88a9ed1c16bdc0379acad60e1a55b581bfc3eeb90804fa3e603fb1ee19da",
+    "/tmp/stock-scalar-add-witness-build.log": "da88fec755e3d1cb901a1b1185dc813ad125ab9a076aa3adbbf628554d07ee29",
+    "/tmp/stock-scalar-add-public-audit.log": "70e602a802a72b627d7d58d28842049ed933f09f9fe537b95cb3413f5d9f1e58",
+    "/tmp/stock-scalar-add-owned-audit.log": "ef3e73d4878d9b827748530c4415dc0bae89fcfd6616c59c652dad112c04cdd1",
+    "/tmp/stock-addsub-scan-proper-build.log": "7fa92594eaed6b9be661f15ce397609ac94224bcba8da89f7a60755b0fd5f102",
+    "/tmp/stock-scalar-target-audit.log": "1cd14cc97b24a5cd47924eeb5def6109ad06545e3250410d87ed1bfb220a4fb4",
+    "/tmp/stock-scalar-runtime-check.log": "0a09576acf26e882def802224360e9b5abe63e4cb9410364e23a1eb227951a08",
+    "/tmp/stock-scalar-linked-check/progress.json": "758be98f5fc5ebff04c5917be10ceb00e917c1788cd16b8c62c27ef21477125d",
+    "/tmp/stock-scalar-cli-check/state.json": "a9b2d864437e93498a6536948a160482d46e691bfb4ebd0310f73174a2bf4af4",
+    "/tmp/stock-scalar-scan-public-facts-build.log": "b3a25add46ecf07153ab589ec571a2699e9b3f35130ccad9e304526c9d0fa711"
+  },
+  "next": "Author squash; notify integrator; continue all original #140 obligations.",
+  "boundary_roots": 23,
+  "explicit_native_witness_roots": 15,
+  "linked_cases": 10,
+  "generated_linked_lean_files": 16,
+  "real_cli_modes": 2,
+  "mcp_review": {
+    "root": "Backend.Stock.Proof.stock_lower_select_addsub_omitted_body_fall_refines",
+    "axioms": [
+      "propext",
+      "Classical.choice",
+      "Quot.sound"
+    ],
+    "source_warnings": [],
+    "calls": 1
+  },
+  "validated_head": "c6f3a0805aeb67457c7942f8d56fb754567b3cd0",
+  "author_receipt": "docs/research/stock-scalar-add-production-author-gates.json",
+  "expanded_owned_partitions": 9,
+  "settings_matched_regalloc2_passed": true
+}

@@ -10,7 +10,8 @@ open _root_.E2E _root_.E2E.LinkCheck _root_.E2E.BinCheck Backend Lean
 
 def leanFilesProductionWith (lowerName : String) (I : LinkInput) (names : List String) (entries : List String) (out module exe : String)
     (cleanup : Bool)
-    (noTls : Bool) (stack : Option Nat) (stackEntries : List String) (bg : BinGen) :
+    (noTls : Bool) (stack : Option Nat) (stackEntries : List String) (bg : BinGen)
+    (lowerImport : String := "FV.Backend.Lowering.StockPrologueAll") :
     List (String × String) := Id.run do
   let ns := s!"Crates.{module}"
   let n := I.funcs.length
@@ -20,7 +21,8 @@ def leanFilesProductionWith (lowerName : String) (I : LinkInput) (names : List S
   let split := nSl > 1
   let slFns (k : Nat) := ", ".intercalate ((idx.drop (k * sliceSize)).take sliceSize |>.map (s!"fn{·}"))
   let pairs (l : List (String × Nat)) := ",\n    ".intercalate (l.map fun p => s!"({leanStr p.1}, {p.2})")
-  let header (imports : String) := s!"import FV.E2E.ProductionChecksWith
+  let header (imports : String) := s!"import {lowerImport}
+import FV.E2E.ProductionChecksWith
 import FV.E2E.ProductionStackBound
 {imports}
 

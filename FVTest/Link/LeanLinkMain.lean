@@ -1,3 +1,4 @@
+import FV.Backend.Lowering.StockScalarProduction
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Link.OptCompile
@@ -215,15 +216,15 @@ def main (args0 : List String) : IO UInt32 := do
       return 1
   -- Keep optimizer and exceptional-edge theorem variants on their retained route
   -- until their production adapters are complete.
-  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.Prologue.AllConfigurations.eligible fi.func) &&
+  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)
-  let compiled := if stockEnabled then ProductionCompilerWith.compile Backend.Stock.Prologue.AllConfigurations.lower SC0 file0 deadCleanup
+  let compiled := if stockEnabled then ProductionCompilerWith.compile Backend.Stock.ScalarAdd.lower SC0 file0 deadCleanup
     else (compile SC file0).map fun file => (⟨file,false⟩ : ProductionCompilerWith.Output)
   match compiled with
   | .ok out =>
     let file := out.file
     if out.stock then
-      let SP := SC0.placedProductionWith Backend.Stock.Prologue.AllConfigurations.lower deadCleanup
+      let SP := SC0.placedProductionWith Backend.Stock.ScalarAdd.lower deadCleanup
       IO.FS.writeBinFile exe file
       IO.println s!"lean-link: {exe}: {summary} written by Link.ProductionCompilerWith.compile (Link.ProductionCompilerWith.attempt_correct)"
       if let some f := ldFile then
