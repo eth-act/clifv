@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.KernelBV
 
 /-!
 # Constants made at a type variable (`iconst_u ty k`, `iconst_s ty k`, `iconst ty (imm64_neg ty c)`)
@@ -10,10 +11,9 @@ specs (`tyUmax_ofClif`, `band64_umax`, `i64SextendU64_umax`, …) evaluate, and 
 `UnaryImm` reduces to `.iconst t (BitVec.ofInt t.width k)`. What remained was the bit-level finish:
 
 - `rule_bits_tv`: `rule_bits_w` without the `Val` split, with contradictory `i128` cases closed after
-  the type split, negations pulled out of products (`BitVec.neg_mul`/`mul_neg`: `bv_decide` does not
-  finish symbolic 64-bit products), `bv_decide` (120 s SAT timeout) before `ac_rfl` (`ac_rfl` on a
-  closed-width goal such as `allOnes 64 - x = ~~~x` hits the maximum recursion depth, which `first`
-  does not catch).
+  the type split, negations pulled out of products (`BitVec.neg_mul`/`mul_neg`), `kbv` before
+  `ac_rfl` (`ac_rfl` on a closed-width goal such as `allOnes 64 - x = ~~~x` hits the maximum
+  recursion depth, which `first` does not catch).
 - `rule_auto_tv`: left-hand side, `i128` split, if-lets, `rule_rhs_x`, `rule_finish_tv`.
 - `imm64Neg_ofInt`: `imm64_neg` of an arbitrary immediate (not only a presented `imm64OfBits b`), with
   `asI64_asU64_cast`/`ofInt_asI64_low` for `imm64 (i64_cast_unsigned k)` (`cprop.isle` 269).
@@ -34,7 +34,7 @@ theorem ofInt_asI64_low {t : Ty} (ht : t ≠ .i128) (x : Int) :
     BitVec.ofInt t.width (Rust.asI64 x) = BitVec.ofInt t.width x := by
   imm_cases t <;> simp only [Rust.asI64, ofInt_toInt_signExtend] <;>
     (try simp (disch := decide) only [ofInt_eq_setWidth]) <;>
-    generalize BitVec.ofInt 64 x = X <;> bv_decide
+    generalize BitVec.ofInt 64 x = X <;> kbv
 
 /-- `imm64_neg` of any immediate at a non-`i128` type (`imm64Neg_spec` needs a presented
 immediate `imm64OfBits b`; `cprop.isle` 269 negates `imm64 (i64_cast_unsigned k)`). -/
@@ -65,7 +65,7 @@ macro "rule_bits_tv" : tactic => `(tactic| (
             opt_widths <;> sem_simp_b <;> (try int_bv) <;>
             (try simp only [BitVec.neg_mul, BitVec.mul_neg, BitVec.neg_neg]) <;>
             (try apply val_congr) <;>
-            first | bv_decide (config := { timeout := 120 }) | ac_rfl))))
+            first | kbv | ac_rfl))))
 
 set_option hygiene false in
 /-- `rule_finish_w` with `rule_bits_tv`. -/
