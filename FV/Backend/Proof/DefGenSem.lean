@@ -470,7 +470,7 @@ theorem fitsClL_sound (he : EnvOK c D env e) :
       fitsCl.fitsClL e n b z as = true → ∀ v ∈ vs, Cl c b z D v
   | _, _, _, [], [], _, _ => fun _ h => by cases h
   | n, b, z, a :: as, v :: vs, h, hf => by
-    simp only [fitsCl.fitsClL, Bool.and_eq_true] at hf
+    simp only [fitsCl.fitsClL, allA, Bool.and_eq_true] at hf
     intro u hu
     rcases List.mem_cons.mp hu with rfl | hu
     · exact fitsCl_sound he n b z a h.1 hf.1
@@ -1204,11 +1204,11 @@ where
   crOk_len : ∀ (fs : List A) (cs : List Bool) {n : Nat} {z : Bool},
       fitsTy.crOk e n z fs cs = true → fs.length = cs.length
     | _ :: fs, _ :: cs, _, _, h => by
-      simp only [fitsTy.crOk, Bool.and_eq_true] at h
+      simp only [fitsTy.crOk, crAll, Bool.and_eq_true] at h
       exact congrArg (· + 1) (crOk_len fs cs h.2)
     | [], [], _, _, _ => rfl
-    | [], _ :: _, _, _, h => by simp [fitsTy.crOk] at h
-    | _ :: _, [], _, _, h => by simp [fitsTy.crOk] at h
+    | [], _ :: _, _, _, h => by simp [fitsTy.crOk, crAll] at h
+    | _ :: _, [], _, _, h => by simp [fitsTy.crOk, crAll] at h
   crOk_sound (n : Nat) {z : Bool}
       (ih : ∀ (a : A) (τ : TypeId) (z : Bool) {w : V}, γ c a D env w → fitsTy e n a τ z = true →
         PT c z D τ w) :
@@ -1218,7 +1218,7 @@ where
           (b = true → Cl c false z D f ∨ FlagP c z D TyId.«ProducesFlags» f) ∧
           (b = false → Cl c false z D f)
     | g :: fs, b' :: cs, v :: vs, h, hf => by
-      simp only [fitsTy.crOk, Bool.and_eq_true] at hf
+      simp only [fitsTy.crOk, crAll, Bool.and_eq_true] at hf
       intro i f b hv hb
       cases i with
       | zero =>
@@ -1235,8 +1235,8 @@ where
         simp only [List.getElem?_cons_succ] at hv hb
         exact crOk_sound n ih fs cs h.2 hf.2 i f b hv hb
     | [], [], [], _, _ => fun i f b hv => by simp at hv
-    | [], _ :: _, _, _, hf => by simp [fitsTy.crOk] at hf
-    | _ :: _, [], _, _, hf => by simp [fitsTy.crOk] at hf
+    | [], _ :: _, _, _, hf => by simp [fitsTy.crOk, crAll] at hf
+    | _ :: _, [], _, _, hf => by simp [fitsTy.crOk, crAll] at hf
     | _ :: _, _ :: _, [], h, _ => h.elim
     | [], [], _ :: _, h, _ => h.elim
 

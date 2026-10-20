@@ -15,6 +15,10 @@ terminator rules and of the rules of `lower_branch`. `emitTab_ok`: every rule of
 data.
 -/
 
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
+
 namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Isle Isle.Aarch64
@@ -806,31 +810,70 @@ def emitTab : Tab :=
 abbrev emitEntryOk (e : TermId × List AW × AW) : Bool :=
   (program.rulesOf e.1).all (aRule program emitTab aextE actorE apreE aOracle e.2.1 e.2.2)
 
-theorem emitTab0_ok : (emitTab0).all emitEntryOk = true := by native_decide
+theorem emitTab0_ok : (emitTab0).all emitEntryOk = true := by
+  simp only [emitTab0, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab1_ok : (emitTab1).all emitEntryOk = true := by native_decide
+theorem emitTab1_ok : (emitTab1).all emitEntryOk = true := by
+  simp only [emitTab1, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab2_ok : (emitTab2).all emitEntryOk = true := by native_decide
+theorem emitTab2_ok : (emitTab2).all emitEntryOk = true := by
+  simp only [emitTab2, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab3_ok : (emitTab3).all emitEntryOk = true := by native_decide
+theorem emitTab3_ok : (emitTab3).all emitEntryOk = true := by
+  simp only [emitTab3, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab4_ok : (emitTab4).all emitEntryOk = true := by native_decide
+theorem emitTab4_ok : (emitTab4).all emitEntryOk = true := by
+  simp only [emitTab4, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab5_ok : (emitTab5).all emitEntryOk = true := by native_decide
+theorem emitTab5_ok : (emitTab5).all emitEntryOk = true := by
+  simp only [emitTab5, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab6_ok : (emitTab6).all emitEntryOk = true := by native_decide
+theorem emitTab6_ok : (emitTab6).all emitEntryOk = true := by
+  simp only [emitTab6, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab7_ok : (emitTab7).all emitEntryOk = true := by native_decide
+theorem emitTab7_ok : (emitTab7).all emitEntryOk = true := by
+  simp only [emitTab7, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab8_ok : (emitTab8).all emitEntryOk = true := by native_decide
+theorem emitTab8_ok : (emitTab8).all emitEntryOk = true := by
+  simp only [emitTab8, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab9_ok : (emitTab9).all emitEntryOk = true := by native_decide
+theorem emitTab9_ok : (emitTab9).all emitEntryOk = true := by
+  simp only [emitTab9, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab10_ok : (emitTab10).all emitEntryOk = true := by native_decide
+theorem emitTab10_ok : (emitTab10).all emitEntryOk = true := by
+  simp only [emitTab10, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab11_ok : (emitTab11).all emitEntryOk = true := by native_decide
+theorem emitTab11_ok : (emitTab11).all emitEntryOk = true := by
+  simp only [emitTab11, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem emitTab12_ok : (emitTab12).all emitEntryOk = true := by native_decide
+theorem emitTab12_ok : (emitTab12).all emitEntryOk = true := by
+  simp only [emitTab12, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **Every rule of every entry checks.** -/
 theorem emitTab_ok : chkTab program emitTab aextE actorE apreE aOracle = true := by
@@ -840,15 +883,27 @@ theorem emitTab_ok : chkTab program emitTab aextE actorE apreE aOracle = true :=
 
 /-- The closure roots of `lower` other than the hand-checked ones check. -/
 theorem emitStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
-    emitHandIds.contains r.id || aRule program emitTab aextE actorE apreE aOracle [.xv .inst] AW.top r) = true := by native_decide
+    emitHandIds.contains r.id || aRule program emitTab aextE actorE apreE aOracle [.xv .inst] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `return`, 1037 `trap`) check. -/
 theorem emitTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    aRule program emitTab aextE actorE apreE aOracle [.c0] AW.top r) = true := by native_decide
+    aRule program emitTab aextE actorE apreE aOracle [.c0] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- Every rule of `lower_branch` checks: without branches, or ending in one. -/
 theorem emitBranch_ok : (program.rulesOf TId.lower_branch).all (fun r =>
     aRule program emitTab aextE actorE apreE aOracle [.c0, .c0] AW.top r ||
-    aRuleLast program emitTab aextE actorE apreE aOracle 10 [.c0, .c0] r) = true := by native_decide
+    aRuleLast program emitTab aextE actorE apreE aOracle 10 [.c0, .c0] r) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 end Backend.Proof.Cov
