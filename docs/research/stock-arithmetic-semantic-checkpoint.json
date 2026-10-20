@@ -1,7 +1,7 @@
 {
   "utc": "2026-10-20T08:51:47.122579+00:00",
   "base": "f9e9aad1effc75000e7e1f42dfb79fde77e8dc3e",
-  "state": "targeted semantic consumers, nonlegacy artifact witness and trust checks passed; current full author gates pending",
+  "state": "complete direct semantic consumers, nonlegacy artifact witness and full current author gates passed",
   "compiler_roots": [
     "E2E.backend_correct_stock_arithmetic_return",
     "E2E.backend_correct_stock_arithmetic"
@@ -33,5 +33,7 @@
     "/tmp/stock-semantic-all-owned.log": "f71f9cef5df88dc775e94f9daf2786e356251b987e6ca98c893745a29759ddb8",
     "/tmp/stock-semantic-mcp.json": "558855e9b9bd401569ce6c8070da9870a0cce1af81814aad0ff6826cc41cc6a0",
     "/tmp/stock-semantic-old-statements.json": "f5f635c83ea469353502c3e35ce36e31d91dea5e6098c9c51fbba9f895f439ef"
-  }
+  },
+  "author_gates_receipt": "docs/research/stock-arithmetic-semantic-author-gates.json",
+  "reconciled_base": "4d0156407bdfd1d65c4c40dac2c1b1055a41334e"
 }
