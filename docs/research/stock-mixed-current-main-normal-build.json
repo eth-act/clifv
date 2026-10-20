@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-20T21:41:22.402517+00:00",
+  "utc": "2026-10-20T21:48:49.727855+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
@@ -65,11 +65,18 @@
     "FV.E2E.EmitReady",
     "FV.E2E.EmitSize",
     "FV.E2E.Guarded",
+    "FV.E2E.LinkGood",
     "FV.E2E.LinkOwnCallsShapeOf",
     "FV.E2E.LinkOwnCallsStmt",
     "FV.E2E.LinkOwnCallsStmtHyp",
     "FV.E2E.LinkOwnCallsTry",
+    "FV.E2E.LinkOwnCallsTryHyp",
+    "FV.E2E.LinkOwnFrames",
     "FV.E2E.LinkOwnFramesDefs",
+    "FV.E2E.LinkOwnGotLocal",
+    "FV.E2E.LinkOwnGotRun",
+    "FV.E2E.LinkOwnRets",
+    "FV.E2E.LinkOwnSegRange",
     "FV.E2E.LinkScopeDefs",
     "FV.E2E.Lockstep",
     "FV.E2E.Pair",
@@ -77,6 +84,7 @@
     "FV.E2E.RegLevelCorrectX",
     "FV.E2E.SizeDefs",
     "FV.E2E.SizeVC",
+    "FV.E2E.StackBound",
     "FV.E2E.StockProductionFixtures",
     "FV.E2E.ValidatedCleanup",
     "FV.E2E.ValidatedFinal",
@@ -94,7 +102,7 @@
     "FVTest.Backend.AllocChoice",
     "FVTest.Backend.Lowering.StockMixedRuntime"
   ],
-  "normal_built_count": 87,
+  "normal_built_count": 95,
   "failed_modules": 0,
   "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
   "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
@@ -3891,6 +3899,95 @@
       "max_active_builds": 2,
       "scheduler_resumed": true,
       "skip_reason": null
+    },
+    {
+      "batch": 21,
+      "utc": "2026-10-20T21:45:41.128553+00:00",
+      "head": "b48b81a8cf937e41dadd47246941ea31eb39b1a6",
+      "counts": {
+        "source_key_current_or_restored": 103,
+        "waiting_for_current_imports": 6,
+        "waiting_for_transitive_imports": 34,
+        "built": 8,
+        "waiting_for_author_slow_shared_prerequisite": 1
+      },
+      "built": [
+        {
+          "module": "FV.E2E.LinkOwnCallsTryHyp",
+          "source_sha256": "0f443888349bbff87d97e729f7b851b2cf4f3628c6527664fd882dfb55033e3c",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch21/FV.E2E.LinkOwnCallsTryHyp.build.log",
+          "log_sha256": "957ece7a95081315dc8e65ce1dff3647e92594da4d40a4713aad34e54d500a45",
+          "returncode": 0
+        },
+        {
+          "module": "FV.E2E.LinkOwnGotRun",
+          "source_sha256": "a9db861d8397c829c0d79dbe90f11f29fdf728d162ca0b314dce71e24c3c046b",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch21/FV.E2E.LinkOwnGotRun.build.log",
+          "log_sha256": "483588dc8e99b43ccef4818c62969dff05d75fc580536b4960a2d4ff143dbff2",
+          "returncode": 0
+        },
+        {
+          "module": "FV.E2E.LinkOwnGotLocal",
+          "source_sha256": "de7031f4a257a32c4217ba9a2b38e610924655c91c2b3e4faf38ffbc49da956e",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch21/FV.E2E.LinkOwnGotLocal.build.log",
+          "log_sha256": "d42ce60ea98cf5d91bbc888e531192b9ee106ab1c1eeac1bc5a6cffbc8b125d2",
+          "returncode": 0
+        },
+        {
+          "module": "FV.E2E.LinkOwnSegRange",
+          "source_sha256": "b36f9d9ca6d55a9b127a215539af70216554a392dbeb989411629ef667602ea4",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch21/FV.E2E.LinkOwnSegRange.build.log",
+          "log_sha256": "35b5ac0e04cfab0e2ce83ea8503e0d0b49c7b60ccce7db5251f692df58b2ef3c",
+          "returncode": 0
+        },
+        {
+          "module": "FV.E2E.LinkOwnFrames",
+          "source_sha256": "21d00724ddae653f338b80527db6e005f1cacde589b5f0e6d6f7690511356156",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch21/FV.E2E.LinkOwnFrames.build.log",
+          "log_sha256": "cb09a617064f5935a7c2dcd96e722bcb51c5da07a762114447370c5e04af0c0b",
+          "returncode": 0
+        },
+        {
+          "module": "FV.E2E.LinkOwnRets",
+          "source_sha256": "fd804cdd566f9062af50f1da68b204a951f50d8d4966709a23fbc702e3b2e4d5",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch21/FV.E2E.LinkOwnRets.build.log",
+          "log_sha256": "ee4c2dfa0c02b196371e163ddc3b524e15d5309c50df36012fff16b2e581c727",
+          "returncode": 0
+        },
+        {
+          "module": "FV.E2E.LinkGood",
+          "source_sha256": "73e440177b09acdbc9a162e20e6984559ab94af05292990874a8c2f9664e2fcb",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch21/FV.E2E.LinkGood.build.log",
+          "log_sha256": "e06e306fa85f3a724b357de9f1eb7b5bcb040756deadd1c513961da36902d88b",
+          "returncode": 0
+        },
+        {
+          "module": "FV.E2E.StackBound",
+          "source_sha256": "f23bfac3c4eb90eb8bf2b4f86d32b55b3b83c24dc988a5aec013186ef24c43e0",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch21/FV.E2E.StackBound.build.log",
+          "log_sha256": "053eeb46cbef2ec381004da165ce24105d1ff93cc8680922a7c92a32bd300246",
+          "returncode": 0
+        }
+      ],
+      "full_receipt_sha256": "8454920fc1364aa60157e48ebf81bca5573ca835b31e3c0ef180300bc1a82e35",
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "leaf_cap_MiB": 8192,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 22,
+      "utc": "2026-10-20T21:47:29.623939+00:00",
+      "head": "b48b81a8cf937e41dadd47246941ea31eb39b1a6",
+      "counts": {},
+      "built": [],
+      "full_receipt_sha256": "9da0b7a0906f5b9ebd9aefe08194e6d015aedca7fb9d0418882b6854a3b29f68",
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "leaf_cap_MiB": 8192,
+      "scheduler_resumed": true,
+      "skip_reason": "two existing author kernels retained; no available slot"
     }
   ],
   "current_abi_review_receipt": "docs/research/stock-mixed-abi-normal-review.json",
@@ -3907,5 +4004,25 @@
     "duplicate_downloads_removed": true,
     "not_a_gate_pass": true
   },
-  "future_short_shared_batch_policy": "Known >120s prerequisites whose source/import closure is unaffected by Mixed are left to the primary source-identical gate to avoid holding its launcher during long secondary builds. Actual changed Mixed proof closures remain eligible; no gate is skipped."
+  "future_short_shared_batch_policy": "Known >120s prerequisites whose source/import closure is unaffected by Mixed are left to the primary source-identical gate to avoid holding its launcher during long secondary builds. Actual changed Mixed proof closures remain eligible; no gate is skipped.",
+  "final_wave1_cache_reuse": {
+    "run": 39464556827,
+    "main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
+    "stage": "stage-w1-4",
+    "unique_keys_verified": 433,
+    "referenced_artifacts_verified": 966,
+    "receipt_sha256": "9ef5d71eeff1cbad34ab74b8cbaed901880a958df1605a692473aa99ac90c732",
+    "duplicate_download_removed": true,
+    "not_a_gate_pass": true
+  },
+  "ci_red_triage": {
+    "run": 39464556827,
+    "job": 118838017105,
+    "scheduler": "404/404 ok;238built",
+    "failure": "leantar cache packing FV.Link.Ld.Layout; src/lgz.rs1317 assertion s2.len()==s.len(); exit101",
+    "log_sha256": "3e3a21ee39d3448700907462d3c6760c9cf8a4c176b8760d8ca77b5a15789e90",
+    "integrator_comment": "https://github.com/eth-act/clifv/issues/261#issuecomment-6302283662",
+    "source_failure_not_observed_at_this_error": true,
+    "whole_run_remains_red": true
+  }
 }
