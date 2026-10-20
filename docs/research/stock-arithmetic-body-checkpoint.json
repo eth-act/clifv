@@ -1,0 +1,23 @@
+{
+  "utc": "2026-10-20T06:02:28.393005+00:00",
+  "base": "5f7350fa143f4a3f7f1c9fab5f5e0c679b45fb7d",
+  "scope": "derived actual pure arithmetic body value simulation, not complete function/production activation",
+  "modules_and_witness_build": "PASS648jobs",
+  "public_audit": "PASS7/7; five general roots standard only; two fixed witnesses use only previously marked ScalarAddScanWitness native facts",
+  "owned_audit": {
+    "core_standard_only": 27,
+    "fixed_witness_constants": 2
+  },
+  "source_sha256": {
+    "FV/Backend/Proof/StockArithmeticBodyRefines.lean": "6ceb1f16549a29339f1cf2f9080fb5ccbcd21a69968b20e16289e50dcc150ba6",
+    "FV/Backend/Proof/StockArithmeticBodyWitness.lean": "281e6bb07db0f10bdfd7374101363bbda456ef5edfbcf556a4460c3470a74c24",
+    "scripts/audit/stock-arithmetic-body.lean": "7b1b1223489a07af0773b9dd4ff914d241ca58be6153ba7f4b4e48544ed605fb"
+  },
+  "logs": {
+    "/tmp/stock-arithmetic-body-port-build.log": "40706258d96ed4dd83a120f9baabf83c8386aefcd393ab86b93194cc37202b4c",
+    "/tmp/stock-arithmetic-body-execution-final-build.log": "960f91296944eeb178969676b4c40f135ceb7befac644da1580abdbe5dd1d984",
+    "/tmp/stock-arithmetic-body-public-audit.log": "2b4f1e1031f398dfb5d178e473e70b20727ef33ad6e445a8e05970652c685146",
+    "/tmp/stock-arithmetic-body-owned-final.log": "470e8da59e348d9b900a92f3012a009699e71223fbeb3e8c0fc9283677d45038"
+  },
+  "remaining": "derive original source execution/entry-return function composition, direct optimized-Stock checker/consumer contracts, complete function activation; all full#140 families/effects/simulation/completeness remain"
+}
