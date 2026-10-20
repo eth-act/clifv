@@ -1,0 +1,24 @@
+{
+  "utc": "2026-10-16T11:38:40.316925+00:00",
+  "backup": {
+    "utc": "20261016T113821Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T113821Z",
+    "commit": "3064d7ff83722c991bb8808028a467cea89f84c5",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1256,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  },
+  "archive": {
+    "utc": "20261016T113813Z",
+    "path": "/home/lee/.clifv-recovery/20261016T113813Z-got-source-scratch/checkpoint.tar.gz",
+    "sha256": "b5cf56cd3b9c90c64dde75aecc8fa64b3ddf73a01ef66fdaaa6107d12bcd3763",
+    "bytes": 33231217,
+    "members": 588,
+    "every_member_byte_verified": true,
+    "scratch190_normal_and_complete_witnesses": "pass",
+    "canonical_integration_MCP_fullgates": "pending after frozen batch"
+  },
+  "full_goal": "active/incomplete; production legacy"
+}
