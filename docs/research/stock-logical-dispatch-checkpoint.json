@@ -1,0 +1,33 @@
+{
+  "utc": "2026-10-20T16:56:14.116534+00:00",
+  "state": "verified next-class dispatch prerequisite; not production activation or a proof-fragment PR",
+  "parent": "4b861517ed14b6e84254458ef765b583a5d43dca",
+  "scratch_sha256": "5ca1bd6d9b90ac078d58d6d538954490bc2e82e147cbccb1ddeec435cc2c99cb",
+  "module_source_sha256": "365b4a573b588106d3270b3c93918c40ff317be7c52c2aed349588c872c3d968",
+  "owned_standard_only": 30,
+  "public_roots": 5,
+  "nonvacuity": "actual sparse-ID complete Stock runs for every AND/OR/XOR kind, reused from existing standard-only witnesses",
+  "inventory": {
+    "band": [
+      842,
+      841,
+      836
+    ],
+    "bor": [
+      862,
+      863,
+      855,
+      854,
+      849
+    ],
+    "bxor": [
+      870,
+      869,
+      864
+    ]
+  },
+  "coverage": "Every actual retained logical source record has a root in the complete source-opcode inventory, derived from successful lowering/source context; no caller-selected root certificate or narrower source premise. Old explicit selected-root theorem variants unchanged.",
+  "kernel_log": "'Backend.Stock.Proof.LogicalComplete.opcode_inventory' depends on axioms: [propext]\n'Backend.Stock.Proof.LogicalComplete.source_data' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.Proof.LogicalComplete.selected_rule_ids' depends on axioms: [propext, Classical.choice, Quot.sound]\n'Backend.Stock.Proof.LogicalComplete.record_selected_rule_ids' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]\n'Backend.Stock.Proof.LogicalComplete.dispatch_witness' depends on axioms: [propext, Classical.choice, Quot.sound]\nLOGICAL_SOURCE_DISPATCH_STANDARD_ONLY 30\n",
+  "resources": "8GiB solo scratch after existing author child completed; scheduler launcher held/resumed in finally; no kernel interrupted or source/build-cache mutation.3/4GiB attempts hit cgroup OOM, peer dispatch module records peak about6GiB.",
+  "remaining": "Derive complete record/source execution for every inventory root (base, mirrored logical-NOT, two EXTR32/64 fused OR roots1501/1507), body/entry/return/NI, complete source classifier, shared production consumers, witnesses/runtime/CLI/generated-proof/full current gates. Normal module/private-name port validation pending. Finish arithmetic then mixed landings first; original#140 entire goal stays active."
+}
