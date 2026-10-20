@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleRestEmbed
+import FV.Opt.Proof.KernelBV
 import FV.Opt.Proof.RuleSkel
 
 /-!
@@ -285,7 +286,7 @@ theorem band64_mask_imm {t : Ty} (ht : t ≠ .i128) (c : BitVec t.width) :
       simp only [BitVec.toNat_setWidth]; have := c.isLt; rw [Nat.mod_eq_of_lt (by omega)]]
     rw [natCast_inj']
     simp only [BitVec.ofInt_ofNat]
-    bv_decide)
+    kbv)
 
 set_option maxHeartbeats 4000000 in
 /-- `imm64_udiv`/`imm64_urem`/`imm64_srem`/`imm64_sdiv` (constant folding of `cprop.isle` 32-50):
@@ -484,8 +485,8 @@ macro "skel_bool" : tactic => `(tactic| (
   try simp only [Sem.truthy, BitVec.ofNat_eq_ofNat] at *
   first
     | assumption
-    | (simp only [bne_iff_ne, ne_eq, beq_iff_eq] at *; first | assumption | (opt_cases_ty <;> opt_widths <;> bv_decide))
-    | (opt_cases_ty <;> opt_widths <;> (try sem_simp) <;> bv_decide)))
+    | (simp only [bne_iff_ne, ne_eq, beq_iff_eq] at *; first | assumption | (opt_cases_ty <;> opt_widths <;> kbv))
+    | (opt_cases_ty <;> opt_widths <;> (try sem_simp) <;> kbv)))
 
 set_option hygiene false in
 /-- Phase 4 for branches and conditional traps: the outcome lemmas in turn. -/
@@ -589,7 +590,7 @@ macro "truthy_auto " r:ident : tactic => `(tactic| (
     try simp only [bne_iff_ne, ne_eq] at *
     opt_cases_val
     opt_cases_ty <;> (try simp only [Ty.width] at *) <;> (try omega) <;> opt_widths <;>
-      (try sem_simp) <;> (try (simp only [Option.some.injEq] at *; subst_vars)) <;> (try bswap_unroll) <;> (try simp only [Sem.bitrev] at *) <;> bv_decide)))
+      (try sem_simp) <;> (try (simp only [Option.some.injEq] at *; subst_vars)) <;> (try bswap_unroll) <;> (try simp only [Sem.bitrev] at *) <;> kbv)))
 
 set_option maxHeartbeats 4000000 in
 theorem ok_truthy_bitops_111 {p : Isle.Program} (hd : Data p) : TruthyOk p rule_bitops_111 := by

@@ -1,0 +1,14 @@
+Original #140 remains active/incomplete; production LEGACY.
+
+Full signed/unsigned extension-load match/RHS frame at arbitrary successful fuel; every actual successful source-statement root returning a value preserves EVERY actual mapped direct/indirect call sunk bit. Source format6/7 distinctions, isolated atomic helper source/value oracle, retained fixed summaries and actual first-match exceptions derived internally. Original source/DFG interfaces, prior variants, accepted inputs and production defaults unchanged.
+
+38 scratch modules compile;49 public theorem roots and3 semantic-model definitions have standard-only normal trust audits. Original-scope/dominance/arity/full-ABI signed/unsigned ordinary-load and actual root810 atomic-fusion named-selector witnesses inhabit the new statement protection. Fixed helper/root partitions preserve identical predicates and keep every scratch kernel within8GiB.
+
+Control-root/scan/core/node/whole-driver composition and universal call emission remain OPEN. Per-emitted-record outgoing bounds do not establish universal CallsStack/OutArgsOk. All remaining families/effects/Try continuations/sinking/traps/static readiness/availability/checker/fallback/Stock totality/source/block/whole-driver simulation AND completeness and actual compiler/checker/linker/generated-proof production integration remain mandatory. Canonical integration, ONE coherent bundled MCP, complete final witnesses/kernel/transitive audits, full build/crates/runtime/encoder/BOTH E2E identity-stage parity and FRESH full stock comparison remain pending.
+
+[Hashed module/source/log/audit evidence](stock-call-protection-scratch.json). [Outgoing audit review](stock-outgoing-audit-review.json). No new MCP, PR, merge, worktree or cache.
+
+1. Inspect exact live canonical1930build/2182audit terminal receipt; preserve source/script freeze and completed work. Review upstream trust reductions without adding native assumptions or silently changing expected sets.
+2. Thread actual source-call protection through return/trap/branch roots, binder/scan/retained endpoints/core/node/whole run; derive every actual original source call unsunk and mandatory emitted, not a new input filter.
+3. Compose every actual emitted call stack bound with whole-run outgoing monotonicity to derive original-input universal CallsStack and OutArgsOk. Finish remaining families/effects/Try and original-input static/checker/fallback/totality obligations.
+4. Integrate validated outgoing+call-protection modules as a coherent semantic batch after freeze; add only actual dependent builds, ONE expanded bundled MCP, all normal/public/kernel/transitive audits and all full gates. Continue every original source/block/whole-driver simulation/completeness and production-consumer obligation; final fresh comparison.
