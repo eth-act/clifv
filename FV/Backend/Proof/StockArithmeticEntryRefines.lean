@@ -27,14 +27,14 @@ private theorem return_inbounds {vc : VCode} {isem : Backend.Proof.Sem}
 add/sub bodies in the actual Stock VCode. ABI materialization, omitted parameter
 values, final aliases, source execution and machine PC placement are derived
 internally. The allocation checker may choose the proof-selected initial file. -/
-theorem actual_arithmetic_entry_return_refines {f : Clif.Function} {result : Result}
+theorem actual_arithmetic_entry_return_refines_frame {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     (abi : sigAbiOk f.sig = true) {b : Clif.Block} (blocks : f.blocks = [b])
     (family : ∀ stm ∈ b.body, ∃ subtract : Bool, ∃ ty x y,
       stm.inst = .binary (if subtract then .isub else .iadd) ty x y)
     {xs : List Nat} (ret : b.term = .ret xs)
-    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
-    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr)
     {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
     (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals mem)
     {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
@@ -44,12 +44,13 @@ theorem actual_arithmetic_entry_return_refines {f : Clif.Function} {result : Res
     (arguments : ArgsAtEntry F f.sig args w) :
     ∃ ρ, RunOkABI f result.code isem MR fr.slots ⟨0,0,ρ,w⟩ (.returned vals mem) := by
   obtain ⟨event,vb,pre,body,ρ',w',events,zero,placed,pieces,execution,mem',values,same,
-    after,bodyCode⟩ := stock_lower_entry_prelude_refines run scope dominated entered driver
+    after,bodyCode⟩ := stock_lower_entry_prelude_refines_frame run scope dominated entered driver
       memorySem stable memory arguments
   have code : vb.insts = pre ++ event.output.code.map (·.mapRegs
       (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))) ++ after := by
     rw [pieces,bodyCode,Array.append_assoc]
-  obtain ⟨b',regs,entry,argTypes,paramTypes,set,slots,frame⟩ := Opt.enterFunc_ok entered
+  have entryFacts := entered
+  obtain ⟨b',regs,entry,argTypes,paramTypes,set,frame⟩ := entryFacts
   have sameBlock : b' = b := by
     have found : some b = some b' := by
       simpa only [Clif.Function.entry?,blocks,List.head?_cons] using entry
@@ -57,8 +58,8 @@ theorem actual_arithmetic_entry_return_refines {f : Clif.Function} {result : Res
   subst b'
   have defined : SourceDefinedAt f result.ctx event.block 0 fr := by
     rw [zero]
-    exact source_defined_enterFunc dominated result.ctx entered
-  have held := stock_lower_entered_values_guarded run scope dominated events entered values
+    exact source_defined_entry_frame dominated result.ctx entered
+  have held := stock_lower_entered_values_guarded_frame run scope dominated events entered values
     event.output.state w' mem'
   have finished := actual_arithmetic_return_refines_at run scope dominated abi blocks family ret events
     (s := ⟨fr,[],cm⟩) (by rw [frame]) rfl (by rw [frame]) (by rw [frame])
@@ -75,5 +76,24 @@ theorem actual_arithmetic_entry_return_refines {f : Clif.Function} {result : Res
     (by simpa only [Nat.zero_add,Array.length_toList] using room) execution
   refine ⟨entrySeed event.ctx fr,RunOkABI.prefix path ?_⟩
   simpa only [Nat.zero_add,Array.length_toList] using finished
+
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem actual_arithmetic_entry_return_refines {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) {b : Clif.Block} (blocks : f.blocks = [b])
+    (family : ∀ stm ∈ b.body, ∃ subtract : Bool, ∃ ty x y,
+      stm.inst = .binary (if subtract then .isub else .iadd) ty x y)
+    {xs : List Nat} (ret : b.term = .ret xs)
+    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
+    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals mem)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {sb : Nat} {syms : String → Option Nat}
+    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
+    {w : Arm.ArmState} (memory : MR fr.slots cm w)
+    (arguments : ArgsAtEntry F f.sig args w) :
+    ∃ ρ, RunOkABI f result.code isem MR fr.slots ⟨0,0,ρ,w⟩ (.returned vals mem) := by
+  exact actual_arithmetic_entry_return_refines_frame run scope dominated abi blocks family ret (SourceEntry.of_enterFunc entered) returned refines driver memorySem stable memory arguments
 
 end Backend.Stock.Proof.ArithmeticBody

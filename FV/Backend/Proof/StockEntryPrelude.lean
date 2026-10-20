@@ -29,10 +29,10 @@ private theorem core_scan_suffix {ctx : Ctx} {order : Order} {f : Clif.Function}
 of the emitted block-zero ABI prelude. All source values survive, including
 unused parameters. No entry-code, per-row ABI or initial-value certificate is
 supplied by the caller; the initial virtual file is selected inside the proof. -/
-theorem stock_lower_entry_prelude_refines {f : Clif.Function} {result : Result}
+theorem stock_lower_entry_prelude_refines_frame {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
-    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
-    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr)
     {isem : Backend.Proof.Sem} (driver : DriverSem isem)
     {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
     (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
@@ -49,7 +49,8 @@ theorem stock_lower_entry_prelude_refines {f : Clif.Function} {result : Result}
   obtain ⟨ranges,bytes,before,data,core,raw,block,sizes,build,coreRun,assembled,events,
     atBlock,blockCode⟩ := stock_lower_entry_assembly run scope
   have inv := buildCtx_mappedInv scope build
-  obtain ⟨b,regs,entry,argTypes,paramTypes,set,slots,frame⟩ := Opt.enterFunc_ok entered
+  have entryFacts := entered
+  obtain ⟨b,regs,entry,argTypes,paramTypes,set,frame⟩ := entryFacts
   have sourceBlock : f.blocks[0]? = some b := by
     simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using entry
   have blockValue : f.blocks[0]! = b := by
@@ -78,9 +79,9 @@ theorem stock_lower_entry_prelude_refines {f : Clif.Function} {result : Result}
   have maps := (stock_lower_record_context run scope events).2.1
   have held : ValuesHeld (fun _ => True) result.ctx fr (entrySeed core.scan.ctx fr) := by
     intro x _ v found
-    obtain ⟨key,mapped,value⟩ := entrySeed_entered_values run scope dominated events entered x trivial v found
+    obtain ⟨key,mapped,value⟩ := entrySeed_entered_values_frame run scope dominated events entered x trivial v found
     exact ⟨key,by rwa [maps] at mapped,value⟩
-  obtain ⟨ρ',w',execution,mem,values,same⟩ := mapped_entry_prelude_preserves inv entered
+  obtain ⟨ρ',w',execution,mem,values,same⟩ := mapped_entry_prelude_preserves_frame inv entered
     dominated.ssa sourceBlock locations sizes mapped driver memorySem stable held memory arguments
   refine ⟨core.scan,block,prelude,core.code.map (·.mapRegs resolve),ρ',w',events,
     (stock_lowerBlockCore_scanOrigin coreRun).2.2.1,atBlock,?_,execution,mem,?_,same,?_⟩
@@ -93,23 +94,44 @@ theorem stock_lower_entry_prelude_refines {f : Clif.Function} {result : Result}
   · obtain ⟨after,pieces⟩ := core_scan_suffix coreRun
     exact ⟨after.map (·.mapRegs resolve),by rw [pieces,Array.map_append]⟩
 
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem stock_lower_entry_prelude_refines {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    {isem : Backend.Proof.Sem} (driver : DriverSem isem)
+    {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
+    {w : Arm.ArmState} (memory : MR fr.slots cm w)
+    (arguments : ArgsAtEntry F f.sig args w) :
+    ∃ (event : BlockScanEvent) (block : VBlock) (prelude body : Array MInst)
+      (ρ' : Nat → CV) (w' : Arm.ArmState),
+      event ∈ result.blockScans.toList ∧ event.block = 0 ∧
+      result.code.blocks[0]? = some block ∧ block.insts = prelude ++ body ∧
+      seqRun isem prelude.toList (entrySeed event.ctx fr) w = some (.fall ρ' w') ∧
+      MR fr.slots cm w' ∧ ValuesHeld (fun _ => True) event.ctx fr ρ' ∧ SameWorld F w' w ∧
+      ∃ after, body = event.output.code.map (·.mapRegs
+        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))) ++ after := by
+  exact stock_lower_entry_prelude_refines_frame run scope dominated (SourceEntry.of_enterFunc entered) driver memorySem stable memory arguments
+
 /-- The source relation after ABI materialization follows from ordinary entered
 values. Final aliases fix original parameters, so callers need no resolved-value
 certificate for the later body simulation. -/
-theorem stock_lower_entered_values_guarded {f : Clif.Function} {result : Result}
+theorem stock_lower_entered_values_guarded_frame {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
-    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
-    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr)
     {ρ : Nat → CV} (held : ValuesHeld (fun _ => True) event.ctx fr ρ)
     (st : State) {MR : MemRelT} (w : Arm.ArmState) (memory : MR fr.slots cm w) :
     GuardedScanRel f result event.ctx event.block MR st (0,fr,cm) ρ w := by
-  obtain ⟨b,regs,entry,argTypes,paramTypes,set,slots,frame⟩ := Opt.enterFunc_ok entered
+  have entryFacts := entered
+  obtain ⟨b,regs,entry,argTypes,paramTypes,set,frame⟩ := entryFacts
   have frameRegs : fr.regs = regs := congrArg (fun frame : Clif.Frame => frame.regs) frame
   have block : f.blocks[0]? = some b := by
     simpa only [Clif.Function.entry?,List.head?_eq_getElem?] using entry
   refine ⟨congrArg (fun frame : Clif.Frame => frame.func) frame,
-    stock_lower_entered_restrict_dfg run dominated events entered _,memory,?_⟩
+    stock_lower_entered_restrict_dfg_frame run dominated events entered _,memory,?_⟩
   intro x _ v found
   obtain ⟨key,mapped,value⟩ := held x trivial v found
   have parameter : x ∈ b.params.map (·.1) := by
@@ -126,5 +148,16 @@ theorem stock_lower_entered_values_guarded {f : Clif.Function} {result : Result}
   dsimp only
   rw [fixed]
   exact value
+
+/-- Executable-entry compatibility variant; retains the original statement. -/
+theorem stock_lower_entered_values_guarded {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {args : List Clif.Val} {cm0 cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : Clif.enterFunc f args cm0 = .ok (fr,cm))
+    {ρ : Nat → CV} (held : ValuesHeld (fun _ => True) event.ctx fr ρ)
+    (st : State) {MR : MemRelT} (w : Arm.ArmState) (memory : MR fr.slots cm w) :
+    GuardedScanRel f result event.ctx event.block MR st (0,fr,cm) ρ w := by
+  exact stock_lower_entered_values_guarded_frame run scope dominated events (SourceEntry.of_enterFunc entered) held st w memory
 
 end Backend.Stock.Proof
