@@ -398,3 +398,5 @@ source/ABI-entry foundation. Next derive typed ABI agreement from source entry a
 actual node origin, compose entry at VCode0 with body/return, and instantiate direct
 semantic consumers. No new production class is activated by this proof packet;
 all original full-goal obligations remain active.
+
+Entry-foundation author gates passed on `37905e99c7519f1d91fdcf0d2e38c04e6123fca8`: reconciled main#3417a18184a,17new/affected modules scheduled after strict prior-source/import closure checks, fullFV/FVTest2455jobs,all32auditfiles,94standardcore/67fixedwitnessownedconstants. All1060priorpublicaxiomsets retained exactly (1129currentroots including new concurrency proofs). No runtime/compiler/checker/linker input changed in this PR. [Terminal author receipt](../research/stock-entry-author-gates.json). Typed ABI agreement and actual Stock-node entry atVCode0/directsemanticconsumer integration remain next.

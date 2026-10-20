@@ -1,0 +1,87 @@
+{
+  "state": "per_pr_gates_passed",
+  "utc": "2026-10-20T07:46:19.806812+00:00",
+  "pid": 1137009,
+  "head": "37905e99c7519f1d91fdcf0d2e38c04e6123fca8",
+  "base": "7a18184a86a4dab476d809d6318ad643182a8566",
+  "logs": {
+    "affected-scheduler": {
+      "path": "/tmp/stock-entry-author-gates/affected-scheduler.log",
+      "sha256": "47c4f6eb850e1d639db19bd00b78659611bbece48c2c0727e9c7a1ec5f4528f5"
+    },
+    "full-library-replay": {
+      "path": "/tmp/stock-entry-author-gates/full-library-replay.log",
+      "sha256": "8c06101a9f25ccf2401eebac9de2cdcd491fb43a1292ec99246e84faf7a99111"
+    },
+    "all-axiom-audits": {
+      "path": "/tmp/stock-entry-author-gates/all-axiom-audits.log",
+      "sha256": "212d426a7f6cb11ea97e0a643eba6ccde179405a40bc09bd8d5c3bd625423be9"
+    },
+    "all-new-owned": {
+      "path": "/tmp/stock-entry-author-gates/all-new-owned.log",
+      "sha256": "c24da7d78983d0156dccbdac0e1f57b90413688595fa13415c52340bb41bae49"
+    }
+  },
+  "reuse_manifest": {
+    "previous_verified_main": "348fa0a8cad6e55c7f6374a6fa782a21cd8d3d6e",
+    "current_reconciled_main": "7a18184a86a4dab476d809d6318ad643182a8566",
+    "previous_source_modules": 2427,
+    "unchanged_prior_source_and_audit_hashes_preserved": true,
+    "changed_prior_paths_from_verified_upstream_tree": [
+      "FV/Concurrency.lean",
+      "scripts/audit/concurrency.lean"
+    ],
+    "new_upstream_modules": [
+      "FV.Concurrency",
+      "FV.Concurrency.AllocThread",
+      "FV.Concurrency.ArmInstFoot",
+      "FV.Concurrency.ArmPrecise",
+      "FV.Concurrency.FrameMono",
+      "FV.Concurrency.PrepThread",
+      "FV.Concurrency.PrivCoh",
+      "FV.Concurrency.ThreadLayerWitness",
+      "FV.Concurrency.VCodeEvents",
+      "FV.Concurrency.VCodeThread",
+      "FV.Concurrency.VCodeThreadWitness"
+    ],
+    "new_entry_modules": [
+      "FV.Backend.Proof.StockEntryArgs",
+      "FV.Backend.Proof.StockEntryAssembly",
+      "FV.Backend.Proof.StockEntryLoads",
+      "FV.Backend.Proof.StockEntryLoadsWitness",
+      "FV.Backend.Proof.StockEntrySeed",
+      "FV.Backend.Proof.StockEntrySeedWitness"
+    ],
+    "affected_modules_to_schedule": [
+      "FV.Backend.Proof.StockEntryArgs",
+      "FV.Backend.Proof.StockEntryAssembly",
+      "FV.Backend.Proof.StockEntryLoads",
+      "FV.Backend.Proof.StockEntryLoadsWitness",
+      "FV.Backend.Proof.StockEntrySeed",
+      "FV.Backend.Proof.StockEntrySeedWitness",
+      "FV.Concurrency",
+      "FV.Concurrency.AllocThread",
+      "FV.Concurrency.ArmInstFoot",
+      "FV.Concurrency.ArmPrecise",
+      "FV.Concurrency.FrameMono",
+      "FV.Concurrency.PrepThread",
+      "FV.Concurrency.PrivCoh",
+      "FV.Concurrency.ThreadLayerWitness",
+      "FV.Concurrency.VCodeEvents",
+      "FV.Concurrency.VCodeThread",
+      "FV.Concurrency.VCodeThreadWitness"
+    ],
+    "prior_modules_reused": 2426,
+    "affected_executables": [],
+    "runtime_input_changes_in_PR": false,
+    "reuse": "strict source/import closure validation; current upstream concurrency changes scheduled alongside new entry leaves, then completeFV/FVTest replay"
+  },
+  "axiom_parity": {
+    "previous_roots": 1060,
+    "current_roots": 1129,
+    "missing": [],
+    "changed_sets": {},
+    "all_previous_axiom_sets_preserved": true
+  },
+  "next": "Fetch current main/reconcile, receipt, substantive author squash and notify integrator. Continue typed ABI agreement/actual node entry/direct semantic integration and all original#140."
+}
