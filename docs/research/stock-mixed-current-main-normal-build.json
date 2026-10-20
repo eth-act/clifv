@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-20T21:48:49.727855+00:00",
+  "utc": "2026-10-20T22:06:33.193459+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
@@ -42,7 +42,37 @@
     "FV.Backend.Proof.RefinesInsts2",
     "FV.Backend.Proof.RelaxLayout",
     "FV.Backend.Proof.RelaxReady",
+    "FV.Backend.Proof.StockAddSubScanRefines",
     "FV.Backend.Proof.StockArithmeticCheck",
+    "FV.Backend.Proof.StockBodyScanOrigin",
+    "FV.Backend.Proof.StockBodyScanRefines",
+    "FV.Backend.Proof.StockBranchArgumentCode",
+    "FV.Backend.Proof.StockEdgeValues",
+    "FV.Backend.Proof.StockEntryABI",
+    "FV.Backend.Proof.StockEntryAliases",
+    "FV.Backend.Proof.StockEntryArgs",
+    "FV.Backend.Proof.StockEntryAssembly",
+    "FV.Backend.Proof.StockEntryLoads",
+    "FV.Backend.Proof.StockEntryOrder",
+    "FV.Backend.Proof.StockEntrySeed",
+    "FV.Backend.Proof.StockGuardedOmission",
+    "FV.Backend.Proof.StockPreparedSemantics",
+    "FV.Backend.Proof.StockPureSourceColors",
+    "FV.Backend.Proof.StockReturnABI",
+    "FV.Backend.Proof.StockReturnArity",
+    "FV.Backend.Proof.StockReturnHelpers",
+    "FV.Backend.Proof.StockReturnRecordCalls",
+    "FV.Backend.Proof.StockReturnRecordSource",
+    "FV.Backend.Proof.StockReturnRootCalls",
+    "FV.Backend.Proof.StockReturnSourceRuns",
+    "FV.Backend.Proof.StockSelectScanRefines",
+    "FV.Backend.Proof.StockSinkFrame",
+    "FV.Backend.Proof.StockSourceDFG",
+    "FV.Backend.Proof.StockSourceDefined",
+    "FV.Backend.Proof.StockSourceEdges",
+    "FV.Backend.Proof.StockSourceEntry",
+    "FV.Backend.Proof.StockTermContract",
+    "FV.Backend.Proof.StockTermDataOrigin",
     "FV.Backend.ScalarProduction",
     "FV.Backend.SemanticNICheck",
     "FV.Backend.StockArithmeticCheck",
@@ -52,19 +82,34 @@
     "FV.E2E.ABIReadOnlyRealize",
     "FV.E2E.ABIReadOnlySem",
     "FV.E2E.ABIReadOnlyTransport",
+    "FV.E2E.ActualBinCheck",
+    "FV.E2E.ActualCompilerModes",
+    "FV.E2E.ActualPipelineCheck",
     "FV.E2E.BinCheck",
+    "FV.E2E.Binary",
+    "FV.E2E.BinaryGood",
     "FV.E2E.CodeMap",
     "FV.E2E.CompiledProduction",
+    "FV.E2E.DeadCleanupBinCheck",
+    "FV.E2E.DeadCleanupBinary",
     "FV.E2E.DeadCleanupContracts",
     "FV.E2E.DeadCleanupGuarded",
+    "FV.E2E.DeadCleanupLinkCheck",
     "FV.E2E.DeadCleanupRealizes",
     "FV.E2E.DeadCleanupRegLevel",
     "FV.E2E.DeadCleanupRegLevelX",
     "FV.E2E.DeadCleanupSpillWords",
+    "FV.E2E.DeadCleanupStackBound",
     "FV.E2E.EmitCondsDefs",
     "FV.E2E.EmitReady",
     "FV.E2E.EmitSize",
+    "FV.E2E.ExecBytes",
+    "FV.E2E.ExecFrameSim",
+    "FV.E2E.ExecRunN",
+    "FV.E2E.ExecStatic",
+    "FV.E2E.ExecWords",
     "FV.E2E.Guarded",
+    "FV.E2E.LegalSource",
     "FV.E2E.LinkGood",
     "FV.E2E.LinkOwnCallsShapeOf",
     "FV.E2E.LinkOwnCallsStmt",
@@ -77,13 +122,23 @@
     "FV.E2E.LinkOwnGotRun",
     "FV.E2E.LinkOwnRets",
     "FV.E2E.LinkOwnSegRange",
+    "FV.E2E.LinkProduction",
     "FV.E2E.LinkScopeDefs",
     "FV.E2E.Lockstep",
+    "FV.E2E.LoweringProvenance",
     "FV.E2E.Pair",
+    "FV.E2E.PipelineCheck",
+    "FV.E2E.PreparedPipeline",
+    "FV.E2E.ProductionCheck",
+    "FV.E2E.ProductionChecksWith",
+    "FV.E2E.ProductionPipeline",
+    "FV.E2E.ProductionPipelineWith",
+    "FV.E2E.ProductionStackBound",
     "FV.E2E.RegLevelCorrect",
     "FV.E2E.RegLevelCorrectX",
     "FV.E2E.SizeDefs",
     "FV.E2E.SizeVC",
+    "FV.E2E.SrcScopeDefs",
     "FV.E2E.StackBound",
     "FV.E2E.StockProductionFixtures",
     "FV.E2E.ValidatedCleanup",
@@ -91,22 +146,28 @@
     "FV.E2E.ValidatedLowering",
     "FV.E2E.ValidatedNoninterference",
     "FV.E2E.ValidatedWorld",
+    "FV.Front.Bundle",
+    "FV.Front.Read",
+    "FV.Link.CodeMapProof",
     "FV.Link.Image",
     "FV.Link.ImageProof",
     "FV.Link.Layout",
     "FV.Link.LayoutFacts",
     "FV.Link.LayoutProof",
+    "FV.Link.Ld.Syms",
     "FV.Link.OutsideProof",
     "FV.Link.Reloc",
     "FV.Link.RelocProof",
+    "FV.Link.RelocShape",
     "FVTest.Backend.AllocChoice",
-    "FVTest.Backend.Lowering.StockMixedRuntime"
+    "FVTest.Backend.Lowering.StockMixedRuntime",
+    "FVTest.E2E.LinkProof"
   ],
-  "normal_built_count": 95,
+  "normal_built_count": 156,
   "failed_modules": 0,
   "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
   "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
-  "waiting": "Normal source-body/function proof and higher ABI machine/linked/generated/CLI consumers still await current shared imports. Existing linked-call, validation/world/NI/cleanup, image/layout/relocation consumer modules now build. No whole-class or activation claim; arithmetic current gates first and all original140active.",
+  "waiting": "Complete source body/function and ABI machine proofs await 8GiB leaf budgets and current shared imports. Primary arithmetic currently reserves12GiB; do not retry known6GiB modules at4GiB. NativeCLI/linked/generated/trust/identity-stage/examples current gates still mandatory; fulloriginal140active/arithmeticfirst.",
   "batches": [
     {
       "utc": "2026-10-20T19:14:26.869956+00:00",
@@ -3988,6 +4049,716 @@
       "leaf_cap_MiB": 8192,
       "scheduler_resumed": true,
       "skip_reason": "two existing author kernels retained; no available slot"
+    },
+    {
+      "batch": 23,
+      "utc": "2026-10-20T21:51:48.770238+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 112,
+        "waiting_for_current_imports": 7,
+        "waiting_for_transitive_imports": 45,
+        "waiting_for_author_slow_shared_prerequisite": 1,
+        "built": 8
+      },
+      "build_attempts": [
+        {
+          "module": "FV.E2E.Binary",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "e5db1b853ffe8d84a34a5afe004d601b6e3b3de45af0a4945fdfbc9893b5c0ae",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch23/FV.E2E.Binary.build.log",
+          "log_sha256": "16fef9be950bf0715d53d0a8e7fb5ddb683d9385168b9a0de378d3a34606b02c"
+        },
+        {
+          "module": "FV.E2E.BinaryGood",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "02d15b834e15aa7f91af81dec2239d5f080d8db2caf27c76cd53a231ff1ac3df",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch23/FV.E2E.BinaryGood.build.log",
+          "log_sha256": "51ef09f74ae65b6ce563c29f73075a144c266477bd5f80c84ba7fe1408d5a13c"
+        },
+        {
+          "module": "FV.E2E.ExecWords",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "e42fcc48e89ab468d8441a7d377aebb702f162e715dc46384d77f134b08cea75",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch23/FV.E2E.ExecWords.build.log",
+          "log_sha256": "0e5260050c70a8ec4070c8a1ef8285308328681e1b7a756d05dc4b26b8994512"
+        },
+        {
+          "module": "FV.E2E.ExecBytes",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "594bb08f45354ee1c225043b89b5dbe929602fac26745b26bdf1f06868e362b8",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch23/FV.E2E.ExecBytes.build.log",
+          "log_sha256": "e2e4dcfe319c73e7b77196ac331d906f8d7d10cee7e1e24b0c1dc4e6251b5a9e"
+        },
+        {
+          "module": "FV.E2E.ExecStatic",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "5575c1ee8f68bde960ffff10b929175714e5f5f527a680c2be7ece4c7d2ec9c8",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch23/FV.E2E.ExecStatic.build.log",
+          "log_sha256": "862edb22d7d52913600948d9b326e07599d0a57e05453838a7388d942a7f8419"
+        },
+        {
+          "module": "FV.E2E.ExecFrameSim",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "3662a005822bc88408d6c43bf70b4de6a61afeac85a1199752457c8295d23c5d",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch23/FV.E2E.ExecFrameSim.build.log",
+          "log_sha256": "79100fcde80aeb5b411851dda4272c2ae134f144b0db7e0ec139d88ec27aec99"
+        },
+        {
+          "module": "FV.E2E.ExecRunN",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "1198661f1d99bd327c83f1fa3d1141a1110464ccb96a5707bbbe5c6d1390ec6d",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch23/FV.E2E.ExecRunN.build.log",
+          "log_sha256": "72a195db50f558f4b1c7599392544b1b06c7ee1c3471889764aa29d4b27f1775"
+        },
+        {
+          "module": "FV.E2E.SrcScopeDefs",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "d171715ad110f8acde11288184ef982eed88711a5f7d9822d7f5656f97715e54",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch23/FV.E2E.SrcScopeDefs.build.log",
+          "log_sha256": "e48f9efe004c2b8c023a4c6de8572af87ef8c909bea5c6aa6d12b5fcb56bcc2b"
+        }
+      ],
+      "full_receipt_sha256": "6c64669d3620c5a157b5e16037d9e897e69b7def5c8dae418ded4b1fe726ad85",
+      "leaf_cap_MiB": 8192,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 24,
+      "utc": "2026-10-20T21:53:10.031350+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 121,
+        "waiting_for_current_imports": 12,
+        "waiting_for_transitive_imports": 58,
+        "waiting_for_author_slow_shared_prerequisite": 1,
+        "built": 8
+      },
+      "build_attempts": [
+        {
+          "module": "FV.E2E.LegalSource",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "81c2c9707d1729c07f4f313d7def03eac9f3c9959f8d6964e4ac2ea1bcf4d688",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch24/FV.E2E.LegalSource.build.log",
+          "log_sha256": "9e41ff3529abc16d69678741e2b858b9306714ccdad2ad4132b35d816fa48e86"
+        },
+        {
+          "module": "FV.E2E.PipelineCheck",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "1637ed83191de9ada3caa1f11f18b07a9cb54f7825d2c89ea3ac4d5d21141652",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch24/FV.E2E.PipelineCheck.build.log",
+          "log_sha256": "bc9f79ec11b684b440c15d7e5f79bfc27e8e749edc6719b346ff96e9c6f0464b"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupLinkCheck",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "478a7b0f87db406b380c9ed97a11e221f8905f04618dd9b253b5b161b6191692",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch24/FV.E2E.DeadCleanupLinkCheck.build.log",
+          "log_sha256": "30c821ab98da96d2942a35d64e244daa5287145439e87ff237d1ec089a0fd887"
+        },
+        {
+          "module": "FV.Link.CodeMapProof",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "97a5bc00a659128fcb27a439199f919e18460083cc8f0616b0d58584e7f998a4",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch24/FV.Link.CodeMapProof.build.log",
+          "log_sha256": "bcd322bb6f30679fdee9301c12d9755afdc8735610bee4dbaad6a178ab2ac3c5"
+        },
+        {
+          "module": "FV.Link.RelocShape",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "244aa2d52b053d9c5786681010ab831ce7c5b46a60de5bec77caf41813ae7a77",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch24/FV.Link.RelocShape.build.log",
+          "log_sha256": "d4ff2789df91fb33394430cfd864b80e5562c6940cb4687af056d2a16b3e6dd8"
+        },
+        {
+          "module": "FV.E2E.LinkProduction",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "bb22c83a1592dd7dfbef607bfb85d4b42a7a5b2de5c8d2bfa2df64543aedf06d",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch24/FV.E2E.LinkProduction.build.log",
+          "log_sha256": "9fb1694c37390c3a0866be10ae0412e8946f46c031f97cf9157a773b30a88b86"
+        },
+        {
+          "module": "FV.E2E.LoweringProvenance",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "66b420d8edb7a77718c9addc96a4afffd6e71e12456d0ed8352b95f112e92c46",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch24/FV.E2E.LoweringProvenance.build.log",
+          "log_sha256": "c9966026fb30c7d048954996b220cdb8cc01065cfdff64cf5e69080cd6ee2d07"
+        },
+        {
+          "module": "FV.E2E.ActualPipelineCheck",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "37554c30b65d90d9510209800c385d2bd5e70a6caa69f0ca2dbfd32d85a60d75",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch24/FV.E2E.ActualPipelineCheck.build.log",
+          "log_sha256": "c9b553dd03a3bd977b5a1736e61ddc1acc2623af423e01fc74cb1d1827fd1b0b"
+        }
+      ],
+      "full_receipt_sha256": "e3c82378ce96411fc62ab29357ae406933880ccf824fb7b93cf91e648ba7d998",
+      "leaf_cap_MiB": 8192,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 25,
+      "utc": "2026-10-20T21:54:03.750877+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 129,
+        "waiting_for_current_imports": 12,
+        "waiting_for_transitive_imports": 60,
+        "waiting_for_author_slow_shared_prerequisite": 1,
+        "built": 8
+      },
+      "build_attempts": [
+        {
+          "module": "FV.E2E.PreparedPipeline",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "064955c242c5689e16618f80db586418fcd35de69d4c3ab96eec02c8229e01ab",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch25/FV.E2E.PreparedPipeline.build.log",
+          "log_sha256": "f42d5418fc89442c78399df288892aeec04624da1ff0060c6a3f8fa7bb2ee904"
+        },
+        {
+          "module": "FV.E2E.ActualBinCheck",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "c7fb86b7769f13b2b9097a02ceacb9f836328538ac30e04f91d5fd2555b8a842",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch25/FV.E2E.ActualBinCheck.build.log",
+          "log_sha256": "f9e9d90833bd53f4c7bd97827041d2e64a55ef2ba53620b02ce2405db6f6995c"
+        },
+        {
+          "module": "FV.E2E.ActualCompilerModes",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "9d39f8db72267640336fe290be51f8af725a85b148a7d169b922aa8b1613f6ff",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch25/FV.E2E.ActualCompilerModes.build.log",
+          "log_sha256": "89b624059f01156b3e6e33418c54517b1640c144187794271f3b9fb7bc3fc66d"
+        },
+        {
+          "module": "FV.E2E.ProductionPipeline",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "d9334cf3396d995d2da3dcba5edcaa660e749ec93ba66f5adb17ad5c59f9ddb5",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch25/FV.E2E.ProductionPipeline.build.log",
+          "log_sha256": "729b95640b09aa38fffca10d5ebffe9f98d11cb4952df7f59796ba7e351c7e22"
+        },
+        {
+          "module": "FV.E2E.ProductionCheck",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "0be19ec8d53670589c3d4011f8412ac6c940b8eaec44bc5d39842381e6bc829b",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch25/FV.E2E.ProductionCheck.build.log",
+          "log_sha256": "4a27bdfa167dbda72abf5b0d11bec3d7738922a1685b06e64f1deeb323008261"
+        },
+        {
+          "module": "FV.E2E.ProductionPipelineWith",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "469cf87955ac900d000eba7b85c71db8e31d78d292730949c960756ed5c07fb4",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch25/FV.E2E.ProductionPipelineWith.build.log",
+          "log_sha256": "8b85c210a34c9ec41a94b1582c46f6e0b1d1a5adc41d944b415988ee11eb9e4b"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupStackBound",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "bfb6e8b4c7accfeb65a79eaa498e447a7fa20e3333cae2b7a0a1ccbe6210b493",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch25/FV.E2E.DeadCleanupStackBound.build.log",
+          "log_sha256": "52c40c559bed32b6a550c4c67975897d48fee5f8a7fbceb84464bfc3ba73fc4d"
+        },
+        {
+          "module": "FV.E2E.ProductionStackBound",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "4aa93eb99207d7a77133d3dfd95274b70d6aa2a940afbab5861045c0e6c6b519",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch25/FV.E2E.ProductionStackBound.build.log",
+          "log_sha256": "16abeac2923a6ce666606fc5aff895e095238f14d372e70af3d69edf7e497736"
+        }
+      ],
+      "full_receipt_sha256": "5c2cd099225f35bf3db31966b30a7c8f7781ccc288687c05a5f92481a4f2bc44",
+      "leaf_cap_MiB": 8192,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 26,
+      "utc": "2026-10-20T21:55:06.380808+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 144,
+        "waiting_for_current_imports": 14,
+        "waiting_for_transitive_imports": 105,
+        "waiting_for_author_slow_shared_prerequisite": 1,
+        "built": 7
+      },
+      "build_attempts": [
+        {
+          "module": "FV.E2E.ProductionChecksWith",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "1f6fd47f2b21f94c3912d53e7651fb2034df458e2fa1411d6910132084c2b7fc",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch26/FV.E2E.ProductionChecksWith.build.log",
+          "log_sha256": "93c7d2337331612dd996862bbb4f77bec7ad4bd428b4175aa62a79be28aa1bf8"
+        },
+        {
+          "module": "FV.Link.Ld.Syms",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "297db6161b0d9c0fd90e3b65020fd62cb73f2a314b8b72bfe861acd2f79d0855",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch26/FV.Link.Ld.Syms.build.log",
+          "log_sha256": "3c538bca49c865b0dc4ad63d3ece955ef665d1bbe2d6badd1ff690ad55122021"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupBinCheck",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "4b334ad48baf01a95399b093c4aac41a89b0dbdbb038fde3004826159c46d1e9",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch26/FV.E2E.DeadCleanupBinCheck.build.log",
+          "log_sha256": "ec706571abaaac05f7cd17290587301ea3d4ebadbe9d7c69c58adf159f290972"
+        },
+        {
+          "module": "FV.Front.Bundle",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "b42fad6a56cdb1df2de7d9dd82a2e73c698f8c807649a4f5a04c663a6036a777",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch26/FV.Front.Bundle.build.log",
+          "log_sha256": "c637f075f89e385f6879b73a03eea2a954940e86855d00374e9bb7eaa487b370"
+        },
+        {
+          "module": "FV.Front.Read",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "15cc8baa064b21747ac0f6a1e5920dd7e805751143a18199954b7696cb1e204c",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch26/FV.Front.Read.build.log",
+          "log_sha256": "4b24595e2167a1ba6f06f5184057c4b7cc33aeda10c1de106c254483adcff28b"
+        },
+        {
+          "module": "FVTest.E2E.LinkProof",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "499c5d7ffac339e8ca2f45edbf79cad9d5eb0447a4b57cc2bdb4c1137646dd25",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch26/FVTest.E2E.LinkProof.build.log",
+          "log_sha256": "398278314673359922940dcfaa0cbf24f1a2090dfb3fc17e87c84ff7829f9ed1"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupBinary",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "4686ca0e32672b02f465b0e02b0c0328a8d05dff96556f7a110d0ac4349678db",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch26/FV.E2E.DeadCleanupBinary.build.log",
+          "log_sha256": "3283fa38d5ae59f8f31166d764f156f58fa69f33837463ad9acb0772c4d2af19"
+        }
+      ],
+      "full_receipt_sha256": "6a322c4c91205570172a29d3e5553977a7b6adf26d7a1bab320ec7f332674273",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 27,
+      "utc": "2026-10-20T21:57:26.454518+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 25,
+        "built": 8,
+        "waiting_for_current_imports": 1
+      },
+      "build_attempts": [
+        {
+          "module": "FV.Backend.Proof.StockEntryAliases",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "6f07e051f611d9cc9d036a04190b7970381539103265d2772e64651d85df7bbf",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch27/FV.Backend.Proof.StockEntryAliases.build.log",
+          "log_sha256": "1eb4f8c421f62ab172ef749f7765571649f0e68bf1b13203cd280c3c7ff9190f"
+        },
+        {
+          "module": "FV.Backend.Proof.StockEntryOrder",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "cf21b590e3442c773bae88581e235ee6387bcccf5cd36f2cb738b9cfceccd999",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch27/FV.Backend.Proof.StockEntryOrder.build.log",
+          "log_sha256": "3ad034cbeb3c78560ccc484f453d68c0ea3993f09033c5b91e48b48754deac33"
+        },
+        {
+          "module": "FV.Backend.Proof.StockSourceDFG",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "fb1e4c20e49cbb98227651be091f863b1341441d357dbee5cf69c857a58a9647",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch27/FV.Backend.Proof.StockSourceDFG.build.log",
+          "log_sha256": "7cc8cfa4dcd0bd4fc949fe5f2cfbd8762517ec68fe92785621cd90ed8b5fb87d"
+        },
+        {
+          "module": "FV.Backend.Proof.StockSelectScanRefines",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "dd44e5c53e4aaf45ef21438b0984d704bc5513186662272b04949529997b534f",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch27/FV.Backend.Proof.StockSelectScanRefines.build.log",
+          "log_sha256": "6f2912f16391e015603497e16f9bf924a1eedbc4da48fcb89d91df23c3bee004"
+        },
+        {
+          "module": "FV.Backend.Proof.StockGuardedOmission",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "66ae9903483c9092fc7513934e827974a268f9309099ff39d237c21f11b1e42e",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch27/FV.Backend.Proof.StockGuardedOmission.build.log",
+          "log_sha256": "7ce7de1600a4cda38415b828b4276fae031caeaf88c1d4c29f661b97f10c29be"
+        },
+        {
+          "module": "FV.Backend.Proof.StockBodyScanRefines",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "e3f28b91372e42c8428bb53b4a90b8b8e245106dc4a2b9f16fc14090df9e90c3",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch27/FV.Backend.Proof.StockBodyScanRefines.build.log",
+          "log_sha256": "5009af038927f82a0ee437fa8f77a7c090a23ca7f50143a2ecefb2e86c19377b"
+        },
+        {
+          "module": "FV.Backend.Proof.StockBodyScanOrigin",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "a189ac48b04110c6de9a1a882fb2305a7d5a5d7287f1626d2c72b5826f4359f3",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch27/FV.Backend.Proof.StockBodyScanOrigin.build.log",
+          "log_sha256": "e215670586121dbdcdb65c6659a9b30c98e161ed7dbaf9b478885319b521e47e"
+        },
+        {
+          "module": "FV.Backend.Proof.StockAddSubScanRefines",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "a9de4a8a60211a1ce10ab116ede08b88247ab7b398dd3e4351d075e252310f54",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch27/FV.Backend.Proof.StockAddSubScanRefines.build.log",
+          "log_sha256": "c4e72703276fbd063e415037bcf9f1d94bae9b7880aa143e8e30abb54913f591"
+        }
+      ],
+      "full_receipt_sha256": "8947ba625a807314443409a4eefa819c7dd2016d5d563144713e68d10179585e",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 28,
+      "utc": "2026-10-20T21:58:12.607310+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 33,
+        "waiting_for_current_imports": 1,
+        "waiting_for_transitive_imports": 1,
+        "built": 8
+      },
+      "build_attempts": [
+        {
+          "module": "FV.Backend.Proof.StockReturnABI",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "b5b58df5e702fd026d08dd1e2b670a5e25b6b55c173ae0c7ef977ab617c3005f",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch28/FV.Backend.Proof.StockReturnABI.build.log",
+          "log_sha256": "99be5b96e41a37c95124b074d6ca2311213d69eb1785f753c354a1283fce20f9"
+        },
+        {
+          "module": "FV.Backend.Proof.StockReturnArity",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "8255025e6317c061fc148d7368204a0ca0e9e0bf1e1168e0a74543e2cf30f1cd",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch28/FV.Backend.Proof.StockReturnArity.build.log",
+          "log_sha256": "9ca179d9143f5511326994ade0990d4797d816114d0eaf88a04fc638f3f79840"
+        },
+        {
+          "module": "FV.Backend.Proof.StockSourceDefined",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "3098a4c3173948676ac5724d2e99af70c91466e0ddafdeb0e07eb050227c9941",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch28/FV.Backend.Proof.StockSourceDefined.build.log",
+          "log_sha256": "7e1e5b04a03c5dde85c0c5712b9d4facf2f48275d73c83bc8f79ab5cd8d47ebe"
+        },
+        {
+          "module": "FV.Backend.Proof.StockSourceEntry",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "b029a9e4521d1d9389250800b3132740cf90e4daf445ad3c1809c5bee1d37807",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch28/FV.Backend.Proof.StockSourceEntry.build.log",
+          "log_sha256": "69b08aa68d1794efd07dfd7e8a610c500dc2fa18507c6172b2a8fafa5031dd95"
+        },
+        {
+          "module": "FV.Backend.Proof.StockEntrySeed",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "4aa25c33de67c6a2cf3cc53152f041725c0eee157a786ec10b4499581bb37130",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch28/FV.Backend.Proof.StockEntrySeed.build.log",
+          "log_sha256": "f6aaa6c2d37fb9d0d39744ef1739c551ad359dd13bc838ab4ef113ec6bc7b47d"
+        },
+        {
+          "module": "FV.Backend.Proof.StockEntryAssembly",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "319ff86fbe59efca466087155c310f50b50b091584885aca8d696ff79fdfe9d7",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch28/FV.Backend.Proof.StockEntryAssembly.build.log",
+          "log_sha256": "95c6a40c70cee3fea255ac48757a5548db89103ec69330e8ecb8aa1a19414ac5"
+        },
+        {
+          "module": "FV.Backend.Proof.StockEntryArgs",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "780b81882ebbdaf33b56686f19eba25d6312eb50737ad6c2dfc881ae5edd4756",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch28/FV.Backend.Proof.StockEntryArgs.build.log",
+          "log_sha256": "71bdb2743bbffaf15e289cc134e190ce2130e3bf6a6f2990cf7a6f2dd3314eba"
+        },
+        {
+          "module": "FV.Backend.Proof.StockEntryLoads",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "cbcd050eee345187e9ab19736a441a61750b2dcf94fb6a737266751ccf8b881f",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch28/FV.Backend.Proof.StockEntryLoads.build.log",
+          "log_sha256": "b72243c08fd5f2fdbe0e9d2214a2ea8ba6d9e6574b9690d8495d31002a3fc471"
+        }
+      ],
+      "full_receipt_sha256": "79be8c66943ea73f0c0a43df5fcba61745d6e761df24c5ddf0a54d519b7ee7cf",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 29,
+      "utc": "2026-10-20T21:59:24.910284+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 41,
+        "waiting_for_current_imports": 2,
+        "waiting_for_transitive_imports": 14,
+        "built": 8,
+        "waiting_for_author_slow_shared_prerequisite": 1
+      },
+      "build_attempts": [
+        {
+          "module": "FV.Backend.Proof.StockEntryABI",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "c2a32ff65d2dc0053648e82be9cd80db41e3bf0ed2a109d350d74d6998fff017",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch29/FV.Backend.Proof.StockEntryABI.build.log",
+          "log_sha256": "5694924fc8b3fbf526543cc10e77230a85f23ffcc1ea5a50e50092db0d4ce180"
+        },
+        {
+          "module": "FV.Backend.Proof.StockSourceEdges",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "c5554b886e5382de6cb4108b8b64d51d7112f1860972532d4fe3dfc8832f473f",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch29/FV.Backend.Proof.StockSourceEdges.build.log",
+          "log_sha256": "872f302199f96d7b12e868999b3195911c5556b31ecebd5a17e686bd80479b12"
+        },
+        {
+          "module": "FV.Backend.Proof.StockEdgeValues",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "1b47c8284eaceb5750d3f94969b32aea423936785fd47c4b4abaa2ce257c31ca",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch29/FV.Backend.Proof.StockEdgeValues.build.log",
+          "log_sha256": "220c6aea43795eebc6d685d08c34eb572339a2820663f8f26e111767c9496590"
+        },
+        {
+          "module": "FV.Backend.Proof.StockBranchArgumentCode",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "65fcc035aac8dbd48bdbcdec4f2a79954cfa979cf422770dc90a4212dcd6eaab",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch29/FV.Backend.Proof.StockBranchArgumentCode.build.log",
+          "log_sha256": "f081feff74cb9a4c29aa0ab3398a35d898795067ef6fd3a84bcd987ac72fa76b"
+        },
+        {
+          "module": "FV.Backend.Proof.StockTermContract",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "c60adfe04976f61db0a9ee9edf3fec87740d0959a10650d4d6447d24d7878261",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch29/FV.Backend.Proof.StockTermContract.build.log",
+          "log_sha256": "dd0c01ad8b58824a2bd8f8aa5d7d3a02a95098b98861a882276d18667281dc50"
+        },
+        {
+          "module": "FV.Backend.Proof.StockReturnHelpers",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "8cd482aa7ae33163f2b21c8620cf9197812f10d541d732ae586f714d9fc0e091",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch29/FV.Backend.Proof.StockReturnHelpers.build.log",
+          "log_sha256": "ca9334b704725c45356d46e690c5b9890f99054fc5482d09f9b708f3f3edd586"
+        },
+        {
+          "module": "FV.Backend.Proof.StockReturnRootCalls",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "ccb7ebc7be5b8199268c87c782c35acc042aabafa91684919a3b11d61706652f",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch29/FV.Backend.Proof.StockReturnRootCalls.build.log",
+          "log_sha256": "7bc66a0536f2bf4bdb83f81c5b16f27ae965ebe5e2ec88bad266c0db32a7422e"
+        },
+        {
+          "module": "FV.Backend.Proof.StockTermDataOrigin",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "c24d8e66bffd13f2193b3a68e67b229ba9fafb2998b1588509dff1343ac7351d",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch29/FV.Backend.Proof.StockTermDataOrigin.build.log",
+          "log_sha256": "bdc49cd25c6f5462e0e2728f8b662f1c41badd9167cb49dba6f98ae3937a3073"
+        }
+      ],
+      "full_receipt_sha256": "8f3c9960dce9d41619ceb3cdff84910425b0959b52a97805e15859343ecfd606",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 30,
+      "utc": "2026-10-20T22:00:45.149979+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 175,
+        "waiting_for_current_imports": 14,
+        "waiting_for_transitive_imports": 126,
+        "waiting_for_author_slow_shared_prerequisite": 2,
+        "built": 4
+      },
+      "build_attempts": [
+        {
+          "module": "FV.Backend.Proof.StockReturnRecordCalls",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "4c63c112a63b7c5b8acea5e5ca0407fdc5709f9d34c1cde415be0252c15c99b4",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch30/FV.Backend.Proof.StockReturnRecordCalls.build.log",
+          "log_sha256": "019cdcd048c4dbdd5551ed1c72b8f092796dfed07cd16c4cd5d18d8f9a18d948"
+        },
+        {
+          "module": "FV.Backend.Proof.StockReturnSourceRuns",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "977eac61e4735a907395ea666fd6fdab027887854153c8a52974b31159d72dc6",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch30/FV.Backend.Proof.StockReturnSourceRuns.build.log",
+          "log_sha256": "5b36c1b8cd55e71052f6fd65e36de9889be1965f8f0fa76eb2e4f3d823ce5fc8"
+        },
+        {
+          "module": "FV.Backend.Proof.StockReturnRecordSource",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "a78e345d77624adebe6bcf887ac15c978e38e0330d781d97eb78ccc8cd2fea94",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch30/FV.Backend.Proof.StockReturnRecordSource.build.log",
+          "log_sha256": "40b40897ca13f0658a6f9336c42d526241ba30a130c06786defe6a6778637336"
+        },
+        {
+          "module": "FV.Backend.Proof.StockPreparedSemantics",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "a0606314b07cec637b11d5fad1fc81746854edf6e6628fbf5482506970f1dc04",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch30/FV.Backend.Proof.StockPreparedSemantics.build.log",
+          "log_sha256": "af3e927c69a8b768c09c7da9378d5974b374123f2dd2c377269eeb1533f53b25"
+        }
+      ],
+      "full_receipt_sha256": "7719de59d2b74d10f09a1c56a670a0147ea8c95c979c72921e08407de977e98d",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 31,
+      "utc": "2026-10-20T22:02:06.910251+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 25,
+        "failed": 1
+      },
+      "build_attempts": [
+        {
+          "module": "FV.Backend.Proof.StockBlockCode",
+          "state": "failed",
+          "returncode": -15,
+          "source_sha256": "f285aa588ee579707b6c7824654fe8fc275d0b8d2c6dc0d2202d356a9e8b4b23",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch31/FV.Backend.Proof.StockBlockCode.build.log",
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "full_receipt_sha256": "6db5f0bcb4a50b3c394cb1a9b121ecd1cb12fe40125c24e91c9e45ed6e49aa0a",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 32,
+      "utc": "2026-10-20T22:04:34.455790+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 179,
+        "waiting_for_larger_leaf_budget": 2,
+        "built": 2,
+        "waiting_for_transitive_imports": 129,
+        "waiting_for_author_slow_shared_prerequisite": 2,
+        "waiting_for_current_imports": 12
+      },
+      "build_attempts": [
+        {
+          "module": "FV.Backend.Proof.StockSinkFrame",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "2838400e1c408018c85e3fea85aff49ec525d79f07373b32b83097805adcf712",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch32/FV.Backend.Proof.StockSinkFrame.build.log",
+          "log_sha256": "96310c5d8109b5cfe9509b55b8118993207162e7cad225081eb827212815585d"
+        },
+        {
+          "module": "FV.Backend.Proof.StockPureSourceColors",
+          "state": "built",
+          "returncode": 0,
+          "source_sha256": "ab628ce7760e12d97aa78b3049eabe41260aa5595afd39de0feab851e47712ff",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch32/FV.Backend.Proof.StockPureSourceColors.build.log",
+          "log_sha256": "8278be84531a88df2ac49f7a10c1ad336b5e91ad3787a775977edeb4d0806b7a"
+        }
+      ],
+      "full_receipt_sha256": "ea139df4e82e808611e5a3fee4ed87ce15c63cb9cee90c1f20afa5cab77669c8",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
+    },
+    {
+      "batch": 33,
+      "utc": "2026-10-20T22:05:33.035750+00:00",
+      "head": "9506a33148e2cef73efe192220f06db3fcf13e3e",
+      "counts": {
+        "source_key_current_or_restored": 181,
+        "waiting_for_larger_leaf_budget": 2,
+        "waiting_for_transitive_imports": 129,
+        "waiting_for_author_slow_shared_prerequisite": 2,
+        "waiting_for_current_imports": 12
+      },
+      "build_attempts": [],
+      "full_receipt_sha256": "281ac5816f90f83097c00506861d386e3d2a233c648ba580d9f78ee30d469ea9",
+      "leaf_cap_MiB": 4096,
+      "aggregate_MiB": 16384,
+      "max_active_builds": 2,
+      "scheduler_resumed": true,
+      "skip_reason": null
     }
   ],
   "current_abi_review_receipt": "docs/research/stock-mixed-abi-normal-review.json",
@@ -4024,5 +4795,21 @@
     "integrator_comment": "https://github.com/eth-act/clifv/issues/261#issuecomment-6302283662",
     "source_failure_not_observed_at_this_error": true,
     "whole_run_remains_red": true
+  },
+  "resource_deferrals": {
+    "StockBlockCode": {
+      "attempt_returncode": -15,
+      "attempt_cap_MiB": 4096,
+      "journal_confirms_cgroup_oom": true,
+      "journal_sha256": "5da3b864fa0c3d8a93c9e4fcdd4f2f799ac1f9580232ab065aeaf7bca2cf7f97",
+      "known_peak_MiB": 5922,
+      "required_with_margin_MiB": 7618,
+      "state": "deferred_pending_larger_available_leaf_budget_no_Lean_diagnostic"
+    },
+    "StockPureUnsunk": {
+      "required_with_margin_MiB": 7596,
+      "state": "preflight_deferred_not_launched"
+    },
+    "policy_fix": "Read current worktree and primary .lake/lake-module-peaks.tsv as well as checked-in records; restore exact keys first, defer builds whose known peaks plus margin exceed available reserved leaf budget. No aggregate cap increase."
   }
 }
