@@ -1,6 +1,6 @@
 {
   "utc": "2026-10-20T03:52:18.239578+00:00",
-  "state": "complete_class_implementation_targeted_passed_pending_frozen_author_gates",
+  "state": "author_gates_passed_pending_author_squash",
   "base": "5a143135fca1b3565085f7cf403dc475c85cfc24",
   "standard_public_roots": 28,
   "standard_owned_constants": 248,
@@ -12,7 +12,7 @@
   "complete_machine_witness": true,
   "new_scan_nonvacuity_witness": true,
   "entrypoint_activation": "local implementation; not yet main",
-  "full_author_gates_run": false,
+  "full_author_gates_run": true,
   "full_original_goal_complete": false,
   "logs": {
     "/tmp/stock-scalar-add-proper-code-domain-build.log": "5024669552d1723a33566b69871ee3e8b44ef471512f5b6daaa3e683bbb8d41a",
@@ -27,7 +27,7 @@
     "/tmp/stock-scalar-cli-check/state.json": "a9b2d864437e93498a6536948a160482d46e691bfb4ebd0310f73174a2bf4af4",
     "/tmp/stock-scalar-scan-public-facts-build.log": "b3a25add46ecf07153ab589ec571a2699e9b3f35130ccad9e304526c9d0fa711"
   },
-  "next": "Freeze source, run current author gates, reconcile current main and squash substantive scalar-add production class. Continue all original #140 obligations.",
+  "next": "Author squash; notify integrator; continue all original #140 obligations.",
   "boundary_roots": 23,
   "explicit_native_witness_roots": 15,
   "linked_cases": 10,
@@ -42,5 +42,9 @@
     ],
     "source_warnings": [],
     "calls": 1
-  }
+  },
+  "validated_head": "c6f3a0805aeb67457c7942f8d56fb754567b3cd0",
+  "author_receipt": "docs/research/stock-scalar-add-production-author-gates.json",
+  "expanded_owned_partitions": 9,
+  "settings_matched_regalloc2_passed": true
 }

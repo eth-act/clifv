@@ -23,3 +23,9 @@ author gates, current-main reconciliation and substantive class squash; arithmet
 activation on main is not yet claimed.
 
 The broader full-driver rule/effect/source/block/whole-driver simulation and Stock-only completeness, optimizer/unwind consumers and final production replacement remain open. All saved canonical work, prior theorem variants, input conditions, required axiom sets and original/current identity-stage baselines remain required.
+
+Frozen author gates and supplementary owned/native-witness and settings-matched
+regalloc2 checks passed on `c6f3a0805aeb67457c7942f8d56fb754567b3cd0`. Terminal results, exact log hashes
+and both-mode original/prior identity-stage parity are preserved in
+[the author receipt](stock-scalar-add-production-author-gates.json). The author
+squash follows immediately after current-main reconciliation; full #140 remains open.
