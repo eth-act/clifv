@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-20T20:09:10.125423+00:00",
+  "utc": "2026-10-20T20:30:29.429011+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
@@ -3214,5 +3214,10 @@
     "receipt_sha256": "ce4580980fcf2d9f223e68ff784d0f91d58f7075f2d60ff2aef35e2bffe982eb",
     "not_a_gate_pass": true
   },
-  "normal_runtime_receipt": "docs/research/stock-mixed-current-normal-runtime.json"
+  "normal_runtime_receipt": "docs/research/stock-mixed-current-normal-runtime.json",
+  "native_execution_receipt": "docs/research/stock-mixed-native-execution.json",
+  "current_runtime_export_source_sha256": {
+    "FVTest/Backend/Lowering/StockMixedRuntime.lean": "bcd70e9c5d50dedcd8299330318d37affb8ac489854de3addfc8fa394664c6ae",
+    "scripts/check-stock-mixed-native.py": "6334f76939b499b8d401aa7a91f5d05bc42f6888ebbb58a250d7d1228d3d6b60"
+  }
 }

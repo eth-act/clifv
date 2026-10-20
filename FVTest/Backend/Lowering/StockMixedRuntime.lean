@@ -18,6 +18,21 @@ def input (config : Stock.D0.Configuration) : String :=
   (Stock.D0.source "retained_d0" .fastI32 []).print ++ "\n" ++
   "function %retained_legacy() -> i64 {\nblock0:\n    v0 = iconst.i64 7\n    return v0\n}\n"
 
+/-- Export the actual Lean-encoded object and original inputs for native
+execution tests. Normal runtime checks retain their existing behavior. -/
+private def saveNativeArtifacts (label : String) (config : Stock.D0.Configuration)
+    (cleanup : Bool) (production : FileAsm) : IO Unit := do
+  if let some directory ← IO.getEnv "STOCK_MIXED_NATIVE_OUT" then
+    let dir := System.FilePath.mk directory
+    IO.FS.createDirAll dir
+    let stem := s!"{label}-{repr config}-{if cleanup then "cleanup" else "plain"}"
+    let bytes ← match production.object with
+      | .ok bytes => pure bytes
+      | .error message => throw (IO.userError message)
+    IO.FS.writeBinFile (dir / (stem ++ ".o")) bytes
+    IO.FS.writeFile (dir / (stem ++ ".json")) production.tableJson
+    IO.FS.writeFile (dir / (stem ++ ".clif")) ("test run\ntarget aarch64\n\n" ++ input config)
+
 private def checkConfiguration (label : String)
     (allocateBatch : Array VCode → IO (Array (Except String AFunc)))
     (config : Stock.D0.Configuration) : IO Unit := do
@@ -57,6 +72,7 @@ private def checkConfiguration (label : String)
     require (production.funcs.length == 6 && production.unsupported.isEmpty &&
       production.unverified.isEmpty && production.unvalidated.isEmpty)
       "mixed arithmetic/retained functions lost a successful verified stage"
+    saveNativeArtifacts label config cleanup production
     let calls ← IO.mkRef (0 : Nat)
     let retried ← compileFileMixedNIWhen true (fun vcs => do
       let n ← calls.get

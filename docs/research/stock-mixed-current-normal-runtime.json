@@ -88,5 +88,6 @@
     }
   },
   "earlier_fallback_only_run_retired": true,
-  "regalloc2_source_compatibility": "lean-regalloc source, workspace manifest and lock unchanged from completed old-source release epoch087; only isle2lean closure.rs changed in rust. Actual binary SHA recorded above; complete current Rust gate still required."
+  "regalloc2_source_compatibility": "lean-regalloc source, workspace manifest and lock unchanged from completed old-source release epoch087; only isle2lean closure.rs changed in rust. Actual binary SHA recorded above; complete current Rust gate still required.",
+  "later_native_execution_receipt": "docs/research/stock-mixed-native-execution.json"
 }
