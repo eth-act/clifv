@@ -319,3 +319,18 @@ Continue arithmetic-family/value simulation and direct semantic consumer work
 immediately after the prerequisite squash; all original #140 obligations remain.
 
 Arithmetic body author gates passed on `b382a3e5e3ad4ef1231f1ab6ba0a19d69179dd61`: scheduler validated the two new modules against exact unchanged source/audit hashes from the2426-module#338base, followed by the full `FV FVTest` replay, all28audit files and27core/2fixed-witness owned constants. All1042priorpublicaxiomsets retained exactly;7newpublicroots audited. No runtime/consumer input or executable changed. Receipt: [arithmetic body author gates](../research/stock-arithmetic-body-author-gates.json). Original source evaluation/entry-return composition and direct semantic consumers remain next.
+
+#339 (`2fe5fa0febb4ec0460fad4785a5e1e81e7b440a9`) landed the derived arithmetic
+body value-simulation unit. Exact source+receipt tree verified, all current gates
+passed and integrator notified; no new production class enabled.
+
+Next source-execution checkpoint (main#339): actual `Clif.step` supplies each
+indexed arithmetic source step. An actual `Clif.runLoop` return supplies the
+entire source-body sequence, exact residual fuel and state at the terminator.
+Composition with emitted-body simulation no longer asks for a supplied source-step
+sequence. Complete retained-record/reference-step and reference-return/dirty-input
+machine witnesses pass651jobs,5public roots and23standard core-owned constants;
+2fixed witnesses retain only existing marked native trace facts. Entry handling,
+terminal source definedness/frame/caller transport and return composition remain
+next, before direct optimized-Stock semantic consumers and complete function
+activation. [Source execution evidence](../research/stock-arithmetic-source-execution-checkpoint.json).
