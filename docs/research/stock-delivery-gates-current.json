@@ -1,0 +1,91 @@
+{
+  "utc": "2026-10-16T15:45:14.383428+00:00",
+  "previous_goal_turn_classification": "PROGRESS: prior10modules/38roots/344audit preserved; this turn actual exact-PR gate schedule started, prior heavy kernel completed successfully,285completed targets reused, clean exact commit view and source/import preservation reviews verified.",
+  "goal": "ORIGINAL full#140 active/incomplete; production LEGACY",
+  "validation_worker": {
+    "utc": "2026-10-16T15:43:21.935739+00:00",
+    "state": "serial_build",
+    "pid": 3247835,
+    "pr": 246,
+    "view": "/home/lee/clifv/.worktrees/stock-delivery-gates",
+    "commit": "44abfd79cbe4cda5ed868054b7f9e166152cf709",
+    "canonical_controller": 1233457,
+    "cache_lease": "/tmp/stock-delivery-cache-lease.json",
+    "index": 12,
+    "total": 1415,
+    "module": "FV.Backend.Proof.IselSzTab",
+    "log": "/tmp/stock-pr246-gates-20261016T152014Z-module-FV.Backend.Proof.IselSzTab.log",
+    "memory_cap": "22G"
+  },
+  "completed_phase_count": 11,
+  "canonical_controller": {
+    "pid": 1233457,
+    "state": "INTENTIONALLY queue-held via SIGSTOP, NOT killed or restarted; original child IselPrgTab completed successfully",
+    "source_and_script_freeze_verified": true,
+    "purpose": "Serialize one shared cache for exact PR246 full gates; same controller resumes by explicit lease release after gate review or automatically if worker fails"
+  },
+  "lease": {
+    "utc": "2026-10-16T15:20:14.160771+00:00",
+    "state": "running_exact_PR_gates",
+    "owner": "codygunton / #44 / root",
+    "worker_pid": 3247835,
+    "pr": 246,
+    "view": "/home/lee/clifv/.worktrees/stock-delivery-gates",
+    "commit": "44abfd79cbe4cda5ed868054b7f9e166152cf709",
+    "canonical_controller": 1233457,
+    "canonical_previous_progress": {
+      "state": "running",
+      "pid": 1233457,
+      "utc": "2026-10-16T14:46:45.542891+00:00",
+      "total": 1930,
+      "completed_modules": 284,
+      "index": 285,
+      "current": "FV.Backend.Proof.IselPrgTab",
+      "log": "/tmp/stock-coherent-build-FV.Backend.Proof.IselPrgTab.log",
+      "memcap": "22G"
+    },
+    "current_children": [
+      2790797
+    ],
+    "policy": "Current kernel finishes; same controller held only to serialize exact-PR access to one shared cache. Source/script freeze unchanged. No kernel restart/cache copy/new warm cache.",
+    "release_command": "python3 /tmp/stock-pr246-gates.py --release",
+    "cache_quiescent_utc": "2026-10-16T15:21:19.236620+00:00",
+    "terminal_original_children": {
+      "2790797": {
+        "state": "Z",
+        "exit_code": 0,
+        "cmdline": ""
+      }
+    }
+  },
+  "lease_release_command": "python3 /tmp/stock-pr246-gates.py --release",
+  "view": {
+    "path": "/home/lee/clifv/.worktrees/stock-delivery-gates",
+    "branch": "agent/stock-delivery-gates",
+    "commit": "44abfd79cbe4cda5ed868054b7f9e166152cf709",
+    "owner": "codygunton / #44",
+    "purpose": "Exact PR246 then PR247 local validation; remove after batch once unique ignored evidence archived",
+    "tracked_clean": true,
+    "source_modules": 2002,
+    "all_source_import_closure": "/tmp/stock-pr246-all-source-import-closure.json"
+  },
+  "cache": {
+    "warm_Lean_caches": 1,
+    "copy_performed": false,
+    "root_build_crate_build_Rust_target": "symbolic links to canonical cache; exclusively owned by gate worker while canonical queue held",
+    "heavy_kernels_concurrent": 1,
+    "effective_workers": 2,
+    "memory_cap": "22GiB; prior isolatedStockCmpWithFlags32GiB exception only",
+    "free_GiB": 811.3
+  },
+  "required_sequence": [
+    "Serial dependency build of1415affected/mismatched exact-view modules, reusing285verified matching canonical targets",
+    "Full --rehash FV/FVTest/tools including lean-link/clif-decode; crate proofs; all public roots and documented compiler theorem axiom audit; runtime; encoder; BOTH E2E modes with every old identity/stage list",
+    "Completion review /tmp/stock-pr246-completion-audit.py checks every rejection/failure summary, full all-constant axiom closure and old exact sets, source scans and current main/CI",
+    "Generate one conjunction of every public/compiled theorem statement via /tmp/stock-pr246-mcp-bundle.py; normal compile then ONE lean_verify(file_path,theorem_name,scan_source=true)",
+    "Review receipts; only then ready and squash#246, validate#247in same clean view/cache, then remove clean view/archiveevidence and resume canonical controller"
+  ],
+  "receipts_pending": true,
+  "no_merge_this_batch": true,
+  "no_new_production_default_or_shared_source_interface_edits": true
+}
