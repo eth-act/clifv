@@ -6,6 +6,16 @@ proof checkpoints remain evidence, not a queue of instructions to resume.
 
 ## Active raw arithmetic delivery packet (2026-10-20)
 
+The arithmetic runtime gate must require real accepted regalloc2 oracle answers,
+validate allocation/lowering/emission, and compare all five allocated-function
+fields with production's result. The ordinary allocator wrapper can silently
+fall back, so its label alone is insufficient. Test repair `28edb796` retains all
+original configuration, retry and history assertions and adds a missing-binary
+negative control. Run it against the exact arithmetic candidate before landing,
+include that test repair in the arithmetic packet, and normal-build the affected
+test module. Keep the currently running frozen author gate intact; its other
+required gates and the stronger runtime receipt are both mandatory.
+
 The cold author rebuild exposed a pre-existing 23,645 MiB comparison-helper proof.
 Its exact-statement replacement now uses small opaque matching/evaluation steps:
 normal module build371jobs passes (leaf1.8s), standalone peak2.1GiB, all69owned
