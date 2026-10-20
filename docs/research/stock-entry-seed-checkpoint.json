@@ -1,0 +1,32 @@
+{
+  "utc": "2026-10-20T06:56:23.666163+00:00",
+  "base": "348fa0a8cad6e55c7f6374a6fa782a21cd8d3d6e",
+  "scope": "source-side seeded entry invariant and ABI register-copy preservation, not full generated machine prelude/function activation",
+  "build": "PASS653jobs",
+  "public_roots": "14/14;9standardgeneral/5explicitfixedwitness",
+  "owned_constants": {
+    "core_standard_only": 15,
+    "fixed_witness_constants": 21
+  },
+  "source_sha256": {
+    "FV/Backend/Proof/StockEntrySeed.lean": "1bc385deb7ec364b93dc12f256e40f58c088740d1c75e1852106026008b380d6",
+    "FV/Backend/Proof/StockEntryArgs.lean": "780b81882ebbdaf33b56686f19eba25d6312eb50737ad6c2dfc881ae5edd4756",
+    "FV/Backend/Proof/StockEntrySeedWitness.lean": "ad080381f9333e0875cd9af16e4f1c914dd720cd14352ca420f47e583fce753d",
+    "scripts/audit/stock-entry-seed.lean": "4f9844789f3644f8581b3dbcff2f602852dfe97d59dc0c9c740d6fc87208bb00"
+  },
+  "logs": {
+    "/tmp/stock-entry-args-real-witness-fixed-build.log": "b319c50fa500dab2fd69d9d4f680e6edf7c970c345461361dbfd0bad6aabe6dd",
+    "/tmp/stock-entry-seed-args-public-audit.log": "fae88408676ecb70c13acc42d299eb8e037c91050110d599453d524ad550e5ed",
+    "/tmp/stock-entry-seed-args-owned.log": "b529cc45bbe9ab2c3c5649aca415164ff785cec927c9b2acdbd1e29062af1524",
+    "/tmp/stock-entry-seed-args-mcp.json": "f3592426968f4208202b0c15b883e6a1fcfe3fcab48dc083f7fd9a647bb3afc7"
+  },
+  "interface_evidence": "RegallocSound.checkAlloc_sound universally quantifies initial virtual files; AllocChecked alone has a weaker initial-file interface. Existing contracts retained. Boundary posted#140/6284915808.",
+  "remaining": [
+    "nonempty stack-load preservation witness (off-tree generic lemma kernel-passes standard axioms)",
+    "derive source/ABI row agreement and exact prelude from actual assembleOriginalBlock loop",
+    "compose machine entry at VCode position0 with source/body/return simulation",
+    "direct optimized-Stock semantic checker/consumer integration and complete production classes",
+    "all original#140 broader rule/effect, whole-driver simulation/Stock-only completeness and full integration obligations"
+  ],
+  "formatting_after_validation": "removed trailing blank line at EOF; all Lean tokens unchanged"
+}
