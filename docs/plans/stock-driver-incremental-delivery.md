@@ -317,3 +317,5 @@ executable; no new production class is claimed. The terminal
 [author receipt](../research/stock-pure-body-author-gates.json) records the scope.
 Continue arithmetic-family/value simulation and direct semantic consumer work
 immediately after the prerequisite squash; all original #140 obligations remain.
+
+Arithmetic body author gates passed on `b382a3e5e3ad4ef1231f1ab6ba0a19d69179dd61`: scheduler validated the two new modules against exact unchanged source/audit hashes from the2426-module#338base, followed by the full `FV FVTest` replay, all28audit files and27core/2fixed-witness owned constants. All1042priorpublicaxiomsets retained exactly;7newpublicroots audited. No runtime/consumer input or executable changed. Receipt: [arithmetic body author gates](../research/stock-arithmetic-body-author-gates.json). Original source evaluation/entry-return composition and direct semantic consumers remain next.
