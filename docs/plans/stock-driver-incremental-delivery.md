@@ -291,3 +291,12 @@ Incremental replacement is possible. What cannot safely be separated is enabling
 a Stock-produced function while its source-to-machine argument or any consumer
 still reasons about legacy output. That coupling sets the size of each activation
 PR; it does not require a single all-families, all-programs wholesale swap.
+
+The complete derived color-frame/decision-coverage prerequisite passed frozen
+author gates on `9cab610f1cc1bcff39aa70b049acee1c7d2710fb`, including the full FV/FVTest scheduler, all
+checked-in trust audits, all owned constants and exact prior theorem axiom-set
+parity. The proof-only dependency manifest reaches no runtime consumer or
+executable; no new production class is claimed. The terminal
+[author receipt](../research/stock-pure-body-author-gates.json) records the scope.
+Continue arithmetic-family/value simulation and direct semantic consumer work
+immediately after the prerequisite squash; all original #140 obligations remain.
