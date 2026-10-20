@@ -64,3 +64,11 @@ metadata and exact whole-attempt retry output/history/stages.
 This is stronger than prototype evidence but still not normal per-module/tool
 validation: CLI/link/generated-proof/corpus gates and prior-axiom/identity/stage
 parity remain pending before landing. Frozen arithmetic gates continue first.
+
+Pending integration checks now also cover previous-semantic and legacy
+complete fallback on the new mixed source itself, retaining the earlier
+arithmetic-source cases. Each retry receives the unchanged specification,
+image and cleanup flag. The mixed linked fixture defaults to its own
+`/tmp/stock-mixed-linked-fixture` directory to preserve arithmetic evidence.
+These additional source changes await the next bounded check; no Lean scratch
+job runs alongside the current16GiB PerEdgeSpillCycleFixture kernel.

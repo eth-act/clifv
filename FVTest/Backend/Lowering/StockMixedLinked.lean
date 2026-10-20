@@ -155,4 +155,4 @@ def check (out : System.FilePath) : IO Unit := do
 end FVTest.StockMixedLinkedFixture
 
 def main (args : List String) : IO Unit :=
-  FVTest.StockMixedLinkedFixture.check (args.headD "/tmp/stock-arithmetic-linked-fixture")
+  FVTest.StockMixedLinkedFixture.check (args.headD "/tmp/stock-mixed-linked-fixture")
