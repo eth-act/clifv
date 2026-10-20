@@ -1,0 +1,6 @@
+import FV.Backend.Proof.StockSelectComparisonDriverRuns
+import FV.Backend.Proof.StockSelectComparisonSourceSetup
+import FV.Backend.Proof.StockSelectComparisonSourceWitness
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonDriver.stock_select_comparison_driver_observed
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonSourceWitness.stock_select_comparison_source_setup
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonSourceWitness.stock_select_comparison_complete_source_witness
