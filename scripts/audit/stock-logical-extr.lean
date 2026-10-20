@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockLogicalExtrValuesWitness
+import FV.Backend.Proof.StockLogicalExtrMatch
 import FV.Backend.Proof.StockLogicalExtrSemantics
 import FV.Backend.Proof.StockLogicalExtrRhs
 open Lean Elab Command
