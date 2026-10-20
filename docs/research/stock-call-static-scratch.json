@@ -1,0 +1,840 @@
+{
+  "goal": "#140 full original goal active/incomplete; production legacy",
+  "utc": "2026-10-16T09:05:29.471553+00:00",
+  "previous_goal_turn_classification": "maintenance progress: resource inventory/cleanup evidence and discipline update; original proof goal remained active",
+  "status": "scratch compiled/normal-standard-only;canonicalintegration/MCP/fullgates pending",
+  "scope": "Actual revised Stock explicit call-output allocation and successful return pins derive fresh/distinct ABI defs and state/emission framing. Actual direct/indirect argument, pin and info helpers derive CallOk/SpillInstOk with arbitrary stack arguments under original sigAbiOk. Writing actual fresh result defs frames every earlier vreg and transports callee AllHold/length to ResultsHeld. Complete four direct/indirect x ordinary/implicit-sret source pipelines preserve original LowerScope/Dominated/ArityOk/ABI and actual Stock/raw/global checked fallback/physical success, actual returned/prepared call instructions, ordinary nonempty outputs, empty explicit sret outputs, and real direct nine-argument stack stores. Auxiliary helper protocol uses the SAME actual built context and initial state. Separate concrete 7/9 result-value witnesses exercise local transport.",
+  "limits": "Selected-RHS/retained-record binding of the auxiliary helper protocol and whole-call/source/world semantic composition remain OPEN. Local result transport assumes callee AllHold and explicit result length; these must be derived from source call semantics, not added as accepted input conditions. TryCall reserved definition uniqueness/final alias transport, remaining control OpsOk/SpillInstOk/visitor success, availability/checker/fallback completeness and Stock totality remain open. ALL original rule/effect/call/trap/sinking/Try continuations, register/value/source/DFG/world/block/whole-driver simulation/completeness, compiler/checker/linker/generated-proof production integration, final complete witnesses/audits/full gates/both E2E identity-stage parity/fresh complete stock comparison and original input/theorem/axiom/#179 parity remain mandatory.",
+  "scratch_sources": {
+    "/tmp/StockTerminalFormObservation.lean": "3479fd742cca2711d6def6c8bad6c68e2fda22368a7fb7dcc88d24504bcf5756",
+    "/tmp/StockTerminalFormContracts.lean": "43bb50e413da780ad2444bc68a690ae698744a4104ef96caba0b2b68d68818f6",
+    "/tmp/StockTerminalFormWitness.lean": "1a8a011af69fbc3950a658ec73301d74bc4dee2273aa4b1388c00211c02e0f13",
+    "/tmp/StockCoreFormObservation.lean": "aadfbe8f061d12fea9377e38cf4571135c8c233f9dda4901a6c1fbe0d6d0e805",
+    "/tmp/StockCoreFormContracts.lean": "2dee57541c8f579e35963296e1c0dac025bd203340848464a444a75587a84bcc",
+    "/tmp/StockCoreFormWitness.lean": "c06d5ce33a2baca6ef1043600643bcaabd58bb3d41b7d54ca7aa96a5f9f2a03e",
+    "/tmp/StockEntryFormContracts.lean": "ea562b699ef05ff85330bceb79294b6553b09f5cf4b3b19c886ebabaacbdf316",
+    "/tmp/StockWholeFormContracts.lean": "77131d964e7f174e854722fe3083c12a1500c2e47e99f3ac2b80969015dcf16f",
+    "/tmp/StockPreparedFormContracts.lean": "e4d28deb70f227dfa85a11018634050f7476956de97369c7f58e67f0a0a2e969",
+    "/tmp/StockWholeFormSource.lean": "c492d1d5079e6db35a90b9ad27c5a9956c84e48ffa7eb23e38e77e674f01f783",
+    "/tmp/StockWholeFormObservation.lean": "8f677cd537c724371916574a43d2156d65d0008c487b6aea7e521ef3721aabc9",
+    "/tmp/StockWholeFormWitness.lean": "6cdaaa40fd5cdd65c8afb48e4ac2f362c629dba3c8ec4f593158e363e38713e9",
+    "/tmp/StockClassGrowthContracts.lean": "f22a47bc5d319d51c7d6fb7fc70949de80f4873517ce655f9cf3d773d853adef",
+    "/tmp/StockInitialClasses.lean": "a9cf58eb8f2a77612517ff9d05e79c113ea59123181a5d06d1078ca66997b81b",
+    "/tmp/StockWholeClassGrowth.lean": "3c6897e63d216b8140900a348ddc6d565acff32f9b69927b2fc6f894ffed0c36",
+    "/tmp/StockClassGrowthWitness.lean": "d698f1c1e713fa11400619b06e0116bd2c1b4b02f990ec608c6db6512483fc8e",
+    "/tmp/StockClassCtorContracts.lean": "98c98cd188da5edbf9c89a9e8673cb4598df1d51ca0dddd7dff4f09704d93242",
+    "/tmp/StockClassModel.lean": "fd752357b800da12a19e8a5818347b3046c5eb935314bceff1c2c01bab7c0a71",
+    "/tmp/StockClassRoots.lean": "93b397d93da6cb0eeeb1a8cd26805eaa614fd93375aaa52d14e59a3b25d80739",
+    "/tmp/StockClassWitness.lean": "a944d138a8621ff040c2a99b0f053d9fec04777ab114dc9abe8a538310b190af",
+    "/tmp/StockClassApplyWitness.lean": "d4b9d4b09b2247754844169d7892b5e51e9a5817944561c740796b17a0f66e45",
+    "/tmp/StockBindingClassContracts.lean": "f05481600ba05b610ad30f8c83eecac8f200d526014442ce2d6b25ac16443f20",
+    "/tmp/StockScanClassContracts.lean": "4a59362b36d262e46ab2e31cf876a538f34aa8084f4c2bd3fa625efbb51087c9",
+    "/tmp/StockBindingClassWitness.lean": "845323ea678e8f0e663d7afc907a64d28317af1b98005d90eefe5c7c6068b8ed",
+    "/tmp/StockOrderedAliasClassWitness.lean": "c771500fbc48867b0087c457f7179432b697658ccf47253a5cbe78596da317ca",
+    "/tmp/StockHelperAliasClasses.lean": "911a935753732fcf5dc11c626fc0363a45bc0f4a64df089e609989aef5b98a7b",
+    "/tmp/StockAliasClassInputs.lean": "533bd17433508d640b296f5b1d55ffd45905326cdf61449024c8fda2cb76f5c4",
+    "/tmp/StockEmissionAliasClasses.lean": "5ac4bf49e16e1a9fc89e8b5a6aa5d649b3707749844a79ea868ce9e18e2b96db",
+    "/tmp/StockScanAliasClasses.lean": "022e74ddbaeaeea4a27ba2b4027a101e7fac99dfc604f3b23b9d6b84a3b54e63",
+    "/tmp/StockTryAliasSource.lean": "3dcb7b42dec2be50c73ba05c460092feb0162785cc580fa95642768482094607",
+    "/tmp/StockTryAliasObservation.lean": "a7f65f9ae4175e281ee0c9965a3f7c779f57810ccb633c14f4952aa8aef5648e",
+    "/tmp/StockTryAliasTerms.lean": "270009faa6ff17ac413a8ef32ebc3cdf6d4e9b494ef35aa7e45c06c6b0d5ba0e",
+    "/tmp/StockTryAliasWitness.lean": "88358ae1de232ea515d7e1e025f75762368d1610e9bdc7baddb57a49a8b5aa67",
+    "/tmp/StockScanAliasWitness.lean": "21f9a4829f2973ce538df685ada82de2c8aeb9799bac4721b6d839ace18037ea",
+    "/tmp/StockDriverAliasClasses.lean": "0471c962d0a894f4e80b3d7c299197306a42873fe4f92b9bf227eecdcdc2f16e",
+    "/tmp/StockDriverAliasWitness.lean": "97a1148b858f2ca12f15e3701ff132e553cfd8821ed91b1bda6b9e96880a16fa",
+    "/tmp/StockBranchClassContracts.lean": "0afbc0a41536456cf0a77976df77da94ceb5f84c0f38e82e50b7c6150cb790e7",
+    "/tmp/StockCoreClassContracts.lean": "16883166eff10d2ce51fdcd598cac31204ea7a86919cb9877b597b20173e18ca",
+    "/tmp/StockCoreClassWitness.lean": "354f411cec686429287e31529e5a996219a608426f134040431ab937735661f1",
+    "/tmp/StockEntryClassContracts.lean": "dc40fb3f98dd4b5277429a4364b4b830509e72686db2d0c33a0f871129ab1c68",
+    "/tmp/StockWholeInstructionClasses.lean": "327e3e9508e362e474657f26c2dcea2afb4a2631d1046ab3694d1359c6dd693a",
+    "/tmp/StockPreparedInstructionClasses.lean": "5717669bbae3b4060107fc850f7be48540577e2a6805342c3314495c73862add",
+    "/tmp/StockWholeInstructionClassWitness.lean": "b8e21280e924007e302054a756a0363fd8a25244fc772fd3d37294371ce8347c",
+    "/tmp/StockCriticalInstructionClassWitness.lean": "b9f909124fcce572386dcdb839f0c5b6877a7f0e9a258d4ca4a26ccb39b6e533",
+    "/tmp/StockWholeClasses.lean": "06bc967863f9d9ca20334471b74c693e888c8aa1d7a2af9aeae9eb8bf5d41ecd",
+    "/tmp/StockPreparedClasses.lean": "cb38498faf6716bfd2853d79cf85b2e167f91863bae78e20beb8cb987eb90bb2",
+    "/tmp/StockClassesWitness.lean": "3b1620a0bbd2fb8476dfad4c6b55496cb2ecf64f8dd68083e0132c51e6460329",
+    "/tmp/StockCriticalClassesWitness.lean": "5c02156ca17b6314f1eda83ea3d42804f4ffe26494733731fcea2779dc583bf9",
+    "/tmp/StockReturnStatic.lean": "47d8b8057c5b89f8a6b9bc388ee17f4e62f2269a43c8a936391be21d6a53af53",
+    "/tmp/StockReturnPlacedStatic.lean": "f504bb7b444a4a843b70cf7ac5ce36dcdebdc1274c373286a44f0b047ff3a00c",
+    "/tmp/StockReturnStaticSource.lean": "72cd1e346d4abb9b71dd3df281d493bf726346171064dc2e73aa7b86ea54abaa",
+    "/tmp/StockReturnStaticObservation.lean": "39dc9cf392b51bd9cb8ff13ee54b11ef3eed639f0eb18909f732e8605c1db5b3",
+    "/tmp/StockReturnStaticWitness.lean": "9a9ccca32852b5103932bb95a098768366b5531b38c8540a514588759bfbbcd4",
+    "/tmp/StockCallOutputStatic.lean": "9211bb5d507dd63c386e243a6231662e8baf1ad57a7c605d9e55dba744cdd31c",
+    "/tmp/StockCallAbiStatic.lean": "8cb8429bf1cf6c119b0b67cca74ed1312541ae1c287c2ac27b9512195ad522bd",
+    "/tmp/StockCallStaticSource.lean": "134b4454085fa7618566995dbdf1a1e87c780673e617aed0a68627b04aaf71c5",
+    "/tmp/StockCallStaticObservation.lean": "f3e95dc9795c349d50a7053f02d9a4482084dafed93eabb032d668aa165982f8",
+    "/tmp/StockCallStaticWitness.lean": "d8dc2ddeb36274f2f448946eed92a90263984d20ace6f1c803d70575ec7f8bfb",
+    "/tmp/StockCallOutputValues.lean": "425c70f235eb1e135bca729818303dbd2715840bf9840732d560799f1ade36fa",
+    "/tmp/StockCallOutputValuesWitness.lean": "4b106065a21563eec4b87e92b7920e8e059144dad216afa438cbceaf436dfca9"
+  },
+  "scratch_compiled_modules": {
+    "/tmp/StockTerminalFormObservation.olean": "40b095232c49f2bc7f94106c8b71961129105e2b0652ded41aaf0e6f8a57e925",
+    "/tmp/StockTerminalFormContracts.olean": "02e7bcda6dda40790229b2933c0bc9f57a74292b8e08f5c9c0300d68c7e88ab8",
+    "/tmp/StockTerminalFormWitness.olean": "625dda6e0ce46e934e3a7d635f5c445e446a90add778aff793714c68a8b76720",
+    "/tmp/StockCoreFormObservation.olean": "e5acd7d72c858864edead3313253cdc07b3c41532b31e60955f4743ac99a093c",
+    "/tmp/StockCoreFormContracts.olean": "11372d4e0c42ba93dd12a905dac5f3ae3d91b62eb63382e3f215591862e37a19",
+    "/tmp/StockCoreFormWitness.olean": "8cb07c37e1e7dd3df93c16d26777b1a38e434e819439e8e7260fe7f605eb135b",
+    "/tmp/StockEntryFormContracts.olean": "ab9d38a12202a5586e285111a1f77b9fb703d9299a75ef636a4a881bce91fc91",
+    "/tmp/StockWholeFormContracts.olean": "c1b34fd75c6a5a38a806ca09ba9ce049b5209d6f05ca7bfb1cc6ec5d91b3fb13",
+    "/tmp/StockPreparedFormContracts.olean": "f0038d7f8093ffa7f442512864b6a55c061aac3bf9e2965ce66f18bf62c1ad77",
+    "/tmp/StockWholeFormSource.olean": "ebb70403ddf352aab2cd71e2aa8f926e9d970ade3f8d6da268eac09e0afb2e80",
+    "/tmp/StockWholeFormObservation.olean": "1b952baeaab59990bb2fb0515ddf48f0b333302203a6c9563afd3cffa9800a6a",
+    "/tmp/StockWholeFormWitness.olean": "a6a2397b202bad51c1e7b743c680b918f3772ba602dc3b6ce1c56593da282597",
+    "/tmp/StockClassGrowthContracts.olean": "3174f929f50c81a978c931d20c0b2825097bbf468217e97e5ba230b48d104106",
+    "/tmp/StockInitialClasses.olean": "e2c3f9601c462d22431b3e63a669930aea377881febc084245cde44a4ad080c0",
+    "/tmp/StockWholeClassGrowth.olean": "9eb93fec2bd533bc5060781daa66a82e2e443326d247acf11f659b9bd1abf1b8",
+    "/tmp/StockClassGrowthWitness.olean": "e7410c6beab66dbec0e3b0ef28d03c7bd3f949ba412d376f72e2a6d0cadeb515",
+    "/tmp/StockClassCtorContracts.olean": "c84abdeb3b87f3c31c8ffaa7115daa702cfe1610b9e261c0688995c062baac58",
+    "/tmp/StockClassModel.olean": "13ad1c48caab8c6bea20e1676a4b4f48991df1a900fb3536a15178f94befbd51",
+    "/tmp/StockClassRoots.olean": "4ab4cb124f4d32cd30c5421e0e088d5e65349d8a61ef919f2b944fe12d6f806f",
+    "/tmp/StockClassWitness.olean": "10e8b8179750ab068ae6387ec340728afa23cbb89423e2ce5064ba3da74ebdb0",
+    "/tmp/StockClassApplyWitness.olean": "4b70c4fe0e056b76e5d7bf78ac898aae64c5f097173267b97f36104f62fd4dda",
+    "/tmp/StockBindingClassContracts.olean": "2f5196327f4b1a145df1f4d3007e665788a91d30f227e45bfb0f85bc010acf44",
+    "/tmp/StockScanClassContracts.olean": "9b9a34a301992bea9ca5600538238ffd8fda805c9833b4a0a54c1ffa970e330b",
+    "/tmp/StockBindingClassWitness.olean": "0b0ee2db8567f41f9cd476d0b3c4d313b4b03e19875519e37aef283e8219ec8b",
+    "/tmp/StockOrderedAliasClassWitness.olean": "3af856abc15fe1c835b9d97f8a49e5de36fa8d2347565516578ef753ebb28680",
+    "/tmp/StockHelperAliasClasses.olean": "e4a2130a7d1a92239469b1619d987094869a30ab0f72cdcb1b7b7bb2d0531516",
+    "/tmp/StockAliasClassInputs.olean": "0cfd650fd1b3c342e804cd892e26681312481da9660446a873c432f54e8686cc",
+    "/tmp/StockEmissionAliasClasses.olean": "46644f7f06b4a685a025a2c94f0db8277ac6398dceb1468c0738f872dad73680",
+    "/tmp/StockScanAliasClasses.olean": "0c0bbc1d4ca897a7ca37b2dbd9842bfe776105e52f6b6ae0326c2648943c1b75",
+    "/tmp/StockTryAliasSource.olean": "48a2b962db7ffb0bc169107632309e735ebfa54e029fb9ea76127d19b612608d",
+    "/tmp/StockTryAliasObservation.olean": "773f7d85c82e310927fc2ce47d1b69bbb64dbcfc78ce12df79b6b5a63899c221",
+    "/tmp/StockTryAliasTerms.olean": "a43891c4f8e4c95758f7d84c34934e21ea1d27ca1bdee8f938e16c93cef9952f",
+    "/tmp/StockTryAliasWitness.olean": "39e246f42acf46b9843cdbce0dfe6dbf7c9cc915e687ba155e86f4d243512900",
+    "/tmp/StockScanAliasWitness.olean": "2fc06d0645a005dc198976d5739ca9db2955658bad4913707948b535f6021c0f",
+    "/tmp/StockDriverAliasClasses.olean": "034a07ef06a3cf88f3cb43c856ab1c12950f861a90c89194cfc1ea21ede6ee52",
+    "/tmp/StockDriverAliasWitness.olean": "58093746cc4b0acf37f6c1dd2b850f001b4f84035ff4611a1300b8218bc79435",
+    "/tmp/StockBranchClassContracts.olean": "fc60533b9a7121c651f686eb3cf708a380e386ef4883f5a8ad581e8e59ee0bcb",
+    "/tmp/StockCoreClassContracts.olean": "3b91a11fb77133405c618e289770752bb5ea0bfcc0a2ec04e247aba2845a1946",
+    "/tmp/StockCoreClassWitness.olean": "4c5d367eff85647af6ad2ad5febb78728766a74a6b641aa2ce10a7fbde3acd9d",
+    "/tmp/StockEntryClassContracts.olean": "736eeca3bf01154b2a3c4691fdff8cdc178be2b7dbded63197cd17df7ae288c1",
+    "/tmp/StockWholeInstructionClasses.olean": "ef224776df635523f01efa0019eef7f93ee9559ac05d5c523407c6364eb6b33b",
+    "/tmp/StockPreparedInstructionClasses.olean": "b2e6889eb3e783db4882ee6d057e96cb561cde3c6e4c534520d91f319b0f508a",
+    "/tmp/StockWholeInstructionClassWitness.olean": "43a2921f6bfbbf6e69c24f0f060ef69b432626616917b8bc45a4908ced95190c",
+    "/tmp/StockCriticalInstructionClassWitness.olean": "1eed92f17b8f4858d095489d921a533ca636ef9cdb05c2ad5db723d57f5d81ae",
+    "/tmp/StockWholeClasses.olean": "c00428205d04765d8f5b17cf94feee86e5e56a03fda1f825e45730190f85ec06",
+    "/tmp/StockPreparedClasses.olean": "c927e55a1bfe1f0f1d1f0a485b8d6b875bc214dbcb00dd8e3b8148ec4f6ffd05",
+    "/tmp/StockClassesWitness.olean": "861f4f18f8da87204baf0cbfe55a0fcc42b876be28b6718218a917a7b03a479e",
+    "/tmp/StockCriticalClassesWitness.olean": "7c12ee8145bfe7945d9fe05ca8419ae9a37da7985a4077878c59275177880a6c",
+    "/tmp/StockReturnStatic.olean": "81e19f23b7cd9192ec8659e362cb280554ae388a37c110151ab3199c04324b1f",
+    "/tmp/StockReturnPlacedStatic.olean": "6a81d44278b437b12b9d6a2d8cc96d36726ed0c4425e90315a47ce15fefe58aa",
+    "/tmp/StockReturnStaticSource.olean": "51cb7bb26ea8d80791aef26d94b8ff37a1a8ba1a0bbad98568fa0c8f52732e76",
+    "/tmp/StockReturnStaticObservation.olean": "428e424e1690920cc819ded1933090e9a8aec92e16df3cc942e885bac6b371cd",
+    "/tmp/StockReturnStaticWitness.olean": "df30eb80c5142552ceb29ecd49562f7de830a482aee5c0b99d76820f8dd6ec31",
+    "/tmp/StockCallOutputStatic.olean": "852893945320c49ffaad889a0633bc57d3e36fcda16aa801478defaaf4e0301f",
+    "/tmp/StockCallAbiStatic.olean": "539f68b4d8a2a54c5bd929dbede65002a39ff2360b521cc0b997ee5aa5814dc9",
+    "/tmp/StockCallStaticSource.olean": "3e6309ed18fb580dcd50f65d2f23ec629f709b6d1278c57acb4a283c514e48fd",
+    "/tmp/StockCallStaticObservation.olean": "095188d41b6a7cea029904b40bdfb39fc1368d1b854e4d4afaaebfab8385d128",
+    "/tmp/StockCallStaticWitness.olean": "13fa367b3a6bad56ee4e4a06d6a28d3ee6694b237372c6fc3fb9f0997d4d7d1f",
+    "/tmp/StockCallOutputValues.olean": "d0da9138d982bb50818762d9065ba406a2c5a58894fff94a145b3158858d0d23",
+    "/tmp/StockCallOutputValuesWitness.olean": "a1cc071c8e1519df55b132fefe1373c55b4e51dc5ccc1f246a922701f7ba16a2"
+  },
+  "compiled_logs": {
+    "/tmp/stock-terminal-form-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-terminal-contracts-build.log": "c88e90677f244a60b0a51d60d401557f6f4cd15582cf853f9b21438d42c7b320",
+    "/tmp/stock-terminal-witness-build.log": "06328b6e0e2d6a8a55dc69320c9f7dd1bcc9028b71bb9fa9a734380cfc8f2714",
+    "/tmp/stock-core-form-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-core-contracts-build.log": "b03a0a9d20f4539d30de3673d9c2969a3b01e05c1e3c21bf54aee99f5821db56",
+    "/tmp/stock-core-witness-build.log": "6b654de61206404c9dc483c0b4f93e7a95aef82d4b78e790d33057adcaab7a78",
+    "/tmp/stock-entry-contracts-build.log": "020ff3bbfe39db6de916c0ff1039d5910ea5c6bba4080aa3c3db34831ecefc96",
+    "/tmp/stock-whole-contracts-build.log": "296daed9599f435516b317e806bb52bdc7047fb4b549bfad80b42127f10250fb",
+    "/tmp/stock-prepared-forms-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-source-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-form-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-witness-build.log": "ef304946022ed915cdee73c18f3444e6705221fbbc68a91ffeeb1def0ce76e8c",
+    "/tmp/stock-class-growth-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-initial-classes-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-class-growth-build.log": "383eb4ddcf310e3f76b561d4a458b33138b866692a1a0e2951cd7d33c7da91f0",
+    "/tmp/stock-class-growth-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-class-ctor-build.log": "3d1795e1dce5a0596755c76750afbaa1defd9864c2a739ddea9755cf6fe77693",
+    "/tmp/stock-class-model-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-class-roots-build.log": "d3fe7182b3f1b1e669c4f50fe2e7d76d3bf4fcc3b9196481c1fb3beb0799af22",
+    "/tmp/stock-class-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-class-apply-witness-build.log": "652004d6dc87edad49f066358836895b306466870c78caa2c295c993d4f86036",
+    "/tmp/stock-binding-class-build.log": "b98bdf785122aaca91e1e09338cb6653dc22b19827ce1862138dc2742e434ca1",
+    "/tmp/stock-scan-class-build.log": "458b765779cdeabe568f95f6202c3d848a21978e7bfcfcef967ff3653999f6e7",
+    "/tmp/stock-binding-class-witness-build.log": "90822c73cd9f4b357c63ee12e4cb73f920c6b89e620c0fda918a6c5a39ceb532",
+    "/tmp/stock-ordered-alias-class-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-helper-alias-build.log": "6da1b736fb137b0276154cf5bea6ea9ca8017392703990f16bf5d6ca4cdbd52e",
+    "/tmp/stock-alias-class-inputs-build.log": "34cdbda1d26ab3256c8631c92c5618530567c94a5abfb15798ca2362e107be08",
+    "/tmp/stock-emission-alias-build.log": "773bd1e6fc2a96a0c8c51cdb41fa8844b3453274bea6ac2d20a0499546cea36d",
+    "/tmp/stock-scan-alias-build.log": "dca74aa0551612ba1adeb0358b11ffc7d73915d7dd27045250945d658f8686f2",
+    "/tmp/stock-try-alias-source-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-try-alias-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-try-alias-terms-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-try-alias-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-scan-alias-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-driver-alias-build.log": "5d916457a57135b90d9cc546562e047ee3382d38400263472031150c7ce7df4b",
+    "/tmp/stock-driver-alias-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-branch-class-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-core-class-build.log": "e6de9cb8d0c6816cfcf969aedc6e29fb419b52a25b2dd7f111cda6b7b423b393",
+    "/tmp/stock-core-class-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-entry-class-build.log": "2f3fe28d965c1a304bc446dca59fbfcc9e6e94ce4feb8dd8c11bcc8b3fdde57e",
+    "/tmp/stock-whole-instruction-classes-build.log": "eda2fb8cd956e99d186d61fdc78764c5ad19801f0f949c5e7fa2cfbf678ca6ad",
+    "/tmp/stock-prepared-instruction-classes-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-instruction-class-witness-build.log": "356792991bbe5d130d5f895b53560cb219f00d8698746fac81c851d16346613a",
+    "/tmp/stock-critical-instruction-class-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-whole-classes-build.log": "4f6ed9fa389170c3b8754bec96b68dfe0d0c2b1ef75a6d02523b86769817189e",
+    "/tmp/stock-prepared-classes-build.log": "b541f9a24a78db8dbeccdc1928ba80e1e4fb463528e95694f9bd3b6e5f3be88f",
+    "/tmp/stock-classes-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-critical-classes-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-return-static-build.log": "5da5614c732b177e8e1f5c51b4ec9bb9b61cce047947473f7a1aab38253b6fdc",
+    "/tmp/stock-return-placed-static-build.log": "6ed87baaf5ad821025a2f0e6f27fcf93859783df8d24bf48bcc42004d97d2aa9",
+    "/tmp/stock-return-static-source-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-return-static-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-return-static-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-output-static-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-abi-static-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-static-source-build.log": "3d6ebc1d625d67c1d840658f54df98b084d1ca35b0af38d5c447a492e0ad831f",
+    "/tmp/stock-call-static-observation-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-static-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-output-values-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-call-output-values-witness-build.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "source_scans": {
+    "/tmp/StockTerminalFormObservation.lean": [],
+    "/tmp/StockTerminalFormContracts.lean": [],
+    "/tmp/StockTerminalFormWitness.lean": [],
+    "/tmp/StockCoreFormObservation.lean": [],
+    "/tmp/StockCoreFormContracts.lean": [],
+    "/tmp/StockCoreFormWitness.lean": [],
+    "/tmp/StockEntryFormContracts.lean": [],
+    "/tmp/StockWholeFormContracts.lean": [],
+    "/tmp/StockPreparedFormContracts.lean": [],
+    "/tmp/StockWholeFormSource.lean": [],
+    "/tmp/StockWholeFormObservation.lean": [],
+    "/tmp/StockWholeFormWitness.lean": [],
+    "/tmp/StockClassGrowthContracts.lean": [],
+    "/tmp/StockInitialClasses.lean": [],
+    "/tmp/StockWholeClassGrowth.lean": [],
+    "/tmp/StockClassGrowthWitness.lean": [],
+    "/tmp/StockClassCtorContracts.lean": [],
+    "/tmp/StockClassModel.lean": [],
+    "/tmp/StockClassRoots.lean": [],
+    "/tmp/StockClassWitness.lean": [],
+    "/tmp/StockClassApplyWitness.lean": [],
+    "/tmp/StockBindingClassContracts.lean": [],
+    "/tmp/StockScanClassContracts.lean": [],
+    "/tmp/StockBindingClassWitness.lean": [],
+    "/tmp/StockOrderedAliasClassWitness.lean": [],
+    "/tmp/StockHelperAliasClasses.lean": [],
+    "/tmp/StockAliasClassInputs.lean": [],
+    "/tmp/StockEmissionAliasClasses.lean": [],
+    "/tmp/StockScanAliasClasses.lean": [],
+    "/tmp/StockTryAliasSource.lean": [],
+    "/tmp/StockTryAliasObservation.lean": [],
+    "/tmp/StockTryAliasTerms.lean": [],
+    "/tmp/StockTryAliasWitness.lean": [],
+    "/tmp/StockScanAliasWitness.lean": [],
+    "/tmp/StockDriverAliasClasses.lean": [],
+    "/tmp/StockDriverAliasWitness.lean": [],
+    "/tmp/StockBranchClassContracts.lean": [],
+    "/tmp/StockCoreClassContracts.lean": [],
+    "/tmp/StockCoreClassWitness.lean": [],
+    "/tmp/StockEntryClassContracts.lean": [],
+    "/tmp/StockWholeInstructionClasses.lean": [],
+    "/tmp/StockPreparedInstructionClasses.lean": [],
+    "/tmp/StockWholeInstructionClassWitness.lean": [],
+    "/tmp/StockCriticalInstructionClassWitness.lean": [],
+    "/tmp/StockWholeClasses.lean": [],
+    "/tmp/StockPreparedClasses.lean": [],
+    "/tmp/StockClassesWitness.lean": [],
+    "/tmp/StockCriticalClassesWitness.lean": [],
+    "/tmp/StockReturnStatic.lean": [],
+    "/tmp/StockReturnPlacedStatic.lean": [],
+    "/tmp/StockReturnStaticSource.lean": [],
+    "/tmp/StockReturnStaticObservation.lean": [],
+    "/tmp/StockReturnStaticWitness.lean": [],
+    "/tmp/StockCallOutputStatic.lean": [],
+    "/tmp/StockCallAbiStatic.lean": [],
+    "/tmp/StockCallStaticSource.lean": [],
+    "/tmp/StockCallStaticObservation.lean": [],
+    "/tmp/StockCallStaticWitness.lean": [],
+    "/tmp/StockCallOutputValues.lean": [],
+    "/tmp/StockCallOutputValuesWitness.lean": []
+  },
+  "normal_axiom_audit": {
+    "path": "/tmp/stock-call-static-all-axioms.log",
+    "sha256": "7ed1a2db4ccbe9412df475ff8b5dcca182bdb3953c071f9fe26a2b15f4c72e37",
+    "roots": {
+      "Backend.Stock.Proof.Coverage.TerminalDraftObservation.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_retTrap_emission_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_emit_retTrap_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scan_retTrap_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scan_slot_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scanBlock_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_built_scanBlock_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraftWitness.stock_complete_terminal_scan_form_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraftObservation.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraft.stock_emitBranch_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraft.stock_blockCore_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraftWitness.stock_complete_core_form_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.EntryDraft.stock_assemble_form_coverage": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsDraft.stock_lower_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsDraft.stock_lower_formsCovered": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.PreparedFormsDraft.stock_prepared_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.PreparedFormsDraft.stock_prepared_formsCovered": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.source_scope": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.source_arity": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.source_dominated": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsWitness.stock_whole_forms_entry_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_ctor_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_apply_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_named_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scan_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scanBlock_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_ctor_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_apply_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scan_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scanBlock_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_allocate_classes": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_build_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_allocate_classes_witness": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_build_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeClassGrowthDraft.stock_lower_class_growth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthWitnessDraft.stock_complete_class_growth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_ctor_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_apply_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_build_initial_classInvariant": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_build_term_classInvariant": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_statement_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_branch_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_retTrap_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassWitnessDraft.stock_complete_operand_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassWitnessDraft.stock_complete_retTrap_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassWitnessDraft.stock_complete_class_apply_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassDraft.stock_bindResults_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassDraft.stock_resolve_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassDraft.stock_emitInstruction_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassDraft.stock_scanInstruction_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanClassDraft.stock_emit_retTrap_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanClassDraft.stock_scan_slot_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanClassDraft.stock_scanBlock_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanClassDraft.stock_built_scanBlock_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassWitnessDraft.stock_complete_binding_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassWitnessDraft.stock_complete_scan_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassWitnessDraft.stock_complete_ordered_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_ctor_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_apply_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_named_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_build_alias_class_inputs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_built_reserved_class_inputs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.EmissionAliasClassDraft.stock_emitInstruction_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.EmissionAliasClassDraft.stock_emit_empty_results_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanAliasClassDraft.stock_scan_slot_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanAliasClassDraft.stock_scanBlock_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.source_scope": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.source_arity": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.source_dominated": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.try_term": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.try_lookup": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasWitnessDraft.stock_complete_try_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasWitnessDraft.stock_complete_scan_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.DriverAliasClassDraft.stock_lower_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.DriverAliasWitnessDraft.stock_complete_driver_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.DriverAliasWitnessDraft.stock_complete_critical_driver_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BranchClassDraft.stock_emitBranch_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CoreClassDraft.stock_built_core_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CoreClassWitnessDraft.stock_complete_branch_core_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.EntryClassDraft.stock_assemble_classes": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeInstructionClassDraft.stock_lower_instruction_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.PreparedInstructionClassDraft.stock_prepared_instruction_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeInstructionClassWitnessDraft.stock_complete_entry_instruction_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CriticalInstructionClassWitnessDraft.stock_complete_critical_instruction_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeClassesDraft.stock_lower_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeClassesDraft.stock_lower_integer_block_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.PreparedClassesDraft.stock_prepared_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassesWitnessDraft.stock_complete_entry_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CriticalClassesWitnessDraft.stock_complete_critical_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticDraft.stock_gen_return_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticDraft.stock_lower_return_record_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnPlacedStaticDraft.stock_lower_return_instruction_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticFixture.source_conditions": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticWitnessDraft.stock_complete_return_static_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutputStaticDraft.stock_gen_call_output_exact": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutputStaticDraft.stock_gen_call_rets_fresh_defs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAbiStaticDraft.stock_call_helpers_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallStaticFixture.source_conditions": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallStaticFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallStaticWitnessDraft.stock_complete_call_static_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutputValuesDraft.stock_call_output_values": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutputValuesWitnessDraft.stock_complete_call_output_values_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "all105_standard_only": true,
+    "all97_prior_exact_sets_preserved": true
+  },
+  "new_public_roots": [
+    "Backend.Stock.Proof.CallOutputStaticDraft.stock_gen_call_output_exact",
+    "Backend.Stock.Proof.CallOutputStaticDraft.stock_gen_call_rets_fresh_defs",
+    "Backend.Stock.Proof.CallAbiStaticDraft.stock_call_helpers_static",
+    "Backend.Stock.Proof.CallStaticFixture.source_conditions",
+    "Backend.Stock.Proof.CallStaticFixture.observed",
+    "Backend.Stock.Proof.CallStaticWitnessDraft.stock_complete_call_static_witness",
+    "Backend.Stock.Proof.CallOutputValuesDraft.stock_call_output_values",
+    "Backend.Stock.Proof.CallOutputValuesWitnessDraft.stock_complete_call_output_values_witness"
+  ],
+  "proof_development": "Seven modules compiled. One isolated20GiB four-case pipeline kernel after existing owned child finished; exact same controller finally resumed08:58:29Z. All other compiles8GiB, no repeated pipeline kernel, new tree or scratch MCP. Finite source argument lists retain all original conditions; local proof inference/record-layout errors corrected before successful compile.",
+  "freeze_preserved": {
+    "all2003_Lean_bytes_and_set": true,
+    "all755_recorded_hashes": true,
+    "validation_scripts": true
+  },
+  "serial": {
+    "state": "running",
+    "pid": 2172773,
+    "index": 882,
+    "total": 1011,
+    "current": "FV.Backend.Proof.StockLogicalNotXorFusedWitness"
+  },
+  "watcher": {
+    "state": "running",
+    "phase": "waiting_serial",
+    "watcher_pid": 2438436,
+    "serial_controller_pid": 2172773
+  },
+  "coordination": "All contributor statuses/#140 read. Peer#52 changed ACTIVE08:07Z with four agents on floats/FP/backend, optimizer executable path, unwinding and remaining input totality. Specific register-class/call-ABI/TryCall/exception/production overlaps flagged in own#44 mentioning@kevaundray and proposed boundary: current /tmp-only Stock proof wrappers under original LowerScope/AbiSigsOk and existing Clif/Arm/ABI semantics, no shared RegClass/CtlShape/ISLE/Clif/Arm/E2E/Link/frontend/default/peerbranch edit or FP-scope broadening; coordinate changed shared interfaces/production/TryCall semantic contracts before such edits. Nonconflicting Stock proofs continue. Preserve/reconcile newer main f29d0c0 before integration/cutover.",
+  "resources": {
+    "free_GiB": 821.8,
+    "new_worktrees": 0,
+    "warm_caches": 1,
+    "new_scratch_compiled_bytes": 2897056,
+    "normal_cap_GiB": 8,
+    "isolated_try_and_metadata_and_witness_cap_GiB": 20,
+    "OMP_LEAN_workers": 2,
+    "cleanup": "No disposable clean worktree or obsolete duplicate warm cache; active scratch outputs retained until integration/evidence preservation. Shared aggregate budget; other projects untouched."
+  },
+  "next_steps": [
+    "Maintain canonical freeze until exact watcher terminal; inspect actual 1992-root audit and every full gate receipt.",
+    "Reconcile upstream f29d0c0 and newer peer variants before integration. Integrate all 60 scratch modules/105 roots as one coherent batch; preserve cached observations; exactly one bundled 105-root MCP, then 2097 normal roots preserving all 1992 prior exact sets and every full gate.",
+    "Bind actual call helpers to selected RHS/retained records and source semantics; derive TryCall reserved uniqueness/final alias transport and whole control visitor/static validity.",
+    "Finish original input availability/checker/fallback completeness/Stock totality and ALL original whole-driver simulation/completeness and production consumers; final complete witnesses/audits/full gates/both E2E parity/fresh comparison."
+  ],
+  "integration_counts": {
+    "modules": 60,
+    "new_roots": 105,
+    "canonical_roots_after_integration": 2097,
+    "bundled_MCP_roots": 105
+  },
+  "resource_windows": {
+    "/tmp/stock-call-static-window.json": {
+      "controller_pid": 2172773,
+      "started_utc": "2026-10-16T08:54:27.840215+00:00",
+      "reason": "Isolate four direct/indirect ordinary/sret call pipelines, real stack traffic and actual helper protocol at20GiB; preserve frozen sources and resume same exact controller",
+      "existing_children": [
+        "460549"
+      ],
+      "returncode": 0,
+      "controller_resumed_utc": "2026-10-16T08:58:29.772230+00:00"
+    }
+  }
+}
