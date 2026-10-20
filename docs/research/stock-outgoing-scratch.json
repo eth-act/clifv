@@ -1,0 +1,233 @@
+{
+  "utc": "2026-10-16T12:01:39.591490+00:00",
+  "goal": "#140 original full goal active/incomplete; production legacy",
+  "previous_goal_turn_classification": "progress: GOT complete source proofs/witnesses, coherent110module integration/upstream reconciliation/remote146996d3; current turn adds actual record-to-whole-returned outgoing-area proofs and original-helper/cached-kernel witnesses",
+  "scope": "Actual Stock constructors, complete term interpretation, scans and block scans never decrease outgoing area; every actual retained record fits its block final area. Real emitBranch, lowerBlockCore, original/synthetic lowerNode and whole reverse-node fold transport that invariant. Actual whole-driver origin/suffix execution bounds EVERY retained record by result.final and the SAME returned VCode.outgoing. Actual colocated-direct and GOT selected call helpers derive SigStackOk at their real record output and returned VCode area, using original scope stackLayout and internally derived real sigArgLocs/helper/max updates/copy-free binding. No caller-chosen stack bound or new accepted-input condition. Real constructor/interpreter witnesses raise0to16 bytes for nine parameters; actual opportunistic scan/block alias, jump branch/core/node and nonempty node-fold witnesses reuse cached original kernels.",
+  "limits": "Seven modules24roots compile;20foundation roots normal-audited standard-only. Complete ordinary9arg/two-result and sret/zero-result direct+GOT pipeline witness source drafted (8th module/two more roots), pending its single queued compile after existing serial dependency rebuild. Full216root audit queued after witness; no claim all26 roots pass yet. ALL prior110 scratch source/compiled/log hashes and frozen canonical2246Lean/module-script bytes unchanged. No canonical edits/tree/agent/cache/new cold kernel/MCP. Whole-driver output-area lower bounds do not yet derive universal CallsStack: still need mandatory call emission/coverage for every source call and actual whole-input OutArgsOk/read-frame integration. All original #140 families/effects/Try/sinking/traps/source/DFG/world/block/whole-driver simulation/completeness, checker/fallback/Stock totality and real compiler/checker/linker/generated-proof production integration remain mandatory. Final audits/full gates/bothE2E identity-stage/fresh complete comparison required; production LEGACY.",
+  "new_scratch_sources": {
+    "/tmp/StockOutgoingFlow.lean": "27e5aeddb8632792547e942d0399c223f4683c7cff325341fc0bd2d922cbce11",
+    "/tmp/StockOutgoingWitness.lean": "203b4c8be94ce71869a44d2378791c7515c733ca8d6c6c3d7214f6ebf82ae435",
+    "/tmp/StockOutgoingDriver.lean": "2ccf210ed608314012087f18992b74750d963766ec0991665e692dac1618f8b6",
+    "/tmp/StockOutgoingWhole.lean": "b7de049a98e0bb7832612ba96a9d9cc75a6713402c5fe064656370c5172fae34",
+    "/tmp/StockOutgoingDriverWitness.lean": "2e3a3de4b0ce3945d106fe33a43df33e1b67ebbc149986d90b058d6890523be0",
+    "/tmp/StockCallOutgoing.lean": "a0a0904e5684cc0def24573638b65c33308c2f055e5b6748019d191843dc5f08",
+    "/tmp/StockGotOutgoing.lean": "c0e13a2315fc20cc3f406d4105a4b38a486c0fc0d1d89731b3d55f9746990afa",
+    "/tmp/StockCallOutgoingWitness.lean": "6fb8f481821f8b4d7c1a3c5383241b85df17629c5c9b64c760c7911764f0dc00"
+  },
+  "new_compiled_modules": {
+    "/tmp/StockOutgoingFlow.olean": "48b257da4df2940c254b62fcfeb1cd6289daf25f95268d7d5228a3d341cabcb8",
+    "/tmp/StockOutgoingWitness.olean": "f08ebb3bedc6b84b372c276935caf0e9bf577b6800e89241cb1c9525579f90c5",
+    "/tmp/StockOutgoingDriver.olean": "9149c8572be7205e48c589af04cb101a812d3499a43d4c330829fae3b865f1ae",
+    "/tmp/StockOutgoingWhole.olean": "37dfc45fe7ef881e5bae479b6d5079fe464c26970f93812d64e690512a8086a9",
+    "/tmp/StockOutgoingDriverWitness.olean": "692eae5edcd89faa2768071314fd4a4e11af7b4c9bb9d4b095e064df9920c0cf",
+    "/tmp/StockCallOutgoing.olean": "35d46689660e19075fb7a0d2179ccbbafa66bde8e696d538443f10f0dd66f291",
+    "/tmp/StockGotOutgoing.olean": "f2334fe59e4db16c80ffb76ccaa147abba4d12936dc1fced7c4c238418237e8d"
+  },
+  "new_compiled_logs": {
+    "/tmp/stock-outgoing-flow.log": "4f7e2a2c69922229b2d555ca50f65c50d072ed92d12eae4e01e818a8a905228c",
+    "/tmp/stock-outgoing-witness.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-outgoing-driver.log": "094c95937a6fb4a1919b822f2bab6c6e0699d49bce91c64673f4319fd1d79ffd",
+    "/tmp/stock-outgoing-whole.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-outgoing-driver-witness.log": "7d6459c459892125a1a06a093826195c990cc5f8b812a734f4d25769869107c7",
+    "/tmp/stock-call-outgoing.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-got-outgoing.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "source_scans": {
+    "/tmp/StockOutgoingFlow.lean": [],
+    "/tmp/StockOutgoingWitness.lean": [],
+    "/tmp/StockOutgoingDriver.lean": [],
+    "/tmp/StockOutgoingWhole.lean": [],
+    "/tmp/StockOutgoingDriverWitness.lean": [],
+    "/tmp/StockCallOutgoing.lean": [],
+    "/tmp/StockGotOutgoing.lean": [],
+    "/tmp/StockCallOutgoingWitness.lean": []
+  },
+  "foundation_normal_audit": {
+    "path": "/tmp/stock-outgoing-foundation-axioms.log",
+    "sha256": "501f2770d5a57d1ce3f2858fff8aa70ab9bc21243d66fc3735461db48a872ade",
+    "roots": {
+      "Backend.Stock.Proof.OutgoingDraft.stock_ctor_outgoingLe": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDraft.stock_apply_outgoingLe": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDraft.stock_scan_outgoingLe": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDraft.stock_scanBlock_outgoingLe": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDraft.stock_scanBlock_record_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWitnessDraft.stock_ctor_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWitnessDraft.stock_apply_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWitnessDraft.stock_scan_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWitnessDraft.stock_scanBlock_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverDraft.stock_emitBranch_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverDraft.stock_lowerBlockCore_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverDraft.stock_lowerNode_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWholeDraft.stock_lowerNodes_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_record_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_code_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_record_code_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_emitBranch_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerNode_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerNodes_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerBlockCore_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "all20_standard_only": true
+  },
+  "new_public_roots": [
+    "Backend.Stock.Proof.OutgoingDraft.stock_ctor_outgoingLe",
+    "Backend.Stock.Proof.OutgoingDraft.stock_apply_outgoingLe",
+    "Backend.Stock.Proof.OutgoingDraft.stock_scan_outgoingLe",
+    "Backend.Stock.Proof.OutgoingDraft.stock_scanBlock_outgoingLe",
+    "Backend.Stock.Proof.OutgoingDraft.stock_scanBlock_record_outgoing",
+    "Backend.Stock.Proof.OutgoingWitnessDraft.stock_ctor_outgoing_witness",
+    "Backend.Stock.Proof.OutgoingWitnessDraft.stock_apply_outgoing_witness",
+    "Backend.Stock.Proof.OutgoingWitnessDraft.stock_scan_outgoing_witness",
+    "Backend.Stock.Proof.OutgoingWitnessDraft.stock_scanBlock_outgoing_witness",
+    "Backend.Stock.Proof.OutgoingDriverDraft.stock_emitBranch_outgoing",
+    "Backend.Stock.Proof.OutgoingDriverDraft.stock_lowerBlockCore_outgoing",
+    "Backend.Stock.Proof.OutgoingDriverDraft.stock_lowerNode_outgoing",
+    "Backend.Stock.Proof.OutgoingWholeDraft.stock_lowerNodes_outgoing",
+    "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_record_outgoing",
+    "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_code_outgoing",
+    "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_record_code_outgoing",
+    "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_emitBranch_outgoing_witness",
+    "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerNode_outgoing_witness",
+    "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerNodes_outgoing_witness",
+    "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerBlockCore_outgoing_witness",
+    "Backend.Stock.Proof.CallOutgoingDraft.stock_lower_direct_call_record_outgoing",
+    "Backend.Stock.Proof.CallOutgoingDraft.stock_lower_direct_call_code_outgoing",
+    "Backend.Stock.Proof.GotOutgoingDraft.stock_lower_got_call_record_outgoing",
+    "Backend.Stock.Proof.GotOutgoingDraft.stock_lower_got_call_code_outgoing",
+    "Backend.Stock.Proof.CallOutgoingWitnessDraft.stock_complete_direct_call_outgoing_witness",
+    "Backend.Stock.Proof.CallOutgoingWitnessDraft.stock_complete_got_call_outgoing_witness"
+  ],
+  "full_new_audit": {
+    "state": "waiting_dependencies",
+    "watcher_pid": 1276049,
+    "utc": "2026-10-16T12:00:09.123479+00:00",
+    "serial": {
+      "state": "running",
+      "pid": 1233457,
+      "total": 1930,
+      "index": 66,
+      "current": "FV.Backend.Proof.RegallocAtomic"
+    },
+    "missing": [
+      "FV.Backend.Proof.RegallocAtomic"
+    ],
+    "current_in_required_dependencies": true
+  },
+  "canonical_serial": {
+    "state": "running",
+    "pid": 1233457,
+    "utc": "2026-10-16T11:57:41.683301+00:00",
+    "total": 1930,
+    "completed_modules": 65,
+    "index": 66,
+    "current": "FV.Backend.Proof.RegallocAtomic",
+    "log": "/tmp/stock-coherent-build-FV.Backend.Proof.RegallocAtomic.log",
+    "memcap": "22G"
+  },
+  "canonical_freeze_manifest": "/tmp/stock-coherent-build-inputs.json",
+  "canonical_freeze_verified": true,
+  "all190_prior_scratch_hashes_preserved": true,
+  "base_scratch_receipt": "docs/research/stock-got-source-scratch.json",
+  "candidate_integration_counts": {
+    "new_modules": 8,
+    "new_roots": 26,
+    "cumulative_modules": 118,
+    "cumulative_scratch_roots": 216,
+    "canonical_after_integration": 2208,
+    "ONE_bundled_MCP_roots": 216
+  },
+  "resources": {
+    "free_GiB": 816.4,
+    "new_agents_worktrees_caches": 0,
+    "warm_caches": 1,
+    "new_proof_memcap_GiB": 8,
+    "no_new_cold_kernel": true,
+    "aggregate_concurrency": "one canonical serial heavy build plus bounded small proof checks; one passive watcher; no extra agent or cache"
+  },
+  "next_steps": [
+    "Poll SAME live coherent controller1233457/session88401 and outgoing watcher1276049/session48465; inspect actual terminal logs. No restart solely for observation timeout. Canonical FV/FVTest/scripts frozen.",
+    "Finish/check actual ordinary+sret direct/GOT full-pipeline area witnesses and cumulative216-root normal audit; ALL190 prior exact sets/four legacy bases/source-compiled-log hashes must remain unchanged.",
+    "After canonical frozen1930-target build/2182 audit terminal reviewed, integrate these8 source modules into the same coherent proof batch, build only newly added modules and their actual dependents, then ONE expanded216-root bundled MCP and2208normal roots/full gates. No extra small MCP/PR slices.",
+    "Derive universal mandatory emission/whole CallsStack and actual outgoing memory area from original inputs; finish Try continuations and ALL remaining original full-goal simulation/completeness/production obligations."
+  ]
+}

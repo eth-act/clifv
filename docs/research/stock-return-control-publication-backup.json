@@ -1,0 +1,17 @@
+{
+  "archive": "/home/lee/.clifv-recovery/20261015T135615Z-return-control-merged/checkpoint.tar.gz",
+  "sha256": "03fe9c53d67a5706d3155e641bf0a258b6833b62b8951c27a2d25299d9e4d9ee",
+  "members": 38,
+  "remote_backup": {
+    "utc": "20261015T135620Z",
+    "branch": "agent/stock-driver-wip-backup-20261015T135620Z",
+    "commit": "3faa7ee1e5da810dbee18ba4918d0caaeda6a233",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 765,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  },
+  "publication_pr": 205,
+  "merge": "323198412893acf7dc87be3c7ef7c6c4de7e58f7"
+}
