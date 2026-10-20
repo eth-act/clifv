@@ -989,8 +989,9 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   branch, open its PR and squash-merge it once its per-PR gates pass ("Gate policy" below); never
   force-push main, never `git stash`, never pattern-kill processes. Temp files in `/tmp/<name>_*`.
 - Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; check the log for "Build
-  completed successfully". The `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to 16.5 GB
-  (`RuleBitops7`; `RuleArith` 15 GB, a dozen others 7–11 GB) and take up to 34 min each; `lake build`
+  completed successfully". The `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to about
+  10 GB (`RuleShifts3P1`, `RuleExtends2`; the former 12–19 GB modules are split into parts,
+  docs/contracts/midend.md) and take up to 34 min each; `lake build`
   (no `-j` option) runs every ready module at once and exceeds any sane cap. Without a reachable
   systemd user manager, `memcap.sh` falls back (one stderr line) to a non-root watchdog: process-tree
   RssAnon + RssShmem polled every 0.2 s, SIGKILL and exit 137 above the cap.

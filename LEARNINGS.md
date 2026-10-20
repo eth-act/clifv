@@ -43,7 +43,7 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 
 ### Split heavy modules
 - Lean builds one module per process and a module's peak is roughly its heaviest declarations together. Splitting a heavy file into parts (keeping the old module as a file that imports the parts, so importers don't change) lowers the peak and lets the parts build in parallel.
-- **Effect:** e.g. `RuleRestEmbed` 16.9 GB → ≤ 8.3 GB per part, `RuleBitops7` 16.5 → 6.4 GB, `RuleShifts3` 15.2 → 9.4 GB (branch `agent/build-diet-rules2`, being merged; single-file measurements under load).
+- **Effect** (standalone `lean`, same session, peak RSS before → heaviest part): `RuleBitops7` 19.3 → 6.1 GB, `RuleArith` 15.2 → 4.5 GB, `RuleRestEmbed` 15.8 → 8.6 GB, `RuleBitops2` 12.7 → 5.2 GB, `RuleBitops5` 11.0 → 6.3 GB, `RuleShifts2` 9.5 → 6.1 GB. `RuleShifts3` did not improve (the part with `shifts_41` alone is ~10 GB): splitting helps when the peak is several declarations together, not one big one. Statements unchanged (all 7,998 `FV.Opt` constants hash-identical). (BuildDiet, `FV/Opt/Proof/Rule*P<n>.lean`.)
 - Don't over-split: evm.fast-dev found larger checkpoint groups built faster warm (see below).
 
 ### Don't depend on private library internals
