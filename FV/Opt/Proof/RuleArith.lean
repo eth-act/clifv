@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleAuto
+import FV.Opt.Proof.KernelBV
 
 /-!
 # `opts/arithmetic.isle`: proven `simplify` rules
@@ -7,8 +8,8 @@ Each theorem is the batching template `rule_auto` (`FV/Opt/Proof/RuleAuto.lean`)
 data, for an abstract program with `Data p`; the types `i8`..`i128` are all covered where the rule
 applies. The 86 other `simplify` roots of the file are not proven yet (see `docs/contracts/midend.md`,
 "Rule proofs": if-lets and internal constructors with if-lets (`iconst_u`/`iconst_s` on the right),
-`imm64_power_of_two`, multiplication identities beyond `bv_decide`'s reach, `iabs`; lines 616-622
-pass alone but hit the 10 s SAT timeout under a full parallel build, so they are left out).
+`imm64_power_of_two`, multiplication identities beyond the bit-level decision procedure, `iabs`;
+lines 616-622 were left out because they hit a timeout under a full parallel build).
 -/
 
 set_option linter.unusedSimpArgs false
