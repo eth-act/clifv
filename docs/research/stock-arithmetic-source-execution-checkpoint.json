@@ -1,0 +1,22 @@
+{
+  "utc": "2026-10-20T06:14:36.519816+00:00",
+  "base": "2fe5fa0febb4ec0460fad4785a5e1e81e7b440a9",
+  "scope": "actual reference evaluator/body execution to emitted arithmetic-body simulation; entry/return whole-function integration still open",
+  "targeted_build": "PASS651jobs",
+  "public_audit": "PASS5/5; three general standard-only roots; two real fixed-trace witnesses use only existing marked ScalarAddScanWitness native facts",
+  "owned_core_standard_only": 23,
+  "owned_fixed_witness_constants": 2,
+  "files": {
+    "FV/Backend/Proof/StockArithmeticSourceRefines.lean": "b77979a789e0457693b4d1d2127ad6fdee5368787125cfee32a8a60c4917718c",
+    "FV/Backend/Proof/StockArithmeticSourceWitness.lean": "3994484657aec3742ae82628bc87d0c5bebb299b888014deb9bd91bf60ccf407",
+    "FV/Backend/Proof/StockArithmeticSourceExecution.lean": "f9aca93bc4589d78acc39df169f54dfa013f154d07505771d3ba2207b9e5c804",
+    "FV/Backend/Proof/StockArithmeticSourceExecutionWitness.lean": "7d333302ab5f90d0ce50ef9058b7a1a12cd50cc4db3a92e5e14bf9ea4c6a4286",
+    "scripts/audit/stock-arithmetic-source.lean": "4c4f0df4ecd33cdc293bd581bc561b47150857987f078a28ee1f56f24ad58110"
+  },
+  "logs": {
+    "/tmp/stock-arithmetic-source-execution-port-build.log": "72203fba7ca4519328b1ac45db532bc9191760e10c4b3eba575587537a944e34",
+    "/tmp/stock-arithmetic-source-public-audit.log": "670f7858ca82984702a95dbc7de9bb9d17d0bc54acfef916b6e3e1ff00f3dc7f",
+    "/tmp/stock-arithmetic-source-owned.log": "c00175992e6f46b11a958d8ad42b4a7278aa6c122cc55bfab15cd06363123ccc"
+  },
+  "next": "derive terminal source definedness/frame/caller facts and entry/return whole-function composition; instantiate direct optimized-Stock semantic consumer contract; all original#140 effects/families/completeness remain"
+}

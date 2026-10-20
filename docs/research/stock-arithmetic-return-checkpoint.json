@@ -1,0 +1,25 @@
+{
+  "utc": "2026-10-20T06:26:56.431087+00:00",
+  "base": "2fe5fa0febb4ec0460fad4785a5e1e81e7b440a9",
+  "scope": "actual source body and ABI return in actual Stock VCode; emitted machine argument prelude and direct semantic consumers still open",
+  "build": "PASS675jobs",
+  "public_audit": "11/11 across source+return;8standard general roots and3fixed trace witnesses using only existing marked native facts",
+  "all_new_owned_constants": {
+    "core_standard_only": 53,
+    "fixed_witness_constants": 3
+  },
+  "files": {
+    "FV/Backend/Proof/StockArithmeticSourceFrame.lean": "38fa6f5664c13778c4ee71217c99d1fb28fa9cd5905547b2a9b87a94da3deb1d",
+    "FV/Backend/Proof/StockArithmeticTerminalDefined.lean": "d2d8772b901243d6989c5364bfe4a73def57712e3bf77c0ce38af72f40f8c492",
+    "FV/Backend/Proof/StockArithmeticReturnRefines.lean": "ab6210f9968d4661e8563904a407881ba08e0bbb94fc34b0903c0c89d417fb1f",
+    "FV/Backend/Proof/StockArithmeticReturnWitness.lean": "4bd19832e6be5060a79175015cd3b5e27855ce69ae18ce90e428937634d37468",
+    "scripts/audit/stock-arithmetic-return.lean": "d239d542cac57528c5106b2f0a699fe24aee4f70bbeea3c82ee62c3b3003f413"
+  },
+  "logs": {
+    "/tmp/stock-arithmetic-return-complete-build.log": "37af96e0c6d8e8899768f620abd8487a54a8fd2a644e6694fef491c16843df21",
+    "/tmp/stock-arithmetic-return-public-audit.log": "f34750704aec7ba10c3a744868ef63bfc58207774c4b5fdd05948cbe34757dea",
+    "/tmp/stock-arithmetic-function-owned.log": "525de741458e821d2354d60b0ef4c8d1aa50f0a132792736a27af28b367ad59f",
+    "/tmp/stock-arithmetic-return-mcp.json": "2fa103cf3f6a5827a75fd99f418c79ff4b3ec9145f3d4f6803f3f89b149d5092"
+  },
+  "remaining": "machine entry/prelude from ABI args, including parameters omitted as unused; direct optimized-Stock semantic checker/consumer contract and complete function activation; all original#140 broader families/effects/simulation/Stock-only completeness/integration"
+}

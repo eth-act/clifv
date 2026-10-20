@@ -319,3 +319,37 @@ Continue arithmetic-family/value simulation and direct semantic consumer work
 immediately after the prerequisite squash; all original #140 obligations remain.
 
 Arithmetic body author gates passed on `b382a3e5e3ad4ef1231f1ab6ba0a19d69179dd61`: scheduler validated the two new modules against exact unchanged source/audit hashes from the2426-module#338base, followed by the full `FV FVTest` replay, all28audit files and27core/2fixed-witness owned constants. All1042priorpublicaxiomsets retained exactly;7newpublicroots audited. No runtime/consumer input or executable changed. Receipt: [arithmetic body author gates](../research/stock-arithmetic-body-author-gates.json). Original source evaluation/entry-return composition and direct semantic consumers remain next.
+
+#339 (`2fe5fa0febb4ec0460fad4785a5e1e81e7b440a9`) landed the derived arithmetic
+body value-simulation unit. Exact source+receipt tree verified, all current gates
+passed and integrator notified; no new production class enabled.
+
+Next source-execution checkpoint (main#339): actual `Clif.step` supplies each
+indexed arithmetic source step. An actual `Clif.runLoop` return supplies the
+entire source-body sequence, exact residual fuel and state at the terminator.
+Composition with emitted-body simulation no longer asks for a supplied source-step
+sequence. Complete retained-record/reference-step and reference-return/dirty-input
+machine witnesses pass651jobs,5public roots and23standard core-owned constants;
+2fixed witnesses retain only existing marked native trace facts. Entry handling,
+terminal source definedness/frame/caller transport and return composition remain
+next, before direct optimized-Stock semantic consumers and complete function
+activation. [Source execution evidence](../research/stock-arithmetic-source-execution-checkpoint.json).
+
+Arithmetic source/return composition is now proved on main#339: actual reference
+execution derives terminal definedness, caller/frame preservation and the return
+step; actual block assembly supplies body and return segment placement. The body
+and existing return simulation compose to an ABI-correct return in Stock's actual
+VCode. Original `Clif.enterFunc` derives initial source frame/definedness facts.
+A complete nonempty/dirty-input/reference-entry/VCode-return witness passes675jobs;
+source+return audits pass11public roots and53standard-only core constants, with3
+fixed witnesses using only earlier marked native trace facts. One bundled MCP
+entered-return root is standard3/no warnings; owned LSP processes stopped.
+[Return checkpoint](../research/stock-arithmetic-return-checkpoint.json).
+
+The remaining entry obligation is the **machine** argument prelude: establish the
+guarded values from ABI arguments, including parameters omitted as unused. Do not
+silently require all parameters to be used or supply an entry-value certificate.
+Then instantiate direct optimized-Stock checker/consumer semantics and complete
+function production activation. No new class is enabled by this proof packet.
+
+Source/return author gates passed on `d53bb5d9f1fc3385e814c81f3f9cbca54972f621`: all prior2428verified modules reused only after exact source/audit hash checks,8newmodules scheduled, completeFV/FVTest replay2439jobs,30audits,53standardcore/3fixedwitnessownedconstants. All1049previouspublicaxiomsets retained exactly,11newpublicroots audited. No runtime/consumer input or executable changed. Receipt: [source/return author gates](../research/stock-arithmetic-return-author-gates.json). Machine entry prelude, direct optimized-Stock consumers and full function production activation remain next.
