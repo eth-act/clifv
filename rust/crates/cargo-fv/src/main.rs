@@ -9,7 +9,7 @@ use std::process::{Command, Stdio};
 
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
-                                [--panic-abort] [--members-only] [--no-binary-check] [--lean-link]
+                                [--panic-abort] [--members-only] [--no-binary-check] [--lean-link [--verified]]
                                 [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
        cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE --module NAME]
@@ -23,7 +23,8 @@ under qemu-aarch64-static. After a build the report is in target/fv-report.json 
 report` prints it).
 
   --opt               run the Lean mid-end (all rules; nothing is reported verified)
-  --opt-proven-only   run the Lean mid-end with the proven rules (E2E.backend_correct_opt_proven_cleanup)
+  --opt-proven-only   run the Lean mid-end with the proven rules (E2E.backend_correct_opt_exe_cleanup;
+                      i128-legalised functions E2E.backend_correct_legal_opt_cleanup)
   --members-only      only the workspace members go through the Lean backend; dependencies are
                       plain cg_clif (separate target dir). Single dependencies: FV_SKIP_DEPS=a,b
                       or [package.metadata.fv] / [workspace.metadata.fv] skip-deps = [\"a\"]
@@ -37,7 +38,18 @@ report` prints it).
                       executable's code, data and symbols checked against the proven program)
   --lean-link         the Lean linker writes the Lean-compiled code of every executable (L2b,
                       docs/research/lean-linker.md): placed as one region (`.text.fvlean`) and
-                      relocated by `lake exe lean-link` (Link.leanLink); implies --keep-temps;
+                      compiled, relocated and written by `lake exe lean-link`
+                      (Link.DeadCleanup.compileExe; with --opt-proven-only `lean-link --opt`,
+                      Link.DeadCleanup.compileExeOpt: the same on the functions the mid-end
+                      optimised), which names the theorems covering the executable (`coverage:`,
+                      also in the report); outside the compiler's input conditions it falls back
+                      to the bare Lean linker (no compiler theorem); implies --keep-temps;
+                      separate target dir; not with --opt (unproven rules)
+  --verified          (with --lean-link) fail closed: an executable whose Lean-compiled part is
+                      outside the compiler's source domain (SrcScopeB) or input conditions
+                      (InScopeIn) is a link error instead of the fallback, so every executable
+                      written is covered by Link.DeadCleanup.compileExe_correct{,_peak,_source,
+                      _source_peak} (with --opt-proven-only Link.DeadCleanup.compileExeOpt_correct{…});
                       separate target dir
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
@@ -144,7 +156,7 @@ fn repo_root() -> PathBuf {
         (".lake/build/bin/lean-backend", "lake build lean-backend"),
         ("rust/target/release/clif-data-export", "cargo build --release -p clif-data-export (in rust/)"),
         ("rust/target/release/lean-regalloc", "cargo build --release -p lean-regalloc (in rust/)"),
-        ("scripts/rust-clif/normalize.py", "a checkout of the repository"),
+        (".lake/build/bin/clif-decode", "lake build clif-decode"),
     ] {
         if !r.join(p).exists() {
             die(&format!("{} missing (FV_ROOT={}); build it: {how}", r.join(p).display(), r.display()));
@@ -169,7 +181,7 @@ fn value_of(args: &[String], opt: &str) -> Option<String> {
 /// Everything that changes the Lean side of a build but not cargo's fingerprints.
 fn stamp_of(cfg: &Config, wrapper: &Path, backend: &str) -> String {
     let mut s = String::new();
-    for p in [cfg.lean_backend(), cfg.data_export(), cfg.lean_regalloc(), cfg.normalize(), wrapper.to_path_buf()] {
+    for p in [cfg.lean_backend(), cfg.data_export(), cfg.lean_regalloc(), cfg.decode(), wrapper.to_path_buf()] {
         let m = std::fs::metadata(&p).ok();
         s.push_str(&format!(
             "{} {} {:?}\n",
@@ -255,6 +267,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut members_only = false;
     let mut bin_check = true;
     let mut lean_link = false;
+    let mut verified = false;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -270,8 +283,15 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
                 lean_link = true;
                 keep_temps = true;
             }
+            "--verified" => verified = true,
             _ => cargo_args.push(a),
         }
+    }
+    if verified && !lean_link {
+        die("--verified needs --lean-link (it makes the Lean linker fail closed)");
+    }
+    if lean_link && mode == Mode::Opt {
+        die("--lean-link compiles with the proven mid-end rules only (lean-link --opt); use --opt-proven-only");
     }
     if value_of(&cargo_args, "--target").is_some() {
         die(&format!("cargo fv always builds for {TARGET}; drop --target"));
@@ -297,27 +317,27 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         .find_map(|l| l.strip_prefix("host: ").map(String::from))
         .unwrap_or_else(|| die("rustc -vV: no host"));
     let bin = sysroot.join("lib/rustlib").join(&host).join("bin");
-    // Codegen backend: with panic=unwind, cg_clif built with its `unwinding` feature (landing
-    // pads: Drop during unwinding, catch_unwind) if available, else the shipped one (no landing
-    // pads). With panic=abort the shipped one: the unwinding one would turn every call that may
-    // unwind into a `try_call` with a terminate edge (rustc's abort_unwinding_calls), and those
-    // functions would fall back.
-    let unwinding_cg_clif = root.join("target/cg_clif-unwind/librustc_codegen_cranelift.so");
+    // Codegen backend: cg_clif with this repository's patch (scripts/build-cg-clif.sh), which
+    // writes each function's external-name table and the module's declarations into its dump
+    // (the identities `clif-decode` reads; docs/contracts/frontend.md). With panic=unwind the
+    // build with cg_clif's `unwinding` feature (landing pads: Drop during unwinding,
+    // catch_unwind); with panic=abort the one without: the unwinding one would turn every call
+    // that may unwind into a `try_call` with a terminate edge (rustc's abort_unwinding_calls),
+    // and those functions would fall back. The shipped cg_clif writes no tables.
+    let variant = if panic_abort { "abort" } else { "unwind" };
+    let patched = root.join(format!("target/cg_clif/{variant}/librustc_codegen_cranelift.so"));
     let backend: String = match std::env::var("FV_CG_CLIF") {
-        Ok(v) if v == "cranelift" => v,
+        Ok(v) if v == "cranelift" => die("FV_CG_CLIF=cranelift: the shipped cg_clif writes no external-name tables; build the patched one with scripts/build-cg-clif.sh (docs/USAGE.md)"),
         Ok(v) if Path::new(&v).exists() => v,
-        Ok(v) => die(&format!("FV_CG_CLIF={v}: no such file (a cg_clif .so, or `cranelift` for the shipped one)")),
-        Err(_) if !panic_abort && unwinding_cg_clif.exists() => unwinding_cg_clif.display().to_string(),
-        Err(_) => "cranelift".into(),
+        Ok(v) => die(&format!("FV_CG_CLIF={v}: no such file (a cg_clif .so built by scripts/build-cg-clif.sh)")),
+        Err(_) if patched.exists() => patched.display().to_string(),
+        Err(_) => die(&format!("{} missing: build the patched cg_clif with scripts/build-cg-clif.sh (docs/USAGE.md)", patched.display())),
     };
-    let panic_desc = match (panic_abort, backend.as_str()) {
-        (true, b) => format!("abort (cg_clif: {b})"),
-        (false, "cranelift") => "unwind (shipped cg_clif: no landing pads, so no Drop during unwinding and catch_unwind in the crate does not catch)".to_string(),
-        (false, b) => format!("unwind (cg_clif with unwinding: {b})"),
+    let panic_desc = if panic_abort {
+        format!("abort (cg_clif: {backend})")
+    } else {
+        format!("unwind (cg_clif with unwinding: {backend})")
     };
-    if !panic_abort && backend == "cranelift" {
-        eprintln!("cargo fv: note: the shipped cg_clif has no landing pads (Drop during unwinding, catch_unwind in the crate); build the unwinding one with scripts/build-cg-clif-unwind.sh (docs/USAGE.md)");
-    }
     // `FV_SKIP_DEPS=a,b`: more dependency packages that keep plain cg_clif
     skip_deps.extend(
         std::env::var("FV_SKIP_DEPS").unwrap_or_default().split([',', ' ']).filter(|s| !s.is_empty()).map(String::from),
@@ -326,12 +346,13 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     skip_deps.dedup();
     // one target dir per configuration that changes the objects (cargo does not see FV_*)
     let fv_dir = target.join("fv").join(format!(
-        "{}{}{}{}{}",
+        "{}{}{}{}{}{}",
         mode.name(),
         if members_only { "-members" } else { "" },
         if trap_replaced { "-trap" } else { "" },
         if panic_abort { "-abort" } else { "" },
-        if lean_link { "-leanlink" } else { "" }
+        if lean_link { "-leanlink" } else { "" },
+        if verified { "-verified" } else { "" }
     ));
     let cfg = Config {
         root,
@@ -344,7 +365,6 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         rust_lld: find_tool("FV_RUST_LLD", &[bin.join("rust-lld")]),
         objcopy: find_tool("FV_OBJCOPY", &["/usr/lib/llvm-18/bin/llvm-objcopy".into(), bin.join("rust-objcopy")]),
         ar: find_tool("FV_AR", &["/usr/lib/llvm-18/bin/llvm-ar".into()]),
-        python: std::env::var("FV_PYTHON").unwrap_or("python3".into()),
         jobs: std::env::var("FV_JOBS")
             .ok()
             .and_then(|j| j.parse().ok())
@@ -353,6 +373,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         bin_check,
         trap_replaced,
         lean_link,
+        lean_link_verified: verified,
         pkg_skip,
     };
     let wrapper = std::env::current_exe()
@@ -491,6 +512,11 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             exes.len(),
             exes.iter().sum::<usize>()
         );
+    }
+    for b in report.units.iter().filter_map(|u| u.unit.binary.as_ref()) {
+        if let Some(c) = &b.lean_link {
+            eprintln!("cargo fv: lean-link {}: covered by {c}", b.path);
+        }
     }
     if bin_check {
         // the binary-level theorem's checks, per linked executable with Lean-compiled code

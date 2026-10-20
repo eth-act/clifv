@@ -1,0 +1,46 @@
+{
+  "utc": "2026-10-14T20:03:02.659478+00:00",
+  "goal": "#140 full original scope, active/incomplete",
+  "checked": "Supporting protected match/RHS/source-data lemmas typecheck independently at unchanged4M proof limit",
+  "profile_findings": "Recursive isel_inv simplification dominates; full emitter run and RHS were revisited during match-only work. Pure metadata decoding remains expensive. Sparse decoding limits rules to their ten relevant term facts.",
+  "live_build_session": 53099,
+  "live_build_log": "/tmp/driver-resume-cmp-immediate-chain-sparse.log",
+  "unvalidated": "General selection and dependent emitter/root/record/transfer/complete-driver witness modules; prepared88-root audit has not passed",
+  "prior_verified": "79 normal comparison roots,40 earlier source hashes unchanged, one fresh immediate-driver MCP observation; see prior observation receipt",
+  "production": "legacy",
+  "publication": "local/uncommitted; no push/merge",
+  "logs": [
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-profile.lean",
+      "sha256": "4ed9f76fb47199087482f46c8ca689efa70d8e5b774ba46aa8b83e15cdac1c02"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-profile.log",
+      "sha256": "b608ce00878cec6d9909c700a850eb12a19f591307cd995b4209170a938bfcd6"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-facts.lean",
+      "sha256": "9d8079fb687a5ed5365f988fc7da65592418717ab113385e5a62b6b569f03137"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-facts.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-bounded.lean",
+      "sha256": "288ad05d0f8fd71f740e9ce2b5171a8adff0e1826a4ab5269b23206fbeea5dbf"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-bounded.log",
+      "sha256": "f6dd01b470c03ba84bff9ed721bd8175aeefdb69e34c0cc7803752b048d3a0a6"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-sparse.lean",
+      "sha256": "f5fb0bfabd56551113459785876ccc0b5dcfdcc10a01e8155b7ac724a0937ad1"
+    },
+    {
+      "path": "/tmp/driver-resume-cmp-immediate-selection-sparse.log",
+      "sha256": "1293373a2a2181313ea91e55fa47f3a0f765af01a0a2de37179559a8d526e6e3"
+    }
+  ]
+}
