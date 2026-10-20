@@ -520,8 +520,26 @@ def typeName (p : Program) (t : TypeId) : String :=
   | some t => t.name
   | none => s!"<type {t}>"
 
-def termByName? (p : Program) (n : String) : Option Term := p.terms.find? (·.name == n)
-def ruleByName? (p : Program) (n : String) : Option Rule := p.rules.find? (·.name == n)
+/-- The term named `n`. Specified by a `List` scan: the kernel evaluates `List.find?`
+structurally, while `Array.find?` costs about 4 GB and 16 s in a kernel `decide` over the
+2483 aarch64 terms, paid by every `decide +kernel` that runs `Isle.Interp.run` (e.g.
+`Stock.lower`). Compiled code runs `termByNameArray` (`@[csimp]` below). -/
+def termByName? (p : Program) (n : String) : Option Term := p.terms.toList.find? (·.name == n)
+/-- The rule named `n` (`List` scan, as `termByName?`). -/
+def ruleByName? (p : Program) (n : String) : Option Rule := p.rules.toList.find? (·.name == n)
+
+/-- `termByName?` as compiled: the `Array` scan, without building the list. -/
+def termByNameArray (p : Program) (n : String) : Option Term := p.terms.find? (·.name == n)
+/-- `ruleByName?` as compiled. -/
+def ruleByNameArray (p : Program) (n : String) : Option Rule := p.rules.find? (·.name == n)
+
+@[csimp] theorem termByName?_eq_termByNameArray : @termByName? = @termByNameArray := by
+  funext p n
+  simp [termByName?, termByNameArray]
+
+@[csimp] theorem ruleByName?_eq_ruleByNameArray : @ruleByName? = @ruleByNameArray := by
+  funext p n
+  simp [ruleByName?, ruleByNameArray]
 
 /-- Rules of a term, in matching order. -/
 def rulesOf (p : Program) (t : TermId) : List Rule := (p.ruleLists[t]?).getD []
