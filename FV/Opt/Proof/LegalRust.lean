@@ -481,12 +481,15 @@ theorem extLegal_env : ExtLegal env := by
             rcases hps : sig.params with _ | ⟨p1, _ | ⟨p2, _ | ⟨p3, ps⟩⟩⟩ <;>
               simp [hps, AbiParam.tys] at hty
             rw [hps] at hG
-            rcases gs with _ | ⟨g1, _ | ⟨g2, _ | ⟨g3, gs⟩⟩⟩ <;> try (simp [GroupsOf] at hG; done)
+            rcases gs with _ | ⟨g1, _ | ⟨g2, gs⟩⟩ <;> try (simp [GroupsOf] at hG; done)
             obtain ⟨v1, rfl, hG1, he1⟩ := expRel_cons_val hG (by simp [← hty.1, ha]) hexp
             obtain ⟨v2, rfl, hG2, he2⟩ := expRel_cons_val hG1 (by simp [← hty.2.1, hb]) he1
-            obtain ⟨v3, rfl, -, -⟩ := expRel_cons_val hG2 (by simp [← hty.2.2.1, hc]) he2
-            rw [← ho]
-            exact memOutcome_prefix ..
+            cases gs with
+            | nil => simp [GroupsOf] at hG2
+            | cons g3 gs =>
+              obtain ⟨v3, rfl, -, -⟩ := expRel_cons_val hG2 (by simp [← hty.2.2.1, hc]) he2
+              rw [← ho]
+              exact memOutcome_prefix ..
         exact ⟨fun rv m' hr hrt =>
             ⟨rv, key _ hr (by simp), expRel_refl hR hrt (noI128_of_tys hrt (memOutcome_ret hr).1)⟩,
           fun c hc => key _ hc (by simp)⟩
