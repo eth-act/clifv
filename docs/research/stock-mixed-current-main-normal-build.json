@@ -1,0 +1,866 @@
+{
+  "utc": "2026-10-20T19:36:16.498532+00:00",
+  "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
+  "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
+  "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
+  "reconciled_source": "3a9814b7d75fe833befeb8bd19ef80532ed0550b",
+  "dependency_fix_source": "8d13b4de250185cbc094be28f4d44e74c1df94b1",
+  "built_modules": [
+    "FV.Backend.Lowering.StockD0",
+    "FV.Backend.Lowering.StockPrologue",
+    "FV.Backend.Lowering.StockProduction",
+    "FV.Backend.Lowering.StockPrologueAll",
+    "FV.Backend.Lowering.StockScalarAdd",
+    "FV.Backend.Lowering.StockScalarProduction",
+    "FV.Backend.DeadCleanup",
+    "FV.Backend.Lowering.StockArithmetic",
+    "FV.Backend.Lowering.StockMixed",
+    "FV.Backend.ABIReadOnly",
+    "FV.Backend.ABIReadFlags"
+  ],
+  "normal_built_count": 11,
+  "failed_modules": 0,
+  "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
+  "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
+  "waiting": "22mixed proof/consumer/test modules needcurrentimportsnotyetbuiltinprimaryauthor epoch; nosemantic/module failureclaimedandnodependencyfalse-pass. Resume normalportwhen importkeysready, includingcommonconsumersaffectedbyABIimportchange.",
+  "batches": [
+    {
+      "utc": "2026-10-20T19:14:26.869956+00:00",
+      "head": "3a9814b7d75fe833befeb8bd19ef80532ed0550b",
+      "primary_head": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
+      "source_sha256": {
+        "FV.Clif.Syntax": "c253dae51602c3ea9ebef6df4d4c1651bd3b4d62dad74fabba372025e0c1010f",
+        "FV.Clif.Sem": "164b58992f3c92bba9030021d3706d7c7dc50179a299ba869d2196d2a70dd87a",
+        "FV.Clif.Mem": "d0f4ae012bfc4e1d653f3a61bfb33905714189bb4318cd17ad3299de0a94c774",
+        "FV.Float.Basic": "d1b14ce396ebfa7ec1de27e3c5e364eda9ef336b0a996cdb7b3c469880facdf7",
+        "FV.Float.Round": "db9fbde3e2a0e4160edcf8fffdbc22fa6f4c982b193ece2dd47e1c6e89b5af25",
+        "FV.Float.Arith": "e673c55dcd1bf7eee46bd9462196d0a439deae0b1ca3916234ec3292ec2d95dd",
+        "FV.Float.Convert": "17d87b84bb9b64c8a13869fa3476863a865f9169c6774dae12bb0c5d09b3e88a",
+        "FV.Float": "8447f3b693714aa928c09b729e9d2ace271be72bd9ec5310dcd3eb2a9abf6791",
+        "FV.Clif.FSem": "1db282b8fac9e46a49a58351f41e35b58d84954ce6b76c9d71241d922f798a9e",
+        "FV.Clif.Run": "5495387536aaea214ff130ac09ca4f8b1c0cea0e50dc4be9add7ef9a6e4cfa4f",
+        "FV.Clif.FloatLit": "f72e88c9e14dc177aa9e5fdac843f0e778820876d078ab76e9b6f2333b3d5daf",
+        "FV.Clif.Print": "25c2b885d5ddfa72e85a9d2818ddc74efff586b6bbad1afe6d04effba1d35418",
+        "FV.Clif.Parse": "032cecf71e3ad50531f0e2f2725bf0e57af2bf2d9bc18bd23cad38a5f3bb5510",
+        "FV.Clif.Rust": "4fca9fa20a816615cf77777dc172dc61ef9ef18fa4361dd1feb69c942f343944",
+        "FV.Clif": "af190442e090937659e21fc84a24f173653056239857ca2b9746769e889471ba",
+        "FV.Isle.Syntax": "09825b7c796533b335806ba901a7104bd48901400a763c0e9be440ae3f861edf",
+        "FV.Isle.Pretty": "80215cf71509d14988a3f42e8fe147ffa7535db1c0e0acef70ce8f9a0cb36f36",
+        "FV.Isle.Interp": "4aa45099acb5ee25492992a4a010d448d8cd7beed06ca601f2620052d572c82d",
+        "FV.Isle.Generated.Ids": "47fae191044e29284bdf8870ba3fdf5ae34434846f1da84458b5543d058e3d48",
+        "FV.Isle.Generated.Types00": "0679ac95982b2ad1ea6abc8321cb88e5fb67f21b91e05d66101d0513a518340d",
+        "FV.Isle.Generated.TypeArray": "39fdbc2e2cd3a61eabf12db6406e7251812459968c7dc0acccb3bc4c43f9cd1b",
+        "FV.Isle.Generated.Terms00": "57c7e821497e8c63cc74fc3afa3fabe0c29c279b052a26f8f6c240492e4e5c4a",
+        "FV.Isle.Generated.Terms01": "11b3be644a1e29ce3cc6ffdab7223a1e0b33d660b86366aafeac12d39b43aede",
+        "FV.Isle.Generated.Terms02": "6b6a988e375feada0e1a236a2286b8c3ce5470ba0c11f1cd77d8f1da8db66515",
+        "FV.Isle.Generated.TermTable": "c9bf4d1850a5c28edd2c0f6f13f2b2f4c80acc852ec6c9e06f8926a0ae70391d",
+        "FV.Isle.Generated.Rules00": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
+        "FV.Isle.Generated.Rules01": "2f9964c0eec71285d47f1250afd0d610aaaa2df091275ca258a05f760e301550",
+        "FV.Isle.Generated.Rules02": "cc5eb3ecef520bd778f7e7b0997334206a9c94e0996c4f1c6960234e0065fcc9",
+        "FV.Isle.Generated.Rules03": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f",
+        "FV.Isle.Generated.RuleArray": "428a6bc5fcad236b23497b70f17cea437987f5c69f17e5d16149d3890c082e03",
+        "FV.Isle.Generated.RuleLists00": "9084c5e4292e91c059ad478e1721d2de10c3b0c54ef9762a1f40af74b2db7a18",
+        "FV.Isle.Generated.RuleTable": "6e775b3482f37ef6bfeefd75f5f0f373c0a64a74128bddf6a7b01d1c12d95c3a",
+        "FV.Isle.Generated.Specs00": "166a502a6405594b092e66749336fcbafa5a7d51fa28c1e69a837fafb4ced36e",
+        "FV.Isle.Generated.Specs01": "7705775f30f7ed522d4102d1539c640ef6cdd31438c345a864e0f9a615ca7561",
+        "FV.Isle.Generated.Specs02": "82fe0c7433f496c4086c3450ed7ba1fbce94011c45ab3aaab6474708babf8518",
+        "FV.Isle.Generated.Specs03": "d9951a29ba5935bc39d4f07c9ef7368faf18132f6ff585cbe89b34064255b18e",
+        "FV.Isle.Generated.Specs04": "4ad21cc7d44d3977d039d0739e5c20498aa55f755e2d9dbe93a80347a401fc22",
+        "FV.Isle.Generated.Specs05": "e35b48c875bfff317cf3c48678584fd300162daf91a5e644944782e5000f2bfe",
+        "FV.Isle.Generated.Specs06": "f3d64cae4362c0ceae3acd5674cd884153a231424a578b12bcea83042eabb941",
+        "FV.Isle.Generated.Program": "022c862de2605cfdfe7694c0274dc052e9b16a202c2a48cbc520492e572ae8f9",
+        "FV.Isle.Generated.Manifest": "f9a5d15ef380857ec63f80466c5903c201b3d373fa5322da0585f9ef96ade1d4",
+        "FV.Isle.Generated.Closure": "6ba984696184e77cfc20e92a70cd55504bdfa87d5384263e22949af92ed9e239",
+        "FV.Isle": "1c76940ace0a6ca5c36c597ec3a6bf706e742a5fe580c999951170ea8612f765",
+        "FV.Backend.MInst": "ac6306be6341384dfd458277290a3d4764e5aa93fcc5fc30105d8b3aba1566e1",
+        "FV.Backend.Isel": "3a5fdccdf4d0cfa8ccbc0d483d42186b1ea98470093502ce17764da0301e6d59",
+        "FV.Backend.StackAlloc": "36a2f3ae0eb04103a5219e81c3ea04a1b624a21bac1b9cbfd3f14d822b4ec12d",
+        "FV.Backend.RegallocOps": "c958a0967b61148bdb72d45af7d6d284c588fb85cdf648f70ab5c094f0e231ee",
+        "FV.Backend.Lowering.StockAlloc": "a64d6ca5f51860e9eb28d9086ef2304d4be1061ff916bdf6ddb44c1fa9d037f5",
+        "FV.Backend.Lowering.Stock": "ef263a21f413c3b516a2f89cbefb96ad70e81765e0498b869512a03dbefec5fb",
+        "FV.Backend.Lowering.StockD0": "58e8578b5781f7a7fd0e8a455352f78ba11e86731d556430a017546d0422a5f3",
+        "FV.Backend.Lowering.StockPrologue": "aff7c9319f0d207b6593e96376d899186ccd1204902d8b92c3da5f9bc1f3451c",
+        "FV.Backend.Lowering.StockProduction": "858cdc90638eb8b5e234c4e5acbf6ee0c0106efa2428e87cfed579a2fb2faed5",
+        "FV.Backend.Lowering.StockPrologueAll": "e51b3a89adaf5cd152ea76d8122ed93893ea0bfd3410a42c1318dbd120910c2b",
+        "FV.Backend.Lowering.StockScalarAdd": "9a521f03771709404a56eddd2cf00ad0349748738b0d20bab1acc6757a34d955",
+        "FV.Backend.Lowering.StockScalarProduction": "d6cebc50c316675321c78e236940c53d17f983f42c0d2e9e5858476f19b308f8",
+        "FV.Backend.DeadCleanup": "2d866fb9d31506f414fd1ccbccb0e52b9d576d0e5b66ca904fa85291c1c68d66",
+        "FV.Backend.Lowering.StockArithmetic": "30ac48d3dd37980b1cf91cf97453bc8b2189bd1f6c6d66d735315cd936ff039c",
+        "FV.Backend.Lowering.StockMixed": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c"
+      },
+      "records": [
+        {
+          "module": "FV.Clif.Syntax",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.Syntax.probe.log"
+        },
+        {
+          "module": "FV.Clif.Sem",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.Sem.probe.log"
+        },
+        {
+          "module": "FV.Clif.Mem",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.Mem.probe.log"
+        },
+        {
+          "module": "FV.Float.Basic",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Float.Basic.probe.log"
+        },
+        {
+          "module": "FV.Float.Round",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Float.Round.probe.log"
+        },
+        {
+          "module": "FV.Float.Arith",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Float.Arith.probe.log"
+        },
+        {
+          "module": "FV.Float.Convert",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Float.Convert.probe.log"
+        },
+        {
+          "module": "FV.Float",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Float.probe.log"
+        },
+        {
+          "module": "FV.Clif.FSem",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.FSem.probe.log"
+        },
+        {
+          "module": "FV.Clif.Run",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.Run.probe.log"
+        },
+        {
+          "module": "FV.Clif.FloatLit",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.FloatLit.probe.log"
+        },
+        {
+          "module": "FV.Clif.Print",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.Print.probe.log"
+        },
+        {
+          "module": "FV.Clif.Parse",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.Parse.probe.log"
+        },
+        {
+          "module": "FV.Clif.Rust",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.Rust.probe.log"
+        },
+        {
+          "module": "FV.Clif",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Clif.probe.log"
+        },
+        {
+          "module": "FV.Isle.Syntax",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Syntax.probe.log"
+        },
+        {
+          "module": "FV.Isle.Pretty",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Pretty.probe.log"
+        },
+        {
+          "module": "FV.Isle.Interp",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Interp.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Ids",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Ids.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Types00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Types00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.TypeArray",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.TypeArray.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Terms00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Terms00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Terms01",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Terms01.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Terms02",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Terms02.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.TermTable",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.TermTable.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Rules00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Rules00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Rules01",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Rules01.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Rules02",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Rules02.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Rules03",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Rules03.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.RuleArray",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.RuleArray.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.RuleLists00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.RuleLists00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.RuleTable",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.RuleTable.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Specs00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs01",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Specs01.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs02",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Specs02.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs03",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Specs03.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs04",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Specs04.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs05",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Specs05.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs06",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Specs06.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Program",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Program.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Manifest",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Manifest.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Closure",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.Generated.Closure.probe.log"
+        },
+        {
+          "module": "FV.Isle",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Isle.probe.log"
+        },
+        {
+          "module": "FV.Backend.MInst",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.MInst.probe.log"
+        },
+        {
+          "module": "FV.Backend.Isel",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Isel.probe.log"
+        },
+        {
+          "module": "FV.Backend.StackAlloc",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.StackAlloc.probe.log"
+        },
+        {
+          "module": "FV.Backend.RegallocOps",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.RegallocOps.probe.log"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockAlloc",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Lowering.StockAlloc.probe.log"
+        },
+        {
+          "module": "FV.Backend.Lowering.Stock",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Lowering.Stock.probe.log"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockD0",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Lowering.StockD0.build.log",
+          "returncode": 0
+        },
+        {
+          "module": "FV.Backend.Lowering.StockPrologue",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Lowering.StockPrologue.build.log",
+          "returncode": 0
+        },
+        {
+          "module": "FV.Backend.Lowering.StockProduction",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Lowering.StockProduction.build.log",
+          "returncode": 0
+        },
+        {
+          "module": "FV.Backend.Lowering.StockPrologueAll",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Lowering.StockPrologueAll.build.log",
+          "returncode": 0
+        },
+        {
+          "module": "FV.Backend.Lowering.StockScalarAdd",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Lowering.StockScalarAdd.build.log",
+          "returncode": 0
+        },
+        {
+          "module": "FV.Backend.Lowering.StockScalarProduction",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Lowering.StockScalarProduction.build.log",
+          "returncode": 0
+        },
+        {
+          "module": "FV.Backend.DeadCleanup",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.DeadCleanup.build.log",
+          "returncode": 0
+        },
+        {
+          "module": "FV.Backend.Lowering.StockArithmetic",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-data/FV.Backend.Lowering.StockArithmetic.build.log",
+          "returncode": 0
+        }
+      ],
+      "scheduler_resumed": true,
+      "budget_GiB": 16,
+      "normal_leaf_cap_GiB": 8,
+      "max_active_builds": 2,
+      "cache": "own ignored .lake view, shared source-keyed artifactstore/hardlinks; no cachecopy",
+      "remaining": "Continue source-keyed normalmixedproof/consumer/tool/runtime gates; arithmeticcandidate must landfirst."
+    },
+    {
+      "utc": "2026-10-20T19:20:20.780608+00:00",
+      "head": "3a9814b7d75fe833befeb8bd19ef80532ed0550b",
+      "primary_head": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
+      "source_sha256": {
+        "FV.Backend.ABIReadFlags": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89",
+        "FV.Backend.Lowering.StockMixed": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c",
+        "FV.Backend.StockMixedCheck": "7f728e8c0810db75b423dd1f5e4b95488ff11e7014403a1f4c93cf5f25684da1",
+        "FV.Backend.SemanticNICheck": "881835f4a3a88bb840bedcebccb780ac6c903fc42b270e93f3ce88ad420e5fbb",
+        "FV.Backend.Lowering.StockMixedNI": "015b3c09f35e93ffb307f7ea3176606e0d35470a741d79573206ab72a73577a9",
+        "FV.Backend.MixedNIProduction": "28a2adf73c7eb8b24b96acfd9f6cd6c0597ebdd75c52fd8d3dc4170e868899ff",
+        "FV.Backend.Proof.StockMixedBodyRefines": "8843866a09637538e38392715eb39685e5cb97b12be1144c3a3e7298dbd40d92",
+        "FV.Backend.Proof.StockMixedCheck": "290a5c92d37dfab7dff7578938fc32c40596aaa6715e7a022efdb1c6bcd1a534",
+        "FV.E2E.ABIReadFlags": "63c98b3f73a9063dc04a6d457a15c787a23e24a79c0d3db57b77ce834de2dcdd",
+        "FV.E2E.StockMixedWorldX": "01dbc79c99032acb4cd911dedbbc5707c8c73d3c957e98e98360ab3e3bee9ac0",
+        "FV.E2E.CompiledSemantic": "3f97dc68e613c739fbb075d9c6773bff23a9665d6736d359e37e3810b407beb8",
+        "FV.E2E.StockMixedNI": "422f5ba002fd40ed61ac55e4230bbd33cd355d6014ace8a2a47db8cdfc39f1c4",
+        "FV.E2E.CompiledSemanticNI": "6239f1c2045a4a6bfcddf957f68d0be88294029bbf7cbd87359f791e1456eded",
+        "FV.E2E.SemanticNIBoundary": "3d3fe26c06fb8ac65a57a6b45b26bb8e7769fcf56cc3c5bfc8274fe7c2dfc9d3",
+        "FV.Link.SemanticCompileWith": "764d6b32ab745d5dfc001c32c97f41b7fef840667db9d988a405092faf1a5352",
+        "FV.E2E.StockMixedWitness": "f802c93b967d7c00defc1d3fcd4e4e1e9f5c03c65458290c8dd56d53a5a27eda",
+        "FV.E2E.SemanticMixedCompilerWitness": "a1ed6445aa1ff7fd864b745419ff1239b5e78f2210a23337bd328526e8e5b315",
+        "FV.E2E.SemanticFallbackWitness": "5fe9ea7e002523afba7bbe83e19feee6b034ba87ce457bba16cc9fc02d642603",
+        "FVTest.Backend.Lowering.StockMixedLinked": "15dcef863ab62d81af55c6a843470a5966a043d67330ca36f7db8cb93363530a",
+        "FVTest.Backend.Lowering.StockMixedRuntime": "c79f25a10718359c108d202b313dc9817030a1a43268a5d0f1252c3da89512ee",
+        "FVTest.Backend.Main": "f1d894ac2691c5021ef34492117e0ed56f52d35976d4d9c7d8ee9c43786a7683",
+        "FVTest.E2E.LinkCheckMain": "12f6db91df25a10c00efdcc9227224fbc0a244a57e5aa3fbe3c51de73edfbfaa",
+        "FVTest.Link.LeanLinkMain": "99354df383a1a6f559213d10d3514a0c4d9c73ad4f0a982eb849988fbcaa27a7"
+      },
+      "records": [
+        {
+          "module": "FV.Backend.ABIReadFlags",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.Backend.ABIReadFlags.imports.log"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockMixed",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.Backend.Lowering.StockMixed.build.log",
+          "returncode": 0
+        },
+        {
+          "module": "FV.Backend.StockMixedCheck",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.Backend.StockMixedCheck.imports.log"
+        },
+        {
+          "module": "FV.Backend.SemanticNICheck",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.Backend.SemanticNICheck.imports.log"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockMixedNI",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.Backend.Lowering.StockMixedNI.imports.log"
+        },
+        {
+          "module": "FV.Backend.MixedNIProduction",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.Backend.MixedNIProduction.imports.log"
+        },
+        {
+          "module": "FV.Backend.Proof.StockMixedBodyRefines",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.Backend.Proof.StockMixedBodyRefines.imports.log"
+        },
+        {
+          "module": "FV.Backend.Proof.StockMixedCheck",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.Backend.Proof.StockMixedCheck.imports.log"
+        },
+        {
+          "module": "FV.E2E.ABIReadFlags",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.E2E.ABIReadFlags.imports.log"
+        },
+        {
+          "module": "FV.E2E.StockMixedWorldX",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.E2E.StockMixedWorldX.imports.log"
+        },
+        {
+          "module": "FV.E2E.CompiledSemantic",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.E2E.CompiledSemantic.imports.log"
+        },
+        {
+          "module": "FV.E2E.StockMixedNI",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.E2E.StockMixedNI.imports.log"
+        },
+        {
+          "module": "FV.E2E.CompiledSemanticNI",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.E2E.CompiledSemanticNI.imports.log"
+        },
+        {
+          "module": "FV.E2E.SemanticNIBoundary",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.E2E.SemanticNIBoundary.imports.log"
+        },
+        {
+          "module": "FV.Link.SemanticCompileWith",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.Link.SemanticCompileWith.imports.log"
+        },
+        {
+          "module": "FV.E2E.StockMixedWitness",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.E2E.StockMixedWitness.imports.log"
+        },
+        {
+          "module": "FV.E2E.SemanticMixedCompilerWitness",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.E2E.SemanticMixedCompilerWitness.imports.log"
+        },
+        {
+          "module": "FV.E2E.SemanticFallbackWitness",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FV.E2E.SemanticFallbackWitness.imports.log"
+        },
+        {
+          "module": "FVTest.Backend.Lowering.StockMixedLinked",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FVTest.Backend.Lowering.StockMixedLinked.imports.log"
+        },
+        {
+          "module": "FVTest.Backend.Lowering.StockMixedRuntime",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FVTest.Backend.Lowering.StockMixedRuntime.imports.log"
+        },
+        {
+          "module": "FVTest.Backend.Main",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FVTest.Backend.Main.imports.log"
+        },
+        {
+          "module": "FVTest.E2E.LinkCheckMain",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FVTest.E2E.LinkCheckMain.imports.log"
+        },
+        {
+          "module": "FVTest.Link.LeanLinkMain",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch2/FVTest.Link.LeanLinkMain.imports.log"
+        }
+      ],
+      "scheduler_resumed": true,
+      "budget_GiB": 16,
+      "normal_leaf_cap_GiB": 8,
+      "max_active_builds": 2,
+      "cache": "own ignored .lake view, shared source-keyed artifactstore/hardlinks; no cachecopy",
+      "remaining": "Continue source-keyed normalmixedproof/consumer/tool/runtime gates; arithmeticcandidate must landfirst."
+    },
+    {
+      "utc": "2026-10-20T19:24:58.012514+00:00",
+      "head": "8d13b4de250185cbc094be28f4d44e74c1df94b1",
+      "primary_head": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
+      "source_sha256": {
+        "FV.Clif.Syntax": "c253dae51602c3ea9ebef6df4d4c1651bd3b4d62dad74fabba372025e0c1010f",
+        "FV.Clif.Sem": "164b58992f3c92bba9030021d3706d7c7dc50179a299ba869d2196d2a70dd87a",
+        "FV.Clif.Mem": "d0f4ae012bfc4e1d653f3a61bfb33905714189bb4318cd17ad3299de0a94c774",
+        "FV.Float.Basic": "d1b14ce396ebfa7ec1de27e3c5e364eda9ef336b0a996cdb7b3c469880facdf7",
+        "FV.Float.Round": "db9fbde3e2a0e4160edcf8fffdbc22fa6f4c982b193ece2dd47e1c6e89b5af25",
+        "FV.Float.Arith": "e673c55dcd1bf7eee46bd9462196d0a439deae0b1ca3916234ec3292ec2d95dd",
+        "FV.Float.Convert": "17d87b84bb9b64c8a13869fa3476863a865f9169c6774dae12bb0c5d09b3e88a",
+        "FV.Float": "8447f3b693714aa928c09b729e9d2ace271be72bd9ec5310dcd3eb2a9abf6791",
+        "FV.Clif.FSem": "1db282b8fac9e46a49a58351f41e35b58d84954ce6b76c9d71241d922f798a9e",
+        "FV.Clif.Run": "5495387536aaea214ff130ac09ca4f8b1c0cea0e50dc4be9add7ef9a6e4cfa4f",
+        "FV.Clif.FloatLit": "f72e88c9e14dc177aa9e5fdac843f0e778820876d078ab76e9b6f2333b3d5daf",
+        "FV.Clif.Print": "25c2b885d5ddfa72e85a9d2818ddc74efff586b6bbad1afe6d04effba1d35418",
+        "FV.Clif.Parse": "032cecf71e3ad50531f0e2f2725bf0e57af2bf2d9bc18bd23cad38a5f3bb5510",
+        "FV.Clif.Rust": "4fca9fa20a816615cf77777dc172dc61ef9ef18fa4361dd1feb69c942f343944",
+        "FV.Clif": "af190442e090937659e21fc84a24f173653056239857ca2b9746769e889471ba",
+        "FV.Isle.Syntax": "09825b7c796533b335806ba901a7104bd48901400a763c0e9be440ae3f861edf",
+        "FV.Isle.Pretty": "80215cf71509d14988a3f42e8fe147ffa7535db1c0e0acef70ce8f9a0cb36f36",
+        "FV.Isle.Interp": "4aa45099acb5ee25492992a4a010d448d8cd7beed06ca601f2620052d572c82d",
+        "FV.Isle.Generated.Ids": "47fae191044e29284bdf8870ba3fdf5ae34434846f1da84458b5543d058e3d48",
+        "FV.Isle.Generated.Types00": "0679ac95982b2ad1ea6abc8321cb88e5fb67f21b91e05d66101d0513a518340d",
+        "FV.Isle.Generated.TypeArray": "39fdbc2e2cd3a61eabf12db6406e7251812459968c7dc0acccb3bc4c43f9cd1b",
+        "FV.Isle.Generated.Terms00": "57c7e821497e8c63cc74fc3afa3fabe0c29c279b052a26f8f6c240492e4e5c4a",
+        "FV.Isle.Generated.Terms01": "11b3be644a1e29ce3cc6ffdab7223a1e0b33d660b86366aafeac12d39b43aede",
+        "FV.Isle.Generated.Terms02": "6b6a988e375feada0e1a236a2286b8c3ce5470ba0c11f1cd77d8f1da8db66515",
+        "FV.Isle.Generated.TermTable": "c9bf4d1850a5c28edd2c0f6f13f2b2f4c80acc852ec6c9e06f8926a0ae70391d",
+        "FV.Isle.Generated.Rules00": "d37ab52be27e00e509bcc8dca122c5ce3c63f19f9eb54f494b5a2cb036a536e5",
+        "FV.Isle.Generated.Rules01": "2f9964c0eec71285d47f1250afd0d610aaaa2df091275ca258a05f760e301550",
+        "FV.Isle.Generated.Rules02": "cc5eb3ecef520bd778f7e7b0997334206a9c94e0996c4f1c6960234e0065fcc9",
+        "FV.Isle.Generated.Rules03": "0d9182702287a96e68c1326fc123216c4f0033be02b5a8491733eabe00db233f",
+        "FV.Isle.Generated.RuleArray": "428a6bc5fcad236b23497b70f17cea437987f5c69f17e5d16149d3890c082e03",
+        "FV.Isle.Generated.RuleLists00": "9084c5e4292e91c059ad478e1721d2de10c3b0c54ef9762a1f40af74b2db7a18",
+        "FV.Isle.Generated.RuleTable": "6e775b3482f37ef6bfeefd75f5f0f373c0a64a74128bddf6a7b01d1c12d95c3a",
+        "FV.Isle.Generated.Specs00": "166a502a6405594b092e66749336fcbafa5a7d51fa28c1e69a837fafb4ced36e",
+        "FV.Isle.Generated.Specs01": "7705775f30f7ed522d4102d1539c640ef6cdd31438c345a864e0f9a615ca7561",
+        "FV.Isle.Generated.Specs02": "82fe0c7433f496c4086c3450ed7ba1fbce94011c45ab3aaab6474708babf8518",
+        "FV.Isle.Generated.Specs03": "d9951a29ba5935bc39d4f07c9ef7368faf18132f6ff585cbe89b34064255b18e",
+        "FV.Isle.Generated.Specs04": "4ad21cc7d44d3977d039d0739e5c20498aa55f755e2d9dbe93a80347a401fc22",
+        "FV.Isle.Generated.Specs05": "e35b48c875bfff317cf3c48678584fd300162daf91a5e644944782e5000f2bfe",
+        "FV.Isle.Generated.Specs06": "f3d64cae4362c0ceae3acd5674cd884153a231424a578b12bcea83042eabb941",
+        "FV.Isle.Generated.Program": "022c862de2605cfdfe7694c0274dc052e9b16a202c2a48cbc520492e572ae8f9",
+        "FV.Isle.Generated.Manifest": "f9a5d15ef380857ec63f80466c5903c201b3d373fa5322da0585f9ef96ade1d4",
+        "FV.Isle.Generated.Closure": "6ba984696184e77cfc20e92a70cd55504bdfa87d5384263e22949af92ed9e239",
+        "FV.Isle": "1c76940ace0a6ca5c36c597ec3a6bf706e742a5fe580c999951170ea8612f765",
+        "FV.Backend.MInst": "ac6306be6341384dfd458277290a3d4764e5aa93fcc5fc30105d8b3aba1566e1",
+        "FV.Backend.Isel": "3a5fdccdf4d0cfa8ccbc0d483d42186b1ea98470093502ce17764da0301e6d59",
+        "FV.Backend.StackAlloc": "36a2f3ae0eb04103a5219e81c3ea04a1b624a21bac1b9cbfd3f14d822b4ec12d",
+        "FV.Backend.RegallocOps": "c958a0967b61148bdb72d45af7d6d284c588fb85cdf648f70ab5c094f0e231ee",
+        "FV.Backend.DeadCleanup": "2d866fb9d31506f414fd1ccbccb0e52b9d576d0e5b66ca904fa85291c1c68d66",
+        "FV.Backend.ABIReadOnly": "50b2785490b7c2b8b1859c4df7e974079476dd0ed876e9cf60ddff2b890f3200",
+        "FV.Backend.ABIReadFlags": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89"
+      },
+      "records": [
+        {
+          "module": "FV.Clif.Syntax",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.Syntax.probe.log"
+        },
+        {
+          "module": "FV.Clif.Sem",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.Sem.probe.log"
+        },
+        {
+          "module": "FV.Clif.Mem",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.Mem.probe.log"
+        },
+        {
+          "module": "FV.Float.Basic",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Float.Basic.probe.log"
+        },
+        {
+          "module": "FV.Float.Round",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Float.Round.probe.log"
+        },
+        {
+          "module": "FV.Float.Arith",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Float.Arith.probe.log"
+        },
+        {
+          "module": "FV.Float.Convert",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Float.Convert.probe.log"
+        },
+        {
+          "module": "FV.Float",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Float.probe.log"
+        },
+        {
+          "module": "FV.Clif.FSem",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.FSem.probe.log"
+        },
+        {
+          "module": "FV.Clif.Run",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.Run.probe.log"
+        },
+        {
+          "module": "FV.Clif.FloatLit",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.FloatLit.probe.log"
+        },
+        {
+          "module": "FV.Clif.Print",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.Print.probe.log"
+        },
+        {
+          "module": "FV.Clif.Parse",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.Parse.probe.log"
+        },
+        {
+          "module": "FV.Clif.Rust",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.Rust.probe.log"
+        },
+        {
+          "module": "FV.Clif",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Clif.probe.log"
+        },
+        {
+          "module": "FV.Isle.Syntax",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Syntax.probe.log"
+        },
+        {
+          "module": "FV.Isle.Pretty",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Pretty.probe.log"
+        },
+        {
+          "module": "FV.Isle.Interp",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Interp.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Ids",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Ids.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Types00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Types00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.TypeArray",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.TypeArray.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Terms00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Terms00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Terms01",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Terms01.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Terms02",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Terms02.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.TermTable",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.TermTable.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Rules00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Rules00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Rules01",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Rules01.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Rules02",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Rules02.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Rules03",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Rules03.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.RuleArray",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.RuleArray.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.RuleLists00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.RuleLists00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.RuleTable",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.RuleTable.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs00",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Specs00.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs01",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Specs01.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs02",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Specs02.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs03",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Specs03.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs04",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Specs04.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs05",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Specs05.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Specs06",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Specs06.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Program",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Program.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Manifest",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Manifest.probe.log"
+        },
+        {
+          "module": "FV.Isle.Generated.Closure",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.Generated.Closure.probe.log"
+        },
+        {
+          "module": "FV.Isle",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Isle.probe.log"
+        },
+        {
+          "module": "FV.Backend.MInst",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Backend.MInst.probe.log"
+        },
+        {
+          "module": "FV.Backend.Isel",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Backend.Isel.probe.log"
+        },
+        {
+          "module": "FV.Backend.StackAlloc",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Backend.StackAlloc.probe.log"
+        },
+        {
+          "module": "FV.Backend.RegallocOps",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Backend.RegallocOps.probe.log"
+        },
+        {
+          "module": "FV.Backend.DeadCleanup",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-abi/FV.Backend.DeadCleanup.probe.log"
+        },
+        {
+          "module": "FV.Backend.ABIReadOnly",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-abi/FV.Backend.ABIReadOnly.build.log",
+          "returncode": 0
+        },
+        {
+          "module": "FV.Backend.ABIReadFlags",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-abi/FV.Backend.ABIReadFlags.build.log",
+          "returncode": 0
+        }
+      ],
+      "scheduler_resumed": true,
+      "budget_GiB": 16,
+      "normal_leaf_cap_GiB": 8,
+      "max_active_builds": 2,
+      "cache": "own ignored .lake view, shared source-keyed artifactstore/hardlinks; no cachecopy",
+      "remaining": "Continue source-keyed normalmixedproof/consumer/tool/runtime gates; arithmeticcandidate must landfirst."
+    }
+  ],
+  "limits": "3a/8dmodulecachekeys validonlyforexactsource+importclosure; metadataonlyreceiptcommitdoesnotmodifyLean/Rust. Allnormalclassproof/tool/runtime/encoder/identitystage/trust/nativegenerated/verifiedexamplegatesremainmandatorybeforemixedactivation. Arithmeticlandsfirst. Original140fullgoalactive."
+}
