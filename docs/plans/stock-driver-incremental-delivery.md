@@ -6,6 +6,16 @@ proof checkpoints remain evidence, not a queue of instructions to resume.
 
 ## Active raw arithmetic delivery packet (2026-10-20)
 
+The cold author rebuild exposed a pre-existing 23,645 MiB comparison-helper proof.
+Its exact-statement replacement now uses small opaque matching/evaluation steps:
+normal module build371jobs passes (leaf1.8s), standalone peak2.1GiB, all69owned
+constants standard-only. The public header and its three-axiom set are retained.
+The original failed16GiB run was closed after active children finished, preserving
+364successful module records/cache; resume pending/affected gates rather than
+restarting completed work. [Resource-repair evidence](../research/stock-cmp-resource-repair.json).
+This is a prerequisite repair within the complete activation packet; it is not
+main activation or full-goal completion.
+
 Published prerequisite checkpoint `79df6b4a` on
 `agent/stock-arithmetic-production-adapters` supplies raw-Stock non-interference
 and whole-program/stack/binary/real-executable/original-source/peak consumers.
