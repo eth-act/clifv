@@ -1,0 +1,23 @@
+{
+  "state": "source_review_only_not_reconciled_kernel_validation",
+  "base": "6a1f7d51",
+  "fields": 39,
+  "unchanged_fields": 38,
+  "changed": [
+    "compiled"
+  ],
+  "old_compiled": "\u2200 g \u2208 L.P.funcs, CompiledEither g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb",
+  "new_compiled": "\u2200 g \u2208 L.P.funcs, CompiledProduction g (L.A g).k (L.A g).vc (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb",
+  "candidate_files": {
+    "ActualCompilerModes.lean": "569d0dafba092b1acab03f661aa8030587aae0f6dfc5fcd651e3f386275ad15e",
+    "ActualBinCheck.lean": "9609fd1f079ca6ce8a58e233235342b394e998b376d398cf21f9d81e4ef672e4",
+    "ActualPipelineCheck.lean": "69d38c3cc22ee82a53695589c5aa056848f6de9bec5340064cb2a30125be4062",
+    "LinkProduction.lean": "bb22c83a1592dd7dfbef607bfb85d4b42a7a5b2de5c8d2bfa2df64543aedf06d"
+  },
+  "byte_writer_source_body": "identical modulo compiler-result callback and comments; not yet kernel validated",
+  "additional_integration_obligations": [
+    "Generated proof emitter must retain optional global and per-entry stack-bound theorems; existing ActualCompilerModes prototype supplies ordinary CrateStmt but does not yet port StackStmt/stackN wrappers. Reuse generic StackBound.budMap/budget graph definitions and LinkProduction budget theorem; do not omit successful stages.",
+    "Actual Lean-link default path must write and prove the same callback result table; old compileExe/leanLink variants remain wrappers.",
+    "Actual compiler and generated-proof consumers must preserve original allocator fallback flag, k/j/base provenance, both cleanup modes, unwind verification labels, and default Lean-linked behavior."
+  ]
+}
