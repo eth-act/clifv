@@ -1,4 +1,5 @@
 import FV.Opt
+import FV.Opt.OptimizeX
 import FV.Clif.Parse
 
 /-!
@@ -43,8 +44,9 @@ def parseOptArgs (args : List String) : Except String (Option Config × List Str
     | a :: r => rest := rest.push a; xs := r
   return (if on then some cfg else none, rest.toList)
 
-/-- Optimise every parsed function of a file. -/
+/-- Optimise every parsed function of a file (the executable compiler's mid-end
+`Opt.optimizeExe`, `FV/Opt/OptimizeX.lean`). -/
 def optimizeParsedFile (cfg : Config) (pf : ParsedFile) : ParsedFile :=
-  { pf with funcs := pf.funcs.map fun p => { p with func := p.func.map (optimize · cfg) } }
+  { pf with funcs := pf.funcs.map fun p => { p with func := p.func.map (optimizeExe · cfg) } }
 
 end Opt

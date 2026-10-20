@@ -1,0 +1,23 @@
+import FV.Backend.Proof.StockSelectNonzeroConditionShape
+import FV.Backend.Proof.StockSelectConditionInvertShape
+import FV.Backend.Proof.StockSelectZeroConditionShape
+import FV.Backend.Proof.StockSelectWideComparisonShape
+import FV.Backend.Proof.StockSelectNarrowComparisonShape
+import FV.Backend.Proof.StockSelectComparisonConditionShape
+import FV.Backend.Proof.StockSelectConditionCompanion
+import FV.Backend.Proof.StockSelectComparisonCompanionValues
+import FV.Backend.Proof.StockSelectConditionShapeWitness
+import FV.Backend.Proof.StockSelectComparisonCompanionWitness
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_nonzero_actual_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_condition_invert_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_zero_rhs_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_wide_comparison_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_narrow_comparison_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_comparison_condition_shape
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_condition_boolean_companion
+#print axioms Backend.Stock.Proof.ScalarSelect.stock_select_comparison_companion_source_values
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_nonzero_condition_shape_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_invert_companion_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_flags_invert_companion_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ConditionShapeWitness.stock_select_zero_rhs_shape_witness
+#print axioms Backend.Stock.Proof.ScalarSelect.ComparisonCompanionWitness.stock_select_comparison_companion_complete_witness
