@@ -1,0 +1,13 @@
+{
+  "utc": "2026-10-19T05:26:06.295739+00:00",
+  "base": "e63ec13d58c1d96eca4c8946dcfea6e12126ef51",
+  "backup_of_local_plans": "/home/lee/.clifv-recovery/20261019T052606Z-plan-refresh",
+  "last_green_at_inspection": "8dba4e7b",
+  "scope": "documentation only",
+  "branch": "agent/stock-plan-refresh-20261019",
+  "head": "6052687ae295ef5c1d7add78b3c751d1290a6e80",
+  "validation": "Docs only: no gates required by current \u00a77; diff --check and relative roadmap links PASS",
+  "PR": 324,
+  "merge_commit": "aaeb49265517e02fbd93902e0b884a219ed60bea",
+  "landed_tree_matches_reviewed_tree": true
+}

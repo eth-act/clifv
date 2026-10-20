@@ -1,0 +1,78 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"success\": true,\n  \"timed_out\": false,\n  \"diagnostics\": [\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_zero_observed' depends on axioms: [propext, Classical.choice, Quot.sound]\",\n      \"line\": 8,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_select_zero_source_values' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 9,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.ZeroSourceWitness.stock_select_zero_original_consumer_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 10,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_original_select_rhs_calls' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 11,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_original_select_source_data' depends on axioms: [propext, Quot.sound]\",\n      \"line\": 12,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_original_select_match' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 13,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_calls' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 14,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_driver_observed' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 15,\n      \"column\": 1,\n      \"lean_tags\": null\n    },\n    {\n      \"severity\": \"info\",\n      \"message\": \"'Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_root_calls_witness' depends on axioms: [propext,\\n Classical.choice,\\n Quot.sound]\",\n      \"line\": 16,\n      \"column\": 1,\n      \"lean_tags\": null\n    }\n  ]\n}"
+    }
+  ],
+  "structuredContent": {
+    "success": true,
+    "timed_out": false,
+    "diagnostics": [
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_zero_observed' depends on axioms: [propext, Classical.choice, Quot.sound]",
+        "line": 8,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_select_zero_source_values' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 9,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.ZeroSourceWitness.stock_select_zero_original_consumer_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 10,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_original_select_rhs_calls' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 11,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_original_select_source_data' depends on axioms: [propext, Quot.sound]",
+        "line": 12,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_original_select_match' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 13,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.stock_original_select_selected_calls' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 14,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_driver_observed' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 15,
+        "column": 1,
+        "lean_tags": null
+      },
+      {
+        "severity": "info",
+        "message": "'Backend.Stock.Proof.ScalarSelect.OriginalSelectFixture.stock_original_select_root_calls_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+        "line": 16,
+        "column": 1,
+        "lean_tags": null
+      }
+    ]
+  },
+  "isError": false
+}
