@@ -11,7 +11,7 @@ open _root_.E2E _root_.E2E.LinkCheck _root_.E2E.BinCheck Backend Lean
 def leanFilesSemanticWith (lowerName : String) (I : LinkInput) (names : List String) (entries : List String) (out module exe : String)
     (cleanup : Bool)
     (noTls : Bool) (stack : Option Nat) (stackEntries : List String) (bg : BinGen)
-    (lowerImport : String := "FV.Backend.Lowering.StockArithmetic") :
+    (lowerImport : String := "FV.Backend.Lowering.StockArithmeticNI") :
     List (String × String) := Id.run do
   let ns := s!"Crates.{module}"
   let n := I.funcs.length
@@ -140,7 +140,7 @@ excerpts (`hdr_bin`, `sliceK_bin`, `data_bin`, `syms_bin`).
 theorem globalB_input : SemanticChecksWith.globalBProduction actualLower input {if cleanup then "true" else "false"} = true := by native_decide
 
 /-- Every premise of `LinkSys.Ok` about the program and its layout. -/
-theorem okB_input : okRWith actualStage input actualResults = true :=
+theorem okB_input : okRSemanticNI actualStage input actualResults = true :=
   SemanticChecksWith.okRProduction_of_checks globalB_input {if sl.length == 1 then "slice0_ok" else s!"(by
     show SemanticChecksWith.fnsBProduction actualLower input {if cleanup then "true" else "false"} ({funcs}) = true
     simp only [SemanticChecksWith.fnsBProduction_append, {", ".intercalate (sl.map (s!"slice{·}_ok"))}, Bool.and_self])"}
@@ -160,7 +160,7 @@ theorem entries_present :
   let parts := ["exHdr"] ++ sl.map (s!"ex{·}") ++ ["exData", "exSyms"]
   let hs := ["hH"] ++ sl.map (s!"h{·}") ++ ["hD", "hS"]
   let codeOf (k : Nat) := s!"(SemanticChecksWith.codeBProduction_sound slice{k}_bin (Elf.agrees_append.2 ⟨hH, h{k}⟩))"
-  let code := (sl.drop 1).foldl (fun acc k => s!"(SemanticChecksWith.artsOkSemanticNI_append {acc}\n      {codeOf k})") (codeOf 0)
+  let code := (sl.drop 1).foldl (fun acc k => s!"(SemanticChecksWith.artsOkProduction_append {acc}\n      {codeOf k})") (codeOf 0)
   main := main ++ s!"/-- The executable's headers: a static AArch64 executable. -/
 theorem hdr_bin : hdrB exHdr = true := by native_decide
 
@@ -179,7 +179,7 @@ resolved, the data objects, and the link map as its symbol table (`BinOk`). -/
 theorem bin_ok (file : ByteArray) (h : Elf.Agrees file exAll) : BinOkWithResults input actualResults dataObjs file := by
   simp only [exAll, Elf.agrees_append] at h
   obtain ⟨{", ".intercalate hs}⟩ := h
-  exact SemanticChecksWith.binOkSemanticNI_of_checks (hdrB_sound hdr_bin hH)
+  exact SemanticChecksWith.binOkProduction_of_checks (hdrB_sound hdr_bin hH)
     {code}
     (dataB_sound data_bin (Elf.agrees_append.2 ⟨hH, hD⟩))
     (symsB_sound syms_bin (Elf.agrees_append.2 ⟨hH, hS⟩))

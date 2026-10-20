@@ -1,5 +1,5 @@
 import FV.Backend.ArithmeticProduction
-import FV.Backend.SemanticNICheck
+import FV.Backend.Lowering.StockArithmeticNI
 
 namespace Backend
 set_option autoImplicit false
@@ -8,7 +8,7 @@ set_option autoImplicit false
 it can reach a verified allocation. Failure retries the shipped lowerer. -/
 def lowerCheckedArithmeticNI (f : Clif.Function) (verify : Bool) : Except String VCode :=
   let attempt := do
-    let vc ← Stock.Arithmetic.lowerCandidate f
+    let vc ← Stock.Arithmetic.lowerValidated f
     if verify && !SemanticNI.check f vc then
       throw "lowering rejected by the paired semantic lowering validator"
     pure vc

@@ -349,7 +349,9 @@ theorem buildCtx_value_domain {f : Clif.Function} {ctx : Ctx}
 private def requests : List AllocationRequest :=
   [.value 7, .exception 1 2 1, .value 2, .value 7, .value 50]
 
-private def allocation : Allocation := allocateRequests 8 2 requests
+-- This proof-only fixture deliberately requests an out-of-range value. Keep
+-- kernel reduction available without evaluating Array.set! at CLI startup.
+private noncomputable def allocation : Allocation := allocateRequests 8 2 requests
 
 theorem allocation_valid_witness :
     AllocationValid allocation ∧

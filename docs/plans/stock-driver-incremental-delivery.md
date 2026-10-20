@@ -4,6 +4,26 @@ Current execution plan, refreshed 2026-10-19; replaces the wholesale-cutover ord
 [test-binary-alignment-recovery.md](test-binary-alignment-recovery.md). Historical
 proof checkpoints remain evidence, not a queue of instructions to resume.
 
+## Active raw arithmetic delivery packet (2026-10-20)
+
+Published prerequisite checkpoint `79df6b4a` on
+`agent/stock-arithmetic-production-adapters` supplies raw-Stock non-interference
+and whole-program/stack/binary/real-executable/original-source/peak consumers.
+All12 ABI/cleanup compiler witnesses pass with a used ninth stack argument,
+unused parameters and an explicit slot. Arbitrary-value source execution and
+1,279 standard-only owned core constants pass. See
+[the consumer checkpoint](../research/stock-arithmetic-ni-checkpoint.md).
+
+The active implementation switches actual compiler, checker, linker and generated
+proof defaults to the paired semantic path, preserving all prior class routes,
+settings guards and transactional fallback. Consumer reconstruction also handles
+retained artifacts in mixed executables. Current work is mixed runtime/allocation
+retry, actual linked/generated-proof validation and full author gates; do not
+land or claim activation from prerequisite builds alone. No original theorem
+variant/input/axiom/identity/stage requirement is relaxed. All original #140
+family/effect, omitted/sunk, simulation, Stock-only completeness, optimizer/unwind
+and whole-production obligations remain active after this class landing.
+
 ## Landed checkpoint and active implementation (2026-10-19)
 
 #328 squash-merged as `6a1f7d518f76bedc8219204bde40cfa41be876cd`.

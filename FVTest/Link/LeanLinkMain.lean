@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockScalarProduction
+import FV.Backend.Lowering.StockArithmeticNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Link.OptCompile
@@ -9,7 +9,7 @@ import FV.E2E.LinkScopeInputDefs
 import FV.Link.Ld.Spec
 import FVTest.Link.LdArgs
 import FV.Link.ExeUCompile
-import FV.Link.ProductionCompileWith
+import FV.Link.SemanticCompileWith
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)
@@ -216,26 +216,26 @@ def main (args0 : List String) : IO UInt32 := do
       return 1
   -- Keep optimizer and exceptional-edge theorem variants on their retained route
   -- until their production adapters are complete.
-  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)
-  let compiled := if stockEnabled then ProductionCompilerWith.compile Backend.Stock.ScalarAdd.lower SC0 file0 deadCleanup
-    else (compile SC file0).map fun file => (⟨file,false⟩ : ProductionCompilerWith.Output)
+  let compiled := if stockEnabled then SemanticCompilerWith.compile Backend.Stock.Arithmetic.lowerValidated SC0 file0 deadCleanup
+    else (compile SC file0).map fun file => (⟨file,false⟩ : SemanticCompilerWith.Output)
   match compiled with
   | .ok out =>
     let file := out.file
     if out.stock then
-      let SP := SC0.placedProductionWith Backend.Stock.ScalarAdd.lower deadCleanup
+      let SP := SC0.placedProductionWith Backend.Stock.Arithmetic.lowerValidated deadCleanup
       IO.FS.writeBinFile exe file
-      IO.println s!"lean-link: {exe}: {summary} written by Link.ProductionCompilerWith.compile (Link.ProductionCompilerWith.attempt_correct)"
+      IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.compile (Link.SemanticCompilerWith.attempt_correct)"
       if let some f := ldFile then
         match ← ldCheck SP file0 f with
-        | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB); retained legacy acceptance: Link.ProductionCompilerWith.accepts_legacy"
+        | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB); retained legacy acceptance: Link.SemanticCompilerWith.accepts_legacy"
         | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
       let src := if srcOk then
-          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.ProductionCompilerWith.attempt_correct_source, Link.ProductionCompilerWith.attempt_correct_source_peak"
+          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.SemanticCompilerWith.attempt_correct_source, Link.SemanticCompilerWith.attempt_correct_source_peak"
         else "; outside SrcScopeB: about the legalised program only"
       let scope := if verified then "; input in InScopeIn (--verified)" else ""
-      IO.println s!"lean-link: {exe}: coverage: Link.ProductionCompilerWith.attempt_correct, Link.ProductionCompilerWith.attempt_correct_depth, Link.ProductionCompilerWith.attempt_correct_peak{src}{scope}"
+      IO.println s!"lean-link: {exe}: coverage: Link.SemanticCompilerWith.attempt_correct, Link.SemanticCompilerWith.attempt_correct_depth, Link.SemanticCompilerWith.attempt_correct_peak{src}{scope}"
       return 0
     -- the unwind tables (S10f): with the cleanup compiler, `compileExeU SC file0 = .ok file`
     let unwOk := deadCleanup && Link.DeadCleanup.unwOkB SC file
