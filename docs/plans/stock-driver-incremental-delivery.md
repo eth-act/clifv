@@ -22,6 +22,8 @@ passed. Old variants remain compatibility wrappers; no second class is enabled.
 #331 (`fd857be3`) landed whole-program/checker/binary/compiler-mode consumers and the actual-result byte writer, with standard-only compiler proofs and a fixed successful Stock prologue retaining non-legacy history.
 
 The active packet adds actual image correctness, stack bounds, sliced generated proofs and six actual linked fixture cases (twelve emitted Lean files). All per-PR gates passed on ee7ddcc6: 2350 modules,14 trust audits,both1154 E2E modes with1150 original identity/stage parity,two matched binary links,and all twelve emitted files. Full binary execution adapters, CLI migration and universal prologue activation remain. Source/domain candidates cover all six configurations; actual code/checker candidates currently cover SystemV i64 only and need reconciliation.
+The next class implementation is on `agent/stock-actual-binary-production`: universal SystemV i64 prologue selector, actual transactional pipeline and image proofs, concrete executable/original-source/peak consumers, and default compiler/checker/linker/proof emission. Targeted gates and the complete all-value machine witness pass. Full author gates are pending. The rollout retains optimizer and exceptional-edge routes until their adapters are complete; baseline acceptance is preserved by legacy retry. See [implementation evidence](../research/stock-prologue-production-implementation.md).
+
 All remaining original #140 obligations remain open.
 
 ## Decision and current baseline

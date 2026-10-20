@@ -8,6 +8,7 @@ import FV.E2E.LinkScopeInputDefs
 import FV.Link.Ld.Spec
 import FVTest.Link.LdArgs
 import FV.Link.ExeUCompile
+import FV.Link.ProductionCompile
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)
@@ -212,8 +213,29 @@ def main (args0 : List String) : IO UInt32 := do
       for (n, fs) in bad do
         IO.eprintln s!"lean-link:   {n}: {fs}"
       return 1
-  match compile SC file0 with
-  | .ok file =>
+  -- Keep optimizer and exceptional-edge theorem variants on their retained route
+  -- until their production adapters are complete.
+  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.Prologue.eligible fi.func) &&
+    !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)
+  let compiled := if stockEnabled then ProductionCompiler.compile SC0 file0 deadCleanup
+    else (compile SC file0).map fun file => (⟨file,false⟩ : ProductionCompiler.Output)
+  match compiled with
+  | .ok out =>
+    let file := out.file
+    if out.stock then
+      let SP := SC0.placedProduction deadCleanup
+      IO.FS.writeBinFile exe file
+      IO.println s!"lean-link: {exe}: {summary} written by Link.ProductionCompiler.compile (Link.ProductionCompiler.attempt_correct)"
+      if let some f := ldFile then
+        match ← ldCheck SP file0 f with
+        | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB); retained legacy acceptance: Link.ProductionCompiler.accepts_legacy"
+        | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e}"
+      let src := if srcOk then
+          "; the original (pre-i128-legalisation) program, in SrcScopeB: Link.ProductionCompiler.attempt_correct_source, Link.ProductionCompiler.attempt_correct_source_peak"
+        else "; outside SrcScopeB: about the legalised program only"
+      let scope := if verified then "; input in InScopeIn (--verified)" else ""
+      IO.println s!"lean-link: {exe}: coverage: Link.ProductionCompiler.attempt_correct, Link.ProductionCompiler.attempt_correct_depth, Link.ProductionCompiler.attempt_correct_peak{src}{scope}"
+      return 0
     -- the unwind tables (S10f): with the cleanup compiler, `compileExeU SC file0 = .ok file`
     let unwOk := deadCleanup && Link.DeadCleanup.unwOkB SC file
     IO.FS.writeBinFile exe file
