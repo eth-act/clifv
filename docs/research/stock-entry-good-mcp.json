@@ -1,0 +1,55 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgeSpill.spill_entry_good_runs' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgeSpill.bodyStateAt_good' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgeSpill.bodyStateAt_le' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgeSpill.spill_return_block_after_entry' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_spill_entry_good_runs' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.stock_spill_return_successor_runs' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.EntryGoodWitness.stock_entry_return_blocks_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}

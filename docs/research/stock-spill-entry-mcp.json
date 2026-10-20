@@ -1,0 +1,62 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgeSpill.spillAllocAt_block' depends on axioms: [propext, Quot.sound]",
+      "line": 6,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgeSpill.spill_entry_route' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 7,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgeSpill.spill_jump_route' depends on axioms: [propext]",
+      "line": 8,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgeSpill.spill_entry_stores_runs' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 9,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Proof.PerEdgeSpill.spill_entry_runs' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 10,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.SpillEntryFixture.try_fixture' depends on axioms: [propext, Classical.choice, Quot.sound]",
+      "line": 11,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.SpillEntryWitness.stock_try_spill_entry_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 12,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.SpillJumpWitness.stock_spill_jump_route_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 13,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}
