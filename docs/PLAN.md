@@ -5,8 +5,9 @@ return class and retains legacy for other inputs. Compiler and E2E routes share
 the dispatcher, with complete-code compatibility preserving downstream consumers.
 Additive actual-output E2E contracts now cover source/SSA-validated Stock output,
 both cleanup modes and world/non-interference composition while retaining the old
-variants. Whole-program/checker/linker/generated-proof migration and the next
-production class remain required. Broader simulation/completeness obligations
+variants. Additive whole-program/checker/binary consumers and an actual-result
+byte-writer bridge retain the old interfaces. Actual CLI/generated-proof/stack
+migration and the next production class remain required. Broader simulation/completeness obligations
 remain open; see the
 [Stock contract](contracts/stock-driver.md) and
 [delivery plan](plans/stock-driver-incremental-delivery.md).

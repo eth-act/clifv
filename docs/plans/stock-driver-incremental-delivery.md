@@ -15,12 +15,15 @@ both E2E modes 1154 accepted with all original 1150 identities and ordered stage
 preserved, mixed generated proofs and verified default Lean-linked fv-demo/survey.
 The historical baseline sections below describe pre-#328 reconciliation.
 
-The active next packet adds actual-output E2E contracts, callback provenance,
-world/non-interference composition and successful witnesses in both cleanup modes.
-Old variants remain compatibility wrappers; Stock histories and edge operands are
-retained. This packet alone enables no second production class. Next come actual
-link/checker/binary/generated-proof consumers and the proved two-block prologue
-class. Its source/domain candidates cover all six configurations; actual code and
+The actual-output E2E contracts, callback provenance, world/non-interference
+composition and successful witnesses landed in #329 (`c2c5d773`). Its 2335-module,
+11-file trust audit, both-mode E2E identity/stage and link/generated-proof gates
+passed. Old variants remain compatibility wrappers; no second class is enabled.
+The active next packet adds whole-program/checker/binary/compiler-mode consumers
+and an actual-result byte-writer bridge, with standard-only compiler proofs and
+a fixed successful Stock prologue witness retaining non-legacy diagnostic history.
+Actual generated-proof/stack-bound/image integration and universal prologue
+activation remain next. Its source/domain candidates cover all six configurations; actual code and
 checker candidates currently cover SystemV i64 only and need reconciliation.
 All remaining original #140 obligations remain open.
 
