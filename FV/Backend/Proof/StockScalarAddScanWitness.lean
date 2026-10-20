@@ -1,6 +1,7 @@
 import FV.Backend.Proof.StockAddSubScanRefines
 import FV.Backend.Proof.StockActualAddSubBodyRefines
 import FV.Backend.Proof.StockScalarAddWitness
+import FV.Backend.Proof.StockPureUnsunk
 import FV.Backend.Proof.LowerSim
 
 /-! Real retained-record and body non-vacuity witness for the arithmetic scan
@@ -216,5 +217,38 @@ theorem actual_body_split_witness :
   apply refines families s t ?_ registers w pre
   simpa only [actual_event_block,indices] using steps
 
+
+
+theorem actual_pure_color_data :
+    event.input.entryColor[0]! = 0 ∧ event.input.sunk[0]! = false := by native_decide
+
+/-- The original pure arithmetic slot remains unsunk through the actual
+terminator, ordinary body and every retained body-record boundary. -/
+theorem actual_zeroColor_body_witness :
+    ∃ b term scanned, SourceBodySplit function event b term scanned ∧
+      scanBlock event.ctx event.block event.termInst event.isBranch
+        (sourceBodyIndices function event.block b) term.output.state = .ok scanned ∧
+      ZeroColorLe event.input term.output.state ∧
+      ZeroColorLe term.output.state scanned.state ∧
+      (∀ r ∈ scanned.records, r.input.sunk[0]! = false ∧ r.output.state.sunk[0]! = false) ∧
+      scanned.state.sunk[0]! = false := by
+  have dom := ScalarAdd.lowering_domain "scalar_add_scan" [] .systemVI64
+  obtain ⟨b,term,scanned,split⟩ := stock_lower_body_scan_split run dom.2 events
+  have initial := stock_scan_zeroColorLe split.termRun
+  rw [split.termInput] at initial
+  have actualRun : scanBlock event.ctx event.block event.termInst event.isBranch
+      (sourceBodyIndices function event.block b) term.output.state = .ok scanned := by
+    unfold scanBlock
+    rw [runScans_ref]
+    exact split.scanned.runScansRef
+  have blockFrame := stock_scanBlock_zeroColorLe actualRun
+  have frames := stock_scans_zeroColorLe split.scanned
+  obtain ⟨zero,safe⟩ := actual_pure_color_data
+  have termZero : term.output.state.entryColor[0]! = 0 := by rw [initial.1]; exact zero
+  have termSafe := initial.2 0 zero safe
+  refine ⟨b,term,scanned,split,actualRun,initial,blockFrame,?_,blockFrame.2 0 termZero termSafe⟩
+  intro r member
+  obtain ⟨pre,post⟩ := frames.2 r member
+  exact ⟨pre.2 0 termZero termSafe,post.2 0 termZero termSafe⟩
 
 end Backend.Stock.Proof.ScalarAddScanWitness

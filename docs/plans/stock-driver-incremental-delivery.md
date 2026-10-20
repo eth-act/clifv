@@ -50,8 +50,14 @@ reconcile those into the existing modules, then derive pure-source zero-color/un
 complete broader straight-line production classes. Actual `sink_inst` rejects
 zero-color targets; deferred sunk effects remain a separate mandatory obligation.
 Classes whose actual Stock code differs from legacy also require a direct Stock
-semantic checker/consumer contract: legacy-code equality cannot complete #140. Do not publish the adapter
-as a replacement for complete function activation. All original rule/effect,
+semantic checker/consumer contract: legacy-code equality cannot complete #140. The new StockPureUnsunk leaf now proves immutable colors and zero-color unsunk
+preservation through all constructors, arbitrary interpreter runs, actual scans,
+complete blocks and retained-record boundaries. Eight public roots/all126owned
+constants are standard-only; actual sink/interpreter and complete source-body
+witnesses pass normal builds/trust audits. SourceMetadata/buildCtx derivation and
+full node/traversal propagation remain next, followed by broader function
+simulation and the direct semantic consumer contract. Do not publish this proof
+checkpoint as a replacement for complete function activation. All original rule/effect,
 source/block/whole-driver simulation and Stock-only completeness remain open.
 Optimizer and exceptional-edge routes await their consumer adapters.
 All remaining original #140 obligations remain open.

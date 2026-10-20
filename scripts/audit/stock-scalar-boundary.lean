@@ -39,3 +39,7 @@ import FV.E2E.ScalarAddBoundaryWitness
 #print axioms Backend.Stock.Proof.ScalarAddScanWitness.actual_event_block -- witness: native_decide
 
 #print axioms Backend.Stock.Proof.ScalarAddScanWitness.actual_body_split_witness -- witness: native_decide
+
+#print axioms Backend.Stock.Proof.ScalarAddScanWitness.actual_pure_color_data -- witness: native_decide
+
+#print axioms Backend.Stock.Proof.ScalarAddScanWitness.actual_zeroColor_body_witness -- witness: native_decide
