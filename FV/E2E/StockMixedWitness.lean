@@ -183,7 +183,7 @@ open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0
 /-- The actual mixed artifacts inhabit the shared production consumer, rather
 than a separate experimental checker or a caller-provided proof contract. -/
 theorem compiled_semantic_exists (config : Configuration) (cleanup : Bool) :
-    ∃ (result : Stock.Result) vcp rf af fa fb,
+    ∃ (result : Stock.Result), ∃ vcp rf af fa fb,
       CompiledSemanticNI (function config) 0 result.code vcp rf af fa fb ∧
       CompiledStockArithmeticStage (function config) cleanup 0 result vcp rf af fa fb ∧
       FormsCovered ⟨fa.k,af.slotBase⟩ vcp := by

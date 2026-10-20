@@ -45,3 +45,11 @@ remove the unneeded clean arithmetic checkout after its landing.
 All original #140 uncovered family/effect, omitted/sunk memory/trap/call/CFG,
 source/block/whole-driver simulation, Stock-only completeness, optimizer/unwind
 and all production-consumer obligations remain open after this class.
+
+Follow-up source review corrected the typed existential binder in
+`StockMixedWitness.compiled_semantic_exists`. All24 changed Lean files parse.
+An isolated kernel check of the new `accepts_previous` and
+`compileWithFallback_spec` against the frozen arithmetic module passes with
+exactly the standard three axioms. [Scope and source hashes](stock-mixed-static-routing-check.json).
+These checks do not validate the full module port or production adapters;
+normal module, witness, runtime and consumer gates above remain pending.
