@@ -313,6 +313,86 @@ shared with slice 5 as `IselCovT`), `ResClassOk` from it, and the typed kill-fre
 (`KillRunsHyp`/`TryDefsExact`/`killFreeB_lower` over `LowT`, which needs slice 5's typed
 `try_call` exclusion).
 
+**S11e5 Stage C, slice 7, composition (FloatsC7D: typed contracts, driver, Main/Final).** The
+typed obligations (`Proof/LowerContractT.lean`): `CtxT f ctx` (`CtxInvT`, `InstScopeT`, integer
+externs; `CtxInv.toCtxT`); statements on subset-E instructions of a typed context
+(`LowerRulesCorrectTI`, `MemRulesCorrectRTI`, `CallRulesCorrectT`, `IndRulesCorrectT`) and
+`NonEUnmatchableT` (on the other typed-scope instructions only the float roots match);
+terminators `LowerTermOkT` (a `return` puts value `x` in the next return register of its class
+`valClassOf ctx x`: `retRegsT`, `retRegsC_eq`), `LowerTermRulesCorrectT`, `BranchRulesCorrectT`,
+`TryRulesCorrectT`, `TryIndRulesCorrectT` and the four unmatchability Props; dispatchers
+`lowerInstOk_runTermT` (with the proven `LowerRulesCorrectT`/`MemRulesCorrectRT`/
+`LowerRulesCorrectFT` and `lower_nonroot_nomatchT`), `lowerTermOk_runTermT`, `branchOk_runTermT`,
+`tryOk_runTermT`, `tryIndOk_runTermT`; the driver's calls of one context `InstCallsT`/
+`TermCallsT`/`TryCallsT`/`TryIndCallsT` with `*_of_rules` and integer `.toT`. The typed driver
+(`Proof/LowerSimT.lean`): `MatchT` (at `posT`, tracked values typed: `TypedA`), `DriverHypT`,
+`stmt_stepT`, `term_stepT` (returns: `RetRegsOk`, the values' type classes, and the return
+types), `term_step_tryT`, `entryLoads_runT` (an `ldr s`/`ldr d` under `MemRefinesFP`),
+`entry_stepT` (class-aware `Args`, `argPairsT`), `sim_runT`, `driver_correctT`;
+`DriverHyp.toT`. Composition (`E2E/ComposeT.lean`): `IselSimT`, `ArmRefinesT` (returned value
+`j` held by the `j`-th return register of the values' classes: x0.. integers, v0.. floats),
+`backend_correct_of_layers_exT`/`T`; for integer returns `backend_correct_of_layers_ex_ofT`
+and `ArmRefinesT.toArmRefines`. Main/Final (`E2E/MainT.lean`, `E2E/FinalT.lean`,
+`E2E/FinalDirectT.lean`): `InSubsetT`, `CompiledT`/`CompiledAT` (`lowerCheckT`),
+`loweringObligationsT_of_check`, `iselSim_of_driverT`, `argsAtEntry_bodyT` (x0–x8/v0–v7),
+`iselSimT_of_rules`, `backend_correct_of_rules_exT`/`T`, and at `csem` (`memRefinesFP_csem`)
+`backend_correct_m4_exT`, `backend_correct_final_exT`, `backend_correct_finalT` under
+`TypedRules` (the 13 open typed families); integer specialization `backend_correct_final_ofT`
+(`backend_correct_final`'s premises and conclusion through the typed chain);
+`CompiledAT.of_lowerT`, `backend_correct_finalT_alloc` (slice 6's `allocChecked_allocResultT`,
+decided premises `arityOkB`, `tryArgClassOk`, `resClassOkB`, `ctlSpillB`, `formsCoveredB`,
+`killFreeB`). Witness `FVTest/E2E/FloatFinalT.lean`: `fW` (float `load`/`f64const`/`select`/
+`store`/`bitcast` between integer parameters and return) has `InSubsetT`, `CompiledT`,
+`CompiledAT` (also via `CompiledAT.of_lowerT` with the spill allocation) and `FormsCovered`;
+`fMv` (float parameters/return) has `InSubsetT`, but `lowerRFunc`'s `ctlCheck` rejects it until
+slice 5 widens `ctlInstOk`. The dead-cleanup route (`E2E/DeadCleanupT.lean`):
+`CompiledCleanupT`/`AT`, `backend_correct_of_rules_cleanup_exT` (`prune_correct`), at `valueSem`
+(`memRefinesFP_valueSem`) `backend_correct_m4_cleanup_exT`, `backend_correct_final_cleanup_exT`/
+`T`, integer specialization `backend_correct_final_cleanup_ofT`; witness `compiledCleanupT_w`.
+Two-world entry: `entry_step2T`. The open items of this paragraph are closed or narrowed by the
+next one.
+
+**S11e5 Stage C, slice 7, store typing, integer roots, world and input scope (FloatsC7I,
+`agent/floats-c7`).** *Store typing* (the false premise of the earlier typed final theorems):
+the integer `store` roots 1064–1067 dispatch on the stored value's type, so `NonEUnmatchableT`
+now takes `StoreTyped ctx inst` (a float `store` stores a float-typed value; one definition, in
+`Proof/LowerContractT.lean`, with `StoresTyped`, `storeTyped_of_instE`, `CtxInv.storesTyped`),
+decided per function by `Compile.storeTypedB` (`FV/Compile/StoreTyped.lean`: `storeTypedB_sound`,
+`storeTypedB_of_functionE`) and linked to `buildCtx` by `storesTyped_of_buildCtx`; the check is
+the new field `InSubsetT.storeTyped` (`InSubset.toT` derives it from `functionE`, so the integer
+specializations keep the integer premises), threaded through `lowerInstOk_runTermT` →
+`instCallsT_of_rules` → `iselSimT_of_rules`. FloatsC7F's integer roots over typed contexts are
+proven and plugged in: `lowerRulesCorrectTI_program` (`Proof/IselLowerAllTI.lean`),
+`memRulesCorrectRTI_program` (`Proof/IselMemAllTI.lean`), `nonEUnmatchableT_program`
+(`Proof/IselNonETI.lean`). At FloatsC5's request the branch/`try_call` families take
+`TermIntPos ctx t` (a `brif` condition, a `try_call`'s callee and arguments are in integer
+positions; `termIntPos_of_functionET`, `DriverHypT.termIntPos`). `TypedRules` is now the ten
+control families, its call families in the pinned form of the two-world driver
+(`Proof/LowerContractTP.lean`: `CallRulesCorrectTP`, `IndRulesCorrectTP`, `TryRulesCorrectTP`,
+`TryIndRulesCorrectTP` with `*_of_P`, dispatchers `lowerInstOkP_runTermT`, `tryOkP_runTermT`,
+`tryIndOkP_runTermT`). *World and non-interference*: `E2E/LinkWorldT.lean`
+(`driverHypT_relW_of`, `iselSim_relWT`, `backend_correct_worldT`: returns in their classes'
+registers, `RetRegsOk`, with the return types; `armRefinesT_of_actRet`), `E2E/PairDriverT.lean`
+(`instCalls_pairT`/`tryCalls_pairT`/`tryIndCalls_pairT` from the pinned typed contracts at
+`csemGF`, `termCalls_pairT`, `vcode_niT` on `entry_step2T`, `backend_correct_world_niT`),
+`E2E/DeadCleanupPairT.lean` (the `valueSem` forms through `valueSemGF`), `E2E/CompiledEitherT.lean`
+(the per-state `X` forms, `CompiledEitherT`, `CompiledEither.toT`, the four pipeline dispatches).
+*Typed input scope*: `E2E/LinkScopeDefsT.lean` (`lowerScopeTB`, `lowersTB` with `ctlSpillB`/
+`formsCoveredB default`/`killFreeB`, `fnScopeTB` with `storeTypedB`/`tryArgClassOk`/
+`resClassOkB`, `InScopePT`), `E2E/LinkScopeT.lean` (`lowerScopeT_of`,
+`lowerScopeTB_of_lowerScopeB`, `inSubsetT_of_fnScopeT`, `allocChecked_of_fnScopeT`,
+`compiledAT_of_fnScopeT`, `compiledT_of_fnScopeT`, `backend_correct_finalT_scope`).
+`InScopeIn`/`fnScopeInB`/`compileExe` are unchanged. Witnesses: `FVTest/E2E/FloatFinalT.lean`
+(`storeTypedB` of `fW`/`fMv`; `fBadStore`, a float store of an integer value, is rejected),
+`FVTest/E2E/FloatLinkT.lean` (`StoresTyped`, `TermIntPos`, `CompiledEitherT`, `fnScopeTB fW` and
+its consequences, `lowerScopeTB_of_lowerScopeB`). Open: the ten control families (FloatsC5);
+`Link.compileExe_correctT` needs a typed port of the link induction (`LinkSys.Ok` has
+`subset : InSubset`, `compiled : CompiledEither`, and `LinkSys.Thm` fixes `us.map (·.2)` to
+x0, x1, …): a `LinkSysT` beside it (FV/E2E/LinkArmT.lean, LinkGoodT.lean, …) with `InSubsetT`,
+`CompiledEitherT`, `RetRegsOk` in its `Thm`, program callees integer-signature (`declSigB`, calls
+integer-only in `functionET`) so call sites keep x0..; `functionET` still excludes float calls and
+the S11f arithmetic.
+
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
 (`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
