@@ -1,4 +1,5 @@
 import FV.Clif
+import FV.Clif.Unwind
 import FV.Opt.Legalize128Pass
 import Lean.Data.Json
 
@@ -18,6 +19,11 @@ Per file:
    run with `Clif.run` (empty `Env`, the file's `; data:` objects, fuel `1_000_000`) and compared with its expectation.
 4. With an oracle file (JSON lines from `clif-oracle interp`, schema in
    `docs/contracts/clif.md`), each run is also compared with the Cranelift interpreter.
+
+`--unwind` (S10b, `docs/plans/unwinding.md`): runs use `Clif.runX` (unwinding), the file's
+`%throw` stub is dropped and `%throw(tag, p1, p2)` is the extern raising an exception caught by
+`tagN` handlers with `N = tag` and by `default` handlers, payload `[p1, p2]` (Cranelift's
+`__cranelift_throw` runner); the oracle is `clif-throw-native` (`scripts/clif-unwind-native.sh`).
 
 Prints one line per file and a `TOTAL` line; exit status 1 iff something failed or
 disagreed.
@@ -177,13 +183,27 @@ def callees (f : Function) : List String := f.externs.map (·.2.name)
 /-- Does the filetest treat the extern `name` as available? `rustEnv`: the trusted Rust
 contracts (`Clif.Rust.env`) provide the mem* functions, the `__*ti3` 128-bit division
 helpers, and every diverging panic entry. -/
-def extAvailable (rustEnv : Bool) (name : String) : Bool :=
-  (rustEnv && (Clif.Rust.isPanic name || name == "memcpy" || name == "memset" ||
+def extAvailable (rustEnv : Bool) (name : String) (unwind : Bool := false) : Bool :=
+  (unwind && name == "throw") || (rustEnv && (Clif.Rust.isPanic name || name == "memcpy" || name == "memset" ||
     name == "memmove" || name == "memcmp" || Clif.Rust.isDivHelper name))
+
+/-- `--unwind`: `%throw(tag : i32, p1 : i64, p2 : i64)` raises `tag` with payload `[p1, p2]`. -/
+def throwEnv : XEnv where
+  extern n := if n == "throw" then some fun vals mem =>
+      match vals with
+      | [t, p1, p2] => .unwound ⟨fun k => k == t.toNat, [p1, p2]⟩ mem
+      | _ => .stuck "throw: expects (i32, i64, i64)"
+    else none
+
+/-- A `runX` outcome for the report (an exception leaving the run is `stuck`, with its
+payload). -/
+def ofX : XOutcome → Outcome
+  | .unwound e _ => .stuck s!"unwound, payload {showVals e.payload}"
+  | o => o.toOutcome
 
 /-- Supported functions whose transitive in-file callees are all supported; the others get
 a reason. -/
-def closure (rustEnv : Bool) (pf : ParsedFile) : List (String × Except String Function) :=
+def closure (rustEnv : Bool) (pf : ParsedFile) (unwind : Bool := false) : List (String × Except String Function) :=
   let direct : List (String × Except String Function) := pf.funcs.map fun f =>
     (f.name, match f.func with
       | .ok fn => .ok fn
@@ -201,7 +221,7 @@ def closure (rustEnv : Bool) (pf : ParsedFile) : List (String × Except String F
         match (callees fn).find? (fun c => (bad.lookup c).isSome) with
         | some c => some (n, s!"calls %{c}, which is unsupported")
         | none =>
-          match (callees fn).find? (fun c => !names.contains c && !extAvailable rustEnv c) with
+          match (callees fn).find? (fun c => !names.contains c && !extAvailable rustEnv c unwind) with
           | some c => some (n, s!"calls extern %{c} (not in this file)")
           | none => none
       | .error _ => none
@@ -220,12 +240,14 @@ def sameOutcome : Outcome → Outcome → Bool
   | _, _ => false
 
 def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord))
-    (printDir : Option String) (rustEnv : Bool) (legal : Bool) : IO Counts := do
+    (printDir : Option String) (rustEnv : Bool) (legal : Bool) (unwind : Bool := false) :
+    IO Counts := do
   let src ← IO.FS.readFile path
-  let pf := parseFile src
+  let pf0 := parseFile src
+  let pf := if unwind then { pf0 with funcs := pf0.funcs.filter (·.name != "throw") } else pf0
   let mut c : Counts := {}
   let mut notes : Array String := #[]
-  let cl := closure rustEnv pf
+  let cl := closure rustEnv pf unwind
   -- Program of all parsed functions (callers of unsupported ones are excluded from runs).
   let supported := pf.funcs.filterMap fun f => f.func.toOption
   let data := match pf.data with | .ok ds => ds | .error _ => []
@@ -258,7 +280,8 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
     | some (.ok fn) =>
       let mut i := 0
       for r in fn.runs do
-        let o := run (if rustEnv then Clif.Rust.env else {}) prog r.func r.args fuel
+        let o := if unwind then ofX (runX throwEnv prog r.func r.args fuel)
+          else run (if rustEnv then Clif.Rust.env else {}) prog r.func r.args fuel
         let ok := check r o
         if ok then c := { c with pass := c.pass + 1 }
         else
@@ -321,7 +344,7 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
   return c
 
 def usage : String :=
-  "usage: clif-filetest [-v] [--oracle-dir DIR | --oracle FILE.json] [--print-dir DIR] [--rust-env] [--legalize128] FILE.clif..."
+  "usage: clif-filetest [-v] [--oracle-dir DIR | --oracle FILE.json] [--print-dir DIR] [--rust-env] [--legalize128] [--unwind] FILE.clif..."
 
 end ClifFiletest
 
@@ -333,6 +356,7 @@ def main (args : List String) : IO UInt32 := do
   let mut printDir : Option String := none
   let mut rustEnv := false
   let mut legal := false
+  let mut unwind := false
   let mut files := #[]
   let mut rest := args
   while !rest.isEmpty do
@@ -343,6 +367,7 @@ def main (args : List String) : IO UInt32 := do
     | "--print-dir" :: d :: r => printDir := some d; rest := r
     | "--rust-env" :: r => rustEnv := true; rest := r
     | "--legalize128" :: r => legal := true; rest := r
+    | "--unwind" :: r => unwind := true; rest := r
     | f :: r => files := files.push f; rest := r
     | [] => pure ()
   if files.isEmpty then
@@ -372,7 +397,7 @@ def main (args : List String) : IO UInt32 := do
           IO.println s!"{f}: oracle file {p} missing"
           badOracle := badOracle + 1
           pure none
-    let c ← runFile verbose f oracle printDir rustEnv legal
+    let c ← runFile verbose f oracle printDir rustEnv legal unwind
     if c.unsupported > 0 then filesWithUnsupported := filesWithUnsupported + 1
     total := total.add c
   let legalTotal := if legal then

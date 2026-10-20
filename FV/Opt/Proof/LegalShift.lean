@@ -5,16 +5,16 @@ import FV.Opt.Proof.LegalArith
 
 Split from `LegalArith.lean`; the per-width pattern theorems are in `LegalShift8/16/32/64`.
 
-`bv_decide` on the whole 128-bit identity with a 128-bit amount runs out of memory. The proofs
-here keep the SAT problems small:
-
-* `ishl`/`ushr`/`sshr`: the source shift by `A mod 128` is a shift by the 7-bit vector
-  `A.setWidth 7` (`shiftV_eq`); the 128-bit barrel shifter over 7 amount bits is small.
-* `rotl`/`rotr`: the halves of a 128-bit left rotation by `n < 128` are proved bit by bit
-  (`rotl_lo`, `rotl_hi`) as 64-bit shift formulas; rewritten with a 64-bit amount
-  (`rotl_lo_bv`, `rotl_hi_bv`), the remaining identities are 64-bit ones. A right rotation by
-  `n` is the left rotation by `(128 - n) % 128` (`rotateRight_eq`), the amount `rotr`'s
-  prefix computes (`rotrAmt`).
+A run is split at the amount: the prefix computes the 64-bit amount `J < 128` (`amtK`, for
+`rotr` `rotrAmt`; `vs_pre`), the shift core is evaluated with `J` a free variable (`shift_core`,
+`RotCore`; a computed amount — `rotr`'s `select` — makes `simp` distribute over the selects and
+run out of memory), and the two are glued (`shift_glue`, `rot_glue`). The identities of a core
+(`vs_fin`) are kernel-checked: the selects are split, the 64-bit amounts become `Nat`s in
+`J.toNat`, the source halves are the 64-bit shift formulas of `shl_lo`, …, `sshr_hi` (shifts;
+bit by bit, `LegalArith.lean`) or `rotLo`/`rotHi` (rotations; the halves of the rotation by
+`rotl_lo`, `rotl_hi`), and the amounts agree by `omega`. A right rotation by `n` is the left
+rotation by `(128 - n) % 128` (`rotateRight_eq`), the amount `rotr`'s prefix computes
+(`rotrAmt`).
 -/
 
 namespace Opt.Legal
@@ -49,69 +49,7 @@ theorem shiftV_eq {op : BinaryOp} (hop : op = .ishl ∨ op = .ushr ∨ op = .ssh
     simp only [shiftV, shiftVbv, BitVec.shiftLeft_eq', BitVec.ushiftRight_eq',
       BitVec.sshiftRight', hk]
 
-/-! ## Rotations: halves bit by bit -/
-
-theorem getLsbD_idx {w : Nat} (x : BitVec w) {i j : Nat} (h : i = j) :
-    x.getLsbD i = x.getLsbD j := by
-  rw [h]
-
-theorem rotl_lo (xl xh : BitVec 64) (n : Nat) (hn : n < 128) :
-    ((xh ++ xl).rotateLeft n).extractLsb' 0 64 =
-      if n < 64 then xl <<< n ||| xh >>> (64 - n) else xh <<< (n - 64) ||| xl >>> (128 - n) := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateLeft, BitVec.getLsbD_append,
-    hi, decide_true, Bool.true_and, Nat.zero_add, Nat.mod_eq_of_lt (show n < 64 + 64 by omega)]
-  by_cases h2 : n < 64
-  · simp only [h2, ite_true, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
-      BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and]
-    by_cases h1 : i < n
-    · simp only [h1, ite_true, show ¬ (64 + 64 - n + i < 64) by omega, ite_false,
-        decide_true, Bool.not_true, Bool.false_and, Bool.false_or]
-      exact getLsbD_idx _ (by omega)
-    · simp only [h1, ite_false, show i < 64 + 64 by omega, show i - n < 64 by omega,
-        decide_true, decide_false, Bool.not_false, Bool.true_and, ite_true,
-        BitVec.getLsbD_of_ge xh (64 - n + i) (by omega), Bool.or_false]
-  · simp only [h2, ite_false, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
-      BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and, show i < n by omega]
-    by_cases h3 : i < n - 64
-    · simp only [show 64 + 64 - n + i < 64 by omega, ite_true, h3, decide_true, Bool.not_true,
-        Bool.false_and, Bool.false_or]
-    · simp only [show ¬ (64 + 64 - n + i < 64) by omega, ite_false, h3, decide_false,
-        Bool.not_false, Bool.true_and, BitVec.getLsbD_of_ge xl (128 - n + i) (by omega),
-        Bool.or_false]
-      exact getLsbD_idx _ (by omega)
-
-theorem rotl_hi (xl xh : BitVec 64) (n : Nat) (hn : n < 128) :
-    ((xh ++ xl).rotateLeft n).extractLsb' 64 64 =
-      if n < 64 then xh <<< n ||| xl >>> (64 - n) else xl <<< (n - 64) ||| xh >>> (128 - n) := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateLeft, BitVec.getLsbD_append,
-    hi, decide_true, Bool.true_and, Nat.mod_eq_of_lt (show n < 64 + 64 by omega)]
-  by_cases h2 : n < 64
-  · simp only [h2, ite_true, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
-      BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and, show ¬ (64 + i < n) by omega,
-      ite_false, show 64 + i < 64 + 64 by omega]
-    by_cases h1 : i < n
-    · simp only [h1, show 64 + i - n < 64 by omega, ite_true, decide_true, Bool.not_true,
-        Bool.false_and, Bool.false_or]
-      exact getLsbD_idx _ (by omega)
-    · simp only [h1, show ¬ (64 + i - n < 64) by omega, ite_false, decide_false,
-        Bool.not_false, Bool.true_and, BitVec.getLsbD_of_ge xl (64 - n + i) (by omega),
-        Bool.or_false]
-      exact getLsbD_idx _ (by omega)
-  · simp only [h2, ite_false, BitVec.getLsbD_or, BitVec.getLsbD_shiftLeft,
-      BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and]
-    by_cases h3 : i < n - 64
-    · simp only [show 64 + i < n by omega, ite_true, show ¬ (64 + 64 - n + (64 + i) < 64) by omega,
-        ite_false, h3, decide_true, Bool.not_true, Bool.false_and, Bool.false_or]
-      exact getLsbD_idx _ (by omega)
-    · simp only [show ¬ (64 + i < n) by omega, ite_false, show 64 + i < 64 + 64 by omega,
-        show 64 + i - n < 64 by omega, ite_true, h3, decide_true, decide_false,
-        Bool.not_false, Bool.true_and, BitVec.getLsbD_of_ge xh (128 - n + i) (by omega),
-        Bool.or_false]
-      exact getLsbD_idx _ (by omega)
+/-! ## Rotations -/
 
 /-- A right rotation is a left rotation by the complementary amount. -/
 theorem rotateRight_eq (X : BitVec 128) {n : Nat} (hn : n < 128) :
@@ -188,27 +126,60 @@ theorem rotrAmt_toNat {K : BitVec 64} (hK : K.toNat < 128) :
 
 /-! ## The proof steps of a pattern theorem -/
 
-/-- Unfold the variable-shift pattern. -/
-macro "vs_unfold" : tactic => `(tactic|
-  simp only [Pat.varShiftFull, Pat.amt, Pat.varShift, Pat.cross, List.cons_append,
-    List.nil_append, reduceCtorEq, beq_iff_eq, ite_false, ite_true, beq_self_eq_true])
-
-/-- The 64-bit operations of a run, in `bv_decide`'s fragment. -/
+/-- The 64-bit operations of a run, unfolded to bit-vector operations. -/
 macro "vs_sem" : tactic => `(tactic|
   simp only [ishl64, ushr64, sshr64, Sem.binary, Sem.bor, Sem.band, Sem.isub, select_bif,
     Sem.icmp, Sem.intcc, bool8_eq, Sem.uextend])
 
-/-- A variable shift (`ishl`/`ushr`/`sshr`) by the amount `a`: the whole run, the source value
-generalised, then the identities with the 7-bit amount. -/
-macro "vs_shift " a:term : tactic => `(tactic| (
-  rw [shiftV_eq (by simp) $a]
-  generalize hX : shiftVbv _ _ (BitVec.setWidth 7 $a) = X
-  simp only [shiftVbv] at hX
-  vs_unfold
-  pat_eval
-  vs_sem
-  subst_vars
-  constructor <;> bv_decide -enums))
+/-- The residual identities of a core run: the selects split, the 64-bit amounts as `Nat`s
+(`J.toNat` arithmetic), the source halves by `shl_lo`, …, then the amounts by `omega`. -/
+macro "vs_fin" : tactic => `(tactic| (
+  (try simp only [b8_ne0, Bool.cond_eq_ite])
+  (repeat' split) <;>
+  simp only [BitVec.shiftLeft_eq', BitVec.ushiftRight_eq', BitVec.sshiftRight_eq',
+    BitVec.toNat_umod, BitVec.toNat_sub, BitVec.toNat_ofNat, Opt.Proof.KernelBV.reduceToNatAndMask,
+    BitVec.ule_eq_decide, BitVec.lt_def, beq_iff_eq, bne_iff_ne, ne_eq, BitVec.toNat_eq,
+    decide_eq_true_eq, Bool.not_eq_true, Nat.reducePow, Nat.reduceMod] at * <;>
+  simp (disch := omega) only [shl_lo, shl_hi, ushr_lo, ushr_hi, sshr_lo, sshr_hi, ite_eq_left,
+    ite_eq_right, Nat.mod_eq_of_lt, BitVec.shiftLeft_zero, BitVec.ushiftRight_zero,
+    BitVec.sshiftRight_zero, BitVec.ushiftRight_eq_zero, BitVec.shiftLeft_eq_zero, BitVec.or_zero,
+    BitVec.zero_or] <;>
+  eq_leaf))
+
+/-- Evaluate the core of a variable shift (amount register `ha`). -/
+macro "vs_core_eval " h0:ident h1:ident ha:ident : tactic => `(tactic|
+  simp (config := { maxSteps := 4000000 }) [Pat.varShift, Pat.cross, S, K, bin,
+    runPat, evalInst, dframe, Frame.getAs, Frame.get, Regs.set, Res.ofOption,
+    BinaryOp.isShift, Sem.shift, bind, Res.bind, width_i8, width_i64,
+    Regs.setMany_cons, Regs.setMany_nil, Out128, shiftV, $h0:ident, $h1:ident, $ha:ident])
+
+/-- The core of a variable shift (`ishl`/`ushr`/`sshr`) on an opaque amount `J < 128` at `a`. -/
+private theorem shift_core (op : BinaryOp) (hop : op = .ishl ∨ op = .ushr ∨ op = .sshr)
+    (a t : ValueId) (hat : (a = 6 ∧ t = 7) ∨ (a = 7 ∧ t = 8)) :
+    ∀ (ρ : Regs) (xl xh J : BitVec 64), J.toNat < 128 → ρ 0 = some (V64 xl) →
+      ρ 1 = some (V64 xh) → ρ a = some (V64 J) →
+      ∃ ρ', runPat ρ (Pat.varShift op a t) = some ρ' ∧
+        Out128 ρ' 3 4 (shiftV op (xh ++ xl) J.toNat) := by
+  intro ρ xl xh J hJ h0 h1 ha
+  rcases hat with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rcases hop with rfl | rfl | rfl <;>
+    (vs_core_eval h0 h1 ha
+     vs_sem
+     constructor <;> vs_fin)
+
+/-- A variable shift by `J`: an amount prefix computing `J` at `a`, then the core. -/
+private theorem shift_glue {ρ0 : Regs} {pre : List Stmt} {op : BinaryOp} {a t : ValueId}
+    (hc : ∀ (ρ : Regs) (xl xh J : BitVec 64), J.toNat < 128 → ρ 0 = some (V64 xl) →
+      ρ 1 = some (V64 xh) → ρ a = some (V64 J) →
+      ∃ ρ', runPat ρ (Pat.varShift op a t) = some ρ' ∧
+        Out128 ρ' 3 4 (shiftV op (xh ++ xl) J.toNat))
+    {xl xh J : BitVec 64} (hJ : J.toNat < 128)
+    (hpre : ∃ ρ1, runPat ρ0 pre = some ρ1 ∧ ρ1 0 = some (V64 xl) ∧ ρ1 1 = some (V64 xh) ∧
+      ρ1 a = some (V64 J)) :
+    ∃ ρ, runPat ρ0 (pre ++ Pat.varShift op a t) = some ρ ∧
+      Out128 ρ 3 4 (shiftV op (xh ++ xl) J.toNat) := by
+  obtain ⟨ρ1, hp, h0, h1, ha⟩ := hpre
+  obtain ⟨ρ, hr, hout⟩ := hc ρ1 xl xh J hJ h0 h1 ha
+  exact ⟨ρ, by rw [runPat_append, hp, Option.bind_some, hr], hout⟩
 
 /-! ### Rotations: the rotate core on an opaque amount
 
@@ -226,15 +197,11 @@ macro "rot_core" : tactic => `(tactic| (
   intro ρ xl xh J hJ h0 h1 ha
   generalize hLo : rotLo xl xh J = Lo
   generalize hHi : rotHi xl xh J = Hi
-  have hJ' : J < 128#64 := by rw [BitVec.lt_def]; simpa using hJ
   simp only [rotLo, rotHi] at hLo hHi
-  simp (config := { maxSteps := 4000000 }) [Pat.varShift, Pat.cross, S, K, bin,
-    runPat, evalInst, dframe, Frame.getAs, Frame.get, Regs.set, Res.ofOption,
-    BinaryOp.isShift, Sem.shift, bind, Res.bind, width_i8, width_i64,
-    Regs.setMany_cons, Regs.setMany_nil, h0, h1, ha]
+  vs_core_eval h0 h1 ha
   vs_sem
   subst hLo hHi
-  constructor <;> bv_decide -enums))
+  constructor <;> vs_fin))
 
 theorem rotCore_6_7 : RotCore 6 7 := by rot_core
 theorem rotCore_7_8 : RotCore 7 8 := by rot_core
@@ -276,7 +243,44 @@ macro "vs_pre" : tactic => `(tactic| (
   simp only [Pat.amt, List.cons_append, List.nil_append]
   pat_eval
   simp only [amtK, rotrAmt, Sem.binary, Sem.band, Sem.isub, select_bif, Sem.icmp, Sem.intcc,
-    bool8_eq, Sem.uextend]
-  try bv_decide -enums))
+    bool8_eq, Sem.uextend, BitVec.setWidth_eq, BitVec.zeroExtend_eq_setWidth]
+  all_goals (try simp only [b8_ne0])
+  all_goals (try simp only [Bool.cond_eq_ite, beq_iff_eq])
+  all_goals congr))
+
+/-- The variable-shift patterns (`ishl`/`ushr`/`sshr`) with a 64-bit amount `a`. -/
+theorem pat_varShiftW (op : BinaryOp) (hop : op = .ishl ∨ op = .ushr ∨ op = .sshr)
+    (xl xh a : BitVec 64) :
+    ∃ ρ, runPat (canon [V64 xl, V64 xh, V64 a]) (Pat.varShiftFull op .wide) = some ρ ∧
+      Out128 ρ 3 4 (shiftV op (xh ++ xl) (a.toNat % 128)) := by
+  rw [← amtK_toNat (Nat.le_refl 64) a]
+  rcases hop with rfl | rfl | rfl <;>
+    exact shift_glue (pre := (Pat.amt .wide false 5).1) (shift_core _ (by simp) 6 7 (.inl ⟨rfl, rfl⟩))
+      (amtK_lt (by omega) a) (by vs_pre)
+
+example : ∃ ρ, runPat (canon [V64 1#64, V64 2#64, V64 3#64]) (Pat.varShiftFull .ishl .wide) =
+    some ρ ∧ Out128 ρ 3 4 (shiftV .ishl (2#64 ++ 1#64) ((3#64).toNat % 128)) :=
+  pat_varShiftW .ishl (.inl rfl) 1#64 2#64 3#64
+
+/-- The variable-shift patterns (`ishl`/`ushr`/`sshr`) with an amount `a` narrower than 64 bits. -/
+theorem pat_varShiftN (op : BinaryOp) (hop : op = .ishl ∨ op = .ushr ∨ op = .sshr) (t : Ty)
+    (ht : t = .i8 ∨ t = .i16 ∨ t = .i32) (xl xh : BitVec 64) (a : BitVec t.width) :
+    ∃ ρ, runPat (canon [V64 xl, V64 xh, ⟨t, a⟩]) (Pat.varShiftFull op .narrow) = some ρ ∧
+      Out128 ρ 3 4 (shiftV op (xh ++ xl) (a.toNat % 128)) := by
+  rcases ht with rfl | rfl | rfl <;> rw [← amtK_toNat (by simp) a] <;>
+  rcases hop with rfl | rfl | rfl <;>
+    exact shift_glue (pre := (Pat.amt .narrow false 5).1)
+      (shift_core _ (by simp) 7 8 (.inr ⟨rfl, rfl⟩)) (amtK_lt (by simp) a) (by vs_pre)
+
+example : ∃ ρ, runPat (canon [V64 1#64, V64 2#64, ⟨.i8, 3#8⟩]) (Pat.varShiftFull .ushr .narrow) =
+    some ρ ∧ Out128 ρ 3 4 (shiftV .ushr (2#64 ++ 1#64) ((3#8).toNat % 128)) :=
+  pat_varShiftN .ushr (.inr (.inl rfl)) .i8 (.inl rfl) 1#64 2#64 3#8
+
+/-- A variable shift (`ishl`/`ushr`/`sshr`) by the amount `a` (`pat_varShiftW`; a narrow amount
+by `pat_varShiftN`, its type read off the goal). -/
+macro "vs_shift " a:term : tactic => `(tactic|
+  first
+  | exact pat_varShiftW _ (by simp) _ _ $a
+  | (refine pat_varShiftN _ ?_ _ ?_ _ _ _ <;> simp))
 
 end Opt.Legal

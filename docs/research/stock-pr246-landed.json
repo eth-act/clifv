@@ -1,0 +1,9 @@
+{
+  "utc": "2026-10-17T14:16:24.234741+00:00",
+  "pr": 246,
+  "merge_commit": "fc4a06f39f3840f27fc2e41e158b2ada0bbbcf60",
+  "validated_head": "a071e715d1feea0266c86c3b46d5cb96db885c91",
+  "landed_tree_equals_validated_tree": true,
+  "production": "legacy",
+  "full_goal_complete": false
+}
