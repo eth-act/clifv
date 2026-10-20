@@ -1,0 +1,35 @@
+{
+  "utc": "2026-10-16T18:00:46.851194+00:00",
+  "archive": "/home/lee/.clifv-recovery/20261016T180046Z-try-rule/checkpoint.tar.gz",
+  "sha256": "0927aa52a326cb0c520a31f40881d4ee3863b76a20f22a7ffd56e0949fd08af1",
+  "bytes": 5326534,
+  "members": 49,
+  "all_members_byte_verified": true,
+  "previous_backup": {
+    "branch": "agent/stock-driver-wip-backup-20261016T171612Z",
+    "commit": "8f378372fa9005a7bc755afc7624911595574048",
+    "archive": "/home/lee/.clifv-recovery/20261016T171558Z-try-context/checkpoint.tar.gz",
+    "sha256": "576110905dac1c51365ef905c66bf5d670e01e03457c3e3f642b9806577f1097"
+  },
+  "cleanup": {
+    "utc": "2026-10-16T18:00:46.851055+00:00",
+    "temporary_duplicate_dependency_snapshot_removed": true,
+    "bytes_reclaimed": 2478960840,
+    "unique_source_objects_logs_audits_and_failure_evidence_preserved": true,
+    "one_shared_warm_cache_and_active_clean_PR_validation_view_retained": true,
+    "same_exact_PR_worker_resumed": true,
+    "no_unneeded_clean_worktree_or_duplicate_build_cache": true,
+    "free_bytes": 868038377472,
+    "other_projects_touched": false
+  },
+  "remote": {
+    "utc": "20261016T180459Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T180459Z",
+    "commit": "ef8f8053a8669c2143625a056c1932937bf6ddc9",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1727,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  }
+}

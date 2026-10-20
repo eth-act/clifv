@@ -1,0 +1,30 @@
+{
+  "utc": "20261016T131033Z",
+  "archive": "/home/lee/.clifv-recovery/cleanup-comparison-20261016T131033Z/comparison-results.tar.gz",
+  "archive_bytes": 9455827,
+  "archive_sha256": "0b1703dd54a8f60b1debdcd3b276f64fc9e40284998e439731e77a73748b1820",
+  "archived_files": [
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume/target/stock-per-edge-allocator-comparison-20261015T181000Z/results.json",
+      "member": "target/stock-per-edge-allocator-comparison-20261015T181000Z/results.json",
+      "bytes": 42857534,
+      "sha256": "a25d8fa2a393e88beb7d12ec49d8c4cbb9ca512235c1f39471c6b037ab83df5d"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume/target/stock-per-edge-driver-comparison-20261015T181200Z/results.json",
+      "member": "target/stock-per-edge-driver-comparison-20261015T181200Z/results.json",
+      "bytes": 42814365,
+      "sha256": "a52603f00f3b0de89b121d7e6258bc09c568bc1f12b42a1dbb4e8cde005f728d"
+    },
+    {
+      "path": "/home/lee/clifv/.worktrees/driver-proof-resume/target/stock-prepared-forward-comparison-20261015T190000Z/results.json",
+      "member": "target/stock-prepared-forward-comparison-20261015T190000Z/results.json",
+      "bytes": 42828703,
+      "sha256": "2754a491bccf7463ded6fcb905fd1496a94f9c10b858827345c2bcf06be2389a"
+    }
+  ],
+  "every_member_verified": true,
+  "net_reclaimed_bytes": 119044775,
+  "other_projects": "untouched",
+  "reason": "Completed comparison bulk results archived; summaries, source instrumentation and build logs kept in place."
+}
