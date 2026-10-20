@@ -53,3 +53,14 @@ An isolated kernel check of the new `accepts_previous` and
 exactly the standard three axioms. [Scope and source hashes](stock-mixed-static-routing-check.json).
 These checks do not validate the full module port or production adapters;
 normal module, witness, runtime and consumer gates above remain pending.
+
+Combined-source validation of the actual port now passes: full body/source/NI,
+pointwise world and shared semantic/NI/TLS consumer proofs;255ownedcoreconstants
+standard-only,36fixedwitnessconstants with exactly the2existing native-data facts.
+The complete actual mixed runtime fixture passes all6configurations with both
+Lean and matchedregalloc2 and both cleanup settings, including retained VCode/
+metadata and exact whole-attempt retry output/history/stages.
+[Exact inputs, method, logs and limitations](stock-mixed-port-kernel-runtime.json).
+This is stronger than prototype evidence but still not normal per-module/tool
+validation: CLI/link/generated-proof/corpus gates and prior-axiom/identity/stage
+parity remain pending before landing. Frozen arithmetic gates continue first.
