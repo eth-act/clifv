@@ -431,3 +431,5 @@ the legacy contracts and fallback. Production selection is still the landed
 universal initial-file guarantee rather than substituting AllocChecked. All
 original rule/effect, source/block/whole-driver simulation, Stock-only
 completeness and production-consumer obligations remain mandatory.
+
+Actual entry-to-return author gates passed on `5199a6a930d840f8e7c934bd537f16b4de736df3`: 63 affected modules scheduled after exact source/import-closure reuse checks, complete FV/FVTest replay (2459 jobs), all 33 audit files, 150 standard-only core constants and 68 fixed-witness constants with no new native axioms. All 1129 prior public axiom sets are retained exactly (1144 current roots), and all 15 prior public theorem headers in changed modules are unchanged. No runtime consumer or executable is affected. [Terminal author receipt](../research/stock-entry-abi-author-gates.json). Next actual preparation/allocation and direct semantic production consumers; all original #140 obligations remain active.

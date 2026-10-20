@@ -1,7 +1,7 @@
 {
   "utc": "2026-10-20T08:18:44.072522+00:00",
   "base": "5c9917ce46c7fea62ed31515319210121ef3f0b0",
-  "state": "targeted complete packet and trust checks passed; full current author gates pending",
+  "state": "complete targeted witnesses, all-owned trust and full current author gates passed",
   "normal_build_evidence": {
     "/tmp/stock-entry-abi-origin-build.log": "05a7646b568e6c93b82c0ec094ea7a2c60ac83390bc3ebf5284363d9df511da4",
     "/tmp/stock-entry-abi-fixed-build.log": "247d6128d9799f1bce86be4a01316b7d8639c94e922656ec93f2195077b14a5f",
@@ -54,5 +54,6 @@
     "/tmp/stock-entry-abi-register-witness-build.log": "5bd464d0da97ae781da3ba202cd5e0c612ae622c08a925bb66e73a592dd24659",
     "/tmp/stock-entry-abi-public-audit.log": "75b850f0fe28a339f8c43de6b0cfce0a8268eec711d9b0ee04e204704a4913be",
     "/tmp/stock-entry-abi-all-owned.log": "728e2adee02d8648aa91c2f86f345c305459067cc54b1103eaea90023013a9dc"
-  }
+  },
+  "author_gates_receipt": "docs/research/stock-entry-abi-author-gates.json"
 }
