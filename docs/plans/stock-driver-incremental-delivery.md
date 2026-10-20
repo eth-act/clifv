@@ -334,3 +334,20 @@ machine witnesses pass651jobs,5public roots and23standard core-owned constants;
 terminal source definedness/frame/caller transport and return composition remain
 next, before direct optimized-Stock semantic consumers and complete function
 activation. [Source execution evidence](../research/stock-arithmetic-source-execution-checkpoint.json).
+
+Arithmetic source/return composition is now proved on main#339: actual reference
+execution derives terminal definedness, caller/frame preservation and the return
+step; actual block assembly supplies body and return segment placement. The body
+and existing return simulation compose to an ABI-correct return in Stock's actual
+VCode. Original `Clif.enterFunc` derives initial source frame/definedness facts.
+A complete nonempty/dirty-input/reference-entry/VCode-return witness passes675jobs;
+source+return audits pass11public roots and53standard-only core constants, with3
+fixed witnesses using only earlier marked native trace facts. One bundled MCP
+entered-return root is standard3/no warnings; owned LSP processes stopped.
+[Return checkpoint](../research/stock-arithmetic-return-checkpoint.json).
+
+The remaining entry obligation is the **machine** argument prelude: establish the
+guarded values from ABI arguments, including parameters omitted as unused. Do not
+silently require all parameters to be used or supply an entry-value certificate.
+Then instantiate direct optimized-Stock checker/consumer semantics and complete
+function production activation. No new class is enabled by this proof packet.
