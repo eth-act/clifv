@@ -429,7 +429,7 @@ theorem got_of_good {D : List Clif.DataObject} (hI : ProductionStackBound.okB I 
   rw [hb, Option.getD_some]
   by_cases hii : img I (BitVec.ofNat 64 G + BitVec.ofNat 64 i)
   · rw [mem_modelOf_img hii]
-    rcases (BinCheck.img_bytesProduction hbin hI hii).2 with h | h
+    rcases (ProductionChecksWith.img_bytesProduction (lower := I.lower) hbin hI hii).2 with h | h
     · rw [hb] at h; cases h; rfl
     · exact absurd h hnr
   · rw [mem_modelOf_not hii]

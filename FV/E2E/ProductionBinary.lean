@@ -1,5 +1,6 @@
 import FV.E2E.ProductionStackBound
 import FV.E2E.ProductionCheck
+import FV.E2E.ProductionChecksWith
 
 /-! # The binary-level theorem (M9, docs/contracts/e2e.md, "Binary level (M9)")
 
@@ -564,7 +565,7 @@ theorem binFacts_of_checks {I : ProductionStackBound.CompilerInput} {D : List Cl
     BinFacts I (imageOf file) (BinCheck.RelocAtWithResults I I.results) (BinCheck.roByte I D) where
   ok := hI
   code := fun _ ha =>
-    have h := BinCheck.img_bytesProduction hB hI ha
+    have h := ProductionChecksWith.img_bytesProduction (lower := I.lower) hB hI ha
     ⟨.inl h.1, h.2⟩
   data := fun _ _ h =>
     have h' := BinCheck.roByte_sound hB.data h

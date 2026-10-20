@@ -1,0 +1,35 @@
+{
+  "utc": "2026-10-20T02:27:38.166809+00:00",
+  "state": "implementation_and_targeted_gates_passed_full_author_gates_pending",
+  "base": "00f686f1c1fa2b67f4041372139ecc25db0e0474",
+  "standard_compiler_class_public_roots": 132,
+  "boundary_witness_roots": 16,
+  "marked_fixed_native_witness_roots": 9,
+  "owned_constants_standard_only": 650,
+  "owned_partition_counts": [
+    479,
+    14,
+    9,
+    81,
+    28,
+    5,
+    34
+  ],
+  "actual_link_cases": 10,
+  "generated_lean_files": 16,
+  "machine_witness": "all six configurations, both cleanup modes, arbitrary argument words",
+  "real_cli": "new and original bundles, both modes, four emitted proofs PASS",
+  "runtime": "all six configurations, both modes, mixed D0/legacy, forced allocation failure retries once and restores original outputs/stages",
+  "original_apis": "SystemV selector/pipeline preserved; exact compatibility equations for compiler input/attempt/output and monadic file compiler; defaulted CompilerInput.lower retains shipped default",
+  "full_goal_complete": false,
+  "logs": {
+    "/tmp/stock-generic-exe-fixed-build.log": "b9eab2e207284c64819246c2da871e07f7076119397063efe8b201270a45e77d",
+    "/tmp/stock-all-boundary-linked-build.log": "8a33ae7626643f06c84379dee97c6abfab1abc69d6b9da2243b51fb5660c35f9",
+    "/tmp/stock-all-cli-module-build.log": "0e1491628c193e1442bf505f793f7451b34c1125f627bb3ba430397798908ab4",
+    "/tmp/stock-production-compatibility-fixed-build.log": "efca4441f08f2e571725f669de552427677a1efe2c1e71393c43429252385673",
+    "/tmp/stock-all-parametric-final-audit.log": "129a119b2ba5c77ded0e404bcd3ea211f3c65352d776fa7a582983f758c113c1",
+    "/tmp/stock-all-owned-final-core.log": "183d16f78fb76006bc069815aeeae8fe926d75cc913fc246cdd34e7abf925c0e",
+    "/tmp/stock-all-runtime-run.log": "0a09576acf26e882def802224360e9b5abe63e4cb9410364e23a1eb227951a08"
+  },
+  "next": "Run frozen full current author gates, fetch/reconcile main, author squash a substantive all-six production-class PR and notify integrator. Then optimizer/unwind consumer adapters and further rule/effect/full-driver original#140 obligations."
+}
