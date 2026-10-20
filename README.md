@@ -33,22 +33,24 @@ to cg_clif. The last two give a reason. `cargo fv report` prints the summary aga
 
 ## Quick start
 
-Install Lean 4 through elan. Install the pinned Rust nightly with cg_clif,
-`qemu-aarch64-static`, LLVM 18 binutils, and python3, as [docs/USAGE.md](docs/USAGE.md#install)
+Install Lean 4 through elan. Install the pinned Rust nightly with its `rustc-dev` component,
+`qemu-aarch64-static` and LLVM 18 binutils, as [docs/USAGE.md](docs/USAGE.md#install)
 describes. Then, from the repository root, build the tools and run an example:
 
 ```
-scripts/memcap.sh lake build lean-backend
-scripts/memcap.sh scripts/build-cg-clif-unwind.sh
+scripts/memcap.sh lake build lean-backend clif-decode
+scripts/memcap.sh scripts/build-cg-clif.sh
 cd rust && ../scripts/memcap.sh cargo build --release -p cargo-fv -p clif-data-export -p lean-regalloc
 export PATH=$PWD/target/release:$PATH
 cd ../examples/fv-demo && cargo fv test
 ```
 
 `scripts/memcap.sh` caps each build at 16 GB of memory (`FV_MEMCAP` changes the cap), so a
-runaway Lean process cannot exhaust the machine. `scripts/build-cg-clif-unwind.sh` builds
-cg_clif with landing pads. The shipped cg_clif has none, and without them fv-demo's four
-unwinding tests fail.
+runaway Lean process cannot exhaust the machine. `scripts/build-cg-clif.sh` builds cg_clif with
+this repository's patch, which writes into each CLIF dump which symbol every external name of
+the function denotes (`cargo fv` reads the identities from there, docs/contracts/frontend.md),
+once with landing pads (for panic=unwind) and once without (panic=abort). `cargo fv` needs it:
+the shipped cg_clif writes no such tables.
 
 After each build, `cargo fv` also checks every linked executable against the binary-level
 theorem. The check needs the `link-check` tool, which takes close to an hour to build on a

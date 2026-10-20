@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselCmpExt
+import FV.Opt.Proof.KernelBV
 import FV.Opt.Proof.InterpEval
 import Std.Tactic.BVDecide
 
@@ -11,13 +12,13 @@ import Std.Tactic.BVDecide
 that form to one of that form: `Rust.imm64Add (ofClif t) (imm64OfBits b) (imm64OfBits c) =
 .ok (imm64OfBits (b + c))`, etc. (`opt_imm`), and `ofInt_imm64OfBits` closes the round trip, so
 right-hand sides built from helper results evaluate to `BitVec` terms over the matched
-immediates, which `bv_decide` compares with the left-hand side's value.
+immediates, which `kbv` compares with the left-hand side's value.
 
 **Proofs** (`imm_solve`): split the type (four widths), unfold the helper, rewrite every `Int`
 operation of the Rust transcription (`asU64`, `asI64`, `band64`, `sext`, `maskTo`, the `ty_mask`
 literal, comparisons, `if`) into `BitVec 64` operations (`BitVec.ofInt 64` distributes over
 `+ - *` and `if`; `imm64OfBits b = (b.setWidth 64).toInt`; `BitVec.toInt_inj`), then
-`bv_decide`.
+`kbv`.
 
 Also here: the forward-evaluation facts for building nodes (`make_inst` of a concrete
 `InstructionData`: `toInst`, `makeInst`; `cfg`; `panics`).
@@ -212,9 +213,86 @@ macro_rules
     simp (disch := assumption) only [$ts,*, Rust.andMask, tyMask_ofClif, width64_ofClif,
       ofClif_bits, except_ok_bind', except_pure', Rust.i64SextendImm64, Rust.u64UextendImm64])
 
+/-! ### Width round trips, masks and shifts (the residual `BitVec 64` goals of `imm_solve`) -/
+
+private theorem setWidth_setWidth64 {w : Nat} (hw : w ≤ 64) (x : BitVec w) :
+    (x.setWidth 64).setWidth w = x := by
+  rw [BitVec.setWidth_setWidth_of_le _ hw, BitVec.setWidth_eq]
+
+private theorem setWidth_signExtend64 {w : Nat} (hw : w ≤ 64) (x : BitVec w) :
+    (x.signExtend 64).setWidth w = x := by
+  apply BitVec.eq_of_getElem_eq
+  intro i hi
+  rw [BitVec.getElem_setWidth, BitVec.getLsbD_signExtend]
+  simp [hi, show i < 64 by omega]
+
+private theorem toNat_sub_one_of_pow {w k : Nat} (hk : k ≤ w) (c : BitVec w) (hc : c.toNat = 2 ^ k) :
+    (c - 1#w).toNat = 2 ^ k - 1 := by
+  have hp : 2 ^ k ≤ 2 ^ w := Nat.pow_le_pow_right (by decide) hk
+  have hpos := Nat.two_pow_pos k
+  rw [BitVec.toNat_sub, hc, BitVec.toNat_ofNat]
+  rcases Nat.eq_zero_or_pos w with rfl | hw
+  · simp at hp; omega
+  · have h1 : 1 % 2 ^ w = 1 := Nat.mod_eq_of_lt (Nat.one_lt_two_pow (by omega))
+    rw [h1, show 2 ^ w - 1 + 2 ^ k = (2 ^ k - 1) + 2 ^ w by omega, Nat.add_mod_right,
+      Nat.mod_eq_of_lt (by omega)]
+
+private theorem setWidth_mul_mask {w : Nat} (hw : w ≤ 64) (c : BitVec 64) (hc : c.toNat = 2 ^ w)
+    (x y : BitVec w) : x.setWidth 64 * y.setWidth 64 &&& c - 1#64 = (x * y).setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq
+  have hp : 2 ^ w ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) hw
+  have hx := x.isLt
+  have hy := y.isLt
+  rw [BitVec.toNat_and, toNat_sub_one_of_pow hw c hc, Nat.and_two_pow_sub_one_eq_mod,
+    BitVec.toNat_mul, BitVec.toNat_setWidth, BitVec.toNat_setWidth, BitVec.toNat_setWidth,
+    BitVec.toNat_mul, Nat.mod_eq_of_lt (a := x.toNat) (by omega),
+    Nat.mod_eq_of_lt (a := y.toNat) (by omega), Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 hw),
+    Nat.mod_eq_of_lt (a := x.toNat * y.toNat % 2 ^ w)
+      (Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos w)) hp)]
+
+/-- The shift amount masks: `y &&& (2^k - 1)` as `y.toNat % 2^k`. -/
+private theorem toNat_and_lowmask' {w : Nat} (n : BitVec w) (hn : 2 ^ (n.toNat + 1).log2 = n.toNat + 1)
+    (y : BitVec w) : (y &&& n).toNat = y.toNat % (n.toNat + 1) := by
+  rw [BitVec.toNat_and, ← hn, ← Nat.and_two_pow_sub_one_eq_mod, hn, Nat.add_sub_cancel]
+
+private theorem toNat_setWidth64 {w : Nat} (hw : w ≤ 64) (y : BitVec w) :
+    (y.setWidth 64).toNat = y.toNat := by
+  rw [BitVec.toNat_setWidth,
+    Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le y.isLt (Nat.pow_le_pow_right (by decide) hw))]
+
+private theorem and_allOnes' {w : Nat} (k : BitVec w) (hk : k.toNat = 2 ^ w - 1) (x : BitVec w) :
+    x &&& k = x := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, hk, Nat.and_two_pow_sub_one_eq_mod, Nat.mod_eq_of_lt x.isLt]
+
+private theorem setWidth64_and_mask {w : Nat} (hw : w ≤ 64) (k : BitVec 64) (hk : k.toNat = 2 ^ w - 1)
+    (x : BitVec w) : x.setWidth 64 &&& k = x.setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_and, hk, Nat.and_two_pow_sub_one_eq_mod, toNat_setWidth64 hw, Nat.mod_eq_of_lt x.isLt]
+
+private theorem setWidth64_shiftLeft_mask {w : Nat} (hw : w ≤ 64) (k : BitVec 64)
+    (hk : k.toNat = 2 ^ w - 1) (x : BitVec w) (n : Nat) :
+    x.setWidth 64 <<< n &&& k = (x <<< n).setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq
+  have hp : 2 ^ w ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) hw
+  rw [BitVec.toNat_and, hk, Nat.and_two_pow_sub_one_eq_mod, BitVec.toNat_shiftLeft,
+    toNat_setWidth64 hw, Nat.mod_mod_of_dvd _ (Nat.pow_dvd_pow 2 hw), toNat_setWidth64 hw,
+    BitVec.toNat_shiftLeft]
+
+private theorem setWidth64_ushiftRight {w : Nat} (hw : w ≤ 64) (x : BitVec w) (n : Nat) :
+    x.setWidth 64 >>> n = (x >>> n).setWidth 64 := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, toNat_setWidth64 hw, toNat_setWidth64 hw, BitVec.toNat_ushiftRight]
+
 /-- Phase 2 (at one concrete width): turn every `Int` operation into a `BitVec 64` one
-(`Int` values of the helpers are `.toInt`/`.toNat` of `BitVec 64` terms), decide. -/
-macro "imm_solve" : tactic => `(tactic| (
+(`Int` values of the helpers are `.toInt`/`.toNat` of `BitVec 64` terms), rewrite with the given
+width-generic lemmas (side conditions on literals by `decide`), then `kbv`. The specs' goals are all
+true (no template alternatives), so `kbv` gets a larger budget here (64-bit rotations split the
+amount into 64 cases of 64 bits each). -/
+syntax "imm_solve" ("[" Lean.Parser.Tactic.simpLemma,* "]")? : tactic
+macro_rules
+  | `(tactic| imm_solve) => `(tactic| imm_solve [])
+  | `(tactic| imm_solve [$ts,*]) => `(tactic| (
     try simp (disch := decide) only [sext_imm64OfBits, maskTo_of_lt, maskTo_64, sext_of_lt, sext_64]
     simp (disch := decide) only [imm64OfBits_eq, asU64_eq, asI64_eq, band64_eq,
       bor64_eq, bxor64_eq, BitVec.ofInt_toInt, ofInt64_natCast_toNat, BitVec.setWidth_eq,
@@ -227,7 +305,8 @@ macro "imm_solve" : tactic => `(tactic| (
       ofInt_toInt_signExtend, setWidth_ite, Sem.umin, Sem.umax, Sem.smin, Sem.smax, icmp_eq,
       icmp_ne, icmp_slt, icmp_sge, icmp_sgt, icmp_sle, icmp_ult, icmp_uge, icmp_ugt, icmp_ule,
       Int.reduceNatCast, BitVec.ofInt_natCast, BitVec.ofNat_toNat]
-    all_goals bv_decide))
+    all_goals try simp (disch := decide) only [$ts,*]
+    all_goals (set_option kbv.budgetScale 12 in kbv)))
 
 /-- Split a non-`i128` type into its four widths (reverting the given bit vectors). -/
 syntax "imm_cases" ident (ppSpace ident)* : tactic
@@ -256,7 +335,7 @@ macro_rules
 @[opt_imm] theorem imm64Mul_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
     Rust.imm64Mul (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (b * c)) := by
   imm_pre [Rust.imm64Mul]
-  imm_cases t b c <;> imm_solve
+  imm_cases t b c <;> imm_solve [setWidth_mul_mask]
 
 @[opt_imm] theorem imm64And_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
     Rust.imm64And (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (b &&& c)) := by
@@ -296,12 +375,12 @@ macro_rules
 @[opt_imm] theorem imm64Smin_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
     Rust.imm64Smin (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.smin b c)) := by
   imm_pre [Rust.imm64Smin]
-  imm_cases t b c <;> imm_solve
+  imm_cases t b c <;> imm_solve [setWidth_setWidth64, setWidth_signExtend64, setWidth_ite]
 
 @[opt_imm] theorem imm64Smax_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
     Rust.imm64Smax (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.smax b c)) := by
   imm_pre [Rust.imm64Smax]
-  imm_cases t b c <;> imm_solve
+  imm_cases t b c <;> imm_solve [setWidth_setWidth64, setWidth_signExtend64, setWidth_ite]
 
 theorem imm64Icmp_eq_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .eq (imm64OfBits b) (imm64OfBits c) =
@@ -457,6 +536,90 @@ theorem ctz64_eq (x : Int) : Rust.ctz64 x = (BitVec.ofInt 64 x).ctz.toNat := by
       simpa [BitVec.getLsbD] using this
 
 
+private theorem clz_toNat_lt_of_ne_zero {w : Nat} {x : BitVec w} (hx : x ≠ 0#w) : x.clz.toNat < w := by
+  have := BitVec.lt_def.1 (BitVec.clz_lt_iff_ne_zero.2 hx)
+  simpa [Nat.mod_eq_of_lt Nat.lt_two_pow_self] using this
+
+private theorem log2_toNat_eq_clz {w : Nat} {x : BitVec w} (hx : x ≠ 0#w) :
+    x.toNat.log2 = w - 1 - x.clz.toNat := by
+  have hw : 0 < w := by
+    rcases Nat.eq_zero_or_pos w with rfl | h
+    · exact absurd (BitVec.eq_nil x) hx
+    · exact h
+  have hn : x.toNat ≠ 0 := fun h => hx (BitVec.eq_of_toNat_eq (by simpa using h))
+  have h1 := BitVec.two_pow_sub_clz_le_toNat_of_ne_zero hw hx
+  have h2 := BitVec.toNat_lt_two_pow_sub_clz (x := x)
+  have hc := clz_toNat_lt_of_ne_zero hx
+  rw [Nat.log2_eq_iff hn]
+  refine ⟨h1, ?_⟩
+  have : w - 1 - x.clz.toNat + 1 = w - x.clz.toNat := by omega
+  rw [this]; exact h2
+
+private theorem clz_setWidth_toNat_eq {w v : Nat} (hw : w ≤ v) (x : BitVec w) :
+    (x.setWidth v).clz.toNat = x.clz.toNat + (v - w) := by
+  by_cases hx : x = 0#w
+  · subst hx
+    have e1 : (0#w).clz = BitVec.ofNat w w := BitVec.clz_eq_iff_eq_zero.2 rfl
+    have e2 : ((0#w).setWidth v).clz = BitVec.ofNat v v := BitVec.clz_eq_iff_eq_zero.2 (by simp)
+    rw [e1, e2, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt Nat.lt_two_pow_self,
+      Nat.mod_eq_of_lt Nat.lt_two_pow_self]
+    omega
+  · have hy : x.setWidth v ≠ 0#v := by
+      intro h; apply hx; apply BitVec.eq_of_toNat_eq
+      have := congrArg BitVec.toNat h
+      simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.zero_mod] at this ⊢
+      rwa [Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) hw))] at this
+    have e := log2_toNat_eq_clz hy
+    have e' := log2_toNat_eq_clz hx
+    have ht : (x.setWidth v).toNat = x.toNat := by
+      rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) hw))]
+    rw [ht] at e
+    have := clz_toNat_lt_of_ne_zero hy
+    have := clz_toNat_lt_of_ne_zero hx
+    omega
+
+private theorem clz_setWidth64 {w : Nat} (hw : w ≤ 64) (b : BitVec w) :
+    (b.setWidth 64).clz = b.clz.setWidth 64 + BitVec.ofNat 64 (64 - w) := by
+  apply BitVec.eq_of_toNat_eq
+  have hc : b.clz.toNat ≤ w := by
+    have := BitVec.le_def.1 (BitVec.clz_le (x := b))
+    simpa [Nat.mod_eq_of_lt (Nat.lt_two_pow_self (n := w))] using this
+  rw [clz_setWidth_toNat_eq hw, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (a := b.clz.toNat) (by omega), Nat.mod_eq_of_lt (a := 64 - w) (by omega),
+    Nat.mod_eq_of_lt (by omega)]
+
+private theorem ctz_setWidth_toNat_eq {w v : Nat} (hw : w ≤ v) (x : BitVec w) (hx : x ≠ 0#w) :
+    (x.setWidth v).ctz.toNat = x.ctz.toNat := by
+  have hy : x.setWidth v ≠ 0#v := by
+    intro h; apply hx; apply BitVec.eq_of_toNat_eq
+    have := congrArg BitVec.toNat h
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.zero_mod] at this ⊢
+    rwa [Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le x.isLt (Nat.pow_le_pow_right (by decide) hw))] at this
+  have hbit : ∀ i, (x.setWidth v).getLsbD i = x.getLsbD i := by
+    intro i
+    rw [BitVec.getLsbD_setWidth]
+    by_cases hi : i < v
+    · simp [hi]
+    · have : ¬ i < w := by omega
+      simp [hi, BitVec.getLsbD_of_ge x i (by omega)]
+  have t1 := BitVec.getLsbD_true_ctz_of_ne_zero hy
+  have t2 := BitVec.getLsbD_true_ctz_of_ne_zero hx
+  rcases Nat.lt_trichotomy (x.setWidth v).ctz.toNat x.ctz.toNat with h | h | h
+  · have := BitVec.getLsbD_false_of_lt_ctz (x := x) h
+    rw [hbit] at t1; rw [t1] at this; exact absurd this (by decide)
+  · exact h
+  · have := BitVec.getLsbD_false_of_lt_ctz (x := x.setWidth v) h
+    rw [hbit, t2] at this; exact absurd this (by decide)
+
+private theorem ctz_setWidth64 {w : Nat} (hw : w ≤ 64) (b : BitVec w) :
+    b = 0#w ∨ (b.setWidth 64).ctz = b.ctz.setWidth 64 := by
+  by_cases hb : b = 0#w
+  · exact Or.inl hb
+  · right
+    apply BitVec.eq_of_toNat_eq
+    rw [ctz_setWidth_toNat_eq hw b hb, BitVec.toNat_setWidth,
+      Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le b.ctz.isLt (Nat.pow_le_pow_right (by decide) hw))]
+
 theorem clz_aux {w : Nat} (hw : w ≤ 64) (b : BitVec w)
     (h1 : (b.setWidth 64).clz = b.clz.setWidth 64 + BitVec.ofNat 64 (64 - w)) :
     (b.setWidth 64).clz.toNat = b.clz.toNat + (64 - w) ∧ b.clz.toNat ≤ w := by
@@ -471,13 +634,8 @@ theorem clz_aux {w : Nat} (hw : w ≤ 64) (b : BitVec w)
 
 theorem clz_setWidth_toNat {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
     (b.setWidth 64).clz.toNat = b.clz.toNat + (64 - t.width) ∧ b.clz.toNat ≤ t.width := by
-  revert b
-  cases t
-  · intro b; exact clz_aux (by decide) b (by opt_widths; simp only [Ty.width, Nat.reduceSub]; bv_decide)
-  · intro b; exact clz_aux (by decide) b (by opt_widths; simp only [Ty.width, Nat.reduceSub]; bv_decide)
-  · intro b; exact clz_aux (by decide) b (by opt_widths; simp only [Ty.width, Nat.reduceSub]; bv_decide)
-  · intro b; exact clz_aux (by decide) b (by opt_widths; simp only [Ty.width, Nat.reduceSub]; bv_decide)
-  · exact absurd rfl ht
+  have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
+  exact clz_aux hw b (clz_setWidth64 hw b)
 
 theorem imm64OfBits_of_lt {w : Nat} (b : BitVec w) (h : b.toNat < 2 ^ 63) :
     imm64OfBits b = b.toNat := by
@@ -508,13 +666,8 @@ theorem ctz_aux {w : Nat} (hw : w ≤ 64) (b : BitVec w)
 
 theorem ctz_setWidth_toNat {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
     b ≠ 0#t.width → (b.setWidth 64).ctz.toNat = b.ctz.toNat := by
-  revert b
-  cases t
-  · intro b; exact ctz_aux (by decide) b (by opt_widths; simp only [Ty.width]; bv_decide)
-  · intro b; exact ctz_aux (by decide) b (by opt_widths; simp only [Ty.width]; bv_decide)
-  · intro b; exact ctz_aux (by decide) b (by opt_widths; simp only [Ty.width]; bv_decide)
-  · intro b; exact ctz_aux (by decide) b (by opt_widths; simp only [Ty.width]; bv_decide)
-  · exact absurd rfl ht
+  have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
+  exact ctz_aux hw b (ctz_setWidth64 hw b)
 
 theorem ctz_zero_toNat (w : Nat) : (0#w).ctz.toNat = w := by
   have : (0#w).ctz = BitVec.ofNat w w := by
@@ -543,7 +696,7 @@ theorem ctz_zero_toNat (w : Nat) : (0#w).ctz.toNat = w := by
 
 end Opt.Proof
 
-/-! ## Shift amounts as bit-vector masks (`bv_decide` shifts by a `BitVec`, not a `Nat`)
+/-! ## Shift amounts as bit-vector masks (a `BitVec` shift amount, not a `Nat`)
 
 For a power-of-two width `w` (every `Ty.width`), `y.toNat % w` is `(y &&& (w - 1)).toNat`; the
 hypotheses are closed by `decide` once the widths are literals. -/
@@ -633,7 +786,9 @@ theorem shiftLeft_toNat' {w v : Nat} (x : BitVec w) (y : BitVec v) : x <<< y.toN
   imm_pre [Rust.imm64Shl]
   simp only [Rust.band64, Rust.asU64, int_toNat_natCast, ofInt_mul_two_pow, shiftLeft_toNat']
   imm_cases t b <;> imm_cases t' c <;> simp (disch := decide) only [ishl_mask, Nat.reduceBEq, Bool.false_eq_true, reduceIte, Int.reduceSub,
-    Int.reducePow, Nat.reduceSub, Int.reduceNatCast] <;> imm_solve
+    Int.reducePow, Nat.reduceSub, Int.reduceNatCast] <;> imm_solve [BitVec.shiftLeft_eq', BitVec.ushiftRight_eq',
+    BitVec.reduceSub, toNat_and_lowmask', toNat_setWidth64, BitVec.reduceToNat, Nat.reduceAdd,
+    setWidth64_shiftLeft_mask, and_allOnes', setWidth64_and_mask, setWidth64_ushiftRight]
 
 theorem natCast_div_two_pow {w : Nat} (x : BitVec w) (k : Nat) :
     ((x.toNat : Int) / (2 : Int) ^ k) = ((x >>> k).toNat : Int) := by
@@ -652,7 +807,9 @@ theorem sshiftRight_toNat' {w v : Nat} (x : BitVec w) (y : BitVec v) : x.sshiftR
   imm_pre [Rust.imm64Ushr]
   simp only [Rust.band64, Rust.asU64, int_toNat_natCast, natCast_div_two_pow, ushiftRight_toNat']
   imm_cases t b <;> imm_cases t' c <;> simp (disch := decide) only [ushr_mask, Nat.reduceBEq, Bool.false_eq_true, reduceIte, Int.reduceSub,
-    Int.reducePow, Nat.reduceSub, Int.reduceNatCast] <;> imm_solve
+    Int.reducePow, Nat.reduceSub, Int.reduceNatCast] <;> imm_solve [BitVec.shiftLeft_eq', BitVec.ushiftRight_eq',
+    BitVec.reduceSub, toNat_and_lowmask', toNat_setWidth64, BitVec.reduceToNat, Nat.reduceAdd,
+    setWidth64_shiftLeft_mask, and_allOnes', setWidth64_and_mask, setWidth64_ushiftRight]
 
 end
 
