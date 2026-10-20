@@ -43,22 +43,29 @@ and generated proofs, actual verified CLIs, matchedregalloc2/retry and verified
 defaultLean-linkedfv-demo21/survey53 (2/2and18/18binaries).
 [Scalar-add evidence](../research/stock-scalar-add-core.md) links the terminal receipt.
 
-The active batch on `agent/stock-straight-line-production` generalizes real body
-composition beyond the initial complete arithmetic function. The actual add/sub
-body adapter and its real full-body nonvacuity witness kernel-check off-tree;
-reconcile those into the existing modules, then derive pure-source zero-color/unsunk and emitted/omitted coverage and
-complete broader straight-line production classes. Actual `sink_inst` rejects
-zero-color targets; deferred sunk effects remain a separate mandatory obligation.
-Classes whose actual Stock code differs from legacy also require a direct Stock
-semantic checker/consumer contract: legacy-code equality cannot complete #140. The new StockPureUnsunk leaf now proves immutable colors and zero-color unsunk
-preservation through all constructors, arbitrary interpreter runs, actual scans,
-complete blocks and retained-record boundaries. Eight public roots/all126owned
-constants are standard-only; actual sink/interpreter and complete source-body
-witnesses pass normal builds/trust audits. SourceMetadata/buildCtx derivation and
-full node/traversal propagation remain next, followed by broader function
-simulation and the direct semantic consumer contract. Do not publish this proof
-checkpoint as a replacement for complete function activation. All original rule/effect,
-source/block/whole-driver simulation and Stock-only completeness remain open.
+The active batch on `agent/stock-straight-line-production` connects the actual
+arithmetic body adapter to a complete real body-split/execution witness. The
+StockPureUnsunk leaf proves immutable colors and zero-color unsunk preservation
+through every constructor, arbitrary interpreter runs, actual scans, complete
+blocks and retained-record boundaries. Eight public roots/all126owned constants
+are standard-only; real sink/interpreter and complete arithmetic-body witnesses
+pass normal builds and trust audits.
+
+StockPureSourceColors now derives zero colors from the actual metadata loop for
+arbitrary pure single-block bodies, then from successful original buildCtx. Its
+three public roots/all16owned constants, including the nonempty actual-build
+witness, use standard axioms without native-data premises. Next propagate the
+invariant through complete original/critical-edge nodes and whole traversal,
+derive source-family coverage and complete broader function simulation.
+
+Actual sink_inst rejects zero-color targets; deferred sunk memory/effect
+invariants remain a separate mandatory obligation. Optimized Stock outputs also
+need direct semantic checker/consumer contracts: the retained
+CompiledProduction.lowerOk still proves the legacy lowerCheck and code equality
+cannot complete #140. Retain that old contract and its theorem variants. Do not
+publish these proof checkpoints as a substitute for complete function activation.
+All original rule/effect, source/block/whole-driver simulation and Stock-only
+completeness obligations remain open.
 Optimizer and exceptional-edge routes await their consumer adapters.
 All remaining original #140 obligations remain open.
 
