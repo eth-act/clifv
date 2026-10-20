@@ -1,28 +1,34 @@
 {
-  "utc": "2026-10-20T19:36:16.498532+00:00",
+  "utc": "2026-10-20T19:52:41.090108+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
   "reconciled_source": "3a9814b7d75fe833befeb8bd19ef80532ed0550b",
   "dependency_fix_source": "8d13b4de250185cbc094be28f4d44e74c1df94b1",
   "built_modules": [
+    "FV.Backend.ABIReadFlags",
+    "FV.Backend.ABIReadOnly",
+    "FV.Backend.DeadCleanup",
+    "FV.Backend.Lowering.StockArithmetic",
+    "FV.Backend.Lowering.StockArithmeticNI",
     "FV.Backend.Lowering.StockD0",
-    "FV.Backend.Lowering.StockPrologue",
+    "FV.Backend.Lowering.StockMixed",
+    "FV.Backend.Lowering.StockMixedNI",
     "FV.Backend.Lowering.StockProduction",
+    "FV.Backend.Lowering.StockPrologue",
     "FV.Backend.Lowering.StockPrologueAll",
     "FV.Backend.Lowering.StockScalarAdd",
     "FV.Backend.Lowering.StockScalarProduction",
-    "FV.Backend.DeadCleanup",
-    "FV.Backend.Lowering.StockArithmetic",
-    "FV.Backend.Lowering.StockMixed",
-    "FV.Backend.ABIReadOnly",
-    "FV.Backend.ABIReadFlags"
+    "FV.Backend.Proof.StockArithmeticCheck",
+    "FV.Backend.SemanticNICheck",
+    "FV.Backend.StockArithmeticCheck",
+    "FV.Backend.StockMixedCheck"
   ],
-  "normal_built_count": 11,
+  "normal_built_count": 17,
   "failed_modules": 0,
   "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
   "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
-  "waiting": "22mixed proof/consumer/test modules needcurrentimportsnotyetbuiltinprimaryauthor epoch; nosemantic/module failureclaimedandnodependencyfalse-pass. Resume normalportwhen importkeysready, includingcommonconsumersaffectedbyABIimportchange.",
+  "waiting": "Four direct import boundaries and44transitive consumers remain deferred: ArithmeticProduction, StockMixedBodyRefines, ABIReadOnlySem, StockArithmeticWorldX. First LowerLoopRun/LowerDecide prerequisites now passed; six additional normal modules built. Full current proof/consumer/tool/native/corpus/identity-stage/trust/example gates still required. No activation claim.",
   "batches": [
     {
       "utc": "2026-10-20T19:14:26.869956+00:00",
@@ -860,7 +866,514 @@
       "max_active_builds": 2,
       "cache": "own ignored .lake view, shared source-keyed artifactstore/hardlinks; no cachecopy",
       "remaining": "Continue source-keyed normalmixedproof/consumer/tool/runtime gates; arithmeticcandidate must landfirst."
+    },
+    {
+      "utc": "2026-10-20T19:51:57.879127+00:00",
+      "head": "28310dcacafe524413d1ccd19cd2483acf75ff5b",
+      "primary_head": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
+      "source_sha256": {
+        "FV.Backend.ABIReadOnly": "50b2785490b7c2b8b1859c4df7e974079476dd0ed876e9cf60ddff2b890f3200",
+        "FV.Backend.ABIReadFlags": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89",
+        "FV.Backend.Lowering.StockMixed": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c",
+        "FV.Backend.StockArithmeticCheck": "94233aa8d45ea4f2651de3dd908388a2563c0e3ccd8a9c9e0e5df8295bee97eb",
+        "FV.Backend.StockMixedCheck": "7f728e8c0810db75b423dd1f5e4b95488ff11e7014403a1f4c93cf5f25684da1",
+        "FV.Backend.SemanticNICheck": "881835f4a3a88bb840bedcebccb780ac6c903fc42b270e93f3ce88ad420e5fbb",
+        "FV.Backend.Lowering.StockArithmeticNI": "19ba7ff09c01b874b13969e93f71d8360c33e37aa5d00bd88d4e1e7659c82783",
+        "FV.Backend.Lowering.StockMixedNI": "015b3c09f35e93ffb307f7ea3176606e0d35470a741d79573206ab72a73577a9",
+        "FV.Backend.ArithmeticProduction": "bd92b1fa62e7b0dbc1b1997ba41466b69c8603f103dbf9b057403437552f46ac",
+        "FV.Backend.ArithmeticNIProduction": "3e63913d7f68a5e85400b15d75d9408455dafb4b01ad0dd163b3f609977fc600",
+        "FV.Backend.MixedNIProduction": "28a2adf73c7eb8b24b96acfd9f6cd6c0597ebdd75c52fd8d3dc4170e868899ff",
+        "FV.Backend.Proof.StockMixedBodyRefines": "8843866a09637538e38392715eb39685e5cb97b12be1144c3a3e7298dbd40d92",
+        "FV.Backend.Proof.StockMixedCheck": "290a5c92d37dfab7dff7578938fc32c40596aaa6715e7a022efdb1c6bcd1a534",
+        "FV.E2E.ABIReadOnlySem": "6f668d2a8325aaa5ca14da1253d9ac1591c3283aecff81c2ac226170450f6a7b",
+        "FV.E2E.ABIReadOnlyCheck": "6469008b758c4e8458c5effde2725ccb5386d13944e9e9df0d22a7cf39ca5dbb",
+        "FV.E2E.ABIReadOnlyTransport": "a2885abe2390903a65b6a543d027b0ad23e284c974e5805ebfdf6b31acbfcf99",
+        "FV.E2E.ABIReadOnlyRealize": "94499c209577d7882b7e188736a06fc8b495d2da41430f6f2e51efb342be3f07",
+        "FV.E2E.ABIReadOnlyMachine": "f13556eb9024a78838d984f9c4ef7ee56b6bfa56f7a7e18697a03751b6fbfc99",
+        "FV.E2E.ABIReadFlags": "63c98b3f73a9063dc04a6d457a15c787a23e24a79c0d3db57b77ce834de2dcdd",
+        "FV.Backend.Proof.StockArithmeticCheck": "8ef990729c2a93aaeaaa657f58a74d73a22c47bbd64b2c3685a77673b2bdaa5f",
+        "FV.E2E.StockArithmeticWorldX": "2fd5b09787216b53f2b82113c2484f4d14c981fba51e6e7f0099f4566b22c70a",
+        "FV.E2E.StockMixedWorldX": "01dbc79c99032acb4cd911dedbbc5707c8c73d3c957e98e98360ab3e3bee9ac0",
+        "FV.E2E.CompiledSemantic": "3f97dc68e613c739fbb075d9c6773bff23a9665d6736d359e37e3810b407beb8",
+        "FV.E2E.StockArithmeticNI": "feec67e0f0d700da278e4c5ff3aad93a91f64e0f16a7fce5b86e4148beba1ca4",
+        "FV.E2E.StockMixedNI": "422f5ba002fd40ed61ac55e4230bbd33cd355d6014ace8a2a47db8cdfc39f1c4",
+        "FV.E2E.CompiledSemanticNI": "6239f1c2045a4a6bfcddf957f68d0be88294029bbf7cbd87359f791e1456eded",
+        "FV.E2E.SemanticNIBoundary": "3d3fe26c06fb8ac65a57a6b45b26bb8e7769fcf56cc3c5bfc8274fe7c2dfc9d3",
+        "FV.E2E.LinkSemanticNI": "96147f225ada9ab5f98d8467ee03557905d82dcf996e5cf6c013a8144b5bda41",
+        "FV.E2E.SemanticPipelineCheck": "71558acbb347a8c7de014c9db82f299b829bec6285b6d1720eab6d5116f0c45a",
+        "FV.E2E.SemanticPreparedPipeline": "d52a4a7617335dde067978c5cdbfd6758d7276a252d426acaaca22a72a875f93",
+        "FV.E2E.SemanticStackBound": "024f498240f127b624a4e4795eedecaa34889a09b8d8e8a5790cc9a62e347e89",
+        "FV.Link.SemanticCompileWith": "764d6b32ab745d5dfc001c32c97f41b7fef840667db9d988a405092faf1a5352",
+        "FV.E2E.SemanticLinkGood": "1917a9cf471aebabd5e9503515a900781a7e70e86709b7c8eca1fb450d77a495",
+        "FV.E2E.SemanticBinary": "5f8426b81e0760b165005c479edb8f2ecfbe138973c5386342f617ac510d9a37",
+        "FV.E2E.SemanticBinaryGood": "6b7639cb88096fc4204649c6e898a479d285291e023e9554a1f2bbfdebf6aadb",
+        "FV.E2E.SemanticExecBytes": "09f393f0dcac6eadd4ae7dab27cf1283610ca216770d8d5a167b47754692b67f",
+        "FV.E2E.SemanticExecStatic": "03155e5c04b60080213163be90dd2f8eb27935402ec9cf8414263ce987906351",
+        "FV.E2E.SemanticExecFrameSim": "41e7c481e9f6f882f1eb71e7a6a5b9cba4d14cc3de49e1410ea7c2f85327e2bd",
+        "FV.E2E.SemanticExecRunN": "c463cd58b4dc760a165f345c00c458071d9b5b41475f72c84e93b2df38ece81e",
+        "FV.E2E.SemanticExecGoodRun": "4add061a769d0fabb4dc1cd7d6bc90ac6fde9f833e678286ff39fb64f98014fc",
+        "FV.E2E.SemanticExecGot": "3dddd3a0d20b1bd4aa1fc7133a8d210ba190562798cca5ff1bc74f6eb51da661",
+        "FV.E2E.SemanticExecGoodReads": "1df37eab84af7eca52b6e716f2d2f7f204e5f80295cd6dc4f290cbb222c98485",
+        "FV.E2E.SemanticExecProven": "fef63bb6f78be27b862de1abafb186cd2d1205285dce21d062179f5fb731e3b7",
+        "FV.Link.SemanticExeWith": "59e46819d4b367d90a784fc7442376b8710d25177bfaa04779e1e4971fbe3fba",
+        "FV.Link.SemanticExeSourceWith": "45c90a8c26c589565c9928b145733850199ab263a9dcc785cfb9a67147391cfb",
+        "FV.E2E.StockArithmeticNIWitness": "32ea235df1f2e1f3b867f0ffda62efa8864e6e8142e40dfc0c7ba7a90dd933c4",
+        "FV.E2E.SemanticCompilerWitness": "ed6f674e5a07395c8230b00fecd2c4d9252dfe31c4bddeeba0dc68594c280e7d",
+        "FV.E2E.StockMixedWitness": "f802c93b967d7c00defc1d3fcd4e4e1e9f5c03c65458290c8dd56d53a5a27eda",
+        "FV.E2E.SemanticMixedCompilerWitness": "a1ed6445aa1ff7fd864b745419ff1239b5e78f2210a23337bd328526e8e5b315",
+        "FV.E2E.SemanticFallbackWitness": "5fe9ea7e002523afba7bbe83e19feee6b034ba87ce457bba16cc9fc02d642603",
+        "FV.E2E.SemanticChecksWith": "080634ebe0360e88c0a690dd7a6559c64caf6f53df8c279aa26a1d8ecaefe954",
+        "FVTest.E2E.SemanticLinkProofWith": "d37e8d9cc2b084a1777520a06f4dde317d96d97fe9c4e31a77d5aab98cc60f32",
+        "FVTest.Backend.Lowering.StockMixedLinked": "15dcef863ab62d81af55c6a843470a5966a043d67330ca36f7db8cb93363530a",
+        "FVTest.Backend.Lowering.StockMixedRuntime": "c79f25a10718359c108d202b313dc9817030a1a43268a5d0f1252c3da89512ee",
+        "FVTest.Backend.Main": "f1d894ac2691c5021ef34492117e0ed56f52d35976d4d9c7d8ee9c43786a7683",
+        "FVTest.E2E.LinkCheckMain": "12f6db91df25a10c00efdcc9227224fbc0a244a57e5aa3fbe3c51de73edfbfaa",
+        "FVTest.Link.LeanLinkMain": "99354df383a1a6f559213d10d3514a0c4d9c73ad4f0a982eb849988fbcaa27a7"
+      },
+      "records": [
+        {
+          "module": "FV.Backend.ABIReadOnly",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.ABIReadOnly.probe.log",
+          "probe_log_sha256": "3fe3427694b7a0f0af619c3861ae93cf970855aab04d787749613003d7e3eaa0"
+        },
+        {
+          "module": "FV.Backend.ABIReadFlags",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.ABIReadFlags.probe.log",
+          "probe_log_sha256": "ee969b7c3d38c118f2a1d0ff7fc4134d469ad91b1826751cbf418a4d3dde6b65"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockMixed",
+          "state": "source_key_current_or_restored",
+          "probe_log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.Lowering.StockMixed.probe.log",
+          "probe_log_sha256": "81a5ea94a7fd4260441b5c41ce5f078540d4a1e133c4b843674c46244a5e4994"
+        },
+        {
+          "module": "FV.Backend.StockArithmeticCheck",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.StockArithmeticCheck.build.log",
+          "returncode": 0,
+          "log_sha256": "4690a1f71a12ad05fece1c385b7a46d2e0d84e22725f6833b23d37042044a047"
+        },
+        {
+          "module": "FV.Backend.StockMixedCheck",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.StockMixedCheck.build.log",
+          "returncode": 0,
+          "log_sha256": "0ae09a8c3fdb50c334bc6c654664a82d02ce55325c7bca4186c772e4334bf2ce"
+        },
+        {
+          "module": "FV.Backend.SemanticNICheck",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.SemanticNICheck.build.log",
+          "returncode": 0,
+          "log_sha256": "ef9ccd3d28c0f2f62988f5dec9943d45b998b73479c7e788cb5c7a540b66a606"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockArithmeticNI",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.Lowering.StockArithmeticNI.build.log",
+          "returncode": 0,
+          "log_sha256": "e06a815fe205efa8b8e6f85d50b91a499485143c774f89d1c8e5a72f399192c4"
+        },
+        {
+          "module": "FV.Backend.Lowering.StockMixedNI",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.Lowering.StockMixedNI.build.log",
+          "returncode": 0,
+          "log_sha256": "638a03f6b471f92531622da956f18b5aa9ef5d16e20f6f110d5ea976e98a4365"
+        },
+        {
+          "module": "FV.Backend.ArithmeticProduction",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.ArithmeticProduction.imports.log",
+          "log_sha256": "336075928fc1a1022f1683c882a57ca75258dd2576d37a85ffb79651f4faf8fa"
+        },
+        {
+          "module": "FV.Backend.ArithmeticNIProduction",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Backend.ArithmeticProduction"
+          ]
+        },
+        {
+          "module": "FV.Backend.MixedNIProduction",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Backend.ArithmeticNIProduction"
+          ]
+        },
+        {
+          "module": "FV.Backend.Proof.StockMixedBodyRefines",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.Proof.StockMixedBodyRefines.imports.log",
+          "log_sha256": "c5cc0dc6b8725c97efb7f1a3c87ce77875e2c0472660fc6a7e3c97fd49fc18bf"
+        },
+        {
+          "module": "FV.Backend.Proof.StockMixedCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Backend.Proof.StockMixedBodyRefines"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlySem",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.E2E.ABIReadOnlySem.imports.log",
+          "log_sha256": "4cca51e9c77c17d102124b526a8ece7c93592a37e3634d620fac5989a8d6545b"
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlySem"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyTransport",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyRealize",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyTransport"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadOnlyMachine",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyRealize"
+          ]
+        },
+        {
+          "module": "FV.E2E.ABIReadFlags",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyMachine"
+          ]
+        },
+        {
+          "module": "FV.Backend.Proof.StockArithmeticCheck",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.Backend.Proof.StockArithmeticCheck.build.log",
+          "returncode": 0,
+          "log_sha256": "b7c3ae6d12eddbd495e2f988773c837e9db97219b8727f5d33785f79a6f6f447"
+        },
+        {
+          "module": "FV.E2E.StockArithmeticWorldX",
+          "state": "waiting_for_current_imports",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch3/FV.E2E.StockArithmeticWorldX.imports.log",
+          "log_sha256": "07bcf268d150deaa8291b409c8da500969f1e56dea32dd23c648e4561a1e82fc"
+        },
+        {
+          "module": "FV.E2E.StockMixedWorldX",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Backend.Proof.StockMixedCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.CompiledSemantic",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.StockArithmeticWorldX",
+            "FV.E2E.StockMixedWorldX"
+          ]
+        },
+        {
+          "module": "FV.E2E.StockArithmeticNI",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadOnlyMachine"
+          ]
+        },
+        {
+          "module": "FV.E2E.StockMixedNI",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.ABIReadFlags",
+            "FV.Backend.Proof.StockMixedCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.CompiledSemanticNI",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.CompiledSemantic",
+            "FV.E2E.StockArithmeticNI",
+            "FV.E2E.StockMixedNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticNIBoundary",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.CompiledSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.LinkSemanticNI",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticNIBoundary"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticPipelineCheck",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticPreparedPipeline",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticPipelineCheck"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticStackBound",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticPreparedPipeline"
+          ]
+        },
+        {
+          "module": "FV.Link.SemanticCompileWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticStackBound"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticLinkGood",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.LinkSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticBinary",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticStackBound"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticBinaryGood",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticLinkGood",
+            "FV.E2E.SemanticBinary"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecBytes",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticBinary"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecStatic",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecBytes"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecFrameSim",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecStatic"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecRunN",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecFrameSim"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecGoodRun",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticBinaryGood",
+            "FV.E2E.SemanticExecRunN"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecGot",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecGoodRun"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecGoodReads",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecGoodRun",
+            "FV.E2E.SemanticExecFrameSim"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticExecProven",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticExecGot",
+            "FV.E2E.SemanticExecGoodReads"
+          ]
+        },
+        {
+          "module": "FV.Link.SemanticExeWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.SemanticCompileWith",
+            "FV.E2E.SemanticExecProven"
+          ]
+        },
+        {
+          "module": "FV.Link.SemanticExeSourceWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.SemanticExeWith"
+          ]
+        },
+        {
+          "module": "FV.E2E.StockArithmeticNIWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.CompiledSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticCompilerWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.SemanticExeSourceWith",
+            "FV.E2E.StockArithmeticNIWitness"
+          ]
+        },
+        {
+          "module": "FV.E2E.StockMixedWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.StockMixedNI",
+            "FV.E2E.CompiledSemanticNI"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticMixedCompilerWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.SemanticExeSourceWith",
+            "FV.E2E.StockMixedWitness"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticFallbackWitness",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticCompilerWitness",
+            "FV.E2E.SemanticMixedCompilerWitness"
+          ]
+        },
+        {
+          "module": "FV.E2E.SemanticChecksWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticStackBound"
+          ]
+        },
+        {
+          "module": "FVTest.E2E.SemanticLinkProofWith",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.E2E.SemanticStackBound",
+            "FV.E2E.SemanticChecksWith",
+            "FV.E2E.SemanticChecksWith",
+            "FV.E2E.SemanticStackBound"
+          ]
+        },
+        {
+          "module": "FVTest.Backend.Lowering.StockMixedLinked",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FVTest.E2E.SemanticLinkProofWith",
+            "FV.E2E.StockArithmeticNIWitness",
+            "FV.E2E.StockMixedWitness"
+          ]
+        },
+        {
+          "module": "FVTest.Backend.Lowering.StockMixedRuntime",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Backend.MixedNIProduction",
+            "FV.E2E.StockArithmeticNIWitness",
+            "FV.E2E.StockMixedWitness"
+          ]
+        },
+        {
+          "module": "FVTest.Backend.Main",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Backend.MixedNIProduction"
+          ]
+        },
+        {
+          "module": "FVTest.E2E.LinkCheckMain",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FVTest.E2E.SemanticLinkProofWith"
+          ]
+        },
+        {
+          "module": "FVTest.Link.LeanLinkMain",
+          "state": "waiting_for_transitive_imports",
+          "dependencies": [
+            "FV.Link.SemanticCompileWith"
+          ]
+        }
+      ],
+      "skip_reason": null,
+      "scheduler_resumed": true,
+      "budget_GiB": 16,
+      "normal_leaf_cap_MiB": 8192,
+      "max_active_builds": 2,
+      "cache": "own ignored .lake view, shared source-keyed artifactstore/hardlinks; no cachecopy",
+      "remaining": "Continue source-keyed normalmixedproof/consumer/tool/runtime gates; arithmeticcandidate must landfirst."
     }
   ],
-  "limits": "3a/8dmodulecachekeys validonlyforexactsource+importclosure; metadataonlyreceiptcommitdoesnotmodifyLean/Rust. Allnormalclassproof/tool/runtime/encoder/identitystage/trust/nativegenerated/verifiedexamplegatesremainmandatorybeforemixedactivation. Arithmeticlandsfirst. Original140fullgoalactive."
+  "limits": "3a/8dmodulecachekeys validonlyforexactsource+importclosure; metadataonlyreceiptcommitdoesnotmodifyLean/Rust. Allnormalclassproof/tool/runtime/encoder/identitystage/trust/nativegenerated/verifiedexamplegatesremainmandatorybeforemixedactivation. Arithmeticlandsfirst. Original140fullgoalactive.",
+  "resource_policy_current": {
+    "aggregate_MiB": 16384,
+    "max_active_builds": 2,
+    "leaf_cap_MiB": 8192,
+    "no_actual_proof_wall_timeout": true,
+    "transitive_missing_imports_pruned": true,
+    "active_author_modules_not_duplicated": true,
+    "launcher_resumed": true
+  },
+  "ci_cache_reuse": {
+    "run": 39464556827,
+    "base": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
+    "stages": [
+      "stage-w1-7",
+      "stage-w1-8",
+      "stage-w1-9"
+    ],
+    "verified_unique_output_keys": 123,
+    "verified_referenced_artifacts": 369,
+    "receipt_sha256": "ce4580980fcf2d9f223e68ff784d0f91d58f7075f2d60ff2aef35e2bffe982eb",
+    "not_a_gate_pass": true
+  }
 }
