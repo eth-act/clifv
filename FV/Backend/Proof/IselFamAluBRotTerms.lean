@@ -286,7 +286,7 @@ theorem small_rot_amt {w : Nat} (hw : w = 8 ∨ w = 16) (A : BitVec 32) :
 
 theorem small_rot_neg {w : Nat} (hw : w = 8 ∨ w = 16) (B : BitVec 32) (hB : B.toNat < w) :
     (0 - (B - BitVec.ofNat 32 w)).toNat = w - B.toNat := by
-  have e : 0 - (B - BitVec.ofNat 32 w) = BitVec.ofNat 32 w - B := by bv_decide
+  have e : 0 - (B - BitVec.ofNat 32 w) = BitVec.ofNat 32 w - B := by bv_omega
   rw [e, BitVec.toNat_sub, BitVec.toNat_ofNat]
   rcases hw with rfl | rfl <;> simp <;> omega
 
