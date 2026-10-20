@@ -193,6 +193,49 @@ allocators.
 Filetests with the fallback forced (`scripts/lean-backend-filetests.sh --regalloc spill`): see
 "Results" (g).
 
+### Typed spill chain (S11e5 Stage C slice 6, `f32`/`f64` values)
+
+The spill allocation is unchanged (FP homes and scratch keep the 128-bit Q slots). Its acceptance
+over the typed movement scope `LowerScopeT` (`FV/Backend/Proof/Spill{EdgesT,ClassesT,LocalPipeT}.lean`,
+`SpillInstCheck.lean`, `FV/Compile/TryArgClass.lean`), beside the integer theorems (statements
+unchanged):
+
+```lean
+theorem Spill.edgesHyp_ofT (hd : Dominated f) (hs : LowerScopeT f) (ha : ArityOk f)
+    (htc : Compile.tryArgClassOk f = true) (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp) :
+    ∀ succs preds, vcp.cfg = .ok (succs, preds) → EdgesOk vcp succs preds
+theorem Spill.classesHypT (f vc vcp) (hd : Dominated f) (hs : LowerScopeT f) (hrc : ResClassOk f)
+    (hl : lowerFunction f = .ok vc) (hp : prepare vc = .ok vcp) : ClassesOk vcp
+theorem Spill.spillLocalOk_of_pipelineT (hd hs ha htc hrc hl hp)
+    (hctl : ∀ vb ∈ vc.blocks.toList, ∀ i ∈ vb.insts.toList, i.isCtl = true → SpillInstOk i)
+    (hform : FormsCovered default vcp) : SpillLocalOk vcp
+theorem Spill.spillAcceptedT (hd hs ha htc hrc hl hp hctl hform) (hk : killFreeB vcp = true) :
+    AllocChecked vcp (spillAlloc vcp)
+theorem Spill.allocChecked_allocResultT (… as spillAcceptedT …) (ra : Except String RFunc) :
+    AllocChecked vcp (allocResult vcp ra)
+```
+
+* `Compile.tryArgClassOk f` (input check): a `try_call`'s `ret i`/`exn i` arguments go to integer
+  parameters (`tryRegsOf`'s vregs are integer; `edgeClassOk` checks only `val` arguments).
+  `tryArgClassOk_sound`, `tryArgClassOk_of_functionE`.
+* `ResClassOk f` (decided by `resClassOkB f`, `resClassOk_of_resClassOkB`): in the recorded
+  lowering, a statement's `lower` returns `[.vreg o c]` for result `r` only with `c = valClassOf
+  ctx r` (the driver aliases `r` to `o`). Over subset E it is `resClassOk_of_lowerScope` (from
+  `stmt_cov`). The class facts of the ISLE calls hold over float-capable contexts (`stmt_clsT`,
+  `termCall_clsT`); the alias resolution keeps classes when each alias joins one class
+  (`resolve_clsT`).
+* `hctl` is slice 5's premise (`ctlSpill_typed`); `ctlSpillB vc` decides it
+  (`ctlSpill_of_ctlSpillB`, from `spillInstOkB`/`opsOkB`, sound). `hform` is decided by
+  `formsCoveredB default vcp` (over `LowerScope` it is `formsCovered_complete`). `hk` is the
+  syntactic availability check `killFreeB` (proven over `LowerScope`, `E2E.spillKillFree`).
+* `classesOkB` decides `ClassesOk` (`classesOk_of_classesOkB`).
+* Integer corollaries: `classesHyp_of_T : ClassesHyp`, `edgesHyp_of_toT`,
+  `spillLocalOk_of_pipelineT_int` (only `hctl` left, as in `spillLocalOk_of_pipeline`).
+
+Witnesses: `FVTest/Backend/FloatSpillT.lean` (`fMv`, float parameters/loads/stores/constants/
+`select`/`bitcast`/block parameters/return: all premises decided, `spillAcceptedT_mv`,
+`checkAlloc_mv`; the integer corollaries on `lowerWitness`'s source).
+
 ## The Lean allocator (`leanAlloc`, V4b, `--regalloc lean`)
 
 `leanAlloc : VCode → Except String RFunc` (`FV/Backend/LinearScan.lean`, #57/#273) is a
