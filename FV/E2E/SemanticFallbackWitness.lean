@@ -8,8 +8,15 @@ set_option Elab.async false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 10000000
 
-private def reject (_ : Clif.Function) : Except String VCode :=
-  .error "forced complete semantic attempt failure"
+/-- A lowering error can recover inside the per-function pipeline. Instead,
+produce allocatable code for a different computation so the complete program's
+semantic checker rejects the first attempt. -/
+private def mismatch (f : Clif.Function) : Except String VCode :=
+  lowerFunction {f with blocks := f.blocks.map fun b =>
+    {b with body := b.body.map fun stm =>
+      {stm with inst := match stm.inst with
+        | .binary .iadd ty x y => .binary .isub ty x y
+        | inst => inst}}}
 
 private def selected (r : Except String SemanticCompilerWith.FallbackOutput)
     (wanted : SemanticCompilerWith.CompileChoice) : Bool :=
@@ -38,13 +45,13 @@ private def checks (config : Configuration) (cleanup : Bool) : Bool :=
   selected (SemanticCompilerWith.compileWithFallback Stock.Mixed.lowerValidated
     Stock.Arithmetic.lowerValidated (SemanticMixedCompilerWitness.initial config)
     (SemanticMixedCompilerWitness.file0 config cleanup) cleanup) .current &&
-  selected (SemanticCompilerWith.compileWithFallback reject Stock.Arithmetic.lowerValidated
+  selected (SemanticCompilerWith.compileWithFallback mismatch Stock.Arithmetic.lowerValidated
     (SemanticCompilerWitness.initial config) (SemanticCompilerWitness.file0 config cleanup) cleanup) .previous &&
-  selected (SemanticCompilerWith.compileWithFallback reject reject
+  selected (SemanticCompilerWith.compileWithFallback mismatch mismatch
     (SemanticCompilerWitness.initial config) (legacyFile0 config cleanup) cleanup) .legacy &&
-  selected (SemanticCompilerWith.compileWithFallback reject Stock.Arithmetic.lowerValidated
+  selected (SemanticCompilerWith.compileWithFallback mismatch Stock.Arithmetic.lowerValidated
     (SemanticMixedCompilerWitness.initial config) (mixedPreviousFile0 config cleanup) cleanup) .previous &&
-  selected (SemanticCompilerWith.compileWithFallback reject reject
+  selected (SemanticCompilerWith.compileWithFallback mismatch mismatch
     (SemanticMixedCompilerWitness.initial config) (mixedLegacyFile0 config cleanup) cleanup) .legacy
 
 -- witness: native_decide (all three actual compiler choices, twelve configurations)

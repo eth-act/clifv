@@ -72,3 +72,14 @@ image and cleanup flag. The mixed linked fixture defaults to its own
 `/tmp/stock-mixed-linked-fixture` directory to preserve arithmetic evidence.
 These additional source changes await the next bounded check; no Lean scratch
 job runs alongside the current16GiB PerEdgeSpillCycleFixture kernel.
+
+The37source-file combined compiler/consumer check now passes actual ELF
+compilation and all5compiler-choice cases across12ABI/cleanup configurations.
+The initial witness incorrectly used a lowering error to force whole-program
+failure; per-function recovery can legitimately accept that attempt. The repaired
+fixture supplies allocatable code for a different computation, forcing the
+semantic checker to reject it. Current/previous/legacy selection now passes for
+both arithmetic and mixed sources without changing expected choices. Both fixed
+witness roots use only standard axioms and their marked native-data fact.
+[Exact sources, initial failure, diagnostic and passing result](stock-mixed-compiler-fallback-check.json).
+Normal module/tool/CLI/link/generated-proof/corpus/parity gates remain pending.
