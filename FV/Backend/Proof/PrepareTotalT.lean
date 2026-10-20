@@ -1,6 +1,8 @@
 import FV.Backend.Proof.PrepareTotal
 import FV.Backend.Proof.SpillEdgesLowT
 import FV.Backend.Proof.IselTermFactsTy
+import FV.Backend.Proof.SpillEdgesT
+import FV.Backend.Proof.LowerCompleteT
 
 /-!
 # `prepare` is total on the typed scope (S11e5 Stage C, slice 8)
