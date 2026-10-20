@@ -407,10 +407,10 @@ returns are rejected by the backend anyway). Witnesses: `Opt.Legal.Complete.Witn
 (`(i64 × 8, i128) -> i128`: `Pre`, legalised to ten `i64` parameters, accepted) and `hole128`
 (`(i64 × 7, i128, i64) -> i128`: `Pre`, legalised with the last `i64` as the eighth parameter and
 the halves as the ninth and tenth, accepted, `hole128_legal`). Native check:
-`FVTest/Clif/fixtures/i128-stack-args.clif` (`scripts/lean-backend-filetests.sh`: 11 runs agree
+`FVTest/Clif/fixtures/i128-stack-args.clif` (`scripts/lean-backend-filetests.sh`: 14 runs agree
 with Cranelift's code — all registers used, `x7` left, a stack pad, a fifth pair, a pair then
-an `i64` on the stack, a call passing a pair on the stack; the seven functions are verified;
-the `x7` case followed by an `i64` is unsupported).
+an `i64` on the stack, a call passing a pair on the stack, the `x7` placement (`%hole`) and a
+call at it (`%callhole`); all nine functions are compiled and verified, none unsupported).
 
 ## Overflow ops at `i128` (S4, #28)
 
