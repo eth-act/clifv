@@ -148,6 +148,31 @@ theorem stack128_legal : ∃ g cert, function128Cert stack128 = .ok (g, cert) �
     rw [h] at ht
     exact ⟨r.1, r.2, rfl, by simpa [Except.toOption] using ht, check_complete stack128_pre h⟩
 
+/-- `%hole128(i64 × 7, i128, i64) -> i128`: `return v7` (`x7` placement: Cranelift passes the
+pair on the stack and `v8` in `x7`): `Pre` holds and the legalisation, with `v8` as the eighth
+`i64` parameter (`x7`) and the halves as the ninth and tenth (the stack), is accepted. -/
+def hole128 : Function where
+  name := "hole128"
+  sig := { params := (List.replicate 7 { ty := .i64 }) ++ [{ ty := .i128 }, { ty := .i64 }],
+           returns := [{ ty := .i128 }] }
+  blocks := [{ id := 0, params := ((List.range 7).map (·, .i64)) ++ [(7, .i128), (8, .i64)],
+               body := [], term := .ret [7] }]
+
+theorem hole128_pre : Pre hole128 := preB_iff.1 (by decide +kernel)
+
+theorem hole128_legal : ∃ g cert, function128Cert hole128 = .ok (g, cert) ∧
+    g.sig.params = List.replicate 10 { ty := .i64 } ∧
+    (g.blocks.head?.bind (·.params[7]?)) = some (8, .i64) ∧ check hole128 g cert = true := by
+  have ht : ((function128Cert hole128).toOption.map
+      fun r => (r.1.sig.params, r.1.blocks.head?.bind (·.params[7]?))) =
+      some (List.replicate 10 { ty := .i64 }, some (8, .i64)) := by decide +kernel
+  cases h : function128Cert hole128 with
+  | error e => rw [h] at ht; cases ht
+  | ok r =>
+    rw [h] at ht
+    simp only [Except.toOption, Option.map_some, Option.some.injEq, Prod.mk.injEq] at ht
+    exact ⟨r.1, r.2, rfl, ht.1, ht.2, check_complete hole128_pre h⟩
+
 /-- `%saddof128(i128, i128) -> i128, i8`: `v2, v3 = sadd_overflow v0, v1; return v2, v3`:
 `Pre` holds and the legalisation (the pure pattern `Pat.overflow .saddOverflow`) is accepted. -/
 def saddof128 : Function where

@@ -1052,7 +1052,57 @@ theorem entryParams_spec {C : Ctx} (hG : CGood C) (gs : List (List SlotEl))
   | case7 gs v t ps ht =>
     intro st st' out h
     simp [entryParams, ht] at h
-  | case8 t x h1 h2 h3 h4 =>
+  | case8 p gs v t u tu ps hc ih =>
+    -- `x7` placement: the next parameter first, then the pair
+    intro st st' out h hl hn hz
+    simp only [entryParams, hc, ite_true] at h
+    obtain ⟨⟨a, b⟩, s0, h0, hk⟩ := run_bind h
+    obtain ⟨hab, rfl⟩ := pairOf_ok h0
+    obtain ⟨rest, s1, h1, h2⟩ := run_bind hk
+    simp only [pure_run, Except.ok.injEq, Prod.mk.injEq] at h2
+    obtain ⟨rfl, rfl⟩ := h2
+    simp only [List.map_cons, List.nodup_cons, List.mem_cons, not_or] at hn
+    obtain ⟨o1, n1, ok1, nd1, m1⟩ := ih h1 (fun x hx => hl x (by simp [hx])) hn.2.2 hz
+    have hr : v < C.T0 := hl (v, t) (by simp)
+    have hru : u < C.T0 := hl (u, tu) (by simp)
+    have hpab := hG.pair hab
+    have hz' := hG.lt
+    simp only [Bool.and_eq_true, beq_iff_eq] at hc
+    obtain ⟨⟨ht, htu⟩, hpu⟩ := hc
+    refine ⟨o1, n1, ?_, ?_, ?_⟩
+    · simp [entryParamsOk, ht, htu, hpu, hab, ok1]
+    · have hnot : ∀ y ∈ [u, a, b], y ∉ rest.map (·.1) := by
+        intro y hy hm
+        rcases m1 y hm with ⟨w, hw, hx⟩ | ⟨h3, -⟩
+        · have hwl : w < C.T0 := by
+            obtain ⟨q, hq, rfl⟩ := List.mem_map.mp hw
+            exact hl q (by simp [hq])
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
+          rcases hy with rfl | rfl | rfl
+          · exact imgOf_disj hG hru hwl (fun e => hn.2.1 (e ▸ hw))
+              (by rw [imgOf_plain hpu]; simp) hx
+          · exact imgOf_disj hG hr hwl (fun e => hn.1.2 (e ▸ hw))
+              (by rw [imgOf_pair hab]; simp) hx
+          · exact imgOf_disj hG hr hwl (fun e => hn.1.2 (e ▸ hw))
+              (by rw [imgOf_pair hab]; simp) hx
+        · simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
+          rcases hy with rfl | rfl | rfl <;> vomega
+      simp only [List.map_cons, List.nodup_cons, List.mem_cons, not_or]
+      exact ⟨⟨by vomega, by vomega, hnot u (by simp)⟩, ⟨hpab.2.2.2.2, hnot a (by simp)⟩,
+        hnot b (by simp), nd1⟩
+    · intro x hx
+      simp only [List.map_cons, List.mem_cons] at hx
+      rcases hx with rfl | rfl | rfl | hx
+      · exact .inl ⟨x, by simp, by rw [imgOf_plain hpu]; simp⟩
+      · exact .inl ⟨v, by simp, by rw [imgOf_pair hab]; simp⟩
+      · exact .inl ⟨v, by simp, by rw [imgOf_pair hab]; simp⟩
+      · rcases m1 x hx with ⟨w, hw, hx⟩ | h3
+        · exact .inl ⟨w, by simp only [List.map_cons, List.mem_cons]; exact .inr (.inr hw), hx⟩
+        · exact .inr h3
+  | case9 p gs v t u tu ps hc =>
+    intro st st' out h
+    simp [entryParams, hc] at h
+  | case10 =>
     intro st st' out h
     rw [entryParams] at h
     · simp at h

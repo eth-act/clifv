@@ -43,4 +43,10 @@ import FV.E2E.LegalWideWitness
 #print axioms Opt.Legal.Complete.Witness.tryInd_not_pre
 #print axioms Opt.Legal.Complete.Witness.tryInd_preW
 #print axioms Opt.Legal.Complete.Witness.tryInd_legal
+#print axioms Opt.Legal.Complete.Witness.stack128_pre
+#print axioms Opt.Legal.Complete.Witness.stack128_legal
+#print axioms Opt.Legal.Complete.Witness.hole128_pre
+#print axioms Opt.Legal.Complete.Witness.hole128_legal
+#print axioms Opt.Legal.groupsOf_cons
+#print axioms Opt.Legal.expandArgs_x7
 #print axioms E2E.LinkWitness.a2_legal_wide -- witness: native_decide

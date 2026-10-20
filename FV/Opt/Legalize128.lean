@@ -138,9 +138,12 @@ signature passes the halves as two `i64` parameters, which the backend places in
 8-byte stack slots (`argLocs`) once `x0..x7` are used up, so:
 * registers used up (`k = 8`): the pair, after an `i64` pad when the stack offset is not
   16-aligned;
-* only `x7` left (`k = 7`): a pad takes `x7` and the halves go on the stack, which needs a
-  16-aligned stack offset; Cranelift leaves `x7` to the next integer parameter, so a later
-  integer parameter makes the legalisation fail (`hole`).
+* only `x7` left (`k = 7`): the halves go on the stack, which needs a 16-aligned stack
+  offset, and Cranelift leaves `x7` to the next integer parameter. When the next parameter is
+  one (`x7` placement), the legalised signature passes it first, in `x7`, then the halves: the
+  pair's group is `[.val q, .lo, .hi]` (`q` that parameter) and `q`'s own group is empty.
+  Otherwise a pad takes `x7`, and a later integer parameter makes the legalisation fail
+  (`hole`: Cranelift passes it in `x7`).
 
 Returns use the same expansion; more than eight legalised returns are rejected by the
 backend (`retRegs`), as Cranelift rejects stack returns. -/
@@ -155,7 +158,8 @@ inductive SlotEl where
 
 /-- The slots of every parameter, in order; `k` counts the `x` registers consumed so far
 (`x0..x7`), `v` the float registers (`v0..v7`), `st` the stack bytes (a multiple of 8),
-`hole`: a pair went on the stack while Cranelift still had `x7` free. -/
+`hole`: a pair went on the stack while Cranelift still had `x7` free. An `i128` group
+`[.val q, .lo, .hi]` is followed by the empty group of the parameter `q` it carries in `x7`. -/
 def expandGroups (ps : List AbiParam) : Except String (List (List SlotEl)) :=
   go ps 0 0 0 false
 where
@@ -169,9 +173,19 @@ where
           let rest ← go ps (if k % 2 == 1 then k + 3 else k + 2) v st hole
           return (if k % 2 == 1 then [.pad, .lo, .hi] else [.lo, .hi]) :: rest
         else if k == 7 then
-          if st % 16 == 0 then do
-            let rest ← go ps 8 v (st + 16) true
-            return [.pad, .lo, .hi] :: rest
+          if st % 16 == 0 then
+            match ps with
+            | q :: qs =>
+              if q.ty != .i128 && q.purpose != .sret && !q.ty.isFloat then do
+                -- `x7` placement: `q` in `x7`, then the halves on the stack
+                let rest ← go qs 8 v (st + 16) false
+                return [.val q, .lo, .hi] :: [] :: rest
+              else do
+                let rest ← go (q :: qs) 8 v (st + 16) true
+                return [.pad, .lo, .hi] :: rest
+            | [] => do
+              let rest ← go [] 8 v (st + 16) true
+              return [.pad, .lo, .hi] :: rest
           else throw "legalize128: i128 argument on an unaligned stack offset while x7 is free"
         else if st % 16 == 0 then do
           let rest ← go ps k v (st + 16) hole
@@ -239,13 +253,18 @@ structure Cert where
 /-! ## Run commands: the original's arguments and the legalised outcome -/
 
 /-- The arguments of a run command of the original function, expanded for the legalised
-signature (an `i128` argument becomes its pair, a pad gets zero). -/
+signature (an `i128` argument becomes its pair, a pad gets zero; with `x7` placement the next
+argument comes first). -/
 def expandRunArgs (orig : Signature) (vs : List Val) : Except String (List Val) := do
   let gs ← expandGroups orig.params
   go gs vs
 where
   go : List (List SlotEl) → List Val → Except String (List Val)
     | [], [] => return []
+    | [.val _, .lo, .hi] :: [] :: gs, v :: u :: vs => do
+      let pair ← groupVal [.lo, .hi] v
+      let rest ← go gs vs
+      return u :: pair ++ rest
     | g :: gs, v :: vs => do
       let mine ← groupVal g v
       let rest ← go gs vs
