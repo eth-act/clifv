@@ -1,6 +1,6 @@
-import FV.Backend.Lowering.StockScalarProduction
+import FV.Backend.Lowering.StockArithmeticNI
 import FVTest.E2E.LinkProof
-import FVTest.E2E.ProductionLinkProofWith
+import FVTest.E2E.SemanticLinkProofWith
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -21,17 +21,33 @@ def main (args : List String) : IO UInt32 := do
   -- names whose address is in a data object the program reaches (vtable methods)
   let dataSyms : List String := A.data.flatMap (·.refs)
   let I0 : LinkInput := { funcs := fis.toList, addrs, syms := [], raStar := 8, D := 0 }
+  -- Other supported compiler modes and whole-file retries can retain earlier
+  -- artifacts. Recover their routing from actual bytes, then validate every
+  -- selected artifact normally. These are data choices, not source assumptions.
+  let mut retained : List String := []
+  if let some phs := phdrs (fileRd file) then
+    for fi in I0.funcs do
+      let f := fi.func
+      if Stock.Arithmetic.eligible f && !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
+        let bytesMatch := match I0.pipeProductionWith Stock.Arithmetic.lowerValidated o.deadCleanup fi with
+          | .error _ => false
+          | .ok a => artB I0 (fileRd file) phs a
+        if !bytesMatch then retained := retained ++ [f.name]
+  let actualLower := Stock.Arithmetic.lowerWithFallbacks retained
+  let lowerName := if retained.isEmpty then "Backend.Stock.Arithmetic.lowerValidated"
+    else "(Backend.Stock.Arithmetic.lowerWithFallbacks [" ++
+      ", ".intercalate (retained.map leanStr) ++ "])"
   if o.profile then
     -- the slowest functions: the pipeline, the lowering validator, the allocation checker
     let mut tot : Array (Nat × String × Nat × Nat × Nat) := #[]
     for fi in fis do
       let t0 ← IO.monoMsNow
       let f := fi.func
-      let r := I0.pipeProductionWith Stock.ScalarAdd.lower o.deadCleanup fi
+      let r := I0.pipeProductionWith actualLower o.deadCleanup fi
       let ok := r.toBool
       let t1 ← IO.monoMsNow
       let a := getOk r
-      let lc := Backend.Proof.Driver.lowerCheck f a.vc
+      let lc := Backend.SemanticNI.check f a.vc
       let t2 ← IO.monoMsNow
       let ca := (checkAlloc a.vcp a.rf).toBool
       let t3 ← IO.monoMsNow
@@ -41,12 +57,12 @@ def main (args : List String) : IO UInt32 := do
       IO.println s!"  profile: {t} ms {n} (pipeline {a}, lowerCheck {b}, checkAlloc {c})"
     IO.println s!"  profile: {(tot.map (·.1)).foldl (· + ·) 0} ms in total"
   let t0 ← IO.monoMsNow
-  let R0 := I0.resultsProductionWith Stock.ScalarAdd.lower o.deadCleanup
+  let R0 := I0.resultsProductionWith actualLower o.deadCleanup
   -- the CLIF image's symbols and the call-level stack
   -- the checks that do not depend on the rest of the program, once (`staticChks`: the
   -- validators); then `diagR` with them (`chks = staticChks ++ linkChks`)
   let D0 := (R0.map fun e => frameDrop (getOk e.2).af).foldl max 0
-  let stat := R0.map fun e => (e.1.name, (if o.deadCleanup then staticChksWith Backend.DeadCleanup.prune else staticChks) { I0 with D := D0 } e.1 e.2)
+  let stat := R0.map fun e => (e.1.name, staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2)
   let nStat := (stat.filter fun e => !(bad e.2).isEmpty).length
   IO.println s!"  static checks (the validators): {nStat} function(s) fail"
   IO.println s!"  static checks done in {(← IO.monoMsNow) - t0} ms"
@@ -243,7 +259,7 @@ def main (args : List String) : IO UInt32 := do
     let stackAll := Pk.funcs.all fun g => (stackOf g).isSome
     let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
       else none
-    for (p, t) in FVTest.E2E.ProductionLinkProofWith.leanFilesProductionWith "Backend.Stock.ScalarAdd.lower" I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockScalarProduction") do
+    for (p, t) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockArithmeticNI") do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
       IO.FS.writeFile p t
       IO.println s!"  wrote {p}"

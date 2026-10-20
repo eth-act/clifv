@@ -731,3 +731,13 @@ def emit : Arm.Code → ByteArray                    -- decode ∘ encode = id
 theorem backend_correct (f : FlatFn σ τ) (h : f.checked) :
     Arm.run (emit (regalloc (isel (compile f)))) ≈ denote f
 ```
+
+
+Raw Stock arithmetic delivery (#140, active 2026-10-20): paired semantic artifacts
+and whole-program/binary/executable/original-source consumers are implemented on
+`agent/stock-arithmetic-production-adapters` (checkpoint79df6b4a). Actual default
+compiler/checker/linker/proof-emission integration is under mixed-program and full
+author validation, with original inputs/contracts/axioms and prior class routes
+retained. No main activation receipt yet. See
+`docs/plans/stock-driver-incremental-delivery.md` and
+`docs/research/stock-arithmetic-ni-checkpoint.md`. Full original#140 remains open.

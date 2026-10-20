@@ -740,7 +740,7 @@ FV.Backend.Proof.StockCmpWideConstantLeftRootValues	2016	2
 FV.Backend.Proof.StockCmpWideConstantLeftSelection	2308	56
 FV.Backend.Proof.StockCmpWideConstantLeftSourceValues	2020	2
 FV.Backend.Proof.StockCmpWideConstantLeftValues	1949	2
-FV.Backend.Proof.StockCmpWithFlags	23645	128
+FV.Backend.Proof.StockCmpWithFlags	2119	2
 FV.Backend.Proof.StockCmpZero16ConstantDriverRuns	9471	120
 FV.Backend.Proof.StockCmpZero16ConstantThreeEqAllValuesWitness	9416	40
 FV.Backend.Proof.StockCmpZero16ConstantThreeNeAllValuesWitness	9437	40

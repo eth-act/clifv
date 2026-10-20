@@ -1152,3 +1152,13 @@ label**; list the free ones with
 | T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | **done** ([#213](https://github.com/eth-act/clifv/pull/213)): no compiled-evaluation axiom in the compiler theorems |
 | T7 | [#43](https://github.com/eth-act/clifv/issues/43) Trusted base: `normalize.py`, `clif-data-export` (frontend-side tools) | **T7a/T7d/T7e done** ([#222](https://github.com/eth-act/clifv/pull/222)): bundle boundary, Lean-built `LinkSpec` with proofs, `Front.bundle_correct_source{,_peak}{,_baseline}`; T7b/T7c: #221, done |
 | T7b/T7c | [#221](https://github.com/eth-act/clifv/issues/221) Trusted base: frontend identities at the source (cg_clif external-name tables) and a Lean decoding of the raw dumps | **done** ([#224](https://github.com/eth-act/clifv/pull/224)): patched cg_clif tables, `Front.decodeFn`, `Front.rawLink_eq_link`, `Front.bundle_correct_raw{,_peak}{,_baseline}` (docs/contracts/frontend.md §2, §4) |
+
+
+Raw Stock arithmetic delivery (#140, active 2026-10-20): paired semantic artifacts
+and whole-program/binary/executable/original-source consumers are implemented on
+`agent/stock-arithmetic-production-adapters` (checkpoint79df6b4a). Actual default
+compiler/checker/linker/proof-emission integration is under mixed-program and full
+author validation, with original inputs/contracts/axioms and prior class routes
+retained. No main activation receipt yet. See
+`docs/plans/stock-driver-incremental-delivery.md` and
+`docs/research/stock-arithmetic-ni-checkpoint.md`. Full original#140 remains open.
