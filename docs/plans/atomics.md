@@ -328,10 +328,17 @@ they are; the per-thread layers are new files.
   well-formed execution that is SC per location (Armv8's `internal`), with `co`-first initial
   writes, reads reading their writes' values and no partial overlap, **if only thread `i` writes
   `Priv i`, thread `i`'s trace is `PrivCoh (Priv i)`**. `realizes_of_threads_priv`: the reduction
-  with one private set per thread. The premise "only thread `i` writes `Priv i`" is the
-  threads' guarantee (`ownWrites_of_refines`), but deriving it from the refinements is circular
-  (a thread's guarantee needs its coherence, which needs the others' guarantees) and the fragment
-  allows load buffering (no dependency ordering), so it stays an explicit program-level premise.
+  with one private set per thread.
+
+  **Explicit program-level premise: no thread writes another thread's private set.** It is a
+  hypothesis of `privCoh_of_consistent`/`realizes_of_threads_priv`, not a theorem, for two
+  reasons. (1) Deriving it from the per-thread refinements is circular: thread `i`'s guarantee
+  (`ownWrites_of_refines`: it writes only `Priv i` and its source events' locations) holds only
+  if its reads of `Priv i` are coherent, and that coherence needs every other thread's guarantee
+  first. (2) There is no order to break the circle by induction: the fragment allows load
+  buffering through plain accesses (no dependency ordering, §2), so a consistent execution need
+  not have a prefix in which all threads behaved. It is a property of the program (its stacks
+  are disjoint and nobody else writes them), as in CASCompCert's rely/guarantee premise.
 * **Layer 2: isel with interference (open).** The per-statement simulation of the M7 driver (the
   step lemmas behind `IselSim`) as `Refines` from `ClifThread.CStep` to the VCode event
   semantics. `stmt_step` does not reveal which addresses the VCode segment accesses (finding 3).
