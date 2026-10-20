@@ -83,3 +83,14 @@ both arithmetic and mixed sources without changing expected choices. Both fixed
 witness roots use only standard axioms and their marked native-data fact.
 [Exact sources, initial failure, diagnostic and passing result](stock-mixed-compiler-fallback-check.json).
 Normal module/tool/CLI/link/generated-proof/corpus/parity gates remain pending.
+
+Actual linked fixture now passes all12scenarios: realELF/program/checker/history/
+stack/proof emission, both cleanup modes, strict/fallback, retained artifacts,
+mixed old/new classes with a caller, and33functions/global/per-entry emission.
+The exact emitted six-function mixed cleanup proof and33-function per-entry proof
+(Input+both slices+root) also pass kernel checking against combined new production/
+consumer declarations. [Inputs, all artifact hashes, logs, recovery](stock-mixed-linked-check.json).
+Recovery7090fb6d on agent/stock-driver-wip-backup-20261020T162211Z preserves
+all1874saveddirtypaths and exact generated artifacts/logs/scratch sources; canonical
+HEAD/index unchanged. These checks do not replace normal module/tool/CLI gates,
+ALL generated variants, corpus or previous axiom/identity/stage parity.
