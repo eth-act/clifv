@@ -68,12 +68,57 @@ private def checkConfiguration (label : String)
       retried.unvalidated == retained.unvalidated) "retry changed retained output/history/stages"
   IO.println s!"Stock arithmetic {label} {repr config}: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed"
 
+/-- Require real accepted oracle answers, then compare them with the production
+allocator's output. A missing binary or spill fallback cannot satisfy this test. -/
+private def checkedRegalloc2 (bin : String) (vcs : Array VCode) : IO (Array (Except String AFunc)) := do
+  let prepared ← vcs.mapM fun vc => match prepareChecked vc with
+    | .ok vcp => pure vcp
+    | .error message => throw (IO.userError message)
+  let answers ← match ← runLeanRegalloc bin aarch64Env prepared with
+    | .ok answers => pure answers
+    | .error message => throw (IO.userError message)
+  require (answers.size == prepared.size) "real regalloc2 answer count differs"
+  let mut expected : Array (Except String AFunc) := #[]
+  for i in [:prepared.size] do
+    let result ← match answers[i]! with
+      | .ok result => pure result
+      | .error message => throw (IO.userError message)
+    let rf ← match result.oracle with
+      | .ok rf => pure rf
+      | .error message => throw (IO.userError message)
+    let vcp := prepared[i]!
+    require (decide (result.prepared = vcp) && (checkAlloc vcp rf).isOk)
+      "real regalloc2 allocation was not accepted"
+    let af ← match lowerRFunc vcp rf with
+      | .ok af => pure af
+      | .error message => throw (IO.userError message)
+    require (emitReady af) "real regalloc2 output required emission fallback"
+    expected := expected.push (.ok af)
+  let actual ← (Allocator.regalloc2 bin).run vcs
+  require (actual.size == expected.size && (actual.zip expected).all (fun (a,b) =>
+    match a,b with
+    | .ok a,.ok b => a.name == b.name && a.frameSize == b.frameSize &&
+        a.blocks == b.blocks && a.slotBase == b.slotBase && a.frame == b.frame
+    | _,_ => false)) "production allocator changed the real checked oracle output"
+  pure actual
+
+
 def check : IO Unit := do
   for config in Stock.D0.configurations do
     checkConfiguration "lean" (fun vcs => pure (allocateLean vcs)) config
-  let regalloc := (Allocator.regalloc2 "rust/target/release/lean-regalloc").run
+  let regalloc := checkedRegalloc2 "rust/target/release/lean-regalloc"
   for config in Stock.D0.configurations do
     checkConfiguration "regalloc2" regalloc config
+  let sample ← match Stock.Arithmetic.lowerValidated
+      (E2E.StockArithmeticNIWitness.function .systemVI64) with
+    | .ok vc => pure vc
+    | .error message => throw (IO.userError message)
+  let missingRejected ← try
+    discard <| checkedRegalloc2 "/dev/null/lean-regalloc" #[sample]
+    pure false
+  catch _ => pure true
+  require missingRejected "missing regalloc2 binary silently passed the oracle test"
+  IO.println "Stock arithmetic missing-binary negative control passed"
 
 end FVTest.StockArithmeticRuntime
 
