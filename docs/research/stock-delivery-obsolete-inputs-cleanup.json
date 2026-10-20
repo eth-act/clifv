@@ -1,0 +1,11 @@
+{
+  "utc": "20261017T143417Z",
+  "removed_expendable_snapshot": "/tmp/stock-try-rule-inputs",
+  "archive": "/home/lee/.clifv-recovery/20261017T143417Z-obsolete-proof-inputs/stock-try-rule-inputs.tar.gz",
+  "archive_sha256": "1021412330c92e0850963f8549a0eefd4e478b04faec1bafeab7e038b84cf4d7",
+  "bytes_before": 2818996296,
+  "archive_bytes": 987405630,
+  "member_count": 1052,
+  "every_archived_byte_verified": true,
+  "scratch_sources_and_logs_preserved": true
+}
