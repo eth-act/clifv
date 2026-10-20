@@ -3921,3 +3921,27 @@ Crates.NAME.bin_ok: [propext, Classical.choice, Quot.sound] + `Crates.NAME.{hdr_
 
 Every top-level theorem of the compiler (per function, per executable, the frontend theorems) and
 the result of an axiom scan of every constant of `FV`: `docs/research/axiom-audit.md`.
+
+
+### Raw Stock arithmetic production
+
+The default non-optimizer/non-unwind route now additionally accepts complete
+single-block ordinary i32/i64 functions containing straight-line add/sub bodies
+and a return, through actual raw Stock output. Source/SSA/ABI checks and the
+executable ABI-read check derive the semantic premises. Unused parameters,
+stack-passed arguments and explicit source slots retain the original input
+conditions. Candidate, allocation, emission or layout failure retries the
+previous production route with the same input/settings.
+
+`CompiledSemanticNI` is additive: old production contracts and theorem variants
+keep their legacy lowering-validator guarantees. The new consumer proves source
+execution, exact return values, related-world non-interference, whole-program
+linking, stack/binary/executable execution and original-source/peak variants.
+Compiler roots use the standard axioms; fixed compiler-data witnesses are marked
+separately. The semantic checker validates either retained or raw Stock artifacts;
+consumer routing recovered from actual artifacts is untrusted data and introduces
+no source-value, per-record family or caller-selected virtual-file certificate.
+
+Other function families and optimizer/unwind activation, full Stock-only
+completeness and every remaining original #140 obligation remain open. The
+active branch is under validation; this paragraph is not a main landing receipt.

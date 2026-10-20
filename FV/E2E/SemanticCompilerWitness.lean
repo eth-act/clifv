@@ -1,4 +1,5 @@
 import FV.Link.SemanticExeSourceWith
+import FV.Backend.Lowering.StockArithmeticNI
 import FV.E2E.StockArithmeticNIWitness
 import FV.Link.Ld.Spec
 import FV.Clif.Print
@@ -20,7 +21,7 @@ def initial (config : Configuration) : LinkSpec := {
   R := 0x200160 }
 
 def spec (config : Configuration) (cleanup : Bool) : LinkSpec :=
-  (initial config).placedProductionWith Stock.Arithmetic.lowerCandidate cleanup
+  (initial config).placedProductionWith Stock.Arithmetic.lowerValidated cleanup
 
 def plan (S : LinkSpec) : Link.Ld.Plan :=
   let size := 0x160 + S.size
@@ -34,10 +35,10 @@ def file0 (config : Configuration) (cleanup : Bool) : ByteArray :=
   match Link.Ld.assemble (plan (spec config cleanup)) with | .ok image => image.write | .error _ => ByteArray.empty
 
 def input (config : Configuration) (cleanup : Bool) : SemanticStackBound.CompilerInput :=
-  SemanticCompilerWith.input Stock.Arithmetic.lowerCandidate (spec config cleanup) cleanup
+  SemanticCompilerWith.input Stock.Arithmetic.lowerValidated (spec config cleanup) cleanup
 
 def attempt (config : Configuration) (cleanup : Bool) : Except String ByteArray :=
-  SemanticCompilerWith.attempt Stock.Arithmetic.lowerCandidate (spec config cleanup) (file0 config cleanup) cleanup
+  SemanticCompilerWith.attempt Stock.Arithmetic.lowerValidated (spec config cleanup) (file0 config cleanup) cleanup
 
 private def checks (config : Configuration) (cleanup : Bool) : Bool :=
   (attempt config cleanup).isOk && SemanticStackBound.okB (input config cleanup) &&
