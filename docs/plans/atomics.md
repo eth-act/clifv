@@ -368,7 +368,11 @@ they are; the per-thread layers are new files.
     under `Maps` (one memory instruction for `load`/`store`/`atomic_*`, `dmb` for `fence`, none
     otherwise; entry and edge code only frame reads), and that instruction's access size is the
     CLIF access size. It is checked per compiled function (`decide`), like `checkAlloc`.
-  * **2d (addresses by variation):** the argument above, for loads, stores, `atomic_load`/`store`
+  * **2d (addresses by variation; core done, `FV/Concurrency/IselVary.lean`):**
+    `store_touched`/`load_touched`: from `LowerInstOk` and `MemRelOk`, no byte of a store's or a
+    load-like statement's CLIF access is `Untouched` by its code's `seqRun`. Open: the footprint
+    lemma (a byte outside every event of the run is `Untouched`), the per-instruction CLIF facts
+    (`hout`, `hinj`) and a witness on the M4 instance (`memRelOk_relW`). The argument above, for loads, stores, `atomic_load`/`store`
     (`ldar`/`stlr`), `atomic_rmw`/`atomic_cas` (both loop events at x25, 2a) and `fence`.
   * **2e (assembly):** the CLIF run reading the bytes the VCode run read (receptiveness of
     `CStep`), `ψ` mapping each CLIF event to its segment's memory event, `Refines` with `Priv` =

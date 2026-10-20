@@ -201,3 +201,6 @@ import FVTest.Concurrency.LitmusFull
 -- T2h layer 2b: a segment run as a forward run
 #print axioms Concurrency.SegRun.vtrun_patch
 #print axioms Concurrency.SegRun.ldar_patch
+-- T2h layer 2d core: accesses of a lowered statement by variation
+#print axioms Concurrency.IselVary.store_touched
+#print axioms Concurrency.IselVary.load_touched

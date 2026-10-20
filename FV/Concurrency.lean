@@ -74,3 +74,4 @@ import FV.Concurrency.ArmAllocItem
 import FV.Concurrency.ArmAllocStraight
 import FV.Concurrency.ArmAllocWitness
 import FV.Concurrency.SegRun
+import FV.Concurrency.IselVary
