@@ -12,7 +12,8 @@ Additive actual-output E2E contracts (`CompiledValidated`, cleanup variants and
 `CompiledProduction`) compose source/SSA validation, concrete machine correctness
 and world/non-interference without requiring legacy-constructor equality. Old
 variants remain. Successful Stock and positive try-call/TLS witnesses cover both
-cleanup modes. Whole-program/checker/linker/generated-proof integration and the
+cleanup modes. Additive whole-program/checker/binary consumers and an actual-result
+byte-writer bridge now exist. Actual CLI/generated-proof/stack integration and the
 next production class remain required; these contracts alone enable no new class.
 
 The #60 cleanup implementation in #137 uses the legacy driver and preserves

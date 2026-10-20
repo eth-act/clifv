@@ -25,6 +25,17 @@ proof interfaces, not per-program certificates. Broader Stock classes still need
 fixed source-correctness proofs and downstream checker/linker/proof-writer
 integration before production activation.
 
+`LinkSys.OkProduction` in `LinkProduction.lean` retains all 38 non-compilation
+fields of `LinkSys.Ok` and uses the actual-output compilation contract.
+`ActualPipelineCheck`, `ActualBinCheck` and `ActualCompilerModes` bind the same
+callback result table to whole-program semantics, ELF bytes and relocation facts,
+including the original allocator fallback flag and k/j/base indices.
+`Link.leanLinkWithLowering` writes that table with every existing byte-writer
+check; exact arbitrary-input compatibility lemmas cover both old linker modes.
+These APIs are additive. Actual CLI/generated-proof/stack migration and universal
+prologue activation remain required. The fixed non-legacy-history prologue
+witness in `ActualPrologueWitness.lean` is not a production activation proof.
+
 Producer: M7 (agents `M7Skeleton`, `M7Driver`; branch `agent/m7-driver`). Consumers: the
 integrator, M4 (rule proofs), M6 (register level). Code: `FV/E2E/{Statement,Compose,Main}.lean`
 (namespace `E2E`), the CLIF → VCode driver simulation
