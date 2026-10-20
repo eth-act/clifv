@@ -4,8 +4,8 @@
 # Cranelift's own aarch64 code for the same CLIF, called with generated inputs under
 # qemu-aarch64-static (`clif-native --diff`, docs/research/rust-route.md "Native coverage").
 #
-# Per crate: normalise the unopt dump with its recovered data image and callee names
-# (clif-data-export --fnmap), compile it with `lean-backend`, then `clif-native --diff` links
+# Per crate: decode the unopt dumps (clif-decode) with the crate's data objects
+# (clif-data-export), compile them with `lean-backend`, then `clif-native --diff` links
 # both engines' objects with the same harness, trampolines, data objects (fixed addresses)
 # and runtime (scripts/rust-clif/rust-runtime.c: mem*, __*ti3; the harness: __rust_u128_mulo
 # and a bump allocator behind __rust_alloc & co.; every other extern -- the core panic entry
@@ -16,7 +16,7 @@
 # counted): timeouts, stack overflows, harness crashes.
 #
 # Needs dump.sh output (with the crates' objects) and built tools (clif-native,
-# clif-data-export, lean-backend).
+# clif-data-export, clif-decode, lean-backend).
 # usage: scripts/rust-clif/diff-native.sh [OUT_DIR]
 #   env: DIFF_WORK (default OUT_DIR/../diff-native), VECTORS (64 per round), MIN_VECTORS (50),
 #        MAX_VECTORS (512), PAR (crates in parallel, 6), SEED, CALL_TIMEOUT_MS (500),
@@ -41,6 +41,7 @@ mkdir -p "$work"
 ulimit -c 0 # qemu would dump core for every harness crash
 
 exporter="$root/rust/target/release/clif-data-export"
+decode="$root/.lake/build/bin/clif-decode"
 clang --target=aarch64-linux-gnu -ffreestanding -fno-builtin -nostdlib -O1 \
   -c "$here/rust-runtime.c" -o "$work/rust-runtime.o"
 
@@ -52,11 +53,9 @@ one() { # PROFILE-CRATE
   case $pc in release-oc-*) p=release-oc ;; release-*) p=release ;; debug-*) p=debug ;; esac
   c=${pc#"$p"-}
   local b="$work/$pc" raw="$out/$p/$c/$c.clif"
-  # data image, gv names and the names of the `u0:N` callees (allocator, panics, fmt)
-  "$exporter" "$raw" "$out/$p/$c/$c.o" --out "$b.data.clif" --gvmap "$b.gvmap.tsv" \
-    --fnmap "$b.fnmap.tsv" >"$b.export.log"
-  python3 "$here/normalize.py" "$raw" unopt "$b.clif" \
-    --gvmap "$b.gvmap.tsv" --fnmap "$b.fnmap.tsv" --data-file "$b.data.clif"
+  # the data image; the dumps decoded (every external name the symbol cg_clif declared)
+  "$exporter" "$out/$p/$c/$c.o" --out "$b.data.clif" >"$b.export.log"
+  "$decode" "$raw" unopt "$b.clif" --data-file "$b.data.clif" 2>"$b.decode.log"
   "$backend" "$b.clif" "$b.o" --traps "$b.traps.json" >"$b.backend.log" 2>&1
   local rc=0
   "$native" --diff "$b.clif" --lean-obj "$b.o" --lean-table "$b.traps.json" \
@@ -72,7 +71,7 @@ except Exception as e:
     print("no summary", e)')"
 }
 export -f one
-export work out here exporter native backend VECTORS MIN_VECTORS MAX_VECTORS SEED CALL_TIMEOUT_MS
+export work out here exporter decode native backend VECTORS MIN_VECTORS MAX_VECTORS SEED CALL_TIMEOUT_MS
 
 echo "== clif-native --diff per crate ($PAR in parallel)"
 printf '%s\n' $crates | xargs -P "$PAR" -I{} bash -c 'one {}'
