@@ -30,7 +30,7 @@ new arithmetic outputs keep the actual Stock code and diagnostics. Edge data
 is discarded only after checking that every row is empty. The enclosing
 production pipeline is responsible for validation and transactional fallback. -/
 def lowerCandidate (f : Clif.Function) : Except String VCode :=
-  if ScalarAdd.activationEligible f then ScalarAdd.lower f
+  if D0.eligible f || ScalarAdd.activationEligible f then ScalarAdd.lower f
   else if eligible f then do
     let result ← Stock.lower f
     if result.edgeArgs.all (fun row => row.all (·.isEmpty)) then pure result.code
