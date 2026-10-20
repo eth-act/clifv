@@ -1,0 +1,42 @@
+{
+  "utc": "2026-10-17T08:28:31.401878+00:00",
+  "PR246": {
+    "utc": "2026-10-17T08:11:21.492134+00:00",
+    "pr": 246,
+    "old_head": "44abfd79cbe4cda5ed868054b7f9e166152cf709",
+    "head": "a071e715d1feea0266c86c3b46d5cb96db885c91",
+    "main": "9a3e5f8c0f8de56c07705f84c670b86de387bc2c",
+    "tree": "893a471a98cfd23a2ac18c66a94f856bebf38bc1",
+    "branch": "agent/stock-per-successor-preparation-pr",
+    "remote_head_verified": true,
+    "no_merge_conflicts": true,
+    "production": "legacy",
+    "gates": "pending exact latest-main tree; warm-cache/integrator coordination requested in140; full per-PR gates remain required",
+    "previous_published_head": "088111278aecc094fc87937525b79cba2e88b8b3"
+  },
+  "PR247": {
+    "utc": "2026-10-17T08:11:21.492134+00:00",
+    "pr": 247,
+    "old_head": "e5a9cd6ce7a339ffab9fc6b0a26d574296d3f8de",
+    "head": "b700671120ddb1f60d86d7e8769b2ed7c17e3d14",
+    "tree": "51e0fa5b18690e406984d4b6eca7854dd2007021",
+    "base_PR246": "a071e715d1feea0266c86c3b46d5cb96db885c91",
+    "branch": "agent/stock-cfg-preparation-proof-pr",
+    "remote_head_verified": true,
+    "original_delta_path_set_preserved": true,
+    "gates": "pending exact latest-main tree; warm-cache/integrator coordination requested in140; full per-PR gates remain required",
+    "production": "legacy",
+    "previous_published_head": "d8e45fa4f83fbc52bff855e08825edd61fecc1d6",
+    "main": "9a3e5f8c0f8de56c07705f84c670b86de387bc2c"
+  },
+  "runtime_preflight": {
+    "path": "/tmp/stock-pr246-runtime-preflight.json",
+    "head": "088111278aecc094fc87937525b79cba2e88b8b3",
+    "five_originals_emitted": true,
+    "three_original_config_rejections_preserved": true,
+    "latest_main_certified": false
+  },
+  "main": "9a3e5f8c0f8de56c07705f84c670b86de387bc2c",
+  "production": "legacy",
+  "full140": "incomplete"
+}
