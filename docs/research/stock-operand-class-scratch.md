@@ -1,0 +1,13 @@
+# Actual Stock operand-class roots — scratch evidence
+
+The [hashed receipt](stock-operand-class-scratch.json) records all twenty-one scratch modules and forty-seven public roots. All compile, use only standard axioms in the normal transitive audit, and preserve all thirty-seven previous exact axiom sets. Canonical integration, bundled MCP and full gates remain pending behind the existing frozen validation.
+
+Every successful actual Stock helper now satisfies the existing complete CtorCls contract. The proof covers revised StructReturn returns, explicit call-output allocations and merged return/payload aliases, deriving the exact merged-loop base and register origins internally. It supports non-identity source register assignments. The existing checked clsTab and ModelC soundness proof now apply to actual Stock state and helpers, with the model instantiated internally.
+
+Actual context construction supplies initial and reserved term-context class invariants. Actual mapped source statements preserve the emitted class invariant and establish GoodV for nonempty results; actual branch and return/trap roots preserve the emitted class invariant through the unchanged fixed checks and source format/opcode exclusions.
+
+Complete original-scope/dominance/arity statement, comparing-branch and return sources go through actual Stock, raw preparation, global checked fallback and physical lowering. Their real root calls satisfy the class invariants; real non-control emitted instructions satisfy InstCls. A complete-source generic-analysis witness has nonempty typed arguments, an actual allocating helper and interpreter call, a classed fresh result and a growing frontier. All observations reuse existing independent kernel caches; no new expensive kernel observation or scratch MCP loop was required.
+
+Still open: ordered result-binding classes, final-alias class transport, all scan/core/node/returned/prepared instruction-class composition, control ABI validity and original-input availability/checker/fallback completeness. Class facts do not establish register values or source/world/block/whole-driver semantics, completeness, totality or production cutover. All original recovery-plan obligations and final production witnesses/audits/gates/fresh complete comparison remain mandatory.
+
+After the frozen 1,992-root/full-gate watcher is terminal and receipts are verified, integrate all twenty-one scratch modules as one coherent additive coverage/class batch. Check renamed imports and complete witnesses, run exactly one bundled forty-seven-root MCP, then a 2,039-root normal audit preserving every prior exact set and all full gates. Remove obsolete scratch outputs after integration and evidence preservation. No merge-ready claim exists yet.
