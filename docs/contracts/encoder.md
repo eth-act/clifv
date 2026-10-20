@@ -321,18 +321,20 @@ Also proved (not emitted): `Hints`, `Reg_pair_signed_offset`.
 `decode_class d g` proves `decode_raw_inst (armBits (.G (.C x))) = some (ArmInst.G (.C x)).norm`
 for a class `C` of group `G`, generic in the structure `x`:
 
-1. name the word: `refine decode_of_armBits fun w hw => ?_` (`hw : armBits … = w`, so the
-   32-bit concatenation is not duplicated in every `if`; without this `split` exceeds simp's
-   step limit), unfold `armBits` in `hw` and `ArmInst.norm` in the goal;
-2. top-level dispatch: rewrite with `d` (`decode_raw_inst_of_{dpi,br,dpr,dpsfp,ldst,reserved}`:
-   `op1 = w<28:25>` in the group's set ⇒ `decode_raw_inst w = g w`), side condition by `bv_decide`;
-3. unfold the group decoder `g` (a `match_bv` = chain of `if … then some (C {f := extractLsb' …})`),
-   `repeat' split`;
-4. each branch: `congr <;> bv_decide` (the matching pattern: one `extractLsb' lo n w = x.f` per
-   field) or `bv_decide` (a pattern that cannot match: its condition contradicts `hw`).
+1. introduce the encoded word with `decode_of_armBits`, unfold `armBits`, then substitute
+   its concatenation for the word; unfold `ArmInst.norm`;
+2. rewrite top-level dispatch with `d`
+   (`decode_raw_inst_of_{dpi,br,dpr,dpsfp,ldst,reserved}`); normalize its field condition using
+   `BitVec.extractLsb'_append_eq_ite` and a kernel-proved concatenation comparison lemma;
+3. unfold the group decoder `g`, then perform the same field normalization before splitting
+   remaining conditionals;
+4. normalize the resulting branch hypotheses and goals with those same lemmas. One-bit
+   alternatives use `BitVec.eq_zero_or_eq_one`.
 
-All `bv_decide` problems are about one 32-bit word; the 37 class lemmas elaborate in ~45 s in
-total, each file well under the 16 GB memcap. The ISLE program is not involved.
+All 39 class lemmas are kernel checked: no SAT invocation, LRAT certificate, or native
+evaluation. The private concatenation lemma has a concrete nonzero-field witness.
+The six class modules, `EncodeBase`, `Encode`, and `EncodeBranch` built successfully in
+10 seconds for the T6 cutover. The ISLE program is not involved.
 
 ### Label operands and the branch-range policy (`EncodeBranch.lean`)
 
@@ -472,19 +474,18 @@ the loader are trusted (PLAN.md §5, M7 row); the writer is checked against `llv
 
 ### `#print axioms`
 
-Every theorem above: `propext`, `Classical.choice`, `Quot.sound`, plus, for the ones that
-depend on the class lemmas (`decode_armBits`, `Insn.decode_encode`, `Insn.stepi_eq_sem`,
-`FnAsm.layout_insn`, `layout_branch`, `layout_trap_word`, `FnAsm.stepi_eq_sem`), 525
-`Backend.decode_armBits_<Class>._native.bv_decide.ax_*` (the compiled LRAT checker's trust
-axioms, allowed by `docs/ARCHITECTURE.md`). `toArmInst_pcRel`, `encode_inRange`,
-`encode_error_of_out_of_range`, `labelOffsets_spec`, `layout_word`, `layout_word_inv`,
-`layout_jumpTable`, `layout_relocs`, `layout_traps`: only the three standard axioms.
+The T6 audit covers all 39 class lemmas, six dispatch lemmas, `decode_armBits`,
+`Insn.decode_encode`, `Insn.decodeOk_of_encode`, `Insn.stepi_eq_sem`,
+`Insn.toArmInst_pcRel`, `Insn.encode_inRange`, and `Insn.encode_error_of_out_of_range`:
+all 52 roots depend only on `propext`, `Classical.choice`, and/or `Quot.sound`.
+No `sorryAx`, compiled LRAT, or `native_decide` axiom occurs in these roots.
 
 ### Trusted pieces
 
 - The Lean Arm model's decoder `decode_raw_inst` and `exec_inst` (validated by co-simulation,
   `docs/contracts/arm.md`): the theorems are against it, not against the Arm ARM.
-- `bv_decide`'s compiled LRAT checker (the `_native` axioms) and the Lean kernel.
+- The Lean kernel. The encoder's class, dispatch, and PC-relative proofs do not require
+  compiled LRAT checking or native evaluation.
 - `Insn.toArmInst`'s field choices as the meaning of each assembly form (M7 obligation on
   `Insn.sem`; checked byte-for-byte against `llvm-mc`).
 - The object writer, linker (relocations above) and loader: the words are assumed to be at
