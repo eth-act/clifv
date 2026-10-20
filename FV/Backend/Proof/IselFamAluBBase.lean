@@ -140,7 +140,7 @@ theorem unaryOpcode_inj {a b : Clif.UnaryOp} {n : String} (ha : unaryOpcode a = 
 theorem instNames_unary {c : Clif.Inst} {cop : Clif.UnaryOp} {n : String}
     (hcop : unaryOpcode cop = some n) (h : instNames c = ("Unary", n)) :
     ∃ ty x, c = .unary cop ty x := by
-  cases c <;> simp only [instNames, Prod.mk.injEq] at h <;> simp at h
+  cases c <;> simp only [instNames, Prod.mk.injEq] at h <;> (try simp at h)
   case unary op ty x =>
     have : unaryOpcode op = some n := by
       cases hb : unaryOpcode op with
@@ -154,6 +154,11 @@ theorem instNames_unary {c : Clif.Inst} {cop : Clif.UnaryOp} {n : String}
   -- `bmask` shares the `Unary` format but its opcode name is outside `unaryOpcode`'s range
   case bmask ty x =>
     exfalso; cases cop <;> simp [unaryOpcode] at hcop <;> subst hcop <;> simp at h
+  case float op ty args =>
+    exfalso
+    have hm := fOpc_mem op
+    rw [h.2] at hm
+    cases cop <;> simp [unaryOpcode] at hcop <;> subst hcop <;> simp at hm
 
 /-- The instruction data and result type of a unary instruction `cop` (from `instData`). -/
 theorem instData_unary_data {f : Clif.Function} {cop : Clif.UnaryOp} {n : String}

@@ -998,3 +998,41 @@ Since S11e5 Stage C slice 4, `csem`'s fallback `mspec` states the float accesses
 composition takes `csemGF` contracts (`lowerInstOk_pairF`, `lowerTryOk_pairF`,
 `FV/E2E/GuardedFPPair.lean`; `docs/contracts/e2e.md`). Producing `CtxInvT` in the driver, the
 typed per-step contracts and the widened scope are the remaining S11e5 slices.
+
+## Float arithmetic (S11f, #239): the arithmetic roots at `CtxInvT`
+
+* `ispecFP` (`IselContract`, `ispec`'s fallback arm): `fpuRRR op sz rd _ _` on `[a, b]` defines
+  `fpu2Out op sz a b` (`IEEE.add`/`sub`/`mul`/`div`/`max`/`min` at `.rne` on the low 32 or 64
+  bits, zero-extended to 128, as `write_sfp`), `fpuRR op sz rd _` on `[a]` defines
+  `fpu1Val op sz a` (`abs`, `neg`, `sqrt`, `fcvt` s→d and d→s), `fpuCmp sz _ _` on `[a, b]`
+  writes `fcmpFlags (fcmpOut sz a b)` (`FPCompare`'s NZCV); other sizes are unspecified
+  (`none`). `ispecFP_next`, `ispec_fp_or` (on a form, `ispec` is `ispecFP` or `ispecFP` is
+  `none`), `ispecFP_world` (`RegallocCSemWorld`), `ispecFP_lockstep` (`E2E/Lockstep`).
+  `Refines` for the three forms: `ref_fpuRRR`, `ref_fpuRR`, `ref_fpuCmp` (`RefinesInsts2`,
+  against the Arm model's `exec_fp_data_processing_{one,two}_source`/`FP_compare`, which use the
+  same shared core with `FPCR = 0`).
+* **Target** (`IselContract`): `floatArithRootRule` (rule ids 662, 664, 666, 668, 670, 672, 674,
+  676, 678, 679, 680: `fadd fsub fmul fdiv fmin fmax sqrt fneg fabs fpromote fdemote`) and
+
+  `LowerRulesCorrectFT p := ∀ F isem MR env cp, Refines F isem → MRStable F MR →
+    ∀ r ∈ p.rulesOf TId.lower, floatArithRootRule r = true → LowerRuleOkT isem MR env cp p r`.
+
+  Proven: `lowerRulesCorrectFT_program` (`IselLowerAll`, from `fadd_okT` … `fdemote_okT` in
+  `IselFloatArith`); `lowerRulesCorrect_program` dispatches the same roots through
+  `(…_okT …).toOk`.
+* **Exclusion with the arithmetic** (`IselExclT`): `failsTG p iOps fOps` (`failsT` is the
+  instance at `opsT`/`floatOps`), sound under `InstSplit S f ctx iOps fOps` (`failsTG_sound`;
+  `AVT.HoldsS S`, `AVT.Holds` is `AVT.HoldsS Compile.instET`); `exclOkTA_program` and
+  `lower_nonroot_nomatchTA` over `InstScopeTA` (instructions in `Compile.instETA`, i.e.
+  `instET ∨ fArithET`; float-result opcodes `floatOpsA`, `inst_splitA`). `failsT_sound` and
+  `lower_nonroot_nomatchT` keep their statements.
+* **Deferred: `fcmp`.** `rule_lower_2176` is not a closure root and `instData` rejects `fcmp`
+  (so `Compile.fArithET` excludes it); its `fp_cond_code` conditions are open.
+
+**Non-vacuity.** `FVTest/Backend/FloatArithCtxT.lean`: `ctxInvT_float_arith` (`ctxOkT_sound`,
+`native_decide`, witness only) for a function with all eleven operations, `lower` fires the
+eleven roots on it, `instScopeTA_float_arith`, `float_arith_fcmp_nomatch`
+(`lower_nonroot_nomatchTA` on the `fcmp` root). Oracle: `FVTest/Backend/float_arith.clif`.
+
+**Boundary.** Nothing downstream consumes `LowerRulesCorrectFT`/`InstScopeTA` yet (the driver
+and the end-to-end scope keep `InstScopeT`).

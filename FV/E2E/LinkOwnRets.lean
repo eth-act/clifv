@@ -82,6 +82,7 @@ def LowerRetShapeOk (p : Program) (r : Rule) : Prop :=
     (evalExpr p (sem ctx) cfg n r.rhs env').run s1 = .ok (some out, (st', tr')) →
     RetShape t st st'
 
+set_option maxHeartbeats 800000 in
 /-- **`trap`** (`rule_lower_2237`): `udf`. -/
 theorem trap_retShape {p : Program} (hp : Data p) : LowerRetShapeOk p rule_lower_2237 := by
   intro f ctx hctx ti t data hrt hd hi cfg hc m n st tr env' s1 out st' tr' hm hn _ hmatch heval

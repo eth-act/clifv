@@ -504,6 +504,7 @@ theorem stmt_root {f : Clif.Function} {ctx : Ctx} (hP : PInv f ctx) {ii : Nat} {
       simp [sigRetsOf, hsd, sigRets_of_ne hr, hlen, ← hty]
   -- `bitcast` (S11e4) is outside E
   case bitcast => exact absurd hE (by simp [Compile.instE])
+  case float => exact absurd hE (by simp [Compile.instE])
   all_goals simp [instData, throw, throwThe, MonadExceptOf.throw] at hd
 
 /-! ## Terminator roots -/

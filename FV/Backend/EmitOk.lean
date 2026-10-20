@@ -49,6 +49,11 @@ def immOkB : MInst → Bool
     s == .size32 || s == .size64
   | .vecDupImm _ imm inv s =>
     !inv && imm.shift == 0 && !imm.shiftOnes && !imm.is64 && s != .size64x2
+  -- S11f: single/double precision only (`fpFtype`); `fcvt` from the size its op names
+  | .fpuRR op s .. =>
+    (s == .size32 || s == .size64) && (op != .cvt32To64 || s == .size32) &&
+      (op != .cvt64To32 || s == .size64)
+  | .fpuRRR _ s .. | .fpuRRRR _ s .. | .fpuCmp s .. => s == .size32 || s == .size64
   | _ => true
 
 /-- No `condBr`/`trapIf` with an `al`/`nv` condition. -/

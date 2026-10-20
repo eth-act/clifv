@@ -266,6 +266,58 @@ theorem ec_fpuMoveFPImm {rd : Reg} {imm : ASIMDFPModImm} {s : ScalarSize}
   simp only [Bool.or_eq_true, beq_iff_eq] at hp
   rcases hp with rfl | rfl <;> cases s <;> first | rfl | exact absurd hg (by decide)
 
+theorem fp_sz_of {a : AW} (ha : a.enumAll fpSzOk = true) {v : V} (hv : γ f ctx a v) {s : ScalarSize}
+    (hs : v.scalarSize? = some s) : s = .size32 ∨ s = .size64 := by
+  obtain ⟨k, hg, hp⟩ := enum_of ha hv hs
+  simp only [fpSzOk, Bool.or_eq_true, beq_iff_eq] at hp
+  rcases hp with rfl | rfl <;> cases s <;>
+    first | exact .inl rfl | exact .inr rfl | exact absurd hg (by decide)
+
+theorem ec_fpuRRR {op : FPUOp2} {rd rn rm : Reg} {s : ScalarSize}
+    (hc : eFpuOpSz [a1, a2, a3, a4, a5] = true) (g2 : γ f ctx a2 v2) (s2 : v2.scalarSize? = some s) :
+    (MInst.fpuRRR op s rd rn rm).emitOk = true := by
+  rcases fp_sz_of hc g2 s2 with rfl | rfl <;> rfl
+
+theorem ec_fpuRRRR {op : FPUOp3} {rd rn rm ra : Reg} {s : ScalarSize}
+    (hc : eFpuOpSz [a1, a2, a3, a4, a5, a6] = true) (g2 : γ f ctx a2 v2)
+    (s2 : v2.scalarSize? = some s) : (MInst.fpuRRRR op s rd rn rm ra).emitOk = true := by
+  rcases fp_sz_of hc g2 s2 with rfl | rfl <;> rfl
+
+theorem ec_fpuCmp {rn rm : Reg} {s : ScalarSize} (hc : eFpuCmp [a1, a2, a3] = true)
+    (g1 : γ f ctx a1 v1) (s1 : v1.scalarSize? = some s) : (MInst.fpuCmp s rn rm).emitOk = true := by
+  rcases fp_sz_of hc g1 s1 with rfl | rfl <;> rfl
+
+theorem ec_fpuRR {op : FPUOp1} {rd rn : Reg} {s : ScalarSize}
+    (hc : eFpuRR [a1, a2, a3, a4] = true) (g1 : γ f ctx a1 v1) (o1 : v1.fpuOp1? = some op)
+    (g2 : γ f ctx a2 v2) (s2 : v2.scalarSize? = some s) :
+    (MInst.fpuRR op s rd rn).emitOk = true := by
+  simp only [eFpuRR, Bool.and_eq_true, Bool.or_eq_true] at hc
+  obtain ⟨⟨hs, h1⟩, h2⟩ := hc
+  have e1 : op = .cvt32To64 → s = .size32 := by
+    intro he
+    subst he
+    rcases h1 with h1 | h1
+    · obtain ⟨j, hj, hq⟩ := enum_of h1 g1 o1
+      exfalso
+      split at hj <;> first | exact absurd hq (by decide) | cases hj
+    · obtain ⟨k, hg, hp⟩ := enum_of h1 g2 s2
+      simp only [beq_iff_eq] at hp
+      subst hp
+      cases s <;> first | rfl | exact absurd hg (by decide)
+  have e2 : op = .cvt64To32 → s = .size64 := by
+    intro he
+    subst he
+    rcases h2 with h2 | h2
+    · obtain ⟨j, hj, hq⟩ := enum_of h2 g1 o1
+      exfalso
+      split at hj <;> first | exact absurd hq (by decide) | cases hj
+    · obtain ⟨k, hg, hp⟩ := enum_of h2 g2 s2
+      simp only [beq_iff_eq] at hp
+      subst hp
+      cases s <;> first | rfl | exact absurd hg (by decide)
+  rcases fp_sz_of hs g2 s2 with rfl | rfl <;> cases op <;>
+    first | rfl | exact absurd (e1 rfl) (by decide) | exact absurd (e2 rfl) (by decide)
+
 theorem ec_never {as : List AW} {P : Prop} (hc : eNever as = true) : P := by
   simp [eNever] at hc
 
@@ -443,6 +495,10 @@ theorem em1_sound {nb : Bool} {t k : Nat} {as : List AW} {vs : List V} (hc : em1
        | (apply ec_atomicRmw hc <;> assumption)
        | (apply ec_atomicCas hc <;> assumption)
        | (apply ec_fpuMoveFPImm hc <;> assumption)
+       | (apply ec_fpuRRR hc <;> assumption)
+       | (apply ec_fpuRRRR hc <;> assumption)
+       | (apply ec_fpuCmp hc <;> assumption)
+       | (apply ec_fpuRR hc <;> assumption)
        | exact ec_never hc)
 
 theorem emA1_sound {nb : Bool} {a : AW} {v : V} {m : MInst} (ha : emA1 nb a = true)

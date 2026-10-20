@@ -288,6 +288,69 @@ def movKVal {n : Nat} (a : BitVec n) (imm : MoveWideConst) : BitVec n :=
   (a &&& ~~~(BitVec.ofNat n 0xFFFF <<< (16 * imm.shift))) |||
     (BitVec.ofNat n imm.bits <<< (16 * imm.shift))
 
+/-- S11f: the binary scalar FP operations of `fpuRRR` on format `f` (the Arm model's
+`exec_fp_data_processing_two_source` with `FPCR = 0`: the shared IEEE core, round to nearest
+even). -/
+@[simp] def fpu2Val (op : FPUOp2) (f : IEEE.Fmt) (a b : IEEE.Bits f) : IEEE.Bits f :=
+  match op with
+  | .add => IEEE.add f .rne a b
+  | .sub => IEEE.sub f .rne a b
+  | .mul => IEEE.mul f .rne a b
+  | .div => IEEE.div f .rne a b
+  | .max => IEEE.max f .rne a b
+  | .min => IEEE.min f .rne a b
+
+/-- S11f: `fpuRRR op` on 128-bit register values at single (`size32`) or double (`size64`)
+precision; the result zero-extended into the register (`write_sfp`). -/
+@[simp] def fpu2Out (op : FPUOp2) (sz : ScalarSize) (a b : CV) : Option CV :=
+  match sz with
+  | .size32 => some ((fpu2Val op .b32 (a.setWidth 32) (b.setWidth 32)).setWidth 128)
+  | .size64 => some ((fpu2Val op .b64 (a.setWidth 64) (b.setWidth 64)).setWidth 128)
+  | _ => none
+
+/-- S11f: the unary scalar FP operations of `fpuRR` on a 128-bit register value (the Arm
+model's `exec_fp_data_processing_one_source`): `fabs`/`fneg`/`fsqrt` at single or double
+precision, `fcvt` single → double (`size` 32) and double → single (`size` 64); the result
+zero-extended into the register (`write_sfp`). -/
+@[simp] def fpu1Val (op : FPUOp1) (sz : ScalarSize) (a : CV) : Option CV :=
+  match op, sz with
+  | .abs, .size32 => some ((IEEE.abs .b32 (a.setWidth 32)).setWidth 128)
+  | .abs, .size64 => some ((IEEE.abs .b64 (a.setWidth 64)).setWidth 128)
+  | .neg, .size32 => some ((IEEE.neg .b32 (a.setWidth 32)).setWidth 128)
+  | .neg, .size64 => some ((IEEE.neg .b64 (a.setWidth 64)).setWidth 128)
+  | .sqrt, .size32 => some ((IEEE.sqrt .b32 .rne (a.setWidth 32)).setWidth 128)
+  | .sqrt, .size64 => some ((IEEE.sqrt .b64 .rne (a.setWidth 64)).setWidth 128)
+  | .cvt32To64, .size32 => some ((IEEE.convert .b32 .b64 .rne (a.setWidth 32)).setWidth 128)
+  | .cvt64To32, .size64 => some ((IEEE.convert .b64 .b32 .rne (a.setWidth 64)).setWidth 128)
+  | _, _ => none
+
+/-- S11f: the flags `FCMP` writes (`FPCompare`: unordered `0011`, equal `0110`, less than
+`1000`, greater than `0010`; the Arm model's `exec_fp_compare`). -/
+def fcmpFlags (c : IEEE.Cmp) : Arm.PState :=
+  let nzcv := Arm.DPSFP.fpCompareNZCV c
+  Arm.make_pstate (Arm.BitVec.lsb nzcv 3) (Arm.BitVec.lsb nzcv 2) (Arm.BitVec.lsb nzcv 1)
+    (Arm.BitVec.lsb nzcv 0)
+
+/-- S11f: the IEEE comparison `FCMP` performs at single (`size32`) or double (`size64`)
+precision. -/
+@[simp] def fcmpOut (sz : ScalarSize) (a b : CV) : Option IEEE.Cmp :=
+  match sz with
+  | .size32 => some (IEEE.compare .b32 (a.setWidth 32) (b.setWidth 32))
+  | .size64 => some (IEEE.compare .b64 (a.setWidth 64) (b.setWidth 64))
+  | _ => none
+
+/-- S11f: scalar FP arithmetic and comparison (the shared IEEE core, `FPCR = 0`); a scalar FP
+result zeroes the register above it (`write_sfp`). `ispec`'s fallback: a separate match, so that
+`ispec`'s own match (whose equation lemmas every `simp [ispec]` realizes, within the default
+heartbeats) keeps its size. -/
+@[simp] def ispecFP : Sem := fun i uses w =>
+  match i, uses with
+  | .fpuRRR op sz rd _ _, [a, b] => (fpu2Out op sz a b).map fun r => (defOut rd r, w, .next)
+  | .fpuRR op sz rd _, [a] => (fpu1Val op sz a).map fun r => (defOut rd r, w, .next)
+  | .fpuCmp sz _ _, [a, b] =>
+    (fcmpOut sz a b).map fun c => ([], Arm.write_pstate (fcmpFlags c) w, .next)
+  | _, _ => none
+
 /-- **Value-level meaning of the instruction forms the proven rules emit**, in terms of the
 Arm model's operations (`AddWithCarry`, `write_pstate`, `ConditionHolds`): the def values
 (in operand order) and the world after. `none`: form not specified (yet). A 32-bit operation
@@ -491,7 +554,25 @@ def ispec : Sem := fun i uses w =>
     if imm.shift = 0 ∧ imm.shiftOnes = false ∧ imm.is64 = false ∧ sz ≠ .size64x2 then
       some (defOut rd (moviVal sz imm.imm), w, .next)
     else none
-  | _, _ => none
+  -- S11f: the scalar FP arithmetic and comparison (`ispecFP`)
+  | _, _ => ispecFP i uses w
+
+/-- S11f: `ispecFP` only produces `next`. -/
+theorem ispecFP_next {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List CV}
+    {w' : Arm.ArmState} {ctl : Ctl} (h : ispecFP i uses w = some (outs, w', ctl)) :
+    ctl = .next := by
+  revert h
+  unfold ispecFP
+  split
+  all_goals intro h
+  all_goals simp only [Option.map_eq_some_iff, Prod.mk.injEq, reduceCtorEq] at h
+  all_goals (obtain ⟨_, -, -, -, h⟩ := h; exact h.symm)
+
+/-- S11f: on a form, `ispec` is its fallback `ispecFP`, or `ispecFP` does not specify it. -/
+theorem ispec_fp_or (i : MInst) (uses : List CV) :
+    (∀ w, ispec i uses w = ispecFP i uses w) ∨ (∀ w, ispecFP i uses w = none) := by
+  cases i
+  all_goals first | exact .inr fun _ => rfl | exact .inl fun _ => rfl
 
 /-- **The semantic hypothesis of the rule statements**: on every form `ispec` specifies, the
 VCode semantics gives the same def values and the same control (`ispec` only produces `next`,
@@ -565,10 +646,11 @@ structure CtxInv (f : Clif.Function) (ctx : Ctx) : Prop where
     info.clif = some inst → memAddr? inst = some x → ctx.valueType? x = some (.int 64)
 
 /-- Instructions the rules may look through (`def_inst`): their value is a function of their
-operands (and the frame's slot bases). -/
+operands (and the frame's slot bases). The float operations (S11f) are memory-independent too
+(`fcmp` is looked through by `is_nonzero_cmp`). -/
 def pureInst : Clif.Inst → Bool
   | .iconst .. | .unary .. | .binary .. | .icmp .. | .extend .. | .ireduce .. | .select ..
-  | .stackAddr .. => true
+  | .stackAddr .. | .float .. => true
   | _ => false
 
 /-- The frame is typed as the context says: a defined value's CLIF type is its `valueType?`
@@ -1263,6 +1345,21 @@ def MemRulesCorrectRT (p : Program) : Prop :=
     (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
     Refines F isem → MRStable F MR → MemRefinesR Rd F sb syms isem → MemRefinesFP Rd F sb isem →
     ∀ r ∈ p.rulesOf TId.lower, floatMemRootRule r = true → MemRuleOkRT Rd F sb syms isem MR env cp p r
+
+/-- The scalar float arithmetic root rules of `lower` (S11f): `fpu_rrr` of `fadd` (662), `fsub`
+(664), `fmul` (666), `fdiv` (668), `fmin` (670), `fmax` (672); `fpu_rr` of `sqrt` (674), `fneg`
+(676), `fabs` (678), `fpromote` (679), `fdemote` (680). -/
+def floatArithRootRule (r : Rule) : Bool :=
+  r.id == 662 || r.id == 664 || r.id == 666 || r.id == 668 || r.id == 670 || r.id == 672 ||
+    r.id == 674 || r.id == 676 || r.id == 678 || r.id == 679 || r.id == 680
+
+/-- **S11f's target (scalar float arithmetic)**: over float-capable contexts, the scalar float
+arithmetic roots are correct (CLIF's `Inst.float` and the emitted `FpuRRR`/`FpuRR` compute the
+same IEEE function). -/
+def LowerRulesCorrectFT (p : Program) : Prop :=
+  ∀ (F : BitVec 64 → Prop) (isem : Sem) (MR : MemRelT) (env : Clif.Env) (cp : Clif.Program),
+    Refines F isem → MRStable F MR →
+    ∀ r ∈ p.rulesOf TId.lower, floatArithRootRule r = true → LowerRuleOkT isem MR env cp p r
 
 /-! ### Calls (contract change #5; stack-passed arguments: agent/stack-tls-proof) -/
 

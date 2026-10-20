@@ -38,6 +38,7 @@ theorem instData_div_inv {f : Clif.Function} {cl : Clif.Inst} {w : V} {ko : Nat}
       simp only [List.cons.injEq] at h3
       exact ⟨he, h3.2.1⟩
     · cases h
+  · cases op <;> simp [divOpcode] at ho
 
 theorem getAs_ne_trap (fr : Clif.Frame) (x : Nat) (ty : Clif.Ty) (c : Clif.TrapCode) :
     fr.getAs x ty ≠ .trap c := by

@@ -35,6 +35,7 @@ theorem ispec_ctl {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : List C
   unfold ispec
   split
   all_goals (repeat' split)
+  all_goals first | exact fun h => .inl (ispecFP_next h) | skip
   all_goals intro h
   all_goals first
     | (right; rfl)

@@ -51,39 +51,6 @@ def Lbl.name (k : Nat) : Lbl → String
   | .loop n => s!".L{k}_a{n}"
   | .skip => ".+8"
 
-/-- Scalar floating-point unary operations of `Insn.fpuRR` (Cranelift `FPUOp1`, `inst.isle`).
-`cvt32To64`/`cvt64To32` are FCVT between precisions; their `size` is the source's. -/
-inductive FPUOp1 where
-  | abs | neg | sqrt | cvt32To64 | cvt64To32
-  deriving DecidableEq, Repr, Inhabited, BEq
-
-/-- Scalar floating-point binary operations of `Insn.fpuRRR` (Cranelift `FPUOp2`). -/
-inductive FPUOp2 where
-  | add | sub | mul | div | max | min
-  deriving DecidableEq, Repr, Inhabited, BEq
-
-/-- Scalar fused multiply-add operations of `Insn.fpuRRRR` (Cranelift `FPUOp3`):
-`fmadd`/`fmsub`/`fnmadd`/`fnmsub`. -/
-inductive FPUOp3 where
-  | mAdd | mSub | nMAdd | nMSub
-  deriving DecidableEq, Repr, Inhabited, BEq
-
-/-- Round-to-integral modes of `Insn.fpuRound` with the operand precision (Cranelift
-`FpuRoundMode`): `frintm`/`frintp`/`frintz`/`frintn`. -/
-inductive FpuRoundMode where
-  | minus32 | minus64 | plus32 | plus64 | zero32 | zero64 | nearest32 | nearest64
-  deriving DecidableEq, Repr, Inhabited, BEq
-
-/-- Float → integer conversions of `Insn.fpuToInt` (Cranelift `FpuToIntOp`, `fcvtzs`/`fcvtzu`). -/
-inductive FpuToIntOp where
-  | f32ToU32 | f32ToI32 | f32ToU64 | f32ToI64 | f64ToU32 | f64ToI32 | f64ToU64 | f64ToI64
-  deriving DecidableEq, Repr, Inhabited, BEq
-
-/-- Integer → float conversions of `Insn.intToFpu` (Cranelift `IntToFpuOp`, `scvtf`/`ucvtf`). -/
-inductive IntToFpuOp where
-  | u32ToF32 | i32ToF32 | u32ToF64 | i32ToF64 | u64ToF32 | i64ToF32 | u64ToF64 | i64ToF64
-  deriving DecidableEq, Repr, Inhabited, BEq
-
 /-- One AArch64 instruction over real registers: one line of assembly, one 4-byte word.
 Constructors follow the assembly the backend prints (including the aliases `mov`, `cset`,
 `lsl`/`lsr`/`asr`/`ror #imm`), so that `llvm-mc` checks the alias translation the encoder does.
@@ -514,6 +481,15 @@ def MInst.lines (c : FnCtx) (m : MInst) (ps : PState) : Except String (List Line
     if invert || imm.shift != 0 || imm.shiftOnes || imm.is64 then
       throw s!"VecDupImm {repr imm} invert={invert}"
     else one (.movi s rd imm.imm.toNat)
+  -- S11f: `emit.rs` `FpuRR`, `FpuRRR`, `FpuRRRR`, `FpuCmp`, `FpuRound`, `FpuToInt`, `IntToFpu`:
+  -- one instruction each
+  | .fpuRR op s rd rn => one (.fpuRR op s rd rn)
+  | .fpuRRR op s rd rn rm => one (.fpuRRR op s rd rn rm)
+  | .fpuRRRR op s rd rn rm ra => one (.fpuRRRR op s rd rn rm ra)
+  | .fpuCmp s rn rm => one (.fpuCmp s rn rm)
+  | .fpuRound op rd rn => one (.fpuRound op rd rn)
+  | .fpuToInt op rd rn => one (.fpuToInt op rd rn)
+  | .intToFpu op rd rn => one (.intToFpu op rd rn)
 where
   /-- `LoadAddr` with an immediate offset (`emit.rs`). -/
   addOff (rd rn : Reg) (off : Int) : List Line :=
