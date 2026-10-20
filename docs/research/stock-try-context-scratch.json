@@ -1,0 +1,2605 @@
+{
+  "utc": "2026-10-16T17:15:58.387975+00:00",
+  "goal": "Full original#140 ACTIVE/incomplete; production LEGACY",
+  "previous_goal_turn_classification": "progress: reached TryCall schedule/handler-node proofs and complete original compiler/source witnesses, audits and verified remote backup",
+  "scope": "Exact source-context and actual named first-match/RHS selection for the same real scheduled TryCall branch; no production, source semantics or input-condition change",
+  "modules": {
+    "StockTrySourceContext": {
+      "source": "/tmp/StockTrySourceContext.lean",
+      "source_sha256": "0786a5010bcaf7d2fd89fd86ce07043da09367080985b697257566071b016e0a",
+      "object": "/tmp/StockTrySourceContext.olean",
+      "object_sha256": "aa8d2ea212f6d01c82b9b0aaba7b303fe44454389916b0c398a74226a7566207",
+      "log": "/tmp/stock-try-source-context.log",
+      "log_sha256": "46350ff3660731f419dd20e4924664527550f668e9da08912663c8337fe5508d"
+    },
+    "StockTryBranchSelection": {
+      "source": "/tmp/StockTryBranchSelection.lean",
+      "source_sha256": "ae02012b675f0ca803ccd669721ea95cdeb8210b7915bd5f050711c635716276",
+      "object": "/tmp/StockTryBranchSelection.olean",
+      "object_sha256": "ce31d0e34c294b4730945f2126a712584e44853969be214f2eb4490962ab3d02",
+      "log": "/tmp/stock-try-branch-selection.log",
+      "log_sha256": "4249c6420ac06dcd42d98687e390d1ec157ad8e541eeebfd0acbae09508a606d"
+    },
+    "StockTrySourceContextWitness": {
+      "source": "/tmp/StockTrySourceContextWitness.lean",
+      "source_sha256": "37e7d0df393eac1f6d94695b50109e2c1daeb9e71df3afcea20c5d03c081f652",
+      "object": "/tmp/StockTrySourceContextWitness.olean",
+      "object_sha256": "fb68cf8e8e73d266c7f432a7eb7492b5214dd3dada1b92ae36914f6b4df88d09",
+      "log": "/tmp/stock-try-source-context-witness.log",
+      "log_sha256": "52ac5e94f10d5ff9b4d9449e43601c1711f0677099325e1dca1f95ce3fb08b76"
+    }
+  },
+  "public_roots": {
+    "Backend.Stock.Proof.TrySourceContextDraft.stock_lower_try_branch_source": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_branch_selection": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.TryBranchSelectionDraft.stock_lower_try_source_selection": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_source_direct_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_source_indirect_data": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.TrySourceContextWitnessDraft.stock_complete_try_source_context_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.TrySourceContextWitnessDraft.stock_complete_try_source_data_witness": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "receipt_types": {
+    "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "counts": {
+    "scratch_modules": 3,
+    "public_roots": 7,
+    "new_receipt_types": 2,
+    "combined_audited_roots_models": 392,
+    "prior383_exact_axiom_sets_preserved": 383,
+    "all_new_module_constants": 159,
+    "prior13_source_module_bytes_preserved": 13
+  },
+  "normal_audit": {
+    "path": "/tmp/stock-try-context-combined-axioms.log",
+    "sha256": "7afd406894eddd2e910219886d04f7fbb5f8c92dff4ddad7894af5d218d03b41",
+    "sets": {
+      "Backend.Stock.Proof.Coverage.TerminalDraftObservation.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_retTrap_emission_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_emit_retTrap_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scan_retTrap_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scan_slot_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_scanBlock_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraft.stock_built_scanBlock_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.TerminalDraftWitness.stock_complete_terminal_scan_form_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraftObservation.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraft.stock_emitBranch_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraft.stock_blockCore_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.CoreDraftWitness.stock_complete_core_form_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.EntryDraft.stock_assemble_form_coverage": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsDraft.stock_lower_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsDraft.stock_lower_formsCovered": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.PreparedFormsDraft.stock_prepared_form_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.PreparedFormsDraft.stock_prepared_formsCovered": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.source_scope": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.source_arity": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.source_dominated": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.WholeFormsWitness.stock_whole_forms_entry_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_ctor_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_apply_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_named_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scan_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scanBlock_classGrowth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_ctor_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_apply_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scan_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthDraft.stock_scanBlock_classGrowth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_allocate_classes": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_build_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_allocate_classes_witness": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.InitialClassesDraft.stock_build_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeClassGrowthDraft.stock_lower_class_growth": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassGrowthWitnessDraft.stock_complete_class_growth_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_ctor_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_apply_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_build_initial_classInvariant": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_build_term_classInvariant": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_statement_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_branch_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassDraft.stock_retTrap_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassWitnessDraft.stock_complete_operand_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassWitnessDraft.stock_complete_retTrap_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OperandClassWitnessDraft.stock_complete_class_apply_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassDraft.stock_bindResults_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassDraft.stock_resolve_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassDraft.stock_emitInstruction_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassDraft.stock_scanInstruction_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanClassDraft.stock_emit_retTrap_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanClassDraft.stock_scan_slot_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanClassDraft.stock_scanBlock_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanClassDraft.stock_built_scanBlock_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassWitnessDraft.stock_complete_binding_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassWitnessDraft.stock_complete_scan_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BindingClassWitnessDraft.stock_complete_ordered_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_ctor_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_apply_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_named_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_build_alias_class_inputs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasClassDraft.stock_built_reserved_class_inputs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.EmissionAliasClassDraft.stock_emitInstruction_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.EmissionAliasClassDraft.stock_emit_empty_results_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanAliasClassDraft.stock_scan_slot_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ScanAliasClassDraft.stock_scanBlock_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.source_scope": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.source_arity": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.source_dominated": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.try_term": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryAliasFixture.try_lookup": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasWitnessDraft.stock_complete_try_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.HelperAliasWitnessDraft.stock_complete_scan_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.DriverAliasClassDraft.stock_lower_alias_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.DriverAliasWitnessDraft.stock_complete_driver_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.DriverAliasWitnessDraft.stock_complete_critical_driver_alias_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.BranchClassDraft.stock_emitBranch_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CoreClassDraft.stock_built_core_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CoreClassWitnessDraft.stock_complete_branch_core_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.EntryClassDraft.stock_assemble_classes": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeInstructionClassDraft.stock_lower_instruction_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.PreparedInstructionClassDraft.stock_prepared_instruction_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeInstructionClassWitnessDraft.stock_complete_entry_instruction_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CriticalInstructionClassWitnessDraft.stock_complete_critical_instruction_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeClassesDraft.stock_lower_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.WholeClassesDraft.stock_lower_integer_block_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.PreparedClassesDraft.stock_prepared_classes": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ClassesWitnessDraft.stock_complete_entry_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CriticalClassesWitnessDraft.stock_complete_critical_classes_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticDraft.stock_gen_return_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticDraft.stock_lower_return_record_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnPlacedStaticDraft.stock_lower_return_instruction_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticFixture.source_conditions": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ReturnStaticWitnessDraft.stock_complete_return_static_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutputStaticDraft.stock_gen_call_output_exact": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutputStaticDraft.stock_gen_call_rets_fresh_defs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAbiStaticDraft.stock_call_helpers_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallStaticFixture.source_conditions": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallStaticFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallStaticWitnessDraft.stock_complete_call_static_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutputValuesDraft.stock_call_output_values": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutputValuesWitnessDraft.stock_complete_call_output_values_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRootSelectionDraft.stock_selected_call_rule": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRootSelectionDraft.stock_selected_call_indirect_rule": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRhsCallsDraft.stock_direct_call_rhs_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRootMatchDraft.stock_direct_call_root_match": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRootMatchDraft.stock_selected_direct_call_rhs_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordCallsDraft.stock_lower_direct_call_record_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRhsStaticDraft.stock_direct_call_rhs_info_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordWitnessDraft.stock_complete_direct_call_record_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordWitnessDraft.stock_complete_indirect_call_selection_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallEmissionDraft.stock_direct_call_protocol_emission": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordEmissionDraft.stock_lower_direct_call_record_emission": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordEmissionDraft.stock_lower_direct_call_instruction_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallEmissionWitnessDraft.stock_complete_direct_call_emission_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectCallRhsDraft.stock_indirect_call_root_match": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectCallRhsDraft.stock_indirect_call_rhs_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectCallRhsDraft.stock_selected_indirect_call_rhs_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceRecordStatementDraft.stock_lower_source_record_statement": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectCallEmissionDraft.stock_indirect_call_protocol_emission": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectCallRecordEmissionDraft.stock_lower_indirect_call_record_protocol": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectCallRecordEmissionDraft.stock_lower_indirect_call_record_emission": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectCallRecordEmissionDraft.stock_lower_indirect_call_instruction_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectCallEmissionWitnessDraft.stock_complete_indirect_call_emission_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallRhsDraft.stock_got_call_root_match": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallRhsDraft.stock_got_call_rhs_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallRhsDraft.stock_selected_got_call_rhs_calls": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotLoadDraft.stock_load_ext_name_got": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallFixture.source_conditions": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallFixture.observed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallEmissionDraft.stock_got_call_protocol_emission": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallRecordEmissionDraft.stock_lower_got_call_record_protocol": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallRecordEmissionDraft.stock_lower_got_call_record_emission": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallRecordEmissionDraft.stock_lower_got_call_instructions_static": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotCallWitnessDraft.stock_complete_got_call_emission_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TupleBindingDraft.stock_bindResults_fresh_tuple": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TupleRecordBindingDraft.stock_lower_record_results_nodup": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TupleRecordBindingDraft.stock_lower_record_fresh_tuple": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResultBindingDraft.stock_lower_call_result_binding": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResultBindingDraft.stock_lower_indirect_call_result_binding": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResultValuesDraft.stock_resultsHeld_call_prefix": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResultValuesDraft.stock_lower_call_result_values": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResultValuesDraft.stock_lower_indirect_call_result_values": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResultBindingWitnessDraft.stock_complete_direct_call_result_binding_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResultBindingWitnessDraft.stock_complete_indirect_call_result_binding_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResultBindingWitnessDraft.stock_complete_got_call_result_binding_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallSemDraft.stock_explicit_call_sem_compatible": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallSemDraft.stock_explicit_direct_call_return": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallSemDraft.stock_explicit_indirect_call_return": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallFramesDraft.stock_explicit_call_sem_refines": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallFramesDraft.stock_explicit_call_sem_driver": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallFramesDraft.stock_explicit_call_sem_other": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallPhysicalDraft.stock_explicit_call_physical": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallPhysicalDraft.stock_explicit_call_guarded_physical": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallExecutionDraft.stock_explicit_direct_call_execution": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallExecutionDraft.stock_explicit_indirect_call_execution": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallWitnessDraft.stock_complete_explicit_direct_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallWitnessDraft.stock_complete_explicit_sret_physical_witness": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallWitnessDraft.stock_explicit_call_legacy_structure_witness": [
+        "Backend.Proof.addp_aux_8._native.bv_decide.ax_1_8",
+        "Backend.Proof.bswap_32._native.bv_decide.ax_1_5",
+        "Backend.Proof.bswap_64._native.bv_decide.ax_1_5",
+        "Backend.Proof.cnt_aux_8._native.bv_decide.ax_1_8",
+        "Backend.Proof.hsb32._native.bv_decide.ax_1_7",
+        "Backend.Proof.rv16._native.bv_decide.ax_1_8",
+        "Backend.Proof.rv32._native.bv_decide.ax_1_8",
+        "Backend.Proof.rv64._native.bv_decide.ax_1_8",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExplicitCallWitnessDraft.stock_complete_explicit_indirect_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallStoreSemDraft.stock_explicit_call_mem_refines": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallStoreSemDraft.stock_source_call_stores_execution": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordSourceDraft.stock_lower_direct_call_record_code": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordSourceDraft.stock_lower_direct_call_record_source_run": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordFootprintDraft.stock_lower_direct_call_record_footprint": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordFootprintDraft.stock_lower_direct_call_operand_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResolvedSourceDraft.stock_lower_direct_call_record_defs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResolvedSourceDraft.stock_lower_direct_call_guarded_source_run": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallRecordSourceWitnessDraft.stock_complete_direct_call_source_record_witness": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_18",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_23",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_28",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_34",
+        "Backend.Proof.dbm_sxtb._native.native_decide.ax_1_1",
+        "Backend.Proof.dbm_sxth._native.native_decide.ax_1_1",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_101",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_106",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_111",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_120",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_125",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_130",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_135",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_140",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_145",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_150",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_155",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_160",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_165",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_170",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_175",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_180",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_185",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_190",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_195",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_200",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_205",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_71",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_76",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_86",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_91",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_96",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectRecordCodeDraft.stock_lower_indirect_call_record_code": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectRecordFootprintDraft.stock_lower_indirect_call_record_footprint": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectRecordFootprintDraft.stock_lower_indirect_call_operand_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallResolvedFrameDraft.stock_lower_record_resolved_source_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectRecordSourceDraft.stock_lower_indirect_call_record_source_run": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectResolvedSourceDraft.stock_lower_indirect_call_record_defs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectResolvedSourceDraft.stock_lower_indirect_call_guarded_source_run": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.IndirectSourceWitnessDraft.stock_complete_indirect_call_source_record_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallFreshResolvedFrameDraft.stock_lower_record_resolved_source_frame_with_fresh_uses": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotRecordCodeDraft.stock_lower_got_call_record_code": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotRecordFootprintDraft.stock_lower_got_call_record_footprint": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotRecordFootprintDraft.stock_lower_got_call_operand_coverage": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotStoreSemDraft.stock_source_got_stores_execution": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotRecordSourceDraft.stock_lower_got_call_record_source_run": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotResolvedSourceDraft.stock_lower_got_call_record_defs": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotResolvedSourceDraft.stock_lower_got_call_guarded_source_run": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotSourceWitnessDraft.stock_complete_got_call_source_record_witness": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_18",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_23",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_28",
+        "Backend.Proof.casHead_spec._native.bv_decide.ax_1_34",
+        "Backend.Proof.dbm_sxtb._native.native_decide.ax_1_1",
+        "Backend.Proof.dbm_sxth._native.native_decide.ax_1_1",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_101",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_106",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_111",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_120",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_125",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_130",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_135",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_140",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_145",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_150",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_155",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_160",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_165",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_170",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_175",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_180",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_185",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_190",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_195",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_200",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_205",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_71",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_76",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_86",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_91",
+        "Backend.Proof.rmwBody_spec._native.bv_decide.ax_1_96",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicCallProtectedDraft.stock_atomic_load_preserves_direct_source_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicCallProtectedDraft.stock_atomic_load_preserves_indirect_source_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicCallWitnessDraft.stock_atomic_load_both_source_calls_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicNoNoneDraft.stock_atomic_helper_not_none": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicProtectedDraft.stock_atomic_load_sink_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicProtectedDraft.stock_atomic_load_preserves_other_sunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.stock_callSink_table_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_table_0_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_table_1_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_table_2_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_table_3_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_table_4_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_table_5_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_table_6_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_table_7_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_roots_0_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_roots_1_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_roots_2_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_roots_3_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_roots_4_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_roots_5_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_roots_6_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.call_roots_7_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkRootsDraft.stock_statement_preserves_direct_source_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkRootsDraft.stock_statement_preserves_indirect_source_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.stock_callSink_roots_checked": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgLoadSinkDraft.stock_loadSink_pattern": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgLoadSinkDraft.stock_loadSink_binding": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgLoadSinkDraft.stock_loadSink_call": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_sink_resultful": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_sink_iflet": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_iflet_sink_resultful": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_iflet_rhs_sink_resultful": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CfgSinkProvenanceDraft.stock_matched_rule_sink_resultful": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionLoadFrameDraft.stock_extension_load_full_sink_frame": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionLoadFrameDraft.stock_extension_load_full_sink_frame_any_fuel": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionLoadPatternDraft.stock_extension_load_match_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionLoadSourceDraft.stock_extension_load_sink_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionLoadWitnessDraft.stock_extension_load_both_source_calls_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionLoadWitnessDraft.stock_statement_both_source_calls_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionTailDraft.stock_extension_tail_table_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.ExtensionTailDraft.stock_extension_tail_environments_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.OracleInvariant.soundAt": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.Coverage.OracleInvariant.selected_rule_sound": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OracleInvariantWitnessDraft.stock_oracle_invariant_original_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OracleInvariantWitnessDraft.stock_oracle_selected_original_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.PureSinkDraft.stock_pure_apply_noSink": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.PureSinkDraft.stock_pure_noSink_table_checked": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.AtomicExtensionWitnessDraft.stock_atomic_extension_both_source_calls_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.PureSinkDraft.pureModel": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDraft.callSinkModel": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OracleInvariantWitnessDraft.fromFixed": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDraft.stock_ctor_outgoingLe": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDraft.stock_apply_outgoingLe": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDraft.stock_scan_outgoingLe": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDraft.stock_scanBlock_outgoingLe": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDraft.stock_scanBlock_record_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWitnessDraft.stock_ctor_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWitnessDraft.stock_apply_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWitnessDraft.stock_scan_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWitnessDraft.stock_scanBlock_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverDraft.stock_emitBranch_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverDraft.stock_lowerBlockCore_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverDraft.stock_lowerNode_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWholeDraft.stock_lowerNodes_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_record_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_code_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingWholeDraft.stock_lower_record_code_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_emitBranch_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerNode_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerNodes_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.OutgoingDriverWitnessDraft.stock_lowerBlockCore_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutgoingDraft.stock_lower_direct_call_record_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutgoingDraft.stock_lower_direct_call_code_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotOutgoingDraft.stock_lower_got_call_record_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotOutgoingDraft.stock_lower_got_call_code_outgoing": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutgoingWitnessDraft.stock_complete_direct_call_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOutgoingWitnessDraft.stock_complete_got_call_outgoing_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkControlDraft.stock_statement_source_calls_same": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkControlDraft.stock_branch_source_calls_same": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkControlDraft.stock_retTrap_source_calls_same": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkScansDraft.stock_buildCtx_source_calls_unsunk": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkScansDraft.stock_scanBlock_source_calls_same": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkScansDraft.stock_scan_original_call_emitted": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkScansDraft.stock_scanBlock_source_calls_unsunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkBlocksDraft.stock_blockCore_source_calls_unsunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDriverDraft.stock_lower_source_calls_unsunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDriverDraft.stock_lower_records_source_calls_unsunk": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallMandatoryEmissionDraft.stock_lower_source_call_record_emitted": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOriginalOutgoingDraft.stock_lower_original_call_code_stack": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallActualStackSourceDraft.stock_lower_direct_call_record_source_run_original_stack": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallActualStackSourceDraft.stock_lower_got_call_record_source_run_original_stack": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallOriginalResolvedSourceDraft.stock_lower_original_call_guarded_source_run": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.UnreachableCallStackDraft.stock_unreachable_call_stack_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaObservationDraft.stock_direct_call_area_false": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaObservationDraft.stock_direct_call_area_true": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaObservationDraft.stock_got_call_area_false": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaObservationDraft.stock_got_call_area_true": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaBoundsDraft.stock_direct_call_area": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallAreaBoundsDraft.stock_got_call_area": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallActualStackWitnessDraft.stock_complete_direct_call_actual_stack_source_witness": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.GotActualStackWitnessDraft.stock_complete_got_call_actual_stack_source_witness": [
+        "Arm.Memory.read_write_bytes_different._native.bv_decide.ax_1_9",
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkControlWitnessDraft.stock_control_both_source_calls_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDriverWitnessDraft.stock_complete_direct_call_unsunk_driver_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSinkDriverWitnessDraft.stock_complete_got_call_unsunk_driver_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_original_body_record": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_reachable_original_node": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_reachable_source_call_emitted": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageDraft.stock_lower_reachable_direct_call_stack": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageWitnessDraft.stock_complete_direct_reachable_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageWitnessDraft.stock_complete_indirect_reachable_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.CallSourceCoverageWitnessDraft.stock_complete_got_reachable_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_destination_reachable": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_enterFunc_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_frame_located_regs": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_frame_located_rest": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_enterBlock_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_continueWith_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_returnValues_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_stepCall_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_stepCallIndirect_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_stepReturnCall_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_pending_jump_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_tryNormal_block": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_stepTryCall_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_stepTryCallIndirect_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionUnwindDraft.stock_source_tryHandler_block": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionUnwindDraft.stock_source_try_table_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionUnwindDraft.stock_source_catchIn_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_stepTerm_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_step_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_initState_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_runPrefix_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsDraft.stock_source_executing_statement": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsDraft.stock_lower_executing_source_call_emitted": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsDraft.stock_lower_executing_direct_call_stack": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.entered": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.first": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.called": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.returned": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.execution": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.head": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.completed_source_run": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsWitnessDraft.stock_complete_direct_executing_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsWitnessDraft.stock_complete_indirect_executing_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsWitnessDraft.stock_complete_got_executing_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionControlWitnessDraft.stock_actual_control_execution_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionControlWitnessDraft.stock_actual_try_handler_execution_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionProgramWitnessDraft.stock_actual_program_call_return_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionProgramWitnessDraft.stock_actual_raw_tail_location_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.FrameLocated": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.StateLocated": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionUnwindDraft.PendingTableLocated": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.RunPrefix": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.stock_source_unwindFrom_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.stock_source_raiseIn_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.stock_source_caller_tables_length": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.stock_source_toX_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionStackShapeDraft.stock_source_step_stack_delta": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXLiftDraft.stock_source_liftStep_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXCoreDraft.stock_source_caller_tables_frames": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXCoreDraft.stock_source_stepX_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXCoreDraft.stock_source_xrunPrefix_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXSourceDraft.stock_source_stepX_original_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXSourceDraft.stock_source_initStateX_original_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXSourceDraft.stock_source_xrunPrefix_original_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingXCallsDraft.stock_lower_xexecuting_source_call_emitted": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingXCallsDraft.stock_lower_xexecuting_direct_call_stack": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackWitnessDraft.stock_source_nested_unwind_witness": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackWitnessDraft.stock_source_nested_unwind_complete_witness": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackWitnessDraft.stock_source_actual_lift_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackWitnessDraft.stock_source_original_nested_prefix_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackWitnessDraft.stock_source_original_normal_pop_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackWitnessDraft.stock_source_uncaught_nested_witness": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingXCallsWitnessDraft.stock_complete_direct_xexecuting_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingXCallsWitnessDraft.stock_complete_indirect_xexecuting_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingXCallsWitnessDraft.stock_complete_got_xexecuting_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.CallerTables": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXStackDraft.XLocated": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXCoreDraft.XRunPrefix": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionXSourceDraft.SourceXLocated": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchRecordsDraft.stock_recordCore_branch_retained": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchRecordsDraft.stock_recordCore_schedule_preserved": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchRecordsDraft.stock_emitBranch_record": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchRecordsDraft.stock_lowerBlockCore_try_branch": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchRecordsDraft.stock_emitBranch_try_kind": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryScheduleDraft.stock_lower_try_branch_scheduled": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingTryDraft.stock_source_executing_try_terminator": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingTryDraft.stock_lower_xexecuting_try_scheduled": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceTryHandlerCoverageDraft.stock_lower_xcaught_handler_node": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingTryWitnessDraft.stock_complete_reached_try_schedule_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingTryWitnessDraft.stock_complete_reached_handler_node_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.stock_lower_try_branch_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_branch_selection": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.stock_lower_try_source_selection": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_source_direct_data": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_source_indirect_data": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextWitnessDraft.stock_complete_try_source_context_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextWitnessDraft.stock_complete_try_source_data_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionStackShapeDraft.StackDelta": []
+    }
+  },
+  "all_constant_audit": {
+    "path": "/tmp/stock-try-context-all-constants.log",
+    "sha256": "4208d6d760630c6e7a2560ccf58a6a78cec689881aef0fefad640c5df0c1f6d6",
+    "sets": {
+      "_private.StockTrySourceContextWitness.0.Except.map.match_1.splitter": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_8.eq_2": [],
+      "_private.StockTrySourceContext.0.Backend.Stock.lowerNode.match_1.eq_1": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.rpo.match_1.eq_2": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.trace": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Clif.instReprExnItem.repr.match_1.eq_2": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_1.splitter": [],
+      "_private.StockTryBranchSelection.0.Except.map.match_1.splitter": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.consistent": [
+        "propext",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.destinations.match_1.eq_4": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextWitnessDraft.stock_complete_try_source_context_witness": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.out": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Array.forIn'.loop.match_1.eq_1": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.mk._flat_ctor": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.VCode.cfg.match_1.eq_2": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_source_indirect_data": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.ctorIdx": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_source_direct_data": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Clif.ExnTable.normal.eq_1": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.mk.noConfusion": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "HAppend.hAppend.eq_1": [],
+      "_private.StockTrySourceContextWitness.0.List.filterMap.match_1.eq_1": [],
+      "_private.StockTrySourceContext.0.Backend.Stock.lowerNode.match_1.splitter": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.input": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContext.0.Backend.Stock.Proof.TrySourceContextDraft.node_core": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.selected": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.function": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection._sizeOf_inst": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTryBranchSelection.0.Except.map.match_1.eq_1": [],
+      "_private.StockTrySourceContext.0.Backend.Stock.Proof.TrySourceContextDraft.node_mono": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.branch": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.ctorIdx": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextWitnessDraft.stock_complete_try_source_data_witness": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_1.eq_1": [],
+      "_private.StockTrySourceContextWitness.0.List.get.match_1.eq_2": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.mk.sizeOf_spec": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "instHAppendOfAppend.eq_1": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_8.eq_1": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.function.eq_1": [],
+      "Clif.TryDest.block.eq_1": [],
+      "_private.StockTryBranchSelection.0.Backend.Stock.Proof.TryBranchSelectionDraft.branchInput": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.entry": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_5.eq_1": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.table": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_5.eq_4": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.stock_lower_try_source_selection": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.mapped": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_branch_selection": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.mk.noConfusion": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Append.append.eq_1": [],
+      "_private.StockTrySourceContextWitness.0.Clif.instReprExnItem.repr.match_1.eq_1": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.destinations.match_1.splitter._sparseCasesOn_6": [
+        "propext"
+      ],
+      "_private.StockTrySourceContext.0.Backend.Stock.branchArgs.match_1.eq_2": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.frame": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.original": [
+        "propext",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.stock_try_branch_selection.match_1_1": [],
+      "_private.StockTrySourceContextWitness.0.List.filterMap.match_1.eq_2": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.rules": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Array.foldlM.loop.match_1.eq_2": [],
+      "_private.StockTrySourceContextWitness.0.Clif.instReprExnItem.repr.match_1.eq_3": [],
+      "_private.StockTrySourceContext.0.Backend.Stock.Proof.TrySourceContextDraft.origin": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.destinations.match_1.eq_6": [
+        "propext"
+      ],
+      "_private.StockTrySourceContext.0.Backend.Stock.lowerNode.match_1.splitter._sparseCasesOn_2": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.next": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource._sizeOf_inst": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContext.0.Backend.Stock.branchArgs.match_1.eq_1": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.destinations.match_1.eq_3": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.emitted": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.ctx": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTryBranchSelection.0.Except.map.match_1.eq_2": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource._sizeOf_1": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_5.splitter": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.rpo.match_1.splitter": [],
+      "_private.StockTrySourceContextWitness.0.List.get.match_1.splitter": [],
+      "_private.StockTrySourceContext.0.Backend.Stock.branchArgs.match_1.eq_3": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.named": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContext.0.Backend.Stock.Proof.TrySourceContextDraft.nodes_mono": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.stepBefore": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContext.0.Backend.Stock.lowerNode.match_1.eq_2": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.VCode.cfg.match_1.eq_1": [],
+      "_private.StockTrySourceContext.0.Except.map.match_1.eq_2": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.destinations.match_1.splitter": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Except.map.match_1.eq_2": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.recOn": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Array.foldlM.loop.match_1.splitter": [],
+      "_private.StockTrySourceContext.0.Except.map.match_1.eq_1": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.recOn": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Array.forIn'.loop.match_1.splitter": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.state": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.destinations.match_1.eq_2": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.mk.injEq": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.destinations.match_1.eq_1": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.rpo.match_1.eq_1": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.index": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_1.eq_2": [],
+      "_private.StockTrySourceContextWitness.0.Std.Legacy.Range.forIn'.loop.match_1.eq_1": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection._sizeOf_1": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Array.foldlM.loop.match_1.eq_1": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.noConfusionType": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Clif.instReprExnItem.repr.match_1.splitter": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.stepCode": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.rec": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.noConfusionType": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_3.eq_1": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_5.eq_3": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_3.splitter": [],
+      "_private.StockTrySourceContextWitness.0.List.get.match_1.eq_1": [],
+      "_private.StockTrySourceContext.0.Except.map.match_1.splitter": [],
+      "_private.StockTrySourceContextWitness.0.Std.Legacy.Range.forIn'.loop.match_1.splitter": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.build": [
+        "propext",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.consistent": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.sourceMetadata.match_3.splitter": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.rec": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.noConfusion": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.List.filterMap.match_1.splitter": [],
+      "_private.StockTrySourceContext.0.Backend.Stock.blockOrder.match_8.eq_1": [],
+      "Clif.ExnTable.items.eq_1": [],
+      "Clif.ExnTable.handlers.eq_1": [],
+      "_private.StockTrySourceContext.0.Backend.Stock.blockOrder.match_8.splitter": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.mk": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.VCode.cfg.match_1.splitter": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.mk.injEq": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.casesOn": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.casesOn": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.block": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Std.Legacy.Range.forIn'.loop.match_1.eq_2": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_5.eq_2": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.stepAfter": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.source_build": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.code": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.data": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.Proof.TrySourceContextWitnessDraft.order": [
+        "propext",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.stock_lower_try_branch_source": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.mk": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.valueMap": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContext.0.Backend.Stock.branchArgs.match_1.splitter": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.noConfusion": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.slot": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContext.0.Backend.Stock.branchArgs.match_1.splitter._sparseCasesOn_3": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.mk.inj": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.ti": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_5.splitter._sparseCasesOn_4": [
+        "propext"
+      ],
+      "_private.StockTrySourceContextWitness.0.Except.map.match_1.eq_1": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.mk.sizeOf_spec": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.prepared": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.mk.inj": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.stepRules": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.blockOrder.match_8.splitter": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.scheduled": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.sourceMetadata.match_3.eq_1": [],
+      "Clif.TryDest.args.eq_1": [],
+      "_private.StockTrySourceContextWitness.0.Array.forIn'.loop.match_1.eq_2": [],
+      "_private.StockTrySourceContextWitness.0.Backend.Stock.destinations.match_1.eq_5": [
+        "propext"
+      ],
+      "List.instAppend.eq_1": [],
+      "Backend.Stock.Proof.TryBranchSelectionDraft.TryBranchSelection.mk._flat_ctor": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "_private.StockTrySourceContext.0.Backend.Stock.blockOrder.match_8.eq_2": [],
+      "Backend.Stock.Proof.TrySourceContextDraft.TryBranchSource.tryRegs": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ]
+    }
+  },
+  "source_facts_derived_internally": [
+    "Stock.buildCtx source/ranges and actual reverse-traversal node/core/branch",
+    "Terminal index equals blockStart plus original body length",
+    "Actual TryCall data installed into the original placeholder slot",
+    "Mapped source context/valueReg map/DFG transport, with real input.tryRegs at that terminal",
+    "Actual named lower_branch match/RHS selection and fired rules at exact intermediate states",
+    "Actual raw branchCode replacement and scheduled-step before/after/rules/emitted-code equality",
+    "Actual direct/indirect decoded layouts and source signatures without identity numbering"
+  ],
+  "witnesses": [
+    "Complete original LowerScope/Dominated/ArityOk direct and indirect Stock.lower/prepareAt/checked forced-spill fallback/physical pipelines",
+    "Terminal indices1/2, mapped context/slot/value map and real exception registers",
+    "Concrete source frame holds9 and indirect address4096 and satisfies BOTH original and branch-context DFGCons",
+    "Both actual direct/indirect decoded source-data/signature results and first-match receipts inhabit the same complete compiler pipelines"
+  ],
+  "canonical2246_source_and_validation_scripts_frozen": true,
+  "MCP": "Pending single coherent expanded-root batch after integration; no scratch per-root MCP calls or merge-ready claim",
+  "temporary_inputs": {
+    "manifest": "/tmp/stock-try-context-inputs.json",
+    "sha256": "403ed8e858d506c6f7de46e16351353f989ba1ef7e84c40898776e54939145be",
+    "modules": 1010,
+    "bytes": 2475740312,
+    "policy": "Temporary isolated import objects; remove duplicate inputs after archiving unique new source/object/log/audit evidence and input manifest."
+  },
+  "active_exact_PR246_validation": {
+    "utc": "2026-10-16T17:15:39.856300+00:00",
+    "state": "serial_build",
+    "pid": 3247835,
+    "pr": 246,
+    "view": "/home/lee/clifv/.worktrees/stock-delivery-gates",
+    "commit": "44abfd79cbe4cda5ed868054b7f9e166152cf709",
+    "canonical_controller": 1233457,
+    "cache_lease": "/tmp/stock-delivery-cache-lease.json",
+    "index": 338,
+    "total": 1415,
+    "module": "FV.Backend.Proof.StockTermContractWitness",
+    "log": "/tmp/stock-pr246-gates-20261016T152014Z-module-FV.Backend.Proof.StockTermContractWitness.log",
+    "memory_cap": "22G"
+  },
+  "remaining_checklist": [
+    {
+      "requirement": "Exact-current-PR full build/crates/runtime/encoder/both-E2E identity-stage/public/private/compiler/MCP gates, ready and squash#246 then#247 when passed",
+      "state": "#246 active, #247queued, no merge this batch"
+    },
+    {
+      "requirement": "Integrate all validated scratch modules after canonical source freeze; expanded public/private/receipt/kernel/transitive audit and one bundled MCP; complete full exact-tree gates",
+      "state": "open"
+    },
+    {
+      "requirement": "Classify actual selected TryCall rules from the internally derived source data and actual match; derive every real intermediate helper call",
+      "state": "open; generic actual first-match/RHS receipt now proved"
+    },
+    {
+      "requirement": "Adapt/reuse legacy normal TryCall semantic helpers with Stock mapped registers/final aliases; do not assert identity-based CtxInv for dense Stock mappings",
+      "state": "open"
+    },
+    {
+      "requirement": "Actual direct/GOT/indirect TryCall outgoing bounds, call/handler ABI value/world transitions, argument/return/payload binding and original demanded/available frame/DFG/deferred-effect preservation",
+      "state": "open"
+    },
+    {
+      "requirement": "Complete new-call-in-handler compiler witnesses and all original family/effect/sinking/source/block/whole-driver value/world simulation AND completeness under original input conditions",
+      "state": "open"
+    },
+    {
+      "requirement": "Original-input visitor/static/checker/checked-fallback/physical readiness/totality, all required non-vacuity witnesses and exact old theorem/axiom/accepted-identity-stage parity",
+      "state": "open"
+    },
+    {
+      "requirement": "Actual compiler/checker/linker/generated-proof production integration and final full gates/FRESH COMPLETE Stock comparison retaining at least#179",
+      "state": "open; production LEGACY"
+    }
+  ]
+}
