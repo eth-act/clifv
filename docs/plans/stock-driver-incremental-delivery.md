@@ -67,6 +67,23 @@ packet after current per-PR gates, while broader function value simulation,
 Stock-only completeness and production-class integration continue. This is a complete color
 frame, not full driver correctness or a new production activation.
 
+#338 (`5f7350fa143f4a3f7f1c9fab5f5e0c679b45fb7d`) landed the complete
+source/driver frame and pure-record decision prerequisite after all2426modules,
+all checked-in audits/owned constants and exact prior axiom-set parity passed.
+The exact source+receipt tree was verified and the integrator notified.
+
+The next ArithmeticBodyRefines checkpoint now derives original ordinary source
+information, singleton result bindings and actual add/sub record families from
+syntax and successful lowering. Arbitrary pure single-block arithmetic bodies
+compose their value simulation without caller-provided per-record family/map
+certificates. A real nonempty source/event and dirty-input execution witness
+exercise the new theorem. Targeted648jobs,7public roots and27standard-only core
+constants pass;2fixed witnesses retain only existing marked native trace facts.
+This is body simulation, not whole-function correctness or a production class.
+Next derive original source execution and entry/return composition, then direct
+optimized-Stock checker/consumer contracts and complete function activation.
+[Checkpoint evidence](../research/stock-arithmetic-body-checkpoint.json).
+
 Actual sink_inst rejects zero-color targets; deferred sunk memory/effect
 invariants remain a separate mandatory obligation. Optimized Stock outputs also
 need direct semantic checker/consumer contracts: the retained
@@ -300,3 +317,5 @@ executable; no new production class is claimed. The terminal
 [author receipt](../research/stock-pure-body-author-gates.json) records the scope.
 Continue arithmetic-family/value simulation and direct semantic consumer work
 immediately after the prerequisite squash; all original #140 obligations remain.
+
+Arithmetic body author gates passed on `b382a3e5e3ad4ef1231f1ab6ba0a19d69179dd61`: scheduler validated the two new modules against exact unchanged source/audit hashes from the2426-module#338base, followed by the full `FV FVTest` replay, all28audit files and27core/2fixed-witness owned constants. All1042priorpublicaxiomsets retained exactly;7newpublicroots audited. No runtime/consumer input or executable changed. Receipt: [arithmetic body author gates](../research/stock-arithmetic-body-author-gates.json). Original source evaluation/entry-return composition and direct semantic consumers remain next.

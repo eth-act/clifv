@@ -1,0 +1,49 @@
+{
+  "state": "per_pr_gates_passed",
+  "utc": "2026-10-20T06:06:08.183680+00:00",
+  "pid": 3556000,
+  "head": "b382a3e5e3ad4ef1231f1ab6ba0a19d69179dd61",
+  "base": "5f7350fa143f4a3f7f1c9fab5f5e0c679b45fb7d",
+  "logs": {
+    "affected-scheduler": {
+      "path": "/tmp/stock-arithmetic-author-gates/affected-scheduler.log",
+      "sha256": "33f579355eb62dada47fedb44d6364963fcf7a1b63f961bf771207a4aecae7da"
+    },
+    "full-library-replay": {
+      "path": "/tmp/stock-arithmetic-author-gates/full-library-replay.log",
+      "sha256": "6458adb556073b48977955e98221f2bcedad54e22563f60c5662ebcd428b3ebc"
+    },
+    "all-axiom-audits": {
+      "path": "/tmp/stock-arithmetic-author-gates/all-axiom-audits.log",
+      "sha256": "a96484dd57e3695b7ca5f667689163b7d3cfb0f2ccbb6b3a1250706ccbeb4d33"
+    },
+    "all-new-owned": {
+      "path": "/tmp/stock-arithmetic-author-gates/all-new-owned.log",
+      "sha256": "470e8da59e348d9b900a92f3012a009699e71223fbeb3e8c0fc9283677d45038"
+    }
+  },
+  "reuse_manifest": {
+    "previous_exact_merged_base": "5f7350fa143f4a3f7f1c9fab5f5e0c679b45fb7d",
+    "previous_modules_passed": 2426,
+    "all_previous_source_and_audit_hashes_unchanged": true,
+    "new_modules": [
+      "FV.Backend.Proof.StockArithmeticBodyRefines",
+      "FV.Backend.Proof.StockArithmeticBodyWitness"
+    ],
+    "affected_modules": [
+      "FV.Backend.Proof.StockArithmeticBodyRefines",
+      "FV.Backend.Proof.StockArithmeticBodyWitness"
+    ],
+    "affected_executables": [],
+    "runtime_input_changes": false,
+    "reuse": "scheduler --only after exact prior source-hash/merged-tree validation; full FV/FVTest target replay follows"
+  },
+  "axiom_parity": {
+    "previous_roots": 1042,
+    "current_roots": 1049,
+    "missing": [],
+    "changed_sets": {},
+    "all_previous_axiom_sets_preserved": true
+  },
+  "next": "Fetch current main/reconcile, receipt and author squash; continue original source/whole-function simulation/direct semantic consumers."
+}
