@@ -1,5 +1,7 @@
+import FV.E2E.RegLevelDriverSem
 import FV.Backend.Proof.StockEntryLoads
 import FV.Backend.Proof.StockEntryAssembly
+import FV.Backend.Proof.StockEntryPrelude
 import FV.Backend.Lowering.StockD0
 import FV.Backend.Proof.LowerDecide
 import FV.Backend.Proof.MemRefines
@@ -199,5 +201,28 @@ theorem stack_assembly_rows_witness :
         simp [empty,mappedEntryPairs,mappedEntryLoads,entryPrelude]
       omega
     exact ⟨block,locs,stack,rows,rfl,rfl,signature,mapped,nonempty,order,lookups,properties.1,code⟩
+
+/-- The whole-driver entry theorem executes its actual emitted stack prelude
+on arbitrary machine memory and derives all row/width/mapping obligations. -/
+theorem stack_whole_entry_prelude_witness (X : ExtSem) (w : Arm.ArmState) :
+    Stock.lower function = .ok result ∧
+    ∃ (actual : BlockScanEvent) (block : VBlock) (prelude body : Array MInst)
+      (ρ' : Nat → CV) (w' : Arm.ArmState),
+      actual ∈ result.blockScans.toList ∧ actual.block = 0 ∧
+      result.code.blocks[0]? = some block ∧ block.insts = prelude ++ body ∧
+      seqRun (csem (fun _ => False) ⟨0,0⟩ X) prelude.toList
+        (entrySeed actual.ctx (frame w)) w = some (.fall ρ' w') ∧
+      ValuesHeld (fun _ => True) actual.ctx (frame w) ρ' ∧ SameWorld (fun _ => False) w' w := by
+  have entered : Clif.enterFunc function (arguments w) Clif.Mem.empty =
+      .ok (frame w,Clif.Mem.empty) := rfl
+  have memSem : MemRefines (fun _ => False) 0 (fun _ => none) (csem (fun _ => False) ⟨0,0⟩ X) :=
+    memRefines_csem (fun _ => False) ⟨0,0⟩ X rfl (fun _ _ h => by cases h)
+  have stable : MRStable (fun _ => False) (fun _ _ _ => True) := by
+    intro _ _ _ _ _ _
+    trivial
+  obtain ⟨actual,block,prelude,body,ρ',w',events,zero,placed,code,execution,_,values,same,_⟩ :=
+    stock_lower_entry_prelude_refines run domain.2 domain.1 entered
+      (driverSem_csem (fun _ => False) ⟨0,0⟩ X) memSem stable trivial (stack_arguments_at_entry w)
+  exact ⟨run,actual,block,prelude,body,ρ',w',events,zero,placed,code,execution,values,same⟩
 
 end Backend.Stock.Proof.EntryLoadsWitness

@@ -38,7 +38,7 @@ private theorem factor_seg {vb : VBlock} {pre code post : Array MInst}
 /-- Actual source execution and the actual emitted arithmetic body/return reach
 an ABI-correct return in Stock's returned VCode. Source steps, terminal definedness,
 caller/frame transport and segment placement are all derived internally. -/
-theorem actual_arithmetic_return_refines {f : Clif.Function} {result : Result}
+theorem actual_arithmetic_return_refines_at {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     (abi : sigAbiOk f.sig = true) {b : Clif.Block} (blocks : f.blocks = [b])
     (family : ∀ stm ∈ b.body, ∃ subtract : Bool, ∃ ty x y,
@@ -52,10 +52,14 @@ theorem actual_arithmetic_return_refines {f : Clif.Function} {result : Result}
     {vals : List Clif.Val} {mem : Clif.Mem}
     (returned : Clif.runLoop env cp fuel s = .returned vals mem)
     {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
-    {MR : MemRelT} (stable : MRStable F MR) :
-    ∃ label k, ∀ ρ w, GuardedScanRel f result event.ctx event.block MR event.output.state
+    {MR : MemRelT} (stable : MRStable F MR)
+    {label : Nat} {vb : VBlock} {pre post : Array MInst}
+    (placed : result.code.blocks[label]? = some vb)
+    (code : vb.insts = pre ++ event.output.code.map (·.mapRegs
+      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))) ++ post) :
+    ∀ ρ w, GuardedScanRel f result event.ctx event.block MR event.output.state
       (0,s.frame,s.mem) ρ w →
-      RunOkABI f result.code isem MR s.frame.slots ⟨label,k,ρ,w⟩ (.returned vals mem) := by
+      RunOkABI f result.code isem MR s.frame.slots ⟨label,pre.size,ρ,w⟩ (.returned vals mem) := by
   obtain ⟨term,body,split,families⟩ := actual_arithmetic_families run scope blocks family events
   have start : s.frame.body = b.body.drop 0 := by simpa using remaining
   obtain ⟨t,left,total,ends,empty,steps,frame⟩ := actual_arithmetic_source_execution_frame
@@ -69,7 +73,6 @@ theorem actual_arithmetic_return_refines {f : Clif.Function} {result : Result}
   have tCallers : t.callers = [] := frame.1.trans callers
   have tTerm : t.frame.term = .ret xs := frame.2.2.2.trans (terminal.trans ret)
   have done := return_done_of_runLoop empty tCallers tTerm ends
-  obtain ⟨label,vb,pre,post,placed,code⟩ := stock_lower_block_scan_code run events
   let resolve := Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)
   have pieces : vb.insts = pre ++ body.code.map (·.mapRegs resolve) ++
       (term.output.emitted.map (·.mapRegs resolve) ++ post) := by
@@ -83,7 +86,6 @@ theorem actual_arithmetic_return_refines {f : Clif.Function} {result : Result}
       (term.output.emitted.toList.map (·.mapRegs resolve)) := by
     simpa only [Array.size_append,Array.size_map,Array.toList_map] using factor_seg termPieces
   have termMember : term ∈ event.output.records := by rw [split.records]; exact List.mem_cons_self
-  refine ⟨label,pre.size,?_⟩
   intro ρ w held
   obtain ⟨ρ',w',executed,postHeld⟩ := stock_lower_select_addsub_omitted_body_fall_refines
     run scope dominated events split.scanned split.retained families refines stable
@@ -105,6 +107,29 @@ theorem actual_arithmetic_return_refines {f : Clif.Function} {result : Result}
     termMember split.termInst tFunc tCallers done tDefined values refines stable placed termSeg w' memory
   have combined := RunOkABI.prefix path (by simpa only [List.length_map,Array.length_toList] using finished)
   simpa only [frame.2.2.1] using combined
+
+/-- Compatibility variant retaining existential body placement. -/
+theorem actual_arithmetic_return_refines {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) {b : Clif.Block} (blocks : f.blocks = [b])
+    (family : ∀ stm ∈ b.body, ∃ subtract : Bool, ∃ ty x y,
+      stm.inst = .binary (if subtract then .isub else .iadd) ty x y)
+    {xs : List Nat} (ret : b.term = .ret xs)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {s : Clif.State}
+    (func : s.frame.func = f) (callers : s.callers = [])
+    (remaining : s.frame.body = b.body) (terminal : s.frame.term = b.term)
+    (defined : SourceDefinedAt f result.ctx event.block 0 s.frame)
+    {vals : List Clif.Val} {mem : Clif.Mem}
+    (returned : Clif.runLoop env cp fuel s = .returned vals mem)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    {MR : MemRelT} (stable : MRStable F MR) :
+    ∃ label k, ∀ ρ w, GuardedScanRel f result event.ctx event.block MR event.output.state
+      (0,s.frame,s.mem) ρ w →
+      RunOkABI f result.code isem MR s.frame.slots ⟨label,k,ρ,w⟩ (.returned vals mem) := by
+  obtain ⟨label,vb,pre,post,placed,code⟩ := stock_lower_block_scan_code run events
+  exact ⟨label,pre.size,actual_arithmetic_return_refines_at run scope dominated abi blocks family ret
+    events func callers remaining terminal defined returned refines stable placed code⟩
 
 /-- Original function entry derives the frame, caller and source-definedness
 premises of the actual arithmetic return simulation. -/

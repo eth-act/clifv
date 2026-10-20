@@ -400,3 +400,36 @@ semantic consumers. No new production class is activated by this proof packet;
 all original full-goal obligations remain active.
 
 Entry-foundation author gates passed on `37905e99c7519f1d91fdcf0d2e38c04e6123fca8`: reconciled main#3417a18184a,17new/affected modules scheduled after strict prior-source/import closure checks, fullFV/FVTest2455jobs,all32auditfiles,94standardcore/67fixedwitnessownedconstants. All1060priorpublicaxiomsets retained exactly (1129currentroots including new concurrency proofs). No runtime/compiler/checker/linker input changed in this PR. [Terminal author receipt](../research/stock-entry-author-gates.json). Typed ABI agreement and actual Stock-node entry atVCode0/directsemanticconsumer integration remain next.
+
+
+#342 (`5c9917ce46c7fea62ed31515319210121ef3f0b0`) landed the entry foundation;
+its exact source+receipt tree was verified and the integrator notified. Terminal
+evidence and all 1,874 saved dirty paths were remotely verified in recovery
+commit `4d4054f45dbd8e98952ce78d3dc9ac790f9c766e`.
+
+The active `agent/stock-entry-abi-simulation` batch derives typed ABI agreement
+from original source entry and signature checks, distinct actual virtual
+destinations from SSA/mapping, and full filtered register-copy/stack-load
+execution without per-row certificates. Actual whole-driver node-zero origin
+provides the real constructor and retained scan. Final aliases preserve the
+original entry prelude; original source values establish the guarded body
+relation after it. The arithmetic return proof now has an additive explicit
+placement variant, retaining its old public variants unchanged.
+
+`actual_arithmetic_entry_return_refines` passes the normal 675-job targeted
+build: arbitrary single-block add/sub bodies execute from actual VCode block 0,
+instruction 0 to the ABI return. The initial virtual file is chosen internally;
+unused arguments remain supported. Arbitrary-value/nonempty-body and real
+register/stack entry witnesses pass normal builds. All 15 public roots and all
+150 core-owned constants use standard axioms; 68 witness constants retain only
+previously audited fixed trace axioms. Current full per-PR gates remain pending. [Current checkpoint](../research/stock-entry-abi-checkpoint.json).
+
+Next connect this complete VCode simulation through actual preparation/allocation
+and direct semantic compiler/checker/linker/generated-proof consumers, retaining
+the legacy contracts and fallback. Production selection is still the landed
+#336 classes; this batch does not activate a new class. Preserve checkAlloc's
+universal initial-file guarantee rather than substituting AllocChecked. All
+original rule/effect, source/block/whole-driver simulation, Stock-only
+completeness and production-consumer obligations remain mandatory.
+
+Actual entry-to-return author gates passed on `5199a6a930d840f8e7c934bd537f16b4de736df3`: 63 affected modules scheduled after exact source/import-closure reuse checks, complete FV/FVTest replay (2459 jobs), all 33 audit files, 150 standard-only core constants and 68 fixed-witness constants with no new native axioms. All 1129 prior public axiom sets are retained exactly (1144 current roots), and all 15 prior public theorem headers in changed modules are unchanged. No runtime consumer or executable is affected. [Terminal author receipt](../research/stock-entry-abi-author-gates.json). Next actual preparation/allocation and direct semantic production consumers; all original #140 obligations remain active.
