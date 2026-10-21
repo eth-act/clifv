@@ -1,5 +1,4 @@
 import FV.Backend.DeadCleanup
-import FV.Backend.Proof.LowerDecide
 
 namespace Backend.ABIReadOnly
 set_option autoImplicit false

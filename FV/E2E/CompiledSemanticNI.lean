@@ -1,5 +1,6 @@
 import FV.E2E.CompiledSemantic
 import FV.E2E.StockArithmeticNI
+import FV.E2E.StockMixedNI
 import FV.Backend.SemanticNICheck
 
 namespace E2E
@@ -17,6 +18,10 @@ inductive CompiledSemanticNI (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       Stock.Arithmetic.Domain f → result.code = vc → ABIReadOnly.check f.sig vc = true →
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticNI f k vc vcp rf af fa fb
+  | mixed {cleanup : Bool} {result : Stock.Result} :
+      Stock.Mixed.Domain f → result.code = vc → ABIReadFlags.check f.sig vc = true →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemanticNI f k vc vcp rf af fa fb
 
 namespace CompiledSemanticNI
 variable {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc}
@@ -28,6 +33,7 @@ theorem toSemantic (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
   cases hc with
   | compatible h => exact .compatible h
   | arithmetic domain equal _ h => exact .arithmetic domain equal h
+  | mixed domain equal _ h => exact .mixed domain equal h
 
 /-- All new semantic and paired premises come from executable checks and actual
 pipeline observations, rather than new accepted-source assumptions. -/
@@ -44,12 +50,15 @@ theorem of_checks {cleanup : Bool} (lower : SemanticNI.check f vc = true)
     | true =>
       exact .stockCleanup ⟨⟨legacy,prepared,prepOk,allocChecked_of_checkAlloc check,alloc,emit,layout⟩,check⟩
   simp only [SemanticNI.check,Bool.or_eq_true,Bool.and_eq_true] at lower
-  rcases lower with legacy | ⟨semantic,reads⟩
+  rcases lower with legacy | ⟨semantic,reads⟩ | ⟨semantic,reads⟩
   · exact .compatible (retained legacy)
   · rcases Stock.Arithmetic.check_sound semantic with legacy | ⟨result,domain,run,equal,_⟩
     · exact .compatible (retained legacy)
     · exact .arithmetic domain equal reads
         ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
+  · obtain ⟨result,domain,run,equal,_⟩ := Stock.Mixed.check_sound semantic
+    exact .mixed domain equal reads
+      ⟨run,by rwa [equal],by rwa [equal],check,alloc,emit,layout⟩
 
 end CompiledSemanticNI
 
@@ -105,6 +114,13 @@ theorem backend_correct_world_niX_semantic {p : Clif.Program} {f : Clif.Function
     intro vals cm returned
     obtain ⟨us,outs,w,pins,arity,values,memory,site,base,paired⟩ :=
       backend_correct_world_niX_stock_arithmetic domain reads h hcov hsym hslot hcs hrel hargs
+        fuel vals cm returned
+    exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ _ => paired⟩
+  | mixed domain equal reads h =>
+    subst vc
+    intro vals cm returned
+    obtain ⟨us,outs,w,pins,arity,values,memory,site,base,paired⟩ :=
+      backend_correct_world_niX_stock_mixed domain reads h hcov hsym hslot hcs hrel hargs
         fuel vals cm returned
     exact ⟨us,outs,w,pins,arity,values,memory,site,base,fun _ _ => paired⟩
 

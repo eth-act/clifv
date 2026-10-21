@@ -4009,3 +4009,11 @@ no source-value, per-record family or caller-selected virtual-file certificate.
 Other function families and optimizer/unwind activation, full Stock-only
 completeness and every remaining original #140 obligation remain open. The
 active branch is under validation; this paragraph is not a main landing receipt.
+
+Mixed select/add/sub implementation is pending on `agent/stock-mixed-production`:
+source-only executable checks derive its domain, flag-threaded paired execution
+preserves exact ABI returns, and shared semantic consumers retain the original
+source/machine boundary. It adds no caller-supplied map/run certificate. Default
+adapters and the previous-semantic-compiler-before-legacy retry are unvalidated;
+see `docs/research/stock-mixed-production-checkpoint.md`. This is not a main
+activation or a change to the original #140 completion conditions.

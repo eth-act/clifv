@@ -741,3 +741,9 @@ author validation, with original inputs/contracts/axioms and prior class routes
 retained. No main activation receipt yet. See
 `docs/plans/stock-driver-incremental-delivery.md` and
 `docs/research/stock-arithmetic-ni-checkpoint.md`. Full original#140 remains open.
+
+2026-10-20: mixed select/add/sub production modules/adapters are prepared on
+`agent/stock-mixed-production`; validation pending. The arithmetic author checkout
+remains frozen. Full machine NI and complete prototype witnesses pass; split
+modules/default CLIs/retained artifacts require gates before any landing. Full
+#140 remains open; see `docs/research/stock-mixed-production-checkpoint.md`.

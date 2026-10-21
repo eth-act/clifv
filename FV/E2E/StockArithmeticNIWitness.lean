@@ -1,3 +1,4 @@
+import FV.E2E.StockProductionFixtures
 import FV.E2E.CompiledSemanticNI
 import FV.Backend.LinearScan
 import FV.Backend.Lowering.StockD0
@@ -9,22 +10,6 @@ set_option Elab.async false
 set_option maxRecDepth 100000
 set_option maxHeartbeats 10000000
 attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
-
-/-- Two arithmetic operations, an actually read ninth stack parameter, six
-unused parameters and an explicit source slot, across all six shipped ABIs. -/
-def function (config : Configuration) : Clif.Function :=
-  let ty := valueType config
-  {source "stock_arithmetic_ni" config [] with
-    sig := {
-      params := List.replicate 9 ⟨ty,.none,.normal⟩
-      returns := [⟨ty,.none,.normal⟩]
-      callConv := convention config}
-    slots := [(7,⟨8,some 8⟩)]
-    blocks := [{
-      id := 0
-      params := (List.range 9).map (fun i => (i,ty))
-      body := [⟨[9],.binary .iadd ty 0 8⟩,⟨[10],.binary .isub ty 9 1⟩]
-      term := .ret [10]}]}
 
 private def checks (config : Configuration) (cleanup : Bool) : Bool :=
   Stock.Arithmetic.sourceOk (function config) &&

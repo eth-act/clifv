@@ -1162,3 +1162,10 @@ author validation, with original inputs/contracts/axioms and prior class routes
 retained. No main activation receipt yet. See
 `docs/plans/stock-driver-incremental-delivery.md` and
 `docs/research/stock-arithmetic-ni-checkpoint.md`. Full original#140 remains open.
+
+2026-10-20 #140 mixed-class checkpoint: verified source-machine NI and actual
+six-ABI/two-cleanup prototypes have been moved into production module/adapters
+on `agent/stock-mixed-production`. The new module split and default integration
+are unvalidated and unmerged. Old input conditions, theorem variants, required
+axioms and successful identity/stage sets remain mandatory. Full original #140
+family/effect/whole-driver/completeness obligations are still open.

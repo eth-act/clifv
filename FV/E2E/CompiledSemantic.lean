@@ -1,5 +1,6 @@
 import FV.E2E.CompiledProduction
 import FV.E2E.StockArithmeticWorldX
+import FV.E2E.StockMixedWorldX
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
@@ -14,6 +15,10 @@ inductive CompiledSemantic (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledSemantic f k vc vcp rf af fa fb
   | arithmetic {cleanup : Bool} {result : Stock.Result} :
       Stock.Arithmetic.Domain f → result.code = vc →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemantic f k vc vcp rf af fa fb
+  | mixed {cleanup : Bool} {result : Stock.Result} :
+      Stock.Mixed.Domain f → result.code = vc →
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemantic f k vc vcp rf af fa fb
 
@@ -42,21 +47,25 @@ theorem check (hc : CompiledSemantic f k vc vcp rf af fa fb) : Backend.checkAllo
   cases hc with
   | compatible h => exact h.check
   | arithmetic _ _ h => exact h.check
+  | mixed _ _ h => exact h.check
 
 theorem alloc (hc : CompiledSemantic f k vc vcp rf af fa fb) : lowerRFunc vcp rf = .ok af := by
   cases hc with
   | compatible h => exact h.alloc
   | arithmetic _ _ h => exact h.alloc
+  | mixed _ _ h => exact h.alloc
 
 theorem emit (hc : CompiledSemantic f k vc vcp rf af fa fb) : emitFunc k af = .ok fa := by
   cases hc with
   | compatible h => exact h.emit
   | arithmetic _ _ h => exact h.emit
+  | mixed _ _ h => exact h.emit
 
 theorem layout (hc : CompiledSemantic f k vc vcp rf af fa fb) : fa.layout = .ok fb := by
   cases hc with
   | compatible h => exact h.layout
   | arithmetic _ _ h => exact h.layout
+  | mixed _ _ h => exact h.layout
 
 end CompiledSemantic
 
@@ -102,5 +111,8 @@ theorem backend_correct_worldX_semantic {p : Clif.Program} {f : Clif.Function} {
   | arithmetic domain equal h =>
     subst vc
     exact backend_correct_worldX_stock_arithmetic domain h hcov hsym hslot hcs hrel hargs fuel
+  | mixed domain equal h =>
+    subst vc
+    exact backend_correct_worldX_stock_mixed domain h hcov hsym hslot hcs hrel hargs fuel
 
 end E2E
