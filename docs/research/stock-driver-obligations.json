@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-21T23:08:50.185556+00:00",
+  "updated_utc": "2026-10-21T23:48:09.312965+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -16,9 +16,10 @@
       "integer NOT/NOT-of-XOR via shared scalar consumers",
       "i32/i64 multiplication and fused multiply through shared scalar consumers",
       "i32/i64 ordinary shifts and fused bitfield pairs through shared scalar consumers",
-      "i32/i64 extension/reduction through shared scalar consumers (validated, squash pending)"
+      "i32/i64 extension/reduction through shared scalar consumers (validated, squash pending)",
+      "i32/i64 negation, CLZ/CTZ, bit reversal/byte swap and rotations through shared scalar consumers (validated, squash pending)"
     ],
-    "pending": "Counts/reversals/rotations, then all unchanged original140 scalar/control/memory/effects/calls/source/block/whole-driver/completeness and consumers."
+    "pending": "Popcount; comparisons/min/max; high multiply/division/remainder; complete original integer widths/ABIs; all unchanged original140 control/memory/traps/effects/calls/source/block/whole-driver/completeness/consumers."
   },
   "roots": [
     {
@@ -2549,7 +2550,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Ineg",
       "saved_guarded_bridge": "FV/Backend/Proof/StockNegRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -2557,7 +2558,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_861",
@@ -4744,7 +4746,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Rotl",
       "saved_guarded_bridge": "FV/Backend/Proof/StockRotateWideRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: guarded original record/source execution proved and actual dispatch derived; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4752,7 +4754,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1797",
@@ -4760,7 +4763,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Rotl",
       "saved_guarded_bridge": "FV/Backend/Proof/StockRotateWideRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: guarded original record/source execution proved and actual dispatch derived; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4768,7 +4771,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1803",
@@ -4776,7 +4780,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Rotl",
       "saved_guarded_bridge": "FV/Backend/Proof/StockRotateWideImmRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: guarded original record/source execution proved and actual dispatch derived; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4784,7 +4788,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1808",
@@ -4792,7 +4797,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Rotl",
       "saved_guarded_bridge": "FV/Backend/Proof/StockRotateWideImmRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: guarded original record/source execution proved and actual dispatch derived; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4800,7 +4805,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1827",
@@ -4840,7 +4846,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Rotr",
       "saved_guarded_bridge": "FV/Backend/Proof/StockRotateWideRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: guarded original record/source execution proved and actual dispatch derived; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4848,7 +4854,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1848",
@@ -4856,7 +4863,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Rotr",
       "saved_guarded_bridge": "FV/Backend/Proof/StockRotateWideRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: guarded original record/source execution proved and actual dispatch derived; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4864,7 +4871,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1852",
@@ -4888,7 +4896,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Rotr",
       "saved_guarded_bridge": "FV/Backend/Proof/StockRotateWideImmRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: guarded original record/source execution proved and actual dispatch derived; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4896,7 +4904,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1862",
@@ -4904,7 +4913,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Rotr",
       "saved_guarded_bridge": "FV/Backend/Proof/StockRotateWideImmRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: guarded original record/source execution proved and actual dispatch derived; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4912,7 +4921,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1916",
@@ -4984,7 +4994,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Bitrev",
       "saved_guarded_bridge": "FV/Backend/Proof/StockBitrevRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4992,7 +5002,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1951",
@@ -5048,7 +5059,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Clz",
       "saved_guarded_bridge": "FV/Backend/Proof/StockCountRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: actual selected record/source value bridge exists under original demand/availability and DFG guards; whole-driver composition remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5056,7 +5067,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_1982",
@@ -5112,7 +5124,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Ctz",
       "saved_guarded_bridge": "FV/Backend/Proof/StockCountRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: actual selected record/source value bridge exists under original demand/availability and DFG guards; whole-driver composition remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5120,7 +5132,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_2000",
@@ -5208,7 +5221,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Bswap",
       "saved_guarded_bridge": "FV/Backend/Proof/StockBswapRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5216,7 +5229,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_2041",
@@ -5224,7 +5238,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Bswap",
       "saved_guarded_bridge": "FV/Backend/Proof/StockBswapRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete bit-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5232,7 +5246,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-bit-production-activation.md"
     },
     {
       "rule": "rule_lower_2044",
