@@ -24,11 +24,31 @@ percentages. No whole-backlog port or new worktree is needed. Canonical saved wo
 The superseded logical view was archived, its unique dirty recovery source pushed
 atfc1bb8e1, and the clean view removed. Four necessary views and one warm cache remain.
 
-Active constants packet on779bc7ba derives unique root53 selection and match/RHS
-receipts from actual retained records, reuses saved source transfer, and composes
-constant scans with the shipped logical/mixed record boundary. Old theorem headers
-and variants remain. Complete boundary witnesses and current normal/trust gates
-precede landing; body/entry/return/default consumer activation is still required.
+The constant selected-record/body prerequisite landed in #360 (22a05d3b), with
+all 2,659 normal keys, 45 trust audits, previous 1,322 axiom sets and both old scan
+headers preserved. Its complete source/csem/body witness is standard-only; evidence
+is backed remotely ataeaaf5e5. See the constant record/body research receipt.
+
+Constant production activation is complete through one reusable scalar consumer.
+[Terminal evidence](../research/stock-scalar-production-activation.md) records all
+35 primary command gates and seven ownership records, exact previous axiom/header
+and identity/stage parity, native byte execution, all retained classes and verified
+examples. Validated source edfe4f4f is backed remotely with terminal evidence at
+fe81690d. A universal internal Scalar.Domain is derived by fixed source-check
+soundness. Shared pure source and ABI composition retains old variants; MOVK has
+its own scalar read boundary, with the old check and cleanup whitelist unchanged.
+
+Default attempt order is Scalar→Logical→Mixed→Arithmetic→legacy. Actual retained
+artifact reconstruction probes every route against bytes and records its index,
+on the original source/settings. Routing data does not restrict source theorems.
+
+Next: NOT/fused through the same scalar domain and consumers. Current-source drafts
+for all three NOT roots (base, shifted, NOT-of-XOR), original guarded source and
+scan/body/entry/return/no-trap proofs already compile and are backed in fe81690d.
+Integrate them as the next substantive packet, preserving the old constant
+classifier theorem and every old variant. No new consumer stack is needed.
+Continue all remaining original obligations after that class; fallback is not
+Stock completeness. The original full goal remains unfinished.
 
 ## Maintained validation runner (landed #358)
 

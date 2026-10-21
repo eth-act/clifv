@@ -55,6 +55,15 @@ theorem entryRegs (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
     obtain ⟨n,bound,pin⟩ := regs r found
     exact ⟨n,pin,bound⟩
 
+  | scalar domain equal reads h =>
+    intro loc member r located
+    have regs := (Spill.locsOf_regs (functionE_sig_int domain.scope.subsetE).1
+      (Spill.sret_le_of_sigAbiOk domain.abi)).2
+    have found : r ∈ Spill.locRegs (locsOf f.sig) :=
+      List.mem_filterMap.mpr ⟨loc,member,by rw [located]⟩
+    obtain ⟨n,bound,pin⟩ := regs r found
+    exact ⟨n,pin,bound⟩
+
 /-- An ABI-read-only artifact contains no TLS helper; cleanup and checked
 preparation preserve that exclusion. -/
 theorem noTls {sig : Clif.Signature} {code : VCode}
@@ -80,6 +89,21 @@ theorem noTlsFlags {sig : Clif.Signature} {code : VCode}
   obtain ⟨k,hi⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member')
   have supported := MixedFlagBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
   cases i <;> simp_all [Backend.ABIReadOnly.instruction,Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
+
+/-- MOVK adds no TLS read; the retained ABI checks keep their exclusions. -/
+theorem noTlsScalar {sig : Clif.Signature} {code : VCode}
+    (checked : Backend.ABIReadScalar.check sig code = true) : code.hasTls = false := by
+  rw [VCode.hasTls,Array.any_eq_false']
+  intro vb member
+  apply Bool.eq_false_iff.mp
+  apply Array.any_eq_false'.mpr
+  intro i member'
+  obtain ⟨b,hb⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member)
+  obtain ⟨k,hi⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member')
+  have supported := ScalarBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
+  cases i <;> simp_all [Backend.ABIReadScalar.instruction,Backend.ABIReadScalar.constant,
+    Backend.ABIReadFlags.instruction,Backend.ABIReadOnly.instruction,
+    Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
 
 end CompiledSemanticNI
 
@@ -114,6 +138,17 @@ theorem hasTls_of_vcode_semantic {f : Clif.Function} {k : Nat} {vc vcp : VCode}
 
   | @logical cleanup result domain equal reads h =>
     have raw := CompiledSemanticNI.noTlsFlags reads
+    have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
+      rw [equal]
+      cases cleanup with
+      | false => exact raw
+      | true => exact Backend.DeadCleanup.prune_noTls raw
+    have prepared := noTls_of_prepCheck h.prepOk staged
+    rw [prepared] at ht
+    cases ht
+
+  | @scalar cleanup result domain equal reads h =>
+    have raw := CompiledSemanticNI.noTlsScalar reads
     have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
       rw [equal]
       cases cleanup with

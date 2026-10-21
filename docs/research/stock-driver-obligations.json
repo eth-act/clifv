@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-21T16:54:04.908901+00:00",
+  "updated_utc": "2026-10-21T19:49:48.025223+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -10,9 +10,11 @@
       "prologue",
       "scalar-add",
       "arithmetic",
-      "add/sub/select (357)"
+      "add/sub/select (357)",
+      "AND/OR/XOR (359)",
+      "integer constants via shared scalar consumers (author gates complete; current activation PR)"
     ],
-    "pending": "Validated logical activation at0d9f54fe; author squash next. Then constants/NOT and all remaining full-goal obligations."
+    "pending": "NOT/fused through existing Scalar.Domain and consumers, then every remaining original scalar/control/memory/effect/call/whole-driver/completeness obligation. Current guarded NOT drafts compile and are backed in fe81690d."
   },
   "roots": [
     {
@@ -21,7 +23,7 @@
       "source": "FV/Isle/Generated/Rules01.lean",
       "primary_opcode": "Iconst",
       "saved_guarded_bridge": "FV/Backend/Proof/StockConstantRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual selection/receipt-free guarded record/source/scan/body/entry-return and default production consumers complete; see stock-scalar-production-activation receipt",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -29,7 +31,17 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "ConstantComplete.selected_rule",
+        "ConstantComplete.record_source",
+        "stock_lower_constant_scan_fall_refines",
+        "stock_lower_mixed_constant_body_fall_refines",
+        "ConstantBody.actual_constant_body_refines",
+        "ConstantBody.actual_constant_entry_return_refines_frame"
+      ],
+      "completeness": "Stock-only selection/request/lowering success and downstream whole-driver completeness remain open; successful-run refinement is not totality.",
+      "production_receipt": "docs/research/stock-scalar-production-activation.json"
     },
     {
       "rule": "rule_lower_58",
