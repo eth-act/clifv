@@ -34,8 +34,8 @@ def resultValue (config : Configuration) (input : Nat → BitVec (valueType conf
   let width := (valueType config).width
   let unsigned := (StockMulNIWitness.resultValue config input <<< (0x105 % width)) >>> (0x103 % width)
   let signed := (StockMulNIWitness.resultValue config input <<< (2 % width)).sshiftRight (9 % width)
-  let lsl := signed <<< (input 2).toNat % width
-  let lsr := lsl >>> (input 1).toNat % width
+  let lsl := signed <<< ((input 2).toNat % width)
+  let lsr := lsl >>> ((input 1).toNat % width)
   let asr := lsr.sshiftRight ((input 0).toNat % width)
   let combined := (~~~(asr <<< (2 % width))) ^^^ unsigned
   let immediate := (combined <<< (0x105 % width)) ^^^ input 3

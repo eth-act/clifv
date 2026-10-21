@@ -6,7 +6,7 @@ import FV.Backend.LinearScan
 import FV.Backend.Lowering.StockD0
 
 set_option maxRecDepth 100000
-set_option maxHeartbeats 10000000
+set_option maxHeartbeats 1000000
 
 namespace E2E.StockShiftNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0

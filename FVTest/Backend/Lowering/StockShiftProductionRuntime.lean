@@ -90,7 +90,7 @@ private def checkConfiguration (label : String)
     require (retried.text == retained.text && retried.rules == retained.rules &&
       retried.unsupported == retained.unsupported && retried.unverified == retained.unverified &&
       retried.unvalidated == retained.unvalidated) "retry changed retained output/history/stages"
-  IO.println s!"Stock mul {label} {repr config}: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed"
+  IO.println s!"Stock shift {label} {repr config}: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed"
 
 /-- Require real accepted oracle answers, then compare them with the production
 allocator's output. A missing binary or spill fallback cannot satisfy this test. -/
@@ -141,7 +141,7 @@ def check : IO Unit := do
     pure false
   catch _ => pure true
   require missingRejected "missing regalloc2 binary silently passed the oracle test"
-  IO.println "Stock mul missing-binary negative control passed"
+  IO.println "Stock shift missing-binary negative control passed"
 
 end FVTest.StockShiftProductionRuntime
 
