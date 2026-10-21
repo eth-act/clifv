@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-21T00:32:07.097937+00:00",
+  "utc": "2026-10-21T00:58:33.210472+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
@@ -37,6 +37,7 @@
     "FV.Backend.Proof.DeadCleanupPositions",
     "FV.Backend.Proof.DeadCleanupPrepareMap",
     "FV.Backend.Proof.DeadCleanupPreparedAvailability",
+    "FV.Backend.Proof.DefAssemble",
     "FV.Backend.Proof.DefAssembleBase",
     "FV.Backend.Proof.DefGenModel",
     "FV.Backend.Proof.DefGenOracle",
@@ -47,6 +48,7 @@
     "FV.Backend.Proof.IselEmitChk",
     "FV.Backend.Proof.IselEmitCtor",
     "FV.Backend.Proof.IselEmitDefs",
+    "FV.Backend.Proof.IselEmitDriver",
     "FV.Backend.Proof.IselEmitFns",
     "FV.Backend.Proof.IselEmitHand",
     "FV.Backend.Proof.IselEmitLast",
@@ -57,9 +59,12 @@
     "FV.Backend.Proof.IselFloatVac",
     "FV.Backend.Proof.IselLowerAll",
     "FV.Backend.Proof.IselPrgCheck",
+    "FV.Backend.Proof.IselPrgCover",
     "FV.Backend.Proof.IselPrgCtorBase",
     "FV.Backend.Proof.IselPrgCtorSound",
+    "FV.Backend.Proof.IselPrgCtx",
     "FV.Backend.Proof.IselPrgDom",
+    "FV.Backend.Proof.IselPrgDriver",
     "FV.Backend.Proof.IselPrgExt",
     "FV.Backend.Proof.IselPrgExtSound",
     "FV.Backend.Proof.IselPrgHand",
@@ -74,10 +79,14 @@
     "FV.Backend.Proof.IselPrgSound",
     "FV.Backend.Proof.IselPrgTab",
     "FV.Backend.Proof.IselSzBrTable",
+    "FV.Backend.Proof.IselSzDriver",
     "FV.Backend.Proof.IselSzExt",
     "FV.Backend.Proof.IselSzSound",
     "FV.Backend.Proof.KillPrep",
     "FV.Backend.Proof.LowerSimUCheck",
+    "FV.Backend.Proof.LowerTotal",
+    "FV.Backend.Proof.LowerTotalCtx",
+    "FV.Backend.Proof.LowerTotalDefs",
     "FV.Backend.Proof.MemRefines",
     "FV.Backend.Proof.PerEdgePrepareComplete",
     "FV.Backend.Proof.PerEdgePrepareSound",
@@ -176,6 +185,7 @@
     "FV.E2E.ActualCompilerModes",
     "FV.E2E.ActualPipelineCheck",
     "FV.E2E.AllocDirect",
+    "FV.E2E.AllocTotal",
     "FV.E2E.BinCheck",
     "FV.E2E.Binary",
     "FV.E2E.BinaryGood",
@@ -183,26 +193,39 @@
     "FV.E2E.CompiledProduction",
     "FV.E2E.CompiledSemantic",
     "FV.E2E.CompiledSemanticNI",
+    "FV.E2E.DeadCleanupAlloc",
     "FV.E2E.DeadCleanupBinCheck",
     "FV.E2E.DeadCleanupBinary",
     "FV.E2E.DeadCleanupContracts",
     "FV.E2E.DeadCleanupCover",
     "FV.E2E.DeadCleanupCtl",
     "FV.E2E.DeadCleanupDirect",
+    "FV.E2E.DeadCleanupEmit",
+    "FV.E2E.DeadCleanupEmitReady",
     "FV.E2E.DeadCleanupGotCheck",
     "FV.E2E.DeadCleanupGuarded",
     "FV.E2E.DeadCleanupLinkCalls",
     "FV.E2E.DeadCleanupLinkCheck",
     "FV.E2E.DeadCleanupLinkFrames",
+    "FV.E2E.DeadCleanupLinkScope",
     "FV.E2E.DeadCleanupPreparedSize",
     "FV.E2E.DeadCleanupRealizes",
     "FV.E2E.DeadCleanupRegLevel",
     "FV.E2E.DeadCleanupRegLevelX",
+    "FV.E2E.DeadCleanupSpillCheckAlloc",
     "FV.E2E.DeadCleanupSpillWords",
     "FV.E2E.DeadCleanupStackBound",
+    "FV.E2E.DeadCleanupTotal",
     "FV.E2E.EmitCondsDefs",
+    "FV.E2E.EmitCondsLower",
+    "FV.E2E.EmitEnc",
+    "FV.E2E.EmitLabels",
+    "FV.E2E.EmitNear",
+    "FV.E2E.EmitPreOk",
     "FV.E2E.EmitReady",
     "FV.E2E.EmitSize",
+    "FV.E2E.EmitTotal",
+    "FV.E2E.EmitTotalIn",
     "FV.E2E.ExecBytes",
     "FV.E2E.ExecFrameSim",
     "FV.E2E.ExecGoodReads",
@@ -227,7 +250,11 @@
     "FV.E2E.LinkOwnRets",
     "FV.E2E.LinkOwnSegRange",
     "FV.E2E.LinkProduction",
+    "FV.E2E.LinkScope",
     "FV.E2E.LinkScopeDefs",
+    "FV.E2E.LinkScopeInput",
+    "FV.E2E.LinkScopeInputDefs",
+    "FV.E2E.LinkSemanticNI",
     "FV.E2E.Lockstep",
     "FV.E2E.LoweringProvenance",
     "FV.E2E.Pair",
@@ -246,13 +273,27 @@
     "FV.E2E.RegLevelU",
     "FV.E2E.RegLevelUTry",
     "FV.E2E.RegLevelUnwind",
+    "FV.E2E.RelaxTotal",
+    "FV.E2E.SemanticBinary",
+    "FV.E2E.SemanticBinaryGood",
+    "FV.E2E.SemanticExecBytes",
+    "FV.E2E.SemanticExecFrameSim",
+    "FV.E2E.SemanticExecStatic",
+    "FV.E2E.SemanticLinkGood",
     "FV.E2E.SemanticNIBoundary",
+    "FV.E2E.SemanticPipelineCheck",
+    "FV.E2E.SemanticPreparedPipeline",
+    "FV.E2E.SemanticStackBound",
     "FV.E2E.SizeDefs",
+    "FV.E2E.SizeIn",
+    "FV.E2E.SizeLower",
     "FV.E2E.SizeVC",
     "FV.E2E.SpillAvail",
     "FV.E2E.SpillCheckAlloc",
     "FV.E2E.SpillCheckAllocFix",
     "FV.E2E.SpillCheckAllocMono",
+    "FV.E2E.SpillDefined",
+    "FV.E2E.SpillKillFree",
     "FV.E2E.SpillLower",
     "FV.E2E.SrcScopeDefs",
     "FV.E2E.StackBound",
@@ -272,8 +313,17 @@
     "FV.E2E.ValidatedWorld",
     "FV.Front.Bundle",
     "FV.Front.Read",
+    "FV.Link.ActualImage",
     "FV.Link.CodeMapProof",
+    "FV.Link.Compile",
+    "FV.Link.Correct",
+    "FV.Link.DeadCleanupCompile",
+    "FV.Link.DeadCleanupImage",
     "FV.Link.EhCheck",
+    "FV.Link.Exe",
+    "FV.Link.ExeInput",
+    "FV.Link.ExeSource",
+    "FV.Link.ExeTotal",
     "FV.Link.Image",
     "FV.Link.ImageProof",
     "FV.Link.Layout",
@@ -281,10 +331,16 @@
     "FV.Link.LayoutProof",
     "FV.Link.Ld.Syms",
     "FV.Link.OutsideProof",
+    "FV.Link.Placed",
+    "FV.Link.ProductionImage",
+    "FV.Link.ProductionImageWith",
+    "FV.Link.ProductionImageWithProof",
     "FV.Link.Reloc",
     "FV.Link.RelocProof",
     "FV.Link.RelocShape",
     "FV.Link.RelocShapeProof",
+    "FV.Link.SemanticCompileWith",
+    "FV.Link.Total",
     "FV.Link.UnwFns",
     "FV.Unw.EhFrame",
     "FV.Unw.EhFrameHdr",
@@ -294,11 +350,11 @@
     "FVTest.Backend.Main",
     "FVTest.E2E.LinkProof"
   ],
-  "normal_built_count": 287,
+  "normal_built_count": 343,
   "failed_modules": 0,
   "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
   "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
-  "waiting": "Complete source body/function and ABI machine proofs await 8GiB leaf budgets and current shared imports. Primary arithmetic currently reserves12GiB; do not retry known6GiB modules at4GiB. NativeCLI/linked/generated/trust/identity-stage/examples current gates still mandatory; fulloriginal140active/arithmeticfirst.",
+  "waiting": "Complete remaining normal witnesses and production consumers. Arithmetic old213 module scheduler is still live, held parent awaits verified current-Arm handoff672. These new source-keyed normal port builds remain old-Arm-model evidence; exact current-Arm activation gates are mandatory. Mixed runtime missing-oracle repair/new normal integration harness require actual end-to-end run.",
   "batches": [
     {
       "utc": "2026-10-20T19:14:26.869956+00:00",
@@ -8295,6 +8351,475 @@
         "compile_jobs_started": 0,
         "all_current_targets_directly_verified_log": "/tmp/stock-mixed-current-main-normal-modules-batch56/verified-current-source-keys.log"
       }
+    },
+    {
+      "batch": 57,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch57/receipt.json",
+      "receipt_sha256": "c742ab5442e84cf99ac363b079a3a2d6583776e43c06cc74640d8583fdeaa710",
+      "head": "22aa7ab3ddbad7d02940f433916339f735ba2aa6",
+      "built": [
+        {
+          "module": "FV.Backend.Proof.LowerTotalCtx",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch57/FV.Backend.Proof.LowerTotalCtx.build.log",
+          "returncode": 0,
+          "log_sha256": "c38415665f71af7bbbab11accbef583645c03f51499b1b80ca9facb7bbed16a6"
+        },
+        {
+          "module": "FV.Backend.Proof.LowerTotalDefs",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch57/FV.Backend.Proof.LowerTotalDefs.build.log",
+          "returncode": 0,
+          "log_sha256": "28339e99c746b1b08c1e85ddc4c8713d35d5aec4edb61861be5e8be83ad76406"
+        },
+        {
+          "module": "FV.E2E.SpillKillFree",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch57/FV.E2E.SpillKillFree.build.log",
+          "returncode": 0,
+          "log_sha256": "57e797c777312364711e44ad7736fce774230db678c1763496787aba1b63d93c"
+        },
+        {
+          "module": "FV.E2E.AllocTotal",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch57/FV.E2E.AllocTotal.build.log",
+          "returncode": 0,
+          "log_sha256": "ec86c60a594d15787a6e21fe542227ed2aaa76432e1e95aa90e432121872ef8e"
+        },
+        {
+          "module": "FV.E2E.RelaxTotal",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch57/FV.E2E.RelaxTotal.build.log",
+          "returncode": 0,
+          "log_sha256": "01281b17e3c0df39ad7986e41a797a696f31387d3e673ec784de8b32d0d33314"
+        },
+        {
+          "module": "FV.E2E.EmitPreOk",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch57/FV.E2E.EmitPreOk.build.log",
+          "returncode": 0,
+          "log_sha256": "d40385c5e264672aa349fc63637afee53e06aaf22f62bf93553775a1f5aa9671"
+        },
+        {
+          "module": "FV.E2E.EmitEnc",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch57/FV.E2E.EmitEnc.build.log",
+          "returncode": 0,
+          "log_sha256": "2e0bcacf55a15b871929ee94d142ca9d2deb5d75cc2100b7d1800c822c134079"
+        },
+        {
+          "module": "FV.E2E.EmitLabels",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch57/FV.E2E.EmitLabels.build.log",
+          "returncode": 0,
+          "log_sha256": "df765aa0092ce44c63519f3c00a234165124e67b1aa92c16a07cd0f866bc8df3"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 8192,
+      "current_source_not_new_Arm_model_pass": true
+    },
+    {
+      "batch": 58,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch58/receipt.json",
+      "receipt_sha256": "472e857077d927dd2b00eefd4ff32278a138692b7a1bb94fa13a6f44ed0a3c9d",
+      "head": "22aa7ab3ddbad7d02940f433916339f735ba2aa6",
+      "built": [
+        {
+          "module": "FV.E2E.EmitNear",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch58/FV.E2E.EmitNear.build.log",
+          "returncode": 0,
+          "log_sha256": "855311965dee9584b85429946e8d198d5ebd8aa833a870a290b5c1a4b94f202b"
+        },
+        {
+          "module": "FV.E2E.EmitTotal",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch58/FV.E2E.EmitTotal.build.log",
+          "returncode": 0,
+          "log_sha256": "bb08d3e37e981d561740c877e0581974d681d406639f0683ac6081403c082c85"
+        },
+        {
+          "module": "FV.E2E.EmitCondsLower",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch58/FV.E2E.EmitCondsLower.build.log",
+          "returncode": 0,
+          "log_sha256": "2013e9c52f8afedc433c34e8c0007338f7e35833b14cb18c3375de6cfc8ce00b"
+        },
+        {
+          "module": "FV.Backend.Proof.IselEmitDriver",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch58/FV.Backend.Proof.IselEmitDriver.build.log",
+          "returncode": 0,
+          "log_sha256": "491d56a24458c438f7579a798325a0791f4a72f92b4d92d1da8151b71f47835e"
+        },
+        {
+          "module": "FV.E2E.EmitTotalIn",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch58/FV.E2E.EmitTotalIn.build.log",
+          "returncode": 0,
+          "log_sha256": "64d1433ee016dfee75214014cd26830a596142a6640b187d1a05e60f72beb3f6"
+        },
+        {
+          "module": "FV.Backend.Proof.DefAssemble",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch58/FV.Backend.Proof.DefAssemble.build.log",
+          "returncode": 0,
+          "log_sha256": "1e7b56b4f7b2d92e33d61cc97a05f47df255430232b83b1b301cc0c0573fad1c"
+        },
+        {
+          "module": "FV.Backend.Proof.LowerTotal",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch58/FV.Backend.Proof.LowerTotal.build.log",
+          "returncode": 0,
+          "log_sha256": "f88c7faa73f83a1bf164d73534ba4872ce299b75c01f8cc0c49f54ea886eed5c"
+        },
+        {
+          "module": "FV.Backend.Proof.IselPrgCtx",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch58/FV.Backend.Proof.IselPrgCtx.build.log",
+          "returncode": 0,
+          "log_sha256": "c3a591b8252ca76c6212b735f770d7a745c36039a3730246ce659a7d9c9f895b"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 8192,
+      "current_source_not_new_Arm_model_pass": true
+    },
+    {
+      "batch": 59,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch59/receipt.json",
+      "receipt_sha256": "a096bd032b2d86e6277229ef9b56c9b50bfba9a76f0362f38bb1b92dd74ff69c",
+      "head": "22aa7ab3ddbad7d02940f433916339f735ba2aa6",
+      "built": [
+        {
+          "module": "FV.E2E.LinkScopeInputDefs",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch59/FV.E2E.LinkScopeInputDefs.build.log",
+          "returncode": 0,
+          "log_sha256": "721ba72ebc25b0fdad4fd9d534155a3682cc6f4d9aebfc87447f6ef47f5994ce"
+        },
+        {
+          "module": "FV.Link.Compile",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch59/FV.Link.Compile.build.log",
+          "returncode": 0,
+          "log_sha256": "67e67e25124d62cbc488607602edb11db6782b5716917bec1ac1965bf8fa682d"
+        },
+        {
+          "module": "FV.E2E.SizeLower",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch59/FV.E2E.SizeLower.build.log",
+          "returncode": 0,
+          "log_sha256": "db8a64d5f7ea23e9fec552efa256fb2bfa44519bfba1d4a03aa8132f060a0260"
+        },
+        {
+          "module": "FV.Backend.Proof.IselSzDriver",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch59/FV.Backend.Proof.IselSzDriver.build.log",
+          "returncode": 0,
+          "log_sha256": "1db521b7cc5f297636c1c6882ca06005362886468ab1185d4870f6e8b831a988"
+        },
+        {
+          "module": "FV.E2E.SizeIn",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch59/FV.E2E.SizeIn.build.log",
+          "returncode": 0,
+          "log_sha256": "b76676b8dfa368face40520316be8cc943a727e881fb6b9529eed687445150df"
+        },
+        {
+          "module": "FV.Backend.Proof.IselPrgCover",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch59/FV.Backend.Proof.IselPrgCover.build.log",
+          "returncode": 0,
+          "log_sha256": "29b2d54dc0d91f5d356b9e3b62babf40d1cc3953805bbae591970f1118a71be0"
+        },
+        {
+          "module": "FV.Backend.Proof.IselPrgDriver",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch59/FV.Backend.Proof.IselPrgDriver.build.log",
+          "returncode": 0,
+          "log_sha256": "5f19a730d7d2d239dc382e32401e19c55368f3146d4a999082973f3ad2fa2478"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupAlloc",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch59/FV.E2E.DeadCleanupAlloc.build.log",
+          "returncode": 0,
+          "log_sha256": "68ac75bc16c828049bd8a8427afede1fc27b208d32ef6b89348bd078911d9ba4"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 8192,
+      "current_source_not_new_Arm_model_pass": true
+    },
+    {
+      "batch": 60,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch60/receipt.json",
+      "receipt_sha256": "21fe20bb8cc431cd89a3473df618141c6aba6ec2df0aeb842bb67f52962c3d2e",
+      "head": "22aa7ab3ddbad7d02940f433916339f735ba2aa6",
+      "built": [
+        {
+          "module": "FV.E2E.LinkScope",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch60/FV.E2E.LinkScope.build.log",
+          "returncode": 0,
+          "log_sha256": "d591d8b498858c77902e28bd2731ecb4506943b606e1e604b0c974d8d27b9da3"
+        },
+        {
+          "module": "FV.E2E.SpillDefined",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch60/FV.E2E.SpillDefined.build.log",
+          "returncode": 0,
+          "log_sha256": "5cd17a6b645dce97817d2e38aed16483707d244ba50b009da10b3f86e092eba7"
+        },
+        {
+          "module": "FV.Link.Correct",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch60/FV.Link.Correct.build.log",
+          "returncode": 0,
+          "log_sha256": "406a460b7e75dbf68add7cba092f05a1d35f2633ac09f6cee62ade358a9a19eb"
+        },
+        {
+          "module": "FV.E2E.LinkScopeInput",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch60/FV.E2E.LinkScopeInput.build.log",
+          "returncode": 0,
+          "log_sha256": "bfb081bbb88d9eb6577554d46571ff09a48fde0ab48d22f72a26293d34aee268"
+        },
+        {
+          "module": "FV.Link.Exe",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch60/FV.Link.Exe.build.log",
+          "returncode": 0,
+          "log_sha256": "c98e56584f605dd11b4f533c0563e97fa64dd439f91456ded915b8169d2a1c28"
+        },
+        {
+          "module": "FV.Link.ExeSource",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch60/FV.Link.ExeSource.build.log",
+          "returncode": 0,
+          "log_sha256": "90ebccc6f3d784b5cb55f9cd9bd47ebe048a1adcec0e765dd0c4f22217facac7"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupSpillCheckAlloc",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch60/FV.E2E.DeadCleanupSpillCheckAlloc.build.log",
+          "returncode": 0,
+          "log_sha256": "4bf1556108191e92dda859628d6407214cafd542fe515f946823686d323ea8b9"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupEmit",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch60/FV.E2E.DeadCleanupEmit.build.log",
+          "returncode": 0,
+          "log_sha256": "d750aa66cee0669bd79f16ddf8d64aba308150956562e1bca2565c80b507be5d"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 8192,
+      "current_source_not_new_Arm_model_pass": true
+    },
+    {
+      "batch": 61,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch61/receipt.json",
+      "receipt_sha256": "b31b5e15537ba32dfe54a0a36df353561765f5b9319655870f078b72137544f7",
+      "head": "22aa7ab3ddbad7d02940f433916339f735ba2aa6",
+      "built": [
+        {
+          "module": "FV.E2E.DeadCleanupEmitReady",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch61/FV.E2E.DeadCleanupEmitReady.build.log",
+          "returncode": 0,
+          "log_sha256": "fbd3d453d62d179994e51fcf970a58b4ccff6b726bed7d195bc3c32ad23a7bc2"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupTotal",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch61/FV.E2E.DeadCleanupTotal.build.log",
+          "returncode": 0,
+          "log_sha256": "02dc2db87db4629fd327d4790c2ae20f63a2f3748287db7335915d33c2be1cfe"
+        },
+        {
+          "module": "FV.E2E.DeadCleanupLinkScope",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch61/FV.E2E.DeadCleanupLinkScope.build.log",
+          "returncode": 0,
+          "log_sha256": "a7b9cac95017f52ca1d98d18aaa3819ff2c52d3507a482f346571fdf82dbe6ea"
+        },
+        {
+          "module": "FV.Link.DeadCleanupImage",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch61/FV.Link.DeadCleanupImage.build.log",
+          "returncode": 0,
+          "log_sha256": "e9746b18245612524c3b693a4e0b97a2342ce02d28f983e23d7b5334f6954f02"
+        },
+        {
+          "module": "FV.Link.ActualImage",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch61/FV.Link.ActualImage.build.log",
+          "returncode": 0,
+          "log_sha256": "c4c33e2611de3e371e1cd87733246c90e09045e0461886382bae5c168bd8cf38"
+        },
+        {
+          "module": "FV.Link.Total",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch61/FV.Link.Total.build.log",
+          "returncode": 0,
+          "log_sha256": "1fb55d0b88f7e37ca78e828cbc69c2159298d2aaa80989f5cb9cc0b494f6dceb"
+        },
+        {
+          "module": "FV.Link.ExeTotal",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch61/FV.Link.ExeTotal.build.log",
+          "returncode": 0,
+          "log_sha256": "e522a9d52227e4268b45df36b68cfb515366beaa718b401cb74701b741d59abf"
+        },
+        {
+          "module": "FV.Link.ExeInput",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch61/FV.Link.ExeInput.build.log",
+          "returncode": 0,
+          "log_sha256": "b5ceb135de87effcd48b37c616bc65716d3917c5e38525a0a3c64bb7cb04ce95"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 8192,
+      "current_source_not_new_Arm_model_pass": true
+    },
+    {
+      "batch": 62,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch62/receipt.json",
+      "receipt_sha256": "a3f31f04af3159533698b66410255d65c0635621a8ea7dd42e9f9592b14f2e4f",
+      "head": "22aa7ab3ddbad7d02940f433916339f735ba2aa6",
+      "built": [
+        {
+          "module": "FV.Link.ProductionImage",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch62/FV.Link.ProductionImage.build.log",
+          "returncode": 0,
+          "log_sha256": "0722852456c60593a675727821b0e0ffaeac82a0d224554a235c40fbc7db83a2"
+        },
+        {
+          "module": "FV.Link.ProductionImageWith",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch62/FV.Link.ProductionImageWith.build.log",
+          "returncode": 0,
+          "log_sha256": "46a47c0e6c199e284b4f6e7def542d1ab360eb64f458ca7c8845a9e0d06d5777"
+        },
+        {
+          "module": "FV.E2E.LinkSemanticNI",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch62/FV.E2E.LinkSemanticNI.build.log",
+          "returncode": 0,
+          "log_sha256": "738927a80b91081d505fae47c42d6066c57c6a7f6aff271fabf9fcce5407176c"
+        },
+        {
+          "module": "FV.E2E.SemanticPipelineCheck",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch62/FV.E2E.SemanticPipelineCheck.build.log",
+          "returncode": 0,
+          "log_sha256": "13a1dc14a530c617705d8330f685a09db797656e4c6a564b6cefbcad50d1f639"
+        },
+        {
+          "module": "FV.E2E.SemanticPreparedPipeline",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch62/FV.E2E.SemanticPreparedPipeline.build.log",
+          "returncode": 0,
+          "log_sha256": "362d9339ca2ffb956620e1a3135a96b8882db9955606d7cf5b505dd24a57efbd"
+        },
+        {
+          "module": "FV.E2E.SemanticStackBound",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch62/FV.E2E.SemanticStackBound.build.log",
+          "returncode": 0,
+          "log_sha256": "fbccc2f6f6e3f0900e2890a1100994536b7e37f4836f9401b5aade720bf2aa2d"
+        },
+        {
+          "module": "FV.Link.DeadCleanupCompile",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch62/FV.Link.DeadCleanupCompile.build.log",
+          "returncode": 0,
+          "log_sha256": "e5aba41366c478442f1addc4cba349cef98e0bf0a71cce975e812222f95f2c75"
+        },
+        {
+          "module": "FV.Link.Placed",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch62/FV.Link.Placed.build.log",
+          "returncode": 0,
+          "log_sha256": "6147722bcd4ebbddbcbd40d24aa99d9428fd06d4f2fbfc6734d952334a05ba2a"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 8192,
+      "current_source_not_new_Arm_model_pass": true
+    },
+    {
+      "batch": 63,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch63/receipt.json",
+      "receipt_sha256": "328ff52cd4e55b2055d2d47e09ea75950e3a44d76dd3b8b63114692f821bd328",
+      "head": "22aa7ab3ddbad7d02940f433916339f735ba2aa6",
+      "built": [
+        {
+          "module": "FV.Link.SemanticCompileWith",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch63/FV.Link.SemanticCompileWith.build.log",
+          "returncode": 0,
+          "log_sha256": "61eb433549a291816d5a9f0b58d6e7c1dc234ff1962aa808ce0b25609a16339f"
+        },
+        {
+          "module": "FV.Link.ProductionImageWithProof",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch63/FV.Link.ProductionImageWithProof.build.log",
+          "returncode": 0,
+          "log_sha256": "5fe7cf4584083407a65901fa16d08198f23aede9ae936ae1fc9c17131cfccc8c"
+        },
+        {
+          "module": "FV.E2E.SemanticLinkGood",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch63/FV.E2E.SemanticLinkGood.build.log",
+          "returncode": 0,
+          "log_sha256": "8cefde6abe20d6d2187514e633bf155899b95b5680aa23a160eb2a642d4fc5cc"
+        },
+        {
+          "module": "FV.E2E.SemanticBinary",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch63/FV.E2E.SemanticBinary.build.log",
+          "returncode": 0,
+          "log_sha256": "56364ad5a83c6d3245af155ec5e922ad0c341bdc3b11bb7b84bd4b376ab77f00"
+        },
+        {
+          "module": "FV.E2E.SemanticBinaryGood",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch63/FV.E2E.SemanticBinaryGood.build.log",
+          "returncode": 0,
+          "log_sha256": "063198fb4ac74ce1c379f637322bc8b14eb640723891051a1c6cc8189fdd01a5"
+        },
+        {
+          "module": "FV.E2E.SemanticExecBytes",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch63/FV.E2E.SemanticExecBytes.build.log",
+          "returncode": 0,
+          "log_sha256": "73625decf0a4094db245ef9abbac57e0eed867eab5f8bb2d94de7210e253a7e4"
+        },
+        {
+          "module": "FV.E2E.SemanticExecStatic",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch63/FV.E2E.SemanticExecStatic.build.log",
+          "returncode": 0,
+          "log_sha256": "8e498caffbc0fb6621dfc3fa4cf6cb0c3d00d21dc6281c22493c2b6a17f2ebd3"
+        },
+        {
+          "module": "FV.E2E.SemanticExecFrameSim",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch63/FV.E2E.SemanticExecFrameSim.build.log",
+          "returncode": 0,
+          "log_sha256": "a11f40456c583891baecfe30f18222011f7b51b7cce82bc5465b5d60984a5069"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 4096,
+      "current_source_not_new_Arm_model_pass": true
     }
   ],
   "current_abi_review_receipt": "docs/research/stock-mixed-abi-normal-review.json",
@@ -8470,5 +8995,8 @@
     "current_source_validation_not_current_main_pass": true,
     "cache_import_receipt": "/tmp/stock-08020-ci-cache-stages/receipt.json",
     "boundary_comment": 6304759270
-  }
+  },
+  "normal_integration_gate": "scripts/check-stock-mixed-integration.py",
+  "runtime_missing_oracle_control_source": "22aa7ab3ddbad7d02940f433916339f735ba2aa6",
+  "runtime_missing_oracle_control_execution": "pending"
 }
