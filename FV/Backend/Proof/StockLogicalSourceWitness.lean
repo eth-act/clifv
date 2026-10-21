@@ -1,6 +1,7 @@
 import FV.Backend.Proof.StockLogicalRecordWitness
 import FV.Backend.Proof.LowerSim
 import FV.Backend.Proof.StockLogicalCompleteValues
+import FV.Backend.Proof.StockLogicalScanRefines
 
 namespace Backend.Stock.Proof.LogicalSelected
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
@@ -168,5 +169,117 @@ theorem stock_lower_logical_complete_source_values_witness :
       input.events input.records block statement current .bor input.source input.clif input.results rfl
       input.mapped input.recorded input.emitted self restrictedDFG guarded sourceStep
   exact ⟨input.result,input.event,input.record,ρ',fr',input.run,input.events,input.records,execution,sourceStep,sourceHeld⟩
+
+private theorem rr_scans_execute {exec : Nat → State → Except String Scan}
+    {indices : List Nat} {input : State} {output : BlockScan}
+    (cert : ScansSpec exec indices input output) :
+    ∀ record ∈ output.records, exec record.inst record.input = .ok record.output := by
+  induction cert with
+  | nil input => simp
+  | cons head rest ih =>
+    intro record member
+    rcases List.mem_cons.mp member with rfl | member
+    · exact head
+    · exact ih record member
+
+private theorem rr_record_exec (input : LogicalRecordInputs .registers) :
+    scanInstruction input.event.ctx input.event.block input.record.inst input.event.termInst
+      input.event.isBranch input.record.input = .ok input.record.output := by
+  have member := input.records
+  obtain ⟨ranges,params,earlier,suffix,starting,finishing,before,after,
+    label,bi,data,core,build,ordered,initial,empty,parts,folded,
+    final,prefixRun,nodeRun,suffixRun,node,coreRun,eventEq,stateEq⟩ :=
+    stock_lower_blockScanOrigin input.run input.events
+  rw [eventEq] at member ⊢
+  have actual := (stock_lowerBlockCore_scanOrigin coreRun).2.2.2.2.2
+  unfold scanBlock at actual
+  exact rr_scans_execute (runScans_spec actual) input.record member
+
+/-- A nonempty body from an actual whole-driver run inhabits both complete
+logical scan refinement and body composition, with a real source step and the
+original guarded relation for every initial machine world. -/
+theorem stock_lower_logical_scan_body_witness :
+    ∃ (result : Result) (event : BlockScanEvent) (record : ScanRecord) (body : BlockScan)
+      (s t : SourcePoint),
+      Stock.lower (formFunction .registers) = .ok result ∧
+      event ∈ result.blockScans.toList ∧ record ∈ event.output.records ∧
+      body.records = [record] ∧
+      ScansSpec (fun i => scanInstruction event.ctx event.block i event.termInst event.isBranch)
+        [record.inst] record.input body ∧
+      (∀ r ∈ body.records, MixedLogicalOrOmittedRecord (formFunction .registers) event.ctx 0 r) ∧
+      SourceSteps (IndexedSourceInst Clif.Env.empty {funcs := []} (formFunction .registers) event.ctx 0)
+        [record.inst] s t ∧
+      ScanFallRefines (IndexedSourceInst Clif.Env.empty {funcs := []} (formFunction .registers) event.ctx 0)
+        ispec result.final.alias
+        (GuardedScanRel (formFunction .registers) result event.ctx 0 (fun _ cm _ => cm = Clif.Mem.empty)) record ∧
+      ∀ w, GuardedScanRel (formFunction .registers) result event.ctx 0 (fun _ cm _ => cm = Clif.Mem.empty)
+        body.state s (formRegs .registers) w ∧
+        ∃ ρ' w', seqRun ispec (body.code.toList.map (·.mapRegs
+          (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) (formRegs .registers) w =
+            some (.fall ρ' w') ∧
+          GuardedScanRel (formFunction .registers) result event.ctx 0 (fun _ cm _ => cm = Clif.Mem.empty)
+            record.input t ρ' w' := by
+  obtain ⟨input⟩ := stock_lower_logical_record_inputs_witness .registers
+  have restrictedDFG := dfgCons_congr (ctx := input.event.ctx) (fr := formFrame .registers)
+    (fr' := restrict rrFrame (availOf (formFunction .registers)
+      (availIn (formFunction .registers) input.result.ctx) 0 0)) rfl rfl (rrRestricted input.result.ctx) input.dfg
+  have guarded := input.held.mono (fun y (h : Demanded input.record.output.state y ∧ y ∈
+    availOf (formFunction .registers) (availIn (formFunction .registers) input.result.ctx) 0 0) => h.1)
+  have block : (formFunction .registers).blocks[0]? = some ((formFunction .registers).blocks[0]!) := rfl
+  have statement : ((formFunction .registers).blocks[0]!).body[0]? =
+      some (⟨[100],.binary .bor .i64 7 31⟩ : Clif.Stmt) := rfl
+  have current : input.record.inst = blockStart (formFunction .registers) 0 + 0 := by
+    have zero := input.current
+    change input.record.inst = 0 at zero
+    simpa only [blockStart,List.take_zero,List.map_nil,List.sum_nil,Nat.zero_add] using zero
+  let val : Clif.Val := ⟨Clif.Ty.i64,Clif.Sem.binary .bor (BitVec.ofNat 64 7) (BitVec.ofNat 64 5)⟩
+  let fr' : Clif.Frame := {rrFrame with regs := rrFrame.regs.set 100 val,body := []}
+  have evaluated : instOutcome Clif.Env.empty {funcs := []} rrFrame Clif.Mem.empty
+      (.binary .bor .i64 7 31) = .ok ([val],Clif.Mem.empty) := rfl
+  have sourceStep : SourceInstResult Clif.Env.empty {funcs := []} input.event.ctx input.record.inst
+      (rrFrame,Clif.Mem.empty) (fr',Clif.Mem.empty) :=
+    ⟨input.info,.binary .bor .i64 7 31,[val],rrFrame.regs.set 100 val,[],
+      input.source,input.clif,by rw [input.results]; rfl,evaluated,by rw [input.results]; rfl,rfl⟩
+  let s : SourcePoint := (0,rrFrame,Clif.Mem.empty)
+  let t : SourcePoint := (1,fr',Clif.Mem.empty)
+  have indexed : IndexedSourceInst Clif.Env.empty {funcs := []} (formFunction .registers)
+      input.event.ctx 0 input.record.inst s t := ⟨current,rfl,sourceStep⟩
+  have steps : SourceSteps (IndexedSourceInst Clif.Env.empty {funcs := []} (formFunction .registers)
+      input.event.ctx 0) [input.record.inst] s t := .cons indexed (.nil t)
+  let body : BlockScan := ⟨input.record.output.state,[input.record],input.record.output.emitted⟩
+  have rebuild : (⟨input.record.inst,input.record.input,input.record.output⟩ : ScanRecord) = input.record := by
+    cases input.record; rfl
+  have scanned : ScansSpec (fun i => scanInstruction input.event.ctx input.event.block i input.event.termInst
+      input.event.isBranch) [input.record.inst] input.record.input body := by
+    simpa only [body,Array.empty_append,rebuild] using
+      (ScansSpec.cons (exec := fun i => scanInstruction input.event.ctx input.event.block i input.event.termInst
+        input.event.isBranch) (rr_record_exec input) (ScansSpec.nil input.record.output.state))
+  have family : MixedLogicalOrOmittedRecord (formFunction .registers) input.event.ctx 0 input.record :=
+    Or.inr ⟨0,(formFunction .registers).blocks[0]!,⟨[100],.binary .bor .i64 7 31⟩,
+      block,statement,current,input.step,input.recorded,input.emitted,.bor,input.info,.i64,7,31,100,_,
+      input.source,input.clif,input.results,rfl,input.mapped⟩
+  have families : ∀ r ∈ body.records, MixedLogicalOrOmittedRecord (formFunction .registers) input.event.ctx 0 r := by
+    intro r member
+    have eq := List.mem_singleton.mp member
+    subst r
+    exact family
+  have retained : ∀ r ∈ body.records, r ∈ input.event.output.records := by
+    intro r member
+    have eq := List.mem_singleton.mp member
+    subst r
+    exact input.records
+  have self : Refines (fun _ => True) ispec := fun _ _ _ _ w' _ h => ⟨w',h,SameWorld.refl _ _⟩
+  have stable : MRStable (fun _ => True) (fun _ cm _ => cm = Clif.Mem.empty) := fun _ _ _ _ _ h => h
+  have localProof := stock_lower_logical_scan_fall_refines input.run (formScope .registers) rrDominated
+    input.events input.records block statement current .bor input.source input.clif input.results rfl
+    input.mapped input.recorded input.emitted self stable
+  refine ⟨input.result,input.event,input.record,body,s,t,input.run,input.events,input.records,rfl,
+    scanned,families,steps,localProof,?_⟩
+  intro w
+  have pre : GuardedScanRel (formFunction .registers) input.result input.event.ctx 0
+      (fun _ cm _ => cm = Clif.Mem.empty) body.state s (formRegs .registers) w :=
+    ⟨rfl,restrictedDFG,rfl,guarded⟩
+  exact ⟨pre,stock_lower_mixed_logical_body_fall_refines input.run (formScope .registers) rrDominated
+    input.events scanned retained families self stable s t steps (formRegs .registers) w pre⟩
 
 end Backend.Stock.Proof.LogicalSelected
