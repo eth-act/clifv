@@ -1,4 +1,5 @@
 import Lean
+import FV.Opt.Proof.KernelBV
 
 /-!
 # Tactics for the rule proofs
@@ -161,8 +162,8 @@ namespace Opt.Proof
 open Lean Meta Elab Tactic
 
 /-- `opt_widths`: give every local `x : BitVec e` whose width `e` reduces to a numeral (after
-`cases` on a `Clif.Ty`, `e` is `Ty.width .i32` etc.) the type `BitVec n`, so that `bv_decide`
-accepts it as an atom. -/
+`cases` on a `Clif.Ty`, `e` is `Ty.width .i32` etc.) the type `BitVec n`, so that `kbv` sees a
+concrete width. -/
 elab "opt_widths" : tactic => do
   let gs ← getGoals
   let mut out := []

@@ -11,7 +11,8 @@ refining `ispec`) leaves `lcfValue …` in the result vreg.
 
 Arithmetic is on `Nat` 16-bit slices (`slice16`, `replace16`: `load_constant_full`'s `get`,
 `replace`); with the slice index and the operation width made concrete every fact is linear
-arithmetic with literal divisors (`omega`), and `movk`'s bit masking is a `bv_decide` identity.
+arithmetic with literal divisors (`omega`), and `movk`'s bit masking is a bitwise identity proved
+for every width (`movK_ident`: clear the field, then add the disjoint new field).
 -/
 
 namespace Backend.Proof
@@ -219,15 +220,57 @@ theorem movWide_first {n base g f : Nat} (hn : Wid n) (op : MoveWideOp)
       all_goals simp only [Nat.reducePow, Nat.reduceMul, Nat.zero_mul, Nat.one_mul, Nat.pow_zero,
         Nat.div_one, Nat.mul_one] at *; omega
 
+private theorem testBit_ffff (j : Nat) : Nat.testBit 0xFFFF j = decide (j < 16) := by
+  rw [show (0xFFFF : Nat) = 2 ^ 16 - 1 from rfl, Nat.testBit_two_pow_sub_one]
+
+/-- The 16-bit field at `k`, put back in place, is `x` masked by that field. -/
+private theorem field_eq_and {n k : Nat} (x : BitVec n) :
+    ((x >>> k).setWidth 16).setWidth n <<< k = x &&& (BitVec.ofNat n 0xFFFF <<< k) := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_shiftLeft, BitVec.getLsbD_setWidth, BitVec.getLsbD_ushiftRight,
+    BitVec.getLsbD_and, BitVec.getLsbD_ofNat, testBit_ffff, hi, decide_true, Bool.true_and]
+  by_cases h1 : i < k
+  · simp [h1]
+  · by_cases h2 : i - k < 16
+    · have : k + (i - k) = i := by omega
+      simp [h1, h2, this, show i - k < n by omega]
+    · simp [h1, h2]
+
+private theorem and_not_add_and {n : Nat} (x m : BitVec n) : (x &&& ~~~m) + (x &&& m) = x := by
+  rw [BitVec.add_eq_or_of_and_eq_zero]
+  · apply BitVec.eq_of_getLsbD_eq; intro i hi
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, hi, decide_true,
+      Bool.true_and]
+    cases x.getLsbD i <;> cases m.getLsbD i <;> rfl
+  · apply BitVec.eq_of_getLsbD_eq; intro i hi
+    simp only [BitVec.getLsbD_and, BitVec.getLsbD_not, hi, decide_true, Bool.true_and,
+      BitVec.getLsbD_zero]
+    cases x.getLsbD i <;> cases m.getLsbD i <;> rfl
+
+/-- The cleared field and the shifted new field share no bit. -/
+private theorem movK_disjoint {n k : Nat} (x : BitVec n) (y : BitVec 16) :
+    (x &&& ~~~(BitVec.ofNat n 0xFFFF <<< k)) &&& (y.setWidth n <<< k) = 0#n := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  simp only [BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_setWidth, BitVec.getLsbD_ofNat, testBit_ffff, hi, decide_true, Bool.true_and]
+  by_cases h1 : i < k
+  · simp [h1]
+  · by_cases h2 : i - k < 16
+    · simp [h1, h2, show i - k < n by omega]
+    · simp [h1, h2, BitVec.getLsbD_of_ge y (i - k) (by omega)]
+
+-- The identity holds at every width and shift; `hn` and `hj` stay for the callers' statement.
+set_option linter.unusedVariables false in
 theorem movK_ident {n j : Nat} (hn : Wid n) (hj : j < n / 16) (x : BitVec n) (y : BitVec 16) :
     movKVal x ⟨y.toNat, j⟩ =
       x - (((x >>> (16 * j)).setWidth 16).setWidth n <<< (16 * j)) + (y.setWidth n <<< (16 * j)) := by
   simp only [movKVal, BitVec.ofNat_toNat]
-  rcases hn with rfl | rfl
-  · obtain rfl | rfl : j = 0 ∨ j = 1 := by omega
-    all_goals simp only [Nat.reduceMul]; bv_decide
-  · obtain rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega
-    all_goals simp only [Nat.reduceMul]; bv_decide
+  rw [field_eq_and, ← BitVec.add_eq_or_of_and_eq_zero _ _ (movK_disjoint x y)]
+  congr 1
+  conv => rhs; arg 1; rw [← and_not_add_and x (BitVec.ofNat n 0xFFFF <<< (16 * j))]
+  rw [BitVec.add_sub_cancel]
 
 /-- `movk` computes `replace16`. -/
 theorem movK_val {sz : OperandSize} {a : CV} {run b j : Nat} (ha : lo64 a = BitVec.ofNat 64 run)
