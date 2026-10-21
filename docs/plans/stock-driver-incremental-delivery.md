@@ -565,3 +565,35 @@ Land arithmetic first. Preserve prior semantic/compiler retries, accepted
 identities/stages and exact old axiom sets; do not merge this class from prototype
 proof evidence alone. Cleanup owns the additional source-only checkout and the
 old clean delivery checkout after its evidence is archived.
+
+
+### Current-model logical validation checkpoint (2026-10-21)
+
+Nine current-model EXTR semantic modules now build normally: actual first-match
+selection, retained-record/result binding, final aliases/fresh writes, and original
+availability-restricted source transfer. All six new general roots use exactly
+the standard three axioms. See the [partial EXTR receipt](../research/stock-logical-extr-current-model-core.json).
+Complete eleven-root source dispatch and guarded mixed-body composition are
+implemented with nonempty actual-run witnesses; their normal validation and
+final bundled trust review remain pending.
+
+The byte-identical `E2E.CompiledStockArithmeticStage` declaration now lives in
+`FV/E2E/StockArithmeticStageContract.lean`; the original arithmetic module retains
+both theorem variants unchanged. Logical pipeline witness statements/proofs are
+unchanged and import the contract and exact checker owners. Their import closure
+falls from 777 to 440 modules. The contract builds normally. No production
+selector, accepted-input condition, theorem variant or required axiom changed.
+
+Complete witnesses still require current-model form coverage. The first
+`RegallocAtomic` attempt reached its isolated 6 GiB cap; the systemd journal
+confirms OOM, rather than a timeout or theorem diagnostic. The scheduler retries
+at 12 GiB within the shared 16 GiB/two-job budget. Preserve that live retry; a
+corrected compact witness batch is queued behind the exact live handles. Neither
+is a full-witness or activation pass.
+
+Land arithmetic first after its current author gates, then Mixed and logical
+activation with the existing consumer/fallback gates. Every original #140
+obligation remains: uncovered families/effects, original-source/block/whole-driver
+simulation and completeness, compiler/checker/linker/generated consumers, and
+exact prior input/identity/stage/axiom preservation. Partial receipts and the
+artifact-contract split do not complete that goal.

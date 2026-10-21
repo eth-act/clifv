@@ -96,7 +96,8 @@
     "aggregate_memory_GiB": 16,
     "max_compiler_jobs": 2,
     "new_worktrees_or_physical_caches": 0,
-    "actual_kernels_interrupted": 0
+    "manually_interrupted_kernels": 0,
+    "common_dependency_cap_terminations": 1
   },
   "remaining": [
     "Complete actual six-ABI/mirror RootWitness normal validation",
@@ -119,5 +120,22 @@
     "normal_contract_build_log": "/tmp/stock-stage-contract-corrected-build.log",
     "normal_contract_build_log_sha256": "b8967933c0a863d4cd3b783f0115a1e3b4d957dda83ea1dbcc44434af683af59",
     "complete_witness_normal_validation": "pending while live RegallocAtomic dependency completes; corrected contract passed separately; no kernel interrupted"
+  },
+  "later_common_dependency_retry": {
+    "utc": "2026-10-21T04:17:08.510720+00:00",
+    "state": "per_scope_memory_cap_oom_confirmed",
+    "unit": "run-p3253192-i380384704.scope",
+    "initial_cap_GiB": 6,
+    "actual_cgroup_peak_GiB": 6,
+    "elapsed_seconds": 898,
+    "scheduler_exit_status": 143,
+    "raw_runner_exit_status": -15,
+    "not_a_wall_clock_timeout": true,
+    "manually_interrupted": false,
+    "journal_log": "/tmp/stock-logical-compact-witness/regalloc-atomic-6G-oom-journal.log",
+    "scheduler_automatic_retry_cap_GiB": 12,
+    "aggregate_budget_GiB": 16,
+    "current_lean_pid": 3369724,
+    "note": "OOM ended the scoped process tree before child usage propagated; wrapper maxrss0.1GiB is not the actual peak. Journal confirms6GiB. No success is claimed for this dependency."
   }
 }
