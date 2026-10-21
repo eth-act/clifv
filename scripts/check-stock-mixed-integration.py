@@ -136,19 +136,21 @@ def main():
             env.pop("LEAN_PATH", None)
         else:
             env["LEAN_PATH"] = original_leanpath
+        # Keep every Crates module under one import root; Lean chooses the first
+        # matching package directory and does not search another partial root.
         cli_hashes = {}
         for mode, flags in (("Plain", ["--no-dead-cleanup"]), ("Cleanup", [])):
             bundle = generated / f"StockMixed2{mode}FallbackGlobal-bundle"
             retained = generated / f"StockMixed2Retained{mode}FallbackGlobal-bundle"
             for label, source in (("current", bundle), ("retained", retained)):
-                proof = output / "Crates" / f"MixedCLI{label}{mode}.lean"
+                proof = generated / "Crates" / f"MixedCLI{label}{mode}.lean"
                 proof.parent.mkdir(exist_ok=True)
                 run(f"link-check-{label}-{mode}", ["lake", "env", str(view / ".lake/build/bin/link-check"),
                     str(source), "--lean", str(proof), "--module", proof.stem, *flags])
                 if label == "retained" and mode == "Plain":
                     assert "lowerWithFallbacks [" in proof.read_text(), "retained reconstruction route was not exercised"
-                env["LEAN_PATH"] = str(output) + ":" + leanpath
-                run(f"cli-proof-{label}-{mode}", ["lean", "--root=" + str(output),
+                env["LEAN_PATH"] = str(generated) + ":" + leanpath
+                run(f"cli-proof-{label}-{mode}", ["lean", "--root=" + str(generated),
                     "-o", str(proof.with_suffix(".olean")), str(proof)])
                 cli_hashes[str(proof.relative_to(output))] = sha(proof)
                 audit_imports.append("Crates." + proof.stem)
@@ -178,7 +180,7 @@ run_cmd do
   unless count > 0 do throwError "empty generated-proof audit"
   logInfo m!"STOCK_MIXED_GENERATED_AXIOMS_PASS {count}"
 ''')
-        env["LEAN_PATH"] = str(output) + ":" + str(generated) + ":" + leanpath
+        env["LEAN_PATH"] = str(generated) + ":" + leanpath
         audited = run("generated-axioms", ["lean", "--root=" + str(output), str(audit)])
         assert "STOCK_MIXED_GENERATED_AXIOMS_PASS " in audited
         assert all(sha(generated / path) == digest for path, digest in generated_hashes.items())
