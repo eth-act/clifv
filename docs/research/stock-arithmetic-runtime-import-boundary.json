@@ -1,6 +1,6 @@
 {
   "utc": "2026-10-21T14:16:23.197667+00:00",
-  "state": "source_preservation_verified_normal_validation_pending",
+  "state": "source_preservation_and_normal_native_cli_validation_passed",
   "parent": "c2449401454c4b5e000b13074a8aec6149732694",
   "failure": "Native link-check prints initialization index panic through proof-only StockBlockScan private fixture imports; gate rejects despite exit0.",
   "repair": "Separate executable definitions from correctness imports; retain old namespaces, definition bodies, emitted proof text, theorem statements and proof bodies.",
@@ -47,5 +47,5 @@
     "graph_is_conservative": true,
     "generated_import_strings_can_overapproximate_edges": true
   },
-  "normal_build_and_cli_validation": "pending, no activation or merge-ready claim"
+  "normal_build_and_cli_validation": "Passed; see stock-arithmetic-production-activation.json. Explicit caller dependencies e8f4632b and retained fixture5a3b822e included."
 }

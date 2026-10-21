@@ -6,15 +6,16 @@ proof checkpoints remain evidence, not a queue of instructions to resume.
 
 ## Active raw arithmetic delivery packet (2026-10-20)
 
-Current blocker (2026-10-21): the c244 normal module, runtime, encoder, E2E,
-strict real-regalloc arithmetic and linked/generated gates passed. The native CLI
-gate rejects a startup panic caused by proof-fixture initialization. The repair
-separates runtime definition imports from correctness consumers, retaining exact
-compiler bodies and theorem/proof text. Normal affected-module/tool builds and
-actual native CLI/generated-proof checks remain mandatory; preserve completed
-gates and failed logs. See
-[the import-boundary record](../research/stock-arithmetic-runtime-import-boundary.json).
-
+Arithmetic activation packet (2026-10-21): complete author gates and fresh-main
+review pass on5a3b822e. This delivery activates actual raw Stock arithmetic through
+default compiler/checker/linker/generated-proof consumers, with legacy fallback.
+All2590modules, required trust/runtime/identity/encoder/actualCLI/linked-generated/
+verified-example gates pass. The initializer panic is resolved by executable
+import separation, preserving compiler bodies and theorem/proof text. The
+retained fixture now separately tests shared-byte reconstruction and explicit
+nonempty retained callbacks. [Terminal evidence and next obligations](../research/stock-arithmetic-production-activation.md).
+Next reconcile saved Mixed and logical complete classes onto the actual squash;
+continue all original #140 obligations, not proof fragments or a wholesale swap.
 
 The arithmetic runtime gate must require real accepted regalloc2 oracle answers,
 validate allocation/lowering/emission, and compare all five allocated-function
