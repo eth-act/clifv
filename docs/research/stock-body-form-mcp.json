@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "timed_out": false,
+  "diagnostics": [
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.Coverage.Result.stock_lower_body_form_coverage' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 3,
+      "column": 1,
+      "lean_tags": null
+    },
+    {
+      "severity": "info",
+      "message": "'Backend.Stock.Proof.BodyFormCoverageWitness.stock_body_form_coverage_witness' depends on axioms: [propext,\n Classical.choice,\n Quot.sound]",
+      "line": 4,
+      "column": 1,
+      "lean_tags": null
+    }
+  ]
+}
