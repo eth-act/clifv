@@ -143,10 +143,10 @@ end Data
 /-- Actual class syntax excludes the effectful/comparison look-through roots;
 original matched sources select the base cast internally. Old broader selected
 variants remain available for subsequent family expansion. -/
-theorem stock_lower_cast_selected_rule {f : Clif.Function} {result : Result}
+theorem stock_lower_cast_selected_rule_of_formats {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) {event : BlockScanEvent}
     (events : event ∈ result.blockScans.toList)
-    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,CastBody.Family stm.inst)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,CastBody.SafeFormat stm.inst)
     (sg : Bool) {i x : Nat} {info : IInfo} {ty : Clif.Ty}
     (source : event.ctx.insts[i]? = some info) (clif : info.clif = some (.extend (ScalarCast.extendOp sg) ty x))
     {st next : State} {out : V} {trace : List RuleId} (selected : LowerSelection event.ctx i st out next trace) :
@@ -156,7 +156,7 @@ theorem stock_lower_cast_selected_rule {f : Clif.Function} {result : Result}
       info.clif = some cl → CastBody.SafeFormat cl := by
     intro j info cl found original
     exact stock_lower_source_statement_family run scope events CastBody.SafeFormat
-      (fun b block stm statement => CastBody.family_formats (family b block stm statement)) found original
+      family found original
   have data := extend_data inv sg source clif
   have ids := stock_selected_source_opcode_ids inv source clif data selected
   cases sg with
@@ -205,6 +205,17 @@ theorem stock_lower_cast_selected_rule {f : Clif.Function} {result : Result}
 
 /-- Original reduction selection has one reachable source root, without a
 fresh-result or selected-root input premise. -/
+
+theorem stock_lower_cast_selected_rule {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) {event : BlockScanEvent}
+    (events : event ∈ result.blockScans.toList)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,CastBody.Family stm.inst)
+    (sg : Bool) {i x : Nat} {info : IInfo} {ty : Clif.Ty}
+    (source : event.ctx.insts[i]? = some info) (clif : info.clif = some (.extend (ScalarCast.extendOp sg) ty x))
+    {st next : State} {out : V} {trace : List RuleId} (selected : LowerSelection event.ctx i st out next trace) :
+    selected.rule = ScalarCast.extendRule sg := by
+  exact stock_lower_cast_selected_rule_of_formats run scope events (fun b block stm statement => CastBody.family_formats (family b block stm statement)) sg source clif selected
+
 theorem stock_reduce_selected_rule {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
     {i x : Nat} {info : IInfo} {ty : Clif.Ty}
     (source : ctx.insts[i]? = some info) (clif : info.clif = some (.ireduce ty x))

@@ -44,9 +44,19 @@ def castEligible (stm : Clif.Stmt) : Bool :=
 
 def castBodyEligible (stm : Clif.Stmt) : Bool := shiftBodyEligible stm || castEligible stm
 
+/-- Unary bit operations and rotations extend the class while old selectors stay fixed. -/
+def bitEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .unary .ineg ty _ | .unary .clz ty _ | .unary .ctz ty _
+  | .unary .bitrev ty _ | .unary .bswap ty _
+  | .binary .rotl ty _ _ | .binary .rotr ty _ _ => ty == .i32 || ty == .i64
+  | _ => false
+
+def bitBodyEligible (stm : Clif.Stmt) : Bool := castBodyEligible stm || bitEligible stm
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all castBodyEligible &&
+  | [b] => b.body.all bitBodyEligible &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
