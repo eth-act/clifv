@@ -150,7 +150,8 @@ def main():
                 run(f"link-check-{label}-{mode}", ["lake", "env", str(view / ".lake/build/bin/link-check"),
                     str(source), "--lean", str(proof), "--module", proof.stem, *flags])
                 if label == "retained" and mode == "Plain":
-                    assert "lowerWithFallbacks [" in proof.read_text(), "retained reconstruction route was not exercised"
+                    selected = re.search(r"Backend\.Stock\.Scalar\.lowerWithRoutes \[(.*?)\]", proof.read_text(), re.S)
+                    assert selected and re.search(r",\s*[1-4]\)", selected.group(1)), "non-default retained reconstruction route was not exercised"
                 env["LEAN_PATH"] = str(generated) + ":" + leanpath
                 run(f"cli-proof-{label}-{mode}", ["lean", "--root=" + str(generated),
                     "-o", str(proof.with_suffix(".olean")), str(proof)])
