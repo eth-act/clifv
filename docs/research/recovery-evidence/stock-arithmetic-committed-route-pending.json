@@ -1,0 +1,17 @@
+{
+  "utc": "2026-10-21T06:40:27.370457+00:00",
+  "state": "prepared_not_executed",
+  "source": "/tmp/StockArithmeticCommittedRoute.lean",
+  "sha256": "c370fc8cafbe994d6af73a1c4d367b484e6d4d38ac7c0ece33c04fd637665a32",
+  "required_prior_gate": "arithmetic-dual-allocator-runtime strict real-oracle gate",
+  "planned_command": [
+    "scripts/memcap.sh",
+    "lake",
+    "env",
+    "lean",
+    "--root=/tmp",
+    "/tmp/StockArithmeticCommittedRoute.lean"
+  ],
+  "expected_pass_records": 24,
+  "reason": "Require positive compiler commit after exactly one allocation attempt, alongside actual raw Stock allocator input and complete emitted artifacts; keep existing forced-retry and strict oracle gates. No frozen source changes."
+}
