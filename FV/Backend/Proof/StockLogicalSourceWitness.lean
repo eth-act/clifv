@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockLogicalRecordWitness
 import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.StockLogicalCompleteValues
 
 namespace Backend.Stock.Proof.LogicalSelected
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
@@ -119,6 +120,53 @@ theorem stock_lower_logical_source_values_witness :
     ⟨input.info,.binary .bor .i64 7 31,[val],rrFrame.regs.set 100 val,[],
       input.source,input.clif,by rw [input.results]; rfl,evaluated,by rw [input.results]; rfl,rfl⟩
   have sourceHeld := source_single_result_values input.source input.clif input.results sourceStep evaluated installed
+  exact ⟨input.result,input.event,input.record,ρ',fr',input.run,input.events,input.records,execution,sourceStep,sourceHeld⟩
+
+/-- An actual source step inhabits the complete eleven-root transfer theorem
+without supplying a chosen-rule premise. The old explicit-root witness remains. -/
+theorem stock_lower_logical_complete_source_values_witness :
+    ∃ (result : Result) (event : BlockScanEvent) (record : ScanRecord) (ρ' : Nat → CV) (fr' : Clif.Frame),
+      Stock.lower (formFunction .registers) = .ok result ∧
+      event ∈ result.blockScans.toList ∧ record ∈ event.output.records ∧
+      PRun (fun _ => True) ispec (record.output.emitted.toList.map (·.mapRegs
+        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1)))) (formRegs .registers) ρ' ∧
+      SourceInstResult Clif.Env.empty {funcs := []} event.ctx record.inst
+        (rrFrame,Clif.Mem.empty) (fr',Clif.Mem.empty) ∧
+      ValuesHeld (fun y => Demanded record.input y ∧
+        y ∈ availOf (formFunction .registers) (availIn (formFunction .registers) result.ctx) 0 1)
+        event.ctx fr' (fun k => ρ' (aliasNum result.final.alias k)) := by
+  obtain ⟨input⟩ := stock_lower_logical_record_inputs_witness .registers
+  have sourceX : rrFrame.getAs 7 .i64 = .ok (BitVec.ofNat 64 7) := rfl
+  have sourceY : rrFrame.getAs 31 .i64 = .ok (BitVec.ofNat 64 5) := rfl
+  have restrictedX := getAs_congr (fr := rrFrame) (x := 7) (ty := .i64)
+    (congrFun (rrRestricted input.result.ctx) 7)
+  have restrictedY := getAs_congr (fr := rrFrame) (x := 31) (ty := .i64)
+    (congrFun (rrRestricted input.result.ctx) 31)
+  have restrictedDFG := dfgCons_congr (ctx := input.event.ctx) (fr := formFrame .registers)
+    (fr' := restrict rrFrame (availOf (formFunction .registers)
+      (availIn (formFunction .registers) input.result.ctx) 0 0)) rfl rfl (rrRestricted input.result.ctx) input.dfg
+  have guarded := input.held.mono (fun y (h : Demanded input.record.output.state y ∧ y ∈
+    availOf (formFunction .registers) (availIn (formFunction .registers) input.result.ctx) 0 0) => h.1)
+  have block : (formFunction .registers).blocks[0]? = some ((formFunction .registers).blocks[0]!) := rfl
+  have statement : ((formFunction .registers).blocks[0]!).body[0]? =
+      some (⟨[100],.binary .bor .i64 7 31⟩ : Clif.Stmt) := rfl
+  have current : input.record.inst = blockStart (formFunction .registers) 0 + 0 := by
+    have zero := input.current
+    change input.record.inst = 0 at zero
+    simpa only [blockStart,List.take_zero,List.map_nil,List.sum_nil,Nat.zero_add] using zero
+  have self : Refines (fun _ => True) ispec := fun _ _ _ _ w' _ h => ⟨w',h,SameWorld.refl _ _⟩
+  let val : Clif.Val := ⟨Clif.Ty.i64,Clif.Sem.binary .bor (BitVec.ofNat 64 7) (BitVec.ofNat 64 5)⟩
+  let fr' : Clif.Frame := { rrFrame with regs := rrFrame.regs.set 100 val, body := [] }
+  have evaluated : instOutcome Clif.Env.empty {funcs := []} rrFrame Clif.Mem.empty
+      (.binary .bor .i64 7 31) = .ok ([val],Clif.Mem.empty) := rfl
+  have sourceStep : SourceInstResult Clif.Env.empty {funcs := []} input.event.ctx input.record.inst
+      (rrFrame,Clif.Mem.empty) (fr',Clif.Mem.empty) :=
+    ⟨input.info,.binary .bor .i64 7 31,[val],rrFrame.regs.set 100 val,[],
+      input.source,input.clif,by rw [input.results]; rfl,evaluated,by rw [input.results]; rfl,rfl⟩
+  obtain ⟨u,v,ρ',getX,getY,execution,value,memory,kept,sourceHeld⟩ :=
+    LogicalComplete.record_source_from_step input.run (formScope .registers) rrDominated
+      input.events input.records block statement current .bor input.source input.clif input.results rfl
+      input.mapped input.recorded input.emitted self restrictedDFG guarded sourceStep
   exact ⟨input.result,input.event,input.record,ρ',fr',input.run,input.events,input.records,execution,sourceStep,sourceHeld⟩
 
 end Backend.Stock.Proof.LogicalSelected
