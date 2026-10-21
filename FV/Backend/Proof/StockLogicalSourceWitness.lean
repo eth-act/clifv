@@ -39,6 +39,9 @@ private theorem rrDominated : Dominated (formFunction .registers) := by
     have bounds := (inFix_fixOk (f := (formFunction .registers)) (ctx := ctx) (gn := id)).cand tl x available
     have length : (formFunction .registers).blocks.length = 1 := rfl
     omega
+/-- The actual sparse-ID logical source has the original dominance property. -/
+theorem logical_register_source_dominated : Dominated (formFunction .registers) := rrDominated
+
 private theorem rrAvailable (ctx : Ctx) (y : Nat) :
     y ∈ availOf (formFunction .registers) (availIn (formFunction .registers) ctx) 0 0 ↔ y = 7 ∨ y = 31 := by
   have noEntry : y ∉ (availIn (formFunction .registers) ctx).getD 0 [] := by
@@ -353,8 +356,7 @@ theorem stock_lower_actual_logical_body_witness :
       have empty := List.length_eq_zero_iff.mp zero
       rw [empty] at recs
       have eq : input.record = r := List.mem_singleton.mp (by simpa only [recs] using member)
-      rw [← eq] at recs
-      exact recs
+      simp [empty,← eq]
   have chain := split.scanned.chain
   rw [singleton] at chain
   have state : body.state = input.record.output.state := chain.2

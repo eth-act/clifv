@@ -32,7 +32,7 @@ theorem logical_source_notrap_witness (u v : BitVec 64) :
     have equal := List.mem_singleton.mp member
     subst stm
     exact Or.inr (Or.inr ⟨.bor,.i64,7,31,rfl⟩)
-  refine ⟨f,input.result,s,input.run,formScope .registers,(by change [⟨[100],.binary .bor .i64 7 31⟩] ≠ []; simp),rfl,rfl,?_⟩
+  refine ⟨f,input.result,s,input.run,formScope .registers,(by change ([⟨[100],.binary .bor .i64 7 31⟩] : List Clif.Stmt) ≠ []; simp),rfl,rfl,?_⟩
   intro fuel code
   exact logical_source_notrap fuel s rfl family (xs := [100]) rfl code
 
