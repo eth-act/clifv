@@ -36,9 +36,17 @@ def shiftEligible (stm : Clif.Stmt) : Bool :=
 
 def shiftBodyEligible (stm : Clif.Stmt) : Bool := mulBodyEligible stm || shiftEligible stm
 
+/-- Casts extend source syntax without changing earlier selectors. -/
+def castEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .extend _ ty _ | .ireduce ty _ => ty == .i32 || ty == .i64
+  | _ => false
+
+def castBodyEligible (stm : Clif.Stmt) : Bool := shiftBodyEligible stm || castEligible stm
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all shiftBodyEligible &&
+  | [b] => b.body.all castBodyEligible &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
