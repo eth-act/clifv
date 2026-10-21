@@ -4,6 +4,7 @@ import FV.Backend.Proof.StockScalarConstantDomain
 import FV.Backend.Proof.StockScalarBnotDomain
 import FV.Backend.Proof.StockScalarMulDomain
 import FV.Backend.Proof.StockScalarShiftDomain
+import FV.Backend.Proof.StockScalarCastDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -68,6 +69,17 @@ theorem shiftBodyEligible_sound {stm : Clif.Stmt} (checked : shiftBodyEligible s
       · exact Or.inr ⟨.lsr,ty,x,y,rfl⟩
       · exact Or.inr ⟨.asr,ty,x,y,rfl⟩
 
+/-- Cast syntax is checked on the original statements, independently of selected roots. -/
+theorem castBodyEligible_sound {stm : Clif.Stmt} (checked : castBodyEligible stm = true) :
+    Stock.Proof.CastBody.Family stm.inst := by
+  simp only [castBodyEligible,Bool.or_eq_true] at checked
+  rcases checked with old | cast
+  · exact Or.inl (shiftBodyEligible_sound old)
+  · cases inst : stm.inst <;> simp only [castEligible,inst] at cast
+    all_goals try contradiction
+    · exact Or.inr (Or.inl ⟨_,_,_,rfl⟩)
+    · exact Or.inr (Or.inr ⟨_,_,rfl⟩)
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
@@ -79,10 +91,10 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     have sourceShape : ∃ xs, b.term = .ret xs := by
       cases term : b.term <;> simp_all
     obtain ⟨xs,ret⟩ := sourceShape
-    have families : ∀ stm ∈ b.body, Stock.Proof.ShiftBody.Family stm.inst := by
+    have families : ∀ stm ∈ b.body, Stock.Proof.CastBody.Family stm.inst := by
       intro stm member
       have supported := List.all_eq_true.mp body stm member
-      exact shiftBodyEligible_sound supported
+      exact castBodyEligible_sound supported
     have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
       apply List.find?_eq_none.mpr
       intro p member
@@ -93,7 +105,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       intro any
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
-    exact domain_of_shift (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
+    exact domain_of_cast (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
   next => cases eligible
 
 

@@ -1,5 +1,6 @@
 import FV.Backend.ABIReadScalar
 import FV.E2E.ABIReadShiftSteps
+import FV.E2E.ABIReadCastSteps
 
 namespace E2E.ScalarBoundary
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup E2E.MixedFlagBoundary
@@ -7,7 +8,7 @@ set_option autoImplicit false
 set_option Elab.async false
 
 private def special : MInst → Bool
-  | .movK .. | .bitfieldMove .. => true
+  | .movK .. | .bitfieldMove .. | .extend .. => true
   | .aluRRR op .. | .aluRRImmShift op .. => Backend.ABIReadScalar.shiftOp op
   | _ => false
 
@@ -70,12 +71,16 @@ private theorem old_not_special {sig : Clif.Signature} {b k : Nat} {i : MInst}
   cases i with
   | movK rd rn imm sz => cases checked
   | bitfieldMove sz op rd rn a b => cases checked
+  | extend rd rn sg fromB toB => cases checked
   | aluRRR op sz rd rn rm => cases op <;> first | rfl | cases checked
   | aluRRImmShift op sz rd rn imm => cases op <;> first | rfl | cases checked
   | _ => rfl
 
 private theorem shift_special {i : MInst} (checked : Backend.ABIReadScalar.shift i = true) : special i = true := by
   cases i <;> first | exact checked | rfl | cases checked
+
+private theorem extension_special {i : MInst} (checked : Backend.ABIReadScalar.extension i = true) : special i = true := by
+  cases i <;> first | rfl | cases checked
 
 private theorem constant_special {i : MInst} (checked : Backend.ABIReadScalar.constant i = true) : special i = true := by
   obtain ⟨d,n,imm,sz,rfl⟩ := constant_cases checked
@@ -105,7 +110,7 @@ theorem checked_step_frame {sig : Clif.Signature} {b k : Nat} {i : MInst}
     (run : sem F ctx X i us w = some (outs,t,ctl)) :
     FlagFrame w t ∧ (ctl = .next ∨ ctl = .ret) := by
   simp only [Backend.ABIReadScalar.instruction,Bool.or_eq_true] at checked
-  rcases checked with (old | added) | shifted
+  rcases checked with ((old | added) | shifted) | extended
   · simp only [sem,old_not_special old,Bool.false_eq_true,↓reduceIte] at run
     exact MixedFlagBoundary.checked_step_frame old run
   · simp only [sem,constant_special added,↓reduceIte] at run
@@ -113,6 +118,9 @@ theorem checked_step_frame {sig : Clif.Signature} {b k : Nat} {i : MInst}
     exact ⟨frame,.inl control⟩
   · simp only [sem,shift_special shifted,↓reduceIte] at run
     obtain ⟨frame,control⟩ := ShiftRead.step_frame shifted run
+    exact ⟨frame,.inl control⟩
+  · simp only [sem,extension_special extended,↓reduceIte] at run
+    obtain ⟨frame,control⟩ := CastRead.step_frame extended run
     exact ⟨frame,.inl control⟩
 
 theorem checked_step_transport {sig : Clif.Signature} {args : List Clif.Val}
@@ -133,7 +141,7 @@ theorem checked_step_transport {sig : Clif.Signature} {args : List Clif.Val}
     (run : sem F ctx X i us w = some (outs,t,ctl)) :
     ∃ t', sem F ctx X i us w' = some (outs,t',ctl) ∧ SameWorld Z t t' := by
   simp only [Backend.ABIReadScalar.instruction,Bool.or_eq_true] at checked
-  rcases checked with (old | added) | shifted
+  rcases checked with ((old | added) | shifted) | extended
   · simp only [sem,old_not_special old,Bool.false_eq_true,↓reduceIte] at run ⊢
     exact MixedFlagBoundary.checked_step_transport types old current other worlds registers stack run
   · simp only [sem,constant_special added,↓reduceIte] at run ⊢
@@ -141,6 +149,8 @@ theorem checked_step_transport {sig : Clif.Signature} {args : List Clif.Val}
     exact mspec_lockstep (by rw [shape]; rfl) worlds run
   · simp only [sem,shift_special shifted,↓reduceIte] at run ⊢
     exact mspec_lockstep (ShiftRead.no_mem shifted) worlds run
+  · simp only [sem,extension_special extended,↓reduceIte] at run ⊢
+    exact mspec_lockstep (CastRead.no_mem extended) worlds run
 
 namespace Realize
 theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
@@ -154,7 +164,7 @@ theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
     (executed : sem F ctx X i us w = some (outs,final,ctl)) :
     ∃ actual, valueSem F ctx X i us t = some (outs,actual,ctl) ∧ SameWorld F actual final := by
   simp only [Backend.ABIReadScalar.instruction,Bool.or_eq_true] at checked
-  rcases checked with (old | added) | shifted
+  rcases checked with ((old | added) | shifted) | extended
   · simp only [sem,old_not_special old,Bool.false_eq_true,↓reduceIte] at executed ⊢
     exact MixedFlagBoundary.Realize.step_realize types old frame arguments worlds entry executed
   · simp only [sem,constant_special added,↓reduceIte] at executed
@@ -166,6 +176,11 @@ theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
   · simp only [sem,shift_special shifted,↓reduceIte] at executed
     obtain ⟨spec,run,related⟩ := mspec_lockstep (ShiftRead.no_mem shifted) worlds.symm executed
     rw [ShiftRead.spec_eq shifted] at run
+    obtain ⟨actual,realized,related'⟩ := refines_valueSem F ctx X _ us t outs spec run
+    exact ⟨actual,realized,related'.trans related.symm⟩
+  · simp only [sem,extension_special extended,↓reduceIte] at executed
+    obtain ⟨spec,run,related⟩ := mspec_lockstep (CastRead.no_mem extended) worlds.symm executed
+    rw [CastRead.spec_eq extended] at run
     obtain ⟨actual,realized,related'⟩ := refines_valueSem F ctx X _ us t outs spec run
     exact ⟨actual,realized,related'.trans related.symm⟩
 

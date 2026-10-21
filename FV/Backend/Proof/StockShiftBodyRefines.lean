@@ -87,4 +87,19 @@ theorem actual_shift_body_refines {f : Clif.Function} {result : Result}
     split.scanned split.retained families refines driver stable s s'
   · simpa only [sourceBodyIndices,List.reverse_reverse] using source
   · simpa only [split.state] using held
+
+theorem emitted_record_family {f : Clif.Function} {ctx : Ctx} {bi : Nat}
+    {record : ScanRecord} {j : Nat} {b : Clif.Block} {stm : Clif.Stmt}
+    (block : f.blocks[bi]? = some b) (statement : b.body[j]? = some stm)
+    (current : record.inst = blockStart f bi + j)
+    {step : Step} (recorded : record.output.step = some step) (emitted : step.decision = .emitted)
+    {info : IInfo} {z a : Nat} (source : ctx.insts[record.inst]? = some info)
+    (clif : info.clif = some stm.inst) (one : info.results = [z]) (results : stm.results = [z])
+    (mapped : ctx.valueReg? z = some (.vreg a .int)) (family : Family stm.inst) :
+    MixedShiftOrOmittedRecord f ctx bi record := by
+  rcases family with old | ⟨kind,ty,x,y,shape⟩
+  · exact Or.inl (mul_record_family block statement current recorded emitted source clif one results mapped old)
+  · have original : info.clif = some (.binary kind.cop ty x y) := by rw [clif,shape]
+    exact Or.inr ⟨j,b,stm,block,statement,current,step,recorded,emitted,
+      kind,info,ty,x,y,z,a,source,original,one,results,mapped⟩
 end Backend.Stock.Proof.ShiftBody

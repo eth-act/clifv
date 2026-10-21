@@ -19,8 +19,14 @@ def shift : MInst → Bool
   | .bitfieldMove .. => true
   | _ => false
 
+/-- The six integer extension forms supported by the machine specification. -/
+def extension : MInst → Bool
+  | .extend _ _ _ fromB toB =>
+      [(8,16),(8,32),(8,64),(16,32),(16,64),(32,64)].contains (fromB,toB)
+  | _ => false
+
 def instruction (sig : Clif.Signature) (b k : Nat) (i : MInst) : Bool :=
-  ABIReadFlags.instruction sig b k i || constant i || shift i
+  ABIReadFlags.instruction sig b k i || constant i || shift i || extension i
 
 def check (sig : Clif.Signature) (vc : VCode) : Bool :=
   vc.blocks.toList.zipIdx.all fun (block,b) =>

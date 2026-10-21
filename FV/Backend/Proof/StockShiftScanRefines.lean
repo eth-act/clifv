@@ -102,4 +102,24 @@ theorem stock_lower_mixed_shift_body_fall_refines {f : Clif.Function} {result : 
     exact stock_lower_shift_scan_fall_refines run scope dominated events (retained record member)
       block statement current kind source clif results statementResults mapped recorded emitted refines stable
 
+
+theorem stock_lower_mixed_shift_record_fall_refines {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {bi : Nat} {record : ScanRecord} (records : record ∈ event.output.records)
+    (family : MixedShiftOrOmittedRecord f event.ctx bi record)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
+    {env : Clif.Env} {cp : Clif.Program} :
+    ScanFallRefines (IndexedSourceInst env cp f event.ctx bi) isem result.final.alias
+      (GuardedScanRel f result event.ctx bi MR) record := by
+  rcases family with old | mul
+  · exact stock_lower_mixed_mul_record_fall_refines run scope dominated events
+      records old refines driver stable
+  · obtain ⟨j,b,stm,block,statement,current,step,recorded,emitted,kind,info,ty,x,y,z,a,
+      source,clif,results,statementResults,mapped⟩ := mul
+    exact stock_lower_shift_scan_fall_refines run scope dominated events records
+      block statement current kind source clif results statementResults mapped recorded emitted refines stable
+
+
 end Backend.Stock.Proof
