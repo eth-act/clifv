@@ -12,9 +12,17 @@ def constantEligible (stm : Clif.Stmt) : Bool :=
 
 def bodyEligible (stm : Clif.Stmt) : Bool := Logical.bodyEligible stm || constantEligible stm
 
+/-- Extend source syntax while preserving the old constant classifier and its theorem. -/
+def notEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .unary .bnot ty _ => ty == .i32 || ty == .i64
+  | _ => false
+
+def extendedBodyEligible (stm : Clif.Stmt) : Bool := bodyEligible stm || notEligible stm
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all bodyEligible &&
+  | [b] => b.body.all extendedBodyEligible &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
