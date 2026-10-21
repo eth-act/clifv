@@ -29,6 +29,11 @@ Producer: M3-model. Model choice: `docs/decisions/arm-model.md`. Attribution:
 - DONE (T4 #40, 2026-10-18): encoder-driven co-simulation (`arm-cosim --encoder`, section
   "Co-simulation"): every `Backend.Insn` form the encoder accepts, 424 forms × 200 vectors, 0
   failures; it found that the model lacks `umaddl`/`smaddl` (#271, outside subset E).
+- DONE (T1 #37 / #271, 2026-10-19): the thread pointer `TPIDR_EL0` (`StateField.TPIDR`), `mrs xt,
+  tpidr_el0`, and SMADDL/SMSUBL/UMADDL/UMSUBL. Co-simulation (seed `0x5eed`, 200 vectors per form):
+  `scripts/arm-cosim.sh` 333 forms, 66 600 vectors, 0 failures (new: `mrs (tpidr_el0)`, `smaddl`,
+  `smsubl`, `umaddl`, `umsubl`, 200/0 each); `--encoder` 427 forms, 85 400 vectors, 0 failures
+  (new: `mrsTpidrEl0`, `aluRRRR uMAddL 64`, `aluRRRR sMAddL 64`, 200/0 each; `Enc.excluded` empty).
 
 ## Public API (namespace `Arm`)
 
@@ -38,11 +43,12 @@ Names follow LNSym. `docs/ARCHITECTURE.md` uses generic names; they map as follo
 
 | What | API | Module |
 | --- | --- | --- |
-| State | `ArmState` with fields GPR x0–x30, SP (`GPR 31`), v0–v31 (`SFP`, 128-bit), `PC`, `PState` (N Z C V), `mem : Memory` (`BitVec 64 → BitVec 8`, little-endian), `program : Program`, and an error field. `ArmState.default` is all zeros, with an empty program and no error. | `FV.Arm.State` |
-| Generic read/write | `r (fld : StateField) s`, `w fld v s`, where `StateField := GPR i \| SFP i \| PC \| FLAG f \| ERR`. There are simp lemmas `r_of_w_same`, `r_of_w_different`, `w_of_w_shadow`, … | `FV.Arm.State` |
+| State | `ArmState` with fields GPR x0–x30, SP (`GPR 31`), v0–v31 (`SFP`, 128-bit), `PC`, `PState` (N Z C V), the thread pointer `TPIDR_EL0` (`TPIDR`, 64-bit), `mem : Memory` (`BitVec 64 → BitVec 8`, little-endian), `program : Program`, and an error field. `ArmState.default` is all zeros, with an empty program and no error. | `FV.Arm.State` |
+| Generic read/write | `r (fld : StateField) s`, `w fld v s`, where `StateField := GPR i \| SFP i \| PC \| FLAG f \| ERR \| TPIDR`. There are simp lemmas `r_of_w_same`, `r_of_w_different`, `w_of_w_shadow`, … | `FV.Arm.State` |
 | GPRs | `read_gpr n i s` / `write_gpr n i v s` treat register 31 as SP. `read_gpr_zr` / `write_gpr_zr` treat it as XZR (ASL `X[]`). Reads take the low `n` bits; writes zero-extend to 64 bits. | `FV.Arm.State` |
 | SIMD&FP | `read_sfp n i s`, `write_sfp n i v s` (the write zero-extends to 128 bits) | `FV.Arm.State` |
 | PC | `read_pc s`, `write_pc v s` | `FV.Arm.State` |
+| Thread pointer | `r .TPIDR s` (`TPIDR_EL0`). `mrs xt, tpidr_el0` reads it (`exec_mrs_tpidr`: `exec_inst (.BR (.Mrs {o0 := 1, op1 := 0b011#3, CRn := 0b1101#4, CRm := 0, op2 := 0b010#3, Rt := Rt})) s = w .PC (r .PC s + 4) (write_gpr_zr 64 Rt (r .TPIDR s) s)`); no instruction writes it (`r_TPIDR_exec_inst`, `r_TPIDR_stepi`). The loader / OS sets it, outside the model. | `FV.Arm.Insts.BR.Mrs`, `FV.Arm.Tpidr` |
 | Flags | `read_flag f s` / `write_flag f v s` with `f : PFlag := N \| Z \| C \| V`; `read_pstate`, `write_pstate`, `make_pstate`; `ConditionHolds cond s` (ASL) | `FV.Arm.State`, `FV.Arm.Insts.Common` |
 | Memory | `read_mem_bytes n addr s : BitVec (n*8)`, `write_mem_bytes n addr v s` (little-endian, wraps mod 2^64); `Memory.read_bytes`/`write_bytes`; separation theory in `FV.Arm.Memory.{Separate,SeparateProofs,MemoryProofs}` (`mem_separate'`, `mem_subset'`, …) | `FV.Arm.State`, `FV.Arm.Memory.*` |
 | Program | `Program := Map (BitVec 64) (BitVec 32)` (an association list); `def_program`, `set_program s p`; `fetch_inst addr s : Option (BitVec 32)` (`@[irreducible]`). Code is disjoint from data memory: `mem` never holds instructions. | `FV.Arm.Map`, `FV.Arm.State` |
@@ -78,7 +84,7 @@ NOPs); memory is flat, total and little-endian, with no alignment faults except 
 | `Arm/Insts/**` (scalar + subset of SIMD) | `FV/Arm/Insts/**` | fixes and additions (below) |
 | `Arm/Memory/{Attr,MemoryProofs,Separate,SeparateProofs}.lean` | `FV/Arm/Memory/…` | ported |
 | `Tactics/{Attr,BvOmegaBench,Common,FetchAndDecode,IntroHyp,Simp,StepThms,Sym}.lean`, `Tactics/Sym/*` | `FV/Arm/Tactics/…` | ported: `sym_n` and `#genStepEqTheorems` |
-| — | `FV/Arm/Decode/Reserved.lean`, `FV/Arm/Insts/Reserved/Udf.lean`, `Insts/BR/Test_branch.lean`, `Insts/DPI/Extract.lean`, `Insts/DPR/{Add_sub_ext_reg,Conditional_compare}.lean`, `Insts/DPSFP/Advanced_simd_across_lanes.lean`, `Insts/DPSFP/{FP_data_processing_one_source,FP_immediate,FP_conditional_select,FP_data_processing_two_source,FP_data_processing_three_source,FP_compare}.lean`, `Insts/LDST/Reg_literal.lean` | FV additions |
+| — | `FV/Arm/Decode/Reserved.lean`, `FV/Arm/Insts/Reserved/Udf.lean`, `Insts/BR/{Test_branch,Mrs}.lean`, `Insts/DPI/Extract.lean`, `Insts/DPR/{Add_sub_ext_reg,Conditional_compare}.lean`, `Insts/DPSFP/Advanced_simd_across_lanes.lean`, `Insts/DPSFP/{FP_data_processing_one_source,FP_immediate,FP_conditional_select,FP_data_processing_two_source,FP_data_processing_three_source,FP_compare}.lean`, `Insts/LDST/Reg_literal.lean`, `FV/Arm/Tpidr.lean` | FV additions |
 | `Arm/Insts/DPSFP/Advanced_simd_modified_immediate.lean` | `FV/Arm/Insts/DPSFP/…` | ported for `movi vd.2s, #0` (S11d); the state-returning decode helper made pure |
 
 Ported files keep the Amazon copyright header. Modified files say so in a "Modified by
@@ -236,7 +242,8 @@ Sequences, all built from rows above:
   `udf #0xc11f`.
 
 Not modelled, because Cranelift does not emit them for the subset: PRFM, exclusives/atomics
-beyond the single-register ones, system instructions other than hints.
+beyond the single-register ones, system instructions other than hints, barriers and
+`mrs xt, tpidr_el0`.
 
 ## Co-simulation (`FVTest/Arm/Cosim/*`, `lake exe arm-cosim`)
 
@@ -256,26 +263,25 @@ Relocated immediates (`bl`'s `CALL26`, `adrp`'s page offset, the `:lo12:`/`:got_
 `:tlsdesc_lo12:` fields), which the encoder leaves zero, get the values a linker would write (a
 landing pad, a random page offset, a buffer offset). `stlxr` runs after an `ldaxr` of the same
 address (`TestCase.pre`: instructions run by both qemu and the model before the tested one), so
-qemu's exclusive monitor is set and the store succeeds on both sides. Not co-simulated
-(`Enc.excluded`): `mrs xt, tpidr_el0` (no system registers in the model, by design) and
-`umaddl`/`smaddl`, which the model does not implement (#271; emitted only for
-`umul_overflow`/`smul_overflow`, outside subset E).
+qemu's exclusive monitor is set and the store succeeds on both sides. `Enc.excluded` is empty:
+every `Insn` constructor is co-simulated (`mrs xt, tpidr_el0` and `umaddl`/`smaddl` since T1,
+#37 / #271).
 
 `--coverage` (no qemu) reports, per encoder form, the hand-written specs covering it: those
 whose sampled cube (the bits constant over 400 sampled words, with their values) contains all
-300 sampled words of the form. Results (2026-10-18, seed `0x5eed`, 200 vectors per form):
+300 sampled words of the form. Results (2026-10-19, seed `0x5eed`, 200 vectors per form):
 
 | | forms | covered by `Specs.lean` | co-simulated, failures |
 | --- | --- | --- | --- |
-| encoder forms (`--encoder`) | 424 (+ 2 excluded) | 419 (missing: `stlxr` b/h/w/x, `fmov h, w`) | 424 forms, 84 800 vectors, 0 failures |
-| `Specs.lean` + encoder (`--all`) | 752 | — | 150 400 vectors, 0 failures |
+| encoder forms (`--encoder`) | 427 (0 excluded) | 422 (missing: `stlxr` b/h/w/x, `fmov h, w`) | 427 forms, 85 400 vectors, 0 failures |
+| `Specs.lean` + encoder (`--all`) | 760 | — | 152 000 vectors, 0 failures |
 
 Nightly (post-merge, never blocking): `.github/workflows/fidelity-nightly.yml` runs
 `--all --n 1000` with a seed rotating per run and reports to #280.
 
 Per vector: a random valid encoding of the form, with all register fields random, including
 31 (SP or ZR according to the form). The initial state is random: x0–x30 (biased towards edge
-values), SP, NZCV, v0–v30 and a 64-byte data buffer. For the floating-point forms v0–v30 hold
+values), SP, NZCV, TPIDR_EL0, v0–v30 and a 64-byte data buffer. For the floating-point forms v0–v30 hold
 IEEE values (`randomFpCase`, `Harness.lean`) in the low 32/64 bits, the other bits random:
 ±0, ±min/max subnormal, ±min normal, ±1, ±max finite, ±∞, quiet and signalling NaNs with
 payloads, powers of two at the integer-conversion bounds, exact integers, values near 1 and
@@ -285,7 +291,7 @@ every test writes `msr fpcr, xzr` before it runs. Batches of vectors (one batch 
 instruction class) become one freestanding static aarch64 program (`Harness.lean`), assembled
 by clang, linked by rust-lld, and run under qemu-aarch64-static with raw `write`/`exit`
 syscalls. The program echoes the initial state, runs each instruction, and reports x0–x30, SP,
-NZCV, PC, v0–v30 and the buffer afterwards. Lean rebuilds the initial state from the echo, runs
+NZCV, PC, TPIDR_EL0, v0–v30 and the buffer afterwards. Lean rebuilds the initial state from the echo, runs
 `stepi`, and compares every field. It also checks the error outcome: `.None`, or `.Trap imm16`
 for `udf`, where the QEMU side is a `SIGILL` handler reading the signal frame.
 

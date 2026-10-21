@@ -102,8 +102,9 @@ adrp x0, :tlsdesc:v ; ldr tmp, [x0, :tlsdesc_lo12:v] ; add x0, x0, :tlsdesc_lo12
 blr tmp ; mrs tmp, tpidr_el0 ; add x0, x0, tmp
 ```
 
-The model cannot run it: it has no system registers (`mrs tpidr_el0` stops with an error), and
-the resolver `tmp` calls is code of the dynamic linker, outside the function. The machine of the
+The model cannot run all of it: `mrs tpidr_el0` reads the model's thread pointer (section
+"Thread pointer" below), but the resolver `tmp` calls is code of the dynamic linker, outside the
+function. The machine of the
 theorem (`ArmStepX X H fa`, `FV/E2E/RegLevelMachine.lean`) therefore hooks the sequence, as it
 hooks calls: the `adrp` only advances the pc, and at the `ldr` the rest of the sequence runs as
 one step `H.tls v tmp`. The hook's contract `TlsOk F X H` (`FV/E2E/RegLevelTls.lean`, premise
@@ -130,6 +131,33 @@ The register clause is Cranelift's TLSDESC convention (`ElfTlsGetAddr` in
 register allocator keeps values live in every other register across the sequence). `TlsOk` is
 that convention, plus the flags: it lets the resolver change NZCV, so the proof does not rely on
 the flags surviving the sequence.
+
+## Thread pointer: `TPIDR_EL0` is state, read by `mrs`, written by no instruction (T1, #37)
+
+`ArmState` has a 64-bit field for `TPIDR_EL0` (`StateField.TPIDR`; `r .TPIDR`/`w .TPIDR` like
+the PC; 0 in `ArmState.default`). It is the only system register of the model:
+
+- `mrs xt, tpidr_el0` (the only `MRS` the backend emits, Cranelift's `0xd53bd040 | Rt`) writes
+  it to `X[t]` (`Rt = 31` is XZR: no write) and advances the PC, per the Arm ARM ASL
+  (`FV/Arm/Insts/BR/Mrs.lean`; `Arm.exec_mrs_tpidr`). Every other system register stays
+  `Unimplemented`.
+- No instruction writes it (`Arm.r_TPIDR_exec_inst`, `Arm.r_TPIDR_stepi`, `FV/Arm/Tpidr.lean`;
+  the model has no `MSR`): at EL0 the thread pointer is set by the loader / OS (or by the thread
+  library's `msr`, which Cranelift never emits), outside the model, so a proof takes its value
+  from the initial state.
+
+The co-simulation sets `TPIDR_EL0` to a random value before every vector (`msr tpidr_el0`) and
+compares it afterwards, also on the `SIGILL` path; the harness's own scratch moved to v31.
+
+## Multiply-add long: SMADDL/SMSUBL/UMADDL/UMSUBL (#271)
+
+`Data_processing_three_source.lean` executes the 64-bit long multiply-adds (`op31 = 001`
+signed, `101` unsigned; `o0` add/subtract) per the Arm ARM ASL: `X[d] = X[a] ± ext(W[n]) *
+ext(W[m])` with `ext` the sign or zero extension of the low 32 bits to 64 (the product of two
+32-bit integers fits in 64 bits, so the 64-bit modular result is the ASL's `result<63:0>`).
+Cranelift emits `smaddl`/`umaddl` for `smul_overflow`/`umul_overflow` (`ALUOp3::SMAddL`/
+`UMAddL`; the encoder's `aluRRRR` fields agree with the decode: `sf = 1`, `op31 = 001`/`101`,
+`o0 = 0`). Before, these stopped with `Unimplemented`.
 
 ## Floating point: FPCR fixed to 0, ASL on the shared IEEE core (S11d, #237, 2026-10-16)
 

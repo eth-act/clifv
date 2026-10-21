@@ -85,3 +85,4 @@ import FV.Arm.Tactics.Sym.FetchAndDecode
 import FV.Arm.Tactics.Sym.LCtxSearch
 import FV.Arm.Tactics.Sym.MemoryEffects
 import FV.Arm.Tactics.Sym.ProgramInfo
+import FV.Arm.Tpidr

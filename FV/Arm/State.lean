@@ -151,6 +151,10 @@ structure ArmState where
   private pc         : BitVec 64
   /-- PState -/
   private pstate     : PState
+  /-- (FV addition) `TPIDR_EL0`, the EL0 software thread ID register (the thread pointer).
+  `MRS Xt, TPIDR_EL0` reads it; no instruction of the model writes it (the loader / OS sets
+  it, outside the model). -/
+  private tpidr      : BitVec 64
   /-- Memory: maps 64-bit addresses to bytes -/
   mem        : Memory
   /--
@@ -173,6 +177,7 @@ def ArmState.default : ArmState := {
     sfp := fun _ => 0#128,
     pc := 0#64,
     pstate := PState.zero,
+    tpidr := 0#64,
     mem := fun _ => 0#8,
     program := [],
     error := StateError.None
@@ -272,6 +277,8 @@ inductive StateField where
   | PC     : StateField
   | FLAG   : PFlag → StateField
   | ERR    : StateField
+  /-- (FV addition) `TPIDR_EL0` (the EL0 thread pointer). -/
+  | TPIDR  : StateField
 deriving DecidableEq, Repr, Hashable
 
 namespace StateField
@@ -282,16 +289,17 @@ abbrev SP := GPR 31#5
 
 /- Might eventually be used to maintain a `O(1)` access `StateField` map,
 by using `StateField.toFin` to index into a sparse array. -/
-/-- `StateField` is equivalent to `Fin (32 + 32 + 1 + 4 + 1)` -/
-def toFin : StateField → Fin 70
-  | .GPR x    => x.toFin.castAdd 38
-  | .SFP x    => (x.toFin.addNat 32).castAdd 6
+/-- `StateField` is equivalent to `Fin (32 + 32 + 1 + 4 + 1 + 1)` -/
+def toFin : StateField → Fin 71
+  | .GPR x    => x.toFin.castAdd 39
+  | .SFP x    => (x.toFin.addNat 32).castAdd 7
   | .PC       => 64
   | .FLAG .N  => 65
   | .FLAG .Z  => 66
   | .FLAG .C  => 67
   | .FLAG .V  => 68
   | .ERR      => 69
+  | .TPIDR    => 70
 
 section ToExpr
 open Lean PFlag
@@ -312,6 +320,7 @@ instance : ToExpr StateField where
     | PC       => mkConst ``PC
     | FLAG fl  => mkApp (mkConst ``FLAG) (toExpr fl)
     | ERR      => mkConst ``ERR
+    | TPIDR    => mkConst ``TPIDR
 
 end ToExpr
 
@@ -323,7 +332,8 @@ instance : ToString StateField :=
   | StateField.SFP i  => "q" ++ (ToString.toString i.toNat)
   | StateField.PC     => "pc"
   | StateField.FLAG p => "flag" ++ (ToString.toString p)
-  | StateField.ERR    => "err"⟩
+  | StateField.ERR    => "err"
+  | StateField.TPIDR  => "tpidr_el0"⟩
 
 -- Injective Lemmas for StateField
 attribute [state_simp_rules] StateField.GPR.injEq
@@ -339,6 +349,7 @@ def state_value (fld : StateField) : Type :=
   | PC      => BitVec 64
   | FLAG _  => BitVec 1
   | ERR     => StateError
+  | TPIDR   => BitVec 64
 
 @[irreducible]
 def r (fld : StateField) (s : ArmState) : (state_value fld) :=
@@ -349,6 +360,7 @@ def r (fld : StateField) (s : ArmState) : (state_value fld) :=
   | PC      => read_base_pc s
   | FLAG i  => read_base_flag i s
   | ERR     => read_base_error s
+  | TPIDR   => s.tpidr
 
 /-!
 
@@ -410,6 +422,7 @@ def w (fld : StateField) (v : (state_value fld)) (s : ArmState) : ArmState :=
   | PC     => write_base_pc v s
   | FLAG i => write_base_flag i v s
   | ERR    => write_base_error v s
+  | TPIDR  => { s with tpidr := v }
 
 @[state_simp_rules]
 theorem setWidth_eq_of_r_gpr :
@@ -1215,6 +1228,11 @@ private theorem reads_equal_implies_error_equal (s1 s2 : ArmState)
   funext
   simpa only [r, read_base_error, read_store] using h (.ERR)
 
+private theorem reads_equal_implies_tpidr_equal (s1 s2 : ArmState)
+  (h : ∀ (f : StateField), r f s1 = r f s2) :
+  ArmState.tpidr s1 = ArmState.tpidr s2 := by
+  simpa only [r] using h (.TPIDR)
+
 private theorem read_mem_equal_implies_mem_equal (s1 s2 : ArmState)
   (h_mem : ∀ (addr : BitVec 64), read_mem addr s1 = read_mem addr s2) :
   s1.mem = s2.mem := by
@@ -1264,6 +1282,7 @@ theorem state_eq_iff_components_eq {s1 s2 : ArmState} :
     case sfp => rwa [reads_equal_implies_sfp_equal]
     case pc  => rwa [reads_equal_implies_pc_equal]
     case pstate => rwa [reads_equal_implies_pstate_equal]
+    case tpidr => rwa [reads_equal_implies_tpidr_equal]
     case error => rwa [reads_equal_implies_error_equal]
     case program => assumption
     case mem => rwa [read_mem_bytes_equal_implies_mem_equal]

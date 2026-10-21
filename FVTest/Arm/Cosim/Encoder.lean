@@ -13,11 +13,6 @@ the relocated immediates). Relocated fields (`R_AARCH64_*`: `bl`'s `imm26`, `adr
 offset, the `:lo12:` immediates) are zero in the encoder's word; here they get the values a
 linker would write (a landing pad, a random page offset, a buffer offset).
 
-Not co-simulated (`excluded`): `mrs xt, tpidr_el0` (the model has no system registers and stops
-with `Unimplemented`; it is only in `tls_value`'s TLSDESC sequence, outside every theorem), and
-`umaddl`/`smaddl`, which the model does not implement (#271; Cranelift emits them only for
-`umul_overflow`/`smul_overflow`, outside subset E).
-
 `coverage` compares the encoder forms with the hand-written specs: a form counts as covered by
 a spec when every sampled word of the form lies in the spec's sampled cube (the bits that are
 constant across the spec's samples have the same values in the form's words).
@@ -114,8 +109,8 @@ def dpForms : List Spec :=
     ((aluRRROps.filter fun op => w || !(op == .sMulH || op == .uMulH)).map fun op =>
       simple s!"aluRRR {short op} {sizeBits w}" "enc-dp" do
         return some (.aluRRR op w (← gZR).2 (← gZR).2 (← gZR).2, none)) ++
-    -- (`uMAddL`/`sMAddL`: `excluded`)
-    ([ALUOp3.mAdd, .mSub].map fun op =>
+    -- `uMAddL`/`sMAddL` encode `sf = 1` whatever `is64`: one form each, at `is64`
+    (([ALUOp3.mAdd, .mSub] ++ if w then [ALUOp3.uMAddL, .sMAddL] else []).map fun op =>
       simple s!"aluRRRR {short op} {sizeBits w}" "enc-dp" do
         return some (.aluRRRR op w (← gZR).2 (← gZR).2 (← gZR).2 (← gZR).2, none)) ++
     ([ALUOp.add, .sub, .addS, .subS].map fun op =>
@@ -221,6 +216,7 @@ def brForms : List Spec :=
      let w ← retry "udf" do return encode0 (.udf (← bits 16))
      return { (← randomCase "udf" w) with kind := .udf },
    simple "dmb ish" "enc-misc" (return some (.dmbish, none)),
+   simple "mrsTpidrEl0" "enc-misc" do return some (.mrsTpidrEl0 (← gZR).2, none),
    form "adr" "enc-misc" fun _ => do
      let w ← retry "adr" do
        return encodeRel ((← below 2049 : Nat) - (1024 : Int)) (.adr (← gZR).2 (.block 0))
@@ -463,10 +459,8 @@ def fpForms : List Spec :=
 def encoderSpecs : List Spec :=
   dpForms ++ brForms ++ ldstForms ++ pairForms ++ litForms ++ exclForms ++ fpForms
 
-/-- `Insn` forms deliberately not co-simulated, with the reason. -/
-def excluded : List (String × String) :=
-  [("mrsTpidrEl0", "the model has no system registers (Unimplemented by design; only in tls_value's TLSDESC sequence, outside every theorem)"),
-   ("aluRRRR uMAddL/sMAddL", "the model does not implement UMADDL/SMADDL (Unimplemented; co-simulation: 400/400 vectors stop there; #271); Cranelift emits them only for umul_overflow/smul_overflow, outside subset E")]
+/-- `Insn` forms deliberately not co-simulated, with the reason (none: every constructor is). -/
+def excluded : List (String × String) := []
 
 /-! ## Coverage of the encoder forms by the hand-written specs -/
 
