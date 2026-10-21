@@ -9,7 +9,10 @@ run_cmd do
   for (name,_) in env.constants.toList do
     if !(name.toString.contains "StockLogicalExtr") then continue
     for ax in ← collectAxioms name do
-      unless #[``propext,``Classical.choice,``Quot.sound,
+      let declaredPrivate := #[
+        "_private.FV.E2E.StockLogicalExtrRootWitness.0.E2E.StockLogicalExtrWitness.recordChecks_true._native.native_decide.ax_1",
+        "_private.FV.E2E.StockLogicalExtrRootWitness.0.E2E.StockLogicalExtrWitness.selectedRootChecks_true._native.native_decide.ax_1"].contains ax.toString
+      unless declaredPrivate || #[``propext,``Classical.choice,``Quot.sound,
         ``E2E.StockLogicalExtrWitness.checks_true._native.native_decide.ax_1,
         ``E2E.StockLogicalExtrWitness.match_checks_true._native.native_decide.ax_1].contains ax do
         throwError "unexpected axiom {ax} in {name}"
