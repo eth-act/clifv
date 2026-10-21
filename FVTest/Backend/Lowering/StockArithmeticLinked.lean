@@ -29,8 +29,9 @@ private def configFor (i : Nat) : Stock.D0.Configuration :=
 private def sourceText (name : String) (c : Stock.D0.Configuration)
     (retainedArithmetic : Bool := false) : String :=
   let f := {E2E.StockArithmeticNIWitness.function c with name}
-  -- A dead third operation distinguishes retained plain artifacts from the
-  -- demand-driven Stock output, exercising consumer reconstruction fallback.
+  -- Keep a dead operation in the retained-source fixture. Virtual lowerings
+  -- differ while their allocated machine words may agree; exercise the explicit
+  -- retained callback separately from automatic byte-based reconstruction.
   let f := if retainedArithmetic then {f with blocks := f.blocks.map fun b =>
     {b with body := b.body ++ [⟨[11],.binary .iadd (Stock.D0.valueType c) 0 1⟩]}} else f
   f.print
@@ -45,9 +46,10 @@ private def plan (s : LinkSpec) : Link.Ld.Plan :=
       {name := symName n, value, info := 18, shndx := 0xfff1} }
 
 private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : Bool) (mixed : Bool := false) (retainedArithmetic : Bool := false) : IO Unit := do
-  let actualLower := if retainedArithmetic then Stock.ScalarAdd.lower else Stock.Arithmetic.lowerValidated
-  let lowerName := if retainedArithmetic then "Backend.Stock.ScalarAdd.lower" else "Backend.Stock.Arithmetic.lowerValidated"
   let names := (List.range count).map fun i => s!"actual_stock_arithmetic_{i}"
+  let actualLower := if retainedArithmetic then Stock.Arithmetic.lowerWithFallbacks names else Stock.Arithmetic.lowerValidated
+  let lowerName := if retainedArithmetic then "(Backend.Stock.Arithmetic.lowerWithFallbacks [" ++
+    ", ".intercalate (names.map leanStr) ++ "])" else "Backend.Stock.Arithmetic.lowerValidated"
   let clif := String.join (names.zipIdx.map fun (n,i) =>
     if !mixed || i == 0 then sourceText n (configFor i) retainedArithmetic
     else if i == 1 then (Stock.Prologue.source n .systemVI64 []).print
