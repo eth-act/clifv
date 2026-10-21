@@ -1,0 +1,358 @@
+{
+  "utc": "2026-10-16T15:01:16.091509+00:00",
+  "goal": "ORIGINAL full#140 ACTIVE/INCOMPLETE; production LEGACY",
+  "previous_goal_turn_classification": "PROGRESS: prior20module/34root actual-call bridge, complete witnesses/302audit and remote recovery verified. This continuation proves actual normal interpreter reachability and executing-call coverage, plus local exception-handler location; all remaining original obligations retained.",
+  "scope": "Actual Stock source destinations resolve to the same first matching block as Clif.enterBlock. Actual Clif.initState/enterFunc, every successful Clif.step and every finite prefix of that unchanged step relation derive reachable original frame locations for active and suspended frames. This covers arbitrary ordinary effects, direct/indirect program and extern calls, returns, tail calls, jump/brif/brTable, and both normal TryCall forms. Actual executing source calls now derive source position, node, scan, record and emitted Step internally; executed direct/GOT calls derive SigStackOk at actual returned area, without global CallsStack or caller reachability/emission certificates. Pending original TryCall tables and actual catchIn handlers have location proofs; full suspended-table/runX composition remains open.",
+  "new_scratch_sources": {
+    "/tmp/StockSourceExecutionGraph.lean": "ffad1dbb4274e4687ae6f66a26c27767a7098bb3fefaa3c581415857a3b40db5",
+    "/tmp/StockSourceExecutionCalls.lean": "27bc6e638e29719e1eedff0a70e9b8068923b17d0edfc6880c1e1c8dc0fd3ebd",
+    "/tmp/StockSourceExecutionTry.lean": "b000990adb9265bb81980be4740aacf9293500d8b297c568f07216948086fd17",
+    "/tmp/StockSourceExecutionUnwind.lean": "ae7f0bc5646b8b088ce0d9ea4198480b2195cc8e52700fbf3988d5dad4927de1",
+    "/tmp/StockSourceExecutionCore.lean": "3e72e634f1288581a1b5b59e9d2e648a43f5ceb0b3c6ff592eab75fed8951968",
+    "/tmp/StockSourceExecutingCalls.lean": "7749f56e8e51cb09c787ef7bb79dae93e6752ab89363881cc8b12a231c84500e",
+    "/tmp/StockSourceExecutionFixture.lean": "05696134d1a4d1e34ade98ecf39e8d7cb8d692bfbbd18edae2ebf4d70767d0ac",
+    "/tmp/StockSourceExecutingCallsWitness.lean": "b54d0907519f0baa17347f3f1526de768c558578b0353abc45cc2901c29ac54c",
+    "/tmp/StockSourceExecutionControlWitness.lean": "a367a7e29c7dd4ace50d9ef7ae6654c1d0c37f7b2c4ab283a6b2846e037ba90e",
+    "/tmp/StockSourceExecutionProgramWitness.lean": "07af8d05738148235fad02b2fb7c75c8d30c0b4f57944287bb0d6106a0146496"
+  },
+  "new_compiled_modules": {
+    "/tmp/StockSourceExecutionGraph.olean": "032954af710e9eadf36bc455c45eb9444f87b1f47f93ca6ca192ddd724721493",
+    "/tmp/StockSourceExecutionCalls.olean": "3bca69a72dacd65660b259cf48e1793e337c6b85e16ccd08ce925bb2acf633da",
+    "/tmp/StockSourceExecutionTry.olean": "8847848f2b80fe6891c0c12eadb3e79121d8615e095cd00ca0fa2e26faf426b4",
+    "/tmp/StockSourceExecutionUnwind.olean": "889980bcad3edd3834a395094944fc90c0f199d4378c9164dfc28a3566d75e7b",
+    "/tmp/StockSourceExecutionCore.olean": "591d0b4d62b46d6271c09807190910979bd9c3d092ed31f265dad78de28bc2b5",
+    "/tmp/StockSourceExecutingCalls.olean": "e4ced80ec8772af711b204a0d22b9d8344c2cea3704a10606b683ccff75d9435",
+    "/tmp/StockSourceExecutionFixture.olean": "30503223debed07478573d31907f582d0630ef3dd919ee71403ed1b71cbe465b",
+    "/tmp/StockSourceExecutingCallsWitness.olean": "f9122228ca0e3a79e19f4f66765e1a85a441f5209e99c55c6ea3c4e6530597d3",
+    "/tmp/StockSourceExecutionControlWitness.olean": "c8316f00bcf49b5a9d2a3aa24795c7d88601700aadf1208e3e07aa0f3bace07c",
+    "/tmp/StockSourceExecutionProgramWitness.olean": "f14cfb73178c6d2fb4765b2567afd55387b08bfbad66facac2cd7a9e713b2231"
+  },
+  "module_logs": {
+    "StockSourceExecutionGraph": "/tmp/stock-source-execution-graph.log",
+    "StockSourceExecutionCalls": "/tmp/stock-source-execution-calls.log",
+    "StockSourceExecutionTry": "/tmp/stock-source-execution-try.log",
+    "StockSourceExecutionUnwind": "/tmp/stock-source-execution-unwind.log",
+    "StockSourceExecutionCore": "/tmp/stock-source-execution-core.log",
+    "StockSourceExecutingCalls": "/tmp/stock-source-executing-calls.log",
+    "StockSourceExecutionFixture": "/tmp/stock-source-execution-fixture.log",
+    "StockSourceExecutingCallsWitness": "/tmp/stock-source-executing-calls-witness.log",
+    "StockSourceExecutionControlWitness": "/tmp/stock-source-execution-control-witness.log",
+    "StockSourceExecutionProgramWitness": "/tmp/stock-source-execution-program-witness.log"
+  },
+  "new_compiled_logs": {
+    "/tmp/stock-source-execution-graph.log": "b6a3cf13d90bda04b996ddd95dcb862a2d4f8045644cab566eda00e9f878a312",
+    "/tmp/stock-source-execution-calls.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-source-execution-try.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-source-execution-unwind.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-source-execution-core.log": "d21711d0fc88c91ba4d6279e52565ff310c3c58297b1eb8803ce3e368d095ccf",
+    "/tmp/stock-source-executing-calls.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-source-execution-fixture.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-source-executing-calls-witness.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/stock-source-execution-control-witness.log": "8c36f2d6973e966869088044cbc0c6a7183487176f8c32fe057621dec62f0d17",
+    "/tmp/stock-source-execution-program-witness.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "source_scans": {
+    "/tmp/StockSourceExecutionGraph.lean": "PASS",
+    "/tmp/StockSourceExecutionCalls.lean": "PASS",
+    "/tmp/StockSourceExecutionTry.lean": "PASS",
+    "/tmp/StockSourceExecutionUnwind.lean": "PASS",
+    "/tmp/StockSourceExecutionCore.lean": "PASS",
+    "/tmp/StockSourceExecutingCalls.lean": "PASS",
+    "/tmp/StockSourceExecutionFixture.lean": "PASS",
+    "/tmp/StockSourceExecutingCallsWitness.lean": "PASS",
+    "/tmp/StockSourceExecutionControlWitness.lean": "PASS",
+    "/tmp/StockSourceExecutionProgramWitness.lean": "PASS"
+  },
+  "new_public_theorem_roots": [
+    "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_destination_reachable",
+    "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_enterFunc_located",
+    "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_frame_located_regs",
+    "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_frame_located_rest",
+    "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_enterBlock_located",
+    "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_continueWith_located",
+    "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_returnValues_located",
+    "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_stepCall_located",
+    "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_stepCallIndirect_located",
+    "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_stepReturnCall_located",
+    "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_pending_jump_located",
+    "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_tryNormal_block",
+    "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_stepTryCall_located",
+    "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_stepTryCallIndirect_located",
+    "Backend.Stock.Proof.SourceExecutionUnwindDraft.stock_source_tryHandler_block",
+    "Backend.Stock.Proof.SourceExecutionUnwindDraft.stock_source_try_table_located",
+    "Backend.Stock.Proof.SourceExecutionUnwindDraft.stock_source_catchIn_located",
+    "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_stepTerm_located",
+    "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_step_located",
+    "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_initState_located",
+    "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_runPrefix_located",
+    "Backend.Stock.Proof.SourceExecutingCallsDraft.stock_source_executing_statement",
+    "Backend.Stock.Proof.SourceExecutingCallsDraft.stock_lower_executing_source_call_emitted",
+    "Backend.Stock.Proof.SourceExecutingCallsDraft.stock_lower_executing_direct_call_stack",
+    "Backend.Stock.Proof.SourceExecutionFixtureDraft.entered",
+    "Backend.Stock.Proof.SourceExecutionFixtureDraft.first",
+    "Backend.Stock.Proof.SourceExecutionFixtureDraft.called",
+    "Backend.Stock.Proof.SourceExecutionFixtureDraft.returned",
+    "Backend.Stock.Proof.SourceExecutionFixtureDraft.execution",
+    "Backend.Stock.Proof.SourceExecutionFixtureDraft.head",
+    "Backend.Stock.Proof.SourceExecutionFixtureDraft.completed_source_run",
+    "Backend.Stock.Proof.SourceExecutingCallsWitnessDraft.stock_complete_direct_executing_call_witness",
+    "Backend.Stock.Proof.SourceExecutingCallsWitnessDraft.stock_complete_indirect_executing_call_witness",
+    "Backend.Stock.Proof.SourceExecutingCallsWitnessDraft.stock_complete_got_executing_call_witness",
+    "Backend.Stock.Proof.SourceExecutionControlWitnessDraft.stock_actual_control_execution_witness",
+    "Backend.Stock.Proof.SourceExecutionControlWitnessDraft.stock_actual_try_handler_execution_witness",
+    "Backend.Stock.Proof.SourceExecutionProgramWitnessDraft.stock_actual_program_call_return_witness",
+    "Backend.Stock.Proof.SourceExecutionProgramWitnessDraft.stock_actual_raw_tail_location_witness"
+  ],
+  "audited_ghost_definitions": [
+    "Backend.Stock.Proof.SourceExecutionGraphDraft.FrameLocated",
+    "Backend.Stock.Proof.SourceExecutionCallsDraft.StateLocated",
+    "Backend.Stock.Proof.SourceExecutionUnwindDraft.PendingTableLocated",
+    "Backend.Stock.Proof.SourceExecutionCoreDraft.RunPrefix"
+  ],
+  "normal_audit": {
+    "path": "/tmp/stock-source-execution-axioms.log",
+    "sha256": "428a945b422f13a3c80642c5dc8e4b31f5f7436907378b142cca005717615ecc",
+    "roots": {
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_destination_reachable": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_enterFunc_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_frame_located_regs": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_frame_located_rest": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.stock_source_enterBlock_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_continueWith_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_returnValues_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_stepCall_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_stepCallIndirect_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.stock_source_stepReturnCall_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_pending_jump_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_tryNormal_block": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_stepTryCall_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionTryDraft.stock_source_stepTryCallIndirect_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionUnwindDraft.stock_source_tryHandler_block": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionUnwindDraft.stock_source_try_table_located": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionUnwindDraft.stock_source_catchIn_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_stepTerm_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_step_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_initState_located": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.stock_source_runPrefix_located": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsDraft.stock_source_executing_statement": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsDraft.stock_lower_executing_source_call_emitted": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsDraft.stock_lower_executing_direct_call_stack": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.entered": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.first": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.called": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.returned": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.execution": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.head": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionFixtureDraft.completed_source_run": [
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsWitnessDraft.stock_complete_direct_executing_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsWitnessDraft.stock_complete_indirect_executing_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutingCallsWitnessDraft.stock_complete_got_executing_call_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionControlWitnessDraft.stock_actual_control_execution_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionControlWitnessDraft.stock_actual_try_handler_execution_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionProgramWitnessDraft.stock_actual_program_call_return_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionProgramWitnessDraft.stock_actual_raw_tail_location_witness": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionGraphDraft.FrameLocated": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCallsDraft.StateLocated": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionUnwindDraft.PendingTableLocated": [
+        "propext"
+      ],
+      "Backend.Stock.Proof.SourceExecutionCoreDraft.RunPrefix": [
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "all38_new_public_roots_and4_ghost_definitions_standard_only": true,
+    "all302_prior_exact_sets_preserved": true,
+    "total_audited": 344
+  },
+  "counts": {
+    "new_modules": 10,
+    "new_public_roots": 38,
+    "ghost_definitions": 4,
+    "earlier_root_model_sets": 302,
+    "total_audited": 344
+  },
+  "witnesses": {
+    "ordinary_sret_direct_indirect_GOT": "StockSourceExecutionFixture seven unconditional actual init/step/call/return/prefix/body/complete Clif.runWith roots over six cases; StockSourceExecutingCallsWitness three complete ORIGINAL LowerScope/Dominated/ArityOk/AbiSigsOk lower/prepare/forced-checked-fallback/physical pipelines derive actual executing-call records/stack/location using NEW roots. Existing compiler-stage kernels reused; no cold Stock pipeline observation repeated.",
+    "branch_normal_TryCall": "StockSourceExecutionControlWitness five ORIGINAL scope/dominance/arity/fullABI functions execute jump/brif/brTable/directTry/indirectTry; branch-table index corrected to original i32 requirement, not source-condition relaxation. Manual original Dominated proof uses actual original build metadata.",
+    "exception_handlers": "Same control witness covers actual direct and indirect TryCall, tagged and default catches, actual stepX raised/caught states, PendingTableLocated and FrameLocated via NEW roots, and complete actual Clif.runWithX returns. Generic whole-runX/suspended-table invariant remains to prove.",
+    "program_calls_returns": "StockSourceExecutionProgramWitness actual direct and indirect program calls push a caller and enter a callee, then return to SAME original tracked caller, exercising nonempty suspended callers.",
+    "tail_semantics": "Same module separately exercises general Clif return_call into a tracked source callee with no pushed caller. This is a RAW semantic helper witness; original compiler scope excludes return_call and is unchanged."
+  },
+  "invariant_boundary": "FrameLocated/StateLocated/PendingTableLocated/RunPrefix are ghost proof relations, never compiler input filters. RunPrefix records exactly arbitrary finite Clif.step next prefixes; no instruction family or callee subset is assumed. Frame.func equality identifies which compiled function is currently executing, not an extra accepted-input condition.",
+  "unwind_limit": "Local original-table/catchIn and complete tagged/default X-run witnesses are proved. Need strengthen XState invariant to link every stored tries table to original reachable source TryCall, prove liftStep/raiseIn/unwindFrom/stepX and X prefixes universally. Do not claim full exceptional whole-driver composition yet.",
+  "preservation": {
+    "all_previous176_source_object_and_all_recorded_log_hashes": true,
+    "canonical2246_source_and_script_freeze_verified": true,
+    "old_theorem_variants_accepted_inputs_world_semantics_production_defaults": "unchanged"
+  },
+  "canonical_controller": {
+    "state": "running",
+    "pid": 1233457,
+    "utc": "2026-10-16T14:46:45.542891+00:00",
+    "total": 1930,
+    "completed_modules": 284,
+    "index": 285,
+    "current": "FV.Backend.Proof.IselPrgTab",
+    "log": "/tmp/stock-coherent-build-FV.Backend.Proof.IselPrgTab.log",
+    "memcap": "22G"
+  },
+  "bounded_dependency_build": {
+    "module": "FV.Clif.Unwind",
+    "reason": "Only missing dependency; confirmed current canonical kernel not in its six-module closure, so checked the lightweight definition module with8GiB instead of duplicating a heavy current kernel. Main controller remains live and will reuse it.",
+    "log": "/tmp/stock-source-execution-unwind-dependency.log",
+    "sha256": "990200485468a47e0780f92b5ef10e23f4b0afa137c19ac114327963eca86b30",
+    "result": "PASS6jobs, Unwind709ms, source freeze unchanged"
+  },
+  "integration_proposal": {
+    "modules": 186,
+    "public_roots": 337,
+    "normal_public_root_target": 2329,
+    "extra_model_definitions": 3,
+    "extra_ghost_definitions": 4,
+    "MCP": "ONE expanded bundled337public-root check after coherent canonical integration; no scratch MCP calls"
+  },
+  "resources": {
+    "free_GiB": 811.7,
+    "new_worktree_or_cache": false,
+    "warm_cache_count": 1,
+    "effective_workers": 2,
+    "scratch_memory_cap": "8GiB",
+    "canonical_memory_cap": "22GiB; prior isolatedCmp32GiB exception",
+    "other_projects": "untouched"
+  },
+  "deliveries": "#246@44abfd79 and#247@e5a9cd6c remain DRAFT; all three CI checks on EACH PASS, mergeState CLEAN. Exact-current-PR local gates and trust review pending. No push to review branches/no merge this batch; remote recovery snapshot follows.",
+  "next_steps": [
+    "Preserve same live canonical1930build/source+script freeze; inspect terminal2182audit receipt and review every changed upstream dependency set. No timeout-based restart.",
+    "Prove generic XState stored-table correspondence and actual raiseIn/unwindFrom/liftStep/stepX prefix invariant; then connect actual normal AND exceptional source executions to Stock call/handler/control coverage.",
+    "Integrate76validated modules beyond existing110coherent modules, add only actual affected builds; ONE expanded337root MCP, complete public/kernel/transitive audits, full exact-current-PR/build/crates/runtime/encoder/BOTH E2E identity-stage gates before ready/squash#246 then#247.",
+    "Finish every original family/effect/Try/world/DFG/source/block/whole-driver value simulation AND completeness, original-input availability/visitor/static/checker/fallback/physical readiness/totality, and complete remaining witnesses.",
+    "Switch actual compiler/checker/linker/generated-proof consumers only when all original proof and acceptance parity obligations hold; final fresh complete stock comparison must retain at least#179."
+  ],
+  "cleanup_receipt": "docs/research/stock-source-execution-cleanup.json",
+  "backup_receipt": "docs/research/stock-source-execution-backup.json"
+}

@@ -588,7 +588,7 @@ satisfiable for each production width and each sign/correction fixture. -/
 example : ∀ w ∈ [32, 64], ∀ d ∈ ([3, 7, 15, -3, -5, -7, -15] : List Int),
     3 ≤ w ∧ w ≤ 64 ∧ -2 ^ (w - 1) ≤ d ∧ d < 2 ^ (w - 1) ∧ d ≠ 0 ∧
     Rust.isPow2 (Rust.asU64 d) = false ∧
-    Rust.isPow2 (Rust.asU64 (Rust.asI64 (-d))) = false := by native_decide
+    Rust.isPow2 (Rust.asU64 (Rust.asI64 (-d))) = false := by decide +kernel
 
 /-- `sdc_magicS` applies to real positive and negative divisors, not only hypothetical
 magic constants. Its correction equation holds for every dividend in the signed range. -/
@@ -606,10 +606,10 @@ example : ∃ (m : Int) (s : Nat), Rust.magicS 64 (-7) = (m, (s : Int)) ∧ s < 
 
 /-- Positive divisor: the multiplier can require adding the dividend or no correction. -/
 example : (Rust.magicS 32 7).1 < 0 ∧ 0 < (Rust.magicS 32 3).1 ∧
-    (Rust.magicS 64 15).1 < 0 ∧ 0 < (Rust.magicS 64 3).1 := by native_decide
+    (Rust.magicS 64 15).1 < 0 ∧ 0 < (Rust.magicS 64 3).1 := by decide +kernel
 
 /-- Negative divisor: the multiplier can require subtracting the dividend or no correction. -/
 example : 0 < (Rust.magicS 32 (-3)).1 ∧ (Rust.magicS 32 (-5)).1 < 0 ∧
-    0 < (Rust.magicS 64 (-3)).1 ∧ (Rust.magicS 64 (-5)).1 < 0 := by native_decide
+    0 < (Rust.magicS 64 (-3)).1 ∧ (Rust.magicS 64 (-5)).1 < 0 := by decide +kernel
 
 end Opt.Proof
