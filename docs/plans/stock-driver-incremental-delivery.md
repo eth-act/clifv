@@ -69,19 +69,29 @@ historical counts are not semantic coverage. Both fused bitfield cases,
 guarded source/body/entry-return/no-trap and ABI producer support are complete.
 Old selectors, theorem variants and cleanup behavior remain.
 
-Next: casts through the same contract. Kernel-checked original-source candidates
-are Uextend810/811/815/808, Sextend824/819, Ireduce946. Reuse existing guarded
-base extension and zero-code reduction/alias bridges. Discharge the remaining
-look-through cases by execution or proved source-family exclusions before class
-activation. Then finish every unchanged original140scalar/control/memory/trap/
-effect/call/source/block/whole-driver/completeness/consumer obligation. Fallback
-is not Stock-only completeness; full original140 remains unfinished.
+Cast activation passes all author gates through the same scalar consumers.
+[Terminal evidence](../research/stock-cast-production-activation.md) records
+18primary/15ownership gates,1506auditedroots,1470oldAXsets/43oldheaders exact,
+1680native comparisons, two32subcheck actual CLI/link/generated cohorts and all
+current full gates. Validated845327d4 and terminal
+evidence backed60dab84b. Actual808/819/946 execution and
+source-derived exclusions for810/811/815/824 compose full body/entry/default
+production. All prior selectors and theorem variants remain.
+
+Next: counts/reversals/rotations through the same contract, reusing existing
+guarded source bridges and deriving selection internally. Then every remaining
+unchanged original140scalar/control/memory/trap/effect/call/source/block/whole-
+driver/completeness/consumer obligation. Fallback is not Stock-only completeness;
+full original140 remains unfinished.
 
 ## Maintained validation runner (landed #358)
 
 Use scripts/stock-delivery-gates.py with plan/run/resume/report commands around
 existing build/audit/runtime/integration/native/example scripts. No replacement
-scheduler, compiler redesign or workflow platform. Manifest records base and
+scheduler, compiler redesign or workflow platform. Split independent current and retained
+integration cohorts into separate one-gate manifests up front so they can use
+both available slots after full/example gates; preserve the aggregate16GiB/two-job
+limit. Never mutate a running manifest or duplicate a healthy cohort. Manifest records base and
 candidate, module/consumer changes, explicit gates and complete declared input
 fingerprints (sources/import outputs/tools/settings/scripts), theorem/header and
 identity baselines. Unknown dependencies require conservative reruns.

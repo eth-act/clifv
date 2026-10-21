@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-21T22:08:04.624855+00:00",
+  "updated_utc": "2026-10-21T23:08:50.185556+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -15,9 +15,10 @@
       "integer constants via shared scalar consumers (361)",
       "integer NOT/NOT-of-XOR via shared scalar consumers",
       "i32/i64 multiplication and fused multiply through shared scalar consumers",
-      "i32/i64 ordinary shifts and fused bitfield pairs through shared scalar consumers"
+      "i32/i64 ordinary shifts and fused bitfield pairs through shared scalar consumers",
+      "i32/i64 extension/reduction through shared scalar consumers (validated, squash pending)"
     ],
-    "pending": "Casts: kernel-checked Uextend810/811/815/808, Sextend824/819, Ireduce946. Reuse guarded base cast/reduction bridges, discharge look-through cases, extend scalar ABI step facts and complete production class. Then all remaining original scalar/control/memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligations."
+    "pending": "Counts/reversals/rotations, then all unchanged original140 scalar/control/memory/effects/calls/source/block/whole-driver/completeness and consumers."
   },
   "roots": [
     {
@@ -3311,7 +3312,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Uextend",
       "saved_guarded_bridge": "FV/Backend/Proof/StockCastSourceValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete cast-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3319,7 +3320,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-cast-production-activation.md"
     },
     {
       "rule": "rule_lower_1266",
@@ -3351,7 +3353,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "cast_class_exclusion": "CastBody.family_formats + stock_lower_source_statement_family; load/compare execution remains a later full-goal obligation"
     },
     {
       "rule": "rule_lower_1281",
@@ -3367,7 +3370,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "cast_class_exclusion": "CastBody.family_formats + stock_lower_source_statement_family; load/compare execution remains a later full-goal obligation"
     },
     {
       "rule": "rule_lower_1283",
@@ -3431,7 +3435,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "cast_class_exclusion": "CastBody.family_formats + stock_lower_source_statement_family; load/compare execution remains a later full-goal obligation"
     },
     {
       "rule": "rule_lower_1315",
@@ -3439,7 +3444,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Sextend",
       "saved_guarded_bridge": "FV/Backend/Proof/StockCastSourceValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete cast-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3447,7 +3452,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-cast-production-activation.md"
     },
     {
       "rule": "rule_lower_1320",
@@ -3527,7 +3533,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "cast_class_exclusion": "CastBody.family_formats + stock_lower_source_statement_family; load/compare execution remains a later full-goal obligation"
     },
     {
       "rule": "rule_lower_1377",
@@ -5409,7 +5416,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Ireduce",
       "saved_guarded_bridge": "FV/Backend/Proof/StockReduceSourceValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/execution/retained binding/guarded transfer and complete cast-body/entry/default consumers validated; squash pending",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5417,7 +5424,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-cast-production-activation.md"
     },
     {
       "rule": "rule_lower_2152",
