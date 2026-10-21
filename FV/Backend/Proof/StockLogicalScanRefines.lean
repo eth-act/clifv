@@ -57,6 +57,35 @@ def MixedLogicalOrOmittedRecord (f : Clif.Function) (ctx : Ctx) (bi : Nat) (r : 
           ctx.insts[r.inst]? = some info ∧ info.clif = some (.binary kind.cop ty x y) ∧
           info.results = [z] ∧ stm.results = [z] ∧ ctx.valueReg? z = some (.vreg a .int)
 
+/-- Reusable record-level dispatch for the shipped logical/mixed class.
+Later classes compose this boundary without duplicating its rule-family cases. -/
+theorem stock_lower_mixed_logical_record_fall_refines {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {bi : Nat} {record : ScanRecord}
+    (records : record ∈ event.output.records)
+    (family : MixedLogicalOrOmittedRecord f event.ctx bi record)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    {MR : MemRelT} (stable : MRStable F MR) {env : Clif.Env} {cp : Clif.Program} :
+    ScanFallRefines (IndexedSourceInst env cp f event.ctx bi) isem result.final.alias
+      (GuardedScanRel f result event.ctx bi MR) record := by
+  rcases family with old | logical
+  · rcases old with selected | arithmetic
+    · obtain ⟨j,b,stm,block,statement,current,step,recorded,kind⟩ := selected
+      rcases kind with omitted | ⟨emitted,info,ty,c,x,y,z,a,source,clif,results,statementResults,mapped⟩
+      · exact stock_lower_omitted_scan_fall_refines run scope dominated events records
+          block statement current recorded omitted
+      · exact stock_lower_select_scan_fall_refines run scope dominated events records
+          block statement current source clif results statementResults mapped recorded emitted refines stable
+    · obtain ⟨j,b,stm,block,statement,current,step,recorded,emitted,subtract,info,ty,x,y,z,a,
+        source,clif,results,statementResults,mapped⟩ := arithmetic
+      exact stock_lower_addsub_scan_fall_refines run scope dominated events records
+        block statement current subtract source clif results statementResults mapped recorded emitted refines stable
+  · obtain ⟨j,b,stm,block,statement,current,step,recorded,emitted,kind,info,ty,x,y,z,a,
+      source,clif,results,statementResults,mapped⟩ := logical
+    exact stock_lower_logical_scan_fall_refines run scope dominated events records
+      block statement current kind source clif results statementResults mapped recorded emitted refines stable
+
 /-- Source steps compose through the actual scan order and retained machine
 code, preserving all previously supported select/add/sub and omission cases. -/
 theorem stock_lower_mixed_logical_body_fall_refines {f : Clif.Function} {result : Result}
@@ -75,22 +104,8 @@ theorem stock_lower_mixed_logical_body_fall_refines {f : Clif.Function} {result 
           (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1)))) ρ w =
           some (.fall ρ' w') ∧ GuardedScanRel f result event.ctx bi MR input s' ρ' w' := by
   apply scanned.fall_refines
-  intro r member
-  rcases families r member with old | logical
-  · rcases old with selected | arithmetic
-    · obtain ⟨j,b,stm,block,statement,current,step,recorded,kind⟩ := selected
-      rcases kind with omitted | ⟨emitted,info,ty,c,x,y,z,a,source,clif,results,statementResults,mapped⟩
-      · exact stock_lower_omitted_scan_fall_refines run scope dominated events (retained r member)
-          block statement current recorded omitted
-      · exact stock_lower_select_scan_fall_refines run scope dominated events (retained r member)
-          block statement current source clif results statementResults mapped recorded emitted refines stable
-    · obtain ⟨j,b,stm,block,statement,current,step,recorded,emitted,subtract,info,ty,x,y,z,a,
-        source,clif,results,statementResults,mapped⟩ := arithmetic
-      exact stock_lower_addsub_scan_fall_refines run scope dominated events (retained r member)
-        block statement current subtract source clif results statementResults mapped recorded emitted refines stable
-  · obtain ⟨j,b,stm,block,statement,current,step,recorded,emitted,kind,info,ty,x,y,z,a,
-      source,clif,results,statementResults,mapped⟩ := logical
-    exact stock_lower_logical_scan_fall_refines run scope dominated events (retained r member)
-      block statement current kind source clif results statementResults mapped recorded emitted refines stable
+  intro record member
+  exact stock_lower_mixed_logical_record_fall_refines run scope dominated events
+    (retained record member) (families record member) refines stable
 
 end Backend.Stock.Proof

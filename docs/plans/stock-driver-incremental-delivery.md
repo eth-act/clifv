@@ -11,18 +11,24 @@ required axioms/accepted identities/successful stages.
 
 Arithmetic shipped in #356 (95b87108); complete add/sub/select activation shipped
 in #357 (ba08bcaf); the bounded maintained runner shipped in #358 (40333cb4).
-The complete AND/OR/XOR extension is validated at 0d9f54fe and ready for author
-squash. [Logical activation evidence](../research/stock-logical-production-activation.md)
+The complete AND/OR/XOR extension landed in #359 (779bc7ba), exact squash
+tree verified against validated 0d9f54fe plus its documentation receipt. [Logical activation evidence](../research/stock-logical-production-activation.md)
 records current normal/trust/runtime/native/CLI/retention/identity/example gates,
-exact original axiom/header parity and actual provenance. Land it before another
-family expansion; record the actual squash in #44/#140/#261.
+exact original axiom/header parity and actual provenance. The actual squash and integrator notice are recorded in #44/#140/#261.
 
 Next: remaining pure scalar classes, starting with constants and NOT/fused logical
 forms, using saved guarded bridges and existing body/consumer composition. Read
 [the obligation ledger](../research/stock-driver-obligations.json); historical root
 inventories require current-source/scope reconciliation and are not coverage
-percentages. No whole-backlog port or new worktree is needed. Preserve canonical
-saved work and archive the superseded logical view before cleanup.
+percentages. No whole-backlog port or new worktree is needed. Canonical saved work and terminal logical evidence are backed remotely at29f6be2f.
+The superseded logical view was archived, its unique dirty recovery source pushed
+atfc1bb8e1, and the clean view removed. Four necessary views and one warm cache remain.
+
+Active constants packet on779bc7ba derives unique root53 selection and match/RHS
+receipts from actual retained records, reuses saved source transfer, and composes
+constant scans with the shipped logical/mixed record boundary. Old theorem headers
+and variants remain. Complete boundary witnesses and current normal/trust gates
+precede landing; body/entry/return/default consumer activation is still required.
 
 ## Maintained validation runner (landed #358)
 
