@@ -25,6 +25,23 @@ private theorem normal_abi {params : List Clif.AbiParam} (all : params.all abiEl
   have purpose : (p.purpose == .normal) = true := good.1
   exact beq_iff_eq.mp purpose
 
+/-- The existing executable syntax classifier implies the preserved family. -/
+theorem bodyEligible_sound {stm : Clif.Stmt} (supported : bodyEligible stm = true) :
+    Stock.Proof.LogicalBody.Family stm.inst := by
+  cases inst : stm.inst <;> simp only [bodyEligible,inst] at supported
+  all_goals try contradiction
+  next op ty x y =>
+    simp only [Bool.and_eq_true] at supported
+    have ops := supported.1
+    simp only [Bool.or_eq_true,beq_iff_eq] at ops
+    rcases ops with (((rfl | rfl) | rfl) | rfl) | rfl
+    · exact .inl ⟨false,ty,x,y,rfl⟩
+    · exact .inl ⟨true,ty,x,y,rfl⟩
+    · exact .inr (.inr ⟨.band,ty,x,y,rfl⟩)
+    · exact .inr (.inr ⟨.bor,ty,x,y,rfl⟩)
+    · exact .inr (.inr ⟨.bxor,ty,x,y,rfl⟩)
+  next ty c x y => exact .inr (.inl ⟨ty,c,x,y,rfl⟩)
+
 /-- The runtime source classifier derives all semantic premises internally. -/
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
@@ -40,19 +57,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     have families : ∀ stm ∈ b.body, Stock.Proof.LogicalBody.Family stm.inst := by
       intro stm member
       have supported := List.all_eq_true.mp body stm member
-      cases inst : stm.inst <;> simp only [bodyEligible,inst] at supported
-      all_goals try contradiction
-      next op ty x y =>
-        simp only [Bool.and_eq_true] at supported
-        have ops := supported.1
-        simp only [Bool.or_eq_true,beq_iff_eq] at ops
-        rcases ops with (((rfl | rfl) | rfl) | rfl) | rfl
-        · exact .inl ⟨false,ty,x,y,rfl⟩
-        · exact .inl ⟨true,ty,x,y,rfl⟩
-        · exact .inr (.inr ⟨.band,ty,x,y,rfl⟩)
-        · exact .inr (.inr ⟨.bor,ty,x,y,rfl⟩)
-        · exact .inr (.inr ⟨.bxor,ty,x,y,rfl⟩)
-      next ty c x y => exact .inr (.inl ⟨ty,c,x,y,rfl⟩)
+      exact bodyEligible_sound supported
     have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
       apply List.find?_eq_none.mpr
       intro p member

@@ -1,5 +1,5 @@
 import FV.E2E.ProductionPipelineWith
-import FV.Backend.Lowering.StockLogicalNI
+import FV.Backend.Lowering.StockScalarNI
 import FVTest.E2E.LinkProof
 import FVTest.E2E.SemanticLinkProofWith
 
@@ -25,22 +25,27 @@ def main (args : List String) : IO UInt32 := do
   -- Other supported compiler modes and whole-file retries can retain earlier
   -- artifacts. Recover their routing from actual bytes, then validate every
   -- selected artifact normally. These are data choices, not source assumptions.
-  let mut retained : List String := []
+  let mut choices : List (String × Nat) := []
   if let some phs := phdrs (fileRd file) then
     for fi in I0.funcs do
       let f := fi.func
-      if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f || Stock.Logical.activationEligible f) && !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
-        -- Probe this candidate before the transactional legacy retry. Otherwise
-        -- an incompatible saved allocator answer can hide a retained artifact.
-        let bytesMatch := match I0.pipeOfWithLowering Stock.Logical.lowerValidated
-            (productionStage o.deadCleanup) fi with
-          | .error _ => false
-          | .ok a => artB I0 (fileRd file) phs a
-        if !bytesMatch then retained := retained ++ [f.name]
-  let actualLower := Stock.Logical.lowerWithFallbacks retained
-  let lowerName := if retained.isEmpty then "Backend.Stock.Logical.lowerValidated"
-    else "(Backend.Stock.Logical.lowerWithFallbacks [" ++
-      ", ".intercalate (retained.map leanStr) ++ "])"
+      if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f ||
+          Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f) &&
+          !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
+        -- Probe each complete route before its transactional retry. A retained
+        -- logical/mixed artifact must not be skipped directly to legacy.
+        let mut found : Option Nat := none
+        for (lower,idx) in Stock.Scalar.lowerRoutes.zipIdx do
+          if found.isNone then
+            let matches := match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
+              | .error _ => false
+              | .ok a => artB I0 (fileRd file) phs a
+            if matches then found := some idx
+        let idx := found.getD 4
+        if idx != 0 then choices := choices ++ [(f.name,idx)]
+  let actualLower := Stock.Scalar.lowerWithRoutes choices
+  let lowerName := "(Backend.Stock.Scalar.lowerWithRoutes [" ++
+    ", ".intercalate (choices.map fun (name,idx) => "(" ++ leanStr name ++ ", " ++ toString idx ++ ")") ++ "])"
   if o.profile then
     -- the slowest functions: the pipeline, the lowering validator, the allocation checker
     let mut tot : Array (Nat × String × Nat × Nat × Nat) := #[]
@@ -263,7 +268,7 @@ def main (args : List String) : IO UInt32 := do
     let stackAll := Pk.funcs.all fun g => (stackOf g).isSome
     let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
       else none
-    for (p, t) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockLogicalNI") do
+    for (p, t) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockScalarNI") do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
       IO.FS.writeFile p t
       IO.println s!"  wrote {p}"

@@ -2,6 +2,7 @@ import FV.E2E.CompiledProduction
 import FV.E2E.StockArithmeticWorldX
 import FV.E2E.StockMixedWorldX
 import FV.E2E.StockLogicalWorldX
+import FV.E2E.StockScalarWorldX
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver
@@ -24,6 +25,11 @@ inductive CompiledSemantic (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledSemantic f k vc vcp rf af fa fb
   | logical {cleanup : Bool} {result : Stock.Result} :
       Stock.Logical.Domain f → result.code = vc →
+      CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
+      CompiledSemantic f k vc vcp rf af fa fb
+
+  | scalar {cleanup : Bool} {result : Stock.Result} :
+      Stock.Scalar.Domain f → result.code = vc →
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemantic f k vc vcp rf af fa fb
 
@@ -56,6 +62,8 @@ theorem check (hc : CompiledSemantic f k vc vcp rf af fa fb) : Backend.checkAllo
 
   | logical _ _ h => exact h.check
 
+  | scalar _ _ h => exact h.check
+
 theorem alloc (hc : CompiledSemantic f k vc vcp rf af fa fb) : lowerRFunc vcp rf = .ok af := by
   cases hc with
   | compatible h => exact h.alloc
@@ -63,6 +71,8 @@ theorem alloc (hc : CompiledSemantic f k vc vcp rf af fa fb) : lowerRFunc vcp rf
   | mixed _ _ h => exact h.alloc
 
   | logical _ _ h => exact h.alloc
+
+  | scalar _ _ h => exact h.alloc
 
 theorem emit (hc : CompiledSemantic f k vc vcp rf af fa fb) : emitFunc k af = .ok fa := by
   cases hc with
@@ -72,6 +82,8 @@ theorem emit (hc : CompiledSemantic f k vc vcp rf af fa fb) : emitFunc k af = .o
 
   | logical _ _ h => exact h.emit
 
+  | scalar _ _ h => exact h.emit
+
 theorem layout (hc : CompiledSemantic f k vc vcp rf af fa fb) : fa.layout = .ok fb := by
   cases hc with
   | compatible h => exact h.layout
@@ -79,6 +91,8 @@ theorem layout (hc : CompiledSemantic f k vc vcp rf af fa fb) : fa.layout = .ok 
   | mixed _ _ h => exact h.layout
 
   | logical _ _ h => exact h.layout
+
+  | scalar _ _ h => exact h.layout
 
 end CompiledSemantic
 
@@ -131,5 +145,9 @@ theorem backend_correct_worldX_semantic {p : Clif.Program} {f : Clif.Function} {
   | logical domain equal h =>
     subst vc
     exact backend_correct_worldX_stock_logical domain h hcov hsym hslot hcs hrel hargs fuel
+
+  | scalar domain equal h =>
+    subst vc
+    exact backend_correct_worldX_stock_scalar domain h hcov hsym hslot hcs hrel hargs fuel
 
 end E2E

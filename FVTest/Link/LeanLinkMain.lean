@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockLogicalNI
+import FV.Backend.Lowering.StockScalarNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Link.OptCompile
@@ -216,9 +216,9 @@ def main (args0 : List String) : IO UInt32 := do
       return 1
   -- Keep optimizer and exceptional-edge theorem variants on their retained route
   -- until their production adapters are complete.
-  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)
-  let routes := [Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
+  let routes := [Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
   let compiled := if stockEnabled then SemanticCompilerWith.compileWithRoutes routes SC0 file0 deadCleanup
     else (compile SC file0).map fun file => (⟨file,none⟩ : SemanticCompilerWith.RoutedOutput)

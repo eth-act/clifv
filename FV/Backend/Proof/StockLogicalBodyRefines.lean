@@ -1,5 +1,6 @@
 import FV.Backend.Proof.StockArithmeticBodyRefines
 import FV.Backend.Proof.StockLogicalScanRefines
+import FV.Backend.Proof.StockPureBodyFamilies
 
 /-! Source-syntax coverage for complete select/arithmetic/logical bodies. -/
 namespace Backend.Stock.Proof.LogicalBody
@@ -15,37 +16,6 @@ def Family (inst : Clif.Inst) : Prop :=
     inst = .binary (if subtract then .isub else .iadd) ty x y) ∨
   (∃ ty c x y, inst = .select ty c x y) ∨
   (∃ kind : LogicalSelected.Kind, ∃ ty x y, inst = .binary kind.cop ty x y)
-
-private theorem family_result {f : Clif.Function} {ctx : Ctx} (inv : MappedCtxInv f ctx)
-    {i : Nat} {info : IInfo} {inst : Clif.Inst}
-    (source : ctx.insts[i]? = some info) (clif : info.clif = some inst)
-    (family : Family inst) : ∃ z, info.results = [z] := by
-  obtain ⟨tys,result,typed,arity⟩ := inv.resTys i info _ source clif
-  have one : info.results.length = 1 := by
-    rcases family with ⟨subtract,ty,x,y,shape⟩ | ⟨ty,c,x,y,shape⟩ | ⟨kind,ty,x,y,shape⟩
-    all_goals
-      rw [shape] at result
-      have equal := Option.some.inj result
-      rw [← equal] at arity
-      simpa only [List.length_singleton] using arity
-  cases values : info.results with
-  | nil => simp [values] at one
-  | cons z rest =>
-    cases rest with
-    | nil => exact ⟨z,rfl⟩
-    | cons a tail => simp [values] at one
-
-private theorem scans_execute {exec : Nat → State → Except String Scan}
-    {indices : List Nat} {input : State} {output : BlockScan}
-    (cert : ScansSpec exec indices input output) :
-    ∀ record ∈ output.records, exec record.inst record.input = .ok record.output := by
-  induction cert with
-  | nil input => simp
-  | cons head rest ih =>
-    intro record member
-    rcases List.mem_cons.mp member with rfl | member
-    · exact head
-    · exact ih record member
 
 /-- Original syntax and successful lowering supply every body record's family,
 source result, actual mapped register and emission/omission decision internally. -/
@@ -63,36 +33,31 @@ theorem actual_logical_families {f : Clif.Function} {result : Result}
     · cases subtract <;> rfl
     · rfl
     · cases kind <;> rfl
-  obtain ⟨term,body,split,decisions⟩ := stock_lower_pure_body_decisions run scope blocks quiet events
+  have single : ∀ stm ∈ b.body,
+      (stm.inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·)).map List.length = some 1 := by
+    intro stm member
+    rcases family stm member with ⟨subtract,ty,x,y,shape⟩ | ⟨ty,c,x,y,shape⟩ | ⟨kind,ty,x,y,shape⟩
+    all_goals rw [shape]
+    all_goals rfl
+  obtain ⟨term,body,split,sourceRecords⟩ := PureBody.actual_source_records run scope blocks quiet single events
   refine ⟨term,body,split,?_⟩
   intro record member
-  obtain ⟨j,stm,statement,current⟩ := split.positions record member
-  obtain ⟨step,recorded,decision⟩ := decisions record member
-  rcases decision with omitted | emitted
-  · exact Or.inl (Or.inl ⟨j,b,stm,split.block,statement,current,step,recorded,Or.inl omitted⟩)
-  · obtain ⟨info,source,clif,results⟩ :=
-      ArithmeticBody.body_source_info run events split statement current
-    have inv := (stock_lower_record_context run scope events).1
-    have sourceFamily := family stm (List.mem_of_getElem? statement)
-    obtain ⟨z,one⟩ := family_result inv source clif sourceFamily
-    obtain ⟨emission,emissionRun,scan⟩ := stock_emitted_scan
-      (scans_execute split.scanned record member) recorded emitted
-    have atInst : event.ctx.insts[record.inst]! = info := by
-      simp only [Array.getElem!_eq_getD,Array.getD_eq_getD_getElem?,source,Option.getD_some]
-    obtain ⟨r,mapped⟩ := ArithmeticBody.emission_result_mapped emissionRun
-      (by rw [atInst]; exact one)
-    obtain ⟨a,rfl⟩ := inv.valueReg z r mapped
-    rcases sourceFamily with ⟨subtract,ty,x,y,shape⟩ | ⟨ty,c,x,y,shape⟩ | ⟨kind,ty,x,y,shape⟩
-    · have original : info.clif = some (.binary (if subtract then .isub else .iadd) ty x y) := by
-        rw [clif,shape]
-      exact Or.inl (Or.inr ⟨j,b,stm,split.block,statement,current,step,recorded,emitted,
-        subtract,info,ty,x,y,z,a,source,original,one,results.symm.trans one,mapped⟩)
+  obtain ⟨j,b',stm,block,statement,current,step,recorded,decision⟩ := sourceRecords record member
+  have same : b' = b := Option.some.inj (block.symm.trans split.block)
+  subst b'
+  rcases decision with omitted | ⟨emitted,info,z,a,source,clif,one,results,mapped⟩
+  · exact Or.inl (Or.inl ⟨j,b,stm,block,statement,current,step,recorded,Or.inl omitted⟩)
+  · rcases family stm (List.mem_of_getElem? statement) with
+      ⟨subtract,ty,x,y,shape⟩ | ⟨ty,c,x,y,shape⟩ | ⟨kind,ty,x,y,shape⟩
+    · have original : info.clif = some (.binary (if subtract then .isub else .iadd) ty x y) := by rw [clif,shape]
+      exact Or.inl (Or.inr ⟨j,b,stm,block,statement,current,step,recorded,emitted,
+        subtract,info,ty,x,y,z,a,source,original,one,results,mapped⟩)
     · have original : info.clif = some (.select ty c x y) := by rw [clif,shape]
-      exact Or.inl (Or.inl ⟨j,b,stm,split.block,statement,current,step,recorded,Or.inr
-        ⟨emitted,info,ty,c,x,y,z,a,source,original,one,results.symm.trans one,mapped⟩⟩)
+      exact Or.inl (Or.inl ⟨j,b,stm,block,statement,current,step,recorded,Or.inr
+        ⟨emitted,info,ty,c,x,y,z,a,source,original,one,results,mapped⟩⟩)
     · have original : info.clif = some (.binary kind.cop ty x y) := by rw [clif,shape]
-      exact Or.inr ⟨j,b,stm,split.block,statement,current,step,recorded,emitted,
-        kind,info,ty,x,y,z,a,source,original,one,results.symm.trans one,mapped⟩
+      exact Or.inr ⟨j,b,stm,block,statement,current,step,recorded,emitted,
+        kind,info,ty,x,y,z,a,source,original,one,results,mapped⟩
 
 /-- Whole ordinary-body refinement derives its record coverage and maps from
 source syntax. The original indexed availability/DFG and memory/world boundary

@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockLogicalSourceExecution
+import FV.Backend.Proof.StockPureNotrap
 
 /-! Actual source outcomes for the complete ordinary logical/mixed class. -/
 namespace Backend.Stock.Proof.LogicalBody
@@ -76,6 +77,11 @@ private theorem family_notrap (fr : Clif.Frame) (cm : Clif.Mem)
         | stuck message => simp
         | ok b => simp
 
+/-- Reusable local no-trap fact for the preserved logical/mixed syntax. -/
+theorem logical_inst_notrap (fr : Clif.Frame) (cm : Clif.Mem)
+    {inst : Clif.Inst} (family : Family inst) (code : Clif.TrapCode) :
+    Clif.evalInst fr cm inst ≠ .trap code := family_notrap fr cm family code
+
 /-- Pure select/add/sub/logical source bodies ending in return cannot produce a trap, even
 when malformed operands instead make the executable semantics stuck. -/
 theorem logical_source_notrap {env : Clif.Env} {cp : Clif.Program} (fuel : Nat)
@@ -83,46 +89,11 @@ theorem logical_source_notrap {env : Clif.Env} {cp : Clif.Program} (fuel : Nat)
     (family : ∀ stm ∈ s.frame.body, Family stm.inst)
     {xs : List Nat} (ret : s.frame.term = .ret xs) (code : Clif.TrapCode) :
     Clif.runLoop env cp fuel s ≠ .trapped code := by
-  induction fuel generalizing s with
-  | zero => simp
-  | succ fuel ih =>
-    rw [Clif.runLoop_succ]
-    cases remaining : s.frame.body with
-    | nil =>
-      rw [Clif.step_term env cp s remaining,ret,Clif.stepTerm]
-      cases values : s.frame.getMany xs with
-      | trap c => exact False.elim (getMany_notrap s.frame xs c values)
-      | stuck message => simp
-      | ok vals =>
-        simp only [Clif.StepResult.ofRes]
-        by_cases typed : vals.map (·.ty) = Clif.AbiParam.tys s.frame.func.sig.returns <;>
-          simp [Clif.returnValues,Clif.checkTys,Clif.Res.check,callers,Clif.StepResult.ofRes,typed]
-    | cons stm rest =>
-      have instFamily := family stm (by simp [remaining])
-      rw [Clif.step_inst env cp s stm rest remaining
-        (by
-          intro fn args h
-          rcases instFamily with ⟨subtract,ty,x,y,shape⟩ | ⟨ty,c,x,y,shape⟩ | ⟨kind,ty,x,y,shape⟩
-          all_goals rw [shape] at h; cases h)
-        (by
-          intro sig callee args h
-          rcases instFamily with ⟨subtract,ty,x,y,shape⟩ | ⟨ty,c,x,y,shape⟩ | ⟨kind,ty,x,y,shape⟩
-          all_goals rw [shape] at h; cases h)]
-      cases evaluated : Clif.evalInst s.frame s.mem stm.inst with
-      | trap c => exact False.elim (family_notrap s.frame s.mem instFamily c evaluated)
-      | stuck message => simp
-      | ok pair =>
-        rcases pair with ⟨values,cm⟩
-        simp only [Clif.StepResult.ofRes,Clif.continueWith]
-        cases written : s.frame.regs.setMany stm.results values with
-        | none => simp
-        | some regs =>
-          simp only
-          apply ih {s with frame := {s.frame with regs,body := rest},mem := cm} callers ?_ ret
-          intro other member
-          apply family other
-          rw [remaining]
-          exact List.mem_cons_of_mem _ member
-
+  apply PureBody.pure_source_notrap fuel s callers ?_ ret code
+  intro stm member
+  have instFamily := family stm member
+  refine ⟨?_,fun fr cm c => family_notrap fr cm instFamily c⟩
+  rcases instFamily with ⟨subtract,ty,x,y,shape⟩ | ⟨ty,c,x,y,shape⟩ | ⟨kind,ty,x,y,shape⟩
+  all_goals rw [shape]; rfl
 
 end Backend.Stock.Proof.LogicalBody
