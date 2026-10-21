@@ -29,25 +29,26 @@ all 2,659 normal keys, 45 trust audits, previous 1,322 axiom sets and both old s
 headers preserved. Its complete source/csem/body witness is standard-only; evidence
 is backed remotely ataeaaf5e5. See the constant record/body research receipt.
 
-Active activation packet: constants through one reusable scalar production
-consumer. Shared pure source execution, actual record extraction, entry/return
-and no-trap composition replace duplicated logical implementations, retaining old
-statements. A universal internal Scalar.Domain is derived by fixed source-check
-soundness proofs, not supplied at runtime. Its consumers handle actual returns
-and traps without adding a new compiler/checker/linker stack for each scalar family.
+Constant production activation is complete through one reusable scalar consumer.
+[Terminal evidence](../research/stock-scalar-production-activation.md) records all
+35 primary command gates and seven ownership records, exact previous axiom/header
+and identity/stage parity, native byte execution, all retained classes and verified
+examples. Validated source edfe4f4f is backed remotely with terminal evidence at
+fe81690d. A universal internal Scalar.Domain is derived by fixed source-check
+soundness. Shared pure source and ABI composition retains old variants; MOVK has
+its own scalar read boundary, with the old check and cleanup whitelist unchanged.
 
-Multi-word constants exposed MOVK missing from the old ABI read boundary. Keep the
-old checks and cleanup whitelist; add a scalar read check and MOVK step proofs,
-sharing the existing upper ABI transport/realization/machine proof. The complete
-six-ABI/two-cleanup scalar pipeline witness now builds; final normal/trust/owned,
-strict allocator/native, actual CLI/link/generated, previous-class, identity and
-verified-example gates remain before claiming default activation.
+Default attempt order is Scalar→Logical→Mixed→Arithmetic→legacy. Actual retained
+artifact reconstruction probes every route against bytes and records its index,
+on the original source/settings. Routing data does not restrict source theorems.
 
-Artifact reconstruction must probe every retained complete lowering route against
-actual bytes and record its index. Preserve Scalar→Logical→Mixed→Arithmetic→legacy
-attempt ordering and original settings/input on retry. Routing data does not
-restrict the source theorem. Continue directly through NOT/fused and all remaining
-original obligations after this class lands.
+Next: NOT/fused through the same scalar domain and consumers. Current-source drafts
+for all three NOT roots (base, shifted, NOT-of-XOR), original guarded source and
+scan/body/entry/return/no-trap proofs already compile and are backed in fe81690d.
+Integrate them as the next substantive packet, preserving the old constant
+classifier theorem and every old variant. No new consumer stack is needed.
+Continue all remaining original obligations after that class; fallback is not
+Stock completeness. The original full goal remains unfinished.
 
 ## Maintained validation runner (landed #358)
 
