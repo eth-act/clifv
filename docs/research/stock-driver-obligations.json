@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-21T21:01:27.630196+00:00",
+  "updated_utc": "2026-10-21T22:08:04.624855+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -14,9 +14,10 @@
       "AND/OR/XOR (359)",
       "integer constants via shared scalar consumers (361)",
       "integer NOT/NOT-of-XOR via shared scalar consumers",
-      "i32/i64 multiplication and fused multiply through shared scalar consumers"
+      "i32/i64 multiplication and fused multiply through shared scalar consumers",
+      "i32/i64 ordinary shifts and fused bitfield pairs through shared scalar consumers"
     ],
-    "pending": "Shifts/casts: actual eight-source-root dispatch draft compiles; fused bitfield892/893 and scalar ABI read-boundary step facts remain. Then every original remaining scalar/control/memory/trap/effect/call/block/whole-driver/completeness/consumer obligation."
+    "pending": "Casts: kernel-checked Uextend810/811/815/808, Sextend824/819, Ireduce946. Reuse guarded base cast/reduction bridges, discharge look-through cases, extend scalar ABI step facts and complete production class. Then all remaining original scalar/control/memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligations."
   },
   "roots": [
     {
@@ -4290,7 +4291,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Ishl",
       "saved_guarded_bridge": "FV/Backend/Proof/StockShiftRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/request/execution/retained binding/guarded transfer and complete shipped shift-body/entry/default production consumers complete",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4298,7 +4299,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "ShiftComplete.selected_rule_ids",
+        "ShiftComplete.record_source",
+        "stock_lower_shift_scan_fall_refines",
+        "stock_lower_mixed_shift_body_fall_refines",
+        "ShiftBody.actual_shift_body_refines",
+        "ShiftBody.actual_shift_entry_return_refines_frame",
+        "Scalar.domain_of_shift"
+      ],
+      "production_receipt": "docs/research/stock-shift-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open; successful-run refinement is not totality."
     },
     {
       "rule": "rule_lower_1549",
@@ -4306,7 +4318,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Ishl",
       "saved_guarded_bridge": "FV/Backend/Proof/StockShiftRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/request/execution/retained binding/guarded transfer and complete shipped shift-body/entry/default production consumers complete",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4314,7 +4326,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "ShiftComplete.selected_rule_ids",
+        "ShiftComplete.record_source",
+        "stock_lower_shift_scan_fall_refines",
+        "stock_lower_mixed_shift_body_fall_refines",
+        "ShiftBody.actual_shift_body_refines",
+        "ShiftBody.actual_shift_entry_return_refines_frame",
+        "Scalar.domain_of_shift"
+      ],
+      "production_receipt": "docs/research/stock-shift-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open; successful-run refinement is not totality."
     },
     {
       "rule": "rule_lower_1553",
@@ -4330,7 +4353,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1583",
@@ -4346,7 +4371,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1588",
@@ -4362,7 +4389,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1638",
@@ -4370,7 +4399,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Ushr",
       "saved_guarded_bridge": "FV/Backend/Proof/StockShiftRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/request/execution/retained binding/guarded transfer and complete shipped shift-body/entry/default production consumers complete",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4378,7 +4407,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "ShiftComplete.selected_rule_ids",
+        "ShiftComplete.record_source",
+        "stock_lower_shift_scan_fall_refines",
+        "stock_lower_mixed_shift_body_fall_refines",
+        "ShiftBody.actual_shift_body_refines",
+        "ShiftBody.actual_shift_entry_return_refines_frame",
+        "Scalar.domain_of_shift"
+      ],
+      "production_receipt": "docs/research/stock-shift-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open; successful-run refinement is not totality."
     },
     {
       "rule": "rule_lower_1642",
@@ -4386,7 +4426,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Ushr",
       "saved_guarded_bridge": "FV/Backend/Proof/StockShiftRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/request/execution/retained binding/guarded transfer and complete shipped shift-body/entry/default production consumers complete",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4394,7 +4434,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "ShiftComplete.selected_rule_ids",
+        "ShiftComplete.record_source",
+        "stock_lower_shift_scan_fall_refines",
+        "stock_lower_mixed_shift_body_fall_refines",
+        "ShiftBody.actual_shift_body_refines",
+        "ShiftBody.actual_shift_entry_return_refines_frame",
+        "Scalar.domain_of_shift"
+      ],
+      "production_receipt": "docs/research/stock-shift-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open; successful-run refinement is not totality."
     },
     {
       "rule": "rule_lower_1646",
@@ -4410,7 +4461,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1654",
@@ -4426,7 +4479,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1659",
@@ -4442,7 +4497,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1661",
@@ -4458,7 +4515,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1695",
@@ -4466,7 +4525,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Sshr",
       "saved_guarded_bridge": "FV/Backend/Proof/StockShiftRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/request/execution/retained binding/guarded transfer and complete shipped shift-body/entry/default production consumers complete",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4474,7 +4533,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "ShiftComplete.selected_rule_ids",
+        "ShiftComplete.record_source",
+        "stock_lower_shift_scan_fall_refines",
+        "stock_lower_mixed_shift_body_fall_refines",
+        "ShiftBody.actual_shift_body_refines",
+        "ShiftBody.actual_shift_entry_return_refines_frame",
+        "Scalar.domain_of_shift"
+      ],
+      "production_receipt": "docs/research/stock-shift-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open; successful-run refinement is not totality."
     },
     {
       "rule": "rule_lower_1699",
@@ -4482,7 +4552,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Sshr",
       "saved_guarded_bridge": "FV/Backend/Proof/StockShiftRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/request/execution/retained binding/guarded transfer and complete shipped shift-body/entry/default production consumers complete",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4490,15 +4560,26 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "ShiftComplete.selected_rule_ids",
+        "ShiftComplete.record_source",
+        "stock_lower_shift_scan_fall_refines",
+        "stock_lower_mixed_shift_body_fall_refines",
+        "ShiftBody.actual_shift_body_refines",
+        "ShiftBody.actual_shift_entry_return_refines_frame",
+        "Scalar.domain_of_shift"
+      ],
+      "production_receipt": "docs/research/stock-shift-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open; successful-run refinement is not totality."
     },
     {
       "rule": "rule_lower_1704",
       "id": 892,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Sshr",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockShiftBitfieldRecordValues.lean",
+      "status": "actual source selection/request/execution/retained binding/guarded transfer and complete shipped shift-body/entry/default production consumers complete",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4506,15 +4587,26 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "ShiftComplete.selected_rule_ids",
+        "ShiftComplete.record_source",
+        "stock_lower_shift_scan_fall_refines",
+        "stock_lower_mixed_shift_body_fall_refines",
+        "ShiftBody.actual_shift_body_refines",
+        "ShiftBody.actual_shift_entry_return_refines_frame",
+        "Scalar.domain_of_shift"
+      ],
+      "production_receipt": "docs/research/stock-shift-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open; successful-run refinement is not totality."
     },
     {
       "rule": "rule_lower_1707",
       "id": 893,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Ushr",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockShiftBitfieldRecordValues.lean",
+      "status": "actual source selection/request/execution/retained binding/guarded transfer and complete shipped shift-body/entry/default production consumers complete",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -4522,7 +4614,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "ShiftComplete.selected_rule_ids",
+        "ShiftComplete.record_source",
+        "stock_lower_shift_scan_fall_refines",
+        "stock_lower_mixed_shift_body_fall_refines",
+        "ShiftBody.actual_shift_body_refines",
+        "ShiftBody.actual_shift_entry_return_refines_frame",
+        "Scalar.domain_of_shift"
+      ],
+      "production_receipt": "docs/research/stock-shift-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open; successful-run refinement is not totality."
     },
     {
       "rule": "rule_lower_1720",
@@ -4538,7 +4641,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1729",
@@ -4554,7 +4659,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1734",
@@ -4570,7 +4677,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1736",
@@ -4586,7 +4695,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_original_source_scope": "Excluded under unchanged original-source LowerScope/MappedCtxInv by ShiftComplete.selected_rule_ids and opcode_inventory; no reachability or execution conclusion for other scopes.",
+      "scope_exclusion_proof": "FV/Backend/Proof/StockShiftDispatch.lean"
     },
     {
       "rule": "rule_lower_1772",

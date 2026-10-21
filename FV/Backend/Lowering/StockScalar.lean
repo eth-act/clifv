@@ -28,9 +28,17 @@ def mulEligible (stm : Clif.Stmt) : Bool :=
 
 def mulBodyEligible (stm : Clif.Stmt) : Bool := extendedBodyEligible stm || mulEligible stm
 
+/-- Shifts extend the source family while earlier selectors retain their meaning. -/
+def shiftEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .binary .ishl ty _ _ | .binary .ushr ty _ _ | .binary .sshr ty _ _ => ty == .i32 || ty == .i64
+  | _ => false
+
+def shiftBodyEligible (stm : Clif.Stmt) : Bool := mulBodyEligible stm || shiftEligible stm
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all mulBodyEligible &&
+  | [b] => b.body.all shiftBodyEligible &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false

@@ -58,14 +58,24 @@ retention and all current full gates. Validated1cd9816f and evidence backed9c3f2
 Reusable source classification/record dispatch/no-trap facts avoid copying earlier
 families. Old selectors and theorem variants stay.
 
-Next: shifts/casts through the same contract. Current-source shift dispatch draft
-already compiles and is backed9c3f26fd. Existing scope/adapter exclusion proofs
-restrict actual source candidates to eight:103→874/873,104→893/884/883,
-105→892/891/890. Historical inventory is not reachability or semantic coverage.
-Reuse six existing shift bridges; discharge fused bitfield892/893 and extend the
-scalar ABI read boundary with proved step facts, retaining old checks/variants.
-Then complete casts and every remaining original obligation. Fallback is not
-Stock completeness. The full original140goal remains unfinished.
+The complete shift class passes all author gates through the same scalar
+consumers. [Terminal evidence](../research/stock-shift-production-activation.md)
+records18primary gates/13ownership partitions,2728normalkeys,1470audited roots,
+1428oldAXsets/34oldheaders exact,1512native comparisons, two32subcheck actual
+CLI/link/generated cohorts, original flat-multiply retention and all current
+full gates. Validatedca069aa6 and terminal evidence are backed remotely at
+de6aae6e. Current source dispatch proves eight reachable shift roots;
+historical counts are not semantic coverage. Both fused bitfield cases,
+guarded source/body/entry-return/no-trap and ABI producer support are complete.
+Old selectors, theorem variants and cleanup behavior remain.
+
+Next: casts through the same contract. Kernel-checked original-source candidates
+are Uextend810/811/815/808, Sextend824/819, Ireduce946. Reuse existing guarded
+base extension and zero-code reduction/alias bridges. Discharge the remaining
+look-through cases by execution or proved source-family exclusions before class
+activation. Then finish every unchanged original140scalar/control/memory/trap/
+effect/call/source/block/whole-driver/completeness/consumer obligation. Fallback
+is not Stock-only completeness; full original140 remains unfinished.
 
 ## Maintained validation runner (landed #358)
 

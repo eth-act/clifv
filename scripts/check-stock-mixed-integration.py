@@ -64,9 +64,9 @@ def proof_order(directory, prefix="Mixed"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift"], default="mixed")
     options = parser.parse_args()
-    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction"}.get(options.kind, options.kind.capitalize())
+    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction"}.get(options.kind, options.kind.capitalize())
     view = Path(__file__).resolve().parents[1]
     output = options.output.resolve()
     if output == view or view in output.parents:
