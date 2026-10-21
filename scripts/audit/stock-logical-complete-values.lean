@@ -1,3 +1,4 @@
+import FV.Backend.Proof.StockLogicalCheckWitness
 import FV.Backend.Proof.StockLogicalNotrapWitness
 import FV.Backend.Proof.StockLogicalReturnWitness
 import FV.Backend.Proof.StockLogicalSourceWitness
@@ -31,3 +32,9 @@ import FV.Backend.Proof.StockLogicalSourceWitness
 
 #print axioms Backend.Stock.Proof.LogicalBody.logical_source_notrap
 #print axioms Backend.Stock.Proof.LogicalBody.logical_source_notrap_witness
+
+#print axioms Backend.Stock.Logical.sourceOk_sound
+#print axioms Backend.Stock.Logical.check_sound
+#print axioms Backend.Stock.Logical.classifier_accepts
+#print axioms Backend.Stock.Logical.actualChecked_true -- witness: native_decide
+#print axioms Backend.Stock.Logical.actual_check_witness -- witness: native_decide

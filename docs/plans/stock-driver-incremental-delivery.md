@@ -657,3 +657,19 @@ argument values, successful lowering and a returned source run. This supplies th
 outcome branch needed by complete function simulation, alongside the entry/return
 composition. Both new roots are listed for axiom audit; normal validation remains
 pending. No production activation or full-goal completion is claimed.
+
+
+The pending logical integration packet now has `Lowering.StockLogical`,
+`StockLogicalCheck` and checker soundness over `LogicalBody.Family`. The
+executable classifier covers ordinary i32/i64 select/add/sub/AND/OR/XOR bodies;
+source scope, dominance and ABI remain executable checks. Actual Stock provenance
+and empty edge-argument rows are checked before exposing a candidate. Previously
+supported Mixed/Arithmetic inputs retain their previous selector. A nonempty
+sparse-ID OR function inhabits both source classification and an actual checked
+whole-driver output; only its declared fixed-data witness uses `native_decide`.
+The universal soundness roots add no native premise. These files are pending
+normal validation with the logical function packet; production routing is not
+changed. After validation, connect the generic existing ABI-read boundary and
+semantic consumers, run the complete class/fallback gates, and land the class.
+Arithmetic remains the first activation landing, then Mixed. All original#140
+families/effects, simulation/completeness and preservation obligations remain.
