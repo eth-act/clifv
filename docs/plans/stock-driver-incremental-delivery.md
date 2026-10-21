@@ -78,11 +78,21 @@ evidence backed60dab84b. Actual808/819/946 execution and
 source-derived exclusions for810/811/815/824 compose full body/entry/default
 production. All prior selectors and theorem variants remain.
 
-Next: counts/reversals/rotations through the same contract, reusing existing
-guarded source bridges and deriving selection internally. Then every remaining
-unchanged original140scalar/control/memory/trap/effect/call/source/block/whole-
-driver/completeness/consumer obligation. Fallback is not Stock-only completeness;
-full original140 remains unfinished.
+Negation, CLZ/CTZ, bit reversal/byte swap and rotations pass author gates through
+shared scalar consumers. [Terminal evidence](../research/stock-bit-production-activation.md)
+records 18 primary / 17 ownership gates, 1,541 audited roots, all 1,506 old axiom
+sets / 45 old public headers exact, 2,064 native comparisons, two 32-check actual
+CLI/link/generated cohorts and all current full gates. Validated source
+`ab08eefa`; terminal evidence backed at `9f4c6d0e`.
+Saved instruction-derived transfers and shared composition are reused; all old
+cast variants remain alongside the more general source-format variants.
+
+Next: popcount, reusing existing numerical/vector helper proofs and scoped
+projection; its i128/vector roots require original-scope exclusions. Then
+comparisons/min/max, high multiply/division/remainder, complete original integer
+widths and ABIs, and every unchanged original #140 control/memory/trap/effect/
+call/source/block/whole-driver/completeness/consumer obligation. Fallback is not
+Stock-only completeness; full original #140 remains unfinished.
 
 ## Maintained validation runner (landed #358)
 

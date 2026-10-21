@@ -38,28 +38,30 @@ def run_commands(bits, kind="mixed"):
         [2, 0, high, 11, 22, 33, 44, 55, low],
         [1, low, low, 11, 22, 33, 44, 55, low],
     ]
+    if kind == "bit":
+        vectors.append([1, 1, 0, 11, 22, 33, 44, 55, 7])  # observable CTZ(0)
     cases = []
     for args in vectors:
         selected = args[1] + args[8] if args[0] else args[1]
-        if kind in ("scalar", "not", "mul", "shift", "cast"):
+        if kind in ("scalar", "not", "mul", "shift", "cast", "bit"):
             mask = (1 << bits) - 1
             constant = 0x123456789abcdef & mask
             band = ((args[1] + constant) & args[8]) & mask
             logical = ((band ^ (args[2] & mask)) | constant) & mask
             chosen = logical if args[0] else band
             previous = signed(chosen - args[2] + 4097, bits)
-            if kind in ("not", "mul", "shift", "cast"):
+            if kind in ("not", "mul", "shift", "cast", "bit"):
                 inverted = (~previous) & mask
                 complemented = (~(inverted ^ (args[2] & mask))) & mask
                 result = ~((complemented + 4097) & args[8])
                 not_result = signed(result, bits)
-                if kind in ("mul", "shift", "cast"):
+                if kind in ("mul", "shift", "cast", "bit"):
                     product = not_result * args[2]
                     added = product + constant
                     multiplied = added * args[1]
                     subtracted = args[8] - (args[8] + multiplied) * args[2]
                     mul_result = signed(subtracted ^ product, bits)
-                    if kind in ("shift", "cast"):
+                    if kind in ("shift", "cast", "bit"):
                         unsigned = (((mul_result & mask) << (0x105 % bits)) & mask) >> (0x103 % bits)
                         shifted_signed = signed(((mul_result & mask) << 2) & mask, bits) >> 9
                         lsl = (shifted_signed << ((args[2] & mask) % bits)) & mask
@@ -68,9 +70,27 @@ def run_commands(bits, kind="mixed"):
                         combined = (~((asr << 2) & mask) ^ unsigned) & mask
                         immediate = (((combined << (0x105 % bits)) & mask) ^ (args[3] & mask))
                         shift_result = signed(immediate >> (0x103 % bits), bits) >> 9
-                        if kind == "cast":
+                        if kind in ("cast", "bit"):
                             cast_result = signed(shift_result ^ (0xffffffff if (args[1] & 0x80000000) else 0), bits)
-                            cases.append(("stock_cast_ni", args, cast_result))
+                            if kind == "bit":
+                                negated = (-args[1]) & mask
+                                reversed_bits = int(f"{negated:0{bits}b}"[::-1], 2)
+                                swapped = int.from_bytes(reversed_bits.to_bytes(bits // 8, "little"), "big")
+                                def rol(value, amount):
+                                    amount %= bits
+                                    return ((value << amount) | (value >> ((bits - amount) % bits))) & mask
+                                def ror(value, amount):
+                                    return rol(value, -amount)
+                                rotated = ror(rol(swapped, args[2] & mask), args[1] & mask)
+                                immediate = ror(rol(rotated, 0x105), 0x103)
+                                leading = bits - (args[1] & mask).bit_length()
+                                x = args[2] & mask
+                                trailing = bits if x == 0 else (x & -x).bit_length() - 1
+                                bit_result = signed(immediate ^ leading ^ trailing ^ cast_result, bits)
+                                cases.append(("stock_bit_ni", args, bit_result))
+                                cases.append(("retained_cast", args, cast_result))
+                            else:
+                                cases.append(("stock_cast_ni", args, cast_result))
                             cases.append(("retained_shift", args, shift_result))
                         else:
                             cases.append(("stock_shift_ni", args, shift_result))
@@ -103,7 +123,7 @@ def run_commands(bits, kind="mixed"):
         cases.append(("retained_prologue", [value], value))
     for value in [0, -1, (1 << 31) - 1, -(1 << 31)]:
         cases.append(("retained_d0", [value], value))
-    if kind in ("scalar", "not", "mul", "shift", "cast"):
+    if kind in ("scalar", "not", "mul", "shift", "cast", "bit"):
         for a, b in [(0, 7), (-1, 9), ((1 << 63) - 1, 3)]:
             cases.append(("retained_legacy", [a, b], signed(a * b, 64)))
     else:
@@ -115,7 +135,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     parser.add_argument("--native-bin", type=Path, default=Path("rust/target/release/clif-native"))
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit"], default="mixed")
     options = parser.parse_args()
     root = options.artifacts.resolve()
     native = options.native_bin.resolve()
@@ -147,7 +167,9 @@ def main():
         names = {f["name"] for f in json.loads(table.read_text())["functions"]}
         wanted = {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
                   "retained_prologue", "retained_d0", "retained_legacy"}
-        if options.kind == "cast":
+        if options.kind == "bit":
+            wanted = (wanted - {"stock_mixed_ni"}) | {"stock_bit_ni", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
+        elif options.kind == "cast":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_cast_ni", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
         elif options.kind == "shift":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_shift_ni", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}

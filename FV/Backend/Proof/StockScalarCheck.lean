@@ -5,6 +5,7 @@ import FV.Backend.Proof.StockScalarBnotDomain
 import FV.Backend.Proof.StockScalarMulDomain
 import FV.Backend.Proof.StockScalarShiftDomain
 import FV.Backend.Proof.StockScalarCastDomain
+import FV.Backend.Proof.StockScalarBitDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -80,6 +81,25 @@ theorem castBodyEligible_sound {stm : Clif.Stmt} (checked : castBodyEligible stm
     · exact Or.inr (Or.inl ⟨_,_,_,rfl⟩)
     · exact Or.inr (Or.inr ⟨_,_,rfl⟩)
 
+/-- The original source classifier derives bit/rotate syntax; no selected root is a premise. -/
+theorem bitBodyEligible_sound {stm : Clif.Stmt} (checked : bitBodyEligible stm = true) :
+    Stock.Proof.BitBody.Family stm.inst := by
+  simp only [bitBodyEligible,Bool.or_eq_true] at checked
+  rcases checked with old | bit
+  · exact Or.inl (castBodyEligible_sound old)
+  · cases inst : stm.inst <;> simp only [bitEligible,inst] at bit
+    all_goals try contradiction
+    next op ty x =>
+      cases op <;> simp only [bitEligible] at bit
+      all_goals try contradiction
+      all_goals exact Or.inr (Or.inl ⟨_,_,_,by simp [Stock.Proof.BitBody.Unary],rfl⟩)
+    next op ty x y =>
+      cases op <;> simp only [bitEligible] at bit
+      all_goals try contradiction
+      all_goals first
+        | exact Or.inr (Or.inr ⟨true,_,_,_,rfl⟩)
+        | exact Or.inr (Or.inr ⟨false,_,_,_,rfl⟩)
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
@@ -91,10 +111,10 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     have sourceShape : ∃ xs, b.term = .ret xs := by
       cases term : b.term <;> simp_all
     obtain ⟨xs,ret⟩ := sourceShape
-    have families : ∀ stm ∈ b.body, Stock.Proof.CastBody.Family stm.inst := by
+    have families : ∀ stm ∈ b.body, Stock.Proof.BitBody.Family stm.inst := by
       intro stm member
       have supported := List.all_eq_true.mp body stm member
-      exact castBodyEligible_sound supported
+      exact bitBodyEligible_sound supported
     have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
       apply List.find?_eq_none.mpr
       intro p member
@@ -105,7 +125,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       intro any
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
-    exact domain_of_cast (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
+    exact domain_of_bit (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
   next => cases eligible
 
 

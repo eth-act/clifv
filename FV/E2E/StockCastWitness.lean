@@ -214,3 +214,9 @@ theorem compiled_semantic_exists (config : Configuration) (cleanup : Bool) :
   exact ⟨result,vcp,rf,af,fa,fb,.scalar domain rfl reads stage,stage,covered⟩
 
 end E2E.StockCastNIWitness
+
+namespace E2E.StockCastNIWitness
+/-- Reusable original syntax for subsequent scalar-family extensions. -/
+theorem source_family (config : Backend.Stock.D0.Configuration) :
+    ∀ stm ∈ (function config).blocks[0]!.body, Backend.Stock.Proof.CastBody.Family stm.inst := family config
+end E2E.StockCastNIWitness
