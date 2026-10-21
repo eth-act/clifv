@@ -1,4 +1,5 @@
 import FV.Opt.Proof.RuleBitopsEmbed
+import FV.Opt.Proof.KernelBV
 
 /-!
 # Template variants for `opts/icmp.isle` and `opts/selects.isle`
@@ -70,7 +71,7 @@ macro_rules
       all_goals opt_types))
 
 /-- `rule_bits_b` with the `Int` literals of the if-let conditions (`2 ^ w - 1` at a literal
-width) reduced before `bv_decide`. -/
+width) reduced before `kbv`. -/
 macro "rule_bits_c" : tactic => `(tactic| (
   try simp (disch := assumption) only [asU64_imm64OfBits, Int.natCast_eq_zero, Int.natCast_inj,
     toNat_eq_iff_ofNat, ofInt_imm64OfBits, bne_iff_ne, ne_eq, toNat_eq_zero_iff] at *
@@ -86,7 +87,7 @@ macro "rule_bits_c" : tactic => `(tactic| (
             ac_rfl)
          | (opt_cases_val <;> opt_cases_ty <;> opt_widths <;> sem_simp_b <;>
             (try simp only [Int.reducePow, Int.reduceSub, Int.reduceToNat, Nat.reducePow,
-              Nat.reduceSub] at *) <;> first | ac_rfl | bv_decide))))
+              Nat.reduceSub] at *) <;> first | ac_rfl | kbv))))
 
 set_option hygiene false in
 macro "rule_finish_c" : tactic => `(tactic| first
