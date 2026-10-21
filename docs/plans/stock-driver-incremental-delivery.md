@@ -624,3 +624,13 @@ checked-in target, normal input keys and permitted axiom review are the evidence
 This does not complete the syntax-derived logical body layer or production
 activation. Arithmetic remains the first actual landing; all original #140
 scope and preservation requirements remain active.
+
+
+`StockLogicalSourceExecution` now derives indexed body steps from the actual
+`Clif.step`/`Clif.runLoop`, including exact residual fuel, an empty body at the
+terminator and preserved caller/function/slot/terminator frame components.
+The syntax family retains add/sub/select and complete binary logical operations;
+no caller-supplied source-step sequence or execution certificate is introduced.
+A real two-step returned CLIF run supplies a nonempty witness. Normal validation
+is pending with the existing source/scan/body packet; arithmetic activation
+remains first priority.

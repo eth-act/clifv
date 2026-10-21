@@ -3,6 +3,7 @@ import FV.Backend.Proof.LowerSim
 import FV.Backend.Proof.StockLogicalCompleteValues
 import FV.Backend.Proof.StockLogicalScanRefines
 import FV.Backend.Proof.StockLogicalBodyRefines
+import FV.Backend.Proof.StockLogicalSourceExecution
 
 namespace Backend.Stock.Proof.LogicalSelected
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
@@ -395,5 +396,41 @@ theorem stock_lower_actual_logical_body_witness :
     rw [eventZero,eventState]
     exact ⟨rfl,restrictedDFG,rfl,guarded⟩
   exact ⟨pre,transfer s t steps (formRegs .registers) w pre⟩
+
+/-- A real returned CLIF run inhabits the complete source-execution bridge;
+its nonempty body, residual fuel and exact terminator state are derived. -/
+theorem stock_lower_logical_source_execution_witness :
+    ∃ (result : Result) (event : BlockScanEvent) (b : Clif.Block) (term : ScanRecord)
+      (body : BlockScan) (s : Clif.State) (vals : List Clif.Val) (cm : Clif.Mem),
+      Stock.lower (formFunction .registers) = .ok result ∧
+      event ∈ result.blockScans.toList ∧ SourceBodySplit (formFunction .registers) event b term body ∧
+      b.body.length = 1 ∧ (∀ stm ∈ b.body, LogicalBody.Family stm.inst) ∧ s.frame.body = b.body ∧
+      Clif.runLoop Clif.Env.empty {funcs := []} 2 s = .returned vals cm ∧
+      ∃ t left, left + b.body.length = 2 ∧
+        Clif.runLoop Clif.Env.empty {funcs := []} left t = .returned vals cm ∧ t.frame.body = [] ∧
+        SourceSteps (IndexedSourceInst Clif.Env.empty {funcs := []} (formFunction .registers) event.ctx event.block)
+          (List.range' (blockStart (formFunction .registers) event.block) b.body.length)
+          (0,s.frame,s.mem) (b.body.length,t.frame,t.mem) ∧ LogicalBody.SourceFrameEq s t := by
+  obtain ⟨input⟩ := stock_lower_logical_record_inputs_witness .registers
+  let b := (formFunction .registers).blocks[0]!
+  have blocks : (formFunction .registers).blocks = [b] := rfl
+  have family : ∀ stm ∈ b.body, LogicalBody.Family stm.inst := by
+    intro stm member
+    change stm ∈ [⟨[100],.binary .bor .i64 7 31⟩] at member
+    have eq := List.mem_singleton.mp member
+    subst stm
+    exact Or.inr (Or.inr ⟨.bor,.i64,7,31,rfl⟩)
+  obtain ⟨term,body,split,families⟩ := LogicalBody.actual_logical_families input.run
+    (formScope .registers) blocks family input.events
+  let s : Clif.State := ⟨rrFrame,[],Clif.Mem.empty⟩
+  let vals : List Clif.Val := [⟨.i64,7⟩]
+  have returned : Clif.runLoop Clif.Env.empty {funcs := []} 2 s = .returned vals Clif.Mem.empty := by
+    rfl
+  obtain ⟨t,left,total,ends,empty,steps,frame⟩ := LogicalBody.actual_logical_source_execution_frame
+    input.run input.events split family (j := 0) (by simp) (by rfl) returned
+  refine ⟨input.result,input.event,b,term,body,s,vals,Clif.Mem.empty,input.run,input.events,
+    split,rfl,family,rfl,returned,t,left,?_,ends,empty,?_,frame⟩
+  · simpa only [Nat.sub_zero] using total
+  · simpa only [Nat.add_zero,Nat.sub_zero] using steps
 
 end Backend.Stock.Proof.LogicalSelected
