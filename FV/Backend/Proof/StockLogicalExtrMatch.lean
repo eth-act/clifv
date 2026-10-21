@@ -40,7 +40,7 @@ private theorem word_source {p : Program} (hp : Data p) {f : Clif.Function} {ctx
   rw [data] at raw
   have name : (variantNames 151)[if left then 103 else 104]? =
       some (if left then "Ishl" else "Ushr") := by
-    cases left <;> first | exact variantNames_Ishl | exact variantNames_Ushr
+    cases left <;> decide +kernel
   have opcode : binaryOpcode (if left then .ishl else .ushr) =
       some (if left then "Ishl" else "Ushr") := by cases left <;> rfl
   obtain ⟨ty,x,count,rfl,_,rfl⟩ := instData_binary_inv name opcode raw

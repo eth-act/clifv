@@ -1,0 +1,110 @@
+{
+  "utc": "2026-10-21T03:54:19.537486+00:00",
+  "state": "normal_EXTR_core_passed_complete_witness_and_activation_gates_pending",
+  "upstream_main": "08020ed34bea4a3656c1b080c55087da40f2ebbe",
+  "source_parent_commit": "839104c4",
+  "validated_sources_sha256": {
+    "FV/Backend/Proof/StockLogicalExtrRhs.lean": "91f9522859f5eb3db77a19242c69fa84b258a7d289a67677b7b4718555cc6747",
+    "FV/Backend/Proof/StockLogicalExtrSemantics.lean": "3e65b36482eac7a0d34f1cbc797e55083bc62d84ce88dade17a492f900de819e",
+    "FV/Backend/Proof/StockLogicalExtrValues.lean": "a3d86a904a8da09baa539f66b3210ced72dcbf467c9c50a7930c93feb5d0963a",
+    "FV/Backend/Proof/StockLogicalExtrMatch.lean": "27485fa3e682a2d12f498e1030b8ae6149ec3f16df0959f48b27f2932ac986b2",
+    "FV/Backend/Proof/StockLogicalExtrMatchReceipt.lean": "05cac49967c83b600bc7651a79695a0c1c72585e8e88a68e04bd532993c58c9b",
+    "FV/Backend/Proof/StockLogicalExtrMatchedValues.lean": "a9bbf53657298d1e42e8997213b3e158fb4cc93f097269656eccb49938304e85",
+    "FV/Backend/Proof/StockLogicalExtrSelectedValues.lean": "5f2da2fe2a4e26359216963e89ced2a960a62aeb5d134d1a3272d8b3e59162ac",
+    "FV/Backend/Proof/StockLogicalExtrRecord.lean": "b0016c9bbfc6197b11d27ab0b49f6db424fb00dcbadaab8b9860b51f972e691b",
+    "FV/Backend/Proof/StockLogicalExtrSourceTransfer.lean": "a128579938a314fcc142e6c9b566e110e5736375e9df3a6ba46acedda5937110"
+  },
+  "module_evidence": {
+    "FV.Backend.Proof.StockLogicalExtrRhs": {
+      "log": "/tmp/stock-logical-core-priority-attempt3/modules/FV.Backend.Proof.StockLogicalExtrRhs.log",
+      "sha256": "3b6ca297ca273ecd58937b192070acb9a39944da0c16d4de1e634db203652618"
+    },
+    "FV.Backend.Proof.StockLogicalExtrSemantics": {
+      "log": "/tmp/stock-logical-core-priority-attempt3/modules/FV.Backend.Proof.StockLogicalExtrSemantics.log",
+      "sha256": "0e29c3665d804ce59c905f14207e21fc03dc4d0c5b84de8a1cceb53161d12a3f"
+    },
+    "FV.Backend.Proof.StockLogicalExtrValues": {
+      "log": "/tmp/stock-logical-core-priority-attempt3/modules/FV.Backend.Proof.StockLogicalExtrValues.log",
+      "sha256": "c32e096d47fdf1e231374af8a168112fd351a2f836639a41eed4605f42c05067"
+    },
+    "FV.Backend.Proof.StockLogicalExtrMatch": {
+      "log": "/tmp/stock-logical-core-priority-attempt3/modules/FV.Backend.Proof.StockLogicalExtrMatch.log",
+      "sha256": "21a4d74df4089826b03d34fd4ecc6ff297131e7b14467ea56d9ed25b08f05905"
+    },
+    "FV.Backend.Proof.StockLogicalExtrMatchReceipt": {
+      "log": "/tmp/stock-logical-core-priority-attempt3/modules/FV.Backend.Proof.StockLogicalExtrMatchReceipt.log",
+      "sha256": "7f5714b67987e2ae6419c6396842fe1872c152cc55dd334222172bf6f6faf424"
+    },
+    "FV.Backend.Proof.StockLogicalExtrMatchedValues": {
+      "log": "/tmp/stock-logical-core-priority-attempt3/modules/FV.Backend.Proof.StockLogicalExtrMatchedValues.log",
+      "sha256": "4121c275bb18e1ebd262ea6ffc164888531dec3a3f664cc7adc9a23418ec470d"
+    },
+    "FV.Backend.Proof.StockLogicalExtrSelectedValues": {
+      "log": "/tmp/stock-logical-core-priority-attempt3/modules/FV.Backend.Proof.StockLogicalExtrSelectedValues.log",
+      "sha256": "7f1b77fbf411e168b93048529465f7377aa0251ff596a8a163cbf4be048a6d8e"
+    },
+    "FV.Backend.Proof.StockLogicalExtrRecord": {
+      "log": "/tmp/stock-logical-record-source-priority/modules/FV.Backend.Proof.StockLogicalExtrRecord.log",
+      "sha256": "a3d9ebdbeecf146cad84cb8372f2d9b49bd49fd9e81935322756f08a0586d624"
+    },
+    "FV.Backend.Proof.StockLogicalExtrSourceTransfer": {
+      "log": "/tmp/stock-logical-record-source-priority/modules/FV.Backend.Proof.StockLogicalExtrSourceTransfer.log",
+      "sha256": "caee209fad85e76ffabe1f947470816633362d532e2a9f78599c2df34ff13aca"
+    }
+  },
+  "axiom_audit": {
+    "log": "/tmp/stock-extr-core-normal-audit/axioms.log",
+    "sha256": "40d8ec6ddd2ffc0f0a75bcdec880124c3b3970abd61448b1d042425b7b32d1e5",
+    "roots": {
+      "Backend.Stock.Proof.LogicalExtr.selected_root_values": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.record_values": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.available_values": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.source_operands": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.available_source": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.source_from_step": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ]
+    },
+    "all_six_general_roots_use_only_standard_three_axioms": true
+  },
+  "scope": "Actual first-match EXTR selection, retained-record/result binding, final aliases, fresh-write preservation and original availability-restricted source transfer, both mirrors. Width/count/lookthrough guards are derived; original theorem variants and accepted-input conditions are retained.",
+  "port_repair": "A saved opcode lookup referenced a lemma outside its current import closure. The closed lookup is now proved by kernel decide, without importing the entire legacy EXTR proof family.",
+  "dependency_repair": "EXTR and binary-logical source transfer import the common guarded-result and binary-evaluation helper owners directly, removing an unrelated add/sub/unary/multiply/shift dependency stack. The separate binary-logical source composition still awaits normal validation.",
+  "resource_policy": {
+    "aggregate_memory_GiB": 16,
+    "max_compiler_jobs": 2,
+    "new_worktrees_or_physical_caches": 0,
+    "actual_kernels_interrupted": 0
+  },
+  "remaining": [
+    "Complete actual six-ABI/mirror RootWitness normal validation",
+    "Validate complete eleven-root source dispatch and guarded mixed-body composition with their nonempty witnesses",
+    "One bundled MCP and owned/public/previous axiom parity audit",
+    "Finish current-model arithmetic production activation gates and land arithmetic first",
+    "Reconcile and land Mixed, then logical production consumers and every original140 family/effect/simulation/completeness obligation"
+  ],
+  "full_goal_complete": false,
+  "merge_ready": false
+}
