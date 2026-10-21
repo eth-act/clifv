@@ -24,11 +24,30 @@ percentages. No whole-backlog port or new worktree is needed. Canonical saved wo
 The superseded logical view was archived, its unique dirty recovery source pushed
 atfc1bb8e1, and the clean view removed. Four necessary views and one warm cache remain.
 
-Active constants packet on779bc7ba derives unique root53 selection and match/RHS
-receipts from actual retained records, reuses saved source transfer, and composes
-constant scans with the shipped logical/mixed record boundary. Old theorem headers
-and variants remain. Complete boundary witnesses and current normal/trust gates
-precede landing; body/entry/return/default consumer activation is still required.
+The constant selected-record/body prerequisite landed in #360 (22a05d3b), with
+all 2,659 normal keys, 45 trust audits, previous 1,322 axiom sets and both old scan
+headers preserved. Its complete source/csem/body witness is standard-only; evidence
+is backed remotely ataeaaf5e5. See the constant record/body research receipt.
+
+Active activation packet: constants through one reusable scalar production
+consumer. Shared pure source execution, actual record extraction, entry/return
+and no-trap composition replace duplicated logical implementations, retaining old
+statements. A universal internal Scalar.Domain is derived by fixed source-check
+soundness proofs, not supplied at runtime. Its consumers handle actual returns
+and traps without adding a new compiler/checker/linker stack for each scalar family.
+
+Multi-word constants exposed MOVK missing from the old ABI read boundary. Keep the
+old checks and cleanup whitelist; add a scalar read check and MOVK step proofs,
+sharing the existing upper ABI transport/realization/machine proof. The complete
+six-ABI/two-cleanup scalar pipeline witness now builds; final normal/trust/owned,
+strict allocator/native, actual CLI/link/generated, previous-class, identity and
+verified-example gates remain before claiming default activation.
+
+Artifact reconstruction must probe every retained complete lowering route against
+actual bytes and record its index. Preserve Scalar→Logical→Mixed→Arithmetic→legacy
+attempt ordering and original settings/input on retry. Routing data does not
+restrict the source theorem. Continue directly through NOT/fused and all remaining
+original obligations after this class lands.
 
 ## Maintained validation runner (landed #358)
 

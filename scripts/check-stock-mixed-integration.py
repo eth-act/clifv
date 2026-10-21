@@ -64,7 +64,7 @@ def proof_order(directory, prefix="Mixed"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar"], default="mixed")
     options = parser.parse_args()
     prefix = options.kind.capitalize()
     view = Path(__file__).resolve().parents[1]

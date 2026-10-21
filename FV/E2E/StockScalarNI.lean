@@ -1,4 +1,4 @@
-import FV.E2E.ABIReadFlags
+import FV.E2E.ABIReadScalar
 import FV.Backend.Proof.StockScalarCheck
 
 namespace E2E
@@ -12,7 +12,7 @@ second chosen virtual file or extra source-value assumption is needed. -/
 theorem backend_correct_world_niX_stock_scalar {p : Clif.Program} {f : Clif.Function} {k : Nat} {result : Stock.Result} {vcp : VCode}
     {rf : RFunc} {af : AFunc} {fa : FnAsm} {fb : FnBin}
     (domain : Stock.Scalar.Domain f) {cleanup : Bool}
-    (readOnly : E2E.MixedFlagBoundary.check f.sig result.code = true)
+    (readOnly : E2E.ScalarBoundary.check f.sig result.code = true)
     (hc : CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb)
     {X : ExtSem} {syms : String → Option Nat} {slotOff : Nat} {env : Clif.Env} {K : Nat}
     {F : BitVec 64 → Prop} {c : BitVec 64}
@@ -54,9 +54,9 @@ theorem backend_correct_world_niX_stock_scalar {p : Clif.Program} {f : Clif.Func
     cases callers
     rfl
   obtain ⟨ρ,source⟩ := domain.returns hc.lower hcs.stockSourceEntry
-    (by rwa [state]) (MixedFlagBoundary.refines F ⟨fa.k,af.slotBase⟩ X)
-    (MixedFlagBoundary.driver F ⟨fa.k,af.slotBase⟩ X)
-    (MixedFlagBoundary.memory F ⟨fa.k,af.slotBase⟩ X hslot hsym)
+    (by rwa [state]) (ScalarBoundary.refines F ⟨fa.k,af.slotBase⟩ X)
+    (ScalarBoundary.driver F ⟨fa.k,af.slotBase⟩ X)
+    (ScalarBoundary.memory F ⟨fa.k,af.slotBase⟩ X hslot hsym)
     (mrStable_relW ⟨F,syms,slotOff,(RAFrame.compute vcp rf).intBase⟩ f c) hrel hargs
   obtain ⟨us,outs,w,cm0,reached,pins,arity,values,memory,freed⟩ := source
   have site : result.code.RetsSite us := by
@@ -67,13 +67,13 @@ theorem backend_correct_world_niX_stock_scalar {p : Clif.Program} {f : Clif.Func
     exact memRel_leave (memRel_free memory.1.1 _)
   refine ⟨us,outs,w,pins.ordinary domain.ordinary,arity,values,mem,site,?_,?_⟩
   · intro H G base ra s he
-    exact MixedFlagBoundary.machine_return (f := f) hcs.sig readOnly hc.prepOk hc.check hc.alloc hc.emit hc.layout
+    exact ScalarBoundary.machine_return (f := f) hcs.sig readOnly hc.prepOk hc.check hc.alloc hc.emit hc.layout
       (fun _ h => h) hcov hargs (SameWorld.refl F w) reached H G base ra s he
   · intro D w₀' hrel' hsw hreg hstk H G base ra s he
     have arguments := ABIReadOnly.arguments_transport hargs hsw hreg hstk
     obtain ⟨otherWorld,other,relatedWorlds⟩ :=
-      MixedFlagBoundary.return_transport hcs.sig readOnly hsw hreg hstk reached
-    exact MixedFlagBoundary.machine_return (f := f) hcs.sig readOnly hc.prepOk hc.check hc.alloc hc.emit hc.layout
+      ScalarBoundary.return_transport hcs.sig readOnly hsw hreg hstk reached
+    exact ScalarBoundary.machine_return (f := f) hcs.sig readOnly hc.prepOk hc.check hc.alloc hc.emit hc.layout
       (fun _ h => Or.inl h) hcov arguments relatedWorlds.symm other H G base ra s he
 
 end E2E

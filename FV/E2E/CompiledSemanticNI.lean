@@ -30,7 +30,7 @@ inductive CompiledSemanticNI (f : Clif.Function) (k : Nat) (vc vcp : VCode)
       CompiledSemanticNI f k vc vcp rf af fa fb
 
   | scalar {cleanup : Bool} {result : Stock.Result} :
-      Stock.Scalar.Domain f → result.code = vc → ABIReadFlags.check f.sig vc = true →
+      Stock.Scalar.Domain f → result.code = vc → ABIReadScalar.check f.sig vc = true →
       CompiledStockArithmeticStage f cleanup k result vcp rf af fa fb →
       CompiledSemanticNI f k vc vcp rf af fa fb
 

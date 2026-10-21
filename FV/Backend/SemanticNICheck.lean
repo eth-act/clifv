@@ -4,6 +4,7 @@ import FV.Backend.StockMixedCheck
 import FV.Backend.StockLogicalCheck
 import FV.Backend.StockScalarCheck
 import FV.Backend.ABIReadFlags
+import FV.Backend.ABIReadScalar
 
 namespace Backend.SemanticNI
 set_option autoImplicit false
@@ -15,6 +16,6 @@ def check (f : Clif.Function) (vc : VCode) : Bool :=
     ((Stock.Arithmetic.check f vc && ABIReadOnly.check f.sig vc) ||
       (Stock.Mixed.check f vc && ABIReadFlags.check f.sig vc) ||
       (Stock.Logical.check f vc && ABIReadFlags.check f.sig vc) ||
-      (Stock.Scalar.check f vc && ABIReadFlags.check f.sig vc))
+      (Stock.Scalar.check f vc && ABIReadScalar.check f.sig vc))
 
 end Backend.SemanticNI

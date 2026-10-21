@@ -18,7 +18,7 @@ private def checks (config : Configuration) (cleanup : Bool) : Bool :=
   | .error _ => false
   | .ok result =>
     !lowerCheck (function config) result.code &&
-    MixedFlagBoundary.check (function config).sig result.code &&
+    ScalarBoundary.check (function config).sig result.code &&
     match Backend.prepare (Stock.Arithmetic.stage cleanup result.code) with
     | .error _ => false
     | .ok vcp =>
@@ -75,7 +75,7 @@ theorem compiled_exists (config : Configuration) (cleanup : Bool) :
     Stock.Scalar.Domain (function config) ∧
     ∃ result vcp rf af fa fb,
       CompiledStockArithmeticStage (function config) cleanup 0 result vcp rf af fa fb ∧
-      MixedFlagBoundary.check (function config).sig result.code = true ∧
+      ScalarBoundary.check (function config).sig result.code = true ∧
       leanAlloc vcp = .ok rf ∧ FormsCovered ⟨fa.k,af.slotBase⟩ vcp ∧
       lowerCheck (function config) result.code = false := by
   have h : checks config cleanup = true := by

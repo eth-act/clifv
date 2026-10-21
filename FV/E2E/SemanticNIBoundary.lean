@@ -90,6 +90,21 @@ theorem noTlsFlags {sig : Clif.Signature} {code : VCode}
   have supported := MixedFlagBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
   cases i <;> simp_all [Backend.ABIReadOnly.instruction,Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
 
+/-- MOVK adds no TLS read; the retained ABI checks keep their exclusions. -/
+theorem noTlsScalar {sig : Clif.Signature} {code : VCode}
+    (checked : Backend.ABIReadScalar.check sig code = true) : code.hasTls = false := by
+  rw [VCode.hasTls,Array.any_eq_false']
+  intro vb member
+  apply Bool.eq_false_iff.mp
+  apply Array.any_eq_false'.mpr
+  intro i member'
+  obtain ⟨b,hb⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member)
+  obtain ⟨k,hi⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member')
+  have supported := ScalarBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
+  cases i <;> simp_all [Backend.ABIReadScalar.instruction,Backend.ABIReadScalar.constant,
+    Backend.ABIReadFlags.instruction,Backend.ABIReadOnly.instruction,
+    Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
+
 end CompiledSemanticNI
 
 /-- The existing whole-program TLS contract also applies to paired semantic
@@ -133,7 +148,7 @@ theorem hasTls_of_vcode_semantic {f : Clif.Function} {k : Nat} {vc vcp : VCode}
     cases ht
 
   | @scalar cleanup result domain equal reads h =>
-    have raw := CompiledSemanticNI.noTlsFlags reads
+    have raw := CompiledSemanticNI.noTlsScalar reads
     have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
       rw [equal]
       cases cleanup with
