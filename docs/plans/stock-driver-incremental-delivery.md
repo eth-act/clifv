@@ -42,13 +42,20 @@ Default attempt order is Scalar→Logical→Mixed→Arithmetic→legacy. Actual 
 artifact reconstruction probes every route against bytes and records its index,
 on the original source/settings. Routing data does not restrict source theorems.
 
-Next: NOT/fused through the same scalar domain and consumers. Current-source drafts
-for all three NOT roots (base, shifted, NOT-of-XOR), original guarded source and
-scan/body/entry/return/no-trap proofs already compile and are backed in fe81690d.
-Integrate them as the next substantive packet, preserving the old constant
-classifier theorem and every old variant. No new consumer stack is needed.
-Continue all remaining original obligations after that class; fallback is not
-Stock completeness. The original full goal remains unfinished.
+The NOT extension is complete through the same scalar consumers, with all17
+primary command gates/eight ownership partitions, exact1378oldAXsets/3oldheaders,
+1176nativecomparisons, two32subcheckactualCLI/link/generatedcohorts and current
+fullcorpus/encoder/identity/stage/examples passing. Validatedfa5468f4 and terminal
+evidence are backed817b6526. See the NOT activation receipt. Old constant selectors
+and theorem variants stay. General roots include shifted NOT, while shift-bearing
+whole functions await the next shift source class.
+
+Next: multiplication and fused multiply using landed root/record proofs and
+current-source dispatch/guarded-transfer drafts already compiled and backed in
+817b6526. Continue through shifts/casts and every remaining original obligation.
+Use the same scalar contract and consumers; factor only duplication encountered,
+preserve old classifiers and source conditions. Fallback is not completeness.
+The original full goal remains unfinished.
 
 ## Maintained validation runner (landed #358)
 
