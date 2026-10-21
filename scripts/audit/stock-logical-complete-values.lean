@@ -6,3 +6,7 @@ import FV.Backend.Proof.StockLogicalSourceWitness
 #print axioms Backend.Stock.Proof.stock_lower_logical_scan_fall_refines
 #print axioms Backend.Stock.Proof.stock_lower_mixed_logical_body_fall_refines
 #print axioms Backend.Stock.Proof.LogicalSelected.stock_lower_logical_scan_body_witness
+
+#print axioms Backend.Stock.Proof.LogicalBody.actual_logical_families
+#print axioms Backend.Stock.Proof.LogicalBody.actual_logical_body_refines
+#print axioms Backend.Stock.Proof.LogicalSelected.stock_lower_actual_logical_body_witness

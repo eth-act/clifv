@@ -597,3 +597,12 @@ obligation remains: uncovered families/effects, original-source/block/whole-driv
 simulation and completeness, compiler/checker/linker/generated consumers, and
 exact prior input/identity/stage/axiom preservation. Partial receipts and the
 artifact-contract split do not complete that goal.
+
+
+The next body layer, `StockLogicalBodyRefines`, now derives complete record-family
+coverage, singleton results and actual register maps internally from source syntax
+and successful lowering. It composes actual select/add/sub/logical/omitted body
+records under the original indexed DFG, availability and memory/world relation.
+A nonempty actual-body/source-step witness covers the relation for every initial
+world. This implementation is pending normal validation with
+`StockLogicalSourceWitness`; it is not a function-level activation receipt.

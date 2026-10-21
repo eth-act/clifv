@@ -2,6 +2,7 @@ import FV.Backend.Proof.StockLogicalRecordWitness
 import FV.Backend.Proof.LowerSim
 import FV.Backend.Proof.StockLogicalCompleteValues
 import FV.Backend.Proof.StockLogicalScanRefines
+import FV.Backend.Proof.StockLogicalBodyRefines
 
 namespace Backend.Stock.Proof.LogicalSelected
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
@@ -281,5 +282,118 @@ theorem stock_lower_logical_scan_body_witness :
     ⟨rfl,restrictedDFG,rfl,guarded⟩
   exact ⟨pre,stock_lower_mixed_logical_body_fall_refines input.run (formScope .registers) rrDominated
     input.events scanned retained families self stable s t steps (formRegs .registers) w pre⟩
+
+private theorem rr_scan_length {exec : Nat → State → Except String Scan}
+    {indices : List Nat} {input : State} {output : BlockScan}
+    (cert : ScansSpec exec indices input output) : output.records.length = indices.length := by
+  induction cert with
+  | nil input => rfl
+  | cons head rest ih => simpa only [List.length_cons] using congrArg Nat.succ ih
+
+/-- The syntax-derived body theorem is inhabited by an actual nonempty whole
+Stock scan and source execution, with its guarded relation for every world. -/
+theorem stock_lower_actual_logical_body_witness :
+    ∃ (result : Result) (event : BlockScanEvent) (b : Clif.Block) (term : ScanRecord)
+      (body : BlockScan) (s t : SourcePoint),
+      Stock.lower (formFunction .registers) = .ok result ∧
+      event ∈ result.blockScans.toList ∧ (formFunction .registers).blocks = [b] ∧
+      (∀ stm ∈ b.body, LogicalBody.Family stm.inst) ∧
+      SourceBodySplit (formFunction .registers) event b term body ∧ body.records ≠ [] ∧
+      SourceSteps (IndexedSourceInst Clif.Env.empty {funcs := []} (formFunction .registers) event.ctx event.block)
+        ((List.range b.body.length).map (blockStart (formFunction .registers) event.block + ·)) s t ∧
+      ∀ w, GuardedScanRel (formFunction .registers) result event.ctx event.block
+        (fun _ cm _ => cm = Clif.Mem.empty) event.output.state s (formRegs .registers) w ∧
+        ∃ ρ' w', seqRun ispec (body.code.toList.map (·.mapRegs
+          (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) (formRegs .registers) w =
+            some (.fall ρ' w') ∧
+          GuardedScanRel (formFunction .registers) result event.ctx event.block
+            (fun _ cm _ => cm = Clif.Mem.empty) term.output.state t ρ' w' := by
+  obtain ⟨input⟩ := stock_lower_logical_record_inputs_witness .registers
+  let b := (formFunction .registers).blocks[0]!
+  have blocks : (formFunction .registers).blocks = [b] := rfl
+  have bodyLength : b.body.length = 1 := rfl
+  have family : ∀ stm ∈ b.body, LogicalBody.Family stm.inst := by
+    intro stm member
+    change stm ∈ [⟨[100],.binary .bor .i64 7 31⟩] at member
+    have eq := List.mem_singleton.mp member
+    subst stm
+    exact Or.inr (Or.inr ⟨.bor,.i64,7,31,rfl⟩)
+  have self : Refines (fun _ => True) ispec := fun _ _ _ _ w' _ h => ⟨w',h,SameWorld.refl _ _⟩
+  have stable : MRStable (fun _ => True) (fun _ cm _ => cm = Clif.Mem.empty) := fun _ _ _ _ _ h => h
+  obtain ⟨term,body,split,transfer⟩ := LogicalBody.actual_logical_body_refines input.run
+    (formScope .registers) rrDominated blocks family input.events self stable
+    (env := Clif.Env.empty) (cp := {funcs := []})
+  have eventZero : input.event.block = 0 := by
+    have bound := (List.getElem?_eq_some_iff.mp split.block).1
+    rw [blocks] at bound
+    simp only [List.length_singleton] at bound
+    omega
+  have current : input.record.inst = 0 := input.current
+  have termInst : term.inst = 1 := by
+    have h := split.termInst.trans split.termIndex
+    rw [eventZero,bodyLength] at h
+    exact h
+  have member : input.record ∈ body.records := by
+    have retained := input.records
+    rw [split.records] at retained
+    rcases List.mem_cons.mp retained with eq | member
+    · have same := congrArg (fun r : ScanRecord => r.inst) eq
+      rw [current,termInst] at same
+      omega
+    · exact member
+  have count : body.records.length = 1 := by
+    simpa only [sourceBodyIndices,List.length_reverse,List.length_map,List.length_range,bodyLength]
+      using rr_scan_length split.scanned
+  have singleton : body.records = [input.record] := by
+    cases recs : body.records with
+    | nil => simp [recs] at member
+    | cons r rest =>
+      have zero : rest.length = 0 := by rw [recs] at count; simp only [List.length_cons] at count; omega
+      have empty := List.length_eq_zero_iff.mp zero
+      rw [empty] at recs
+      have eq : input.record = r := List.mem_singleton.mp (by simpa only [recs] using member)
+      rw [← eq] at recs
+      exact recs
+  have chain := split.scanned.chain
+  rw [singleton] at chain
+  have state : body.state = input.record.output.state := chain.2
+  have eventState : input.event.output.state = input.record.output.state := split.state.symm.trans state
+  have nonempty : body.records ≠ [] := by rw [singleton]; simp
+  have restrictedDFG := dfgCons_congr (ctx := input.event.ctx) (fr := formFrame .registers)
+    (fr' := restrict rrFrame (availOf (formFunction .registers)
+      (availIn (formFunction .registers) input.result.ctx) 0 0)) rfl rfl (rrRestricted input.result.ctx) input.dfg
+  have guarded := input.held.mono (fun y (h : Demanded input.record.output.state y ∧ y ∈
+    availOf (formFunction .registers) (availIn (formFunction .registers) input.result.ctx) 0 0) => h.1)
+  let val : Clif.Val := ⟨Clif.Ty.i64,Clif.Sem.binary .bor (BitVec.ofNat 64 7) (BitVec.ofNat 64 5)⟩
+  let fr' : Clif.Frame := {rrFrame with regs := rrFrame.regs.set 100 val,body := []}
+  have evaluated : instOutcome Clif.Env.empty {funcs := []} rrFrame Clif.Mem.empty
+      (.binary .bor .i64 7 31) = .ok ([val],Clif.Mem.empty) := rfl
+  have sourceStep : SourceInstResult Clif.Env.empty {funcs := []} input.event.ctx 0
+      (rrFrame,Clif.Mem.empty) (fr',Clif.Mem.empty) := by
+    rw [← current]
+    exact ⟨input.info,.binary .bor .i64 7 31,[val],rrFrame.regs.set 100 val,[],
+      input.source,input.clif,by rw [input.results]; rfl,evaluated,by rw [input.results]; rfl,rfl⟩
+  let s : SourcePoint := (0,rrFrame,Clif.Mem.empty)
+  let t : SourcePoint := (1,fr',Clif.Mem.empty)
+  have indexed : IndexedSourceInst Clif.Env.empty {funcs := []} (formFunction .registers)
+      input.event.ctx input.event.block 0 s t := by
+    refine ⟨?_,rfl,sourceStep⟩
+    rw [eventZero]
+    rfl
+  have steps : SourceSteps (IndexedSourceInst Clif.Env.empty {funcs := []} (formFunction .registers)
+      input.event.ctx input.event.block)
+      ((List.range b.body.length).map (blockStart (formFunction .registers) input.event.block + ·)) s t := by
+    have indices : ((List.range b.body.length).map (blockStart (formFunction .registers) input.event.block + ·)) = [0] := by
+      rw [eventZero,bodyLength]
+      rfl
+    rw [indices]
+    exact .cons indexed (.nil t)
+  refine ⟨input.result,input.event,b,term,body,s,t,input.run,input.events,blocks,family,split,nonempty,steps,?_⟩
+  intro w
+  have pre : GuardedScanRel (formFunction .registers) input.result input.event.ctx input.event.block
+      (fun _ cm _ => cm = Clif.Mem.empty) input.event.output.state s (formRegs .registers) w := by
+    rw [eventZero,eventState]
+    exact ⟨rfl,restrictedDFG,rfl,guarded⟩
+  exact ⟨pre,transfer s t steps (formRegs .registers) w pre⟩
 
 end Backend.Stock.Proof.LogicalSelected
