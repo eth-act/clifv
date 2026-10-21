@@ -67,6 +67,18 @@ scalar ABI read boundary with proved step facts, retaining old checks/variants.
 Then complete casts and every remaining original obligation. Fallback is not
 Stock completeness. The full original140goal remains unfinished.
 
+Shift source checkpoint1f592ff0 is pushed on the active delivery branch. All14
+new proof modules build through Scalar.domain_of_shift: current eight-root
+dispatch, both fused bitfield original-source/count receipts, guarded request
+success, emitted instruction/fresh writes, actual retained binding, guarded
+source/body/entry-return composition and no-trap. Existing scalar ABI boundary
+now has compiled shift step facts; production check/selector and complete
+six-ABI/two-cleanup witnesses are under bounded author validation. This is a
+backup checkpoint, not an activation receipt or Stock-only completeness claim.
+Next: finish witness/runtime/native/CLI/link/retention/trust/parity gates, land
+this complete class, then casts and the unchanged remaining original140scope.
+
+
 ## Maintained validation runner (landed #358)
 
 Use scripts/stock-delivery-gates.py with plan/run/resume/report commands around

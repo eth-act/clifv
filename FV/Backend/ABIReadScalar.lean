@@ -9,8 +9,18 @@ def constant : MInst → Bool
   | .movK (.vreg _ .int) (.vreg _ .int) _ _ => true
   | _ => false
 
+/-- Shift and bitfield producers frame ABI reads without changing cleanup rules. -/
+def shiftOp : ALUOp → Bool
+  | .lsl | .lsr | .asr => true
+  | _ => false
+
+def shift : MInst → Bool
+  | .aluRRR op .. | .aluRRImmShift op .. => shiftOp op
+  | .bitfieldMove .. => true
+  | _ => false
+
 def instruction (sig : Clif.Signature) (b k : Nat) (i : MInst) : Bool :=
-  ABIReadFlags.instruction sig b k i || constant i
+  ABIReadFlags.instruction sig b k i || constant i || shift i
 
 def check (sig : Clif.Signature) (vc : VCode) : Bool :=
   vc.blocks.toList.zipIdx.all fun (block,b) =>
