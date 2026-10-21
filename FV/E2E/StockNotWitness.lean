@@ -81,6 +81,10 @@ private theorem family (config : Configuration) :
   · exact .inr ⟨ty,24,rfl⟩
   · exact .inr ⟨ty,1,rfl⟩
 
+/-- Reuse the fixed original source family when extending complete witnesses. -/
+theorem source_family (config : Configuration) :
+    ∀ stm ∈ (function config).blocks[0]!.body, Stock.Proof.BnotBody.Family stm.inst := family config
+
 /-- Actual checked/allocated/emitted artifacts inhabit the complete mixed
 semantic domain in every ABI and cleanup mode, beyond the legacy checker. -/
 theorem compiled_exists (config : Configuration) (cleanup : Bool) :

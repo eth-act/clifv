@@ -57,6 +57,29 @@ def MixedBnotOrOmittedRecord (f : Clif.Function) (ctx : Ctx) (bi : Nat) (r : Sca
           ctx.insts[r.inst]? = some info ∧ info.clif = some (.unary .bnot ty x) ∧
           info.results = [z] ∧ stm.results = [z] ∧ ctx.valueReg? z = some (.vreg a .int)
 
+/-- Reusable source-record dispatch for the complete shipped NOT/constant family. -/
+theorem stock_lower_mixed_bnot_record_fall_refines {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {bi : Nat} {record : ScanRecord} (records : record ∈ event.output.records)
+    (family : MixedBnotOrOmittedRecord f event.ctx bi record)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {MR : MemRelT} (stable : MRStable F MR)
+    {env : Clif.Env} {cp : Clif.Program} :
+    ScanFallRefines (IndexedSourceInst env cp f event.ctx bi) isem result.final.alias
+      (GuardedScanRel f result event.ctx bi MR) record := by
+  rcases family with (old | constant) | bnot
+  · exact stock_lower_mixed_logical_record_fall_refines run scope dominated events
+      records old refines stable
+  · obtain ⟨j,b,stm,block,statement,current,step,recorded,emitted,info,ty,imm,x,a,
+      source,clif,results,statementResults,mapped⟩ := constant
+    exact stock_lower_constant_scan_fall_refines run scope dominated events records
+      block statement current source clif results statementResults mapped recorded emitted refines driver stable
+  · obtain ⟨j,b,stm,block,statement,current,step,recorded,emitted,info,ty,x,z,a,
+      source,clif,results,statementResults,mapped⟩ := bnot
+    exact stock_lower_bnot_scan_fall_refines run scope dominated events records
+      block statement current source clif results statementResults mapped recorded emitted refines stable
+
 theorem stock_lower_mixed_bnot_body_fall_refines {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
@@ -75,15 +98,7 @@ theorem stock_lower_mixed_bnot_body_fall_refines {f : Clif.Function} {result : R
           some (.fall ρ' w') ∧ GuardedScanRel f result event.ctx bi MR input s' ρ' w' := by
   apply scanned.fall_refines
   intro record member
-  rcases families record member with (old | constant) | bnot
-  · exact stock_lower_mixed_logical_record_fall_refines run scope dominated events
-      (retained record member) old refines stable
-  · obtain ⟨j,b,stm,block,statement,current,step,recorded,emitted,info,ty,imm,x,a,
-      source,clif,results,statementResults,mapped⟩ := constant
-    exact stock_lower_constant_scan_fall_refines run scope dominated events (retained record member)
-      block statement current source clif results statementResults mapped recorded emitted refines driver stable
-  · obtain ⟨j,b,stm,block,statement,current,step,recorded,emitted,info,ty,x,z,a,
-      source,clif,results,statementResults,mapped⟩ := bnot
-    exact stock_lower_bnot_scan_fall_refines run scope dominated events (retained record member)
-      block statement current source clif results statementResults mapped recorded emitted refines stable
+  exact stock_lower_mixed_bnot_record_fall_refines run scope dominated events
+    (retained record member) (families record member) refines driver stable
+
 end Backend.Stock.Proof

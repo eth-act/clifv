@@ -20,9 +20,17 @@ def notEligible (stm : Clif.Stmt) : Bool :=
 
 def extendedBodyEligible (stm : Clif.Stmt) : Bool := bodyEligible stm || notEligible stm
 
+/-- Multiplication extends the source family; all earlier classifiers stay fixed. -/
+def mulEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .binary .imul ty _ _ => ty == .i32 || ty == .i64
+  | _ => false
+
+def mulBodyEligible (stm : Clif.Stmt) : Bool := extendedBodyEligible stm || mulEligible stm
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all extendedBodyEligible &&
+  | [b] => b.body.all mulBodyEligible &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
