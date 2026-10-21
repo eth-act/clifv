@@ -634,3 +634,16 @@ no caller-supplied source-step sequence or execution certificate is introduced.
 A real two-step returned CLIF run supplies a nonempty witness. Normal validation
 is pending with the existing source/scan/body packet; arithmetic activation
 remains first priority.
+
+
+`StockLogicalReturnRefines` now composes the actual logical/mixed source run,
+body refinement, retained return record, ABI entry prelude and actual machine-PC
+placement into a complete entry-to-return simulation. Both executable-entry and
+source-frame variants are retained alongside the unchanged Mixed/Arithmetic
+variants. `StockLogicalReturnWitness` uses a real nonempty sparse-ID OR body with
+two independent arbitrary words, an actual `enterFunc`/returned reference run,
+ABI arguments and machine execution from PC `(0,0)`. This new composition and
+its witness are implementation pending normal validation, not a proof or
+activation pass. The audit list includes all five general roots and the witness.
+Validate with the pending logical source/body packet after the frozen arithmetic
+author gates; do not hold the first arithmetic landing for this next class.
