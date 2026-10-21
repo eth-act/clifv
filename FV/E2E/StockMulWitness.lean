@@ -146,11 +146,19 @@ theorem source_returns (config : Configuration) (input : Nat → BitVec (valueTy
 end E2E.StockMulNIWitness
 
 namespace E2E.StockMulNIWitness
+/-- Actual retained root IDs, including ordinary and fused multiplication. -/
+def selectedRoots (result : Backend.Stock.Result) : List Nat :=
+  result.blockScans.toList.flatMap fun event =>
+    event.output.records.filterMap fun record => record.output.step.bind fun step => step.rules.getLast?
+
+def multiplyRootsCovered (result : Backend.Stock.Result) : Bool :=
+  [759,597,598,599].all (selectedRoots result).contains
+
 private def classChecks (config : Backend.Stock.D0.Configuration) : Bool :=
   Backend.Stock.Scalar.sourceOk (function config) &&
   match Backend.Stock.lower (function config) with
   | .error _ => false
-  | .ok result => Backend.Stock.Scalar.check (function config) result.code
+  | .ok result => Backend.Stock.Scalar.check (function config) result.code && multiplyRootsCovered result
 
 -- witness: native_decide (six fixed actual source/provenance checks only)
 theorem source_checks_true : Backend.Stock.D0.configurations.all classChecks = true := by native_decide
@@ -167,7 +175,27 @@ theorem classifier_accepts (config : Backend.Stock.D0.Configuration) :
   obtain ⟨source,h⟩ := h
   cases lowered : Backend.Stock.lower (function config) with
   | error message => simp [lowered] at h
-  | ok result => exact ⟨result,rfl,source,by simpa only [lowered] using h⟩
+  | ok result =>
+    have both : Backend.Stock.Scalar.check (function config) result.code = true ∧
+        multiplyRootsCovered result = true := by simpa only [lowered,Bool.and_eq_true] using h
+    exact ⟨result,rfl,source,both.1⟩
+
+/-- Every ABI selects the ordinary root and both multiply-add mirrors plus multiply-subtract. -/
+theorem selected_roots_present (config : Backend.Stock.D0.Configuration) :
+    ∃ result, Backend.Stock.lower (function config) = .ok result ∧
+      ∀ id ∈ [759,597,598,599], id ∈ selectedRoots result := by
+  have h := List.all_eq_true.mp source_checks_true config
+    (by cases config <;> simp [Backend.Stock.D0.configurations])
+  simp only [classChecks,Bool.and_eq_true] at h
+  obtain ⟨source,h⟩ := h
+  cases lowered : Backend.Stock.lower (function config) with
+  | error message => simp [lowered] at h
+  | ok result =>
+    have both : Backend.Stock.Scalar.check (function config) result.code = true ∧
+        multiplyRootsCovered result = true := by simpa only [lowered,Bool.and_eq_true] using h
+    refine ⟨result,rfl,?_⟩
+    intro id member
+    exact List.contains_iff_mem.mp (List.all_eq_true.mp both.2 id member)
 end E2E.StockMulNIWitness
 
 namespace E2E.StockMulNIWitness

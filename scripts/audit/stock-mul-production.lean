@@ -29,5 +29,6 @@ import FV.Backend.Proof.StockMulDispatch
 #print axioms E2E.StockMulNIWitness.compiled_exists -- witness: native_decide
 #print axioms E2E.StockMulNIWitness.classifier_accepts -- witness: native_decide
 #print axioms E2E.StockMulNIWitness.compiled_semantic_exists -- witness: native_decide
+#print axioms E2E.StockMulNIWitness.selected_roots_present -- witness: native_decide
 #print axioms E2E.StockMulNIWitness.source_entry
 #print axioms E2E.StockMulNIWitness.source_returns
