@@ -98,15 +98,19 @@ def isReg1 : Option AW → Bool
 theorem eq_of_isReg1 : ∀ {o : Option AW}, isReg1 o = true → o = some (.reg 1)
   | some (.reg 1), _ => rfl
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem tab_556 : isReg1 (if [AW.c0].any AW.isBot then some .bot else
     match aOracleS 556 [AW.c0] with
     | some a => some a
-    | none => tabGet shpTab 556 [AW.c0]) = true := by native_decide
+    | none => tabGet shpTab 556 [AW.c0]) = true := by decide +kernel
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem tab_553 : isReg1 (if [AW.ty [.int 64], .data 122 1 [], .c0].any AW.isBot then some .bot else
     match aOracleS 553 [AW.ty [.int 64], .data 122 1 [], .c0] with
     | some a => some a
-    | none => tabGet shpTab 553 [AW.ty [.int 64], .data 122 1 [], .c0]) = true := by native_decide
+    | none => tabGet shpTab 553 [AW.ty [.int 64], .data 122 1 [], .c0]) = true := by decide +kernel
 
 /-- The table's sub-runs of `br_table` (`put_in_reg_zext32`, `imm`). -/
 theorem brSub (hctx : CtxInv f ctx) (hcl : Cov.Clean ctx) (N : Nat) : BrSub f ctx N :=
@@ -129,17 +133,25 @@ theorem hand_model {ctx : Ctx} {N : Nat} {vs : List V} {rl : Rule} (h : HandOk c
 
 /-! ## Rule-data facts -/
 
-theorem lower_len : 1002 + (program.rulesOf T.lower.id).length ≤ 999999 := by native_decide
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+theorem lower_len : 1002 + (program.rulesOf T.lower.id).length ≤ 999999 := by decide +kernel
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem lower_branch_len : 1002 + (program.rulesOf T.lower_branch.id).length ≤ 999999 := by
-  native_decide
+  decide +kernel
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem lower_hand_ids : (program.rulesOf TId.lower).all (fun r => !shpHandIds.contains r.id ||
-    r.id == 1031 || r.id == 1032 || r.id == 1033) = true := by native_decide
+    r.id == 1031 || r.id == 1032 || r.id == 1033) = true := by decide +kernel
 
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
 theorem branch_hand_ids : (program.rulesOf TId.lower_branch).all (fun r => !shpHandIds.contains r.id ||
     ((r.id == 1034 || r.id == 1035 || r.id == 1036) && !closureRoot r) || r.id == 1140) = true := by
-  native_decide
+  decide +kernel
 
 /-! ## The driver's calls -/
 
