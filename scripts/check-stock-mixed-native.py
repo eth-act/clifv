@@ -120,7 +120,9 @@ def main():
         names = {f["name"] for f in json.loads(table.read_text())["functions"]}
         wanted = {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
                   "retained_prologue", "retained_d0", "retained_legacy"}
-        if options.kind == "scalar":
+        if options.kind == "not":
+            wanted = (wanted - {"stock_mixed_ni"}) | {"stock_not_ni", "retained_constant", "retained_logical", "retained_mixed"}
+        elif options.kind == "scalar":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_scalar_ni", "retained_logical", "retained_mixed"}
         elif options.kind == "logical":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_logical_ni", "retained_mixed"}
