@@ -4,6 +4,57 @@ Current execution plan, refreshed 2026-10-19; replaces the wholesale-cutover ord
 [test-binary-alignment-recovery.md](test-binary-alignment-recovery.md). Historical
 proof checkpoints remain evidence, not a queue of instructions to resume.
 
+## Active raw arithmetic delivery packet (2026-10-20)
+
+Arithmetic activation packet (2026-10-21): complete author gates and fresh-main
+review pass on5a3b822e. This delivery activates actual raw Stock arithmetic through
+default compiler/checker/linker/generated-proof consumers, with legacy fallback.
+All2590modules, required trust/runtime/identity/encoder/actualCLI/linked-generated/
+verified-example gates pass. The initializer panic is resolved by executable
+import separation, preserving compiler bodies and theorem/proof text. The
+retained fixture now separately tests shared-byte reconstruction and explicit
+nonempty retained callbacks. [Terminal evidence and next obligations](../research/stock-arithmetic-production-activation.md).
+Next reconcile saved Mixed and logical complete classes onto the actual squash;
+continue all original #140 obligations, not proof fragments or a wholesale swap.
+
+The arithmetic runtime gate must require real accepted regalloc2 oracle answers,
+validate allocation/lowering/emission, and compare all five allocated-function
+fields with production's result. The ordinary allocator wrapper can silently
+fall back, so its label alone is insufficient. Test repair `28edb796` retains all
+original configuration, retry and history assertions and adds a missing-binary
+negative control. Run it against the exact arithmetic candidate before landing,
+include that test repair in the arithmetic packet, and normal-build the affected
+test module. Keep the currently running frozen author gate intact; its other
+required gates and the stronger runtime receipt are both mandatory.
+
+The cold author rebuild exposed a pre-existing 23,645 MiB comparison-helper proof.
+Its exact-statement replacement now uses small opaque matching/evaluation steps:
+normal module build371jobs passes (leaf1.8s), standalone peak2.1GiB, all69owned
+constants standard-only. The public header and its three-axiom set are retained.
+The original failed16GiB run was closed after active children finished, preserving
+364successful module records/cache; resume pending/affected gates rather than
+restarting completed work. [Resource-repair evidence](../research/stock-cmp-resource-repair.json).
+This is a prerequisite repair within the complete activation packet; it is not
+main activation or full-goal completion.
+
+Published prerequisite checkpoint `79df6b4a` on
+`agent/stock-arithmetic-production-adapters` supplies raw-Stock non-interference
+and whole-program/stack/binary/real-executable/original-source/peak consumers.
+All12 ABI/cleanup compiler witnesses pass with a used ninth stack argument,
+unused parameters and an explicit slot. Arbitrary-value source execution and
+1,279 standard-only owned core constants pass. See
+[the consumer checkpoint](../research/stock-arithmetic-ni-checkpoint.md).
+
+The active implementation switches actual compiler, checker, linker and generated
+proof defaults to the paired semantic path, preserving all prior class routes,
+settings guards and transactional fallback. Consumer reconstruction also handles
+retained artifacts in mixed executables. Current work is mixed runtime/allocation
+retry, actual linked/generated-proof validation and full author gates; do not
+land or claim activation from prerequisite builds alone. No original theorem
+variant/input/axiom/identity/stage requirement is relaxed. All original #140
+family/effect, omitted/sunk, simulation, Stock-only completeness, optimizer/unwind
+and whole-production obligations remain active after this class landing.
+
 ## Landed checkpoint and active implementation (2026-10-19)
 
 #328 squash-merged as `6a1f7d518f76bedc8219204bde40cfa41be876cd`.
@@ -467,3 +518,16 @@ through every consumer. The raw semantic witness does not establish Stock-only
 completeness or discharge any remaining original rule/effect/CFG obligation.
 
 Direct semantic-consumer author gates passed on `823ecbb19e6a1e7ec2708afbdfe7612e91fa5b76`: 21 affected modules scheduled with exact source/import-closure reuse, full FV/FVTest/checker tools (3052 jobs), all 34 audit files, 224 standard-only core constants and 30 witness constants with one explicitly marked fixed native fact. All 1144 prior public axiom sets are retained exactly (1181 current roots); 18 prior public theorem headers are unchanged. Both E2E modes retain all 1,150 original and 1,159 prior identities and ordered stages, with 1,159 accepted/0 rejected, and real verified fv-demo link checks pass. [Terminal author receipt](../research/stock-arithmetic-semantic-author-gates.json). Reconciled main #344 concurrency proof additions; all 1,171 pre-reconcile public axiom sets are also preserved exactly. Next world/trace and cleanup adapters plus actual runtime/checker/linker/generated-proof integration before new activation; all original #140 obligations remain active.
+
+## Next mixed class: implementation prepared, validation pending (2026-10-20)
+
+`agent/stock-mixed-production` prepares complete select/add/sub production adapters
+while the arithmetic delivery source stays frozen for its author gates. The
+verified prototype has full source-machine NI, executable classifier soundness,
+all six source/output acceptance checks and twelve full pipeline configurations;
+the new module split and actual default adapters still require normal gates.
+See [the mixed checkpoint](../research/stock-mixed-production-checkpoint.md).
+Land arithmetic first. Preserve prior semantic/compiler retries, accepted
+identities/stages and exact old axiom sets; do not merge this class from prototype
+proof evidence alone. Cleanup owns the additional source-only checkout and the
+old clean delivery checkout after its evidence is archived.

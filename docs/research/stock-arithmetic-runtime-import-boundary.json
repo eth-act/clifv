@@ -1,0 +1,51 @@
+{
+  "utc": "2026-10-21T14:16:23.197667+00:00",
+  "state": "source_preservation_and_normal_native_cli_validation_passed",
+  "parent": "c2449401454c4b5e000b13074a8aec6149732694",
+  "failure": "Native link-check prints initialization index panic through proof-only StockBlockScan private fixture imports; gate rejects despite exit0.",
+  "repair": "Separate executable definitions from correctness imports; retain old namespaces, definition bodies, emitted proof text, theorem statements and proof bodies.",
+  "definition_text_sha256": "c1534312ed6f70250b9c91bdbc4c173079430346e7f34fca44ef4b6ee8b74b94",
+  "theorem_suffix_sha256": "6baf6ec107804058a4faee9b522a834ab25d33c2ee0980af8e4b5f2a894c164c",
+  "old_failed_run": "/tmp/stock-arithmetic-spill-repaired-author-gates",
+  "source_closure": {
+    "utc": "2026-10-21T14:15:43.428960+00:00",
+    "changed": [
+      "FV/E2E/SemanticPipelineCheck.lean",
+      "FV/E2E/SemanticPreparedPipeline.lean",
+      "FV/Link/SemanticCompileDefs.lean",
+      "FV/Link/SemanticCompileWith.lean",
+      "FVTest/E2E/SemanticLinkProofWith.lean",
+      "FVTest/Link/LeanLinkMain.lean"
+    ],
+    "affected": [
+      "FV.E2E.SemanticBinary",
+      "FV.E2E.SemanticBinaryGood",
+      "FV.E2E.SemanticChecksWith",
+      "FV.E2E.SemanticCompilerWitness",
+      "FV.E2E.SemanticExecBytes",
+      "FV.E2E.SemanticExecFrameSim",
+      "FV.E2E.SemanticExecGoodReads",
+      "FV.E2E.SemanticExecGoodRun",
+      "FV.E2E.SemanticExecGot",
+      "FV.E2E.SemanticExecProven",
+      "FV.E2E.SemanticExecRunN",
+      "FV.E2E.SemanticExecStatic",
+      "FV.E2E.SemanticPipelineCheck",
+      "FV.E2E.SemanticPreparedPipeline",
+      "FV.E2E.SemanticStackBound",
+      "FV.Link.SemanticCompileDefs",
+      "FV.Link.SemanticCompileWith",
+      "FV.Link.SemanticExeSourceWith",
+      "FV.Link.SemanticExeWith",
+      "FVTest.Backend.Lowering.StockArithmeticLinked",
+      "FVTest.E2E.LinkCheckMain",
+      "FVTest.E2E.SemanticLinkProofWith",
+      "FVTest.Link.LeanLinkMain"
+    ],
+    "affected_count": 23,
+    "unchanged_count": 2567,
+    "graph_is_conservative": true,
+    "generated_import_strings_can_overapproximate_edges": true
+  },
+  "normal_build_and_cli_validation": "Passed; see stock-arithmetic-production-activation.json. Explicit caller dependencies e8f4632b and retained fixture5a3b822e included."
+}
