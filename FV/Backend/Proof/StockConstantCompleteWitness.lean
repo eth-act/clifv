@@ -63,18 +63,22 @@ theorem complete_boundary_witness (X : ExtSem) :
   obtain ⟨f,result,event,record,b,info,step,oldFrame,oldPost,oldRegs,
     run,scope,dominated,events,records,block,statement,current,source,clif,results,mapped,
     recorded,emitted,oldSource,oldHeld⟩ := stock_lower_constant_record_boundary_witness
-  let fr : Clif.Frame := {func := f,regs := fun _ => none,slots := [],
-    body := [⟨[2],.iconst .i8 9⟩],term := b.term}
+  let fr : Clif.Frame := {
+    func := f
+    regs := fun _ => none
+    slots := []
+    body := [⟨[2],.iconst .i8 9⟩]
+    term := b.term }
   let fr' : Clif.Frame := {fr with regs := fr.regs.set 2 (.ofInt .i8 9),body := []}
   have sourceStep : SourceInstResult Clif.Env.empty {funcs := []} event.ctx record.inst
       (fr,Clif.Mem.empty) (fr',Clif.Mem.empty) :=
     ⟨info,.iconst .i8 9,[.ofInt .i8 9],fr.regs.set 2 (.ofInt .i8 9),[],source,clif,
-      by rw [results]; rfl,rfl,by rw [results]; rfl,rfl⟩
+      by rw [results],rfl,by rw [results]; rfl,rfl⟩
   have dfg : DFGCons event.ctx (restrict fr (availOf f (availIn f result.ctx) 0 0)) := by
     constructor
     · intro x j inf inst v defined found original pure lookup
       simp [restrict,fr] at lookup
-    · intro x v lookup
+    · intro x ty v typed lookup
       simp [restrict,fr] at lookup
   have held : ValuesHeld (fun y => Demanded record.output.state y ∧
       y ∈ availOf f (availIn f result.ctx) 0 0) event.ctx fr
