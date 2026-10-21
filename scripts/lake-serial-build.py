@@ -246,8 +246,10 @@ def main():
         env = dict(os.environ, FV_MEMCAP=f"{c // 2 ** 20}M",
                    LEAN_NUM_THREADS=os.environ.get("LEAN_NUM_THREADS", "2"))
         f = open(out / f"{m}.log", "w")
-        p = subprocess.Popen(["/usr/bin/time", "-v", "-o", str(out / f"{m}.time"),
-                              str(root / "scripts/memcap.sh"), "lake", "build", m],
+        timing = (["/usr/bin/time", "-v", "-o", str(out / f"{m}.time")]
+                  if pathlib.Path("/usr/bin/time").is_file() else
+                  [sys.executable, str(root / "scripts/lake-time.py"), str(out / f"{m}.time")])
+        p = subprocess.Popen([*timing, str(root / "scripts/memcap.sh"), "lake", "build", m],
                              cwd=root, env=env, stdout=f, stderr=subprocess.STDOUT)
         running[m] = (p, time.time(), c)
         say(f"start {m} cap={gib(c)} running={len(running)} "

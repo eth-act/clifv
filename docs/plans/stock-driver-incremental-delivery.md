@@ -9,21 +9,24 @@ required axioms/accepted identities/successful stages.
 
 ## Starting point and next deliveries
 
-Arithmetic shipped in #356, squash 95b87108. Complete single-block i32/i64
-add/sub/select activation is validated at d7f93237 with 39author gates; see
-[activation evidence](../research/stock-mixed-production-activation.md).
-Source comparisons are not part of that class. Land this ready packet before
-adding tooling or another class. Check current main; reconcile/rerun only gates
-whose dependencies changed. Record the actual squash and notify #140/#261.
+Arithmetic shipped in #356 (95b87108); complete add/sub/select activation shipped
+in #357 (ba08bcaf); the bounded maintained runner shipped in #358 (40333cb4).
+The complete AND/OR/XOR extension is validated at 0d9f54fe and ready for author
+squash. [Logical activation evidence](../research/stock-logical-production-activation.md)
+records current normal/trust/runtime/native/CLI/retention/identity/example gates,
+exact original axiom/header parity and actual provenance. Land it before another
+family expansion; record the actual squash in #44/#140/#261.
 
-Next deliver exactly one bounded validation repair, then saved logical production
-support. Use existing views/cache and preserve canonical driver-proof-resume,
-stock-lowering and logical dirty work. Historical successes count only at their
-real source/dependency provenance, never as unverified current-main passes.
+Next: remaining pure scalar classes, starting with constants and NOT/fused logical
+forms, using saved guarded bridges and existing body/consumer composition. Read
+[the obligation ledger](../research/stock-driver-obligations.json); historical root
+inventories require current-source/scope reconciliation and are not coverage
+percentages. No whole-backlog port or new worktree is needed. Preserve canonical
+saved work and archive the superseded logical view before cleanup.
 
-## Bounded validation repair
+## Maintained validation runner (landed #358)
 
-Add scripts/stock-delivery-gates.py with plan/run/resume/report commands around
+Use scripts/stock-delivery-gates.py with plan/run/resume/report commands around
 existing build/audit/runtime/integration/native/example scripts. No replacement
 scheduler, compiler redesign or workflow platform. Manifest records base and
 candidate, module/consumer changes, explicit gates and complete declared input
@@ -40,11 +43,11 @@ Further tooling only fixes concrete delivery blockers.
 
 ## Dependency-ordered proof and production work
 
-Reconcile saved logical work onto the actual Mixed squash. Reuse arithmetic/
-select composition; finish AND/OR/XOR actual selection, retained binding,
-availability-guarded source transfer, arbitrary-value body/entry/return/world-NI
-proofs, classifier soundness, witnesses and all default consumers/fallback.
-Extend existing parametric adapters; retain old interfaces as wrappers.
+The reconciled logical packet supplies arithmetic/select/logical composition,
+retained binding, guarded source transfer, arbitrary-value body/entry/return and
+world-NI proofs, classifier soundness and actual default consumers. Continue the
+following sequence through the full goal, extending shared proofs and existing
+parametric consumers; retain old interfaces and theorem variants.
 
 Maintain one obligation ledger over current actual rules/helpers/terminators/
 traversal/consumers, each linked to its proof or scope-exclusion theorem,

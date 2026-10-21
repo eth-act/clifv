@@ -19,25 +19,25 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def expected_roots():
+def expected_roots(prefix="Mixed"):
     roots = set()
     for mode in ("Plain", "Cleanup"):
         for policy in ("Strict", "Fallback"):
-            roots.add(f"StockMixed6{mode}{policy}Global")
-        roots.add(f"StockMixed2{mode}FallbackGlobal")
-        roots.add(f"StockMixed6Mixed{mode}FallbackGlobal")
-        roots.add(f"StockMixed2Retained{mode}FallbackGlobal")
-    roots.update(("StockMixed33CleanupFallbackGlobal", "StockMixed33CleanupFallbackEntries"))
+            roots.add(f"Stock{prefix}6{mode}{policy}Global")
+        roots.add(f"Stock{prefix}2{mode}FallbackGlobal")
+        roots.add(f"Stock{prefix}6Mixed{mode}FallbackGlobal")
+        roots.add(f"Stock{prefix}2Retained{mode}FallbackGlobal")
+    roots.update((f"Stock{prefix}33CleanupFallbackGlobal", f"Stock{prefix}33CleanupFallbackEntries"))
     return roots
 
 
-def proof_order(directory):
+def proof_order(directory, prefix="Mixed"):
     """Use actual local imports, including Input and per-entry proof slices."""
     files = {".".join(p.relative_to(directory).with_suffix("").parts): p
              for p in (directory / "Crates").rglob("*.lean")}
     roots = {p.stem for p in (directory / "Crates").glob("*.lean")}
-    if roots != expected_roots():
-        raise RuntimeError(f"unexpected generated roots: missing={expected_roots()-roots}, extra={roots-expected_roots()}")
+    if roots != expected_roots(prefix):
+        raise RuntimeError(f"unexpected generated roots: missing={expected_roots(prefix)-roots}, extra={roots-expected_roots(prefix)}")
     ordered, visiting, visited = [], set(), set()
 
     def visit(module):
@@ -64,7 +64,9 @@ def proof_order(directory):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical"], default="mixed")
     options = parser.parse_args()
+    prefix = options.kind.capitalize()
     view = Path(__file__).resolve().parents[1]
     output = options.output.resolve()
     if output == view or view in output.parents:
@@ -109,23 +111,23 @@ def main():
     try:
         (output / "sources.json").write_text(json.dumps(sources, indent=2) + "\n")
         run("current-module-keys", ["lake", "build", "--no-build",
-            "FVTest.Backend.Lowering.StockMixedRuntime", "FVTest.Backend.Lowering.StockMixedLinked",
+            f"FVTest.Backend.Lowering.Stock{prefix}Runtime", f"FVTest.Backend.Lowering.Stock{prefix}Linked",
             "lean-backend", "lean-link", "link-check"])
         runtime = run("runtime", ["lake", "env", "lean", "--run",
-                                  "FVTest/Backend/Lowering/StockMixedRuntime.lean"])
-        assert runtime.count("Stock mixed lean ") == 6
-        assert runtime.count("Stock mixed regalloc2 ") == 6
-        assert "Stock mixed missing-binary negative control passed" in runtime
+                                  f"FVTest/Backend/Lowering/Stock{prefix}Runtime.lean"])
+        assert runtime.count(f"Stock {options.kind} lean ") == 6
+        assert runtime.count(f"Stock {options.kind} regalloc2 ") == 6
+        assert f"Stock {options.kind} missing-binary negative control passed" in runtime
         generated = output / "linked"
         run("linked-fixture", ["lake", "env", "lean", "--run",
-            "FVTest/Backend/Lowering/StockMixedLinked.lean", str(generated)])
+            f"FVTest/Backend/Lowering/Stock{prefix}Linked.lean", str(generated)])
         artifact_hashes = {str(p.relative_to(generated)): sha(p)
                            for p in generated.rglob("*") if p.is_file()}
         leanpath = subprocess.check_output([memcap, "lake", "env", "printenv", "LEAN_PATH"],
                                           cwd=view, env=env, text=True).strip()
         original_leanpath = env.get("LEAN_PATH")
         env["LEAN_PATH"] = str(generated) + ":" + leanpath
-        paths = proof_order(generated)
+        paths = proof_order(generated, prefix)
         generated_hashes = {str(p.relative_to(generated)): sha(p) for p in paths}
         audit_imports = [".".join(p.relative_to(generated).with_suffix("").parts)
                          for p in paths if p.parent == generated / "Crates"]
@@ -140,10 +142,10 @@ def main():
         # matching package directory and does not search another partial root.
         cli_hashes = {}
         for mode, flags in (("Plain", ["--no-dead-cleanup"]), ("Cleanup", [])):
-            bundle = generated / f"StockMixed2{mode}FallbackGlobal-bundle"
-            retained = generated / f"StockMixed2Retained{mode}FallbackGlobal-bundle"
+            bundle = generated / f"Stock{prefix}2{mode}FallbackGlobal-bundle"
+            retained = generated / f"Stock{prefix}2Retained{mode}FallbackGlobal-bundle"
             for label, source in (("current", bundle), ("retained", retained)):
-                proof = generated / "Crates" / f"MixedCLI{label}{mode}.lean"
+                proof = generated / "Crates" / f"{prefix}CLI{label}{mode}.lean"
                 proof.parent.mkdir(exist_ok=True)
                 run(f"link-check-{label}-{mode}", ["lake", "env", str(view / ".lake/build/bin/link-check"),
                     str(source), "--lean", str(proof), "--module", proof.stem, *flags])
@@ -179,15 +181,15 @@ run_cmd do
     count := count + 1
   unless count > 0 do throwError "empty generated-proof audit"
   logInfo m!"STOCK_MIXED_GENERATED_AXIOMS_PASS {count}"
-''')
+'''.replace('StockMixed', 'Stock'+prefix).replace('MixedCLI', prefix+'CLI').replace('STOCK_MIXED', 'STOCK_'+prefix.upper()))
         env["LEAN_PATH"] = str(generated) + ":" + leanpath
         audited = run("generated-axioms", ["lean", "--root=" + str(output), str(audit)])
-        assert "STOCK_MIXED_GENERATED_AXIOMS_PASS " in audited
+        assert "STOCK_" + prefix.upper() + "_GENERATED_AXIOMS_PASS " in audited
         assert all(sha(generated / path) == digest for path, digest in generated_hashes.items())
         assert all(sha(output / path) == digest for path, digest in cli_hashes.items())
         assert all(sha(generated / path) == digest for path, digest in artifact_hashes.items()), "linked inputs changed during CLI validation"
         report("passed", source_manifest_sha256=sha(output / "sources.json"),
-               generated_roots=sorted(expected_roots()), generated_sources=generated_hashes,
+               generated_roots=sorted(expected_roots(prefix)), generated_sources=generated_hashes,
                cli_sources=cli_hashes, generated_axiom_audit_sha256=sha(audit),
                linked_artifacts=artifact_hashes,
                regalloc_binary_sha256=sha(view / "rust/target/release/lean-regalloc"),

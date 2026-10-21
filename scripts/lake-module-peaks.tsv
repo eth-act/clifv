@@ -1791,3 +1791,4 @@ FV.Opt.RuleAllow	108	2
 FV.Opt.Rules	124	2
 FV.Opt.Simplify	122	2
 FV.Opt.Validate	122	2
+FV.Backend.Proof.StockLogicalCheckWitness	9343	108

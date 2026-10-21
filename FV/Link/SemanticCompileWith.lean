@@ -63,4 +63,59 @@ theorem compileWithFallback_spec {current previous : ProductionLowering} {S : Li
       rcases compile_spec older with ⟨stock,run⟩ | ⟨legacy,run⟩
       · exact .inr (.inl ⟨by simp [stock],run⟩)
       · exact .inr (.inr ⟨by simp [legacy],run⟩)
+
+/-- A successful older complete route is preserved when a new route is added. -/
+theorem compileWithRoutes_accepts_tail {current : ProductionLowering}
+    {previous : List ProductionLowering} {S : LinkSpec} {file0 : ByteArray}
+    {cleanup : Bool} {out : RoutedOutput}
+    (h : compileWithRoutes previous S file0 cleanup = .ok out) :
+    ∃ result, compileWithRoutes (current :: previous) S file0 cleanup = .ok result := by
+  simp only [compileWithRoutes]
+  split
+  · exact ⟨_,rfl⟩
+  · exact ⟨_,by rw [h]; rfl⟩
+
+/-- The original legacy acceptance is preserved for any finite route list. -/
+theorem compileWithRoutes_accepts_legacy {routes : List ProductionLowering}
+    {S : LinkSpec} {file0 file : ByteArray} {cleanup : Bool}
+    (h : legacyCompile (legacySpec S cleanup) file0 cleanup = .ok file) :
+    ∃ out, compileWithRoutes routes S file0 cleanup = .ok out := by
+  induction routes with
+  | nil => exact ⟨⟨file,none⟩,by simp [compileWithRoutes,h,Except.map]⟩
+  | cons current previous ih =>
+    obtain ⟨out,run⟩ := ih
+    exact compileWithRoutes_accepts_tail run
+
+/-- Every successful index identifies the exact proved attempt that emitted the
+file. Legacy output retains its original compiler contract. -/
+theorem compileWithRoutes_spec {routes : List ProductionLowering} {S : LinkSpec}
+    {file0 : ByteArray} {cleanup : Bool} {out : RoutedOutput}
+    (h : compileWithRoutes routes S file0 cleanup = .ok out) :
+    (out.route = none ∧ legacyCompile (legacySpec S cleanup) file0 cleanup = .ok out.file) ∨
+    ∃ i lower, out.route = some i ∧ routes[i]? = some lower ∧
+      attempt lower (S.placedProductionWith lower cleanup) file0 cleanup = .ok out.file := by
+  induction routes generalizing out with
+  | nil =>
+    cases legacy : legacyCompile (legacySpec S cleanup) file0 cleanup with
+    | error message => simp [compileWithRoutes,legacy,Except.map] at h
+    | ok file =>
+      simp only [compileWithRoutes,legacy,Except.map] at h
+      cases h
+      exact .inl ⟨rfl,rfl⟩
+  | cons current previous ih =>
+    cases first : attempt current (S.placedProductionWith current cleanup) file0 cleanup with
+    | ok file =>
+      simp only [compileWithRoutes,first] at h
+      cases h
+      exact .inr ⟨0,current,rfl,rfl,first⟩
+    | error message =>
+      cases tail : compileWithRoutes previous S file0 cleanup with
+      | error message => simp [compileWithRoutes,first,tail,Except.map] at h
+      | ok result =>
+        simp only [compileWithRoutes,first,tail,Except.map] at h
+        cases h
+        rcases ih tail with ⟨legacy,run⟩ | ⟨i,lower,route,index,run⟩
+        · exact .inl ⟨by simp [legacy],run⟩
+        · exact .inr ⟨i+1,lower,by simp [route],by simpa using index,run⟩
+
 end Link.SemanticCompilerWith

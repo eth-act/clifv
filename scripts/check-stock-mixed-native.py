@@ -27,7 +27,7 @@ def signed(value, bits):
     return value if value < 1 << (bits - 1) else value - (1 << bits)
 
 
-def run_commands(bits):
+def run_commands(bits, kind="mixed"):
     low, high = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
     vectors = [
         [0, 5, 2, 11, 22, 33, 44, 55, 7],
@@ -41,7 +41,15 @@ def run_commands(bits):
     cases = []
     for args in vectors:
         selected = args[1] + args[8] if args[0] else args[1]
-        cases.append(("stock_mixed_ni", args, signed(selected - args[2], bits)))
+        if kind == "logical":
+            mask = (1 << bits) - 1
+            band = (args[1] & args[8]) & mask
+            logical = ((band ^ (args[2] & mask)) | (args[1] & mask)) & mask
+            chosen = logical if args[0] else band
+            cases.append(("stock_logical_ni", args, signed(chosen - args[2], bits)))
+            cases.append(("retained_mixed", args, signed(selected - args[2], bits)))
+        else:
+            cases.append(("stock_mixed_ni", args, signed(selected - args[2], bits)))
         cases.append(("retained_arithmetic", args, signed(args[0] + args[8] - args[1], bits)))
     for a, b in [(0, 0), (-1, 1), (high, 1), (low, low)]:
         cases.append(("retained_scalar", [a, b], signed(a + b, bits)))
@@ -57,6 +65,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     parser.add_argument("--native-bin", type=Path, default=Path("rust/target/release/clif-native"))
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical"], default="mixed")
     options = parser.parse_args()
     root = options.artifacts.resolve()
     native = options.native_bin.resolve()
@@ -86,9 +95,12 @@ def main():
         seen.add(key)
         table, original = obj.with_suffix(".json"), obj.with_suffix(".clif")
         names = {f["name"] for f in json.loads(table.read_text())["functions"]}
-        assert names == {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
-                         "retained_prologue", "retained_d0", "retained_legacy"}, names
-        cases = run_commands(int(width))
+        wanted = {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
+                  "retained_prologue", "retained_d0", "retained_legacy"}
+        if options.kind == "logical":
+            wanted = (wanted - {"stock_mixed_ni"}) | {"stock_logical_ni", "retained_mixed"}
+        assert names == wanted, names
+        cases = run_commands(int(width), options.kind)
         attached = set()
         def add_commands(match):
             name = match.group(1)
