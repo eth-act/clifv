@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-21T22:06:50.837089+00:00",
+  "source_head": "ca069aa6e6402915b0ecca4482e6bb2edcd37b6e",
+  "archive_sha256": "0001730428d06e8ad64bf73e233f45ffd1469369b2e9a3d13f37ba1c04840e51",
+  "archive_bytes": 10143570,
+  "files": 998,
+  "terminal_receipt_sha256": "ada1cc46bfc0f6539a068e88432c10e68fb50c324c9b06e8869454ba00b70eb5",
+  "preserves_failures": true,
+  "next_cast_kernel_inventory_and_drafts_included": true
+}
