@@ -50,12 +50,22 @@ evidence are backed817b6526. See the NOT activation receipt. Old constant select
 and theorem variants stay. General roots include shifted NOT, while shift-bearing
 whole functions await the next shift source class.
 
-Next: multiplication and fused multiply using landed root/record proofs and
-current-source dispatch/guarded-transfer drafts already compiled and backed in
-817b6526. Continue through shifts/casts and every remaining original obligation.
-Use the same scalar contract and consumers; factor only duplication encountered,
-preserve old classifiers and source conditions. Fallback is not completeness.
-The original full goal remains unfinished.
+Multiplication/fused multiply is complete through the same scalar consumers.
+[Terminal evidence](../research/stock-mul-production-activation.md) records20primary
+gates/11ownership partitions,1399oldAXsets/18oldheaders exact,1344nativecomparisons,
+two32subcheckactualCLI/link/generated cohorts, original flat-multiply artifact
+retention and all current full gates. Validated1cd9816f and evidence backed9c3f26fd.
+Reusable source classification/record dispatch/no-trap facts avoid copying earlier
+families. Old selectors and theorem variants stay.
+
+Next: shifts/casts through the same contract. Current-source shift dispatch draft
+already compiles and is backed9c3f26fd. Existing scope/adapter exclusion proofs
+restrict actual source candidates to eight:103→874/873,104→893/884/883,
+105→892/891/890. Historical inventory is not reachability or semantic coverage.
+Reuse six existing shift bridges; discharge fused bitfield892/893 and extend the
+scalar ABI read boundary with proved step facts, retaining old checks/variants.
+Then complete casts and every remaining original obligation. Fallback is not
+Stock completeness. The full original140goal remains unfinished.
 
 ## Maintained validation runner (landed #358)
 

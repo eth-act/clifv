@@ -1,3 +1,4 @@
+import FVTest.Backend.Lowering.StockScalarTestSupport
 import FV.Backend.ScalarNIProduction
 import FV.Backend.LinearScan
 import FV.E2E.StockScalarFixtures
@@ -18,7 +19,7 @@ def input (config : Stock.D0.Configuration) : String :=
   (Stock.ScalarAdd.source "retained_scalar" config []).print ++ "\n" ++
   (Stock.Prologue.source "retained_prologue" .systemVI64 []).print ++ "\n" ++
   (Stock.D0.source "retained_d0" .fastI32 []).print ++ "\n" ++
-  "function %retained_legacy(i64, i64) -> i64 {\nblock0(v0: i64, v1: i64):\n    v2 = imul v0, v1\n    return v2\n}\n"
+  FVTest.StockScalarFixture.legacySource "retained_legacy"
 
 /-- Export the actual Lean-encoded object and original inputs for native
 execution tests. Normal runtime checks retain their existing behavior. -/

@@ -1,3 +1,4 @@
+import FVTest.Backend.Lowering.StockScalarTestSupport
 import FV.E2E.SemanticChecksWith
 import FV.Link.ProductionImageWith
 import FV.Link.Ld.Spec
@@ -55,7 +56,7 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     else if i == 2 then (Stock.Prologue.source n .systemVI64 []).print
     else if i == 3 then (Stock.D0.source n .fastI32 []).print
     else if i == 4 then
-      "function %" ++ n ++ "(i64, i64) -> i64 {\nblock0(v0: i64, v1: i64):\n    v2 = imul v0, v1\n    return v2\n}\n"
+      FVTest.StockScalarFixture.legacySource n
     else
       "function %" ++ n ++ "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v {\n    fn0 = colocated %" ++ names[0]! ++
       "(i64, i64, i64, i64, i64, i64, i64, i64, i64) -> i64 system_v\nblock0(v0: i64, v1: i64, v2: i64, v3: i64, v4: i64, v5: i64, v6: i64, v7: i64, v8: i64):\n    v9 = call fn0(v0, v1, v2, v3, v4, v5, v6, v7, v8)\n    v10 = iconst.i64 1\n    v11 = iadd v9, v10\n    return v11\n}\n")

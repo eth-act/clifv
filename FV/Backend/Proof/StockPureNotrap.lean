@@ -16,6 +16,10 @@ private theorem getAs_notrap (fr : Clif.Frame) (x : Nat) (ty : Clif.Ty) (c : Cli
   | stuck message => simp [Clif.Frame.getAs,found]
   | ok value => cases cast : value.as? ty <;> simp [Clif.Frame.getAs,found,Clif.Res.ofOption,cast]
 
+/-- Frame lookup and type conversion are stuck on malformed inputs, never trapping. -/
+theorem frame_getAs_notrap (fr : Clif.Frame) (x : Nat) (ty : Clif.Ty) (c : Clif.TrapCode) :
+    fr.getAs x ty ≠ .trap c := getAs_notrap fr x ty c
+
 private theorem getMany_notrap (fr : Clif.Frame) (xs : List Nat) (c : Clif.TrapCode) :
     fr.getMany xs ≠ .trap c := by
   induction xs generalizing c with
