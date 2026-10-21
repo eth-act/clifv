@@ -57,7 +57,7 @@ for mode,record in identity.items():
 # strict real-oracle runtime gate. Keep this independent of the frozen source.
 extra_path=root/'committed-route-extra-gate.json'
 extra=json.loads(extra_path.read_text())
-assert extra['sha256']=='c370fc8cafbe994d6af73a1c4d367b484e6d4d38ac7c0ece33c04fd637665a32'
+assert extra['sha256']=='d61c5d6f2702460bdb016a7a3907dcf76c8bda8f0181f36b6f2f191aa4de8f72'
 assert sha(extra['source'])==extra['sha256']
 if extra['state']!='passed':
  emit('additional_committed_route_runtime_required',source=extra['source'],expected_pass_records=24,required_prior_gate='arithmetic-dual-allocator-runtime',receipt=str(extra_path))

@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-21T11:46:13.205722+00:00",
+  "state": "prepared_not_executed",
+  "source": "/tmp/StockArithmeticCommittedRoute.lean",
+  "old_source": "/tmp/stock-spill-cycle-resource-repair/positive-route-before-parsed-check.lean",
+  "old_sha256": "c370fc8cafbe994d6af73a1c4d367b484e6d4d38ac7c0ece33c04fd637665a32",
+  "sha256": "d61c5d6f2702460bdb016a7a3907dcf76c8bda8f0181f36b6f2f191aa4de8f72",
+  "active_receipt": "/tmp/stock-arithmetic-spill-repaired-author-gates/committed-route-extra-gate.json",
+  "ready_guard": "/tmp/stock-arithmetic-spill-repaired-ready-to-land.py",
+  "expected_cases": 24,
+  "frozen_compiler_source_unchanged": true,
+  "required_prior_gate": "arithmetic-dual-allocator-runtime",
+  "new_assertions": "Actual parsed eligible function passes semantic check, fails legacy lowerCheck and returns the exact raw Stock output from lowerCheckedArithmeticNI before allocation; existing one-call, raw prepared input, complete-stage and both-allocator checks retained."
+}

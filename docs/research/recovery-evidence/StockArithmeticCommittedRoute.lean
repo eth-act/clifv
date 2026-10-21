@@ -19,6 +19,17 @@ def checkAllocator (label : String)
     require (!Backend.Proof.Driver.lowerCheck f raw && SemanticNI.check f raw)
       "positive fixture did not select actual raw Stock"
     let pf := Clif.parseFile (FVTest.StockArithmeticRuntime.input config)
+    let parsed ← match pf.funcs.find? (fun p => p.name == f.name) with
+      | none => throw (IO.userError "positive parsed arithmetic source missing")
+      | some p => match p.func with
+        | .error message => throw (IO.userError s!"positive arithmetic parse failed: {repr message}")
+        | .ok parsed => pure parsed
+    let selected ← match lowerCheckedArithmeticNI parsed true with
+      | .error message => throw (IO.userError message)
+      | .ok vc => pure vc
+    require (Stock.Arithmetic.eligible parsed && SemanticNI.check parsed raw &&
+      !Backend.Proof.Driver.lowerCheck parsed raw && decide (selected = raw))
+      "positive parsed source did not select and validate the actual raw Stock branch"
     for cleanup in [false,true] do
       let expected ← match prepare (Stock.Arithmetic.stage cleanup raw) with
         | .ok vc => pure vc
