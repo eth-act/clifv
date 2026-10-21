@@ -125,6 +125,16 @@ def check : IO Unit := do
   let regalloc := checkedRegalloc2 "rust/target/release/lean-regalloc"
   for config in Stock.D0.configurations do
     checkConfiguration "regalloc2" regalloc config
+  let sample ← match Stock.Mixed.lowerValidated
+      (E2E.StockMixedNIWitness.function .systemVI64) with
+    | .ok vc => pure vc
+    | .error message => throw (IO.userError message)
+  let missingRejected ← try
+    discard <| checkedRegalloc2 "/dev/null/lean-regalloc" #[sample]
+    pure false
+  catch _ => pure true
+  require missingRejected "missing regalloc2 binary silently passed the oracle test"
+  IO.println "Stock mixed missing-binary negative control passed"
 
 end FVTest.StockMixedRuntime
 

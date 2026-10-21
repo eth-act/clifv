@@ -510,6 +510,19 @@ Direct semantic-consumer author gates passed on `823ecbb19e6a1e7ec2708afbdfe7612
 
 ## Next mixed class: implementation prepared, validation pending (2026-10-20)
 
+The normal integration gate is now checked in as
+`scripts/check-stock-mixed-integration.py --output <new-external-directory>`.
+After the current module/tool build, it requires current Lake input keys, the
+24-case runtime grid with a missing-oracle negative control, all twelve actual
+linked-proof roots including the 33-function slices, current/retained checker
+and verified-linker CLI routes, and a generated-declaration axiom audit. It uses
+normal checked-in modules and emitted files, never combined-source substitutes.
+Run it sequentially within the shared compiler/memory budget. Its dependency
+ordering was checked against the existing eighteen generated files; an actual
+end-to-end run on the current Arm model remains mandatory. Native execution,
+successful final MCP review, full corpus and old identity/stage/axiom parity
+remain separate required gates. This preparation is not an activation receipt.
+
 `agent/stock-mixed-production` prepares complete select/add/sub production adapters
 while the arithmetic delivery source stays frozen for its author gates. The
 verified prototype has full source-machine NI, executable classifier soundness,
