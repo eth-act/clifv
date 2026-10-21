@@ -6,6 +6,16 @@ proof checkpoints remain evidence, not a queue of instructions to resume.
 
 ## Active raw arithmetic delivery packet (2026-10-20)
 
+Current blocker (2026-10-21): the c244 normal module, runtime, encoder, E2E,
+strict real-regalloc arithmetic and linked/generated gates passed. The native CLI
+gate rejects a startup panic caused by proof-fixture initialization. The repair
+separates runtime definition imports from correctness consumers, retaining exact
+compiler bodies and theorem/proof text. Normal affected-module/tool builds and
+actual native CLI/generated-proof checks remain mandatory; preserve completed
+gates and failed logs. See
+[the import-boundary record](../research/stock-arithmetic-runtime-import-boundary.json).
+
+
 The arithmetic runtime gate must require real accepted regalloc2 oracle answers,
 validate allocation/lowering/emission, and compare all five allocated-function
 fields with production's result. The ordinary allocator wrapper can silently

@@ -9,7 +9,7 @@ import FV.E2E.LinkScopeInputDefs
 import FV.Link.Ld.Spec
 import FVTest.Link.LdArgs
 import FV.Link.ExeUCompile
-import FV.Link.SemanticCompileWith
+import FV.Link.SemanticCompileDefs
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)

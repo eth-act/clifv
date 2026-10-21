@@ -1,5 +1,5 @@
 import FV.E2E.PreparedPipeline
-import FV.E2E.LinkSemanticNI
+import FV.Backend.SemanticNICheck
 
 namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver

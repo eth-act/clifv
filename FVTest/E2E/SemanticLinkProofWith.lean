@@ -1,6 +1,5 @@
 import FVTest.E2E.LinkProof
-import FV.E2E.SemanticStackBound
-import FV.E2E.SemanticChecksWith
+import FV.E2E.SemanticPipelineCheck
 
 /-! Proof emitter for actual callback outputs. Original
 emitters remain unchanged, including their theorem variants and output format. -/
