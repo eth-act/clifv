@@ -1,5 +1,5 @@
 {
-  "utc": "2026-10-21T00:58:33.210472+00:00",
+  "utc": "2026-10-21T01:10:22.495987+00:00",
   "state": "partial normal current-source module port; semantic/runtime/wholeclass gates pending",
   "parent_arithmetic": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
   "base_main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
@@ -276,10 +276,19 @@
     "FV.E2E.RelaxTotal",
     "FV.E2E.SemanticBinary",
     "FV.E2E.SemanticBinaryGood",
+    "FV.E2E.SemanticChecksWith",
+    "FV.E2E.SemanticCompilerWitness",
     "FV.E2E.SemanticExecBytes",
     "FV.E2E.SemanticExecFrameSim",
+    "FV.E2E.SemanticExecGoodReads",
+    "FV.E2E.SemanticExecGoodRun",
+    "FV.E2E.SemanticExecGot",
+    "FV.E2E.SemanticExecProven",
+    "FV.E2E.SemanticExecRunN",
     "FV.E2E.SemanticExecStatic",
+    "FV.E2E.SemanticFallbackWitness",
     "FV.E2E.SemanticLinkGood",
+    "FV.E2E.SemanticMixedCompilerWitness",
     "FV.E2E.SemanticNIBoundary",
     "FV.E2E.SemanticPipelineCheck",
     "FV.E2E.SemanticPreparedPipeline",
@@ -299,10 +308,12 @@
     "FV.E2E.StackBound",
     "FV.E2E.StockArithmeticArtifact",
     "FV.E2E.StockArithmeticNI",
+    "FV.E2E.StockArithmeticNIWitness",
     "FV.E2E.StockArithmeticSemantics",
     "FV.E2E.StockArithmeticStage",
     "FV.E2E.StockArithmeticWorldX",
     "FV.E2E.StockMixedNI",
+    "FV.E2E.StockMixedWitness",
     "FV.E2E.StockMixedWorldX",
     "FV.E2E.StockProductionFixtures",
     "FV.E2E.UnwindSem",
@@ -324,12 +335,18 @@
     "FV.Link.ExeInput",
     "FV.Link.ExeSource",
     "FV.Link.ExeTotal",
+    "FV.Link.ExeUCompile",
     "FV.Link.Image",
     "FV.Link.ImageProof",
     "FV.Link.Layout",
     "FV.Link.LayoutFacts",
     "FV.Link.LayoutProof",
+    "FV.Link.Ld.Data",
+    "FV.Link.Ld.File0",
+    "FV.Link.Ld.PlanProof",
+    "FV.Link.Ld.Spec",
     "FV.Link.Ld.Syms",
+    "FV.Link.OptCompile",
     "FV.Link.OutsideProof",
     "FV.Link.Placed",
     "FV.Link.ProductionImage",
@@ -340,21 +357,27 @@
     "FV.Link.RelocShape",
     "FV.Link.RelocShapeProof",
     "FV.Link.SemanticCompileWith",
+    "FV.Link.SemanticExeSourceWith",
+    "FV.Link.SemanticExeWith",
     "FV.Link.Total",
     "FV.Link.UnwFns",
     "FV.Unw.EhFrame",
     "FV.Unw.EhFrameHdr",
     "FV.Unw.Model",
     "FVTest.Backend.AllocChoice",
+    "FVTest.Backend.Lowering.StockArithmeticRuntime",
+    "FVTest.Backend.Lowering.StockMixedLinked",
     "FVTest.Backend.Lowering.StockMixedRuntime",
     "FVTest.Backend.Main",
-    "FVTest.E2E.LinkProof"
+    "FVTest.E2E.LinkCheckMain",
+    "FVTest.E2E.LinkProof",
+    "FVTest.E2E.SemanticLinkProofWith"
   ],
-  "normal_built_count": 343,
+  "normal_built_count": 366,
   "failed_modules": 0,
   "cache": "Own ignored .lake import view, source-keyed shared artifactstore; MInst.olean verifiedsamehardlinkedartifact(nlink3), no copied physical cache",
   "source_compatibility": "ABIReadOnly predicates/bodies unchanged byteforbyte after droppingunusedLowerDecideimport. NormalABIReadOnly/ABIReadFlagscompilepasses oncurrentmainMInst/Isel.",
-  "waiting": "Complete remaining normal witnesses and production consumers. Arithmetic old213 module scheduler is still live, held parent awaits verified current-Arm handoff672. These new source-keyed normal port builds remain old-Arm-model evidence; exact current-Arm activation gates are mandatory. Mixed runtime missing-oracle repair/new normal integration harness require actual end-to-end run.",
+  "waiting": "Normal complete Mixed/compiler/fallback witnesses and exact checked-in runtime modules pass on preserved old Arm model.48 positive cases/2 missing-binary controls; all24 fresh objects/tables/CLIF inputs match prior624-call native grid. Exact current-Arm gates remain mandatory.",
   "batches": [
     {
       "utc": "2026-10-20T19:14:26.869956+00:00",
@@ -8820,6 +8843,207 @@
       "scheduler_resumed": true,
       "leaf_cap_MiB": 4096,
       "current_source_not_new_Arm_model_pass": true
+    },
+    {
+      "batch": 64,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch64/receipt.json",
+      "receipt_sha256": "15f4e0b6253d42bbcf3fe0ad8169bfcf3f6b1bc65a87ce1a6a01a09d51268199",
+      "head": "48bca5b4e899d2ba5fda525b245f94756bc263b6",
+      "built": [
+        {
+          "module": "FV.E2E.SemanticExecRunN",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch64/FV.E2E.SemanticExecRunN.build.log",
+          "returncode": 0,
+          "log_sha256": "03fa14c22945ed062a9f637c996c1a3bdc0a5fa717a1bf3d6687239effc51825"
+        },
+        {
+          "module": "FV.E2E.SemanticExecGoodRun",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch64/FV.E2E.SemanticExecGoodRun.build.log",
+          "returncode": 0,
+          "log_sha256": "2a5cb275d2aab183c9164771290f82771f93f529335f1ab600a85cd76a4330fd"
+        },
+        {
+          "module": "FV.E2E.SemanticExecGot",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch64/FV.E2E.SemanticExecGot.build.log",
+          "returncode": 0,
+          "log_sha256": "1beacd011e910e74284361b010281f3ae242e072fadf69ee3912cad6480b3b35"
+        },
+        {
+          "module": "FV.E2E.SemanticExecGoodReads",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch64/FV.E2E.SemanticExecGoodReads.build.log",
+          "returncode": 0,
+          "log_sha256": "a19cc8302f21e48bcda943e0b8850f8b5de9a7ee111130e6732e4f01f3a19c34"
+        },
+        {
+          "module": "FV.E2E.SemanticExecProven",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch64/FV.E2E.SemanticExecProven.build.log",
+          "returncode": 0,
+          "log_sha256": "68e3bc8deb77d2e74c2cc8c8f777a40aecd2ebc07938628dc2e359fc5d090d12"
+        },
+        {
+          "module": "FV.Link.SemanticExeWith",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch64/FV.Link.SemanticExeWith.build.log",
+          "returncode": 0,
+          "log_sha256": "e6a79901b1ca177855fe950026d2b80a47077a1ed644af3d7e3a5b5f406810c9"
+        },
+        {
+          "module": "FV.Link.SemanticExeSourceWith",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch64/FV.Link.SemanticExeSourceWith.build.log",
+          "returncode": 0,
+          "log_sha256": "0465459311c6523b57394cfdc5aa425e140df74fe7079739c7c3b4225fdf0c61"
+        },
+        {
+          "module": "FV.E2E.StockArithmeticNIWitness",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch64/FV.E2E.StockArithmeticNIWitness.build.log",
+          "returncode": 0,
+          "log_sha256": "8cba01408f285e3723dee298161eb0057a064153b47af5fa35a385ae2c0f87e4"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 5120,
+      "current_source_not_new_Arm_model_pass": true
+    },
+    {
+      "batch": 65,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch65/receipt.json",
+      "receipt_sha256": "fbb6574865f46df7e1f25a38268d168ed60b38c2b696e94cfb9b36d06f400878",
+      "head": "48bca5b4e899d2ba5fda525b245f94756bc263b6",
+      "built": [
+        {
+          "module": "FV.Link.Ld.File0",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch65/FV.Link.Ld.File0.build.log",
+          "returncode": 0,
+          "log_sha256": "0f02a286b91a36ff12cd1f2a2d6fdcaec941bb2e30f5f4d15ed1a3255b09dad3"
+        },
+        {
+          "module": "FV.Link.Ld.PlanProof",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch65/FV.Link.Ld.PlanProof.build.log",
+          "returncode": 0,
+          "log_sha256": "b593d33f13593f34be02ea6b864f11b182953aab10b2e74fe5cd2aeef7957273"
+        },
+        {
+          "module": "FV.Link.Ld.Data",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch65/FV.Link.Ld.Data.build.log",
+          "returncode": 0,
+          "log_sha256": "424b3ed99f5709fd97edba101caeba1111141cea7bf33c5cf54f27a649ee70a4"
+        },
+        {
+          "module": "FV.Link.Ld.Spec",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch65/FV.Link.Ld.Spec.build.log",
+          "returncode": 0,
+          "log_sha256": "b1813ea98708afa6a089ccb4ff733b657edca4156b2f82fc21935551889a0298"
+        },
+        {
+          "module": "FV.E2E.SemanticCompilerWitness",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch65/FV.E2E.SemanticCompilerWitness.build.log",
+          "returncode": 0,
+          "log_sha256": "cb43f9551a73cb78da6fb84dd46d8e7d7fbb4edc09077fc9f03a2b11acb54550"
+        },
+        {
+          "module": "FV.E2E.StockMixedWitness",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch65/FV.E2E.StockMixedWitness.build.log",
+          "returncode": 0,
+          "log_sha256": "75dd796882670717ccb046682e55776ed03cf3cb7bba0a52fdd7f5982ace421c"
+        },
+        {
+          "module": "FV.E2E.SemanticMixedCompilerWitness",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch65/FV.E2E.SemanticMixedCompilerWitness.build.log",
+          "returncode": 0,
+          "log_sha256": "c5365784b15faf264de42fd70eeca6828de666d73c1b910ee27dcc56526d9c4c"
+        },
+        {
+          "module": "FV.E2E.SemanticFallbackWitness",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch65/FV.E2E.SemanticFallbackWitness.build.log",
+          "returncode": 0,
+          "log_sha256": "132487c5f9f5b2d4133ec81a43f8e845975370a64b1d44a20dfb54d866c1a727"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 5120,
+      "current_source_not_new_Arm_model_pass": true
+    },
+    {
+      "batch": 66,
+      "receipt": "/tmp/stock-mixed-current-main-normal-modules-batch66/receipt.json",
+      "receipt_sha256": "1d015da1675441489b3314c50368fb17859e96e70737e209dcd4c2b830bbbaf5",
+      "head": "48bca5b4e899d2ba5fda525b245f94756bc263b6",
+      "built": [
+        {
+          "module": "FVTest.Backend.Lowering.StockArithmeticRuntime",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch66/FVTest.Backend.Lowering.StockArithmeticRuntime.build.log",
+          "returncode": 0,
+          "log_sha256": "dac3b9ff5ea434bf549b25b73637fb2a75fc60974b7fb4b22775ad63c741d0d5"
+        },
+        {
+          "module": "FV.E2E.SemanticChecksWith",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch66/FV.E2E.SemanticChecksWith.build.log",
+          "returncode": 0,
+          "log_sha256": "fc17ccb9241df68d06ab8cb7a82ff36f61eb2b9bee12e2e6e77af104c4a076de"
+        },
+        {
+          "module": "FVTest.E2E.SemanticLinkProofWith",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch66/FVTest.E2E.SemanticLinkProofWith.build.log",
+          "returncode": 0,
+          "log_sha256": "8e39a7267610d45e32cac0e1a7b0415d58e9a13ce5adedeb39ede43253eb36a0"
+        },
+        {
+          "module": "FVTest.Backend.Lowering.StockMixedLinked",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch66/FVTest.Backend.Lowering.StockMixedLinked.build.log",
+          "returncode": 0,
+          "log_sha256": "931147b872aae616de58c586934f915c8b0d20978acd74fc6c6d211c30890d0e"
+        },
+        {
+          "module": "FVTest.Backend.Lowering.StockMixedRuntime",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch66/FVTest.Backend.Lowering.StockMixedRuntime.build.log",
+          "returncode": 0,
+          "log_sha256": "0d73c13aa69769af9225481f2e5f368110a2af547961fa49705f623dfb24ce14"
+        },
+        {
+          "module": "FVTest.E2E.LinkCheckMain",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch66/FVTest.E2E.LinkCheckMain.build.log",
+          "returncode": 0,
+          "log_sha256": "e881c15ce426e2ec3d924839066957162b36e0e68a3a9c41ed6481280991f230"
+        },
+        {
+          "module": "FV.Link.OptCompile",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch66/FV.Link.OptCompile.build.log",
+          "returncode": 0,
+          "log_sha256": "398f667941187c22706dfd6d741310f8c243bd5fa3ba842fdd7f2ea2ca6334be"
+        },
+        {
+          "module": "FV.Link.ExeUCompile",
+          "state": "built",
+          "log": "/tmp/stock-mixed-current-main-normal-modules-batch66/FV.Link.ExeUCompile.build.log",
+          "returncode": 0,
+          "log_sha256": "9434fe2115855f026cdcdb05b6388bf13bb3c709e0205ba0425ec770a7ecf861"
+        }
+      ],
+      "scheduler_resumed": true,
+      "leaf_cap_MiB": 8192,
+      "current_source_not_new_Arm_model_pass": true
     }
   ],
   "current_abi_review_receipt": "docs/research/stock-mixed-abi-normal-review.json",
@@ -8998,5 +9222,13 @@
   },
   "normal_integration_gate": "scripts/check-stock-mixed-integration.py",
   "runtime_missing_oracle_control_source": "22aa7ab3ddbad7d02940f433916339f735ba2aa6",
-  "runtime_missing_oracle_control_execution": "pending"
+  "runtime_missing_oracle_control_execution": "passed_exact_normal_checked_in_file_old_Arm_model",
+  "normal_strict_runtime_receipt": "docs/research/stock-mixed-normal-runtimes-strict.json",
+  "normal_compiled_complete_witnesses": [
+    "FV.E2E.StockMixedWitness",
+    "FV.E2E.SemanticCompilerWitness",
+    "FV.E2E.SemanticMixedCompilerWitness",
+    "FV.E2E.SemanticFallbackWitness"
+  ],
+  "current_arm_ci_stage5_receipt": "/tmp/stock-08020-ci-cache-heavy-stage5/receipt.json"
 }
