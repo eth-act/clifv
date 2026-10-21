@@ -1,0 +1,38 @@
+{
+  "utc": "20261016T155515Z",
+  "branch": "agent/stock-driver-wip-backup-20261016T155515Z",
+  "commit": "e70eb32064a19286049893be89e3d170cd98ed6e",
+  "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+  "captured_dirty_paths": 1706,
+  "additional_evidence_paths": 1,
+  "remote_commit_and_all_captured_blobs_verified": true,
+  "index_and_active_head_unchanged": true,
+  "archive": {
+    "utc": "20261016T155455Z",
+    "archive": "/home/lee/.clifv-recovery/20261016T155455Z-delivery-gates/checkpoint.tar.gz",
+    "sha256": "ff52ac950f238699864f78013515c995197ea3ecfc788f06b5328a277aae7afe",
+    "bytes": 577193,
+    "members": 33,
+    "every_member_verified": true,
+    "worker_live_at_capture": 3247835,
+    "progress_at_capture": {
+      "utc": "2026-10-16T15:43:21.935739+00:00",
+      "state": "serial_build",
+      "pid": 3247835,
+      "pr": 246,
+      "view": "/home/lee/clifv/.worktrees/stock-delivery-gates",
+      "commit": "44abfd79cbe4cda5ed868054b7f9e166152cf709",
+      "canonical_controller": 1233457,
+      "cache_lease": "/tmp/stock-delivery-cache-lease.json",
+      "index": 12,
+      "total": 1415,
+      "module": "FV.Backend.Proof.IselSzTab",
+      "log": "/tmp/stock-pr246-gates-20261016T152014Z-module-FV.Backend.Proof.IselSzTab.log",
+      "memory_cap": "22G"
+    },
+    "canonical_queue_held_intentionally": true,
+    "source_work_recovery_parent": "fa02c3d200bbb5bed43f164e3f4ec7551564467d",
+    "capture_is_RUNNING_checkpoint_NOT_terminal_gate_receipt": true
+  },
+  "checkpoint_is_in_progress_not_gate_success": true
+}

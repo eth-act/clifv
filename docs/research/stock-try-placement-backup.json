@@ -1,0 +1,36 @@
+{
+  "utc": "2026-10-16T23:34:47.652706+00:00",
+  "archive": "/home/lee/.clifv-recovery/20261016T233447Z-try-placement/checkpoint.tar.gz",
+  "sha256": "42c927c6b9a662426659eb4b8d7246e5069c9b4e746f020a2b46179e65639dcf",
+  "bytes": 4342670,
+  "members": 60,
+  "all_members_byte_verified": true,
+  "previous_remote_backup": {
+    "utc": "20261016T232121Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T232121Z",
+    "commit": "bdbddea4d076d927ef5febad93fe641f927f8477",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1801,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  },
+  "cleanup": {
+    "duplicate_dependency_snapshot_removed": true,
+    "bytes_reclaimed": 2817276128,
+    "all_unique_sources_objects_logs_checks_audits_preserved": true,
+    "one_shared_warm_cache_retained": true,
+    "other_projects_touched": false,
+    "free_bytes": 862795788288
+  },
+  "remote": {
+    "utc": "20261016T233513Z",
+    "branch": "agent/stock-driver-wip-backup-20261016T233513Z",
+    "commit": "78f90ade647ad5c2c4c1806afa8b0954847fd1ac",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1804,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  }
+}

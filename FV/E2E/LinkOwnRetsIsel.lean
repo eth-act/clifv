@@ -1,6 +1,8 @@
 import FV.E2E.LinkOwnRets
 import FV.Backend.Proof.KillDriver
 import FV.Backend.Proof.IselShpCtor
+import FV.Backend.Proof.TermSetRoots
+import FV.Backend.Proof.TermSetData
 
 /-!
 # The ISLE inversion for `Rets`: `iselNoRets : IselNoRetsHyp`
@@ -8,7 +10,8 @@ import FV.Backend.Proof.IselShpCtor
 The uniform invariant of ISLE runs (`Isle.Interp.UModel`, `KillGen.lean`) with the run relation
 `NoRetsSince` on the term set `retTab`: the closure under `Isle.ruleTerms` of the terms applied
 by the rules of `lower` other than `rule_lower_2574` (the `return` rule, id 1037) and by the rules
-of `lower_branch`. Decided over the exported rule data: `retTab` is closed and does not contain
+of `lower_branch`. The generated literal set is untrusted. Leaf-wise kernel-checked
+certificates over the exported rule data establish that `retTab` is closed and does not contain
 `gen_return`, the only extern constructor emitting a `Rets` (`Cov.externCtor_shp`; `emit`'s
 `MInst.ofV` decodes no `Rets`, `ofV_noRets`). Rule 1037 pins the `MultiAry` format, which no
 statement's data has (`ret_nomatch`).
@@ -19,6 +22,8 @@ namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
 
 /-! ## Constructors emit no `Rets` but `gen_return` -/
 
@@ -73,36 +78,27 @@ theorem ctor_noRets (ctx : Ctx) {term : Term} {vs : List V} {s : LState} {v : V}
 
 /-! ## The term set -/
 
-/-- Worklist closure under `Isle.ruleTerms` (`k`: fuel; the closure property is decided
-afterwards, so running out of fuel is harmless). -/
-def retClose : Nat → List TermId → Std.HashSet TermId → Std.HashSet TermId
-  | 0, _, seen => seen
-  | _ + 1, [], seen => seen
-  | k + 1, t :: ts, seen =>
-    if seen.contains t then retClose k ts seen
-    else retClose k ((program.rulesOf t).flatMap ruleTerms ++ ts) (seen.insert t)
-
-/-- The terms the root rules apply: those of `lower` but the `return` rule (1037), and those of
-`lower_branch`. -/
-def retRoots : List TermId :=
-  ((program.rulesOf TId.lower).filter fun r => r.id != 1037).flatMap ruleTerms ++
-    (program.rulesOf TId.lower_branch).flatMap ruleTerms
-
-/-- **The terms of statement and branch runs.** -/
-def retTab : List TermId := (retClose 10000000 retRoots {}).toList
-
 /-- The terms of a rule are in `retTab`. -/
 def retRuleOkB (rl : Rule) : Bool := (ruleTerms rl).all (retTab.contains ·)
 
 theorem retTab_closedB : retTab.all (fun t => (program.rulesOf t).all retRuleOkB) = true := by
-  native_decide
+  simp only [retTab, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem retTab_genReturn : retTab.contains TId.gen_return = false := by native_decide
+theorem retTab_genReturn : retTab.contains TId.gen_return = false := by decide +kernel
 
 theorem retRootS_ok : (program.rulesOf TId.lower).all (fun rl => rl.id == 1037 || retRuleOkB rl) = true := by
-  native_decide
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem retRootB_ok : (program.rulesOf TId.lower_branch).all retRuleOkB = true := by native_decide
+theorem retRootB_ok : (program.rulesOf TId.lower_branch).all retRuleOkB = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 theorem retRuleOk_of {rl : Rule} (h : retRuleOkB rl = true) : ∀ u ∈ ruleTerms rl, u ∈ retTab := by
   intro u hu
