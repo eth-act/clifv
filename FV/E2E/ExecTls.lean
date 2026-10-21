@@ -1,5 +1,6 @@
 import FV.E2E.ExecTlsCf
 import FV.E2E.ExecTlsWords
+import FV.Arm.Tpidr
 
 /-! # The executable's TLS words, run for real (T1)
 
@@ -110,6 +111,7 @@ theorem armStepX_tpidr {X : ExtSem} {H : ArmHooks} {fa : FnAsm}
     (ht : ∀ n tmp s, Arm.r .TPIDR (H.tls n tmp s) = Arm.r .TPIDR s) (s : Arm.ArmState) :
     Arm.r .TPIDR (ArmStepX X H fa s) = Arm.r .TPIDR s := by
   unfold ArmStepX
+  dsimp only
   split <;> first
     | exact hc _ _
     | exact ht _ _ _
@@ -186,9 +188,7 @@ theorem read_pstate_of_flags {s t : Arm.ArmState} (h : ∀ fl, Arm.r (.FLAG fl) 
     Arm.read_pstate s = Arm.read_pstate t := by
   have hN := h .N; have hZ := h .Z; have hC := h .C; have hV := h .V
   simp only [Arm.r, Arm.read_base_flag] at hN hZ hC hV
-  simp only [Arm.read_pstate]
-  cases hs : s.pstate; cases ht : t.pstate
-  simp_all
+  apply Arm.PState.ext <;> simp only [Arm.read_pstate] <;> assumption
 
 /-- **`leTls` meets the TLSDESC contract** `TlsOk` (no trust: it is the hook's definition). -/
 theorem tlsOk_le {R : Res} {F' : BitVec 64 → Prop} (F : BitVec 64 → Prop) (K : Nat) :
@@ -213,15 +213,19 @@ theorem tlsOk_le {R : Res} {F' : BitVec 64 → Prop} (F : BitVec 64 → Prop) (K
         Arm.r_of_w_same]
       rfl
     · rw [Arm.r_of_w_different (by simp), Arm.r_of_w_same]; rfl
-    · rw [Arm.r_of_w_different hpc, Arm.r_of_w_different hk, Arm.r_of_w_different h0']
+    · rw [Arm.r_of_w_different hpc, Arm.r_of_w_different hk,
+        Arm.r_of_w_different (by simpa [rnum] using h0')]
     · simp [Arm.ArmState.mem_w_eq_mem]
     · simp [Arm.w_program]
   flags n k s w hw := by
     show Arm.read_pstate (leTls I B file n (.x k) s) = Arm.read_pstate w
     have hfl : Arm.read_pstate s = Arm.read_pstate w :=
       read_pstate_of_flags fun fl => hw.1 (.FLAG fl) (by simp [Masked])
+    rw [← hfl]
+    apply read_pstate_of_flags
+    intro fl
     unfold leTls
-    split <;> simp only [read_pstate_w (fun fl => by simp), hfl]
+    split <;> simp [Arm.r_of_w_different]
 
 /-- **Non-vacuity of `BaseOk` with TLS**: the closed base environment with the local-exec TLS
 hook (`leBase I closedBase file`) satisfies every base premise of the linked system of any
@@ -268,7 +272,7 @@ CLIF address (the CLIF memory's symbols are at the symbols' values, `I.symAddr`)
 theorem tlsLoader_addr_canon {n : String} {v : Nat} (h : TpOff file (I.addrOf n) = some v) :
     -BitVec.ofNat 64 (tlsA file) + tpOffOf I file n = I.symAddr n 0 := by
   rw [tpOffOf, h, Option.getD_some, tpOff_eq h, symAddr_zero, BitVec.ofNat_add, ← BitVec.add_assoc,
-    BitVec.add_comm (-_), BitVec.add_neg_cancel, BitVec.zero_add]
+    BitVec.add_left_neg, BitVec.zero_add]
 
 /-- **The outside-code contract `HooksSim` of `leBase`**: its call clause is `B`'s; its TLS clause
 holds (`leTls` writes constants into registers). -/
@@ -335,7 +339,7 @@ theorem second_insn {g : Clif.Function} (hF : FnOk I file g) {pc : BitVec 64} (h
   rw [h2] at hins
   cases hins
   rw [hr't] at hi2
-  rcases ht with h | h <;> rw [h] at hi2 <;> cases i2 <;> simp_all [Insn.reloc?, loOf, Insn.tlsSite]
+  rcases ht with h | h <;> rw [h] at hi2 <;> cases i <;> simp_all [Insn.reloc?, loOf, Insn.tlsSite]
 
 /-- The instruction at a TLSDESC `ldr` word is that `ldr`. -/
 theorem tlsSecond_insn {g : Clif.Function} (hF : FnOk I file g)
@@ -346,6 +350,7 @@ theorem tlsSecond_insn {g : Clif.Function} (hF : FnOk I file g)
   obtain ⟨j, t, hj, ho, tmp, -, ⟨t1, hj1⟩, -⟩ := tls_lines hF hT hrl ht
   have h1 := insnAt_of_line hF hj1
   rw [lineOffset_succ _ j _ hj, ho] at h1
+  change insnAt _ _ (wAt _ (rl.offset + 4)) = _ at h1
   rw [h1] at hins
   cases hins
   exact ⟨_, _, rfl⟩
@@ -359,8 +364,8 @@ theorem tlsSecond_of_ldr {g : Clif.Function} (hF : FnOk I file g) {pc : BitVec 6
   have hR := hF.bin.reloc _ (line_reloc hF hj (show (Insn.ldrTlsDescLo12 tmp rn n).reloc? =
     some (.tlsDescLd64Lo12, n, 0) from rfl))
   unfold RelocOk at hR
-  obtain ⟨r', hr', ht, ho⟩ := hR
-  exact ⟨r', hr', ht, by rw [← hpc]; show _ = wAt _ _; rw [ho]; rfl⟩
+  obtain ⟨-, r', hr', ht, ho⟩ := hR
+  exact ⟨r', hr', ht, by rw [← hpc, ho]; rfl⟩
 
 /-- The TLSDESC `adrp` word is neither a pair's second word nor a TLSDESC `ldr` word. -/
 theorem tlsFirst_not {g : Clif.Function} (hF : FnOk I file g)
