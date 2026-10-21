@@ -1,0 +1,11 @@
+# Whole-driver alias-class checkpoint
+
+The full #140 goal remains active/incomplete; production still uses the legacy driver.
+
+Two new compiled scratch modules add three public roots. `stock_lower_alias_classes` derives final alias classes, class growth, reservation-table preservation, NoOpportunity and actual final-resolver class preservation from the original `LowerScope` and a successful actual Stock run. Branch emission, outgoing demands, original and critical nodes, body scans and reverse traversal compose internally. No new source condition or alias certificate is required.
+
+Complete witnesses cover the real try-call payload194→return193 and resolved class, plus direct and indirect forced-critical-edge pipelines retaining the original unreachable predecessor. Each includes original scope/dominance/arity and actual raw/globalcheckedfallback/physical success. Both modules compiled exit0; the cumulative78-root normal audit is standard-only and preserves all75 prior exact sets. All prior source/compiled/log hashes and frozen canonical source/script manifests are unchanged. Detailed hashes and process evidence: [JSON receipt](stock-driver-alias-scratch.json).
+
+Scratch integration is still pending:36modules/78roots, exactly one bundled78-root MCP after integration, then2070normalroots preserving all1992prior exactsets and every full gate. The current live frozen watcher still covers1992roots; scratch is outside it. Preserve independently cached pipeline/metadata kernels. No scratch MCP has run.
+
+Next prove global raw/returned/prepared instruction classes and control ABI validity, original-input availability/checker/fallback completeness and Stock totality. All original value/register agreement, source/DFG/world/block/whole-driver simulation/completeness, remaining families/effects/calls/traps/sinking/TryCall continuations and actual compiler/checker/linker/generated-proof production integration remain mandatory. Complete final witnesses/audits/full gates/both E2E identity-stage parity/fresh complete comparison must preserve original inputs, old theorem variants/axiom sets, successful identities/stages and at least#179. Reconcile newer main218–227/f29d0c0 before integration/cutover.
