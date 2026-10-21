@@ -647,3 +647,13 @@ its witness are implementation pending normal validation, not a proof or
 activation pass. The audit list includes all five general roots and the witness.
 Validate with the pending logical source/body packet after the frozen arithmetic
 author gates; do not hold the first arithmetic landing for this next class.
+
+
+The pending logical function packet also includes `StockLogicalNotrap`: pure
+select/add/sub/AND/OR/XOR bodies ending in return cannot produce a source trap at
+any fuel; malformed operands may still be stuck, preserving the reference
+semantics. Its nonvacuity witness uses an actual sparse-ID OR function, independent
+argument values, successful lowering and a returned source run. This supplies the
+outcome branch needed by complete function simulation, alongside the entry/return
+composition. Both new roots are listed for axiom audit; normal validation remains
+pending. No production activation or full-goal completion is claimed.
