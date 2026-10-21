@@ -172,24 +172,50 @@ theorem intmin_check_ok {n : Nat} (hn : 60 ≤ n) {w : Nat} (hw : w = 8 ∨ w = 
 end
 
 section OvfFlags
-set_option maxHeartbeats 1000000
+
+private theorem condOn_adds1' {n : Nat} (hn : n = 32 ∨ n = 64) (a : BitVec n) :
+    condOn Cond.eq.bits (Arm.AddWithCarry a (BitVec.ofNat n 1) 0#1).2 = (a == BitVec.allOnes n) := by
+  rw [show ∀ ps, condOn Cond.eq.bits ps = decide (ps.z = 1#1) from fun _ => rfl]
+  have hr := Arm.fst_AddWithCarry_eq_add a (BitVec.ofNat n 1)
+  simp only [Arm.AddWithCarry, Arm.make_pstate, BitVec.zero_eq] at hr ⊢
+  rw [hr, Bool.eq_iff_iff]
+  simp only [decide_eq_true_eq, beq_iff_eq]
+  rcases hn with rfl | rfl <;> split <;> simp <;> bv_omega
+
+/-- `subs a, #1` overflows exactly at the signed minimum. -/
+private theorem condOn_sub1_vs' {n : Nat} (hn : n = 32 ∨ n = 64) (a : BitVec n) :
+    condOn Cond.vs.bits (cmpFlags a (BitVec.ofNat n 1)) = (a == BitVec.intMin n) := by
+  rw [show ∀ ps, condOn Cond.vs.bits ps = decide (ps.v = 1#1) from fun _ => rfl, Bool.eq_iff_iff]
+  simp only [decide_eq_true_eq, beq_iff_eq]
+  have hr := Arm.fst_AddWithCarry_eq_sub_neg a (~~~(BitVec.ofNat n 1))
+  simp only [cmpFlags, Arm.AddWithCarry, Arm.make_pstate, BitVec.not_not] at hr ⊢
+  rw [hr, ← BitVec.toInt_inj (y := BitVec.intMin n)]
+  have h1 := BitVec.toInt_lt (x := a); have h2 := BitVec.le_toInt a
+  split <;> rename_i h <;>
+    simp only [show (0#1 = 1#1) = False by decide, false_iff, true_iff] <;>
+    revert h <;> rw [← BitVec.toInt_inj] <;>
+    rcases hn with rfl | rfl <;>
+    · rw [BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_add, BitVec.toInt_add,
+        BitVec.toInt_signExtend_of_le (by decide), BitVec.toInt_signExtend_of_le (by decide),
+        BitVec.toInt_sub, BitVec.toInt_setWidth, BitVec.toInt_intMin, BitVec.toInt_not]
+      simp (disch := decide) only [BitVec.toInt_one, BitVec.toNat_ofNat]
+      simp only [Int.bmod_def] at *
+      simp only [Nat.reduceSub, Nat.reducePow, Nat.reduceAdd, Nat.reduceMod] at *
+      repeat' split
+      all_goals omega
 
 theorem condOn_adds1_32 (a : BitVec 32) :
-    condOn Cond.eq.bits (Arm.AddWithCarry a (BitVec.ofNat 32 1) 0#1).2 = (a == BitVec.allOnes 32) := by
-  simp only [condOn, Cond.bits, Arm.AddWithCarry, Arm.make_pstate, BitVec.zero_eq]
-  bv_decide
+    condOn Cond.eq.bits (Arm.AddWithCarry a (BitVec.ofNat 32 1) 0#1).2 = (a == BitVec.allOnes 32) :=
+  condOn_adds1' (.inl rfl) a
 theorem condOn_adds1_64 (a : BitVec 64) :
-    condOn Cond.eq.bits (Arm.AddWithCarry a (BitVec.ofNat 64 1) 0#1).2 = (a == BitVec.allOnes 64) := by
-  simp only [condOn, Cond.bits, Arm.AddWithCarry, Arm.make_pstate, BitVec.zero_eq]
-  bv_decide
+    condOn Cond.eq.bits (Arm.AddWithCarry a (BitVec.ofNat 64 1) 0#1).2 = (a == BitVec.allOnes 64) :=
+  condOn_adds1' (.inr rfl) a
 theorem condOn_sub1_vs_32 (a : BitVec 32) :
-    condOn Cond.vs.bits (cmpFlags a (BitVec.ofNat 32 1)) = (a == BitVec.intMin 32) := by
-  simp only [condOn, Cond.bits, cmpFlags, Arm.AddWithCarry, Arm.make_pstate, BitVec.zero_eq]
-  bv_decide
+    condOn Cond.vs.bits (cmpFlags a (BitVec.ofNat 32 1)) = (a == BitVec.intMin 32) :=
+  condOn_sub1_vs' (.inl rfl) a
 theorem condOn_sub1_vs_64 (a : BitVec 64) :
-    condOn Cond.vs.bits (cmpFlags a (BitVec.ofNat 64 1)) = (a == BitVec.intMin 64) := by
-  simp only [condOn, Cond.bits, cmpFlags, Arm.AddWithCarry, Arm.make_pstate, BitVec.zero_eq]
-  bv_decide
+    condOn Cond.vs.bits (cmpFlags a (BitVec.ofNat 64 1)) = (a == BitVec.intMin 64) :=
+  condOn_sub1_vs' (.inr rfl) a
 theorem condOn_nzcv0_vs :
     condOn Cond.vs.bits (Arm.make_pstate (BitVec.ofBool false) (BitVec.ofBool false)
       (BitVec.ofBool false) (BitVec.ofBool false)) = false := by
@@ -281,12 +307,24 @@ theorem runs_lsl32 (hR : Refines F isem) (d x s : Nat) (hs : s < 32) (ρ : Nat �
     (by show ispec _ [ρ x] w = _; simp [ispec, shiftVal, defOut, OperandSize.bits, hs]) rfl
     (SameWorldNF.refl F w) fun _ _ => rfl
 
-set_option maxHeartbeats 1000000 in
 theorem shl_intMin_8 (a : BitVec 8) : (a.signExtend 32 <<< 24 = BitVec.intMin 32) ↔ a = BitVec.intMin 8 := by
-  bv_decide
-set_option maxHeartbeats 1000000 in
+  rw [BitVec.toNat_eq, BitVec.toNat_eq, BitVec.toNat_shiftLeft, BitVec.toNat_signExtend,
+    BitVec.toNat_intMin, BitVec.toNat_intMin, BitVec.msb_eq_decide, BitVec.toNat_setWidth]
+  have := a.isLt
+  simp only [Nat.shiftLeft_eq]
+  split <;> simp at * <;> omega
 theorem shl_intMin_16 (a : BitVec 16) : (a.signExtend 32 <<< 16 = BitVec.intMin 32) ↔ a = BitVec.intMin 16 := by
-  bv_decide
+  rw [BitVec.toNat_eq, BitVec.toNat_eq, BitVec.toNat_shiftLeft, BitVec.toNat_signExtend,
+    BitVec.toNat_intMin, BitVec.toNat_intMin, BitVec.msb_eq_decide, BitVec.toNat_setWidth]
+  have := a.isLt
+  simp only [Nat.shiftLeft_eq]
+  split <;> simp at * <;> omega
+
+private theorem signExtend_allOnes {n : Nat} (hn : n = 8 ∨ n = 16 ∨ n = 32) (b : BitVec n) :
+    b.signExtend 32 = BitVec.allOnes 32 ↔ b = BitVec.allOnes n := by
+  rw [← BitVec.toInt_inj, ← BitVec.toInt_inj (x := b), BitVec.toInt_signExtend_of_le (by omega),
+    BitVec.toInt_allOnes, BitVec.toInt_allOnes]
+  rcases hn with rfl | rfl | rfl <;> simp
 
 theorem divOpnd_intMin {n : Nat} (hn : n = 32 ∨ n = 64) {a : BitVec n} {A : CV} (h : DivOpnd true a A) :
     opnd (szOf n) A = BitVec.intMin _ ↔ a = BitVec.intMin n := by
@@ -308,13 +346,13 @@ theorem divOpnd_allOnes {n : Nat} (hn : n = 8 ∨ n = 16 ∨ n = 32 ∨ n = 64) 
   rcases hn with rfl | rfl | rfl | rfl
   · simp only [show (8:Nat) ≤ 32 by decide, ↓reduceIte] at h
     show ((lo64 B).setWidth 32 = BitVec.allOnes 32) ↔ _
-    rw [h]; bv_decide
+    rw [h]; exact signExtend_allOnes (by decide) b
   · simp only [show (16:Nat) ≤ 32 by decide, ↓reduceIte] at h
     show ((lo64 B).setWidth 32 = BitVec.allOnes 32) ↔ _
-    rw [h]; bv_decide
+    rw [h]; exact signExtend_allOnes (by decide) b
   · simp only [show (32:Nat) ≤ 32 by decide, ↓reduceIte] at h
     show ((lo64 B).setWidth 32 = BitVec.allOnes 32) ↔ _
-    rw [h]; bv_decide
+    rw [h]; exact signExtend_allOnes (by decide) b
   · simp only [show ¬ (64:Nat) ≤ 32 by decide, ↓reduceIte] at h
     show ((lo64 B).setWidth 64 = BitVec.allOnes 64) ↔ _
     rw [h]; simp
