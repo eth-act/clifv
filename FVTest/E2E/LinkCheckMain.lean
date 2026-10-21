@@ -37,10 +37,10 @@ def main (args : List String) : IO UInt32 := do
         let mut found : Option Nat := none
         for (lower,idx) in Stock.Scalar.lowerRoutes.zipIdx do
           if found.isNone then
-            let matches := match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
+            let sameBytes := match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
               | .error _ => false
               | .ok a => artB I0 (fileRd file) phs a
-            if matches then found := some idx
+            if sameBytes then found := some idx
         let idx := found.getD 4
         if idx != 0 then choices := choices ++ [(f.name,idx)]
   let actualLower := Stock.Scalar.lowerWithRoutes choices
