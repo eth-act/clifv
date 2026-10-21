@@ -1,0 +1,95 @@
+{
+  "utc": "2026-10-21T11:37:50.584321+00:00",
+  "base": "08020ed34bea4a3656c1b080c55087da40f2ebbe",
+  "head": "c2449401454c4b5e000b13074a8aec6149732694",
+  "scope": "Literal header preservation for every modified existing FV/FVTest Lean file, including private theorem headers; all prior five files rechecked byte-for-byte against retained hashes. Normal elaboration and exact prior axiom-set parity remain mandatory.",
+  "files": [
+    {
+      "file": "FV/Backend/Proof/StockCmpWithFlags.lean",
+      "base_sha256": "e38c0e5e4995e266d4e38dccaa57a293dfe03550fa91b76a4a19e50daccac27a",
+      "head_sha256": "d49824a87d0951140462c5d9e4a4614d2fbfe52e8839abc795a2378062b8be00",
+      "retained_theorem_headers": {
+        "sem_ctor": "125147f3307f29d3792ea5d788433046fba7e6368ec602aa0f1f5a8b2c90cd88",
+        "sem_mkData": "8dab981c2e7fbdf74c7c45183dcab3618eb1266030fc4e461d6983495f5c6143",
+        "sem_unData": "0c59b4961df919ca32de0f96f9e22357664e703d96842fded01290edd571ea14",
+        "stock_cmp_with_flags_reg": "0aa300c646a24c84e9e120f7245b94773e476231dfe35d35fb34a9494f599f49"
+      },
+      "old_theorem_headers_unchanged": true
+    },
+    {
+      "file": "FV/Backend/Proof/StockContext.lean",
+      "base_sha256": "0710a218afb39803e349ac7fea1132964b2aee7f8380e5ae1f816de8be37f5fd",
+      "head_sha256": "35826e2a8b3eb49c0722e1d86a0bccbf76d2bac5f563890c9d7c1bcb92c8cd33",
+      "retained_theorem_headers": {
+        "initial_valid": "71a1b08d096673df9bd5c58bf04c54ebbc146ad795d7ee1dc38fe0ad5937bee7",
+        "step_value_lookup": "c5a3f040ea6dae402db4c3ba0e8544c2f15eb79ca9a8e5a4e489b6f8ea3b7c6b",
+        "value_valid": "d08c4be3192d7bdf7f8439526def2572c19bdf059c1099c10bf8c409d1d70701",
+        "exception_valid": "49aca9a6feebc902604d6199871bbdc56a810175b48572cfcb9f1e7f4f87d320",
+        "allocation_valid": "2b368675a760275c6347533328138c515d48837ff083a4bbebc50a4e176515fa",
+        "fold_next": "872ba1f20a7c4d43b9a662e74a3891f17eb0743c8fdde369f1ecb2ecb2c64308",
+        "allocation_next": "054f47fd18d7309bcd596ee460c37dc92a2c52bad4e4b6ee13ee2f16d35c1cf7",
+        "step_size": "78000db35f15d870faa5353f1fbbb9ac10eb2b386c2358a3927c9e984667cd9c",
+        "step_domain": "db1ef682fd48f9097ff475747a2f0207f15f92bee1996abdfcdb5060ed8fd1d0",
+        "fold_domain": "4999f542c430298a8fb0cdd2f47ac69ad98e9f199e06b585fdbe29024137113d",
+        "allocation_domain": "71620f96c978f2febb186f586c811a417e4946ae12e1b9d64d47eed0aa63b624",
+        "block_requests_values": "499311d8bdea52fdc889a2f5c21f304dcdadfbbc11c2054a9f6d85e6045dc53c",
+        "mapM_projection": "f8ed0b58aa55a24105a1a7afff39e869fbad71ef5265e2be210b89f59741c3cd",
+        "allocationRequests_values": "18354e79eb99ef579620694ca27c49cb245c121e82c10d5433f9a203178d9686",
+        "mem_value_filterMap": "d7a5a1173299eb2ddf7530865fd74436048b2367762112856aec6f3b20245be0",
+        "finish_allocated": "f6fb4e3a6dfe143400947f9182415bdde43ff365a51a49ef5fbd8973e1659d26",
+        "buildCtx_allocation": "1ea656844f853f7978b2a1283bccdec4b235e3d22899c4f75fd28bb34693125b",
+        "buildCtx_valClass": "529bc80c37097f5cf7ef1114e96e50cf41d15787f6cb6701cd9803fef1bbd376",
+        "buildCtx_allocated": "0b00f17d0ce7f1f270c88e98d67f6c818b6091b12b2db1666df1f9b78c9c8301",
+        "buildCtx_demand_size": "45b457cc25143918ac1015207042c500c813e039c501f06fa0e881560fe5e524",
+        "buildCtx_value_domain": "f81f2e4619ef5f74a8024a4fe11f763423318c9da9206f7ca71b877839a5c480",
+        "allocation_valid_witness": "a9a025119a8f39819f4a2fda9202f633aef774584a770886c6eb580be8ce6ca0",
+        "allocation_next_witness": "fc782779aa85eb6ce3b15960f2bf5428ce09544e6b10775960fb94a75d6d4e1a",
+        "allocation_domain_witness": "3b706cb0c62124eba6b5d353cef26d6783386ee2c1847718a4bc545d78add694",
+        "fixture_build": "766e472753d2ad0e175f2cba1dd1763e31cdf096133e7a886ea84bddc858af99",
+        "allocationRequests_values_witness": "d812e616fa4eec49f6e3c0c4e2fcc432cad20a63190ba7100bb66c34eb175cdd",
+        "buildCtx_allocation_witness": "9fe0206ea5d18d0ebac5cf8f15f0ae4c70a5540fe38a2f5c710939320e70ad03",
+        "buildCtx_allocated_witness": "dfe17fa4a35d2419e72757895c0848bc263663d6c99913b11b9cc9813b4ab9f3",
+        "buildCtx_demand_size_witness": "d8124a3dced8dc46d7050341de9da69536eb199ae966e10ca67a181aba398e13",
+        "buildCtx_value_domain_witness": "41a2537e2ad2297f7c889b0e0c0a516fea494007f95941673b7707c36b85bb26"
+      },
+      "old_theorem_headers_unchanged": true
+    },
+    {
+      "file": "FVTest/Backend/Main.lean",
+      "base_sha256": "08bcb4217b8b02e8e5e29b5f243c328e2421274cdb9e3dd44c566ca653ee2931",
+      "head_sha256": "23f66b070412a87293e0e8ccf126b60f16df37f8bd5f87beb417a2cd5f20196d",
+      "retained_theorem_headers": {},
+      "old_theorem_headers_unchanged": true
+    },
+    {
+      "file": "FVTest/E2E/LinkCheckMain.lean",
+      "base_sha256": "b77f50c6fb52a4e22dfdda3ffc949672a66fe4a683a23dea7b24cc4dbdc86ec6",
+      "head_sha256": "b946b23a066641fd18c04d2b2142076f09ca0cf994a9b62b102c55f7c20d2df9",
+      "retained_theorem_headers": {},
+      "old_theorem_headers_unchanged": true
+    },
+    {
+      "file": "FVTest/Link/LeanLinkMain.lean",
+      "base_sha256": "cbd9dae1d26b14a313ed848331053fcc716594b90189b621a4659277adb3e89d",
+      "head_sha256": "fe1e7e5df9a5bbe25dd160956410901a8cd3f5a994caf3f41581eeb5b297cb3e",
+      "retained_theorem_headers": {},
+      "old_theorem_headers_unchanged": true
+    },
+    {
+      "file": "FV/Backend/Proof/PerEdgeSpillCycleFixture.lean",
+      "base_sha256": "5826a487673794ab63d303d09ff97ffd7ae07f5016bdf0bfe27e3da18f902287",
+      "head_sha256": "5c57124e14633ecdf542e861f943544b7d7ac36d3b934565db1fb8512479b5f8",
+      "retained_theorem_headers": {
+        "original_build": "4695c465bdb192fc64e50a9abb9c14150be35b5eab7447563e3fe195531d46b1",
+        "scope": "2442c79ea7acae5d84788376209a86ed1ce2989c646f47072e039957f20390df",
+        "dominated": "19bbe3150a9eaabe84bf5a6e7863c95095b0256655801e8e05c7ee4235ce8003",
+        "observed": "e103fa4c0f9fb3fb8989cb618f76d291c627cfb815efcddc55e70cdb1f77fedd",
+        "cycle_fixture": "3f130d7e7135dbc1a25b01c74c8479dc8ae54e6b11389ad67185ec1e995bf257"
+      },
+      "old_theorem_headers_unchanged": true
+    }
+  ],
+  "retained_old_headers": 39,
+  "all_old_theorem_headers_unchanged": true,
+  "deleted_existing_Lean_files": []
+}

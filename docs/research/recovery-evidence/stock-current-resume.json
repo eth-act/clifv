@@ -1,0 +1,697 @@
+{
+  "state": "active",
+  "utc": "2026-10-21T11:39:00.006391+00:00",
+  "goal_complete": false,
+  "objective": "Land the updated Stock driver incrementally on main through all original140 simulation/completeness/consumer obligations; preserve original inputs, variants, axiom sets, accepted identities and ordered stages.",
+  "previous_goal_turn": "verified wait: observer checked actual process command lines/states and current gate records; see latest_authoritative_observation",
+  "current_main": "08020ed34bea4a3656c1b080c55087da40f2ebbe",
+  "arithmetic": {
+    "worktree": "/home/lee/clifv/.worktrees/stock-driver-incremental",
+    "branch": "agent/stock-spill-cycle-resource-repair-20261021",
+    "head": "c2449401454c4b5e000b13074a8aec6149732694",
+    "controller_pid": 1193364,
+    "scheduler_pid": 1193738,
+    "phase": "all-modules",
+    "evidence": "/tmp/stock-arithmetic-arm-model-author-gates/progress.json",
+    "controller": "/tmp/stock-arithmetic-arm-model-author-gates.py",
+    "readiness": "/tmp/stock-arithmetic-spill-repaired-ready-to-land.py",
+    "latest_completed_modules_observed": 1534,
+    "latest_nonzero": [],
+    "module_policy": "all current FV/FVTest module keys checked; source/import/config-matching Lake artifacts reused. No incomplete old epoch assumption. All22 static gate names and dynamic identity/example/generated gates retained.",
+    "strict_arithmetic_runtime_source_sha256": "b00043a15c8616e6b4b78bfa2d24634eeacb825bbd75d56db6aa1b1626641b1c",
+    "cache_baseline": "Exact-key current-CI RegallocLemmas proof artifact; normal no-build downstream restore passed.",
+    "prior_epoch": "/tmp/stock-arithmetic-arm-model-before-CI-preference",
+    "consumer_route_preflight": "/tmp/stock-arithmetic-arm-model-author-gates/consumer-route-preflight.json",
+    "actual_compiler_pids_last_observed": [
+      1476025
+    ],
+    "total_current_module_list": 2589,
+    "latest_heavy_success": {
+      "module": "FV.Backend.Proof.StockMinMaxWideConstantDriverRuns",
+      "seconds": 833,
+      "peak_GiB": 9.3,
+      "prior_kernel_pid": 4101788,
+      "exit": 0
+    },
+    "latest_scalar_select_success": {
+      "module": "FV.Backend.Proof.StockSelectScalarDriverRuns",
+      "seconds": 412,
+      "peak_GiB": 8.7,
+      "prior_kernel_pid": 4136809,
+      "exit": 0
+    },
+    "latest_killtab_success": {
+      "module": "FV.Backend.Proof.KillTab",
+      "seconds": 604,
+      "peak_GiB": 3.0,
+      "exit": 0
+    },
+    "latest_try_shape_success": {
+      "module": "FV.Backend.Proof.IselShpTry",
+      "seconds": 583,
+      "peak_GiB": 2.2,
+      "exit": 0
+    },
+    "latest_total_shape_success": {
+      "module": "FV.Backend.Proof.IselShpTotal",
+      "seconds": 277,
+      "peak_GiB": 7.6,
+      "exit": 0
+    },
+    "retained_theorem_source_preflight": "/tmp/stock-arithmetic-arm-model-author-gates/retained-theorem-source-preflight.json",
+    "external_gate_input_preflight": "/tmp/stock-arithmetic-arm-model-author-gates/external-gate-input-preflight.json",
+    "original_identity_baseline_restoration": "/tmp/stock-arithmetic-arm-model-author-gates/original-identity-baseline-restoration.json",
+    "unpublished_pr_body": "/tmp/stock-arithmetic-activation-pr-body.txt",
+    "latest_narrow_constant_success": {
+      "module": "FV.Backend.Proof.StockMinMaxNarrowConstantDriverRuns",
+      "seconds": 922,
+      "peak_GiB": 9.3,
+      "exit": 0
+    },
+    "extra_committed_route_gate": "/tmp/stock-arithmetic-arm-model-author-gates/committed-route-extra-gate.json",
+    "latest_extension_witness_success": {
+      "module": "FV.Backend.Proof.StockAddSubExtensionWitness",
+      "seconds": 966,
+      "peak_GiB": 9.3,
+      "exit": 0
+    },
+    "latest_comparison_driver_success": {
+      "module": "FV.Backend.Proof.StockSelectComparisonDriverRuns",
+      "seconds": 862,
+      "peak_GiB": 9.2,
+      "exit": 0
+    },
+    "latest_link_calls_success": {
+      "module": "FV.E2E.LinkOwnCallsRun",
+      "seconds": 550,
+      "peak_GiB": 4.7,
+      "exit": 0
+    },
+    "latest_defgen_wrap_success": {
+      "module": "FV.Backend.Proof.DefGenWrap",
+      "seconds": 800,
+      "peak_GiB": 5.2,
+      "exit": 0
+    },
+    "latest_defgen_table_success": {
+      "module": "FV.Backend.Proof.DefGenTab",
+      "seconds": 841,
+      "peak_GiB": 3.5,
+      "exit": 0
+    },
+    "latest_cast_success": {
+      "module": "FV.Backend.Proof.StockCastWitness",
+      "seconds": 361,
+      "peak_GiB": 9.7,
+      "exit": 0
+    },
+    "latest_source_sink_table_success": {
+      "module": "FV.Backend.Proof.StockSourceSinkTable",
+      "seconds": 116,
+      "peak_GiB": 13.2,
+      "exit": 0
+    },
+    "latest_shift_witness_success": {
+      "module": "FV.Backend.Proof.StockShiftWitnessInputs",
+      "seconds": 675,
+      "peak_GiB": 10.0,
+      "exit": 0
+    },
+    "latest_kill_try_success": {
+      "module": "FV.Backend.Proof.KillTryDefs",
+      "seconds": 574,
+      "peak_GiB": 2.2,
+      "exit": 0
+    },
+    "latest_link_try_success": {
+      "module": "FV.E2E.LinkOwnCallsTry",
+      "seconds": 593,
+      "peak_GiB": 2.4,
+      "exit": 0
+    },
+    "observer": "/tmp/stock-observe-arithmetic-gate.py",
+    "root": "/tmp/stock-arithmetic-spill-repaired-author-gates",
+    "controller_script": "/tmp/stock-arithmetic-spill-repaired-author-gates.py",
+    "retained_normal_key_modules": 1523,
+    "remaining_modules_initial": 1066,
+    "supplemental_runtime_receipt": "/tmp/stock-arithmetic-spill-repaired-author-gates/committed-route-extra-gate.json"
+  },
+  "retired_old_epoch": {
+    "head": "213fe68bfbda3ed5d237cb7df6651f47e5a189bc",
+    "old_author": 1762992,
+    "old_scheduler": 1763255,
+    "old_observer": 2890710,
+    "old_handoff": 2912219,
+    "all_retired_only_after_live_kernel_exit0": true,
+    "no_proof_kernel_interrupted": true,
+    "receipt": "/tmp/stock-arm-drained-handoff/receipt.json",
+    "handoff": "/tmp/stock-arm-drained-handoff/progress.json",
+    "completed_old_log_records": 1258,
+    "last_addsub_shift_edge_kernel_exit_status": 0,
+    "old_full_epoch_complete": false,
+    "all_frozen_sources_verified": 2655,
+    "old_source_branch_preserved": "agent/stock-arithmetic-production-current-main"
+  },
+  "mixed": {
+    "worktree": "/home/lee/clifv/.worktrees/stock-mixed-production",
+    "branch": "agent/stock-mixed-arm-model-20261021T003711Z",
+    "head": "bbcdf080a43d340087692da65828c8a36762f795",
+    "source_code_identical_to_saved_old_model_packet": 30,
+    "old_model_evidence_branch": "agent/stock-mixed-production-current-main",
+    "old_model_evidence_head": "11a57ca637d2cb87ed85764c6e2e88feccf90a84",
+    "normal_old_model_distinct_module_builds": 366,
+    "old_model_normal_runtime_positive_cases": 48,
+    "old_model_missing_binary_negative_controls": 2,
+    "old_model_fresh_native_objects_tables_inputs_matching_prior624_call_execution": 24,
+    "all_current_Arm_validation_pending": true,
+    "normal_integration_gate": "scripts/check-stock-mixed-integration.py",
+    "normal_runtime_receipt": "docs/research/stock-mixed-normal-runtimes-strict.json",
+    "source_preparation": "/tmp/stock-mixed-arm-source-prep.json",
+    "no_new_worktree_or_physical_cache": true
+  },
+  "preserved_saved_source": {
+    "worktree": "/home/lee/clifv/.worktrees/driver-proof-resume",
+    "head": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "dirty_saved_paths": 1874,
+    "never_overwrite_or_stash": true
+  },
+  "logical_saved_source": {
+    "branch": "agent/stock-logical-production",
+    "head": "95d72bb8b6115536699e0b710b7d46c23cd67bc5",
+    "worktree": null,
+    "next": "normal/private-name port, actual retained binding and guarded original-source simulation, whole witnesses/class and full current gates after arithmetic/Mixed"
+  },
+  "remote_recovery": [
+    {
+      "commit": "0b76d25d796550be1cfa6e720b353c265f6a227a",
+      "branch": "agent/stock-driver-wip-backup-20261021T011134Z",
+      "archive": "/tmp/stock-normal-complete-recovery/evidence.tar.gz",
+      "sha256": "598fdc4bcd44b22615380395f0b6dff3cd5a791467a39443d14389645fe29556",
+      "includes": "1874 saved dirty paths,80 normal build logs/receipts, exact normal runtime logs and24 matching native exports, previous long44 body and cache317 verification"
+    },
+    {
+      "commit": "400debde42252efe4e402e1bb4ef4c1f1b114a96",
+      "branch": "agent/stock-driver-wip-backup-20261021T011946Z",
+      "archive": "/tmp/stock-arm-drained-handoff/completed-old-source-epoch.tar.gz",
+      "includes": "1874 saved dirty paths, complete stopped old epoch logs/inputs, last kernel exit0, new drained-handoff worker/controller/readiness and no full-old-pass claim"
+    },
+    {
+      "commit": "70be76da74642a8f274644dc3c0b5efbeef7a00f",
+      "branch": "agent/stock-driver-wip-backup-20261021T022512Z",
+      "archive": "/tmp/stock-current-CI-preference-handoff/current-epoch-and-cache-evidence.tar.gz",
+      "includes": "1874 saved dirty paths;421 current-model partial epoch records+two successful final kernels; entire extra-CI/cache-serialization/toolchain investigation, original old artifact and exact-key bundle before adoption."
+    },
+    {
+      "commit": "d15e909a8f2bf4b6ab35c6c8525dd4692105b816",
+      "branch": "agent/stock-driver-wip-backup-20261021T023956Z",
+      "archive": "/tmp/stock-cache-alignment-final-backup/evidence.tar.gz",
+      "sha256": "a6f3e5004b7a57fb53e07308097d48c731c341bd8771961281c0870070e22c77",
+      "includes": "1874 saved dirty paths; complete successful cache-alignment receipt including saved-trace precedence, resumed1235132/1235140 controls, original artifact/key proof and all input-map analyses."
+    },
+    {
+      "commit": "60618a64528739ca8365a1895ab46f4545d5ae80",
+      "branch": "agent/stock-driver-wip-backup-20261021T025555Z",
+      "archive": "/tmp/stock-late-w1-final-backup/evidence.tar.gz",
+      "sha256": "5f87ecedc79a58b7881ebb50146f0f6944a67cada0eee857ff86586b7e18df85",
+      "includes": "all1874 saved dirty paths, late wave1 stage1/4 exact current mappings/record+artifact verification, current live handles/status and original cache preference alignment evidence."
+    }
+  ],
+  "resource_policy": {
+    "aggregate_MiB": 16384,
+    "max_actual_compiler_jobs": 2,
+    "OMP_NUM_THREADS": 2,
+    "OMP_THREAD_LIMIT": 2,
+    "one_physical_cache": "/home/lee/clifv/.worktrees/driver-proof-resume/.lake/artifact-cache",
+    "disk_free_GiB_observed": 766,
+    "worktrees_with_current_ownership": [
+      "/home/lee/clifv",
+      "driver-proof-resume",
+      "stock-lowering",
+      "stock-driver-incremental",
+      "stock-mixed-production"
+    ],
+    "no_proof_wall_timeout_or_pattern_kill": true,
+    "cleanup": "12 completed helpers and duplicate native objects removed only after byte verification against remotely backed archive. All5 worktrees still needed; no new cache/tree. Five additional completed cache/probe helpers removed after verified remote archive; unneeded duplicate toolchain/archive removed."
+  },
+  "current_model_CI_cache": {
+    "run": 39519636227,
+    "earlier_receipt": "/tmp/stock-08020-ci-cache-stages/receipt.json",
+    "stage5_receipt": "/tmp/stock-08020-ci-cache-heavy-stage5/receipt.json",
+    "unique_output_keys_across_two_imports": 380,
+    "stage5_records": 317,
+    "stage5_referenced_artifacts": 639,
+    "not_gate_pass": true,
+    "importer_schema": "output data may be dict facets OR a string ltar artifact; recursively verify leaf references. Do not repeat old data.values-only bug.",
+    "extra_receipt": "/tmp/stock-08020-ci-extra-stages/receipt.json",
+    "extra_records": 643,
+    "extra_referenced_artifacts": 1265,
+    "extra_new_keys": 399,
+    "unique_output_keys_across_imports": 938,
+    "alignment": "/tmp/stock-current-CI-preference-handoff/alignment-receipt.json",
+    "important_saved_trace_behavior": "Lake getArtifacts? prefers valid saved trace before output mapping. Preserve/quarantine only the exact known old RegallocLemmas trace to adopt verified CI output under the SAME input key7f930049350db887. No custom input-hash rebinding.",
+    "late_w1_receipt": "/tmp/stock-08020-ci-late-w1-stages/receipt.json",
+    "late_w1_records": 553,
+    "late_w1_referenced_artifacts": 1332,
+    "late_w1_new_keys": 159,
+    "preferred_RegallocLemmas_unchanged": true
+  },
+  "coordination": {
+    "own_status": 44,
+    "task": 140,
+    "boundary_comment": 6304759270,
+    "last_Kev_status": 52,
+    "last_jsign_status": 71,
+    "stale_status_is_uncertain": true,
+    "no_boundary_reply_observed": true
+  },
+  "execution_plan": "/home/lee/clifv/.worktrees/stock-mixed-production/docs/plans/stock-driver-incremental-delivery.md",
+  "next": "Continue same arithmetic1235132/1235140 current-key all-module validation and complete actual first activation gates, then author squash. Keep logical9c3e9a02 source-run/body packet pending normal651-module proof validation; no extra compiler jobs beyond aggregate16GiB/max2. Prior complete EXTR normal/MCP epoch1827ff05 preserved; aligned logical replay still pending. Continue Mixed/logical consumers and every original140 obligation after first arithmetic priority.",
+  "logical_current_work": {
+    "worktree": "/home/lee/clifv/.worktrees/stock-mixed-production",
+    "branch": "agent/stock-logical-current-model",
+    "head": "9c3e9a024753adcaa39cabfa636aa615b393ad71",
+    "remote_backup_verified": true,
+    "validation_pending": true,
+    "controller_pid": null,
+    "controller": "/tmp/stock-logical-normal-batch-attempt2.py",
+    "progress": "/tmp/stock-logical-selected-normal-attempt2/progress.json",
+    "scheduler_log": "/tmp/stock-logical-selected-normal-attempt2/modules/sched.log",
+    "target": "FV.E2E.StockLogicalExtrRootWitness",
+    "frozen_packet_manifest": "/tmp/stock-logical-selected-normal/source-inputs.json",
+    "next_target": "FV.Backend.Proof.StockLogicalSourceWitness including complete logical dispatch, guarded/source-derived body and new actual-run source execution; normal validation pending651 modules",
+    "arithmetic_launch_metadata_held": false,
+    "all_prior_actual_kernels_drained_without_interruption": true,
+    "finally_resumes_arithmetic": true,
+    "initial_launch_failure": "/tmp/stock-logical-selected-normal/build.log; missing /usr/bin/time before any proof started; fixed using existing timing wrapper",
+    "scheduler_pid": null,
+    "remote_recovery": {
+      "utc": "20261021T033206Z",
+      "branch": "agent/stock-driver-wip-backup-20261021T033206Z",
+      "commit": "8240006d35eadfb739a2e84b2f0a34a59a05395b",
+      "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+      "captured_dirty_paths": 1874,
+      "additional_evidence_paths": 1,
+      "remote_commit_and_all_captured_blobs_verified": true,
+      "index_and_active_head_unchanged": true
+    },
+    "partial_evidence_archive": {
+      "archive": "/tmp/stock-logical-selected-recovery/evidence.tar.gz",
+      "sha256": "2ee74ce09de9d88f1643a2c699e0f042f413731565c6854b6630ac2af4d27713",
+      "bytes": 177128,
+      "paths": 852,
+      "completed_module_records": 420,
+      "actual_build_records": 23,
+      "partial": true
+    },
+    "observed_current_job": "StockFreshRecordValues cap12G after StockConstantRecordValues exit0",
+    "core_priority": {
+      "state": "normal_core_and_record_source_passed",
+      "core_progress": "/tmp/stock-logical-core-priority-attempt3/progress.json",
+      "record_source_progress": "/tmp/stock-logical-record-source-priority/progress.json",
+      "normal_std3_audit": "/tmp/stock-extr-core-normal-audit/result.json"
+    },
+    "local_unpublished_refinement": null,
+    "compact_witness": {
+      "controller_pid": 3244768,
+      "controller": "/tmp/stock-logical-compact-witness.py",
+      "progress": "/tmp/stock-logical-compact-witness/progress.json",
+      "held_scheduler": 2201390,
+      "finally_resumes": 2201390,
+      "first_contract_diagnostics": "Encode/Driver namespace imports corrected after failed contract leaf; other current kernels preserved",
+      "current_live_kernel_wrapper": null,
+      "corrected_contract_normal_build": "/tmp/stock-stage-contract-corrected-build.log",
+      "current_live_kernel_pid": null,
+      "old_kernel_pid_terminal": 3253213,
+      "old_wrapper_pid_terminal": 3253190,
+      "memory_cap_retry": "/tmp/stock-logical-compact-witness/regalloc-atomic-6G-oom.json",
+      "initial_cap_GiB": 6,
+      "current_cap_GiB": 12,
+      "atomic_retry_passed": {
+        "normal_exit_status": 0,
+        "elapsed_seconds": 1145,
+        "peak_GiB": 9.6,
+        "log": "/tmp/stock-logical-compact-witness/modules/FV.Backend.Proof.RegallocAtomic.log",
+        "timing": "/tmp/stock-logical-compact-witness/modules/FV.Backend.Proof.RegallocAtomic.time"
+      },
+      "current_phase": "RegallocCover after successful atomic retry",
+      "state": "terminal_first_contract_failure_preserved_atomic_and_coverage_passed"
+    },
+    "compact_witness_retry": {
+      "controller_pid": 3349630,
+      "controller": "/tmp/stock-logical-compact-witness-attempt2.py",
+      "progress": "/tmp/stock-logical-compact-witness-attempt2/progress.json",
+      "waits_exact_handles": [
+        3244768,
+        3249812
+      ],
+      "holds_and_finally_resumes": 2201390,
+      "state": "terminal_failed_only_old_map_lookup_then_corrected_actual_target_passed_in_attempt3"
+    },
+    "remote_verified_core_evidence": {
+      "utc": "20261021T042020Z",
+      "branch": "agent/stock-driver-wip-backup-20261021T042020Z",
+      "commit": "75aee61f2088ec17450164bbf92fcb1b9f34a0ad",
+      "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+      "captured_dirty_paths": 1874,
+      "additional_evidence_paths": 1,
+      "remote_commit_and_all_captured_blobs_verified": true,
+      "index_and_active_head_unchanged": true,
+      "archive": {
+        "archive": "/tmp/stock-logical-current-verified-recovery-final/evidence.tar.gz",
+        "sha256": "803286af0ba40ef4d10923917c1ee8daca9ff615a05b76e80d8fb342fcacaab1",
+        "bytes": 92125,
+        "paths": 133,
+        "source_head": "2b46f7a8a65dc76743f32b5275cedd18c4b4d0c4"
+      }
+    },
+    "normal_complete_witness": "passed /tmp/stock-logical-compact-witness-attempt3/progress.json",
+    "normal_axiom_audit": "/tmp/stock-logical-root-complete-handoff/axiom-roots.json",
+    "single_MCP_receipt": "docs/research/stock-logical-extr-current-model-mcp.json",
+    "handoff": "/tmp/stock-logical-root-complete-handoff/receipt.json",
+    "inactive_view_saved_trace_alignment_pending": "/tmp/stock-logical-root-complete-handoff/cache-variant-handoff/receipt.json (preferred same key materialized; aligned root replay pending at2 frontier modules)",
+    "remote_complete_packet_recovery": {
+      "utc": "20261021T050819Z",
+      "branch": "agent/stock-driver-wip-backup-20261021T050819Z",
+      "commit": "ef7bc0bcd975a1e6304593af3884576e8b80ca0e",
+      "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+      "captured_dirty_paths": 1874,
+      "additional_evidence_paths": 1,
+      "remote_commit_and_all_captured_blobs_verified": true,
+      "index_and_active_head_unchanged": true,
+      "archive": {
+        "archive": "/tmp/stock-logical-root-complete-recovery/evidence.tar.gz",
+        "sha256": "9ca400a05afeea7aabe9036ddb7ea953e57e69f13f725209388ec6246a7a4238",
+        "bytes": 1072336,
+        "paths": 1707,
+        "source_head": "1827ff059af4b27949bf5ea3862d07373d1caf5a"
+      }
+    },
+    "obsolete_root_controllers_archived_and_removed": true,
+    "source_run_bridge_recovery": {
+      "utc": "20261021T051919Z",
+      "branch": "agent/stock-driver-wip-backup-20261021T051919Z",
+      "commit": "f0b15ec810e87d41f659210ef91b8f773c1e53f3",
+      "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+      "captured_dirty_paths": 1874,
+      "additional_evidence_paths": 1,
+      "remote_commit_and_all_captured_blobs_verified": true,
+      "index_and_active_head_unchanged": true,
+      "archive": {
+        "archive": "/tmp/stock-logical-source-run-progress-recovery/evidence.tar.gz",
+        "sha256": "b85e243c1e7ca5510614dd79a80d1c0e91265b2255cb627332a2ffdf58e25eeb",
+        "bytes": 176259,
+        "paths": 12
+      }
+    }
+  },
+  "arithmetic_current_observation": {
+    "controller": 1235132,
+    "scheduler": 1235140,
+    "state": "running_all_modules",
+    "completed_records": 520,
+    "nonzero_records": 0,
+    "new_normal_passes": {
+      "FV.Backend.Proof.IselSzTab": {
+        "seconds": 1079,
+        "peak_GiB": 3.1
+      },
+      "FV.Backend.Proof.IselTermFactsCallT": {
+        "seconds": 767,
+        "peak_GiB": 2.0
+      }
+    },
+    "current_kernel": "StockSelectionReceipts after normal AluRecordValues/DemandExtent/AluOperandCoverage passes",
+    "first_actual_landing_priority": true
+  },
+  "logical_entry_return_pending": {
+    "head": "e6f366ddf3f8c43c0133dc6aa4d782f201b272c6",
+    "branch": "agent/stock-logical-current-model",
+    "remote_verified": true,
+    "normal_validation": "pending",
+    "target": "FV.Backend.Proof.StockLogicalReturnWitness",
+    "acyclic_local_closure": 756,
+    "preserved_old_variants": true,
+    "first_landing_priority": "arithmetic",
+    "latest_head": "f3a5527c6a420c7ee74d9a6ff97d14e6a92b2724",
+    "additional_target": "FV.Backend.Proof.StockLogicalNotrapWitness",
+    "additional_target_local_closure": 651,
+    "checker_target": "FV.Backend.Proof.StockLogicalCheckWitness",
+    "checker_target_local_closure": 715
+  },
+  "latest_progress_backup": {
+    "utc": "20261021T072809Z",
+    "branch": "agent/stock-driver-wip-backup-20261021T072809Z",
+    "commit": "c8f30fe82a485f4a119c6a38fd71e22803684bc2",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 1874,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true,
+    "evidence": {
+      "archive": "/tmp/stock-current-gate-progress-recovery-20261021T072809Z/evidence.tar.gz",
+      "sha256": "932508a842db7421b36034d13246c7a44199d9c4434b046f68695aacca4b951c",
+      "bytes": 6229120,
+      "completed_records": 866,
+      "paths": 1754
+    }
+  },
+  "status_history_before_consolidation": "/tmp/stock-status44-before-consolidation.md",
+  "gate_input_restoration_backup": {
+    "utc": "20261021T062524Z",
+    "branch": "agent/stock-driver-wip-backup-20261021T061345Z",
+    "commit": "43ec2f64613dbb787740287bbb722f054fb0a3eb",
+    "parent": "44cf348e773856a7534df9fc58fd38e317752edc",
+    "archive": "/tmp/stock-arithmetic-gate-input-recovery-20261021T062524Z/evidence.tar.gz",
+    "archive_sha256": "f306b689e200530341799305f7cb78e96c9e0d91bc70b1fcc4a6ebcd1d64c9b7",
+    "archive_bytes": 90744,
+    "archive_paths": 55,
+    "prior_axiom_roots_verified": 1181,
+    "remote_commit_blob_verified": true,
+    "all_active_heads_indexes_unchanged": true
+  },
+  "supplemental_gate_source_backup": {
+    "utc": "20261021T064548Z",
+    "branch": "agent/stock-driver-wip-backup-20261021T061345Z",
+    "commit": "6f11d7601ee488bc1859ca5cfe6f53317b2adef1",
+    "parent": "43ec2f64613dbb787740287bbb722f054fb0a3eb",
+    "remote_commit_and_blobs_verified": true,
+    "active_head_and_index_unchanged": true,
+    "test_state": "prepared_not_executed",
+    "files": [
+      {
+        "local": "/tmp/StockArithmeticCommittedRoute.lean",
+        "path": "docs/research/recovery-evidence/StockArithmeticCommittedRoute.lean",
+        "blob": "2227d6ba69fcc7abf2b31662accbcd09f2c6c78b",
+        "sha256": "c370fc8cafbe994d6af73a1c4d367b484e6d4d38ac7c0ece33c04fd637665a32"
+      },
+      {
+        "local": "/tmp/stock-arithmetic-arm-model-author-gates/committed-route-extra-gate.json",
+        "path": "docs/research/recovery-evidence/stock-arithmetic-committed-route-pending.json",
+        "blob": "6c989f3b6f3b5034e41f1e4987bb1e6f8f12fc78",
+        "sha256": "5e3b669c715e9069b2c3f3feb2e02f5c8bfe7dd69cc75b84536dc67f65873818"
+      }
+    ]
+  },
+  "latest140_coordination": "https://github.com/eth-act/clifv/issues/140#issuecomment-6309936540",
+  "readiness_extra_guard_backup": {
+    "utc": "20261021T071615Z",
+    "branch": "agent/stock-driver-wip-backup-20261021T061345Z",
+    "commit": "9927222da5b15737d1d9f8dfebda70c2aa15d9c5",
+    "parent": "6f11d7601ee488bc1859ca5cfe6f53317b2adef1",
+    "path": "docs/research/recovery-evidence/stock-arithmetic-ready-to-land.py",
+    "sha256": "679f243cbddf02262e2713633420537c3a99ea5455cdf98a181615fad68d15e6",
+    "remote_commit_blob_verified": true,
+    "active_head_index_unchanged": true
+  },
+  "latest_authoritative_observation": {
+    "utc": "2026-10-21T11:39:00.006391+00:00",
+    "head": "c2449401454c4b5e000b13074a8aec6149732694",
+    "checkout_head": "c2449401454c4b5e000b13074a8aec6149732694",
+    "supplemental_route_runtime_state": "prepared_not_executed",
+    "state": "running",
+    "phase": "all-modules",
+    "controller_pid": 1193364,
+    "controller_live": true,
+    "scheduler_pid": 1193738,
+    "scheduler_live": true,
+    "completed_module_records": 11,
+    "nonzero_records": [],
+    "actual_lean_jobs": [
+      {
+        "pid": 1476025,
+        "source": "/home/lee/clifv/.worktrees/stock-driver-incremental/FV/Backend/Proof/StockCmpZero64RightDefinedDriverRuns.lean",
+        "cpu_seconds": 44.0,
+        "elapsed_seconds": 44.1,
+        "rss_MiB": 8765.1
+      }
+    ],
+    "latest_module_events": [
+      "07:38:01 draining for solo FV.Backend.Proof.StockPerEdgeCriticalAllocatorWitness (16G)",
+      "07:38:15 done FV.Backend.Proof.StockArithmeticBodyRefines rc=0 16s maxrss=6.1G built -> ok",
+      "07:38:15 start FV.Backend.Proof.StockCmpZero64RightDefinedDriverRuns cap=12G running=1 avail=182.1G"
+    ],
+    "retained_current_key_modules": 1523,
+    "total_current_module_checks_observed": 1534
+  },
+  "observer_frontier_backup": {
+    "utc": "2026-10-21T08:16:25.725004+00:00",
+    "branch": "agent/stock-driver-wip-backup-20261021T061345Z",
+    "commit": "7f1852480cc5929fbca430d021d5bfe49d443622",
+    "parent": "9927222da5b15737d1d9f8dfebda70c2aa15d9c5",
+    "remote_verified": true,
+    "active_head_and_index_unchanged": true,
+    "captured": {
+      "docs/research/recovery-evidence/stock-observe-arithmetic-gate.py": {
+        "blob": "91a8de723b3d3e6bae5a6873868554b04c195bd7",
+        "sha256": "a0632f5f7ce9c3a49fb262bdb42b001565db090e7214af28f46054b23569ac86"
+      },
+      "docs/research/recovery-evidence/stock-logical-function-cache-probe.json": {
+        "blob": "63f020b00dd80aa12c9b65f1838962e4a250eac2",
+        "sha256": "d13ebf364851bec192fee77f45a732f921cafc450d8dabd50840e1ba50dabeaf"
+      },
+      "docs/research/recovery-evidence/stock-logical-function-cache-probe.log": {
+        "blob": "f686a20d9dc3cccbdc3d65a2cc6db3bf7ff44193",
+        "sha256": "3b7a789e7dcfc22ee1a7f52adea63771241e0efa4827af3a22403052f0e34f80"
+      },
+      "docs/research/recovery-evidence/stock-arithmetic-live-observation.json": {
+        "blob": "51ee9a5d739cd6926e23cd0d7369be21427db4e8",
+        "sha256": "e8ee0aed28452319d154974b6cde9598e4dab88f7b79108f6dffc91eb1afc892"
+      }
+    }
+  },
+  "logical_cache_only_probe": {
+    "utc": "2026-10-21T08:15:44.862141+00:00",
+    "state": "cache_only_probe_requires_normal_build",
+    "head": "f3a5527c6a420c7ee74d9a6ff97d14e6a92b2724",
+    "exit_status": 3,
+    "targets": [
+      "FV.Backend.Proof.StockLogicalSourceWitness",
+      "FV.Backend.Proof.StockLogicalReturnWitness",
+      "FV.Backend.Proof.StockLogicalNotrapWitness",
+      "FV.Backend.Proof.StockLogicalCheckWitness"
+    ],
+    "frontier": [
+      "FV.Backend.Proof.StockLogicalObserved",
+      "FV.Backend.Proof.StockLogicalExtrRhs",
+      "FV.Backend.Proof.StockLogicalExtrSemantics",
+      "FV.Backend.Proof.StockPureUnsunk",
+      "FV.Backend.Proof.StockPureSourceColors",
+      "FV.Backend.Proof.StockAddSubScanRefines",
+      "FV.Backend.Proof.StockSourceEntry",
+      "FV.Backend.Lowering.StockLogical",
+      "FV.Backend.StockArithmeticCheck"
+    ],
+    "log": "/tmp/stock-logical-function-cache-probe.log",
+    "log_sha256": "3b7a789e7dcfc22ee1a7f52adea63771241e0efa4827af3a22403052f0e34f80",
+    "no_compiler_jobs_launched": true,
+    "not_a_proof_failure_or_validation_pass": true,
+    "next": "Normal bounded scheduler for these targets after arithmetic landing frees the shared build budget. Preserve current arithmetic controller; do not restart completed dependencies."
+  },
+  "main_last_fetched": "08020ed34bea4a3656c1b080c55087da40f2ebbe",
+  "priority_correction": {
+    "last_stock_pr": 345,
+    "last_stock_merge_utc": "2026-10-20T09:01:07Z",
+    "failure": "PerEdgeSpillCycleFixture isolated16GiB cgroup OOM at2026-10-21T10:30:23Z",
+    "coordination": "https://github.com/eth-act/clifv/issues/140#issuecomment-6314000634",
+    "next": "Preserve live scheduler; resolve failed current-source fixture via exact-key artifact, integrator heavy lane or exact-statement resource repair; then finish remaining author/production gates.",
+    "logical_import_edit": "preserved dirty; not committed"
+  },
+  "spill_cycle_repair": {
+    "state": "passed_and_adopted_in_live_delivery_epoch",
+    "held_metadata_scheduler": 1235140,
+    "controller": 1235132,
+    "hold_receipt": "/tmp/stock-spill-cycle-resource-repair/hold.json",
+    "original_drained_kernel": {
+      "pid": 4169820,
+      "exit_status": 0,
+      "time": "/tmp/stock-arithmetic-arm-model-author-gates/all-modules/FV.Backend.Proof.StockLogicalNotXorFusedWitness.time"
+    },
+    "first_conjunct": {
+      "exit_status": 0,
+      "scope_peak_GiB": 15.7,
+      "standard_axioms_only": true,
+      "source": "/tmp/StockSpillCycleFirstProbe.lean",
+      "log": "/tmp/stock-spill-cycle-resource-repair/first-probe.log",
+      "time": "/tmp/stock-spill-cycle-resource-repair/first-probe.time"
+    },
+    "complete_probe": {
+      "session": 50910,
+      "source": "/tmp/StockSpillCycleSplitProbe.lean",
+      "log": "/tmp/stock-spill-cycle-resource-repair/split-probe.log",
+      "time": "/tmp/stock-spill-cycle-resource-repair/split-probe.time",
+      "memcap": "16G",
+      "all_seven_original_conditions_retained": true
+    },
+    "important": "Original arithmetic source remains frozen. Scheduler is intentionally SIGSTOP-held, not failed. Resume same metadata scheduler with SIGCONT after bounded experiment; do not leave indefinitely held. No Lean kernel was interrupted.",
+    "normal_module_session": 85321,
+    "source_backup": {
+      "utc": "2026-10-21T11:15:22.978426+00:00",
+      "state": "source_pushed_normal_module_validation_running",
+      "branch": "agent/stock-spill-cycle-resource-repair-20261021",
+      "commit": "c2449401454c4b5e000b13074a8aec6149732694",
+      "parent": "672c4dc4820b31c477a5e075926c72cd2b267dd8",
+      "source": "FV/Backend/Proof/PerEdgeSpillCycleFixture.lean",
+      "sha256": "5c57124e14633ecdf542e861f943544b7d7ac36d3b934565db1fb8512479b5f8",
+      "remote_commit_and_blob_verified": true,
+      "frozen_arithmetic_head_and_index_unchanged": true,
+      "normal_module_session": 85321,
+      "normal_module_view": "/home/lee/clifv/.worktrees/stock-mixed-production",
+      "import_closure_source_modules": 727,
+      "all_dependency_sources_match_frozen_arithmetic": true
+    },
+    "source_preservation": {
+      "all_original_function_pipeline_and_observation_definitions_identical": true,
+      "all_original_public_structures_and_theorem_statements_and_proof_bytes_identical": true,
+      "new_changes": "seven private kernel lemmas, opaque composition of the unchanged Observed, serial command elaboration",
+      "normal_validation_pending": true
+    },
+    "first_full_probe_result": "All seven fixed conditions checked, then local composition error branch failed; corrected in normal module. NOT a validation pass; original failure log preserved.",
+    "recovery_backup": {
+      "utc": "2026-10-21T11:02:36.575565+00:00",
+      "branch": "agent/stock-driver-wip-backup-20261021T061345Z",
+      "commit": "fc0c642e10ea7b20d6a8d8e5a71aef328c696062",
+      "parent": "7f1852480cc5929fbca430d021d5bfe49d443622",
+      "archive": "/tmp/stock-spill-cycle-resource-repair/evidence-pending.tar.gz",
+      "archive_sha256": "288afe6129164e5463f78992965b50aa43de0e0f7dd5b5407e273ff626caedb0",
+      "file_count": 11,
+      "remote_commit_and_blob_verified": true,
+      "original_source_heads_and_index_unchanged": true,
+      "full_split_probe_still_pending": true
+    },
+    "normal_build_current": {
+      "utc": "2026-10-21T11:29:07.837154+00:00",
+      "same_config_hashes": {
+        "lean-toolchain": "d5edba4e4b8faad9c1baeadb265716d20d03be4d1a2647dc5e35b0c0325bea7b",
+        "lakefile.toml": "5394d0e68c3823359b5e717641533915af8216a655271c5fd666fb4438bb799d",
+        "lake-manifest.json": "42a77ac5be8aa95ed8b8e897264b57a1e71d4a1f2cac21b81928d823a2b31756",
+        "scripts/memcap.sh": "60af3d16450cf77e2ee0d3d59d822de06687b1f7099c7d8971ad3f3fe850a9e2"
+      },
+      "normal_build_source_sha256": "5c57124e14633ecdf542e861f943544b7d7ac36d3b934565db1fb8512479b5f8",
+      "source_commit": "c2449401454c4b5e000b13074a8aec6149732694",
+      "source_sha256_matches_pushed_commit": true,
+      "normal_module_process": 578993,
+      "normal_module_session": 85321,
+      "new_delivery_controller_prepared_not_started": "/tmp/stock-arithmetic-spill-repaired-author-gates.py",
+      "important": "Original author scheduler1235140 remains intentionally SIGSTOP-held while this16GiB normal build is live. Do not resume concurrent builds above shared budget."
+    },
+    "coordination_followup": "https://github.com/eth-act/clifv/issues/140#issuecomment-6314765745",
+    "terminal_receipt": "/tmp/stock-spill-cycle-resource-repair/terminal-repair-receipt.json",
+    "verified_backup": {
+      "utc": "2026-10-21T11:34:39.329892+00:00",
+      "branch": "agent/stock-driver-wip-backup-20261021T061345Z",
+      "commit": "00f404a1975bd54879aa3ca24831c86542e8852a",
+      "parent": "fc0c642e10ea7b20d6a8d8e5a71aef328c696062",
+      "archive": "/tmp/stock-spill-cycle-resource-repair/verified-repair-and-preserved-epoch.tar.gz",
+      "archive_sha256": "f2512ae6d2e8de819fe110179ffc4889b8b57bf6ef5f44918bab9d7f34c6bdaf",
+      "archive_bytes": 13150822,
+      "archived_paths": 3096,
+      "remote_commit_and_blob_verified": true,
+      "canonical_head_and_index_unchanged": true,
+      "normal_module_repair_passed": true,
+      "old_epoch_complete": false,
+      "new_epoch_validation_still_running": true
+    },
+    "hold_finished": true
+  },
+  "next_action": "Observe repaired current delivery epoch1193364/1193738; resolve actual failures, then complete all original gates plus24positive committed-route check, current-main review/receipt/PR/squash. Do not use old held/retired controller IDs or old ready-to-land paths."
+}
