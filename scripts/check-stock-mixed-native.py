@@ -41,18 +41,27 @@ def run_commands(bits, kind="mixed"):
     cases = []
     for args in vectors:
         selected = args[1] + args[8] if args[0] else args[1]
-        if kind in ("scalar", "not"):
+        if kind in ("scalar", "not", "mul"):
             mask = (1 << bits) - 1
             constant = 0x123456789abcdef & mask
             band = ((args[1] + constant) & args[8]) & mask
             logical = ((band ^ (args[2] & mask)) | constant) & mask
             chosen = logical if args[0] else band
             previous = signed(chosen - args[2] + 4097, bits)
-            if kind == "not":
+            if kind in ("not", "mul"):
                 inverted = (~previous) & mask
                 complemented = (~(inverted ^ (args[2] & mask))) & mask
                 result = ~((complemented + 4097) & args[8])
-                cases.append(("stock_not_ni", args, signed(result, bits)))
+                not_result = signed(result, bits)
+                if kind == "mul":
+                    product = not_result * args[2]
+                    added = product + constant
+                    multiplied = added * args[1]
+                    subtracted = args[8] - (args[8] + multiplied) * args[2]
+                    cases.append(("stock_mul_ni", args, signed(subtracted ^ product, bits)))
+                    cases.append(("retained_not", args, not_result))
+                else:
+                    cases.append(("stock_not_ni", args, not_result))
                 cases.append(("retained_constant", args, previous))
             else:
                 cases.append(("stock_scalar_ni", args, previous))
@@ -76,7 +85,7 @@ def run_commands(bits, kind="mixed"):
         cases.append(("retained_prologue", [value], value))
     for value in [0, -1, (1 << 31) - 1, -(1 << 31)]:
         cases.append(("retained_d0", [value], value))
-    if kind in ("scalar", "not"):
+    if kind in ("scalar", "not", "mul"):
         for a, b in [(0, 7), (-1, 9), ((1 << 63) - 1, 3)]:
             cases.append(("retained_legacy", [a, b], signed(a * b, 64)))
     else:
@@ -88,7 +97,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     parser.add_argument("--native-bin", type=Path, default=Path("rust/target/release/clif-native"))
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul"], default="mixed")
     options = parser.parse_args()
     root = options.artifacts.resolve()
     native = options.native_bin.resolve()
@@ -120,7 +129,9 @@ def main():
         names = {f["name"] for f in json.loads(table.read_text())["functions"]}
         wanted = {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
                   "retained_prologue", "retained_d0", "retained_legacy"}
-        if options.kind == "not":
+        if options.kind == "mul":
+            wanted = (wanted - {"stock_mixed_ni"}) | {"stock_mul_ni", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
+        elif options.kind == "not":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_not_ni", "retained_constant", "retained_logical", "retained_mixed"}
         elif options.kind == "scalar":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_scalar_ni", "retained_logical", "retained_mixed"}
