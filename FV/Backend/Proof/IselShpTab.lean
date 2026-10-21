@@ -14,6 +14,10 @@ calls of the closure roots of `lower` and of `lower_branch` other than the hand-
 decided once over the exported rule data.
 -/
 
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
+
 namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Isle Isle.Aarch64
@@ -691,21 +695,45 @@ def shpTab : Tab :=
 abbrev shpEntryOk (e : TermId × List AW × AW) : Bool :=
   (program.rulesOf e.1).all (aRule program shpTab aext actor apreS aOracleS e.2.1 e.2.2)
 
-theorem shpTab0_ok : (shpTab0).all shpEntryOk = true := by native_decide
+theorem shpTab0_ok : (shpTab0).all shpEntryOk = true := by
+  simp only [shpTab0, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem shpTab1_ok : (shpTab1).all shpEntryOk = true := by native_decide
+theorem shpTab1_ok : (shpTab1).all shpEntryOk = true := by
+  simp only [shpTab1, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem shpTab2_ok : (shpTab2).all shpEntryOk = true := by native_decide
+theorem shpTab2_ok : (shpTab2).all shpEntryOk = true := by
+  simp only [shpTab2, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem shpTab3_ok : (shpTab3).all shpEntryOk = true := by native_decide
+theorem shpTab3_ok : (shpTab3).all shpEntryOk = true := by
+  simp only [shpTab3, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem shpTab4_ok : (shpTab4).all shpEntryOk = true := by native_decide
+theorem shpTab4_ok : (shpTab4).all shpEntryOk = true := by
+  simp only [shpTab4, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem shpTab5_ok : (shpTab5).all shpEntryOk = true := by native_decide
+theorem shpTab5_ok : (shpTab5).all shpEntryOk = true := by
+  simp only [shpTab5, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem shpTab6_ok : (shpTab6).all shpEntryOk = true := by native_decide
+theorem shpTab6_ok : (shpTab6).all shpEntryOk = true := by
+  simp only [shpTab6, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
-theorem shpTab7_ok : (shpTab7).all shpEntryOk = true := by native_decide
+theorem shpTab7_ok : (shpTab7).all shpEntryOk = true := by
+  simp only [shpTab7, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- **Every rule of every entry checks.** -/
 theorem shpTab_ok : chkTab program shpTab aext actor apreS aOracleS = true := by
@@ -716,14 +744,25 @@ theorem shpTab_ok : chkTab program shpTab aext actor apreS aOracleS = true := by
 /-- The closure roots of `lower` other than the hand-checked ones check. -/
 theorem shpStmt_ok : (program.rulesOf TId.lower).all (fun r => !closureRootIds.contains r.id ||
     shpHandIds.contains r.id || aRule program shpTab aext actor apreS aOracleS [.xv .inst] AW.top r) = true := by
-  native_decide
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The terminator rules of `lower` (964 `return`, 1037 `trap`) check. -/
 theorem shpTerm_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
-    aRule program shpTab aext actor apreS aOracleS [.c0] AW.top r) = true := by native_decide
+    aRule program shpTab aext actor apreS aOracleS [.c0] AW.top r) = true := by
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 /-- The rules of `lower_branch` other than the hand-checked ones check. -/
 theorem shpBranch_ok : (program.rulesOf TId.lower_branch).all (fun r => shpHandIds.contains r.id ||
-    aRule program shpTab aext actor apreS aOracleS [.c0, .c0] AW.top r) = true := by native_decide
+    aRule program shpTab aext actor apreS aOracleS [.c0, .c0] AW.top r) = true := by
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 end Backend.Proof.Cov

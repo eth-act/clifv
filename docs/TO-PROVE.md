@@ -43,8 +43,44 @@ theorem compileExe_total : InScopeP P → ∃ elf, compileExe P outside = .ok el
 Delivered (L1, `FV/Link/Exe.lean`, `FV/Link/ExeTotal.lean`): `Link.compileExe S file0` (the CLIF
 functions with the oracle's answers, the placement and rust-lld's executable of the outside part in);
 `Link.compileExe_correct` with the outside-code contracts and "no call cycle reachable from the entry"
-as premises; `Link.compileExe_total` under `InScopeP`, the driver's names/sizes,
+as premises, and `Link.compileExe_correct_depth` (L1d) for every entry, recursive ones included, with
+`frameDrop + D·M` bytes of stack for a CLIF run of at most `M + 1` steps in place of the call-graph
+premise (`Link.compileExe_correct_peak`: `frameDrop + D·d` bytes for a run of peak call depth `d`);
+`Link.compileExe_total` under `InScopeP`, the driver's names/sizes,
 the addresses within the relocations' reach and rust-lld's output passing `regionOkB`/`outsideOkB`.
+On the original (pre-`i128`-legalisation) program: `Link.compileExe_correct_source` (acyclic) and
+`Link.compileExe_correct_source_peak` (any entry, stack from the source run's call depth). The
+compiler `lean-link`/`cargo fv --lean-link` ship by default, `Link.DeadCleanup.compileExe`, has the
+same four (`Link.DeadCleanup.compileExe_correct{,_peak,_source,_source_peak}`, L1f #217); its
+`--verified` mode writes only executables they cover (outside `SrcScopeB`/`InScopeP`: an error).
+`Link.compileExe_total_reach` (L1e, `FV/Link/ExeInputReach.lean`): totality for the Lean
+compiler's layout (`S.placed`) under conditions decided on the inputs `S` (CLIF program, data, link
+map) and `file0` only: `InScopeP`, `layoutOkB`, `file0OkB` (rust-lld's checks moved from the patched
+file to `file0`, TLS offsets from `PT_TLS`) and `reachOkB` (the CLIF functions' declared names and
+offsets within `bl`/`adrp` reach of the region; the compiled code relocates only against them,
+`relocOk_tab`); the same for the shipped compiler, `Link.DeadCleanup.compileExe_total_reach`
+(`FV/Link/ExeInputReachCleanup.lean`). `Link.compileExe_total_input` (`FV/Link/ExeInput.lean`) is
+the intermediate form with the output premise `CallPageReach`. `InScopeP` contains `lowersB`
+(`FV/E2E/LinkScopeDefs.lean`): `lowerFunction` and `prepare` accept the function and the prepared
+VCode meets `spillSizeOkB` — the compiler's own acceptance (§1.2, kind 4). V7 (#226) proves it from
+conditions on the CLIF function alone: `InScopeIn` (`FV/E2E/LinkScopeInputDefs.lean`; per function
+`fnScopeInB`, `fnScopeB` with `lowersB` replaced by `extendsWidenB`, `sizeOkB`, `driverInB`,
+`iselInB`) implies `InScopeP` (`E2E.LinkCheck.inScopeP_of_input`: `Prg.lowerFunction_ok_input`,
+an abstract interpretation of the ISLE rules; `Prep.prepare_ok`; `spillSizeOkB_of_sizeOkB`), so
+`Link.compileExe_total_reach_input` and `Link.DeadCleanup.compileExe_total_reach_input`
+(`FV/Link/ExeInputReachIn.lean`, `FV/Link/ExeInputReachCleanupIn.lean`) take `InScopeIn`.
+`lean-link --verified` checks `fnScopeInB`; on `lean-e2e-check`'s 1150 in-scope functions and the
+`cargo fv` crates (fv-demo 1346, survey 3179 functions) both scopes accept the same functions.
+Left: `progScopeB`'s `addrSlotsInB` (shared by both) reads whether the lowered code has an
+outgoing-argument area (`outAreaB`, by running `lowerFunction`; no acceptance condition: an error
+counts as no area).
+On the frontend bundle (T7d/T7e, docs/contracts/frontend.md): `lean-link` builds `S` in Lean from
+`cargo fv link-proof`'s `bundle.json` (`Front.buildSpec`); its source program is the codegen units'
+program under the linked names (`Front.buildSpec_srcProg`), alpha-equivalent to the units' program
+under any scoping of their names (`Front.link_alpha`, `Clif.runLoop_ren`), and
+`Front.bundle_correct_source{,_peak}{,_baseline}` state the four source theorems about the runs of
+that program; `Front.bundle_correct_raw{,_peak}{,_baseline}` about cg_clif's program as its dumps
+wrote it (module identities, decoded in Lean: `Front.rawLink_eq_link`, T7b/T7c).
 
 ### 1.2 What "no per-program certificate" means here (decision)
 
@@ -54,19 +90,24 @@ Every check the compiler runs today falls in one of five kinds. The goal admits 
 | --- | --- | --- |
 | **Proven pass:** the pass is proven correct directly | encoder (`Insn.decode_encode`), `prepare` on `PrepDomain` (`Prep.prepare_correct`) | yes |
 | **Internal check with a proven fallback:** the compiler runs a check and on rejection uses a path that's proven directly; the theorem has no premise about the check | mid-end: every validator failure keeps the last accepted function (`FV/Opt/Optimize.lean:150-156`), so `optimize_sim_proven` has no checker premise | yes; rejections cost only code quality |
-| **Validator as a premise:** the theorem assumes the check returned `true` for this program | `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB` (`Compiled`/`FormsCovered`, `FV/E2E/Statement.lean:144-153`, `FV/E2E/Final.lean:162`); `okB`, `BinOk` (`goodN` was one until L4: now `goodN_iff`, the input condition "no call cycle reachable") | **no**: needs a completeness proof (the check never fails on what the compiler produces for in-scope input), a direct proof of the pass, or a fallback |
-| **Internal rejection without fallback:** compilation fails | function ≥ 128 MiB (`b` out of range after relaxation, `FV/Backend/Encode.lean` `Env.pcRel`), `ctlCheck` (the allocator-frame limit is gone, V5) | allowed for correctness, but **violates totality**: each must be removed, proven unreachable, or moved into `InScope` as a condition on the input |
-| **Per-program proof via `native_decide`** | `crate-proofs/Crates/*.lean`: `link_ok`, `bin_ok`, `stack_ok` (`FVTest/E2E/LinkCheckMain.lean:307-432`) | **no**: disappears once linking, binary and stack checks are proven complete or replaced (WPs L1–L4) |
-| **Per-program proof via `native_decide`** | `crate-proofs/Crates/*.lean`: `link_ok`, `bin_ok`, `stack_ok` (`FVTest/E2E/LinkCheckMain.lean:307-432`; since L4 `stack_ok` evaluates an input condition and the bound, `stackB_isSome_iff`) | **no**: disappears once linking, binary and stack checks are proven complete or replaced (WPs L1–L4) |
+| **Validator as a premise:** the theorem assumes the check returned `true` for this program | `lowerCheck`, `prepCheck`, `checkAlloc`, `formsCoveredB` (`Compiled`/`FormsCovered`, `FV/E2E/Statement.lean:160-169`, `FV/E2E/Final.lean:227`); `okB`, `BinOk` (`goodN` was one until L4: now `goodN_iff`, the input condition "no call cycle reachable") | **no**: needs a completeness proof (the check never fails on what the compiler produces for in-scope input), a direct proof of the pass, or a fallback |
+| **Internal rejection without fallback:** compilation fails | function ≥ 128 MiB (`b` out of range after relaxation, `FV/Backend/Encode.lean` `Env.pcRel`; now the input condition `sizeOkB`), `ctlCheck` (the allocator-frame limit is gone, V5); `lowerFunction`/`prepare` rejections (proven unreachable on the input conditions `driverInB`/`iselInB`, V7: `InScopeIn` implies `InScopeP`'s `lowersB`, §1.1) | allowed for correctness, but **violates totality**: each must be removed, proven unreachable, or moved into `InScope` as a condition on the input |
+| **Per-program proof via `native_decide`** | `crate-proofs/Crates/*.lean`: `link_ok`, `bin_ok`, `stack_ok` (`FVTest/E2E/LinkCheckMain.lean:379-438`; since L4 `stack_ok` evaluates an input condition and the bound, `stackB_isSome_iff`) | **no**: disappears once linking, binary and stack checks are proven complete or replaced (WPs L1–L4); `compileExe` (L1) needs none |
 
 An external program (regalloc2, rust-lld) may stay in the loop only as an oracle whose result is checked
 and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness then never depends on it.
 
 ### 1.3 Trusted by design (not part of this file's goal)
 
-- the frontend: rustc + rustc_codegen_cranelift produce the CLIF; the theorems are relative to it;
-- Lean's kernel; `bv_decide`'s LRAT check and `Lean.ofReduceBool` in the **fixed** rule/encoder proofs
-  (proven once, not per program; see T6 to reduce it);
+- the frontend: rustc + rustc_codegen_cranelift (with `scripts/patches/cg-clif-extnames.patch`,
+  which prints each dump's external-name table and the module's declarations) produce the CLIF;
+  the theorems are relative to it. Exactly: the frontend bundle (format `clifv-frontend-bundle` 2)
+  faithfully represents the program cg_clif compiled — each function's dump with its table, each
+  unit's data objects (`clif-data-export` reads them from the object) and local symbols
+  (docs/contracts/frontend.md §1, §5); everything from the bundle to the executable is Lean with
+  theorems (T7b–T7e: the decoding of the dumps, `Front.rawLink_eq_link`, included);
+- Lean's kernel (since T6 no fixed proof needs compiled evaluation: no `bv_decide` or
+  `native_decide` certificate remains in the compiler theorems);
 - the Arm model and `Clif.run` as specifications (fidelity is tested, not proven: T4, T5);
 - the contracts of code outside the program (std, musl, cg_clif-fallback functions), the OS loader.
 
@@ -74,21 +115,22 @@ and, on rejection, replaced by a directly proven Lean path (kind 2). Correctness
 
 | Stage | Implemented in | Verified today by | Kind (§1.2) | WP |
 | --- | --- | --- | --- | --- |
-| mid-end `simplify` rules | Lean (ISLE data) | 1055 + 37 rule theorems; unproven rules disabled (`ruleAllow := .proven`) | proven | R1–R8 (coverage); R9 done |
+| cg_clif dumps → decoded units; frontend bundle → `LinkSpec` (decoding of external names, renaming to linked names, data closure, CLIF image symbols, `FnInput`s) | Lean `Front.parseUnit` / `Front.decodeFn` (`FV/Front/Raw.lean`; the same function decodes at build time: `lake exe clif-decode`) and `Front.buildSpec` (`FV/Front/`); Rust `cargo fv link-proof` only collects files and addresses (`bundle.json`) | `Front.decodeFn_spec`, `Front.parseUnit_raw`, `Front.rawLink_eq_link` (cg_clif's program in module identities = the decoded program, under any naming respecting the declarations), `Front.buildSpec_spec` (source program = the units' program under the linked names, a scoping), `Front.link_alpha` + `Clif.runLoop_ren` (any scoping, same runs), `Front.data_complete`; composed: `Front.bundle_correct_source{,_peak}{,_baseline}`, `Front.bundle_correct_raw{,_peak}{,_baseline}`. Before the bundle (patched cg_clif and its dumps' tables, `clif-data-export`'s object reading) trusted: docs/contracts/frontend.md | proven (T7b–T7e); trusted boundary specified (T7a) | T7 |
+| mid-end `simplify` rules | Lean (ISLE data) | 1154 + 37 rule theorems; only false shifts 84/88 disabled (`ruleAllow := .proven`) | proven | R4 done for sound originals ([#212](https://github.com/eth-act/clifv/pull/212)) |
 | mid-end passes (GVN, DCE, LICM, simplify driver, unreachable, `Opt.check`) | Lean | `editOk`, `simpOk`, `wfCert`, `unreachableOk`, `keepsBackendSubset` + soundness | fallback | M1 (quality only) |
-| i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`) | validator, complete on `Pre` | S6 |
+| i128 legalisation | Lean | `Opt.Legal.check` + `check_complete` on `Pre f` (`FV/Opt/Proof/LegalComplete.lean:1718`); `Pre` decided (`preB_iff`, `check_complete_of_preB`); the executable refines the original program (`Link.compileExe_correct_source`, recursive entries `…_source_peak` with the source run's depth, `legalProg_refines_depth`; the shipped compiler's `Link.DeadCleanup.…_source{,_peak}`; `SrcScopeB` decided on the parsed CLIF, by `lean-link --verified` too) | validator, complete on the decidable `Pre` (S6 done); source-level executable theorem with environment and run premises (S2/S3) | S2, S3, S6, L1f |
 | instruction selection | Lean (ISLE data) | `LowerRulesCorrect` etc., proven once | proven | — |
-| lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`) | validator, complete on decidable input conditions | V1 done |
+| lowering driver | Lean `lowerFunction` | `lowerCheck`, complete on `Dominated`/`LowerScope` (`lowerCheck_complete`); `lowerFunction`'s and `prepare`'s acceptance proven on the input conditions `driverInB`/`iselInB` (`Prg.lowerFunction_ok_input`, `Prep.prepare_ok`, V7); `InScopeP` keeps `lowersB`, `InScopeIn` replaces it (§1.1) | validator, complete on decidable input conditions; total on decidable input conditions | V1, V7 done |
 | form coverage | Lean (ISLE data) | `formsCoveredB`, complete on `LowerScope` (`formsCovered_complete`) | validator, complete on decidable input conditions | V3 done |
 | `prepare` | Lean | `prepCheck`, complete on `PrepDomain`, which `lowerFunction` always produces (`prepDomain_of_lower`) | validator, complete | V2 done |
 | register allocation | **external Rust** (regalloc2 0.15.2 via `lean-regalloc`), Lean fallback `spillAlloc` | `checkAlloc` (`FV/Backend/RegallocCheck.lean:423-441`) on regalloc2's output; on rejection `spillAlloc` (`allocResult`, `E2E.backend_correct_final_alloc`), accepted by `checkAlloc` for every in-scope function (`E2E.spillAccepted`, proven) | fallback; its acceptance proven | V4 (a) done; (b) open |
 | frame, control lowering | Lean `lowerRFunc` | internal rejections (`ctlCheck`, operand/move shapes; no frame-size limit since V5); a rejection of regalloc2's allocation falls back to `spillAlloc`, which `lowerRFunc` provably lowers (`E2E.lowerRFunc_spillAlloc`) | fallback; its lowering proven | V5 done |
 | emission, layout | Lean | branch relaxation; `emitFunc_layout_total` from `layoutReadyB`; regalloc2's code kept only if `emitReady` (`lowerAllocReady`), the spill code proven ready (`E2E.emitReady_spill`) under `emitCondsB`; its three isel facts proven from the ISLE data (`E2E.backend_correct_final_total_emit_in`, input condition `extendsWidenB`); the size bound from the input condition `sizeOkB f` (`E2E.backend_correct_final_total_emit_input`) | proven | — |
 | encoder | Lean | `Insn.decode_encode` (`FV/Backend/Proof/Encode.lean:57-60`) | proven | — |
-| linking (program level) | `cargo fv` object merge + **rust-lld**; with `--lean-link` the program part's placement is Lean's (`Link.leanLink`) | **`okB`** (`FV/E2E/LinkCheck.lean:716-777`) per crate by `native_decide`; with `--lean-link` `linkerOkB` is proven (`Link.leanLink_linkerOk`) | **validator premise + oracle + per-program proof**; L2b stages 1–2: linker facts proven | L1, L2 |
+| linking (program level) | `cargo fv` object merge + **rust-lld**; with `--lean-link` the program part's placement is Lean's (`Link.leanLink`) | **`okB`** (`FV/E2E/LinkCheck.lean:795-853`) per crate by `native_decide`; with `--lean-link` `linkerOkB` is proven (`Link.leanLink_linkerOk`); for `compileExe`'s output `okB` is proven (`Link.okB_leanLink`) | **validator premise + oracle + per-program proof**; with `compileExe` (L1): proven, no per-program proof | L1 done, L2 |
 | executable bytes | **rust-lld**; with `--lean-link` the program part's bytes are `Link.leanLink`'s | **`BinOk`** (`FV/E2E/BinCheck.lean:539-543`) per crate by `native_decide`; with `--lean-link` `BinOk` of the placed input (whose results are the compiler's, `LinkInput.fallback`) without premise (`Link.binOk_leanLink`): the code proven, the facts about rust-lld's bytes (`regionOkB`, `Static`, `DataOk`, `SymsOk`) checks inside `leanLink` | **validator premise + oracle + per-program proof**; with `compileExe` (L1): code proven, rust-lld's output checked by the linker | L2, L1 done |
 | executable semantics | — | `E2E.ExecBytes.binary_correct_exec_proven`: the executable's own words (outside calls and TLS by hooks) refine the CLIF run, with **no per-state hypothesis**: the premises of `binary_correct_of_checks_acyclic`, the per-program checks `codeMapB` and `gotB` (`GotOk`), the outside-code contracts `HooksSim` and `OutsideAvoids`; the run's facts come from the M6 proof (`RL.GoodX`, exported through `LinkSys.RunGoodL`); for `compileExe`'s output every per-program fact is proven or a `leanLink` check (`Link.compileExe_correct`: `GotOk` and `OutsideAvoids` vacuous, no GOT slot) | proven; with `compileExe` no per-program premise (L1); the TLS hook (T1) | L3, L1 done |
-| stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); `compileExe_correct` takes the input condition `¬ CycleFrom` directly | input condition | L4 done |
+| stack bound | Lean `budMap` | `budOkW` proven for `budMap`'s budgets (`budOkW_budMap`), no run-time check; `goodN`/`stackB` characterised as "no call cycle reachable" (`goodN_iff`, `stackB_isSome_iff`); `compileExe_correct` takes the input condition `¬ CycleFrom` directly; `compileExe_correct_depth` (L1d) needs no call-graph condition: the outside caller provides `frameDrop + D·M` bytes (proportional to the fuel `M`, not to the run's peak call depth); `compileExe_correct_peak` `frameDrop + D·d` for the run's peak depth `d`, on the source program `…_source_peak` (the source run's depth), for the shipped compiler `Link.DeadCleanup.…_peak`/`…_source_peak` (L1f) | input condition / outside-caller contract | L4, L1d, L1f done |
 
 Mid-end note: the mid-end is already certificate-free in the sense of §1.2, so M1 is optional.
 
@@ -136,7 +178,7 @@ author's estimate, not measured), **Risk**.
   `E2E.backend_correct_final_of_lower` (`FV/E2E/FinalDirect.lean`): `backend_correct_final` from the
   pipeline's results and `dominatedB`/`lowerScopeB`, without `Compiled` and `hcov`; only `checkAlloc`
   remains. Decided once over the rule data: an abstract interpretation of the ISLE rules (`IselCov*.lean`,
-  summary table `covTab` from `FVTest/Backend/IselCovGen.lean`, 12 `native_decide` checks).
+  summary table `covTab` from `FVTest/Backend/IselCovGen.lean`, 12 leaf-wise kernel-checked certificates).
   The ISLE-level lemmas use `LogicImmComplete` (every logical immediate `ImmLogic.ofNat?` accepts is
   encodable), proven by `logicImmComplete` (`FV/Backend/Proof/LogicImmComplete.lean`, kernel `decide` over
   the 5334 (element size, run, rotation) triples).
@@ -215,7 +257,7 @@ author's estimate, not measured), **Risk**.
      interpreter, parametric in its transfer functions, re-run with an `emit` precondition checking the
      shapes of `CondBr`/`TrapIf`/`TestBitAndBranch` (`apreS`), oracles for the helpers with fresh defs
      (`load_ext_name_got/near`, `atomic_rmw/cas_loop`, `elf_tls_get_addr`), table `shpTab` (641 entries,
-     `FVTest/Backend/IselShpGen.lean`, 11 `native_decide` checks); the call, `try_call` and `br_table`
+     `FVTest/Backend/IselShpGen.lean`, 11 leaf-wise kernel-checked certificates); the call, `try_call` and `br_table`
      root rules (1031–1036, 1140) by hand (`root_hand`). `IselCtlHyp`'s `try_call` clause is restricted
      to `f`'s terminators: for an arbitrary `try_call_indirect` on an unused signature declaration with
      two `sret` parameters it is false (rule 1036). So step 3 is **done**: `E2E.spillLocalAll`
@@ -255,7 +297,7 @@ author's estimate, not measured), **Risk**.
      monotone under the run relation `RsK`: new kills are fresh); emitted uses likewise (`IsK`). The
      killing forms are built only inside `atomic_rmw_loop`, `atomic_cas_loop`, `br_table_impl`
      (oracles, run inversions in `KillOracle.lean`); the reachable term tables `killTabS`/`killTabB`
-     (`KillTab.lean`, `native_decide`) contain no killing variant and no `invalid_reg` (only the `nop`
+     (`TermSetData.lean`, certified in `KillTab.lean` by kernel checks) contain no killing variant and no `invalid_reg` (only the `nop`
      rule 587, a hand rule with no results, and the I128 rules 636/637, which never match, apply it);
      every extern constructor but `invalid_reg` keeps the invariant (`kp_ctor`, `KillCtor.lean`;
      `MInst.ofV`'s uses are among the value's registers, `ofV_kill`); a `try_call`'s results live only
@@ -310,7 +352,7 @@ author's estimate, not measured), **Risk**.
     Non-vacuity: `E2E.backend_correct_final_total_witness`.
 - **Remaining for totality:** emission and layout (`emitFunc`, `layout`: branch range), V6.
 
-### V6. Branch range (totality)
+### V6. Branch range (totality) — **done**
 
 - **Done (2026-10-06):** branch relaxation in `emitFunc` (`b.c T` ⟶ `b.!c .+8; b T` for conditional
   branches to block/trap labels out of reach, `relaxOf` fixpoint; byte-identical when nothing is far);
@@ -349,6 +391,45 @@ author's estimate, not measured), **Risk**.
   (`spillWordBound_le`). Witness: `backend_correct_final_total_emit_input_witness`;
   `lean-e2e-check` 1149/1149.
 
+### V7. Lowering and `prepare` totality (the input scope without running the compiler) — **done** (#226, #227)
+
+- **Was:** `InScopeP`'s per-function `lowersB` ran `lowerFunction` and `prepare` and required
+  their success (§1.2, kind 4): no theorem showed that they succeed on in-scope input.
+- **Done (2026-10-16):** `Backend.Proof.Prg.lowerFunction_ok_input`
+  (`FV/Backend/Proof/IselPrgDriver.lean`): `lowerFunction f = .ok vc` from `functionE`, `sigAbiOk`,
+  `dominatedB`, `lowerScopeB`, `arityOkB`, `entryParamsB`, `extendsWidenB` and two new decidable
+  input conditions, each a Cranelift verifier/ABI rule the driver or the ISLE rules check on the
+  way: `driverInB` (`LowerTotal.lean`: AAPCS64 convention, at most 8 returns, declared callees,
+  symbols and successor blocks, `i64` load/store addresses, the `try_call` table rules) and
+  `iselInB` (`IselPrgCtx.lean`: callee, `call_indirect` and `try_call` signatures with argument
+  locations and at most 8 ABI returns, declared `func_addr` callees and `stack_addr` slots, return
+  arity; at most 8 `try_call` table items, a proof-convenience bound). The driver part
+  (`lowerFunction_ok`) shows that no loop body returns `.error` given the ISLE side (`IselProg`);
+  the ISLE side is a progress analysis on the exported rules (`IselPrg*.lean`: abstract domain
+  `PA`, sound models of the extern helpers, summary table `IselPrgTab` of 1006 entries generated
+  by `FVTest/Backend/IselPrgGen.lean` and checked leaf-wise by `decide +kernel`, rules 862/863 and
+  `extr_32_or_64` by hand). `Prep.prepare_ok` (`PrepareTotal.lean`): `prepare` succeeds on
+  `lowerFunction`'s output (no new condition; the cleanup pipeline's `prepare (prune vc)` from it,
+  `prune_prepare_ok`).
+- **Scope:** `E2E.LinkCheck.fnScopeInB`/`InScopeIn` (`FV/E2E/LinkScopeInputDefs.lean`): `fnScopeB`/
+  `InScopeP` with `lowersB` replaced by `extendsWidenB`, `sizeOkB`, `driverInB`, `iselInB`;
+  `lowersB_of_input`, `fnScopeB_of_input`, `inScopeP_of_input` (`FV/E2E/LinkScopeInput.lean`) — the
+  conversion for every theorem taking `InScopeP` (the source, peak and bundle theorems take
+  `compileExe … = .ok file`, which the totality theorems give).
+- **Theorems:** `Link.compileExe_total_reach_input`, `Link.DeadCleanup.compileExe_total_reach_input`
+  (`FV/Link/ExeInputReachIn.lean`, `FV/Link/ExeInputReachCleanupIn.lean`: premise `InScopeIn`);
+  `E2E.backend_correct_final_total_input`, `E2E.backend_correct_final_cleanup_total_input`
+  (`FV/E2E/TotalInput.lean`: `backend_correct_final{,_cleanup}_total_emit_input` without the
+  `lowerFunction`/`prepare` success premises). Witnesses: `driverInB_witness`, `iselInB_witness`,
+  `backend_correct_final_total_input_witness` (kernel-checked; `dominatedB` is the witness's
+  premise: its fixpoint uses `Std.HashMap`, which the kernel does not reduce).
+- **Corpus:** `lean-e2e-check` compares both per-function scopes (a disagreement fails the run):
+  1150 / 1150, 0 disagreements. `cargo fv test --lean-link --verified` (`lean-link` checks
+  `fnScopeInB`): fv-demo (2 executables, 1346 functions) and the survey (18 executables, 3179
+  functions) written and tested with the same outcomes as before.
+- **Left:** `addrSlotsInB` (in `progScopeB`, unchanged) reads whether `lowerFunction`'s output has
+  an outgoing-argument area (`outAreaB`); it runs the lowering but assumes no success.
+
 ### L1. The executable compiler as one Lean function — **done** (`agent/compile-exe`)
 
 - **Was:** the executable is produced by `cargo fv` (Rust) + rust-lld; the theorem's link and binary facts
@@ -372,11 +453,61 @@ author's estimate, not measured), **Risk**.
     offsets below `2^32`) and rust-lld's output (`regionOkB`, `outsideOkB`). The compiler's outputs need
     nothing: `pipeT_ok`, `relocShapes_of_pipeT` (`FV/Link/RelocShapeProof.lean`: every relocated
     instruction is emitted with its partners, `emitFunc_seqOk`), `codeMap_place`.
+  - **`Link.compileExe_total_input`** (L1e, #216, `FV/Link/ExeInput.lean`): `compileExe S.placed file0`
+    succeeds under conditions decided on the inputs only. The layout is the Lean compiler's
+    (`LinkSpec.placed`: the CLIF functions' names, the compiled sizes `sizesOf`), so the names/sizes
+    premises disappear and `placeOkB` follows from `InScopeP` (distinct names; compiled code is
+    nonempty, `pipeT_words_pos`) and `layoutOkB` (`R` and the outside addresses against the layout's
+    span). rust-lld's checks move from the patched file to `file0` (`file0OkB`: `regionOkB` of the
+    layout's span, `hdrB`, `dataFastB` on the file without the region's bytes `maskEx`, `symsOkB`,
+    and `symFootB`: the section headers, symbol and string tables lie after the region;
+    `outsideOkB_patch`: patching the region changes no byte these checks read; `symIndex` is a
+    terminating fold, same output as the `while` loop it replaces). TLS reach from `tlsOkB` (a
+    `PT_TLS` segment, every link-map address and `0` with a thread-pointer offset below `2^32`).
+    `placed_of_compileExe`: a successful `compileExe S file0` has `S.placed = S`. Its one output
+    premise `CallPageReach` (`bl`/`adrp` targets in reach) is discharged by
+    **`Link.compileExe_total_reach`** (`FV/Link/ExeInputReach.lean`): `reachOkB` on the layout
+    (every external function name of every CLIF function has a word-aligned link-map address `bl`
+    reaches from the whole region, every declared name with every declared offset an address whose
+    page `adrp` reaches) and **name provenance** `relocOk_tab`: a `bl` of the compiled code of `f`
+    targets an external function `f` declares, an `adrp` pair a name `f` declares (external
+    function or `symbol`/`symbol tls` global value) with a declared offset (`0` or a global value's
+    offset) (`Backend.Proof.RelocProv.RelocOk`). Names enter ISLE values only through the extractors
+    `func_ref_data` and `symbol_value_data`; an abstract interpretation of the exported rules
+    (`FV/Backend/Proof/RelocProvCheck.lean`, V1's flow analysis over name sources, offsets and the
+    references of the `MInst`s built; table `provTab` and the root rules kernel-checked in chunks,
+    `RelocProvTab.lean`, `RelocProvRoot.lean`; model `RelocProvModel.lean`) gives
+    `lowerFunction_refs` (`RelocProvDriver.lean`); `prepare`, `DeadCleanup.prune`, the allocation,
+    emission and layout keep them (`RelocProvEmit.lean`: `prepare_allInsts`, `prune_allInsts`,
+    `relocs_of_alloc`). Witnesses `total_input_witness`, `spec_placed`
+    (`CompileExeWitness.lean`), `total_reach_witness` (`CompileExeReachWitness.lean`). The
+    shipped compiler: `Link.DeadCleanup.compileExe_total_input`/`placed_of_compileExe`
+    (`FV/Link/ExeInputCleanup.lean`, layout `DeadCleanup.placed`) and
+    `Link.DeadCleanup.compileExe_total_reach` (`FV/Link/ExeInputReachCleanup.lean`), witnesses
+    `total_input_cleanup_witness`, `total_reach_cleanup_witness`. Real executables: the input
+    conditions, `reachOkB` (both compilers) and `RelocOk` of every compiled relocation evaluate to
+    `true` on two survey executables rust-lld linked (66 and 493 functions).
   - Non-vacuity: `crate-proofs/Crates/CompileExeWitness.lean` (`a_arith`: `compile_eq`, `correct_closed`,
     `total_witness`); per run: `crate-proofs/Crates/CompileExeRunWitness.lean`
     (`compileExe_run_witness`: the panic=abort `a_arith` compiled by `compileExe`, every premise of
     `compileExe_correct` for one outside call of `wrapping_add(2, 3)`, and the executable machine returns
     with `5` in x0).
+- **L1d (#204, #215), done:** `Link.compileExe_correct_depth`: the premises of
+  `compileExe_correct` without `¬ CycleFrom`, `OutsideCall … (frameDrop (art S.input f).af + S.input.D * M)`
+  in place of `stackFn`, the same executable conclusion (`ExecRefines`). Chain: `binary_correct_depthX`,
+  `runGood_sysS_of`/`runGood_sysS_depth` (`sysS` takes the callees' budget), the budget-independent
+  core `exec_of_runGood` (`binary_correct_exec_proven` is its instance too, statement unchanged),
+  `binary_correct_exec_depth_proven`. Axioms standard. Witness `crate-proofs/Crates/CompileExeRecWitness.lean`:
+  the self-recursive `direct` (`DirectSelf`, `cyclic`) compiled by `compileExe`, `direct(3)` run by the
+  executable machine returns `6` (`compileExe_rec_witness`); `stack_needed`: the premise is more than
+  `stackFn` and fails with `sp = 16`. **Peak call depth:** `Link.compileExe_correct_peak` takes
+  `frameDrop + D * d` bytes where `d` bounds the source run's call depth (`Clif.DepthLe`: no reached
+  state has more than `d` callers), independent of the fuel; the linked system carries its callee runs
+  (`LinkSys.crun`, `CrunOk`; default the fuel-`M` runs, so the fuel theorems are unchanged), the
+  peak instance runs callees with a fixed fuel and bounded depth (`Clif.runD`, `linkEnvD`,
+  `runLoop_linkD`). Chain `backend_correct_program_peakX`, `binary_correct_peakX`, `runGood_sysS_peak`,
+  `binary_correct_exec_peak_proven`. Witness `crate-proofs/Crates/CompileExePeakWitness.lean`. Gap: each
+  level is charged the largest frame `D` (e2e.md "Recursive programs"; DEFERRED "Recursion").
 - **L1b (`agent/compile-exe`):** `addrSlotsInB`/`addrSlotsB` relaxed (`|| declSlotsB P`: with a declared
   program callee with slots the run has `NeedSlots`, where `LinkSys.Ok.addrSlots` is not used; the premise
   now takes `¬ NeedSlots`).
@@ -388,9 +519,23 @@ author's estimate, not measured), **Risk**.
   address. Generic shared-code `LinkInput` certificates remain supported.
   `E2E.LinkWitness.DirectSelf` witnesses the scope, declaration and self edge, and proves that
   the actual compiled recursive input has no depth-independent stack budget.
-- **Open:** recursive executable correctness without `CycleFrom` exclusion; inputs outside `InScopeP` (`lean-link` then
+- **L1f (#217, #218), done:** the theorems of the compiler that ships by default and the recursive
+  source theorem. `Link.compileExe_correct_source_peak` (`FV/Link/ExeSource.lean`): the original
+  `i128` program, no `¬ CycleFrom`, `frameDrop + D·d` bytes for `d` bounding the **source** run's
+  call depth; the legalisation keeps the call depth (`E2E.LegalProgram.legalProg_refines_depth`,
+  `FV/E2E/LegalDepth.lean`: `legalProg_refines`' fuel induction at every depth, `guardEnvD`/
+  `tgtEnvD`, `Clif.unlink_depth`). `Link.DeadCleanup.compileExe_correct_peak`, `_source`,
+  `_source_peak` (`FV/E2E/DeadCleanupExecPeak.lean`, `FV/Link/DeadCleanupExe{Peak,Source}.lean`;
+  the cleanup chain unchanged). `lake exe lean-link` prints the theorems covering the written
+  executable (`coverage:`); `--verified` (`cargo fv --lean-link --verified`) makes an input outside
+  `SrcScopeB` (proof-free in `FV/E2E/SrcScopeDefs.lean`) or `InScopeP` an error. Witnesses:
+  `crate-proofs/Crates/CompileExeSourcePeakWitness.lean`, `DeadCleanupExePeakWitness.lean`,
+  `DeadCleanupExeSourceWitness.lean`. Axioms standard.
+- **Open:** exact live-frame accounting for recursive programs (L1d charges the largest frame per
+  call level); inputs outside `InScopeP` (`lean-link` then
   falls back to `leanLink`, not covered by `compileExe_correct`, and prints the failing conditions per
-  cause). Remaining failures are proof limits (each protects a `LinkSys.Ok` premise `okB` checks the same
+  cause; `--verified` refuses them). Remaining failures are proof limits (each protects a
+  `LinkSys.Ok` premise `okB` checks the same
   way). `sret` at indirect calls is done (#89 (a), `agent/scope-widen`: `Ok.indSig` asks for equal
   `sigRets` counts, `LinkCheck.indRetsB`; e2e.md "Widening 12"): fv-demo's test harness 4 → 1,
   `examples/deps` 23 → 15. `try_call` result counts are done (#89 (d): `csem` defines a `try_call`'s
@@ -409,7 +554,7 @@ author's estimate, not measured), **Risk**.
 
 - **Now:** `okB` checks per crate (static: pipeline success, the backend validators, ABI and signature
   checks; inter-function: call registers, frames, return addresses, indirect-call scope; global: distinct
-  names, image readback, symbol injectivity), `FV/E2E/LinkCheck.lean:716-777`. `BinOk` checks what
+  names, image readback, symbol injectivity), `FV/E2E/LinkCheck.lean:795-853`. `BinOk` checks what
   rust-lld wrote.
 - **Deliver:**
   - **L2a.** Split `okB` into (i) properties of the input program, moved into a decidable `InScopeP`
@@ -436,7 +581,7 @@ author's estimate, not measured), **Risk**.
   | compiled: prepCheck | `compiled` | own output | `prepCheck_complete`, `prepDomain_of_lower` (V2) |
   | compiled: checkAlloc | `compiled` | own output | regalloc2's answer: kept only if accepted (`checkAlloc_allocResult`); spill allocation: `spillCheckAlloc` (completeness of `checkAlloc`'s fixpoint, `FV/E2E/SpillCheckAlloc*.lean`) under **`SpillDefinedHyp`** (on input with `entryParamsB`, now in `fnScopeB`: without it the statement is false, `not_spillDefinedHyp`, `FV/E2E/SpillDefinedFalse.lean`), which follows from **`LowerDefinedHyp`** (`spillDefinedHyp_of_lower`, `FV/E2E/SpillDefined.lean`: availability proven, `prepare` keeps definedness sets, `Spill.defAvail_prepare`; definedness sets from paths, `Spill.defined_of_paths'`). The driver's assembly is proven: `DefRun.lower_defined` (`FV/Backend/Proof/DefAssemble.lean`: `UsesDefined` from a path invariant over CLIF availability and the run segments), so `LowerDefinedHyp` follows from the ISLE run facts (`lowerDefinedHyp_of_runs`, `crate_correct_inScope_runs`). The ISLE run facts are proven too: `DefRun.defRunsHyp` (`FV/Backend/Proof/DefRunsProof.lean`, abstract interpretation `DefGen*.lean`), so `E2E.spillDefinedHyp`, `crate_correct_inScope_proven` |
   | covered | `covered` | own output | `formsCovered_complete` (V3) |
-  | sretRets | `sretRets` | own output | `retsB_of_lower` with `iselNoRets` (`FV/E2E/LinkOwnRets*.lean`; `native_decide` table checks over the ISLE rules, as the Kill tables) |
+  | sretRets | `sretRets` | own output | `retsB_of_lower` with `iselNoRets` (`FV/E2E/LinkOwnRets*.lean`; kernel-checked certificates over the untrusted literal term set, as the Kill tables) |
   | argRegs (distinct, argument registers, width ≤ 64) | `argRegs` | input | `fnScopeB` |
   | entryRegs | `entryRegs` | own output | `entryB_of_lower` |
   | fits | `fits` | linker output | `linkerOkB` |
@@ -587,8 +732,7 @@ author's estimate, not measured), **Risk**.
       of `binary_correct_of_checks_acyclic` + `codeMapB` + `HooksSim` + `GotOk I file` (decidable,
       `gotB`) + `OutsideAvoids (GotSlot I file) …`, no per-state hypothesis; conclusion
       `ExecRefines … (step I B file) r (RelocAt I) (Clif.runLoop …)`. Axioms: `propext`,
-      `Classical.choice`, `Quot.sound` and the project's existing `bv_decide`/`native_decide`
-      certificates. Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
+      `Classical.choice`, `Quot.sound` (since T6 no fixed-proof certificate). Non-vacuity: `Crates.BinaryExecWitness.binary_correct_exec_proven_witness`
       (`a_arith`'s `wrapping_add`; no GOT pair, `noGotPair`).
   - **Done: aliases** (item 6; 2026-10-06, `agent/exec-alias`; e2e.md "The executable's own words",
     "Aliases"): `siteAt` returns the kind of site (`Site`, `siteOf`: real word, call of the
@@ -650,32 +794,32 @@ Parallel from day one: V1a, V1c, V1e, V3, V4, V5, V6, L2b, L3, L4.
 ## 4. Work packages: widening what the theorems cover (scope)
 
 These don't remove certificates; they shrink the set of functions reported "unverified" (today
-`lean-e2e-check`: 1149 accepted, 97 out of scope) and the cg_clif fallbacks. Independent of §3 unless noted.
+`lean-e2e-check`: 1150 accepted, 97 out of scope) and the cg_clif fallbacks. Independent of §3 unless noted.
 
 ### R1–R9. Mid-end rule proofs (the deferred `simplify` rules)
 
-1092 of 1193 rule roots are proven; the rest are disabled in the proven configuration. Status and recipe:
+1191 of 1193 rule roots are proven; only the two false shift roots remain disabled. Status and recipe:
 `docs/DEFERRED.md` "Mid-end `simplify` rule proofs", per-rule reasons in `docs/contracts/midend.md`
 "Rule proofs" (lines ~570-610). One agent per family; files `FV/Opt/Proof/Rule<Family>.lean`, allow-list in
 `FV/Opt/RuleAllow.lean`, import in `FV/Opt/Proof/RuleAll.lean`.
 
 | WP | Family | Left | Main obstacle |
 | --- | --- | --- | --- |
-| R1 | arithmetic | 28 | timeouts (200, 206, 251–288 `imul` by odd constants, 615–622 64-bit products); `simp` type mismatch (410–428) |
-| R2 | icmp | 15 | `GraphOk.make_val` unification (49, 77, 91); counterexample after timeouts (155–184, 386–410); 205, 295, 296 |
-| R3 | selects | 13 | literal-match facts lost under `simp_all` (188–202); timeouts (81, 85); 15 nondeterministic in the full build |
-| R4 | shifts | 19 | rotate regrouping through `iadd_uextend`/`isub_uextend` (239–266: ~50 of 125 per-type goals fail, 128-bit rotations); 161, 170, 184, 193, 315. **84 and 88 are false**: keep them disabled, or adopt the masked rules of kevaundray/wasmtime#2 in the exported data and prove those |
-| R5 | spaceship | 20 | the 20 `select` rules: two made `icmp`s under `sextend_maybe` blow up the term (>10 min/rule) |
+| R1 | arithmetic | 0 | **done** ([#211](https://github.com/eth-act/clifv/pull/211)): all 258 roots; exact guards, odd modular cancellation, high-half extraction and symbolic product identities; original premises unchanged |
+| R2 | icmp | 0 | **done** ([#210](https://github.com/eth-act/clifv/pull/210)): all 124 roots; typed composition RHS proofs, exact guard/decomposition evaluation and width-parametric identities |
+| R3 | selects | 0 | **done** ([#208](https://github.com/eth-act/clifv/pull/208)): all 100 roots; symbolic select identities and typed RHS evaluation |
+| R4 | shifts | 2 false | **done for sound originals** ([#212](https://github.com/eth-act/clifv/pull/212)): 73/75 roots; exact masked-sum guards, modular mixed-width rotation identities and subtraction/shift distribution. **84 and 88 remain disabled**; corrected masked rules in kevaundray/wasmtime#2 are not adopted here |
+| R5 | spaceship | 0 | **done** ([#209](https://github.com/eth-act/clifv/pull/209)): all 40 roots; width-parametric signed/unsigned identities and shared typed RHS proofs |
 | R6 | cprop | 0 | **done** (R0) |
-| R7 | bitops | 3 | 79 (needs 64-bit and/not immediate specs), 157/170 (byte-swap timeouts) |
-| R8 | extends | 3 | 40, 42, 44 timeouts at 16M heartbeats |
+| R7 | bitops | 0 | **done** ([#207](https://github.com/eth-act/clifv/pull/207)): all 450 roots; masked-OR guard and opcode-indexed byte-swap proofs |
+| R8 | extends | 0 | **done** ([#206](https://github.com/eth-act/clifv/pull/206)): all 29 roots; sign-extension comparisons against zero |
 | R9 | skeleton | 0 | **done** (`agent/skeleton-r9`): all 37 roots; signed `div_const` and count-based branches, including i128/reduced counts |
 
 **R0 (shared infrastructure) is done** (`agent/rule-infra`): `iabs` `bif` form, the finish for constants
 made under a type variable, the `truthy` if-let lemma, `u64_bswap*`, power-of-two and `div_const`
 magic-number specs (`magicU_spec`, `magicS_spec`), low-memory icmp/selects templates; 43 `simplify` and 10
 skeleton roots (midend.md "R0"). The R0 templates (`rule_auto_a`, `rule_auto_tv`, `rule_pre_k`,
-`rule_lhs_g` with `Elab.async false`) are the first thing to try on the rules left in R1–R3.
+`rule_lhs_g` with `Elab.async false`) remain shared infrastructure for later rule proofs.
 
 ### M1. Mid-end validators: completeness (optional, quality only)
 
@@ -687,17 +831,17 @@ Large, low priority.
 
 | WP | Extension | Notes / where recorded |
 | --- | --- | --- |
-| S1 | Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | excluded by `backend_correct_opt_proven` (`FV/E2E/OptProven.lean:29-30`) |
-| S2 | Legalisation + optimisation composed; legalised functions in the linking theorem | DEFERRED "i128 legalisation" |
-| S3 | Whole-program refinement of the original i128 source program | DEFERRED "Linking", first "Remaining" item: per-function `check_refines` under a linked environment, by depth induction |
+| S1 | Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | **done**: the executable compiler's mid-end `Opt.optimizeExe` (`optimize` with the fresh-value guard `freshOkB` and the shape guard `keepsShapeB`, `FV/Opt/OptimizeX.lean`) refines every program (`Opt.optimizeProgramExe_refines`, simulations `FV/Opt/Proof/*X.lean`); `E2E.backend_correct_opt_exe{,_cleanup}` (no `hci`/`hnt`); the optimising executable compiler `Link.{DeadCleanup.}compileExeOpt_{correct,correct_peak,correct_source,correct_source_peak,total_reach_input}` (`lean-link --opt`, `cargo fv --lean-link --opt-proven-only`). Found: `optimize` alone is unsound on ill-formed `try_call` functions (`Opt.PipelineXWitness.optimize_not_refines`; outside every earlier claim, midend.md "The executable compiler's mid-end") |
+| S2 | Legalisation + optimisation composed; legalised functions in the linking theorem | **done**: legalised functions in the executable theorem (`Link.compileExe_correct_source`, `FV/Link/ExeSource.lean`; `FnInput.func_eq`, `LinkInput.prog_eq`, `SrcScopeB`); composed with the optimiser: `E2E.backend_correct_legal_opt{,_env}{,_cleanup}` (`FV/E2E/LegalOptX.lean`) and `Link.{DeadCleanup.}compileExeOpt_correct_source{,_peak}` |
+| S3 | Whole-program refinement of the original i128 source program | **done** with premises (`E2E.LegalProgram.legalProg_refines`, `Link.compileExe_correct_source`): environment `HelperOk`/`ExtLegal`/`EnvKeepsBounded` (with `i128`), `sigOf = none` (with indirect calls); run conditions memories below `2^64`, for traps `NoMemTrap`/`TrapsExplicit` (legalize128.md, "The executable compiler on the original source program") |
 | S4 | i128 gaps: `umulhi`/`smulhi`, `try_call`, overflow ops, atomics, stack-passed i128, i128 indirect signatures, `try_call_indirect` | DEFERRED "i128 legalisation", "Completeness of `Opt.Legal.check`" |
 | S5 | Stack-passed arguments of `call_indirect`/`try_call_indirect` (≤ 8 register params today) | `FV/E2E/Statement.lean:84-87` |
-| S6 | A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | DEFERRED "Completeness of `Opt.Legal.check`" |
+| S6 | A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | **done** (`preB_iff`, `check_complete_of_preB`, `legalOkB`; `FV/Opt/Proof/LegalPre.lean`) |
 | S7 | `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | DEFERRED "`sret`" |
 | S8 | `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | DEFERRED "Linking", "Remaining" |
 | S9 | Trapping helpers (`__*ti3` division by zero) and traps inside program callees | DEFERRED "i128 legalisation"; `TrapsExplicit` |
-| S10 | Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | `docs/contracts/e2e.md` (try_call covers normal returns only) |
-| S11 | Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | PLAN.md "Next steps" 2; the largest fallback reason |
+| S10 | Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | `docs/contracts/e2e.md` (try_call covers normal returns only); plan `docs/plans/unwinding.md` (sub-issues #229–#233) |
+| S11 | Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | PLAN.md "Next steps" 2; the largest fallback reason (145 of the 158 `examples/deps` fallbacks; 100 of them float data movement only). Plan, semantics decisions and slices S11a–S11g: `docs/plans/floats.md` |
 | S12 | SIMD | after S11 |
 
 ## 5. Trusted-base reduction (optional for the goal, listed for completeness)
@@ -710,8 +854,8 @@ Large, low priority.
 | T3 | std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | needs S11, S12, inline asm |
 | T4 | Arm model fidelity (ASL-derived, qemu co-simulation) | testing, not proof |
 | T5 | `Clif.run` fidelity (Cranelift interpreter + native runs) | testing, not proof |
-| T6 | `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | replace with kernel-checked reflection where feasible; per-program uses disappear with L1–L4 |
-| T7 | `normalize.py`, `clif-data-export` (frontend-side tools) | part of the trusted frontend today |
+| T6 | `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | **done** ([#213](https://github.com/eth-act/clifv/pull/213)): every fixed `native_decide` and `bv_decide` of the compiler's proofs replaced by kernel-checked proofs, statements unchanged. Encoder: symbolic field lemmas. Generated tables: leaf-wise `decide +kernel`; closure term sets are untrusted literals (`TermSetGen`) checked by the kernel. Backend bit-vector lemmas (incl. `movK_ident`, for every width): symbolic `BitVec` proofs. Optimizer rules (formerly 934 lemmas): the kernel-checked finisher `kbv` (`FV/Opt/Proof/KernelBV.lean`: bounded per-method heartbeat budgets; `bv_normalize`, bit extensionality, case splits, `toNat`/`toInt` + `omega`, minterms + `grind`, shift/sign lemmas), `kbv_amt`/`kbv_cmp` (`RuleInfraShiftAmt.lean`) and hand proofs. `compileExe_correct`/`_total`, `backend_correct_final`, `binary_correct_exec_proven`, `backend_correct_opt_proven`: 759–9000 `bv_decide` and up to 68 `native_decide` axioms → `propext`, `Classical.choice`, `Quot.sound` only. Not replaced: the `bv_decide` proofs of eight lemmas of the LNSym-ported Arm model (`FV/Arm/Insts/Common.lean`, `FV/Arm/Insts/DPSFP/Advanced_simd_copy.lean`), which no compiler theorem uses (docs/research/axiom-audit.md). Lean 4.34's kernel-mode LRAT reflection was infeasible (failed on a 15-node probe). Cost: the Opt proof modules need a serial pre-build (§7) |
+| T7 | `normalize.py`, `clif-data-export` (frontend-side tools) | **done**: T7a/T7d/T7e ([#222](https://github.com/eth-act/clifv/pull/222)): the boundary is the frontend bundle (docs/contracts/frontend.md); renaming, data closure, CLIF image symbols and `FnInput`s are Lean with theorems (`Front.buildSpec_spec`, `Front.link_alpha`, `Clif.runLoop_ren`, `Front.data_complete`), composed with the executable theorems (`Front.bundle_correct_source{,_peak}{,_baseline}`, witness `Crates.FrontendBundleWitness` on `g_u128`). T7b/T7c ([#224](https://github.com/eth-act/clifv/pull/224), #221): cg_clif with `scripts/patches/cg-clif-extnames.patch` writes each dump's external-name table and the module's declarations; `clif-data-export`'s order-based identity recovery and `normalize.py` are deleted; `Front.decodeFn` decodes the raw dumps in Lean (`decodeFn_spec`, `parseUnit_raw`), and the executable theorems hold for cg_clif's program in module identities under any naming that respects its declarations (`Front.rawLink_eq_link`, `Front.bundle_correct_raw{,_peak}{,_baseline}`, witness `Crates.FrontendBundleWitnessRaw`). Trusted: cg_clif with its patch, `clif-data-export`'s object reading (data checked by the binary check), the parser, stage selection (frontend.md §5) |
 
 ## 6. Not needed for the goal
 
@@ -725,14 +869,21 @@ Large, low priority.
   `/home/kev/work/clifv-wt/<name>`, branch `agent/<name>`. Absolute paths under the worktree. Never push,
   merge, rebase, `git stash`, or pattern-kill processes. Temp files in `/tmp/<name>_*`.
 - Every lake/cargo command through `FV_MEMCAP=<N>G scripts/memcap.sh`; full FV build
-  `LEAN_NUM_THREADS=2 FV_MEMCAP=22G`; check the log for "Build completed successfully".
+  `LEAN_NUM_THREADS=2 FV_MEMCAP=22G`; check the log for "Build completed successfully". The
+  `kbv`-based rule modules (`FV.Opt.Proof.Rule*`) peak at up to 16.5 GB (`RuleBitops7`; `RuleArith`
+  14 GB, a dozen others 7–11 GB) and take up to 34 min each (all 317 modules: 2 h 4 min, three at a time); `lake build` (no `-j` option) runs many
+  at once and exceeds 22G, so first build the `FV.Opt.Proof` modules (317 with their imports) at most
+  three at a time in import order (`FV_MEMCAP=13G LEAN_NUM_THREADS=2 scripts/memcap.sh lake build
+  FV.Opt.Proof.<Module>`, a module killed at 13G again alone at 22G), then the full target, which
+  replays them (docs/contracts/midend.md, build note).
 - No `sorry`, `admit`, hand-written `axiom`, `trace_state`. Allowed axioms: `propext`, `Classical.choice`,
   `Quot.sound`, and generated `*._native.bv_decide.ax_*` / `*._native.native_decide.ax_*` in fixed proofs.
 - Every new top-level theorem gets a non-vacuity witness (they have caught six unsatisfiable premises).
 - A WP that removes a premise keeps the old theorem and adds the premise-free variant; cutover of the
   callers and docs (`docs/contracts/e2e.md`, `docs/PLAN.md` status, this file) in the same branch.
-- Gates before "merge-ready: …": `lake build FV FVTest lean-backend lean-e2e-check link-check`;
-  `lake build` in `crate-proofs/`; `#print axioms` of the E2E theorems; `scripts/lean-backend-filetests.sh`
+- Gates before "merge-ready: …": `lake build FV FVTest lean-backend lean-e2e-check link-check lean-link
+  clif-decode`; `lake build` in `crate-proofs/`; `#print axioms` of the E2E theorems (all of them:
+  docs/research/axiom-audit.md); `scripts/lean-backend-filetests.sh`
   (corpus 114/114, runtests ≥ 4672/0/0); `scripts/lean-backend-encode-check.sh` (0 differ);
   `lean-e2e-check` (≥ 1149 accepted, 0 rejected); if CLIF semantics change, `scripts/clif-filetests.sh` at
   its baseline and `scripts/opt-difftest.sh` with 0 failures.
@@ -763,39 +914,44 @@ label**; list the free ones with
 | V6 | [#8](https://github.com/eth-act/clifv/issues/8) Branch range (totality) | **done** (#65) |
 | V6b | [#66](https://github.com/eth-act/clifv/issues/66) `emitPre` and `layoutReadyB` always hold (per-function totality) | **done**: `backend_correct_final_total_emit`, premises replaced by the decidable `emitCondsB` |
 | V6c | [#76](https://github.com/eth-act/clifv/issues/76) `emitCondsB` from the input | **done**: isel facts (`backend_correct_final_total_emit_in`, input condition `extendsWidenB`), size bound (`backend_correct_final_total_emit_input`, input condition `sizeOkB`) |
+| V7 | [#226](https://github.com/eth-act/clifv/issues/226) `lowerFunction`/`prepare` totality: the input scope without running the compiler | **done** ([#227](https://github.com/eth-act/clifv/pull/227)): `Prg.lowerFunction_ok_input` (input conditions `driverInB`, `iselInB`; ISLE progress analysis, table `IselPrgTab`), `Prep.prepare_ok`, `InScopeIn`/`inScopeP_of_input`, `Link.compileExe_total_reach_input`, `Link.DeadCleanup.compileExe_total_reach_input`, `E2E.backend_correct_final{,_cleanup}_total_input`; `lean-link --verified` checks `fnScopeInB`; left: `addrSlotsInB`'s `outAreaB` |
 | L2a | [#9](https://github.com/eth-act/clifv/issues/9) Linking without validators: split `okB` into input conditions + properties proven by construction | **done**: `crate_correct_inScope_proven` (no `okB`, no open hypothesis: `InScopeP` + `linkerOkB`); `SpillDefinedHyp` (its first statement was false, `not_spillDefinedHyp`; `InScopeP` has `entryParamsB`) proven: `LowerDefinedHyp` from the driver's assembly (`DefRun.lower_defined`) and the ISLE run facts (`DefRun.defRunsHyp`, abstract interpretation `DefGen*`) |
 | L2b | [#10](https://github.com/eth-act/clifv/issues/10) Static linker in Lean for the executable (BinOk by construction) | stages 1–2 (`agent/lean-linker`): program part placed/relocated/written by `Link.leanLink`; `linkerOkB` and `ArtOk` proven, `BinOk` of the placed input without premise (rust-lld's bytes checked by the linker); `cargo fv --lean-link` on survey, fv-demo, deps; the binary theorem on its output: L1; open: design (b) for the outside part |
 | L3 | [#11](https://github.com/eth-act/clifv/issues/11) Executable-bytes simulation (M9 item 1b) | stages 1–2 done (#63, #64); stage 3 done (3a frame property, `agent/exec-frame`; 3b `RunOkD` from the M6 proof incl. D2/D4: `binary_correct_exec_proven`, `agent/exec-good`); aliases done (`agent/exec-alias`: site kinds, `codeMapB` holds on `fv-demo`) |
 | L4 | [#12](https://github.com/eth-act/clifv/issues/12) Stack bound without a per-program check | **done** (`agent/stack-complete`): `budOkW_budMap`, `goodN_iff`, `stackB_isSome_iff`, `binary_correct_of_checks_acyclic` |
 | L1 | [#13](https://github.com/eth-act/clifv/issues/13) The executable compiler as one Lean function | **done** (`agent/compile-exe`): `Link.compileExe`, `compileExe_correct` (no per-program premise, no open hypothesis), `compileExe_total` (address and rust-lld conditions); #88 removes the alias restriction by compiling native self-calls; `lake exe lean-link` runs `compileExe` |
 | L1c | [#88](https://github.com/eth-act/clifv/issues/88) Remove `AliasOut` from executable compiler totality | **done** (`agent/alias-total`): native self-calls in function-free activations; alias-free driver and `LinkSpec`; `compileExe_total` without alias restriction or output hypothesis; recursive own-address smoke passes |
+| L1d | [#204](https://github.com/eth-act/clifv/issues/204) Executable correctness for recursive programs (remove CycleFrom exclusion) | **done** ([#215](https://github.com/eth-act/clifv/pull/215)): `Link.compileExe_correct_depth` (no call-graph premise; stack `frameDrop + D·M` for fuel `M`), `Link.compileExe_correct_peak` (stack `frameDrop + D·d` for the run's peak call depth `d`), witnesses `Crates.CompileExeRecWitness`, `Crates.CompileExePeakWitness`; open: exact live-frame accounting |
+| L1e | [#216](https://github.com/eth-act/clifv/issues/216) `compileExe` totality from decidable input conditions (layout from Lean, rust-lld checks on `file0`) | **done** ([#220](https://github.com/eth-act/clifv/pull/220), [#223](https://github.com/eth-act/clifv/pull/223)): `Link.compileExe_total_reach` and `Link.DeadCleanup.compileExe_total_reach` (premises `InScopeP`, `layoutOkB`, `file0OkB`, `reachOkB`: decided on the CLIF input, the link map and `file0`), name provenance of the compiled relocations (`relocOk_tab`, `lowerFunction_refs`, `relocs_of_alloc`), witnesses `total_reach_witness`, `total_reach_cleanup_witness`; intermediate `compileExe_total_input` (premise `CallPageReach`) |
+| L1f | [#217](https://github.com/eth-act/clifv/issues/217) Theorems for the shipped (dead-cleanup) compiler, recursive i128 source theorem, fail-closed `lean-link --verified` | **done** ([#218](https://github.com/eth-act/clifv/pull/218)): `Link.compileExe_correct_source_peak` (`legalProg_refines_depth`), `Link.DeadCleanup.compileExe_correct_peak`/`_source`/`_source_peak`, `lean-link --verified` and `coverage:`; witnesses `Crates.CompileExeSourcePeakWitness`, `Crates.DeadCleanupExePeakWitness`, `Crates.DeadCleanupExeSourceWitness` |
 | R0 | [#14](https://github.com/eth-act/clifv/issues/14) Mid-end rule proofs: shared infrastructure (iabs normal form, makeInst for type-variable constants, helper specs, module splitting) | **done** (`agent/rule-infra`; 43 + 10 roots) |
-| R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (28 rules left) | open |
-| R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (15 rules left) | open |
-| R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (13 rules left) | open |
-| R4 | [#18](https://github.com/eth-act/clifv/issues/18) Mid-end rule proofs: shifts (19 rules left) | open |
-| R5 | [#19](https://github.com/eth-act/clifv/issues/19) Mid-end rule proofs: spaceship (20 rules left) | open |
+| R1 | [#15](https://github.com/eth-act/clifv/issues/15) Mid-end rule proofs: arithmetic (0 rules left) | **done** ([#211](https://github.com/eth-act/clifv/pull/211)) |
+| R2 | [#16](https://github.com/eth-act/clifv/issues/16) Mid-end rule proofs: icmp (0 rules left) | **done** ([#210](https://github.com/eth-act/clifv/pull/210)) |
+| R3 | [#17](https://github.com/eth-act/clifv/issues/17) Mid-end rule proofs: selects (0 rules left) | **done** ([#208](https://github.com/eth-act/clifv/pull/208)) |
+| R4 | [#18](https://github.com/eth-act/clifv/issues/18) Mid-end rule proofs: shifts (only false 84/88 left) | **done for sound originals** ([#212](https://github.com/eth-act/clifv/pull/212)) |
+| R5 | [#19](https://github.com/eth-act/clifv/issues/19) Mid-end rule proofs: spaceship (0 rules left) | **done** ([#209](https://github.com/eth-act/clifv/pull/209)) |
 | R6 | [#20](https://github.com/eth-act/clifv/issues/20) Mid-end rule proofs: cprop (0 rules left) | **done** (by R0, `agent/rule-infra`) |
-| R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (3 rules left) | open |
-| R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (3 rules left) | open |
+| R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (0 rules left) | **done** ([#207](https://github.com/eth-act/clifv/pull/207)) |
+| R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (0 rules left) | **done** ([#206](https://github.com/eth-act/clifv/pull/206)) |
 | R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (0 rules left) | **done** (`agent/skeleton-r9`) |
 | M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | open |
-| S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | open |
-| S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | open |
-| S3 | [#27](https://github.com/eth-act/clifv/issues/27) Whole-program refinement of the original i128 source program | open |
+| S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | **done** ([#245](https://github.com/eth-act/clifv/pull/245)): `Opt.optimizeExe`, `Opt.optimizeProgramExe_refines`, `E2E.backend_correct_opt_exe`, `Link.compileExeOpt_*`; `lean-link --opt` |
+| S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | **done**: legalised functions ([#214](https://github.com/eth-act/clifv/pull/214), `Link.compileExe_correct_source`); with the optimiser ([#245](https://github.com/eth-act/clifv/pull/245)): `E2E.backend_correct_legal_opt`, `Link.compileExeOpt_correct_source` |
+| S3 | [#27](https://github.com/eth-act/clifv/issues/27) Whole-program refinement of the original i128 source program | **done** with environment/run premises ([#214](https://github.com/eth-act/clifv/pull/214), `legalProg_refines`) |
 | S4 | [#28](https://github.com/eth-act/clifv/issues/28) i128 gaps: `umulhi`/`smulhi`, `try_call`, overflow ops, atomics, stack-passed i128, i128 indirect signatures, `try_call_indirect` | open |
 | S5 | [#29](https://github.com/eth-act/clifv/issues/29) Stack-passed arguments of `call_indirect`/`try_call_indirect` (≤ 8 register params today) | open |
-| S6 | [#30](https://github.com/eth-act/clifv/issues/30) A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | open |
+| S6 | [#30](https://github.com/eth-act/clifv/issues/30) A decidable `Pre` for legalisation (`noSelf`, `defs`, `ids`) so `check` is provably redundant on `InScope` | **done** ([#214](https://github.com/eth-act/clifv/pull/214), `preB_iff`, `check_complete_of_preB`) |
 | S7 | [#31](https://github.com/eth-act/clifv/issues/31) `vmctx`/`sarg` parameters; `sret` return register (x0 holds the pointer) | open |
 | S8 | [#32](https://github.com/eth-act/clifv/issues/32) `return_call`; recursion through a pointer; a function calling itself under its own name; indirect callees with stack-passed or `sret` params | open |
 | S9 | [#33](https://github.com/eth-act/clifv/issues/33) Trapping helpers (`__*ti3` division by zero) and traps inside program callees | open |
-| S10 | [#34](https://github.com/eth-act/clifv/issues/34) Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | open |
-| S11 | [#35](https://github.com/eth-act/clifv/issues/35) Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | open |
+| S10 | [#34](https://github.com/eth-act/clifv/issues/34) Unwinding: landing pads, LSDA, `.eh_frame`, `try_call`'s exceptional edge | in progress (`docs/plans/unwinding.md`; sub-issues #229–#233) |
+| S11 | [#35](https://github.com/eth-act/clifv/issues/35) Floats (f32/f64 in `Clif.run`, Arm FP instructions co-simulated, rules + proofs, FP register class in `checkAlloc`/V4) | in progress (`docs/plans/floats.md`; sub-issues #234–#240) |
 | S12 | [#36](https://github.com/eth-act/clifv/issues/36) SIMD | open |
 | T1 | [#37](https://github.com/eth-act/clifv/issues/37) Trusted base: TLS: TLSDESC hook vs lld's local-exec rewrite | open |
 | T2 | [#38](https://github.com/eth-act/clifv/issues/38) Trusted base: Atomics on a single-core model (`ldar`/`stlr` plain, exclusive store always succeeds, `dmb` no-op) | open |
 | T3 | [#39](https://github.com/eth-act/clifv/issues/39) Trusted base: std/musl contracts: compile std through `cargo fv` (`-Zbuild-std`) | open |
 | T4 | [#40](https://github.com/eth-act/clifv/issues/40) Trusted base: Arm model fidelity (ASL-derived, qemu co-simulation) | open |
 | T5 | [#41](https://github.com/eth-act/clifv/issues/41) Trusted base: `Clif.run` fidelity (Cranelift interpreter + native runs) | open |
-| T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | open |
-| T7 | [#43](https://github.com/eth-act/clifv/issues/43) Trusted base: `normalize.py`, `clif-data-export` (frontend-side tools) | open |
+| T6 | [#42](https://github.com/eth-act/clifv/issues/42) Trusted base: `Lean.ofReduceBool`/`native_decide` in the fixed proofs (bv_decide certificates, encoder facts) | **done** ([#213](https://github.com/eth-act/clifv/pull/213)): no compiled-evaluation axiom in the compiler theorems |
+| T7 | [#43](https://github.com/eth-act/clifv/issues/43) Trusted base: `normalize.py`, `clif-data-export` (frontend-side tools) | **T7a/T7d/T7e done** ([#222](https://github.com/eth-act/clifv/pull/222)): bundle boundary, Lean-built `LinkSpec` with proofs, `Front.bundle_correct_source{,_peak}{,_baseline}`; T7b/T7c: #221, done |
+| T7b/T7c | [#221](https://github.com/eth-act/clifv/issues/221) Trusted base: frontend identities at the source (cg_clif external-name tables) and a Lean decoding of the raw dumps | **done** ([#224](https://github.com/eth-act/clifv/pull/224)): patched cg_clif tables, `Front.decodeFn`, `Front.rawLink_eq_link`, `Front.bundle_correct_raw{,_peak}{,_baseline}` (docs/contracts/frontend.md §2, §4) |
