@@ -1,25 +1,20 @@
-//! `cargo fv link-proof`: the input of a crate-level instance of the linking theorem
-//! (`E2E.backend_correct_program`, `FV/E2E/LinkCheck.lean`; docs/contracts/e2e.md,
-//! "Crate-level instance").
+//! `cargo fv link-proof`: the frontend bundle of an executable's program part
+//! (docs/contracts/frontend.md), the input of the Lean-built `LinkSpec` (`Front.buildSpec`,
+//! `FV/Front/Bundle.lean`) that `lake exe lean-link` compiles and `lake exe link-check` checks.
 //!
-//! A build with `--keep-temps` keeps, per codegen unit, the CLIF file `lean-backend` compiled
-//! for every Lean-compiled function, `lean-regalloc`'s output for it (`regalloc_tee`), and the
-//! names the merge gave its symbols (`fv-link.json`, written by `pipeline::process_in`); per
-//! linked executable, the lld link map (`link-<tag>.map`, `link-<tag>.json`). From those this
-//! command writes a directory for `lake exe link-check`:
-//!
-//! * `fns/<i>.clif`: the compiled CLIF with every name replaced by the symbol it is linked as
-//!   (local symbols renamed by the merge, `c_LdataN` → the data symbol); `fns/<i>.ra.json`;
-//! * `link.json`: the functions; the data objects they reach (`data`: `clif-data-export`'s
-//!   `; data:` lines, renamed likewise; an object the merge left local, the assembler's
-//!   `.LdataN`, is named `.LdataN@<unit tag>` and found in the link map under its object file);
-//!   and the link map's address of every function (its Lean code: the `__fvlean$` marker) and
-//!   of every name the functions and data objects refer to.
-//!
-//! `link-check` then evaluates the checker `E2E.LinkCheck.okB` and the binary checks of
-//! `E2E.BinCheck` (the executable's code, data objects and symbol table against the program) on
-//! it and (with `--lean`) writes the Lean file that proves `LinkSys.Ok` and `BinOk` for the crate
-//! by `native_decide`.
+//! A build with `--keep-temps` keeps, per codegen unit, cg_clif's dump of every Lean-compiled
+//! function (the stage `lean-backend` compiled the decoding of), `lean-regalloc`'s output for it
+//! (`regalloc_tee`), the unit's data objects (`data.clif`), and the merge's record
+//! (`fv-link.json`, written by `pipeline::process_in`: the names the merge gave the symbols it
+//! renamed, the object's local symbols); per linked executable, the lld link map
+//! (`link-<tag>.map`, `link-<tag>.json`). This command only collects them, unchanged, into
+//! `DIR/bundle.json`: per unit its tag, the paths of the function dumps and regalloc files, the
+//! path of its data objects, its local symbols and their link-map addresses, the merge's names;
+//! the executable's symbols (those defined once); the address of each function's Lean code (its
+//! `__fvlean$` marker); the functions it cannot include (unverified, or no unique marker). No
+//! CLIF or data text is rewritten here: the decoding of the dumps, the renaming to linked names,
+//! the data closure and the CLIF image's symbols are computed in Lean (`Front.assemble`), with
+//! proofs (`FV/Front/BundleProof.lean`, `FV/Front/RawProof.lean`).
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::ffi::OsString;
 use std::fs;
@@ -119,45 +114,6 @@ fn read_map(p: &Path) -> Result<LinkMap, String> {
     Ok(m)
 }
 
-/// The CLIF name of a data object the merge left local (`c_LdataN`, the assembler's `.LdataN`,
-/// which repeats across codegen units) as its symbol `.LdataN` qualified by the unit's tag:
-/// `.LdataN@<tag>` (the binary checks look up `.LdataN` in the executable's symbol table).
-fn local_data_name(clif: &str, tag: &str) -> Option<String> {
-    clif.strip_prefix("c_").filter(|n| n.starts_with("Ldata")).map(|n| format!(".{n}@{tag}"))
-}
-/// The data objects of a codegen unit (`clif-data-export`'s `; data: %name [writable] = …`
-/// lines) with the names their contents refer to.
-fn read_data_refs(p: &Path) -> HashMap<String, Vec<String>> {
-    let mut m = HashMap::new();
-    for l in fs::read_to_string(p).unwrap_or_default().lines() {
-        let Some(rest) = l.strip_prefix("; data: %") else { continue };
-        let name: String = rest.chars().take_while(|c| is_name_char(*c)).collect();
-        let refs = rest
-            .split_once(" = ")
-            .map(|(_, items)| {
-                items
-                    .split_whitespace()
-                    .filter_map(|t| t.strip_prefix('%'))
-                    .map(|t| t.chars().take_while(|c| is_name_char(*c)).collect::<String>())
-                    .collect()
-            })
-            .unwrap_or_default();
-        m.insert(name, refs);
-    }
-    m
-}
-
-/// The `; data:` lines of a codegen unit's data objects, by object name.
-fn read_data_lines(p: &Path) -> HashMap<String, String> {
-    let mut m = HashMap::new();
-    for l in fs::read_to_string(p).unwrap_or_default().lines() {
-        let Some(rest) = l.strip_prefix("; data: %") else { continue };
-        let name: String = rest.chars().take_while(|c| is_name_char(*c)).collect();
-        m.insert(name, l.to_string());
-    }
-    m
-}
-
 /// The defined symbols of an executable: name → addresses.
 fn read_exe_syms(p: &Path) -> Result<HashMap<String, BTreeSet<u64>>, String> {
     use object::{Object, ObjectSymbol, SymbolKind};
@@ -174,38 +130,6 @@ fn read_exe_syms(p: &Path) -> Result<HashMap<String, BTreeSet<u64>>, String> {
     Ok(m)
 }
 
-
-fn is_name_char(c: char) -> bool {
-    c.is_ascii_alphanumeric() || c == '_' || c == '.' || c == '$'
-}
-
-/// `text` with every `%name` renamed by `names`; also returns the names (after renaming).
-fn rename_clif(text: &str, names: &BTreeMap<String, String>) -> (String, BTreeSet<String>) {
-    let mut out = String::with_capacity(text.len() + 256);
-    let mut seen = BTreeSet::new();
-    let mut it = text.char_indices().peekable();
-    while let Some((i, c)) = it.next() {
-        out.push(c);
-        if c != '%' {
-            continue;
-        }
-        let mut end = i + 1;
-        while let Some(&(j, d)) = it.peek() {
-            if !is_name_char(d) {
-                break;
-            }
-            end = j + d.len_utf8();
-            it.next();
-        }
-        let n = &text[i + 1..end];
-        let r = names.get(n).cloned().unwrap_or_else(|| n.to_string());
-        if !r.is_empty() {
-            seen.insert(r.clone());
-        }
-        out.push_str(&r);
-    }
-    (out, seen)
-}
 
 struct Opts {
     exe: Vec<String>,
@@ -231,8 +155,9 @@ usage: cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean 
 After `cargo fv build|test --keep-temps`: the Lean-compiled, verified functions of the executable
 whose path contains every SUBSTR (default: the only one), restricted to the codegen units of the crate
 NAME (its units `NAME-<hash>`), as the input of the crate-level linking theorem
-(docs/contracts/e2e.md, \"Crate-level instance\"): DIR (default target/fv/link-proof) gets the
-renamed CLIF files, the regalloc outputs and link.json. Then `lake exe link-check DIR` reports
+(docs/contracts/e2e.md, \"Crate-level instance\"): DIR (default target/fv/link-proof) gets
+bundle.json, the frontend bundle (docs/contracts/frontend.md) from which Lean builds the program
+(names, data closure). Then `lake exe link-check DIR` reports
 which premises of LinkSys.Ok fail (per function), and with --lean writes the Lean file proving
 LinkSys.Ok by native_decide and the theorem for the entries (default: every function); put it in
 the repository's crate-proofs/Crates/ and build it there with `lake build Crates.NAME` (the checker
@@ -344,29 +269,16 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         return Err(format!("no Lean-compiled codegen unit of {exe}{} was kept", o.krate.as_deref().map(|k| format!(" of crate {k}")).unwrap_or_default()));
     }
     let _ = fs::remove_dir_all(&o.out);
-    let fns_dir = o.out.join("fns");
-    fs::create_dir_all(&fns_dir).map_err(|e| format!("{}: {e}", fns_dir.display()))?;
-    let mut funcs = Vec::new();
-    let mut referenced: BTreeSet<String> = BTreeSet::new();
-    let mut fn_addr: BTreeMap<String, u64> = BTreeMap::new();
+    fs::create_dir_all(&o.out).map_err(|e| format!("{}: {e}", o.out.display()))?;
+    let mut units = Vec::new();
+    let mut markers: BTreeMap<String, u64> = BTreeMap::new();
     let mut skipped: Vec<(String, String)> = Vec::new();
-    // functions whose address is in a data object the functions reach (vtables): CLIF image
-    // symbols, so that an indirect call through them resolves
-    let mut data_fns: BTreeSet<String> = BTreeSet::new();
-    // the reachable data objects (`; data:` lines renamed to the linked symbols; the binary
-    // checks compare them with the executable's bytes)
-    let mut data_lines: Vec<String> = Vec::new();
-    // the addresses of the data objects the merge left local (`local_data_name`)
-    let mut local_addr: BTreeMap<String, u64> = BTreeMap::new();
+    let mut nfuncs = 0;
     for (obj, j) in &cgus {
-        let unopt = cgu_dir.get(obj).map(|d| d.join("data-unopt.clif"));
-        let data = unopt.as_deref().map(read_data_refs).unwrap_or_default();
-        let lines = unopt.as_deref().map(read_data_lines).unwrap_or_default();
-        let mut start: Vec<String> = Vec::new();
-        let names: BTreeMap<String, String> = j["names"]
-            .as_object()
-            .map(|m| m.iter().filter_map(|(k, v)| v.as_str().map(|v| (k.clone(), v.to_string()))).collect())
-            .unwrap_or_default();
+        let dir = &cgu_dir[obj];
+        let rec = dir.join(CGU_FILE);
+        let tag = dir.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let mut functions = Vec::new();
         for f in j["functions"].as_array().into_iter().flatten() {
             let fin = f["final"].as_str().unwrap_or_default().to_string();
             if !f["verified"].as_bool().unwrap_or(false) {
@@ -378,101 +290,76 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
                 skipped.push((fin, "no unique Lean code address in the link map (removed by --gc-sections?)".into()));
                 continue;
             };
-            let clif = PathBuf::from(f["clif"].as_str().unwrap_or_default());
+            let dump = PathBuf::from(f["dump"].as_str().unwrap_or_default());
             let ra = PathBuf::from(f["ra"].as_str().unwrap_or_default());
-            let text = fs::read_to_string(&clif).map_err(|e| format!("{}: {e}", clif.display()))?;
-            let (renamed, seen) = rename_clif(&text, &names);
-            start.extend(rename_clif(&text, &BTreeMap::new()).1);
-            let i = funcs.len();
-            let cp = fns_dir.join(format!("{i}.clif"));
-            let rp = fns_dir.join(format!("{i}.ra.json"));
-            fs::write(&cp, renamed).map_err(|e| format!("{}: {e}", cp.display()))?;
-            fs::copy(&ra, &rp).map_err(|e| format!("{}: {e} (rebuild with --keep-temps)", ra.display()))?;
-            referenced.extend(seen);
-            fn_addr.insert(fin.clone(), addr);
-            funcs.push(serde_json::json!({
-                "name": fin,
-                "clif": format!("fns/{i}.clif"),
-                "ra": format!("fns/{i}.ra.json"),
-                "object": obj,
-                "symbol": f["symbol"],
+            for p in [&dump, &ra] {
+                if !p.is_file() {
+                    return Err(format!("{}: missing (rebuild with --keep-temps)", p.display()));
+                }
+            }
+            markers.insert(fin.clone(), addr);
+            functions.push(serde_json::json!({
+                "name": f["symbol"],
+                "final": fin,
+                "dump": dump,
+                "ra": ra,
             }));
         }
-        // the data objects reachable from the functions' names, and the functions they hold
-        let tag = cgu_dir.get(obj).and_then(|d| d.file_name()).map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        let mut dnames = names.clone();
-        for d in data.keys() {
-            if dnames.contains_key(d) {
-                continue;
-            }
-            if let Some(l) = local_data_name(d, &tag) {
-                let sym = l.split('@').next().unwrap_or_default().to_string();
-                if let Some(a) = map.local.get(&(obj.clone(), sym)).filter(|a| a.len() == 1).and_then(|a| a.iter().next()) {
-                    local_addr.insert(l.clone(), *a);
-                }
-                dnames.insert(d.clone(), l);
-            }
+        nfuncs += functions.len();
+        let Some(locals) = j["locals"].as_array() else {
+            return Err(format!("{}: no `locals` (written by an older cargo fv: rebuild)", rec.display()));
+        };
+        let locals: Vec<(String, String)> = locals
+            .iter()
+            .filter_map(|p| Some((p[0].as_str()?.to_string(), p[1].as_str()?.to_string())))
+            .collect();
+        // the link map's address of each local symbol of the unit's object (defined once there)
+        let local_addrs: Vec<(String, u64)> = locals
+            .iter()
+            .filter_map(|(_, s)| {
+                let a = map.local.get(&(obj.clone(), s.clone())).filter(|a| a.len() == 1)?;
+                Some((s.clone(), *a.iter().next()?))
+            })
+            .collect();
+        let data = dir.join("data.clif");
+        if !data.is_file() {
+            return Err(format!("{}: missing (the unit's data objects)", data.display()));
         }
-        let mut seen: BTreeSet<String> = BTreeSet::new();
-        let mut todo: Vec<String> = start.into_iter().filter(|n| data.contains_key(n)).collect();
-        while let Some(d) = todo.pop() {
-            if !seen.insert(d.clone()) {
-                continue;
-            }
-            if let Some(l) = lines.get(&d) {
-                let (renamed, names_in) = rename_clif(l, &dnames);
-                data_lines.push(renamed);
-                referenced.extend(names_in);
-            }
-            for r in data.get(&d).into_iter().flatten() {
-                if data.contains_key(r) {
-                    todo.push(r.clone());
-                } else {
-                    data_fns.insert(names.get(r).cloned().unwrap_or_else(|| r.clone()));
-                }
-            }
-        }
+        units.push(serde_json::json!({
+            "tag": tag,
+            "object": obj,
+            "functions": functions,
+            "data": data,
+            "locals": locals,
+            "names": j["names"],
+            "local_addrs": local_addrs,
+        }));
     }
-    let data_fns: Vec<&String> = data_fns.iter().filter(|n| fn_addr.contains_key(*n)).collect();
-    // the addresses: functions at their Lean code (the map's markers), other names where the
-    // executable's symbol table has them (the map shows demangled names)
+    // the executable's symbols defined once (the map shows demangled names)
     let exe_syms = read_exe_syms(Path::new(&exe))?;
-    let mut addrs: Vec<(String, u64)> = fn_addr.iter().map(|(n, a)| (n.clone(), *a)).collect();
-    let mut unresolved = Vec::new();
-    for n in &referenced {
-        if fn_addr.contains_key(n) {
-            continue;
-        }
-        if let Some(a) = local_addr.get(n) {
-            addrs.push((n.clone(), *a));
-            continue;
-        }
-        match exe_syms.get(n) {
-            Some(a) if a.len() == 1 => addrs.push((n.clone(), *a.iter().next().unwrap_or(&0))),
-            Some(a) => unresolved.push(format!("{n} (defined {} times)", a.len())),
-            None => unresolved.push(n.clone()),
-        }
-    }
-    let link = serde_json::json!({
+    let symbols: BTreeMap<&String, u64> = exe_syms
+        .iter()
+        .filter_map(|(n, a)| if a.len() == 1 { a.iter().next().map(|a| (n, *a)) } else { None })
+        .collect();
+    let bundle = serde_json::json!({
+        "format": "clifv-frontend-bundle",
+        "version": 2,
         "exe": exe,
         "map": map_path,
-        "functions": funcs,
-        "addrs": addrs,
-        "unresolved": unresolved,
-        "data_syms": data_fns,
-        "data": data_lines,
+        "units": units,
+        "symbols": symbols.iter().map(|(n, a)| serde_json::json!([n, a])).collect::<Vec<_>>(),
+        "markers": markers.iter().map(|(n, a)| serde_json::json!([n, a])).collect::<Vec<_>>(),
         "skipped": skipped,
     });
-    let lp = o.out.join("link.json");
-    fs::write(&lp, serde_json::to_string_pretty(&link).unwrap_or_default()).map_err(|e| format!("{}: {e}", lp.display()))?;
+    let bp = o.out.join("bundle.json");
+    fs::write(&bp, serde_json::to_string_pretty(&bundle).unwrap_or_default())
+        .map_err(|e| format!("{}: {e}", bp.display()))?;
     eprintln!(
-        "cargo fv link-proof: {} functions of {} codegen unit(s) of {exe} (skipped {}), {} addresses ({} names unresolved) → {}",
-        funcs.len(),
+        "cargo fv link-proof: {nfuncs} functions of {} codegen unit(s) of {exe} (skipped {}), {} executable symbols → {}",
         cgus.len(),
         skipped.len(),
-        addrs.len(),
-        unresolved.len(),
-        o.out.display()
+        symbols.len(),
+        bp.display()
     );
     if o.no_check {
         return Ok(0);
