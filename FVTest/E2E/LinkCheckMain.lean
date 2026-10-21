@@ -1,5 +1,5 @@
 import FV.E2E.ProductionPipelineWith
-import FV.Backend.Lowering.StockArithmeticNI
+import FV.Backend.Lowering.StockMixedNI
 import FVTest.E2E.LinkProof
 import FVTest.E2E.SemanticLinkProofWith
 
@@ -29,14 +29,17 @@ def main (args : List String) : IO UInt32 := do
   if let some phs := phdrs (fileRd file) then
     for fi in I0.funcs do
       let f := fi.func
-      if Stock.Arithmetic.eligible f && !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
-        let bytesMatch := match I0.pipeProductionWith Stock.Arithmetic.lowerValidated o.deadCleanup fi with
+      if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f) && !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
+        -- Probe this candidate before the transactional legacy retry. Otherwise
+        -- an incompatible saved allocator answer can hide a retained artifact.
+        let bytesMatch := match I0.pipeOfWithLowering Stock.Mixed.lowerValidated
+            (productionStage o.deadCleanup) fi with
           | .error _ => false
           | .ok a => artB I0 (fileRd file) phs a
         if !bytesMatch then retained := retained ++ [f.name]
-  let actualLower := Stock.Arithmetic.lowerWithFallbacks retained
-  let lowerName := if retained.isEmpty then "Backend.Stock.Arithmetic.lowerValidated"
-    else "(Backend.Stock.Arithmetic.lowerWithFallbacks [" ++
+  let actualLower := Stock.Mixed.lowerWithFallbacks retained
+  let lowerName := if retained.isEmpty then "Backend.Stock.Mixed.lowerValidated"
+    else "(Backend.Stock.Mixed.lowerWithFallbacks [" ++
       ", ".intercalate (retained.map leanStr) ++ "])"
   if o.profile then
     -- the slowest functions: the pipeline, the lowering validator, the allocation checker
@@ -260,7 +263,7 @@ def main (args : List String) : IO UInt32 := do
     let stackAll := Pk.funcs.all fun g => (stackOf g).isSome
     let stackS := if stackAll then some (Pk.funcs.foldl (fun x g => max x ((stackOf g).getD 0)) 0)
       else none
-    for (p, t) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockArithmeticNI") do
+    for (p, t) in FVTest.E2E.SemanticLinkProofWith.leanFilesSemanticWith lowerName I' (funcs.map (·.2)) entries out o.module exe o.deadCleanup noTls stackS stackGood bg (lowerImport := "FV.Backend.Lowering.StockMixedNI") do
       if let some pd := (p : System.FilePath).parent then IO.FS.createDirAll pd
       IO.FS.writeFile p t
       IO.println s!"  wrote {p}"

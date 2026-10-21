@@ -1,0 +1,20 @@
+{
+  "state": "strict_arithmetic_runtime_passed_in_mixed_view",
+  "utc": "2026-10-20T23:48:11.148455+00:00",
+  "head": "1aec0d40e68119e545dbd59c64b334e526f92799",
+  "source_sha256": "b00043a15c8616e6b4b78bfa2d24634eeacb825bbd75d56db6aa1b1626641b1c",
+  "generated_runtime_sha256": "3013b8c3627f79239f7d86cbf8ab4ae5051737159b6ba41966083bb4a6cfaeda",
+  "only_source_change": "proof-witness import replaced by existing fixture data module; exact same public function constant and runtime assertions",
+  "case_grid": 24,
+  "positive_real_oracle_required": true,
+  "missing_binary_negative_control_passed": true,
+  "regalloc_binary_sha256": "d82671ba07c15777a3654563defbd59b4e29a75c28689f94a43a287d7d2c8379",
+  "log": "/tmp/stock-arithmetic-strict-mixed-runtime/runtime.log",
+  "log_sha256": "1314cf9f278795c944bac20f4bbdca8ca4dba51a332fcfd500b7327e62b4a781",
+  "primary_activation_gate_pass_claim": false,
+  "normal_checked_in_module_pass_claim": false,
+  "remaining": "Normal-build checked-in runtime/witness module; exact primary213 strict run and all per-PR gates before arithmetic landing",
+  "cap_GiB": 4,
+  "aggregate_cap_GiB": 8,
+  "max_compiler_jobs": 2
+}

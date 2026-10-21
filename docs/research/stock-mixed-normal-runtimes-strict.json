@@ -1,0 +1,276 @@
+{
+  "state": "normal_checked_in_runtimes_passed",
+  "utc": "2026-10-21T01:05:59.306965+00:00",
+  "head": "48bca5b4e899d2ba5fda525b245f94756bc263b6",
+  "records": {
+    "source-keys": {
+      "returncode": 0,
+      "log": "/tmp/stock-mixed-normal-runtime-current/source-keys.log",
+      "sha256": "e4d18fbdb692861ce554612cf51dca1e438829bb518dc2b9f39194d8d33e9bc5"
+    },
+    "mixed": {
+      "returncode": 0,
+      "log": "/tmp/stock-mixed-normal-runtime-current/mixed.log",
+      "sha256": "e5ccd5b40a4db18e76d51faa1d862457995da0e9f83a6340d9739a509caa50ab"
+    },
+    "arithmetic": {
+      "returncode": 0,
+      "log": "/tmp/stock-mixed-normal-runtime-current/arithmetic.log",
+      "sha256": "1314cf9f278795c944bac20f4bbdca8ca4dba51a332fcfd500b7327e62b4a781"
+    }
+  },
+  "details": {
+    "author_caps_MiB": [
+      8192
+    ],
+    "live": [
+      "3439453"
+    ],
+    "phase": "arithmetic",
+    "positive_runtime_cases": 48,
+    "missing_binary_negative_controls": 2,
+    "regalloc_binary_sha256": "d82671ba07c15777a3654563defbd59b4e29a75c28689f94a43a287d7d2c8379",
+    "native_prior_receipt": "/tmp/stock-mixed-current-native-execution-pass/objects/native-receipt.json",
+    "native_prior_receipt_sha256": "ae777c97b5c510249989d19c744985fbff9ae6d158906e3ca46c379a1c86b584",
+    "native_same_input_object_table": 24,
+    "native_differences": [],
+    "all_native_comparisons": [
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.defaultI32-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.defaultI32-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.defaultI64-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.defaultI64-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.fastI32-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.fastI32-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.fastI64-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.fastI64-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.systemVI32-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.systemVI32-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.systemVI64-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "lean-Backend.Stock.D0.Configuration.systemVI64-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.defaultI32-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.defaultI32-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.defaultI64-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.defaultI64-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.fastI32-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.fastI32-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.fastI64-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.fastI64-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.systemVI32-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.systemVI32-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.systemVI64-cleanup",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      },
+      {
+        "stem": "regalloc2-Backend.Stock.D0.Configuration.systemVI64-plain",
+        "equal": {
+          ".o": true,
+          ".json": true,
+          ".clif": true
+        }
+      }
+    ]
+  },
+  "scheduler_resumed": true,
+  "aggregate_MiB": 16384,
+  "leaf_cap_MiB": 8192,
+  "max_active_builds": 2,
+  "limits": "Exact normal checked-in files on the preserved old Arm model; current-Arm activation gates remain mandatory.",
+  "full_receipt": "/tmp/stock-mixed-normal-runtime-current/receipt.json",
+  "full_receipt_sha256": "8fcb8e28870cafe3155405f75b239f54790e20d1fe0860cf0f6638d685a552ed",
+  "source_snapshot_sha256": "8dfe0cfab3d29c42bdba6e5b40cfce44a4d2db83f77fdc341191d41c14a0714f",
+  "changed_code_source_sha256": {
+    "FV/Backend/ABIReadFlags.lean": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89",
+    "FV/Backend/ABIReadOnly.lean": "50b2785490b7c2b8b1859c4df7e974079476dd0ed876e9cf60ddff2b890f3200",
+    "FV/Backend/Lowering/StockMixed.lean": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c",
+    "FV/Backend/Lowering/StockMixedNI.lean": "015b3c09f35e93ffb307f7ea3176606e0d35470a741d79573206ab72a73577a9",
+    "FV/Backend/MixedNIProduction.lean": "28a2adf73c7eb8b24b96acfd9f6cd6c0597ebdd75c52fd8d3dc4170e868899ff",
+    "FV/Backend/Proof/StockMixedBodyRefines.lean": "8843866a09637538e38392715eb39685e5cb97b12be1144c3a3e7298dbd40d92",
+    "FV/Backend/Proof/StockMixedCheck.lean": "290a5c92d37dfab7dff7578938fc32c40596aaa6715e7a022efdb1c6bcd1a534",
+    "FV/Backend/SemanticNICheck.lean": "881835f4a3a88bb840bedcebccb780ac6c903fc42b270e93f3ce88ad420e5fbb",
+    "FV/Backend/StockMixedCheck.lean": "7f728e8c0810db75b423dd1f5e4b95488ff11e7014403a1f4c93cf5f25684da1",
+    "FV/E2E/ABIReadFlags.lean": "63c98b3f73a9063dc04a6d457a15c787a23e24a79c0d3db57b77ce834de2dcdd",
+    "FV/E2E/CompiledSemantic.lean": "3f97dc68e613c739fbb075d9c6773bff23a9665d6736d359e37e3810b407beb8",
+    "FV/E2E/CompiledSemanticNI.lean": "6239f1c2045a4a6bfcddf957f68d0be88294029bbf7cbd87359f791e1456eded",
+    "FV/E2E/SemanticFallbackWitness.lean": "5fe9ea7e002523afba7bbe83e19feee6b034ba87ce457bba16cc9fc02d642603",
+    "FV/E2E/SemanticMixedCompilerWitness.lean": "a1ed6445aa1ff7fd864b745419ff1239b5e78f2210a23337bd328526e8e5b315",
+    "FV/E2E/SemanticNIBoundary.lean": "3d3fe26c06fb8ac65a57a6b45b26bb8e7769fcf56cc3c5bfc8274fe7c2dfc9d3",
+    "FV/E2E/StockArithmeticNIWitness.lean": "2e653571fdbbf4061af2626fdacf224158a39190e297d69d5ce9e548b76ccb07",
+    "FV/E2E/StockMixedNI.lean": "422f5ba002fd40ed61ac55e4230bbd33cd355d6014ace8a2a47db8cdfc39f1c4",
+    "FV/E2E/StockMixedWitness.lean": "c146a929c2ae80a212c09a892e4a92712fea8cba1ef3bf7fb6282b2d5c60e4e6",
+    "FV/E2E/StockMixedWorldX.lean": "01dbc79c99032acb4cd911dedbbc5707c8c73d3c957e98e98360ab3e3bee9ac0",
+    "FV/E2E/StockProductionFixtures.lean": "54d9f2003b7fa13185bcb13e6e498770ad5cff0553241e801bdcbdbd5591641b",
+    "FV/Link/SemanticCompileWith.lean": "764d6b32ab745d5dfc001c32c97f41b7fef840667db9d988a405092faf1a5352",
+    "FVTest/Backend/Lowering/StockArithmeticRuntime.lean": "b00043a15c8616e6b4b78bfa2d24634eeacb825bbd75d56db6aa1b1626641b1c",
+    "FVTest/Backend/Lowering/StockMixedLinked.lean": "15dcef863ab62d81af55c6a843470a5966a043d67330ca36f7db8cb93363530a",
+    "FVTest/Backend/Lowering/StockMixedRuntime.lean": "d22ce18640a6422ca0cb27e31d00ee4b9a67a373f56392d9624061dacc2f3109",
+    "FVTest/Backend/Main.lean": "f1d894ac2691c5021ef34492117e0ed56f52d35976d4d9c7d8ee9c43786a7683",
+    "FVTest/E2E/LinkCheckMain.lean": "12f6db91df25a10c00efdcc9227224fbc0a244a57e5aa3fbe3c51de73edfbfaa",
+    "FVTest/Link/LeanLinkMain.lean": "99354df383a1a6f559213d10d3514a0c4d9c73ad4f0a982eb849988fbcaa27a7",
+    "scripts/audit/stock-mixed.lean": "d46a2a78e43e957e6fb72a516b8db4ecf8a6ff66961f328230df257fe893d018",
+    "scripts/check-stock-mixed-integration.py": "025f062f48718bd174741c3594b80e25be67197a7289a11a6e6871d458f1ba65",
+    "scripts/check-stock-mixed-native.py": "6334f76939b499b8d401aa7a91f5d05bc42f6888ebbb58a250d7d1228d3d6b60"
+  },
+  "normal_modules_built_first": true,
+  "no_scratch_import_replacement": true,
+  "native_execution_reuse": "All24 fresh objects/tables/original CLIF inputs exactly match the previously executed624-call grid; not624 new executions.",
+  "remaining": "Exact current-Arm integration/CLI/generated/native/trust/MCP/identity-stage/example gates before activation. Arithmetic first, full original140 active."
+}

@@ -1,4 +1,4 @@
-import FV.Backend.Lowering.StockArithmeticNI
+import FV.Backend.Lowering.StockMixedNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
 import FV.Link.OptCompile
@@ -216,17 +216,20 @@ def main (args0 : List String) : IO UInt32 := do
       return 1
   -- Keep optimizer and exceptional-edge theorem variants on their retained route
   -- until their production adapters are complete.
-  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)
-  let compiled := if stockEnabled then SemanticCompilerWith.compile Backend.Stock.Arithmetic.lowerValidated SC0 file0 deadCleanup
-    else (compile SC file0).map fun file => (⟨file,false⟩ : SemanticCompilerWith.Output)
+  let compiled := if stockEnabled then SemanticCompilerWith.compileWithFallback
+      Backend.Stock.Mixed.lowerValidated Backend.Stock.Arithmetic.lowerValidated SC0 file0 deadCleanup
+    else (compile SC file0).map fun file => (⟨file,.legacy⟩ : SemanticCompilerWith.FallbackOutput)
   match compiled with
   | .ok out =>
     let file := out.file
-    if out.stock then
-      let SP := SC0.placedProductionWith Backend.Stock.Arithmetic.lowerValidated deadCleanup
+    if out.choice != .legacy then
+      let actualLower := if out.choice == .current then Backend.Stock.Mixed.lowerValidated
+        else Backend.Stock.Arithmetic.lowerValidated
+      let SP := SC0.placedProductionWith actualLower deadCleanup
       IO.FS.writeBinFile exe file
-      IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.compile (Link.SemanticCompilerWith.attempt_correct)"
+      IO.println s!"lean-link: {exe}: {summary} written by Link.SemanticCompilerWith.compileWithFallback (Link.SemanticCompilerWith.compileWithFallback_spec, Link.SemanticCompilerWith.attempt_correct)"
       if let some f := ldFile then
         match ← ldCheck SP file0 f with
         | .ok () => IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB); retained legacy acceptance: Link.SemanticCompilerWith.accepts_legacy"

@@ -1,0 +1,90 @@
+{
+  "utc": "2026-10-20T20:51:27.973884+00:00",
+  "state": "passed_single_original_MCP_result_validated_offline",
+  "head": "a2d324c83c9cd9601b91ebab085b4aa4ef4e723b",
+  "project": "/home/lee/clifv/.worktrees/stock-mixed-production",
+  "mcp_tool": "lean_run_code",
+  "calls": 1,
+  "compatibility_applications": 3,
+  "axiom_sets": {
+    "E2E.ABIReadOnly.sem": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ABIReadOnly.refines": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ABIReadOnly.memory": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "E2E.ABIReadOnly.driver": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "code_sha256": "bfa519d600f29cec86cf179de9b79e8df3ae453715f73b78943e2b485ac106cb",
+  "raw_mcp_result_sha256": "e63f16a0ac12c8d600d607ba1d942ebe9027da2fbf4fb8e14d5537bfb861eb0f",
+  "cap_MiB": 8192,
+  "max_active_builds": 2,
+  "aggregate_MiB": 16384,
+  "scheduler_resumed": true,
+  "source_sha256": {
+    "FV/E2E/ABIReadOnlySem.lean": "6f668d2a8325aaa5ca14da1253d9ac1591c3283aecff81c2ac226170450f6a7b"
+  },
+  "source_tracked_clean": true,
+  "server_session_ended": true,
+  "client_receipt_parser_error": "Installed SDK uses is_error/structured_content, not camelCase fields. Original successful response retained and validated without another tool call.",
+  "remaining": "ABI contracts only; full class/current per-PR gates and original140stillactive.",
+  "no_remaining_worktree_LSP_daemons_verified": true,
+  "current_normal_built_modules": 63,
+  "newly_normal_built_modules": [
+    "FV.Backend.Proof.DeadCleanupAdapter",
+    "FV.Backend.Proof.IselAtomic",
+    "FV.Backend.Proof.IselFloatArith",
+    "FV.Backend.Proof.IselFloatConst",
+    "FV.Backend.Proof.IselFloatSelect",
+    "FV.Backend.Proof.IselFloatVac",
+    "FV.Backend.Proof.IselLowerAll",
+    "FV.Backend.Proof.MemRefines",
+    "FV.Backend.Proof.RefinesCSem",
+    "FV.Backend.Proof.RefinesInsts",
+    "FV.Backend.Proof.RefinesInsts2",
+    "FV.E2E.ABIReadOnlyCheck",
+    "FV.E2E.ABIReadOnlyRealize",
+    "FV.E2E.ABIReadOnlySem",
+    "FV.E2E.ABIReadOnlyTransport",
+    "FV.E2E.DeadCleanupContracts",
+    "FV.E2E.DeadCleanupGuarded",
+    "FV.E2E.DeadCleanupRealizes",
+    "FV.E2E.DeadCleanupRegLevel",
+    "FV.E2E.DeadCleanupRegLevelX",
+    "FV.E2E.DeadCleanupSpillWords",
+    "FV.E2E.Guarded",
+    "FV.E2E.Lockstep",
+    "FV.E2E.Pair",
+    "FV.E2E.RegLevelCorrect",
+    "FV.E2E.RegLevelCorrectX",
+    "FV.E2E.SizeDefs",
+    "FV.E2E.SizeVC"
+  ],
+  "ci_artifact_reuse": {
+    "run": 39464556827,
+    "main": "ddfeb764eba3bfc812f5570c91ade139d4da3061",
+    "stages": [
+      "stage-w1-0",
+      "stage-w1-1",
+      "stage-w1-3"
+    ],
+    "unique_keys_verified": 667,
+    "referenced_artifacts_verified": 1357,
+    "receipt_sha256": "42f7ff6020ff90fbd499698037c4eee406074fa5587e81fd873ffabadf5293b4",
+    "not_a_gate_pass": true,
+    "MInst_input_key_and_output_artifacts_match_local_exactly": true
+  }
+}
