@@ -1,0 +1,15 @@
+{
+  "archive": "/home/lee/.clifv-recovery/20261015T132107Z-terminal-unsunk/checkpoint.tar.gz",
+  "sha256": "28089ca26d982146cb341a78ba07b6a291a1efdd4648120f8c764cfac72d2fc2",
+  "members": 20,
+  "remote_backup": {
+    "utc": "20261015T132111Z",
+    "branch": "agent/stock-driver-wip-backup-20261015T132111Z",
+    "commit": "bd9c706f4b1229c7f550a58501ccbc9f9e8998a2",
+    "parent": "01081291e566bc4eb80419a526c5725406ed62b7",
+    "captured_dirty_paths": 750,
+    "additional_evidence_paths": 1,
+    "remote_commit_and_all_captured_blobs_verified": true,
+    "index_and_active_head_unchanged": true
+  }
+}

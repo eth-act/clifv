@@ -1,5 +1,7 @@
 import FV.E2E.LinkOwnCallsShape
 import FV.Backend.Proof.KillDriver
+import FV.Backend.Proof.TermSetRoots
+import FV.Backend.Proof.TermSetData
 
 /-!
 # The ISLE call inversion per run (`CallRunHyp`): runs that emit no call
@@ -9,8 +11,9 @@ predicate "holds no `MInst.Call`/`MInst.CallInd` data" (`vCIn`) and the run rela
 `call`/`tryCall`" (`NoCallSince`), on the term set `callTab`: the closure under `Isle.ruleTerms`
 of the terms applied by the rules of `lower` other than the `call`/`call_indirect` rules
 1031–1033 and by the closure-root rules of `lower_branch` (the `try_call` rules 1034–1036 are
-not). Decided over the exported rule data: `callTab` is closed and no call site of its rules
-builds `Call`/`CallInd` data. A call is emitted only through `emit` of such data
+not). The generated literal set is untrusted. Leaf-wise kernel-checked certificates over the
+exported rule data establish that `callTab` is closed and no call site of its rules builds
+`Call`/`CallInd` data. A call is emitted only through `emit` of such data
 (`Cov.externCtor_shp`, `ofV_call_cIn`), extern constructors build none (`externCtor_c`) and
 extractors return none (`externExtract_c`, the CLIF data holds no `MInst` data).
 
@@ -25,6 +28,8 @@ namespace E2E.LinkCheck
 open Backend Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
+set_option Elab.async false
 
 /-! ## Call data inside values -/
 
@@ -271,27 +276,6 @@ theorem dataC_termCtx {ctx : Ctx} (h : DataC ctx) {data : V} (hd : vCIn data = f
 
 /-! ## The term set -/
 
-/-- Worklist closure under `Isle.ruleTerms` (`k`: fuel; the closure property is decided
-afterwards). -/
-def callClose : Nat → List TermId → Std.HashSet TermId → Std.HashSet TermId
-  | 0, _, seen => seen
-  | _ + 1, [], seen => seen
-  | k + 1, t :: ts, seen =>
-    if seen.contains t then callClose k ts seen
-    else callClose k ((program.rulesOf t).flatMap ruleTerms ++ ts) (seen.insert t)
-
-/-- The `call`/`call_indirect` rules of `lower`. -/
-def callExcl : List RuleId := [1031, 1032, 1033]
-
-/-- The terms the root rules apply: those of `lower` but 1031–1033, and those of the
-closure-root rules of `lower_branch`. -/
-def callRoots : List TermId :=
-  ((program.rulesOf TId.lower).filter fun r => !callExcl.contains r.id).flatMap ruleTerms ++
-    ((program.rulesOf TId.lower_branch).filter fun r => closureRoot r).flatMap ruleTerms
-
-/-- **The terms of non-call runs.** -/
-def callTab : List TermId := (callClose 10000000 callRoots {}).toList
-
 /-- A call site `(ty, t)` builds no `Call`/`CallInd` data. -/
 def callSite (ty : TypeId) (t : TermId) : Prop :=
   ∀ term k, termOf program t = .ok term → term.kind = .enumVariant k →
@@ -321,15 +305,23 @@ theorem callRuleOk_of {rl : Rule} (h : callRuleOkB rl = true) :
   exact ⟨fun u hu => by simpa using h.1 u hu, fun q hq => callSite_of (h.2 q hq)⟩
 
 theorem callTab_closedB : callTab.all (fun t => (program.rulesOf t).all callRuleOkB) = true := by
-  native_decide
+  simp only [callTab, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 theorem callRootS_ok :
     (program.rulesOf TId.lower).all (fun rl => callExcl.contains rl.id || callRuleOkB rl) = true := by
-  native_decide
+  rw [show TId.lower = 686 from rfl, data_program.r686]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 theorem callRootB_ok :
     (program.rulesOf TId.lower_branch).all (fun rl => !closureRoot rl || callRuleOkB rl) = true := by
-  native_decide
+  rw [show TId.lower_branch = 687 from rfl, data_program.r687]
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 theorem callTab_closed : ∀ t ∈ callTab, ∀ rl ∈ program.rulesOf t,
     (∀ u ∈ ruleTerms rl, u ∈ callTab) ∧ ∀ q ∈ ruleTys rl, callSite q.1 q.2 :=

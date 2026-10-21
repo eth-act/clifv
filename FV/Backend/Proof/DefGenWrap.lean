@@ -217,9 +217,17 @@ def wrapperInternalB (t : TermId) : Bool :=
       | _ => false
     | none => true
 
+set_option maxHeartbeats 4000000 in
+set_option cbv.maxSteps 4000000 in
 theorem wrapper_internal_ok :
     (List.range program.ruleLists.size).all wrapperInternalB = true := by
-  native_decide
+  conv =>
+    lhs
+    arg 1
+    cbv
+  simp only [List.all_cons, List.all_nil, Bool.and_eq_true, and_true]
+  repeat' apply And.intro
+  all_goals decide +kernel
 
 theorem wrapper_internal {t : TermId} {ct : CT} (hw : wrapper program t = some ct) {term : Term}
     (ht : termOf program t = .ok term) :

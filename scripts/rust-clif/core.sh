@@ -10,6 +10,8 @@
 set -euo pipefail
 
 TOOLCHAIN=${TOOLCHAIN:-nightly-2026-09-26}
+# the patched cg_clif (scripts/build-cg-clif.sh: dumps with external-name tables)
+CG_CLIF=${CG_CLIF:-$(cd "$(dirname "$0")/../.." && pwd)/target/cg_clif/abort/librustc_codegen_cranelift.so}
 work=${1:-/tmp/rust-clif-survey/core}
 rm -rf "$work"
 mkdir -p "$work"
@@ -25,15 +27,15 @@ path = "lib.rs"
 panic = "abort"
 EOF
 printf '#![no_std]\nextern crate alloc;\npub fn f(x: u32) -> alloc::vec::Vec<u32> { alloc::vec![x] }\n' >lib.rs
-cat >wrap.sh <<'EOF'
+cat >wrap.sh <<EOF
 #!/usr/bin/env bash
 # RUSTC_WRAPPER: cg_clif + CLIF dump for every crate except compiler_builtins and build scripts.
 # Several CGUs, so rustc does not try to copy the `.ll` file cg_clif never writes.
-rustc="$1"; shift
-for a in "$@"; do
-  [[ "$a" == compiler_builtins || "$a" == build_script_build ]] && exec "$rustc" "$@"
+rustc="\$1"; shift
+for a in "\$@"; do
+  [[ "\$a" == compiler_builtins || "\$a" == build_script_build ]] && exec "\$rustc" "\$@"
 done
-exec "$rustc" "$@" -Zcodegen-backend=cranelift --emit=llvm-ir -Zunstable-options \
+exec "\$rustc" "\$@" -Zcodegen-backend=$CG_CLIF --emit=llvm-ir -Zunstable-options \\
   -Csymbol-mangling-version=hashed -Ccodegen-units=16
 EOF
 chmod +x wrap.sh
