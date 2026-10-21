@@ -1,4 +1,6 @@
-import FV.E2E.StockArithmeticStage
+import FV.E2E.StockArithmeticStageContract
+import FV.Backend.Proof.LowerDecide
+import FV.Backend.Proof.RegallocCover
 import FV.Backend.LinearScan
 import FV.Backend.Lowering.StockD0
 

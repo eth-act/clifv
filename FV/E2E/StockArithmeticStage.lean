@@ -1,24 +1,12 @@
 import FV.E2E.StockArithmeticArtifact
 import FV.E2E.DeadCleanupContracts
 import FV.Backend.Proof.DeadCleanupPrepare
-import FV.Backend.Lowering.StockArithmetic
+import FV.E2E.StockArithmeticStageContract
 
 namespace E2E
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.Proof Backend.DeadCleanup
 set_option autoImplicit false
 set_option Elab.async false
-
-/-- Both existing cleanup modes retain actual Stock provenance and the same
-checked allocation/physical artifact contract. -/
-structure CompiledStockArithmeticStage (f : Clif.Function) (cleanup : Bool) (k : Nat)
-    (result : Stock.Result) (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : FnBin) : Prop where
-  lower : Stock.lower f = .ok result
-  prepare : Backend.prepare (Stock.Arithmetic.stage cleanup result.code) = .ok vcp
-  prepOk : prepCheck (Stock.Arithmetic.stage cleanup result.code) vcp = true
-  check : checkAlloc vcp rf = .ok ()
-  alloc : lowerRFunc vcp rf = .ok af
-  emit : emitFunc k af = .ok fa
-  layout : fa.layout = .ok fb
 
 /-- Cleanup and preparation preserve the selected return execution and its
 exact register/output tuple, as needed by linked return-site contracts. -/

@@ -106,5 +106,18 @@
     "Reconcile and land Mixed, then logical production consumers and every original140 family/effect/simulation/completeness obligation"
   ],
   "full_goal_complete": false,
-  "merge_ready": false
+  "merge_ready": false,
+  "artifact_contract_split": {
+    "new_module": "FV.E2E.StockArithmeticStageContract",
+    "old_module_retains_both_public_theorem_variants": "FV.E2E.StockArithmeticStage",
+    "public_structure_name": "E2E.CompiledStockArithmeticStage",
+    "declaration_block_byte_identical": true,
+    "old_theorem_text_byte_identical": true,
+    "pipeline_witness_statements_and_proofs_byte_identical": true,
+    "old_root_import_closure": 777,
+    "new_root_import_closure": 440,
+    "normal_contract_build_log": "/tmp/stock-stage-contract-corrected-build.log",
+    "normal_contract_build_log_sha256": "b8967933c0a863d4cd3b783f0115a1e3b4d957dda83ea1dbcc44434af683af59",
+    "complete_witness_normal_validation": "pending while live RegallocAtomic dependency completes; corrected contract passed separately; no kernel interrupted"
+  }
 }
