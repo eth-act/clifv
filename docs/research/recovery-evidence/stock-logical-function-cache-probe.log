@@ -1,0 +1,115 @@
+✖ [357/754] Building FV.Backend.Proof.StockLogicalObserved
+error: target is out-of-date and needs to be rebuilt
+✖ [377/754] Building FV.Backend.Proof.StockLogicalExtrRhs
+error: target is out-of-date and needs to be rebuilt
+✖ [399/754] Building FV.Backend.Proof.StockLogicalExtrSemantics
+error: target is out-of-date and needs to be rebuilt
+✖ [602/754] Building FV.Backend.Proof.StockPureUnsunk
+error: target is out-of-date and needs to be rebuilt
+✖ [608/754] Building FV.Backend.Proof.StockPureSourceColors
+error: target is out-of-date and needs to be rebuilt
+⚠ [666/754] Replayed FV.Backend.Proof.RegallocMemAddr
+warning: FV/Backend/Proof/RegallocMemAddr.lean:115:27: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMemAddr.lean:115:36: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocMemAddr.lean:86:15: This simp argument is unused:
+  h9
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [MInst.lines.addOff, List.nil_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/RegallocMemAddr.lean:109:17: This simp argument is unused:
+  h9
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hu, MInst.lines.addOff, List.nil_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/RegallocMemAddr.lean:109:21: This simp argument is unused:
+  hu
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [h9, MInst.lines.addOff, List.nil_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/RegallocMemAddr.lean:122:17: This simp argument is unused:
+  h9
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [hu]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/RegallocMemAddr.lean:122:21: This simp argument is unused:
+  hu
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [h9]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/RegallocMemAddr.lean:126:74: This simp argument is unused:
+  pcx
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [x16w, spOf, Arm.r_of_w_different, Arm.r_of_w_same, ofNat_u64, Arm.w_of_w_shadow]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+⚠ [668/754] Replayed FV.Backend.Proof.RegallocMoves
+warning: FV/Backend/Proof/RegallocMoves.lean:36:29: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:37:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:81:29: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:82:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:109:29: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:110:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:229:22: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocMoves.lean:231:25: `if_false` has been deprecated: Use `ite_false` instead
+⚠ [673/754] Replayed FV.Backend.Proof.RegallocMemFP
+warning: FV/Backend/Proof/RegallocMemFP.lean:233:53: This simp argument is unused:
+  lsb_facts3
+
+Hint: Omit it from the simp argument list.
+  [apply] simp (config := { decide := true }) only [fpRegInst, Arm.exec_inst, Arm.LDST.exec_reg_reg_offset, ite_false,
+    ExtendOp.bits]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/RegallocMemFP.lean:251:53: This simp argument is unused:
+  lsb_facts3
+
+Hint: Omit it from the simp argument list.
+  [apply] simp (config := { decide := true }) only [fpRegInst, Arm.exec_inst, Arm.LDST.exec_reg_reg_offset, ite_false,
+    ExtendOp.bits]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/RegallocMemFP.lean:357:53: This simp argument is unused:
+  lsb_facts3
+
+Hint: Omit it from the simp argument list.
+  [apply] simp (config := { decide := true }) only [fpRegInst, Arm.exec_inst, Arm.LDST.exec_reg_reg_offset, ite_false,
+    ExtendOp.bits]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: FV/Backend/Proof/RegallocMemFP.lean:375:53: This simp argument is unused:
+  lsb_facts3
+
+Hint: Omit it from the simp argument list.
+  [apply] simp (config := { decide := true }) only [fpRegInst, Arm.exec_inst, Arm.LDST.exec_reg_reg_offset, ite_false,
+    ExtendOp.bits]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+✖ [709/770] Building FV.Backend.Proof.StockAddSubScanRefines
+error: target is out-of-date and needs to be rebuilt
+✖ [719/770] Building FV.Backend.Proof.StockSourceEntry
+error: target is out-of-date and needs to be rebuilt
+✖ [765/770] Building FV.Backend.Lowering.StockLogical
+error: target is out-of-date and needs to be rebuilt
+✖ [766/770] Building FV.Backend.StockArithmeticCheck
+error: target is out-of-date and needs to be rebuilt
+Some required targets logged failures:
+- FV.Backend.Proof.StockLogicalObserved
+- FV.Backend.Proof.StockLogicalExtrRhs
+- FV.Backend.Proof.StockLogicalExtrSemantics
+- FV.Backend.Proof.StockPureUnsunk
+- FV.Backend.Proof.StockPureSourceColors
+- FV.Backend.Proof.StockAddSubScanRefines
+- FV.Backend.Proof.StockSourceEntry
+- FV.Backend.Lowering.StockLogical
+- FV.Backend.StockArithmeticCheck

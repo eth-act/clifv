@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-21T08:15:44.862141+00:00",
+  "state": "cache_only_probe_requires_normal_build",
+  "head": "f3a5527c6a420c7ee74d9a6ff97d14e6a92b2724",
+  "exit_status": 3,
+  "targets": [
+    "FV.Backend.Proof.StockLogicalSourceWitness",
+    "FV.Backend.Proof.StockLogicalReturnWitness",
+    "FV.Backend.Proof.StockLogicalNotrapWitness",
+    "FV.Backend.Proof.StockLogicalCheckWitness"
+  ],
+  "frontier": [
+    "FV.Backend.Proof.StockLogicalObserved",
+    "FV.Backend.Proof.StockLogicalExtrRhs",
+    "FV.Backend.Proof.StockLogicalExtrSemantics",
+    "FV.Backend.Proof.StockPureUnsunk",
+    "FV.Backend.Proof.StockPureSourceColors",
+    "FV.Backend.Proof.StockAddSubScanRefines",
+    "FV.Backend.Proof.StockSourceEntry",
+    "FV.Backend.Lowering.StockLogical",
+    "FV.Backend.StockArithmeticCheck"
+  ],
+  "log": "/tmp/stock-logical-function-cache-probe.log",
+  "log_sha256": "3b7a789e7dcfc22ee1a7f52adea63771241e0efa4827af3a22403052f0e34f80",
+  "no_compiler_jobs_launched": true,
+  "not_a_proof_failure_or_validation_pass": true,
+  "next": "Normal bounded scheduler for these targets after arithmetic landing frees the shared build budget. Preserve current arithmetic controller; do not restart completed dependencies."
+}

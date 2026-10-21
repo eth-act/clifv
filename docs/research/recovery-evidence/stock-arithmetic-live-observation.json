@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-21T08:14:47.282466+00:00",
+  "head": "672c4dc4820b31c477a5e075926c72cd2b267dd8",
+  "checkout_head": "672c4dc4820b31c477a5e075926c72cd2b267dd8",
+  "supplemental_route_runtime_state": "prepared_not_executed",
+  "state": "running",
+  "phase": "all-modules",
+  "controller_pid": 1235132,
+  "controller_live": true,
+  "scheduler_pid": 1235140,
+  "scheduler_live": true,
+  "completed_module_records": 966,
+  "nonzero_records": [],
+  "actual_lean_jobs": [
+    {
+      "pid": 1958710,
+      "source": "/home/lee/clifv/.worktrees/stock-driver-incremental/FV/Backend/Proof/IselEmitTab.lean",
+      "cpu_seconds": 430.8,
+      "elapsed_seconds": 431.5,
+      "rss_MiB": 2147.3
+    }
+  ],
+  "latest_module_events": [
+    "04:12:01 start FV.Backend.Proof.StockTerminalControlWitness cap=10G running=2 avail=157.1G",
+    "04:12:01 draining for solo FV.Opt.Proof.RuleArith (16G)",
+    "04:13:01 done FV.Backend.Proof.StockTerminalControlWitness rc=0 61s maxrss=7.3G built -> ok"
+  ]
+}
