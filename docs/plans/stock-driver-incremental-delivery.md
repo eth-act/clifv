@@ -39,6 +39,17 @@ restarting completed work. [Resource-repair evidence](../research/stock-cmp-reso
 This is a prerequisite repair within the complete activation packet; it is not
 main activation or full-goal completion.
 
+Current-main CI cache reuse also requires consistent serialized proof outputs.
+`RegallocLemmas` had a different valid local olean under the exact same input
+key; its interface metadata and C match CI. Default unstage and saved-trace
+precedence retained that local variant, invalidating downstream CI keys. After
+draining running kernels and remotely preserving the partial epoch, the
+standard Lake API adopted only the verified current-CI artifact under that exact
+key. A normal no-build `IselCmpEmit` probe now restores the expected CI key. No
+source, compiler, theorem assumption, axiom set or activation gate changed;
+check all current module keys again. Do not manually rebind input hashes.
+[Cache alignment evidence](../research/stock-current-arm-cache-alignment.json).
+
 Published prerequisite checkpoint `79df6b4a` on
 `agent/stock-arithmetic-production-adapters` supplies raw-Stock non-interference
 and whole-program/stack/binary/real-executable/original-source/peak consumers.
