@@ -1,5 +1,6 @@
 import FV.E2E.StockScalarWitness
 import FV.E2E.StockScalarWorldX
+import FV.E2E.SemanticNIBoundary
 
 #print axioms Backend.Stock.Proof.PureBody.actual_source_records
 #print axioms Backend.Stock.Proof.PureBody.actual_pure_source_step
@@ -27,3 +28,27 @@ import FV.E2E.StockScalarWorldX
 #print axioms E2E.StockScalarNIWitness.compiled_semantic_exists -- witness: native_decide
 #print axioms E2E.StockScalarNIWitness.source_entry
 #print axioms E2E.StockScalarNIWitness.source_returns
+
+#print axioms E2E.ABIReadBoundary.checked_step_frame
+#print axioms E2E.ABIReadBoundary.checked_step_transport
+#print axioms E2E.ABIReadBoundary.star_transport
+#print axioms E2E.ABIReadBoundary.return_transport
+#print axioms E2E.ABIReadBoundary.Realize.step_realize
+#print axioms E2E.ABIReadBoundary.Realize.star_realize
+#print axioms E2E.ABIReadBoundary.Realize.return_realize
+#print axioms E2E.ABIReadBoundary.machine_return
+#print axioms E2E.MixedFlagBoundary.FlagFrame.refl
+#print axioms E2E.MixedFlagBoundary.FlagFrame.write_pstate
+#print axioms E2E.MixedFlagBoundary.FlagFrame.trans
+#print axioms E2E.MixedFlagBoundary.FlagFrame.regVal
+#print axioms E2E.MixedFlagBoundary.FlagFrame.arguments
+#print axioms E2E.ScalarBoundary.refines
+#print axioms E2E.ScalarBoundary.memory
+#print axioms E2E.ScalarBoundary.driver
+#print axioms E2E.ScalarBoundary.checked_step_frame
+#print axioms E2E.ScalarBoundary.checked_step_transport
+#print axioms E2E.ScalarBoundary.Realize.step_realize
+#print axioms E2E.ScalarBoundary.return_transport
+#print axioms E2E.ScalarBoundary.machine_return
+#print axioms E2E.ScalarBoundary.checked_instruction
+#print axioms E2E.CompiledSemanticNI.noTlsScalar
