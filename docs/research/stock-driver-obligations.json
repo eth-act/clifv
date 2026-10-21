@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-21T19:49:48.025223+00:00",
+  "updated_utc": "2026-10-21T20:12:16.806685+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -12,9 +12,10 @@
       "arithmetic",
       "add/sub/select (357)",
       "AND/OR/XOR (359)",
-      "integer constants via shared scalar consumers (author gates complete; current activation PR)"
+      "integer constants via shared scalar consumers (361)",
+      "integer NOT/NOT-of-XOR via shared scalar consumers"
     ],
-    "pending": "NOT/fused through existing Scalar.Domain and consumers, then every remaining original scalar/control/memory/effect/call/whole-driver/completeness obligation. Current guarded NOT drafts compile and are backed in fe81690d."
+    "pending": "Multiplication/fused multiply, shifts/casts and every remaining original scalar/control/memory/effect/call/whole-driver/completeness obligation. Shift-containing whole functions still await shifts, although general shifted-NOT root/source proofs are complete. Current mul dispatch/source drafts compile and are backed817b6526."
   },
   "roots": [
     {
@@ -3521,7 +3522,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Bnot",
       "saved_guarded_bridge": "FV/Backend/Proof/StockBnotRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual root inventory and selected-root dispatch, result binding, availability-guarded original source, scan/body/entry-return/Domain composition complete; ordinary i32/i64 NOT source class default consumers active",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3529,7 +3530,19 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "BnotComplete.selected_rule_ids",
+        "BnotComplete.record_selected_rule_ids",
+        "BnotComplete.source_from_step",
+        "stock_lower_bnot_scan_fall_refines",
+        "stock_lower_mixed_bnot_body_fall_refines",
+        "BnotBody.actual_bnot_body_refines",
+        "BnotBody.actual_bnot_entry_return_refines_frame",
+        "Scalar.domain_of_bnot"
+      ],
+      "production_receipt": "docs/research/stock-not-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open. Shift-containing source bodies activate only with the future shift class."
     },
     {
       "rule": "rule_lower_1381",
@@ -3601,7 +3614,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Bnot",
       "saved_guarded_bridge": "FV/Backend/Proof/StockBnotRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual root inventory and selected-root dispatch, result binding, availability-guarded original source, scan/body/entry-return/Domain composition complete; ordinary i32/i64 NOT source class default consumers active",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3609,7 +3622,19 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "BnotComplete.selected_rule_ids",
+        "BnotComplete.record_selected_rule_ids",
+        "BnotComplete.source_from_step",
+        "stock_lower_bnot_scan_fall_refines",
+        "stock_lower_mixed_bnot_body_fall_refines",
+        "BnotBody.actual_bnot_body_refines",
+        "BnotBody.actual_bnot_entry_return_refines_frame",
+        "Scalar.domain_of_bnot"
+      ],
+      "production_receipt": "docs/research/stock-not-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open. Shift-containing source bodies activate only with the future shift class."
     },
     {
       "rule": "rule_lower_1406",
@@ -3617,7 +3642,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Bnot",
       "saved_guarded_bridge": "FV/Backend/Proof/StockLogicalNotXorRecord.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual root inventory and selected-root dispatch, result binding, availability-guarded original source, scan/body/entry-return/Domain composition complete; ordinary i32/i64 NOT source class default consumers active",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3625,7 +3650,19 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "BnotComplete.selected_rule_ids",
+        "BnotComplete.record_selected_rule_ids",
+        "BnotComplete.source_from_step",
+        "stock_lower_bnot_scan_fall_refines",
+        "stock_lower_mixed_bnot_body_fall_refines",
+        "BnotBody.actual_bnot_body_refines",
+        "BnotBody.actual_bnot_entry_return_refines_frame",
+        "Scalar.domain_of_bnot"
+      ],
+      "production_receipt": "docs/research/stock-not-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open. Shift-containing source bodies activate only with the future shift class."
     },
     {
       "rule": "rule_lower_1408",
