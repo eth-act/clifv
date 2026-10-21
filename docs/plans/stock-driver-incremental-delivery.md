@@ -673,3 +673,12 @@ changed. After validation, connect the generic existing ABI-read boundary and
 semantic consumers, run the complete class/fallback gates, and land the class.
 Arithmetic remains the first activation landing, then Mixed. All original#140
 families/effects, simulation/completeness and preservation obligations remain.
+
+
+The pending logical checker now imports `StockLogicalBodyRefines`, the actual
+owner of its syntax family, instead of the complete entry/return simulation. All
+checker theorem/proof bytes remain unchanged. The local checker-witness import
+closure drops from726to668modules; this is a source-graph observation, not a
+normal elaboration or axiom pass. See [the import-boundary receipt](../research/stock-logical-check-import-boundary.json).
+The complete source/return/no-trap witnesses and production consumers remain
+mandatory; the frozen arithmetic candidate is unchanged and lands first.
