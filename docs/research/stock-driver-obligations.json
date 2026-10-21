@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-21T20:12:16.806685+00:00",
+  "updated_utc": "2026-10-21T21:01:27.630196+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -13,9 +13,10 @@
       "add/sub/select (357)",
       "AND/OR/XOR (359)",
       "integer constants via shared scalar consumers (361)",
-      "integer NOT/NOT-of-XOR via shared scalar consumers"
+      "integer NOT/NOT-of-XOR via shared scalar consumers",
+      "i32/i64 multiplication and fused multiply through shared scalar consumers"
     ],
-    "pending": "Multiplication/fused multiply, shifts/casts and every remaining original scalar/control/memory/effect/call/whole-driver/completeness obligation. Shift-containing whole functions still await shifts, although general shifted-NOT root/source proofs are complete. Current mul dispatch/source drafts compile and are backed817b6526."
+    "pending": "Shifts/casts: actual eight-source-root dispatch draft compiles; fused bitfield892/893 and scalar ABI read-boundary step facts remain. Then every original remaining scalar/control/memory/trap/effect/call/block/whole-driver/completeness/consumer obligation."
   },
   "roots": [
     {
@@ -2594,7 +2595,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Imul",
       "saved_guarded_bridge": "FV/Backend/Proof/StockMulRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual root selection, retained binding, original guarded source, scan/body/entry-return/Domain and default production consumers complete",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -2602,7 +2603,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proofs": [
+        "MulComplete.selected_rule",
+        "MulComplete.record_source",
+        "stock_lower_mul_scan_fall_refines",
+        "stock_lower_mixed_mul_body_fall_refines",
+        "MulBody.actual_mul_body_refines",
+        "MulBody.actual_mul_entry_return_refines_frame",
+        "Scalar.domain_of_mul"
+      ],
+      "production_receipt": "docs/research/stock-mul-production-activation.json",
+      "completeness": "Stock-only selection/request/lowering success and whole-driver completeness remain open; successful-run refinement is not totality."
     },
     {
       "rule": "rule_lower_876",
