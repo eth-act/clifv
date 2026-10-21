@@ -50,4 +50,22 @@ def compileWithFallback (current previous : ProductionLowering) (S : LinkSpec)
   | .error _ => (compile previous S file0 cleanup).map fun out =>
       ⟨out.file,if out.stock then .previous else .legacy⟩
 
+
+/-- Actual output and its selected semantic route; none records legacy retry. -/
+structure RoutedOutput where
+  file : ByteArray
+  route : Option Nat
+
+/-- Extend the complete retry sequence without dropping a previously shipped
+attempt. Every route receives the original specification/image/settings. -/
+def compileWithRoutes (routes : List ProductionLowering) (S : LinkSpec)
+    (file0 : ByteArray) (cleanup : Bool) : Except String RoutedOutput :=
+  match routes with
+  | [] => (legacyCompile (legacySpec S cleanup) file0 cleanup).map fun file => ⟨file,none⟩
+  | current :: previous =>
+    match attempt current (S.placedProductionWith current cleanup) file0 cleanup with
+    | .ok file => .ok ⟨file,some 0⟩
+    | .error _ => (compileWithRoutes previous S file0 cleanup).map fun out =>
+        ⟨out.file,out.route.map Nat.succ⟩
+
 end Link.SemanticCompilerWith
