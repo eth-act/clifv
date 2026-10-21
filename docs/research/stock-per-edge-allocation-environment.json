@@ -1,0 +1,7 @@
+{
+  "utc": "2026-10-15T18:10:03.185988+00:00",
+  "old_canonical_upstream_symlink": "/home/lee/clifv/third_party/wasmtime",
+  "comparison_upstream": "/home/lee/clifv/.worktrees/wasmtime-stock-lowering",
+  "reason": "Primary source retains earlier exporter instrumentation without positional identities; existing saved pinned mirror passes exact checked current patch reverse-check. No upstream source changed.",
+  "build_cache": "tools/prejit-export/target -> canonical rust/target, one shared Rust cache; no new source worktree."
+}
