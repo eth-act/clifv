@@ -1,6 +1,6 @@
 # Incremental Stock driver delivery
 
-Current execution plan, refreshed 2026-10-19; replaces the wholesale-cutover ordering in
+Current execution plan, refreshed 2026-10-21 UTC; replaces the wholesale-cutover ordering in
 [test-binary-alignment-recovery.md](test-binary-alignment-recovery.md). Historical
 proof checkpoints remain evidence, not a queue of instructions to resume.
 
@@ -24,8 +24,21 @@ fall back, so its label alone is insufficient. Test repair `28edb796` retains al
 original configuration, retry and history assertions and adds a missing-binary
 negative control. Run it against the exact arithmetic candidate before landing,
 include that test repair in the arithmetic packet, and normal-build the affected
-test module. Keep the currently running frozen author gate intact; its other
-required gates and the stronger runtime receipt are both mandatory.
+test module. Preserve already-running proof kernels and completed outputs. After
+a broad upstream model change, drain those kernels without interruption and
+reconcile before launching more obsolete-source modules. An incomplete old
+module epoch supplies no full-pass or unchecked-module reuse claim. The current
+candidate must check every FV/FVTest source/import/config key and run every
+required activation gate, including the stronger runtime receipt.
+
+After #354, the current upstream model is `08020ed3`; the pushed arithmetic
+candidate is `672c4dc4`. The old `213fe68b` scheduler is held while its already
+running `StockAddSubShiftEdgeWitness` kernel finishes. The verified drained
+handoff preserves all completed logs and saved source remotely, retires only
+obsolete metadata processes, and starts the current-model gate. It does not
+finish the remaining obsolete-model batch first. Source-key matching, all22
+named gates and dynamic identity/example/generated-proof checks remain required;
+no old epoch completion is assumed. See #44 for live process IDs and receipts.
 
 The cold author rebuild exposed a pre-existing 23,645 MiB comparison-helper proof.
 Its exact-statement replacement now uses small opaque matching/evaluation steps:
@@ -36,6 +49,17 @@ The original failed16GiB run was closed after active children finished, preservi
 restarting completed work. [Resource-repair evidence](../research/stock-cmp-resource-repair.json).
 This is a prerequisite repair within the complete activation packet; it is not
 main activation or full-goal completion.
+
+Current-main CI cache reuse also requires consistent serialized proof outputs.
+`RegallocLemmas` had a different valid local olean under the exact same input
+key; its interface metadata and C match CI. Default unstage and saved-trace
+precedence retained that local variant, invalidating downstream CI keys. After
+draining running kernels and remotely preserving the partial epoch, the
+standard Lake API adopted only the verified current-CI artifact under that exact
+key. A normal no-build `IselCmpEmit` probe now restores the expected CI key. No
+source, compiler, theorem assumption, axiom set or activation gate changed;
+check all current module keys again. Do not manually rebind input hashes.
+[Cache alignment evidence](../research/stock-current-arm-cache-alignment.json).
 
 Published prerequisite checkpoint `79df6b4a` on
 `agent/stock-arithmetic-production-adapters` supplies raw-Stock non-interference
@@ -520,6 +544,27 @@ completeness or discharge any remaining original rule/effect/CFG obligation.
 Direct semantic-consumer author gates passed on `823ecbb19e6a1e7ec2708afbdfe7612e91fa5b76`: 21 affected modules scheduled with exact source/import-closure reuse, full FV/FVTest/checker tools (3052 jobs), all 34 audit files, 224 standard-only core constants and 30 witness constants with one explicitly marked fixed native fact. All 1144 prior public axiom sets are retained exactly (1181 current roots); 18 prior public theorem headers are unchanged. Both E2E modes retain all 1,150 original and 1,159 prior identities and ordered stages, with 1,159 accepted/0 rejected, and real verified fv-demo link checks pass. [Terminal author receipt](../research/stock-arithmetic-semantic-author-gates.json). Reconciled main #344 concurrency proof additions; all 1,171 pre-reconcile public axiom sets are also preserved exactly. Next world/trace and cleanup adapters plus actual runtime/checker/linker/generated-proof integration before new activation; all original #140 obligations remain active.
 
 ## Next mixed class: implementation prepared, validation pending (2026-10-20)
+
+The normal module port now includes the complete function, compiler-choice and
+fallback witnesses, both runtime modules and the linked-proof fixture. The exact
+checked-in runtime files pass48 positive configurations and2 missing-binary
+negative controls. All24 newly exported Mixed objects, tables and original CLIF
+inputs exactly match the previously executed native grid. These are preserved
+old-model port checks, not current-Arm activation or fresh native executions.
+[Normal runtime evidence](../research/stock-mixed-normal-runtimes-strict.json).
+
+The normal integration gate is now checked in as
+`scripts/check-stock-mixed-integration.py --output <new-external-directory>`.
+After the current module/tool build, it requires current Lake input keys, the
+24-case runtime grid with a missing-oracle negative control, all twelve actual
+linked-proof roots including the 33-function slices, current/retained checker
+and verified-linker CLI routes, and a generated-declaration axiom audit. It uses
+normal checked-in modules and emitted files, never combined-source substitutes.
+Run it sequentially within the shared compiler/memory budget. Its dependency
+ordering was checked against the existing eighteen generated files; an actual
+end-to-end run on the current Arm model remains mandatory. Native execution,
+successful final MCP review, full corpus and old identity/stage/axiom parity
+remain separate required gates. This preparation is not an activation receipt.
 
 `agent/stock-mixed-production` prepares complete select/add/sub production adapters
 while the arithmetic delivery source stays frozen for its author gates. The

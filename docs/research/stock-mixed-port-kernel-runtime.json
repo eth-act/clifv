@@ -1,0 +1,105 @@
+{
+  "utc": "2026-10-20T16:07:58.294474+00:00",
+  "implementation_commit": "78446207078e787072621fe20002f63968f13631",
+  "baseline_import_worktree": "stock-driver-incremental",
+  "baseline_frozen_commit": "087e91d1615c8c944e560c050c1eb7c60981d205",
+  "method": "For each ordered source list, collect unique direct imports outside that list at the top, strip import lines from each source, concatenate exact remaining bodies in listed order, append root axiom checks or #eval FVTest.StockMixedRuntime.check. Lean checks run via existing reserved 4GiB scratch runner beside at most one <=12GiB kernel. Existing scheduler is finally resumed; no FV build outputs overwritten.",
+  "checks": [
+    {
+      "source": "/tmp/StockMixedPortCore.lean",
+      "sha256": "9e1076b8078d11a33f3b50f67db38ecf7f4b9ef95e18df9a1073551edb167320",
+      "ordered_source_hashes": {
+        "FV/Backend/ABIReadFlags.lean": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89",
+        "FV/Backend/Lowering/StockMixed.lean": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c",
+        "FV/Backend/StockMixedCheck.lean": "7f728e8c0810db75b423dd1f5e4b95488ff11e7014403a1f4c93cf5f25684da1",
+        "FV/Backend/Proof/StockMixedBodyRefines.lean": "8843866a09637538e38392715eb39685e5cb97b12be1144c3a3e7298dbd40d92",
+        "FV/Backend/Proof/StockMixedCheck.lean": "290a5c92d37dfab7dff7578938fc32c40596aaa6715e7a022efdb1c6bcd1a534",
+        "FV/E2E/ABIReadFlags.lean": "63c98b3f73a9063dc04a6d457a15c787a23e24a79c0d3db57b77ce834de2dcdd",
+        "FV/E2E/StockMixedNI.lean": "422f5ba002fd40ed61ac55e4230bbd33cd355d6014ace8a2a47db8cdfc39f1c4",
+        "FV/E2E/StockMixedWorldX.lean": "01dbc79c99032acb4cd911dedbbc5707c8c73d3c957e98e98360ab3e3bee9ac0"
+      },
+      "result": "pass",
+      "log": "/tmp/StockMixedPortCore.lean:727:6: warning: Try `simp at sret` instead of `simpa using sret`\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortCore.lean:897:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortCore.lean:897:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortCore.lean:897:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortCore.lean:897:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n'E2E.backend_correct_world_niX_stock_mixed' depends on axioms: [propext, Classical.choice, Quot.sound]\n'E2E.backend_correct_worldX_stock_mixed' depends on axioms: [propext, Classical.choice, Quot.sound]\n"
+    },
+    {
+      "source": "/tmp/StockMixedPortConsumers.lean",
+      "sha256": "789e234fbb34bc0227cca433cda1882af45f42a8541f5b2fb4cd2d45980dc6ed",
+      "ordered_source_hashes": {
+        "FV/Backend/ABIReadFlags.lean": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89",
+        "FV/Backend/Lowering/StockMixed.lean": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c",
+        "FV/Backend/StockMixedCheck.lean": "7f728e8c0810db75b423dd1f5e4b95488ff11e7014403a1f4c93cf5f25684da1",
+        "FV/Backend/Proof/StockMixedBodyRefines.lean": "8843866a09637538e38392715eb39685e5cb97b12be1144c3a3e7298dbd40d92",
+        "FV/Backend/Proof/StockMixedCheck.lean": "290a5c92d37dfab7dff7578938fc32c40596aaa6715e7a022efdb1c6bcd1a534",
+        "FV/E2E/ABIReadFlags.lean": "63c98b3f73a9063dc04a6d457a15c787a23e24a79c0d3db57b77ce834de2dcdd",
+        "FV/E2E/StockMixedNI.lean": "422f5ba002fd40ed61ac55e4230bbd33cd355d6014ace8a2a47db8cdfc39f1c4",
+        "FV/E2E/StockMixedWorldX.lean": "01dbc79c99032acb4cd911dedbbc5707c8c73d3c957e98e98360ab3e3bee9ac0",
+        "FV/Backend/SemanticNICheck.lean": "881835f4a3a88bb840bedcebccb780ac6c903fc42b270e93f3ce88ad420e5fbb",
+        "FV/E2E/CompiledSemantic.lean": "3f97dc68e613c739fbb075d9c6773bff23a9665d6736d359e37e3810b407beb8",
+        "FV/E2E/CompiledSemanticNI.lean": "6239f1c2045a4a6bfcddf957f68d0be88294029bbf7cbd87359f791e1456eded",
+        "FV/E2E/SemanticNIBoundary.lean": "3d3fe26c06fb8ac65a57a6b45b26bb8e7769fcf56cc3c5bfc8274fe7c2dfc9d3"
+      },
+      "result": "pass",
+      "log": "/tmp/StockMixedPortConsumers.lean:731:6: warning: Try `simp at sret` instead of `simpa using sret`\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortConsumers.lean:901:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortConsumers.lean:901:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortConsumers.lean:901:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortConsumers.lean:901:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n'E2E.CompiledSemanticNI.of_checks' depends on axioms: [propext, Classical.choice, Quot.sound]\n'E2E.backend_correct_world_niX_semantic' depends on axioms: [propext, Classical.choice, Quot.sound]\n'E2E.CompiledSemanticNI.noTlsFlags' depends on axioms: [propext, Quot.sound]\n"
+    },
+    {
+      "source": "/tmp/StockMixedPortWitness.lean",
+      "sha256": "016838c587e13d2810f5403892f3fab770a2fe1ed3379160f07aa3f457726071",
+      "ordered_source_hashes": {
+        "FV/Backend/ABIReadFlags.lean": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89",
+        "FV/Backend/Lowering/StockMixed.lean": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c",
+        "FV/Backend/StockMixedCheck.lean": "7f728e8c0810db75b423dd1f5e4b95488ff11e7014403a1f4c93cf5f25684da1",
+        "FV/Backend/Proof/StockMixedBodyRefines.lean": "8843866a09637538e38392715eb39685e5cb97b12be1144c3a3e7298dbd40d92",
+        "FV/Backend/Proof/StockMixedCheck.lean": "290a5c92d37dfab7dff7578938fc32c40596aaa6715e7a022efdb1c6bcd1a534",
+        "FV/E2E/ABIReadFlags.lean": "63c98b3f73a9063dc04a6d457a15c787a23e24a79c0d3db57b77ce834de2dcdd",
+        "FV/E2E/StockMixedNI.lean": "422f5ba002fd40ed61ac55e4230bbd33cd355d6014ace8a2a47db8cdfc39f1c4",
+        "FV/E2E/StockMixedWorldX.lean": "01dbc79c99032acb4cd911dedbbc5707c8c73d3c957e98e98360ab3e3bee9ac0",
+        "FV/Backend/SemanticNICheck.lean": "881835f4a3a88bb840bedcebccb780ac6c903fc42b270e93f3ce88ad420e5fbb",
+        "FV/E2E/CompiledSemantic.lean": "3f97dc68e613c739fbb075d9c6773bff23a9665d6736d359e37e3810b407beb8",
+        "FV/E2E/CompiledSemanticNI.lean": "6239f1c2045a4a6bfcddf957f68d0be88294029bbf7cbd87359f791e1456eded",
+        "FV/E2E/SemanticNIBoundary.lean": "3d3fe26c06fb8ac65a57a6b45b26bb8e7769fcf56cc3c5bfc8274fe7c2dfc9d3",
+        "FV/E2E/StockMixedWitness.lean": "f802c93b967d7c00defc1d3fcd4e4e1e9f5c03c65458290c8dd56d53a5a27eda"
+      },
+      "result": "pass",
+      "log": "/tmp/StockMixedPortWitness.lean:733:6: warning: Try `simp at sret` instead of `simpa using sret`\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortWitness.lean:903:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortWitness.lean:903:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortWitness.lean:903:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortWitness.lean:903:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n'E2E.StockMixedNIWitness.compiled_semantic_exists' depends on axioms: [propext,\n Classical.choice,\n Quot.sound,\n E2E.StockMixedNIWitness.checks_true._native.native_decide.ax_1]\n'E2E.StockMixedNIWitness.checks_true' depends on axioms: [propext,\n Classical.choice,\n Quot.sound,\n E2E.StockMixedNIWitness.checks_true._native.native_decide.ax_1]\n'E2E.StockMixedNIWitness.source_checks_true' depends on axioms: [propext,\n Classical.choice,\n Quot.sound,\n E2E.StockMixedNIWitness.source_checks_true._native.native_decide.ax_1_1]\n"
+    },
+    {
+      "source": "/tmp/StockMixedPortRuntime.lean",
+      "sha256": "e4bf86d13113c73503d3ccad382c6bb3bdf18401c228e9cedfa783b0e780daee",
+      "ordered_source_hashes": {
+        "FV/Backend/ABIReadFlags.lean": "5f395fc59bf41b96cce8d6e50171c382300c41da7c5ccc0e51ec974058aaae89",
+        "FV/Backend/Lowering/StockMixed.lean": "4fbff14d90667a2e97fc178ddb3ace81ed1b45363efaab64629e40dc7b75e18c",
+        "FV/Backend/StockMixedCheck.lean": "7f728e8c0810db75b423dd1f5e4b95488ff11e7014403a1f4c93cf5f25684da1",
+        "FV/Backend/Proof/StockMixedBodyRefines.lean": "8843866a09637538e38392715eb39685e5cb97b12be1144c3a3e7298dbd40d92",
+        "FV/Backend/Proof/StockMixedCheck.lean": "290a5c92d37dfab7dff7578938fc32c40596aaa6715e7a022efdb1c6bcd1a534",
+        "FV/E2E/ABIReadFlags.lean": "63c98b3f73a9063dc04a6d457a15c787a23e24a79c0d3db57b77ce834de2dcdd",
+        "FV/E2E/StockMixedNI.lean": "422f5ba002fd40ed61ac55e4230bbd33cd355d6014ace8a2a47db8cdfc39f1c4",
+        "FV/E2E/StockMixedWorldX.lean": "01dbc79c99032acb4cd911dedbbc5707c8c73d3c957e98e98360ab3e3bee9ac0",
+        "FV/Backend/SemanticNICheck.lean": "881835f4a3a88bb840bedcebccb780ac6c903fc42b270e93f3ce88ad420e5fbb",
+        "FV/E2E/CompiledSemantic.lean": "3f97dc68e613c739fbb075d9c6773bff23a9665d6736d359e37e3810b407beb8",
+        "FV/E2E/CompiledSemanticNI.lean": "6239f1c2045a4a6bfcddf957f68d0be88294029bbf7cbd87359f791e1456eded",
+        "FV/E2E/SemanticNIBoundary.lean": "3d3fe26c06fb8ac65a57a6b45b26bb8e7769fcf56cc3c5bfc8274fe7c2dfc9d3",
+        "FV/E2E/StockMixedWitness.lean": "f802c93b967d7c00defc1d3fcd4e4e1e9f5c03c65458290c8dd56d53a5a27eda",
+        "FV/E2E/StockArithmeticNIWitness.lean": "32ea235df1f2e1f3b867f0ffda62efa8864e6e8142e40dfc0c7ba7a90dd933c4",
+        "FV/Backend/Lowering/StockArithmeticNI.lean": "19ba7ff09c01b874b13969e93f71d8360c33e37aa5d00bd88d4e1e7659c82783",
+        "FV/Backend/ArithmeticNIProduction.lean": "3e63913d7f68a5e85400b15d75d9408455dafb4b01ad0dd163b3f609977fc600",
+        "FV/Backend/Lowering/StockMixedNI.lean": "015b3c09f35e93ffb307f7ea3176606e0d35470a741d79573206ab72a73577a9",
+        "FV/Backend/MixedNIProduction.lean": "28a2adf73c7eb8b24b96acfd9f6cd6c0597ebdd75c52fd8d3dc4170e868899ff",
+        "FVTest/Backend/Lowering/StockMixedRuntime.lean": "c79f25a10718359c108d202b313dc9817030a1a43268a5d0f1252c3da89512ee"
+      },
+      "result": "pass",
+      "log": "/tmp/StockMixedPortRuntime.lean:735:6: warning: Try `simp at sret` instead of `simpa using sret`\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortRuntime.lean:905:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortRuntime.lean:905:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortRuntime.lean:905:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortRuntime.lean:905:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\nStock mixed lean Backend.Stock.D0.Configuration.defaultI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed lean Backend.Stock.D0.Configuration.systemVI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed lean Backend.Stock.D0.Configuration.fastI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed lean Backend.Stock.D0.Configuration.defaultI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed lean Backend.Stock.D0.Configuration.systemVI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed lean Backend.Stock.D0.Configuration.fastI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed regalloc2 Backend.Stock.D0.Configuration.defaultI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed regalloc2 Backend.Stock.D0.Configuration.systemVI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed regalloc2 Backend.Stock.D0.Configuration.fastI32: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed regalloc2 Backend.Stock.D0.Configuration.defaultI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed regalloc2 Backend.Stock.D0.Configuration.systemVI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\nStock mixed regalloc2 Backend.Stock.D0.Configuration.fastI64: raw output, stack/unused arguments, mixed retained classes and both cleanup retries passed\n"
+    }
+  ],
+  "owned_audit": {
+    "source_sha256": "6cd5533204b57089c552522806bf28b4cf1a017d834b818d0da2c0f462e34c13",
+    "core_standard_only": 255,
+    "fixed_witness_constants": 36,
+    "allowed_native_facts": [
+      "E2E.StockMixedNIWitness.checks_true._native.native_decide.ax_1",
+      "E2E.StockMixedNIWitness.source_checks_true._native.native_decide.ax_1_1"
+    ],
+    "log": "/tmp/StockMixedPortWitnessOwned.lean:733:6: warning: Try `simp at sret` instead of `simpa using sret`\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortWitnessOwned.lean:903:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortWitnessOwned.lean:903:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortWitnessOwned.lean:903:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n/tmp/StockMixedPortWitnessOwned.lean:903:11: warning: try 'simp' instead of 'simpa'\n\nNote: This linter can be disabled with `set_option linter.unnecessarySimpa false`\n'E2E.StockMixedNIWitness.compiled_semantic_exists' depends on axioms: [propext,\n Classical.choice,\n Quot.sound,\n E2E.StockMixedNIWitness.checks_true._native.native_decide.ax_1]\n'E2E.StockMixedNIWitness.checks_true' depends on axioms: [propext,\n Classical.choice,\n Quot.sound,\n E2E.StockMixedNIWitness.checks_true._native.native_decide.ax_1]\n'E2E.StockMixedNIWitness.source_checks_true' depends on axioms: [propext,\n Classical.choice,\n Quot.sound,\n E2E.StockMixedNIWitness.source_checks_true._native.native_decide.ax_1_1]\nMIXED_MACHINE_CORE_STANDARD_ONLY 255; FIXED_COMPILER_WITNESS 36\n"
+  },
+  "runtime_scope": "6 configurations x Lean/regalloc2 x both cleanup settings; prepared actual raw Stock reaches allocator; retained class VCode/metadata unchanged; forced complete allocation failure retries exactly once to exact previous text/rules/unsupported/unverified/unvalidated results.",
+  "limits": "Combined-source elaboration/kernel/runtime evidence, not normal per-module builds or evidence of actual CLI/link/generated-proof/corpus/default production activation. Those and old axiom-set/identity/stage parity remain mandatory."
+}

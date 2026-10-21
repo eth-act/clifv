@@ -33,4 +33,21 @@ def compile (lower : ProductionLowering) (S : LinkSpec) (file0 : ByteArray) (cle
   | .ok file => .ok ⟨file,true⟩
   | .error _ => (legacyCompile (legacySpec S cleanup) file0 cleanup).map fun file => ⟨file,false⟩
 
+inductive CompileChoice where
+  | current | previous | legacy
+  deriving DecidableEq, Repr
+
+structure FallbackOutput where
+  file : ByteArray
+  choice : CompileChoice
+
+/-- Retry the previously shipped semantic compiler before the legacy compiler.
+Every attempt receives the original specification, image and cleanup setting. -/
+def compileWithFallback (current previous : ProductionLowering) (S : LinkSpec)
+    (file0 : ByteArray) (cleanup : Bool) : Except String FallbackOutput :=
+  match attempt current (S.placedProductionWith current cleanup) file0 cleanup with
+  | .ok file => .ok ⟨file,.current⟩
+  | .error _ => (compile previous S file0 cleanup).map fun out =>
+      ⟨out.file,if out.stock then .previous else .legacy⟩
+
 end Link.SemanticCompilerWith
