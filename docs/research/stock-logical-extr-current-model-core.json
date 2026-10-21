@@ -1,6 +1,6 @@
 {
-  "utc": "2026-10-21T03:54:19.537486+00:00",
-  "state": "normal_EXTR_core_passed_complete_witness_and_activation_gates_pending",
+  "utc": "2026-10-21T04:52:44.337755+00:00",
+  "state": "normal_EXTR_core_and_complete_witness_passed_general_body_and_activation_pending",
   "upstream_main": "08020ed34bea4a3656c1b080c55087da40f2ebbe",
   "source_parent_commit": "839104c4",
   "validated_sources_sha256": {
@@ -100,11 +100,11 @@
     "common_dependency_cap_terminations": 1
   },
   "remaining": [
-    "Complete actual six-ABI/mirror RootWitness normal validation",
-    "Validate complete eleven-root source dispatch and guarded mixed-body composition with their nonempty witnesses",
-    "One bundled MCP and owned/public/previous axiom parity audit",
-    "Finish current-model arithmetic production activation gates and land arithmetic first",
-    "Reconcile and land Mixed, then logical production consumers and every original140 family/effect/simulation/completeness obligation"
+    "Normal-build complete eleven-root source dispatch, source-syntax-derived logical body coverage and guarded scan/body composition with their nonempty witnesses",
+    "Final whole logical packet owned/public/previous axiom parity and integration gates",
+    "Resume frozen arithmetic author gates as first production landing, then reconcile and land Mixed",
+    "Integrate logical function/source/entry/return/NI/classifier/compiler/checker/linker/generated consumers",
+    "Complete every remaining original140 uncovered family/effect, source/block/whole-driver simulation and completeness obligation"
   ],
   "full_goal_complete": false,
   "merge_ready": false,
@@ -119,7 +119,7 @@
     "new_root_import_closure": 440,
     "normal_contract_build_log": "/tmp/stock-stage-contract-corrected-build.log",
     "normal_contract_build_log_sha256": "b8967933c0a863d4cd3b783f0115a1e3b4d957dda83ea1dbcc44434af683af59",
-    "complete_witness_normal_validation": "pending while live RegallocAtomic dependency completes; corrected contract passed separately; no kernel interrupted"
+    "complete_witness_normal_validation": "Passed for the actual checked-in minimal440-module RootWitness closure; original arithmetic theorem text/structure declaration unchanged. Full production integration gates remain pending."
   },
   "later_common_dependency_retry": {
     "utc": "2026-10-21T04:17:08.510720+00:00",
@@ -136,6 +136,89 @@
     "scheduler_automatic_retry_cap_GiB": 12,
     "aggregate_budget_GiB": 16,
     "current_lean_pid": 3369724,
-    "note": "OOM ended the scoped process tree before child usage propagated; wrapper maxrss0.1GiB is not the actual peak. Journal confirms6GiB. No success is claimed for this dependency."
+    "note": "OOM ended the scoped process tree before child usage propagated; wrapper maxrss0.1GiB is not the actual peak. Journal confirms6GiB. No success is claimed for this dependency.",
+    "retry_result": {
+      "normal_exit_status": 0,
+      "elapsed_seconds": 1145,
+      "peak_MiB": 9779,
+      "followup_form_coverage_exit_status": 0,
+      "followup_form_coverage_seconds": 130,
+      "followup_form_coverage_peak_GiB": 2.9
+    }
+  },
+  "complete_witness_normal_validation": {
+    "source_files_sha256": {
+      "FV/E2E/StockLogicalExtrWitness.lean": "35365016321b1dc76f625c17bc64aca8dcf841e52fefe36161db3e8105c9eb38",
+      "FV/E2E/StockLogicalExtrRootWitness.lean": "4f1ec08eeee08f37c3418982842947cc6423c0e636de50b299d2cca3fd60a583",
+      "FV/E2E/StockArithmeticStageContract.lean": "1f804ac289e2042320aeec117ff78a34bebe3c1b6445e1a61a83ebe5f2218712"
+    },
+    "complete_current_import_closure_modules": 440,
+    "pipeline_fixture_axes": {
+      "configurations": 6,
+      "mirrored_orders": 2,
+      "cleanup_modes": 2,
+      "total_pipeline_cases": 24
+    },
+    "arbitrary_independent_words": true,
+    "selected_root_record_and_original_source_witnesses": true,
+    "root_build_log": "/tmp/stock-logical-compact-witness-attempt3/modules/FV.E2E.StockLogicalExtrRootWitness.log",
+    "root_build_log_sha256": "97ddb100c7067f8268c7d6c0097500eced48b8d8817f1145812831def4e55df3",
+    "root_elapsed_seconds": 52,
+    "root_peak_GiB": 6.2,
+    "actual_current_source_key_replay": "/tmp/stock-logical-root-complete-handoff/current-root-key.log",
+    "axioms": {
+      "Backend.Stock.Proof.LogicalExtr.selected_root_values": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "E2E.StockLogicalExtrWitness.selected_root_values_witness": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "E2E.StockLogicalExtrWitness.selectedRootChecks_true._native.native_decide.ax_1\u271d"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.record_values": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.available_values": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.source_operands": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.available_source": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "Backend.Stock.Proof.LogicalExtr.source_from_step": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound"
+      ],
+      "E2E.StockLogicalExtrWitness.record_values_witness": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "E2E.StockLogicalExtrWitness.recordChecks_true._native.native_decide.ax_1\u271d"
+      ],
+      "E2E.StockLogicalExtrWitness.source_values_witness": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "E2E.StockLogicalExtrWitness.checks_true._native.native_decide.ax_1",
+        "E2E.StockLogicalExtrWitness.recordChecks_true._native.native_decide.ax_1\u271d"
+      ]
+    },
+    "mcp_receipt": "docs/research/stock-logical-extr-current-model-mcp.json",
+    "mcp_receipt_sha256": "6fb9f1cdc1c4f0f362cc05e9bcd05b68089cef99bb6fc504e5f1ba1ce08af9b4",
+    "lookup_port_repair": "Map/getElem? transport followed by direct lookup; no new condition or axiom."
   }
 }

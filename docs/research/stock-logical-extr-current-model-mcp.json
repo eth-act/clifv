@@ -1,0 +1,25 @@
+{
+  "utc": "2026-10-21T04:49:18.203Z",
+  "file_path": "/home/lee/clifv/.worktrees/stock-mixed-production/FV/E2E/StockLogicalExtrRootWitness.lean",
+  "theorem_name": "E2E.StockLogicalExtrWitness.source_values_witness",
+  "scope": "Single transitive MCP check for the complete EXTR source witness; normal audit separately covers all six general roots and three fixed-data witnesses. General logical/body layers and production activation remain pending.",
+  "tool_result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"axioms\": [\n    \"propext\",\n    \"Classical.choice\",\n    \"Quot.sound\",\n    \"E2E.StockLogicalExtrWitness.checks_true._native.native_decide.ax_1\",\n    \"E2E.StockLogicalExtrWitness.recordChecks_true._native.native_decide.ax_1\"\n  ],\n  \"warnings\": []\n}"
+      }
+    ],
+    "structuredContent": {
+      "axioms": [
+        "propext",
+        "Classical.choice",
+        "Quot.sound",
+        "E2E.StockLogicalExtrWitness.checks_true._native.native_decide.ax_1",
+        "E2E.StockLogicalExtrWitness.recordChecks_true._native.native_decide.ax_1"
+      ],
+      "warnings": []
+    },
+    "isError": false
+  }
+}

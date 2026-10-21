@@ -606,3 +606,21 @@ records under the original indexed DFG, availability and memory/world relation.
 A nonempty actual-body/source-step witness covers the relation for every initial
 world. This implementation is pending normal validation with
 `StockLogicalSourceWitness`; it is not a function-level activation receipt.
+
+
+The compact EXTR witness check now passes normally on all 440 current import
+modules. It includes all 24 actual pipeline configurations (six integer ABIs,
+both source orders, both cleanup modes) and arbitrary-word first-match,
+retained-record and original-source witnesses. Normal audits cover all six
+general roots with exactly the standard three axioms; the three witnesses use
+only their declared fixed-data checks. One transitive MCP source-witness review
+also passes with no source warnings. The 12 GiB atomic retry passed at 9.6 GiB,
+and form coverage passed; those successful outputs are retained.
+
+Return the build slot to the frozen arithmetic activation gates after draining
+the old launch graph's running jobs. The 777-node pre-refactor metadata graph is
+obsolete for this witness; no full-777 pass is claimed. The exact current
+checked-in target, normal input keys and permitted axiom review are the evidence.
+This does not complete the syntax-derived logical body layer or production
+activation. Arithmetic remains the first actual landing; all original #140
+scope and preservation requirements remain active.

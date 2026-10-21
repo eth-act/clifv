@@ -465,7 +465,7 @@ private theorem record_inputs (config : Configuration) (mirrored : Bool) (a b : 
     have keyAt : (event.ctx.insts[record.inst]?).map sourceKey =
         some (some (.binary .bor (valueType config)
           (if mirrored then 12 else 11) (if mirrored then 11 else 12)),[13]) := by
-      rw [← Array.getElem?_map,insts,current]
+      rw [← Array.getElem?_map,insts,current,Array.getElem?_map]
       cases config <;> cases mirrored <;> rfl
     obtain ⟨info,source,keyEq⟩ := Option.map_eq_some_iff.mp keyAt
     have clif := congrArg Prod.fst keyEq
