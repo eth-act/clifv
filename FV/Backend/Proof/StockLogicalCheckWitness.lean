@@ -9,7 +9,8 @@ set_option maxHeartbeats 4000000
 
 /-- A nonempty sparse-ID logical source inhabits every source-class guard. -/
 theorem classifier_accepts : sourceOk (formFunction .registers) = true := by
-  decide +kernel
+  simp only [sourceOk,Bool.and_eq_true]
+  refine ⟨⟨⟨?_, ?_⟩, ?_⟩, ?_⟩ <;> decide +kernel
 
 private def actualChecked : Bool :=
   match Stock.lower (formFunction .registers) with

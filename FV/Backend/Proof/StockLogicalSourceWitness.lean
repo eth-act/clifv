@@ -272,7 +272,7 @@ theorem stock_lower_logical_scan_body_witness :
     exact input.records
   have self : Refines (fun _ => True) ispec := fun _ _ _ _ w' _ h => ⟨w',h,SameWorld.refl _ _⟩
   have stable : MRStable (fun _ => True) (fun _ cm _ => cm = Clif.Mem.empty) := fun _ _ _ _ _ h => h
-  have localProof := stock_lower_logical_scan_fall_refines input.run (formScope .registers) rrDominated
+  have localProof := stock_lower_logical_scan_fall_refines (env := Clif.Env.empty) (cp := {funcs := []}) input.run (formScope .registers) rrDominated
     input.events input.records block statement current .bor input.source input.clif input.results rfl
     input.mapped input.recorded input.emitted self stable
   refine ⟨input.result,input.event,input.record,body,s,t,input.run,input.events,input.records,rfl,

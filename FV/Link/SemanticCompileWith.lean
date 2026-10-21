@@ -81,7 +81,7 @@ theorem compileWithRoutes_accepts_legacy {routes : List ProductionLowering}
     (h : legacyCompile (legacySpec S cleanup) file0 cleanup = .ok file) :
     ∃ out, compileWithRoutes routes S file0 cleanup = .ok out := by
   induction routes with
-  | nil => exact ⟨⟨file,none⟩,by simp [compileWithRoutes,h]⟩
+  | nil => exact ⟨⟨file,none⟩,by simp [compileWithRoutes,h,Except.map]⟩
   | cons current previous ih =>
     obtain ⟨out,run⟩ := ih
     exact compileWithRoutes_accepts_tail run
@@ -97,11 +97,11 @@ theorem compileWithRoutes_spec {routes : List ProductionLowering} {S : LinkSpec}
   induction routes generalizing out with
   | nil =>
     cases legacy : legacyCompile (legacySpec S cleanup) file0 cleanup with
-    | error message => simp [compileWithRoutes,legacy] at h
+    | error message => simp [compileWithRoutes,legacy,Except.map] at h
     | ok file =>
       simp only [compileWithRoutes,legacy,Except.map] at h
       cases h
-      exact .inl ⟨rfl,legacy⟩
+      exact .inl ⟨rfl,rfl⟩
   | cons current previous ih =>
     cases first : attempt current (S.placedProductionWith current cleanup) file0 cleanup with
     | ok file =>
@@ -110,7 +110,7 @@ theorem compileWithRoutes_spec {routes : List ProductionLowering} {S : LinkSpec}
       exact .inr ⟨0,current,rfl,rfl,first⟩
     | error message =>
       cases tail : compileWithRoutes previous S file0 cleanup with
-      | error message => simp [compileWithRoutes,first,tail] at h
+      | error message => simp [compileWithRoutes,first,tail,Except.map] at h
       | ok result =>
         simp only [compileWithRoutes,first,tail,Except.map] at h
         cases h

@@ -39,14 +39,14 @@ private theorem sourceDFG (config : Configuration) (mirrored : Bool) (a b : CV) 
         cases config <;> cases mirrored <;> rfl
       rw [absent] at defined
       cases defined
-    · 
+    ·
       by_cases h8 : x = 8
       · subst x
         have absent : (rootBuilt config mirrored).1.defInst? 8 = none := by
           cases config <;> cases mirrored <;> rfl
         rw [absent] at defined
         cases defined
-      · 
+      ·
         by_cases h9 : x = 9
         · subst x
           cases config <;> cases mirrored
@@ -58,7 +58,7 @@ private theorem sourceDFG (config : Configuration) (mirrored : Bool) (a b : CV) 
             cases original
             cases lookup
             exact ⟨[_],fun cm => rfl,rfl⟩
-        · 
+        ·
           by_cases h10 : x = 10
           · subst x
             cases config <;> cases mirrored
@@ -70,7 +70,7 @@ private theorem sourceDFG (config : Configuration) (mirrored : Bool) (a b : CV) 
               cases original
               cases lookup
               exact ⟨[_],fun cm => rfl,rfl⟩
-          · 
+          ·
             by_cases h11 : x = 11
             · subst x
               cases config <;> cases mirrored
@@ -82,7 +82,7 @@ private theorem sourceDFG (config : Configuration) (mirrored : Bool) (a b : CV) 
                 cases original
                 cases lookup
                 exact ⟨[_],fun cm => rfl,rfl⟩
-            · 
+            ·
               by_cases h12 : x = 12
               · subst x
                 cases config <;> cases mirrored

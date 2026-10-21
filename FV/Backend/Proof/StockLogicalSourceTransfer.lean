@@ -273,4 +273,3 @@ theorem not_source_from_step {f : Clif.Function} {result : Result}
   exact ⟨u,v,ρ',getX,getY,execution,value,memEq,kept,post⟩
 
 end Backend.Stock.Proof.LogicalComplete
-
