@@ -99,7 +99,8 @@ structure RetryLoop (f : ArmState → ArmState) (Hd : ArmState → Prop) (rd : A
   mid : ∀ y, Hd y → ∀ e, SameAcc e (rd y) → ∀ i, 0 < i → i < p →
     stepEvs (iterN f i (patch [e] y)) = [] ∧ NoStx (iterN f i (patch [e] y))
   last : ∀ y, Hd y → ∀ e, SameAcc e (rd y) →
-    Ex (iterN f p (patch [e] y)) ∨ StoreAt f Hd rs (iterN f p (patch [e] y))
+    Ex (iterN f p (patch [e] y)) ∨
+      (¬ Ex (iterN f p (patch [e] y)) ∧ StoreAt f Hd rs (iterN f p (patch [e] y)))
 
 /-- **The final iteration of a run `ls` from `t`** after `q` steps of failed iterations (writing
 nothing): from the head `y1`, the `ldaxr` reads `e` and `p - 1` event-free steps follow. -/
@@ -120,7 +121,8 @@ def RetryOut (P : Policy) (f : ArmState → ArmState) (ok : ArmState → Lab →
     (t : ArmState × Mon) (ls : List Lab) : Prop :=
   NoW (evTr ls) ∨ ∃ q y1 e, Final P f ok Hd rd p t ls q y1 e ∧
     (Ex (iterN f p (patch [e] y1)) ∨
-      (StoreAt f Hd rs (iterN f p (patch [e] y1)) ∧ q + p + 1 ≤ ls.length ∧
+      (¬ Ex (iterN f p (patch [e] y1)) ∧ StoreAt f Hd rs (iterN f p (patch [e] y1)) ∧
+        q + p + 1 ≤ ls.length ∧
         ∃ wv : Ev, wv.k.dir = .W ∧ stepEvs (iterN f p (patch [e] y1)) = [wv] ∧
           evTr (ls.take (q + p + 1)) = evTr (ls.take q) ++ segR e p ++ [[wv]] ∧
           (q + p + 2 ≤ ls.length →
@@ -182,9 +184,9 @@ theorem retryOut_shift {B0 rest : List Lab} {t t0 : ArmState × Mon} (hB : PRun 
   · rw [hT, evTr_append]; exact noW_append hnw hF.pre
   · rw [e1, hT, hT, evTr_append, evTr_append, hF.seg, List.append_assoc]
   · obtain ⟨mon1, hr1⟩ := hF.run; exact ⟨mon1, by rw [e1, hT]; exact PRun.append hB hr1⟩
-  rcases hX with hx | ⟨hst, hle, wv, hW, hwv, hs1, hs2⟩
+  rcases hX with hx | ⟨hnx, hst, hle, wv, hW, hwv, hs1, hs2⟩
   · exact .inl hx
-  refine .inr ⟨hst, by simp; omega, wv, hW, hwv, ?_, fun h2 => ?_⟩
+  refine .inr ⟨hnx, hst, by simp; omega, wv, hW, hwv, ?_, fun h2 => ?_⟩
   · rw [e2, hT, hT, evTr_append, evTr_append, hs1]; simp [List.append_assoc]
   · obtain ⟨h3, mon2, hr2⟩ := hs2 (by simp at h2; omega)
     refine ⟨by rw [e3, hT, hT, evTr_append, evTr_append, h3]; simp [List.append_assoc], mon2, ?_⟩
@@ -241,7 +243,7 @@ theorem retry_run (hL : RetryLoop f Hd rd p rs Ex) :
     · rw [Nat.zero_add, List.take_left' hA, List.take_zero]
       exact hsegp
     · rw [Nat.zero_add, List.take_left' hA]; exact r1
-  rcases hL.last y hy e he with hex | hst
+  rcases hL.last y hy e he with hex | ⟨hnx, hst⟩
   · exact .inr ⟨0, y, e, hfin, .inl hex⟩
   cases B with
   | nil =>
@@ -255,7 +257,7 @@ theorem retry_run (hL : RetryLoop f Hd rd p rs Ex) :
   | false =>
     obtain ⟨wv, hW, hwv⟩ := hst.wr
     obtain ⟨hl, ht1⟩ := tstep_store hs hp hxf hW hwv
-    refine .inr ⟨0, y, e, hfin, .inr ⟨hst, by simp; omega, wv, hW, hwv, ?_, fun h2 => ?_⟩⟩
+    refine .inr ⟨0, y, e, hfin, .inr ⟨hnx, hst, by simp; omega, wv, hW, hwv, ?_, fun h2 => ?_⟩⟩
     · rw [show 0 + p + 1 = A.length + 1 by omega, hT, List.take_zero, evTr_append, hsegp]
       simp [evTr, hl]
     · cases rest with

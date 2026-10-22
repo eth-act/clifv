@@ -382,7 +382,7 @@ theorem rmw_retry {R : RL} (hR : R.Wf) {ty : CTy} (hty : AtomTy ty) {op : Atomic
     refine ⟨by rw [patch, setMem_program, hy.prog, hprog], ?_, ?_⟩
     · rw [patch, r_setMem, hy.pc, hpc, RL.pcOf_succ_label hL0]
     · rw [patch, r_setMem, hy.err, herr]
-  refine ⟨by omega, fun y hy => ?_, fun y hy e he i h0 hi => ?_, fun y hy e he => .inr ?_⟩
+  refine ⟨by omega, fun y hy => ?_, fun y hy e he i h0 hi => ?_, fun y hy e he => .inr ⟨id, ?_⟩⟩
   · obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy []
     obtain ⟨t', -, -, ⟨hev, hns⟩, -⟩ := rmw_steps hR hty hd1 hL0 hp1 hp2 hp3
     rw [patch_nil, hy.r25 (by decide)] at hev
@@ -542,7 +542,7 @@ theorem rmw_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSta
   rcases retry_run (P := Policy.arm) (ok := ok) hloop ls.length ls s mon t' (Nat.le_refl _)
       (loopInv_refl s _ _ _) hr with hnw | ⟨q, y1, e, hF, hX⟩
   · exact .inr (.inr (.inr (privW_of_noW hnw)))
-  rcases hX with hfalse | ⟨-, hle1, wv, hW, hwv, hseg1, hseg2⟩
+  rcases hX with hfalse | ⟨-, -, hle1, wv, hW, hwv, hseg1, hseg2⟩
   · exact hfalse.elim
   -- the final iteration: its read `e`, its write `wv`
   obtain ⟨k0, a0, n0, v⟩ := e
