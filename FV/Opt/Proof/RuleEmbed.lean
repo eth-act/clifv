@@ -379,12 +379,12 @@ variable {σ : Type} (G : EGraph σ)
   cases a <;> cases b <;> rfl
 
 @[opt_match] theorem fitsIn64_ofClif_eq {t : Ty} {w : CTy} :
-    Rust.fitsIn64 (CTy.ofClif t) = some w ↔ t ≠ .i128 ∧ w = CTy.ofClif t := by
+    Rust.fitsIn64 (CTy.ofClif t) = some w ↔ t ≠ .i128 ∧ t.isVec = false ∧ w = CTy.ofClif t := by
   cases t <;> simp [Rust.fitsIn64, CTy.ofClif, CTy.bits, CTy.laneBits, CTy.laneCount, eq_comm]
 
-@[opt_monad] theorem fitsIn64_ofClif {t : Ty} (ht : t ≠ .i128) :
+@[opt_monad] theorem fitsIn64_ofClif {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) :
     Rust.fitsIn64 (CTy.ofClif t) = some (CTy.ofClif t) := by
-  cases t <;> first | rfl | exact absurd rfl ht
+  cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
 @[opt_match] theorem tyIntRefScalar64_ofClif_eq {t : Ty} {w : CTy} :
     Rust.tyIntRefScalar64 (CTy.ofClif t) = some w ↔ t.isInt ∧ t ≠ .i128 ∧ w = CTy.ofClif t := by

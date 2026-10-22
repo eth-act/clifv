@@ -176,9 +176,9 @@ theorem imm64Masked_i128 (x : Int) :
     Rust.imm64Masked (CTy.ofClif .i128) x = throw "ty_mask: unimplemented for > 64 bits" := rfl
 
 /-- `i64_sextend_u64` below 128 bits (`iconst_s`'s re-extension check). -/
-@[opt_imm] theorem i64SextendU64_spec {t : Ty} (ht : t ≠ .i128) (x : Int) :
+@[opt_imm] theorem i64SextendU64_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (x : Int) :
     Rust.i64SextendU64 (CTy.ofClif t) x = .ok (Rust.sext t.width (Rust.asI64 x)) := by
-  cases t <;> first | exact absurd rfl ht | rfl
+  cases t <;> first | exact absurd rfl ht | exact absurd hv (by decide) | rfl
 
 /-- `rule_bits_xb` that also decides closed side facts once the types are split (`Ty.i16 ==
 Ty.i8`, `decide (8 < 16)` from the rules of `iadd_uextend`/`isub_uextend`). -/
@@ -243,12 +243,13 @@ open Isle Isle.Opt Clif
 
 set_option linter.unusedSimpArgs false
 
-@[opt_imm] theorem imm64Sshr_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width)
+@[opt_imm] theorem imm64Sshr_spec {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false) (b : BitVec t.width)
     (c : BitVec t'.width) :
     Rust.imm64Sshr (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.sshr b c)) := by
   imm_pre [Rust.imm64Sshr]
   rw [show 64 - (64 - (CTy.ofClif t).bits) = t.width by cases t <;> simp_all [ofClif_bits, Ty.width],
-    ofInt_imm64OfBits ht]
+    ofInt_imm64OfBits ht hv]
   simp only [Rust.band64, int_toNat_natCast, toInt_div_two_pow, sshiftRight_toNat']
   imm_cases t b <;> imm_cases t' c <;> simp (disch := decide) only [sshr_mask, Nat.reduceBEq,
     Bool.false_eq_true, reduceIte, Int.reduceSub, Int.reducePow, Nat.reduceSub, Int.reduceNatCast,
@@ -274,7 +275,8 @@ theorem shl_sub_and {w k : Nat} (m : BitVec 64) (hm : m.toNat < k) (hk : k < 2 ^
   · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk]
   · rw [BitVec.le_def, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk]; omega
 
-@[opt_imm] theorem imm64Rotl_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width)
+@[opt_imm] theorem imm64Rotl_spec {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false) (b : BitVec t.width)
     (c : BitVec t'.width) :
     Rust.imm64Rotl (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.rotl b c)) := by
   imm_pre [Rust.imm64Rotl]
@@ -284,7 +286,8 @@ theorem shl_sub_and {w k : Nat} (m : BitVec 64) (hm : m.toNat < k) (hk : k < 2 ^
     Bool.false_eq_true, reduceIte, Int.reduceSub, Int.reducePow, Nat.reduceSub, Int.reduceNatCast,
     BitVec.ofInt_ofNat, ushr_sub_and, shl_sub_and, toNat_beq_zero] <;> imm_solve
 
-@[opt_imm] theorem imm64Rotr_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width)
+@[opt_imm] theorem imm64Rotr_spec {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false) (b : BitVec t.width)
     (c : BitVec t'.width) :
     Rust.imm64Rotr (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.rotr b c)) := by
   imm_pre [Rust.imm64Rotr]

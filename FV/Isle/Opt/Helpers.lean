@@ -110,12 +110,13 @@ def ofName? (s : String) : Option CTy :=
 
 /-- A vector shape's marker: the mid-end presents the vector type `s` as the float type of this
 width (`ofClif`), a width no type constant of the rules names (`F16`..`F128` only) and distinct
-per shape. The proven rules read a vector value like any other non-integer value of at most 64
-bits; no rule type predicate (`ty_int`, `ty_vec128`, `ty_vector`, `multi_lane`, ...) accepts it,
-so no lane rule matches a vector value (the mid-end has no vector semantics, `simd.md` §9). -/
+per shape. The markers lie strictly between 64 and 128 bits, so no width test of the rules
+(`fits_in_64`, `ty_int_ref_scalar_64`, the `imm64_*` assertions) accepts a vector, and no rule
+type predicate (`ty_int`, `ty_vec128`, `ty_vector`, `multi_lane`, ...) accepts it either: no
+rule matches a vector value (the mid-end has no vector semantics, `simd.md` §9). -/
 @[simp] def vecMarker : Clif.VShape → Nat
-  | .i8x8 => 1 | .i16x4 => 2 | .i32x2 => 3 | .f32x2 => 4 | .i8x16 => 5 | .i16x8 => 6
-  | .i32x4 => 7 | .i64x2 => 8 | .f32x4 => 9 | .f64x2 => 10
+  | .i8x8 => 65 | .i16x4 => 66 | .i32x2 => 67 | .f32x2 => 68 | .i8x16 => 69 | .i16x8 => 70
+  | .i32x4 => 71 | .i64x2 => 72 | .f32x4 => 73 | .f64x2 => 74
 
 /-- The type a CLIF value has for the rules (`vecMarker` for the vector types). -/
 def ofClif : Clif.Ty → CTy
@@ -127,11 +128,11 @@ def ofClif : Clif.Ty → CTy
 def toClif? : CTy → Option Clif.Ty
   | .int 8 => some .i8 | .int 16 => some .i16 | .int 32 => some .i32 | .int 64 => some .i64
   | .int 128 => some .i128 | .float 32 => some .f32 | .float 64 => some .f64
-  | .float 1 => some (.vec .i8x8) | .float 2 => some (.vec .i16x4)
-  | .float 3 => some (.vec .i32x2) | .float 4 => some (.vec .f32x2)
-  | .float 5 => some (.vec .i8x16) | .float 6 => some (.vec .i16x8)
-  | .float 7 => some (.vec .i32x4) | .float 8 => some (.vec .i64x2)
-  | .float 9 => some (.vec .f32x4) | .float 10 => some (.vec .f64x2)
+  | .float 65 => some (.vec .i8x8) | .float 66 => some (.vec .i16x4)
+  | .float 67 => some (.vec .i32x2) | .float 68 => some (.vec .f32x2)
+  | .float 69 => some (.vec .i8x16) | .float 70 => some (.vec .i16x8)
+  | .float 71 => some (.vec .i32x4) | .float 72 => some (.vec .i64x2)
+  | .float 73 => some (.vec .f32x4) | .float 74 => some (.vec .f64x2)
   | _ => none
 
 end CTy

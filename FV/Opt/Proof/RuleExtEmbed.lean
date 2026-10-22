@@ -168,7 +168,7 @@ theorem toNat_beq_lit {w k : Nat} (x : BitVec w) (h : k < 2 ^ w) :
   rw [Bool.eq_iff_iff]; simp only [beq_iff_eq, BitVec.toNat_eq, BitVec.toNat_ofNat, Nat.mod_eq_of_lt h]
 
 /-- `Int` immediates and if-let conditions to `BitVec` (see above). -/
-macro "int_bv" : tactic => `(tactic| simp (disch := decide) only [band64_bv, bor64_bv, bxor64_bv,
+macro "int_bv" : tactic => `(tactic| simp (disch := first | decide | assumption) only [band64_bv, bor64_bv, bxor64_bv,
   asU64_bv, asI64_bv, ofInt_natCast_toNat, ofInt_toInt_signExtend, BitVec.ofInt_add, ofInt_sub',
   BitVec.ofInt_neg, BitVec.ofInt_mul, BitVec.ofInt_natCast, Int.toNat_natCast, BitVec.ofNat_toNat,
   BitVec.ofInt_ofNat, natCast_beq_natCast, natCast_beq_lit, lit_beq_natCast, lit_beq_toNat, toNat_beq_toNat,
@@ -449,7 +449,8 @@ set_option linter.unusedSimpArgs false
 
 @[opt_imm] theorem asI64_u64_max : Rust.asI64 18446744073709551615 = -1 := by decide
 
-@[opt_imm] theorem imm64Shl_neg_one {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128)
+@[opt_imm] theorem imm64Shl_neg_one {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false)
     (c : BitVec t'.width) :
     Rust.imm64Shl (CTy.ofClif t) (-1) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.ishl (BitVec.allOnes t.width) c)) := by
@@ -459,7 +460,8 @@ set_option linter.unusedSimpArgs false
     Nat.reduceBEq, Bool.false_eq_true, reduceIte, Int.reduceSub, Int.reducePow, Nat.reduceSub] <;>
     imm_solve
 
-@[opt_imm] theorem imm64Ushr_ty_mask {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128)
+@[opt_imm] theorem imm64Ushr_ty_mask {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false)
     (c : BitVec t'.width) :
     Rust.imm64Ushr (CTy.ofClif t) (Rust.asI64 (2 ^ t.width - 1)) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.ushr (BitVec.allOnes t.width) c)) := by
