@@ -263,7 +263,32 @@ theorem γT_c0_inst (i : Nat) : γT S iOps fOps f ctx AW.c0 (.inst i) :=
 theorem γT_c0_labels (ls : List Label) : γT S iOps fOps f ctx AW.c0 (.labels ls) :=
   ⟨fun r hr => by simp [V.regsIn] at hr, fun _ => rfl⟩
 
-/-- A context instruction's data is the `.xv .inst` seed value. -/
+/-- The result types of a context instruction are `invalid` or in `mCTys`. -/
+theorem head_resTy_exT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {j : Nat}
+    {info : IInfo} (hi : ctx.insts[j]? = some info) :
+    info.resTys.head?.getD .invalid ∈ (.invalid :: mCTys) := by
+  cases h : info.resTys with
+  | nil => exact List.mem_cons_self
+  | cons t ts =>
+    exact List.mem_cons_of_mem _ (hctx.resTysM j info hi t (by rw [h]; exact List.mem_cons_self))
+
+/-- `AVT.data` is monotone in the opcode list. -/
+theorem AVT.data_mono {S : Clif.Inst → Bool} {f : Clif.Function} {ctx : Ctx} {ops ops' : List Nat}
+    (h : (AVT.data ops).HoldsS S f ctx v) (hm : ops ⊆ ops') :
+    (AVT.data ops').HoldsS S f ctx v := by
+  obtain ⟨c, hS, hOK, kf, ko, fs, he, hko⟩ := h
+  exact ⟨c, hS, hOK, kf, ko, fs, he, List.mem_of_subset_of_mem hm hko⟩
+
+/-- `InstSplit` describes every scope instruction's data by `AVT.data (iOps ++ fOps)`. -/
+theorem instSplit_data {S : Clif.Inst → Bool} {f : Clif.Function} {ctx : Ctx} {iOps fOps : List Nat}
+    (hsp : InstSplit S f ctx iOps fOps) {j : Nat} {info : IInfo} {c : Clif.Inst}
+    (hi : ctx.insts[j]? = some info) (hc : info.clif = some c) (hd : instData f c = .ok info.data) :
+    (AVT.data (iOps ++ fOps)).HoldsS S f ctx info.data := by
+  rcases hsp hi hc hd with ⟨-, hD⟩ | ⟨-, hD⟩
+  · exact AVT.data_mono hD (fun x hx => List.mem_append_left _ hx)
+  · exact AVT.data_mono hD (fun x hx => List.mem_append_right _ hx)
+
+/-- A context instruction's data is the `.xv .inst` seed value. --/
 theorem holds_instT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst) :
     Holds2T Compile.instET opsT floatOps f ctx [.xv .inst] [.inst ii] :=
