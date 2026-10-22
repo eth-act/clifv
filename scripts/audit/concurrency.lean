@@ -143,8 +143,8 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.arm_alloc_refines_mem
 #print axioms Concurrency.ArmAllocThread.exists_prun_line
 #print axioms Concurrency.ArmAllocThread.MemWitness.mem_premises
-#print axioms Concurrency.ArmAllocThread.MemWitness.dmb_run
-#print axioms Concurrency.ArmAllocThread.MemWitness.dmb_refines
+#print axioms Concurrency.ArmAllocThread.MemWitness.dmb_run -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.MemWitness.dmb_refines -- witness: native_decide
 #print axioms Concurrency.ArmAllocThread.MemWitness.ldar_w
 #print axioms Concurrency.ArmAllocThread.MemWitness.stlr_w
 #print axioms Concurrency.ArmAllocThread.MemWitness.ctlIndep_ldar
