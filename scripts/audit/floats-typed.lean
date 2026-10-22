@@ -36,5 +36,5 @@ import FVTest.E2E.FloatCleanupTotalT
 #print axioms E2E.FloatExeTWitness.correct_peakT_spec -- witness: native_decide
 #print axioms E2E.FloatExeTWitness.correctT_specC -- witness: native_decide
 #print axioms E2E.FloatExeTWitness.viaT_baseline -- witness: native_decide
-#print axioms FloatCleanupTotalT.pipeCleanupT_okT_w
+#print axioms FloatCleanupTotalT.pipeCleanupT_okT_w -- witness: native_decide
 #print axioms FloatCleanupTotalT.resultsCleanupT_ok_inT_w -- witness: native_decide
