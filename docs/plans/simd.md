@@ -103,11 +103,13 @@ lane-wise float operations use the S11c core per lane with the AArch64 `FPCR = 0
 `stuck` there; `swizzle` yields 0 for out-of-range indices; `shuffle` indexes the 32-byte
 concatenation.
 
-**Lean model.** The lane/byte functions live in `FV/Clif/Vector.lean` (S12b, independent of
+**Lean model (S12b, done).** The lane/byte functions live in `FV/Clif/Vector.lean` (independent of
 `Clif.Ty`, so it does not touch the files of the running float slices): `VShape` with
-`laneBits`/`lanes`/`width`, `lane`, `setLane`, `ofLanes`, `toBytes`/`ofBytes` (little-endian),
-the `bitcast` identity and their algebra (`lane_setLane`, `ofLanes_lane`, `ofBytes_toBytes`, the
-byte-level reading of a lane). S12d plugs them into `Clif.Ty`/`Clif.run`.
+`laneBits`/`lanes`/`width`/CLIF names, `Vec.lane`, `Vec.setLane`, `Vec.byte` (byte `j`,
+little-endian, the layout `Mem.readBits`/`writeBits` give with `big = false`), `Vec.bitcastLE`,
+and their algebra (`lane_setLane_same`, `lane_setLane_ne`, `ext_lane`, `byte_lane`: byte `j` of
+lane `i` is byte `i·laneBits/8 + j`, `byte_bitcastLE`). S12d plugs them into
+`Clif.Ty`/`Clif.run`.
 
 ## 3. Arm model: Advanced SIMD coverage
 
@@ -190,7 +192,7 @@ vector loads, a slot store, a shim call, a reload, a store); compiler theorems p
 | slice | content | depends on | size (estimate) |
 |---|---|---|---|
 | S12a | **done** (#369): this plan; `scripts/simd-scan.py` | — | docs |
-| S12b | `FV/Clif/Vector.lean`: shapes, lanes, bytes, `bitcast`, lemmas + witnesses | — | ~300 lines, 1 new module |
+| S12b | **done**: `FV/Clif/Vector.lean`: `VShape`, `Vec.lane`/`setLane`/`byte`/`bitcastLE`; `lane_setLane_same`, `lane_setLane_ne`, `ext_lane`, `byte_lane`, `byte_bitcastLE`, `bitcastLE_bitcastLE` + witnesses | — | 216 lines, 1 new module (no importers yet) |
 | S12c | **done**: Arm co-simulation of the unchecked Advanced SIMD forms (section 3), 17 forms, 0 failures, no FV/Arm change | — | 60 lines in `FVTest/Arm/Cosim` |
 | S12d | `Clif.Ty.vec`, explicit `isFloat`, `isVec`; parser/printer (`i64x2`, `vconst` literals for runtests); `Clif.run` data movement (`load`, `store`, params, returns, calls, block params, `select`, `bitcast`); integer/float premises where vectors make statements false | floats Stage C slice 8 (scope widening) merged | like S11b (#264: 155 files, +2045/−742) |
 | S12e | Backend: closure gets `rule_lower_2633`/`2754` (+ 64-bit vectors through `2628`/`2750`), 16-byte memory refinement, typed value map with vector types, ABI with vector arguments/returns, 16-byte program accesses in the lockstep/guarded/link proofs | S12d, S11f merged | like S11e4 + S11e5 slice 4 (~5000 lines) |
