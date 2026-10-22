@@ -767,3 +767,10 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallThread.Witness.compiledE_C -- witness: native_decide
 #print axioms Concurrency.CallThread.Witness.funReal_rmw -- witness: native_decide
 #print axioms Concurrency.CallThread.Witness.funReal_cas -- witness: native_decide
+-- the compiled caller's whole run through the compiled atomic_load and back (#473)
+#print axioms Concurrency.CallSeg.resumeQ
+#print axioms Concurrency.CallSeg.realized_privSegS
+#print axioms Concurrency.CallSeg.WitnessC.prefixCQ -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.callerPost -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.funReal_callFull -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.realizes_call_full -- witness: native_decide
