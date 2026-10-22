@@ -95,23 +95,37 @@ of `InScopeP` (`docs/contracts/dead-cleanup.md`):
 
 Failing functions: std 6, test 11, fv-demo 1 (`_RNxC7fv_demo12Hgl7BS49lQJI`, which passed before:
 one of its indirect calls can now reach a std function). Without `--verified` the executables are
-written by the bare Lean linker (`Link.DeadCleanup.leanLink`, no compiler theorem) and the tests
-pass (§2.2). These are scope conditions of the compiler theorem (stack arguments / indirect calls:
-S5 `StackArgsS5`, S-indirect), not std-specific; the fix is either widening `indB`/`callScopeB` or
-dropping the failing functions from `P` at link time (§4, slice T3c).
+written by the bare Lean linker (`Link.DeadCleanup.leanLink`, no compiler theorem); run under
+qemu they pass the same tests as before (lib test 21 passed, main test 0 tests, `ok`), with
+28568 / 27919 Lean-compiled functions, all of std but its float fallbacks. These are scope
+conditions of the compiler theorem (indirect calls, stack arguments: S5), not std-specific; the
+fix is either widening `indB`/`callScopeB` or dropping the failing functions from `P` at link time
+(§4, slice T3c).
 
 ### 2.2 Cost
 
 fv-demo debug with `--build-std`: cargo + cg_clif + `lean-backend` for all 32447 functions: about
 8 minutes (16 jobs). `lake exe lean-link` on the 28k-function region: **2 h 13 min / 2 h 26 min**
-per executable (before: seconds for 461/903 functions); the binary check (`link-check`) on it:
-over 1.5 h. Both are linear-time in intent; at this size the program-level checks that quantify
-over `P` per function (`indB`, `callScopeB`, `mayB`) dominate (quadratic). Slice T3d.
+per executable (before: seconds for 461/903 functions); the binary check (`link-check`) on the
+first executable was stopped after 2.5 h. Not profiled; the likely cost is the program-level
+checks that scan `P` once per function (`indB`, `callScopeB`, `mayB`), i.e. quadratic in the
+region size [inference]. Slice T3d. Without `--lean-link` (the default merge mode) and with
+`--no-binary-check`, `--build-std` costs minutes (survey below: 6 min).
 
 ### 2.3 Survey
 
-`examples/survey` (9 crates, 3179 functions, all verified before): see the table in the PR body /
-`docs/USAGE.md` "Examples and results".
+`examples/survey` (9 crates, 18 test executables), `cargo fv test --no-binary-check`:
+
+| | members (functions / verified) | std (functions / verified / unverified / fallback) | Lean in a test executable | tests |
+| --- | --- | --- | --- | --- |
+| before | 3179 / 3179 | — (prebuilt: 1627–1644 functions per executable) | 27–493 | 27 `ok` |
+| `--build-std` | 4196 / 4196 | 30358 / 30129 / 32 / 197 | 27262–27878 (std 27229 in each) | 27 `ok` |
+
+The members have more functions with `--build-std` (probably generic instances no longer shared
+from the prebuilt rlibs [inference]); all are verified. In the merge mode the 32 outside-E float
+functions of std run Lean code unverified (under `--lean-link` they keep cg_clif's code).
+`--lean-link --verified` on the survey with `--build-std` is not affordable yet (18 executables ×
+T3d).
 
 ### 2.4 Outside contracts that become proven
 
