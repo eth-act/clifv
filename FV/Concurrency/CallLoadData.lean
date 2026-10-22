@@ -134,4 +134,10 @@ theorem spC : E2E.spv RC.s0 = 0x7000#64 ∧ frameDrop RC.af = 240 ∧
     RC.af.frameSize = 224 ∧ (act vcpL rfL).af.frameSize = 224 := by
   native_decide
 
+theorem scopeLB :
+    (act vcpL rfL).vc.blocks.all (·.insts.all (memFormLB (act vcpL rfL).ctx)) = true := by
+  native_decide
+
+theorem entryArgsL : entryArgsB vcpL = true := by native_decide
+
 end Concurrency.CallSeg.WitnessC
