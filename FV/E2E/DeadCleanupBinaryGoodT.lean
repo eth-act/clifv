@@ -3,6 +3,7 @@ import FV.E2E.BinaryGoodT
 import FV.E2E.DeadCleanupBinaryT
 import FV.E2E.BinCheckT
 import FV.E2E.BinaryT
+import FV.E2E.DeadCleanupBinCheckT
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.DeadCleanupStackBoundT
 import FV.E2E.LinkArmT
@@ -14,7 +15,7 @@ import FV.E2E.StackBoundT
 /-! # Typed copies of `FV.E2E.DeadCleanupBinaryGood` (S11e5 Stage C, slice 8)
 
 The declarations of `FV.E2E.DeadCleanupBinaryGood` that depend on the integer link contract
-(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefinesT`), for the typed contract `LinkSys.OkT`
+(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefines`), for the typed contract `LinkSys.OkT`
 (suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`). -/
 
 namespace E2E
@@ -48,7 +49,7 @@ def StackStmtXT (I : LinkInput) (n : String) : Prop :=
     (∀ a, (LinkSys.ofInputCleanup I B F).Img a → F a) → ProgStmtSXT (LinkSys.ofInputCleanup I B F) I n
 
 /-- `crate_correct_stackN` with `RunGoodL` for a returning or trapping outcome. -/
-theorem crate_correct_stackNXT {I : LinkInput} (hI : okBCleanup I = true) {n : String}
+theorem crate_correct_stackNXT {I : LinkInput} (hI : okBCleanupT I = true) {n : String}
     (hn : goodN I n = true) : StackStmtXT I n := by
   intro B F hB hFI f hf M _ _ _ _ _ hent hroom hgfree hFeq himg hbe hargs hcs hsav hrel hpl htr
   have hf' : (progOf I.resultsCleanup).func? n = some f := hf
@@ -96,7 +97,7 @@ theorem binary_correctXT {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
 /-- `binary_correct_of_checks` with `RunGoodL` of the model's run for a returning or trapping
 outcome. -/
 theorem binary_correct_of_checksXT {I : LinkInput} {D : List Clif.DataObject} {file : ByteArray}
-    (hI : okBCleanup I = true) (hbin : DeadCleanupBinCheck.BinOk I D file) (B : BaseEnv) (hB : BaseOk (sys I B))
+    (hI : okBCleanupT I = true) (hbin : DeadCleanupBinCheck.BinOk I D file) (B : BaseEnv) (hB : BaseOk (sys I B))
     {n : String} (hn : DeadCleanupStackBound.goodN I n = true) {f : Clif.Function}
     (hf : (prog I).func? n = some f) (M : Nat) {r : Arm.ArmState} {args : List Clif.Val}
     {cs : Clif.State} (hX : (imageOf file).Intact r)

@@ -1,6 +1,7 @@
 import FV.E2E.DeadCleanupBinary
 import FV.E2E.BinaryT
 import FV.E2E.DeadCleanupStackBoundT
+import FV.E2E.DeadCleanupBinCheckT
 import FV.E2E.BinCheckT
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.LinkArmT
@@ -11,7 +12,7 @@ import FV.E2E.StackBoundT
 /-! # Typed copies of `FV.E2E.DeadCleanupBinary` (S11e5 Stage C, slice 8)
 
 The declarations of `FV.E2E.DeadCleanupBinary` that depend on the integer link contract
-(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefinesT`), for the typed contract `LinkSys.OkT`
+(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefines`), for the typed contract `LinkSys.OkT`
 (suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`). -/
 
 namespace E2E.DeadCleanupBinary
@@ -198,6 +199,17 @@ theorem premisesT {I : LinkInput} {B : BaseEnv} {f : Clif.Function} {K : Nat} {r
       omega
   · intro hN'; rw [hspb]; exact hr.place hN'
 
+/-- **The binary facts** of an executable `X` for a crate input `I` (what the binary checks
+establish, `binary_correct_of_checksT`): the input passes the crate checker (`okBT`); the program's
+code bytes are kept bytes of the executable, equal to the compiled image except at the bytes `R`
+of relocated instructions (which hold the resolved encodings, `FV/E2E/BinCheck.lean`); the CLIF
+image's read-only data `roB` are kept bytes of the executable. -/
+structure BinFactsT (I : LinkInput) (X : Image) (R : BitVec 64 → Prop)
+    (roB : BitVec 64 → Option (BitVec 8)) : Prop where
+  ok : okBCleanupT I = true
+  code : ∀ a, img I a → X.kept a ∧ (X.mem a = some (imgMem I a) ∨ R a)
+  data : ∀ a b, roB a = some b → X.kept a ∧ X.mem a = some b
+
 /-- **The binary-level theorem** (`docs/contracts/e2e.md`, "Binary level (M9)"): for an
 executable with the binary factsT of a crate input (`BinFactsT`), whose loaded kept bytes the
 machine state `r` holds (`Image.Intact`), a function `f` of the program whose calls reach no call
@@ -238,12 +250,26 @@ theorem binary_correctT {I : LinkInput} {X : Image} {R : BitVec 64 → Prop}
       · exact h
     · exact absurd (mem_modelOf_not hi) hne
 
+/-- **The binary facts from the checks**: an input that passes the crate checker and an
+executable file that passes the binary checks (`DeadCleanupBinCheck.BinOk`: its code is the compiled code
+with resolved relocations, its CLIF data objects and symbols are the input's). -/
+theorem binFacts_of_checksT {I : LinkInput} {D : List Clif.DataObject} {file : ByteArray}
+    (hI : okBCleanupT I = true) (hB : DeadCleanupBinCheck.BinOk I D file) :
+    BinFactsT I (imageOf file) (DeadCleanupBinCheck.RelocAt I) (BinCheck.roByte I D) where
+  ok := hI
+  code := fun _ ha =>
+    have h := DeadCleanupBinCheck.img_bytesT hB hI ha
+    ⟨.inl h.1, h.2⟩
+  data := fun _ _ h =>
+    have h' := BinCheck.roByte_sound hB.data h
+    ⟨h'.2, h'.1⟩
+
 /-- **The binary-level theorem for an executable file** that passes the checks (`okB` on the
 crate input `I`, `BinOk` on the file with the CLIF data objects `D`): `binary_correctT` with the
 executable's loaded image (`imageOf file`), its relocated instruction bytes `RelocAt I` and its
 read-only CLIF data `roByte I D`. -/
 theorem binary_correct_of_checksT {I : LinkInput} {D : List Clif.DataObject} {file : ByteArray}
-    (hI : okBCleanup I = true) (hbin : DeadCleanupBinCheck.BinOk I D file) (B : BaseEnv) (hB : BaseOk (sys I B))
+    (hI : okBCleanupT I = true) (hbin : DeadCleanupBinCheck.BinOk I D file) (B : BaseEnv) (hB : BaseOk (sys I B))
     {n : String} (hn : DeadCleanupStackBound.goodN I n = true) {f : Clif.Function}
     (hf : (prog I).func? n = some f) (M : Nat) {r : Arm.ArmState} {args : List Clif.Val}
     {cs : Clif.State} (hX : (imageOf file).Intact r)
