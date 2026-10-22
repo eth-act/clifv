@@ -5,6 +5,7 @@ import FV.Backend.Proof.IselPrgCtx
 import FV.Backend.Proof.LowerTotal
 import FV.Backend.Proof.LowerDecide
 import FV.Compile.SelectTyped
+import FV.Backend.Proof.IselCovTCall
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the statements' families
@@ -727,5 +728,73 @@ theorem termFam_of {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
           γ_valsAll fun x hx => hops x (by simpa [Compile.termIntOperands] using hx),
           γ_c0V rfl rfl, trivial⟩)⟩
     | _ => rw [ht] at hd; simp [tryCallData, throw, throwThe, MonadExceptOf.throw] at hd
+
+/-- With SSA, the results of a statement whose result types are E types are of class `int`. -/
+theorem results_int {ctx : Ctx} {info : IInfo}
+    (hrv : ∀ (m : Nat) r t, info.results[m]? = some r → info.resTys[m]? = some t →
+      ctx.valueType? r = some t)
+    (hlen : info.results.length = info.resTys.length) (hE : ∀ t ∈ info.resTys, t ∈ eCTys) :
+    ∀ x ∈ info.results, valClassOf ctx x = .int := by
+  intro x hx
+  obtain ⟨m, hm⟩ := List.mem_iff_getElem?.mp hx
+  have hlt : m < info.resTys.length := hlen ▸ (List.getElem?_eq_some_iff.mp hm).1
+  have hv := hrv m x _ hm (List.getElem?_eq_getElem hlt)
+  have ht := hE _ (List.getElem_mem hlt)
+  simp only [valClassOf, hv, Option.map_some, Option.getD_some]
+  simp only [eCTys, List.mem_cons, List.not_mem_nil, or_false] at ht
+  rcases ht with h | h | h | h <;> rw [h] <;> rfl
+
+set_option maxHeartbeats 4000000 in
+/-- **The results of a `call`/`call_indirect` of a typed-scope function are of class `int`**
+(integer externs, `sigIntB` signatures; SSA types). -/
+theorem callRes_int {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {st0 : LState}
+    (hs : LowerScopeT f) (hdom : dominatedB f = true) (hb : buildCtx f = .ok (ctx, ranges, st0))
+    {j : Nat} {info : IInfo} {c : Clif.Inst} (hj : ctx.insts[j]? = some info)
+    (hc : info.clif = some c) (hcall : Cov.CallInst c) :
+    ∀ x ∈ info.results, valClassOf ctx x = .int := by
+  have sp := ctxSpec_of hb
+  have hctx : CtxInvT f ctx := ctxInvT_of hs hb
+  have hd := dominated_of hdom
+  have hdata := hctx.data j info c hj hc
+  obtain ⟨tys, htys, hres, hlen0⟩ := hctx.resTys j info c hj hc
+  have hlen : info.results.length = info.resTys.length := by rw [hres, hlen0]; simp
+  have hrv := (sp.facts.types hd.ssa).1 j info hj
+  refine results_int hrv hlen ?_
+  cases c with
+  | call fn args =>
+    simp only [instData] at hdata
+    split at hdata
+    rotate_left
+    · cases hdata
+    rename_i ext hext
+    simp only [Clif.Inst.resultTypes, hext, Option.map_some, Option.some.injEq] at htys
+    subst htys
+    have hsig := List.all_eq_true.mp (externsE_of hs.subsetT) _ (Compile.lookup_mem hext)
+    simp only [Compile.sigE, Bool.and_eq_true, List.all_eq_true] at hsig
+    intro t ht
+    rw [hres] at ht
+    simp only [List.map_map, List.mem_map, Function.comp_apply] at ht
+    obtain ⟨p, hp, rfl⟩ := ht
+    exact ofClif_eCTys (hsig.2 p hp)
+  | callIndirect sig callee args =>
+    simp only [instData] at hdata
+    split at hdata
+    rotate_left
+    · cases hdata
+    rename_i sd hsd
+    split at hdata
+    rotate_left
+    · cases hdata
+    rename_i hint'
+    simp only [Clif.Inst.resultTypes, hsd, Option.map_some, Option.some.injEq] at htys
+    subst htys
+    intro t ht
+    have hm := hctx.resTysM j info hj t ht
+    rw [hres] at ht
+    simp only [List.map_map, List.mem_map, Function.comp_apply] at ht
+    obtain ⟨p, hp, rfl⟩ := ht
+    simp only [sigIntB, Bool.and_eq_true, List.all_eq_true] at hint'
+    exact ofClif_int_mCTys (hint'.2 p hp) hm
+  | _ => simp [Cov.CallInst] at hcall
 
 end Backend.Proof.CovT

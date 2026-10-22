@@ -2,6 +2,7 @@ import FV.Backend.Proof.IselCovTModel
 import FV.Backend.Proof.IselCovTTab
 import FV.Backend.Proof.IselCovTCall
 import FV.Backend.Proof.IselCovDriver
+import FV.Backend.Proof.LowerContractT
 
 /-!
 # Form coverage over float-capable contexts (typed V3): the driver's calls
@@ -25,7 +26,7 @@ namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 open Backend.Proof.Cov (Clean CovSince LogicImmComplete IntOut CallInst kind_cases kind_int kind_float)
-open Backend.Proof.Driver (covSince_refl lower_len)
+open Backend.Proof.Driver
 
 set_option maxRecDepth 20000
 
@@ -109,7 +110,7 @@ theorem root_hand_varT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAt md c
       rcases hout with ho | hhd
       · exact .inl (ho ▸ le_sound a (outOf rl) hle v (he.2 v rfl))
       · obtain ⟨-, m', hm', hmatch'⟩ := selectRule_some hc h1
-        exact .inr (hhand rl hhd m' n s tr env _ v s2 tr2 (by omega) (by omega) hmatch' h3)
+        exact .inr (hhand rl hhd m' n s tr env _ v _ tr2 (by omega) (by omega) hmatch' h3)
     · exact absurd hmatch (hno m _ _ _)
 
 end Root
@@ -198,15 +199,15 @@ theorem stmt_covT (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hctx
           (rl ∈ program.rulesOf TId.lower ∧ (rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033)))) ∨
       (∀ m s0 env s1, (matchRule program (sem ctx) {} m rl [.inst ii]).run s0 ≠ .ok (some env, s1)) := by
     intro rl hrl
-    have hf := List.all_eq_true.mp (List.all_eq_true.mp covStmtT_ok rl hrl) i
-      (List.mem_range.mpr (famTab_lt hF))
+    have hs := List.all_eq_true.mp covStmtT_ok rl hrl
+    unfold stmtOkT at hs
+    have hf := List.all_eq_true.mp hs i (List.mem_range.mpr (famTab_lt hF))
     refine .inl ⟨hf, ?_⟩
     by_cases hid : rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033
     · exact .inr ⟨hrl, hid⟩
     · left
       unfold stmtOut
-      rw [if_neg]
-      simpa only [Bool.or_eq_true, beq_iff_eq] using hid
+      rw [if_neg (by simp only [Bool.or_eq_true, beq_iff_eq, or_assoc]; exact hid)]
   have hv := root_hand_varT (md := covModelT hLI hctx hcl hfam s) rfl
     (fun n => soundAt (md := covModelT hLI hctx hcl hfam s) (cfg := {}) (tab := covTabT)
       rfl covTabT_ok n)
@@ -219,9 +220,7 @@ theorem stmt_covT (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hctx
   intro rss hout hres
   subst hout
   rcases hv.2 _ rfl with hγ | ⟨hI, hcall⟩
-  · intro rs hrs r hr
-    have hk := hγ.1 r (Driver.mem_regsVec hrs hr)
-    have hall : F.all ≠ [] := by
+  · have hall : F.all ≠ [] := by
       intro hnil
       obtain ⟨x, hx'⟩ := List.exists_mem_of_ne_nil _ hres
       have := hok.2.2.1 x hx'
@@ -233,7 +232,9 @@ theorem stmt_covT (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hctx
       unfold famOut
       rw [List.getD_eq_getElem?_getD, hF]
       simp [hall]
-    rw [hfo] at hk
+    rw [hfo] at hγ
+    intro rs hrs r hr
+    have hk := hγ.1 r (Driver.mem_regsVec hrs hr)
     obtain ⟨n, c, rfl, t, ht, htc⟩ := vcls_kind hk
     refine ⟨n, c, rfl, .inr fun x hx' => ?_⟩
     obtain ⟨u, hu, hxu⟩ := valIn_class (hok.2.2.1 x hx')
@@ -261,7 +262,156 @@ theorem branch_covT (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hc
       ⟨fun r hr => by simp [V.regsIn] at hr, fun _ => rfl⟩, trivial⟩
   exact (sa.root T.lower_branch.ret T.lower_branch.id T.lower_branch _ _ [.inst [i], AT.c0] AT.top _ s #[]
     out s' tr' data_program.t687 term_687_kind
-    (fun rl hrl => .inl (List.all_eq_true.mp (List.all_eq_true.mp covBranchT_ok rl hrl) i
-      (List.mem_range.mpr (famTab_lt hF)))) hins (covSince_refl s) happ).1
+    (fun rl hrl => by
+      have hb := List.all_eq_true.mp covBranchT_ok rl hrl
+      unfold branchOkT at hb
+      exact .inl (List.all_eq_true.mp hb i (List.mem_range.mpr (famTab_lt hF))))
+    hins (covSince_refl s) happ).1
+
+/-! ## Contexts with the same value types -/
+
+theorem valIn_valTy {ctx ctx' : Ctx} (hvt : ctx'.valTy = ctx.valTy) {x : Nat} {ts : List CTy}
+    (h : ValIn ctx x ts) : ValIn ctx' x ts := by
+  have he : ctx'.valueType? x = ctx.valueType? x := by simp [Ctx.valueType?, hvt]
+  exact ⟨fun t ht => h.1 t (he ▸ ht), fun ht => h.2 (he ▸ ht)⟩
+
+/-- `γP` depends on the context through its value types only. -/
+theorem γP_valTy {I : List Nat → V → Prop} {ctx ctx' : Ctx} (hvt : ctx'.valTy = ctx.valTy) :
+    ∀ (a : AT) (v : V), γP ctx I a v → γP ctx' I a v
+  | .bot, _, h => h
+  | .flat _ _, _, h => h
+  | .reg _, _, h => h
+  | .ty _, _, h => h
+  | .bool _, _, h => h
+  | .logic _, _, h => h
+  | .scale _, _, h => h
+  | .simm9, _, h => h
+  | .val _, _, h => by
+    obtain ⟨x, rfl, hx⟩ := h
+    exact ⟨x, rfl, valIn_valTy hvt hx⟩
+  | .vals _, _, h => by
+    obtain ⟨xs, rfl, hl, hx⟩ := h
+    exact ⟨xs, rfl, hl, fun i x ts h1 h2 => valIn_valTy hvt (hx i x ts h1 h2)⟩
+  | .valsAll _, _, h => by
+    obtain ⟨xs, rfl, hx⟩ := h
+    exact ⟨xs, rfl, fun x hm => valIn_valTy hvt (hx x hm)⟩
+  | .inst _, _, h => h
+  | .movi, _, h => h
+  | .extv, _, h => by
+    obtain ⟨x, e, b, rfl, hx⟩ := h
+    exact ⟨x, e, b, rfl, by simpa [Ctx.valueType?, hvt] using hx⟩
+  | .num _ _, _, h => h
+  | .alts as, v, h => by
+    simp only [γP] at h ⊢
+    rw [γAnyP_iff] at h ⊢
+    obtain ⟨a, ha, hv⟩ := h
+    exact ⟨a, ha, γP_valTy hvt a v hv⟩
+  | .data t k fs, v, h => by
+    simp only [γP] at h ⊢
+    obtain ⟨vs, rfl, hl⟩ := h
+    exact ⟨vs, rfl, γLP_valTy hvt fs vs hl⟩
+where
+  γLP_valTy {I : List Nat → V → Prop} {ctx ctx' : Ctx} (hvt : ctx'.valTy = ctx.valTy) :
+      ∀ (as : List AT) (vs : List V), γLP ctx I as vs → γLP ctx' I as vs
+    | [], [], _ => trivial
+    | a :: as, v :: vs, ⟨h1, h2⟩ => ⟨γP_valTy hvt a v h1, γLP_valTy hvt as vs h2⟩
+    | [], _ :: _, h => h.elim
+    | _ :: _, [], h => h.elim
+
+theorem famOk_valTy {ctx ctx' : Ctx} (hvt : ctx'.valTy = ctx.valTy) {F : Fam} {info : IInfo}
+    (h : FamOk ctx F info) : FamOk ctx' F info :=
+  ⟨h.1, fun x hx => valIn_valTy hvt (h.2.1 x hx), fun x hx => valIn_valTy hvt (h.2.2.1 x hx),
+    γP_valTy hvt _ _ h.2.2.2⟩
+
+theorem famCover_eq {ctx ctx' : Ctx} (hvt : ctx'.valTy = ctx.valTy) (hins : ctx'.insts = ctx.insts)
+    (h : FamCover ctx) : FamCover ctx' := by
+  intro j info c hj hc
+  rw [hins] at hj
+  obtain ⟨i, F, hF, hok⟩ := h j info c hj hc
+  exact ⟨i, F, hF, famOk_valTy hvt hok⟩
+
+/-- A terminator's data at its placeholder slot keeps `FamCover` (the slot has no CLIF
+instruction). -/
+theorem famCover_termCtx {ctx : Ctx} (hfam : FamCover ctx) {ti : Nat}
+    (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) (data : V) :
+    FamCover (termCtx ctx ti data) := by
+  intro j info c hj hc
+  by_cases hji : j = ti
+  · subst hji
+    rw [termCtx_insts_self hph data] at hj
+    cases hj
+    cases hc
+  · rw [termCtx_insts_ne hji] at hj
+    obtain ⟨i, F, hF, hok⟩ := hfam j info c hj hc
+    exact ⟨i, F, hF, famOk_valTy (ctx := ctx) (ctx' := termCtx ctx ti data) rfl hok⟩
+
+set_option maxRecDepth 100000 in
+/-- **A terminator's lowering is covered** (typed; `lower` on `return`/`trap`, `lower_branch` on
+a branch of a family). -/
+theorem termCall_covT (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hcl : Clean ctx) (hfam : FamCover ctx) {ti : Nat}
+    (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩)
+    {t : Clif.Terminator} {data : V} (hd : termData (abiTerm f t) = .ok data)
+    (htf : ∃ (i : Nat) (F : Fam), famTab[i]? = some F ∧ FamOk ctx F ⟨data, [], [], none⟩) {targets : List Label}
+    {s : LState} {out : Option V} {s' : LState} {tr : List Isle.RuleId}
+    (h : termCallF ctx ti data t targets s = .ok (out, s', tr)) : CovSince s s' := by
+  have hti : ti < ctx.insts.size := (Array.getElem?_eq_some_iff.mp hph).1
+  have hctx' := ctxInvT_termCtx hctx hph data
+  have hcl' := Cov.clean_termCtx hcl hd ti
+  have hfam' := famCover_termCtx hfam hph data
+  unfold termCallF at h
+  have hlower : retOrTrap (abiTerm f t) = true →
+      runTerm (termCtx ctx ti data) "lower" [.inst ti] s = .ok (out, s', tr) → CovSince s s' := by
+    intro hrt h
+    obtain ⟨t', tr', ht, happ⟩ := runTerm_apply h
+    rw [program_termByName_lower] at ht
+    cases ht
+    have hslot := termCtx_self hti data
+    have hrules : ∀ rl ∈ program.rulesOf T.lower.id,
+        aRule program covTabT aext actor apre aOracle [AT.c0] AT.top rl = true ∨
+          ∀ m s0 env s1, (matchRule program (sem (termCtx ctx ti data)) {} m rl [.inst ti]).run s0 ≠
+            .ok (some env, s1) := by
+      intro rl hrl
+      cases hroot : termRootRule rl with
+      | false => exact .inr (lower_term_nomatch hrt hd hslot hrl hroot)
+      | true =>
+        have hf := List.all_eq_true.mp covTermT_ok rl hrl
+        simp only [termRootRule] at hroot
+        simp only [hroot, Bool.not_true, Bool.false_or] at hf
+        exact .inl hf
+    have sa := soundAt (md := covModelT hLI hctx' hcl' hfam' s) (cfg := {}) (tab := covTabT)
+      rfl covTabT_ok 1000000
+    exact (sa.root T.lower.ret T.lower.id T.lower _ _ [AT.c0] AT.top [.inst ti] s #[] out s' tr'
+      data_program.t686 term_686_kind hrules
+      ⟨⟨fun r hr => by simp [V.regsIn] at hr, fun _ => rfl⟩, trivial⟩ (covSince_refl s) happ).1
+  obtain ⟨i, F, hF, hok⟩ := htf
+  have hok' : FamOk (termCtx ctx ti data) F ⟨data, [], [], none⟩ := famOk_valTy (ctx := ctx) (ctx' := termCtx ctx ti data) rfl hok
+  have hslot := termCtx_self hti data
+  cases t with
+  | ret vs => exact hlower rfl h
+  | trap c => exact hlower rfl h
+  | jump bc => exact branch_covT hLI hctx' hcl' hfam' hslot hF hok' h
+  | brif c a b => exact branch_covT hLI hctx' hcl' hfam' hslot hF hok' h
+  | brTable x d tb => exact branch_covT hLI hctx' hcl' hfam' hslot hF hok' h
+  | returnCall fn args => simp [abiTerm, termData, throw, throwThe, MonadExceptOf.throw] at hd
+  | tryCall fn args et => simp [abiTerm, termData, throw, throwThe, MonadExceptOf.throw] at hd
+  | tryCallIndirect callee args et => simp [abiTerm, termData, throw, throwThe, MonadExceptOf.throw] at hd
+
+/-- **A `try_call`'s lowering is covered** (typed; `lower_branch` in the `try_call` context). -/
+theorem tryCall_covT (hLI : LogicImmComplete) {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx)
+    (hcl : Clean ctx) (hfam : FamCover ctx) {ti : Nat}
+    (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩)
+    {t : Clif.Terminator} {data : V} (hd : tryCallData f t = .ok data)
+    (htf : ∃ (i : Nat) (F : Fam), famTab[i]? = some F ∧ FamOk ctx F ⟨data, [], [], none⟩) {trs : List Reg × List Reg}
+    {targets : List Label} {s : LState} {out : Option V} {s' : LState} {tr : List Isle.RuleId}
+    (h : tryCallF ctx ti data trs targets s = .ok (out, s', tr)) : CovSince s s' := by
+  have hti : ti < ctx.insts.size := (Array.getElem?_eq_some_iff.mp hph).1
+  have h' := ctxInvT_termCtx hctx hph data
+  have hctx' : CtxInvT f (tryCtx ctx ti data trs) := { h' with }
+  obtain ⟨i, F, hF, hok⟩ := htf
+  exact branch_covT hLI hctx' (Cov.clean_tryCtx hcl hd ti trs)
+    (famCover_eq (ctx := termCtx ctx ti data) (ctx' := tryCtx ctx ti data trs) rfl rfl
+      (famCover_termCtx hfam hph data)) (termCtx_self hti data) hF
+    (famOk_valTy (ctx := ctx) (ctx' := tryCtx ctx ti data trs) rfl hok) h
 
 end Backend.Proof.CovT
