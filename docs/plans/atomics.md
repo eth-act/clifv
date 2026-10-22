@@ -345,7 +345,7 @@ they are; the per-thread layers are new files.
   buffering through plain accesses (no dependency ordering, §2), so a consistent execution need
   not have a prefix in which all threads behaved. It is a property of the program (its stacks
   are disjoint and nobody else writes them), as in CASCompCert's rely/guarantee premise.
-* **Layer 2: isel with interference (open; 2a–2d done, 2e CLIF side done).** The per-statement simulation of the M7
+* **Layer 2: isel with interference (done from a match: `IselRefines.isel_refines`).** The per-statement simulation of the M7
   driver (`LowerSim.stmt_step`, behind `IselSim`) as `Refines` from `ClifThread.CStep` to the
   VCode event semantics. `stmt_step` does not reveal which addresses the VCode segment accesses
   (finding 3). Two ways to recover them:
@@ -416,7 +416,7 @@ they are; the per-thread layers are new files.
     forms at `AMode.addr`/x0, the LL/SC loops at x25; `straightEvs_size`); `addr_eq_of_oneAcc`:
     such events covering every byte of `[a, a + n)` are at `a`. Witnesses
     (`VCodeSizeWitness.lean`): `ldar_oneAcc`, `ldar_at`.
-  * **2e (assembly; open, CLIF side done):** the CLIF run reading the bytes the VCode run read
+  * **2e (assembly; done from a match):** the CLIF run reading the bytes the VCode run read
     (receptiveness of `CStep`), `ψ` mapping each CLIF event to its segment's memory event,
     `Refines` with `Priv` = the frame (the segment's other writes: outgoing call arguments).
     * *CLIF thread steps (done, `FV/Concurrency/ClifCStep.lean`):* `cstep_of_eval` (a statement
@@ -440,7 +440,31 @@ they are; the per-thread layers are new files.
       `IselMemAux`'s event shapes); the end of a memory segment (`IselMemSeg.mem_complete`).
       Witnesses: `SegFootWitness`, `IselMemAuxWitness`, `CEvsInvWitness`, and
       `IselThreadWitnessData.driverHypA` (the driver hypothesis of the compiled atomics function).
-    * open: the memory statement's segment (`mem_seg`), the layer-2 theorem.
+    * *The memory statement's segment (done, `FV/Concurrency/IselMemMain.lean`,
+      `IselMemLower.lean`):* **`mem_seg`**: the thread walks to the statement's one memory
+      instruction; the CLIF memory holding the bytes the thread read at the access
+      (`MemRelOk.store` on both sides, `match_mem`) steps (`step_next_of`) and the driver's step
+      from the patched pair (`stmt_matchN`) is the thread's segment (`mem_complete`). Reads hold
+      the patched bytes (`SAgrees`), writes the bytes the memory relation pins after the segment
+      (`bytes_of_mr`, the post-instructions keep memory: `seqRun_nomem`); an `atomic_cas` writes
+      exactly when its loop does (`cas_cmp`, the loop comparing with the expected value's vreg).
+      `casOkB` now also pins an `atomic_rmw`'s loop to integer vregs (`intV`), which fixes its
+      uses and so its two events (`cEvs_rmw_shape`).
+    * **The layer-2 theorem (done, `FV/Concurrency/IselRefines.lean`):** `seg_res` (every
+      segment from a match: terminator, pure or memory statement) and **`isel_refines`**: from a
+      `Driver.Match`, every `VTRun` of the VCode under `csem`/`cEvs` is realized up to a prefix
+      after which the CLIF thread has no step or is at an `atomic_cas` on read-only data
+      (`IselThread.Stop`) by a `CRun`, with `Refines Maps (fun _ => False) (StepPair …)`.
+      Witness (`IselRefinesWitness.lean`): `isel_refines_fA`, every premise but the match and
+      the run discharged on the real lowering of the atomics function `fA` (`driverHypA`,
+      `memRelOk_relW`, `X0_tls`).
+    * *From the function's entry (done, `FV/Concurrency/IselEntry.lean`):* `entry_matchN`
+      (`LowerSim.entry_step` with the entry code exposed: the `Args` step, then the stack-argument
+      loads) and **`isel_refines_entry`**: the layer-2 refinement for a VCode thread run from
+      `⟨0, 0, ρ₀, w₀⟩` (where layers 3 and 4a start), for functions whose parameters are all in
+      registers (the entry code is one `Args`, without events; stack-argument loads are reads
+      not yet covered). Witness: `isel_refines_entry_fA` (`fA_reg`).
+    * open: the composition with layers 3, 4a, 4b.
 
   Outside the multi-threaded scope (no `CStep`, or two VCode events per CLIF event): `i128`
   loads/stores (two `ldr`/`str`, a mixed-size question, T2i #317) and `stack_load`/

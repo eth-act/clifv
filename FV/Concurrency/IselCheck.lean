@@ -14,7 +14,8 @@ CLIF outcome. They are checked on the driver's lowering, by translation validati
   instruction (`pureInst`), `fence`, or a little-endian `load`/`atomic_*`, a `store`/
   `atomic_store`), its code has the segment shape (`SegShape.segShape`), every instruction of
   the code is a control form or a covered straight-line form (`FormOk`), not a call and not a
-  `rets`, and an `atomic_cas`'s loop compares with the expected value's vreg (`casOkB`);
+  `rets`, an `atomic_rmw`'s memory instruction is an `atomic_rmw` loop, and an `atomic_cas`'s
+  loop (on integer vregs) compares with the expected value's vreg (`casOkB`);
 * `termOkB t ms`: the terminator is a branch, a return or a trap (no `try_call`, no tail call)
   and its code has no instruction with a memory kind;
 * **`threadCheck f`**: both, on the driver's lowering of `f` (as `lowerCheck` computes it);
@@ -48,12 +49,28 @@ def threadInstB : Clif.Inst → Bool
 `rets`. -/
 def instOkB (i : MInst) : Bool := (i.isCtl || FormOk default i) && !isCallB i && !isRetsB i
 
-/-- An `atomic_cas` compares with its expected value's own vreg (the loop's `expect` operand):
-the comparison of the code is the comparison of the CLIF statement. -/
+/-- An integer vreg. -/
+def intV : Reg → Bool
+  | .vreg _ .int => true
+  | _ => false
+
+theorem intV_eq {r : Reg} (h : intV r = true) : ∃ n, r = .vreg n .int := by
+  cases r with
+  | vreg n c => cases c <;> simp [intV] at h ⊢
+  | _ => simp [intV] at h
+
+/-- The atomic updates' memory instruction: an `atomic_rmw`'s is an `atomic_rmw` loop on integer
+vregs (an `atomic_cas` loop has the same kinds but may skip its write), an `atomic_cas`'s is an
+`atomic_cas` loop on integer vregs comparing with its expected value's own vreg (the loop's
+`expect` operand): the comparison of the code is the comparison of the CLIF statement. -/
 def casOkB (inst : Clif.Inst) (ms : List MInst) : Bool :=
   match inst with
   | .atomicCas _ _ _ ex _ => (memInsts ms).all fun i => match i with
-    | .atomicCasLoop _ _ _ (.vreg e _) _ _ _ => e == ex
+    | .atomicCasLoop _ _ (.vreg _ .int) (.vreg e .int) (.vreg _ .int) (.vreg _ .int)
+        (.vreg _ .int) => e == ex
+    | _ => false
+  | .atomicRmw .. => (memInsts ms).all fun i => match i with
+    | .atomicRmwLoop _ _ _ a x d r1 r2 => intV a && intV x && intV d && intV r1 && intV r2
     | _ => false
   | _ => true
 

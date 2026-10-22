@@ -427,20 +427,19 @@ theorem vtrun_len {vc : VCode} {sem : ISem CV ArmState} {ev : MInst → List CV 
 def conv (tr : List (List Ev)) : List (List (Prog.Ev AKind ClifThread.BVal)) :=
   tr.map (·.map ProgE2E.convEv)
 
-/-- **`prepare` with interference**: a run of the prepared code `vcp` from the entry, reading any
-bytes, is realized by a run of the original `vc` from the entry with the same events up to steps
-without events (`Refines` with equal events, no private location, the atomic updates the two-event
-steps), which returns (traps) with the same values and world when the prepared run does. -/
-theorem prep_refines {vc vcp : VCode} {sem : ISem CV ArmState}
+/-- **`prepare` with interference, as traces**: a run of the prepared code `vcp` from the entry,
+reading any bytes, is realized by a run of the original `vc` from the entry with the same events
+up to steps without events (`Thin`), which returns (traps) with the same values and world when
+the prepared run does. -/
+theorem prep_thin {vc vcp : VCode} {sem : ISem CV ArmState}
     {ev : MInst → List CV → ArmState → List Ev} (hds : DriverSemG sem)
     (hcheck : prepCheck vc vcp = true)
     (hev : ∀ i ls i', i.setTargets ls = some i' → ev i' = ev i)
     (hgoto : ∀ i u w outs w2 j, sem i u w = some (outs, w2, .goto j) → ev i u w = [])
-    (hlen : ∀ i u w, (ev i u w).length ≤ 2) {ρ₀ : Nat → CV} {w₀ : ArmState}
+    {ρ₀ : Nat → CV} {w₀ : ArmState}
     {trT : List (List Ev)} {cT : VConf CV ArmState}
     (hrun : VTRun vcp sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trT cT) :
-    ∃ trS cS ψ, VTRun vc sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧
-      Refines (· = ·) (fun _ => False) (StepPair (conv trT)) (conv trS) (conv trT) ψ ∧
+    ∃ trS cS, VTRun vc sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧ Thin trS trT ∧
       (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) := by
   unfold prepCheck at hcheck
   split at hcheck
@@ -483,15 +482,33 @@ theorem prep_refines {vc vcp : VCode} {sem : ISem CV ArmState}
       · rename_i vb hvb; exact (Array.getElem?_eq_some_iff.mp hvb).1
       · cases h0
     obtain ⟨trS, cS, hrS, hmE, hth⟩ := prep_run H hds hev hgoto hrun (.blk hL0 h0)
-    have hlenS := vtrun_len hlen hrS
-    obtain ⟨ψ, href⟩ := refines_of_thin (hth.map ProgE2E.convEv) (by
-      intro j hj
-      simp only [List.getElem_map, List.length_map]
-      exact hlenS j (by simpa using hj))
-    refine ⟨trS, cS, ψ, hrS, href, fun vals w h => ?_, fun w h => ?_⟩
+    refine ⟨trS, cS, hrS, hth, fun vals w h => ?_, fun w h => ?_⟩
     · subst h; cases hmE; rfl
     · subst h; cases hmE; rfl
   · cases hcheck
+
+/-- **`prepare` with interference**: a run of the prepared code `vcp` from the entry, reading any
+bytes, is realized by a run of the original `vc` from the entry with the same events up to steps
+without events (`Refines` with equal events, no private location, the atomic updates the two-event
+steps), which returns (traps) with the same values and world when the prepared run does. -/
+theorem prep_refines {vc vcp : VCode} {sem : ISem CV ArmState}
+    {ev : MInst → List CV → ArmState → List Ev} (hds : DriverSemG sem)
+    (hcheck : prepCheck vc vcp = true)
+    (hev : ∀ i ls i', i.setTargets ls = some i' → ev i' = ev i)
+    (hgoto : ∀ i u w outs w2 j, sem i u w = some (outs, w2, .goto j) → ev i u w = [])
+    (hlen : ∀ i u w, (ev i u w).length ≤ 2) {ρ₀ : Nat → CV} {w₀ : ArmState}
+    {trT : List (List Ev)} {cT : VConf CV ArmState}
+    (hrun : VTRun vcp sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trT cT) :
+    ∃ trS cS ψ, VTRun vc sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧
+      Refines (· = ·) (fun _ => False) (StepPair (conv trT)) (conv trS) (conv trT) ψ ∧
+      (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) := by
+  obtain ⟨trS, cS, hrS, hth, hret, hhalt⟩ := prep_thin hds hcheck hev hgoto hrun
+  have hlenS := vtrun_len hlen hrS
+  obtain ⟨ψ, href⟩ := refines_of_thin (hth.map ProgE2E.convEv) (by
+    intro j hj
+    simp only [List.getElem_map, List.length_map]
+    exact hlenS j (by simpa using hj))
+  exact ⟨trS, cS, ψ, hrS, href, hret, hhalt⟩
 
 /-! ## The instance: `csem` and its precise footprint -/
 
@@ -557,5 +574,16 @@ theorem prep_refines_csem {vc vcp : VCode} {F : BitVec 64 → Prop} {ctx : FnCtx
   prep_refines (driverSem_csem F ctx X).toDriverSemG hcheck
     (fun _ _ _ h => cEvs_setTargets F ctx h) (fun _ _ _ _ _ _ h => csem_goto h)
     (cEvs_len F ctx) hrun
+
+/-- **`prepare` with interference, for `csem`, as traces** (`prep_thin` with the precise
+footprint `cEvs`). -/
+theorem prep_thin_csem {vc vcp : VCode} {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
+    (hcheck : prepCheck vc vcp = true) {ρ₀ : Nat → CV} {w₀ : ArmState}
+    {trT : List (List Ev)} {cT : VConf CV ArmState}
+    (hrun : VTRun vcp (csem F ctx X) (cEvs F ctx) (.run ⟨0, 0, ρ₀, w₀⟩) trT cT) :
+    ∃ trS cS, VTRun vc (csem F ctx X) (cEvs F ctx) (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧ Thin trS trT ∧
+      (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) :=
+  prep_thin (driverSem_csem F ctx X).toDriverSemG hcheck
+    (fun _ _ _ h => cEvs_setTargets F ctx h) (fun _ _ _ _ _ _ h => csem_goto h) hrun
 
 end Concurrency.PrepThread
