@@ -118,14 +118,14 @@ zero-extends). Instruction classes, by need:
 |---|---|---|---|
 | A: vector load/store | `ldr`/`str q` (unsigned offset, unscaled `ldur`/`stur`, pre/post-index, register offset), `ldp`/`stp q`, `ldr q` (literal) | yes (`LDST/Reg_imm`, `Reg_unscaled_imm`, `Reg_pair`, `Reg_literal`) | yes (`Specs.lean` `ldstSimdVariants`, `ldstPair`, `ldrLiteral`; 0 failures) |
 | A: register moves | `mov vd.16b, vn.16b` (`orr` vector; Cranelift `FpuMove128`) | yes | yes (`orr (vector)`) |
-| A: `bitcast` `i128` → vector | `fmov d, x` + `ins vd.d[1], x` (`mov_to_fpu`, `mov_to_vec`) | `fmov` yes; `ins` (general) yes | `fmov` yes; `ins`: S12c |
+| A: `bitcast` `i128` → vector | `fmov d, x` + `ins vd.d[1], x` (`mov_to_fpu`, `mov_to_vec`) | `fmov` yes; `ins` (general) yes | yes (`ins (general)`: S12c) |
 | A: `bitcast` vector → `i128`/`i64` | `umov x, v.d[0..1]` (`mov_from_vec`) | yes | yes (`umov`) |
-| model, not checked yet | `ins` (element), `dup` (element, general), `smov`, `rev16/rev32/rev64` (vector), `add`/`sub` (vector), `and`/`bic`/`orn`/`eor`/`bsl`/`bit`/`bif` (vector) | yes (LNSym ports with FV fixes) | S12c |
+| model, not checked yet | `ins` (element), `dup` (element, general), `smov`, `rev16/rev32/rev64` (vector), `add`/`sub` (vector), `and`/`bic`/`orn`/`eor`/`bsl`/`bit`/`bif` (vector) | yes (LNSym ports with FV fixes) | yes (S12c) |
 | B: lane arithmetic and permutes | `cmeq`/`cmgt`/… (vector), `mul`, `smin`/`umax`…, `sqadd`…, shifts by immediate (`ushr`, `sshll`/`ushll`), `xtn`/`sqxtn`, `zip`/`uzp`/`trn`, `ext`, `tbl`, `fadd`/`fmul`/… (vector), `fcvt*` (vector) | no (LNSym's `Advanced_simd_{extract,permute,shift_by_immediate,table_lookup,three_different,…}` were dropped, `docs/contracts/arm.md`) | phase B |
 
-Phase A therefore needs no new Arm semantics. S12c co-simulates the Advanced SIMD forms that
-are in the model but not yet checked against qemu (FVTest only; FV/Arm changes only for
-mismatches found).
+Phase A therefore needs no new Arm semantics. S12c (done, 2026-10-22) co-simulated the Advanced
+SIMD forms that were in the model but unchecked: 17 new forms in `FVTest/Arm/Cosim/Specs.lean`,
+0 failures (`scripts/arm-cosim.sh`: 350 forms, 70 000 vectors), no model change.
 
 ## 4. Register class
 
@@ -189,9 +189,9 @@ vector loads, a slot store, a shim call, a reload, a store); compiler theorems p
 
 | slice | content | depends on | size (estimate) |
 |---|---|---|---|
-| S12a | this plan; `scripts/simd-scan.py` | — | docs |
+| S12a | **done** (#369): this plan; `scripts/simd-scan.py` | — | docs |
 | S12b | `FV/Clif/Vector.lean`: shapes, lanes, bytes, `bitcast`, lemmas + witnesses | — | ~300 lines, 1 new module |
-| S12c | Arm co-simulation of the unchecked Advanced SIMD forms (section 3); FV/Arm fixes if qemu disagrees | — | ~150 lines in `FVTest/Arm/Cosim` |
+| S12c | **done**: Arm co-simulation of the unchecked Advanced SIMD forms (section 3), 17 forms, 0 failures, no FV/Arm change | — | 60 lines in `FVTest/Arm/Cosim` |
 | S12d | `Clif.Ty.vec`, explicit `isFloat`, `isVec`; parser/printer (`i64x2`, `vconst` literals for runtests); `Clif.run` data movement (`load`, `store`, params, returns, calls, block params, `select`, `bitcast`); integer/float premises where vectors make statements false | floats Stage C slice 8 (scope widening) merged | like S11b (#264: 155 files, +2045/−742) |
 | S12e | Backend: closure gets `rule_lower_2633`/`2754` (+ 64-bit vectors through `2628`/`2750`), 16-byte memory refinement, typed value map with vector types, ABI with vector arguments/returns, 16-byte program accesses in the lockstep/guarded/link proofs | S12d, S11f merged | like S11e4 + S11e5 slice 4 (~5000 lines) |
 | S12f | Scope widening under new names, totality, end to end: `lean-e2e-check`, `cargo fv test --lean-link --verified` on fv-demo/survey/deps with fallback counts before → after (deps SIMD 9 → 0), docs | S12e | ~1500 lines |
