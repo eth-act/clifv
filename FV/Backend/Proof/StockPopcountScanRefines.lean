@@ -29,9 +29,9 @@ theorem stock_lower_popcount_scan_fall_refines {f : Clif.Function} {result : Res
   have position : s.1 = j := Nat.add_left_cancel (indexed.symm.trans current)
   obtain ⟨func, dfg, memory, values⟩ := held
   rw [position] at dfg values
-  obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ := Popcount.source_by_instruction
+  obtain ⟨u,d,ρ',getX,output,bounds,execution,value,unchanged,kept,post⟩ := ScalarPopcount.stock_lower_popcount_source_by_instruction
     run scope dominated events records block statement current source clif results statementResults
-    mapped recorded emitted refines values sourceStep
+    mapped recorded emitted refines dfg values sourceStep
   obtain ⟨w',executed,world⟩ := execution w
   have postDFG := stock_lower_source_step_dfg run scope dominated events block statement current func dfg sourceStep
   obtain ⟨info',inst,vals,regs,rest,found,original,body,evaluated,written,updated⟩ := sourceStep

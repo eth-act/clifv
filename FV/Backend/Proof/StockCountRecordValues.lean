@@ -180,15 +180,4 @@ theorem stock_lower_count_available_values {f : Clif.Function} {result : Result}
       change VHolds oldVal (ρ' (aliasNum result.final.alias key))
       rw [kept _ (by rw [high,starts] at outside; exact outside)]
       exact old
-
-/-- Reusable state frontier for other original-source record families. -/
-theorem stock_scan_frontier (st : State) (i : Nat) :
-    (scanState st i).base.nextVreg = st.base.nextVreg := scan_frontier st i
-
-theorem stock_scan_emitted_empty (st : State) (i : Nat) :
-    (scanState st i).base.emitted = #[] := scan_empty st i
-
-/-- Result binding preserves the instruction emitter for every register class. -/
-theorem stock_binding_base {ctx : Ctx} {pairs : List (Nat × List Reg)} {st next : State} {copies : Array MInst}
-    (run : bindResults ctx pairs st = .ok (next,copies)) : next.base = st.base := binding_base run
 end Backend.Stock.Proof.ScalarCount
