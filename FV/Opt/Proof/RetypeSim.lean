@@ -518,4 +518,143 @@ theorem rr_step {f : Function} (hok : okB σ f = true) {fr fr' : Frame} (m : Mem
     | tryCall fn args et => exact ⟨fun X1 m1 h => (by cases h), fun r _ _ h => h⟩
     | tryCallIndirect c args et => exact ⟨fun X1 m1 h => (by cases h), fun r _ _ h => h⟩
 
+/-! ## `try_call` successors -/
+
+theorem Pw2.left_mem {α β : Type} {Q : α → β → Prop} :
+    ∀ {xs : List α} {ys : List β}, Pw2 Q xs ys → ∀ x ∈ xs, ∃ y, Q x y
+  | _, _, .nil => fun x hx => by cases hx
+  | _, _, .cons h hp => fun x hx => by
+    rcases List.mem_cons.1 hx with rfl | hx
+    · exact ⟨_, h⟩
+    · exact Pw2.left_mem hp x hx
+
+/-- After a `try_call` of `f` (normal-return arguments outside `vals σ f`): binding the results at
+the fresh values and entering the normal-return successor keeps the relation. -/
+theorem tcont_rr {f : Function} (hok : okB σ f = true) {fr fr' : Frame}
+    (hr : RR σ f fr fr') {et : ExnTable} (hnv : ∀ v ∈ et.normal.vals, v ∉ vals σ f) {n : Nat}
+    {bc : BlockCall} (hbc : tryNormal et fr.func.freshValue = .ok bc) (rtys : List Ty) :
+    TCont (RR σ f) fr (tryRets n fr.func.freshValue) bc fr' (tryRets n fr.func.freshValue) bc
+      rtys := by
+  obtain ⟨hf, hg, hsl, -, -, -, hrr⟩ := hr
+  have hout : ∀ i, fr.func.freshValue + i ∉ vals σ f := fun i hv => by
+    have := vals_lt hv; rw [hf] at this; exact Nat.not_lt.2 (Nat.le_add_right _ _) this
+  intro vs regs _ hset
+  obtain ⟨regs', hset', hrr'⟩ := hrr.setMany (fun x hx => by
+    obtain ⟨i, -, rfl⟩ := List.mem_map.1 hx; exact hout i) hset
+  refine ⟨regs', hset', fun fr1 he => ?_⟩
+  obtain ⟨bc2, hbc2, -, hpw⟩ := tryNormal_pair id (et := et) (et' := et)
+    (by rw [TryDest.mapVals_id]) (b2 := fr.func.freshValue) hbc
+  rw [hbc] at hbc2; cases hbc2
+  have hargs : ∀ v ∈ bc.args, v ∉ vals σ f := by
+    intro v hv
+    obtain ⟨y, hy⟩ := Pw2.left_mem hpw v hv
+    rcases hy with ⟨u, hu, hxu, -⟩ | ⟨i, hxi, -⟩
+    · rw [hxu]; exact hnv u hu
+    · rw [hxi]; exact hout i
+  exact enterBlock_rr hok (X := { fr with regs }) (Y := { fr' with regs := regs' }) hf hg hsl hrr'
+    hargs he
+
+/-! ## The function simulation -/
+
+/-- **The retyping refines** (on its domain `okB`), `call_indirect` and `try_call`/
+`try_call_indirect` included. -/
+theorem retype_simX (f : Function) (hok : okB σ f = true) : FunSimX f (retype σ f) := by
+  refine FunSimX.ofW rfl rfl rfl rfl fun syms => ⟨RR σ f, ⟨?_, ?_, ?_⟩, ?_⟩
+  · -- `IsSim`
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+    · rintro fr fr' ⟨hf, hg, hsl, -⟩; exact ⟨hsl, by rw [hg, hf]; rfl⟩
+    · rintro fr fr' m fr1 m1 hr hm hl
+      obtain ⟨Y1, hY, hr1⟩ := (rr_step hok m hr).1 fr1 m1 hl
+      exact ⟨Y1, .single hY, hr1⟩
+    · rintro fr fr' m ext vals rs rest hr hm hl
+      refine ⟨fr', rs, rest.map (retypeStmt σ), .refl _ _, (rr_step hok m hr).2.1 _ _ _ _ hl, ?_⟩
+      obtain ⟨hf, hg, hsl, hbd, htm, ⟨b, hb, hsuf, htb⟩, hrr⟩ := hr
+      obtain ⟨st, fn, args, hbody, hi, hrs, -⟩ := lstep_call_inv hl
+      have hst : st ∈ b.body := hsuf.subset (by rw [hbody]; simp)
+      have hres := (stmtOk_other ((okB_block hok hb).2.1 st hst) (by rw [hi]; rfl)
+        (by rw [hi]; rfl)).2
+      rw [hrs] at hres
+      intro vs regs _ hset
+      obtain ⟨regs', hset', hrr'⟩ := hrr.setMany hres hset
+      exact ⟨regs', hset', hf, hg, hsl, rfl, htm,
+        ⟨b, hb, (List.suffix_cons st rest).trans (hbody ▸ hsuf), htb⟩, hrr'⟩
+    · rintro fr fr' m vals hr hm hl
+      exact ⟨fr', .refl _ _, (rr_step hok m hr).2.2 _ (fun _ _ h => by cases h)
+        (fun _ _ _ _ h => by cases h) (fun _ h => by cases h) hl⟩
+    · rintro fr fr' m ext vals hr hm hl
+      exact ⟨fr', .refl _ _, (rr_step hok m hr).2.2 _ (fun _ _ h => by cases h)
+        (fun _ _ _ _ h => by cases h) (fun _ h => by cases h) hl⟩
+    · rintro fr fr' m c hr hm hl
+      exact ⟨fr', m, .refl _ _, (rr_step hok m hr).2.2 _ (fun _ _ h => by cases h)
+        (fun _ _ _ _ h => by cases h) (fun _ h => by cases h) hl⟩
+  · -- `call_indirect`
+    rintro fr fr' m st rest sig callee args d a vals hr - - - hm hbd0 hi hca
+    obtain ⟨hf, hg, hsl, hbd, htm, ⟨b, hb, hsuf, htb⟩, hrr⟩ := hr
+    have hst : st ∈ b.body := hsuf.subset (by rw [hbd0]; simp)
+    obtain ⟨hops, hres⟩ := stmtOk_other ((okB_block hok hb).2.1 st hst) (by rw [hi]; rfl)
+      (by rw [hi]; rfl)
+    simp only [hi, operands] at hops
+    refine ⟨fr', retypeStmt σ st, rest.map (retypeStmt σ), sig, callee, args, .refl _ _,
+      by rw [hbd, hbd0]; rfl, retypeInst_callIndirect.2 hi, ?_, ?_⟩
+    · rw [← hca]
+      unfold ciArgs
+      have hsd : fr'.func.sigDecls = fr.func.sigDecls := by rw [hf, hg]; rfl
+      rw [hrr.getMany (fun v hv => hops v (List.mem_cons_of_mem _ hv)),
+        hrr.frameGet (hops callee List.mem_cons_self), hsd]
+    · intro vs regs _ hset
+      obtain ⟨regs', hset', hrr'⟩ := hrr.setMany hres hset
+      exact ⟨regs', hset', hf, hg, hsl, rfl, htm,
+        ⟨b, hb, (List.suffix_cons st rest).trans (hbd0 ▸ hsuf), htb⟩, hrr'⟩
+  · -- `try_call`, `try_call_indirect`
+    refine ⟨?_, ?_⟩
+    · rintro fr fr' m fn args et n base bc ext vs0 hr - - - hm hbd0 ht htc hca
+      have hr0 := hr
+      obtain ⟨hf, hg, hsl, hbd, htm, ⟨b, hb, hsuf, htb⟩, hrr⟩ := hr
+      have hopsT : ∀ v ∈ termOperands (.tryCall fn args et), v ∉ vals σ f := by
+        rw [← ht, htb]; exact (okB_block hok hb).2.2
+      have hfv : fr'.func.freshValue = fr.func.freshValue := by rw [hf, hg, retype_freshValue]
+      obtain ⟨rfl, hbc⟩ := tcArgs_base htc
+      have htc' : tcArgs fr' fn et = .ok (n, fr.func.freshValue, bc) := by
+        obtain ⟨e0, s0, he0, hs0, hc0, -, hbc0, hn0⟩ := tcArgs_ok.1 htc
+        exact tcArgs_ok.2 ⟨e0, s0, by rw [← he0, hf, hg]; rfl, by rw [← hs0, hf, hg]; rfl, hc0,
+          hfv.symm, hbc0, hn0⟩
+      have hca' : callArgs fr' fn args = .ok (ext, vs0) := by
+        rw [← hca]
+        unfold callArgs
+        have hex : fr'.func.extern? fn = fr.func.extern? fn := by rw [hf, hg]; rfl
+        rw [hrr.getMany (fun v hv => hopsT v (by simp [termOperands, hv])), hex]
+      refine ⟨fr', fn, args, et, fr.func.freshValue, bc, .refl _ _, by rw [hbd, hbd0]; rfl,
+        by rw [htm, ht], htc', hca', ?_⟩
+      exact tcont_rr hok hr0 (fun v hv => hopsT v (normal_vals_sub v hv)) hbc _
+    · rintro fr fr' m callee args et n base bc d a vs0 hr - - - hm hbd0 ht htc hca
+      have hr0 := hr
+      obtain ⟨hf, hg, hsl, hbd, htm, ⟨b, hb, hsuf, htb⟩, hrr⟩ := hr
+      have hopsT : ∀ v ∈ termOperands (.tryCallIndirect callee args et), v ∉ vals σ f := by
+        rw [← ht, htb]; exact (okB_block hok hb).2.2
+      have hfv : fr'.func.freshValue = fr.func.freshValue := by rw [hf, hg, retype_freshValue]
+      have hsd : fr'.func.sigDecls = fr.func.sigDecls := by rw [hf, hg]; rfl
+      obtain ⟨rfl, hbc⟩ := ticArgs_base htc
+      have htc' : ticArgs fr' et = .ok (n, fr.func.freshValue, bc) := by
+        obtain ⟨s0, hs0, -, hbc0, hn0⟩ := ticArgs_ok.1 htc
+        exact ticArgs_ok.2 ⟨s0, by rw [← hs0, hsd], hfv.symm, hbc0, hn0⟩
+      have hca' : ciArgs fr' et.sig callee args = .ok (d, a, vs0) := by
+        rw [← hca]
+        unfold ciArgs
+        rw [hrr.getMany (fun v hv => hopsT v (by simp [termOperands, hv])),
+          hrr.frameGet (hopsT callee (by simp [termOperands])), hsd]
+      refine ⟨fr', callee, args, et, fr.func.freshValue, bc, .refl _ _, by rw [hbd, hbd0]; rfl,
+        by rw [htm, ht], htc', hca', ?_⟩
+      exact tcont_rr hok hr0 (fun v hv => hopsT v (normal_vals_sub' v hv)) hbc _
+  · -- entry
+    intro b hb
+    refine ⟨retypeBlock σ b, by rw [retype_entry?, hb]; rfl, rfl,
+      fun args regs slots _ hset _ => ?_⟩
+    have hbm : b ∈ f.blocks := List.mem_of_mem_head? hb
+    refine ⟨rfl, rfl, rfl, rfl, rfl, ⟨b, hbm, List.suffix_refl _, rfl⟩, fun _ _ => rfl,
+      fun v hv => ?_⟩
+    have hn : v ∉ b.params.map (·.1) := fun hm => by
+      obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hm; exact (okB_block hok hbm).1 q hq hv
+    simp only [((setMany_spec hset).2 v).1 hn]
+    rfl
+
 end Opt.Retype
