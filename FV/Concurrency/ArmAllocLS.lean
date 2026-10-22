@@ -437,44 +437,39 @@ theorem x_or_v {r : Reg} (h : r.allocatable = true) :
   · exact .inl ⟨q, rfl, hq⟩
   · exact .inr ⟨q, rfl⟩
 
-/-- **A GPR load at an unsigned offset is a one-event form.** -/
-theorem load_uoff_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u off : Nat}
-    {fl : Clif.MemFlags}
-    (hfo : FormOk ctx (.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl) = true) :
+/-- **A GPR load at a `unsignedOffset` mode is a one-event form** (`OneEvForm`). -/
+theorem load_uoff_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u : Nat} {off : Nat}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl) = true) :
     OneEvForm F ctx (.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl) := by
   have hop : op ≠ .fpuLoad128 ∧ off % op.bytes = 0 ∧ off / op.bytes < 4096 := by
     simpa [FormOk, memOk] using hfo
-  have hops : (MInst.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl).operands =
-      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
-  have hasg2 : ∀ r0 r1 : Reg,
-      (MInst.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl).assign #[r0, r1] =
-      .ok (.load op r0 (.unsignedOffset r1 off) fl) := fun _ _ => rfl
+  have hops : (MInst.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl).operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 : Reg, (MInst.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl).assign #[r0, r1] = .ok (.load op r0 (.unsignedOffset r1 off) fl) := fun _ _ => rfl
   have hlines : ∀ (r0 r1 : Reg) ps, (MInst.load op r0 (.unsignedOffset r1 off) fl).lines ctx ps =
       .ok ([.ins (.load op r0 (.unsignedOffset r1 off)) fl.trapCode], ps) := fun _ _ _ => rfl
-  have hfin : ∀ q, q ≤ 30 → FinalAM op.bytes (.unsignedOffset (.x q) off) :=
-    fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
+  have hfin : ∀ q, q ≤ 30 → FinalAM op.bytes (.unsignedOffset (.x q) off) := fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
   obtain ⟨a0, ha0, -⟩ := exec_load_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega))
     ArmState.default (fun h => by simp [AMode.base] at h)
   refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _, ha0,
     (load_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega)) ArmState.default ha0).1⟩,
     ?_, ?_, ?_⟩
-  · intro ops regs i' hops' hsz hasg
+  · intro ops regs i' hops' hsz hasg'
     rw [hops] at hops'; cases hops'
     obtain ⟨r0, r1, rfl⟩ := regs2 hsz
-    rw [hasg2] at hasg; cases hasg
+    rw [hasg] at hasg'; cases hasg'
     exact ⟨_, _, hlines _ _⟩
-  · intro ops regs i' x t env a hops' hsz hasg hl ha
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
     rw [hops] at hops'; cases hops'
     obtain ⟨r0, r1, rfl⟩ := regs2 hsz
-    rw [hasg2] at hasg; cases hasg
+    rw [hasg] at hasg'; cases hasg'
     rw [hlines] at hl
     simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
     obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
     exact plain_arm ha (.inl ⟨_, _, _, rfl⟩)
-  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg hl ha M
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
     rw [hops] at hops'; cases hops'
     obtain ⟨r0, r1, rfl⟩ := regs2 hsz
-    rw [hasg2] at hasg; cases hasg
+    rw [hasg] at hasg'; cases hasg'
     rw [hlines] at hl
     simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
     obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
@@ -494,5 +489,613 @@ theorem load_uoff_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u
         (fun h => by simp [AMode.base] at h), placeUses_setMem]
     simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
       setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR load at a `unscaled` mode is a one-event form** (`OneEvForm`). -/
+theorem load_unsc_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u : Nat} {off : Int}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.load op (.vreg d .int) (.unscaled (.vreg u .int) off) fl) = true) :
+    OneEvForm F ctx (.load op (.vreg d .int) (.unscaled (.vreg u .int) off) fl) := by
+  have hop : op ≠ .fpuLoad128 ∧ -256 ≤ off ∧ off < 256 := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.load op (.vreg d .int) (.unscaled (.vreg u .int) off) fl).operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 : Reg, (MInst.load op (.vreg d .int) (.unscaled (.vreg u .int) off) fl).assign #[r0, r1] = .ok (.load op r0 (.unscaled r1 off) fl) := fun _ _ => rfl
+  have hlines : ∀ (r0 r1 : Reg) ps, (MInst.load op r0 (.unscaled r1 off) fl).lines ctx ps =
+      .ok ([.ins (.load op r0 (.unscaled r1 off)) fl.trapCode], ps) := fun _ _ _ => rfl
+  have hfin : ∀ q, q ≤ 30 → FinalAM op.bytes (.unscaled (.x q) off) := fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_load_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _, ha0,
+    (load_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inl ⟨_, _, _, rfl⟩)
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .load op (.x 0) (.unscaled (.x 1) off) fl) hops
+      rfl (hlines _ _ _), linesEvs_single ha0,
+      load_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      load_line_cf env ctx op hop.1 p (by omega) _ (hfin q (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR load at a `regReg` mode is a one-event form** (`OneEvForm`). -/
+theorem load_regReg_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u v : Nat} 
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.load op (.vreg d .int) (.regReg (.vreg u .int) (.vreg v .int)) fl) = true) :
+    OneEvForm F ctx (.load op (.vreg d .int) (.regReg (.vreg u .int) (.vreg v .int)) fl) := by
+  have hop : op ≠ .fpuLoad128 ∧ True := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.load op (.vreg d .int) (.regReg (.vreg u .int) (.vreg v .int)) fl).operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.load op (.vreg d .int) (.regReg (.vreg u .int) (.vreg v .int)) fl).assign #[r0, r1, r2] = .ok (.load op r0 (.regReg r1 r2) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.load op r0 (.regReg r1 r2) fl).lines ctx ps =
+      .ok ([.ins (.load op r0 (.regReg r1 r2)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM op.bytes (.regReg (.x q) (.x r)) := fun q r hq hr => ⟨hq, hr⟩
+  obtain ⟨a0, ha0, -⟩ := exec_load_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0,
+    (load_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inl ⟨_, _, _, rfl⟩)
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .load op (.x 0) (.regReg (.x 1) (.x 2)) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0,
+      load_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      load_line_cf env ctx op hop.1 p (by omega) _ (hfin q r (by omega) (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR load at a `regScaled` mode is a one-event form** (`OneEvForm`). -/
+theorem load_regScaled_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u v : Nat} 
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.load op (.vreg d .int) (.regScaled (.vreg u .int) (.vreg v .int)) fl) = true) :
+    OneEvForm F ctx (.load op (.vreg d .int) (.regScaled (.vreg u .int) (.vreg v .int)) fl) := by
+  have hop : op ≠ .fpuLoad128 ∧ True := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.load op (.vreg d .int) (.regScaled (.vreg u .int) (.vreg v .int)) fl).operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.load op (.vreg d .int) (.regScaled (.vreg u .int) (.vreg v .int)) fl).assign #[r0, r1, r2] = .ok (.load op r0 (.regScaled r1 r2) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.load op r0 (.regScaled r1 r2) fl).lines ctx ps =
+      .ok ([.ins (.load op r0 (.regScaled r1 r2)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM op.bytes (.regScaled (.x q) (.x r)) := fun q r hq hr => ⟨hq, hr⟩
+  obtain ⟨a0, ha0, -⟩ := exec_load_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0,
+    (load_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inl ⟨_, _, _, rfl⟩)
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .load op (.x 0) (.regScaled (.x 1) (.x 2)) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0,
+      load_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      load_line_cf env ctx op hop.1 p (by omega) _ (hfin q r (by omega) (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR load at a `regScaledExtended` mode is a one-event form** (`OneEvForm`). -/
+theorem load_regScaledExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u v : Nat} {e : ExtendOp}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.load op (.vreg d .int) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl) = true) :
+    OneEvForm F ctx (.load op (.vreg d .int) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl) := by
+  have hop : op ≠ .fpuLoad128 ∧ extOk e := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.load op (.vreg d .int) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl).operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.load op (.vreg d .int) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl).assign #[r0, r1, r2] = .ok (.load op r0 (.regScaledExtended r1 r2 e) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.load op r0 (.regScaledExtended r1 r2 e) fl).lines ctx ps =
+      .ok ([.ins (.load op r0 (.regScaledExtended r1 r2 e)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM op.bytes (.regScaledExtended (.x q) (.x r) e) := fun q r hq hr => ⟨hq, hr, hop.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_load_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0,
+    (load_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inl ⟨_, _, _, rfl⟩)
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .load op (.x 0) (.regScaledExtended (.x 1) (.x 2) e) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0,
+      load_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      load_line_cf env ctx op hop.1 p (by omega) _ (hfin q r (by omega) (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR load at a `regExtended` mode is a one-event form** (`OneEvForm`). -/
+theorem load_regExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u v : Nat} {e : ExtendOp}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.load op (.vreg d .int) (.regExtended (.vreg u .int) (.vreg v .int) e) fl) = true) :
+    OneEvForm F ctx (.load op (.vreg d .int) (.regExtended (.vreg u .int) (.vreg v .int) e) fl) := by
+  have hop : op ≠ .fpuLoad128 ∧ extOk e := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.load op (.vreg d .int) (.regExtended (.vreg u .int) (.vreg v .int) e) fl).operands = .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.load op (.vreg d .int) (.regExtended (.vreg u .int) (.vreg v .int) e) fl).assign #[r0, r1, r2] = .ok (.load op r0 (.regExtended r1 r2 e) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.load op r0 (.regExtended r1 r2 e) fl).lines ctx ps =
+      .ok ([.ins (.load op r0 (.regExtended r1 r2 e)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM op.bytes (.regExtended (.x q) (.x r) e) := fun q r hq hr => ⟨hq, hr, hop.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_load_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0,
+    (load_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inl ⟨_, _, _, rfl⟩)
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .load op (.x 0) (.regExtended (.x 1) (.x 2) e) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0,
+      load_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      load_line_cf env ctx op hop.1 p (by omega) _ (hfin q r (by omega) (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR store at a `unsignedOffset` mode is a one-event form** (`OneEvForm`). -/
+theorem store_uoff_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {d u : Nat} {off : Nat}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.store op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl) = true) :
+    OneEvForm F ctx (.store op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl) := by
+  have hop : op ≠ .fpuStore128 ∧ off % op.bytes = 0 ∧ off / op.bytes < 4096 := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.store op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl).operands = .ok #[⟨d, .int, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 : Reg, (MInst.store op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl).assign #[r0, r1] = .ok (.store op r0 (.unsignedOffset r1 off) fl) := fun _ _ => rfl
+  have hlines : ∀ (r0 r1 : Reg) ps, (MInst.store op r0 (.unsignedOffset r1 off) fl).lines ctx ps =
+      .ok ([.ins (.store op r0 (.unsignedOffset r1 off)) fl.trapCode], ps) := fun _ _ _ => rfl
+  have hfin : ∀ q, q ≤ 30 → FinalAM op.bytes (.unsignedOffset (.x q) off) := fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_store_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _, ha0,
+    (store_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inl ⟨_, _, _, rfl⟩))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .store op (.x 0) (.unsignedOffset (.x 1) off) fl) hops
+      rfl (hlines _ _ _), linesEvs_single ha0,
+      store_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      store_line_cf env ctx op hop.1 p (by omega) _ (hfin q (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR store at a `unscaled` mode is a one-event form** (`OneEvForm`). -/
+theorem store_unsc_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {d u : Nat} {off : Int}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.store op (.vreg d .int) (.unscaled (.vreg u .int) off) fl) = true) :
+    OneEvForm F ctx (.store op (.vreg d .int) (.unscaled (.vreg u .int) off) fl) := by
+  have hop : op ≠ .fpuStore128 ∧ -256 ≤ off ∧ off < 256 := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.store op (.vreg d .int) (.unscaled (.vreg u .int) off) fl).operands = .ok #[⟨d, .int, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 : Reg, (MInst.store op (.vreg d .int) (.unscaled (.vreg u .int) off) fl).assign #[r0, r1] = .ok (.store op r0 (.unscaled r1 off) fl) := fun _ _ => rfl
+  have hlines : ∀ (r0 r1 : Reg) ps, (MInst.store op r0 (.unscaled r1 off) fl).lines ctx ps =
+      .ok ([.ins (.store op r0 (.unscaled r1 off)) fl.trapCode], ps) := fun _ _ _ => rfl
+  have hfin : ∀ q, q ≤ 30 → FinalAM op.bytes (.unscaled (.x q) off) := fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_store_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _, ha0,
+    (store_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inl ⟨_, _, _, rfl⟩))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .store op (.x 0) (.unscaled (.x 1) off) fl) hops
+      rfl (hlines _ _ _), linesEvs_single ha0,
+      store_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      store_line_cf env ctx op hop.1 p (by omega) _ (hfin q (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR store at a `regReg` mode is a one-event form** (`OneEvForm`). -/
+theorem store_regReg_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {d u v : Nat} 
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.store op (.vreg d .int) (.regReg (.vreg u .int) (.vreg v .int)) fl) = true) :
+    OneEvForm F ctx (.store op (.vreg d .int) (.regReg (.vreg u .int) (.vreg v .int)) fl) := by
+  have hop : op ≠ .fpuStore128 ∧ True := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.store op (.vreg d .int) (.regReg (.vreg u .int) (.vreg v .int)) fl).operands = .ok #[⟨d, .int, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.store op (.vreg d .int) (.regReg (.vreg u .int) (.vreg v .int)) fl).assign #[r0, r1, r2] = .ok (.store op r0 (.regReg r1 r2) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.store op r0 (.regReg r1 r2) fl).lines ctx ps =
+      .ok ([.ins (.store op r0 (.regReg r1 r2)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM op.bytes (.regReg (.x q) (.x r)) := fun q r hq hr => ⟨hq, hr⟩
+  obtain ⟨a0, ha0, -⟩ := exec_store_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0,
+    (store_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inl ⟨_, _, _, rfl⟩))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .store op (.x 0) (.regReg (.x 1) (.x 2)) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0,
+      store_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      store_line_cf env ctx op hop.1 p (by omega) _ (hfin q r (by omega) (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR store at a `regScaled` mode is a one-event form** (`OneEvForm`). -/
+theorem store_regScaled_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {d u v : Nat} 
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.store op (.vreg d .int) (.regScaled (.vreg u .int) (.vreg v .int)) fl) = true) :
+    OneEvForm F ctx (.store op (.vreg d .int) (.regScaled (.vreg u .int) (.vreg v .int)) fl) := by
+  have hop : op ≠ .fpuStore128 ∧ True := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.store op (.vreg d .int) (.regScaled (.vreg u .int) (.vreg v .int)) fl).operands = .ok #[⟨d, .int, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.store op (.vreg d .int) (.regScaled (.vreg u .int) (.vreg v .int)) fl).assign #[r0, r1, r2] = .ok (.store op r0 (.regScaled r1 r2) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.store op r0 (.regScaled r1 r2) fl).lines ctx ps =
+      .ok ([.ins (.store op r0 (.regScaled r1 r2)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM op.bytes (.regScaled (.x q) (.x r)) := fun q r hq hr => ⟨hq, hr⟩
+  obtain ⟨a0, ha0, -⟩ := exec_store_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0,
+    (store_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inl ⟨_, _, _, rfl⟩))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .store op (.x 0) (.regScaled (.x 1) (.x 2)) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0,
+      store_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      store_line_cf env ctx op hop.1 p (by omega) _ (hfin q r (by omega) (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR store at a `regScaledExtended` mode is a one-event form** (`OneEvForm`). -/
+theorem store_regScaledExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {d u v : Nat} {e : ExtendOp}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.store op (.vreg d .int) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl) = true) :
+    OneEvForm F ctx (.store op (.vreg d .int) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl) := by
+  have hop : op ≠ .fpuStore128 ∧ extOk e := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.store op (.vreg d .int) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl).operands = .ok #[⟨d, .int, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.store op (.vreg d .int) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl).assign #[r0, r1, r2] = .ok (.store op r0 (.regScaledExtended r1 r2 e) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.store op r0 (.regScaledExtended r1 r2 e) fl).lines ctx ps =
+      .ok ([.ins (.store op r0 (.regScaledExtended r1 r2 e)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM op.bytes (.regScaledExtended (.x q) (.x r) e) := fun q r hq hr => ⟨hq, hr, hop.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_store_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0,
+    (store_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inl ⟨_, _, _, rfl⟩))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .store op (.x 0) (.regScaledExtended (.x 1) (.x 2) e) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0,
+      store_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      store_line_cf env ctx op hop.1 p (by omega) _ (hfin q r (by omega) (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+/-- **A GPR store at a `regExtended` mode is a one-event form** (`OneEvForm`). -/
+theorem store_regExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {d u v : Nat} {e : ExtendOp}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.store op (.vreg d .int) (.regExtended (.vreg u .int) (.vreg v .int) e) fl) = true) :
+    OneEvForm F ctx (.store op (.vreg d .int) (.regExtended (.vreg u .int) (.vreg v .int) e) fl) := by
+  have hop : op ≠ .fpuStore128 ∧ extOk e := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.store op (.vreg d .int) (.regExtended (.vreg u .int) (.vreg v .int) e) fl).operands = .ok #[⟨d, .int, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.store op (.vreg d .int) (.regExtended (.vreg u .int) (.vreg v .int) e) fl).assign #[r0, r1, r2] = .ok (.store op r0 (.regExtended r1 r2 e) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.store op r0 (.regExtended r1 r2 e) fl).lines ctx ps =
+      .ok ([.ins (.store op r0 (.regExtended r1 r2 e)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM op.bytes (.regExtended (.x q) (.x r) e) := fun q r hq hr => ⟨hq, hr, hop.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_store_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0,
+    (store_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inl ⟨_, _, _, rfl⟩))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .store op (.x 0) (.regExtended (.x 1) (.x 2) e) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0,
+      store_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      store_line_cf env ctx op hop.1 p (by omega) _ (hfin q r (by omega) (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
 
 end Concurrency.ArmAllocThread
