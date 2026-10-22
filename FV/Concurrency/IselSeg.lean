@@ -147,6 +147,46 @@ theorem vtstep_next {b k : Nat} {ρ : Nat → CV} {w : ArmState} {vb : VBlock} {
     cases hnx with
     | next hk1 => exact ⟨_, _, rfl, hk1⟩
 
+/-- **A thread follows a forward run through instructions without memory kinds**: its first
+`n` steps have no events and reach the run's end, or its run ends earlier, without events. -/
+theorem vtrun_follow :
+    ∀ {n : Nat} {c0 cn : VConf CV ArmState},
+      StarNP (VStep vc (csem F ctx X)) (NoMemAt vc) n c0 cn →
+      ∀ {tr : List (List Ev)} {cT : VConf CV ArmState},
+      VTRun vc (csem F ctx X) (cEvs F ctx) c0 tr cT →
+      (∃ pre rest, tr = pre ++ rest ∧ pre.length = n ∧ (∀ e ∈ pre, e = []) ∧
+        VTRun vc (csem F ctx X) (cEvs F ctx) c0 pre cn ∧
+        VTRun vc (csem F ctx X) (cEvs F ctx) cn rest cT) ∨
+      (tr.length < n ∧ ∀ e ∈ tr, e = [])
+  | _, _, _, .refl _, tr, cT, hr => by
+    refine .inl ⟨[], tr, rfl, rfl, ?_, VTRun.nil, hr⟩
+    intro e h; cases h
+  | _, _, _, .step hP hst t, tr, cT, hr => by
+    cases hr with
+    | nil => exact .inr ⟨by simp, fun _ h => nomatch h⟩
+    | @cons _ c'' _ evs tr' hs hr' =>
+      have hs0 := hs
+      cases hs0 with
+      | mk hb hi hops he hf hst' =>
+        rename_i b k ρ w vb i ops
+        have hev : evs = [] := by
+          rw [he]; exact VCodeEvents.cEvs_nil (hP b k ρ w rfl vb i hb hi) _ _
+        subst hev
+        rw [SegRun.patch_nil] at hst'
+        have e := vstep_det hst' hst
+        subst e
+        rcases vtrun_follow t hr' with ⟨pre, rest, htr, hl, hpe, h1, h2⟩ | ⟨hl, hpe⟩
+        · refine .inl ⟨[] :: pre, rest, by rw [htr]; rfl, by simp [hl], ?_, .cons hs h1, h2⟩
+          intro x hx
+          rcases List.mem_cons.mp hx with h | h
+          · exact h
+          · exact hpe x h
+        · refine .inr ⟨by simp; omega, ?_⟩
+          intro x hx
+          rcases List.mem_cons.mp hx with h | h
+          · exact h
+          · exact hpe x h
+
 end walk
 
 /-! ## The memory relation after patching -/

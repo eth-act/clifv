@@ -1,5 +1,6 @@
 import FV.Concurrency.SegRun
 import FV.Backend.Proof.LowerSim
+import FV.Concurrency.SegShape
 
 /-!
 # Counted runs and the statement step with its endpoint (T2h, #311, layer 2e)
@@ -26,44 +27,64 @@ open Arm ArmThread Backend Backend.Proof Backend.Proof.Driver VCodeThread PrepTh
 
 /-! ## Counted runs -/
 
+/-- **`n` steps of `r`, each from a configuration satisfying `P`.** -/
+inductive StarNP {α : Type} (r : α → α → Prop) (P : α → Prop) : Nat → α → α → Prop
+  | refl (a : α) : StarNP r P 0 a a
+  | step {n : Nat} {a b c : α} : P a → r a b → StarNP r P n b c → StarNP r P (n + 1) a c
+
 /-- **`n` steps of `r`.** -/
-inductive StarN {α : Type} (r : α → α → Prop) : Nat → α → α → Prop
-  | refl (a : α) : StarN r 0 a a
-  | step {n : Nat} {a b c : α} : r a b → StarN r n b c → StarN r (n + 1) a c
+abbrev StarN {α : Type} (r : α → α → Prop) : Nat → α → α → Prop := StarNP r fun _ => True
 
 section starN
-variable {α : Type} {r : α → α → Prop}
+variable {α : Type} {r : α → α → Prop} {P Q : α → Prop}
 
-theorem StarN.star : ∀ {n : Nat} {a b : α}, StarN r n a b → Star r a b
+theorem StarNP.star : ∀ {n : Nat} {a b : α}, StarNP r P n a b → Star r a b
   | _, _, _, .refl _ => .refl _
-  | _, _, _, .step h t => .step h t.star
+  | _, _, _, .step _ h t => .step h t.star
 
-theorem StarN.trans : ∀ {n m : Nat} {a b c : α}, StarN r n a b → StarN r m b c →
-    StarN r (n + m) a c
+theorem StarNP.mono (hPQ : ∀ a, P a → Q a) : ∀ {n : Nat} {a b : α}, StarNP r P n a b →
+    StarNP r Q n a b
+  | _, _, _, .refl _ => .refl _
+  | _, _, _, .step hp h t => .step (hPQ _ hp) h (t.mono hPQ)
+
+theorem StarNP.toN {n : Nat} {a b : α} (h : StarNP r P n a b) : StarN r n a b :=
+  h.mono fun _ _ => trivial
+
+theorem StarNP.trans : ∀ {n m : Nat} {a b c : α}, StarNP r P n a b → StarNP r P m b c →
+    StarNP r P (n + m) a c
   | _, _, _, _, _, .refl _, h => by simpa using h
-  | _, _, _, _, _, .step h t, h' => by
-    rw [Nat.add_right_comm]; exact .step h (t.trans h')
+  | _, _, _, _, _, .step hp h t, h' => by
+    rw [Nat.add_right_comm]; exact .step hp h (t.trans h')
 
 /-- **Deterministic relations reach one configuration in `n` steps.** -/
-theorem StarN.det (hdet : ∀ a b c, r a b → r a c → b = c) :
-    ∀ {n : Nat} {a b c : α}, StarN r n a b → StarN r n a c → b = c
+theorem StarNP.det (hdet : ∀ a b c, r a b → r a c → b = c) :
+    ∀ {n : Nat} {a b c : α}, StarNP r P n a b → StarNP r Q n a c → b = c
   | _, _, _, _, .refl _, .refl _ => rfl
-  | _, _, _, _, .step h1 t1, .step h2 t2 => by
+  | _, _, _, _, .step _ h1 t1, .step _ h2 t2 => by
     rw [hdet _ _ _ h1 h2] at t1
-    exact StarN.det hdet t1 t2
+    exact StarNP.det hdet t1 t2
 
 /-- Split a counted run. -/
-theorem StarN.split : ∀ (n m : Nat) {a c : α}, StarN r (n + m) a c →
-    ∃ b, StarN r n a b ∧ StarN r m b c
+theorem StarNP.split : ∀ (n m : Nat) {a c : α}, StarNP r P (n + m) a c →
+    ∃ b, StarNP r P n a b ∧ StarNP r P m b c
   | 0, _, _, _, h => ⟨_, .refl _, by simpa using h⟩
   | n + 1, m, _, _, h => by
     rw [Nat.add_right_comm] at h
     cases h with
-    | step h1 t =>
-      obtain ⟨b, t1, t2⟩ := StarN.split n m t
-      exact ⟨b, .step h1 t1, t2⟩
+    | step hp h1 t =>
+      obtain ⟨b, t1, t2⟩ := StarNP.split n m t
+      exact ⟨b, .step hp h1 t1, t2⟩
 
 end starN
+
+/-- The instruction at the configuration has no memory kind. -/
+def NoMemAt {W : Type} (vc : VCode) (c : VConf CV W) : Prop :=
+  ∀ b k ρ w, c = .run ⟨b, k, ρ, w⟩ → ∀ vb i, vc.blocks[b]? = some vb → vb.insts[k]? = some i →
+    Code.akinds i = []
+
+/-- The configuration is at instruction `k0 + i` of block `b`, for some `i < len`. -/
+def InSeg {V W : Type} (b k0 len : Nat) (c : VConf V W) : Prop :=
+  ∃ i < len, ∃ ρ w, c = .run ⟨b, k0 + i, ρ, w⟩
 
 /-! ## Determinism of `VStep` -/
 
@@ -94,15 +115,25 @@ theorem vstep_det {V W : Type} {vc : VCode} {sem : ISem V W} {a b c : VConf V W}
 /-- `VStep` runs of `n` steps reach one configuration. -/
 theorem vstepN_det {V W : Type} {vc : VCode} {sem : ISem V W} {n : Nat} {a b c : VConf V W}
     (h1 : StarN (VStep vc sem) n a b) (h2 : StarN (VStep vc sem) n a c) : b = c :=
-  StarN.det (r := VStep vc sem) (fun _ _ _ h1 h2 => vstep_det h1 h2) h1 h2
+  StarNP.det (r := VStep vc sem) (fun _ _ _ h1 h2 => vstep_det h1 h2) h1 h2
 
-/-- **A segment that falls through is `ms.length` steps** (`seqRun_fall_star`, counted). -/
+theorem InSeg.succ {V W : Type} {b k0 len : Nat} {c : VConf V W} (h : InSeg b (k0 + 1) len c) :
+    InSeg b k0 (len + 1) c := by
+  obtain ⟨i, hi, ρ, w, rfl⟩ := h
+  exact ⟨i + 1, by omega, ρ, w, by rw [Nat.add_assoc, Nat.add_comm 1 i]⟩
+
+theorem InSeg.zero {V W : Type} (b k0 len : Nat) (hl : 0 < len) (ρ : Nat → V) (w : W) :
+    InSeg b k0 len (VConf.run ⟨b, k0, ρ, w⟩) := ⟨0, hl, ρ, w, rfl⟩
+
+/-- **A segment that falls through is `ms.length` steps**, within the segment
+(`seqRun_fall_star`, counted). -/
 theorem seqRun_fall_starN {V W : Type} {vc : VCode} {sem : ISem V W} {b : Nat} {vb : VBlock}
     (hvb : vc.blocks[b]? = some vb) :
     ∀ {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {ρ' : Nat → V} {w' : W},
     SegAt vb k0 ms → k0 + ms.length < vb.insts.size →
     seqRun sem ms ρ w = some (.fall ρ' w') →
-    StarN (VStep vc sem) ms.length (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + ms.length, ρ', w'⟩) := by
+    StarNP (VStep vc sem) (InSeg b k0 ms.length) ms.length (.run ⟨b, k0, ρ, w⟩)
+      (.run ⟨b, k0 + ms.length, ρ', w'⟩) := by
   intro ms
   induction ms with
   | nil =>
@@ -115,11 +146,10 @@ theorem seqRun_fall_starN {V W : Type} {vc : VCode} {sem : ISem V W} {b : Nat} {
     obtain ⟨ops, outs, w₁, hops, hsem, hlen, hrest⟩ := seqRun_cons_fall h
     have hstep : VStep vc sem (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + 1, vdefUpd ops outs ρ, w₁⟩) :=
       VStep.step hvb hseg.head hops hsem hlen (VNext.next (by simp at hlt; omega))
-    have := ih hseg.tail (by simp at hlt ⊢; omega) hrest
+    have := (ih hseg.tail (by simp at hlt ⊢; omega) hrest).mono fun _ h => InSeg.succ h
     simp only [List.length_cons] at this ⊢
-    rw [show k0 + (ms.length + 1) = k0 + 1 + ms.length by omega, Nat.add_comm ms.length 1]
-    rw [Nat.add_comm 1 ms.length]
-    exact .step hstep this
+    rw [show k0 + (ms.length + 1) = k0 + 1 + ms.length by omega]
+    exact .step (InSeg.zero _ _ _ (by omega) _ _) hstep this
 
 /-! ## Thread runs as counted forward runs -/
 
@@ -149,7 +179,7 @@ theorem vtrun_nil_starN {vc : VCode} {sem : ISem CV ArmState}
         rw [hops] at hops'; cases hops'
         exact hf
       obtain ⟨h1, h2⟩ := vstep_setMem hf' hst m
-      exact ⟨StarN.step h1 ih, ihm.trans h2⟩
+      exact ⟨StarNP.step trivial h1 ih, ihm.trans h2⟩
     | ret v w => cases hs
     | halt w => cases hs
 
@@ -167,9 +197,9 @@ theorem vtrun_patchN {vc : VCode} {sem : ISem CV ArmState}
   have e3 : confMem (confW c2).mem c3 = c3 := by rw [← hpost'.2]; exact confMem_self c3
   rw [confMem_self, e3] at hpost'
   rw [Nat.add_assoc]
-  refine StarN.trans hpre'.1 ?_
+  refine StarNP.trans hpre'.1 ?_
   rw [Nat.add_comm 1]
-  refine .step ?_ hpost'.1
+  refine .step trivial ?_ hpost'.1
   cases c1 with
   | run s =>
     obtain ⟨b, k, ρ, w⟩ := s
@@ -179,13 +209,15 @@ theorem vtrun_patchN {vc : VCode} {sem : ISem CV ArmState}
   | ret v w => cases h2
   | halt w => cases h2
 
-/-- A segment that stops at instruction `k`: `k` counted steps to it (`seqRun_stop_star`). -/
+/-- A segment that stops at instruction `k`: `k` counted steps to it, within the segment
+(`seqRun_stop_star`). -/
 theorem seqRun_stop_starN {V W : Type} {vc : VCode} {sem : ISem V W} {b : Nat} {vb : VBlock}
     (hvb : vc.blocks[b]? = some vb) :
     ∀ {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {k : Nat} {i : MInst}
       {ops : Array Operand} {ρ₁ : Nat → V} {w₁ : W} {outs : List V} {w₂ : W} {ctl : Ctl},
     SegAt vb k0 ms → seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ ctl) →
-    StarN (VStep vc sem) k (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + k, ρ₁, w₁⟩) ∧ k < ms.length ∧
+    StarNP (VStep vc sem) (InSeg b k0 ms.length) k (.run ⟨b, k0, ρ, w⟩)
+        (.run ⟨b, k0 + k, ρ₁, w₁⟩) ∧ k < ms.length ∧
       vb.insts[k0 + k]? = some i ∧ i.operands = .ok ops ∧
       sem i (vuses ops ρ₁) w₁ = some (outs, w₂, ctl) ∧
       outs.length = (ops.toList.filter Operand.isDef).length ∧ ctl ≠ .next := by
@@ -196,7 +228,7 @@ theorem seqRun_stop_starN {V W : Type} {vc : VCode} {sem : ISem V W} {b : Nat} {
     intro k0 ρ w k i ops ρ₁ w₁ outs w₂ ctl hseg h
     rcases seqRun_cons_stop h with
       ⟨rfl, rfl, hops, rfl, rfl, hsem, hlen, hne⟩ | ⟨k', ops₀, outs₀, w₃, rfl, hops₀, hsem₀, hlen₀, hrest⟩
-    · exact ⟨by simpa using StarN.refl _, by simp, by simpa using hseg.head, hops, hsem, hlen, hne⟩
+    · exact ⟨by simpa using StarNP.refl _, by simp, by simpa using hseg.head, hops, hsem, hlen, hne⟩
     · obtain ⟨hstar, hk, hi, hops, hsem, hlen, hne⟩ := ih hseg.tail hrest
       have hlt : k0 + 1 < vb.insts.size := by
         have := (Array.getElem?_eq_some_iff.mp hi).1; omega
@@ -206,7 +238,7 @@ theorem seqRun_stop_starN {V W : Type} {vc : VCode} {sem : ISem V W} {b : Nat} {
       refine ⟨?_, by simp; omega, by simpa [Nat.add_assoc, Nat.add_comm 1 k'] using hi, hops,
         hsem, hlen, hne⟩
       rw [show k0 + (k' + 1) = k0 + 1 + k' by omega]
-      exact .step hstep hstar
+      exact .step (InSeg.zero _ _ _ (by simp) _ _) hstep (hstar.mono fun _ h => InSeg.succ h)
 
 /-! ## The statement step with its endpoint -/
 
@@ -228,8 +260,8 @@ theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     {s' : Clif.State} (hs : Clif.step env p s = .next s') :
     ∃ (B : Clif.Block) (j : Nat) (ρ' : Nat → CV) (w' : W), f.blocks[b]? = some B ∧
       B.body[j]? = some stm ∧ k = pos f R bl b j ∧
-      StarN (VStep vc sem) (seg f R bl b j).length (.run ⟨b, k, ρ, w⟩)
-        (.run ⟨b, k + (seg f R bl b j).length, ρ', w'⟩) ∧
+      StarNP (VStep vc sem) (InSeg b k (seg f R bl b j).length) (seg f R bl b j).length
+        (.run ⟨b, k, ρ, w⟩) (.run ⟨b, k + (seg f R bl b j).length, ρ', w'⟩) ∧
       Match f ctx R gn bl A MR slots s' ⟨b, k + (seg f R bl b j).length, ρ', w'⟩ := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
@@ -432,8 +464,11 @@ statement in a counted number of steps, matching the CLIF state after the branch
 theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
-    (hnt : s.frame.term.isTry = false) {s' : Clif.State} (hs : Clif.step env p s = .next s') :
-    ∃ (n : Nat) (vs' : VState CV W), StarN (VStep vc sem) n (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+    (hnt : s.frame.term.isTry = false)
+    (htk : ∀ L, bl[b]? = some L → ∀ i ∈ L.tst'.emitted.toList, Code.akinds i = [])
+    {s' : Clif.State} (hs : Clif.step env p s = .next s') :
+    ∃ (n : Nat) (vs' : VState CV W),
+      StarNP (VStep vc sem) (NoMemAt vc) n (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
       Match f ctx R gn bl A MR slots s' vs' := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
@@ -551,6 +586,23 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   obtain ⟨ρ₁', hsr', -, hA2⟩ := (hren (huses_of hU) hAg).2 hsr
   obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_starN hvb hsegat hsr'
   obtain ⟨hmk, -⟩ := seqRun_stop_mem hsr
+  have hP : ∀ c : VConf CV W, InSeg b (pos f R bl b B.body.length)
+      (L.tst'.emitted.toList.map (·.mapRegs R)).length c → NoMemAt vc c := by
+    rintro c ⟨i', hi', ρx, wx, rfl⟩ b2 k2 ρ2 w2 he vb2 ins hb2 hins
+    cases he
+    rw [hvb] at hb2; cases hb2
+    rw [hsegat i' hi'] at hins; cases hins
+    rw [List.getElem_map, SegShape.akinds_mapRegs]
+    exact htk L hL _ (List.getElem_mem _)
+  have hPi : NoMemAt vc (.run ⟨b, pos f R bl b B.body.length + k', ρ₁',
+      w₁⟩ : VConf CV W) := by
+    intro b2 k2 ρ2 w2 he vb2 ins hb2 hins
+    cases he
+    rw [hvb] at hb2; cases hb2
+    rw [hi] at hins; cases hins
+    rw [SegShape.akinds_mapRegs]
+    exact htk L hL _ (List.mem_of_getElem? hmk)
+  have hstar := hstar.mono hP
   have hlast : L.tst'.emitted.toList.getLast? = some i := by
     rw [List.getLast?_eq_getElem?, ← hk1, Nat.add_sub_cancel]; exact hmk
   have hK : pos f R bl b B.body.length + k' + 1 = vb.insts.size := by
@@ -581,7 +633,7 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       (by rw [hbargs]; simp [List.map_map, Function.comp_def, H.shape.ren.vreg])
       (by rw [hpt]; simp [List.map_map, Function.comp_def]) (by simp; omega)
       (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
-    exact ⟨_, _, hstar.trans (StarN.step (VStep.step hvb hi hops hsem hlen
+    exact ⟨_, _, hstar.trans (StarNP.step hPi (VStep.step hvb hi hops hsem hlen
       (VNext.goto hK (by rw [hsucc_eq, htgs]; rfl) henv)) (.refl _)), hM⟩
   · rename_i fn0 args0 et0 hT
     rw [hT] at hBnt; cases hBnt
@@ -607,7 +659,7 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       have henv := edgeEnv_eq (V := CV) hvb hvbt (xs := []) (ps := [])
         (by rw [hbargs']; rfl) (by rw [hpt, hp0]; rfl) rfl (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
       rw [hargs0, hp0] at hM
-      exact ⟨_, _, hstar.trans (StarN.step (VStep.step hvb hi hops hsem hlen
+      exact ⟨_, _, hstar.trans (StarNP.step hPi (VStep.step hvb hi hops hsem hlen
         (VNext.goto hK (by rw [hsucc_eq, List.getElem?_eq_getElem hjlt, hnil hargs0]) henv))
         (.refl _)), hM⟩
     · obtain ⟨eb, heb, hebi, hebp, hebba⟩ := hedge hargs0
@@ -631,7 +683,12 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         refine VStep.step heb (by rw [hebi]; rfl) (i := .jump tl) (ops := #[]) rfl
           (H.dsem.jump tl w₂) rfl (VNext.goto (by rw [hebi]; rfl) ?_ henv2)
         rw [succOf_eq H.shape.labels hcfg heb hebback]; rfl
-      exact ⟨_, _, hstar.trans (StarN.step hstep1 (StarN.step hstep2 (.refl _))), hM⟩
+      exact ⟨_, _, hstar.trans (StarNP.step hPi hstep1 (StarNP.step (by
+        intro b2 k2 ρ2 w2 he vb2 ins hb2 hins
+        cases he
+        rw [heb] at hb2; cases hb2
+        rw [hebi] at hins; cases hins
+        rfl) hstep2 (.refl _))), hM⟩
 
 end
 
