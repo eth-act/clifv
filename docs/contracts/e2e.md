@@ -567,6 +567,48 @@ not newly proven; CLIF semantics are unchanged.
 * **Regression file**: `corpus/clif-regress/call_indirect.clif` (a vtable built with
   `func_addr` and dispatched through, a function address returned as a value, `try_call_indirect`).
 
+### Self tail calls as loops (S8a, #32, 2026-10-22, `agent/return-call-s8`)
+
+The backend rejects `return_call`. A function's `return_call` of **itself** is compiled as a
+loop before the backend, so the executable reuses the frame and the stack does not grow per
+tail call.
+
+* **Transform** (`FV/Opt/TailLoop.lean`, kept free of proofs): `selfTail f fn` — `fnN`
+  declares `f`'s own name with `f`'s parameter and return types; `eligB f` — no stack slots, no
+  `try_call`/`try_call_indirect`, the first block's parameter types are the signature's, at
+  least one self `return_call`. `loop f` (else `f`): a new entry block (id `newId f`, fresh
+  parameters `freshValue f + i` of the first block's types, `jump b0(q)`) before `f`'s blocks,
+  each self `return_call fnN(args)` replaced by `jump b0(args)`.
+* **Refinement** (`FV/E2E/TailLoopSim.lean`): `Opt.TailLoop.TailRel P P'` (each function of `P'`
+  is its counterpart of `P` or `loop` of it). `TailRel.refines`: for distinct names in `P`,
+  externs keeping the slot-placement oracle (`Clif.EnvKeepsPlace`) and entries `cs`, `cs'`
+  (`ClifEntry`, same arguments, slots, memory) with a consistent oracle stack at `cs`
+  (`SpsOk`), `Clif.runLoop B P' m cs'` returns/traps as `Clif.runLoop B P k cs` for some `m`,
+  and when `P`'s run is final, `DepthLe B P d cs → DepthLe B P' d cs'`. Simulation `TR`: equal
+  memories, callers pairwise related, frames related by `FRm m` (`false`: the same function,
+  registers extended; `true`: the eligible source function and its `loop`, terminators
+  `termT`); a source step is one target step, two when it enters a transformed function (the
+  new entry block's `jump`). The self `return_call` step (`selfTail_rel`): `Clif.run` frees no
+  slot (none), pops the activation's oracle stack pointer and pushes the same one
+  (`selfTail_mem`, from `SpsOk`), re-enters the first block with fresh registers; the target's
+  `jump` keeps its (larger) registers.
+* **Executable compiler** (`FV/Link/TailCompile.lean`, `FV/Link/TailExe.lean`,
+  `FV/Link/TailExeLd.lean`): `FnInput.tail` (the transformed function printed after the file's
+  header, used when it parses back to itself), `LinkSpec.tail`, `Link.DeadCleanup.compileExeTail S
+  = compileExe S.tail`. `compileExeTail_correct`, `compileExeTail_correct_peak`: the premises of
+  `compileExeOpt_correct{,_peak}` on `S.tail` plus `Clif.EnvKeepsPlace B.env` and `SpsOk cs`,
+  without the optimiser's register equality (the transformed entry binds the new block's
+  parameters); the conclusion is about `prog S.inputCleanup` (self `return_call`s included),
+  the peak variant with `frameDrop (art S.tail.inputCleanup f').af + D * d` for the **input**
+  run's depth `d`. `compileExeTail_total_reach_input`, `compileExeTail_total_ld`:
+  `compileExe_total_reach_input`/`file0OkB_ld` on `S.tail` (`withSizes_tail`).
+* **Witness** `Crates.DeadCleanupExeTailPeakWitness.cleanup_tail_peak_witness`: `sum(n, acc)`
+  (`return_call sum(n - 1, acc + n)`) compiled by `compileExeTail`; the input run of
+  `sum(10, 0)` returns `55` with call depth `0`; with `frameDrop + D * 0` bytes of stack the
+  executable machine returns `55` in x0.
+* **Not covered**: DEFERRED "Tail calls" (`return_call` of another function, `return_call_indirect`,
+  the `tail` convention, slots/`try_call`, the source-level and `--opt` variants).
+
 ### Callee contract with a dead stack (2026-10-02, `agent/callee-fix`)
 
 **The flaw.** `CalleeOk.os` was `OperandsSound F (callExec H) (csem F ctx X) (.call info)`: from
