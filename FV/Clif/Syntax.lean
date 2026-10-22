@@ -1,3 +1,5 @@
+import FV.Clif.Vector
+
 /-!
 # CLIF syntax (subset `clif-subset-v1`, semantics list S)
 
@@ -17,12 +19,14 @@ Conventions:
 
 namespace Clif
 
-/-- CLIF scalar types: the integers and the IEEE 754 binary32/binary64 floats (`f32`/`f64`).
-A float value is its raw bit pattern (`Val.bits`); its arithmetic is in `FV/Float`. Vectors
-and `f16`/`f128` are outside the subset. -/
+/-- CLIF types: the integers, the IEEE 754 binary32/binary64 floats (`f32`/`f64`) and the 64-
+and 128-bit vectors (`vec s`, `FV/Clif/Vector.lean`). A float or vector value is its raw bit
+pattern (`Val.bits`); float arithmetic is in `FV/Float`, vector lanes in `Clif.Vec`. `f16`/`f128`
+and dynamic vectors are outside the subset. -/
 inductive Ty where
   | i8 | i16 | i32 | i64 | i128
   | f32 | f64
+  | vec (s : VShape)
   deriving DecidableEq, Repr, Inhabited, Hashable
 
 namespace Ty
@@ -30,6 +34,7 @@ namespace Ty
 /-- Bit width of a type. -/
 def width : Ty → Nat
   | i8 => 8 | i16 => 16 | i32 => 32 | i64 => 64 | i128 => 128 | f32 => 32 | f64 => 64
+  | vec s => s.width
 
 /-- Byte width of a type. -/
 def bytes (t : Ty) : Nat := t.width / 8
@@ -37,19 +42,27 @@ def bytes (t : Ty) : Nat := t.width / 8
 /-- CLIF spelling of the type. -/
 def name : Ty → String
   | i8 => "i8" | i16 => "i16" | i32 => "i32" | i64 => "i64" | i128 => "i128"
-  | f32 => "f32" | f64 => "f64"
+  | f32 => "f32" | f64 => "f64" | vec s => s.name
 
 def ofName? : String → Option Ty
   | "i8" => some i8 | "i16" => some i16 | "i32" => some i32 | "i64" => some i64
-  | "i128" => some i128 | "f32" => some f32 | "f64" => some f64 | _ => none
+  | "i128" => some i128 | "f32" => some f32 | "f64" => some f64
+  | n => (VShape.ofName? n).map vec
 
 /-- An integer type (`i8 … i128`). -/
 @[simp] def isInt : Ty → Bool
   | i8 | i16 | i32 | i64 | i128 => true
-  | f32 | f64 => false
+  | f32 | f64 | vec _ => false
 
 /-- A float type (`f32`, `f64`). -/
-@[simp] def isFloat (t : Ty) : Bool := !t.isInt
+@[simp] def isFloat : Ty → Bool
+  | f32 | f64 => true
+  | _ => false
+
+/-- A vector type. -/
+@[simp] def isVec : Ty → Bool
+  | vec _ => true
+  | _ => false
 
 /-- The integer type of a width. -/
 def ofWidth? : Nat → Option Ty
@@ -59,19 +72,39 @@ def ofWidth? : Nat → Option Ty
 /-- The integer type of twice the width (`iconcat` result), if any. -/
 def double? : Ty → Option Ty
   | i8 => some i16 | i16 => some i32 | i32 => some i64 | i64 => some i128 | i128 => none
-  | f32 | f64 => none
+  | f32 | f64 | vec _ => none
 
 /-- The integer type of half the width (`isplit` results), if any. -/
 def half? : Ty → Option Ty
   | i8 => none | i16 => some i8 | i32 => some i16 | i64 => some i32 | i128 => some i64
-  | f32 | f64 => none
+  | f32 | f64 | vec _ => none
 
-/-- The integer type of the same width as a float type (`bitcast` partner); integers map to
-themselves. -/
+/-- The integer type of the same width as a float type (`bitcast` partner); integers and
+vectors map to themselves. -/
 def intOfWidth : Ty → Ty
   | f32 => i32 | f64 => i64 | t => t
 
-@[simp] theorem width_pos (t : Ty) : 0 < t.width := by cases t <;> decide
+@[simp] theorem width_pos (t : Ty) : 0 < t.width := by
+  cases t with
+  | vec s => cases s <;> decide
+  | _ => decide
+
+/-- A float type is not an integer type (the former definition `isFloat = !isInt`, now one
+direction: vectors are neither). -/
+theorem not_isInt_of_isFloat {t : Ty} (h : t.isFloat) : t.isInt = false := by
+  cases t <;> simp_all
+
+theorem isFloat_iff (t : Ty) : t.isFloat ↔ t = f32 ∨ t = f64 := by
+  cases t <;> simp
+
+/-- Every type is an integer, a float or a vector type. -/
+theorem isInt_or_isFloat_or_isVec (t : Ty) : t.isInt ∨ t.isFloat ∨ t.isVec := by
+  cases t <;> simp
+
+/-- Not an integer and not a vector: a float (the scalar reading of `!isInt`). -/
+theorem isFloat_of_not_isInt {t : Ty} (hi : t.isInt = false) (hv : t.isVec = false) :
+    t.isFloat := by
+  cases t <;> simp_all
 
 end Ty
 

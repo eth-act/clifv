@@ -191,7 +191,14 @@ def globalValue : GlobalValue → String
   | .tlsSymbol n off col => s!"symbol {if col then "colocated " else ""}tls %{n}{offset off}"
 
 def dataValue (x : Val) : String :=
-  if x.ty.isFloat then floatText x.ty.width x.bits else toString x.toInt
+  match x.ty with
+  | .vec s =>
+    -- `[l0 l1 …]`, lane 0 first (`Parse.dataValue`)
+    let lane (i : Nat) : String :=
+      let b := Vec.lane s.laneBits x.bits i
+      if s.isFloatLane then floatText s.laneBits b else toString b.toInt
+    "[" ++ " ".intercalate ((List.range s.lanes).map lane) ++ "]"
+  | _ => if x.ty.isFloat then floatText x.ty.width x.bits else toString x.toInt
 
 def runCommand (sig : Signature) (r : RunCommand) : String :=
   let inv := s!"%{r.func}({", ".intercalate (r.args.map dataValue)})"
