@@ -8,6 +8,7 @@ import FV.Backend.Proof.StockScalarCastDomain
 import FV.Backend.Proof.StockScalarBitDomain
 import FV.Backend.Proof.StockScalarPopcountDomain
 import FV.Backend.Proof.StockScalarMinMaxDomain
+import FV.Backend.Proof.StockScalarCmpDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -132,6 +133,16 @@ theorem minmaxBodyEligible_sound {stm : Clif.Stmt} (checked : minmaxBodyEligible
         | exact Or.inr ⟨true,false,_,_,_,rfl⟩
         | exact Or.inr ⟨true,true,_,_,_,rfl⟩
 
+/-- Actual comparison syntax constructs the universal mixed source domain. -/
+theorem cmpBodyEligible_sound {stm : Clif.Stmt} (checked : cmpBodyEligible stm = true) :
+    Stock.Proof.CmpBody.Family stm.inst := by
+  simp only [cmpBodyEligible,Bool.or_eq_true] at checked
+  rcases checked with old | cmp
+  · exact Or.inl (minmaxBodyEligible_sound old)
+  · cases inst : stm.inst <;> simp only [cmpEligible,inst] at cmp
+    all_goals try contradiction
+    next cc ty x y => exact Or.inr ⟨cc,ty,x,y,rfl⟩
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
@@ -143,10 +154,10 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     have sourceShape : ∃ xs, b.term = .ret xs := by
       cases term : b.term <;> simp_all
     obtain ⟨xs,ret⟩ := sourceShape
-    have families : ∀ stm ∈ b.body, Stock.Proof.MinMaxBody.Family stm.inst := by
+    have families : ∀ stm ∈ b.body, Stock.Proof.CmpBody.Family stm.inst := by
       intro stm member
       have supported := List.all_eq_true.mp body stm member
-      exact minmaxBodyEligible_sound supported
+      exact cmpBodyEligible_sound supported
     have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
       apply List.find?_eq_none.mpr
       intro p member
@@ -157,7 +168,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       intro any
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
-    exact domain_of_minmax (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
+    exact domain_of_cmp (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
   next => cases eligible
 
 
