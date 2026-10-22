@@ -23,17 +23,20 @@ theorem noTlsReloc : (tabOf I.results).all (fun e =>
 
 theorem tlsLoader (file : ByteArray) : TlsLoader I closedBase file (r (memOf file)) where
   tp := by
-    simp only [r, Arm.r_of_w_different (show Arm.StateField.TPIDR ≠ .PC by simp),
-      Arm.r_of_w_different (show ∀ i, Arm.StateField.TPIDR ≠ .GPR i by simp), r_setMem]
-    rfl
+    simp only [r, Arm.r_of_w_different (by decide : Arm.StateField.TPIDR ≠ .PC),
+      Arm.r_of_w_different (by decide : Arm.StateField.TPIDR ≠ .GPR 30#5),
+      Arm.r_of_w_different (by decide : Arm.StateField.TPIDR ≠ .GPR 31#5),
+      Arm.r_of_w_different (by decide : Arm.StateField.TPIDR ≠ .GPR 0#5),
+      Arm.r_of_w_different (by decide : Arm.StateField.TPIDR ≠ .GPR 1#5), r_setMem]
+    with_unfolding_all rfl
   call d s := by
     show Arm.r .TPIDR (Arm.w .PC (Arm.r .PC s + 4) s) = _
     exact Arm.r_of_w_different (by simp)
   addr g hg rl hrl ht := by
     have hm := tab_mem (okB_names Crates.AArithAbort.okB_input) hg
-    have := List.all_eq_true.1 noTlsReloc _ hm
-    have := List.all_eq_true.1 this rl hrl
-    simp [ht] at this
+    have := List.all_eq_true.1 (List.all_eq_true.1 noTlsReloc _ hm) rl hrl
+    rw [ht] at this
+    exact absurd this (by decide)
 
 theorem hooksCall (d : Option String) {m e : Arm.ArmState} (h : Sim I m e) :
     Sim I (closedBase.hooks.call d m) (closedBase.hooks.call d e) := by
