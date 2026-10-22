@@ -388,7 +388,7 @@ the `retN`/value arguments).
   under `compileExeU` and the base premises (`BaseU`, `OkUNI`), the file's tables are the
   compiled functions' (`compileExeU_tables`) and `backend_correct_program_budgetU'`/`peakU'`
   hold for the linked system of the executable. `lean-link` evaluates `unwOkB` (with dead
-  cleanup, not `--opt`): when it holds the `coverage:` line adds `exceptional edges:
+  cleanup; under `--opt` `compileExeOptU`, below): when it holds the `coverage:` line adds `exceptional edges:
   Link.DeadCleanup.compileExe_correct_unwind, …_peak`, otherwise it prints `exceptional edges
   not covered (unwOkB: <reason>)` and still writes the file. Bundles:
   `Front.bundle_correct_raw_unwind` (`FV/Front/RawExeUnwind.lean`: `bundle_correct_raw`'s
@@ -423,6 +423,22 @@ the `retN`/value arguments).
   `Front.RawExeUnwindSrcWitness.raw_caught`/`raw_unwound`. Not covered: an executable-bytes
   machine with unwinding (the theorem is about the linked machine whose tables are proven to be
   the file's).
+* **The optimising executable with unwinding (S10g, #404)**: `Link.DeadCleanup.compileExeOptU S
+  file0` is `compileExeU S.opt file0` (`compileExeOpt`, then `unwOkB` of the optimised input;
+  `compileExeOptU_placed`: what `lean-link --opt` decides) (`FV/Link/OptExeUnwind.lean`).
+  `compileExeOpt_correct_unwind`: `compileExe_correct_unwind`'s statement (`UnwindStmt`) for the
+  optimised input. **`compileExeOpt_correct_unwind_peak`**: through the mid-end — for `f` of the
+  input's program (after the `i128` legalisation, before the mid-end) and its optimisation `f'`
+  entered with the same registers, slots and memory, the linked machine with unwinding of the
+  optimised program of depth `d` (a bound on the optimised run's call depth, `DepthLeX`) refines
+  **every** run with unwinding of the input's program from `f`'s entry (`ArmRefinesU`). Proof: the
+  mid-end's simulation with handler edges at program level (`FnInput.opt_simU`,
+  `funsSimU_prog`, the entries related by `sru_entry`, `Opt.runLoopX_refinesU`) matches each
+  return, trap and exception by the optimised run's at some fuel, and
+  `compileExe_correct_unwind_peak` at that fuel. Premises beyond `compileExe_correct_unwind_peak`'s:
+  the linked CLIF environment keeps the link-time symbols (`Opt.EnvKeepsSymbolsX`), the trap
+  premise at every fuel. Witness: `Link.DeadCleanup.OptUnwindWitness.stmt`/`peak_applies`
+  (`%rec`'s optimised executable; `compileExeOptU` by `native_decide`).
 * **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
   normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
   `normArgReg`, `retN` indices below the callee's return count), and checks that a `tryCall`

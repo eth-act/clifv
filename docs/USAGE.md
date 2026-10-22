@@ -737,9 +737,13 @@ With `--lean-link` (S10f), `lake exe lean-link` also checks the executable's unw
 function, an FDE and LSDA decoding to the theorem's tables; the per-function unwinding checks)
 and then adds `exceptional edges: Link.DeadCleanup.compileExe_correct_unwind,
 Link.DeadCleanup.compileExe_correct_unwind_peak` to the `coverage:` line (otherwise it prints
-`exceptional edges not covered (unwOkB: …)` and writes the file as before). fv-demo's two
-executables pass it; it adds roughly 0.3–2 s per executable (it recomputes the pipeline's
-results).
+`exceptional edges not covered (unwOkB: …)` and writes the file as before). With
+`--opt-proven-only`, `lean-link --opt` decides `Link.DeadCleanup.compileExeOptU` (`unwOkB` of the
+optimised input) and adds `exceptional edges: Link.DeadCleanup.compileExeOpt_correct_unwind,
+Link.DeadCleanup.compileExeOpt_correct_unwind_peak` (S10g, #404). fv-demo's two executables
+pass it, linked by `lean-ld` (the default), with and without `--opt-proven-only` (2026-10-22:
+`cargo fv test --lean-link [--opt-proven-only]`, 21/21 tests); it adds roughly 0.3–2 s per
+executable (it recomputes the pipeline's results).
 
 With the shipped cg_clif (no landing pads; before the external-name tables, #221, `cargo fv`
 could still use it) or `--panic-abort` there are no landing-pad fallbacks:

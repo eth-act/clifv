@@ -17,6 +17,7 @@ import FV.E2E.OptUnwindWitness
 import FV.Front.RawExeUnwindSrc
 import FV.E2E.LegalProgXWitness
 import FV.Front.RawExeUnwindSrcWitness
+import FV.Link.OptExeUnwindWitness
 
 #print axioms Backend.Proof.UnwindTables.uleb?_uleb
 #print axioms Backend.Proof.UnwindTables.sleb?_sleb
@@ -135,3 +136,12 @@ import FV.Front.RawExeUnwindSrcWitness
 #print axioms E2E.LegalProgram.XWitness.unwound_refines -- witness: native_decide
 #print axioms Front.RawExeUnwindSrcWitness.raw_caught -- witness: native_decide
 #print axioms Front.RawExeUnwindSrcWitness.raw_unwound -- witness: native_decide
+#print axioms Link.DeadCleanup.compileExeOptU_spec
+#print axioms Link.DeadCleanup.compileExeOptU_placed
+#print axioms Link.DeadCleanup.compileExeOpt_correct_unwind
+#print axioms E2E.LinkCheck.FnInput.opt_simU
+#print axioms Link.DeadCleanup.funsSimU_prog
+#print axioms Link.DeadCleanup.sru_entry
+#print axioms Link.DeadCleanup.compileExeOpt_correct_unwind_peak
+#print axioms Link.DeadCleanup.OptUnwindWitness.stmt -- witness: native_decide
+#print axioms Link.DeadCleanup.OptUnwindWitness.peak_applies -- witness: native_decide
