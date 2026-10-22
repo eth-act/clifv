@@ -55,7 +55,7 @@ theorem fcmp_okT : LowerRuleOkT isem MR env cp p rule_lower_2176 := by
   intro f ctx hctx ii info inst hi hic _ cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
     heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
-  obtain ⟨N, rfl⟩ : ∃ N, n = N + 100 := ⟨n - 100, by omega⟩
+  obtain ⟨N, rfl⟩ : ∃ N, n = N + 400 := ⟨n - 400, by omega⟩
   obtain ⟨cc, ty, x, y, rfl, -, hok, -⟩ := fcmp_front hp hctx hi hic rfl hp.t2458
     term_2458_kind hp.t2396 term_2396_kind (m := m' + 9) hmatch
   have hp' := hp
@@ -80,7 +80,7 @@ theorem uextend_fcmp_okT : LowerRuleOkT isem MR env cp p rule_lower_1283 := by
   intro f ctx hctx ii info inst hi hic _ cfg hco m n st tr env' s1 out st' tr' hm hn hvb _ hmatch
     heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
-  obtain ⟨N, rfl⟩ : ∃ N, n = N + 100 := ⟨n - 100, by omega⟩
+  obtain ⟨N, rfl⟩ : ∃ N, n = N + 400 := ⟨n - 400, by omega⟩
   isel_inv' hp [] at hmatch heval
   rename_i hj _ hi2 hd2
   rw [hi, Option.some.injEq] at hj
