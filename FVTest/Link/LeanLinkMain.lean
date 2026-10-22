@@ -1,6 +1,7 @@
 import FV.Backend.Lowering.StockScalarNI
 import FV.Link.Compile
 import FV.Link.DeadCleanupCompile
+import FV.Link.TailCompile
 import FV.Link.OptCompile
 import FV.Link.Placed
 import FV.E2E.SrcScopeDefs
@@ -73,6 +74,15 @@ libunwind finds them (`.eh_frame_hdr`'s search), are the compiled functions'
 (`Link.EhCheck.unwFnsB`) — so `compileExeU` succeeds and the coverage adds
 `compileExe_correct_unwind`/`_peak` (the exceptional edges); otherwise the executable is still
 written (the theorems above do not depend on unwinding) and the first failing reason is printed.
+
+**Self tail calls** (S8, #32): with the cleanup compiler and without `--opt`, when a function
+`return_call`s itself (`Opt.TailLoop.eligB`), the compiler is `Link.DeadCleanup.compileExeTail`
+(`compileExe` on `Link.LinkSpec.tail`: the self tail calls as loops, each transformed function
+printed to CLIF and used only when it parses back to itself; the functions where it does not
+keep their input, `tailFallbacks:`); coverage: `compileExeTail_correct`,
+`compileExeTail_correct_peak` (about the input's program, self `return_call`s included),
+totality `compileExeTail_total_reach_input`. Such an input is outside `SrcScopeB` (`linkFreeB`),
+so `--verified` rejects it.
 -/
 
 open Lean E2E E2E.LinkCheck E2E.Elf Link
@@ -167,8 +177,10 @@ def main (args0 : List String) : IO UInt32 := do
     | .ok S => pure S
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
   -- the compiler's input: the optimised one under `--opt` (`compileExeOpt S = compileExe S.opt`),
+  -- the self tail calls as loops when a function has one (`compileExeTail S = compileExe S.tail`),
   -- with the Lean compiler's layout (`placedPar = placed`: the totality theorems' layout)
-  let SC0 := if opt then S.opt else S
+  let tailOn := deadCleanup && !opt && S.funcs.any (fun fi => Opt.TailLoop.eligB fi.func)
+  let SC0 := if opt then S.opt else if tailOn then S.tail else S
   let SC := if deadCleanup then Link.DeadCleanup.placedPar SC0 else SC0.placedPar
   let names := SC.names
   let R := SC.R
@@ -177,13 +189,16 @@ def main (args0 : List String) : IO UInt32 := do
   let compile := if deadCleanup then Link.DeadCleanup.compileExe else Link.compileExe
   let link := if deadCleanup then Link.DeadCleanup.leanLink else Link.leanLink
   let thm (s : String) := (if deadCleanup then "Link.DeadCleanup." else "Link.") ++ s
-  let exeName := if opt then "compileExeOpt" else "compileExe"
+  let exeName := if opt then "compileExeOpt" else if tailOn then "compileExeTail" else "compileExe"
   let theoremName := thm s!"{exeName}_correct"
   let compilerName := thm exeName
   let linkerName := if deadCleanup then "Link.DeadCleanup.leanLink" else "Link.leanLink"
   if opt then
     let fb := Link.optFallbacksWith S.funcs SC0.funcs
     IO.println s!"lean-link: {exe}: --opt: optFallbacks: {fb.length} of {S.funcs.length} function(s) {fb.take 5}"
+  if tailOn then
+    let fb := S.tailFallbacks
+    IO.println s!"lean-link: {exe}: self tail calls as loops: {S.tailLoops.length} function(s) {S.tailLoops.take 5}, tailFallbacks: {fb.length} {fb.take 5}"
   -- the source domain (`SrcScopeB` reads the parsed functions only, so `S.input0`'s is the
   -- compiler's input's)
   let I := S.input0
@@ -216,7 +231,7 @@ def main (args0 : List String) : IO UInt32 := do
       return 1
   -- Keep optimizer and exceptional-edge theorem variants on their retained route
   -- until their production adapters are complete.
-  let stockEnabled := !opt && SC0.funcs.any (fun fi => Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
+  let stockEnabled := !opt && !tailOn && SC0.funcs.any (fun fi => Backend.Stock.Scalar.activationEligible fi.func || Backend.Stock.Logical.activationEligible fi.func || Backend.Stock.Mixed.activationEligible fi.func || Backend.Stock.Arithmetic.eligible fi.func || Backend.Stock.ScalarAdd.activationEligible fi.func) &&
     !(SC0.funcs.any fun fi => fi.func.blocks.any fun b => b.term.isTry)
   let routes := [Backend.Stock.Scalar.lowerValidated,Backend.Stock.Logical.lowerValidated,Backend.Stock.Mixed.lowerValidated,
     Backend.Stock.Arithmetic.lowerValidated]
@@ -263,7 +278,7 @@ def main (args0 : List String) : IO UInt32 := do
           pure false
     let totalAll := if ldOk then s!"{total}; on lean-ld's output {totalLd}" else total
     let scope := if verified then s!"; input in InScopeIn (totality: {totalAll}) (--verified)" else ""
-    let unw := if unwOk && !opt then
+    let unw := if unwOk && !opt && !tailOn then
         s!"; exceptional edges: {thm "compileExe_correct_unwind"}, {thm "compileExe_correct_unwind_peak"}"
       else ""
     IO.println s!"lean-link: {exe}: coverage: {thm s!"{exeName}_correct"}, {thm s!"{exeName}_correct_peak"}{src}{scope}{unw}"

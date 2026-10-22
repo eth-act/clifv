@@ -3,7 +3,7 @@ import FV.Link.TailExe
 
 /-! # Per-run non-vacuity of the tail-loop compiler's peak-call-depth theorem (S8, #32)
 
-`Link.DeadCleanup.compileExeT` compiles the self-tail-recursive `sum(n, acc)` (`n = 0 ? acc :
+`Link.DeadCleanup.compileExeTail` compiles the self-tail-recursive `sum(n, acc)` (`n = 0 ? acc :
 return_call sum(n - 1, acc + n)`, its own declaration `fn0 = colocated %sum`), placed at 16 MiB
 with the cleanup pipeline's size of its transformed function in the placeholder executable of
 `Crates.LeanLinkWitness` (`compile_eq`). The transform turns the self `return_call` into a loop
@@ -13,7 +13,7 @@ is `closedBase` (no extern: it keeps the slot-placement oracle).
 The input program's CLIF run of `sum(10, 0)` makes ten self tail calls and returns `55` with call
 depth `0` (`depth`: a `return_call` replaces the frame, no state of the run has a caller). Outside
 code calls the compiled `sum` with `10, 0` in x0, x1 and `frameDrop + D * 0` bytes of stack — one
-frame, whatever the number of tail calls; `Link.DeadCleanup.compileExeT_correct_peak` gives the
+frame, whatever the number of tail calls; `Link.DeadCleanup.compileExeTail_correct_peak` gives the
 executable machine's return to the caller with `55` in x0 (`cleanup_tail_peak_witness`).
 -/
 
@@ -75,7 +75,7 @@ theorem link_eq : Link.DeadCleanup.leanLink spec.tail file0 = .ok file :=
 theorem inScope : InScopeP spec.tail.input0 = true := by native_decide
 
 /-- **The tail-loop executable compiler compiles `sum` to `file`.** -/
-theorem compile_eq : Link.DeadCleanup.compileExeT spec file0 = .ok file := by
+theorem compile_eq : Link.DeadCleanup.compileExeTail spec file0 = .ok file := by
   show Link.DeadCleanup.compileExe spec.tail file0 = _
   simp only [Link.DeadCleanup.compileExe, inScopePar_eq, inScope, ↓reduceIte, link_eq]
 
@@ -297,7 +297,7 @@ theorem clifEntry : ClifEntry f0 args' cs := by
   obtain ⟨-, -, -, hb, -, hsig, -, hpar, -, -, -, hsl, -⟩ := facts
   exact ⟨rfl, rfl, hsig, ⟨b0, hb, rfl, rfl, hpar, setMany0⟩, by simp [cs, hsl]⟩
 
-/-- The target entry for `compileExeT_correct_peak`. -/
+/-- The target entry for `compileExeTail_correct_peak`. -/
 theorem clifRun : ClifRun J closedBase f (r m) args' cs' where
   entry := clifEntry'
   slots := fun _ _ h => by simp [cs'] at h
@@ -331,14 +331,14 @@ theorem run_eq : run = .returned [⟨.i64, 55#64⟩] (LinkWitness.retMem run) :=
 theorem depth : Clif.DepthLe closedBase.env (prog I0) d cs :=
   Clif.depthLe_of_depthB M cs facts.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
 
-/-- **Per-run non-vacuity of `Link.DeadCleanup.compileExeT_correct_peak`** on the
-self-tail-recursive `sum`: `Link.DeadCleanup.compileExeT` produces the executable `file`, with
+/-- **Per-run non-vacuity of `Link.DeadCleanup.compileExeTail_correct_peak`** on the
+self-tail-recursive `sum`: `Link.DeadCleanup.compileExeTail` produces the executable `file`, with
 `sum`'s self tail call turned into a loop (`spec.tailLoops = [sum]`, `f0 ≠ f`); the input
 program's CLIF run of `sum(10, 0)` returns `55` with call depth `0`; and, the outside code
 calling the compiled `sum` with `10, 0` in x0, x1 and `frameDrop + D * 0` bytes of stack (one
 frame for ten tail calls), the executable machine returns to the caller with `55` in x0. -/
 theorem cleanup_tail_peak_witness :
-    Link.DeadCleanup.compileExeT spec file0 = .ok file ∧ spec.tailLoops = [n] ∧
+    Link.DeadCleanup.compileExeTail spec file0 = .ok file ∧ spec.tailLoops = [n] ∧
     (prog I0).func? n = some f0 ∧ (prog J).func? n = some f ∧ f0 ≠ f ∧
     Clif.DepthLe closedBase.env (prog I0) 0 cs ∧
     OutsideCall J (BinCheck.roByte J spec.tail.data) f (frameDrop (art J f).af + J.D * 0)
@@ -350,7 +350,7 @@ theorem cleanup_tail_peak_witness :
   obtain ⟨hf0, hf, hne, -⟩ := facts
   have hoc := outsideCall (memOf file) (BinCheck.roByte J spec.tail.data)
     facts.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have h := (Link.DeadCleanup.compileExeT_correct_peak compile_eq closedBase (base_closed _)
+  have h := (Link.DeadCleanup.compileExeTail_correct_peak compile_eq closedBase (base_closed _)
     (hooksSim_closed J) keepsPlace hf0 hf d (intact file) hoc (clifRun _) clifEntry rfl rfl
     spsOk depth M).1 _ _ run_eq
   rw [x30_r] at h

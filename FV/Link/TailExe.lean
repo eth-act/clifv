@@ -4,17 +4,17 @@ import FV.E2E.TailLoopSim
 
 /-! # The executable compiler with self tail calls as loops is correct (S8, #32)
 
-`Link.DeadCleanup.compileExeT S = compileExe S.tail` (`FV/Link/TailCompile.lean`). Its theorems
+`Link.DeadCleanup.compileExeTail S = compileExe S.tail` (`FV/Link/TailCompile.lean`). Its theorems
 are about the input's program (after the `i128` legalisation, before the tail-loop transform),
-whose functions may `return_call` themselves: `compileExeT_correct` (entries reaching no call
-cycle of the transformed program) and **`compileExeT_correct_peak`** (any entry, with
+whose functions may `return_call` themselves: `compileExeTail_correct` (entries reaching no call
+cycle of the transformed program) and **`compileExeTail_correct_peak`** (any entry, with
 `frameDrop + D·d` bytes of stack for the **input** program's peak call depth `d`: a self
 `return_call` keeps the callers, so the stack does not grow per tail call). They compose
 `Link.DeadCleanup.compileExe_correct{,_peak}` on `S.tail` with the transform's refinement
 `Opt.TailLoop.TailRel.refines` (`FV/E2E/TailLoopSim.lean`). Extra premises: the externs keep the
 slot-placement oracle (`Clif.EnvKeepsPlace`) and the input run's entry has a consistent oracle
 stack (`Opt.TailLoop.SpsOk`; `spsOk_none` without the oracle, `spsOk_entry`). Totality:
-`compileExeT_total_reach_input` (`compileExe_total_reach_input` on `S.tail`).
+`compileExeTail_total_reach_input` (`compileExe_total_reach_input` on `S.tail`).
 -/
 
 namespace Link
@@ -68,36 +68,36 @@ set_option autoImplicit false
 open E2E E2E.LinkCheck E2E.BinCheck E2E.Elf E2E.DeadCleanupBinary E2E.DeadCleanupExecBytes
   Backend LinkSpec
 
-theorem compileExeT_spec {S : LinkSpec} {file0 file : ByteArray}
-    (h : compileExeT S file0 = .ok file) : compileExe S.tail file0 = .ok file := h
+theorem compileExeTail_spec {S : LinkSpec} {file0 file : ByteArray}
+    (h : compileExeTail S file0 = .ok file) : compileExe S.tail file0 = .ok file := h
 
 theorem tailRel_prog (S : LinkSpec) :
     Opt.TailLoop.TailRel (prog S.inputCleanup) (prog S.tail.inputCleanup) := by
   rw [prog_eq, prog_eq]; exact S.tailRel
 
 /-- The linked system of the transformed input is `Ok`. -/
-theorem linkOk_tail {S : LinkSpec} {file0 file : ByteArray} (h : compileExeT S file0 = .ok file)
+theorem linkOk_tail {S : LinkSpec} {file0 file : ByteArray} (h : compileExeTail S file0 = .ok file)
     (B : BaseEnv) (hB : BaseOk (sys S.tail.inputCleanup B)) :
     (LinkSys.ofInputCleanup S.tail.inputCleanup B fun _ => True).Ok := by
-  obtain ⟨hin, hl⟩ := compileExe_spec (compileExeT_spec h)
+  obtain ⟨hin, hl⟩ := compileExe_spec (compileExeTail_spec h)
   exact okBCleanup_sound (okB_leanLink hin hl) (baseOk_F hB) fun _ _ => trivial
 
 /-- Distinct function names in the input's program (those of the transformed program). -/
-theorem nodup_tail {S : LinkSpec} {file0 file : ByteArray} (h : compileExeT S file0 = .ok file)
+theorem nodup_tail {S : LinkSpec} {file0 file : ByteArray} (h : compileExeTail S file0 = .ok file)
     (B : BaseEnv) (hB : BaseOk (sys S.tail.inputCleanup B)) :
     ((prog S.inputCleanup).funcs.map (·.name)).Nodup := by
   rw [← (tailRel_prog S).names]
   exact (linkOk_tail h B hB).names
 
 /-- **The executable compiler with self tail calls as loops is correct** (about the input's
-program, whose functions may `return_call` themselves): for `compileExeT S file0 = .ok file`, an
+program, whose functions may `return_call` themselves): for `compileExeTail S file0 = .ok file`, an
 outside call of the compiled code of the transformed function `f'` (named `n`; no call cycle
 reachable from it) refines the whole-program run of the input's program from the entry `cs` of
 its function `f` named `n` with the call's arguments, slots and memory (a consistent oracle
 stack, the externs keeping the oracle): a return is the executable's return of the same values
 with the same memory; a trap (the transformed runs' traps explicit) is the same trap. -/
-theorem compileExeT_correct {S : LinkSpec} {file0 file : ByteArray}
-    (h : compileExeT S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.tail.inputCleanup B))
+theorem compileExeTail_correct {S : LinkSpec} {file0 file : ByteArray}
+    (h : compileExeTail S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.tail.inputCleanup B))
     (hH : HooksSim S.tail.inputCleanup B) (hk : Clif.EnvKeepsPlace B.env) {n : String}
     {f f' : Clif.Function} (hf : (prog S.inputCleanup).func? n = some f)
     (hf' : (prog S.tail.inputCleanup).func? n = some f')
@@ -135,7 +135,7 @@ theorem compileExeT_correct {S : LinkSpec} {file0 file : ByteArray}
     cases m with
     | zero => exact absurd hm.symm (by simpa using hof)
     | succ K =>
-      have := compileExe_correct (compileExeT_spec h) B hB hH hf' hc K hX ho hr (htr K hm)
+      have := compileExe_correct (compileExeTail_spec h) B hB hH hf' hc K hX ho hr (htr K hm)
       rw [hm] at this
       exact this
   refine ⟨fun vals cm hrun => ?_, fun htr c hrun => ?_⟩
@@ -144,12 +144,12 @@ theorem compileExeT_correct {S : LinkSpec} {file0 file : ByteArray}
   · exact hexec (h2 c hrun) (fun h => by cases h) fun K _ => htr K
 
 /-- **The executable compiler with self tail calls as loops is correct for recursive programs,
-with the stack of the input run's peak call depth**: `compileExeT_correct` without the call-graph
+with the stack of the input run's peak call depth**: `compileExeTail_correct` without the call-graph
 premise; the outside caller provides `frameDrop + D * d` bytes of stack, where `d` bounds the call
 depth of the **input** program's run from `cs` (`Clif.DepthLe`). A self `return_call` does not
 add a caller, in the input's run as in the loop, so the stack does not grow per tail call. -/
-theorem compileExeT_correct_peak {S : LinkSpec} {file0 file : ByteArray}
-    (h : compileExeT S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.tail.inputCleanup B))
+theorem compileExeTail_correct_peak {S : LinkSpec} {file0 file : ByteArray}
+    (h : compileExeTail S file0 = .ok file) (B : BaseEnv) (hB : BaseOk (sys S.tail.inputCleanup B))
     (hH : HooksSim S.tail.inputCleanup B) (hk : Clif.EnvKeepsPlace B.env) {n : String}
     {f f' : Clif.Function} (hf : (prog S.inputCleanup).func? n = some f)
     (hf' : (prog S.tail.inputCleanup).func? n = some f') (d : Nat)
@@ -186,7 +186,7 @@ theorem compileExeT_correct_peak {S : LinkSpec} {file0 file : ByteArray}
     cases m with
     | zero => exact absurd hm.symm (by simpa using hof)
     | succ F =>
-      have := compileExe_correct_peak (compileExeT_spec h) B hB hH hf' F d hX ho hr hd' (htr F hm)
+      have := compileExe_correct_peak (compileExeTail_spec h) B hB hH hf' F d hX ho hr hd' (htr F hm)
       rw [hm] at this
       exact this
   refine ⟨fun vals cm hrun => ?_, fun htr c hrun => ?_⟩
@@ -201,11 +201,11 @@ without compiling** (`compileExe_total_reach_input` on the transformed input): o
 transformed input (`InScopeIn`), its layout (`layoutOkB`), the reach of its functions'
 references from the region (`reachOkB`), rust-lld's executable `file0` (`file0OkB`), with the
 sizes of the transformed functions' compiled code. -/
-theorem compileExeT_total_reach_input {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
+theorem compileExeTail_total_reach_input {S : LinkSpec} {file0 : ByteArray} {phs : List Phdr}
     (hin : InScopeIn (placed S.tail).input0 = true) (hl : (placed S.tail).layoutOkB = true)
     (hph : phdrs (fileRd file0) = some phs) (hf : (placed S.tail).file0OkB file0 phs = true)
     (hreach : (placed S.tail).reachOkB = true) :
-    compileExeT (S.withSizes (sizesOf S.tail)) file0 =
+    compileExeTail (S.withSizes (sizesOf S.tail)) file0 =
       .ok (patch file0 (offsetOf phs S.R) (regionOf (placed S.tail) (tpOff phs))) := by
   show compileExe (S.withSizes (sizesOf S.tail)).tail file0 = _
   rw [Link.withSizes_tail]

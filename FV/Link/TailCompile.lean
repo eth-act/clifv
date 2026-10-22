@@ -3,14 +3,14 @@ import FV.Opt.TailLoop
 
 /-! # The executable compiler with self tail calls as loops: the definition (S8, #32)
 
-`Link.DeadCleanup.compileExeT S file0`: the shipped executable compiler
+`Link.DeadCleanup.compileExeTail S file0`: the shipped executable compiler
 `Link.DeadCleanup.compileExe` on the input whose functions have their self `return_call`s turned
 into loops (`Opt.TailLoop.loop`, `FV/Opt/TailLoop.lean`): the frame is reused, so a self tail call
 does not grow the stack. As for the optimising compiler (`FnInput.opt`, `FV/Link/OptCompile.lean`),
 the input of `compileExe` is CLIF text: the transformed function is printed after the file's
 header lines and used only when the printed text parses (and legalises) back to it; otherwise the
 function keeps its input (`LinkSpec.tailFallbacks` lists those). A function without a self
-`return_call` (`Opt.TailLoop.eligB` false) keeps its input, so `compileExeT S = compileExe S` for
+`return_call` (`Opt.TailLoop.eligB` false) keeps its input, so `compileExeTail S = compileExe S` for
 an input without one. Theorems: `FV/Link/TailExe.lean`. Kept free of proofs.
 -/
 
@@ -44,7 +44,7 @@ def LinkSpec.tailLoops (S : LinkSpec) : List String :=
 namespace DeadCleanup
 
 /-- **The executable compiler with self tail calls as loops** (the shipped backend). -/
-def compileExeT (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
+def compileExeTail (S : LinkSpec) (file0 : ByteArray) : Except String ByteArray :=
   compileExe S.tail file0
 
 end DeadCleanup
