@@ -7,8 +7,9 @@ import FV.Concurrency.ArmAllocBranch
 The scope of `arm_alloc_refines_br` (`MemScopeB`: event-free items, `fence`, `ldar`/`stlr`, LL/SC
 loops, block-ending branches) extended by the **plain loads/stores**: GPR `load`/`store` and
 SIMD&FP `fpuLoad`/`fpuStore` (32/64 bits) at the final addressing modes (`unsignedOffset`,
-`unscaled`, `regReg`, `regScaled`, `regScaledExtended`, `regExtended`; `LSMode`), whose lowering is
-one access line (`memFinalize` leaves a final mode unchanged):
+`unscaled`, `regReg`, `regScaled`, `regScaledExtended`, `regExtended`; `LSMode`) and at the stack
+modes (stack-slot, `sp`, `fp` offsets) whose offset `memFinalize` encodes as an immediate
+(`LSModeOk`), so that their lowering is one access line:
 
 * `load_line_cf`, `store_line_cf`, `fpuLoad_line_cf`, `fpuStore_line_cf`: **the closed form of an
   emitted access's events** — one read (of the memory's bytes) or one write (of the data register's
@@ -19,14 +20,17 @@ one access line (`memFinalize` leaves a final mode unchanged):
   form is a one-event form** (`OneEvForm`): the allocated access's event on any memory is the
   canonical run's, since both access the same address (the base and index registers' values agree
   through `useVals`/`placeUses`) with the same data;
+* `stackFin`, `ldst_unal`, `load_stack_form` … `fpuStore_stack_form`: the stack modes lower to an
+  immediate mode on `sp` or `fp` (`SameWorld` keeps both registers); at an unaligned `sp` both the
+  allocated and the canonical access fault without an event;
 * `MemScopeLS`, `itemSim_ls`: the scope with the plain loads/stores and its per-item obligation
   (`oneEv_op` at the plain accesses, `itemSim_br`'s cases otherwise);
 * **`arm_alloc_refines_ls`**: `arm_alloc_refines_br`'s conclusion for the functions of
   `MemScopeLS`;
 * witness: `ArmAllocLSWitness.ls_premises`.
 
-The stack-slot, `sp` and `fp` offsets (`memFinalize` may lower them through `x16`, an event-free
-prefix of lines) are not in `LSMode`.
+The stack offsets that `memFinalize` lowers through `x16` (an event-free `loadConst64` prefix) are
+not covered (`ArmAllocMemLS.straightSem_pre`/`preMem` are the prefix's ingredients).
 -/
 
 namespace Concurrency.ArmAllocThread
@@ -2089,22 +2093,472 @@ theorem fpuStore_regExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : Scalar
       BitVec.setWidth_setWidth_of_le]
 
 
+/-! ## The stack modes without an `x16` prefix -/
+
+/-- An `sp`-based access with `sp` unaligned has no event (the alignment fault). -/
+theorem immEvs_unal (inst : LDST.Reg_imm_cls) (s : ArmState) (h1 : inst.Rn = 31#5)
+    (h2 : ¬ CheckSPAlignment s) : immEvs inst s = [] := by
+  unfold immEvs
+  simp only [h1, h2, not_false_eq_true, and_self, ite_true]
+  repeat' split
+  all_goals rfl
+
+/-- … of an unscaled SIMD&FP access. -/
+theorem ldsturEvs_unal (inst : Reg_unscaled_imm_cls) (s : ArmState) (h1 : inst.Rn = 31#5)
+    (h2 : ¬ CheckSPAlignment s) : ldsturEvs inst s = [] := by
+  unfold ldsturEvs
+  simp only [h1, h2, not_false_eq_true, and_self, ite_true]
+  split <;> rfl
+
+/-- The `sp`-based immediate modes (`memFinalize`'s outputs at a stack offset). -/
+def SpImm (m : AMode) : Prop := (∃ o, m = .unscaled .sp o) ∨ ∃ k, m = .unsignedOffset .sp k
+
+/-- **A plain access at an `sp`-based immediate mode with `sp` unaligned has no event** (the
+alignment fault). -/
+theorem ldst_unal {env : Env} {x : Insn} {ai : ArmInst} (ha : x.toArmInst env = .ok ai)
+    (hx : (∃ op rt m, x = .load op rt m ∧ SpImm m) ∨ (∃ op rt m, x = .store op rt m ∧ SpImm m) ∨
+      (∃ sz rt m, x = .fpuLoad sz rt m ∧ SpImm m) ∨ (∃ sz rt m, x = .fpuStore sz rt m ∧ SpImm m))
+    {y : ArmState} (hna : ¬ CheckSPAlignment y) : instEvs ai y = [] := by
+  unfold Insn.toArmInst at ha
+  cases hf : x.armFields env with
+  | error e => rw [hf] at ha; cases ha
+  | ok a0 =>
+  rw [hf] at ha
+  simp only [Functor.map, Except.map, Except.ok.injEq] at ha
+  subst ha
+  rcases hx with ⟨op, rt, m, rfl, ⟨o, rfl⟩ | ⟨o, rfl⟩⟩ | ⟨op, rt, m, rfl, ⟨o, rfl⟩ | ⟨o, rfl⟩⟩ |
+      ⟨op, rt, m, rfl, ⟨o, rfl⟩ | ⟨o, rfl⟩⟩ | ⟨op, rt, m, rfl, ⟨o, rfl⟩ | ⟨o, rfl⟩⟩ <;> (try cases op) <;>
+    simp (config := {decide := true}) only [Insn.armFields, LoadOp.fields, StoreOp.fields,
+      ldstFields, bind, Except.bind, Reg.encSP, pure, Except.pure, Insn.armFields.fpLdstSize,
+      ite_true, ite_false, Bool.false_eq_true] at hf <;>
+    (repeat' split at hf) <;> (try cases hf) <;>
+    simp only [ArmInst.norm, instEvs] <;>
+    (try split) <;>
+    first
+      | (apply immEvs_unal <;> first | exact hna | rfl)
+      | (apply ldsturEvs_unal <;> first | exact hna | rfl)
+/-- The stack modes: stack-slot, `sp` and `fp` offsets. -/
+def StackMode (m : AMode) : Prop := (∃ o, m = .slotOffset o) ∨ (∃ o, m = .spOffset o) ∨ ∃ o, m = .fpOffset o
+
+/-- **`memFinalize` at a stack mode without a prefix** gives an immediate mode on `sp` or `fp`. -/
+theorem stackFin {ctx : FnCtx} {m m' : AMode} {n : Nat} (hm : StackMode m) (hn : 0 < n)
+    (hf : memFinalize ctx m n = .ok ([], m')) :
+    FinalAM n m' ∧ (SpImm m' ∨ (∃ o, m' = .unscaled (.x 29) o) ∨ ∃ k, m' = .unsignedOffset (.x 29) k) := by
+  have key : ∀ (B : Reg) (o : Int), BaseOk B →
+      (match simm9? o with
+        | some s => (([] : List Line), AMode.unscaled B s)
+        | none => match uimm12Scaled? o n with
+          | some k => ([], .unsignedOffset B k)
+          | none => (loadConst64 (.x 16) (u64 o), .regExtended B (.x 16) .sxtx)) = ([], m') →
+      FinalAM n m' ∧ ((∃ o, m' = .unscaled B o) ∨ ∃ k, m' = .unsignedOffset B k) := by
+    intro B o hB h
+    cases h9 : simm9? o with
+    | some k9 =>
+      rw [h9] at h
+      simp only [Prod.mk.injEq, true_and] at h
+      subst h
+      have hk : -256 ≤ k9 ∧ k9 ≤ 255 := by simp only [simm9?] at h9; split at h9 <;> simp_all
+      exact ⟨⟨hB, hk.1, by omega⟩, .inl ⟨_, rfl⟩⟩
+    | none =>
+      rw [h9] at h
+      cases hu : uimm12Scaled? o n with
+      | some ku =>
+        rw [hu] at h
+        simp only [Prod.mk.injEq, true_and] at h
+        subst h
+        have hk : ku % n = 0 ∧ ku ≤ 4095 * n := by
+          simp only [uimm12Scaled?] at hu
+          split at hu
+          · rename_i hc
+            simp only [Option.some.injEq] at hu
+            subst hu
+            obtain ⟨h0, h1, h2⟩ := hc
+            exact ⟨by simpa using h2, by omega⟩
+          · cases hu
+        refine ⟨⟨hB, hk.1, ?_⟩, .inr ⟨_, rfl⟩⟩
+        have := Nat.div_le_div_right (c := n) hk.2
+        rw [Nat.mul_div_cancel _ hn] at this
+        omega
+      | none =>
+        rw [hu] at h
+        simp only [Prod.mk.injEq] at h
+        exact absurd h.1 (by rw [loadConst64_eq]; exact List.cons_ne_nil _ _)
+  rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;>
+    simp only [memFinalize, pure, Except.pure, Except.ok.injEq] at hf
+  · obtain ⟨h1, h2⟩ := key .sp _ trivial hf
+    exact ⟨h1, .inl h2⟩
+  · obtain ⟨h1, h2⟩ := key .sp _ trivial hf
+    exact ⟨h1, .inl h2⟩
+  · obtain ⟨h1, h2⟩ := key (.x 29) _ (by simp [BaseOk]) hf
+    exact ⟨h1, .inr h2⟩
+
+theorem regs1 {regs : Array Reg} (h : regs.size = 1) : ∃ a, regs = #[a] := by
+  rcases regs with ⟨_ | ⟨a, _ | ⟨_, _⟩⟩⟩ <;> simp at h
+  exact ⟨a, rfl⟩
+
+/-- A state with an aligned `sp` (for the encodings' existence). -/
+def s16 : ArmState := Arm.w (.GPR 31#5) 0#64 ArmState.default
+
+theorem s16_align : CheckSPAlignment s16 := by
+  simp [CheckSPAlignment, s16, read_gpr, Arm.r_of_w_same, Aligned]
+
+/-- The stack bases are unmasked: `SameWorld` keeps them. -/
+theorem regX_stack {F : BitVec 64 → Prop} {s w : ArmState} (h : SameWorld F s w) {B : Reg}
+    (hB : B = .sp ∨ B = .x 29) : regX s B = regX w B := by
+  rcases hB with rfl | rfl
+  · exact h.1 (.GPR 31#5) (by simp [Masked])
+  · exact h.1 (.GPR (rnum 29)) (by simp [Masked, rnum])
+
+/-- **A GPR load at a stack mode that `memFinalize` lowers without a prefix is a one-event form.** -/
+theorem load_stack_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d : Nat} {m m' : AMode}
+    {fl : Clif.MemFlags} (hm : StackMode m) (hfo : FormOk ctx (.load op (.vreg d .int) m fl) = true)
+    (hf : memFinalize ctx m op.bytes = .ok ([], m')) :
+    OneEvForm F ctx (.load op (.vreg d .int) m fl) := by
+  have hop : op ≠ .fpuLoad128 := by
+    rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> simpa [FormOk, memOk] using hfo
+  obtain ⟨hfin, hsh⟩ := stackFin hm (load_bytes_pos op) hf
+  have hops : (MInst.load op (.vreg d .int) m fl).operands = .ok #[⟨d, .int, .def, .late, .reg⟩] := by
+    rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> rfl
+  have hasg : ∀ r0 : Reg, (MInst.load op (.vreg d .int) m fl).assign #[r0] = .ok (.load op r0 m fl) := by
+    intro r0; rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> rfl
+  have hlines : ∀ (r0 : Reg) ps, (MInst.load op r0 m fl).lines ctx ps =
+      .ok ([.ins (.load op r0 m') fl.trapCode], ps) := by
+    intro r0 ps; simp [MInst.lines, hf, bind, Except.bind, pure, Except.pure]
+  have hB : ∃ B, (B = .sp ∨ B = .x 29) ∧ ((∃ o, m' = .unscaled B o) ∨ ∃ k, m' = .unsignedOffset B k) := by
+    rcases hsh with (⟨o, rfl⟩ | ⟨k, rfl⟩) | ⟨o, rfl⟩ | ⟨k, rfl⟩
+    · exact ⟨_, .inl rfl, .inl ⟨_, rfl⟩⟩
+    · exact ⟨_, .inl rfl, .inr ⟨_, rfl⟩⟩
+    · exact ⟨_, .inr rfl, .inl ⟨_, rfl⟩⟩
+    · exact ⟨_, .inr rfl, .inr ⟨_, rfl⟩⟩
+  obtain ⟨B, hBB, hm'⟩ := hB
+  have hsp : ∀ y, ¬ (B = .sp ∧ ¬ CheckSPAlignment y) → m'.base = .sp → CheckSPAlignment y := by
+    intro y h hb
+    rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;> simp only [AMode.base] at hb <;>
+      exact Classical.byContradiction fun hn => h ⟨hb, hn⟩
+  have hspimm : B = .sp → SpImm m' := by
+    rintro rfl; rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩
+    · exact .inl ⟨_, rfl⟩
+    · exact .inr ⟨_, rfl⟩
+  obtain ⟨a0, ha0, -⟩ := exec_load_line env0 ctx op hop 0 (by omega) _ hfin s16 (fun _ => s16_align)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, hasg (.x 0), hlines _ _, ha0,
+    (load_line_shape env0 ctx op hop 0 (by omega) _ hfin s16 ha0).1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inl ⟨_, _, _, rfl⟩)
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;> cases op <;> (try exact absurd rfl hop) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .load op (.x 0) m fl) hops (hasg _) (hlines _ _),
+      linesEvs_single ha0]
+    have hpu : placeUses #[⟨d, .int, .def, .late, .reg⟩] (canonRegs #[⟨d, .int, .def, .late, .reg⟩])
+        (useVals #[⟨d, .int, .def, .late, .reg⟩] #[.x p] s) (setMem M w) = setMem M w := by
+      simp [placeUses, useVals, Operand.isUse]
+    rw [hpu]
+    have hsp' : Arm.r (.GPR 31#5) w = Arm.r (.GPR 31#5) s := (hsw.1 (.GPR 31#5) (by simp [Masked])).symm
+    by_cases hna : B = .sp ∧ ¬ CheckSPAlignment s
+    · have hna' : ¬ CheckSPAlignment w := fun h => hna.2 (align_of_spEq hsp'.symm h)
+      rw [ldst_unal ha (.inl ⟨_, _, _, rfl, hspimm hna.1⟩) (by rw [check_sp_sm']; exact hna.2),
+        ldst_unal ha0 (.inl ⟨_, _, _, rfl, hspimm hna.1⟩) (by rw [check_sp_sm']; exact hna')]
+    · have hal : ∀ y, Arm.r (.GPR 31#5) y = Arm.r (.GPR 31#5) s → ¬ (B = .sp ∧ ¬ CheckSPAlignment y) :=
+        fun y hy h => hna ⟨h.1, fun h' => h.2 (align_of_spEq hy h')⟩
+      rw [load_line_cf env ctx op hop p (by omega) _ hfin ha _
+          (fun hb => by rw [check_sp_sm']; exact hsp s (hal s rfl) hb),
+        load_line_cf env0 ctx op hop 0 (by omega) _ hfin ha0 _
+          (fun hb => by rw [check_sp_sm']; exact hsp w (hal w hsp') hb)]
+      have hx := regX_stack hsw hBB
+      rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;>
+        simp [AMode.addr, regX_setMem, setMem_mem, hx]
+
+/-- **A GPR store at a stack mode that `memFinalize` lowers without a prefix is a one-event form.** -/
+theorem store_stack_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {d : Nat} {m m' : AMode}
+    {fl : Clif.MemFlags} (hm : StackMode m) (hfo : FormOk ctx (.store op (.vreg d .int) m fl) = true)
+    (hf : memFinalize ctx m op.bytes = .ok ([], m')) :
+    OneEvForm F ctx (.store op (.vreg d .int) m fl) := by
+  have hop : op ≠ .fpuStore128 := by
+    rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> simpa [FormOk, memOk] using hfo
+  obtain ⟨hfin, hsh⟩ := stackFin hm (store_bytes_pos op) hf
+  have hops : (MInst.store op (.vreg d .int) m fl).operands = .ok #[⟨d, .int, .use, .early, .reg⟩] := by
+    rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> rfl
+  have hasg : ∀ r0 : Reg, (MInst.store op (.vreg d .int) m fl).assign #[r0] = .ok (.store op r0 m fl) := by
+    intro r0; rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> rfl
+  have hlines : ∀ (r0 : Reg) ps, (MInst.store op r0 m fl).lines ctx ps =
+      .ok ([.ins (.store op r0 m') fl.trapCode], ps) := by
+    intro r0 ps; simp [MInst.lines, hf, bind, Except.bind, pure, Except.pure]
+  have hB : ∃ B, (B = .sp ∨ B = .x 29) ∧ ((∃ o, m' = .unscaled B o) ∨ ∃ k, m' = .unsignedOffset B k) := by
+    rcases hsh with (⟨o, rfl⟩ | ⟨k, rfl⟩) | ⟨o, rfl⟩ | ⟨k, rfl⟩
+    · exact ⟨_, .inl rfl, .inl ⟨_, rfl⟩⟩
+    · exact ⟨_, .inl rfl, .inr ⟨_, rfl⟩⟩
+    · exact ⟨_, .inr rfl, .inl ⟨_, rfl⟩⟩
+    · exact ⟨_, .inr rfl, .inr ⟨_, rfl⟩⟩
+  obtain ⟨B, hBB, hm'⟩ := hB
+  have hsp : ∀ y, ¬ (B = .sp ∧ ¬ CheckSPAlignment y) → m'.base = .sp → CheckSPAlignment y := by
+    intro y h hb
+    rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;> simp only [AMode.base] at hb <;>
+      exact Classical.byContradiction fun hn => h ⟨hb, hn⟩
+  have hspimm : B = .sp → SpImm m' := by
+    rintro rfl; rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩
+    · exact .inl ⟨_, rfl⟩
+    · exact .inr ⟨_, rfl⟩
+  obtain ⟨a0, ha0, -⟩ := exec_store_line env0 ctx op hop 0 (by omega) _ hfin s16 (fun _ => s16_align)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, hasg (.x 0), hlines _ _, ha0,
+    (store_line_shape env0 ctx op hop 0 (by omega) _ hfin s16 ha0).1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inl ⟨_, _, _, rfl⟩))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;> cases op <;> (try exact absurd rfl hop) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .store op (.x 0) m fl) hops (hasg _) (hlines _ _),
+      linesEvs_single ha0]
+    have hpu : placeUses #[⟨d, .int, .use, .early, .reg⟩] (canonRegs #[⟨d, .int, .use, .early, .reg⟩])
+        (useVals #[⟨d, .int, .use, .early, .reg⟩] #[.x p] s) (setMem M w) =
+        setMem M (setReg w (.x 0) (regVal s (.x p))) := by
+      simp [placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase, setReg, w_setMem]
+    rw [hpu]
+    have hsp' : Arm.r (.GPR 31#5) (setReg w (.x 0) (regVal s (.x p))) = Arm.r (.GPR 31#5) s := by
+      simp [setReg, Arm.r_of_w_different, rnum]; exact (hsw.1 (.GPR 31#5) (by simp [Masked])).symm
+    by_cases hna : B = .sp ∧ ¬ CheckSPAlignment s
+    · have hna' : ¬ CheckSPAlignment (setReg w (.x 0) (regVal s (.x p))) :=
+        fun h => hna.2 (align_of_spEq hsp'.symm h)
+      rw [ldst_unal ha (.inr (.inl ⟨_, _, _, rfl, hspimm hna.1⟩)) (by rw [check_sp_sm']; exact hna.2),
+        ldst_unal ha0 (.inr (.inl ⟨_, _, _, rfl, hspimm hna.1⟩)) (by rw [check_sp_sm']; exact hna')]
+    · have hal : ∀ y, Arm.r (.GPR 31#5) y = Arm.r (.GPR 31#5) s → ¬ (B = .sp ∧ ¬ CheckSPAlignment y) :=
+        fun y hy h => hna ⟨h.1, fun h' => h.2 (align_of_spEq hy h')⟩
+      rw [store_line_cf env ctx op hop p (by omega) _ hfin ha _
+          (fun hb => by rw [check_sp_sm']; exact hsp s (hal s rfl) hb),
+        store_line_cf env0 ctx op hop 0 (by omega) _ hfin ha0 _
+          (fun hb => by rw [check_sp_sm']; exact hsp _ (hal _ hsp') hb)]
+      have hx : regX s B = regX (setReg w (.x 0) (regVal s (.x p))) B := by
+        rw [regX_stack hsw hBB]; rcases hBB with rfl | rfl <;>
+          simp [regX, spOf, setReg, Arm.r_of_w_different, rnum]
+      rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;>
+        simp [AMode.addr, regX_setMem, setMem_mem, hx, setReg, Arm.r_of_w_same, regVal,
+          rnum, r_setMem, lo64, BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuLoad at a stack mode that `memFinalize` lowers without a prefix is a one-event form.** -/
+theorem fpuLoad_stack_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d : Nat} {m m' : AMode}
+    {fl : Clif.MemFlags} (hm : StackMode m) (hfo : FormOk ctx (.fpuLoad sz (.vreg d .float) m fl) = true)
+    (hf : memFinalize ctx m sz.bytes = .ok ([], m')) :
+    OneEvForm F ctx (.fpuLoad sz (.vreg d .float) m fl) := by
+  have hop : FpSz sz := by
+    rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> simpa [FormOk, memOk, FpSz] using hfo
+  obtain ⟨hfin, hsh⟩ := stackFin hm (by have := fpSz_bytes hop; omega) hf
+  have hops : (MInst.fpuLoad sz (.vreg d .float) m fl).operands = .ok #[⟨d, .float, .def, .late, .reg⟩] := by
+    rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> rfl
+  have hasg : ∀ r0 : Reg, (MInst.fpuLoad sz (.vreg d .float) m fl).assign #[r0] = .ok (.fpuLoad sz r0 m fl) := by
+    intro r0; rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> rfl
+  have hlines : ∀ (r0 : Reg) ps, (MInst.fpuLoad sz r0 m fl).lines ctx ps =
+      .ok ([.ins (.fpuLoad sz r0 m') fl.trapCode], ps) := by
+    intro r0 ps; simp [MInst.lines, hf, bind, Except.bind, pure, Except.pure]
+  have hB : ∃ B, (B = .sp ∨ B = .x 29) ∧ ((∃ o, m' = .unscaled B o) ∨ ∃ k, m' = .unsignedOffset B k) := by
+    rcases hsh with (⟨o, rfl⟩ | ⟨k, rfl⟩) | ⟨o, rfl⟩ | ⟨k, rfl⟩
+    · exact ⟨_, .inl rfl, .inl ⟨_, rfl⟩⟩
+    · exact ⟨_, .inl rfl, .inr ⟨_, rfl⟩⟩
+    · exact ⟨_, .inr rfl, .inl ⟨_, rfl⟩⟩
+    · exact ⟨_, .inr rfl, .inr ⟨_, rfl⟩⟩
+  obtain ⟨B, hBB, hm'⟩ := hB
+  have hsp : ∀ y, ¬ (B = .sp ∧ ¬ CheckSPAlignment y) → m'.base = .sp → CheckSPAlignment y := by
+    intro y h hb
+    rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;> simp only [AMode.base] at hb <;>
+      exact Classical.byContradiction fun hn => h ⟨hb, hn⟩
+  have hspimm : B = .sp → SpImm m' := by
+    rintro rfl; rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩
+    · exact .inl ⟨_, rfl⟩
+    · exact .inr ⟨_, rfl⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuLoad_line env0 ctx sz hop 0 (by omega) _ hfin s16 (fun _ => s16_align)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, hasg (.v 0), hlines _ _, ha0,
+    (fpuLoad_line_cf env0 ctx sz hop 0 (by omega) _ hfin ha0).1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inl ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;> rcases hop with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuLoad sz (.v 0) m fl) hops (hasg _) (hlines _ _),
+      linesEvs_single ha0]
+    have hpu : placeUses #[⟨d, .float, .def, .late, .reg⟩] (canonRegs #[⟨d, .float, .def, .late, .reg⟩])
+        (useVals #[⟨d, .float, .def, .late, .reg⟩] #[.v p] s) (setMem M w) = setMem M w := by
+      simp [placeUses, useVals, Operand.isUse]
+    rw [hpu]
+    have hsp' : Arm.r (.GPR 31#5) w = Arm.r (.GPR 31#5) s := (hsw.1 (.GPR 31#5) (by simp [Masked])).symm
+    by_cases hna : B = .sp ∧ ¬ CheckSPAlignment s
+    · have hna' : ¬ CheckSPAlignment w := fun h => hna.2 (align_of_spEq hsp'.symm h)
+      rw [ldst_unal ha (.inr (.inr (.inl ⟨_, _, _, rfl, hspimm hna.1⟩))) (by rw [check_sp_sm']; exact hna.2),
+        ldst_unal ha0 (.inr (.inr (.inl ⟨_, _, _, rfl, hspimm hna.1⟩))) (by rw [check_sp_sm']; exact hna')]
+    · have hal : ∀ y, Arm.r (.GPR 31#5) y = Arm.r (.GPR 31#5) s → ¬ (B = .sp ∧ ¬ CheckSPAlignment y) :=
+        fun y hy h => hna ⟨h.1, fun h' => h.2 (align_of_spEq hy h')⟩
+      rw [(fpuLoad_line_cf env ctx sz hop p hp _ hfin ha).2 _
+          (fun hb => by rw [check_sp_sm']; exact hsp s (hal s rfl) hb),
+        (fpuLoad_line_cf env0 ctx sz hop 0 (by omega) _ hfin ha0).2 _
+          (fun hb => by rw [check_sp_sm']; exact hsp w (hal w hsp') hb)]
+      have hx := regX_stack hsw hBB
+      rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;>
+        simp [AMode.addr, regX_setMem, setMem_mem, hx]
+
+/-- **A SIMD&FP fpuStore at a stack mode that `memFinalize` lowers without a prefix is a one-event form.** -/
+theorem fpuStore_stack_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d : Nat} {m m' : AMode}
+    {fl : Clif.MemFlags} (hm : StackMode m) (hfo : FormOk ctx (.fpuStore sz (.vreg d .float) m fl) = true)
+    (hf : memFinalize ctx m sz.bytes = .ok ([], m')) :
+    OneEvForm F ctx (.fpuStore sz (.vreg d .float) m fl) := by
+  have hop : FpSz sz := by
+    rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> simpa [FormOk, memOk, FpSz] using hfo
+  obtain ⟨hfin, hsh⟩ := stackFin hm (by have := fpSz_bytes hop; omega) hf
+  have hops : (MInst.fpuStore sz (.vreg d .float) m fl).operands = .ok #[⟨d, .float, .use, .early, .reg⟩] := by
+    rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> rfl
+  have hasg : ∀ r0 : Reg, (MInst.fpuStore sz (.vreg d .float) m fl).assign #[r0] = .ok (.fpuStore sz r0 m fl) := by
+    intro r0; rcases hm with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> rfl
+  have hlines : ∀ (r0 : Reg) ps, (MInst.fpuStore sz r0 m fl).lines ctx ps =
+      .ok ([.ins (.fpuStore sz r0 m') fl.trapCode], ps) := by
+    intro r0 ps; simp [MInst.lines, hf, bind, Except.bind, pure, Except.pure]
+  have hB : ∃ B, (B = .sp ∨ B = .x 29) ∧ ((∃ o, m' = .unscaled B o) ∨ ∃ k, m' = .unsignedOffset B k) := by
+    rcases hsh with (⟨o, rfl⟩ | ⟨k, rfl⟩) | ⟨o, rfl⟩ | ⟨k, rfl⟩
+    · exact ⟨_, .inl rfl, .inl ⟨_, rfl⟩⟩
+    · exact ⟨_, .inl rfl, .inr ⟨_, rfl⟩⟩
+    · exact ⟨_, .inr rfl, .inl ⟨_, rfl⟩⟩
+    · exact ⟨_, .inr rfl, .inr ⟨_, rfl⟩⟩
+  obtain ⟨B, hBB, hm'⟩ := hB
+  have hsp : ∀ y, ¬ (B = .sp ∧ ¬ CheckSPAlignment y) → m'.base = .sp → CheckSPAlignment y := by
+    intro y h hb
+    rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;> simp only [AMode.base] at hb <;>
+      exact Classical.byContradiction fun hn => h ⟨hb, hn⟩
+  have hspimm : B = .sp → SpImm m' := by
+    rintro rfl; rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩
+    · exact .inl ⟨_, rfl⟩
+    · exact .inr ⟨_, rfl⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuStore_line env0 ctx sz hop 0 (by omega) _ hfin s16 (fun _ => s16_align)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, hasg (.v 0), hlines _ _, ha0,
+    (fpuStore_line_cf env0 ctx sz hop 0 (by omega) _ hfin ha0).1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inr ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, rfl⟩ := regs1 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;> rcases hop with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuStore sz (.v 0) m fl) hops (hasg _) (hlines _ _),
+      linesEvs_single ha0]
+    have hpu : placeUses #[⟨d, .float, .use, .early, .reg⟩] (canonRegs #[⟨d, .float, .use, .early, .reg⟩])
+        (useVals #[⟨d, .float, .use, .early, .reg⟩] #[.v p] s) (setMem M w) =
+        setMem M (setReg w (.v 0) (regVal s (.v p))) := by
+      simp [placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase, setReg, w_setMem]
+    rw [hpu]
+    have hsp' : Arm.r (.GPR 31#5) (setReg w (.v 0) (regVal s (.v p))) = Arm.r (.GPR 31#5) s := by
+      simp [setReg, Arm.r_of_w_different, rnum]; exact (hsw.1 (.GPR 31#5) (by simp [Masked])).symm
+    by_cases hna : B = .sp ∧ ¬ CheckSPAlignment s
+    · have hna' : ¬ CheckSPAlignment (setReg w (.v 0) (regVal s (.v p))) :=
+        fun h => hna.2 (align_of_spEq hsp'.symm h)
+      rw [ldst_unal ha (.inr (.inr (.inr ⟨_, _, _, rfl, hspimm hna.1⟩))) (by rw [check_sp_sm']; exact hna.2),
+        ldst_unal ha0 (.inr (.inr (.inr ⟨_, _, _, rfl, hspimm hna.1⟩))) (by rw [check_sp_sm']; exact hna')]
+    · have hal : ∀ y, Arm.r (.GPR 31#5) y = Arm.r (.GPR 31#5) s → ¬ (B = .sp ∧ ¬ CheckSPAlignment y) :=
+        fun y hy h => hna ⟨h.1, fun h' => h.2 (align_of_spEq hy h')⟩
+      rw [(fpuStore_line_cf env ctx sz hop p hp _ hfin ha).2 _
+          (fun hb => by rw [check_sp_sm']; exact hsp s (hal s rfl) hb),
+        (fpuStore_line_cf env0 ctx sz hop 0 (by omega) _ hfin ha0).2 _
+          (fun hb => by rw [check_sp_sm']; exact hsp _ (hal _ hsp') hb)]
+      have hx : regX s B = regX (setReg w (.v 0) (regVal s (.v p))) B := by
+        rw [regX_stack hsw hBB]; rcases hBB with rfl | rfl <;>
+          simp [regX, spOf, setReg, Arm.r_of_w_different, rnum]
+      rcases hm' with ⟨o, rfl⟩ | ⟨k, rfl⟩ <;>
+        simp [AMode.addr, regX_setMem, setMem_mem, hx, setReg, Arm.r_of_w_same, regVal,
+          rnum, r_setMem, lo64, BitVec.setWidth_setWidth_of_le]
+
 /-! ## The scope with plain loads/stores and the run level -/
 
-/-- The addressing modes of the plain accesses covered here: the final modes (not the stack-slot,
-`sp` and `fp` offsets, which `memFinalize` may lower through `x16`). -/
+/-- The final addressing modes (not the stack-slot, `sp` and `fp` offsets, which `memFinalize`
+lowers). -/
 def LSMode : AMode → Bool
   | .slotOffset _ | .spOffset _ | .fpOffset _ => false
   | _ => true
 
-/-- **The plain load/store forms**: a covered (`FormOk`) GPR or SIMD&FP load/store at a final
-addressing mode (`LSMode`). -/
+/-- **The covered modes of a plain access of `bytes` bytes**: a final mode (`LSMode`), or a stack
+mode that `memFinalize` lowers without the `x16` prefix (its offset fits an immediate). -/
+def LSModeOk (ctx : FnCtx) (bytes : Nat) (m : AMode) : Prop :=
+  LSMode m = true ∨ (StackMode m ∧ ∃ m', memFinalize ctx m bytes = .ok ([], m'))
+
+/-- **The plain load/store forms**: a covered (`FormOk`) GPR or SIMD&FP load/store at a covered
+mode (`LSModeOk`). -/
 def LSForm (ctx : FnCtx) (i : MInst) : Prop :=
   FormOk ctx i = true ∧ match i with
-    | .load _ _ m _ | .store _ _ m _ | .fpuLoad _ _ m _ | .fpuStore _ _ m _ => LSMode m = true
+    | .load op _ m _ | .store op _ m _ => LSModeOk ctx op.bytes m
+    | .fpuLoad sz _ m _ | .fpuStore sz _ m _ => LSModeOk ctx sz.bytes m
     | _ => False
 
-theorem load_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {rt : Reg} {m : AMode}
+theorem load_lsFinal {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {rt : Reg} {m : AMode}
     {fl : Clif.MemFlags} (hfo : FormOk ctx (.load op rt m fl) = true) (hm : LSMode m = true) :
     OneEvForm F ctx (.load op rt m fl) := by
   rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
@@ -2133,7 +2587,16 @@ theorem load_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {rt : R
     all_goals exact load_regExt_form hfo
   | _ => first | (simp [LSMode] at hm; done) | (simp [FormOk, memOk] at hfo)
 
-theorem store_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {rt : Reg} {m : AMode}
+theorem load_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {rt : Reg}
+    {m : AMode} {fl : Clif.MemFlags} (hfo : FormOk ctx (.load op rt m fl) = true)
+    (hm : LSModeOk ctx op.bytes m) : OneEvForm F ctx (.load op rt m fl) := by
+  rcases hm with hm | ⟨hs, m', hf⟩
+  · exact load_lsFinal hfo hm
+  · rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
+    all_goals rcases hs with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> try (simp [FormOk] at hfo; done)
+    all_goals exact load_stack_form (by first | exact .inl ⟨_, rfl⟩ | exact .inr (.inl ⟨_, rfl⟩) | exact .inr (.inr ⟨_, rfl⟩)) hfo hf
+
+theorem store_lsFinal {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {rt : Reg} {m : AMode}
     {fl : Clif.MemFlags} (hfo : FormOk ctx (.store op rt m fl) = true) (hm : LSMode m = true) :
     OneEvForm F ctx (.store op rt m fl) := by
   rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
@@ -2162,7 +2625,16 @@ theorem store_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {rt :
     all_goals exact store_regExt_form hfo
   | _ => first | (simp [LSMode] at hm; done) | (simp [FormOk, memOk] at hfo)
 
-theorem fpuLoad_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode}
+theorem store_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {rt : Reg}
+    {m : AMode} {fl : Clif.MemFlags} (hfo : FormOk ctx (.store op rt m fl) = true)
+    (hm : LSModeOk ctx op.bytes m) : OneEvForm F ctx (.store op rt m fl) := by
+  rcases hm with hm | ⟨hs, m', hf⟩
+  · exact store_lsFinal hfo hm
+  · rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
+    all_goals rcases hs with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> try (simp [FormOk] at hfo; done)
+    all_goals exact store_stack_form (by first | exact .inl ⟨_, rfl⟩ | exact .inr (.inl ⟨_, rfl⟩) | exact .inr (.inr ⟨_, rfl⟩)) hfo hf
+
+theorem fpuLoad_lsFinal {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode}
     {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuLoad sz rt m fl) = true) (hm : LSMode m = true) :
     OneEvForm F ctx (.fpuLoad sz rt m fl) := by
   rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
@@ -2191,7 +2663,16 @@ theorem fpuLoad_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} 
     all_goals exact fpuLoad_regExt_form hfo
   | _ => first | (simp [LSMode] at hm; done) | (simp [FormOk, memOk] at hfo)
 
-theorem fpuStore_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode}
+theorem fpuLoad_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {rt : Reg}
+    {m : AMode} {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuLoad sz rt m fl) = true)
+    (hm : LSModeOk ctx sz.bytes m) : OneEvForm F ctx (.fpuLoad sz rt m fl) := by
+  rcases hm with hm | ⟨hs, m', hf⟩
+  · exact fpuLoad_lsFinal hfo hm
+  · rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
+    all_goals rcases hs with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> try (simp [FormOk] at hfo; done)
+    all_goals exact fpuLoad_stack_form (by first | exact .inl ⟨_, rfl⟩ | exact .inr (.inl ⟨_, rfl⟩) | exact .inr (.inr ⟨_, rfl⟩)) hfo hf
+
+theorem fpuStore_lsFinal {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode}
     {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuStore sz rt m fl) = true) (hm : LSMode m = true) :
     OneEvForm F ctx (.fpuStore sz rt m fl) := by
   rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
@@ -2219,6 +2700,15 @@ theorem fpuStore_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize}
     all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
     all_goals exact fpuStore_regExt_form hfo
   | _ => first | (simp [LSMode] at hm; done) | (simp [FormOk, memOk] at hfo)
+
+theorem fpuStore_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {rt : Reg}
+    {m : AMode} {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuStore sz rt m fl) = true)
+    (hm : LSModeOk ctx sz.bytes m) : OneEvForm F ctx (.fpuStore sz rt m fl) := by
+  rcases hm with hm | ⟨hs, m', hf⟩
+  · exact fpuStore_lsFinal hfo hm
+  · rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
+    all_goals rcases hs with ⟨o, rfl⟩ | ⟨o, rfl⟩ | ⟨o, rfl⟩ <;> try (simp [FormOk] at hfo; done)
+    all_goals exact fpuStore_stack_form (by first | exact .inl ⟨_, rfl⟩ | exact .inr (.inl ⟨_, rfl⟩) | exact .inr (.inr ⟨_, rfl⟩)) hfo hf
 
 /-- **Every plain load/store form is a one-event form.** -/
 theorem lsForm_oneEv {F : BitVec 64 → Prop} {ctx : FnCtx} {i : MInst} (h : LSForm ctx i) :
