@@ -334,3 +334,196 @@ theorem PB_foldl {base K : Nat} (sz al : Part → Nat) (nb : Part → Bool) (ta 
     omega
 
 end Link.Ld
+
+namespace Link.Ld
+
+/-! ## The placed parts -/
+
+theorem le_sum_of_mem {l : List Nat} {a : Nat} (h : a ∈ l) : a ≤ l.sum := by
+  induction l with
+  | nil => cases h
+  | cons b l ih =>
+    rcases List.mem_cons.1 h with rfl | h
+    · simp
+    · have := ih h; simp only [List.sum_cons]; omega
+
+/-- **Every placed part** is a part of a placed output section, thread-local exactly when that
+section is `.tdata` or `.tbss`, at its size and alignment. -/
+theorem foldl_slots (sz al : Part → Nat) (nb : Part → Bool) (ta : Nat) :
+    ∀ (l : List OSec) (st : PSt) (x : Slot), x ∈ (l.foldl (placeSec sz al nb ta) st).slots.toList →
+      x ∈ st.slots.toList ∨ ∃ s ∈ l, x.part ∈ s.parts ∧
+        x.tls = (s.name == ".tdata" || s.name == ".tbss") ∧ x.size = sz x.part ∧
+        x.addr % max (al x.part) 1 = 0
+  | [], _, _, h => .inl h
+  | s :: l, st, x, h => by
+    rcases foldl_slots sz al nb ta l _ x h with h | h
+    · have : placeSec sz al nb ta st s = placeIn sz al nb ta (st.openSeg s.seg) s := rfl
+      rw [this] at h
+      unfold placeIn at h
+      rcases placeParts_mem _ _ _ _ _ _ _ _ _ _ x h with h | ⟨h1, h2, -, -, -, h6, h7, -⟩
+      · left
+        unfold PSt.openSeg at h
+        split at h <;> exact h
+      · exact .inr ⟨s, List.mem_cons_self .., Array.mem_toList_iff.1 h1, by rw [h2], h7, h6⟩
+    · obtain ⟨t, ht, h'⟩ := h
+      exact .inr ⟨t, List.mem_cons_of_mem _ ht, h'⟩
+
+theorem layPre_slot (o : Opts) (st : St) (g : GcOut) {x : Slot} (hx : x ∈ (layPre o st g).pst.slots.toList) :
+    ∃ s ∈ (layPre o st g).sorted.toList, x.part ∈ s.parts ∧
+      x.tls = (s.name == ".tdata" || s.name == ".tbss") ∧
+      x.size = (layDecide st g).partSize st.files x.part ∧
+      x.addr % max (LayD.partAlign st.files x.part) 1 = 0 := by
+  have := foldl_slots ((layDecide st g).partSize st.files) (LayD.partAlign st.files) (LayD.partNb st.files)
+    (tlsAlignOf (LayD.partAlign st.files) (sortOSecs st.files (layDecide st g).osecs))
+    (sortOSecs st.files (layDecide st g).osecs).toList (PSt.init o.base) x
+    (by rw [Array.foldl_toList]; exact hx)
+  rcases this with h | h
+  · simp [PSt.init] at h
+  · exact h
+
+/-- **The placement's bounds** (`PB`) on the layout. -/
+theorem layPre_bound (o : Opts) (st : St) (g : GcOut) :
+    let L := layPre o st g
+    let D := layDecide st g
+    let sb := placeBound (D.partSize st.files) (LayD.partAlign st.files)
+      (tlsAlignOf (LayD.partAlign st.files) L.sorted) L.sorted.toList
+    PB o.base sb L.pst ∧ L.pst.va ≤ o.base + hdrSize + sb := by
+  intro L D sb
+  have hK : ∀ s ∈ L.sorted.toList, s.name = ".tbss" →
+      secBound (D.partSize st.files) (LayD.partAlign st.files) (tlsAlignOf (LayD.partAlign st.files) L.sorted) s ≤ sb := by
+    intro s hs _
+    have := le_sum_of_mem (List.mem_map.2 ⟨s, hs, rfl⟩ :
+      secBound (D.partSize st.files) (LayD.partAlign st.files) (tlsAlignOf (LayD.partAlign st.files) L.sorted) s
+        + 2 * 65536 ∈ L.sorted.toList.map fun s => secBound (D.partSize st.files) (LayD.partAlign st.files)
+          (tlsAlignOf (LayD.partAlign st.files) L.sorted) s + 2 * 65536)
+    unfold sb placeBound; omega
+  have := PB_foldl (base := o.base) (K := sb) (D.partSize st.files) (LayD.partAlign st.files) (LayD.partNb st.files)
+    (tlsAlignOf (LayD.partAlign st.files) L.sorted) L.sorted.toList (PSt.init o.base) (PB_init _ _) hK
+  rw [Array.foldl_toList] at this
+  refine ⟨this.1, ?_⟩
+  have h2 := this.2
+  simp only [PSt.init] at h2
+  exact h2
+
+end Link.Ld
+
+namespace Link.Ld
+
+/-! ## The TLS template -/
+
+/-- `.tdata` comes before `.tbss`, and at most once (`seen`: `.tdata` already placed). -/
+def tlsOrderB : Bool → List OSec → Bool
+  | _, [] => true
+  | seen, s :: l =>
+    (if s.name == ".tdata" then !seen else if s.name == ".tbss" then seen else true) &&
+      tlsOrderB (seen || s.name == ".tdata") l
+
+/-- **The TLS template's invariant** (`TD`, `TB`: bounds on `.tdata`'s and `.tbss`'s extents):
+before `.tdata` no part is thread-local; after it, the thread-local parts lie in
+`[tls.1, tls.1 + TD + TB]`, the `.tbss` start within `.tdata`'s extent, and the template's
+alignment at most `TD`. -/
+structure TI (TD TB : Nat) (seen : Bool) (st : PSt) : Prop where
+  before : seen = false → ∀ x ∈ st.slots.toList, x.tls = false
+  start : seen = true → st.tls.1 ≤ st.tbssVa ∧ st.tbssVa ≤ st.tls.1 + TD ∧ st.tls.2.2.2.2 ≤ TD
+  slots : seen = true → ∀ x ∈ st.slots.toList, x.tls = true →
+    st.tls.1 ≤ x.addr ∧ x.addr + x.size ≤ st.tls.1 + TD + TB
+
+theorem TI_init (TD TB base : Nat) : TI TD TB false (PSt.init base) where
+  before := by simp [PSt.init]
+  start := by simp
+  slots := by simp
+
+theorem TI_openSeg {TD TB : Nat} {seen : Bool} {st : PSt} (h : TI TD TB seen st) (k : Nat) :
+    TI TD TB seen (st.openSeg k) := by
+  unfold PSt.openSeg
+  split
+  · exact { before := h.before, start := h.start, slots := h.slots }
+  · exact h
+
+theorem TI_placeIn {TD TB : Nat} {seen : Bool} {st : PSt} (h : TI TD TB seen st) (sz al : Part → Nat)
+    (nb : Part → Bool) (ta : Nat) (s : OSec)
+    (hD : s.name = ".tdata" → seen = false ∧ secBound sz al ta s ≤ TD)
+    (hB : s.name = ".tbss" → seen = true ∧ secBound sz al ta s ≤ TB) :
+    TI TD TB (seen || s.name == ".tdata") (placeIn sz al nb ta st s) := by
+  have hb := placeParts_bound sz al
+  have hm := placeParts_mem sz al
+  have hA : s.parts.foldl (fun m p => max m (al p)) (if s.name == ".tdata" then ta else 1) ≤
+      (if s.name == ".tdata" then ta else 1) + (s.parts.toList.map al).sum := by
+    rw [← Array.foldl_toList]; exact foldl_max_le al _ _
+  have hS := sum_le_sum_add (l := s.parts.toList) al sz
+  have hsec : secBound sz al ta s = (if s.name == ".tdata" then ta else 1) +
+      2 * (s.parts.toList.map fun p => al p + sz p).sum := rfl
+  generalize hDd : (s.name == ".tdata") = tdata at hA hsec ⊢
+  generalize hA0 : s.parts.foldl (fun m p => max m (al p)) (if tdata then ta else 1) = a0 at hA ⊢
+  generalize hT : (s.name == ".tbss") = tbss
+  generalize hN : (tbss || s.name == ".bss" || s.parts.all nb) = nobits
+  generalize hS0 : (if tbss = true then alignUp st.tbssVa a0 else alignUp st.va a0) = start
+  generalize hO : (if tbss = true then st.off else st.off + (start - st.va)) = soff
+  have hpb := hb start soff (st.outs.size + 1) (!nobits) (tdata || tbss) s.parts.toList start st.slots
+  have hpm := hm start soff (st.outs.size + 1) (!nobits) (tdata || tbss) s.parts.toList start st.slots
+  have hpe := placeParts_mem.placeParts_end sz al start soff (st.outs.size + 1) (!nobits) (tdata || tbss)
+    s.parts.toList start st.slots
+  generalize hR : placeParts sz al start soff (st.outs.size + 1) (!nobits) (tdata || tbss) start
+    s.parts.toList st.slots = r at hpb hpm hpe
+  unfold placeIn
+  simp only [hDd, hA0, hT, hN, hS0, hO, hR]
+  cases tdata with
+  | true =>
+    have htb : tbss = false := by
+      cases tbss
+      · rfl
+      · simp only [beq_iff_eq] at hDd hT; rw [hDd] at hT; exact absurd hT (by decide)
+    subst htb
+    obtain ⟨hs, hbd⟩ := hD (by simpa using hDd)
+    subst hs
+    simp only [↓reduceIte, Bool.false_eq_true, Bool.or_true] at hS0 hsec hA ⊢
+    have h1 := le_alignUp st.va a0
+    refine { before := by simp, start := fun _ => ?_, slots := fun _ x hx htls => ?_ }
+    · simp only; omega
+    · rcases hpm x hx with hx | ⟨-, -, -, -, h5, -, -, h8⟩
+      · rw [h.before rfl x hx] at htls; cases htls
+      · simp only; omega
+  | false =>
+    simp only [Bool.false_eq_true, ↓reduceIte, Bool.or_false] at hS0 hsec hA ⊢
+    cases tbss with
+    | true =>
+      obtain ⟨hs, hbd⟩ := hB (by simpa using hT)
+      subst hs
+      have h2 := alignUp_le st.tbssVa a0
+      have h3 := le_alignUp st.tbssVa a0
+      obtain ⟨e1, e2, e3⟩ := h.start rfl
+      refine { before := by simp, start := fun _ => ⟨e1, e2, e3⟩, slots := fun _ x hx htls => ?_ }
+      rcases hpm x hx with hx | ⟨-, -, -, -, h5, -, -, h8⟩
+      · exact h.slots rfl x hx htls
+      · simp only [↓reduceIte, ite_true, if_true] at hS0 ⊢; omega
+    | false =>
+      simp only [Bool.false_eq_true, ↓reduceIte] at hS0 ⊢
+      refine { before := fun hs x hx => ?_, start := h.start, slots := fun hs x hx htls => ?_ }
+      · rcases hpm x hx with hx | ⟨-, h2, -⟩
+        · exact h.before hs x hx
+        · simpa using h2
+      · rcases hpm x hx with hx | ⟨-, h2, -⟩
+        · exact h.slots hs x hx htls
+        · rw [h2] at htls; cases htls
+
+/-- The bound on the sections named `n`. -/
+def namedBound (sz al : Part → Nat) (ta : Nat) (n : String) (l : List OSec) : Nat :=
+  ((l.filter (·.name == n)).map (secBound sz al ta)).sum
+
+theorem TI_foldl {sz al : Part → Nat} {nb : Part → Bool} {ta TD TB : Nat} :
+    ∀ (l : List OSec) (seen : Bool) (st : PSt), TI TD TB seen st → tlsOrderB seen l = true →
+      (∀ s ∈ l, s.name = ".tdata" → secBound sz al ta s ≤ TD) →
+      (∀ s ∈ l, s.name = ".tbss" → secBound sz al ta s ≤ TB) →
+      TI TD TB (seen || l.any (·.name == ".tdata")) (l.foldl (placeSec sz al nb ta) st)
+  | [], seen, st, h, _, _, _ => by simpa using h
+  | s :: l, seen, st, h, ho, hD, hB => by
+    simp only [tlsOrderB, Bool.and_eq_true] at ho
+    have h1 := TI_placeIn (TI_openSeg h s.seg) sz al nb ta s
+      (fun hn => ⟨by rw [hn] at ho; simpa using ho.1, hD s (List.mem_cons_self ..) hn⟩)
+      (fun hn => ⟨by rw [hn] at ho; simpa using ho.1, hB s (List.mem_cons_self ..) hn⟩)
+    have := TI_foldl (nb := nb) l _ _ h1 ho.2 (fun t ht => hD t (List.mem_cons_of_mem _ ht))
+      (fun t ht => hB t (List.mem_cons_of_mem _ ht))
+    simp only [List.foldl_cons, List.any_cons, Bool.or_assoc] at this ⊢
+    exact this
+
+end Link.Ld
