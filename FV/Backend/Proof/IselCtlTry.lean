@@ -293,7 +293,7 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitV
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
-  have hsI := exnTableOpnd_int he
+  have hsI : sigIntB ext.sig = true := hsig ▸ exnTableOpnd_int he
   ctl_inv [*, rule_lower_2542, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
     ctor_gen_try_call_rets_iff hsI] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
@@ -524,7 +524,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
   clear hfirst
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
-  have hsI := exnTableOpnd_int he
+  have hsI : sigIntB ext.sig = true := hsig ▸ exnTableOpnd_int he
   ctl_inv [*, rule_lower_2551, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
     ctor_gen_try_call_rets_iff hsI, ctor_box_external_name_iff] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
