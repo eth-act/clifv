@@ -170,8 +170,9 @@ Deferred:
   `Front.bundle_correct_{source,raw}{,_peak}_nobnd`, with callee traps
   `compileExe_correct_source_trap{,_peak}_nobnd`, `Front.bundle_correct_{source,raw}_trap{,_peak}_nobnd`;
   baseline `Link.compileExe_correct_source{,_peak}_nobnd` (#434), optimising
-  `Link.{DeadCleanup.}compileExeOpt_correct_source{,_peak}_nobnd`; still a premise of the
-  unwinding source theorems) and, for traps,
+  `Link.{DeadCleanup.}compileExeOpt_correct_source{,_peak}_nobnd`; with unwinding
+  `Front.bundle_correct_raw_unwind_src_nobnd`; still a premise of the CLIF half
+  `Front.raw_legal_unwind`, which has no stack premise) and, for traps,
   the source run's `NoMemTrap` and the target run's `TrapsExplicit` (run conditions);
 - runs that trap inside a `__*ti3` helper (`i128` division by zero, `sdiv MIN, -1`): the
   backend theorem excludes extern traps (`TrapsExplicit` of the legalised run). Per function
