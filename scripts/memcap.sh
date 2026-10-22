@@ -32,7 +32,12 @@ if [ -n "${FV_MEMCAP_OFF:-}" ]; then
   exec "$@"
 fi
 if systemctl --user show-environment >/dev/null 2>&1; then
-  exec systemd-run --user --scope --quiet \
+  # All scopes go into one slice ($FV_SLICE, default clifv.slice) so the sum of every agent's
+  # builds is capped too: the slice unit (~/.config/systemd/user/clifv.slice, see docs/USAGE.md)
+  # sets MemoryMax/MemoryHigh for clifv as a whole, and a runaway kills a clifv module (the
+  # scheduler retries it) instead of the global OOM killer picking random processes.
+  # Without that unit file systemd creates an uncapped slice, i.e. today's behaviour.
+  exec systemd-run --user --scope --quiet --slice="${FV_SLICE:-clifv.slice}" \
     -p MemoryMax="${FV_MEMCAP:-16G}" -p MemorySwapMax=0 -p TasksMax=infinity "$@"
 fi
 # shellcheck disable=SC2016
