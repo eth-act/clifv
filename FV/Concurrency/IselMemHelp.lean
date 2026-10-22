@@ -104,4 +104,92 @@ theorem applyR_local {A : BitVec 64} {n : Nat} (hn : n ≤ 2 ^ 64) :
     calc Xv = writeM n A (readM n A Xv) m1 := ih
       _ = writeM n A (readM n A Xv) m := hw _
 
+/-! ## The memory instruction, the access -/
+
+theorem memBytes_form {i : MInst} {n : Nat} (h : SegShape.memBytes i = some n) :
+    i.isCtl = false ∨ (∃ ty op fl a x d r1 r2, i = .atomicRmwLoop ty op fl a x d r1 r2) ∨
+      (∃ ty fl a e x d r, i = .atomicCasLoop ty fl a e x d r) := by
+  cases i <;> simp only [SegShape.memBytes, reduceCtorEq] at h
+  all_goals first
+    | exact .inl rfl
+    | exact .inr (.inl ⟨_, _, _, _, _, _, _, _, rfl⟩)
+    | exact .inr (.inr ⟨_, _, _, _, _, _, _, rfl⟩)
+
+theorem akinds_dmb {i : MInst} (h : akinds i = [.dmb]) : i = .fence := by
+  cases i <;> simp [akinds] at h ⊢
+
+theorem ofOption_none {α : Type} {m : String} : (Clif.Res.ofOption m (none : Option α)) = .stuck m :=
+  rfl
+
+/-- A memory statement that runs has an access. -/
+theorem access_of_ok {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame} {c : Clif.Mem}
+    {inst : Clif.Inst} (hthr : IselCheck.threadInstB inst = true) (hnp : pureInst inst = false)
+    (hfe : inst ≠ .fence) {r : List Clif.Val × Clif.Mem} (h : instOutcome env p fr c inst = .ok r) :
+    ∃ a n, IselClif.access fr inst = some (a, n) := by
+  cases inst <;> simp only [IselCheck.threadInstB, pureInst, Bool.not_eq_true'] at hthr hnp
+  all_goals first
+    | (exact absurd rfl hfe)
+    | (cases hthr; done)
+    | (cases hnp; done)
+    | skip
+  case load op ty fl pp off =>
+    cases hp : fr.regs pp with
+    | none => simp [instOutcome, Clif.evalInst, Clif.Frame.get, hp, ofOption_none] at h
+    | some pv => exact ⟨Clif.effAddr pv off, op.size ty, by simp [IselClif.access, hthr, hp]⟩
+  case store op ty fl x pp off =>
+    cases hp : fr.regs pp with
+    | none =>
+      simp only [instOutcome, Clif.evalInst, Clif.Frame.get, hp, ofOption_none] at h
+      cases hx : fr.getAs x ty <;> simp [hx] at h <;> cases h
+    | some pv => exact ⟨Clif.effAddr pv off, op.size ty, by simp [IselClif.access, hp]⟩
+  case atomicRmw op ty fl pp x =>
+    cases hp : fr.regs pp with
+    | none => simp [instOutcome, Clif.evalInst, Clif.Frame.get, hp, ofOption_none] at h
+    | some pv => exact ⟨Clif.effAddr pv 0, ty.bytes, by simp [IselClif.access, hthr, hp]⟩
+  case atomicCas ty fl pp ex x =>
+    cases hp : fr.regs pp with
+    | none => simp [instOutcome, Clif.evalInst, Clif.Frame.get, hp, ofOption_none] at h
+    | some pv => exact ⟨Clif.effAddr pv 0, ty.bytes, by simp [IselClif.access, hthr, hp]⟩
+  case atomicLoad ty fl pp =>
+    cases hp : fr.regs pp with
+    | none => simp [instOutcome, Clif.evalInst, Clif.Frame.get, hp, ofOption_none] at h
+    | some pv => exact ⟨Clif.effAddr pv 0, ty.bytes, by simp [IselClif.access, hthr, hp]⟩
+  case atomicStore ty fl x pp =>
+    cases hp : fr.regs pp with
+    | none =>
+      simp only [instOutcome, Clif.evalInst, Clif.Frame.get, hp, ofOption_none] at h
+      cases hx : fr.getAs x ty <;> simp [hx] at h <;> cases h
+    | some pv => exact ⟨Clif.effAddr pv 0, ty.bytes, by simp [IselClif.access, hp]⟩
+
+/-- The checked size of a statement's memory instruction is its access size, which is positive. -/
+theorem expect_access {fr : Clif.Frame} {inst : Clif.Inst} {ks : List AKind} {nE a n : Nat}
+    (he : SegShape.expect inst = some (ks, nE)) (ha : IselClif.access fr inst = some (a, n)) :
+    nE = n ∧ 0 < n := by
+  cases inst <;> simp only [SegShape.expect, reduceCtorEq, Option.some.injEq, Prod.mk.injEq,
+    IselClif.access] at he ha
+  case load op ty fl pp off =>
+    obtain ⟨-, pv, -, hh⟩ := IselClif.access_some_ite ha
+    simp only [Prod.mk.injEq] at hh
+    rw [← he.2, ← hh.2]; exact ⟨rfl, by cases op <;> cases ty <;> decide⟩
+  case store op ty fl x pp off =>
+    obtain ⟨pv, -, hh⟩ := IselClif.access_some ha
+    simp only [Prod.mk.injEq] at hh
+    rw [← he.2, ← hh.2]; exact ⟨rfl, by cases op <;> cases ty <;> decide⟩
+  case atomicRmw op ty fl pp x =>
+    obtain ⟨-, pv, -, hh⟩ := IselClif.access_some_ite ha
+    simp only [Prod.mk.injEq] at hh
+    rw [← he.2, ← hh.2]; exact ⟨rfl, by cases ty <;> decide⟩
+  case atomicCas ty fl pp ex x =>
+    obtain ⟨-, pv, -, hh⟩ := IselClif.access_some_ite ha
+    simp only [Prod.mk.injEq] at hh
+    rw [← he.2, ← hh.2]; exact ⟨rfl, by cases ty <;> decide⟩
+  case atomicLoad ty fl pp =>
+    obtain ⟨-, pv, -, hh⟩ := IselClif.access_some_ite ha
+    simp only [Prod.mk.injEq] at hh
+    rw [← he.2, ← hh.2]; exact ⟨rfl, by cases ty <;> decide⟩
+  case atomicStore ty fl x pp =>
+    obtain ⟨pv, -, hh⟩ := IselClif.access_some ha
+    simp only [Prod.mk.injEq] at hh
+    rw [← he.2, ← hh.2]; exact ⟨rfl, by cases ty <;> decide⟩
+
 end Concurrency.IselMemHelp
