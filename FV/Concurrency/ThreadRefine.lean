@@ -15,7 +15,9 @@ memory events) is realized by the target trace `trT` through the position map `�
   kinds related by `MK` (for CLIF → Arm: Cranelift's table `Maps`);
 * `mono`: `ψ` is strictly increasing on the source events (program order is preserved and
   reflected; positions without events are unconstrained);
-* `shared`/`priv` (the **footprint guarantee**): the source accesses no private location; every
+* `shared`/`priv` (the **footprint guarantee**): the source accesses no private location (a
+  fence, direction `.F`, is exempt: it accesses no memory — the Arm `dmb` event sits at address 0
+  with size 0 and no bytes — so it cannot touch private data); every
   target write that is no source event's image (spills, saved registers, the frame) writes a
   private location `Priv`. Target reads outside the image (a failed LL/SC iteration's `ldaxr`)
   may read anything;
@@ -70,7 +72,7 @@ structure Refines (MK : K → K' → Prop) (Priv : Nat → Prop) (pairT : Nat ×
   ev : ∀ p x, evAt trS p = some x → ∃ y, evAt trT (ψ p) = some y ∧ MK x.k y.k ∧ y.dir = x.dir ∧
     y.loc = x.loc ∧ y.n = x.n ∧ y.val = x.val
   mono : ∀ p q, (evAt trS p).isSome → (evAt trS q).isSome → Lt p q → Lt (ψ p) (ψ q)
-  shared : ∀ p x, evAt trS p = some x → ¬ Priv x.loc
+  shared : ∀ p x, evAt trS p = some x → x.dir ≠ .F → ¬ Priv x.loc
   priv : ∀ p y, evAt trT p = some y → y.dir = .W → (∀ q, (evAt trS q).isSome → ψ q ≠ p) →
     Priv y.loc
   len : ∀ j (h : j < trS.length), (trS[j]).length ≤ 2
@@ -144,11 +146,11 @@ theorem Refines.trans {MK1 : K → K' → Prop} {MK2 : K' → K'' → Prop} {P1 
     obtain ⟨y, hy, m2, d2, l2, n2, v2⟩ := h2.ev _ u hu
     exact ⟨y, hy, ⟨u.k, m1, m2⟩, d2.trans d1, l2.trans l1, n2.trans n1, v2.trans v1⟩
   mono p q hp hq hl := h2.mono _ _ (h1.img hp) (h1.img hq) (h1.mono p q hp hq hl)
-  shared p x hx hP := by
+  shared p x hx hF hP := by
     rcases hP with hP | hP
-    · exact h1.shared p x hx hP
-    · obtain ⟨u, hu, -, -, hl, -⟩ := h1.ev p x hx
-      exact h2.shared _ u hu (hl ▸ hP)
+    · exact h1.shared p x hx hF hP
+    · obtain ⟨u, hu, -, d1, hl, -⟩ := h1.ev p x hx
+      exact h2.shared _ u hu (by rw [d1]; exact hF) (hl ▸ hP)
   priv p y hy hW hn := by
     by_cases hi : ∃ u, (evAt trU u).isSome ∧ ψ2 u = p
     · obtain ⟨u, hu, rfl⟩ := hi
@@ -414,8 +416,13 @@ theorem realizes_of_threads {T : TSem TState SKind BVal} {PA : Traces AState AKi
         hinitW q (Nat.lt_of_lt_of_le (show q < locsC.length from he) hlen)
       rw [this] at hdR; exact absurd hdR.2 (by decide)
     | thr i j k =>
-      obtain ⟨h, x, y, hxS, -, hy, -, -, hl, -⟩ := hdata i j k he
-      have hsh := (href i h).shared _ x hxS
+      obtain ⟨h, x, y, hxS, -, hy, -, hd, hl, -⟩ := hdata i j k he
+      have hxF : x.dir ≠ .F := by
+        have hR := hdR.2
+        rw [hφ i h] at hR
+        simp only [Traces.exec, hy] at hR
+        rw [← hd, hR]; decide
+      have hsh := (href i h).shared _ x hxS hxF
       have hlocE : (PA.exec locsA rfA coA rmwA).loc (φ (.thr i j k)) = x.loc := by
         rw [hφ i h]; simp only [Traces.exec, hy, hl]
       rw [hlocE] at hloc

@@ -17,8 +17,11 @@ relation `Rel` between Arm thread states and source configurations at item bound
   write with no exclusive event in between (Armv8's `rmw` of the emitted code: a failing
   `stlxr` has no event, so a failed iteration's `ldaxr` pairs with nothing);
 * `Img`: one source step's events are events of an Arm segment (same kind, address, size and
-  bytes, in order), the segment's other writes are private, the source step's events are not,
-  and an atomic update (`Shape`: `[acqXR, relXW]`) maps to a monitor pair;
+  bytes, in order), the segment's other writes are private, the source step's events are not
+  (barrier events, direction `.F`, exempt: a `dmb` accesses no memory — its event
+  `ArmInstFoot.dmbEv` is at address 0 with size 0 and no bytes — so it cannot touch private
+  data, and nothing need keep address 0 out of the private set), and an atomic update
+  (`Shape`: `[acqXR, relXW]`) maps to a monitor pair;
 * `ItemSim`: **the per-item obligation**: from related states, every precise Arm run either
   reaches the end of the item (a source step whose events are the image of the segment, the
   states after it related; a step without Arm instructions decreases a measure `μ`), or ends
@@ -158,7 +161,7 @@ structure Img (Priv : Nat → Prop) (evs : List Ev) (tr : List (List Ev)) (φ : 
   mono : ∀ k k', k < k' → k' < evs.length → Lt (φ k) (φ k')
   priv : ∀ p y, evAt tr p = some y → y.k.dir = .W → (∀ k < evs.length, φ k ≠ p) →
     Priv y.addr.toNat
-  shared : ∀ e ∈ evs, ¬ Priv e.addr.toNat
+  shared : ∀ e ∈ evs, e.k.dir ≠ .F → ¬ Priv e.addr.toNat
   shape : Shape evs
   pair : evs.length = 2 → MonPair tr (φ 0) (φ 1)
 
@@ -175,7 +178,7 @@ structure RefA (Priv : Nat → Prop) (trS trT : List (List Ev)) (ψ : Nat × Nat
   mono : ∀ p q, (evAt trS p).isSome → (evAt trS q).isSome → Lt p q → Lt (ψ p) (ψ q)
   priv : ∀ p y, evAt trT p = some y → y.k.dir = .W → (∀ q, (evAt trS q).isSome → ψ q ≠ p) →
     Priv y.addr.toNat
-  shared : ∀ p x, evAt trS p = some x → ¬ Priv x.addr.toNat
+  shared : ∀ p x, evAt trS p = some x → x.k.dir ≠ .F → ¬ Priv x.addr.toNat
   shape : ∀ j (h : j < trS.length), Shape trS[j]
   pair : ∀ j (h : j < trS.length), trS[j].length = 2 → MonPair trT (ψ (j, 0)) (ψ (j, 1))
 
@@ -271,15 +274,15 @@ theorem RefA.cons {evs : List Ev} {trS : List (List Ev)} {A B : List (List Ev)}
       · rw [evAt_cons_succ]; exact hq
       · simp only [consMap, shift, e]
         ext <;> simp; omega
-  shared p x hx := by
+  shared p x hx hF := by
     obtain ⟨j, k⟩ := p
     cases j with
     | zero =>
       rw [evAt_cons_zero] at hx
-      exact hi.shared x (List.mem_of_getElem? hx)
+      exact hi.shared x (List.mem_of_getElem? hx) hF
     | succ j =>
       rw [evAt_cons_succ] at hx
-      exact hr.shared _ x hx
+      exact hr.shared _ x hx hF
   shape j hj := by
     cases j with
     | zero => exact hi.shape
@@ -368,10 +371,10 @@ theorem RefA.refines {trS trT : List (List Ev)} {ψ : Nat × Nat → Nat × Nat}
   mono p q hp hq hl := by
     rw [evAt_conv, Option.isSome_map] at hp hq
     exact h.mono p q hp hq hl
-  shared p x hx := by
+  shared p x hx hF := by
     rw [evAt_conv] at hx
     obtain ⟨e, he, rfl⟩ := Option.map_eq_some_iff.mp hx
-    exact h.shared p e he
+    exact h.shared p e he hF
   priv p y hy hW hn := by
     rw [evAt_conv] at hy
     obtain ⟨e, he, rfl⟩ := Option.map_eq_some_iff.mp hy

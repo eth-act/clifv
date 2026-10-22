@@ -57,7 +57,7 @@ theorem itemSim : ItemSim Policy.arm stepi (fun _ _ => True) S Rel (· = true) (
           ⟨rfl, rfl, _, he⟩, by simpa using PRun.cons hs (.inr ⟨m, hm⟩) trivial .nil, .inr rfl,
           ?_⟩)
         rw [htr, he]
-        refine ⟨fun k hk => ?_, fun k k' h1 h2 => ?_, fun p y hy hW _ => ?_, fun _ _ h => h,
+        refine ⟨fun k hk => ?_, fun k k' h1 h2 => ?_, fun p y hy hW _ => ?_, fun _ _ _ h => h,
           .inl ⟨by simp, fun e he' => ?_⟩, fun h => ?_⟩
         · obtain rfl : k = 0 := by simpa using hk
           rfl
