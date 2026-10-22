@@ -76,7 +76,11 @@ private theorem old_not_special {sig : Clif.Signature} {b k : Nat} {i : MInst}
   | bitfieldMove sz op rd rn a b => cases checked
   | extend rd rn sg fromB toB => cases checked
   | bitRR op sz rd rn => cases checked
-  | movToFpu .. | movFromVec .. | vecMisc .. | vecLanes .. | vecRRR .. => cases checked
+  | movToFpu rd rn sz => cases checked
+  | movFromVec rd rn idx sz => cases checked
+  | vecMisc op rd rn sz => cases checked
+  | vecLanes op rd rn sz => cases checked
+  | vecRRR op rd rn rm sz => cases checked
   | aluRRR op sz rd rn rm => cases op <;> first | rfl | cases checked
   | aluRRImmShift op sz rd rn imm => cases op <;> first | rfl | cases checked
   | _ => rfl

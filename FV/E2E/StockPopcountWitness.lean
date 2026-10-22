@@ -59,7 +59,7 @@ private theorem family (config : Configuration) :
     rcases popcount with rfl | rfl | rfl | rfl
     all_goals first
       | exact .inr ⟨_,_,rfl⟩
-      | exact .inl (.inl (.inl (.inl (.inl (.inl (.inl (.inr (.inr ⟨.bxor,_,_,_,rfl⟩)))))))))
+      | exact .inl (.inl (.inl (.inl (.inl (.inl (.inl (.inr (.inr ⟨.bxor,_,_,_,rfl⟩))))))))
 
 /-- Actual checked/allocated/emitted artifacts inhabit the complete mixed
 semantic domain in every ABI and cleanup mode, beyond the legacy checker. -/

@@ -1,4 +1,5 @@
 import FV.Backend.Proof.StockPopcountSourceValues
+import FV.Backend.Proof.StockScopedPopcountSourceValues
 import FV.Backend.Proof.LowerSim
 namespace Backend.Stock.Proof.ScalarPopcount.NonzeroWitness
 open Backend.Proof Backend.Proof.Driver Isle Isle.Interp Isle.Aarch64
@@ -261,6 +262,58 @@ theorem stock_lower_popcount_source_witness (ty : Clif.Ty) (aliased : Bool)
   obtain ⟨actual,d,ρ',found,output,bounds,execution,value,memEq,kept,post⟩ := stock_lower_popcount_source_by_instruction input.run
     (scope ty aliased supported) (dominated ty aliased supported) input.events input.records block statement current
     input.source input.clif input.results rfl input.mapped input.recorded input.emitted self restrictedDFG guarded sourceStep
+  have actualEq := Clif.Res.ok.inj (found.symm.trans getX)
+  subst actual
+  exact ⟨input.result,input.event,input.record,input.step,d,ρ',fr',input.run,scope ty aliased supported,dominated ty aliased supported,
+    input.events,input.records,input.recorded,input.emitted,input.selectedId,output,bounds,execution,value,sourceStep,post,fun yes => by
+      subst aliased
+      have separate : (192 : Nat) ≠ 194+popcountAlloc ty.width := by unfold popcountAlloc; split <;> (try simp only [ite_true,ite_false,Bool.false_eq_true]) <;> omega
+      simp [regs,separate]⟩
+/-- The same original inputs inhabit the scoped scheduling-state transfer at all
+four widths, including prior aliases and dirty upper machine bits. -/
+theorem stock_lower_popcount_source_witness_scoped (ty : Clif.Ty) (aliased : Bool)
+    (supported : ty = .i8 ∨ ty = .i16 ∨ ty = .i32 ∨ ty = .i64) :
+    ∃ (result : Result) (event : BlockScanEvent) (record : ScanRecord) (step : Step) (d : Nat) (ρ' : Nat → CV) (fr' : Clif.Frame),
+      Stock.lower (function ty aliased) = .ok result ∧ LowerScope (function ty aliased) ∧ Dominated (function ty aliased) ∧
+      event ∈ result.blockScans.toList ∧ record ∈ event.output.records ∧
+      record.output.step = some step ∧ step.decision = .emitted ∧
+      step.rules.getLast? = some (popcountRule ty.width).id ∧ step.results = [[.vreg d .int]] ∧
+      (record.input.base.nextVreg ≤ d ∧ d < record.output.state.base.nextVreg) ∧
+      PRun (fun _ => True) ispec (record.output.emitted.toList.map (·.mapRegs
+        (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1)))) (regs ty aliased) ρ' ∧
+      VHolds ⟨ty,Clif.Sem.unary .popcnt (BitVec.ofInt ty.width (-91))⟩ (ρ' d) ∧
+      SourceInstResult Clif.Env.empty {funcs := []} event.ctx record.inst
+        (frame ty aliased,Clif.Mem.empty) (fr',Clif.Mem.empty) ∧
+      ValuesHeld (fun v => Demanded record.input v ∧
+        v ∈ availOf (function ty aliased) (availIn (function ty aliased) result.ctx) 0 (rootIndex aliased+1)) event.ctx fr'
+        (fun k => ρ' (aliasNum result.final.alias k)) ∧
+      (aliased = true → regs ty aliased 192 = 0) := by
+  obtain ⟨input⟩ := inputs ty aliased supported
+  have sameFrame := frame_available ty aliased input.result.ctx
+  have getX : (restrict (frame ty aliased) (availOf (function ty aliased) (availIn (function ty aliased) input.result.ctx) 0
+      (rootIndex aliased))).getAs 7 ty = .ok (BitVec.ofInt ty.width (-91)) := by
+    have original : (frame ty aliased).getAs 7 ty = .ok (BitVec.ofInt ty.width (-91)) := by
+      rcases supported with rfl | rfl | rfl | rfl <;> rfl
+    exact (getAs_congr (fr := frame ty aliased) (x := 7) (ty := ty) (congrFun sameFrame 7)).trans original
+  have guarded := input.held.mono (fun v (h : Demanded input.record.output.state v ∧
+      v ∈ availOf (function ty aliased) (availIn (function ty aliased) input.result.ctx) 0 (rootIndex aliased)) => h.1)
+  let val : Clif.Val := ⟨ty,Clif.Sem.unary .popcnt (BitVec.ofInt ty.width (-91))⟩
+  let fr' : Clif.Frame := {frame ty aliased with regs := (frame ty aliased).regs.set 100 val,body := []}
+  have evaluated : instOutcome Clif.Env.empty {funcs := []} (frame ty aliased) Clif.Mem.empty (instruction ty) =
+      .ok ([val],Clif.Mem.empty) := by rcases supported with rfl | rfl | rfl | rfl <;> rfl
+  have sourceStep : SourceInstResult Clif.Env.empty {funcs := []} input.event.ctx input.record.inst
+      (frame ty aliased,Clif.Mem.empty) (fr',Clif.Mem.empty) :=
+    ⟨input.info,instruction ty,[val],(frame ty aliased).regs.set 100 val,[],input.source,input.clif,
+      by rw [input.results]; rfl,evaluated,by rw [input.results]; rfl,rfl⟩
+  have block : (function ty aliased).blocks[0]? = some ((function ty aliased).blocks[0]!) := rfl
+  have statement : ((function ty aliased).blocks[0]!).body[rootIndex aliased]? = some (⟨[100],instruction ty⟩ : Clif.Stmt) := by
+    cases aliased <;> rfl
+  have current : input.record.inst = blockStart (function ty aliased) 0 + rootIndex aliased := by
+    simpa only [blockStart,List.take_zero,List.map_nil,List.sum_nil,Nat.zero_add] using input.current
+  have self : Refines (fun _ => True) ispec := fun _ _ _ _ w' _ h => ⟨w',h,SameWorld.refl _ _⟩
+  obtain ⟨actual,d,ρ',found,output,bounds,execution,value,memEq,kept,post⟩ := Backend.Stock.Proof.Popcount.source_by_instruction input.run
+    (scope ty aliased supported) (dominated ty aliased supported) input.events input.records block statement current
+    input.source input.clif input.results rfl input.mapped input.recorded input.emitted self guarded sourceStep
   have actualEq := Clif.Res.ok.inj (found.symm.trans getX)
   subst actual
   exact ⟨input.result,input.event,input.record,input.step,d,ρ',fr',input.run,scope ty aliased supported,dominated ty aliased supported,

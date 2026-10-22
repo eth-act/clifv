@@ -1,3 +1,5 @@
+import FV.Backend.Proof.StockPopcountZeroWitness
+import FV.Backend.Proof.StockPopcountNonzeroWitness
 import FV.E2E.StockPopcountWitness
 
 #print axioms Backend.Stock.Proof.UnchangedHelper.observe
@@ -53,3 +55,6 @@ import FV.E2E.StockPopcountWitness
 #print axioms E2E.StockPopcountNIWitness.compiled_semantic_exists -- witness: native_decide
 #print axioms E2E.StockPopcountNIWitness.source_family
 #print axioms Backend.Stock.Scalar.popcountBodyEligible_sound
+
+#print axioms Backend.Stock.Proof.ScalarPopcount.ZeroWitness.stock_lower_popcount_source_witness_scoped
+#print axioms Backend.Stock.Proof.ScalarPopcount.NonzeroWitness.stock_lower_popcount_source_witness_scoped
