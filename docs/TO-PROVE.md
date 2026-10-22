@@ -732,6 +732,19 @@ author's estimate, not measured), **Risk**.
   linker's output (`FV/Link/ExeLd.lean`, `FV/Link/DeadCleanupExeLd.lean`). **3d (#270):** `lean-ld`
   is `--lean-link`'s default (`--rust-lld` opts out); `lean-link --ld` decides `Plan.specOkB` on
   every executable (survey 18/18, fv-demo 2/2, deps 4/4 hold; tests identical to rust-lld's).
+  **A1 (#409):** the totality on `lean-ld`'s output without assuming the link:
+  **`Link.DeadCleanup.compileExe_total_ldIn`** (`FV/Link/ExeLdIn.lean`) — when resolution and
+  `--gc-sections` succeed, the layout's references resolve (`layRefsB`) and its relocations apply
+  (`relsInB`; both decided without addresses), the headers and tables fit (`fitsB`) and the link
+  spec's conditions hold on `lean-ld`'s placement of the inputs (`specPreB`), and the compiler's
+  input conditions hold on the link spec at the placement's symbols (`ldSpec`: `R` and the outside
+  addresses are values of the plan's symbols, so the outside part of `symsPlanB` holds by
+  construction), then `link o ins = .ok r` and `compileExe` succeeds on `r.img.write`. Steps:
+  `layout_ok`, `assemble_layout_ok`, `relIn_relocOkB`, `layout_relsOk`, `link_okIn`,
+  `specOkB_of_pre`. Witness `compileExe_total_ldIn_witness` (two clang-assembled objects, the
+  region made by `cargo fv`'s program-part steps). `lean-link --ld` decides the premises on every
+  executable it compiles with the cleanup compiler (the `atSyms` addresses are the compiled spec's,
+  `ldSpec_self`).
 
 - **Depends:** L2a on V1–V6; L2b independent of them. **Risk:** L2b scope (archive handling, all
   relocation types std uses, TLS layout, `.eh_frame`).
