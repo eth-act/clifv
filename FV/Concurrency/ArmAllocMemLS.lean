@@ -511,77 +511,51 @@ theorem straightSem_pre {F : BitVec 64 → Prop} {ctx : FnCtx} {i ic : MInst} {u
 
 /-! ## The events of the plain load/store instructions on any memory -/
 
-/-- **The events of a plain GPR load** (`lsb opc 1 = 1`, so a read) on `setMem M s` are the single
-read event at the base register's value plus the offset's value, of the access size, reading the
-memory `M` — so they only depend on the base and offset values (and the `sp`-alignment branch). -/
-theorem immEvs_gprR_eq (size opc : BitVec 2) (Rn Rt Rn' Rt' : BitVec 5)
+/-- **The events of a plain GPR load on any memory** are the single read event at the base
+register's value plus the offset's value, of the access size, reading the memory — so they only
+depend on the base and offset values (and the `sp`-alignment branch). -/
+theorem immEvs_load_eq (op : LoadOp) (hop : op ≠ .fpuLoad128) (Rn Rt Rn' Rt' : BitVec 5)
     (imm imm' : Arm.LDST.Reg_offset) (M : Memory) (s y : ArmState)
     (ha : read_gpr 64 Rn s = read_gpr 64 Rn' y)
-    (hi : imm.value size.toNat s = imm'.value size.toNat y)
-    (hsig : Arm.BitVec.lsb opc 1 = 1#1)
+    (hi : imm.value op.fields.1.toNat s = imm'.value op.fields.1.toNat y)
     (hRn : (Rn = 31#5) ↔ (Rn' = 31#5))
     (h31s : Rn = 31#5 → CheckSPAlignment s) (h31y : Rn' = 31#5 → CheckSPAlignment y) :
-    immEvs (gprCls size opc Rn Rt imm) (setMem M s) =
-      immEvs (gprCls size opc Rn' Rt' imm') (setMem M y) := by
-  unfold immEvs
-  simp (config := {decide := true}) only [gprCls, hsig, if_false, and_true, not_false,
-    check_sp_sm']
-  split
-  · rfl
-  · split
-    · rfl
-    · by_cases hA1 : Rn = 31#5 ∧ ¬ CheckSPAlignment s
-      · have h31' : Rn' = 31#5 := hRn.mp hA1.1
-        have hny : ¬ CheckSPAlignment y := fun h => hA1.2 (by rw [check_sp_sm' M y]; exact h)
-        rw [if_pos hA1, if_pos ⟨h31', hny⟩]
+    immEvs (gprCls op.fields.1 op.fields.2.2 Rn Rt imm) (setMem M s) =
+      immEvs (gprCls op.fields.1 op.fields.2.2 Rn' Rt' imm') (setMem M y) := by
+  cases op <;> simp at hop <;> simp only [LoadOp.fields] at hi <;>
+  · simp (config := {decide := true}) only [immEvs, gprCls, LoadOp.fields, log2,
+      Arm.LDST.reg_imm_constrain_unpredictable, check_sp_sm', hRn, Bool.false_eq_true,
+      not_false_eq_true, and_true, and_false, false_and, decide_eq_true_eq, if_false, ite_true]
+    by_cases hA1 : Rn' = 31#5 ∧ ¬ CheckSPAlignment s
+    · exact absurd hA1 (fun h => h.2 (h31s (hRn.mpr h.1)))
+    · by_cases hA2 : Rn' = 31#5 ∧ ¬ CheckSPAlignment y
+      · exact absurd hA2 (fun h => h.2 (h31y h.1))
+      · rw [if_neg hA1, if_neg hA2]
+        simp only [read_gpr_sm, offset_value_sm, setMem_mem]
+        rw [ha, hi]
         rfl
-      · by_cases hA2 : Rn' = 31#5 ∧ ¬ CheckSPAlignment y
-        · rw [if_neg hA1, if_pos hA2]
-          rfl
-        · rw [if_neg hA1, if_neg hA2]
-          have haddr : read_gpr 64 Rn (setMem M s) + imm.value size.toNat (setMem M s) =
-              read_gpr 64 Rn' (setMem M y) + imm'.value size.toNat (setMem M y) := by
-            simp only [read_gpr_sm, offset_value_sm]
-            rw [ha, hi]
-          simp only [List.cons.injEq, Ev.mk.injEq]
-          exact ⟨rfl, haddr, rfl, by rw [haddr]⟩
 
-/-- **… of a plain GPR store** (`lsb opc 1 = 0`, `lsb opc 0 = 0`, so a write of the data
-register's bytes). -/
-theorem immEvs_gprW_eq (size opc : BitVec 2) (Rn Rt Rn' Rt' : BitVec 5)
+/-- **… of a plain GPR store**: a write of the data register's bytes. -/
+theorem immEvs_store_eq (op : StoreOp) (hop : op ≠ .fpuStore128) (Rn Rt Rn' Rt' : BitVec 5)
     (imm imm' : Arm.LDST.Reg_offset) (M : Memory) (s y : ArmState)
     (ha : read_gpr 64 Rn s = read_gpr 64 Rn' y)
     (hd : Arm.r (Arm.StateField.GPR Rt) s = Arm.r (Arm.StateField.GPR Rt') y)
-    (hi : imm.value size.toNat s = imm'.value size.toNat y)
-    (hnsig : ¬ (Arm.BitVec.lsb opc 1 = 1#1)) (hopc0 : Arm.BitVec.lsb opc 0 = 0#1)
+    (hi : imm.value op.fields.1.toNat s = imm'.value op.fields.1.toNat y)
     (hRt : Rt ≠ 31#5 ∧ Rt' ≠ 31#5)
     (hRn : (Rn = 31#5) ↔ (Rn' = 31#5))
     (h31s : Rn = 31#5 → CheckSPAlignment s) (h31y : Rn' = 31#5 → CheckSPAlignment y) :
-    immEvs (gprCls size opc Rn Rt imm) (setMem M s) =
-      immEvs (gprCls size opc Rn' Rt' imm') (setMem M y) := by
-  unfold immEvs
-  simp (config := {decide := true}) only [gprCls, hnsig, hopc0, if_false, and_true, not_false,
-    check_sp_sm']
-  split
-  · rfl
-  · split
-    · rfl
-    · by_cases hA1 : Rn = 31#5 ∧ ¬ CheckSPAlignment s
-      · have h31' : Rn' = 31#5 := hRn.mp hA1.1
-        have hny : ¬ CheckSPAlignment y := fun h => hA1.2 (by rw [check_sp_sm' M y]; exact h)
-        rw [if_pos hA1, if_pos ⟨h31', hny⟩]
-        rfl
-      · by_cases hA2 : Rn' = 31#5 ∧ ¬ CheckSPAlignment y
-        · rw [if_neg hA1, if_pos hA2]
-          rfl
-        · rw [if_neg hA1, if_neg hA2]
-          have haddr : read_gpr 64 Rn (setMem M s) + imm.value size.toNat (setMem M s) =
-              read_gpr 64 Rn' (setMem M y) + imm'.value size.toNat (setMem M y) := by
-            simp only [read_gpr_sm, offset_value_sm]
-            rw [ha, hi]
-          simp only [List.cons.injEq, Ev.mk.injEq]
-          refine ⟨rfl, haddr, rfl, ?_⟩
-          simp only [ldst_read, read_gpr_zr_sm, read_gpr]
-          rw [if_neg hRt.1, if_neg hRt.2, hd]
+    immEvs (gprCls op.fields.1 op.fields.2.2 Rn Rt imm) (setMem M s) =
+      immEvs (gprCls op.fields.1 op.fields.2.2 Rn' Rt' imm') (setMem M y) := by
+  cases op <;> simp at hop <;> simp only [StoreOp.fields] at hi <;>
+  · simp (config := {decide := true}) only [immEvs, gprCls, StoreOp.fields, log2,
+      Arm.LDST.reg_imm_constrain_unpredictable, check_sp_sm', hRn, Bool.false_eq_true,
+      not_false_eq_true, and_true, and_false, false_and, decide_eq_true_eq, if_false, ite_true]
+    by_cases hA1 : Rn' = 31#5 ∧ ¬ CheckSPAlignment s
+    · exact absurd hA1 (fun h => h.2 (h31s (hRn.mpr h.1)))
+    · by_cases hA2 : Rn' = 31#5 ∧ ¬ CheckSPAlignment y
+      · exact absurd hA2 (fun h => h.2 (h31y h.1))
+      · rw [if_neg hA1, if_neg hA2]
+        simp (config := {decide := true}) [gprCls, ldst_read, read_gpr_zr_sm, read_gpr,
+          read_gpr_sm, offset_value_sm, setMem_mem, ha, hi, hd, if_pos hRt.1, if_pos hRt.2]
 
 end Concurrency.ArmAllocThread
