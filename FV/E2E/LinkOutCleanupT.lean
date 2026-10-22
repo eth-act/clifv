@@ -73,7 +73,7 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
   obtain ⟨hca, hcov, hrets, hent, hout, hsite, hsr, hci⟩ := ho
   have hS := lowerScopeT_of hs
   have hlc := lowerCheckT_complete (dominated_of hd) hS hl
-  have hpc := Prep.prepCheck_complete hp (prune_prepDomain (prepDomain_ofT (dominated_of hd) hS hl))
+  have hpc := Prep.prepCheck_complete hp (prune_prepDomain (Spill.prepDomain_ofT (dominated_of hd) hS hl))
   have hfr := frame_cleanup_of_lower hl hraw hvp hlr
   obtain ⟨hdecl, hindB, -, -⟩ := hpg _ hgP
   rw [List.all_eq_true]

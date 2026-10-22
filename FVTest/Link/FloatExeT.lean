@@ -11,14 +11,15 @@ the output checks `OutOkT` and the Lean linker's success, for the legacy pipelin
 the shipped dead-cleanup pipeline (`specC`); so `Link.compileExe_correctT`,
 `Link.DeadCleanup.compileExe_correctT` and their depth/peak forms apply (`correctT_*`). The
 integer corollary `Link.compileExe_correct_viaT` is instantiated on the existing integer witness
-`DeadCleanupExecutableWitness.baselineSpec` (`viaT_baseline`). `lake build FVTest.Link.FloatExeT`. -/
+`DeadCleanupExecutableWitness.baselineSpec` (`viaT_baseline`).
+`lake build FVTest.Link.FloatExeT`. -/
 
 namespace E2E.FloatExeTWitness
 set_option autoImplicit false
-open E2E E2E.LinkCheck Link Backend E2E.DeadCleanupExecutableWitness
+open E2E E2E.LinkCheck Link Backend
+open E2E.DeadCleanupExecutableWitness (baselineSpec baselineFile0 placeholder)
 
-def fW : FnInput :=
-  { clif := "function %w(i64, i8) -> i64 {
+def srcW : String := "function %w(i64, i8) -> i64 {
 block0(v0: i64, v1: i8):
     v2 = load.f64 v0
     v3 = f64const 0x1.0p-2
@@ -27,10 +28,11 @@ block0(v0: i64, v1: i8):
     v5 = bitcast.i64 v4
     return v5
 }
-", ra := "{}" }
+"
 
-def fMv : FnInput :=
-  { clif := "function %mv(f64, i64, f32, i8) -> f64 {
+def fW : FnInput := { clif := srcW, ra := "{}" }
+
+def srcMv : String := "function %mv(f64, i64, f32, i8) -> f64 {
 block0(v0: f64, v1: i64, v2: f32, v3: i8):
     v4 = load.f64 v1
     store v2, v1+8
@@ -46,7 +48,9 @@ block1(v10: f64):
 block2(v11: f64):
     return v11
 }
-", ra := "{}", k := 1 }
+"
+
+def fMv : FnInput := { clif := srcMv, ra := "{}" }
 
 def fns : List FnInput := [fW, fMv]
 
@@ -74,7 +78,8 @@ def floatsB : Bool :=
 
 def checks : Bool :=
   floatsB && InScopePT spec.input && OutOkT spec.input && (leanLink spec file0).toBool &&
-  InScopePT specC.inputCleanup && OutOkTCleanup specC.inputCleanup && (leanLink specC file0C).toBool
+  InScopePT specC.inputCleanup && OutOkTCleanup specC.inputCleanup &&
+  (Link.DeadCleanup.leanLink specC file0C).toBool
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 10000000 in
@@ -82,13 +87,14 @@ theorem checks_true : checks = true := by native_decide
 
 theorem parts : floatsB = true ∧ InScopePT spec.input = true ∧ OutOkT spec.input = true ∧
     (leanLink spec file0).toBool = true ∧ InScopePT specC.inputCleanup = true ∧
-    OutOkTCleanup specC.inputCleanup = true ∧ (leanLink specC file0C).toBool = true := by
+    OutOkTCleanup specC.inputCleanup = true ∧
+    (Link.DeadCleanup.leanLink specC file0C).toBool = true := by
   have h := checks_true
   simp only [checks, Bool.and_eq_true] at h
   exact ⟨h.1.1.1.1.1.1, h.1.1.1.1.1.2, h.1.1.1.1.2, h.1.1.1.2, h.1.1.2, h.1.2, h.2⟩
 
 def file : ByteArray := getOk (leanLink spec file0)
-def fileC : ByteArray := getOk (leanLink specC file0C)
+def fileC : ByteArray := getOk (Link.DeadCleanup.leanLink specC file0C)
 
 /-- **Witness**: `InScopePT` of a program with float parameters, returns and data movement. -/
 theorem inScopePT_spec : InScopePT spec.input = true := parts.2.1
@@ -98,28 +104,35 @@ theorem outOkT_spec : OutOkT spec.input = true := parts.2.2.1
 
 theorem link_eq : leanLink spec file0 = .ok file := getOk_eq parts.2.2.2.1
 
-theorem link_eqC : leanLink specC file0C = .ok fileC := getOk_eq parts.2.2.2.2.2.2
+theorem link_eqC : Link.DeadCleanup.leanLink specC file0C = .ok fileC := getOk_eq parts.2.2.2.2.2.2
 
 /-- **Witness**: `Link.compileExe_correctT` applies to the float program (every premise but the
 outside code's contracts and the run is discharged). -/
-theorem correctT_spec := @compileExe_correctT spec file0 file inScopePT_spec outOkT_spec link_eq
+theorem correctT_spec :
+    type_of% (@compileExe_correctT spec file0 file inScopePT_spec outOkT_spec link_eq) :=
+  @compileExe_correctT spec file0 file inScopePT_spec outOkT_spec link_eq
 
-theorem correct_depthT_spec :=
+theorem correct_depthT_spec :
+    type_of% (@compileExe_correct_depthT spec file0 file inScopePT_spec outOkT_spec link_eq) :=
   @compileExe_correct_depthT spec file0 file inScopePT_spec outOkT_spec link_eq
 
-theorem correct_peakT_spec :=
+theorem correct_peakT_spec :
+    type_of% (@compileExe_correct_peakT spec file0 file inScopePT_spec outOkT_spec link_eq) :=
   @compileExe_correct_peakT spec file0 file inScopePT_spec outOkT_spec link_eq
 
 /-- **Witness**: `Link.DeadCleanup.compileExe_correctT` applies to the float program. -/
-theorem correctT_specC :=
-  @Link.DeadCleanup.compileExe_correctT specC file0C fileC parts.2.2.2.2.1 parts.2.2.2.2.2.1 link_eqC
+theorem correctT_specC :
+    type_of% (@Link.DeadCleanup.compileExe_correctT specC file0C fileC parts.2.2.2.2.1
+      parts.2.2.2.2.2.1 link_eqC) :=
+  @Link.DeadCleanup.compileExe_correctT specC file0C fileC parts.2.2.2.2.1 parts.2.2.2.2.2.1
+    link_eqC
 
 /-! ## The integer corollary on the existing integer witness -/
 
 def fileB : ByteArray := getOk (Link.compileExe baselineSpec baselineFile0)
 
 theorem compile_eqB : Link.compileExe baselineSpec baselineFile0 = .ok fileB := by
-  have h := checks_true
+  have h := DeadCleanupExecutableWitness.checks_true
   simp only [DeadCleanupExecutableWitness.checks, Bool.and_eq_true] at h
   exact getOk_eq h.1.1
 
@@ -130,6 +143,8 @@ theorem typedPremises_baseline :
   typedPremises_of_compileExe compile_eqB
 
 /-- **Witness**: `Link.compileExe_correct_viaT` on the integer witness. -/
-theorem viaT_baseline := @compileExe_correct_viaT baselineSpec baselineFile0 fileB compile_eqB
+theorem viaT_baseline :
+    type_of% (@compileExe_correct_viaT baselineSpec baselineFile0 fileB compile_eqB) :=
+  @compileExe_correct_viaT baselineSpec baselineFile0 fileB compile_eqB
 
 end E2E.FloatExeTWitness

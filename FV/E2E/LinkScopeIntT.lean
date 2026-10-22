@@ -4,6 +4,7 @@ import FV.E2E.LinkScope
 import FV.E2E.SpillKillFree
 import FV.Backend.Proof.SpillInstCheckComplete
 import FV.Backend.Proof.FormsCoverComplete
+import FV.E2E.SpillDefined
 
 /-! # The integer input conditions are typed ones (S11e5 Stage C, slice 8)
 
