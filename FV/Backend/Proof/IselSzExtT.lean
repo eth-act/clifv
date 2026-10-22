@@ -138,7 +138,7 @@ theorem emitW_sound {a : AW} {c : Nat} (ha : emitW a = some c) {v : V} (hv : γT
     split at ha
     · cases ha
       rename_i hall
-      obtain ⟨b, hb, hbv⟩ := γAny_iff.mp hv
+      obtain ⟨b, hb, hbv⟩ := γAnyT_iff.mp hv
       have hp := List.all_eq_true.mp hall b hb
       cases b with
       | data t k fs =>
@@ -181,7 +181,7 @@ theorem emitT_sound {a : AW} {n : Nat} (ha : emitT a = some n) {v : V} (hv : γT
   | alts as =>
     simp only [emitT, Option.map_eq_some_iff] at ha
     obtain ⟨ns, hns, rfl⟩ := ha
-    obtain ⟨b, hb, hbv⟩ := γAny_iff.mp hv
+    obtain ⟨b, hb, hbv⟩ := γAnyT_iff.mp hv
     obtain ⟨nb, hnb, hg⟩ := mapM_some_mem hns b hb
     refine Nat.le_trans ?_ (mem_le_foldl_max ns 0 nb hnb)
     cases b with
