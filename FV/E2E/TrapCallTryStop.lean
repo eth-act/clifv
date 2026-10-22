@@ -384,6 +384,31 @@ theorem sim_trapStop {env0 : Clif.Env} {c : Clif.TrapCode} (hp : p.funcs = [])
       | done vals cm => rw [hs] at hrun; cases hrun
       | stuck msg => rw [hs] at hrun; cases hrun
 
+/-- **`sim_trapStop` from the entry** (`driver_correctU`'s counterpart): the VCode run from
+the entry reaches an explicit trap with `c`, a raising `call` that ends the activation, or a
+raising `tryCall`. -/
+theorem driver_trapStop {env0 : Clif.Env} {c : Clif.TrapCode} (hp : p.funcs = [])
+    (H : DriverHyp f vc ctx st0 R gn bl A sem MR (trapEnv env0 c).toEnv p)
+    (HU : UnwShape f vc ctx R gn bl A)
+    (HR : RaiseHyp f sem MR (trapEnv env0 c) F X XR sb syms out) (hds : DriverSem sem)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) (htr : TrapsExplicitCT env0 p cs) {fuel : Nat}
+    (hrun : Clif.runLoop env0 p fuel cs = .trapped c) :
+    VTraps vc sem ρ₀ w₀ c ∨ (∃ obj w', VUnwinds vc sem XR ρ₀ w₀ obj w') ∨
+      VTryRaiseFrom vc sem XR ⟨0, 0, ρ₀, w₀⟩ := by
+  obtain ⟨k, ρ₁, w₁, hstar, hm⟩ := entry_step H hds HR.mem HR.mrs hB0 hcall hfunc hslots hbody
+    hterm hregs hty hsig hmr hargs (ρ₀ := ρ₀)
+  rcases sim_trapStop hp H HU HR hfunc htr fuel cs _ (.refl _) hm hrun with h | ⟨o, w', h⟩ | h
+  · exact .inl (VTrapFrom.prefix hstar h)
+  · exact .inr (.inl ⟨o, w', VUnwFrom.prefix hstar h⟩)
+  · exact .inr (.inr (VTryRaiseFrom.prefix hstar h))
+
 end
 
 end Backend.Proof.Driver
