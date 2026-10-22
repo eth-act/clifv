@@ -262,6 +262,7 @@ theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       B.body[j]? = some stm ∧ k = pos f R bl b j ∧
       StarNP (VStep vc sem) (InSeg b k (seg f R bl b j).length) (seg f R bl b j).length
         (.run ⟨b, k, ρ, w⟩) (.run ⟨b, k + (seg f R bl b j).length, ρ', w'⟩) ∧
+      seqRun sem (seg f R bl b j) ρ w = some (.fall ρ' w') ∧
       Match f ctx R gn bl A MR slots s' ⟨b, k + (seg f R bl b j).length, ρ', w'⟩ := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
@@ -343,7 +344,7 @@ theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       rw [hseg] at hsegat
       rw [pos_succ, hseg] at hlt
       have hstar := seqRun_fall_starN hvb hsegat (by simpa using hlt) hsr'
-      refine ⟨B, j, ρ', w', hB, hstm, rfl, by rw [hseg]; exact hstar, ?_⟩
+      refine ⟨B, j, ρ', w', hB, hstm, rfl, by rw [hseg]; exact hstar, by rw [hseg]; exact hsr', ?_⟩
       rw [hseg]
       refine ⟨hcall, hfunc, hslots, by simpa [fr', restrict, hslots] using hmr,
         B, j + 1, hB, hterm, hjlt, hrest, ?_, ?_, ?_⟩

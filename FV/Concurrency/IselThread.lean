@@ -169,7 +169,7 @@ theorem pure_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
       p.func? e.name = none := fun fn args h => by rw [h] at hp; simp [pureInst] at hp
   cases hs : Clif.step env p s with
   | next s' =>
-    obtain ⟨B, j, ρ', w', hB, hstm, hk, hstar, hM⟩ := stmt_matchN H hm hbody hind hs
+    obtain ⟨B, j, ρ', w', hB, hstm, hk, hstar, -, hM⟩ := stmt_matchN H hm hbody hind hs
     obtain ⟨L, hL⟩ := H.blow hB
     obtain ⟨vb, hvb, hsllen, -, -, -, -, -, hcode, htne, -⟩ := H.shape.blk b B L hB hL
     have hjlt : j < B.body.length := (List.getElem?_eq_some_iff.mp hstm).1
