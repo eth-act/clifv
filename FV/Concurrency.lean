@@ -136,6 +136,8 @@ import FV.Concurrency.ArmAllocLoopWitness
 import FV.Concurrency.RealizeWitnessLoad
 import FV.Concurrency.ArmAllocBranch
 import FV.Concurrency.ArmAllocBranchWitness
+import FV.Concurrency.ArmAllocLS
+import FV.Concurrency.ArmAllocLSWitness
 import FV.Concurrency.RealizeWitnessStore
 import FV.Concurrency.RealizeWitnessMP
 import FV.Concurrency.CallCompose
