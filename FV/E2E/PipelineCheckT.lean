@@ -224,7 +224,8 @@ theorem okRWith_soundT (stage : VCode → VCode) {I : LinkInput} {R : Res}
       exact Clif.Program.bare_func? _ _
     · intro sig hs
       have := List.all_eq_true.mp (fa hg).indOk sig hs
-      simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+      simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+      exact this.2
   refine
     { names := hn
       free := fun g hg => (fa hg).free
