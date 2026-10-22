@@ -26,7 +26,8 @@ registers (`E2E.ExecBytes.evsOk_congr`), which the simulating executable state s
 * `noFault_plain`, `noFault_hook`, `noFault_call`, `noFault_pair`: the executable's step at each
   kind of site does not fault;
 * `evsOkAt_of_goodW`, `runOkSNBF_of_good`: the hypotheses from `RunGoodLBW` of `sysSK … NW`;
-* `exec_of_trapAtMF`; **`binary_correct_exec_memtrapF_rw`**, **`binary_correct_exec_memtrapF_rw_peak`**.
+* `exec_of_trapAtMF`; the observable `ExecTrapF` and the premise `MapRelRW`;
+  **`binary_correct_exec_memtrapF_rw`**, **`binary_correct_exec_memtrapF_rw_peak`**.
 -/
 
 namespace E2E.DeadCleanupExecBytes
