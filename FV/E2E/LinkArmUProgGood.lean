@@ -1,5 +1,5 @@
 import FV.E2E.LinkArmUProgNI
-import FV.E2E.LinkArmUGood
+import FV.E2E.LinkArmUIndGood
 
 /-!
 # The whole-program theorem with unwinding, with the per-state facts of the run (S10g, #404)
@@ -8,7 +8,7 @@ import FV.E2E.LinkArmUGood
 machine with unwinding: for a returning, trapping or unwinding whole-program run with unwinding,
 every state of the run of the entered function on `machU` whose step ends without error, and of
 every activation nested through its calls (returning or raising), has the per-state facts
-(`RunGoodLU`, from the linking statement `ThmU`).
+(`RunGoodLU`, from the linking statement with the per-state facts `ThmGU`).
 
 * `runGoodLU_withCrunX`: `RunGoodLU` does not depend on the callee runs (the machine does not
   read them).
@@ -65,7 +65,7 @@ linking statement at depth `M` (`backend_correct_program_coreU`'s per-state part
 returning, trapping or unwinding outcome, `RunGoodLU` of the entered activation. -/
 theorem backend_correct_program_coreUG (L : LinkSysU) (hL : L.Ok)
     {κ : Nat → Clif.Function → Nat} {f : Clif.Function}
-    (hf : f ∈ L.P.funcs) (M : Nat) (hthm : L.ThmU κ M) {ra : BitVec 64} {s w₀ : Arm.ArmState}
+    (hf : f ∈ L.P.funcs) (M : Nat) (hthm : L.ThmGU κ M) {ra : BitVec 64} {s w₀ : Arm.ArmState}
     {args : List Clif.Val} {cs : Clif.State}
     (hent : AbiEntry (L.A f).fb (L.A f).base ra s) (hres : StackAvail (κ M f) (L.A f).af s)
     (hF : L.F = frameWG (κ M f) (RAFrame.compute (L.A f).vcp (L.A f).rf).intBase
@@ -146,7 +146,7 @@ theorem backend_correct_program_budgetUG' (L : LinkSysU) (hL : L.Ok) (hU : L.OkU
   haveI := L.crunOkX_std hL fun g hg hn => hU.indScopeX g hg hn
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   refine L.runGoodLU_withCrunX (backend_correct_program_coreUG L.stdX hL hf M
-    (L.stdX.thmUN hL (hU.withCrunX _) ⟨hNI.baseRaiseNI⟩ hκ M) hent hres hF hgfree himg hbe hargs
+    (L.stdX.thmUNG hL (hU.withCrunX _) ⟨hNI.baseRaiseNI⟩ hκ M) hent hres hF hgfree himg hbe hargs
     hcs hsav hrel hpl htr (fun ho => ?_) hout)
   exact L.stdX.envRX_crun hL.names M hf (runInv_entry hf hcs) hIf (fun _ => hrel.1.symbols)
     (by rcases ho with ⟨_, _, ho⟩ | ⟨_, ho⟩ | ⟨_, _, ho⟩ <;> rw [show L.stdX.crunX (M + 1) cs =
@@ -180,7 +180,7 @@ theorem backend_correct_program_peakUG' (L : LinkSysU) (hL : L.Ok) (hU : L.OkU) 
   haveI := L.crunOkX_peak hL (fun g hg hn => hU.indScopeX g hg hn) F
   have hIf : Clif.LInv (L.P.only f) cs := runInv_entry (by simp [Clif.Program.only]) hcs
   refine L.runGoodLU_withCrunX (backend_correct_program_coreUG (L.peakX F) hL hf d
-    ((L.peakX F).thmUN hL (hU.withCrunX _) ⟨hNI.baseRaiseNI⟩ hκ d) hent hres hF hgfree himg hbe
+    ((L.peakX F).thmUNG hL (hU.withCrunX _) ⟨hNI.baseRaiseNI⟩ hκ d) hent hres hF hgfree himg hbe
     hargs hcs hsav hrel hpl htr (fun ho => ?_) hout)
   exact Clif.runLoopX_linkD (env := L.envX) (syms := L.syms) F d hL.names hf hL.free
     (hU.indScopeX f hf) (E := (L.peakX F).envRX d f) rfl rfl

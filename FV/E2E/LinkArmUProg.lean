@@ -83,7 +83,7 @@ theorem backend_correct_program_coreU (L : LinkSysU) (hL : L.Ok)
     exact armRefines_of_actRet (fb := (L.A f).fb) (base := (L.A f).base) hus hlen hhold hmemR hret
   | trapped c =>
     obtain ⟨m, hm⟩ := hlink (.inr (.inl ⟨_, rfl⟩))
-    exact ((hthm f hf L.F args cs w₀ m hWE).2.1 htr c hm L.Img ra s hME).imp fun _ h => h.1
+    exact (hthm f hf L.F args cs w₀ m hWE).2.1 htr c hm L.Img ra s hME
   | unwound e cm =>
     obtain ⟨m, hm⟩ := hlink (.inr (.inr ⟨_, _, rfl⟩))
     obtain ⟨obj, wf, hex, hmemR, hall, -⟩ := (hthm f hf L.F args cs w₀ m hWE).2.2 e cm hm

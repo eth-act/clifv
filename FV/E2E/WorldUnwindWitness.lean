@@ -36,9 +36,7 @@ theorem world_applies {X0 : ExtSem} {K : Nat} {F : BitVec 64 → Prop} {c : BitV
           ActEntryU vcp rf af fa fb K F G (Xr X0) H IselSimUWitness.XR U base ra s w₀ →
           ∃ n, ActUnw ra F G obj w s (runX (Unw.ArmStepU (Xr X0) H U T fa) n s) ∧
             PostTrace fa af base (Unw.ArmStepU (Xr X0) H U T fa) s n ∧ 0 < n ∧
-            UnwExit U T fa (runX (Unw.ArmStepU (Xr X0) H U T fa) (n - 1) s) ∧
-            ∀ i < n, actGoodXU vcp rf af fa fb base s (Xr X0) H IselSimUWitness.XR U T K G
-              (GotV vcp) (runX (Unw.ArmStepU (Xr X0) H U T fa) i s) := by
+            UnwExit U T fa (runX (Unw.ArmStepU (Xr X0) H U T fa) (n - 1) s) := by
   obtain ⟨hv, hs, -, hc, hlU, hsv, hpad, hlast, hcs', -, hrows⟩ := facts
   exact (backend_correct_world_pipelineU (InSubset.of_verifiable hv (fun _ => rfl)) (.cleanup hc)
     hlU (formsCovered_cleanup_complete (lowerScope_of hs) hc.lower hc.prepare _)
@@ -107,9 +105,7 @@ theorem world_applies_legacy {X0 : ExtSem} {K : Nat} {F : BitVec 64 → Prop} {c
           ActEntryU vcpL rfL afL faL fbL K F G (Xr X0) H IselSimUWitness.XR U base ra s w₀ →
           ∃ n, ActUnw ra F G obj w s (runX (Unw.ArmStepU (Xr X0) H U TL faL) n s) ∧
             PostTrace faL afL base (Unw.ArmStepU (Xr X0) H U TL faL) s n ∧ 0 < n ∧
-            UnwExit U TL faL (runX (Unw.ArmStepU (Xr X0) H U TL faL) (n - 1) s) ∧
-            ∀ i < n, actGoodXU vcpL rfL afL faL fbL base s (Xr X0) H IselSimUWitness.XR U TL K G
-              (GotV vcpL) (runX (Unw.ArmStepU (Xr X0) H U TL faL) i s) := by
+            UnwExit U TL faL (runX (Unw.ArmStepU (Xr X0) H U TL faL) (n - 1) s) := by
   obtain ⟨hv, hs, -, -, hlU, -⟩ := facts
   obtain ⟨hc, hsv, hpad, hlast, hcs', hrows⟩ := factsL
   exact (backend_correct_world_pipelineU (InSubset.of_verifiable hv (fun _ => rfl)) (.legacy hc)

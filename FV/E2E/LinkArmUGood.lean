@@ -4,9 +4,9 @@ import FV.E2E.LinkArmUCallNI
 # The per-state facts of the linked machine's runs with unwinding (S10g, #404)
 
 `FV/E2E/LinkGood.lean` for the linked machine with unwinding (`LinkSysU.machU`): the linking
-statement with unwinding (`ThmU`) gives every activation the per-state facts of its run
-(`RunGoodLU`: `GoodAtU` at every state of `ReachLU` whose step ends without error). Here the
-pieces its induction step (`thm_ofU`, `thm_ofUN`) uses:
+statement with unwinding and per-state facts (`ThmGU`) gives every activation the per-state facts
+of its run (`RunGoodLU`: `GoodAtU` at every state of `ReachLU` whose step ends without error).
+Here the pieces its induction step (`thm_ofGU`, `thm_ofUNG`, `FV/E2E/LinkArmUIndGood.lean`) uses:
 
 * `actRLU`: the register-level activation with unwinding that the induction step instantiates the
   per-function world theorem with (`XU`, `XRU`, `hooksU`, `UU`, the tables).
@@ -16,7 +16,7 @@ pieces its induction step (`thm_ofU`, `thm_ofUN`) uses:
 * `blrToU`: the callee of a `blr` at such a state is one `g` may enter (`BlrAtU`).
 * `progGoodCoreU`, `callGoodU`: **the callee's states**: at such a state where the machine calls
   `h`, every state of `h`'s run (returning or raising) whose step ends without error has the
-  per-state facts — from the callee's CLIF run (`CondU`/`CondR`), `progCallUN` and the linking
+  per-state facts — from the callee's CLIF run (`CondU`/`CondR`), `progCallUNQ` and the linking
   statement one level down.
 * `runGood_of_traceU`: an activation's `RunGoodLU` from its register-level trace (`actGoodXU`)
   and a bound on its states before the return.
@@ -172,9 +172,9 @@ theorem blrToU (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.funcs)
 /-- **The callee's states of a call of a function of `P` that returns or raises**
 (`LinkSys.progGoodCore` with unwinding): from the callee's CLIF run (`CondU`/`CondR` of
 `progXU`/`progXR`), the caller state compatible with the call's world (`CallerOk`) and
-`progCallUN` one level down. -/
+`progCallUNQ` one level down. -/
 theorem progGoodCoreU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
-    (ih : 0 < M → L.ThmU κ (M - 1)) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
+    (ih : 0 < M → L.ThmGU κ (M - 1)) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
     (hh : h ∈ L.P.funcs) (hcallee : L.Callee g h) {F G : BitVec 64 → Prop} {s0 : Arm.ArmState}
     (himgF : ∀ a, L.Img a → F a) (himgG : ∀ a, L.Img a → G a)
     (himgS : ∀ a, L.Img a → s0.mem a = L.imgMem a)
@@ -206,7 +206,7 @@ theorem progGoodCoreU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
         hrun⟩, -⟩ := hcond
       obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
       obtain ⟨_, _, _, -, -, -, -, -, hcall, -⟩ :=
-        (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead hmr
+        (L.progCallUNQ hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead hmr
           hargs hsav hpl hinit).1 rvals cm' hrun
       obtain ⟨_, -, -, -, hrg⟩ := hcall t hcOk
       exact hrg
@@ -218,7 +218,7 @@ theorem progGoodCoreU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
         hrun⟩ := hcond
       obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
       obtain ⟨_, _, -, -, hcall, -⟩ :=
-        (L.progCallUN hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead hmr
+        (L.progCallUNQ hL hU (M := M') (ih hM) hpf ⟨g, hg, hcallee⟩ himgF herrw halw hroom hdead hmr
           hargs hsav hpl hinit).2 e cm' hrun
       obtain ⟨_, -, -, hrg⟩ := hcall t hcOk
       exact hrg
@@ -230,7 +230,7 @@ callee that returns (`RL.CallPre`) or raises (`RLU.CallPreU`) and the machine ca
 (`CallsAtU`), every state of `h`'s run entered from `u` whose step ends without error has the
 per-state facts (`progGoodCoreU`). -/
 theorem callGoodU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
-    (ih : 0 < M → L.ThmU κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+    (ih : 0 < M → L.ThmGU κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) {u : Arm.ArmState} {h : Clif.Function}
     (hpre : (L.actRLU κ M g F G s).CallPre u ∨ (L.actRLU κ M g F G s).CallPreU u)
@@ -377,7 +377,7 @@ unwinding (`actGoodXU` of every state before `n`), when every state before its r
 ends without error is before `n` (`LinkSys.runGood_of_trace` with unwinding): its own states from
 the trace, the nested ones from the call states (`callGoodU`). -/
 theorem runGood_of_traceU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
-    (ih : 0 < M → L.ThmU κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+    (ih : 0 < M → L.ThmGU κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F G : BitVec 64 → Prop} {ra : BitVec 64} {s w₀ : Arm.ArmState}
     (he : L.MachEntry κ M g F G ra s w₀) {n : Nat}
     (hgood : ∀ i < n, actGoodXU (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb

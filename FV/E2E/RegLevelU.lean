@@ -24,7 +24,10 @@ personality reading the tables `T`).
 * `RLU.RaiseX`/`RLU.GoodXU`: a raising-call state (the pc at a `bl`/`blr` whose machine callee
   raises), where `RL.GoodX`'s call clause (a normal callee result) fails; `GoodXU` = `GoodX` or
   `RaiseX`, the trace predicate of the runs with unwinding. `RLU.stepU_q_raise`: at `Q` at a
-  call item whose callee raises, the machine enters the unwinder from a `RaiseX` state.
+  call item whose callee raises, the machine enters the unwinder from a `RaiseX` state
+  (`stepU_q_raiseF`: with the call line's descriptor). `RLU.RaiseXF`/`RLU.GoodXUF`: a raising-call
+  state with the facts the executable machine needs of its step (D1, the exit lands on the
+  return, the restored `sp`, a `blr`'s facts, the raising callees' contract premise).
 * `TryRaiseSem`: `csemU`'s raising-`tryCall` clause, for any semantics (`csemVU`, `csemU`, the
   dead-cleanup chain's value semantics).
 * `mstep_congr`: an allocated-code step under one semantics is one under another that agrees on
@@ -155,9 +158,9 @@ noncomputable def stepU : Arm.ArmState → Arm.ArmState := Unw.ArmStepU R.X R.H 
 
 end RLU
 
-/-- **The machine facts of a raising-call state**: the pc at a call line (`bl n`/`blr r`) whose
+/-- **A raising-call state of the activation**: the pc at a call line (`bl n`/`blr r`) whose
 machine callee (descriptor `some n`/`none`) raises, the body's `sp`, no error, the program. -/
-structure RLU.RaiseAt (R : RLU) (u : Arm.ArmState) : Prop where
+structure RLU.RaiseX (R : RLU) (u : Arm.ArmState) : Prop where
   good : R.Good u
   err : Arm.r .ERR u = .None
   prog : u.program = R.fb.program R.base
@@ -181,12 +184,12 @@ def RLU.CallPreU (R : RLU) (u : Arm.ArmState) : Prop :=
       gotGuard R.gv R.X info (useVals ops regs u) ∧
       R.XR.raise (callDest info) (useVals ops regs u) w = some (obj, w')
 
-/-- **A raising-call state of the activation** (`RaiseAt`) with the facts the executable
-machine needs of its step (`RL.GoodX`'s counterpart): D1 at the unwinder's step, a step that
-continues the unwinding lands on the activation's ABI return (the restored frame is the
-caller's), the unwinder restores the call's state with the body's `sp`, a `blr`'s facts, and the
-raising callees' contract premise (`CallPreU`). -/
-structure RLU.RaiseX (R : RLU) (u : Arm.ArmState) : Prop extends RLU.RaiseAt R u where
+/-- **A raising-call state of the activation with the facts the executable machine needs of its
+step** (`RaiseX` and `RL.GoodX`'s counterpart): D1 at the unwinder's step, a step that continues
+the unwinding lands on the activation's ABI return (the restored frame is the caller's), the
+unwinder restores the call's state with the body's `sp`, a `blr`'s facts, and the raising
+callees' contract premise (`CallPreU`). -/
+structure RLU.RaiseXF (R : RLU) (u : Arm.ArmState) : Prop extends RLU.RaiseX R u where
   /-- D1 at the unwinder's step -/
   next : R.NextOk u (R.stepU u)
   /-- a step continuing the unwinding (the personality) lands on the activation's return -/
@@ -205,8 +208,15 @@ structure RLU.RaiseX (R : RLU) (u : Arm.ArmState) : Prop extends RLU.RaiseAt R u
 a raising-call state (where `RL.GoodX`'s call clause, a normal callee result, fails). -/
 def RLU.GoodXU (R : RLU) (u : Arm.ArmState) : Prop := R.GoodX u ∨ R.RaiseX u
 
+/-- **The per-state facts of a run with unwinding, with the raising-call states' step facts**:
+a state of the old trace (`RL.GoodX`), or a raising-call state with `RaiseXF`. -/
+def RLU.GoodXUF (R : RLU) (u : Arm.ArmState) : Prop := R.GoodX u ∨ R.RaiseXF u
+
+theorem RLU.GoodXUF.goodXU {R : RLU} {u : Arm.ArmState} (h : R.GoodXUF u) : R.GoodXU u :=
+  h.imp id RLU.RaiseXF.toRaiseX
+
 /-- At a raising-call state the machine with unwinding enters the unwinder. -/
-theorem RLU.stepU_raiseX {R : RLU} (hR : R.Wf) {u : Arm.ArmState} (h : R.RaiseAt u) :
+theorem RLU.stepU_raiseX {R : RLU} (hR : R.Wf) {u : Arm.ArmState} (h : R.RaiseX u) :
     ∃ d obj t, R.U.raise d u = some (obj, t) ∧
       R.stepU u = Unw.unwindAt R.T (progBase u) (Arm.r .PC u) obj t := by
   obtain ⟨x, d, obj, t, ⟨j, tt, hj, hpc⟩, hd, hr⟩ := h.raise
@@ -243,17 +253,17 @@ theorem assign_callDest {info ic : CallInfo} {regs : Array Reg}
       subst h
       exact callVisit_run_callDest _ info q hq
 
-/-- **A raising call on the machine**: at `Q` at a `call`/`tryCall` item whose machine callee
-raises (the descriptor of the VCode call), the machine with unwinding enters the unwinder, the
-state has the machine facts of a raising-call state (`RaiseAt`), the call line's descriptor is
+/-- **A raising call on the machine, with the call line's facts**: at `Q` at a `call`/`tryCall`
+item whose machine callee raises (the descriptor of the VCode call), the machine with unwinding
+enters the unwinder, the state is a raising-call state (`RaiseX`), the call line's descriptor is
 the VCode call's, and a `blr` there is not through `xzr` (calls through int vregs). -/
-theorem RLU.stepU_q_raise {R : RLU} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
+theorem RLU.stepU_q_raiseF {R : RLU} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R.toRL s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
     {info : CallInfo} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
     (hik : i = .call info ∨ ∃ ti, i = .tryCall info ti) {obj : BitVec 64} {t : Arm.ArmState}
     (hr : R.U.raise (callDest info) s = some (obj, t)) :
-    R.stepU s = Unw.unwindAt R.T (progBase s) (Arm.r .PC s) obj t ∧ R.RaiseAt s ∧
+    R.stepU s = Unw.unwindAt R.T (progBase s) (Arm.r .PC s) obj t ∧ R.RaiseX s ∧
       (∀ x' d', R.AtLine s x' → ((∃ n, x' = .bl n ∧ d' = some n) ∨ (∃ r, x' = .blr r ∧ d' = none)) →
         d' = callDest info) ∧
       (∀ x', R.AtLine s (.blr x') → R.vc.DestsInt → x' ≠ .xzr) := by
@@ -297,6 +307,19 @@ theorem RLU.stepU_q_raise {R : RLU} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
         · exact ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩
       obtain ⟨b1, vb1, k1, hvb1, hi1⟩ := hsite
       exact callDest_ne_xzr (hD b1 vb1 k1 info hvb1 hi1) hstat hasgC he
+
+/-- **A raising call on the machine**: at `Q` at a `call`/`tryCall` item whose machine callee
+raises (the descriptor of the VCode call), the machine with unwinding enters the unwinder, and
+the state is a raising-call state. -/
+theorem RLU.stepU_q_raise {R : RLU} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
+    {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (hq : Q R.toRL s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
+    {info : CallInfo} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
+    (hik : i = .call info ∨ ∃ ti, i = .tryCall info ti) {obj : BitVec 64} {t : Arm.ArmState}
+    (hr : R.U.raise (callDest info) s = some (obj, t)) :
+    R.stepU s = Unw.unwindAt R.T (progBase s) (Arm.r .PC s) obj t ∧ R.RaiseX s :=
+  let ⟨h1, h2, _⟩ := RLU.stepU_q_raiseF hR hq hvb hi hik hr
+  ⟨h1, h2⟩
 
 /-! ## The raising callees' contract -/
 
@@ -507,17 +530,40 @@ def RealizesTryRaise (R : RLU) (semU : Sem) : Prop :=
     ∃ n c'', MStep R.vc semU ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
       Q R.toRL (iterN R.stepU n s) c'' ∧ ∀ i < n, R.GoodXU (iterN R.stepU i s)
 
-/-- **`Realizes` with unwinding**, from any `Realizes` of a semantics `sem₀` with which `semU`
-agrees off raising calls and which raises (`.halt`) at a raising `call`; the trace predicate
-`GoodXU` (the old trace's `GoodX` states and the raising-call states). -/
-theorem realizes_allU {R : RLU} (hR : R.Wf) {sem₀ semU : Sem}
+/-- `RealizesTryRaise` with any trace predicate `P` (`RealizesTryRaise R semU` is
+`RealizesTryRaiseP R semU R.GoodXU`). -/
+def RealizesTryRaiseP (R : RLU) (semU : Sem) (P : Arm.ArmState → Prop) : Prop :=
+  ∀ (s : Arm.ArmState) (b k : Nat) (allocs : Array Loc) (its : List RItem) (m : Loc → CV)
+    (w : Arm.ArmState) (vb : VBlock) (info : CallInfo) (ti : TryInfo) (ops : Array Operand)
+    (c' : MConf CV Arm.ArmState) (obj : BitVec 64) (w' : Arm.ArmState),
+    Q R.toRL s (.run ⟨b, .op k allocs :: its, m, w⟩) → AInv R.toRL (.run ⟨b, .op k allocs :: its, m, w⟩) →
+    R.vc.blocks[b]? = some vb → vb.insts[k]? = some (.tryCall info ti) →
+    (MInst.tryCall info ti).operands = .ok ops →
+    R.XR.raise (callDest info) (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w =
+      some (obj, w') →
+    MStep R.vc semU ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c' →
+    ∃ n c'', MStep R.vc semU ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c'' ∧
+      Q R.toRL (iterN R.stepU n s) c'' ∧ ∀ i < n, P (iterN R.stepU i s)
+
+theorem RealizesTryRaiseP.mono {R : RLU} {semU : Sem} {P P' : Arm.ArmState → Prop}
+    (h : RealizesTryRaiseP R semU P) (hP : ∀ u, P u → P' u) : RealizesTryRaiseP R semU P' :=
+  fun s b k allocs its m w vb info ti ops c' obj w' h1 h2 h3 h4 h5 h6 h7 =>
+    let ⟨n, c'', a, b', c⟩ := h s b k allocs its m w vb info ti ops c' obj w' h1 h2 h3 h4 h5 h6 h7
+    ⟨n, c'', a, b', fun i hi => hP _ (c i hi)⟩
+
+/-- **`Realizes` with unwinding, for any trace predicate `P` above the old trace's `GoodX`**
+(`realizes_allU`'s generalisation): from any `Realizes` of a semantics `sem₀` with which `semU`
+agrees off raising calls and which raises (`.halt`) at a raising `call`, and the raising
+`tryCall`s realised with trace `P`. -/
+theorem realizes_allUP {R : RLU} (hR : R.Wf) {sem₀ semU : Sem} {P : Arm.ArmState → Prop}
+    (hP : ∀ u, R.GoodX u → P u)
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hreal : Realizes R.vc R.rf sem₀ ckeep R.step (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodX)
     (hagree : ∀ i uses w, NoRaise R.XR i uses w → semU i uses w = sem₀ i uses w)
     (hcall : ∀ info uses w r obj w', semU (.call info) uses w = some r →
       R.XR.raise (callDest info) uses w = some (obj, w') → r.2.2 = .halt)
-    (htry : RealizesTryRaise R semU) :
-    Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU := by
+    (htry : RealizesTryRaiseP R semU P) :
+    Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) P := by
   intro s c c' ⟨hq, hA⟩ hm
   -- a step without a raising callee: the old realisation, on the same run
   have old : MStep R.vc sem₀ ckeep R.rf c c' →
@@ -525,7 +571,7 @@ theorem realizes_allU {R : RLU} (hR : R.Wf) {sem₀ semU : Sem}
         R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → i.operands = .ok ops →
         NoRaise R.XR i (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w) →
       ∃ n c'', MStep R.vc semU ckeep R.rf c c'' ∧
-        (Q R.toRL (iterN R.stepU n s) c'' ∧ AInv R.toRL c'') ∧ ∀ i < n, R.GoodXU (iterN R.stepU i s) := by
+        (Q R.toRL (iterN R.stepU n s) c'' ∧ AInv R.toRL c'') ∧ ∀ i < n, P (iterN R.stepU i s) := by
     intro hm0 hnr
     obtain ⟨n, c'', hm'', ⟨hq'', hA''⟩, ht⟩ := hreal s c c' ⟨hq, hA⟩ hm0
     have hit := RLU.iterN_stepU hR hU n s ht
@@ -533,7 +579,7 @@ theorem realizes_allU {R : RLU} (hR : R.Wf) {sem₀ semU : Sem}
       (hagree _ _ _ (hnr b k allocs its m w vb i ops hc hvb hi hops)).symm, ⟨by rw [hit]; exact hq'',
       hA''⟩, fun i hi => ?_⟩
     rw [RLU.iterN_stepU hR hU i s fun i' hi' => ht i' (by omega)]
-    exact .inl (ht i hi)
+    exact hP _ (ht i hi)
   cases hm with
   | move =>
     exact old .move fun _ _ _ _ _ _ _ _ _ hc => by cases hc
@@ -567,5 +613,18 @@ theorem realizes_allU {R : RLU} (hR : R.Wf) {sem₀ semU : Sem}
       · obtain ⟨n, c'', hm'', hq'', ht⟩ := htry s b k allocs its m w vb info ti ops c' obj w2 hq hA
           hvb hi hops hraise hstep
         exact ⟨n, c'', hm'', ⟨hq'', aInv_stepS hR hq hA hm''⟩, ht⟩
+
+/-- **`Realizes` with unwinding**, from any `Realizes` of a semantics `sem₀` with which `semU`
+agrees off raising calls and which raises (`.halt`) at a raising `call`; the trace predicate
+`GoodXU` (the old trace's `GoodX` states and the raising-call states). -/
+theorem realizes_allU {R : RLU} (hR : R.Wf) {sem₀ semU : Sem}
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (hreal : Realizes R.vc R.rf sem₀ ckeep R.step (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodX)
+    (hagree : ∀ i uses w, NoRaise R.XR i uses w → semU i uses w = sem₀ i uses w)
+    (hcall : ∀ info uses w r obj w', semU (.call info) uses w = some r →
+      R.XR.raise (callDest info) uses w = some (obj, w') → r.2.2 = .halt)
+    (htry : RealizesTryRaise R semU) :
+    Realizes R.vc R.rf semU ckeep R.stepU (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXU :=
+  realizes_allUP hR (fun _ h => .inl h) hU hreal hagree hcall htry
 
 end Backend.Proof

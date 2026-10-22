@@ -380,8 +380,60 @@ def ThmU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
           ∃ n, ActRet ra F G us outs wf s (runX (L.machU M g) n s) ∧
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧
+            ¬ UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s)) ∧
+        (L.NeedNI → ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
+          RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+            g (spv w₀) cs.frame.slots cs.mem w₀' →
+          SameWorld (fun a => F a ∨ D a) w₀ w₀' →
+          (∀ r v, (ArgLoc.reg r, v) ∈ (locsOf g.sig).zip vals → regVal w₀' r = regVal w₀ r) →
+          (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf g.sig).zip vals → ∀ k < v.ty.bytes,
+            w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+              w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) →
+          ∀ G ra s, L.MachEntry κ M g F G ra s w₀' →
+            ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.machU M g) n s) ∧
+              PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧
+              ¬ UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s))) ∧
+    (TrapsExplicitX (L.envRX M g) L.P.bare cs → ∀ c : Clif.TrapCode,
+      Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .trapped c →
+      ∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
+        ∃ n, TrapAt (L.A g).fb (L.A g).base c (runX (L.machU M g) n s)) ∧
+    (∀ (e : Clif.Exn) (cm' : Clif.Mem),
+      Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .unwound e cm' →
+      ∃ (obj : BitVec 64) (wf : Arm.ArmState), ExnRel e obj ∧ MemRel F L.syms cm' wf ∧
+        (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
+          ∃ n, ActUnw ra F G obj wf s (runX (L.machU M g) n s) ∧
+            PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧ 0 < n ∧
+            UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s)) ∧
+        (L.NeedNI → ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
+          RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+            g (spv w₀) cs.frame.slots cs.mem w₀' →
+          SameWorld (fun a => F a ∨ D a) w₀ w₀' →
+          (∀ r v, (ArgLoc.reg r, v) ∈ (locsOf g.sig).zip vals → regVal w₀' r = regVal w₀ r) →
+          (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf g.sig).zip vals → ∀ k < v.ty.bytes,
+            w₀'.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k) =
+              w₀.mem (Arm.r (.GPR 29#5) w₀ + BitVec.ofInt 64 (16 + (off : Int)) + BitVec.ofNat 64 k)) →
+          ∀ G ra s, L.MachEntry κ M g F G ra s w₀' →
+            ∃ n, ActUnw ra (fun a => F a ∨ D a) G obj wf s (runX (L.machU M g) n s) ∧
+              PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧ 0 < n ∧
+              UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s)))
+
+/-- **`ThmU` with a fact `Q M g s` of every machine-side activation** (entered in `s`) that
+realises the outcome: `ThmGU` with `Q` the per-state facts `RunGoodLU`; `ThmU` is `ThmUQ` without
+`Q` (`ThmUQ.toThmU`, `thmUQ_true`). -/
+def ThmUQ (Q : Nat → Clif.Function → Arm.ArmState → Prop) (κ : Nat → Clif.Function → Nat)
+    (M : Nat) : Prop :=
+  ∀ g ∈ L.P.funcs, ∀ (F : BitVec 64 → Prop) (vals : List Clif.Val) (cs : Clif.State)
+    (w₀ : Arm.ArmState) (fuel : Nat), L.WorldEntry κ M g F vals cs w₀ →
+    (∀ (rvals : List Clif.Val) (cm' : Clif.Mem),
+      Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .returned rvals cm' →
+      ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
+        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A g).vc.RetsSite us ∧
+        (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
+          ∃ n, ActRet ra F G us outs wf s (runX (L.machU M g) n s) ∧
+            PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧
             ¬ UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s) ∧
-            L.RunGoodLU M g s) ∧
+            Q M g s) ∧
         (L.NeedNI → ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
           RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
             g (spv w₀) cs.frame.slots cs.mem w₀' →
@@ -394,11 +446,11 @@ def ThmU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
             ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.machU M g) n s) ∧
               PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧
               ¬ UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s) ∧
-              L.RunGoodLU M g s)) ∧
+              Q M g s)) ∧
     (TrapsExplicitX (L.envRX M g) L.P.bare cs → ∀ c : Clif.TrapCode,
       Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .trapped c →
       ∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
-        ∃ n, TrapAt (L.A g).fb (L.A g).base c (runX (L.machU M g) n s) ∧ L.RunGoodLU M g s) ∧
+        ∃ n, TrapAt (L.A g).fb (L.A g).base c (runX (L.machU M g) n s) ∧ Q M g s) ∧
     (∀ (e : Clif.Exn) (cm' : Clif.Mem),
       Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .unwound e cm' →
       ∃ (obj : BitVec 64) (wf : Arm.ArmState), ExnRel e obj ∧ MemRel F L.syms cm' wf ∧
@@ -406,7 +458,7 @@ def ThmU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
           ∃ n, ActUnw ra F G obj wf s (runX (L.machU M g) n s) ∧
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧ 0 < n ∧
             UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s) ∧
-            L.RunGoodLU M g s) ∧
+            Q M g s) ∧
         (L.NeedNI → ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
           RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
             g (spv w₀) cs.frame.slots cs.mem w₀' →
@@ -419,7 +471,47 @@ def ThmU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
             ∃ n, ActUnw ra (fun a => F a ∨ D a) G obj wf s (runX (L.machU M g) n s) ∧
               PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧ 0 < n ∧
               UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s) ∧
-              L.RunGoodLU M g s))
+              Q M g s))
+
+/-- **The linking statement with unwinding at depth `M`, with the per-state facts of every
+realising activation's run** (`RunGoodLU`). -/
+def ThmGU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
+  L.ThmUQ (fun M g s => L.RunGoodLU M g s) κ M
+
+theorem ThmUQ.toThmU {Q : Nat → Clif.Function → Arm.ArmState → Prop}
+    {κ : Nat → Clif.Function → Nat} {M : Nat} (h : L.ThmUQ Q κ M) : L.ThmU κ M := by
+  intro g hg F vals cs w₀ fuel hWE
+  obtain ⟨h1, h2, h3⟩ := h g hg F vals cs w₀ fuel hWE
+  refine ⟨fun rvals cm' hr => ?_, fun htr c hc G ra s hME => (h2 htr c hc G ra s hME).imp
+    fun _ h => h.1, fun e cm' hr => ?_⟩
+  · obtain ⟨us, outs, wf, a1, a2, a3, a4, a5, a6, a7⟩ := h1 rvals cm' hr
+    exact ⟨us, outs, wf, a1, a2, a3, a4, a5,
+      fun G ra s hME => (a6 G ra s hME).imp fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩,
+      fun hN D w₀' x1 x2 x3 x4 G ra s hME =>
+        (a7 hN D w₀' x1 x2 x3 x4 G ra s hME).imp fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩⟩
+  · obtain ⟨obj, wf, a1, a2, a3, a4⟩ := h3 e cm' hr
+    exact ⟨obj, wf, a1, a2,
+      fun G ra s hME => (a3 G ra s hME).imp fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩,
+      fun hN D w₀' x1 x2 x3 x4 G ra s hME =>
+        (a4 hN D w₀' x1 x2 x3 x4 G ra s hME).imp fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩⟩
+
+theorem thmUQ_true {κ : Nat → Clif.Function → Nat} {M : Nat} (h : L.ThmU κ M) :
+    L.ThmUQ (fun _ _ _ => True) κ M := by
+  intro g hg F vals cs w₀ fuel hWE
+  obtain ⟨h1, h2, h3⟩ := h g hg F vals cs w₀ fuel hWE
+  refine ⟨fun rvals cm' hr => ?_, fun htr c hc G ra s hME => (h2 htr c hc G ra s hME).imp
+    fun _ h => ⟨h, trivial⟩, fun e cm' hr => ?_⟩
+  · obtain ⟨us, outs, wf, a1, a2, a3, a4, a5, a6, a7⟩ := h1 rvals cm' hr
+    exact ⟨us, outs, wf, a1, a2, a3, a4, a5,
+      fun G ra s hME => (a6 G ra s hME).imp fun _ h => ⟨h.1, h.2.1, h.2.2, trivial⟩,
+      fun hN D w₀' x1 x2 x3 x4 G ra s hME =>
+        (a7 hN D w₀' x1 x2 x3 x4 G ra s hME).imp fun _ h => ⟨h.1, h.2.1, h.2.2, trivial⟩⟩
+  · obtain ⟨obj, wf, a1, a2, a3, a4⟩ := h3 e cm' hr
+    exact ⟨obj, wf, a1, a2,
+      fun G ra s hME => (a3 G ra s hME).imp fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, trivial⟩,
+      fun hN D w₀' x1 x2 x3 x4 G ra s hME =>
+        (a4 hN D w₀' x1 x2 x3 x4 G ra s hME).imp
+          fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2, trivial⟩⟩
 
 /-! ## The external semantics: unfolding, results, exclusivity -/
 

@@ -354,6 +354,23 @@ theorem realizes_value_allU {R : RLU} (hR : R.Wf)
     (fun _ _ _ _ _ _ h hr => by rw [valueSemVU_call_raise h hr])
     htry
 
+/-- **`realizes_value_allU` with the raising-call states' step facts** (trace `R.GoodXUF`;
+`htry` from `realizes_tryCall_raiseUF`). -/
+theorem realizes_value_allUF {R : RLU} (hR : R.Wf)
+    (hC : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv)
+    (hT : R.vc.hasTryCall = true → CalleeTryOkG R.F R.K R.G R.s0
+      (CallAt R.fa R.base) R.X R.H R.vc.TrySite R.gv)
+    (hTls : R.vc.hasTls = true → TlsOk R.F R.K R.X R.H)
+    (hcov : FormsCovered R.ctx R.vc)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (htry : RealizesTryRaiseP R R.valueSemU R.GoodXUF) :
+    Realizes R.vc R.rf R.valueSemU ckeep R.stepU
+      (fun s c => Q R.toRL s c ∧ AInv R.toRL c) R.GoodXUF :=
+  realizes_allUP hR (fun _ h => .inl h) hU (realizes_value_all hR hC hT hTls hcov)
+    (fun _ _ _ h => valueSemVU_noRaise h)
+    (fun _ _ _ _ _ _ h hr => by rw [valueSemVU_call_raise h hr])
+    htry
+
 /-! ## Non-vacuity -/
 
 namespace UnwindValueSemWitness
