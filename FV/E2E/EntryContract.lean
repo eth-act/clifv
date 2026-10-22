@@ -156,21 +156,4 @@ theorem outsideCall_of {I : LinkInput} {D : List Clif.DataObject} {file : ByteAr
   valid := hv.valid
   symbols := hv.symbols
 
-/-- A loader contract with more stack gives one with less. -/
-theorem Loader.mono {file : ByteArray} {N N' : Nat} {r : Arm.ArmState} (h : Loader file N' r)
-    (hN : N ≤ N') : Loader file N r where
-  intact := h.intact
-  stack := Nat.le_trans hN h.stack
-  stackRw := fun a hb => h.stackRw a ⟨hb.1, by have := hb.2; omega⟩
-
-/-- A CLIF view with more stack gives one with less. -/
-theorem ClifView.mono {I : LinkInput} {B : BaseEnv} {f : Clif.Function} {N N' : Nat}
-    {r : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State} (h : ClifView I B f N' r args cs)
-    (hN : N ≤ N') : ClifView I B f N r args cs where
-  bytes := h.bytes
-  valid := fun a n hv => ⟨(h.valid a n hv).1, fun k hk => ⟨((h.valid a n hv).2 k hk).1,
-    fun hb => ((h.valid a n hv).2 k hk).2 ⟨hb.1, by have := hb.2; omega⟩⟩⟩
-  symbols := h.symbols
-  run := h.run
-
 end E2E.EntryContract

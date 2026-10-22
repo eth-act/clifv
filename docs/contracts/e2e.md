@@ -4195,6 +4195,98 @@ traps inside the `try_call`'s callee and satisfies `TrapsExplicitCT`).
 Next (S9e, #408, linked program and executable): the world variant (`WorldTrapCall`/`WorldTrapStop`
 without `hnt`), then `LinkSys.TrapsOk.noTry`, `TrapsD`'s `try_call` clauses and the executable
 theorems' `hnoTry`.
+## Entry-state and runtime premises (A5, #411)
+
+`FV/E2E/EntryContract.lean`, `FV/Front/RawExeContract.lean`. The executable theorems
+(`Front.bundle_correct_raw{,_peak}` and everything below them) take seven premises about the code
+outside the program and the machine state the program is entered in: `BaseOk`, `HooksSim`, the
+i128 helpers' contract (`hlegal`), the indirect-call signatures (`hsig`), `Image.Intact`,
+`OutsideCall` and `ClifRun`. Each field is one of:
+
+* **trusted** — a contract TO-PROVE §1.3 trusts by design (the code outside the program; the OS
+  loader and runtime), stated as a premise;
+* **derived** — follows from the written ELF (the checks `compileExe` runs and proves:
+  `okB_leanLink`, `binOk_leanLink`) and a loader/caller contract stated on the file;
+* **choice** — the choice of the CLIF state that models the machine state (which CLIF run the
+  theorem is about), not an obligation of anyone;
+* **open** — would need a fact nothing provides today.
+
+| Premise / field | Gate | Kind | Notes |
+| --- | --- | --- | --- |
+| `BaseOk.baseNoAlloc` | a function with an outgoing-argument area | trusted (outside code) | externs allocate no CLIF memory |
+| `BaseOk.keepSyms`, `.aliasSyms` | a function with an indirect call | trusted (outside code) | the CLIF model of the outside world keeps symbols; names at one address of no program function are one extern (met by `closedBase`) |
+| `BaseOk.baseOs`, `.basePc`, `.baseExt` | — | trusted (outside code) | outside calls are AAPCS64-sound, return to `pc + 4`, set no model error, keep the program field |
+| `BaseOk.baseX`, `.baseXI`, `.baseTry` | — | trusted (outside code) | the externs' CLIF semantics is what the machine's outside calls do (`XCallsOk`, `XCallsIndOk`, `CalleeTryOk`) |
+| `BaseOk.baseTls`, `.baseTlsNI` | a `tls_value` / `NeedNI` | trusted (loader/runtime) | the TLSDESC resolver (on the hook-free route only `TlsLoader`) |
+| `BaseOk.baseNI` | `NeedNI` | trusted (outside code) | non-interference of outside calls |
+| `BaseOk.baseKeepsPlace`, `.baseKeepsAllocs` | `NeedSlots` | trusted (outside code) | outside calls keep the slot-placement oracle and the allocations |
+| `HooksSim.call`, `.tls` | — | trusted (outside code) | the hooks read no relocated instruction byte and not the program field |
+| `hlegal` (`HelperOk`, `ExtLegal`, `EnvKeepsBounded`) | the program mentions `i128` | trusted (outside code) | the i128 helpers' contracts (gap "legalisation environment restrictions") |
+| `hsig` (`∀ n, B.env.sigOf n = none`) | a function with an indirect call | trusted (outside code) | a property of the CLIF model of the outside world |
+| `Image.Intact` | — | trusted (loader) | already stated on the file: the read-only and RELRO segments hold the file's bytes |
+| `OutsideCall.pc`, `.spAligned`, `.args` (registers) | — | trusted (caller) | AAPCS64; `pc` is `f`'s link-map address, which `SymsOk` ties to the file's symbol table |
+| `OutsideCall.err` | — | trusted (caller) | a model convention: no model error in the entry state |
+| `OutsideCall.ra` | — | trusted (caller) | the caller is outside code; not derivable from the file (fallback functions share the read-only text segments with the program) |
+| `OutsideCall.stack` (`N ≤ sp`) | — | trusted (loader/runtime) | `N = stackFn` or `frameDrop + D·d`; nothing relates it to the OS stack limit (open as a runtime fact, a premise by design) |
+| `OutsideCall.stackFree` | — | **derived** (`stackFree_of`) | the code is in read-only segments (`DeadCleanupBinCheck.img_bytes`); the stack is writable (`Loader.stackRw`) |
+| `OutsideCall.args` (stack arguments not code) | — | **derived** (`argsOut_of`) | stack arguments are in writable memory (`ArgsRw`) |
+| `OutsideCall.bytes` + `.image` | — | **derived** (`image_of`) | one uniform agreement (`ClifView.bytes`: every live CLIF byte is the machine's) + `Image.Intact` + `BinCheck.roByte_sound` |
+| `OutsideCall.valid` | — | choice (`ClifView.valid`) | the CLIF allocations fit, hold no code, lie in the free stack only in `f`'s slot region; "hold no code" would be derivable from a code/data separation fact of the file (open: not checked today) |
+| `OutsideCall.symbols` | — | choice (`ClifView.symbols`) | the CLIF symbol table is the link map |
+| `ClifRun.entry`, `.slots`, `.place` | — | choice (`ClifView.run`) | the reference run: CLIF leaves slot addresses unspecified |
+| `OutsideAvoids` (GOT slots) | — | discharged | `leanLink`'s output has no GOT slot (`outsideAvoids_leanLink`) |
+
+Genuinely open (not entry-contract fields): a model of the process start (the ELF entry point,
+musl's startup and std's `lang_start` producing the entry state: outside code, trusted by design);
+the stack size against the OS limit; the existence of a CLIF view for a given machine state (the
+caller's heap as CLIF allocations); the run premises `MemBounded` (#407) and `NoMemTrap` (needs a
+fault model).
+
+```lean
+-- E2E.EntryContract
+structure Loader (file : ByteArray) (N : Nat) (r : Arm.ArmState) : Prop where
+  intact : (imageOf file).Intact r
+  stack : N ≤ (spv r).toNat
+  stackRw : ∀ a, StackBelow N (spv r) a → ¬ Elf.ro file a   -- the stack is writable memory
+def ArgsRw (file) (sig) (args) (r) : Prop      -- ArgsOut with `Avoids (Elf.ro file)` for stack args
+structure Caller (I) (file) (f) (r) (args) : Prop where
+  pc : Arm.r .PC r = (art I f).base
+  err : Arm.r .ERR r = .None
+  ra : ¬ img I (xreg 30 r)
+  spAligned : (spv r).toNat % 16 = 0
+  args : ArgsRw file f.sig args r
+structure ClifView (I) (B) (f) (N) (r) (args) (cs) : Prop where   -- a choice
+  bytes : ∀ a b, cs.mem.valid a 1 → cs.mem.bytes a = some b → read_mem a r = b
+  valid : …                                  -- as OutsideCall.valid
+  symbols : cs.mem.symbols = fun n => I.syms.lookup n
+  run : ClifRun I B f r args cs
+theorem outsideCall_of (hI : okBCleanup I = true) (hbin : DeadCleanupBinCheck.BinOk I D file)
+    (hl : Loader file N r) (hc : Caller I file f r args) (hv : ClifView I B f N r args cs) :
+    OutsideCall I (BinCheck.roByte I D) f N r args cs.mem
+-- Front
+structure EntryContract (S) (B) (file) (g) (N) (r) (args) : Prop where
+  base : BaseOk (sys S.inputCleanup B)
+  hooks : HooksSim S.inputCleanup B
+  legal : (∃ f ∈ S.inputCleanup.srcProg.funcs, mentions128 f = true) →
+    HelperOk B.env ∧ ExtLegal B.env ∧ EnvKeepsBounded B.env
+  sigs : (∃ g ∈ (prog S.inputCleanup).funcs, ¬ Clif.IndFree g) → ∀ n, B.env.sigOf n = none
+  loader : Loader file N r
+  caller : Caller S.inputCleanup file g r args
+theorem bundle_correct_raw_contract … (hC : EntryContract S B file g (stackFn S.inputCleanup g) r args')
+    (hv : ClifView S.inputCleanup B g (stackFn S.inputCleanup g) r args' cs') …
+    -- g = legalize (f.rename σ.fwd); otherwise the premises and conclusion of bundle_correct_raw
+theorem bundle_correct_raw_peak_contract …    -- N = frameDrop (art _ g).af + D * d, as _peak
+```
+
+* **Non-vacuity** (`crate-proofs/Crates/FrontendBundleWitnessContract.lean`): on the codegen unit
+  of `g_u128` (`Crates.FrontendBundleWitness`), every `PT_LOAD` segment of the written executable
+  ends below `sp0 - 2^20` (`loadBelowB`, decided on its program headers), so the stack is in no
+  read-only segment (`not_ro`); `contract`: `EntryContract` holds for the outside call of the
+  compiled `wmul_u128` with up to `2^20` bytes of stack; `bundle_raw_contract_witness`,
+  `bundle_raw_peak_contract_witness`: the two theorems instantiated, the executable returns
+  `15, 5` in x0, x1.
+* `#print axioms` (`scripts/audit/entry-contract.lean`): `[propext, Classical.choice,
+  Quot.sound]`.
 
 ## Remaining (precise)
 
@@ -4202,7 +4294,9 @@ M4 (`LowerRulesCorrect` and the terminator statements) and M6 (`RegLevelCorrect`
 `Refines`/`MemRefines` of `csem`) are proven, `FormsCovered` follows from `formsCovered_complete`,
 and the program callees' contracts are discharged by `E2E.backend_correct_program` (induction on
 the call depth); the executable theorems are `Link.DeadCleanup.compileExe_correct{,_peak,_source,
-_source_peak}` and, from cg_clif's dumps, `Front.bundle_correct_raw{,_peak}`; with callee traps
+_source_peak}` and, from cg_clif's dumps, `Front.bundle_correct_raw{,_peak}` (under the single
+runtime contract `Front.EntryContract`: `Front.bundle_correct_raw{,_peak}_contract`, "Entry-state
+and runtime premises" above); with callee traps
 `Link.DeadCleanup.compileExe_correct_trap{,_peak,_source_trap,_source_trap_peak}` and
 `Front.bundle_correct_raw_trap{,_peak}` (above). What remains is
 listed in `docs/TO-PROVE.md` (§1.1 for totality, §4 for scope, §5 for the trusted base); from this
