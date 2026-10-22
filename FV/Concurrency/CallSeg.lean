@@ -1,6 +1,7 @@
 import FV.Concurrency.CallThread
 import FV.Concurrency.ArmAllocEntry
 import FV.Concurrency.ArmAllocFwd
+import FV.Concurrency.ArmProgram
 
 /-!
 # Private segments, the `bl` step and exclusive-closed runs (T2h, #311, calls)
@@ -32,6 +33,17 @@ open Arm ArmFoot ArmThread Prog ClifThread ProgE2E Backend Backend.Proof VCodeTh
 
 /-! ## Private segments -/
 
+/-- **The machine keeps the program through straight-line lines.** -/
+theorem linesAt_program {R : RL} (hR : R.Wf) {j : Nat} {ls1 : List Line} {s s' : ArmState}
+    (h : LinesAt R j ls1 s s') :
+    ∀ i ≤ ls1.length, (iterN R.step i s).program = R.fb.program R.base
+  | 0, _ => h.prog
+  | i + 1, hi => by
+    obtain ⟨x, t, a, -, -, -, -, hit⟩ := step_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit
+      h.at_ h.hook h.prog h.pc h.err h.inter h.run i (by omega)
+    rw [show R.step = ArmStepX R.X R.H R.fa from rfl, hit, exec_inst_program]
+    exact linesAt_program hR h i (by omega)
+
 /-- **Through a list of moves**, per step (module doc). -/
 theorem moves_privA {R : RL} (hR : R.Wf) {b : Nat} {w : ArmState} :
     ∀ (mvs : List (Loc × Loc)) (its : List RItem) (s : ArmState) (m : Loc → CV),
@@ -39,7 +51,8 @@ theorem moves_privA {R : RL} (hR : R.Wf) {b : Nat} {w : ArmState} :
       AInv R (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
       ∃ n, Q R (iterN R.step n s) (.run ⟨b, its, movesM mvs m, w⟩) ∧
         AInv R (.run ⟨b, its, movesM mvs m, w⟩) ∧
-        ∀ i < n, (∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s)
+        ∀ i < n, ((∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s)) ∧
+          (iterN R.step i s).program = R.fb.program R.base
   | [], its, s, m, hq, hA => ⟨0, hq, hA, fun _ h => absurd h (Nat.not_lt_zero _)⟩
   | p :: mvs, its, s, m, hq, hA => by
     obtain ⟨j, ls1, s', code, -, -, hlat, hq1, hpriv⟩ := move_lines hR hq
@@ -49,7 +62,7 @@ theorem moves_privA {R : RL} (hR : R.Wf) {b : Nat} {w : ArmState} :
     obtain ⟨n, hq2, hA2, hp2⟩ := moves_privA hR mvs its _ _ hq1 hA1
     refine ⟨ls1.length + n, by rw [iterN_add]; exact hq2, hA2, fun i hi => ?_⟩
     by_cases h : i < ls1.length
-    · exact hpriv i h
+    · exact ⟨hpriv i h, linesAt_program hR hlat i (by omega)⟩
     · have := hp2 (i - ls1.length) (by omega)
       rw [← iterN_add, show ls1.length + (i - ls1.length) = i by omega] at this
       exact this
