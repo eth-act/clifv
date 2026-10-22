@@ -424,8 +424,9 @@ def afterSavesOf (af : AFunc) : List AInst :=
 
 /-- **`unwindRows` succeeds on the emitted code** when the entry block's leading callee-save
 stores have negative, 8-aligned CFA offsets (`SaveOk`), no callee-saved register is stored
-through x16 right after them (`farSave`, #479) and the code is below 4 GiB. -/
-theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
+through x16 right after them (`farSave`: `unwindRows` fails on such a store since #479, where it
+used to emit an FDE without that register's row) and the code is below 4 GiB. -/
+theorem unwindRows_complete_nofar {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
     {fb : FnBin} (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa)
     (hlay : fa.layout = .ok fb) (hsz : 4 * fb.words.size < 2 ^ 32) {vb : VBlock}
     {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items)
@@ -510,6 +511,27 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
     fun a ha x hx => by
       obtain ⟨i, t, rfl⟩ := hins x (List.mem_append_right _ (List.mem_flatMap.2 ⟨a, ha, hx⟩))
       simp [Line.insn?]⟩
+
+/-- **`unwindRows` succeeds on the emitted code** (`unwindRows_complete_nofar`) when the entry
+block's code after the leading callee-save stores does not start computing an x16 address.
+The statement before #479 (without `hx`) no longer holds: `unwindRows` now fails when a
+callee-saved register is stored through x16 right after the saves (an allocator answer with a
+spill slot at 32 KiB or more can do that), rather than emit tables without its row. -/
+theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
+    {fb : FnBin} (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa)
+    (hlay : fa.layout = .ok fb) (hsz : 4 * fb.words.size < 2 ^ 32) {vb : VBlock}
+    {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items)
+    (hs : ∀ a ∈ savesOf af, SaveOk af.frameSize a)
+    (hx : (afterSavesOf af).head?.all (fun a => !a.x16Addr) = true) :
+    ∃ rows, unwindRows af fa = .ok rows := by
+  refine unwindRows_complete_nofar halloc hemit hlay hsz hvb hit hs ?_
+  unfold farSave
+  cases h : (afterSavesOf af).head? with
+  | none => simp
+  | some a =>
+    rw [h] at hx
+    simp only [Option.all_some, Bool.not_eq_true'] at hx
+    simp [hx]
 
 /-! ## The `try_call` premises from the prepared code -/
 

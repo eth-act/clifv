@@ -959,7 +959,7 @@ theorem unwindRows_complete_frame {vc : VCode} {rf : RFunc} {af : AFunc} {k : Na
   obtain ⟨vb, hvb⟩ : ∃ vb, vc.blocks[0]? = some vb := ⟨_, Array.getElem?_eq_getElem (by omega)⟩
   obtain ⟨items0, hit⟩ : ∃ items0, rf.blocks[0]? = some items0 :=
     ⟨_, Array.getElem?_eq_getElem (by omega)⟩
-  exact unwindRows_complete halloc hemit hlay hcode hvb hit
+  exact unwindRows_complete_nofar halloc hemit hlay hcode hvb hit
     (saveOk_of hRF halloc hsz hne hframe hlead) (frame_saves_far hRF halloc hsz hne hframe hlead).2
 
 /-! ## Without `saveFrameB` (#479): an outgoing area below 32560 bytes suffices -/
