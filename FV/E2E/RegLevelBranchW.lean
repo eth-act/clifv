@@ -2,7 +2,7 @@ import FV.E2E.RegLevelBranch
 import FV.E2E.RegLevelWrites
 
 /-!
-# Branches on the machine with their writes (A3, #412, slice F8b)
+# Branches on the machine with their writes
 
 `RegLevelBranch`'s `step_branchX`, `step_skipX` with `RL.GoodXW` (`GoodX` and the writes
 `RL.WritesAt` of the unhooked instruction at the pc, which avoids the kept addresses `R.G`):
@@ -13,8 +13,6 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- **A branch line's state** with the body's `sp` and its writes: `GoodXW` (the step goes to the
-target label or the next line, and the branch instruction writes nothing). -/
 theorem step_branchXW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i : Insn} {l : Lbl}
     (hj : R.L[j]? = some (.ins i none))
     (hi : i = .b l ∨ (∃ c, i = .bcond c l) ∨ (∃ nz w r, i = .cbz nz w r l) ∨
@@ -25,9 +23,6 @@ theorem step_branchXW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i : Ins
   rcases hi with rfl | ⟨c, rfl⟩ | ⟨nz, w, r, rfl⟩ | ⟨nz, r, bit, rfl⟩ <;>
     exact RL.writesAt_noStore hR hj hpc rfl
 
-/-- **The inverted short branch of a relaxed branch** with the body's `sp` and its writes:
-`GoodXW` (the step goes past the next line, which is not the first word of an `adrp` pair, or to
-it, and the branch instruction writes nothing). -/
 theorem step_skipXW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {j : Nat} {i x : Insn}
     (hj : R.L[j]? = some (.ins i none)) (hj1 : R.L[j + 1]? = some (.ins x none))
     (hi : (∃ c, i = .bcond c .skip) ∨ (∃ nz w r, i = .cbz nz w r .skip) ∨
