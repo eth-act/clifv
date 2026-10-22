@@ -840,7 +840,14 @@ fn process_in(
     } else {
         inputs.extend(ours.iter().map(|(_, o)| o.clone()));
     }
-    run(Command::new(&cfg.rust_lld).args(["-flavor", "gnu", "-r", "-o"]).arg(&lean).args(&inputs))?;
+    // the inputs through a response file: a large codegen unit (std's, `--build-std`) has more
+    // objects than one command line holds
+    let inputs_rsp = work.join("lean-inputs.rsp");
+    write_list(
+        &inputs_rsp,
+        inputs.iter().map(|p| format!("\"{}\"", p.display().to_string().replace('\\', "\\\\").replace('"', "\\\""))),
+    )?;
+    run(Command::new(&cfg.rust_lld).args(["-flavor", "gnu", "-r", "-o"]).arg(&lean).arg(format!("@{}", inputs_rsp.display())))?;
     let lean_syms = read_syms(&lean)?;
     let mut ours_redef: Vec<String> = renames.iter().map(|(a, b)| format!("{a} {b}")).collect();
     // the CLIF names of our code → the final symbol names (`cargo fv link-proof`)
