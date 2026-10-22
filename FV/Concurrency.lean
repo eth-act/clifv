@@ -33,7 +33,10 @@ through location 0: `RealizeCompiled.WitnessMP.realizes_mp`, `RealizeCompiled.Wi
 call; external callees under the trusted event contract `CallCompose.ExtEvContract`).
 Layer 4b from the ABI entry, through the prologue: `ArmAllocThread.arm_alloc_refines_entry`.
 A compiled callee's contract in a linked thread: `CallThread.funReal_callee` (from
-`CallThread.thread_compiled_entry`, lifted under the caller's frames by `ClifLift.crun_pushC`).
+`CallThread.thread_compiled_entry`, lifted under the caller's frames by `ClifLift.crun_pushC`);
+callees with LL/SC loops entered with the open monitor: `CallSeg.funReal_calleeX`. A compiled
+caller calling the compiled `atomic_load`, as a thread: `CallSeg.WitnessC.funReal_call`,
+`CallSeg.WitnessC.realizes_call`.
 The fragment model is weaker than the whole `aarch64.cat` (`Armv8Full.consistent_frag`); LSE
 atomics map by the same table (`Lse.lse_maps`). Nothing here changes the Arm model of `FV/Arm`.
 -/
@@ -154,3 +157,7 @@ import FV.Concurrency.ArmProgram
 import FV.Concurrency.ClifLift
 import FV.Concurrency.CallThread
 import FV.Concurrency.CallThreadWitness
+import FV.Concurrency.CallSeg
+import FV.Concurrency.CallXClosedWitness
+import FV.Concurrency.CallLoadData
+import FV.Concurrency.CallLoadWitness
