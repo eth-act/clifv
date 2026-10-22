@@ -1,4 +1,5 @@
 import FV.Concurrency.CallLoadData
+import FV.Concurrency.CallXClosedWitness
 
 /-!
 # A compiled caller calling the compiled `atomic_load` (T2h, #311, calls)
@@ -685,5 +686,49 @@ theorem funReal_call (env : Clif.Env) :
     · exact .inl h
     · exact .inr (.inl ⟨[], _, rfl, h⟩)
     · exact .inr (.inr h)
+
+/-- **The thread through the call realizes the CLIF program** (`realizes_linked` with the
+caller's thread contract `funReal_call`): every execution of the realized prefix of a precise run
+of the linked machine from the caller's ABI entry (as `realizes_linked`'s premises) is realized
+by a CLIF thread of `pCL` from the caller's entry state. -/
+theorem realizes_call (env : Clif.Env) {ls : List Lab} {t' : CallCompose.AT}
+    (hr : PRun Policy.arm MC (OkPriv RLB) (RC.s0, none) ls t') :
+    ∃ k : Nat → Nat, (∀ i < 1, k i ≤ ls.length) ∧
+      ∀ (PA : Traces ProgE2E.AState AKind BVal) (locsA locsC : List (Nat × Nat)) (MA0 MC0 : Bytes)
+        (rfA coA rmwA : Rel PEv), PA.n = 1 →
+        (∀ i < 1, PA.tr i = conv (evTr (ls.take (k i)))) →
+        (PA.exec locsA rfA coA rmwA).Wf →
+        (∀ i < 1, ∀ a b, rmwA (.thr i a.1 a.2) (.thr i b.1 b.2) ↔
+          MonPair (evTr (ls.take (k i))) a b) →
+        locsC <+: locsA →
+        (∀ q (h : q < locsA.length), locsC.length ≤ q → ∃ j, j < 1 ∧ PrivA RLB (locsA[q]).1) →
+        (∀ q (h : q < locsC.length),
+          bytesI.get MA0 (locsC[q]).1 (locsC[q]).2 = bytesI.get MC0 (locsC[q]).1 (locsC[q]).2) →
+        (∀ i < 1, ∀ j < 1, j ≠ i → ∀ q x, evAt (PA.tr i) q = some x → x.dir ≠ .F →
+          ¬ PrivA RLB x.loc) →
+        ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧
+          (∀ i < 1, PC.st i 0 = .run csC) ∧ PC.Runs (CStep env pCL) ∧
+          Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) :=
+  CallCompose.realizes_linked (Priv := fun _ => PrivA RLB) (M := fun _ => MC)
+    (ok := fun _ => OkPriv RLB) (cs := fun _ => .run csC) (sA := fun _ => (RC.s0, none))
+    (fun _ _ ls t' hr => by
+      obtain ⟨k, c', hR, -⟩ := funReal_call env ls t' hr
+      exact ⟨k, c', hR⟩)
+    (ls := fun _ => ls) (t' := fun _ => t') (fun _ _ => hr)
+
+/-- **Non-vacuity of `funReal_calleeX`** on the compiled `atomic_load` entered by the caller's
+`bl` with the open monitor (its program passes the `LdxAcq` check, its hooks keep the error). -/
+theorem funReal_bl_open (env : Clif.Env) :
+    CallCompose.FunReal env pCL (PrivA RLB) MC (OkPriv RLB) (fun _ _ _ _ => False)
+      (CalleeEnd env pCL RLB extC) (RLB.s0, none) (.run (ClifLift.pushC extC csL)) := by
+  have hspec := Classical.choose_spec prefixC
+  rw [show Classical.choose prefixC = n0C from rfl] at hspec
+  obtain ⟨_, _, _, _, _, hstr, hx0⟩ := hspec
+  have hπ : RLB.s0.program = pL := enterL_program sBC
+  exact funReal_calleeX (compiledEX hstr hx0 env pCL) extC
+    (fun s' h => by simp only [MC, h.trans hπ, ite_true]; rfl)
+    (fun s' h => (step_programX sBC s').trans h)
+    (fun s' _ h => armStepX_err (fun _ _ h => h) (fun _ _ _ h => h) s' h)
+    (fun s' h => WitnessX.ldxAcq_of_words (by native_decide) s' (h.trans hπ))
 
 end Concurrency.CallSeg.WitnessC

@@ -631,3 +631,28 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.WitnessC.compiled_ofC -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.WitnessC.run_cas -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.WitnessC.realizes_cas -- witness: native_decide
+
+-- T2 (#311): calls — the caller's segment, the `bl`, exclusive-closed LL/SC callees, the witness
+#print axioms Concurrency.CallSeg.linesAt_program
+#print axioms Concurrency.CallSeg.moves_privA
+#print axioms Concurrency.CallSeg.prun_privF
+#print axioms Concurrency.CallSeg.step_bl
+#print axioms Concurrency.CallSeg.tstep_plain_nil
+#print axioms Concurrency.CallSeg.refines_nilS
+#print axioms Concurrency.CallSeg.stepEvs_err
+#print axioms Concurrency.CallSeg.stepEvs_ldx
+#print axioms Concurrency.CallSeg.xClosed_mon
+#print axioms Concurrency.CallSeg.xClosed_mon0
+#print axioms Concurrency.CallSeg.armStepX_err
+#print axioms Concurrency.CallSeg.funReal_callee0
+#print axioms Concurrency.CallSeg.funReal_calleeX
+#print axioms Concurrency.CallSeg.WitnessX.ldxAcq_of_words
+#print axioms Concurrency.CallSeg.WitnessX.xClosed_llsc -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.wf_gen
+#print axioms Concurrency.CallSeg.WitnessC.prefixC -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.compiledEX -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.funRealX -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.cstepC -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.funReal_call -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.realizes_call -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.funReal_bl_open -- witness: native_decide

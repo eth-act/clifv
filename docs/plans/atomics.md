@@ -650,10 +650,34 @@ they are; the per-thread layers are new files.
       caller's frames, its runs exclusive-closed (`xClosed_noStx`: no store exclusive with
       release in its code). Witness (`CallThreadWitness.lean`): `compiledE_L`,
       `thread_load_entry`, `noStxL`, **`funReal_load`** (the compiled `atomic_load` as a callee).
-    * open: the caller's segment obligation for compiled code (layer 4b with the call item as a
-      pause point, layer 2 with call statements, the caller's resumption after the callee's
-      return: its callee-saved registers, `sp` and frame restored by the callee's compiled
-      code), and the witness of a compiled function calling the compiled `atomic_load`.
+    * **A compiled caller calling a compiled callee (done, `CallSeg.lean`, witness
+      `CallLoadData.lean`/`CallLoadWitness.lean`)**: `moves_privA` (through moves, per step:
+      private events, no store exclusive, the program kept, `linesAt_program`), `prun_privF`
+      (a precise run of a linked machine agreeing with `R.step` along such a path is that path,
+      its labels the path's events, no `relXW`), `step_bl` (the machine's step at a hooked
+      `bl n` line is `R.H.call (some n)`; the decoded `BL` has no events, class `plain`),
+      `tstep_plain_nil`, `refines_nilS`. Witness: the CLIF `%f(v0) { v1 = call fn0(v0) }` with
+      `fn0 = colocated %ld` compiled (`RC`, its hook `enterL` enters the compiled `atomic_load`:
+      its program, pc at its base, x30 the return address); `prefixC` (the caller's path from
+      its ABI entry to the `bl`); `RLx s` (the callee's activation entered by the `bl` from `s`,
+      the caller's addresses kept: `wfX`, `abiX`, `compiledEX`, `funRealX`); `cstepC` (the
+      CLIF `call`, no events); **`funReal_call`** (`link_compose` on the linked machine `MC`:
+      every precise run from the caller's ABI entry realizes a prefix that is the whole run or
+      ends at the callee's end, `EndC`); **`realizes_call`** (`realizes_linked`).
+    * **Exclusive-closed callee runs with LL/SC loops (done, `CallSeg.lean`)**: decided from the
+      monitor rather than per loop: **`xClosed_mon`**/`xClosed_mon0` — on a program whose load
+      exclusives all acquire with a base other than `sp` (`LdxAcq`) and a machine keeping the
+      program and the error (`armStepX_err`), every precise run from the open monitor is
+      exclusive-closed (a successful `stlxr` needs the armed monitor, which only an `ldaxr` and
+      its `acqXR` event arm). `funReal_callee0`, **`funReal_calleeX`**: the callee contract of a
+      compiled callee entered with the open monitor (its `atomic_rmw`/`atomic_cas` loops use
+      `ldaxr` on x25), from the word check `WitnessX.ldxAcq_of_words`. Witnesses:
+      `WitnessX.xClosed_llsc` (the `ldaxr; add; stlxr; cbnz` loop's run with a successful
+      `stlxr`), `WitnessC.funReal_bl_open`.
+    * open: the caller's resumption after the callee's return (layer 4b and layer 2 with call
+      items/statements as pause points: callee-saved registers, `sp` and frame restored by the
+      callee's compiled code), and a compiled `atomic_rmw`/`atomic_cas` callee entered from its
+      ABI entry (its `CompiledE` needs the rmw/cas forms at the entry-level witness).
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
