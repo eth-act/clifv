@@ -246,12 +246,11 @@ theorem relF : E2E.RelW ΓF fF (E2E.spv w₀F) [] Clif.Mem.empty w₀F :=
 
 theorem argsF : ArgsAtEntry RA.F fF.sig [] w₀F := fun loc v h => by simp at h
 
-/-- **Non-vacuity of `Compiled`**: the compiled `fence; return` (`RA`), the CLIF entry state
-`csF`, and the Arm state after the prologue. -/
-theorem compiledF : ∃ n, ∀ (env : Clif.Env) (p : Clif.Program),
-    Compiled env p RA csF (iterN RA.step n RA.s0) := by
-  obtain ⟨n, hq, hA⟩ := qRA
-  refine ⟨n, fun env p => ?_⟩
+/-- `Compiled` for the compiled `fence; return` at every Arm state `Q`-related to its entry
+configuration (with the store that state holds). -/
+theorem compiled_of {s : ArmState} (hq : Q RA s (MConf.init RA.rf (locVal RA.fr s) w₀F))
+    (hA : AInv RA (MConf.init RA.rf (locVal RA.fr s) w₀F)) (env : Clif.Env) (p : Clif.Program) :
+    Compiled env p RA csF s := by
   obtain ⟨hlow, hthr, hext, hind, hv, -, hout, hprep, -⟩ := checksF
   obtain ⟨ctx, st0, R, gn, bl, A, H, hbl⟩ := driverHyp_of (Γ := ΓF) (fctx := RA.ctx) (X := RA.X)
     (c := E2E.spv w₀F) (env := env) (p := p) hlow hthr (List.isEmpty_iff.mp hext)
@@ -269,6 +268,13 @@ theorem compiledF : ∃ n, ∀ (env : Clif.Env) (p : Clif.Program),
       (fun off h => by simp [List.isEmpty_iff.mp hlocs] at h),
       hprep, allocF, b0F, rfl, rfl, rfl, rfl, rfl, by simp [hpar', csF], by simp [hpar'],
       by simp [List.isEmpty_iff.mp hsig], relF, argsF, hq, hA⟩ }
+
+/-- **Non-vacuity of `Compiled`**: the compiled `fence; return` (`RA`), the CLIF entry state
+`csF`, and the Arm state after the prologue. -/
+theorem compiledF : ∃ n, ∀ (env : Clif.Env) (p : Clif.Program),
+    Compiled env p RA csF (iterN RA.step n RA.s0) := by
+  obtain ⟨n, hq, hA⟩ := qRA
+  exact ⟨n, compiled_of hq hA⟩
 
 /-- The allocation has moves (the saves of the callee-saved registers). -/
 theorem not_noMovesF : ¬ NoMoves RA := by
