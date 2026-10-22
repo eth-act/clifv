@@ -1,3 +1,4 @@
+import FV.Link.ReachCheckWitness
 import FV.E2E.StockDivWitness
 import FV.E2E.StockDivSourceWitness
 import FV.E2E.SemanticNIBoundary
@@ -43,3 +44,8 @@ import FV.E2E.SemanticNIBoundary
 #print axioms E2E.StockDivNIWitness.zero_traps
 #print axioms E2E.StockDivNIWitness.signed_minimum_overflow
 #print axioms E2E.StockDivNIWitness.signed_minimum_remainder
+
+#print axioms Link.LinkSpec.reachOkMap_eq
+#print axioms Link.LinkSpec.reachOkMap_empty
+#print axioms Link.LinkSpec.reachOkMap_duplicates -- witness: native_decide
+#print axioms Link.DeadCleanup.placedPar_eq
