@@ -135,6 +135,18 @@ source delta, import closure and unchanged relevant executable hashes; rerun
 current normal keys/trust, affected executable ownership and affected consumer
 cohorts. Never relabel historical passes. Unknown dependencies require reruns.
 
+Division/remainder implementation is active on the preserved delivery view.
+The first complete source class is a single returned division/remainder, with
+all four operations and arbitrary operands, including zero and signed overflow.
+Its source/record/binder/body/ABI-entry/return/trap domain and additive paired
+consumer compile; 48 fixed ABI/cleanup pipeline witnesses and exact arbitrary-input
+source outcomes compile. The old pure-return signatures remain wrappers over a
+shared local-step composition; division is never declared pure or no-trap.
+Boundary checkpoint f4c0bc72 is remotely backed. Full per-PR runtime/native/link/
+generated-proof/trust/retention validation is pending; this is not a landing receipt.
+Continue mixed/colored/sunk trap-prefix bodies after this class, then all remaining
+original #140 obligations. Do not stop at this first class.
+
 Next: division/
 remainder; complete original widths/ABIs; every unchanged original #140 control/
 memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligation.
