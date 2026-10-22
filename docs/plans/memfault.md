@@ -13,7 +13,7 @@ keep their premises, new results get new names, every new top-level theorem a wi
 | F2 | done: `FV/Clif/MemTrap.lean` (`Access`, `MemTrapAt`, `memTrapInst` = `atomic_rmw`/`atomic_cas`, `memTrapAt_of_trapped`, `evalInst_notrap`), `FV/E2E/MemTrapStatement.lean` (`TrapsExplicitM`, `TrapsExplicit.toM`, `MapFaults`, `TrapAtF`), witness `FV/Clif/MemTrapWitness.lean` (`atomic_rmw` at address 0 traps `heap_oob`) |
 | F3 | done: `FV/Backend/Proof/IselMemTrap.lean` (`AtomicLowered`, `loopTrap?`, `atomic_rules_filter`, `atomicLowered_runTerm`: the `lower` call on an `atomic_rmw`/`atomic_cas` emits its single LL/SC loop with the CLIF address vreg and flags), `FV/Backend/Proof/LowerSimMemTrap.lean` (`VMemTrapFrom`, `RunPremM`, `stmt_memtrap`, `reach_match`, `driver_memtrap`: a CLIF trap is an explicit VCode trap or the run reaches the trapping atomic's loop, code and address kept). Design change: no `csemF`; the VCode semantics is unchanged and the memory trap is an observable (`VMemTrapFrom`) refined to the Arm state at the loop's `ldaxr` |
 | F4–F7 (weak chain) | done: the per-function conclusion on the existing total-memory machine, no `MapRel` premise (parent's decision 2026-10-22). `FV/E2E/RegLevelMemTrap.lean` (`TrapAtM`, `haltLoop`, `loop_ldaxr`, `regLevel_memtrap_world_value`, `trapAtF_of_trapAtM`), `FV/Backend/Proof/PrepareMemTrap.lean` (`memTraps_prune`, `memTraps_prep`), `FV/E2E/WorldMemTrap.lean` (`backend_correct_worldX_cleanup_memtrap`), `FV/E2E/LinkMemTrap.lean` (`RunGoodLB`, `backend_correct_program_memtrap_{core,budget,peak}`), `FV/E2E/DeadCleanupExecMemTrap.lean` (`ExecTrapM`, `act_simNB`, `binary_correct_exec_memtrap{,_peak}`), `FV/Link/DeadCleanupExeMemTrap.lean` (`compileExe_correct_memtrap{,_peak}`, `compileExe_correct_source_memtrap{,_peak}`), `FV/Front/RawExeMemTrap.lean` (`bundle_correct_{source,raw}_memtrap{,_peak}`), witness `FV/Link/DeadCleanupExeMemTrapWitness.lean` (`atomic_cas` at address 0 under `nullMap`). **Claim**: if the run reaches the trapping atomic, its `ldaxr` faults under the map; it does not say that no earlier access faulted. Only traps of the entry function's own atomics (callees return; `TrapsExplicitM` of the linked environment). docs/contracts/e2e.md "Memory traps of trapping atomics" |
-| F8 | open: the `MapRel`-based variants on `stepF` (a per-state invariant: every earlier access of the run touches only mapped memory), as new theorem variants |
+| F8 | done with every entry CLIF byte read-write (#443): F8b `RL.WritesAt`/`RL.GoodXW` per realised form (`FV/E2E/*W.lean`, `realizes_allW`, `backend_correct_world_niX_pipelineW`, `backend_correct_program_memtrapW_*`), F8c/F8d `FV/E2E/DeadCleanupExecMemFault.lean` (`MapRelRW`, `ExecTrapF`, `binary_correct_exec_memtrapF_rw{,_peak}`), `FV/Link/DeadCleanupExeMemFault.lean`, `FV/Front/RawExeMemFault.lean` (`compileExe_correct{,_source}_memtrapF_rw{,_peak}`, `bundle_correct_{source,raw}_memtrapF_rw{,_peak}`), witness `FV/Link/DeadCleanupExeMemFaultWitness.lean`. Design change: no write guard; the unwritable bytes are kept addresses (`sysSK … NW`), so `MapRelRW` needs read-only data mapped read-write. F8a (#472): the write guard, for `.rodata` mapped read-only |
 
 ## Where we are
 
@@ -167,7 +167,7 @@ reaches an instruction that halts with `trapCode? i = some c`":
 | F5 | `FV/E2E/LinkMemTrap.lean` | delivered: `backend_correct_program_memtrap{_core,_budget,_peak}` (`TrapAtM` and `RunGoodLB`) |
 | F6 | `FV/E2E/DeadCleanupExecMemTrap.lean`, `FV/Link/DeadCleanupExeMemTrap.lean` | delivered: `binary_correct_exec_memtrap{,_peak}`, `Link.DeadCleanup.compileExe_correct_memtrap{,_peak}` (`ExecRefinesM`, `ExecTrapM`) |
 | F7 | `FV/Link/DeadCleanupExeMemTrap.lean`, `FV/Front/RawExeMemTrap.lean`, witness `FV/Link/DeadCleanupExeMemTrapWitness.lean` | delivered: `compileExe_correct_source_memtrap{,_peak}`, `Front.bundle_correct_{source,raw}_memtrap{,_peak}`: the trap halves with `TrapsExplicitM ∧ MapFaults mp` instead of `TrapsExplicit`; `NoMemTrap` of the source run stays (it forbids load/store traps only; atomic traps are allowed) |
-| F8 | open | the `MapRel` variants on `stepF`: no earlier access of the run faults |
+| F8 | see Status | `_memtrapF_rw`: the fault-aware executable runs to the trap with no earlier fault; read-only data must be mapped read-write until F8a (#472) |
 
 ## Size [INFERENCE]
 
@@ -216,6 +216,15 @@ executable transfer (`StepOk` gets the footprint fact, `Sim` keeps it: same regi
 agreeing outside relocated bytes), and F8d: the `_memtrapF` variants on the fault-aware machines
 (`ArmFault.stepF` per function; the executable machine with `execF` at its processor steps, hook
 steps unchanged). Size [INFERENCE]: F8a M, F8b L (every realised form, the bulk), F8c M, F8d S.
+
+**As built (#443).** F8a's write guard was not built: it re-proves every memory and call rule
+through isel. Instead the bytes `mp` does not allow to be written are kept addresses of every
+activation (`DeadCleanupExecBytes.sysSK I B f K r NW`, as the GOT slots), and F8b proves the writes
+fact `RL.WritesAt` (writes avoid `G`) beside D2's `RL.ReadsAt`. Because `csem F` admits only
+accesses, loads included, outside `F ⊇ G`, `G` cannot hold a byte the program reads, so the premise
+`MapRelRW` needs every entry CLIF byte, read-only data included, mapped read-write; the theorems
+are named `_memtrapF_rw`. The write guard (and `MapRel` with read-only data mapped read-only) is
+#472.
 
 ## Related, not in this plan
 
