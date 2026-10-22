@@ -495,7 +495,7 @@ both typed theorems apply; `viaT_baseline` on the integer executable witness. Au
 `fnScopeInTB` keeps every conjunct of `fnScopeInB` over the typed scope (`functionET`,
 `lowerScopeTB`) with `fnScopeTB`'s input checks `storeTypedB`/`tryArgClassOk`; a function outside
 subset E must also meet `resClassOkB` and the run-time decider `lowerOutTB` (`lowerFunction`
-succeeds; `ctlSpillB` of its output; `emitCondsB`, `formsCoveredB default`, `killFreeB` and
+succeeds; `ctlSpillB` of its output; `emitCondsB`, `formsCoveredB default` and
 `ctlInstsB` — `ctlInstOk` everywhere, `Args` first in block 0 — of `prepare`'s output), i.e. what
 the typed chain does not prove yet; `InScopeInT`, `fnScopeInFailsT`. Literal-pool `f64const`
 stays outside by `functionET`'s `f64PoolFree`. Proven: `Prep.prepare_okT` (`prepare` is total on
@@ -535,7 +535,8 @@ proven on the typed scope: `E2E.spillKillFreeT` (`E2E/SpillKillFreeT.lean`: `Dom
 `LowerScopeT`, `AbiSigsOk`, `ArityOk`, `tryArgClassOk` → `Spill.killFreeB` of `prepare
 (lowerFunction f)`) and `LinkCheck.killFreeB_of_scopeT` (from `fnScopeInTB`'s decided conjuncts
 `dominatedB`, `lowerScopeTB`, `sigAbiOk`, `indSigsOk`, `arityOkB`, `tryArgClassOk`), so
-`lowerOutTB`'s `killFreeB` conjunct can be dropped. Parts: `Kill.killRunsHypT`
+`lowerOutTB`'s `killFreeB` conjunct is dropped (Floats14; `fnScopeTB_of_inT`, `pipeT_okT` and
+`pipeCleanupT_okT` take it from `killFreeB_of_scopeT`). Parts: `Kill.killRunsHypT`
 (`Proof/KillDriverT.lean`; the killed-vreg analysis is a uniform invariant over every root rule
 of the exported program, so only its two rule exclusions, `nop` 587 and I128 636/637, are
 re-proven over `CtxInvT`), `Kill.tryDefsExactT` (`Proof/KillTryDefsT.lean`; the `try_call`'s

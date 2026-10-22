@@ -3,6 +3,7 @@ import FV.E2E.LinkScopeInput
 import FV.E2E.LinkScopeT
 import FV.E2E.EmitTotalT
 import FV.E2E.SpillDefined
+import FV.E2E.SpillKillFreeT
 
 /-! # The typed input conditions and the compiler's per-function totality (S11e5 Stage C, slice 8)
 
@@ -66,11 +67,11 @@ theorem ctlInsts_of_ctlInstsB {vc : VCode} (h : ctlInstsB vc = true) : CtlInsts 
     · cases h2
 
 /-- `lowerOutTB`: `lowerFunction` succeeds, its output meets `ctlSpillB`, and every output of
-`prepare` on it meets `emitCondsB`, `formsCoveredB default`, `killFreeB` and `ctlInstsB`. -/
+`prepare` on it meets `emitCondsB`, `formsCoveredB default` and `ctlInstsB`. -/
 theorem lowerOutTB_spec {g : Clif.Function} (h : lowerOutTB g = true) :
     ∃ vc, lowerFunction g = .ok vc ∧ Spill.ctlSpillB vc = true ∧
       ∀ vcp, prepare vc = .ok vcp → emitCondsB vcp = true ∧ formsCoveredB default vcp = true ∧
-        Spill.killFreeB vcp = true ∧ ctlInstsB vcp = true := by
+        ctlInstsB vcp = true := by
   unfold lowerOutTB at h
   split at h
   · rename_i vc hl
@@ -78,7 +79,7 @@ theorem lowerOutTB_spec {g : Clif.Function} (h : lowerOutTB g = true) :
     obtain ⟨hc, h⟩ := h
     refine ⟨vc, hl, hc, fun vcp hp => ?_⟩
     simp only [hp, Bool.and_eq_true] at h
-    exact ⟨h.1.1.1, h.1.1.2, h.1.2, h.2⟩
+    exact ⟨h.1.1, h.1.2, h.2⟩
   · cases h
 
 /-- **Integer inclusion**: every function of the integer input scope is in the typed one. -/
@@ -123,7 +124,8 @@ theorem fnScopeTB_of_inT {g : Clif.Function} (h : fnScopeInTB g = true)
   obtain ⟨hrc, hout⟩ := hor.resolve_left (by rw [hE]; decide)
   obtain ⟨vc, hl, hcs, hpost⟩ := lowerOutTB_spec hout
   obtain ⟨vcp, hp⟩ := Prep.prepare_okT (dominated_of h10) (lowerScopeT_of h11) hl
-  obtain ⟨hem, hfc, hk, -⟩ := hpost vcp hp
+  obtain ⟨hem, hfc, -⟩ := hpost vcp hp
+  have hk := killFreeB_of_scopeT h10 h11 h4a h4b h5 h12 h3 hl hp
   have hsz : spillSizeOkB vcp = true := by
     simp only [emitCondsB, Bool.and_eq_true] at hem
     exact hem.1.1.1
@@ -149,13 +151,15 @@ theorem pipeT_okT {g : Clif.Function} (h : fnScopeInTB g = true) (k : Nat) (base
     obtain ⟨hl, -⟩ := pipeT_spec ha
     exact ⟨a, ha, lowerCheckT_complete_int (dominated_of hd) (lowerScope_of hs) hl, hpc,
       allocChecked_of_checkAlloc hca, hcov⟩
-  · obtain ⟨-, -, htc, -, -, -, -, -, -, -, hd, hs, har, -, -, -, -, -, hor⟩ := fnScopeInT_parts h
+  · obtain ⟨-, -, htc, habi, hext, hind, -, -, -, -, hd, hs, har, -, -, -, -, -, hor⟩ :=
+      fnScopeInT_parts h
     obtain ⟨hrc, hout⟩ := hor.resolve_left hE
     obtain ⟨vc, hl, hcs, hpost⟩ := lowerOutTB_spec hout
     have hD := dominated_of hd
     have hS := lowerScopeT_of hs
     obtain ⟨vcp, hp⟩ := Prep.prepare_okT hD hS hl
-    obtain ⟨hem, hfc, hk, hci⟩ := hpost vcp hp
+    obtain ⟨hem, hfc, hci⟩ := hpost vcp hp
+    have hk := killFreeB_of_scopeT hd hs habi hext hind har htc hl hp
     have hcov := (formsCoveredB_iff _ _).mp hfc
     obtain ⟨hacc, af, ha, fa, fb, he, hla⟩ := backend_total_emitT hD hS (arityOk_of har) htc
       (resClassOk_of_resClassOkB hrc) hl hp (ctlSpill_of_ctlSpillB hcs) hcov hk
@@ -184,5 +188,13 @@ theorem (`inScopeInT_of_inScopeIn`). -/
 theorem resultsT_ok_input {I : LinkInput} (hin : InScopeIn I = true) :
     I.resultsT.all (·.2.toBool) = true :=
   resultsT_ok_inT (inScopeInT_of_inScopeIn hin)
+
+/-- **`lowerOutTB`'s `killFreeB` conjunct is implied by the rest of the typed input scope.** -/
+theorem killFreeB_of_fnScopeInT {g : Clif.Function} {vc vcp : VCode} (h : fnScopeInTB g = true)
+    (hl : lowerFunction g = .ok vc) (hp : Backend.prepare vc = .ok vcp) :
+    Spill.killFreeB vcp = true := by
+  obtain ⟨-, -, htc, habi, hext, hind, -, -, -, -, hd, hs, har, -⟩ := fnScopeInT_parts h
+  exact killFreeB_of_scopeT hd hs habi hext hind har htc hl hp
+
 
 end E2E.LinkCheck
