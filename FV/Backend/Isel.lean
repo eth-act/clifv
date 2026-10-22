@@ -401,7 +401,7 @@ register of its class (`tyClass`), then 8-byte-minimum naturally aligned stack s
 pointer-sized). -/
 def sigArgs (s : Clif.Signature) : Except String (List Nat) :=
   s.params.mapM fun p =>
-    if p.ty == .i128 then throw "i128 parameter"
+    if p.ty == .i128 || p.ty.isVec then throw "i128 or vector parameter"
     else match p.purpose with
       | .normal | .vmctx => pure p.ty.bytes
       | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"

@@ -1427,7 +1427,7 @@ theorem CtxInv.call_retClasses {f : Clif.Function} {ctx : Ctx} (hctx : CtxInv f 
 
 /-- The byte sizes of a signature's parameters (`sigArgs`) are their types' sizes. -/
 theorem sigArgs_eq_map : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
-    ps.mapM (fun p => if p.ty == .i128 then throw "i128 parameter"
+    ps.mapM (fun p => if p.ty == .i128 || p.ty.isVec then throw "i128 or vector parameter"
       else match p.purpose with
         | .normal | .vmctx => pure p.ty.bytes
         | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
@@ -1464,9 +1464,10 @@ theorem sigParamBytes_eq_map {s : Clif.Signature} {bytes : List Nat}
     (hb : sigParamBytes s = .ok bytes) : bytes = s.params.map (·.ty.bytes) :=
   sigArgs_eq_map hb
 
-/-- The byte sizes of a signature's parameters are 1, 2, 4 or 8 (`sigArgs` rejects `i128`). -/
+/-- The byte sizes of a signature's parameters are 1, 2, 4 or 8 (`sigArgs` rejects `i128` and
+vectors). -/
 theorem sigArgs_bytes : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
-    ps.mapM (fun p => if p.ty == .i128 then throw "i128 parameter"
+    ps.mapM (fun p => if p.ty == .i128 || p.ty.isVec then throw "i128 or vector parameter"
       else match p.purpose with
         | .normal | .vmctx => pure p.ty.bytes
         | .sret => if p.ty == .i64 then pure 8 else throw "sret parameter must be i64"
@@ -1489,12 +1490,17 @@ theorem sigArgs_bytes : ∀ {ps : List Clif.AbiParam} {bytes : List Nat},
         intro c hc
         rcases List.mem_cons.mp hc with rfl | hc
         · have hty : p.ty ≠ .i128 := fun e => by simp [e] at hb
-          have hbt : ∀ t : Clif.Ty, t ≠ .i128 → t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8 := by
-            intro t ht; cases t <;> simp_all [Clif.Ty.bytes, Clif.Ty.width]
-          simp only [hty, beq_iff_eq, ↓reduceIte] at hb
+          have hv : p.ty.isVec = false := by
+            cases e : p.ty.isVec
+            · rfl
+            · simp only [e, Bool.or_true, ↓reduceIte] at hb; cases hb
+          have hbt : ∀ t : Clif.Ty, t ≠ .i128 → t.isVec = false →
+              t.bytes = 1 ∨ t.bytes = 2 ∨ t.bytes = 4 ∨ t.bytes = 8 := by
+            intro t ht htv; cases t <;> simp_all [Clif.Ty.bytes, Clif.Ty.width]
+          simp only [hty, hv, beq_iff_eq, Bool.or_false, ↓reduceIte] at hb
           split at hb
-          · simp only [pure, Except.pure, Except.ok.injEq] at hb; rw [← hb]; exact hbt _ hty
-          · simp only [pure, Except.pure, Except.ok.injEq] at hb; rw [← hb]; exact hbt _ hty
+          · simp only [pure, Except.pure, Except.ok.injEq] at hb; rw [← hb]; exact hbt _ hty hv
+          · simp only [pure, Except.pure, Except.ok.injEq] at hb; rw [← hb]; exact hbt _ hty hv
           · split at hb
             · simp only [pure, Except.pure, Except.ok.injEq] at hb; rw [← hb]; simp
             · cases hb
