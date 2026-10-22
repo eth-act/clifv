@@ -1,6 +1,7 @@
 import Crates.FrontendBundleWitnessRaw
 import Crates.FrontendBundleWitnessPeak
 import FV.Front.RawExeContract
+import FV.Front.ExeContract
 
 /-! # Non-vacuity of the runtime-contract theorems (A5, #411) on a real codegen unit
 
@@ -204,5 +205,96 @@ theorem bundle_raw_peak_contract_witness :
   rw [gr, Option.getD_some] at hrel
   cases split_ret hrel
   exact ⟨scd_ok, hf0r, σ, hσr, hd, hrun0r, k, hret, hx 0 _ rfl, hx 1 _ rfl⟩
+
+/-- **Per-run non-vacuity of `Front.bundle_correct_source_contract`**: as
+`Crates.FrontendBundleWitness.bundle_source_witness` (the units' program under the frontend
+naming `sc`), with the runtime contract `contract` and the CLIF view `view` in place of the seven
+entry premises. -/
+theorem bundle_source_contract_witness :
+    Front.buildSpec bw = .ok S ∧ Link.DeadCleanup.compileExe S file0 = .ok file ∧
+    bw.units.mapM Front.parseUnit = .ok us ∧ Front.ScopingOk us sc ∧
+    (Front.link us sc).func? n = some f0 ∧ mentions128 f0 = true ∧
+    ∃ σ : Clif.Ren,
+      Front.link us (Front.finOf us) = (Front.link us sc).rename σ.fwd ∧
+      σ.fwd mulClif = mulLinked ∧
+      Clif.runLoop (helperEnv.ren σ.symm) (Front.link us sc) M (cs.ren σ.symm) =
+        .returned [⟨.i128, 5#64 ++ 15#64⟩] ((LinkWitness.retMem run).ren σ.symm) ∧
+      ∃ k, ArmRet ra0 (r (memOf file)) (runX (step J helperBase file) k (r (memOf file))) ∧
+        XHolds ⟨.i64, 15#64⟩ (xreg 0 (runX (step J helperBase file) k (r (memOf file)))) ∧
+        XHolds ⟨.i64, 5#64⟩ (xreg 1 (runX (step J helperBase file) k (r (memOf file)))) := by
+  obtain ⟨hf, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, hst, -, -, -,
+    -, hslotsB, hsrc⟩ := FrontendBundleWitness.facts
+  obtain ⟨σ, hσ, hσn, hσm⟩ := alpha
+  have hP := srcProg_eq hσ
+  have hfs : f0.rename σ.fwd = fs := pre_fn hP hσn hf
+  have hsig0 : f0.sig = fs.sig := by rw [← hfs, Clif.Function.rename_sig]
+  have hslots : ∀ g ∈ J.srcProg.funcs, g.slots = [] :=
+    fun g hg => by simpa using List.all_eq_true.mp hslotsB g hg
+  have hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f0.sig.params).getD []) args args' := by
+    rw [hsig0, gp, Option.getD_some]
+    exact ⟨⟨3#64, 1#64, rfl, rfl, rfl⟩, ⟨5#64, 0#64, rfl, rfl, rfl⟩, trivial⟩
+  have H := Front.bundle_correct_source_contract (r := r (memOf file)) (args := args)
+    (args' := args') (cs := cs.ren σ.symm) (cs' := cs') buildSpec_eq compile_eq hsrc hus hσ
+    (helperEnv.ren σ.symm) helperBase (Front.Env.ren_symm_ren σ _).symm hf0
+    (by rw [hfs]; exact acyclic) (by rw [hfs]; exact contract hst) (by rw [hfs]; exact view)
+    (pre_entry hfs clifEntry) hexp rfl (Front.Mem.ren_symm_ren σ cm).symm
+    (pre_bnd hP (Link.SourceWitness.srcBounded hsrc hslots (Clif.Program.func?_some hf).1
+      clifEntry cm_bounded)) M
+  have hrun0 := pre_run hP run_eq
+  have h := H.1 _ _ hrun0
+  rw [hfs, hsig0, x30_r] at h
+  obtain ⟨vals', hrel, k, hret, hx, -⟩ := h
+  rw [gr, Option.getD_some] at hrel
+  cases split_ret hrel
+  exact ⟨buildSpec_eq, compile_eq, hus, sc_ok, hf0, f0_mentions, σ, hσ, hσm, hrun0, k, hret,
+    hx 0 _ rfl, hx 1 _ rfl⟩
+
+/-- **Per-run non-vacuity of `Front.bundle_correct_source_peak_contract`**: as
+`bundle_source_contract_witness`, the source run's call depth `d = 1`
+(`Crates.FrontendBundleWitnessPeak.depth`) instead of the call-graph premise, and
+`frameDrop + D * 1` bytes of stack. -/
+theorem bundle_source_peak_contract_witness :
+    Front.buildSpec bw = .ok S ∧ Link.DeadCleanup.compileExe S file0 = .ok file ∧
+    bw.units.mapM Front.parseUnit = .ok us ∧ Front.ScopingOk us sc ∧
+    (Front.link us sc).func? n = some f0 ∧ mentions128 f0 = true ∧
+    ∃ σ : Clif.Ren,
+      Front.link us (Front.finOf us) = (Front.link us sc).rename σ.fwd ∧
+      σ.fwd mulClif = mulLinked ∧
+      Clif.DepthLe (helperEnv.ren σ.symm) (Front.link us sc) FrontendBundleWitnessPeak.d
+        (cs.ren σ.symm) ∧
+      Clif.runLoop (helperEnv.ren σ.symm) (Front.link us sc) M (cs.ren σ.symm) =
+        .returned [⟨.i128, 5#64 ++ 15#64⟩] ((LinkWitness.retMem run).ren σ.symm) ∧
+      ∃ k, ArmRet ra0 (r (memOf file)) (runX (step J helperBase file) k (r (memOf file))) ∧
+        XHolds ⟨.i64, 15#64⟩ (xreg 0 (runX (step J helperBase file) k (r (memOf file)))) ∧
+        XHolds ⟨.i64, 5#64⟩ (xreg 1 (runX (step J helperBase file) k (r (memOf file)))) := by
+  obtain ⟨hf, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -,
+    -, hslotsB, hsrc⟩ := FrontendBundleWitness.facts
+  obtain ⟨σ, hσ, hσn, hσm⟩ := alpha
+  have hP := srcProg_eq hσ
+  have hfs : f0.rename σ.fwd = fs := pre_fn hP hσn hf
+  have hsig0 : f0.sig = fs.sig := by rw [← hfs, Clif.Function.rename_sig]
+  have hslots : ∀ g ∈ J.srcProg.funcs, g.slots = [] :=
+    fun g hg => by simpa using List.all_eq_true.mp hslotsB g hg
+  have hexp : Opt.Legal.ExpRel ((Opt.Legal.groups f0.sig.params).getD []) args args' := by
+    rw [hsig0, gp, Option.getD_some]
+    exact ⟨⟨3#64, 1#64, rfl, rfl, rfl⟩, ⟨5#64, 0#64, rfl, rfl, rfl⟩, trivial⟩
+  have hd : Clif.DepthLe (helperEnv.ren σ.symm) (Front.link us sc) FrontendBundleWitnessPeak.d
+      (cs.ren σ.symm) := pre_depth hP FrontendBundleWitnessPeak.depth
+  have H := Front.bundle_correct_source_peak_contract (r := r (memOf file)) (args := args)
+    (args' := args') (cs := cs.ren σ.symm) (cs' := cs') buildSpec_eq compile_eq hsrc hus hσ
+    (helperEnv.ren σ.symm) helperBase (Front.Env.ren_symm_ren σ _).symm hf0
+    FrontendBundleWitnessPeak.d
+    (by rw [hfs]; exact contract FrontendBundleWitnessPeak.stack_le) (by rw [hfs]; exact view)
+    (pre_entry hfs clifEntry) hexp rfl (Front.Mem.ren_symm_ren σ cm).symm
+    (pre_bnd hP (Link.SourceWitness.srcBounded hsrc hslots (Clif.Program.func?_some hf).1
+      clifEntry cm_bounded)) hd M
+  have hrun0 := pre_run hP run_eq
+  have h := H.1 _ _ hrun0
+  rw [hfs, hsig0, x30_r] at h
+  obtain ⟨vals', hrel, k, hret, hx, -⟩ := h
+  rw [gr, Option.getD_some] at hrel
+  cases split_ret hrel
+  exact ⟨buildSpec_eq, compile_eq, hus, sc_ok, hf0, f0_mentions, σ, hσ, hσm, hd, hrun0, k, hret,
+    hx 0 _ rfl, hx 1 _ rfl⟩
 
 end Crates.FrontendBundleWitnessContract
