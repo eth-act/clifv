@@ -305,3 +305,14 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.PrepThread.prep_thin
 #print axioms Concurrency.PrepThread.prep_thin_csem
 #print axioms Concurrency.AllocThread.alloc_thin
+#print axioms Concurrency.ThreadCompose.Thin.trans
+#print axioms Concurrency.ThreadCompose.Thin.take
+#print axioms Concurrency.ThreadCompose.Refines.congr
+#print axioms Concurrency.ThreadCompose.Refines.take
+#print axioms Concurrency.ThreadCompose.isel_alloc_refines
+#print axioms Concurrency.ThreadCompose.prun_len
+#print axioms Concurrency.ThreadCompose.csemV_none
+#print axioms Concurrency.ThreadCompose.arm_isel_refines
+#print axioms Concurrency.ThreadCompose.Witness.thin_take_w
+#print axioms Concurrency.ThreadCompose.Witness.refines_take_w
+#print axioms Concurrency.ThreadCompose.Witness.isel_alloc_refines_fA -- witness: native_decide

@@ -1,5 +1,6 @@
 import FV.Concurrency.IselEntry
 import FV.Concurrency.AllocThread
+import FV.Concurrency.ArmAllocStraight
 
 /-!
 # Composing the per-thread layers (T2h, #311)
@@ -19,7 +20,12 @@ stops), so composing them needs truncation:
   entry (`AllocThread.MTRun` under `csem`, events `cEvs`, any read values) is realized, up to a
   prefix after which the CLIF thread stops (`IselThread.Stop`), by a CLIF thread run (`CRun`),
   `Refines Maps` with no private location and the allocated code's two-event steps as the atomic
-  pairs.
+  pairs;
+* **`arm_isel_refines`**: with layer 4b's run-level refinement of a precise Arm run (from the
+  allocated code's entry configuration, `ArmAllocThread.refines_of_itemSim`'s form), all layers
+  composed: the Arm run (a prefix of it) realizes a CLIF thread run, `Refines Maps (PrivA R)
+  (MonPair …)` (`prun_len`: an Arm step has at most one event, so the Arm trace can be cut);
+  `csemV_none`: with no GOT-pinned calls the activation's semantics is `csem`.
 -/
 
 namespace Concurrency.ThreadCompose
@@ -82,6 +88,11 @@ theorem evAt_take {α : Type} (tr : List (List α)) (m : Nat) (p : Nat × Nat) :
   split
   · rw [List.getElem?_take_of_lt (by assumption)]
   · rw [List.getElem?_take_eq_none (by omega)]; rfl
+
+theorem evAt_take_of_lt {α : Type} {tr : List (List α)} {m : Nat} {p : Nat × Nat} (h : p.1 < m) :
+    evAt (tr.take m) p = evAt tr p := by
+  unfold evAt
+  rw [List.getElem?_take_of_lt h]
 
 theorem evAt_take_some {α : Type} {tr : List (List α)} {m : Nat} {p : Nat × Nat} {x : α}
     (h : evAt (tr.take m) p = some x) : p.1 < m ∧ evAt tr p = some x := by
@@ -148,7 +159,7 @@ theorem Refines.take {MK : K → K' → Prop} {P : Nat → Prop}
           obtain ⟨hp, hx'⟩ := evAt_take_some hx
           obtain ⟨y, hy, hr⟩ := h.ev p x hx'
           refine ⟨y, ?_, hr⟩
-          rw [evAt_take, if_pos (hbefore p hp (by rw [hx']; rfl))]
+          rw [evAt_take_of_lt (hbefore p hp (by rw [hx']; rfl))]
           exact hy
         mono := fun p q hp hq hl => h.mono p q (isSome_take hp).2 (isSome_take hq).2 hl
         shared := fun p x hx hF => h.shared p x (evAt_take_some hx).2 hF
@@ -157,7 +168,7 @@ theorem Refines.take {MK : K → K' → Prop} {P : Nat → Prop}
           refine h.priv p y hy' hW fun q hq e => ?_
           by_cases hqm : q.1 < m
           · refine hn q ?_ e
-            rw [evAt_take, if_pos hqm]; exact hq
+            rw [evAt_take_of_lt hqm]; exact hq
           · have := hmin q (by omega) hq
             rw [e] at this; omega
         len := fun j hj => by
@@ -182,7 +193,7 @@ theorem Refines.take {MK : K → K' → Prop} {P : Nat → Prop}
       priv := fun p y hy hW hn => h.priv p y hy hW fun q hq e => by
         by_cases hqm : q.1 < m
         · refine hn q ?_ e
-          rw [evAt_take, if_pos hqm]; exact hq
+          rw [evAt_take_of_lt hqm]; exact hq
         · exact hnone q (by omega) hq
       len := fun j hj => by
         simp only [List.getElem_take]
@@ -243,5 +254,98 @@ theorem isel_alloc_refines (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) M
     · exact .inr h
 
 end
+
+/-! ## Layer 4b -/
+
+open ArmAllocThread in
+/-- **An Arm step has at most one event.** -/
+theorem prun_len {P : Policy} {f : ArmState → ArmState} {ok : ArmState → Lab → Prop} :
+    ∀ {t t' : ArmState × Mon} {ls : List Lab}, PRun P f ok t ls t' →
+      ∀ j (hj : j < (evTr ls).length), (evTr ls)[j].length ≤ 1
+  | _, _, _, .nil, j, hj => absurd hj (by simp [evTr])
+  | _, _, _, .cons (l := l) hs hp _ hr, j, hj => by
+    cases j with
+    | zero =>
+      simp only [evTr, List.map_cons, List.getElem_cons_zero]
+      rcases hp with hx | ⟨m, he⟩
+      · cases hs with
+        | exec _ _ _ _ => simp at hx
+        | xfail _ _ _ _ => simp
+      · rw [he]; exact ArmPrecise.len_stepEvs _
+    | succ j =>
+      have := prun_len hr j (by simp [evTr] at hj ⊢; omega)
+      simpa [evTr] using this
+
+/-- **With no GOT-pinned calls, the activation's semantics is `csem`.** -/
+theorem csemV_none (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
+    csemV (fun _ _ => False) F ctx X = csem F ctx X := by
+  funext i uses w
+  unfold csemV
+  split <;> simp [gotGuard]
+
+open ArmAllocThread in
+/-- **All layers composed** (module doc): the Arm run's refinement of the allocated code (layer
+4b, `hA`) and layers 2, 3, 4a (`isel_alloc_refines`). -/
+theorem arm_isel_refines {RA : RL} (hgv : RA.gv = fun _ _ => False)
+    {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
+    {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat}
+    {syms : String → Option Nat}
+    (H : DriverHyp f vc ctx st0 R gn bl A (csem RA.F RA.ctx RA.X) MR env p)
+    (hchk : threadCheckBl f bl = true) (hMR : MemRelOk RA.F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree RA.X) (hMem : MemRefines RA.F sb syms (csem RA.F RA.ctx RA.X))
+    (hMRs : MRStable RA.F MR) (hreg : ∀ off, ArgLoc.stack off ∉ locsOf f.sig)
+    (hprep : prepCheck vc RA.vc = true) (halloc : checkAlloc RA.vc RA.rf = .ok ())
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry RA.F f.sig args w₀)
+    {ok : ArmState → Lab → Prop} {s : ArmState × Mon} {ls : List Lab} {s' : ArmState × Mon}
+    (hP : PRun Policy.arm RA.step ok s ls s') {nA : Nat} {trM : List (List Ev)}
+    {cE : MConf CV ArmState} {ψA : Nat × Nat → Nat × Nat}
+    (hM : MTRun RA.vc RA.rf RA.sem ckeep (cEvs RA.F RA.ctx) (MConf.init RA.rf m₀ w₀) trM cE)
+    (hA : Refines (· = ·) (PrivA RA) (MonPair (evTr (ls.take nA))) (conv trM)
+      (conv (evTr (ls.take nA))) ψA) (hend : nA = ls.length ∨ Done RA cE) (hnA : nA ≤ ls.length) :
+    ∃ k trS t ψ, k ≤ nA ∧ CRun env p (.run cs) trS t ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take nA))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Done RA cE ∨ Stop env p t) := by
+  have hsem : RA.sem = csem RA.F RA.ctx RA.X := by
+    show csemV RA.gv RA.F RA.ctx RA.X = _
+    rw [hgv, csemV_none]
+  rw [hsem] at hM
+  obtain ⟨m, trS, t, ψ, hm, hrun, href, hendm⟩ :=
+    isel_alloc_refines H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0 hcall hfunc hslots
+      hbody hterm hregs hty hsig (fun _ => 0) hmr hargs hM
+  have h1 : ∀ j (hj : j < (conv (evTr (ls.take nA))).length),
+      (conv (evTr (ls.take nA)))[j].length ≤ 1 := by
+    intro j hj
+    have hl := prun_len hP j (by simp [conv, evTr] at hj ⊢; omega)
+    simp only [conv, evTr, List.getElem_map, List.length_map, List.getElem_take] at hl ⊢
+    exact hl
+  obtain ⟨k, hk, hAk, hkfull⟩ := Refines.take hA h1 m
+  have hlenA : (conv (evTr (ls.take nA))).length = nA := by
+    simp [conv, evTr]; omega
+  have htk : (conv (evTr (ls.take nA))).take k = conv (evTr (ls.take k)) := by
+    simp only [conv, evTr, ← List.map_take, List.take_take]
+    rw [Nat.min_eq_left (by omega)]
+  rw [htk] at hAk
+  have hm' : (conv trM).take m = conv (trM.take m) := by simp [conv, List.map_take]
+  rw [hm'] at hAk
+  have href2 := Refines.congr (Refines.trans href hAk) (MK' := Maps) (P' := PrivA RA)
+    (fun a c ⟨b, h1, h2⟩ => h2 ▸ h1) (fun l => ⟨fun h => by rcases h with h | h; exact h.elim; exact h,
+      fun h => .inr h⟩)
+  refine ⟨k, trS, t, _, by omega, hrun, href2, ?_⟩
+  rcases hendm with h | h
+  · have hk' := hkfull (by simp [conv, h])
+    rw [hlenA] at hk'
+    rcases hend with h' | h'
+    · exact .inl (hk'.trans h')
+    · exact .inr (.inl h')
+  · exact .inr (.inr h)
 
 end Concurrency.ThreadCompose
