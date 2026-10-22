@@ -109,4 +109,20 @@ theorem unwindRows_applies : ∃ rows, unwindRows af fa = .ok rows :=
   unwindRows_complete compiled.1 compiled.2.1 compiled.2.2 premises_facts.2.2.2.2.2.1
     premises_facts.1 premises_facts.2.1 premises_facts.2.2.2.2.1
 
+/-- The prepared code's `try_call` premise and the allocation's block count, decided. -/
+def premisesV : Bool := tryInfoOkB vcp && (rf.blocks.size == vcp.blocks.size)
+
+set_option maxRecDepth 100000 in
+theorem premisesV_true : premisesV = true := by native_decide
+
+/-- **`handlersOk_of_tryInfo`/`padsOk_of_tryInfo` apply** to `tc`: its prepared code meets
+`TryInfoOk`, so `callSites` and `padsNonzeroB` hold of its emitted code. -/
+theorem tryInfo_applies : (∃ l, callSites af fa = .ok l) ∧ padsNonzeroB af fa = true := by
+  have h := premisesV_true
+  simp only [premisesV, Bool.and_eq_true, beq_iff_eq] at h
+  have ht := tryInfoOk_of h.1
+  exact ⟨callSites_complete compiled.2.1 (handlersOk_of_tryInfo compiled.1 h.2 ht),
+    padsNonzero_complete compiled.1 compiled.2.1 compiled.2.2 premises_facts.1 premises_facts.2.1
+      (padsOk_of_tryInfo compiled.1 ht premises_facts.1)⟩
+
 end Link.EhCheck.Complete.Witness

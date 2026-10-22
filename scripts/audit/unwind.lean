@@ -153,3 +153,7 @@ import FV.Link.UnwFnsCompleteWitness
 #print axioms Link.EhCheck.Complete.Witness.callSites_applies -- witness: native_decide
 #print axioms Link.EhCheck.Complete.Witness.padsNonzero_applies -- witness: native_decide
 #print axioms Link.EhCheck.Complete.Witness.unwindRows_applies -- witness: native_decide
+#print axioms Link.EhCheck.Complete.tryCall_of_af
+#print axioms Link.EhCheck.Complete.handlersOk_of_tryInfo
+#print axioms Link.EhCheck.Complete.padsOk_of_tryInfo
+#print axioms Link.EhCheck.Complete.Witness.tryInfo_applies -- witness: native_decide
