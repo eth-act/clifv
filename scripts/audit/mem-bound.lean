@@ -5,6 +5,8 @@ import FV.Link.DeadCleanupExeTrapNBWitness
 import FV.Link.DeadCleanupExeTrapPeakNBWitness
 import FV.Front.RawExeTrapTNB
 import FV.Link.DeadCleanupExeTrapTNBWitness
+import FV.Link.OptExeSourceNB
+import FV.Link.DeadCleanupOptExeSourceNB
 #print axioms E2E.SrcBounded.step_next_rich
 #print axioms E2E.SrcBounded.bounded_slotless
 #print axioms E2E.SrcBounded.bounded_placed
@@ -48,3 +50,16 @@ import FV.Link.DeadCleanupExeTrapTNBWitness
 #print axioms Link.DeadCleanup.TrapTWitness.peak_trapsDT_all -- witness: native_decide
 #print axioms Link.DeadCleanup.TrapTWitness.exec_source_trapsT -- witness: native_decide
 #print axioms Link.DeadCleanup.TrapTWitness.exec_source_trapsT_peak -- witness: native_decide
+#print axioms E2E.LinkCheck.FnInput.opt_keepsInd
+#print axioms Link.LinkSpec.optRelK
+#print axioms Link.callee_of_enter_opt
+#print axioms Link.srcBoundedOpt_gen
+#print axioms Link.srcBoundedOpt_acyclic
+#print axioms Link.srcBoundedOpt_peak
+#print axioms Link.compileExeOpt_correct_source_nobnd
+#print axioms Link.compileExeOpt_correct_source_peak_nobnd
+#print axioms Link.DeadCleanup.srcBoundedOpt_gen
+#print axioms Link.DeadCleanup.srcBoundedOpt_acyclic
+#print axioms Link.DeadCleanup.srcBoundedOpt_peak
+#print axioms Link.DeadCleanup.compileExeOpt_correct_source_nobnd
+#print axioms Link.DeadCleanup.compileExeOpt_correct_source_peak_nobnd

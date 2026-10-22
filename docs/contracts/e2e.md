@@ -2305,7 +2305,10 @@ legalisation → the mid-end `Opt.optimizeExe` with the proven rule sets (`Opt.e
 executable compiler's mid-end") → backend. `LinkSpec.opt` prints every optimised function after
 its file's header and uses the text only when it parses (and legalises) back to the optimised
 function (`FnInput.opt`), else keeps the input (`LinkSpec.optFallbacks`, printed by
-`lean-link --opt`: 0 on fv-demo and the survey). Its theorems (`FV/Link/OptExe.lean`,
+`lean-link --opt`: 0 on fv-demo and the survey); it also keeps the input when the mid-end dropped
+one of its indirect-call signatures (`keepsIndB`: the source theorems without the memory bound,
+`compileExeOpt_correct_source{,_peak}_nobnd`, budget every callee the source run can enter by
+the optimised call graph; legalize128.md "The memory bound derived"). Its theorems (`FV/Link/OptExe.lean`,
 `FV/Link/DeadCleanupOptExe.lean`) compose `compileExe`'s, about the optimised input `S.opt`,
 with the mid-end's whole-program refinement (`OptRel.refines`, which keeps the call depth) and,
 for the source theorems, the legalisation's:

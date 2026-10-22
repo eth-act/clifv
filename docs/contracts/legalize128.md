@@ -390,8 +390,19 @@ state (`prog_eq_src`, `ident_state`). No CLIF semantics change. Witnesses:
 (`FV/Link/DeadCleanupExeTrapNB.lean`) and `Front.bundle_correct_{source,raw}_trap{,_peak}_nobnd`
 (`FV/Front/RawExeTrapNB.lean`), witness `Link.DeadCleanup.TrapWitness.exec_source_traps`
 (`FV/Link/DeadCleanupExeTrapNBWitness.lean`: a source run trapping in a callee, `TrapsD` at every
-depth, `NoMemTrap`). Still with `hbnd`: the baseline compiler's, the optimising and unwinding
-source theorems.
+depth, `NoMemTrap`). The baseline compiler's: `Link.compileExe_correct_source{,_peak}_nobnd`
+(`FV/Link/ExeSourceNB.lean`, #434). The optimising compilers':
+`Link.{DeadCleanup.}compileExeOpt_correct_source{,_peak}_nobnd` (`FV/Link/OptExeSourceNB.lean`,
+`FV/Link/DeadCleanupOptExeSourceNB.lean`): the reference run is the **optimised** function's, so
+the slot-placement oracle holds the optimised input's frames; the source run enters `h` from `g`
+only when the optimised `h'` (same name and slots, `ShapeFacts`) is a callee of the optimised
+`g'` (`Link.callee_of_enter_opt`). A direct call keeps its declaration (`ShapeFacts.externs`); an
+indirect call keeps its signature because `FnInput.opt` keeps its input when the mid-end drops
+one of the input's indirect-call signatures (`keepsIndB`, `FnInput.opt_keepsInd`: branch folding
+and `removeUnreachable` can drop a call site the source run never reaches, but whose callee the
+stack budget must still count). Witnesses `crate-proofs/Crates/OptNoBndWitness.lean`,
+`crate-proofs/Crates/OptSourcePeakNBWitness.lean`. Still with `hbnd`: the unwinding source
+theorems.
 
 **Recursive programs and the shipped compiler (L1f, #217).** `Link.compileExe_correct_source_peak`
 (`FV/Link/ExeSource.lean`): the same without `hc`, the outside caller providing `frameDrop (art
