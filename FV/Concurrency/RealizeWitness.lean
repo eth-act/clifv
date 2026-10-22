@@ -72,7 +72,7 @@ theorem driverHyp_of {f : Clif.Function} {vc : VCode} {Γ : E2E.Rel} {fctx : FnC
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
       (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hlow) houtB)
-      (memRelOk_relW Γ f c)
+      (indStack_mono (indStack_of_check hlow) houtB) (memRelOk_relW Γ f c)
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
     ext := fun B hB st hst fn args hi e he => hsub.externCalls B hB st hst fn args hi e he
@@ -85,7 +85,8 @@ theorem driverHyp_of {f : Clif.Function} {vc : VCode} {Γ : E2E.Rel} {fctx : FnC
       (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hlow) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef
-      (mrStable_relW Γ f c) hicalls
+      (mrStable_relW Γ f c) hmem (outArgsOk_relW Γ f c)
+      (indStack_mono (indStack_of_check hlow) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := hcfg }, hbl⟩
 

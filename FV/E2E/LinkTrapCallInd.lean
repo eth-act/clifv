@@ -254,7 +254,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
     (hGk a (hME.imgG a ha)).trans (hME.imgS a ha)
   have hstep := L.mach_callAt (M := M) hL hg hsite hprog hasg hP
   rcases hdisj with ⟨ext, hin, G', sl, cm, args, vals', hG', hd, hargs, hmr, htr'⟩ |
-    ⟨sig, hsig, nm, G', sl, cm, u0, args, vals', hG', hsg, hu0, hl8, hall, hmr, htr', hty, hdn, hus⟩
+    ⟨sig, hsig, nm, G', sl, cm, u0, args, vals', hG', hsg, hu0, hargsS, hmr, htr', hty, hdn, hus⟩
   · -- an extern of `g` (`bl`, or `blr` of its GOT address)
     obtain ⟨Gb, hGb, rfl⟩ := cutEnv_extern hG'
     obtain ⟨htrG, hQ⟩ := cutO_trapped htr'
@@ -395,7 +395,7 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
         rw [hdn, hus] at hX0 ⊢; rwa [L.X_none hs] at hX0
       have hBT : L.BaseTrapCallI g tc info u := ⟨hsite, hgb, herr, ops, regs, i', w, F, _, _,
         spv w₀, hops, hasg, hP, hsw, hX0', .inr ⟨sig, hsig, nm, Gb, sl, cm, u0, args, vals', hbase,
-        (fun _ h => nomatch h), hu0, hl8, hall, hmr, htrG, hty, hdn, hus⟩⟩
+        (fun _ h => nomatch h), hu0, hargsS, hmr, htrG, hty, hdn, hus⟩⟩
       refine .base (hstop ?_) (by rw [hu]; exact ⟨info, hBT⟩)
       rw [hstep, L.hooks_base hgb.1 u hgb.2]; exact hB.stop g hg tc info u hBT
     | some h =>
@@ -414,6 +414,8 @@ theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ :
       have hm : IndSigMatch sig h :=
         hsg h.sig (by simp only [cutEnv, envOf, Clif.linkEnvR_sigOf, hpf, Option.map_some])
       obtain ⟨⟨bytes, hbb, hb8⟩, -⟩ := hL.indSig g hg hnf h hh hdecl (.inl ⟨sig, hsig, hm⟩)
+      have hall : AllHold vals' args :=
+        (argsAt_iff_of_regs (hm.paramBytes.trans hbb) hb8 hargsS.1).mp hargsS
       have hargs : ArgsAt h.sig vals' args w := (argsAt_iff_of_regs hbb hb8 hvl).mpr hall
       have hsav : StackArgsAvoid F h.sig vals' w := by
         intro off v hm'
