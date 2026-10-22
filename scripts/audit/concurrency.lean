@@ -244,3 +244,50 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.VCodeSize.addr_eq_of_oneAcc
 #print axioms Concurrency.VCodeSize.Witness.ldar_oneAcc
 #print axioms Concurrency.VCodeSize.Witness.ldar_at
+-- T2h layer 2e: segment simulation pieces (footprints along a run, VCode determinism, counted LowerSim matches, CLIF steps without events, memory-statement helpers)
+#print axioms Concurrency.SegFoot.csem_keep
+#print axioms Concurrency.SegFoot.runFoot_csem
+#print axioms Concurrency.SegFoot.Witness.keep_ldar
+#print axioms Concurrency.SegFoot.Witness.seg_covered
+#print axioms Concurrency.SegFoot.Witness.runFoot_ldar_fence
+#print axioms Concurrency.SegFoot.Witness.fence_foot_after_ldar
+#print axioms Concurrency.IselStep.vstep_det
+#print axioms Concurrency.IselStep.vtrun_patchN
+#print axioms Concurrency.IselStep.stmt_matchN
+#print axioms Concurrency.IselStep.term_matchN
+#print axioms Concurrency.IselSeg.vtrun_walk
+#print axioms Concurrency.IselSeg.vtrun_follow
+#print axioms Concurrency.IselSeg.mr_patch
+#print axioms Concurrency.IselSeg.mr_own
+#print axioms Concurrency.IselCheck.obligations_of_threadCheck
+#print axioms Concurrency.CorrRefine.refines_of_corr
+#print axioms Concurrency.ClifCStepTerm.done_of_step
+#print axioms Concurrency.ClifCStepTerm.cstep_pure
+#print axioms Concurrency.ClifCStepTerm.cstep_term
+#print axioms Concurrency.IselThread.simRes_of_seg
+#print axioms Concurrency.IselThread.pure_seg
+#print axioms Concurrency.IselThread.term_seg
+#print axioms Concurrency.IselMem.match_mem
+#print axioms Concurrency.IselMem.vtstep_mem
+#print axioms Concurrency.IselMemAux.cEvs_rmw_shape
+#print axioms Concurrency.IselMemAux.cEvs_cas_shape
+#print axioms Concurrency.IselMemAux.cEvs_fence
+#print axioms Concurrency.IselMemAux.csem_keep_any
+#print axioms Concurrency.IselMemAux.star_mem_keep
+#print axioms Concurrency.IselMemAux.Witness.ldar_one_w0 -- witness: native_decide
+#print axioms Concurrency.IselMemAux.Witness.fence_w0 -- witness: native_decide
+#print axioms Concurrency.IselMemAux.Witness.rmw_shape_w0 -- witness: native_decide
+#print axioms Concurrency.IselMemAux.Witness.cas_shape_w0 -- witness: native_decide
+#print axioms Concurrency.IselMemAux.Witness.path1 -- witness: native_decide
+#print axioms Concurrency.IselMemAux.Witness.star_rets -- witness: native_decide
+#print axioms Concurrency.CEvsInv.cEvs_mapRegs
+#print axioms Concurrency.CEvsInv.cEvs_setMem_common
+#print axioms Concurrency.CEvsInv.cEvs_setMem_atA
+#print axioms Concurrency.CEvsInv.Witness.ldar_atA_w0
+#print axioms Concurrency.CEvsInv.Witness.ldar_renamed_atA
+#print axioms Concurrency.IselVar.events_at_access
+#print axioms Concurrency.IselMemSeg.mem_complete
+#print axioms Concurrency.IselMemSeg.mem_split
+#print axioms Concurrency.IselMemHelp.bytes_of_mr
+#print axioms Concurrency.IselMemHelp.access_of_ok
+#print axioms Concurrency.IselThread.Witness.driverHypA -- witness: native_decide
