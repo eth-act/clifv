@@ -19,6 +19,7 @@ import FV.E2E.LegalProgXWitness
 import FV.Front.RawExeUnwindSrcWitness
 import FV.Link.OptExeUnwindWitness
 import FV.Link.UnwFnsCompleteWitness
+import FV.Link.UnwTryInWitness
 import FV.Link.ExeUnwindExecWitness
 import FV.Link.ExeUnwindExecGoodWitness
 import FV.E2E.LinkArmUProgGoodWitness
@@ -161,6 +162,13 @@ import FV.E2E.WorldUnwindNIWitness
 #print axioms Link.EhCheck.Complete.handlersOk_of_tryInfo
 #print axioms Link.EhCheck.Complete.padsOk_of_tryInfo
 #print axioms Link.EhCheck.Complete.Witness.tryInfo_applies -- witness: native_decide
+#print axioms Link.EhCheck.Complete.tryInfoOk_of_input
+#print axioms Link.EhCheck.Complete.callSites_complete_input
+#print axioms Link.EhCheck.Complete.padsNonzero_complete_input
+#print axioms Link.EhCheck.Complete.lower_good
+#print axioms Link.EhCheck.Complete.prepare_good
+#print axioms Link.EhCheck.Complete.Witness.tryInfoOk_applies -- witness: native_decide
+#print axioms Link.EhCheck.Complete.Witness.input_applies -- witness: native_decide
 #print axioms E2E.DeadCleanupExecBytes.walk_det
 #print axioms E2E.DeadCleanupExecBytes.machU_uSys
 #print axioms E2E.DeadCleanupExecBytes.unwindAt_sim

@@ -473,9 +473,18 @@ the `retN`/value arguments).
   (every `try_call` has a handler, each a tag 0/1 whose landing pad is a block other than the
   entry; decidable `tryInfoOkB`): `handlersOk_of_tryInfo`, `padsOk_of_tryInfo` (a `try_call` of
   `af` is one of `vc` with the same handlers, `tryCall_of_af`); witness `Witness.tryInfo_applies`.
-  Open: `TryInfoOk` and `SaveOk` from the input (the CLIF exception tables' tags through
-  `lowerFunction`/`prepare`, the frame layout), and `unwCheck`, `lastCallsOk`, `savedCheck` (which fails for `large_frame`, see
-  "Validators"), and `ehOkR` on lean-ld's output.
+  **`TryInfoOk` from the input** (`FV/Link/UnwTryIn.lean`): `tryInfoOk_of_input` — on in-scope
+  input (`Dominated`, `LowerScope`, `Spill.ArityOk`) whose `try_call` tables have at least one
+  item, each a `tag 0`/`tag 1` handler (**`tryTablesB f`**, decidable on the CLIF function),
+  `prepare (prune vc)` of `lowerFunction f = .ok vc` satisfies `TryInfoOk`: `lowerFunction`
+  builds the handlers from the items (`exnTableOpnd_items`, `tryInfoOf_tags`), `prepare`'s
+  `setTargets` keeps the tags (`setTargets_tags`), every `tryCall` stays its block's last
+  instruction (`Good`: `lower_good`, `prepare_good`, `good_sublist` for the cleanup), so its
+  handlers' labels are CFG successors (`cfg_spec`) and none is the entry block (`EdgesOk.entry`,
+  `preds_empty`). Corollaries `callSites_complete_input`, `padsNonzero_complete_input`; witness
+  `Witness.tryInfoOk_applies`/`input_applies` (`FV/Link/UnwTryInWitness.lean`, on `tc`).
+  Open: `SaveOk` (the frame layout), `unwCheck`, `lastCallsOk`, `savedCheck` (which fails for
+  `large_frame`, see "Validators"), and `ehOkR` on lean-ld's output.
 * **The executable-bytes machine with unwinding (S10g, #404)** (`FV/E2E/DeadCleanupExecUnwind.lean`):
   `E2E.DeadCleanupExecBytes.stepU I B Ub file` is `DeadCleanupExecBytes.step` (the processor on
   the file's words; calls of code outside the program and TLS by the base hooks; a call of a
