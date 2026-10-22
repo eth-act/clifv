@@ -3,7 +3,8 @@ import FV.Concurrency.ArmAllocBranch
 
 namespace Concurrency.ArmAllocThread
 
-open Arm ArmFoot ArmThread ArmInstFoot VCodeThread Backend Backend.Proof AllocThread ThreadRefine
+open Arm ArmFoot ArmThread ArmInstFoot ArmPrecise VCodeThread Backend Backend.Proof AllocThread
+  ThreadRefine
 open Code VCodeEvents VCodeAddr
 
 /-- **The event of a plain GPR load** (not at an unaligned `sp`): one read at the base plus the
@@ -2059,5 +2060,223 @@ theorem fpuStore_regExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : Scalar
       setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
       BitVec.setWidth_setWidth_of_le]
 
+
+/-! ## The scope with plain loads/stores and the run level -/
+
+/-- The addressing modes of the plain accesses covered here: the final modes (not the stack-slot,
+`sp` and `fp` offsets, which `memFinalize` may lower through `x16`). -/
+def LSMode : AMode → Bool
+  | .slotOffset _ | .spOffset _ | .fpOffset _ => false
+  | _ => true
+
+/-- **The plain load/store forms**: a covered (`FormOk`) GPR or SIMD&FP load/store at a final
+addressing mode (`LSMode`). -/
+def LSForm (ctx : FnCtx) (i : MInst) : Prop :=
+  FormOk ctx i = true ∧ match i with
+    | .load _ _ m _ | .store _ _ m _ | .fpuLoad _ _ m _ | .fpuStore _ _ m _ => LSMode m = true
+    | _ => False
+
+theorem load_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {rt : Reg} {m : AMode}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.load op rt m fl) = true) (hm : LSMode m = true) :
+    OneEvForm F ctx (.load op rt m fl) := by
+  rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
+  all_goals cases m with
+  | unsignedOffset b off =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact load_uoff_form hfo
+  | unscaled b off =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact load_unsc_form hfo
+  | regReg b c =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact load_regReg_form hfo
+  | regScaled b c =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact load_regScaled_form hfo
+  | regScaledExtended b c e =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact load_regScaledExt_form hfo
+  | regExtended b c e =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact load_regExt_form hfo
+  | _ => first | (simp [LSMode] at hm; done) | (simp [FormOk, memOk] at hfo)
+
+theorem store_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} {rt : Reg} {m : AMode}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.store op rt m fl) = true) (hm : LSMode m = true) :
+    OneEvForm F ctx (.store op rt m fl) := by
+  rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
+  all_goals cases m with
+  | unsignedOffset b off =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact store_uoff_form hfo
+  | unscaled b off =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact store_unsc_form hfo
+  | regReg b c =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact store_regReg_form hfo
+  | regScaled b c =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact store_regScaled_form hfo
+  | regScaledExtended b c e =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact store_regScaledExt_form hfo
+  | regExtended b c e =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact store_regExt_form hfo
+  | _ => first | (simp [LSMode] at hm; done) | (simp [FormOk, memOk] at hfo)
+
+theorem fpuLoad_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuLoad sz rt m fl) = true) (hm : LSMode m = true) :
+    OneEvForm F ctx (.fpuLoad sz rt m fl) := by
+  rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
+  all_goals cases m with
+  | unsignedOffset b off =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuLoad_uoff_form hfo
+  | unscaled b off =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuLoad_unsc_form hfo
+  | regReg b c =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuLoad_regReg_form hfo
+  | regScaled b c =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuLoad_regScaled_form hfo
+  | regScaledExtended b c e =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuLoad_regScaledExt_form hfo
+  | regExtended b c e =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuLoad_regExt_form hfo
+  | _ => first | (simp [LSMode] at hm; done) | (simp [FormOk, memOk] at hfo)
+
+theorem fpuStore_lsForm {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {rt : Reg} {m : AMode}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuStore sz rt m fl) = true) (hm : LSMode m = true) :
+    OneEvForm F ctx (.fpuStore sz rt m fl) := by
+  rcases rt with ⟨d, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk] at hfo; done)
+  all_goals cases m with
+  | unsignedOffset b off =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuStore_uoff_form hfo
+  | unscaled b off =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuStore_unsc_form hfo
+  | regReg b c =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuStore_regReg_form hfo
+  | regScaled b c =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuStore_regScaled_form hfo
+  | regScaledExtended b c e =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuStore_regScaledExt_form hfo
+  | regExtended b c e =>
+    rcases b with ⟨u, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals rcases c with ⟨v, _ | _⟩ | _ | _ | _ | _ <;> try (simp [FormOk, memOk] at hfo; done)
+    all_goals exact fpuStore_regExt_form hfo
+  | _ => first | (simp [LSMode] at hm; done) | (simp [FormOk, memOk] at hfo)
+
+/-- **Every plain load/store form is a one-event form.** -/
+theorem lsForm_oneEv {F : BitVec 64 → Prop} {ctx : FnCtx} {i : MInst} (h : LSForm ctx i) :
+    OneEvForm F ctx i := by
+  obtain ⟨hfo, hm⟩ := h
+  cases i <;> simp only at hm
+  · exact load_lsForm hfo hm
+  · exact store_lsForm hfo hm
+  · exact fpuLoad_lsForm hfo hm
+  · exact fpuStore_lsForm hfo hm
+
+theorem noGoto_ls {ctx : FnCtx} {i : MInst} (h : LSForm ctx i) : ¬ GotoForm i := by
+  intro hg
+  rcases hg with (⟨_, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, _, _, rfl⟩) | ⟨_, _, rfl⟩ |
+      ⟨_, _, _, _, _, rfl⟩ <;>
+    exact h.2
+
+/-- **The scope of `arm_alloc_refines_ls`**: every instruction is a memory form, an LL/SC loop
+(`MemFormL`), a block-ending branch (`BrForm`) or a plain load/store (`LSForm`). -/
+def MemScopeLS (R : RL) : Prop :=
+  ∀ (b : Nat) (vb : VBlock) (k : Nat) (i : MInst), R.vc.blocks[b]? = some vb →
+    vb.insts[k]? = some i → MemFormL R.ctx i ∨ BrForm i ∨ LSForm R.ctx i
+
+theorem memScopeLS_of_memScopeB {R : RL} (h : MemScopeB R) : MemScopeLS R :=
+  fun b vb k i hb hi => (h b vb k i hb hi).elim .inl (fun h => .inr (.inl h))
+
+/-- **The per-item obligation of the scope with plain loads/stores, with moves**, for `μR`. -/
+theorem itemSim_ls {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) :
+    ItemSim Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (Done R) (μR R) (PrivA R) := by
+  rintro ⟨s, mon⟩ c ⟨hq, hA⟩ ls t' hr
+  match c with
+  | .ret vals m w => exact .inl (.inl ⟨vals, m, w, rfl⟩)
+  | .halt w => exact .inl (.inr (.inl ⟨w, rfl⟩))
+  | .run ⟨b, its, m, w⟩ =>
+  by_cases hS : ∃ evs c', SrcStep R (.run ⟨b, its, m, w⟩) evs c'
+  case neg => exact .inl (.inr (.inr fun evs c' h => hS ⟨evs, c', h⟩))
+  obtain ⟨evs0, c0, hs0⟩ := hS
+  cases hs0 with
+  | @move _ src dst its' =>
+    have hng : ∀ evs c', SrcStep R (MvC b src dst its' m w) evs c' → SameB (MvC b src dst its' m w) c' :=
+      fun evs c' h => sameB_step h fun _ _ _ e => by cases e
+    rcases move_op hR hq hA hr with h | h
+    · exact .inr (.inl (isOut_μR hng h))
+    · exact .inr (.inr (.inr h))
+  | @op _ k allocs its' _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
+    have hs : SrcStep R (OpC b k allocs its' m w) _ _ := .op hvb hi hops hevs hfoot hst
+    have uniq : ∀ vb' i', R.vc.blocks[b]? = some vb' → vb'.insts[k]? = some i' → i' = i :=
+      fun vb' i' h1 h2 => by rw [hvb] at h1; cases h1; rw [hi] at h2; cases h2; rfl
+    have hng : ¬ GotoForm i → ∀ evs c', SrcStep R (OpC b k allocs its' m w) evs c' →
+        SameB (OpC b k allocs its' m w) c' :=
+      fun hg evs c' h => sameB_step h fun k1 allocs1 its1 e vb' i' h1 h2 => by
+        injection e with e1 e2
+        injection e1 with e3 e4
+        subst e3
+        exact uniq vb' i' h1 h2 ▸ hg
+    rcases hsc b vb k i hvb hi with hl | hbr | hls
+    · refine opOutR_of (hng (noGoto_memFormL hl)) ?_
+      rcases hl with (h | h | ⟨ty, rt, rn, fl, rfl, hfo⟩ | ⟨ty, rt, rn, fl, rfl, hfo⟩) | hl | hl
+      · exact opOut_okPriv (fun ls t' hr => noev_op hR hq hA hs
+          (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ h) hr) hr
+      · exact opOut_okPriv (fun ls t' hr => fence_op hR hq hA hs
+          (fun vb' i' h1 h2 => (uniq vb' i' h1 h2).trans h) hr) hr
+      · exact opOut_okPriv (fun ls t' hr => oneEv_op hR hq hA hs
+          (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ ldar_form hfo) hr) hr
+      · exact opOut_okPriv (fun ls t' hr => oneEv_op hR hq hA hs
+          (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ stlr_form hfo) hr) hr
+      · exact rmw_op hR hq hA hs (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ hl) hr
+      · exact cas_op hR hq hA hs (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ hl) hr
+    · exact goto_op hR hq hA hs (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ hbr) hr
+    · exact opOutR_of (hng (noGoto_ls hls)) (opOut_okPriv (fun ls t' hr => oneEv_op hR hq hA hs
+        (fun vb' i' h1 h2 => uniq vb' i' h1 h2 ▸ lsForm_oneEv hls) hr) hr)
+
+/-- **Layer 4b with the plain loads/stores** (module doc): every precise Arm run under `OkPriv`
+from a `Q`-related state realizes a run of the allocated code (`MTRun`) with `Refines` (equal
+kinds, the addresses outside the world private, the atomic updates monitor pairs), up to the
+allocated code's return, trap or undefined behaviour (`Done`), for functions whose instructions
+are event-free, `fence`, `ldar`, `stlr`, LL/SC loops, block-ending branches or plain loads/stores
+at final addressing modes (`MemScopeLS`), whatever their moves. -/
+theorem arm_alloc_refines_ls {R : RL} (hR : R.Wf) (hsc : MemScopeLS R)
+    {s : ArmState} {mon : Mon} {c : MConf CV ArmState} (hq : Q R s c) (hA : AInv R c)
+    {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
+    ∃ n trS cE ψ, n ≤ ls.length ∧ MTRun R.vc R.rf R.sem ckeep (cEvs R.F R.ctx) c trS cE ∧
+      Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
+        (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
+  obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
+    refines_of_itemSim (itemSim_ls hR hsc) hr ⟨hq, hA⟩
+  exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 end Concurrency.ArmAllocThread
