@@ -404,7 +404,12 @@ they are; the per-thread layers are new files.
     `addr_eq_of_cover`: an `n`-byte event covering every byte of `[a, a + n)` (no wrap-around,
     `MemRelOk.valid`) starts at `a`. Witnesses (`IselCoverWitness.lean`): `cover_ldar` (no
     footprint of the `ldar` avoids `0x8000`: with that byte changed it loads `5`, not `0`),
-    `addr_eq_cover8`. Open: the event sizes of `cEvs` (`AtA` versions of `straight_avoid_of`).
+    `addr_eq_cover8`.
+    *Event sizes (`VCodeSize.lean`):* `cEvs_size`: the footprint `cEvs` of a successful `csem`
+    step of a memory instruction is one access of its size `SegShape.memBytes` (straight-line
+    forms at `AMode.addr`/x0, the LL/SC loops at x25; `straightEvs_size`); `addr_eq_of_oneAcc`:
+    such events covering every byte of `[a, a + n)` are at `a`. Witnesses
+    (`VCodeSizeWitness.lean`): `ldar_oneAcc`, `ldar_at`.
   * **2e (assembly; open, CLIF side done):** the CLIF run reading the bytes the VCode run read
     (receptiveness of `CStep`), `ψ` mapping each CLIF event to its segment's memory event,
     `Refines` with `Priv` = the frame (the segment's other writes: outgoing call arguments).
@@ -417,9 +422,10 @@ they are; the per-thread layers are new files.
       Witnesses (`ClifCStepWitness.lean`): `cstep_atomicLoad0`, `cstep_store0`,
       `cstep_atomicCas0`.
     * open: the statements without events (their outcome does not read the bytes), the VCode
-      side per statement (the segment's one event is the CLIF access: `access_in_events` with
-      `segShape`'s equal size, and its bytes are the CLIF bytes by `MemRelOk.bytes`; the
-      footprint premises of `RunOut` along the run: no error, aligned `sp`, `csemWF`), the match
+      side per statement (the segment's one event is the CLIF access: `access_in_events`,
+      `cover_of_not_runOut` and `addr_eq_of_oneAcc` with `segShape`'s equal size, and its bytes
+      are the CLIF bytes by `MemRelOk.bytes`; the footprint premises of `RunOut` along the run:
+      no error, aligned `sp`, `csemWF`), the match
       after patching both memories with the read bytes (`MemRelOk.store` bytewise), determinism
       of `VStep` (the thread's segment is `stmt_step`'s forward run), and the induction over the
       thread run.

@@ -84,3 +84,5 @@ import FV.Concurrency.ClifCStep
 import FV.Concurrency.ClifCStepWitness
 import FV.Concurrency.IselCover
 import FV.Concurrency.IselCoverWitness
+import FV.Concurrency.VCodeSize
+import FV.Concurrency.VCodeSizeWitness
