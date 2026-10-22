@@ -646,24 +646,11 @@ theorem termTryT {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)} {
   simp only [bind, Except.bind] at h
   split at h
   · cases h
-  rename_i q hexC
+  rename_i q hex
   obtain ⟨sig, items⟩ := q
-  -- the typed operand of an integer `try_call` (`tryCallData` succeeded) is the integer one
-  have hex : exnTableOpnd f et = .ok (sig, items) := by
-    obtain ⟨s', i', he'⟩ : ∃ s' i', exnTableOpnd f et = .ok (s', i') := by
-      rcases ht with ⟨fn, args, h'⟩ | ⟨c, args, h'⟩ <;> rw [h'] at hdata
-      · obtain ⟨s', i', -, he', -⟩ := tryCallData_spec hdata; exact ⟨s', i', he'⟩
-      · exact tryCallIndData_spec hdata
-    have hC := exnTableOpndC_of he'
-    rw [hexC] at hC
-    cases hC
-    exact he'
-  have hrc := sigRets_classes_int (sigIntB_iff.mp (exnTableOpnd_int hex)).2
   simp only at h
   split at h
-  · rename_i retsL paysL st1 htrC
-    have htr : tryRegsOf sig ds.st = some ((retsL, paysL), st1) := by
-      rw [← tryRegsOfC_eq hrc]; exact htrC
+  · rename_i retsL paysL st1 htr
     split at h
     · cases h
     split at h
