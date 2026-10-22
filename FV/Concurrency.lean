@@ -145,6 +145,7 @@ import FV.Concurrency.ArmAllocLSWitness
 import FV.Concurrency.RealizeWitnessStore
 import FV.Concurrency.RealizeWitnessMP
 import FV.Concurrency.RealizeWitnessRmw
+import FV.Concurrency.RealizeWitnessCas
 import FV.Concurrency.CallCompose
 import FV.Concurrency.CallComposeWitness
 import FV.Concurrency.ArmAllocEntry

@@ -719,9 +719,26 @@ they are; the per-thread layers are new files.
   the compiled `fence; return` from the state after the prologue through its 18 saves (private
   `plainW` writes) and its `dmb ish` (`dmbEv`) satisfies `realizes_compiled`'s premises; every
   execution of its realized prefix is `Realizes`d by a CLIF thread from `csF` (one exists,
-  `wf_noReads`). Open: the realized prefix is existential (excluding an early `Done` needs the
-  allocated code's progress at the `fence`), and an `atomic_load`/`atomic_store` function (reads
-  of private slots and of shared memory: a well-formed execution with `rf`).
+  `wf_noReads`). The realized prefix is existential (excluding an early `Done` needs the allocated
+  code's progress); the witnesses below state their runs and the contract for every realized
+  prefix, and what the pairs are on the whole run.
+* **Loads, stores, LL/SC loops, plain memory (done, T2l/T2m #446–#470).** `CompiledB`/
+  `realizes_compiledB` (loops and branches, `arm_alloc_refines_br`) and `CompiledLS`/
+  `thread_compiledLS`/**`realizes_compiledLS`** (also plain loads/stores, `MemScopeLS`,
+  `arm_alloc_refines_ls`); `Compiled` and `CompiledB` are corollaries. `Exec.Wf.rmw_imm` ranges
+  over events only (`Exec.ev`, §2), so executions with successful Arm LL/SC pairs are well formed.
+  Forward runs through the loops with the monitor tracked (`ArmAllocLoopFwd.lean`: `step_fwdS`,
+  `prun_quiet`, `rmw_fwd`, `cas_fwd`, `rmw_lines`, `cas_lines`). Witnesses, each on the function
+  as `lowerFunction`/`prepare`/`spillAlloc` compile it, every premise of `Compiled`/`CompiledLS`
+  discharged: `WitnessL.realizes_load` (`atomic_load.i64`, an `ldar`), `WitnessS.realizes_store`
+  (`atomic_store.i64`, an `stlr`), `WitnessMP.realizes_mp`/`mp_reads` (two compiled threads,
+  message passing: the `ldar` reads from the `stlr`), `WitnessR.realizes_rmw`
+  (`atomic_rmw.i64 add`: `ldaxr; add; stlxr`, the execution's `rmw` the prefix's monitor pairs,
+  `rmw_full`: on the whole run it relates the `ldaxr` read to the `stlxr` write) and
+  `WitnessC.realizes_cas` (`atomic_cas.i64` with the expected value present: `ldaxr; cmp; b.ne;
+  stlxr`); generic `WitnessR.realizes_pair` (one thread, private plain prefix then an exclusive
+  pair), `RealizeExec.wf_rmw`. Open in layer 4b: stack offsets built in x16 (`OneEvPreForm`);
+  mixed-size accesses (T2i, #317).
 * **Backward from forward.** The layers are forward per-step simulations; `Refines` is
   backward (from the actual Arm trace to a CLIF run). The bridge is determinism of each level
   given its read values (receptiveness): the source run is the one reading the target's values
@@ -729,9 +746,13 @@ they are; the per-thread layers are new files.
 * **Widening** (§3c): extern calls that touch memory, per-thread allocation metadata,
   `tls_value`.
 
-**#38 stays open until layers 1–4 discharge `Realizes`.** Until then `program_correct*` compose
-the memory-model layer with the per-thread contract, and the single-core assumption stays in
-the trusted base of `E2E.backend_correct_final`.
+**Layers 1–4 discharge `Realizes` for compiled code (#311, #38 closed by T2m).**
+`realizes_compiledLS` gives the contract `program_correct*` assume, for threads running compiled
+functions in the scope `MemScopeLS` (atomic loads/stores, `atomic_rmw`/`atomic_cas` LL/SC loops,
+fences, branches, plain loads/stores), with calls through `CallCompose.realizes_linked`; the
+witnesses above show it on `atomic_load`, `atomic_store`, message passing, `atomic_rmw` and
+`atomic_cas`. Remaining scope widenings are tracked separately: stack offsets built in x16
+(`OneEvPreForm`), mixed-size accesses (T2i, #317).
 
 ## 4. Testing (the oracle)
 
@@ -763,7 +784,7 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2i (#317) | Mixed-size accesses (a mixed-size model instead of `NoOverlap`) | open |
 
 The existing single-core assumption stays in the trusted base of `E2E.backend_correct_final`, and
-#38 stays open, until T2h is done (§3c: T2e composes the memory-model layer with an explicit
-per-thread contract that `backend_correct_final` does not imply). T2a–T2c replace "a multi-core memory model is a project of its own" by a proven
+#38 is closed by T2h/T2m (§3e: `realizes_compiledLS` discharges the per-thread contract for
+compiled code in the scope `MemScopeLS`). T2a–T2c replace "a multi-core memory model is a project of its own" by a proven
 mapping at the execution level: every Armv8 execution of Cranelift's atomics code is consistent
 for the Cranelift contract, and SC (an interleaving) when the program is race-free.

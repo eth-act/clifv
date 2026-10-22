@@ -626,3 +626,8 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.WitnessR.realizes_pair
 #print axioms Concurrency.RealizeCompiled.WitnessR.rmw_full
 #print axioms Concurrency.RealizeCompiled.WitnessR.realizes_rmw -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.cas_fwd
+#print axioms Concurrency.ArmAllocThread.cas_lines
+#print axioms Concurrency.RealizeCompiled.WitnessC.compiled_ofC -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessC.run_cas -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessC.realizes_cas -- witness: native_decide
