@@ -31,6 +31,45 @@ theorem postTrace_of_goodXU {R : RLU} {n : Nat}
   · exact g.good.resolve_left fun h => h hpc
   · exact g.good.resolve_left fun h => h hpc
 
+/-- At a state of the old trace the machine's callee of the call line (if any) does not raise
+(`RLU.noRaise_of_goodX`, by the call line's descriptor). -/
+theorem RLU.noRaise_desc {R : RLU} (hR : R.Wf)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    {u : Arm.ArmState} (g : R.GoodX u) : ∀ d, callDescAt R.fa u = some d → R.U.raise d u = none := by
+  intro d hd
+  obtain ⟨x, ⟨j, tt, hj, hpc⟩, -⟩ := g.line
+  have hins := insnAt_pc hR hj g.prog hpc
+  unfold callDescAt at hd
+  rw [hins] at hd
+  cases x with
+  | bl n =>
+    simp only [Option.some.injEq] at hd
+    exact RLU.noRaise_of_goodX hR hU g ⟨j, tt, hj, hpc⟩ (.inl ⟨n, rfl, hd.symm⟩)
+  | blr r =>
+    simp only [Option.some.injEq] at hd
+    exact RLU.noRaise_of_goodX hR hU g ⟨j, tt, hj, hpc⟩ (.inr ⟨r, rfl, hd.symm⟩)
+  | _ => cases hd
+
+/-- **The per-state facts of a run with unwinding of the activation with these data**
+(`actGoodX`'s counterpart; the fields `lm`, `psF` play no role): a state of the old trace whose
+call line's callee does not raise, or a raising-call state (`RLU.RaiseX`). -/
+def actGoodXU (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : FnBin) (base : BitVec 64)
+    (s0 : Arm.ArmState) (X : ExtSem) (H : ArmHooks) (XR : XRaise) (U : Unw.UnwHooks)
+    (T : Unw.FnTables) (K : Nat) (G : BitVec 64 → Prop) (gv : Nat → String → Prop)
+    (u : Arm.ArmState) : Prop :=
+  ((⟨⟨vcp, rf, af, fa, fb, {}, base, s0, X, H, {}, K, G, gv⟩, XR, U, T⟩ : RLU).GoodX u ∧
+      ∀ d, callDescAt fa u = some d → U.raise d u = none) ∨
+    (⟨⟨vcp, rf, af, fa, fb, {}, base, s0, X, H, {}, K, G, gv⟩, XR, U, T⟩ : RLU).RaiseX u
+
+/-- `actGoodXU` from the trace predicate `RLU.GoodXU` and the raising callees' contract. -/
+theorem actGoodXU_of {R : RLU} (hR : R.Wf)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    {u : Arm.ArmState} (h : R.GoodXU u) :
+    actGoodXU R.vc R.rf R.af R.fa R.fb R.base R.s0 R.X R.H R.XR R.U R.T R.K R.G R.gv u := by
+  rcases h with g | g
+  · exact .inl ⟨g.act, RLU.noRaise_desc hR hU g⟩
+  · exact .inr ⟨⟨g.good, g.err, g.prog, g.sp, g.raise⟩, g.next, g.exit, g.tsp, g.blr, g.pre⟩
+
 /-- **The register-level world theorem with unwinding**, generic in the activation semantics
 `semU` (realised by the machine with unwinding, `hRz`; `csem` at the returns and traps). -/
 theorem regLevelCorrect_worldUT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
@@ -64,14 +103,21 @@ theorem regLevelCorrect_worldUT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
       ∃ n, ActRet ra (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
           af G s) G us vals w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
         PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧
-        ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s)) ∧
+        ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+        ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G gv
+          (runX (Unw.ArmStepU X H U T fa) i s)) ∧
     (∀ c, VTraps vcp semU ρ₀ w₀ c →
-      ∃ n, TrapAt fb base c (runX (Unw.ArmStepU X H U T fa) n s)) ∧
+      ∃ n, TrapAt fb base c (runX (Unw.ArmStepU X H U T fa) n s) ∧
+        (∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G gv
+          (runX (Unw.ArmStepU X H U T fa) i s)) ∧
+        ∀ m, Arm.r .ERR (runX (Unw.ArmStepU X H U T fa) (n + m + 1) s) ≠ .None) ∧
     (∀ obj w, VUnwinds vcp semU XR ρ₀ w₀ obj w →
       ∃ n, ActUnw ra (frameWG K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
           af G s) G obj w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
         PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧ 0 < n ∧
-        UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s)) := by
+        UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+        ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G gv
+          (runX (Unw.ArmStepU X H U T fa) i s)) := by
   obtain ⟨cc, ins, hc⟩ := checked_of_checkAlloc hcheck
   obtain ⟨a0, hat, hle⟩ := hc.at
   obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
@@ -84,11 +130,15 @@ theorem regLevelCorrect_worldUT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : Fn
   obtain ⟨_, h1, h2, h3⟩ := regLevelCorrect_coreUT hR hent hat hU hgot (hRz lm psF _ rfl hR) hrets
     hhalt (lsda_cases hsites hlsda) (siteAt_of_check hR hlast) hrows hcie hfde hsaved hbe
     (fun _ => ρ₀) (fun _ => Inv_mono hle Inv_entryState)
-  refine ⟨fun us vals w hret => ?_, h2, fun obj w hu => ?_⟩
+  refine ⟨fun us vals w hret => ?_, fun c htc => ?_, fun obj w hu => ?_⟩
   · obtain ⟨n, a1, a2, a3, a4, a5, a6, htr, hnot⟩ := h1 us vals w hret
-    exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU htr, hnot⟩
+    exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU htr, hnot,
+      fun i hi => actGoodXU_of hR hU (htr i hi)⟩
+  · obtain ⟨n, htrap, htr, hst⟩ := h2 c htc
+    exact ⟨n, htrap, fun i hi => actGoodXU_of hR hU (htr i hi), hst⟩
   · obtain ⟨n, a1, a2, a3, a4, a5, a6, htr, hn, hx⟩ := h3 obj w hu
-    exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU htr, hn, hx⟩
+    exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU htr, hn, hx,
+      fun i hi => actGoodXU_of hR hU (htr i hi)⟩
 
 /-- **The realisation of the value semantics with unwinding at an activation with kept addresses
 `G` and GOT pins `gv`**: from the callee contracts relative to `G` (`CalleeOkG`,

@@ -105,7 +105,9 @@ theorem backend_correct_world_ni_cleanupU {p : Clif.Program} {f : Clif.Function}
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
           ∃ n, ActRet ra F G us outs w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
             PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧
-            ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s)) ∧
+            ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+            ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+              (runX (Unw.ArmStepU X H U T fa) i s)) ∧
         (XNI F syms (f.externs.map (·.2)) (indSigs f) c
             (CallLg env.toEnv (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
           XRNI F syms (f.externs.map (·.2)) (indSigs f) c
@@ -121,18 +123,25 @@ theorem backend_correct_world_ni_cleanupU {p : Clif.Program} {f : Clif.Function}
             (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀' →
             ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
               PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧
-              ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s))) ∧
+              ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+              ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+                (runX (Unw.ArmStepU X H U T fa) i s))) ∧
     (∀ c', Clif.runLoopX env p fuel cs.toX = .trapped c' →
       ∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
         (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
-        ∃ n, TrapAt fb base c' (runX (Unw.ArmStepU X H U T fa) n s)) ∧
+        ∃ n, TrapAt fb base c' (runX (Unw.ArmStepU X H U T fa) n s) ∧
+          (∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+            (runX (Unw.ArmStepU X H U T fa) i s)) ∧
+          ∀ m, Arm.r .ERR (runX (Unw.ArmStepU X H U T fa) (n + m + 1) s) ≠ .None) ∧
     (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →
       ∃ (obj : BitVec 64) (w : Arm.ArmState), ExnRel e obj ∧ MemRel F syms cm w ∧
         (∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
           ∃ n, ActUnw ra F G obj w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
             PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧ 0 < n ∧
-            UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s)) ∧
+            UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+            ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+              (runX (Unw.ArmStepU X H U T fa) i s)) ∧
         (XNI F syms (f.externs.map (·.2)) (indSigs f) c
             (CallLg env.toEnv (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
           XRNI F syms (f.externs.map (·.2)) (indSigs f) c
@@ -148,7 +157,9 @@ theorem backend_correct_world_ni_cleanupU {p : Clif.Program} {f : Clif.Function}
             (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀' →
             ∃ n, ActUnw ra (fun a => F a ∨ D a) G obj w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
               PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧ 0 < n ∧
-              UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s))) := by
+              UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+              ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+                (runX (Unw.ArmStepU X H U T fa) i s))) := by
   have hI := iselSimU_relW_cleanup hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot (fun _ => 0) hcs
     hrel hargs htr fuel
   have hP := prepareCorrectU_cleanup (driverSem_valueSemU F ⟨fa.k, af.slotBase⟩ X XR)
@@ -184,9 +195,9 @@ theorem backend_correct_world_ni_cleanupU {p : Clif.Program} {f : Clif.Function}
     · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ :=
         (hNIv hNI hTls hRNI D w₀' hrel' hsw hreg hstk).1 vals cm hrun
       obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
-      obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8⟩ := (hM6 w₀' H U G base ra s he).1 us' outs' w2
-        (vReturns_gotV_gen (gotPair_valueU _ _ _) ((hP.1 _ _).1 _ _ _ hv2))
-      refine ⟨n, ⟨h1, h2, fun a ha => ?_, fun g hg h29 h31 => ?_, h5, h6⟩, h7, h8⟩
+      obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8, h9⟩ := (hM6 w₀' H U G base ra s he).1 us' outs'
+        w2 (vReturns_gotV_gen (gotPair_valueU _ _ _) ((hP.1 _ _).1 _ _ _ hv2))
+      refine ⟨n, ⟨h1, h2, fun a ha => ?_, fun g hg h29 h31 => ?_, h5, h6⟩, h7, h8, h9⟩
       · rw [h3 a (fun hf => ha (.inl hf))]
         exact (hsw12.2.1 a ha).symm
       · rw [h4 g hg h29 h31]
@@ -199,9 +210,9 @@ theorem backend_correct_world_ni_cleanupU {p : Clif.Program} {f : Clif.Function}
     obtain ⟨obj', w1, w2, hv1, hv2, hsw12⟩ :=
       (hNIv hNI hTls hRNI D w₀' hrel' hsw hreg hstk).2 e cm hrun
     obtain ⟨rfl, rfl⟩ := vUnwFrom_det hv1 hv
-    obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8, h9⟩ := (hM6 w₀' H U G base ra s he).2.2 obj' w2
-      (vUnwinds_gotV_gen (gotPair_valueU _ _ _) (hP.2 _ _ _ _ hv2))
-    refine ⟨n, ⟨h1, h2, fun a ha => ?_, h4, h5, fun g hg h29 h31 => ?_⟩, h7, h8, h9⟩
+    obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8, h9, h10⟩ := (hM6 w₀' H U G base ra s he).2.2 obj'
+      w2 (vUnwinds_gotV_gen (gotPair_valueU _ _ _) (hP.2 _ _ _ _ hv2))
+    refine ⟨n, ⟨h1, h2, fun a ha => ?_, h4, h5, fun g hg h29 h31 => ?_⟩, h7, h8, h9, h10⟩
     · rw [h3 a (fun hf => ha (.inl hf))]
       exact (hsw12.2.1 a ha).symm
     · rw [h6 g hg h29 h31]
@@ -245,7 +256,9 @@ theorem backend_correct_world_niU {p : Clif.Program} {f : Clif.Function} {k : Na
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
           ∃ n, ActRet ra F G us outs w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
             PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧
-            ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s)) ∧
+            ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+            ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+              (runX (Unw.ArmStepU X H U T fa) i s)) ∧
         (XNI F syms (f.externs.map (·.2)) (indSigs f) c
             (CallLg env.toEnv (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
           XRNI F syms (f.externs.map (·.2)) (indSigs f) c
@@ -261,18 +274,25 @@ theorem backend_correct_world_niU {p : Clif.Program} {f : Clif.Function} {k : Na
             (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀' →
             ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
               PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧
-              ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s))) ∧
+              ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+              ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+                (runX (Unw.ArmStepU X H U T fa) i s))) ∧
     (∀ c', Clif.runLoopX env p fuel cs.toX = .trapped c' →
       ∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
         (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
-        ∃ n, TrapAt fb base c' (runX (Unw.ArmStepU X H U T fa) n s)) ∧
+        ∃ n, TrapAt fb base c' (runX (Unw.ArmStepU X H U T fa) n s) ∧
+          (∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+            (runX (Unw.ArmStepU X H U T fa) i s)) ∧
+          ∀ m, Arm.r .ERR (runX (Unw.ArmStepU X H U T fa) (n + m + 1) s) ≠ .None) ∧
     (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →
       ∃ (obj : BitVec 64) (w : Arm.ArmState), ExnRel e obj ∧ MemRel F syms cm w ∧
         (∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
           ∃ n, ActUnw ra F G obj w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
             PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧ 0 < n ∧
-            UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s)) ∧
+            UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+            ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+              (runX (Unw.ArmStepU X H U T fa) i s)) ∧
         (XNI F syms (f.externs.map (·.2)) (indSigs f) c
             (CallLg env.toEnv (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
           XRNI F syms (f.externs.map (·.2)) (indSigs f) c
@@ -288,7 +308,9 @@ theorem backend_correct_world_niU {p : Clif.Program} {f : Clif.Function} {k : Na
             (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀' →
             ∃ n, ActUnw ra (fun a => F a ∨ D a) G obj w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
               PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧ 0 < n ∧
-              UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s))) := by
+              UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+              ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+                (runX (Unw.ArmStepU X H U T fa) i s))) := by
   have hI := iselSimU_relW hsub hc hlU hX hXI hXR hXRi hexcl hsym hslot (fun _ => 0) hcs
     hrel hargs htr fuel
   have hP := prepareCorrectU_of_check (driverSem_csemU F ⟨fa.k, af.slotBase⟩ X XR) hc.prepOk XR
@@ -331,9 +353,9 @@ theorem backend_correct_world_niU {p : Clif.Program} {f : Clif.Function} {k : Na
     · obtain ⟨us', outs', w1, w2, hv1, hv2, hsw12⟩ :=
         (hNIv hNI hTls hRNI D w₀' hrel' hsw hreg hstk).1 vals cm hrun
       obtain ⟨rfl, rfl, rfl⟩ := vRetFrom_det (vs := ⟨0, 0, fun _ => 0, w₀⟩) hv1 hv
-      obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8⟩ := (hM6 w₀' H U G base ra s he).1 us' outs' w2
-        (vReturns_gotV_gen (gotPair_csemU _ _ _) ((hP.1 _ _).1 _ _ _ hv2))
-      refine ⟨n, ⟨h1, h2, fun a ha => ?_, fun g hg h29 h31 => ?_, h5, h6⟩, h7, h8⟩
+      obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8, h9⟩ := (hM6 w₀' H U G base ra s he).1 us' outs'
+        w2 (vReturns_gotV_gen (gotPair_csemU _ _ _) ((hP.1 _ _).1 _ _ _ hv2))
+      refine ⟨n, ⟨h1, h2, fun a ha => ?_, fun g hg h29 h31 => ?_, h5, h6⟩, h7, h8, h9⟩
       · rw [h3 a (fun hf => ha (.inl hf))]
         exact (hsw12.2.1 a ha).symm
       · rw [h4 g hg h29 h31]
@@ -346,9 +368,9 @@ theorem backend_correct_world_niU {p : Clif.Program} {f : Clif.Function} {k : Na
     obtain ⟨obj', w1, w2, hv1, hv2, hsw12⟩ :=
       (hNIv hNI hTls hRNI D w₀' hrel' hsw hreg hstk).2 e cm hrun
     obtain ⟨rfl, rfl⟩ := vUnwFrom_det hv1 hv
-    obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8, h9⟩ := (hM6 w₀' H U G base ra s he).2.2 obj' w2
-      (vUnwinds_gotV_gen (gotPair_csemU _ _ _) (hP.2 _ _ _ _ hv2))
-    refine ⟨n, ⟨h1, h2, fun a ha => ?_, h4, h5, fun g hg h29 h31 => ?_⟩, h7, h8, h9⟩
+    obtain ⟨n, ⟨h1, h2, h3, h4, h5, h6⟩, h7, h8, h9, h10⟩ := (hM6 w₀' H U G base ra s he).2.2 obj'
+      w2 (vUnwinds_gotV_gen (gotPair_csemU _ _ _) (hP.2 _ _ _ _ hv2))
+    refine ⟨n, ⟨h1, h2, fun a ha => ?_, h4, h5, fun g hg h29 h31 => ?_⟩, h7, h8, h9, h10⟩
     · rw [h3 a (fun hf => ha (.inl hf))]
       exact (hsw12.2.1 a ha).symm
     · rw [h6 g hg h29 h31]
@@ -393,7 +415,9 @@ theorem backend_correct_world_ni_pipelineU {p : Clif.Program} {f : Clif.Function
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
           ∃ n, ActRet ra F G us outs w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
             PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧
-            ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s)) ∧
+            ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+            ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+              (runX (Unw.ArmStepU X H U T fa) i s)) ∧
         (XNI F syms (f.externs.map (·.2)) (indSigs f) c
             (CallLg env.toEnv (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
           XRNI F syms (f.externs.map (·.2)) (indSigs f) c
@@ -409,18 +433,25 @@ theorem backend_correct_world_ni_pipelineU {p : Clif.Program} {f : Clif.Function
             (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀' →
             ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
               PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧
-              ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s))) ∧
+              ¬ UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+              ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+                (runX (Unw.ArmStepU X H U T fa) i s))) ∧
     (∀ c', Clif.runLoopX env p fuel cs.toX = .trapped c' →
       ∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
         (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
-        ∃ n, TrapAt fb base c' (runX (Unw.ArmStepU X H U T fa) n s)) ∧
+        ∃ n, TrapAt fb base c' (runX (Unw.ArmStepU X H U T fa) n s) ∧
+          (∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+            (runX (Unw.ArmStepU X H U T fa) i s)) ∧
+          ∀ m, Arm.r .ERR (runX (Unw.ArmStepU X H U T fa) (n + m + 1) s) ≠ .None) ∧
     (∀ e cm, Clif.runLoopX env p fuel cs.toX = .unwound e cm →
       ∃ (obj : BitVec 64) (w : Arm.ArmState), ExnRel e obj ∧ MemRel F syms cm w ∧
         (∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
           (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀ →
           ∃ n, ActUnw ra F G obj w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
             PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧ 0 < n ∧
-            UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s)) ∧
+            UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+            ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+              (runX (Unw.ArmStepU X H U T fa) i s)) ∧
         (XNI F syms (f.externs.map (·.2)) (indSigs f) c
             (CallLg env.toEnv (f.externs.map (·.2)) (indSigs f)) X → XTls F X →
           XRNI F syms (f.externs.map (·.2)) (indSigs f) c
@@ -436,7 +467,9 @@ theorem backend_correct_world_ni_pipelineU {p : Clif.Program} {f : Clif.Function
             (s : Arm.ArmState), ActEntryU vcp rf af fa fb K F G X H XR U base ra s w₀' →
             ∃ n, ActUnw ra (fun a => F a ∨ D a) G obj w s (runX (Unw.ArmStepU X H U T fa) n s) ∧
               PostTrace fa af base (Unw.ArmStepU X H U T fa) s n ∧ 0 < n ∧
-              UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s))) := by
+              UnwExit U T fa (runX (Unw.ArmStepU X H U T fa) (n - 1) s) ∧
+              ∀ i < n, actGoodXU vcp rf af fa fb base s X H XR U T K G (GotV vcp)
+                (runX (Unw.ArmStepU X H U T fa) i s))) := by
   cases hc with
   | legacy hc =>
     exact backend_correct_world_niU hsub hc hlU hcov hX hXI hXR hXRi hexcl hsym hslot

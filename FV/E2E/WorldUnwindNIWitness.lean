@@ -73,7 +73,9 @@ theorem world_ni_applies (p0 : Arm.PState) {K : Nat} {F : BitVec 64 → Prop} {c
             ∃ n, ActUnw ra (fun a => F a ∨ D a) G obj w s
                 (runX (Unw.ArmStepU (Xr (X1 p0)) H U T fa) n s) ∧
               PostTrace fa af base (Unw.ArmStepU (Xr (X1 p0)) H U T fa) s n ∧ 0 < n ∧
-              UnwExit U T fa (runX (Unw.ArmStepU (Xr (X1 p0)) H U T fa) (n - 1) s) := by
+              UnwExit U T fa (runX (Unw.ArmStepU (Xr (X1 p0)) H U T fa) (n - 1) s) ∧
+              ∀ i < n, actGoodXU vcp rf af fa fb base s (Xr (X1 p0)) H IselSimUWitness.XR U T K G
+                (GotV vcp) (runX (Unw.ArmStepU (Xr (X1 p0)) H U T fa) i s) := by
   obtain ⟨hv, hs, -, hc, hlU, hsv, hpad, hlast, hcs', -, hrows⟩ := facts
   intro e cm hrun
   obtain ⟨obj, w, hex, hm, -, hni⟩ := (backend_correct_world_ni_pipelineU (X := Xr (X1 p0))
@@ -110,7 +112,9 @@ theorem world_ni_applies_legacy (p0 : Arm.PState) {K : Nat} {F : BitVec 64 → P
             ∃ n, ActUnw ra (fun a => F a ∨ D a) G obj w s
                 (runX (Unw.ArmStepU (Xr (X1 p0)) H U TL faL) n s) ∧
               PostTrace faL afL base (Unw.ArmStepU (Xr (X1 p0)) H U TL faL) s n ∧ 0 < n ∧
-              UnwExit U TL faL (runX (Unw.ArmStepU (Xr (X1 p0)) H U TL faL) (n - 1) s) := by
+              UnwExit U TL faL (runX (Unw.ArmStepU (Xr (X1 p0)) H U TL faL) (n - 1) s) ∧
+              ∀ i < n, actGoodXU vcpL rfL afL faL fbL base s (Xr (X1 p0)) H IselSimUWitness.XR U TL
+                K G (GotV vcpL) (runX (Unw.ArmStepU (Xr (X1 p0)) H U TL faL) i s) := by
   obtain ⟨hv, hs, -, -, hlU, -⟩ := facts
   obtain ⟨hc, hsv, hpad, hlast, hcs', hrows⟩ := factsL
   intro e cm hrun
