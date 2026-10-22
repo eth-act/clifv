@@ -927,4 +927,71 @@ theorem cas_steps {R : RL} (hR : R.Wf) {ty : CTy} (hty : AtomTy ty) {fl : Clif.M
   refine ⟨s3, hrun3, by rw [← hit3]; rfl, hseg, ?_, hevc, hnsc, hstepc, hevf, hnsf, hstepf⟩
   rw [cls_of_decode hdecs, stlxr_cls hty (.inr rfl) has]
 
+/-! ## The `atomic_cas` loop is a retry loop -/
+
+/-- The heads of the `atomic_cas` loop started at `s`: scratch x24, x27; the flags (the `cmp` sets
+them before the `b.ne` reads them). -/
+abbrev CasHd (ty : CTy) (s y : ArmState) : Prop := LoopInv s y [24, 27] True ty.bytes
+
+/-- **The `atomic_cas` loop is a retry loop** (`RetryLoop`) on the machine, with heads `CasHd`:
+three lines (`ldaxr; cmp; b.ne`) before the `stlxr`, the status register w24, the exit when `ne`
+holds (the values differ). -/
+theorem cas_retry {R : RL} (hR : R.Wf) {ty : CTy} (hty : AtomTy ty) {fl : Clif.MemFlags}
+    {j0 n : Nat} {X : List Line}
+    (hdrop : R.L.drop j0 = casLoopLines ty.bits fl (.loop n) (.loop (n + 1)) ++ X)
+    {s : ArmState} (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j0)
+    (herr : Arm.r .ERR s = .None) :
+    RetryLoop R.step (CasHd ty s) (loopRd ty s) 3 24#5
+      (fun z => Arm.ConditionHolds Cond.ne.bits z = true) := by
+  have hL0 : R.L[j0]? = some (.label (.loop n)) := lines_at' hdrop 0 _ rfl
+  have hy0 : ∀ y, CasHd ty s y → ∀ E : List Ev,
+      (patch E y).program = R.fb.program R.base ∧ Arm.r .PC (patch E y) = R.pcOf (j0 + 1) ∧
+        Arm.r .ERR (patch E y) = .None := by
+    intro y hy E
+    refine ⟨by rw [patch, setMem_program, hy.prog, hprog], ?_, ?_⟩
+    · rw [patch, r_setMem, hy.pc, hpc, RL.pcOf_succ_label hL0]
+    · rw [patch, r_setMem, hy.err, herr]
+  refine ⟨by omega, fun y hy => ?_, fun y hy e he i h0 hi => ?_, fun y hy e he => ?_⟩
+  · obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy []
+    obtain ⟨s1, -, -, ⟨hev, hns⟩, -⟩ := cas_steps hR hty hdrop hp1 hp2 hp3
+    rw [patch_nil, hy.r25 (by decide)] at hev
+    rw [patch_nil] at hns
+    exact ⟨rfl, atomTy_bytes hty, hev, hns⟩
+  · obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy [e]
+    obtain ⟨s1, -, hit, -, hcmp, hbne, -⟩ := cas_steps hR hty hdrop hp1 hp2 hp3
+    obtain rfl | rfl : i = 1 ∨ i = 2 := by omega
+    · exact hcmp
+    · rw [hit]; exact hbne
+  obtain ⟨k, a, n', v⟩ := e
+  obtain ⟨h1, h2, h3⟩ := he
+  simp only [loopRd] at h1 h2 h3
+  subst h1 h2 h3
+  obtain ⟨hp1, hp2, hp3⟩ := hy0 y hy [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩]
+  obtain ⟨s1, hrun1, hit, -, -, -, hstepb, hstore⟩ := cas_steps hR hty hdrop hp1 hp2 hp3
+  have hz : iterN R.step 3 (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y) = R.step s1 := by
+    rw [show 3 = 2 + 1 from rfl, iterN_succ', hit]
+  rw [hz, hstepb]
+  by_cases hne : Arm.ConditionHolds Cond.ne.bits s1 = true
+  · left; rw [condHolds_w_pc]; exact hne
+  have hne' : Arm.ConditionHolds Cond.ne.bits s1 = false := by simpa using hne
+  right
+  rw [hne', ite_eq_right (by simp)]
+  refine ⟨by rw [condHolds_w_pc, hne']; simp, ?_⟩
+  obtain ⟨s3, -, hstep3, hwev, hcls, hevc, hnsc, -, hevf, hnsf, hstepf⟩ := hstore hne'
+  obtain ⟨-, -, -, hfr1, hmem1, hprog1, -⟩ := casHead_spec hty fl (R.envOf (j0 + 1)) _ hp3
+  obtain ⟨s1', hrun1', -, -, hfr1', hmem1', hprog1', -⟩ :=
+    casHead_spec hty fl (R.envOf (j0 + 1)) _ hp3
+  rw [hrun1] at hrun1'
+  cases hrun1'
+  refine ⟨⟨true, 25#5, hcls⟩, ⟨_, rfl, hwev⟩, ⟨by rw [hstep3]; exact hevc, by rw [hstep3]; exact hnsc⟩,
+    ⟨hevf, hnsf⟩, ?_⟩
+  rw [hstepf]
+  refine ⟨by rw [Arm.r_of_w_same, hpc], fun f h1 h2 h3 => ?_, .inl trivial, fun v' => ?_, ?_⟩
+  · rw [Arm.r_of_w_different h1, r_failState _ _ _ h1 (by simpa [rnum] using h2 24 (by simp)),
+      Arm.r_of_w_different h1, hfr1' f h1 (by simpa [rnum] using h2 27 (by simp)) h3, patch, r_setMem]
+    exact hy.frame f h1 h2 h3
+  · rw [ArmState.mem_w_eq_mem, mem_failState, ArmState.mem_w_eq_mem, hmem1', hy.patch_mem,
+      writeM_writeM _ _ _ _ _ (atomTy_bytes hty)]
+  · rw [Arm.w_program, prog_failState, Arm.w_program, hprog1', patch, setMem_program, hy.prog]
+
 end Concurrency.ArmAllocThread
