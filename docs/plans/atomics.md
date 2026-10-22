@@ -645,12 +645,14 @@ they are; the per-thread layers are new files.
     write private (composed by `CallCompose.Refines.app`). Witness (`ArmAllocEntryWitness.lean`):
     `entry_premises`, `run_load_entry` (the compiled `atomic_load` from its ABI entry through the
     prologue, the saves, `args`, the spill and the `ldar`), `refines_load_entry`.
-  * open: `ItemSim` for plain loads/stores (multi-line address forms through x16; one-line
-    forms fit `OneEvForm`, their event equality per addressing mode is open).
-    Needed per form: **receptiveness** (the allocated code steps on every read value once it
-    steps on one: the pc and error of a load do not depend on the loaded bytes) and **event
-    equality** (the allocated instruction's Arm events are the canonical run's `cEvs`, address
-    and bytes);
+  * plain loads/stores **done** for the one-line forms (`ArmAllocLS.lean`, #460 + follow-up):
+    `MemScopeLS` = `MemScopeB` ∨ `LSForm` (GPR/SIMD&FP load/store at a final mode, or at a stack
+    mode whose offset `memFinalize` encodes as an immediate), `lsForm_oneEv` (24 final-mode and 4
+    stack-mode `OneEvForm` instances; event equality from the closed forms `*_line_cf`,
+    receptiveness from `CtlIndep`), `itemSim_ls`, **`arm_alloc_refines_ls`**; witness
+    `ArmAllocLSWitness.ls_premises`. Open: the stack offsets lowered through `x16` (an event-free
+    `loadConst64` prefix; `ArmAllocMemLS.preMem`/`straightSem_pre` are the ingredients; needs a
+    multi-step `oneEv_op`);
   * kinds by `MInst.lines` (`Code.lines_kinds`, `VCodeEvents.cEvs_kinds`);
   * frame, spill and prologue accesses in `F s` (= `Priv`; the stack is per thread), read under
     `PrivCoh`;
