@@ -1,4 +1,5 @@
 import FV.Concurrency.ArmAllocMem
+import FV.Concurrency.MoveEvs
 
 /-!
 # Layer 4b with the allocation's moves (T2k, #311)
@@ -18,7 +19,8 @@ thread writes read its latest write there).
   store exclusives is, under `OkPriv`, the single-core run (its labels the single-core events);
 * `move_op`: **the per-item obligation at a move**: the Arm runs the move's lines (the
   single-core run, `Q` after it, `Backend.Proof.realizes_move`'s proof), all of whose events are
-  private (`MoveCodeOk`: `Backend.Proof.moveLines_evs`, `moveLines_noStx`); the source step has
+  private (`MoveCodeOk`, which every activation's move code is: `moveCodeOk`, from
+  `Backend.Proof.moveLines_evs`, `moveLines_noStx`); the source step has
   no event;
 * `itemSim_of_op_ok`: `ArmAllocMem.itemSim_of_op` without `NoMoves`: under `OkPriv`, `ItemSim`
   holds when it holds (under any run condition) at every instruction item with a source step;
@@ -143,12 +145,19 @@ def MoveCodeOk (R : RL) : Prop :=
       (∀ x t, Line.ins x t ∈ ls → ∀ env ai, x.toArmInst env = .ok ai →
         ∀ rel rs rn, clsOf ai ≠ .stx rel rs rn)
 
+/-- **Every activation's move code is `MoveCodeOk`** (`moveLines_evs`, with the frame layout of
+`RL.frameOk`; `moveLines_noStx`). -/
+theorem moveCodeOk {R : RL} (hR : R.Wf) : MoveCodeOk R :=
+  fun c wh src dst hchk hLs hLd hT code hmi s hsp hal ls ps ps' hls =>
+    ⟨fun env => moveLines_evs (R.frameOk hR) R.ctx R.af hchk hLs hLd hT hmi hsp hal hls env,
+      moveLines_noStx R.ctx R.af hchk hmi hls⟩
+
 /-- The configuration at a move item. -/
 abbrev MvC (b : Nat) (src dst : Loc) (its : List RItem) (m : Loc → CV) (w : ArmState) :
     MConf CV ArmState := .run ⟨b, .move src dst :: its, m, w⟩
 
 /-- **The per-item obligation at a move** (module doc). -/
-theorem move_op {R : RL} (hR : R.Wf) (hmc : MoveCodeOk R) {s : ArmState} {mon : Mon} {b : Nat}
+theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
     {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
     (hq : Q R s (MvC b src dst its m w)) (hA : AInv R (MvC b src dst its m w))
     {ls : List Lab} {t' : ArmState × Mon}
@@ -185,7 +194,7 @@ theorem move_op {R : RL} (hR : R.Wf) (hmc : MoveCodeOk R) {s : ArmState} {mon : 
     iterN_execLines hR.layout hR.lm hR.fit ls1' j s s' hat hhook
       (by rw [hst.prog]) (by rw [hpc]; rfl) hst.err (hint _) (hrun _)
   -- the move's lines: private events, no store exclusive
-  obtain ⟨hev, hns⟩ := hmc c wh src dst hcm hLs hLd hT _ hc1 s hst.sp hst.align ls1' ps1 ps1
+  obtain ⟨hev, hns⟩ := moveCodeOk hR c wh src dst hcm hLs hLd hT _ hc1 s hst.sp hst.align ls1' ps1 ps1
     (hcl ps1)
   have hseg := segEvs_execLines (X := R.X) (H := R.H) (base := R.base) hR.layout hR.lm hR.fit ls1'
     j s s' hat hhook (by rw [hst.prog]) (by rw [hpc]; rfl) hst.err (hint _) (hrun _)
@@ -249,7 +258,7 @@ theorem move_op {R : RL} (hR : R.Wf) (hmc : MoveCodeOk R) {s : ArmState} {mon : 
 /-- **`ItemSim` from the instruction items, with moves**: under `OkPriv`, the per-item obligation
 holds when it holds at every instruction item with a source step (for runs under any condition,
 in particular `fun _ _ => True` as `ArmAllocMem`'s items give it). -/
-theorem itemSim_of_op_ok {R : RL} (hR : R.Wf) (hmc : MoveCodeOk R)
+theorem itemSim_of_op_ok {R : RL} (hR : R.Wf)
     (hop : ∀ s mon b k allocs its m w evs0 c0, Q R s (OpC b k allocs its m w) →
       AInv R (OpC b k allocs its m w) → SrcStep R (OpC b k allocs its m w) evs0 c0 →
       ∀ ls t', PRun Policy.arm R.step (fun _ _ => True) (s, mon) ls t' →
@@ -266,7 +275,7 @@ theorem itemSim_of_op_ok {R : RL} (hR : R.Wf) (hmc : MoveCodeOk R)
   obtain ⟨evs0, c0, hs0⟩ := hS
   cases hs0 with
   | @move _ src dst its' =>
-    rcases move_op hR hmc hq hA hr with h | h
+    rcases move_op hR hq hA hr with h | h
     · exact .inr (.inl h)
     · exact .inr (.inr (.inr h))
   | @op _ k allocs its' _ _ vb i ops _ _ hvb hi hops hevs hfoot hst =>
@@ -282,10 +291,10 @@ theorem itemSim_of_op_ok {R : RL} (hR : R.Wf) (hmc : MoveCodeOk R)
     · exact .inr (.inr (.inr h))
 
 /-- **The per-item obligation of the memory scope, with moves.** -/
-theorem itemSim_mv {R : RL} (hR : R.Wf) (hmc : MoveCodeOk R) (hsc : MemScope R) :
+theorem itemSim_mv {R : RL} (hR : R.Wf) (hsc : MemScope R) :
     ItemSim Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (Done R)
       (fun c => c.measure) (PrivA R) := by
-  refine itemSim_of_op_ok hR hmc fun s mon b k allocs its m w evs0 c0 hq hA hs ls t' hr => ?_
+  refine itemSim_of_op_ok hR fun s mon b k allocs its m w evs0 c0 hq hA hs ls t' hr => ?_
   have hs' := hs
   cases hs' with
   | @op _ _ _ _ _ _ vb i ops _ _ hvb hi _ _ _ _ =>
@@ -302,14 +311,14 @@ theorem itemSim_mv {R : RL} (hR : R.Wf) (hmc : MoveCodeOk R) (hsc : MemScope R) 
 (equal kinds, the addresses outside the world private, the monitor pairs atomic), up to the
 allocated code's return, trap or undefined behaviour (`Done`), for functions whose instructions
 are event-free, `fence`, `ldar` or `stlr` (`MemScope`), whatever their moves. -/
-theorem arm_alloc_refines_mv {R : RL} (hR : R.Wf) (hmc : MoveCodeOk R) (hsc : MemScope R)
+theorem arm_alloc_refines_mv {R : RL} (hR : R.Wf) (hsc : MemScope R)
     {s : ArmState} {mon : Mon} {c : MConf CV ArmState} (hq : Q R s c) (hA : AInv R c)
     {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
     ∃ n trS cE ψ, n ≤ ls.length ∧ MTRun R.vc R.rf R.sem ckeep (cEvs R.F R.ctx) c trS cE ∧
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
   obtain ⟨n, trS, cE, ψ, hn, hs, href, hend⟩ :=
-    refines_of_itemSim (itemSim_mv hR hmc hsc) hr ⟨hq, hA⟩
+    refines_of_itemSim (itemSim_mv hR hsc) hr ⟨hq, hA⟩
   exact ⟨n, trS, cE, ψ, hn, mtrun_of_srun hs, href, hend⟩
 
 end Concurrency.ArmAllocThread

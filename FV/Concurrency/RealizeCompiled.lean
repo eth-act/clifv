@@ -13,7 +13,7 @@ threads running **compiled** functions, from the per-thread layers:
 * `Refines.pairT_congr`, `monPair_take`: the atomic pairs of a refinement only matter at the
   images; the monitor pairs of a prefix of an Arm trace are those of the trace there;
 * `Compiled`: what the pipeline gives one thread (`RA` the activation of a compiled function:
-  register level `RL.Wf`, its moves' code (`MoveCodeOk`), the memory scope, no GOT-pinned calls;
+  register level `RL.Wf`, the memory scope, no GOT-pinned calls;
   layer 2's driver hypothesis and checks for the CLIF function; the CLIF entry state `cs` related
   to the entry world, and `Q ∧ AInv` at the allocated code's entry configuration for the Arm state
   `s`);
@@ -104,7 +104,6 @@ state `s` related to the allocated code's entry configuration. -/
 structure Compiled (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.State)
     (s : ArmState) : Prop where
   wf : RA.Wf
-  moves : MoveCodeOk RA
   scope : MemScope RA
   gv : RA.gv = fun _ _ => False
   front : ∃ (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
@@ -141,7 +140,7 @@ theorem thread_compiled {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif
   obtain ⟨f, vc, ctx, st0, R, gn, bl, A, MR, slots, sb, syms, B0, args, m₀, w₀, H, hchk, hMR,
     hMRw, hX, hMem, hMRs, hreg, hprep, halloc, hB0, hcall, hfunc, hslots, hbody, hterm, hregs, hty,
     hsig, hmr, hargs, hq, hA⟩ := hc.front
-  obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hend⟩ := arm_alloc_refines_mv hc.wf hc.moves hc.scope hq hA hr
+  obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hend⟩ := arm_alloc_refines_mv hc.wf hc.scope hq hA hr
   obtain ⟨k, trS, t, ψ, hk, hrun, href, hendk⟩ :=
     arm_isel_refinesE (E := Done RA cE) hc.gv H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0
       hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr hM hAr hend hnA
