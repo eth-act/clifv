@@ -172,7 +172,14 @@ The proof covers them as follows.
   reads x0 after an `sret` call). `sret_reach` holds for the per-activation run on `P.bare`
   (no program functions, every call an extern). Witness: `Link.DeadCleanup.SretWitness
   .exec_returns_sret` (`function %s(i64 sret)` compiled by `compileExeU`, x0 = the pointer).
-  The other variants (`_unwind`, `backend_correct_legal*`, `_opt*`) keep the CLIF-values
+  Over the mid-end: `backend_correct_opt_abi`/`backend_correct_opt_proven_abi`
+  (`FV/E2E/SretReturnOpt.lean`; premise `sretStableB (Opt.optimize f cfg)`, the optimiser keeps
+  the signature so `sretArg` is the source's; witness `SretReturnWitness.sw_opt_abi`). Through
+  the `i128` legalisation: `backend_correct_legal{,_env,_wide,_env_wide}_abi`
+  (`FV/E2E/SretReturnLegal.lean`; premise `sretStableB g` on the legalised `g`, conclusion
+  `ArmRefinesLegalAbi … (sretArg g args')`; witness `SretReturnWitness.swl_legal_abi`, an
+  `(i64 sret, i128)` function legalised by the compiler's pass). The other variants (`_unwind`,
+  the dead-cleanup/direct/opt legalisation copies, `OptX`/`_opt_exe*`) keep the CLIF-values
   conclusion.
 * **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
   parameters `x (abiArgIdx …)[i]`, `sigArgLocs_regs`) or a store to `[sp + off]` of the outgoing
