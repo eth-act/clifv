@@ -29,8 +29,6 @@ def signed(value, bits):
 
 def run_commands(bits, kind="mixed"):
     if kind == "div":
-        if options.kind == "div":
-            wanted |= {"stock_div_"+op for op in ("sdiv", "udiv", "srem", "urem")}
         cases = run_commands(bits, "highmul")
         low, high = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
         pairs = [(7,2),(-7,2),(7,-2),(-7,-2),(low,-1),(low,1),
@@ -264,6 +262,8 @@ def main():
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_scalar_ni", "retained_logical", "retained_mixed"}
         elif options.kind == "logical":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_logical_ni", "retained_mixed"}
+        if options.kind == "div":
+            wanted |= {"stock_div_"+op for op in ("sdiv", "udiv", "srem", "urem")}
         assert names == wanted, names
         cases = run_commands(int(width), options.kind)
         attached = set()

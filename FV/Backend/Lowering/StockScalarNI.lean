@@ -1,6 +1,7 @@
 import FV.Backend.Lowering.StockLogicalNI
 import FV.Backend.StockScalarCheck
 import FV.Backend.ABIReadScalar
+import FV.Backend.ABIReadDiv
 
 namespace Backend.Stock.Scalar
 set_option autoImplicit false
@@ -12,7 +13,7 @@ def lowerValidated (f : Clif.Function) : Except String VCode :=
   else
     let attempt := do
       let vc ← lowerCandidate f
-      if check f vc && ABIReadScalar.check f.sig vc then pure vc
+      if check f vc && (ABIReadScalar.check f.sig vc || ABIReadDiv.check f.sig vc) then pure vc
       else throw "Stock scalar candidate failed paired semantic validation"
     match attempt with
     | .ok vc => .ok vc
