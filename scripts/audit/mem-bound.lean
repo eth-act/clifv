@@ -2,6 +2,7 @@ import FV.Front.RawExeNB
 import FV.Front.RawExeBaselineNB
 import FV.Front.RawExeTrapNB
 import FV.Link.DeadCleanupExeTrapNBWitness
+import FV.Link.DeadCleanupExeTrapPeakNBWitness
 #print axioms E2E.SrcBounded.step_next_rich
 #print axioms E2E.SrcBounded.bounded_slotless
 #print axioms E2E.SrcBounded.bounded_placed
@@ -26,6 +27,8 @@ import FV.Link.DeadCleanupExeTrapNBWitness
 #print axioms Link.DeadCleanup.TrapWitness.exec_source_traps -- witness: native_decide
 #print axioms Link.DeadCleanup.TrapWitness.cs0_trapsD_all -- witness: native_decide
 #print axioms Link.DeadCleanup.TrapWitness.src_noMemTrap -- witness: native_decide
+#print axioms Link.DeadCleanup.TrapWitness.peak_trapsD_all
+#print axioms Link.DeadCleanup.TrapWitness.exec_source_traps_peak -- witness: native_decide
 #print axioms Link.srcBounded_gen
 #print axioms Link.srcBounded_acyclic
 #print axioms Link.srcBounded_peak
