@@ -483,8 +483,18 @@ the `retN`/value arguments).
   handlers' labels are CFG successors (`cfg_spec`) and none is the entry block (`EdgesOk.entry`,
   `preds_empty`). Corollaries `callSites_complete_input`, `padsNonzero_complete_input`; witness
   `Witness.tryInfoOk_applies`/`input_applies` (`FV/Link/UnwTryInWitness.lean`, on `tc`).
-  Open: `SaveOk` (the frame layout), `unwCheck`, `lastCallsOk`, `savedCheck` (which fails for
-  `large_frame`, see "Validators"), and `ehOkR` on lean-ld's output.
+  **`savedCheck` and `SaveOk`** (`FV/Link/UnwSavedIn.lean`): the allocation part by construction —
+  `savedCheckRF_spill` (spill allocation), `savedCheckRF_build` (regalloc2's answer as `buildRFunc`
+  reads it: the saved registers are every callee-saved register its locations mention), so
+  `savedCheckRF_pipe` for every allocator answer the pipeline lowers; the frame part
+  `savedCheckAF_of`/`savedCheck_of`/`savedCheck_pipe` and `saveOk_of`/`unwindRows_complete_frame`
+  under two decidable conditions on the artifact that are necessary for the current compiler:
+  **`saveFrameB`** (save slots below 32 KiB; `large_frame` stores through x16) and **`leadOkB`**
+  (no further callee-save store right after the saves; an allocator answer storing a
+  callee-saved register into a spill slot there passes `checkAlloc` but gives wrong rows, so
+  `savedCheckAF` rightly rejects it). Witness `Witness.savedCheck_applies`/`unwindRows_frame_applies`.
+  Open: `unwCheck`, `lastCallsOk` (needs an input condition: a callee called by a `try_call` and
+  by a call of the last block), `ehOkR` on lean-ld's output, the totality theorem.
 * **The executable-bytes machine with unwinding (S10g, #404)** (`FV/E2E/DeadCleanupExecUnwind.lean`):
   `E2E.DeadCleanupExecBytes.stepU I B Ub file` is `DeadCleanupExecBytes.step` (the processor on
   the file's words; calls of code outside the program and TLS by the base hooks; a call of a
