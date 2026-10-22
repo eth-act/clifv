@@ -217,7 +217,10 @@ Run on `origin/agent/build-diet` (`d8524602`) against `origin/main`:
 ### Recommendation
 
 - Agents MAY use `turbo-lean check --decl` to iterate on one theorem in a heavy module (usage:
-  `docs/USAGE.md`). Set `TURBO_LEAN_TIMEOUT_MS`, run it under memcap, kill the daemons
-  afterwards, and always finish with the normal lake build and audits before a PR.
+  `docs/USAGE.md`; binary `~/.local/bin/turbo-lean`, built from
+  `~/.local/share/turbo-lean/src` at `ded00b8`). Before the first call, set
+  `TURBO_LEAN_TIMEOUT_MS`, `TURBO_LEAN_HOME` and `TURBO_LEAN_TELEMETRY=off`: telemetry to
+  `telemetry.thomas.md`, an external host, is on by default. Run it under memcap, kill the
+  daemons afterwards, and always finish with the normal lake build and audits before a PR.
 - Do not use `build`, `pr-verify`, `ci-verify` or the governor. Keep the statement-hash dumps
   and `scripts/lake-serial-build.py`.

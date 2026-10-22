@@ -1020,13 +1020,18 @@ To iterate on one theorem in a heavy proof module without rebuilding the module 
 1,697 s → 0.1 s per edit; see `docs/research/turbo-lean.md`):
 
 ```bash
-# once: git clone https://github.com/Th0rgal/turbo-lean /tmp/turbo_trial
-#       (cd /tmp/turbo_trial/lean && lake build) && (cd /tmp/turbo_trial && cargo build --release -p turbo-lean)
+# binary: ~/.local/bin/turbo-lean (built from ~/.local/share/turbo-lean/src, turbo-lean ded00b8)
+# if missing, rebuild it there (not in /tmp: reboots wipe /tmp):
+#   git clone https://github.com/Th0rgal/turbo-lean ~/.local/share/turbo-lean/src
+#   cd ~/.local/share/turbo-lean/src && git checkout ded00b8 && (cd lean && lake build) \
+#     && cargo build --release -p turbo-lean && ln -sf "$PWD/target/release/turbo-lean" ~/.local/bin/
 lake build <imports of the module>          # dependencies must be built (shared cache)
-export TURBO_LEAN_TIMEOUT_MS=3600000        # the worker's default limit is 30 s; set before the first check
-export TURBO_LEAN_HOME=/tmp/<name>_turbo TURBO_LEAN_TELEMETRY=off
+# set all three before the first check (the background worker reads them when it starts):
+export TURBO_LEAN_TIMEOUT_MS=3600000        # the worker's default limit is 30 s
+export TURBO_LEAN_HOME=/tmp/<name>_turbo
+export TURBO_LEAN_TELEMETRY=off             # on by default: mcp/fast-check send telemetry to telemetry.thomas.md
 FV_MEMCAP=8G LEAN_NUM_THREADS=2 scripts/memcap.sh \
-  /tmp/turbo_trial/target/release/turbo-lean --json check FV/Backend/Proof/KillTab.lean --decl nop_rhs
+  ~/.local/bin/turbo-lean --json check FV/Backend/Proof/KillTab.lean --decl nop_rhs
 # edit the proof, rerun the same command: only that theorem is re-elaborated
 ```
 
