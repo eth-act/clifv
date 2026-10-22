@@ -694,9 +694,15 @@ they are; the per-thread layers are new files.
     mode whose offset `memFinalize` encodes as an immediate), `lsForm_oneEv` (24 final-mode and 4
     stack-mode `OneEvForm` instances; event equality from the closed forms `*_line_cf`,
     receptiveness from `CtlIndep`), `itemSim_ls`, **`arm_alloc_refines_ls`**; witness
-    `ArmAllocLSWitness.ls_premises`. Open: the stack offsets lowered through `x16` (an event-free
-    `loadConst64` prefix; `ArmAllocMemLS.preMem`/`straightSem_pre` are the ingredients; needs a
-    multi-step `oneEv_op`);
+    `ArmAllocLSWitness.ls_premises`. The stack offsets lowered through `x16` **done**
+    (`ArmAllocLSX.lean`, #473): `OneEvPreForm` (an event-free `loadConst64` prefix, then one
+    access; `oneEvPreForm_of_oneEv`), `oneEvPre_op` (the prefix's event-free steps, a run ending
+    inside them has no event; they commute with the patch of the read bytes, `iterN_comm`;
+    receptiveness `straightSem_preC` from `preMem`/`straightSem_pre`), the four instances
+    `load_stackX_form` … `fpuStore_stackX_form`, `MemScopeLSX` = `MemScopeB` ∨ `LSFormX`,
+    `itemSim_lsx`, **`arm_alloc_refines_lsx`**, `lsFormX_covered`; witness
+    `ArmAllocLSXWitness.lsx_premises` (`R.Wf`, `MemScopeLSX`, `¬ MemScopeLS`) and `lsx_run`; one
+    thread on the whole run `RealizeCompiled.thread_compiledLSX_full`;
   * kinds by `MInst.lines` (`Code.lines_kinds`, `VCodeEvents.cEvs_kinds`);
   * frame, spill and prologue accesses in `F s` (= `Priv`; the stack is per thread), read under
     `PrivCoh`;
@@ -759,8 +765,8 @@ they are; the per-thread layers are new files.
   `rmw_full`: on the whole run it relates the `ldaxr` read to the `stlxr` write) and
   `WitnessC.realizes_cas` (`atomic_cas.i64` with the expected value present: `ldaxr; cmp; b.ne;
   stlxr`); generic `WitnessR.realizes_pair` (one thread, private plain prefix then an exclusive
-  pair), `RealizeExec.wf_rmw`. Open in layer 4b: stack offsets built in x16 (`OneEvPreForm`);
-  mixed-size accesses (T2i, #317).
+  pair), `RealizeExec.wf_rmw`. Layer 4b with the stack offsets built in x16:
+  `arm_alloc_refines_lsx` (#473). Open: mixed-size accesses (T2i, #317).
 * **The realized prefix covers the whole run (done, T2j #473, `FV/Concurrency/ThreadProgress.lean`).**
   Layer 4b could end the realized prefix where the allocated code is `Done` — returned, trapped,
   or *without a step* — while the CLIF thread could still step. Excluded by a progress argument
@@ -801,8 +807,9 @@ prefixes that cover the runs (T2j, #473).** `realizes_compiledLS_full` gives the
 loads/stores), each thread's realized prefix its whole Arm run or ending where the CLIF thread
 stops, with calls through `CallCompose.realizes_linked`; the witnesses above show it on
 `atomic_load`, `atomic_store`, message passing and `atomic_rmw` on the whole runs, and on
-`atomic_cas`. Remaining scope widenings are tracked separately: stack offsets built in x16
-(`OneEvPreForm`), mixed-size accesses (T2i, #317).
+`atomic_cas`. The stack offsets built in x16 are in layer 4b's scope (`arm_alloc_refines_lsx`; one thread on
+the whole run: `thread_compiledLSX_full`). Remaining scope widening tracked separately: mixed-size
+accesses (T2i, #317).
 
 ## 4. Testing (the oracle)
 
