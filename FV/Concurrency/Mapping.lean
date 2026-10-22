@@ -59,6 +59,7 @@ def restrict (X : Exec E) (S : E → Prop) : Exec {e // S e} where
   rf a b := X.rf a.1 b.1
   co a b := X.co a.1 b.1
   rmw a b := X.rmw a.1 b.1
+  ev e := X.ev e.1
 
 variable {X : Exec E} {S : E → Prop}
 
@@ -216,7 +217,7 @@ theorem atomicity (hX : X.Wf) (hc : Consistent X k) {a b c : E} (hr : X.rmw a b)
   · have hpo : X.po a c := hX.com_int_po hc.internal (.inr (.inr h1)) hac
     have hcb : c ≠ b := by rintro rfl; exact hX.co_irrefl _ h2
     rcases hX.po_total c b (hac.symm.trans hab) hcb with h | h
-    · exact hX.rmw_imm _ _ _ hr hpo h
+    · exact hX.rmw_imm _ _ _ hr hpo h (.inl (by rw [(hX.co_dir _ _ h2).1]; decide))
     · have hd := hX.co_dir _ _ h2
       have hpl : X.poLoc b c := by
         refine ⟨h, (hX.co_loc _ _ h2).symm, ?_, ?_⟩

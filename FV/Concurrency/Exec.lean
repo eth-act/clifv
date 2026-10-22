@@ -32,6 +32,10 @@ structure Exec (E : Type) where
   rf : Rel E
   co : Rel E
   rmw : Rel E
+  /-- The elements of `E` that hold an event (default: all). An execution built from traces
+  indexes events by program position (`Traces.exec`); positions past a step's events hold none.
+  -/
+  ev : E → Prop := fun _ => True
 
 namespace Exec
 
@@ -75,8 +79,18 @@ structure Wf : Prop where
   rmw_dir : ∀ a b, X.rmw a b → X.dir a = .R ∧ X.dir b = .W
   rmw_loc : ∀ a b, X.rmw a b → X.loc a = X.loc b
   rmw_po : ∀ a b, X.rmw a b → X.po a b
-  /-- The two halves of an atomic update are `po`-adjacent. -/
-  rmw_imm : ∀ a b c, X.rmw a b → X.po a c → X.po c b → False
+  /-- The two halves of an atomic update are `po`-adjacent among the events: no element in
+  between accesses memory (`dir ≠ F`) or holds an event (fences included). Armv8's `rmw` relates
+  an exclusive pair through program order among events; the empty program positions after an
+  `ldaxr`'s step (`Traces.exec`) are not events. -/
+  rmw_imm : ∀ a b c, X.rmw a b → X.po a c → X.po c b → (X.dir c ≠ .F ∨ X.ev c) → False
+
+/-- The strict well-formedness of the first model: `Wf` with `rmw` immediacy over every element
+of `E`, events or not. -/
+structure WfStrict : Prop extends X.Wf where
+  rmw_imm_all : ∀ a b c, X.rmw a b → X.po a c → X.po c b → False
+
+theorem WfStrict.wf {X : Exec E} (h : X.WfStrict) : X.Wf := h.toWf
 
 variable {X}
 
