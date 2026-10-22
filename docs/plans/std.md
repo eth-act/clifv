@@ -238,18 +238,25 @@ Besides those: std's optional libc symbols, looked up as weak data
 `pidfd_spawnp`, `__cxa_thread_atexit_impl`, `__dso_handle`; std checks them for null before a
 call); musl's startup (`_start`/`_start_c`, `__libc_start_main`, the crt objects, which call
 `main`, i.e. enter the program, and run before it) and the TLS hook (`TlsOk`, T1); the remaining
-Rust code outside the region: the allocator shim `__rust_{alloc,dealloc,realloc,alloc_zeroed}`
-and `__rust_no_alloc_shim_is_unstable_v2` (cg_clif writes no CLIF dump for it, slice T3b), std's
-float fallbacks (S11), and the per-executable exclusions of T3c (17 / 18 functions on fv-demo,
-cg_clif's code). The list is what the region *references*; a given run calls a subset.
+Rust code outside the region: `__rust_no_alloc_shim_is_unstable_v2` (empty; deliberately not
+dumped by T3b, see §4), std's float fallbacks (S11), and the per-executable exclusions of T3c
+(17 / 18 functions on fv-demo, cg_clif's code). Since T3b the allocator shim
+`__rust_{alloc,dealloc,realloc,alloc_zeroed}` is in the region (verified forwarding functions to
+`__rdl_*`). The list is what the region *references*; a given run calls a subset.
 
 ## 4. Slices
 
 * **T3a (done, #396)**: `--build-std` wiring, std group in the report, attribution, response file,
   this plan, docs.
-* **T3b**: the allocator shim (`__rust_alloc` & co.): emit/dump it through cg_clif so it is in
-  `P` (a forwarding function to `__rdl_alloc`); then the allocator boundary is exactly musl's
-  `malloc` family.
+* **T3b (done)**: the patched cg_clif dumps the allocator shim wrappers `__rust_alloc`,
+  `__rust_dealloc`, `__rust_realloc`, `__rust_alloc_zeroed`; cargo-fv picks them up unchanged.
+  fv-demo `--build-std --lean-link --verified`: region 28550 → 28554 functions (lib test), 27902 →
+  27906 (main test), exclusions unchanged (18 / 17), all 8 wrappers verified; qemu: lib test 21
+  passed, main test ok. The empty `__rust_no_alloc_shim_is_unstable_v2` is not dumped: for a file
+  without `try_call`, `lean-backend` lowers with `Stock.Scalar`, which drops the empty `args []` of
+  a parameterless function while `lean-link`'s lowering keeps it, so the recorded allocation does
+  not apply, `lean-link` falls back to the spill allocation (4 → 42 words) and placement fails
+  (`placeOkB`); reported on #140. The allocator boundary is now musl's `malloc` family.
 * **T3c (done)**: `--verified` with `--build-std`: per-executable exclusion of the functions
   failing a per-function condition (§2.1). Widening `indB`/`callScopeB` (stack arguments in
   indirect calls; with S5) would shrink the exclusions.

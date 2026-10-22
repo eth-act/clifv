@@ -1,3 +1,36 @@
+diff --git a/compiler/rustc_codegen_cranelift/src/allocator.rs b/compiler/rustc_codegen_cranelift/src/allocator.rs
+index 9133fd7..bf70728 100644
+--- a/compiler/rustc_codegen_cranelift/src/allocator.rs
++++ b/compiler/rustc_codegen_cranelift/src/allocator.rs
+@@ -11,6 +11,9 @@
+ 
+ pub(crate) fn codegen(tcx: TyCtxt<'_>, module: &mut dyn Module, methods: &[AllocatorMethod]) {
+     let usize_ty = module.target_config().pointer_type();
++    // clifv: the shim's CLIF dumps, like every function's (`--emit=llvm-ir`)
++    let dump = crate::pretty_clif::should_write_ir(tcx.sess).then(|| tcx.output_filenames(()));
++    let dump = dump.map(|o| &**o);
+ 
+     for method in methods {
+         let mut arg_tys = Vec::with_capacity(method.inputs.len());
+@@ -47,6 +50,7 @@ pub(crate) fn codegen(tcx: TyCtxt<'_>, module: &mut dyn Module, methods: &[Alloc
+             sig,
+             &mangle_internal_symbol(tcx, &global_fn_name(method.name)),
+             &mangle_internal_symbol(tcx, &default_fn_name(method.name)),
++            dump,
+         );
+     }
+ 
+@@ -75,6 +79,10 @@ pub(crate) fn codegen(tcx: TyCtxt<'_>, module: &mut dyn Module, methods: &[Alloc
+         bcx.seal_all_blocks();
+         bcx.finalize(module.target_config());
+ 
++        // clifv: no dump for this empty marker function (`ret`): it stays cg_clif's code. The Lean
++        // backend's production lowering of a file without `try_call` (`Stock.Scalar`) omits the
++        // empty `args` of a parameterless function, so `lean-link`'s pipeline (which has it) would
++        // reject the recorded allocation (eth-act/clifv docs/plans/std.md, T3b).
+         module.define_function(func_id, &mut ctx).unwrap();
+     }
+ }
 diff --git a/compiler/rustc_codegen_cranelift/src/base.rs b/compiler/rustc_codegen_cranelift/src/base.rs
 index 638463b..30adf6f 100644
 --- a/compiler/rustc_codegen_cranelift/src/base.rs
@@ -20,11 +53,56 @@ index 638463b..30adf6f 100644
              &context.func,
              &clif_comments,
          );
+diff --git a/compiler/rustc_codegen_cranelift/src/common.rs b/compiler/rustc_codegen_cranelift/src/common.rs
+index 30bd2f2..a9143c5 100644
+--- a/compiler/rustc_codegen_cranelift/src/common.rs
++++ b/compiler/rustc_codegen_cranelift/src/common.rs
+@@ -233,11 +233,13 @@ pub(crate) fn type_sign(ty: Ty<'_>) -> bool {
+     }
+ }
+ 
++/// clifv: `dump` (the allocator shim) writes the wrapper's CLIF dumps like `codegen_fn`'s.
+ pub(crate) fn create_wrapper_function(
+     module: &mut dyn Module,
+     sig: Signature,
+     wrapper_name: &str,
+     callee_name: &str,
++    dump: Option<&rustc_session::config::OutputFilenames>,
+ ) {
+     let wrapper_func_id = module.declare_function(wrapper_name, Linkage::Export, &sig).unwrap();
+     let callee_func_id = module.declare_function(callee_name, Linkage::Import, &sig).unwrap();
+@@ -266,7 +268,13 @@ pub(crate) fn create_wrapper_function(
+         bcx.seal_all_blocks();
+         bcx.finalize(module.target_config());
+     }
++    if let Some(of) = dump {
++        crate::pretty_clif::write_shim_clif_file(of, wrapper_name, "unopt", &*module, wrapper_func_id, &ctx.func);
++    }
+     module.define_function(wrapper_func_id, &mut ctx).unwrap();
++    if let Some(of) = dump {
++        crate::pretty_clif::write_shim_clif_file(of, wrapper_name, "opt", &*module, wrapper_func_id, &ctx.func);
++    }
+ }
+ 
+ pub(crate) struct FunctionCx<'m, 'clif, 'tcx: 'm> {
+diff --git a/compiler/rustc_codegen_cranelift/src/inline_asm.rs b/compiler/rustc_codegen_cranelift/src/inline_asm.rs
+index cd2b06c..6278df2 100644
+--- a/compiler/rustc_codegen_cranelift/src/inline_asm.rs
++++ b/compiler/rustc_codegen_cranelift/src/inline_asm.rs
+@@ -202,7 +202,7 @@ pub(crate) fn codegen_inline_asm_terminator<'tcx>(
+                         fx.inline_asm_index += 1;
+                         let sig =
+                             get_function_sig(fx.tcx, fx.target_config.default_call_conv, instance);
+-                        create_wrapper_function(fx.module, sig, &wrapper_name, symbol.name);
++                        create_wrapper_function(fx.module, sig, &wrapper_name, symbol.name, None);
+ 
+                         CInlineAsmOperand::Symbol { symbol: wrapper_name }
+                     }
 diff --git a/compiler/rustc_codegen_cranelift/src/pretty_clif.rs b/compiler/rustc_codegen_cranelift/src/pretty_clif.rs
-index fee3562..694fd1a 100644
+index fee3562..e2035cc 100644
 --- a/compiler/rustc_codegen_cranelift/src/pretty_clif.rs
 +++ b/compiler/rustc_codegen_cranelift/src/pretty_clif.rs
-@@ -291,20 +291,114 @@ pub(crate) fn write_clif_file(
+@@ -291,20 +291,136 @@ pub(crate) fn write_clif_file(
      output_filenames: &OutputFilenames,
      symbol_name: &str,
      postfix: &str,
@@ -45,6 +123,28 @@ index fee3562..694fd1a 100644
      });
  }
  
++/// clifv: the dump of a function cg_clif builds without MIR (the allocator shim), like
++/// `write_clif_file`'s, the function named `u0:<func_id>` as `codegen_fn` names its functions
++/// (on a copy: the emitted code is unchanged).
++pub(crate) fn write_shim_clif_file(
++    output_filenames: &OutputFilenames,
++    symbol_name: &str,
++    postfix: &str,
++    module: &dyn Module,
++    func_id: FuncId,
++    func: &cranelift_codegen::ir::Function,
++) {
++    let mut func = func.clone();
++    func.name = cranelift_codegen::ir::UserFuncName::user(0, func_id.as_u32());
++    let comments = CommentWriter {
++        enabled: true,
++        global_comments: vec![],
++        entity_comments: FxHashMap::default(),
++        inst_post_comments: FxHashMap::default(),
++    };
++    write_clif_file(output_filenames, symbol_name, postfix, module, &func, &comments);
++}
++
 +/// clifv (eth-act/clifv, `scripts/patches/cg-clif-extnames.patch`): after the function, the
 +/// identities the text leaves implicit, as comment lines (`docs/contracts/frontend.md`):
 +///
