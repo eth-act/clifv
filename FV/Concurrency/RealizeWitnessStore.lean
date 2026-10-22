@@ -315,27 +315,26 @@ theorem head_stlrS : ∀ vb code, RAS.vc.blocks[0]? = some vb → itemsCode RAS.
     | some c => cases c <;> intro h <;> first | rfl | cases h
   · cases h
 
-/-- The entry `args` as a step of the allocated code (no code, the world unchanged). -/
+/-- The entry `args` as a step of the allocated code (no code, the world unchanged; `x0` in the
+store gets the world's `x0`). -/
 theorem args_stepS (its : List RItem) (m : Loc → CV) (w : ArmState) :
     ∃ m', MStep RAS.vc RAS.sem ckeep RAS.rf (.run ⟨0, .op 0 #[.reg (.x 0), .reg (.x 1)] :: its, m, w⟩)
-      (.run ⟨0, its, m', w⟩) := by
+      (.run ⟨0, its, m', w⟩) ∧ m' (.reg (.x 0)) = regVal w (.x 0) := by
   obtain ⟨hi, hsz⟩ := argsS0
-  exact ⟨_, MStep.op vb0S hi (operands_args [(0, .x 0), (1, .x 1)]) rfl rfl
+  refine ⟨_, MStep.op vb0S hi (operands_args [(0, .x 0), (1, .x 1)]) rfl rfl
     (by simp [argOps, Operand.isDef]) (HavocOuts.refl _ _ _)
-    ⟨fun _ _ => rfl, fun c hc => by cases hc⟩ (MNext.next (by rw [hsz]; decide))⟩
+    ⟨fun _ _ => rfl, fun c hc => by cases hc⟩ (MNext.next (by rw [hsz]; decide)), ?_⟩
+  simp [writeM, argOps, Operand.isDef, Operand.isLate, Operand.isEarly, Backend.Proof.upd]
 
-/-- **`Realizes` on the compiled `atomic_store` through its `stlr`** (module doc). -/
-theorem realizes_store : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
+/-- **The run of the compiled `atomic_store` through its `stlr`**: after the prologue, a precise
+run reading the thread's own bytes whose last step is the `stlr`'s single event (`relW`, 8 bytes
+at address 0, the first argument), every earlier event private and plain; `Compiled` at its
+start. -/
+theorem run_store : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
+    (∀ env p, Compiled env p RAS csS (iterN RAS.step n RAS.s0)) ∧
     PRun Policy.arm RAS.step (OkPriv RAS) (iterN RAS.step n RAS.s0, none) (lsP ++ [⟨[e], false⟩]) t' ∧
-    e.k = .relW ∧ e.n = 8 ∧
-    (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAS e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) ∧
-    ∀ (env : Clif.Env) (p : Clif.Program) (M0 : Bytes), ∃ k ≤ lsP.length + 1,
-      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧ PC.st 0 0 = .run csS ∧
-        PC.Runs (CStep env p) ∧
-        Realizes (PA1 RAS (iterN RAS.step n RAS.s0) (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e) M0
-          (latestW (PA1 RAS (iterN RAS.step n RAS.s0) (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e))
-          (coL (PA1 RAS (iterN RAS.step n RAS.s0) (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e))
-          (fun _ _ => False) PC [(e.addr.toNat, e.n)] M0 φ (fun _ _ _ => True) := by
+    e.k = .relW ∧ e.n = 8 ∧ e.addr = 0 ∧
+    (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAS e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) := by
   obtain ⟨n', hq, hA⟩ := qRS
   have e0 := checksRunS.1
   have hq0 := hq
@@ -343,20 +342,28 @@ theorem realizes_store : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState 
   simp only [MConf.init] at hq0 hA0
   rw [show RAS.rf = rfS from rfl, e0] at hq0 hA0
   -- the saves
-  obtain ⟨ls1, t1, m1, r1, hq1, hA1, hev1⟩ := moves_fwdA wfRS (fun K => (K == .plainW) = true)
+  obtain ⟨ls1, t1, r1, hq1, hA1, hev1⟩ := moves_fwdA wfRS (fun K => (K == .plainW) = true)
     savesL _ _ _ none hq0 hA0 (moves_kinds checksRunS.2.1)
   -- the entry `args`
-  obtain ⟨m', hst⟩ := args_stepS (spillS.map (fun p => RItem.move p.1 p.2) ++ rest2S) m1 w₀S
+  obtain ⟨m', hst, hm'⟩ := args_stepS (spillS.map (fun p => RItem.move p.1 p.2) ++ rest2S) _ w₀S
   have hq2 := realizes_args wfRS hq1 hA1 vb0S argsS0.1 hst
+  have hA2 := Backend.Proof.aInv_step wfRS hq1 hA1 hst
   -- the spill moves
-  obtain ⟨ls2, t2, m2, r2, hq3, hev2⟩ := moves_fwd wfRS
-    (fun K => (K == .plainW || K == .plainR) = true) spillS rest2S t1.1 m' t1.2 hq2
+  obtain ⟨ls2, t2, r2, hq3, -, hev2⟩ := moves_fwdA wfRS
+    (fun K => (K == .plainW || K == .plainR) = true) spillS rest2S t1.1 m' t1.2 hq2 hA2
     (moves_kinds checksRunS.2.2.1)
   -- the `stlr`
   obtain ⟨j, hj, hpc, hstr⟩ := q_head hq3 rfl head_stlrS
-  obtain ⟨t3, ev, r3, -, hk, hn, -⟩ := excl_step_fwd wfRS hj rfl hstr.prog hpc hstr.err
+  obtain ⟨t3, ev, r3, -, hk, hn, ha⟩ := excl_step_fwd wfRS hj rfl hstr.prog hpc hstr.err
     (lb := 0) (p := 1) (q := 0) (.inl rfl) (by omega) (by omega) (fun _ => rfl) t2.2
   simp only [show ¬ (0 : Nat) = 1 from by decide, ite_false] at hk
+  -- its address: the first argument, `x0 = 0`
+  have hx0 : movesM spillS m' (.reg (.x 0)) = regVal w₀S (.x 0) := by
+    simp [movesM, spillS, Backend.Proof.upd, hm']
+  have hs3 := hstr.store (.reg (.x 0)) (fun r h => by cases h; rfl) trivial
+  rw [hx0] at hs3
+  have hz : regVal w₀S (.x 0) = 0 := by
+    rw [E2E.regVal_bodyOf _ _ (by decide), shapeS.2.2.2.2.2.2.2.1]
   have hr : PRun Policy.arm RAS.step (OkPriv RAS) (iterN RAS.step n' RAS.s0, none)
       ((ls1 ++ ls2) ++ [⟨[ev], false⟩]) t3 := PRun.append (PRun.append r1 r2) r3
   have hevP : ∀ l ∈ ls1 ++ ls2, ∀ e' ∈ l.evs,
@@ -367,7 +374,23 @@ theorem realizes_store : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState 
       exact ⟨privA_addr.2 hF, .inl (by simpa using hK)⟩
     · obtain ⟨hF, hK⟩ := hev2 l hl e' he'
       exact ⟨privA_addr.2 hF, by simpa using hK⟩
-  exact ⟨n', ls1 ++ ls2, ev, t3, hr, hk, hn, hevP, fun env p M0 =>
-    realizes_one (fun env p => compiled_ofS hq hA env p) hr hevP (by rw [hk]; decide) env p M0⟩
+  exact ⟨n', ls1 ++ ls2, ev, t3, fun env p => compiled_ofS hq hA env p, hr, hk, hn,
+    ha.trans (regVal_x0 hs3 hz), hevP⟩
+
+/-- **`Realizes` on the compiled `atomic_store` through its `stlr`** (module doc). -/
+theorem realizes_store : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
+    PRun Policy.arm RAS.step (OkPriv RAS) (iterN RAS.step n RAS.s0, none) (lsP ++ [⟨[e], false⟩]) t' ∧
+    e.k = .relW ∧ e.n = 8 ∧ e.addr = 0 ∧
+    (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAS e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) ∧
+    ∀ (env : Clif.Env) (p : Clif.Program) (M0 : Bytes), ∃ k ≤ lsP.length + 1,
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧ PC.st 0 0 = .run csS ∧
+        PC.Runs (CStep env p) ∧
+        Realizes (PA1 RAS (iterN RAS.step n RAS.s0) (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e) M0
+          (latestW (PA1 RAS (iterN RAS.step n RAS.s0) (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e))
+          (coL (PA1 RAS (iterN RAS.step n RAS.s0) (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e))
+          (fun _ _ => False) PC [(e.addr.toNat, e.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨n, lsP, e, t', hc, hr, hk, hn, ha, hevP⟩ := run_store
+  exact ⟨n, lsP, e, t', hr, hk, hn, ha, hevP, fun env p M0 =>
+    realizes_one hc hr hevP (by rw [hk]; decide) env p M0⟩
 
 end Concurrency.RealizeCompiled.WitnessS

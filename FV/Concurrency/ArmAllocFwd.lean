@@ -204,25 +204,31 @@ theorem codeLinesE_head_fence {ctx : FnCtx} {af : AFunc} {rest : List AInst} {ps
     obtain ⟨rfl, -⟩ := h
     rfl
 
+/-- The store after a list of moves. -/
+def movesM : List (Loc × Loc) → (Loc → CV) → Loc → CV
+  | [], m => m
+  | p :: mvs, m => movesM mvs (upd m p.2 (m p.1))
+
 /-- **`moves_fwd` with `AInv`**: through a list of moves at the head of the items, `AInv` is
-kept (`aInv_step`, a move step). -/
+kept (`aInv_step`, a move step); the store after them is `movesM`. -/
 theorem moves_fwdA {R : RL} (hR : R.Wf) (P : AKind → Prop) {b : Nat} {w : ArmState} :
     ∀ (mvs : List (Loc × Loc)) (its : List RItem) (s : ArmState) (m : Loc → CV) (mon : Mon),
       Q R s (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
       AInv R (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
       (∀ p ∈ mvs, ∀ code ls1, R.fr.moveInsts p.1 p.2 = .ok code →
         codeLinesE R.ctx R.af code {} = .ok (ls1, {}) → ∀ K ∈ kinds ls1, P K) →
-      ∃ (ls : List Lab) (t' : ArmState × Mon) (m' : Loc → CV),
-        PRun Policy.arm R.step (OkPriv R) (s, mon) ls t' ∧ Q R t'.1 (.run ⟨b, its, m', w⟩) ∧
-        AInv R (.run ⟨b, its, m', w⟩) ∧ ∀ l ∈ ls, ∀ e ∈ l.evs, R.F e.addr ∧ P e.k
+      ∃ (ls : List Lab) (t' : ArmState × Mon),
+        PRun Policy.arm R.step (OkPriv R) (s, mon) ls t' ∧
+        Q R t'.1 (.run ⟨b, its, movesM mvs m, w⟩) ∧
+        AInv R (.run ⟨b, its, movesM mvs m, w⟩) ∧ ∀ l ∈ ls, ∀ e ∈ l.evs, R.F e.addr ∧ P e.k
   | [], its, s, m, mon, hq, hA, _ =>
-    ⟨[], (s, mon), m, .nil, hq, hA, fun _ h => absurd h List.not_mem_nil⟩
+    ⟨[], (s, mon), .nil, hq, hA, fun _ h => absurd h List.not_mem_nil⟩
   | p :: mvs, its, s, m, mon, hq, hA, hK => by
     obtain ⟨ls, t1, r1, hq1, code, ls1, hc, hcl, hev⟩ := move_fwd hR hq mon
     have hA1 := Backend.Proof.aInv_step hR hq hA (.move (src := p.1) (dst := p.2))
-    obtain ⟨ls', t2, m2, r2, hq2, hA2, hev2⟩ := moves_fwdA hR P mvs its t1.1 _ t1.2 hq1 hA1
+    obtain ⟨ls', t2, r2, hq2, hA2, hev2⟩ := moves_fwdA hR P mvs its t1.1 _ t1.2 hq1 hA1
       (fun p' hp' => hK p' (List.mem_cons_of_mem _ hp'))
-    refine ⟨ls ++ ls', t2, m2, PRun.append r1 r2, hq2, hA2, fun l hl e he => ?_⟩
+    refine ⟨ls ++ ls', t2, PRun.append r1 r2, hq2, hA2, fun l hl e he => ?_⟩
     rcases List.mem_append.mp hl with hl | hl
     · obtain ⟨h1, h2⟩ := hev l hl e he
       exact ⟨h1, hK p List.mem_cons_self code ls1 hc hcl _ h2⟩
