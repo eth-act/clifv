@@ -631,12 +631,129 @@ fn write_list(path: &Path, items: impl IntoIterator<Item = String>) -> Result<()
 fn gap_object(cfg: &Config, work: &Path) -> Result<PathBuf, String> {
     let bin = work.join("gap.bin");
     let o = work.join("gap.o");
+    if o.is_file() {
+        // the unit's (`lean_variant` builds after it)
+        return Ok(o);
+    }
     fs::write(&bin, [0u8; 4]).map_err(|e| format!("{}: {e}", bin.display()))?;
     run(Command::new(&cfg.objcopy)
         .args(["-I", "binary", "-O", "elf64-littleaarch64", "--rename-section", ".data=.text,alloc,load,readonly,code,contents", "--strip-all"])
         .arg(&bin)
         .arg(&o))?;
     Ok(o)
+}
+
+/// The unit's Lean-compiled functions (`--lean-link`): one line `symbol<TAB>object` each, in
+/// placement order ([`lean_variant`]).
+pub const LEAN_FUNCS: &str = "lean-funcs.txt";
+
+/// The Lean code of the functions `fns` (symbol, object) as one relocatable object `out` in the
+/// work directory: `ld -r` of the objects (with `--lean-link` each followed by a zero word, the
+/// Lean linker's placement `Link.offs`: the gap word, so that `ld -r` lays the code out as the
+/// Lean linker places it), the unit's renaming `renames` (data names too, and the names the
+/// code references under another spelling, [`obj_name_of`]) and a marker `__fvlean$<final>` at
+/// each function. `prefix` names the work files. Returns the CLIF names of the code → their
+/// final symbol names (`cargo fv link-proof`).
+fn lean_object(
+    cfg: &Config,
+    work: &Path,
+    out: &Path,
+    prefix: &str,
+    fns: &[(String, PathBuf)],
+    renames: &BTreeMap<String, String>,
+) -> Result<BTreeMap<String, String>, String> {
+    let final_name = |s: &str| renames.get(s).cloned().unwrap_or_else(|| s.to_string());
+    let mut inputs: Vec<PathBuf> = Vec::new();
+    if cfg.lean_link {
+        let pad = gap_object(cfg, work)?;
+        for (_, o) in fns {
+            inputs.push(o.clone());
+            inputs.push(pad.clone());
+        }
+    } else {
+        inputs.extend(fns.iter().map(|(_, o)| o.clone()));
+    }
+    // the inputs through a response file: a large codegen unit (std's, `--build-std`) has more
+    // objects than one command line holds
+    let inputs_rsp = work.join(format!("{prefix}-inputs.rsp"));
+    write_list(
+        &inputs_rsp,
+        inputs.iter().map(|p| format!("\"{}\"", p.display().to_string().replace('\\', "\\\\").replace('"', "\\\""))),
+    )?;
+    run(Command::new(&cfg.rust_lld).args(["-flavor", "gnu", "-r", "-o"]).arg(out).arg(format!("@{}", inputs_rsp.display())))?;
+    let syms = read_syms(out)?;
+    let mut redef: Vec<String> = renames.iter().map(|(a, b)| format!("{a} {b}")).collect();
+    let mut clif_names: BTreeMap<String, String> = fns.iter().map(|(s, _)| (s.clone(), final_name(s))).collect();
+    for u in &syms.undefined {
+        let n = obj_name_of(u);
+        clif_names.insert(u.clone(), final_name(&n));
+        if n != *u {
+            redef.push(format!("{u} {}", final_name(&n)));
+        }
+    }
+    let redef_path = work.join(format!("redefine-{prefix}.txt"));
+    write_list(&redef_path, redef)?;
+    run(Command::new(&cfg.objcopy).arg(format!("--redefine-syms={}", redef_path.display())).arg(out))?;
+    let syms = read_syms(out)?;
+    let data = fs::read(out).map_err(|e| format!("{}: {e}", out.display()))?;
+    let file = object::File::parse(&*data).map_err(|e| format!("{}: {e}", out.display()))?;
+    let mut markers = Vec::new();
+    for (s, _) in fns {
+        let n = final_name(s);
+        let Some(&(si, v)) = syms.at.get(&n) else {
+            return Err(format!("internal: `{n}` missing from the merged Lean object"));
+        };
+        let sec = object::read::ObjectSection::name(
+            &object::read::Object::section_by_index(&file, object::SectionIndex(si))
+                .map_err(|e| format!("{}: {e}", out.display()))?,
+        )
+        .map_err(|e| format!("{}: {e}", out.display()))?
+        .to_string();
+        // global here (llvm-objcopy appends added symbols after the globals, so a local one
+        // breaks the symbol table order); localised with the renamed symbols after the merge
+        markers.push(format!("--add-symbol={MARKER}{n}={sec}:{v},global,function"));
+    }
+    let rsp = work.join(format!("{prefix}-markers.rsp"));
+    write_list(&rsp, markers)?;
+    run(Command::new(&cfg.objcopy).arg(format!("@{}", rsp.display())).arg(out))?;
+    Ok(clif_names)
+}
+
+/// `--lean-link --verified` (T3c): the unit's Lean object without the functions whose final
+/// symbol names `exclude` lists (they fail a per-function input condition of the executable's
+/// compiler theorem; `lake exe lean-link` lists them): built from the unit's per-function objects
+/// ([`LEAN_FUNCS`]) with the unit's renaming (`redefine.txt`), so that the excluded functions'
+/// symbols bind to cg_clif's (weak) copies. `None` when the unit has no excluded function (its
+/// `lean.o` stands). Written under a name of the exclusion set, atomically (other executables'
+/// links read the unit too).
+pub fn lean_variant(cfg: &Config, work: &Path, exclude: &BTreeSet<String>) -> Result<Option<PathBuf>, String> {
+    let read = |name: &str| -> Result<String, String> {
+        let p = work.join(name);
+        fs::read_to_string(&p).map_err(|e| format!("{}: {e}", p.display()))
+    };
+    let renames: BTreeMap<String, String> = read("redefine.txt")?
+        .lines()
+        .filter_map(|l| l.split_once(' ').map(|(a, b)| (a.to_string(), b.to_string())))
+        .collect();
+    let fns: Vec<(String, PathBuf)> = read(LEAN_FUNCS)?
+        .lines()
+        .filter_map(|l| l.split_once('\t').map(|(s, o)| (s.to_string(), PathBuf::from(o))))
+        .collect();
+    let final_name = |s: &str| renames.get(s).cloned().unwrap_or_else(|| s.to_string());
+    let keep: Vec<(String, PathBuf)> = fns.iter().filter(|(s, _)| !exclude.contains(&final_name(s))).cloned().collect();
+    if keep.len() == fns.len() {
+        return Ok(None);
+    }
+    let tag = tag_of(&exclude.iter().cloned().collect::<Vec<_>>().join("\n"));
+    let out = work.join(format!("lean-x{tag}.o"));
+    if out.is_file() {
+        return Ok(Some(out));
+    }
+    let prefix = format!("lean-x{tag}-{}", std::process::id());
+    let tmp = work.join(format!("{prefix}.o"));
+    lean_object(cfg, work, &tmp, &prefix, &keep, &renames)?;
+    fs::rename(&tmp, &out).map_err(|e| format!("{}: {e}", out.display()))?;
+    Ok(Some(out))
 }
 
 fn process_in(
@@ -826,68 +943,16 @@ fn process_in(
         trap_bodies(&cg, &ours.iter().map(|(s, _)| final_name(s)).collect::<Vec<_>>())?;
     }
 
-    // our functions: one relocatable object, same renaming (data names too), markers. With
-    // `--lean-link` every function is followed by a zero word (the Lean linker's placement,
-    // `Link.offs`: the gap word), so that `ld -r` lays the code out as the Lean linker places it.
+    // our functions: one relocatable object, same renaming (data names too), markers
     let lean = work.join("lean.o");
-    let mut inputs: Vec<PathBuf> = Vec::new();
-    if cfg.lean_link {
-        let pad = gap_object(cfg, work)?;
-        for (_, o) in &ours {
-            inputs.push(o.clone());
-            inputs.push(pad.clone());
-        }
-    } else {
-        inputs.extend(ours.iter().map(|(_, o)| o.clone()));
-    }
-    // the inputs through a response file: a large codegen unit (std's, `--build-std`) has more
-    // objects than one command line holds
-    let inputs_rsp = work.join("lean-inputs.rsp");
-    write_list(
-        &inputs_rsp,
-        inputs.iter().map(|p| format!("\"{}\"", p.display().to_string().replace('\\', "\\\\").replace('"', "\\\""))),
-    )?;
-    run(Command::new(&cfg.rust_lld).args(["-flavor", "gnu", "-r", "-o"]).arg(&lean).arg(format!("@{}", inputs_rsp.display())))?;
-    let lean_syms = read_syms(&lean)?;
-    let mut ours_redef: Vec<String> = renames.iter().map(|(a, b)| format!("{a} {b}")).collect();
-    // the CLIF names of our code → the final symbol names (`cargo fv link-proof`)
-    let mut clif_names: BTreeMap<String, String> =
-        ours.iter().map(|(s, _)| (s.clone(), final_name(s))).collect();
-    for u in &lean_syms.undefined {
-        let n = obj_name_of(u);
-        clif_names.insert(u.clone(), final_name(&n));
-        if n != *u {
-            ours_redef.push(format!("{u} {}", final_name(&n)));
-        }
-    }
+    let mut clif_names = lean_object(cfg, work, &lean, "lean", &ours, &renames)?;
     for n in &declared {
         clif_names.entry(n.clone()).or_insert_with(|| final_name(&obj_name_of(n)));
     }
-    let ours_redef_path = work.join("redefine-lean.txt");
-    write_list(&ours_redef_path, ours_redef)?;
-    objcopy(&[format!("--redefine-syms={}", ours_redef_path.display())], &lean)?;
-    let lean_syms = read_syms(&lean)?;
-    let lean_file_data = fs::read(&lean).map_err(|e| format!("{}: {e}", lean.display()))?;
-    let lean_file = object::File::parse(&*lean_file_data).map_err(|e| format!("{}: {e}", lean.display()))?;
-    let mut markers = Vec::new();
-    for (s, _) in &ours {
-        let n = final_name(s);
-        let Some(&(si, v)) = lean_syms.at.get(&n) else {
-            return Err(format!("internal: `{n}` missing from the merged Lean object"));
-        };
-        let sec = object::read::ObjectSection::name(
-            &object::read::Object::section_by_index(&lean_file, object::SectionIndex(si))
-                .map_err(|e| format!("{}: {e}", lean.display()))?,
-        )
-        .map_err(|e| format!("{}: {e}", lean.display()))?
-        .to_string();
-        // global here (llvm-objcopy appends added symbols after the globals, so a local one
-        // breaks the symbol table order); localised with the renamed symbols after the merge
-        markers.push(format!("--add-symbol={MARKER}{n}={sec}:{v},global,function"));
+    if cfg.lean_link {
+        // what `lean_variant` needs to build the object again without some functions
+        write_list(&work.join(LEAN_FUNCS), ours.iter().map(|(s, o)| format!("{s}\t{}", o.display())))?;
     }
-    let rsp = work.join("markers.rsp");
-    write_list(&rsp, markers)?;
-    run(Command::new(&cfg.objcopy).arg(format!("@{}", rsp.display())).arg(&lean))?;
 
     if cfg.lean_link {
         // the Lean linker links our code at the executable's link (`leanlink`): the codegen

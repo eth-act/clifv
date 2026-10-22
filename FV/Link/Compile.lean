@@ -1,5 +1,5 @@
 import FV.Link.Image
-import FV.E2E.LinkScopeInputDefs
+import FV.E2E.LinkScopeFast
 
 /-! # The executable compiler (L1): the definition
 
@@ -18,23 +18,28 @@ namespace Link
 open E2E.LinkCheck
 
 /-- `InScopeP` with the per-function conditions (`fnScopeB`: `lowerFunction` and `prepare`
-accept, …) evaluated in parallel tasks. -/
+accept, …) evaluated in parallel tasks, the program-level ones with hash maps of the program's
+functions and of the symbols (`progScopeFastB`, `assocMap`: linear instead of quadratic, T3d). -/
 def inScopePar (I : LinkInput) : Bool :=
-  progScopeB I.prog (fun n => I.syms.lookup n) && (parMap fnScopeB I.prog.funcs).all id
+  let sy := assocMap I.syms
+  progScopeFastB I.prog (fun n => sy[n]?) && (parMap fnScopeB I.prog.funcs).all id
 
 theorem inScopePar_eq (I : LinkInput) : inScopePar I = InScopeP I := by
-  simp only [inScopePar, InScopeP, parMap_eq, List.all_map, Function.comp_def, id]
+  simp only [inScopePar, assocMap_fun, progScopeFastB_eq, InScopeP, parMap_eq, List.all_map,
+    Function.comp_def, id]
 
 /-- The error on an input outside `InScopeP` (`Link.DeadCleanup.compileExe`'s check). -/
 def outOfScopeMsg : String := "the input is outside the verified subset (InScopeP)"
 
 /-- `InScopeIn` with the per-function conditions (`fnScopeInB`, decided on the CLIF function
-alone) evaluated in parallel tasks. -/
+alone) evaluated in parallel tasks, the program-level ones with hash maps (`progScopeInFastB`). -/
 def inScopeInPar (I : LinkInput) : Bool :=
-  progScopeInB I.prog (fun n => I.syms.lookup n) && (parMap fnScopeInB I.prog.funcs).all id
+  let sy := assocMap I.syms
+  progScopeInFastB I.prog (fun n => sy[n]?) && (parMap fnScopeInB I.prog.funcs).all id
 
 theorem inScopeInPar_eq (I : LinkInput) : inScopeInPar I = InScopeIn I := by
-  simp only [inScopeInPar, InScopeIn, parMap_eq, List.all_map, Function.comp_def, id]
+  simp only [inScopeInPar, assocMap_fun, progScopeInFastB_eq, InScopeIn, parMap_eq, List.all_map,
+    Function.comp_def, id]
 
 /-- `compileExe`'s error on an input outside the verified subset (`InScopeIn`). -/
 def outOfScopeInMsg : String := "the input is outside the verified subset (InScopeIn)"

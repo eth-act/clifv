@@ -53,7 +53,10 @@ the per-function input conditions decided on the CLIF alone (`fnScopeInB`, V7) o
 covered by the four theorems above and its input is in `InScopeIn` (`InScopeP`'s program-level
 conditions with `fnScopeInB`), on which the compiler is proven total
 (`Link.DeadCleanup.compileExe_total_reach_input`, `Link.compileExe_total_reach`, given the
-layout, reach and `file0` conditions).
+layout, reach and `file0` conditions). On such an error it also prints the functions failing a
+per-function condition (`exclusions`, the line `--verified: exclude: …`): `cargo fv` then links
+the executable again with those functions' cg_clif code (left out of the region, outside code
+like a fallback) and runs `lean-link` again (T3c).
 
 **`--opt`**: the optimising executable compiler — `Link.DeadCleanup.compileExeOpt` (default) or
 `Link.compileExeOpt` (`--no-dead-cleanup`): `compileExe` on the input whose functions the
@@ -91,15 +94,17 @@ def hex (n : Nat) : String := "0x" ++ String.ofList (Nat.toDigits 16 n)
 
 open Backend in
 /-- The program-level per-function input conditions `g` fails (`progScopeB`'s conjuncts, the
-indirect-call scope `indB` and the call sites `callScopeB` split by cause). -/
-def scopeFails (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : List String :=
+indirect-call scope `indB` and the call sites `callScopeB` split by cause); `F`: `P.func?` (a hash
+map, `funcMap`). -/
+def scopeFails (F : String → Option Clif.Function) (P : Clif.Program) (S : String → Option Nat)
+    (g : Clif.Function) : List String :=
   let ind := !indFreeB g
   let site (s : Clif.Signature) (args : List Nat) : List String :=
     if indSiteB P S g s args then [] else ["callScopeB:blrRegs"]
   let sites := g.blocks.flatMap fun B =>
     (B.body.flatMap fun st => match st.inst with
       | .call fn args => match g.extern? fn with
-        | some e => if dirSiteB P e args then [] else ["callScopeB:dirSite"]
+        | some e => if dirSiteWithB F e args then [] else ["callScopeB:dirSite"]
         | none => []
       | .callIndirect sg _ args => match g.sigDecls.lookup sg with
         | some s => site s args
@@ -107,25 +112,53 @@ def scopeFails (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function
       | _ => []) ++
     match B.term with
     | .tryCall fn args _ => match g.extern? fn with
-      | some e => if dirSiteB P e args then [] else ["callScopeB:dirSite"]
+      | some e => if dirSiteWithB F e args then [] else ["callScopeB:dirSite"]
       | none => []
     | .tryCallIndirect _ args et => match g.sigDecls.lookup et.sig with
       | some s => site s args
       | none => []
     | _ => []
-  ((if declSigB P g then [] else ["declSigB"]) ++
+  ((if declSigWithB F g then [] else ["declSigB"]) ++
     (if ind && P.funcs.any (fun h => mayB S g h.name && indSigB g h &&
         (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true))
       then ["indB:calleeStack"] else []) ++
     (if ind && P.funcs.any (fun h => mayB S g h.name && indSigB g h && !indRetsB g h)
       then ["indB:sretRets"] else []) ++
-    sites ++ (if outScopeB P g then [] else ["outScopeB"])).eraseDups
+    sites ++ (if outScopeWithB F g then [] else ["outScopeB"])).eraseDups
 
 /-- The source-domain conditions (`SrcScopeB`'s per-function conjuncts) a parsed function `g` of
-the source program `P` fails. -/
-def srcFails (P : Clif.Program) (g : Clif.Function) : List String :=
+the source program fails (`F`: its `func?`, a hash map, `funcMap`). -/
+def srcFails (F : String → Option Clif.Function) (g : Clif.Function) : List String :=
   (if Opt.Legalize128.legalOkB g then [] else ["legalOkB"]) ++
-    (if linkFreeB g then [] else ["linkFreeB"]) ++ (if declSigB P g then [] else ["declSigB"])
+    (if linkFreeB g then [] else ["linkFreeB"]) ++ (if declSigWithB F g then [] else ["declSigB"])
+
+/-- **`--verified`: the functions to leave out of the region** (T3c): those failing a
+per-function condition of the source domain (`srcFails`), of `fnScopeInB` or of the
+program-level conditions (`scopeFails`), when the program-wide conditions hold (`helperFreeB`,
+distinct names, `addrSlotsInputB`); `none` otherwise. `cargo fv` links the executable again
+with their cg_clif code (outside code, as a fallback's) and runs `lean-link` on it: leaving a
+function out of the program only drops conjuncts of the other functions' per-function conditions
+(each quantifies over the program's functions), and every condition is decided again on the
+relinked executable. -/
+def exclusions (S SC : LinkSpec) : Option (List String) :=
+  let srcP := S.input0.srcProg
+  let P := SC.input0.prog
+  let sy := assocMap SC.input0.syms
+  let syms := fun n => sy[n]?
+  let fm := funcMap P
+  let fmS := funcMap srcP
+  if !helperFreeB srcP || !Link.nodupB (P.funcs.map (·.name)) || !addrSlotsInputB P syms then none
+  else
+    let src := srcP.funcs.filter fun g => !(srcFails (fun n => fmS[n]?) g).isEmpty
+    let fns := (P.funcs.zip (parMap (fun g => fnScopeInFails g ++ scopeFails (fun n => fm[n]?) P syms g)
+      P.funcs)).filter (!·.2.isEmpty)
+    some (Front.dedupFirst (src.map (·.name) ++ fns.map (·.1.name)))
+
+/-- Print `exclusions` (the line `cargo fv` reads). -/
+def printExclusions (exe : String) (S SC : LinkSpec) : IO Unit :=
+  match exclusions S SC with
+  | some (n :: ns) => IO.eprintln s!"lean-link: {exe}: --verified: exclude: {" ".intercalate (n :: ns)}"
+  | _ => pure ()
 
 /-- `--key VALUE` taken out of an argument list. -/
 def takeOpt (key : String) : List String → Option String × List String
@@ -205,18 +238,21 @@ def main (args0 : List String) : IO UInt32 := do
   let srcOk := SrcScopeB I
   if verified && !srcOk then
     let P := I.srcProg
-    let bad := P.funcs.filterMap fun g => match srcFails P g with
+    let fmS := funcMap P
+    let bad := P.funcs.filterMap fun g => match srcFails (fun n => fmS[n]?) g with
       | [] => none
       | fs => some (g.name, fs)
     IO.eprintln s!"lean-link: {exe}: --verified: outside the source domain (SrcScopeB): {bad.length} function(s) failing legalOkB/linkFreeB/declSigB {(bad.take 3).map (·.1)}, helperFreeB {helperFreeB P}; not written"
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
+    printExclusions exe S SC
     return 1
   -- the input conditions decided on the CLIF alone (`fnScopeInB`, `addrSlotsInputB`); with
   -- `InScopeP`'s other program conditions, which `compile` checks, `InScopeIn`
   if verified then
     let P := SC.input0.prog
-    let syms := fun n => SC.input0.syms.lookup n
+    let sy := assocMap SC.input0.syms
+    let syms := fun n => sy[n]?
     if !addrSlotsInputB P syms then
       IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn): addrSlotsInputB fails (an indirect call, a function with an address and stack slots, no program callee with slots); not written"
       return 1
@@ -228,6 +264,7 @@ def main (args0 : List String) : IO UInt32 := do
       IO.eprintln s!"lean-link: {exe}: --verified: outside the input conditions (InScopeIn): {bad.length} function(s) failing fnScopeInB (by cause: {causes}) {(bad.take 3).map (·.1)}; not written"
       for (n, fs) in bad do
         IO.eprintln s!"lean-link:   {n}: {fs}"
+      printExclusions exe S SC
       return 1
   -- Keep optimizer and exceptional-edge theorem variants on their retained route
   -- until their production adapters are complete.
@@ -293,8 +330,10 @@ def main (args0 : List String) : IO UInt32 := do
     -- `compileExe_correct`; `Link.leanLink` still links it (its checks, the per-crate proof),
     -- except under `--verified`
     let P := SC.input0.prog
-    let syms := fun n => SC.input0.syms.lookup n
-    let bad := P.funcs.filterMap fun g => match scopeFails P syms g with
+    let sy := assocMap SC.input0.syms
+    let syms := fun n => sy[n]?
+    let fm := funcMap P
+    let bad := P.funcs.filterMap fun g => match scopeFails (fun n => fm[n]?) P syms g with
       | [] => none
       | fs => some (g.name, fs)
     let causes := (bad.flatMap (·.2)).eraseDups.map fun c => s!"{c} {(bad.filter (·.2.contains c)).length}"
@@ -304,7 +343,9 @@ def main (args0 : List String) : IO UInt32 := do
     IO.eprintln s!"lean-link: {exe}: outside compileExe's input conditions ({scopeName}): {bad.length} function(s) failing the program-level per-function conditions (by cause: {causes}) {(bad.take 3).map (·.1)}, distinct names {decide (P.funcs.map (·.name)).Nodup}, {if e == outOfScopeInMsg then s!"addrSlotsInputB {addrSlotsInputB P syms}" else s!"addrSlotsInB {addrSlotsInB P syms}"} (else {fnScope}); {what}"
     for (n, fs) in bad do
       IO.eprintln s!"lean-link:   {n}: {fs}"
-    if verified then return 1
+    if verified then
+      printExclusions exe S SC
+      return 1
     match link SC file0 with
     | .error e => do IO.eprintln s!"lean-link: {exe}: {e}"; return 1
     | .ok file =>
