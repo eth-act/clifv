@@ -1,5 +1,6 @@
 import FV.Backend.Proof.IselFloatConst
 import FV.Backend.Proof.IselFloatArith
+import FV.Backend.Proof.IselFloatCvt
 import FV.Backend.Proof.IselFloatSelect
 import FV.Backend.Proof.IselFamAluBIconst
 import FV.Backend.Proof.IselFamAluBMisc
@@ -177,6 +178,38 @@ theorem lowerRulesCorrect_program : LowerRulesCorrect program := by
     exact (fpromote_okT hp MR env cp hR hMR).toOk
   · rw [lower_rule_eq hr (k := 206) (r0 := rule_lower_559) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     exact (fdemote_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 220) (r0 := rule_lower_724) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f32_i32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 221) (r0 := rule_lower_727) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f64_i32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 112) (r0 := rule_lower_730) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f32_i32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 113) (r0 := rule_lower_733) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f64_i32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 222) (r0 := rule_lower_744) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f32_i64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 223) (r0 := rule_lower_747) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_sint_f64_i64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 114) (r0 := rule_lower_750) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f32_i64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 115) (r0 := rule_lower_753) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_from_uint_f64_i64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 224) (r0 := rule_lower_764) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i32_f32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 116) (r0 := rule_lower_767) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i64_f32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 225) (r0 := rule_lower_770) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i32_f32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 117) (r0 := rule_lower_773) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i64_f32_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 226) (r0 := rule_lower_784) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i32_f64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 118) (r0 := rule_lower_787) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_sint_sat_i64_f64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 227) (r0 := rule_lower_790) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i32_f64_okT hp MR env cp hR hMR).toOk
+  · rw [lower_rule_eq hr (k := 119) (r0 := rule_lower_793) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
+    exact (fcvt_to_uint_sat_i64_f64_okT hp MR env cp hR hMR).toOk
   · rw [lower_rule_eq hr (k := 499) (r0 := rule_lower_801) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
     apply isub_base_case_ok <;> assumption
   · rw [lower_rule_eq hr (k := 228) (r0 := rule_lower_805) (by rw [show TId.lower = 686 from rfl, data_program.r686]; rfl) (by rw [h]; rfl)]
