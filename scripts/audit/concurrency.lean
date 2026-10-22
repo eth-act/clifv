@@ -702,3 +702,42 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.WitnessR.realizes_pair_full
 #print axioms Concurrency.RealizeCompiled.WitnessR.realizes_rmw_full -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.WitnessC.realizes_cas_cov -- witness: native_decide
+
+
+-- T2j (#473): layer 4b with the stack offsets built in x16 (ArmAllocLSX)
+#print axioms Concurrency.ArmAllocThread.kinds_preLines
+#print axioms Concurrency.ArmAllocThread.lines_eq
+#print axioms Concurrency.ArmAllocThread.straightSem_preC
+#print axioms Concurrency.ArmAllocThread.straightSem_pre_some
+#print axioms Concurrency.ArmAllocThread.oneEvPre_op
+#print axioms Concurrency.ArmAllocThread.stackFinX
+#print axioms Concurrency.ArmAllocThread.preLines_loadConst64
+#print axioms Concurrency.ArmAllocThread.finX
+#print axioms Concurrency.ArmAllocThread.straightEvs_lines
+#print axioms Concurrency.ArmAllocThread.ins_last
+#print axioms Concurrency.ArmAllocThread.pcx_setMem
+#print axioms Concurrency.ArmAllocThread.pcx16_sp
+#print axioms Concurrency.ArmAllocThread.pcx16_regX
+#print axioms Concurrency.ArmAllocThread.pcx16_x16
+#print axioms Concurrency.ArmAllocThread.addrX_eq
+#print axioms Concurrency.ArmAllocThread.addrX_pcx
+#print axioms Concurrency.ArmAllocThread.addr_pcx16
+#print axioms Concurrency.ArmAllocThread.pcx16_gpr
+#print axioms Concurrency.ArmAllocThread.pcx16_sfp
+#print axioms Concurrency.ArmAllocThread.load_stackX_form
+#print axioms Concurrency.ArmAllocThread.store_stackX_form
+#print axioms Concurrency.ArmAllocThread.fpuLoad_stackX_form
+#print axioms Concurrency.ArmAllocThread.fpuStore_stackX_form
+#print axioms Concurrency.ArmAllocThread.lsFormX_of_lsForm
+#print axioms Concurrency.ArmAllocThread.lsFormX_covered
+#print axioms Concurrency.ArmAllocThread.lsFormX_cases
+#print axioms Concurrency.ArmAllocThread.noGoto_lsx
+#print axioms Concurrency.ArmAllocThread.memScopeLSX_of_memScopeLS
+#print axioms Concurrency.ArmAllocThread.itemSim_lsx
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_lsx
+#print axioms Concurrency.ArmAllocThread.LSXWitness.wfX -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.LSXWitness.finX
+#print axioms Concurrency.ArmAllocThread.LSXWitness.scopeX
+#print axioms Concurrency.ArmAllocThread.LSXWitness.not_memScopeLS
+#print axioms Concurrency.ArmAllocThread.LSXWitness.lsx_premises -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.LSXWitness.lsx_run -- witness: native_decide

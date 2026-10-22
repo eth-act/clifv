@@ -148,6 +148,8 @@ import FV.Concurrency.ArmAllocBranch
 import FV.Concurrency.ArmAllocBranchWitness
 import FV.Concurrency.ArmAllocLS
 import FV.Concurrency.ArmAllocLSWitness
+import FV.Concurrency.ArmAllocLSX
+import FV.Concurrency.ArmAllocLSXWitness
 import FV.Concurrency.RealizeWitnessStore
 import FV.Concurrency.RealizeWitnessMP
 import FV.Concurrency.RealizeWitnessRmw
