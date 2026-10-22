@@ -379,3 +379,23 @@ the static executable, and theorems state that its output meets those conditions
   | deps `--lean-link --no-binary-check` | 16 / 16 both, same names and outcomes | 20821 of 21021 both; 4 / 4 executables by `compileExe` | not run (link-check takes hours); the `crates` executable (19845 functions) verified by it with `lean-ld` in an earlier run | 155–299 ms vs 2.7–3.6 s | 4 / 4 hold, 7–11 s |
 
   Before the planner fixes, `lean-ld` took about 100 min on the deps `crates` executable.
+* **The totality from conditions on `lean-ld`'s inputs** (A1, #409; `FV/Link/Ld/{LayoutTotal,
+  BodyTotal,Places,RelocTotal,RelsTotal,RelsFast,LinkTotal,SpecTotal}.lean`, `FV/Link/ExeLdIn.lean`):
+  **`Link.DeadCleanup.compileExe_total_ldIn`** needs no successful link and no plan: resolution
+  and `--gc-sections` succeed; the layout's references resolve (`layRefsB`: `layout_ok`); every
+  relocation passes `relCheckB` against address-free bounds (`relsInB`: each placed input
+  section's and kept `.eh_frame` record's relocations, the symbol's kind `tgtOf` and its value's
+  interval `value_in`, the place's interval from its section; `relIn_relocOkB`, `layout_relsOk`,
+  so `assemble` builds the body, `assemble_layout_ok`); the headers and tables fit on the
+  placement's image skeleton (`fitsB`, the fit checks read the body's size only); the link spec's
+  conditions on the placement (`specPreB`); then `link o ins = .ok r` (`link_okIn`) and
+  `compileExe` succeeds on `r.img.write`. The link spec's addresses come from `lean-ld`'s
+  placement (`ldSpec`, `LinkSpec.atSyms`: `R` and every outside name's address a value of the
+  plan's symbols), so the outside part of `symsPlanB` holds by construction (`outside_inSyms`,
+  `specOkB_of_pre`); the spec from the executable's symbol table (`Front.buildSpec`) stays the
+  rust-lld route's. Witness `compileExe_total_ldIn_witness` (`FV/Link/ExeLdInWitness.lean`: a
+  clang-assembled `_start` with a `CALL26` and an `ABS64` to `add1`, and the region object made by
+  `cargo fv`'s program-part steps). `lean-link --ld` decides the premises with the cleanup
+  compiler (`ldInCheck`; `relsInFastB`, `reachOkPar`: proven equal) after checking that
+  `atSyms` gives the compiled spec's own addresses (`ldSpec_self`). Fresh links (2026-10-22): the
+  premises hold on survey 18 / 18 (0.5–4.1 s), fv-demo 2 / 2 (1.1–2.9 s) and deps 4 / 4.

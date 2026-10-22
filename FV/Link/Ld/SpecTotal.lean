@@ -83,11 +83,15 @@ theorem symHint_complete {syms : Array OutSym} {k : Nat} {s : OutSym} (hs : syms
   have hk : k < syms.size := (Array.getElem?_eq_some_iff.1 hs).1
   exact (hint_foldl syms _ {} (fun _ _ h => by simp at h)).2.2 k (List.mem_range.2 hk) s hs
 
-/-- **A link-map entry is one of the plan's symbols** (`symsPlanB`'s check of one entry). -/
-def inSymsB (pl : Plan) (p : String × Nat) : Bool :=
-  match (symHint pl.syms)[(symName p.1, p.2)]?.bind (pl.syms[·]?) with
+/-- A link-map entry is one of the plan's symbols, found with the hint `idx` (`symHint`, built
+once per plan). -/
+def inSymsWith (idx : Std.HashMap (String × Nat) Nat) (pl : Plan) (p : String × Nat) : Bool :=
+  match idx[(symName p.1, p.2)]?.bind (pl.syms[·]?) with
   | some s => s.name == symName p.1 && s.value == p.2
   | none => false
+
+/-- **A link-map entry is one of the plan's symbols** (`symsPlanB`'s check of one entry). -/
+def inSymsB (pl : Plan) (p : String × Nat) : Bool := inSymsWith (symHint pl.syms) pl p
 
 theorem symsPlanB_eq (I : LinkInput) (pl : Plan) :
     symsPlanB I pl = I.addrs.all fun p => (I.aliases.lookup p.1).isSome || inSymsB pl p := rfl
@@ -97,7 +101,7 @@ theorem inSymsB_of_hint {pl : Plan} {p : String × Nat} (h : (symName p.1, p.2) 
   obtain ⟨k, hk⟩ : ∃ k, (symHint pl.syms)[(symName p.1, p.2)]? = some k :=
     Option.isSome_iff_exists.1 (Std.HashMap.isSome_getElem?_iff_mem.2 h)
   obtain ⟨s, hs, he⟩ := symHint_sound hk
-  unfold inSymsB
+  unfold inSymsB inSymsWith
   simp only [hk, Option.bind_some, hs]
   simp only [Prod.mk.injEq] at he
   simp [he.1, he.2]
@@ -143,14 +147,22 @@ theorem firstVals_sound {syms : Array OutSym} {n : String} {v : Nat} (h : (first
 
 /-! ## The link spec at the plan's symbols -/
 
+/-- `pinAddr` with the tables `h` (`symHint`) and `fv` (`firstVals`). -/
+def pinAddrWith (h : Std.HashMap (String × Nat) Nat) (fv : Std.HashMap String Nat) (n : String) (a : Nat) :
+    Option Nat :=
+  if h.contains (symName n, a) then some a else fv[symName n]?
+
 /-- **An address from the plan's symbols** for the link-map name `n` with hint `a`: `a` when the
 plan has a symbol `symName n` of value `a`, else the first symbol named `symName n`'s value. -/
 def pinAddr (syms : Array OutSym) (n : String) (a : Nat) : Option Nat :=
-  if (symHint syms).contains (symName n, a) then some a else (firstVals syms)[symName n]?
+  pinAddrWith (symHint syms) (firstVals syms) n a
 
-/-- The outside part's addresses from the plan's symbols (a name without one is left out). -/
+/-- The outside part's addresses from the plan's symbols (a name without one is left out; the
+tables built once). -/
 def pinOutside (syms : Array OutSym) (l : List (String × Nat)) : List (String × Nat) :=
-  l.filterMap fun p => (pinAddr syms p.1 p.2).map (p.1, ·)
+  let h := symHint syms
+  let fv := firstVals syms
+  l.filterMap fun p => (pinAddrWith h fv p.1 p.2).map (p.1, ·)
 
 /-- **The link spec at `lean-ld`'s plan's symbols** `syms`: the region's base the first
 function's address there (`S.R` as the hint; `S.R` without one), the outside part's addresses
@@ -161,7 +173,7 @@ def _root_.Link.LinkSpec.atSyms (S : LinkSpec) (syms : Array OutSym) : LinkSpec 
 
 theorem pinAddr_inSyms {pl : Plan} {n : String} {a v : Nat} (h : pinAddr pl.syms n a = some v) :
     inSymsB pl (n, v) = true := by
-  unfold pinAddr at h
+  unfold pinAddr pinAddrWith at h
   split at h
   · rename_i hc
     simp only [Option.some.injEq] at h
@@ -180,7 +192,7 @@ theorem outside_inSyms {pl : Plan} (l : List (String × Nat)) : ∀ p ∈ pinOut
   unfold pinOutside at hp
   obtain ⟨q, -, hq⟩ := List.mem_filterMap.1 hp
   obtain ⟨v, hv, rfl⟩ := Option.map_eq_some_iff.1 hq
-  exact pinAddr_inSyms hv
+  exact pinAddr_inSyms (a := q.2) hv
 
 /-! ## The spec's conditions on the placement -/
 
@@ -193,7 +205,8 @@ def specPreB (P : LinkSpec) (o : Opts) (st : St) (g : GcOut) : Bool :=
   match L.entry o st g, L.pieces o st g with
   | .ok e, .ok ps =>
     let pl := L.plan o e ps (L.syms o st g).1
-    pl.regionInB P.R P.size && P.progAddrs.all (inSymsB pl) && tlsBoundB P pl &&
+    let idx := symHint pl.syms
+    pl.regionInB P.R P.size && P.progAddrs.all (inSymsWith idx pl) && tlsBoundB P pl &&
       dataPlanB P.input0 P.data pl (offsetOf pl.phdrs P.R) P.size
   | _, _ => false
 

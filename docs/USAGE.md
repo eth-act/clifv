@@ -473,7 +473,7 @@ checked per executable for that guarantee: the facts about the compiled code are
 the facts about the bytes the linker wrote (headers, cg_clif's data objects, the symbol table,
 the region's segment) are checks inside `leanLink`, so a failure is a link error, not a weaker
 guarantee; on `lean-ld`'s output (the default) they are theorems (`Link.Ld.file0OkB_ld`, from
-`Plan.specOkB`, which `lean-link --ld` decides and reports). The remaining premises are the contracts of the code outside the program and that
+`Plan.specOkB`, which `lean-link --ld` decides and reports; it also decides on `lean-ld`'s inputs, without linking, the premises of `Link.DeadCleanup.compileExe_total_ldIn`, the compiler's totality on them, and prints `lean-ld's inputs meet the input conditions`). The remaining premises are the contracts of the code outside the program and that
 the CLIF run traps only explicitly. When `lean-link` prints `written by
 Link.DeadCleanup.leanLink` (`coverage: none`: the program fails an input condition, which it
 names), the executable is linked the same way but not covered by `compileExe_correct`; the

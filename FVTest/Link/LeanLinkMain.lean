@@ -213,8 +213,9 @@ def ldInCheck (S0 SC : LinkSpec) (f : String) : IO (Except String String) := do
     | .ok st => match st.gc roots o.gc with
       | .error e => return .error s!"gc: {e}"
       | .ok g =>
+        let t0 ← IO.monoMsNow
         let S1 := S0.atSyms ((Link.Ld.layPre o st g).syms o st g).1
-        let same := decide (S1.R = S0.R) && decide (S1.outside = S0.outside)
+        let same ← IO.lazyPure fun _ => decide (S1.R = S0.R) && decide (S1.outside = S0.outside)
         -- `SC` is `placed S0` (`Link.DeadCleanup.placedPar_eq`), so with `S0`'s own addresses `ldSpec S0 o st g = SC`
         -- (`Link.DeadCleanup.ldSpec_self`): the premises are decided on the spec compiled
         let P := if same then SC else Link.DeadCleanup.ldSpec S0 o st g
@@ -224,7 +225,7 @@ def ldInCheck (S0 SC : LinkSpec) (f : String) : IO (Except String String) := do
           ("layoutOkB", fun _ => P.layoutOkB), ("reachOkB", fun _ => P.reachOkPar),
           ("atSyms (the compiled spec's addresses)", fun _ => same)]
         let mut fails : List String := []
-        let mut times : List String := []
+        let mut times : List String := [s!"resolve, gc, atSyms {(← IO.monoMsNow) - t0} ms"]
         for (n, c) in checks do
           let t0 ← IO.monoMsNow
           let b ← IO.lazyPure c
