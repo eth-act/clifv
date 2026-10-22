@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-21T23:48:09.312965+00:00",
+  "updated_utc": "2026-10-22T01:37:41.014650+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -17,9 +17,10 @@
       "i32/i64 multiplication and fused multiply through shared scalar consumers",
       "i32/i64 ordinary shifts and fused bitfield pairs through shared scalar consumers",
       "i32/i64 extension/reduction through shared scalar consumers (validated, squash pending)",
-      "i32/i64 negation, CLZ/CTZ, bit reversal/byte swap and rotations through shared scalar consumers (validated, squash pending)"
+      "i32/i64 negation, CLZ/CTZ, bit reversal/byte swap and rotations through shared scalar consumers (validated, squash pending)",
+      "i32/i64 popcount through shared scalar consumers (validated, squash pending)"
     ],
-    "pending": "Popcount; comparisons/min/max; high multiply/division/remainder; complete original integer widths/ABIs; all unchanged original140 control/memory/traps/effects/calls/source/block/whole-driver/completeness/consumers."
+    "pending": "Comparisons/min/max, high multiply/division/remainder and complete original integer widths/ABIs; every remaining original #140 control/memory/trap/effect/call/source/block/whole-driver simulation/completeness/consumer obligation remains."
   },
   "roots": [
     {
@@ -5287,7 +5288,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Popcnt",
       "saved_guarded_bridge": "FV/Backend/Proof/StockPopcountRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/RHS matching/execution/retained binding/guarded transfer validated at four scalar widths; i32/i64 body/entry/default consumers validated, squash pending; universal lowering/downstream completeness remains",
       "scope_status_historical": "closure: actual guarded record/source/dispatch proved; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5295,7 +5296,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-popcount-production-activation.md"
     },
     {
       "rule": "rule_lower_2080",
@@ -5303,7 +5305,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Popcnt",
       "saved_guarded_bridge": "FV/Backend/Proof/StockPopcountRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/RHS matching/execution/retained binding/guarded transfer validated at four scalar widths; i32/i64 body/entry/default consumers validated, squash pending; universal lowering/downstream completeness remains",
       "scope_status_historical": "closure: actual guarded record/source/dispatch proved; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5311,7 +5313,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-popcount-production-activation.md"
     },
     {
       "rule": "rule_lower_2086",
@@ -5319,7 +5322,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Popcnt",
       "saved_guarded_bridge": "FV/Backend/Proof/StockPopcountRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/RHS matching/execution/retained binding/guarded transfer validated at four scalar widths; i32/i64 body/entry/default consumers validated, squash pending; universal lowering/downstream completeness remains",
       "scope_status_historical": "closure: actual guarded record/source/dispatch proved; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5327,7 +5330,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-popcount-production-activation.md"
     },
     {
       "rule": "rule_lower_2092",
@@ -5335,7 +5339,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Popcnt",
       "saved_guarded_bridge": "FV/Backend/Proof/StockPopcountRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "status": "actual source selection/RHS matching/execution/retained binding/guarded transfer validated at four scalar widths; i32/i64 body/entry/default consumers validated, squash pending; universal lowering/downstream completeness remains",
       "scope_status_historical": "closure: actual guarded record/source/dispatch proved; whole-driver obligations remain",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5343,7 +5347,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-popcount-production-activation.md"
     },
     {
       "rule": "rule_lower_2099",
@@ -5351,7 +5356,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Popcnt",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "excluded by existing original-scope selected-root closure and current scalar opcode inventory; no new scope restriction",
       "scope_status_historical": "excluded: Stock ordinary-source match impossible under original mapped context",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5359,7 +5364,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockPopcountDispatch.lean"
     },
     {
       "rule": "rule_lower_2108",
@@ -5367,7 +5373,7 @@
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Popcnt",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "excluded by existing original-scope selected-root closure and current scalar opcode inventory; no new scope restriction",
       "scope_status_historical": "excluded: Stock ordinary-source match impossible under original mapped context",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5375,7 +5381,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockPopcountDispatch.lean"
     },
     {
       "rule": "rule_lower_2113",
