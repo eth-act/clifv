@@ -1,5 +1,6 @@
 import FV.Link.DeadCleanupExeLd
 import FV.Link.Ld.SpecTotal
+import FV.Link.Ld.RelsFast
 
 /-! # The shipped executable compiler is total on `lean-ld`'s inputs (A1, #409)
 
@@ -32,6 +33,19 @@ symbols (`LinkSpec.atSyms`), at the Lean compiler's layout (`placed`). -/
 def ldSpec (S : LinkSpec) (o : Opts) (st : St) (g : GcOut) : LinkSpec :=
   placed (S.atSyms ((layPre o st g).syms o st g).1)
 
+/-- When the placement's symbols give `S`'s own addresses, the link spec at the placement is
+`S`'s (`lake exe lean-link --ld` decides the premises on the spec it compiled). -/
+theorem ldSpec_self {S : LinkSpec} {o : Opts} {st : St} {g : GcOut}
+    (hR : (S.atSyms ((layPre o st g).syms o st g).1).R = S.R)
+    (ho : (S.atSyms ((layPre o st g).syms o st g).1).outside = S.outside) : ldSpec S o st g = placed S := by
+  unfold ldSpec
+  congr 1
+  revert hR ho
+  cases S
+  simp only [LinkSpec.atSyms]
+  intro hR ho
+  rw [hR, ho]
+
 /-- **The shipped executable compiler succeeds on `lean-ld`'s output, from conditions on the
 inputs**: `lean-ld` links the inputs and `compileExe` succeeds on the executable. -/
 theorem compileExe_total_ldIn {S : LinkSpec} {o : Opts} {ins : List Input} {st : St} {g : GcOut}
@@ -55,3 +69,29 @@ theorem compileExe_total_ldIn {S : LinkSpec} {o : Opts} {ins : List Input} {st :
   exact ⟨r, hlk, compileExe_total_ld hin hl hlk hP hreach⟩
 
 end Link.DeadCleanup
+
+namespace Link
+
+open E2E E2E.LinkCheck E2E.BinCheck Backend.Proof.RelocProv
+
+/-- **`reachOkB` with the link map as a hash map and the region's size computed once**
+(`reachOkPar_eq`; `reachOkB` looks every name up in the list and sums the sizes per check). -/
+def LinkSpec.reachOkPar (P : LinkSpec) : Bool :=
+  let am := addrMap P.addrs
+  let sz := P.size
+  let R := P.R
+  let addr := fun n => (am[n]?).getD 0
+  P.funcs.all fun fi =>
+    let f := fi.func
+    (externNames f).all (fun n => let t := addr n
+      t % 4 == 0 && decide (R + sz ≤ t + 2 ^ 27) && decide (t < R + 2 ^ 27)) &&
+    (refNames f).all fun n => (refOffs f).all fun o =>
+      let T := (BitVec.ofNat 64 (addr n) + BitVec.ofInt 64 o).toNat
+      decide (pageOf (R + sz) ≤ pageOf T + 2 ^ 20) && decide (pageOf T < pageOf R + 2 ^ 20)
+
+theorem LinkSpec.reachOkPar_eq (P : LinkSpec) : P.reachOkPar = P.reachOkB := by
+  have h : ∀ n, P.input0.addrOf n = ((addrMap P.addrs)[n]?).getD 0 := fun n => by
+    rw [addrMap_get]; rfl
+  simp only [reachOkPar, reachOkB, refsReachB, callReachB, pageReachB, LinkInput.symAddr, h]
+
+end Link

@@ -3,6 +3,7 @@ import FV.Link.DeadCleanupExeLd
 import FV.Link.Ld.LayoutProof
 import FV.Link.Ld.LayoutTotal
 import FV.Link.Ld.RelocTotal
+import FV.Link.ExeLdInWitness
 
 -- the executable compiler's totality on `lean-ld`'s output (L2b stage 3e)
 #print axioms Link.compileExe_total_ld
@@ -45,3 +46,13 @@ import FV.Link.Ld.RelocTotal
 #print axioms Link.Ld.value_in
 #print axioms Link.Ld.relocOkB_of
 #print axioms Link.Ld.relIn_relocOkB
+
+-- lean-ld links its inputs; the compiler's totality from conditions on the inputs (A1, #409)
+#print axioms Link.Ld.layout_relsOk
+#print axioms Link.Ld.link_okIn
+#print axioms Link.Ld.specOkB_of_pre
+#print axioms Link.DeadCleanup.ldSpec_self
+#print axioms Link.DeadCleanup.compileExe_total_ldIn
+#print axioms Link.DeadCleanup.LdInWitness.compileExe_total_ldIn_witness -- witness: native_decide
+#print axioms Link.Ld.relsInFastB_eq
+#print axioms Link.LinkSpec.reachOkPar_eq

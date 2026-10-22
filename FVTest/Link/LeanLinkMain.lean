@@ -197,9 +197,11 @@ def ldCheck (P : LinkSpec) (file0 : ByteArray) (f : String) : IO (Except String 
 compiler on `S0`, before the layout): resolution and `--gc-sections`, `layRefsB`, `relsInB`,
 `fitsB`, `specPreB`, the compiler's input conditions on the link spec at the placement's symbols
 (`Link.DeadCleanup.ldSpec`), decided on the inputs without linking; and whether that link spec's
-addresses are `S0`'s (`LinkSpec.atSyms`), so that the executable compiled is the theorem's. On
-failure, the failing conditions. -/
-def ldInCheck (S0 : LinkSpec) (f : String) : IO (Except String Unit) := do
+addresses are `S0`'s (`LinkSpec.atSyms`), so that it is the spec compiled, `SC` (`ldSpec_self`)
+and the executable compiled is the theorem's (`relsInB` by `relsInFastB`, `reachOkB` by
+`reachOkPar`: equal, `relsInFastB_eq`, `reachOkPar_eq`). On failure, the failing conditions; on
+success, each condition's time. -/
+def ldInCheck (S0 SC : LinkSpec) (f : String) : IO (Except String String) := do
   let args := ((← IO.FS.readFile f).splitOn "\n").filter (!·.isEmpty)
   match ← Link.Ld.parseLdArgs args with
   | .error e => return .error s!"lean-ld's arguments: {e}"
@@ -211,14 +213,25 @@ def ldInCheck (S0 : LinkSpec) (f : String) : IO (Except String Unit) := do
     | .ok st => match st.gc roots o.gc with
       | .error e => return .error s!"gc: {e}"
       | .ok g =>
-        let P := Link.DeadCleanup.ldSpec S0 o st g
         let S1 := S0.atSyms ((Link.Ld.layPre o st g).syms o st g).1
-        let checks := [("layRefsB", Link.Ld.layRefsB o st g), ("relsInB", Link.Ld.relsInB o st g),
-          ("fitsB", Link.Ld.fitsB o st g), ("specPreB", Link.Ld.specPreB P o st g),
-          ("InScopeIn", inScopeInPar P.input0), ("layoutOkB", P.layoutOkB), ("reachOkB", P.reachOkB),
-          ("atSyms R", decide (S1.R = S0.R)), ("atSyms outside", decide (S1.outside = S0.outside))]
-        let fails := (checks.filter (!·.2)).map (·.1)
-        if fails.isEmpty then return .ok () else return .error s!"failing: {fails}"
+        let same := decide (S1.R = S0.R) && decide (S1.outside = S0.outside)
+        -- `SC` is `placed S0` (`Link.DeadCleanup.placedPar_eq`), so with `S0`'s own addresses `ldSpec S0 o st g = SC`
+        -- (`Link.DeadCleanup.ldSpec_self`): the premises are decided on the spec compiled
+        let P := if same then SC else Link.DeadCleanup.ldSpec S0 o st g
+        let checks : List (String × (Unit → Bool)) := [("layRefsB", fun _ => Link.Ld.layRefsB o st g),
+          ("relsInB", fun _ => Link.Ld.relsInFastB o st g), ("fitsB", fun _ => Link.Ld.fitsB o st g),
+          ("specPreB", fun _ => Link.Ld.specPreB P o st g), ("InScopeIn", fun _ => inScopeInPar P.input0),
+          ("layoutOkB", fun _ => P.layoutOkB), ("reachOkB", fun _ => P.reachOkPar),
+          ("atSyms (the compiled spec's addresses)", fun _ => same)]
+        let mut fails : List String := []
+        let mut times : List String := []
+        for (n, c) in checks do
+          let t0 ← IO.monoMsNow
+          let b ← IO.lazyPure c
+          times := times ++ [s!"{n} {(← IO.monoMsNow) - t0} ms"]
+          if !b then fails := fails ++ [n]
+        if fails.isEmpty then return .ok s!"{", ".intercalate times}"
+        else return .error s!"failing: {fails}"
 
 def main (args0 : List String) : IO UInt32 := do
   let usage := "usage: lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]"
@@ -342,8 +355,8 @@ def main (args0 : List String) : IO UInt32 := do
           -- the plain cleanup compiler: the premises of `compileExe_total_ldIn` on the inputs
           if deadCleanup && !opt && !tailOn then
             let t1 ← IO.monoMsNow
-            match ← ldInCheck SC0 f with
-            | .ok () => IO.println s!"lean-link: {exe}: lean-ld's inputs meet the input conditions ({(← IO.monoMsNow) - t1} ms): totality decided on the inputs, without linking: Link.DeadCleanup.compileExe_total_ldIn"
+            match ← ldInCheck SC0 SC f with
+            | .ok times => IO.println s!"lean-link: {exe}: lean-ld's inputs meet the input conditions ({(← IO.monoMsNow) - t1} ms: {times}): totality decided on the inputs, without linking: Link.DeadCleanup.compileExe_total_ldIn"
             | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's inputs: compileExe_total_ldIn's premises: {e}"
           pure true
         | .error e =>
