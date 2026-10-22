@@ -13,6 +13,15 @@ namespace E2E.ExecBytes
 
 open Backend Backend.Proof E2E.LinkCheck E2E.Binary E2E.BinCheck E2E.ExecWords
 
+theorem _root_.Backend.Insn.tlsSite_of_hooked {x : Insn} (h : x.hooked = false) :
+    x.tlsSite = false := by
+  cases x <;> simp_all [Insn.hooked, Insn.tlsSite]
+
+theorem _root_.Backend.Insn.tlsSite_of_reloc {i : Insn} {ty : RelocType} {s : String} {a : Int}
+    (h : i.reloc? = some (ty, s, a)) (ht : ty = .adrGotPage ∨ ty = .adrPrelPgHi21) :
+    i.tlsSite = false := by
+  rcases ht with rfl | rfl <;> cases i <;> simp_all [Insn.reloc?, Insn.tlsSite]
+
 section Tls
 
 variable {I : LinkInput} {B : BaseEnv} {file : ByteArray}
@@ -35,8 +44,112 @@ theorem fileWord_bind {a : BitVec 64} {w : BitVec 32} {i : Arm.ArmInst}
     (fileWord file a).bind Arm.decode_raw_inst = some i := by
   rw [hf, Option.bind_some, hd]
 
-theorem wAt_add (a : Art) (o k : Nat) : wAt a o + BitVec.ofNat 64 k = wAt a (o + k) := by
-  simp only [wAt]; rw [BitVec.add_assoc, ← BitVec.ofNat_add]
+theorem wAt_add20 (a : Art) (o : Nat) : wAt a (o + 20) + 4 = wAt a o + 4 + 20 := by
+  simp only [wAt, BitVec.add_assoc, BitVec.ofNat_add]
+  rfl
+
+theorem encZR_ne0 {tmp : Reg} {rt : BitVec 5} (htmp : tmp ≠ .x 0) (hrt : tmp.encZR = .ok rt) :
+    rt ≠ 0#5 := by
+  rintro rfl
+  cases tmp with
+  | x k =>
+    simp only [Reg.encZR] at hrt
+    split at hrt
+    · have := congrArg BitVec.toNat (Except.ok.inj hrt)
+      simp at this
+      exact htmp (by rw [show k = 0 by omega])
+    · cases hrt
+  | _ => simp [Reg.encZR] at hrt <;> cases hrt
+
+/-- The compiled `mrs tmp, tpidr_el0`. -/
+theorem mrs_arm {env : Env} {tmp : Reg} {rt : BitVec 5} {a : Arm.ArmInst}
+    (hrt : tmp.encZR = .ok rt) (h : (Insn.mrsTpidrEl0 tmp).toArmInst env = .ok a) :
+    a = .BR (.Mrs
+      {o0 := 1, op1 := 0b011#3, CRn := 0b1101#4, CRm := 0, op2 := 0b010#3, Rt := rt}) := by
+  simp [Insn.toArmInst, Insn.armFields, hrt, Functor.map, Except.map, bind, Except.bind, pure,
+    Except.pure, Arm.ArmInst.norm] at h
+  exact h.symm
+
+/-- The compiled `add x0, x0, tmp`. -/
+theorem add_arm {env : Env} {tmp : Reg} {rt : BitVec 5} {a : Arm.ArmInst}
+    (hrt : tmp.encZR = .ok rt)
+    (h : (Insn.aluRRR .add true (.x 0) (.x 0) tmp).toArmInst env = .ok a) :
+    a = .DPR (.Add_sub_shifted_reg
+      {sf := 1#1, op := 0#1, S := 0#1, shift := 0, Rm := rt, imm6 := 0, Rn := 0#5, Rd := 0#5}) := by
+  have h0 : (Reg.x 0).encZR = .ok 0#5 := rfl
+  simp [Insn.toArmInst, Insn.armFields, hrt, h0, ALUOp.addSub?, ALUOp.logic?, b1,
+    Functor.map, Except.map, bind, Except.bind, pure, Except.pure, Arm.ArmInst.norm] at h
+  exact h.symm
+
+theorem add_exec (rt : BitVec 5) (s : Arm.ArmState) :
+    Arm.exec_inst (.DPR (.Add_sub_shifted_reg
+      {sf := 1#1, op := 0#1, S := 0#1, shift := 0, Rm := rt, imm6 := 0, Rn := 0#5, Rd := 0#5})) s =
+    Arm.w .PC (Arm.r .PC s + 4)
+      (Arm.w (.GPR 0#5) (Arm.r (.GPR 0#5) s + Arm.read_gpr_zr 64 rt s) s) := by
+  rw [Arm.w_of_w_commute (by simp)]
+  simp [Arm.exec_inst, Arm.DPR.exec_add_sub_shifted_reg, Arm.write_gpr_zr, Arm.write_gpr,
+    Arm.read_gpr_zr, Arm.read_gpr, Arm.write_pc, Arm.read_pc, Arm.fst_AddWithCarry_eq_add,
+    Arm.decode_shift, Arm.shift_reg]
+
+theorem wzr_ne {rt : BitVec 5} (h : rt ≠ 31#5) (x : BitVec 64) (s : Arm.ArmState) :
+    Arm.write_gpr_zr 64 rt x s = Arm.w (.GPR rt) x s := by
+  simp [Arm.write_gpr_zr, h, Arm.write_gpr]
+
+theorem rzr_ne {rt : BitVec 5} (h : rt ≠ 31#5) (s : Arm.ArmState) :
+    Arm.read_gpr_zr 64 rt s = Arm.r (.GPR rt) s := by
+  simp [Arm.read_gpr_zr, h, Arm.read_gpr]
+
+/-- The end of the TLS sequence: the model's `leTls` state (unfolded) against the executable's
+state after the six words. -/
+theorem tls_sim_end {m e e5 : Arm.ArmState} (hs : Sim I m e) {rt : BitVec 5} (hrt0 : rt ≠ 0#5)
+    {tp T off addr y q1 q2 q3 q4 q5 q6 : BitVec 64} (hT : T = tp) (haddr : tp + off = addr)
+    (he5 : e5 = Arm.w .PC q5 (Arm.write_gpr_zr 64 rt T (Arm.w .PC q4 (Arm.w .PC q3 (Arm.w .PC q2
+      (Arm.w (.GPR 0#5) off (Arm.w .PC q1 (Arm.w (.GPR 0#5) y e))))))))
+    (hq6 : q6 = Arm.r .PC m + 4 + 20) :
+    Sim I (if rt = 31#5 then
+        Arm.w .PC (Arm.r .PC (Arm.w .PC (Arm.r .PC m + 4) m) + 20)
+          (Arm.w (.GPR 0#5) off (Arm.w .PC (Arm.r .PC m + 4) m))
+      else
+        Arm.w .PC (Arm.r .PC (Arm.w .PC (Arm.r .PC m + 4) m) + 20)
+          (Arm.w (.GPR rt) tp (Arm.w (.GPR 0#5) addr (Arm.w .PC (Arm.r .PC m + 4) m))))
+      (Arm.w .PC q6 (Arm.w (.GPR 0#5) (Arm.r (.GPR 0#5) e5 + Arm.read_gpr_zr 64 rt e5) e5)) := by
+  subst hT hq6
+  rw [Arm.r_of_w_same]
+  by_cases h31 : rt = 31#5
+  · have hg : Arm.r (.GPR 0#5) e5 + Arm.read_gpr_zr 64 rt e5 = off := by
+      subst he5 h31
+      simp [Arm.read_gpr_zr, Arm.write_gpr_zr, Arm.r_of_w_different, Arm.r_of_w_same]
+    rw [hg]
+    simp only [h31, ↓reduceIte]
+    have he5' : e5 = Arm.w .PC q5 (Arm.w .PC q4 (Arm.w .PC q3 (Arm.w .PC q2
+        (Arm.w (.GPR 0#5) off (Arm.w .PC q1 (Arm.w (.GPR 0#5) y e)))))) := by
+      subst h31; rw [he5]; simp [Arm.write_gpr_zr]
+    refine ⟨fun fld => ?_, fun a ha => ?_⟩
+    · by_cases hP : fld = .PC
+      · subst hP; simp only [Arm.r_of_w_same]
+      by_cases h0 : fld = .GPR 0#5
+      · subst h0; simp [Arm.r_of_w_different, Arm.r_of_w_same]
+      simp only [Arm.r_of_w_different hP, Arm.r_of_w_different h0, he5']
+      exact hs.1 fld
+    · simp only [Arm.ArmState.mem_w_eq_mem, he5']
+      exact hs.2 a ha
+  · simp only [h31, ↓reduceIte]
+    have hg : Arm.r (.GPR 0#5) e5 + Arm.read_gpr_zr 64 rt e5 = addr := by
+      subst he5
+      simp [rzr_ne h31, wzr_ne h31, Arm.r_of_w_different, Arm.r_of_w_same, Ne.symm hrt0]
+      rw [← haddr, BitVec.add_comm]
+    rw [hg, wzr_ne h31] at *
+    refine ⟨fun fld => ?_, fun a ha => ?_⟩
+    · by_cases hP : fld = .PC
+      · subst hP; simp only [Arm.r_of_w_same]
+      by_cases h0 : fld = .GPR 0#5
+      · subst h0; simp [Arm.r_of_w_different, Arm.r_of_w_same, Ne.symm hrt0]
+      by_cases hr : fld = .GPR rt
+      · subst hr he5; simp [Arm.r_of_w_different, Arm.r_of_w_same, hrt0]
+      simp only [Arm.r_of_w_different hP, Arm.r_of_w_different h0, Arm.r_of_w_different hr, he5]
+      exact hs.1 fld
+    · simp only [Arm.ArmState.mem_w_eq_mem, he5]
+      exact hs.2 a ha
 
 /-- **The TLS sequence**: from the model state at its `adrp`, the model's two steps (the `adrp`,
 then the hook `leTls` at the `ldr`) against the executable's six processor steps on lld's
@@ -84,7 +197,7 @@ theorem tls_step {M : Nat} {g : Clif.Function} (hF : FnOk I file g)
   have hR := hF.bin.reloc rl hrl
   unfold RelocOk at hR
   rw [ht] at hR
-  obtain ⟨v, hv, hv32, hw0, hw1, hw2, hw3⟩ := hR
+  obtain ⟨-, v, hv, hv32, hw0, hw1, hw2, hw3⟩ := hR
   have hhi : v / 65536 < 2 ^ 16 := by omega
   have hlo : v % 65536 < 2 ^ 16 := by omega
   obtain ⟨hd0, hx0⟩ := movzW_exec hhi
@@ -102,47 +215,27 @@ theorem tls_step {M : Nat} {g : Clif.Function} (hF : FnOk I file g)
     | error _ =>
       simp [Insn.toArmInst, Insn.armFields, h, Functor.map, Except.map, bind, Except.bind] at ha4
     | ok rt => exact ⟨rt, rfl⟩
-  have hrt0 : rt ≠ 0#5 := by
-    intro h0; subst h0
-    cases tmp <;> simp [Reg.encZR] at hrt
-    rename_i k
-    obtain ⟨hk, hk'⟩ := hrt
-    have := congrArg BitVec.toNat hk'
-    simp at this
-    exact htmp (by rw [show k = 0 by omega])
-  have ha4' : a4 = .BR (.Mrs { o0 := 1, op1 := 0b011#3, CRn := 0b1101#4, CRm := 0, op2 := 0b010#3,
-      Rt := rt }) := by
-    simp [Insn.toArmInst, Insn.armFields, hrt, Functor.map, Except.map, bind, Except.bind, pure,
-      Except.pure, Arm.ArmInst.norm] at ha4
-    exact ha4.symm
+  have hrt0 := encZR_ne0 htmp hrt
+  have ha4' := mrs_arm hrt ha4
   subst ha4'
   have hx4 := Arm.exec_mrs_tpidr rt
-  have hx5 : ∀ s, Arm.exec_inst a5 s = Arm.w .PC (Arm.r .PC s + 4)
-      (Arm.w (.GPR 0#5) (Arm.r (.GPR 0#5) s + Arm.read_gpr_zr 64 rt s) s) := by
-    have : a5 = .DPR (.Add_sub_shifted_reg { sf := 1#1, op := 0#1, S := 0#1, shift := 0, Rm := rt,
-        imm6 := 0, Rn := 0#5, Rd := 0#5 }) := by
-      simp [Insn.toArmInst, Insn.armFields, hrt, Reg.encZR, AluOp.addSub?, AluOp.logic?, b1,
-        Functor.map, Except.map, bind, Except.bind, pure, Except.pure, Arm.ArmInst.norm] at ha5
-      exact ha5.symm
-    subst this
-    intro s
-    rw [Arm.w_of_w_commute (by simp)]
-    simp [Arm.exec_inst, Arm.DPR.exec_add_sub_shifted_reg, Arm.write_gpr_zr, Arm.write_gpr,
-      Arm.read_gpr_zr, Arm.read_gpr, Arm.write_pc, Arm.read_pc, Arm.fst_AddWithCarry_eq_add,
-      Arm.decode_shift, Arm.shift_reg]
+  have ha5' := add_arm hrt ha5
+  subst ha5'
+  have hx5 := add_exec rt
   -- the executable's run
   have hpe : Arm.r .PC e = wAt (art I g) rl.offset := (hs.1 .PC).trans hpc
   have hee : Arm.r .ERR e = .None := (hs.1 .ERR).trans herr
   have hte : Arm.r .TPIDR e = B.tp := (hs.1 .TPIDR).trans htp
-  set e1 := Arm.w .PC (Arm.r .PC e + 4) (Arm.w (.GPR 0#5) (BitVec.ofNat 64 (v / 65536 * 2 ^ 16)) e)
-    with he1d
+  obtain ⟨e1, he1d⟩ : ∃ e1, e1 = Arm.w .PC (Arm.r .PC e + 4)
+      (Arm.w (.GPR 0#5) (BitVec.ofNat 64 (v / 65536 * 2 ^ 16)) e) := ⟨_, rfl⟩
   have he1 : stepT I B file e = e1 := by
     rw [stepT_real (by rw [hpe]; exact s0) (.inl rfl) hee
-      (fileWord_bind (by rw [hpe]; exact hw0) hd0), hx0]
+      (fileWord_bind (by rw [hpe]; exact hw0) hd0), hx0, he1d]
   have pc1 : Arm.r .PC e1 = wAt (art I g) (rl.offset + 4) := by
-    rw [he1d, Arm.r_of_w_same, hpe, wAt_add]
+    rw [he1d, Arm.r_of_w_same, hpe, wAt_add4]
   have err1 : Arm.r .ERR e1 = .None := by rw [he1d]; simp [Arm.r_of_w_different, hee]
-  set e2 := Arm.w .PC (Arm.r .PC e1 + 4) (Arm.w (.GPR 0#5) (BitVec.ofNat 64 v) e1) with he2d
+  obtain ⟨e2, he2d⟩ : ∃ e2, e2 = Arm.w .PC (Arm.r .PC e1 + 4)
+      (Arm.w (.GPR 0#5) (BitVec.ofNat 64 v) e1) := ⟨_, rfl⟩
   have he2 : stepT I B file e1 = e2 := by
     rw [stepT_real (by rw [pc1]; exact s1) (.inr (.inl ⟨_, _, rfl⟩)) err1
       (fileWord_bind (by rw [pc1]; exact hw1) hd1), hx1, he2d]
@@ -150,28 +243,29 @@ theorem tls_step {M : Nat} {g : Clif.Function} (hF : FnOk I file g)
     rw [he1d, Arm.r_of_w_different (by simp), Arm.r_of_w_same]
     exact movz_movk_val hv32
   have pc2 : Arm.r .PC e2 = wAt (art I g) (rl.offset + 8) := by
-    rw [he2d, Arm.r_of_w_same, pc1, wAt_add]
+    rw [he2d, Arm.r_of_w_same, pc1, wAt_add4]
   have err2 : Arm.r .ERR e2 = .None := by rw [he2d]; simp [Arm.r_of_w_different, err1]
-  set e3 := Arm.w .PC (Arm.r .PC e2 + 4) e2 with he3d
+  obtain ⟨e3, he3d⟩ : ∃ e3, e3 = Arm.w .PC (Arm.r .PC e2 + 4) e2 := ⟨_, rfl⟩
   have he3 : stepT I B file e2 = e3 := by
     rw [stepT_real (by rw [pc2]; exact s2) (.inr (.inr rfl)) err2
-      (fileWord_bind (by rw [pc2]; exact hw2) hdn), hxn]
+      (fileWord_bind (by rw [pc2]; exact hw2) hdn), hxn, he3d]
   have pc3 : Arm.r .PC e3 = wAt (art I g) (rl.offset + 12) := by
-    rw [he3d, Arm.r_of_w_same, pc2, wAt_add]
+    rw [he3d, Arm.r_of_w_same, pc2, wAt_add4]
   have err3 : Arm.r .ERR e3 = .None := by rw [he3d]; simp [Arm.r_of_w_different, err2]
-  set e4 := Arm.w .PC (Arm.r .PC e3 + 4) e3 with he4d
+  obtain ⟨e4, he4d⟩ : ∃ e4, e4 = Arm.w .PC (Arm.r .PC e3 + 4) e3 := ⟨_, rfl⟩
   have he4 : stepT I B file e3 = e4 := by
     rw [stepT_real (by rw [pc3]; exact s3) (.inr (.inr rfl)) err3
-      (fileWord_bind (by rw [pc3]; exact hw3) hdn), hxn]
+      (fileWord_bind (by rw [pc3]; exact hw3) hdn), hxn, he4d]
   have pc4 : Arm.r .PC e4 = wAt (art I g) (rl.offset + 16) := by
-    rw [he4d, Arm.r_of_w_same, pc3, wAt_add]
+    rw [he4d, Arm.r_of_w_same, pc3, wAt_add4]
   have err4 : Arm.r .ERR e4 = .None := by rw [he4d]; simp [Arm.r_of_w_different, err3]
-  set e5 := Arm.w .PC (Arm.r .PC e4 + 4) (Arm.write_gpr_zr 64 rt (Arm.r .TPIDR e4) e4) with he5d
+  obtain ⟨e5, he5d⟩ : ∃ e5, e5 = Arm.w .PC (Arm.r .PC e4 + 4)
+      (Arm.write_gpr_zr 64 rt (Arm.r .TPIDR e4) e4) := ⟨_, rfl⟩
   have he5 : stepT I B file e4 = e5 := by
     rw [stepT_real (by rw [pc4]; exact s4) (.inr (.inr rfl)) err4
-      (fileWord_bind (by rw [pc4]; exact hf4) hd4), hx4]
+      (fileWord_bind (by rw [pc4]; exact hf4) hd4), hx4, he5d]
   have pc5 : Arm.r .PC e5 = wAt (art I g) (rl.offset + 20) := by
-    rw [he5d, Arm.r_of_w_same, pc4, wAt_add]
+    rw [he5d, Arm.r_of_w_same, pc4, wAt_add4]
   have err5 : Arm.r .ERR e5 = .None := by
     rw [he5d]; simp [Arm.r_of_w_different, Arm.write_gpr_zr, Arm.write_gpr]; split <;>
       simp [Arm.r_of_w_different, err4]
@@ -187,75 +281,30 @@ theorem tls_step {M : Nat} {g : Clif.Function} (hF : FnOk I file g)
   have hi0 : insnAt (art I g).fa (progBase m) (Arm.r .PC m) = some (.adrpTlsDesc (.x 0) rl.sym) := by
     rw [hb, hpc, ← ho]; exact insnAt_of_line hF hj
   have hm1 : (sys I (leBase I B file)).mach M g m = Arm.w .PC (Arm.r .PC m + 4) m := by
-    show ArmStepX _ _ _ m = _
+    show ArmStepX (sys I (leBase I B file)).Xb ((sys I (leBase I B file)).hooks M) (art I g).fa m = _
     simp only [ArmStepX, hi0]
   have hb1 : progBase (Arm.w .PC (Arm.r .PC m + 4) m) = (art I g).base := by
     rw [← hb]; simp [progBase, Arm.w_program]
   have hi1 : insnAt (art I g).fa (progBase (Arm.w .PC (Arm.r .PC m + 4) m))
       (Arm.r .PC (Arm.w .PC (Arm.r .PC m + 4) m)) = some (.ldrTlsDescLo12 tmp (.x 0) rl.sym) := by
-    rw [hb1, Arm.r_of_w_same, hpc, wAt_add, ← o1]; exact insnAt_of_line hF hj1
+    rw [hb1, Arm.r_of_w_same, hpc, wAt_add4, ← o1]; exact insnAt_of_line hF hj1
   have hm2 : (sys I (leBase I B file)).mach M g (Arm.w .PC (Arm.r .PC m + 4) m) =
       leTls I B file rl.sym tmp (Arm.w .PC (Arm.r .PC m + 4) m) := by
-    show ArmStepX _ _ _ _ = _
+    show ArmStepX (sys I (leBase I B file)).Xb ((sys I (leBase I B file)).hooks M) (art I g).fa _ = _
     simp only [ArmStepX, hi1, hooks_tls]
     rfl
   rw [hm1, hm2, hrun]
   -- the final states
   have hx4e : Arm.r .TPIDR e4 = B.tp := by
-    rw [he4d, Arm.r_of_w_different (by simp), he3d, Arm.r_of_w_different (by simp), he2d,
-      Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp), he1d,
-      Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp), hte]
+    rw [he4d, he3d, he2d, he1d]; simp [Arm.r_of_w_different, hte]
   have hoff : tpOffOf I file rl.sym = BitVec.ofNat 64 v := by simp [tpOffOf, hv]
   have hgd : tmp.encZR.toOption.getD 31#5 = rt := by simp [hrt, Except.toOption]
-  refine ⟨fun fld => ?_, fun a ha => ?_⟩
-  · unfold leTls
-    rw [hgd]
-    by_cases h31 : rt = 31#5
-    · subst h31
-      simp only [if_pos rfl]
-      by_cases hP : fld = .PC
-      · subst hP
-        simp only [Arm.r_of_w_same, pc5, hpc, wAt_add]
-      by_cases h0 : fld = .GPR 0#5
-      · subst h0
-        rw [Arm.r_of_w_different (by simp), Arm.r_of_w_same, Arm.r_of_w_different (by simp),
-          Arm.r_of_w_same]
-        simp [Arm.read_gpr_zr, he5d, Arm.write_gpr_zr, Arm.r_of_w_different, he4d, he3d, he2d,
-          Arm.r_of_w_same, hoff]
-      rw [Arm.r_of_w_different hP, Arm.r_of_w_different h0, Arm.r_of_w_different hP,
-        Arm.r_of_w_different h0, Arm.r_of_w_different hP]
-      simp [he5d, Arm.write_gpr_zr, Arm.r_of_w_different hP, he4d, he3d, he2d,
-        Arm.r_of_w_different h0, he1d]
-      exact hs.1 fld
-    · simp only [if_neg h31]
-      by_cases hP : fld = .PC
-      · subst hP
-        simp only [Arm.r_of_w_same, pc5, hpc, wAt_add]
-      by_cases h0 : fld = .GPR 0#5
-      · subst h0
-        rw [Arm.r_of_w_different (by simp), Arm.r_of_w_same, Arm.r_of_w_different (by simp),
-          Arm.r_of_w_different (by simp [Ne.symm hrt0]), Arm.r_of_w_same, ← haddr, hoff]
-        simp [Arm.read_gpr_zr, h31, Arm.read_gpr, he5d, Arm.write_gpr_zr, Arm.write_gpr,
-          Arm.r_of_w_different, Arm.r_of_w_same, hrt0, Ne.symm hrt0, hx4e, he4d, he3d, he2d,
-          BitVec.add_comm]
-      by_cases hr : fld = .GPR rt
-      · subst hr
-        rw [Arm.r_of_w_different (by simp), Arm.r_of_w_different (by simp [hrt0]),
-          Arm.r_of_w_different (by simp), Arm.r_of_w_same]
-        simp [he5d, Arm.write_gpr_zr, h31, Arm.write_gpr, Arm.r_of_w_different, Arm.r_of_w_same,
-          hx4e]
-      rw [Arm.r_of_w_different hP, Arm.r_of_w_different h0, Arm.r_of_w_different hP,
-        Arm.r_of_w_different hr, Arm.r_of_w_different h0, Arm.r_of_w_different hP]
-      simp [he5d, Arm.write_gpr_zr, h31, Arm.write_gpr, Arm.r_of_w_different hP,
-        Arm.r_of_w_different hr, he4d, he3d, he2d, Arm.r_of_w_different h0, he1d]
-      exact hs.1 fld
-  · unfold leTls
-    split <;>
-    · simp [Arm.ArmState.mem_w_eq_mem, he5d, Arm.write_gpr_zr, Arm.write_gpr, he4d, he3d, he2d,
-        he1d]
-      first
-        | exact hs.2 a ha
-        | (split <;> simp [Arm.ArmState.mem_w_eq_mem] <;> exact hs.2 a ha)
+  have haddr' : B.tp + BitVec.ofNat 64 v = I.symAddr rl.sym 0 := by rw [← hoff]; exact haddr
+  have hq6 : Arm.r .PC e5 + 4 = Arm.r .PC m + 4 + 20 := by rw [pc5, hpc, wAt_add20]
+  unfold leTls
+  rw [hgd, hoff]
+  subst he5d he4d he3d he2d he1d
+  exact tls_sim_end hs hrt0 hx4e haddr' rfl hq6
 
 /-- At a TLS sequence's `adrp`, the executable's first step has the model's pc and error (for a
 trap at the `ldr` word). -/
@@ -276,15 +325,16 @@ theorem tls_first_pc {M : Nat} {g : Clif.Function} (hF : FnOk I file g)
   have hR := hF.bin.reloc rl hrl
   unfold RelocOk at hR
   rw [ht] at hR
-  obtain ⟨v, -, hv32, hw0, -⟩ := hR
-  obtain ⟨hd0, hx0⟩ := movzW_exec (show v / 65536 < 2 ^ 16 by omega)
+  obtain ⟨-, v, -, hv32, hw0, -⟩ := hR
+  have hhi : v / 65536 < 2 ^ 16 := by omega
+  obtain ⟨hd0, hx0⟩ := movzW_exec hhi
   have hpe : Arm.r .PC e = wAt (art I g) rl.offset := (hs.1 .PC).trans hpc
   have hee : Arm.r .ERR e = .None := (hs.1 .ERR).trans herr
   have hb : progBase m = (art I g).base := progBase_of hF hm hprog hj
   have hi0 : insnAt (art I g).fa (progBase m) (Arm.r .PC m) = some (.adrpTlsDesc (.x 0) rl.sym) := by
     rw [hb, hpc, ← ho]; exact insnAt_of_line hF hj
   have hm1 : (sys I (leBase I B file)).mach M g m = Arm.w .PC (Arm.r .PC m + 4) m := by
-    show ArmStepX _ _ _ m = _
+    show ArmStepX (sys I (leBase I B file)).Xb ((sys I (leBase I B file)).hooks M) (art I g).fa m = _
     simp only [ArmStepX, hi0]
   rw [hm1, stepT_real (by rw [hpe]; exact s0) (.inl rfl) hee
     (fileWord_bind (by rw [hpe]; exact hw0) hd0), hx0]
@@ -391,13 +441,15 @@ theorem act_coreT (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
     have hins1 : insnAt (art I g).fa (art I g).base
         (Arm.r .PC (runX ((sys I (leBase I B file)).mach M g) k1 c)) = some i := by
       rw [hpc1, ← ho]; exact insnAt_of_line hFg hj
-    have hA := stepT_of_ins hok1 (hk'.1 .PC) hins1
-      (by rcases ht with h | h <;> rw [h] at hi <;> cases i <;> simp_all [Insn.reloc?, Insn.tlsSite])
+    have hA := stepT_of_ins hok1 (hk'.1 .PC) hins1 (Insn.tlsSite_of_reloc hi ht)
     obtain ⟨i0, hins0, -, -⟩ := hok0.site
     obtain ⟨hpcE, -⟩ := pair_first_pc hFg hrl ht hpc1 hok1 hk'
-    have hB := stepT_of_ins (I := I) (B := B) (file := file) hok0
-      (by rw [runX_succ']; exact hpcE.symm) hins0 (second_insn hFg ⟨rl, hrl, ht, he⟩ hins0)
-    rw [runX_succ', runX_add (stepT I B file) k' 2]
+    have hB := stepT_of_ins (I := I) (B := B) (file := file)
+      (e := step I (leBase I B file) file (runX (stepT I B file) k' e)) hok0
+      (hpcE.symm.trans (congrArg (Arm.r .PC)
+        (runX_succ' ((sys I (leBase I B file)).mach M g) k1 c).symm))
+      hins0 (second_insn hFg ⟨rl, hrl, ht, he⟩ hins0)
+    rw [runX_succ' ((sys I (leBase I B file)).mach M g) k1, runX_add (stepT I B file) k' 2]
     show Sim I _ (stepT I B file (stepT I B file (runX (stepT I B file) k' e)))
     rw [hA, hB]
     exact pair_step hFg hrl ht hpc1 hok1
@@ -417,7 +469,7 @@ theorem act_coreT (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
     obtain ⟨k', hk'⟩ := ih k1 (by omega) (fun j hj => hret j (by omega))
       (by rw [hpc1]; exact hn1) (by rw [hpc1]; exact hn2) hok1.err
     refine ⟨k' + 6, ?_⟩
-    rw [runX_succ', runX_succ', runX_add (stepT I B file) k' 6]
+    rw [runX_succ' ((sys I (leBase I B file)).mach M g) k1, runX_add (stepT I B file) k' 6]
     exact tls_step hFg (hT g hg) (hsite g hg) hrl ht hpc1 hok1.err hok1.program hk' (htp' k1)
       (haddr g hg rl hrl ht)
   obtain ⟨k', hk'⟩ := ih k0 (by omega) (fun j hj => hret j (by omega)) hs hsT hok0.err
@@ -470,7 +522,7 @@ theorem act_coreT (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
     · simp [‹¬ _›, junkAt, Arm.r_of_w_same] at herr
   by_cases hhk : i.hooked = false
   · refine ⟨k' + 1, ?_⟩
-    rw [runX_succ', stepT_of_ins hok0 hpe hins (by cases i <;> simp_all [Insn.hooked, Insn.tlsSite])]
+    rw [runX_succ', stepT_of_ins hok0 hpe hins (Insn.tlsSite_of_hooked hhk)]
     exact plain_step hFg hok0 hk' hins hhk
   · cases i <;> simp only [Insn.hooked, Bool.true_eq_false, not_false_eq_true, not_true_eq_false] at hhk
     case bl n =>
@@ -590,8 +642,7 @@ theorem exec_of_modelT (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
       have hins1 : insnAt (art I f).fa (art I f).base
           (Arm.r .PC (runX ((sys I (leBase I B file)).mach M f) n1 (modelOf I f r))) = some i := by
         rw [hpc1, ← ho]; exact insnAt_of_line hFf hj
-      have hA := stepT_of_ins hok1 (hk'.1 .PC) hins1
-        (by rcases ht with h | h <;> rw [h] at hi <;> cases i <;> simp_all [Insn.reloc?, Insn.tlsSite])
+      have hA := stepT_of_ins hok1 (hk'.1 .PC) hins1 (Insn.tlsSite_of_reloc hi ht)
       refine ⟨k' + 1, ?_⟩
       rw [runX_succ'] at htrap ⊢
       rw [hA]

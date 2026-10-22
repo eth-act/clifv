@@ -86,7 +86,7 @@ theorem binary_correct_exec_proven_tls {I : LinkInput} {D : List Clif.DataObject
     (hL : TlsLoader I B file r) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (stepT I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
-  have hr' : ClifRun I (leBase I B file) f r args cs := hr
+  have hr' : ClifRun I (leBase I B file) f r args cs := ⟨hr.entry, hr.slots, hr.place⟩
   have htr' : TrapsExplicit (Clif.linkEnvN (prog I) (leBase I B file).env M) (prog I).bare cs :=
     htr
   have hn := (StackBound.goodN_iff hI).2 ⟨f, hf, hc⟩
@@ -118,7 +118,7 @@ theorem binary_correct_exec_depth_proven_tls {I : LinkInput} {D : List Clif.Data
     (hL : TlsLoader I B file r) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (stepT I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
-  have hr' : ClifRun I (leBase I B file) f r args cs := hr
+  have hr' : ClifRun I (leBase I B file) f r args cs := ⟨hr.entry, hr.slots, hr.place⟩
   have htr' : TrapsExplicit (Clif.linkEnvN (prog I) (leBase I B file).env M) (prog I).bare cs :=
     htr
   have hfacts := binFacts_of_checks hI hbin
@@ -148,7 +148,7 @@ theorem binary_correct_exec_peak_proven_tls {I : LinkInput} {D : List Clif.DataO
     (hL : TlsLoader I B file r) :
     ExecRefines (art I f).fb (art I f).base (xreg 30 r) (stepT I B file) r (RelocAt I)
       (Clif.runLoop B.env (prog I) (F + 1) cs) := by
-  have hr' : ClifRun I (leBase I B file) f r args cs := hr
+  have hr' : ClifRun I (leBase I B file) f r args cs := ⟨hr.entry, hr.slots, hr.place⟩
   have hd' : Clif.DepthLe (leBase I B file).env (prog I) d cs := hd
   have htr' : TrapsExplicit (Clif.linkEnvD (prog I) (leBase I B file).env F d) (prog I).bare cs :=
     htr
