@@ -1,6 +1,6 @@
 import FV.Backend.Proof.IselCtlCallTI
 import FV.Backend.Proof.IselTermFactsCallT
-import FV.Backend.Proof.PairsC
+import FV.Backend.Proof.IselCtlTermTI
 import FV.Backend.Proof.DriverCheckT
 
 /-!
@@ -96,7 +96,7 @@ def CallRulesCorrectTFP (p : Program) : Prop :=
 /-! ## Typed-context facts -/
 
 /-- The registers of the values of a float-capable context: vreg `x` of `x`'s class. -/
-theorem mapM_valueRegT {f : Clif.Function} {ctx : Ctx} (hctx : CallCtxT f ctx) :
+theorem mapM_valueRegC {f : Clif.Function} {ctx : Ctx} (hctx : CallCtxT f ctx) :
     ∀ {xs : List Nat} {rs : List Reg}, xs.mapM ctx.valueReg? = some rs →
       rs = xs.map fun x => Reg.vreg x (valClassOf ctx x)
   | [], rs, h => by simp at h; simp [h]
@@ -104,7 +104,7 @@ theorem mapM_valueRegT {f : Clif.Function} {ctx : Ctx} (hctx : CallCtxT f ctx) :
     simp only [List.mapM_cons, Option.bind_eq_bind, Option.bind_eq_some_iff, Option.pure_def,
       Option.some.injEq] at h
     obtain ⟨r, hr, rs', hrs, rfl⟩ := h
-    rw [hctx.valueReg x r hr, mapM_valueRegT hctx hrs]
+    rw [hctx.valueReg x r hr, mapM_valueRegC hctx hrs]
     rfl
 
 /-- The number of CLIF results of a `call` is its callee's number of returns. -/
@@ -176,14 +176,6 @@ theorem operands_call_symC (nm : String) (L : List (Nat × RegClass × Reg))
   simp only [MInst.visitOperands, StateT.run_bind, StateT.run_pure, except_ok_bind, mapM_fixedUseC,
     mapM_callDefsC]
   simp [bind, Except.bind, StateT.run, pure, StateT.pure, Except.pure]
-
-theorem filter_isUse_retOpsC (L : List (Nat × RegClass × Reg)) :
-    (retOpsC L).filter Operand.isUse = retOpsC L := by
-  rw [List.filter_eq_self]
-  intro o ho
-  simp only [retOpsC, List.mem_map] at ho
-  obtain ⟨q, -, rfl⟩ := ho
-  simp [Operand.isUse, Operand.isDef]
 
 theorem filter_isUse_callDefOpsC (D : List (Reg × Nat × RegClass)) :
     (callDefOpsC D).filter Operand.isUse = [] := by
@@ -331,20 +323,20 @@ theorem regsClasses_outRegsC (st : LState) (cs : List RegClass) :
     Option.map_some, Option.getD_some, Reg.homeCls]
   rw [show (fun x : RegClass × Nat => x.1) = Prod.fst from rfl, map_fst_zipIdx]
 
-theorem retRegsC_length : ∀ (cs : List RegClass) (nx nv : Nat) {ps : List Reg},
+theorem retRegsC_lengthC : ∀ (cs : List RegClass) (nx nv : Nat) {ps : List Reg},
     retRegsC cs nx nv = some ps → ps.length = cs.length
   | [], _, _, ps, h => by simp [retRegsC] at h; subst h; rfl
   | .int :: cs, nx, nv, ps, h => by
     simp only [retRegsC] at h
     split at h
     · obtain ⟨ps', h', rfl⟩ := Option.map_eq_some_iff.mp h
-      simp [retRegsC_length cs _ _ h']
+      simp [retRegsC_lengthC cs _ _ h']
     · cases h
   | .float :: cs, nx, nv, ps, h => by
     simp only [retRegsC] at h
     split at h
     · obtain ⟨ps', h', rfl⟩ := Option.map_eq_some_iff.mp h
-      simp [retRegsC_length cs _ _ h']
+      simp [retRegsC_lengthC cs _ _ h']
     · cases h
 
 theorem outDefsC_length (b : Nat) {ps : List Reg} {cs : List RegClass}
@@ -923,7 +915,7 @@ theorem call_bl_ruleOkTF {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop}
   isel_destruct; subst_vars
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
-  have hrs := mapM_valueRegT hctx ‹List.mapM ctx.valueReg? args = some _›
+  have hrs := mapM_valueRegC hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
   simp only [ctor_gen_call_args_genC _ _ _ (valClassOf ctx) hb hl,
     ctor_gen_call_info_gen _ _ _ _ _ _ _ hl,
@@ -932,7 +924,7 @@ theorem call_bl_ruleOkTF {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop}
   simp only [ctor_gen_call_info_gen _ _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
-  have hps := retRegsC_length _ _ _ ‹retRegsC _ 0 0 = some _›
+  have hps := retRegsC_lengthC _ _ _ ‹retRegsC _ 0 0 = some _›
   simp only [ctor_output_vec_iff] at *
   isel_destruct; subst_vars
   have h638 := ‹ApplyInternal _ _ _ _ 46 638 _ _ _ _›
@@ -1005,7 +997,7 @@ theorem call_got_ruleOkTF {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor ctx T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor ctx T.gen_call_args _ _ = _›
   have hbelow := mapM_valueReg_below hvb ‹List.mapM ctx.valueReg? args = some _›
-  have hrs := mapM_valueRegT hctx ‹List.mapM ctx.valueReg? args = some _›
+  have hrs := mapM_valueRegC hctx ‹List.mapM ctx.valueReg? args = some _›
   subst hrs
   simp only [ctor_gen_call_args_genC _ _ _ (valClassOf ctx) hb hl, mapM_single_map,
     Option.some.injEq, exists_eq_left'] at *
@@ -1016,7 +1008,7 @@ theorem call_got_ruleOkTF {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop
     ite_true,
     ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
-  have hps := retRegsC_length _ _ _ ‹retRegsC _ 0 0 = some _›
+  have hps := retRegsC_lengthC _ _ _ ‹retRegsC _ 0 0 = some _›
   simp only [ctor_output_vec_iff] at *
   isel_destruct; subst_vars
   have h639 := ‹ApplyInternal _ _ _ _ 46 639 _ _ _ _›

@@ -82,11 +82,15 @@ theorem callCtx_fCallStk : CallCtxT fCallStk (ctxStOf fCallStk).1 :=
 /-- `CtxInvT` types the arguments of a `call` as integers, so it fails on `fCallF`'s context. -/
 theorem not_ctxInvT_fCallF : ¬ CtxInvT fCallF (ctxStOf fCallF).1 := by
   intro h
-  have hi : (ctxStOf fCallF).1.insts[0]? = some (ctxStOf fCallF).1.insts[0]! := by native_decide
-  have hc : (ctxStOf fCallF).1.insts[0]!.clif = some (.call 0 [0, 1, 2]) := by native_decide
+  have hc0 : ((ctxStOf fCallF).1.insts[0]?.bind (·.clif)) = some (.call 0 [0, 1, 2]) := by
+    native_decide
   have ht : (ctxStOf fCallF).1.valueType? 0 = some (.float 64) := by native_decide
-  have := h.intOps 0 _ _ hi hc 0 (by simp [intArgs]) _ ht
-  revert this; decide
+  cases hi : (ctxStOf fCallF).1.insts[0]? with
+  | none => rw [hi] at hc0; cases hc0
+  | some info =>
+    rw [hi] at hc0
+    have := h.intOps 0 info _ hi hc0 0 (by simp [intArgs]) _ ht
+    simp [eCTys] at this
 
 /-- **The float `call` family applies to both contexts**: `CallCtxT` contexts whose instruction 0
 is a `call` of an extern with an `f64` parameter, and rule 1032 (`rule_lower_2518`) is a `call`
