@@ -123,7 +123,7 @@ theorem stmt_memtrap (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     have hty := hcons.2 q _ pv h64 (by rw [restrict_regs_of_mem hqA]; exact hpv')
     exact lo64_of_holds_i64 hh (ofClif_eq_int64 hty)
   rcases hcases with ⟨op, ty, q, x, hi, rfl⟩ | ⟨ty, q, e, x, hi, rfl⟩
-  · obtain ⟨lop, d, d1, d2, rfl⟩ := hshape.1 op ty fl q x hi
+  · obtain ⟨hety, lop, d, d1, d2, rfl⟩ := hshape.1 op ty fl q x hi
     rw [hi] at hacc
     cases hacc with
     | atomicRmw hpv =>
@@ -133,10 +133,10 @@ theorem stmt_memtrap (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       simp only [MInst.mapRegs, H.shape.ren.vreg] at hk0
       refine ⟨b, _, ρ, w, vb, _, _, ρ (gn q), [ρ (gn x)], ty.bytes, .refl _, hvb, hk0,
         operands_rmwLoop _ _ _ _ _ _ _ _, by simp [vuses, Operand.isUse], ?_, ?_⟩
-      · simp [loopTrap?, hfl, ofClif_bytes_eq]
+      · simp [loopTrap?, hfl, ofClif_bytes_eq, atomTy_ofClif hety]
       · exact ⟨_, by rw [haddr q (by simp [hi, memAddr?]) (by simp [hi, instArgs]) pv hpv,
           ofNat_effAddr0], hQa⟩
-  · obtain ⟨d, d1, rfl⟩ := hshape.2 ty fl q e x hi
+  · obtain ⟨hety, d, d1, rfl⟩ := hshape.2 ty fl q e x hi
     rw [hi] at hacc
     cases hacc with
     | atomicCas hpv =>
@@ -146,7 +146,7 @@ theorem stmt_memtrap (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       simp only [MInst.mapRegs, H.shape.ren.vreg] at hk0
       refine ⟨b, _, ρ, w, vb, _, _, ρ (gn q), [ρ (gn e), ρ (gn x)], ty.bytes, .refl _, hvb, hk0,
         operands_casLoop _ _ _ _ _ _ _, by simp [vuses, Operand.isUse], ?_, ?_⟩
-      · simp [loopTrap?, hfl, ofClif_bytes_eq]
+      · simp [loopTrap?, hfl, ofClif_bytes_eq, atomTy_ofClif hety]
       · exact ⟨_, by rw [haddr q (by simp [hi, memAddr?]) (by simp [hi, instArgs]) pv hpv,
           ofNat_effAddr0], hQa⟩
 
