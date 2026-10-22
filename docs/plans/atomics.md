@@ -464,7 +464,7 @@ they are; the per-thread layers are new files.
       `⟨0, 0, ρ₀, w₀⟩` (where layers 3 and 4a start), for functions whose parameters are all in
       registers (the entry code is one `Args`, without events; stack-argument loads are reads
       not yet covered). Witness: `isel_refines_entry_fA` (`fA_reg`).
-    * open: the composition with layers 3, 4a, 4b.
+    * the composition with layers 3, 4a, 4b: see *Composition* below.
 
   Outside the multi-threaded scope (no `CStep`, or two VCode events per CLIF event): `i128`
   loads/stores (two `ldr`/`str`, a mixed-size question, T2i #317) and `stack_load`/
@@ -547,6 +547,23 @@ they are; the per-thread layers are new files.
   * the canonical run (`cEvs`) and the allocated instruction's run access the same bytes: the
     per-instruction proofs (`OperandsSound`) give whole-state results only, so this needs either
     event-level versions of them or an argument from `OperandsSound` on every memory.
+* **Composition (done, `FV/Concurrency/ThreadCompose.lean`).** Layers 3 and 4a are exported as
+  `Thin` traces (`PrepThread.prep_thin`, `prep_thin_csem`, `AllocThread.alloc_thin`); layers 2
+  and 4b refine a *prefix* of their target (up to where the source stops), so composing needs
+  truncation: `Thin.trans`, `Thin.take` (a prefix of the source is `Thin` to a prefix of the
+  target, the whole one for the whole source), `Refines.take` (a prefix of the source refines
+  the target cut before the first image of a dropped source event, when target steps have at
+  most one event: Arm steps, `prun_len`), `Refines.congr`.
+  * **`isel_alloc_refines`** (layers 2, 3, 4a): a run of the allocated code from the entry
+    (`MTRun` under `csem`/`cEvs`) is realized up to `Stop` by a `CRun`, `Refines Maps`, no
+    private location. Witness (`ThreadComposeWitness.lean`): `isel_alloc_refines_fA` on the atomics
+    function as compiled (`prepare`, the spill allocation `spillAlloc`, both accepted).
+  * **`arm_isel_refines`** (all layers): given layer 4b's run-level refinement of a precise Arm
+    run from the allocated code's entry configuration (`refines_of_itemSim`'s form; `q_init`
+    gives that configuration, `MConf.init`), the Arm run (a prefix of it: up to the allocated
+    code's `Done` or the CLIF thread's `Stop`) realizes a `CRun`,
+    `Refines Maps (PrivA R) (MonPair …)`; `csemV_none`: without GOT-pinned calls the
+    activation's semantics is `csem`.
 * **Backward from forward.** The layers are forward per-step simulations; `Refines` is
   backward (from the actual Arm trace to a CLIF run). The bridge is determinism of each level
   given its read values (receptiveness): the source run is the one reading the target's values

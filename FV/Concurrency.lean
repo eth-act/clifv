@@ -108,3 +108,5 @@ import FV.Concurrency.IselMemMain
 import FV.Concurrency.IselRefines
 import FV.Concurrency.IselEntry
 import FV.Concurrency.IselRefinesWitness
+import FV.Concurrency.ThreadCompose
+import FV.Concurrency.ThreadComposeWitness
