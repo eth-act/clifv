@@ -766,4 +766,165 @@ theorem rmw_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmSta
     rw [hseg1, List.append_assoc]
     exact img_pair hpos hF.pre rfl rfl hsh (T := []) (by simp)
 
+/-! ## The `atomic_cas` loop on the machine -/
+
+theorem condHolds_w_pc (c : BitVec 4) (v : BitVec 64) (s : ArmState) :
+    Arm.ConditionHolds c (Arm.w .PC v s) = Arm.ConditionHolds c s := by
+  exact SameWorld.conditionHolds (SameWorld.w_left (F := fun _ => False) (by simp [Masked])
+    (SameWorld.refl _ s)) c
+
+/-- An unhooked line without memory kind: no event, no store exclusive. -/
+theorem line_noEv {R : RL} (hR : R.Wf) {j : Nat} {x : Insn} {tc : Option Clif.TrapCode}
+    (hj : R.L[j]? = some (.ins x tc)) (hh : x.hooked = false) (hk : insnKind x = none) {u : ArmState}
+    (hprog : u.program = R.fb.program R.base) (hpc : Arm.r .PC u = R.pcOf j)
+    (herr : Arm.r .ERR u = .None) : stepEvs u = [] ∧ NoStx u := by
+  obtain ⟨a, ha, -, hev, hdec⟩ := stepEvs_line (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj hh hprog
+    hpc herr
+  refine ⟨by rw [hev]; exact VCodeEvents.instEvs_none ha hk _, fun rel rs rn h => ?_⟩
+  rw [cls_of_decode hdec, clsOf_none ha hk] at h
+  cases h
+
+set_option maxHeartbeats 1000000 in
+/-- **The `atomic_cas` loop on the machine**, from a state at its `ldaxr` (line `j0 + 1`): the
+`ldaxr` reads at x25, the `cmp` and the `b.ne` have no event and no store exclusive; the `b.ne`
+leaves the loop (to the line after it, `j0 + 7`) when `ne` holds, else goes to the `stlxr`, which
+writes x28's low bytes at x25 with status register w24; after it, the `cbnz` falls through on
+success and goes back to the loop label on failure. -/
+theorem cas_steps {R : RL} (hR : R.Wf) {ty : CTy} (hty : AtomTy ty) {fl : Clif.MemFlags}
+    {j0 n : Nat} {X : List Line}
+    (hdrop : R.L.drop j0 = casLoopLines ty.bits fl (.loop n) (.loop (n + 1)) ++ X)
+    {t : ArmState} (hprog : t.program = R.fb.program R.base) (hpc : Arm.r .PC t = R.pcOf (j0 + 1))
+    (herr : Arm.r .ERR t = .None) :
+    ∃ s1, execLines (R.envOf (j0 + 1)) (casLoopHead ty.bits fl) t = some s1 ∧
+      iterN R.step 2 t = s1 ∧
+      (stepEvs t = [⟨.acqXR, Arm.r (.GPR 25#5) t, ty.bytes,
+        readM ty.bytes (Arm.r (.GPR 25#5) t) t.mem⟩] ∧ NoStx t) ∧
+      (stepEvs (R.step t) = [] ∧ NoStx (R.step t)) ∧ (stepEvs s1 = [] ∧ NoStx s1) ∧
+      R.step s1 = Arm.w .PC (if Arm.ConditionHolds Cond.ne.bits s1 then R.pcOf (j0 + 7)
+        else R.pcOf (j0 + 4)) s1 ∧
+      (Arm.ConditionHolds Cond.ne.bits s1 = false →
+        ∃ s3, execLines (R.envOf (j0 + 4)) (casStore ty.bits fl) (Arm.w .PC (R.pcOf (j0 + 4)) s1) = some s3 ∧
+          R.step (Arm.w .PC (R.pcOf (j0 + 4)) s1) = s3 ∧
+          stepEvs (Arm.w .PC (R.pcOf (j0 + 4)) s1) =
+            [⟨.relXW, Arm.r (.GPR 25#5) s1, ty.bytes, (Arm.r (.GPR 28#5) s1).setWidth (ty.bytes * 8)⟩] ∧
+          cls (Arm.w .PC (R.pcOf (j0 + 4)) s1) = .stx true 24#5 25#5 ∧
+          stepEvs s3 = [] ∧ NoStx s3 ∧ R.step s3 = Arm.w .PC (R.pcOf (j0 + 7)) s3 ∧
+          stepEvs (failState 24#5 (Arm.w .PC (R.pcOf (j0 + 4)) s1)) = [] ∧
+          NoStx (failState 24#5 (Arm.w .PC (R.pcOf (j0 + 4)) s1)) ∧
+          R.step (failState 24#5 (Arm.w .PC (R.pcOf (j0 + 4)) s1)) =
+            Arm.w .PC (R.pcOf j0) (failState 24#5 (Arm.w .PC (R.pcOf (j0 + 4)) s1))) := by
+  have hat : ∀ q ln, (casLoopLines ty.bits fl (.loop n) (.loop (n + 1)))[q]? = some ln →
+      R.L[j0 + q]? = some ln := lines_at' hdrop
+  have hL0 : R.L[j0]? = some (.label (.loop n)) := hat 0 _ rfl
+  have hL3 : R.L[j0 + 3]? = some (.ins (.bcond .ne (.loop (n + 1))) none) := hat 3 _ rfl
+  have hL4 : R.L[j0 + 4]? = some (.ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode) :=
+    hat 4 _ rfl
+  have hL5 : R.L[j0 + 5]? = some (.ins (.cbz true true (.x 24) (.loop n)) none) := hat 5 _ rfl
+  have hL6 : R.L[j0 + 6]? = some (.label (.loop (n + 1))) := hat 6 _ rfl
+  have hp76 : R.pcOf (j0 + 7) = R.pcOf (j0 + 6) := RL.pcOf_succ_label hL6
+  have hd1 : R.L.drop (j0 + 1) = casLoopHead ty.bits fl ++
+      (.ins (.bcond .ne (.loop (n + 1))) none :: .ins (.stlxr ty.bits (.x 24) (.x 28) (.x 25)) fl.trapCode ::
+        .ins (.cbz true true (.x 24) (.loop n)) none :: .label (.loop (n + 1)) :: X) := by
+    rw [← List.drop_drop, hdrop]; simp [casLoopLines, casLoopHead]
+  have hd4 : R.L.drop (j0 + 4) = casStore ty.bits fl ++
+      (.ins (.cbz true true (.x 24) (.loop n)) none :: .label (.loop (n + 1)) :: X) := by
+    rw [← List.drop_drop, hdrop]; simp [casLoopLines, casLoopHead, casStore]
+  obtain ⟨s1, hrun1, hint1, -, hfr1, hmem1, hprog1, -⟩ := casHead_spec hty fl (R.envOf (j0 + 1)) t herr
+  obtain ⟨hit1, hpcs1, -, -⟩ := run_ins hR hd1 (casHead_ins _ fl) hprog hpc herr hint1 hrun1
+  simp only [casLoopHead, List.length_cons, List.length_nil] at hit1 hpcs1
+  have hhook : ∀ i tc, Line.ins i tc ∈ casLoopHead ty.bits fl → i.hooked = false := fun i tc h => by
+    obtain ⟨i', t', e, hh⟩ := casHead_ins _ fl _ h; cases e; exact hh
+  have hst : ∀ i < (casLoopHead ty.bits fl).length, ∃ x tc a,
+      (casLoopHead ty.bits fl)[i]? = some (.ins x tc) ∧ x.toArmInst (R.envOf (j0 + 1 + i)) = .ok a ∧
+      decodeAt (iterN R.step i t) = some a ∧ stepEvs (iterN R.step i t) = instEvs a (iterN R.step i t) ∧
+      iterN R.step (i + 1) t = exec_inst a (iterN R.step i t) :=
+    step_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit (lines_at' hd1) hhook hprog hpc herr
+      hint1 hrun1
+  -- the `ldaxr`
+  obtain ⟨x0, tc0, a0, hl0, ha0, hdec0, hev0, -⟩ := hst 0 (by simp [casLoopHead])
+  simp only [casLoopHead, List.getElem?_cons_zero, Option.some.injEq, Line.ins.injEq] at hl0
+  obtain ⟨rfl, rfl⟩ := hl0
+  have hread : stepEvs t = [⟨.acqXR, Arm.r (.GPR 25#5) t, ty.bytes,
+      readM ty.bytes (Arm.r (.GPR 25#5) t) t.mem⟩] ∧ NoStx t := by
+    refine ⟨hev0.trans (ldaxr_one hty ha0 t), fun rel rs rn h => ?_⟩
+    obtain ⟨sz, hsz⟩ := ldaxr_cls hty ha0
+    rw [cls_of_decode (s := t) hdec0, hsz] at h
+    cases h
+  -- the `cmp`
+  obtain ⟨x1, tc1, a1, hl1, ha1, hdec1, hev1, -⟩ := hst 1 (by simp [casLoopHead])
+  simp only [casLoopHead, List.getElem?_cons_succ, List.getElem?_cons_zero, Option.some.injEq,
+    Line.ins.injEq] at hl1
+  obtain ⟨rfl, rfl⟩ := hl1
+  have hcmp : stepEvs (R.step t) = [] ∧ NoStx (R.step t) := by
+    refine ⟨hev1.trans (VCodeEvents.instEvs_none ha1 (insnKind_casLoopCmp _) _), fun rel rs rn h => ?_⟩
+    rw [cls_of_decode (s := R.step t) hdec1, clsOf_none ha1 (insnKind_casLoopCmp _)] at h
+    cases h
+  -- the `b.ne`
+  have herr1 : Arm.r .ERR s1 = .None := by
+    rw [hfr1 .ERR (by simp) (by simp) (by simp)]; exact herr
+  have hprog1' : s1.program = R.fb.program R.base := by rw [hprog1, hprog]
+  have hpc3 : Arm.r .PC s1 = R.pcOf (j0 + 3) := by rw [hpcs1]
+  have hbne := line_noEv hR hL3 rfl rfl hprog1' hpc3 herr1
+  obtain ⟨ab, jb, hab, hjb, hstepb⟩ := step_branch hR hL3 (.inr (.inl ⟨.ne, rfl⟩)) (by simp) hprog1'
+    hpc3 herr1
+  rw [brCond_bcond hab, pcOf_label_eq hR hjb hL6, ← hp76] at hstepb
+  refine ⟨s1, hrun1, hit1, hread, hcmp, hbne, hstepb, fun hne => ?_⟩
+  -- the `stlxr`
+  generalize hz : Arm.w .PC (R.pcOf (j0 + 4)) s1 = z
+  have herrz : Arm.r .ERR z = .None := by rw [← hz, Arm.r_of_w_different (by simp)]; exact herr1
+  have hprogz : z.program = R.fb.program R.base := by rw [← hz, Arm.w_program]; exact hprog1'
+  have hpcz : Arm.r .PC z = R.pcOf (j0 + 4) := by rw [← hz, Arm.r_of_w_same]
+  obtain ⟨s3, hrun3, h24, -, -, hprog3⟩ := stlxr_spec hty fl (R.envOf (j0 + 4)) z herrz
+  have hint3 : LinesInterOk (R.envOf (j0 + 4)) (casStore ty.bits fl) z :=
+    fun q h0 h1 => by simp [casStore] at h1; omega
+  obtain ⟨hit3, hpcs3, -, -⟩ := run_ins hR hd4 (by simp [casStore, Insn.hooked]) hprogz hpcz herrz hint3
+    hrun3
+  simp only [casStore, List.length_cons, List.length_nil, Nat.zero_add] at hit3 hpcs3
+  have hseg : (segEvs R.step (casStore ty.bits fl).length z).flatten =
+      linesEvs (R.envOf (j0 + 4)) (casStore ty.bits fl) z :=
+    segEvs_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit _ (j0 + 4) z s3 (lines_at' hd4)
+      (by simp [casStore, Insn.hooked]) hprogz hpcz herrz hint3 hrun3
+  rw [casStore_evsEq hty fl] at hseg
+  simp only [casStore, List.length_cons, List.length_nil, Nat.zero_add, segEvs_one, List.flatten_cons,
+    List.flatten_nil, List.append_nil] at hseg
+  obtain ⟨as, has, -, -, hdecs⟩ := stepEvs_line (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hL4 rfl
+    hprogz hpcz herrz
+  have h25z : Arm.r (.GPR 25#5) z = Arm.r (.GPR 25#5) s1 := by
+    rw [← hz, Arm.r_of_w_different (by simp)]
+  have h28z : Arm.r (.GPR 28#5) z = Arm.r (.GPR 28#5) s1 := by
+    rw [← hz, Arm.r_of_w_different (by simp)]
+  rw [h25z, h28z] at hseg
+  -- the `cbnz` after a success, after a failure
+  have herr3 : Arm.r .ERR s3 = .None := by
+    have := stlxr_spec hty fl (R.envOf (j0 + 4)) z herrz
+    obtain ⟨s3', h3', -, hfr3, -, -⟩ := this
+    rw [hrun3] at h3'; cases h3'
+    rw [hfr3 .ERR (by simp) (by simp)]; exact herrz
+  have hprog3' : s3.program = R.fb.program R.base := by rw [hprog3, hprogz]
+  have hpc5 : Arm.r .PC s3 = R.pcOf (j0 + 5) := by rw [hpcs3]
+  obtain ⟨hevc, hnsc⟩ := cbz_noEv hR hL5 hprog3' hpc5 herr3
+  obtain ⟨ac, jc, hac, -, hstepc⟩ := step_branch hR hL5 (.inr (.inr (.inl ⟨true, true, .x 24, rfl⟩)))
+    (by simp) hprog3' hpc5 herr3
+  have hbr : brCond ac s3 = false := by
+    rw [brCond_cbz (by decide) hac]; simp [rnum, h24]
+  rw [hbr] at hstepc
+  simp only [Bool.false_eq_true, ite_false, show j0 + 5 + 1 = j0 + 6 from rfl, ← hp76] at hstepc
+  have hpcf : Arm.r .PC (failState 24#5 z) = R.pcOf (j0 + 5) := by
+    rw [pc_failState, hpcz, show j0 + 5 = (j0 + 4) + 1 from rfl, RL.pcOf_succ_ins hL4]
+  have herrf : Arm.r .ERR (failState 24#5 z) = .None := by
+    rw [r_failState _ _ _ (by simp) (by simp)]; exact herrz
+  have hprogf : (failState 24#5 z).program = R.fb.program R.base := by
+    rw [prog_failState, hprogz]
+  obtain ⟨hevf, hnsf⟩ := cbz_noEv hR hL5 hprogf hpcf herrf
+  obtain ⟨af, jf, haf, hjf, hstepf⟩ := step_branch hR hL5 (.inr (.inr (.inl ⟨true, true, .x 24, rfl⟩)))
+    (by simp) hprogf hpcf herrf
+  have hbrf : brCond af (failState 24#5 z) = true := by
+    rw [brCond_cbz (by decide) haf]
+    have := x24_failState z
+    simp [rnum, this]
+  simp only [hbrf, ite_true] at hstepf
+  rw [pcOf_label_eq hR hjf hL0] at hstepf
+  refine ⟨s3, hrun3, by rw [← hit3]; rfl, hseg, ?_, hevc, hnsc, hstepc, hevf, hnsf, hstepf⟩
+  rw [cls_of_decode hdecs, stlxr_cls hty (.inr rfl) has]
+
 end Concurrency.ArmAllocThread
