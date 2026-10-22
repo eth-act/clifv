@@ -473,6 +473,9 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.WitnessMP.priv_disj -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.WitnessMP.realizes_mp -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.WitnessMP.mp_reads -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.Compiled.toB
+#print axioms Concurrency.RealizeCompiled.thread_compiledB
+#print axioms Concurrency.RealizeCompiled.realizes_compiledB
 
 -- T2 (#311): layer 4b calls, the linking induction (callee events through the callee's refinement)
 #print axioms Concurrency.CallCompose.XClosed.append
