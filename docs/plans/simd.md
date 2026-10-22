@@ -164,6 +164,24 @@ ABI: Cranelift's aarch64 `compute_arg_locs` places 64/128-bit vectors like float
 then 16-byte aligned stack slots); `argLocsC`/`retRegsC` (S11e2) are class-based, so a vector
 is a `.float`-class argument of 16 bytes.
 
+**Route taken for the measured functions (S12e, 2026-10-22): retyping + `i128` legalisation.**
+The 9 measured functions only move 128-bit vectors from memory to memory (§1), so they need
+neither `q` registers nor the 16-byte FP contracts above. `Opt.Retype` (`FV/Opt/Retype.lean`)
+rewrites each plain `load`/`store` at a type of a `TyMap σ` (for S12: the 128-bit vector shapes,
+`vec128`) to the access at a type of the same width (`i128`), on the domain `okB σ f`: each
+retyped load defines one value, read only as the stored value of retyped stores (not by any
+other statement, terminator or block parameter). The retyped function is then the input of the
+existing, proven `i128` legalisation (two `i64` accesses per 16-byte access) and backend.
+Theorems: `Opt.Retype.retype_simX` (`FunSimX f (retype σ f)` on `okB`, `call_indirect` and
+`try_call` included; the registers agree outside the retyped values and hold the same bits at
+the other type there), and `E2E.backend_correct_retype_legal_wide{,_cleanup}` /
+`…_retype_legal_opt_wide{,_cleanup}` (`FV/E2E/RetypeLegal.lean`: the Arm code of the
+legalisation `g` of `retype σ f` refines the run of `f`, by `retype_simX` lifted to the program
+run, composed with `backend_correct_legal_wide`/`_opt_wide`). Witnesses:
+`Opt.Retype.Witness.copyF_sim` (a function the retyping changes), `E2E.LinkWitness.a2_retype_legal_wide`.
+The `q`-register lowering of this section stays the route for vectors in registers (parameters,
+returns, `bitcast`), when a measured function needs it.
+
 ## 6. Proof plan
 
 The statements of `E2E.backend_correct_final*`, `Link.compileExe_correct*`,
@@ -195,8 +213,9 @@ vector loads, a slot store, a shim call, a reload, a store); compiler theorems p
 | S12b | **done**: `FV/Clif/Vector.lean`: `VShape`, `Vec.lane`/`setLane`/`byte`/`bitcastLE`; `lane_setLane_same`, `lane_setLane_ne`, `ext_lane`, `byte_lane`, `byte_bitcastLE`, `bitcastLE_bitcastLE` + witnesses | — | 216 lines, 1 new module (no importers yet) |
 | S12c | **done**: Arm co-simulation of the unchecked Advanced SIMD forms (section 3), 17 forms, 0 failures, no FV/Arm change | — | 60 lines in `FVTest/Arm/Cosim` |
 | S12d | `Clif.Ty.vec`, explicit `isFloat`, `isVec`; parser/printer (`i64x2`, `vconst` literals for runtests); `Clif.run` data movement (`load`, `store`, params, returns, calls, block params, `select`, `bitcast`); integer/float premises where vectors make statements false | floats Stage C slice 8 (scope widening) merged | like S11b (#264: 155 files, +2045/−742) |
-| S12e | Backend: closure gets `rule_lower_2633`/`2754` (+ 64-bit vectors through `2628`/`2750`), 16-byte memory refinement, typed value map with vector types, ABI with vector arguments/returns, 16-byte program accesses in the lockstep/guarded/link proofs | S12d, S11f merged | like S11e4 + S11e5 slice 4 (~5000 lines) |
-| S12f | Scope widening under new names, totality, end to end: `lean-e2e-check`, `cargo fv test --lean-link --verified` on fv-demo/survey/deps with fallback counts before → after (deps SIMD 9 → 0), docs | S12e | ~1500 lines |
+| S12e | **done (theorems)**: `Opt.Retype` + `retype_simX`, `E2E.backend_correct_retype_legal_wide*` (§5, "Route taken"); then `lean-backend` retypes the `vec128` accesses before the `i128` legalisation (needs S12d) | S12d for the wiring | ~900 lines |
+| S12f | `lean-link`: the input's functions retyped before legalisation under new theorem names (`FnInput.func` keeps its meaning), totality, end to end: `lean-e2e-check`, `cargo fv test --lean-link --verified` on fv-demo/survey/deps with fallback counts before → after (deps SIMD 9 → 0), docs | S12e | ~1500 lines |
+| S12e′ (if measured) | vectors in registers: closure gets `rule_lower_2633`/`2754` (+ 64-bit vectors through `2628`/`2750`), 16-byte memory refinement, typed value map with vector types, ABI with vector arguments/returns | S12d, a measured need | like S11e4 + S11e5 slice 4 (~5000 lines) |
 | S12g (if measured) | `bitcast` `i128` ↔ vector: `MInst.movToVec` (`ins`), encoder, `rule_lower_2784`/`2789` | S12e | ~800 lines |
 | phase B | lane semantics and arithmetic (section 1, item 2) | a measured need | DEFERRED |
 
