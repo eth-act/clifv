@@ -618,3 +618,11 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallThread.Witness.armStepX_program
 #print axioms Concurrency.CallThread.Witness.noStxL -- witness: native_decide
 #print axioms Concurrency.CallThread.Witness.funReal_load -- witness: native_decide
+-- T2m (#311): Wf with rmw over events; the compiled atomic_rmw witness
+#print axioms Concurrency.RealizeCompiled.wf_rmw
+#print axioms Concurrency.RealizeCompiled.WitnessR.compiled_ofR -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessR.run_rmw -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessR.posE
+#print axioms Concurrency.RealizeCompiled.WitnessR.realizes_pair
+#print axioms Concurrency.RealizeCompiled.WitnessR.rmw_full
+#print axioms Concurrency.RealizeCompiled.WitnessR.realizes_rmw -- witness: native_decide

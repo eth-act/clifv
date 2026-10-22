@@ -388,4 +388,276 @@ theorem run_rmw : ∃ (n : Nat) (lsP : List Lab) (eR eW : Ev) (t' : ArmState × 
   exact ⟨n', ls1 ++ ls2, _, _, _, fun env p => compiled_ofR hq hA env p, hr, rfl, rfl, ha, ha,
     rfl, rfl, hevP⟩
 
+/-! ## One compiled thread, a private prefix and an exclusive pair -/
+
+/-- The Arm trace shape: a prefix, the `ldaxr`'s read, `M` steps without events, the `stlxr`'s
+write. -/
+abbrev pairLs (lsP : List Lab) (eR eW : Ev) (M : Nat) : List Lab :=
+  lsP ++ (⟨[eR], false⟩ :: (List.replicate M ⟨[], false⟩ ++ [⟨[eW], false⟩]))
+
+/-- The `rmw` of the realized prefix: its monitor pairs. -/
+def rmwP (ls : List Lab) (k : Nat) (a b : PEv) : Prop :=
+  ∃ j kk j' kk', a = .thr 0 j kk ∧ b = .thr 0 j' kk' ∧ MonPair (evTr (ls.take k)) (j, kk) (j', kk')
+
+theorem evAt_take_some {ls : List Lab} {k : Nat} {p : Nat × Nat} {x : Ev}
+    (h : evAt (evTr (ls.take k)) p = some x) : evAt (evTr ls) p = some x := by
+  rw [evTr_take] at h
+  simp only [evAt, List.getElem?_take] at h ⊢
+  split at h
+  · exact h
+  · simp at h
+
+theorem evAt_single_some {e x : Ev} {kk : Nat} (h : ([e] : List Ev)[kk]? = some x) :
+    kk = 0 ∧ x = e := by
+  cases kk with
+  | zero => simp at h; exact ⟨rfl, h.symm⟩
+  | succ kk => simp at h
+
+/-- The events of the pair's part of the trace: the read at its first step, the write at its
+last. -/
+theorem posE {lsP : List Lab} {eR eW : Ev} {M j kk : Nat} {x : Ev}
+    (h : evAt (evTr (pairLs lsP eR eW M)) (j, kk) = some x) (hj : lsP.length ≤ j) :
+    (j = lsP.length ∧ kk = 0 ∧ x = eR) ∨ (j = lsP.length + M + 1 ∧ kk = 0 ∧ x = eW) := by
+  rw [evTr_append, evAt_append_ge _ _ (by simpa [evTr_length] using hj)] at h
+  simp only [evTr_length] at h
+  obtain ⟨d, rfl⟩ : ∃ d, j = lsP.length + d := ⟨j - lsP.length, by omega⟩
+  simp only [Nat.add_sub_cancel_left] at h
+  rcases d with _ | d
+  · simp only [evAt, evTr, List.map_cons, List.getElem?_cons_zero, Option.bind_some] at h
+    obtain ⟨rfl, rfl⟩ := evAt_single_some h
+    exact .inl ⟨rfl, rfl, rfl⟩
+  · simp only [evAt, evTr, List.map_cons, List.getElem?_cons_succ, List.map_append,
+      List.map_replicate, List.map_cons, List.map_nil] at h
+    rcases Nat.lt_trichotomy d M with hd | rfl | hd
+    · rw [List.getElem?_append_left (by simpa using hd), List.getElem?_replicate] at h
+      simp [hd] at h
+    · rw [List.getElem?_append_right (by simp)] at h
+      simp only [List.length_replicate, Nat.sub_self, List.getElem?_cons_zero, Option.bind_some] at h
+      obtain ⟨rfl, rfl⟩ := evAt_single_some h
+      exact .inr ⟨by omega, rfl, rfl⟩
+    · rw [List.getElem?_append_right (by simp; omega)] at h
+      simp only [List.length_replicate] at h
+      rw [List.getElem?_eq_none (by simp; omega)] at h
+      cases h
+
+theorem posP {lsP : List Lab} {eR eW : Ev} {M j kk : Nat} {x : Ev}
+    (h : evAt (evTr (pairLs lsP eR eW M)) (j, kk) = some x) (hj : j < lsP.length) :
+    ∃ l ∈ lsP, x ∈ l.evs := by
+  rw [evTr_append, evAt_append_lt _ _ (by simpa [evTr_length] using hj)] at h
+  exact evAt_evTr_mem h
+
+theorem evAt_PA1 (RA : Backend.Proof.RL) (sA : ArmState) (ls : List Lab) (k j kk : Nat) :
+    (PA1 RA sA ls k).evAt (.thr 0 j kk) = (evAt (evTr (ls.take k)) (j, kk)).map convEv := by
+  simp only [Traces.evAt, PA1, show (0 : Nat) < 1 from by decide, ite_true]
+  exact evAt_conv (evTr (ls.take k)) (j, kk)
+
+/-- **`Realizes` for one compiled thread whose run is private plain accesses, then an exclusive
+pair**: an `acqXR` read, steps without events, and an `relXW` write of the same bytes. Every
+execution of the realized prefix with the initial locations `locs1` (the pair's first), reads from
+the latest earlier write and the prefix's monitor pairs as `rmw` (`rmwP`) is `Realizes`d by a
+CLIF thread from `cs`, for every initial memory. -/
+theorem realizes_pair {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
+    (hc : ∀ env p, CompiledLS env p RA cs sA) {lsP : List Lab} {eR eW : Ev} {M : Nat}
+    {t' : ArmState × Mon}
+    (hr : PRun Policy.arm RA.step (OkPriv RA) (sA, none) (pairLs lsP eR eW M) t')
+    (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RA e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR))
+    (hkR : eR.k = .acqXR) (hkW : eW.k = .relXW) (ha : eW.addr = eR.addr) (hn : eW.n = eR.n)
+    (env : Clif.Env) (p : Clif.Program) (M0 : Bytes) :
+    ∃ k ≤ (pairLs lsP eR eW M).length, ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv),
+      PC.n = 1 ∧ PC.st 0 0 = .run cs ∧ PC.Runs (CStep env p) ∧
+      Realizes (PA1 RA sA (pairLs lsP eR eW M) k) (locs1 lsP eR) M0
+        (latestW (PA1 RA sA (pairLs lsP eR eW M) k) (locs1 lsP eR))
+        (coL (PA1 RA sA (pairLs lsP eR eW M) k) (locs1 lsP eR)) (rmwP (pairLs lsP eR eW M) k)
+        PC [(eR.addr.toNat, eR.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨k, hk, hR⟩ := realizes_compiledLS (n := 1) (env := env) (p := p) (RA := fun _ => RA)
+    (cs := fun _ => cs) (sA := fun _ => sA) (fun _ _ => hc env p)
+    (mon := fun _ => none) (ls := fun _ => pairLs lsP eR eW M) (t' := fun _ => t')
+    (fun _ _ => hr)
+  let ls := pairLs lsP eR eW M
+  -- the events of the run
+  have hevs : ∀ l ∈ ls, ∀ e' ∈ l.evs, e' = eR ∨ e' = eW ∨
+      (∃ q : Nat, ((lsP.flatMap (·.evs)).map fun e : Ev => (e.addr.toNat, e.n))[q]? =
+        some (e'.addr.toNat, e'.n)) ∧ PrivA RA e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR) := by
+    intro l hl e' he'
+    rcases List.mem_append.mp hl with hl | hl
+    · refine .inr (.inr ⟨?_, hevP l hl e' he'⟩)
+      obtain ⟨q, hq⟩ := List.mem_iff_getElem?.mp
+        (List.mem_map_of_mem (f := fun e : Ev => (e.addr.toNat, e.n))
+          (List.mem_flatMap.mpr ⟨l, hl, he'⟩))
+      exact ⟨q, hq⟩
+    · simp only [List.mem_cons, List.mem_append, List.mem_replicate, List.mem_singleton,
+        List.not_mem_nil, or_false] at hl
+      rcases hl with rfl | ⟨-, rfl⟩ | rfl
+      · exact .inl (List.mem_singleton.mp he')
+      · cases he'
+      · exact .inr (.inl (List.mem_singleton.mp he'))
+  let P := PA1 RA sA ls (k 0)
+  have hev : ∀ j kk x, P.evAt (.thr 0 j kk) = some x →
+      ∃ l ∈ ls, ∃ e' ∈ l.evs, x = ProgE2E.convEv e' := by
+    intro j kk x hx
+    simp only [Traces.evAt, P, PA1, show (0 : Nat) < 1 from by decide, ite_true] at hx
+    obtain ⟨l, hl, e', he', rfl⟩ := evAt_conv_mem (p := (j, kk)) hx
+    exact ⟨l, List.mem_of_mem_take hl, e', he', rfl⟩
+  have hwf0 := wf_single (P := P) (locs := locs1 lsP eR) rfl
+    (take_len_le hr (k 0)) (fun r hr' => by
+      cases r with
+      | init q =>
+        simp only [X0, Traces.exec] at hr'
+        split at hr' <;> cases hr'
+      | thr i j kk =>
+        simp only [X0, Traces.exec] at hr' ⊢
+        split at hr'
+        · rename_i x hx
+          have hi : i = 0 := by
+            simp only [Traces.evAt, P, PA1] at hx
+            split at hx
+            · omega
+            · cases hx
+          subst hi
+          obtain ⟨l, hl, e', he', rfl⟩ := hev j kk x hx
+          rcases hevs l hl e' he' with rfl | rfl | ⟨⟨q, hq⟩, -⟩
+          · refine ⟨.init 0, by simp [locs1], ?_, trivial⟩
+            simp [hx, locs1, ProgE2E.convEv]
+          · simp [ProgE2E.convEv, hkW] at hr'
+            exact absurd hr' (by decide)
+          · have hq' : q + 1 < (locs1 lsP eR).length := by
+              have := (List.getElem?_eq_some_iff.mp hq).1
+              simp only [locs1, List.length_cons]; omega
+            refine ⟨.init (q + 1), by simp only [hq', ite_true], ?_, trivial⟩
+            simp only [hx, locs1, List.getElem?_cons_succ, hq, Option.getD_some, ProgE2E.convEv]
+        · cases hr')
+  -- the monitor pairs of the prefix: the `ldaxr`'s read and the `stlxr`'s write
+  have hexR : ∀ j kk x, evAt (evTr (ls.take (k 0))) (j, kk) = some x → x.k = .acqXR →
+      j = lsP.length ∧ kk = 0 ∧ x = eR := by
+    intro j kk x hx hk'
+    have hx' := evAt_take_some hx
+    by_cases hj : j < lsP.length
+    · obtain ⟨l, hl, hxl⟩ := posP hx' hj
+      rcases (hevP l hl x hxl).2 with h | h <;> rw [h] at hk' <;> cases hk'
+    · rcases posE hx' (by omega) with h | ⟨-, -, rfl⟩
+      · exact h
+      · rw [hkW] at hk'; cases hk'
+  have hexW : ∀ j kk x, evAt (evTr (ls.take (k 0))) (j, kk) = some x → x.k = .relXW →
+      j = lsP.length + M + 1 ∧ kk = 0 ∧ x = eW := by
+    intro j kk x hx hk'
+    have hx' := evAt_take_some hx
+    by_cases hj : j < lsP.length
+    · obtain ⟨l, hl, hxl⟩ := posP hx' hj
+      rcases (hevP l hl x hxl).2 with h | h <;> rw [h] at hk' <;> cases hk'
+    · rcases posE hx' (by omega) with ⟨-, -, rfl⟩ | h
+      · rw [hkR] at hk'; cases hk'
+      · exact h
+  have hdirS : ∀ j kk x, evAt (evTr (ls.take (k 0))) (j, kk) = some x →
+      (X0 P (locs1 lsP eR)).dir (.thr 0 j kk) = x.k.dir ∧
+      (X0 P (locs1 lsP eR)).loc (.thr 0 j kk) = x.addr.toNat := by
+    intro j kk x hx
+    have e := evAt_PA1 RA sA ls (k 0) j kk
+    rw [hx] at e
+    simp only [X0, Traces.exec]
+    rw [show P.evAt (.thr 0 j kk) = some (convEv x) from e]
+    exact ⟨rfl, rfl⟩
+  have hnone : ∀ j kk, evAt (evTr (ls.take (k 0))) (j, kk) = none →
+      (X0 P (locs1 lsP eR)).dir (.thr 0 j kk) = .F ∧ ¬ (X0 P (locs1 lsP eR)).ev (.thr 0 j kk) := by
+    intro j kk hx
+    have e := evAt_PA1 RA sA ls (k 0) j kk
+    rw [hx] at e
+    simp only [X0, Traces.exec]
+    rw [show P.evAt (.thr 0 j kk) = none from e]
+    exact ⟨rfl, by simp⟩
+  have hwf := wf_rmw (rmw := rmwP ls (k 0)) hwf0
+    (fun a b ⟨j, kk, j', kk', ea, eb, ⟨x, hx, hxk⟩, ⟨y, hy, hyk⟩, _⟩ => by
+      subst ea eb
+      rw [(hdirS _ _ _ hx).1, (hdirS _ _ _ hy).1, hxk, hyk]
+      exact ⟨rfl, rfl⟩)
+    (fun a b ⟨j, kk, j', kk', ea, eb, ⟨x, hx, hxk⟩, ⟨y, hy, hyk⟩, _⟩ => by
+      subst ea eb
+      rw [(hdirS _ _ _ hx).2, (hdirS _ _ _ hy).2]
+      obtain ⟨-, -, rfl⟩ := hexR _ _ _ hx hxk
+      obtain ⟨-, -, rfl⟩ := hexW _ _ _ hy hyk
+      rw [ha])
+    (fun a b ⟨j, kk, j', kk', ea, eb, _, _, hlt, _⟩ => by
+      subst ea eb
+      exact ⟨rfl, hlt⟩)
+    (fun a b c ⟨j, kk, j', kk', ea, eb, ⟨x, hx, hxk⟩, ⟨y, hy, hyk⟩, _⟩ h1 h2 h3 => by
+      subst ea eb
+      obtain ⟨rfl, rfl, -⟩ := hexR _ _ _ hx hxk
+      obtain ⟨rfl, rfl, -⟩ := hexW _ _ _ hy hyk
+      cases c with
+      | init q => exact h1
+      | thr i j kk =>
+        obtain ⟨rfl, h1⟩ := h1
+        obtain ⟨-, h2⟩ := h2
+        cases hz : evAt (evTr (ls.take (k 0))) (j, kk) with
+        | none =>
+          obtain ⟨hd, he⟩ := hnone j kk hz
+          rcases h3 with h3 | h3
+          · exact h3 hd
+          · exact he h3
+        | some z =>
+          rcases posE (evAt_take_some hz) (by omega) with ⟨rfl, rfl, -⟩ | ⟨rfl, rfl, -⟩ <;> omega)
+  obtain ⟨PC, φ, h1, h2, h3, h4⟩ := hR P (locs1 lsP eR) [(eR.addr.toNat, eR.n)] M0 M0
+    (latestW P (locs1 lsP eR)) (coL P (locs1 lsP eR)) (rmwP ls (k 0)) rfl
+    (fun i hi => by obtain rfl : i = 0 := by omega
+                    rfl) hwf
+    (fun i hi a b => by
+      obtain rfl : i = 0 := by omega
+      exact ⟨fun ⟨_, _, _, _, e1, e2, h⟩ => by cases e1; cases e2; exact h,
+        fun h => ⟨_, _, _, _, rfl, rfl, h⟩⟩)
+    ⟨_, rfl⟩
+    (fun q hq hq1 => by
+      obtain ⟨q', rfl⟩ : ∃ q', q = q' + 1 := ⟨q - 1, by simp at hq1; omega⟩
+      have hq2 : q' < ((lsP.flatMap (·.evs)).map fun e => (e.addr.toNat, e.n)).length := by
+        simp only [locs1, List.length_cons] at hq; omega
+      have hm := List.getElem_mem hq2
+      obtain ⟨e', he', he'q⟩ := List.mem_map.mp hm
+      obtain ⟨l, hl, he'l⟩ := List.mem_flatMap.mp he'
+      refine ⟨0, by omega, ?_⟩
+      simp only [locs1, List.getElem_cons_succ, ← he'q]
+      exact (hevP l hl e' he'l).1)
+    (fun q h => rfl) (fun i hi j hj hne => by omega)
+  exact ⟨k 0, by have := hk 0 (by omega); simpa using this, PC, φ, h1, h2 0 (by omega), h3, h4⟩
+
+/-- **On the whole run, the `rmw` relates the `ldaxr`'s read to the `stlxr`'s write.** -/
+theorem rmw_full {lsP : List Lab} {eR eW : Ev} {M : Nat} (hkR : eR.k = .acqXR)
+    (hkW : eW.k = .relXW)
+    (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, e'.k = .plainW ∨ e'.k = .plainR) :
+    rmwP (pairLs lsP eR eW M) (pairLs lsP eR eW M).length (.thr 0 lsP.length 0)
+      (.thr 0 (lsP.length + M + 1) 0) := by
+  refine ⟨_, _, _, _, rfl, rfl, ⟨eR, ?_, hkR⟩, ⟨eW, ?_, hkW⟩, .inl (by omega), ?_⟩
+  · rw [List.take_length, evTr_append, evAt_append_ge _ _ (by simp [evTr_length])]
+    simp [evTr_length, evAt, evTr]
+  · rw [List.take_length, evTr_append, evAt_append_ge _ _ (by simp [evTr_length]; omega)]
+    simp only [evTr_length, show lsP.length + M + 1 - lsP.length = M + 1 by omega]
+    simp [evAt, evTr, List.getElem?_append_right]
+  · intro q z h1 h2 hz
+    rw [List.take_length] at hz
+    by_cases hq : q.1 < lsP.length
+    · obtain ⟨l, hl, hzl⟩ := posP (j := q.1) (kk := q.2) hz hq
+      rcases hevP l hl z hzl with h | h <;> rw [h] <;> exact ⟨by decide, by decide⟩
+    · rcases posE (j := q.1) (kk := q.2) hz (by omega) with ⟨e1, e2, -⟩ | ⟨e1, e2, -⟩
+      · rcases h1 with h1 | ⟨-, h1⟩ <;> simp_all
+      · rcases h2 with h2 | ⟨-, h2⟩ <;> simp_all
+
+/-- **`Realizes` on the compiled `atomic_rmw` through one successful iteration of its loop**
+(module doc): the run of `run_rmw`; every execution of its realized prefix (initial locations
+`locs1`, the pair's first; `rmw` the prefix's monitor pairs) is `Realizes`d by a CLIF thread from
+`csR`; on the whole run, that `rmw` relates the read to the write. -/
+theorem realizes_rmw : ∃ (n : Nat) (lsP : List Lab) (eR eW : Ev) (t' : ArmState × Mon),
+    PRun Policy.arm RAR.step (OkPriv RAR) (iterN RAR.step n RAR.s0, none) (pairLs lsP eR eW MR) t' ∧
+    eR.k = .acqXR ∧ eW.k = .relXW ∧ eR.addr = 0 ∧ eW.addr = 0 ∧ eR.n = 8 ∧ eW.n = 8 ∧
+    (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAR e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) ∧
+    rmwP (pairLs lsP eR eW MR) (pairLs lsP eR eW MR).length (.thr 0 lsP.length 0)
+      (.thr 0 (lsP.length + MR + 1) 0) ∧
+    ∀ (env : Clif.Env) (p : Clif.Program) (M0 : Bytes), ∃ k ≤ (pairLs lsP eR eW MR).length,
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧ PC.st 0 0 = .run csR ∧
+        PC.Runs (CStep env p) ∧
+        Realizes (PA1 RAR (iterN RAR.step n RAR.s0) (pairLs lsP eR eW MR) k) (locs1 lsP eR) M0
+          (latestW (PA1 RAR (iterN RAR.step n RAR.s0) (pairLs lsP eR eW MR) k) (locs1 lsP eR))
+          (coL (PA1 RAR (iterN RAR.step n RAR.s0) (pairLs lsP eR eW MR) k) (locs1 lsP eR))
+          (rmwP (pairLs lsP eR eW MR) k) PC [(eR.addr.toNat, eR.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨n, lsP, eR, eW, t', hc, hr, hkR, hkW, haR, haW, hnR, hnW, hevP⟩ := run_rmw
+  exact ⟨n, lsP, eR, eW, t', hr, hkR, hkW, haR, haW, hnR, hnW, hevP,
+    rmw_full hkR hkW fun l hl e he => (hevP l hl e he).2, fun env p M0 =>
+    realizes_pair hc hr hevP hkR hkW (haW.trans haR.symm) (hnW.trans hnR.symm) env p M0⟩
+
 end Concurrency.RealizeCompiled.WitnessR
