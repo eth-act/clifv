@@ -367,7 +367,7 @@ theorem aPat_soundT : ∀ (q : Pattern) (a : AW) (aenv : List AW) (v : V) (env e
 theorem aPatAll_soundT : ∀ (qs : List Pattern) (a : AW) (aenv : List AW) (v : V)
     (env env' : Isle.Interp.Env V) (st : LState),
     matchAll p (sem ctx) st qs v env = .ok (some env') → γT S iOps fOps f ctx a v → EnvOKT f ctx aenv env →
-    ∃ aenv' ∈ aPatAllT p aext a qs aenv, EnvOKT f ctx aenv' env'
+    ∃ aenv' ∈ aPatAllT p aext iOps fOps a qs aenv, EnvOKT f ctx aenv' env'
   | [], a, aenv, v, env, env', st, h, hv, he => by
     rw [matchAll.eq_1] at h
     cases h
@@ -388,7 +388,7 @@ theorem aPatAll_soundT : ∀ (qs : List Pattern) (a : AW) (aenv : List AW) (v : 
 theorem aPatArgs_soundT : ∀ (qs : List Pattern) (as : List AW) (aenv : List AW) (vs : List V)
     (env env' : Isle.Interp.Env V) (st : LState),
     matchArgs p (sem ctx) st qs vs env = .ok (some env') → HoldsPT f ctx as vs →
-    EnvOKT f ctx aenv env → ∃ aenv' ∈ aPatArgsT p aext as qs aenv, EnvOKT f ctx aenv' env'
+    EnvOKT f ctx aenv env → ∃ aenv' ∈ aPatArgsT p aext iOps fOps as qs aenv, EnvOKT f ctx aenv' env'
   | [], as, aenv, [], env, env', st, h, hv, he => by
     rw [matchArgs.eq_1] at h
     cases h
@@ -499,7 +499,7 @@ theorem aBinds_cons {x : VarId} {ty : TypeId} {e : Isle.Expr} {bs : List (VarId 
   · cases h
 
 theorem aIfLets_cons {il : IfLet} {ils : List IfLet} {aenv : List AW} {envs : List (List AW)}
-    (h : aIfLetsT p tab aext actor apre aOracle (il :: ils) aenv = some envs) :
+    (h : aIfLetsT p tab aext actor apre aOracle iOps fOps (il :: ils) aenv = some envs) :
     ∃ a, aExpr p tab actor apre aOracle il.rhs aenv = some a ∧
       ((aPatT p aext iOps fOps a il.lhs aenv).mapM fun e => aIfLetsT p tab aext actor apre aOracle iOps fOps ils e).map
         List.flatten = some envs := by
@@ -544,7 +544,7 @@ theorem tabGet_le {t : TermId} {as : List AW} {out : AW} (h : tabGet tab t as = 
       simp only [Bool.and_eq_true, beq_iff_eq] at hp
       exact ⟨e.2.1, by rw [← hp.1]; exact hm, hp.2⟩
 
-theorem chkTab_memT (hc : chkTabT p tab aext actor apre aOracle = true) {t : TermId} {ins : List AW}
+theorem chkTab_memT (hc : chkTabT p tab aext actor apre aOracle iOps fOps = true) {t : TermId} {ins : List AW}
     {out : AW} (hm : (t, ins, out) ∈ tab) :
     ∀ r ∈ p.rulesOf t, aRuleT p tab aext actor apre aOracle iOps fOps ins out r = true := by
   have := List.all_eq_true.mp hc _ hm
@@ -610,7 +610,7 @@ theorem holds2_bot {as : List AW} {vs : List V} (hb : as.any AW.isBot = true) (h
 
 include hctx hsp in
 /-- **Soundness of the abstract interpretation**, at every fuel. -/
-theorem soundAtT (hc : cfg.checkOverlap = false) (htab : chkTabT p tab aext actor apre aOracle = true) :
+theorem soundAtT (hc : cfg.checkOverlap = false) (htab : chkTabT p tab aext actor apre aOracle iOps fOps = true) :
     ∀ n, SoundAtT md cfg tab n := by
   intro n
   induction n using Nat.strongRecOn with
@@ -868,10 +868,10 @@ theorem soundAtT (hc : cfg.checkOverlap = false) (htab : chkTabT p tab aext acto
       obtain ⟨aenv0, hm0, he0⟩ := aPatArgs_soundT hctx hsp md _ _ _ _ _ _ _ hma (holdsPT_of_holds2T hins)
         (envOKT_empty (List.replicate rl.vars.length .top) _)
       unfold aRuleEnvsT at hae
-      cases hif : aIfLetsT p tab aext actor apre aOracle rl.iflets aenv0 with
+      cases hif : aIfLetsT p tab aext actor apre aOracle iOps fOps rl.iflets aenv0 with
       | none =>
         cases hm : (aPatArgsT p aext iOps fOps ins rl.args (List.replicate rl.vars.length .top)).mapM
-            (fun e => aIfLetsT p tab aext actor apre aOracle rl.iflets e) with
+            (fun e => aIfLetsT p tab aext actor apre aOracle iOps fOps rl.iflets e) with
         | none => rw [hm] at hae; cases hae
         | some yss =>
           obtain ⟨y, -, hy⟩ := mapM_some_mem hm aenv0 hm0
