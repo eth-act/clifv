@@ -429,4 +429,120 @@ theorem linesWrites_cons {env : Env} {x : Insn} {t : Option Clif.TrapCode} {ls :
     cases hp
 
 
+theorem loadConst64_noStores (rd : Reg) (v : Nat) :
+    ∀ x t, Line.ins x t ∈ loadConst64 rd v → x.stores = false := by
+  intro x t h
+  simp only [loadConst64, List.mem_cons, List.mem_filterMap] at h
+  rcases h with h | ⟨j, _, hj⟩
+  · simp only [Line.ins.injEq] at h; obtain ⟨rfl, -⟩ := h; rfl
+  · split at hj
+    · simp only [Option.some.injEq, Line.ins.injEq] at hj; obtain ⟨rfl, -⟩ := hj; rfl
+    · cases hj
+
+/-! ## The allocated instructions without stores -/
+
+/-- The allocated instructions whose lines may hold a store. -/
+def _root_.Backend.MInst.memWr : MInst → Bool
+  | .store .. | .storeRelease .. | .atomicRmwLoop .. | .atomicCasLoop .. | .fpuStore .. => true
+  | _ => false
+
+/-- A line without a store. -/
+def _root_.Backend.Line.storeFree : Line → Bool
+  | .ins i _ => !i.stores
+  | _ => true
+
+theorem memFinalize_storeFree {c : FnCtx} {mm : AMode} {b : Nat} {v : List Line × AMode}
+    (h : memFinalize c mm b = .ok v) : ∀ ln ∈ v.1, ln.storeFree = true := by
+  intro ln hln
+  unfold memFinalize at h
+  split at h <;> simp only [pure, Except.pure, Except.ok.injEq, throw, throwThe,
+    MonadExceptOf.throw, reduceCtorEq] at h <;> subst h
+  all_goals first
+    | (simp at hln; done)
+    | (split at hln
+       · simp at hln
+       · split at hln
+         · simp at hln
+         · obtain ⟨x, t, rfl⟩ : ∃ x t, ln = .ins x t := by
+             simp only [loadConst64, List.mem_cons, List.mem_filterMap] at hln
+             rcases hln with rfl | ⟨j, _, hj⟩
+             · exact ⟨_, _, rfl⟩
+             · split at hj
+               · simp only [Option.some.injEq] at hj; exact ⟨_, _, hj.symm⟩
+               · cases hj
+           simp [Line.storeFree, loadConst64_noStores _ _ x t hln])
+
+
+theorem store_bytes_pos (op : StoreOp) : 0 < op.bytes := by cases op <;> decide
+
+/-- `memFinalize`'s extra lines hold no store. -/
+theorem memFinalize_noStores {c : FnCtx} {mm : AMode} {b : Nat} {v : List Line × AMode}
+    (h : memFinalize c mm b = .ok v) : ∀ x t, Line.ins x t ∈ v.1 → x.stores = false := by
+  intro x t hx
+  have := memFinalize_storeFree h _ hx
+  simpa [Line.storeFree] using this
+
+/-- **The writes of a store's lines**: only the access itself, `op.bytes` bytes at the store's
+address in the state where its lines start. -/
+theorem mstore_writes (ctx : FnCtx) {op : StoreOp} {rt : Reg} {m : AMode} {fl : Clif.MemFlags}
+    (hm : MemMode op.bytes m)
+    (hop : op = .fpuStore128 → ∀ pre m', memFinalize ctx m op.bytes = .ok (pre, m') →
+      (∃ rn off, m' = .unsignedOffset rn off) ∨ ∃ rn off, m' = .unscaled rn off)
+    {ps : PState} {ls : List Line} {ps' : PState}
+    (hl : (MInst.store op rt m fl).lines ctx ps = .ok (ls, ps')) (env : Env) (s : Arm.ArmState) :
+    LinesWrites env ls s (fun a => ∃ k < op.bytes, a = m.addr ctx op.bytes s + BitVec.ofNat 64 k) := by
+  simp only [MInst.lines, bind, Except.bind] at hl
+  split at hl
+  · cases hl
+  rename_i r hr
+  obtain ⟨pre, m'⟩ := r
+  simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl
+  obtain ⟨rfl, -⟩ := hl
+  obtain ⟨-, h2, h3⟩ := memFinalize_addr ctx (store_bytes_pos op) hm hr env s
+  refine linesWrites_append_last (memFinalize_noStores hr) fun s1 hs1 env' a ha p hp i hi => ?_
+  rw [memWrites_store ctx h2 (fun e => hop e _ _ hr) ha, List.mem_singleton] at hp
+  subst hp
+  exact ⟨i, hi, by rw [h3 s1 hs1]⟩
+
+/-- **The lines of an allocated instruction other than `memWr` hold no store.** -/
+theorem lines_noStores {c : FnCtx} {m : MInst} {ps ps' : PState} {ls : List Line}
+    (h : m.lines c ps = .ok (ls, ps')) (hm : m.memWr = false) :
+    ∀ i t, Line.ins i t ∈ ls → i.stores = false := by
+  suffices hs : ∀ ln ∈ ls, ln.storeFree = true by
+    intro i t hi
+    have := hs _ hi
+    simpa [Line.storeFree] using this
+  have hmf' : ∀ mm b v, memFinalize c mm b = .ok v → ∀ ln ∈ v.1, ln.storeFree = true :=
+    fun _ _ _ hv => memFinalize_storeFree hv
+  have hk : ∀ (k : CondBrKind) l, (k.insn l).stores = false := fun k l => by cases k <;> rfl
+  unfold MInst.lines at h
+  split at h <;> simp only [bind, Except.bind, pure, Except.pure] at h
+  all_goals (repeat' (first | (split at h) | (simp only [Except.ok.injEq, Prod.mk.injEq] at h; obtain ⟨rfl, -⟩ := h)))
+  all_goals first | cases h | (simp [throw, throwThe, MonadExceptOf.throw] at h) | skip
+  all_goals (try (simp [MInst.memWr] at hm; done))
+  all_goals intro ln hln
+  all_goals simp [MInst.lines.addOff] at hln
+  all_goals (repeat' (split at hln)) <;> (try simp at hln)
+  all_goals first
+    | exact hmf' _ _ _ (by assumption) _ hln
+    | (rename_i heq; simp [throw, throwThe, MonadExceptOf.throw] at heq; done)
+    | (rcases hln with h | h | h | h | h | h | h | h | h <;>
+        first
+          | exact hmf' _ _ _ (by assumption) _ h
+          | rfl
+          | (simp only [Line.storeFree, hk, Bool.not_false]; done)
+          | (rename_i hx; obtain ⟨-, rfl⟩ := hx; rfl)
+          | (subst h; rfl)
+          | (subst h; simp only [Line.storeFree, hk, Bool.not_false]; done)
+          | (subst h; simp_all [Line.storeFree, Insn.stores, MInst.memWr]; done)
+          | (obtain ⟨a, ha, rfl⟩ := h; rfl)
+          | (split at h <;> (try split at h) <;> simp at h <;> subst h <;> rfl))
+    | (subst hln; simp_all [Line.storeFree, Insn.stores, MInst.memWr]; done)
+    | (rcases hln with h | h
+       · exact hmf' _ _ _ (by assumption) _ h
+       · subst h
+         simp only [Line.storeFree, Bool.not_eq_eq_eq_not, Bool.not_true]
+         exact store_loads (fun e => by subst e; simp [MInst.memWr] at hm))
+
+
 end Backend.Proof
