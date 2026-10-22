@@ -7,8 +7,9 @@ An instruction family `F` describes the instructions of a float-capable context 
 interpreter starts from: `F.res` the type `inst_data_value` gives (the first result's, `invalid`
 without results), `F.all` the types of every result, `F.data` the `InstructionData` (opcode
 alternatives, and typed value fields `val`/`vals`/`valsAll`). `famTab` lists the families of the
-typed scope's instructions (`instData`'s formats, split where the operand classes differ:
-float/integer `load`, `store` and `select`; `bitcast`), and the S11f float arithmetic.
+typed scope's instructions (`instData`'s formats, split where the operand or result classes differ:
+float/integer `load`, `store`, `select` and `bitcast`) and of the terminators (`termData`,
+`tryCallData`: the data of a terminator's slot in its context).
 
 `instM f ctx fs`: the meaning of `inst fs`, an instruction of the context of one of the
 families `fs` (its data described with `γP ctx noInst`, its result values typed). `γ f ctx` is
@@ -106,8 +107,8 @@ def famTab : List Fam := [
   -- 16: `atomic_load`
   ⟨eCTys, eCTys, idata VIdx.InstructionData.LoadNoOffset [opAlts [VIdx.Opcode.AtomicLoad], vE,
     .c0]⟩,
-  -- 17: `bitcast`
-  ⟨anyCTys, anyCTys, idata VIdx.InstructionData.LoadNoOffset [opAlts [VIdx.Opcode.Bitcast], vM,
+  -- 17: `bitcast` to an integer
+  ⟨eCTys, eCTys, idata VIdx.InstructionData.LoadNoOffset [opAlts [VIdx.Opcode.Bitcast], vM,
     .c0]⟩,
   -- 18: `atomic_store`
   ⟨noRes, [], idata VIdx.InstructionData.StoreNoOffset [opAlts [VIdx.Opcode.AtomicStore],
@@ -123,7 +124,28 @@ def famTab : List Fam := [
     .c0]⟩,
   -- 22: `f64const`
   ⟨[.float 64], [.float 64], idata VIdx.InstructionData.UnaryIeee64 [opAlts [VIdx.Opcode.F64const],
-    .c0]⟩]
+    .c0]⟩,
+  -- 23: `bitcast` to a float
+  ⟨fCTys, fCTys, idata VIdx.InstructionData.LoadNoOffset [opAlts [VIdx.Opcode.Bitcast], vM,
+    .c0]⟩,
+  -- terminators (`termData`, `tryCallData`; the slot of a terminator in its context)
+  -- 24: `jump`
+  ⟨noRes, [], idata VIdx.InstructionData.Jump [opAlts [VIdx.Opcode.Jump], .c0]⟩,
+  -- 25: `brif` (an integer condition)
+  ⟨noRes, [], idata VIdx.InstructionData.Brif [opAlts [VIdx.Opcode.Brif], vE, .c0]⟩,
+  -- 26: `br_table` (an integer index)
+  ⟨noRes, [], idata VIdx.InstructionData.BranchTable [opAlts [VIdx.Opcode.BrTable], vE, .c0]⟩,
+  -- 27: `return`
+  ⟨noRes, [], idata VIdx.InstructionData.MultiAry [opAlts [VIdx.Opcode.Return],
+    .valsAll anyCTys]⟩,
+  -- 28: `trap`
+  ⟨noRes, [], idata VIdx.InstructionData.Trap [opAlts [VIdx.Opcode.Trap], .c0]⟩,
+  -- 29: `try_call` (integer arguments)
+  ⟨noRes, [], idata VIdx.InstructionData.TryCall [opAlts [VIdx.Opcode.TryCall],
+    .valsAll eCTys, .c0, .c0]⟩,
+  -- 30: `try_call_indirect` (integer callee and arguments)
+  ⟨noRes, [], idata VIdx.InstructionData.TryCallIndirect [opAlts [VIdx.Opcode.TryCallIndirect],
+    .valsAll eCTys, .c0]⟩]
 
 /-- A family describes an instruction entry of the context: the type `inst_data_value` gives,
 the types of the results, the data. -/
@@ -134,12 +156,12 @@ def FamOk (ctx : Ctx) (F : Fam) (info : IInfo) : Prop :=
 
 /-- **The meaning of `inst fs`**: an instruction of the context, of a family of `fs`. -/
 def instM (f : Clif.Function) (ctx : Ctx) (fs : List Nat) (v : V) : Prop :=
-  ∃ j info c, v = .inst j ∧ ctx.insts[j]? = some info ∧ info.clif = some c ∧
-    instData f c = .ok info.data ∧ ∃ i ∈ fs, ∃ F, famTab[i]? = some F ∧ FamOk ctx F info
+  ∃ j info, v = .inst j ∧ ctx.insts[j]? = some info ∧
+    ∃ i ∈ fs, ∃ F, famTab[i]? = some F ∧ FamOk ctx F info
 
 theorem instRef_instM (f : Clif.Function) (ctx : Ctx) : InstRef (instM f ctx) := by
   intro fs v h
-  obtain ⟨j, -, -, rfl, -⟩ := h
+  obtain ⟨j, -, rfl, -⟩ := h
   exact ⟨j, rfl⟩
 
 /-- **The meaning of an abstract value** in the context `ctx` of `f`. -/
