@@ -211,8 +211,9 @@ Functions with a struct-return pointer and calls of `sret` callees are inside th
 theorem (`docs/contracts/e2e.md`, "`sret`"). Deferred:
 - ~~x0 holds the pointer on return~~ (done, S7 #31, 2026-10-22): `E2E.backend_correct_final_abi`
   / `backend_correct_final_sret` (premise `sretStableB`, met by every `sret` function of fv-demo,
-  the survey and `examples/deps`). Still with the CLIF-values conclusion only: the variants
-  (`_cleanup`, the typed `…T`, `_unwind`, `backend_correct_legal*`, `_opt*`) and the linked and
+  the survey and `examples/deps`); the dead-cleanup copies `backend_correct_final_cleanup_abi`
+  / `_sret` (`FV/E2E/SretReturnCleanup.lean`). Still with the CLIF-values conclusion only: the
+  variants (the typed `…T`, `_unwind`, `backend_correct_legal*`, `_opt*`) and the linked and
   executable theorems (their callers are Lean-compiled and do not read x0 after an `sret` call);
   carrying `ArmRefinesAbi` through them is mechanical (the same `_abi` copy of their
   `IselSim` composition);

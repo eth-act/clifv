@@ -152,9 +152,12 @@ The proof covers them as follows.
   dumps (2026-10-22): every function returning its `sret` pointer passes (fv-demo 234, survey
   249, `examples/deps` 4966). Witness: `SretReturnWitness.sw_returns_sret` (the cg_clif shape
   `(i64 sret, i64)` storing its argument through the pointer, compiled by the real pipeline,
-  all contract premises discharged by the `NonVacuity` callees). The variants (`_cleanup`, the
-  typed `…T`, `_unwind`, the linked and executable theorems) keep the CLIF-values conclusion:
-  in a linked program the callers are Lean-compiled and never read x0 after an `sret` call.
+  all contract premises discharged by the `NonVacuity` callees). The dead-cleanup variant has
+  its `_abi` copies (`FV/E2E/SretReturnCleanup.lean`: `backend_correct_final_cleanup_abi`,
+  `backend_correct_final_cleanup_sret`, witness `SretReturnCleanup.sw_returns_sret_cleanup`).
+  The other variants (the typed `…T`, `_unwind`, the linked and executable theorems) keep the
+  CLIF-values conclusion: in a linked program the callers are Lean-compiled and never read x0
+  after an `sret` call.
 * **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
   parameters `x (abiArgIdx …)[i]`, `sigArgLocs_regs`) or a store to `[sp + off]` of the outgoing
   area (`argStores_run`); `gen_call_output` allocates one def per
