@@ -29,6 +29,23 @@ inductive Ty where
   | vec (s : VShape)
   deriving DecidableEq, Repr, Inhabited, Hashable
 
+/-- The case split of `cases t` on a type (`cases_eliminator`): the seven scalar types and the
+ten vector shapes as seventeen closed cases, so that a `cases t <;> decide` over the scalar
+types stays a proof by closed computation with vectors. -/
+@[elab_as_elim, cases_eliminator]
+def Ty.casesFlat {motive : Ty → Sort u} (i8 : motive .i8) (i16 : motive .i16)
+    (i32 : motive .i32) (i64 : motive .i64) (i128 : motive .i128) (f32 : motive .f32)
+    (f64 : motive .f64) (i8x8 : motive (.vec .i8x8)) (i16x4 : motive (.vec .i16x4))
+    (i32x2 : motive (.vec .i32x2)) (f32x2 : motive (.vec .f32x2))
+    (i8x16 : motive (.vec .i8x16)) (i16x8 : motive (.vec .i16x8))
+    (i32x4 : motive (.vec .i32x4)) (i64x2 : motive (.vec .i64x2))
+    (f32x4 : motive (.vec .f32x4)) (f64x2 : motive (.vec .f64x2)) : (t : Ty) → motive t
+  | .i8 => i8 | .i16 => i16 | .i32 => i32 | .i64 => i64 | .i128 => i128
+  | .f32 => f32 | .f64 => f64
+  | .vec .i8x8 => i8x8 | .vec .i16x4 => i16x4 | .vec .i32x2 => i32x2 | .vec .f32x2 => f32x2
+  | .vec .i8x16 => i8x16 | .vec .i16x8 => i16x8 | .vec .i32x4 => i32x4
+  | .vec .i64x2 => i64x2 | .vec .f32x4 => f32x4 | .vec .f64x2 => f64x2
+
 namespace Ty
 
 /-- Bit width of a type. -/
@@ -85,9 +102,7 @@ def intOfWidth : Ty → Ty
   | f32 => i32 | f64 => i64 | t => t
 
 @[simp] theorem width_pos (t : Ty) : 0 < t.width := by
-  cases t with
-  | vec s => cases s <;> decide
-  | _ => decide
+  cases t <;> decide
 
 /-- A float type is not an integer type (the former definition `isFloat = !isInt`, now one
 direction: vectors are neither). -/

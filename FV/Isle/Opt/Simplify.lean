@@ -192,8 +192,10 @@ def imm64OfBits {w : Nat} (imm : BitVec w) : Int := Rust.asI64 imm.toNat
 
 /-- A node as Cranelift's `InstructionData` (`none`: no form here; not presented). -/
 def ofInst : Clif.Inst → Option V
-  -- Cranelift has no `iconst.i128` (its `Imm64` cannot hold the value): not presented.
+  -- Cranelift has no `iconst.i128` (its `Imm64` cannot hold the value) and no vector `iconst`
+  -- (`vconst`): not presented.
   | .iconst .i128 _ => none
+  | .iconst (.vec _) _ => none
   | .iconst _ imm =>
     some (idata VIdx.«InstructionData».«UnaryImm» [opcode VIdx.«Opcode».«Iconst», .int (imm64OfBits imm)])
   | .unary op _ x => some (idata VIdx.«InstructionData».«Unary» [opcode (unaryIdx op), .value x])
@@ -234,7 +236,7 @@ def toInst (typeOf : Nat → Option Clif.Ty) (ty : CTy) : V → Option Clif.Inst
     if t != TyId.«InstructionData» then none else
     match k, fs, ty.toClif? with
     | VIdx.«InstructionData».«UnaryImm», [.data _ VIdx.«Opcode».«Iconst» [], .int imm], some t =>
-      if t == .i128 then none else some (.iconst t (BitVec.ofInt t.width imm))
+      if t == .i128 || t.isVec then none else some (.iconst t (BitVec.ofInt t.width imm))
     | VIdx.«InstructionData».«Unary», [.data _ op [], .value x], some t =>
       match unaryOfIdx? op with
       | some u => some (.unary u t x)
