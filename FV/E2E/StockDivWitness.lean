@@ -1,6 +1,7 @@
 import FV.E2E.StockDivFixtures
 import FV.E2E.CompiledSemanticNI
 import FV.Backend.LinearScan
+import FV.Backend.Lowering.StockScalarNI
 namespace E2E.StockDivNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0
 set_option autoImplicit false
@@ -16,6 +17,10 @@ private def checks (config : Configuration) (op : Clif.DivOp) (cleanup : Bool) :
   | .ok result =>
     !lowerCheck (function config op) result.code &&
     DivBoundary.check (function config op).sig result.code &&
+    Stock.Scalar.check (function config op) result.code && SemanticNI.check (function config op) result.code &&
+    (match Stock.Scalar.lowerValidated (function config op) with
+      | .error _ => false
+      | .ok vc => decide (vc = result.code)) &&
     match Backend.prepare (Stock.Arithmetic.stage cleanup result.code) with
     | .error _ => false
     | .ok vcp =>
@@ -40,6 +45,8 @@ theorem compiled_exists (config : Configuration) (op : Clif.DivOp) (cleanup : Bo
     Stock.Scalar.Domain (function config op) ∧
     ∃ result vcp rf af fa fb,
       CompiledStockArithmeticStage (function config op) cleanup 0 result vcp rf af fa fb ∧
+      CompiledSemanticNI (function config op) 0 result.code vcp rf af fa fb ∧
+      Stock.Scalar.lowerValidated (function config op) = .ok result.code ∧
       DivBoundary.check (function config op).sig result.code = true ∧
       leanAlloc vcp = .ok rf ∧ FormsCovered ⟨fa.k,af.slotBase⟩ vcp ∧
       lowerCheck (function config op) result.code = false := by
@@ -60,7 +67,14 @@ theorem compiled_exists (config : Configuration) (op : Clif.DivOp) (cleanup : Bo
   | error message => simp [lowered] at h
   | ok result =>
     simp only [lowered,Bool.and_eq_true,Bool.not_eq_true'] at h
-    obtain ⟨⟨legacy,reads⟩,h⟩ := h
+    obtain ⟨⟨⟨⟨⟨legacy,reads⟩,scalar⟩,paired⟩,actual⟩,h⟩ := h
+    have actualLower : Stock.Scalar.lowerValidated (function config op) = .ok result.code := by
+      cases observed : Stock.Scalar.lowerValidated (function config op) with
+      | error message => simp [observed] at actual
+      | ok vc =>
+        simp only [observed,decide_eq_true_eq] at actual
+        cases actual
+        rfl
     cases prepared : Backend.prepare (Stock.Arithmetic.stage cleanup result.code) with
     | error message => simp [prepared] at h
     | ok vcp =>
@@ -86,9 +100,10 @@ theorem compiled_exists (config : Configuration) (op : Clif.DivOp) (cleanup : Bo
                 cases check : checkAlloc vcp rf with
                 | error message => rw [check] at checked; change false = true at checked; cases checked
                 | ok value => cases value; rfl
-              exact ⟨result,vcp,rf,af,fa,fb,
-                ⟨lowered,prepared,prepOk,check,physical,emitted,layout⟩,
-                reads,allocated,(formsCoveredB_iff _ _).mp covered,legacy⟩
+              have stage : CompiledStockArithmeticStage (function config op) cleanup 0 result vcp rf af fa fb :=
+                ⟨lowered,prepared,prepOk,check,physical,emitted,layout⟩
+              exact ⟨result,vcp,rf,af,fa,fb,stage,.scalarDiv domain rfl reads stage,
+                actualLower,reads,allocated,(formsCoveredB_iff _ _).mp covered,legacy⟩
 
 /-- Complete entry retains arbitrary source values and explicit slot address. -/
 theorem source_entry (config : Configuration) (op : Clif.DivOp)
