@@ -17,8 +17,6 @@ namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 
-
-
 /-!
 # Form coverage of the ISLE lowering (V3): the extern constructors
 
@@ -151,29 +149,38 @@ theorem externCtor_covT (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? x = some r →
             exact ⟨fun r hr => ⟨n, c, hn⟩, by rfl⟩)
          | (rename_i heq; obtain ⟨n, c, hn⟩ := hvr _ _ heq; exact ⟨n, c, hn⟩)
          | (obtain ⟨⟨n, hn⟩, -⟩ := loadConstantFull_cov _ _ _ _ st; exact ⟨n, .int, by rw [hn]⟩)
-         | skip)
-      | (simp (config := { decide := true }) only [CtorResT, ite_true, ite_false, Bool.false_eq_true,
-          Bool.or_false, Bool.false_or, Bool.or_true, Bool.true_or, ↓reduceIte]
-         first
-         | exact ⟨_, _, _, _, rfl, rfl, logicSize_of ‹_›, ofNat?_value ‹_›⟩
-         | exact ⟨_, _, _, _, rfl, rfl, logicSize64_lt ‹_›, ofNat?_value ‹_›⟩
-         | exact ⟨_, _, _, _, rfl, rfl, logicSize64_ge ‹_› ‹_›, ofNat?_value ‹_›⟩
-         | exact ⟨_, rfl, ofNat?_value ‹_›⟩
-         | exact ⟨_, _, _, rfl, rfl, uimm12_of ‹_›⟩
-         | exact ⟨_, rfl, simm9_of ‹_›⟩
-         | exact ⟨_, _, rfl, rfl⟩
-         | exact ⟨_, rfl, rfl⟩
-         | exact ⟨_, _, _, _, rfl, rfl⟩
-         | exact ⟨_, _, _, rfl, List.mem_of_getElem? ‹_›, rfl⟩
-         | exact ⟨fun r hr => by simp_all [V.regsIn, regsInL], fun _ => rfl⟩
-         | (refine ⟨fun r hr => ?_, ?_⟩
+         -- class-aware residuals: pass-through ids, the `value_reg`/`output` family, `put_in_reg`
+         | (intro hcv; exact covVL_iff.mp hcv _ (by simp))
+         | (refine ⟨fun r hr => ?_, fun _ => rfl⟩
+            simp [V.regsIn, regsInL] at hr ⊢
+            exact hr)
+         | (refine ⟨fun r hr => ?_, rfl⟩
             simp only [V.regsIn, List.mem_singleton] at hr
             subst hr
-            obtain ⟨n, c, hn⟩ := hvr _ _ ‹_›
-            exact ⟨n, c, hn⟩
-            exact trivial)
+            exact hvr _ _ ‹_›)
+         | exact regsVec_single_vregT hvr ‹_›
+         | (obtain ⟨n, c, hn⟩ := hvr _ _ ‹_›; exact ⟨n, c, by rw [hn]⟩)
+         | (refine ⟨_, _, _, rfl, ?_, rfl⟩; simp only [V.regsIn]; exact List.mem_of_getElem? ‹_›)
+         | exact ⟨_, _, _, _, rfl, rfl⟩
+         | (exact ⟨fun r hr => by
+              simp only [V.regsIn, List.mem_flatten] at hr
+              obtain ⟨rs, hrs, hr⟩ := hr
+              exact (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).2 rs hrs r hr, rfl, ⟨_, rfl⟩⟩)
+         | (exact ⟨_, _, _, _, rfl, rfl, ?_, ?_⟩; exact logicSize_of ‹_›; exact ofNat?_value ‹_›)
+         | (exact ⟨_, _, _, _, rfl, rfl, ?_, ?_⟩; exact logicSize64_lt ‹_›; exact ofNat?_value ‹_›)
+         | (exact ⟨_, _, _, _, rfl, rfl, ?_, ?_⟩; exact logicSize64_ge ‹_› ‹_›; exact ofNat?_value ‹_›)
+         | (exact ⟨_, rfl, ?_⟩; exact ofNat?_value ‹_›)
+         | (exact ⟨_, _, _, rfl, rfl, ?_⟩; exact uimm12_of ‹_›)
+         | (exact ⟨_, rfl, ?_⟩; exact simm9_of ‹_›)
+         | exact ⟨_, _, rfl, rfl⟩
+         | exact ⟨_, rfl, rfl⟩
+         | (exact ⟨_, _, _, _, rfl, rfl, logicSize_of ‹_›, ofNat?_value ‹_›⟩)
+         | (exact ⟨_, _, _, _, rfl, rfl, logicSize64_lt ‹_›, ofNat?_value ‹_›⟩)
+         | (exact ⟨_, _, _, _, rfl, rfl, logicSize64_ge ‹_› ‹_›, ofNat?_value ‹_›⟩)
+         | (exact ⟨_, rfl, ofNat?_value ‹_›⟩)
+         | (exact ⟨_, _, _, rfl, rfl, uimm12_of ‹_›⟩)
+         | (exact ⟨_, rfl, simm9_of ‹_›⟩)
          | skip)
-      | skip
 
 /-! ## The model's constructor field -/
 
@@ -302,25 +309,37 @@ theorem ctor_soundT (hLI : LogicImmComplete) (hctx : CtxInvT f ctx) (s0 : LState
   unfold CtorResT at hr
   unfold actorC
   simp only [htp]
-  unfold actorRest
-  split at hr
-  · rw [if_pos] at hr ⊢
-    · obtain ⟨ty, cls, n, rfl, hcls, rfl⟩ := hr
-      obtain ⟨a, rfl, ha⟩ := holds2_oneT hvs
+  -- `actorC` overrides `put_in_reg`/`put_extended_in_reg`/`load_constant_full` (`.reg 3`) and
+  -- `put_in_regs`/`put_in_regs_vec` (`.flat 3 true`), delegating the rest (incl.
+  -- `temp_writable_reg`) to `actorRest`; dispatch `hr`'s chain in its own order
+  by_cases hid0 : (term.id == TId.temp_writable_reg) = true
+  · rw [if_pos hid0] at hr
+    obtain ⟨ty, cls, n, rfl, hcls, rfl⟩ := hr
+    by_cases hid1' : (term.id == TId.put_in_reg || term.id == TId.put_extended_in_reg || term.id == TId.load_constant_full) = true
+    · rw [if_pos hid1'] at ⊢
+      exact ⟨_, rfl, by cases cls <;> simp [Reg.kind]⟩
+    rw [if_neg hid1'] at ⊢
+    by_cases hid2' : (term.id == TId.put_in_regs || term.id == TId.put_in_regs_vec) = true
+    · rw [if_pos hid2'] at ⊢
+      refine ⟨fun r hrr => ?_, fun _ => rfl⟩
+      simp only [V.regsIn, List.mem_singleton] at hrr
+      subst hrr
+      cases cls <;> simp [Reg.kind]
+    rw [if_neg hid2'] at ⊢
+    unfold actorRest
+    rw [if_pos hid0] at ⊢
+    obtain ⟨a, rfl, ha⟩ := holds2_oneT hvs
+    cases a with
+    | ty ts' =>
       simp only [tysOf]
-      split
-      · rename_i ts hts
-        cases a with
-        | ty ts' =>
-          simp only [tysOf, Option.some.injEq] at hts
-          subst hts
-          obtain ⟨t, ht, he⟩ := ha
-          cases he
-          exact ⟨_, rfl, clsMask_mem ht hcls⟩
-        | _ => simp [tysOf] at hts
-      · refine ⟨_, rfl, ?_⟩
-        cases cls <;> simp [Reg.kind]
-  · rw [if_neg] at hr ⊢
+      obtain ⟨t, ht, he⟩ := ha
+      cases he
+      exact ⟨_, rfl, clsMask_mem ht hcls⟩
+    | _ =>
+      simp only [tysOf]
+      refine ⟨_, rfl, ?_⟩
+      cases cls <;> simp [Reg.kind]
+  rw [if_neg hid0] at hr
   by_cases hid1' : (term.id == TId.put_in_reg || term.id == TId.put_extended_in_reg || term.id == TId.load_constant_full) = true
   · rw [if_pos hid1'] at hr ⊢
     obtain ⟨n, c, rfl⟩ := hr
@@ -330,6 +349,8 @@ theorem ctor_soundT (hLI : LogicImmComplete) (hctx : CtxInvT f ctx) (s0 : LState
   · rw [if_pos hid2'] at hr ⊢
     exact ⟨fun r hrr => by obtain ⟨n, c, rfl⟩ := hr.1 r hrr; cases c <;> simp [Reg.kind], fun _ => hr.2⟩
   rw [if_neg hid2'] at hr ⊢
+  unfold actorRest
+  rw [if_neg hid0, if_neg hid1', if_neg hid2']
   by_cases hid2o : (term.id == TId.gen_call_output) = true
   · rw [if_pos hid2o] at hr ⊢
     exact ⟨fun r hrr => by obtain ⟨n, c, rfl⟩ := hr.1 r hrr; cases c <;> simp [Reg.kind],
