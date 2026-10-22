@@ -137,6 +137,18 @@ theorem wf_single (hn : P.n = 1)
   rmw_po _ _ h := h.elim
   rmw_imm _ _ _ h := h.elim
 
+/-- **Replacing the `rmw` relation of a well-formed execution of traces**: well formed again
+when the new pairs are a read and a write of one location, in `po` order, with no event
+between them (`Exec.Wf.rmw_imm`: positions holding no event do not count). -/
+theorem wf_rmw {rf co r0 rmw : Rel PEv} (h : (P.exec locs rf co r0).Wf)
+    (hd : ∀ a b, rmw a b → (X0 P locs).dir a = .R ∧ (X0 P locs).dir b = .W)
+    (hl : ∀ a b, rmw a b → (X0 P locs).loc a = (X0 P locs).loc b)
+    (hp : ∀ a b, rmw a b → PEv.po a b)
+    (hi : ∀ a b c, rmw a b → PEv.po a c → PEv.po c b →
+      ((X0 P locs).dir c ≠ .F ∨ (X0 P locs).ev c) → False) :
+    (P.exec locs rf co rmw).Wf :=
+  { h with rmw_dir := hd, rmw_loc := hl, rmw_po := hp, rmw_imm := hi }
+
 end single
 
 /-! ## Several threads -/
