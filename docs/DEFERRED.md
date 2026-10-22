@@ -168,8 +168,12 @@ Deferred:
   allocator can exceed it; proven for slotless programs, `bounded_of_noSlots`) and, for traps,
   the source run's `NoMemTrap` and the target run's `TrapsExplicit` (run conditions);
 - runs that trap inside a `__*ti3` helper (`i128` division by zero, `sdiv MIN, -1`): the
-  backend theorem excludes extern traps (`TrapsExplicit` of the legalised run); covering them
-  needs a trapping-helper contract on the Arm side (natively the helper aborts);
+  backend theorem excludes extern traps (`TrapsExplicit` of the legalised run). Per function
+  they are covered since S9a (#33, e2e.md "Callee traps"): `E2E.backend_correct_final_cleanup_trapcall`
+  takes `TrapsExplicitC` (callee traps of `call`/`call_indirect` allowed) and the helper's
+  trap contract `XTrapsOk` (the helper does not return on the machine), and ends at the call
+  state of the trapping helper; the legalised whole-program and executable theorems still take
+  `TrapsExplicit` (S9c/S9d);
 - a correct `umulhi`/`smulhi` expansion at `i128` (now unsupported), ~~`try_call` with `i128`
   in the validator~~ (done, legalize128.md "`try_call` and `call_indirect`"), `i128`
   `umul_overflow`/`smul_overflow` and atomics (~~`uadd`/`sadd`/`usub`/`ssub_overflow`~~ done,
@@ -341,7 +345,8 @@ Deferred:
   live along the executed call derivation needs a budget indexed by the run, not `LinkSys.Budget`
   (which quantifies over every syntactic callee).
 - Neither covers divergence or stack overflow (no theorem about a run that exceeds the stack);
-  `TrapsExplicit` still restricts traps inside callees (S9).
+  `TrapsExplicit` still restricts traps inside callees (S9: per function S9a covers the callees
+  of `call`/`call_indirect`; the linked and executable theorems are S9c/S9d).
 
 ## Tail calls: what `compileExeTail_correct` does not cover (S8a, #32, 2026-10-22)
 
