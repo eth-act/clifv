@@ -309,8 +309,9 @@ premises. Deferred, in order:
   discharge `hC`/`hX` for program callees from each callee's `backend_correct_final`, by
   induction on the depth (bounded by the whole-program fuel, as in `runLoop_link`).
 - `call_indirect`/`try_call_indirect` between program functions (the whole-program
-  `stepCallIndirect` resolves addresses among all functions and externs of `P`), `return_call`,
-  and traps inside program callees.
+  `stepCallIndirect` resolves addresses among all functions and externs of `P`), `return_call`
+  (a function's `return_call` of itself: done, as a loop, "Tail calls" below; of another
+  function: open there), and traps inside program callees.
 
 ## Completeness of the lowering validator `lowerCheck` (done, 2026-10-05)
 
@@ -341,6 +342,46 @@ Deferred:
   (which quantifies over every syntactic callee).
 - Neither covers divergence or stack overflow (no theorem about a run that exceeds the stack);
   `TrapsExplicit` still restricts traps inside callees (S9).
+
+## Tail calls: what `compileExeTail_correct` does not cover (S8a, #32, 2026-10-22)
+
+Done (TO-PROVE S8; e2e.md "Self tail calls as loops"): a function's `return_call` of itself
+(its own declaration, with its parameter and return types), in a function without stack slots
+and without `try_call`, becomes a jump to its first block (`Opt.TailLoop.loop`; a new entry block
+jumps there), so the frame is reused; `Opt.TailLoop.TailRel.refines` (the transformed program's
+run refines the input program's and keeps its call depth), `Link.DeadCleanup.compileExeTail`
+(`compileExe` on `LinkSpec.tail`) with `compileExeTail_correct`, `compileExeTail_correct_peak`
+(the input run's peak depth: a self tail call adds no caller, so the stack does not grow per
+tail call), `compileExeTail_total_reach_input`/`_total_ld`; `lean-link` runs it on inputs with a
+self tail call. Deferred:
+- **`return_call` of another function** (mutual tail recursion, tail calls of externs): the
+  backend rejects `return_call` (`Isel.termData`: "not in E"). Needs a VCode terminator (the
+  callee contract `X.call`, then the function's return with its results), its regalloc check
+  (fixed argument uses, a terminator like `rets`) and emission (the epilogue, then `b sym` /
+  `br xN` with a register outside the arguments and the callee-saved ones), an Arm-level tail
+  hook (`ArmStepX` at a `b` to a symbol: the callee runs from the caller's entry `sp` and returns
+  to x30) with a `CalleeOk` variant at tail sites, the per-function theorem's conclusion
+  through the callee's return, and in `LinkSys` a budget `Budget f ≥ Budget g` (no frame) at a
+  tail site with an induction on (depth, fuel), a tail call staying at its depth.
+- **`return_call_indirect`**: not in `Clif.Syntax` (parser, `Clif.run`, oracle runs).
+- **The `tail` calling convention**, which Cranelift's verifier requires for `return_call`
+  (aarch64: arguments and results from x2, callee-popped stack arguments, no `sret`): rejected
+  by the backend. `Clif.run` does not check calling conventions, so `system_v`/`fast`
+  functions with a self `return_call` are in our CLIF.
+- **Self tail calls with stack slots or `try_call`**: the input run frees and re-enters the
+  slots (fresh, uninitialised, at new bump addresses without the placement oracle); the new
+  entry block's parameters raise `Function.freshValue`, where `try_call` binds its results.
+- **Source and `--opt` variants**: `ProgCtx` (the `i128` legalisation's source domain) excludes
+  `return_call`, so `--verified` (`SrcScopeB`, `linkFreeB`) rejects inputs with one; the
+  optimising compiler is not composed with the transform. MidendM1c's shape guard
+  (`keepsShapeB`: branch folding may make the only `return_call` block unreachable, then
+  `optimizeExe` keeps its input) is unaffected: after the transform no self `return_call` is left.
+- Premises of the composition: the externs keep the slot-placement oracle
+  (`Clif.EnvKeepsPlace`) and the input run's entry has a consistent oracle stack
+  (`Opt.TailLoop.SpsOk`: the entry's stack pointer is what entering the function from the
+  stack below pushes, as for every activation `Clif.run` enters; vacuous without the oracle).
+- Rust inputs: cg_clif emits no `return_call` (`TerminatorKind::TailCall` is a `span_bug!` in
+  `rustc_codegen_cranelift/src/base.rs`); none of the fv-demo, survey or deps functions has one.
 
 ## Totality on input conditions: what remains (L1e, #216, 2026-10-16)
 
