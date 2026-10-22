@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-22T06:03:01.229204+00:00",
+  "updated_utc": "2026-10-22T22:08:32.068652+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -21,9 +21,16 @@
       "i32/i64 popcount through shared scalar consumers",
       "i32/i64 signed and unsigned min/max through shared scalar consumers",
       "i32/i64 integer comparisons and actual cast-of-icmp811 through shared scalar consumers",
-      "i32/i64 signed/unsigned high multiplication through shared scalar consumers (validated, squash pending)"
+      "i32/i64 signed/unsigned high multiplication through shared scalar consumers (389, d522474c)"
     ],
-    "pending": "Division/remainder including original trapped outcomes; complete original widths/ABIs; every remaining original #140 control/memory/effect/call/source/block/whole-driver simulation/completeness/consumer obligation remains."
+    "pending": "Squash-merge validated singleton division packet; stable outcome import boundary; mixed scalar prefixes with a returned final division; arbitrary-position colored/sunk instructions; complete original widths/ABIs and every remaining original140 control/memory/effect/call/source/block/whole-driver simulation/completeness/consumer obligation.",
+    "validated_pending_merge": {
+      "class": "Single returned i32/i64 division/remainder, all four operations, arbitrary original values including real zero/overflow traps",
+      "validated_code_head": "b1ef0c67f455eecb643883a414904016bab65d8f",
+      "current_author_gates": "passed;25 primary/27 ownership; see division activation receipt",
+      "backup": "a2c9d0d83f32cc089b438ba4977926ec85c88dfe",
+      "full_140_complete": false
+    }
   },
   "roots": [
     {
@@ -2973,8 +2980,8 @@
       "id": 786,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Udiv",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockDivSourceValues.lean",
+      "status": "Complete real selected-record normal/trap/source transfer and singleton returned-function domain/consumer composition validated on recorded heads; current-main compatibility gates pending before merge. Mixed/colored bodies and universal Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -2982,15 +2989,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-div-production-activation.json",
+      "stock_only_completeness": false,
+      "actual_execution_evidence": "Observed in 24 configurations, source45aea1cd; not a historical inventory coverage percentage."
     },
     {
       "rule": "rule_lower_1119",
       "id": 787,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Udiv",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockDivSourceValues.lean",
+      "status": "Complete real selected-record normal/trap/source transfer and singleton returned-function domain/consumer composition validated on recorded heads; current-main compatibility gates pending before merge. Mixed/colored bodies and universal Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -2998,15 +3008,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-div-production-activation.json",
+      "stock_only_completeness": false,
+      "actual_execution_evidence": "Observed in 24 configurations, source45aea1cd; not a historical inventory coverage percentage."
     },
     {
       "rule": "rule_lower_1145",
       "id": 788,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Sdiv",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockDivSourceValues.lean",
+      "status": "Complete real selected-record normal/trap/source transfer and singleton returned-function domain/consumer composition validated on recorded heads; current-main compatibility gates pending before merge. Mixed/colored bodies and universal Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3014,15 +3027,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-div-production-activation.json",
+      "stock_only_completeness": false,
+      "actual_execution_evidence": "Observed in 24 configurations, source45aea1cd; not a historical inventory coverage percentage."
     },
     {
       "rule": "rule_lower_1153",
       "id": 789,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Sdiv",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockDivSourceValues.lean",
+      "status": "Complete real selected-record normal/trap/source transfer and singleton returned-function domain/consumer composition validated on recorded heads; current-main compatibility gates pending before merge. Mixed/colored bodies and universal Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3030,7 +3046,10 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-div-production-activation.json",
+      "stock_only_completeness": false,
+      "actual_execution_evidence": "Observed in 24 configurations, source45aea1cd; not a historical inventory coverage percentage."
     },
     {
       "rule": "rule_lower_1163",
@@ -3038,7 +3057,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Sdiv",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "Saved complete signed safe-divisor source bridges retained; not observed in the singleton arbitrary-operand production fixture. Constant-divisor/mixed class activation and Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3054,7 +3073,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Sdiv",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "Saved complete signed safe-divisor source bridges retained; not observed in the singleton arbitrary-operand production fixture. Constant-divisor/mixed class activation and Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3069,8 +3088,8 @@
       "id": 792,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Urem",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockDivSourceValues.lean",
+      "status": "Complete real selected-record normal/trap/source transfer and singleton returned-function domain/consumer composition validated on recorded heads; current-main compatibility gates pending before merge. Mixed/colored bodies and universal Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3078,15 +3097,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-div-production-activation.json",
+      "stock_only_completeness": false,
+      "actual_execution_evidence": "Observed in 24 configurations, source45aea1cd; not a historical inventory coverage percentage."
     },
     {
       "rule": "rule_lower_1197",
       "id": 793,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Urem",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockDivSourceValues.lean",
+      "status": "Complete real selected-record normal/trap/source transfer and singleton returned-function domain/consumer composition validated on recorded heads; current-main compatibility gates pending before merge. Mixed/colored bodies and universal Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3094,15 +3116,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-div-production-activation.json",
+      "stock_only_completeness": false,
+      "actual_execution_evidence": "Observed in 24 configurations, source45aea1cd; not a historical inventory coverage percentage."
     },
     {
       "rule": "rule_lower_1204",
       "id": 794,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Srem",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockDivSourceValues.lean",
+      "status": "Complete real selected-record normal/trap/source transfer and singleton returned-function domain/consumer composition validated on recorded heads; current-main compatibility gates pending before merge. Mixed/colored bodies and universal Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3110,15 +3135,18 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-div-production-activation.json",
+      "stock_only_completeness": false,
+      "actual_execution_evidence": "Observed in 24 configurations, source45aea1cd; not a historical inventory coverage percentage."
     },
     {
       "rule": "rule_lower_1211",
       "id": 795,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Srem",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockDivSourceValues.lean",
+      "status": "Complete real selected-record normal/trap/source transfer and singleton returned-function domain/consumer composition validated on recorded heads; current-main compatibility gates pending before merge. Mixed/colored bodies and universal Stock-only completeness remain.",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3126,7 +3154,10 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-div-production-activation.json",
+      "stock_only_completeness": false,
+      "actual_execution_evidence": "Observed in 24 configurations, source45aea1cd; not a historical inventory coverage percentage."
     },
     {
       "rule": "rule_lower_1222",
