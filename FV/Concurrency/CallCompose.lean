@@ -23,7 +23,7 @@ an **external** callee's events are given by an explicit, trusted event contract
   exclusive-closed; `Realized.trans` (`Refines.app`, `CRun.append`).
 * `FunReal`: **the function contract** of an activation entered in the Arm thread state `u` with
   the CLIF thread state `c` (its frame pushed): every precise run under the run condition `ok`
-  realizes a prefix that is the whole run, ends where the CLIF state satisfies `E`, or ends where
+  realizes a prefix that is the whole run, ends where the end condition `E` holds (of the realized Arm prefix and the CLIF state), or ends where
   the activation has returned (`Ret`).
 * **`link_compose`, the linking induction**: per-function *segment* obligations (from an
   activation's invariant `Inv`, a run realizes a prefix that ends, returns, or ends at a call:
