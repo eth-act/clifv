@@ -3,7 +3,7 @@ import FV.E2E.WorldTrapCall
 import FV.E2E.LinkTrapCallWitness
 import FV.Front.RawExeTrap
 import FV.Link.DeadCleanupExeTrapWitness
-import FV.E2E.DeadCleanupTrapCallTry
+import FV.E2E.DeadCleanupTrapCallTryWitness
 
 -- S9 (#33): callee traps. S9a: the per-function theorem (docs/contracts/e2e.md "Callee traps").
 #print axioms E2E.step_trapRel
@@ -100,3 +100,7 @@ import FV.E2E.DeadCleanupTrapCallTry
 #print axioms Backend.Proof.regLevel_trapCall_coreT
 #print axioms Backend.Proof.regLevel_trapCall_valueT
 #print axioms E2E.backend_correct_final_cleanup_trapcallT
+#print axioms E2E.DeadCleanupTrapCallTryWitness.final_applies -- witness: native_decide
+#print axioms E2E.DeadCleanupTrapCallTryWitness.source_hasTry
+#print axioms E2E.DeadCleanupTrapCallTryWitness.cs0_trapsCT
+#print axioms E2E.DeadCleanupTrapCallTryWitness.cs0_traps
