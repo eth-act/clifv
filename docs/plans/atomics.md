@@ -458,8 +458,13 @@ they are; the per-thread layers are new files.
       Witness (`IselRefinesWitness.lean`): `isel_refines_fA`, every premise but the match and
       the run discharged on the real lowering of the atomics function `fA` (`driverHypA`,
       `memRelOk_relW`, `X0_tls`).
-    * open: the run from the function's entry (the entry code `preT`: incoming stack arguments
-      are reads not yet checked), and the composition with layers 3, 4a, 4b.
+    * *From the function's entry (done, `FV/Concurrency/IselEntry.lean`):* `entry_matchN`
+      (`LowerSim.entry_step` with the entry code exposed: the `Args` step, then the stack-argument
+      loads) and **`isel_refines_entry`**: the layer-2 refinement for a VCode thread run from
+      `⟨0, 0, ρ₀, w₀⟩` (where layers 3 and 4a start), for functions whose parameters are all in
+      registers (the entry code is one `Args`, without events; stack-argument loads are reads
+      not yet covered). Witness: `isel_refines_entry_fA` (`fA_reg`).
+    * open: the composition with layers 3, 4a, 4b.
 
   Outside the multi-threaded scope (no `CStep`, or two VCode events per CLIF event): `i128`
   loads/stores (two `ldr`/`str`, a mixed-size question, T2i #317) and `stack_load`/

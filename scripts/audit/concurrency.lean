@@ -298,3 +298,7 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.IselRefines.seg_res
 #print axioms Concurrency.IselRefines.isel_refines
 #print axioms Concurrency.IselRefines.Witness.isel_refines_fA -- witness: native_decide
+#print axioms Concurrency.IselEntry.entry_matchN
+#print axioms Concurrency.IselEntry.entryLoads_nil
+#print axioms Concurrency.IselEntry.isel_refines_entry
+#print axioms Concurrency.IselRefines.Witness.isel_refines_entry_fA -- witness: native_decide
