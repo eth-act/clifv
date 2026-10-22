@@ -498,8 +498,11 @@ lowering passes the typed validator (`Backend.lowerCheckFor`: `lowerCheckT` outs
 the theorems are `backend_correct_finalT`/`backend_correct_final_cleanupT` with
 `E2E.typedRules_program` (`FV/E2E/VerifiableT.lean`: `InSubsetT.of_verifiableT`,
 `verifiable_or_verifiableT_of_unverifiedReason`, `lowerChecked_spec`; witness
-`FVTest/E2E/FloatVerifiedW.lean`). Next: the executable compiler's gate (`compileExe`,
-`lean-link --verified`) on `InScopePT` + `OutOkTCleanup` with `Link.DeadCleanup.compileExe_correctT`.
+`FVTest/E2E/FloatVerifiedW.lean`). Next: the executable compiler's gate for plain `lean-link`
+(`Link.DeadCleanup.compileExeT`: `InScopePT` + `OutOkTCleanup` with
+`Link.DeadCleanup.compileExe_correctT`). Decision (parent, 2026-10-22): `lean-link --verified`
+stays integer-only — its claim reaches the Rust source through front-end theorems
+(`Front.bundle_correct_raw*`) that exist only for integers; only plain `--lean-link` widens.
 
 **Slice 8, totality half (typed input scope, FloatsTotT).** `E2E/LinkScopeInputDefsT.lean`:
 `fnScopeInTB` keeps every conjunct of `fnScopeInB` over the typed scope (`functionET`,

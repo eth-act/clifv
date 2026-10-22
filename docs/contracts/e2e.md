@@ -4104,6 +4104,9 @@ outside (`functionET` has no arithmetic). The Stock routes are integer-only (the
 requires `i32`/`i64` signatures and bodies): on a typed function they produce `lowerFunction`'s
 code, accepted only by `lowerCheck` (which implies `lowerCheckT`, `lowerCheckT_of_lowerCheck`) or,
 as the last retry, by `lowerChecked`'s `lowerCheckT`.
+`lean-link --verified` stays integer-only (decision 2026-10-22): its claim reaches the Rust
+source through front-end theorems (`Front.bundle_correct_raw*`) that exist only for integers;
+the typed scope widens plain `lean-link` only.
 
 ## Contract changes taken (byte-identical)
 
