@@ -421,14 +421,20 @@ they are; the per-thread layers are new files.
       value), `atomic_cas` (read, and the write when the comparison succeeds) and `fence`.
       Witnesses (`ClifCStepWitness.lean`): `cstep_atomicLoad0`, `cstep_store0`,
       `cstep_atomicCas0`.
-    * open: the statements without events (their outcome does not read the bytes), the VCode
-      side per statement (the segment's one event is the CLIF access: `access_in_events`,
-      `cover_of_not_runOut` and `addr_eq_of_oneAcc` with `segShape`'s equal size, and its bytes
-      are the CLIF bytes by `MemRelOk.bytes`; the footprint premises of `RunOut` along the run:
-      no error, aligned `sp`, `csemWF`), the match
-      after patching both memories with the read bytes (`MemRelOk.store` bytewise), determinism
-      of `VStep` (the thread's segment is `stmt_step`'s forward run), and the induction over the
-      thread run.
+    * *Assembly pieces (done):* footprint premises along the run (`SegFoot.csem_keep`,
+      `runFoot_csem`); `VStep` determinism and counted driver matches exposing the segment's
+      endpoint (`IselStep.vstep_det`, `vtrun_patchN`, `stmt_matchN`, `term_matchN`); a thread
+      walking a stretch without events (`IselSeg.vtrun_walk`, `vtrun_follow`); the match after
+      patching both memories (`IselSeg.mr_patch`, `mr_own`); the static per-statement check
+      (`IselCheck.threadCheck`, `obligations_of_threadCheck`); CLIF steps without events
+      (`ClifCStepTerm.cstep_pure`, `cstep_term`, `done_of_step`); traces to `Refines`
+      (`CorrRefine.refines_of_corr`); the induction (`IselThread.simRes_of_seg`, `pure_seg`,
+      `term_seg`); the memory instruction's events are the CLIF access
+      (`IselVar.events_at_access`, with `CEvsInv.cEvs_mapRegs`/`cEvs_setMem_atA` and
+      `IselMemAux`'s event shapes); the end of a memory segment (`IselMemSeg.mem_complete`).
+      Witnesses: `SegFootWitness`, `IselMemAuxWitness`, `CEvsInvWitness`, and
+      `IselThreadWitnessData.driverHypA` (the driver hypothesis of the compiled atomics function).
+    * open: the memory statement's segment (`mem_seg`), the layer-2 theorem.
 
   Outside the multi-threaded scope (no `CStep`, or two VCode events per CLIF event): `i128`
   loads/stores (two `ldr`/`str`, a mixed-size question, T2i #317) and `stack_load`/
