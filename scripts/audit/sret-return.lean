@@ -1,6 +1,7 @@
 import FV.E2E.SretReturnWitness
 import FV.E2E.SretReturnCleanup
 import FV.E2E.SretReturnWitnessT
+import FV.Link.DeadCleanupExeAbiWitness
 
 #print axioms Backend.Proof.Driver.term_step_abi
 #print axioms Backend.Proof.Driver.sim_run_abi
@@ -46,3 +47,23 @@ import FV.E2E.SretReturnWitnessT
 #print axioms E2E.backend_correct_finalT_sret
 #print axioms E2E.backend_correct_finalT
 #print axioms E2E.SretReturnWitness.sw_returns_sretT -- witness: native_decide
+#print axioms E2E.iselSim_relW_abi
+#print axioms E2E.backend_correct_world_abi
+#print axioms E2E.iselSim_relW_cleanup_abi
+#print axioms E2E.backend_correct_world_cleanup_abi
+#print axioms E2E.backend_correct_world_pipeline_abi
+#print axioms E2E.armRefinesAbi_of_actRet
+#print axioms E2E.backend_correct_program_core_abi
+#print axioms E2E.backend_correct_program_budget_abi
+#print axioms E2E.backend_correct_program_stack_abi
+#print axioms E2E.DeadCleanupBinary.binary_correct_abi
+#print axioms E2E.DeadCleanupBinary.binary_correct_of_checks_abi
+#print axioms E2E.DeadCleanupExecBytes.ExecRefinesAbi.execRefines
+#print axioms E2E.DeadCleanupExecBytes.exec_of_modelN_abi
+#print axioms E2E.DeadCleanupExecBytes.binary_correct_exec_staticN_abi
+#print axioms E2E.DeadCleanupExecBytes.binary_correct_exec_of_reads_abi
+#print axioms E2E.DeadCleanupExecBytes.binary_correct_exec_of_insn_abi
+#print axioms E2E.DeadCleanupExecBytes.binary_correct_exec_proven_abi
+#print axioms Link.DeadCleanup.compileExe_correct_abi
+#print axioms Link.DeadCleanup.compileExe_correct
+#print axioms Link.DeadCleanup.SretWitness.exec_returns_sret -- witness: native_decide
