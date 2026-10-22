@@ -33,18 +33,21 @@ open Backend Isle Isle.Interp Isle.Aarch64
 set_option maxRecDepth 20000
 
 /-- **The lowering of a trapping atomic**: `ms` is the single LL/SC loop of `inst`, with the
-CLIF address value's vreg as address operand and the CLIF flags. -/
+CLIF address value's vreg as address operand and the CLIF flags; the type is an `i8..i64`. -/
 def AtomicLowered (inst : Clif.Inst) (ms : List MInst) : Prop :=
-  (∀ op ty fl p x, inst = .atomicRmw op ty fl p x → ∃ (lop : AtomicRmwLoopOp) (d d1 d2 : Nat),
+  (∀ op ty fl p x, inst = .atomicRmw op ty fl p x → eTy ty = true ∧
+    ∃ (lop : AtomicRmwLoopOp) (d d1 d2 : Nat),
     ms = [.atomicRmwLoop (CTy.ofClif ty) lop fl (.vreg p .int) (.vreg x .int) (.vreg d .int)
       (.vreg d1 .int) (.vreg d2 .int)]) ∧
-  (∀ ty fl p e x, inst = .atomicCas ty fl p e x → ∃ d d1 : Nat,
+  (∀ ty fl p e x, inst = .atomicCas ty fl p e x → eTy ty = true ∧ ∃ d d1 : Nat,
     ms = [.atomicCasLoop (CTy.ofClif ty) fl (.vreg p .int) (.vreg e .int) (.vreg x .int)
       (.vreg d .int) (.vreg d1 .int)])
 
-/-- The trap code (the flags') and the access size of an LL/SC loop instruction. -/
+/-- The trap code (the flags') and the access size of an LL/SC loop instruction of an
+`i8..i64` type (`AtomTy`). -/
 def loopTrap? : MInst → Option (Clif.TrapCode × Nat)
-  | .atomicRmwLoop ty _ fl .. | .atomicCasLoop ty fl .. => fl.trapCode.map (·, ty.bytes)
+  | .atomicRmwLoop ty _ fl .. | .atomicCasLoop ty fl .. =>
+    if AtomTy ty then fl.trapCode.map (·, ty.bytes) else none
   | _ => none
 
 theorem loopTrap?_mapRegs (g : Reg → Reg) (i : MInst) : loopTrap? (i.mapRegs g) = loopTrap? i := by
@@ -98,7 +101,7 @@ macro_rules
     · simp [vdefs, operands_rmwLoop, Operand.isDef, LState.fresh]
     · refine ⟨fun _ _ _ _ _ h => ?_, fun _ _ _ _ _ h => by cases h⟩
       cases h
-      exact ⟨_, _, _, _, rfl⟩))
+      exact ⟨hety, _, _, _, _, rfl⟩))
 
 section Shapes
 variable {p : Program} (hp : Data p)
@@ -172,7 +175,7 @@ theorem casShape_ok : RuleShapeOk p rule_lower_2390 := by
   · simp [vdefs, operands_casLoop, Operand.isDef, LState.fresh]
   · refine ⟨fun _ _ _ _ _ h => (by cases h), fun _ _ _ _ _ h => ?_⟩
     cases h
-    exact ⟨_, _, rfl⟩
+    exact ⟨hety, _, _, rfl⟩
 
 end Shapes
 

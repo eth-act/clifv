@@ -4242,6 +4242,53 @@ on `(41, 0)` traps with `int_divz` inside `h`), `cs0_trapsDT` (the new premise h
 (`compileExe_correct_trapT` with every premise but the entry contract discharged: the executable
 reaches a state at a trap with `int_divz`).
 
+## Memory traps of trapping atomics (A3, #412, F4–F7)
+
+`docs/plans/memfault.md`. The trap theorems above take `TrapsExplicit`: no load, store or atomic
+traps. cg_clif's `atomic_cas`/`atomic_rmw` carry the default trap code `heap_oob` (every load and
+store is `notrap`), and `Clif.run` traps there when the access is outside every live allocation.
+Cranelift inserts no check: the trap is the hardware fault of the access. New theorems (old ones
+unchanged) take instead the run premise **`TrapsExplicitM`** (a statement traps only explicitly or
+at a trapping atomic, `Clif.memTrapInst`; every callee returns) and the memory map premise
+**`MapFaults mp`** (every memory trap of the run, `Clif.MemTrapAt … c a n`, has a byte of
+`[a, a + n)` that the process's memory map `mp` does not map, `Perm.none`).
+
+**What they claim.** The observable is a state of the run at a trap site of the entry function
+with the CLIF code whose instruction errs (an explicit trap's `udf`) or **faults under `mp`**
+(`ArmFault.InstFaults`: the `ldaxr x27, [x25]` of the trapping atomic's LL/SC loop, `x25` the
+CLIF address). The machines are the existing ones, whose memory is total: the theorems say that
+**if** the run reaches the trapping atomic, its `ldaxr` faults under the map; they do **not** say
+that no earlier access of the run faults under `mp`. That needs the `MapRel` premise and the
+fault-aware step `ArmFault.stepF` (slice F8, open).
+
+* register level (`FV/E2E/RegLevelMemTrap.lean`): the observable `TrapAtM mp fa fb base c` (`TrapAt`
+  at a `udf` line, `UdfLine`, or at an `ldaxr` line with an unmapped byte, `LdaxrUnmapped`;
+  `trapAtF_of_trapAtM`: on the function's own machine it is `TrapAtF`, the next `stepF` is the
+  fault); the proof device `haltLoop` (the VCode semantics with the trapping loop halting,
+  `memTrap_halt`, `realizes_haltLoop`), `loop_ldaxr`, **`regLevel_memtrap_world_value`**;
+* per function (`FV/E2E/WorldMemTrap.lean`): `iselSim_relW_cleanup_memtrap` (`driver_memtrap`),
+  **`backend_correct_worldX_cleanup_memtrap`** (every activation reaches `TrapAtM`, every earlier
+  state `GoodX`);
+* linked program (`FV/E2E/LinkMemTrap.lean`): the per-state facts before the trap state
+  `LinkSys.RunGoodLB n` (the total machine runs on past the `ldaxr`, so `RunGoodL` is bounded),
+  **`E2E.backend_correct_program_memtrap_{core,budget,peak}`**;
+* executable (`FV/E2E/DeadCleanupExecMemTrap.lean`, `FV/Link/DeadCleanupExeMemTrap.lean`): the
+  observable **`ExecTrapM mp I file f c e`** (`TrapAt` of `f`, and the file's instruction word at
+  the pc, executed by the processor, errs or faults under `mp`), `ExecRefinesM`; the simulation
+  before a step `act_simNB`; `DeadCleanupExecBytes.binary_correct_exec_memtrap{,_peak}`,
+  **`Link.DeadCleanup.compileExe_correct_memtrap{,_peak}`**,
+  `compileExe_correct_source_memtrap{,_peak}` (the source run's trap without load/store traps,
+  `Opt.Legal.NoMemTrap`, which allows atomic traps);
+* bundles (`FV/Front/RawExeMemTrap.lean`): **`Front.bundle_correct_{source,raw}_memtrap{,_peak}`**:
+  the trap halves of `bundle_correct_{source,raw}{,_peak}` with `TrapsExplicitM ∧ MapFaults mp` of
+  the compiled program's run at every fuel in place of `TrapsExplicit`, conclusion `ExecRefinesM`.
+
+Witness (`FV/Link/DeadCleanupExeMemTrapWitness.lean`): `f(a, e, x) = atomic_cas.i64 a, e, x`
+compiled by `compileExe` (`compile_eq`); `run_traps` (the run on `(0, 1, 2)` traps `heap_oob`),
+`cs0_trapsExplicitM`, `cs0_mapFaults` (the map `nullMap`: nothing mapped below 4096, the null
+page), `cs0_not_trapsExplicit` (the old premise fails), `exec_traps` (`compileExe_correct_memtrap`
+with every premise but the entry contract discharged). `#print axioms`: `scripts/audit/memfault.lean`.
+
 ## Entry-state and runtime premises (A5, #411)
 
 `FV/E2E/EntryContract.lean`, `FV/Front/RawExeContract.lean`, `FV/Front/ExeContract.lean`,
