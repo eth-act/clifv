@@ -407,6 +407,7 @@ def rules : Array ClosureRule := #[
   ⟨808, "rule_lower_1261", 686, true, [], [], []⟩,
   ⟨810, "rule_lower_1272", 686, true, [], [], []⟩,
   ⟨811, "rule_lower_1281", 686, true, [], [], []⟩,
+  ⟨812, "rule_lower_1283", 686, true, [], [], ["Opcode.Fcmp", "ty_scalar_float"]⟩,
   ⟨815, "rule_lower_1300", 686, true, ["slow"], ["slow"], []⟩,
   ⟨816, "rule_lower_1307", 699, false, [], [], []⟩,
   ⟨817, "rule_lower_1308", 699, false, [], [], []⟩,
@@ -474,6 +475,7 @@ def rules : Array ClosureRule := #[
   ⟨939, "rule_lower_2086", 686, true, [], [], []⟩,
   ⟨940, "rule_lower_2092", 686, true, [], [], []⟩,
   ⟨946, "rule_lower_2146", 686, true, [], [], []⟩,
+  ⟨951, "rule_lower_2176", 686, true, [], [], ["Opcode.Fcmp", "ty_scalar_float"]⟩,
   ⟨958, "rule_lower_2215", 686, true, [], [], []⟩,
   ⟨959, "rule_lower_2222", 715, false, ["TODO"], [], []⟩,
   ⟨960, "rule_lower_2224", 715, false, ["TODO"], [], []⟩,
@@ -692,7 +694,6 @@ def excludedRootRules : Array (String × List String) := #[
   ("rule_lower_1248", ["I64X2"]),
   ("rule_lower_1254", ["I64X2"]),
   ("rule_lower_1266", ["Opcode.Extractlane"]),
-  ("rule_lower_1283", ["Opcode.Fcmp", "ty_scalar_float"]),
   ("rule_lower_1289", ["I128"]),
   ("rule_lower_1294", ["I128", "Opcode.Extractlane"]),
   ("rule_lower_1320", ["Opcode.Extractlane"]),
@@ -760,7 +761,6 @@ def excludedRootRules : Array (String × List String) := #[
   ("rule_lower_2158", ["Opcode.Fcmp", "multi_lane"]),
   ("rule_lower_2164", ["Opcode.Fcmp", "multi_lane"]),
   ("rule_lower_2170", ["Opcode.Fcmp", "multi_lane"]),
-  ("rule_lower_2176", ["Opcode.Fcmp", "ty_scalar_float"]),
   ("rule_lower_2179", ["Opcode.Fcmp"]),
   ("rule_lower_2185", ["multi_lane"]),
   ("rule_lower_2191", ["multi_lane"]),
@@ -1564,8 +1564,8 @@ def terms : Array ClosureTerm := #[
 
 /-- Summary counts (also in `docs/contracts/isle.md`). -/
 def summary : List (String × Nat) := [
-  ("rules", 521), ("rootRules", 171), ("excludedRootRules", 354),
-  ("rulesExcludedByDefaultTags", 50), ("rulesWithLhsReasons", 59),
+  ("rules", 523), ("rootRules", 173), ("excludedRootRules", 352),
+  ("rulesExcludedByDefaultTags", 50), ("rulesWithLhsReasons", 61),
   ("terms", 660), ("externTerms", 145), ("externConstructors", 102),
   ("externExtractors", 47), ("externTermsWithSpec", 98)]
 

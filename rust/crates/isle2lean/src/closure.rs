@@ -92,6 +92,8 @@ pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_549",
     "rule_lower_554",
     "rule_lower_559",
+    "rule_lower_1283",
+    "rule_lower_2176",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];

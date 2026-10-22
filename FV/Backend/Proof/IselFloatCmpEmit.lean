@@ -186,8 +186,8 @@ variable {p : Program} (hp : Data p) {ctx : Ctx} {cfg : Config} (hc : cfg.checkO
 set_option maxHeartbeats 2000000 in
 include hp hc in
 /-- `fpu_cmp` (`inst.isle:2606`): `MInst.FpuCmp` as a flag producer. -/
-theorem fpu_cmp_ok {n : Nat} (hn : 30 ≤ n) {a b c : V} {s s' : LState × Array RuleId} {v : V}
-    (h : ApplyInternal p (sem ctx) cfg n 47 370 [a, b, c] s v s') :
+theorem fpu_cmp_ok {n : Nat} {a b c : V} {s s' : LState × Array RuleId} {v : V}
+    (h : ApplyInternal p (sem ctx) cfg n 47 370 [a, b, c] s v s') (hn : 30 ≤ n) :
     s'.1 = s.1 ∧ v = .data 47 1 [.data 58 56 [a, b, c]] := by
   isel_split hp hc h 370
   isel_inv [*, rule_inst_2606] at hm he
@@ -195,8 +195,8 @@ theorem fpu_cmp_ok {n : Nat} (hn : 30 ≤ n) {a b c : V} {s s' : LState × Array
 set_option maxHeartbeats 4000000 in
 include hp hc in
 /-- `fp_cond_code` (`inst.isle:5230-5256`): `fpCond?` of the condition, which is not `one`/`ueq`. -/
-theorem fp_cond_code_ok {n : Nat} (hn : 40 ≤ n) {k : Nat} {s s' : LState × Array RuleId} {v : V}
-    (h : ApplyInternal p (sem ctx) cfg n 96 656 [.data 144 k []] s v s') :
+theorem fp_cond_code_ok {n : Nat} {k : Nat} {s s' : LState × Array RuleId} {v : V}
+    (h : ApplyInternal p (sem ctx) cfg n 96 656 [.data 144 k []] s v s') (hn : 40 ≤ n) :
     s'.1 = s.1 ∧ ∃ cc c, k = fccIdx cc ∧ fpCond? cc = some c ∧ v = .data 96 c.idx [] := by
   isel_split hp hc h 656
   all_goals isel_inv [*, rule_inst_5232, rule_inst_5235, rule_inst_5237, rule_inst_5239,
@@ -303,9 +303,9 @@ set_option maxHeartbeats 4000000 in
 include hp hc in
 /-- `scalar_size` at any type: the size index of the type (rules exist only for the scalar
 types; at `invalid`/vectors no rule matches and the call cannot succeed). -/
-theorem scalar_size_ok {n : Nat} (hn : 40 ≤ n) {t : CTy}
+theorem scalar_size_ok {n : Nat} {t : CTy}
     {s s' : LState × Array RuleId} {v : V}
-    (h : ApplyInternal p (sem ctx) cfg n 95 307 [.ty t] s v s') :
+    (h : ApplyInternal p (sem ctx) cfg n 95 307 [.ty t] s v s') (hn : 40 ≤ n) :
     v = .data 95 (ssIdx t) [] ∧ s'.1 = s.1 := by
   cases t with
   | invalid =>
@@ -349,17 +349,22 @@ theorem scalar_size_ok {n : Nat} (hn : 40 ≤ n) {t : CTy}
         | (have hw : CTy.float w = CTy.float 64 := by assumption
            simp only [CTy.float.injEq] at hw; subst hw; rfl)
 
+/-- The scalar size of an index (the decoding `ofV` uses; `fpu_cmp`'s output only reaches
+`ofV` for indices `0..4`, where it is the matching `OperandSize`). -/
+def sizeOfIdx : Nat → ScalarSize
+  | 0 => .size8 | 1 => .size16 | 2 => .size32 | 3 => .size64 | 4 => .size128 | _ => .size8
+
 /-- The condition instruction `fpu_cmp` builds decodes at any scalar size index `k ≤ 4`
 (`ssIdx` of a type is at most 4). -/
-theorem ofV_fpuCmp_some {k : Nat} (hk : k ≤ 4) {rx ry : Reg} :
-    ∃ m, MInst.ofV (.data 58 56 [.data 95 k [], .reg rx, .reg ry]) = some m ∧
-      (k = 2 → m = .fpuCmp .size32 rx ry) ∧ (k = 3 → m = .fpuCmp .size64 rx ry) := by
+theorem ofV_fpuCmp {k : Nat} (hk : k ≤ 4) (rx ry : Reg) :
+    MInst.ofV (.data 58 56 [.data 95 k [], .reg rx, .reg ry]) =
+      some (.fpuCmp (sizeOfIdx k) rx ry) := by
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl
-  · exact ⟨.fpuCmp .size8 rx ry, rfl, fun h => by omega, fun h => by omega⟩
-  · exact ⟨.fpuCmp .size16 rx ry, rfl, fun h => by omega, fun h => by omega⟩
-  · exact ⟨.fpuCmp .size32 rx ry, rfl, fun _ => rfl, fun h => by omega⟩
-  · exact ⟨.fpuCmp .size64 rx ry, rfl, fun h => by omega, fun _ => rfl⟩
-  · exact ⟨.fpuCmp .size128 rx ry, rfl, fun h => by omega, fun h => by omega⟩
+  · rfl
+  · rfl
+  · rfl
+  · rfl
+  · rfl
 
 /-- The `hsz` fact of `emit_fcmp_core` at `f32`: the size index `2`. -/
 theorem hsz32 {sz : ScalarSize} (h : sz = .size32) :
@@ -404,52 +409,38 @@ theorem emit_fcmp_okT {F : BitVec 64 → Prop} {isem : Sem} {f : Clif.Function}
      have := fccOk_ne h9 hok
      omega)
   · -- rule 526
-    obtain ⟨t, hty, -⟩ := (ext_value_type_iff ctx _ y _).mp
-      ‹externExtract ctx T.value_type (.value y) _ = _›
-    simp only [List.cons.injEq, and_true] at hty
-    obtain ⟨rx, hrx, rfl, hrst⟩ := (ctor_put_in_reg_iff ctx _ x _ _).mp ‹externCtor ctx T.put_in_reg _ _ = _›
-    obtain ⟨ry, hry, rfl, hrst2⟩ := (ctor_put_in_reg_iff ctx _ y _ _).mp ‹externCtor ctx T.put_in_reg _ _ = _›
-    subst hrst; subst hrst2
-    obtain rfl := hctx.valueReg x rx hrx
-    obtain rfl := hctx.valueReg y ry hry
-    obtain ⟨hk, -⟩ := scalar_size_ok hp hc (by omega)
-      ‹ApplyInternal _ _ _ _ 95 307 [.ty t] _ _ _ _›
-    rw [hk]
-    isel_call hp hc [fpu_cmp_ok, fp_cond_code_ok]
-    subst_vars
-    obtain ⟨cc', cond, hfk, hfc, -⟩ := ‹∃ cc c, _ = fccIdx cc ∧ fpCond? cc = some c ∧ _›
-    have hcond : fpCond? cc = some cond := by
-      obtain rfl := fccIdx_inj hfk
-      exact hfc
-    obtain ⟨m, hmi, h32, h64⟩ := ofV_fpuCmp_some (ssIdx_le t)
-      (rx := .vreg x (valClassOf ctx x)) (ry := .vreg y (valClassOf ctx y))
-      (k := ssIdx t)
-    refine ⟨[], Frag.nil _, .inr (.inr ⟨_, _, cond, rfl, hmi, (fpCond?_ne_al hcond).1,
-      (fpCond?_ne_al hcond).2, rfl, ?_⟩), fun fr ρ b hh hdf hT => ?_⟩
-    · rw [vuseNums_fpuCmp]
-      intro u hu
+    obtain ⟨hk, hst1⟩ := scalar_size_ok hp hc ‹_› (by omega)
+    obtain ⟨hst2, hv8⟩ := fpu_cmp_ok hp hc ‹_› (by omega)
+    obtain ⟨hst3, cc', cond, hfk, hfc, hv7⟩ := fp_cond_code_ok hp hc ‹_› (by omega)
+    obtain rfl := fccIdx_inj hfk
+    have hvx : _ = Reg.vreg x (valClassOf ctx x) := hctx.valueReg x _ (by assumption)
+    have hvy : _ = Reg.vreg y (valClassOf ctx y) := hctx.valueReg y _ (by assumption)
+    subst hvx
+    subst hvy
+    dsimp only at hst3 hst2
+    rw [hv8, hk, hv7, hst3, hst2, hst1]
+    refine CondCode.flag (ms := []) (Frag.nil _) (ofV_fpuCmp (ssIdx_le _) _ _)
+      (fpCond?_ne_al hfc) rfl ?_ ?_
+    · intro u hu
+      rw [vuseNums_fpuCmp] at hu
       rcases mem2 hu with rfl | rfl
-      · exact vreg_lt hvb hrx
-      · exact vreg_lt hvb hry
-    · rcases hT with ⟨ty, xa, xb, hxv, hyv, hb⟩
-      have hrt : CTy.ofClif ty = t := vholds_ty hdf hty hyv
-      cases t with
-      | invalid => simp [CTy.ofClif] at hrt
-      | int w => cases ty <;> simp [CTy.ofClif, Clif.FSem.fcmp] at hrt hb
-      | float w =>
-        have hw : w = 32 ∨ w = 64 := by cases ty <;> simp_all [CTy.ofClif]
-        rcases hw with rfl | rfl
-        · have hty32 : ty = .f32 := by cases ty <;> simp_all [CTy.ofClif]
-          subst hty32
-          obtain ⟨ms', -, -, hr'⟩ := emit_fcmp_core hctx hvb hcond hrx hry hty hmi rfl
-            (hsz32 rfl)
-          exact hr' fr ρ b hh hdf ⟨.f32, xa, xb, hxv, hyv, hb⟩
-        · have hty64 : ty = .f64 := by cases ty <;> simp_all [CTy.ofClif]
-          subst hty64
-          obtain ⟨ms', -, -, hr'⟩ := emit_fcmp_core hctx hvb hcond hrx hry hty hmi rfl
-            (hsz64 rfl)
-          exact hr' fr ρ b hh hdf ⟨.f64, xa, xb, hxv, hyv, hb⟩
-      | vec lb n fl => cases ty <;> simp [CTy.ofClif] at hrt
+      · exact vreg_lt hvb (by assumption)
+      · exact vreg_lt hvb (by assumption)
+    · rintro fr ρ b hh hdf ⟨ty, xa, xb, hxv, hyv, hb⟩
+      have hrt : _ = _ := vholds_ty hdf (by assumption) hyv
+      subst hrt
+      cases ty with
+      | f32 =>
+        obtain ⟨ms', -, -, hr'⟩ := emit_fcmp_core hctx hvb hfc (by assumption)
+          (by assumption) (by assumption)
+          (ofV_fpuCmp (ssIdx_le (CTy.ofClif Clif.Ty.f32)) _ _) (hsz32 rfl)
+        exact hr' fr ρ b hh hdf ⟨.f32, xa, xb, hxv, hyv, hb⟩
+      | f64 =>
+        obtain ⟨ms', -, -, hr'⟩ := emit_fcmp_core hctx hvb hfc (by assumption)
+          (by assumption) (by assumption)
+          (ofV_fpuCmp (ssIdx_le (CTy.ofClif Clif.Ty.f64)) _ _) (hsz64 rfl)
+        exact hr' fr ρ b hh hdf ⟨.f64, xa, xb, hxv, hyv, hb⟩
+      | _ => simp [Clif.FSem.fcmp] at hb
 
 end Contract
 

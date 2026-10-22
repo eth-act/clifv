@@ -11,7 +11,7 @@ def excludedSourceRoots : List Rule := (program.rulesOf TId.lower).filter (fun r
 /-- Kernel evaluation of the real generated rule list gives the exact
 partition; these numbers are not whole-driver execution-proof coverage. -/
 theorem stock_source_root_partition_counts : (program.rulesOf TId.lower).length = 517 ∧
-    sourceClosureRoots.length = 166 ∧ excludedSourceRoots.length = 351 := by
+    sourceClosureRoots.length = 168 ∧ excludedSourceRoots.length = 349 := by
   rw [sourceClosureRoots,excludedSourceRoots,show TId.lower = 686 from rfl,data_program.r686]
   decide +kernel
 /-- Every actual selected ordinary source root belongs to the remaining real
@@ -25,7 +25,7 @@ theorem stock_selected_source_root_partition {f : Clif.Function} {ctx : Ctx} (ma
 scalar and floating rules, with full source-rule membership. -/
 theorem stock_source_root_partition_witness : rule_lower_53 ∈ sourceClosureRoots ∧
     rule_lower_58 ∈ excludedSourceRoots ∧ (program.rulesOf TId.lower).length = 517 ∧
-    sourceClosureRoots.length = 166 ∧ excludedSourceRoots.length = 351 := by
+    sourceClosureRoots.length = 168 ∧ excludedSourceRoots.length = 349 := by
   refine ⟨?_,?_,stock_source_root_partition_counts⟩
   · rw [sourceClosureRoots,show TId.lower = 686 from rfl,data_program.r686]; decide +kernel
   · rw [excludedSourceRoots,show TId.lower = 686 from rfl,data_program.r686]; decide +kernel
