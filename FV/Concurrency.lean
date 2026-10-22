@@ -31,6 +31,7 @@ of compiled code (`RealizeCompiled.realizes_compiled`; on the compiled `atomic_l
 through location 0: `RealizeCompiled.WitnessMP.realizes_mp`, `RealizeCompiled.WitnessMP.mp_reads`); calls by the linking induction
 (`CallCompose.link_compose`: the callee's events through its own refinement, composed along the
 call; external callees under the trusted event contract `CallCompose.ExtEvContract`).
+Layer 4b from the ABI entry, through the prologue: `ArmAllocThread.arm_alloc_refines_entry`.
 The fragment model is weaker than the whole `aarch64.cat` (`Armv8Full.consistent_frag`); LSE
 atomics map by the same table (`Lse.lse_maps`). Nothing here changes the Arm model of `FV/Arm`.
 -/
@@ -142,3 +143,5 @@ import FV.Concurrency.RealizeWitnessStore
 import FV.Concurrency.RealizeWitnessMP
 import FV.Concurrency.CallCompose
 import FV.Concurrency.CallComposeWitness
+import FV.Concurrency.ArmAllocEntry
+import FV.Concurrency.ArmAllocEntryWitness
