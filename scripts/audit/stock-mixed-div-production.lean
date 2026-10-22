@@ -1,0 +1,29 @@
+import FV.Backend.Proof.StockScalarMixedDivDomain
+import FV.Backend.Proof.StockScalarCheck
+import FV.E2E.StockMixedDivWitness
+#print axioms Backend.Stock.Proof.trapRun_seq_prefix
+#print axioms Backend.Stock.Proof.ScansSpec.local_trap_refines
+#print axioms Backend.Stock.Proof.LocalBody.actual_local_source_trap
+#print axioms Backend.Stock.Proof.LocalBody.actual_local_source_trap_execution
+#print axioms Backend.Stock.Proof.LocalBody.actual_local_entry_trap_refines_frame
+#print axioms Backend.Stock.Proof.QuietSourceColors.sourceMetadata_quiet_single_block
+#print axioms Backend.Stock.Proof.QuietSourceColors.buildCtx_quiet_single_block
+#print axioms Backend.Stock.Proof.QuietSourceColors.stock_lower_quiet_single_block_unsunk
+#print axioms Backend.Stock.Proof.QuietSourceColors.actual_quiet_source_record
+#print axioms Backend.Stock.Proof.QuietSourceColors.highmul_source_record_fall_refines
+#print axioms Backend.Stock.Proof.stock_lower_last_div_return_emitted
+#print axioms Backend.Stock.Proof.DivBody.actual_last_div_record
+#print axioms Backend.Stock.Proof.ScansSpec.record_inst_mem
+#print axioms Backend.Stock.Proof.ScansSpec.record_unique
+#print axioms Backend.Stock.Proof.MixedDivRecord.fall_refines
+#print axioms Backend.Stock.Proof.MixedDivRecord.trap_refines
+#print axioms Backend.Stock.Proof.DivBody.actual_mixed_div_families
+#print axioms Backend.Stock.Proof.DivBody.actual_mixed_div_body_refines
+#print axioms Backend.Stock.Proof.DivBody.actual_mixed_div_entry_return_refines_frame
+#print axioms Backend.Stock.Proof.DivBody.actual_mixed_div_entry_trap_refines_frame
+#print axioms Backend.Stock.Scalar.domain_of_mixed_div
+#print axioms Backend.Stock.Scalar.mixedDivEligible_sound
+#print axioms E2E.StockMixedDivNIWitness.checks_true -- witness: native_decide
+#print axioms E2E.StockMixedDivNIWitness.source_cases -- witness: native_decide
+#print axioms E2E.StockMixedDivNIWitness.compiled_exists -- witness: native_decide
+#print axioms E2E.StockMixedDivNIWitness.source_entry

@@ -11,6 +11,7 @@ import FV.Backend.Proof.StockScalarMinMaxDomain
 import FV.Backend.Proof.StockScalarCmpDomain
 import FV.Backend.Proof.StockScalarHighMulDomain
 import FV.Backend.Proof.StockScalarDivDomain
+import FV.Backend.Proof.StockScalarMixedDivDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -160,6 +161,25 @@ theorem highmulBodyEligible_sound {stm : Clif.Stmt} (checked : highmulBodyEligib
         | exact Or.inr ⟨true,_,_,_,rfl⟩
         | exact Or.inr ⟨false,_,_,_,rfl⟩
 
+/-- The classifier derives source shape and every prefix family internally. -/
+theorem mixedDivEligible_sound {b : Clif.Block} (checked : mixedDivEligible b = true) :
+    ∃ (front : List Clif.Stmt) (stm : Clif.Stmt) (op : Clif.DivOp) (ty : Clif.Ty) (x y z : Nat),
+      b.body = front ++ [stm] ∧
+      (∀ item ∈ front,Proof.HighMulBody.Family item.inst) ∧
+      stm.inst = .div op ty x y ∧ stm.results = [z] ∧ b.term = .ret [z] := by
+  unfold mixedDivEligible at checked
+  split at checked
+  next z op ty x y front z' body ret =>
+    simp only [Bool.and_eq_true] at checked
+    have equal : z = z' := beq_iff_eq.mp checked.1.1
+    subst z'
+    refine ⟨front.reverse,⟨[z],.div op ty x y⟩,op,ty,x,y,z,?_,?_,rfl,rfl,ret⟩
+    · have reversed := congrArg List.reverse body
+      simpa only [List.reverse_reverse,List.reverse_cons,List.reverse_nil,List.nil_append] using reversed
+    · intro item member
+      exact highmulBodyEligible_sound (List.all_eq_true.mp checked.2 item (List.mem_reverse.mp member))
+  next => cases checked
+
 /-- The finite source classifier supplies the original division and binder. -/
 theorem singleDivEligible_sound {b : Clif.Block} (checked : singleDivEligible b = true) :
     ∃ (stm : Clif.Stmt) (op : Clif.DivOp) (ty : Clif.Ty) (x y z : Nat),
@@ -195,7 +215,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
     simp only [Bool.or_eq_true] at body
-    rcases body with old | divided
+    rcases body with (old | divided) | mixed
     · have families : ∀ stm ∈ b.body, Stock.Proof.HighMulBody.Family stm.inst := by
         intro stm member
         have supported := List.all_eq_true.mp old stm member
@@ -204,6 +224,9 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     · obtain ⟨stm,op,ty,x,y,z,singleton,division,results,ret'⟩ := singleDivEligible_sound divided
       exact domain_of_single_div (lowerScope_of scope) (dominated_of dominated) abi blocks
         singleton division results ret' ordinary
+    · obtain ⟨front,stm,op,ty,x,y,z,shape,families,division,results,ret'⟩ := mixedDivEligible_sound mixed
+      exact domain_of_mixed_div (lowerScope_of scope) (dominated_of dominated) abi blocks
+        shape families division results ret' ordinary
   next => cases eligible
 
 
