@@ -774,3 +774,12 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSeg.WitnessC.callerPost -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessC.funReal_callFull -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessC.realizes_call_full -- witness: native_decide
+-- layer 4b pausing at calls and returns (#473)
+#print axioms Concurrency.ArmAllocThread.refA_runQ
+#print axioms Concurrency.ArmAllocThread.refines_of_itemSimQ
+#print axioms Concurrency.ArmAllocThread.memScopeLSC_of_ls
+#print axioms Concurrency.ArmAllocThread.itemSim_lsC
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_lsC
+#print axioms Concurrency.CallSeg.WitnessC.scopeRC -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.not_scopeLS_RC -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.caller_lsC -- witness: native_decide
