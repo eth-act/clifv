@@ -630,6 +630,16 @@ section Binary
 
 variable {I : LinkInput} {B : BaseEnv} {file : ByteArray}
 
+/-- **The fault-aware executable's observable of a trap with code `c` of `f`**: the run of the
+executable machine with faults `stepF mp` from `r` reaches, with no faulting step before it
+(`NoFault`: every earlier step is the step of `step`), a trap site of `f` with `c` whose
+instruction errs (`udf`) or faults under `mp` (`ExecTrapM`), and its step there errs. -/
+def ExecTrapF (mp : ArmFault.MemMap) (I : LinkInput) (B : BaseEnv) (file : ByteArray)
+    (f : Clif.Function) (c : Clif.TrapCode) (r : Arm.ArmState) : Prop :=
+  ∃ k, (∀ j < k, NoFault mp I B file (runX (stepF mp I B file) j r)) ∧
+    ExecTrapM mp I file f c (runX (stepF mp I B file) k r) ∧
+    Arm.r .ERR (runX (stepF mp I B file) (k + 1) r) ≠ .None
+
 /-- **The memory map premise with every entry CLIF byte read-write** (F8; `_rw`): every byte
 `mp` does not allow to be written lies outside the reserved stack `N` below `r`'s stack pointer,
 the stack arguments and every allocation of the entry's CLIF memory `cm` (so read-only data
@@ -653,9 +663,7 @@ theorem exec_memtrapF_of_model {D : List Clif.DataObject} (hI : okBCleanup I = t
     (ht : TrapAtM mp (art I f).fa (art I f).fb (art I f).base tc
       (runX ((sys I B).mach M f) N (modelOf I f r)))
     (hgood : (sysSK I B f K r fun a => (mp a).allows .W = false).RunGoodLBW N M f (modelOf I f r)) :
-    ∃ k, (∀ j < k, NoFault mp I B file (runX (stepF mp I B file) j r)) ∧
-      ExecTrapM mp I file f tc (runX (stepF mp I B file) k r) ∧
-      Arm.r .ERR (runX (stepF mp I B file) (k + 1) r) ≠ .None := by
+    ExecTrapF mp I B file f tc r := by
   have hfacts := binFacts_of_checks hI hbin
   have hL' := okBCleanup_sound hI (baseOk_F (F' := img I) hB) fun _ h => h
   have hF : ∀ g ∈ (prog I).funcs, FnOk I file g := fun g hg => fnOk hI hbin hL' hg
@@ -685,9 +693,7 @@ theorem binary_correct_exec_memtrapF_rw {D : List Clif.DataObject} (hI : okBClea
     {mp : ArmFault.MemMap} (hmf : MapFaults mp (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs)
     (hmap : MapRelRW mp I f (DeadCleanupStackBound.stackFn I f) r args cs.mem)
     {tc : Clif.TrapCode} (hrun : Clif.runLoop B.env (prog I) (M + 1) cs = .trapped tc) :
-    ∃ k, (∀ j < k, NoFault mp I B file (runX (stepF mp I B file) j r)) ∧
-      ExecTrapM mp I file f tc (runX (stepF mp I B file) k r) ∧
-      Arm.r .ERR (runX (stepF mp I B file) (k + 1) r) ≠ .None := by
+    ExecTrapF mp I B file f tc r := by
   have hn := (DeadCleanupStackBound.goodN_iff hI).2 ⟨f, hf, hc⟩
   have hfm := (Clif.Program.func?_some hf).1
   have hf' : (progOf I.resultsCleanup).func? n = some f := hf
@@ -725,9 +731,7 @@ theorem binary_correct_exec_memtrapF_rw_peak {D : List Clif.DataObject} (hI : ok
     {mp : ArmFault.MemMap} (hmf : MapFaults mp (Clif.linkEnvD (prog I) B.env F d) (prog I).bare cs)
     (hmap : MapRelRW mp I f (frameDrop (art I f).af + I.D * d) r args cs.mem)
     {tc : Clif.TrapCode} (hrun : Clif.runLoop B.env (prog I) (F + 1) cs = .trapped tc) :
-    ∃ k, (∀ j < k, NoFault mp I B file (runX (stepF mp I B file) j r)) ∧
-      ExecTrapM mp I file f tc (runX (stepF mp I B file) k r) ∧
-      Arm.r .ERR (runX (stepF mp I B file) (k + 1) r) ≠ .None := by
+    ExecTrapF mp I B file f tc r := by
   have hfm := (Clif.Program.func?_some hf).1
   obtain ⟨hL, hent, hres, hgfree, hbe, hargs, hsav, hrel, hpl⟩ :=
     sysSK_entry hI hbin hB hfm hX ho hmap.nw hr
