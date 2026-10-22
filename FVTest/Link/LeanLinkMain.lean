@@ -72,8 +72,10 @@ on the written executable — the unwind tables rust-lld wrote for the region, f
 libunwind finds them (`.eh_frame_hdr`'s search), are the compiled functions'
 (`Link.EhCheck.ehOkR`), and the compiled functions pass the unwinding checks
 (`Link.EhCheck.unwFnsB`) — so `compileExeU` succeeds and the coverage adds
-`compileExe_correct_unwind`/`_peak` (the exceptional edges); otherwise the executable is still
-written (the theorems above do not depend on unwinding) and the first failing reason is printed.
+`compileExe_correct_unwind`/`_peak` (the exceptional edges; under `--opt`, `compileExeOptU`
+succeeds: `compileExeOpt_correct_unwind`/`_peak`, the latter through the mid-end, S10g #404);
+otherwise the executable is still written (the theorems above do not depend on unwinding) and
+the first failing reason is printed.
 
 **Self tail calls** (S8, #32): with the cleanup compiler and without `--opt`, when a function
 `return_call`s itself (`Opt.TailLoop.eligB`), the compiler is `Link.DeadCleanup.compileExeTail`
@@ -278,8 +280,11 @@ def main (args0 : List String) : IO UInt32 := do
           pure false
     let totalAll := if ldOk then s!"{total}; on lean-ld's output {totalLd}" else total
     let scope := if verified then s!"; input in InScopeIn (totality: {totalAll}) (--verified)" else ""
-    let unw := if unwOk && !opt && !tailOn then
-        s!"; exceptional edges: {thm "compileExe_correct_unwind"}, {thm "compileExe_correct_unwind_peak"}"
+    -- the exceptional edges: `compileExeU SC0 file0 = .ok file` (`compileExeOptU S` under `--opt`)
+    let unw := if unwOk && !tailOn then
+        if opt then
+          s!"; exceptional edges: {thm "compileExeOpt_correct_unwind"}, {thm "compileExeOpt_correct_unwind_peak"}"
+        else s!"; exceptional edges: {thm "compileExe_correct_unwind"}, {thm "compileExe_correct_unwind_peak"}"
       else ""
     IO.println s!"lean-link: {exe}: coverage: {thm s!"{exeName}_correct"}, {thm s!"{exeName}_correct_peak"}{src}{scope}{unw}"
     if deadCleanup && !unwOk then
