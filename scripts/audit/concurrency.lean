@@ -783,3 +783,15 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSeg.WitnessC.scopeRC -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessC.not_scopeLS_RC -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessC.caller_lsC -- witness: native_decide
+-- layer 2's return coverage (#473)
+#print axioms Concurrency.IselStep.term_retN
+#print axioms Concurrency.IselThread.SimResR.simResP
+#print axioms Concurrency.IselThread.SegResR.segResP
+#print axioms Concurrency.IselThread.simResR_of_seg
+#print axioms Concurrency.IselThread.pure_segR
+#print axioms Concurrency.IselThread.term_segR
+#print axioms Concurrency.IselMemSeg.mem_completeR
+#print axioms Concurrency.IselMemMain.mem_segR
+#print axioms Concurrency.IselRefines.seg_resR
+#print axioms Concurrency.IselEntry.isel_refines_entryR
+#print axioms Concurrency.IselRefines.Witness.isel_refines_entryR_fA -- witness: native_decide

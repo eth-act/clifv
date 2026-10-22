@@ -84,4 +84,34 @@ theorem isel_refines_entry_fA {Γ : E2E.Rel} {fctx : FnCtx} {c : BitVec 64} {env
     VCodeThread.Witness.X0_tls (memRefines_csem Γ.F fctx _ hslot hsym) (mrStable_relW Γ fA c)
     fA_reg hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr
 
+/-- **Layer 2 from `fA`'s entry with the return covered** (`IselEntry.isel_refines_entryR`): as
+`isel_refines_entry_fA`; where the CLIF thread has returned, the realized prefix is the whole
+VCode trace. -/
+theorem isel_refines_entryR_fA {Γ : E2E.Rel} {fctx : FnCtx} {c : BitVec 64} {env : Clif.Env}
+    {p : Clif.Program} (hc : c.toNat % 16 = 0) (hslot : fctx.slotBase = Γ.slotOff)
+    (hsym : ∀ n b, Γ.syms n = some b → VCodeThread.Witness.X0.sym n 0 = BitVec.ofNat 64 b) :
+    ∃ ctx st0 R gn bl A,
+      DriverHyp fA vcA ctx st0 R gn bl A (csem Γ.F fctx VCodeThread.Witness.X0) (RelW Γ fA c)
+        env p ∧
+      ∀ (slots : List (Clif.SlotId × Nat)) (cs : Clif.State) (B0 : Clif.Block)
+        (args : List Clif.Val) (ρ₀ : Nat → CV) (w₀ : ArmState) (tr : List (List Ev))
+        (cT : VConf CV ArmState),
+        fA.blocks[0]? = some B0 → cs.callers = [] → cs.frame.func = fA →
+        cs.frame.slots = slots → cs.frame.body = B0.body → cs.frame.term = B0.term →
+        Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs →
+        args.map (·.ty) = B0.params.map (·.2) → args.map (·.ty) = fA.sig.params.map (·.ty) →
+        RelW Γ fA c slots cs.mem w₀ → ArgsAtEntry Γ.F fA.sig args w₀ →
+        VTRun vcA (csem Γ.F fctx VCodeThread.Witness.X0) (cEvs Γ.F fctx) (.run ⟨0, 0, ρ₀, w₀⟩)
+          tr cT →
+        ∃ n trS t ψ, n ≤ tr.length ∧ CRun env p (.run cs) trS t ∧
+          Refines Maps (fun _ => False) (StepPair (conv (tr.take n))) trS (conv (tr.take n)) ψ ∧
+          ((n = tr.length ∧ ∃ c', VStep vcA (csem Γ.F fctx VCodeThread.Witness.X0) cT c') ∨
+            Stop env p t) ∧ ∀ v, t = .ret v → n = tr.length := by
+  obtain ⟨ctx, st0, R, gn, bl, A, H, hchk⟩ := driverHypA (env := env) (p := p) (c := c) hslot hsym
+  refine ⟨ctx, st0, R, gn, bl, A, H, fun slots cs B0 args ρ₀ w₀ tr cT hB0 hcall hfunc hslots
+    hbody hterm hregs hty hsig hmr hargs hr => ?_⟩
+  exact IselEntry.isel_refines_entryR H hchk (memRelOk_relW Γ fA c) (relW_wf hc)
+    VCodeThread.Witness.X0_tls (memRefines_csem Γ.F fctx _ hslot hsym) (mrStable_relW Γ fA c)
+    fA_reg hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr
+
 end Concurrency.IselRefines.Witness
