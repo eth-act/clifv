@@ -511,13 +511,22 @@ every function of `fnScopeInTB` for every allocator answer, with `lowerCheckT`, 
 `AllocChecked` and `FormsCovered`; `resultsT_ok_inT` (crates), `resultsT_ok_input` (the integer
 conclusion re-derived). Witnesses `FVTest/E2E/FloatTotalT.lean` (`fW`: float load/const/select/
 store/bitcast, decided in `fnScopeInTB`, compiled by `pipeT_okT`; `crateW`; integer `fInt`).
+The dead-cleanup pipeline (FloatCleanupT; built): `E2E/DeadCleanupTotalT.lean` carries
+`lowerOutTB`'s facts on `prepare`'s raw output `vcp` to `prepare (prune vc) = .ok (preparedCleanup
+vc vcp)` with no new premise and for every rule set (cleanup deletes pure instructions only and
+keeps labels, interfaces and terminators: `preparedCleanup_formsCovered`, `preparedCleanup_ctlInsts`,
+`preparedCleanup_emitCondsB`), `spillLocal_cleanupT`, `spillAccepted_cleanupT` (the raw code's
+`killFreeB` availability restricted by `preparedCleanup_spillAvail`), `backend_total_emit_cleanupT`;
+`E2E/LinkScopeInputCleanupT.lean`: **`pipeCleanupT_okT`** (`pipeCleanupT` succeeds on every
+function of `fnScopeInTB` for every allocator answer, with `lowerCheckT`, `prepCheck (prune vc)`,
+`AllocChecked`, `FormsCovered`), `resultsCleanupT_ok_inT`, `resultsCleanupT_ok_input`; witnesses
+`FVTest/E2E/FloatCleanupTotalT.lean`.
 Remaining for `Link.compileExe_total_reach_inputT`, in order: typed ISLE progress (`IselProg` for
 the float roots: float forms in `stmtForms`/`prgTab`, `PInvT`, the extern helpers under
 `CtxInvT`), replacing `lowerOutTB`'s `lowerFunction` check; typed size/emission analyses
 (`iselSz`, `iselEmit`) for `emitCondsB`; completeness of `ctlSpillB`/`formsCoveredB`/`killFreeB`/
 `resClassOkB` on the typed scope (slice 6's open items) and typed `vc_ctl` (control-shape
-analysis) for `ctlInstsB`; the dead-cleanup pipeline (`pipeCleanupT_okT`: `prepare (prune vc)`'s
-spill acceptance and emission, typed `DeadCleanup*`); `leanLink`'s per-function checks
+analysis) for `ctlInstsB`; `leanLink`'s per-function checks
 (`chks`: `functionE`, integer `lowerCheck`, `checkAlloc` of the spill allocation) and
 `compileExe`'s gate widened to `InScopeInT`, then the LinkSysT port for correctness.
 
