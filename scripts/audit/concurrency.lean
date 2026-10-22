@@ -762,3 +762,8 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSeg.WitnessC.mstep_ldar -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessC.cstep_ld -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessC.funReal_ld -- witness: native_decide
+-- compiled atomic_rmw/atomic_cas callees from their ABI entry (#473)
+#print axioms Concurrency.CallThread.Witness.compiledE_R -- witness: native_decide
+#print axioms Concurrency.CallThread.Witness.compiledE_C -- witness: native_decide
+#print axioms Concurrency.CallThread.Witness.funReal_rmw -- witness: native_decide
+#print axioms Concurrency.CallThread.Witness.funReal_cas -- witness: native_decide

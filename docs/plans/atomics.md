@@ -690,8 +690,8 @@ they are; the per-thread layers are new files.
       its moves, epilogue and CLIF `return`) and the `link_compose` instance giving the caller's
       whole run; generically, layer 4b pausing at `rets`/calls needs a pc-discipline invariant
       (no item's run leaves the code) and layer 2 the coverage of a returning CLIF thread.
-      Compiled `atomic_rmw`/`atomic_cas` callees from their ABI entry: see `CallLLSCEntry.lean`
-      when merged.
+      Compiled `atomic_rmw`/`atomic_cas` callees from their ABI entry: done (`CallLLSCEntry.lean`: `compiledE_R`, `compiledE_C`,
+      `funReal_rmw`, `funReal_cas` via `funReal_calleeX`); a compiled caller of the rmw callee is open.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
