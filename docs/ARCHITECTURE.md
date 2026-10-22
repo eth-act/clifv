@@ -38,7 +38,16 @@ first, then update its producer and its consumers together.
   `omega`/`decide +kernel`/`simp` in library lemmas; keep `bv_decide` for real bit-blasting goals.
   T6's encoder proofs use symbolic field lemmas, not compiled certificates. Its fixed table
   checks split conjunctions into kernel-decided leaves; generated data remains untrusted.
-- Lean: core and `Std` only, no Mathlib (keeps the toolchain pin to `v4.34.1` alone).
+- Lean: core and `Std` only in the root package (`FV`, `FVTest`, `Corpus`) and `crate-proofs`.
+  Mathlib is allowed only in the leaf package `float-spec/` (`FVFloatSpec`: FV/Float proven
+  equal to FloatLib's IEEE 754 model, `docs/contracts/float.md` "Trust"), which `require`s the
+  root package and is imported by nothing. Why: putting Mathlib in scope of FV/Float would put
+  1,778 Mathlib modules upstream of 2,624 of the 2,812 FV modules: +1.4 GB median peak per
+  module (222 modules measured), +3–4 s import each, heavy modules pushed past 12 GB
+  (LegalArith 94 → 134 s, LegalShift 83 → 161 s under load), and 8 proof breakages in the first
+  360 modules from Mathlib's simp set and the `alias` keyword (FloatBridge). The leaf costs
+  once: Mathlib olean cache ~1 GB download / 7.5 GB on disk, FloatLib ~2.5 min, FVFloatSpec
+  ~1.5 min at ~2.6 GB per process (`scripts/float-spec.sh`, in the main gate).
 - Lean namespaces follow the directories: `Clif`, `DSL`, `Compile`, `Arm`, `Validate`, `Isle`, `Backend`, `Opt`, `E2E`.
 - Anything executable that is meant as a model must be *checkable* against an external
   oracle: Cranelift's interpreter, native execution under `qemu-aarch64-static`, or `llvm-mc`.

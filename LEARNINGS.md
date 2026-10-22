@@ -49,6 +49,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 ### Don't depend on private library internals
 - A proof that reached into the private internals of `Array.qsort` would break on a toolchain update. Sorting `cfg.loops.attach` instead carries the membership fact through the sort, with the same output (#318).
 
+### Keep Mathlib out of the main import graph
+- **Problem:** making `FV/Float` import FloatLib (which needs Mathlib) put 1,778 Mathlib modules upstream of 2,624 of 2,812 FV modules.
+- **Numbers:** +1.4 GB peak memory per module (median of 222), +3–4 s import each; under load LegalArith 94 → 134 s, LegalShift 83 → 161 s; 8 breakages in the first 360 modules (`alias` is a keyword, Mathlib simp lemmas give "no goals"/unsolved goals), none on the same modules with the bare toolchain bump.
+- **Trick:** a leaf Lake package (`float-spec/`, `require fv from ".."`) holds the Mathlib-dependent equality proofs; nothing imports it. Cost there: Mathlib cache ~1 GB download / 7.5 GB disk once, FloatLib ~2.5 min, FVFloatSpec ~1.5 min at ~2.6 GB per process (FloatBridge).
+
 ## Build infrastructure
 
 ### Threads per Lean process don't help us
