@@ -159,7 +159,7 @@ theorem refines_of_thin {trS trT : List (List (Prog.Ev K V))} (h : Thin trS trT)
         rcases hl with hl | ⟨he, hl⟩
         · exact .inl (h2 _ _ hj hj' (ne_nil_of_lt hk) (ne_nil_of_lt hk') hl)
         · exact .inr ⟨by simp only [he], hl⟩
-      shared := fun _ _ _ h => h
+      shared := fun _ _ _ _ h => h
       priv := fun p y hy _ hn => by
         obtain ⟨hj, hk, -⟩ := evAt_some hy
         obtain ⟨j, hj', hidx, hne⟩ := h3 p.1 hj (ne_nil_of_lt hk)

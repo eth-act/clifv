@@ -101,7 +101,7 @@ theorem refines_trans_spill :
       id :=
     { ev := fun p x h => ⟨x, h, rfl, rfl, rfl, rfl, rfl⟩
       mono := fun _ _ _ _ hl => hl
-      shared := fun _ _ _ h => h
+      shared := fun _ _ _ _ h => h
       priv := fun p y h _ hn => absurd rfl (hn p (by rw [h]; rfl))
       len := fun j h => by simp at h; subst h; simp
       pair := fun j h h2 => by simp at h; subst h; simp at h2
