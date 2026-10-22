@@ -994,4 +994,499 @@ theorem cas_retry {R : RL} (hR : R.Wf) {ty : CTy} (hty : AtomTy ty) {fl : Clif.M
       writeM_writeM _ _ _ _ _ (atomTy_bytes hty)]
   · rw [Arm.w_program, prog_failState, Arm.w_program, hprog1', patch, setMem_program, hy.prog]
 
+/-! ## The per-item obligation at the `atomic_cas` loop -/
+
+theorem condHolds_of_flags {a b : ArmState} (h : ∀ g, Arm.r (.FLAG g) a = Arm.r (.FLAG g) b)
+    (c : BitVec 4) : Arm.ConditionHolds c a = Arm.ConditionHolds c b := by
+  unfold Arm.ConditionHolds Arm.read_flag
+  rw [h .N, h .Z, h .C, h .V]
+
+theorem patch_wr (e wv : Ev) (hW : wv.k.dir = .W) (w : ArmState) : patch [e, wv] w = patch [e] w := by
+  simp only [patch, applyR, hW, show (Dir.W = Dir.R) = False from by simp, ite_false]
+
+set_option maxHeartbeats 8000000 in
+/-- **The per-item obligation at the `atomic_cas` loop** (module doc): every precise Arm run from
+`Q`-related states goes through failed iterations (reading any bytes, writing nothing) and ends
+before a successful `stlxr` or the exit (no write), or its final iteration's `ldaxr` read `e` is
+the event of the allocated code's step `[e]` (the values differ: the `b.ne` exit), or `e` and the
+successful `stlxr` write `wv` are the events of its step `[e, wv]` (a monitor pair), on the world
+patched with `e`, the states after the item related. -/
+theorem cas_op {R : RL} (hR : R.Wf) {ok : ArmState → Lab → Prop} {s : ArmState} {mon : Mon}
+    {b k : Nat} {allocs : Array Loc} {its' : List RItem} {m : Loc → CV} {w : ArmState}
+    {evs0 : List Ev} {c0 : MConf CV ArmState}
+    (hq : Q R s (OpC b k allocs its' m w)) (hA : AInv R (OpC b k allocs its' m w))
+    (hs0 : SrcStep R (OpC b k allocs its' m w) evs0 c0)
+    (hform : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i →
+      ∃ ty fl ra re rx rd r1, i = .atomicCasLoop ty fl ra re rx rd r1)
+    {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm R.step ok (s, mon) ls t') :
+    OpOutG R ok (s, mon) (OpC b k allocs its' m w) ls := by
+  cases hs0 with
+  | @op _ _ _ _ _ _ vb i ops _ _ hvb hi hops0 hevs0 hfoot0 hst0 =>
+  obtain ⟨ty, fl, ra, re, rx, rd, r1, rfl⟩ := hform vb i hvb hi
+  have hck := (lowerRFunc_ok hR.alloc).2.2
+  have hok := ctlCheck_inst hck hvb hi
+  simp only [ctlInstOk, Bool.and_eq_true] at hok
+  obtain ⟨⟨⟨⟨h0, h1⟩, h2⟩, h3⟩, h4⟩ := hok
+  obtain ⟨va, rfl⟩ := isVregInt_iff h0
+  obtain ⟨ve, rfl⟩ := isVregInt_iff h1
+  obtain ⟨vx, rfl⟩ := isVregInt_iff h2
+  obtain ⟨vd, rfl⟩ := isVregInt_iff h3
+  obtain ⟨v1, rfl⟩ := isVregInt_iff h4
+  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
+    hasg, hc1', hops, hstat, hchk', hc2, hl1, hl2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+  rw [hops] at hops0
+  cases hops0
+  have hops' : ops = #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨ve, .int, .use, .early, .fixed (.x 26)⟩,
+      ⟨vx, .int, .use, .early, .fixed (.x 28)⟩, ⟨vd, .int, .def, .late, .fixed (.x 27)⟩,
+      ⟨v1, .int, .def, .late, .fixed (.x 24)⟩] := by
+    have e : (MInst.atomicCasLoop ty fl (.vreg va .int) (.vreg ve .int) (.vreg vx .int)
+        (.vreg vd .int) (.vreg v1 .int)).operands =
+        .ok #[⟨va, .int, .use, .early, .fixed (.x 25)⟩, ⟨ve, .int, .use, .early, .fixed (.x 26)⟩,
+          ⟨vx, .int, .use, .early, .fixed (.x 28)⟩, ⟨vd, .int, .def, .late, .fixed (.x 27)⟩,
+          ⟨v1, .int, .def, .late, .fixed (.x 24)⟩] := rfl
+    rw [e] at hops; injection hops with h; exact h.symm
+  subst hops'
+  obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hstat
+  obtain ⟨q0, q1, q2, q3, q4, rfl⟩ := regs5 (by simpa using hsz.symm)
+  obtain rfl : q0 = .x 25 := fixed_reg (o := ⟨va, .int, .use, .early, .fixed (.x 25)⟩) hloc (by simp) rfl
+  obtain rfl : q1 = .x 26 := fixed_reg (o := ⟨ve, .int, .use, .early, .fixed (.x 26)⟩) hloc (by simp) rfl
+  obtain rfl : q2 = .x 28 := fixed_reg (o := ⟨vx, .int, .use, .early, .fixed (.x 28)⟩) hloc (by simp) rfl
+  obtain rfl : q3 = .x 27 := fixed_reg (o := ⟨vd, .int, .def, .late, .fixed (.x 27)⟩) hloc (by simp) rfl
+  obtain rfl : q4 = .x 24 := fixed_reg (o := ⟨v1, .int, .def, .late, .fixed (.x 24)⟩) hloc (by simp) rfl
+  have hasg' : (MInst.atomicCasLoop ty fl (.vreg va .int) (.vreg ve .int) (.vreg vx .int)
+      (.vreg vd .int) (.vreg v1 .int)).assign #[.x 25, .x 26, .x 28, .x 27, .x 24] =
+      .ok (.atomicCasLoop ty fl (.x 25) (.x 26) (.x 28) (.x 27) (.x 24)) := rfl
+  rw [hasg'] at hasg; cases hasg
+  obtain rfl : c1 = [.inst (.atomicCasLoop ty fl (.x 25) (.x 26) (.x 28) (.x 27) (.x 24))] := by
+    rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+    · exact h
+    · cases h
+    · cases h
+  have hl1' := codeLinesE_single hl1
+  simp only [MInst.lines, bne_self_eq_false, Bool.or_false, Bool.false_eq_true,
+    ite_false, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1'
+  obtain ⟨rfl, rfl⟩ := hl1'
+  have hreg : ∀ r, r.allocatable = true → m (.reg r) = regVal s r := fun r hr =>
+    hst.store (.reg r) (fun r' e => by cases e; exact hr) trivial
+  have hU : (((#[(⟨va, .int, .use, .early, .fixed (.x 25)⟩ : Operand),
+      ⟨ve, .int, .use, .early, .fixed (.x 26)⟩, ⟨vx, .int, .use, .early, .fixed (.x 28)⟩,
+      ⟨vd, .int, .def, .late, .fixed (.x 27)⟩, ⟨v1, .int, .def, .late, .fixed (.x 24)⟩].zip
+      (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg)).toList.filter (·.1.isUse)).map (m ·.2)) =
+      [regVal s (.x 25), regVal s (.x 26), regVal s (.x 28)] := by
+    simp [Operand.isUse, hreg (.x 25) rfl, hreg (.x 26) rfl, hreg (.x 28) rfl]
+  have herrw : Arm.r .ERR w = .None := by
+    rw [← hst.world.1 .ERR (by simp [Masked]), hst.err]
+  have hnc : ∀ info, MInst.atomicCasLoop ty fl (.vreg va .int) (.vreg ve .int) (.vreg vx .int)
+      (.vreg vd .int) (.vreg v1 .int) ≠ .call info := fun _ h => by cases h
+  have hnt : ∀ info ti, MInst.atomicCasLoop ty fl (.vreg va .int) (.vreg ve .int) (.vreg vx .int)
+      (.vreg vd .int) (.vreg v1 .int) ≠ .tryCall info ti := fun _ _ h => by cases h
+  obtain ⟨hty, hav, hk⟩ : AtomTy ty ∧ Avoids R.F ty.bytes (Arm.r (.GPR 25#5) s) ∧ k + 1 < vb.insts.size := by
+    cases hst0 with
+    | @op _ _ _ _ _ _ vb1 i1 ops1 outs outs' w' ctl m2 c' hvb1 hi1 hops1 hsz1 hsem hlen hho hcl hn =>
+    rw [hvb] at hvb1; cases hvb1; rw [hi] at hi1; cases hi1; rw [hops] at hops1; cases hops1
+    rw [hU, R.sem_eq hnc hnt] at hsem
+    have herrp : Arm.r .ERR (patch evs0 w) = .None := by rw [patch, r_setMem]; exact herrw
+    simp only [csem, herrp, ite_true] at hsem
+    split at hsem
+    · rename_i outs1 t1 c1 hL
+      obtain ⟨hty, hav, -, -, -⟩ := loopSem_inv hL
+      refine ⟨hty, by rwa [lo64_regVal_x] at hav, ?_⟩
+      have : ctl = .next := by
+        split at hsem
+        · simp only [Option.some.injEq, Prod.mk.injEq] at hsem; exact hsem.2.2.symm
+        · exact (loopSem_inv hsem).2.2.2.2
+      subst this
+      cases hn with
+      | next hk => exact hk
+    · cases hsem
+  have hn0 : 0 < ty.bytes := by rcases hty with rfl | rfl | rfl | rfl <;> decide
+  have hbytes := atomTy_bytes hty
+  -- the lines
+  have hdrop' : R.L.drop j0 = casLoopLines ty.bits fl (.loop ps1.aloop) (.loop (ps1.aloop + 1)) ++
+      (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
+    rw [hdrop, ftList_cas hty, relaxLines_append, relaxLines_loop (by
+      rcases hty with rfl | rfl | rfl | rfl <;>
+        simp (config := {decide := true}) [casLoopLines, casLoopHead, casLoopCmp, Insn.condTarget?,
+          CTy.bits]), List.append_assoc]
+  have hL0 : R.L[j0]? = some (.label (.loop ps1.aloop)) := lines_at' hdrop' 0 _ rfl
+  -- the run
+  have hloop := cas_retry hR hty hdrop' hst.prog hpc hst.err
+  rcases retry_run (P := Policy.arm) (ok := ok) hloop ls.length ls s mon t' (Nat.le_refl _)
+      (loopInv_refl s _ _ _) hr with hnw | ⟨q, y1, e, hF, hX⟩
+  · exact .inr (.inr (.inr (privW_of_noW hnw)))
+  -- the final iteration: its read `e`
+  obtain ⟨k0, a0, n0, v⟩ := e
+  obtain ⟨hk1, ha1, hn1⟩ := hF.acc
+  simp only [loopRd] at hk1 ha1 hn1
+  subst hk1 ha1 hn1
+  have hy1 := hF.hd
+  have hp1 : (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1).program = R.fb.program R.base := by
+    rw [patch, setMem_program, hy1.prog, hst.prog]
+  have hp2 : Arm.r .PC (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1) = R.pcOf (j0 + 1) := by
+    rw [patch, r_setMem, hy1.pc, hpc, RL.pcOf_succ_label hL0]
+  have hp3 : Arm.r .ERR (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1) = .None := by
+    rw [patch, r_setMem, hy1.err, hst.err]
+  obtain ⟨s1, hrun1, hit1, -, -, -, hstepb, hstore⟩ := cas_steps hR hty hdrop' hp1 hp2 hp3
+  obtain ⟨s1', hrun1', -, -, hfr1, hmem1, hprog1, -⟩ := casHead_spec hty fl (R.envOf (j0 + 1)) _ hp3
+  rw [hrun1] at hrun1'
+  cases hrun1'
+  have hz : iterN R.step 3 (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1) = R.step s1 := by
+    rw [show 3 = 2 + 1 from rfl, iterN_succ', hit1]
+  have hyr : ∀ q, q < 32 → q ≠ 24 → q ≠ 27 →
+      Arm.r (.GPR (rnum q)) (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1) =
+        Arm.r (.GPR (rnum q)) s := by
+    intro q hq h24 h27
+    rw [patch, r_setMem]
+    exact hy1.frame _ (by simp) (fun q' hq' e => by
+      have e' : rnum q = rnum q' := by injection e
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hq'
+      rcases hq' with rfl | rfl
+      · exact rnum_ne hq (by decide) h24 e'
+      · exact rnum_ne hq (by decide) h27 e') (by simp)
+  have hs1r : ∀ q, q < 32 → q ≠ 24 → q ≠ 27 → Arm.r (.GPR (rnum q)) s1 = Arm.r (.GPR (rnum q)) s := by
+    intro q hq h24 h27
+    rw [hfr1 _ (by simp) (fun r hr e => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      subst hr
+      have e' : rnum q = rnum 27 := by injection e
+      exact rnum_ne hq (by decide) h27 e') (by simp)]
+    exact hyr q hq h24 h27
+  -- the allocated code's world patched with the final read
+  generalize hW0 : patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] w = W
+  have hWmem : W.mem = writeM ty.bytes (Arm.r (.GPR 25#5) s) v w.mem := by
+    rw [← hW0]; simp [patch, applyR, AKind.dir]
+  have hWerr : Arm.r .ERR W = .None := by rw [← hW0, patch, r_setMem, herrw]
+  generalize hWt : ([Reg.x 25, .x 26, .x 28].zip [regVal s (.x 25), regVal s (.x 26), regVal s (.x 28)]).foldl
+    (fun s p => setReg s p.1 p.2) W = Wt
+  have hWtr : ∀ q, q = 25 ∨ q = 26 ∨ q = 28 → Arm.r (.GPR (rnum q)) Wt = Arm.r (.GPR (rnum q)) s := by
+    intro q hq
+    rw [← hWt]
+    rcases hq with rfl | rfl | rfl <;>
+      simp [setReg, rnum, Arm.r_of_w_same, Arm.r_of_w_different, lo64_regVal_x]
+  have hWtoth : ∀ f, f ≠ .GPR 25#5 → f ≠ .GPR 26#5 → f ≠ .GPR 28#5 → Arm.r f Wt = Arm.r f W := by
+    intro f h1 h2 h3; rw [← hWt]
+    simp [setReg, rnum, Arm.r_of_w_different h1, Arm.r_of_w_different h2, Arm.r_of_w_different h3]
+  have hWtmem : Wt.mem = W.mem := by rw [← hWt, foldl_setReg_mem]
+  have hWtprog : Wt.program = W.program := by rw [← hWt]; simp [setReg, Arm.w_program]
+  have hWterr : Arm.r .ERR Wt = .None := by rw [hWtoth _ (by simp) (by simp) (by simp), hWerr]
+  obtain ⟨t1, hrunt, -, -, hfrt, hmemt, hprogt, -⟩ := casHead_spec hty fl env0 Wt hWterr
+  have hrd : readM ty.bytes (Arm.r (.GPR 25#5) s) Wt.mem = v := by
+    rw [hWtmem, hWmem, readM_writeM _ _ _ _ hbytes]
+  have hrdy : readM ty.bytes (Arm.r (.GPR 25#5) s)
+      (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1).mem = v := by
+    rw [hy1.patch_mem, readM_writeM _ _ _ _ hbytes]
+  have h25W : Arm.r (.GPR 25#5) Wt = Arm.r (.GPR 25#5) s := hWtr 25 (.inl rfl)
+  have h25y : Arm.r (.GPR 25#5) (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1) =
+      Arm.r (.GPR 25#5) s := hyr 25 (by decide) (by decide) (by decide)
+  have h26W : Arm.r (.GPR 26#5) Wt = Arm.r (.GPR 26#5) s := hWtr 26 (.inr (.inl rfl))
+  have h26y : Arm.r (.GPR 26#5) (patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1) =
+      Arm.r (.GPR 26#5) s := hyr 26 (by decide) (by decide) (by decide)
+  have h28W : Arm.r (.GPR 28#5) Wt = Arm.r (.GPR 28#5) s := hWtr 28 (.inr (.inr rfl))
+  have h25s1 : Arm.r (.GPR 25#5) s1 = Arm.r (.GPR 25#5) s := hs1r 25 (by decide) (by decide) (by decide)
+  have h28s1 : Arm.r (.GPR 28#5) s1 = Arm.r (.GPR 28#5) s := hs1r 28 (by decide) (by decide) (by decide)
+  obtain ⟨hflag, h27eq⟩ := casHead_dep hty fl (R.envOf (j0 + 1)) env0
+    (t1 := patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] y1) (t2 := Wt)
+    (by rw [h25y, h25W]) (by rw [h26y, h26W])
+    (by rw [h25W, read_mem_bytes_eq, read_mem_bytes_eq, hrd, hrdy]) hrun1 hrunt
+  have hcond : Arm.ConditionHolds Cond.ne.bits s1 = Arm.ConditionHolds Cond.ne.bits t1 :=
+    condHolds_of_flags hflag _
+  have hav' : Avoids R.F ty.bytes (lo64 (regVal s (.x 25))) := by rw [lo64_regVal_x]; exact hav
+  have ht1err : Arm.r .ERR t1 = .None := by rw [hfrt .ERR (by simp) (by simp) (by simp)]; exact hWterr
+  have hsemH : loopSem R.F ty (regVal s (.x 25)) (casLoopHead ty.bits fl) [.x 25, .x 26, .x 28]
+      [regVal s (.x 25), regVal s (.x 26), regVal s (.x 28)] [.x 27, .x 24] W =
+      some ([regVal t1 (.x 27), ofX 0], t1, .next) := by
+    unfold loopSem
+    rw [hWt, ite_eq_left ⟨hty, hav', hWerr⟩, hrunt]
+    simp [ht1err, hprogt, hWtprog]
+  have hevH : loopEvs (casLoopHead ty.bits fl) [.x 25, .x 26, .x 28]
+      [regVal s (.x 25), regVal s (.x 26), regVal s (.x 28)] W =
+      [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] := by
+    unfold loopEvs
+    rw [hWt, casHead_shape hty fl env0 Wt hWterr, h25W, hrd]
+  -- `Q` at the next item, from a machine state after the loop
+  have fin : ∀ (E : List Ev) (sF wF : ArmState) (outsF : List CV), (∀ ev ∈ E, Avoids R.F ev.n ev.addr) →
+      patch E w = W →
+      R.sem (.atomicCasLoop ty fl (.vreg va .int) (.vreg ve .int) (.vreg vx .int) (.vreg vd .int)
+        (.vreg v1 .int)) [regVal s (.x 25), regVal s (.x 26), regVal s (.x 28)] W =
+        some (outsF, wF, .next) →
+      outsF.length = 2 → [regVal sF (.x 27)] = outsF.take 1 →
+      Arm.r .PC sF = R.pcOf (j0 + 7) → SameWorld R.F sF wF →
+      (∀ f, f ≠ .PC → (∀ n ∈ [27, 24], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
+        Arm.r f sF = Arm.r f s) →
+      (∀ a, R.F a → sF.mem a = s.mem a) → sF.program = s.program →
+      ∃ c'', MStep R.vc R.sem ckeep R.rf
+        (.run ⟨b, .op k (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg) :: its', m, W⟩) c'' ∧
+        Q R sF c'' ∧ AInv R c'' := by
+    intro E sF wF outsF hEav hEW hsemF hlen2 h27F hpcF hswF hfrF hmemF hprogF
+    obtain ⟨c'', hm, hQ⟩ : ∃ c'', MStep R.vc R.sem ckeep R.rf
+        (.run ⟨b, .op k (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg) :: its', m, W⟩) c'' ∧
+        Q R sF c'' := by
+      refine ⟨_, MStep.op (outs' := [regVal sF (.x 27), regVal sF (.x 24)]) (m2 := m) hvb hi hops
+        (by simp) (by rw [hU]; exact hsemF) (by rw [hlen2]; simp [Operand.isDef])
+        ⟨by simp [hlen2], fun h => by simp [havocFrom, MInst.keptDefs] at h, fun n h => ?_⟩ ?_
+        (MNext.next hk), ?_⟩
+      · simp only [havocFrom, MInst.keptDefs, Option.some.injEq] at h
+        subst h
+        simpa using h27F
+      · refine ⟨fun l _ => ?_, fun c hc => by simp [MInst.clobbers] at hc⟩
+        simp [Backend.Proof.writeM, Operand.isDef, Operand.isEarly]
+      refine ⟨j0 + 7, vb, items, pre ++ [.op k (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg)],
+        c2, ls2, _, ps2, T, hvb, hit, by rw [hsplit]; simp, hchk', hc2, hl2, htr, ?_, hpcF, ?_⟩
+      · rw [← List.drop_drop, hdrop']
+        exact List.drop_left' (by simp [casLoopLines, casLoopHead])
+      · refine stRel_after hR hst ?_ ?_ hswF ?_ hprogF ⟨?_, fun a ha => hmemF a (RL.FK_F ha)⟩
+        · refine store_regs hst [27, 24] (by simp) ?_ ?_ hfrF
+          · intro n hn
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+            rcases hn with rfl | rfl <;> simp [Backend.Proof.writeM, upd, Operand.isDef, Operand.isLate]
+          · intro r hr
+            simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hr
+            simp [Backend.Proof.writeM, upd, Operand.isDef, Operand.isLate, hr.1, hr.2]
+        · intro l hl
+          simp [Backend.Proof.writeM, upd, Operand.isDef, Operand.isLate, hl]
+        · rw [hfrF .ERR (by simp) (by simp) (by simp)]; exact hst.err
+        · simp only [spOf]; exact hfrF _ (by simp) (by simp [rnum]) (by simp)
+    exact ⟨c'', hm, hQ, aInv_step hR (q_patch hR hq hEav) (aInv_patch hA _) (by rw [hEW]; exact hm)⟩
+  -- the machine's fields after the head, against the allocated code's after its head
+  have hnm : ∀ f, ¬ Masked f → f ≠ .PC ∧ (∀ n ∈ [27, 24], f ≠ .GPR (rnum n)) ∧
+      f ≠ .GPR 25#5 ∧ f ≠ .GPR 26#5 ∧ f ≠ .GPR 28#5 := by
+    intro f hf
+    refine ⟨fun h => hf (by subst h; simp [Masked]), fun n hn h => hf ?_, fun h => hf (by subst h; simp [Masked]),
+      fun h => hf (by subst h; simp [Masked]), fun h => hf (by subst h; simp [Masked])⟩
+    subst h
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hn
+    rcases hn with rfl | rfl <;> simp [Masked, rnum]
+  have hfs1 : ∀ f, f ≠ .PC → (∀ n ∈ [27, 24], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
+      Arm.r f s1 = Arm.r f s := by
+    intro f h1 h2 h3
+    rw [hfr1 f h1 (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; simpa [rnum] using h2 27 (by simp)) h3, patch,
+      r_setMem]
+    exact hy1.frame f h1 (fun q hq => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
+      rcases hq with rfl | rfl
+      · exact h2 24 (by simp)
+      · exact h2 27 (by simp)) h3
+  have hft1 : ∀ f, ¬ Masked f → (∀ g, f ≠ .FLAG g) → Arm.r f t1 = Arm.r f s := by
+    intro f hf h3
+    obtain ⟨h1, h2, h25, h26, h28⟩ := hnm f hf
+    rw [hfrt f h1 (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; simpa [rnum] using h2 27 (by simp)) h3,
+      hWtoth f h25 h26 h28, ← hW0, patch,
+      r_setMem]
+    exact (hst.world.1 f hf).symm
+  have hmems1 : s1.mem = writeM ty.bytes (Arm.r (.GPR 25#5) s) v s.mem := by
+    rw [hmem1, hy1.patch_mem]
+  have hmemt1 : t1.mem = writeM ty.bytes (Arm.r (.GPR 25#5) s) v w.mem := by
+    rw [hmemt, hWtmem, hWmem]
+  have hprogs1 : s1.program = s.program := by rw [hprog1, patch, setMem_program, hy1.prog]
+  have hprogt1 : t1.program = w.program := by rw [hprogt, hWtprog, ← hW0, patch, setMem_program]
+  have hout : ∀ a, R.F a → ∀ q < ty.bytes, Arm.r (.GPR 25#5) s + BitVec.ofNat 64 q ≠ a :=
+    fun a ha q hq e => hav q hq (by rw [e]; exact ha)
+  have hsh1 : ∀ x ∈ [(⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩ : Ev)],
+      x.k.dir ≠ .F → ¬ PrivA R x.addr.toNat := by
+    intro x hx _
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    subst hx; exact privA_of_avoid hav hn0
+  rcases hX with hex | ⟨hnx, -, hle1, wv, hW, hwv, hseg1, hseg2⟩
+  · -- the values differ: the `b.ne` leaves the loop after the head
+    rw [hz, hstepb, condHolds_w_pc] at hex
+    have hne1 : Arm.ConditionHolds Cond.ne.bits t1 = true := hcond ▸ hex
+    have hsemE : R.sem (.atomicCasLoop ty fl (.vreg va .int) (.vreg ve .int) (.vreg vx .int)
+        (.vreg vd .int) (.vreg v1 .int)) [regVal s (.x 25), regVal s (.x 26), regVal s (.x 28)] W =
+        some ([regVal t1 (.x 27), ofX 0], t1, .next) := by
+      rw [R.sem_eq hnc hnt]
+      simp only [csem, hWerr, ite_true]
+      rw [hsemH]
+      simp only [hne1, ite_true]
+    have hevE : casEvs R.F ty fl (regVal s (.x 25)) (regVal s (.x 26)) (regVal s (.x 28)) W =
+        [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] := by
+      unfold casEvs
+      rw [hsemH]
+      simp only [hne1, ite_true]
+      exact hevH
+    generalize hzF : Arm.w .PC (R.pcOf (j0 + 7)) s1 = zF
+    have hfzF : ∀ f, f ≠ .PC → Arm.r f zF = Arm.r f s1 := fun f h => by rw [← hzF, Arm.r_of_w_different h]
+    have hswF : SameWorld R.F zF t1 := by
+      refine ⟨fun f hf => ?_, fun a ha => ?_, ?_⟩
+      · obtain ⟨h1, h2, -⟩ := hnm f hf
+        rw [hfzF f h1]
+        by_cases hfl : ∃ g, f = .FLAG g
+        · obtain ⟨g, rfl⟩ := hfl; exact hflag g
+        · have h3 : ∀ g, f ≠ .FLAG g := fun g h => hfl ⟨g, h⟩
+          rw [hfs1 f h1 h2 h3, hft1 f hf h3]
+      · rw [← hzF, ArmState.mem_w_eq_mem, hmems1, hmemt1]
+        exact writeM_pt _ _ _ (hst.world.2.1 a ha)
+      · rw [← hzF, Arm.w_program, hprogs1, hprogt1]; exact hst.world.2.2
+    obtain ⟨c'', hm, hQ, hAI⟩ := fin [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] zF t1 _
+      (fun x hx => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; subst hx; exact hav)
+      hW0 hsemE rfl (by
+        have h27z : Arm.r (.GPR 27#5) zF = Arm.r (.GPR 27#5) t1 := by
+          rw [hfzF _ (by simp)]; exact h27eq
+        simp [regVal, rnum, h27z])
+      (by rw [← hzF, Arm.r_of_w_same]) hswF
+      (fun f h1 h2 h3 => by rw [hfzF f h1]; exact hfs1 f h1 h2 h3)
+      (fun a ha => by rw [← hzF, ArmState.mem_w_eq_mem, hmems1, writeM_apply_out _ _ _ _ _ (hout a ha)])
+      (by rw [← hzF, Arm.w_program, hprogs1])
+    have hsrc : SrcStep R (OpC b k (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg) its' m w)
+        [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩] c'' := by
+      refine .op hvb hi hops ?_ ?_ (by rw [hW0]; exact hm)
+      · rw [hW0]
+        show _ = cEvs R.F R.ctx _ (((_ : Array Operand).zip _).toList.filter (·.1.isUse) |>.map (m ·.2)) W
+        rw [hU]
+        unfold cEvs
+        simp only [MInst.isCtl, ite_true]
+        exact hevE.symm
+      · rw [hW0]
+        show IFoot R.sem _ (((_ : Array Operand).zip _).toList.filter (·.1.isUse) |>.map (m ·.2)) W _
+        rw [hU]
+        have hf := casEvs_foot (F := R.F) (ctx := R.ctx) (X := R.X) (ra := .vreg va .int)
+          (re := .vreg ve .int) (rx := .vreg vx .int) (rd := .vreg vd .int) (rs := .vreg v1 .int)
+          (u := regVal s (.x 25)) (e := regVal s (.x 26)) (x := regVal s (.x 28)) (ty := ty) (fl := fl)
+          hWerr
+        rw [hevE] at hf
+        refine ⟨hf.1, fun m' hm' => ?_⟩
+        rw [R.sem_eq hnc hnt, R.sem_eq hnc hnt]
+        exact hf.2 m' hm'
+    obtain ⟨mon1, hr1⟩ := hF.run
+    rw [hz, hstepb] at hr1
+    simp only [hex, ite_true, hzF] at hr1
+    refine .inr (.inl ⟨q + 3, _, c'', (zF, mon1), fun _ => ((evTr (ls.take q)).length, 0), hF.le,
+      .inl (by omega), hsrc, hr1, ⟨hQ, hAI⟩, ?_⟩)
+    rw [hF.seg]
+    exact img_one (by omega) hF.pre rfl (by simp) hsh1
+  -- equal values: the `stlxr` succeeds, then the `cbnz` falls through
+  simp only [hz, hstepb, condHolds_w_pc] at hnx
+  have hne' : Arm.ConditionHolds Cond.ne.bits s1 = false := by simpa using hnx
+  have hne1 : Arm.ConditionHolds Cond.ne.bits t1 = false := hcond ▸ hne'
+  obtain ⟨s3, hrun3, hstep3, hwevA, -, -, -, hstepc, -⟩ := hstore hne'
+  simp only [hz, hstepb, hne', Bool.false_eq_true, ite_false] at hwv
+  rw [hwevA, h25s1, h28s1] at hwv
+  simp only [List.cons.injEq, and_true] at hwv
+  subst hwv
+  simp only [hz, hstepb, hne', Bool.false_eq_true, ite_false] at hseg2
+  generalize hzS : Arm.w .PC (R.pcOf (j0 + 4)) s1 = zS at hrun3 hstep3 hstepc hseg2
+  have hfzS : ∀ f, f ≠ .PC → Arm.r f zS = Arm.r f s1 := fun f h => by rw [← hzS, Arm.r_of_w_different h]
+  have herrzS : Arm.r .ERR zS = .None := by
+    rw [hfzS _ (by simp), hfs1 _ (by simp) (by simp) (by simp)]; exact hst.err
+  obtain ⟨s3', hrun3', -, hfr3, hmem3, hprog3⟩ := stlxr_spec hty fl (R.envOf (j0 + 4)) zS herrzS
+  simp only [casStore] at hrun3
+  rw [hrun3] at hrun3'
+  cases hrun3'
+  obtain ⟨w2, hrunw2, -, hfrw2, hmemw2, hprogw2⟩ := stlxr_spec hty fl env0 t1 ht1err
+  have hw2err : Arm.r .ERR w2 = .None := by rw [hfrw2 .ERR (by simp) (by simp)]; exact ht1err
+  have hsemS : R.sem (.atomicCasLoop ty fl (.vreg va .int) (.vreg ve .int) (.vreg vx .int)
+      (.vreg vd .int) (.vreg v1 .int)) [regVal s (.x 25), regVal s (.x 26), regVal s (.x 28)] W =
+      some ([regVal w2 (.x 27), ofX 0], w2, .next) := by
+    rw [R.sem_eq hnc hnt]
+    simp only [csem, hWerr, ite_true]
+    rw [hsemH]
+    simp only [hne1, Bool.false_eq_true, ite_false]
+    unfold loopSem
+    rw [ite_eq_left ⟨hty, hav', ht1err⟩]
+    simp only [List.zip_nil_left, List.foldl_nil]
+    rw [hrunw2]
+    simp [hw2err, hprogw2]
+  have h25t1 : Arm.r (.GPR 25#5) t1 = Arm.r (.GPR 25#5) s := by
+    rw [hfrt _ (by simp) (by simp) (by simp)]; exact h25W
+  have h28t1 : Arm.r (.GPR 28#5) t1 = Arm.r (.GPR 28#5) s := by
+    rw [hfrt _ (by simp) (by simp) (by simp)]; exact h28W
+  have hevS : casEvs R.F ty fl (regVal s (.x 25)) (regVal s (.x 26)) (regVal s (.x 28)) W =
+      [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩, ⟨.relXW, Arm.r (.GPR 25#5) s, ty.bytes,
+        (Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)⟩] := by
+    unfold casEvs
+    rw [hsemH]
+    simp only [hne1, Bool.false_eq_true, ite_false]
+    rw [hevH]
+    unfold loopEvs
+    simp only [List.zip_nil_left, List.foldl_nil]
+    rw [casStore_evsEq hty fl, h25t1, h28t1]
+    rfl
+  -- the machine after the loop
+  generalize hxF : Arm.w .PC (R.pcOf (j0 + 7)) s3 = xF at hstepc
+  have hfx : ∀ f, f ≠ .PC → f ≠ .GPR 24#5 → Arm.r f xF = Arm.r f s1 := fun f h1 h2 => by
+    rw [← hxF, Arm.r_of_w_different h1, hfr3 f h1 h2, hfzS f h1]
+  have hfx' : ∀ f, f ≠ .PC → (∀ n ∈ [27, 24], f ≠ .GPR (rnum n)) → (∀ g, f ≠ .FLAG g) →
+      Arm.r f xF = Arm.r f s := fun f h1 h2 h3 => by
+    rw [hfx f h1 (by simpa [rnum] using h2 24 (by simp))]; exact hfs1 f h1 h2 h3
+  have h25zS : Arm.r (.GPR 25#5) zS = Arm.r (.GPR 25#5) s := by rw [hfzS _ (by simp), h25s1]
+  have h28zS : Arm.r (.GPR 28#5) zS = Arm.r (.GPR 28#5) s := by rw [hfzS _ (by simp), h28s1]
+  have hmemzS : zS.mem = writeM ty.bytes (Arm.r (.GPR 25#5) s) v s.mem := by
+    rw [← hzS, ArmState.mem_w_eq_mem, hmems1]
+  have hmemx : xF.mem = writeM ty.bytes (Arm.r (.GPR 25#5) s)
+      ((Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)) (writeM ty.bytes (Arm.r (.GPR 25#5) s) v s.mem) := by
+    rw [← hxF, ArmState.mem_w_eq_mem, hmem3, write_mem_bytes_eq, setMem_mem, h25zS, h28zS, hmemzS]
+  have hmemw2' : w2.mem = writeM ty.bytes (Arm.r (.GPR 25#5) s)
+      ((Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)) (writeM ty.bytes (Arm.r (.GPR 25#5) s) v w.mem) := by
+    rw [hmemw2, write_mem_bytes_eq, setMem_mem, h25t1, h28t1, hmemt1]
+  have hswF : SameWorld R.F xF w2 := by
+    refine ⟨fun f hf => ?_, fun a ha => ?_, ?_⟩
+    · obtain ⟨h1, h2, -⟩ := hnm f hf
+      rw [hfx f h1 (by simpa [rnum] using h2 24 (by simp)),
+        hfrw2 f h1 (by simpa [rnum] using h2 24 (by simp))]
+      by_cases hfl : ∃ g, f = .FLAG g
+      · obtain ⟨g, rfl⟩ := hfl; exact hflag g
+      · have h3 : ∀ g, f ≠ .FLAG g := fun g h => hfl ⟨g, h⟩
+        rw [hfs1 f h1 h2 h3, hft1 f hf h3]
+    · rw [hmemx, hmemw2']
+      exact writeM_pt _ _ _ (writeM_pt _ _ _ (hst.world.2.1 a ha))
+    · rw [← hxF, Arm.w_program, hprog3, ← hzS, Arm.w_program, hprogs1, hprogw2, hprogt1]
+      exact hst.world.2.2
+  have hEav : ∀ x ∈ [(⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩ : Ev), ⟨.relXW, Arm.r (.GPR 25#5) s,
+      ty.bytes, (Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)⟩], Avoids R.F x.n x.addr := by
+    intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> exact hav
+  have hpw : patch [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩, ⟨.relXW, Arm.r (.GPR 25#5) s,
+      ty.bytes, (Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)⟩] w = W := by
+    rw [patch_wr _ _ rfl, hW0]
+  obtain ⟨c'', hm, hQ, hAI⟩ := fin _ xF w2 _ hEav hpw hsemS rfl (by
+      have h27x : Arm.r (.GPR 27#5) xF = Arm.r (.GPR 27#5) w2 := by
+        rw [hfx _ (by simp) (by simp), h27eq, hfrw2 _ (by simp) (by simp)]
+      simp [regVal, rnum, h27x])
+    (by rw [← hxF, Arm.r_of_w_same]) hswF hfx'
+    (fun a ha => by
+      rw [hmemx, writeM_apply_out _ _ _ _ _ (hout a ha), writeM_apply_out _ _ _ _ _ (hout a ha)])
+    (by rw [← hxF, Arm.w_program, hprog3, ← hzS, Arm.w_program, hprogs1])
+  have hsrc : SrcStep R (OpC b k (#[Reg.x 25, .x 26, .x 28, .x 27, .x 24].map Loc.reg) its' m w)
+      [⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩, ⟨.relXW, Arm.r (.GPR 25#5) s,
+        ty.bytes, (Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)⟩] c'' := by
+    refine .op hvb hi hops ?_ ?_ (by rw [hpw]; exact hm)
+    · rw [hpw]
+      show _ = cEvs R.F R.ctx _ (((_ : Array Operand).zip _).toList.filter (·.1.isUse) |>.map (m ·.2)) W
+      rw [hU]
+      unfold cEvs
+      simp only [MInst.isCtl, ite_true]
+      exact hevS.symm
+    · rw [hpw]
+      show IFoot R.sem _ (((_ : Array Operand).zip _).toList.filter (·.1.isUse) |>.map (m ·.2)) W _
+      rw [hU]
+      have hf := casEvs_foot (F := R.F) (ctx := R.ctx) (X := R.X) (ra := .vreg va .int)
+        (re := .vreg ve .int) (rx := .vreg vx .int) (rd := .vreg vd .int) (rs := .vreg v1 .int)
+        (u := regVal s (.x 25)) (e := regVal s (.x 26)) (x := regVal s (.x 28)) (ty := ty) (fl := fl)
+        hWerr
+      rw [hevS] at hf
+      refine ⟨hf.1, fun m' hm' => ?_⟩
+      rw [R.sem_eq hnc hnt, R.sem_eq hnc hnt]
+      exact hf.2 m' hm'
+  have hsh : ∀ x ∈ [(⟨.acqXR, Arm.r (.GPR 25#5) s, ty.bytes, v⟩ : Ev), ⟨.relXW, Arm.r (.GPR 25#5) s,
+      ty.bytes, (Arm.r (.GPR 28#5) s).setWidth (ty.bytes * 8)⟩],
+      x.k.dir ≠ .F → ¬ PrivA R x.addr.toNat := by
+    intro x hx _
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl <;> exact privA_of_avoid hav hn0
+  by_cases h2 : q + 3 + 2 ≤ ls.length
+  · obtain ⟨hs2, mon2, hr2⟩ := hseg2 h2
+    rw [hstep3, hstepc] at hr2
+    refine .inr (.inl ⟨_, _, c'', (xF, mon2), fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
+      ((evTr (ls.take q)).length + 3, 0), h2, .inl (by omega), hsrc, hr2, ⟨hQ, hAI⟩, ?_⟩)
+    rw [hs2, List.append_assoc]
+    exact img_pair (by omega) hF.pre rfl rfl hsh (T := [[]]) (by simp)
+  · have hls : ls.take (q + 3 + 1) = ls := List.take_of_length_le (by omega)
+    rw [hls] at hseg1
+    refine .inr (.inr (.inl ⟨_, c'', fun j => if j = 0 then ((evTr (ls.take q)).length, 0) else
+      ((evTr (ls.take q)).length + 3, 0), hsrc, ?_⟩))
+    rw [hseg1, List.append_assoc]
+    exact img_pair (by omega) hF.pre rfl rfl hsh (T := []) (by simp)
+
 end Concurrency.ArmAllocThread
