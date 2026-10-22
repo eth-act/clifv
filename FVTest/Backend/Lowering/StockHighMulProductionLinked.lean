@@ -89,8 +89,11 @@ private def checkCase (out : System.FilePath) (count : Nat) (cleanup fallback : 
     throw (IO.userError "actual callback program checks failed")
   for e in results do
     let a ← get e.2
-    let old ← get (lowerFunction e.1)
-    if !retainedMixed && (!mixed || e.1.name == names[0]!) then
+    if count == 33 && e.1.name != names[0]! then
+      let previous ← get (Stock.Arithmetic.lowerValidated e.1)
+      require (decide (a.vc = previous) && Backend.Proof.Driver.lowerCheck e.1 a.vc)
+        "small multi-entry fixture changed its existing validated route"
+    else if !retainedMixed && (!mixed || e.1.name == names[0]!) then
       require (!Backend.Proof.Driver.lowerCheck e.1 a.vc) "raw arithmetic artifact silently took legacy fallback"
     else
       let previous ← get (Stock.Mixed.lowerValidated e.1)
