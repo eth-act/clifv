@@ -3944,6 +3944,78 @@ M6Ctl3 (compiler, behaviour-preserving): `ctlCheck` also requires every value of
 an int vreg (so the `j`-th returned pair is the `j`-th fixed use); `lean-backend` on corpus,
 extrt and runtests (445 files): no function rejected.
 
+## Callee traps (S9a, #33)
+
+`TrapsExplicit` (the run premise of every per-function theorem) lets a statement trap only if it
+is an explicitly trapping instruction. A `call`/`call_indirect` whose callee traps (a trapping
+`__*ti3` helper, a panic: `Clif.Rust.env`'s panics trap with `user1`, a callee of the linked
+program that traps) is therefore outside every theorem. S9a covers it per function, for the
+shipped compiler (`FV/E2E/DeadCleanupTrapCall.lean`):
+
+```
+E2E.backend_correct_final_cleanup_trapcall
+  (hsub : InSubset p f) (hc : CompiledCleanupA f k vc vcp rf af fa fb)
+  (hlU : lowerCheckU f vc = true) (hp : p.funcs = []) (hft : ∀ B ∈ f.blocks, B.term.isTry = false)
+  hcov hC hTls hX hXI                                  -- as backend_correct_final_cleanup
+  (hXT : ∀ s, XTrapsOk env (f.externs.map (·.2)) (indSigs f) (Rel.holds … s …) X)
+  hsym hslot hent hres hbe hargs hcs hrel
+  (htr : TrapsExplicitC env p cs) (hrun : Clif.runLoop env p fuel cs = .trapped c) :
+  ∃ n, TrapAt fb base c (runX (ArmStepX X H fa) n s) ∨
+    (CallTrapAt vcp (frameW … s) K (fun _ => False) s fa base X (fun _ _ => False)
+        (TrapCallSem env (f.externs.map (·.2)) (indSigs f) (Rel.holds … s …) X c)
+        (runX (ArmStepX X H fa) n s) ∧
+      ∀ i < n, actGoodX vcp rf af fa fb base s X H K (fun _ => False) (fun _ _ => False)
+        (runX (ArmStepX X H fa) i s))
+```
+
+* **Premise** `TrapsExplicitC` (`FV/E2E/TrapCallClifRun.lean`): `TrapsExplicit` whose statement
+  clause also allows a `call`/`call_indirect` (`CallInst`; such a step traps only inside its
+  callee: the preludes `callArgs`/`indPre` never trap). `TrapsExplicit.toC`: the old premise
+  implies it.
+* **Conclusion**: the machine reaches a trap site of `f` with the code, or a **callee-trap state**
+  (`CallTrapAt`, `FV/E2E/RegLevelTrapCall.lean`): the pc at the call line of a `call` of `f`,
+  the callee contract's premises (`RL.CallPre`'s: dead stack, operand checks, the world `w`, `sp`
+  aligned, no error, GOT guard) and `TrapCallSem … c` on the call's operand values and `w`: the
+  machine semantics `X.call` gives no normal return and the CLIF semantics of the called extern
+  (direct, or the extern at the callee address) traps with `c` on the arguments held there and a
+  memory related to `w`. Every earlier state of the activation is `GoodX` (the trace facts the
+  linking and executable layers use).
+* **Trapping callees' contract** `XTrapsOk`: where an extern's CLIF semantics traps (arguments
+  and memory related as in `XCallsOk`), its machine semantics `X.call` is `none` — the outside
+  code does not return there (a `__*ti3` helper with divisor zero, a panic). It holds trivially
+  for callees that never trap (`xTrapsOk_of_noTrap`).
+* **Scope of S9a**: functions without `try_call`/`try_call_indirect` terminators, in a program
+  without functions (`p.funcs = []`, the per-function theorems' `p.bare` in the linked
+  theorems), whose lowering passes the unwinding validator `lowerCheckU` (decided by
+  `lean-link` as `unwOkB`).
+* **Proof**: the proof device `trapEnv env c` (`FV/E2E/TrapCallClif.lean`) turns a callee trap
+  with `c` into an exception (`trapExn`) of the run with unwinding. `trapEnv_of_trapped`: for a
+  run of `f` that traps with `c` under `TrapsExplicitC`, `trapEnv`'s run with unwinding satisfies
+  `TrapsExplicitX` and traps with `c` or ends with an exception (`step_trapRel`: a step of
+  `trapEnv`'s environment is `env`'s except at a callee trap with `c`, where it is `stuck` and the
+  step with unwinding raises, `raiseAt_of_trapRel`; reachability and determinism of the run,
+  `reachX_trapEnv`, `trapped_det`). The unwinding chain then carries the exception: CLIF → VCode
+  by `iselSimU_of_driver` (with the raising semantics `xrT XT` of the trapping callees and its
+  contracts `xRaiseOk_trapEnv`/`xRaiseIndOk_trapEnv`, the normal-return contracts transferred by
+  `xCallsOk_trapEnv`), `prune` + `prepare` by `prepareCorrectU_cleanup_value`, and the register
+  level on the machine **without** unwinding by `regLevel_trapCall_value`
+  (`regLevel_trapCall_core`: `forward`/`forward_last` to the halting call, `realizes_trapT`:
+  the value realiser transfers to the semantics whose trapping calls halt).
+* **Non-vacuity** (`FV/E2E/DeadCleanupTrapCallWitness.lean`): `final_applies` applies the
+  theorem to a compiled function calling a `%panic` that traps (`checks_true` receipt); on its
+  entered state `cs0` the run traps with `user1` inside the callee, `cs0_trapsC` (the new
+  premise holds), `cs0_not_trapsExplicit` (the old one does not), `cs0_unwinds` (the device).
+* `#print axioms`: `backend_correct_final_cleanup_trapcall`, `regLevel_trapCall_value`,
+  `trapEnv_of_trapped`: `[propext, Classical.choice, Quot.sound]`.
+
+Not yet covered (S9b–S9d, TO-PROVE §4 S9): traps of the callees of `try_call`/
+`try_call_indirect` (the device's exception would be caught by the handler semantics); the
+linked program (`LinkArm`: the linked hook of a program callee whose run traps returns no state,
+`junkAt`; the callee-trap state must continue in the callee's code, by induction on the depth,
+ending at a trap site of some function of the program or at a callee-trap state of a base
+callee, with `XTrapsOk` for the base environment in `BaseOk`); the executable bytes and
+`compileExe`/`Front` (`ExecRefines`' trap clause names the entered function's trap sites only).
+
 ## Remaining (precise)
 
 M4 (`LowerRulesCorrect` and the terminator statements) and M6 (`RegLevelCorrect`, `DriverSem`,
@@ -3952,8 +4024,8 @@ and the program callees' contracts are discharged by `E2E.backend_correct_progra
 the call depth); the executable theorems are `Link.DeadCleanup.compileExe_correct{,_peak,_source,
 _source_peak}` and, from cg_clif's dumps, `Front.bundle_correct_raw{,_peak}`. What remains is
 listed in `docs/TO-PROVE.md` (§1.1 for totality, §4 for scope, §5 for the trusted base); from this
-file: stack-passed arguments of indirect calls (`indSigs`, S5) and memory-access traps (need a
-fault model; `TrapsExplicit`).
+file: stack-passed arguments of indirect calls (`indSigs`, S5), memory-access traps (need a
+fault model; `TrapsExplicit`), and callee traps beyond S9a (above, "Callee traps").
 
 ## Trusted (not proven)
 

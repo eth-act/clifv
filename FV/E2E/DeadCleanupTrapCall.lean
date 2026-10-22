@@ -26,8 +26,15 @@ machine semantics `X.call` gives no normal return there), every earlier state of
   `p.bare`): CLIF → VCode by the unwinding chain's `iselSimU_of_driver` on `trapEnv env c`
   (`trapEnv_of_trapped`), `prune` + `prepare` by `prepareCorrectU_cleanup_value`, the register
   level by `regLevel_trapCall_value`.
-* `backend_correct_final_cleanup_trapcall_old`: with `TrapsExplicit` (no callee traps) the
-  callee-trap alternative is the old trap site (`TrapsExplicit.toC`).
+* Every run under the old premise is a run under the new one (`TrapsExplicit.toC`); the old
+  theorem `backend_correct_final_cleanup` is unchanged. Non-vacuity, and a run the new theorem
+  covers and the old one excludes: `FV/E2E/DeadCleanupTrapCallWitness.lean`.
+
+Still excluded at this layer (later steps of S9, see `docs/TO-PROVE.md` S9): traps inside the
+callees of `try_call`/`try_call_indirect` (the trap of such a callee is caught by the unwinding
+chain's handler semantics: a different proof device is needed), memory-access traps
+(`heap_oob`: no fault model), and the composition with the linked program (`LinkArm`: the
+callee-trap state of a program callee continues in the callee's code) and the executable.
 -/
 
 namespace E2E
