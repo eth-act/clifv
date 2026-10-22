@@ -642,7 +642,86 @@ theorem mem_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
       (pw_two (evrel_read (by rw [hrk]; exact .inr rfl) hR (sagrees_head hag0 hR) hA hn' ha s.mem)
         (evrel_write (by rw [hwk]; exact .inr rfl) hW hAw hnw ha hval))
   case atomicCas ty fl pp ex x =>
-    sorry
+    obtain ⟨hle, pv, hpv, hae⟩ := access_some_ite (hi ▸ hacc)
+    simp only [Prod.mk.injEq] at hae
+    obtain ⟨ea, en⟩ := hae
+    obtain ⟨pv', ev, v, old, hpv', hex, hx, hold⟩ := cas_parts (hi ▸ h2o)
+    rw [hpv] at hpv'; cases hpv'
+    obtain ⟨t, fl', p0, e0, x0, d0, d1, rfl⟩ :=
+      cas_form (hi ▸ hcas') hmi0 (by rw [hks, ← hexp.1]; simp)
+    obtain ⟨ua, uex, ux, hu, hh⟩ := hcasx ty fl pp ex x hi ev hex
+    rw [hu] at hcsem2 hev2
+    -- the comparisons of the statement and of the loop agree
+    have hrd := (load_eq hle hold).2
+    rw [ea, en] at hrd
+    have hb : ∀ i < nE, ∀ y, (s.mem.writeBits false a nE
+        (readM nE (BitVec.ofNat 64 a) (patch evs wm).mem)).bytes (a + i) = some y →
+        Arm.read_mem (BitVec.ofNat 64 (a + i)) (patch evs w) = y := fun i hi' y hy =>
+      hMR.bytes slots _ (patch evs w) (a + i) y hmr2 (valid_sub (valid_of_allocs rfl hv) hi') hy
+    have hEA2 : AtA (BitVec.ofNat 64 a) nE
+        (cEvs F fc (.atomicCasLoop t fl' (.vreg p0 .int) (.vreg e0 .int) (.vreg x0 .int)
+          (.vreg d0 .int) (.vreg d1 .int)) [ua, uex, ux] (patch evs wm)) := by
+      rw [← hev2]; exact hEA
+    have hn8 : nE ≤ 8 := by
+      have h2 := hEA2
+      rcases IselMemAux.cEvs_cas_shape hep hcsem2 with ⟨hevs, -⟩ | ⟨wr, hevs, -⟩ <;>
+      · rw [hevs] at h2
+        have := (h2 _ List.mem_cons_self).2
+        simp only at this
+        rw [← this]
+        have h := hcsem2
+        simp only [csem, hep, ite_true] at h
+        cases hL : loopSem F t ua (casLoopHead t.bits fl') [.x 25, .x 26, .x 28] [ua, uex, ux]
+            [.x 27, .x 24] (patch evs wm) with
+        | none => rw [hL] at h; cases h
+        | some r1 => have := atomTy_bytes (loopSem_some hL).1; omega
+    have hcmp := cas_cmp en hn8 hrd ha64 hb hh
+    have hpm : (patch evs w).mem = (patch evs wm).mem := by rw [hMw]; rfl
+    rw [hpm] at hcmp
+    rcases IselMemAux.cEvs_cas_shape hep hcsem2 with ⟨hevs, hne'⟩ | ⟨wr, hevs, hwk, -, -, heq'⟩
+    · -- the comparison fails: the read
+      rw [hevs] at hEA2
+      obtain ⟨hA0, hn0'⟩ := hEA2 _ List.mem_cons_self
+      simp only at hA0 hn0'
+      rw [hA0, hn0'] at hne'
+      have hq : (old == ev) = false := by
+        rw [beq_eq_false_iff_ne]; exact fun h => hne' (hcmp.mp h)
+      obtain ⟨r0, hevs', hrk⟩ : ∃ r0, evs = [r0] ∧ r0.k = .acqXR := ⟨_, hev2.trans hevs, rfl⟩
+      subst hevs'
+      have hc2 := cstep_atomicCas (s := { s with mem := (s.mem.writeBits false a nE
+        (readM nE (BitVec.ofNat 64 a) (patch [r0] wm).mem)) }) hbody hi hpv hex hx hold hs2
+      simp only [hq, Bool.false_eq_true, ite_false] at hc2
+      rw [ea, en] at hc2
+      have hR : r0.k.dir = .R := by rw [hrk]; rfl
+      obtain ⟨hA, hn'⟩ := hEA r0 (by simp)
+      exact mem_complete hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+        (pw_one (evrel_read (by rw [hrk]; exact .inr rfl) hR (sagrees_head hag0 hR) hA hn' ha
+          s.mem))
+    · -- the comparison succeeds: the read and the write
+      rw [hevs] at hEA2
+      obtain ⟨hA0, hn0'⟩ := hEA2 _ List.mem_cons_self
+      simp only at hA0 hn0'
+      rw [hA0, hn0'] at heq'
+      have hq : (old == ev) = true := by
+        rw [beq_iff_eq]; exact hcmp.mpr heq'
+      obtain ⟨r0, hevs', hrk⟩ : ∃ r0, evs = [r0, wr] ∧ r0.k = .acqXR := ⟨_, hev2.trans hevs, rfl⟩
+      subst hevs'
+      have hc2 := cstep_atomicCas (s := { s with mem := (s.mem.writeBits false a nE
+        (readM nE (BitVec.ofNat 64 a) (patch [r0, wr] wm).mem)) }) hbody hi hpv hex hx hold hs2
+      simp only [hq, ite_true] at hc2
+      have hown := cstep_own hc2 hs2 (by exact ⟨fun _ => rfl, (fun h => nomatch h), trivial⟩)
+      rw [applyEvs_rw] at hown
+      have hg : getB s'.mem.bytes a nE = valB (bigOf fl) nE v := by
+        rw [hown, ← ea, ← en]; exact getB_putB_valB _ _ _ _ _
+      rw [ea, en] at hc2
+      have hR : r0.k.dir = .R := by rw [hrk]; rfl
+      have hW : wr.k.dir = .W := by rw [hwk]; rfl
+      obtain ⟨hA, hn'⟩ := hEA r0 (by simp)
+      obtain ⟨hAw, hnw⟩ := hEA wr (by simp)
+      have hval := write_val hMR hmrL hvL hg hAw hnw (hmemW [r0] wr rfl hW)
+      exact mem_complete hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+        (pw_two (evrel_read (by rw [hrk]; exact .inr rfl) hR (sagrees_head hag0 hR) hA hn' ha
+          s.mem) (evrel_write (by rw [hwk]; exact .inr rfl) hW hAw hnw ha hval))
   case fence => exact absurd trivial hfe
 
 end

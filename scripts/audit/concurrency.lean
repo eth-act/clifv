@@ -291,3 +291,10 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.IselMemHelp.bytes_of_mr
 #print axioms Concurrency.IselMemHelp.access_of_ok
 #print axioms Concurrency.IselThread.Witness.driverHypA -- witness: native_decide
+#print axioms Concurrency.IselMemLower.step_next_of
+#print axioms Concurrency.IselMemLower.cas_cmp
+#print axioms Concurrency.IselMemLower.mem_vreg
+#print axioms Concurrency.IselMemMain.mem_seg
+#print axioms Concurrency.IselRefines.seg_res
+#print axioms Concurrency.IselRefines.isel_refines
+#print axioms Concurrency.IselRefines.Witness.isel_refines_fA -- witness: native_decide
