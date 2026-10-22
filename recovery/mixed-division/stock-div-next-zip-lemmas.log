@@ -1,0 +1,6 @@
+List.mem_zipIdx.{u_1} {α : Type u_1} {x : α} {i : Nat} {xs : List α} {k : Nat} (h : (x, i) ∈ xs.zipIdx k) :
+  k ≤ i ∧ i < k + xs.length ∧ x = xs[i - k]
+List.getElem?_zipIdx.{u_1} {α : Type u_1} {l : List α} {i j : Nat} :
+  (l.zipIdx i)[j]? = Option.map (fun a => (a, i + j)) l[j]?
+/tmp/stock-div-next-zip-lemmas.lean:4:7: error(lean.unknownIdentifier): Unknown constant `List.getElem_of_mem_zipIdx`
+/tmp/stock-div-next-zip-lemmas.lean:5:7: error(lean.unknownIdentifier): Unknown constant `List.getElem?_of_mem_zipIdx`

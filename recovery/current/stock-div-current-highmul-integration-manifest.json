@@ -1,0 +1,52 @@
+{
+  "packet": "current-highmul-integration",
+  "base": "5c1351a088eee97b38925a5266f5a6f4cbd19797",
+  "candidate": "b1ef0c67f455eecb643883a414904016bab65d8f",
+  "env": {
+    "FV_LAKE_CACHE": "/home/lee/clifv/.worktrees/driver-proof-resume/.lake/artifact-cache",
+    "FV_MEMCAP": "8G",
+    "PATH": "/home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin:/home/lee/.cargo/bin:/home/lee/clifv/.worktrees/stock-div-release-20261022/rust/target/release:/home/lee/.local/share/clifv-test-tools/usr/bin:/home/lee/.rustup/toolchains/nightly-2026-09-26-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin:/home/lee/.codex/packages/app-server-daemon/releases/0.163.0-x86_64-unknown-linux-musl/codex-path:/home/lee/.codex/tmp/arg0-linux/codex-arg0jkWVLj:/home/lee/.codex/tmp/arg0/codex-arg08PQMX1:/home/lee/.codex/packages/app-server-daemon/releases/0.162.1-x86_64-unknown-linux-musl/codex-path:/home/lee/.codex/tmp/arg0/codex-arg0wLFcsh:/home/lee/.codex/packages/app-server-daemon/releases/0.162.0-x86_64-unknown-linux-musl/codex-path:/home/lee/.codex/tmp/arg0/codex-arg06SuP8p:/home/lee/.codex/packages/app-server-daemon/releases/0.161.0-x86_64-unknown-linux-musl/codex-path:/home/lee/.codex/tmp/arg0/codex-arg0elxSSE:/home/lee/.codex/packages/app-server-daemon/releases/0.160.1-x86_64-unknown-linux-musl/codex-path:/home/lee/.codex/tmp/arg0/codex-arg00iE9Wj:/home/lee/.codex/packages/app-server-daemon/releases/0.160.0-x86_64-unknown-linux-musl/codex-path:/home/lee/.codex/tmp/arg0/codex-arg0NAQB5q:/home/lee/.npm-global/lib/node_modules/@openai/codex/node_modules/@openai/codex-linux-x64/vendor/x86_64-unknown-linux-musl/codex-path:/opt/cuda/bin:/home/lee/.pixi/bin:/home/lee/.elan/bin:/home/lee/.local/bin:/opt/cuda/bin:/home/lee/.pixi/bin:/home/lee/.elan/bin:/home/lee/.local/bin:/home/lee/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/home/lee/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/bin:/usr/lib/jvm/default/bin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl:/home/lee/.fzf/bin:/home/lee/.local/bin:/home/lee/.local/bin/zig-install:/home/lee/.cargo/bin:/home/lee/.npm-global/bin:/home/lee/.pyenv/bin:/home/lee/ai-cookbook/scripts:/home/lee/.risc0/bin:/opt/nvim-linux-x86_64/bin:/home/lee/.local/bin:/home/lee/.local/bin/zig-install:/home/lee/.cargo/bin:/home/lee/.npm-global/bin:/home/lee/.pyenv/bin:/home/lee/ai-cookbook/scripts:/home/lee/.risc0/bin:/opt/nvim-linux-x86_64/bin",
+    "FV_ROOT": "/home/lee/clifv/.worktrees/stock-div-release-20261022",
+    "FV_AR": "/home/lee/.local/share/clifv-test-tools/usr/bin/llvm-ar",
+    "FV_OBJCOPY": "/home/lee/.local/share/clifv-test-tools/usr/bin/llvm-objcopy",
+    "LLVM_MC": "/home/lee/.local/share/clifv-test-tools/usr/bin/llvm-mc",
+    "CLIF_NATIVE_QEMU": "/home/lee/.local/share/clifv-test-tools/usr/bin/qemu-aarch64-static",
+    "CLIF_NATIVE_LLD": "/home/lee/.rustup/toolchains/nightly-2026-09-26-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/rust-lld",
+    "OMP_NUM_THREADS": "2",
+    "OMP_THREAD_LIMIT": "2",
+    "LEAN_NUM_THREADS": "2",
+    "CARGO_BUILD_JOBS": "2"
+  },
+  "tools": [
+    "lake",
+    "lean",
+    "python3"
+  ],
+  "gates": [
+    {
+      "id": "highmul-actual-cli-link-generated",
+      "argv": [
+        "python3",
+        "scripts/check-stock-mixed-integration.py",
+        "--output",
+        "{out}/highmul",
+        "--class",
+        "highmul",
+        "--fixture-mode",
+        "native"
+      ],
+      "outputs": [
+        "{out}/highmul/receipt.json"
+      ],
+      "complete_inputs": false,
+      "inputs": [
+        ".lake/build/bin/stock-highmul-runtime",
+        ".lake/build/bin/stock-highmul-linked"
+      ]
+    }
+  ],
+  "historical_evidence": [
+    "docs/research/stock-cmp-production-activation.json"
+  ],
+  "validation_scope": "Current-main reconciliation of complete returned division/remainder class; prior actual evidence remains on recorded heads; full original140 stays open."
+}

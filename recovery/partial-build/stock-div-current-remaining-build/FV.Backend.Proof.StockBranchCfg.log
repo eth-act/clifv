@@ -1,0 +1,4 @@
+⚠ [156/619] Replayed FV.Backend.Proof.LowerSim
+warning: FV/Backend/Proof/LowerSim.lean:1863:46: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+✔ [619/619] Built FV.Backend.Proof.StockBranchCfg (29s)
+Build completed successfully (619 jobs).

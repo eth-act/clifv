@@ -1,0 +1,13 @@
+3153 modules (5 heavy, 488 without a record); critical path 2.39 h, serial 31.96 h (recorded)
+13:28:34 want 3153 modules (3148 assumed built) budget=4G max_jobs=1 heavy>12G
+13:28:34 start FV.Backend.Proof.StockPureSourceColors cap=3G running=1 avail=129.2G
+13:28:35 done FV.Backend.Proof.StockPureSourceColors rc=0 1s maxrss=0.1G up-to-date -> ok
+13:28:35 start FV.Backend.Proof.StockPureDriverUnsunk cap=4G running=1 avail=129.7G
+13:28:36 done FV.Backend.Proof.StockPureDriverUnsunk rc=0 1s maxrss=0.1G up-to-date -> ok
+13:28:36 start FV.Backend.Proof.StockPureNotrap cap=3G running=1 avail=122.6G
+13:28:37 done FV.Backend.Proof.StockPureNotrap rc=0 1s maxrss=0.1G up-to-date -> ok
+13:28:37 start FV.Backend.Proof.StockDivReturnDemand cap=3G running=1 avail=123.6G
+13:28:38 done FV.Backend.Proof.StockDivReturnDemand rc=0 1s maxrss=0.1G up-to-date -> ok
+13:28:38 start FV.Backend.Proof.StockLocalSourceExecution cap=3G running=1 avail=125.2G
+13:28:39 done FV.Backend.Proof.StockLocalSourceExecution rc=0 1s maxrss=0.1G up-to-date -> ok
+13:28:39 END 3153/3153 ok, 0 built, wall 0.1 min

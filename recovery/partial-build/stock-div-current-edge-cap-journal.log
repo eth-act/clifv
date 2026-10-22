@@ -1,0 +1,4 @@
+Oct 22 16:29:33 lucy systemd[1902]: Started [systemd-run] /home/lee/.elan/toolchains/leanprover--lean4---v4.34.1/bin/lake build FV.Backend.Proof.StockEdgeCode.
+Oct 22 16:29:41 lucy systemd[1902]: run-p553650-i402826448.scope: The kernel OOM killer killed some processes in this unit.
+Oct 22 16:29:41 lucy systemd[1902]: run-p553650-i402826448.scope: Failed with result 'oom-kill'.
+Oct 22 16:29:41 lucy systemd[1902]: run-p553650-i402826448.scope: Consumed 10.209s CPU time over 8.314s wall clock time, 3G memory peak.

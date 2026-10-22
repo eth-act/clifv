@@ -1,0 +1,9 @@
+/tmp/stock-div-next-record-uniqueness.lean:36:14: error: Function expected at
+  ih fresh.right first second
+but this term has type
+  r = s
+
+Note: Expected a function because this term is being applied to the argument
+  same
+'Backend.Stock.Proof.ScansSpec.record_inst_mem' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ScansSpec.record_unique' depends on axioms: [propext, sorryAx, Quot.sound]

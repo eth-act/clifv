@@ -1,0 +1,13 @@
+{
+  "utc": "2026-10-22T20:31:49.892210+00:00",
+  "actual_current_head": "b1ef0c67f455eecb643883a414904016bab65d8f",
+  "scope": "New split proof import validation in separate temporary root, using actual installed import artifacts; production classifier/pipeline witnesses not yet applied or validated. Current main normal-key reconciliation still pending.",
+  "records": [
+    {
+      "module": "FV/Backend/Proof/StockScanTrapSemantics.lean",
+      "source_sha256": "743cf45d601ac6178cc70f66717d13ba4e8e9a0986fc404a401152ee51c84f6d",
+      "returncode": 1,
+      "log": "/tmp/stock-div-mixed-import-check/StockScanTrapSemantics.log"
+    }
+  ]
+}

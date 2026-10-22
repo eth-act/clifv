@@ -1,0 +1,21 @@
+⚠ [147/212] Replayed FV.Backend.Proof.LowerSim
+warning: FV/Backend/Proof/LowerSim.lean:1863:46: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+⚠ [153/212] Replayed FV.E2E.RegLevelMachine
+warning: FV/E2E/RegLevelMachine.lean:122:6: `dite_cond_eq_true` has been deprecated: Use `dite_eq_left_of_eq_true` instead
+⚠ [180/212] Replayed FV.E2E.RegLevelOp
+warning: FV/E2E/RegLevelOp.lean:103:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:103:20: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:104:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelOp.lean:104:29: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [203/212] Replayed FV.E2E.RegLevelTry
+warning: FV/E2E/RegLevelTry.lean:323:25: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [207/212] Replayed FV.Backend.Proof.RegallocCover
+warning: FV/Backend/Proof/RegallocCover.lean:83:58: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocCover.lean:85:62: `if_true` has been deprecated: Use `ite_true` instead
+⚠ [210/212] Replayed FV.E2E.RegLevelAtomic
+warning: FV/E2E/RegLevelAtomic.lean:708:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelAtomic.lean:711:15: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelAtomic.lean:723:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelAtomic.lean:726:15: `if_neg` has been deprecated: Use `ite_eq_right` instead
+✔ [212/212] Built FV.E2E.RegLevelCorrect (11s)
+Build completed successfully (212 jobs).

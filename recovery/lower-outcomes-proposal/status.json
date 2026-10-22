@@ -1,0 +1,10 @@
+{
+  "status": "Prospective follow-on only; shared files unchanged, boundary posted140, split imports not validated",
+  "moved_public_declarations": [
+    "Backend.Proof.Driver.VTrapFrom",
+    "Backend.Proof.Driver.VRetFrom",
+    "Backend.Proof.Driver.VTrapFrom.prefix",
+    "Backend.Proof.Driver.VRetFrom.prefix"
+  ],
+  "declaration_bodies": "byte-for-byte copied from currentLowerSim"
+}

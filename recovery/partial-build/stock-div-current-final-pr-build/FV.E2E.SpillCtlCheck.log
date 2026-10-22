@@ -1,0 +1,42 @@
+⚠ [147/383] Replayed FV.Backend.Proof.LowerSim
+warning: FV/Backend/Proof/LowerSim.lean:1863:46: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+⚠ [155/383] Replayed FV.E2E.Main
+warning: FV/E2E/Main.lean:80:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Main.lean:86:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [174/383] Replayed FV.E2E.RegLevelMachine
+warning: FV/E2E/RegLevelMachine.lean:122:6: `dite_cond_eq_true` has been deprecated: Use `dite_eq_left_of_eq_true` instead
+⚠ [201/383] Replayed FV.E2E.RegLevelOp
+warning: FV/E2E/RegLevelOp.lean:103:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:103:20: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:104:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelOp.lean:104:29: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [212/383] Replayed FV.E2E.RegLevelTry
+warning: FV/E2E/RegLevelTry.lean:323:25: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [216/383] Replayed FV.Backend.Proof.RegallocCover
+warning: FV/Backend/Proof/RegallocCover.lean:83:58: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocCover.lean:85:62: `if_true` has been deprecated: Use `ite_true` instead
+⚠ [219/383] Replayed FV.E2E.RegLevelAtomic
+warning: FV/E2E/RegLevelAtomic.lean:708:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelAtomic.lean:711:15: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelAtomic.lean:723:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelAtomic.lean:726:15: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [306/383] Replayed FV.Backend.Proof.MemRefines
+warning: FV/Backend/Proof/MemRefines.lean:424:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:450:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:462:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:478:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:509:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:509:19: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/MemRefines.lean:513:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/MemRefines.lean:516:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [371/383] Replayed FV.Backend.Proof.SpillCtlPipe
+warning: FV/Backend/Proof/SpillCtlPipe.lean:91:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:184:31: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:185:25: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:191:26: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:200:59: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:205:59: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:223:16: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:223:28: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+✔ [383/383] Built FV.E2E.SpillCtlCheck (2.7s)
+Build completed successfully (383 jobs).

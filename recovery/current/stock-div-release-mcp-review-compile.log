@@ -1,0 +1,18 @@
+.lake/StockDivPacketReview.lean:8:69: error: Function expected at
+  sigAbiOk
+but this term has type
+  ?m.1
+
+Note: Expected a function because this term is being applied to the argument
+  f.sig
+
+Hint: The identifier `sigAbiOk` is unknown, and Lean's `autoImplicit` option causes an unknown identifier to be treated as an implicitly bound variable with an unknown type. However, the unknown type cannot be a function, and a function is what Lean expects here. This is often the result of a typo or a missing `import` or `open` statement.
+.lake/StockDivPacketReview.lean:12:12: error: Function expected at
+  sigRets
+but this term has type
+  ?m.2
+
+Note: Expected a function because this term is being applied to the argument
+  f.sig
+
+Hint: The identifier `sigRets` is unknown, and Lean's `autoImplicit` option causes an unknown identifier to be treated as an implicitly bound variable with an unknown type. However, the unknown type cannot be a function, and a function is what Lean expects here. This is often the result of a typo or a missing `import` or `open` statement.

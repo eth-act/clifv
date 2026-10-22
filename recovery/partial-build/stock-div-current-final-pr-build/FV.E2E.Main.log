@@ -1,0 +1,6 @@
+⚠ [147/155] Replayed FV.Backend.Proof.LowerSim
+warning: FV/Backend/Proof/LowerSim.lean:1863:46: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+⚠ [155/155] Built FV.E2E.Main (841ms)
+warning: FV/E2E/Main.lean:80:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Main.lean:86:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+Build completed successfully (155 jobs).

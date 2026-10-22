@@ -1,0 +1,543 @@
+import FV.Backend.InputScope
+import FV.Backend.Encode
+import FV.Backend.Regalloc
+import FV.Backend.Proof.RegallocSound
+import FV.Backend.Proof.RegallocOperands
+import FV.Backend.Proof.EncodeStep
+import FV.Backend.Proof.LowerOutcomes
+import FV.Backend.Proof.DriverCheck
+import FV.Backend.Proof.PrepareCheck
+import FV.Compile.Subset
+
+/-!
+# M7: the end-to-end statement (`docs/contracts/e2e.md`)
+
+For an in-subset CLIF function `f` of a program `p` and the Lean backend's compiled code
+(`Compiled`: `lowerFunction` → `prepare` → `checkAlloc` → `lowerRFunc` → `emitFunc` →
+`FnAsm.layout`, and the validators `lowerCheck`/`prepCheck` accepted), loaded at `base`: an Arm execution from an ABI-conformant entry state refines
+the CLIF execution (`Clif.runLoop` from the matching CLIF entry state):
+
+* CLIF returns `vals` with memory `cm` ⇒ the Arm run reaches the return address with `vals` in
+  x0.. (low bits, `XHolds`), sp / callee-saved registers restored, and memory agreeing with `cm`
+  on every live CLIF allocation;
+* CLIF traps with code `c` ⇒ the Arm run reaches a trap site of the function's trap table with
+  code `c`;
+* `stuck` (a violated CLIF precondition) and `outOfFuel`: no claim.
+
+The three layers and who proves them:
+
+```
+Clif.runLoop  ──(IselSim: M7 driver + lowerCheck, from M4's rules)──▶  VStep vc sem
+VStep vc sem  ──(PrepareCorrect: M7, prepCheck)─────────────────────▶  VStep (prepare vc) sem
+VStep vcp sem ──(RegLevelCorrect: M6 + M5)──────────────────────────▶  Arm run (astep^n)
+```
+
+`sem s : Sem` is the VCode-level per-`MInst` semantics of the activation entered in `s`, shared
+by M4 and M6 (M6's `csem (F s)`; values `CV` = 128-bit registers, world = the Arm state).
+Everything is stated for an abstract `sem`, Arm machine `astep` and frame-address set `F`; they
+are instantiated by M6's definitions.
+-/
+
+namespace E2E
+
+open Backend Backend.Proof Backend.Proof.Driver
+
+/-! ## Values: the width convention
+
+`Sem` (the VCode-level instruction semantics, M6's `csem` is the instance), `VHolds` (a CLIF
+value of type `ty` is the low `ty.width` bits of a register value, upper bits unspecified,
+PLAN.md §3.4) and `AllHold` are the driver's (`Backend.Proof.Driver`, shared with M4). -/
+
+/-- `VHolds` for a 64-bit X register. For the subset's types (width ≤ 64) this is
+`x.setWidth v.ty.width = v.bits` (`XHolds_iff`). -/
+def XHolds (v : Clif.Val) (x : BitVec 64) : Prop := VHolds v (ofX x)
+
+theorem XHolds_iff {v : Clif.Val} {x : BitVec 64} (h : v.ty.width ≤ 64) :
+    XHolds v x ↔ x.setWidth v.ty.width = v.bits := by
+  simp only [XHolds, VHolds, ofX]
+  rw [BitVec.setWidth_setWidth_of_le _ (by omega)]
+
+/-- Number of the Arm register `x n`. -/
+def xreg (n : Nat) (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR (BitVec.ofNat 5 n)) s
+
+/-- Arm stack pointer. -/
+def spv (s : Arm.ArmState) : BitVec 64 := Arm.r (.GPR 31#5) s
+
+/-! ## The subset -/
+
+/-- The CLIF functions the theorem covers: clif-subset-v2 E (`Compile.functionE`), plus the
+current restrictions of the proof (e2e.md, "Remaining"): calls only to externs of this
+activation's program. Whole-program linking supplies a program without functions and
+discharges compiled callees' contracts by induction on call depth, including self-calls.
+Indirect calls have at most 8 register parameters, and signatures (the
+function's, its externs' and its indirect calls') with `normal` parameters and returns plus at
+most one `sret` struct-return pointer (`sigAbiOk`: in x8, returned in x0, no other returns);
+other special-purpose parameters are compiled and flagged unverified. Parameters beyond x0..x7
+(the function's own, and the arguments of a `call` or a `try_call`) are passed on the stack
+(agent/stack-tls-proof, agent/last-unverified: `ArgsIn`, `Backend.Proof.ArgsAt`). -/
+structure InSubset (p : Clif.Program) (f : Clif.Function) : Prop where
+  subsetE : Compile.functionE f = true
+  externCalls : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
+    ∀ e, f.extern? fn = some e → p.func? e.name = none
+  /-- a `try_call` calls an extern, like `externCalls` -/
+  tryExterns : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
+    ∀ e, f.extern? fn = some e → p.func? e.name = none
+  abiSigs : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true
+  /-- the signatures of the indirect calls (`call_indirect`, `try_call_indirect`) take at most
+  8 (register) parameters and pass `sigAbiOk` (`Backend.indSigsOk`) -/
+  indSigs : ∀ s ∈ indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true
+
+/-- The driver's local verification conditions give the per-activation subset when every
+call is external to `p`; linking later supplies the compiled callees' contracts. -/
+theorem InSubset.of_verifiable {p : Clif.Program} {f : Clif.Function}
+    (h : Backend.verifiable f = true) (hp : ∀ n, p.func? n = none) : InSubset p f := by
+  simp only [Backend.verifiable, Backend.abiSigs, Backend.indSigsOk,
+    Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, and_assoc] at h
+  obtain ⟨hE, hf, hext, hind⟩ := h
+  exact ⟨hE, fun _ _ _ _ _ _ _ e _ => hp e.name,
+    fun _ _ _ _ _ _ e _ => hp e.name, ⟨hf, hext⟩, hind⟩
+
+/-- A function without indirect calls has no indirect-call signatures. -/
+theorem indSigs_eq_nil {f : Clif.Function}
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (htci : ∀ B ∈ f.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et) :
+    indSigs f = [] := by
+  unfold indSigs
+  rw [List.flatMap_eq_nil_iff]
+  intro B hB
+  rw [List.append_eq_nil_iff, List.filterMap_eq_nil_iff]
+  refine ⟨fun st hst => ?_, ?_⟩
+  · cases h : st.inst with
+    | callIndirect sig callee args => exact absurd h (hci B hB st hst sig callee args)
+    | _ => rfl
+  · cases h : B.term with
+    | tryCallIndirect callee args et => exact absurd h (htci B hB callee args et)
+    | _ => rfl
+
+/-- `f`'s calls of externs no function of `q` is named: in the subset for `q` when it is for `p`
+(e.g. `q` the program without functions, whose calls are all external). -/
+theorem InSubset.retarget {p q : Clif.Program} {f : Clif.Function} (h : InSubset p f)
+    (hq : ∀ n, q.func? n = none) : InSubset q f :=
+  ⟨h.subsetE, fun _ _ _ _ _ _ _ e _ => hq e.name, fun _ _ _ _ _ _ e _ => hq e.name, h.abiSigs,
+    h.indSigs⟩
+
+/-- **Specialisation**: the former subset (with at most 8 parameters for `f` and every
+extern, `regParams`/`callRegArgs`, and the indirect-call signature condition) is inside the
+new one; for a function without indirect calls `indSigs` is vacuous (`indSigs_eq_nil`). -/
+theorem InSubset.of_regArgs {p : Clif.Program} {f : Clif.Function}
+    (hE : Compile.functionE f = true)
+    (_hreg : f.sig.params.length ≤ 8)
+    (hext : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
+      ∀ e, f.extern? fn = some e → p.func? e.name = none)
+    (htry : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
+      ∀ e, f.extern? fn = some e → p.func? e.name = none)
+    (_hcra : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8)
+    (habi : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true)
+    (hind : ∀ s ∈ _root_.Backend.indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true) :
+    InSubset p f :=
+  ⟨hE, hext, htry, habi, hind⟩
+
+/-- **Specialisation**: for a function without indirect calls, the former subset (without
+`indSigs`, which is vacuous: `indSigs_eq_nil`). -/
+theorem InSubset.of_indirectFree {p : Clif.Program} {f : Clif.Function}
+    (hE : Compile.functionE f = true)
+    (hreg : f.sig.params.length ≤ 8)
+    (hext : ∀ b ∈ f.blocks, ∀ st ∈ b.body, ∀ fn args, st.inst = .call fn args →
+      ∀ e, f.extern? fn = some e → p.func? e.name = none)
+    (htry : ∀ b ∈ f.blocks, ∀ fn args et, b.term = .tryCall fn args et →
+      ∀ e, f.extern? fn = some e → p.func? e.name = none)
+    (hcra : ∀ e ∈ f.externs, e.2.sig.params.length ≤ 8)
+    (habi : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true)
+    (hci : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (htci : ∀ B ∈ f.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et) :
+    InSubset p f :=
+  .of_regArgs hE hreg hext htry hcra habi (by rw [indSigs_eq_nil hci htci]; simp)
+
+/-! ## The compiled code -/
+
+/-- The backend's pipeline succeeded on `f` (`Backend.compileFileWith` with the regalloc2
+allocator; `rf` is whatever the untrusted allocator returned and the checker accepted), and
+M7's validators accepted the lowering (`lowerCheck`: the VCode is the recorded lowering of `f`
+with an SSA availability certificate) and `prepare` (`prepCheck`). -/
+structure Compiled (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc) (af : AFunc)
+    (fa : FnAsm) (fb : FnBin) : Prop where
+  lower : lowerFunction f = .ok vc
+  lowerOk : lowerCheck f vc = true
+  prepare : prepare vc = .ok vcp
+  prepOk : prepCheck vc vcp = true
+  check : checkAlloc vcp rf = .ok ()
+  alloc : lowerRFunc vcp rf = .ok af
+  emit : emitFunc k af = .ok fa
+  layout : fa.layout = .ok fb
+
+/-- `Compiled` with the allocation premise `AllocChecked` (verified in-states, `CheckedAt`, with an
+`EntryOk` entry state) in place of `checkAlloc`'s verdict (V4): the allocation need not come from
+regalloc2 and be accepted by the checker's own fixpoint iteration (the spill allocation,
+`FV/E2E/AllocDirect.lean`). `Compiled.toA`: every `Compiled` is one. -/
+structure CompiledA (f : Clif.Function) (k : Nat) (vc vcp : VCode) (rf : RFunc) (af : AFunc)
+    (fa : FnAsm) (fb : FnBin) : Prop where
+  lower : lowerFunction f = .ok vc
+  lowerOk : lowerCheck f vc = true
+  prepare : prepare vc = .ok vcp
+  prepOk : prepCheck vc vcp = true
+  check : AllocChecked vcp rf
+  alloc : lowerRFunc vcp rf = .ok af
+  emit : emitFunc k af = .ok fa
+  layout : fa.layout = .ok fb
+
+theorem Compiled.toA {f : Clif.Function} {k : Nat} {vc vcp : VCode} {rf : RFunc} {af : AFunc}
+    {fa : FnAsm} {fb : FnBin} (hc : Compiled f k vc vcp rf af fa fb) :
+    CompiledA f k vc vcp rf af fa fb :=
+  ⟨hc.lower, hc.lowerOk, hc.prepare, hc.prepOk, allocChecked_of_checkAlloc hc.check, hc.alloc, hc.emit,
+    hc.layout⟩
+
+/-! ## CLIF side: entry state and memory relation -/
+
+/-- `cs` is an initial CLIF state of `f` on `args`: `Clif.initState` except that the stack
+slot addresses (`cs.frame.slots`) and the memory are left free. CLIF does not specify slot
+addresses; `Clif.run`'s bump allocator picks one choice (`clifEntry_initState`), the Arm frame
+another, and the theorem is stated for the Arm frame's (`SlotsAt`). -/
+structure ClifEntry (f : Clif.Function) (args : List Clif.Val) (cs : Clif.State) : Prop where
+  callers : cs.callers = []
+  func : cs.frame.func = f
+  sig : args.map (·.ty) = f.sig.params.map (·.ty)
+  entry : ∃ b, f.entry? = some b ∧ cs.frame.body = b.body ∧ cs.frame.term = b.term ∧
+    b.params.map (·.2) = args.map (·.ty) ∧
+    Clif.Regs.empty.setMany (b.params.map (·.1)) args = some cs.frame.regs
+  slotIds : cs.frame.slots.map (·.1) = f.slots.map (·.1)
+
+/-- CLIF memory ↔ Arm memory, same addresses: initialised bytes of live CLIF allocations are
+the Arm bytes, every address of a live CLIF allocation is a 64-bit address outside the frame addresses `F` (the
+allocator-private part of the frame: spill and save slots, fp/lr), and `symbol_value`
+addresses are the link-time ones `syms`. -/
+structure MemRel (F : BitVec 64 → Prop) (syms : String → Option Nat) (cm : Clif.Mem)
+    (s : Arm.ArmState) : Prop where
+  bytes : ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → Arm.read_mem (BitVec.ofNat 64 a) s = b
+  valid : ∀ a n, cm.valid a n = true → a + n ≤ 2 ^ 64 ∧ ∀ k < n, ¬ F (BitVec.ofNat 64 (a + k))
+  symbols : cm.symbols = syms
+
+/-- The relation parameters of the CLIF ↔ VCode relation: frame addresses `F`, link-time
+symbol addresses `syms`, and `slotOff`: the explicit stack-slot region is at `sp + slotOff` of
+the VCode world (M6: the allocated frame's `slotBase`). -/
+structure Rel where
+  F : BitVec 64 → Prop
+  syms : String → Option Nat
+  slotOff : Nat
+  /-- the size of the outgoing stack-argument area at `sp` of the VCode world (M6: the
+  allocated frame's `intBase`; `0` for a function whose calls pass no argument on the stack) -/
+  out : Nat
+
+/-- Address of the stack-slot region in world `w`. -/
+def Rel.slotReg (Γ : Rel) (w : Arm.ArmState) : Nat := (spv w).toNat + Γ.slotOff
+
+/-- The outgoing stack-argument area `[sp, sp + out)` of world `w` (agent/stack-tls-proof): it
+fits the address space, avoids the frame addresses `F`, and no byte of a live CLIF allocation is
+in it (the calls write their stack-passed arguments there). For `out = 0` it holds trivially
+(`outRel_zero`). -/
+def OutRel (F : BitVec 64 → Prop) (out : Nat) (cm : Clif.Mem) (w : Arm.ArmState) : Prop :=
+  out ≤ 2 ^ 64 ∧ Avoids F out (spv w) ∧
+    ∀ a n, cm.valid a n = true → ∀ k < n, ∀ j < out,
+      BitVec.ofNat 64 (a + k) ≠ spv w + BitVec.ofNat 64 j
+
+theorem outRel_zero (F : BitVec 64 → Prop) (cm : Clif.Mem) (w : Arm.ArmState) :
+    OutRel F 0 cm w :=
+  ⟨by decide, fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ _ _ _ _ h => absurd h (Nat.not_lt_zero _)⟩
+
+/-- The stack slots of an activation are at the frame's slot region. -/
+def SlotRel (f : Clif.Function) (base : Nat) (slots : List (Clif.SlotId × Nat)) : Prop :=
+  ∀ id b, slots.lookup id = some b →
+    ∃ off, (slotLayout f.slots).1.lookup id = some off ∧ b = base + off
+
+/-- The CLIF memory/slots ↔ VCode world relation M4's rule statements are relative to. -/
+def Rel.holds (Γ : Rel) (f : Clif.Function) (slots : List (Clif.SlotId × Nat)) (cm : Clif.Mem)
+    (w : Arm.ArmState) : Prop :=
+  MemRel Γ.F Γ.syms cm w ∧ SlotRel f (Γ.slotReg w) slots ∧ OutRel Γ.F Γ.out cm w
+
+/-- **Specialisation**: without an outgoing stack-argument area (`out = 0`), `Rel.holds` is the
+former relation (memory and slots). -/
+theorem Rel.holds_zero {F : BitVec 64 → Prop} {syms : String → Option Nat} {slotOff : Nat}
+    {f : Clif.Function} {slots : List (Clif.SlotId × Nat)} {cm : Clif.Mem} {w : Arm.ArmState} :
+    Rel.holds ⟨F, syms, slotOff, 0⟩ f slots cm w ↔
+      MemRel F syms cm w ∧ SlotRel f ((spv w).toNat + slotOff) slots :=
+  ⟨fun h => ⟨h.1, h.2.1⟩, fun h => ⟨h.1, h.2, outRel_zero F cm w⟩⟩
+
+/-- Live CLIF memory agrees with the Arm memory (the observable memory at return). -/
+def MemAgree (cm : Clif.Mem) (s : Arm.ArmState) : Prop :=
+  ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → Arm.read_mem (BitVec.ofNat 64 a) s = b
+
+/-- The run premises: every trap of the CLIF run is explicit, a `trap` terminator or a division
+(whose lowering checks and traps); memory-access traps (`heap_oob`) and traps inside externs are
+excluded (the Arm model has no memory faults and callees are outside the theorem; for DSL
+output this holds trivially, traps are unreachable, PLAN.md §3.2). And an indirect call of the
+entered function calls an extern: no function of `p` is at its callee address (calls between
+the program's functions are outside the theorem, as for `call`: `InSubset.externCalls`). -/
+structure TrapsExplicit (env : Clif.Env) (p : Clif.Program) (cs : Clif.State) : Prop where
+  /-- a statement traps only if it is an explicitly trapping instruction -/
+  stmt : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
+    s.frame.body = st :: rest → explicitTrapInst st.inst = true
+  /-- the callee of a `try_call` terminator of the entered function does not trap (its step
+  continues at the normal return; `Clif.run` has no unwinding) -/
+  tryCall : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
+    s.frame.body = [] → s.frame.term = .tryCall fn args et →
+    ∀ B ∈ cs.frame.func.blocks, B.term ≠ .tryCall fn args et
+  /-- the same for a `try_call_indirect` terminator -/
+  tryCallInd : ∀ s c callee args et, Reach env p cs s → Clif.step env p s = .trapped c →
+    s.frame.body = [] → s.frame.term = .tryCallIndirect callee args et →
+    ∀ B ∈ cs.frame.func.blocks, B.term ≠ .tryCallIndirect callee args et
+  /-- a `call_indirect` statement of the entered function calls an extern: no function of `p`
+  is at the callee address (`Clif.stepCallIndirect` would enter it) -/
+  indirect : ∀ s st rest sig callee args, Reach env p cs s → s.frame.body = st :: rest →
+    st.inst = .callIndirect sig callee args → (∃ B ∈ cs.frame.func.blocks, st ∈ B.body) → ∀ cv,
+    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat
+  /-- the same for a `try_call_indirect` terminator of the entered function -/
+  tryIndirect : ∀ s callee args et, Reach env p cs s → s.frame.body = [] →
+    s.frame.term = .tryCallIndirect callee args et →
+    (∃ B ∈ cs.frame.func.blocks, B.term = .tryCallIndirect callee args et) → ∀ cv,
+    s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat
+
+/-- **Specialisation**: for an entered function without indirect calls (no `call_indirect`
+statement, no `try_call_indirect` terminator), `TrapsExplicit` is its former two clauses (the
+statement and `try_call` trap clauses); the indirect-call clauses are vacuous. -/
+theorem TrapsExplicit.of_indirectFree {env : Clif.Env} {p : Clif.Program} {cs : Clif.State}
+    (hci : ∀ B ∈ cs.frame.func.blocks, ∀ st ∈ B.body, ∀ sig callee args,
+      st.inst ≠ .callIndirect sig callee args)
+    (htci : ∀ B ∈ cs.frame.func.blocks, ∀ callee args et, B.term ≠ .tryCallIndirect callee args et)
+    (h : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = st :: rest → explicitTrapInst st.inst = true)
+    (ht : ∀ s c fn args et, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = [] → s.frame.term = .tryCall fn args et →
+      ∀ B ∈ cs.frame.func.blocks, B.term ≠ .tryCall fn args et) :
+    TrapsExplicit env p cs :=
+  ⟨h, ht, fun _ _ callee args et _ _ _ _ B hB e => htci B hB callee args et e,
+    fun _ st _ sig callee args _ _ hi ⟨B, hB, hst⟩ => absurd hi (hci B hB st hst sig callee args),
+    fun _ callee args et _ _ _ ⟨B, hB, e⟩ => absurd e (htci B hB callee args et)⟩
+
+/-- For an entered function without `try_call`/`try_call_indirect` terminators and without
+`call_indirect` statements, `TrapsExplicit` is its statement clause. -/
+theorem TrapsExplicit.of_tryFree {env : Clif.Env} {p : Clif.Program} {cs : Clif.State}
+    (hf : ∀ B ∈ cs.frame.func.blocks, B.term.isTry = false)
+    (hci : ∀ B ∈ cs.frame.func.blocks, ∀ st ∈ B.body, ∀ sig callee args,
+      st.inst ≠ .callIndirect sig callee args)
+    (h : ∀ s c st rest, Reach env p cs s → Clif.step env p s = .trapped c →
+      s.frame.body = st :: rest → explicitTrapInst st.inst = true) :
+    TrapsExplicit env p cs :=
+  .of_indirectFree hci (fun B hB callee args et e => by have := hf B hB; rw [e] at this; cases this)
+    h (fun _ _ fn args et _ _ _ _ B hB e => by have := hf B hB; rw [e] at this; cases this)
+
+/-! ## Arm side: entry, return, trap -/
+
+/-- `n` steps of the Arm machine `astep` (M6's `ArmStepX ext`: `stepi`, except that calls and
+relocated address computations run the external hooks). -/
+def runX (astep : Arm.ArmState → Arm.ArmState) : Nat → Arm.ArmState → Arm.ArmState
+  | 0, s => s
+  | n + 1, s => runX astep n (astep s)
+
+/-- `a` is a byte of a code word of the program loaded in `s`. -/
+def CodeAddr (s : Arm.ArmState) (a : BitVec 64) : Prop :=
+  ∃ p : BitVec 64 × BitVec 32, List.Mem p s.program ∧ (a - p.1).toNat < 4
+
+/-- ABI (AAPCS64) entry: the function's words are loaded at `base` (as the model's program and
+as data in memory: jump tables are read from the code), pc at the entry, return address `ra` in
+x30 outside the code, sp 16-aligned, no model error. -/
+structure AbiEntry (fb : FnBin) (base ra : BitVec 64) (s : Arm.ArmState) : Prop where
+  program : s.program = fb.program base
+  code : ∀ k w, fb.words[k]? = some w → Arm.read_mem_bytes 4 (base + BitVec.ofNat 64 (4 * k)) s = w
+  pc : Arm.r .PC s = base
+  err : Arm.r .ERR s = .None
+  lr : xreg 30 s = ra
+  raOutside : ∀ k < fb.words.size, ra ≠ base + BitVec.ofNat 64 (4 * k)
+  spAligned : (spv s).toNat % 16 = 0
+  fits : base.toNat + 4 * fb.words.size ≤ 2 ^ 64
+
+/-- The ABI entry of a call (`AbiEntry` without the return address outside the code): what the
+register-level proof uses. A linked call of a function into its own code (one copy of a
+recursive function) enters its callee this way. -/
+structure AbiCall (fb : FnBin) (base ra : BitVec 64) (s : Arm.ArmState) : Prop where
+  program : s.program = fb.program base
+  code : ∀ k w, fb.words[k]? = some w → Arm.read_mem_bytes 4 (base + BitVec.ofNat 64 (4 * k)) s = w
+  pc : Arm.r .PC s = base
+  err : Arm.r .ERR s = .None
+  lr : xreg 30 s = ra
+  spAligned : (spv s).toNat % 16 = 0
+  fits : base.toNat + 4 * fb.words.size ≤ 2 ^ 64
+
+theorem AbiEntry.toCall {fb : FnBin} {base ra : BitVec 64} {s : Arm.ArmState}
+    (h : AbiEntry fb base ra s) : AbiCall fb base ra s :=
+  ⟨h.program, h.code, h.pc, h.err, h.lr, h.spAligned, h.fits⟩
+
+/-- A stack-passed argument `v` at offset `off` of the caller's outgoing area at `sp` of `s`
+(AAPCS64): its `ty.bytes` bytes are inside the address space, not code, and hold its bits
+(little-endian). -/
+structure StackArgAt (v : Clif.Val) (off : Nat) (s : Arm.ArmState) : Prop where
+  fits : (spv s).toNat + off + v.ty.bytes ≤ 2 ^ 64
+  noCode : ∀ k < v.ty.bytes, ¬ CodeAddr s (spv s + BitVec.ofNat 64 (off + k))
+  bytes : (Arm.read_mem_bytes v.ty.bytes (spv s + BitVec.ofNat 64 off) s).setWidth v.ty.width =
+    v.bits
+
+/-- The arguments where AAPCS64 puts them (`sigArgLocs`, agent/stack-tls-proof): a parameter at a
+register location in that register (low bits; x0.. in order, an `sret` struct-return pointer in
+x8), a parameter at a stack location `off` in the caller's outgoing area at `sp + off`
+(`StackArgAt`). With at most 8 parameters every argument is in a register and this is the
+former "argument `i` in `x (argIdx sig i)`" (`E2E.argsIn_iff_of_regs`). -/
+def ArgsIn (sig : Clif.Signature) (args : List Clif.Val) (s : Arm.ArmState) : Prop :=
+  ∀ loc v, (loc, v) ∈ (locsOf sig).zip args → match loc with
+    | .reg r => VHolds v (regVal s r)
+    | .stack off => StackArgAt v off s
+
+/-- `n` bytes fit below `sp` without wrapping and hold no code. -/
+def StackRoom (n : Nat) (s : Arm.ArmState) : Prop :=
+  n ≤ (spv s).toNat ∧ ∀ a, CodeAddr s a → n ≤ (a - (spv s - BitVec.ofNat 64 n)).toNat
+
+theorem StackRoom.mono {m n : Nat} {s : Arm.ArmState} (h : StackRoom m s) (hnm : n ≤ m) :
+    StackRoom n s := by
+  refine ⟨Nat.le_trans hnm h.1, fun a ha => ?_⟩
+  have h2 := h.2 a ha
+  have h1 := h.1
+  have hm : m < 2 ^ 64 := Nat.lt_of_le_of_lt h1 (spv s).isLt
+  have e : a - (spv s - BitVec.ofNat 64 n) =
+      (a - (spv s - BitVec.ofNat 64 m)) - BitVec.ofNat 64 (m - n) := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (by omega : n < 2 ^ 64), Nat.mod_eq_of_lt (by omega : m < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega : m - n < 2 ^ 64)]
+    have := a.isLt
+    have := (spv s).isLt
+    omega
+  rw [e, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : m - n < 2 ^ 64)]
+  have := (a - (spv s - BitVec.ofNat 64 m)).isLt
+  omega
+
+/-- **Resource precondition** with a stack budget `K` for the callees: the frame (fp/lr pair and
+`frameSize` bytes) and `K` more bytes below it fit below sp without wrapping and hold no code.
+The callees' stack `[sp_body - K, sp_body)` is the dead stack of every call (`CalleeOk`). With
+`K = 0` this is the former precondition (the frame only). -/
+def StackAvail (K : Nat) (af : AFunc) (s : Arm.ArmState) : Prop :=
+  StackRoom (af.frameSize + 16 + K) s
+
+/-- The frame part of `StackAvail` (the former precondition). -/
+theorem StackAvail.frame {K : Nat} {af : AFunc} {s : Arm.ArmState} (h : StackAvail K af s) :
+    StackRoom (af.frameSize + 16) s :=
+  StackRoom.mono h (Nat.le_add_right _ _)
+
+/-- The state the function body starts in, relative to the ABI entry state `s`: the prologue
+(when `af.frame`) pushed fp/lr and set up the frame: `sp` lowered by `16 + frameSize`, `x29` the
+frame pointer `sp_entry - 16`; x0–x8 and v0–v7 (arguments; x8 is preserved by the
+prologue — for `sret` functions it carries the hidden struct-return pointer), memory, the program and every field outside
+the allocatable/temporary registers (x18, x30, flags, …) as at entry. -/
+def frameDrop (af : AFunc) : Nat := if af.frame then af.frameSize + 16 else 0
+
+structure BodyEntry (af : AFunc) (s w₀ : Arm.ArmState) : Prop where
+  sp : spv w₀ = spv s - BitVec.ofNat 64 (frameDrop af)
+  fp : xreg 29 w₀ = if af.frame then spv s - 16#64 else xreg 29 s
+  args : ∀ i < 9, xreg i w₀ = xreg i s
+  argsV : ∀ i < 8, Arm.r (.SFP (BitVec.ofNat 5 i)) w₀ = Arm.r (.SFP (BitVec.ofNat 5 i)) s
+  other : ∀ f, ¬ Masked f → f ≠ .GPR 29#5 → f ≠ .GPR 31#5 → Arm.r f w₀ = Arm.r f s
+  mem : w₀.mem = s.mem
+  program : w₀.program = s.program
+
+/-- Callee-saved X registers (AAPCS64: x19–x28, and the frame pointer x29). -/
+def calleeSavedX : List Nat := (List.range 11).map (19 + ·)
+
+/-- An AAPCS64 return from the activation entered in `s`: at the return address, sp and the
+callee-saved registers (x19–x29, low 64 bits of v8–v15) as at entry. -/
+structure ArmRet (ra : BitVec 64) (s s' : Arm.ArmState) : Prop where
+  pc : Arm.r .PC s' = ra
+  err : Arm.r .ERR s' = .None
+  sp : spv s' = spv s
+  savedX : ∀ n ∈ calleeSavedX, xreg n s' = xreg n s
+  savedV : ∀ n, 8 ≤ n → n < 16 →
+    (Arm.r (.SFP (BitVec.ofNat 5 n)) s').setWidth 64 = (Arm.r (.SFP (BitVec.ofNat 5 n)) s).setWidth 64
+
+/-- The Arm run stopped at a trap site of the function with code `c`: the word there is a
+`udf` (the model's next step errors) or a trapping access whose fault the OS reports (trusted). -/
+structure TrapAt (fb : FnBin) (base : BitVec 64) (c : Clif.TrapCode) (s : Arm.ArmState) : Prop where
+  err : Arm.r .ERR s = .None
+  site : ∃ t ∈ fb.traps, t.code = c ∧ Arm.r .PC s = base + BitVec.ofNat 64 t.offset
+
+/-! ## VCode observables -/
+
+/-- The VCode run from the entry executes `rets us` (use values `vals`), final world `w`. -/
+def VReturns (vc : VCode) (sem : Sem) (ρ₀ : Nat → CV) (w₀ : Arm.ArmState)
+    (us : List (Reg × Reg)) (vals : List CV) (w : Arm.ArmState) : Prop :=
+  VRetFrom vc sem ⟨0, 0, ρ₀, w₀⟩ us vals w
+
+/-- The VCode run from the entry reaches an instruction that halts with trap code `c`. -/
+def VTraps (vc : VCode) (sem : Sem) (ρ₀ : Nat → CV) (w₀ : Arm.ArmState) (c : Clif.TrapCode) :
+    Prop :=
+  VTrapFrom vc sem ⟨0, 0, ρ₀, w₀⟩ c
+
+/-! ## The layer statements -/
+
+/-- **CLIF → VCode (M7 driver).** The VCode of `f` simulates complete CLIF runs of `f` (entered
+at an entry state whose slots/memory are related to the VCode entry world `w₀`). -/
+def IselSim (sem : Sem) (Γ : Rel) (env : Clif.Env) (p : Clif.Program) (f : Clif.Function)
+    (vc : VCode) : Prop :=
+  ∀ args cs w₀ (ρ₀ : Nat → CV), ClifEntry f args cs → Γ.holds f cs.frame.slots cs.mem w₀ →
+    ArgsAtEntry Γ.F f.sig args w₀ → TrapsExplicit env p cs → ∀ fuel,
+    (∀ vals cm, Clif.runLoop env p fuel cs = .returned vals cm →
+      ∃ us outs w, VReturns vc sem ρ₀ w₀ us outs w ∧
+        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        PrefixHold vals outs ∧ MemRel Γ.F Γ.syms cm w) ∧
+    (∀ c, Clif.runLoop env p fuel cs = .trapped c → VTraps vc sem ρ₀ w₀ c)
+
+/-- **`prepare` (M7).** Unreachable-block removal, critical-edge splitting and the RPO
+reordering preserve returns and traps. Discharged by `prepCheck` (`prepareCorrect_of_check`). -/
+def PrepareCorrect (sem : Sem) (vc vcp : VCode) : Prop :=
+  ∀ ρ₀ w₀, (∀ us vals w, VReturns vc sem ρ₀ w₀ us vals w → VReturns vcp sem ρ₀ w₀ us vals w) ∧
+    (∀ c, VTraps vc sem ρ₀ w₀ c → VTraps vcp sem ρ₀ w₀ c)
+
+/-- **VCode → Arm (M6 + M5, agent M6Rest).** For the prepared VCode `vcp`, allocated and laid
+out as `af`/`fb`, loaded at `base`, from an ABI entry state `s` with enough stack (the frame and
+the callees' budget `K`): VCode runs of the activation's semantics `sem s` from a body-entry
+world `w₀` (`BodyEntry`: after the prologue) are realised by the Arm machine `astep` from `s`.
+`F s` is the set of addresses outside the world of the activation entered in `s`
+(allocator-private slots, fp/lr, the callees' dead stack). -/
+def RegLevelCorrect (sem : Arm.ArmState → Sem) (F : Arm.ArmState → BitVec 64 → Prop) (K : Nat)
+    (astep : Arm.ArmState → Arm.ArmState) (vcp : VCode) (af : AFunc) (fb : FnBin) : Prop :=
+  ∀ base ra s, AbiEntry fb base ra s → StackAvail K af s → ∀ w₀, BodyEntry af s w₀ →
+    ∀ ρ₀ : Nat → CV,
+    (∀ us vals w, VReturns vcp (sem s) ρ₀ w₀ us vals w →
+      ∃ n, ArmRet ra s (runX astep n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x → regVal (runX astep n s) p = x) ∧
+        ∀ a, ¬ F s a → (runX astep n s).mem a = w.mem a) ∧
+    (∀ c, VTraps vcp (sem s) ρ₀ w₀ c → ∃ n, TrapAt fb base c (runX astep n s))
+
+/-- **`RegLevelCorrect` for one initial vreg file of the theorem's choice** (V4): the
+register-level theorem chooses `ρ₀` (from the activation's initial frame: `AllocChecked`'s entry state
+may place vregs, `regLevelCorrect_backend_ex`); `IselSim` and `PrepareCorrect` hold for every
+`ρ₀`, so the composition (`backend_correct_of_layers_ex`) instantiates them with it.
+`RegLevelCorrect.ex`: implied by `RegLevelCorrect`. -/
+def RegLevelCorrectEx (sem : Arm.ArmState → Sem) (F : Arm.ArmState → BitVec 64 → Prop) (K : Nat)
+    (astep : Arm.ArmState → Arm.ArmState) (vcp : VCode) (af : AFunc) (fb : FnBin) : Prop :=
+  ∀ base ra s, AbiEntry fb base ra s → StackAvail K af s → ∀ w₀, BodyEntry af s w₀ →
+    ∃ ρ₀ : Nat → CV,
+    (∀ us vals w, VReturns vcp (sem s) ρ₀ w₀ us vals w →
+      ∃ n, ArmRet ra s (runX astep n s) ∧
+        (∀ (j : Nat) v p x, us[j]? = some (v, p) → vals[j]? = some x → regVal (runX astep n s) p = x) ∧
+        ∀ a, ¬ F s a → (runX astep n s).mem a = w.mem a) ∧
+    (∀ c, VTraps vcp (sem s) ρ₀ w₀ c → ∃ n, TrapAt fb base c (runX astep n s))
+
+theorem RegLevelCorrect.ex {sem : Arm.ArmState → Sem} {F : Arm.ArmState → BitVec 64 → Prop}
+    {K : Nat} {astep : Arm.ArmState → Arm.ArmState} {vcp : VCode} {af : AFunc} {fb : FnBin}
+    (h : RegLevelCorrect sem F K astep vcp af fb) : RegLevelCorrectEx sem F K astep vcp af fb :=
+  fun base ra s he hs w₀ hb => ⟨fun _ => 0, h base ra s he hs w₀ hb _⟩
+
+/-- **M7's lowering obligations**: the VCode has the structure `lowerFunction` builds
+(`LowerShape`, incl. `CtxInv`), and an SSA availability certificate exists (`Cert`).
+Discharged by `lowerCheck` (`loweringObligations_of_check`). -/
+def LoweringObligations (f : Clif.Function) (vc : VCode) : Prop :=
+  ∃ ctx st0 R gn bl A, LowerShape f vc ctx st0 R gn bl ∧ Cert f ctx st0 gn bl A ∧
+    ∀ B ∈ f.blocks, BrIdxTyped ctx B.term
+
+/-! ## The theorem's conclusion -/
+
+/-- What the Arm run does for a CLIF outcome (`stuck`/`outOfFuel`: no claim). -/
+def ArmRefines (fb : FnBin) (base ra : BitVec 64) (astep : Arm.ArmState → Arm.ArmState)
+    (s : Arm.ArmState) : Clif.Outcome → Prop
+  | .returned vals cm => ∃ n, ArmRet ra s (runX astep n s) ∧
+      (∀ (j : Nat) v, vals[j]? = some v → XHolds v (xreg j (runX astep n s))) ∧
+      MemAgree cm (runX astep n s)
+  | .trapped c => ∃ n, TrapAt fb base c (runX astep n s)
+  | .stuck _ | .outOfFuel => True
+
+end E2E

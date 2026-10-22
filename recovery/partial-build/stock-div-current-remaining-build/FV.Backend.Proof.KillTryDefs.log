@@ -1,0 +1,23 @@
+⚠ [149/318] Replayed FV.Backend.Proof.LowerSim
+warning: FV/Backend/Proof/LowerSim.lean:1863:46: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+⚠ [155/318] Replayed FV.E2E.RegLevelMachine
+warning: FV/E2E/RegLevelMachine.lean:122:6: `dite_cond_eq_true` has been deprecated: Use `dite_eq_left_of_eq_true` instead
+⚠ [182/318] Replayed FV.E2E.RegLevelOp
+warning: FV/E2E/RegLevelOp.lean:103:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:103:20: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:104:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelOp.lean:104:29: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [186/318] Replayed FV.Backend.Proof.RegallocCover
+warning: FV/Backend/Proof/RegallocCover.lean:83:58: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocCover.lean:85:62: `if_true` has been deprecated: Use `ite_true` instead
+⚠ [292/318] Replayed FV.Backend.Proof.SpillCtlPipe
+warning: FV/Backend/Proof/SpillCtlPipe.lean:91:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:184:31: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:185:25: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:191:26: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:200:59: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:205:59: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:223:16: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:223:28: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+✔ [318/318] Built FV.Backend.Proof.KillTryDefs (587s)
+Build completed successfully (318 jobs).

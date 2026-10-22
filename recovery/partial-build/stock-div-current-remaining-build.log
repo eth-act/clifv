@@ -1,0 +1,58 @@
+3168 modules (2 heavy, 1253 without a record); critical path 2.47 h, serial 43.71 h (recorded)
+16:52:16 want 3168 modules (2764 assumed built) budget=16G max_jobs=2 heavy>12G
+16:52:16 start FV.Backend.Proof.DefGenWrap cap=7G running=1 avail=136.9G
+16:52:16 start FV.Backend.Proof.StockPrepareInputs cap=6G running=2 avail=136.9G
+16:52:17 done FV.Backend.Proof.DefGenWrap rc=0 1s maxrss=0.1G up-to-date -> ok
+16:52:17 done FV.Backend.Proof.StockPrepareInputs rc=0 1s maxrss=0.1G up-to-date -> ok
+16:52:17 start FV.Backend.Proof.StockCriticalCode cap=6G running=1 avail=137.4G
+16:52:17 start FV.Backend.Proof.StockPrepareTotal cap=6G running=2 avail=137.4G
+16:52:19 done FV.Backend.Proof.StockPrepareTotal rc=0 2s maxrss=2.1G built -> ok
+16:52:19 start FV.Backend.Proof.StockReturnSourceRuns cap=6G running=2 avail=137.4G
+16:52:20 done FV.Backend.Proof.StockCriticalCode rc=0 3s maxrss=2.1G built -> ok
+16:52:20 start FV.Backend.Proof.StockEmittedGraph cap=6G running=2 avail=137.4G
+16:52:21 done FV.Backend.Proof.StockReturnSourceRuns rc=0 2s maxrss=2.1G built -> ok
+16:52:21 start FV.Backend.Proof.DefGenTab cap=5G running=2 avail=137.2G
+16:52:22 done FV.Backend.Proof.StockEmittedGraph rc=0 2s maxrss=2.1G built -> ok
+16:52:22 start FV.Backend.Proof.KillTryDefs cap=4G running=2 avail=137.3G
+17:02:10 done FV.Backend.Proof.KillTryDefs rc=0 588s maxrss=2.2G built -> ok
+17:02:10 start FV.Backend.Proof.StockBranchCfg cap=6G running=2 avail=137.1G
+17:02:40 done FV.Backend.Proof.StockBranchCfg rc=0 30s maxrss=6.1G built -> ok
+17:02:40 start FV.Backend.Proof.StockGraphBounds cap=6G running=2 avail=136.7G
+17:02:42 done FV.Backend.Proof.StockGraphBounds rc=0 2s maxrss=2.1G built -> ok
+17:02:42 start FV.Backend.Proof.StockReturnRecordSource cap=6G running=2 avail=136.6G
+17:02:44 done FV.Backend.Proof.StockReturnRecordSource rc=0 2s maxrss=2.1G built -> ok
+17:02:44 start FV.Backend.Proof.StockSourceEntry cap=6G running=2 avail=136.5G
+17:02:46 done FV.Backend.Proof.StockSourceEntry rc=0 2s maxrss=2.0G built -> ok
+17:02:46 start FV.Backend.Proof.StockEntrySeed cap=6G running=2 avail=136.5G
+17:02:48 done FV.Backend.Proof.StockEntrySeed rc=0 2s maxrss=2.1G built -> ok
+17:02:48 start FV.Backend.Proof.StockReturnAutomaticSource cap=6G running=2 avail=136.5G
+17:02:49 done FV.Backend.Proof.StockReturnAutomaticSource rc=0 1s maxrss=2.0G built -> ok
+17:02:49 start FV.Backend.Proof.StockTermContract cap=6G running=2 avail=136.5G
+17:02:50 done FV.Backend.Proof.StockTermContract rc=0 1s maxrss=1.7G built -> ok
+17:02:50 start FV.Backend.Proof.StockTryCfg cap=6G running=2 avail=136.6G
+17:02:53 done FV.Backend.Proof.StockTryCfg rc=0 3s maxrss=2.1G built -> ok
+17:02:53 start FV.E2E.LinkOwnCallsShapeOf cap=4G running=2 avail=136.6G
+17:02:55 done FV.E2E.LinkOwnCallsShapeOf rc=0 2s maxrss=2.2G built -> ok
+17:02:55 start FV.E2E.LinkOwnCallsTry cap=4G running=2 avail=136.5G
+17:07:09 done FV.Backend.Proof.DefGenTab rc=0 888s maxrss=3.4G built -> ok
+17:07:09 start FV.Backend.Proof.StockBranchSelection cap=6G running=2 avail=134.3G
+17:07:24 done FV.Backend.Proof.StockBranchSelection rc=0 15s maxrss=6.1G built -> ok
+17:07:24 start FV.Backend.Proof.StockEntryArgs cap=6G running=2 avail=139.6G
+17:07:26 done FV.Backend.Proof.StockEntryArgs rc=0 2s maxrss=2.0G built -> ok
+17:07:26 start FV.Backend.Proof.StockEntryAssembly cap=6G running=2 avail=139.5G
+17:07:28 done FV.Backend.Proof.StockEntryAssembly rc=0 2s maxrss=2.1G built -> ok
+17:07:28 start FV.Backend.Proof.StockEntryLoads cap=6G running=2 avail=139.5G
+17:07:30 done FV.Backend.Proof.StockEntryLoads rc=0 2s maxrss=2.0G built -> ok
+17:07:30 start FV.Backend.Proof.StockReturnContract cap=6G running=2 avail=139.5G
+17:07:32 done FV.Backend.Proof.StockReturnContract rc=0 2s maxrss=2.1G built -> ok
+17:07:32 start FV.Backend.Proof.StockArithmeticTerminalDefined cap=6G running=2 avail=139.4G
+17:07:34 done FV.Backend.Proof.StockArithmeticTerminalDefined rc=0 2s maxrss=2.1G built -> ok
+17:07:34 start FV.Backend.Proof.StockControlShape cap=6G running=2 avail=139.4G
+17:07:45 done FV.Backend.Proof.StockControlShape rc=0 11s maxrss=2.4G built -> ok
+17:07:45 start FV.Backend.Proof.StockEntryABI cap=6G running=2 avail=138.8G
+17:07:50 done FV.Backend.Proof.StockEntryABI rc=0 5s maxrss=2.1G built -> ok
+17:07:50 start FV.Backend.Proof.StockReturnVCode cap=6G running=2 avail=138.7G
+17:07:52 done FV.Backend.Proof.StockReturnVCode rc=0 2s maxrss=2.0G built -> ok
+17:07:52 start FV.Backend.EmitOk cap=3G running=2 avail=138.7G
+17:07:53 done FV.Backend.EmitOk rc=0 1s maxrss=0.1G up-to-date -> ok
+17:07:53 start FV.Backend.Proof.IselSzCall cap=4G running=2 avail=138.6G

@@ -1,0 +1,21 @@
+{
+  "scope": "Static proposed-graph calculation only, no compiled-refactor claim",
+  "results": {
+    "FV.Backend.Proof.IselShpTotal": {
+      "hypothetical_import_count": 293,
+      "would_still_import_LowerSim": false
+    },
+    "FV.Backend.Proof.DefGenWrap": {
+      "hypothetical_import_count": 322,
+      "would_still_import_LowerSim": false
+    },
+    "FV.Backend.Proof.IselPrgTryLast": {
+      "hypothetical_import_count": 301,
+      "would_still_import_LowerSim": false
+    },
+    "FV.E2E.CompiledSemanticNI": {
+      "hypothetical_import_count": 1121,
+      "would_still_import_LowerSim": true
+    }
+  }
+}

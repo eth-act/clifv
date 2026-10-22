@@ -1,0 +1,20 @@
+{
+  "state": "Python grid generation/retention checks pass; actual Lean objects/native execution pending activation",
+  "results": {
+    "32": {
+      "all13prior_grids_exact": true,
+      "prior_cases": 170,
+      "current_cases": 258,
+      "new_cases": 88,
+      "new_coded_traps": 8
+    },
+    "64": {
+      "all13prior_grids_exact": true,
+      "prior_cases": 170,
+      "current_cases": 258,
+      "new_cases": 88,
+      "new_coded_traps": 8
+    }
+  },
+  "source_sha256": "de546fc2e7aad501affbe266bc15c88ab7a3f69a4a3477c999dba0bae95de1e9"
+}

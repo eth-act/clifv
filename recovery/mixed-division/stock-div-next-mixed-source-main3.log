@@ -1,0 +1,81 @@
+'Backend.Stock.Proof.trapRun_seq_prefix' depends on axioms: [propext]
+'Backend.Stock.Proof.ScansSpec.trap_refines' depends on axioms: [propext, Quot.sound]
+/tmp/stock-div-next-mixed-source.lean:163:6: error: Type mismatch
+  evaluated
+has type
+  Clif.evalInst s.frame s.mem stm.inst = Clif.Res.trap code
+but is expected to have type
+  Clif.Res.trap code = Clif.Res.trap code
+/tmp/stock-div-next-mixed-source.lean:218:54: error: unsolved goals
+f : Clif.Function
+result : Result
+run : lower f = Except.ok result
+event : BlockScanEvent
+events : event ∈ result.blockScans.toList
+b : Clif.Block
+term : ScanRecord
+body : BlockScan
+split : SourceBodySplit f event b term body
+family : ∀ (stm : Clif.Stmt), stm ∈ b.body → LocalInst stm.inst
+env : Clif.Env
+cp : Clif.Program
+xs : List Nat
+code : Clif.TrapCode
+fuel : Nat
+ih :
+  ∀ {j : Nat} {s : Clif.State},
+    j ≤ b.body.length →
+      s.frame.body = List.drop j b.body →
+        s.callers = [] →
+          s.frame.term = Clif.Terminator.ret xs →
+            Clif.runLoop env cp fuel s = Clif.Outcome.trapped code →
+              SourceTrapSteps (IndexedSourceInst env cp f event.ctx event.block)
+                (IndexedSourceTrap env cp f event.ctx event.block)
+                (List.range' (blockStart f event.block + j) (b.body.length - j)) (j, s.frame, s.mem) code
+j : Nat
+s : Clif.State
+bound : j ≤ b.body.length
+remaining : s.frame.body = List.drop j b.body
+callers : s.callers = []
+ret : s.frame.term = Clif.Terminator.ret xs
+done : ¬j = b.body.length
+inside : j < b.body.length
+stm : Clif.Stmt := b.body[j]
+statement : b.body[j]? = some stm
+head : s.frame.body = stm :: List.drop (j + 1) b.body
+instFamily : LocalInst stm.inst
+length : b.body.length - j = b.body.length - (j + 1) + 1
+vs : List Clif.Val
+cm : Clif.Mem
+evaluated : Clif.evalInst s.frame s.mem stm.inst = Clif.Res.ok (vs, cm)
+regs : Clif.Regs
+written : s.frame.regs.setMany stm.results vs = some regs
+trapped :
+  Clif.runLoop env cp fuel
+      {
+        frame :=
+          { func := s.frame.func, regs := regs, slots := s.frame.slots, body := List.drop (j + 1) b.body,
+            term := s.frame.term },
+        callers := s.callers, mem := cm } =
+    Clif.Outcome.trapped code
+t : Clif.State :=
+  {
+    frame :=
+      let __src := s.frame;
+      { func := __src.func, regs := regs, slots := __src.slots, body := List.drop (j + 1) b.body, term := __src.term },
+    callers := s.callers, mem := cm }
+⊢ Clif.StepResult.next
+      {
+        frame :=
+          { func := s.frame.func, regs := regs, slots := s.frame.slots, body := List.drop (j + 1) b.body,
+            term := s.frame.term },
+        callers := s.callers, mem := cm } =
+    Clif.StepResult.next t
+'Backend.Stock.Proof.LocalBody.actual_local_source_trap' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.LocalBody.actual_local_source_trap_execution' depends on axioms: [propext,
+ sorryAx,
+ Classical.choice,
+ Quot.sound]

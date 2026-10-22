@@ -1,0 +1,120 @@
+⚠ [155/433] Replayed FV.Backend.Proof.LowerSim
+warning: FV/Backend/Proof/LowerSim.lean:1863:46: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+⚠ [162/433] Replayed FV.E2E.Main
+warning: FV/E2E/Main.lean:80:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Main.lean:86:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [181/433] Replayed FV.E2E.RegLevelMachine
+warning: FV/E2E/RegLevelMachine.lean:122:6: `dite_cond_eq_true` has been deprecated: Use `dite_eq_left_of_eq_true` instead
+⚠ [208/433] Replayed FV.E2E.RegLevelOp
+warning: FV/E2E/RegLevelOp.lean:103:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:103:20: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelOp.lean:104:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelOp.lean:104:29: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [219/433] Replayed FV.E2E.RegLevelTry
+warning: FV/E2E/RegLevelTry.lean:323:25: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [223/433] Replayed FV.Backend.Proof.RegallocCover
+warning: FV/Backend/Proof/RegallocCover.lean:83:58: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/RegallocCover.lean:85:62: `if_true` has been deprecated: Use `ite_true` instead
+⚠ [226/433] Replayed FV.E2E.RegLevelAtomic
+warning: FV/E2E/RegLevelAtomic.lean:708:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelAtomic.lean:711:15: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/RegLevelAtomic.lean:723:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/RegLevelAtomic.lean:726:15: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [313/433] Replayed FV.Backend.Proof.MemRefines
+warning: FV/Backend/Proof/MemRefines.lean:424:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:450:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:462:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:478:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:509:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/Backend/Proof/MemRefines.lean:509:19: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/MemRefines.lean:513:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/Backend/Proof/MemRefines.lean:516:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [319/433] Replayed FV.E2E.Lockstep
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:89:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:89:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:89:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:89:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:93:24: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:89:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:89:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:93:24: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:85:24: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:273:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:273:31: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:283:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:289:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:509:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:512:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:516:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:519:12: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:626:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:627:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:644:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:645:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:647:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:667:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:668:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:691:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:692:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Lockstep.lean:700:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:701:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:741:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:742:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/Lockstep.lean:744:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [321/433] Replayed FV.E2E.Pair
+warning: FV/E2E/Pair.lean:163:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:163:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:163:16: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/Pair.lean:177:16: `if_neg` has been deprecated: Use `ite_eq_right` instead
+⚠ [353/433] Replayed FV.E2E.LinkArm
+warning: FV/E2E/LinkArm.lean:112:27: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:114:27: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:148:8: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:166:6: `dif_neg` has been deprecated: Use `dite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:264:6: `dif_pos` has been deprecated: Use `dite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:821:6: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:1484:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:1489:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:1967:34: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:1968:34: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2305:38: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:2315:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2323:42: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:2437:8: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2479:59: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2479:71: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:2733:47: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:2734:6: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3265:30: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3324:10: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3327:10: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3338:14: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3339:14: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3351:47: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3444:22: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3503:22: `if_pos` has been deprecated: Use `ite_eq_left` instead
+warning: FV/E2E/LinkArm.lean:3572:32: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3618:36: `if_neg` has been deprecated: Use `ite_eq_right` instead
+warning: FV/E2E/LinkArm.lean:3743:12: `if_pos` has been deprecated: Use `ite_eq_left` instead
+⚠ [420/433] Replayed FV.Backend.Proof.SpillCtlPipe
+warning: FV/Backend/Proof/SpillCtlPipe.lean:91:23: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:184:31: `if_true` has been deprecated: Use `ite_true` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:185:25: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:191:26: `if_false` has been deprecated: Use `ite_false` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:200:59: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:205:59: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:223:16: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+warning: FV/Backend/Proof/SpillCtlPipe.lean:223:28: `List.Sublist.cons₂` has been deprecated: Use `List.Sublist.cons_cons` instead
+✔ [433/433] Built FV.E2E.LinkOwnCalls (1.1s)
+Build completed successfully (433 jobs).

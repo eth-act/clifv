@@ -1,0 +1,1 @@
+/tmp/stock-div-next-mixed-classifier.lean:1:0: error: object file '/home/lee/clifv/.worktrees/stock-div-release-20261022/.lake/build/lib/lean/FV/Backend/Proof/StockScalarCheck.olean' of module FV.Backend.Proof.StockScalarCheck does not exist
