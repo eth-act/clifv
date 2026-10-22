@@ -1,4 +1,4 @@
-import FV.Backend.Proof.LowerSim
+import FV.Backend.Proof.LowerOutcomes
 import FV.Backend.Proof.PrepareCheck
 import FV.Backend.Proof.DriverCheckSound
 
