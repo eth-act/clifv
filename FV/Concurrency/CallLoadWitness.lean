@@ -480,4 +480,61 @@ theorem funRealX (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) (env : Cl
 
 end bl
 
+/-! ## The CLIF call -/
+
+theorem preC : (do
+    let ext ← Clif.Res.ofOption s!"unknown function reference fn{(0 : Clif.FnRef)}"
+      (csC.frame.func.extern? 0)
+    let vals ← csC.frame.getMany [0]
+    Clif.checkTys s!"arguments of call to %{ext.name}" vals (Clif.AbiParam.tys ext.sig.params)
+    pure (ext, vals) : Clif.Res (Clif.ExtFunc × List Clif.Val)) = .ok (extF, argsL) := by
+  have h := preB_eq
+  unfold preB at h
+  revert h
+  generalize (do
+    let ext ← Clif.Res.ofOption s!"unknown function reference fn{(0 : Clif.FnRef)}"
+      (csC.frame.func.extern? 0)
+    let vals ← csC.frame.getMany [0]
+    Clif.checkTys s!"arguments of call to %{ext.name}" vals (Clif.AbiParam.tys ext.sig.params)
+    pure (ext, vals) : Clif.Res (Clif.ExtFunc × List Clif.Val)) = r
+  cases r <;> simp
+
+theorem enterFunc_of' {f : Clif.Function} {vals : List Clif.Val} {mem : Clif.Mem} {b : Clif.Block}
+    {regs : Clif.Regs} (hb : f.entry? = some b) (h1 : vals.map (·.ty) = Clif.AbiParam.tys f.sig.params)
+    (h2 : vals.map (·.ty) = b.params.map (·.2))
+    (hr : Clif.Regs.empty.setMany (b.params.map (·.1)) vals = some regs) :
+    Clif.enterFunc f vals mem = .ok (⟨f, regs, (Clif.enterSlots f mem).1, b.body, b.term⟩,
+      (Clif.enterSlots f mem).2) := by
+  have h3 : Clif.AbiParam.tys f.sig.params = b.params.map (·.2) := h1.symm.trans h2
+  simp only [Clif.enterFunc, Clif.checkTys, h1, h3, hb, hr, beq_self_eq_true, Clif.Res.check_true,
+    Clif.Res.ofOption_some, Clif.Res.ok_bind]
+  rfl
+
+/-- **The CLIF call step on any bytes**: the caller enters `%ld` with the argument `0`. -/
+theorem stepC (env : Clif.Env) (B : Bytes) :
+    Clif.step env pCL (withBytes csC B) = .next (withBytes (ClifLift.pushC extC csL) B) := by
+  obtain ⟨hb, hf, hsig, hent, h1, h2, hsl⟩ := clifC
+  rw [Clif.step_call env pCL _ [] [1] 0 [0] hb]
+  unfold Clif.stepCall
+  simp only [show (withBytes csC B).frame = csC.frame from rfl]
+  rw [preC]
+  simp only [Clif.StepResult.ofRes_ok, hf, hsig, ite_true]
+  rw [enterFunc_of' hent h1 h2 regsL_eq]
+  simp only [Clif.StepResult.ofRes_ok]
+  have hs : Clif.enterSlots fL (withBytes csC B).mem = ([], (withBytes csC B).mem) := by
+    unfold Clif.enterSlots
+    show Clif.bumpSlots fL.slots _ = _
+    rw [hsl]; rfl
+  rw [hs]
+  rfl
+
+/-- **The CLIF call step** (no events). -/
+theorem cstepC (env : Clif.Env) : CStep env pCL (.run csC) [] (.run (ClifLift.pushC extC csL)) := by
+  refine ⟨⟨?_, fun _ h => nomatch h⟩, ⟨csC.mem.bytes, trivial⟩, fun B _ =>
+    ⟨.run (withBytes (ClifLift.pushC extC csL) B), by rw [stepC]; rfl, rfl⟩⟩
+  show [] ∈ evShape csC
+  unfold evShape
+  rw [show csC.frame.body = B0C.body from rfl, clifC.1]
+  simp
+
 end Concurrency.CallSeg.WitnessC

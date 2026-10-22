@@ -140,4 +140,48 @@ theorem scopeLB :
 
 theorem entryArgsL : entryArgsB vcpL = true := by native_decide
 
+/-! ## The CLIF caller -/
+
+/-- The caller's entry block. -/
+def B0C : Clif.Block := fC.blocks.headD default
+
+/-- The caller's entry registers: `v0 = 0`. -/
+def regsC : Clif.Regs := (Clif.Regs.empty.setMany (B0C.params.map (·.1)) argsL).getD Clif.Regs.empty
+
+/-- **The caller's CLIF entry state**: block 0, `v0 = 0`, no slots, `memL`. -/
+def csC : Clif.State :=
+  { frame := { func := fC, regs := regsC, slots := [], body := B0C.body, term := B0C.term }
+    callers := []
+    mem := memL }
+
+/-- The program: the caller and `%ld`. -/
+def pCL : Clif.Program := { funcs := [fC, fL] }
+
+/-- The caller's extern `fn0`. -/
+def extF : Clif.ExtFunc := (fC.extern? 0).getD default
+
+/-- The caller suspended at its call (the rest of its block empty, the result `v1`). -/
+def extC : List (Clif.Frame × List Clif.ValueId) := [({ csC.frame with body := [] }, [1])]
+
+theorem clifC : B0C.body = [{ results := [1], inst := .call 0 [0] }] ∧
+    pCL.func? extF.name = some fL ∧
+    (Clif.AbiParam.tys fL.sig.params == Clif.AbiParam.tys extF.sig.params &&
+      Clif.AbiParam.tys fL.sig.returns == Clif.AbiParam.tys extF.sig.returns) = true ∧
+    fL.entry? = some B0L ∧ argsL.map (·.ty) = Clif.AbiParam.tys fL.sig.params ∧
+    argsL.map (·.ty) = B0L.params.map (·.2) ∧ fL.slots = [] := by
+  native_decide
+
+/-- The call's operands (as a check). -/
+def preB : Bool :=
+  match (do
+    let ext ← Clif.Res.ofOption s!"unknown function reference fn{(0 : Clif.FnRef)}"
+      (csC.frame.func.extern? 0)
+    let vals ← csC.frame.getMany [0]
+    Clif.checkTys s!"arguments of call to %{ext.name}" vals (Clif.AbiParam.tys ext.sig.params)
+    pure (ext, vals) : Clif.Res (Clif.ExtFunc × List Clif.Val)) with
+  | .ok a => decide (a = (extF, argsL))
+  | _ => false
+
+theorem preB_eq : preB = true := by native_decide
+
 end Concurrency.CallSeg.WitnessC
