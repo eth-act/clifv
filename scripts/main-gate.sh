@@ -17,7 +17,7 @@
 #
 # The list: lake-serial-build.py FV FVTest Corpus, then `lake build` of every library and
 # executable; crate-proofs `lake build`; scripts/axiom-audit.py (scripts/audit/); lean-e2e-check;
-# lean-backend-encode-check.sh; lean-backend-filetests.sh; clif-filetests.sh against
+# lean-backend-encode-check.sh; lean-backend-filetests.sh; arm-fault-cosim.sh; clif-filetests.sh against
 # scripts/clif-filetests-baseline.txt and opt-difftest.sh (skipped by `loop` when no CLIF path
 # changed since the last green run that ran them); cargo-fv and the Rust tools; examples/compare.sh
 # --lean-link --verified on examples/fv-demo and examples/survey (cargo fv's per-executable binary
@@ -82,6 +82,8 @@ run_gate() { # LOGDIR CLIF; cwd: the worktree root
   echo "encode-check rc=$r: $(grep -E 'functions [0-9]+:|differ' "$L/encoding.log" | tail -n 2 | tr '\n' ' ')"; [ $r = 0 ] || fail=1
   "${MC[@]}" scripts/lean-backend-filetests.sh > "$L/filetests.log" 2>&1; r=$?
   echo "filetests rc=$r: $(grep -E 'TOTAL|corpus|runtest' "$L/filetests.log" | tail -n 4 | tr '\n' ' ')"; [ $r = 0 ] || fail=1
+  "${MC[@]}" scripts/arm-fault-cosim.sh > "$L/faultcosim.log" 2>&1; r=$?
+  echo "arm-fault-cosim rc=$r: $(grep -E '^TOTAL' "$L/faultcosim.log" | tail -n 1)"; [ $r = 0 ] || fail=1
   if [ "$CLIF" = 1 ]; then
     "${MC[@]}" scripts/clif-filetests.sh > "$L/clif.log" 2>&1; r=$?
     local cur cp cf cd_ bp bf bd
