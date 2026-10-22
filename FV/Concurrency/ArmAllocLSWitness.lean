@@ -5,13 +5,13 @@ import FV.Concurrency.ArmAllocWitness
 # Non-vacuity of layer 4b with the plain loads/stores (T2h, #311)
 
 * `ls_premises`: the compiled function `args; v0 := 0x100; v2 := 8; v1 := ldr [v0]; str v1,
-  [v0, v2]; d3 := ldur [v0, #16]; str d3, [v0, v2, lsl #3]; rets` (`RS`: a hand-written VCode
+  [v0, v2]; d3 := ldur [v0, #16]; str d3, [v0, v2, lsl #3]; v4 := ldr [sp, #8]; rets` (`RS`: a hand-written VCode
   `vcS` and allocation `rfS`, lowered, emitted and laid out by the compiler, loaded as
   `ArmAllocWitness.act` loads it) meets the premises of `arm_alloc_refines_ls`: `R.Wf`,
   `MemScopeLS` (and not `MemScopeB`: the plain loads/stores are no memory form of that scope),
   and `Q ∧ AInv` at `MConf.init` after the prologue (`Backend.Proof.q_init`). Its four accesses
   cover GPR and SIMD&FP loads and stores at the unsigned-offset, unscaled, register and scaled
-  register modes.
+  register modes, and a stack mode (`spOffset`, lowered without the `x16` prefix).
 
 The layout facts (the label map is a hash map, which the kernel does not reduce) are by
 `native_decide`.
@@ -32,6 +32,7 @@ def vcS : VCode :=
       .store .store64 (.vreg 1 .int) (.regReg (.vreg 0 .int) (.vreg 2 .int)) flS,
       .fpuLoad .size64 (.vreg 3 .float) (.unscaled (.vreg 0 .int) 16) flS,
       .fpuStore .size64 (.vreg 3 .float) (.regScaled (.vreg 0 .int) (.vreg 2 .int)) flS,
+      .load .uload64 (.vreg 4 .int) (.spOffset 8) flS,
       .rets []] }], classes := #[],
     slotBytes := 0, outgoing := 0, rulesFired := #[] }
 
@@ -40,7 +41,8 @@ def vr (n : Nat) : Loc := .reg (.v n)
 
 def rfS : RFunc :=
   { blocks := #[#[.op 0 #[], .op 1 #[xr 9], .op 2 #[xr 10], .op 3 #[xr 11, xr 9],
-      .op 4 #[xr 11, xr 9, xr 10], .op 5 #[vr 1, xr 9], .op 6 #[vr 1, xr 9, xr 10], .op 7 #[]]],
+      .op 4 #[xr 11, xr 9, xr 10], .op 5 #[vr 1, xr 9], .op 6 #[vr 1, xr 9, xr 10], .op 7 #[xr 12],
+      .op 8 #[]]],
     spillSlots := 0, saved := [] }
 
 abbrev RS : RL := act vcS rfS
@@ -78,14 +80,17 @@ theorem scopeS : MemScopeLS RS := by
   rcases b with _ | b
   · simp only [RS, act, vcS] at hb
     cases hb
-    rcases k with _ | _ | _ | _ | _ | _ | _ | _ | k
+    rcases k with _ | _ | _ | _ | _ | _ | _ | _ | _ | k
     · simp at hi; subst hi; exact .inl (.inl (.inl (.inr (.inl ⟨_, rfl⟩))))
     · simp at hi; subst hi; exact .inl (.inl (.inl (.inl ⟨rfl, rfl, rfl⟩)))
     · simp at hi; subst hi; exact .inl (.inl (.inl (.inl ⟨rfl, rfl, rfl⟩)))
-    · simp at hi; subst hi; exact .inr (.inr ⟨by decide, rfl⟩)
-    · simp at hi; subst hi; exact .inr (.inr ⟨by decide, rfl⟩)
-    · simp at hi; subst hi; exact .inr (.inr ⟨by decide, rfl⟩)
-    · simp at hi; subst hi; exact .inr (.inr ⟨by decide, rfl⟩)
+    · simp at hi; subst hi; exact .inr (.inr ⟨by decide, .inl rfl⟩)
+    · simp at hi; subst hi; exact .inr (.inr ⟨by decide, .inl rfl⟩)
+    · simp at hi; subst hi; exact .inr (.inr ⟨by decide, .inl rfl⟩)
+    · simp at hi; subst hi; exact .inr (.inr ⟨by decide, .inl rfl⟩)
+    · simp at hi; subst hi
+      exact .inr (.inr ⟨by decide, .inr ⟨.inr (.inl ⟨_, rfl⟩), .unscaled .sp 8, by
+        simp [memFinalize, simm9?, pure, Except.pure]⟩⟩)
     · simp at hi; subst hi; exact .inl (.inl (.inl (.inr (.inr (.inl ⟨_, rfl⟩)))))
     · simp at hi
   · simp [RS, act, vcS] at hb
