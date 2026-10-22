@@ -1188,7 +1188,7 @@ def OutAt (n : Nat) (sp a : BitVec 64) : Prop := sp.toNat ≤ a.toNat ∧ a.toNa
 
 theorem intBase_le_size (vc : VCode) (rf : RFunc) :
     (RAFrame.compute vc rf).intBase ≤ (RAFrame.compute vc rf).size := by
-  obtain ⟨h1, h2, h3, -⟩ := compute_facts vc rf
+  obtain ⟨⟨h0, h1⟩, h2, h3, -⟩ := compute_facts vc rf
   by_cases hfs : rf.floatStack = true <;> simp [hfs] at h2 <;> omega
 
 /-- The bytes `[sp + lo, sp + hi)` (no wrap): a frame's slot region. -/
