@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselCovLe
+import FV.Backend.Proof.IselCovFormT
 import FV.Backend.Proof.IselCovSemT
 
 /-!
@@ -63,7 +64,7 @@ theorem deep_soundT : ∀ (a : AW) (v : V), γT S iOps fOps f ctx a v → DeepOk
         rcases hc.2 with h1 | h1
         · exact absurd ht h1
         · split
-          · rename_i i hi; exact covOk_sound h1 hl hi
+          · rename_i i hi; exact covOk_soundT h1 hl hi
           · rfl
       · exact .inl ht
   | .num k b, v, h => by

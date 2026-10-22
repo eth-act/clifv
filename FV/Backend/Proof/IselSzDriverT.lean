@@ -107,7 +107,7 @@ theorem handW_mono {p : Program} {vs : List V} {rl : Rule} {W : LState → Nat} 
 theorem cov_sa (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx opsT floatOps)
     (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hcl : Cov.Clean ctx) (s0 : LState) {cfg : Config}
     (hc : cfg.checkOverlap = false) : ∀ n, SoundAtT (covModelT logicImmComplete hctx hsp hsc hx hcl s0) cfg covTabT n :=
-  soundAtT (hctx := hctx) (md := covModelT logicImmComplete hctx hsp hsc hx hcl s0) (cfg := cfg) (tab := covTabT)
+  soundAtT (hctx := hctx) (hsp := hsp) (md := covModelT logicImmComplete hctx hsp hsc hx hcl s0) (cfg := cfg) (tab := covTabT)
     hc covTab_ok
 
 /-- A sub-run of an internal term the cost table bounds at `as` (`SubW`), from `costAt`. -/

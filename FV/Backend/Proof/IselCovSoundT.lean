@@ -59,7 +59,7 @@ theorem deepAny_memT {as : List AW} {x : AW} (hx : x ∈ as) {v : V} (h : γT S 
 
 /-- **Fields of an enum value** (`aun`). -/
 theorem aun_soundT {a : AW} {t k : Nat} {vs : List V} (h : γT S iOps fOps f ctx a (.data t k vs)) (n : Nat) :
-    ∃ as, aun a k n = some as ∧ HoldsPT f ctx as vs := by
+    ∃ as, aun a k n = some as ∧ HoldsPT S iOps fOps f ctx as vs := by
   cases a with
   | data t' k' fs =>
     obtain ⟨vs', he, hl⟩ := h
@@ -120,7 +120,7 @@ theorem aun_soundT {a : AW} {t k : Nat} {vs : List V} (h : γT S iOps fOps f ctx
 
 /-- **Fields of a struct value** (`aunS`). -/
 theorem aunS_soundT {a : AW} {t k : Nat} {vs : List V} (h : γT S iOps fOps f ctx a (.data t k vs)) (n : Nat) :
-    ∃ as, aunS a n = some as ∧ HoldsPT f ctx as vs := by
+    ∃ as, aunS a n = some as ∧ HoldsPT S iOps fOps f ctx as vs := by
   cases a with
   | data t' k' fs =>
     obtain ⟨vs', he, hl⟩ := h
@@ -180,13 +180,13 @@ structure CovModelT (S : Clif.Inst → Bool) (iOps fOps : List Nat) (p : Program
     (f : Clif.Function) (ctx : Ctx) where
   Is : LState → Prop
   ext : ∀ (a : AW) (term : Term) (v : V) (st : LState) (fs : List V), γT S iOps fOps f ctx a v →
-    (sem ctx).extract term v st = .ok fs → HoldsPT f ctx (aext term.id a) fs
+    (sem ctx).extract term v st = .ok fs → HoldsPT S iOps fOps f ctx (aext term.id a) fs
   ctor : ∀ (as : List AW) (vs : List V) (term : Term) (v : V) (st st' : LState),
-    Holds2T f ctx as vs → Is st → apre term.id as = true →
+    Holds2T S iOps fOps f ctx as vs → Is st → apre term.id as = true →
     (sem ctx).ctor term vs st = .ok (v, st') → γT S iOps fOps f ctx (actor term.id as) v ∧ Is st'
   oracle : ∀ (cfg : Config), cfg.checkOverlap = false → ∀ (n : Nat) (ty : TypeId) (t : TermId)
     (as : List AW) (vs : List V) (a : AW) (s : LState) (tr : Array RuleId) (r : Option V) (s' : LState)
-    (tr' : Array RuleId), aOracle t as = some a → Holds2T f ctx as vs → Is s →
+    (tr' : Array RuleId), aOracle t as = some a → Holds2T S iOps fOps f ctx as vs → Is s →
     (applyTerm p (sem ctx) cfg n ty t vs).run (s, tr) = .ok (r, (s', tr')) →
     Is s' ∧ ∀ v, r = some v → γT S iOps fOps f ctx a v
 
@@ -230,7 +230,7 @@ mutual
 of `aPatT`'s environments describes. -/
 theorem aPat_soundT : ∀ (q : Pattern) (a : AW) (aenv : List AW) (v : V) (env env' : Isle.Interp.Env V)
     (st : LState), matchPat p (sem ctx) st q v env = .ok (some env') → γT S iOps fOps f ctx a v →
-    EnvOKT f ctx aenv env → ∃ aenv' ∈ aPatT p aext iOps fOps a q aenv, EnvOKT f ctx aenv' env'
+    EnvOKT S iOps fOps f ctx aenv env → ∃ aenv' ∈ aPatT p aext iOps fOps a q aenv, EnvOKT S iOps fOps f ctx aenv' env'
   | q, a, aenv, v, env, env', st, h, hv, he => by
     unfold aPatT
     split
@@ -366,8 +366,8 @@ theorem aPat_soundT : ∀ (q : Pattern) (a : AW) (aenv : List AW) (v : V) (env e
 /-- `aPatAllT`: every pattern against the same value. -/
 theorem aPatAll_soundT : ∀ (qs : List Pattern) (a : AW) (aenv : List AW) (v : V)
     (env env' : Isle.Interp.Env V) (st : LState),
-    matchAll p (sem ctx) st qs v env = .ok (some env') → γT S iOps fOps f ctx a v → EnvOKT f ctx aenv env →
-    ∃ aenv' ∈ aPatAllT p aext iOps fOps a qs aenv, EnvOKT f ctx aenv' env'
+    matchAll p (sem ctx) st qs v env = .ok (some env') → γT S iOps fOps f ctx a v → EnvOKT S iOps fOps f ctx aenv env →
+    ∃ aenv' ∈ aPatAllT p aext iOps fOps a qs aenv, EnvOKT S iOps fOps f ctx aenv' env'
   | [], a, aenv, v, env, env', st, h, hv, he => by
     rw [matchAll.eq_1] at h
     cases h
@@ -387,8 +387,8 @@ theorem aPatAll_soundT : ∀ (qs : List Pattern) (a : AW) (aenv : List AW) (v : 
 /-- `aPatArgsT`: patterns against values position by position. -/
 theorem aPatArgs_soundT : ∀ (qs : List Pattern) (as : List AW) (aenv : List AW) (vs : List V)
     (env env' : Isle.Interp.Env V) (st : LState),
-    matchArgs p (sem ctx) st qs vs env = .ok (some env') → HoldsPT f ctx as vs →
-    EnvOKT f ctx aenv env → ∃ aenv' ∈ aPatArgsT p aext iOps fOps as qs aenv, EnvOKT f ctx aenv' env'
+    matchArgs p (sem ctx) st qs vs env = .ok (some env') → HoldsPT S iOps fOps f ctx as vs →
+    EnvOKT S iOps fOps f ctx aenv env → ∃ aenv' ∈ aPatArgsT p aext iOps fOps as qs aenv, EnvOKT S iOps fOps f ctx aenv' env'
   | [], as, aenv, [], env, env', st, h, hv, he => by
     rw [matchArgs.eq_1] at h
     cases h
@@ -553,7 +553,7 @@ theorem chkTab_memT (hc : chkTabT p tab aext actor apre aOracle iOps fOps = true
 end Inv
 
 theorem holds2_leT {as bs : List AW} {vs : List V} (h : AW.leAll as bs = true)
-    (hv : Holds2T f ctx as vs) : Holds2T f ctx bs vs :=
+    (hv : Holds2T S iOps fOps f ctx as vs) : Holds2T S iOps fOps f ctx bs vs :=
   leL_soundT as bs h vs hv
 
 /-! ## Soundness of the abstract interpretation -/
@@ -565,41 +565,41 @@ variable {p : Program} (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps
 /-- The soundness statements at fuel `n`. -/
 structure SoundAtT (n : Nat) : Prop where
   expr : ∀ e aenv a env s tr r s' tr', aExpr p tab actor apre aOracle e aenv = some a →
-    EnvOKT f ctx aenv env → md.Is s →
+    EnvOKT S iOps fOps f ctx aenv env → md.Is s →
     (evalExpr p (sem ctx) cfg n e env).run (s, tr) = .ok (r, (s', tr')) →
     md.Is s' ∧ ∀ v, r = some v → γT S iOps fOps f ctx a v
   args : ∀ es aenv as env s tr r s' tr', aArgs p tab actor apre aOracle es aenv = some as →
-    EnvOKT f ctx aenv env → md.Is s →
+    EnvOKT S iOps fOps f ctx aenv env → md.Is s →
     (evalArgs p (sem ctx) cfg n es env).run (s, tr) = .ok (r, (s', tr')) →
-    md.Is s' ∧ ∀ vs, r = some vs → Holds2T f ctx as vs
+    md.Is s' ∧ ∀ vs, r = some vs → Holds2T S iOps fOps f ctx as vs
   binds : ∀ bs aenv aenv' env s tr r s' tr', aBinds p tab actor apre aOracle bs aenv = some aenv' →
-    EnvOKT f ctx aenv env → md.Is s →
+    EnvOKT S iOps fOps f ctx aenv env → md.Is s →
     (evalBinds p (sem ctx) cfg n bs env).run (s, tr) = .ok (r, (s', tr')) →
-    md.Is s' ∧ ∀ env', r = some env' → EnvOKT f ctx aenv' env'
+    md.Is s' ∧ ∀ env', r = some env' → EnvOKT S iOps fOps f ctx aenv' env'
   apply : ∀ ty t as a vs s tr r s' tr', aApply p tab actor apre aOracle ty t as = some a →
-    Holds2T f ctx as vs → md.Is s →
+    Holds2T S iOps fOps f ctx as vs → md.Is s →
     (applyTerm p (sem ctx) cfg n ty t vs).run (s, tr) = .ok (r, (s', tr')) →
     md.Is s' ∧ ∀ v, r = some v → γT S iOps fOps f ctx a v
   root : ∀ ty t term flags ex ins out vs s tr r s' tr', termOf p t = .ok term →
     term.kind = .decl flags (some .internal) ex →
     (∀ rl ∈ p.rulesOf t, aRuleT p tab aext actor apre aOracle iOps fOps ins out rl = true ∨
       ∀ m s0 env s1, (matchRule p (sem ctx) cfg m rl vs).run s0 ≠ .ok (some env, s1)) →
-    Holds2T f ctx ins vs → md.Is s →
+    Holds2T S iOps fOps f ctx ins vs → md.Is s →
     (applyTerm p (sem ctx) cfg n ty t vs).run (s, tr) = .ok (r, (s', tr')) →
     md.Is s' ∧ ∀ v, r = some v → γT S iOps fOps f ctx out v
   mrule : ∀ rl ins envs vs s tr env s' tr', aRuleEnvsT p tab aext actor apre aOracle iOps fOps ins rl = some envs →
-    Holds2T f ctx ins vs → md.Is s →
+    Holds2T S iOps fOps f ctx ins vs → md.Is s →
     (matchRule p (sem ctx) cfg n rl vs).run (s, tr) = .ok (some env, (s', tr')) →
-    md.Is s' ∧ ∃ aenv ∈ envs, EnvOKT f ctx aenv env
+    md.Is s' ∧ ∃ aenv ∈ envs, EnvOKT S iOps fOps f ctx aenv env
   iflets : ∀ ils aenv envs env s tr env' s' tr', aIfLetsT p tab aext actor apre aOracle iOps fOps ils aenv = some envs →
-    EnvOKT f ctx aenv env → md.Is s →
+    EnvOKT S iOps fOps f ctx aenv env → md.Is s →
     (matchIfLets p (sem ctx) cfg n ils env).run (s, tr) = .ok (some env', (s', tr')) →
-    md.Is s' ∧ ∃ aenv' ∈ envs, EnvOKT f ctx aenv' env'
+    md.Is s' ∧ ∃ aenv' ∈ envs, EnvOKT S iOps fOps f ctx aenv' env'
 
-theorem γT_mkData {ty : TypeId} {k : Nat} {as : List AW} {vs : List V} (h : Holds2T f ctx as vs) :
+theorem γT_mkData {ty : TypeId} {k : Nat} {as : List AW} {vs : List V} (h : Holds2T S iOps fOps f ctx as vs) :
     γT S iOps fOps f ctx (.data ty k as) ((sem ctx).mkData ty k vs) := ⟨vs, rfl, h⟩
 
-theorem holds2_bot {as : List AW} {vs : List V} (hb : as.any AW.isBot = true) (h : Holds2T f ctx as vs) :
+theorem holds2_bot {as : List AW} {vs : List V} (hb : as.any AW.isBot = true) (h : Holds2T S iOps fOps f ctx as vs) :
     False := by
   obtain ⟨a, ha, hab⟩ := List.any_eq_true.mp hb
   obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp ha
@@ -631,7 +631,7 @@ theorem soundAtT (hc : cfg.checkOverlap = false) (htab : chkTabT p tab aext acto
       term.kind = .decl flags (some .internal) ex →
       (∀ rl ∈ p.rulesOf t, aRuleT p tab aext actor apre aOracle iOps fOps ins out rl = true ∨
         ∀ m s0 env s1, (matchRule p (sem ctx) cfg m rl vs).run s0 ≠ .ok (some env, s1)) →
-      Holds2T f ctx ins vs → md.Is s →
+      Holds2T S iOps fOps f ctx ins vs → md.Is s →
       (applyTerm p (sem ctx) cfg (n + 1) ty t vs).run (s, tr) = .ok (r, (s', tr')) →
       md.Is s' ∧ ∀ v, r = some v → γT S iOps fOps f ctx out v := by
     intro ty t term flags ex ins out vs s tr r s' tr' ht hk hrules hins hIs h

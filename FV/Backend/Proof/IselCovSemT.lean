@@ -87,14 +87,32 @@ theorem γLT_get : ∀ {as : List AW} {vs : List V}, γLT S iOps fOps f ctx as v
 /-! ## Positional descriptions -/
 
 /-- Abstract values describe values pointwise (same lengths). -/
-def Holds2T (f : Clif.Function) (ctx : Ctx) : List AW → List V → Prop := γLT S iOps fOps f ctx
+def Holds2T (S : Clif.Inst → Bool) (iOps fOps : List Nat) (f : Clif.Function) (ctx : Ctx) :
+    List AW → List V → Prop := γLT S iOps fOps f ctx
 
 /-- Abstract values describe values position by position, `top` past the end. -/
-def HoldsPT (f : Clif.Function) (ctx : Ctx) (as : List AW) (vs : List V) : Prop :=
+def HoldsPT (S : Clif.Inst → Bool) (iOps fOps : List Nat) (f : Clif.Function) (ctx : Ctx)
+    (as : List AW) (vs : List V) : Prop :=
   ∀ i v, vs[i]? = some v → γT S iOps fOps f ctx (as.getD i .top) v
 
+
+theorem γLT_cons {a : AW} {as : List AW} {v : V} {vs : List V}
+    (h : γLT S iOps fOps f ctx (a :: as) (v :: vs)) :
+    γT S iOps fOps f ctx a v ∧ γLT S iOps fOps f ctx as vs := h
+
+theorem γLT_nil {a : List AW} (h : γLT S iOps fOps f ctx a []) : a = [] := by
+  match a, h with
+  | [], _ => rfl
+  | _ :: _, h => exact h.elim
+
+theorem γLT_cons' {b : AW} {bs : List AW} {w : V} {ws : List V}
+    (h : γLT S iOps fOps f ctx (b :: bs) (w :: ws)) :
+    ∃ c cs, b :: bs = c :: cs ∧ γT S iOps fOps f ctx c w ∧ γLT S iOps fOps f ctx cs ws :=
+  ⟨b, bs, rfl, h.1, h.2⟩
+
 /-- The abstract environment describes the bound variables (`top` past its end). -/
-def EnvOKT (f : Clif.Function) (ctx : Ctx) (aenv : List AW) (env : Isle.Interp.Env V) : Prop :=
+def EnvOKT (S : Clif.Inst → Bool) (iOps fOps : List Nat) (f : Clif.Function) (ctx : Ctx)
+    (aenv : List AW) (env : Isle.Interp.Env V) : Prop :=
   ∀ x w, env[x]? = some (some w) → γT S iOps fOps f ctx (aenv.getD x .top) w
 
 theorem γT_top (v : V) : γT S iOps fOps f ctx AW.top v :=
@@ -102,26 +120,29 @@ theorem γT_top (v : V) : γT S iOps fOps f ctx AW.top v :=
 
 theorem holdsPT_of_holds2T : ∀ {as : List AW} {vs : List V},
     γLT S iOps fOps f ctx as vs →
-    ∀ i v, vs[i]? = some v → γT S iOps fOps f ctx (as.getD i .top) v
-  | [], [], _, _, _, h => by simp at h
-  | a :: as, v :: vs, i, w, hw, ⟨h1, h2⟩ => by
+    ∀ i v, vs[i]? = some v → γT S iOps fOps f ctx (as.getD i .top) v := by
+  intro as vs h
+  match as, vs, h with
+  | [], [], h => intro i v hv; simp at hv
+  | [], _ :: _, h => exact h.elim
+  | _ :: _, [], h => exact h.elim
+  | a :: as, v :: vs, ⟨h1, h2⟩ =>
+    intro i w hw
     cases i with
     | zero => simp at hw; subst hw; exact h1
     | succ i => simpa using holdsPT_of_holds2T h2 i w (by simpa using hw)
-  | [], _ :: _, h => h.elim
-  | _ :: _, [], h => h.elim
 
 theorem holdsPT_cons {a : AW} {as : List AW} {v : V} {vs : List V}
-    (h : HoldsPT f ctx (a :: as) (v :: vs)) :
-    γT S iOps fOps f ctx a v ∧ HoldsPT f ctx as vs :=
+    (h : HoldsPT S iOps fOps f ctx (a :: as) (v :: vs)) :
+    γT S iOps fOps f ctx a v ∧ HoldsPT S iOps fOps f ctx as vs :=
   ⟨by simpa using h 0 v rfl, fun i w hw => by simpa using h (i + 1) w (by simpa using hw)⟩
 
-theorem holdsPT_nil_cons {v : V} {vs : List V} (h : HoldsPT f ctx [] (v :: vs)) :
-    HoldsPT f ctx [] vs :=
+theorem holdsPT_nil_cons {v : V} {vs : List V} (h : HoldsPT S iOps fOps f ctx [] (v :: vs)) :
+    HoldsPT S iOps fOps f ctx [] vs :=
   fun i w hw => by simpa using h (i + 1) w (by simpa using hw)
 
 theorem holdsPT_replicate {a : AW} {vs : List V} (h : ∀ v ∈ vs, γT S iOps fOps f ctx a v) (n : Nat) :
-    HoldsPT f ctx (List.replicate n a) vs := by
+    HoldsPT S iOps fOps f ctx (List.replicate n a) vs := by
   intro i v hv
   rw [List.getD_eq_getElem?_getD, List.getElem?_replicate]
   split
@@ -129,19 +150,19 @@ theorem holdsPT_replicate {a : AW} {vs : List V} (h : ∀ v ∈ vs, γT S iOps f
   · exact γT_top v
 
 theorem holdsPT_single {a : AW} {v : V} (h : γT S iOps fOps f ctx a v) :
-    HoldsPT f ctx [a] [v] := by
+    HoldsPT S iOps fOps f ctx [a] [v] := by
   intro i w hw
   cases i with
   | zero => simp at hw; subst hw; exact h
   | succ i => simp at hw
 
-theorem envOKT_empty (aenv : List AW) (n : Nat) : EnvOKT f ctx aenv (Array.replicate n none) := by
+theorem envOKT_empty (aenv : List AW) (n : Nat) : EnvOKT S iOps fOps f ctx aenv (Array.replicate n none) := by
   intro x w hx
   simp [Array.getElem?_replicate] at hx
 
 theorem envOKT_set {aenv : List AW} {env : Isle.Interp.Env V}
-    (he : EnvOKT f ctx aenv env) {a : AW} {v : V} (hv : γT S iOps fOps f ctx a v) (x : Nat) :
-    EnvOKT f ctx (aenv.set x a) (env.set! x (some v)) := by
+    (he : EnvOKT S iOps fOps f ctx aenv env) {a : AW} {v : V} (hv : γT S iOps fOps f ctx a v) (x : Nat) :
+    EnvOKT S iOps fOps f ctx (aenv.set x a) (env.set! x (some v)) := by
   intro y w hy
   rw [Array.set!_eq_setIfInBounds, Array.getElem?_setIfInBounds] at hy
   by_cases hyx : x = y
@@ -154,9 +175,7 @@ theorem envOKT_set {aenv : List AW} {env : Isle.Interp.Env V}
       split
       · exact hv
       · exact γT_top _
-    · simp only [hyx, ↓reduceIte] at hy
-      have := he y w hy
-      rwa [List.getD_eq_getElem?_getD, List.getElem?_set_ne hyx, ← List.getD_eq_getElem?_getD]
+    · cases hy
   · simp only [hyx, ↓reduceIte] at hy
     have := he y w hy
     rwa [List.getD_eq_getElem?_getD, List.getElem?_set_ne hyx, ← List.getD_eq_getElem?_getD]
@@ -277,7 +296,7 @@ theorem AVT.data_mono {S : Clif.Inst → Bool} {f : Clif.Function} {ctx : Ctx} {
     (h : (AVT.data ops).HoldsS S f ctx v) (hm : ops ⊆ ops') :
     (AVT.data ops').HoldsS S f ctx v := by
   obtain ⟨c, hS, hOK, kf, ko, fs, he, hko⟩ := h
-  exact ⟨c, hS, hOK, kf, ko, fs, he, hm x hko⟩
+  exact ⟨c, hS, hOK, kf, ko, fs, he, hm hko⟩
 
 /-- `InstSplit` describes every scope instruction's data by `AVT.data (iOps ++ fOps)`. -/
 theorem instSplit_data {S : Clif.Inst → Bool} {f : Clif.Function} {ctx : Ctx} {iOps fOps : List Nat}
@@ -288,7 +307,7 @@ theorem instSplit_data {S : Clif.Inst → Bool} {f : Clif.Function} {ctx : Ctx} 
   · exact AVT.data_mono hD (fun x hx => List.mem_append_left _ hx)
   · exact AVT.data_mono hD (fun x hx => List.mem_append_right _ hx)
 
-theorem holds2_oneT {as : List AW} {v : V} (h : Holds2T f ctx as [v]) :
+theorem holds2_oneT {as : List AW} {v : V} (h : Holds2T S iOps fOps f ctx as [v]) :
     ∃ a, as = [a] ∧ γT S iOps fOps f ctx a v := by
   cases as with
   | nil => simp [Holds2T, γLT] at h
@@ -297,7 +316,7 @@ theorem holds2_oneT {as : List AW} {v : V} (h : Holds2T f ctx as [v]) :
     | nil => exact ⟨a, rfl, h.1⟩
     | cons _ _ => simp [Holds2T, γLT] at h
 
-theorem holds2_twoT {as : List AW} {v w : V} (h : Holds2T f ctx as [v, w]) :
+theorem holds2_twoT {as : List AW} {v w : V} (h : Holds2T S iOps fOps f ctx as [v, w]) :
     ∃ a b, as = [a, b] ∧ γT S iOps fOps f ctx a v ∧ γT S iOps fOps f ctx b w := by
   cases as with
   | nil => simp [Holds2T, γLT] at h
@@ -309,7 +328,7 @@ theorem holds2_twoT {as : List AW} {v w : V} (h : Holds2T f ctx as [v, w]) :
       | nil => exact ⟨a, b, rfl, h.1, h.2.1⟩
       | cons _ _ => simp [Holds2T, γLT] at h
 
-theorem holds2_threeT {as : List AW} {u v w : V} (h : Holds2T f ctx as [u, v, w]) :
+theorem holds2_threeT {as : List AW} {u v w : V} (h : Holds2T S iOps fOps f ctx as [u, v, w]) :
     ∃ a b c, as = [a, b, c] ∧ γT S iOps fOps f ctx a u ∧ γT S iOps fOps f ctx b v ∧
       γT S iOps fOps f ctx c w := by
   cases as with
@@ -327,7 +346,7 @@ theorem holds2_threeT {as : List AW} {u v w : V} (h : Holds2T f ctx as [u, v, w]
 
 theorem holds_instT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst) :
-    Holds2T (S := Compile.instET) (iOps := opsT) (fOps := floatOps) f ctx [.xv .inst] [.inst ii] :=
+    Holds2T Compile.instET opsT floatOps f ctx [.xv .inst] [.inst ii] :=
   ⟨⟨⟨ii, info, inst, rfl, hi, hc, hctx.data _ _ _ hi hc⟩, rfl, rfl⟩, trivial⟩
 
 end Backend.Proof.Cov

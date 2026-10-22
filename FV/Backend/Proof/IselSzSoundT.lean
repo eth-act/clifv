@@ -179,11 +179,11 @@ variable {md : CovModelT S iOps fOps aext actor apre aOracle p f ctx} {cfg : Con
 /-- The environment after a rule's argument patterns is described by one of `aPatArgsT`'s
 (`SoundAtT.mrule` for the rule without its if-lets). -/
 theorem patArgs_env (sa : ∀ n, SoundAtT md cfg tab n) {rl : Rule} {ins : List AW} {vs : List V}
-    {s : LState} {env0 : Isle.Interp.Env V} (hins : Holds2T f ctx ins vs) (hIs : md.Is s)
+    {s : LState} {env0 : Isle.Interp.Env V} (hins : Holds2T S iOps fOps f ctx ins vs) (hIs : md.Is s)
     (hma : matchArgs p (sem ctx) s rl.args vs (Array.replicate rl.vars.length none) =
       .ok (some env0)) :
     ∃ aenv0 ∈ aPatArgsT p aext iOps fOps ins rl.args (List.replicate rl.vars.length .top),
-      EnvOKT f ctx aenv0 env0 := by
+      EnvOKT S iOps fOps f ctx aenv0 env0 := by
   let rl' : Rule := { rl with iflets := [] }
   have hae : aRuleEnvsT p tab aext actor apre aOracle iOps fOps ins rl' =
       some (aPatArgsT p aext iOps fOps ins rl.args (List.replicate rl.vars.length .top)) := by
@@ -199,11 +199,11 @@ theorem patArgs_env (sa : ∀ n, SoundAtT md cfg tab n) {rl : Rule} {ins : List 
 for that if-let alone). -/
 theorem pat_env (sa : ∀ n, SoundAtT md cfg tab n) {il : IfLet} {a : AW} {aenv : List AW}
     {env env1 : Isle.Interp.Env V} {v : V} {s s1 : LState} {tr tr1 : Array RuleId} {k : Nat}
-    (ha : aExpr p tab actor apre aOracle il.rhs aenv = some a) (he : EnvOKT f ctx aenv env)
+    (ha : aExpr p tab actor apre aOracle il.rhs aenv = some a) (he : EnvOKT S iOps fOps f ctx aenv env)
     (hIs : md.Is s)
     (hrun : (evalExpr p (sem ctx) cfg (k + 1) il.rhs env).run (s, tr) = .ok (some v, (s1, tr1)))
     (hmp : matchPat p (sem ctx) s1 il.lhs v env = .ok (some env1)) :
-    ∃ aenv1 ∈ aPatT p aext iOps fOps a il.lhs aenv, EnvOKT f ctx aenv1 env1 := by
+    ∃ aenv1 ∈ aPatT p aext iOps fOps a il.lhs aenv, EnvOKT S iOps fOps f ctx aenv1 env1 := by
   have hif : aIfLetsT p tab aext actor apre aOracle iOps fOps [il] aenv = some (aPatT p aext iOps fOps a il.lhs aenv) := by
     rw [aIfLetsT.eq_2, ha]
     simp only [aIfLetsT.eq_1]
@@ -225,32 +225,32 @@ variable (md : CovModelT S iOps fOps aext actor apre aOracle p f ctx) (cfg : Con
 /-- The cost statements at fuel `n`: a run grows the measure `W` by at most the cost. -/
 structure CostAtT (n : Nat) : Prop where
   expr : ∀ e aenv c env s tr r s' tr', cExpr p tab aw ctab actor apre aOracle e aenv = some c →
-    EnvOKT f ctx aenv env → md.Is s →
+    EnvOKT S iOps fOps f ctx aenv env → md.Is s →
     (evalExpr p (sem ctx) cfg n e env).run (s, tr) = .ok (r, (s', tr')) → W s' ≤ W s + c
   args : ∀ es aenv c env s tr r s' tr', cArgs p tab aw ctab actor apre aOracle es aenv = some c →
-    EnvOKT f ctx aenv env → md.Is s →
+    EnvOKT S iOps fOps f ctx aenv env → md.Is s →
     (evalArgs p (sem ctx) cfg n es env).run (s, tr) = .ok (r, (s', tr')) → W s' ≤ W s + c
   binds : ∀ bs aenv c env s tr r s' tr', cBinds p tab aw ctab actor apre aOracle bs aenv = some c →
-    EnvOKT f ctx aenv env → md.Is s →
+    EnvOKT S iOps fOps f ctx aenv env → md.Is s →
     (evalBinds p (sem ctx) cfg n bs env).run (s, tr) = .ok (r, (s', tr')) → W s' ≤ W s + c
   apply : ∀ ty t as c vs s tr r s' tr', cApply p tab aw ctab apre aOracle ty t as = some c →
-    Holds2T f ctx as vs → md.Is s →
+    Holds2T S iOps fOps f ctx as vs → md.Is s →
     (applyTerm p (sem ctx) cfg n ty t vs).run (s, tr) = .ok (r, (s', tr')) → W s' ≤ W s + c
   root : ∀ ty t term flags ex ins c vs s tr r s' tr', termOf p t = .ok term →
     term.kind = .decl flags (some .internal) ex →
     (∀ rl ∈ p.rulesOf t, cRuleLeT p tab aw ctab aext actor apre aOracle iOps fOps ins c rl = true ∨
       ∀ m s0 env s1, (matchRule p (sem ctx) cfg m rl vs).run s0 ≠ .ok (some env, s1)) →
-    Holds2T f ctx ins vs → md.Is s →
+    Holds2T S iOps fOps f ctx ins vs → md.Is s →
     (applyTerm p (sem ctx) cfg n ty t vs).run (s, tr) = .ok (r, (s', tr')) → W s' ≤ W s + c
   mrule : ∀ rl ins cs vs s tr env s' tr',
     (aPatArgsT p aext iOps fOps ins rl.args (List.replicate rl.vars.length .top)).mapM
       (cIfLetsT p tab aw ctab aext actor apre aOracle iOps fOps rl.iflets) = some cs →
-    Holds2T f ctx ins vs → md.Is s →
+    Holds2T S iOps fOps f ctx ins vs → md.Is s →
     (matchRule p (sem ctx) cfg n rl vs).run (s, tr) = .ok (some env, (s', tr')) →
     W s' ≤ W s + cs.foldl max 0
   iflets : ∀ ils aenv c env s tr env' s' tr',
     cIfLetsT p tab aw ctab aext actor apre aOracle iOps fOps ils aenv = some c →
-    EnvOKT f ctx aenv env → md.Is s →
+    EnvOKT S iOps fOps f ctx aenv env → md.Is s →
     (matchIfLets p (sem ctx) cfg n ils env).run (s, tr) = .ok (some env', (s', tr')) →
     W s' ≤ W s + c
 
@@ -282,7 +282,7 @@ theorem costAtT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab
       term.kind = .decl flags (some .internal) ex →
       (∀ rl ∈ p.rulesOf t, cRuleLeT p tab aw ctab aext actor apre aOracle iOps fOps ins c rl = true ∨
         ∀ m s0 env s1, (matchRule p (sem ctx) cfg m rl vs).run s0 ≠ .ok (some env, s1)) →
-      Holds2T f ctx ins vs → md.Is s →
+      Holds2T S iOps fOps f ctx ins vs → md.Is s →
       (applyTerm p (sem ctx) cfg (n + 1) ty t vs).run (s, tr) = .ok (r, (s', tr')) →
       W s' ≤ W s + c := by
     intro ty t term flags ex ins c vs s tr r s' tr' ht hk hrules hins hIs h
@@ -579,7 +579,7 @@ theorem cost_root (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg t
     (ht : termOf p t = .ok term) (hk : term.kind = .decl flags (some .internal) ex)
     (hrules : ∀ rl ∈ p.rulesOf t, cRuleLeT p tab aw ctab aext actor apre aOracle iOps fOps ins c rl = true ∨
       ∀ m s0 env s1, (matchRule p (sem ctx) cfg m rl vs).run s0 ≠ .ok (some env, s1))
-    (hins : Holds2T f ctx ins vs) (hIs : md.Is s) {n : Nat}
+    (hins : Holds2T S iOps fOps f ctx ins vs) (hIs : md.Is s) {n : Nat}
     (h : (applyTerm p (sem ctx) cfg n ty t vs).run (s, tr) = .ok (r, (s', tr'))) :
     W s' ≤ W s + c :=
   (costAtT hc sa hext hor hct n).root _ _ _ _ _ _ _ _ _ _ _ _ _ ht hk hrules hins hIs h
@@ -598,7 +598,7 @@ theorem cost_root_hand (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md 
     (ht : termOf p t = .ok term) (hk : term.kind = .decl flags (some .internal) ex)
     (hrules : ∀ rl ∈ p.rulesOf t, cRuleLeT p tab aw ctab aext actor apre aOracle iOps fOps ins c rl = true ∨
       (∀ m s0 env s1, (matchRule p (sem ctx) cfg m rl vs).run s0 ≠ .ok (some env, s1)) ∨ Hand rl)
-    (hins : Holds2T f ctx ins vs) (hIs : md.Is s) {n : Nat} (hn : 1002 + (p.rulesOf t).length ≤ n)
+    (hins : Holds2T S iOps fOps f ctx ins vs) (hIs : md.Is s) {n : Nat} (hn : 1002 + (p.rulesOf t).length ≤ n)
     (h : (applyTerm p (sem ctx) cfg (n + 1) ty t vs).run (s, tr) = .ok (r, (s', tr'))) :
     W s' ≤ W s + c := by
   have ca := costAtT hc sa hext hor hct

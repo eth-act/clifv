@@ -21,14 +21,14 @@ variable {f : Clif.Function} {ctx : Ctx}
 theorem γ_c0T {w : V} (h : w.regsIn = [] ∧ covV w = true) : γT S iOps fOps f ctx .c0 w :=
   ⟨fun r hr => (by rw [h.1] at hr; cases hr), fun _ => h.2⟩
 
-theorem holdsP_singleT {a : AW} {w : V} (h : γT S iOps fOps f ctx a w) : HoldsPT f ctx [a] [w] := by
+theorem holdsP_singleT {a : AW} {w : V} (h : γT S iOps fOps f ctx a w) : HoldsPT S iOps fOps f ctx [a] [w] := by
   intro i v hv
   cases i with
   | zero => simp at hv; subst hv; exact h
   | succ i => simp at hv
 
 theorem holdsP_allT {as : List AW} {fs : List V}
-    (h : ∀ i w, fs[i]? = some w → i < as.length → γT S iOps fOps f ctx (as.getD i .top) w) : HoldsPT f ctx as fs := by
+    (h : ∀ i w, fs[i]? = some w → i < as.length → γT S iOps fOps f ctx (as.getD i .top) w) : HoldsPT S iOps fOps f ctx as fs := by
   intro i w hw
   by_cases hi : i < as.length
   · exact h i w hw hi
@@ -41,7 +41,7 @@ set_option maxHeartbeats 1000000 in
 theorem ext_soundT (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
     (hsc : InstScopeT ctx) (hx : f.externs.all (Compile.sigE ·.2.sig) = true) (hcl : Clean ctx) (a : AW) (term : Term) (v : V)
     (st : LState) (fs : List V) (hv : γT S iOps fOps f ctx a v) (h : (sem ctx).extract term v st = .ok fs) :
-    HoldsPT f ctx (aextT term.id a) fs := by
+    HoldsPT S iOps fOps f ctx (aextT term.id a) fs := by
   rw [sem_extract] at h
   cases hp : tyPred term.id with
   | some q =>
@@ -119,19 +119,19 @@ theorem ext_soundT (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
         · exact .inl h
         · exact .inr (.inl h)
         · exact .inr (.inr (.inl h)))
-      show HoldsPT f ctx (List.replicate 1 _) fs
+      show HoldsPT S iOps fOps f ctx (List.replicate 1 _) fs
       exact holdsPT_replicate (fun w hw => by
         obtain ⟨x, rfl⟩ := hval w hw; exact ⟨⟨x, rfl⟩, rfl, rfl⟩) 1
     split
     · rename_i _ _ _ _ hid
       have hval := hc.vals (.inr (.inr (.inr (.inl (by simpa using hid)))))
-      show HoldsPT f ctx (List.replicate 2 _) fs
+      show HoldsPT S iOps fOps f ctx (List.replicate 2 _) fs
       exact holdsPT_replicate (fun w hw => by
         obtain ⟨x, rfl⟩ := hval w hw; exact ⟨⟨x, rfl⟩, rfl, rfl⟩) 2
     split
     · rename_i _ _ _ _ _ hid
       have hval := hc.vals (.inr (.inr (.inr (.inr (by simpa using hid)))))
-      show HoldsPT f ctx (List.replicate 3 _) fs
+      show HoldsPT S iOps fOps f ctx (List.replicate 3 _) fs
       exact holdsPT_replicate (fun w hw => by
         obtain ⟨x, rfl⟩ := hval w hw; exact ⟨⟨x, rfl⟩, rfl, rfl⟩) 3
     split
@@ -157,12 +157,12 @@ theorem ext_soundT (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
           obtain ⟨t', ht', he⟩ := hv
           cases he
           split
-          · show HoldsPT f ctx (List.replicate 2 _) fs
+          · show HoldsPT S iOps fOps f ctx (List.replicate 2 _) fs
             exact holdsPT_replicate (fun w hw => γ_c0T (hclean w hw)) 2
           · rename_i hno
             exact absurd (List.any_eq_true.mpr ⟨_, ht', by simpa using hl⟩) hno
         | _ => simp [tysOf] at hts
-      · show HoldsPT f ctx (List.replicate 2 _) fs
+      · show HoldsPT S iOps fOps f ctx (List.replicate 2 _) fs
         exact holdsPT_replicate (fun w hw => γ_c0T (hclean w hw)) 2
     split
     · rename_i _ _ _ _ _ _ _ _ hid
@@ -171,7 +171,7 @@ theorem ext_soundT (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
     · rename_i _ _ _ _ _ _ _ _ _ hid
       rw [hc.tls (by simpa using hid)]
       exact holdsP_singleT ⟨[], rfl, trivial⟩
-    · show HoldsPT f ctx (List.replicate 4 _) fs
+    · show HoldsPT S iOps fOps f ctx (List.replicate 4 _) fs
       exact holdsPT_replicate (fun w hw => γ_c0T (hclean w hw)) 4
 
 end Backend.Proof.Cov
