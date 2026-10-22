@@ -47,14 +47,15 @@ signature `sig`, argument values `vals` and CLIF memory `cm` are admitted by `Pc
 to `cm` (`MemRel`) with stack pointer `sp0`, and the arguments are as the call's kind puts them: a call of a declared
 extern (in `exts`, with its signature) has them where the ABI puts them (`ArgsAt`; the register
 ones the uses, after the target of a `blr`, which holds `n`'s link-time address); an indirect
-call (signature in `sigs`) has at most 8 values, all in registers. -/
+call (signature in `sigs`) has them where its call-site signature's ABI puts them (`ArgsAt`,
+S5). -/
 def CallG (F : BitVec 64 → Prop) (syms : String → Option Nat) (X : ExtSem)
     (exts : List Clif.ExtFunc) (sigs : List Clif.Signature) (sp0 : BitVec 64)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (dest : CallDest)
     (uses : List CV) (w : Arm.ArmState) : Prop :=
   ∃ n sig vals cm args, Pc n sig vals cm ∧ (MemRel F syms cm w ∧ spv w = sp0) ∧
     ((∃ e ∈ exts, e.name = n ∧ e.sig = sig) ∧ ArgsAt sig vals args w ∨
-      sig ∈ sigs ∧ vals.length ≤ 8 ∧ AllHold vals args) ∧
+      sig ∈ sigs ∧ ArgsAt sig vals args w) ∧
     (dest = .sym n ∧ uses = args ∨ (∃ r, dest = .reg r) ∧ ∃ u, uses = u :: args ∧ lo64 u = X.sym n 0)
 
 /-- The guard of the calls of `csemG`: a `call` and a `tryCall` are pinned (`CallG`); the entry's
@@ -266,25 +267,25 @@ theorem indCallsRefineP_csemG {env : Clif.Env} {sigs : List Clif.Signature} {MR 
     IndCallsRefineP Pc env sigs MR (csemG F ctx X Rd syms exts sigs sp0 Pc) := by
   obtain ⟨h1, h2⟩ := indCallsRefine_csem (F := F) (ctx := ctx) hX hsym
     (fun sl cm w h => (hMRm sl cm w h).symbols)
-  refine ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a1' a2 a3 a4 a5 a6 a7 hpc a9
+  refine ⟨fun sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a1' a2 a3 a4 a5 a7 hpc a9
     a10 a11 => ?_, fun sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a1' a2 a3 a4 a0 a5
-    a6 a7 hpc a9 a10 a11 => ?_⟩
+    a7 hpc a9 a10 a11 => ?_⟩
   · have hm := hMRm sl cm w a7
     have hu : lo64 u = X.sym n 0 := by
       rw [a3, hsym n a (by rw [← hm.symbols]; exact a2)]
     have hg : GuardC F syms X exts sigs sp0 Pc (.call ⟨.reg r, us, ds⟩) (u :: args) w :=
-      ⟨n, sig, vals, cm, args, hpc, ⟨hm, hMRc sl cm w a7⟩, (.inr ⟨hin, a5, a6⟩), .inr ⟨⟨r, rfl⟩, u, rfl, hu⟩⟩
+      ⟨n, sig, vals, cm, args, hpc, ⟨hm, hMRc sl cm w a7⟩, (.inr ⟨hin, a5⟩), .inr ⟨⟨r, rfl⟩, u, rfl, hu⟩⟩
     have hr : GuardR F Rd ctx.slotBase (.call ⟨.reg r, us, ds⟩) (u :: args) w := trivial
     rw [csemG_of hr hg]
-    exact h1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a1' a2 a3 a4 a5 a6 a7 a9 a10 a11
+    exact h1 sig hin n g sl cm w a r us ds u args vals rvals cm' a1 a1' a2 a3 a4 a5 a7 a9 a10 a11
   · have hm := hMRm sl cm w a7
     have hu : lo64 u = X.sym n 0 := by
       rw [a3, hsym n a (by rw [← hm.symbols]; exact a2)]
     have hg : GuardC F syms X exts sigs sp0 Pc (.tryCall ⟨.reg r, us, ds⟩ ti) (u :: args) w :=
-      ⟨n, sig, vals, cm, args, hpc, ⟨hm, hMRc sl cm w a7⟩, (.inr ⟨hin, a5, a6⟩), .inr ⟨⟨r, rfl⟩, u, rfl, hu⟩⟩
+      ⟨n, sig, vals, cm, args, hpc, ⟨hm, hMRc sl cm w a7⟩, (.inr ⟨hin, a5⟩), .inr ⟨⟨r, rfl⟩, u, rfl, hu⟩⟩
     have hr : GuardR F Rd ctx.slotBase (.tryCall ⟨.reg r, us, ds⟩ ti) (u :: args) w := trivial
     rw [csemG_of hr hg]
-    exact h2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a1' a2 a3 a4 a0 a5 a6 a7 a9 a10
+    exact h2 sig hin n g sl cm w a r us ds ti u args vals rvals cm' a1 a1' a2 a3 a4 a0 a5 a7 a9 a10
       a11
 
 theorem minst_cases (i : MInst) :

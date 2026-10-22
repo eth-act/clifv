@@ -58,7 +58,7 @@ def XRNI (F : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Cl
     (∀ a, F a → Z a) → SameWorld Z w w' → MemRel F syms cm w → MemRel F syms cm w' →
     spv w = sp0 → spv w' = sp0 →
     ((∃ e ∈ exts, e.name = n ∧ e.sig = sig) ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w' ∨
-      sig ∈ sigs ∧ vals.length ≤ 8 ∧ AllHold vals args) →
+      sig ∈ sigs ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w') →
     XR.raise d uses w = some (o, x) → XR.raise d uses w' = some (o', x') → SameWorld Z x x'
 
 /-! ## Raises on pairs of worlds -/
@@ -108,8 +108,8 @@ theorem vUnwFrom_pair {vc : VCode} {sem : Sem} {XR : XRaise} {vs : VState CV W2}
 
 /-- **The guard of a raising call site**: the pinned CLIF call (extern `n`, signature `s`, values
 `vals`, memory `cm`) with its arguments as the call's kind puts them (a declared extern of
-`exts` with the ABI's arguments; an indirect call of signature in `sigs` with at most 8
-register arguments of the parameter types), the world related to `cm` with stack pointer
+`exts` with the ABI's arguments; an indirect call of signature in `sigs` with the arguments where
+its ABI puts them, S5, of the parameter types), the world related to `cm` with stack pointer
 `sp0`, and the call's destination and uses (`CallG` for one pinned call, with the indirect
 call's types). -/
 def RaiseGuard (F : BitVec 64 → Prop) (syms : String → Option Nat) (X : ExtSem)
@@ -118,7 +118,7 @@ def RaiseGuard (F : BitVec 64 → Prop) (syms : String → Option Nat) (X : ExtS
     (w : Arm.ArmState) : Prop :=
   ∃ args, (MemRel F syms cm w ∧ spv w = sp0) ∧
     ((∃ e ∈ exts, e.name = n ∧ e.sig = s) ∧ ArgsAt s vals args w ∨
-      s ∈ sigs ∧ vals.length ≤ 8 ∧ AllHold vals args ∧
+      s ∈ sigs ∧ ArgsAt s vals args w ∧
         vals.map (·.ty) = Clif.AbiParam.tys s.params) ∧
     (dest = .sym n ∧ uses = args ∨ (∃ r, dest = .reg r) ∧ ∃ u, uses = u :: args ∧ lo64 u = X.sym n 0)
 
@@ -341,31 +341,31 @@ theorem indCallsRefineP_probeG {exts : List Clif.ExtFunc} {sigs : List Clif.Sign
       (pinMR MR slots)
       (probeG sem XR (raiseC MR slots e m) (RaiseGuard F syms X exts sigs sp0 n s vals cm)) := by
   refine ⟨?_, ?_⟩
-  · intro sig hin n' g' sl cm0 w a r us ds u args vals' rvals cm' hg' hsg ha hu' hds hlen hall hmr
+  · intro sig hin n' g' sl cm0 w a r us ds u args vals' rvals cm' hg' hsg ha hu' hds hargs hmr
       hpc hret hrl hty
     obtain ⟨hn, hs, rfl, rfl⟩ := hpc
     obtain ⟨-, rfl, hcm⟩ := overEnv_at hg' hret
     subst hn hs cm'
     have hX : lo64 u = X.sym n' 0 := by
       rw [hu', hsym n' a (by rw [← hMRs sl _ w hmr.2]; exact ha)]
-    obtain ⟨obj, w', hr, hex, hm⟩ := hXRi sig hin n' g sl cm0 w u args vals' e m hg hsg hX hlen
-      hall hmr.2 hu hty
+    obtain ⟨obj, w', hr, hex, hm⟩ := hXRi sig hin n' g sl cm0 w u args vals' e m hg hsg hX hargs
+      hmr.2 hu hty
     have hG : RaiseGuard F syms X exts sigs sp0 n' sig vals' cm0 (.reg r) (u :: args) w :=
-      ⟨args, ⟨hMRm _ _ _ hmr.2, hMRc _ _ _ hmr.2⟩, .inr ⟨hin, hlen, hall, hty⟩,
+      ⟨args, ⟨hMRm _ _ _ hmr.2, hMRc _ _ _ hmr.2⟩, .inr ⟨hin, hargs, hty⟩,
         .inr ⟨⟨r, rfl⟩, u, rfl, hX⟩⟩
     exact ⟨_, w', probeG_call_of (ci := ⟨.reg r, us, ds⟩) hG hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
       prefixHold_zero (by rw [hds]; exact returns_le_sigRets _), hmr.1, hm⟩
-  · intro sig hin n' g' sl cm0 w a r us ds ti u args vals' rvals cm' hg' hsg ha hu' hds hti hlen
-      hall hmr hpc hret hrl hty
+  · intro sig hin n' g' sl cm0 w a r us ds ti u args vals' rvals cm' hg' hsg ha hu' hds hti hargs
+      hmr hpc hret hrl hty
     obtain ⟨hn, hs, rfl, rfl⟩ := hpc
     obtain ⟨-, rfl, hcm⟩ := overEnv_at hg' hret
     subst hn hs cm'
     have hX : lo64 u = X.sym n' 0 := by
       rw [hu', hsym n' a (by rw [← hMRs sl _ w hmr.2]; exact ha)]
-    obtain ⟨obj, w', hr, hex, hm⟩ := hXRi sig hin n' g sl cm0 w u args vals' e m hg hsg hX hlen
-      hall hmr.2 hu hty
+    obtain ⟨obj, w', hr, hex, hm⟩ := hXRi sig hin n' g sl cm0 w u args vals' e m hg hsg hX hargs
+      hmr.2 hu hty
     have hG : RaiseGuard F syms X exts sigs sp0 n' sig vals' cm0 (.reg r) (u :: args) w :=
-      ⟨args, ⟨hMRm _ _ _ hmr.2, hMRc _ _ _ hmr.2⟩, .inr ⟨hin, hlen, hall, hty⟩,
+      ⟨args, ⟨hMRm _ _ _ hmr.2, hMRc _ _ _ hmr.2⟩, .inr ⟨hin, hargs, hty⟩,
         .inr ⟨⟨r, rfl⟩, u, rfl, hX⟩⟩
     exact ⟨_, w', probeG_tryCall_of (ci := ⟨.reg r, us, ds⟩) hG hr ⟨hex, hmr.1 ▸ hm⟩, by simp,
       prefixHold_zero (Nat.le_trans (returns_le_sigRets _) hds), hmr.1, hm⟩
@@ -389,7 +389,7 @@ theorem stmt_raiseG (hRG : Refines F semG) (hMG : MemRefinesR Rd F sb syms semG)
     (hgot : ∀ (rd : Reg) (n : String) (w : Arm.ArmState), ∃ w',
       semG (.loadExtNameGot rd n) [] w = some ([ofX (X.sym n 0)], w', .next) ∧ SameWorldNF F w' w)
     (hMR : MRStable F MR) (hout : OutArgsOk F out MR) (hMRo : MemRelOk F sb syms f MR)
-    (hstk : CallsStack f out)
+    (hstk : CallsStack f out) (hIstk : IndStack (indSigs f) out)
     (hXR : XRaiseOk env (f.externs.map (·.2)) MR X XR) (hXRi : XRaiseIndOk env (indSigs f) MR X XR)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms)
@@ -432,7 +432,7 @@ theorem stmt_raiseG (hRG : Refines F semG) (hMG : MemRefinesR Rd F sb syms semG)
     (indCallsRefineP_probeG (sem := semG) (exts := f.externs.map (·.2)) (slots := fr.slots) hXRi
       hsym hMRs hMRm hMRc hg hu)
     (memRefinesR_probeG hMG) hctx (outArgsOk_pin hout fr.slots)
-    (externsIn_self f) hE (memRelOk_pin hMRo fr.slots) hi hc hsig
+    (externsIn_self f) hE (memRelOk_pin hMRo fr.slots) hi hc hsig hIstk
     (fun fn args e' hc' he => hstk B hB stm hstm fn args e' hc' he) hvb hrun
   have hms : ms = st'.emitted.toList := by
     rw [hemp, Array.empty_append] at hem; rw [hem, List.toList_toArray]
@@ -451,7 +451,7 @@ related to `e` (the world related to `m`) at a call site satisfying `RaiseGuard`
 theorem try_raiseG (hRG : Refines F semG) (hMG : MemRefinesR Rd F sb syms semG)
     (hgot : ∀ (rd : Reg) (n : String) (w : Arm.ArmState), ∃ w',
       semG (.loadExtNameGot rd n) [] w = some ([ofX (X.sym n 0)], w', .next) ∧ SameWorldNF F w' w)
-    (hMR : MRStable F MR) (hout : OutArgsOk F out MR)
+    (hMR : MRStable F MR) (hout : OutArgsOk F out MR) (hIstk : IndStack (indSigs f) out)
     (hXR : XRaiseOk env (f.externs.map (·.2)) MR X XR) (hXRi : XRaiseIndOk env (indSigs f) MR X XR)
     (hsym : ∀ n b, syms n = some b → X.sym n 0 = BitVec.ofNat 64 b)
     (hMRs : ∀ sl cm w, MR sl cm w → cm.symbols = syms)
@@ -464,8 +464,7 @@ theorem try_raiseG (hRG : Refines F semG) (hMG : MemRefinesR Rd F sb syms semG)
     (hT : (∃ fn args, ci = .call fn args ∧ tryCallData f (.tryCall fn args et) = .ok data ∧
         ∀ e, f.extern? fn = some e → SigStackOk e.sig out) ∨
       (∃ callee args, ci = .callIndirect et.sig callee args ∧
-        tryCallData f (.tryCallIndirect callee args et) = .ok data ∧ sig ∈ indSigs f ∧
-        sig.params.length ≤ 8))
+        tryCallData f (.tryCallIndirect callee args et) = .ok data ∧ sig ∈ indSigs f))
     (he : exnTableOpnd f et = .ok (sig, items))
     (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩)
     (hinfo : tryInfoOf sig items targets = some info) (hregs : tryRegsOf sig lo = some (trs, st1))
@@ -507,13 +506,13 @@ theorem try_raiseG (hRG : Refines F semG) (hMG : MemRefinesR Rd F sb syms semG)
           (RaiseGuard F syms X (f.externs.map (·.2)) (indSigs f) sp0 n s vals cm))
         (pinMR MR fr.slots) (overEnv env.toEnv n vals cm (zeroVals s.returns) m) p
         (tryCtx ctx ti data trs) ci info { st1 with emitted := #[] } st' ms := by
-    rcases hT with ⟨fn, args, rfl, hd, hra⟩ | ⟨callee, args, rfl, hd, hsg, h8⟩
+    rcases hT with ⟨fn, args, rfl, hd, hra⟩ | ⟨callee, args, rfl, hd, hsg⟩
     · exact tryOkP_runTerm tryRulesCorrectP tryUnmatchable hR' (mrStable_pin hMR fr.slots)
         (memRefinesR_probeG hMG) (outArgsOk_pin hout fr.slots) hcr hctx' (externsIn_self f) hra
         hd he hi hinfo hregs' hvb' (Nat.le_refl _) hrun
     · exact tryIndOkP_runTerm tryIndRulesCorrectP tryIndUnmatchable hR'
-        (mrStable_pin hMR fr.slots) hicr hctx' hd he hsg h8 hi hinfo hregs' hvb' (Nat.le_refl _)
-        hrun
+        (mrStable_pin hMR fr.slots) (memRefinesR_probeG hMG) (outArgsOk_pin hout fr.slots) hIstk
+        hicr hctx' hd he hsg hi hinfo hregs' hvb' (Nat.le_refl _) hrun
   have hms' : ms = st'.emitted.toList := by
     simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
   subst hms'
@@ -573,16 +572,18 @@ theorem raiseGuard_ni {F : BitVec 64 → Prop} {syms : String → Option Nat} {X
     · exact .inr ⟨rfl, hu⟩
   have hLg : CallLgR env exts sigs n s vals cm := by
     refine ⟨?_, g, e, m, hg, hu⟩
-    rcases hk1 with ⟨hk, -⟩ | ⟨hs, -, -, hty⟩
+    rcases hk1 with ⟨hk, -⟩ | ⟨hs, -, hty⟩
     · exact .inl hk
     · exact .inr ⟨hs, hty⟩
   have hA : (∃ e ∈ exts, e.name = n ∧ e.sig = s) ∧ ArgsAt s vals a1 w ∧ ArgsAt s vals a1 w' ∨
-      s ∈ sigs ∧ vals.length ≤ 8 ∧ AllHold vals a1 := by
-    rcases hk1 with ⟨hk, ha1⟩ | ⟨hs, h8, hall, -⟩
-    · rcases hk2 with ⟨-, ha2⟩ | ⟨hs, h8, hall, -⟩
+      s ∈ sigs ∧ ArgsAt s vals a1 w ∧ ArgsAt s vals a1 w' := by
+    rcases hk1 with ⟨hk, ha1⟩ | ⟨hs, ha1, -⟩
+    · rcases hk2 with ⟨-, ha2⟩ | ⟨-, ha2, -⟩
       · exact .inl ⟨hk, ha1, ha2⟩
-      · exact .inr ⟨hs, h8, hall⟩
-    · exact .inr ⟨hs, h8, hall⟩
+      · exact .inl ⟨hk, ha1, ha2⟩
+    · rcases hk2 with ⟨-, ha2⟩ | ⟨-, ha2, -⟩
+      · exact .inr ⟨hs, ha1, ha2⟩
+      · exact .inr ⟨hs, ha1, ha2⟩
   exact hNI n s vals cm a1 (destName dest) uses Z w w' o x o' x' hLg hd hFZ hsw hm1 hm2 hsp1 hsp2
     hA hr1 hr2
 
@@ -635,7 +636,7 @@ theorem raiseHypW_pair (semG : (BitVec 64 → Prop) → Sem) (semU : Sem)
       o = o' ∧ ct = ct' ∧ SameWorld (Zof F D cm) w₁ w₁')
     (hsubG : ∀ Rd i us w r, semG Rd i us w = some r → semU i us w = some r)
     (hRS : RaiseSem F X XR semU)
-    (hstk : CallsStack f out) (htstk : TryStack f out)
+    (hstk : CallsStack f out) (htstk : TryStack f out) (hIstk : IndStack (indSigs f) out)
     (hout : OutArgsOk F out (RelW ⟨F, syms, sb, ib⟩ f c))
     (hXR : XRaiseOk env (f.externs.map (·.2)) (RelW ⟨F, syms, sb, ib⟩ f c) X XR)
     (hXRi : XRaiseIndOk env (indSigs f) (RelW ⟨F, syms, sb, ib⟩ f c) X XR)
@@ -657,10 +658,12 @@ theorem raiseHypW_pair (semG : (BitVec 64 → Prop) → Sem) (semU : Sem)
     obtain ⟨n, s, vals, g, hg, hu, hO, hpin⟩ := instRaise_spec hr
     have hII : InitIn (fun b => ¬ Zof F D cm b) cm := initIn_zof (Γ := Γ) hm1 D
     obtain ⟨hU, k, ci, ops, ρa, wa, obj, wa', hk1, hn1, hs1, hops, hr1, hG1, hex1, hm1'⟩ :=
-      stmt_raiseG (hRG _) (hMG _) (hgot _) hMR hout hMRo hstk hXR hXRi hsym hMRs hMRm hMRc hctx
+      stmt_raiseG (hRG _) (hMG _) (hgot _) hMR hout hMRo hstk hIstk hXR hXRi hsym hMRs hMRm hMRc
+        hctx
         hE hin hi hc hsig hemp hvb hrun hcall hf hvh hdc hm1 hII hg hu hO hpin
     obtain ⟨-, k2, ci2, ops2, ρb, wb, obj2, wb', hk2, hn2, hs2, hops2, hr2, hG2, hex2, hm2'⟩ :=
-      stmt_raiseG (hRG _) (hMG _) (hgot _) hMR hout hMRo hstk hXR hXRi hsym hMRs hMRm hMRc hctx
+      stmt_raiseG (hRG _) (hMG _) (hgot _) hMR hout hMRo hstk hIstk hXR hXRi hsym hMRs hMRm hMRc
+        hctx
         hE hin hi hc hsig hemp hvb hrun hcall hf hvh hdc hm2 hII hg hu hO hpin
     obtain rfl := firstCall_unique hk1 hn1 hk2 hn2
     rw [hk1] at hk2
@@ -701,10 +704,12 @@ theorem raiseHypW_pair (semG : (BitVec 64 → Prop) → Sem) (semU : Sem)
     obtain ⟨n, s, vals, g, hg, hu, hO, hpin⟩ := instRaise_spec hr
     have hII : InitIn (fun b => ¬ Zof F D cm b) cm := initIn_zof (Γ := Γ) hm1 D
     obtain ⟨hU, ops, ρa, wa, obj, wa', hnt, hs1, hops, hr1, hG1, hex1, hm1'⟩ :=
-      try_raiseG (hRG _) (hMG _) (hgot _) hMR hout hXR hXRi hsym hMRs hMRm hMRc hctx hT he hph
+      try_raiseG (hRG _) (hMG _) (hgot _) hMR hout hIstk hXR hXRi hsym hMRs hMRm hMRc hctx hT he
+        hph
         hinfo hregs hvb hrun hms hpre hf hvh hdc hm1 hII hg hu hO hpin
     obtain ⟨-, ops2, ρb, wb, obj2, wb', -, hs2, hops2, hr2, hG2, hex2, hm2'⟩ :=
-      try_raiseG (hRG _) (hMG _) (hgot _) hMR hout hXR hXRi hsym hMRs hMRm hMRc hctx hT he hph
+      try_raiseG (hRG _) (hMG _) (hgot _) hMR hout hIstk hXR hXRi hsym hMRs hMRm hMRc hctx hT he
+        hph
         hinfo hregs hvb hrun hms hpre hf hvh hdc hm2 hII hg hu hO hpin
     rw [hops] at hops2
     cases hops2
@@ -760,7 +765,7 @@ theorem csemG_got (fctx : FnCtx) (Rd : BitVec 64 → Prop) (rd : Reg) (n : Strin
 `csemG` with no call admitted). -/
 theorem raiseHypW_pair_csemU (fctx : FnCtx) (hsb : fctx.slotBase = sb) (hTls : XTls F X)
     (hex : ∀ d uses w, X.call d uses w ≠ none → XR.raise d uses w = none)
-    (hstk : CallsStack f out) (htstk : TryStack f out)
+    (hstk : CallsStack f out) (htstk : TryStack f out) (hIstk : IndStack (indSigs f) out)
     (hout : OutArgsOk F out (RelW ⟨F, syms, sb, ib⟩ f c))
     (hXR : XRaiseOk env (f.externs.map (·.2)) (RelW ⟨F, syms, sb, ib⟩ f c) X XR)
     (hXRi : XRaiseIndOk env (indSigs f) (RelW ⟨F, syms, sb, ib⟩ f c) X XR)
@@ -776,13 +781,13 @@ theorem raiseHypW_pair_csemU (fctx : FnCtx) (hsb : fctx.slotBase = sb) (hTls : X
       guardedStep0 (D := D) (syms := syms) hTls fctx cm [i] [] [] i (List.mem_singleton_self i) us
         w w' o w₁ ct o' w₁' ct' hw h h')
     (fun _ _ _ _ _ h => csemU_of_csem hex (csemG_sub h).2.2) (raiseSem_csemU F fctx X XR) hstk
-    htstk hout hXR hXRi hsym hNI
+    htstk hIstk hout hXR hXRi hsym hNI
 
 /-- **The raising code on pairs of worlds, dead-cleanup pipeline** (`valueSemU`; the guarded
 semantics `valueSemG` with no call admitted). -/
 theorem raiseHypW_pair_valueSemU (fctx : FnCtx) (hsb : fctx.slotBase = sb) (hTls : XTls F X)
     (hex : ∀ d uses w, X.call d uses w ≠ none → XR.raise d uses w = none)
-    (hstk : CallsStack f out) (htstk : TryStack f out)
+    (hstk : CallsStack f out) (htstk : TryStack f out) (hIstk : IndStack (indSigs f) out)
     (hout : OutArgsOk F out (RelW ⟨F, syms, sb, ib⟩ f c))
     (hXR : XRaiseOk env (f.externs.map (·.2)) (RelW ⟨F, syms, sb, ib⟩ f c) X XR)
     (hXRi : XRaiseIndOk env (indSigs f) (RelW ⟨F, syms, sb, ib⟩ f c) X XR)
@@ -800,7 +805,7 @@ theorem raiseHypW_pair_valueSemU (fctx : FnCtx) (hsb : fctx.slotBase = sb) (hTls
       guardedStep0_value (D := D) (syms := syms) hTls fctx cm [i] [] [] i
         (List.mem_singleton_self i) us w w' o w₁ ct o' w₁' ct' hw h h')
     (fun _ _ _ _ _ h => valueSemU_of_valueSem hex (valueSemG_sub h))
-    (raiseSem_valueSemU F fctx X XR) hstk htstk hout hXR hXRi hsym hNI
+    (raiseSem_valueSemU F fctx X XR) hstk htstk hIstk hout hXR hXRi hsym hNI
 
 end
 
