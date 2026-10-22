@@ -393,4 +393,68 @@ theorem realizes_store : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState 
   exact ⟨n, lsP, e, t', hr, hk, hn, ha, hevP, fun env p M0 =>
     realizes_one hc hr hevP (by rw [hk]; decide) env p M0⟩
 
+/-! ## The whole run -/
+
+theorem bodyS : ∃ st rest, csS.frame.body = st :: rest ∧ st.inst = .atomicStore .i64 {} 1 0 := by
+  have h : csS.frame.body.head?.map (·.inst) = some (.atomicStore .i64 {} 1 0) := by native_decide
+  revert h
+  cases csS.frame.body with
+  | nil => intro h; cases h
+  | cons st rest => intro h; exact ⟨st, rest, rfl, by simpa using h⟩
+
+theorem regS0 : csS.frame.regs 0 = some ⟨.i64, 0⟩ := by native_decide
+
+theorem getS1 : ∃ v, csS.frame.getAs 1 .i64 = .ok v := by
+  have h : (match csS.frame.getAs 1 .i64 with | .ok _ => true | _ => false) = true := by
+    native_decide
+  revert h
+  cases csS.frame.getAs 1 .i64 with
+  | ok v => intro _; exact ⟨v, rfl⟩
+  | _ => intro h; cases h
+
+theorem stepS0 : (match Clif.step default default (withBytes csS (fun _ => some 0)) with
+    | .next _ => true | _ => false) = true := by native_decide
+
+/-- **The CLIF thread from `csS` steps** (its `atomic_store`). -/
+theorem cstep_csS (env : Clif.Env) (p : Clif.Program) : ∃ evs t', CStep env p (.run csS) evs t' := by
+  obtain ⟨st, rest, hb, hi⟩ := bodyS
+  obtain ⟨v, hv⟩ := getS1
+  have hb' : (withBytes csS (fun _ => some 0)).frame.body = st :: rest := hb
+  obtain ⟨s', hs⟩ := step_next_of_check (env := env) (p := p) hb'
+    (fun _ _ h => by rw [hi] at h; cases h) (fun _ _ _ h => by rw [hi] at h; cases h) default
+    default stepS0
+  exact ⟨_, _, ClifCStep.cstep_atomicStore hb' hi regS0 hv hs⟩
+
+theorem shapeS1 : evShape csS = [[(.scW, 8)]] := by
+  obtain ⟨st, rest, hb, hi⟩ := bodyS
+  simp only [evShape, hb, hi]
+  rfl
+
+theorem notStop_csS (env : Clif.Env) (p : Clif.Program) : ¬ Stop env p (.run csS) := by
+  obtain ⟨st, rest, hb, hi⟩ := bodyS
+  obtain ⟨evs, t', hs⟩ := cstep_csS env p
+  rintro (hd | hc)
+  · exact hd ⟨evs, t', hs⟩
+  · exact not_casRO hb (fun _ _ _ _ _ h => by rw [hi] at h; cases h) hc
+
+/-- **`Realizes` on the compiled `atomic_store` through its `stlr`, on the whole run** (T2j). -/
+theorem realizes_store_full : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
+    PRun Policy.arm RAS.step (OkPriv RAS) (iterN RAS.step n RAS.s0, none) (lsP ++ [⟨[e], false⟩]) t' ∧
+    e.k = .relW ∧ e.n = 8 ∧ e.addr = 0 ∧
+    (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAS e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) ∧
+    ∀ (env : Clif.Env) (p : Clif.Program) (M0 : Bytes),
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧ PC.st 0 0 = .run csS ∧
+        PC.Runs (CStep env p) ∧
+        Realizes (PA1 RAS (iterN RAS.step n RAS.s0) (lsP ++ [⟨[e], false⟩]) (lsP.length + 1))
+          (locs1 lsP e) M0
+          (latestW (PA1 RAS (iterN RAS.step n RAS.s0) (lsP ++ [⟨[e], false⟩]) (lsP.length + 1))
+            (locs1 lsP e))
+          (coL (PA1 RAS (iterN RAS.step n RAS.s0) (lsP ++ [⟨[e], false⟩]) (lsP.length + 1))
+            (locs1 lsP e))
+          (fun _ _ => False) PC [(e.addr.toNat, e.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨n, lsP, e, t', hc, hr, hk, hn, ha, hevP⟩ := run_store
+  exact ⟨n, lsP, e, t', hr, hk, hn, ha, hevP, fun env p M0 =>
+    realizes_one_full hc hr hevP (by rw [hk]; decide) env p M0 (notStop_csS env p)
+      (fun _ _ hs => nonFence_one shapeS1 (by decide) hs)⟩
+
 end Concurrency.RealizeCompiled.WitnessS

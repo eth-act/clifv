@@ -298,22 +298,24 @@ theorem take_len_le {ls : List Lab} {P : Policy} {f : ArmState → ArmState}
   exact this
 
 /-- **`Realizes` for one compiled thread whose run is private plain accesses, then one shared
-access `e`** (no `relXW` among them): every execution of the realized prefix with the initial
-locations `locs1` (the shared one first, the CLIF one), reads from the latest earlier write
-(`wf_single`) and any initial memory is `Realizes`d by a CLIF thread from `cs`. -/
-theorem realizes_one {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
+access `e`** (no `relXW` among them), its realized prefix covering the run (`Covers`): every
+execution of the realized prefix with the initial locations `locs1` (the shared one first, the
+CLIF one), reads from the latest earlier write (`wf_single`) and any initial memory is
+`Realizes`d by a CLIF thread from `cs`. -/
+theorem realizes_one_cov {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
     (hc : ∀ env p, Compiled env p RA cs sA) {lsP : List Lab} {e : Ev} {t' : ArmState × Mon}
     (hr : PRun Policy.arm RA.step (OkPriv RA) (sA, none) (lsP ++ [⟨[e], false⟩]) t')
     (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RA e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR))
     (he : e.k ≠ .relXW) (env : Clif.Env) (p : Clif.Program) (M0 : Bytes) :
-    ∃ k ≤ lsP.length + 1, ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧
+    ∃ k ≤ lsP.length + 1, Covers env p RA cs (lsP ++ [⟨[e], false⟩]) k ∧
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧
       PC.st 0 0 = .run cs ∧ PC.Runs (CStep env p) ∧
       Realizes (PA1 RA sA (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e) M0
         (latestW (PA1 RA sA (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e))
         (coL (PA1 RA sA (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e)) (fun _ _ => False)
         PC [(e.addr.toNat, e.n)] M0 φ (fun _ _ _ => True) := by
-  obtain ⟨k, hk, hR⟩ := realizes_compiled (n := 1) (env := env) (p := p) (RA := fun _ => RA)
-    (cs := fun _ => cs) (sA := fun _ => sA) (fun _ _ => hc env p)
+  obtain ⟨k, hk, hcv, hR⟩ := realizes_compiled_full (n := 1) (env := env) (p := p)
+    (RA := fun _ => RA) (cs := fun _ => cs) (sA := fun _ => sA) (fun _ _ => hc env p)
     (mon := fun _ => none) (ls := fun _ => lsP ++ [⟨[e], false⟩]) (t' := fun _ => t')
     (fun _ _ => hr)
   -- the events of the run
@@ -389,7 +391,62 @@ theorem realizes_one {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
       simp only [locs1, List.getElem_cons_succ, ← he'q]
       exact (hevP l hl e' he'l).1)
     (fun q h => rfl) (fun i hi j hj hne => by omega)
-  exact ⟨k 0, by have := hk 0 (by omega); simpa using this, PC, φ, h1, h2 0 (by omega), h3, h4⟩
+  exact ⟨k 0, by have := hk 0 (by omega); simpa using this, hcv 0 (by omega), PC, φ, h1,
+    h2 0 (by omega), h3, h4⟩
+
+/-- **`Realizes` for one compiled thread whose run is private plain accesses, then one shared
+access `e`** (`realizes_one_cov` without the coverage). -/
+theorem realizes_one {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
+    (hc : ∀ env p, Compiled env p RA cs sA) {lsP : List Lab} {e : Ev} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm RA.step (OkPriv RA) (sA, none) (lsP ++ [⟨[e], false⟩]) t')
+    (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RA e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR))
+    (he : e.k ≠ .relXW) (env : Clif.Env) (p : Clif.Program) (M0 : Bytes) :
+    ∃ k ≤ lsP.length + 1, ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧
+      PC.st 0 0 = .run cs ∧ PC.Runs (CStep env p) ∧
+      Realizes (PA1 RA sA (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e) M0
+        (latestW (PA1 RA sA (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e))
+        (coL (PA1 RA sA (lsP ++ [⟨[e], false⟩]) k) (locs1 lsP e)) (fun _ _ => False)
+        PC [(e.addr.toNat, e.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨k, hk, -, h⟩ := realizes_one_cov hc hr hevP he env p M0
+  exact ⟨k, hk, h⟩
+
+/-- **A covering prefix of a private run ending in one shared access is the whole run** when the
+CLIF thread cannot stop at its start and steps with a non-fence event: its first step's events
+would be in the private part. -/
+theorem one_full {env : Clif.Env} {p : Clif.Program} {RA : Backend.Proof.RL} {cs : Clif.State}
+    {lsP : List Lab} {e : Ev} {k : Nat} (hcov : Covers env p RA cs (lsP ++ [⟨[e], false⟩]) k)
+    (hk : k ≤ lsP.length + 1) (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RA e'.addr.toNat)
+    (hgo : ¬ Stop env p (.run cs))
+    (hone : ∀ evs t', CStep env p (.run cs) evs t' → ∃ i, ∃ hi : i < evs.length, evs[i].dir ≠ .F) :
+    k = lsP.length + 1 := by
+  have := covers_full hcov (by simpa using hk) hgo fun evs t' hs k' hk' ψ hsh _ => by
+    obtain ⟨i, hi, hF⟩ := hone evs t' hs
+    obtain ⟨hnp, y, hy, -, hl⟩ := hsh i hi hF
+    obtain ⟨l, hl', e', he', rfl⟩ := evAt_conv_mem hy
+    have hk'' : k' ≤ lsP.length := by simp at hk'; omega
+    rw [List.take_append_of_le_length hk''] at hl'
+    exact hnp (by rw [← hl]; exact hevP l (List.mem_of_mem_take hl') e' he')
+  simpa using this
+
+/-- **`Realizes` for one compiled thread whose run is private plain accesses, then one shared
+access, on the whole run** (`realizes_one_cov`, `one_full`): when the CLIF thread from `cs`
+cannot stop at its start and steps with a non-fence event. -/
+theorem realizes_one_full {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
+    (hc : ∀ env p, Compiled env p RA cs sA) {lsP : List Lab} {e : Ev} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm RA.step (OkPriv RA) (sA, none) (lsP ++ [⟨[e], false⟩]) t')
+    (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RA e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR))
+    (he : e.k ≠ .relXW) (env : Clif.Env) (p : Clif.Program) (M0 : Bytes)
+    (hgo : ¬ Stop env p (.run cs))
+    (hone : ∀ evs t', CStep env p (.run cs) evs t' → ∃ i, ∃ hi : i < evs.length, evs[i].dir ≠ .F) :
+    ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧
+      PC.st 0 0 = .run cs ∧ PC.Runs (CStep env p) ∧
+      Realizes (PA1 RA sA (lsP ++ [⟨[e], false⟩]) (lsP.length + 1)) (locs1 lsP e) M0
+        (latestW (PA1 RA sA (lsP ++ [⟨[e], false⟩]) (lsP.length + 1)) (locs1 lsP e))
+        (coL (PA1 RA sA (lsP ++ [⟨[e], false⟩]) (lsP.length + 1)) (locs1 lsP e)) (fun _ _ => False)
+        PC [(e.addr.toNat, e.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨k, hk, hcv, h⟩ := realizes_one_cov hc hr hevP he env p M0
+  obtain rfl := one_full hcv hk (fun l hl e' he' => (hevP l hl e' he').1) hgo hone
+  exact h
 
 /-! ## The run through the `ldar` -/
 
@@ -565,5 +622,62 @@ theorem realizes_load : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState �
   obtain ⟨n, lsP, e, t', hc, hr, hk, hn, ha, hevP⟩ := run_load
   exact ⟨n, lsP, e, t', hr, hk, hn, ha, hevP, fun env p M0 =>
     realizes_one hc hr hevP (by rw [hk]; decide) env p M0⟩
+
+/-! ## The whole run -/
+
+theorem bodyL : ∃ st rest, csL.frame.body = st :: rest ∧ st.inst = .atomicLoad .i64 {} 0 := by
+  have h : csL.frame.body.head?.map (·.inst) = some (.atomicLoad .i64 {} 0) := by native_decide
+  revert h
+  cases csL.frame.body with
+  | nil => intro h; cases h
+  | cons st rest => intro h; exact ⟨st, rest, rfl, by simpa using h⟩
+
+theorem regL0 : csL.frame.regs 0 = some ⟨.i64, 0⟩ := by native_decide
+
+theorem stepL0 : (match Clif.step default default (withBytes csL (fun _ => some 0)) with
+    | .next _ => true | _ => false) = true := by native_decide
+
+/-- **The CLIF thread from `csL` steps** (its `atomic_load`, on bytes `0`). -/
+theorem cstep_csL (env : Clif.Env) (p : Clif.Program) : ∃ evs t', CStep env p (.run csL) evs t' := by
+  obtain ⟨st, rest, hb, hi⟩ := bodyL
+  have hb' : (withBytes csL (fun _ => some 0)).frame.body = st :: rest := hb
+  obtain ⟨s', hs⟩ := step_next_of_check (env := env) (p := p) hb'
+    (fun _ _ h => by rw [hi] at h; cases h) (fun _ _ _ h => by rw [hi] at h; cases h) default
+    default stepL0
+  exact ⟨_, _, ClifCStep.cstep_atomicLoad hb' hi regL0 hs⟩
+
+theorem shapeL1 : evShape csL = [[(.scR, 8)]] := by
+  obtain ⟨st, rest, hb, hi⟩ := bodyL
+  simp only [evShape, hb, hi]
+  rfl
+
+theorem notStop_csL (env : Clif.Env) (p : Clif.Program) : ¬ Stop env p (.run csL) := by
+  obtain ⟨st, rest, hb, hi⟩ := bodyL
+  obtain ⟨evs, t', hs⟩ := cstep_csL env p
+  rintro (hd | hc)
+  · exact hd ⟨evs, t', hs⟩
+  · exact not_casRO hb (fun _ _ _ _ _ h => by rw [hi] at h; cases h) hc
+
+/-- **`Realizes` on the compiled `atomic_load` through its `ldar`, on the whole run** (T2j): the
+run of `run_load`; every execution of all of it is `Realizes`d by a CLIF thread from `csL`
+(`realizes_one_full`: the CLIF thread steps from `csL`, with the `atomic_load`'s read). -/
+theorem realizes_load_full : ∃ (n : Nat) (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
+    PRun Policy.arm RAL.step (OkPriv RAL) (iterN RAL.step n RAL.s0, none) (lsP ++ [⟨[e], false⟩]) t' ∧
+    e.k = .acqR ∧ e.n = 8 ∧ e.addr = 0 ∧
+    (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAL e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) ∧
+    ∀ (env : Clif.Env) (p : Clif.Program) (M0 : Bytes),
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧ PC.st 0 0 = .run csL ∧
+        PC.Runs (CStep env p) ∧
+        Realizes (PA1 RAL (iterN RAL.step n RAL.s0) (lsP ++ [⟨[e], false⟩]) (lsP.length + 1))
+          (locs1 lsP e) M0
+          (latestW (PA1 RAL (iterN RAL.step n RAL.s0) (lsP ++ [⟨[e], false⟩]) (lsP.length + 1))
+            (locs1 lsP e))
+          (coL (PA1 RAL (iterN RAL.step n RAL.s0) (lsP ++ [⟨[e], false⟩]) (lsP.length + 1))
+            (locs1 lsP e))
+          (fun _ _ => False) PC [(e.addr.toNat, e.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨n, lsP, e, t', hc, hr, hk, hn, ha, hevP⟩ := run_load
+  exact ⟨n, lsP, e, t', hr, hk, hn, ha, hevP, fun env p M0 =>
+    realizes_one_full hc hr hevP (by rw [hk]; decide) env p M0 (notStop_csL env p)
+      (fun _ _ hs => nonFence_one shapeL1 (by decide) hs)⟩
 
 end Concurrency.RealizeCompiled.WitnessL

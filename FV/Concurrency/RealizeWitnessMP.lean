@@ -53,8 +53,8 @@ theorem PAn_ev {n : Nat} {RA : Nat → Backend.Proof.RL} {sA : Nat → ArmState}
   · simp [Traces.evAt, PAn, hi] at hx
 
 /-- **`Realizes` for `n` compiled threads, each a private plain prefix then one shared access**
-(module doc). -/
-theorem realizes_n {n : Nat} {RA : Nat → Backend.Proof.RL} {cs : Nat → Clif.State}
+(module doc), the realized prefixes covering the runs (`Covers`). -/
+theorem realizes_n_cov {n : Nat} {RA : Nat → Backend.Proof.RL} {cs : Nat → Clif.State}
     {sA : Nat → ArmState} (hc : ∀ i < n, ∀ env p, Compiled env p (RA i) (cs i) (sA i))
     {lsP : Nat → List Lab} {e : Nat → Ev} {t' : Nat → ArmState × Mon}
     (hr : ∀ i < n, PRun Policy.arm (RA i).step (OkPriv (RA i)) (sA i, none)
@@ -67,14 +67,15 @@ theorem realizes_n {n : Nat} {RA : Nat → Backend.Proof.RL} {cs : Nat → Clif.
     (hdE : ∀ i < n, ∀ j < n, j ≠ i → ¬ PrivA (RA j) (e i).addr.toNat)
     (env : Clif.Env) (p : Clif.Program) (M0 : Bytes) :
     ∃ k : Nat → Nat, (∀ i < n, k i ≤ (lsP i).length + 1) ∧
+      (∀ i < n, Covers env p (RA i) (cs i) (lsP i ++ [⟨[e i], false⟩]) (k i)) ∧
       ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = n ∧
         (∀ i < n, PC.st i 0 = .run (cs i)) ∧ PC.Runs (CStep env p) ∧
         Realizes (PAn n RA sA (fun i => lsP i ++ [⟨[e i], false⟩]) k) (locsC ++ privsN n lsP) M0
           (latestW (PAn n RA sA (fun i => lsP i ++ [⟨[e i], false⟩]) k) (locsC ++ privsN n lsP))
           (coL (PAn n RA sA (fun i => lsP i ++ [⟨[e i], false⟩]) k) (locsC ++ privsN n lsP))
           (fun _ _ => False) PC locsC M0 φ (fun _ _ _ => True) := by
-  obtain ⟨k, hk, hR⟩ := realizes_compiled (n := n) (env := env) (p := p) (RA := RA) (cs := cs)
-    (sA := sA) (fun i hi => hc i hi env p) (mon := fun _ => none)
+  obtain ⟨k, hk, hcv, hR⟩ := realizes_compiled_full (n := n) (env := env) (p := p) (RA := RA)
+    (cs := cs) (sA := sA) (fun i hi => hc i hi env p) (mon := fun _ => none)
     (ls := fun i => lsP i ++ [⟨[e i], false⟩]) (t' := t') hr
   -- the events of the runs
   have hevs : ∀ i < n, ∀ l ∈ lsP i ++ [⟨[e i], false⟩], ∀ e' ∈ l.evs,
@@ -146,7 +147,31 @@ theorem realizes_n {n : Nat} {RA : Nat → Backend.Proof.RL} {cs : Nat → Clif.
       rcases hevs i hi l (List.mem_of_mem_take hl) e' he' with rfl | ⟨-, hP, -⟩
       · exact hdE i hi j hj hne
       · exact hdP i hi j hj hne _ hP)
-  exact ⟨k, fun i hi => by have := hk i hi; simpa using this, PC, φ, h1, h2, h3, h4⟩
+  exact ⟨k, fun i hi => by have := hk i hi; simpa using this, hcv, PC, φ, h1, h2, h3, h4⟩
+
+/-- **`Realizes` for `n` compiled threads, each a private plain prefix then one shared access**
+(`realizes_n_cov` without the coverage). -/
+theorem realizes_n {n : Nat} {RA : Nat → Backend.Proof.RL} {cs : Nat → Clif.State}
+    {sA : Nat → ArmState} (hc : ∀ i < n, ∀ env p, Compiled env p (RA i) (cs i) (sA i))
+    {lsP : Nat → List Lab} {e : Nat → Ev} {t' : Nat → ArmState × Mon}
+    (hr : ∀ i < n, PRun Policy.arm (RA i).step (OkPriv (RA i)) (sA i, none)
+      (lsP i ++ [⟨[e i], false⟩]) (t' i))
+    (hevP : ∀ i < n, ∀ l ∈ lsP i, ∀ e' ∈ l.evs,
+      PrivA (RA i) e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR))
+    (he : ∀ i < n, (e i).k ≠ .relXW) (locsC : List (Nat × Nat))
+    (hC : ∀ i < n, ∃ q : Nat, (locsC[q]?).map (fun c : Nat × Nat => c.1) = some (e i).addr.toNat)
+    (hdP : ∀ i < n, ∀ j < n, j ≠ i → ∀ a, PrivA (RA i) a → ¬ PrivA (RA j) a)
+    (hdE : ∀ i < n, ∀ j < n, j ≠ i → ¬ PrivA (RA j) (e i).addr.toNat)
+    (env : Clif.Env) (p : Clif.Program) (M0 : Bytes) :
+    ∃ k : Nat → Nat, (∀ i < n, k i ≤ (lsP i).length + 1) ∧
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = n ∧
+        (∀ i < n, PC.st i 0 = .run (cs i)) ∧ PC.Runs (CStep env p) ∧
+        Realizes (PAn n RA sA (fun i => lsP i ++ [⟨[e i], false⟩]) k) (locsC ++ privsN n lsP) M0
+          (latestW (PAn n RA sA (fun i => lsP i ++ [⟨[e i], false⟩]) k) (locsC ++ privsN n lsP))
+          (coL (PAn n RA sA (fun i => lsP i ++ [⟨[e i], false⟩]) k) (locsC ++ privsN n lsP))
+          (fun _ _ => False) PC locsC M0 φ (fun _ _ _ => True) := by
+  obtain ⟨k, hk, -, h⟩ := realizes_n_cov hc hr hevP he locsC hC hdP hdE env p M0
+  exact ⟨k, hk, h⟩
 
 /-! ## The two activations' private sets -/
 
@@ -273,6 +298,78 @@ theorem realizes_mp : ∃ (sA : Nat → ArmState) (lsP : Nat → List Lab) (e : 
       · exact notF_low 0 (by decide) hP)
     env p M0
   exact ⟨k, hk, PC, φ, h1, h2 0 (by decide), h2 1 (by decide), h3, h4⟩
+
+/-- **`Realizes` for the compiled `atomic_store` and `atomic_load` as two threads, on the whole
+runs** (T2j): `realizes_mp` with both realized prefixes the whole runs (`WitnessL.one_full`: the
+CLIF threads from `csS` and `csL` step with their access and cannot stop at their start), so
+`mp_reads` applies: the `ldar` reads from the `stlr`. -/
+theorem realizes_mp_full : ∃ (sA : Nat → ArmState) (lsP : Nat → List Lab) (e : Nat → Ev)
+    (t' : Nat → ArmState × Mon),
+    (∀ i < 2, PRun Policy.arm (RA2 i).step (OkPriv (RA2 i)) (sA i, none)
+      (lsP i ++ [⟨[e i], false⟩]) (t' i)) ∧
+    (e 0).k = .relW ∧ (e 1).k = .acqR ∧ (e 0).addr = 0 ∧ (e 1).addr = 0 ∧ (e 0).n = 8 ∧
+    (e 1).n = 8 ∧
+    (∀ i < 2, ∀ l ∈ lsP i, ∀ e' ∈ l.evs, PrivA (RA2 i) e'.addr.toNat ∧
+      (e'.k = .plainW ∨ e'.k = .plainR)) ∧
+    ∀ (env : Clif.Env) (p : Clif.Program) (M0 : Bytes), ∃ k : Nat → Nat,
+      (∀ i < 2, k i = (lsP i).length + 1) ∧
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 2 ∧
+        PC.st 0 0 = .run csS ∧ PC.st 1 0 = .run csL ∧ PC.Runs (CStep env p) ∧
+        Realizes (PAn 2 RA2 sA (fun i => lsP i ++ [⟨[e i], false⟩]) k) ([(0, 8)] ++ privsN 2 lsP) M0
+          (latestW (PAn 2 RA2 sA (fun i => lsP i ++ [⟨[e i], false⟩]) k) ([(0, 8)] ++ privsN 2 lsP))
+          (coL (PAn 2 RA2 sA (fun i => lsP i ++ [⟨[e i], false⟩]) k) ([(0, 8)] ++ privsN 2 lsP))
+          (fun _ _ => False) PC [(0, 8)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨nS, lsS, eS, tS, hcS, hrS, hkS, hnS, haS, hevS⟩ := run_store
+  obtain ⟨nL, lsL, eL, tL, hcL, hrL, hkL, hnL, haL, hevL⟩ := run_load
+  let sA : Nat → ArmState := fun i => if i = 0 then iterN RAS.step nS RAS.s0 else iterN RAL.step nL RAL.s0
+  let lsP : Nat → List Lab := fun i => if i = 0 then lsS else lsL
+  let e : Nat → Ev := fun i => if i = 0 then eS else eL
+  let t' : Nat → ArmState × Mon := fun i => if i = 0 then tS else tL
+  have two : ∀ i < 2, i = 0 ∨ i = 1 := fun i hi => by omega
+  have hr : ∀ i < 2, PRun Policy.arm (RA2 i).step (OkPriv (RA2 i)) (sA i, none)
+      (lsP i ++ [⟨[e i], false⟩]) (t' i) := fun i hi => by
+    rcases two i hi with rfl | rfl
+    · exact hrS
+    · exact hrL
+  have hevP : ∀ i < 2, ∀ l ∈ lsP i, ∀ e' ∈ l.evs, PrivA (RA2 i) e'.addr.toNat ∧
+      (e'.k = .plainW ∨ e'.k = .plainR) := fun i hi => by
+    rcases two i hi with rfl | rfl
+    · exact hevS
+    · exact hevL
+  refine ⟨sA, lsP, e, t', hr, hkS, hkL, haS, haL, hnS, hnL, hevP, fun env p M0 => ?_⟩
+  have hz : ∀ i < 2, (e i).addr = 0 := fun i hi => by
+    rcases two i hi with rfl | rfl
+    · exact haS
+    · exact haL
+  obtain ⟨k, hk, hcv, PC, φ, h1, h2, h3, h4⟩ := realizes_n_cov (n := 2) (RA := RA2) (cs := cs2)
+    (sA := sA)
+    (fun i hi env p => by
+      rcases two i hi with rfl | rfl
+      · exact hcS env p
+      · exact hcL env p) hr hevP
+    (fun i hi => by
+      rcases two i hi with rfl | rfl
+      · show eS.k ≠ _; rw [hkS]; decide
+      · show eL.k ≠ _; rw [hkL]; decide)
+    [(0, 8)] (fun i hi => ⟨0, by simp [hz i hi]⟩)
+    (fun i hi j hj hne a hPi hPj => by
+      rcases two i hi with rfl | rfl <;> rcases two j hj with rfl | rfl
+      · exact hne rfl
+      · exact priv_disj hPi hPj
+      · exact priv_disj hPj hPi
+      · exact hne rfl)
+    (fun i hi j hj hne hP => by
+      rw [hz i hi] at hP
+      rcases two j hj with rfl | rfl
+      · exact notF_lowS 0 (by decide) hP
+      · exact notF_low 0 (by decide) hP)
+    env p M0
+  refine ⟨k, fun i hi => ?_, PC, φ, h1, h2 0 (by decide), h2 1 (by decide), h3, h4⟩
+  rcases two i hi with rfl | rfl
+  · exact one_full (hcv 0 (by decide)) (hk 0 (by decide)) (fun l hl e' he' => (hevS l hl e' he').1)
+      (notStop_csS env p) (fun _ _ hs => nonFence_one shapeS1 (by decide) hs)
+  · exact one_full (hcv 1 (by decide)) (hk 1 (by decide)) (fun l hl e' he' => (hevL l hl e' he').1)
+      (notStop_csL env p) (fun _ _ hs => nonFence_one shapeL1 (by decide) hs)
 
 theorem evAt_PAn {n : Nat} {RA : Nat → Backend.Proof.RL} {sA : Nat → ArmState}
     {ls : Nat → List Lab} {k : Nat → Nat} {i : Nat} (hi : i < n) (j kk : Nat) :

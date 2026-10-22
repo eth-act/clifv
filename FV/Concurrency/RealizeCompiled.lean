@@ -501,6 +501,96 @@ theorem realizes_compiled_full {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA
           Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) :=
   realizes_compiledB_full (fun i hi => (hc i hi).toB) hr
 
+/-! ## When the realized prefix is the whole run -/
+
+/-- **A covering prefix is the whole run** when the CLIF thread cannot stop at its start and no
+first step of it has its events (the non-fence ones shared, at distinct positions) in a strict
+prefix of the run: then the realizing CLIF run of `Covers` has no step, and stops at its start. -/
+theorem covers_full {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {ls : List Lab} {k : Nat} (hcov : Covers env p RA cs ls k) (hk : k ≤ ls.length)
+    (hgo : ¬ Stop env p (.run cs))
+    (hstep : ∀ evs t', CStep env p (.run cs) evs t' → ∀ k' < ls.length,
+      ∀ ψ : Nat × Nat → Nat × Nat,
+      (∀ i (hi : i < evs.length), evs[i].dir ≠ .F → ¬ PrivA RA evs[i].loc ∧
+        ∃ y, evAt (conv (evTr (ls.take k'))) (ψ (0, i)) = some y ∧ y.dir = evs[i].dir ∧
+          y.loc = evs[i].loc) →
+      (∀ i j (hi : i < evs.length) (hj : j < evs.length), i ≠ j → ψ (0, i) ≠ ψ (0, j)) → False) :
+    k = ls.length := by
+  rcases hcov with h | ⟨trS, st, ψ, h0, hst, href, hstop⟩
+  · exact h
+  refine Classical.byContradiction fun hne => ?_
+  cases trS with
+  | nil => exact hgo (by simpa [h0] using hstop)
+  | cons evs rest =>
+    have hs := hst 0 (by simp)
+    simp only [List.getElem_cons_zero, h0] at hs
+    have hat : ∀ i (hi : i < evs.length), evAt (evs :: rest) (0, i) = some evs[i] := fun i hi =>
+      evAt_of (by simp) (by simpa using hi)
+    refine hstep evs _ hs k (by omega) ψ (fun i hi hF => ?_) (fun i j hi hj hij e => ?_)
+    · obtain ⟨y, hy, -, hd, hl, -⟩ := href.ev _ _ (hat i hi)
+      exact ⟨href.shared _ _ (hat i hi) hF, y, hy, hd, hl⟩
+    · have := href.inj (by rw [hat i hi]; rfl) (by rw [hat j hj]; rfl) e
+      simp only [Prod.mk.injEq, true_and] at this
+      exact hij this
+
+/-- A non-call statement steps the same in every environment and program. -/
+theorem step_next_of_check {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
+    {st : Clif.Stmt} {rest : List Clif.Stmt} (hb : s.frame.body = st :: rest)
+    (hc : ∀ fn args, st.inst ≠ .call fn args)
+    (hci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (env0 : Clif.Env) (p0 : Clif.Program)
+    (h : (match Clif.step env0 p0 s with | .next _ => true | _ => false) = true) :
+    ∃ s', Clif.step env p s = .next s' := by
+  have e : Clif.step env p s = Clif.step env0 p0 s := by
+    rw [Clif.step_inst env p s st rest hb hc hci, Clif.step_inst env0 p0 s st rest hb hc hci]
+  rw [e]
+  cases h' : Clif.step env0 p0 s with
+  | next s' => exact ⟨s', rfl⟩
+  | _ => rw [h'] at h; cases h
+
+/-- A thread whose first statement is no `atomic_cas` is not at one on read-only data. -/
+theorem not_casRO {s : Clif.State} {st : Clif.Stmt} {rest : List Clif.Stmt}
+    (hb : s.frame.body = st :: rest) (hi : ∀ ty fl pp ex x, st.inst ≠ .atomicCas ty fl pp ex x) :
+    ¬ CasRO (.run s) := by
+  rintro ⟨s', stm, rest', ty, fl, pp, ex, x, a, n, he, hb', hi', -, -⟩
+  cases he
+  rw [hb] at hb'
+  cases hb'
+  exact hi _ _ _ _ _ hi'
+
+/-- **A thread whose step shape is one event of a non-fence kind** steps with a non-fence
+event. -/
+theorem nonFence_one {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {kd : SKind} {n : Nat}
+    (hsh : evShape s = [[(kd, n)]]) (hk : kd.dir ≠ .F) {evs : List (Ev SKind BVal)}
+    {t' : TState} (hs : CStep env p (.run s) evs t') : ∃ i, ∃ hi : i < evs.length, evs[i].dir ≠ .F := by
+  obtain ⟨⟨hm, hd⟩, -⟩ := hs
+  rw [hsh] at hm
+  simp only [List.mem_singleton] at hm
+  match evs, hm with
+  | [x], hm =>
+    simp only [List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq, and_true] at hm
+    refine ⟨0, by simp, ?_⟩
+    rw [List.getElem_cons_zero, (hd x (by simp)).1, hm.1]
+    exact hk
+
+/-- **A thread whose step shape is two events of non-fence kinds** steps with two non-fence
+events. -/
+theorem nonFence_two {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {k1 k2 : SKind}
+    {n1 n2 : Nat} (hsh : evShape s = [[(k1, n1), (k2, n2)]]) (hk1 : k1.dir ≠ .F)
+    (hk2 : k2.dir ≠ .F) {evs : List (Ev SKind BVal)} {t' : TState}
+    (hs : CStep env p (.run s) evs t') :
+    ∃ hl : 1 < evs.length, evs[0].dir ≠ .F ∧ evs[1].dir ≠ .F := by
+  obtain ⟨⟨hm, hd⟩, -⟩ := hs
+  rw [hsh] at hm
+  simp only [List.mem_singleton] at hm
+  match evs, hm with
+  | [x, y], hm =>
+    simp only [List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq, and_true] at hm
+    refine ⟨by simp, ?_, ?_⟩
+    · rw [List.getElem_cons_zero, (hd x (by simp)).1, hm.1.1]; exact hk1
+    · simp only [List.getElem_cons_succ, List.getElem_cons_zero]
+      rw [(hd y (by simp)).1, hm.2.1]; exact hk2
+
 /-! ## Executions without reads -/
 
 /-- A strict total order on program events (initial writes first, then thread, step, event). -/

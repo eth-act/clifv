@@ -455,22 +455,23 @@ theorem evAt_PA1 (RA : Backend.Proof.RL) (sA : ArmState) (ls : List Lab) (k j kk
 pair**: an `acqXR` read, steps without events, and an `relXW` write of the same bytes. Every
 execution of the realized prefix with the initial locations `locs1` (the pair's first), reads from
 the latest earlier write and the prefix's monitor pairs as `rmw` (`rmwP`) is `Realizes`d by a
-CLIF thread from `cs`, for every initial memory. -/
-theorem realizes_pair {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
+CLIF thread from `cs`, for every initial memory; the realized prefix covers the run (`Covers`). -/
+theorem realizes_pair_cov {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
     (hc : ∀ env p, CompiledLS env p RA cs sA) {lsP : List Lab} {eR eW : Ev} {M : Nat}
     {t' : ArmState × Mon}
     (hr : PRun Policy.arm RA.step (OkPriv RA) (sA, none) (pairLs lsP eR eW M) t')
     (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RA e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR))
     (hkR : eR.k = .acqXR) (hkW : eW.k = .relXW) (ha : eW.addr = eR.addr) (hn : eW.n = eR.n)
     (env : Clif.Env) (p : Clif.Program) (M0 : Bytes) :
-    ∃ k ≤ (pairLs lsP eR eW M).length, ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv),
+    ∃ k ≤ (pairLs lsP eR eW M).length, Covers env p RA cs (pairLs lsP eR eW M) k ∧
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv),
       PC.n = 1 ∧ PC.st 0 0 = .run cs ∧ PC.Runs (CStep env p) ∧
       Realizes (PA1 RA sA (pairLs lsP eR eW M) k) (locs1 lsP eR) M0
         (latestW (PA1 RA sA (pairLs lsP eR eW M) k) (locs1 lsP eR))
         (coL (PA1 RA sA (pairLs lsP eR eW M) k) (locs1 lsP eR)) (rmwP (pairLs lsP eR eW M) k)
         PC [(eR.addr.toNat, eR.n)] M0 φ (fun _ _ _ => True) := by
-  obtain ⟨k, hk, hR⟩ := realizes_compiledLS (n := 1) (env := env) (p := p) (RA := fun _ => RA)
-    (cs := fun _ => cs) (sA := fun _ => sA) (fun _ _ => hc env p)
+  obtain ⟨k, hk, hcv, hR⟩ := realizes_compiledLS_full (n := 1) (env := env) (p := p)
+    (RA := fun _ => RA) (cs := fun _ => cs) (sA := fun _ => sA) (fun _ _ => hc env p)
     (mon := fun _ => none) (ls := fun _ => pairLs lsP eR eW M) (t' := fun _ => t')
     (fun _ _ => hr)
   let ls := pairLs lsP eR eW M
@@ -615,7 +616,79 @@ theorem realizes_pair {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
       simp only [locs1, List.getElem_cons_succ, ← he'q]
       exact (hevP l hl e' he'l).1)
     (fun q h => rfl) (fun i hi j hj hne => by omega)
-  exact ⟨k 0, by have := hk 0 (by omega); simpa using this, PC, φ, h1, h2 0 (by omega), h3, h4⟩
+  exact ⟨k 0, by have := hk 0 (by omega); simpa using this, hcv 0 (by omega), PC, φ, h1,
+    h2 0 (by omega), h3, h4⟩
+
+/-- **`Realizes` for one compiled thread whose run is private plain accesses, then an exclusive
+pair** (`realizes_pair_cov` without the coverage). -/
+theorem realizes_pair {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
+    (hc : ∀ env p, CompiledLS env p RA cs sA) {lsP : List Lab} {eR eW : Ev} {M : Nat}
+    {t' : ArmState × Mon}
+    (hr : PRun Policy.arm RA.step (OkPriv RA) (sA, none) (pairLs lsP eR eW M) t')
+    (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RA e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR))
+    (hkR : eR.k = .acqXR) (hkW : eW.k = .relXW) (ha : eW.addr = eR.addr) (hn : eW.n = eR.n)
+    (env : Clif.Env) (p : Clif.Program) (M0 : Bytes) :
+    ∃ k ≤ (pairLs lsP eR eW M).length, ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv),
+      PC.n = 1 ∧ PC.st 0 0 = .run cs ∧ PC.Runs (CStep env p) ∧
+      Realizes (PA1 RA sA (pairLs lsP eR eW M) k) (locs1 lsP eR) M0
+        (latestW (PA1 RA sA (pairLs lsP eR eW M) k) (locs1 lsP eR))
+        (coL (PA1 RA sA (pairLs lsP eR eW M) k) (locs1 lsP eR)) (rmwP (pairLs lsP eR eW M) k)
+        PC [(eR.addr.toNat, eR.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨k, hk, -, h⟩ := realizes_pair_cov hc hr hevP hkR hkW ha hn env p M0
+  exact ⟨k, hk, h⟩
+
+/-- **A covering prefix of a private run ending in an exclusive pair is the whole run** when the
+CLIF thread cannot stop at its start and steps with two non-fence events: a strict prefix has one
+shared event (the read), at one position. -/
+theorem pair_full {env : Clif.Env} {p : Clif.Program} {RA : Backend.Proof.RL} {cs : Clif.State}
+    {lsP : List Lab} {eR eW : Ev} {M k : Nat} (hcov : Covers env p RA cs (pairLs lsP eR eW M) k)
+    (hk : k ≤ (pairLs lsP eR eW M).length) (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RA e'.addr.toNat)
+    (hgo : ¬ Stop env p (.run cs))
+    (htwo : ∀ evs t', CStep env p (.run cs) evs t' →
+      ∃ hl : 1 < evs.length, evs[0].dir ≠ .F ∧ evs[1].dir ≠ .F) :
+    k = (pairLs lsP eR eW M).length := by
+  refine covers_full hcov hk hgo fun evs t' hs k' hk' ψ hsh hinj => ?_
+  obtain ⟨hl, h0, h1⟩ := htwo evs t' hs
+  have hpos : ∀ i (hi : i < evs.length), evs[i].dir ≠ .F → ψ (0, i) = (lsP.length, 0) := by
+    intro i hi hF
+    obtain ⟨hnp, y, hy, -, hly⟩ := hsh i hi hF
+    rw [evAt_conv] at hy
+    obtain ⟨x, hx, rfl⟩ := Option.map_eq_some_iff.mp hy
+    have hlt : (ψ (0, i)).1 < k' := by
+      obtain ⟨h1, -⟩ := evAt_isSome (show (evAt (evTr ((pairLs lsP eR eW M).take k'))
+        ((ψ (0, i)).1, (ψ (0, i)).2)).isSome from by rw [hx]; rfl)
+      simp [evTr] at h1; omega
+    have hx' := evAt_take_some hx
+    by_cases hq : (ψ (0, i)).1 < lsP.length
+    · obtain ⟨l, hl', hxl⟩ := posP (j := (ψ (0, i)).1) (kk := (ψ (0, i)).2) hx' hq
+      exact absurd (by rw [← hly]; exact hevP l hl' x hxl) hnp
+    · rcases posE (j := (ψ (0, i)).1) (kk := (ψ (0, i)).2) hx' (by omega) with
+        ⟨e1, e2, -⟩ | ⟨e1, -, -⟩
+      · exact Prod.ext e1 e2
+      · simp at hk'; omega
+  exact hinj 0 1 (by omega) hl (by decide) ((hpos 0 (by omega) h0).trans (hpos 1 hl h1).symm)
+
+/-- **`Realizes` for one compiled thread whose run is private plain accesses, then an exclusive
+pair, on the whole run** (`realizes_pair_cov`, `pair_full`). -/
+theorem realizes_pair_full {RA : Backend.Proof.RL} {cs : Clif.State} {sA : ArmState}
+    (hc : ∀ env p, CompiledLS env p RA cs sA) {lsP : List Lab} {eR eW : Ev} {M : Nat}
+    {t' : ArmState × Mon}
+    (hr : PRun Policy.arm RA.step (OkPriv RA) (sA, none) (pairLs lsP eR eW M) t')
+    (hevP : ∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RA e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR))
+    (hkR : eR.k = .acqXR) (hkW : eW.k = .relXW) (ha : eW.addr = eR.addr) (hn : eW.n = eR.n)
+    (env : Clif.Env) (p : Clif.Program) (M0 : Bytes) (hgo : ¬ Stop env p (.run cs))
+    (htwo : ∀ evs t', CStep env p (.run cs) evs t' →
+      ∃ hl : 1 < evs.length, evs[0].dir ≠ .F ∧ evs[1].dir ≠ .F) :
+    ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv),
+      PC.n = 1 ∧ PC.st 0 0 = .run cs ∧ PC.Runs (CStep env p) ∧
+      Realizes (PA1 RA sA (pairLs lsP eR eW M) (pairLs lsP eR eW M).length) (locs1 lsP eR) M0
+        (latestW (PA1 RA sA (pairLs lsP eR eW M) (pairLs lsP eR eW M).length) (locs1 lsP eR))
+        (coL (PA1 RA sA (pairLs lsP eR eW M) (pairLs lsP eR eW M).length) (locs1 lsP eR))
+        (rmwP (pairLs lsP eR eW M) (pairLs lsP eR eW M).length)
+        PC [(eR.addr.toNat, eR.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨k, hk, hcv, h⟩ := realizes_pair_cov hc hr hevP hkR hkW ha hn env p M0
+  obtain rfl := pair_full hcv hk (fun l hl e' he' => (hevP l hl e' he').1) hgo htwo
+  exact h
 
 /-- **On the whole run, the `rmw` relates the `ldaxr`'s read to the `stlxr`'s write.** -/
 theorem rmw_full {lsP : List Lab} {eR eW : Ev} {M : Nat} (hkR : eR.k = .acqXR)
@@ -659,5 +732,90 @@ theorem realizes_rmw : ∃ (n : Nat) (lsP : List Lab) (eR eW : Ev) (t' : ArmStat
   exact ⟨n, lsP, eR, eW, t', hr, hkR, hkW, haR, haW, hnR, hnW, hevP,
     rmw_full hkR hkW fun l hl e he => (hevP l hl e he).2, fun env p M0 =>
     realizes_pair hc hr hevP hkR hkW (haW.trans haR.symm) (hnW.trans hnR.symm) env p M0⟩
+
+/-! ## The whole run -/
+
+theorem bodyR : ∃ st rest, csR.frame.body = st :: rest ∧ st.inst = .atomicRmw .add .i64 {} 0 1 := by
+  have h : csR.frame.body.head?.map (·.inst) = some (.atomicRmw .add .i64 {} 0 1) := by
+    native_decide
+  revert h
+  cases csR.frame.body with
+  | nil => intro h; cases h
+  | cons st rest => intro h; exact ⟨st, rest, rfl, by simpa using h⟩
+
+theorem regR0 : csR.frame.regs 0 = some ⟨.i64, 0⟩ := by native_decide
+
+theorem getR1 : ∃ v, csR.frame.getAs 1 .i64 = .ok v := by
+  have h : (match csR.frame.getAs 1 .i64 with | .ok _ => true | _ => false) = true := by
+    native_decide
+  revert h
+  cases csR.frame.getAs 1 .i64 with
+  | ok v => intro _; exact ⟨v, rfl⟩
+  | _ => intro h; cases h
+
+theorem loadR0 : ∃ old, (withBytes csR (fun _ => some 0)).mem.load {} (Clif.effAddr ⟨.i64, 0⟩ 0)
+    Clif.Ty.i64.bytes Clif.Ty.i64.width = .ok old := by
+  have h : (match (withBytes csR (fun _ => some 0)).mem.load {} (Clif.effAddr ⟨.i64, 0⟩ 0)
+      Clif.Ty.i64.bytes Clif.Ty.i64.width with | .ok _ => true | _ => false) = true := by
+    native_decide
+  revert h
+  cases (withBytes csR (fun _ => some 0)).mem.load {} (Clif.effAddr ⟨.i64, 0⟩ 0)
+    Clif.Ty.i64.bytes Clif.Ty.i64.width with
+  | ok v => intro _; exact ⟨v, rfl⟩
+  | _ => intro h; cases h
+
+theorem stepR0 : (match Clif.step default default (withBytes csR (fun _ => some 0)) with
+    | .next _ => true | _ => false) = true := by native_decide
+
+/-- **The CLIF thread from `csR` steps** (its `atomic_rmw`). -/
+theorem cstep_csR (env : Clif.Env) (p : Clif.Program) : ∃ evs t', CStep env p (.run csR) evs t' := by
+  obtain ⟨st, rest, hb, hi⟩ := bodyR
+  obtain ⟨v, hv⟩ := getR1
+  obtain ⟨old, hold⟩ := loadR0
+  have hb' : (withBytes csR (fun _ => some 0)).frame.body = st :: rest := hb
+  obtain ⟨s', hs⟩ := step_next_of_check (env := env) (p := p) hb'
+    (fun _ _ h => by rw [hi] at h; cases h) (fun _ _ _ h => by rw [hi] at h; cases h) default
+    default stepR0
+  exact ⟨_, _, ClifCStep.cstep_atomicRmw hb' hi regR0 hv hold hs⟩
+
+theorem shapeR1 : evShape csR = [[(.scR, 8), (.scW, 8)]] := by
+  obtain ⟨st, rest, hb, hi⟩ := bodyR
+  simp only [evShape, hb, hi]
+  rfl
+
+theorem notStop_csR (env : Clif.Env) (p : Clif.Program) : ¬ Stop env p (.run csR) := by
+  obtain ⟨st, rest, hb, hi⟩ := bodyR
+  obtain ⟨evs, t', hs⟩ := cstep_csR env p
+  rintro (hd | hc)
+  · exact hd ⟨evs, t', hs⟩
+  · exact not_casRO hb (fun _ _ _ _ _ h => by rw [hi] at h; cases h) hc
+
+/-- **`Realizes` on the compiled `atomic_rmw` through one successful iteration of its loop, on the
+whole run** (T2j): the run of `run_rmw`; every execution of all of it (its `rmw` the run's monitor
+pairs, which relate the `ldaxr`'s read to the `stlxr`'s write, `rmw_full`) is `Realizes`d by a
+CLIF thread from `csR` (`realizes_pair_full`: the CLIF thread steps from `csR` with the
+`atomic_rmw`'s read and write). -/
+theorem realizes_rmw_full : ∃ (n : Nat) (lsP : List Lab) (eR eW : Ev) (t' : ArmState × Mon),
+    PRun Policy.arm RAR.step (OkPriv RAR) (iterN RAR.step n RAR.s0, none) (pairLs lsP eR eW MR) t' ∧
+    eR.k = .acqXR ∧ eW.k = .relXW ∧ eR.addr = 0 ∧ eW.addr = 0 ∧ eR.n = 8 ∧ eW.n = 8 ∧
+    (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAR e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) ∧
+    rmwP (pairLs lsP eR eW MR) (pairLs lsP eR eW MR).length (.thr 0 lsP.length 0)
+      (.thr 0 (lsP.length + MR + 1) 0) ∧
+    ∀ (env : Clif.Env) (p : Clif.Program) (M0 : Bytes),
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧ PC.st 0 0 = .run csR ∧
+        PC.Runs (CStep env p) ∧
+        Realizes (PA1 RAR (iterN RAR.step n RAR.s0) (pairLs lsP eR eW MR)
+            (pairLs lsP eR eW MR).length) (locs1 lsP eR) M0
+          (latestW (PA1 RAR (iterN RAR.step n RAR.s0) (pairLs lsP eR eW MR)
+            (pairLs lsP eR eW MR).length) (locs1 lsP eR))
+          (coL (PA1 RAR (iterN RAR.step n RAR.s0) (pairLs lsP eR eW MR)
+            (pairLs lsP eR eW MR).length) (locs1 lsP eR))
+          (rmwP (pairLs lsP eR eW MR) (pairLs lsP eR eW MR).length) PC [(eR.addr.toNat, eR.n)] M0
+          φ (fun _ _ _ => True) := by
+  obtain ⟨n, lsP, eR, eW, t', hc, hr, hkR, hkW, haR, haW, hnR, hnW, hevP⟩ := run_rmw
+  exact ⟨n, lsP, eR, eW, t', hr, hkR, hkW, haR, haW, hnR, hnW, hevP,
+    rmw_full hkR hkW fun l hl e he => (hevP l hl e he).2, fun env p M0 =>
+    realizes_pair_full hc hr hevP hkR hkW (haW.trans haR.symm) (hnW.trans hnR.symm) env p M0
+      (notStop_csR env p) (fun _ _ hs => nonFence_two shapeR1 (by decide) (by decide) hs)⟩
 
 end Concurrency.RealizeCompiled.WitnessR
