@@ -493,7 +493,15 @@ mrs tmp, tpidr_el0; add x0, x0, tmp`.
   TLS symbol is its `st_value` (its offset in the TLS segment), the address clause pins
   `B.tp = -tlsA file` (`tlsLoader_addr_canon`): the theorem is about the thread whose TLS block
   the CLIF memory's symbols denote. `baseOk_closedLe` shows `BaseOk` of `leBase` satisfiable for
-  programs with `tls_value` (the closed base needs none).
+  programs with `tls_value` (the closed base needs none); `baseOk_le` gives it from any base
+  environment's `BaseOk`.
+* **The shipped chain, hook-free (T1 follow-up)**: the same for the cleanup input
+  (`FV/E2E/DeadCleanupExecTls*.lean`, copies of the baseline files over `inputCleanup`):
+  `E2E.DeadCleanupExecBytes.binary_correct_exec_proven_tls` (`_peak_`),
+  `Link.DeadCleanup.compileExe_correct_tls` (`_peak`; `FV/Link/DeadCleanupExeTls.lean`),
+  `Link.DeadCleanup.compileExe_correct_source_tls` (`_peak`; `FV/Link/DeadCleanupExeSourceTls.lean`)
+  and `Front.bundle_correct_source_tls`, `Front.bundle_correct_raw_tls` (`_peak`;
+  `FV/Front/RawExeTls.lean`). Non-vacuity: `crate-proofs/Crates/DeadCleanupExeTlsWitness.lean`.
 
 ### Indirect calls and function addresses
 
