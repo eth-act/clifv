@@ -694,9 +694,29 @@ they are; the per-thread layers are new files.
       return, every step private), **`funReal_callFull`** (`link_compose` with the callee's return,
       `Ret true = RetL`, the caller's invariant again after it; end condition `Returned`: the
       CLIF thread has returned) and **`realizes_call_full`**: every precise run of `MC2` from the
-      caller's ABI entry is realized entirely or up to the CLIF thread's return. Open generically:
-      layer 4b pausing at `rets`/calls on a linked machine needs a pc-discipline invariant (no
-      item's run leaves the code) and layer 2 the coverage of a returning CLIF thread.
+      caller's ABI entry is realized entirely or up to the CLIF thread's return.
+    * **Layer 4b pausing at calls and returns (done, `ArmAllocPause.lean`)**: `refA_runQ`,
+      **`refines_of_itemSimQ`** (`refines_of_itemSim` that also gives the Arm run up to where the
+      source terminates and the relation of its last state there), `AtCall`, `AtRets`, `Pause`,
+      `MemScopeLSC` (`MemScopeLS` with `call` items), `itemSim_lsC` and
+      **`arm_alloc_refines_lsC`**: every precise run from a `Q`-related state is realized entirely
+      or up to a state related (`RelQ`) to a configuration where the allocated code is done or
+      pauses at a `call` or `rets` item. Witness (`ArmAllocPauseWitness.lean`): `scopeRC`,
+      `not_scopeLS_RC`, `caller_lsC` (the compiled caller of `atomic_load`).
+    * **Open: the generic call theorem** (every compiled function whose callees are compiled
+      program functions or `ExtEvContract` externals realizes its whole run). Needed: (1) layer
+      4b's pc invariant on a linked machine — every state of an item's run before its end is at
+      an instruction line other than `ret` (so a linked machine that switches programs at `ret`
+      lines, like `MC2`, agrees with `R.step` there), per item (`noev_op`, `fence_op`, `oneEv_op`,
+      `rmw_op`, `cas_op`, `goto_op`, `move_op`); (2) layer 2's return coverage — a CLIF thread that
+      returned (`.ret`) realizes the whole VCode trace: `term_segP`'s return case realizes `0`
+      VCode steps although the return's code (moves, `rets`) has no events, so `SimResP`/`SegResP`
+      need variants recording it through `pure_segP`, `mem_segP`, `term_segP`, `simResP_of_seg`,
+      `isel_refines_entryP`; (3) the layers' state relation at a pause (the CLIF state at its
+      `call` with its arguments in the Arm registers, for the callee's `CompiledE`) and after the
+      return (layer 2's `Match` after the call from the callee's results and preserved registers),
+      which the composition theorems (`ThreadCompose.isel_alloc_refinesP`, `arm_isel_refinesE'`)
+      do not export; `resumeQ` gives layer 4b's side of the latter.
       Compiled `atomic_rmw`/`atomic_cas` callees from their ABI entry: done (`CallLLSCEntry.lean`: `compiledE_R`, `compiledE_C`,
       `funReal_rmw`, `funReal_cas` via `funReal_calleeX`); a compiled caller of the rmw callee is open.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
@@ -856,7 +876,7 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2c (#301) | Litmus tests in Lean + qemu harness | **done** |
 | T2d (#302) | Per-thread event semantics of the Arm model: the run of one thread as a trace of memory events with an exclusive monitor (failing `stlxr`, the `cbnz` retry); the existing single-core model is that semantics against an SC memory with a monitor that never fails | **done** |
 | T2e (#303) | Program level: multi-threaded `Clif.run` (`ClifThread.MTRun`), program-level DRF-SC (race-freedom in every contract-consistent execution, initial writes `co`-first), replay of SC executions as interleaving runs, and the program-level statement `ProgE2E.program_correct` with the per-thread contract `Realizes` (§3c) | **done** |
-| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference; §3e) | layer 0 **done** (`ThreadRefine`: reduction `realizes_of_threads`, composition `Refines.trans`); layer 1 **done** (precise footprints `ArmInstFoot`, VCode thread semantics `VCodeThread.VTStep`); layer 1b **done** (event kinds `VCodeEvents.cEvs_kinds`); precise Arm labels (`ArmPrecise`) and private coherence (`PrivCoh.privCoh_of_consistent`) **done**; layer 3 **done** (`PrepThread.prep_refines_csem`); layer 4a **done** (`AllocThread.alloc_refines`); layer 4b run level and event-free items **done** (`ArmAllocThread.refines_of_itemSim`, `arm_alloc_refines_noev`); layer 2 steps 2a–2d **done** (`VCodeAddr.cEvs_avoid`, `SegRun.vtrun_patch`, `SegShape.segShapeCheck`, `IselClif.access_in_events`); layer 4b's LL/SC loops **done** (`ArmAllocThread.rmw_op`, `cas_op`, `arm_alloc_refines_loop`) and block-ending branches **done** (`goto_op`, `arm_alloc_refines_br`); 2e and 4b's other items with events open |
+| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference; §3e) | layer 0 **done** (`ThreadRefine`: reduction `realizes_of_threads`, composition `Refines.trans`); layer 1 **done** (precise footprints `ArmInstFoot`, VCode thread semantics `VCodeThread.VTStep`); layer 1b **done** (event kinds `VCodeEvents.cEvs_kinds`); precise Arm labels (`ArmPrecise`) and private coherence (`PrivCoh.privCoh_of_consistent`) **done**; layer 3 **done** (`PrepThread.prep_refines_csem`); layer 4a **done** (`AllocThread.alloc_refines`); layer 4b run level and event-free items **done** (`ArmAllocThread.refines_of_itemSim`, `arm_alloc_refines_noev`); layer 2 steps 2a–2e **done** (`VCodeAddr.cEvs_avoid`, `SegRun.vtrun_patch`, `SegShape.segShapeCheck`, `IselClif.access_in_events`, assembly from a match `IselRefines.isel_refines`); layer 4b's LL/SC loops **done** (`ArmAllocThread.rmw_op`, `cas_op`, `arm_alloc_refines_loop`), block-ending branches **done** (`goto_op`, `arm_alloc_refines_br`), plain loads/stores **done** (`arm_alloc_refines_ls`, the x16 stack offsets `arm_alloc_refines_lsx`); all layers on the whole run **done** (T2j: `RealizeCompiled.realizes_compiledLS_full`); calls: the linking induction **done** (`CallCompose.link_compose`), compiled callers/callees on witnesses **done** (`CallSeg.WitnessC.realizes_call_full`), layer 4b pausing at calls and returns **done** (`ArmAllocThread.arm_alloc_refines_lsC`); open: the generic call theorem (layer 4b's pc invariant on linked machines, layer 2's return coverage, the layers' relation at a call and after its return) |
 | T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem (§3d), and the program-level chain `program_correct_rust` | **done** |
 | T2g (#305) | Widening: LSE atomics (`has_lse`: not emitted in our configuration, covered by the table, `Lse.lse_maps`), the full `aarch64.cat` (`Armv8Full`, monotonicity `consistent_frag`), `i128` atomics (rejected by cg_clif) | **done** |
 | T2i (#317) | Mixed-size accesses (a mixed-size model instead of `NoOverlap`) | open |
