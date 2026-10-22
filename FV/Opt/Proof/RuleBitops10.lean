@@ -98,8 +98,8 @@ attribute [local opt_match] byteSwapBinaryOpcode_eq byteSwapBinaryNode
 /-- Normalize immediate encodings and intermediate shift results before applying the
 closed-width identities. Normalize both numeral encodings, without unfolding `bswap`. -/
 macro "byte_swap_bits" : tactic => `(tactic| (
-  simp only [asU64_imm64OfBits (t := .i32) (by decide),
-    asU64_imm64OfBits (t := .i64) (by decide),
+  simp only [asU64_imm64OfBits (t := .i32) (by decide) (by decide),
+    asU64_imm64OfBits (t := .i64) (by decide) (by decide),
     ← Int.cast_ofNat_Int, Int.natCast_inj, toNat_eq_iff_ofNat] at *
   opt_destruct
   all_goals subst_vars
