@@ -135,20 +135,34 @@ source delta, import closure and unchanged relevant executable hashes; rerun
 current normal keys/trust, affected executable ownership and affected consumer
 cohorts. Never relabel historical passes. Unknown dependencies require reruns.
 
-Division/remainder implementation is active on the preserved delivery view.
-The first complete source class is a single returned division/remainder, with
-all four operations and arbitrary operands, including zero and signed overflow.
-Its source/record/binder/body/ABI-entry/return/trap domain and additive paired
-consumer compile; 48 fixed ABI/cleanup pipeline witnesses and exact arbitrary-input
-source outcomes compile. The old pure-return signatures remain wrappers over a
-shared local-step composition; division is never declared pure or no-trap.
-Boundary checkpoint f4c0bc72 is remotely backed. Full per-PR runtime/native/link/
-generated-proof/trust/retention validation is pending; this is not a landing receipt.
-Continue mixed/colored/sunk trap-prefix bodies after this class, then all remaining
-original #140 obligations. Do not stop at this first class.
+The complete singleton returned division/remainder class passes current author
+gates at `b1ef0c67` on `5c1351a0`, reconciled onto `aa81ed96` with documentation
+changes only. [Current and historical evidence](../research/stock-div-production-activation.md)
+records25 primary/27 ownership gates, actual normal/trust/native/runtime/encoder/
+identity/stage/consumer/retention/verified-example observations and remote
+backup `a2c9d0d8`. Every actual record retains its source head.
+The default compiler/checker/linker/generated-proof consumers include all four
+operations and real zero/overflow traps; original arbitrary operands/slots and
+old pure theorem variants remain. Source bridges retain8/16/32/64; production
+activation covers32/64 across six ABIs, both cleanup modes and both real allocators.
 
-Next: division/
-remainder; complete original widths/ABIs; every unchanged original #140 control/
+Continue immediately with mixed scalar prefixes followed by a returned division.
+The universal return-and-trap domain and seven split proof modules compile, with
+all21 printed roots standard-only. Complete96 pipeline/source-observation
+witnesses, runtime29functions, linked/native/generated-consumer updates are saved
+but not yet production-validated/activated. Constant-divisor fixtures must observe
+790/791 rather than counting saved lemmas as executed coverage.
+
+A concrete build boundary can be delivered alongside the next implementation:
+extract unchanged VCode outcomes, their prefix lemmas, ArgsAtEntry and Reach into
+a stable interface; retain names/definitions and LowerSim re-exports. Isolated
+interface/PrepareSound/Statement/LowerSim copies compile; full affected gates
+are still required. Coordinate the shared-file boundary on140. This avoids
+rebuilding generated interpreter proofs after unrelated simulation additions.
+Do not stop at either this first trapping class or a performance-only packet.
+
+Next: mixed scalar prefixes and returned final division; broader colored/sunk
+instructions; complete original widths/ABIs; every unchanged original #140 control/
 memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligation.
 Never exclude original accepted compare/cast syntax to simplify composition.
 Universal successful lowering and downstream completeness remain. Fallback is
