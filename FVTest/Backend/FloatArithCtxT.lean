@@ -10,7 +10,8 @@ check `ctxOkT` (by `native_decide`, witness only), so `ctxOkT_sound` gives `CtxI
 the ISLE `lower` term fires each of the eleven roots of `floatArithRootRule`
 (`lowerRulesCorrectFT_program`) on its instructions. Its instructions are in the arithmetic
 scope `InstScopeTA` (not in `InstScopeT`), so `lower_nonroot_nomatchTA` excludes the roots
-outside the closure on them, e.g. the deferred `fcmp` root `rule_lower_2176`.
+outside the closure on them; the `fcmp` root `rule_lower_2176` is S11f's
+(`LowerRulesCorrectFC`, witness `FloatCmpCtxT.lean`).
 `lake build FVTest.Backend.FloatArithCtxT`.
 -/
 
@@ -92,20 +93,11 @@ theorem instScopeTA_float_arith : InstScopeTA (ctxStOfA fArith).1 := by
 #guard !Compile.instET (.float .fadd .f32 [0, 1]) && Compile.instETA (.float .fadd .f32 [0, 1])
 #guard !Compile.instETA (.float (.fcmp .eq) .f32 [0, 1])
 
-/-- **`lower_nonroot_nomatchTA` applies to this context**: the deferred `fcmp` root
-(`rule_lower_2176`, outside the closure) matches none of its instructions, e.g. the `fadd.f32`
-(instruction 0). -/
-theorem float_arith_fcmp_nomatch (cfg m s0 env s1) :
-    (Isle.Interp.matchRule program (Backend.sem (ctxStOfA fArith).1) cfg m rule_lower_2176
-      [V.inst 0]).run s0 ≠ .ok (some env, s1) := by
-  obtain ⟨info, hi⟩ : ∃ info, (ctxStOfA fArith).1.insts[0]? = some info :=
-    Option.isSome_iff_exists.mp (by native_decide)
-  obtain ⟨inst, hc⟩ : ∃ inst, info.clif = some inst := by
-    refine Option.isSome_iff_exists.mp ?_
-    have : ((ctxStOfA fArith).1.insts[0]?.bind (·.clif)).isSome = true := by native_decide
-    rw [hi] at this
-    exact this
-  exact lower_nonroot_nomatchTA ctxInvT_float_arith instScopeTA_float_arith (by native_decide) hi
-    hc (r := rule_lower_2176)
-    (by rw [show TId.lower = 686 from rfl, data_program.r686]; decide +kernel) (by decide)
-    cfg m s0 env s1
+/-- **The deferred `fcmp` root is now a proven closure root (S11f)**: `rule_lower_2176` is in
+`closureRootIds`, is a `floatCmpRootRule` (proven over float-capable contexts by
+`lowerRulesCorrectFC_program`, see `FloatCmpCtxT.lean`), and is not a `floatArithRootRule`, so
+the arithmetic dispatch excludes it via `hfa`. -/
+theorem float_cmp_root_closure :
+    closureRootIds.contains rule_lower_2176.id = true ∧ floatCmpRootRule rule_lower_2176 = true ∧
+      floatArithRootRule rule_lower_2176 = false :=
+  ⟨by native_decide, by native_decide, by native_decide⟩

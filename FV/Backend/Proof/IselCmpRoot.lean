@@ -310,7 +310,6 @@ theorem is_nonzero_cmp_okT {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F
       isel_inv_simp [] at *
       isel_destruct
       subst_vars
-      trace_state
       obtain ⟨h652⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 652 _ _ _ _) := ⟨‹_›⟩
       refine (emit_icmp_okT hp hc hR hctx (hn := by omega) hai hbi hvb h652).weaken ?_
       rintro fr ρ bb hh hdf ⟨v, hv, rfl⟩

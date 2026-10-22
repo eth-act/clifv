@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselCmpRoot
+import FV.Backend.Proof.IselFamALUATI
 import FV.Backend.Proof.IselFloatCmpEmit
 
 /-!
@@ -17,30 +18,6 @@ open Backend Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 20000
 
-/-! ## The matched instruction -/
-
-/-- The instruction the `fcmp` root matched (`InstructionData::FloatCompare`). -/
-theorem fcmp_front {p : Program} (hp : Data p) {f : Clif.Function} {ctx : Ctx}
-    (hctx : CtxInvT f ctx) {ii : Nat} {info : IInfo} {inst : Clif.Inst}
-    (hi : ctx.insts[ii]? = some info) (hic : info.clif = some inst) {r : Rule}
-    {tyPat xPat yPat ccPat : Pattern} {tf to : Term}
-    (hargs : r.args = [.term 18 209 [tyPat, .term 152 2458 [.term 151 2396 [],
-      .term 147 1614 [xPat, yPat], ccPat]]])
-    (htf : termOf p 2458 = .ok tf) (hkf : tf.kind = .enumVariant 11)
-    (hto : termOf p 2396 = .ok to) (hko : to.kind = .enumVariant 112)
-    {cfg : Config} {m : Nat} {s s1 : LState × Array RuleId} {env : Interp.Env V}
-    (h : (matchRule p (sem ctx) cfg (m + 1) r [.inst ii]).run s = .ok (some env, s1)) :
-    ∃ cc ty x y, inst = .fcmp cc ty [x, y] ∧ ty.isFloat ∧ fccOk cc = true ∧
-      info.data = .data 152 11 [.data 151 112 [], .values [x, y], .data 144 (fccIdx cc) []] := by
-  obtain ⟨info', fs, hi', hd⟩ := root_match_data hp ctx hargs hp.t2458 term_2458_kind
-    hp.t2396 term_2396_kind h
-  rw [hi] at hi'
-  cases hi'
-  have hdat := hctx.data ii info inst hi hic
-  rw [hd] at hdat
-  obtain ⟨cc, ty, x, y, rfl, hfl, hok, -⟩ := instData_fcmp_inv hdat
-  exact ⟨cc, ty, x, y, rfl, hfl, hok, hd⟩
-
 /-! ## The roots -/
 
 section Root
@@ -56,22 +33,36 @@ theorem fcmp_okT : LowerRuleOkT isem MR env cp p rule_lower_2176 := by
     heval
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
   obtain ⟨N, rfl⟩ : ∃ N, n = N + 400 := ⟨n - 400, by omega⟩
-  obtain ⟨cc, ty, x, y, rfl, -, hok, -⟩ := fcmp_front hp hctx hi hic rfl hp.t2458
-    term_2458_kind hp.t2396 term_2396_kind (m := m' + 9) hmatch
-  have hp' := hp
   isel_inv' hp [] at hmatch heval
-  have h655 := ‹ApplyInternal _ _ _ _ 123 655 _ _ _ _›
-  have h715 := ‹ApplyInternal _ _ _ _ 27 715 _ _ _ _›
-  have hE := emit_fcmp_okT hp' hco hctx (by omega) hok hvb h655
-  obtain ⟨m0, cond, hflag, rfl, hst⟩ := lcrb_ok hp' hco (hn := by omega) hE.shape h715
-  isel_call hp' hco [cmp_output_reg_ok]
+  rename_i hins hdd h655
+  rw [hi, Option.some.injEq] at hins
+  subst hins
+  have hdat := hctx.data ii _ inst hi hic
+  rw [← hdd] at hdat
+  obtain ⟨cc, ty, x, y, rfl, -, hok, hd2⟩ := instData_fcmp_inv hdat
+  simp only [List.cons.injEq] at hd2
+  obtain ⟨hv7, hvcc⟩ := hd2
+  subst hv7
+  obtain ⟨hvcc, -⟩ := hvcc
+  subst hvcc
+  isel_inv_simp [] at *
+  isel_destruct
+  subst_vars
+  obtain ⟨h655⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 655 _ _ _ _) := ⟨‹_›⟩
+  obtain ⟨h715⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 715 _ _ _ _) := ⟨‹_›⟩
+  have hE := emit_fcmp_okT (F := F) (isem := isem) hp hco hctx (hn := by omega) hok hvb h655
+  obtain ⟨m0, cond, hflag, rfl, hst⟩ := lcrb_ok hp hco (hn := by omega) hE.shape h715
+  isel_call hp hco [cmp_output_reg_ok]
   obtain ⟨hmono, ms, hf, hsem⟩ := condCode_lcrb hR hE hflag
   rw [hst]
   refine ⟨ms, hf.emitted, _, rfl, lowerInstOk_runs hMR hf.mono hf.defs rfl ?_⟩
   intro fr cm ρ w vals cm' _ hh hdf ho
-  obtain ⟨t, rfl, -, hT⟩ := evalInst_fcmp_ok ho
+  obtain ⟨t, hv, hcm, hT⟩ := evalInst_fcmp_ok ho
+  subst hcm
+  subst hv
   obtain ⟨hu, hr⟩ := hsem fr ρ t hh hdf hT
-  exact ⟨rfl, hu, .inl hmono, _, rfl, (hr w).imp fun ρ' _ _ h => by rw [h]; exact vholds_bool8 _⟩
+  exact ⟨rfl, hu, .inl hmono, _, rfl, (hr w).imp fun ρ' _ _ h => by
+    rw [h]; exact vholds_bool8 _⟩
 
 set_option maxHeartbeats 8000000 in
 /-- **`uextend (fcmp)`** (`rule_lower_1283`, `lower.isle:1283`): the condition of `emit_fcmp`
@@ -82,33 +73,43 @@ theorem uextend_fcmp_okT : LowerRuleOkT isem MR env cp p rule_lower_1283 := by
   obtain ⟨m', rfl⟩ : ∃ m', m = m' + 10 := ⟨m - 10, by omega⟩
   obtain ⟨N, rfl⟩ : ∃ N, n = N + 400 := ⟨n - 400, by omega⟩
   isel_inv' hp [] at hmatch heval
+  rename_i hins hdd h655 hres
+  rw [hi, Option.some.injEq] at hins
+  subst hins
+  have hdat := hctx.data ii _ inst hi hic
+  rw [← hdd] at hdat
+  obtain ⟨uty, z, rfl, hety, rfl⟩ := instData_uextend_inv hdat
+  isel_inv_simp [] at *
+  isel_destruct
+  subst_vars
+  isel_inv_simp [] at *
+  isel_destruct
+  subst_vars
   rename_i hj _ hi2 hd2
-  rw [hi, Option.some.injEq] at hj
-  subst hj
-  obtain ⟨cl, hcl, hdat2⟩ := ctxInv_clif hctx hj hi2
+  obtain ⟨cl, hcl, hdat2⟩ := ctxInv_clifTI hctx hj hi2
   rw [← hd2] at hdat2
-  obtain ⟨cc, ty', x, y, rfl, -, hok, -⟩ := instData_fcmp_inv hdat2
-  obtain ⟨uty, z, rfl, hety, rfl⟩ := instData_uextend_inv
-    (hctx.data ii info inst hi hic)
+  obtain ⟨cc, ty', x, y, rfl, -, hok, hd3⟩ := instData_fcmp_inv hdat2
+  simp only [List.cons.injEq] at hd3
+  obtain ⟨hv7, hvcc⟩ := hd3
+  subst hv7
+  obtain ⟨hvcc, -⟩ := hvcc
+  subst hvcc
   isel_inv_simp [] at *
   isel_destruct
   subst_vars
-  isel_inv_simp [] at *
-  isel_destruct
-  subst_vars
-  have hp' := hp
   obtain ⟨h655⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 655 _ _ _ _) := ⟨‹_›⟩
   obtain ⟨h715⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 27 715 _ _ _ _) := ⟨‹_›⟩
-  have hE := emit_fcmp_okT hp' hco hctx (by omega) hok hvb h655
-  obtain ⟨m0, cond, hflag, rfl, hst⟩ := lcrb_ok hp' hco (hn := by omega) hE.shape h715
-  isel_call hp' hco [cmp_output_reg_ok]
+  have hE := emit_fcmp_okT (F := F) (isem := isem) hp hco hctx (hn := by omega) hok hvb h655
+  obtain ⟨m0, cond, hflag, rfl, hst⟩ := lcrb_ok hp hco (hn := by omega) hE.shape h715
+  isel_call hp hco [cmp_output_reg_ok]
   obtain ⟨hmono, ms, hf, hsem⟩ := condCode_lcrb hR hE hflag
   rw [hst]
   refine ⟨ms, hf.emitted, _, rfl, lowerInstOk_runs hMR hf.mono hf.defs rfl ?_⟩
   intro fr cm ρ w vals cm' _ hh hdf ho
   obtain ⟨v, hzv, -, rfl, rfl⟩ := evalInst_uextend_ok ho
   obtain ⟨vals2, hev, hl⟩ := hdf.1 z _ _ _ v hj hi2 hcl rfl hzv
-  obtain ⟨t, rfl, -, hT⟩ := evalInst_fcmp_ok (hev default)
+  obtain ⟨t, hv, -, hT⟩ := evalInst_fcmp_ok (hev default)
+  subst hv
   have hv2 := lookup_zip_single hl
   subst hv2
   obtain ⟨hu, hr⟩ := hsem fr ρ t hh hdf hT
