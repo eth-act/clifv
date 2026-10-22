@@ -118,7 +118,6 @@ theorem bodyPart_ok {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)
     · cases h
     rename_i data hd
     refine ⟨data, hS, ?_, h⟩
-    replace hd := tryCallData_of_C hx hd
     unfold DataOk
     split
     · rename_i fn args et ht; exact absurd ht (hn1 fn args et)
@@ -532,7 +531,7 @@ theorem loop_run {f : Clif.Function} {vc : VCode} (hE : Compile.functionE f = tr
       simp only [Option.map_some, Option.some.injEq, Nat.zero_add] at hx
       subst hx
       have hx : f.externs.all (Compile.sigE ·.2.sig) = true := by
-        simp only [Compile.functionE, Bool.and_eq_true] at hE; exact hE.1.1.2
+        simp only [Compile.functionE, Bool.and_eq_true] at hE; exact hE.1.2
       obtain ⟨L, hL⟩ := blockStep sp (sp.ctxE hE) hx hpb hB hI hs
       exact ⟨_, hL⟩
   · intro x b b' hb'

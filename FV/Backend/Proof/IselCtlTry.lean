@@ -293,13 +293,14 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitV
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
-  have hsI : sigIntB ext.sig = true := hsig ▸ exnTableOpnd_int he
+  have hsI := exnTableOpnd_int he
+  have hsE : sigIntB ext.sig = true := by rw [hsig]; exact hsI
   ctl_inv [*, rule_lower_2542, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff hsI] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI, ctor_gen_try_call_rets_iff hsE] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
+    ctor_gen_try_call_rets_iff hsI, ctor_gen_try_call_rets_iff hsE, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
     isel_destruct <;> subst_vars)
   have hx' := ‹ctx.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -314,6 +315,7 @@ theorem try_bl_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : BitV
   simp only [ctor_gen_call_args_gen _ _ _ hb hl, mapM_single_map, Option.some.injEq,
     exists_eq_left'] at *
   isel_destruct; subst_vars
+  try (simp only [ctor_gen_try_call_rets_iff hsE] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_info_gen _ _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
@@ -524,13 +526,14 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
   clear hfirst
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
-  have hsI : sigIntB ext.sig = true := hsig ▸ exnTableOpnd_int he
+  have hsI := exnTableOpnd_int he
+  have hsE : sigIntB ext.sig = true := by rw [hsig]; exact hsI
   ctl_inv [*, rule_lower_2551, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff hsI, ctor_box_external_name_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI, ctor_gen_try_call_rets_iff hsE, ctor_box_external_name_iff] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
+    ctor_gen_try_call_rets_iff hsI, ctor_gen_try_call_rets_iff hsE, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
     ctor_box_external_name_iff] at * <;> isel_destruct <;> subst_vars)
   have hx' := ‹ctx.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -548,6 +551,7 @@ theorem try_got_ruleOk {p : Program} (hp : Data p) (hpT : TryData p) {Rd F : Bit
   isel_destruct; subst_vars
   have h570 := ‹ApplyInternal _ _ _ _ 27 570 _ _ _ _›
   obtain ⟨rfl, hs0⟩ := kL _ (by omega) _ _ _ _ _ h570
+  try (simp only [ctor_gen_try_call_rets_iff hsE] at *; isel_destruct; subst_vars)
   simp only [ctor_gen_call_ind_info_gen _ _ _ _ _ _ hl, Nat.reduceEqDiff, Nat.reduceLT,
     ite_true, ite_false, Option.some.injEq] at *
   isel_destruct; subst_vars
