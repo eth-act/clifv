@@ -9,6 +9,7 @@ import FV.Backend.Proof.StockScalarBitDomain
 import FV.Backend.Proof.StockScalarPopcountDomain
 import FV.Backend.Proof.StockScalarMinMaxDomain
 import FV.Backend.Proof.StockScalarCmpDomain
+import FV.Backend.Proof.StockScalarHighMulDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -143,6 +144,21 @@ theorem cmpBodyEligible_sound {stm : Clif.Stmt} (checked : cmpBodyEligible stm =
     all_goals try contradiction
     next cc ty x y => exact Or.inr ⟨cc,ty,x,y,rfl⟩
 
+/-- Original signed/unsigned high-multiply syntax derives the universal mixed source domain. -/
+theorem highmulBodyEligible_sound {stm : Clif.Stmt} (checked : highmulBodyEligible stm = true) :
+    Stock.Proof.HighMulBody.Family stm.inst := by
+  simp only [highmulBodyEligible,Bool.or_eq_true] at checked
+  rcases checked with old | highmul
+  · exact Or.inl (cmpBodyEligible_sound old)
+  · cases inst : stm.inst <;> simp only [highmulEligible,inst] at highmul
+    all_goals try contradiction
+    next op ty x y =>
+      cases op <;> simp only [highmulEligible] at highmul
+      all_goals try contradiction
+      all_goals first
+        | exact Or.inr ⟨true,_,_,_,rfl⟩
+        | exact Or.inr ⟨false,_,_,_,rfl⟩
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
@@ -154,10 +170,10 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     have sourceShape : ∃ xs, b.term = .ret xs := by
       cases term : b.term <;> simp_all
     obtain ⟨xs,ret⟩ := sourceShape
-    have families : ∀ stm ∈ b.body, Stock.Proof.CmpBody.Family stm.inst := by
+    have families : ∀ stm ∈ b.body, Stock.Proof.HighMulBody.Family stm.inst := by
       intro stm member
       have supported := List.all_eq_true.mp body stm member
-      exact cmpBodyEligible_sound supported
+      exact highmulBodyEligible_sound supported
     have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
       apply List.find?_eq_none.mpr
       intro p member
@@ -168,7 +184,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       intro any
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
-    exact domain_of_cmp (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
+    exact domain_of_highmul (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
   next => cases eligible
 
 

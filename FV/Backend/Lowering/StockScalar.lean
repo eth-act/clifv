@@ -79,9 +79,17 @@ def cmpEligible (stm : Clif.Stmt) : Bool :=
 
 def cmpBodyEligible (stm : Clif.Stmt) : Bool := minmaxBodyEligible stm || cmpEligible stm
 
+/-- High multiplication extends the original source family; prior selectors stay. -/
+def highmulEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .binary .smulhi ty _ _ | .binary .umulhi ty _ _ => ty == .i32 || ty == .i64
+  | _ => false
+
+def highmulBodyEligible (stm : Clif.Stmt) : Bool := cmpBodyEligible stm || highmulEligible stm
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all cmpBodyEligible &&
+  | [b] => b.body.all highmulBodyEligible &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
