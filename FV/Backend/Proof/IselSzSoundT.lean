@@ -436,7 +436,7 @@ theorem costAtT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab
     unfold cApply at hca
     split at hca
     · rename_i hb
-      exact (holds2_bot hb hvs).elim
+      exact (holds2_botT hb hvs).elim
     cases ht : termOf p t with
     | error e =>
       rw [applyTerm.eq_2] at h

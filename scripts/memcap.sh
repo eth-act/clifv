@@ -7,6 +7,14 @@
 #        FV_MEMCAP_OFF=1 runs <cmd> without a scope (CI runners: one job per VM, and swap must
 #        stay usable for the modules that peak above the runner's RAM; .github/workflows/full-gate.yml)
 #
+# Optional (scripts/lake-serial-build.py sets both): FV_MEMCAP_UNIT=<name> names the scope
+# <name>.scope (default: systemd's run-*.scope); FV_MEMCAP_STATS=<file> makes the scope write, when
+# <cmd> exits, `peak <bytes>` (the scope's cgroup memory.peak: the real peak of lean and every
+# other process in it, not lake's RSS) and its memory.events `oom`/`oom_kill` counters to <file>.
+# `oom` > 0 means the scope hit its own cap; a scope killed from outside (systemd-oomd under
+# global memory pressure, or the slice's limit) writes either no file or `oom 0`.
+# The watchdog fallback writes the same file (peak = polled tree RSS, `oom 1` if it killed).
+#
 # Fallback: if the systemd user manager is unreachable (e.g. user@<uid> was OOM-killed and not
 # restarted, so `systemd-run --user` says "Failed to connect to bus"), <cmd> runs in its own
 # session/process group under a watchdog that polls the process tree's resident memory every
@@ -37,7 +45,19 @@ if systemctl --user show-environment >/dev/null 2>&1; then
   # sets MemoryMax/MemoryHigh for clifv as a whole, and a runaway kills a clifv module (the
   # scheduler retries it) instead of the global OOM killer picking random processes.
   # Without that unit file systemd creates an uncapped slice, i.e. today's behaviour.
-  exec systemd-run --user --scope --quiet --slice="${FV_SLICE:-clifv.slice}" \
+  opts=()
+  if [ -n "${FV_MEMCAP_UNIT:-}" ]; then opts=(--unit="$FV_MEMCAP_UNIT"); fi
+  if [ -n "${FV_MEMCAP_STATS:-}" ]; then
+    # A small sh stays in the scope while <cmd> runs and reads the scope's counters at the end;
+    # OOMPolicy=continue keeps it alive when the kernel kills a process at the cap (the default
+    # policy stops the whole scope, so <cmd> then fails with 143 and no file is written).
+    opts+=(-p OOMPolicy=continue)
+    # shellcheck disable=SC2016
+    set -- sh -c '"$@"; rc=$?; d=/sys/fs/cgroup$(sed -n "s/^0:://p" /proc/self/cgroup)
+      { printf "peak %s\n" "$(cat "$d/memory.peak")"; grep -E "^oom(_kill)? " "$d/memory.events"
+      } > "$FV_MEMCAP_STATS" 2>/dev/null; exit $rc' memcap "$@"
+  fi
+  exec systemd-run --user --scope --quiet --slice="${FV_SLICE:-clifv.slice}" ${opts[@]+"${opts[@]}"} \
     -p MemoryMax="${FV_MEMCAP:-16G}" -p MemorySwapMax=0 -p TasksMax=infinity "$@"
 fi
 # shellcheck disable=SC2016
@@ -117,12 +137,24 @@ def reap():  # reap the command and any orphans reparented to us
         if pid == child:
             status = st
 
+peak = 0
+
+def stats(oom):
+    path = os.environ.get("FV_MEMCAP_STATS")
+    if path:
+        try:
+            with open(path, "w") as f:
+                f.write(f"peak {peak}\noom {oom}\noom_kill {oom}\n")
+        except OSError:
+            pass
+
 while True:
     reap()
     if status is not None:
         break
     procs = tree()
     used = sum(map(rss, procs))
+    peak = max(peak, used)
     if used > cap:
         for _ in range(500):
             try:
@@ -141,8 +173,11 @@ while True:
                 break
         print(f"memcap: process tree RSS {used / 2**30:.2f} GiB exceeded cap {cap_s}; killed",
               file=sys.stderr, flush=True)
+        stats(1)
         sys.exit(137)
     time.sleep(0.2)
+
+stats(0)
 
 if os.WIFSIGNALED(status):
     sig = os.WTERMSIG(status)

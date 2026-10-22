@@ -25,10 +25,6 @@ covered instructions, `emit`'s instruction, or `gen_call_args`' stores of argume
 returns what `CtorResT` states (the shapes `actor` relies on).
 -/
 
-namespace Backend.Proof.Cov
-
-open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
-
 /-- The result of extern constructor `id` on `args`, as `actor` needs it. -/
 def CtorResT (id : TermId) (args : List V) (v : V) : Prop :=
   if id == TId.temp_writable_reg then
@@ -77,7 +73,7 @@ structure CtorCovT (id : TermId) (args : List V) (st : LState) (v : V) (st' : LS
   res : CtorResT id args v
 
 /-- `CtorCovT` of every successful result. -/
-def CtorCovP (st : LState) (id : TermId) (args : List V) (r : ExtResult (V × LState)) : Prop :=
+def CtorCovPT (st : LState) (id : TermId) (args : List V) (r : ExtResult (V × LState)) : Prop :=
   ∀ v st', r = .ok (v, st') → CtorCovT id args st v st'
 
 /-! ## Helpers -/
@@ -110,10 +106,10 @@ theorem externCtor_covT (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? x = some r →
     · cases h
   · right
     revert h v st'
-    apply externCtor_split _ (CtorCovP st)
+    apply externCtor_split _ (CtorCovPT st)
     all_goals
       intros
-      unfold CtorCovP
+      unfold CtorCovPT
       intro v st' h
       try dsimp only at h
       repeat' (split at h)

@@ -27,16 +27,9 @@ evaluation of patterns, expressions, rules and table terms describes every run. 
 about the extern helpers and the oracle are the fields of `CovModelT` (`IselCovExt`).
 -/
 
-namespace Backend.Proof.Cov
-
-open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
-
 variable {S : Clif.Inst → Bool} {iOps fOps : List Nat} {f : Clif.Function} {ctx : Ctx}
 
 /-! ## Positional descriptions -/
-
-theorem kind_and_15 (r : Reg) : r.kind &&& 15 ≠ 0 := by
-  rcases kind_cases r with h | h | h | h <;> rw [h] <;> decide
 
 theorem deepOk_fieldsT {d : Nat × Bool} {t k : Nat} {vs : List V} (h : DeepOk d (.data t k vs)) :
     ∀ w ∈ vs, γT S iOps fOps f ctx (.flat d.1 d.2) w := by
@@ -148,13 +141,6 @@ theorem aunS_soundT {a : AW} {t k : Nat} {vs : List V} (h : γT S iOps fOps f ct
 
 /-! ## Integer constants -/
 
-theorem normInt_small (ty : TypeId) {i : Int} (h0 : 0 ≤ i) (h1 : i < 128) : normInt ty i = i := by
-  unfold normInt
-  split
-  · rename_i t _
-    cases t <;> dsimp only <;> rw [Int.emod_eq_of_lt h0 (by simp; omega)] <;> simp <;> omega
-  · rfl
-
 /-- A constant's value is described by `aint`. -/
 theorem aint_soundT (ty : TypeId) (i : Int) : γT S iOps fOps f ctx (aint i) ((sem ctx).int ty i) := by
   unfold aint
@@ -198,12 +184,6 @@ section Pat
 variable {p : Program} (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
   (md : CovModelT aext actor apre aOracle S iOps fOps p f ctx)
 
-theorem unData_eq {ty : TypeId} {v : V} {k : Nat} {fs : List V}
-    (h : (sem ctx).unData ty v = some (k, fs)) : v = .data ty k fs := by
-  cases v <;> simp [sem] at h
-  obtain ⟨rfl, rfl, rfl⟩ := h
-  rfl
-
 theorem primOk_soundT {a : AW} {ty : TypeId} {n : String} {c : V} (hpo : primOk a ty n = false)
     (hc : primTy ty n = some c) (hv : γT S iOps fOps f ctx a c) : False := by
   unfold primOk at hpo
@@ -218,10 +198,6 @@ theorem primOk_soundT {a : AW} {ty : TypeId} {n : String} {c : V} (hpo : primOk 
       exact hpo _ ht' rfl
     | _ => simp at hpo
   | _ => simp at hpo
-
-theorem eq_sem_iff {a b : V} : (sem ctx).eq a b = true ↔ a = b := by
-  show (a == b) = true ↔ a = b
-  exact beq_iff_eq
 
 set_option linter.unusedSectionVars false in
 include hctx hsp md in
@@ -433,72 +409,7 @@ end Pat
 section Inv
 variable {p : Program} {tab : Tab}
 
-theorem mapM_some_mem {α β : Type} {g : α → Option β} :
-    ∀ {xs : List α} {ys : List β}, xs.mapM g = some ys → ∀ x ∈ xs, ∃ y ∈ ys, g x = some y
-  | [], _, _ => fun _ h => by cases h
-  | x :: xs, ys, h => by
-    rw [List.mapM_cons] at h
-    obtain ⟨y0, h0, h⟩ := bind_some_ex h
-    obtain ⟨ys', h1, h⟩ := bind_some_ex h
-    simp only [pure, Option.some.injEq] at h
-    subst h
-    intro z hz
-    rcases List.mem_cons.mp hz with rfl | hz
-    · exact ⟨y0, List.mem_cons_self, h0⟩
-    · obtain ⟨y, hy, hg⟩ := mapM_some_mem h1 z hz
-      exact ⟨y, List.mem_cons_of_mem _ hy, hg⟩
-
-theorem flat_mapM_mem {α β : Type} {g : α → Option (List β)} {xs : List α} {ys : List β}
-    (h : (xs.mapM g).map List.flatten = some ys) {x : α} (hx : x ∈ xs) {zs : List β}
-    (hg : g x = some zs) {z : β} (hz : z ∈ zs) : z ∈ ys := by
-  cases hm : xs.mapM g with
-  | none => rw [hm] at h; cases h
-  | some yss =>
-    rw [hm] at h
-    simp only [Option.map_some, Option.some.injEq] at h
-    subst h
-    obtain ⟨y, hy, hgy⟩ := mapM_some_mem hm x hx
-    rw [hg] at hgy
-    cases hgy
-    exact List.mem_flatten.mpr ⟨zs, hy, hz⟩
-
-theorem aExpr_let {ty : TypeId} {bs : List (VarId × TypeId × Isle.Expr)} {body : Isle.Expr}
-    {aenv : List AW} {a : AW} (h : aExpr p tab actor apre aOracle (.let ty bs body) aenv = some a) :
-    ∃ aenv', aBinds p tab actor apre aOracle bs aenv = some aenv' ∧
-      aExpr p tab actor apre aOracle body aenv' = some a := by
-  rw [aExpr.eq_5] at h
-  split at h
-  · exact ⟨_, ‹_›, h⟩
-  · cases h
-
-theorem aExpr_term {ty : TypeId} {t : TermId} {args : List Isle.Expr} {aenv : List AW} {a : AW}
-    (h : aExpr p tab actor apre aOracle (.term ty t args) aenv = some a) :
-    ∃ as, aArgs p tab actor apre aOracle args aenv = some as ∧
-      aApply p tab actor apre aOracle ty t as = some a := by
-  rw [aExpr.eq_6] at h
-  split at h
-  · exact ⟨_, ‹_›, h⟩
-  · cases h
-
-theorem aArgs_cons {e : Isle.Expr} {es : List Isle.Expr} {aenv : List AW} {as : List AW}
-    (h : aArgs p tab actor apre aOracle (e :: es) aenv = some as) :
-    ∃ a as', as = a :: as' ∧ aExpr p tab actor apre aOracle e aenv = some a ∧
-      aArgs p tab actor apre aOracle es aenv = some as' := by
-  rw [aArgs.eq_2] at h
-  split at h
-  · cases h; exact ⟨_, _, rfl, ‹_›, ‹_›⟩
-  · cases h
-
-theorem aBinds_cons {x : VarId} {ty : TypeId} {e : Isle.Expr} {bs : List (VarId × TypeId × Isle.Expr)}
-    {aenv aenv' : List AW} (h : aBinds p tab actor apre aOracle ((x, ty, e) :: bs) aenv = some aenv') :
-    ∃ a, aExpr p tab actor apre aOracle e aenv = some a ∧
-      aBinds p tab actor apre aOracle bs (aenv.set x a) = some aenv' := by
-  rw [aBinds.eq_2] at h
-  split at h
-  · exact ⟨_, ‹_›, h⟩
-  · cases h
-
-theorem aIfLets_cons {il : IfLet} {ils : List IfLet} {aenv : List AW} {envs : List (List AW)}
+theorem aIfLets_consT {il : IfLet} {ils : List IfLet} {aenv : List AW} {envs : List (List AW)}
     (h : aIfLetsT p tab aext actor apre aOracle iOps fOps (il :: ils) aenv = some envs) :
     ∃ a, aExpr p tab actor apre aOracle il.rhs aenv = some a ∧
       ((aPatT p aext iOps fOps a il.lhs aenv).mapM fun e => aIfLetsT p tab aext actor apre aOracle iOps fOps ils e).map
@@ -521,28 +432,6 @@ theorem aRule_invT {ins : List AW} {out : AW} {r : Rule}
     · exact ⟨_, ‹_›, this⟩
     · cases this
   · cases h
-
-theorem tabGet_le {t : TermId} {as : List AW} {out : AW} (h : tabGet tab t as = some out) :
-    ∃ ins, (t, ins, out) ∈ tab ∧ AW.leAll as ins = true := by
-  unfold tabGet at h
-  split at h
-  · rename_i e he
-    cases h
-    have hm := List.mem_of_find?_eq_some he
-    have hp := List.find?_some he
-    simp only [Bool.and_eq_true, beq_iff_eq] at hp
-    obtain ⟨⟨h1, h2⟩, -⟩ := hp
-    exact ⟨e.2.1, by rw [← h1]; exact hm, h2⟩
-  · cases hf : tab.find? (fun e => e.1 == t && AW.leAll as e.2.1) with
-    | none => rw [hf] at h; cases h
-    | some e =>
-      rw [hf] at h
-      simp only [Option.map_some, Option.some.injEq] at h
-      subst h
-      have hm := List.mem_of_find?_eq_some hf
-      have hp := List.find?_some hf
-      simp only [Bool.and_eq_true, beq_iff_eq] at hp
-      exact ⟨e.2.1, by rw [← hp.1]; exact hm, hp.2⟩
 
 theorem chkTab_memT (hc : chkTabT p tab aext actor apre aOracle iOps fOps = true) {t : TermId} {ins : List AW}
     {out : AW} (hm : (t, ins, out) ∈ tab) :
@@ -599,7 +488,7 @@ structure SoundAtT (n : Nat) : Prop where
 theorem γT_mkData {ty : TypeId} {k : Nat} {as : List AW} {vs : List V} (h : Holds2T S iOps fOps f ctx as vs) :
     γT S iOps fOps f ctx (.data ty k as) ((sem ctx).mkData ty k vs) := ⟨vs, rfl, h⟩
 
-theorem holds2_bot {as : List AW} {vs : List V} (hb : as.any AW.isBot = true) (h : Holds2T S iOps fOps f ctx as vs) :
+theorem holds2_botT {as : List AW} {vs : List V} (hb : as.any AW.isBot = true) (h : Holds2T S iOps fOps f ctx as vs) :
     False := by
   obtain ⟨a, ha, hab⟩ := List.any_eq_true.mp hb
   obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp ha
@@ -775,7 +664,7 @@ theorem soundAtT (hc : cfg.checkOverlap = false) (htab : chkTabT p tab aext acto
     unfold aApply at ha
     split at ha
     · rename_i hb
-      exact (holds2_bot hb hvs).elim
+      exact (holds2_botT hb hvs).elim
     cases ht : termOf p t with
     | error e =>
       rw [applyTerm.eq_2] at h
@@ -887,7 +776,7 @@ theorem soundAtT (hc : cfg.checkOverlap = false) (htab : chkTabT p tab aext acto
       cases pure_ok h; exact ⟨hIs, aenv, List.mem_singleton_self _, he⟩
     | cons il ils =>
       rw [matchIfLets.eq_3] at h
-      obtain ⟨a, hae, hails⟩ := aIfLets_cons ha
+      obtain ⟨a, hae, hails⟩ := aIfLets_consT ha
       obtain ⟨o, ⟨s1, tr1⟩, h1, h2⟩ := bind_ok h
       obtain ⟨hIs1, hv1⟩ := ihn.expr _ _ _ _ _ _ _ _ _ hae he hIs h1
       cases o with

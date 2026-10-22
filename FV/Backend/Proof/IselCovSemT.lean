@@ -349,4 +349,8 @@ theorem holds_instT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {ii :
     Holds2T Compile.instET opsT floatOps f ctx [.xv .inst] [.inst ii] :=
   ⟨⟨⟨ii, info, inst, rfl, hi, hc, hctx.data _ _ _ hi hc⟩, rfl, rfl⟩, trivial⟩
 
+
+theorem γ_osT {k : Nat} : γT S iOps fOps f ctx .c0 (.data 93 k []) :=
+  ⟨fun r hr => by simp [V.regsIn, regsInL] at hr, fun _ => rfl⟩
+
 end Backend.Proof.Cov
