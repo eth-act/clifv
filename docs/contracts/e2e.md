@@ -116,7 +116,9 @@ The proof covers them as follows.
 
 * **Scope** `InSubset.abiSigs`: `sigAbiOk` of `f`'s signature and of every extern's — `normal`
   parameters and returns plus at most one `sret` `i64` parameter, and then no returns
-  (`Backend.abiSigs`; other special purposes such as `vmctx`/`sarg` stay unverified).
+  (`Backend.abiSigs`; other special purposes such as `vmctx`/`sarg` stay unverified: cg_clif
+  emits neither on aarch64, 0 functions in fv-demo, the survey, `examples/deps` and vendor,
+  2026-10-22).
 * **Entry** `ArgsIn sig args s`: a register-located argument in its register (`locsOf`:
   x0.. in order, the `sret` parameter in x8), a stack-located one at `sp + off`; with at most 8
   parameters this is "argument `i` in `x (argIdx sig i)`" (`argsIn_iff_of_regs`), and without
@@ -128,6 +130,31 @@ The proof covers them as follows.
   `PrefixHold vals outs` (the CLIF values are the first ABI returns); the conclusion
   `ArmRefines` is unchanged (CLIF return values in x0.., memory), so for an `sret` function it
   claims the memory the function wrote through the pointer, not the value of x0.
+* **Return register** (S7, #31, `agent/abi-s7`): `E2E.backend_correct_final_abi`
+  (`FV/E2E/SretReturn.lean`) has `backend_correct_final`'s premises plus `sretStableB f`
+  and the conclusion `ArmRefinesAbi … (sretArg f args)`: on a return, x0.. hold `vals ++
+  sretArg f args` (`sretArg`: the `sret` argument when `sigRets` returns the pointer, else
+  nothing; `ArmRefinesAbi.armRefines` gives back `ArmRefines`). `backend_correct_final_sret`:
+  for a function with an `sret` parameter `i` and no returns, x0 holds `args[i]` (the pointer
+  the caller passed in x8; `vals = []` by `runLoop_returned_tys_entry`). The chain: `term_step_abi`
+  (the return's use values hold `vals ++ sv`, `sv` the frame's `sretRet f` values, `AllHold`),
+  `sim_run_abi`/`driver_correct_abi` (`RunOkAbi Q`: `sv` satisfies any `Q` that holds of
+  `sretRet f` in every reachable state; `term_step`, `sim_run`, `driver_correct` are the
+  corollaries with `Q := True`, statements unchanged), `IselSimAbi`, then
+  `backend_correct_{of_layers,_,of_rules,m4,final}_ex_abi`. The CLIF fact (`sret_reach`,
+  `FV/Backend/Proof/SretStable.lean`): every state reachable from the entry is one activation of
+  `f` without callers at a block's statements or at a `try_call`'s pending normal-return jump,
+  with the `sretRet f` register as at entry (`StOk`, `stOk_step`, `stOk_reach`), when
+  `sretStableB f` holds: the value is below `freshValue`, no statement result and no parameter of
+  a block a terminator continues at (`runTargets`) binds it, and the entry parameters are
+  distinct (Cranelift's verifier guarantees all of it: SSA, no branch to the entry block).
+  `lean-e2e-check` reports `sretStableB` per function. Measured on the `cargo fv` bin-check
+  dumps (2026-10-22): every function returning its `sret` pointer passes (fv-demo 234, survey
+  249, `examples/deps` 4966). Witness: `SretReturnWitness.sw_returns_sret` (the cg_clif shape
+  `(i64 sret, i64)` storing its argument through the pointer, compiled by the real pipeline,
+  all contract premises discharged by the `NonVacuity` callees). The variants (`_cleanup`, the
+  typed `…T`, `_unwind`, the linked and executable theorems) keep the CLIF-values conclusion:
+  in a linked program the callers are Lean-compiled and never read x0 after an `sret` call.
 * **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
   parameters `x (abiArgIdx …)[i]`, `sigArgLocs_regs`) or a store to `[sp + off]` of the outgoing
   area (`argStores_run`); `gen_call_output` allocates one def per

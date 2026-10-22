@@ -209,10 +209,16 @@ Deferred:
 
 Functions with a struct-return pointer and calls of `sret` callees are inside the end-to-end
 theorem (`docs/contracts/e2e.md`, "`sret`"). Deferred:
-- the conclusion claims the CLIF return values (none for an `sret` function) and the memory the
-  function wrote through the pointer, not that x0 holds the pointer on return (the ABI's
-  `sigRets`); callers compiled by cg_clif and the Lean backend do not read it;
-- `vmctx`/`sarg` parameters (flagged unverified). (`sret` with 8 further parameters is
+- ~~x0 holds the pointer on return~~ (done, S7 #31, 2026-10-22): `E2E.backend_correct_final_abi`
+  / `backend_correct_final_sret` (premise `sretStableB`, met by every `sret` function of fv-demo,
+  the survey and `examples/deps`). Still with the CLIF-values conclusion only: the variants
+  (`_cleanup`, the typed `…T`, `_unwind`, `backend_correct_legal*`, `_opt*`) and the linked and
+  executable theorems (their callers are Lean-compiled and do not read x0 after an `sret` call);
+  carrying `ArmRefinesAbi` through them is mechanical (the same `_abi` copy of their
+  `IselSim` composition);
+- `vmctx`/`sarg` parameters (flagged unverified, `sigAbiOk`): not emitted by cg_clif on aarch64
+  (0 functions in fv-demo, the survey, `examples/deps`, vendor; `StructArgument` only for
+  x86-style `byval` arguments, `VMContext` is wasmtime's). (`sret` with 8 further parameters is
   covered since agent/stack-tls-proof: `InSubset.regParams` is gone.)
 
 ## Stack-passed arguments: what `E2E.backend_correct_final` does not cover (2026-10-01)
