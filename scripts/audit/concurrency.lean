@@ -129,6 +129,25 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.Witness.wfN
 #print axioms Concurrency.ArmAllocThread.Witness.qN
 #print axioms Concurrency.ArmAllocThread.Witness.noev_premises
+-- layer 4b, memory items (fence, ldar, stlr)
+#print axioms Concurrency.ArmAllocThread.itemSim_of_op
+#print axioms Concurrency.ArmAllocThread.noev_op
+#print axioms Concurrency.ArmAllocThread.fence_op
+#print axioms Concurrency.ArmAllocThread.ctlIndep_excl
+#print axioms Concurrency.ArmAllocThread.straightSem_one
+#print axioms Concurrency.ArmAllocThread.q_regs
+#print axioms Concurrency.ArmAllocThread.oneEv_op
+#print axioms Concurrency.ArmAllocThread.ldar_form
+#print axioms Concurrency.ArmAllocThread.stlr_form
+#print axioms Concurrency.ArmAllocThread.itemSim_mem
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_mem
+#print axioms Concurrency.ArmAllocThread.exists_prun_line
+#print axioms Concurrency.ArmAllocThread.MemWitness.mem_premises
+#print axioms Concurrency.ArmAllocThread.MemWitness.dmb_run
+#print axioms Concurrency.ArmAllocThread.MemWitness.dmb_refines
+#print axioms Concurrency.ArmAllocThread.MemWitness.ldar_w
+#print axioms Concurrency.ArmAllocThread.MemWitness.stlr_w
+#print axioms Concurrency.ArmAllocThread.MemWitness.ctlIndep_ldar
 -- the program level with fences and Rust orderings (T2f, #304)
 #print axioms Concurrency.ProgE2E.rmw_sc
 #print axioms Concurrency.ProgE2E.raceFreeProgF_of_raceFreeProg

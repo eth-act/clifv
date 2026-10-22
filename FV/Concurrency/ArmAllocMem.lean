@@ -912,7 +912,8 @@ theorem exists_prun_line {R : RL} (hR : R.Wf) {s : ArmState} {j : Nat} {x : Insn
     (herr : Arm.r .ERR s = .None)
     (hnstx : ∀ a, x.toArmInst (R.envOf j) = .ok a → ∀ rel rs rn, clsOf a ≠ .stx rel rs rn)
     (mon : Mon) (m : Memory) :
-    ∃ t', PRun Policy.arm R.step (fun _ _ => True) (s, mon) [⟨stepEvs (setMem m s), false⟩] t' := by
+    ∃ a t', x.toArmInst (R.envOf j) = .ok a ∧ stepEvs (setMem m s) = instEvs a (setMem m s) ∧
+      PRun Policy.arm R.step (fun _ _ => True) (s, mon) [⟨stepEvs (setMem m s), false⟩] t' := by
   have hline : ∀ m', ∃ a, x.toArmInst (R.envOf j) = .ok a ∧ R.step (setMem m' s) = exec_inst a (setMem m' s) ∧
       stepEvs (setMem m' s) = instEvs a (setMem m' s) ∧ decodeAt (setMem m' s) = some a := fun m' =>
     stepEvs_line (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj hh (by rw [setMem_program]; exact hprog)
@@ -935,7 +936,7 @@ theorem exists_prun_line {R : RL} (hR : R.Wf) {s : ArmState} {j : Nat} {x : Insn
     cases ha1; cases ha2
     rw [hs1, hs2]; exact e
   have hdec0 : decodeAt s = some a := by rw [← decodeAt_setMem m s]; exact hdec
-  refine ⟨_, .cons (.exec hk hag (ArmPrecise.footprint_of_setMem hfoot hag)
+  refine ⟨a, _, ha, hev, .cons (.exec hk hag (ArmPrecise.footprint_of_setMem hfoot hag)
     (fun rel rs rn h => absurd (by rw [cls_of_decode hdec0] at h; exact h) (hnstx a ha rel rs rn)))
     (.inr ⟨m, rfl⟩) trivial .nil⟩
 
