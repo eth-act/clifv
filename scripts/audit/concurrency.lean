@@ -596,3 +596,25 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.store_lsFinal
 #print axioms Concurrency.ArmAllocThread.fpuLoad_lsFinal
 #print axioms Concurrency.ArmAllocThread.fpuStore_lsFinal
+
+-- T2 (#311): calls — the thread from the ABI entry, CLIF callers-lifting, the callee contract
+#print axioms Concurrency.ThreadCompose.arm_isel_refinesE'
+#print axioms Concurrency.ArmAllocThread.prologue_linesAt
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_entryQ
+#print axioms Concurrency.ArmFoot.exec_inst_program
+#print axioms Concurrency.ArmFoot.stepi_program
+#print axioms Concurrency.ClifLift.step_pushC
+#print axioms Concurrency.ClifLift.cstep_pushC
+#print axioms Concurrency.ClifLift.cstep_ret_nil
+#print axioms Concurrency.ClifLift.crun_pushC
+#print axioms Concurrency.CallThread.thread_compiled_entry
+#print axioms Concurrency.CallThread.refines_prefix_nil
+#print axioms Concurrency.CallThread.prun_transfer
+#print axioms Concurrency.CallThread.xClosed_noStx
+#print axioms Concurrency.CallThread.xClosed_runs
+#print axioms Concurrency.CallThread.funReal_callee
+#print axioms Concurrency.CallThread.Witness.compiledE_L -- witness: native_decide
+#print axioms Concurrency.CallThread.Witness.thread_load_entry -- witness: native_decide
+#print axioms Concurrency.CallThread.Witness.armStepX_program
+#print axioms Concurrency.CallThread.Witness.noStxL -- witness: native_decide
+#print axioms Concurrency.CallThread.Witness.funReal_load -- witness: native_decide

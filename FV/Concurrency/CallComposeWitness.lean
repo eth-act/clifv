@@ -108,7 +108,7 @@ def Inv (_ : Bool) (_ : AT) (_ : TState) (x : AT) (d : TState) : Prop := x.1 = s
 variable (env : Clif.Env) (p : Clif.Program) (Priv : Nat → Prop) (ok : ArmState → Lab → Prop)
 
 /-- **The caller's segment obligation**: after one step, the external callee is entered. -/
-theorem segOk_caller : SegOk env p Priv stepi ok Ent Ret (fun _ => False) (Inv true) true := by
+theorem segOk_caller : SegOk env p Priv stepi ok Ent Ret (fun _ _ => False) (Inv true) true := by
   rintro u c ⟨x1, mon⟩ d ⟨hx, rfl⟩ ls t' hr
   simp only at hx; subst hx
   obtain ⟨hev, hpre⟩ := prun_sE hr
@@ -119,7 +119,7 @@ theorem segOk_caller : SegOk env p Priv stepi ok Ent Ret (fun _ => False) (Inv t
       false, hpre 1, ⟨rfl, rfl⟩, fun z d'' h => ⟨h.2.1, h.2.2⟩⟩))⟩
 
 /-- **The external callee's event contract** (here proven): one step, then returned, no write. -/
-theorem extContract : ExtEvContract env p Priv stepi ok Ext Ent Ret (fun _ => False)
+theorem extContract : ExtEvContract env p Priv stepi ok Ext Ent Ret (fun _ _ => False)
     (fun _ _ => True) := by
   refine ⟨?_⟩
   rintro h ⟨u1, mon⟩ c rfl ⟨hu, rfl⟩ ls t' hr
@@ -141,8 +141,8 @@ theorem linked_sE (mon : Mon) {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm stepi ok (sE, mon) ls t') :
     ∃ c', Realized env p Priv ls ls.length (.ret []) c' := by
   have hF := link_compose_ext (env := env) (p := p) (Priv := Priv) (M := stepi) (ok := ok)
-    (Ext := Ext) (Ent := Ent) (Ret := Ret) (E := fun _ => False) (Fr := fun _ _ => True)
-    (Inv := Inv) (fun _ _ _ _ h => h)
+    (Ext := Ext) (Ent := Ent) (Ret := Ret) (E := fun _ _ => False) (Fr := fun _ _ => True)
+    (Inv := Inv) (fun _ _ _ h => h) (fun _ _ _ _ h => h)
     (fun g hg => by
       obtain rfl : g = true := by simpa [Ext] using hg
       exact segOk_caller env p Priv ok)

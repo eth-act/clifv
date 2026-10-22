@@ -630,10 +630,30 @@ they are; the per-thread layers are new files.
       `stepi` thread whose caller enters an external callee at every step (its `SegOk`,
       `segOk_caller`; the callee's contract proven, `extContract`): every run is realized
       entirely.
-    * open: the segment obligations of compiled functions (layer 4b with the call item a pause
-      point; layer 2 with call statements; the caller's resumption after the return), the
-      thread's machine running the callee's code against the per-function `R.step`, and the
-      witness of a compiled function calling a compiled `atomic_load` function.
+    * The end condition `E` of `FunReal`/`SegOk`/`ExtEvContract` is a predicate on the realized
+      Arm prefix and the CLIF state, closed under prefixing with the caller's part (`hE` of
+      `link_compose`), so that a callee's realization may end where its own Arm prefix drives
+      its allocated code to its end.
+    * **A compiled callee's contract (done, `CallThread.lean`, `ClifLift.lean`,
+      `ArmProgram.lean`)**: `CompiledE` (a compiled activation entered at its ABI entry, scope
+      `MemScopeLS`, the pipeline facts after the prologue), **`thread_compiled_entry`** (layer
+      4b from the ABI entry, `arm_alloc_refines_entryQ`, composed with layers 2–4a by
+      `ThreadCompose.arm_isel_refinesE'`, which keeps the prefix length at layer 4b's end: the
+      realized prefix is the whole run, ends where the CLIF thread stops, or drives the allocated
+      code to its end, `DoneBy`, refined by exactly that prefix); `ClifLift` (the callee's CLIF
+      run under the caller's suspended frames, `pushC`: `step_pushC`, `cstep_pushC`,
+      `crun_pushC`, a final return step to the bottom frame dropped, `cstep_ret_nil`);
+      `ArmFoot.stepi_program` (no Arm step changes the program field, so a linked machine
+      dispatching on it runs the callee's `R.step` on the callee's states, `prun_transfer`);
+      **`funReal_callee`**: the callee's `FunReal` in any linked machine that is `RA.step` on the
+      states holding its program, entered at its ABI entry with its CLIF entry state under the
+      caller's frames, its runs exclusive-closed (`xClosed_noStx`: no store exclusive with
+      release in its code). Witness (`CallThreadWitness.lean`): `compiledE_L`,
+      `thread_load_entry`, `noStxL`, **`funReal_load`** (the compiled `atomic_load` as a callee).
+    * open: the caller's segment obligation for compiled code (layer 4b with the call item as a
+      pause point, layer 2 with call statements, the caller's resumption after the callee's
+      return: its callee-saved registers, `sp` and frame restored by the callee's compiled
+      code), and the witness of a compiled function calling the compiled `atomic_load`.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step

@@ -17,7 +17,8 @@ configuration, i.e. after the prologue. Here the precise Arm run starts at the *
   with a plain write, and is no store exclusive; `prun_prologue`: a precise run under `OkPriv`
   through (a prefix of) the prologue is the single-core run, its events private plain writes;
 * `refines_privW`: an Arm segment of private writes without load exclusive refines the empty
-  source;
+  source; `prologue_linesAt`, `arm_alloc_refines_entryQ` (from any configuration `Q`-related to
+  the state after the prologue);
 * **`arm_alloc_refines_entry`**: every precise run from the ABI entry under `OkPriv` realizes a
   run of the allocated code from its entry configuration (any `BodyEntryW` world `w₀`), with
   `arm_alloc_refines_ls`'s conclusion: the prologue's write is private (`PrivA`), the rest by
@@ -278,6 +279,71 @@ theorem refines_privW {K : Type} {MK : K → AKind → Prop} {Priv : Nat → Pro
 
 /-! ## From the ABI entry -/
 
+/-- **The prologue's lines from the ABI entry** (`q_init_lines` without the body world). -/
+theorem prologue_linesAt {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.base ra R.s0) :
+    LinesAt R 1 (prologueLines R.af.frameSize) R.s0
+      (iterN R.step (prologueLines R.af.frameSize).length R.s0) := by
+  have hst0 := hR.stack.frame
+  have hs : R.af.frameSize < 2 ^ 64 := by have := hst0.1; omega
+  have hal0 : Arm.CheckSPAlignment R.s0 := (checkSP_iff _).2 hent.spAligned
+  obtain ⟨vb, items, code, ls, ps1, ps2, T, hvb, hit, hcode, hls, htr, hj0, hdrop⟩ := entry_block hR
+  obtain ⟨s', hsteps, -⟩ := prologue_ok (R.envOf 1) hs R.s0 hal0
+  have hpc1 : Arm.r .PC R.s0 = R.pcOf 1 := by
+    rw [hent.pc]
+    simp only [RL.pcOf, RL.L] at hj0 ⊢
+    rw [lineOffset_succ _ _ _ hj0]
+    simp [lineOffset, Line.size]
+  obtain ⟨hiter, -⟩ := iterN_steps hR hdrop
+    (fun ln h => by obtain ⟨x, e, hh, -⟩ := prologueLines_ins _ ln h; exact ⟨x, e, hh⟩)
+    hent.program hpc1 hent.err hsteps
+  rw [hiter]
+  exact ⟨lines_at hdrop, fun x t h => by
+    obtain ⟨x', e, hh, -⟩ := prologueLines_ins _ _ h; cases e; exact hh,
+    hent.program, by rw [hpc1]; rfl, hent.err, stepsOk_interOk hsteps hent.err, hsteps.exec⟩
+
+/-- **Layer 4b from the ABI entry, from any configuration `Q`-related to the state after the
+prologue** (`arm_alloc_refines_entry` with `Q ∧ AInv` given). -/
+theorem arm_alloc_refines_entryQ {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) {ra : BitVec 64}
+    (hent : AbiCall R.fb R.base ra R.s0) {c : MConf CV ArmState}
+    (hq : Q R (iterN R.step (prologueLines R.af.frameSize).length R.s0) c) (hA : AInv R c)
+    {mon : Mon} {ls : List Lab}
+    {t' : ArmState × Mon} (hr : PRun Policy.arm R.step (OkPriv R) (R.s0, mon) ls t') :
+    ∃ n trS cE ψ, n ≤ ls.length ∧ MTRun R.vc R.rf R.sem ckeep (cEvs R.F R.ctx) c trS cE ∧
+      Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
+        (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
+  have hlat := prologue_linesAt hR hent
+  have hpp : ∀ {mon : Mon} {L : List Lab} {t1 : ArmState × Mon},
+      PRun Policy.arm R.step (OkPriv R) (R.s0, mon) L t1 →
+      L.length ≤ (prologueLines R.af.frameSize).length →
+      t1.1 = iterN R.step L.length R.s0 ∧ PrivW (PrivA R) (evTr L) ∧
+        ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := fun h hL => prun_prologue hR hent hlat h hL
+  generalize hP : (prologueLines R.af.frameSize).length = P at hq hpp
+  by_cases hle : ls.length ≤ P
+  · -- the run ends inside the prologue: private writes only
+    obtain ⟨-, hpw, -⟩ := hpp hr hle
+    refine ⟨ls.length, [], _, id, Nat.le_refl _, .nil, ?_, .inl rfl⟩
+    rw [List.take_length]
+    exact refines_privW hpw
+  · obtain ⟨v, hv, hrest⟩ := CallCompose.take_prun hr P
+    have hPl : (ls.take P).length = P := by simp; omega
+    obtain ⟨hv1, hpw, hpk⟩ := hpp hv (by omega)
+    rw [hPl] at hv1
+    obtain ⟨v1, vm⟩ := v
+    simp only at hv1
+    subst hv1
+    obtain ⟨n2, trS, cE, ψ2, hn2, hM, href, hend⟩ := arm_alloc_refines_ls hR hsc hq hA hrest
+    refine ⟨P + n2, trS, cE, CallCompose.appMap 0 (evTr (ls.take P)).length id ψ2,
+      by simp at hn2; omega, hM, ?_, ?_⟩
+    · have e : evTr (ls.take (P + n2)) = evTr (ls.take P) ++ evTr ((ls.drop P).take n2) := by
+        rw [List.take_add, evTr_append]
+      rw [e]
+      have := CallCompose.Refines.app (refines_privW (MK := (· = ·)) hpw) href
+        (.inr fun a x hx hk => by rw [hpk a x hx] at hk; cases hk)
+      simpa using this
+    · rcases hend with h | h
+      · left; simp at h; omega
+      · exact .inr h
+
 /-- **Layer 4b from the ABI entry** (module doc): every precise run under `OkPriv` from the ABI
 entry realizes, on a prefix, a run of the allocated code from its entry configuration
 (`MConf.init` with the body-entry world `w₀`), with `Refines` (equal kinds, the addresses outside
@@ -292,37 +358,7 @@ theorem arm_alloc_refines_entry {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) {ra : 
       MTRun R.vc R.rf R.sem ckeep (cEvs R.F R.ctx) (MConf.init R.rf m₀ w₀) trS cE ∧
       Refines (· = ·) (PrivA R) (MonPair (evTr (ls.take n))) (PrepThread.conv trS)
         (PrepThread.conv (evTr (ls.take n))) ψ ∧ (n = ls.length ∨ Done R cE) := by
-  obtain ⟨hlat, hq, hA⟩ := q_init_lines hR hent hbe
-  have hpp : ∀ {mon : Mon} {L : List Lab} {t1 : ArmState × Mon},
-      PRun Policy.arm R.step (OkPriv R) (R.s0, mon) L t1 →
-      L.length ≤ (prologueLines R.af.frameSize).length →
-      t1.1 = iterN R.step L.length R.s0 ∧ PrivW (PrivA R) (evTr L) ∧
-        ∀ p y, evAt (evTr L) p = some y → y.k = .plainW := fun h hL => prun_prologue hR hent hlat h hL
-  generalize hP : (prologueLines R.af.frameSize).length = P at hq hA hpp
-  by_cases hle : ls.length ≤ P
-  · -- the run ends inside the prologue: private writes only
-    obtain ⟨-, hpw, -⟩ := hpp hr hle
-    refine ⟨locVal R.fr (iterN R.step P R.s0), ls.length, [], _, id, Nat.le_refl _, .nil, ?_, .inl rfl⟩
-    rw [List.take_length]
-    exact refines_privW hpw
-  · obtain ⟨v, hv, hrest⟩ := CallCompose.take_prun hr P
-    have hPl : (ls.take P).length = P := by simp; omega
-    obtain ⟨hv1, hpw, hpk⟩ := hpp hv (by omega)
-    rw [hPl] at hv1
-    obtain ⟨v1, vm⟩ := v
-    simp only at hv1
-    subst hv1
-    obtain ⟨n2, trS, cE, ψ2, hn2, hM, href, hend⟩ := arm_alloc_refines_ls hR hsc hq hA hrest
-    refine ⟨_, P + n2, trS, cE, CallCompose.appMap 0 (evTr (ls.take P)).length id ψ2,
-      by simp at hn2; omega, hM, ?_, ?_⟩
-    · have e : evTr (ls.take (P + n2)) = evTr (ls.take P) ++ evTr ((ls.drop P).take n2) := by
-        rw [List.take_add, evTr_append]
-      rw [e]
-      have := CallCompose.Refines.app (refines_privW (MK := (· = ·)) hpw) href
-        (.inr fun a x hx hk => by rw [hpk a x hx] at hk; cases hk)
-      simpa using this
-    · rcases hend with h | h
-      · left; simp at h; omega
-      · exact .inr h
+  obtain ⟨-, hq, hA⟩ := q_init_lines hR hent hbe
+  exact ⟨_, arm_alloc_refines_entryQ hR hsc hent hq hA hr⟩
 
 end Concurrency.ArmAllocThread

@@ -287,8 +287,9 @@ theorem csemV_none (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) :
 open ArmAllocThread in
 /-- **All layers composed, the end condition of layer 4b a parameter** (module doc): the Arm
 run's refinement of the allocated code (layer 4b, `hA`, realized up to `nA` steps, all of them
-or until `E`) and layers 2, 3, 4a (`isel_alloc_refines`). -/
-theorem arm_isel_refinesE {RA : RL} (hgv : RA.gv = fun _ _ => False)
+or until `E`) and layers 2, 3, 4a (`isel_alloc_refines`); when it ends at `E`, the realized prefix
+is the whole of layer 4b's (`k = nA`). -/
+theorem arm_isel_refinesE' {RA : RL} (hgv : RA.gv = fun _ _ => False)
     {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
     {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
     {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat}
@@ -315,7 +316,7 @@ theorem arm_isel_refinesE {RA : RL} (hgv : RA.gv = fun _ _ => False)
     (conv (evTr (ls.take nA))) ψA) {E : Prop} (hend : nA = ls.length ∨ E) (hnA : nA ≤ ls.length) :
     ∃ k trS t ψ, k ≤ nA ∧ CRun env p (.run cs) trS t ∧
       Refines Maps (PrivA RA) (MonPair (evTr (ls.take nA))) trS (conv (evTr (ls.take k))) ψ ∧
-      (k = ls.length ∨ E ∨ Stop env p t) := by
+      (k = ls.length ∨ (k = nA ∧ E) ∨ Stop env p t) := by
   have hsem : RA.sem = csem RA.F RA.ctx RA.X := by
     show csemV RA.gv RA.F RA.ctx RA.X = _
     rw [hgv, csemV_none]
@@ -347,8 +348,42 @@ theorem arm_isel_refinesE {RA : RL} (hgv : RA.gv = fun _ _ => False)
     rw [hlenA] at hk'
     rcases hend with h' | h'
     · exact .inl (hk'.trans h')
-    · exact .inr (.inl h')
+    · exact .inr (.inl ⟨hk', h'⟩)
   · exact .inr (.inr h)
+
+open ArmAllocThread in
+/-- `arm_isel_refinesE'` without the prefix length at `E`. -/
+theorem arm_isel_refinesE {RA : RL} (hgv : RA.gv = fun _ _ => False)
+    {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
+    {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat}
+    {syms : String → Option Nat}
+    (H : DriverHyp f vc ctx st0 R gn bl A (csem RA.F RA.ctx RA.X) MR env p)
+    (hchk : threadCheckBl f bl = true) (hMR : MemRelOk RA.F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree RA.X) (hMem : MemRefines RA.F sb syms (csem RA.F RA.ctx RA.X))
+    (hMRs : MRStable RA.F MR) (hreg : ∀ off, ArgLoc.stack off ∉ locsOf f.sig)
+    (hprep : prepCheck vc RA.vc = true) (halloc : checkAlloc RA.vc RA.rf = .ok ())
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry RA.F f.sig args w₀)
+    {ok : ArmState → Lab → Prop} {s : ArmState × Mon} {ls : List Lab} {s' : ArmState × Mon}
+    (hP : PRun Policy.arm RA.step ok s ls s') {nA : Nat} {trM : List (List Ev)}
+    {cE : MConf CV ArmState} {ψA : Nat × Nat → Nat × Nat}
+    (hM : MTRun RA.vc RA.rf RA.sem ckeep (cEvs RA.F RA.ctx) (MConf.init RA.rf m₀ w₀) trM cE)
+    (hA : Refines (· = ·) (PrivA RA) (MonPair (evTr (ls.take nA))) (conv trM)
+    (conv (evTr (ls.take nA))) ψA) {E : Prop} (hend : nA = ls.length ∨ E) (hnA : nA ≤ ls.length) :
+    ∃ k trS t ψ, k ≤ nA ∧ CRun env p (.run cs) trS t ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take nA))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ E ∨ Stop env p t) := by
+  obtain ⟨k, trS, t, ψ, hk, hrun, href, hend'⟩ := arm_isel_refinesE' hgv H hchk hMR hMRw hX hMem hMRs
+    hreg hprep halloc hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hP hM hA hend hnA
+  exact ⟨k, trS, t, ψ, hk, hrun, href, hend'.imp_right (Or.imp_left And.right)⟩
 
 open ArmAllocThread in
 /-- **All layers composed** (module doc): the Arm run's refinement of the allocated code (layer

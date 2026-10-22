@@ -335,23 +335,25 @@ variable (env : Clif.Env) (p : Clif.Program) (Priv : Nat → Prop) (M : ArmState
 abbrev AT := ArmState × Mon
 
 /-- **The function contract** of an activation entered in `u` with the CLIF thread state `c` (its
-frame pushed): every precise run under `ok` realizes a prefix that is the whole run, or ends in a
-CLIF state satisfying `E`, or ends where the activation has returned (`Ret u c v c'`: the Arm
-state `v` and the CLIF state `c'` after its return). -/
-def FunReal (Ret : AT → TState → AT → TState → Prop) (E : TState → Prop) (u : AT) (c : TState) :
-    Prop :=
+frame pushed): every precise run under `ok` realizes a prefix that is the whole run, or ends where
+the end condition `E` holds of the realized Arm prefix and the CLIF state (e.g. the CLIF thread
+stops, or the prefix drives an activation's allocated code to its end), or ends where the
+activation has returned (`Ret u c v c'`: the Arm state `v` and the CLIF state `c'` after its
+return). -/
+def FunReal (Ret : AT → TState → AT → TState → Prop) (E : List Lab → TState → Prop) (u : AT)
+    (c : TState) : Prop :=
   ∀ ls t', PRun Policy.arm M ok u ls t' → ∃ k c', Realized env p Priv ls k c c' ∧
-    (k = ls.length ∨ E c' ∨ ∃ v, PRun Policy.arm M ok u (ls.take k) v ∧ Ret u c v c')
+    (k = ls.length ∨ E (ls.take k) c' ∨ ∃ v, PRun Policy.arm M ok u (ls.take k) v ∧ Ret u c v c')
 
 /-- **The segment obligation of a function's activation** with invariant `Inv` (entered at `u`,
 `c`; now at `x`, `d`): every precise run realizes a prefix that is the whole run, ends in `E`,
 ends where the activation has returned, or ends after at least one step at the entry of a callee
 `h` (`Ent h`), from whose every return (`Ret h`) the activation's invariant holds again. -/
 def SegOk {G : Type} (Ent : G → AT → TState → Prop) (Ret : G → AT → TState → AT → TState → Prop)
-    (E : TState → Prop) (Inv : AT → TState → AT → TState → Prop) (g : G) : Prop :=
+    (E : List Lab → TState → Prop) (Inv : AT → TState → AT → TState → Prop) (g : G) : Prop :=
   ∀ u c x d, Inv u c x d → ∀ ls t', PRun Policy.arm M ok x ls t' →
     ∃ k d', Realized env p Priv ls k d d' ∧
-      (k = ls.length ∨ E d' ∨
+      (k = ls.length ∨ E (ls.take k) d' ∨
         (∃ v, PRun Policy.arm M ok x (ls.take k) v ∧ Ret g u c v d') ∨
         (0 < k ∧ ∃ v h, PRun Policy.arm M ok x (ls.take k) v ∧ Ent h v d' ∧
           ∀ z d'', Ret h v d' z d'' → Inv u c z d''))
@@ -366,19 +368,19 @@ pairs) on a prefix that is the whole run, ends in `E`, or ends at the callee's r
 and **the writes of that prefix avoid the caller's private set** `Fr u` (the outside code
 touches the thread's stack only below the caller's frame). -/
 structure ExtEvContract {G : Type} (Ext : G → Prop) (Ent : G → AT → TState → Prop)
-    (Ret : G → AT → TState → AT → TState → Prop) (E : TState → Prop) (Fr : AT → Nat → Prop) :
-    Prop where
+    (Ret : G → AT → TState → AT → TState → Prop) (E : List Lab → TState → Prop)
+    (Fr : AT → Nat → Prop) : Prop where
   real : ∀ h u c, Ext h → Ent h u c → ∀ ls t', PRun Policy.arm M ok u ls t' →
     ∃ k c', Realized env p Priv ls k c c' ∧
       (∀ q y, evAt (evTr (ls.take k)) q = some y → y.k.dir = .W → ¬ Fr u y.addr.toNat) ∧
-      (k = ls.length ∨ E c' ∨ ∃ v, PRun Policy.arm M ok u (ls.take k) v ∧ Ret h u c v c')
+      (k = ls.length ∨ E (ls.take k) c' ∨ ∃ v, PRun Policy.arm M ok u (ls.take k) v ∧ Ret h u c v c')
 
 variable {env p Priv M ok}
 
 /-- The contract gives the external callees' function contracts. -/
 theorem ExtEvContract.funReal {G : Type} {Ext : G → Prop} {Ent : G → AT → TState → Prop}
-    {Ret : G → AT → TState → AT → TState → Prop} {E : TState → Prop} {Fr : AT → Nat → Prop}
-    (hX : ExtEvContract env p Priv M ok Ext Ent Ret E Fr) {h : G} {u : AT} {c : TState}
+    {Ret : G → AT → TState → AT → TState → Prop} {E : List Lab → TState → Prop}
+    {Fr : AT → Nat → Prop} (hX : ExtEvContract env p Priv M ok Ext Ent Ret E Fr) {h : G} {u : AT} {c : TState}
     (he : Ext h) (hen : Ent h u c) : FunReal env p Priv M ok (Ret h) E u c := fun ls t' hr => by
   obtain ⟨k, c', hR, -, hend⟩ := hX.real h u c he hen ls t' hr
   exact ⟨k, c', hR, hend⟩
@@ -391,10 +393,11 @@ theorem take_prun {u t' : AT} {ls : List Lab} (hr : PRun Policy.arm M ok u ls t'
 
 /-- **The linking induction** (module doc): from the segment obligations of the program's
 functions and the external callees' contracts, every activation entered by `Ent` satisfies the
-function contract. -/
+function contract (the end condition `E` closed under prefixing the Arm run with the caller's
+part, `hE`). -/
 theorem link_compose {G : Type} {Ext : G → Prop} {Ent : G → AT → TState → Prop}
-    {Ret : G → AT → TState → AT → TState → Prop} {E : TState → Prop}
-    {Inv : G → AT → TState → AT → TState → Prop}
+    {Ret : G → AT → TState → AT → TState → Prop} {E : List Lab → TState → Prop}
+    {Inv : G → AT → TState → AT → TState → Prop} (hE : ∀ A B d, E B d → E (A ++ B) d)
     (hinit : ∀ g u c, ¬ Ext g → Ent g u c → Inv g u c u c)
     (hseg : ∀ g, ¬ Ext g → SegOk env p Priv M ok Ent Ret E (Inv g) g)
     (hext : ∀ h u c, Ext h → Ent h u c → FunReal env p Priv M ok (Ret h) E u c) :
@@ -402,7 +405,8 @@ theorem link_compose {G : Type} {Ext : G → Prop} {Ent : G → AT → TState �
   -- the invariant's statement, by strong induction on the run's length
   have key : ∀ n g u c x d ls t', ls.length ≤ n → ¬ Ext g → Inv g u c x d →
       PRun Policy.arm M ok x ls t' → ∃ k d', Realized env p Priv ls k d d' ∧
-        (k = ls.length ∨ E d' ∨ ∃ v, PRun Policy.arm M ok x (ls.take k) v ∧ Ret g u c v d') := by
+        (k = ls.length ∨ E (ls.take k) d' ∨ ∃ v, PRun Policy.arm M ok x (ls.take k) v ∧
+          Ret g u c v d') := by
     intro n
     induction n with
     | zero =>
@@ -422,7 +426,7 @@ theorem link_compose {G : Type} {Ext : G → Prop} {Ent : G → AT → TState �
         obtain rfl := PRun.det hv' hv
         have hlen1 : (ls.drop k).length ≤ n := by simp; omega
         have hcal : ∃ k2 d2, Realized env p Priv (ls.drop k) k2 d' d2 ∧
-            (k2 = (ls.drop k).length ∨ E d2 ∨
+            (k2 = (ls.drop k).length ∨ E ((ls.drop k).take k2) d2 ∨
               ∃ z, PRun Policy.arm M ok v' ((ls.drop k).take k2) z ∧ Ret h v' d' z d2) := by
           by_cases hx : Ext h
           · exact hext h v' d' hx hent _ _ hrest
@@ -432,7 +436,9 @@ theorem link_compose {G : Type} {Ext : G → Prop} {Ent : G → AT → TState �
         rcases hend2 with h2 | h2 | ⟨z, hz, hret⟩
         · refine ⟨k + k2, d2, hR12, .inl ?_⟩
           simp at h2; omega
-        · exact ⟨k + k2, d2, hR12, .inr (.inl h2)⟩
+        · refine ⟨k + k2, d2, hR12, .inr (.inl ?_)⟩
+          rw [List.take_add]
+          exact hE _ _ _ h2
         · -- the callee returned: the caller resumes on the rest
           have hk2 := hR2.le
           obtain ⟨z', hz', hrest2⟩ := take_prun hrest k2
@@ -445,7 +451,12 @@ theorem link_compose {G : Type} {Ext : G → Prop} {Ent : G → AT → TState �
           refine ⟨k + k2 + k3, d3, hR123, ?_⟩
           rcases hend3 with h3 | h3 | ⟨w, hw, hret3⟩
           · left; simp at h3 hk2 ⊢; omega
-          · exact .inr (.inl h3)
+          · have e : ls.take (k + k2 + k3) = ls.take k ++ (ls.drop k).take k2 ++
+                (ls.drop (k + k2)).take k3 := by
+              rw [List.take_add, List.take_add]
+            refine .inr (.inl ?_)
+            rw [e]
+            exact hE _ _ _ h3
           · refine .inr (.inr ⟨w, ?_, hret3⟩)
             have e : ls.take (k + k2 + k3) = ls.take k ++ (ls.drop k).take k2 ++
                 (ls.drop (k + k2)).take k3 := by
@@ -459,13 +470,13 @@ theorem link_compose {G : Type} {Ext : G → Prop} {Ent : G → AT → TState �
 
 /-- **The linking induction with external callees under their event contract.** -/
 theorem link_compose_ext {G : Type} {Ext : G → Prop} {Ent : G → AT → TState → Prop}
-    {Ret : G → AT → TState → AT → TState → Prop} {E : TState → Prop} {Fr : AT → Nat → Prop}
-    {Inv : G → AT → TState → AT → TState → Prop}
-    (hinit : ∀ g u c, ¬ Ext g → Ent g u c → Inv g u c u c)
+    {Ret : G → AT → TState → AT → TState → Prop} {E : List Lab → TState → Prop}
+    {Fr : AT → Nat → Prop} {Inv : G → AT → TState → AT → TState → Prop}
+    (hE : ∀ A B d, E B d → E (A ++ B) d) (hinit : ∀ g u c, ¬ Ext g → Ent g u c → Inv g u c u c)
     (hseg : ∀ g, ¬ Ext g → SegOk env p Priv M ok Ent Ret E (Inv g) g)
     (hX : ExtEvContract env p Priv M ok Ext Ent Ret E Fr) :
     ∀ g u c, Ent g u c → FunReal env p Priv M ok (Ret g) E u c :=
-  link_compose hinit hseg fun _ _ _ he hen => hX.funReal he hen
+  link_compose hE hinit hseg fun _ _ _ he hen => hX.funReal he hen
 
 end link
 
