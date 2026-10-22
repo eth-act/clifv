@@ -165,7 +165,10 @@ Deferred:
   #217): the outside environment's `HelperOk`/`ExtLegal`/
   `EnvKeepsBounded` when a source function mentions `i128` and `sigOf = none` with indirect
   calls (environment contracts); the source run's memories below `2^64` (`Clif.run`'s bump
-  allocator can exceed it; proven for slotless programs, `bounded_of_noSlots`) and, for traps,
+  allocator can exceed it; proven for slotless programs, `bounded_of_noSlots`; ~~for the shipped
+  compiler~~ derived, A2/B1 #407: `Link.DeadCleanup.compileExe_correct_source{,_peak}_nobnd`,
+  `Front.bundle_correct_{source,raw}{,_peak}_nobnd`; still a premise of the baseline, optimising,
+  unwinding and trap-callee source theorems) and, for traps,
   the source run's `NoMemTrap` and the target run's `TrapsExplicit` (run conditions);
 - runs that trap inside a `__*ti3` helper (`i128` division by zero, `sdiv MIN, -1`): the
   backend theorem excludes extern traps (`TrapsExplicit` of the legalised run). Per function

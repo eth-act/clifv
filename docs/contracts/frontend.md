@@ -217,6 +217,11 @@ one linked name, a local symbol named like a global).
   source run (`ClifEntry`, `MemBounded` of the reachable states, `NoMemTrap`, `DepthLe`) are stated
   on the units' program (`clifEntry_ren`, `bnd_ren`, `noMemTrap_ren`, `depthLe_ren`); the others are
   the compiler theorems'.
+* **Without the memory bound (A2/B1, #407).** `Front.bundle_correct_source_nobnd`,
+  `bundle_correct_source_peak_nobnd`, `bundle_correct_raw_nobnd`, `bundle_correct_raw_peak_nobnd`
+  (`FV/Front/RawExeNB.lean`): the shipped compiler's theorems without `MemBounded` of the source
+  run's reachable states, composed from `Link.DeadCleanup.compileExe_correct_source{,_peak}_nobnd`
+  (legalize128.md, "The memory bound derived").
 * **The executable refines cg_clif's program (T7b, T7c).** `Front.bundle_correct_raw`,
   `bundle_correct_raw_peak`, `bundle_correct_raw_baseline`, `bundle_correct_raw_peak_baseline`:
   the same, about the runs of **`rawLink us sc`** for any `sc` with `RawScopingOk us sc` — the

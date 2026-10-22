@@ -352,7 +352,7 @@ of `legalize f`):
 | `hlegal`: `HelperOk`, `ExtLegal`, `EnvKeepsBounded` of `B.env` when a source function mentions `i128` | environment (outside code) | proven for `Clif.Rust.env` (`helperOk_env`, `extLegal_env`, `envKeepsAllocs_env`) and for `Link.SourceWitness.helperEnv` |
 | `hsig`: `B.env.sigOf = none` when the program has indirect calls | environment | `IndScope` already requires it of the linked system's own resolution |
 | `hcs`, `hexp`, `hsl`, `hmem`: the source entry `cs` on `args`, `args'` its ABI split, the target's slots and memory | choice of the reference runs | as `ClifRun` for the target |
-| `hbnd`: every memory of the source run has valid ranges below `2^64` | run condition | `Clif.run`'s bump allocator can exceed `2^64`; proven for slotless programs under externs keeping allocations (`E2E.LegalProgram.Witness.bounded_of_noSlots`) |
+| `hbnd`: every memory of the source run has valid ranges below `2^64` | run condition | `Clif.run`'s bump allocator can exceed `2^64`; proven for slotless programs under externs keeping allocations (`E2E.LegalProgram.Witness.bounded_of_noSlots`). **Derived** for the shipped compiler (A2/B1, #407): `Link.DeadCleanup.compileExe_correct_source{,_peak}_nobnd` and `Front.bundle_correct_{source,raw}{,_peak}_nobnd` have every other premise and not this one (see below, "The memory bound derived") |
 | traps only: `NoMemTrap` of the source run | run condition | a 16-byte access whose halves lie in two adjacent allocations traps in the source and not after the split; proven for returning runs (`memTrapFree_of_returned`) |
 | traps only: `TrapsExplicit` of the target run at every fuel | run condition | the target fuel is the legalisation's; for returns derived (`trapsExplicit_of_run`) |
 
@@ -368,6 +368,26 @@ contracts for programs without TLS, indirect calls or helper calls
 original program's run of `wmul_u128` on `2^64 + 3` and `5` returns `5 * 2^64 + 15`, and the
 executable machine, called with `3, 1, 5, 0` in x0–x3, returns `15, 5` in x0, x1
 (`compileExe_source_witness`).
+
+**The memory bound derived (A2/B1, #407).** `FV/Link/DeadCleanupExeSourceNB.lean`:
+`Link.DeadCleanup.compileExe_correct_source_nobnd` and `compileExe_correct_source_peak_nobnd`
+are `compileExe_correct_source{,_peak}` without `hbnd`; `FV/Front/RawExeNB.lean` composes them
+(`Front.bundle_correct_source{,_peak}_nobnd`, `Front.bundle_correct_raw{,_peak}_nobnd`). For a
+program mentioning `i128` the bound is derived (`srcBounded_acyclic`, `srcBounded_peak`): the
+source run enters only callees of the compiled program (`E2E.SrcBounded.callee_of_enter`: a
+direct call keeps its declaration, an indirect call its call-site signature, `indSig_legal`);
+with program callees having slots (`NeedSlots`) the reference run's slot-placement oracle
+(`ClifRun.place`) puts each activation's slots in its compiled frame (`slotFits`,
+`frameDrop = frameSize + 16`) inside the stack the outside caller provides (`OutsideCall.stack`:
+`stackFn`, the budgets of `budget_of`; or `frameDrop + D * d` for call depth `d`), so no stack
+pointer wraps (`E2E.SrcBounded.bounded_placed`); without, no entered function has slots
+(`bounded_slotless`); the externs keep valid ranges below `2^64` (`EnvKeepsBounded`, already a
+premise with `i128`) and the oracle (`BaseOk.baseKeepsPlace`). For a program without `i128` the
+legalisation is the identity and the source run is the compiled program's run from the same
+state (`prog_eq_src`, `ident_state`). No CLIF semantics change. Witnesses:
+`crate-proofs/Crates/NoBndWitness.lean` (the runs of the existing witnesses, without
+`srcBounded`). Still with `hbnd`: the baseline compiler's, the optimising and unwinding source
+theorems, the trap-callee variants (`RawExeTrap`).
 
 **Recursive programs and the shipped compiler (L1f, #217).** `Link.compileExe_correct_source_peak`
 (`FV/Link/ExeSource.lean`): the same without `hc`, the outside caller providing `frameDrop (art
