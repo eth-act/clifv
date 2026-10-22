@@ -6,6 +6,7 @@ import FV.Backend.Proof.IselShpTBrTable
 import FV.Backend.Proof.IselShpDriver
 import FV.Backend.Proof.IselCovTDriver
 import FV.Backend.Proof.IselCovTFamCover
+import FV.Backend.Proof.LowerShapeOkT
 
 /-!
 # Control shapes of the typed ISLE lowering: the driver's calls, `IselCtlHypT`
@@ -134,10 +135,31 @@ theorem eq_of_isReg1T : ∀ {o : Option AT}, isReg1T o = true → o = some (.reg
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-theorem tabT_556 : isReg1T (if [AT.c0].any AT.isBot then some .bot else
-    match aOracleST 556 [AT.c0] with
+theorem tabT_556_8 : isReg1T (if [AT.val [.int 8]].any AT.isBot then some .bot else
+    match aOracleST 556 [AT.val [.int 8]] with
     | some a => some a
-    | none => tabGet shpTabT 556 [AT.c0]) = true := by decide +kernel
+    | none => tabGet shpTabT 556 [AT.val [.int 8]]) = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+theorem tabT_556_16 : isReg1T (if [AT.val [.int 16]].any AT.isBot then some .bot else
+    match aOracleST 556 [AT.val [.int 16]] with
+    | some a => some a
+    | none => tabGet shpTabT 556 [AT.val [.int 16]]) = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+theorem tabT_556_32 : isReg1T (if [AT.val [.int 32]].any AT.isBot then some .bot else
+    match aOracleST 556 [AT.val [.int 32]] with
+    | some a => some a
+    | none => tabGet shpTabT 556 [AT.val [.int 32]]) = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+theorem tabT_556_64 : isReg1T (if [AT.val [.int 64]].any AT.isBot then some .bot else
+    match aOracleST 556 [AT.val [.int 64]] with
+    | some a => some a
+    | none => tabGet shpTabT 556 [AT.val [.int 64]]) = true := by decide +kernel
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
@@ -149,8 +171,17 @@ theorem tabT_553 : isReg1T (if [AT.ty [.int 64], .data 122 1 [], .c0].any AT.isB
 /-- The table's sub-runs of `br_table` (`put_in_reg_zext32`, `imm`). -/
 theorem brSubT (hctx : CtxInvT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) (N : Nat) :
     BrSubT f ctx N :=
-  ⟨hcl, subOkT_of_tab hctx hcl hfam N fun ty => by
-      rw [aApply_internal_eqT program_term_556 term_556_kind]; exact eq_of_isReg1T tabT_556,
+  ⟨hcl, fun w hw => by
+      simp only [List.mem_cons, List.mem_nil_iff, or_false] at hw
+      rcases hw with rfl | rfl | rfl | rfl
+      · exact subOkT_of_tab hctx hcl hfam N fun ty => by
+          rw [aApply_internal_eqT program_term_556 term_556_kind]; exact eq_of_isReg1T tabT_556_8
+      · exact subOkT_of_tab hctx hcl hfam N fun ty => by
+          rw [aApply_internal_eqT program_term_556 term_556_kind]; exact eq_of_isReg1T tabT_556_16
+      · exact subOkT_of_tab hctx hcl hfam N fun ty => by
+          rw [aApply_internal_eqT program_term_556 term_556_kind]; exact eq_of_isReg1T tabT_556_32
+      · exact subOkT_of_tab hctx hcl hfam N fun ty => by
+          rw [aApply_internal_eqT program_term_556 term_556_kind]; exact eq_of_isReg1T tabT_556_64,
     subOkT_of_tab hctx hcl hfam N fun ty => by
       rw [aApply_internal_eqT program_term_553 term_553_kind]; exact eq_of_isReg1T tabT_553⟩
 
@@ -195,10 +226,10 @@ theorem stmt_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) (h
     (shp_soundT hctx.inv hcl hfam _ s rfl)
     (Hand := fun rl => rl ∈ program.rulesOf TId.lower ∧ (rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033))
     (fun rl ⟨hrl, hid⟩ => hand_modelT (handOkT_call totality hctx ha
-      (fun fn e he => (Cov.sigE_int (List.all_eq_true.mp hctx.externs (fn, e) (lookup_some_mem he))).1)
+      (fun fn e he => (sigE_int (List.all_eq_true.mp hctx.externs (fn, e) (lookup_some_mem he))).1)
       hi hc hmem hrl hid _) s)
     data_program.t686 term_686_kind hrules hins (ShpIsT.refl hN) (n := 999999)
-    Cov.lower_len happ).1
+    lower_len happ).1
 
 set_option maxRecDepth 100000 in
 /-- `lower_branch` on a terminator of a family, with the `br_table` rule checked by hand and
@@ -212,6 +243,9 @@ theorem branch_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) 
       (∀ m s0 env s1, (matchRule program (sem ctx) {} m rl [.inst ti, .labels targets]).run s0 ≠
         .ok (some env, s1)) ∨ Try rl)
     (hTry : ∀ rl, Try rl → HandOkT ctx N [.inst ti, .labels targets] rl)
+    (hval : ∀ (x c : V) (info : IInfo), ctx.insts[ti]? = some info →
+      V.data 152 4 [V.data 151 2 [], x, c] = info.data →
+      ∃ w, w ∈ [8, 16, 32, 64] ∧ γ f ctx (.val [.int w]) x)
     {s : LState} {out : Option V} {s' : LState} {tr : List Isle.RuleId} (hN : N ≤ s.nextVreg)
     (h : runTerm ctx "lower_branch" [.inst ti, .labels targets] s = .ok (out, s', tr)) :
     CtlSinceT N s s' := by
@@ -245,7 +279,7 @@ theorem branch_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) 
     (fun rl hrl => by
       rcases hrl with hT | ⟨hrl, hid⟩
       · exact hand_modelT (hTry rl hT) s
-      · exact hand_modelT (handOkT_brTable totality (brSubT hctx.inv hcl hfam) hrl hid N) s)
+      · exact hand_modelT (handOkT_brTable totality (brSubT hctx.inv hcl hfam) hval hrl hid N) s)
     data_program.t687 term_687_kind hrules hins (ShpIsT.refl hN) (n := 999999)
     lower_branch_len happ).1
 
@@ -253,7 +287,7 @@ set_option maxRecDepth 100000 in
 /-- **A terminator's lowering emits control forms of their typed shapes.** -/
 theorem termCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) {ti : Nat}
     (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) {t : Clif.Terminator}
-    (hty : t.isTry = false) {data : V} (hd : termData (abiTerm f t) = .ok data)
+    (hty : t.isTry = false) (hip : TermIntPos ctx t) {data : V} (hd : termData (abiTerm f t) = .ok data)
     (htf : ∃ (i : Nat) (F : Fam), famTab[i]? = some F ∧ FamOk ctx F ⟨data, [], [], none⟩)
     {targets : List Label} {s : LState} {out : Option V} {s' : LState} {tr : List Isle.RuleId}
     (hN : ctx.valDef.size ≤ s.nextVreg)
@@ -267,6 +301,42 @@ theorem termCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx
   obtain ⟨i, F, hF, hok⟩ := htf
   have hok' : FamOk (termCtx ctx ti data) F ⟨data, [], [], none⟩ :=
     famOk_valTy (ctx := ctx) (ctx' := termCtx ctx ti data) rfl hok
+  have hval : ∀ (x c : V) (info : IInfo), (termCtx ctx ti data).insts[ti]? = some info →
+      V.data 152 4 [V.data 151 2 [], x, c] = info.data →
+      ∃ w, w ∈ [8, 16, 32, 64] ∧ γ f (termCtx ctx ti data) (.val [.int w]) x := by
+    intro x c info hi he
+    rw [hslot] at hi
+    cases hi
+    cases t with
+    | brTable x' d tb =>
+      rw [show abiTerm f (.brTable x' d tb) = .brTable x' d tb from rfl, termData_brTable] at hd
+      cases hd
+      cases he
+      have hx : IntPos ctx x' := hip x' (by simp [Compile.termIntOperands])
+      cases hvt : ctx.valueType? x' with
+      | none =>
+        refine ⟨8, by simp, x', rfl, ⟨fun t ht => ?_, fun _ => ⟨.int 8, by simp, rfl⟩⟩⟩
+        have ht' : ctx.valueType? x' = some t := ht
+        rw [hvt] at ht'
+        cases ht'
+      | some t =>
+        have hm := hx t hvt
+        simp only [eCTys, List.mem_cons, List.mem_nil_iff, or_false] at hm
+        rcases hm with rfl | rfl | rfl | rfl <;>
+          exact ⟨_, by simp, x', rfl, valIn_type hvt (List.mem_singleton_self _)⟩
+    | jump bc =>
+      rw [show abiTerm f (.jump bc) = .jump bc from rfl, termData_jump] at hd; cases hd; cases he
+    | brif c' a b =>
+      rw [show abiTerm f (.brif c' a b) = .brif c' a b from rfl, termData_brif] at hd
+      cases hd; cases he
+    | ret vs =>
+      rw [show abiTerm f (.ret vs) = .ret (vs ++ sretRet f) from rfl, termData_ret] at hd
+      cases hd; cases he
+    | trap c' =>
+      rw [show abiTerm f (.trap c') = .trap c' from rfl, termData_trap] at hd; cases hd; cases he
+    | returnCall fn args => simp [abiTerm, termData, throw, throwThe, MonadExceptOf.throw] at hd
+    | tryCall fn args et => simp [Clif.Terminator.isTry] at hty
+    | tryCallIndirect callee args et => simp [Clif.Terminator.isTry] at hty
   have hbranch : retOrTrap (abiTerm f t) = false →
       runTerm (termCtx ctx ti data) "lower_branch" [.inst ti, .labels targets] s = .ok (out, s', tr) →
       CtlSinceT ctx.valDef.size s s' := fun hrt h =>
@@ -274,7 +344,7 @@ theorem termCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx
       (fun rl hrl _ hcr => .inl fun m s0 env s1 =>
         branchExcludedUnmatchableT_program rl hrl hcr f _ hctx' ti _ data targets hrt hd hslot {} m
           s0 env s1)
-      (fun _ h => h.elim) hN h
+      (fun _ h => h.elim) hval hN h
   have hlower : retOrTrap (abiTerm f t) = true →
       runTerm (termCtx ctx ti data) "lower" [.inst ti] s = .ok (out, s', tr) →
       CtlSinceT ctx.valDef.size s s' := by
@@ -308,6 +378,23 @@ theorem termCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx
   | tryCall fn args et => simp [Clif.Terminator.isTry] at hty
   | tryCallIndirect callee args et => simp [Clif.Terminator.isTry] at hty
 
+/-- A `try_call`'s data is not a `BranchTable`. -/
+theorem tryCallData_ne_brTableT {t : Clif.Terminator} {data : V} (hd : tryCallData f t = .ok data) :
+    ∀ fs, data ≠ .data 152 4 fs := by
+  intro fs he
+  cases t with
+  | tryCall fn args et =>
+    obtain ⟨sig, items, ext, he', hx, hs⟩ := tryCallData_spec hd
+    rw [tryCallData_eq he' hx hs] at hd
+    cases hd
+    cases he
+  | tryCallIndirect callee args et =>
+    obtain ⟨sig, items, he'⟩ := tryCallIndData_spec hd
+    rw [tryCallIndData_eq he'] at hd
+    cases hd
+    cases he
+  | _ => simp [tryCallData, throw, throwThe, MonadExceptOf.throw] at hd
+
 /-- **A `try_call`'s lowering emits control forms of their typed shapes.** -/
 theorem tryCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) (ha : AbiSigsOk f)
     {ti : Nat} (hph : ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩) {t : Clif.Terminator}
@@ -334,6 +421,11 @@ theorem tryCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
     (fun rl hrl hid _ => .inr ⟨hrl, hid⟩)
     (fun rl ⟨hrl, hid⟩ => handOkT_try totality hctx ha hph het hd he hip (tryInd_sig ha hB he) _ hlo htr
       hrl hid)
+    (fun x c info hi he' => by
+      have hsl : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ := termCtx_self hti data
+      rw [hsl] at hi
+      cases hi
+      exact absurd he'.symm (tryCallData_ne_brTableT hd _))
     (by show ctx.valDef.size ≤ st1.nextVreg; omega) h
 
 /-! ## The typed ISLE inversion -/
@@ -355,7 +447,8 @@ theorem iselCtlHypT : IselCtlHypT := by
       · exact ⟨B, hB, st, hst, Option.some.inj hc⟩
     exact stmt_shpT hctx hcl hfam ha hi hc hmem hN h
   · obtain ⟨B, hBm, rfl⟩ := hB
-    exact termCall_shpT hctx hcl hfam hph hty hd (termFam_of hs hdom hb hBm (.inl hd)) hN h
+    exact termCall_shpT hctx hcl hfam hph hty (termIntPos_of hs hb hBm) hd
+      (termFam_of hs hdom hb hBm (.inl hd)) hN h
   · obtain ⟨B, hBm, hBt⟩ := hB
     subst hBt
     exact tryCall_shpT hctx hcl hfam ha hph het ⟨B, hBm, rfl⟩ hd
