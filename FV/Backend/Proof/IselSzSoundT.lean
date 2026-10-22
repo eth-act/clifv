@@ -43,7 +43,7 @@ namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 
-variable {f : Clif.Function} {ctx : Ctx} {p : Program} {aext : TermId → AW → List AW}
+variable {S : Clif.Inst → Bool} {iOps fOps : List Nat} {f : Clif.Function} {ctx : Ctx} {p : Program} {aext : TermId → AW → List AW}
   {actor : TermId → List AW → AW}
   {apre : TermId → List AW → Bool} {aOracle : TermId → List AW → Option AW}
   {tab : Tab} {aw : TermId → List AW → Option Nat} {ctab : CTab}
@@ -174,7 +174,7 @@ theorem mapM_single_flatten : ∀ (xs : List (List AW)),
 /-! ## Environments of a match, from `SoundAtT` -/
 
 section Env
-variable {md : CovModelT S iOps fOps aext actor apre aOracle p f ctx} {cfg : Config}
+variable {md : CovModelT aext actor apre aOracle S iOps fOps p f ctx} {cfg : Config}
 
 /-- The environment after a rule's argument patterns is described by one of `aPatArgsT`'s
 (`SoundAtT.mrule` for the rule without its if-lets). -/
@@ -219,7 +219,7 @@ end Env
 /-! ## Soundness of the cost analysis -/
 
 section Cost
-variable (md : CovModelT S iOps fOps aext actor apre aOracle p f ctx) (cfg : Config) (tab : Tab)
+variable (md : CovModelT aext actor apre aOracle S iOps fOps p f ctx) (cfg : Config) (tab : Tab)
   (aw : TermId → List AW → Option Nat) (ctab : CTab) (W : LState → Nat)
 
 /-- The cost statements at fuel `n`: a run grows the measure `W` by at most the cost. -/
@@ -260,7 +260,7 @@ variable {md cfg tab aw ctab W}
 extern constructors' costs (`ExtWT`), the oracle's (`OracleWT`) and the checked cost table
 (`chkCostT`), every run grows `W` by at most the cost the analysis gives. -/
 theorem costAtT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab n)
-    (hext : ExtWT f ctx apre aw W) (hor : OracleWT p f ctx aOracle W)
+    (hext : ExtWT S iOps fOps f ctx apre aw W) (hor : OracleWT S iOps fOps p f ctx aOracle W)
     (hct : chkCostT p tab aw ctab aext actor apre aOracle iOps fOps = true) :
     ∀ n, CostAtT md cfg tab aw ctab W n := by
   intro n
@@ -571,7 +571,7 @@ theorem costAtT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab
 
 /-- **A root term whose rules cost at most `c` or never match** grows `W` by at most `c`. -/
 theorem cost_root (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab n)
-    (hext : ExtWT f ctx apre aw W) (hor : OracleWT p f ctx aOracle W)
+    (hext : ExtWT S iOps fOps f ctx apre aw W) (hor : OracleWT S iOps fOps p f ctx aOracle W)
     (hct : chkCostT p tab aw ctab aext actor apre aOracle iOps fOps = true)
     {vs : List V} {c : Nat} {ty : TypeId} {t : TermId} {term : Term} {flags : TermFlags}
     {ex : Option Extractor} {ins : List AW} {s : LState} {tr : Array RuleId} {r : Option V}
@@ -588,7 +588,7 @@ theorem cost_root (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg t
 (`HandW`: at a fuel leaving every hand-checked match and right-hand side 1000 steps) grows `W`
 by at most `c` (`root_hand` for the cost). -/
 theorem cost_root_hand (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab n)
-    (hext : ExtWT f ctx apre aw W) (hor : OracleWT p f ctx aOracle W)
+    (hext : ExtWT S iOps fOps f ctx apre aw W) (hor : OracleWT S iOps fOps p f ctx aOracle W)
     (hct : chkCostT p tab aw ctab aext actor apre aOracle iOps fOps = true)
     {vs : List V} {c : Nat} {Hand : Rule → Prop}
     (hhand : ∀ rl, Hand rl → HandW p ctx vs rl W c)
