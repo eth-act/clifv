@@ -1,130 +1,18 @@
+import FV.E2E.RegLevelNext
 import FV.E2E.RegLevelGotoW
 import FV.E2E.RegLevelWrites
 
 /-!
-# Items that fall through (M6): islands, `trapIf` not taken, symbol addresses
+# Items that fall through with their writes (A3, #412, slice F8b)
 
-Common bookkeeping: `q_op` takes `Q` at an instruction item apart (its allocated form, its
-lines, the lines after it); `q_next` puts `Q` together at the next item after plain lines ran.
+`RegLevelNext`'s `realizes_trapIf_next` with `RL.GoodXW` (`GoodX` and the writes `RL.WritesAt`
+of the unhooked instruction at the pc, which avoids the kept addresses `R.G`): the branch
+instruction of the `trapIf` writes no memory.
 -/
 
 namespace Backend.Proof
 
 open Backend E2E
-
-/-- `Q` at an instruction item, taken apart. -/
-theorem q_op {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem}
-    {m : Loc → CV} {w : Arm.ArmState} (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩))
-    {vb : VBlock} {i : MInst} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i) :
-    ∃ j0 items pre regs i' c1 c2 ls1 ls2 ps1 psm ps2 T, ∃ (cc : CheckCtx) (wh : String) (ops : Array Operand),
-      allocs = regs.map Loc.reg ∧ R.rf.blocks[b]? = some items ∧
-      items.toList = pre ++ .op k allocs :: its ∧ i.assign regs = .ok i' ∧
-      ((c1 = [AInst.inst i'] ∧ (∀ ds, i' ≠ .args ds) ∧ (∀ us, i' ≠ .rets us)) ∨
-        (∃ ds, i' = .args ds ∧ c1 = []) ∨ (∃ us, i' = .rets us ∧ c1 = [AInst.epilogueRet])) ∧
-      i.operands = .ok ops ∧ cc.checkStatic wh ops (regs.map Loc.reg) i.clobbers = .ok () ∧
-      ItemsChecked R vb its ∧ itemsCode R.fr vb its = .ok c2 ∧
-      codeLinesE R.ctx R.af c1 ps1 = .ok (ls1, psm) ∧ codeLinesE R.ctx R.af c2 psm = .ok (ls2, ps2) ∧
-      ps2.traps.toList <+: R.psF.traps.toList ∧
-      R.L.drop j0 = relaxLines R.far (ftList (ls1 ++ (ls2 ++ nxtOf R.af b))) ++ T ∧
-      Arm.r .PC s = R.pcOf j0 ∧ StRel R s m w := by
-  obtain ⟨j0, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
-    hpc, hst⟩ := hq
-  rw [hvb] at hvb0; cases hvb0
-  obtain ⟨c1, c2, hc1, hc2, rfl⟩ := itemsCode_cons hcode
-  obtain ⟨regs, i0, i', rfl, hi0, hasg, hc1'⟩ := itemCode_op hc1
-  rw [hi] at hi0; cases hi0
-  obtain ⟨cc, wh, i2, ops, hi2, hops, hstat, hchk'⟩ := op_checked hchk
-  rw [hi] at hi2; cases hi2
-  obtain ⟨ls1, ls2, psm, h1, h2, rfl⟩ := codeLinesE_append _ _ _ _ _ hls
-  exact ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, by rw [hdrop, List.append_assoc], hpc, hst⟩
-
-/-- `Q` at the next item, after the item's lines `ls1` (which `fallthrough` keeps) ran. -/
-theorem q_next {R : RL} {s : Arm.ArmState} {b : Nat} {it : RItem} {its : List RItem}
-    {m : Loc → CV} {w : Arm.ArmState} {vb : VBlock} {items : Array RItem} {pre : List RItem}
-    {c2 : List AInst} {ls1 ls2 : List Line} {psm ps2 : PState} {T : List Line} {j0 : Nat}
-    (hvb : R.vc.blocks[b]? = some vb) (hit : R.rf.blocks[b]? = some items)
-    (hsplit : items.toList = pre ++ it :: its) (hchk : ItemsChecked R vb its)
-    (hc2 : itemsCode R.fr vb its = .ok c2) (h2 : codeLinesE R.ctx R.af c2 psm = .ok (ls2, ps2))
-    (htr : ps2.traps.toList <+: R.psF.traps.toList)
-    (hdrop : R.L.drop j0 = relaxLines R.far (ftList (ls1 ++ (ls2 ++ nxtOf R.af b))) ++ T)
-    (hft : ftList (ls1 ++ (ls2 ++ nxtOf R.af b)) = ls1 ++ ftList (ls2 ++ nxtOf R.af b))
-    (hpc : Arm.r .PC s = R.pcOf (j0 + (relaxLines R.far ls1).length)) (hst : StRel R s m w) :
-    Q R s (.run ⟨b, its, m, w⟩) := by
-  have hdrop' : R.L.drop j0 =
-      relaxLines R.far ls1 ++ (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
-    rw [hdrop, hft, relaxLines_append, List.append_assoc]
-  refine ⟨j0 + (relaxLines R.far ls1).length, vb, items, pre ++ [it], c2, ls2, psm, ps2, T, hvb, hit,
-    by rw [hsplit]; simp, hchk, hc2, h2, htr, ?_, ?_, hst⟩
-  · rw [← List.drop_drop, hdrop', List.drop_left]
-  · exact hpc
-
-/-- A `trapIf` branch passes `fallthrough` unchanged (no trap label follows it in second
-position). -/
-theorem ftList_kind_trap (k' : CondBrKind) (n : Nat) (Z : List Line)
-    (hZ : ∀ n, Z[1]? ≠ some (.label (.trap n))) :
-    ftList (.ins (k'.insn (.trap n)) none :: Z) = .ins (k'.insn (.trap n)) none :: ftList Z := by
-  have hnb : ∀ x, k'.insn (.trap n) ≠ .b x := by cases k' <;> simp [CondBrKind.insn]
-  have hct : ∀ l, (k'.insn (.trap n)).condTarget? = some l → l = .trap n := by
-    intro l h
-    cases k' <;> simp only [CondBrKind.insn, Insn.condTarget?] at h
-    · simp_all
-    · simp_all
-    · split at h <;> simp_all
-  have hs : ftStep (.ins (k'.insn (.trap n)) none) Z[0]? Z[1]? =
-      ([.ins (k'.insn (.trap n)) none], 1) := by
-    unfold ftStep
-    repeat' split
-    all_goals first
-      | rfl
-      | (rename_i h0 h1 h2 h3; simp only [Line.ins.injEq] at h0 h1; simp_all)
-      | simp_all
-      | (exfalso; simp_all)
-  rw [ftList_cons, hs]
-  rfl
-
-/-- An instruction without defs and clobbers leaves the store unchanged (`MStep.op`). -/
-theorem store_nodefs {m m2 : Loc → CV} {L : List (Operand × Loc)} {cl : List Reg} (hcl0 : cl = [])
-    (hcl : Clobbered ckeep cl (writeM m ((L.zip ([] : List CV)).filter (·.1.1.isEarly))) m2) :
-    writeM m2 ((L.zip ([] : List CV)).filter (·.1.1.isLate)) = m := by
-  subst hcl0
-  have : m2 = m := funext fun l => (hcl.1 l (by simp)).trans (by simp [writeM])
-  subst this
-  simp [writeM]
-
-/-! ## Islands -/
-
-/-- **`emitIsland`**: no code. -/
-theorem realizes_island {R : RL} {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
-    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState} {c' : MConf CV Arm.ArmState}
-    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {nb : Nat}
-    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.emitIsland nb))
-    (h : MStep R.vc R.sem ckeep R.rf (.run ⟨b, .op k allocs :: its, m, w⟩) c') :
-    Q R s c' := by
-  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
-    hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
-  obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
-  obtain rfl : c1 = [.inst (.emitIsland nb)] := by
-    rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
-    · exact h
-    · cases h
-    · cases h
-  have hl1 := codeLinesE_single h1
-  simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
-  obtain ⟨rfl, rfl⟩ := hl1
-  cases h with
-  | @op b k allocs its m w vb' i ops' outs outs' w' ctl m2 c' hvb' hi' hops' hsz hsem hlen hho hcl hn =>
-  rw [hvb] at hvb'; cases hvb'
-  rw [hi] at hi'; cases hi'
-  obtain rfl := hho.2.1 rfl
-  simp only [RL.sem, csemV, csem, Option.some.injEq, Prod.mk.injEq] at hsem
-  obtain ⟨rfl, rfl, rfl⟩ := hsem
-  cases hn with
-  | next hk =>
-  rw [store_nodefs rfl hcl]
-  exact q_next hvb hit hsplit hchk' hc2 h2 htr hdrop (by simp) (by simpa using hpc) hst
-
-/-! ## `trapIf` not taken -/
 
 /-- **`trapIf` whose condition does not hold**: one conditional branch (to the trap section),
 not taken. -/
@@ -196,5 +84,6 @@ theorem realizes_trapIf_nextW {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat
   rw [hn]
   exact q_next hvb hit hsplit hchk' hc2 h2 htr hdrop (by rw [List.singleton_append, hft]; rfl)
     (by rw [Arm.r_of_w_same, hjf rfl]; simp [relaxLines]) (hst.pc _)
+
 
 end Backend.Proof
