@@ -1,6 +1,7 @@
 import FV.Backend
 import FV.Backend.ScalarNIProduction
 import FV.Opt.Legalize128Pass
+import FV.Opt.RetypeVec
 import FV.Opt.LegalExn
 import FVTest.Opt.Common
 import FVTest.Backend.StockConfig
@@ -37,6 +38,12 @@ With `--personality <sym>` (`cargo fv`: `rust_eh_personality`), functions with l
 (`try_call`) get cg_clif's LSDA and a `zLPR` CIE with that personality routine
 (`FV/Backend/Obj.lean`); without it their landing pads have no LSDA (as Cranelift's own
 objects, which leave the LSDA to the embedder).
+
+A function whose vector values only move from memory to memory (`Opt.Retype.okB vecInt`: the
+`load.i64x2`/`store` shape cg_clif emits around its inline-asm shims) first has those accesses
+retyped to the integer type of the same width (`Opt.Retype.retypeParsedFile`, `i128` for 128-bit
+vectors); its legalisation is then covered by `E2E.backend_correct_retype_legal_wide` (about the
+original function; `…_retype_legal_opt_wide` under `--opt`).
 
 Every function that mentions `i128` is first legalised by `Opt.Legalize128` (rewritten to
 plain `i8..i64` CLIF before the mid-end and the backend). A legalised function the validator
@@ -193,7 +200,7 @@ def run (input output : String) (o : Opts) : IO UInt32 := do
   -- the stock configuration requires regalloc2 (checked above)
   let alloc := (← Allocator.ofName? ra).getD .spill
   let source := Clif.parseFile src
-  let lg := Opt.Legalize128.parsedFile128 source
+  let lg := Opt.Legalize128.parsedFile128 (Opt.Retype.retypeParsedFile source)
   let pf := match o.opt with | some c => Opt.optimizeParsedFile c lg.file | none => lg.file
   -- the mid-end theorems (`E2E.backend_correct_opt_exe`, `E2E.backend_correct_legal_opt`) cover
   -- every function, legalised ones included, for the proven rule sets
