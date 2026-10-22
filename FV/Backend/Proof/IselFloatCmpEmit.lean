@@ -140,7 +140,7 @@ variable {F : BitVec 64 → Prop} {isem : Sem} {f : Clif.Function} {ctx : Ctx}
 /-- The frame side of `emit_fcmp_core`, with the (empty) instruction list fixed: on a frame
 where the operands hold values of the controlling type, the `FCMP` run's condition truth is
 `Clif.FSem.fcmp` on them. -/
-theorem emit_fcmp_core_run {st : LState} (hvb : ValsBelow ctx st)
+theorem emit_fcmp_core_run (hctx : CtxInvT f ctx) {st : LState} (hvb : ValsBelow ctx st)
     {cc : Clif.FloatCC} {cond : Cond} (hcond : fpCond? cc = some cond) {x y : Nat} {rx ry : Reg}
     {t : CTy} {sz : ScalarSize} {sv : V}
     (hx : ctx.valueReg? x = some rx) (hy : ctx.valueReg? y = some ry) (hT : ctx.valueType? y = some t)
@@ -152,7 +152,9 @@ theorem emit_fcmp_core_run {st : LState} (hvb : ValsBelow ctx st)
       (∀ u ∈ vuseNums (MInst.fpuCmp sz rx ry), st.nextVreg ≤ u ∨ (fr.regs u).isSome) ∧
       ∀ w, Runs F isem [] ρ w (fun ρ' _ => ∃ ps, SetsFlags (MInst.fpuCmp sz rx ry) ρ' ps ∧
         condOn cond.bits ps = b) := by
-  rintro ⟨ty, xa, xb, hxv, hyv, hb⟩ at hT'
+  have h1 := hctx.valueReg x rx hx; subst h1
+  have h2 := hctx.valueReg y ry hy; subst h2
+  obtain ⟨ty, xa, xb, hxv, hyv, hb⟩ := hT'
   refine ⟨UsesLo.nil _ _, fun u hu => ?_, fun w => Runs.nil ?_⟩
   · rw [vuseNums_fpuCmp] at hu
     rcases mem2 hu with rfl | rfl
@@ -191,7 +193,8 @@ theorem emit_fcmp_core (hctx : CtxInvT f ctx) {st : LState} (hvb : ValsBelow ctx
     rcases mem2 hu with rfl | rfl
     · exact vreg_lt hvb hx
     · exact vreg_lt hvb hy
-  · exact fun fr ρ b hh hdf hT => emit_fcmp_core_run hvb hcond hx hy hT hofv hsz fr ρ b hh hdf hT
+  · exact fun fr ρ b hh hdf hTv =>
+      emit_fcmp_core_run hctx hvb hcond hx hy hT hofv hsz fr ρ b hh hdf hTv
 
 end Core
 
@@ -451,14 +454,14 @@ theorem emit_fcmp_okT {F : BitVec 64 → Prop} {isem : Sem} {f : Clif.Function}
         have hxq : ctx.valueReg? x = some (Reg.vreg x (valClassOf ctx x)) := by assumption
         have hyq : ctx.valueReg? y = some (Reg.vreg y (valClassOf ctx y)) := by assumption
         have hTy : ctx.valueType? y = some (CTy.ofClif Clif.Ty.f32) := by assumption
-        exact emit_fcmp_core_run hvb hfc hxq hyq hTy
+        exact emit_fcmp_core_run hctx hvb hfc hxq hyq hTy
           (ofV_fpuCmp (ssIdx_le (CTy.ofClif Clif.Ty.f32)) _ _) (hsz32 rfl) fr ρ b hh hdf
           ⟨.f32, xa, xb, hxv, hyv, hb⟩
       | f64 =>
         have hxq : ctx.valueReg? x = some (Reg.vreg x (valClassOf ctx x)) := by assumption
         have hyq : ctx.valueReg? y = some (Reg.vreg y (valClassOf ctx y)) := by assumption
         have hTy : ctx.valueType? y = some (CTy.ofClif Clif.Ty.f64) := by assumption
-        exact emit_fcmp_core_run hvb hfc hxq hyq hTy
+        exact emit_fcmp_core_run hctx hvb hfc hxq hyq hTy
           (ofV_fpuCmp (ssIdx_le (CTy.ofClif Clif.Ty.f64)) _ _) (hsz64 rfl) fr ρ b hh hdf
           ⟨.f64, xa, xb, hxv, hyv, hb⟩
       | _ => simp [Clif.FSem.fcmp] at hb
