@@ -9,10 +9,12 @@ transparency to look for a variable. In the isel inversion proofs the context ho
 equations between large interpreter terms (`externCtor ctx …`, `Interp.applyTerm …`), so every
 rescan reduces them again: `subst_vars` took about 95% of `IselCtlTry` and `IselTermFactsCall`.
 
-`fastSubstVars` makes the same substitutions in the same order (a variable's first equation,
-`rhs` before `lhs`, `substCore` with `tryToSkip`), but reads the sides syntactically (after
-`instantiateMVars`, as `substVar` already does for variables). It differs from `subst_vars`
-only on an equation whose side is not a variable but reduces to one.
+`substVars` below first makes the substitutions it can see syntactically (sides after
+`instantiateMVars`, as `substVar` already reads them; same order and choices: a variable's
+first equation, `rhs` before `lhs`, `substCore` with `tryToSkip`), then runs
+`Lean.Meta.substVars` once for the equations whose side only reduces to a variable (e.g.
+`(a, b).1 = x`). The result is a `subst_vars` normal form; the expensive rescans happen only
+for those few.
 
 Every module importing this one (through `IselCmpBase`, the isel tactic hub) runs it for every
 `subst_vars`, also the ones inside the isel macros: `IselCtlTry` 806 → 101 s, `KillTryDefs`
@@ -63,14 +65,19 @@ def substSomeVar? (g : MVarId) : MetaM (Option MVarId) := g.withContext do
           return some g'
   return none
 
-/-- `Lean.Meta.substVars` without `whnf` of equation sides. -/
-partial def substVars (g : MVarId) : MetaM MVarId := do
+/-- The substitutions visible without `whnf`. -/
+partial def substVarsSyntactic (g : MVarId) : MetaM MVarId := do
   match ← substSomeVar? g with
-  | some g' => substVars g'
+  | some g' => substVarsSyntactic g'
   | none => return g
 
+/-- `Lean.Meta.substVars`, with the syntactically visible substitutions made first. -/
+def substVars (g : MVarId) : MetaM MVarId := do
+  Lean.Meta.substVars (← substVarsSyntactic g)
+
 open Elab Tactic in
-/-- `subst_vars` without `whnf` of equation sides (`Backend.Proof.FastSubst.substVars`). -/
+/-- `subst_vars` with the syntactically visible substitutions first
+(`Backend.Proof.FastSubst.substVars`). -/
 elab "fast_subst_vars" : tactic => do
   replaceMainGoal [← substVars (← getMainGoal)]
 
