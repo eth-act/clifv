@@ -380,6 +380,11 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.ctlIndep_fpReg_store
 #print axioms Concurrency.ArmAllocThread.ctlIndep_fpUnsc_load
 #print axioms Concurrency.ArmAllocThread.ctlIndep_fpUnsc_store
+#print axioms Concurrency.ArmAllocThread.linesEvs_insKind_none
+#print axioms Concurrency.ArmAllocThread.preMem
+#print axioms Concurrency.ArmAllocThread.straightSem_pre
+#print axioms Concurrency.ArmAllocThread.immEvs_load_eq
+#print axioms Concurrency.ArmAllocThread.immEvs_store_eq
 -- T2k (#311): forward precise runs, realizes_fence
 #print axioms Concurrency.ArmAllocThread.move_lines
 #print axioms Concurrency.ArmAllocThread.step_fwd
