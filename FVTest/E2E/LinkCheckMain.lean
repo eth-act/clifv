@@ -27,24 +27,26 @@ def main (args : List String) : IO UInt32 := do
   -- Other supported compiler modes and whole-file retries can retain earlier
   -- artifacts. Recover their routing from actual bytes, then validate every
   -- selected artifact normally. These are data choices, not source assumptions.
-  let mut choices : List (String × Nat) := []
-  if let some phs := phdrs (fileRd file) then
-    for fi in I0.funcs do
-      let f := fi.func
-      if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f ||
-          Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f) &&
-          !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
-        -- Probe each complete route before its transactional retry. A retained
-        -- logical/mixed artifact must not be skipped directly to legacy.
-        let mut found : Option Nat := none
-        for (lower,idx) in Stock.Scalar.lowerRoutes.zipIdx do
-          if found.isNone then
-            let sameBytes := match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
-              | .error _ => false
-              | .ok a => artB I0 (fileRd file) phs a
-            if sameBytes then found := some idx
-        let idx := found.getD 4
-        if idx != 0 then choices := choices ++ [(f.name,idx)]
+  -- One task per function (`Link.parMap`, T3d: up to five pipelines per function).
+  let choices : List (String × Nat) := match phdrs (fileRd file) with
+    | none => []
+    | some phs =>
+      let rd := fileRd file
+      let route (fi : FnInput) : Option (String × Nat) :=
+        let f := fi.func
+        if (Stock.Arithmetic.eligible f || Stock.Mixed.activationEligible f ||
+            Stock.Logical.activationEligible f || Stock.Scalar.activationEligible f) &&
+            !(Stock.D0.eligible f || Stock.ScalarAdd.activationEligible f) then
+          -- Probe each complete route before its transactional retry. A retained
+          -- logical/mixed artifact must not be skipped directly to legacy.
+          let found := Stock.Scalar.lowerRoutes.zipIdx.find? fun (lower, _) =>
+            match I0.pipeOfWithLowering lower (productionStage o.deadCleanup) fi with
+            | .error _ => false
+            | .ok a => artB I0 rd phs a
+          let idx := (found.map (·.2)).getD 4
+          if idx != 0 then some (f.name, idx) else none
+        else none
+      (Link.parMap route I0.funcs).filterMap id
   let actualLower := Stock.Scalar.lowerWithRoutes choices
   let lowerName := "(Backend.Stock.Scalar.lowerWithRoutes [" ++
     ", ".intercalate (choices.map fun (name,idx) => "(" ++ leanStr name ++ ", " ++ toString idx ++ ")") ++ "])"
