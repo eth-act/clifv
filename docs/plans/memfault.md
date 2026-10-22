@@ -182,6 +182,41 @@ reaches an instruction that halts with `trapCode? i = some c`":
 
 Overall XL, as the audit estimated; F1–F2 are independent of the rest and land first.
 
+## F8: no earlier access faults (design, 2026-10-22)
+
+F4–F7 (merged, #440) say: if the run reaches the trapping atomic, its `ldaxr` faults under `mp`.
+F8 adds, as new variants, that the run on the fault-aware machine gets there: no step before the
+trap state faults (`¬ ArmFault.Faults mp` at every earlier state of the activation and of the
+activations it calls), so `ArmFault.runF mp` agrees with the run up to the trap state
+(`runF_eq_run`) and its next step is the fault. Premise `MapRel mp` (with the run): every byte
+valid in the CLIF memory of a reachable state is readable (`ro`/`rw`) and writable unless the
+allocation is read-only, the stack region the theorem reserves (`OutsideCall.stack`) is `rw`, the
+code words and the GOT slots are readable.
+
+The obligation is a per-step footprint invariant: every access of every line the run executes is
+allowed. The accesses split three ways:
+
+1. **CLIF memory instructions** (`load`, `store`, `atomic_*` lines; `MemRefines`): the address is
+   the CLIF access's. The existing guarded semantics `csemG`/`valueSemG` (`FV/E2E/Guarded.lean`,
+   `FV/E2E/DeadCleanupGuarded.lean`) already restricts the reads of the memory forms to a
+   predicate `Rd` (`GuardR`, `MemRefinesR`) and is proven through isel for the D2 read facts. F8a:
+   add a write guard `GuardW Wr` (stores, the LL/SC loops' `stlxr`) with `MemRefinesRW`, and
+   instantiate `Rd`/`Wr` with `mp`'s permissions; the rules discharge the guards from `MemRel`
+   and CLIF validity, `MapRel` turns validity into permission.
+2. **Frame accesses** (spills, reloads, prologue/epilogue pairs, outgoing arguments, stack slots):
+   inside the activation's frame region `F` (`FrameKeep`, `frameW`), which lies in the reserved
+   stack region, `rw` by `MapRel`. F8b: an `RL.AccessOk` per-state fact next to
+   `RL.ReadsAt` (D2), proven per realised form like `ReadsAt` (`LinesReads` with reads and writes:
+   `ArmInstFoot.instEvs` per emitted line form).
+3. **Code and GOT reads** (jump tables, `adrp`/`ldr` GOT pairs): readable by `MapRel`'s code/GOT
+   clause.
+
+Then F8c: `RL.GoodX` with `AccessOk` through the linked-program induction (`RunGoodLB`) and the
+executable transfer (`StepOk` gets the footprint fact, `Sim` keeps it: same registers, memory
+agreeing outside relocated bytes), and F8d: the `_memtrapF` variants on the fault-aware machines
+(`ArmFault.stepF` per function; the executable machine with `execF` at its processor steps, hook
+steps unchanged). Size [INFERENCE]: F8a M, F8b L (every realised form, the bulk), F8c M, F8d S.
+
 ## Related, not in this plan
 
 * **Stack overflow** (`stk_ovf`, DEFERRED "divergence or stack overflow"): with `stepF` a stack
