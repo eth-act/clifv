@@ -3,6 +3,7 @@ import FV.Backend.Lowering.StockScalarNI
 import FVTest.E2E.LinkProof
 import FVTest.E2E.SemanticLinkProofWith
 import FV.E2E.BinCheckFast
+import FV.Link.Image
 
 open E2E E2E.LinkCheck E2E.StackBound Lean Backend E2E.Elf E2E.BinCheck
 
@@ -67,12 +68,13 @@ def main (args : List String) : IO UInt32 := do
       IO.println s!"  profile: {t} ms {n} (pipeline {a}, lowerCheck {b}, checkAlloc {c})"
     IO.println s!"  profile: {(tot.map (·.1)).foldl (· + ·) 0} ms in total"
   let t0 ← IO.monoMsNow
-  let R0 := I0.resultsProductionWith actualLower o.deadCleanup
+  -- `I0.resultsProductionWith actualLower o.deadCleanup`, one task per function (`Link.parMap_eq`)
+  let R0 : Res := Link.parMap (fun fi => (fi.func, I0.pipeProductionWith actualLower o.deadCleanup fi)) I0.funcs
   -- the CLIF image's symbols and the call-level stack
   -- the checks that do not depend on the rest of the program, once (`staticChks`: the
   -- validators); then `diagR` with them (`chks = staticChks ++ linkChks`)
   let D0 := (R0.map fun e => frameDrop (getOk e.2).af).foldl max 0
-  let stat := R0.map fun e => (e.1.name, staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2)
+  let stat := Link.parMap (fun e => (e.1.name, staticChksSemanticNI (productionStage o.deadCleanup) { I0 with D := D0 } e.1 e.2)) R0
   let nStat := (stat.filter fun e => !(bad e.2).isEmpty).length
   IO.println s!"  static checks (the validators): {nStat} function(s) fail"
   IO.println s!"  static checks done in {(← IO.monoMsNow) - t0} ms"
@@ -95,8 +97,8 @@ def main (args : List String) : IO UInt32 := do
     let T := tabOf keep
     let C := LinkCtx.of I P T
     let gl := bad (globalChksWith C I P T)
-    let fs := keep.filterMap fun e =>
-      match bad ((statM[e.1.name]?).getD [] ++ linkChksWith C P e.1 e.2) with
+    let fs := (keep.zip (Link.parMap (fun e => bad ((statM[e.1.name]?).getD [] ++ linkChksWith C P e.1 e.2)) keep)).filterMap fun (e, b) =>
+      match b with
       | [] => none
       | b => some (e.1.name, b ++ (match e.2 with | .error m => [m] | .ok _ => []))
     d := (if gl.isEmpty then [] else [("(program)", gl)]) ++ fs
@@ -153,11 +155,16 @@ def main (args : List String) : IO UInt32 := do
     | some e => staticB e phs
     | none => false
   let arts := keep.map fun e => (e.1.name, getOk e.2)
+  -- the link map and the aliases in hash maps, built once (`artWithB_assocMap`, `objWithB_assocMap`)
+  let addrM := assocMap I'.addrs
+  let aliasM := assocMap I'.aliases
+  let ad := fun n => (addrM[n]?).getD 0
+  let al := fun n => aliasM[n]?
   let mut codeBad := 0
   let mut words := 0
   for (n, a) in arts do
     words := words + a.fb.words.size
-    if !artB I' r phs a then
+    if !artWithB ad al r phs a then
       codeBad := codeBad + 1
       IO.println s!"  BIN code {n}:"
       for m in (artDiag I' r phs a).take 8 do IO.println s!"      {m}"
@@ -203,7 +210,7 @@ def main (args : List String) : IO UInt32 := do
   let D := allData.filter (reach.contains ·.name)
   let mut dataBad := 0
   for o in D do
-    if !objB I' r phs o then
+    if !objWithB (fun n => addrM[n]?) r phs o then
       dataBad := dataBad + 1
       IO.println s!"  BIN data {o.name}:"
       for m in (objDiag I' r phs o).take 8 do IO.println s!"      {m}"
@@ -212,12 +219,11 @@ def main (args : List String) : IO UInt32 := do
   let cert : List (String × Nat × Nat) := I'.addrs.filterMap fun p =>
     (idx.get? (symName p.1, p.2)).map (p.1, ·)
   let ex : Excerpt := [(0, file)]
-  let aliasM := assocMap I'.aliases
   let certM := assocMap cert
   let symsBad := I'.addrs.filter fun p => !(aliasM[p.1]?).isSome && !(certM[p.1]?).isSome
   for p in symsBad do
     IO.println s!"  BIN symbol {p.1}: no defined symbol {symName p.1} = {hexN p.2} in the executable's symbol table"
-  let symsOk := symsB I' ex cert
+  let symsOk := symsWithB (fun n => aliasM[n]?) (fun n => certM[n]?) I' ex
   let binOk := hdrOk && codeBad == 0 && dataBad == 0 && symsOk
   IO.println s!"  binary checks done in {(← IO.monoMsNow) - tb} ms"
   IO.println (if binOk then

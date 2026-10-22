@@ -194,7 +194,11 @@ def linkChksWith (C : LinkCtx) (P : Clif.Program) (g : Clif.Function) (r : Excep
     List (String × Bool) :=
   let a := getOk r
   let fr := RAFrame.compute a.vcp a.rf
-  let may := indToFastB C.S g
+  -- `g`'s facts bound before the scans over the program (a closure `indToFastB C.S g` of a
+  -- definition with the `let`s inside is eta-expanded and recomputes them per call)
+  let Ds := declSet g
+  let sigs := indSigs g
+  let may := indToWithB C.S (indFreeB g) (fun n => Ds.contains n) sigs g
   [("outFits", g.externs.all (fun e => !(C.F e.2.name).isSome || outFitsB e.2.sig fr.intBase)),
    ("calleeFrame/slotFits",
      !(C.callees.contains g.name || ((C.S g.name).isSome && C.anyInd)) ||
@@ -207,7 +211,7 @@ def linkChksWith (C : LinkCtx) (P : Clif.Program) (g : Clif.Function) (r : Excep
 theorem linkChksWith_of (I : LinkInput) (P : Clif.Program) (T : List (Clif.Function × Art))
     (g : Clif.Function) (r : Except String Art) :
     linkChksWith (LinkCtx.of I P T) P g r = linkChks I P T g r := by
-  simp only [linkChksWith, LinkCtx.of, assocMap_fun, funcMap_fun, indToFastB_eq, indFastB_eq,
+  simp only [linkChksWith, LinkCtx.of, assocMap_fun, funcMap_fun, indToWithB_declSet, indFastB_eq,
     calleeSet_contains, raCallFastB_eq, siteWithOk_func?]
   rfl
 

@@ -102,8 +102,13 @@ map, `funcMap`). -/
 def scopeFails (F : String → Option Clif.Function) (P : Clif.Program) (S : String → Option Nat)
     (g : Clif.Function) : List String :=
   let ind := !indFreeB g
+  -- `g`'s facts once (`mayWithB`, `indSigWithB`, `indRetsWithB`, `indToWithB`: T3d)
+  let Ds := declSet g
+  let D := fun n => Ds.contains n
+  let sigs := indSigs g
+  let to := indToWithB S (!ind) D sigs g
   let site (s : Clif.Signature) (args : List Nat) : List String :=
-    if indSiteB P S g s args then [] else ["callScopeB:blrRegs"]
+    if indSiteWithB P to s args then [] else ["callScopeB:blrRegs"]
   let sites := g.blocks.flatMap fun B =>
     (B.body.flatMap fun st => match st.inst with
       | .call fn args => match g.extern? fn with
@@ -122,10 +127,11 @@ def scopeFails (F : String → Option Clif.Function) (P : Clif.Program) (S : Str
       | none => []
     | _ => []
   ((if declSigWithB F g then [] else ["declSigB"]) ++
-    (if ind && P.funcs.any (fun h => mayB S g h.name && indSigB g h &&
+    (if ind && P.funcs.any (fun h => mayWithB S (!ind) D h.name && indSigWithB D sigs h &&
         (match sigParamBytes h.sig with | .ok b => decide (b.length > 8) | .error _ => true))
       then ["indB:calleeStack"] else []) ++
-    (if ind && P.funcs.any (fun h => mayB S g h.name && indSigB g h && !indRetsB g h)
+    (if ind && P.funcs.any (fun h => mayWithB S (!ind) D h.name && indSigWithB D sigs h &&
+        !indRetsWithB sigs h)
       then ["indB:sretRets"] else []) ++
     sites ++ (if outScopeWithB F g then [] else ["outScopeB"])).eraseDups
 

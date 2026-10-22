@@ -1,3 +1,4 @@
+import FV.E2E.BinCheck
 import FV.E2E.CodeMap
 import FV.E2E.StackBound
 import FV.E2E.LinkCheckFast
@@ -122,3 +123,130 @@ theorem budMapFast_eq (I : LinkInput) (R : Res) : budMapFast I R = budMap I R :=
 end StackBound
 
 end E2E
+
+namespace E2E.BinCheck
+
+open E2E E2E.LinkCheck Backend Elf
+
+/-! ## The binary checks with the link map in a hash map
+
+`relocB`, `itemBytes`, `objB` and `symsB` look names up in the link map, the aliases and the
+symbol certificate (`List.lookup`) per relocation, per data byte (`objB` evaluates `objAt I o`
+at every byte) and per link-map entry. The `…WithB` forms take the lookups as functions (`ad`:
+`I.addrOf`, `al`: `I.aliases.lookup`, `look`: `I.addrs.lookup`, `ce`: `cert.lookup`) and are the
+checks at those; `link-check` passes hash maps built once (`artWithB_assocMap`,
+`objWithB_assocMap`, `symsWithB_assocMap`). -/
+
+/-- `relocB I` with `I.addrOf = ad` and `I.aliases.lookup = al`. -/
+def relocWithB (ad : String → Nat) (al : String → Option String) (m : PMem) (phs : List Phdr)
+    (a : Art) (r : Reloc) : Bool :=
+  let o := r.offset
+  o % 4 == 0 && match r.type with
+  | .call26 =>
+    let d : Int := (ad ((al r.sym).getD r.sym) : Int) - (wAt a o).toNat
+    a.fb.words[o / 4]? == some (blW 0) && blRange d && readN m 4 (wAt a o) == some (blW d)
+  | .adrGotPage | .adrPrelPgHi21 =>
+    let got := decide (r.type = .adrGotPage)
+    let rd := rd5 (a.fb.words[o / 4]?.getD 0)
+    decide (rd < 31) && a.fb.words[o / 4]? == some (adrpW rd 0) &&
+      a.fb.words[o / 4 + 1]? == some (if got then ldrW rd rd 0 else addW rd rd 0) &&
+      a.fb.relocs.any (fun r' => r'.offset == o + 4 && decide (r'.type = loOf r.type) &&
+        r'.sym == r.sym && r'.addend == r.addend) &&
+      (match readN m 4 (wAt a o), readN m 4 (wAt a (o + 4)) with
+       | some x0, some x1 => pairB m (wAt a o).toNat
+          (BitVec.ofNat 64 (ad r.sym) + BitVec.ofInt 64 r.addend).toNat rd got x0 x1
+       | _, _ => false)
+  | .ld64GotLo12Nc | .addAbsLo12Nc =>
+    a.fb.relocs.any fun r' => r'.offset + 4 == o &&
+      decide (r'.type = .adrGotPage ∨ r'.type = .adrPrelPgHi21)
+  | .tlsDescAdrPage21 =>
+    match tpOff phs (ad r.sym) with
+    | some v => decide (v < 2 ^ 32) && readN m 4 (wAt a o) == some (movzW 0 (v / 65536)) &&
+      readN m 4 (wAt a (o + 4)) == some (movkW 0 (v % 65536)) &&
+      readN m 4 (wAt a (o + 8)) == some nopW && readN m 4 (wAt a (o + 12)) == some nopW
+    | none => false
+  | .tlsDescLd64Lo12 =>
+    a.fb.relocs.any fun r' => decide (r'.type = .tlsDescAdrPage21) && r'.offset + 4 == o
+  | .tlsDescAddLo12 =>
+    a.fb.relocs.any fun r' => decide (r'.type = .tlsDescAdrPage21) && r'.offset + 8 == o
+  | .tlsDescCall =>
+    a.fb.relocs.any fun r' => decide (r'.type = .tlsDescAdrPage21) && r'.offset + 12 == o
+
+theorem relocWithB_eq (I : LinkInput) :
+    relocWithB I.addrOf (fun n => I.aliases.lookup n) = relocB I := rfl
+
+/-- `artB I` with `I.addrOf = ad` and `I.aliases.lookup = al`. -/
+def artWithB (ad : String → Nat) (al : String → Option String) (r : Rd) (phs : List Phdr)
+    (a : Art) : Bool :=
+  let m := memIn r phs
+  (List.range a.fb.words.size).all (fun k =>
+    (List.range 4).all (fun i => roB phs (wAt a (4 * k + i))) &&
+    (a.fb.relocs.any (·.offset == 4 * k) ||
+      readN m 4 (wAt a (4 * k)) == some (a.fb.words[k]?.getD 0))) &&
+  a.fb.relocs.all (relocWithB ad al m phs a)
+
+theorem artWithB_eq (I : LinkInput) :
+    artWithB I.addrOf (fun n => I.aliases.lookup n) = artB I := rfl
+
+theorem artWithB_assocMap (I : LinkInput) :
+    artWithB (fun n => ((assocMap I.addrs)[n]?).getD 0) (fun n => (assocMap I.aliases)[n]?) =
+      artB I := by
+  simp only [assocMap_get]
+  exact artWithB_eq I
+
+/-- `itemBytes I` with `I.addrOf = ad`. -/
+def itemBytesWith (ad : String → Nat) : Clif.DataItem → List (BitVec 8)
+  | .byte b => [b]
+  | .addr n off =>
+    let v := BitVec.ofInt 64 ((ad n : Int) + off)
+    (List.range 8).map fun j => v.extractLsb' (8 * j) 8
+
+theorem itemBytesWith_eq (I : LinkInput) : itemBytesWith I.addrOf = itemBytes I := by
+  funext it
+  cases it <;> rfl
+
+/-- **`objB` with the link map looked up through `look`** and the object's address and bytes
+computed once (an array; `objWithB_eq`). -/
+def objWithB (look : String → Option Nat) (r : Rd) (phs : List Phdr) (o : Clif.DataObject) : Bool :=
+  match look o.name with
+  | none => false
+  | some a0 =>
+    let bs := (o.items.flatMap (itemBytesWith fun n => (look n).getD 0)).toArray
+    let at0 := BitVec.ofNat 64 a0
+    (List.range bs.size).all fun i =>
+      let x := at0 + BitVec.ofNat 64 i
+      loadIn r phs x.toNat == some (bs[i]?.getD 0) && (o.writable || roB phs x || relroB phs x)
+
+theorem objWithB_eq (I : LinkInput) (r : Rd) (phs : List Phdr) (o : Clif.DataObject) :
+    objWithB (fun n => I.addrs.lookup n) r phs o = objB I r phs o := by
+  have hi : itemBytesWith (fun n => (I.addrs.lookup n).getD 0) = itemBytes I := itemBytesWith_eq I
+  simp only [objWithB, objB, objBytes, objAt, hi]
+  cases h : I.addrs.lookup o.name with
+  | none => simp
+  | some a0 => simp [LinkInput.addrOf, h]
+
+theorem objWithB_assocMap (I : LinkInput) :
+    objWithB (fun n => (assocMap I.addrs)[n]?) = objB I := by
+  funext r phs o
+  rw [assocMap_fun, objWithB_eq]
+
+/-- `symsB` with the aliases and the certificate looked up through `al`, `ce`. -/
+def symsWithB (al : String → Option String) (ce : String → Option (Nat × Nat)) (I : LinkInput)
+    (ex : Excerpt) : Bool :=
+  let r := exRd ex
+  I.addrs.all fun p => (al p.1).isSome ||
+    match ce p.1 with
+    | some (s, i) => match symEntry r s i with
+      | some (o, v) => v == p.2 && cstrB r o (symName p.1)
+      | none => false
+    | none => false
+
+theorem symsWithB_eq (I : LinkInput) (ex : Excerpt) (cert : List (String × Nat × Nat)) :
+    symsWithB (fun n => I.aliases.lookup n) (fun n => cert.lookup n) I ex = symsB I ex cert := rfl
+
+theorem symsWithB_assocMap (I : LinkInput) (ex : Excerpt) (cert : List (String × Nat × Nat)) :
+    symsWithB (fun n => (assocMap I.aliases)[n]?) (fun n => (assocMap cert)[n]?) I ex =
+      symsB I ex cert := by
+  rw [assocMap_fun, assocMap_fun, symsWithB_eq]
+
+end E2E.BinCheck

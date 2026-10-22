@@ -14,8 +14,9 @@ once) answers `P.func?` (`funcMap_get`) and `assocMap l` answers `l.lookup` (`as
 the hash-map versions `progScopeFastB`, `progScopeInFastB` are equal to the conditions
 (`progScopeFastB_eq`, `progScopeInFastB_eq`); `Link.inScopePar`, `Link.inScopeInPar` evaluate
 them. They also compute a function's own facts (`indFreeB g`, `declB g`, `indSigs g`) once per
-function instead of once per (function, function) pair (`indFastB`, `indToFastB`). No statement
-changes.
+function instead of once per (function, function) pair (`indFastB`, `indToWithB`; the callers
+bind them with `let` before the scan over the program: Lean's compiler eta-expands a partially
+applied definition, so a closure `indToB S g` recomputes them per call). No statement changes.
 -/
 
 namespace E2E.LinkCheck
@@ -120,14 +121,9 @@ theorem indToWithB_eq (S : String → Option Nat) (g : Clif.Function) :
 theorem indWithB_eq (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) :
     indWithB P S (indFreeB g) (declB g) (indSigs g) = indB P S g := rfl
 
-/-- **`indToB S g` with `g`'s facts computed once** (`indToFastB_eq`). -/
-def indToFastB (S : String → Option Nat) (g : Clif.Function) : Clif.Function → Bool :=
-  let D := declSet g
-  indToWithB S (indFreeB g) (fun n => D.contains n) (indSigs g) g
-
-theorem indToFastB_eq (S : String → Option Nat) (g : Clif.Function) :
-    indToFastB S g = indToB S g := by
-  simp only [indToFastB, declSet_contains, indToWithB_eq]
+theorem indToWithB_declSet (S : String → Option Nat) (g : Clif.Function) :
+    indToWithB S (indFreeB g) (fun n => (declSet g).contains n) (indSigs g) g = indToB S g := by
+  rw [declSet_contains, indToWithB_eq]
 
 /-- **`indB P S g` with `g`'s facts computed once** (`indFastB_eq`). -/
 def indFastB (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) : Bool :=
@@ -187,16 +183,18 @@ theorem callScopeWithB_eq (P : Clif.Program) (S : String → Option Nat) (g : Cl
     callScopeWithB P.func? P (indToB S g) g = callScopeB P S g := rfl
 
 /-- The per-function part of `progScopeB` with the program's functions looked up through `F` and
-`g`'s facts computed once (`indFastB`, `indToFastB`). -/
+`g`'s facts computed once (`indFastB`, `indToWithB`). -/
 def progFnWithB (F : String → Option Clif.Function) (P : Clif.Program) (S : String → Option Nat)
     (g : Clif.Function) : Bool :=
-  let to := indToFastB S g
+  let Ds := declSet g
+  let sigs := indSigs g
+  let to := indToWithB S (indFreeB g) (fun n => Ds.contains n) sigs g
   declSigWithB F g && indFastB P S g && callScopeWithB F P to g && outScopeWithB F g
 
 theorem progFnWithB_func? (P : Clif.Program) (S : String → Option Nat) (g : Clif.Function) :
     progFnWithB P.func? P S g =
       (declSigB P g && indB P S g && callScopeB P S g && outScopeB P g) := by
-  simp only [progFnWithB, indFastB_eq, indToFastB_eq, callScopeWithB_eq]
+  simp only [progFnWithB, indFastB_eq, indToWithB_declSet, callScopeWithB_eq]
   rfl
 
 /-- `progScopeB` with the program's functions looked up through `F`. -/
