@@ -62,11 +62,11 @@ theorem fpuToInt_ok {n : Nat} (hn : 40 ≤ n) {op a : V} {st st' : LState × Arr
 
 theorem ext_fits_in_16_64 (ctx : Ctx) (st : LState) :
     externExtract ctx T.fits_in_16 (.ty (.int 64)) st = .fail := by
-  rw [ext_fits_in_16, if_neg (by decide)]
+  rw [ext_fits_in_16]; rfl
 
 theorem ext_fits_in_16_32 (ctx : Ctx) (st : LState) :
     externExtract ctx T.fits_in_16 (.ty (.int 32)) st = .fail := by
-  rw [ext_fits_in_16, if_neg (by decide)]
+  rw [ext_fits_in_16]; rfl
 
 set_option maxHeartbeats 2000000 in
 include hp hc in
@@ -84,6 +84,8 @@ theorem fpuToIntSat_ok {n : Nat} (hn : 60 ≤ n) {op a s : V} {t : CTy}
   all_goals first
     | exact absurd ‹CTy.int 64 = CTy.int 32› (by decide)
     | exact absurd ‹CTy.int 32 = CTy.int 64› (by decide)
+    | exact absurd ‹(CTy.int 64).bits ≤ 16› (by decide)
+    | exact absurd ‹(CTy.int 32).bits ≤ 16› (by decide)
     | (have h632 := ‹ApplyInternal _ _ _ _ 27 632 _ _ _ _›
        exact fpuToInt_ok hp' hc (by omega) h632)
 
@@ -241,6 +243,7 @@ theorem fromIntOpAt_ne {op : Clif.FOp} {ty : Clif.Ty} {b : Bool} {o : IntToFpuOp
     (h : fromIntOpAt op ty b = some o) : op = .fcvtFromUint ∨ op = .fcvtFromSint := by
   cases op <;> first | (left; rfl) | (right; rfl) | (cases ty <;> cases b <;> simp [fromIntOpAt] at h)
 
+set_option maxHeartbeats 4000000 in
 /-- **A saturating conversion is the `FpuToInt` the rule emits**: on a register value holding
 the float operand, `fpuToIntVal` holds CLIF's result. -/
 theorem toSat_holds {op : Clif.FOp} {ty tx : Clif.Ty} {fop : FpuToIntOp}
@@ -250,8 +253,9 @@ theorem toSat_holds {op : Clif.FOp} {ty tx : Clif.Ty} {fop : FpuToIntOp}
   simp only at hty
   subst hty
   rcases toIntOpAt_ne hat with rfl | rfl
-  all_goals cases ty <;> cases aty <;>
-    simp only [toIntOpAt, Option.some.injEq, reduceCtorEq] at hat <;> subst hat
+  all_goals
+    cases ty <;> cases aty <;> simp only [toIntOpAt, Option.some.injEq, reduceCtorEq] at hat <;>
+      subst hat
   all_goals
     have ha' : za.setWidth _ = ab := ha
     subst ha'
@@ -260,6 +264,7 @@ theorem toSat_holds {op : Clif.FOp} {ty tx : Clif.Ty} {fop : FpuToIntOp}
     subst h
     first | exact vholds_x32 _ | exact vholds_x64 _
 
+set_option maxHeartbeats 4000000 in
 /-- **A conversion from a 64-bit integer is the `IntToFpu` the rule emits.** -/
 theorem from64_holds {op : Clif.FOp} {ty : Clif.Ty} {iop : IntToFpuOp}
     (hat : fromIntOpAt op ty true = some iop) {a r : Clif.Val} {za : CV} (hty : a.ty = .i64)
@@ -270,14 +275,15 @@ theorem from64_holds {op : Clif.FOp} {ty : Clif.Ty} {iop : IntToFpuOp}
   have ha' : lo64 za = ab := ha
   subst ha'
   rcases fromIntOpAt_ne hat with rfl | rfl
-  all_goals cases ty <;> simp only [fromIntOpAt, Option.some.injEq, reduceCtorEq] at hat <;>
-    subst hat
+  all_goals
+    cases ty <;> simp only [fromIntOpAt, Option.some.injEq, reduceCtorEq] at hat <;> subst hat
   all_goals
     simp only [Clif.evalFloat, Clif.Ty.isInt, ↓reduceIte, Clif.FSem.fromInt, Clif.Res.ofOption,
       bind, Clif.Res.bind, pure, Clif.Res.ok.injEq, fop_beq, Clif.Ty.width] at h
     subst h
     first | exact vholds_f32' _ | exact vholds_f64' _
 
+set_option maxHeartbeats 4000000 in
 /-- **A conversion from an integer of at most 32 bits is the `IntToFpu` the rule emits**, on
 the register `put_in_reg_{z,s}ext32` returned (`ExtHolds`). -/
 theorem small_holds {op : Clif.FOp} {ty : Clif.Ty} {iop : IntToFpuOp}
@@ -287,8 +293,8 @@ theorem small_holds {op : Clif.FOp} {ty : Clif.Ty} {iop : IntToFpuOp}
   obtain ⟨aty, ab⟩ := a
   have he := hext.2 hw
   rcases fromIntOpAt_ne hat with rfl | rfl
-  all_goals cases ty <;> simp only [fromIntOpAt, Option.some.injEq, reduceCtorEq] at hat <;>
-    subst hat
+  all_goals
+    cases ty <;> simp only [fromIntOpAt, Option.some.injEq, reduceCtorEq] at hat <;> subst hat
   all_goals
     simp only [cvtSigned, Bool.false_eq_true, ↓reduceIte] at he
     simp only [Clif.evalFloat] at h
@@ -379,17 +385,18 @@ theorem lowerInstOk_cvtSmall {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
         st.emitted ++ ms.toArray ∧
       LowerInstOk isem MR env cp ctx (.float op ty [x]) results st [[.vreg s1.nextVreg .float]]
         ((s1.fresh .float).2.emit (.intToFpu iop (.vreg s1.nextVreg .float) r)) ms := by
-  have hf2 : Frag s1 ((s1.fresh .float).2.emit (.intToFpu iop (.vreg s1.nextVreg .float) r))
-      [.intToFpu iop (.vreg s1.nextVreg .float) r] :=
-    Frag.fresh_emit_f s1 (fun d hd => by
-      rwa [show vdefs (MInst.intToFpu iop (.vreg s1.nextVreg .float) r) = [s1.nextVreg] from rfl]
-        at hd)
   by_cases htE : t ∈ eCTys
   · have hxi : IntPos ctx x := fun t' h' => by rw [ht] at h'; cases h'; exact htE
     obtain ⟨k, ms, hv, hfr, hk, hk', hrun⟩ :=
       ExtOut.semT hR hctx hxi hvb (.inl rfl) (by simp) (by simp) hE
     simp only [V.reg.injEq] at hv
     subst hv
+    have hf2 : Frag s1 ((s1.fresh .float).2.emit
+        (.intToFpu iop (.vreg s1.nextVreg .float) (.vreg k .int)))
+        [.intToFpu iop (.vreg s1.nextVreg .float) (.vreg k .int)] :=
+      Frag.fresh_emit_f s1 (fun d hd => by
+        rwa [show vdefs (MInst.intToFpu iop (.vreg s1.nextVreg .float) (.vreg k .int)) =
+          [s1.nextVreg] from rfl] at hd)
     have hF := hfr.append hf2
     refine ⟨_, hF.emitted, lowerInstOk_runs_c hMR hF.mono hF.defs rfl ?_⟩
     intro fr cm ρ w vals cm' _ hvals hdfg ho
@@ -426,10 +433,26 @@ theorem lowerInstOk_cvtSmall {F : BitVec 64 → Prop} {isem : Sem} {MR : MemRelT
     · simp only [V.reg.injEq] at hv
       subst hv
       subst hs
-      have hf1 := Frag.fresh_emit st (m := .extend (st.fresh .int).1 rx (cvtSigned op) t.bits 32)
+      obtain rfl := hctx.valueReg x rx hx
+      have hf1 := Frag.fresh_emit st
+        (m := .extend (.vreg st.nextVreg .int) (.vreg x (valClassOf ctx x)) (cvtSigned op) t.bits 32)
         (fun d hd => by
-          rwa [show vdefs (MInst.extend (st.fresh .int).1 rx (cvtSigned op) t.bits 32) =
-            [st.nextVreg] from rfl] at hd)
+          rwa [show vdefs (MInst.extend (.vreg st.nextVreg .int) (.vreg x (valClassOf ctx x))
+            (cvtSigned op) t.bits 32) = [st.nextVreg] from rfl] at hd)
+      have hf2 : Frag ((st.fresh .int).2.emit
+          (.extend (.vreg st.nextVreg .int) (.vreg x (valClassOf ctx x)) (cvtSigned op) t.bits 32))
+          ((((st.fresh .int).2.emit (.extend (.vreg st.nextVreg .int) (.vreg x (valClassOf ctx x))
+            (cvtSigned op) t.bits 32)).fresh .float).2.emit
+            (.intToFpu iop (.vreg (((st.fresh .int).2.emit (.extend (.vreg st.nextVreg .int)
+              (.vreg x (valClassOf ctx x)) (cvtSigned op) t.bits 32)).nextVreg) .float)
+              (.vreg st.nextVreg .int)))
+          [.intToFpu iop (.vreg (((st.fresh .int).2.emit (.extend (.vreg st.nextVreg .int)
+              (.vreg x (valClassOf ctx x)) (cvtSigned op) t.bits 32)).nextVreg) .float)
+              (.vreg st.nextVreg .int)] :=
+        Frag.fresh_emit_f _ (fun d hd => by
+          rwa [show vdefs (MInst.intToFpu iop (.vreg (((st.fresh .int).2.emit (.extend
+            (.vreg st.nextVreg .int) (.vreg x (valClassOf ctx x)) (cvtSigned op) t.bits 32)).nextVreg)
+            .float) (.vreg st.nextVreg .int)) = [_] from rfl] at hd)
       have hF := hf1.append hf2
       refine ⟨_, hF.emitted, lowerInstOk_runs_c hMR hF.mono hF.defs rfl ?_⟩
       intro fr cm ρ w vals cm' _ _ hdfg ho
@@ -592,10 +615,12 @@ macro "from64_root " ht:term:max hk:term:max op:term:max hn:term:max T:term:max 
     cvt_start $ht $hk $op $hn
     have hX : $T = CTy.ofClif ty := by rw [← hres]; exact ‹$T = _›
     obtain rfl : ty = $t := by cases ty <;> simp [CTy.ofClif] at hX ⊢
-    obtain ⟨ms, rss, e1, e2, e3⟩ := cvt_from64_rhs hp' hR hMR hctx hco (iop := $iop) rfl
-      (hn1 := by omega) (hn2 := by omega) ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
-      ‹ApplyInternal _ _ _ _ 27 633 _ _ _ _› ‹externExtract ctx T.value_type _ _ = _›
-      ‹externCtor ctx T.put_in_reg _ _ = _›
+    have h1 := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+    have h2 := ‹ApplyInternal _ _ _ _ 27 633 _ _ _ _›
+    have h3 := ‹externExtract ctx T.value_type _ _ = _›
+    have h4 := ‹externCtor ctx T.put_in_reg _ _ = _›
+    obtain ⟨ms, rss, e1, e2, e3⟩ := cvt_from64_rhs hp' hR hMR hctx hco (op := $op) (ty := $t)
+      (iop := $iop) rfl (by omega) (by omega) h1 h2 h3 h4
     exact ⟨ms, e1, rss, e2, e3⟩))
 
 set_option hygiene false in
@@ -609,10 +634,12 @@ macro "small_root " ht:term:max hk:term:max op:term:max hn:term:max T:term:max t
     obtain rfl : ty = $t := by cases ty <;> simp [CTy.ofClif] at hX ⊢
     have h55 := ‹ApplyInternal _ _ _ _ 27 $k _ _ _ _›
     have hE := $e hp' hco (hn := by omega) h55
-    obtain ⟨ms, rss, e1, e2, e3⟩ := cvt_small_rhs hp' hR hMR hctx hco (iop := $iop) rfl
-      (hn1 := by omega) (hn2 := by omega) hvb ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
-      ‹ApplyInternal _ _ _ _ 27 633 _ _ _ _› ‹externExtract ctx T.value_type _ _ = _›
-      ‹externExtract ctx T.fits_in_32 _ _ = _› hE
+    have h1 := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+    have h2 := ‹ApplyInternal _ _ _ _ 27 633 _ _ _ _›
+    have h3 := ‹externExtract ctx T.value_type _ _ = _›
+    have h4 := ‹externExtract ctx T.fits_in_32 _ _ = _›
+    obtain ⟨ms, rss, e1, e2, e3⟩ := cvt_small_rhs hp' hR hMR hctx hco (op := $op) (ty := $t)
+      (iop := $iop) rfl (by omega) (by omega) hvb h1 h2 h3 h4 hE
     exact ⟨ms, e1, rss, e2, e3⟩))
 
 set_option hygiene false in
@@ -622,14 +649,16 @@ macro "sat32_root " ht:term:max hk:term:max op:term:max hn:term:max tx:term:max 
   `(tactic| (
     cvt_start $ht $hk $op $hn
     have hX : (CTy.ofClif ty).bits ≤ 32 := by
-      rw [← hres]; exact ‹(info.resTys.head?.getD CTy.invalid).bits ≤ 32›
+      rw [← hres]; assumption
     obtain rfl : ty = .i32 := by
       cases ty <;> simp [fCvtTyOk, CTy.ofClif, CTy.bits] at hok hX ⊢
-    have h629 := ‹ApplyInternal _ _ _ _ 27 629 _ _ _ _›
-    rw [hres] at h629
-    obtain ⟨ms, rss, e1, e2, e3⟩ := cvt_toSat_rhs hp' hR hMR hctx hco (tx := $tx) (fop := $fop)
-      rfl (.inr rfl) (hn1 := by omega) (hn2 := by omega) ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _› h629
-      ‹externExtract ctx T.value_type _ _ = _› ‹externCtor ctx T.put_in_reg _ _ = _›
+    have h2 := ‹ApplyInternal _ _ _ _ 27 629 _ _ _ _›
+    rw [hres] at h2
+    have h1 := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+    have h3 := ‹externExtract ctx T.value_type _ _ = _›
+    have h4 := ‹externCtor ctx T.put_in_reg _ _ = _›
+    obtain ⟨ms, rss, e1, e2, e3⟩ := cvt_toSat_rhs hp' hR hMR hctx hco (op := $op) (ty := .i32)
+      (tx := $tx) (fop := $fop) rfl (.inr rfl) (by omega) (by omega) h1 h2 h3 h4
     exact ⟨ms, e1, rss, e2, e3⟩))
 
 set_option hygiene false in
@@ -640,10 +669,12 @@ macro "sat64_root " ht:term:max hk:term:max op:term:max hn:term:max tx:term:max 
     cvt_start $ht $hk $op $hn
     have hX : CTy.int 64 = CTy.ofClif ty := by rw [← hres]; exact ‹CTy.int 64 = _›
     obtain rfl : ty = .i64 := by cases ty <;> simp [CTy.ofClif] at hX ⊢
-    obtain ⟨ms, rss, e1, e2, e3⟩ := cvt_toSat_rhs hp' hR hMR hctx hco (tx := $tx) (fop := $fop)
-      rfl (.inl rfl) (hn1 := by omega) (hn2 := by omega) ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
-      ‹ApplyInternal _ _ _ _ 27 629 _ _ _ _› ‹externExtract ctx T.value_type _ _ = _›
-      ‹externCtor ctx T.put_in_reg _ _ = _›
+    have h1 := ‹ApplyInternal _ _ _ _ 25 172 _ _ _ _›
+    have h2 := ‹ApplyInternal _ _ _ _ 27 629 _ _ _ _›
+    have h3 := ‹externExtract ctx T.value_type _ _ = _›
+    have h4 := ‹externCtor ctx T.put_in_reg _ _ = _›
+    obtain ⟨ms, rss, e1, e2, e3⟩ := cvt_toSat_rhs hp' hR hMR hctx hco (op := $op) (ty := .i64)
+      (tx := $tx) (fop := $fop) rfl (.inl rfl) (by omega) (by omega) h1 h2 h3 h4
     exact ⟨ms, e1, rss, e2, e3⟩))
 
 section Roots
