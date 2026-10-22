@@ -24,7 +24,14 @@
 #
 # Budgets (128 GB machine, docs/TO-PROVE.md §7): scheduler GATE_BUDGET (48G), module caps up to
 # GATE_MAX_CAP (28G), single memcapped commands GATE_CAP (28G).
+#
+# The run-time gates call `qemu-aarch64-static`. When it is not on PATH (Ubuntu 26.04 has no
+# qemu-user-static package; qemu-user's binaries are static but named qemu-aarch64), GATE_TOOLS
+# (default /home/kev/work/clifv-tools/bin) goes first on PATH; set it up without root with
+#   apt-get download qemu-user && dpkg-deb -x qemu-user_*.deb ../root  (in clifv-tools/deb)
+#   ln -s ../root/usr/bin/qemu-aarch64 clifv-tools/bin/qemu-aarch64-static
 set -u
+command -v qemu-aarch64-static > /dev/null || export PATH="${GATE_TOOLS:-/home/kev/work/clifv-tools/bin}:$PATH"
 GATE_DIR=${GATE_DIR:-/home/kev/work/clifv-main-gate}
 LOCK=/tmp/clifv-heavy.lock
 ISSUE=261
