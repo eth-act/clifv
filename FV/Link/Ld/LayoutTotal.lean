@@ -212,7 +212,7 @@ theorem synth_some {L : Lay} {o : Opts} {n : String}
   simp only [h1, h2, Bool.false_eq_true, ↓reduceIte, synthNames, List.contains_iff_mem, List.mem_cons,
     List.mem_nil_iff, or_false] at h
   rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-    rfl | rfl | rfl <;> simp [Lay.synthFixed]
+    rfl | rfl | rfl <;> simp [Lay.synthFixed, Lay.synthTable, List.lookup]
 
 theorem value_ok {L : Lay} {o : Opts} {st : St} {g : GcOut} {fi j : Nat}
     (h : refOkB st g (L.pst.outs.toList.map (·.name)) fi j = true) :
