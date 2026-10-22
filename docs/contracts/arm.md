@@ -39,6 +39,10 @@ Producer: M3-model. Model choice: `docs/decisions/arm-model.md`. Attribution:
   ADD/SUB (vector), AND/BIC/ORN/EOR/BSL/BIT/BIF (vector), REV16/REV32/REV64 (vector). No model
   change: 17 new forms, 0 failures (DUP/INS/SMOV/BSL/BIT/BIF also 1000 vectors each);
   `scripts/arm-cosim.sh` 350 forms, 70 000 vectors, 0 failures (seed `0x5eed`, 200 per form).
+- DONE (A3 #412 F1, 2026-10-22): memory faults, outside `FV/Arm` (section "Memory faults"):
+  `ArmFault.stepF` (`FV/ArmFault/Step.lean`) on the precise footprints, co-simulated by
+  `scripts/arm-fault-cosim.sh`: 152 forms, 30 400 vectors (20 577 faulting), 0 failures (seed
+  `0xfa17`, 200 per form). `FV/Arm` and `arm-cosim` unchanged.
 
 ## Public API (namespace `Arm`)
 
@@ -71,7 +75,7 @@ Names follow LNSym. `docs/ARCHITECTURE.md` uses generic names; they map as follo
 | `.NotFound msg` | No instruction at `PC` in `program`. |
 | `.Unimplemented msg` | The word does not decode, or it decodes to a form the model does not implement (e.g. PRFM, PAC hints). |
 | `.Illegal msg` | UNDEFINED / CONSTRAINED UNPREDICTABLE encodings that the model refuses, e.g. load with writeback where `Rn = Rt`. |
-| `.Fault msg` | SP-based access with SP not 16-byte aligned (`CheckSPAlignment`). |
+| `.Fault msg` | SP-based access with SP not 16-byte aligned (`CheckSPAlignment`); `ArmFault.memFault` (`.Fault "memory fault"`) is the memory fault of `ArmFault.stepF` (section "Memory faults"), never produced by `stepi`. |
 | `.Other msg` | Internal. |
 
 Once the error field is non-`None`, `stepi`/`run` leave the state unchanged.
@@ -314,6 +318,43 @@ for `udf`, where the QEMU side is a `SIGILL` handler reading the signal frame.
 - Branch forms: targets are limited to ±32 instructions, where landing pads record the reached
   PC. The immediate fields therefore span only small magnitudes, in both signs. `br`/`blr`/`ret`
   targets are landing-pad addresses.
+
+## Memory faults (`FV/ArmFault/*`, `lake exe arm-fault-cosim`; A3, #412)
+
+`Arm.stepi` never faults on memory. A process has a memory map, and an access to a byte the map
+does not allow raises a synchronous Data Abort (Linux: `SIGSEGV`, or `SIGBUS`, at the faulting
+instruction). `FV/ArmFault/Step.lean` adds the fault without changing `FV/Arm`. The access of an
+instruction is its precise footprint (`Concurrency.ArmInstFoot.instEvs`/`stepEvs`, proven by
+`footprint_exec_inst`/`footprint_stepi`):
+
+| What | API |
+| --- | --- |
+| Map | `ArmFault.Perm := none \| ro \| rw`, `MemMap := BitVec 64 → Perm`. `Perm.allows`: a read needs `ro`/`rw`, a write `rw`, a barrier event nothing |
+| Fault | `InstFaults mp ai s`, `Faults mp s`: a byte of an event of `instEvs ai s`/`stepEvs s` is not allowed (decidable). `faults_of_byte`, `byte_of_faults`, `not_faults_mono` |
+| Step | `execF mp ai s`, `stepF mp s`, `runF mp n s`: as `exec_inst`/`stepi`/`run`, but a faulting step sets the error `memFault` (`.Fault "memory fault"`) and changes nothing else (`stepF_fault`, `r_stepF_fault`, `mem_stepF_fault`) |
+| Agreement | `stepF_of_not` (no fault: `stepi`), `stepF_all` (the map allowing everything), `stepF_eq_execF`, `stepF_err`, `runF_eq_run` (no step faults: `run`), `runF_fault` (the first fault, then the fault state for ever) |
+
+A Data Abort is precise for pc, the other registers' inputs and memory. Destination registers of
+a faulting load are UNKNOWN in the Arm ARM (qemu writes the first register of a SIMD&FP `ldp`
+whose second half faults); the model keeps them, and no theorem may read them after a fault.
+Not modelled: alignment faults of mapped exclusives, instruction-fetch faults, changes of the
+map during a run. Witnesses: `FV/ArmFault/Witness.lean` (`ldr` from address 0 faults while
+`stepi` loads; straddling loads and stores; a read-only byte allows loads, not stores).
+
+Co-simulation (`FVTest/Arm/Cosim/Fault.lean`, `FaultMain.lean`; `scripts/arm-fault-cosim.sh
+[--n N] [--seed S] [--only SUBSTR] [--show K]`, tools as for `arm-cosim`): every load/store form
+of `Specs.lean` (single register in all addressing modes, GPR and SIMD&FP, pairs, `ldar`, `stlr`,
+`ldaxr`; not the literal loads, which read the code) and `stlxr` after `ldaxr xzr`. The test
+program's entry `_fstart` `mprotect`s two data regions, loads `[ro | none | ro]` and stores
+`[rw | none | ro | rw]` (4 KiB pages), installs a `SIGSEGV`/`SIGBUS` handler that records the
+signal and `si_addr` and dumps the signal context, and writes the regions' addresses. Each test's
+base register points to `boundary - 16k` (`k < 6`) of a region, so the access lies before, across
+or after a page boundary. The model runs `stepF` under the same map, its memory holding the load
+region's bytes. A vector passes when the model faults exactly when qemu signals, `si_addr` is a
+forbidden byte of the access, and every field agrees (on a fault: with the state before the
+instruction, the faulting load's destination registers taken from qemu). Output:
+`form<TAB>vectors<TAB>faults<TAB>failures`, then the total. Result (2026-10-22, seed `0xfa17`,
+200 per form): 152 forms, 30 400 vectors, 20 577 faults, 0 failures.
 
 ## Tactic API (symbolic simulation)
 
