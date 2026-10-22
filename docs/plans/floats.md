@@ -572,6 +572,26 @@ arm and `ref_fpuCmp` are in place for it. Open: `fcmp` (the `fp_cond_code` condi
 conversions (`fpu_to_int_cvt{,_sat}`, `int_to_fpu`), `fma`/rounding, and threading
 `LowerRulesCorrectFT`/`InstScopeTA` into the driver and the end-to-end scope.
 
+**S11e6 (#419), slice 1: `call` with `f32`/`f64` arguments and returns in the typed family.**
+`Proof/IselCtlCallF.lean`: `CallRulesCorrectTFP` (the pinned `call` family, rules 1031 `bl` and
+1032 GOT + `blr`, for every extern signature) and `callRulesCorrectTFP_program`. Arguments are
+passed in their values' vregs of their classes (`valClassOf`), fixed to `sigArgLocs`' locations
+(x0..x7 / v0..v7, separate counters, `sret` in x8); stack-passed ones are stored by
+`stackArgStore` (`str s`/`str d` for a float vreg, so the family assumes `MemRefinesFP` beside
+`MemRefinesR`; `argStoresC_run`, `argsAt_after_storesC`; that a float vreg holds a float value of
+byte size 4/8 comes from the frame typing, `argClasses_of_frame`); returns get fresh vregs of
+their classes defined from `retRegsC`'s registers (`outDefsC`, `results_callC`). The callee
+contract `CallsRefineP` is unchanged (class-agnostic). The contexts are `CallCtxT` (`CtxInvT`'s
+data, result types and class-aware registers, `CtxInvT.toCallCtx`), because `CtxInvT` types every
+`call` argument as an integer (`intArgs`); `callCtxOkB` decides it. `callRuleOkTP_of_TFP`: the
+integer-argument family over `CtxT` is an instance. Witnesses `FVTest/Backend/FloatCallF.lean`:
+`fCallF` (`%g(f64, i64, f32) -> f64`: uses v0, x0, v1, def v0 into a float vreg) and `fCallStk`
+(nine `f64` arguments, the ninth `str d` at `[sp]`, an `f32` return), both `CallCtxT` and not
+`CtxInvT`; their prepared code passes `ctlSpillB` and `lowerRFunc` (`ctlCheck`). Open (next slices): typed `try_call` (`tryRegsOf`/`gen_try_call_rets` by class, a
+typed `LowerTryOk`), `call_indirect`/`try_call_indirect` (`sigIntB`), and plugging the families
+into the typed chain (`CtxInvT`'s `intArgs` without the `call` arguments, extern signatures
+`sigET` in the typed scope with an argument-class check).
+
 ## 4. Known hazards
 
 - Proofs that derive a type from its width (`ty_i64_of_width`, width injectivity in
