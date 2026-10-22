@@ -135,7 +135,7 @@ theorem InSubset.of_regArgs {p : Clif.Program} {f : Clif.Function}
     (habi : sigAbiOk f.sig = true ∧ ∀ e ∈ f.externs, sigAbiOk e.2.sig = true)
     (hind : ∀ s ∈ _root_.Backend.indSigs f, s.params.length ≤ 8 ∧ sigAbiOk s = true) :
     InSubset p f :=
-  ⟨hE, hext, htry, habi, hind⟩
+  ⟨hE, hext, htry, habi, fun s hs => (hind s hs).2⟩
 
 /-- **Specialisation**: for a function without indirect calls, the former subset (without
 `indSigs`, which is vacuous: `indSigs_eq_nil`). -/

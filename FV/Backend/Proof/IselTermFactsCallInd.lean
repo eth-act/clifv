@@ -37,7 +37,7 @@ theorem mem_indSigs {f : Clif.Function} {s : Clif.Signature} (h : s ∈ indSigs 
     cases ht : B.term with
     | tryCallIndirect c args et =>
       rw [ht] at hs
-      exact ⟨c, args, et, ht, by simpa using hs⟩
+      exact ⟨c, args, et, rfl, by simpa using hs⟩
     | _ => simp [ht] at hs
 
 set_option maxRecDepth 20000
