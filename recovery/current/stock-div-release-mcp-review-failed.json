@@ -1,0 +1,9 @@
+{"content":[{"type":"text","text":"{
+  "axioms": [
+    "propext",
+    "sorryAx",
+    "Classical.choice",
+    "Quot.sound"
+  ],
+  "warnings": []
+}"}],"structuredContent":{"axioms":["propext","sorryAx","Classical.choice","Quot.sound"],"warnings":[]},"isError":false}

@@ -1,0 +1,16 @@
+/tmp/stock-div-next-mixed-source-witness.lean:58:7: error: unexpected token 'prefix'; expected '(', ':=', '|' or term
+/tmp/stock-div-next-mixed-source-witness.lean:58:7: error: Missing cases:
+/tmp/stock-div-next-mixed-source-witness.lean:57:68: error: unsolved goals
+config : Configuration
+op : Clif.DivOp
+input : Nat → BitVec (valueType config).width
+slot : Nat
+⊢ Clif.runLoop Clif.Env.empty { funcs := [] } ((StockHighMulNIWitness.function config).blocks[0]!.body.length + 2)
+      { frame := frame config op input slot, callers := [], mem := Clif.Mem.empty } =
+    match Clif.Sem.div op (StockHighMulNIWitness.resultValue config input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := valueType config, bits := q }] Clif.Mem.empty
+/tmp/stock-div-next-mixed-source-witness.lean:58:15: error: unexpected identifier; expected prec
+/tmp/stock-div-next-mixed-source-witness.lean:63:12: error: unexpected token ']'; expected ':'
+'E2E.StockMixedDivNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockMixedDivNIWitness.source_runs' depends on axioms: [propext, sorryAx, Quot.sound]

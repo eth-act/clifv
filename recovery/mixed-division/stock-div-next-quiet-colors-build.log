@@ -1,0 +1,52 @@
+/tmp/stock-div-next-quiet-colors.lean:27:10: error: Tactic `rewrite` failed: Did not find an occurrence of the pattern
+  (forIn xs ?s (bodyStep start bi)).run.snd.fst[q]!
+in the target expression
+  (do
+              let x ←
+                pure
+                    (ForInStep.yield
+                      (s.fst.set! (start + x.snd) bi, s.snd.fst.set! (start + x.snd) s.snd.snd.snd,
+                        s.snd.snd.fst.set! (start + x.snd) (instArgs x.fst.inst), s.snd.snd.snd + 1))
+              match x with
+                | ForInStep.done b => pure b
+                | ForInStep.yield b => forIn xs b (bodyStep start bi)).run.snd.fst[q]! =
+    s.snd.fst[q]!
+
+case cons.true
+start bi q : Nat
+x : Clif.Stmt × Nat
+xs : List (Clif.Stmt × Nat)
+ih :
+  (∀ (x : Clif.Stmt × Nat), x ∈ xs → colored x.fst.inst = true → start + x.snd ≠ q) →
+    ∀ (s : ColorState), (forIn xs s (bodyStep start bi)).run.snd.fst[q]! = s.snd.fst[q]!
+separate : ∀ (x_1 : Clif.Stmt × Nat), x_1 ∈ x :: xs → colored x_1.fst.inst = true → start + x_1.snd ≠ q
+s : ColorState
+tail : ∀ (y : Clif.Stmt × Nat), y ∈ xs → colored y.fst.inst = true → start + y.snd ≠ q
+coloredHere : colored x.fst.inst = true
+⊢ (do
+              let x ←
+                pure
+                    (ForInStep.yield
+                      (s.fst.set! (start + x.snd) bi, s.snd.fst.set! (start + x.snd) s.snd.snd.snd,
+                        s.snd.snd.fst.set! (start + x.snd) (instArgs x.fst.inst), s.snd.snd.snd + 1))
+              match x with
+                | ForInStep.done b => pure b
+                | ForInStep.yield b => forIn xs b (bodyStep start bi)).run.snd.fst[q]! =
+    s.snd.fst[q]!
+/tmp/stock-div-next-quiet-colors.lean:58:48: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Array.getElem?_replicate, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-quiet-colors.lean:58:61: warning: This simp argument is unused:
+  Array.getElem?_replicate
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [getElem!_def, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+'Backend.Stock.Proof.QuietSourceColors.sourceMetadata_quiet_single_block' depends on axioms: [propext,
+ sorryAx,
+ Quot.sound]

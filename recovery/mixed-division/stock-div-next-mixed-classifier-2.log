@@ -1,0 +1,93 @@
+'Backend.Stock.Proof.trapRun_seq_prefix' depends on axioms: [propext]
+'Backend.Stock.Proof.ScansSpec.trap_refines' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.LocalBody.actual_local_source_trap' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.LocalBody.actual_local_source_trap_execution' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+/tmp/stock-div-next-mixed-classifier.lean:272:55: warning: Variable name `refines` is not explicitly referenced.
+
+Hint: The binding can be removed (if unused) or named `_` (if used implicitly). Alternatively, prefix the name with `_` to silence this warning:
+  [apply] _refines
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+'Backend.Stock.Proof.LocalBody.actual_local_entry_trap_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+/tmp/stock-div-next-mixed-classifier.lean:385:48: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Array.getElem?_replicate, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-mixed-classifier.lean:385:61: warning: This simp argument is unused:
+  Array.getElem?_replicate
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [getElem!_def, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-mixed-classifier.lean:399:30: warning: This simp argument is unused:
+  Option.getD_some
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getElem!_def, r]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-mixed-classifier.lean:409:12: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Array.getElem?_replicate, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-mixed-classifier.lean:409:25: warning: This simp argument is unused:
+  Array.getElem?_replicate
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [getElem!_def, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+'Backend.Stock.Proof.QuietSourceColors.sourceMetadata_quiet_single_block' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.QuietSourceColors.buildCtx_quiet_single_block' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.QuietSourceColors.stock_lower_quiet_single_block_unsunk' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.QuietSourceColors.actual_quiet_source_record' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.QuietSourceColors.highmul_source_record_fall_refines' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+/tmp/stock-div-next-mixed-classifier.lean:608:37: warning: This simp argument is unused:
+  Option.getD_some
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getElem!_def, source, clif, division, Option.any, mustLower]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+'Backend.Stock.Proof.stock_lower_last_div_return_emitted' depends on axioms: [propext, Classical.choice, Quot.sound]
+/tmp/stock-div-next-mixed-classifier.lean:648:39: warning: This simp argument is unused:
+  Option.getD_some
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getElem!_def, source, infoResults, results]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+'Backend.Stock.Proof.DivBody.actual_last_div_record' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.ScansSpec.record_inst_mem' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ScansSpec.record_unique' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.MixedDivRecord.fall_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.MixedDivRecord.trap_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_mixed_div_families' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_mixed_div_body_refines' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_mixed_div_entry_return_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.DivBody.actual_mixed_div_entry_trap_refines_frame' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Scalar.domain_of_mixed_div' depends on axioms: [propext, Classical.choice, Quot.sound]
+'Backend.Stock.Scalar.mixedDivEligible_sound' depends on axioms: [propext, Quot.sound]

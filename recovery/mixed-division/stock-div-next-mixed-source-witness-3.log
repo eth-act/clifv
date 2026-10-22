@@ -1,0 +1,59 @@
+/tmp/stock-div-next-mixed-source-witness.lean:51:6: error: 'change' tactic failed, pattern
+  (match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.systemVI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := Clif.Ty.i32, bits := q }] Clif.Mem.empty) =
+    ?m.120
+is not definitionally equal to target
+  Clif.runLoop Clif.Env.empty { funcs := [] } 250
+      { frame := frame Configuration.defaultI32 op input slot, callers := [], mem := Clif.Mem.empty } =
+    match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.defaultI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := valueType Configuration.defaultI32, bits := q }] Clif.Mem.empty
+/tmp/stock-div-next-mixed-source-witness.lean:51:6: error: 'change' tactic failed, pattern
+  (match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.systemVI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := Clif.Ty.i32, bits := q }] Clif.Mem.empty) =
+    ?m.120
+is not definitionally equal to target
+  Clif.runLoop Clif.Env.empty { funcs := [] } 250
+      { frame := frame Configuration.systemVI32 op input slot, callers := [], mem := Clif.Mem.empty } =
+    match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.systemVI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := valueType Configuration.systemVI32, bits := q }] Clif.Mem.empty
+/tmp/stock-div-next-mixed-source-witness.lean:51:6: error: 'change' tactic failed, pattern
+  (match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.systemVI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := Clif.Ty.i32, bits := q }] Clif.Mem.empty) =
+    ?m.120
+is not definitionally equal to target
+  Clif.runLoop Clif.Env.empty { funcs := [] } 250
+      { frame := frame Configuration.fastI32 op input slot, callers := [], mem := Clif.Mem.empty } =
+    match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.fastI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := valueType Configuration.fastI32, bits := q }] Clif.Mem.empty
+/tmp/stock-div-next-mixed-source-witness.lean:51:83: error: Application type mismatch: The argument
+  input
+has type
+  Nat → BitVec (valueType Configuration.defaultI64).width
+but is expected to have type
+  Nat → BitVec (valueType Configuration.systemVI32).width
+in the application
+  StockHighMulNIWitness.resultValue Configuration.systemVI32 input
+/tmp/stock-div-next-mixed-source-witness.lean:51:83: error: Application type mismatch: The argument
+  input
+has type
+  Nat → BitVec (valueType Configuration.systemVI64).width
+but is expected to have type
+  Nat → BitVec (valueType Configuration.systemVI32).width
+in the application
+  StockHighMulNIWitness.resultValue Configuration.systemVI32 input
+/tmp/stock-div-next-mixed-source-witness.lean:51:83: error: Application type mismatch: The argument
+  input
+has type
+  Nat → BitVec (valueType Configuration.fastI64).width
+but is expected to have type
+  Nat → BitVec (valueType Configuration.systemVI32).width
+in the application
+  StockHighMulNIWitness.resultValue Configuration.systemVI32 input
+'E2E.StockMixedDivNIWitness.source_entry' depends on axioms: [propext]
+'E2E.StockMixedDivNIWitness.source_runs' depends on axioms: [propext, sorryAx, Quot.sound]

@@ -1,0 +1,562 @@
+/tmp/stock-div-next-mixed-source-witness.lean:15:130: error: unexpected identifier; expected '}'
+/tmp/stock-div-next-mixed-source-witness.lean:33:49: error: Application type mismatch: The argument
+  rfl
+has type
+  ?m.103 = ?m.103
+but is expected to have type
+  { frame := frame Configuration.defaultI32 op input slot, callers := [], mem := Clif.Mem.empty }.frame.term =
+    ((fun b =>
+          { id := b.id, params := b.params, cold := b.cold,
+            body := b.body ++ StockHighMulNIWitness.extraBody Configuration.defaultI32,
+            term := Clif.Terminator.ret [4008] })
+        ((fun b =>
+            { id := b.id, params := b.params, cold := b.cold,
+              body := b.body ++ StockCmpNIWitness.extraBody Configuration.defaultI32,
+              term := Clif.Terminator.ret [1196] })
+          ((fun b =>
+              { id := b.id, params := b.params, cold := b.cold,
+                body := b.body ++ StockMinMaxNIWitness.extraBody Configuration.defaultI32,
+                term := Clif.Terminator.ret [226] })
+            ((fun b =>
+                { id := b.id, params := b.params, cold := b.cold,
+                  body := b.body ++ StockPopcountNIWitness.extraBody Configuration.defaultI32,
+                  term := Clif.Terminator.ret [78] })
+              ((fun b =>
+                  { id := b.id, params := b.params, cold := b.cold,
+                    body := b.body ++ StockBitNIWitness.extraBody Configuration.defaultI32,
+                    term := Clif.Terminator.ret [74] })
+                ((fun b =>
+                    { id := b.id, params := b.params, cold := b.cold,
+                      body := b.body ++ StockCastNIWitness.extraBody Configuration.defaultI32,
+                      term := Clif.Terminator.ret [60] })
+                  ((fun b =>
+                      { id := b.id, params := b.params, cold := b.cold,
+                        body := b.body ++ StockShiftNIWitness.extraBody Configuration.defaultI32,
+                        term := Clif.Terminator.ret [53] })
+                    ((fun b =>
+                        { id := b.id, params := b.params, cold := b.cold,
+                          body := b.body ++ StockMulNIWitness.extraBody Configuration.defaultI32,
+                          term := Clif.Terminator.ret [33] })
+                      { id := 0, params := List.map (fun i => (i, valueType Configuration.defaultI32)) (List.range 9),
+                        body :=
+                          [{ results := [9],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.defaultI32)
+                                  81985529216486895#(valueType Configuration.defaultI32).width },
+                            { results := [10],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.defaultI32)
+                                  4097#(valueType Configuration.defaultI32).width },
+                            { results := [11],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.defaultI32) 1 9 },
+                            { results := [12],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.defaultI32) 11 8 },
+                            { results := [13],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.defaultI32) 12 2 },
+                            { results := [14],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bor (valueType Configuration.defaultI32) 13 9 },
+                            { results := [15], inst := Clif.Inst.select (valueType Configuration.defaultI32) 0 14 12 },
+                            { results := [16],
+                              inst := Clif.Inst.binary Clif.BinaryOp.isub (valueType Configuration.defaultI32) 15 2 },
+                            { results := [17],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.defaultI32) 16 10 },
+                            { results := [18],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.defaultI32)
+                                  42#(valueType Configuration.defaultI32).width },
+                            { results := [19],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.defaultI32) 1 8 },
+                            { results := [20],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.defaultI32) 17 },
+                            { results := [21],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.defaultI32) 20 2 },
+                            { results := [22],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.defaultI32) 21 },
+                            { results := [23],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.defaultI32) 22 10 },
+                            { results := [24],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.defaultI32) 23 8 },
+                            { results := [25],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.defaultI32) 24 },
+                            { results := [26],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.defaultI32) 1 }],
+                        term := Clif.Terminator.ret [25] })))))))).term
+in the application
+  And.intro rfl
+/tmp/stock-div-next-mixed-source-witness.lean:33:49: error: Application type mismatch: The argument
+  rfl
+has type
+  ?m.103 = ?m.103
+but is expected to have type
+  { frame := frame Configuration.systemVI32 op input slot, callers := [], mem := Clif.Mem.empty }.frame.term =
+    ((fun b =>
+          { id := b.id, params := b.params, cold := b.cold,
+            body := b.body ++ StockHighMulNIWitness.extraBody Configuration.systemVI32,
+            term := Clif.Terminator.ret [4008] })
+        ((fun b =>
+            { id := b.id, params := b.params, cold := b.cold,
+              body := b.body ++ StockCmpNIWitness.extraBody Configuration.systemVI32,
+              term := Clif.Terminator.ret [1196] })
+          ((fun b =>
+              { id := b.id, params := b.params, cold := b.cold,
+                body := b.body ++ StockMinMaxNIWitness.extraBody Configuration.systemVI32,
+                term := Clif.Terminator.ret [226] })
+            ((fun b =>
+                { id := b.id, params := b.params, cold := b.cold,
+                  body := b.body ++ StockPopcountNIWitness.extraBody Configuration.systemVI32,
+                  term := Clif.Terminator.ret [78] })
+              ((fun b =>
+                  { id := b.id, params := b.params, cold := b.cold,
+                    body := b.body ++ StockBitNIWitness.extraBody Configuration.systemVI32,
+                    term := Clif.Terminator.ret [74] })
+                ((fun b =>
+                    { id := b.id, params := b.params, cold := b.cold,
+                      body := b.body ++ StockCastNIWitness.extraBody Configuration.systemVI32,
+                      term := Clif.Terminator.ret [60] })
+                  ((fun b =>
+                      { id := b.id, params := b.params, cold := b.cold,
+                        body := b.body ++ StockShiftNIWitness.extraBody Configuration.systemVI32,
+                        term := Clif.Terminator.ret [53] })
+                    ((fun b =>
+                        { id := b.id, params := b.params, cold := b.cold,
+                          body := b.body ++ StockMulNIWitness.extraBody Configuration.systemVI32,
+                          term := Clif.Terminator.ret [33] })
+                      { id := 0, params := List.map (fun i => (i, valueType Configuration.systemVI32)) (List.range 9),
+                        body :=
+                          [{ results := [9],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.systemVI32)
+                                  81985529216486895#(valueType Configuration.systemVI32).width },
+                            { results := [10],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.systemVI32)
+                                  4097#(valueType Configuration.systemVI32).width },
+                            { results := [11],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.systemVI32) 1 9 },
+                            { results := [12],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.systemVI32) 11 8 },
+                            { results := [13],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.systemVI32) 12 2 },
+                            { results := [14],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bor (valueType Configuration.systemVI32) 13 9 },
+                            { results := [15], inst := Clif.Inst.select (valueType Configuration.systemVI32) 0 14 12 },
+                            { results := [16],
+                              inst := Clif.Inst.binary Clif.BinaryOp.isub (valueType Configuration.systemVI32) 15 2 },
+                            { results := [17],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.systemVI32) 16 10 },
+                            { results := [18],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.systemVI32)
+                                  42#(valueType Configuration.systemVI32).width },
+                            { results := [19],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.systemVI32) 1 8 },
+                            { results := [20],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.systemVI32) 17 },
+                            { results := [21],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.systemVI32) 20 2 },
+                            { results := [22],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.systemVI32) 21 },
+                            { results := [23],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.systemVI32) 22 10 },
+                            { results := [24],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.systemVI32) 23 8 },
+                            { results := [25],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.systemVI32) 24 },
+                            { results := [26],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.systemVI32) 1 }],
+                        term := Clif.Terminator.ret [25] })))))))).term
+in the application
+  And.intro rfl
+/tmp/stock-div-next-mixed-source-witness.lean:33:49: error: Application type mismatch: The argument
+  rfl
+has type
+  ?m.103 = ?m.103
+but is expected to have type
+  { frame := frame Configuration.fastI32 op input slot, callers := [], mem := Clif.Mem.empty }.frame.term =
+    ((fun b =>
+          { id := b.id, params := b.params, cold := b.cold,
+            body := b.body ++ StockHighMulNIWitness.extraBody Configuration.fastI32,
+            term := Clif.Terminator.ret [4008] })
+        ((fun b =>
+            { id := b.id, params := b.params, cold := b.cold,
+              body := b.body ++ StockCmpNIWitness.extraBody Configuration.fastI32, term := Clif.Terminator.ret [1196] })
+          ((fun b =>
+              { id := b.id, params := b.params, cold := b.cold,
+                body := b.body ++ StockMinMaxNIWitness.extraBody Configuration.fastI32,
+                term := Clif.Terminator.ret [226] })
+            ((fun b =>
+                { id := b.id, params := b.params, cold := b.cold,
+                  body := b.body ++ StockPopcountNIWitness.extraBody Configuration.fastI32,
+                  term := Clif.Terminator.ret [78] })
+              ((fun b =>
+                  { id := b.id, params := b.params, cold := b.cold,
+                    body := b.body ++ StockBitNIWitness.extraBody Configuration.fastI32,
+                    term := Clif.Terminator.ret [74] })
+                ((fun b =>
+                    { id := b.id, params := b.params, cold := b.cold,
+                      body := b.body ++ StockCastNIWitness.extraBody Configuration.fastI32,
+                      term := Clif.Terminator.ret [60] })
+                  ((fun b =>
+                      { id := b.id, params := b.params, cold := b.cold,
+                        body := b.body ++ StockShiftNIWitness.extraBody Configuration.fastI32,
+                        term := Clif.Terminator.ret [53] })
+                    ((fun b =>
+                        { id := b.id, params := b.params, cold := b.cold,
+                          body := b.body ++ StockMulNIWitness.extraBody Configuration.fastI32,
+                          term := Clif.Terminator.ret [33] })
+                      { id := 0, params := List.map (fun i => (i, valueType Configuration.fastI32)) (List.range 9),
+                        body :=
+                          [{ results := [9],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.fastI32)
+                                  81985529216486895#(valueType Configuration.fastI32).width },
+                            { results := [10],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.fastI32)
+                                  4097#(valueType Configuration.fastI32).width },
+                            { results := [11],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.fastI32) 1 9 },
+                            { results := [12],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.fastI32) 11 8 },
+                            { results := [13],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.fastI32) 12 2 },
+                            { results := [14],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bor (valueType Configuration.fastI32) 13 9 },
+                            { results := [15], inst := Clif.Inst.select (valueType Configuration.fastI32) 0 14 12 },
+                            { results := [16],
+                              inst := Clif.Inst.binary Clif.BinaryOp.isub (valueType Configuration.fastI32) 15 2 },
+                            { results := [17],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.fastI32) 16 10 },
+                            { results := [18],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.fastI32)
+                                  42#(valueType Configuration.fastI32).width },
+                            { results := [19],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.fastI32) 1 8 },
+                            { results := [20],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.fastI32) 17 },
+                            { results := [21],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.fastI32) 20 2 },
+                            { results := [22],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.fastI32) 21 },
+                            { results := [23],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.fastI32) 22 10 },
+                            { results := [24],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.fastI32) 23 8 },
+                            { results := [25],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.fastI32) 24 },
+                            { results := [26],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.fastI32) 1 }],
+                        term := Clif.Terminator.ret [25] })))))))).term
+in the application
+  And.intro rfl
+/tmp/stock-div-next-mixed-source-witness.lean:33:49: error: Application type mismatch: The argument
+  rfl
+has type
+  ?m.103 = ?m.103
+but is expected to have type
+  { frame := frame Configuration.defaultI64 op input slot, callers := [], mem := Clif.Mem.empty }.frame.term =
+    ((fun b =>
+          { id := b.id, params := b.params, cold := b.cold,
+            body := b.body ++ StockHighMulNIWitness.extraBody Configuration.defaultI64,
+            term := Clif.Terminator.ret [4008] })
+        ((fun b =>
+            { id := b.id, params := b.params, cold := b.cold,
+              body := b.body ++ StockCmpNIWitness.extraBody Configuration.defaultI64,
+              term := Clif.Terminator.ret [1196] })
+          ((fun b =>
+              { id := b.id, params := b.params, cold := b.cold,
+                body := b.body ++ StockMinMaxNIWitness.extraBody Configuration.defaultI64,
+                term := Clif.Terminator.ret [226] })
+            ((fun b =>
+                { id := b.id, params := b.params, cold := b.cold,
+                  body := b.body ++ StockPopcountNIWitness.extraBody Configuration.defaultI64,
+                  term := Clif.Terminator.ret [78] })
+              ((fun b =>
+                  { id := b.id, params := b.params, cold := b.cold,
+                    body := b.body ++ StockBitNIWitness.extraBody Configuration.defaultI64,
+                    term := Clif.Terminator.ret [74] })
+                ((fun b =>
+                    { id := b.id, params := b.params, cold := b.cold,
+                      body := b.body ++ StockCastNIWitness.extraBody Configuration.defaultI64,
+                      term := Clif.Terminator.ret [60] })
+                  ((fun b =>
+                      { id := b.id, params := b.params, cold := b.cold,
+                        body := b.body ++ StockShiftNIWitness.extraBody Configuration.defaultI64,
+                        term := Clif.Terminator.ret [53] })
+                    ((fun b =>
+                        { id := b.id, params := b.params, cold := b.cold,
+                          body := b.body ++ StockMulNIWitness.extraBody Configuration.defaultI64,
+                          term := Clif.Terminator.ret [33] })
+                      { id := 0, params := List.map (fun i => (i, valueType Configuration.defaultI64)) (List.range 9),
+                        body :=
+                          [{ results := [9],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.defaultI64)
+                                  81985529216486895#(valueType Configuration.defaultI64).width },
+                            { results := [10],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.defaultI64)
+                                  4097#(valueType Configuration.defaultI64).width },
+                            { results := [11],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.defaultI64) 1 9 },
+                            { results := [12],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.defaultI64) 11 8 },
+                            { results := [13],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.defaultI64) 12 2 },
+                            { results := [14],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bor (valueType Configuration.defaultI64) 13 9 },
+                            { results := [15], inst := Clif.Inst.select (valueType Configuration.defaultI64) 0 14 12 },
+                            { results := [16],
+                              inst := Clif.Inst.binary Clif.BinaryOp.isub (valueType Configuration.defaultI64) 15 2 },
+                            { results := [17],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.defaultI64) 16 10 },
+                            { results := [18],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.defaultI64)
+                                  42#(valueType Configuration.defaultI64).width },
+                            { results := [19],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.defaultI64) 1 8 },
+                            { results := [20],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.defaultI64) 17 },
+                            { results := [21],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.defaultI64) 20 2 },
+                            { results := [22],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.defaultI64) 21 },
+                            { results := [23],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.defaultI64) 22 10 },
+                            { results := [24],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.defaultI64) 23 8 },
+                            { results := [25],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.defaultI64) 24 },
+                            { results := [26],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.defaultI64) 1 }],
+                        term := Clif.Terminator.ret [25] })))))))).term
+in the application
+  And.intro rfl
+/tmp/stock-div-next-mixed-source-witness.lean:33:49: error: Application type mismatch: The argument
+  rfl
+has type
+  ?m.103 = ?m.103
+but is expected to have type
+  { frame := frame Configuration.systemVI64 op input slot, callers := [], mem := Clif.Mem.empty }.frame.term =
+    ((fun b =>
+          { id := b.id, params := b.params, cold := b.cold,
+            body := b.body ++ StockHighMulNIWitness.extraBody Configuration.systemVI64,
+            term := Clif.Terminator.ret [4008] })
+        ((fun b =>
+            { id := b.id, params := b.params, cold := b.cold,
+              body := b.body ++ StockCmpNIWitness.extraBody Configuration.systemVI64,
+              term := Clif.Terminator.ret [1196] })
+          ((fun b =>
+              { id := b.id, params := b.params, cold := b.cold,
+                body := b.body ++ StockMinMaxNIWitness.extraBody Configuration.systemVI64,
+                term := Clif.Terminator.ret [226] })
+            ((fun b =>
+                { id := b.id, params := b.params, cold := b.cold,
+                  body := b.body ++ StockPopcountNIWitness.extraBody Configuration.systemVI64,
+                  term := Clif.Terminator.ret [78] })
+              ((fun b =>
+                  { id := b.id, params := b.params, cold := b.cold,
+                    body := b.body ++ StockBitNIWitness.extraBody Configuration.systemVI64,
+                    term := Clif.Terminator.ret [74] })
+                ((fun b =>
+                    { id := b.id, params := b.params, cold := b.cold,
+                      body := b.body ++ StockCastNIWitness.extraBody Configuration.systemVI64,
+                      term := Clif.Terminator.ret [60] })
+                  ((fun b =>
+                      { id := b.id, params := b.params, cold := b.cold,
+                        body := b.body ++ StockShiftNIWitness.extraBody Configuration.systemVI64,
+                        term := Clif.Terminator.ret [53] })
+                    ((fun b =>
+                        { id := b.id, params := b.params, cold := b.cold,
+                          body := b.body ++ StockMulNIWitness.extraBody Configuration.systemVI64,
+                          term := Clif.Terminator.ret [33] })
+                      { id := 0, params := List.map (fun i => (i, valueType Configuration.systemVI64)) (List.range 9),
+                        body :=
+                          [{ results := [9],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.systemVI64)
+                                  81985529216486895#(valueType Configuration.systemVI64).width },
+                            { results := [10],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.systemVI64)
+                                  4097#(valueType Configuration.systemVI64).width },
+                            { results := [11],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.systemVI64) 1 9 },
+                            { results := [12],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.systemVI64) 11 8 },
+                            { results := [13],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.systemVI64) 12 2 },
+                            { results := [14],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bor (valueType Configuration.systemVI64) 13 9 },
+                            { results := [15], inst := Clif.Inst.select (valueType Configuration.systemVI64) 0 14 12 },
+                            { results := [16],
+                              inst := Clif.Inst.binary Clif.BinaryOp.isub (valueType Configuration.systemVI64) 15 2 },
+                            { results := [17],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.systemVI64) 16 10 },
+                            { results := [18],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.systemVI64)
+                                  42#(valueType Configuration.systemVI64).width },
+                            { results := [19],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.systemVI64) 1 8 },
+                            { results := [20],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.systemVI64) 17 },
+                            { results := [21],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.systemVI64) 20 2 },
+                            { results := [22],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.systemVI64) 21 },
+                            { results := [23],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.systemVI64) 22 10 },
+                            { results := [24],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.systemVI64) 23 8 },
+                            { results := [25],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.systemVI64) 24 },
+                            { results := [26],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.systemVI64) 1 }],
+                        term := Clif.Terminator.ret [25] })))))))).term
+in the application
+  And.intro rfl
+/tmp/stock-div-next-mixed-source-witness.lean:33:49: error: Application type mismatch: The argument
+  rfl
+has type
+  ?m.103 = ?m.103
+but is expected to have type
+  { frame := frame Configuration.fastI64 op input slot, callers := [], mem := Clif.Mem.empty }.frame.term =
+    ((fun b =>
+          { id := b.id, params := b.params, cold := b.cold,
+            body := b.body ++ StockHighMulNIWitness.extraBody Configuration.fastI64,
+            term := Clif.Terminator.ret [4008] })
+        ((fun b =>
+            { id := b.id, params := b.params, cold := b.cold,
+              body := b.body ++ StockCmpNIWitness.extraBody Configuration.fastI64, term := Clif.Terminator.ret [1196] })
+          ((fun b =>
+              { id := b.id, params := b.params, cold := b.cold,
+                body := b.body ++ StockMinMaxNIWitness.extraBody Configuration.fastI64,
+                term := Clif.Terminator.ret [226] })
+            ((fun b =>
+                { id := b.id, params := b.params, cold := b.cold,
+                  body := b.body ++ StockPopcountNIWitness.extraBody Configuration.fastI64,
+                  term := Clif.Terminator.ret [78] })
+              ((fun b =>
+                  { id := b.id, params := b.params, cold := b.cold,
+                    body := b.body ++ StockBitNIWitness.extraBody Configuration.fastI64,
+                    term := Clif.Terminator.ret [74] })
+                ((fun b =>
+                    { id := b.id, params := b.params, cold := b.cold,
+                      body := b.body ++ StockCastNIWitness.extraBody Configuration.fastI64,
+                      term := Clif.Terminator.ret [60] })
+                  ((fun b =>
+                      { id := b.id, params := b.params, cold := b.cold,
+                        body := b.body ++ StockShiftNIWitness.extraBody Configuration.fastI64,
+                        term := Clif.Terminator.ret [53] })
+                    ((fun b =>
+                        { id := b.id, params := b.params, cold := b.cold,
+                          body := b.body ++ StockMulNIWitness.extraBody Configuration.fastI64,
+                          term := Clif.Terminator.ret [33] })
+                      { id := 0, params := List.map (fun i => (i, valueType Configuration.fastI64)) (List.range 9),
+                        body :=
+                          [{ results := [9],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.fastI64)
+                                  81985529216486895#(valueType Configuration.fastI64).width },
+                            { results := [10],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.fastI64)
+                                  4097#(valueType Configuration.fastI64).width },
+                            { results := [11],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.fastI64) 1 9 },
+                            { results := [12],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.fastI64) 11 8 },
+                            { results := [13],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.fastI64) 12 2 },
+                            { results := [14],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bor (valueType Configuration.fastI64) 13 9 },
+                            { results := [15], inst := Clif.Inst.select (valueType Configuration.fastI64) 0 14 12 },
+                            { results := [16],
+                              inst := Clif.Inst.binary Clif.BinaryOp.isub (valueType Configuration.fastI64) 15 2 },
+                            { results := [17],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.fastI64) 16 10 },
+                            { results := [18],
+                              inst :=
+                                Clif.Inst.iconst (valueType Configuration.fastI64)
+                                  42#(valueType Configuration.fastI64).width },
+                            { results := [19],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.fastI64) 1 8 },
+                            { results := [20],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.fastI64) 17 },
+                            { results := [21],
+                              inst := Clif.Inst.binary Clif.BinaryOp.bxor (valueType Configuration.fastI64) 20 2 },
+                            { results := [22],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.fastI64) 21 },
+                            { results := [23],
+                              inst := Clif.Inst.binary Clif.BinaryOp.iadd (valueType Configuration.fastI64) 22 10 },
+                            { results := [24],
+                              inst := Clif.Inst.binary Clif.BinaryOp.band (valueType Configuration.fastI64) 23 8 },
+                            { results := [25],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.fastI64) 24 },
+                            { results := [26],
+                              inst := Clif.Inst.unary Clif.UnaryOp.bnot (valueType Configuration.fastI64) 1 }],
+                        term := Clif.Terminator.ret [25] })))))))).term
+in the application
+  And.intro rfl
+/tmp/stock-div-next-mixed-source-witness.lean:49:6: error: 'change' tactic failed, pattern
+  (match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.systemVI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := Clif.Ty.i32, bits := q }] Clif.Mem.empty) =
+    ?m.120
+is not definitionally equal to target
+  Clif.runLoop Clif.Env.empty { funcs := [] } 250
+      { frame := frame Configuration.defaultI32 op input slot, callers := [], mem := Clif.Mem.empty } =
+    match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.defaultI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := valueType Configuration.defaultI32, bits := q }] Clif.Mem.empty
+/tmp/stock-div-next-mixed-source-witness.lean:49:6: error: 'change' tactic failed, pattern
+  (match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.systemVI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := Clif.Ty.i32, bits := q }] Clif.Mem.empty) =
+    ?m.120
+is not definitionally equal to target
+  Clif.runLoop Clif.Env.empty { funcs := [] } 250
+      { frame := frame Configuration.systemVI32 op input slot, callers := [], mem := Clif.Mem.empty } =
+    match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.systemVI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := valueType Configuration.systemVI32, bits := q }] Clif.Mem.empty
+/tmp/stock-div-next-mixed-source-witness.lean:49:6: error: 'change' tactic failed, pattern
+  (match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.systemVI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := Clif.Ty.i32, bits := q }] Clif.Mem.empty) =
+    ?m.120
+is not definitionally equal to target
+  Clif.runLoop Clif.Env.empty { funcs := [] } 250
+      { frame := frame Configuration.fastI32 op input slot, callers := [], mem := Clif.Mem.empty } =
+    match Clif.Sem.div op (StockHighMulNIWitness.resultValue Configuration.fastI32 input) (input 8) with
+    | Except.error code => Clif.Outcome.trapped code
+    | Except.ok q => Clif.Outcome.returned [{ ty := valueType Configuration.fastI32, bits := q }] Clif.Mem.empty
+/tmp/stock-div-next-mixed-source-witness.lean:49:83: error: Application type mismatch: The argument
+  input
+has type
+  Nat → BitVec (valueType Configuration.defaultI64).width
+but is expected to have type
+  Nat → BitVec (valueType Configuration.systemVI32).width
+in the application
+  StockHighMulNIWitness.resultValue Configuration.systemVI32 input
+/tmp/stock-div-next-mixed-source-witness.lean:49:83: error: Application type mismatch: The argument
+  input
+has type
+  Nat → BitVec (valueType Configuration.systemVI64).width
+but is expected to have type
+  Nat → BitVec (valueType Configuration.systemVI32).width
+in the application
+  StockHighMulNIWitness.resultValue Configuration.systemVI32 input
+/tmp/stock-div-next-mixed-source-witness.lean:49:83: error: Application type mismatch: The argument
+  input
+has type
+  Nat → BitVec (valueType Configuration.fastI64).width
+but is expected to have type
+  Nat → BitVec (valueType Configuration.systemVI32).width
+in the application
+  StockHighMulNIWitness.resultValue Configuration.systemVI32 input
+'E2E.StockMixedDivNIWitness.source_entry' depends on axioms: [propext, sorryAx]
+'E2E.StockMixedDivNIWitness.source_runs' depends on axioms: [propext, sorryAx, Quot.sound]

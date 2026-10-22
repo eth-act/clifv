@@ -1,0 +1,7 @@
+{
+  "base": "5c1351a088eee97b38925a5266f5a6f4cbd19797",
+  "head": "b1ef0c67f455eecb643883a414904016bab65d8f",
+  "previous_source": "7e13767cdc9a52585d0741efbb51df0391cad93a",
+  "rebase": "conflict-free",
+  "standalone_mixed_source_draft_validation": "Started on7e, loaded old immutable imports; plain lean /tmp draft no active build target outputs. Its eventual result is historical7e, not current-rebase gate."
+}

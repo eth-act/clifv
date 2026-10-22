@@ -1,0 +1,15 @@
+/tmp/stock-div-next-quiet-colors.lean:60:48: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Array.getElem?_replicate, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-quiet-colors.lean:60:61: warning: This simp argument is unused:
+  Array.getElem?_replicate
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [getElem!_def, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+'Backend.Stock.Proof.QuietSourceColors.sourceMetadata_quiet_single_block' depends on axioms: [propext, Quot.sound]
