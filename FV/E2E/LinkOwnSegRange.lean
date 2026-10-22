@@ -207,10 +207,10 @@ theorem segRangeHyp : SegRangeHyp := by
             (fun e he => sigStack_of he (hs.stackLayout.2 B hBm fn args et e hBT he))
             hdata' hex hph hinfo hreg (hvbS _ hge) hc⟩
         · have hdata' : tryCallData f (.tryCallIndirect callee args et) = .ok L.data := hBT ▸ hdat
-          obtain ⟨hsin, h8⟩ := tryIndSig_of_subset hsub B hBm callee args et T.sig hBT
+          have hsin := tryIndSig_of_subset hsub B hBm callee args et T.sig hBT
             (Backend.Proof.Driver.exnTableOpnd_sig hex)
           exact ⟨_, hYI f ctx _ callee args et L.data T.sig T.items L.targets T.info T.regs L.tst
-            T.st1 out L.tst' tr hctx hdata' hex hsin h8 hph hinfo hreg (hvbS _ hge) hc⟩
+            T.st1 out L.tst' tr hctx hdata' hex hsin hph hinfo hreg (hvbS _ hge) hc⟩
       obtain ⟨pre, ci, hms, hpre, hcd⟩ := hok.shape
       have hmono := hok.mono
       obtain ⟨-, htrs, hst1, -⟩ := tryRegsOf_spec (exnTableOpnd_cc hex) hreg

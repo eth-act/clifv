@@ -243,7 +243,7 @@ theorem xRaiseOk (exts : List Clif.ExtFunc) (MR : MemRelT) (X : ExtSem) :
 
 theorem xRaiseIndOk (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
     XRaiseIndOk env sigs MR X XR := by
-  intro sig _ n g sl cm w u args vals e m hg _ _ _ _ hmr hu _
+  intro sig _ n g sl cm w u args vals e m hg _ _ _ hmr hu _
   simp only [env, Option.some.injEq] at hg
   subst hg
   simp only [Clif.XOutcome.unwound.injEq] at hu
@@ -253,7 +253,7 @@ theorem xRaiseIndOk (sigs : List Clif.Signature) (MR : MemRelT) (X : ExtSem) :
 theorem xRaiseExcl (exts : List Clif.ExtFunc) (sigs : List Clif.Signature) (MR : MemRelT)
     (X : ExtSem) : XRaiseExcl env exts sigs MR X XR := by
   refine ⟨fun ext _ g sl cm w d uses args vals rvals cm' hg _ _ _ hr => ?_,
-    fun sig _ n g sl cm w u args vals rvals cm' hg _ _ _ _ _ hr _ => ?_⟩ <;>
+    fun sig _ n g sl cm w u args vals rvals cm' hg _ _ _ _ hr _ => ?_⟩ <;>
   · simp only [env, Option.some.injEq] at hg
     subst hg
     cases hr

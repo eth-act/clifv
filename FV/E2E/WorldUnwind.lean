@@ -338,14 +338,13 @@ theorem indCallsRefine_csemU_of_excl {F : BitVec 64 → Prop} {ctx : FnCtx} {X :
     IndCallsRefine env sigs MR (csemU F ctx X XR) := by
   obtain ⟨h1, h2⟩ := indCallsRefine_csem (F := F) (ctx := ctx) hX hsym hMR
   refine ⟨?_, ?_⟩
-  · intro sig hsig n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11
+  · intro sig hsig n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10
     obtain ⟨outs, w', hs, rest⟩ :=
-      h1 sig hsig n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11
+      h1 sig hsig n g sl cm w a r us ds u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10
     exact ⟨outs, w', csemU_of_csem hex hs, rest⟩
   · intro sig hsig n g sl cm w a r us ds ti u args vals rvals cm' a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11
-      a12
     obtain ⟨outs, w', hs, rest⟩ := h2 sig hsig n g sl cm w a r us ds ti u args vals rvals cm' a1 a2
-      a3 a4 a5 a6 a7 a8 a9 a10 a11 a12
+      a3 a4 a5 a6 a7 a8 a9 a10 a11
     exact ⟨outs, w', csemU_of_csem hex hs, rest⟩
 
 /-- **CLIF → VCode with unwinding for an activation inside a linked program** (`RelW`; the

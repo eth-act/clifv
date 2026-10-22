@@ -194,13 +194,14 @@ theorem argsAt_prog (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh
     (hkind : (∃ e ∈ g.externs.map (·.2), e.name = h.name ∧ e.sig = sig) ∨
       sig ∈ indSigs g ∧ vals.map (·.ty) = Clif.AbiParam.tys sig.params)
     (hA : (∃ e ∈ g.externs.map (·.2), e.name = h.name ∧ e.sig = sig) ∧ ArgsAt sig vals args w ∧
-        ArgsAt sig vals args w' ∨ sig ∈ indSigs g ∧ vals.length ≤ 8 ∧ AllHold vals args) :
+        ArgsAt sig vals args w' ∨
+      sig ∈ indSigs g ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w') :
     ArgsAt h.sig vals args w ∧ ArgsAt h.sig vals args w' := by
   have hce := clifEntry_initState (f := h) hpf hinit
   have hvl : vals.length = h.sig.params.length := by
     have := congrArg List.length hce.sig
     simpa using this
-  rcases hA with ⟨⟨e', he', hen', hes⟩, h1, h2⟩ | ⟨hsig, h8, hall⟩
+  rcases hA with ⟨⟨e', he', hen', hes⟩, h1, h2⟩ | ⟨hsig, h1, h2⟩
   · have := hL.declSig g hg e' he' h (by rw [hen']; exact hpf)
     rw [← hes, this] at h1 h2
     exact ⟨h1, h2⟩
@@ -214,7 +215,9 @@ theorem argsAt_prog (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh
         rfl
       · exact hce.sig.symm.trans hty
     obtain ⟨⟨bytes, hb, hb8⟩, -⟩ := hdeclS h hh hdecl (L.toLinkSys.indReach hpf hdecl hsig hmatch)
-    exact ⟨(argsAt_iff_of_regs hb hb8 hvl).mpr hall, (argsAt_iff_of_regs hb hb8 hvl).mpr hall⟩
+    have habi := (hL.subset g hg).indSigs sig hsig
+    exact ⟨LinkSys.argsAt_of_tyMatch habi hmatch hb hb8 hvl h1,
+      LinkSys.argsAt_of_tyMatch habi hmatch hb hb8 hvl h2⟩
 
 /-- **Non-interference of the external semantics of an activation of `g`** with unwinding
 (`xni`'s counterpart): the base externs' (`baseNI`), and `progXU_ni` for a function of `P`. -/
