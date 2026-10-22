@@ -34,8 +34,6 @@ theorem holdsP_allT {as : List AW} {fs : List V}
   · exact h i w hw hi
   · rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none (by omega)]; exact γT_top w
 
-theorem sem_extract (ctx : Ctx) : (sem ctx).extract = externExtract ctx := rfl
-
 set_option maxHeartbeats 1000000 in
 /-- **Extractors**: `aext` describes the outputs of every extern extractor. -/
 theorem ext_soundT (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
@@ -58,7 +56,7 @@ theorem ext_soundT (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
         simp only
         split
         · rename_i ts hts
-          apply holdsP_single
+          apply holdsPT_single
           cases a with
           | ty ts' =>
             simp only [tysOf, Option.some.injEq] at hts
@@ -101,7 +99,7 @@ theorem ext_soundT (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
             obtain ⟨j', info', c, he, hi', hc', hd'⟩ := hx'
             cases he
             rw [hi] at hi'; cases hi'
-            have hD := instSplit_data hsp hi hc (hctx.data i info c hi hc')
+            have hD := instSplit_data hsp hi hc' (hctx.data i info c hi hc')
             exact ⟨hD, hd.1, hd.2⟩
           · exact γ_c0T hd
         | succ j => simp only [List.length_cons, List.length_nil] at hj; omega
