@@ -116,8 +116,13 @@ names their number. fv-demo with `--build-std --lean-link --verified`: **both ex
 by `Link.DeadCleanup.compileExe` and covered by `compileExe_correct{,_peak,_source,_source_peak}`
 (input in `InScopeIn`)**, 28550 (lib test, 18 excluded) / 27902 (main test, 17 excluded) functions
 in the region; under qemu lib test 21 passed, main test `ok`. The exceptional edges of one std
-function stay uncovered (`unwOkB: …: lastCallsOk`, S10). Widening `indB`/`callScopeB` (S5) would
-shrink the exclusion list; it is not needed for coverage of the rest.
+function (`gimli::read::abbrev::…::parse`) stayed uncovered (`unwOkB: …: lastCallsOk`, S10): its
+last block ends in a plain `blr x8` (`memcpy` through the GOT) followed by `mov x0, x19`, and a
+`try_call` elsewhere is also a `blr x8`; `lastCallsOk` only told such calls apart by a following
+`udf`. It now also accepts a following register move (`afterLine?`, `FV/E2E/RegLevelCallSite.lean`;
+`q_callSite_last` unchanged): `lean-backend` reports that function inside
+`backend_correct_final_cleanup_unwind`. Widening `indB`/`callScopeB` (S5) would shrink the
+exclusion list; it is not needed for coverage of the rest.
 
 ### 2.2 Cost
 
