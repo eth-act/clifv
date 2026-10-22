@@ -87,12 +87,26 @@ CLI/link/generated cohorts and all current full gates. Validated source
 Saved instruction-derived transfers and shared composition are reused; all old
 cast variants remain alongside the more general source-format variants.
 
-Next: popcount, reusing existing numerical/vector helper proofs and scoped
-projection; its i128/vector roots require original-scope exclusions. Then
-comparisons/min/max, high multiply/division/remainder, complete original integer
-widths and ABIs, and every unchanged original #140 control/memory/trap/effect/
-call/source/block/whole-driver/completeness/consumer obligation. Fallback is not
-Stock-only completeness; full original #140 remains unfinished.
+Popcount passes author gates through the same scalar consumers.
+[Terminal evidence](../research/stock-popcount-production-activation.md) records
+18 primary / 19 ownership gates, 1,571 audited roots, all 1,541 old axiom
+sets / 29 old public headers exact, 2,256 native comparisons and two 32-check
+actual CLI/link/generated cohorts. Validated source `13696563`;
+terminal evidence backed at `6e9e92da`. Existing numerical/helper proofs
+and original scope closure are reused; old variants remain. Existing complete source-transfer witnesses cover all four scalar
+widths; production activation is i32/i64.
+
+Next: comparisons/min/max, high multiply/division/remainder, complete original
+integer widths and ABIs, and every unchanged original #140 control/memory/trap/
+effect/call/source/block/whole-driver/completeness/consumer obligation. Universal
+successful lowering and downstream completeness remain. Fallback is not Stock
+completeness; full original #140 remains unfinished.
+
+Reuse existing complete source wrappers before writing alternate proofs. The
+current interpreted runtime and linked fixtures each take minutes; measure ordinary
+native lean_exe targets for the same fixture code in the next batch, preserving
+every gate and its inputs. This is a bounded execution improvement, not a new
+workflow system.
 
 ## Maintained validation runner (landed #358)
 

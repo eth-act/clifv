@@ -30,8 +30,15 @@ def bitProducer : MInst → Bool
   | .bitRR .. | .aluRRR .extr .. | .aluRRImmShift .extr .. => true
   | _ => false
 
+/-- The exact vector producers used by scalar popcount. -/
+def popcountProducer : MInst → Bool
+  | .movToFpu _ _ .size32 | .movToFpu _ _ .size64
+  | .movFromVec _ _ 0 .size8 | .vecMisc .cnt _ _ .size8x8
+  | .vecLanes .addv _ _ .size8x8 | .vecRRR .addp _ _ _ .size8x8 => true
+  | _ => false
+
 def instruction (sig : Clif.Signature) (b k : Nat) (i : MInst) : Bool :=
-  ABIReadFlags.instruction sig b k i || constant i || shift i || extension i || bitProducer i
+  ABIReadFlags.instruction sig b k i || constant i || shift i || extension i || bitProducer i || popcountProducer i
 
 def check (sig : Clif.Signature) (vc : VCode) : Bool :=
   vc.blocks.toList.zipIdx.all fun (block,b) =>
