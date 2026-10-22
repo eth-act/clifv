@@ -423,3 +423,10 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.LoopWitness.rmw_retry_w -- witness: native_decide
 #print axioms Concurrency.ArmAllocThread.LoopWitness.cas_retry_w -- witness: native_decide
 #print axioms Concurrency.ArmAllocThread.LoopWitness.retry_run_w -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.moves_fwdA
+#print axioms Concurrency.ArmAllocThread.excl_step_fwd
+#print axioms Concurrency.ArmAllocThread.codeLinesE_head_ldar
+#print axioms Concurrency.ArmAllocThread.codeLinesE_head_stlr
+#print axioms Concurrency.RealizeCompiled.WitnessL.realizes_one
+#print axioms Concurrency.RealizeCompiled.WitnessL.compiled_ofL -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessL.realizes_load -- witness: native_decide

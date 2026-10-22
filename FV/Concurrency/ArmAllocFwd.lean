@@ -204,4 +204,98 @@ theorem codeLinesE_head_fence {ctx : FnCtx} {af : AFunc} {rest : List AInst} {ps
     obtain ⟨rfl, -⟩ := h
     rfl
 
+/-- **`moves_fwd` with `AInv`**: through a list of moves at the head of the items, `AInv` is
+kept (`aInv_step`, a move step). -/
+theorem moves_fwdA {R : RL} (hR : R.Wf) (P : AKind → Prop) {b : Nat} {w : ArmState} :
+    ∀ (mvs : List (Loc × Loc)) (its : List RItem) (s : ArmState) (m : Loc → CV) (mon : Mon),
+      Q R s (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
+      AInv R (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩) →
+      (∀ p ∈ mvs, ∀ code ls1, R.fr.moveInsts p.1 p.2 = .ok code →
+        codeLinesE R.ctx R.af code {} = .ok (ls1, {}) → ∀ K ∈ kinds ls1, P K) →
+      ∃ (ls : List Lab) (t' : ArmState × Mon) (m' : Loc → CV),
+        PRun Policy.arm R.step (OkPriv R) (s, mon) ls t' ∧ Q R t'.1 (.run ⟨b, its, m', w⟩) ∧
+        AInv R (.run ⟨b, its, m', w⟩) ∧ ∀ l ∈ ls, ∀ e ∈ l.evs, R.F e.addr ∧ P e.k
+  | [], its, s, m, mon, hq, hA, _ =>
+    ⟨[], (s, mon), m, .nil, hq, hA, fun _ h => absurd h List.not_mem_nil⟩
+  | p :: mvs, its, s, m, mon, hq, hA, hK => by
+    obtain ⟨ls, t1, r1, hq1, code, ls1, hc, hcl, hev⟩ := move_fwd hR hq mon
+    have hA1 := Backend.Proof.aInv_step hR hq hA (.move (src := p.1) (dst := p.2))
+    obtain ⟨ls', t2, m2, r2, hq2, hA2, hev2⟩ := moves_fwdA hR P mvs its t1.1 _ t1.2 hq1 hA1
+      (fun p' hp' => hK p' (List.mem_cons_of_mem _ hp'))
+    refine ⟨ls ++ ls', t2, m2, PRun.append r1 r2, hq2, hA2, fun l hl e he => ?_⟩
+    rcases List.mem_append.mp hl with hl | hl
+    · obtain ⟨h1, h2⟩ := hev l hl e he
+      exact ⟨h1, hK p List.mem_cons_self code ls1 hc hcl _ h2⟩
+    · exact hev2 l hl e he
+
+/-- **One precise step at an `ldar`/`stlr` line** (64 bits, registers `x p`, address `x q`),
+reading the thread's own memory: a single event of kind `acqR` (`lb = 1`) or `relW`
+(`lb = 0`), 8 bytes at the address register's value. -/
+theorem excl_step_fwd {R : RL} (hR : R.Wf) {s : ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.fa.lines.toList[j]? = some (.ins x t))
+    (hh : x.hooked = false) (hprog : s.program = R.fb.program R.base)
+    (hpc : Arm.r .PC s = R.pcOf j) (herr : Arm.r .ERR s = .None) {lb p q : Nat}
+    (hlb : lb = 0 ∨ lb = 1) (hp : p ≤ 30) (hq : q ≤ 30)
+    (hx : ∀ env, x.armFields env = Insn.armFields.exclFields 64 1 lb 31 (.x p) (.x q))
+    (mon : Mon) :
+    ∃ (t1 : ArmState × Mon) (e : Ev), PRun Policy.arm R.step (OkPriv R) (s, mon) [⟨[e], false⟩] t1 ∧
+      t1.1 = R.step s ∧ e.k = (if lb = 1 then .acqR else .relW) ∧ e.n = 8 ∧
+      e.addr = read_gpr 64 (BitVec.ofNat 5 q) s := by
+  obtain ⟨a, ha, -, hev, hdec⟩ := stepEvs_line (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj hh
+    hprog hpc herr
+  obtain ⟨sz, rn', rt', rfl, hrn, -, hsz⟩ := toArmInst_excl (hx _) ha
+  simp only [Reg.encSP, hq, ite_true, pure, Except.pure, Except.ok.injEq] at hrn
+  subst hrn
+  have hsz' : sz = 3#2 := by rcases hsz with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨-, h⟩ <;> first | omega | exact h
+  subst hsz'
+  have hns : NoStx s := fun rel rs rn h => by
+    rw [cls_of_decode hdec] at h
+    simp [clsOf, exclCls] at h
+    split at h <;> cases h
+  obtain ⟨t1, r1, ht1⟩ := step_fwd hR hj hh hprog hpc herr hns mon
+  have hq31 : BitVec.ofNat 5 q ≠ 31#5 := ofNat5_ne31 (by omega)
+  rw [hev] at r1
+  rcases hlb with rfl | rfl
+  · simp only [instEvs, exclEvs, hq31, false_and, ite_false, exclKind,
+      show BitVec.ofNat 1 0 = 0#1 from rfl, show ¬ (0#1 : BitVec 1) = 1#1 by decide,
+      show BitVec.ofNat 1 1 = 1#1 from rfl, ite_true] at r1
+    exact ⟨t1, _, r1, ht1, rfl, rfl, rfl⟩
+  · simp only [instEvs, exclEvs, hq31, false_and, ite_false, exclKind,
+      show BitVec.ofNat 1 1 = 1#1 from rfl, ite_true] at r1
+    exact ⟨t1, _, r1, ht1, rfl, rfl, rfl⟩
+
+theorem lines_loadAcquire (c : FnCtx) (ps : Backend.PState) {ty : CTy} {rt rn : Reg}
+    {fl : Clif.MemFlags} :
+    (MInst.loadAcquire ty rt rn fl).lines c ps = .ok ([.ins (.ldar ty.bits rt rn) fl.trapCode], ps) :=
+  rfl
+
+theorem lines_storeRelease (c : FnCtx) (ps : Backend.PState) {ty : CTy} {rt rn : Reg}
+    {fl : Clif.MemFlags} :
+    (MInst.storeRelease ty rt rn fl).lines c ps = .ok ([.ins (.stlr ty.bits rt rn) fl.trapCode], ps) :=
+  rfl
+
+/-- The lines of code starting with `loadAcquire` start with its `ldar`. -/
+theorem codeLinesE_head_ldar {ctx : FnCtx} {af : AFunc} {ty : CTy} {rt rn : Reg}
+    {fl : Clif.MemFlags} {rest : List AInst} {ps ps' : Backend.PState} {ls : List Line}
+    (h : codeLinesE ctx af (.inst (.loadAcquire ty rt rn fl) :: rest) ps = .ok (ls, ps')) :
+    ls.head? = some (.ins (.ldar ty.bits rt rn) fl.trapCode) := by
+  simp only [codeLinesE, ainstLines, lines_loadAcquire, bind, Except.bind] at h
+  split at h
+  · cases h
+  · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    rfl
+
+/-- The lines of code starting with `storeRelease` start with its `stlr`. -/
+theorem codeLinesE_head_stlr {ctx : FnCtx} {af : AFunc} {ty : CTy} {rt rn : Reg}
+    {fl : Clif.MemFlags} {rest : List AInst} {ps ps' : Backend.PState} {ls : List Line}
+    (h : codeLinesE ctx af (.inst (.storeRelease ty rt rn fl) :: rest) ps = .ok (ls, ps')) :
+    ls.head? = some (.ins (.stlr ty.bits rt rn) fl.trapCode) := by
+  simp only [codeLinesE, ainstLines, lines_storeRelease, bind, Except.bind] at h
+  split at h
+  · cases h
+  · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at h
+    obtain ⟨rfl, -⟩ := h
+    rfl
+
 end Concurrency.ArmAllocThread
