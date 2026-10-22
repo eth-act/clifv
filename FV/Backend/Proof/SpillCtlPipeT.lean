@@ -61,6 +61,80 @@ theorem mem_vcBlocksOfT' {f : Clif.Function} {ctx : Ctx} {bl : List BLow} {vb : 
     exact .inl ⟨p.2, p.1.1, p.1.2, this.1, this.2, rfl⟩
   · exact .inr ⟨p.1, p.2, vb0, (List.of_mem_zip hp).1, he, rfl⟩
 
+/-! ## The entry block's `Args` -/
+
+/-- An `sret` parameter of an ABI-checked signature is an `i64`. -/
+theorem sret_i64_of_sigAbiOk {s : Clif.Signature} (h : sigAbiOk s = true) :
+    ∀ p ∈ s.params, p.purpose = .sret → p.ty = .i64 := by
+  unfold sigAbiOk at h
+  simp only [Bool.and_eq_true, List.all_eq_true, Bool.or_eq_true, beq_iff_eq,
+    decide_eq_true_eq] at h
+  intro p hp hps
+  rcases h.1.1.1 p hp with h | h
+  · rw [h] at hps; cases hps
+  · exact h.2
+
+/-- The typed entry pairs' registers have their vregs' classes (`spillInstOk_entryArgsT`'s
+placement argument). -/
+theorem entryDC_argRegC {f : Clif.Function} {ctx : Ctx} {B : Clif.Block}
+    (hsig : (f.sig.params.filter (·.purpose == .sret)).length ≤ 1)
+    (hsret : ∀ p ∈ f.sig.params, p.purpose = .sret → p.ty = .i64)
+    (hcls : ∀ (i : Nat) (x : Clif.ValueId) (t : Clif.Ty) (sp : Clif.AbiParam),
+      B.params[i]? = some (x, t) → f.sig.params[i]? = some sp →
+      valClassOf ctx x = tyClass sp.ty) :
+    ∀ q ∈ entryDC ctx (Driver.entryParams f B), ArgRegC q.2.1 q.2.2 := by
+  intro q hq
+  obtain ⟨i, x, t, p, hb, hlc, rfl⟩ := mem_entryDC hq
+  cases hloc : sigArgLocs f.sig with
+  | error e => simp [locsOf, hloc] at hlc
+  | ok r =>
+    obtain ⟨locs, n⟩ := r
+    have hl : locsOf f.sig = locs := by simp [locsOf, hloc]
+    obtain ⟨-, hP⟩ := sigArgLocs_regsC hsig hloc
+    rw [hl] at hlc
+    obtain ⟨sp, hsp, hpl⟩ := hP.get hlc
+    have hc := hcls i x t sp hb hsp
+    simp only
+    rw [hc]
+    rcases hpl with ⟨hs, he8⟩ | ⟨-, hlc'⟩
+    · cases he8
+      rw [hsret sp (List.mem_of_getElem? hsp) hs]
+      exact .inl ⟨rfl, 8, Nat.le_refl _, rfl⟩
+    · exact retRegC_argRegC (hlc' p rfl)
+
+/-- **The facts of the typed entry block's parameters**: distinct vregs (SSA), not renamed by
+the alias resolution (no parameter is an alias key), of the classes of the signature's
+parameters (`EntryClassOk`). -/
+theorem entryParams_factsT {f : Clif.Function} {ctx : Ctx} {ranges : Array (Nat × Nat)}
+    {st0 : LState} (bl : List BLow) (hd : Dominated f) (hec : EntryClassOk f)
+    (hb : buildCtx f = .ok (ctx, ranges, st0)) {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0) :
+    (B0.params.map (·.1)).Nodup ∧
+    (∀ x ∈ B0.params.map (·.1),
+      lowerFunction.resolve (aliasArr (aliasOf f bl)) ((aliasArr (aliasOf f bl)).size + 1)
+        (Driver.vregOf ctx x) = Driver.vregOf ctx x) ∧
+    (∀ (i : Nat) (x : Clif.ValueId) (t : Clif.Ty) (sp : Clif.AbiParam),
+      B0.params[i]? = some (x, t) → f.sig.params[i]? = some sp →
+      valClassOf ctx x = tyClass sp.ty) := by
+  have hcf := ctxFacts_of hb
+  have hB0m : B0 ∈ f.blocks := List.mem_of_getElem? hB0
+  have hvd := hd.ssa
+  refine ⟨?_, fun x hx => ?_, fun k x t sp hx hsp => ?_⟩
+  · unfold valueDefs at hvd
+    have := (List.pairwise_flatMap.mp hvd).1 B0 hB0m
+    exact (List.nodup_append.mp this).1
+  · show lowerFunction.resolve _ _ (Reg.vreg x (valClassOf ctx x)) = _
+    rw [resolve_vreg]
+    congr 1
+    refine resolve_fix _ (fun o hm => ?_)
+    obtain ⟨B', hB', stm, hstm, hr⟩ := aliasOf_key hm
+    exact param_not_result hvd hB0m hB' hx (List.mem_flatMap.mpr ⟨stm, hstm, hr⟩)
+  · have hty := (hcf.types hvd).2 B0 hB0m (x, t) (List.mem_of_getElem? hx)
+    have hhead : f.blocks.head? = some B0 := by
+      rw [List.head?_eq_getElem?]; exact hB0
+    rw [← hec B0 hhead k x t sp hx hsp,
+      show tyClass t = (CTy.ofClif t).valClass by cases t <;> rfl]
+    simp [valClassOf, hty]
+
 /-- **`CtlSpillHyp` from the typed ISLE inversion**, for typed-scope input whose signatures pass
 the end-to-end subset's ABI check and whose entry block is typed like the signature. -/
 theorem ctlSpillHypT_of (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
@@ -104,34 +178,9 @@ theorem ctlSpillHypT_of (hI : IselCtlHypT) {f : Clif.Function} {vc : VCode}
       · rename_i B0 hB0
         simp only [List.mem_cons] at hpre
         rcases hpre with rfl | hpre
-        · have hB0m : B0 ∈ f.blocks := List.mem_of_getElem? hB0
-          have hvd := hd.ssa
-          have hpar : (B0.params.map (·.1)).Nodup := by
-            unfold valueDefs at hvd
-            have := (List.pairwise_flatMap.mp hvd).1 B0 hB0m
-            exact (List.nodup_append.mp this).1
-          have hsig := ha.1.1
-          unfold sigAbiOk at hsig
-          simp only [Bool.and_eq_true, List.all_eq_true, Bool.or_eq_true, beq_iff_eq,
-            decide_eq_true_eq] at hsig
-          refine spillInstOk_entryArgsT (sret_le_of_sigAbiOk ha.1.1)
-            (fun p hp hps => by
-              rcases hsig.1.1.1 p hp with h | h
-              · rw [h] at hps; cases hps
-              · exact h.2)
-            hpar (fun x hx => ?_) (fun k x t sp hx hsp => ?_)
-          · show lowerFunction.resolve _ _ (Reg.vreg x (valClassOf ctx x)) = _
-            rw [resolve_vreg]
-            congr 1
-            refine resolve_fix al (fun o hm => ?_)
-            obtain ⟨B', hB', stm, hstm, hr⟩ := aliasOf_key hm
-            exact param_not_result hvd hB0m hB' hx (List.mem_flatMap.mpr ⟨stm, hstm, hr⟩)
-          · have hty := (hcf.types hvd).2 B0 hB0m (x, t) (List.mem_of_getElem? hx)
-            have hhead : f.blocks.head? = some B0 := by
-              rw [List.head?_eq_getElem?]; exact hB0
-            rw [← hec B0 hhead k x t sp hx hsp,
-              show tyClass t = (CTy.ofClif t).valClass by cases t <;> rfl]
-            simp [valClassOf, hty]
+        · obtain ⟨hpar, hR, hcls⟩ := entryParams_factsT bl hd hec hb hB0
+          exact spillInstOk_entryArgsT (sret_le_of_sigAbiOk ha.1.1) (sret_i64_of_sigAbiOk ha.1.1)
+            hpar hR hcls
         · simp only [entryLoadsT, List.mem_filterMap] at hpre
           obtain ⟨q, -, hq⟩ := hpre
           unfold entryLoadOfT at hq
