@@ -10,6 +10,7 @@ import FV.Backend.Proof.StockScalarPopcountDomain
 import FV.Backend.Proof.StockScalarMinMaxDomain
 import FV.Backend.Proof.StockScalarCmpDomain
 import FV.Backend.Proof.StockScalarHighMulDomain
+import FV.Backend.Proof.StockScalarDivDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -159,6 +160,19 @@ theorem highmulBodyEligible_sound {stm : Clif.Stmt} (checked : highmulBodyEligib
         | exact Or.inr ⟨true,_,_,_,rfl⟩
         | exact Or.inr ⟨false,_,_,_,rfl⟩
 
+/-- The finite source classifier supplies the original division and binder. -/
+theorem singleDivEligible_sound {b : Clif.Block} (checked : singleDivEligible b = true) :
+    ∃ (stm : Clif.Stmt) (op : Clif.DivOp) (ty : Clif.Ty) (x y z : Nat),
+      b.body = [stm] ∧ stm.inst = .div op ty x y ∧ stm.results = [z] ∧ b.term = .ret [z] := by
+  unfold singleDivEligible at checked
+  split at checked
+  next z op ty x y z' body ret =>
+    simp only [Bool.and_eq_true] at checked
+    have equal : z = z' := beq_iff_eq.mp checked.1
+    subst z'
+    exact ⟨⟨[z],.div op ty x y⟩,op,ty,x,y,z,body,rfl,rfl,ret⟩
+  next => cases checked
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
@@ -170,10 +184,6 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     have sourceShape : ∃ xs, b.term = .ret xs := by
       cases term : b.term <;> simp_all
     obtain ⟨xs,ret⟩ := sourceShape
-    have families : ∀ stm ∈ b.body, Stock.Proof.HighMulBody.Family stm.inst := by
-      intro stm member
-      have supported := List.all_eq_true.mp body stm member
-      exact highmulBodyEligible_sound supported
     have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
       apply List.find?_eq_none.mpr
       intro p member
@@ -184,7 +194,16 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       intro any
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
-    exact domain_of_highmul (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
+    simp only [Bool.or_eq_true] at body
+    rcases body with old | divided
+    · have families : ∀ stm ∈ b.body, Stock.Proof.HighMulBody.Family stm.inst := by
+        intro stm member
+        have supported := List.all_eq_true.mp old stm member
+        exact highmulBodyEligible_sound supported
+      exact domain_of_highmul (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
+    · obtain ⟨stm,op,ty,x,y,z,singleton,division,results,ret'⟩ := singleDivEligible_sound divided
+      exact domain_of_single_div (lowerScope_of scope) (dominated_of dominated) abi blocks
+        singleton division results ret' ordinary
   next => cases eligible
 
 
