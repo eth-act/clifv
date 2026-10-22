@@ -78,9 +78,20 @@ def oracleTyName : Ty → String
   | .vec s => if s.width == 128 then "i8x16" else "i8x8"
   | t => t.name
 
-/-- Agreement of our outcome with the interpreter's. `none`: the oracle reported an error
-(no comparison possible). -/
+/-- The interpreter returned a non-vector value where the signature has a vector result: its
+`bitcast` from a scalar to a vector type converts the scalar to the lane type and returns that
+lane alone (Cranelift 0.136.1 `interpreter/src/step.rs`, `Opcode::Bitcast`), so the record is no
+observation of the function. -/
+def illTypedVec (o : Outcome) (a : OracleActual) : Bool :=
+  match o, a with
+  | .returned vs _, .returned ws =>
+    vs.length == ws.length && (vs.zip ws).any fun (v, (tn, _)) => v.ty.isVec && tn != oracleTyName v.ty
+  | _, _ => false
+
+/-- Agreement of our outcome with the interpreter's. `none`: the oracle reported an error or an
+ill-typed vector result (`illTypedVec`; no comparison possible). -/
 def agree (o : Outcome) (a : OracleActual) : Option Bool :=
+  if illTypedVec o a then none else
   match o, a with
   | .returned vs _, .returned ws => some (vs.map (fun v => (oracleTyName v.ty, v.toNat)) == ws)
   | .trapped c, .trapped d => some (c.name == d)
