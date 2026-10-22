@@ -54,9 +54,17 @@ def bitEligible (stm : Clif.Stmt) : Bool :=
 
 def bitBodyEligible (stm : Clif.Stmt) : Bool := castBodyEligible stm || bitEligible stm
 
+/-- Popcount extends the source family while all previous selectors stay fixed. -/
+def popcountEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .unary .popcnt ty _ => ty == .i32 || ty == .i64
+  | _ => false
+
+def popcountBodyEligible (stm : Clif.Stmt) : Bool := bitBodyEligible stm || popcountEligible stm
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all bitBodyEligible &&
+  | [b] => b.body.all popcountBodyEligible &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
