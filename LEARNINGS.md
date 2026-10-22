@@ -33,6 +33,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Trick:** run the tactic's `assumption` with reducible transparency.
 - **Effect:** the file compiles in about 30 s.
 
+### No `first | exact a | exact b …` over goals mentioning a big definition
+- **Problem:** in `synthTable_le` (`FV/Link/Ld/RelocTotal.lean`), `first | exact a | exact b …` over goals that mention lean-ld's planner `layPre o st g` ran out of heartbeats (over 200000): each failed `exact` tried to unify by unfolding the whole planner.
+- **Trick:** one explicit tactic per goal (the right lemma named for each case), no `first` fallback chain.
+- **Effect:** the file checks in about 9 s (A1c, #409).
+
 ## Module structure and imports
 
 ### Don't import umbrella modules from hub files

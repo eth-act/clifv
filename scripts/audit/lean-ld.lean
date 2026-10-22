@@ -2,7 +2,7 @@ import FV.Link.ExeLd
 import FV.Link.DeadCleanupExeLd
 import FV.Link.Ld.LayoutProof
 import FV.Link.Ld.LayoutTotal
-import FV.Link.Ld.BodyTotal
+import FV.Link.Ld.RelocTotal
 
 -- the executable compiler's totality on `lean-ld`'s output (L2b stage 3e)
 #print axioms Link.compileExe_total_ld
@@ -40,3 +40,8 @@ import FV.Link.Ld.BodyTotal
 #print axioms Link.Ld.buildBody_layout
 #print axioms Link.Ld.assemble_layout_ok
 #print axioms Link.Ld.tinyPiece_relsOk
+
+-- symbol values in address-free intervals; the relocation checks are sound (A1c, #409)
+#print axioms Link.Ld.value_in
+#print axioms Link.Ld.relocOkB_of
+#print axioms Link.Ld.relIn_relocOkB
