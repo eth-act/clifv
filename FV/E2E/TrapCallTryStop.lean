@@ -219,6 +219,171 @@ theorem term_step_try_stop (H : DriverHyp f vc ctx st0 R gn bl A sem MR env.toEn
   exact ⟨b, _, ρ₁', w₁, vb, ci'', ti'', ops.map (rnOp gn), obj, w₂, hstar, hvb, hi, hops',
     by rw [hdest, hvu]; exact hra⟩
 
+/-- The step from a `try_call`'s pending `jump` never traps. -/
+theorem step_tryNext_ne_trapped {env' : Clif.Env} {s : Clif.State} {regs : Clif.Regs}
+    {bc : Clif.BlockCall} {cm : Clif.Mem} (c' : Clif.TrapCode) :
+    Clif.step env' p (tryNext s regs bc cm) ≠ .trapped c' := by
+  rw [Clif.step_term _ _ _ rfl]
+  exact (stepTerm_branch_ne (t := .jump bc) (by simp [dests])).2 c'
+
+/-- **The CLIF → VCode simulation of a trapping run, stopped at the trapping step**: for a run
+of `env` (a program without functions) that traps with `c` under `TrapsExplicitCT` (callee
+traps allowed, `try_call` callees included), and the activation semantics `sem` of the proof
+device `trapEnv env c` (`DriverHyp`, `UnwShape`, `RaiseHyp`), the VCode run from a matching
+state reaches an explicit trap with `c`, a raising `call` that ends the activation, or a raising
+`tryCall`. -/
+theorem sim_trapStop {env0 : Clif.Env} {c : Clif.TrapCode} (hp : p.funcs = [])
+    (H : DriverHyp f vc ctx st0 R gn bl A sem MR (trapEnv env0 c).toEnv p)
+    (HU : UnwShape f vc ctx R gn bl A)
+    (HR : RaiseHyp f sem MR (trapEnv env0 c) F X XR sb syms out)
+    {cs : Clif.State} (hcf : cs.frame.func = f) (htr : TrapsExplicitCT env0 p cs) :
+    ∀ (fuel : Nat) (s : Clif.State) (vs : VState CV Arm.ArmState), Reach env0 p cs s →
+      Match f ctx R gn bl A MR slots s vs → Clif.runLoop env0 p fuel s = .trapped c →
+      VTrapFrom vc sem vs c ∨ (∃ obj w', VUnwFrom vc sem XR vs obj w') ∨
+        VTryRaiseFrom vc sem XR vs := by
+  intro fuel
+  induction fuel using Nat.strongRecOn with
+  | _ fuel ih =>
+  intro s vs hr hm hrun
+  cases fuel with
+  | zero => simp [Clif.runLoop] at hrun
+  | succ n =>
+  obtain ⟨b, k, ρ, w⟩ := vs
+  rw [Clif.runLoop_succ] at hrun
+  have hrel := step_trapRel env0 c hp s
+  have hnx : ∀ s', Clif.step env0 p s = .next s' →
+      Clif.step (trapEnv env0 c).toEnv p s = .next s' := by
+    intro s' hs
+    rcases hrel with e | ⟨e, -⟩
+    · rw [e, hs]
+    · rw [hs] at e; cases e
+  -- a continuing step
+  have hcont : ∀ s', Clif.step env0 p s = .next s' → Clif.runLoop env0 p n s' = .trapped c →
+      (∃ vs', Star (VStep vc sem) (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+        Match f ctx R gn bl A MR slots s' vs') →
+      VTrapFrom vc sem ⟨b, k, ρ, w⟩ c ∨ (∃ obj w', VUnwFrom vc sem XR ⟨b, k, ρ, w⟩ obj w') ∨
+        VTryRaiseFrom vc sem XR ⟨b, k, ρ, w⟩ := by
+    intro s' hs hrun' ⟨vs', hstar, hm'⟩
+    rcases ih n (by omega) s' vs' (hr.snoc hs) hm' hrun' with h | ⟨o, w', h⟩ | h
+    · exact .inl (VTrapFrom.prefix hstar h)
+    · exact .inr (.inl ⟨o, w', VUnwFrom.prefix hstar h⟩)
+    · exact .inr (.inr (VTryRaiseFrom.prefix hstar h))
+  cases hbody : s.frame.body with
+  | cons st rest =>
+    obtain ⟨-, -, -, -, B, j, hB, -, -, hbd, -⟩ := id hm
+    have hst : st ∈ B.body := by
+      rw [hbd] at hbody
+      exact List.mem_of_mem_drop (hbody ▸ List.mem_cons_self)
+    have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
+    have hind : ∀ sig callee args, st.inst = .callIndirect sig callee args → ∀ cv,
+        s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat :=
+      fun sig callee args hi => htr.indirect s st rest sig callee args hr hbody hi
+        ⟨B, hcf ▸ hBmem, hst⟩
+    obtain ⟨S1, S2⟩ := stmt_step H hm hbody hind
+    cases hs : Clif.step env0 p s with
+    | next s' =>
+      rw [hs] at hrun
+      exact hcont s' hs hrun (S1 s' (hnx s' hs))
+    | trapped c' =>
+      rw [hs] at hrun
+      cases hrun
+      rcases hrel with e | ⟨-, m, e⟩
+      · rw [hs] at e
+        rcases htr.stmt s c st rest hr hs hbody with hx | hx
+        · exact .inl (S2 c e hx)
+        · exact absurd e (step_call_trap_stuck env0 c hp hbody hx hs)
+      · have hra := raiseAt_of_trapRel env0 c hp (fun h => by rw [hbody] at h; cases h) hs e
+        rw [raiseAt_stmt hbody] at hra
+        obtain ⟨obj, w', hu, -, -⟩ := stmt_step_raise H HU HR hm hbody hra
+        exact .inr (.inl ⟨obj, w', hu⟩)
+    | done vals cm => rw [hs] at hrun; cases hrun
+    | stuck msg => rw [hs] at hrun; cases hrun
+  | nil =>
+    obtain ⟨B, j, hB, hterm, -⟩ := hm.2.2.2.2
+    have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
+    cases hty : s.frame.term.isTry with
+    | false =>
+      obtain ⟨T1, -, T3⟩ := term_step H hm hbody hty
+      cases hs : Clif.step env0 p s with
+      | next s' =>
+        rw [hs] at hrun
+        exact hcont s' hs hrun (T1 s' (hnx s' hs))
+      | trapped c' =>
+        rw [hs] at hrun
+        cases hrun
+        rcases hrel with e | ⟨-, m, e⟩
+        · rw [hs] at e
+          exact .inl (T3 c e)
+        · have hra := raiseAt_of_trapRel env0 c hp (fun _ => hty) hs e
+          rw [raiseAt_term_none hbody hty
+            (fun fn args ht => H.noTail B hBmem fn args (hterm.symm.trans ht))] at hra
+          cases hra
+      | done vals cm => rw [hs] at hrun; cases hrun
+      | stuck msg => rw [hs] at hrun; cases hrun
+    | true =>
+      obtain ⟨et, hT⟩ : ∃ et, IsTryWith s.frame.term et := by
+        cases ht : s.frame.term with
+        | tryCall fn args et => exact ⟨et, .inl ⟨fn, args, rfl⟩⟩
+        | tryCallIndirect c args et => exact ⟨et, .inr ⟨c, args, rfl⟩⟩
+        | _ => rw [ht] at hty; cases hty
+      have hind : ∀ callee args, s.frame.term = .tryCallIndirect callee args et → ∀ cv,
+          s.frame.get callee = .ok cv → ∀ g ∈ p.funcs,
+            s.mem.symbols g.name ≠ some cv.toNat :=
+        fun callee args ht => htr.tryIndirect s callee args et hr hbody ht
+          ⟨B, hcf ▸ hBmem, hterm.symm.trans ht⟩
+      obtain ⟨-, Tnx⟩ := term_step_try H hm hbody hT hind
+      cases hs : Clif.step env0 p s with
+      | next s' =>
+        rw [hs] at hrun
+        obtain ⟨-, -, N3⟩ := Tnx s' (hnx s' hs)
+        -- `s'` is the pending `jump`
+        have hs' : ∃ regs bc cm, s' = tryNext s regs bc cm := by
+          rw [Clif.step_term _ _ _ hbody] at hs
+          rcases hT with ⟨fn, args, ht⟩ | ⟨callee, args, ht⟩
+          · rw [ht] at hs
+            obtain ⟨-, hnx'⟩ := stepTry_spec (env := env0) (p := p) (args := args) (et := et)
+              (fun e he => H.tryExt B hBmem fn args et (hterm.symm.trans ht) e
+                (hm.2.1 ▸ he))
+            obtain ⟨-, bc, -, cm, regs, -, -, -, -, rfl⟩ := hnx' s' hs
+            exact ⟨regs, bc, cm, rfl⟩
+          · rw [ht] at hs
+            obtain ⟨-, hnx'⟩ := stepTryInd_spec (env := env0) (p := p) (args := args) (et := et)
+              (hind callee args ht)
+            obtain ⟨-, bc, -, cm, regs, -, -, -, -, rfl⟩ := hnx' s' hs
+            exact ⟨regs, bc, cm, rfl⟩
+        obtain ⟨regs, bc, cm, rfl⟩ := hs'
+        cases n with
+        | zero => simp [Clif.runLoop] at hrun
+        | succ m =>
+          dsimp only at hrun
+          rw [Clif.runLoop_succ] at hrun
+          have hrel' := step_trapRel env0 c hp (tryNext s regs bc cm)
+          cases hs2 : Clif.step env0 p (tryNext s regs bc cm) with
+          | next s'' =>
+            rw [hs2] at hrun
+            have hs2' : Clif.step (trapEnv env0 c).toEnv p (tryNext s regs bc cm) = .next s'' := by
+              rcases hrel' with e | ⟨e, -⟩
+              · rw [e, hs2]
+              · rw [hs2] at e; cases e
+            obtain ⟨vs', hstar, hm'⟩ := N3 s'' hs2'
+            rcases ih m (by omega) s'' vs' ((hr.snoc hs).snoc hs2) hm' hrun with h | ⟨o, w', h⟩ | h
+            · exact .inl (VTrapFrom.prefix hstar h)
+            · exact .inr (.inl ⟨o, w', VUnwFrom.prefix hstar h⟩)
+            · exact .inr (.inr (VTryRaiseFrom.prefix hstar h))
+          | trapped c' => exact absurd hs2 (step_tryNext_ne_trapped c')
+          | done vals cm' => rw [hs2] at hrun; cases hrun
+          | stuck msg => rw [hs2] at hrun; cases hrun
+      | trapped c' =>
+        rw [hs] at hrun
+        cases hrun
+        rcases hrel with e | ⟨-, m, e⟩
+        · rw [hs] at e
+          exact absurd e (step_try_trap_stuck env0 c hp hbody hT hs)
+        · exact .inr (.inr (term_step_try_stop H HU HR hm hbody hT
+            (raiseAt_of_trapRel_try env0 c hp hbody hT hs)))
+      | done vals cm => rw [hs] at hrun; cases hrun
+      | stuck msg => rw [hs] at hrun; cases hrun
+
 end
 
 end Backend.Proof.Driver
