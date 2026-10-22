@@ -337,6 +337,66 @@ def umov : Spec := ⟨"umov", "simd", fun _ => do
   randomCase "umov" (enc [(0, 1), (Q, 1), (0, 1), (0b01110000, 8), (imm5, 5), (0, 1), (0b0111, 4),
     (1, 1), (← vreg, 5), (← reg, 5)])⟩
 
+/-! ## Advanced SIMD forms of the model not emitted by the float lowering (S12c, #36)
+
+`docs/plans/simd.md` §3: `ins` (general) is `bitcast` `i128` → vector (`mov_to_vec`); the
+others are in the model (LNSym ports with FV fixes) and checked here before a lowering uses
+them. -/
+
+/-- `imm5` with lane size `size` (0..3: b/h/s/d) and a random index. -/
+def laneImm5 (size : Nat) : GenM Nat := do
+  let idx ← bits (4 - size)
+  return (1 <<< size) ||| (idx <<< (size + 1))
+
+/-- Advanced SIMD copy: `0 Q op 01110000 imm5 0 imm4 1 Rn Rd`. -/
+def simdCopy (Q op imm5 imm4 rn rd : Nat) : UInt32 :=
+  enc [(0, 1), (Q, 1), (op, 1), (0b01110000, 8), (imm5, 5), (0, 1), (imm4, 4), (1, 1), (rn, 5), (rd, 5)]
+
+/-- DUP (element) / DUP (general): every lane size, `Q = 0` only below 64-bit lanes. -/
+def dup (general : Bool) : Spec :=
+  let name := if general then "dup (general)" else "dup (element)"
+  ⟨name, "simd", fun _ => do
+    let size ← below 4
+    let Q ← if size == 3 then pure 1 else bits 1
+    let rn ← if general then reg else vreg
+    randomCase name (simdCopy Q 0 (← laneImm5 size) (if general then 1 else 0) rn (← vreg))⟩
+
+/-- INS (general): `mov vd.<T>[i], wn/xn`, every lane size. -/
+def insGeneral : Spec := ⟨"ins (general)", "simd", fun _ => do
+  randomCase "ins (general)" (simdCopy 1 0 (← laneImm5 (← below 4)) 0b0011 (← reg) (← vreg))⟩
+
+/-- INS (element): `mov vd.<T>[i], vn.<T>[j]`, every lane size, random `imm4` (its bits below
+the lane size are ignored). -/
+def insElement : Spec := ⟨"ins (element)", "simd", fun _ => do
+  randomCase "ins (element)" (simdCopy 1 1 (← laneImm5 (← below 4)) (← bits 4) (← vreg) (← vreg))⟩
+
+/-- SMOV: `w` destination (`Q = 0`, b/h lanes), `x` destination (`Q = 1`, b/h/s lanes). -/
+def smov : Spec := ⟨"smov", "simd", fun _ => do
+  let (size, Q) ← pick #[(0, 0), (1, 0), (0, 1), (1, 1), (2, 1)]
+  randomCase "smov" (simdCopy Q 0 (← laneImm5 size) 0b0101 (← vreg) (← reg))⟩
+
+/-- Advanced SIMD three same: `0 Q U 01110 size 1 Rm opcode 1 Rn Rd`. -/
+def threeSame (Q U size opcode : Nat) : GenM UInt32 := do
+  return enc [(0, 1), (Q, 1), (U, 1), (0b01110, 5), (size, 2), (1, 1), (← vreg, 5), (opcode, 5),
+    (1, 1), (← vreg, 5), (← vreg, 5)]
+
+/-- ADD (vector) (`U = 0`) / SUB (vector) (`U = 1`): every arrangement. -/
+def addSubVector (U : Nat) (name : String) : Spec := ⟨name, "simd", fun _ => do
+  let size ← below 4
+  let Q ← if size == 3 then pure 1 else bits 1
+  randomCase name (← threeSame Q U size 0b10000)⟩
+
+/-- The logical three-same forms (`opcode = 00011`; `U:size` selects the operation), 8B/16B. -/
+def logicVector (U size : Nat) (name : String) : Spec := ⟨name, "simd", fun _ => do
+  randomCase name (← threeSame (← bits 1) U size 0b00011)⟩
+
+/-- REV16/REV32/REV64 (vector): `0 Q U 01110 size 10000 opcode 10 Rn Rd`, the allocated
+element sizes (below the container). -/
+def revVector (U opcode : Nat) (sizes : Array Nat) (name : String) : Spec := ⟨name, "simd", fun _ => do
+  let size ← pick sizes
+  randomCase name (enc [(0, 1), (← bits 1, 1), (U, 1), (0b01110, 5), (size, 2), (0b10000, 5),
+    (opcode, 5), (0b10, 2), (← vreg, 5), (← vreg, 5)])⟩
+
 /-! ## Scalar floating point and SIMD&FP data movement (FV additions) -/
 
 /-- `name (s)` / `name (d)` for `ftype` 00 / 01. -/
@@ -518,6 +578,13 @@ def allSpecs : List Spec :=
     dp1 none 0b000000 "rbit", dp1 none 0b000100 "clz", dp1 none 0b000101 "cls",
     dp1 none 0b000001 "rev16", dp1 (some 0) 0b000010 "rev (32)", dp1 (some 1) 0b000010 "rev32",
     dp1 (some 1) 0b000011 "rev (64)",
+    dup false, dup true, insGeneral, insElement, smov,
+    addSubVector 0 "add (vector)", addSubVector 1 "sub (vector)",
+    logicVector 0 0 "and (vector)", logicVector 0 1 "bic (vector, reg)",
+    logicVector 0 3 "orn (vector)", logicVector 1 0 "eor (vector)",
+    logicVector 1 1 "bsl", logicVector 1 2 "bit", logicVector 1 3 "bif",
+    revVector 0 0b00000 #[0, 1, 2] "rev64 (vector)", revVector 1 0b00000 #[0, 1] "rev32 (vector)",
+    revVector 0 0b00001 #[0] "rev16 (vector)",
     condSel 0 0 "csel", condSel 0 1 "csinc", condSel 1 0 "csinv", condSel 1 1 "csneg",
     condCmp 1 1 "ccmp (imm)", condCmp 0 1 "ccmn (imm)", condCmp 1 0 "ccmp (reg)",
     condCmp 0 0 "ccmn (reg)",

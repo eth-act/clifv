@@ -34,6 +34,11 @@ Producer: M3-model. Model choice: `docs/decisions/arm-model.md`. Attribution:
   `scripts/arm-cosim.sh` 333 forms, 66 600 vectors, 0 failures (new: `mrs (tpidr_el0)`, `smaddl`,
   `smsubl`, `umaddl`, `umsubl`, 200/0 each); `--encoder` 427 forms, 85 400 vectors, 0 failures
   (new: `mrsTpidrEl0`, `aluRRRR uMAddL 64`, `aluRRRR sMAddL 64`, 200/0 each; `Enc.excluded` empty).
+- DONE (S12c #36, 2026-10-22): co-simulation of the Advanced SIMD forms that were in the model
+  but unchecked (`docs/plans/simd.md` §3): DUP (element, general), INS (general, element), SMOV,
+  ADD/SUB (vector), AND/BIC/ORN/EOR/BSL/BIT/BIF (vector), REV16/REV32/REV64 (vector). No model
+  change: 17 new forms, 0 failures (DUP/INS/SMOV/BSL/BIT/BIF also 1000 vectors each);
+  `scripts/arm-cosim.sh` 350 forms, 70 000 vectors, 0 failures (seed `0x5eed`, 200 per form).
 
 ## Public API (namespace `Arm`)
 
@@ -190,6 +195,11 @@ failures.
 | `addp` (vector) | added | popcnt i16 | 200/0 |
 | `uaddlv` | added (extra) | — | 200/0 |
 | `umov` (b/h/s/d lanes) | port+fix | popcnt | 200/0 |
+| `ins` (general) (b/h/s/d lanes) | port+fix | — (S12: `bitcast` `i128` → vector, `mov_to_vec`) | 200/0, 1000/0 |
+| `dup` (element, general), `ins` (element), `smov` | port (+fix: general forms) | — (S12 phase B) | 4 × 200/0, 4 × 1000/0 |
+| `add`/`sub` (vector), every arrangement | port | — (S12 phase B) | 2 × 200/0 |
+| `and`/`bic`/`orn`/`eor`/`bsl`/`bit`/`bif` (vector) 8b/16b | port | — (S12 phase B) | 7 × 200/0, `bsl`/`bit`/`bif` 1000/0 |
+| `rev16`/`rev32`/`rev64` (vector), allocated element sizes | port | — (S12 phase B) | 3 × 200/0 |
 
 ### Floating point (S11d, #237)
 
