@@ -150,6 +150,6 @@ import FV.Link.UnwFnsCompleteWitness
 #print axioms Link.EhCheck.Complete.padsNonzero_complete
 #print axioms Link.EhCheck.Complete.unwindRows_complete
 #print axioms Link.EhCheck.Complete.entry_static
-#print axioms Link.EhCheck.Complete.Witness.callSites_applies
-#print axioms Link.EhCheck.Complete.Witness.padsNonzero_applies
-#print axioms Link.EhCheck.Complete.Witness.unwindRows_applies
+#print axioms Link.EhCheck.Complete.Witness.callSites_applies -- witness: native_decide
+#print axioms Link.EhCheck.Complete.Witness.padsNonzero_applies -- witness: native_decide
+#print axioms Link.EhCheck.Complete.Witness.unwindRows_applies -- witness: native_decide
