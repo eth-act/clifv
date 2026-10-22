@@ -213,6 +213,52 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {MR : MemRelT} {env : Clif.Env}
   {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat} {syms : String → Option Nat}
 
+/-- **Layers 2, 3 and 4a composed, with progress** (T2j): `isel_alloc_refines`, and when the
+realized prefix is the whole run of the allocated code, its last configuration has a step
+(`MStep`): the VCode run has one there (`IselEntry.isel_refines_entryP`), so has the prepared
+code (`PrepThread.prep_thin_csemP`) and the allocated code (`AllocThread.alloc_thinP`). -/
+theorem isel_alloc_refinesP (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBl f bl = true) (hMR : MemRelOk F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree X) (hMem : MemRefines F sb syms (csem F fc X)) (hMRs : MRStable F MR)
+    (hreg : ∀ off, ArgLoc.stack off ∉ locsOf f.sig)
+    {vcp : VCode} (hprep : prepCheck vc vcp = true) {rf : RFunc}
+    (halloc : checkAlloc vcp rf = .ok ()) {keep : Reg → CV → CV}
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    (ρ₀ : Nat → CV) {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) {trM : List (List Ev)} {cM : MConf CV ArmState}
+    (hr : MTRun vcp rf (csem F fc X) keep (cEvs F fc) (MConf.init rf m₀ w₀) trM cM) :
+    ∃ m trS t ψ, m ≤ trM.length ∧ CRun env p (.run cs) trS t ∧
+      Refines Maps (fun _ => False) (StepPair (conv (trM.take m))) trS (conv (trM.take m)) ψ ∧
+      ((m = trM.length ∧ ∃ cM', MStep vcp (csem F fc X) keep rf cM cM') ∨ Stop env p t) := by
+  obtain ⟨trP, cP, hrP, hthP, -, -, hprogA⟩ := alloc_thinP halloc m₀ ρ₀ w₀ hr
+  obtain ⟨trV, cV, hrV, hthV, -, -, hprogP⟩ :=
+    prep_thin_csemP (F := F) (ctx := fc) (X := X) hprep hrP
+  have hth := Thin.trans hthV hthP
+  obtain ⟨n, trS, t, ψ, hn, hrun, href, hend⟩ :=
+    IselEntry.isel_refines_entryP H hchk hMR hMRw hX hMem hMRs hreg hB0 hcall hfunc hslots hbody
+      hterm hregs hty hsig hmr hargs hrV
+  obtain ⟨m, hm, htk, hfull⟩ := Thin.take hth n
+  have hlenV := vtrun_len (cEvs_len F fc) hrV
+  obtain ⟨ψ2, href2⟩ := refines_of_thin (htk.map ProgE2E.convEv) (by
+    intro j hj
+    have hj' : j < (trV.take n).length := by simpa using hj
+    simp only [List.getElem_map, List.length_map, List.getElem_take]
+    exact hlenV j (by simp at hj'; omega))
+  have href3 := Refines.congr (Refines.trans href href2) (MK' := Maps) (P' := fun _ => False)
+    (fun a c ⟨b, h1, h2⟩ => h2 ▸ h1) (fun l => ⟨fun h => by rcases h with h | h <;> exact h,
+      fun h => h.elim⟩)
+  refine ⟨m, trS, t, fun p => ψ2 (ψ p), hm, hrun, href3, ?_⟩
+  · rcases hend with ⟨h, cV', hv⟩ | h
+    · obtain ⟨cP', hvP⟩ := hprogP cV' hv
+      exact .inl ⟨hfull (by rw [h]; simp), hprogA cP' hvP⟩
+    · exact .inr h
+
 /-- **Layers 2, 3 and 4a composed** (module doc). -/
 theorem isel_alloc_refines (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     (hchk : threadCheckBl f bl = true) (hMR : MemRelOk F sb syms f MR)
@@ -233,26 +279,9 @@ theorem isel_alloc_refines (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) M
     ∃ m trS t ψ, m ≤ trM.length ∧ CRun env p (.run cs) trS t ∧
       Refines Maps (fun _ => False) (StepPair (conv (trM.take m))) trS (conv (trM.take m)) ψ ∧
       (m = trM.length ∨ Stop env p t) := by
-  obtain ⟨trP, cP, hrP, hthP, -, -⟩ := alloc_thin halloc m₀ ρ₀ w₀ hr
-  obtain ⟨trV, cV, hrV, hthV, -, -⟩ := prep_thin_csem (F := F) (ctx := fc) (X := X) hprep hrP
-  have hth := Thin.trans hthV hthP
-  obtain ⟨n, trS, t, ψ, hn, hrun, href, hend⟩ :=
-    IselEntry.isel_refines_entry H hchk hMR hMRw hX hMem hMRs hreg hB0 hcall hfunc hslots hbody
-      hterm hregs hty hsig hmr hargs hrV
-  obtain ⟨m, hm, htk, hfull⟩ := Thin.take hth n
-  have hlenV := vtrun_len (cEvs_len F fc) hrV
-  obtain ⟨ψ2, href2⟩ := refines_of_thin (htk.map ProgE2E.convEv) (by
-    intro j hj
-    have hj' : j < (trV.take n).length := by simpa using hj
-    simp only [List.getElem_map, List.length_map, List.getElem_take]
-    exact hlenV j (by simp at hj'; omega))
-  have href3 := Refines.congr (Refines.trans href href2) (MK' := Maps) (P' := fun _ => False)
-    (fun a c ⟨b, h1, h2⟩ => h2 ▸ h1) (fun l => ⟨fun h => by rcases h with h | h <;> exact h,
-      fun h => h.elim⟩)
-  refine ⟨m, trS, t, fun p => ψ2 (ψ p), hm, hrun, href3, ?_⟩
-  · rcases hend with h | h
-    · exact .inl (hfull (by rw [h]; simp))
-    · exact .inr h
+  obtain ⟨m, trS, t, ψ, hm, hrun, href, hend⟩ := isel_alloc_refinesP H hchk hMR hMRw hX hMem
+    hMRs hreg hprep halloc hB0 hcall hfunc hslots hbody hterm hregs hty hsig ρ₀ hmr hargs hr
+  exact ⟨m, trS, t, ψ, hm, hrun, href, hend.imp_left And.left⟩
 
 end
 

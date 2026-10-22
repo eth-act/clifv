@@ -18,6 +18,56 @@ open Arm ArmFoot ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.D
 section
 variable {vc : VCode} {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem}
 
+/-- **The end of a memory statement's segment** (module doc), with progress (`SegResP`). -/
+theorem mem_completeP {env : Clif.Env} {p : Clif.Program}
+    {Mt : Clif.State → VState CV ArmState → Prop} {s s' : Clif.State} {b k : Nat}
+    {ρ : Nat → CV} {w : ArmState} {vb : VBlock} (hvb : vc.blocks[b]? = some vb) {L m : Nat}
+    (hmL : m < L) (hlt : k + L < vb.insts.size)
+    (hpost : ∀ i < L - (m + 1), ∃ ins, vb.insts[k + (m + 1) + i]? = some ins ∧ akinds ins = [] ∧
+      isRetsB ins = false)
+    {pre : List (List Ev)} {ρm : Nat → CV} {wm : ArmState} (hpl : pre.length = m)
+    (hpe : ∀ e ∈ pre, e = [])
+    (h1 : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k, ρ, w⟩) pre (.run ⟨b, k + m, ρm, wm⟩))
+    {evs : List Ev} {ρ'' : Nat → CV} {w'' : ArmState}
+    (h2 : VTStep vc (csem F fc X) (cEvs F fc) (.run ⟨b, k + m, ρm, wm⟩) evs
+      (.run ⟨b, k + m + 1, ρ'', w''⟩))
+    {rest2 : List (List Ev)} {cT : VConf CV ArmState}
+    (h3 : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k + m + 1, ρ'', w''⟩) rest2 cT)
+    {cL : VState CV ArmState}
+    (hstar : StarN (VStep vc (csem F fc X)) L (patchC evs (.run ⟨b, k, ρ, w⟩)) (.run cL))
+    (hML : Mt s' cL) {evsS : List (Prog.Ev SKind BVal)} (hc : CStep env p (.run s) evsS (.run s'))
+    (hS : evsS ≠ []) (hcorr : PW (EvRel Maps) evsS (evs.map ProgE2E.convEv)) :
+    SegResP env p vc (csem F fc X) (cEvs F fc) Mt s (pre ++ evs :: rest2) cT := by
+  rcases vtrun_walk (F := F) (ctx := fc) (X := X) hvb (L - (m + 1)) hpost (by omega) h3 with
+    ⟨ρL, wL, post, rest3, htr, hl, hpe', h4, h5, -⟩ | ⟨hl, hpe'⟩
+  · have hN := vtrun_patchN h1 hpe h2 h4 hpe'
+    rw [hpl, hl, show m + 1 + (L - (m + 1)) = L by omega] at hN
+    have e := vstepN_det hN hstar
+    rw [show k + (m + 1) + (L - (m + 1)) = k + L by omega] at e h5
+    cases e
+    have htr' : pre ++ evs :: rest2 = (pre ++ evs :: post) ++ rest3 := by rw [htr]; simp
+    have hlen : (pre ++ evs :: post).length = L := by simp; omega
+    refine .inr ⟨L, [evsS], s', _, ?_, .cons hc .nil, ?_, hML, ?_, .inl (by omega)⟩
+    · rw [htr']; simp; omega
+    · rw [htr', List.take_left' hlen]
+      exact corr_one hpe hpe' hcorr hS
+    · rw [htr', List.drop_left' hlen]
+      exact h5
+  · have hN := vtrun_patchN h1 hpe h2 h3 hpe'
+    rw [hpl] at hN
+    have hcorr1 : Corr Maps [evsS] (conv ((pre ++ evs :: rest2).take
+        (pre ++ evs :: rest2).length)) := by
+      rw [List.take_length]
+      exact corr_one hpe hpe' hcorr hS
+    rcases vstep_of_starN hN hstar (by omega) with hv | ⟨hlen, e⟩
+    · exact .inl ⟨(pre ++ evs :: rest2).length, [evsS], .run s', Nat.le_refl _, .cons hc .nil,
+        hcorr1, .inl ⟨rfl, hv⟩⟩
+    · subst e
+      have hlen' : (pre ++ evs :: rest2).length = L := by simp; omega
+      refine .inr ⟨L, [evsS], s', _, by omega, .cons hc .nil, ?_, hML, ?_, .inl (by omega)⟩
+      · rw [← hlen']; exact hcorr1
+      · rw [← hlen', List.drop_length]; exact .nil
+
 /-- **The end of a memory statement's segment** (module doc). -/
 theorem mem_complete {env : Clif.Env} {p : Clif.Program}
     {Mt : Clif.State → VState CV ArmState → Prop} {s s' : Clif.State} {b k : Nat}
@@ -37,26 +87,8 @@ theorem mem_complete {env : Clif.Env} {p : Clif.Program}
     (hstar : StarN (VStep vc (csem F fc X)) L (patchC evs (.run ⟨b, k, ρ, w⟩)) (.run cL))
     (hML : Mt s' cL) {evsS : List (Prog.Ev SKind BVal)} (hc : CStep env p (.run s) evsS (.run s'))
     (hS : evsS ≠ []) (hcorr : PW (EvRel Maps) evsS (evs.map ProgE2E.convEv)) :
-    SegRes env p vc (csem F fc X) (cEvs F fc) Mt s (pre ++ evs :: rest2) cT := by
-  rcases vtrun_walk (F := F) (ctx := fc) (X := X) hvb (L - (m + 1)) hpost (by omega) h3 with
-    ⟨ρL, wL, post, rest3, htr, hl, hpe', h4, h5, -⟩ | ⟨hl, hpe'⟩
-  · have hN := vtrun_patchN h1 hpe h2 h4 hpe'
-    rw [hpl, hl, show m + 1 + (L - (m + 1)) = L by omega] at hN
-    have e := vstepN_det hN hstar
-    rw [show k + (m + 1) + (L - (m + 1)) = k + L by omega] at e h5
-    cases e
-    have htr' : pre ++ evs :: rest2 = (pre ++ evs :: post) ++ rest3 := by rw [htr]; simp
-    have hlen : (pre ++ evs :: post).length = L := by simp; omega
-    refine .inr ⟨L, [evsS], s', _, ?_, .cons hc .nil, ?_, hML, ?_, .inl (by omega)⟩
-    · rw [htr']; simp; omega
-    · rw [htr', List.take_left' hlen]
-      exact corr_one hpe hpe' hcorr hS
-    · rw [htr', List.drop_left' hlen]
-      exact h5
-  · refine .inl ⟨(pre ++ evs :: rest2).length, [evsS], .run s', Nat.le_refl _, .cons hc .nil,
-      ?_, .inl rfl⟩
-    rw [List.take_length]
-    exact corr_one hpe hpe' hcorr hS
+    SegRes env p vc (csem F fc X) (cEvs F fc) Mt s (pre ++ evs :: rest2) cT :=
+  (mem_completeP hvb hmL hlt hpost hpl hpe h1 h2 h3 hstar hML hc hS hcorr).segRes
 
 end
 

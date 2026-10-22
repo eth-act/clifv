@@ -209,6 +209,31 @@ theorem vtrun_patchN {vc : VCode} {sem : ISem CV ArmState}
   | ret v w => cases h2
   | halt w => cases h2
 
+/-- **A shorter run along a forward run stops where the forward run steps** (`T2j`): if `n ≤ L`
+steps reach `cT` and `L` steps reach `cE`, then `cT` has a `VStep`, or `n = L` and `cT = cE`. -/
+theorem vstep_of_starN {V W : Type} {vc : VCode} {sem : ISem V W} {n L : Nat}
+    {c0 cT cE : VConf V W} (hT : StarN (VStep vc sem) n c0 cT) (hE : StarN (VStep vc sem) L c0 cE)
+    (hle : n ≤ L) : (∃ c', VStep vc sem cT c') ∨ (n = L ∧ cT = cE) := by
+  obtain ⟨mid, hA, hB⟩ := StarNP.split n (L - n) (by rw [Nat.add_sub_cancel' hle]; exact hE)
+  have e := vstepN_det hT hA
+  subst e
+  generalize hd : L - n = d at hB
+  cases hB with
+  | refl => exact .inr ⟨by omega, rfl⟩
+  | step _ h _ => exact .inl ⟨_, h⟩
+
+/-- **A thread run without events along a forward run stops where the forward run steps**
+(`vstep_of_starN` with `vtrun_nil_starN`). -/
+theorem vstep_of_vtrun {vc : VCode} {sem : ISem CV ArmState}
+    {ev : MInst → List CV → ArmState → List Ev} {L : Nat} {c0 cT cE : VConf CV ArmState}
+    {tr : List (List Ev)} (hr : VTRun vc sem ev c0 tr cT) (he : ∀ e ∈ tr, e = [])
+    (hE : StarN (VStep vc sem) L c0 cE) (hle : tr.length ≤ L) :
+    (∃ c', VStep vc sem cT c') ∨ (tr.length = L ∧ cT = cE) := by
+  obtain ⟨h1, h2⟩ := vtrun_nil_starN hr he (confW c0).mem
+  have e0 : confMem (confW c0).mem cT = cT := by rw [← h2]; exact confMem_self cT
+  rw [confMem_self, e0] at h1
+  exact vstep_of_starN h1 hE hle
+
 /-- A segment that stops at instruction `k`: `k` counted steps to it, within the segment
 (`seqRun_stop_star`). -/
 theorem seqRun_stop_starN {V W : Type} {vc : VCode} {sem : ISem V W} {b : Nat} {vb : VBlock}

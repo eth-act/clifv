@@ -37,6 +37,8 @@ A compiled callee's contract in a linked thread: `CallThread.funReal_callee` (fr
 callees with LL/SC loops entered with the open monitor: `CallSeg.funReal_calleeX`. A compiled
 caller calling the compiled `atomic_load`, as a thread: `CallSeg.WitnessC.funReal_call`,
 `CallSeg.WitnessC.realizes_call`.
+The realized prefix covers the whole run: it is the whole Arm run or ends where the CLIF thread
+stops (`ThreadProgress.arm_isel_refines_full`, `RealizeCompiled.realizes_compiledLS_full`).
 The fragment model is weaker than the whole `aarch64.cat` (`Armv8Full.consistent_frag`); LSE
 atomics map by the same table (`Lse.lse_maps`). Nothing here changes the Arm model of `FV/Arm`.
 -/
@@ -127,6 +129,7 @@ import FV.Concurrency.IselEntry
 import FV.Concurrency.IselRefinesWitness
 import FV.Concurrency.ThreadCompose
 import FV.Concurrency.ThreadComposeWitness
+import FV.Concurrency.ThreadProgress
 import FV.Concurrency.MoveEvs
 import FV.Concurrency.ArmAllocMove
 import FV.Concurrency.RealizeCompiled
