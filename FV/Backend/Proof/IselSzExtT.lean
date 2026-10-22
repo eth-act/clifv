@@ -15,7 +15,7 @@ namespace Backend.Proof.Cov
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 
 
-theorem γL_single {as : List AW} {i : V} (h : γLT S iOps fOps f ctx as [i]) : ∃ a, as = [a] ∧ γT S iOps fOps f ctx a i :=
+theorem γL_singleT {as : List AW} {i : V} (h : γLT S iOps fOps f ctx as [i]) : ∃ a, as = [a] ∧ γT S iOps fOps f ctx a i :=
   holds2_oneT h
 
 
@@ -87,7 +87,7 @@ theorem extWT_wt : ExtWT S iOps fOps f ctx apre actorW (fun s => wtA s.emitted) 
   rcases externCtor_sz ctx term vs st v st' h with
     he | ⟨hid, i, m, rfl, hm, he⟩ | ⟨hid, hw, -⟩ | ⟨hid, l, hl, he⟩ | ⟨hid, -⟩
   · simp only [he]; omega
-  · obtain ⟨a, rfl, ha⟩ := γL_single hvs
+  · obtain ⟨a, rfl, ha⟩ := γL_singleT hvs
     rw [hid] at hc
     simp only [actorW, beq_self_eq_true, ↓reduceIte] at hc
     simp only [he, wtA_push]
@@ -117,7 +117,7 @@ theorem extWT_tg : ExtWT S iOps fOps f ctx apre actorT (fun s => tgA s.emitted) 
   rcases externCtor_sz ctx term vs st v st' h with
     he | ⟨hid, i, m, rfl, hm, he⟩ | ⟨-, -, ht⟩ | ⟨-, l, -, he⟩ | ⟨-, ht⟩
   · simp only [he]; omega
-  · obtain ⟨a, rfl, ha⟩ := γL_single hvs
+  · obtain ⟨a, rfl, ha⟩ := γL_singleT hvs
     rw [hid] at hc
     simp only [actorT, beq_self_eq_true, ↓reduceIte] at hc
     simp only [he, tgA_push]
