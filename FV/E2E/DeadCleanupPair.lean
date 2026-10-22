@@ -77,6 +77,7 @@ theorem instCalls_pair_value (hc : CompiledCleanup f k vc vcp rf af fa fb)
   intro ctx ii info inst st rss st' tr hctx hmem hE hi hcl hsig hemp hvb hrun
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hstk := callsStack_mono (callsStack_of_check hc.lowerOk) (outgoing_le_intBaseCleanupA hc.toA)
+  have hIstk := indStack_mono (indStack_of_check hc.lowerOk) (outgoing_le_intBaseCleanupA hc.toA)
   have key : ∀ (Rd : BitVec 64 → Prop)
       (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop),
       LowerInstOkP Rd Pc
@@ -89,7 +90,7 @@ theorem instCalls_pair_value (hc : CompiledCleanup f k vc vcp rf af fa fb)
       excludedUnmatchable callRulesCorrectP indRulesCorrectP memRulesCorrectR_program
       refines_valueSemG (mrStable_relW Γ f c) (callsRefineP_valueSemG hX (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
       (indCallsRefineP_valueSemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1)) (memRefinesR_valueSemG (ctx := ⟨fa.k, af.slotBase⟩) hslot hsym)
-      hctx (outArgsOk_relW Γ f c) (externsIn_self f) hE (memRelOk_relW Γ f c) hi hcl hsig
+      hctx (outArgsOk_relW Γ f c) (externsIn_self f) hE (memRelOk_relW Γ f c) hi hcl hsig hIstk
       (fun fn args e hc' he => hstk B hB stm hstm fn args e (hst ▸ hc') he) hvb hrun
     cases hov
     rw [hemp, Array.empty_append] at hem
@@ -242,7 +243,7 @@ theorem tryIndCalls_pair_value (hc : CompiledCleanup f k vc vcp rf af fa fb)
     TryIndCalls (pairSem (valueSem F ⟨fa.k, af.slotBase⟩ X))
       (MRP ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩ f c D) env p (indSigs f) := by
   intro g ctx ti callee args et data sig items targets info trs lo st1 out st' tr hctx hd he hsig
-    h8 hph hinfo hregs hvb hrun
+    hph hinfo hregs hvb hrun
   let Γ : Rel := ⟨F, syms, slotOff, (RAFrame.compute vcp rf).intBase⟩
   have hctx' := ctxInv_tryRegs (ctxInv_termCtx hctx hph data) trs
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
@@ -258,8 +259,11 @@ theorem tryIndCalls_pair_value (hc : CompiledCleanup f k vc vcp rf af fa fb)
         { st1 with emitted := #[] } st' st'.emitted.toList := by
     intro Rd Pc
     obtain ⟨ms, hem, hok⟩ := tryIndOkP_runTerm tryIndRulesCorrectP tryIndUnmatchable
-      refines_valueSemG (mrStable_relW Γ f c) (indCallsRefineP_valueSemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
-      hctx' hd he hsig h8 hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
+      refines_valueSemG (mrStable_relW Γ f c)
+      (memRefinesR_valueSemG (ctx := ⟨fa.k, af.slotBase⟩) rfl hsym) (outArgsOk_relW Γ f c)
+      (indStack_mono (indStack_of_check hc.lowerOk) (outgoing_le_intBaseCleanupA hc.toA))
+      (indCallsRefineP_valueSemG hXI hsym (fun _ _ _ h => h.1.1) (fun _ _ _ h => h.2.1))
+      hctx' hd he hsig hi hinfo hregs' hvb' (st := { st1 with emitted := #[] })
       (Nat.le_refl _) hrun
     have : ms = st'.emitted.toList := by
       simp only [Array.empty_append] at hem; rw [hem, List.toList_toArray]
