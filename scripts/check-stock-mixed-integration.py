@@ -5,6 +5,9 @@ Run after building FV/FVTest and lean-backend/lean-link/link-check, with the sam
 shared Lake cache. --output must be a new directory outside the source tree.
 Every compiler subprocess uses memcap.sh, sequentially, without proof timeouts.
 This integration gate supplements the full corpus, trust and identity gates.
+--fixture-mode native uses prebuilt ordinary fixture executables for registered
+classes; their Lake keys and binary hashes are checked. The default preserves
+the existing interpreted invocation.
 """
 import argparse
 import hashlib
@@ -64,9 +67,10 @@ def proof_order(directory, prefix="Mixed"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax"], default="mixed")
+    parser.add_argument("--fixture-mode", choices=["native", "interpreted"], default="interpreted")
     options = parser.parse_args()
-    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction"}.get(options.kind, options.kind.capitalize())
+    prefix = {"scalar": "ScalarProduction", "not": "NotProduction", "mul": "MulProduction", "shift": "ShiftProduction", "cast": "CastProduction", "bit": "BitProduction", "popcount": "PopcountProduction", "minmax": "MinMaxProduction"}.get(options.kind, options.kind.capitalize())
     view = Path(__file__).resolve().parents[1]
     output = options.output.resolve()
     if output == view or view in output.parents:
@@ -80,6 +84,15 @@ def main():
                for p in (view / folder).rglob("*.lean")}
     script_hash = sha(Path(__file__).resolve())
     records = {}
+    native_names = {"popcount": "stock-popcount", "minmax": "stock-minmax"}
+    native_fixtures = options.fixture_mode == "native" and options.kind in native_names
+    if options.fixture_mode == "native" and not native_fixtures:
+        parser.error("No registered native fixture targets for this class")
+    fixture_targets = ([native_names[options.kind]+"-runtime",native_names[options.kind]+"-linked"]
+                       if native_fixtures else [])
+    fixture_binaries = {str(view / ".lake/build/bin" / name): sha(view / ".lake/build/bin" / name)
+                        for name in fixture_targets}
+
 
     def frozen():
         assert subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=view, text=True).strip() == head
@@ -87,11 +100,13 @@ def main():
                    for p in (view / folder).rglob("*.lean")}
         assert current == sources, "source changed during integration gate"
         assert sha(Path(__file__).resolve()) == script_hash, "gate script changed during validation"
+        assert all(sha(Path(p)) == h for p,h in fixture_binaries.items()), "fixture binary changed during validation"
 
     def report(state, **details):
         (output / "receipt.json").write_text(json.dumps({
             "state": state, "head": head, "pid": os.getpid(),
-            "script_sha256": script_hash, "records": records, **details,
+            "script_sha256": script_hash, "fixture_execution": "native" if native_fixtures else "interpreted",
+            "fixture_binary_sha256": fixture_binaries, "records": records, **details,
         }, indent=2) + "\n")
 
     def run(name, args):
@@ -112,15 +127,17 @@ def main():
         (output / "sources.json").write_text(json.dumps(sources, indent=2) + "\n")
         run("current-module-keys", ["lake", "build", "--no-build",
             f"FVTest.Backend.Lowering.Stock{prefix}Runtime", f"FVTest.Backend.Lowering.Stock{prefix}Linked",
-            "lean-backend", "lean-link", "link-check"])
-        runtime = run("runtime", ["lake", "env", "lean", "--run",
-                                  f"FVTest/Backend/Lowering/Stock{prefix}Runtime.lean"])
+            "lean-backend", "lean-link", "link-check", *fixture_targets])
+        runtime_argv = ([str(view / ".lake/build/bin" / fixture_targets[0])] if native_fixtures else
+                        ["lake", "env", "lean", "--run",f"FVTest/Backend/Lowering/Stock{prefix}Runtime.lean"])
+        runtime = run("runtime", runtime_argv)
         assert runtime.count(f"Stock {options.kind} lean ") == 6
         assert runtime.count(f"Stock {options.kind} regalloc2 ") == 6
         assert f"Stock {options.kind} missing-binary negative control passed" in runtime
         generated = output / "linked"
-        run("linked-fixture", ["lake", "env", "lean", "--run",
-            f"FVTest/Backend/Lowering/Stock{prefix}Linked.lean", str(generated)])
+        linked_argv = ([str(view / ".lake/build/bin" / fixture_targets[1]),str(generated)] if native_fixtures else
+                       ["lake", "env", "lean", "--run",f"FVTest/Backend/Lowering/Stock{prefix}Linked.lean",str(generated)])
+        run("linked-fixture", linked_argv)
         artifact_hashes = {str(p.relative_to(generated)): sha(p)
                            for p in generated.rglob("*") if p.is_file()}
         leanpath = subprocess.check_output([memcap, "lake", "env", "printenv", "LEAN_PATH"],

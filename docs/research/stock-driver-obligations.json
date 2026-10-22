@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-22T01:37:41.014650+00:00",
+  "updated_utc": "2026-10-22T02:35:25.579542+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -18,9 +18,10 @@
       "i32/i64 ordinary shifts and fused bitfield pairs through shared scalar consumers",
       "i32/i64 extension/reduction through shared scalar consumers (validated, squash pending)",
       "i32/i64 negation, CLZ/CTZ, bit reversal/byte swap and rotations through shared scalar consumers (validated, squash pending)",
-      "i32/i64 popcount through shared scalar consumers (validated, squash pending)"
+      "i32/i64 popcount through shared scalar consumers (validated, squash pending)",
+      "i32/i64 signed and unsigned min/max through shared scalar consumers (validated, squash pending)"
     ],
-    "pending": "Comparisons/min/max, high multiply/division/remainder and complete original integer widths/ABIs; every remaining original #140 control/memory/trap/effect/call/source/block/whole-driver simulation/completeness/consumer obligation remains."
+    "pending": "Integer comparisons including real cast-of-icmp811, high multiply/division/remainder and complete original integer widths/ABIs; every remaining original #140 control/memory/trap/effect/call/source/block/whole-driver simulation/completeness/consumer obligation remains."
   },
   "roots": [
     {
@@ -3123,7 +3124,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Umin",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "existing actual-source selection/execution/retained binding/guarded transfer reused; derived operand types; min/max body/entry/default consumers validated, squash pending; universal lowering/downstream completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3131,7 +3132,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-minmax-production-activation.md"
     },
     {
       "rule": "rule_lower_1224",
@@ -3139,7 +3141,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Smin",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "existing actual-source selection/execution/retained binding/guarded transfer reused; derived operand types; min/max body/entry/default consumers validated, squash pending; universal lowering/downstream completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3147,7 +3149,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-minmax-production-activation.md"
     },
     {
       "rule": "rule_lower_1226",
@@ -3155,7 +3158,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Umax",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "existing actual-source selection/execution/retained binding/guarded transfer reused; derived operand types; min/max body/entry/default consumers validated, squash pending; universal lowering/downstream completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3163,7 +3166,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-minmax-production-activation.md"
     },
     {
       "rule": "rule_lower_1228",
@@ -3171,7 +3175,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Smax",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "existing actual-source selection/execution/retained binding/guarded transfer reused; derived operand types; min/max body/entry/default consumers validated, squash pending; universal lowering/downstream completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3179,7 +3183,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "docs/research/stock-minmax-production-activation.md"
     },
     {
       "rule": "rule_lower_1233",
@@ -3187,7 +3192,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Smin",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "later matching fallback excluded by existing scalar-first matching order under original source conditions",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3195,7 +3200,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockMinMaxSourceMatch.lean"
     },
     {
       "rule": "rule_lower_1236",
@@ -3203,7 +3209,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Smin",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "excluded by existing original-scope opcode closure and current min/max inventory; no new accepted-input restriction",
       "scope_status_historical": "excluded: Stock ordinary-source match impossible under original mapped context",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3211,7 +3217,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockMinMaxSourceMatch.lean"
     },
     {
       "rule": "rule_lower_1239",
@@ -3219,7 +3226,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Umin",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "later matching fallback excluded by existing scalar-first matching order under original source conditions",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3227,7 +3234,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockMinMaxSourceMatch.lean"
     },
     {
       "rule": "rule_lower_1242",
@@ -3235,7 +3243,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Umin",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "excluded by existing original-scope opcode closure and current min/max inventory; no new accepted-input restriction",
       "scope_status_historical": "excluded: Stock ordinary-source match impossible under original mapped context",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3243,7 +3251,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockMinMaxSourceMatch.lean"
     },
     {
       "rule": "rule_lower_1245",
@@ -3251,7 +3260,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Smax",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "later matching fallback excluded by existing scalar-first matching order under original source conditions",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3259,7 +3268,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockMinMaxSourceMatch.lean"
     },
     {
       "rule": "rule_lower_1248",
@@ -3267,7 +3277,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Smax",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "excluded by existing original-scope opcode closure and current min/max inventory; no new accepted-input restriction",
       "scope_status_historical": "excluded: Stock ordinary-source match impossible under original mapped context",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3275,7 +3285,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockMinMaxSourceMatch.lean"
     },
     {
       "rule": "rule_lower_1251",
@@ -3283,7 +3294,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Umax",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "later matching fallback excluded by existing scalar-first matching order under original source conditions",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3291,7 +3302,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockMinMaxSourceMatch.lean"
     },
     {
       "rule": "rule_lower_1254",
@@ -3299,7 +3311,7 @@
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Umax",
       "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "status": "excluded by existing original-scope opcode closure and current min/max inventory; no new accepted-input restriction",
       "scope_status_historical": "excluded: Stock ordinary-source match impossible under original mapped context",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3307,7 +3319,8 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "current_proof": "FV/Backend/Proof/StockMinMaxSourceMatch.lean"
     },
     {
       "rule": "rule_lower_1261",

@@ -96,17 +96,26 @@ terminal evidence backed at `6e9e92da`. Existing numerical/helper proofs
 and original scope closure are reused; old variants remain. Existing complete source-transfer witnesses cover all four scalar
 widths; production activation is i32/i64.
 
-Next: comparisons/min/max, high multiply/division/remainder, complete original
-integer widths and ABIs, and every unchanged original #140 control/memory/trap/
-effect/call/source/block/whole-driver/completeness/consumer obligation. Universal
-successful lowering and downstream completeness remain. Fallback is not Stock
-completeness; full original #140 remains unfinished.
+Signed/unsigned min/max passes author gates through the same scalar consumers.
+[Terminal evidence](../research/stock-minmax-production-activation.md) records
+22 primary / 21 ownership gates, 1,601 audited roots, all 1,571 prior axiom sets /
+30 old headers exact and 2,448 native comparisons. Current and retained actual
+CLI/link/generated cohorts each pass32 checks. Validated `3f52b679`;
+remote evidence `1559dcb9`. Existing complete source wrappers, original
+operand-type derivation and actual SameWorldNF framing are reused.
 
-Reuse existing complete source wrappers before writing alternate proofs. The
-current interpreted runtime and linked fixtures each take minutes; measure ordinary
-native lean_exe targets for the same fixture code in the next batch, preserving
-every gate and its inputs. This is a bounded execution improvement, not a new
-workflow system.
+Measured ordinary native fixture runners retain identical checks/artifacts and
+reduce repeated interpreted runs from minutes to about10 seconds. Keep the
+interpreted default and explicit native mode, validate target keys/binary hashes,
+and compile generated proofs freshly. Reuse existing complete source wrappers
+before introducing another proof chain.
+
+Next: integer comparisons and actual cast-of-icmp811; high multiply/division/
+remainder; complete original widths/ABIs; every unchanged original #140 control/
+memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligation.
+Never exclude original accepted compare/cast syntax to simplify composition.
+Universal successful lowering and downstream completeness remain. Fallback is
+not Stock completeness; full original #140 remains unfinished.
 
 ## Maintained validation runner (landed #358)
 

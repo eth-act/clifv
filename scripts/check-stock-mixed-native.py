@@ -38,30 +38,30 @@ def run_commands(bits, kind="mixed"):
         [2, 0, high, 11, 22, 33, 44, 55, low],
         [1, low, low, 11, 22, 33, 44, 55, low],
     ]
-    if kind in ("bit", "popcount"):
+    if kind in ("bit", "popcount", "minmax"):
         vectors.append([1, 1, 0, 11, 22, 33, 44, 55, 7])  # observable CTZ(0)
     cases = []
     for args in vectors:
         selected = args[1] + args[8] if args[0] else args[1]
-        if kind in ("scalar", "not", "mul", "shift", "cast", "bit", "popcount"):
+        if kind in ("scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax"):
             mask = (1 << bits) - 1
             constant = 0x123456789abcdef & mask
             band = ((args[1] + constant) & args[8]) & mask
             logical = ((band ^ (args[2] & mask)) | constant) & mask
             chosen = logical if args[0] else band
             previous = signed(chosen - args[2] + 4097, bits)
-            if kind in ("not", "mul", "shift", "cast", "bit", "popcount"):
+            if kind in ("not", "mul", "shift", "cast", "bit", "popcount", "minmax"):
                 inverted = (~previous) & mask
                 complemented = (~(inverted ^ (args[2] & mask))) & mask
                 result = ~((complemented + 4097) & args[8])
                 not_result = signed(result, bits)
-                if kind in ("mul", "shift", "cast", "bit", "popcount"):
+                if kind in ("mul", "shift", "cast", "bit", "popcount", "minmax"):
                     product = not_result * args[2]
                     added = product + constant
                     multiplied = added * args[1]
                     subtracted = args[8] - (args[8] + multiplied) * args[2]
                     mul_result = signed(subtracted ^ product, bits)
-                    if kind in ("shift", "cast", "bit", "popcount"):
+                    if kind in ("shift", "cast", "bit", "popcount", "minmax"):
                         unsigned = (((mul_result & mask) << (0x105 % bits)) & mask) >> (0x103 % bits)
                         shifted_signed = signed(((mul_result & mask) << 2) & mask, bits) >> 9
                         lsl = (shifted_signed << ((args[2] & mask) % bits)) & mask
@@ -70,9 +70,9 @@ def run_commands(bits, kind="mixed"):
                         combined = (~((asr << 2) & mask) ^ unsigned) & mask
                         immediate = (((combined << (0x105 % bits)) & mask) ^ (args[3] & mask))
                         shift_result = signed(immediate >> (0x103 % bits), bits) >> 9
-                        if kind in ("cast", "bit", "popcount"):
+                        if kind in ("cast", "bit", "popcount", "minmax"):
                             cast_result = signed(shift_result ^ (0xffffffff if (args[1] & 0x80000000) else 0), bits)
-                            if kind in ("bit", "popcount"):
+                            if kind in ("bit", "popcount", "minmax"):
                                 negated = (-args[1]) & mask
                                 reversed_bits = int(f"{negated:0{bits}b}"[::-1], 2)
                                 swapped = int.from_bytes(reversed_bits.to_bytes(bits // 8, "little"), "big")
@@ -87,9 +87,24 @@ def run_commands(bits, kind="mixed"):
                                 x = args[2] & mask
                                 trailing = bits if x == 0 else (x & -x).bit_length() - 1
                                 bit_result = signed(immediate ^ leading ^ trailing ^ cast_result, bits)
-                                if kind == "popcount":
+                                if kind in ("popcount", "minmax"):
                                     count_result = signed(bit_result ^ (args[1] & mask).bit_count() ^ (args[2] & mask).bit_count(), bits)
-                                    cases.append(("stock_popcount_ni", args, count_result))
+                                    if kind == "minmax":
+                                        small, negative, large = 7, (-7) & mask, 0x123456789abcdef & mask
+                                        smin = lambda a, b: min(signed(a,bits), signed(b,bits)) & mask
+                                        smax = lambda a, b: max(signed(a,bits), signed(b,bits)) & mask
+                                        umin = lambda a, b: min(a & mask,b & mask)
+                                        umax = lambda a, b: max(a & mask,b & mask)
+                                        a,b,c,d = smin(args[1],args[2]),smax(args[1],args[8]),umin(args[2],args[3]),umax(args[0],args[8])
+                                        e,f,g,h = smin(args[1],small),smax(args[2],negative),umin(args[8],small),umax(args[0],negative)
+                                        i,j,k,l = smin(large,args[1]),smax(large,args[2]),umin(large,args[8]),umax(large,args[0])
+                                        combined = (a+b) & mask
+                                        for index,value in enumerate([c,d,e,f,g,h,i,j,k,l]):
+                                            combined = ((combined+value) & mask) if index % 2 else (combined ^ value)
+                                        cases.append(("stock_minmax_ni",args,signed((count_result & mask) ^ combined,bits)))
+                                        cases.append(("retained_popcount",args,count_result))
+                                    else:
+                                        cases.append(("stock_popcount_ni", args, count_result))
                                     cases.append(("retained_bit", args, bit_result))
                                 else:
                                     cases.append(("stock_bit_ni", args, bit_result))
@@ -128,7 +143,7 @@ def run_commands(bits, kind="mixed"):
         cases.append(("retained_prologue", [value], value))
     for value in [0, -1, (1 << 31) - 1, -(1 << 31)]:
         cases.append(("retained_d0", [value], value))
-    if kind in ("scalar", "not", "mul", "shift", "cast", "bit", "popcount"):
+    if kind in ("scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax"):
         for a, b in [(0, 7), (-1, 9), ((1 << 63) - 1, 3)]:
             cases.append(("retained_legacy", [a, b], signed(a * b, 64)))
     else:
@@ -140,7 +155,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     parser.add_argument("--native-bin", type=Path, default=Path("rust/target/release/clif-native"))
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax"], default="mixed")
     options = parser.parse_args()
     root = options.artifacts.resolve()
     native = options.native_bin.resolve()
@@ -172,7 +187,9 @@ def main():
         names = {f["name"] for f in json.loads(table.read_text())["functions"]}
         wanted = {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
                   "retained_prologue", "retained_d0", "retained_legacy"}
-        if options.kind == "popcount":
+        if options.kind == "minmax":
+            wanted = (wanted - {"stock_mixed_ni"}) | {"stock_minmax_ni", "retained_popcount", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
+        elif options.kind == "popcount":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_popcount_ni", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
         elif options.kind == "bit":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_bit_ni", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
