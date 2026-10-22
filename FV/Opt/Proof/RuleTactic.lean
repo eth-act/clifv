@@ -138,18 +138,39 @@ elab "opt_rw_lhs" : tactic => withMainContext do
 end Opt.Proof
 
 namespace Opt.Proof
+
+/-- A vector type refutes a hypothesis `t.isVec = false` (closes the vector cases of
+`opt_cases_ty`). -/
+theorem ty_isVec_vec_elim {s : Clif.VShape} {P : Prop} (h : (Clif.Ty.vec s).isVec = false) : P :=
+  nomatch h
+
 open Lean Meta Elab Tactic
 
-/-- `opt_cases_ty`: `cases` every local variable of type `Clif.Ty` or `Clif.IntCC`. -/
+/-- Close `g` if it has a hypothesis `(Ty.vec s).isVec = false`. -/
+def closeVecCase (g : MVarId) : MetaM Bool := g.withContext do
+  for h in ← getLCtx do
+    if h.isImplementationDetail then continue
+    let t ← instantiateMVars h.type
+    if t.isAppOfArity ``Eq 3 && t.appArg!.isConstOf ``Bool.false then
+      let l := t.appFn!.appArg!
+      if l.isAppOfArity ``Clif.Ty.isVec 1 && l.appArg!.isAppOfArity ``Clif.Ty.vec 1 then
+        g.assign (← mkAppOptM ``ty_isVec_vec_elim #[none, some (← g.getType), some h.toExpr])
+        return true
+  return false
+
+/-- `opt_cases_ty`: `cases` every local variable of type `Clif.Ty`, `Clif.VShape` (the shape of a
+vector type, so that its width reduces to a numeral) or `Clif.IntCC`; a vector case of a type
+with a hypothesis `t.isVec = false` is closed at once. -/
 elab "opt_cases_ty" : tactic => do
   let rec go (g : MVarId) (fuel : Nat) : MetaM (List MVarId) := g.withContext do
     if fuel = 0 then return [g]
     for d in ← getLCtx do
       if d.isImplementationDetail then continue
       let ty ← instantiateMVars d.type
-      if ty.isConstOf `Clif.Ty || ty.isConstOf `Clif.IntCC then
+      if ty.isConstOf `Clif.Ty || ty.isConstOf `Clif.VShape || ty.isConstOf `Clif.IntCC then
         let gs ← g.cases d.fvarId
-        return (← gs.toList.mapM fun s => go s.mvarId (fuel - 1)).flatten
+        let gs ← gs.toList.filterM fun s => return !(← closeVecCase s.mvarId)
+        return (← gs.mapM fun s => go s.mvarId (fuel - 1)).flatten
     return [g]
   let gs ← getGoals
   let mut out := []
