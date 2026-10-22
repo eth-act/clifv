@@ -1,0 +1,498 @@
+import FV.Concurrency.ArmAllocMemLS
+import FV.Concurrency.ArmAllocBranch
+
+namespace Concurrency.ArmAllocThread
+
+open Arm ArmFoot ArmThread ArmInstFoot VCodeThread Backend Backend.Proof AllocThread ThreadRefine
+open Code VCodeEvents VCodeAddr
+
+/-- **The event of a plain GPR load** (not at an unaligned `sp`): one read at the base plus the
+offset, of the access size, of the memory's bytes. -/
+theorem immEvs_load_cf (op : LoadOp) (hop : op ≠ .fpuLoad128) (Rn Rt : BitVec 5)
+    (imm : Arm.LDST.Reg_offset) (s : ArmState) (hsp : Rn = 31#5 → CheckSPAlignment s) :
+    immEvs (gprCls op.fields.1 op.fields.2.2 Rn Rt imm) s =
+      [⟨.plainR, read_gpr 64 Rn s + imm.value (log2 op.bytes) s, op.bytes,
+        readM op.bytes (read_gpr 64 Rn s + imm.value (log2 op.bytes) s) s.mem⟩] := by
+  have h31 : ¬ (Rn = 31#5 ∧ ¬ CheckSPAlignment s) := fun h => h.2 (hsp h.1)
+  cases op <;> simp at hop <;>
+  · simp (config := {decide := true}) only [immEvs, gprCls, LoadOp.fields, LoadOp.bytes,
+      Arm.LDST.reg_imm_constrain_unpredictable, h31, log2]
+    simp (config := {decide := true})
+
+/-- **The event of a plain GPR store** (not at an unaligned `sp`): one write of the data
+register's low bytes. -/
+theorem immEvs_store_cf (op : StoreOp) (hop : op ≠ .fpuStore128) (Rn Rt : BitVec 5) (hRt : Rt ≠ 31#5)
+    (imm : Arm.LDST.Reg_offset) (s : ArmState) (hsp : Rn = 31#5 → CheckSPAlignment s) :
+    immEvs (gprCls op.fields.1 op.fields.2.2 Rn Rt imm) s =
+      [⟨.plainW, read_gpr 64 Rn s + imm.value (log2 op.bytes) s, op.bytes,
+        (Arm.r (.GPR Rt) s).setWidth (op.bytes * 8)⟩] := by
+  have h31 : ¬ (Rn = 31#5 ∧ ¬ CheckSPAlignment s) := fun h => h.2 (hsp h.1)
+  cases op <;> simp at hop <;>
+  · simp (config := {decide := true}) only [immEvs, gprCls, StoreOp.fields, StoreOp.bytes,
+      Arm.LDST.reg_imm_constrain_unpredictable, h31, log2]
+    simp (config := {decide := true}) [ldst_read, read_gpr_zr, read_gpr, hRt]
+    all_goals rfl
+
+/-- **The shape of an emitted plain GPR load** at a final addressing mode: its Arm instruction
+is memory-independent in its control (`CtlIndep`), not a store exclusive, and its events are the
+`immEvs` of a base register and an offset whose sum is the mode's address (on every state). -/
+theorem load_line_shape (env : Env) (ctx : FnCtx) (op : LoadOp) (hop : op ≠ .fpuLoad128) (d : Nat)
+    (hd : d ≤ 30) (m : AMode) (hm : FinalAM op.bytes m) (s0 : ArmState) {ai : ArmInst}
+    (ha : Insn.toArmInst env (.load op (.x d) m) = .ok ai) :
+    CtlIndep ai ∧ (∀ rel rs rn, clsOf ai ≠ .stx rel rs rn) ∧
+      ∃ Rn imm, (∀ y, instEvs ai y = immEvs (gprCls op.fields.1 op.fields.2.2 Rn (BitVec.ofNat 5 d) imm) y) ∧
+        (∀ y, read_gpr 64 Rn y + imm.value (log2 op.bytes) y = m.addr ctx op.bytes y) ∧
+        (Rn = 31#5 → m.base = .sp) := by
+  cases m with
+  | unsignedOffset rn off =>
+    obtain ⟨hb, h1, h2⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    have e : Insn.toArmInst env (.load op (.x d) (.unsignedOffset rn off)) = .ok (uimmInst op.fields.1 op.fields.2.2 (BitVec.ofNat 12 (off / op.bytes)) Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, LoadOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, LoadOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_uimm_load op hop _ _ _ (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_uimm _ _ _ _ _ y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr]
+    congr 1
+    exact uimm_value op.bytes (by cases op <;> simp_all [LoadOp.bytes]) off h1 h2
+  | unscaled rn off =>
+    obtain ⟨hb, h1, h2⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    have e : Insn.toArmInst env (.load op (.x d) (.unscaled rn off)) = .ok (unscInst op.fields.1 op.fields.2.2 (BitVec.ofInt 9 off) Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, LoadOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, LoadOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_unsc_load op hop _ _ _ (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_unsc _ _ _ _ _ y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr]
+    congr 1
+    exact simm9_value off h1 h2
+  | regReg rn rm =>
+    obtain ⟨hb, hi⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi s0
+    have e : Insn.toArmInst env (.load op (.x d) (.regReg rn rm)) = .ok (regInst op.fields.1 op.fields.2.2 Rm 3#3 0#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, LoadOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, LoadOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_reg_load op hop _ _ _ _ _ (by decide) (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_reg _ _ _ _ _ _ _ (by decide) y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRn] at hRn'; cases hRn'
+    rw [hRm] at hRm'; cases hRm'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+    congr 1
+    rw [show Arm.decode_reg_extend 3#3 = .UXTX from rfl]
+    apply BitVec.eq_of_toNat_eq
+    simp [Arm.extend_reg, Arm.ExtendType.unsigned_len]
+    exact (regX y rm).isLt
+  | regScaled rn rm =>
+    obtain ⟨hb, hi⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi s0
+    have e : Insn.toArmInst env (.load op (.x d) (.regScaled rn rm)) = .ok (regInst op.fields.1 op.fields.2.2 Rm 3#3 1#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, LoadOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, LoadOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_reg_load op hop _ _ _ _ _ (by decide) (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_reg _ _ _ _ _ _ _ (by decide) y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRn] at hRn'; cases hRn'
+    rw [hRm] at hRm'; cases hRm'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+    congr 1
+    rw [show Arm.decode_reg_extend 3#3 = .UXTX from rfl, ite_true]
+    exact uxtx_shift _ _ (by cases op <;> simp [log2, LoadOp.bytes])
+  | regScaledExtended rn rm ex =>
+    obtain ⟨hb, hi, hex⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi s0
+    have e : Insn.toArmInst env (.load op (.x d) (.regScaledExtended rn rm ex)) = .ok (regInst op.fields.1 op.fields.2.2 Rm ex.bits 1#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hex with rfl | rfl | rfl | rfl <;> cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, LoadOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, LoadOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_reg_load op hop _ _ _ _ _ (ext_lsb1 hex) (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_reg _ _ _ _ _ _ _ (ext_lsb1 hex) y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRn] at hRn'; cases hRn'
+    rw [hRm] at hRm'; cases hRm'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+    simp only [ite_true]
+  | regExtended rn rm ex =>
+    obtain ⟨hb, hi, hex⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi s0
+    have e : Insn.toArmInst env (.load op (.x d) (.regExtended rn rm ex)) = .ok (regInst op.fields.1 op.fields.2.2 Rm ex.bits 0#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hex with rfl | rfl | rfl | rfl <;> cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, LoadOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, LoadOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_reg_load op hop _ _ _ _ _ (ext_lsb1 hex) (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_reg _ _ _ _ _ _ _ (ext_lsb1 hex) y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRn] at hRn'; cases hRn'
+    rw [hRm] at hRm'; cases hRm'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+    rfl
+  | _ => simp [FinalAM] at hm
+
+/-- **The shape of an emitted plain GPR store** at a final addressing mode: its Arm instruction
+is memory-independent in its control (`CtlIndep`), not a store exclusive, and its events are the
+`immEvs` of a base register and an offset whose sum is the mode's address (on every state). -/
+theorem store_line_shape (env : Env) (ctx : FnCtx) (op : StoreOp) (hop : op ≠ .fpuStore128) (d : Nat)
+    (hd : d ≤ 30) (m : AMode) (hm : FinalAM op.bytes m) (s0 : ArmState) {ai : ArmInst}
+    (ha : Insn.toArmInst env (.store op (.x d) m) = .ok ai) :
+    CtlIndep ai ∧ (∀ rel rs rn, clsOf ai ≠ .stx rel rs rn) ∧
+      ∃ Rn imm, (∀ y, instEvs ai y = immEvs (gprCls op.fields.1 op.fields.2.2 Rn (BitVec.ofNat 5 d) imm) y) ∧
+        (∀ y, read_gpr 64 Rn y + imm.value (log2 op.bytes) y = m.addr ctx op.bytes y) ∧
+        (Rn = 31#5 → m.base = .sp) := by
+  cases m with
+  | unsignedOffset rn off =>
+    obtain ⟨hb, h1, h2⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    have e : Insn.toArmInst env (.store op (.x d) (.unsignedOffset rn off)) = .ok (uimmInst op.fields.1 op.fields.2.2 (BitVec.ofNat 12 (off / op.bytes)) Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, StoreOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, StoreOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_uimm_store op hop _ _ _ (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_uimm _ _ _ _ _ y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr]
+    congr 1
+    exact uimm_value op.bytes (by cases op <;> simp_all [StoreOp.bytes]) off h1 h2
+  | unscaled rn off =>
+    obtain ⟨hb, h1, h2⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    have e : Insn.toArmInst env (.store op (.x d) (.unscaled rn off)) = .ok (unscInst op.fields.1 op.fields.2.2 (BitVec.ofInt 9 off) Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, StoreOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, StoreOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_unsc_store op hop _ _ _ (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_unsc _ _ _ _ _ y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr]
+    congr 1
+    exact simm9_value off h1 h2
+  | regReg rn rm =>
+    obtain ⟨hb, hi⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi s0
+    have e : Insn.toArmInst env (.store op (.x d) (.regReg rn rm)) = .ok (regInst op.fields.1 op.fields.2.2 Rm 3#3 0#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, StoreOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, StoreOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_reg_store op hop _ _ _ _ _ (by decide) (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_reg _ _ _ _ _ _ _ (by decide) y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRn] at hRn'; cases hRn'
+    rw [hRm] at hRm'; cases hRm'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+    congr 1
+    rw [show Arm.decode_reg_extend 3#3 = .UXTX from rfl]
+    apply BitVec.eq_of_toNat_eq
+    simp [Arm.extend_reg, Arm.ExtendType.unsigned_len]
+    exact (regX y rm).isLt
+  | regScaled rn rm =>
+    obtain ⟨hb, hi⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi s0
+    have e : Insn.toArmInst env (.store op (.x d) (.regScaled rn rm)) = .ok (regInst op.fields.1 op.fields.2.2 Rm 3#3 1#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, StoreOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, StoreOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_reg_store op hop _ _ _ _ _ (by decide) (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_reg _ _ _ _ _ _ _ (by decide) y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRn] at hRn'; cases hRn'
+    rw [hRm] at hRm'; cases hRm'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+    congr 1
+    rw [show Arm.decode_reg_extend 3#3 = .UXTX from rfl, ite_true]
+    exact uxtx_shift _ _ (by cases op <;> simp [log2, StoreOp.bytes])
+  | regScaledExtended rn rm ex =>
+    obtain ⟨hb, hi, hex⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi s0
+    have e : Insn.toArmInst env (.store op (.x d) (.regScaledExtended rn rm ex)) = .ok (regInst op.fields.1 op.fields.2.2 Rm ex.bits 1#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hex with rfl | rfl | rfl | rfl <;> cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, StoreOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, StoreOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_reg_store op hop _ _ _ _ _ (ext_lsb1 hex) (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_reg _ _ _ _ _ _ _ (ext_lsb1 hex) y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRn] at hRn'; cases hRn'
+    rw [hRm] at hRm'; cases hRm'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+    simp only [ite_true]
+  | regExtended rn rm ex =>
+    obtain ⟨hb, hi, hex⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb s0
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi s0
+    have e : Insn.toArmInst env (.store op (.x d) (.regExtended rn rm ex)) = .ok (regInst op.fields.1 op.fields.2.2 Rm ex.bits 0#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hex with rfl | rfl | rfl | rfl <;> cases op <;> simp at hop <;>
+        simp_all [Insn.toArmInst, Insn.armFields, StoreOp.fields, ldstFields, Reg.encZR, uField, sField,
+          Arm.ArmInst.norm, StoreOp.bytes, bind, Except.bind, pure, Except.pure, uimmInst, unscInst,
+          regInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_reg_store op hop _ _ _ _ _ (ext_lsb1 hex) (ofNat5_ne31 hd), fun _ _ _ h => by simp [clsOf, uimmInst, unscInst, regInst] at h, Rn, _,
+      fun y => instEvs_reg _ _ _ _ _ _ _ (ext_lsb1 hex) y, fun y => ?_, fun h => by simp [AMode.base, h31 h]⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRn] at hRn'; cases hRn'
+    rw [hRm] at hRm'; cases hRm'
+    simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+    rfl
+  | _ => simp [FinalAM] at hm
+
+/-! ## The plain accesses' Arm instructions: class and event sizes -/
+
+/-- All events have a positive size. -/
+def AllP (evs : List Ev) : Prop := ∀ e ∈ evs, 0 < e.n
+
+theorem allp_nil : AllP [] := fun _ h => absurd h List.not_mem_nil
+
+theorem allp_ite {c : Prop} [Decidable c] {a b : List Ev} (ha : c → AllP a) (hb : ¬ c → AllP b) :
+    AllP (if c then a else b) := by
+  by_cases h : c
+  · rw [ite_eq_left h]; exact ha h
+  · rw [ite_eq_right h]; exact hb h
+
+theorem allp_one {e : Ev} (h : 0 < e.n) : AllP [e] := by
+  intro e' he'; simp only [List.mem_singleton] at he'; subst he'; exact h
+
+theorem shl8_pos (k : Nat) : 0 < (8 <<< k) / 8 := by
+  rw [Nat.shiftLeft_eq, Nat.mul_comm, Nat.mul_div_cancel _ (by decide)]; exact Nat.two_pow_pos _
+
+theorem p_immEvs (inst : LDST.Reg_imm_cls) (s : ArmState) : AllP (immEvs inst s) := by
+  unfold immEvs
+  dsimp only
+  repeat' (first | exact allp_nil | (apply allp_ite <;> intro h))
+  all_goals exact allp_one (shl8_pos _)
+
+theorem p_ldsturEvs (inst : Reg_unscaled_imm_cls) (s : ArmState) : AllP (ldsturEvs inst s) := by
+  unfold ldsturEvs
+  dsimp only
+  repeat' (first | exact allp_nil | (apply allp_ite <;> intro h))
+  all_goals exact allp_one (shl8_pos _)
+
+/-- **A single-register load/store encoding** (`ldstFields`) is of the plain class and its events
+have positive sizes. -/
+theorem ldstFields_plain {size : BitVec 2} {V : BitVec 1} {opc : BitVec 2} {bytes : Nat}
+    {Rt : BitVec 5} {m : AMode} {a : ArmInst} (h : ldstFields size V opc bytes Rt m = .ok a) :
+    clsOf a.norm = .plain ∧ ∀ y, AllP (instEvs a.norm y) := by
+  unfold ldstFields at h
+  cases m <;> simp only [bind, Except.bind, pure, Except.pure] at h <;>
+    (repeat' split at h) <;> (try cases h) <;>
+    refine ⟨rfl, fun y => ?_⟩ <;> simp only [ArmInst.norm, instEvs] <;>
+    first
+      | exact p_immEvs _ _
+      | exact allp_ite (fun _ => p_ldsturEvs _ _) (fun _ => p_immEvs _ _)
+      | exact allp_ite (fun _ => allp_nil) (fun _ => p_immEvs _ _)
+
+theorem ldstFields_bind_plain {x : Except String (BitVec 5)} {size : BitVec 2} {V : BitVec 1}
+    {opc : BitVec 2} {bytes : Nat} {m : AMode} {a : ArmInst}
+    (h : (x >>= fun Rt => ldstFields size V opc bytes Rt m) = .ok a) :
+    clsOf a.norm = .plain ∧ ∀ y, AllP (instEvs a.norm y) := by
+  cases x with
+  | error e => simp only [bind, Except.bind] at h; cases h
+  | ok Rt => simp only [bind, Except.bind] at h; exact ldstFields_plain h
+
+theorem ldstFields_bind2_plain {y : Except String (BitVec 2)} {x : Except String (BitVec 5)}
+    {V : BitVec 1} {opc : BitVec 2} {bytes : Nat} {m : AMode} {a : ArmInst}
+    (h : (y >>= fun size => x >>= fun Rt => ldstFields size V opc bytes Rt m) = .ok a) :
+    clsOf a.norm = .plain ∧ ∀ y, AllP (instEvs a.norm y) := by
+  cases y with
+  | error e => simp only [bind, Except.bind] at h; cases h
+  | ok size => simp only [bind, Except.bind] at h; exact ldstFields_bind_plain h
+
+/-- **The Arm instruction of an emitted plain load/store** is not a store exclusive, and its
+events are of the line's kind (`plainR`/`plainW`) with positive sizes (`OneEvForm.arm`). -/
+theorem plain_arm {env : Env} {x : Insn} {a : ArmInst} (ha : x.toArmInst env = .ok a)
+    (hx : (∃ op rt m, x = .load op rt m) ∨ (∃ op rt m, x = .store op rt m) ∨
+      (∃ sz rt m, x = .fpuLoad sz rt m) ∨ (∃ sz rt m, x = .fpuStore sz rt m)) :
+    (∀ rel rs rn, clsOf a ≠ .stx rel rs rn) ∧
+      ∀ y, ∀ e ∈ instEvs a y, e.k ≠ .relXW ∧ (e.k.dir ≠ .F → 0 < e.n) := by
+  have hk : ∃ k, insnKind x = some k ∧ (k = .plainR ∨ k = .plainW) := by
+    rcases hx with ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ | ⟨_, _, _, rfl⟩ <;>
+      simp [insnKind]
+  obtain ⟨k, hk, hk'⟩ := hk
+  have hK : ∀ y, ∀ e ∈ instEvs a y, e.k = k := fun y e he => by
+    have hs := instEvs_kinds ha y
+    rw [hk] at hs
+    have hm : e.k ∈ (instEvs a y).map (·.k) := List.mem_map_of_mem he
+    simpa using hs.subset hm
+  have hP : clsOf a = .plain ∧ ∀ y, AllP (instEvs a y) := by
+    unfold Insn.toArmInst at ha
+    cases hf : x.armFields env with
+    | error e => rw [hf] at ha; cases ha
+    | ok a0 =>
+      rw [hf] at ha
+      simp only [Functor.map, Except.map, Except.ok.injEq] at ha
+      subst ha
+      rcases hx with ⟨op, rt, m, rfl⟩ | ⟨op, rt, m, rfl⟩ | ⟨sz, rt, m, rfl⟩ | ⟨sz, rt, m, rfl⟩
+      · cases op <;> simp only [Insn.armFields, LoadOp.fields] at hf <;> exact ldstFields_bind_plain hf
+      · cases op <;> simp only [Insn.armFields, StoreOp.fields] at hf <;> exact ldstFields_bind_plain hf
+      · simp only [Insn.armFields] at hf; exact ldstFields_bind2_plain hf
+      · simp only [Insn.armFields] at hf; exact ldstFields_bind2_plain hf
+  refine ⟨fun rel rs rn h => (by rw [hP.1] at h; cases h), fun y e he => ⟨?_, fun _ => hP.2 y e he⟩⟩
+  rw [hK y e he]; rcases hk' with rfl | rfl <;> decide
+
+/-! ## Closed forms of the emitted accesses' events -/
+
+/-- **The event of an emitted GPR load** at a final mode: one read at the mode's address. -/
+theorem load_line_cf (env : Env) (ctx : FnCtx) (op : LoadOp) (hop : op ≠ .fpuLoad128) (d : Nat)
+    (hd : d ≤ 30) (m : AMode) (hm : FinalAM op.bytes m) {ai : ArmInst}
+    (ha : Insn.toArmInst env (.load op (.x d) m) = .ok ai) (y : ArmState)
+    (hsp : m.base = .sp → CheckSPAlignment y) :
+    instEvs ai y = [⟨.plainR, m.addr ctx op.bytes y, op.bytes,
+      readM op.bytes (m.addr ctx op.bytes y) y.mem⟩] := by
+  obtain ⟨-, -, Rn, imm, hev, hA, h31⟩ := load_line_shape env ctx op hop d hd m hm y ha
+  rw [hev, immEvs_load_cf op hop Rn _ imm y (fun h => hsp (h31 h)), hA]
+
+/-- **The event of an emitted GPR store** at a final mode: one write of the data register's low
+bytes at the mode's address. -/
+theorem store_line_cf (env : Env) (ctx : FnCtx) (op : StoreOp) (hop : op ≠ .fpuStore128) (d : Nat)
+    (hd : d ≤ 30) (m : AMode) (hm : FinalAM op.bytes m) {ai : ArmInst}
+    (ha : Insn.toArmInst env (.store op (.x d) m) = .ok ai) (y : ArmState)
+    (hsp : m.base = .sp → CheckSPAlignment y) :
+    instEvs ai y = [⟨.plainW, m.addr ctx op.bytes y, op.bytes,
+      (Arm.r (.GPR (BitVec.ofNat 5 d)) y).setWidth (op.bytes * 8)⟩] := by
+  obtain ⟨-, -, Rn, imm, hev, hA, h31⟩ := store_line_shape env ctx op hop d hd m hm y ha
+  rw [hev, immEvs_store_cf op hop Rn _ (ofNat5_ne31 hd) imm y (fun h => hsp (h31 h)), hA]
+
+theorem bindE_ok {α β : Type} {x : Except String α} {f : α → Except String β} {b : β}
+    (h : (x >>= f) = .ok b) : ∃ a, x = .ok a ∧ f a = .ok b := by
+  cases x with
+  | error e => simp only [bind, Except.bind] at h; cases h
+  | ok a => exact ⟨a, rfl, h⟩
+
+theorem encSP_v {q : Nat} {R : BitVec 5} : (Reg.v q).encSP ≠ .ok R := by
+  simp [Reg.encSP, throw, throwThe, MonadExceptOf.throw]
+
+theorem encZR_v {q : Nat} {R : BitVec 5} : (Reg.v q).encZR ≠ .ok R := by
+  simp [Reg.encZR, throw, throwThe, MonadExceptOf.throw]
+
+
+set_option hygiene false in
+/-- Closes a goal whose hypothesis `ha` encodes a plain load/store with a SIMD&FP register where a
+GPR is required (the encoder fails). -/
+macro "ldst_noV" : tactic => `(tactic| (
+  simp [Insn.toArmInst, Insn.armFields, LoadOp.fields, StoreOp.fields, ldstFields, Reg.encZR,
+    Reg.encSP, Reg.encV, bind, Except.bind, Functor.map, Except.map, throw, throwThe,
+    MonadExceptOf.throw] at ha <;>
+  split at ha <;> (try cases ha) <;> (rename_i heq; repeat' split at heq) <;> (try cases heq)))
+
+/-! ## The plain load/store forms -/
+
+theorem x_or_v {r : Reg} (h : r.allocatable = true) :
+    (∃ q, r = .x q ∧ q < 29) ∨ ∃ q, r = .v q := by
+  rcases allocatable_cases h with ⟨q, rfl, hq, -⟩ | ⟨q, rfl, -⟩
+  · exact .inl ⟨q, rfl, hq⟩
+  · exact .inr ⟨q, rfl⟩
+
+/-- **A GPR load at an unsigned offset is a one-event form.** -/
+theorem load_uoff_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u off : Nat}
+    {fl : Clif.MemFlags}
+    (hfo : FormOk ctx (.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl) = true) :
+    OneEvForm F ctx (.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl) := by
+  have hop : op ≠ .fpuLoad128 ∧ off % op.bytes = 0 ∧ off / op.bytes < 4096 := by
+    simpa [FormOk, memOk] using hfo
+  have hops : (MInst.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl).operands =
+      .ok #[⟨d, .int, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
+  have hasg2 : ∀ r0 r1 : Reg,
+      (MInst.load op (.vreg d .int) (.unsignedOffset (.vreg u .int) off) fl).assign #[r0, r1] =
+      .ok (.load op r0 (.unsignedOffset r1 off) fl) := fun _ _ => rfl
+  have hlines : ∀ (r0 r1 : Reg) ps, (MInst.load op r0 (.unsignedOffset r1 off) fl).lines ctx ps =
+      .ok ([.ins (.load op r0 (.unsignedOffset r1 off)) fl.trapCode], ps) := fun _ _ _ => rfl
+  have hfin : ∀ q, q ≤ 30 → FinalAM op.bytes (.unsignedOffset (.x q) off) :=
+    fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_load_line env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _, ha0,
+    (load_line_shape env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega)) ArmState.default ha0).1⟩,
+    ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg2] at hasg; cases hasg
+    exact ⟨_, _, hlines _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg2] at hasg; cases hasg
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inl ⟨_, _, _, rfl⟩)
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg2] at hasg; cases hasg
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases x_or_v (hall (⟨d, .int, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · cases op <;> (try exact absurd rfl hop.1) <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .load op (.x 0) (.unsignedOffset (.x 1) off) fl) hops
+      rfl (hlines _ _ _), linesEvs_single ha0,
+      load_line_cf env0 ctx op hop.1 0 (by omega) _ (hfin 1 (by omega)) ha0 _
+        (fun h => by simp [AMode.base] at h),
+      load_line_cf env ctx op hop.1 p (by omega) _ (hfin q (by omega)) ha _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+end Concurrency.ArmAllocThread
