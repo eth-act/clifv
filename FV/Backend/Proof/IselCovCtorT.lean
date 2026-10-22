@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselCovCtor
+import FV.Backend.Proof.IselCovLeT
 import FV.Backend.Proof.IselCovExtT
 
 /-!
@@ -34,10 +35,8 @@ open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 def CtorResT (id : TermId) (args : List V) (v : V) : Prop :=
   if id == TId.temp_writable_reg then
     ∃ ty cls n, args = [.ty ty] ∧ ty.regClass? = some cls ∧ v = .reg (.vreg n cls)
-  else if id == TId.put_in_reg || id == TId.put_extended_in_reg then
+  else if id == TId.put_in_reg || id == TId.put_extended_in_reg || id == TId.load_constant_full then
     ∃ n c, v = .reg (.vreg n c)
-  else if id == TId.load_constant_full then
-    ∃ n, v = .reg (.vreg n .int)
   else if id == TId.put_in_regs || id == TId.put_in_regs_vec then
     (∀ r ∈ v.regsIn, ∃ n c, r = .vreg n c) ∧ covV v
   else if id == TId.gen_call_output then
@@ -86,7 +85,7 @@ def CtorCovP (st : LState) (id : TermId) (args : List V) (r : ExtResult (V × LS
 /-! ## Helpers -/
 
 theorem regsVec_single_vregT {ctx : Ctx} (hvr : ∀ x r, ctx.valueReg? x = some r →
-    r = .vreg x (valClassOf ctx x)) {vs : List Nat} {rs : List Reg} (h : vs.mapM ctx.valueReg? = some rs) :
+    ∃ n c, r = .vreg n c) {vs : List Nat} {rs : List Reg} (h : vs.mapM ctx.valueReg? = some rs) :
     (∀ r ∈ (V.regsVec (rs.map fun r => [r])).regsIn, ∃ n c, r = .vreg n c) ∧
       covV (V.regsVec (rs.map fun r => [r])) = true := by
   refine ⟨fun r hr => ?_, rfl⟩
@@ -96,9 +95,12 @@ theorem regsVec_single_vregT {ctx : Ctx} (hvr : ∀ x r, ctx.valueReg? x = some 
     simp only [List.mem_singleton] at hr
     exact hr ▸ ha
   obtain ⟨x, -, he⟩ := mapM_mem h r hr'
-  exact ⟨_, _, hvr _ _ he⟩
+  obtain ⟨n, c, hn⟩ := hvr _ _ he
+  exact ⟨n, c, hn⟩
 
-theorem externCtor_cov (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? x = some r → r = .vreg x .int) (t : Term) (args : List V) (st : LState) (v : V) (st' : LState)
+/-- **Every extern constructor** past the type predicates satisfies `CtorCovT`. -/
+theorem externCtor_covT (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? x = some r →
+    ∃ n c, r = .vreg n c) (t : Term) (args : List V) (st : LState) (v : V) (st' : LState)
     (h : externCtor ctx t args st = .ok (v, st')) :
     (∃ q ty, tyPred t.id = some q ∧ args = [.ty ty] ∧ q ty = true ∧ v = .ty ty ∧ st' = st) ∨
       CtorCovT t.id args st v st' := by
@@ -138,16 +140,21 @@ theorem externCtor_cov (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? x = some r → 
           Bool.or_false, Bool.false_or, Bool.or_true, Bool.true_or, ↓reduceIte]
          first
          | (intro _; rfl)
-         | (intro hc; simp only [covVL, Bool.and_true] at hc; exact hc)
-         | (intro _; simp [covV_data, covVL]; done)
-         | exact ⟨_, _, _, rfl, ‹_›, rfl⟩
-         | (rename_i heq; exact ⟨_, congrArg V.reg (hvr _ _ heq)⟩)
-         | exact regsVec_single_vregT hvr ‹_›
-         | (refine ⟨fun r hr => ?_, rfl, _, rfl⟩
+         | (intro hcv; simp only [covVL, Bool.and_true] at hcv; refine ⟨fun r hr => ?_, hcv⟩
             simp only [V.regsIn, List.mem_flatten] at hr
             obtain ⟨rs, hrs, hr⟩ := hr
-            exact (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).2 rs hrs r hr)
-         | (obtain ⟨⟨n, hn⟩, -⟩ := loadConstantFull_cov _ _ _ _ st; exact ⟨n, by rw [hn]⟩)
+            exact ⟨_, _, (callOutput_fold st _ _ (fun _ _ => ⟨_, rfl⟩)).2 rs hrs r hr⟩)
+         | (intro _; simp [covV_data, covVL]; done)
+         | exact ⟨_, _, _, rfl, ‹_›, rfl⟩
+         | (rename_i heq; obtain ⟨n, c, hn⟩ := hvr _ _ heq; exact ⟨n, c, hn⟩)
+         | (rename_i heq; obtain ⟨n, c, hn⟩ := hvr _ _ heq
+            exact ⟨fun r hr => ⟨n, c, hn⟩, by rfl⟩)
+         | (rename_i heq; obtain ⟨n, c, hn⟩ := hvr _ _ heq; exact ⟨n, c, hn⟩)
+         | (obtain ⟨⟨n, hn⟩, -⟩ := loadConstantFull_cov _ _ _ _ st; exact ⟨n, .int, by rw [hn]⟩)
+         | skip)
+      | (simp (config := { decide := true }) only [CtorResT, ite_true, ite_false, Bool.false_eq_true,
+          Bool.or_false, Bool.false_or, Bool.or_true, Bool.true_or, ↓reduceIte]
+         first
          | exact ⟨_, _, _, _, rfl, rfl, logicSize_of ‹_›, ofNat?_value ‹_›⟩
          | exact ⟨_, _, _, _, rfl, rfl, logicSize64_lt ‹_›, ofNat?_value ‹_›⟩
          | exact ⟨_, _, _, _, rfl, rfl, logicSize64_ge ‹_› ‹_›, ofNat?_value ‹_›⟩
@@ -159,10 +166,12 @@ theorem externCtor_cov (ctx : Ctx) (hvr : ∀ x r, ctx.valueReg? x = some r → 
          | exact ⟨_, _, _, _, rfl, rfl⟩
          | exact ⟨_, _, _, rfl, List.mem_of_getElem? ‹_›, rfl⟩
          | exact ⟨fun r hr => by simp_all [V.regsIn, regsInL], fun _ => rfl⟩
-         | (refine ⟨fun r hr => ?_, rfl⟩
+         | (refine ⟨fun r hr => ?_, ?_⟩
             simp only [V.regsIn, List.mem_singleton] at hr
             subst hr
-            exact ⟨_, hvr _ _ ‹_›⟩)
+            obtain ⟨n, c, hn⟩ := hvr _ _ ‹_›
+            exact ⟨n, c, hn⟩
+            exact trivial)
          | skip)
       | skip
 
@@ -173,8 +182,10 @@ variable {f : Clif.Function} {ctx : Ctx}
 theorem kind_oneT {r : Reg} {m : Nat} (hk : r.kind &&& m ≠ 0) (hm : m &&& 14 = 0) :
     ∃ n c, r = .vreg n c := by
   rcases kind_cases r with h1 | h1 | h1 | h1
-  · exact ⟨_, _, kind_int h1⟩
-  · exact ⟨_, _, kind_float h1⟩
+  · obtain ⟨n, h1⟩ := kind_int h1
+    exact ⟨n, .int, h1⟩
+  · obtain ⟨n, h1⟩ := kind_float h1
+    exact ⟨n, .float, h1⟩
   · exfalso; apply hk; apply Nat.eq_of_testBit_eq; intro i
     have := congrArg (·.testBit i) hm
     simp only [Nat.testBit_and, Nat.zero_testBit] at this ⊢
@@ -243,7 +254,15 @@ theorem emitOk_covT {id : TermId} {as : List AW} {vs : List V} (hvs : Holds2T S 
     simp only [apre, hne, beq_self_eq_true, ↓reduceIte, Bool.false_eq_true, beq_iff_eq] at hpre
     obtain ⟨n, c, rfl⟩ := kind_oneT ((deep_soundT b _ hb).1 r hr) hpre
     have hop : storeOpOfBytes b' ≠ .fpuStore128 := by unfold storeOpOfBytes; split <;> simp
-    simp [stackArgStore, Reg.homeCls, Covered, FormOk, hop, memOk]
+    cases c with
+    | int => simp [stackArgStore, Reg.homeCls, Covered, FormOk, hop, memOk]
+    | float =>
+      have hsz : (if b' = 4 then ScalarSize.size32 else ScalarSize.size64) = .size64 ∨
+          (if b' = 4 then ScalarSize.size32 else ScalarSize.size64) = .size32 := by
+        by_cases h4 : b' = 4 <;> simp [h4]
+      rcases hsz with hsz | hsz
+      · rw [stackArgStore]; simp [Reg.homeCls, hsz, Covered, FormOk, hop, memOk]
+      · rw [stackArgStore]; simp [Reg.homeCls, hsz, Covered, FormOk, hop, memOk]
 
 set_option maxHeartbeats 4000000 in
 /-- **Constructors**: `actor` describes the result, the emitted instructions are covered. -/
@@ -252,7 +271,7 @@ theorem ctor_soundT (hLI : LogicImmComplete) (hctx : CtxInvT f ctx) (s0 : LState
     (hpre : apre term.id as = true) (h : (sem ctx).ctor term vs st = .ok (v, st')) :
     γT S iOps fOps f ctx (actorC term.id as) v ∧ CovSince s0 st' := by
   rw [sem_ctor] at h
-  rcases externCtor_covT ctx hctx.valueReg term vs st v st' h with
+  rcases externCtor_covT ctx (fun x r h => ⟨x, valClassOf ctx x, hctx.valueReg x r h⟩) term vs st v st' h with
     ⟨q, ty, hq, rfl, hqt, rfl, rfl⟩ | hc
   · refine ⟨?_, hIs⟩
     obtain ⟨a, rfl, ha⟩ := holds2_oneT hvs
@@ -283,41 +302,34 @@ theorem ctor_soundT (hLI : LogicImmComplete) (hctx : CtxInvT f ctx) (s0 : LState
   unfold CtorResT at hr
   unfold actorC
   simp only [htp]
-  by_cases hpi : (term.id == TId.put_in_reg || term.id == TId.put_extended_in_reg) = true
-  · rw [if_pos hpi] at hr ⊢
+  unfold actorRest
+  split at hr
+  · rw [if_pos] at hr ⊢
+    · obtain ⟨ty, cls, n, rfl, hcls, rfl⟩ := hr
+      obtain ⟨a, rfl, ha⟩ := holds2_oneT hvs
+      simp only [tysOf]
+      split
+      · rename_i ts hts
+        cases a with
+        | ty ts' =>
+          simp only [tysOf, Option.some.injEq] at hts
+          subst hts
+          obtain ⟨t, ht, he⟩ := ha
+          cases he
+          exact ⟨_, rfl, clsMask_mem ht hcls⟩
+        | _ => simp [tysOf] at hts
+      · refine ⟨_, rfl, ?_⟩
+        cases cls <;> simp [Reg.kind]
+  · rw [if_neg] at hr ⊢
+  by_cases hid1' : (term.id == TId.put_in_reg || term.id == TId.put_extended_in_reg || term.id == TId.load_constant_full) = true
+  · rw [if_pos hid1'] at hr ⊢
     obtain ⟨n, c, rfl⟩ := hr
     exact ⟨_, rfl, by cases c <;> simp [Reg.kind]⟩
-  rw [if_neg hpi]
-  by_cases hpv : (term.id == TId.put_in_regs || term.id == TId.put_in_regs_vec) = true
-  · rw [if_pos hpv] at hr ⊢
-    exact ⟨fun r hrr => by obtain ⟨n, c, rfl⟩ := hr.1 r hrr; cases c <;> simp [Reg.kind],
-      fun _ => hr.2⟩
-  rw [if_neg hpv]
-  by_cases hid : (term.id == TId.temp_writable_reg) = true
-  · rw [if_pos hid] at hr ⊢
-    obtain ⟨ty, cls, n, rfl, hcls, rfl⟩ := hr
-    obtain ⟨a, rfl, ha⟩ := holds2_oneT hvs
-    simp only
-    split
-    · rename_i ts hts
-      cases a with
-      | ty ts' =>
-        simp only [tysOf, Option.some.injEq] at hts
-        subst hts
-        obtain ⟨t, ht, he⟩ := ha
-        cases he
-        exact ⟨_, rfl, clsMask_mem ht hcls⟩
-      | _ => simp [tysOf] at hts
-    · refine ⟨_, rfl, ?_⟩
-      cases cls <;> simp [Reg.kind]
-  rw [if_neg hid] at hr ⊢
-  simp only [hpi, Bool.false_or] at hr ⊢
-  by_cases hid1l : (term.id == TId.load_constant_full) = true
-  · rw [if_pos hid1l] at hr ⊢
-    obtain ⟨n, rfl⟩ := hr
-    exact ⟨_, rfl, by simp [Reg.kind]⟩
-  rw [if_neg hid1l] at hr ⊢
-  simp only [hpv, Bool.false_or] at hr ⊢
+  rw [if_neg hid1'] at hr ⊢
+  by_cases hid2' : (term.id == TId.put_in_regs || term.id == TId.put_in_regs_vec) = true
+  · rw [if_pos hid2'] at hr ⊢
+    exact ⟨fun r hrr => by obtain ⟨n, c, rfl⟩ := hr.1 r hrr; cases c <;> simp [Reg.kind], fun _ => hr.2⟩
+  rw [if_neg hid2'] at hr ⊢
   by_cases hid2o : (term.id == TId.gen_call_output) = true
   · rw [if_pos hid2o] at hr ⊢
     exact ⟨fun r hrr => by obtain ⟨n, c, rfl⟩ := hr.1 r hrr; cases c <;> simp [Reg.kind],
@@ -347,7 +359,7 @@ theorem ctor_soundT (hLI : LogicImmComplete) (hctx : CtxInvT f ctx) (s0 : LState
   · rw [if_pos hid8'] at hr ⊢
     obtain ⟨a', i, r, rfl, hra, rfl⟩ := hr
     obtain ⟨a, b, rfl, ha, -⟩ := holds2_twoT hvs
-    exact ⟨r, rfl, (deep_soundT  a a' ha).1 r hra⟩
+    exact ⟨r, rfl, (deep_soundT a a' ha).1 r hra⟩
   rw [if_neg hid8'] at hr ⊢
   by_cases hid9' : (term.id == TId.value_reg || term.id == TId.value_regs || term.id == TId.output || term.id == TId.output_vec || term.id == TId.output_none) = true
   · rw [if_pos hid9'] at hr ⊢
@@ -441,5 +453,4 @@ theorem ctor_soundT (hLI : LogicImmComplete) (hctx : CtxInvT f ctx) (s0 : LState
     exact ⟨_, rfl, ha, trivial⟩
   rw [if_neg hid18'] at hr ⊢
   exact ⟨fun r _ => kind_and_15 r, fun hcv => hr (covVL_of_deepLT hvs hcv)⟩
-
 end Backend.Proof.Cov
