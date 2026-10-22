@@ -24,8 +24,9 @@ store.i64 v1, v0; return }` -/
 def sw : Clif.Function :=
   { name := "sret_witness",
     sig := { params := [{ ty := .i64, purpose := .sret }, { ty := .i64 }] },
-    blocks := [{ id := 0, params := [(0, .i64), (1, .i64)],
-      body := [{ inst := .store .store .i64 {} 1 0 0 }], term := .ret [] }] }
+    blocks := [{
+      id := 0, params := [(0, .i64), (1, .i64)],
+      body := [{ inst := .store .store .i64 ({} : Clif.MemFlags) 1 0 0 }], term := .ret [] }] }
 
 /-- Closed compilation of `sw` through lowering, preparation, the spill allocation, emission and
 layout, with the prepared forms covered. -/
@@ -50,7 +51,7 @@ set_option maxHeartbeats 10000000 in
 /-- The closed test receipt (not used by any compiler correctness theorem). -/
 theorem checks_true : checks = true := by native_decide
 
-theorem sretArg_sw (p v : Clif.Val) : sretArg sw [p, v] = [p] := by decide
+theorem sretArg_sw (p v : Clif.Val) : sretArg sw [p, v] = [p] := rfl
 
 /-- **`sw` meets the compile-time premises of `backend_correct_final_sret`** (`i = 0`). -/
 theorem compiled_exists :
