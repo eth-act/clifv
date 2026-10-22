@@ -415,19 +415,29 @@ def savesOf (af : AFunc) : List AInst :=
   | some (_, code) => (code.toList.drop 1).takeWhile (·.calleeSave?.isSome)
   | none => []
 
+/-- The entry block's code after the prologue and the leading callee-save stores (`unwindRows`
+fails when it starts with a callee-saved register's store through x16, `farSave`). -/
+def afterSavesOf (af : AFunc) : List AInst :=
+  match af.blocks[0]? with
+  | some (_, code) => (code.toList.drop 1).dropWhile (·.calleeSave?.isSome)
+  | none => []
+
 /-- **`unwindRows` succeeds on the emitted code** when the entry block's leading callee-save
-stores have negative, 8-aligned CFA offsets (`SaveOk`) and the code is below 4 GiB. -/
+stores have negative, 8-aligned CFA offsets (`SaveOk`), no callee-saved register is stored
+through x16 right after them (`farSave`, #479) and the code is below 4 GiB. -/
 theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa : FnAsm}
     {fb : FnBin} (halloc : lowerRFunc vc rf = .ok af) (hemit : emitFunc k af = .ok fa)
     (hlay : fa.layout = .ok fb) (hsz : 4 * fb.words.size < 2 ^ 32) {vb : VBlock}
     {items : Array RItem} (hvb : vc.blocks[0]? = some vb) (hit : rf.blocks[0]? = some items)
-    (hs : ∀ a ∈ savesOf af, SaveOk af.frameSize a) :
+    (hs : ∀ a ∈ savesOf af, SaveOk af.frameSize a) (hfar : farSave (afterSavesOf af) = false) :
     ∃ rows, unwindRows af fa = .ok rows := by
   have hframe := lowerRFunc_frame halloc
   obtain ⟨code, ls, ps1, ps2, T, -, haf, hcl, h0, hd⟩ := entry_static halloc hemit hvb hit
   obtain ⟨_, _, -, -, hk⟩ := emitFunc_ok hemit
   have hsv : savesOf af = code.takeWhile (·.calleeSave?.isSome) := by
     simp [savesOf, haf]
+  have hfar' : farSave (code.dropWhile (·.calleeSave?.isSome)) = false := by
+    simpa [afterSavesOf, haf] using hfar
   rw [hsv] at hs
   generalize hS : code.takeWhile (·.calleeSave?.isSome) = saves at hs
   have hcode : code = saves ++ code.dropWhile (·.calleeSave?.isSome) := by
@@ -490,7 +500,7 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
   unfold unwindRows
   simp only [hframe, Bool.not_true, Bool.false_eq_true, ite_false, haf, bind, Except.bind]
   have hb : (some AInst.prologue != some AInst.prologue) = false := rfl
-  simp only [List.head?_cons, List.drop_succ_cons, List.drop_zero, hS, hk, hrows, hb,
+  simp only [List.head?_cons, List.drop_succ_cons, List.drop_zero, hS, hk, hrows, hb, hfar',
     Bool.false_eq_true, ite_false]
   rw [if_neg hle']
   simp only [h0', hgot]

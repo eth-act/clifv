@@ -38,7 +38,10 @@ restores. The callee-saved registers are saved in block 0 before any other instr
 from the slot's first 8 bytes.
 
 `unwindRows` reads the saves from `AFunc`'s block 0 and checks that the function's final code
-starts with exactly the prologue and those stores (so the byte offsets are the code's).
+starts with exactly the prologue and those stores (so the byte offsets are the code's). It fails
+when a callee-saved register is stored through x16 right after those stores (`farSave`): such a
+save would have no row. The frame layout keeps the save slots below 32 KiB (`RAFrame.compute`,
+`saveFrameB_always`), so this does not happen unless the outgoing area is near 32 KiB.
 -/
 
 namespace Backend
@@ -66,6 +69,24 @@ def AInst.calleeSave? : AInst → Option (Reg × Int)
   | .inst (.store op r (.spOffset off) _) =>
     if (op == .store64 || op == .fpuStore128) && calleeSaved.contains r then some (r, off) else none
   | _ => none
+
+/-- An instruction of `spAddrX16` (`x16 := sp + off`: `movz`, `movk`, `add x16, sp, x16`). -/
+def AInst.x16Addr : AInst → Bool
+  | .inst (.movWide .movZ (.x 16) _ _) => true
+  | .inst (.movK (.x 16) (.x 16) _ _) => true
+  | .inst (.aluRRRExtend .add .size64 (.x 16) .sp (.x 16) .sxtx) => true
+  | _ => false
+
+/-- A store of a callee-saved register through x16 (`slotStoreAt` at 32 KiB or more). -/
+def AInst.x16Save : AInst → Bool
+  | .inst (.store op r (.unsignedOffset (.x 16) _) _) =>
+    (op == .store64 || op == .fpuStore128) && calleeSaved.contains r
+  | _ => false
+
+/-- Does `code` start with a callee-saved register's store through x16 (`x16 := sp + off`,
+then the store): a save the rows cannot describe (#479). -/
+def farSave (code : List AInst) : Bool :=
+  code.head?.any (·.x16Addr) && (code.dropWhile (·.x16Addr)).head?.any (·.x16Save)
 
 /-- The instruction of a line (none for labels and jump-table words). -/
 def Line.insn? : Line → Option Insn
@@ -105,6 +126,10 @@ def unwindRows (af : AFunc) (fa : FnAsm) : Except String (List (Nat × Cfi)) := 
   let code := code.toList
   if code.head? != some .prologue then throw "unwind: the entry block does not start with the prologue"
   let saves := (code.drop 1).takeWhile (·.calleeSave?.isSome)
+  -- a callee-saved register stored through x16 right after the saves has no row: fail rather
+  -- than emit tables that leave it out (#479)
+  if farSave ((code.drop 1).dropWhile (·.calleeSave?.isSome)) then
+    throw "unwind: a callee-saved register is stored through x16 (slot at 32 KiB or more), which no row describes"
   let pro := prologueLines af.frameSize
   let c : FnCtx := { k := fa.k, slotBase := af.slotBase }
   let (sl, srows) ← saveRows c af.frameSize (4 * pro.length) saves

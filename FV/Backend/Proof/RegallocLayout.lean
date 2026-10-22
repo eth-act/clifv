@@ -6,18 +6,21 @@ import FV.Backend.Proof.RegallocFrame
 `frameOk_compute`: the frame `RAFrame.compute vc rf` satisfies `FrameOk` for the live
 locations (`Live rf`), with `fmoveTmp` available when the code has float register moves, for
 any `sp0` whose frame does not wrap around and any `F` containing `[sp0 + intBase, sp0 + size)`.
-The layout (all offsets from `sp0`):
+The layout (all offsets from `sp0`; `fl`, `il` = `rf.savedOf .float`, `rf.savedOf .int`):
 
 ```
-[intBase, intBase + 8 n)           int spill slots          (n = spillSlots)
-[floatBase, floatBase + 16 n)      float spill slots        (if used)
-[saveBase, e1)                     float save slots, 16 bytes each
+[intBase, e1)                      float save slots, 16 bytes each
 [e1, e2)                           int save slots, 8 bytes each
+[spillBase, spillBase + 8 n)       int spill slots          (n = spillSlots)
+[floatBase, floatBase + 16 n)      float spill slots        (if used)
 [fmoveTmp, fmoveTmp + 16)          float move temporary     (if used)
                                    size = alignTo _ 16
 [size, size + slotBytes)           explicit CLIF slots (not the allocator's)
                                    total = alignTo _ 16
 ```
+
+`saveFrameB_always`'s arithmetic: every save slot lies below `intBase + 8 * 16 + 10 * 8`
+(`save_lt`), whatever the number of spill slots.
 -/
 
 namespace Backend.Proof
@@ -61,14 +64,40 @@ theorem lookup_mem {L : List (Reg × Nat)} {r : Reg} {o : Nat} (h : L.lookup r =
     · have : (r == a) = false := by simpa using e
       rw [this] at h; exact List.mem_cons_of_mem _ (ih h)
 
+/-- Membership in `RFunc.savedOf`: a callee-saved register of that class. -/
+theorem mem_savedOf {rf : RFunc} {c : RegClass} {r : Reg} (h : r ∈ rf.savedOf c) :
+    r ∈ calleeSaved ∧ r.realClass? = some c := by
+  have h2 := (List.mem_filter.1 h).2
+  simp only [Bool.and_eq_true] at h2
+  exact ⟨(List.mem_filter.1 h).1, by simpa using h2.1⟩
+
+theorem filter_length_le_of_imp {α} {p q : α → Bool} (h : ∀ a, p a = true → q a = true) :
+    ∀ l : List α, (l.filter p).length ≤ (l.filter q).length
+  | [] => by simp
+  | a :: l => by
+    have ih := filter_length_le_of_imp h l
+    by_cases hp : p a = true
+    · simp [List.filter_cons, hp, h a hp]; omega
+    · by_cases hq : q a = true <;> simp [List.filter_cons, hp, hq] <;> omega
+
+theorem savedOf_float_length (rf : RFunc) : (rf.savedOf .float).length ≤ 8 := by
+  have : (calleeSaved.filter fun r => r.realClass? == some RegClass.float).length = 8 := by decide
+  rw [← this]
+  exact filter_length_le_of_imp (fun a h => by simp only [Bool.and_eq_true] at h; exact h.1) _
+
+theorem savedOf_int_length (rf : RFunc) : (rf.savedOf .int).length ≤ 10 := by
+  have : (calleeSaved.filter fun r => r.realClass? == some RegClass.int).length = 10 := by decide
+  rw [← this]
+  exact filter_length_le_of_imp (fun a h => by simp only [Bool.and_eq_true] at h; exact h.1) _
+
 /-- A save-slot entry of the computed frame: its register's class fixes its size, its offset
 its position. -/
 theorem save_entry {vc : VCode} {rf : RFunc} {r : Reg} {o : Nat}
     (h : (RAFrame.compute vc rf).saveOff.lookup r = some o) :
     let fr := RAFrame.compute vc rf
-    let sB := fr.floatBase + (if rf.floatStack then 16 * rf.spillSlots else 0)
-    let fl := rf.saved.filter (·.realClass? == some .float)
-    let il := rf.saved.filter (·.realClass? == some .int)
+    let sB := fr.intBase
+    let fl := rf.savedOf .float
+    let il := rf.savedOf .int
     (∃ i, i < fl.length ∧ fl[i]? = some r ∧ o = sB + 16 * i ∧ slotBytes (.save r) = 16) ∨
       (∃ i, i < il.length ∧ il[i]? = some r ∧ o = sB + 16 * fl.length + 8 * i ∧
         slotBytes (.save r) = 8) := by
@@ -85,15 +114,11 @@ theorem save_entry {vc : VCode} {rf : RFunc} {r : Reg} {o : Nat}
   simp only [List.nil_append, List.mem_append] at hm
   rcases hm with hm | hm
   · obtain ⟨i, hi, hr, ho⟩ := mem_slots hm
-    have hc : r.realClass? = some .float := by
-      have := List.mem_of_getElem? hr
-      simpa [fl] using (List.mem_filter.1 this).2
+    have hc := (mem_savedOf (List.mem_of_getElem? hr)).2
     refine .inl ⟨i, hi, hr, ho, ?_⟩
     cases r <;> simp_all [Reg.realClass?, slotBytes]
   · obtain ⟨i, hi, hr, ho⟩ := mem_slots hm
-    have hc : r.realClass? = some .int := by
-      have := List.mem_of_getElem? hr
-      simpa [il] using (List.mem_filter.1 this).2
+    have hc := (mem_savedOf (List.mem_of_getElem? hr)).2
     refine .inr ⟨i, hi, hr, ho, ?_⟩
     cases r <;> simp_all [Reg.realClass?, slotBytes]
 
@@ -106,26 +131,27 @@ theorem align_facts (x : Nat) (fm : Bool) :
     have := le_alignTo16 (alignTo x 16 + 16)
     omega
 
-/-- The numeric layout of the computed frame. -/
+/-- The numeric layout of the computed frame: the save slots, then the int and float spill
+slots, then the float move temporary. -/
 theorem compute_facts (vc : VCode) (rf : RFunc) :
     let fr := RAFrame.compute vc rf
-    let sB := fr.floatBase + (if rf.floatStack then 16 * rf.spillSlots else 0)
-    let fl := rf.saved.filter (·.realClass? == some .float)
-    let il := rf.saved.filter (·.realClass? == some .int)
-    fr.intBase + 8 * rf.spillSlots ≤ fr.floatBase ∧
-      sB + 16 * fl.length + 8 * il.length ≤ fr.fmoveTmp ∧ fr.fmoveTmp ≤ fr.size ∧
-      (rf.floatMove = true → fr.fmoveTmp + 16 ≤ fr.size) := by
-  intro fr sB fl il
+    let fl := rf.savedOf .float
+    let il := rf.savedOf .int
+    (fr.intBase + 16 * fl.length + 8 * il.length ≤ fr.spillBase ∧
+      fr.spillBase + 8 * rf.spillSlots ≤ fr.floatBase) ∧
+      fr.floatBase + (if rf.floatStack then 16 * rf.spillSlots else 0) ≤ fr.fmoveTmp ∧
+      fr.fmoveTmp ≤ fr.size ∧ (rf.floatMove = true → fr.fmoveTmp + 16 ≤ fr.size) := by
+  intro fr fl il
   have e1 := foldl_slots 16 (fun (p : List (Reg × Nat) × Nat) r => (p.1 ++ [(r, p.2)], p.2 + 16))
-    (fun _ _ _ => rfl) fl [] sB
+    (fun _ _ _ => rfl) fl [] fr.intBase
   have e2 := foldl_slots 8 (fun (p : List (Reg × Nat) × Nat) r => (p.1 ++ [(r, p.2)], p.2 + 8))
-    (fun _ _ _ => rfl) il [] (sB + 16 * fl.length)
-  simp only [fr, sB, fl, il, RAFrame.compute] at e1 e2 ⊢
+    (fun _ _ _ => rfl) il [] (fr.intBase + 16 * fl.length)
+  simp only [fr, fl, il, RAFrame.compute] at e1 e2 ⊢
   rw [e1]
   simp only [List.nil_append]
   rw [e2]
   dsimp only
-  refine ⟨le_alignTo16 _, le_alignTo16 _, (align_facts _ _).1, (align_facts _ _).2⟩
+  exact ⟨⟨le_alignTo16 _, le_alignTo16 _⟩, le_alignTo16 _, (align_facts _ _).1, (align_facts _ _).2⟩
 
 theorem compute_size_le_total (vc : VCode) (rf : RFunc) :
     (RAFrame.compute vc rf).size ≤ (RAFrame.compute vc rf).total := by
@@ -141,10 +167,10 @@ theorem toNat_add_ofNat {a : BitVec 64} {o : Nat} (h : a.toNat + o < 2 ^ 64) :
 theorem live_slot {vc : VCode} {rf : RFunc} {l : Loc} {o : Nat} (hD : Live rf l)
     (ho : (RAFrame.compute vc rf).offset l = .ok o) :
     let fr := RAFrame.compute vc rf
-    let sB := fr.floatBase + (if rf.floatStack then 16 * rf.spillSlots else 0)
-    let fl := rf.saved.filter (·.realClass? == some .float)
-    let il := rf.saved.filter (·.realClass? == some .int)
-    (∃ k, l = .stack k .int ∧ k < rf.spillSlots ∧ o = fr.intBase + 8 * k ∧ slotBytes l = 8) ∨
+    let sB := fr.intBase
+    let fl := rf.savedOf .float
+    let il := rf.savedOf .int
+    (∃ k, l = .stack k .int ∧ k < rf.spillSlots ∧ o = fr.spillBase + 8 * k ∧ slotBytes l = 8) ∨
     (∃ k, l = .stack k .float ∧ k < rf.spillSlots ∧ rf.floatStack = true ∧
       o = fr.floatBase + 16 * k ∧ slotBytes l = 16) ∨
     (∃ r i, l = .save r ∧ i < fl.length ∧ fl[i]? = some r ∧ o = sB + 16 * i ∧ slotBytes l = 16) ∨
@@ -172,7 +198,6 @@ theorem live_slot {vc : VCode} {rf : RFunc} {l : Loc} {o : Nat} (hD : Live rf l)
       · exact .inr (.inr (.inr ⟨r, i, rfl, hi, hr, hoe, hs⟩))
     · cases ho
 
-
 theorem alignTo16_mod (x : Nat) : alignTo x 16 % 16 = 0 := by
   unfold alignTo; omega
 
@@ -181,15 +206,20 @@ theorem compute_align (vc : VCode) (rf : RFunc) :
       (RAFrame.compute vc rf).fmoveTmp % 16 = 0 :=
   ⟨alignTo16_mod _, alignTo16_mod _, alignTo16_mod _⟩
 
+theorem compute_align_spill (vc : VCode) (rf : RFunc) :
+    (RAFrame.compute vc rf).spillBase % 16 = 0 :=
+  alignTo16_mod _
+
 /-- A live slot is aligned to its size and lies below the frame size. -/
 theorem live_align {vc : VCode} {rf : RFunc} {l : Loc} {o : Nat} (hD : Live rf l)
     (ho : (RAFrame.compute vc rf).offset l = .ok o) :
     o % slotBytes l = 0 ∧ o + slotBytes l ≤ (RAFrame.compute vc rf).size := by
   obtain ⟨a1, a2, a3⟩ := compute_align vc rf
-  obtain ⟨h1, h2, h3, h4⟩ := compute_facts vc rf
+  have a4 := compute_align_spill vc rf
+  obtain ⟨⟨h0, h1⟩, h2, h3, h4⟩ := compute_facts vc rf
   rcases live_slot hD ho with ⟨k, rfl, hk, rfl, hs⟩ | ⟨k, rfl, hk, hfs, rfl, hs⟩ |
       ⟨r, i, rfl, hi, _, rfl, hs⟩ | ⟨r, i, rfl, hi, _, rfl, hs⟩ <;> rw [hs]
-  · omega
+  · by_cases hfs : rf.floatStack = true <;> simp [hfs] at h2 <;> omega
   · simp only [hfs, ite_true] at h2; omega
   all_goals by_cases hfs : rf.floatStack = true <;> simp [hfs] at h2 ⊢ <;> omega
 
@@ -200,8 +230,7 @@ theorem frameOk_compute (vc : VCode) (rf : RFunc) (sp0 : BitVec 64) (F : BitVec 
     (hF : ∀ o, (RAFrame.compute vc rf).intBase ≤ o → o < (RAFrame.compute vc rf).size →
       F (sp0 + BitVec.ofNat 64 o)) :
     FrameOk (RAFrame.compute vc rf) (Live rf) (rf.floatMove = true) sp0 F := by
-  obtain ⟨h1, h2, h3, h4⟩ := compute_facts vc rf
-  have hib : (RAFrame.compute vc rf).intBase ≤ (RAFrame.compute vc rf).floatBase := by omega
+  obtain ⟨⟨h0, h1⟩, h2, h3, h4⟩ := compute_facts vc rf
   have hadd : ∀ o k, sp0 + BitVec.ofNat 64 o + BitVec.ofNat 64 k = sp0 + BitVec.ofNat 64 (o + k) := by
     intro o k; rw [BitVec.add_assoc, BitVec.ofNat_add]
   -- every live slot lies in `[intBase, fmoveTmp)`
@@ -210,7 +239,7 @@ theorem frameOk_compute (vc : VCode) (rf : RFunc) (sp0 : BitVec 64) (F : BitVec 
     intro l o hD ho
     rcases live_slot hD ho with ⟨k, rfl, hk, rfl, hs⟩ | ⟨k, rfl, hk, hfs, rfl, hs⟩ |
         ⟨r, i, rfl, hi, _, rfl, hs⟩ | ⟨r, i, rfl, hi, _, rfl, hs⟩ <;> rw [hs]
-    · omega
+    · by_cases hfs : rf.floatStack = true <;> simp [hfs] at h2 <;> omega
     · simp only [hfs, if_true] at h2; omega
     all_goals by_cases hfs : rf.floatStack = true <;> simp [hfs] at h2 ⊢ <;> omega
   refine ⟨fun l l' o o' hD hD' hne ho ho' => ?_, fun l o hD ho k hk => ?_,
@@ -241,4 +270,12 @@ theorem frameOk_compute (vc : VCode) (rf : RFunc) (sp0 : BitVec 64) (F : BitVec 
   · have := h4 hT
     rw [hadd]; exact hF _ (by omega) (by omega)
 
+/-- Every save slot of the computed frame lies below `intBase + 200` (at most eight 16-byte
+float slots and ten 8-byte int slots), whatever the number of spill slots (#479). -/
+theorem save_lt {vc : VCode} {rf : RFunc} {r : Reg} {o : Nat}
+    (h : (RAFrame.compute vc rf).saveOff.lookup r = some o) :
+    o + 8 ≤ (RAFrame.compute vc rf).intBase + 208 := by
+  have hf := savedOf_float_length rf
+  have hi := savedOf_int_length rf
+  rcases save_entry h with ⟨i, hi', -, rfl, -⟩ | ⟨i, hi', -, rfl, -⟩ <;> omega
 end Backend.Proof

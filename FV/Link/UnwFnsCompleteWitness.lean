@@ -103,11 +103,14 @@ theorem padsNonzero_applies : padsNonzeroB af fa = true :=
   padsNonzero_complete compiled.1 compiled.2.1 compiled.2.2 premises_facts.1 premises_facts.2.1
     premises_facts.2.2.2.1
 
+set_option maxRecDepth 100000 in
+theorem far_false : farSave (afterSavesOf af) = false := by native_decide
+
 /-- **`unwindRows_complete` applies** to `tc` (whose entry block saves callee-saved registers:
 `savesOf af ≠ []`). -/
 theorem unwindRows_applies : ∃ rows, unwindRows af fa = .ok rows :=
   unwindRows_complete compiled.1 compiled.2.1 compiled.2.2 premises_facts.2.2.2.2.2.1
-    premises_facts.1 premises_facts.2.1 premises_facts.2.2.2.2.1
+    premises_facts.1 premises_facts.2.1 premises_facts.2.2.2.2.1 far_false
 
 /-- The prepared code's `try_call` premise and the allocation's block count, decided. -/
 def premisesV : Bool := tryInfoOkB vcp && (rf.blocks.size == vcp.blocks.size)
