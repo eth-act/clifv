@@ -17,84 +17,24 @@ namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Isle Isle.Aarch64
 
-theorem stmtOkT_rule_lower_2666 : stmtOkT rule_lower_2666 = true := by decide +kernel
+theorem stmtOkT_rule_lower_230 : stmtOkT rule_lower_230 = true := by decide +kernel
 
-theorem stmtOkT_rule_lower_2672 : stmtOkT rule_lower_2672 = true := by decide +kernel
+theorem stmtOkT_rule_lower_232 : stmtOkT rule_lower_232 = true := by decide +kernel
 
-theorem stmtOkT_rule_lower_2678 : stmtOkT rule_lower_2678 = true := by decide +kernel
+theorem stmtOkT_rule_lower_240 : stmtOkT rule_lower_240 = true := by decide +kernel
 
-theorem stmtOkT_rule_lower_2684 : stmtOkT rule_lower_2684 = true := by decide +kernel
+theorem stmtOkT_rule_lower_242 : stmtOkT rule_lower_242 = true := by decide +kernel
 
-theorem stmtOkT_rule_lower_2690 : stmtOkT rule_lower_2690 = true := by decide +kernel
+theorem stmtOkT_rule_lower_244 : stmtOkT rule_lower_244 = true := by decide +kernel
 
-theorem stmtOkT_rule_lower_2696 : stmtOkT rule_lower_2696 = true := by decide +kernel
+theorem stmtOkT_rule_lower_246 : stmtOkT rule_lower_246 = true := by decide +kernel
 
-theorem stmtOkT_rule_lower_2705 : stmtOkT rule_lower_2705 = true := by decide +kernel
+theorem stmtOkT_rule_lower_248 : stmtOkT rule_lower_248 = true := by decide +kernel
 
-theorem stmtOkT_rule_lower_2709 : stmtOkT rule_lower_2709 = true := by decide +kernel
+theorem stmtOkT_rule_lower_250 : stmtOkT rule_lower_250 = true := by decide +kernel
 
-theorem stmtOkT_rule_lower_2713 : stmtOkT rule_lower_2713 = true := by decide +kernel
+theorem stmtOkT_rule_lower_260 : stmtOkT rule_lower_260 = true := by decide +kernel
 
-theorem stmtOkT_rule_lower_2717 : stmtOkT rule_lower_2717 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2722 : stmtOkT rule_lower_2722 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2726 : stmtOkT rule_lower_2726 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2730 : stmtOkT rule_lower_2730 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2735 : stmtOkT rule_lower_2735 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2770 : stmtOkT rule_lower_2770 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2773 : stmtOkT rule_lower_2773 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2809 : stmtOkT rule_lower_2809 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2818 : stmtOkT rule_lower_2818 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2842 : stmtOkT rule_lower_2842 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2849 : stmtOkT rule_lower_2849 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2863 : stmtOkT rule_lower_2863 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2887 : stmtOkT rule_lower_2887 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2900 : stmtOkT rule_lower_2900 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2913 : stmtOkT rule_lower_2913 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_2927 : stmtOkT rule_lower_2927 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_3022 : stmtOkT rule_lower_3022 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_3042 : stmtOkT rule_lower_3042 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_3062 : stmtOkT rule_lower_3062 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_3082 : stmtOkT rule_lower_3082 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_3217 : stmtOkT rule_lower_3217 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_3220 : stmtOkT rule_lower_3220 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_3225 : stmtOkT rule_lower_3225 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_3286 : stmtOkT rule_lower_3286 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_3292 : stmtOkT rule_lower_3292 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_dynamic_neon_81 : stmtOkT rule_lower_dynamic_neon_81 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_dynamic_neon_87 : stmtOkT rule_lower_dynamic_neon_87 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_86 : stmtOkT rule_lower_86 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_319 : stmtOkT rule_lower_319 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_359 : stmtOkT rule_lower_359 = true := by decide +kernel
-
-theorem stmtOkT_rule_lower_390 : stmtOkT rule_lower_390 = true := by decide +kernel
+theorem stmtOkT_rule_lower_262 : stmtOkT rule_lower_262 = true := by decide +kernel
 
 end Backend.Proof.CovT

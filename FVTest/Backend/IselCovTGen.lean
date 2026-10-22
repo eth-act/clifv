@@ -262,6 +262,8 @@ def ruleNames (src : String) (t : Nat) : List String :=
   match src.splitOn s!"theorem program_rulesOf_{t} : program.rulesOf {t} =" with
   | _ :: rest :: _ =>
     let line := ((rest.splitOn "\n").getD 1 "").trimAscii.toString
+    -- a one-line list ends in `] := rfl` (e.g. term 687), a multi-line one in `]`
+    let line := ((line.splitOn " := rfl").headD line).trimAscii.toString
     let line := String.ofList ((line.toList.drop 1).dropLast)
     (line.splitOn ", ").map (·.trimAscii.toString)
   | _ => []
@@ -270,7 +272,7 @@ def groups {α : Type} (n : Nat) (l : List α) : List (List α) :=
   (List.range ((l.length + n - 1) / n)).map fun k => (l.drop (k * n)).take n
 
 def chunksPerMod : Nat := 2
-def rulesPerMod : Nat := 40
+def rulesPerMod : Nat := 10
 
 def renderAll (tab : Tab) (lowerNames branchNames : List String) : List (String × String) := Id.run do
   let n := (tab.length + chunk - 1) / chunk

@@ -31,7 +31,7 @@ theorem branchOkT_rule_lower_3231 : branchOkT rule_lower_3231 = true := by decid
 
 theorem branchOkT_rule_lower_3270 : branchOkT rule_lower_3270 = true := by decide +kernel
 
-theorem branchOkT_rule_lower_3277] := rf : branchOkT rule_lower_3277] := rf = true := by decide +kernel
+theorem branchOkT_rule_lower_3277 : branchOkT rule_lower_3277 = true := by decide +kernel
 
 /-- The terminator rules of `lower` (964 `return`, 1037 `trap`) check. -/
 theorem covTermT_ok : (program.rulesOf TId.lower).all (fun r => !(r.id == 964 || r.id == 1037) ||
