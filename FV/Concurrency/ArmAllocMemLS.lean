@@ -6,27 +6,17 @@ import FV.Backend.Proof.RegallocMemFP
 /-!
 # Layer 4b for the plain load/store items of the atomics scope (T2h, #311)
 
-The per-item obligation `ArmAllocThread.ItemSim` at the items whose instruction is a **plain
-load/store** (GPR `load`/`store`, SIMD&FP `fpuLoad`/`fpuStore` of 32/64 bits), and the run level
-for functions whose items are event-free, `fence`, a covered `ldar`/`stlr`, or such a plain
-load/store:
+The facts about the **plain load/store** instructions (GPR `load`/`store`, SIMD&FP
+`fpuLoad`/`fpuStore` of 32/64 bits) that the per-item obligation `ArmAllocThread.ItemSim` at their
+items needs (the scope itself: `ArmAllocLS`):
 
-* `oneEvPre`: **a straight-line form with an event-free prefix of lines and one access line**
-(`OneEvPreForm`), generalising `OneEvForm`/`oneEv_op` to the forms whose offset `memFinalize`
-computes through `x16` (`loadConst64`); the prefix's steps are event-free and do not read the
-memory, the access's events on any memory are the canonical run's (the **event equality**
-`OneEvPreForm.ev`), and the source step exists for every read value (**receptiveness**,
-`straightSem_pre`);
-* the one-line forms (`unscaled`, `unsignedOffset`, `regReg`, `regScaled`, `regScaledExtended`,
-`regExtended`) are `oneEvPre` with the empty prefix; the event equality per addressing mode:
-for every mode the allocated and the canonical runs access the same address (the base and index
-registers' values agree, `useVals`/`placeUses`; stack offsets go through `sp`, which `SameWorld`
-keeps);
-* `MemScopeLS`: every instruction is event-free (`NoEvForm`), `fence`, a covered `ldar`/`stlr`,
-or a covered plain load/store (`LSForm`); **`arm_alloc_refines_ls`**: such a function's precise
-Arm runs from `Q`-related states realize runs of the allocated code with `Refines` up to `Done`
-(`arm_alloc_refines_mem`'s conclusion);
-* witnesses per addressing mode (`ArmAllocMemLSWitness`).
+* `ctlIndep_*`: the pc, error and program after each encoded plain load/store do not depend on
+  the memory (`CtlIndep`), alignment faults included;
+* `preMem`, `straightSem_pre`: an event-free prefix of lines (`memFinalize`'s `loadConst64`)
+  commutes with `setMem`, and the source step of a form with such a prefix is the if-expression on
+  the access's execution (**receptiveness**);
+* `immEvs_load_eq`, `immEvs_store_eq`: two GPR accesses of the same shape have the same events
+  when their base and offset values (and, for a store, the data) agree.
 -/
 
 namespace Concurrency.ArmAllocThread

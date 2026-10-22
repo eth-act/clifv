@@ -1,6 +1,34 @@
 import FV.Concurrency.ArmAllocMemLS
 import FV.Concurrency.ArmAllocBranch
 
+/-!
+# Layer 4b with the plain loads/stores (T2h, #311)
+
+The scope of `arm_alloc_refines_br` (`MemScopeB`: event-free items, `fence`, `ldar`/`stlr`, LL/SC
+loops, block-ending branches) extended by the **plain loads/stores**: GPR `load`/`store` and
+SIMD&FP `fpuLoad`/`fpuStore` (32/64 bits) at the final addressing modes (`unsignedOffset`,
+`unscaled`, `regReg`, `regScaled`, `regScaledExtended`, `regExtended`; `LSMode`), whose lowering is
+one access line (`memFinalize` leaves a final mode unchanged):
+
+* `load_line_cf`, `store_line_cf`, `fpuLoad_line_cf`, `fpuStore_line_cf`: **the closed form of an
+  emitted access's events** — one read (of the memory's bytes) or one write (of the data register's
+  low bytes) at the mode's address (`AMode.addr`), of the access size;
+* `plain_arm`: an emitted plain access is no store exclusive and its events have its kind and a
+  positive size;
+* `load_uoff_form` … `fpuStore_regExt_form` (24 forms), `lsForm_oneEv`: **every plain load/store
+  form is a one-event form** (`OneEvForm`): the allocated access's event on any memory is the
+  canonical run's, since both access the same address (the base and index registers' values agree
+  through `useVals`/`placeUses`) with the same data;
+* `MemScopeLS`, `itemSim_ls`: the scope with the plain loads/stores and its per-item obligation
+  (`oneEv_op` at the plain accesses, `itemSim_br`'s cases otherwise);
+* **`arm_alloc_refines_ls`**: `arm_alloc_refines_br`'s conclusion for the functions of
+  `MemScopeLS`;
+* witness: `ArmAllocLSWitness.ls_premises`.
+
+The stack-slot, `sp` and `fp` offsets (`memFinalize` may lower them through `x16`, an event-free
+prefix of lines) are not in `LSMode`.
+-/
+
 namespace Concurrency.ArmAllocThread
 
 open Arm ArmFoot ArmThread ArmInstFoot ArmPrecise VCodeThread Backend Backend.Proof AllocThread
