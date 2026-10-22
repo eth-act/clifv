@@ -104,3 +104,11 @@ root = "FVTest.Link.LeanLdMain"
 [[lean_exe]]
 name = "clif-fuzz"
 root = "FVTest.Clif.Fuzz"
+
+[[lean_exe]]
+name = "stock-popcount-runtime"
+root = "FVTest.Backend.Lowering.StockPopcountProductionRuntime"
+
+[[lean_exe]]
+name = "stock-popcount-linked"
+root = "FVTest.Backend.Lowering.StockPopcountProductionLinked"

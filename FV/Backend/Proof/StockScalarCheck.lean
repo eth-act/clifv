@@ -7,6 +7,7 @@ import FV.Backend.Proof.StockScalarShiftDomain
 import FV.Backend.Proof.StockScalarCastDomain
 import FV.Backend.Proof.StockScalarBitDomain
 import FV.Backend.Proof.StockScalarPopcountDomain
+import FV.Backend.Proof.StockScalarMinMaxDomain
 
 namespace Backend.Stock.Scalar
 open Backend.Proof Backend.Proof.Driver
@@ -114,6 +115,23 @@ theorem popcountBodyEligible_sound {stm : Clif.Stmt} (checked : popcountBodyElig
       all_goals try contradiction
       exact Or.inr ⟨ty,x,rfl⟩
 
+/-- Actual original min/max syntax derives the reusable scalar source domain. -/
+theorem minmaxBodyEligible_sound {stm : Clif.Stmt} (checked : minmaxBodyEligible stm = true) :
+    Stock.Proof.MinMaxBody.Family stm.inst := by
+  simp only [minmaxBodyEligible,Bool.or_eq_true] at checked
+  rcases checked with old | minmax
+  · exact Or.inl (popcountBodyEligible_sound old)
+  · cases inst : stm.inst <;> simp only [minmaxEligible,inst] at minmax
+    all_goals try contradiction
+    next op ty x y =>
+      cases op <;> simp only [minmaxEligible] at minmax
+      all_goals try contradiction
+      all_goals first
+        | exact Or.inr ⟨false,false,_,_,_,rfl⟩
+        | exact Or.inr ⟨false,true,_,_,_,rfl⟩
+        | exact Or.inr ⟨true,false,_,_,_,rfl⟩
+        | exact Or.inr ⟨true,true,_,_,_,rfl⟩
+
 theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domain f := by
   simp only [sourceOk,Bool.and_eq_true] at checked
   obtain ⟨⟨⟨eligible,scope⟩,dominated⟩,abi⟩ := checked
@@ -125,10 +143,10 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
     have sourceShape : ∃ xs, b.term = .ret xs := by
       cases term : b.term <;> simp_all
     obtain ⟨xs,ret⟩ := sourceShape
-    have families : ∀ stm ∈ b.body, Stock.Proof.PopcountBody.Family stm.inst := by
+    have families : ∀ stm ∈ b.body, Stock.Proof.MinMaxBody.Family stm.inst := by
       intro stm member
       have supported := List.all_eq_true.mp body stm member
-      exact popcountBodyEligible_sound supported
+      exact minmaxBodyEligible_sound supported
     have noSret : f.sig.params.find? (·.purpose == .sret) = none := by
       apply List.find?_eq_none.mpr
       intro p member
@@ -139,7 +157,7 @@ theorem sourceOk_sound {f : Clif.Function} (checked : sourceOk f = true) : Domai
       intro any
       obtain ⟨p,member,sret⟩ := List.any_eq_true.mp any
       simpa [(normal_abi returns) p member] using sret
-    exact domain_of_popcount (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
+    exact domain_of_minmax (lowerScope_of scope) (dominated_of dominated) abi blocks families ret ordinary
   next => cases eligible
 
 

@@ -62,9 +62,18 @@ def popcountEligible (stm : Clif.Stmt) : Bool :=
 
 def popcountBodyEligible (stm : Clif.Stmt) : Bool := bitBodyEligible stm || popcountEligible stm
 
+/-- Signed and unsigned min/max extend source syntax while prior selectors remain fixed. -/
+def minmaxEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .binary .smin ty _ _ | .binary .smax ty _ _
+  | .binary .umin ty _ _ | .binary .umax ty _ _ => ty == .i32 || ty == .i64
+  | _ => false
+
+def minmaxBodyEligible (stm : Clif.Stmt) : Bool := popcountBodyEligible stm || minmaxEligible stm
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all popcountBodyEligible &&
+  | [b] => b.body.all minmaxBodyEligible &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
