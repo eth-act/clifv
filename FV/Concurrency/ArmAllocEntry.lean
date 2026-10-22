@@ -1,10 +1,10 @@
-import FV.Concurrency.ArmAllocBranch
+import FV.Concurrency.ArmAllocLS
 import FV.Concurrency.CallCompose
 
 /-!
 # Layer 4b from the ABI entry: the prologue (T2h, #311)
 
-Layer 4b's run-level theorems (`arm_alloc_refines_br`, …) start at the allocated code's entry
+Layer 4b's run-level theorems (`arm_alloc_refines_ls`, …) start at the allocated code's entry
 configuration, i.e. after the prologue. Here the precise Arm run starts at the **ABI entry**
 `R.s0` (`AbiCall`: the pc at the function's first word, an aligned `sp`):
 
@@ -20,8 +20,8 @@ configuration, i.e. after the prologue. Here the precise Arm run starts at the *
   source;
 * **`arm_alloc_refines_entry`**: every precise run from the ABI entry under `OkPriv` realizes a
   run of the allocated code from its entry configuration (any `BodyEntryW` world `w₀`), with
-  `arm_alloc_refines_br`'s conclusion: the prologue's write is private (`PrivA`), the rest by
-  `arm_alloc_refines_br`, composed by `CallCompose.Refines.app`.
+  `arm_alloc_refines_ls`'s conclusion: the prologue's write is private (`PrivA`), the rest by
+  `arm_alloc_refines_ls`, composed by `CallCompose.Refines.app`.
 -/
 
 namespace Concurrency.ArmAllocThread
@@ -282,8 +282,9 @@ theorem refines_privW {K : Type} {MK : K → AKind → Prop} {Priv : Nat → Pro
 entry realizes, on a prefix, a run of the allocated code from its entry configuration
 (`MConf.init` with the body-entry world `w₀`), with `Refines` (equal kinds, the addresses outside
 the world private, the atomic updates monitor pairs), up to the allocated code's return, trap or
-undefined behaviour (`Done`), for functions in `MemScopeB`. -/
-theorem arm_alloc_refines_entry {R : RL} (hR : R.Wf) (hsc : MemScopeB R) {ra : BitVec 64}
+undefined behaviour (`Done`), for functions in `MemScopeLS` (event-free forms, `fence`, `ldar`,
+`stlr`, LL/SC loops, block-ending branches, plain loads/stores). -/
+theorem arm_alloc_refines_entry {R : RL} (hR : R.Wf) (hsc : MemScopeLS R) {ra : BitVec 64}
     (hent : AbiCall R.fb R.base ra R.s0) {w₀ : ArmState}
     (hbe : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀) {mon : Mon} {ls : List Lab}
     {t' : ArmState × Mon} (hr : PRun Policy.arm R.step (OkPriv R) (R.s0, mon) ls t') :
@@ -311,7 +312,7 @@ theorem arm_alloc_refines_entry {R : RL} (hR : R.Wf) (hsc : MemScopeB R) {ra : B
     obtain ⟨v1, vm⟩ := v
     simp only at hv1
     subst hv1
-    obtain ⟨n2, trS, cE, ψ2, hn2, hM, href, hend⟩ := arm_alloc_refines_br hR hsc hq hA hrest
+    obtain ⟨n2, trS, cE, ψ2, hn2, hM, href, hend⟩ := arm_alloc_refines_ls hR hsc hq hA hrest
     refine ⟨_, P + n2, trS, cE, CallCompose.appMap 0 (evTr (ls.take P)).length id ψ2,
       by simp at hn2; omega, hM, ?_, ?_⟩
     · have e : evTr (ls.take (P + n2)) = evTr (ls.take P) ++ evTr ((ls.drop P).take n2) := by

@@ -625,8 +625,8 @@ they are; the per-thread layers are new files.
     prologue is the single-core run, its one event a private plain write to the fp/lr slot);
     `refines_privW`; **`arm_alloc_refines_entry`**: every precise run under `OkPriv` from the ABI
     entry `R.s0` (`AbiCall`) realizes a run of the allocated code from `MConf.init … w₀` (any
-    `BodyEntryW` world), `arm_alloc_refines_br`'s conclusion, the prologue's write private
-    (composed by `CallCompose.Refines.app`). Witness (`ArmAllocEntryWitness.lean`):
+    `BodyEntryW` world), `arm_alloc_refines_ls`'s conclusion (scope `MemScopeLS`), the prologue's
+    write private (composed by `CallCompose.Refines.app`). Witness (`ArmAllocEntryWitness.lean`):
     `entry_premises`, `run_load_entry` (the compiled `atomic_load` from its ABI entry through the
     prologue, the saves, `args`, the spill and the `ldar`), `refines_load_entry`.
   * open: `ItemSim` for plain loads/stores (multi-line address forms through x16; one-line

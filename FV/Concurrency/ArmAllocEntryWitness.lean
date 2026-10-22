@@ -8,7 +8,7 @@ The CLIF `%ld(i64) -> i64 { v1 = atomic_load.i64 v0; return v1 }` as the pipelin
 (`RealizeCompiled.WitnessL.RAL`), from its **ABI entry** `RAL.s0`:
 
 * `entry_premises`: every premise of `ArmAllocThread.arm_alloc_refines_entry` (`R.Wf`,
-  `MemScopeB`, `AbiCall`, `BodyEntryW` with the body-entry world `w₀L`);
+  `MemScopeLS`, `AbiCall`, `BodyEntryW` with the body-entry world `w₀L`);
 * `run_load_entry`: the precise run (reading the thread's own bytes, `OkPriv`) from the ABI entry
   through the prologue (its `stp` writing the fp/lr slot, `prun_fwd`), the 18 saves, the entry
   `args`, the spill of `x0` and back, and the `ldar`: one `acqR` event of 8 bytes at address 0,
@@ -31,10 +31,11 @@ theorem bodyRL : BodyEntryW RAL.F RAL.vc.EntryArg RAL.af RAL.s0 w₀L :=
   (E2E.Binary.bodyEntry_bodyOf RAL.af RAL.s0).w RAL.F entryArgRL
 
 /-- **Every premise of `arm_alloc_refines_entry`** for the compiled `atomic_load`. -/
-theorem entry_premises : RAL.Wf ∧ MemScopeB RAL ∧
+theorem entry_premises : RAL.Wf ∧ MemScopeLS RAL ∧
     AbiCall RAL.fb RAL.base 0x4000#64 RAL.s0 ∧
     BodyEntryW RAL.F RAL.vc.EntryArg RAL.af RAL.s0 w₀L :=
-  ⟨wfRL, memScopeB_of_memScopeL (memScopeL_of_memScope scopeRL), abiRL, bodyRL⟩
+  ⟨wfRL, memScopeLS_of_memScopeB (memScopeB_of_memScopeL (memScopeL_of_memScope scopeRL)), abiRL,
+    bodyRL⟩
 
 /-- **The precise run from the ABI entry through the `ldar`** (module doc). -/
 theorem run_load_entry : ∃ (lsP : List Lab) (e : Ev) (t' : ArmState × Mon),
