@@ -925,7 +925,7 @@ skeleton roots (midend.md "R0"). The R0 templates (`rule_auto_a`, `rule_auto_tv`
 certificates. Completeness would prove the optimiser never silently skips a pass on in-scope input.
 Large, low priority.
 
-In progress (#24, docs/contracts/midend.md "Completeness of the validators"). Measured on fv-demo,
+Done (#24, docs/contracts/midend.md "Completeness of the validators"). Measured on fv-demo,
 the survey, the corpus and the runtests: no stage check or validator ever rejects; the only
 rejections are ill-formed inputs (`call_indirect`, int/float `bitcast`). Done:
 `unreachableOk` (`Opt.unreachableOk_raw` on the decidable `blocksOkB`, implied by `wfCert`/`check`),
@@ -943,7 +943,8 @@ simplify on; `Opt.simpStageOk_of` reduces `SimpStageOk` to syntactic rule-set ob
 discharged for every rule set — the hand rules (`Opt.simpRulesProv_hand`) and the exported
 Cranelift rules with any allow-list (`Opt.simpRulesProv_isle`, `Opt.skelRulesProv_isle`) — so the
 mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.optimize_complete_exe`
-(`exeConfig`), `Opt.optimize_complete_default` (`FV/Opt/Proof/CompleteSimpAll.lean`).
+(`exeConfig`), `Opt.optimize_complete_default`, and at the executable compiler's entry point
+`Opt.optimizeExe_complete_cfg`/`_exe` (shape-safe inputs) (`FV/Opt/Proof/CompleteSimpAll.lean`).
 
 ### S1–S12. Scope extensions
 

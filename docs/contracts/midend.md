@@ -589,7 +589,9 @@ configuration (`FV/Opt/Proof/CompleteSimpAll.lean`): `Opt.simpStageOk_cfg cfg : 
 and `Opt.optimize_complete_cfg cfg f0 (h : ∃ i, check (removeUnreachable f0) = .ok i) :
 (optimizeReport cfg f0).2.passError = none ∧ (optimizeReport cfg f0).1 = runStages cfg
 (removeUnreachable f0)`, with the instances `Opt.optimize_complete_exe` (`exeConfig`) and
-`Opt.optimize_complete_default`; witness `Opt.CompleteSimpAll.witness_exe` (`x + 0 ⇒ x` with
+`Opt.optimize_complete_default`, and for `optimizeExe` (the executables' entry point, shape-safe
+inputs) `Opt.optimizeExe_complete_cfg`/`Opt.optimizeExe_complete_exe`; witnesses
+`Opt.CompleteSimpAll.witness_exe` and `witness_exe_entry` (`x + 0 ⇒ x` with
 `exeConfig`), and `Opt.CompleteSimpWitness.witness_hand` for the hand rules
 (`Opt.optimize_complete_hand`). The guards never fire on the inputs: `scripts/opt-compare.py`
 against the binary without them, 2642 files (corpus+extrt 50, runtests 395, survey and fv-demo
