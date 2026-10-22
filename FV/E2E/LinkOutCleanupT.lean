@@ -70,7 +70,7 @@ theorem chksWithT_resultsCleanupT {I : LinkInput} (hin : InScopePT I = true)
   have hga : getOk (Except.ok (ε := String) a) = a := rfl
   simp only [outChksT, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true, hga,
     progOf_resultsCleanupT] at ho
-  obtain ⟨⟨⟨⟨⟨⟨⟨hca, hcov⟩, hrets⟩, hent⟩, hout⟩, hsite⟩, hsr⟩, hci⟩ := ho
+  obtain ⟨hca, hcov, hrets, hent, hout, hsite, hsr, hci⟩ := ho
   have hS := lowerScopeT_of hs
   have hlc := lowerCheckT_complete (dominated_of hd) hS hl
   have hpc := Prep.prepCheck_complete hp (prune_prepDomain (prepDomain_ofT (dominated_of hd) hS hl))
