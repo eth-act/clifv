@@ -221,7 +221,8 @@ one linked name, a local symbol named like a global).
   `bundle_correct_source_peak_nobnd`, `bundle_correct_raw_nobnd`, `bundle_correct_raw_peak_nobnd`
   (`FV/Front/RawExeNB.lean`): the shipped compiler's theorems without `MemBounded` of the source
   run's reachable states, composed from `Link.DeadCleanup.compileExe_correct_source{,_peak}_nobnd`
-  (legalize128.md, "The memory bound derived").
+  (legalize128.md, "The memory bound derived"); with callee traps (`compileExeU`)
+  `bundle_correct_{source,raw}_trap{,_peak}_nobnd` (`FV/Front/RawExeTrapNB.lean`).
 * **The executable refines cg_clif's program (T7b, T7c).** `Front.bundle_correct_raw`,
   `bundle_correct_raw_peak`, `bundle_correct_raw_baseline`, `bundle_correct_raw_peak_baseline`:
   the same, about the runs of **`rawLink us sc`** for any `sc` with `RawScopingOk us sc` — the

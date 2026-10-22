@@ -167,8 +167,9 @@ Deferred:
   calls (environment contracts); the source run's memories below `2^64` (`Clif.run`'s bump
   allocator can exceed it; proven for slotless programs, `bounded_of_noSlots`; ~~for the shipped
   compiler~~ derived, A2/B1 #407: `Link.DeadCleanup.compileExe_correct_source{,_peak}_nobnd`,
-  `Front.bundle_correct_{source,raw}{,_peak}_nobnd`; still a premise of the baseline, optimising,
-  unwinding and trap-callee source theorems) and, for traps,
+  `Front.bundle_correct_{source,raw}{,_peak}_nobnd`, with callee traps
+  `compileExe_correct_source_trap{,_peak}_nobnd`, `Front.bundle_correct_{source,raw}_trap{,_peak}_nobnd`;
+  still a premise of the baseline, optimising and unwinding source theorems) and, for traps,
   the source run's `NoMemTrap` and the target run's `TrapsExplicit` (run conditions);
 - runs that trap inside a `__*ti3` helper (`i128` division by zero, `sdiv MIN, -1`): the
   backend theorem excludes extern traps (`TrapsExplicit` of the legalised run). Per function
