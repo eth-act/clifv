@@ -430,3 +430,28 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.WitnessL.realizes_one
 #print axioms Concurrency.RealizeCompiled.WitnessL.compiled_ofL -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.WitnessL.realizes_load -- witness: native_decide
+
+-- T2 (#311): layer 4b for the block-ending branches (block-rank measure, fall-through jumps)
+#print axioms Concurrency.ArmAllocThread.br_noEv
+#print axioms Concurrency.ArmAllocThread.reach_bE
+#print axioms Concurrency.ArmAllocThread.reach_rcbE
+#print axioms Concurrency.ArmAllocThread.reach_cbE
+#print axioms Concurrency.ArmAllocThread.labelOffsets_go_nodup
+#print axioms Concurrency.ArmAllocThread.af_nodup
+#print axioms Concurrency.ArmAllocThread.succ_of_label
+#print axioms Concurrency.ArmAllocThread.head_label
+#print axioms Concurrency.ArmAllocThread.μR_succ
+#print axioms Concurrency.ArmAllocThread.μR_lt
+#print axioms Concurrency.ArmAllocThread.csem_goto
+#print axioms Concurrency.ArmAllocThread.realizes_gotoE
+#print axioms Concurrency.ArmAllocThread.goto_op
+#print axioms Concurrency.ArmAllocThread.sameB_step
+#print axioms Concurrency.ArmAllocThread.opOutR_of
+#print axioms Concurrency.ArmAllocThread.opOut_okPriv
+#print axioms Concurrency.ArmAllocThread.memScopeB_of_memScopeL
+#print axioms Concurrency.ArmAllocThread.itemSim_br
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_br
+#print axioms Concurrency.ArmAllocThread.BranchWitness.scopeB
+#print axioms Concurrency.ArmAllocThread.BranchWitness.not_memScopeL
+#print axioms Concurrency.ArmAllocThread.BranchWitness.jump_dropped -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.BranchWitness.br_premises -- witness: native_decide
