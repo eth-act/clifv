@@ -28,6 +28,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Trick:** compute table properties with an untrusted generator that writes literal data, then check the data with small leaf-wise `decide +kernel` certificates (e.g. `TermSetData.lean` + `KillTab.lean`, `IselPrgTab.lean`). Split each conjunction and check one entry per leaf.
 - **Why:** whole-table `decide`/`native_decide` hit 20+ GB or needed compiled evaluation. Leaf-wise checks stay small and need no extra axioms (T6 removed every `native_decide` from the compiler theorems this way).
 
+### Split one leaf further: chunk its environments
+- **Problem:** one leaf of the typed coverage table (`stmtOkT rule_lower_2267`, a `select` rule on the integer-`select` family) has 256 pattern environments; its single `decide +kernel` was killed at 8, 16 and 22 GB, while its 30 other families take ~1 s together. Kernel memory grows with the environments checked in one `decide` (32 environments: 4.7 GB incl. 2.8 GB of imports).
+- **Trick:** prove the leaf from `envOkT` checks of 32-environment chunks (`(envs.drop (c*32)).take 32`) plus `isSome`/length certificates, glued by a small `all_of_chunks` lemma; find such leaves by `decide +kernel`-probing each rule and family separately under a memory cap. The generator (`IselCovTGen.heavy`) emits this for the listed rule/family pairs.
+- **Effect:** `IselCovTTabS30` builds in 119 s at 4.5 GB (was: killed at 22 GB).
+
 ### `assumption` at reducible transparency
 - **Problem:** after `ArmState` gained a field, `stlxr_congr` in `LoopRun.lean` ran out of heartbeats even at 8M: `assumption` was unfolding the state structure.
 - **Trick:** run the tactic's `assumption` with reducible transparency.
