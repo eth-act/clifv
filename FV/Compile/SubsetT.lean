@@ -205,12 +205,12 @@ theorem resTy_not_float_of_instE {f : Function} (hx : f.externs.all (sigE ·.2.s
   | callIndirect => simp [isCallIndirect] at hc
   | unary op ty x =>
     cases op <;> simp_all [Inst.resultTypes, instE, unaryTyE, unaryE, tyE] <;>
-      (subst ht; revert hi; cases ty <;> decide)
+      (split <;> simp_all)
   | _ =>
     simp_all [Inst.resultTypes, instE, tyE, binaryE, flagsE] <;>
       first
       | (subst ht; rfl)
-      | (subst ht; revert hi; rename_i ty _; cases ty <;> decide)
+      | (split <;> simp_all)
       | (revert hi; rename_i ty; subst ht; cases ty <;> decide)
       | skip
 

@@ -21,7 +21,8 @@ theorem mulhi_halfWidth_ofClif (t : Ty) :
       | .i64 => some (CTy.ofClif .i32)
       | .i128 => some (CTy.ofClif .i64)
       | .f32 => some (.float 16)
-      | .f64 => some (CTy.ofClif .f32) := by
+      | .f64 => some (CTy.ofClif .f32)
+      | .vec _ => none := by
   cases t <;> rfl
 
 -- Only the matched extensions' output type controls the half-width guard.

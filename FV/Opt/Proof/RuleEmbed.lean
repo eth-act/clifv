@@ -287,7 +287,7 @@ macro "ofInst_fwd" : tactic => `(tactic| (
   cases i
   case iconst t imm =>
     cases t <;> simp (config := {decide := true}) [ofInst, idata] at h <;>
-      exact ⟨_, _, by decide, rfl, h.symm⟩
+      first | exact ⟨_, _, by decide, by decide, rfl, h.symm⟩ | exact ⟨_, _, by decide, rfl, h.symm⟩
   case extend op t x =>
     cases op <;> (try simp (config := {decide := true}) [ofInst, idata] at h) <;> (subst h; simp)
   all_goals (try simp (config := {decide := true}) [ofInst, idata] at h)
@@ -295,12 +295,12 @@ macro "ofInst_fwd" : tactic => `(tactic| (
 
 @[opt_match] theorem ofInst_unaryImm {i : Inst} {fs : List V} :
     ofInst i = some (.data 53 35 fs) ↔
-      ∃ t imm, t ≠ .i128 ∧ i = .iconst t imm ∧
+      ∃ t imm, t ≠ .i128 ∧ t.isVec = false ∧ i = .iconst t imm ∧
         fs = [opcode 57, .int (imm64OfBits imm)] := by
   constructor
   · ofInst_fwd
-  · rintro ⟨t, imm, ht, rfl, rfl⟩
-    cases t <;> first | rfl | exact absurd rfl ht
+  · rintro ⟨t, imm, ht, hv, rfl, rfl⟩
+    cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
 @[opt_match] theorem ofInst_unary {i : Inst} {fs : List V} :
     ofInst i = some (.data 53 29 fs) ↔
@@ -352,10 +352,10 @@ macro "ofInst_fwd" : tactic => `(tactic| (
 /-! ## Types and immediates -/
 
 @[opt_match] theorem CTy.ofClif_inj {a b : Ty} : CTy.ofClif a = CTy.ofClif b ↔ a = b := by
-  cases a <;> cases b <;> simp [CTy.ofClif]
+  cases a <;> cases b <;> simp [CTy.ofClif, CTy.vecMarker]
 
-/-- The `u64` of a presented (non-`i128`) `iconst` immediate is its bits. -/
-theorem asU64_imm64OfBits {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+/-- The `u64` of a presented (non-`i128`, non-vector) `iconst` immediate is its bits. -/
+theorem asU64_imm64OfBits {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b : BitVec t.width) :
     Rust.asU64 (imm64OfBits b) = b.toNat := by
   have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
   have hlt : b.toNat < 2 ^ 64 := Nat.lt_of_lt_of_le b.isLt (Nat.pow_le_pow_right (by decide) hw)
