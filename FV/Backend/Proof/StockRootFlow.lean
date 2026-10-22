@@ -116,7 +116,7 @@ private theorem stock_root_flow_rules {f : Clif.Function} {ctx : Ctx}
       simp only [h587, bne_self_eq_false, Bool.false_or, Bool.and_eq_true, beq_iff_eq] at hop
       have hn := stock_pinned_names view hctx hi0 hc hop.1 kind_nullAry kind_nop hm
       rw [Proof.variantNames_Nop] at hn
-      have hnop := instNames_nop (Option.some.inj hn).symm
+      have hnop := Backend.Proof.Driver.instNames_nop (Option.some.inj hn).symm
       subst hnop
       obtain ⟨tys, hty, _, hlen⟩ := hctx.resTys ii info .nop hi0 hc
       simp [Clif.Inst.resultTypes] at hty
