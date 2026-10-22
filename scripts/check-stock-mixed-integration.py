@@ -188,7 +188,8 @@ open Lean Elab Command
 run_cmd do
   let env ← getEnv
   let generated := fun (name : Name) =>
-    name.toString.startsWith "Crates.StockMixed" || name.toString.startsWith "Crates.MixedCLI"
+    let owner := (privateToUserName? name).getD name
+    owner.toString.startsWith "Crates.StockMixed" || owner.toString.startsWith "Crates.MixedCLI"
   let mut count : Nat := 0
   for (name, _) in env.constants.toList do
     unless generated name do continue
