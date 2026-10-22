@@ -1014,6 +1014,30 @@ unknown execution metadata remain gaps; this does not claim full CI equivalence.
 See [STOCK-COMPILER-COMPARISON.md](STOCK-COMPILER-COMPARISON.md) for prerequisites,
 the precise contract, retained artifacts, progress tracking and baseline results.
 
+## Fast proof-edit loop for agents (`turbo-lean check`, optional)
+
+To iterate on one theorem in a heavy proof module without rebuilding the module (KillTab
+1,697 s → 0.1 s per edit; see `docs/research/turbo-lean.md`):
+
+```bash
+# once: git clone https://github.com/Th0rgal/turbo-lean /tmp/turbo_trial
+#       (cd /tmp/turbo_trial/lean && lake build) && (cd /tmp/turbo_trial && cargo build --release -p turbo-lean)
+lake build <imports of the module>          # dependencies must be built (shared cache)
+export TURBO_LEAN_TIMEOUT_MS=3600000        # the worker's default limit is 30 s; set before the first check
+export TURBO_LEAN_HOME=/tmp/<name>_turbo TURBO_LEAN_TELEMETRY=off
+FV_MEMCAP=8G LEAN_NUM_THREADS=2 scripts/memcap.sh \
+  /tmp/turbo_trial/target/release/turbo-lean --json check FV/Backend/Proof/KillTab.lean --decl nop_rhs
+# edit the proof, rerun the same command: only that theorem is re-elaborated
+```
+
+- Earlier theorems of the file are replaced by `sorry`, and verdicts are cached, so a pass is
+  **not** a proof of the module. Before a PR, run the normal `lake build` and axiom audits.
+- If the edited theorem is itself the expensive one (a large `decide +kernel`), it costs as much
+  as in lake. Theorems using `native_decide` are always rejected.
+- The first call leaves `turbo-lean serve` and `turbo_zygote` daemons running (1–4 GB each).
+  When you are done, kill those PIDs (yours only: they are in your memcap scope's
+  `cgroup.procs`).
+
 ## Troubleshooting
 
 * `no such command: fv`: put `rust/target/release` on `PATH`.
