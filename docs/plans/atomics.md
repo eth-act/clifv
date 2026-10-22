@@ -339,7 +339,7 @@ they are; the per-thread layers are new files.
   buffering through plain accesses (no dependency ordering, §2), so a consistent execution need
   not have a prefix in which all threads behaved. It is a property of the program (its stacks
   are disjoint and nobody else writes them), as in CASCompCert's rely/guarantee premise.
-* **Layer 2: isel with interference (open; 2a–2d done).** The per-statement simulation of the M7
+* **Layer 2: isel with interference (open; 2a–2d done, 2e CLIF side done).** The per-statement simulation of the M7
   driver (`LowerSim.stmt_step`, behind `IselSim`) as `Refines` from `ClifThread.CStep` to the
   VCode event semantics. `stmt_step` does not reveal which addresses the VCode segment accesses
   (finding 3). Two ways to recover them:
@@ -398,9 +398,24 @@ they are; the per-thread layers are new files.
     `0x8000` under `csem`), `atomicLoad_facts0`, `store_facts0`. Open: `access_in_events` on a
     statement of a compiled function (its `LowerInstOk` from `instCalls_of_rules`, `RunOut`
     from `ifoot_csem` along the run), part of 2e.
-  * **2e (assembly):** the CLIF run reading the bytes the VCode run read (receptiveness of
-    `CStep`), `ψ` mapping each CLIF event to its segment's memory event, `Refines` with `Priv` =
-    the frame (the segment's other writes: outgoing call arguments).
+  * **2e (assembly; open, CLIF side done):** the CLIF run reading the bytes the VCode run read
+    (receptiveness of `CStep`), `ψ` mapping each CLIF event to its segment's memory event,
+    `Refines` with `Priv` = the frame (the segment's other writes: outgoing call arguments).
+    * *CLIF thread steps (done, `FV/Concurrency/ClifCStep.lean`):* `cstep_of_eval` (a statement
+      whose outcome on every byte memory agreeing with its read events is the same values and
+      memory with its write events applied is a `CStep`), and from one successful `Clif.step`
+      the `CStep` of `load` (`naR` read of its access), `store` (`naW` write of the value's bytes
+      `valB`), `atomic_load`/`atomic_store` (`scR`/`scW`), `atomic_rmw` (read, write of the new
+      value), `atomic_cas` (read, and the write when the comparison succeeds) and `fence`.
+      Witnesses (`ClifCStepWitness.lean`): `cstep_atomicLoad0`, `cstep_store0`,
+      `cstep_atomicCas0`.
+    * open: the statements without events (their outcome does not read the bytes), the VCode
+      side per statement (the segment's one event is the CLIF access: `access_in_events` with
+      `segShape`'s equal size, and its bytes are the CLIF bytes by `MemRelOk.bytes`; the
+      footprint premises of `RunOut` along the run: no error, aligned `sp`, `csemWF`), the match
+      after patching both memories with the read bytes (`MemRelOk.store` bytewise), determinism
+      of `VStep` (the thread's segment is `stmt_step`'s forward run), and the induction over the
+      thread run.
 
   Outside the multi-threaded scope (no `CStep`, or two VCode events per CLIF event): `i128`
   loads/stores (two `ldr`/`str`, a mixed-size question, T2i #317) and `stack_load`/

@@ -80,3 +80,5 @@ import FV.Concurrency.IselClif
 import FV.Concurrency.IselClifWitness
 import FV.Concurrency.SegShape
 import FV.Concurrency.SegShapeWitness
+import FV.Concurrency.ClifCStep
+import FV.Concurrency.ClifCStepWitness
