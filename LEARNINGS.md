@@ -87,7 +87,7 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 ### Classify once per section, not per relocation; sum sizes once
 - **Problem:** `lean-link --ld` deciding `compileExe_total_ldIn`'s premises took 12–122 s per survey/fv-demo executable (A1, #409). Per-check timing (`IO.lazyPure` around each `Bool`) showed `relsInB` at 10–11 s (each relocation's `tgtOf` scanned every output section's parts, `secsOf`) and `reachOkB` at up to 108 s (`List.lookup` of the link map and the region's size `span sizes` recomputed per referenced name).
 - **Trick:** decision variants proven equal to the statements' definitions: `relsInFastB` reads the per-section classification from a `Std.HashMap` built once (`secCls`, `secCls_getD`: its entry is `secsOf`'s answer; `relsInFastB_eq` by `simp` then `rfl`), `reachOkPar` uses `addrMap` and the size computed once (`reachOkPar_eq`, `simp` with `addrMap_get`).
-- **Numbers:** the larger fv-demo executable 121,956 ms → 2,889 ms (`relsInB` 10,493 → 88 ms, `reachOkB` 108,454 → 303 ms); the other 17,232 → 1,130 ms (`FV/Link/Ld/RelsFast.lean`, `FV/Link/ExeLdIn.lean`).
+- **Numbers:** the larger fv-demo executable 121,956 ms → 2,889 ms (`relsInB` 10,493 → 88 ms, `reachOkB` 108,454 → 303 ms); the other 17,232 → 1,130 ms (`FV/Link/Ld/RelsFast.lean`, `FV/Link/ExeLdIn.lean`). Same mistake in the link spec's symbol lookups (`symHint`/`firstVals` rebuilt per link-map entry in `inSymsB`/`pinAddr`; fix: `inSymsWith`/`pinAddrWith` taking the tables, built once by `let` outside the `all`/`filterMap`): deps executables (about 20,000 functions) 890–1,321 s → 29–36 s (`specPreB` 254–571 s → 3.8–5.5 s; `FV/Link/Ld/SpecTotal.lean`).
 
 ## From other projects (not yet measured in clifv)
 

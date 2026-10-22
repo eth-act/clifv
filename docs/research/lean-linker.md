@@ -398,4 +398,5 @@ the static executable, and theorems state that its output meets those conditions
   `cargo fv`'s program-part steps). `lean-link --ld` decides the premises with the cleanup
   compiler (`ldInCheck`; `relsInFastB`, `reachOkPar`: proven equal) after checking that
   `atSyms` gives the compiled spec's own addresses (`ldSpec_self`). Fresh links (2026-10-22): the
-  premises hold on survey 18 / 18 (0.5–4.1 s), fv-demo 2 / 2 (1.1–2.9 s) and deps 4 / 4.
+  premises hold on survey 18 / 18 (0.5–4.1 s), fv-demo 2 / 2 (1.1–2.9 s) and deps 4 / 4
+  (29–36 s, most of it `InScopeIn` and `reachOkB`); tests unchanged (53, 21, 16 passed).
