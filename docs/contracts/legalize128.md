@@ -401,8 +401,20 @@ indirect call keeps its signature because `FnInput.opt` keeps its input when the
 one of the input's indirect-call signatures (`keepsIndB`, `FnInput.opt_keepsInd`: branch folding
 and `removeUnreachable` can drop a call site the source run never reaches, but whose callee the
 stack budget must still count). Witnesses `crate-proofs/Crates/OptNoBndWitness.lean`,
-`crate-proofs/Crates/OptSourcePeakNBWitness.lean`. Still with `hbnd`: the unwinding source
-theorems.
+`crate-proofs/Crates/OptSourcePeakNBWitness.lean`. With unwinding:
+`Front.bundle_correct_raw_unwind_src_nobnd` (`FV/Front/RawExeUnwindSrcNB.lean`), the bound from
+`E2E.SrcBoundedX` (`srcBoundedX_slotless`, `srcBoundedX_placed`: `bounded_slotless`/
+`bounded_placed` for `Clif.runLoopX`; a raise leaves the extern's memory, at the raising frame's
+handler or after the left frames freed their slots and popped their stack pointers, a
+`try_call`'s frame stays on the stack below its callee like any caller). Its stack is `MachAt`'s
+premise `StackAvail (κ M g)` at the machine's budget `M`, so for a source run ending within `N`
+steps (call depth below `N`, `reachesX_depth`) the bound comes from `StackAvail` at some
+`M ≥ N` (`Budget κ` covers depth `M`); when there is none, `MachAt` at every `M ≥ N` holds
+vacuously (a return's split results exist, `expRel_exists`). Witnesses
+`Front.RawExeUnwindSrcNBWitness.raw_caught_nb`/`raw_unwound_nb` (`raw_legal_unwind` with the
+derived bound on the `try_call`/raise program of `LegalProgXWitness`), `placed_w` (the oracle
+case). Still with `hbnd`: the CLIF half `Front.raw_legal_unwind` (no stack or entry-memory
+premise to derive it from).
 
 **Recursive programs and the shipped compiler (L1f, #217).** `Link.compileExe_correct_source_peak`
 (`FV/Link/ExeSource.lean`): the same without `hc`, the outside caller providing `frameDrop (art

@@ -7,6 +7,7 @@ import FV.Front.RawExeTrapTNB
 import FV.Link.DeadCleanupExeTrapTNBWitness
 import FV.Link.OptExeSourceNB
 import FV.Link.DeadCleanupOptExeSourceNB
+import FV.Front.RawExeUnwindSrcNBWitness
 #print axioms E2E.SrcBounded.step_next_rich
 #print axioms E2E.SrcBounded.bounded_slotless
 #print axioms E2E.SrcBounded.bounded_placed
@@ -63,3 +64,12 @@ import FV.Link.DeadCleanupOptExeSourceNB
 #print axioms Link.DeadCleanup.srcBoundedOpt_peak
 #print axioms Link.DeadCleanup.compileExeOpt_correct_source_nobnd
 #print axioms Link.DeadCleanup.compileExeOpt_correct_source_peak_nobnd
+#print axioms E2E.SrcBoundedX.reachesX_depth
+#print axioms E2E.SrcBoundedX.srcBoundedX_slotless
+#print axioms E2E.SrcBoundedX.srcBoundedX_placed
+#print axioms Front.expRel_exists
+#print axioms Front.bundle_correct_raw_unwind_src_nobnd
+#print axioms Front.RawExeUnwindSrcNBWitness.slotless_w -- witness: native_decide
+#print axioms Front.RawExeUnwindSrcNBWitness.raw_caught_nb -- witness: native_decide
+#print axioms Front.RawExeUnwindSrcNBWitness.raw_unwound_nb -- witness: native_decide
+#print axioms Front.RawExeUnwindSrcNBWitness.placed_w -- witness: native_decide

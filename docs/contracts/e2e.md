@@ -425,8 +425,10 @@ the `retN`/value arguments).
   a function mentions `i128`, the linked environment's `HelperOk`/`ExtLegal`/`EnvKeepsBounded`
   and `ExtLegalX`/`EnvKeepsAllocsX`/`ExnArityOk` (`Clif.Rust.xenvWith` has them); `Opt.Legal.exnOk`
   of every legalised function; the source entry with the compiled entry's slots and renamed
-  memory; the source run's memories below `2^64`; for traps, no load/store trap on the source
-  run. *The program-level legalisation with unwinding* (`FV/E2E/LegalProgX.lean`,
+  memory; the source run's memories below `2^64` (dropped by
+  `Front.bundle_correct_raw_unwind_src_nobnd`, `FV/Front/RawExeUnwindSrcNB.lean`: derived by
+  `E2E.SrcBoundedX` from `MachAt`'s stack, legalize128.md "The memory bound derived"); for traps,
+  no load/store trap on the source run. *The program-level legalisation with unwinding* (`FV/E2E/LegalProgX.lean`,
   **`E2E.LegalProgram.legalProg_refinesX`**): S3's `legalProg_refines` for `Clif.runLoopX` on
   `ProgCtxX` (`ProgCtx` plus the unwinding contracts where a function mentions `i128`, `IndScopeX`
   with indirect calls, `exnOk` of every legalisation) from good states (`GoodFromX`); proof: S3's
