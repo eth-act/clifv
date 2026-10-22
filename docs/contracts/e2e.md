@@ -4279,7 +4279,10 @@ E2E.backend_correct_final_cleanup_trapcall
 * **Trapping callees' contract** `XTrapsOk`: where an extern's CLIF semantics traps (arguments
   and memory related as in `XCallsOk`), its machine semantics `X.call` is `none` — the outside
   code does not return there (a `__*ti3` helper with divisor zero, a panic). It holds trivially
-  for callees that never trap (`xTrapsOk_of_noTrap`).
+  for callees that never trap (`xTrapsOk_of_noTrap`). Since S5 the indirect clause (and
+  `TrapCallSem`'s) places the arguments by `ArgsAt` (registers and outgoing area); the former
+  8-register shape is `XTrapsOkRegs`, which implies `XTrapsOk` for signatures of at most 8
+  parameters (`xTrapsOk_of_regArgs`).
 * **Scope of S9a**: functions without `try_call`/`try_call_indirect` terminators, in a program
   without functions (`p.funcs = []`, the per-function theorems' `p.bare` in the linked
   theorems), whose lowering passes the unwinding validator `lowerCheckU` (decided by
