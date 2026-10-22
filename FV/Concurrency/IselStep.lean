@@ -179,6 +179,35 @@ theorem vtrun_patchN {vc : VCode} {sem : ISem CV ArmState}
   | ret v w => cases h2
   | halt w => cases h2
 
+/-- A segment that stops at instruction `k`: `k` counted steps to it (`seqRun_stop_star`). -/
+theorem seqRun_stop_starN {V W : Type} {vc : VCode} {sem : ISem V W} {b : Nat} {vb : VBlock}
+    (hvb : vc.blocks[b]? = some vb) :
+    ∀ {ms : List MInst} {k0 : Nat} {ρ : Nat → V} {w : W} {k : Nat} {i : MInst}
+      {ops : Array Operand} {ρ₁ : Nat → V} {w₁ : W} {outs : List V} {w₂ : W} {ctl : Ctl},
+    SegAt vb k0 ms → seqRun sem ms ρ w = some (.stop k i ops ρ₁ w₁ outs w₂ ctl) →
+    StarN (VStep vc sem) k (.run ⟨b, k0, ρ, w⟩) (.run ⟨b, k0 + k, ρ₁, w₁⟩) ∧ k < ms.length ∧
+      vb.insts[k0 + k]? = some i ∧ i.operands = .ok ops ∧
+      sem i (vuses ops ρ₁) w₁ = some (outs, w₂, ctl) ∧
+      outs.length = (ops.toList.filter Operand.isDef).length ∧ ctl ≠ .next := by
+  intro ms
+  induction ms with
+  | nil => intro _ _ _ _ _ _ _ _ _ _ _ _ h; simp [seqRun] at h
+  | cons i₀ ms ih =>
+    intro k0 ρ w k i ops ρ₁ w₁ outs w₂ ctl hseg h
+    rcases seqRun_cons_stop h with
+      ⟨rfl, rfl, hops, rfl, rfl, hsem, hlen, hne⟩ | ⟨k', ops₀, outs₀, w₃, rfl, hops₀, hsem₀, hlen₀, hrest⟩
+    · exact ⟨by simpa using StarN.refl _, by simp, by simpa using hseg.head, hops, hsem, hlen, hne⟩
+    · obtain ⟨hstar, hk, hi, hops, hsem, hlen, hne⟩ := ih hseg.tail hrest
+      have hlt : k0 + 1 < vb.insts.size := by
+        have := (Array.getElem?_eq_some_iff.mp hi).1; omega
+      have hstep : VStep vc sem (.run ⟨b, k0, ρ, w⟩)
+          (.run ⟨b, k0 + 1, vdefUpd ops₀ outs₀ ρ, w₃⟩) :=
+        VStep.step hvb hseg.head hops₀ hsem₀ hlen₀ (VNext.next hlt)
+      refine ⟨?_, by simp; omega, by simpa [Nat.add_assoc, Nat.add_comm 1 k'] using hi, hops,
+        hsem, hlen, hne⟩
+      rw [show k0 + (k' + 1) = k0 + 1 + k' by omega]
+      exact .step hstep hstar
+
 /-! ## The statement step with its endpoint -/
 
 section
@@ -197,9 +226,11 @@ theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
       s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat)
     {s' : Clif.State} (hs : Clif.step env p s = .next s') :
-    ∃ (seg : List MInst) (ρ' : Nat → CV) (w' : W),
-      StarN (VStep vc sem) seg.length (.run ⟨b, k, ρ, w⟩) (.run ⟨b, k + seg.length, ρ', w'⟩) ∧
-      Match f ctx R gn bl A MR slots s' ⟨b, k + seg.length, ρ', w'⟩ := by
+    ∃ (B : Clif.Block) (j : Nat) (ρ' : Nat → CV) (w' : W), f.blocks[b]? = some B ∧
+      B.body[j]? = some stm ∧ k = pos f R bl b j ∧
+      StarN (VStep vc sem) (seg f R bl b j).length (.run ⟨b, k, ρ, w⟩)
+        (.run ⟨b, k + (seg f R bl b j).length, ρ', w'⟩) ∧
+      Match f ctx R gn bl A MR slots s' ⟨b, k + (seg f R bl b j).length, ρ', w'⟩ := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
   subst hk
@@ -280,7 +311,9 @@ theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       rw [hseg] at hsegat
       rw [pos_succ, hseg] at hlt
       have hstar := seqRun_fall_starN hvb hsegat (by simpa using hlt) hsr'
-      refine ⟨_, ρ', w', hstar, hcall, hfunc, hslots, by simpa [fr', restrict, hslots] using hmr,
+      refine ⟨B, j, ρ', w', hB, hstm, rfl, by rw [hseg]; exact hstar, ?_⟩
+      rw [hseg]
+      refine ⟨hcall, hfunc, hslots, by simpa [fr', restrict, hslots] using hmr,
         B, j + 1, hB, hterm, hjlt, hrest, ?_, ?_, ?_⟩
       · simp [pos_succ, hseg]
       · -- held
@@ -392,6 +425,213 @@ theorem stmt_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
           · rw [hres]
             exact lookup_zip_nodup hnodup (setMany_length hset) m x _ hxm hvm
     · cases hs
+
+/-- **The terminator step with its endpoint** (`LowerSim.term_step`, branches): the terminator's
+code (and an edge block's `jump`) runs from the matched configuration to the successor's first
+statement in a counted number of steps, matching the CLIF state after the branch. -/
+theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    (hnt : s.frame.term.isTry = false) {s' : Clif.State} (hs : Clif.step env p s = .next s') :
+    ∃ (n : Nat) (vs' : VState CV W), StarN (VStep vc sem) n (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+      Match f ctx R gn bl A MR slots s' vs' := by
+  obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
+  simp only at hk hheld hcons hB hmem
+  subst hk
+  have hjn : j = B.body.length := by
+    rw [hbd] at hbody
+    have := List.drop_eq_nil_iff.mp hbody
+    omega
+  subst hjn
+  obtain ⟨L, hL⟩ := H.blow hB
+  obtain ⟨vb, hvb, -, -, htemp, hst0t, hnontry, -, hcode, htne, -, hbargs, hsucc⟩ :=
+    H.shape.blk b B L hB hL
+  have hBnt : B.term.isTry = false := hterm ▸ hnt
+  obtain ⟨htl0, hdata, out, tr, hrunT⟩ := hnontry hBnt
+  obtain ⟨ranges, hctx⟩ := H.shape.hctx
+  have htlen : TargetsLen B.term L.targets := by
+    intro x d tbl hT
+    have hs := hsucc
+    rw [hT] at hs
+    obtain ⟨hlt, -⟩ := hs
+    rw [hlt]
+    simp [dests]
+  have hok := H.terms f ctx (L.start + B.body.length) (abiTerm f B.term) L.data L.targets out
+    L.tst L.tst' tr H.shape.ctxInv (brIdxTyped_abiTerm (H.brIdx B (List.mem_of_getElem? hB)))
+    (targetsLen_abiTerm htlen) (H.shape.tslot b B L hB hL)
+    (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0t) hdata htemp
+    (by rw [termCall_abiTerm]; exact hrunT)
+  obtain ⟨hargsTA, hnoclobT, -⟩ := H.cert.term b B L hB hL
+  have hargsT : ∀ y ∈ termArgs B.term, y ∈ A b B.body.length :=
+    fun y hy => hargsTA y (termArgs_abiTerm hy)
+  let fr' := restrict s.frame (A b B.body.length)
+  let ρ₀ : Nat → CV := fun n => ρ (gn n)
+  have hvh : ValsHeld fr' ρ₀ := by
+    intro x v hx
+    have hxA : x ∈ A b B.body.length := restrict_regs_isSome (by rw [hx]; rfl)
+    obtain ⟨v', hv', hh⟩ := hheld x hxA
+    rw [restrict_regs_of_mem hxA, hv'] at hx
+    cases hx
+    exact hh
+  have hrun' := hok.run fr' s.mem ρ₀ w
+    (by simp [fr', restrict, hfunc, termCtx, H.shape.ctxInv.func]) hvh (dfgCons_termCtx hcons _ _)
+    (by simpa [fr', restrict, hslots] using hmem)
+  let D : Nat → Prop := fun n => L.tst.nextVreg ≤ n ∧ n < L.tst'.nextVreg
+  have hD : ∀ d, D d → gn d = d := fun d hd => H.shape.temps d (by
+    have : L.tst.nextVreg ≤ d := hd.1; omega)
+  have hdefs : ∀ m ∈ L.tst'.emitted.toList, ∀ d ∈ vdefs m, D d := hok.defs
+  have hAg : Agree gn D ρ₀ ρ := fun _ _ => rfl
+  have huses_of : UsesOk L.tst fr' L.tst'.emitted.toList →
+      ∀ m ∈ L.tst'.emitted.toList, ∀ u ∈ vuseNums m, D u ∨ ¬ D (gn u) := by
+    intro hU m hm u hu
+    rcases hU m hm u hu with h | h
+    · by_cases h' : u < L.tst'.nextVreg
+      · exact .inl ⟨h, h'⟩
+      · right
+        rw [H.shape.temps u (by omega)]
+        intro hd; exact h' hd.2
+    · right; exact hnoclobT u (restrict_regs_isSome h)
+  have hren := seqRun_rename (sem := sem) (ρ₀ := ρ₀) (ρ := ρ) (w := w) H.shape.ren
+    (H.dsem.rename R gn H.shape.ren) hD hdefs
+  obtain ⟨hsegat, hsize⟩ := tseg_at hcode
+  rw [tseg_eq_none hL htl0] at hsegat hsize htne
+  have hstep : Clif.step env p s = Clif.stepTerm env p s B.term := by
+    rw [Clif.step_term env p s hbody, hterm]
+  have hkeep : ∀ {k' i ops ρ₁ w₁ outs w₂ ctl ρ₁'},
+      seqRun sem L.tst'.emitted.toList ρ₀ w = some (.stop k' i ops ρ₁ w₁ outs w₂ ctl) →
+      Agree gn D (vdefUpd ops outs ρ₁) (vdefUpd (ops.map (rnOp gn)) outs ρ₁') →
+      ∀ x ∈ A b B.body.length, vdefUpd (ops.map (rnOp gn)) outs ρ₁' (gn x) = ρ (gn x) := by
+    intro k' i ops ρ₁ w₁ outs w₂ ctl ρ₁' hsr hA2 x hx
+    have hnd : ¬ D x := by
+      have h4 : x < st0.nextVreg := H.cert.small _ _ x hx
+      intro hd
+      have h3 : L.tst.nextVreg ≤ x := hd.1
+      exact absurd (Nat.lt_of_lt_of_le h4 hst0t) (Nat.not_lt.mpr h3)
+    rw [← hA2 x (.inr (hnoclobT x hx))]
+    exact (seqRun_stop_frame (fun m hm hxm => hnd (hdefs m hm x hxm)) hsr).2
+  have hargsR : ∀ y ∈ termArgs B.term, fr'.regs y = s.frame.regs y :=
+    fun y hy => restrict_regs_of_mem (hargsT y hy)
+  have hne : dests B.term ≠ [] := by
+    intro hd
+    rw [hstep] at hs
+    cases hT : B.term with
+    | ret xs => rw [hT] at hs; exact absurd hs ((stepTerm_ret (env := env) (p := p) (s := s)
+        (xs := xs) hcall).1 s')
+    | trap c => rw [hT] at hs; simp [Clif.stepTerm] at hs
+    | returnCall fn args => exact absurd hT (H.noTail B (List.mem_of_getElem? hB) fn args)
+    | tryCall _ _ _ => rw [hT] at hBnt; cases hBnt
+    | tryCallIndirect _ _ _ => rw [hT] at hBnt; cases hBnt
+    | jump bc => rw [hT] at hd; simp [dests] at hd
+    | brif c t e => rw [hT] at hd; simp [dests] at hd
+    | brTable x d tbl => rw [hT] at hd; simp [dests] at hd
+  rw [hstep] at hs
+  obtain ⟨j', bc, fr2, hbi, hbc, hent, rfl⟩ := stepTerm_branch hne hs
+  have hbr : (∀ i, L.tst'.emitted.toList.getLast? = some i → i.targets = L.targets) ∧
+      ∀ j, branchIdx fr' B.term = .ok j → UsesOk L.tst fr' L.tst'.emitted.toList ∧
+        ∃ k i ops ρ₁ w₁ outs w₂,
+          seqRun sem L.tst'.emitted.toList ρ₀ w = some (.stop k i ops ρ₁ w₁ outs w₂ (.goto j)) ∧
+          k + 1 = L.tst'.emitted.toList.length ∧ MR fr'.slots s.mem w₂ := by
+    cases hT : B.term with
+    | jump bc0 => rw [hT] at hrun'; exact hrun'
+    | brif c t e => rw [hT] at hrun'; exact hrun'
+    | brTable x d tbl => rw [hT] at hrun'; exact hrun'
+    | _ => rw [hT] at hne; simp [dests] at hne
+  obtain ⟨htg, hgo⟩ := hbr
+  have hbi' : branchIdx fr' B.term = .ok j' := by
+    rw [← hbi]
+    cases hT : B.term with
+    | brif c t e =>
+      rw [hT] at hargsR
+      simp only [branchIdx, Clif.Frame.get, hargsR c (by simp [termArgs])]
+    | brTable x d tbl =>
+      rw [hT] at hargsR
+      simp only [branchIdx, Clif.Frame.get, hargsR x (by simp [termArgs])]
+    | _ => rfl
+  obtain ⟨hU, k', i, ops, ρ₁, w₁, outs, w₂, hsr, hk1, hmr⟩ := hgo j' hbi'
+  obtain ⟨ρ₁', hsr', -, hA2⟩ := (hren (huses_of hU) hAg).2 hsr
+  obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_starN hvb hsegat hsr'
+  obtain ⟨hmk, -⟩ := seqRun_stop_mem hsr
+  have hlast : L.tst'.emitted.toList.getLast? = some i := by
+    rw [List.getLast?_eq_getElem?, ← hk1, Nat.add_sub_cancel]; exact hmk
+  have hK : pos f R bl b B.body.length + k' + 1 = vb.insts.size := by
+    rw [hsize, List.length_map, ← hk1]; omega
+  have hback : vb.insts.back? = some (i.mapRegs R) := by
+    rw [Array.back?_eq_getElem?, ← hK, Nat.add_sub_cancel]; exact hi
+  obtain ⟨ss, ps, hcfg⟩ := H.cfg
+  have hsucc_eq : ∀ jj, succOf vc b jj = L.targets[jj]? := fun jj => by
+    rw [succOf_eq H.shape.labels hcfg hvb hback, targets_mapRegs, htg i hlast]
+  have hρ₂ := hkeep hsr hA2
+  have hbcmem : bc ∈ dests B.term := List.mem_of_getElem? hbc
+  have hmr' : MR slots s.mem w₂ := by simpa [fr', restrict, hslots] using hmr
+  split at hsucc
+  · rename_i bc0 hT
+    rw [hT] at hbargs hbc
+    obtain ⟨tl, htl, htgs⟩ := hsucc
+    have hj0 : j' = 0 ∧ bc = bc0 := by
+      cases j' with
+      | zero => simp [dests] at hbc; exact ⟨rfl, hbc.symm⟩
+      | succ n => simp [dests] at hbc
+    obtain ⟨rfl, rfl⟩ := hj0
+    obtain ⟨TB, hTB, hlenA, hne0, hM⟩ := enter_match_br H hB hcall hfunc hslots hheld hcons hbcmem
+      htl hent hρ₂ hmr'
+    obtain ⟨Lt, hLt⟩ := H.blow hTB
+    obtain ⟨vbt, hvbt, -, -, -, -, -, -, -, -, hpt, -, -⟩ := H.shape.blk tl TB Lt hTB hLt
+    simp only [hne0, ite_false] at hpt
+    have henv := edgeEnv_eq (V := CV) hvb hvbt (xs := bc.args.map gn) (ps := TB.params.map (·.1))
+      (by rw [hbargs]; simp [List.map_map, Function.comp_def, H.shape.ren.vreg])
+      (by rw [hpt]; simp [List.map_map, Function.comp_def]) (by simp; omega)
+      (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
+    exact ⟨_, _, hstar.trans (StarN.step (VStep.step hvb hi hops hsem hlen
+      (VNext.goto hK (by rw [hsucc_eq, htgs]; rfl) henv)) (.refl _)), hM⟩
+  · rename_i fn0 args0 et0 hT
+    rw [hT] at hBnt; cases hBnt
+  · rename_i callee0 args0 et0 hT
+    rw [hT] at hBnt; cases hBnt
+  · rename_i hnj _ _
+    have hbargs' : vb.branchArgs = #[] := by
+      rw [hbargs]; split
+      · rename_i bc0 hT; exact absurd hT (hnj bc0)
+      · rfl
+    obtain ⟨hlt, hall⟩ := hsucc
+    have hjlt : j' < L.targets.length := by
+      rw [hlt]; exact (List.getElem?_eq_some_iff.mp hbc).1
+    obtain ⟨tl, htl, hnil, hedge⟩ := hall j' bc L.targets[j'] hbc (List.getElem?_eq_getElem hjlt)
+    obtain ⟨TB, hTB, hlenA, hne0, hM⟩ := enter_match_br H hB hcall hfunc hslots hheld hcons hbcmem
+      htl hent hρ₂ hmr'
+    obtain ⟨Lt, hLt⟩ := H.blow hTB
+    obtain ⟨vbt, hvbt, -, -, -, -, -, -, -, -, hpt, -, -⟩ := H.shape.blk tl TB Lt hTB hLt
+    simp only [hne0, ite_false] at hpt
+    by_cases hargs0 : bc.args = []
+    · have hp0 : TB.params = [] := by
+        rw [hargs0] at hlenA; exact List.eq_nil_of_length_eq_zero hlenA.symm
+      have henv := edgeEnv_eq (V := CV) hvb hvbt (xs := []) (ps := [])
+        (by rw [hbargs']; rfl) (by rw [hpt, hp0]; rfl) rfl (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
+      rw [hargs0, hp0] at hM
+      exact ⟨_, _, hstar.trans (StarN.step (VStep.step hvb hi hops hsem hlen
+        (VNext.goto hK (by rw [hsucc_eq, List.getElem?_eq_getElem hjlt, hnil hargs0]) henv))
+        (.refl _)), hM⟩
+    · obtain ⟨eb, heb, hebi, hebp, hebba⟩ := hedge hargs0
+      have henv1 := edgeEnv_eq (V := CV) hvb heb (xs := []) (ps := [])
+        (by rw [hbargs']; rfl) (by rw [hebp]; rfl) rfl (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
+      have henv2 := edgeEnv_eq (V := CV) heb hvbt (xs := bc.args.map gn) (ps := TB.params.map (·.1))
+        (by rw [hebba]; simp [List.map_map, Function.comp_def, H.shape.ren.vreg])
+        (by rw [hpt]; simp [List.map_map, Function.comp_def]) (by simp; omega)
+        (parCopyEnv (vdefUpd (ops.map (rnOp gn)) outs ρ₁') [] [])
+      have hpc : parCopyEnv (vdefUpd (ops.map (rnOp gn)) outs ρ₁') [] [] =
+          vdefUpd (ops.map (rnOp gn)) outs ρ₁' := rfl
+      rw [hpc] at henv2
+      have hebback : eb.insts.back? = some (.jump tl) := by rw [hebi]; rfl
+      have hstep1 := VStep.step hvb hi hops hsem hlen
+        (VNext.goto hK (by rw [hsucc_eq, List.getElem?_eq_getElem hjlt]) henv1)
+      have hstep2 : VStep vc sem (.run ⟨L.targets[j'], 0,
+          parCopyEnv (vdefUpd (ops.map (rnOp gn)) outs ρ₁') [] [], w₂⟩)
+          (.run ⟨tl, 0, parCopyEnv (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
+            (TB.params.map (·.1)) (bc.args.map gn), w₂⟩) := by
+        rw [hpc]
+        refine VStep.step heb (by rw [hebi]; rfl) (i := .jump tl) (ops := #[]) rfl
+          (H.dsem.jump tl w₂) rfl (VNext.goto (by rw [hebi]; rfl) ?_ henv2)
+        rw [succOf_eq H.shape.labels hcfg heb hebback]; rfl
+      exact ⟨_, _, hstar.trans (StarN.step hstep1 (StarN.step hstep2 (.refl _))), hM⟩
 
 end
 
