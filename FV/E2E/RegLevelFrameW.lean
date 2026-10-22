@@ -393,11 +393,11 @@ theorem ret_machineW {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb 
   · rw [Arm.w_program, hprog1]
   · intro ops' hops' j v p x hj hx
     obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
-    rw [operands_rets] at hops' hops
+    rw [operands_retsC] at hops' hops
     cases hops'
     cases hops
     obtain ⟨hsz, hloc, -, -⟩ := checkStatic_facts hstat
-    obtain ⟨rfl, q, hq, hq2⟩ := rets_uses (fun q hq r hr => (hloc q hq).2 r hr) hsz j v p x hj hx
+    obtain ⟨rfl, q, hq, hq2⟩ := rets_usesC (fun q hq r hr => (hloc q hq).2 r hr) hsz j v p x hj hx
     have hal : p.allocatable = true := by
       have := (hloc q hq).1
       rw [hq2] at this
