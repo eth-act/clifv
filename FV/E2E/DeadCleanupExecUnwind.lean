@@ -370,3 +370,295 @@ theorem unwindAt_continues {T : Unw.FnTables} {start pc obj : BitVec 64} {t : Ar
 end FrameSim
 
 end E2E.DeadCleanupExecBytes
+
+namespace E2E.DeadCleanupExecBytes
+set_option autoImplicit false
+
+open Backend Backend.Proof E2E.LinkCheck E2E.DeadCleanupBinary E2E.BinCheck
+
+/-! ## The hypotheses -/
+
+/-- **The base environment's raising callees do not read the relocated instruction bytes nor
+the program field** (`Sim` before gives the same exception object and `Sim` after): `HooksSim`
+for `Unw.UnwHooks`, the contract the executable machine with unwinding adds. -/
+structure UnwSim (I : LinkInput) (Ub : Unw.UnwHooks) : Prop where
+  raise : ∀ d m e obj t, Sim I m e → Ub.raise d m = some (obj, t) →
+    ∃ t', Ub.raise d e = some (obj, t') ∧ Sim I t t'
+  none : ∀ d m e, Sim I m e → Ub.raise d m = none → Ub.raise d e = none
+
+/-- No raising callee meets `UnwSim`. -/
+theorem unwSim_none (I : LinkInput) : UnwSim I Unw.UnwHooks.none :=
+  ⟨fun _ _ _ _ _ _ h => (by cases h), fun _ _ _ _ _ => rfl⟩
+
+/-- **The executable's unwind tables are the compiled functions'**: libunwind's lookup in
+`file` at every pc of a compiled function gives its address and tables
+(`Link.DeadCleanup.compileExeU_tables`). -/
+def TabsOk (I : LinkInput) (file : ByteArray) : Prop :=
+  ∀ g ∈ (prog I).funcs, ∀ pc, (art I g).base.toNat ≤ pc →
+    pc < (art I g).base.toNat + (art I g).fb.size →
+    Link.EhCheck.unwTables file pc = some ((art I g).base.toNat, (art I g).tables)
+
+section Defs
+
+variable (I : LinkInput) (B : BaseEnv) (file : ByteArray) (U : LinkSysU)
+
+/-- **The states of the activation of `g` at depth `M` entered at `c` of the machine with
+unwinding** before its return, and of the activations nested through its calls whose step ends
+without error (`ReachN` with the activation's entry: the last three indices are the state's
+activation's depth, function and entry, and the state). -/
+inductive ReachU : Nat → Clif.Function → Arm.ArmState → Nat → Clif.Function → Arm.ArmState →
+    Arm.ArmState → Prop
+  | act {M g c k} : (∀ j ≤ k, ¬ Returned (art I g) c (runX ((uSys I B U).machU M g) j c)) →
+      ReachU M g c M g c (runX ((uSys I B U).machU M g) k c)
+  | nest {M g c k h M' g' c' t} :
+      (∀ j ≤ k, ¬ Returned (art I g) c (runX ((uSys I B U).machU (M + 1) g) j c)) →
+      CallsAt I B g (runX ((uSys I B U).machU (M + 1) g) k c) h →
+      Arm.r .ERR (runX ((uSys I B U).machU (M + 1) g) (k + 1) c) = .None →
+      ReachU M h (enterAt (art I h) (runX ((uSys I B U).machU (M + 1) g) k c)) M' g' c' t →
+      ReachU (M + 1) g c M' g' c' t
+
+/-- **What the lockstep with unwinding needs of a model state** `m` of an activation of `g` at
+depth `M`: `StepOk` with D1 on the machine with unwinding, and the save slots of `g`'s frame row
+at a raising call no relocated instruction bytes (what the frame's phase 2 reads). -/
+structure StepOkU (M : Nat) (g : Clif.Function) (m : Arm.ArmState) : Prop where
+  err : Arm.r .ERR m = .None
+  program : m.program = (art I g).fb.program (art I g).base
+  site : ∃ i, insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some i ∧
+    siteAt I (Arm.r .PC m) = some (siteOf (prog I) i) ∧ (i.reloc? = none ∨ i.hooked = true)
+  cf : ∀ rl ∈ (art I g).fb.relocs, (rl.type = .adrGotPage ∨ rl.type = .adrPrelPgHi21) →
+    Arm.r .PC ((uSys I B U).machU M g m) = wAt (art I g) (rl.offset + 4) →
+    Arm.r .PC m = wAt (art I g) rl.offset
+  insn : ∀ i, insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some i → i.hooked = false →
+    ∀ a, (fileWord file (Arm.r .PC m)).bind Arm.decode_raw_inst = some a →
+    ∀ e, Sim I m e → Sim I (Arm.exec_inst a m) (Arm.exec_inst a e)
+  call : ∀ d e, ((∃ n, insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some (.bl n) ∧
+        (prog I).func? n = none ∧ d = some n) ∨
+      ((∃ x, insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some (.blr x)) ∧
+        (blrTarget m).bind (symCallee (sys I B).Xb (prog I)) = none ∧ d = none)) →
+    Sim I m e → Sim I (B.hooks.call d m) (B.hooks.call d e)
+  tls : ∀ tmp rn n e, insnAt (art I g).fa (art I g).base (Arm.r .PC m) =
+      some (.ldrTlsDescLo12 tmp rn n) →
+    Sim I m e → Sim I (B.hooks.tls n tmp m) (B.hooks.tls n tmp e)
+  got : ∀ rl ∈ (art I g).fb.relocs, rl.type = .adrGotPage →
+    Arm.r .PC m = wAt (art I g) (rl.offset + 4) → ∀ (rd G : Nat), rd < 31 → G % 8 = 0 →
+    inR (-2 ^ 20) (2 ^ 20) (pageOf G - pageOf (wAt (art I g) rl.offset).toNat) = true →
+    fileWord file (wAt (art I g) rl.offset) =
+      some (adrpW rd (pageOf G - pageOf (wAt (art I g) rl.offset).toNat)) →
+    fileWord file (wAt (art I g) (rl.offset + 4)) = some (ldrW rd rd (G % 4096 / 8)) → ∀ i < 8,
+    ¬ E2E.DeadCleanupBinCheck.RelocAt I (BitVec.ofNat 64 G + BitVec.ofNat 64 i) ∧
+    m.mem (BitVec.ofNat 64 G + BitVec.ofNat 64 i) =
+      (Elf.loadMem file (BitVec.ofNat 64 G + BitVec.ofNat 64 i)).getD 0
+  blr : ∀ x h, insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some (.blr x) →
+    (blrTarget m).bind (symCallee (sys I B).Xb (prog I)) = some h →
+    x ≠ .xzr ∧ fileWord file (Arm.r .PC m) = some (Arm.read_mem_bytes 4 (Arm.r .PC m) m) ∧
+    I.symAddr h.name 0 = (art I h).base
+  plain : ∀ i, insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some i → i.reloc? = none →
+    ∀ k < 4, ¬ E2E.DeadCleanupBinCheck.RelocAt I (Arm.r .PC m + BitVec.ofNat 64 k)
+  /-- the frame's phase 2 at a raising call reads no relocated instruction byte -/
+  rest : ∀ d obj t, callDescAt (art I g).fa m = some d → ((uSys I B U).UU M).raise d m = some (obj, t) →
+    RestoreOk I (art I g).tables (art I g).base (Arm.r .PC m) t
+
+/-- **The per-state hypothesis on the runs of the machine with unwinding**: at the states of
+`ReachU` whose step ends without error, `StepOkU`, and a step that leaves the activation's frame
+by unwinding (`UnwExit`) lands on its return (the restored frame is the caller's). -/
+def RunOkU (M : Nat) (f : Clif.Function) (c : Arm.ArmState) : Prop :=
+  ∀ M' g c' t, ReachU I B U M f c M' g c' t → Arm.r .ERR ((uSys I B U).machU M' g t) = .None →
+    StepOkU I B file U M' g t ∧
+    (UnwExit ((uSys I B U).UU M') (art I g).tables (art I g).fa t →
+      Returned (art I g) c' ((uSys I B U).machU M' g t))
+
+/-- **The simulation of the activations of the machine with unwinding at depth `M`** by the
+executable machine with unwinding: from related entry states, (A) every state of the activation
+before its return, not entered by leaving the frame by unwinding, not a pair's second word and
+without error, is simulated by a state of the executable's run; (B) when the activation leaves
+its frame by unwinding (the state after its step is without error), the executable's run reaches
+a raising step whose frame walk is at a frame unwound by its row (`Continues`) to a state
+simulating the activation's last state. -/
+def ActSimU (M : Nat) : Prop :=
+  ∀ g c e, g ∈ (prog I).funcs → Arm.r .PC c = (art I g).base → Sim I c e →
+    RunOkU I B file U M g c →
+    (∀ k, (∀ j < k, ¬ Returned (art I g) c (runX ((uSys I B U).machU M g) j c)) →
+      (∀ j, j + 1 = k → ¬ UnwExit ((uSys I B U).UU M) (art I g).tables (art I g).fa
+        (runX ((uSys I B U).machU M g) j c)) →
+      ¬ Second I g (Arm.r .PC (runX ((uSys I B U).machU M g) k c)) →
+      Arm.r .ERR (runX ((uSys I B U).machU M g) k c) = .None →
+      ∃ k', Sim I (runX ((uSys I B U).machU M g) k c) (runX (stepU I B U.Ub file) k' e)) ∧
+    (∀ N, (∀ j < N, ¬ Returned (art I g) c (runX ((uSys I B U).machU M g) j c)) →
+      ∀ j, j + 1 = N → UnwExit ((uSys I B U).UU M) (art I g).tables (art I g).fa
+        (runX ((uSys I B U).machU M g) j c) →
+      Arm.r .ERR (runX ((uSys I B U).machU M g) N c) = .None →
+      ∃ k' ra t, Pending I B U.Ub file (runX (stepU I B U.Ub file) k' e) ra
+          (xreg 0 (runX ((uSys I B U).machU M g) N c)) t ∧ Continues file ra t ∧
+        Sim I (runX ((uSys I B U).machU M g) N c)
+          (unwFrame file ra (xreg 0 (runX ((uSys I B U).machU M g) N c)) t))
+
+end Defs
+
+/-! ## Facts of one step -/
+
+section StepFacts
+
+variable {I : LinkInput} {B : BaseEnv} {file : ByteArray} {U : LinkSysU}
+
+theorem ReachU.mem {M : Nat} {f : Clif.Function} {c : Arm.ArmState} {M' : Nat}
+    {g : Clif.Function} {c' t : Arm.ArmState} (h : ReachU I B U M f c M' g c' t)
+    (hf : f ∈ (prog I).funcs) : g ∈ (prog I).funcs := by
+  induction h with
+  | act _ => exact hf
+  | nest _ hc _ _ ih => exact ih (callee_mem hc)
+
+/-- `StepOk` from `StepOkU` and D1 on the linked machine. -/
+theorem StepOkU.toStepOk {M : Nat} {g : Clif.Function} {m : Arm.ArmState}
+    (h : StepOkU I B file U M g m)
+    (hcf : ∀ rl ∈ (art I g).fb.relocs, (rl.type = .adrGotPage ∨ rl.type = .adrPrelPgHi21) →
+      Arm.r .PC ((sys I B).mach M g m) = wAt (art I g) (rl.offset + 4) →
+      Arm.r .PC m = wAt (art I g) rl.offset) : StepOk I B file M g m :=
+  ⟨h.err, h.program, h.site, hcf, h.insn, h.call, h.tls, h.got, h.blr, h.plain⟩
+
+theorem StepOkU.base_eq (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M : Nat}
+    {g : Clif.Function} (hg : g ∈ (prog I).funcs) {m : Arm.ArmState}
+    (h : StepOkU I B file U M g m) : progBase m = (art I g).base := by
+  obtain ⟨lm, hm⟩ := FnAsm.layout_labelOffsets (hF g hg).layout
+  obtain ⟨i, hins, -, -⟩ := h.site
+  obtain ⟨j, t, hj, -⟩ := insnAt_spec hins
+  exact progBase_of (hF g hg) hm h.program hj
+
+theorem StepOkU.siteAt {M : Nat} {g : Clif.Function} {m : Arm.ArmState}
+    (h : StepOkU I B file U M g m) {i : Insn}
+    (hi : insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some i) :
+    siteAt I (Arm.r .PC m) = some (siteOf (prog I) i) := by
+  obtain ⟨i', h1, h2, -⟩ := h.site
+  rw [hi] at h1; cases h1; exact h2
+
+/-- `StepOk` at a state at no call (the machines agree there). -/
+theorem StepOkU.nocall (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M : Nat}
+    {g : Clif.Function} (hg : g ∈ (prog I).funcs) {m : Arm.ArmState}
+    (h : StepOkU I B file U M g m) {i : Insn}
+    (hi : insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some i) (h1 : ∀ n, i ≠ .bl n)
+    (h2 : ∀ x, i ≠ .blr x) : StepOk I B file M g m := by
+  have hb := h.base_eq hF hg
+  refine h.toStepOk fun rl hrl ht hpc => h.cf rl hrl ht ?_
+  rw [machU_nocall U (by rw [hb]; exact hi) h1 h2]
+  exact hpc
+
+/-- `StepOk` at a call of a function of the program (the linked call is at the next word). -/
+theorem StepOkU.progCall {M : Nat} {g h : Clif.Function} {m : Arm.ArmState}
+    (hok : StepOkU I B file U M g m) (hc : CallsAt I B g m h) : StepOk I B file M g m := by
+  refine hok.toStepOk fun rl hrl ht hpc => ?_
+  rw [mach_call hc] at hpc
+  have hp : Arm.r .PC ((sys I B).pcall M h m) = Arm.r .PC m + 4 := by
+    cases M with
+    | zero => exact (junkAt_pc m).2
+    | succ M => exact (linkedCall_pc _ _ m).2
+  rw [hp, ← wAt_add4] at hpc
+  exact (BitVec.add_left_inj _).mp hpc
+
+/-- The linked machine at a call of code outside the program: the base hook. -/
+theorem mach_base {M : Nat} {g : Clif.Function} {m : Arm.ArmState} {i : Insn}
+    {d : Option String} (hi : insnAt (art I g).fa (progBase m) (Arm.r .PC m) = some i)
+    (hd : (∃ n, i = .bl n ∧ (prog I).func? n = none ∧ d = some n) ∨
+      (∃ x, i = .blr x ∧ (blrTarget m).bind (symCallee (sys I B).Xb (prog I)) = none ∧ d = none)) :
+    (sys I B).mach M g m = B.hooks.call d m := by
+  show ArmStepX (sys I B).Xb ((sys I B).hooks M) (art I g).fa m = _
+  rcases hd with ⟨n, rfl, hn, rfl⟩ | ⟨x, rfl, hn, rfl⟩
+  · simp only [ArmStepX, hi, LinkSys.hooks_call, LinkSys.callHook]
+    rw [show (sys I B).P.func? n = none from hn]
+    rfl
+  · simp only [ArmStepX, hi, LinkSys.hooks_call, LinkSys.callHook]
+    rw [show (blrTarget m).bind (symCallee (sys I B).Xb (sys I B).P) = none from hn]
+    rfl
+
+/-- `StepOk` at a call of code outside the program whose callee does not raise. -/
+theorem StepOkU.baseCall (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M : Nat}
+    {g : Clif.Function} (hg : g ∈ (prog I).funcs) {m : Arm.ArmState}
+    (h : StepOkU I B file U M g m) {i : Insn} {d : Option String}
+    (hi : insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some i)
+    (hd : (∃ n, i = .bl n ∧ (prog I).func? n = none ∧ d = some n) ∨
+      (∃ x, i = .blr x ∧ (blrTarget m).bind (symCallee (sys I B).Xb (prog I)) = none ∧ d = none))
+    (hr : U.Ub.raise d m = none) : StepOk I B file M g m := by
+  have hb := h.base_eq hF hg
+  have hi' : insnAt (art I g).fa (progBase m) (Arm.r .PC m) = some i := by rw [hb]; exact hi
+  refine h.toStepOk fun rl hrl ht hpc => h.cf rl hrl ht ?_
+  rw [machU_base U hi' hd, hr]
+  rw [mach_base hi' hd] at hpc
+  exact hpc
+
+/-- No raise at a site that is no call of code outside the program. -/
+theorem raiseAt_none {s : Arm.ArmState} {i : Insn}
+    (hs : siteAt I (Arm.r .PC s) = some (siteOf (prog I) i))
+    (h1 : ∀ n, i = .bl n → ((prog I).func? n).isSome)
+    (h2 : ∀ x, i = .blr x → ((blrTarget s).bind (symCallee (sys I B).Xb (prog I))).isSome) :
+    raiseAt I B U.Ub s = none := by
+  unfold raiseAt
+  rw [hs]
+  cases i with
+  | bl n => simp [siteOf, h1 n rfl]
+  | blr x => simp [siteOf, h2 x rfl]
+  | _ => rfl
+
+/-- The raise at a call of code outside the program is the base callee's. -/
+theorem raiseAt_base {s : Arm.ArmState} {i : Insn} {d : Option String}
+    (hs : siteAt I (Arm.r .PC s) = some (siteOf (prog I) i))
+    (hd : (∃ n, i = .bl n ∧ (prog I).func? n = none ∧ d = some n) ∨
+      (∃ x, i = .blr x ∧ (blrTarget s).bind (symCallee (sys I B).Xb (prog I)) = none ∧ d = none)) :
+    raiseAt I B U.Ub s = U.Ub.raise d s := by
+  unfold raiseAt
+  rw [hs]
+  rcases hd with ⟨n, rfl, hn, rfl⟩ | ⟨x, rfl, hn, rfl⟩
+  · simp [siteOf, hn]
+  · simp [siteOf, hn]
+
+/-- **The executable's lookup at the return address of a call of `g`** finds `g`'s tables: the
+frame's phase 2 on the file is the model's (`Unw.unwindAt` with `g`'s tables at its address). -/
+theorem unwFrame_call (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) (hT : TabsOk I file)
+    {g : Clif.Function} (hg : g ∈ (prog I).funcs) {pc : BitVec 64} {i : Insn}
+    (hi : insnAt (art I g).fa (art I g).base pc = some i) (obj : BitVec 64) (t : Arm.ArmState) :
+    unwFrame file (pc + 4) obj t = Unw.unwindAt (art I g).tables (art I g).base pc obj t ∧
+    (Continues file (pc + 4) t ↔
+      Unw.personality (art I g).tables.lsda (pc + 4 - 1 - (art I g).base).toNat = .continue ∧
+      (Unw.restore (Unw.rowAt (art I g).tables.cie (art I g).tables.fde
+        (pc + 4 - 1 - (art I g).base).toNat) t).isSome) := by
+  have hFg := hF g hg
+  obtain ⟨j, tt, hj, hpc⟩ := insnAt_spec hi
+  have hl := line_lt hFg hj
+  have hfit := hFg.fits
+  have hlt := (art I g).base.isLt
+  have hn : (pc + 4 - 1).toNat = (art I g).base.toNat + lineOffset (art I g).fa.lines.toList j + 3 := by
+    rw [← hpc, show (art I g).base + BitVec.ofNat 64 (lineOffset (art I g).fa.lines.toList j) + 4 - 1
+      = (art I g).base + BitVec.ofNat 64 (lineOffset (art I g).fa.lines.toList j + 3) by
+        rw [BitVec.ofNat_add]; bv_omega]
+    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : _ < 2 ^ 64),
+      Nat.mod_eq_of_lt (by omega)]
+    omega
+  have hlook := hT g hg (pc + 4 - 1).toNat (by omega) (by simp only [FnBin.size]; omega)
+  have e4 : pc + 4 - 4 = pc := by bv_omega
+  have eb : BitVec.ofNat 64 (art I g).base.toNat = (art I g).base := by simp
+  refine ⟨?_, ?_⟩
+  · simp only [unwFrame, hlook, eb, e4]
+  · simp only [Continues, hlook, Option.some.injEq, Prod.mk.injEq, e4]
+    constructor
+    · rintro ⟨_, _, ⟨rfl, rfl⟩, h1, h2⟩; rw [eb] at h1 h2; exact ⟨h1, h2⟩
+    · rintro ⟨h1, h2⟩; exact ⟨_, _, ⟨rfl, rfl⟩, by rw [eb]; exact h1, by rw [eb]; exact h2⟩
+
+/-- The byte before the return address of a call of `g` is code of the program. -/
+theorem img_ret (hI : okBCleanup I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
+    {g : Clif.Function} (hg : g ∈ (prog I).funcs) {pc : BitVec 64} {i : Insn}
+    (hi : insnAt (art I g).fa (art I g).base pc = some i) : img I (pc + 4 - 1) := by
+  have hFg := hF g hg
+  obtain ⟨j, tt, hj, hpc⟩ := insnAt_spec hi
+  obtain ⟨lm, hm⟩ := FnAsm.layout_labelOffsets hFg.layout
+  obtain ⟨h4, w, -, hk⟩ := FnAsm.layout_word hFg.layout hm hj rfl
+  refine ⟨(g, art I g), tab_mem (okBCleanup_names hI) hg,
+    ((art I g).base + BitVec.ofNat 64 (4 * (0 + lineOffset (art I g).fa.lines.toList j / 4)), w),
+    ?_, ?_⟩
+  · have := wordsAt_mem (base := (art I g).base) (k := 0) (ws := (art I g).fb.words.toList)
+      (j := lineOffset (art I g).fa.lines.toList j / 4) (w := w) (by simpa using hk)
+    simpa [FnBin.program] using this
+  · rw [← hpc, Nat.zero_add, Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h4)]
+    rw [show (art I g).base + BitVec.ofNat 64 (lineOffset (art I g).fa.lines.toList j) + 4 - 1 -
+      ((art I g).base + BitVec.ofNat 64 (lineOffset (art I g).fa.lines.toList j)) = 3 by bv_omega]
+    decide
+
+end StepFacts
+
+end E2E.DeadCleanupExecBytes
