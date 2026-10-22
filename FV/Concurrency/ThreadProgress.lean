@@ -200,6 +200,84 @@ theorem srcStep_of_mstep {R : RL} (hcov : CoveredCode R) (hX : TlsMemFree R.X) {
 /-! ## All layers -/
 
 /-- **All layers composed, the realized prefix the whole run or ending where the CLIF thread
+stops, all of layer 4b's prefix where it has returned** (T2j follow-up; `isel_alloc_refinesR`) (module doc): layer 4b's refinement ending at a related configuration (`hA`, `hend`,
+`arm_alloc_refinesQ`'s form) and layers 2–4a with progress (`isel_alloc_refinesP`); at a related
+`Done` configuration after which layers 2–4a give a step of the allocated code, that step is a
+thread step (`srcStep_of_mstep`), which `Done` excludes. -/
+theorem arm_isel_refines_fullR {RA : RL} (hgv : RA.gv = fun _ _ => False) (hcov : CoveredCode RA)
+    {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
+    {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat}
+    {syms : String → Option Nat}
+    (H : DriverHyp f vc ctx st0 R gn bl A (csem RA.F RA.ctx RA.X) MR env p)
+    (hchk : threadCheckBl f bl = true) (hMR : MemRelOk RA.F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree RA.X) (hMem : MemRefines RA.F sb syms (csem RA.F RA.ctx RA.X))
+    (hMRs : MRStable RA.F MR) (hreg : ∀ off, ArgLoc.stack off ∉ locsOf f.sig)
+    (hprep : prepCheck vc RA.vc = true) (halloc : checkAlloc RA.vc RA.rf = .ok ())
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {m₀ : Loc → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry RA.F f.sig args w₀)
+    {ok : ArmState → Lab → Prop} {s : ArmState × Mon} {ls : List Lab} {s' : ArmState × Mon}
+    (hP : PRun Policy.arm RA.step ok s ls s') {nA : Nat} {trM : List (List Ev)}
+    {cE : MConf CV ArmState} {ψA : Nat × Nat → Nat × Nat}
+    (hM : MTRun RA.vc RA.rf RA.sem ckeep (cEvs RA.F RA.ctx) (MConf.init RA.rf m₀ w₀) trM cE)
+    (hA : Refines (· = ·) (PrivA RA) (MonPair (evTr (ls.take nA))) (conv trM)
+      (conv (evTr (ls.take nA))) ψA)
+    (hend : nA = ls.length ∨ (Done RA cE ∧ ∃ t, RelQ RA t cE)) (hnA : nA ≤ ls.length) :
+    ∃ k trS t ψ, k ≤ nA ∧ CRun env p (.run cs) trS t ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take nA))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p t) ∧ ∀ v, t = .ret v → k = nA := by
+  have hsem : RA.sem = csem RA.F RA.ctx RA.X := by
+    show csemV RA.gv RA.F RA.ctx RA.X = _
+    rw [hgv, csemV_none]
+  rw [hsem] at hM
+  obtain ⟨m, trS, t, ψ, hm, hrun, href, hendm, hretm⟩ :=
+    isel_alloc_refinesR H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0 hcall hfunc hslots
+      hbody hterm hregs hty hsig (fun _ => 0) hmr hargs hM
+  have h1 : ∀ j (hj : j < (conv (evTr (ls.take nA))).length),
+      (conv (evTr (ls.take nA)))[j].length ≤ 1 := by
+    intro j hj
+    have hl := prun_len hP j (by simp [conv, evTr] at hj ⊢; omega)
+    simp only [conv, evTr, List.getElem_map, List.length_map, List.getElem_take] at hl ⊢
+    exact hl
+  obtain ⟨k, hk, hAk, hkfull⟩ := Refines.take hA h1 m
+  have hlenA : (conv (evTr (ls.take nA))).length = nA := by
+    simp [conv, evTr]; omega
+  have htk : (conv (evTr (ls.take nA))).take k = conv (evTr (ls.take k)) := by
+    simp only [conv, evTr, ← List.map_take, List.take_take]
+    rw [Nat.min_eq_left (by omega)]
+  rw [htk] at hAk
+  have hm' : (conv trM).take m = conv (trM.take m) := by simp [conv, List.map_take]
+  rw [hm'] at hAk
+  have href2 := Refines.congr (Refines.trans href hAk) (MK' := Maps) (P' := PrivA RA)
+    (fun a c ⟨b, h1, h2⟩ => h2 ▸ h1) (fun l => ⟨fun h => by rcases h with h | h; exact h.elim; exact h,
+      fun h => .inr h⟩)
+  refine ⟨k, trS, t, _, by omega, hrun, href2, ?_, fun v hv => ?_⟩
+  rotate_left
+  · have hk' := hkfull (by simp [conv, hretm v hv])
+    rw [hlenA] at hk'
+    exact hk'
+  rcases hendm with ⟨h, cE', hmst⟩ | h
+  · have hk' := hkfull (by simp [conv, h])
+    rw [hlenA] at hk'
+    rcases hend with h' | ⟨hD, t0, hq0, -⟩
+    · exact .inl (hk'.trans h')
+    · exfalso
+      rw [← hsem] at hmst
+      obtain ⟨evs, c'', hs⟩ := srcStep_of_mstep hcov hX hq0 hmst
+      rcases hD with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ | hD
+      · cases hmst
+      · cases hmst
+      · exact hD evs c'' hs
+  · exact .inr h
+
+/-- **All layers composed, the realized prefix the whole run or ending where the CLIF thread
 stops** (module doc): layer 4b's refinement ending at a related configuration (`hA`, `hend`,
 `arm_alloc_refinesQ`'s form) and layers 2–4a with progress (`isel_alloc_refinesP`); at a related
 `Done` configuration after which layers 2–4a give a step of the allocated code, that step is a
@@ -233,44 +311,8 @@ theorem arm_isel_refines_full {RA : RL} (hgv : RA.gv = fun _ _ => False) (hcov :
     ∃ k trS t ψ, k ≤ nA ∧ CRun env p (.run cs) trS t ∧
       Refines Maps (PrivA RA) (MonPair (evTr (ls.take nA))) trS (conv (evTr (ls.take k))) ψ ∧
       (k = ls.length ∨ Stop env p t) := by
-  have hsem : RA.sem = csem RA.F RA.ctx RA.X := by
-    show csemV RA.gv RA.F RA.ctx RA.X = _
-    rw [hgv, csemV_none]
-  rw [hsem] at hM
-  obtain ⟨m, trS, t, ψ, hm, hrun, href, hendm⟩ :=
-    isel_alloc_refinesP H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0 hcall hfunc hslots
-      hbody hterm hregs hty hsig (fun _ => 0) hmr hargs hM
-  have h1 : ∀ j (hj : j < (conv (evTr (ls.take nA))).length),
-      (conv (evTr (ls.take nA)))[j].length ≤ 1 := by
-    intro j hj
-    have hl := prun_len hP j (by simp [conv, evTr] at hj ⊢; omega)
-    simp only [conv, evTr, List.getElem_map, List.length_map, List.getElem_take] at hl ⊢
-    exact hl
-  obtain ⟨k, hk, hAk, hkfull⟩ := Refines.take hA h1 m
-  have hlenA : (conv (evTr (ls.take nA))).length = nA := by
-    simp [conv, evTr]; omega
-  have htk : (conv (evTr (ls.take nA))).take k = conv (evTr (ls.take k)) := by
-    simp only [conv, evTr, ← List.map_take, List.take_take]
-    rw [Nat.min_eq_left (by omega)]
-  rw [htk] at hAk
-  have hm' : (conv trM).take m = conv (trM.take m) := by simp [conv, List.map_take]
-  rw [hm'] at hAk
-  have href2 := Refines.congr (Refines.trans href hAk) (MK' := Maps) (P' := PrivA RA)
-    (fun a c ⟨b, h1, h2⟩ => h2 ▸ h1) (fun l => ⟨fun h => by rcases h with h | h; exact h.elim; exact h,
-      fun h => .inr h⟩)
-  refine ⟨k, trS, t, _, by omega, hrun, href2, ?_⟩
-  rcases hendm with ⟨h, cE', hmst⟩ | h
-  · have hk' := hkfull (by simp [conv, h])
-    rw [hlenA] at hk'
-    rcases hend with h' | ⟨hD, t0, hq0, -⟩
-    · exact .inl (hk'.trans h')
-    · exfalso
-      rw [← hsem] at hmst
-      obtain ⟨evs, c'', hs⟩ := srcStep_of_mstep hcov hX hq0 hmst
-      rcases hD with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ | hD
-      · cases hmst
-      · cases hmst
-      · exact hD evs c'' hs
-  · exact .inr h
+  obtain ⟨k, trS, t, ψ, hk, hrun, href, hend', -⟩ := arm_isel_refines_fullR hgv hcov H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0 hcall hfunc hslots hbody
+    hterm hregs hty hsig hmr hargs hP hM hA hend hnA
+  exact ⟨k, trS, t, ψ, hk, hrun, href, hend'⟩
 
 end Concurrency.ThreadProgress

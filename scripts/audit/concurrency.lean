@@ -795,3 +795,10 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.IselRefines.seg_resR
 #print axioms Concurrency.IselEntry.isel_refines_entryR
 #print axioms Concurrency.IselRefines.Witness.isel_refines_entryR_fA -- witness: native_decide
+-- the return covered through all layers (#473)
+#print axioms Concurrency.ThreadCompose.isel_alloc_refinesR
+#print axioms Concurrency.ThreadProgress.arm_isel_refines_fullR
+#print axioms Concurrency.RealizeCompiled.thread_full_of_simR
+#print axioms Concurrency.RealizeCompiled.thread_compiledLS_fullR
+#print axioms Concurrency.ThreadCompose.Witness.isel_alloc_refinesR_fA -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessC1.thread_cas1_fullR -- witness: native_decide
