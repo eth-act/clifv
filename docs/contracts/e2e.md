@@ -4195,6 +4195,7 @@ traps inside the `try_call`'s callee and satisfies `TrapsExplicitCT`).
 Next (S9e, #408, linked program and executable): the world variant (`WorldTrapCall`/`WorldTrapStop`
 without `hnt`), then `LinkSys.TrapsOk.noTry`, `TrapsD`'s `try_call` clauses and the executable
 theorems' `hnoTry`.
+
 ## Entry-state and runtime premises (A5, #411)
 
 `FV/E2E/EntryContract.lean`, `FV/Front/RawExeContract.lean`. The executable theorems
