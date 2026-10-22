@@ -537,4 +537,153 @@ theorem cstepC (env : Clif.Env) : CStep env pCL (.run csC) [] (.run (ClifLift.pu
   rw [show csC.frame.body = B0C.body from rfl, clifC.1]
   simp
 
+/-! ## The linked thread -/
+
+/-- The length of the caller's path to its `bl` (`prefixC`). -/
+noncomputable def n0C : Nat := Classical.choose prefixC
+
+/-- The caller's state at its `bl`. -/
+noncomputable def sBC : ArmState := iterN RC.step n0C RC.s0
+
+/-- **The callee's activation in the linked thread** (entered by the caller's `bl`). -/
+noncomputable def RLB : RL := RLx sBC
+
+/-- The callee's machine. -/
+noncomputable def stepL : ArmState → ArmState := ArmStepX (act vcpL rfL).X (act vcpL rfL).H (act vcpL rfL).fa
+
+open Classical in
+/-- **The linked machine**: the callee's on the states holding its program, the caller's (whose
+`bl ld` hook enters the callee) otherwise. -/
+noncomputable def MC (s : ArmState) : ArmState := if s.program = pL then stepL s else RC.step s
+
+/-- **The end condition of the linked thread**: the realized Arm prefix ends with a prefix at
+the callee's end (`CalleeEnd`: the callee's allocated code driven to its end, or its CLIF
+activation stopped or returning). -/
+def EndC (env : Clif.Env) (P : List Lab) (d : TState) : Prop :=
+  ∃ A B, P = A ++ B ∧ CalleeEnd env pCL RLB extC B d
+
+theorem privW_snoc_nil {Priv : Nat → Prop} {A : List (List ArmThread.Ev)} (h : PrivW Priv A) :
+    PrivW Priv (A ++ [[]]) := by
+  intro p y hy hd
+  by_cases hp : p.1 < A.length
+  · rw [evAt_append_lt _ _ hp] at hy; exact h p y hy hd
+  · rw [evAt_append_ge _ _ (by omega)] at hy
+    obtain ⟨x, hx, hyx⟩ := mem_of_evAt hy
+    simp only [List.mem_singleton] at hx
+    subst hx
+    exact absurd hyx List.not_mem_nil
+
+theorem xClosed_labs {ls : List Lab} (h : ∀ l ∈ ls, ∀ e ∈ l.evs, e.k ≠ .relXW) :
+    CallCompose.XClosed (evTr ls) := CallCompose.xClosed_of fun b y hy => by
+  obtain ⟨x, hx, hyx⟩ := mem_of_evAt hy
+  obtain ⟨l, hl, rfl⟩ := List.mem_map.mp hx
+  exact h l hl y hyx
+
+/-- **The compiled caller calling the compiled `atomic_load`, as a thread** (`link_compose`):
+every precise run of the linked machine from the caller's ABI entry (open monitor), reading the
+thread's own bytes at the callee's private addresses (which contain the caller's), realizes on a
+prefix a run of the CLIF program `pCL` from the caller's entry state: the whole run, or ending
+where the callee's compiled code reaches its end or its CLIF activation stops or returns. The
+caller's part up to the `bl` is the single-core path through private steps (`prun_privF`); the
+`bl` and the CLIF `call` have no events; the callee's events are matched by its own refinement
+(`funRealX`). -/
+theorem funReal_call (env : Clif.Env) :
+    CallCompose.FunReal env pCL (PrivA RLB) MC (OkPriv RLB) (fun _ _ _ _ => False) (EndC env)
+      (RC.s0, none) (.run csC) := by
+  have hspec := Classical.choose_spec prefixC
+  rw [show Classical.choose prefixC = n0C from rfl] at hspec
+  obtain ⟨j, m, hpath, hj, hpc, hstr, hx0⟩ := hspec
+  have hsub : ∀ a, PrivA RC a → PrivA RLB a := fun a h => Or.inr h
+  have hM : ∀ s', s'.program = pL → MC s' = (RLx sBC).step s' := fun s' h => by
+    simp only [MC, h, ite_true]; rfl
+  refine CallCompose.link_compose (G := Bool) (Ext := fun g => g = true)
+    (Ent := fun g u c => match g with
+      | true => u.1 = RLB.s0 ∧ c = .run (ClifLift.pushC extC csL)
+      | false => u = (RC.s0, none) ∧ c = .run csC)
+    (Ret := fun _ _ _ _ _ => False) (E := EndC env)
+    (Inv := fun g u c x d => g = false ∧ x = u ∧ d = c ∧ u = (RC.s0, none) ∧ c = .run csC)
+    (fun A B d ⟨A', B', h, hc⟩ => ⟨A ++ A', B', by rw [h, List.append_assoc], hc⟩)
+    (fun g u c hg he => ?_) (fun g hg => ?_) (fun h u c hh he => ?_) false (RC.s0, none) (.run csC)
+    ⟨rfl, rfl⟩
+  · cases g
+    · exact ⟨rfl, rfl, rfl, he.1, he.2⟩
+    · exact absurd rfl hg
+  · -- the caller's segment: its path to the `bl`, then the call
+    rintro u c x d ⟨-, rfl, rfl, rfl, rfl⟩ ls t' hr
+    have hagree : ∀ i < n0C, MC (iterN RC.step i RC.s0) = RC.step (iterN RC.step i RC.s0) := by
+      intro i hi
+      simp only [MC]
+      rw [if_neg (by rw [(hpath i hi).2]; exact progC_ne)]
+    have hmono : ∀ {L : List Lab} {v : ArmState × Mon},
+        PRun Policy.arm MC (OkPriv RLB) (RC.s0, none) L v →
+        PRun Policy.arm MC (OkPriv RC) (RC.s0, none) L v :=
+      fun h => PRun.mono (fun _ _ h e he hd hp => h e he hd (hsub _ hp)) h
+    have hW : PrivW (PrivA RLB) (segEvs RC.step n0C RC.s0) := fun p y hy hd =>
+      hsub _ (privW_segEvs (fun i hi => (hpath i hi).1.1) p y hy hd)
+    by_cases hlen : ls.length ≤ n0C
+    · obtain ⟨-, hev, hk⟩ := prun_privF (hmono hr) fun i hi =>
+        ⟨(hpath i (by omega)).1.1, (hpath i (by omega)).1.2, hagree i (by omega)⟩
+      refine ⟨ls.length, .run csC, ⟨Nat.le_refl _, [], id, .nil, ?_, ?_⟩, .inl rfl⟩
+      · rw [List.take_length]; exact xClosed_labs fun l hl => (hk l hl).2
+      · rw [List.take_length, hev]
+        exact refines_nilS (fun x hx => absurd hx List.not_mem_nil) fun p y hy hd =>
+          hsub _ (privW_segEvs (fun i hi => (hpath i (by omega)).1.1) p y hy hd)
+    · -- the path to the `bl`, then the `bl` step
+      obtain ⟨v, hv, hrest⟩ := CallCompose.take_prun hr n0C
+      have hlt : (ls.take n0C).length = n0C := by simp; omega
+      obtain ⟨hv1, hev, hk⟩ := prun_privF (hmono hv) fun i hi =>
+        ⟨(hpath i (by omega)).1.1, (hpath i (by omega)).1.2, hagree i (by omega)⟩
+      rw [hlt] at hv1 hev
+      obtain ⟨l, rest, hdrop⟩ : ∃ l rest, ls.drop n0C = l :: rest := by
+        cases h : ls.drop n0C with
+        | nil => simp at h; omega
+        | cons l rest => exact ⟨l, rest, rfl⟩
+      rw [hdrop] at hrest
+      obtain ⟨v1, v2⟩ := v
+      simp only at hv1
+      subst hv1
+      cases hrest with
+      | cons hs hp ho _ =>
+        obtain ⟨hst, hse, hcls⟩ := step_bl wfRC hj hstr.prog hpc
+        obtain ⟨rfl, ht1⟩ := tstep_plain_nil hs hp hse hcls
+        have hMC : MC (iterN RC.step n0C RC.s0) = enterL sBC := by
+          simp only [MC]
+          rw [if_neg (by rw [hstr.prog]; exact progC_ne), hst]
+          show (if some "ld" = some "ld" then enterL (iterN RC.step n0C RC.s0)
+            else iterN RC.step n0C RC.s0) = _
+          rw [if_pos rfl]; rfl
+        rw [hMC] at ht1
+        subst ht1
+        have htake : ls.take (n0C + 1) = ls.take n0C ++ [⟨[], false⟩] := by
+          rw [List.take_add, hdrop]; rfl
+        have hev1 : evTr (ls.take (n0C + 1)) = segEvs RC.step n0C RC.s0 ++ [[]] := by
+          rw [htake, evTr_append, hev]; rfl
+        refine ⟨n0C + 1, .run (ClifLift.pushC extC csL), ⟨by omega, [[]], id,
+          .cons (cstepC env) .nil, ?_, ?_⟩, .inr (.inr (.inr ⟨by omega, (enterL sBC, v2), true, ?_, ⟨rfl, rfl⟩,
+          fun _ _ h => h.elim⟩))⟩
+        · rw [htake]
+          refine xClosed_labs fun l' hl' => ?_
+          rcases List.mem_append.mp hl' with hl' | hl'
+          · exact (hk l' hl').2
+          · simp only [List.mem_singleton] at hl'
+            subst hl'
+            intro e he
+            exact absurd he List.not_mem_nil
+        · rw [hev1]
+          exact refines_nilS (fun x hx => by simp at hx; exact hx) (privW_snoc_nil hW)
+        · rw [htake]
+          exact PRun.append hv (.cons hs hp ho .nil)
+  · subst hh
+    obtain ⟨⟨u1, u2⟩, rfl⟩ : ∃ v : ArmState × Mon, v = u := ⟨u, rfl⟩
+    obtain ⟨hu, rfl⟩ := he
+    simp only at hu
+    subst hu
+    intro ls t' hr
+    obtain ⟨k, c', hR, hend⟩ := funRealX hstr hx0 env pCL extC hM u2 ls t' hr
+    refine ⟨k, c', hR, ?_⟩
+    rcases hend with h | h | h
+    · exact .inl h
+    · exact .inr (.inl ⟨[], _, rfl, h⟩)
+    · exact .inr (.inr h)
+
 end Concurrency.CallSeg.WitnessC
