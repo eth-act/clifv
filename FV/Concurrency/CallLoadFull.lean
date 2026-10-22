@@ -311,4 +311,189 @@ theorem cstep_ld (env : Clif.Env) (bv : BVal) (hl : bv.length = 8) (hs : ∀ x �
   subst hregs
   simp
 
+/-! ## Realized segments -/
+
+theorem Realized.of_take {env : Clif.Env} {p : Clif.Program} {Priv : Nat → Prop} {ls : List Lab}
+    {k : Nat} {c c' : TState} (h : CallCompose.Realized env p Priv (ls.take k) k c c')
+    (hk : k ≤ ls.length) : CallCompose.Realized env p Priv ls k c c' := by
+  obtain ⟨-, trS, ψ, hr, hx, hf⟩ := h
+  rw [List.take_take, Nat.min_self] at hx hf
+  exact ⟨hk, trS, ψ, hr, hx, hf⟩
+
+/-- **A private segment of the single-core path realizes event-free CLIF steps.** -/
+theorem realized_privSeg {R : RL} {env : Clif.Env} {p : Clif.Program} {L : List Lab}
+    {s0 : ArmState} {c c' : TState} (hev : evTr L = segEvs R.step L.length s0)
+    (hpv : ∀ i < L.length, ∀ e ∈ stepEvs (iterN R.step i s0), R.F e.addr)
+    (hk : ∀ l ∈ L, ∀ e ∈ l.evs, e.k ≠ .relXW) {trS : List (List (Prog.Ev SKind BVal))}
+    (hS : ∀ x ∈ trS, x = []) (hrun : ClifCStepTerm.CRun env p c trS c') :
+    CallCompose.Realized env p (PrivA R) L L.length c c' := by
+  refine ⟨Nat.le_refl _, trS, id, hrun, ?_, ?_⟩
+  · rw [List.take_length]; exact xClosed_labs hk
+  · rw [List.take_length, hev]
+    exact refines_nilS hS fun p y hy hd => privW_segEvs hpv p y hy hd
+
+/-- **The `ldar`'s step realizes the CLIF load**: its one `acqR` event, read as the load's
+bytes. -/
+theorem realized_ld {R : RL} {env : Clif.Env} {p : Clif.Program} {la : Lab} {L : List Lab}
+    {e : Ev} (he : la.evs = [e]) (hk : e.k = .acqR) (hnp : ¬ PrivA R e.addr.toNat) {c c1 : TState}
+    (hs : CStep env p c [⟨.scR, .R, e.addr.toNat, e.n, bytesOf e.n e.val⟩] c1) :
+    CallCompose.Realized env p (PrivA R) (la :: L) 1 c c1 := by
+  have htr : evTr ((la :: L).take 1) = [[e]] := by simp [evTr, he]
+  refine ⟨by simp, _, id, .cons hs .nil, ?_, ?_⟩
+  · exact xClosed_labs fun l hl e' he' => by
+      simp at hl; subst hl; rw [he] at he'; simp at he'; subst he'; rw [hk]; decide
+  · rw [htr]
+    have hat : ∀ q x, evAt [[(⟨.scR, .R, e.addr.toNat, e.n, bytesOf e.n e.val⟩ :
+        Prog.Ev SKind BVal)]] q = some x → q = (0, 0) ∧ x = ⟨.scR, .R, e.addr.toNat, e.n,
+          bytesOf e.n e.val⟩ := by
+      rintro ⟨j, kk⟩ x hx
+      rcases j with _ | j
+      · rcases kk with _ | kk
+        · simp [evAt] at hx; exact ⟨rfl, hx.symm⟩
+        · simp [evAt] at hx
+      · simp [evAt] at hx
+    have hatT : ∀ q y, evAt (conv [[e]]) q = some y → q = (0, 0) ∧ y = convEv e := by
+      rintro ⟨j, kk⟩ y hy
+      rcases j with _ | j
+      · rcases kk with _ | kk
+        · simp [evAt, conv] at hy; exact ⟨rfl, hy.symm⟩
+        · simp [evAt, conv] at hy
+      · simp [evAt, conv] at hy
+    exact {
+      ev := fun q x hx => by
+        obtain ⟨rfl, rfl⟩ := hat q x hx
+        refine ⟨convEv e, by simp [evAt, conv], ?_, ?_, rfl, rfl, rfl⟩
+        · show Maps .scR e.k; rw [hk]; exact .inl rfl
+        · show e.k.dir = .R; rw [hk]; rfl
+      mono := fun q q' hq hq' hlt => by
+        obtain ⟨x, hx⟩ := Option.isSome_iff_exists.mp hq
+        obtain ⟨x', hx'⟩ := Option.isSome_iff_exists.mp hq'
+        obtain ⟨rfl, -⟩ := hat q x hx
+        obtain ⟨rfl, -⟩ := hat q' x' hx'
+        exact absurd hlt (Lt.irrefl _)
+      shared := fun q x hx _ => by obtain ⟨-, rfl⟩ := hat q x hx; exact hnp
+      priv := fun q y hy hW _ => by
+        obtain ⟨-, rfl⟩ := hatT q y hy
+        simp [convEv, hk, AKind.dir] at hW
+      len := fun j hj => by simp at hj; subst hj; simp
+      pair := fun j hj h2 => by simp at hj; subst hj; simp at h2
+      pair_inv := fun q q' hq _ hpr => by
+        obtain ⟨⟨x, hx, hxk⟩, -⟩ := hpr
+        obtain ⟨x0, hx0⟩ := Option.isSome_iff_exists.mp hq
+        obtain ⟨rfl, -⟩ := hat q x0 hx0
+        simp [evAt] at hx
+        subst hx
+        rw [hk] at hxk
+        cases hxk }
+
+/-! ## The linked machine with the return -/
+
+/-- The caller's program. -/
+abbrev pC0 : Arm.Program := RC.fb.program RC.base
+
+/-- **A state at the callee's `ret` line.** -/
+def IsRetL (x : ArmState) : Prop :=
+  ∃ j t, (act vcpL rfL).fa.lines.toList[j]? = some (.ins .ret t) ∧
+    Arm.r .PC x = 0x20000#64 + BitVec.ofNat 64 (lineOffset (act vcpL rfL).fa.lines.toList j)
+
+open Classical in
+/-- **The linked machine with the return** (module doc): at the callee's `ret` line, its step
+goes back to the caller's program. -/
+noncomputable def MC2 (x : ArmState) : ArmState :=
+  if x.program = pL then (if IsRetL x then set_program (stepL x) pC0 else stepL x) else RC.step x
+
+theorem mc2_caller {x : ArmState} (hx : x.program = pC0) : MC2 x = RC.step x := by
+  have : ¬ x.program = pL := by rw [hx]; exact progC_ne
+  simp only [MC2, this, ite_false]
+
+theorem mc2_ret {x : ArmState} (hx : x.program = pL) (hr : IsRetL x) :
+    MC2 x = set_program (stepL x) pC0 := by
+  simp only [MC2, hx, ite_true, hr]
+
+/-- **The caller's state after the callee returned** (as the caller resumes): at the return
+address, no error, its `sp`, its addresses as at the call, its program. -/
+def PostA (s y : ArmState) : Prop :=
+  Arm.r .PC y = Arm.r .PC s + 4#64 ∧ Arm.r .ERR y = .None ∧ E2E.spv y = E2E.spv s ∧
+    (∀ a, RC.F a → y.mem a = s.mem a) ∧ y.program = pC0
+
+/-- **The callee's return** (`Ret` of `link_compose`): the caller's Arm state after it, the
+caller's CLIF state ready to return. -/
+def RetL (s : ArmState) (_u : CallCompose.AT) (_c : TState) (v : CallCompose.AT) (d : TState) :
+    Prop :=
+  PostA s v.1 ∧ ∃ sd, d = .run sd ∧ RetReady fC sd ∧ sd.callers = []
+
+theorem srcStep_next {R : RL} {b k : Nat} {allocs : Array Loc} {its : List RItem}
+    {m : Loc → CV} {w : ArmState} {evs : List Ev} {c' : MConf CV ArmState}
+    (hf : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → i.isCtl = false)
+    (h : SrcStep R (OpC b k allocs its m w) evs c') : ∃ m' w', c' = .run ⟨b, its, m', w'⟩ := by
+  cases h with
+  | op hvb hi hops hevs hfoot hst =>
+    cases hst with
+    | op hvb' hi' hops' hsz hsem hlen hho hcl hn =>
+      rw [hvb] at hvb'; cases hvb'; rw [hi] at hi'; cases hi'
+      obtain rfl := csem_ctl (hf _ _ hvb hi) (R.sem_csem hsem)
+      cases hn with
+      | next _ => exact ⟨_, _, rfl⟩
+
+section callee2
+variable {s : ArmState} {m : Loc → CV}
+
+theorem mc2_callee (hS : StRel RC s m w₀C) {x : ArmState} (hx : x.program = pL)
+    (hn : AtNonRet (RLx s) x) (M : Memory) : MC2 (setMem M x) = (RLx s).step (setMem M x) := by
+  have hnr : ¬ IsRetL (setMem M x) := by
+    rintro ⟨j, t, hj, hpc⟩
+    obtain ⟨j', x', t', hj', hx', hpc'⟩ := hn
+    rw [ArmFoot.r_setMem] at hpc
+    have := RL.pcOf_inj (R := RLx s) (wfX hS) hj hj' (hpc.symm.trans hpc')
+    subst this
+    have hj2 : (RLx s).fa.lines.toList[j]? = some (.ins .ret t) := hj
+    rw [hj2] at hj'; cases hj'; exact hx' rfl
+  have hp : (setMem M x).program = pL := by rw [setMem_program]; exact hx
+  simp only [MC2, hp, ite_true, hnr, ite_false]; rfl
+
+/-- **The `ldar`'s configuration has a step of the allocated code** (layers 2–4a's progress,
+`isel_alloc_refinesP`, on the event-free run from the entry: the CLIF thread at `csL` has not
+stepped, since its step has an event, and does not stop there). -/
+theorem mstep_ldar (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) (env : Clif.Env)
+    {mL : Loc → CV} {trM : List (List Ev)}
+    (hrun : SRun (SrcStep (RLx s)) (MConf.init (RLx s).rf (locVal (RLx s).fr
+        (iterN (RLx s).step (prologueLines (RLx s).af.frameSize).length (RLx s).s0)) (w₀X s))
+        trM (.run ⟨0, rest2L, mL, w₀X s⟩))
+    (hnil : ∀ x ∈ trM, x = []) :
+    ∃ c', MStep (RLx s).vc (RLx s).sem ckeep (RLx s).rf (.run ⟨0, rest2L, mL, w₀X s⟩) c' := by
+  obtain ⟨hlow, hthr, hext, hind, hv, -, hout, hprep, -⟩ := checksL
+  obtain ⟨ctx, st0, R, gn, bl, A, H, hbl⟩ := driverHyp_of (Γ := ΓX s) (fctx := (RLx s).ctx)
+    (X := (RLx s).X) (c := E2E.spv (w₀X s)) (env := env) (p := pCL) hlow hthr
+    (List.isEmpty_iff.mp hext) (List.isEmpty_iff.mp hind) hv cfgL hout rfl (fun _ _ h => by cases h)
+  obtain ⟨-, -, hpar, hsig, hlocs, -, -, -⟩ := shapeL
+  have hsem : (RLx s).sem = csem (RLx s).F (RLx s).ctx (RLx s).X :=
+    ThreadCompose.csemV_none _ _ _
+  have hM := mtrun_of_srun hrun
+  rw [hsem] at hM
+  obtain ⟨mI, trS, t, ψ, -, hcr, href, hend⟩ := ThreadCompose.isel_alloc_refinesP (cs := csL) H hbl
+    (E2E.memRelOk_relW (ΓX s) fL _) (IselRefines.Witness.relW_wf (alignX hS))
+    VCodeThread.Witness.X0_tls (memRefines_csem (RLx s).F (RLx s).ctx _ rfl (fun _ _ h => by cases h))
+    (E2E.mrStable_relW (ΓX s) fL _)
+    (fun off h => by have := List.all_eq_true.mp hlocs _ h; simp at this) hprep allocL b0L
+    rfl rfl rfl rfl rfl regsL_eq hpar hsig (fun _ => 0) (relX hS) (argsAtX hx0) hM
+  rcases hend with ⟨-, cM', hst⟩ | hstop
+  · exact ⟨cM', by rw [hsem]; exact hst⟩
+  · exfalso
+    cases hcr with
+    | nil => exact notStop_csL env pCL hstop
+    | @cons _ _ _ x _ hs1 _ =>
+      have hm := hs1.1.1
+      rw [shapeL1, List.mem_singleton] at hm
+      obtain ⟨e, rfl⟩ : ∃ e, x = [e] := by
+        rcases x with _ | ⟨e, _ | ⟨e', r⟩⟩ <;> simp at hm
+        exact ⟨e, rfl⟩
+      obtain ⟨y, hy, -⟩ := href.ev (0, 0) e (by simp [evAt])
+      rw [CallSeg.evAt_nilS (fun x hx => by
+        simp only [PrepThread.conv, List.mem_map] at hx
+        obtain ⟨y, hy, rfl⟩ := hx
+        rw [hnil y (List.mem_of_mem_take hy)]; rfl)] at hy
+      cases hy
+
+end callee2
+
 end Concurrency.CallSeg.WitnessC
