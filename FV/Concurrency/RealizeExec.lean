@@ -139,4 +139,31 @@ theorem wf_single (hn : P.n = 1)
 
 end single
 
+/-! ## Witness: a one-thread trace that reads an initial location -/
+
+/-- One thread, one step reading the 8 bytes at `5`. -/
+def Pr1 : Traces Unit Unit BVal := ⟨1, fun _ => [[⟨(), .R, 5, 8, []⟩]], fun _ _ => ()⟩
+
+/-- **`wf_single` is not vacuous**: the read of `Pr1` reads from the initial write of `(5, 8)`. -/
+theorem wf_single_witness :
+    (Pr1.exec [(5, 8)] (latestW Pr1 [(5, 8)]) (coL Pr1 [(5, 8)]) (fun _ _ => False)).Wf ∧
+      latestW Pr1 [(5, 8)] (.init 0) (.thr 0 0 0) := by
+  have hl : latestW Pr1 [(5, 8)] (.init 0) (.thr 0 0 0) := by
+    refine ⟨rfl, rfl, rfl, trivial, fun w' hw _ h1 h2 => ?_⟩
+    cases w' with
+    | init q => simp only [PEvLt] at h1; simp [X0, Traces.exec] at hw; omega
+    | thr i j k => simp only [PEvLt] at h2; omega
+  refine ⟨wf_single rfl (fun j h => by simp [Pr1] at h ⊢) fun r hr =>
+    ⟨.init 0, rfl, ?_, by
+      cases r with
+      | init q => simp only [X0, Traces.exec] at hr; split at hr <;> cases hr
+      | thr => trivial⟩, hl⟩
+  cases r with
+  | init q => simp only [X0, Traces.exec] at hr; split at hr <;> cases hr
+  | thr i j k =>
+    simp only [X0, Traces.exec, Traces.evAt, Pr1] at hr ⊢
+    by_cases hi : i < 1
+    · rcases j with _ | j <;> rcases k with _ | k <;> simp_all
+    · simp_all
+
 end Concurrency.RealizeCompiled
