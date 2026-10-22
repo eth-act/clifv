@@ -8,6 +8,8 @@ import FVTest.E2E.FloatTotalT
 import FVTest.E2E.FloatCleanupTotalT
 import FV.E2E.VerifiableT
 import FVTest.E2E.FloatVerifiedW
+import FVTest.Link.FloatCompileExeT
+import FV.Link.DeadCleanupCompileT
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
@@ -46,3 +48,7 @@ import FVTest.E2E.FloatVerifiedW
 #print axioms FloatVerifiedW.inSubsetT_w -- witness: native_decide
 #print axioms FloatVerifiedW.lowerChecked_w -- witness: native_decide
 #print axioms FloatVerifiedW.lowerChecked_mv -- witness: native_decide
+#print axioms Link.DeadCleanup.compileExeT_correct
+#print axioms Link.DeadCleanup.compileExeT_total_reach_input
+#print axioms Link.DeadCleanup.compileExeT_eq
+#print axioms E2E.FloatCompileExeTWitness.correct_spec -- witness: native_decide
