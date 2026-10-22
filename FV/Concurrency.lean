@@ -38,6 +38,8 @@ callees with LL/SC loops entered with the open monitor: `CallSeg.funReal_calleeX
 caller calling the compiled `atomic_load`, as a thread: `CallSeg.WitnessC.funReal_call`,
 `CallSeg.WitnessC.realizes_call`; its whole run through the callee's return and its own
 (`CallSeg.resumeQ`): `CallSeg.WitnessC.funReal_callFull`, `CallSeg.WitnessC.realizes_call_full`.
+A compiled caller of the compiled `atomic_rmw` (entered with the open monitor,
+`CallSeg.prun_privF_mon`): `CallSeg.WitnessCR.funReal_call`, `CallSeg.WitnessCR.realizes_call`.
 Layer 4b of a caller pausing at its calls and its return, at related configurations:
 `ArmAllocThread.arm_alloc_refines_lsC` (`refines_of_itemSimQ`, `itemSim_lsC`).
 The realized prefix covers the whole run: it is the whole Arm run or ends where the CLIF thread
@@ -176,5 +178,6 @@ import FV.Concurrency.CallLoadFull
 import FV.Concurrency.CallLLSCEntry
 import FV.Concurrency.CallLoadResume
 import FV.Concurrency.CallRmwData
+import FV.Concurrency.CallRmwWitness
 import FV.Concurrency.ArmAllocPause
 import FV.Concurrency.ArmAllocPauseWitness
