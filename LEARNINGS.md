@@ -93,6 +93,11 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - **Trick:** decision variants proven equal to the statements' definitions: `relsInFastB` reads the per-section classification from a `Std.HashMap` built once (`secCls`, `secCls_getD`: its entry is `secsOf`'s answer; `relsInFastB_eq` by `simp` then `rfl`), `reachOkPar` uses `addrMap` and the size computed once (`reachOkPar_eq`, `simp` with `addrMap_get`).
 - **Numbers:** the larger fv-demo executable 121,956 ms → 2,889 ms (`relsInB` 10,493 → 88 ms, `reachOkB` 108,454 → 303 ms); the other 17,232 → 1,130 ms (`FV/Link/Ld/RelsFast.lean`, `FV/Link/ExeLdIn.lean`). Same mistake in the link spec's symbol lookups (`symHint`/`firstVals` rebuilt per link-map entry in `inSymsB`/`pinAddr`; fix: `inSymsWith`/`pinAddrWith` taking the tables, built once by `let` outside the `all`/`filterMap`): deps executables (about 20,000 functions) 890–1,321 s → 29–36 s (`specPreB` 254–571 s → 3.8–5.5 s; `FV/Link/Ld/SpecTotal.lean`).
 
+### A table in a lambda is rebuilt per call: bind it with `let` outside
+- **Problem:** `link-check --dead-cleanup --prune` on fv-demo with std (28,554 functions) did not finish in 67 min; after the checks (all done in about 4 min) it sat single-threaded in the stack bound. `budMapFast` passed `fun n => (assocMap I.syms)[n]?` to `budSuccFast`, so the 21,057-entry symbol map was rebuilt at every candidate edge of each indirect caller (Lean does not hoist a non-closed term out of a lambda).
+- **Trick:** `let sm := assocMap I.syms` before the call, pass `fun n => sm[n]?`; `budMapFast_eq` unchanged (`simp` zeta-reduces). Also one task per function (`Link.parMap`, `parMap_eq`) for the routing recovery's up to five pipelines per function.
+- **Numbers:** std bundle link-check >67 min (killed) → 5 min 19 s (stack bound 65 s, max RSS 1.2 GB); same output on 22 non-std executables (`FV/E2E/BinCheckFast.lean`, `FVTest/E2E/LinkCheckMain.lean`).
+
 ## From other projects (not yet measured in clifv)
 
 From [Th0rgal/evm.fast-dev](https://github.com/Th0rgal/evm.fast-dev) (`docs/PROOF-PERFORMANCE.md`). All keep ordinary kernel checking and standard axioms. Move an entry up into the sections above once it has been measured here.
