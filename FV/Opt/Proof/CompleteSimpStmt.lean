@@ -89,6 +89,12 @@ theorem RInv.anyX {X : ValueId → Prop} {XN : Inst → Prop} {st : SState}
     obtain ⟨e1, e2, e3⟩ := h.memo n w hw
     exact ⟨.inl (e1.resolve_right (fun h => h.1)), e2, e3⟩, h.alts⟩
 
+theorem RInv.weakXN {X : ValueId → Prop} {XN : Inst → Prop} {st : SState}
+    (h : RInv f V B X (fun _ => False) st) : RInv f V B X XN st :=
+  ⟨h.m, h.noPartial, fun n w hw => by
+    obtain ⟨e1, e2, e3⟩ := h.memo n w hw
+    exact ⟨.inl (e1.resolve_right (fun h => h.2)), e2, e3⟩, h.alts⟩
+
 /-- `pureInsert`: `v = inst` becomes a node (its value stays bad). -/
 theorem pureInsert_ok {st : SState} {v : ValueId} {inst : Inst}
     (hI : RInv f V B (fun _ => False) (fun _ => False) st) (hpure : isPure inst = true)
@@ -176,32 +182,28 @@ theorem pureBest_ok {rules : SimplifyFn} (hR : SimpRulesOk rules) (allowed : Ins
       .inr ⟨e1.resolve_right (fun h => h.1), by rw [e3, hty]⟩⟩
   | none =>
     simp only
-    have hI0 : RInv f V B (· = v) (· = inst) ({ st0 with memo := st0.memo.insert inst v } : SState) :=
-      (hI.anyX).memoInsert (.inr ⟨rfl, rfl⟩) hvk hty
-    have hS0 : RStep B st0 ({ st0 with memo := st0.memo.insert inst v } : SState) :=
-      RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl
-    have hen : ∀ n ∈ SState.enodes ({ st0 with memo := st0.memo.insert inst v } : SState) v,
+    have hI0 : RInv f V B (· = v) (fun _ => False) st0 := hI.anyX
+    have hen : ∀ n ∈ SState.enodes st0 v,
         NodeIn (fun y => st0.types.get? y) f (Placed st0 B) (st0.types.get? v) n := by
       intro n hn
       simp only [SState.enodes, halts, hvd, Option.toList_some, Option.getD_none,
         List.filterMap_nil, List.append_nil, List.mem_singleton] at hn
       subst hn; exact hnode
-    obtain ⟨hI1, hS1, hC1, hb1⟩ := opt_spec (X := (· = v)) (XN := (· = inst)) hR allowed rewriteLimit
+    obtain ⟨hI1, hS1, hC1, hb1⟩ := opt_spec (X := (· = v)) hR allowed rewriteLimit
       _ v hI0 hvk (.inr rfl) (fun n hn y hy => by
-        change st0.defs.get? v = some n at hn
         rw [hvd] at hn; cases hn; exact hops y hy)
       hen
-    generalize optimizeAt rules allowed rewriteLimit
-      ({ st0 with memo := st0.memo.insert inst v } : SState) v = r at hI1 hS1 hC1 hb1
+    generalize optimizeAt rules allowed rewriteLimit st0 v = r at hI1 hS1 hC1 hb1
     obtain ⟨b, st1⟩ := r
     simp only at hI1 hS1 hC1 hb1 ⊢
     have hbk : st1.known b = true ∧ st1.types.get? b = SState.nodeTy inst := by
       rcases hb1 with rfl | hb
       · exact ⟨hS1.known hvk, by rw [hS1.typesKnown _ hvk]; exact hty⟩
       · exact ⟨hb.1.known, by rw [hb.2]; exact hty⟩
-    refine ⟨hI1.memoInsert (hb1.imp (fun h => ⟨h, rfl⟩) (fun h => h.1) |>.symm) hbk.1 hbk.2,
-      (hC1 (hC.congr rfl rfl rfl rfl rfl)).congr rfl rfl rfl rfl rfl,
-      hS0.trans (hS1.trans (RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl)),
+    refine ⟨(hI1.weakXN (XN := (· = inst))).memoInsert
+        (hb1.imp (fun h => ⟨h, rfl⟩) (fun h => h.1) |>.symm) hbk.1 hbk.2,
+      (hC1 hC).congr rfl rfl rfl rfl rfl,
+      hS1.trans (RStep.of_fields rfl rfl rfl rfl rfl rfl rfl rfl),
       by simp, hb1⟩
 
 /-- The pure path of `stepStmt` (after its sanity check). -/

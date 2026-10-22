@@ -33,11 +33,11 @@ stays valid (removing edges only adds dominance), and `Opt.optimize` removes the
 became unreachable.
 
 Differences from Cranelift, all on the conservative side: nodes are materialised where the
-rewritten statement was (placement/remat/LICM are separate passes); the node being
-simplified is in the hash-consing table while its rules run (so a rule rebuilding it, e.g. two
-argument swaps, gets `v` back instead of a copy); an e-class is only visible
+rewritten statement was (placement/remat/LICM are separate passes); an e-class is only visible
 to later matches through its representative when that representative was created by this
 statement (so every node of a visible class can be materialised wherever the class is used).
+As in Cranelift (`insert_pure_enode`), a statement's node enters the hash-consing table only
+after its rules ran, mapped to the best value of its class.
 
 **Invariant (for the proof).** Every emitted statement is a pure node whose operands are
 defined at its position (dominance), and every renaming `v ↦ w` has `w` equal to `v` by the
@@ -512,7 +512,7 @@ def pureBest (rules : SimplifyFn) (allowed : Inst → Bool) (bi : Nat) (st : SSt
   match memoHit st bi inst with
   | some w => (w, st)
   | none =>
-    let (b, st1) := optimizeAt rules allowed rewriteLimit { st with memo := st.memo.insert inst v } v
+    let (b, st1) := optimizeAt rules allowed rewriteLimit st v
     (b, { st1 with memo := st1.memo.insert inst b })
 
 /-- Step 5: keep `v`, or materialise its best value `best` and rename `v` to it. -/

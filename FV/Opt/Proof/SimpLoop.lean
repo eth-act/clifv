@@ -1071,29 +1071,24 @@ theorem pureBest_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) {st st1
     · cases hhit
   | none =>
     simp only [pureBest, hhit] at h
-    generalize hopt : optimizeAt rules allowed rewriteLimit { st with memo := st.memo.insert inst v } v = r at h
+    generalize hopt : optimizeAt rules allowed rewriteLimit st v = r at h
     obtain ⟨b, st1'⟩ := r
     simp only [Prod.mk.injEq] at h
     obtain ⟨rfl, rfl⟩ := h
-    have hkv : st.known v = true := by
-      simp only [SState.solid, Bool.and_eq_true] at hsv; exact hsv.1
-    obtain ⟨hIB, hGB⟩ := memo_insert_spec (st' := { st with memo := st.memo.insert inst v }) hI hops
-      hnode rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl rfl rfl
-    obtain ⟨hI1, hG1, hv1⟩ := optimizeAt_spec (allowed := allowed) hS hE rewriteLimit _ v hIB
-      (hGB.solid v hsv)
+    obtain ⟨hI1, hG1, hv1⟩ := optimizeAt_spec (allowed := allowed) hS hE rewriteLimit _ v hI hsv
     rw [hopt] at hI1 hG1 hv1
     simp only at hI1 hG1 hv1
-    have hM : Mono ρ fr mem st st1' := hGB.mono.trans hG1.mono
+    have hM : Mono ρ fr mem st st1' := hG1.mono
     have hfwd : ∀ a, evalNode (withRegs fr (gval ρ fr mem st1')) mem inst = some a →
         gval ρ fr mem st1' b = some a := by
       intro a ha
       rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st)) (fr' := withRegs fr (gval ρ fr mem st1'))
         rfl rfl rfl (fun y hy => hM.fix y (hops y hy))] at ha
-      exact hv1 a (by rw [hGB.fix v hkv]; exact hnode a ha)
+      exact hv1 a (hnode a ha)
     obtain ⟨hI2, hG2⟩ := memo_insert_spec (st' := { st1' with memo := st1'.memo.insert inst b })
       hI1 (fun y hy => hM.known y (hops y hy)) hfwd rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl
       rfl rfl
-    refine ⟨hI2, hM.trans hG2.mono, hG2.solid v (hG1.solid v (hGB.solid v hsv)), fun a ha => ?_⟩
+    refine ⟨hI2, hM.trans hG2.mono, hG2.solid v (hG1.solid v hsv), fun a ha => ?_⟩
     have ha' : evalNode (withRegs fr (gval ρ fr mem st1')) mem inst = some a := by
       rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st1'))
         (fr' := withRegs fr (gval ρ fr mem { st1' with memo := st1'.memo.insert inst b }))

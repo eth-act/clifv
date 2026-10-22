@@ -1,4 +1,5 @@
 import FV.Opt.Proof.CompleteSimpRun
+import FV.Opt.Proof.CompleteSimpHand
 import FV.Opt.Proof.CompleteOptimize
 
 /-!
@@ -19,9 +20,12 @@ to what the pipeline needs of the simplify stage (`Opt.SimpStageOk`):
 `simp_complete_of_run` combines them; `Opt.simpStageOk_of` instantiates them with the run invariant
 `Opt.simplify_run_inv` (the rule hypotheses `SimpRulesOk`/`SkelRulesOk`, `symbol_value` excluded by
 `allowedIn_symbolValue`), and `Opt.optimize_complete_of_rules` is the mid-end's completeness under
-the rule hypotheses. `Opt.CompleteSimpWitness.witness`: on a function whose two blocks compute the
-same `iconst`, the empty rule set's hash-consing renames the second to the first, and the theorem
-applies.
+the rule hypotheses. With the hand rules the hypotheses hold (`Opt.simpRulesOk_hand`,
+`Opt.skelRulesOk_hand`): `Opt.simpStageOk_hand`, `Opt.optimize_complete_hand`.
+`Opt.CompleteSimpWitness.witness`: on a function whose two blocks compute the same `iconst`, the
+empty rule set's hash-consing renames the second to the first, and the theorem applies;
+`Opt.CompleteSimpWitness.witness_hand`: the hand rule `x + 0 ⇒ x` fires and the hand-rule theorems
+apply.
 -/
 
 namespace Opt
@@ -647,6 +651,23 @@ theorem optimize_complete_of_rules {cfg : Config} (hR : SimpRulesOk cfg.simplify
       (optimizeReport cfg f0).1 = runStages cfg (removeUnreachable f0) :=
   optimizeReport_complete cfg f0 h (.inr (simpStageOk_of hR hK))
 
+/-- **Completeness of the simplify stage with the hand rules** (`simpRulesOk_hand`,
+`skelRulesOk_hand`). -/
+theorem simpStageOk_hand {cfg : Config} (hr : cfg.rules = .hand) : SimpStageOk cfg := by
+  cases cfg
+  simp only at hr
+  subst hr
+  exact simpStageOk_of simpRulesOk_hand skelRulesOk_hand
+
+/-- **Completeness of the mid-end with the hand rules**: on an input that is well formed once its
+unreachable blocks are removed, no stage of `optimizeReport` stops and the result is the
+unvalidated pipeline `runStages`. -/
+theorem optimize_complete_hand (cfg : Config) (hr : cfg.rules = .hand) (f0 : Function)
+    (h : ∃ i, check (removeUnreachable f0) = .ok i) :
+    (optimizeReport cfg f0).2.passError = none ∧
+      (optimizeReport cfg f0).1 = runStages cfg (removeUnreachable f0) :=
+  optimizeReport_complete cfg f0 h (.inr (simpStageOk_hand hr))
+
 end Opt
 
 namespace Opt.CompleteSimpWitness
@@ -683,5 +704,44 @@ theorem witness :
     · cases h0
   exact ⟨hc, by native_decide, by native_decide, by native_decide,
     simplify_complete false simpRulesOk_noRules skelRulesOk_hand fn fn _ hc⟩
+
+/-- `v2 = v0 + 0` with `v1 = iconst.i32 0`. -/
+def fnHand : Function where
+  name := "h"
+  sig := { params := [{ ty := .i32 }], returns := [{ ty := .i32 }] }
+  blocks := [
+    { id := 0, params := [(0, .i32)],
+      body := [{ results := [1], inst := .iconst .i32 0 },
+        { results := [2], inst := .binary .iadd .i32 0 1 }],
+      term := .ret [2] }]
+
+/-- The simplifier with the hand rules on `fnHand`. -/
+abbrev runHand : Function × SimplifyStats × SimpCert :=
+  simplify HandRules.simplify HandRules.simplifySkeleton (allowedIn fnHand) (skelAllowedIn fnHand)
+    false fnHand (coreInfo fnHand)
+
+/-- **Non-vacuity of `simpRulesOk_hand`**: on `fnHand` the hand rule `x_op_zero` renames `v2` to
+`v0` (the block returns `v0`), and `simplify_complete` applies with the hand rules: the validator
+accepts, `check` accepts after `removeUnreachable`, the guard facts hold; the whole pipeline with
+the hand rules does not stop (`optimize_complete_hand`). -/
+theorem witness_hand :
+    check fnHand = .ok (coreInfo fnHand) ∧
+      runHand.1.blocks.map (·.term) = [.ret [0]] ∧
+      runHand.2.2.subst.get? 2 = some 0 ∧
+      (simpOk fnHand runHand.1 (coreInfo fnHand) runHand.2.2 = true ∧
+        (∃ i, check (removeUnreachable runHand.1) = .ok i) ∧ SimpGuard fnHand fnHand runHand.1) ∧
+      (optimizeReport { rules := .hand } fnHand).2.passError = none := by
+  have hc : check fnHand = .ok (coreInfo fnHand) := by
+    have h0 : (match check fnHand with | .ok _ => true | .error _ => false) = true := by
+      native_decide
+    split at h0
+    · rename_i i hi; rw [hi, ← coreInfo_of_check hi]
+    · cases h0
+  have hr : check (removeUnreachable fnHand) = .ok (coreInfo fnHand) := by
+    have h0 : removeUnreachable fnHand = fnHand := by native_decide
+    rw [h0, hc]
+  exact ⟨hc, by native_decide, by native_decide,
+    simplify_complete false simpRulesOk_hand skelRulesOk_hand fnHand fnHand _ hc,
+    (optimize_complete_hand { rules := .hand } rfl fnHand ⟨_, hr⟩).1⟩
 
 end Opt.CompleteSimpWitness
