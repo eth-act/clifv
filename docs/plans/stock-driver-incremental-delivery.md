@@ -16,7 +16,7 @@ tree verified against validated 0d9f54fe plus its documentation receipt. [Logica
 records current normal/trust/runtime/native/CLI/retention/identity/example gates,
 exact original axiom/header parity and actual provenance. The actual squash and integrator notice are recorded in #44/#140/#261.
 
-Continue remaining pure scalar classes, starting with
+Continue remaining scalar classes, including real trapping
 division/remainder, using complete saved source wrappers and shared consumer composition. Read
 [the obligation ledger](../research/stock-driver-obligations.json); historical root
 inventories require current-source/scope reconciliation and are not coverage
@@ -271,3 +271,23 @@ clean views/outputs; preserve dirty/unpublished source and unique evidence.
 Roughly 8 substantive PRs/day is pacing, never a quota or reason to fragment.
 Record implementation/porting/validation/operational-repair time. No routine
 confirmation; keep working until every original #140 obligation is complete.
+
+## Division compatibility gate and next mixed-body delivery
+
+The complete singleton returned division/remainder class is implemented and
+validated on the source heads in [its receipt](../research/stock-div-production-activation.md).
+Current main advanced from b9415cfb to f7074115 while the session was inactive,
+including allocator and linker contracts. The conflict-free reconciliation is
+pushed at6a205546; fresh required dependency/runtime/consumer gates are pending.
+The original receipt and source are backed remotely atf3e6f6bc. No current-main
+pass or merge is claimed before those checks finish.
+
+Next deliver arbitrary proved scalar prefixes followed by a returned final
+division. Derive that division’s actual record retention from the unchanged
+return-demand proof, and pure prefix unsunkness from pointwise quiet source
+colors beside the colored division. Compose real original trapped prefixes
+with the selected scan chunks; preserve memory/world changes in the generic
+prefix proof. This complete class can ship without first solving arbitrary
+position division-sinking, which remains an explicit subsequent obligation.
+All original #140 effects, calls, control, widths/ABIs, block/whole-driver
+simulation and universal Stock-only/downstream completeness remain active.
