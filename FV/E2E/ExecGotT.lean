@@ -14,7 +14,7 @@ import FV.E2E.StackBoundT
 /-! # Typed copies of `FV.E2E.ExecGot` (S11e5 Stage C, slice 8)
 
 The declarations of `FV.E2E.ExecGot` that depend on the integer link contract
-(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefinesT`), for the typed contract `LinkSys.OkT`
+(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefines`), for the typed contract `LinkSys.OkT`
 (suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`). -/
 
 namespace E2E

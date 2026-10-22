@@ -1,9 +1,11 @@
 import FV.E2E.DeadCleanupExecRunN
 import FV.E2E.ExecRunNT
 import FV.E2E.DeadCleanupBinaryT
+import FV.E2E.DeadCleanupBinCheckT
 import FV.E2E.BinCheckT
 import FV.E2E.BinaryT
 import FV.E2E.DeadCleanupExecBytesT
+import FV.E2E.DeadCleanupExecStaticT
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.DeadCleanupStackBoundT
 import FV.E2E.ExecBytesT
@@ -16,7 +18,7 @@ import FV.E2E.StackBoundT
 /-! # Typed copies of `FV.E2E.DeadCleanupExecRunN` (S11e5 Stage C, slice 8)
 
 The declarations of `FV.E2E.DeadCleanupExecRunN` that depend on the integer link contract
-(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefinesT`), for the typed contract `LinkSys.OkT`
+(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefines`), for the typed contract `LinkSys.OkT`
 (suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`). -/
 
 namespace E2E.DeadCleanupExecBytes
@@ -27,6 +29,12 @@ variable (I : LinkInput) (B : BaseEnv) (file : ByteArray)
 end Defs
 section Lemmas
 variable {I : LinkInput} {B : BaseEnv} {file : ByteArray}
+
+theorem runOkSN_of_nT (hI : okBCleanupT I = true) (hc : codeMapB I (tabOf I.resultsCleanup) = true)
+    (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) (hH : HooksSim I B) {M : Nat}
+    {f : Clif.Function} (hf : f ∈ (prog I).funcs) {c : Arm.ArmState}
+    (h : RunOkN I B file M f c) : RunOkSN I B file M f c :=
+  fun M' g t hR he => stepOk_of_dT hI hc hF hH (reachN_mem hR hf) (h M' g t hR he)
 end Lemmas
 section Core
 variable {I : LinkInput} {B : BaseEnv} {file : ByteArray}
@@ -99,7 +107,7 @@ map check `codeMapB` and `StepOkD` at the states of the model's run whose step e
 (nested only into calls that return), the executable machine run from `r` refines the
 whole-program CLIF run. -/
 theorem binary_correct_exec_staticNT {I : LinkInput} {D : List Clif.DataObject} {file : ByteArray}
-    (hI : okBCleanup I = true) (hcm : codeMapB I (tabOf I.resultsCleanup) = true)
+    (hI : okBCleanupT I = true) (hcm : codeMapB I (tabOf I.resultsCleanup) = true)
     (hbin : DeadCleanupBinCheck.BinOk I D file) (B : BaseEnv) (hB : BaseOk (sys I B)) (hH : HooksSim I B)
     {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (hc : ¬ DeadCleanupStackBound.CycleFrom (DeadCleanupStackBound.Calls I I.resultsCleanup) f) (M : Nat) {r : Arm.ArmState}
@@ -110,7 +118,7 @@ theorem binary_correct_exec_staticNT {I : LinkInput} {D : List Clif.DataObject} 
     (hrun : RunOkN I B file M f (modelOf I f r)) :
     ExecRefinesT (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (E2E.DeadCleanupBinCheck.RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
-  have hn := (DeadCleanupStackBound.goodN_iff hI).2 ⟨f, hf, hc⟩
+  have hn := (DeadCleanupStackBound.goodN_iffT hI).2 ⟨f, hf, hc⟩
   obtain ⟨h1, h2⟩ := binary_correct_of_checksT hI hbin B hB hn hf M hX ho hr htr
   have hfm := (Clif.Program.func?_some hf).1
   have hB' : BaseOk (LinkSys.ofInputCleanup I B (worldF I f (DeadCleanupStackBound.bud I f) r)) := baseOk_F hB

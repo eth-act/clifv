@@ -1,7 +1,9 @@
 import FV.E2E.DeadCleanupExecProven
 import FV.E2E.DeadCleanupExecGotT
+import FV.E2E.DeadCleanupExecGoodReadsT
 import FV.E2E.ExecProvenT
 import FV.E2E.DeadCleanupBinaryT
+import FV.E2E.DeadCleanupBinCheckT
 import FV.E2E.BinCheckT
 import FV.E2E.BinaryGoodT
 import FV.E2E.BinaryT
@@ -9,6 +11,7 @@ import FV.E2E.DeadCleanupBinaryGoodT
 import FV.E2E.DeadCleanupExecBytesT
 import FV.E2E.DeadCleanupExecGoodRunT
 import FV.E2E.DeadCleanupExecRunNT
+import FV.E2E.DeadCleanupExecStaticT
 import FV.E2E.DeadCleanupLinkCheckT
 import FV.E2E.DeadCleanupStackBoundT
 import FV.E2E.ExecBytesT
@@ -26,7 +29,7 @@ import FV.E2E.StackBoundT
 /-! # Typed copies of `FV.E2E.DeadCleanupExecProven` (S11e5 Stage C, slice 8)
 
 The declarations of `FV.E2E.DeadCleanupExecProven` that depend on the integer link contract
-(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefinesT`), for the typed contract `LinkSys.OkT`
+(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefines`), for the typed contract `LinkSys.OkT`
 (suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`). -/
 
 namespace E2E.DeadCleanupExecBytes
@@ -38,7 +41,7 @@ contract `HooksSim`, the code map check `codeMapB`, the GOT check (`GotOk`, from
 outside caller keeping the GOT slots off its stack, arguments and live memory (`OutsideAvoids`),
 the executable machine run from `r` refines the whole-program CLIF run. -/
 theorem binary_correct_exec_provenT {I : LinkInput} {D : List Clif.DataObject}
-    {file : ByteArray} (hI : okBCleanup I = true) (hcm : codeMapB I (tabOf I.resultsCleanup) = true)
+    {file : ByteArray} (hI : okBCleanupT I = true) (hcm : codeMapB I (tabOf I.resultsCleanup) = true)
     (hbin : DeadCleanupBinCheck.BinOk I D file) (hgot : GotOk I file) (B : BaseEnv) (hB : BaseOk (sys I B))
     (hH : HooksSim I B) {n : String} {f : Clif.Function} (hf : (prog I).func? n = some f)
     (hc : ¬ DeadCleanupStackBound.CycleFrom (DeadCleanupStackBound.Calls I I.resultsCleanup) f) (M : Nat) {r : Arm.ArmState}
@@ -49,7 +52,7 @@ theorem binary_correct_exec_provenT {I : LinkInput} {D : List Clif.DataObject}
     (htr : TrapsExplicit (Clif.linkEnvN (prog I) B.env M) (prog I).bare cs) :
     ExecRefinesT (art I f).fb (art I f).base (xreg 30 r) (step I B file) r (E2E.DeadCleanupBinCheck.RelocAt I)
       (Clif.runLoop B.env (prog I) (M + 1) cs) := by
-  have hn := (DeadCleanupStackBound.goodN_iff hI).2 ⟨f, hf, hc⟩
+  have hn := (DeadCleanupStackBound.goodN_iffT hI).2 ⟨f, hf, hc⟩
   obtain ⟨-, -, hG⟩ := binary_correct_of_checksXT hI hbin B hB hn hf M hX ho hr htr
   by_cases hout : (∃ vals cm, Clif.runLoop B.env (prog I) (M + 1) cs = .returned vals cm) ∨
       (∃ c, Clif.runLoop B.env (prog I) (M + 1) cs = .trapped c)

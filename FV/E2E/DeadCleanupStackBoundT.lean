@@ -8,12 +8,79 @@ import FV.E2E.PipelineCheckT
 /-! # Typed copies of `FV.E2E.DeadCleanupStackBound` (S11e5 Stage C, slice 8)
 
 The declarations of `FV.E2E.DeadCleanupStackBound` that depend on the integer link contract
-(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefinesT`), for the typed contract `LinkSys.OkT`
+(`LinkSys.Ok`, `LinkSys.Thm`, `okB`, `ArmRefines`), for the typed contract `LinkSys.OkT`
 (suffix `T`; `LinkSys.Ok.*` as `LinkSys.OkT.*`). -/
 
 namespace E2E.DeadCleanupStackBound
 set_option autoImplicit false
 open Backend Backend.Proof Backend.Proof.Driver E2E.LinkCheck E2E.StackBound
+
+/-- Under `okB`, a callee of the linked system is an edge of the call graph. -/
+theorem edgeB_of_calleeT {I : LinkInput} (hI : okBCleanupT I = true) {B : BaseEnv}
+    {F : BitVec 64 → Prop} {g h : Clif.Function} (hg : g ∈ (progOf I.resultsCleanup).funcs)
+    (hc : (LinkSys.ofInputCleanup I B F).Callee g h) : edgeB (fun n => I.syms.lookup n) g h = true := by
+  have hdecl : ∀ e ∈ g.externs, e.2.name = h.name → edgeB (fun n => I.syms.lookup n) g h = true :=
+    fun e he hn => by
+      simp only [edgeB, edgeW, Bool.or_eq_true, List.any_eq_true, beq_iff_eq]
+      exact .inl ⟨e, he, hn⟩
+  rcases hc with ⟨info, hs, n, hd, hpf⟩ | ⟨e, he, hpf⟩ | hc
+  · have hpf' : (progOf I.resultsCleanup).func? n = some h := hpf
+    obtain ⟨⟨e, he, hen⟩, -⟩ := siteOk_sound (site_sound (factsCleanupT hI hg).sites hs) hd hpf'
+    exact hdecl e he (by rw [hen, (Clif.Program.func?_some hpf').2])
+  · obtain ⟨e', he', rfl⟩ := List.mem_map.1 he
+    exact hdecl e' he' (Clif.Program.func?_some (p := progOf I.resultsCleanup) hpf).2.symm
+  · obtain ⟨hh, hmay⟩ := hc
+    rcases hmay with hm | ⟨hnf, hsy, hsig⟩
+    · obtain ⟨e, he, hen⟩ := List.mem_map.1 hm
+      exact hdecl e he hen
+    · obtain ⟨sig, hsm, hm⟩ := hsig h (func?_of_mem (okBCleanup_namesT hI) hh)
+      have hsy' : (I.syms.lookup h.name).isSome = true := by
+        revert hsy; show I.syms.lookup h.name ≠ none → _
+        cases I.syms.lookup h.name <;> simp
+      simp only [edgeB, edgeW, indFreeB_false hnf, hsy', Bool.not_false, Bool.true_and,
+        Bool.or_eq_true, List.any_eq_true, decide_eq_true_eq]
+      exact .inr ⟨sig, hsm, hm⟩
+
+theorem goodN_iffT {I : LinkInput} (hI : okBCleanupT I = true) {n : String} :
+    goodN I n = true ↔
+      ∃ f, (progOf I.resultsCleanup).func? n = some f ∧ ¬ CycleFrom (Calls I I.resultsCleanup) f := by
+  unfold goodN
+  cases hf : (progOf I.resultsCleanup).func? n with
+  | none => simp
+  | some f =>
+    simp only [Option.some.injEq, exists_eq_left']
+    exact budC_isSome_iff (okBCleanup_namesT hI) (Clif.Program.func?_some hf).1
+
+/-- **Soundness of the budgets**: under `okB`, `budMap`'s budgets (which meet `budOkW`,
+`budOkW_budMap`), completed by the depth budget for the functions without one
+(`LinkSys.hybrid`), are a budget of the linked system of the input (whatever the base
+environment). -/
+theorem budget_ofT {I : LinkInput} (hI : okBCleanupT I = true) (B : BaseEnv) (F : BitVec 64 → Prop) :
+    (LinkSys.ofInputCleanup I B F).Budget ((LinkSys.ofInputCleanup I B F).hybrid (budO I) (budMax I)) := by
+  refine LinkSys.budget_hybrid _ _ _ (fun h hh => (factsCleanupT hI hh).depth) ?_ ?_
+  · intro g hg bg hbg h hcl
+    have hok := budOkW_budMap (I := I) (R := I.resultsCleanup) (okBCleanup_namesT hI)
+    have he := edgeB_of_calleeT hI hg hcl
+    have hh : h ∈ (progOf I.resultsCleanup).funcs := (LinkSys.ofInputCleanup I B F).callee_mem hcl
+    simp only [E2E.StackBound.budOkW, List.all_eq_true] at hok
+    have h1 := hok g hg
+    change E2E.StackBound.budC I I.resultsCleanup g = some bg at hbg
+    rw [hbg] at h1
+    simp only [List.all_eq_true] at h1
+    have h2 := h1 h hh
+    simp only [edgeB] at he
+    rw [he] at h2
+    show ∃ bh, E2E.StackBound.budC I I.resultsCleanup h = some bh ∧ _
+    cases hch : E2E.StackBound.budC I I.resultsCleanup h with
+    | none => rw [hch] at h2; simp at h2
+    | some bh =>
+      rw [hch] at h2
+      simp only [Bool.not_true, Bool.false_or, decide_eq_true_eq] at h2
+      exact ⟨bh, rfl, h2⟩
+  · intro h hh bh hbh
+    have := le_foldl_max (stackFn I) _ 0 hh
+    simp only [stackFn, bud, hbh, Option.getD_some] at this
+    exact this
 
 /-- **`backend_correct_program_stack` for the function named `n`** of the linked system `L` of
 the input `I`, every premise but `L.OkT`: for every fuel `M`, from an entry whose `sp` has
@@ -43,7 +110,7 @@ def StackStmtT (I : LinkInput) (n : String) : Prop :=
 
 /-- **A function whose calls never reach a call cycle** (`goodN`) of an input that passes the
 checker refines at every fuel with its stack bound `stackFn I f`. -/
-theorem crate_correct_stackNT {I : LinkInput} (hI : okBCleanup I = true) {n : String}
+theorem crate_correct_stackNT {I : LinkInput} (hI : okBCleanupT I = true) {n : String}
     (hn : goodN I n = true) : StackStmtT I n := by
   intro B F hB hFI f hf M _ _ _ _ _ hent hroom hgfree hFeq himg hbe hargs hcs hsav hrel hpl htr
   have hf' : (progOf I.resultsCleanup).func? n = some f := hf
