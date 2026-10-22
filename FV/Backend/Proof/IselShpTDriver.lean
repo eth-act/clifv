@@ -23,8 +23,8 @@ namespace Backend.Proof.CovT
 
 open Backend Backend.Proof Backend.Proof.Flow Backend.Proof.Spill Isle Isle.Interp Isle.Aarch64
 open Backend.Proof.Cov (Clean LogicImmComplete Totality totality shpHandIds clean_termCtx
-  clean_tryCtx)
-open Backend.Proof.Driver (lower_branch_len lower_hand_ids branch_hand_ids tryInd_sig)
+  clean_tryCtx logicImmComplete)
+open Backend.Proof.Driver
 
 variable {f : Clif.Function} {ctx : Ctx}
 
@@ -194,7 +194,9 @@ theorem stmt_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx) (h
   exact (root_handT (md := shpModelT logicImmComplete hctx.inv hcl hfam ctx.valDef.size s) rfl
     (shp_soundT hctx.inv hcl hfam _ s rfl)
     (Hand := fun rl => rl ∈ program.rulesOf TId.lower ∧ (rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033))
-    (fun rl ⟨hrl, hid⟩ => hand_modelT (handOkT_call totality hctx ha hi hc hmem hrl hid _) s)
+    (fun rl ⟨hrl, hid⟩ => hand_modelT (handOkT_call totality hctx ha
+      (fun fn e he => (Cov.sigE_int (List.all_eq_true.mp hctx.externs (fn, e) (lookup_some_mem he))).1)
+      hi hc hmem hrl hid _) s)
     data_program.t686 term_686_kind hrules hins (ShpIsT.refl hN) (n := 999999)
     Cov.lower_len happ).1
 
@@ -313,7 +315,8 @@ theorem tryCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
     (hd : tryCallData f t = .ok data)
     (htf : ∃ (i : Nat) (F : Fam), famTab[i]? = some F ∧ FamOk ctx F ⟨data, [], [], none⟩)
     {sig : Clif.Signature} {items : List (Option Nat)}
-    (he : exnTableOpnd f et = .ok (sig, items)) {lo st1 : LState} {trs : List Reg × List Reg}
+    (he : exnTableOpnd f et = .ok (sig, items)) (hip : TermIntPos ctx t)
+    {lo st1 : LState} {trs : List Reg × List Reg}
     (hlo : ctx.valDef.size ≤ lo.nextVreg) (htr : tryRegsOf sig lo = some (trs, st1))
     {targets : List Label} {out : Option V} {s' : LState} {tr : List Isle.RuleId}
     (h : tryCallF ctx ti data trs targets { st1 with emitted := #[] } = .ok (out, s', tr)) :
@@ -329,7 +332,7 @@ theorem tryCall_shpT (hctx : CtxT f ctx) (hcl : Clean ctx) (hfam : FamCover ctx)
     (famOk_valTy (ctx := ctx) (ctx' := tryCtx ctx ti data trs) rfl hok)
     (Try := fun rl => rl ∈ program.rulesOf TId.lower_branch ∧ (rl.id = 1034 ∨ rl.id = 1035 ∨ rl.id = 1036))
     (fun rl hrl hid _ => .inr ⟨hrl, hid⟩)
-    (fun rl ⟨hrl, hid⟩ => handOkT_try totality hctx ha hph het hd he (tryInd_sig ha hB he) _ hlo htr
+    (fun rl ⟨hrl, hid⟩ => handOkT_try totality hctx ha hph het hd he hip (tryInd_sig ha hB he) _ hlo htr
       hrl hid)
     (by show ctx.valDef.size ≤ st1.nextVreg; omega) h
 
@@ -356,6 +359,6 @@ theorem iselCtlHypT : IselCtlHypT := by
   · obtain ⟨B, hBm, hBt⟩ := hB
     subst hBt
     exact tryCall_shpT hctx hcl hfam ha hph het ⟨B, hBm, rfl⟩ hd
-      (termFam_of hs hdom hb hBm (.inr hd)) he hlo htr h
+      (termFam_of hs hdom hb hBm (.inr hd)) he (termIntPos_of hs hb hBm) hlo htr h
 
 end Backend.Proof.CovT
