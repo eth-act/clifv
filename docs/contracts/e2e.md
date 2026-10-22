@@ -388,7 +388,7 @@ the `retN`/value arguments).
   under `compileExeU` and the base premises (`BaseU`, `OkUNI`), the file's tables are the
   compiled functions' (`compileExeU_tables`) and `backend_correct_program_budgetU'`/`peakU'`
   hold for the linked system of the executable. `lean-link` evaluates `unwOkB` (with dead
-  cleanup, not `--opt`): when it holds the `coverage:` line adds `exceptional edges:
+  cleanup; under `--opt` `compileExeOptU`, below): when it holds the `coverage:` line adds `exceptional edges:
   Link.DeadCleanup.compileExe_correct_unwind, …_peak`, otherwise it prints `exceptional edges
   not covered (unwOkB: <reason>)` and still writes the file. Bundles:
   `Front.bundle_correct_raw_unwind` (`FV/Front/RawExeUnwind.lean`: `bundle_correct_raw`'s
