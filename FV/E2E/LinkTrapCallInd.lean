@@ -83,6 +83,59 @@ theorem mach_callAt (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.fu
     subst hx
     simp only [mach, ArmStepX, hins, destOf]
 
+/-- At a call line of `g`'s code: the instruction there is the allocated call's. -/
+theorem insnAt_callAt (hL : L.Ok) {g : Clif.Function} (hg : g ∈ L.P.funcs) {u : Arm.ArmState}
+    {i' : MInst} (hca : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i') :
+    ∃ x, insnAt (L.A g).fa (L.A g).base (Arm.r .PC u) = some x ∧ i'.callInsn? = some x := by
+  have hc := hL.compiled g hg
+  obtain ⟨j, x, t, hj, hx, hpc⟩ := hca
+  have hsum := layout_sum hc.layout
+  have hfit := hL.fits g hg
+  exact ⟨x, by rw [hpc]; exact insnAt_line (by omega) hj, hx⟩
+
+/-- **`ProgCallOk` at a `bl h`.** -/
+theorem progCallOk_bl (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs) (hh : h ∈ L.P.funcs)
+    {u : Arm.ArmState} {info : CallInfo} {regs : Array Reg} {i' : MInst} {n : String}
+    (hd : info.dest = .sym n) (hasg : (MInst.call info).assign regs = .ok i')
+    (hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i')
+    (hcode : ∀ a, L.Img a → u.mem a = L.imgMem a) : L.ProgCallOk g h u := by
+  obtain ⟨x, hins, hx⟩ := L.insnAt_callAt hL hg hP
+  obtain ⟨d, us, ds⟩ := info
+  simp only at hd
+  subst hd
+  obtain ⟨us', ds', rfl⟩ := assign_call_sym hasg
+  simp only [MInst.callInsn?, Option.some.injEq] at hx
+  subst hx
+  refine ⟨hh, hcode, fun x' h' => ?_, fun x' h' h1 _ => ?_⟩
+  · rw [hins] at h'; cases h'
+  · rw [hins] at h1; cases h1
+
+/-- **`ProgCallOk` at a `blr` of `h`** (through the vreg `tv` by which `g` may enter `h`). -/
+theorem progCallOk_blr (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
+    (hh : h ∈ L.P.funcs) {u : Arm.ArmState} {info : CallInfo} {regs : Array Reg} {i' : MInst}
+    {tv : Nat} (hsite : (L.A g).vcp.CallSite info) (hd : info.dest = .reg (.vreg tv .int))
+    {c : CheckCtx} {wh : String} {ops : Array Operand}
+    (hst : c.checkStatic wh ops (regs.map .reg) (MInst.call info).clobbers = .ok ())
+    (hasg : (MInst.call info).assign regs = .ok i')
+    (hP : CallAt (L.A g).fa (L.A g).base (Arm.r .PC u) i')
+    (hcode : ∀ a, L.Img a → u.mem a = L.imgMem a)
+    (hb : (blrTarget u).bind (symCallee L.Xb L.P) = some h) (hBlr : L.BlrTo g tv h) :
+    L.ProgCallOk g h u := by
+  obtain ⟨x, hins, hx⟩ := L.insnAt_callAt hL hg hP
+  obtain ⟨d, us, ds⟩ := info
+  simp only at hd
+  subst hd
+  obtain ⟨r0, us', ds', -, rfl⟩ := assign_call_reg hasg
+  simp only [MInst.callInsn?, Option.some.injEq] at hx
+  subst hx
+  refine ⟨hh, hcode, fun x' h' => ?_, fun x' h' h1 h2 => ?_⟩
+  · rw [hins] at h'
+    cases h'
+    exact callDest_ne_xzr (fun r e => by cases e; exact ⟨tv, rfl⟩) hst hasg rfl
+  · rw [hb] at h2
+    cases h2
+    exact ⟨_, tv, hsite, rfl, hBlr⟩
+
 /-- **A `bl` call site of a function `h` of `P`**: its operand values are `h`'s parameter
 registers' values. -/
 theorem blSite (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs) {info : CallInfo}
@@ -275,7 +328,9 @@ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : 
         have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
           rw [destOf_eq_callDest, hd1]; exact L.hooks_some hpf u
         refine .prog (hstop ?_) (by rw [hu]; exact ⟨info, regs, i', hsite, hasg, hP, herr,
-          .inl (by rw [destOf_eq_callDest, hd1, hname])⟩) (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
+          .inl (by rw [destOf_eq_callDest, hd1, hname])⟩)
+          (by rw [hu]; exact L.progCallOk_bl hL hg hh hdest hasg hP hcode)
+          (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
         rw [hstep, hhook, hjunk]; exact junkAt_err u
       · -- `blr` of `h`'s GOT entry
         have hreg : ∀ nm, info.dest ≠ .sym nm := fun nm e => by simp [callDest, e] at hd1
@@ -315,7 +370,9 @@ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : 
         have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
           rw [destOf_eq_callDest, hd1]; exact L.hooks_none hb
         refine .prog (hstop ?_) (by rw [hu]; exact ⟨info, regs, i', hsite, hasg, hP, herr,
-          .inr ⟨by rw [destOf_eq_callDest, hd1], hb⟩⟩) (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
+          .inr ⟨by rw [destOf_eq_callDest, hd1], hb⟩⟩)
+          (by rw [hu]; exact L.progCallOk_blr hL hg hh hsite (by rw [hinfo]) hst hasg hP hcode hb hBlr)
+          (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
         rw [hstep, hhook, hjunk]; exact junkAt_err u
   · -- an indirect call
     obtain ⟨Gb, hGb, rfl⟩ := cutEnv_extern hG'
@@ -404,7 +461,9 @@ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : 
       have hhook : (L.hooks (M' + 1)).call (destOf info) u = L.pcall (M' + 1) h u := by
         rw [destOf_eq_callDest, hdn]; exact L.hooks_none hb
       refine .prog (hstop ?_) (by rw [hu]; exact ⟨info, regs, i', hsite, hasg, hP, herr,
-        .inr ⟨by rw [destOf_eq_callDest, hdn], hb⟩⟩) (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
+        .inr ⟨by rw [destOf_eq_callDest, hdn], hb⟩⟩)
+        (by rw [hu]; exact L.progCallOk_blr hL hg hh hsite (by rw [hinfo]) hst hasg hP hcode hb hBlr)
+        (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
       rw [hstep, hhook, hjunk]; exact junkAt_err u
 
 /-- **The induction step**: the trap statement at depth `M` from the one at depth `M - 1` (and
@@ -488,9 +547,9 @@ theorem trapIn_withCrun (c : Nat → Clif.State → Clif.Outcome) {M : Nat} {g :
   | base hs hb =>
     rw [L.mach_withCrun] at hb
     exact .base (L.stop_withCrun c hs) hb
-  | prog hs hp hra _ ih =>
-    rw [L.mach_withCrun] at hp hra ih
-    exact .prog (L.stop_withCrun c hs) hp hra ih
+  | prog hs hp hok hra _ ih =>
+    rw [L.mach_withCrun] at hp hok hra ih
+    exact .prog (L.stop_withCrun c hs) hp ⟨hok.mem, hok.code, hok.xzr, hok.blrAt⟩ hra ih
 
 /-- The premises of the trap theorem do not read the callee runs. -/
 theorem TrapsOk.withCrun {L : LinkSys} (h : L.TrapsOk) (c : Nat → Clif.State → Clif.Outcome) :
