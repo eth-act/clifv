@@ -532,8 +532,24 @@ they are; the per-thread layers are new files.
     (`ArmAllocWitness.lean`): `noev_premises`, the compiled `args; rets` loaded at `0x10000`
     (`R.Wf`, scope, a `Q`-related state after the prologue, `q_init`); its layout is evaluated
     in the kernel without the hash map of `labelOffsets` (`labelOffsets_one`, `layoutAt`).
-  * open: `ItemSim` for the items with events (loads, stores, `ldar`/`stlr`, `dmb`, the LL/SC
-    loops), moves (spill slots: reads of `Priv` under `PrivCoh`), branches (a measure for the
+  * **`dmb`, `ldar`, `stlr` (done, `ArmAllocMem.lean`)**: `fence_op` (the Arm's one step has
+    `dmbEv`, the source step's); `oneEv_op` for the straight-line forms with one Arm instruction
+    (`OneEvForm`): **event equality** on every memory (`OneEvForm.ev`; `ldar_form`, `stlr_form`
+    by `exclEvs_regs`: same address register value, same data bytes) and **receptiveness**
+    (`straightSem_one`: the canonical instruction's pc, error and program do not depend on the
+    memory, `ctlIndep_excl`), `Q` after both sides patched with the Arm's bytes (`q_patch`);
+    `MemScope` (event-free, `fence`, covered `ldar`/`stlr`) and **`arm_alloc_refines_mem`**
+    (`arm_alloc_refines_noev`'s conclusion, `NoMoves` kept); `exists_prun_line`: a precise
+    one-step run at every unhooked line. Witness (`ArmAllocMemWitness.lean`): `mem_premises`
+    (the compiled `args; fence; rets` with a hand-written move-free allocation: `R.Wf`,
+    `MemScope`, not `NoEvScope`, `Q ∧ AInv` at `MConf.init`), `dmb_run`/`dmb_refines` (the
+    one-step run through the `dmb ish` with its barrier event, refined).
+  * open: `ItemSim` for plain loads/stores (multi-line address forms through x16; one-line
+    forms fit `OneEvForm`, their event equality per addressing mode is open), the LL/SC loops,
+    moves (`spillAlloc` saves x19–x28 at every entry, so compiled CLIF functions are outside
+    `NoMoves`: a move's lines access the frame only — writes private, reads of `Priv` need a
+    `PRun` side condition `ok` returning the thread's own bytes, justified by `PrivCoh`),
+    branches (a measure for the
     fall-through `jump`s, which emit no instruction), calls; the prologue (from the ABI entry).
     Needed per form: **receptiveness** (the allocated code steps on every read value once it
     steps on one: the pc and error of a load do not depend on the loaded bytes) and **event
