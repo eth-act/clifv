@@ -198,3 +198,26 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.VCodeAddr.straightEvs_avoid
 #print axioms Concurrency.VCodeAddr.cEvs_avoid
 #print axioms Concurrency.VCodeAddr.Witness.ldar_avoid
+-- T2h layer 2b: a segment run as a forward run
+#print axioms Concurrency.SegRun.vtrun_patch
+#print axioms Concurrency.SegRun.ldar_patch
+-- T2h layer 2d core: accesses of a lowered statement by variation
+#print axioms Concurrency.IselVary.store_touched
+#print axioms Concurrency.IselVary.load_touched
+-- T2h layer 2d: footprint lemma, CLIF facts, accesses within the run's events
+#print axioms Concurrency.IselFoot.untouched_of_runOut
+#print axioms Concurrency.IselFoot.store_in_events
+#print axioms Concurrency.IselFoot.load_in_events
+#print axioms Concurrency.IselClif.load_facts
+#print axioms Concurrency.IselClif.store_facts
+#print axioms Concurrency.IselClif.atomicLoad_facts
+#print axioms Concurrency.IselClif.atomicStore_facts
+#print axioms Concurrency.IselClif.atomicRmw_facts
+#print axioms Concurrency.IselClif.atomicCas_facts
+#print axioms Concurrency.IselClif.access_in_events
+#print axioms Concurrency.IselClif.Witness.untouched_ldar
+#print axioms Concurrency.IselClif.Witness.atomicLoad_facts0
+#print axioms Concurrency.IselClif.Witness.store_facts0
+-- T2h layer 2c: the shape of a statement's lowered code
+#print axioms Concurrency.SegShape.segShape_segT
+#print axioms Concurrency.SegShape.Witness.atomics_segShape -- witness: native_decide

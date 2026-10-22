@@ -339,14 +339,72 @@ they are; the per-thread layers are new files.
   buffering through plain accesses (no dependency ordering, §2), so a consistent execution need
   not have a prefix in which all threads behaved. It is a property of the program (its stacks
   are disjoint and nobody else writes them), as in CASCompCert's rely/guarantee premise.
-* **Layer 2: isel with interference (open; 2a done).** The per-statement simulation of the M7
-  driver (the step lemmas behind `IselSim`) as `Refines` from `ClifThread.CStep` to the VCode
-  event semantics. `stmt_step` does not reveal which addresses the VCode segment accesses
-  (finding 3). Plan: instantiate the driver per statement with the frame set `F_t` = every
-  address outside the CLIF event's bytes and the CLIF memory restricted to those bytes
-  (`refines_csem`, `memRefines_csem` and `driverSem_csem` are generic in `F`); `csem F_t`'s
-  access check then places every VCode event in the event's bytes, and `cEvs_kinds` gives its
-  kind.
+* **Layer 2: isel with interference (open; 2a–2d done).** The per-statement simulation of the M7
+  driver (`LowerSim.stmt_step`, behind `IselSim`) as `Refines` from `ClifThread.CStep` to the
+  VCode event semantics. `stmt_step` does not reveal which addresses the VCode segment accesses
+  (finding 3). Two ways to recover them:
+  1. *Per-statement frame.* Instantiate the driver per statement with the frame set `F_t` = every
+     address outside the CLIF event's bytes and the CLIF memory restricted to those bytes; 2a
+     then places every VCode event in the event's bytes. This needs `LowerInstOk` for
+     `csem F_t` and a memory relation whose valid bytes are the event's, i.e. the whole M4
+     contract (`instCalls_of_rules`: `CallsRefine`, `OutArgsOk`, … at `F_t`) re-established per
+     statement.
+  2. *By variation (chosen).* Keep the function's `F` and `stmt_step` as they are. Changing one
+     valid CLIF byte on both sides keeps the match (`MemRelOk.store`). A byte of the CLIF access
+     that no VCode event covers changes the CLIF result (a loaded value, or the byte a store
+     leaves) but not the VCode one (the segment's footprint), so it contradicts the match after
+     the step: the CLIF access lies within the VCode event, and with equal sizes it *is* the
+     event (address, size, bytes).
+
+  The steps of 2:
+  * **2b (segment as a forward run; done, `FV/Concurrency/SegRun.lean`):** `vtrun_patch`: a
+    thread run of steps without events, one step with events `evs` and steps without events
+    (a statement's segment) is the forward `VStep` run from the start patched once with `evs`'
+    read bytes (`patchC`): instructions without events neither read nor change the memory
+    (`vstep_setMem`). So `stmt_step`, run from the patched state, describes the thread's
+    segment. Witness: `ldar_patch`.
+  * **2c (segment shape, translation validation; done, `FV/Concurrency/SegShape.lean`):**
+    semantics cannot exclude an extra memory instruction that writes a location back with its
+    old value (every state is unchanged, but the trace has an extra, racy event), so the
+    number, kinds and sizes of each statement's memory instructions are checked on the
+    lowering. `segShape inst seg`: the instructions with memory kinds (`memInsts`, by
+    `Code.akinds`) are exactly one of the kinds of `inst`'s events under `Maps` (`load` →
+    `[plainR]`, `store` → `[plainW]`, `atomic_load` → `ldar` `[acqR]`, `atomic_store` → `stlr`
+    `[relW]`, `atomic_rmw`/`atomic_cas` → the LL/SC loop `[acqXR, relXW]`, `fence` → `dmb`) and of
+    its access size (`memBytes`); every other statement's code has none. **`segShapeCheck f`**
+    runs it on every statement's `lower` output of the driver's lowering (`buildCtx`,
+    `lowBlocks`, as `lowerCheckT` computes it); **`segShape_segT`**: it then holds on the code
+    the validated VCode contains for the statement (`segT`; renaming keeps kinds and sizes, the
+    result copies are moves). Witness (`SegShapeWitness.lean`, `native_decide`):
+    `atomics_segShape`, a function with `atomic_load`, `atomic_store`, `atomic_rmw`,
+    `atomic_cas`, `fence`, `load` and `store`. Entry code (`preT`) and terminator code (`tseg`)
+    are not checked yet (their memory instructions are reads: incoming stack arguments, jump
+    tables).
+  * **2d (addresses by variation; done, `FV/Concurrency/IselVary.lean`, `IselFoot.lean`,
+    `IselClif.lean`):** `store_touched`/`load_touched`: from `LowerInstOk` and `MemRelOk`, no
+    byte of a store's or a load-like statement's CLIF access is `Untouched` by its code's
+    `seqRun`. **`untouched_of_runOut`** (the footprint lemma): a byte outside every event of a
+    run whose instructions step with precise footprints (`RunOut`: `IFoot` at each instruction
+    reached) is `Untouched` — changing it keeps the events' agreement and commutes with their
+    writes (`sagrees_out`, `applyW_out`, `ifoot_out`); hence `store_in_events`/
+    `load_in_events`. The CLIF facts (`StoreFacts`/`LoadFacts`: the outcome on every memory
+    with the same allocations, and a load's first result determining its bytes) follow from one
+    successful run for `load`, `store`, `atomic_load`, `atomic_store`, `atomic_rmw` and
+    `atomic_cas` (`*_facts`; loads little-endian, `readBits_inj`; an `atomic_cas` not on
+    read-only data, since its store would be stuck where the comparison succeeds).
+    **`access_in_events`**: every byte of a memory statement's CLIF access (`access`: effective
+    address and size, the location and size of its `CStep` events) lies in an event of the run
+    of its lowered code. Witnesses (`IselClifWitness.lean`): `untouched_ldar` (the `ldar` at
+    `0x8000` under `csem`), `atomicLoad_facts0`, `store_facts0`. Open: `access_in_events` on a
+    statement of a compiled function (its `LowerInstOk` from `instCalls_of_rules`, `RunOut`
+    from `ifoot_csem` along the run), part of 2e.
+  * **2e (assembly):** the CLIF run reading the bytes the VCode run read (receptiveness of
+    `CStep`), `ψ` mapping each CLIF event to its segment's memory event, `Refines` with `Priv` =
+    the frame (the segment's other writes: outgoing call arguments).
+
+  Outside the multi-threaded scope (no `CStep`, or two VCode events per CLIF event): `i128`
+  loads/stores (two `ldr`/`str`, a mixed-size question, T2i #317) and `stack_load`/
+  `stack_store` (no event, but they touch the bytes).
   * **2a (done, `FV/Concurrency/VCodeAddr.lean`, `VCodeAddrAtomic.lean`, `VCodeFrame.lean`):
     `VCodeAddr.cEvs_avoid`: when `csem F` steps, every event of its footprint `cEvs` avoids
     `F`.** The canonical run's one event of a load/store (GPR and SIMD&FP, every covered
@@ -460,7 +518,7 @@ relaxed outcome is possible; herd7's `aarch64.cat` verdicts are the oracle.
 | T2c (#301) | Litmus tests in Lean + qemu harness | **done** |
 | T2d (#302) | Per-thread event semantics of the Arm model: the run of one thread as a trace of memory events with an exclusive monitor (failing `stlxr`, the `cbnz` retry); the existing single-core model is that semantics against an SC memory with a monitor that never fails | **done** |
 | T2e (#303) | Program level: multi-threaded `Clif.run` (`ClifThread.MTRun`), program-level DRF-SC (race-freedom in every contract-consistent execution, initial writes `co`-first), replay of SC executions as interleaving runs, and the program-level statement `ProgE2E.program_correct` with the per-thread contract `Realizes` (§3c) | **done** |
-| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference; §3e) | layer 0 **done** (`ThreadRefine`: reduction `realizes_of_threads`, composition `Refines.trans`); layer 1 **done** (precise footprints `ArmInstFoot`, VCode thread semantics `VCodeThread.VTStep`); layer 1b **done** (event kinds `VCodeEvents.cEvs_kinds`); precise Arm labels (`ArmPrecise`) and private coherence (`PrivCoh.privCoh_of_consistent`) **done**; layer 3 **done** (`PrepThread.prep_refines_csem`); layer 4a **done** (`AllocThread.alloc_refines`); layer 4b run level and event-free items **done** (`ArmAllocThread.refines_of_itemSim`, `arm_alloc_refines_noev`); layer 2 and 4b's items with events open |
+| T2h (#311) | Discharge `Realizes`: the per-thread event-level refinement of compiled code (isel/prepare/register-level layers re-proven as footprint-preserving simulations with interference; §3e) | layer 0 **done** (`ThreadRefine`: reduction `realizes_of_threads`, composition `Refines.trans`); layer 1 **done** (precise footprints `ArmInstFoot`, VCode thread semantics `VCodeThread.VTStep`); layer 1b **done** (event kinds `VCodeEvents.cEvs_kinds`); precise Arm labels (`ArmPrecise`) and private coherence (`PrivCoh.privCoh_of_consistent`) **done**; layer 3 **done** (`PrepThread.prep_refines_csem`); layer 4a **done** (`AllocThread.alloc_refines`); layer 4b run level and event-free items **done** (`ArmAllocThread.refines_of_itemSim`, `arm_alloc_refines_noev`); layer 2 steps 2a–2d **done** (`VCodeAddr.cEvs_avoid`, `SegRun.vtrun_patch`, `SegShape.segShapeCheck`, `IselClif.access_in_events`); 2e and 4b's items with events open |
 | T2f (#304) | Rust/C++20 (RC11 with all orderings) → the Cranelift contract: cg_clif's ordering strengthening as a theorem (§3d), and the program-level chain `program_correct_rust` | **done** |
 | T2g (#305) | Widening: LSE atomics (`has_lse`: not emitted in our configuration, covered by the table, `Lse.lse_maps`), the full `aarch64.cat` (`Armv8Full`, monotonicity `consistent_frag`), `i128` atomics (rejected by cg_clif) | **done** |
 | T2i (#317) | Mixed-size accesses (a mixed-size model instead of `NoOverlap`) | open |
