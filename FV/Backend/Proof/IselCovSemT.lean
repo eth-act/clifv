@@ -288,7 +288,38 @@ theorem instSplit_data {S : Clif.Inst → Bool} {f : Clif.Function} {ctx : Ctx} 
   · exact AVT.data_mono hD (fun x hx => List.mem_append_left _ hx)
   · exact AVT.data_mono hD (fun x hx => List.mem_append_right _ hx)
 
-/-- A context instruction's data is the `.xv .inst` seed value. --/
+theorem holds2_oneT {as : List AW} {v : V} (h : Holds2T S iOps fOps f ctx as [v]) :
+    ∃ a, as = [a] ∧ γT S iOps fOps f ctx a v := by
+  match as, v, h with
+  | [], [], _ => cases h
+  | [], [_], _ => cases h
+  | [], _ :: _ :: _, _ => cases h
+  | [a], [v], ⟨ha, hb⟩ => exact ⟨a, rfl, ha⟩
+  | [a], _ :: _ :: _, _ => cases h
+  | _ :: _ :: _, _, _ => cases h
+
+theorem holds2_twoT {as : List AW} {v w : V} (h : Holds2T S iOps fOps f ctx as [v, w]) :
+    ∃ a b, as = [a, b] ∧ γT S iOps fOps f ctx a v ∧ γT S iOps fOps f ctx b w := by
+  match as, v, w, h with
+  | [], [], [], _ => cases h
+  | [], [_], [_], _ => cases h
+  | [], _, _, _ => cases h
+  | [_], [_], [_], _ => cases h
+  | [a, b], [v], [w], ⟨ha, hb⟩ =>
+    obtain ⟨c, hc⟩ := hb
+    exact ⟨a, b, rfl, ha, c⟩
+  | _, _, _, _ => cases h
+
+theorem holds2_threeT {as : List AW} {u v w : V} (h : Holds2T S iOps fOps f ctx as [u, v, w]) :
+    ∃ a b c, as = [a, b, c] ∧ γT S iOps fOps f ctx a u ∧ γT S iOps fOps f ctx b v ∧
+      γT S iOps fOps f ctx c w := by
+  match as, u, v, w, h with
+  | [a, b, c], [u], [v], [w], ⟨ha, hb⟩ =>
+    obtain ⟨d, hd⟩ := hb
+    obtain ⟨e, he⟩ := hd
+    exact ⟨a, b, c, rfl, ha, d, e⟩
+  | _, _, _, _, _ => cases h
+
 theorem holds_instT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) {ii : Nat} {info : IInfo}
     {inst : Clif.Inst} (hi : ctx.insts[ii]? = some info) (hc : info.clif = some inst) :
     Holds2T Compile.instET opsT floatOps f ctx [.xv .inst] [.inst ii] :=
