@@ -765,6 +765,41 @@ theorem progX_none (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (ih : 0 < M → L.ThmT 
     L.pcall_junk hL hh hT (L.callerOk_canon hL hh himgF args w).ra] at herr'
   exact junkAt_err _ herr'
 
+/-- The stack-passed arguments of a call of a function `h` of `P` that `g` declares are in `g`'s
+outgoing area, outside the world (`outFits`). -/
+theorem stackArgsAvoid_decl (hL : L.Ok) {g h : Clif.Function} (hg : g ∈ L.P.funcs)
+    {ext : Clif.ExtFunc} (hin : ext ∈ g.externs.map (·.2)) (hpf : L.P.func? ext.name = some h)
+    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State}
+    (hinit : Clif.initState L.P ext.name vals cm = .ok cs) {F : BitVec 64 → Prop}
+    {slotOff : Nat} {c : BitVec 64} {sl : List (Clif.SlotId × Nat)} {w : Arm.ArmState}
+    (hmr : RelW ⟨F, L.syms, slotOff, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩ g c sl cm w) :
+    StackArgsAvoid F h.sig vals w := by
+  obtain ⟨-, hname⟩ := Clif.Program.func?_some hpf
+  have hsig := hL.declSig g hg ext hin h hpf
+  have hout := hmr.1.2.2
+  intro off v hm k hk
+  obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
+  rw [List.getElem?_zip_eq_some] at hi
+  obtain ⟨hli, hvi⟩ := hi
+  have hty := (clifEntry_initState (f := h) (by rw [hname]; exact hpf)
+    (by rw [hname]; exact hinit)).sig
+  obtain ⟨p, hp⟩ : ∃ p, h.sig.params[i]? = some p := by
+    have := congrArg (·[i]?) hty
+    simp only [List.getElem?_map, hvi, Option.map_some] at this
+    cases hp : h.sig.params[i]? with
+    | none => rw [hp] at this; cases this
+    | some p => exact ⟨p, rfl⟩
+  have hvp : v.ty = p.ty := by
+    have := congrArg (·[i]?) hty
+    simp only [List.getElem?_map, hvi, hp, Option.map_some, Option.some.injEq] at this
+    exact this
+  have hfit := hL.outFits g hg ext hin (by simp [hpf]) i off p (by rw [hsig]; exact hli)
+    (by rw [hsig]; exact hp)
+  rw [hvp] at hk
+  rw [add_ofNat_add]
+  have hav : Avoids F (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase (spv w) := hout.2.1
+  exact hav (off + k) (by omega)
+
 /-- An extern of `envOf` that is a function of `P` (`g` may reach it): the linked environment's,
 guarded by the slot-placement oracle. -/
 theorem envOf_prog {M : Nat} {g : Clif.Function} {c : BitVec 64} {n : String}
@@ -845,31 +880,7 @@ theorem xTrapsOk (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) {M : Nat}
       obtain ⟨cs, hinit, hret⟩ := L.linkEnvR_trap hpf hG0 ht0
       have hTD : 0 < M → L.TrapsD (M - 1) h cs := fun hM => hDn (hQ h cs hpf hinit) hM
       rw [hsig] at hargs
-      have hout := hmr.1.2.2
-      -- the stack-passed arguments are in the caller's outgoing area, outside `F`
-      have hsav : StackArgsAvoid F h.sig vals w := by
-        intro off v hm k hk
-        obtain ⟨i, hi⟩ := List.mem_iff_getElem?.mp hm
-        rw [List.getElem?_zip_eq_some] at hi
-        obtain ⟨hli, hvi⟩ := hi
-        have hty := (clifEntry_initState (f := h) (by rw [hname]; exact hpf)
-          (by rw [hname]; exact hinit)).sig
-        obtain ⟨p, hp⟩ : ∃ p, h.sig.params[i]? = some p := by
-          have := congrArg (·[i]?) hty
-          simp only [List.getElem?_map, hvi, Option.map_some] at this
-          cases hp : h.sig.params[i]? with
-          | none => rw [hp] at this; cases this
-          | some p => exact ⟨p, rfl⟩
-        have hvp : v.ty = p.ty := by
-          have := congrArg (·[i]?) hty
-          simp only [List.getElem?_map, hvi, hp, Option.map_some, Option.some.injEq] at this
-          exact this
-        have hfit := hL.outFits g hg ext hin (by simp [hpf]) i off p (by rw [hsig]; exact hli)
-          (by rw [hsig]; exact hp)
-        rw [hvp] at hk
-        rw [add_ofNat_add]
-        have hav : Avoids F (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase (spv w) := hout.2.1
-        exact hav (off + k) (by omega)
+      have hsav := L.stackArgsAvoid_decl hL hg hin hpf hinit hmr
       rw [← hname] at hinit
       have hnone := L.progX_none (κ := κ) hL ih hh ⟨g, hg, .inr (.inl ⟨ext, hin, hpf⟩)⟩ himgF hargs
         hsav hmr hpl hinit hret hTD
@@ -926,6 +937,83 @@ theorem xTrapsOk (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) {M : Nat}
       split
       · exact hnone
       · rfl
+
+end LinkSys
+
+namespace LinkSys
+
+variable (L : LinkSys)
+
+/-! ## The activation's environment with the uncovered callee traps made stuck -/
+
+/-- A step of an activation of `g` under `envOf` with some extern outcomes stuck that is not
+stuck is its step under `linkEnvR`. -/
+theorem step_cut_link (hL : L.Ok) {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.funcs)
+    {c : BitVec 64} {Q : String → List Clif.Val → Clif.Mem → Prop} {s : Clif.State}
+    (hJ : L.ActInv g c s) {r : Clif.StepResult}
+    (hs : Clif.step (cutEnv (L.envOf M g c) Q) L.P.bare s = r) (hr : ∀ m, r ≠ .stuck m) :
+    Clif.step (Clif.linkEnvR L.P L.base (L.crun M)) L.P.bare s = r := by
+  have hPf : ∀ f ∈ (L.P.only g).funcs, Clif.LinkFree f := fun f hf => by
+    simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hf
+    subst hf; exact hL.free f hg
+  exact L.step_envOf_link hL hg hJ (step_of_restrictS (cutEnv_restrictsS _ Q) hPf hJ.1.1 hs hr) hr
+
+theorem reach_cut (hL : L.Ok) [L.CrunOk] {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.funcs)
+    {c : BitVec 64} {Q : String → List Clif.Val → Clif.Mem → Prop} {cs s : Clif.State}
+    (hr : Reach (cutEnv (L.envOf M g c) Q) L.P.bare cs s) (hJ : L.ActInv g c cs) :
+    Reach (Clif.linkEnvR L.P L.base (L.crun M)) L.P.bare cs s ∧ L.ActInv g c s := by
+  induction hr with
+  | refl => exact ⟨.refl _, hJ⟩
+  | step hs _ ih =>
+    have hs' := L.step_cut_link hL hg hJ hs (fun _ h => nomatch h)
+    obtain ⟨h1, h2⟩ := ih (L.actInv_step hL hg hJ hs')
+    exact ⟨.step hs' h1, h2⟩
+
+/-- **The run premise of `P.bare` under `linkEnvR` is the one under `envOf` with some extern
+outcomes stuck** (`trapsExplicit_envOf` for `TrapsExplicitC`). -/
+theorem trapsExplicitC_cut (hL : L.Ok) [L.CrunOk] {M : Nat} {g : Clif.Function}
+    (hg : g ∈ L.P.funcs) {c : BitVec 64} {Q : String → List Clif.Val → Clif.Mem → Prop}
+    {cs : Clif.State} (hJ : L.ActInv g c cs)
+    (h : TrapsExplicitC (Clif.linkEnvR L.P L.base (L.crun M)) L.P.bare cs) :
+    TrapsExplicitC (cutEnv (L.envOf M g c) Q) L.P.bare cs where
+  stmt := fun s c st rest hr hs hb => by
+    obtain ⟨hr', hJs⟩ := L.reach_cut hL hg hr hJ
+    exact h.stmt s c st rest hr' (L.step_cut_link hL hg hJs hs (fun _ h => nomatch h)) hb
+  tryCall := fun s c fn args et hr hs hb ht => by
+    obtain ⟨hr', hJs⟩ := L.reach_cut hL hg hr hJ
+    exact h.tryCall s c fn args et hr' (L.step_cut_link hL hg hJs hs (fun _ h => nomatch h)) hb ht
+  tryCallInd := fun s c callee args et hr hs hb ht => by
+    obtain ⟨hr', hJs⟩ := L.reach_cut hL hg hr hJ
+    exact h.tryCallInd s c callee args et hr'
+      (L.step_cut_link hL hg hJs hs (fun _ h => nomatch h)) hb ht
+  indirect := fun s st rest sig callee args hr hb hi hst =>
+    h.indirect s st rest sig callee args (L.reach_cut hL hg hr hJ).1 hb hi hst
+  tryIndirect := fun s callee args et hr hb ht hB =>
+    h.tryIndirect s callee args et (L.reach_cut hL hg hr hJ).1 hb ht hB
+
+/-- **The run of `g`'s activation under `envOf` with the uncovered callee traps stuck is its run
+under `envR` with them stuck** (`runLoop_envOf` with the cut). -/
+theorem runLoop_cut (hL : L.Ok) [L.CrunOk] {M : Nat} {g : Clif.Function} (hg : g ∈ L.P.funcs)
+    {c : BitVec 64} {Q : String → List Clif.Val → Clif.Mem → Prop} :
+    ∀ (n : Nat) (s : Clif.State), L.ActInv g c s →
+      Clif.runLoop (cutEnv (L.envOf M g c) Q) L.P.bare n s =
+        Clif.runLoop (cutEnv (L.envR M g) Q) L.P.bare n s
+  | 0, _, _ => rfl
+  | n + 1, s, hJ => by
+    have hPf : ∀ f ∈ (L.P.only g).funcs, Clif.LinkFree f := fun f hf => by
+      simp only [Clif.Program.only, List.mem_cons, List.not_mem_nil, or_false] at hf
+      subst hf; exact hL.free f hg
+    have he : Clif.step (cutEnv (L.envOf M g c) Q) L.P.bare s =
+        Clif.step (cutEnv (L.envR M g) Q) L.P.bare s :=
+      step_congrE (E₁ := cutEnv (L.envOf M g c) Q) (E₂ := cutEnv (L.envR M g) Q) rfl rfl hPf hJ.1.1 fun t nm vals htm => by
+        rw [cutEnv_map, cutEnv_map, L.envOf_envR (M := M) (g := g) (n := nm) vals (by rw [htm]; exact hJ.2.2)]
+    rw [Clif.runLoop_succ', Clif.runLoop_succ', he]
+    cases hs : Clif.step (cutEnv (L.envR M g) Q) L.P.bare s with
+    | next s1 =>
+      have hs' := step_of_restrictS (cutEnv_restrictsS _ Q) hPf hJ.1.1 hs (fun _ h => nomatch h)
+      have hs'' := step_of_restrict L.envR_restricts hPf hJ.1.1 hs' (fun _ h => nomatch h)
+      exact runLoop_cut hL hg n s1 (L.actInv_step hL hg hJ hs'')
+    | _ => rfl
 
 end LinkSys
 
