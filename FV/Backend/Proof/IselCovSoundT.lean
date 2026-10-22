@@ -196,7 +196,7 @@ variable {aext actor apre aOracle}
 
 section Pat
 variable {p : Program} (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
-  (md : CovModelT S iOps fOps aext actor apre aOracle p f ctx)
+  (md : CovModelT aext actor apre aOracle S iOps fOps p f ctx)
 
 theorem unData_eq {ty : TypeId} {v : V} {k : Nat} {fs : List V}
     (h : (sem ctx).unData ty v = some (k, fs)) : v = .data ty k fs := by
@@ -560,7 +560,7 @@ theorem holds2_leT {as bs : List AW} {vs : List V} (h : AW.leAll as bs = true)
 
 section Sound
 variable {p : Program} (hctx : CtxInvT f ctx) (hsp : InstSplit S f ctx iOps fOps)
-  (md : CovModelT S iOps fOps aext actor apre aOracle p f ctx) (cfg : Config) (tab : Tab)
+  (md : CovModelT aext actor apre aOracle S iOps fOps p f ctx) (cfg : Config) (tab : Tab)
 
 /-- The soundness statements at fuel `n`. -/
 structure SoundAtT (n : Nat) : Prop where
