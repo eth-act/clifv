@@ -22,7 +22,7 @@ def tlsTab0 : Tab :=
    (250, [⟨2, true⟩, ⟨0, true⟩, ⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩),
    (251, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (254, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
-   (255, [⟨2, true⟩, ⟨0, true⟩], ⟨2, true⟩),
+   (255, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (256, [⟨2, true⟩, ⟨2, true⟩], ⟨2, true⟩),
    (294, [⟨2, true⟩], ⟨0, true⟩),
    (305, [⟨2, true⟩], ⟨0, true⟩)]

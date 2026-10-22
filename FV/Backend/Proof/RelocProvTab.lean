@@ -24,7 +24,7 @@ def provTab0 : Tab :=
    (250, [⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
    (251, [⟨false, true, false, false, true⟩, ⟨false, true, false, false, true⟩], ⟨false, true, false, false, true⟩),
    (254, [⟨false, true, false, false, true⟩, ⟨false, true, false, false, true⟩], ⟨false, true, false, false, true⟩),
-   (255, [⟨false, true, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, true, false, false, true⟩),
+   (255, [⟨false, true, false, false, true⟩, ⟨false, true, false, false, true⟩], ⟨false, true, false, false, true⟩),
    (256, [⟨false, true, false, false, true⟩, ⟨false, true, false, false, true⟩], ⟨false, true, false, false, true⟩),
    (294, [⟨false, false, false, false, true⟩], ⟨false, false, false, false, true⟩),
    (305, [⟨false, false, false, false, true⟩], ⟨false, false, false, true, true⟩)]
@@ -76,7 +76,7 @@ def provTab3 : Tab :=
 
 /-- Chunk 4 of `provTab`. -/
 def provTab4 : Tab :=
-  [(425, [⟨false, true, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩], ⟨false, true, false, false, true⟩),
+  [(425, [⟨false, true, false, false, true⟩, ⟨false, true, false, false, true⟩, ⟨false, true, false, false, true⟩], ⟨false, true, false, false, true⟩),
    (426, [⟨false, true, false, false, true⟩], ⟨false, true, false, false, true⟩),
    (428, [⟨false, false, false, true, true⟩], ⟨false, false, false, false, true⟩),
    (430, [⟨false, false, false, true, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, false, true⟩, ⟨false, false, false, true, true⟩, ⟨false, true, false, false, true⟩], ⟨false, true, false, false, true⟩),
