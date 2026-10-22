@@ -256,6 +256,31 @@ theorem baseOk_closedLe {R : Res} {F : BitVec 64 → Prop} :
   baseKeepsAllocs := fun _ n gsem hn => by
     simp [ofRes, leBase, closedBase, Clif.Env.empty] at hn
 
+theorem leBase_tlsNI {R : Res} {F' : BitVec 64 → Prop} (F : BitVec 64 → Prop) :
+    XTls F (ofRes I R (leBase I B file) F').Xb := by
+  intro Z n w w' _ hsw
+  exact read_pstate_of_flags fun fl => hsw.1 _ (by simp [Masked])
+
+/-- **`BaseOk` with the local-exec TLS hook**: every base premise of a base environment `B`
+holds of `leBase I B file` (its TLS hook meets `TlsOk`, `tlsOk_le`; its flags are the
+processor's). -/
+theorem baseOk_le {R : Res} {F : BitVec 64 → Prop} (h : BaseOk (ofRes I R B F)) :
+    BaseOk (ofRes I R (leBase I B file) F) where
+  baseNoAlloc := h.baseNoAlloc
+  keepSyms := h.keepSyms
+  aliasSyms := h.aliasSyms
+  baseOs := h.baseOs
+  basePc := h.basePc
+  baseExt := h.baseExt
+  baseX := h.baseX
+  baseXI := h.baseXI
+  baseTls := fun _ _ _ F K => tlsOk_le F K
+  baseTry := h.baseTry
+  baseNI := h.baseNI
+  baseTlsNI := fun _ F' => leBase_tlsNI F'
+  baseKeepsPlace := h.baseKeepsPlace
+  baseKeepsAllocs := h.baseKeepsAllocs
+
 /-- The TCB-and-alignment part of the file's thread-pointer offsets (`TpOff file v = A + v`). -/
 def tlsA (file : ByteArray) : Nat :=
   (((Elf.phdrs (Elf.fileRd file)).bind (·.find? (·.type == 7))).map
