@@ -324,12 +324,13 @@ theorem try_bl_out {p : Program} (hp : Data p) (hpT : TryData p) : TryOutOk p ru
   have hfn : ctx.func.extern? fn = some ext := by rw [hcx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
   ctl_inv [*, rule_lower_2542, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
+    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
     isel_destruct <;> subst_vars)
   have hx' := ‹ctx.func.extern? fn = some _›
   rw [hcx.func, hext] at hx'
@@ -377,12 +378,13 @@ theorem try_got_out {p : Program} (hp : Data p) (hpT : TryData p) :
   have hfn : ctx.func.extern? fn = some ext := by rw [hcx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
   ctl_inv [*, rule_lower_2551, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ctor_box_external_name_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI, ctor_box_external_name_iff] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
+    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
     ctor_box_external_name_iff] at * <;> isel_destruct <;> subst_vars)
   have hx' := ‹ctx.func.extern? fn = some _›
   rw [hcx.func, hext] at hx'

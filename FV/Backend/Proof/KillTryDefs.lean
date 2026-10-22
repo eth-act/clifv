@@ -66,12 +66,13 @@ theorem kd_bl {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function} 
   have hfn : c.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
   ctl_inv [*, rule_lower_2542, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
+    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff] at * <;>
     isel_destruct <;> subst_vars)
   have hx' := ‹c.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -148,12 +149,13 @@ theorem kd_got {p : Program} (hp : Data p) (hpT : TryData p) {f : Clif.Function}
   have hfn : c.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   cases hp
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
+  have hsI := exnTableOpnd_int he
   ctl_inv [*, rule_lower_2551, ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ctor_box_external_name_iff] at hmatch heval
+    ctor_gen_try_call_rets_iff hsI, ctor_box_external_name_iff] at hmatch heval
   simp only [hi, hfn, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_func_ref_data_iff, ctor_abi_sig_iff, ctor_try_call_info_iff,
-    ctor_gen_try_call_rets_iff, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
+    ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff, ctor_put_in_regs_vec_iff,
     ctor_box_external_name_iff] at * <;> isel_destruct <;> subst_vars)
   have hx' := ‹c.func.extern? fn = some _›
   rw [hctx.func, hext] at hx'
@@ -234,12 +236,13 @@ theorem kd_ind {p : Program} (hp : Data p) (hpT : TryData p) (hpI : IndData p)
   obtain ⟨t300, t302, t2297, t2474⟩ := hpT
   obtain ⟨t196, t2293, t2454⟩ := hpI
   obtain ⟨t266, t2298, t2475⟩ := hpJ
+  have hsI := exnTableOpnd_int he
   ctl_inv [*, rule_lower_2561, ext_value_slice_unwrap_iff, ext_exception_sig_iff, ctor_abi_sig_iff,
-    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff, ctor_put_in_reg_iff] at hmatch heval
+    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff hsI, ctor_put_in_reg_iff] at hmatch heval
   simp only [hi, Option.some.injEq] at *
   isel_destruct; subst_vars
   repeat (isel_inv_simp [ext_value_slice_unwrap_iff, ext_exception_sig_iff, ctor_abi_sig_iff,
-    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff, ext_value_list_slice_iff,
+    ctor_try_call_info_iff, ctor_gen_try_call_rets_iff hsI, ext_value_list_slice_iff,
     ctor_put_in_regs_vec_iff, ctor_put_in_reg_iff] at * <;> isel_destruct <;> subst_vars)
   obtain ⟨bytes, hb⟩ := ctor_gen_call_args_bytes ‹externCtor c T.gen_call_args _ _ = _›
   obtain ⟨locs, S, hl⟩ := ctor_gen_call_args_locs ‹externCtor c T.gen_call_args _ _ = _›
