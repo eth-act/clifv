@@ -146,6 +146,34 @@ theorem lfacts {o : Opts} {st : St} {g : GcOut}
 
 /-! ## Values -/
 
+/-- Every name `synthTable` lists. -/
+def synthAllNames : List String := synthNames ++ ["__eh_frame_start", "__eh_frame_hdr_start"]
+
+/-- A name the linker may define (`Lay.synth`). -/
+def synthMaybeB (n : String) : Bool :=
+  n.startsWith "__start_" || n.startsWith "__stop_" || synthAllNames.contains n
+
+theorem synthTable_names (L : Lay) (o : Opts) : (L.synthTable o).map (·.1) = synthAllNames := rfl
+
+theorem lookup_none {l : List (String × Option Nat)} {a : String} (h : a ∉ l.map (·.1)) : l.lookup a = none := by
+  induction l with
+  | nil => rfl
+  | cons p l ih =>
+    obtain ⟨k, v⟩ := p
+    simp only [List.map_cons, List.mem_cons, not_or] at h
+    have hk : (a == k) = false := by simp [h.1]
+    simp only [List.lookup, hk]
+    exact ih h.2
+
+theorem synth_none {L : Lay} {o : Opts} {n : String} (h : synthMaybeB n = false) : L.synth o n = none := by
+  simp only [synthMaybeB, Bool.or_eq_false_iff] at h
+  obtain ⟨⟨h1, h2⟩, h3⟩ := h
+  unfold Lay.synth
+  rw [if_neg (by simp [h1]), if_neg (by simp [h2])]
+  unfold Lay.synthFixed
+  rw [lookup_none (by rw [synthTable_names]; simpa using h3)]
+  rfl
+
 /-- **What a relocation's symbol is**, without addresses. -/
 inductive Tgt where
   | img (t : SecId) (x : Nat)
@@ -174,7 +202,7 @@ def tgtOf (st : St) (g : GcOut) (sorted : Array OSec) (fi j : Nat) : Option Tgt 
     else if (g.eh[t.1]!.findIdx? (·.sec == t.2)).isSome then some (.eh x) else none
   | .abs v => some (.abs v)
   | .common _ _ => some .common
-  | .undef n w => if synthKnownB names n then some .synth else if w then some .weak else none
+  | .undef n w => if synthKnownB names n then some .synth else if w && !synthMaybeB n then some .weak else none
 
 /-- The interval of a value of a symbol of kind `k` (thread-local ones: none). -/
 def sIv (B : Bnd) : Tgt → Option (Int × Int)
@@ -362,6 +390,168 @@ theorem synth_le (hf : LFacts o st g) {n : String} {v : Nat} (h : (layPre o st g
   unfold Lay.synthFixed at h
   rw [Option.join_eq_some_iff] at h
   exact synthTable_le hf hb _ (lookup_mem h) v rfl
+
+end
+
+/-! ## A symbol's value in its interval -/
+
+/-- **A value in its kind's interval** (`tls1`: the TLS template's start). -/
+def ValIn (B : Bnd) (tls1 : Nat) (k : Tgt) (S : Int) (uw : Bool) : Prop :=
+  match k with
+  | .tls _ => uw = false ∧ (tls1 : Int) ≤ S ∧ S ≤ tls1 + B.TD + B.TB
+  | .weak => uw = true ∧ S = 0
+  | k => uw = false ∧ ∀ lo hi, sIv B k = some (lo, hi) → lo ≤ S ∧ S ≤ hi
+
+section
+variable {o : Opts} {st : St} {g : GcOut}
+
+theorem dOk_parts {D : LayD} {sorted : Array OSec} (h : dOkB D sorted = true) :
+    (∀ (k : Nat × Nat × Nat) (v : Nat), D.pieceOut[k]? = some v → v ≤ D.ehTotal) ∧
+    (∀ (k : Nat × Nat) (v : Nat), D.ehStart[k]? = some v → v ≤ D.ehTotal) ∧
+    (∀ (k : String) (v : Nat), D.gotSlot[k]? = some v → v < D.gotSyms.size) ∧
+    (∀ e ∈ D.ehs, e.out + e.piece.size ≤ D.ehTotal) := by
+  simp only [dOkB, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq, Array.all_eq_true'] at h
+  obtain ⟨⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, -⟩, -⟩ := h
+  exact ⟨fun k v hk => h1 (k, v) (Std.HashMap.mem_toList_iff_getElem?_eq_some.2 hk),
+    fun k v hk => h2 (k, v) (Std.HashMap.mem_toList_iff_getElem?_eq_some.2 hk),
+    fun k v hk => h3 (k, v) (Std.HashMap.mem_toList_iff_getElem?_eq_some.2 hk), h4⟩
+
+/-- **A symbol's value lies in its kind's interval.** -/
+theorem value_in (hf : LFacts o st g) (hd : dOkB (layDecide st g) (layPre o st g).sorted = true)
+    (hb : o.base ≤ (bndOf o st g).top) {fi j : Nat} {k : Tgt}
+    (hk : tgtOf st g (layPre o st g).sorted fi j = some k) {S : Int} {uw : Bool}
+    (hv : (layPre o st g).value o st g fi j = .ok (S, uw)) :
+    ValIn (bndOf o st g) (layPre o st g).pst.tls.1 k S uw := by
+  obtain ⟨hpo, hes, -, -⟩ := dOk_parts hd
+  have heh : (bndOf o st g).eh = (layDecide st g).ehTotal := rfl
+  unfold tgtOf at hk
+  unfold Lay.value at hv
+  dsimp only at hk hv
+  split at hk
+  · rename_i t x tl htg
+    rw [htg] at hv
+    simp only at hv
+    split at hk
+    · rename_i hlive
+      rw [if_pos hlive] at hv
+      simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv
+      obtain ⟨rfl, rfl⟩ := hv
+      split at hk
+      · rename_i h1
+        split at hk
+        · rename_i hc
+          simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', List.isEmpty_eq_false_iff] at hc
+          obtain ⟨⟨h2, hx⟩, hne⟩ := hc
+          obtain ⟨y, -, -, ha, -, hsz, -, htop, himg, htls⟩ := secAddr_spec hf h1 h2 hne
+          rw [getElem!_pos st.files[t.1].secs t.2 h2] at hx
+          split at hk
+          · rename_i hall
+            cases hk
+            refine ⟨rfl, fun lo hi hiv => ?_⟩
+            simp only [sIv, Option.some.injEq, Prod.mk.injEq] at hiv
+            obtain ⟨rfl, rfl⟩ := hiv
+            have := himg hall
+            rw [ha]
+            constructor <;> push_cast <;> omega
+          · split at hk
+            · rename_i _ hall
+              cases hk
+              obtain ⟨e1, e2⟩ := htls hall
+              refine ⟨rfl, ?_, ?_⟩ <;> rw [ha] <;> push_cast <;> omega
+            · cases hk
+        · cases hk
+      · cases hk
+    · rename_i hlive
+      rw [if_neg hlive] at hv
+      split at hk
+      · cases hk
+        refine ⟨?_, fun lo hi hiv => ?_⟩
+        · split at hv
+          · split at hv
+            · split at hv <;> (simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv; exact hv.2.symm)
+            · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv; exact hv.2.symm
+          · cases hv
+        · simp only [sIv, Option.some.injEq, Prod.mk.injEq] at hiv
+          obtain ⟨rfl, rfl⟩ := hiv
+          have hea := partAddr_le hf "eh"
+          split at hv
+          · rename_i ei hei
+            split at hv
+            · rename_i p hp
+              have hpx := Array.find?_some hp
+              simp only [decide_eq_true_eq] at hpx
+              split at hv
+              · rename_i q hq
+                simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv
+                obtain ⟨rfl, -⟩ := hv
+                have := hpo _ _ hq
+                unfold Lay.ehAddr; push_cast; constructor <;> omega
+              · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv
+                obtain ⟨rfl, -⟩ := hv
+                have : (layPre o st g).ehStart.getD (t.1, ei) 0 ≤ (layDecide st g).ehTotal := by
+                  rw [Std.HashMap.getD_eq_getD_getElem?]
+                  cases hs : (layPre o st g).ehStart[(t.1, ei)]? with
+                  | none => exact Nat.zero_le _
+                  | some v => exact hes _ _ hs
+                unfold Lay.ehAddr; push_cast; constructor <;> omega
+            · simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv
+              obtain ⟨rfl, -⟩ := hv
+              have : (layPre o st g).ehStart.getD (t.1, ei) 0 ≤ (layDecide st g).ehTotal := by
+                rw [Std.HashMap.getD_eq_getD_getElem?]
+                cases hs : (layPre o st g).ehStart[(t.1, ei)]? with
+                | none => exact Nat.zero_le _
+                | some v => exact hes _ _ hs
+              unfold Lay.ehAddr; push_cast; constructor <;> omega
+          · cases hv
+      · cases hk
+  · rename_i v htg
+    rw [htg] at hv
+    cases hk
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv
+    obtain ⟨rfl, rfl⟩ := hv
+    refine ⟨rfl, fun lo hi hiv => ?_⟩
+    simp only [sIv, Option.some.injEq, Prod.mk.injEq] at hiv
+    obtain ⟨rfl, rfl⟩ := hiv
+    exact ⟨Int.le_refl _, Int.le_refl _⟩
+  · rename_i f k' htg
+    rw [htg] at hv
+    cases hk
+    simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv
+    obtain ⟨rfl, rfl⟩ := hv
+    refine ⟨rfl, fun lo hi hiv => ?_⟩
+    simp only [sIv, Option.some.injEq, Prod.mk.injEq] at hiv
+    obtain ⟨rfl, rfl⟩ := hiv
+    have := commonAddr_le hf (f, k')
+    push_cast; constructor <;> omega
+  · rename_i n w htg
+    rw [htg] at hv
+    simp only at hv
+    split at hk
+    · rename_i hsy
+      cases hk
+      have hs := synth_some (L := layPre o st g) (o := o) (n := n)
+        (by rw [layPre_outs]; exact hsy)
+      split at hv
+      · rename_i v hv'
+        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv
+        obtain ⟨rfl, rfl⟩ := hv
+        refine ⟨rfl, fun lo hi hiv => ?_⟩
+        simp only [sIv, Option.some.injEq, Prod.mk.injEq] at hiv
+        obtain ⟨rfl, rfl⟩ := hiv
+        have := synth_le hf hv' hb
+        push_cast; constructor <;> omega
+      · rename_i hn; rw [hn] at hs; cases hs
+    · split at hk
+      · rename_i hsy hw
+        cases hk
+        simp only [Bool.and_eq_true, Bool.not_eq_true'] at hw
+        rw [synth_none hw.2] at hv
+        · simp only at hv
+          rw [if_pos hw.1] at hv
+          simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv
+          obtain ⟨rfl, rfl⟩ := hv
+          exact ⟨rfl, rfl⟩
+      · cases hk
 
 end
 
