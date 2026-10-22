@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Memory-aware Lake build scheduler: one memcapped `lake build <Module>` per module, in import
-order, packing light modules side by side and running heavy ones alone.
+"""Memory-aware Lake build scheduler: one memcapped `lake build <Module>` per module that needs
+building, in import order, packing light modules side by side and running heavy ones alone.
 
 usage: scripts/lake-serial-build.py [options] TARGET...
 
@@ -8,10 +8,26 @@ TARGET is a module (`FV.Opt.Proof.RuleImm`), a prefix ending in `.` (`FV.Opt.Pro
 library name (`FV`, `FVTest`, `Corpus`). The targets and all their local imports are built.
 Run from the worktree root (or pass --root). Afterwards `lake build FV FVTest <exes>` only links.
 
-Each module gets its own `scripts/memcap.sh` scope with cap = recorded peak × --margin + 0.5G
-(clamped to [--min-cap, --max-cap]; --default-cap for modules without a record). Recorded peaks
-come from the --profile TSVs (`module<TAB>peak_mb<TAB>seconds`; later files override earlier
-ones); every module actually built here is appended to --record, so estimates improve.
+Which modules need building (batch check, off with --no-batch-check): one
+`lake build --no-build <all wanted modules>` restores everything that is built or in the shared
+cache (FV_LAKE_CACHE) and names the modules that are out of date; Lake does not look at their
+dependents, so those stay unknown. Whenever modules whose imports are all done have not been
+checked yet, one more `lake build --no-build` over all of them settles them (about 1-2 s each, instead
+of one `lake build <M>` process per module). At the end, one check over every module confirms that
+nothing is out of date (anything Lake still reports is built, at most 3 rounds).
+
+Each module that needs building gets its own `scripts/memcap.sh` scope with cap = recorded peak ×
+--margin + 0.5G (clamped to [--min-cap, --max-cap]; --default-cap for modules without a record).
+Recorded peaks come from the --profile TSVs (`module<TAB>peak_mb<TAB>seconds`; later files
+override earlier ones); every module actually built here is appended to --record with its scope's
+cgroup memory.peak (all of lean's memory, as the cap counts it; GNU time's maxrss if no cgroup).
+
+Cross-worktree dedup (with FV_LAKE_CACHE or LAKE_CACHE_DIR; off with --no-dedup): before
+building a module the scheduler takes an flock in <cache>/.fv-inflight/, keyed by a hash of the
+toolchain, lakefile.toml, lake-manifest.json and the sources of the module and its transitive
+imports (equal keys imply equal Lake input traces). If another scheduler holds it, the module waits
+(without using the budget) until that build ends, then `lake build <M>` restores it from the cache
+(or builds it, if the other build failed).
 
 Launch rules (checked every second):
   * light modules (recorded peak <= --heavy, cap <= --budget): run concurrently while the sum of
@@ -20,21 +36,33 @@ Launch rules (checked every second):
     MemAvailable >= --heavy-avail, no other lean process has RSS above --heavy and no other memcap
     scope has MemoryMax (with --others-by-usage: current usage) above --heavy; otherwise they are
     deferred while light work continues (a deferred module is first probed once with
-    `lake build --no-build`: if it is already built or in the cache, it counts as done);
+    `lake build --no-build`: if it is already built or in the cache, it counts as done). Waiting
+    heavy modules queue machine-wide, oldest first (/tmp/clifv-heavy-queue): only the head may
+    start, and every scheduler leaves room in the clifv slice for the head's recorded peak;
+  * clifv slice (the systemd slice of every memcap scope, $FV_SLICE, default clifv.slice; skipped
+    if it has no MemoryHigh/MemoryMax or with --no-slice-gate): a module starts only if its
+    recorded peak fits under the slice's limit minus --slice-margin, counting the slice's current
+    non-file memory plus what this scheduler's running modules are still expected to add
+    (above the limit, the kernel throttles every clifv build and systemd-oomd kills scopes);
   * nothing new starts while MemAvailable < --pause-avail;
-  * a module killed at its cap (exit 137/143, or lean reporting signal 9) is retried alone at
-    twice the cap (at most --max-cap); with --retry-failed, any other failed module is retried
-    once alone at its cap.
+  * a module killed at its own cap (its scope's memory.events `oom` > 0; without that information,
+    exit 137/143 or lean reporting signal 9) is retried alone at twice the cap (at most --max-cap);
+    a module killed from outside (systemd-oomd under global memory pressure, the slice's limit) is
+    retried at the same cap, up to 3 times; with --retry-failed, any other failed module is
+    retried once alone at its cap.
 Ready modules are started longest-remaining-critical-path first (recorded seconds); when the first
 one does not fit the budget, it reserves it and only modules that cannot delay it are backfilled.
 
-Logs: OUT/sched.log (one line per start/finish) and OUT/<module>.log / .time.
+Logs: OUT/sched.log (one line per start/finish/check) and OUT/<module>.log / .time / .mem.
 """
-import argparse, os, pathlib, re, subprocess, sys, time, tomllib
+import argparse, fcntl, hashlib, os, pathlib, re, subprocess, sys, time, tomllib
 
 GiB = 1024 ** 3
-CGROUP_APPS = pathlib.Path(f"/sys/fs/cgroup/user.slice/user-{os.getuid()}.slice/"
-                           f"user@{os.getuid()}.service/app.slice")
+CGROUP_USER = pathlib.Path(f"/sys/fs/cgroup/user.slice/user-{os.getuid()}.slice/"
+                           f"user@{os.getuid()}.service")
+SLICE = CGROUP_USER / os.environ.get("FV_SLICE", "clifv.slice")
+HEAVY_QUEUE = pathlib.Path("/tmp/clifv-heavy-queue")
+EXTERNAL_RETRIES = 3
 
 
 def size(s):
@@ -58,7 +86,7 @@ def other_heavy_scopes(mine, heavy, by_usage=False):
     """Memcap scopes (systemd-run --scope) of other jobs that may use (by_usage: that do use) more
     than `heavy` bytes, and other lean processes whose RSS is above `heavy`."""
     out = []
-    for s in CGROUP_APPS.glob("run-*.scope"):
+    for s in [*(CGROUP_USER / "app.slice").glob("*.scope"), *SLICE.glob("*.scope")]:
         try:
             procs = set(map(int, (s / "cgroup.procs").read_text().split()))
             if not procs or procs & mine:
@@ -81,6 +109,58 @@ def other_heavy_scopes(mine, heavy, by_usage=False):
         if rss > heavy:
             out.append(f"lean:{d.name}")
     return out
+
+
+def slice_room():
+    """Bytes the clifv slice can still take before its MemoryHigh/MemoryMax: limit minus current
+    usage without page cache (reclaimable). None if the slice has no limit (or no cgroup)."""
+    try:
+        lims = [int(v) for v in ((SLICE / "memory.high").read_text().strip(),
+                                 (SLICE / "memory.max").read_text().strip()) if v != "max"]
+        cur = int((SLICE / "memory.current").read_text())
+        stat = dict(line.split() for line in (SLICE / "memory.stat").read_text().splitlines())
+        cur -= int(stat.get("file", 0))
+    except (OSError, ValueError):
+        return None
+    return min(lims) - cur if lims else None
+
+
+def read_int(p):
+    try:
+        return int(p.read_text().split()[0])
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def pid_alive(pid):
+    try:
+        return "lake-serial-build" in pathlib.Path(f"/proc/{pid}/cmdline").read_bytes().decode(errors="replace")
+    except OSError:
+        return False
+
+
+def heavy_queue_head():
+    """Oldest live ticket of /tmp/clifv-heavy-queue: (pid, peak bytes, module) or None."""
+    best = None
+    try:
+        files = list(HEAVY_QUEUE.iterdir())
+    except OSError:
+        return None
+    for f in files:
+        try:
+            t, pid = map(int, f.name.split("-"))
+            est, mod = f.read_text().split()[:2]
+        except (OSError, ValueError):
+            continue
+        if not pid_alive(pid):
+            try:
+                f.unlink()
+            except OSError:
+                pass
+            continue
+        if best is None or (t, pid) < best[0]:
+            best = ((t, pid), pid, int(est), mod)
+    return best[1:] if best else None
 
 
 def load_modules(root):
@@ -119,6 +199,35 @@ def load_profile(paths):
     return prof
 
 
+def source_keys(root, mods, imports, want):
+    """Dedup key per module: hash of the toolchain, lakefile, manifest, the module's name and
+    source, and its imports' keys. Equal keys imply equal Lake input traces; a collision would only
+    cost a needless wait (the module is then built or restored by `lake build` as usual)."""
+    salt = hashlib.sha256()
+    for f in ("lean-toolchain", "lakefile.toml", "lake-manifest.json"):
+        p = root / f
+        salt.update(f.encode() + b"\0" + (p.read_bytes() if p.exists() else b"") + b"\0")
+    keys = {}
+    for m0 in want:
+        todo = [m0]
+        while todo:
+            m = todo[-1]
+            if m in keys:
+                todo.pop()
+                continue
+            pend = [d for d in imports[m] if d not in keys]
+            if pend:
+                todo.extend(pend)
+                continue
+            todo.pop()
+            h = salt.copy()
+            h.update(m.encode() + b"\0" + mods[m].read_bytes() + b"\0")
+            for d in sorted(set(imports[m])):
+                h.update(keys[d].encode())
+            keys[m] = h.hexdigest()[:32]
+    return keys
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("targets", nargs="+")
@@ -145,6 +254,15 @@ def main():
     ap.add_argument("--retry-failed", action="store_true",
                     help="retry a failed module once, alone (CI: wall-clock limits such as "
                          "bv_decide's SAT timeout can fail on a loaded runner)")
+    ap.add_argument("--no-batch-check", action="store_true",
+                    help="start one `lake build <M>` per module, also for modules that are built or "
+                         "cached (the behaviour before the batch check)")
+    ap.add_argument("--no-dedup", action="store_true",
+                    help="do not wait for other worktrees that are building the same module")
+    ap.add_argument("--no-slice-gate", action="store_true",
+                    help="ignore the clifv slice's memory limit and the machine-wide heavy queue")
+    ap.add_argument("--slice-margin", default="4G",
+                    help="headroom kept below the clifv slice's MemoryHigh/MemoryMax")
     a = ap.parse_args()
 
     root = pathlib.Path(a.root).resolve()
@@ -152,8 +270,10 @@ def main():
     budget, heavy = size(a.budget), size(a.heavy)
     heavy_avail, pause_avail = size(a.heavy_avail), size(a.pause_avail)
     min_cap, default_cap, max_cap = size(a.min_cap), size(a.default_cap), size(a.max_cap)
+    slice_margin = size(a.slice_margin)
     record = root / a.record
     profiles = a.profile or [root / "scripts/lake-module-peaks.tsv", record]
+    memcap = str(root / "scripts/memcap.sh")
 
     libs, mods, imports = load_modules(root)
     prof = load_profile(profiles)
@@ -214,6 +334,19 @@ def main():
     def is_heavy(m, c):
         return prof.get(m, (0, 0))[0] > heavy or c > budget
 
+    def est_peak(m, c):
+        # expected peak for the slice gate: the recorded one, else half the cap
+        return prof[m][0] if m in prof else c // 2
+
+    def downstream(ms):
+        seen, todo = set(), list(ms)
+        while todo:
+            for r in rdeps.get(todo.pop(), []):
+                if r not in seen:
+                    seen.add(r)
+                    todo.append(r)
+        return seen
+
     nheavy = sum(1 for m in want if is_heavy(m, cap[m]))
     print(f"{len(want)} modules ({nheavy} heavy, {sum(1 for m in want if m not in prof)} "
           f"without a record); critical path {max(crit.values(), default=0) / 3600:.2f} h, "
@@ -234,24 +367,165 @@ def main():
         print(line, flush=True)
 
     status = {m: "ok" for m in assumed}  # m -> ok | fail | blocked
-    running = {}           # m -> (Popen, t0, cap)
+    running = {}           # m -> (Popen, t0, cap, unit)
     solo_set = set()       # running modules that must run alone
     retry_cap = {}         # m -> cap for the solo retry (after an OOM kill, or --retry-failed)
     retried = set()        # modules already retried alone after a failure (--retry-failed)
+    external = {}          # m -> kills from outside (systemd-oomd, slice limit), retried at the same cap
     probed = set()         # deferred heavy modules already checked with `lake build --no-build`
+    ood = set()            # modules a batch check reported out of date (their imports were done)
+    polled = {}            # m -> highest memory.peak seen while running
     t_start = time.time()
     built = 0
+    seq = 0
+    me = os.getpid()
+
+    # ---- batch up-to-date check ------------------------------------------------------------
+    failed_job = re.compile(r"^✖ \[\d+/\d+\] (\S+) (\S+)", re.M)
+    nchecks, tcheck = 0, 0.0
+
+    def batch_check(ms):
+        """One `lake build --no-build` over ms (Lake restores whatever is built or cached): the set
+        of modules Lake reports out of date, or None if Lake failed some other way."""
+        nonlocal nchecks, tcheck
+        t0 = time.time()
+        env = dict(os.environ, FV_MEMCAP="4G")
+        r = subprocess.run([memcap, "lake", "build", "--no-build", *sorted(ms)], cwd=root, env=env,
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                           errors="replace")
+        nchecks += 1
+        tcheck += time.time() - t0
+        jobs = failed_job.findall(r.stdout)
+        bad = {n for v, n in jobs if v == "Building" and n in mods}
+        if r.returncode != 0 and (not bad or len(bad) < len(jobs)):
+            (out / f"check{nchecks}.log").write_text(r.stdout)
+            say(f"check of {len(ms)} modules: lake rc={r.returncode} without a clear out-of-date "
+                f"list (out/check{nchecks}.log); building them one by one")
+            return None
+        return bad
+
+    def settle(ms, what):
+        """Batch-check ms: reported -> ood; unreported with no reported import -> ok. The rest
+        (what="all": modules importing a reported one) stay unknown; for what="ready" (all their
+        imports done) anything Lake did not settle is built one by one."""
+        ms = set(ms)
+        t0 = time.time()
+        bad = batch_check(ms)
+        if bad is None:
+            ood.update(ms)
+            return
+        unknown = downstream(bad)
+        fresh = ms - bad - unknown
+        for m in fresh:
+            status[m] = "ok"
+        ood.update(bad & ms if what == "all" else ms - fresh)
+        say(f"check ({what}) {len(ms)} modules in {time.time() - t0:.1f}s: {len(fresh)} up-to-date, "
+            f"{len(bad & ms)} out of date, {len(ms & unknown)} wait for those")
+
+    # ---- cross-worktree in-flight dedup -----------------------------------------------------
+    cache_dir = os.environ.get("FV_LAKE_CACHE") or os.environ.get("LAKE_CACHE_DIR")
+    inflight = pathlib.Path(cache_dir) / ".fv-inflight" if cache_dir and not a.no_dedup else None
+    keys = {}
+    if inflight:
+        try:
+            inflight.mkdir(parents=True, exist_ok=True)
+            keys = source_keys(root, mods, imports, want - assumed)
+        except OSError as e:
+            say(f"dedup off: {e}")
+            inflight = None
+    locks = {}             # m -> (fd, path) held while m builds
+    peer_wait = {}         # m -> time we first found another worktree building it
+    deduped = 0
+
+    def claim(m):
+        """Take m's in-flight lock (True), or False if another scheduler is building m."""
+        nonlocal deduped
+        if inflight is None or m in locks:
+            return True
+        path = inflight / f"{keys[m]}.lock"
+        while True:
+            fd = os.open(path, os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o644)
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                if m not in peer_wait:
+                    peer_wait[m] = time.time()
+                    try:
+                        holder = os.read(fd, 300).decode(errors="replace").strip()
+                    except OSError:
+                        holder = "?"
+                    say(f"wait {m}: another worktree is building it ({holder})")
+                os.close(fd)
+                return False
+            try:
+                same = os.stat(path).st_ino == os.fstat(fd).st_ino
+            except FileNotFoundError:
+                same = False
+            if same:
+                break
+            os.close(fd)  # the holder removed the file after we opened it: retry on the new one
+        os.ftruncate(fd, 0)
+        os.write(fd, f"{root} pid {me}".encode())
+        locks[m] = (fd, path)
+        if m in peer_wait:
+            deduped += 1
+            say(f"peer done {m} after {time.time() - peer_wait.pop(m):.0f}s; restoring it")
+        return True
+
+    def release(m):
+        if m in locks:
+            fd, path = locks.pop(m)
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+            os.close(fd)
+
+    # ---- machine-wide heavy queue -------------------------------------------------------------
+    use_slice = not a.no_slice_gate
+    ticket = None          # (path, module) of this scheduler's waiting heavy module
+
+    def enqueue(m, est):
+        nonlocal ticket
+        if not use_slice:
+            return
+        if ticket and ticket[1] == m:
+            return
+        dequeue()
+        try:
+            HEAVY_QUEUE.mkdir(mode=0o777, exist_ok=True)
+            p = HEAVY_QUEUE / f"{time.time_ns()}-{me}"
+            p.write_text(f"{est} {m}\n")
+            ticket = (p, m)
+        except OSError:
+            pass
+
+    def dequeue():
+        nonlocal ticket
+        if ticket:
+            try:
+                ticket[0].unlink()
+            except OSError:
+                pass
+            ticket = None
 
     def start(m, c):
+        nonlocal seq
+        seq += 1
+        unit = f"fvb-{me}-{seq}-" + re.sub(r"[^A-Za-z0-9_.:-]", "_", m)[:120]
+        for ext in ("mem", "time"):
+            (out / f"{m}.{ext}").unlink(missing_ok=True)
         env = dict(os.environ, FV_MEMCAP=f"{c // 2 ** 20}M",
-                   LEAN_NUM_THREADS=os.environ.get("LEAN_NUM_THREADS", "2"))
+                   LEAN_NUM_THREADS=os.environ.get("LEAN_NUM_THREADS", "2"),
+                   FV_MEMCAP_UNIT=unit, FV_MEMCAP_STATS=str(out / f"{m}.mem"))
         f = open(out / f"{m}.log", "w")
         timing = (["/usr/bin/time", "-v", "-o", str(out / f"{m}.time")]
                   if pathlib.Path("/usr/bin/time").is_file() else
                   [sys.executable, str(root / "scripts/lake-time.py"), str(out / f"{m}.time")])
-        p = subprocess.Popen([*timing, str(root / "scripts/memcap.sh"), "lake", "build", m],
+        p = subprocess.Popen([*timing, memcap, "lake", "build", m],
                              cwd=root, env=env, stdout=f, stderr=subprocess.STDOUT)
-        running[m] = (p, time.time(), c)
+        running[m] = (p, time.time(), c, unit)
+        polled.pop(m, None)
         say(f"start {m} cap={gib(c)} running={len(running)} "
             f"avail={gib(mem_available())}")
 
@@ -259,13 +533,13 @@ def main():
         # `lake build --no-build` fails without building if m is out of date; with the shared
         # cache it also restores m's artifacts. Lake alone needs little memory.
         env = dict(os.environ, FV_MEMCAP="4G")
-        r = subprocess.run([str(root / "scripts/memcap.sh"), "lake", "build", "--no-build", m],
+        r = subprocess.run([memcap, "lake", "build", "--no-build", m],
                            cwd=root, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return r.returncode == 0
 
     def my_pids():
-        pids = {os.getpid()}
-        for p, _, _ in running.values():
+        pids = {me}
+        for p, _, _, _ in running.values():
             pids.add(p.pid)
         # children of /usr/bin/time (the systemd-run scope members)
         try:
@@ -281,113 +555,203 @@ def main():
             pass
         return pids
 
+    def mem_stats(m):
+        try:
+            return {k: int(v) for k, v in
+                    (line.split() for line in (out / f"{m}.mem").read_text().splitlines())}
+        except (OSError, ValueError):
+            return None
+
+    def oomd_killed(unit, t0):
+        try:
+            r = subprocess.run(["journalctl", "-u", "systemd-oomd", "-q", "--no-pager", "-o", "cat",
+                                f"--since=@{int(t0)}", "-g", re.escape(unit)],
+                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, timeout=30)
+            return bool(r.stdout.strip())
+        except (OSError, subprocess.SubprocessError):
+            return False
+
     say(f"want {len(want)} modules ({len(assumed)} assumed built) budget={gib(budget)} "
         f"max_jobs={a.max_jobs} heavy>{gib(heavy)}")
+    batch = not a.no_batch_check
+    if batch and want - assumed:
+        settle(want - assumed, "all")
+    verify_rounds = 0
     last_wait = ""
-    while True:
-        for m, (p, t0, c) in list(running.items()):
-            rc = p.poll()
-            if rc is None:
-                continue
-            del running[m]
-            solo_set.discard(m)
-            dt = time.time() - t0
-            rss = 0
-            try:
-                t = (out / f"{m}.time").read_text()
-                rss = int(re.search(r"Maximum resident set size \(kbytes\): (\d+)", t).group(1)) * 1024
-            except (OSError, AttributeError):
-                pass
-            text = (out / f"{m}.log").read_text(errors="replace")
-            did_build = re.search(r"Built " + re.escape(m) + r"\b", text) is not None
-            oom = rc in (137, 143) or re.search(r"exit code (137|143)|signal 9|Killed", text)
-            if rc == 0:
-                status[m] = "ok"
-                if did_build:
-                    built += 1
-                    rec.write(f"{m}\t{rss // 2 ** 20}\t{dt:.0f}\n"); rec.flush()
-            elif oom and c < max_cap:
-                retry_cap[m] = min(max_cap, 2 * c)
-            elif a.retry_failed and m not in retried:
-                retried.add(m)
-                retry_cap[m] = c
-            else:
-                status[m] = "fail"
-            say(f"done {m} rc={rc} {dt:.0f}s maxrss={rss / GiB:.1f}G "
-                f"{'built' if did_build else 'up-to-date'} -> "
-                f"{status.get(m, 'retry ' + gib(retry_cap.get(m, 0)))}")
-        changed = True
-        while changed:
-            changed = False
-            for m in want:
-                if m not in status and any(status.get(d) in ("fail", "blocked") for d in imports[m]):
-                    status[m] = "blocked"; changed = True
-        pending = [m for m in want if m not in status and m not in running]
-        ready = sorted((m for m in pending if all(status.get(d) == "ok" for d in imports[m])),
-                       key=lambda m: (-crit[m], m))
-        if not running and not ready:
-            break
-        avail = mem_available()
-        wait = ""
-        if avail < pause_avail:
-            wait = f"paused: MemAvailable {gib(avail)} < {gib(pause_avail)}"
-        elif not (solo_set & running.keys()):
-            used = sum(c for (_, _, c) in running.values())
-            now = time.time()
-            reserve = None  # (shadow time, spare budget then) held for the first light module that did not fit
-            for m in ready:
-                c = retry_cap.get(m, cap[m])
-                if is_heavy(m, c):
-                    others = other_heavy_scopes(my_pids(), heavy, a.others_by_usage)
-                    if avail < heavy_avail or others:
-                        # a heavy module that is already built (or in the cache) need not wait
-                        if m not in probed:
-                            probed.add(m)
-                            if up_to_date(m):
-                                status[m] = "ok"
-                                say(f"done {m} up-to-date (probe) -> ok")
-                                continue
-                        wait = (f"deferring heavy {m} ({gib(c)}): avail {gib(avail)}"
-                                f"{', other heavy scopes ' + ' '.join(others) if others else ''}")
-                        continue
-                elif m not in retry_cap:
-                    if len(running) >= a.max_jobs:
-                        break
-                    fits = used + c <= budget
-                    if reserve is None and not fits:
-                        # reserve the budget for m: when do enough running modules finish?
-                        free, shadow = budget - used, now
-                        for end, cc in sorted((max(now, t0 + secs[x]), cc)
-                                              for x, (_, t0, cc) in running.items()):
-                            free, shadow = free + cc, end
-                            if free >= c:
-                                break
-                        reserve = (shadow, free - c)
-                        continue
-                    if reserve is not None:
-                        # backfill only what cannot delay the reserved module
-                        shadow, spare = reserve
-                        if not fits or (now + secs[m] > shadow and c > spare):
-                            continue
-                        if now + secs[m] > shadow:
-                            reserve = (shadow, spare - c)
-                    start(m, c)
-                    used += c
-                    if mem_available() < pause_avail:
-                        break
+    try:
+        while True:
+            for m, (p, t0, c, unit) in list(running.items()):
+                pk = read_int(SLICE / f"{unit}.scope" / "memory.peak")
+                if pk:
+                    polled[m] = max(polled.get(m, 0), pk)
+                rc = p.poll()
+                if rc is None:
                     continue
-                # solo: heavy module (gate passed) or retry after an OOM kill; drain first
-                if running:
-                    wait = f"draining for solo {m} ({gib(c)})"
+                del running[m]
+                solo_set.discard(m)
+                release(m)
+                dt = time.time() - t0
+                rss = 0
+                try:
+                    t = (out / f"{m}.time").read_text()
+                    rss = int(re.search(r"Maximum resident set size \(kbytes\): (\d+)", t).group(1)) * 1024
+                except (OSError, AttributeError):
+                    pass
+                st = mem_stats(m)
+                peak = (st or {}).get("peak") or polled.get(m, 0)
+                text = (out / f"{m}.log").read_text(errors="replace")
+                did_build = re.search(r"Built " + re.escape(m) + r"\b", text) is not None
+                killed = (rc in (137, 143) or bool(st and st.get("oom"))
+                          or re.search(r"exit code (137|143)|signal 9|Killed", text) is not None)
+                # own cap: the scope's oom counter; without stats, assume own unless the last
+                # polled peak was clearly below the cap
+                own = (st["oom"] > 0 if st and "oom" in st
+                       else not (m in polled and polled[m] < 0.9 * c))
+                why = ""
+                if rc == 0:
+                    status[m] = "ok"
+                    if did_build:
+                        built += 1
+                        rec.write(f"{m}\t{(peak or rss) // 2 ** 20}\t{dt:.0f}\n"); rec.flush()
+                elif killed and not own and external.get(m, 0) < EXTERNAL_RETRIES:
+                    external[m] = external.get(m, 0) + 1
+                    why = " (systemd-oomd)" if oomd_killed(unit, t0) else " (from outside)"
+                    # back to the queue at the same cap (not alone)
+                elif killed and own and c < max_cap:
+                    retry_cap[m] = min(max_cap, 2 * c)
+                elif a.retry_failed and m not in retried:
+                    retried.add(m)
+                    retry_cap[m] = c
+                else:
+                    status[m] = "fail"
+                after = (status[m] if m in status else
+                         f"retry {gib(c)} killed{why}" if m not in retry_cap else
+                         f"retry {gib(retry_cap[m])}")
+                say(f"done {m} rc={rc} {dt:.0f}s maxrss={rss / GiB:.1f}G cgpeak={peak / GiB:.1f}G "
+                    f"{'built' if did_build else 'up-to-date'} -> {after}")
+            changed = True
+            while changed:
+                changed = False
+                for m in want:
+                    if m not in status and any(status.get(d) in ("fail", "blocked") for d in imports[m]):
+                        status[m] = "blocked"; changed = True
+            pending = [m for m in want if m not in status and m not in running]
+            ready = sorted((m for m in pending if all(status.get(d) == "ok" for d in imports[m])),
+                           key=lambda m: (-crit[m], m))
+            if batch:
+                unchecked = [m for m in ready if m not in ood]
+                if unchecked:
+                    settle(unchecked, "ready")
+                    continue
+            if not running and not ready:
+                if not (batch and verify_rounds < 3 and want - assumed):
                     break
-                start(m, c)
-                solo_set.add(m)
-                break
-        key = re.sub(r"[\d.]+G", "", wait)
-        if wait and key != last_wait:
-            say(wait)
-        last_wait = key
-        time.sleep(1)
+                verify_rounds += 1
+                bad = batch_check(want - assumed)
+                redo = {m for m in (bad or ()) if status.get(m) == "ok" and m not in assumed}
+                if not redo:
+                    if bad is None:
+                        say("final check inconclusive (see above)")
+                    break
+                for m in redo | downstream(redo):
+                    if status.get(m) == "ok" and m not in assumed:
+                        del status[m]
+                ood.update(redo)
+                say(f"final check: {len(redo)} modules still out of date: {' '.join(sorted(redo)[:10])}")
+                continue
+            avail = mem_available()
+            wait = ""
+            room = slice_room() if use_slice else None
+            head = heavy_queue_head() if use_slice else None
+            if room is not None:
+                room -= slice_margin
+                for x, (_, _, cx, ux) in running.items():
+                    cur = read_int(SLICE / f"{ux}.scope" / "memory.current") or 0
+                    room -= max(0, est_peak(x, cx) - cur)
+                if head and head[0] != me:
+                    room -= head[1]   # leave room for the oldest waiting heavy module
+            if avail < pause_avail:
+                wait = f"paused: MemAvailable {gib(avail)} < {gib(pause_avail)}"
+            elif not (solo_set & running.keys()):
+                used = sum(c for (_, _, c, _) in running.values())
+                now = time.time()
+                reserve = None  # (shadow time, spare budget then) held for the first light module that did not fit
+                for m in ready:
+                    c = retry_cap.get(m, cap[m])
+                    est = est_peak(m, c)
+                    if is_heavy(m, c):
+                        others = other_heavy_scopes(my_pids(), heavy, a.others_by_usage)
+                        queued = head is not None and head[0] != me
+                        if avail < heavy_avail or others or queued or (room is not None and room < est):
+                            # a heavy module that is already built (or in the cache) need not wait
+                            if m not in probed:
+                                probed.add(m)
+                                if up_to_date(m):
+                                    status[m] = "ok"
+                                    say(f"done {m} up-to-date (probe) -> ok")
+                                    if ticket and ticket[1] == m:
+                                        dequeue()
+                                    continue
+                            if not (ticket and ticket[1] != m):
+                                enqueue(m, est)
+                            wait = (f"deferring heavy {m} ({gib(c)}): avail {gib(avail)}"
+                                    f"{', other heavy scopes ' + ' '.join(others) if others else ''}"
+                                    f"{', queued behind ' + head[2] if queued else ''}"
+                                    f"{', clifv slice room ' + gib(max(room, 0)) if room is not None and room < est else ''}")
+                            continue
+                    elif m not in retry_cap:
+                        if len(running) >= a.max_jobs:
+                            break
+                        if room is not None and est > room:
+                            wait = f"clifv slice: room {gib(max(room, 0))} < {gib(est)} for {m}"
+                            break
+                        fits = used + c <= budget
+                        if reserve is None and not fits:
+                            # reserve the budget for m: when do enough running modules finish?
+                            free, shadow = budget - used, now
+                            for end, cc in sorted((max(now, t0 + secs[x]), cc)
+                                                  for x, (_, t0, cc, _) in running.items()):
+                                free, shadow = free + cc, end
+                                if free >= c:
+                                    break
+                            reserve = (shadow, free - c)
+                            continue
+                        if reserve is not None:
+                            # backfill only what cannot delay the reserved module
+                            shadow, spare = reserve
+                            if not fits or (now + secs[m] > shadow and c > spare):
+                                continue
+                            if now + secs[m] > shadow:
+                                reserve = (shadow, spare - c)
+                        if not claim(m):
+                            continue
+                        start(m, c)
+                        used += c
+                        if room is not None:
+                            room -= est
+                        if mem_available() < pause_avail:
+                            break
+                        continue
+                    # solo: heavy module (gate passed) or retry after an OOM kill; drain first
+                    if running:
+                        wait = f"draining for solo {m} ({gib(c)})"
+                        break
+                    if not claim(m):
+                        continue
+                    if ticket and ticket[1] == m:
+                        dequeue()
+                    start(m, c)
+                    solo_set.add(m)
+                    break
+            key = re.sub(r"[\d.]+G", "", wait)
+            if wait and key != last_wait:
+                say(wait)
+            last_wait = key
+            time.sleep(1)
+    finally:
+        dequeue()
+        for m in list(locks):
+            release(m)
 
     dt = time.time() - t_start
     for k in ("fail", "blocked"):
@@ -395,6 +759,9 @@ def main():
         if bad:
             say(f"{k} ({len(bad)}): " + " ".join(bad))
     ok = sum(1 for m in want if status.get(m) == "ok")
+    if batch:
+        say(f"{nchecks} batch checks, {tcheck:.0f}s; {deduped} modules restored after another "
+            f"worktree built them")
     say(f"END {ok}/{len(want)} ok, {built} built, wall {dt / 60:.1f} min")
     return 0 if ok == len(want) else 1
 
