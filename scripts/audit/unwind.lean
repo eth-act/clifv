@@ -180,6 +180,15 @@ import FV.E2E.WorldUnwindNIWitness
 #print axioms Link.EhCheck.Complete.unwindRows_complete_frame
 #print axioms Link.EhCheck.Complete.Witness.savedCheck_applies -- witness: native_decide
 #print axioms Link.EhCheck.Complete.Witness.unwindRows_frame_applies -- witness: native_decide
+#print axioms Link.EhCheck.Complete.saveFrameB_always
+#print axioms Link.EhCheck.Complete.frame_saves_far
+#print axioms Link.EhCheck.Complete.savedCheck_pipe_out
+#print axioms Link.EhCheck.Complete.unwindRows_complete_frame_out
+#print axioms Backend.Proof.save_lt
+#print axioms Backend.Proof.frameOk_compute
+#print axioms Backend.Proof.UnwindTables.unwindRows_frame
+#print axioms Link.EhCheck.Complete.Witness.saveFrameB_always_applies -- witness: native_decide
+#print axioms Link.EhCheck.Complete.Witness.unwindRows_frame_out_applies -- witness: native_decide
 #print axioms E2E.DeadCleanupExecBytes.walk_det
 #print axioms E2E.DeadCleanupExecBytes.machU_uSys
 #print axioms E2E.DeadCleanupExecBytes.unwindAt_sim
