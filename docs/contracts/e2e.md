@@ -4143,11 +4143,42 @@ Link.DeadCleanup.compileExe_correct_trap (h : compileExeU S file0 = .ok file) (B
 * `#print axioms` (`scripts/audit/traps.lean`): every compiler theorem above `[propext,
   Classical.choice, Quot.sound]`.
 
-Not yet covered: traps of the callees of `try_call`/`try_call_indirect` (S9b, #375: premise
+Not yet covered: traps of the callees of `try_call`/`try_call_indirect` on the executable (per
+function done: S9b, below; linked program and executable: S9e, #408, premise
 `hnoTry`), memory-access traps (`heap_oob` of a load/store: no fault model, excluded by
 `TrapsExplicitC`) and `MemBounded` of the source run (the bump allocator); the baseline
 `Link.compileExe` (its pipeline is not the cleanup pipeline the per-function trap theorem is
 proved for).
+
+### Callee traps of `try_call`s, per function (S9b, #375)
+
+`E2E.backend_correct_final_cleanup_trapcallT` (`FV/E2E/DeadCleanupTrapCallTry.lean`):
+`backend_correct_final_cleanup_trapcall` without `∀ B ∈ f.blocks, B.term.isTry = false`, under
+`TrapsExplicitCT` (`TrapsExplicitC` without its `try_call` clauses; `TrapsExplicitC.toT`);
+conclusion: a trap site of `f`, or `CallTrapAtT` (the callee-trap state at a call site of
+either kind, `CallTrapAt.toT`), every earlier state `GoodX`. The proof stops at the trapping
+call instead of following the device's exception into a handler:
+
+* CLIF (`TrapCallTry.lean`): a `try_call`'s preludes never trap; its callee trap is `stuck` in
+  `trapEnv` and raises there (`step_try_trap_stuck`, `raiseAt_of_trapRel_try`);
+* CLIF → VCode (`TrapCallTryStop.lean`): `sim_trapStop`/`driver_trapStop`, fuel induction on
+  the run of `env`, ending at an explicit trap (`VTrapFrom`), a raising `call` (`VUnwFrom`) or a
+  raising `tryCall` (`VTryRaiseFrom`, `term_step_try_stop`);
+* `prune`/`prepare` (`TrapCallTryPrep.lean`): `tryRaise_cleanup`;
+* register level (`RegLevelTrapCallTry.lean`): `haltTry` (the value semantics halting at a
+  raising `tryCall`), `star_haltTry`, `realizes_haltTry`, `regLevel_trapCall_coreT`/`_valueT`
+  (the `try_call` contract from the plain call's, `calleeTryOkG_of_call`).
+
+Witness (`FV/E2E/DeadCleanupTrapCallTryWitness.lean`): `%tp`, a `try_call` of an extern `%panic`
+that traps with `user1` (a `tag0` handler), compiled by the shipped pipeline (closed receipt
+`checks_true`); `final_applies` applies the theorem to it (the trapping callees' contract and the
+normal-return contracts discharged; open as in the S9a witness: `hC`, `hsym`, the entry premises);
+`source_hasTry` (S9a's theorem does not apply), `cs0_traps` + `cs0_trapsCT` (the run on argument 5
+traps inside the `try_call`'s callee and satisfies `TrapsExplicitCT`).
+
+Next (S9e, #408, linked program and executable): the world variant (`WorldTrapCall`/`WorldTrapStop`
+without `hnt`), then `LinkSys.TrapsOk.noTry`, `TrapsD`'s `try_call` clauses and the executable
+theorems' `hnoTry`.
 
 ## Remaining (precise)
 
