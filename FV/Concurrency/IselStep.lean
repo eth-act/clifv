@@ -468,7 +468,7 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
     (htk : ∀ L, bl[b]? = some L → ∀ i ∈ L.tst'.emitted.toList, Code.akinds i = [])
     {s' : Clif.State} (hs : Clif.step env p s = .next s') :
     ∃ (n : Nat) (vs' : VState CV W),
-      StarNP (VStep vc sem) (NoMemAt vc) n (.run ⟨b, k, ρ, w⟩) (.run vs') ∧
+      StarNP (VStep vc sem) (NoMemAt vc) n (.run ⟨b, k, ρ, w⟩) (.run vs') ∧ 0 < n ∧
       Match f ctx R gn bl A MR slots s' vs' := by
   obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
   simp only at hk hheld hcons hB hmem
@@ -634,7 +634,7 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       (by rw [hpt]; simp [List.map_map, Function.comp_def]) (by simp; omega)
       (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
     exact ⟨_, _, hstar.trans (StarNP.step hPi (VStep.step hvb hi hops hsem hlen
-      (VNext.goto hK (by rw [hsucc_eq, htgs]; rfl) henv)) (.refl _)), hM⟩
+      (VNext.goto hK (by rw [hsucc_eq, htgs]; rfl) henv)) (.refl _)), by omega, hM⟩
   · rename_i fn0 args0 et0 hT
     rw [hT] at hBnt; cases hBnt
   · rename_i callee0 args0 et0 hT
@@ -661,7 +661,7 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
       rw [hargs0, hp0] at hM
       exact ⟨_, _, hstar.trans (StarNP.step hPi (VStep.step hvb hi hops hsem hlen
         (VNext.goto hK (by rw [hsucc_eq, List.getElem?_eq_getElem hjlt, hnil hargs0]) henv))
-        (.refl _)), hM⟩
+        (.refl _)), by omega, hM⟩
     · obtain ⟨eb, heb, hebi, hebp, hebba⟩ := hedge hargs0
       have henv1 := edgeEnv_eq (V := CV) hvb heb (xs := []) (ps := [])
         (by rw [hbargs']; rfl) (by rw [hebp]; rfl) rfl (vdefUpd (ops.map (rnOp gn)) outs ρ₁')
@@ -688,7 +688,7 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         cases he
         rw [heb] at hb2; cases hb2
         rw [hebi] at hins; cases hins
-        rfl) hstep2 (.refl _))), hM⟩
+        rfl) hstep2 (.refl _))), by omega, hM⟩
 
 end
 
