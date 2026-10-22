@@ -260,4 +260,262 @@ theorem RegRel.frameGet {V : List ValueId} {fr fr' : Frame} (h : RegRel σ V fr.
     {x : ValueId} (hx : x ∉ V) : fr'.get x = fr.get x := by
   simp only [Frame.get, h.1 x hx]
 
+/-! ## The relation -/
+
+/-- A frame of `f` and a frame of `retype σ f` at the same program point (the target's
+statements retyped), the registers related by `RegRel` (module doc). -/
+def RR (σ : TyMap) (f : Function) (fr fr' : Frame) : Prop :=
+  fr.func = f ∧ fr'.func = retype σ f ∧ fr'.slots = fr.slots ∧
+    fr'.body = fr.body.map (retypeStmt σ) ∧ fr'.term = fr.term ∧
+    (∃ b ∈ f.blocks, fr.body <:+ b.body ∧ fr.term = b.term) ∧
+    RegRel σ (vals σ f) fr.regs fr'.regs
+
+/-- Entering a block whose arguments are outside `vals σ f`. -/
+theorem enterBlock_rr {f : Function} (hok : okB σ f = true) {X Y : Frame} (hf : X.func = f)
+    (hg : Y.func = retype σ f) (hsl : Y.slots = X.slots)
+    (hr : RegRel σ (vals σ f) X.regs Y.regs) {bc : BlockCall}
+    (hbc : ∀ v ∈ bc.args, v ∉ vals σ f) {X1 : Frame} (h : enterBlock X bc = .ok X1) :
+    ∃ Y1, enterBlock Y bc = .ok Y1 ∧ RR σ f X1 Y1 := by
+  obtain ⟨b, args, regs, hb, hga, hty, hset, rfl⟩ := enterBlock_ok h
+  rw [hf] at hb
+  have hbm : b ∈ f.blocks := List.mem_of_find?_eq_some hb
+  obtain ⟨hp, -, -⟩ := okB_block hok hbm
+  obtain ⟨r', hset', hrr⟩ := hr.setMany (fun x hx => by
+    obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hx; exact hp q hq) hset
+  have hgb : Y.func.block? bc.block = some (retypeBlock σ b) := by
+    rw [hg, retype_block?, hb]; rfl
+  refine ⟨_, enterBlock_of hgb (by rw [hr.getMany hbc]; exact hga) hty hset', hf, hg, hsl, rfl, rfl,
+    ⟨b, hbm, List.suffix_refl _, rfl⟩, hrr⟩
+
+/-- A non-call statement whose evaluation and result binding are matched. -/
+theorem lstep_inst_rel {fr fr' : Frame} {m : Mem} {st st' : Stmt} {rest rest' : List Stmt}
+    (hb : fr.body = st :: rest) (hb' : fr'.body = st' :: rest')
+    (hc : ∀ fn args, st.inst ≠ .call fn args) (hc' : ∀ fn args, st'.inst ≠ .call fn args)
+    (g : List Val → List Val) (P : Frame → Frame → Prop)
+    (hev : ∀ vs m', evalInst fr m st.inst = .ok (vs, m') → evalInst fr' m st'.inst = .ok (g vs, m'))
+    (htr : ∀ c, evalInst fr m st.inst = .trap c → evalInst fr' m st'.inst = .trap c)
+    (hset : ∀ vs regs, fr.regs.setMany st.results vs = some regs →
+      ∃ regs', fr'.regs.setMany st'.results (g vs) = some regs' ∧
+        P { fr with regs, body := rest } { fr' with regs := regs', body := rest' }) :
+    (∀ X1 m1, lstep fr m = .next X1 m1 → ∃ Y1, lstep fr' m = .next Y1 m1 ∧ P X1 Y1) ∧
+    (∀ r, (∀ X1 m1, r ≠ .next X1 m1) → (∀ msg, r ≠ .stuck msg) → lstep fr m = r →
+      lstep fr' m = r) := by
+  rw [lstep_inst hb hc, lstep_inst hb' hc']
+  refine ⟨fun X1 m1 h => ?_, fun r hn hs h => ?_⟩
+  · cases he : evalInst fr m st.inst with
+    | ok p =>
+      obtain ⟨vs, m'⟩ := p
+      rw [he] at h; simp only [LRes.ofRes] at h
+      rw [hev vs m' he]; simp only [LRes.ofRes]
+      cases hs : fr.regs.setMany st.results vs with
+      | none => simp only [hs] at h; cases h
+      | some regs =>
+        simp only [hs, LRes.next.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        obtain ⟨regs', hs', hP⟩ := hset vs regs hs
+        simp only [hs']
+        exact ⟨_, rfl, hP⟩
+    | trap c => rw [he] at h; cases h
+    | stuck msg => rw [he] at h; cases h
+  · cases he : evalInst fr m st.inst with
+    | ok p =>
+      obtain ⟨vs, m'⟩ := p
+      rw [he] at h; simp only [LRes.ofRes] at h
+      split at h
+      · exact absurd h.symm (hn _ _)
+      · exact absurd h.symm (hs _)
+    | trap c => rw [he] at h; rw [htr c he]; exact h
+    | stuck msg => rw [he] at h; exact absurd h.symm (hs _)
+
+/-- **One local step** of a frame of `f` is matched by one of the related frame of
+`retype σ f`. -/
+theorem rr_step {f : Function} (hok : okB σ f = true) {fr fr' : Frame} (m : Mem)
+    (hr : RR σ f fr fr') :
+    (∀ X1 m1, lstep fr m = .next X1 m1 → ∃ Y1, lstep fr' m = .next Y1 m1 ∧ RR σ f X1 Y1) ∧
+    (∀ ext vals rs rest, lstep fr m = .call ext vals rs rest →
+      lstep fr' m = .call ext vals rs (rest.map (retypeStmt σ))) ∧
+    (∀ r, (∀ X1 m1, r ≠ .next X1 m1) → (∀ ext vals rs rest, r ≠ .call ext vals rs rest) →
+      (∀ msg, r ≠ .stuck msg) → lstep fr m = r → lstep fr' m = r) := by
+  obtain ⟨hf, hg, hsl, hbd, htm, ⟨b, hb, hsuf, htb⟩, hrr⟩ := hr
+  obtain ⟨-, hsts, hterm⟩ := okB_block hok hb
+  have hgl : fr'.func.globals = fr.func.globals := by rw [hf, hg]; rfl
+  have hex : fr'.func.externs = fr.func.externs := by rw [hf, hg]; rfl
+  have hext : ∀ fn, fr'.func.extern? fn = fr.func.extern? fn := by
+    intro fn; simp only [Function.extern?, hex]
+  cases hbody : fr.body with
+  | cons st rest =>
+    have hst : st ∈ b.body := hsuf.subset (by rw [hbody]; simp)
+    have hok1 := hsts st hst
+    have hbd' : fr'.body = retypeStmt σ st :: rest.map (retypeStmt σ) := by rw [hbd, hbody]; rfl
+    have hpos : ∃ b ∈ f.blocks, rest <:+ b.body ∧ fr.term = b.term :=
+      ⟨b, hb, (List.suffix_cons st rest).trans (hbody ▸ hsuf), htb⟩
+    by_cases hc : ∃ fn args, st.inst = .call fn args
+    · obtain ⟨fn, args, hi⟩ := hc
+      have hi' : (retypeStmt σ st).inst = .call fn args := retypeInst_call.2 hi
+      have hca : callArgs fr' fn args = callArgs fr fn args := by
+        have hops := (stmtOk_other hok1 (by rw [hi]; rfl) (by rw [hi]; rfl)).1
+        simp only [hi, operands] at hops
+        unfold callArgs
+        rw [hrr.getMany hops, hext fn]
+      rw [lstep_call hbody hi, lstep_call hbd' hi', hca]
+      refine ⟨fun X1 m1 h => ?_, fun ext vals rs rest' h => ?_, fun r hn hcl hs h => ?_⟩
+      · cases hc : callArgs fr fn args <;> rw [hc] at h <;> cases h
+      · cases hc : callArgs fr fn args with
+        | ok p =>
+          obtain ⟨e, vs⟩ := p
+          rw [hc] at h
+          simp only [LRes.ofRes, LRes.call.injEq] at h ⊢
+          obtain ⟨rfl, rfl, rfl, rfl⟩ := h
+          exact ⟨rfl, rfl, rfl, rfl⟩
+        | trap c => rw [hc] at h; simp [LRes.ofRes] at h
+        | stuck msg => rw [hc] at h; simp [LRes.ofRes] at h
+      · cases hc : callArgs fr fn args with
+        | ok p => rw [hc] at h; exact absurd h.symm (hcl _ _ _ _)
+        | trap c => rw [hc] at h; exact h
+        | stuck msg => rw [hc] at h; exact absurd h.symm (hs _)
+    · have hnc : ∀ fn args, st.inst ≠ .call fn args := fun fn args h => hc ⟨fn, args, h⟩
+      have hnc' : ∀ fn args, (retypeStmt σ st).inst ≠ .call fn args :=
+        fun fn args h => hnc fn args (retypeInst_call.1 h)
+      have hncall : ∀ ext vals rs rest', lstep fr m ≠ .call ext vals rs rest' := by
+        intro ext vals rs rest' h
+        obtain ⟨st0, fn, args, hb0, hi0, -⟩ := lstep_call_inv h
+        rw [hbody] at hb0; cases hb0
+        exact hnc fn args hi0
+      suffices H : (∀ X1 m1, lstep fr m = .next X1 m1 → ∃ Y1, lstep fr' m = .next Y1 m1 ∧
+          RR σ f X1 Y1) ∧ (∀ r, (∀ X1 m1, r ≠ .next X1 m1) → (∀ msg, r ≠ .stuck msg) →
+          lstep fr m = r → lstep fr' m = r) from
+        ⟨H.1, fun ext vals rs rest' h => absurd h (hncall _ _ _ _),
+          fun r hn _ hs h => H.2 r hn hs h⟩
+      have mkRR : ∀ regs regs', RegRel σ (vals σ f) regs regs' →
+          RR σ f { fr with regs, body := rest } { fr' with regs := regs', body := rest.map (retypeStmt σ) } :=
+        fun regs regs' h => ⟨hf, hg, hsl, rfl, htm, hpos, h⟩
+      cases hl : isRLoad σ st.inst
+      · cases hs : isRStore σ st.inst
+        · -- any other statement: the same instruction on equal operands
+          obtain ⟨hops, hres⟩ := stmtOk_other hok1 hl hs
+          have hi' : (retypeStmt σ st).inst = st.inst := retypeInst_other hl hs
+          have hev : evalInst fr' m (retypeStmt σ st).inst = evalInst fr m st.inst := by
+            rw [hi']; exact evalInst_congr hgl hex hsl fun x hx => hrr.1 x (hops x hx)
+          refine lstep_inst_rel hbody hbd' hnc hnc' id _ (fun vs m' h => by rw [hev, h]; rfl)
+            (fun c h => by rw [hev, h]) fun vs regs h => ?_
+          obtain ⟨regs', h', hrr'⟩ := hrr.setMany hres h
+          exact ⟨regs', h', mkRR _ _ hrr'⟩
+        · -- a retyped store: the stored value retagged, the same bytes
+          obtain ⟨t, fl, x, p, off, hi, hx, hp, hres⟩ := stmtOk_rstore hok1 hl hs
+          obtain ⟨t0, t', fl0, x0, p0, off0, hi0, ht, hri⟩ := isRStore_spec hs
+          rw [hi] at hi0; cases hi0
+          have hri' : (retypeStmt σ st).inst = .store .store t' fl x p off := hri
+          obtain ⟨hev, htr⟩ := evalInst_rstore (m := m) (fr := fr) (fr' := fr') ht (hrr.1 p hp)
+            (hrr.2 x hx)
+          refine lstep_inst_rel hbody hbd' hnc hnc' id _ (fun vs m' h => by
+            rw [hri']; rw [hi] at h; exact hev vs m' h) (fun c h => by
+            rw [hri']; rw [hi] at h; exact htr c h) fun vs regs h => ?_
+          obtain ⟨regs', h', hrr'⟩ := hrr.setMany (xs := st.results)
+            (by rw [hres]; intro x hx; cases hx) h
+          exact ⟨regs', h', mkRR _ _ hrr'⟩
+      · -- a retyped load: the loaded value retagged
+        obtain ⟨hlen, hops⟩ := stmtOk_rload hok1 hl
+        obtain ⟨t, t', fl, p, off, hi, ht, hri⟩ := isRLoad_spec hl
+        have hp : p ∉ vals σ f := hops p (by rw [hi]; simp [operands])
+        obtain ⟨hev, htr⟩ := evalInst_rload (m := m) (fr := fr) (fr' := fr') (fl := fl) (off := off)
+          ht (hrr.1 p hp)
+        obtain ⟨r, hr1⟩ := List.length_eq_one_iff.1 hlen
+        have hrV : r ∈ vals σ f := mem_vals hb hst hl r (by rw [hr1]; simp)
+        have hri' : (retypeStmt σ st).inst = .load .load t' fl p off := hri
+        refine lstep_inst_rel hbody hbd' hnc hnc' (List.map (retag σ)) _ (fun vs m' h => by
+          rw [hri']; rw [hi] at h; exact hev vs m' h) (fun c h => by
+          rw [hri']; rw [hi] at h; exact htr c h) fun vs regs h => ?_
+        have h1 : fr.regs.setMany [r] vs = some regs := by rw [← hr1]; exact h
+        obtain ⟨regs', h', hrr'⟩ := hrr.set1 hrV h1
+        exact ⟨regs', by show fr'.regs.setMany st.results _ = _; rw [hr1]; exact h', mkRR _ _ hrr'⟩
+  | nil =>
+    have hncall : ∀ ext vals rs rest', lstep fr m ≠ .call ext vals rs rest' := by
+      intro ext vals rs rest' h
+      obtain ⟨st0, -, -, hb0, -⟩ := lstep_call_inv h
+      rw [hbody] at hb0; cases hb0
+    suffices H : (∀ X1 m1, lstep fr m = .next X1 m1 → ∃ Y1, lstep fr' m = .next Y1 m1 ∧
+        RR σ f X1 Y1) ∧ (∀ r, (∀ X1 m1, r ≠ .next X1 m1) → (∀ msg, r ≠ .stuck msg) →
+        lstep fr m = r → lstep fr' m = r) from
+      ⟨H.1, fun ext vals rs rest' h => absurd h (hncall _ _ _ _), fun r hn _ hs h => H.2 r hn hs h⟩
+    have hbd' : fr'.body = [] := by rw [hbd, hbody]; rfl
+    have hops : ∀ v ∈ termOperands fr.term, v ∉ vals σ f := by rw [htb]; exact hterm
+    have henter : ∀ bc : BlockCall, (∀ v ∈ bc.args, v ∉ vals σ f) → ∀ X1 m1,
+        LRes.ofRes (enterBlock fr bc) (fun fr1 => .next fr1 m) = .next X1 m1 →
+        ∃ Y1, LRes.ofRes (enterBlock fr' bc) (fun fr1 => .next fr1 m) = .next Y1 m1 ∧
+          RR σ f X1 Y1 := by
+      intro bc hbc X1 m1 h
+      cases he : enterBlock fr bc with
+      | ok X2 =>
+        rw [he] at h; simp only [LRes.ofRes, LRes.next.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        obtain ⟨Y1, he', hR⟩ := enterBlock_rr hok hf hg hsl hrr hbc he
+        exact ⟨Y1, by rw [he']; rfl, hR⟩
+      | trap c => rw [he] at h; cases h
+      | stuck msg => rw [he] at h; cases h
+    have hnr : ∀ (bc : BlockCall) r, (∀ X1 m1, r ≠ .next X1 m1) → (∀ msg, r ≠ .stuck msg) →
+        LRes.ofRes (enterBlock fr bc) (fun fr1 => LRes.next fr1 m) ≠ r := by
+      intro bc r hn hs h
+      cases he : enterBlock fr bc with
+      | ok X1 => rw [he] at h; exact hn X1 m h.symm
+      | trap c => exact enterBlock_not_trap _ _ _ he
+      | stuck msg => rw [he] at h; exact hs msg h.symm
+    rw [lstep_term hbody, lstep_term hbd', htm]
+    cases hterm' : fr.term with
+    | jump d =>
+      have hops' : ∀ v ∈ termOperands (.jump d), v ∉ vals σ f := hterm' ▸ hops
+      exact ⟨fun X1 m1 h => henter d hops' X1 m1 h, fun r hn hs h => absurd h (hnr d r hn hs)⟩
+    | brif c t e =>
+      have hops' : ∀ v ∈ termOperands (.brif c t e), v ∉ vals σ f := hterm' ▸ hops
+      have hgc : fr'.get c = fr.get c := hrr.frameGet (hops' c (by simp [termOperands]))
+      simp only [hgc]
+      refine ⟨fun X1 m1 h => ?_, fun r hn hs h => ?_⟩
+      · cases hcv : fr.get c with
+        | ok cv =>
+          simp only [hcv, LRes.ofRes] at h ⊢
+          refine henter _ (fun v hv => hops' v ?_) X1 m1 h
+          simp only [termOperands, List.mem_cons, List.mem_append]
+          split at hv <;> simp [hv]
+        | trap _ => simp [hcv, LRes.ofRes] at h
+        | stuck _ => simp [hcv, LRes.ofRes] at h
+      · cases hcv : fr.get c with
+        | ok cv => simp only [hcv, LRes.ofRes] at h; exact absurd h (hnr _ r hn hs)
+        | trap _ => simp only [hcv, LRes.ofRes] at h ⊢; exact h
+        | stuck msg => simp only [hcv, LRes.ofRes] at h; exact absurd h.symm (hs _)
+    | brTable x d tbl =>
+      have hops' : ∀ v ∈ termOperands (.brTable x d tbl), v ∉ vals σ f := hterm' ▸ hops
+      have hgx : fr'.get x = fr.get x := hrr.frameGet (hops' x (by simp [termOperands]))
+      simp only [hgx]
+      refine ⟨fun X1 m1 h => ?_, fun r hn hs h => ?_⟩
+      · cases hcv : fr.get x with
+        | ok xv =>
+          simp only [hcv, LRes.ofRes] at h ⊢
+          refine henter _ (fun v hv => hops' v ?_) X1 m1 h
+          simp only [termOperands, List.mem_cons, List.mem_append, List.mem_flatMap]
+          cases hq : tbl[xv.toNat]? with
+          | none => rw [hq] at hv; exact .inl (.inr hv)
+          | some q => rw [hq] at hv; exact .inr ⟨q, List.mem_of_getElem? hq, hv⟩
+        | trap _ => simp [hcv, LRes.ofRes] at h
+        | stuck _ => simp [hcv, LRes.ofRes] at h
+      · cases hcv : fr.get x with
+        | ok xv => simp only [hcv, LRes.ofRes] at h; exact absurd h (hnr _ r hn hs)
+        | trap _ => simp only [hcv, LRes.ofRes] at h ⊢; exact h
+        | stuck msg => simp only [hcv, LRes.ofRes] at h; exact absurd h.symm (hs _)
+    | ret xs =>
+      have hops' : ∀ v ∈ xs, v ∉ vals σ f := by rw [hterm'] at hops; exact hops
+      simp only [hrr.getMany hops']
+      refine ⟨fun X1 m1 h => ?_, fun r _ _ h => h⟩
+      cases hg : fr.getMany xs <;> simp [hg, LRes.ofRes] at h
+    | returnCall fn args =>
+      have hops' : ∀ v ∈ args, v ∉ vals σ f := by rw [hterm'] at hops; exact hops
+      have hta : tailArgs fr' fn args = tailArgs fr fn args := by
+        have hsig : fr'.func.sig = fr.func.sig := by rw [hf, hg]; rfl
+        unfold tailArgs
+        rw [hrr.getMany hops', hext fn, hsig]
+      simp only [hta]
+      refine ⟨fun X1 m1 h => ?_, fun r _ _ h => h⟩
+      cases hg : tailArgs fr fn args <;> simp [hg, LRes.ofRes] at h
+    | trap c => exact ⟨fun X1 m1 h => (by cases h), fun r _ _ h => h⟩
+    | tryCall fn args et => exact ⟨fun X1 m1 h => (by cases h), fun r _ _ h => h⟩
+    | tryCallIndirect c args et => exact ⟨fun X1 m1 h => (by cases h), fun r _ _ h => h⟩
+
 end Opt.Retype
