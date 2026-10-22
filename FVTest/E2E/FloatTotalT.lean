@@ -119,9 +119,8 @@ theorem fnScopeInB_int : fnScopeInB fInt = true := fnScopeInB_of_fnScopeInTB fnS
 theorem lowerScopeB_int : lowerScopeB fInt = true :=
   lowerScopeB_of_lowerScopeTB lowerScopeTB_int (by native_decide)
 
-/-- A one-function crate of `fW`'s CLIF text. -/
-def crateW : LinkInput :=
-  { funcs := [{ clif := "function %w(i64, i8) -> i64 {
+/-- `fW`'s CLIF text. -/
+def srcW : String := "function %w(i64, i8) -> i64 {
 block0(v0: i64, v1: i8):
     v2 = load.f64 v0
     v3 = f64const 0x1.0p-2
@@ -130,16 +129,23 @@ block0(v0: i64, v1: i8):
     v5 = bitcast.i64 v4
     return v5
 }
-", ra := "" }], addrs := [], syms := [], raStar := 0, D := 0 }
+"
 
-/-- A one-function crate of `fInt`'s CLIF text. -/
-def crateInt : LinkInput :=
-  { funcs := [{ clif := "function %i(i64, i64) -> i64 {
+/-- `fInt`'s CLIF text. -/
+def srcInt : String := "function %i(i64, i64) -> i64 {
 block0(v0: i64, v1: i64):
     v2 = iadd v0, v1
     return v2
 }
-", ra := "" }], addrs := [], syms := [], raStar := 0, D := 0 }
+"
+
+/-- A one-function crate of `fW`'s CLIF text. -/
+def crateW : LinkInput :=
+  { funcs := [{ clif := srcW, ra := "" }], addrs := [], syms := [], raStar := 0, D := 0 }
+
+/-- A one-function crate of `fInt`'s CLIF text. -/
+def crateInt : LinkInput :=
+  { funcs := [{ clif := srcInt, ra := "" }], addrs := [], syms := [], raStar := 0, D := 0 }
 
 #guard crateW.prog.funcs.map Compile.functionE == [false] && !InScopeIn crateW
 
