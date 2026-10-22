@@ -391,3 +391,30 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.Witness.realizes_fence -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.wf_single
 #print axioms Concurrency.RealizeCompiled.wf_single_witness
+
+-- T2 (#311): layer 4b for the LL/SC loops (retries, monitor pairs)
+#print axioms Concurrency.ArmAllocThread.noW_append
+#print axioms Concurrency.ArmAllocThread.retryOut_shift
+#print axioms Concurrency.ArmAllocThread.retry_run
+#print axioms Concurrency.ArmAllocThread.evAt_seg
+#print axioms Concurrency.ArmAllocThread.img_pair
+#print axioms Concurrency.ArmAllocThread.img_one
+#print axioms Concurrency.ArmLoop.rmwBody_keepFlags
+#print axioms Concurrency.ArmLoop.rmwBody_dep
+#print axioms Concurrency.ArmLoop.rmwBody_evsEq
+#print axioms Concurrency.ArmLoop.casHead_dep
+#print axioms Concurrency.ArmLoop.casStore_evsEq
+#print axioms Concurrency.ArmLoop.ldaxr_cls
+#print axioms Concurrency.ArmLoop.stlxr_cls
+#print axioms Concurrency.ArmLoop.stlxr_frame
+#print axioms Concurrency.ArmAllocThread.writeM_writeM
+#print axioms Concurrency.ArmAllocThread.r_failState
+#print axioms Concurrency.ArmAllocThread.execLines_mem_of_R
+#print axioms Concurrency.ArmAllocThread.rmw_steps
+#print axioms Concurrency.ArmAllocThread.rmw_retry
+#print axioms Concurrency.ArmAllocThread.rmw_op
+#print axioms Concurrency.ArmAllocThread.cas_steps
+#print axioms Concurrency.ArmAllocThread.cas_retry
+#print axioms Concurrency.ArmAllocThread.cas_op
+#print axioms Concurrency.ArmAllocThread.itemSim_loop
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_loop
