@@ -15,7 +15,7 @@ and the expression evaluation (`aExpr`/`aArgs`/`aBinds`) do not use the pattern 
 
 namespace Backend.Proof.Cov
 
-open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Aarch64
+open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 
 section Eval
 variable (p : Program) (tab : Tab) (aext : TermId → AW → List AW) (actor : TermId → List AW → AW)
