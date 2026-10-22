@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-22T03:59:32.566417+00:00",
+  "source_head": "6025fe3ffa4357ac63c6eac1446a93fee14521b2",
+  "archive_sha256": "2611137b49074e392a5427871a471cdc7e51cb3a1bb9d01b710cff4c0a7e2380",
+  "archive_bytes": 72547196,
+  "files": 2278,
+  "checkpoint_receipt_sha256": "cd504dc75342ab7ef02157e7daf897442e93c786ad819451edee04c328d7e1f2",
+  "preserves_failures": true,
+  "next_packet_drafts_included": true
+}
