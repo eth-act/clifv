@@ -491,4 +491,145 @@ theorem rets_privP {R : RL} (hR : R.Wf) {ra : BitVec 64} (hent : AbiCall R.fb R.
   · rw [Arm.ArmState.mem_w_eq_mem, hm1]
   · rw [Arm.w_program, hprog1]
 
+/-! ## Steps of a linked machine -/
+
+/-- **A thread step of `f` is one of `g`** when they agree on the state with every memory. -/
+theorem tstep_transfer {P : Policy} {f g : ArmState → ArmState} {x : ArmState} {mon : Mon}
+    {l : Lab} {t : ArmState × Mon} (h : ∀ m, f (setMem m x) = g (setMem m x))
+    (hs : TStep P f (x, mon) l t) : TStep P g (x, mon) l t := by
+  cases hs with
+  | @exec _ _ evs hk hag hfp hsucc =>
+    have hfp' : Footprint g x evs := fun m hm' => by
+      rw [← h m, ← h (applyR evs x.mem)]; exact hfp m hm'
+    have hstep := TStep.exec (f := g) (P := P) (mon := mon) hk hag hfp' hsucc
+    rw [← h] at hstep
+    exact hstep
+  | xfail hc hfail herr hsp => exact .xfail hc hfail herr hsp
+
+/-- **One precise step reading the thread's own bytes at private addresses** (`prun_privF`'s
+step, for any machine): the machine's state, the label the step's events, no failed store
+exclusive, no `relXW`. -/
+theorem tstep_priv1 {R : RL} {f : ArmState → ArmState} {x : ArmState} {mon : Mon} {l : Lab}
+    {t : ArmState × Mon} (hs : TStep Policy.arm f (x, mon) l t) (hp : ArmPrecise.Precise x l)
+    (ho : OkPriv R x l) (hpv : ∀ e ∈ stepEvs x, R.F e.addr) (hx : NoStx x) :
+    t.1 = f x ∧ l.evs = stepEvs x ∧ l.xfail = false ∧ ∀ e ∈ l.evs, e.k ≠ .relXW := by
+  have hxf : l.xfail = false := by
+    cases hs with
+    | exec => rfl
+    | xfail hc => exact absurd hc (hx _ _ _)
+  have hag : Agrees l.evs x.mem := by
+    intro e he hRd
+    rcases hp with h' | ⟨M, hM⟩
+    · rw [hxf] at h'; cases h'
+    · have he' := he
+      rw [hM, ArmPrecise.stepEvs_setMem] at he'
+      obtain ⟨e0, he0, -, ha, -⟩ := mem_reread he'
+      exact ho e he hRd (privA_addr.2 (ha ▸ hpv e0 he0))
+  have hk : ∀ e ∈ l.evs, e.k ≠ .relXW := by
+    cases hs with
+    | exec hk' =>
+      intro e he hke
+      have := hk'.1 e he
+      rw [hke] at this
+      cases hc : cls x <;> rw [hc] at this <;> simp [Cls.kind, AKind.dir] at this
+      exact hx _ _ _ hc
+    | xfail => intro e he; exact absurd he List.not_mem_nil
+  obtain ⟨h1, h2, -⟩ := tstep_own hs hp hag hxf
+  exact ⟨h1, h2, hxf, hk⟩
+
+/-- Runs of a source step relation compose. -/
+theorem SRun.append' {C : Type} {S : C → List Ev → C → Prop} :
+    ∀ {a b c : C} {tr1 tr2 : List (List Ev)}, SRun S a tr1 b → SRun S b tr2 c →
+      SRun S a (tr1 ++ tr2) c
+  | _, _, _, _, _, .nil, h2 => h2
+  | _, _, _, _, _, .cons h r, h2 => .cons h (SRun.append' r h2)
+
+/-- **The moves at the head of the items, as the allocated code's thread run** (no events). -/
+theorem srun_moves {R : RL} {b : Nat} {w : ArmState} :
+    ∀ (mvs : List (Loc × Loc)) (its : List RItem) (m : Loc → CV),
+      SRun (SrcStep R) (.run ⟨b, mvs.map (fun p => RItem.move p.1 p.2) ++ its, m, w⟩)
+        (mvs.map fun _ => []) (.run ⟨b, its, movesM mvs m, w⟩)
+  | [], _, _ => .nil
+  | _ :: mvs, its, _ => .cons .move (srun_moves mvs its _)
+
+/-- **A step of the allocated code at an instruction without events** is a thread step without
+events to the same configuration. -/
+theorem srcStep_of_mstep_nil {R : RL} (hcov : ThreadProgress.CoveredCode R) (hX : TlsMemFree R.X)
+    {s : ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
+    {w : ArmState} {c' : MConf CV ArmState} (hq : Q R s (OpC b k allocs its m w))
+    (hn : ∀ vb i, R.vc.blocks[b]? = some vb → vb.insts[k]? = some i → Code.akinds i = [])
+    (hs : MStep R.vc R.sem ckeep R.rf (OpC b k allocs its m w) c') :
+    SrcStep R (OpC b k allocs its m w) [] c' := by
+  obtain ⟨evs, h⟩ := srcStep_of_mstep_eq hcov hX hq hs
+  have he : evs = [] := by
+    cases h with
+    | op hvb hi hops hevs => rw [hevs]; exact VCodeEvents.cEvs_nil (hn _ _ hvb hi) _ _
+  rw [he] at h
+  exact h
+
+/-- **The events of a precise step at an `ldar` line** (64 bits, address `x q`): one `acqR`
+event of 8 bytes at the address register's value, on every memory. -/
+theorem ldar_evs_line {R : RL} (hR : R.Wf) {s : ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.fa.lines.toList[j]? = some (.ins x t))
+    (hh : x.hooked = false) (hprog : s.program = R.fb.program R.base)
+    (hpc : Arm.r .PC s = R.pcOf j) (herr : Arm.r .ERR s = .None) {p q : Nat}
+    (hp : p ≤ 30) (hq : q ≤ 30)
+    (hx : ∀ env, x.armFields env = Insn.armFields.exclFields 64 1 1 31 (.x p) (.x q)) (M : Memory) :
+    NoStx s ∧ ∃ e, stepEvs (setMem M s) = [e] ∧ e.k = .acqR ∧ e.n = 8 ∧
+      e.addr = read_gpr 64 (BitVec.ofNat 5 q) s := by
+  obtain ⟨a, ha, -, hev, hdec⟩ := stepEvs_line (X := R.X) (H := R.H) (s := setMem M s) hR.layout
+    hR.lm hR.fit hj hh (by rw [setMem_program]; exact hprog) (by rw [r_setMem]; exact hpc)
+    (by rw [r_setMem]; exact herr)
+  obtain ⟨sz, rn', rt', rfl, hrn, -, hsz⟩ := toArmInst_excl (hx _) ha
+  simp only [Reg.encSP, hq, ite_true, pure, Except.pure, Except.ok.injEq] at hrn
+  subst hrn
+  have hsz' : sz = 3#2 := by rcases hsz with ⟨h, -⟩ | ⟨h, -⟩ | ⟨h, -⟩ | ⟨-, h⟩ <;> first | omega | exact h
+  subst hsz'
+  have hq31 : BitVec.ofNat 5 q ≠ 31#5 := ofNat5_ne31 (by omega)
+  refine ⟨fun rel rs rn h => ?_, ?_⟩
+  · have hdec' := hdec
+    rw [decodeAt_setMem] at hdec'
+    rw [cls_of_decode hdec'] at h
+    simp [clsOf, exclCls] at h
+  · rw [hev]
+    simp only [instEvs, exclEvs, hq31, false_and, ite_false, exclKind,
+      show BitVec.ofNat 1 1 = 1#1 from rfl, ite_true]
+    refine ⟨_, rfl, rfl, rfl, ?_⟩
+    simp only [read_gpr, r_setMem]
+
 end Concurrency.CallSeg
+
+namespace Concurrency.ClifCStepTerm
+
+open Prog ClifThread
+
+/-- **A return to a suspended caller**: the bottom frame's `return` resumes the first caller with
+the returned values, without events. -/
+theorem cstep_ret_pop {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
+    (hb : s.frame.body = []) {xs : List Clif.ValueId} (hT : s.frame.term = .ret xs)
+    {vals : List Clif.Val} (hg : s.frame.getMany xs = .ok vals) {u : Unit}
+    (hc : Clif.checkTys s!"return values of %{s.frame.func.name}" vals
+      (Clif.AbiParam.tys s.frame.func.sig.returns) = .ok u)
+    {caller : Clif.Frame} {results : List Clif.ValueId}
+    {cs : List (Clif.Frame × List Clif.ValueId)} (hcs : s.callers = (caller, results) :: cs)
+    {regs : Clif.Regs} (hr : caller.regs.setMany results vals = some regs) :
+    CStep env p (.run s) []
+      (.run ⟨{ caller with regs := regs }, cs, (s.mem.free (s.frame.slots.map (·.2))).leave⟩) := by
+  refine ⟨⟨by rw [evShape_term hb]; simp, fun _ h => nomatch h⟩, ⟨s.mem.bytes, trivial⟩,
+    fun B _ => ⟨.run ⟨{ caller with regs := regs }, cs,
+      ClifCStep.withB (s.mem.free (s.frame.slots.map (·.2))).leave B⟩, ?_, rfl⟩⟩
+  have hbB : (withBytes s B).frame.body = [] := hb
+  rw [Clif.step_term env p _ hbB]
+  show res (Clif.stepTerm env p (withBytes s B) s.frame.term) = _
+  rw [hT]
+  simp only [Clif.stepTerm]
+  show res (Clif.StepResult.ofRes (s.frame.getMany xs) _) = _
+  rw [hg]
+  show res (Clif.returnValues (withBytes s B) vals (withBytes s B).mem) = _
+  simp only [Clif.returnValues]
+  rw [show (withBytes s B).frame = s.frame from rfl,
+    show (withBytes s B).callers = s.callers from rfl, hc, hcs]
+  simp only [Clif.StepResult.ofRes_ok, hr, res, withBytes, withB_free, withB_leave]
+  rfl
+
+end Concurrency.ClifCStepTerm
