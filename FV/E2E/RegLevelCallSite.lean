@@ -693,6 +693,14 @@ def lineIs : Option Line → Insn × Option Clif.TrapCode → Bool
   | some (.ins i t), l => decide ((i, t) = l)
   | _, _ => false
 
+/-- The line the code after a plain call starts with, where the emitter's state does not matter:
+a register move (`mov`, e.g. of the call's result: one line, no branch, not relaxed), else
+`nextLine?`. -/
+def afterLine? : List AInst → Option (Insn × Option Clif.TrapCode)
+  | .inst (.mov s rd rm) :: _ =>
+    some (if rm == .sp then .mov true rd rm else .mov s.is64 rd rm, none)
+  | c => nextLine? c
+
 /-- The calls of a block's code: the call's index among the block's calls, its handlers, and the
 code after it. -/
 def codeCalls (code : List AInst) : List (Nat × Option TryInfo × List AInst) :=
@@ -703,7 +711,7 @@ def codeCalls (code : List AInst) : List (Nat × Option TryInfo × List AInst) :
 /-- **The check for the calls of the last block** (decidable, on `af` and its final code `fa`):
 for every call of the last block and every call line of `fa` with the same callee, the call line
 is a call with the same handlers (`Option TryInfo`), or the call of the last block is a plain
-call followed by a line (`nextLine?`) the call line is not followed by. -/
+call followed by a line (`afterLine?`) the call line is not followed by. -/
 def lastCallsOk (af : AFunc) (fa : FnAsm) : Bool :=
   let L := fa.lines.toList
   let code := (af.blocks.back?.map (·.2.toList)).getD []
@@ -712,7 +720,7 @@ def lastCallsOk (af : AFunc) (fa : FnAsm) : Bool :=
     (callIdx L).zipIdx.all fun p =>
       decide ((callKeys L)[p.2]? ≠ (callKeys L)[base + q.1]?) ||
         decide (af.calls[p.2]? = some q.2.1) ||
-        (q.2.1.isNone && match nextLine? q.2.2 with
+        (q.2.1.isNone && match afterLine? q.2.2 with
           | some l => !lineIs L[p.1 + 1]? l
           | none => false)
 
@@ -728,6 +736,37 @@ theorem nextLine?_some {c : List AInst} {l : Insn × Option Clif.TrapCode} (h : 
   split at h
   · exact ⟨_, _, rfl, (Option.some.inj h).symm⟩
   · cases h
+
+theorem afterLine?_some {c : List AInst} {l : Insn × Option Clif.TrapCode}
+    (h : afterLine? c = some l) :
+    (∃ code c3, c = .inst (.udf code) :: c3 ∧ l = (.udf 0xc11f, some code)) ∨
+    ∃ s rd rm c3, c = .inst (.mov s rd rm) :: c3 ∧
+      l = (if rm == .sp then .mov true rd rm else .mov s.is64 rd rm, none) := by
+  unfold afterLine? at h
+  split at h
+  · exact .inr ⟨_, _, _, _, rfl, (Option.some.inj h).symm⟩
+  · exact .inl (nextLine?_some h)
+
+theorem ftStep_mov (x : Insn) (hx : ∃ b rd rm, x = .mov b rd rm) (n1 n2 : Option Line) :
+    ftStep (.ins x none) n1 n2 = ([.ins x none], 1) := by
+  have hc : x.condTarget? = none := by obtain ⟨_, _, _, rfl⟩ := hx; rfl
+  have hb : ∀ y, x ≠ .b y := by obtain ⟨_, _, _, rfl⟩ := hx; intro y h; cases h
+  unfold ftStep
+  split
+  · rename_i h
+    simp only [Line.ins.injEq] at h
+    exact absurd h.1 (hb _)
+  · split
+    · rename_i heq _
+      simp only [Line.ins.injEq] at heq
+      obtain ⟨rfl, -⟩ := heq
+      simp [hc]
+    · rfl
+
+/-- Witness: the move of a call's result after the call (`mov x0, x19`) is a line `afterLine?`
+names, as in the last block of `gimli::read::abbrev::…::parse` (std, T3). -/
+example : afterLine? [.inst (.mov .size64 (.x 0) (.x 19)), .epilogueRet] =
+    some (.mov true (.x 0) (.x 19), none) := rfl
 
 theorem ftStep_trap (i : Insn) (t : Clif.TrapCode) (n1 n2 : Option Line) :
     ftStep (.ins i (some t)) n1 n2 = ([.ins i (some t)], 1) := by
@@ -797,25 +836,44 @@ theorem q_callSite_last {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {all
   · rw [hc0] at h1
     obtain rfl := Option.some.inj h1
     exact ⟨j0, x, hj, hpc, hx, mem_calls_zip hj hxc rfl hc0⟩
-  · -- a plain call followed by a trap: the pc's call line is followed by the trap line
+  · -- a plain call followed by a trap or a move: the pc's call line is followed by that line
     exfalso
-    obtain ⟨l, hl, h1⟩ : ∃ l, nextLine? c2 = some l ∧ lineIs R.L[j0 + 1]? l = false := by
-      revert h1; cases nextLine? c2 <;> simp
-    obtain ⟨code, c3, rfl, rfl⟩ := nextLine?_some hl
-    simp only [codeLinesE, bind, Except.bind, ainstLines, MInst.lines, pure, Except.pure] at hc2
-    split at hc2
-    · cases hc2
-    · rename_i r hr
-      simp only [Except.ok.injEq, Prod.mk.injEq] at hc2
-      obtain ⟨rfl, -⟩ := hc2
-      have hnx : nxtOf R.af b = [] := by simp [nxtOf, hlast]
-      rw [hls rfl, hnx, List.append_nil, List.singleton_append, ftList_cons, ftStep_call hx] at hdrop
-      simp only [List.drop_one, List.tail_cons, List.singleton_append] at hdrop
-      rw [ftList_cons, ftStep_trap] at hdrop
-      simp only [List.drop_one, List.tail_cons, List.singleton_append] at hdrop
-      rw [relaxLines_cons, relaxLine_of_none (by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl),
-        relaxLines_cons, relaxLine_of_none rfl, List.singleton_append, List.singleton_append,
-        List.cons_append, List.cons_append] at hdrop
-      simp [drop_get1 hdrop, lineIs] at h1
+    obtain ⟨l, hl, h1⟩ : ∃ l, afterLine? c2 = some l ∧ lineIs R.L[j0 + 1]? l = false := by
+      revert h1; cases afterLine? c2 <;> simp
+    have hnx : nxtOf R.af b = [] := by simp [nxtOf, hlast]
+    rcases afterLine?_some hl with ⟨code, c3, rfl, rfl⟩ | ⟨s', rd, rm, c3, rfl, rfl⟩
+    · simp only [codeLinesE, bind, Except.bind, ainstLines, MInst.lines, pure, Except.pure] at hc2
+      split at hc2
+      · cases hc2
+      · rename_i r hr
+        simp only [Except.ok.injEq, Prod.mk.injEq] at hc2
+        obtain ⟨rfl, -⟩ := hc2
+        rw [hls rfl, hnx, List.append_nil, List.singleton_append, ftList_cons, ftStep_call hx] at hdrop
+        simp only [List.drop_one, List.tail_cons, List.singleton_append] at hdrop
+        rw [ftList_cons, ftStep_trap] at hdrop
+        simp only [List.drop_one, List.tail_cons, List.singleton_append] at hdrop
+        rw [relaxLines_cons, relaxLine_of_none (by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl),
+          relaxLines_cons, relaxLine_of_none rfl, List.singleton_append, List.singleton_append,
+          List.cons_append, List.cons_append] at hdrop
+        simp [drop_get1 hdrop, lineIs] at h1
+    · generalize hy : (if rm == .sp then Insn.mov true rd rm else .mov s'.is64 rd rm) = y at h1
+      have hym : ∃ b rd rm, y = .mov b rd rm := by
+        subst hy; split <;> exact ⟨_, _, _, rfl⟩
+      have hl1 : ∀ ps0, MInst.lines R.ctx (.mov s' rd rm) ps0 = .ok ([.ins y], ps0) := by
+        intro ps0; subst hy; rfl
+      simp only [codeLinesE, bind, Except.bind, ainstLines, hl1] at hc2
+      split at hc2
+      · cases hc2
+      · rename_i r hr
+        simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hc2
+        obtain ⟨rfl, -⟩ := hc2
+        rw [hls rfl, hnx, List.append_nil, List.singleton_append, ftList_cons, ftStep_call hx] at hdrop
+        simp only [List.drop_one, List.tail_cons, List.singleton_append] at hdrop
+        rw [ftList_cons, ftStep_mov y hym] at hdrop
+        simp only [List.drop_one, List.tail_cons, List.singleton_append] at hdrop
+        rw [relaxLines_cons, relaxLine_of_none (by rcases hx with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> rfl),
+          relaxLines_cons, relaxLine_of_none (by obtain ⟨_, _, _, rfl⟩ := hym; rfl),
+          List.singleton_append, List.singleton_append, List.cons_append, List.cons_append] at hdrop
+        simp [drop_get1 hdrop, lineIs] at h1
 
 end Backend.Proof
