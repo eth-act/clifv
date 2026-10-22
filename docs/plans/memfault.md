@@ -10,7 +10,8 @@ keep their premises, new results get new names, every new top-level theorem a wi
 | --- | --- |
 | F0 | this plan |
 | F1 | done: `FV/ArmFault/Step.lean` (`stepF`, `runF_eq_run`, `runF_fault`, …), witnesses `FV/ArmFault/Witness.lean`, `scripts/arm-fault-cosim.sh` 152 forms, 30 400 vectors (20 577 faults), 0 failures (`docs/contracts/arm.md`, "Memory faults") |
-| F2–F7 | open (below) |
+| F2 | done: `FV/Clif/MemTrap.lean` (`Access`, `MemTrapAt`, `memTrapInst` = `atomic_rmw`/`atomic_cas`, `memTrapAt_of_trapped`, `evalInst_notrap`), `FV/E2E/MemTrapStatement.lean` (`TrapsExplicitM`, `TrapsExplicit.toM`, `MapFaults`, `TrapAtF`), witness `FV/Clif/MemTrapWitness.lean` (`atomic_rmw` at address 0 traps `heap_oob`) |
+| F3–F7 | open (below) |
 
 ## Where we are
 
