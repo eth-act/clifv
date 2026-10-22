@@ -1,4 +1,4 @@
-import FV.E2E.DeadCleanupExecRunN
+import FV.E2E.DeadCleanupExecTrap
 import FV.E2E.LinkArmUEnvCall
 import FV.Link.EhCheck
 
@@ -660,5 +660,538 @@ theorem img_ret (hI : okBCleanup I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk 
     decide
 
 end StepFacts
+
+end E2E.DeadCleanupExecBytes
+
+namespace E2E.DeadCleanupExecBytes
+set_option autoImplicit false
+
+open Backend Backend.Proof E2E.LinkCheck E2E.DeadCleanupBinary E2E.BinCheck
+
+/-! ## The raising steps -/
+
+section Raise
+
+variable {I : LinkInput} {B : BaseEnv} {file : ByteArray} {U : LinkSysU}
+
+/-- **A raising call of `g` at `pc`**: the model's step is the frame's phase 2 on the restored
+state `t`, the executable's raising step's walk is at that frame on a state `t₂` simulating `t`.
+If the personality does not continue, the executable's step ends at this frame; if it does, the
+frame is unwound (`Continues`), the exception object in x0, the walk's frame simulating the
+model's step. -/
+theorem frame_out (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) (hT : TabsOk I file)
+    {g : Clif.Function} (hg : g ∈ (prog I).funcs) {pc : BitVec 64} {i : Insn}
+    (hi : insnAt (art I g).fa (art I g).base pc = some i) {obj : BitVec 64}
+    {t t₂ e : Arm.ArmState} (hs : Sim I t t₂)
+    (hrest : RestoreOk I (art I g).tables (art I g).base pc t)
+    (hpend : Pending I B U.Ub file e (pc + 4) obj t₂)
+    (herr : Arm.r .ERR (Unw.unwindAt (art I g).tables (art I g).base pc obj t) = .None) :
+    (Unw.personality (art I g).tables.lsda (pc + 4 - 1 - (art I g).base).toNat ≠ .continue →
+      Sim I (Unw.unwindAt (art I g).tables (art I g).base pc obj t) (stepU I B U.Ub file e)) ∧
+    (Unw.personality (art I g).tables.lsda (pc + 4 - 1 - (art I g).base).toNat = .continue →
+      Continues file (pc + 4) t₂ ∧
+      xreg 0 (Unw.unwindAt (art I g).tables (art I g).base pc obj t) = obj ∧
+      Sim I (Unw.unwindAt (art I g).tables (art I g).base pc obj t)
+        (unwFrame file (pc + 4) obj t₂)) := by
+  obtain ⟨hU, hC⟩ := unwFrame_call hF hT hg hi obj t₂
+  have hsim := unwindAt_sim (obj := obj) hs hrest
+  refine ⟨fun hp => ?_, fun hp => ?_⟩
+  · rw [hpend.last (fun hn => hp (hC.1 hn.1).1), hU]
+    exact hsim
+  · obtain ⟨hr, hx⟩ := unwindAt_continues hp herr
+    exact ⟨hC.2 ⟨hp, by rw [restore_isSome_sim hs]; exact hr⟩, hx, by rw [hU]; exact hsim⟩
+
+/-- **A call of code outside the program**: without a raise of its callee the executable's step
+simulates the model's; with one, the model's step is the frame's phase 2 and the executable's
+raising step's walk is at that frame. -/
+theorem base_out (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) (hT : TabsOk I file)
+    (hUS : UnwSim I U.Ub) {M : Nat} {g : Clif.Function} (hg : g ∈ (prog I).funcs)
+    {m e₀ : Arm.ArmState} (hok : StepOkU I B file U M g m) (hs : Sim I m e₀) {i : Insn}
+    {d : Option String} (hi : insnAt (art I g).fa (art I g).base (Arm.r .PC m) = some i)
+    (hd : (∃ n, i = .bl n ∧ (prog I).func? n = none ∧ d = some n) ∨
+      (∃ x, i = .blr x ∧ (blrTarget m).bind (symCallee (sys I B).Xb (prog I)) = none ∧ d = none))
+    (herr : Arm.r .ERR ((uSys I B U).machU M g m) = .None) :
+    (¬ UnwExit ((uSys I B U).UU M) (art I g).tables (art I g).fa m →
+      Sim I ((uSys I B U).machU M g m) (stepU I B U.Ub file e₀)) ∧
+    (UnwExit ((uSys I B U).UU M) (art I g).tables (art I g).fa m →
+      ∃ ra t, Pending I B U.Ub file e₀ ra (xreg 0 ((uSys I B U).machU M g m)) t ∧
+        Continues file ra t ∧
+        Sim I ((uSys I B U).machU M g m)
+          (unwFrame file ra (xreg 0 ((uSys I B U).machU M g m)) t)) := by
+  have hFg := hF g hg
+  have hb := hok.base_eq hF hg
+  have hi' : insnAt (art I g).fa (progBase m) (Arm.r .PC m) = some i := by rw [hb]; exact hi
+  have hpe : Arm.r .PC e₀ = Arm.r .PC m := hs.1 .PC
+  have hsite : siteAt I (Arm.r .PC e₀) = some (siteOf (prog I) i) := by
+    rw [hpe]; exact hok.siteAt hi
+  have hd' : (∃ n, i = .bl n ∧ (prog I).func? n = none ∧ d = some n) ∨
+      (∃ x, i = .blr x ∧ (blrTarget e₀).bind (symCallee (sys I B).Xb (prog I)) = none ∧
+        d = none) := by
+    rcases hd with h | ⟨x, rfl, hn, rfl⟩
+    · exact .inl h
+    · exact .inr ⟨x, rfl, by rw [blrTarget_sim hs (hok.plain _ hi rfl)]; exact hn, rfl⟩
+  have hra : raiseAt I B U.Ub e₀ = U.Ub.raise d e₀ := raiseAt_base hsite hd'
+  have hcd : callDescAt (art I g).fa m = some d := by
+    unfold callDescAt
+    rw [hi']
+    rcases hd with ⟨n, rfl, -, rfl⟩ | ⟨x, rfl, -, rfl⟩ <;> rfl
+  have hbd : (uSys I B U).BaseDest d := by
+    rcases hd with ⟨n, -, hn, rfl⟩ | ⟨x, -, -, rfl⟩
+    · exact .inr ⟨n, rfl, hn⟩
+    · exact .inl rfl
+  have hUU : ((uSys I B U).UU M).raise d m = U.Ub.raise d m :=
+    (uSys I B U).UU_base hbd m fun hdn => by
+      subst hdn
+      rcases hd with ⟨n, -, -, h⟩ | ⟨x, -, h, -⟩
+      · cases h
+      · exact h
+  have hmach := machU_base (B := B) U (M := M) hi' hd
+  cases hr : U.Ub.raise d m with
+  | none =>
+    have hn : ¬ UnwExit ((uSys I B U).UU M) (art I g).tables (art I g).fa m := by
+      rintro ⟨d', obj, t, hd'', hr', -⟩
+      rw [hcd] at hd''
+      cases hd''
+      rw [hUU, hr] at hr'
+      cases hr'
+    refine ⟨fun _ => ?_, fun hx => absurd hx hn⟩
+    rw [stepU_of_none (by rw [hra]; exact hUS.none d m e₀ hs hr), hmach, hr]
+    dsimp only
+    rw [← mach_base (M := M) hi' hd]
+    refine hook_step hFg (hok.baseCall hF hg hi hd hr) hs hi ?_
+    rcases hd with ⟨n, rfl, hn, -⟩ | ⟨x, rfl, hn, -⟩
+    · exact .inl ⟨n, rfl, hn⟩
+    · exact .inr (.inl ⟨x, rfl, hn⟩)
+  | some p =>
+    obtain ⟨obj, t⟩ := p
+    obtain ⟨t₂, hr₂, hst⟩ := hUS.raise d m e₀ obj t hs hr
+    have hpend : Pending I B U.Ub file e₀ (Arm.r .PC m + 4) obj t₂ := by
+      rw [← hpe]; exact pending_raise (by rw [hra]; exact hr₂)
+    have hrest := hok.rest d obj t hcd (by rw [hUU]; exact hr)
+    rw [hmach, hr] at herr ⊢
+    dsimp only at herr ⊢
+    rw [hb] at herr ⊢
+    have fo := frame_out hF hT hg hi hst hrest hpend herr
+    refine ⟨fun hn => fo.1 fun hp => hn ⟨d, obj, t, hcd, by rw [hUU]; exact hr, by rw [hb]; exact hp⟩,
+      fun hx => ?_⟩
+    obtain ⟨d', obj', t', hd'', hr', hp⟩ := hx
+    rw [hcd] at hd''
+    cases hd''
+    rw [hUU, hr] at hr'
+    cases hr'
+    rw [hb] at hp
+    obtain ⟨hc, hx0, hsm⟩ := fo.2 hp
+    exact ⟨Arm.r .PC m + 4, t₂, by rw [hx0]; exact hpend, hc, by rw [hx0]; exact hsm⟩
+
+/-- The return address of a call of `h` is no second word of a pair of `h` reached in `h`'s
+activation (`ret_not_secondN` on the machine with unwinding). -/
+theorem ret_not_secondU (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) {M M' : Nat}
+    {g h : Clif.Function} (hg : g ∈ (prog I).funcs) (hh : h ∈ (prog I).funcs) {m : Arm.ArmState}
+    (hok0 : StepOkU I B file U M g m) (hc : CallsAt I B g m h)
+    (hrun' : RunOkU I B file U M' h (enterAt (art I h) m)) {N : Nat}
+    (hN : RetOf (art I h) m (runX ((uSys I B U).machU M' h) N (enterAt (art I h) m)))
+    (hmin : ∀ j < N,
+      ¬ RetOf (art I h) m (runX ((uSys I B U).machU M' h) j (enterAt (art I h) m))) :
+    ¬ Second I h (Arm.r .PC (runX ((uSys I B U).machU M' h) N (enterAt (art I h) m))) := by
+  rintro ⟨rl, hrl, ht, he⟩
+  have hFh := hF h hh
+  cases N with
+  | zero => exact not_second_base hFh ⟨rl, hrl, ht, (pc_enterAt (art I h) m).symm.trans he⟩
+  | succ N1 =>
+  have hokc := (hrun' _ _ _ _
+    (ReachU.act (k := N1) fun j hj => fun hr => hmin j (by omega) (returned_iff.2 hr))
+    (by rw [← runX_succ' ((uSys I B U).machU M' h)]; exact hN.2.1)).1
+  have hpc1 := hokc.cf rl hrl ht (by rw [← runX_succ' ((uSys I B U).machU M' h) N1]; exact he)
+  obtain ⟨j, i1, t, hj, hi, ho⟩ := (FnAsm.layout_relocs hFh.layout rl).1 hrl
+  have hins1 : insnAt (art I h).fa (art I h).base (wAt (art I h) rl.offset) = some i1 := by
+    rw [← ho]; exact insnAt_of_line hFh hj
+  have hs1 : siteAt I (wAt (art I h) rl.offset) = some (siteOf (prog I) i1) := by
+    rw [← hpc1] at hins1 ⊢; exact hokc.siteAt hins1
+  have hpcm : Arm.r .PC m = wAt (art I h) rl.offset := by
+    have h2 : Arm.r .PC m + 4 = wAt (art I h) rl.offset + 4 := by rw [← hN.1, he, wAt_add4]
+    exact (BitVec.add_left_inj _).mp h2
+  have hb := hok0.base_eq hF hg
+  obtain ⟨i0, hi0, hs0, -⟩ := hok0.site
+  simp only [CallsAt, hb] at hc
+  rw [hpcm, hs1, siteOf_pairFirst hi ht] at hs0
+  rcases hc with ⟨n, hins, hn⟩ | ⟨⟨x, hins⟩, -⟩ <;> rw [hins] at hi0 <;> cases hi0
+  · simp [siteOf, hn] at hs0
+  · simp [siteOf] at hs0
+
+/-- **A call of a function `h` of the program**: the executable's word enters `h`; if `h`'s
+activation returns, the executable's run reaches the model's return (`ActSimU`'s (A) one level
+down); if it leaves its frame by unwinding, the walk of the executable's raising step, one level
+down, moves on to the caller's frame, where the model's step is that frame's phase 2. -/
+theorem prog_out (hI : okBCleanup I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
+    (hT : TabsOk I file) {M : Nat} {g h : Clif.Function} (hg : g ∈ (prog I).funcs)
+    {m e₀ : Arm.ArmState} (hok : StepOkU I B file U M g m) (hs : Sim I m e₀)
+    (hc : CallsAt I B g m h) (herr : Arm.r .ERR ((uSys I B U).machU M g m) = .None)
+    (hcall : ∀ M', M = M' + 1 → ActSimU I B file U M')
+    (hrun' : ∀ M', M = M' + 1 → RunOkU I B file U M' h (enterAt (art I h) m)) :
+    (¬ UnwExit ((uSys I B U).UU M) (art I g).tables (art I g).fa m →
+      ∃ n, Sim I ((uSys I B U).machU M g m) (runX (stepU I B U.Ub file) n e₀)) ∧
+    (UnwExit ((uSys I B U).UU M) (art I g).tables (art I g).fa m →
+      ∃ n ra t, Pending I B U.Ub file (runX (stepU I B U.Ub file) n e₀) ra
+          (xreg 0 ((uSys I B U).machU M g m)) t ∧ Continues file ra t ∧
+        Sim I ((uSys I B U).machU M g m)
+          (unwFrame file ra (xreg 0 ((uSys I B U).machU M g m)) t)) := by
+  have hh := callee_mem hc
+  have hFg := hF g hg
+  have hb := hok.base_eq hF hg
+  obtain ⟨i, hi, -, -⟩ := hok.site
+  have hpe : Arm.r .PC e₀ = Arm.r .PC m := hs.1 .PC
+  have hsite : siteAt I (Arm.r .PC e₀) = some (siteOf (prog I) i) := by
+    rw [hpe]; exact hok.siteAt hi
+  obtain ⟨d, hcd, hUU, hk⟩ : ∃ d, callDescAt (art I g).fa m = some d ∧
+      ((uSys I B U).UU M).raise d m = (uSys I B U).praiseU M h m ∧
+      ((∃ n, i = .bl n ∧ (prog I).func? n = some h) ∨
+        (∃ x, i = .blr x ∧ (blrTarget m).bind (symCallee (sys I B).Xb (prog I)) = some h)) := by
+    rcases hc with ⟨n, hins, hn⟩ | ⟨⟨x, hins⟩, hcal⟩
+    · rw [hb, hi] at hins
+      cases hins
+      refine ⟨some n, ?_, (uSys I B U).UU_some hn m, .inl ⟨n, rfl, hn⟩⟩
+      unfold callDescAt; rw [hb, hi]
+    · rw [hb, hi] at hins
+      cases hins
+      refine ⟨none, ?_, (uSys I B U).UU_none hcal, .inr ⟨x, rfl, hcal⟩⟩
+      unfold callDescAt; rw [hb, hi]
+  have hst : stepU I B U.Ub file e₀ = step I B file e₀ := by
+    refine stepU_of_none (raiseAt_none hsite (fun n hn => ?_) (fun x hx => ?_))
+    · rcases hk with ⟨n', hn', hf⟩ | ⟨x, hx, -⟩
+      · rw [hn] at hn'; cases hn'; rw [hf]; rfl
+      · rw [hn] at hx; cases hx
+    · rcases hk with ⟨n', hn', -⟩ | ⟨x', hx', hf⟩
+      · rw [hx] at hn'; cases hn'
+      · rw [blrTarget_sim hs (hok.plain _ hi (by rw [hx']; rfl)), hf]; rfl
+  have hent := call_enter hFg (hF h hh) (hok.progCall hc) hs hc
+  rw [← hst] at hent
+  have hmach := machU_prog (B := B) U (M := M) hc
+  cases M with
+  | zero =>
+    rw [hmach] at herr
+    exact absurd herr (junkAt_err _)
+  | succ M' =>
+  by_cases hx : ExitU ((uSys I B U).machU M' h) ((uSys I B U).UU M') (art I h).tables (art I h) m
+  · -- the callee's run leaves its frame by unwinding: the call raises
+    have hpr : (uSys I B U).praiseU (M' + 1) h m =
+        some (xreg 0 (linkedCall ((uSys I B U).machU M' h) (art I h) m),
+          linkedCall ((uSys I B U).machU M' h) (art I h) m) := by
+      simp only [LinkSysU.praiseU, raisedCall]; exact ite_eq_left hx
+    obtain ⟨hex, hpos, hux⟩ := hx
+    obtain ⟨hN, hmin⟩ := firstNat_spec _ hex
+    obtain ⟨n₂, ra₀, t₀, hpend, hcont, hsim₀⟩ :=
+      (hcall M' rfl h _ _ hh (pc_enterAt _ _) hent (hrun' M' rfl)).2 _
+        (fun j hj hr => hmin j hj (returned_iff.2 hr)) _ (by omega) hux hN.2.1
+    have hv : linkedCall ((uSys I B U).machU M' h) (art I h) m =
+        Arm.set_program (runX ((uSys I B U).machU M' h) (firstNat _ hex) (enterAt (art I h) m))
+          m.program := by
+      simp only [linkedCall, hex, ↓reduceDIte]
+    generalize hw : runX ((uSys I B U).machU M' h) (firstNat _ hex) (enterAt (art I h) m) = w
+      at hN hpend hsim₀ hv
+    have hpcu : Arm.r .PC (unwFrame file ra₀ (xreg 0 w) t₀) = Arm.r .PC m + 4 := by
+      rw [hsim₀.1 .PC]; exact hN.1
+    have hnext : NextFrame I file ra₀ (xreg 0 w) t₀ :=
+      ⟨hcont, by rw [hpcu]; exact img_ret hI hF hg hi⟩
+    have hpend' := hpend.next hnext
+    rw [hpcu] at hpend'
+    have hx0 : xreg 0 (linkedCall ((uSys I B U).machU M' h) (art I h) m) = xreg 0 w := by
+      rw [hv]; simp only [xreg, r_set_program]
+    have hsv : Sim I (linkedCall ((uSys I B U).machU M' h) (art I h) m)
+        (unwFrame file ra₀ (xreg 0 w) t₀) := by
+      rw [hv]; exact sim_set_program _ hsim₀
+    have hrest := hok.rest d _ _ hcd (by rw [hUU, hpr])
+    rw [hmach, hpr] at herr ⊢
+    dsimp only at herr ⊢
+    rw [hb] at herr ⊢
+    rw [hx0] at herr ⊢
+    have fo := frame_out hF hT hg hi hsv hrest hpend' herr
+    have hidx : runX (stepU I B U.Ub file) (1 + n₂ + 1) e₀ =
+        stepU I B U.Ub file (runX (stepU I B U.Ub file) n₂ (stepU I B U.Ub file e₀)) := by
+      rw [runX_add, runX_add]; rfl
+    refine ⟨fun hn => ⟨1 + n₂ + 1, ?_⟩, fun hu => ?_⟩
+    · rw [hidx]
+      refine fo.1 fun hp => hn ⟨d, _, _, hcd, by rw [hUU, hpr], ?_⟩
+      rw [hb]; exact hp
+    · obtain ⟨d', obj', t', hd', hr', hp⟩ := hu
+      rw [hcd] at hd'
+      cases hd'
+      rw [hb] at hp
+      obtain ⟨hcn, hx0', hsm⟩ := fo.2 hp
+      refine ⟨1 + n₂, _, _, ?_, hcn, by rw [hx0']; exact hsm⟩
+      rw [hx0', runX_add]
+      exact hpend'
+  · -- the callee returns: the linked call
+    have hpr : (uSys I B U).praiseU (M' + 1) h m = none := by
+      simp only [LinkSysU.praiseU, raisedCall]; exact ite_eq_right hx
+    have hnu : ¬ UnwExit ((uSys I B U).UU (M' + 1)) (art I g).tables (art I g).fa m := by
+      rintro ⟨d', o, t, hd', hr', -⟩
+      rw [hcd] at hd'
+      cases hd'
+      rw [hUU, hpr] at hr'
+      cases hr'
+    refine ⟨fun _ => ?_, fun hu => absurd hu hnu⟩
+    have hpc : (uSys I B U).pcallU (M' + 1) h m = linkedCall ((uSys I B U).machU M' h) (art I h) m := by
+      simp only [LinkSysU.pcallU, returnedCall]; exact ite_eq_right hx
+    rw [hmach, hpr] at herr ⊢
+    dsimp only at herr ⊢
+    rw [hpc] at herr ⊢
+    unfold linkedCall at herr ⊢
+    split
+    · rename_i hex
+      obtain ⟨hN, hmin⟩ := firstNat_spec _ hex
+      obtain ⟨k2, hk2⟩ := (hcall M' rfl h _ _ hh (pc_enterAt _ _) hent (hrun' M' rfl)).1 _
+        (fun j hj hr => hmin j hj (returned_iff.2 hr))
+        (fun j hj hu => hx ⟨hex, by omega, by rw [show firstNat _ hex - 1 = j by omega]; exact hu⟩)
+        (ret_not_secondU hF hg hh hok hc (hrun' M' rfl) hN hmin) hN.2.1
+      exact ⟨1 + k2, by rw [runX_add]; exact sim_set_program _ hk2⟩
+    · rename_i hne
+      simp only [hne, ↓reduceDIte] at herr
+      exact absurd herr (junkAt_err _)
+
+
+end Raise
+end E2E.DeadCleanupExecBytes
+
+namespace E2E.DeadCleanupExecBytes
+set_option autoImplicit false
+
+open Backend Backend.Proof E2E.LinkCheck E2E.DeadCleanupBinary E2E.BinCheck
+
+/-! ## The simulation -/
+
+section Core
+
+variable {I : LinkInput} {B : BaseEnv} {file : ByteArray} {U : LinkSysU}
+
+/-- The instruction at a pair's second word is no call. -/
+theorem second_nocall {g : Clif.Function} (hF : FnOk I file g) {pc : BitVec 64} {i : Insn}
+    (hs : Second I g pc) (hi : insnAt (art I g).fa (art I g).base pc = some i) :
+    (∀ n, i ≠ .bl n) ∧ ∀ x, i ≠ .blr x := by
+  obtain ⟨rl, hrl, ht, rfl⟩ := hs
+  obtain ⟨-, -, r', hr', hr'o, hr't⟩ := pair_facts hF hrl ht
+  obtain ⟨j', i', t', hj', hi', ho'⟩ := (FnAsm.layout_relocs hF.layout r').1 hr'
+  have h2 : insnAt (art I g).fa (art I g).base (wAt (art I g) (rl.offset + 4)) = some i' := by
+    rw [← hr'o, ← ho']; exact insnAt_of_line hF hj'
+  rw [hi] at h2
+  cases h2
+  rw [hr't] at hi'
+  constructor
+  · rintro n rfl
+    simp only [Insn.reloc?, Option.some.injEq, Prod.mk.injEq] at hi'
+    rcases ht with h | h <;> rw [h] at hi' <;> simp [loOf] at hi'
+  · rintro x rfl
+    simp [Insn.reloc?] at hi'
+
+/-- Before a state the activation has not returned at, no step left its frame by unwinding
+(such a step lands on the return, `RunOkU`). -/
+theorem no_exit_before {M : Nat} {g : Clif.Function} {c : Arm.ArmState}
+    (hrun : RunOkU I B file U M g c) {k : Nat}
+    (hret : ∀ j ≤ k, ¬ Returned (art I g) c (runX ((uSys I B U).machU M g) j c))
+    (herr : Arm.r .ERR (runX ((uSys I B U).machU M g) k c) = .None) :
+    ∀ j, j + 1 = k → ¬ UnwExit ((uSys I B U).UU M) (art I g).tables (art I g).fa
+      (runX ((uSys I B U).machU M g) j c) := by
+  rintro j rfl hu
+  refine hret (j + 1) (Nat.le_refl _) ?_
+  rw [runX_succ']
+  exact (hrun _ _ _ _ (ReachU.act fun j' hj' => hret j' (by omega))
+    (by rw [← runX_succ' ((uSys I B U).machU M g)]; exact herr)).2 hu
+
+theorem act_coreU (hI : okBCleanup I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
+    (hT : TabsOk I file) (hUS : UnwSim I U.Ub) (M : Nat)
+    (hcall : ∀ M', M = M' + 1 → ActSimU I B file U M') : ActSimU I B file U M := by
+  intro g c e hg hpc hsim hrun
+  have hFg := hF g hg
+  have hok : ∀ j, (∀ j' ≤ j, ¬ Returned (art I g) c (runX ((uSys I B U).machU M g) j' c)) →
+      Arm.r .ERR (runX ((uSys I B U).machU M g) (j + 1) c) = .None →
+      StepOkU I B file U M g (runX ((uSys I B U).machU M g) j c) := fun j hj he =>
+    (hrun _ _ _ _ (ReachU.act hj) (by rw [← runX_succ' ((uSys I B U).machU M g)]; exact he)).1
+  have hrun' : ∀ k0 h, (∀ j ≤ k0, ¬ Returned (art I g) c (runX ((uSys I B U).machU M g) j c)) →
+      CallsAt I B g (runX ((uSys I B U).machU M g) k0 c) h →
+      Arm.r .ERR (runX ((uSys I B U).machU M g) (k0 + 1) c) = .None →
+      ∀ M', M = M' + 1 →
+        RunOkU I B file U M' h (enterAt (art I h) (runX ((uSys I B U).machU M g) k0 c)) := by
+    intro k0 h hj hc he M' hM
+    subst hM
+    exact fun M'' g' c' t hr he' => hrun _ _ _ _ (ReachU.nest hj hc he hr) he'
+  have hA : ∀ k, (∀ j < k, ¬ Returned (art I g) c (runX ((uSys I B U).machU M g) j c)) →
+      (∀ j, j + 1 = k → ¬ UnwExit ((uSys I B U).UU M) (art I g).tables (art I g).fa
+        (runX ((uSys I B U).machU M g) j c)) →
+      ¬ Second I g (Arm.r .PC (runX ((uSys I B U).machU M g) k c)) →
+      Arm.r .ERR (runX ((uSys I B U).machU M g) k c) = .None →
+      ∃ k', Sim I (runX ((uSys I B U).machU M g) k c) (runX (stepU I B U.Ub file) k' e) := by
+    intro k
+    induction k using Nat.strongRecOn with
+    | ind k ih =>
+    intro hret hnu hsec herr
+    cases k with
+    | zero => exact ⟨0, hsim⟩
+    | succ k0 =>
+    have hok0 := hok k0 (fun j hj => hret j (by omega)) herr
+    have hnu0 := hnu k0 rfl
+    rw [runX_succ'] at hsec herr ⊢
+    by_cases hs : Second I g (Arm.r .PC (runX ((uSys I B U).machU M g) k0 c))
+    · -- the second word of a pair: two steps from its first word
+      have hs' := hs
+      obtain ⟨rl, hrl, ht, he⟩ := hs
+      cases k0 with
+      | zero => exact (not_second_base hFg ⟨rl, hrl, ht, hpc.symm.trans he⟩).elim
+      | succ k1 =>
+      have hok1 := hok k1 (fun j hj => hret j (by omega)) hok0.err
+      have hpc1 := hok1.cf rl hrl ht (by rw [← runX_succ' ((uSys I B U).machU M g) k1]; exact he)
+      obtain ⟨j1, i1, t1, hj1, hi1, ho1⟩ := (FnAsm.layout_relocs hFg.layout rl).1 hrl
+      have hins1 : insnAt (art I g).fa (art I g).base
+          (Arm.r .PC (runX ((uSys I B U).machU M g) k1 c)) = some i1 := by
+        rw [hpc1, ← ho1]; exact insnAt_of_line hFg hj1
+      have hnc1 : (∀ n, i1 ≠ .bl n) ∧ ∀ x, i1 ≠ .blr x := by
+        constructor
+        · rintro n rfl; simp only [Insn.reloc?, Option.some.injEq, Prod.mk.injEq] at hi1
+          rcases ht with h | h <;> rw [h] at hi1 <;> simp at hi1
+        · rintro x rfl; simp [Insn.reloc?] at hi1
+      have hsec1 : ¬ Second I g (Arm.r .PC (runX ((uSys I B U).machU M g) k1 c)) := by
+        rw [hpc1]; exact first_not_second hFg hrl ht
+      obtain ⟨k', hk'⟩ := ih k1 (by omega) (fun j hj => hret j (by omega))
+        (no_exit_before hrun (fun j hj => hret j (by omega)) hok1.err) hsec1 hok1.err
+      obtain ⟨i0, hins0, -, -⟩ := hok0.site
+      have hnc0 := second_nocall hFg hs' hins0
+      have hb1 := hok1.base_eq hF hg
+      have hb0 := hok0.base_eq hF hg
+      have hst1 := hok1.nocall hF hg hins1 hnc1.1 hnc1.2
+      have hm1 : (uSys I B U).machU M g (runX ((uSys I B U).machU M g) k1 c) =
+          (sys I B).mach M g (runX ((uSys I B U).machU M g) k1 c) :=
+        machU_nocall U (by rw [hb1]; exact hins1) hnc1.1 hnc1.2
+      have hst0 := hok0.nocall hF hg hins0 hnc0.1 hnc0.2
+      rw [runX_succ', hm1] at hst0 hins0 hb0
+      have hm0 := machU_nocall (B := B) U (M := M) (by rw [hb0]; exact hins0) hnc0.1 hnc0.2
+      obtain ⟨hpcE, -⟩ := pair_first_pc hFg hrl ht hpc1 hst1 hk'
+      have hs1 : stepU I B U.Ub file (runX (stepU I B U.Ub file) k' e) =
+          step I B file (runX (stepU I B U.Ub file) k' e) :=
+        stepU_of_none (raiseAt_none (by rw [hk'.1 .PC]; exact siteAt_of hst1 hins1)
+          (fun n hn => absurd hn (hnc1.1 n)) (fun x hx => absurd hx (hnc1.2 x)))
+      have hs2 : stepU I B U.Ub file (step I B file (runX (stepU I B U.Ub file) k' e)) =
+          step I B file (step I B file (runX (stepU I B U.Ub file) k' e)) :=
+        stepU_of_none (raiseAt_none (by rw [← hpcE]; exact siteAt_of hst0 hins0)
+          (fun n hn => absurd hn (hnc0.1 n)) (fun x hx => absurd hx (hnc0.2 x)))
+      refine ⟨k' + 2, ?_⟩
+      rw [runX_succ', hm1, hm0, runX_add (stepU I B U.Ub file) k' 2]
+      show Sim I _ (stepU I B U.Ub file (stepU I B U.Ub file (runX (stepU I B U.Ub file) k' e)))
+      rw [hs1, hs2]
+      exact pair_step hFg hrl ht hpc1 hst1 hst0 hk'
+    · obtain ⟨k', hk'⟩ := ih k0 (by omega) (fun j hj => hret j (by omega))
+        (no_exit_before hrun (fun j hj => hret j (by omega)) hok0.err) hs hok0.err
+      obtain ⟨i, hins, -, -⟩ := hok0.site
+      have hb := hok0.base_eq hF hg
+      have hins' : insnAt (art I g).fa (progBase (runX ((uSys I B U).machU M g) k0 c))
+          (Arm.r .PC (runX ((uSys I B U).machU M g) k0 c)) = some i := by rw [hb]; exact hins
+      have hsite : siteAt I (Arm.r .PC (runX (stepU I B U.Ub file) k' e)) =
+          some (siteOf (prog I) i) := by rw [hk'.1 .PC]; exact hok0.siteAt hins
+      have hbase : ∀ d, ((∃ n, i = .bl n ∧ (prog I).func? n = none ∧ d = some n) ∨
+          (∃ x, i = .blr x ∧ (blrTarget (runX ((uSys I B U).machU M g) k0 c)).bind
+            (symCallee (sys I B).Xb (prog I)) = none ∧ d = none)) →
+          ∃ k'', Sim I ((uSys I B U).machU M g (runX ((uSys I B U).machU M g) k0 c))
+            (runX (stepU I B U.Ub file) k'' e) := fun d hd =>
+        ⟨k' + 1, by rw [runX_succ']; exact (base_out hF hT hUS hg hok0 hk' hins hd herr).1 hnu0⟩
+      have hprog : ∀ h, CallsAt I B g (runX ((uSys I B U).machU M g) k0 c) h →
+          ∃ k'', Sim I ((uSys I B U).machU M g (runX ((uSys I B U).machU M g) k0 c))
+            (runX (stepU I B U.Ub file) k'' e) := fun h hc => by
+        obtain ⟨n, hn⟩ := (prog_out hI hF hT hg hok0 hk' hc herr hcall
+          (hrun' k0 h (fun j hj => hret j (by omega)) hc (by rw [runX_succ']; exact herr))).1 hnu0
+        exact ⟨k' + n, by rw [runX_add]; exact hn⟩
+      have hnocall : (∀ n, i ≠ .bl n) → (∀ x, i ≠ .blr x) →
+          (uSys I B U).machU M g (runX ((uSys I B U).machU M g) k0 c) =
+            (sys I B).mach M g (runX ((uSys I B U).machU M g) k0 c) ∧
+          stepU I B U.Ub file (runX (stepU I B U.Ub file) k' e) =
+            step I B file (runX (stepU I B U.Ub file) k' e) ∧
+          StepOk I B file M g (runX ((uSys I B U).machU M g) k0 c) := fun h1 h2 =>
+        ⟨machU_nocall U hins' h1 h2, stepU_of_none (raiseAt_none hsite
+          (fun n hn => absurd hn (h1 n)) (fun x hx => absurd hx (h2 x))),
+          hok0.nocall hF hg hins h1 h2⟩
+      by_cases hhk : i.hooked = false
+      · obtain ⟨e1, e2, hst⟩ := hnocall (fun n h => by subst h; cases hhk)
+          (fun x h => by subst h; cases hhk)
+        exact ⟨k' + 1, by rw [runX_succ', e1, e2]; exact plain_step hFg hst hk' hins hhk⟩
+      · cases i <;> simp only [Insn.hooked, Bool.true_eq_false, not_false_eq_true,
+          not_true_eq_false] at hhk
+        case bl n =>
+          cases hn : (prog I).func? n with
+          | none => exact hbase (some n) (.inl ⟨n, rfl, hn, rfl⟩)
+          | some h => exact hprog h (.inl ⟨n, by rw [hb]; exact hins, hn⟩)
+        case blr x =>
+          cases hn : (blrTarget (runX ((uSys I B U).machU M g) k0 c)).bind
+              (symCallee (sys I B).Xb (prog I)) with
+          | none => exact hbase none (.inr ⟨x, rfl, hn, rfl⟩)
+          | some h => exact hprog h (.inr ⟨⟨x, by rw [hb]; exact hins⟩, hn⟩)
+        case adrpGot a b =>
+          obtain ⟨e1, -, hst⟩ := hnocall (by simp) (by simp)
+          exact absurd (by rw [e1]; exact adrp_lands hFg hst hins (.inl ⟨a, b, rfl⟩)) hsec
+        case adrp a b d =>
+          obtain ⟨e1, -, hst⟩ := hnocall (by simp) (by simp)
+          exact absurd (by rw [e1]; exact adrp_lands hFg hst hins (.inr ⟨a, b, d, rfl⟩)) hsec
+        case ldrGotLo12 a b d => exact absurd (second_of_lo12 hFg hins (.inl ⟨a, b, d, rfl⟩)) hs
+        case addLo12 a b d f => exact absurd (second_of_lo12 hFg hins (.inr ⟨a, b, d, f, rfl⟩)) hs
+        case adrpTlsDesc a b =>
+          obtain ⟨e1, e2, hst⟩ := hnocall (by simp) (by simp)
+          exact ⟨k' + 1, by
+            rw [runX_succ', e1, e2]
+            exact hook_step hFg hst hk' hins (.inr (.inr (.inl ⟨a, b, rfl⟩)))⟩
+        case ldrTlsDescLo12 a b d =>
+          obtain ⟨e1, e2, hst⟩ := hnocall (by simp) (by simp)
+          exact ⟨k' + 1, by
+            rw [runX_succ', e1, e2]
+            exact hook_step hFg hst hk' hins (.inr (.inr (.inr ⟨a, b, d, rfl⟩)))⟩
+  refine ⟨hA, ?_⟩
+  intro N hret j hj hux herr
+  subst hj
+  have hokj := hok j (fun j' hj' => hret j' (by omega)) herr
+  have hb := hokj.base_eq hF hg
+  obtain ⟨i, hins, -, -⟩ := hokj.site
+  have hux' := hux
+  obtain ⟨d, o, t, hcd, -, -⟩ := hux'
+  have hci : (∃ n, i = .bl n) ∨ ∃ x, i = .blr x := by
+    unfold callDescAt at hcd
+    rw [hb, hins] at hcd
+    cases i <;> simp at hcd ⊢
+  have hcpc : CallPc (art I g).fa (art I g).base (Arm.r .PC (runX ((uSys I B U).machU M g) j c)) := by
+    obtain ⟨j0, t0, hj0, hpc0⟩ := insnAt_spec hins
+    exact ⟨j0, i, t0, hj0, hci, hpc0.symm⟩
+  obtain ⟨k', hk'⟩ := hA j (fun j' hj' => hret j' (by omega))
+    (no_exit_before hrun (fun j' hj' => hret j' (by omega)) hokj.err)
+    (not_second_callPc hFg hcpc) hokj.err
+  have hrun'' := hrun' j
+  rw [runX_succ'] at herr ⊢
+  have hprog : ∀ h, CallsAt I B g (runX ((uSys I B U).machU M g) j c) h →
+      ∃ k' ra t, Pending I B U.Ub file (runX (stepU I B U.Ub file) k' e) ra
+          (xreg 0 ((uSys I B U).machU M g (runX ((uSys I B U).machU M g) j c))) t ∧
+        Continues file ra t ∧
+        Sim I ((uSys I B U).machU M g (runX ((uSys I B U).machU M g) j c))
+          (unwFrame file ra (xreg 0 ((uSys I B U).machU M g (runX ((uSys I B U).machU M g) j c)))
+            t) := fun h hc => by
+    obtain ⟨n2, ra, t, h1, h2, h3⟩ := (prog_out hI hF hT hg hokj hk' hc herr hcall
+      (hrun'' h (fun j' hj' => hret j' (by omega)) hc (by rw [runX_succ']; exact herr))).2 hux
+    exact ⟨k' + n2, ra, t, by rw [runX_add]; exact h1, h2, h3⟩
+  rcases hci with ⟨n, rfl⟩ | ⟨x, rfl⟩
+  · cases hn : (prog I).func? n with
+    | none =>
+      obtain ⟨ra, t, h1, h2, h3⟩ :=
+        (base_out hF hT hUS hg hokj hk' hins (.inl ⟨n, rfl, hn, rfl⟩) herr).2 hux
+      exact ⟨k', ra, t, h1, h2, h3⟩
+    | some h => exact hprog h (.inl ⟨n, by rw [hb]; exact hins, hn⟩)
+  · cases hn : (blrTarget (runX ((uSys I B U).machU M g) j c)).bind
+        (symCallee (sys I B).Xb (prog I)) with
+    | none =>
+      obtain ⟨ra, t, h1, h2, h3⟩ :=
+        (base_out hF hT hUS hg hokj hk' hins (.inr ⟨x, rfl, hn, rfl⟩) herr).2 hux
+      exact ⟨k', ra, t, h1, h2, h3⟩
+    | some h => exact hprog h (.inr ⟨⟨x, by rw [hb]; exact hins⟩, hn⟩)
+
+end Core
+
+/-- **The simulation of the machine with unwinding at every depth.** -/
+theorem act_simU {I : LinkInput} {B : BaseEnv} {file : ByteArray} {U : LinkSysU}
+    (hI : okBCleanup I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk I file g) (hT : TabsOk I file)
+    (hUS : UnwSim I U.Ub) : ∀ M, ActSimU I B file U M
+  | 0 => act_coreU hI hF hT hUS 0 fun _ h => by cases h
+  | M + 1 => act_coreU hI hF hT hUS (M + 1) fun M' h => by
+    obtain rfl : M = M' := Nat.succ.inj h
+    exact act_simU hI hF hT hUS M
 
 end E2E.DeadCleanupExecBytes
