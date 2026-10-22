@@ -4240,8 +4240,10 @@ reaches a state at a trap with `int_divz`).
 
 ## Entry-state and runtime premises (A5, #411)
 
-`FV/E2E/EntryContract.lean`, `FV/Front/RawExeContract.lean`. The executable theorems
-(`Front.bundle_correct_raw{,_peak}` and everything below them) take seven premises about the code
+`FV/E2E/EntryContract.lean`, `FV/Front/RawExeContract.lean`, `FV/Front/ExeContract.lean`,
+`FV/Front/RawExeTrapContract.lean`, `FV/Link/DeadCleanupExeSourceContract.lean`,
+`FV/Link/DeadCleanupExeTrapContract.lean`. The executable theorems (`Front.bundle_correct_raw{,_peak}`
+and everything below them) take seven premises about the code
 outside the program and the machine state the program is entered in: `BaseOk`, `HooksSim`, the
 i128 helpers' contract (`hlegal`), the indirect-call signatures (`hsig`), `Image.Intact`,
 `OutsideCall` and `ClifRun`. Each field is one of:
@@ -4278,6 +4280,23 @@ i128 helpers' contract (`hlegal`), the indirect-call signatures (`hsig`), `Image
 | `OutsideCall.symbols` | — | choice (`ClifView.symbols`) | the CLIF symbol table is the link map |
 | `ClifRun.entry`, `.slots`, `.place` | — | choice (`ClifView.run`) | the reference run: CLIF leaves slot addresses unspecified |
 | `OutsideAvoids` (GOT slots) | — | discharged | `leanLink`'s output has no GOT slot (`outsideAvoids_leanLink`) |
+| `BaseTrapsOk` (trap family) | a trapping run | trusted (outside code) | the outside code does not return where its CLIF semantics traps; covers the legaliser's `__*ti3` helpers; field `traps` of `TrapContract` |
+| `noTry` (trap family) | — | trusted (the program) | no `try_call` terminator in the program (S9b); field `noTry` of `TrapContract` |
+
+The runtime contract covers every executable theorem (`Front.bundle_correct_raw{,_peak}`,
+`Front.bundle_correct_source{,_peak}`, the trap theorems of #398, and the `_source` theorems):
+* `Front.bundle_correct_raw_contract{,_peak}`, `Front.bundle_correct_raw_trap_contract{,_peak}`
+  (`Front.TrapContract` = `EntryContract` + `traps` + `noTry`);
+* `Front.bundle_correct_source_contract{,_peak}` (`FV/Front/ExeContract.lean`);
+* `Link.DeadCleanup.compileExe_correct_source_contract{,_peak}`
+  (`FV/Link/DeadCleanupExeSourceContract.lean`), `Link.DeadCleanup.compileExe_correct_trap_contract{,_peak}`
+  (`FV/Link/DeadCleanupExeTrapContract.lean`, `TrapContract` = the six runtime fields + `traps` +
+  `noTry`, since `compileExe_correct_trap` takes no `hlegal`/`hsig`).
+
+Witnesses: `Crates.FrontendBundleWitnessContract` (the `g_u128` unit: `bundle_raw_contract_witness`,
+`bundle_raw_peak_contract_witness`, `bundle_source_contract_witness`, `bundle_source_peak_contract_witness`;
+no run of the unit traps), `Crates.TrapContractWitness` (`Link.DeadCleanup.TrapWitness`'s `f`/`h`
+program, whose division by zero traps).
 
 Genuinely open (not entry-contract fields): a model of the process start (the ELF entry point,
 musl's startup and std's `lang_start` producing the entry state: outside code, trusted by design);
