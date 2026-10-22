@@ -78,3 +78,5 @@ import FV.Concurrency.IselVary
 import FV.Concurrency.IselFoot
 import FV.Concurrency.IselClif
 import FV.Concurrency.IselClifWitness
+import FV.Concurrency.SegShape
+import FV.Concurrency.SegShapeWitness

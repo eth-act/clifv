@@ -218,3 +218,6 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.IselClif.Witness.untouched_ldar
 #print axioms Concurrency.IselClif.Witness.atomicLoad_facts0
 #print axioms Concurrency.IselClif.Witness.store_facts0
+-- T2h layer 2c: the shape of a statement's lowered code
+#print axioms Concurrency.SegShape.segShape_segT
+#print axioms Concurrency.SegShape.Witness.atomics_segShape -- witness: native_decide
