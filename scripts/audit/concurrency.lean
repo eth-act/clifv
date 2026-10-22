@@ -355,3 +355,28 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.Witness.compiledF -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.Witness.mv_premises -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.Witness.realizes_nil -- witness: native_decide
+-- T2h (#311): layer 4b for the plain load/store items (CtlIndep of the encoded forms)
+#print axioms Concurrency.ArmAllocThread.sameCtl_gpr_load
+#print axioms Concurrency.ArmAllocThread.sameCtl_gpr_load_err
+#print axioms Concurrency.ArmAllocThread.sameCtl_gpr_store
+#print axioms Concurrency.ArmAllocThread.sameCtl_gpr_store_err
+#print axioms Concurrency.ArmAllocThread.sameCtl_fp_load
+#print axioms Concurrency.ArmAllocThread.sameCtl_fp_load_err
+#print axioms Concurrency.ArmAllocThread.sameCtl_fp_store
+#print axioms Concurrency.ArmAllocThread.sameCtl_fp_store_err
+#print axioms Concurrency.ArmAllocThread.sameCtl_ldstur_load
+#print axioms Concurrency.ArmAllocThread.sameCtl_ldstur_load_err
+#print axioms Concurrency.ArmAllocThread.sameCtl_ldstur_store
+#print axioms Concurrency.ArmAllocThread.sameCtl_ldstur_store_err
+#print axioms Concurrency.ArmAllocThread.ctlIndep_uimm_load
+#print axioms Concurrency.ArmAllocThread.ctlIndep_uimm_store
+#print axioms Concurrency.ArmAllocThread.ctlIndep_unsc_load
+#print axioms Concurrency.ArmAllocThread.ctlIndep_unsc_store
+#print axioms Concurrency.ArmAllocThread.ctlIndep_reg_load
+#print axioms Concurrency.ArmAllocThread.ctlIndep_reg_store
+#print axioms Concurrency.ArmAllocThread.ctlIndep_fpUimm_load
+#print axioms Concurrency.ArmAllocThread.ctlIndep_fpUimm_store
+#print axioms Concurrency.ArmAllocThread.ctlIndep_fpReg_load
+#print axioms Concurrency.ArmAllocThread.ctlIndep_fpReg_store
+#print axioms Concurrency.ArmAllocThread.ctlIndep_fpUnsc_load
+#print axioms Concurrency.ArmAllocThread.ctlIndep_fpUnsc_store
