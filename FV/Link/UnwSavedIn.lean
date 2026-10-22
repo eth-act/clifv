@@ -857,7 +857,7 @@ theorem frame_saves_far {vc : VCode} {rf : RFunc} {af : AFunc} (hRF : savedCheck
     exact hallS a ha
   · unfold afterSavesOf
     rw [haf0]
-    simp only [List.toList_toArray, List.drop_one, List.tail_cons]
+    simp only [List.toList_toArray, List.drop_one, List.singleton_append, List.tail_cons]
     rw [hdw]
     exact hlf
 
