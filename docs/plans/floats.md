@@ -462,23 +462,34 @@ and so `lowerRFunc`); it becomes a premise with the typed control-shape analysis
 slice 5b follow-up). Open: `SpillCtlCheck`/`DeadCleanupCtl` rebuild needs `IselShpTotal`
 (about 7.7 GB).
 
-**Slice 8, groundwork (typed link layer, FloatsLinkT; in progress).** Completeness of the
-typed spill chain's control-form decider: `Proof/SpillInstCheckComplete.lean`
-(`opsOkB_of_opsOk`, `spillInstOkB_of_spillInstOk`, `ctlSpillB_of`; witness
-`FVTest/Backend/SpillInstCheckCompleteW.lean`), the first step of `InScopeP → InScopePT`
-(`ctlSpillB` on subset-E input from the integer `ctlSpillHyp`). Plan of the rest (drafts on
-`agent/floats-c8l-wip`, unbuilt until the c5f tree is cached): `LinkSys.OkT` (`InSubsetT`,
-`CompiledEitherT`; an `sret` function in subset E with the integer contract, `sretE`; program
-callees return integers, `calleeInt`), `LinkSys.ThmT` with `RetsOkT` (returns by class, x0.. for
-`sret`) and typed copies of the link/binary/exec layers (`*T.lean`, generated from the integer
-modules by their constant dependencies); `Link.compileExe_correctT` and
-`Link.DeadCleanup.compileExe_correctT` under `InScopePT` with `E2E.typedRules_program` inside and
-one decided premise `OutOkT` (`checkAlloc`'s verdict, form coverage with the artifact's frame,
-`sretRets`, `entryRegs`, `outFits`, call sites: facts whose completeness is proven only for
-subset E; the typed chain proves `AllocChecked`, the link-level world theorems need
-`checkAlloc`); integer corollaries `compileExe_correct_viaT` from `inScopePT_of_inScopeP`
-(`resClassOkB_of`, `ctlSpillB_of`, `formsCovered_complete`, `spillKillFree`) and
-`outOkT_of_inScopeP` (`chks_resultsT`).
+**Slice 8, typed link layer (FloatsLinkT; built).** Completeness of the typed spill chain's
+control-form decider: `Proof/SpillInstCheckComplete.lean` (`opsOkB_of_opsOk`,
+`spillInstOkB_of_spillInstOk`, `ctlSpillB_of`; witness `FVTest/Backend/SpillInstCheckCompleteW.lean`).
+The link/binary/exec layers have typed copies (`FV/E2E/*T.lean`: `LinkArmT`, `LinkCheckT`,
+`LinkGoodT`, `StackBoundT`, `BinCheckT`, `BinaryT`, `BinaryGoodT`, `ExecBytesT`, `ExecStaticT`,
+`ExecRunNT`, `ExecGoodRunT`, `ExecGoodReadsT`, `ExecGotT`, `ExecProvenT` and the `DeadCleanup*T`
+versions), generated from the integer modules by their constant dependencies and patched by hand:
+`LinkSys.OkT` (`InSubsetT`, `CompiledEitherT`; an `sret` function in subset E keeps the integer
+contract; program callees return integers, `calleeInt`), `LinkSys.ThmT` with `RetsOkT` (returns
+by class, x0.. for `sret`), `LinkGoodT` on the typed world theorems with `E2E.typedRules_program`,
+`ExecRefinesT` (`ExecBytesT`: the returned values in the ABI return register of their class;
+`ExecRefinesT.toExecRefines` on integer returns), and the typed checker `okRWithT`/`okRWith_soundT`
+(`PipelineCheckT`) for both pipelines. Theorems: `Link.compileExe_correctT` (`_depthT`, `_peakT`;
+`FV/Link/ExeT.lean`) and `Link.DeadCleanup.compileExe_correctT` (`FV/Link/DeadCleanupExeT.lean`):
+for `leanLink S file0 = .ok file` on `InScopePT S.input` with the decided output checks `OutOkT`
+(`OutOkTCleanup`; `FV/E2E/LinkOutT.lean`, `LinkOutCleanupT.lean`: `checkAlloc`'s verdict, form
+coverage with the artifact's frame, `sretRets`, `entryRegs`, `outFits`, call sites, facts whose
+completeness is proven only for subset E), the executable machine run of `file`'s words refines
+the whole-program CLIF run with `ExecRefinesT`; no rule-family premise. Integer corollaries
+`compileExe_correct_viaT` (`_depth_viaT`, `_peak_viaT`, `DeadCleanup.compileExe_correct_viaT`)
+re-derive the conclusions of `Link.compileExe_correct*` from their exact premises
+(`FV/E2E/LinkScopeIntT.lean`: `inScopePT_of_inScopeP` from `resClassOkB_of`, `ctlSpillB_of`,
+`formsCovered_complete`, `spillKillFree`; `outOkT_of_inScopeP`/`outOkTCleanup_of_inScopeP` from
+`chks_resultsT`). Witness `FVTest/Link/FloatExeT.lean`: a linked program of `%w` (float load,
+constant, `select`, store, `bitcast`) and `%mv` (`(f64, i64, f32, i8) -> f64`, float block
+parameters) is in `InScopePT`, passes `OutOkT`/`OutOkTCleanup` and links with both pipelines, so
+both typed theorems apply; `viaT_baseline` on the integer executable witness. Audit
+`scripts/audit/floats-typed.lean`.
 
 **Slice 8, totality half (typed input scope, FloatsTotT).** `E2E/LinkScopeInputDefsT.lean`:
 `fnScopeInTB` keeps every conjunct of `fnScopeInB` over the typed scope (`functionET`,
