@@ -242,6 +242,19 @@ float accesses by `memRefinesFP_csem`) take the open typed rule families as one 
 through the typed chain; `backend_correct_finalT_alloc` (`FV/E2E/FinalDirectT.lean`) composes
 slice 6's typed spill chain. Witness: `FVTest/E2E/FloatFinalT.lean`.
 
+**The typed executable compiler (S11e5 Stage C slice 8).** `Link.compileExe_correctT`
+(`_depthT`, `_peakT`; `FV/Link/ExeT.lean`) and `Link.DeadCleanup.compileExe_correctT`
+(`FV/Link/DeadCleanupExeT.lean`) are `compileExe_correct*` for the typed input conditions
+`InScopePT` (float data movement, float parameters and returns), with `E2E.typedRules_program`
+inside (no rule-family premise), for `leanLink S file0 = .ok file` and the decided output checks
+`OutOkT`/`OutOkTCleanup` (`FV/E2E/LinkOutT.lean`, `LinkOutCleanupT.lean`); the conclusion
+`ExecRefinesT` places each returned value in the return register of its class. The typed
+link/binary/exec layers are the `FV/E2E/*T.lean` copies of the integer ones. The integer
+theorems' conclusions follow from their exact premises through the typed ones
+(`compileExe_correct_viaT`, `_depth_viaT`, `_peak_viaT`, `DeadCleanup.compileExe_correct_viaT`;
+`FV/E2E/LinkScopeIntT.lean`). Witness `FVTest/Link/FloatExeT.lean`; audit
+`scripts/audit/floats-typed.lean`.
+
 ### `try_call` (the normal return)
 
 `Clif.run` models a `try_call fnN(args), sigM, block(ret…)[, handlers]` as the call of `fnN`
