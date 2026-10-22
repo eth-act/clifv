@@ -184,7 +184,9 @@ open Lean Meta Elab Tactic
 
 /-- `opt_widths`: give every local `x : BitVec e` whose width `e` reduces to a numeral (after
 `cases` on a `Clif.Ty`, `e` is `Ty.width .i32` etc.) the type `BitVec n`, so that `kbv` sees a
-concrete width. -/
+concrete width. In a goal at a vector type (`Ty.vec s`, `s` a shape after `opt_cases_ty`), the
+widths `(Ty.vec s).width` elsewhere are also rewritten to numerals (`Ty.width` alone only reaches
+`s.width`). -/
 elab "opt_widths" : tactic => do
   let gs ← getGoals
   let mut out := []
@@ -199,7 +201,20 @@ elab "opt_widths" : tactic => do
         let e' ← g.withContext <| whnf e
         let some k := e'.rawNatLit? <|> e'.nat? | continue
         g ← g.replaceLocalDeclDefEq d.fvarId (mkApp (mkConst ``BitVec) (mkNatLit k))
-    out := out ++ [g]
+    let hasVec ← g.withContext do
+      let isVec (e : Expr) : Bool := (e.find? (·.isConstOf ``Clif.Ty.vec)).isSome
+      let mut found := isVec (← instantiateMVars (← g.getType))
+      for d in ← getLCtx do
+        if !d.isImplementationDetail && isVec (← instantiateMVars d.type) then found := true
+      pure found
+    if hasVec then
+      setGoals [g]
+      try evalTactic (← `(tactic| simp only [Clif.Ty.width, Clif.VShape.width, Clif.VShape.lanes,
+        Clif.VShape.laneBits, Nat.reduceMul] at *))
+      catch _ => pure ()
+      out := out ++ (← getGoals)
+    else
+      out := out ++ [g]
   setGoals out
 
 end Opt.Proof
