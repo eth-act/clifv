@@ -802,3 +802,11 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.thread_compiledLS_fullR
 #print axioms Concurrency.ThreadCompose.Witness.isel_alloc_refinesR_fA -- witness: native_decide
 #print axioms Concurrency.RealizeCompiled.WitnessC1.thread_cas1_fullR -- witness: native_decide
+-- a compiled caller of the compiled atomic_rmw (#473)
+#print axioms Concurrency.CallSeg.prun_privF_mon
+#print axioms Concurrency.CallSeg.WitnessCR.prefixC -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessCR.compiledEX -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessCR.funRealX -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessCR.cstepC -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessCR.funReal_call -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessCR.realizes_call -- witness: native_decide
