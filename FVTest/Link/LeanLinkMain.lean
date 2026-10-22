@@ -8,6 +8,7 @@ import FV.E2E.SrcScopeDefs
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
 import FV.Link.Ld.Spec
+import FV.Link.ExeLdIn
 import FVTest.Link.LdArgs
 import FV.Link.ExeUCompile
 import FV.Link.SemanticCompileDefs
@@ -192,6 +193,33 @@ def ldCheck (P : LinkSpec) (file0 : ByteArray) (f : String) : IO (Except String 
         (if bad.isEmpty then [] else [s!"dataPlanB ({bad.length} object(s): {(bad.take 3).map (·.name)})"])
       return .error s!"Plan.specOkB fails: {fails}"
 
+/-- **`compileExe_total_ldIn`'s premises on `lean-ld`'s inputs** (`--ld FILE`; the cleanup
+compiler on `S0`, before the layout): resolution and `--gc-sections`, `layRefsB`, `relsInB`,
+`fitsB`, `specPreB`, the compiler's input conditions on the link spec at the placement's symbols
+(`Link.DeadCleanup.ldSpec`), decided on the inputs without linking; and whether that link spec's
+addresses are `S0`'s (`LinkSpec.atSyms`), so that the executable compiled is the theorem's. On
+failure, the failing conditions. -/
+def ldInCheck (S0 : LinkSpec) (f : String) : IO (Except String Unit) := do
+  let args := ((← IO.FS.readFile f).splitOn "\n").filter (!·.isEmpty)
+  match ← Link.Ld.parseLdArgs args with
+  | .error e => return .error s!"lean-ld's arguments: {e}"
+  | .ok c =>
+    let o := c.opts
+    let roots := o.entry :: o.undefs
+    match Link.Ld.resolve roots c.ins with
+    | .error e => return .error s!"resolve: {e}"
+    | .ok st => match st.gc roots o.gc with
+      | .error e => return .error s!"gc: {e}"
+      | .ok g =>
+        let P := Link.DeadCleanup.ldSpec S0 o st g
+        let S1 := S0.atSyms ((Link.Ld.layPre o st g).syms o st g).1
+        let checks := [("layRefsB", Link.Ld.layRefsB o st g), ("relsInB", Link.Ld.relsInB o st g),
+          ("fitsB", Link.Ld.fitsB o st g), ("specPreB", Link.Ld.specPreB P o st g),
+          ("InScopeIn", inScopeInPar P.input0), ("layoutOkB", P.layoutOkB), ("reachOkB", P.reachOkB),
+          ("atSyms R", decide (S1.R = S0.R)), ("atSyms outside", decide (S1.outside = S0.outside))]
+        let fails := (checks.filter (!·.2)).map (·.1)
+        if fails.isEmpty then return .ok () else return .error s!"failing: {fails}"
+
 def main (args0 : List String) : IO UInt32 := do
   let usage := "usage: lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]"
   let (ldFile, args) := takeOpt "--ld" args0
@@ -311,6 +339,12 @@ def main (args0 : List String) : IO UInt32 := do
         match ← ldCheck SC file0 f with
         | .ok () =>
           IO.println s!"lean-link: {exe}: lean-ld's plan meets the link spec (Plan.specOkB, {(← IO.monoMsNow) - t0} ms): file0OkB by Link.Ld.file0OkB_ld; totality without checks of the linker's output: {totalLd}"
+          -- the plain cleanup compiler: the premises of `compileExe_total_ldIn` on the inputs
+          if deadCleanup && !opt && !tailOn then
+            let t1 ← IO.monoMsNow
+            match ← ldInCheck SC0 f with
+            | .ok () => IO.println s!"lean-link: {exe}: lean-ld's inputs meet the input conditions ({(← IO.monoMsNow) - t1} ms): totality decided on the inputs, without linking: Link.DeadCleanup.compileExe_total_ldIn"
+            | .error e => IO.eprintln s!"lean-link: {exe}: lean-ld's inputs: compileExe_total_ldIn's premises: {e}"
           pure true
         | .error e =>
           IO.eprintln s!"lean-link: {exe}: lean-ld's plan: {e} (totality only with the checks of file0, {total})"
