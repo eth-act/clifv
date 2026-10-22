@@ -1,5 +1,6 @@
 import FV.E2E.LinkTrapCall
 import FV.E2E.WorldTrapStop
+import FV.E2E.RegLevelTrapCallTry
 
 /-! # Callee traps in the linked program: the induction and the program theorem (S9c, #376)
 
@@ -224,29 +225,31 @@ theorem callerOk_of_regs (hL : L.Ok) {h : Clif.Function} (hh : h ∈ L.P.funcs)
 /-! ## The induction step -/
 
 /-- **A callee-trap state of an activation at depth `M`** (the per-function theorem's
-`CallTrapAt` under the activation's environment with the uncovered callee traps stuck): the call
-goes outside `P` and its callee traps there (the base hook errs, `BaseTrapsOk.stop`), or it goes
-to a function `h` of `P` whose activation from the call state has the trap observable one level
-down (`progCallT`; its linked call is `junkAt`). Either way the run stops (`hstop`). -/
-theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : L.Budget κ)
-    {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+`CallTrapAtT`, at a call site of either kind, under the activation's environment with the callee
+traps outside `covQ Dn` stuck, `Dn` the run premise `D` one level down): the call goes outside
+`P` and its callee traps there (the base hook errs, `BaseTrapsOk.stop`), or it goes to a function
+`h` of `P` whose activation from the call state has the trap observable one level down
+(`progCallTG`; its linked call is `junkAt`). Either way the run stops (`hstop`). -/
+theorem trapIn_callTrapG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : L.Budget κ)
+    {D : Nat → Clif.Function → Clif.State → Prop} {Dn : Clif.Function → Clif.State → Prop}
+    {M : Nat} (hDnM : ∀ {h : Clif.Function} {cs : Clif.State}, Dn h cs → ∃ M', M = M' + 1 ∧ D M' h cs)
+    (ih : 0 < M → L.ThmTG D κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F G : BitVec 64 → Prop} {vals : List Clif.Val} {cs : Clif.State} {w₀ : Arm.ArmState}
     {ra : BitVec 64} {s : Arm.ArmState} (hWE : L.WorldEntry κ M g F vals cs w₀)
     (hME : L.MachEntry κ M g F G ra s w₀) {n : Nat} {tc : Clif.TrapCode}
     (hstop : Arm.r .ERR (L.mach M g (runX (L.mach M g) n s)) ≠ .None → L.Stop M g s n)
     (hprog : (runX (L.mach M g) n s).program = (L.A g).fb.program (L.A g).base)
-    (hct : CallTrapAt (L.A g).vcp F (κ M g) G s (L.A g).fa (L.A g).base (L.X κ M g F)
+    (hct : CallTrapAtT (L.A g).vcp F (κ M g) G s (L.A g).fa (L.A g).base (L.X κ M g F)
       (GotV (L.A g).vcp)
-      (TrapCallSem (cutEnv (L.envOf M g (spv w₀)) (L.covQ (L.TrapsDn M))) (g.externs.map (·.2))
+      (TrapCallSem (cutEnv (L.envOf M g (spv w₀)) (L.covQ Dn)) (g.externs.map (·.2))
         (indSigs g)
         (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
           g (spv w₀)) (L.X κ M g F) tc)
       (runX (L.mach M g) n s)) :
     L.TrapIn M g s tc := by
-  obtain ⟨info, ⟨b, vb, k, hvb, hk⟩, -, -, hGk, cc, wh, ops, regs, i', w, hops, hst, hasg, hP, hsw,
+  obtain ⟨info, hsite, -, -, hGk, cc, wh, ops, regs, i', w, hops, hst, hasg, hP, hsw,
     -, herr, hgg, hX0, hdisj⟩ := hct
   generalize hu : runX (L.mach M g) n s = u at hstop hprog hGk hP hsw herr hgg hX0 hdisj
-  have hsite : (L.A g).vcp.CallSite info := ⟨b, vb, k, hvb, .inl hk⟩
   have hcode : ∀ a, L.Img a → u.mem a = L.imgMem a := fun a ha =>
     (hGk a (hME.imgG a ha)).trans (hME.imgS a ha)
   have hstep := L.mach_callAt (M := M) hL hg hsite hprog hasg hP
@@ -291,11 +294,7 @@ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : 
       obtain ⟨hdecl, G0, hG0, hGt⟩ := L.envOf_prog hGb hpf
       obtain ⟨hpl, ht0⟩ := hGt _ _ _ htrG
       obtain ⟨cs', hinit, hret⟩ := L.linkEnvR_trap hpf hG0 ht0
-      have hDn := hQ h cs' hpf hinit
-      obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := by
-        cases M with
-        | zero => exact hDn.elim
-        | succ M' => exact ⟨M', rfl⟩
+      obtain ⟨M', rfl, hDn⟩ := hDnM (hQ h cs' hpf hinit)
       have hsav := L.stackArgsAvoid_decl hL hg hin hpf hinit hmr
       rw [hL.declSig g hg ext hin h hpf] at hargs
       rw [← hname] at hinit
@@ -321,7 +320,7 @@ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : 
         have hra := hL.raCall g hg info h hps _ hP.callPc
         have hcOk := L.callerOk_of_regs hL hh hLu hsw hcode hra
         rw [← huv, hd2] at hcOk
-        have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallT hL (Nat.succ_pos M')
+        have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
           (ih (Nat.succ_pos M')) hpfh ⟨g, hg, hcallee⟩
           hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
         have hjunk := L.pcall_junk hL hh hTI hra
@@ -362,7 +361,7 @@ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : 
         have hra := hL.raBlr g hg info hsite hreg h hh hmay _ hP.callPc
         have hcOk := L.callerOk_of_regs hL hh hLu hsw hcode hra
         rw [h2] at hcOk
-        have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallT hL (Nat.succ_pos M')
+        have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
           (ih (Nat.succ_pos M')) hpfh ⟨g, hg, hcallee⟩
           hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
         have hjunk := L.pcall_junk hL hh hTI hra
@@ -405,11 +404,7 @@ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : 
       obtain ⟨hdecl, G0, hG0, hGt⟩ := L.envOf_prog hGb hpf
       obtain ⟨hpl, ht0⟩ := hGt _ _ _ htrG
       obtain ⟨cs', hinit, hret⟩ := L.linkEnvR_trap hpf hG0 ht0
-      have hDn := hQ h cs' hpf hinit
-      obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := by
-        cases M with
-        | zero => exact hDn.elim
-        | succ M' => exact ⟨M', rfl⟩
+      obtain ⟨M', rfl, hDn⟩ := hDnM (hQ h cs' hpf hinit)
       have hnf : ¬ Clif.IndFree g := fun hif => by
         rw [indSigs_nil_of_indFree hif] at hsig; cases hsig
       have hce := clifEntry_initState (f := h) hpf hinit
@@ -453,7 +448,7 @@ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : 
       have hra := hL.raBlr g hg info hsite hreg h hh hdecl _ hP.callPc
       have hcOk := L.callerOk_of_regs hL hh hLu hsw hcode hra
       rw [h2] at hcOk
-      have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallT hL (Nat.succ_pos M')
+      have hTI : L.TrapIn M' h (enterAt (L.A h) u) tc := L.progCallTG hL (Nat.succ_pos M')
         (ih (Nat.succ_pos M')) hpf ⟨g, hg, hcallee⟩
         hWE.img herrw hal' hroom' hdead' hmemR0 hargs hsav hpl' hinit hret hDn u hcOk
       have hjunk := L.pcall_junk hL hh hTI hra
@@ -465,6 +460,27 @@ theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : 
         (by rw [hu]; exact L.progCallOk_blr hL hg hh hsite (by rw [hinfo]) hst hasg hP hcode hb hBlr)
         (by rw [hu]; exact hra) (by rw [hu]; exact hTI)
       rw [hstep, hhook, hjunk]; exact junkAt_err u
+
+/-- `trapIn_callTrapG` for the run premise `TrapsD` and a `call` site (`CallTrapAt`). -/
+theorem trapIn_callTrap (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) (hκ : L.Budget κ)
+    {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+    {F G : BitVec 64 → Prop} {vals : List Clif.Val} {cs : Clif.State} {w₀ : Arm.ArmState}
+    {ra : BitVec 64} {s : Arm.ArmState} (hWE : L.WorldEntry κ M g F vals cs w₀)
+    (hME : L.MachEntry κ M g F G ra s w₀) {n : Nat} {tc : Clif.TrapCode}
+    (hstop : Arm.r .ERR (L.mach M g (runX (L.mach M g) n s)) ≠ .None → L.Stop M g s n)
+    (hprog : (runX (L.mach M g) n s).program = (L.A g).fb.program (L.A g).base)
+    (hct : CallTrapAt (L.A g).vcp F (κ M g) G s (L.A g).fa (L.A g).base (L.X κ M g F)
+      (GotV (L.A g).vcp)
+      (TrapCallSem (cutEnv (L.envOf M g (spv w₀)) (L.covQ (L.TrapsDn M))) (g.externs.map (·.2))
+        (indSigs g)
+        (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+          g (spv w₀)) (L.X κ M g F) tc)
+      (runX (L.mach M g) n s)) :
+    L.TrapIn M g s tc :=
+  L.trapIn_callTrapG (D := L.TrapsD) hL hB hκ (fun {h cs} hD => by
+    cases M with
+    | zero => exact hD.elim
+    | succ M' => exact ⟨M', rfl, hD⟩) ih hg hWE hME hstop hprog hct.toT
 
 /-- **The induction step**: the trap statement at depth `M` from the one at depth `M - 1` (and
 the linking statement `LinkSys.thm` for the returning callees). -/

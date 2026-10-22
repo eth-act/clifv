@@ -4159,9 +4159,9 @@ Link.DeadCleanup.compileExe_correct_trap (h : compileExeU S file0 = .ok file) (B
 * `#print axioms` (`scripts/audit/traps.lean`): every compiler theorem above `[propext,
   Classical.choice, Quot.sound]`.
 
-Not yet covered: traps of the callees of `try_call`/`try_call_indirect` on the executable (per
-function done: S9b, below; linked program and executable: S9e, #408, premise
-`hnoTry`), memory-access traps (`heap_oob` of a load/store: no fault model, excluded by
+Not covered here: traps of the callees of `try_call`/`try_call_indirect` (premise `hnoTry`; done
+in S9b per function and S9e on the executable, below), memory-access traps (`heap_oob` of a
+load/store: no fault model, excluded by
 `TrapsExplicitC`) and `MemBounded` of the source run (the bump allocator); the baseline
 `Link.compileExe` (its pipeline is not the cleanup pipeline the per-function trap theorem is
 proved for).
@@ -4192,9 +4192,35 @@ normal-return contracts discharged; open as in the S9a witness: `hC`, `hsym`, th
 `source_hasTry` (S9a's theorem does not apply), `cs0_traps` + `cs0_trapsCT` (the run on argument 5
 traps inside the `try_call`'s callee and satisfies `TrapsExplicitCT`).
 
-Next (S9e, #408, linked program and executable): the world variant (`WorldTrapCall`/`WorldTrapStop`
-without `hnt`), then `LinkSys.TrapsOk.noTry`, `TrapsD`'s `try_call` clauses and the executable
-theorems' `hnoTry`.
+### Callee traps of `try_call`s in the linked program, on the executable and in the bundles (S9e, #408)
+
+The S9c/S9d chain without "no `try_call` terminator" (old theorems unchanged):
+
+* per function, world (`FV/E2E/WorldTrapStopT.lean`): `regLevel_trapStop_coreT` (the register
+  level with the stopping state and a third end, a raising `tryCall`; the GOT pins of the reached
+  calls from the run, `hgotS`, as `haltTry`'s halting `tryCall` has none), `regLevel_trapStop_worldT`
+  (no `vcp.hasTryCall = false`: the `try_call` contract from `ActEntry.tries`),
+  **`backend_correct_world_cleanup_trapstopT`** (under `TrapsExplicitCT`, conclusion
+  `CallTrapAtT`);
+* linked program (`FV/E2E/LinkTrapCallT.lean`): `LinkSys.TrapsOkT` (`TrapsOk` without `noTry`),
+  the run premise **`LinkSys.TrapsDT`** (`TrapsD` with `TrapsExplicitCT`), the induction
+  `LinkSys.thmTT`, **`E2E.backend_correct_program_trapT{,_budget,_peak}`** with the same
+  observable `TrapIn` (its call sites, `CallSite`, are `call`s and `try_call`s). The induction
+  pieces of S9c are stated for any run premise (`ThmTG`, `progCallTG`, `progX_noneG`,
+  `xTrapsOkG`, `trapIn_callTrapG` at a `CallTrapAtT`); the S9c names are their instances;
+* executable (`FV/E2E/DeadCleanupExecTrapT.lean`, `FV/Link/DeadCleanupExeTrapT.lean`):
+  `DeadCleanupExecBytes.binary_correct_exec_trapT{,_peak}`,
+  **`Link.DeadCleanup.compileExe_correct_trapT{,_peak}`**,
+  `compileExe_correct_source_trapT{,_peak}`; bundles (`FV/Front/RawExeTrapT.lean`):
+  **`Front.bundle_correct_{source,raw}_trapT{,_peak}`** — S9d's statements without `hnoTry`,
+  `TrapsDT` in place of `TrapsD`.
+
+Witness (`FV/Link/DeadCleanupExeTrapTWitness.lean`): `f(x, y)` does `try_call h(x, y)` (a `tag0`
+handler), `h(x, y) = x / y`, compiled by `compileExeU` (`compile_eq`); `run_traps` (the run of `f`
+on `(41, 0)` traps with `int_divz` inside `h`), `cs0_trapsDT` (the new premise holds),
+`cs0_not_trapsD` and `not_noTry` (S9d's premises fail), `exec_traps`
+(`compileExe_correct_trapT` with every premise but the entry contract discharged: the executable
+reaches a state at a trap with `int_divz`).
 
 ## Entry-state and runtime premises (A5, #411)
 
@@ -4299,10 +4325,12 @@ _source_peak}` and, from cg_clif's dumps, `Front.bundle_correct_raw{,_peak}` (un
 runtime contract `Front.EntryContract`: `Front.bundle_correct_raw{,_peak}_contract`, "Entry-state
 and runtime premises" above); with callee traps
 `Link.DeadCleanup.compileExe_correct_trap{,_peak,_source_trap,_source_trap_peak}` and
-`Front.bundle_correct_raw_trap{,_peak}` (above). What remains is
+`Front.bundle_correct_raw_trap{,_peak}`, with `try_call` callee traps too
+`compileExe_correct_trapT{,_peak}`, `compileExe_correct_source_trapT{,_peak}` and
+`Front.bundle_correct_raw_trapT{,_peak}` (above). What remains is
 listed in `docs/TO-PROVE.md` (§1.1 for totality, §4 for scope, §5 for the trusted base); from this
-file: stack-passed arguments of indirect calls (`indSigs`, S5), memory-access traps (need a
-fault model; `TrapsExplicitC`), and traps of `try_call` callees (S9b, above, "Callee traps").
+file: stack-passed arguments of indirect calls (`indSigs`, S5) and memory-access traps (need a
+fault model; `TrapsExplicitC`).
 
 ## Trusted (not proven)
 
