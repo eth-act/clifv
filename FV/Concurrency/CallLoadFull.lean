@@ -494,6 +494,210 @@ theorem mstep_ldar (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0) (env : 
         rw [hnil y (List.mem_of_mem_take hy)]; rfl)] at hy
       cases hy
 
+/-- **The callee after its `ldar`**: the moves, the restores and the return, every step private,
+no store exclusive, on its program, at a line other than `ret` but the last, which is at the
+`ret`; after it the caller's state as it resumes (`PostA`). -/
+theorem calleePost (hS : StRel RC s m w₀C) {x : ArmState} {m2 : Loc → CV} {w2 : ArmState}
+    (hq : Q (RLx s) x (.run ⟨0, (postMv (.x 1)).map (fun p => RItem.move p.1 p.2) ++
+      [.op 2 #[.reg (.x 0)]], m2, w2⟩))
+    (hA : AInv (RLx s) (.run ⟨0, (postMv (.x 1)).map (fun p => RItem.move p.1 p.2) ++
+      [.op 2 #[.reg (.x 0)]], m2, w2⟩)) :
+    ∃ nP, 0 < nP ∧
+      (∀ i < nP, ((∀ e ∈ stepEvs (iterN (RLx s).step i x), (RLx s).F e.addr) ∧
+        NoStx (iterN (RLx s).step i x)) ∧ (iterN (RLx s).step i x).program = pL) ∧
+      (∀ i, i + 1 < nP → AtNonRet (RLx s) (iterN (RLx s).step i x)) ∧
+      IsRetL (iterN (RLx s).step (nP - 1) x) ∧
+      PostA s (set_program (iterN (RLx s).step nP x) pC0) := by
+  have hR := wfX hS
+  obtain ⟨n1, hq1, hA1, hp1⟩ := moves_privP hR (postMv (.x 1)) [.op 2 #[.reg (.x 0)]] x m2 hq hA
+    (fun p hp => moves_noRet (R := RLx s) checksPost.2.2.1 p (by simp [hp]))
+  have hvb : (RLx s).vc.blocks[0]? = some vcpL.blocks[0]! := vb0L
+  obtain ⟨n2, hp2, hpc2, herr2, hsp2, hmem2, hprog2, hnr2, hn2, j, t, hj, hpcj⟩ :=
+    rets_privP hR (abiX hS) hq1 hvb instL2
+  have hstr := q_stRel hq1
+  have hshift : ∀ i, iterN (RLx s).step i (iterN (RLx s).step n1 x) =
+      iterN (RLx s).step (n1 + i) x := fun i => (iterN_add _ _ _ _).symm
+  refine ⟨n1 + n2, by omega, fun i hi => ?_, fun i hi => ?_, ?_, ?_⟩
+  · by_cases h : i < n1
+    · exact ⟨(hp1 i h).1, (hp1 i h).2.1⟩
+    · have := hp2 (i - n1) (by omega)
+      rw [hshift, show n1 + (i - n1) = i by omega] at this
+      exact ⟨this.1, this.2.1⟩
+  · by_cases h : i < n1
+    · exact (hp1 i h).2.2
+    · have := hnr2 (i - n1) (by omega)
+      rw [hshift, show n1 + (i - n1) = i by omega] at this
+      exact this
+  · rw [show n1 + n2 - 1 = n1 + (n2 - 1) by omega, ← hshift]
+    exact ⟨j, t, hj, hpcj⟩
+  · rw [← hshift]
+    refine ⟨?_, ?_, ?_, fun a ha => ?_, rfl⟩
+    · rw [E2E.r_set_program, hpc2]
+    · rw [E2E.r_set_program, herr2]
+    · show Arm.r (.GPR 31#5) (set_program _ _) = Arm.r (.GPR 31#5) s
+      rw [E2E.r_set_program]
+      show E2E.spv _ = _
+      rw [hsp2]
+      show Arm.r (.GPR 31#5) (enterL s) = _
+      rw [r_enterL (by simp) (by simp)]
+    · rw [E2E.mem_set_program, hmem2, hstr.gkeep a ha]
+      show (enterL s).mem a = _
+      rw [mem_enterL]
+
+/-- **A step of private events realizes an event-free CLIF step.** -/
+theorem realized_privStep {R : RL} {env : Clif.Env} {p : Clif.Program} {l : Lab} {L : List Lab}
+    {c c' : TState} (hpv : ∀ e ∈ l.evs, R.F e.addr) (hk : ∀ e ∈ l.evs, e.k ≠ .relXW)
+    (hs : CStep env p c [] c') : CallCompose.Realized env p (PrivA R) (l :: L) 1 c c' := by
+  have htr : evTr ((l :: L).take 1) = [l.evs] := by simp [evTr]
+  refine ⟨by simp, [[]], id, .cons hs .nil, ?_, ?_⟩
+  · exact xClosed_labs fun l' hl' e he => by simp at hl'; subst hl'; exact hk e he
+  · rw [htr]
+    exact refines_nilS (by simp) fun q y hy _ => by
+      obtain ⟨x, hx, hyx⟩ := mem_of_evAt hy
+      simp only [List.mem_singleton] at hx; subst hx
+      exact privA_addr.2 (hpv y hyx)
+
+/-- **The callee's contract with its return** (module doc): every precise run of the linked
+machine from the callee's ABI entry (after the caller's `bl` from `s`) realizes, through the
+CLIF `atomic_load` reading the `ldar`'s bytes, a prefix that is the whole run or ends at the
+callee's return (`RetL`: the caller's Arm state resumable, its CLIF state ready to return). -/
+theorem funReal_ld (env : Clif.Env) (hS : StRel RC s m w₀C) (hx0 : regVal s (.x 0) = 0)
+    (mon : Mon) :
+    CallCompose.FunReal env pCL (PrivA (RLx s)) MC2 (OkPriv (RLx s)) (RetL s) (fun _ _ => False)
+      (enterL s, mon) (.run (ClifLift.pushC extC csL)) := by
+  intro ls t' hr
+  have hR := wfX hS
+  obtain ⟨n0, mL, trM, hpath, hqa, hAa, hrun, hnil, hmL0⟩ := calleePath hS hx0
+  have hagA : ∀ i < n0, MC2 (iterN (RLx s).step i (RLx s).s0) =
+      (RLx s).step (iterN (RLx s).step i (RLx s).s0) := fun i hi => by
+    have h := mc2_callee hS (hpath i hi).2.1 (hpath i hi).2.2 (iterN (RLx s).step i (RLx s).s0).mem
+    rwa [setMem_self] at h
+  by_cases hlen : ls.length ≤ n0
+  · obtain ⟨-, hev, hk⟩ := prun_privF hr fun i hi =>
+      ⟨(hpath i (by omega)).1.1, (hpath i (by omega)).1.2, hagA i (by omega)⟩
+    exact ⟨ls.length, _, realized_privSeg hev (fun i hi => (hpath i (by omega)).1.1)
+      (fun l hl => (hk l hl).2) (trS := []) (by simp) .nil, .inl rfl⟩
+  obtain ⟨va, hva, hrest⟩ := CallCompose.take_prun hr n0
+  have hlt : (ls.take n0).length = n0 := by simp; omega
+  obtain ⟨hva1, hevA, hkA⟩ := prun_privF hva fun i hi =>
+    ⟨(hpath i (by omega)).1.1, (hpath i (by omega)).1.2, hagA i (by omega)⟩
+  have hRA0 := realized_privSeg (env := env) (p := pCL) (c := .run (ClifLift.pushC extC csL)) hevA
+    (fun i hi => (hpath i (by omega)).1.1) (fun l hl => (hkA l hl).2) (trS := []) (by simp) .nil
+  rw [hlt] at hva1 hRA0
+  have hRA := Realized.of_take hRA0 (by omega)
+  obtain ⟨la, ls2, hdrop⟩ : ∃ la ls2, ls.drop n0 = la :: ls2 := by
+    cases h : ls.drop n0 with
+    | nil => simp at h; omega
+    | cons la ls2 => exact ⟨la, ls2, rfl⟩
+  rw [hdrop] at hrest
+  obtain ⟨va1, va2⟩ := va
+  simp only at hva1
+  subst hva1
+  -- the `ldar`
+  obtain ⟨jl, hjl, hpcl, hstrl⟩ := q_head hqa rfl head_ldarL
+  have hnra : AtNonRet (RLx s) (iterN (RLx s).step n0 (RLx s).s0) :=
+    ⟨jl, .ldar 64 (.x 1) (.x 0), some .heapOob, hjl, (fun h => by cases h), hpcl⟩
+  cases hrest with
+  | @cons _ ta _ _ _ hsa hpa hoa hr2 =>
+  have hsaR := tstep_transfer (fun M => mc2_callee hS hstrl.prog hnra M) hsa
+  obtain ⟨hnsa, -⟩ := ldar_evs_line hR hjl rfl hstrl.prog hpcl hstrl.err (p := 1) (q := 0)
+    (by omega) (by omega) (fun _ => rfl) (iterN (RLx s).step n0 (RLx s).s0).mem
+  have hxa : la.xfail = false := by
+    cases hsa with
+    | exec => rfl
+    | xfail hc => exact absurd hc (hnsa _ _ _)
+  obtain ⟨M, hM⟩ : ∃ M, la.evs = stepEvs (setMem M (iterN (RLx s).step n0 (RLx s).s0)) := by
+    rcases hpa with h | h
+    · rw [hxa] at h; cases h
+    · exact h
+  obtain ⟨-, e, hse, hek, hen, hea⟩ := ldar_evs_line hR hjl rfl hstrl.prog hpcl hstrl.err (p := 1)
+    (q := 0) (by omega) (by omega) (fun _ => rfl) M
+  rw [hse] at hM
+  have hs3 := hstrl.store (.reg (.x 0)) (fun r h => by cases h; rfl) trivial
+  have hea0 : e.addr = 0 := hea.trans (regVal_x0 hs3 hmL0)
+  have hnp : ¬ PrivA (RLx s) e.addr.toNat := by
+    rw [hea0]
+    intro h
+    have := xF_ge hS (privA_addr.1 h)
+    simp at this
+  -- its source step and the related states after it
+  obtain ⟨cM, hms⟩ := mstep_ldar hS hx0 env hrun hnil
+  obtain ⟨evs0, hsrc⟩ := srcStep_of_mstep_eq (coveredX hS hx0) VCodeThread.Witness.X0_tls hqa hms
+  obtain ⟨fl, hil, hfo⟩ := instL1
+  have hform : ∀ vb i, (RLx s).vc.blocks[0]? = some vb → vb.insts[1]? = some i →
+      OneEvForm (RLx s).F (RLx s).ctx i := by
+    intro vb i hvb hi
+    have h0 : (RLx s).vc.blocks[0]? = some vcpL.blocks[0]! := vb0L
+    rw [h0] at hvb; cases hvb; rw [hil] at hi; cases hi
+    exact ldar_form hfo
+  rw [checksPost.1] at hqa hAa hsrc
+  obtain ⟨c', t1, φ, hsc, hp1, ht1, ⟨hq1, hA1⟩, -⟩ := oneEv_op1 hR hqa hAa hsrc hform
+    (.cons hsaR hpa trivial .nil)
+  obtain rfl := PRun.det hp1 (.cons hsaR hpa trivial .nil)
+  obtain ⟨m2, w2, rfl⟩ := srcStep_next (fun vb i hvb hi => (hform vb i hvb hi).ctl) hsc
+  obtain ⟨nP, hnP, hpP, hnrP, hretP, hpostP⟩ := calleePost hS hq1 hA1
+  -- the CLIF load and return
+  obtain ⟨s1, d, hcl1, hcl2, hdr, hdc⟩ := cstep_ld env (bytesOf e.n e.val) (by simp [bytesOf, hen])
+    (fun x hx => by simp only [bytesOf, List.mem_map] at hx; obtain ⟨_, _, rfl⟩ := hx; rfl)
+  have hev : (⟨.scR, .R, e.addr.toNat, e.n, bytesOf e.n e.val⟩ : Prog.Ev SKind BVal) =
+      ⟨.scR, .R, 0, 8, bytesOf e.n e.val⟩ := by
+    simp only [Prog.Ev.mk.injEq, true_and, hea0, hen]; simp
+  have hRL := realized_ld (L := ls2) (R := RLx s) hM hek hnp (hev ▸ hcl1)
+  have hRAL := hRA.trans (by rw [hdrop]; exact hRL)
+  -- the run after the `ldar`
+  have hagP : ∀ i, i + 1 < nP → MC2 (iterN (RLx s).step i t1.1) = (RLx s).step (iterN (RLx s).step i t1.1) :=
+    fun i hi => by
+      have h := mc2_callee hS (hpP i (by omega)).2 (hnrP i hi) (iterN (RLx s).step i t1.1).mem
+      rwa [setMem_self] at h
+  have hdrop1 : ls.drop (n0 + 1) = ls2 := by rw [← List.drop_drop, hdrop]; rfl
+  by_cases hlen2 : ls2.length < nP
+  · obtain ⟨-, hev2, hk2⟩ := prun_privF hr2 fun i hi =>
+      ⟨(hpP i (by omega)).1.1, (hpP i (by omega)).1.2, hagP i (by omega)⟩
+    have hR2 := realized_privSeg (env := env) (p := pCL) (c := .run (ClifLift.pushC extC s1)) hev2
+      (fun i hi => (hpP i (by omega)).1.1) (fun l hl => (hk2 l hl).2) (trS := []) (by simp) .nil
+    refine ⟨n0 + 1 + ls2.length, _, hRAL.trans (by rw [hdrop1]; exact hR2), .inl ?_⟩
+    have := congrArg List.length hdrop
+    simp at this; omega
+  obtain ⟨v3, hv3, hrest3⟩ := CallCompose.take_prun hr2 (nP - 1)
+  have hlt3 : (ls2.take (nP - 1)).length = nP - 1 := by simp; omega
+  obtain ⟨hv31, hev3, hk3⟩ := prun_privF hv3 fun i hi =>
+    ⟨(hpP i (by omega)).1.1, (hpP i (by omega)).1.2, hagP i (by omega)⟩
+  have hR30 := realized_privSeg (env := env) (p := pCL) (c := .run (ClifLift.pushC extC s1)) hev3
+    (fun i hi => (hpP i (by omega)).1.1) (fun l hl => (hk3 l hl).2) (trS := []) (by simp) .nil
+  rw [hlt3] at hv31 hR30
+  have hR3 := Realized.of_take hR30 (by omega)
+  obtain ⟨lr, ls3, hdrop3⟩ : ∃ lr ls3, ls2.drop (nP - 1) = lr :: ls3 := by
+    cases h : ls2.drop (nP - 1) with
+    | nil => simp at h; omega
+    | cons lr ls3 => exact ⟨lr, ls3, rfl⟩
+  rw [hdrop3] at hrest3
+  obtain ⟨v31, v32⟩ := v3
+  simp only at hv31
+  subst hv31
+  cases hrest3 with
+  | @cons _ tr _ _ _ hsr hpr hor _ =>
+  obtain ⟨htr1, hlr, -, hkr⟩ := tstep_priv1 hsr hpr hor (hpP (nP - 1) (by omega)).1.1
+    (hpP (nP - 1) (by omega)).1.2
+  have hRr : CallCompose.Realized env pCL (PrivA (RLx s)) (lr :: ls3) 1
+      (.run (ClifLift.pushC extC s1)) (.run d) :=
+    realized_privStep (fun e he => by rw [hlr] at he; exact (hpP (nP - 1) (by omega)).1.1 e he)
+      hkr hcl2
+  have hR3r := hR3.trans (by rw [hdrop3]; exact hRr)
+  rw [show nP - 1 + 1 = nP by omega] at hR3r
+  refine ⟨n0 + 1 + nP, .run d, hRAL.trans (by rw [hdrop1]; exact hR3r), .inr (.inr ⟨tr, ?_, ?_,
+    d, rfl, hdr, hdc⟩)⟩
+  · have e1 : ls.take (n0 + 1 + nP) = ls.take n0 ++ (la :: (ls2.take (nP - 1) ++ [lr])) := by
+      have h2 : ls2.take nP = ls2.take (nP - 1) ++ [lr] := by
+        rw [show nP = (nP - 1) + 1 by omega, List.take_add, hdrop3]; simp
+      rw [List.take_add, hdrop1, h2, List.take_add, hdrop]; simp
+    rw [e1]
+    exact hva.append (.cons hsa hpa hoa (hv3.append (.cons hsr hpr hor .nil)))
+  · rw [htr1, mc2_ret (hpP (nP - 1) (by omega)).2 hretP]
+    have : stepL (iterN (RLx s).step (nP - 1) t1.1) = iterN (RLx s).step nP t1.1 := by
+      rw [show nP = (nP - 1) + 1 by omega, iterN_one_succ]; rfl
+    rw [this]
+    exact hpostP
+
 end callee2
 
 end Concurrency.CallSeg.WitnessC
