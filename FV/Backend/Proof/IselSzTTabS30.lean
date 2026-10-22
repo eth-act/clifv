@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselSzTTabData
+import FV.Backend.Proof.IselSzTChunk
 
 /-!
 # The size of the ISLE lowering's output over float-capable contexts (typed V6c): rules of `lower`, group 30
@@ -49,9 +50,315 @@ theorem szStmtOkT_rule_lower_2262 : szStmtOkT rule_lower_2262 = true := by decid
 
 theorem tgStmtOkT_rule_lower_2262 : tgStmtOkT rule_lower_2262 = true := by decide +kernel
 
-theorem szStmtOkT_rule_lower_2267 : szStmtOkT rule_lower_2267 = true := by decide +kernel
+theorem szStmtOkT_rule_lower_2267_f8_nA : (aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).length ≤ 16 * 16 := by decide +kernel
 
-theorem tgStmtOkT_rule_lower_2267 : tgStmtOkT rule_lower_2267 = true := by decide +kernel
+theorem szStmtOkT_rule_lower_2267_f8_A0 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (0 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A1 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (1 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A2 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (2 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A3 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (3 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A4 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (4 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A5 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (5 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A6 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (6 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A7 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (7 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A8 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (8 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A9 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (9 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A10 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (10 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A11 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (11 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A12 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (12 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A13 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (13 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A14 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (14 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_A15 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (15 * 16)).take 16).all
+    (ifOk program covTabT actorW szCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_s : (aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).isSome = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_nB : ((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).length ≤ 16 * 16 := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B0 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (0 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B1 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (1 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B2 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (2 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B3 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (3 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B4 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (4 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B5 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (5 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B6 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (6 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B7 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (7 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B8 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (8 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B9 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (9 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B10 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (10 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B11 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (11 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B12 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (12 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B13 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (13 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B14 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (14 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_f8_B15 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (15 * 16)).take 16).all
+    (envOk program covTabT actorW szCTabT actor apre aOracle rule_lower_2267 535) = true := by decide +kernel
+
+theorem szStmtOkT_rule_lower_2267_rest : (List.range famTab.length).all (fun i => i == 8 ||
+    cRuleLe program covTabT actorW szCTabT aext actor apre aOracle [.inst [i]] szStmtK rule_lower_2267) = true := by
+  decide +kernel
+
+theorem szStmtOkT_rule_lower_2267 : szStmtOkT rule_lower_2267 = true := by
+  unfold szStmtOkT
+  simp only [Bool.or_eq_true]
+  right
+  rw [List.all_eq_true]
+  intro i hi
+  by_cases hi' : i = 8
+  · subst hi'
+    refine cRuleLe_of_chunks 0 535 16 16 16 16 (by decide) szStmtOkT_rule_lower_2267_f8_nA ?_ szStmtOkT_rule_lower_2267_f8_s szStmtOkT_rule_lower_2267_f8_nB ?_
+    · intro c hc
+      match c, hc with
+      | 0, _ => exact szStmtOkT_rule_lower_2267_f8_A0
+      | 1, _ => exact szStmtOkT_rule_lower_2267_f8_A1
+      | 2, _ => exact szStmtOkT_rule_lower_2267_f8_A2
+      | 3, _ => exact szStmtOkT_rule_lower_2267_f8_A3
+      | 4, _ => exact szStmtOkT_rule_lower_2267_f8_A4
+      | 5, _ => exact szStmtOkT_rule_lower_2267_f8_A5
+      | 6, _ => exact szStmtOkT_rule_lower_2267_f8_A6
+      | 7, _ => exact szStmtOkT_rule_lower_2267_f8_A7
+      | 8, _ => exact szStmtOkT_rule_lower_2267_f8_A8
+      | 9, _ => exact szStmtOkT_rule_lower_2267_f8_A9
+      | 10, _ => exact szStmtOkT_rule_lower_2267_f8_A10
+      | 11, _ => exact szStmtOkT_rule_lower_2267_f8_A11
+      | 12, _ => exact szStmtOkT_rule_lower_2267_f8_A12
+      | 13, _ => exact szStmtOkT_rule_lower_2267_f8_A13
+      | 14, _ => exact szStmtOkT_rule_lower_2267_f8_A14
+      | 15, _ => exact szStmtOkT_rule_lower_2267_f8_A15
+      | _ + 16, hc => exact absurd hc (by omega)
+    · intro c hc
+      match c, hc with
+      | 0, _ => exact szStmtOkT_rule_lower_2267_f8_B0
+      | 1, _ => exact szStmtOkT_rule_lower_2267_f8_B1
+      | 2, _ => exact szStmtOkT_rule_lower_2267_f8_B2
+      | 3, _ => exact szStmtOkT_rule_lower_2267_f8_B3
+      | 4, _ => exact szStmtOkT_rule_lower_2267_f8_B4
+      | 5, _ => exact szStmtOkT_rule_lower_2267_f8_B5
+      | 6, _ => exact szStmtOkT_rule_lower_2267_f8_B6
+      | 7, _ => exact szStmtOkT_rule_lower_2267_f8_B7
+      | 8, _ => exact szStmtOkT_rule_lower_2267_f8_B8
+      | 9, _ => exact szStmtOkT_rule_lower_2267_f8_B9
+      | 10, _ => exact szStmtOkT_rule_lower_2267_f8_B10
+      | 11, _ => exact szStmtOkT_rule_lower_2267_f8_B11
+      | 12, _ => exact szStmtOkT_rule_lower_2267_f8_B12
+      | 13, _ => exact szStmtOkT_rule_lower_2267_f8_B13
+      | 14, _ => exact szStmtOkT_rule_lower_2267_f8_B14
+      | 15, _ => exact szStmtOkT_rule_lower_2267_f8_B15
+      | _ + 16, hc => exact absurd hc (by omega)
+  · have := List.all_eq_true.1 szStmtOkT_rule_lower_2267_rest i hi
+    simpa [hi'] using this
+
+theorem tgStmtOkT_rule_lower_2267_f8_nA : (aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).length ≤ 16 * 16 := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A0 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (0 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A1 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (1 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A2 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (2 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A3 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (3 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A4 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (4 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A5 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (5 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A6 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (6 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A7 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (7 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A8 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (8 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A9 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (9 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A10 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (10 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A11 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (11 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A12 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (12 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A13 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (13 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A14 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (14 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_A15 : (((aPatArgs program aext [.inst [8]] rule_lower_2267.args (List.replicate rule_lower_2267.vars.length .top)).drop (15 * 16)).take 16).all
+    (ifOk program covTabT actorT tgCTabT aext actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_s : (aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).isSome = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_nB : ((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).length ≤ 16 * 16 := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B0 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (0 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B1 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (1 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B2 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (2 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B3 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (3 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B4 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (4 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B5 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (5 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B6 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (6 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B7 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (7 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B8 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (8 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B9 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (9 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B10 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (10 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B11 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (11 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B12 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (12 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B13 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (13 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B14 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (14 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_f8_B15 : ((((aRuleEnvs program covTabT aext actor apre aOracle [.inst [8]] rule_lower_2267).getD []).drop (15 * 16)).take 16).all
+    (envOk program covTabT actorT tgCTabT actor apre aOracle rule_lower_2267 0) = true := by decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267_rest : (List.range famTab.length).all (fun i => i == 8 ||
+    cRuleLe program covTabT actorT tgCTabT aext actor apre aOracle [.inst [i]] tgStmtK rule_lower_2267) = true := by
+  decide +kernel
+
+theorem tgStmtOkT_rule_lower_2267 : tgStmtOkT rule_lower_2267 = true := by
+  unfold tgStmtOkT
+  rw [List.all_eq_true]
+  intro i hi
+  by_cases hi' : i = 8
+  · subst hi'
+    refine cRuleLe_of_chunks 0 0 16 16 16 16 (by decide) tgStmtOkT_rule_lower_2267_f8_nA ?_ tgStmtOkT_rule_lower_2267_f8_s tgStmtOkT_rule_lower_2267_f8_nB ?_
+    · intro c hc
+      match c, hc with
+      | 0, _ => exact tgStmtOkT_rule_lower_2267_f8_A0
+      | 1, _ => exact tgStmtOkT_rule_lower_2267_f8_A1
+      | 2, _ => exact tgStmtOkT_rule_lower_2267_f8_A2
+      | 3, _ => exact tgStmtOkT_rule_lower_2267_f8_A3
+      | 4, _ => exact tgStmtOkT_rule_lower_2267_f8_A4
+      | 5, _ => exact tgStmtOkT_rule_lower_2267_f8_A5
+      | 6, _ => exact tgStmtOkT_rule_lower_2267_f8_A6
+      | 7, _ => exact tgStmtOkT_rule_lower_2267_f8_A7
+      | 8, _ => exact tgStmtOkT_rule_lower_2267_f8_A8
+      | 9, _ => exact tgStmtOkT_rule_lower_2267_f8_A9
+      | 10, _ => exact tgStmtOkT_rule_lower_2267_f8_A10
+      | 11, _ => exact tgStmtOkT_rule_lower_2267_f8_A11
+      | 12, _ => exact tgStmtOkT_rule_lower_2267_f8_A12
+      | 13, _ => exact tgStmtOkT_rule_lower_2267_f8_A13
+      | 14, _ => exact tgStmtOkT_rule_lower_2267_f8_A14
+      | 15, _ => exact tgStmtOkT_rule_lower_2267_f8_A15
+      | _ + 16, hc => exact absurd hc (by omega)
+    · intro c hc
+      match c, hc with
+      | 0, _ => exact tgStmtOkT_rule_lower_2267_f8_B0
+      | 1, _ => exact tgStmtOkT_rule_lower_2267_f8_B1
+      | 2, _ => exact tgStmtOkT_rule_lower_2267_f8_B2
+      | 3, _ => exact tgStmtOkT_rule_lower_2267_f8_B3
+      | 4, _ => exact tgStmtOkT_rule_lower_2267_f8_B4
+      | 5, _ => exact tgStmtOkT_rule_lower_2267_f8_B5
+      | 6, _ => exact tgStmtOkT_rule_lower_2267_f8_B6
+      | 7, _ => exact tgStmtOkT_rule_lower_2267_f8_B7
+      | 8, _ => exact tgStmtOkT_rule_lower_2267_f8_B8
+      | 9, _ => exact tgStmtOkT_rule_lower_2267_f8_B9
+      | 10, _ => exact tgStmtOkT_rule_lower_2267_f8_B10
+      | 11, _ => exact tgStmtOkT_rule_lower_2267_f8_B11
+      | 12, _ => exact tgStmtOkT_rule_lower_2267_f8_B12
+      | 13, _ => exact tgStmtOkT_rule_lower_2267_f8_B13
+      | 14, _ => exact tgStmtOkT_rule_lower_2267_f8_B14
+      | 15, _ => exact tgStmtOkT_rule_lower_2267_f8_B15
+      | _ + 16, hc => exact absurd hc (by omega)
+  · have := List.all_eq_true.1 tgStmtOkT_rule_lower_2267_rest i hi
+    simpa [hi'] using this
 
 theorem szStmtOkT_rule_lower_2280 : szStmtOkT rule_lower_2280 = true := by decide +kernel
 

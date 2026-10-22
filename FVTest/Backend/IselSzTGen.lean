@@ -182,7 +182,55 @@ def renderTab (nm : String) (tab : CTab) : String := Id.run do
 def chunkThm (nm ok : String) (k : Nat) : String :=
   s!"theorem {nm}{k}_ok : ({nm}{k}).all {ok} = true := by\n  simp only [{nm}{k}, List.all_cons, List.all_nil, Bool.and_eq_true, and_true]\n  repeat' apply And.intro\n  all_goals decide +kernel\n\n"
 
-def renderAll (sz tg : CTab) (lowerNames branchNames : List String) : List (String × String) := Id.run do
+
+/-- Rule/family pairs whose single kernel check is too large (rule 2267 on family 8 has 256
+environments, `IselCovTGen.heavy`): checked chunk-wise (`IselSzTChunk.cRuleLe_of_chunks`). -/
+def heavy : List (String × Nat) := [("rule_lower_2267", 8)]
+def envChunk : Nat := 16
+
+/-- The parameters of a chunked check: the if-lets' and the right-hand sides' maximum costs and
+the chunk counts. -/
+structure HeavyP where
+  a : Nat
+  b : Nat
+  nA : Nat
+  nB : Nat
+
+def heavyP (aw : TermId → List AT → Option Nat) (ctab : CTab) (i : Nat) (r : Rule) : HeavyP :=
+  let pats := aPatArgs program aext [.inst [i]] r.args (List.replicate r.vars.length .top)
+  let a := pats.foldl (fun m e => max m ((cIfLets program covTabT aw ctab aext actor apre aOracle r.iflets e).getD 0)) 0
+  let envs := (aRuleEnvs program covTabT aext actor apre aOracle [.inst [i]] r).getD []
+  let b := envs.foldl (fun m e => max m ((cExpr program covTabT aw ctab actor apre aOracle r.rhs e).getD 0)) 0
+  ⟨a, b, (pats.length + envChunk - 1) / envChunk, (envs.length + envChunk - 1) / envChunk⟩
+
+/-- The chunked check of heavy rule `r` on family `i` for one of the two analyses. -/
+def heavyThm (kind : String) (r : String) (i : Nat) (hp : HeavyP) : String := Id.run do
+  let (aw, tab, bound, okName) :=
+    if kind == "sz" then ("actorW", "szCTabT", "szStmtK", "szStmtOkT") else ("actorT", "tgCTabT", "tgStmtK", "tgStmtOkT")
+  let k := envChunk
+  let pats := s!"(aPatArgs program aext [.inst [{i}]] {r}.args (List.replicate {r}.vars.length .top))"
+  let envs := s!"(aRuleEnvs program covTabT aext actor apre aOracle [.inst [{i}]] {r})"
+  let pre := s!"{okName}_{r}_f{i}"
+  let mut s := s!"theorem {pre}_nA : {pats}.length ≤ {hp.nA} * {k} := by decide +kernel\n\n"
+  for c in List.range hp.nA do
+    s := s ++ s!"theorem {pre}_A{c} : (({pats}.drop ({c} * {k})).take {k}).all\n    (ifOk program covTabT {aw} {tab} aext actor apre aOracle {r} {hp.a}) = true := by decide +kernel\n\n"
+  s := s ++ s!"theorem {pre}_s : {envs}.isSome = true := by decide +kernel\n\n"
+  s := s ++ s!"theorem {pre}_nB : ({envs}.getD []).length ≤ {hp.nB} * {k} := by decide +kernel\n\n"
+  for c in List.range hp.nB do
+    s := s ++ s!"theorem {pre}_B{c} : ((({envs}.getD []).drop ({c} * {k})).take {k}).all\n    (envOk program covTabT {aw} {tab} actor apre aOracle {r} {hp.b}) = true := by decide +kernel\n\n"
+  s := s ++ s!"theorem {okName}_{r}_rest : (List.range famTab.length).all (fun i => i == {i} ||\n    cRuleLe program covTabT {aw} {tab} aext actor apre aOracle [.inst [i]] {bound} {r}) = true := by\n  decide +kernel\n\n"
+  let hid := if kind == "sz" then "  simp only [Bool.or_eq_true]\n  right\n" else ""
+  s := s ++ s!"theorem {okName}_{r} : {okName} {r} = true := by\n  unfold {okName}\n{hid}  rw [List.all_eq_true]\n  intro i hi\n  by_cases hi' : i = {i}\n  · subst hi'\n    refine cRuleLe_of_chunks {hp.a} {hp.b} {k} {hp.nA} {k} {hp.nB} (by decide) {pre}_nA ?_ {pre}_s {pre}_nB ?_\n    · intro c hc\n      match c, hc with\n"
+  for c in List.range hp.nA do
+    s := s ++ s!"      | {c}, _ => exact {pre}_A{c}\n"
+  s := s ++ s!"      | _ + {hp.nA}, hc => exact absurd hc (by omega)\n    · intro c hc\n      match c, hc with\n"
+  for c in List.range hp.nB do
+    s := s ++ s!"      | {c}, _ => exact {pre}_B{c}\n"
+  s := s ++ s!"      | _ + {hp.nB}, hc => exact absurd hc (by omega)\n  · have := List.all_eq_true.1 {okName}_{r}_rest i hi\n    simpa [hi'] using this\n\n"
+  s
+
+def renderAll (sz tg : CTab) (lowerNames branchNames : List String)
+    (heavyN : List (String × Nat × HeavyP × HeavyP)) : List (String × String) := Id.run do
   let nS := (sz.length + chunk - 1) / chunk
   let nT := (tg.length + chunk - 1) / chunk
   let mut files : List (String × String) := []
@@ -205,10 +253,16 @@ weight (`actorW`) and the branch targets (`actorT`) they emit. The leaf-wise ker
     files := files ++ [(s!"IselSzTTabC{gi}.lean", c ++ "end Backend.Proof.CovT\n")]
   let sgs := groups rulesPerMod lowerNames
   for (rs, gi) in sgs.zipIdx do
-    let mut c := preamble s!"rules of `lower`, group {gi}" "Each rule of `lower` is within `szStmtK`/`tgStmtK` on every family (`szStmtOkT`, `tgStmtOkT`)." "import FV.Backend.Proof.IselSzTTabData\n"
+    let isHeavy := rs.any (fun r => heavyN.any (·.1 == r))
+    let imp := if isHeavy then "import FV.Backend.Proof.IselSzTTabData\nimport FV.Backend.Proof.IselSzTChunk\n" else "import FV.Backend.Proof.IselSzTTabData\n"
+    let mut c := preamble s!"rules of `lower`, group {gi}" "Each rule of `lower` is within `szStmtK`/`tgStmtK` on every family (`szStmtOkT`, `tgStmtOkT`)." imp
     for r in rs do
-      c := c ++ s!"theorem szStmtOkT_{r} : szStmtOkT {r} = true := by decide +kernel\n\n"
-      c := c ++ s!"theorem tgStmtOkT_{r} : tgStmtOkT {r} = true := by decide +kernel\n\n"
+      match heavyN.find? (·.1 == r) with
+      | some (_, i, hs, ht) =>
+        c := c ++ heavyThm "sz" r i hs ++ heavyThm "tg" r i ht
+      | none =>
+        c := c ++ s!"theorem szStmtOkT_{r} : szStmtOkT {r} = true := by decide +kernel\n\n"
+        c := c ++ s!"theorem tgStmtOkT_{r} : tgStmtOkT {r} = true := by decide +kernel\n\n"
     files := files ++ [(s!"IselSzTTabS{gi}.lean", c ++ "end Backend.Proof.CovT\n")]
   let mut bc := preamble "rules of `lower_branch`, terminators" "Each rule of `lower_branch` is within `szTermK`/`tgTermK` on every family (`szBranchOkT`, `tgBranchOkT`); the terminator rules of `lower` (964 `trap`, 1037 `return`) on `c0`." "import FV.Backend.Proof.IselSzTTabData\n"
   for r in branchNames do
@@ -271,6 +325,10 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"lower rules {ln.length} branch rules {bn.length}"
   if ln.length != stmtRules.length || bn.length != branchRules.length then
     IO.eprintln "rule name lists do not match the program"; return 1
-  for (name, content) in renderAll sz tg ln bn do
+  let heavyN := heavy.filterMap fun (name, i) => ((ln.zip stmtRules).find? (·.1 == name)).map
+    fun (_, r) => (name, i, heavyP actorW sz i r, heavyP actorT tg i r)
+  for (n, i, hs, ht) in heavyN do
+    IO.println s!"heavy {n} f{i}: sz a={hs.a} b={hs.b} nA={hs.nA} nB={hs.nB}; tg a={ht.a} b={ht.b} nA={ht.nA} nB={ht.nB}"
+  for (name, content) in renderAll sz tg ln bn heavyN do
     IO.FS.writeFile (path ++ "/" ++ name) content
   return 0

@@ -549,7 +549,7 @@ theorem handW_tryT {f : Clif.Function} {ctx : Ctx} (hctx : CtxT f ctx) {ti : Nat
     HandW program (tryCtx ctx ti data trs) [.inst ti, .labels targets] rl
       (fun s => wtA s.emitted) (termSzB t) := by
   intro cfg hc m n s tr env s1 r s2 tr2 hm hn hmatch heval
-  have hctxT' := ctxT_tryRegs (ctxT_termCtx hctx hph data) trs
+  have hctxT' : CtxT f (tryCtx ctx ti data trs) := ctxT_tryRegs (ctxT_termCtx hctx hph data) trs
   have hi : (tryCtx ctx ti data trs).insts[ti]? = some ⟨data, [], [], none⟩ :=
     termCtx_insts_self hph data
   have htr' : tryRegsOf sig lo = some ((tryCtx ctx ti data trs).tryRegs, st1) := htr
