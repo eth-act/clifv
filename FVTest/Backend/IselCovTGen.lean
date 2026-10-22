@@ -274,7 +274,71 @@ def groups {α : Type} (n : Nat) (l : List α) : List (List α) :=
 def chunksPerMod : Nat := 2
 def rulesPerMod : Nat := 10
 
-def renderAll (tab : Tab) (lowerNames branchNames : List String) : List (String × String) := Id.run do
+/-- Rule/family pairs whose single kernel check exceeds the memory budget (rule 2267 on family
+8 has 256 environments, >22G in one `decide`): checked in `envChunk`-sized environment chunks. -/
+def heavy : List (String × Nat) := [("rule_lower_2267", 8)]
+def envChunk : Nat := 32
+
+/-- The helpers of the chunked checks (emitted once per module that has a heavy rule). -/
+def heavyDefs : String := "private theorem all_of_chunks {α : Type} (g : α → Bool) (L : List α) (k n : Nat)
+    (hn : L.length ≤ n * k) (h : ∀ c < n, ((L.drop (c * k)).take k).all g = true) :
+    L.all g = true := by
+  rw [List.all_eq_true]
+  intro x hx
+  obtain ⟨j, hj, rfl⟩ := List.getElem_of_mem hx
+  have hk : 0 < k := by
+    rcases Nat.eq_zero_or_pos k with h0 | h0
+    · rw [h0, Nat.mul_zero] at hn; omega
+    · exact h0
+  have hc : j / k < n := Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; omega)
+  have hjk := Nat.div_add_mod' j k
+  have hm := Nat.mod_lt j hk
+  have hl : j % k < ((L.drop (j / k * k)).take k).length := by
+    simp only [List.length_take, List.length_drop]; omega
+  have := List.all_eq_true.1 (h _ hc) _ (List.getElem_mem hl)
+  simp only [List.getElem_take, List.getElem_drop] at this
+  simp only [hjk] at this
+  exact this
+
+/-- The rule test of one environment (`aRule`'s body). -/
+private def envOkT (out : AT) (r : Rule) (env : List AT) : Bool :=
+  match aExpr program covTabT actor apre aOracle r.rhs env with
+  | some a => AT.le a out
+  | none => false
+
+/-- `aRule` from chunk-wise checks of its environments. -/
+private theorem aRule_of_chunks {ins : List AT} {out : AT} {r : Rule} (k n : Nat)
+    (hs : (aRuleEnvs program covTabT aext actor apre aOracle ins r).isSome = true)
+    (hn : ((aRuleEnvs program covTabT aext actor apre aOracle ins r).getD []).length ≤ n * k)
+    (h : ∀ c < n, ((((aRuleEnvs program covTabT aext actor apre aOracle ins r).getD []).drop
+      (c * k)).take k).all (envOkT out r) = true) :
+    aRule program covTabT aext actor apre aOracle ins out r = true := by
+  unfold aRule
+  cases he : aRuleEnvs program covTabT aext actor apre aOracle ins r with
+  | none => rw [he] at hs; cases hs
+  | some envs =>
+    rw [he] at hn h
+    exact all_of_chunks _ envs k n hn h
+
+"
+
+/-- The chunked check of heavy rule `r` on family `i` with `nc` environment chunks. -/
+def heavyThm (r : String) (i nc : Nat) : String := Id.run do
+  let envs := s!"(aRuleEnvs program covTabT aext actor apre aOracle [.inst [{i}]] {r})"
+  let k := envChunk
+  let mut s := s!"theorem stmtOkT_{r}_f{i}_s : {envs}.isSome = true := by decide +kernel\n\n"
+  s := s ++ s!"theorem stmtOkT_{r}_f{i}_n : ({envs}.getD []).length ≤ {nc} * {k} := by decide +kernel\n\n"
+  for c in List.range nc do
+    s := s ++ s!"theorem stmtOkT_{r}_f{i}_c{c} : ((({envs}.getD []).drop ({c} * {k})).take {k}).all\n    (envOkT (stmtOut {r} {i}) {r}) = true := by decide +kernel\n\n"
+  s := s ++ s!"theorem stmtOkT_{r}_rest : (List.range famTab.length).all (fun i => i == {i} ||\n    aRule program covTabT aext actor apre aOracle [.inst [i]] (stmtOut {r} i) {r}) = true := by\n  decide +kernel\n\n"
+  s := s ++ s!"theorem stmtOkT_{r} : stmtOkT {r} = true := by\n  unfold stmtOkT\n  rw [List.all_eq_true]\n  intro i hi\n  by_cases hi' : i = {i}\n  · subst hi'\n    refine aRule_of_chunks {k} {nc} stmtOkT_{r}_f{i}_s stmtOkT_{r}_f{i}_n ?_\n    intro c hc\n    match c, hc with\n"
+  for c in List.range nc do
+    s := s ++ s!"    | {c}, _ => exact stmtOkT_{r}_f{i}_c{c}\n"
+  s := s ++ s!"    | _ + {nc}, hc => exact absurd hc (by omega)\n  · have := List.all_eq_true.1 stmtOkT_{r}_rest i hi\n    simpa [hi'] using this\n\n"
+  s
+
+def renderAll (tab : Tab) (lowerNames branchNames : List String) (heavyN : List (String × Nat × Nat)) :
+    List (String × String) := Id.run do
   let n := (tab.length + chunk - 1) / chunk
   let mut files : List (String × String) := []
   -- the table
@@ -304,8 +368,11 @@ The leaf-wise kernel checks are in `IselCovTTabC*` (entries), `IselCovTTabS*` (t
   let sgs := groups rulesPerMod lowerNames
   for (rs, gi) in sgs.zipIdx do
     let mut c := preamble s!"rules of `lower`, group {gi}" "Each rule of `lower` checks on every family (`stmtOkT`)." "import FV.Backend.Proof.IselCovTTabData\n"
+    if rs.any (fun r => heavyN.any (·.1 == r)) then c := c ++ heavyDefs
     for r in rs do
-      c := c ++ s!"theorem stmtOkT_{r} : stmtOkT {r} = true := by decide +kernel\n\n"
+      match heavyN.find? (·.1 == r) with
+      | some (_, i, nc) => c := c ++ heavyThm r i nc
+      | none => c := c ++ s!"theorem stmtOkT_{r} : stmtOkT {r} = true := by decide +kernel\n\n"
     files := files ++ [(s!"IselCovTTabS{gi}.lean", c ++ "end Backend.Proof.CovT\n")]
   -- branch rules and terminators
   let mut bc := preamble "rules of `lower_branch`, terminators" "Each rule of `lower_branch` checks on every family (`branchOkT`); the terminator rules of `lower` (964 `return`, 1037 `trap`) check on `c0`." "import FV.Backend.Proof.IselCovTTabData\n"
@@ -393,6 +460,11 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"lower rules {ln.length} branch rules {bn.length}"
   if ln.length != stmtRules.length || bn.length != branchRules.length then
     IO.eprintln "rule name lists do not match the program"; return 1
-  for (name, content) in renderAll tab ln bn do
+  let heavyN := heavy.filterMap fun (name, i) => ((ln.zip stmtRules).find? (·.1 == name)).map
+    fun (_, r) =>
+      let ne := ((aRuleEnvs program tab aext actor apre aOracle [.inst [i]] r).getD []).length
+      (name, i, (ne + envChunk - 1) / envChunk)
+  IO.println s!"heavy {heavyN}"
+  for (name, content) in renderAll tab ln bn heavyN do
     IO.FS.writeFile (path ++ "/" ++ name) content
   return (if allOk && term && br then 0 else 1)
