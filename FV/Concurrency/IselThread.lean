@@ -139,6 +139,65 @@ decreasing_by
     · subst h0; simp only [List.drop_zero]; exact Prod.Lex.right _ h
     · exact Prod.Lex.left _ _ (by simp; omega)
 
+/-- **`SimResP` with the return covered** (T2j follow-up): as `SimResP`, and a CLIF thread that has
+returned realizes the whole VCode trace (a return's code has no events). -/
+def SimResR (env : Clif.Env) (p : Clif.Program) (vc : VCode) (sem : ISem CV ArmState)
+    (s : Clif.State) (tr : List (List Ev)) (cT : VConf CV ArmState) : Prop :=
+  ∃ n trS t, n ≤ tr.length ∧ CRun env p (.run s) trS t ∧ Corr Maps trS (conv (tr.take n)) ∧
+    ((n = tr.length ∧ ∃ c', VStep vc sem cT c') ∨ Stop env p t) ∧
+    ∀ v, t = .ret v → n = tr.length
+
+/-- `SegResP` with the return covered (`SimResR` in place of `SimResP`). -/
+def SegResR (env : Clif.Env) (p : Clif.Program) (vc : VCode) (sem : ISem CV ArmState)
+    (ev : MInst → List CV → ArmState → List Ev)
+    (Mt : Clif.State → VState CV ArmState → Prop) (s : Clif.State) (tr : List (List Ev))
+    (cT : VConf CV ArmState) : Prop :=
+  SimResR env p vc sem s tr cT ∨
+  ∃ n trS s' vs', n ≤ tr.length ∧ CRun env p (.run s) trS (.run s') ∧
+    Corr Maps trS (conv (tr.take n)) ∧ Mt s' vs' ∧ VTRun vc sem ev (.run vs') (tr.drop n) cT ∧
+    (0 < n ∨ s'.frame.body.length < s.frame.body.length)
+
+theorem SimResR.simResP {env : Clif.Env} {p : Clif.Program} {vc : VCode} {sem : ISem CV ArmState}
+    {s : Clif.State} {tr : List (List Ev)} {cT : VConf CV ArmState}
+    (h : SimResR env p vc sem s tr cT) : SimResP env p vc sem s tr cT := by
+  obtain ⟨n, trS, t, hn, hrun, hcorr, hend, -⟩ := h
+  exact ⟨n, trS, t, hn, hrun, hcorr, hend⟩
+
+theorem SegResR.segResP {env : Clif.Env} {p : Clif.Program} {vc : VCode} {sem : ISem CV ArmState}
+    {ev : MInst → List CV → ArmState → List Ev} {Mt : Clif.State → VState CV ArmState → Prop}
+    {s : Clif.State} {tr : List (List Ev)} {cT : VConf CV ArmState}
+    (h : SegResR env p vc sem ev Mt s tr cT) : SegResP env p vc sem ev Mt s tr cT :=
+  h.imp_left SimResR.simResP
+
+/-- **Segment results with the return covered compose** (`simResP_of_seg`). -/
+theorem simResR_of_seg {env : Clif.Env} {p : Clif.Program} {vc : VCode}
+    {sem : ISem CV ArmState} {ev : MInst → List CV → ArmState → List Ev}
+    {Mt : Clif.State → VState CV ArmState → Prop}
+    (hseg : ∀ s c tr cT, Mt s c → VTRun vc sem ev (.run c) tr cT →
+      SegResR env p vc sem ev Mt s tr cT)
+    (s : Clif.State) (c : VState CV ArmState) (tr : List (List Ev)) (cT : VConf CV ArmState)
+    (hm : Mt s c) (hr : VTRun vc sem ev (.run c) tr cT) : SimResR env p vc sem s tr cT := by
+  rcases hseg s c tr cT hm hr with h | ⟨n, trS, s', vs', hn, hrun, hcorr, hm', hr', hprog⟩
+  · exact h
+  · obtain ⟨n', trS', t', hn', hrun', hcorr', hend, hret⟩ :=
+      simResR_of_seg hseg s' vs' (tr.drop n) cT hm' hr'
+    refine ⟨n + n', trS ++ trS', t', ?_, hrun.append hrun', ?_, ?_, fun v hv => ?_⟩
+    · simp at hn'; omega
+    · rw [List.take_add, conv_append]
+      exact hcorr.append hcorr'
+    · rcases hend with ⟨h, hv⟩ | h
+      · left; simp at h; exact ⟨by omega, hv⟩
+      · exact .inr h
+    · have := hret v hv
+      simp at this; omega
+termination_by (tr.length, s.frame.body.length)
+decreasing_by
+  rcases hprog with h | h
+  · exact Prod.Lex.left _ _ (by simp; omega)
+  · by_cases h0 : n = 0
+    · subst h0; simp only [List.drop_zero]; exact Prod.Lex.right _ h
+    · exact Prod.Lex.left _ _ (by simp; omega)
+
 /-! ## Statements and terminators without events -/
 
 theorem corr_nil_tgts {trT : List (List Ev)} (h : ∀ e ∈ trT, e = []) :
@@ -211,14 +270,15 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {MR : MemRelT} {env : Clif.Env}
   {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
 
-/-- **The segment of a pure statement**: no events on either side (with progress, `SegResP`). -/
-theorem pure_segP (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+/-- **The segment of a pure statement**: no events on either side (with progress and the return
+covered, `SegResR`). -/
+theorem pure_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     (hchk : threadCheckBl f bl = true) {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : ArmState}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
     {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
     (hp : pureInst stm.inst = true) {tr : List (List Ev)} {cT : VConf CV ArmState}
     (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k, ρ, w⟩) tr cT) :
-    SegResP env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT := by
+    SegResR env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT := by
   have hind : ∀ sig callee args, stm.inst = .callIndirect sig callee args → ∀ cv,
       s.frame.get callee = .ok cv → ∀ g ∈ p.funcs, s.mem.symbols g.name ≠ some cv.toNat :=
     fun sig callee args h => by rw [h] at hp; simp [pureInst] at hp
@@ -258,15 +318,25 @@ theorem pure_segP (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
       · rw [body_of_step_pure hbody hp hs, hbody]; simp
     · rcases vstep_of_vtrun hr hpe hstar.toN (by omega) with hv | ⟨he, -⟩
       · exact .inl ⟨tr.length, [], .run s, Nat.le_refl _, .nil,
-          (by rw [List.take_length]; exact corr_nil_tgts hpe), .inl ⟨rfl, hv⟩⟩
+          (by rw [List.take_length]; exact corr_nil_tgts hpe), .inl ⟨rfl, hv⟩, fun _ h => by cases h⟩
       · omega
   | done v0 m0 => exact absurd hs (stmt_not_done hbody hext hind)
   | trapped c =>
-    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_)⟩
+    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_), fun _ h => by cases h⟩
     refine done_of_step (evShape_pure hbody hp) (by rw [hs]; rfl)
   | stuck m =>
-    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_)⟩
+    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_), fun _ h => by cases h⟩
     refine done_of_step (evShape_pure hbody hp) (by rw [hs]; rfl)
+
+/-- **The segment of a pure statement**: no events on either side (with progress, `SegResP`). -/
+theorem pure_segP (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBl f bl = true) {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩)
+    {stm : Clif.Stmt} {rest : List Clif.Stmt} (hbody : s.frame.body = stm :: rest)
+    (hp : pureInst stm.inst = true) {tr : List (List Ev)} {cT : VConf CV ArmState}
+    (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k, ρ, w⟩) tr cT) :
+    SegResP env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT :=
+  (pure_segR H hchk hm hbody hp hr).segResP
 
 /-- **The segment of a pure statement**: no events on either side. -/
 theorem pure_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
@@ -279,13 +349,14 @@ theorem pure_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
   (pure_segP H hchk hm hbody hp hr).segRes
 
 /-- **The segment of a terminator**: a branch reaches the successor's match without events; a
-return or a trap ends the CLIF thread (with progress, `SegResP`). -/
-theorem term_segP (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+return or a trap ends the CLIF thread (with progress and the return covered, `SegResR`: a return's
+code has no events, `term_retN`). -/
+theorem term_segR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     (hchk : threadCheckBl f bl = true) {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : ArmState}
     (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
     {tr : List (List Ev)} {cT : VConf CV ArmState}
     (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k, ρ, w⟩) tr cT) :
-    SegResP env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT := by
+    SegResR env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT := by
   obtain ⟨hcall, hfunc, hslots, -, B, j, hB, hterm, -, -, -, -, -⟩ := id hm
   obtain ⟨L, hL⟩ := H.blow hB
   have htk := termOk_of hchk hB hL
@@ -324,7 +395,7 @@ theorem term_segP (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
       · rw [htr, List.drop_left' hl]; exact h2
     · rcases vstep_of_vtrun hr hpe hstar.toN (by omega) with hv | ⟨he, -⟩
       · exact .inl ⟨tr.length, [], .run s, Nat.le_refl _, .nil,
-          (by rw [List.take_length]; exact corr_nil_tgts hpe), .inl ⟨rfl, hv⟩⟩
+          (by rw [List.take_length]; exact corr_nil_tgts hpe), .inl ⟨rfl, hv⟩, fun _ h => by cases h⟩
       · omega
   | done vals cm =>
     have hc : CStep env p (.run s) [] (.ret vals) := by
@@ -355,15 +426,33 @@ theorem term_segP (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
         | tryCall _ _ _ => rw [hT] at hnt'; cases hnt'
         | tryCallIndirect _ _ _ => rw [hT] at hnt'; cases hnt'
       simp [res, hcm]
-    refine .inl ⟨0, [[]], .ret vals, Nat.zero_le _, .cons hc .nil, .src .nil, .inr (.inl ?_)⟩
+    obtain ⟨n, us, w', hstar⟩ := term_retN H hm hbody hnt' htk' hs
+    have hnil : ∀ e ∈ tr, e = [] := by
+      rcases vtrun_follow hstar hr with ⟨pre, rest', htr, -, hpe, -, h2⟩ | ⟨-, hpe⟩
+      · cases h2 with
+        | nil => rw [htr, List.append_nil]; exact hpe
+        | cons h _ => cases h
+      · exact hpe
+    refine .inl ⟨tr.length, [[]], .ret vals, Nat.le_refl _, .cons hc .nil,
+      by rw [List.take_length]; exact corr_src_tgts hnil, .inr (.inl ?_), fun _ _ => rfl⟩
     rintro ⟨evs, t', h⟩
     exact h
   | trapped c =>
-    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_)⟩
+    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_), fun _ h => by cases h⟩
     refine done_of_step (evShape_term hbody) (by rw [hs]; rfl)
   | stuck m =>
-    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_)⟩
+    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_), fun _ h => by cases h⟩
     refine done_of_step (evShape_term hbody) (by rw [hs]; rfl)
+
+/-- **The segment of a terminator**: a branch reaches the successor's match without events; a
+return or a trap ends the CLIF thread (with progress, `SegResP`). -/
+theorem term_segP (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBl f bl = true) {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : ArmState}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    {tr : List (List Ev)} {cT : VConf CV ArmState}
+    (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨b, k, ρ, w⟩) tr cT) :
+    SegResP env p vc (csem F fc X) (cEvs F fc) (Match f ctx R gn bl A MR slots) s tr cT :=
+  (term_segR H hchk hm hbody hr).segResP
 
 /-- **The segment of a terminator**: a branch reaches the successor's match without events; a
 return or a trap ends the CLIF thread. -/

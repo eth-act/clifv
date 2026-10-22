@@ -716,6 +716,129 @@ theorem term_matchN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
         rw [hebi] at hins; cases hins
         rfl) hstep2 (.refl _))), by omega, hM⟩
 
+/-- **The return's code runs to the return** (T2j follow-up, `term_matchN`'s `ret` case): from the
+matched configuration of a block whose terminator returns, the terminator's code (no memory
+instruction) runs to the VCode's return configuration. -/
+theorem term_retN (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
+    {s : Clif.State} {b k : Nat} {ρ : Nat → CV} {w : W}
+    (hm : Match f ctx R gn bl A MR slots s ⟨b, k, ρ, w⟩) (hbody : s.frame.body = [])
+    (hnt : s.frame.term.isTry = false)
+    (htk : ∀ L, bl[b]? = some L → ∀ i ∈ L.tst'.emitted.toList, Code.akinds i = [])
+    {vals : List Clif.Val} {cm : Clif.Mem} (hs : Clif.step env p s = .done vals cm) :
+    ∃ (n : Nat) (us : List CV) (w' : W),
+      StarNP (VStep vc sem) (NoMemAt vc) n (.run ⟨b, k, ρ, w⟩) (.ret us w') := by
+  obtain ⟨hcall, hfunc, hslots, hmem, B, j, hB, hterm, hj, hbd, hk, hheld, hcons⟩ := hm
+  simp only at hk hheld hcons hB hmem
+  subst hk
+  have hjn : j = B.body.length := by
+    rw [hbd] at hbody
+    have := List.drop_eq_nil_iff.mp hbody
+    omega
+  subst hjn
+  obtain ⟨L, hL⟩ := H.blow hB
+  obtain ⟨vb, hvb, -, -, htemp, hst0t, hnontry, -, hcode, htne, -, -, hsucc⟩ :=
+    H.shape.blk b B L hB hL
+  have hBnt : B.term.isTry = false := hterm ▸ hnt
+  obtain ⟨htl0, hdata, out, tr, hrunT⟩ := hnontry hBnt
+  have htlen : TargetsLen B.term L.targets := by
+    intro x d tbl hT
+    have hs := hsucc
+    rw [hT] at hs
+    obtain ⟨hlt, -⟩ := hs
+    rw [hlt]
+    simp [dests]
+  have hok := H.terms f ctx (L.start + B.body.length) (abiTerm f B.term) L.data L.targets out
+    L.tst L.tst' tr H.shape.ctxInv (brIdxTyped_abiTerm (H.brIdx B (List.mem_of_getElem? hB)))
+    (targetsLen_abiTerm htlen) (H.shape.tslot b B L hB hL)
+    (fun x r h => Nat.lt_of_lt_of_le (H.shape.valsBelow x r h) hst0t) hdata htemp
+    (by rw [termCall_abiTerm]; exact hrunT)
+  obtain ⟨hargsTA, hnoclobT, -⟩ := H.cert.term b B L hB hL
+  have hargsT : ∀ y ∈ termArgs B.term, y ∈ A b B.body.length :=
+    fun y hy => hargsTA y (termArgs_abiTerm hy)
+  let fr' := restrict s.frame (A b B.body.length)
+  let ρ₀ : Nat → CV := fun n => ρ (gn n)
+  have hvh : ValsHeld fr' ρ₀ := by
+    intro x v hx
+    have hxA : x ∈ A b B.body.length := restrict_regs_isSome (by rw [hx]; rfl)
+    obtain ⟨v', hv', hh⟩ := hheld x hxA
+    rw [restrict_regs_of_mem hxA, hv'] at hx
+    cases hx
+    exact hh
+  have hrun' := hok.run fr' s.mem ρ₀ w
+    (by simp [fr', restrict, hfunc, termCtx, H.shape.ctxInv.func]) hvh (dfgCons_termCtx hcons _ _)
+    (by simpa [fr', restrict, hslots] using hmem)
+  let D : Nat → Prop := fun n => L.tst.nextVreg ≤ n ∧ n < L.tst'.nextVreg
+  have hD : ∀ d, D d → gn d = d := fun d hd => H.shape.temps d (by
+    have : L.tst.nextVreg ≤ d := hd.1; omega)
+  have hdefs : ∀ m ∈ L.tst'.emitted.toList, ∀ d ∈ vdefs m, D d := hok.defs
+  have hAg : Agree gn D ρ₀ ρ := fun _ _ => rfl
+  have huses_of : UsesOk L.tst fr' L.tst'.emitted.toList →
+      ∀ m ∈ L.tst'.emitted.toList, ∀ u ∈ vuseNums m, D u ∨ ¬ D (gn u) := by
+    intro hU m hm u hu
+    rcases hU m hm u hu with h | h
+    · by_cases h' : u < L.tst'.nextVreg
+      · exact .inl ⟨h, h'⟩
+      · right
+        rw [H.shape.temps u (by omega)]
+        intro hd; exact h' hd.2
+    · right; exact hnoclobT u (restrict_regs_isSome h)
+  have hren := seqRun_rename (sem := sem) (ρ₀ := ρ₀) (ρ := ρ) (w := w) H.shape.ren
+    (H.dsem.rename R gn H.shape.ren) hD hdefs
+  obtain ⟨hsegat, -⟩ := tseg_at hcode
+  rw [tseg_eq_none hL htl0] at hsegat htne
+  have hstep : Clif.step env p s = Clif.stepTerm env p s B.term := by
+    rw [Clif.step_term env p s hbody, hterm]
+  rw [hstep] at hs
+  have hP : ∀ c : VConf CV W, InSeg b (pos f R bl b B.body.length)
+      (L.tst'.emitted.toList.map (·.mapRegs R)).length c → NoMemAt vc c := by
+    rintro c ⟨i', hi', ρx, wx, rfl⟩ b2 k2 ρ2 w2 he vb2 ins hb2 hins
+    cases he
+    rw [hvb] at hb2; cases hb2
+    rw [hsegat i' hi'] at hins; cases hins
+    rw [List.getElem_map, SegShape.akinds_mapRegs]
+    exact htk L hL _ (List.getElem_mem _)
+  cases hT : B.term with
+  | ret xs =>
+    rw [hT] at hs hrun' hargsT
+    obtain ⟨hg, -⟩ := (stepTerm_ret (env := env) (p := p) hcall).2.2 vals cm hs
+    have hg' : fr'.getMany xs = .ok vals := by
+      rw [← hg]
+      exact getMany_congr fun y hy => restrict_regs_of_mem (hargsT y hy)
+    obtain ⟨vs, hg''⟩ : ∃ vs, fr'.getMany (xs ++ sretRet f) = .ok (vals ++ vs) :=
+      getMany_append_of (fun y hy => by
+        have hyA : y ∈ A b B.body.length := hargsTA y (by rw [hT]; simp [abiTerm, termArgs, hy])
+        obtain ⟨v', hv', -⟩ := hheld y hyA
+        exact ⟨v', by rw [restrict_regs_of_mem hyA]; exact hv'⟩) hg'
+    obtain ⟨hU, k', us, ops, ρ₁, w₁, outs, w₂, hsr, -⟩ := hrun' _ hg''
+    obtain ⟨ρ₁', hsr', -, -⟩ := (hren (huses_of hU) hAg).2 hsr
+    obtain ⟨hstar, -, hi, hops, hsem, hlen, -⟩ := seqRun_stop_starN hvb hsegat hsr'
+    obtain ⟨hmk, -⟩ := seqRun_stop_mem hsr
+    have hPi : NoMemAt vc (.run ⟨b, pos f R bl b B.body.length + k', ρ₁', w₁⟩ : VConf CV W) := by
+      intro b2 k2 ρ2 w2 he vb2 ins hb2 hins
+      cases he
+      rw [hvb] at hb2; cases hb2
+      rw [hi] at hins; cases hins
+      rw [SegShape.akinds_mapRegs]
+      exact htk L hL _ (List.mem_of_getElem? hmk)
+    exact ⟨_, _, _, (hstar.mono hP).trans (StarNP.step hPi (VStep.step hvb hi hops hsem hlen
+      (VNext.ret rfl)) (.refl _))⟩
+  | jump bc =>
+    rw [hT] at hs
+    exact absurd hs ((stepTerm_branch_ne (s := s) (env := env) (p := p)
+      (by simp [dests] : dests (Clif.Terminator.jump bc) ≠ [])).1 vals cm)
+  | brif c t e =>
+    rw [hT] at hs
+    exact absurd hs ((stepTerm_branch_ne (s := s) (env := env) (p := p)
+      (by simp [dests] : dests (Clif.Terminator.brif c t e) ≠ [])).1 vals cm)
+  | brTable x d tbl =>
+    rw [hT] at hs
+    exact absurd hs ((stepTerm_branch_ne (s := s) (env := env) (p := p)
+      (by simp [dests] : dests (Clif.Terminator.brTable x d tbl) ≠ [])).1 vals cm)
+  | trap c => rw [hT] at hs; simp [Clif.stepTerm] at hs
+  | returnCall fn args => exact absurd hT (H.noTail B (List.mem_of_getElem? hB) fn args)
+  | tryCall _ _ _ => rw [hT] at hBnt; cases hBnt
+  | tryCallIndirect _ _ _ => rw [hT] at hBnt; cases hBnt
+
 end
 
 end Concurrency.IselStep

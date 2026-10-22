@@ -241,6 +241,56 @@ variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg �
   {F : BitVec 64 → Prop} {fc : FnCtx} {X : ExtSem} {MR : MemRelT} {env : Clif.Env}
   {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat} {syms : String → Option Nat}
 
+/-- **Layer 2 from the function's entry, with progress and the return covered** (T2j follow-up):
+as `isel_refines_entryP`; a CLIF thread that has returned (`.ret`) realizes the whole VCode trace
+(the return's code has no events, `IselStep.term_retN`). -/
+theorem isel_refines_entryR (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
+    (hchk : threadCheckBl f bl = true) (hMR : MemRelOk F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree X) (hMem : MemRefines F sb syms (csem F fc X)) (hMRs : MRStable F MR)
+    (hreg : ∀ off, ArgLoc.stack off ∉ locsOf f.sig)
+    {cs : Clif.State} {B0 : Clif.Block} (hB0 : f.blocks[0]? = some B0)
+    (hcall : cs.callers = []) (hfunc : cs.frame.func = f) (hslots : cs.frame.slots = slots)
+    (hbody : cs.frame.body = B0.body) (hterm : cs.frame.term = B0.term) {args : List Clif.Val}
+    (hregs : Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs)
+    (hty : args.map (·.ty) = B0.params.map (·.2))
+    (hsig : args.map (·.ty) = f.sig.params.map (·.ty))
+    {ρ₀ : Nat → CV} {w₀ : Arm.ArmState} (hmr : MR slots cs.mem w₀)
+    (hargs : ArgsAtEntry F f.sig args w₀) {tr : List (List Ev)} {cT : VConf CV ArmState}
+    (hr : VTRun vc (csem F fc X) (cEvs F fc) (.run ⟨0, 0, ρ₀, w₀⟩) tr cT) :
+    ∃ n trS t ψ, n ≤ tr.length ∧ CRun env p (.run cs) trS t ∧
+      Refines Maps (fun _ => False) (StepPair (conv (tr.take n))) trS (conv (tr.take n)) ψ ∧
+      ((n = tr.length ∧ ∃ c', VStep vc (csem F fc X) cT c') ∨ Stop env p t) ∧
+      ∀ v, t = .ret v → n = tr.length := by
+  obtain ⟨vb, ps, ρ₁, ρ₂, w₂, hvb, hvb0, hstep, hseq, hm⟩ :=
+    entry_matchN H (driverSem_csem F fc X) hMem hMRs hB0 hcall hfunc hslots hbody hterm hregs
+      hty hsig hmr hargs
+  rw [entryLoads_nil hreg] at hseq hm
+  simp only [seqRun, Option.some.injEq, SeqEnd.fall.injEq] at hseq
+  obtain ⟨rfl, rfl⟩ := hseq
+  have hsim : SimResR env p vc (csem F fc X) cs tr cT := by
+    cases hr with
+    | nil => exact ⟨0, [], .run cs, Nat.le_refl _, .nil, .nil, .inl ⟨rfl, _, hstep⟩,
+        fun _ h => by cases h⟩
+    | @cons _ c' _ evs tr' hs hr' =>
+      obtain ⟨vb', i, ops, hb', hi, -, hev, -, hst⟩ := IselMemMain.vtstep_evs hs
+      rw [hvb] at hb'; cases hb'
+      rw [hvb0] at hi; cases hi
+      have he : evs = [] := hev.trans (VCodeEvents.cEvs_nil rfl _ _)
+      subst he
+      have e := vstep_det hst hstep
+      subst e
+      obtain ⟨n, trS, t, hn, hrun, hcorr, hend, hret⟩ :=
+        simResR_of_seg (IselRefines.seg_resR H hchk hMR hMRw hX) cs _ tr' cT hm hr'
+      refine ⟨n + 1, trS, t, by simp; omega, hrun, ?_, ?_, fun v hv => by simp [hret v hv]⟩
+      · simpa [conv] using hcorr.tgt
+      · rcases hend with ⟨h, hv⟩ | h
+        · exact .inl ⟨by simp [h], hv⟩
+        · exact .inr h
+  obtain ⟨n, trS, t, hn, hrun, hcorr, hend, hret⟩ := hsim
+  obtain ⟨ψ, href⟩ := refines_of_corr hcorr hrun.length_le
+  exact ⟨n, trS, t, ψ, hn, hrun, href, hend, hret⟩
+
 /-- **Layer 2 from the function's entry, with progress** (T2j): as `isel_refines_entry`; when the
 realized prefix is the whole VCode trace, the trace's last configuration has a `VStep` (the
 VCode run is not stuck there), else the CLIF thread stops. -/
@@ -261,32 +311,8 @@ theorem isel_refines_entryP (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) 
     ∃ n trS t ψ, n ≤ tr.length ∧ CRun env p (.run cs) trS t ∧
       Refines Maps (fun _ => False) (StepPair (conv (tr.take n))) trS (conv (tr.take n)) ψ ∧
       ((n = tr.length ∧ ∃ c', VStep vc (csem F fc X) cT c') ∨ Stop env p t) := by
-  obtain ⟨vb, ps, ρ₁, ρ₂, w₂, hvb, hvb0, hstep, hseq, hm⟩ :=
-    entry_matchN H (driverSem_csem F fc X) hMem hMRs hB0 hcall hfunc hslots hbody hterm hregs
-      hty hsig hmr hargs
-  rw [entryLoads_nil hreg] at hseq hm
-  simp only [seqRun, Option.some.injEq, SeqEnd.fall.injEq] at hseq
-  obtain ⟨rfl, rfl⟩ := hseq
-  have hsim : SimResP env p vc (csem F fc X) cs tr cT := by
-    cases hr with
-    | nil => exact ⟨0, [], .run cs, Nat.le_refl _, .nil, .nil, .inl ⟨rfl, _, hstep⟩⟩
-    | @cons _ c' _ evs tr' hs hr' =>
-      obtain ⟨vb', i, ops, hb', hi, -, hev, -, hst⟩ := IselMemMain.vtstep_evs hs
-      rw [hvb] at hb'; cases hb'
-      rw [hvb0] at hi; cases hi
-      have he : evs = [] := hev.trans (VCodeEvents.cEvs_nil rfl _ _)
-      subst he
-      have e := vstep_det hst hstep
-      subst e
-      obtain ⟨n, trS, t, hn, hrun, hcorr, hend⟩ :=
-        simResP_of_seg (IselRefines.seg_resP H hchk hMR hMRw hX) cs _ tr' cT hm hr'
-      refine ⟨n + 1, trS, t, by simp; omega, hrun, ?_, ?_⟩
-      · simpa [conv] using hcorr.tgt
-      · rcases hend with ⟨h, hv⟩ | h
-        · exact .inl ⟨by simp [h], hv⟩
-        · exact .inr h
-  obtain ⟨n, trS, t, hn, hrun, hcorr, hend⟩ := hsim
-  obtain ⟨ψ, href⟩ := refines_of_corr hcorr hrun.length_le
+  obtain ⟨n, trS, t, ψ, hn, hrun, href, hend, -⟩ := isel_refines_entryR H hchk hMR hMRw hX hMem
+    hMRs hreg hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr
   exact ⟨n, trS, t, ψ, hn, hrun, href, hend⟩
 
 /-- **Layer 2 from the function's entry** (module doc). -/
