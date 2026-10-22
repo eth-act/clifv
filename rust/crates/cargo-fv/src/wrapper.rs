@@ -776,9 +776,11 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
         let mut coverage = None;
         if code == 0 {
             if let Some((_, list)) = &part {
+                let t0 = std::time::Instant::now();
                 match leanlink::patch(&cfg, &output, list, ld_args.as_deref()) {
                     Ok(text) => {
                         eprint!("{text}");
+                        eprint_fv(&format!("{}: lean-link in {} ms", output.display(), t0.elapsed().as_millis()));
                         coverage = leanlink::coverage(&text).map(|c| {
                             if exclude.is_empty() {
                                 c

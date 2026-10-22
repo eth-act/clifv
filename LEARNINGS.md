@@ -72,6 +72,13 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 ### Merge first, verify on main
 - When main moves faster than a full rebuild, a branch that passed its full checks on a recent main and rebases cleanly needs only a targeted build; a continuous main gate runs the full list afterwards and failures are fixed forward. A wrong merge can make main fail to build; it cannot make a false theorem pass, because the kernel checks every proof.
 
+## Compiled checkers (`lean-link`, `link-check`)
+
+### Hash maps behind a lookup parameter, not `List.lookup`/`P.func?` per element
+- **Problem:** `lean-link --verified` took 2 h 26 min on fv-demo with std in the program (28,550 functions, 25,868 data objects; T3, `docs/plans/std.md` §2.2). gdb stack sampling (no `perf` on the machine) showed list scans repeated per element: `P.func?` (a scan of `P`) at every declaration/call site in `progScopeB`, `List.lookup` of the image symbols per (function, function) pair in `indB`, `reachSet` making `|data| + 1` passes over all data objects, a membership test against each unit's `localNames` list per name, `symTable` rebuilt per outside name.
+- **Trick:** keep the checked definitions, add a variant taking the lookup as a function (`progScopeWithB F`, `= progScopeB` at `F = P.func?` by `rfl`), build a `Std.HashMap` once (`funcMap`, `assocMap`) and prove `(funcMap P)[n]? = P.func? n` / `(assocMap l)[n]? = l.lookup n` (foldr of `insert`, `HashMap.getElem?_insert`); the evaluated `inScopeInPar` uses the hash-map variant and `inScopeInPar_eq` stays a `simp` proof. Worklists instead of fixpoint passes; hoist tables out of `filterMap`.
+- **Numbers:** `lean-link` 2 h 26 min → 11 min 55 s (715 s, max RSS 2.3 GB), no statement changed (`FV/E2E/LinkScopeFast.lean`, `FV/Front/Bundle.lean`).
+
 ## From other projects (not yet measured in clifv)
 
 From [Th0rgal/evm.fast-dev](https://github.com/Th0rgal/evm.fast-dev) (`docs/PROOF-PERFORMANCE.md`). All keep ordinary kernel checking and standard axioms. Move an entry up into the sections above once it has been measured here.
