@@ -178,9 +178,10 @@ The proof covers them as follows.
   the `i128` legalisation: `backend_correct_legal{,_env,_wide,_env_wide}_abi`
   (`FV/E2E/SretReturnLegal.lean`; premise `sretStableB g` on the legalised `g`, conclusion
   `ArmRefinesLegalAbi … (sretArg g args')`; witness `SretReturnWitness.swl_legal_abi`, an
-  `(i64 sret, i128)` function legalised by the compiler's pass). The other variants (the linked
-  `_unwind` theorems, the dead-cleanup/direct/opt legalisation copies, `OptX`/`_opt_exe*`) keep
-  the CLIF-values conclusion.
+  `(i64 sret, i128)` function legalised by the compiler's pass); the dead-cleanup copies
+  `backend_correct_legal{,_env}_cleanup_abi` (`FV/E2E/SretReturnLegalCleanup.lean`, witness
+  `swl_legal_cleanup_abi`). The other variants (the linked `_unwind` theorems, the direct/opt
+  legalisation copies, `OptX`/`_opt_exe*`) keep the CLIF-values conclusion.
   *With unwinding* (`agent/AbiS7d-unw`, `FV/E2E/SretReturnUnwind.lean`):
   `E2E.backend_correct_final_unwind_abi` (and `_ex_abi` for `CompiledA`) has
   `backend_correct_final_unwind`'s premises plus `sretStableXB f` and the conclusion
