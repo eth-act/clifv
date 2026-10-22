@@ -431,4 +431,101 @@ theorem ctlIndep_fpUnsc_store (sz : ScalarSize) (hsz : FpSz sz) (imm9 : BitVec 9
   · exact sameCtl_ldstur_store_err hsz imm9 M y h31
   · exact sameCtl_ldstur_store hsz imm9 M y h31
 
+/-! ## Event-free prefixes of lines -/
+
+/-- The events of a line list whose lines' instructions have no memory kind are empty. -/
+theorem linesEvs_insKind_none : ∀ {env : Env} {pre : List Line} (s : ArmState),
+    (∀ ln ∈ pre, ∃ x t', ln = .ins x t' ∧ insnKind x = none) → linesEvs env pre s = []
+  | env, [], _, _ => rfl
+  | env, .ins i t :: pre, s, h => by
+    obtain ⟨x, u, e, hk⟩ := h _ List.mem_cons_self
+    cases e
+    simp only [linesEvs]
+    cases ha : i.toArmInst env with
+    | error _ => rfl
+    | ok ai =>
+      simp only [ha]
+      split
+      · simp only [instEvs_none ha hk, List.nil_append]
+        exact linesEvs_insKind_none _ (fun ln hl => h ln (List.mem_cons_of_mem _ hl))
+      · simp only [instEvs_none ha hk]
+  | env, .label _ :: _, _, h => by obtain ⟨x, t', e, -⟩ := h _ List.mem_cons_self; cases e
+  | env, .word _ _ :: _, _, h => by obtain ⟨x, t', e, -⟩ := h _ List.mem_cons_self; cases e
+
+/-- **An event-free prefix of lines does not touch the memory**: running it over `setMem M s` is
+`setMem M` of running it over `s` (its events are empty, so its footprint is memory-free). -/
+theorem preMem {env : Env} {pre : List Line}
+    (hk : ∀ ln ∈ pre, ∃ x t', ln = .ins x t' ∧ insnKind x = none) (M : Memory) (s : ArmState) :
+    execLines env pre (setMem M s) = (execLines env pre s).map (setMem M) := by
+  have h := ofoot_execLines env pre s
+  rw [linesEvs_insKind_none s hk] at h
+  simpa only [applyW] using h.2 M trivial
+
+open Classical in
+/-- **Receptiveness of a straight-line form with an event-free prefix** (`straightSem_pre`): the
+condition of the step does not depend on the memory (`straightSem_one` with the prefix's
+`preMem`). -/
+theorem straightSem_pre {F : BitVec 64 → Prop} {ctx : FnCtx} {i ic : MInst} {uses : List CV}
+    {w : ArmState} {ops : Array Operand} {pre : List Line} {x : Insn}
+    {t : Option Clif.TrapCode} {a : ArmInst}
+    (hops : i.operands = .ok ops) (hic : i.assign (canonRegs ops) = .ok ic)
+    (hl : ic.lines ctx {} = .ok (pre ++ [.ins x t], {}))
+    (hk : ∀ ln ∈ pre, ∃ x' t', ln = .ins x' t' ∧ insnKind x' = none)
+    (ha : x.toArmInst env0 = .ok a)
+    (ha' : x.toArmInst { env0 with pc := env0.pc + 4 * pre.length } = .ok a)
+    (hc : CtlIndep a) (M : Memory) :
+    straightSem F ctx i uses (setMem M w) =
+      if AccessOk F ctx ic (placeUses ops (canonRegs ops) uses w) ∧
+          (∃ t', execMInst ctx env0 ic (placeUses ops (canonRegs ops) uses w) = some t' ∧
+            Arm.r .ERR t' = .None ∧ t'.program = w.program) then
+        match execMInst ctx env0 ic (setMem M (placeUses ops (canonRegs ops) uses w)) with
+        | some t'' => some (defVals ops (canonRegs ops) t'', t'', Ctl.next)
+        | none => none
+      else none := by
+  unfold straightSem
+  simp only [hops, hic, placeUses_setMem, accessOk_setMem, execMInst, hl]
+  set y : ArmState := placeUses ops (canonRegs ops) uses w with hy
+  rw [execLines_append env0 pre [.ins x t] (setMem M y),
+    execLines_append env0 pre [.ins x t] y, preMem hk M y]
+  cases hp : execLines env0 pre y with
+  | none => simp [hp]
+  | some y1 =>
+    have e1 : execLines { env0 with pc := env0.pc + 4 * pre.length } [.ins x t] (setMem M y1) =
+        if Arm.r .PC (exec_inst a (setMem M y1)) = Arm.r .PC (setMem M y1) + 4#64 then
+          some (exec_inst a (setMem M y1)) else none := by
+      simp only [execLines, ha']
+    have e0 : execLines { env0 with pc := env0.pc + 4 * pre.length } [.ins x t] y1 =
+        if Arm.r .PC (exec_inst a y1) = Arm.r .PC y1 + 4#64 then
+          some (exec_inst a y1) else none := by
+      simp only [execLines, ha']
+    rw [e1, e0, hc M y1 |>.1, r_setMem]
+    simp only [Option.map_some, Option.bind_some]
+    by_cases hP : Arm.r .PC (exec_inst a y1) = Arm.r .PC y1 + 4#64
+    · rw [if_pos hP, hc M y1 |>.2.1, hc M y1 |>.2.2, setMem_program]
+      split
+      · rename_i hC
+        obtain ⟨t', hE, hER, hpr⟩ := hC.2
+        simp only [Option.some.injEq] at hE
+        subst hE
+        rw [if_pos hC.1, if_pos ⟨hER, hpr⟩]
+        rfl
+      · rename_i hC
+        rcases hC with hA | hA
+        · rw [if_neg hA]
+          rfl
+        · have hne : ¬ (Arm.r .ERR (exec_inst a y1) = .None ∧
+              (exec_inst a y1).program = w.program) :=
+            fun h => hA ⟨_, rfl, h.1, h.2⟩
+          by_cases hA2 : AccessOk F ctx ic y
+          · rw [if_pos hA2, if_neg hne]
+            rfl
+          · rw [if_neg hA2]
+            rfl
+    · rw [if_neg hP]
+      by_cases hA2 : AccessOk F ctx ic y
+      · rw [if_pos hA2]
+        rfl
+      · rw [if_neg hA2]
+        rfl
+
 end Concurrency.ArmAllocThread
