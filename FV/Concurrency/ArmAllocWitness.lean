@@ -150,33 +150,37 @@ theorem abi_of {vc : VCode} {rf : RFunc} (hsz : 4 * (act vc rf).fb.words.size �
   spAligned := by rw [spv_s0]; decide
   fits := by show (0x10000#64 : BitVec 64).toNat + _ ≤ _; simp; omega
 
-/-! ## Activations at another stack pointer
+/-! ## Activations at another stack pointer and code address
 
-Threads of a program run on disjoint stacks: `actAt sp` is `act` with `sp` at the entry. -/
+Threads of a program run on disjoint stacks and (their frame sets include their code) disjoint
+code: `actAt sp base` is `act` with `sp` at the entry, its code at `base`. -/
 
 /-- The ABI entry state with `sp` at the entry (as `entry`). -/
 def entryAt (sp : BitVec 64) (fb : FnBin) (base : BitVec 64) : ArmState :=
   setMem (codeMem fb base) (w .PC base (w (.GPR 31#5) sp (w (.GPR 30#5) 0x4000#64
     (set_program ArmState.default (fb.program base)))))
 
-/-- The activation of the compiled `vc`, `rf` entered with `sp` (as `act`). -/
-def actAt (sp : BitVec 64) (vc : VCode) (rf : RFunc) : RL :=
-  { act vc rf with s0 := entryAt sp (act vc rf).fb 0x10000#64 }
+/-- The activation of the compiled `vc`, `rf` entered with `sp`, its code at `base` (as `act`). -/
+def actAt (sp base : BitVec 64) (vc : VCode) (rf : RFunc) : RL :=
+  { act vc rf with base := base, s0 := entryAt sp (act vc rf).fb base }
 
 theorem entryAt_program (sp : BitVec 64) (fb : FnBin) (base : BitVec 64) :
     (entryAt sp fb base).program = fb.program base := by
   simp [entryAt, setMem, set_program, w, write_base_gpr, write_base_pc]
 
-theorem spv_s0At (sp : BitVec 64) (vc : VCode) (rf : RFunc) : spv (actAt sp vc rf).s0 = sp := by
+theorem spv_s0At (sp base : BitVec 64) (vc : VCode) (rf : RFunc) :
+    spv (actAt sp base vc rf).s0 = sp := by
   simp [spv, actAt, entryAt, ArmFoot.r_setMem, Arm.r_of_w_different, Arm.r_of_w_same]
 
-theorem room_ofAt {n : Nat} {sp : BitVec 64} (hn : n ≤ 0x1000) (hsp : n ≤ sp.toNat)
-    (hsp2 : sp.toNat ≤ 0x8000) {a p : BitVec 64} (hp1 : 0x10000 ≤ p.toNat)
-    (hp2 : p.toNat < 0x20000) (hd : (a - p).toNat < 4) :
+theorem room_ofAt {n : Nat} {sp base : BitVec 64} (hn : n ≤ 0x1000) (hsp : n ≤ sp.toNat)
+    (hsp2 : sp.toNat ≤ 0x8000) (hb1 : 0x10000 ≤ base.toNat) (hb2 : base.toNat ≤ 0x100000)
+    {a p : BitVec 64} (hp1 : base.toNat ≤ p.toNat)
+    (hp2 : p.toNat < base.toNat + 0x10000) (hd : (a - p).toNat < 4) :
     n ≤ (a - (sp - BitVec.ofNat 64 n)).toNat := by
   bv_omega
 
-theorem wf_ofAt {sp : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.toNat ≤ 0x8000)
+theorem wf_ofAt {sp base : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.toNat ≤ 0x8000)
+    (hb1 : 0x10000 ≤ base.toNat) (hb2 : base.toNat ≤ 0x100000)
     {vc : VCode} {rf : RFunc} (hc : checkAlloc vc rf = .ok ())
     (ha : (lowerRFunc vc rf).toBool = true)
     (he : (emitFunc 0 (act vc rf).af).toBool = true)
@@ -188,45 +192,47 @@ theorem wf_ofAt {sp : BitVec 64} (hsp1 : 0x1000 ≤ sp.toNat) (hsp2 : sp.toNat �
     (hsz : 4 * (act vc rf).fb.words.size ≤ 0x10000)
     (hps : (blocksLinesE (act vc rf).ctx (act vc rf).af (act vc rf).af.blocks.toList {}).toBool =
       true) :
-    (actAt sp vc rf).Wf where
+    (actAt sp base vc rf).Wf where
   check := allocChecked_of_checkAlloc hc
   alloc := ok_getD ha
-  emit := by rw [show (actAt sp vc rf).fa.k = 0 from hk]; exact ok_getD he
+  emit := by rw [show (actAt sp base vc rf).fa.k = 0 from hk]; exact ok_getD he
   layout := ok_getD hl
   lm := ok_getD hm
   fit := hfit
   stack := by
-    have hsp := spv_s0At sp vc rf
-    have hK : (actAt sp vc rf).K = 0 := rfl
+    have hsp := spv_s0At sp base vc rf
+    have hK : (actAt sp base vc rf).K = 0 := rfl
     refine ⟨?_, fun a ⟨p, hp, hd⟩ => ?_⟩
     · rw [hsp, hK]; show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega
     · rw [hsp, hK]
-      have hp' : List.Mem p (wordsAt 0x10000#64 0 (act vc rf).fb.words.toList) := by
-        have e := entryAt_program sp (act vc rf).fb 0x10000#64
+      have hp' : List.Mem p (wordsAt base 0 (act vc rf).fb.words.toList) := by
+        have e := entryAt_program sp (act vc rf).fb base
         simp only [FnBin.program] at e
         exact e ▸ hp
       obtain ⟨j, hj, he⟩ := wordsAt_addr hp'
       have hjs : j < (act vc rf).fb.words.size := by simpa using hj
-      have hp1 : p.1.toNat = 0x10000 + 4 * j := by
+      have hp1 : p.1.toNat = base.toNat + 4 * j := by
         rw [he]; simp only [Nat.zero_add, BitVec.toNat_add, BitVec.toNat_ofNat]; omega
       exact room_ofAt (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega)
-        (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega) hsp2 (by omega) (by omega) hd
+        (by show (act vc rf).af.frameSize + 16 + 0 ≤ _; omega) hsp2 hb1 hb2 (by omega)
+        (by omega) hd
   psF := ok_snd hps
   prog0 := entryAt_program _ _ _
   gfree := fun _ h => h.elim
 
-theorem abi_ofAt {sp : BitVec 64} (hal : sp.toNat % 16 = 0) {vc : VCode} {rf : RFunc}
+theorem abi_ofAt {sp base : BitVec 64} (hal : sp.toNat % 16 = 0) (hb2 : base.toNat ≤ 0x100000)
+    {vc : VCode} {rf : RFunc}
     (hsz : 4 * (act vc rf).fb.words.size ≤ 0x10000)
     (hcode : ∀ k < (act vc rf).fb.words.size,
-      Arm.read_mem_bytes 4 (0x10000#64 + BitVec.ofNat 64 (4 * k)) (actAt sp vc rf).s0 =
+      Arm.read_mem_bytes 4 (base + BitVec.ofNat 64 (4 * k)) (actAt sp base vc rf).s0 =
         (act vc rf).fb.words[k]!) :
-    AbiCall (actAt sp vc rf).fb (actAt sp vc rf).base 0x4000#64 (actAt sp vc rf).s0 where
+    AbiCall (actAt sp base vc rf).fb (actAt sp base vc rf).base 0x4000#64 (actAt sp base vc rf).s0 where
   program := entryAt_program _ _ _
   code k w hk := by
-    have efb : (actAt sp vc rf).fb = (act vc rf).fb := rfl
+    have efb : (actAt sp base vc rf).fb = (act vc rf).fb := rfl
     rw [efb] at hk
     obtain ⟨hlt, rfl⟩ := Array.getElem?_eq_some_iff.mp hk
-    show Arm.read_mem_bytes 4 (0x10000#64 + _) _ = _
+    show Arm.read_mem_bytes 4 (base + _) _ = _
     rw [hcode k hlt]
     simp [getElem!_def, hlt]
   pc := by simp [actAt, entryAt, act, ArmFoot.r_setMem, Arm.r_of_w_same]
@@ -239,7 +245,7 @@ theorem abi_ofAt {sp : BitVec 64} (hal : sp.toNat % 16 = 0) {vc : VCode} {rf : R
   lr := by simp [xreg, actAt, entryAt, ArmFoot.r_setMem, Arm.r_of_w_different, Arm.r_of_w_same]
   spAligned := by rw [spv_s0At]; exact hal
   fits := by
-    show (0x10000#64 : BitVec 64).toNat + 4 * (act vc rf).fb.words.size ≤ _; simp; omega
+    show base.toNat + 4 * (act vc rf).fb.words.size ≤ _; omega
 
 /-- The register-level relation holds after the prologue of the activation. -/
 theorem q_of {vc : VCode} {rf : RFunc} (hR : (act vc rf).Wf)

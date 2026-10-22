@@ -139,6 +139,124 @@ theorem wf_single (hn : P.n = 1)
 
 end single
 
+/-! ## Several threads -/
+
+/-- The number of steps of the threads before thread `i`. -/
+def offs (P : Traces σ K BVal) (i : Nat) : Nat := ((List.range i).map fun i' => (P.tr i').length).sum
+
+/-- The rank of an event of traces with at most one event per step (threads in order). -/
+def rankM (P : Traces σ K BVal) (locs : List (Nat × Nat)) : PEv → Nat
+  | .init q => q
+  | .thr i j _ => locs.length + offs P i + j
+
+theorem offs_succ (P : Traces σ K BVal) (i : Nat) : offs P (i + 1) = offs P i + (P.tr i).length := by
+  simp [offs, List.range_succ]
+
+theorem offs_mono (P : Traces σ K BVal) {i i' : Nat} (h : i ≤ i') : offs P i ≤ offs P i' := by
+  induction h with
+  | refl => exact Nat.le_refl _
+  | step _ ih => rw [offs_succ]; omega
+
+section multi
+variable {P : Traces σ K BVal} {locs : List (Nat × Nat)}
+
+theorem dir_ne_F_validM
+    (h1 : ∀ i < P.n, ∀ j (h : j < (P.tr i).length), ((P.tr i)[j]).length ≤ 1)
+    {e : PEv} (he : (X0 P locs).dir e ≠ .F) :
+    (∃ q, e = .init q ∧ q < locs.length) ∨
+      ∃ i j, e = .thr i j 0 ∧ i < P.n ∧ j < (P.tr i).length := by
+  cases e with
+  | init q =>
+    left
+    refine ⟨q, rfl, ?_⟩
+    simp only [X0, Traces.exec] at he
+    split at he
+    · assumption
+    · exact absurd rfl he
+  | thr i j k =>
+    right
+    simp only [X0, Traces.exec] at he
+    split at he
+    · rename_i x hx
+      have hi : i < P.n := by
+        refine Classical.byContradiction fun hi => ?_
+        rw [ThreadRefine.evAt_thr_ge hi] at hx; cases hx
+      rw [ThreadRefine.evAt_thr_lt hi] at hx
+      obtain ⟨hj, hk⟩ := evAt_isSome (show (evAt (P.tr i) (j, k)).isSome by rw [hx]; rfl)
+      have := h1 i hi j hj
+      exact ⟨i, j, by rw [show k = 0 by omega], hi, hj⟩
+    · exact absurd rfl he
+
+theorem rank_ltM (h1 : ∀ i < P.n, ∀ j (h : j < (P.tr i).length), ((P.tr i)[j]).length ≤ 1)
+    {a b : PEv} (ha : (X0 P locs).dir a ≠ .F) (hb : (X0 P locs).dir b ≠ .F) (h : PEvLt a b) :
+    rankM P locs a < rankM P locs b := by
+  rcases dir_ne_F_validM h1 ha with ⟨q, rfl, hq⟩ | ⟨i, j, rfl, hi, hj⟩ <;>
+  rcases dir_ne_F_validM h1 hb with ⟨q', rfl, hq'⟩ | ⟨i', j', rfl, hi', hj'⟩
+  · simp only [PEvLt, rankM] at h ⊢; omega
+  · simp only [rankM]; omega
+  · simp [PEvLt] at h
+  · simp only [PEvLt, rankM] at h ⊢
+    rcases h with h | ⟨rfl, h | ⟨rfl, h⟩⟩
+    · have := offs_mono P (show i + 1 ≤ i' by omega)
+      rw [offs_succ] at this
+      omega
+    · omega
+    · omega
+
+/-- **Traces with reads, several threads**: when every step has at most one event and every
+read has an earlier write of its location (in `PEvLt` order: the initial writes, then thread
+`0`, thread `1`, …), reads from the `PEvLt`-latest earlier write (`latestW`, across threads) and
+coherence in `PEvLt` order (`coL`) make a well-formed execution. -/
+theorem wf_multi (h1 : ∀ i < P.n, ∀ j (h : j < (P.tr i).length), ((P.tr i)[j]).length ≤ 1)
+    (hinit : ∀ r, (X0 P locs).dir r = .R →
+      ∃ w, (X0 P locs).dir w = .W ∧ (X0 P locs).loc w = (X0 P locs).loc r ∧ PEvLt w r) :
+    (P.exec locs (latestW P locs) (coL P locs) (fun _ _ => False)).Wf where
+  po_irrefl a := PEv.po_irrefl a
+  po_trans _ _ _ := PEv.po_trans
+  po_tid _ _ := PEv.po_tid
+  po_total _ _ := PEv.po_total
+  rf_dir _ _ h := ⟨h.2.1, h.1⟩
+  rf_loc _ _ h := h.2.2.1
+  rf_func a a' b h h' := by
+    refine Classical.byContradiction fun hne => ?_
+    rcases pevLt_total hne with hl | hl
+    · exact h.2.2.2.2 a' h'.2.1 h'.2.2.1 hl h'.2.2.2.1
+    · exact h'.2.2.2.2 a h.2.1 h.2.2.1 hl h.2.2.2.1
+  rf_total b hb := by
+    obtain ⟨w, hw, hl, hlt⟩ := hinit b hb
+    have hb' : (X0 P locs).dir b = .R := hb
+    have hbF : (X0 P locs).dir b ≠ .F := by rw [hb']; decide
+    suffices H : ∀ d w, rankM P locs b - rankM P locs w = d → (X0 P locs).dir w = .W →
+        (X0 P locs).loc w = (X0 P locs).loc b → PEvLt w b → ∃ a, latestW P locs a b from
+      H _ w rfl hw hl hlt
+    intro d
+    induction d using Nat.strongRecOn with
+    | ind d ih =>
+      intro w hd hw hl hlt
+      by_cases hmax : ∃ w', (X0 P locs).dir w' = .W ∧ (X0 P locs).loc w' = (X0 P locs).loc b ∧
+          PEvLt w w' ∧ PEvLt w' b
+      case neg => exact ⟨w, hb, hw, hl, hlt, fun w' a1 a2 a3 a4 => hmax ⟨w', a1, a2, a3, a4⟩⟩
+      · obtain ⟨w', hw', hl', h1', h2'⟩ := hmax
+        have hwF : (X0 P locs).dir w ≠ .F := by rw [hw]; decide
+        have hw'F : (X0 P locs).dir w' ≠ .F := by rw [hw']; decide
+        have r1 := rank_ltM h1 hwF hw'F h1'
+        have r2 := rank_ltM h1 hw'F hbF h2'
+        exact ih _ (by omega) w' rfl hw' hl' h2'
+  co_dir _ _ h := ⟨h.1, h.2.1⟩
+  co_loc _ _ h := h.2.2.1
+  co_irrefl a h := pevLt_irrefl a h.2.2.2
+  co_trans _ _ _ h1 h2 := ⟨h1.1, h2.2.1, h1.2.2.1.trans h2.2.2.1, pevLt_trans h1.2.2.2 h2.2.2.2⟩
+  co_total a b ha hb hl hne := by
+    rcases pevLt_total hne with h | h
+    · exact .inl ⟨ha, hb, hl, h⟩
+    · exact .inr ⟨hb, ha, hl.symm, h⟩
+  rmw_dir _ _ h := h.elim
+  rmw_loc _ _ h := h.elim
+  rmw_po _ _ h := h.elim
+  rmw_imm _ _ _ h := h.elim
+
+end multi
+
 /-! ## Witness: a one-thread trace that reads an initial location -/
 
 /-- One thread, one step reading the 8 bytes at `5`. -/
