@@ -8,7 +8,9 @@ import FV.E2E.SrcScopeDefs
 import FV.Front.Read
 import FV.E2E.LinkScopeInputDefs
 import FV.Link.Ld.Spec
-import FV.Link.ExeLdIn
+import FV.Link.ReachCheck
+import FV.Link.Ld.SpecTotal
+import FV.Link.Ld.RelsFast
 import FVTest.Link.LdArgs
 import FV.Link.ExeUCompile
 import FV.Link.SemanticCompileDefs
@@ -199,7 +201,7 @@ compiler on `S0`, before the layout): resolution and `--gc-sections`, `layRefsB`
 (`Link.DeadCleanup.ldSpec`), decided on the inputs without linking; and whether that link spec's
 addresses are `S0`'s (`LinkSpec.atSyms`), so that it is the spec compiled, `SC` (`ldSpec_self`)
 and the executable compiled is the theorem's (`relsInB` by `relsInFastB`, `reachOkB` by
-`reachOkPar`: equal, `relsInFastB_eq`, `reachOkPar_eq`). On failure, the failing conditions; on
+`reachOkMap`: equal, `relsInFastB_eq`, `reachOkMap_eq`). On failure, the failing conditions; on
 success, each condition's time. -/
 def ldInCheck (S0 SC : LinkSpec) (f : String) : IO (Except String String) := do
   let args := ((← IO.FS.readFile f).splitOn "\n").filter (!·.isEmpty)
@@ -218,11 +220,11 @@ def ldInCheck (S0 SC : LinkSpec) (f : String) : IO (Except String String) := do
         let same ← IO.lazyPure fun _ => decide (S1.R = S0.R) && decide (S1.outside = S0.outside)
         -- `SC` is `placed S0` (`Link.DeadCleanup.placedPar_eq`), so with `S0`'s own addresses `ldSpec S0 o st g = SC`
         -- (`Link.DeadCleanup.ldSpec_self`): the premises are decided on the spec compiled
-        let P := if same then SC else Link.DeadCleanup.ldSpec S0 o st g
+        let P := if same then SC else Link.DeadCleanup.placedPar S1
         let checks : List (String × (Unit → Bool)) := [("layRefsB", fun _ => Link.Ld.layRefsB o st g),
           ("relsInB", fun _ => Link.Ld.relsInFastB o st g), ("fitsB", fun _ => Link.Ld.fitsB o st g),
           ("specPreB", fun _ => Link.Ld.specPreB P o st g), ("InScopeIn", fun _ => inScopeInPar P.input0),
-          ("layoutOkB", fun _ => P.layoutOkB), ("reachOkB", fun _ => P.reachOkPar),
+          ("layoutOkB", fun _ => P.layoutOkB), ("reachOkB", fun _ => P.reachOkMap),
           ("atSyms (the compiled spec's addresses)", fun _ => same)]
         let mut fails : List String := []
         let mut times : List String := [s!"resolve, gc, atSyms {(← IO.monoMsNow) - t0} ms"]
