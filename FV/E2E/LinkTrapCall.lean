@@ -509,12 +509,22 @@ def ThmT (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
     L.TrapsD M g cs → Clif.runLoop (L.envR M g) L.P.bare fuel cs = .trapped tc →
     ∀ G ra s, L.MachEntry κ M g F G ra s w₀ → L.TrapIn M g s tc
 
+/-- `ThmT` for any run premise `D` of the activations (`ThmT κ M` is `ThmTG L.TrapsD κ M`;
+`FV/E2E/LinkTrapCallT.lean` instantiates it with the premise allowing `try_call` callee traps). -/
+def ThmTG (D : Nat → Clif.Function → Clif.State → Prop) (κ : Nat → Clif.Function → Nat)
+    (M : Nat) : Prop :=
+  ∀ g ∈ L.P.funcs, ∀ (F : BitVec 64 → Prop) (vals : List Clif.Val) (cs : Clif.State)
+    (w₀ : Arm.ArmState) (fuel : Nat) (tc : Clif.TrapCode), L.WorldEntry κ M g F vals cs w₀ →
+    D M g cs → Clif.runLoop (L.envR M g) L.P.bare fuel cs = .trapped tc →
+    ∀ G ra s, L.MachEntry κ M g F G ra s w₀ → L.TrapIn M g s tc
+
 /-- **A trapping call of a function `h` of `P`** at depth `M` (its callee run at depth `M`
-traps, its activation satisfies the run premise one level down) from a world `w` with room for
+traps, its activation satisfies the run premise `D` one level down) from a world `w` with room for
 the callee's stack: from every caller state compatible with `w` (`CallerOk`), the callee's
 activation has the trap observable one level down (the trap counterpart of `progCall`; each
 caller state is entered with its own body-entry world, no non-interference needed). -/
-theorem progCallT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.ThmT κ (M - 1))
+theorem progCallTG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Clif.State → Prop}
+    {M : Nat} (hM : 0 < M) (ih : L.ThmTG D κ (M - 1))
     {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
     (hcal : ∃ g ∈ L.P.funcs, L.Callee g h) {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
     {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
@@ -525,7 +535,7 @@ theorem progCallT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm
     (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
     (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
     (hinit : Clif.initState L.P n vals cm = .ok cs) (hrun : L.crun M cs = .trapped tc)
-    (hTD : L.TrapsD (M - 1) h cs) :
+    (hTD : D (M - 1) h cs) :
     ∀ t, L.CallerOk F h uses w t → L.TrapIn (M - 1) h (enterAt (L.A h) t) tc := by
   intro t ht
   obtain ⟨hh, hname⟩ := Clif.Program.func?_some hpf
@@ -741,6 +751,23 @@ theorem progCallT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.Thm
     · rw [hspt]; exact ha.2
   exact ih h hh Fh vals cs w₀ m tc hWE hTD hm G (Arm.r .PC t + 4) (enterAt (L.A h) t) hME
 
+/-- `progCallTG` for the run premise `TrapsD`. -/
+theorem progCallT (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (hM : 0 < M) (ih : L.ThmT κ (M - 1))
+    {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
+    (hcal : ∃ g ∈ L.P.funcs, L.Callee g h) {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
+    {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
+    (hal : (spv w).toNat % 16 = 0)
+    (hroom : frameDrop (L.A h).af + κ (M - 1) h ≤ (spv w).toNat)
+    (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ (M - 1) h) (spv w) a → F a ∧ ¬ L.Img a)
+    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State} {tc : Clif.TrapCode}
+    (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
+    (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
+    (hinit : Clif.initState L.P n vals cm = .ok cs) (hrun : L.crun M cs = .trapped tc)
+    (hTD : L.TrapsD (M - 1) h cs) :
+    ∀ t, L.CallerOk F h uses w t → L.TrapIn (M - 1) h (enterAt (L.A h) t) tc :=
+  L.progCallTG (D := L.TrapsD) hL hM ih hpf hcal himgF herr hal hroom hdead hmr hargs hsav hpl
+    hinit hrun hTD
+
 theorem linkInitState_ne_trap (P : Clif.Program) (n : String) (vals : List Clif.Val)
     (mem : Clif.Mem) (c : Clif.TrapCode) : Clif.initState P n vals mem ≠ .trap c := by
   simp only [Clif.initState]
@@ -754,8 +781,34 @@ theorem linkInitState_ne_trap (P : Clif.Program) (n : String) (vals : List Clif.
     | stuck m => simp
 
 /-- **`progX` of a trapping callee is undefined**: when the callee run at depth `M` from an
-entry related to the world `w` traps and its activation satisfies the run premise one level down,
-the linked machine's call from the canonical state does not return (`progCallT`, `pcall_junk`). -/
+entry related to the world `w` traps and its activation satisfies the run premise `D` one level
+down, the linked machine's call from the canonical state does not return (`progCallTG`,
+`pcall_junk`). -/
+theorem progX_noneG (hL : L.Ok) [hR : L.CrunOk] {D : Nat → Clif.Function → Clif.State → Prop}
+    {M : Nat} (ih : 0 < M → L.ThmTG D κ (M - 1))
+    {h : Clif.Function} (hh : h ∈ L.P.funcs) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
+    {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {sl : List (Clif.SlotId × Nat)}
+    {slotOff out : Nat} {g : Clif.Function} {c : BitVec 64} {cm : Clif.Mem} {w : Arm.ArmState}
+    {args : List CV} {vals : List Clif.Val} {cs : Clif.State} {tc : Clif.TrapCode}
+    (hargs : ArgsAt h.sig vals args w) (hsav : StackArgsAvoid F h.sig vals w)
+    (hmr : RelW ⟨F, L.syms, slotOff, out⟩ g c sl cm w) (hpl : L.NeedSlots → L.PlaceAt cm c)
+    (hinit : Clif.initState L.P h.name vals cm = .ok cs) (hret : L.crun M cs = .trapped tc)
+    (hTD : 0 < M → D (M - 1) h cs) :
+    L.progX κ M F h args w = none := by
+  have hpf := func?_of_mem hL.names hh
+  unfold progX
+  rw [if_neg]
+  rintro ⟨⟨hM, herrw, halw, hroom, hdead, -⟩, herr'⟩
+  obtain ⟨⟨hmemR0, -, -⟩, hsp, -⟩ := hmr
+  have hT := L.progCallTG hL hM (ih hM) hpf hcal himgF herrw halw hroom hdead hmemR0 hargs hsav
+    (fun hN => by rw [hsp]; exact hpl hN) hinit hret (hTD hM) _
+    (L.callerOk_canon hL hh himgF args w)
+  obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
+  rw [show L.pcall (M' + 1) h (L.canon h args w) = junkAt (L.canon h args w) from
+    L.pcall_junk hL hh hT (L.callerOk_canon hL hh himgF args w).ra] at herr'
+  exact junkAt_err _ herr'
+
+/-- `progX_noneG` for the run premise `TrapsD`. -/
 theorem progX_none (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (ih : 0 < M → L.ThmT κ (M - 1))
     {h : Clif.Function} (hh : h ∈ L.P.funcs) (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {sl : List (Clif.SlotId × Nat)}
@@ -765,19 +818,8 @@ theorem progX_none (hL : L.Ok) [hR : L.CrunOk] {M : Nat} (ih : 0 < M → L.ThmT 
     (hmr : RelW ⟨F, L.syms, slotOff, out⟩ g c sl cm w) (hpl : L.NeedSlots → L.PlaceAt cm c)
     (hinit : Clif.initState L.P h.name vals cm = .ok cs) (hret : L.crun M cs = .trapped tc)
     (hTD : 0 < M → L.TrapsD (M - 1) h cs) :
-    L.progX κ M F h args w = none := by
-  have hpf := func?_of_mem hL.names hh
-  unfold progX
-  rw [if_neg]
-  rintro ⟨⟨hM, herrw, halw, hroom, hdead, -⟩, herr'⟩
-  obtain ⟨⟨hmemR0, -, -⟩, hsp, -⟩ := hmr
-  have hT := L.progCallT hL hM (ih hM) hpf hcal himgF herrw halw hroom hdead hmemR0 hargs hsav
-    (fun hN => by rw [hsp]; exact hpl hN) hinit hret (hTD hM) _
-    (L.callerOk_canon hL hh himgF args w)
-  obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
-  rw [show L.pcall (M' + 1) h (L.canon h args w) = junkAt (L.canon h args w) from
-    L.pcall_junk hL hh hT (L.callerOk_canon hL hh himgF args w).ra] at herr'
-  exact junkAt_err _ herr'
+    L.progX κ M F h args w = none :=
+  L.progX_noneG (D := L.TrapsD) hL ih hh hcal himgF hargs hsav hmr hpl hinit hret hTD
 
 /-- The stack-passed arguments of a call of a function `h` of `P` that `g` declares are in `g`'s
 outgoing area, outside the world (`outFits`). -/
@@ -856,19 +898,18 @@ theorem linkEnvR_trap {M : Nat} {h : Clif.Function} {n : String} (hpf : L.P.func
   | ok cs => rw [hinit] at ht; exact ⟨cs, rfl, ht⟩
 
 /-- **The trapping callees' contract of an activation of `g` at depth `M`** under its
-environment with the uncovered callee traps made stuck: the base's for the externs outside `P`
-(`BaseTrapsOk.xt`), and for a function of `P` the linked machine's call does not return
-(`progX_none`, from the trap statement one level down). -/
-theorem xTrapsOk (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) {M : Nat}
-    (ih : 0 < M → L.ThmT κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+environment with the uncovered callee traps made stuck (those outside `covQ Dn`, `Dn` the run
+premise `D` one level down): the base's for the externs outside `P` (`BaseTrapsOk.xt`), and for a
+function of `P` the linked machine's call does not return (`progX_noneG`, from the trap
+statement one level down). -/
+theorem xTrapsOkG (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk)
+    {D : Nat → Clif.Function → Clif.State → Prop} {Dn : Clif.Function → Clif.State → Prop}
+    {M : Nat} (hDn : ∀ {h : Clif.Function} {cs : Clif.State}, Dn h cs → 0 < M → D (M - 1) h cs)
+    (ih : 0 < M → L.ThmTG D κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {c : BitVec 64} :
-    XTrapsOk (cutEnv (L.envOf M g c) (L.covQ (L.TrapsDn M))) (g.externs.map (·.2)) (indSigs g)
+    XTrapsOk (cutEnv (L.envOf M g c) (L.covQ Dn)) (g.externs.map (·.2)) (indSigs g)
       (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
         g c) (L.X κ M g F) := by
-  have hDn : ∀ {h : Clif.Function} {cs : Clif.State}, L.TrapsDn M h cs → 0 < M → L.TrapsD (M - 1) h cs := by
-    intro h cs hD hM
-    obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
-    exact hD
   refine ⟨fun ext hin G' sl cm w d uses args vals tc hG' hd hargs hmr htr => ?_,
     fun sig hsig n G' sl cm w u args vals tc hG' hsg hu hl8 hall hmr htr hty => ?_⟩
   · obtain ⟨G, hG, rfl⟩ := cutEnv_extern hG'
@@ -892,11 +933,11 @@ theorem xTrapsOk (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) {M : Nat}
       obtain ⟨hdecl, G0, hG0, hGt⟩ := L.envOf_prog hG hpf
       obtain ⟨hpl, ht0⟩ := hGt _ _ _ htrG
       obtain ⟨cs, hinit, hret⟩ := L.linkEnvR_trap hpf hG0 ht0
-      have hTD : 0 < M → L.TrapsD (M - 1) h cs := fun hM => hDn (hQ h cs hpf hinit) hM
+      have hTD : 0 < M → D (M - 1) h cs := fun hM => hDn (hQ h cs hpf hinit) hM
       rw [hsig] at hargs
       have hsav := L.stackArgsAvoid_decl hL hg hin hpf hinit hmr
       rw [← hname] at hinit
-      have hnone := L.progX_none (κ := κ) hL ih hh ⟨g, hg, .inr (.inl ⟨ext, hin, hpf⟩)⟩ himgF hargs
+      have hnone := L.progX_noneG (κ := κ) hL ih hh ⟨g, hg, .inr (.inl ⟨ext, hin, hpf⟩)⟩ himgF hargs
         hsav hmr hpl hinit hret hTD
       rcases hd with ⟨rfl, rfl⟩ | ⟨rfl, -, rfl⟩
       · rw [L.X_prog hpf]; exact hnone
@@ -926,7 +967,7 @@ theorem xTrapsOk (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) {M : Nat}
       obtain ⟨hdecl, G0, hG0, hGt⟩ := L.envOf_prog hG hpf
       obtain ⟨hpl, ht0⟩ := hGt _ _ _ htrG
       obtain ⟨cs, hinit, hret⟩ := L.linkEnvR_trap hpf hG0 ht0
-      have hTD : 0 < M → L.TrapsD (M - 1) h cs := fun hM => hDn (hQ h cs hpf hinit) hM
+      have hTD : 0 < M → D (M - 1) h cs := fun hM => hDn (hQ h cs hpf hinit) hM
       have hnf : ¬ Clif.IndFree g := fun hif => by
         rw [indSigs_nil_of_indFree hif] at hsig; cases hsig
       have hdeclS := hL.indSig g hg hnf
@@ -945,12 +986,23 @@ theorem xTrapsOk (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) {M : Nat}
         intro off v hm
         obtain ⟨r, hr⟩ := (locsOf_small hb hb8).2 _ (List.of_mem_zip hm).1
         cases hr
-      have hnone := L.progX_none (κ := κ) hL ih hh ⟨g, hg, .inr (.inr ⟨hh, hdecl⟩)⟩ himgF hargs
+      have hnone := L.progX_noneG (κ := κ) hL ih hh ⟨g, hg, .inr (.inr ⟨hh, hdecl⟩)⟩ himgF hargs
         hsav hmr hpl hinit hret hTD
       rw [L.X_ind hs]
       split
       · exact hnone
       · rfl
+
+/-- `xTrapsOkG` for the run premise `TrapsD`. -/
+theorem xTrapsOk (hL : L.Ok) [hR : L.CrunOk] (hB : L.BaseTrapsOk) {M : Nat}
+    (ih : 0 < M → L.ThmT κ (M - 1)) {g : Clif.Function} (hg : g ∈ L.P.funcs)
+    {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a) {c : BitVec 64} :
+    XTrapsOk (cutEnv (L.envOf M g c) (L.covQ (L.TrapsDn M))) (g.externs.map (·.2)) (indSigs g)
+      (RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
+        g c) (L.X κ M g F) :=
+  L.xTrapsOkG (D := L.TrapsD) hL hB (fun {h cs} hD hM => by
+    obtain ⟨M', rfl⟩ : ∃ M', M = M' + 1 := ⟨M - 1, by omega⟩
+    exact hD) ih hg himgF
 
 end LinkSys
 
