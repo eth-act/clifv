@@ -4345,8 +4345,8 @@ with the CLIF code whose instruction errs (an explicit trap's `udf`) or **faults
 (`ArmFault.InstFaults`: the `ldaxr x27, [x25]` of the trapping atomic's LL/SC loop, `x25` the
 CLIF address). The machines are the existing ones, whose memory is total: the theorems say that
 **if** the run reaches the trapping atomic, its `ldaxr` faults under the map; they do **not** say
-that no earlier access of the run faults under `mp`. That needs the `MapRel` premise and the
-fault-aware step `ArmFault.stepF` (slice F8, open).
+that no earlier access of the run faults under `mp`. That is F8 (below): the `_memtrapF_rw`
+theorems on the fault-aware machine.
 
 * register level (`FV/E2E/RegLevelMemTrap.lean`): the observable `TrapAtM mp fa fb base c` (`TrapAt`
   at a `udf` line, `UdfLine`, or at an `ldaxr` line with an unmapped byte, `LdaxrUnmapped`;
@@ -4375,6 +4375,44 @@ compiled by `compileExe` (`compile_eq`); `run_traps` (the run on `(0, 1, 2)` tra
 `cs0_trapsExplicitM`, `cs0_mapFaults` (the map `nullMap`: nothing mapped below 4096, the null
 page), `cs0_not_trapsExplicit` (the old premise fails), `exec_traps` (`compileExe_correct_memtrap`
 with every premise but the entry contract discharged). `#print axioms`: `scripts/audit/memfault.lean`.
+
+### No earlier access faults (F8, #443)
+
+`FV/E2E/DeadCleanupExecMemFault.lean`, `FV/Link/DeadCleanupExeMemFault.lean`,
+`FV/Front/RawExeMemFault.lean`. The executable machine with faults `stepF mp I B file`
+(`FV/E2E/DeadCleanupExecFault.lean`: its processor steps are `ArmFault.execF mp`, a step whose
+access has a byte `mp` does not allow errs with `ArmFault.memFault`; the hook steps of outside code
+are unchanged) and the observable **`ExecTrapF mp I B file f c r`**: the run of `stepF mp` from `r`
+reaches, with **no faulting step before it** (`NoFault`: each earlier step is the step of `step`),
+a state with `ExecTrapM … c`, and its step there errs. Theorems (trap halves; the returns are the
+old theorems'): `DeadCleanupExecBytes.binary_correct_exec_memtrapF_rw{,_peak}`,
+**`Link.DeadCleanup.compileExe_correct_memtrapF_rw{,_peak}`**,
+`compileExe_correct_source_memtrapF_rw{,_peak}`,
+**`Front.bundle_correct_{source,raw}_memtrapF_rw{,_peak}`**.
+
+**The premise `MapRelRW mp I f N r args cm` assumes every entry CLIF byte read-write**: every byte
+`mp` does not allow to be **written** lies outside the reserved stack (`N` bytes below `r`'s `sp`),
+the stack arguments and every allocation of the entry's CLIF memory `cm`, and the program's code is
+readable. Read-only data objects (`Clif.Alloc.readonly`) must therefore be mapped read-write: a
+process that maps its `.rodata` read-only (most real Rust binaries) is not covered. The reason: the
+proof keeps the unwritable bytes with the code image (`sysSK I B f K r NW`, the kept addresses `G`
+of every activation), and the VCode semantics `csem F` admits only accesses, loads included,
+outside `F ⊇ G` (`AccessOk`), so `G` cannot hold a byte the program reads. `Clif.run` already makes
+every store into read-only data `stuck`; carrying that through isel (a write guard next to
+`csemG`'s read guard) is F8a, #472, which will relax `MapRelRW` to the CLIF-writable bytes.
+
+Proof: per function, `backend_correct_worldX_cleanup_memtrapW` (every state before the trap also
+has `RL.WritesAt`: its writes avoid `G`); linked program, `backend_correct_program_memtrapW_*`
+(`LinkSys.RunGoodLBW`); on a model state, `RL.evsOk_of_goodXW` (reads outside `G` or jump-table
+bytes, writes outside `G`, so no fault) and `E2E.ExecBytes.evsOk_congr` (a fault depends only on
+the registers, which the simulating executable state shares); `act_simNF`/`act_simNBF` (the
+simulation with "no earlier executable step faults": hooked steps and `bl`/`blr`/`adrp`/`add`
+words access no memory, `noFault_hook`, `noFault_call`, `noFault_pair`).
+
+Witness (`FV/Link/DeadCleanupExeMemFaultWitness.lean`): the `atomic_cas` program above; `mapRelRW`
+(`MapRelRW nullMap` for a reserved stack above the null page: the code lies above it, `img_ge`, the
+entry CLIF memory is empty), `exec_trapsF` (`compileExe_correct_memtrapF_rw` with every premise but
+the entry contract and the stack's position discharged).
 
 ## Entry-state and runtime premises (A5, #411)
 
