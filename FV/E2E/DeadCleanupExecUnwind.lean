@@ -1195,3 +1195,189 @@ theorem act_simU {I : LinkInput} {B : BaseEnv} {file : ByteArray} {U : LinkSysU}
     exact act_simU hI hF hT hUS M
 
 end E2E.DeadCleanupExecBytes
+
+namespace E2E.DeadCleanupExecBytes
+set_option autoImplicit false
+
+open Backend Backend.Proof E2E.LinkCheck E2E.DeadCleanupBinary E2E.BinCheck
+
+/-! ## The theorem about the executable with unwinding -/
+
+/-- **What the executable machine's run does for an outcome of the CLIF run with unwinding**
+(`ArmRefinesU`, with the live CLIF bytes compared outside the relocated instruction bytes `R`,
+as `ExecRefines`): a return with the results, a trap at a trap site of the function, or the
+exception leaving it — an AAPCS64 return to the caller with the exception object in x0 — the
+live CLIF bytes outside `R` as the CLIF memory. -/
+def ExecRefinesU (fb : FnBin) (base ra : BitVec 64) (astep : Arm.ArmState → Arm.ArmState)
+    (s : Arm.ArmState) (R : BitVec 64 → Prop) : Clif.XOutcome → Prop
+  | .returned vals cm => ∃ n, ArmRet ra s (runX astep n s) ∧
+      (∀ (j : Nat) v, vals[j]? = some v → XHolds v (xreg j (runX astep n s))) ∧
+      ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → ¬ R (BitVec.ofNat 64 a) →
+        Arm.read_mem (BitVec.ofNat 64 a) (runX astep n s) = b
+  | .trapped c => ∃ n, TrapAt fb base c (runX astep n s)
+  | .unwound e cm => ∃ n, ArmRet ra s (runX astep n s) ∧ ExnRel e (xreg 0 (runX astep n s)) ∧
+      ∀ a b, cm.valid a 1 = true → cm.bytes a = some b → ¬ R (BitVec.ofNat 64 a) →
+        Arm.read_mem (BitVec.ofNat 64 a) (runX astep n s) = b
+  | .stuck _ | .outOfFuel => True
+
+/-- `ExecRefinesU` of a run without exceptions is `ExecRefines` (the normal-return theorem's
+conclusion is the restriction). -/
+theorem ExecRefinesU.toExec {fb : FnBin} {base ra : BitVec 64}
+    {astep : Arm.ArmState → Arm.ArmState} {s : Arm.ArmState} {R : BitVec 64 → Prop}
+    {o : Clif.Outcome} (h : ExecRefinesU fb base ra astep s R o.toX) :
+    ExecRefines fb base ra astep s R o := by
+  cases o <;> exact h
+
+section Transfer
+
+variable {I : LinkInput} {B : BaseEnv} {file : ByteArray} {U : LinkSysU}
+
+/-- Before the state where the model's run with unwinding is, the activation has not returned
+(`no_return` on the machine with unwinding). -/
+theorem no_returnU {M : Nat} {f : Clif.Function} (hFf : FnOk I file f) {c : Arm.ArmState}
+    (hra : ∀ k < (art I f).fb.words.size, xreg 30 c ≠ (art I f).base + BitVec.ofNat 64 (4 * k))
+    {n : Nat} (herr : Arm.r .ERR (runX ((uSys I B U).machU M f) n c) = .None) :
+    ∀ j < n, ¬ Returned (art I f) c (runX ((uSys I B U).machU M f) j c) := by
+  intro j hj hr
+  obtain ⟨lm, hm⟩ := FnAsm.layout_labelOffsets hFf.layout
+  have := retStuckU (X := (sys I B).Xb) (H := (uSys I B U).hooksU M) (U := (uSys I B U).UU M)
+    (T := (art I f).tables) hFf.layout hm hr.2.2.1 (by rw [hr.1]; exact hra) (n - j - 1)
+  change Arm.r .ERR (runX ((uSys I B U).machU M f) (n - j - 1 + 1)
+    (runX ((uSys I B U).machU M f) j c)) ≠ .None at this
+  rw [← runX_add, show j + (n - j - 1 + 1) = n by omega] at this
+  exact this herr
+
+/-- A trap site of `f` is a code word of `f`. -/
+theorem trap_code {f : Clif.Function} (hFf : FnOk I file f) {c : Clif.TrapCode}
+    {s : Arm.ArmState} (h : TrapAt (art I f).fb (art I f).base c s) :
+    ∃ k < (art I f).fb.words.size, Arm.r .PC s = (art I f).base + BitVec.ofNat 64 (4 * k) := by
+  obtain ⟨t, ht, -, hpc⟩ := h.site
+  obtain ⟨j, i, hj, ho⟩ := ((FnAsm.layout_traps hFf.layout).2 t).1 ht
+  obtain ⟨lm, hm⟩ := FnAsm.layout_labelOffsets hFf.layout
+  obtain ⟨h4, w, -, hk⟩ := FnAsm.layout_word hFf.layout hm hj rfl
+  refine ⟨lineOffset (art I f).fa.lines.toList j / 4, (Array.getElem?_eq_some_iff.mp hk).1, ?_⟩
+  rw [hpc, ← ho, Nat.mul_div_cancel' (Nat.dvd_of_mod_eq_zero h4)]
+
+/-- The return of the model's activation transfers to the executable machine's state. -/
+theorem armRet_sim {f : Clif.Function} {r t t' : Arm.ArmState} {ra : BitVec 64}
+    (h : ArmRet ra (modelOf I f r) t) (hs : Sim I t t') : ArmRet ra r t' :=
+  ⟨by rw [hs.1]; exact h.pc, by rw [hs.1]; exact h.err,
+    by simp only [spv]; rw [hs.1]; exact h.sp.trans (spv_modelOf I f r),
+    fun n hn => by simp only [xreg]; rw [hs.1]; exact (h.savedX n hn).trans (r_modelOf I f r _),
+    fun n h8 h16 => by rw [hs.1, h.savedV n h8 h16, r_modelOf]⟩
+
+/-- **The model's outcome with unwinding transfers to the executable machine with unwinding**,
+given the per-state facts of the model's run (`RunOkU`), for an outside caller whose call
+instruction (the byte before the return address) is no code of the program. -/
+theorem exec_of_modelU (hI : okBCleanup I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
+    (hT : TabsOk I file) (hUS : UnwSim I U.Ub) {M : Nat} {f : Clif.Function}
+    (hf : f ∈ (prog I).funcs) {r : Arm.ArmState} (hpc : Arm.r .PC r = (art I f).base)
+    (hra : ∀ k < (art I f).fb.words.size, xreg 30 r ≠ (art I f).base + BitVec.ofNat 64 (4 * k))
+    (hra1 : ¬ img I (xreg 30 r - 1))
+    (hd : ∀ a, (modelOf I f r).mem a ≠ r.mem a → E2E.DeadCleanupBinCheck.RelocAt I a)
+    (hrun : RunOkU I B file U M f (modelOf I f r)) {o : Clif.XOutcome}
+    (h : ArmRefinesU (art I f).fb (art I f).base (xreg 30 r) ((uSys I B U).machU M f)
+      (modelOf I f r) o) :
+    ExecRefinesU (art I f).fb (art I f).base (xreg 30 r) (stepU I B U.Ub file) r
+      (E2E.DeadCleanupBinCheck.RelocAt I) o := by
+  have hFf := hF f hf
+  have hsim := sim_modelOf hd
+  have hra' : ∀ k < (art I f).fb.words.size,
+      xreg 30 (modelOf I f r) ≠ (art I f).base + BitVec.ofNat 64 (4 * k) := by
+    simp only [xreg, r_modelOf]; exact hra
+  have hpc' : Arm.r .PC (modelOf I f r) = (art I f).base := by rw [r_modelOf]; exact hpc
+  have hS := act_simU (B := B) hI hF hT hUS M f _ r hf hpc' hsim hrun
+  -- a state of the run at the return address is simulated
+  have hfin : ∀ n, (∀ j < n, ¬ Returned (art I f) (modelOf I f r)
+        (runX ((uSys I B U).machU M f) j (modelOf I f r))) →
+      Arm.r .PC (runX ((uSys I B U).machU M f) n (modelOf I f r)) = xreg 30 r →
+      Arm.r .ERR (runX ((uSys I B U).machU M f) n (modelOf I f r)) = .None →
+      ∃ k', Sim I (runX ((uSys I B U).machU M f) n (modelOf I f r))
+        (runX (stepU I B U.Ub file) k' r) := by
+    intro n hret hpcn herr
+    have hsec : ¬ Second I f (Arm.r .PC (runX ((uSys I B U).machU M f) n (modelOf I f r))) :=
+      fun hs => by
+        obtain ⟨k, hk, he⟩ := second_code hFf hs
+        exact hra k hk (by rw [← he, hpcn])
+    by_cases hu : ∃ j, j + 1 = n ∧ UnwExit ((uSys I B U).UU M) (art I f).tables (art I f).fa
+        (runX ((uSys I B U).machU M f) j (modelOf I f r))
+    · obtain ⟨j, hj, hux⟩ := hu
+      obtain ⟨k', ra, t, hp, -, hsm⟩ := hS.2 n hret j hj hux herr
+      have hnn : ¬ NextFrame I file ra
+          (xreg 0 (runX ((uSys I B U).machU M f) n (modelOf I f r))) t := fun hn =>
+        hra1 (by rw [← hpcn, ← hsm.1 .PC]; exact hn.2)
+      exact ⟨k' + 1, by rw [runX_succ', hp.last hnn]; exact hsm⟩
+    · exact hS.1 n hret (fun j hj hux => hu ⟨j, hj, hux⟩) hsec herr
+  cases o with
+  | returned vals cm =>
+    obtain ⟨n, hret, hx, hmem⟩ := h
+    obtain ⟨k', hk'⟩ := hfin n (no_returnU hFf hra' hret.err) hret.pc hret.err
+    refine ⟨k', armRet_sim hret hk', fun j v hv => ?_, fun a b hv hb hR => ?_⟩
+    · simp only [xreg]; rw [hk'.1]; exact hx j v hv
+    · show Arm.read_store _ _ = b
+      rw [show Arm.read_store (BitVec.ofNat 64 a) (runX (stepU I B U.Ub file) k' r).mem =
+        (runX (stepU I B U.Ub file) k' r).mem (BitVec.ofNat 64 a) from rfl, hk'.2 _ hR]
+      exact hmem a b hv hb
+  | unwound ex cm =>
+    obtain ⟨n, hret, hx, hmem⟩ := h
+    obtain ⟨k', hk'⟩ := hfin n (no_returnU hFf hra' hret.err) hret.pc hret.err
+    refine ⟨k', armRet_sim hret hk', ?_, fun a b hv hb hR => ?_⟩
+    · simp only [xreg]; rw [hk'.1]; exact hx
+    · show Arm.read_store _ _ = b
+      rw [show Arm.read_store (BitVec.ofNat 64 a) (runX (stepU I B U.Ub file) k' r).mem =
+        (runX (stepU I B U.Ub file) k' r).mem (BitVec.ofNat 64 a) from rfl, hk'.2 _ hR]
+      exact hmem a b hv hb
+  | trapped c0 =>
+    obtain ⟨n, htrap⟩ := h
+    have hguard := no_returnU (U := U) (B := B) hFf hra' htrap.err
+    have hnr : ∀ j ≤ n, ¬ Returned (art I f) (modelOf I f r)
+        (runX ((uSys I B U).machU M f) j (modelOf I f r)) := fun j hj hr => by
+      rcases Nat.lt_or_ge j n with h | h
+      · exact hguard j h hr
+      · obtain rfl : j = n := by omega
+        obtain ⟨k, hk, he⟩ := trap_code hFf htrap
+        exact hra' k hk (by rw [← hr.1, he])
+    have hnu := no_exit_before hrun hnr htrap.err
+    by_cases hs : Second I f (Arm.r .PC (runX ((uSys I B U).machU M f) n (modelOf I f r)))
+    · -- a trap at a second word: one executable step after the first word
+      have hs' := hs
+      obtain ⟨rl, hrl, ht, he⟩ := hs
+      cases n with
+      | zero => exact (not_second_base hFf ⟨rl, hrl, ht, hpc'.symm.trans he⟩).elim
+      | succ n1 =>
+      have hok1 := (hrun _ _ _ _ (ReachU.act (k := n1) fun j hj => hnr j (by omega))
+        (by rw [← runX_succ' ((uSys I B U).machU M f)]; exact htrap.err)).1
+      have hpc1 := hok1.cf rl hrl ht (by rw [← runX_succ' ((uSys I B U).machU M f) n1]; exact he)
+      obtain ⟨j1, i1, t1, hj1, hi1, ho1⟩ := (FnAsm.layout_relocs hFf.layout rl).1 hrl
+      have hins1 : insnAt (art I f).fa (art I f).base
+          (Arm.r .PC (runX ((uSys I B U).machU M f) n1 (modelOf I f r))) = some i1 := by
+        rw [hpc1, ← ho1]; exact insnAt_of_line hFf hj1
+      have hnc1 : (∀ n, i1 ≠ .bl n) ∧ ∀ x, i1 ≠ .blr x := by
+        constructor
+        · rintro n rfl; simp only [Insn.reloc?, Option.some.injEq, Prod.mk.injEq] at hi1
+          rcases ht with h | h <;> rw [h] at hi1 <;> simp at hi1
+        · rintro x rfl; simp [Insn.reloc?] at hi1
+      obtain ⟨k', hk'⟩ := hS.1 n1 (fun j hj => hguard j (by omega))
+        (no_exit_before hrun (fun j hj => hnr j (by omega)) hok1.err)
+        (by rw [hpc1]; exact first_not_second hFf hrl ht) hok1.err
+      have hst1 := hok1.nocall hF hf hins1 hnc1.1 hnc1.2
+      obtain ⟨hpcE, herrE⟩ := pair_first_pc hFf hrl ht hpc1 hst1 hk'
+      have hm1 : (uSys I B U).machU M f (runX ((uSys I B U).machU M f) n1 (modelOf I f r)) =
+          (sys I B).mach M f (runX ((uSys I B U).machU M f) n1 (modelOf I f r)) :=
+        machU_nocall U (by rw [hok1.base_eq hF hf]; exact hins1) hnc1.1 hnc1.2
+      have hs1 : stepU I B U.Ub file (runX (stepU I B U.Ub file) k' r) =
+          step I B file (runX (stepU I B U.Ub file) k' r) :=
+        stepU_of_none (raiseAt_none (by rw [hk'.1 .PC]; exact siteAt_of hst1 hins1)
+          (fun n hn => absurd hn (hnc1.1 n)) (fun x hx => absurd hx (hnc1.2 x)))
+      refine ⟨k' + 1, ?_⟩
+      rw [runX_succ', hm1] at htrap
+      rw [runX_succ', hs1]
+      exact ⟨by rw [← herrE]; exact htrap.err, by rw [← hpcE]; exact htrap.site⟩
+    · obtain ⟨k', hk'⟩ := hS.1 n hguard hnu hs htrap.err
+      exact ⟨k', by rw [hk'.1]; exact htrap.err, by rw [hk'.1]; exact htrap.site⟩
+  | stuck _ => trivial
+  | outOfFuel => trivial
+
+end Transfer
+
+end E2E.DeadCleanupExecBytes
