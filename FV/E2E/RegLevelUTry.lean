@@ -201,7 +201,7 @@ theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
     (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
     hst.gkeep cc wh ops regs i' w hops hstat hasg hcpc hst.world hst.align hst.err hgg
   obtain ⟨t, hUr, hW, hFK, herrt, hprogt, hoth, hkeep⟩ := hraiseU obj _ hraise
-  obtain ⟨hstep1, hRX⟩ := RLU.stepU_q_raise hR hq hvb hi (.inr ⟨ti, rfl⟩) hUr
+  obtain ⟨hstep1, hRX, hdesc, hxzr⟩ := RLU.stepU_q_raise hR hq hvb hi (.inr ⟨ti, rfl⟩) hUr
   -- the personality: the first handler's landing pad
   obtain ⟨j, x', hj, hpcj, -, hmem⟩ := hsite s b k _ its m w vb _ info (some ti) hq hvb hi
     (.inr ⟨ti, rfl, rfl⟩)
@@ -357,7 +357,30 @@ theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
     rw [Arm.r_of_w_same, hpb]
     simp only [RL.pcOf, hjlo]
   · obtain rfl : i = 0 := by omega
-    exact .inr hRX
+    show R.GoodXU s
+    have hnext : R.NextOk s (R.stepU s) := by
+      refine .inr (.inr (.inr ⟨jl, ?_, fun x tt h => by rw [hjl] at h; cases h⟩))
+      rw [hstepU, Arm.r_of_w_same, hpb]
+      simp only [RL.pcOf]
+      rw [lineOffset_succ _ _ _ hjl, hjlo]
+      simp [Line.size]
+    have hexit : Unw.personality R.T.lsda (Arm.r .PC s + 4 - 1 - progBase s).toNat = .continue →
+        ArmRet (xreg 30 R.s0) R.s0 (R.stepU s) ∧ (R.stepU s).program = R.fb.program R.base := by
+      intro hc
+      rw [hoff, hlsda, hpers] at hc
+      cases hc
+    have htsp : ∀ x d obj' t', R.AtLine s x →
+        ((∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) →
+        R.U.raise d s = some (obj', t') → spOf t' = R.spB := by
+      intro x d obj' t' hx hd hr'
+      obtain rfl := hdesc x d hx hd
+      rw [hUr] at hr'
+      cases hr'
+      exact hFK.1.trans hst.sp
+    exact .inr ⟨hRX, hnext, hexit, htsp, fun x hx => ⟨hxzr x hx, hst.code⟩,
+      ⟨.tryCall info ti, info, hsite0, .inr ⟨ti, rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
+        fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
+        obj, _, hops, hstat, hasg, hcpc, hst.world, hst.align, hst.err, hgg, hraise⟩⟩
 
 /-! ## Discharging `SiteAt` and `PadsNonzero` -/
 

@@ -170,6 +170,170 @@ theorem not_unwExit_of_goodX {R : RLU} (hR : R.Wf)
     cases hr
   | _ => cases hd
 
+/-- At an instruction line that is no call the machine with unwinding steps as the old one. -/
+theorem RLU.stepU_eq_of_line {R : RLU} (hR : R.Wf) {v : Arm.ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins x t)) (hpc : Arm.r .PC v = R.pcOf j)
+    (hprog : v.program = R.fb.program R.base) (h1 : ∀ n, x ≠ .bl n) (h2 : ∀ r, x ≠ .blr r) :
+    R.stepU v = R.step v := by
+  have hins := insnAt_pc hR hj hprog hpc
+  simp only [RLU.stepU, RL.step, Unw.ArmStepU, hins]
+  cases x with
+  | bl n => exact absurd rfl (h1 n)
+  | blr r => exact absurd rfl (h2 r)
+  | _ => rfl
+
+/-- From the step at a `udf` line on, every state of the machine with unwinding errs
+(`RL.udf_stuck`: the `udf` is no call). -/
+theorem RLU.udf_stuckU {R : RLU} (hR : R.Wf) {u : Arm.ArmState} {j : Nat}
+    {t : Option Clif.TrapCode} (hj : R.L[j]? = some (.ins (.udf 0xc11f) t))
+    (hpc : Arm.r .PC u = R.pcOf j) (hprog : u.program = R.fb.program R.base)
+    (herr : Arm.r .ERR u = .None) : ∀ m, Arm.r .ERR (iterN R.stepU (m + 1) u) ≠ .None := by
+  obtain ⟨a, ha, hst⟩ := armStepX_ins (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hj rfl hprog hpc
+    herr
+  obtain ⟨a', ha', he, hp, hpr⟩ := exec_udf_insn ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩ u
+  rw [ha] at ha'; cases ha'
+  have hs : R.step u = Arm.exec_inst a u := hst
+  have hpc1 : Arm.r .PC (R.step u) = R.pcOf j := by rw [hs, hp, hpc]
+  have hprog1 : (R.step u).program = R.fb.program R.base := by rw [hs, hpr, hprog]
+  have herr1 : Arm.r .ERR (R.step u) ≠ .None := by rw [hs]; exact he
+  have h0 : R.stepU u = R.step u :=
+    RLU.stepU_eq_of_line hR hj hpc hprog (fun _ h => by cases h) (fun _ h => by cases h)
+  have hv : ∀ m, iterN R.stepU m (R.step u) = R.step u := by
+    intro m
+    induction m with
+    | zero => rfl
+    | succ m ih =>
+      rw [iterN_add]
+      simp only [iterN]
+      rw [ih, RLU.stepU_eq_of_line hR hj hpc1 hprog1 (fun _ h => by cases h)
+        (fun _ h => by cases h)]
+      exact RL.step_udf_err hR hj hpc1 hprog1 herr1
+  intro m
+  rw [show m + 1 = 1 + m by omega, iterN_add]
+  simp only [iterN]
+  rw [h0, hv m]
+  exact herr1
+
+/-- **`udf` on the machine, with its line**: `trap_udf`'s trap site and its `udf` line. -/
+theorem trap_udf_udf {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {code : Clif.TrapCode}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.udf code)) :
+    TrapAt R.fb R.base code s ∧
+      ∃ j t, R.L[j]? = some (.ins (.udf 0xc11f) t) ∧ Arm.r .PC s = R.pcOf j := by
+  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, rfl, hit, hsplit,
+    hasg, hc1', hops, hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+  obtain ⟨rfl, rfl⟩ := assign_none (fun f => rfl) hasg
+  obtain rfl : c1 = [.inst (.udf code)] := by
+    rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+    · exact h
+    · cases h
+    · cases h
+  have hl1 := codeLinesE_single h1
+  simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
+  obtain ⟨rfl, -⟩ := hl1
+  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
+    intro n e
+    have hm := List.mem_of_getElem? e
+    rcases List.mem_append.1 hm with hm | hm
+    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
+    · simp only [nxtOf] at hm
+      split at hm <;> simp at hm
+  rw [ftR_plain_append _ _ _ (by simp [Line.plain]) hZ] at hdrop
+  have hj := drop_get (Z := []) (by simpa using hdrop)
+  exact ⟨trapAt_line hR hj hpc hst.err, _, _, hj, hpc⟩
+
+/-- **A taken `trapIf` on the machine, with the trap site's `udf` line**: `trap_trapIf` with the
+trap site's line and program. -/
+theorem trap_trapIf_udf {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {allocs : Array Loc}
+    {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
+    (hq : Q R s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {kk : CondBrKind}
+    {code : Clif.TrapCode} (hvb : R.vc.blocks[b]? = some vb)
+    (hi : vb.insts[k]? = some (.trapIf kk code)) {ops : Array Operand}
+    (hops : (MInst.trapIf kk code).operands = .ok ops)
+    (hholds : kk.holds (((ops.zip allocs).toList.filter (·.1.isUse)).map (m ·.2)) w = true) :
+    ∃ n, TrapAt R.fb R.base code (iterN R.step n s) ∧ (∀ i < n, R.GoodX (iterN R.step i s)) ∧
+      (∃ j t, R.L[j]? = some (.ins (.udf 0xc11f) t) ∧ Arm.r .PC (iterN R.step n s) = R.pcOf j) ∧
+      (iterN R.step n s).program = R.fb.program R.base := by
+  have hck := (lowerRFunc_ok hR.alloc).2.2
+  obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops', rfl, hit, hsplit,
+    hasg, hc1', hops', hstat, hchk', hc2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
+  rw [hops] at hops'; cases hops'
+  have hkk : ∀ r sz, kk = .zero r sz ∨ kk = .notZero r sz → r.isVregInt = true := by
+    intro r sz hr
+    have := ctlCheck_inst hck hvb hi
+    rcases hr with rfl | rfl <;> simpa [ctlInstOk] using this
+  obtain ⟨k', rfl, hkr⟩ := kind_alloc hkk (mk := fun k => MInst.trapIf k code) rfl
+    (fun f => rfl) (fun f => rfl) hops hstat hasg m
+  obtain rfl : c1 = [.inst (.trapIf k' code)] := by
+    rcases hc1' with ⟨h, -, -⟩ | ⟨_, h, -⟩ | ⟨_, h, -⟩
+    · exact h
+    · cases h
+    · cases h
+  have hl1 := codeLinesE_single h1
+  simp only [MInst.lines, pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hl1
+  obtain ⟨rfl, hpsm⟩ := hl1
+  have hZ : ∀ n, (ls2 ++ nxtOf R.af b)[1]? ≠ some (.label (.trap n)) := by
+    intro n e
+    have hm := List.mem_of_getElem? e
+    rcases List.mem_append.1 hm with hm | hm
+    · exact codeLinesE_noTrap _ _ _ _ h2 _ hm n rfl
+    · simp only [nxtOf] at hm
+      split at hm <;> simp at hm
+  have hdrop' : R.L.drop j0 = relaxLine R.far (.ins (k'.insn (.trap ps1.traps.size)) none) ++
+      (relaxLines R.far (ftList (ls2 ++ nxtOf R.af b)) ++ T) := by
+    rw [hdrop, List.singleton_append, ftList_kind_trap k' ps1.traps.size _ hZ, relaxLines_cons,
+      List.append_assoc]
+  have hform : (∃ c, k'.insn (.trap ps1.traps.size) = .bcond c (.trap ps1.traps.size)) ∨
+      (∃ nz w r, k'.insn (.trap ps1.traps.size) = .cbz nz w r (.trap ps1.traps.size)) ∨
+      (∃ nz r bit, k'.insn (.trap ps1.traps.size) = .tbz nz r bit (.trap ps1.traps.size)) := by
+    cases k' <;> simp [CondBrKind.insn]
+  obtain ⟨nst, jl, hnst, hjt, -, -, -, hgx⟩ := reach_rcbX hR hdrop' hform (by simp) true
+    (fun env a ha => by rw [kind_brCond hst hkr _ ha, hholds])
+    (fun hct env a ha => by rw [kind_brCond_inv hst hkr _ _ hct ha, hholds])
+    (by rw [hst.prog]) hpc hst.err hst.sp
+  have hjl := hjt rfl
+  have hpre : psm.traps.toList <+: R.psF.traps.toList :=
+    (codeLinesE_traps h2).trans htr
+  have hn : R.psF.traps.toList[ps1.traps.size]? = some (.trap ps1.traps.size, code) := by
+    obtain ⟨t, ht⟩ := hpre
+    rw [← ht, ← hpsm]
+    simp
+  obtain ⟨body, psF', hb, hL, -⟩ := emit_block hR.emit
+  rw [relaxLines_append, relaxLines_trapLines,
+    show emitFar ⟨R.fa.k, R.af.slotBase⟩ R.af = R.far from rfl] at hL
+  obtain ⟨body', hb'⟩ := hR.psF
+  have hk : R.ctx = ⟨R.fa.k, R.af.slotBase⟩ := rfl
+  rw [hk, hb] at hb'
+  simp only [Except.ok.injEq, Prod.mk.injEq] at hb'
+  obtain ⟨-, rfl⟩ := hb'
+  obtain ⟨hlab, hudf⟩ := trapLines_get _ _ _ hn
+  have hlab' : R.L[(relaxLines R.far (ftList body)).length + 2 * ps1.traps.size]? =
+      some (.label (.trap ps1.traps.size)) := by
+    simp only [RL.L, hL]; rw [List.getElem?_append_right (by omega)]; simpa using hlab
+  have hudf' : R.L[(relaxLines R.far (ftList body)).length + 2 * ps1.traps.size + 1]? =
+      some (.ins (.udf 0xc11f) (some code)) := by
+    simp only [RL.L, hL]; rw [List.getElem?_append_right (by omega)]
+    simpa [Nat.add_assoc] using hudf
+  have hoff : R.pcOf jl =
+      R.pcOf ((relaxLines R.far (ftList body)).length + 2 * ps1.traps.size + 1) := by
+    have e1 := labelOffsets_label hR.lm hjl
+    have e2 := labelOffsets_label hR.lm hlab'
+    simp only [RL.pcOf]
+    rw [lineOffset_succ _ _ _ hlab']
+    simp only [RL.L] at e1 e2 ⊢
+    rw [e1] at e2
+    simp only [Option.some.injEq] at e2
+    rw [e2]; simp [Line.size]
+  have hpcF : Arm.r .PC (iterN R.step nst s) =
+      R.pcOf ((relaxLines R.far (ftList body)).length + 2 * ps1.traps.size + 1) := by
+    rw [hnst, Arm.r_of_w_same, hoff]
+  have herrF : Arm.r .ERR (iterN R.step nst s) = .None := by
+    rw [hnst, Arm.r_of_w_different (by simp)]; exact hst.err
+  have hprogF : (iterN R.step nst s).program = R.fb.program R.base := by
+    rw [hnst, Arm.w_program, hst.prog]
+  exact ⟨nst, trapAt_line hR hudf' hpcF herrF, hgx, ⟨_, _, hudf', hpcF⟩, hprogF⟩
+
 /-- **`regLevelCorrect_coreU` keeping the trace**: every state of the run before a return or an
 exceptional end satisfies the trace predicate `RLU.GoodXU`; an exceptional end also keeps the
 addresses `G` and the program, and its last step leaves the frame by unwinding (`UnwExit`). -/
@@ -202,7 +366,9 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         (∀ i < n, R.GoodXU (E2E.runX R.stepU i R.s0)) ∧
         ¬ UnwExit R.U R.T R.fa (E2E.runX R.stepU (n - 1) R.s0)) ∧
     (∀ c, VTraps R.vc semU (ρsel m₀) w₀ c →
-      ∃ n, TrapAt R.fb R.base c (E2E.runX R.stepU n R.s0)) ∧
+      ∃ n, TrapAt R.fb R.base c (E2E.runX R.stepU n R.s0) ∧
+        (∀ i < n, R.GoodXU (E2E.runX R.stepU i R.s0)) ∧
+        ∀ m, Arm.r .ERR (E2E.runX R.stepU (n + m + 1) R.s0) ≠ .None) ∧
     (∀ obj w, VUnwinds R.vc semU R.XR (ρsel m₀) w₀ obj w →
       ∃ n, ArmRet ra R.s0 (E2E.runX R.stepU n R.s0) ∧ xreg 0 (E2E.runX R.stepU n R.s0) = obj ∧
         (∀ a, ¬ R.F a → (E2E.runX R.stepU n R.s0).mem a = w.mem a) ∧
@@ -365,7 +531,7 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
           exact hent.program.symm
   · -- a trap
     obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
-    obtain ⟨n1, c1, hq1, hr1, -⟩ := forward hSim hRz' hstar hinit hq0'
+    obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz' hstar hinit hq0'
     obtain ⟨hnil, hform⟩ :=
       csem_halt (hhalt _ _ _ _ _ (by rw [htc]; exact Option.some_ne_none _) hsem)
     subst hnil
@@ -375,7 +541,7 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
       · exact trapIf_nodefs hops
     have h1 : VStep R.vc semU (.run ⟨b, k, ρ, w⟩) (.halt w') :=
       VStep.step hvb hi hops hsem (by rw [hdefs]; rfl) VNext.halt
-    obtain ⟨n2, c', c'', ⟨⟨hq2, -⟩, -⟩, hr2, hms, hr3, -⟩ :=
+    obtain ⟨n2, c', c'', ⟨⟨hq2, -⟩, -⟩, hr2, hms, hr3, ht2⟩ :=
       forward_last hSim hRz' h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     cases c'' with
     | run s' => obtain ⟨_, e⟩ := hSim.run hr3; cases e
@@ -388,10 +554,27 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
+        have hst2 := q_stRel hq2
+        have hstk : ∀ n3, (∀ i < n3, R.GoodXU (iterN R.stepU i
+              (iterN R.stepU n2 (iterN R.stepU n1 (iterN R.stepU n0 R.s0))))) →
+            (∀ m, Arm.r .ERR (iterN R.stepU (m + 1) (iterN R.stepU n3
+              (iterN R.stepU n2 (iterN R.stepU n1 (iterN R.stepU n0 R.s0))))) ≠ .None) →
+            (∀ i < n0 + n1 + n2 + n3, R.GoodXU (E2E.runX R.stepU i R.s0)) ∧
+            ∀ m, Arm.r .ERR (E2E.runX R.stepU (n0 + n1 + n2 + n3 + m + 1) R.s0) ≠ .None := by
+          intro n3 ht3 hs3
+          refine ⟨fun i hi => ?_, fun m => ?_⟩
+          · rw [runX_eq]
+            exact trace_add ht0U (trace_add ht1 (trace_add ht2 ht3)) i (by omega)
+          · rw [show n0 + n1 + n2 + n3 + m + 1 = n0 + n1 + n2 + (n3 + (m + 1)) by omega, hfin,
+              iterN_add]
+            exact hs3 m
         rcases hform with ⟨cd, rfl⟩ | ⟨kk, cd, rfl, -⟩
         · simp only [trapCode?, Option.some.injEq] at htc
           subst htc
-          exact ⟨n0 + n1 + n2 + 0, by rw [hfin]; exact (trap_udf hR hq2 hvb hi).1⟩
+          obtain ⟨htrap, j, tt, hj, hpcj⟩ := trap_udf_udf hR hq2 hvb hi
+          obtain ⟨h1', h2'⟩ := hstk 0 (fun _ h => absurd h (Nat.not_lt_zero _))
+            (RLU.udf_stuckU hR hj hpcj hst2.prog hst2.err)
+          exact ⟨n0 + n1 + n2 + 0, by rw [hfin]; exact htrap, h1', h2'⟩
         · cases hn with
           | halt =>
           obtain ⟨-, hform2⟩ := csem_halt (hhalt _ _ _ _ _ (by simp [trapCode?]) hsem2)
@@ -400,8 +583,17 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
           · cases e
             simp only [trapCode?, Option.some.injEq] at htc
             subst htc
-            obtain ⟨n3, htrap, ht3, -⟩ := trap_trapIf hR hq2 hvb hi hops' hholds
-            exact ⟨n0 + n1 + n2 + n3, by rw [hfin, RLU.iterN_stepU hR hU n3 _ ht3]; exact htrap⟩
+            obtain ⟨n3, htrap, ht3, ⟨j, tt, hj, hpcj⟩, hprog3⟩ :=
+              trap_trapIf_udf hR hq2 hvb hi hops' hholds
+            have e3 := RLU.iterN_stepU hR hU n3 _ ht3
+            have ht3U : ∀ i < n3, R.GoodXU (iterN R.stepU i
+                (iterN R.stepU n2 (iterN R.stepU n1 (iterN R.stepU n0 R.s0)))) := fun i hi => by
+              rw [RLU.iterN_stepU hR hU i _ fun i' hi' => ht3 i' (by omega)]
+              exact .inl (ht3 i hi)
+            obtain ⟨h1', h2'⟩ := hstk n3 ht3U (by
+              rw [e3]
+              exact RLU.udf_stuckU hR hj hpcj hprog3 htrap.err)
+            exact ⟨n0 + n1 + n2 + n3, by rw [hfin, e3]; exact htrap, h1', h2'⟩
   · -- an exceptional end: a `call` whose callee raises
     obtain ⟨b, k, ρ, w1, vb, info, ops, outs, hstar, hvb, hi, hops, hraise, hsem, hlen⟩ := hu
     obtain ⟨n1, c1, hq1, hr1, ht1⟩ := forward hSim hRz' hstar hinit hq0'
@@ -445,7 +637,7 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
         hst.gkeep cc' wh ops regs i' w1 hops hstat hasg hcpc hst.world hst.align hst.err hgg
       obtain ⟨t, hUr, hW, hFK, herrt, hprogt, hoth, hkc⟩ := hraiseU obj w' hraise'
-      obtain ⟨hstepU, hRX⟩ := RLU.stepU_q_raise hR hq2 hvb hi (.inl rfl) hUr
+      obtain ⟨hstepU, hRX, hdesc, hxzr⟩ := RLU.stepU_q_raise hR hq2 hvb hi (.inl rfl) hUr
       -- the personality continues at a plain call
       obtain ⟨j, x, hj, hpcj, -, hmem⟩ :=
         hsite u b k _ its m w1 vb _ info none hq2 hvb hi (.inl ⟨rfl, rfl⟩)
@@ -523,11 +715,27 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         rw [hstepU]
         simp only [Unw.unwindAt, hoff, hpers, hcie, hfde, hrest]
       -- the trace: the run's states, then the raising call state
+      have htsp : ∀ x d obj' t'', R.AtLine u x →
+          ((∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) →
+          R.U.raise d u = some (obj', t'') → spOf t'' = R.spB := by
+        intro x d obj' t'' hx hd hr'
+        obtain rfl := hdesc x d hx hd
+        rw [hUr] at hr'
+        cases hr'
+        exact hFK.1.trans hst.sp
+      have hRXX : R.RaiseX u :=
+        ⟨hRX, .inr (.inl (by rw [hstep, Arm.r_of_w_different (by simp)]; exact hretA.pc)),
+          fun _ => ⟨by rw [hstep]; exact Unw.armRet_x0 hretA obj,
+            by rw [hstep, Arm.w_program, hprog', hprogt, hst.prog]⟩,
+          htsp, fun x hx => ⟨hxzr x hx, hst.code⟩,
+          ⟨.call info, info, hsite0, .inl rfl, by rw [hst.sp]; exact RL.K_le hR,
+            fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc', wh, ops, regs, i',
+            w1, obj, w', hops, hstat, hasg, hcpc, hst.world, hst.align, hst.err, hgg, hraise'⟩⟩
       have hu1 : ∀ i < 1, R.GoodXU (iterN R.stepU i
           (iterN R.stepU n2 (iterN R.stepU n1 (iterN R.stepU n0 R.s0)))) := fun i hi => by
         obtain rfl : i = 0 := by omega
         rw [hu]
-        exact .inr hRX
+        exact .inr hRXX
       have htr : ∀ i < n0 + n1 + n2 + 1, R.GoodXU (E2E.runX R.stepU i R.s0) := fun i hi => by
         rw [runX_eq]
         exact trace_add ht0U (trace_add ht1 (trace_add ht2 hu1)) i (by omega)

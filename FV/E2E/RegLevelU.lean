@@ -155,9 +155,9 @@ noncomputable def stepU : Arm.ArmState → Arm.ArmState := Unw.ArmStepU R.X R.H 
 
 end RLU
 
-/-- **A raising-call state of the activation**: the pc at a call line (`bl n`/`blr r`) whose
+/-- **The machine facts of a raising-call state**: the pc at a call line (`bl n`/`blr r`) whose
 machine callee (descriptor `some n`/`none`) raises, the body's `sp`, no error, the program. -/
-structure RLU.RaiseX (R : RLU) (u : Arm.ArmState) : Prop where
+structure RLU.RaiseAt (R : RLU) (u : Arm.ArmState) : Prop where
   good : R.Good u
   err : Arm.r .ERR u = .None
   prog : u.program = R.fb.program R.base
@@ -165,12 +165,48 @@ structure RLU.RaiseX (R : RLU) (u : Arm.ArmState) : Prop where
   raise : ∃ x d obj t, R.AtLine u x ∧
     ((∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) ∧ R.U.raise d u = some (obj, t)
 
+/-- **The premise of the raising callees' contract at a call state `u`** (`RL.CallPre`'s
+counterpart): the antecedent of `UnwSoundG` at the allocated call whose code is at the pc, the
+callees' exceptional semantics raising `obj` with world `w'`. The linking layer turns it into
+the facts of the raising callee's run. -/
+def RLU.CallPreU (R : RLU) (u : Arm.ArmState) : Prop :=
+  ∃ (i : MInst) (info : CallInfo), R.vc.CallSite info ∧ (i = .call info ∨ ∃ ti, i = .tryCall info ti) ∧
+    R.K ≤ (spOf u).toNat ∧ (∀ a, StackBelow R.K (spOf u) a → R.F a) ∧
+    (∀ a, R.G a → u.mem a = R.s0.mem a) ∧
+    ∃ (c : CheckCtx) (wh : String) (ops : Array Operand) (regs : Array Reg) (i' : MInst)
+      (w : Arm.ArmState) (obj : BitVec 64) (w' : Arm.ArmState),
+      i.operands = .ok ops ∧ c.checkStatic wh ops (regs.map .reg) i.clobbers = .ok () ∧
+      i.assign regs = .ok i' ∧ CallAt R.fa R.base (Arm.r .PC u) i' ∧
+      SameWorld R.F u w ∧ Arm.CheckSPAlignment u ∧ Arm.r .ERR u = .None ∧
+      gotGuard R.gv R.X info (useVals ops regs u) ∧
+      R.XR.raise (callDest info) (useVals ops regs u) w = some (obj, w')
+
+/-- **A raising-call state of the activation** (`RaiseAt`) with the facts the executable
+machine needs of its step (`RL.GoodX`'s counterpart): D1 at the unwinder's step, a step that
+continues the unwinding lands on the activation's ABI return (the restored frame is the
+caller's), the unwinder restores the call's state with the body's `sp`, a `blr`'s facts, and the
+raising callees' contract premise (`CallPreU`). -/
+structure RLU.RaiseX (R : RLU) (u : Arm.ArmState) : Prop extends RLU.RaiseAt R u where
+  /-- D1 at the unwinder's step -/
+  next : R.NextOk u (R.stepU u)
+  /-- a step continuing the unwinding (the personality) lands on the activation's return -/
+  exit : Unw.personality R.T.lsda (Arm.r .PC u + 4 - 1 - progBase u).toNat = .continue →
+    ArmRet (xreg 30 R.s0) R.s0 (R.stepU u) ∧ (R.stepU u).program = R.fb.program R.base
+  /-- the unwinder restores the call's state with the body's `sp` -/
+  tsp : ∀ x d obj t, R.AtLine u x → ((∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) →
+    R.U.raise d u = some (obj, t) → spOf t = R.spB
+  /-- a `blr`: not through `xzr` (calls through int vregs), the code words readable as data -/
+  blr : ∀ x, R.AtLine u (.blr x) → (R.vc.DestsInt → x ≠ .xzr) ∧ ∀ k w, R.fb.words[k]? = some w →
+    Arm.read_mem_bytes 4 (R.base + BitVec.ofNat 64 (4 * k)) u = w
+  /-- the raising callees' contract premise -/
+  pre : R.CallPreU u
+
 /-- **The per-state facts of a run with unwinding**: a state of the old trace (`RL.GoodX`), or
 a raising-call state (where `RL.GoodX`'s call clause, a normal callee result, fails). -/
 def RLU.GoodXU (R : RLU) (u : Arm.ArmState) : Prop := R.GoodX u ∨ R.RaiseX u
 
 /-- At a raising-call state the machine with unwinding enters the unwinder. -/
-theorem RLU.stepU_raiseX {R : RLU} (hR : R.Wf) {u : Arm.ArmState} (h : R.RaiseX u) :
+theorem RLU.stepU_raiseX {R : RLU} (hR : R.Wf) {u : Arm.ArmState} (h : R.RaiseAt u) :
     ∃ d obj t, R.U.raise d u = some (obj, t) ∧
       R.stepU u = Unw.unwindAt R.T (progBase u) (Arm.r .PC u) obj t := by
   obtain ⟨x, d, obj, t, ⟨j, tt, hj, hpc⟩, hd, hr⟩ := h.raise
@@ -208,37 +244,59 @@ theorem assign_callDest {info ic : CallInfo} {regs : Array Reg}
       exact callVisit_run_callDest _ info q hq
 
 /-- **A raising call on the machine**: at `Q` at a `call`/`tryCall` item whose machine callee
-raises (the descriptor of the VCode call), the machine with unwinding enters the unwinder, and
-the state is a raising-call state. -/
+raises (the descriptor of the VCode call), the machine with unwinding enters the unwinder, the
+state has the machine facts of a raising-call state (`RaiseAt`), the call line's descriptor is
+the VCode call's, and a `blr` there is not through `xzr` (calls through int vregs). -/
 theorem RLU.stepU_q_raise {R : RLU} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat}
     {allocs : Array Loc} {its : List RItem} {m : Loc → CV} {w : Arm.ArmState}
     (hq : Q R.toRL s (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {i : MInst}
     {info : CallInfo} (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some i)
     (hik : i = .call info ∨ ∃ ti, i = .tryCall info ti) {obj : BitVec 64} {t : Arm.ArmState}
     (hr : R.U.raise (callDest info) s = some (obj, t)) :
-    R.stepU s = Unw.unwindAt R.T (progBase s) (Arm.r .PC s) obj t ∧ R.RaiseX s := by
+    R.stepU s = Unw.unwindAt R.T (progBase s) (Arm.r .PC s) obj t ∧ R.RaiseAt s ∧
+      (∀ x' d', R.AtLine s x' → ((∃ n, x' = .bl n ∧ d' = some n) ∨ (∃ r, x' = .blr r ∧ d' = none)) →
+        d' = callDest info) ∧
+      (∀ x', R.AtLine s (.blr x') → R.vc.DestsInt → x' ≠ .xzr) := by
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops, hal, -, -, hasg,
-    -, -, -, -, -, -, -, -, -, -, hst⟩ := q_op hq hvb hi
-  obtain ⟨ic, hic, hdest⟩ : ∃ ic, (i' = .call ic ∨ ∃ ti, i' = .tryCall ic ti) ∧
-      callDest ic = callDest info := by
+    -, -, hstat, -, -, -, -, -, -, -, hst⟩ := q_op hq hvb hi
+  obtain ⟨ic, hic, hdest, hasgC⟩ : ∃ ic, (i' = .call ic ∨ ∃ ti, i' = .tryCall ic ti) ∧
+      callDest ic = callDest info ∧ (MInst.call info).assign regs = .ok (.call ic) := by
     rcases hik with rfl | ⟨ti, rfl⟩
     · obtain ⟨ic, rfl⟩ := assign_call_form hasg
-      exact ⟨ic, .inl rfl, assign_callDest hasg⟩
+      exact ⟨ic, .inl rfl, assign_callDest hasg, hasg⟩
     · obtain ⟨ic, rfl, hc⟩ := (assign_call_tryCall info regs).2 ti i' hasg
-      exact ⟨ic, .inr ⟨ti, rfl⟩, assign_callDest hc⟩
+      exact ⟨ic, .inr ⟨ti, rfl⟩, assign_callDest hc, hc⟩
   have hcpc : CallAt R.fa R.base (Arm.r .PC s) i' := by
     rcases hik with rfl | ⟨ti, rfl⟩
     · exact callAt_of_q hq hvb hi call_hcall regs i' hal hasg
     · exact callAt_of_q hq hvb hi tryCall_hcall regs i' hal hasg
   obtain ⟨j, x, tt, hj, hx, hpc⟩ := hcpc
-  have hd : (∃ n, x = .bl n ∧ callDest ic = some n) ∨ (∃ r, x = .blr r ∧ callDest ic = none) := by
+  have hd0 : (∃ n, x = .bl n ∧ ic.dest = .sym n) ∨ (∃ r, x = .blr r ∧ ic.dest = .reg r) := by
     obtain ⟨dest, us, ds⟩ := ic
     rcases hic with rfl | ⟨ti, rfl⟩ <;> cases dest <;> simp [MInst.callInsn?] at hx <;>
-      subst hx <;> simp [callDest]
+      subst hx <;> simp
+  have hd : (∃ n, x = .bl n ∧ callDest ic = some n) ∨ (∃ r, x = .blr r ∧ callDest ic = none) := by
+    rcases hd0 with ⟨n, rfl, he⟩ | ⟨r, rfl, he⟩
+    · exact .inl ⟨n, rfl, by simp [callDest, he]⟩
+    · exact .inr ⟨r, rfl, by simp [callDest, he]⟩
   rw [hdest] at hd
   have hins := insnAt_pc hR hj hst.prog hpc
-  exact ⟨Unw.armStepU_raise hins hd hr, ⟨RL.good_of_sp hst.sp, hst.err, hst.prog, hst.sp,
-    x, _, obj, t, ⟨j, tt, hj, hpc⟩, hd, hr⟩⟩
+  have hat : R.AtLine s x := ⟨j, tt, hj, hpc⟩
+  refine ⟨Unw.armStepU_raise hins hd hr, ⟨RL.good_of_sp hst.sp, hst.err, hst.prog, hst.sp,
+    x, _, obj, t, hat, hd, hr⟩, fun x' d' hx' hd' => ?_, fun x' hx' hD => ?_⟩
+  · obtain rfl := RL.atLine_unique hR hat hx'
+    rcases hd with ⟨n, rfl, h1⟩ | ⟨r, rfl, h1⟩ <;>
+      rcases hd' with ⟨n', h2, h3⟩ | ⟨r', h2, h3⟩ <;> cases h2 <;> rw [h1, h3]
+  · obtain rfl := RL.atLine_unique hR hat hx'
+    rcases hd0 with ⟨n, h1, -⟩ | ⟨r, h1, he⟩
+    · cases h1
+    · cases h1
+      have hsite : R.vc.CallSite info := by
+        rcases hik with rfl | ⟨ti, rfl⟩
+        · exact ⟨b, vb, k, hvb, .inl hi⟩
+        · exact ⟨b, vb, k, hvb, .inr ⟨ti, hi⟩⟩
+      obtain ⟨b1, vb1, k1, hvb1, hi1⟩ := hsite
+      exact callDest_ne_xzr (hD b1 vb1 k1 info hvb1 hi1) hstat hasgC he
 
 /-! ## The raising callees' contract -/
 
