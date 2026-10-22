@@ -302,3 +302,6 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.IselEntry.entryLoads_nil
 #print axioms Concurrency.IselEntry.isel_refines_entry
 #print axioms Concurrency.IselRefines.Witness.isel_refines_entry_fA -- witness: native_decide
+#print axioms Concurrency.PrepThread.prep_thin
+#print axioms Concurrency.PrepThread.prep_thin_csem
+#print axioms Concurrency.AllocThread.alloc_thin

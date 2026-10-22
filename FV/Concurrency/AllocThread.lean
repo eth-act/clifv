@@ -158,18 +158,16 @@ theorem alloc_run (hc : CheckedAt vc rf c ins a0) {cm cmE : MConf CV ArmState}
 
 end
 
-/-- **Register allocation with interference**: if `checkAlloc vc rf` accepts, a run of the
-allocated code from the entry (store `m₀`, world `w₀`), reading any bytes, is realized by a VCode
-thread run from the entry (vreg file `ρ₀`) with the same events up to the moves (`Refines` with
-equal events, no private location, the atomic updates the two-event steps), which returns
-(traps) with the same values and world when the allocated code does. -/
-theorem alloc_refines {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep : Reg → CV → CV}
+/-- **Register allocation with interference, as traces**: if `checkAlloc vc rf` accepts, a run of
+the allocated code from the entry (store `m₀`, world `w₀`), reading any bytes, is realized by a
+VCode thread run from the entry (vreg file `ρ₀`) with the same events up to the moves (`Thin`),
+which returns (traps) with the same values and world when the allocated code does. -/
+theorem alloc_thin {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep : Reg → CV → CV}
     {ev : MInst → List CV → ArmState → List Ev} (h : checkAlloc vc rf = .ok ())
-    (hlen : ∀ i u w, (ev i u w).length ≤ 2) (m₀ : Loc → CV) (ρ₀ : Nat → CV) (w₀ : ArmState)
+    (m₀ : Loc → CV) (ρ₀ : Nat → CV) (w₀ : ArmState)
     {trT : List (List Ev)} {cT : MConf CV ArmState}
     (hrun : MTRun vc rf sem keep ev (MConf.init rf m₀ w₀) trT cT) :
-    ∃ trS cS ψ, VTRun vc sem ev (VConf.init ρ₀ w₀) trS cS ∧
-      Refines (· = ·) (fun _ => False) (StepPair (conv trT)) (conv trS) (conv trT) ψ ∧
+    ∃ trS cS, VTRun vc sem ev (VConf.init ρ₀ w₀) trS cS ∧ Thin trS trT ∧
       (∀ vals m w, cT = .ret vals m w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) := by
   obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc h
   obtain ⟨a0, hat, hle⟩ := hc.at
@@ -185,12 +183,7 @@ theorem alloc_refines {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep :
     simp only [MConf.init, VConf.init, this]
     exact ⟨rfl, rfl, vb, a0, out, hvb, hrb', hinv0, hedges⟩
   obtain ⟨trS, cS, hrS, hmE, hth⟩ := alloc_run hat hrun hinit
-  have hlenS := vtrun_len hlen hrS
-  obtain ⟨ψ, href⟩ := refines_of_thin (hth.map ProgE2E.convEv) (by
-    intro j hj
-    simp only [List.getElem_map, List.length_map]
-    exact hlenS j (by simpa using hj))
-  refine ⟨trS, cS, ψ, hrS, href, fun vals m w hT => ?_, fun w hT => ?_⟩
+  refine ⟨trS, cS, hrS, hth, fun vals m w hT => ?_, fun w hT => ?_⟩
   · subst hT
     cases cS with
     | ret vals' w' => obtain ⟨rfl, rfl, -⟩ := hmE; rfl
@@ -199,5 +192,26 @@ theorem alloc_refines {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep :
     cases cS with
     | halt w' => cases hmE; rfl
     | _ => exact hmE.elim
+
+/-- **Register allocation with interference**: if `checkAlloc vc rf` accepts, a run of the
+allocated code from the entry (store `m₀`, world `w₀`), reading any bytes, is realized by a VCode
+thread run from the entry (vreg file `ρ₀`) with the same events up to the moves (`Refines` with
+equal events, no private location, the atomic updates the two-event steps), which returns
+(traps) with the same values and world when the allocated code does. -/
+theorem alloc_refines {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep : Reg → CV → CV}
+    {ev : MInst → List CV → ArmState → List Ev} (h : checkAlloc vc rf = .ok ())
+    (hlen : ∀ i u w, (ev i u w).length ≤ 2) (m₀ : Loc → CV) (ρ₀ : Nat → CV) (w₀ : ArmState)
+    {trT : List (List Ev)} {cT : MConf CV ArmState}
+    (hrun : MTRun vc rf sem keep ev (MConf.init rf m₀ w₀) trT cT) :
+    ∃ trS cS ψ, VTRun vc sem ev (VConf.init ρ₀ w₀) trS cS ∧
+      Refines (· = ·) (fun _ => False) (StepPair (conv trT)) (conv trS) (conv trT) ψ ∧
+      (∀ vals m w, cT = .ret vals m w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) := by
+  obtain ⟨trS, cS, hrS, hth, hret, hhalt⟩ := alloc_thin h m₀ ρ₀ w₀ hrun
+  have hlenS := vtrun_len hlen hrS
+  obtain ⟨ψ, href⟩ := refines_of_thin (hth.map ProgE2E.convEv) (by
+    intro j hj
+    simp only [List.getElem_map, List.length_map]
+    exact hlenS j (by simpa using hj))
+  exact ⟨trS, cS, ψ, hrS, href, hret, hhalt⟩
 
 end Concurrency.AllocThread
