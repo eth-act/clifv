@@ -14,6 +14,7 @@ import FV.Link.Ld.RelsFast
 import FVTest.Link.LdArgs
 import FV.Link.ExeUCompile
 import FV.Link.SemanticCompileDefs
+import FV.Link.UnwReport
 
 /-! # `lake exe lean-link DIR [--dead-cleanup|--no-dead-cleanup] [--opt] [--verified] [--ld FILE]`:
 the executable compiler on an executable (L1, L2b)
@@ -376,6 +377,9 @@ def main (args0 : List String) : IO UInt32 := do
     IO.println s!"lean-link: {exe}: coverage: {thm s!"{exeName}_correct"}, {thm s!"{exeName}_correct_peak"}{src}{scope}{unw}"
     if deadCleanup && !unwOk then
       IO.println s!"lean-link: {exe}: exceptional edges not covered (unwOkB: {Link.DeadCleanup.unwFail SC file})"
+    -- report only (S10g, #404): the unwinding conditions of the totality argument, measured
+    if deadCleanup && !tailOn then
+      IO.println s!"lean-link: {exe}: unwinding conditions: {Link.DeadCleanup.unwReport SC file}"
     return 0
   | .error e =>
     if e != outOfScopeMsg && e != outOfScopeInMsg then

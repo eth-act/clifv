@@ -21,6 +21,7 @@ import FV.Link.OptExeUnwindWitness
 import FV.Link.UnwFnsCompleteWitness
 import FV.Link.UnwTryInWitness
 import FV.Link.UnwSavedInWitness
+import FV.Link.ExeULdInWitness
 import FV.Link.ExeUnwindExecWitness
 import FV.Link.ExeUnwindExecGoodWitness
 import FV.E2E.LinkArmUProgGoodWitness
@@ -180,6 +181,10 @@ import FV.E2E.WorldUnwindNIWitness
 #print axioms Link.EhCheck.Complete.unwindRows_complete_frame
 #print axioms Link.EhCheck.Complete.Witness.savedCheck_applies -- witness: native_decide
 #print axioms Link.EhCheck.Complete.Witness.unwindRows_frame_applies -- witness: native_decide
+#print axioms Link.EhCheck.Complete.fnUnwB_of_pipe
+#print axioms Link.EhCheck.Complete.unwFnsB_of_conds
+#print axioms Link.DeadCleanup.compileExeU_total_ldIn
+#print axioms Link.DeadCleanup.ULdInWitness.compileExeU_total_ldIn_witness -- witness: native_decide
 #print axioms E2E.DeadCleanupExecBytes.walk_det
 #print axioms E2E.DeadCleanupExecBytes.machU_uSys
 #print axioms E2E.DeadCleanupExecBytes.unwindAt_sim
