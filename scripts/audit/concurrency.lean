@@ -707,6 +707,7 @@ import FVTest.Concurrency.LitmusFull
 -- T2j (#473): layer 4b with the stack offsets built in x16 (ArmAllocLSX)
 #print axioms Concurrency.ArmAllocThread.kinds_preLines
 #print axioms Concurrency.ArmAllocThread.lines_eq
+#print axioms Concurrency.ArmAllocThread.oneEvPreForm_of_oneEv
 #print axioms Concurrency.ArmAllocThread.straightSem_preC
 #print axioms Concurrency.ArmAllocThread.straightSem_pre_some
 #print axioms Concurrency.ArmAllocThread.oneEvPre_op

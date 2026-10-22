@@ -11,7 +11,8 @@ other stack offsets lower to **an event-free prefix** (`loadConst64 x16 off`: `m
 * `OneEvPreForm`: **a straight-line form whose lines are an event-free prefix and one access**
   (`OneEvForm` with the prefix): the access's events on any memory, from the prefix's end state,
   are the canonical run's (**event equality**, `OneEvPreForm.ev`), and the canonical access's pc,
-  error and program do not depend on the memory (`CtlIndep`);
+  error and program do not depend on the memory (`CtlIndep`); a one-event form is one with an
+  empty prefix (`oneEvPreForm_of_oneEv`);
 * `straightSem_preC`, `straightSem_pre_some`: the canonical run of such a form at any memory
   (**receptiveness**, from `straightSem_pre`/`preMem`);
 * `oneEvPre_op`: **the per-item obligation at such a form**: the Arm takes the prefix's event-free
@@ -76,6 +77,36 @@ theorem lines_eq {ctx : FnCtx} {i' : MInst} {ls ls' : List Line}
   have := (h1 {}).symm.trans (h2 {})
   simp only [Except.ok.injEq, Prod.mk.injEq] at this
   exact this.1
+
+theorem ins_last {L L' : List Line} {x x' : Insn} {t t' : Option Clif.TrapCode}
+    (h : L ++ [.ins x t] = L' ++ [.ins x' t']) : L = L' ∧ x = x' ∧ t = t' := by
+  obtain ⟨h1, h2⟩ := List.append_inj' h rfl
+  simp only [List.cons.injEq, Line.ins.injEq, and_true] at h2
+  exact ⟨h1, h2⟩
+
+/-- **A one-event form is a form with an empty event-free prefix.** -/
+theorem oneEvPreForm_of_oneEv {F : BitVec 64 → Prop} {ctx : FnCtx} {i : MInst}
+    (h : OneEvForm F ctx i) : OneEvPreForm F ctx i := by
+  obtain ⟨ops, ic, x, t, a, hops, hic, hl, ha, hc⟩ := h.canon
+  refine ⟨h.ctl, h.form, ⟨ops, ic, [], x, t, a, hops, hic, hl,
+    fun _ h => absurd h List.not_mem_nil, ha, ha, hc⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops hsz hasg
+    obtain ⟨x, t, hxl⟩ := h.line ops regs i' hops hsz hasg
+    exact ⟨[], x, t, fun _ h => absurd h List.not_mem_nil, hxl⟩
+  · intro ops regs i' pre x t env a hops hsz hasg hl ha
+    obtain ⟨x', t', hxl⟩ := h.line ops regs i' hops hsz hasg
+    have e := (hl.symm.trans (hxl {}))
+    simp only [Except.ok.injEq, Prod.mk.injEq] at e
+    obtain ⟨rfl, rfl, rfl⟩ := ins_last (L' := []) e.1
+    exact h.arm ops regs i' x t env a hops hsz hasg hl ha
+  · intro s w y ops regs i' pre x t env env' a hsw _ hops hsz hall hasg hl hy ha M
+    obtain ⟨x', t', hxl⟩ := h.line ops regs i' hops hsz hasg
+    have e := (hl.symm.trans (hxl {}))
+    simp only [Except.ok.injEq, Prod.mk.injEq] at e
+    obtain ⟨rfl, rfl, rfl⟩ := ins_last (L' := []) e.1
+    simp only [execLines, Option.some.injEq] at hy
+    subst hy
+    exact h.ev s w ops regs i' x t env' a hsw hops hsz hall hasg hl ha M
 
 open Classical in
 /-- **Receptiveness of a form with an event-free prefix**: `straightSem_pre` with the access's
@@ -385,12 +416,6 @@ theorem straightEvs_lines {ctx : FnCtx} {i ic : MInst} {uses : List CV} {w : Arm
     straightEvs ctx i uses w = linesEvs env0 ls (placeUses ops (canonRegs ops) uses w) := by
   unfold straightEvs
   simp only [hops, hic, hl]
-
-theorem ins_last {L L' : List Line} {x x' : Insn} {t t' : Option Clif.TrapCode}
-    (h : L ++ [.ins x t] = L' ++ [.ins x' t']) : L = L' ∧ x = x' ∧ t = t' := by
-  obtain ⟨h1, h2⟩ := List.append_inj' h rfl
-  simp only [List.cons.injEq, Line.ins.injEq, and_true] at h2
-  exact ⟨h1, h2⟩
 
 theorem pcx_setMem (Y : ArmState) (M : Memory) (n : Nat) (P X : BitVec 64) :
     pcx (setMem M Y) n P X = setMem M (pcx Y n P X) := by
