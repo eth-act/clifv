@@ -94,22 +94,22 @@ theorem forall₂_pairwise {α β : Type} {R : α → β → Prop} {P : α → �
 
 /-- **The parts of an output section** lie from the start address on, each at its file offset,
 in increasing, disjoint file ranges up to the end reached. -/
-theorem placeParts_spec (sz al : Part → Nat) (start soff out : Nat) (bits : Bool) :
+theorem placeParts_spec (sz al : Part → Nat) (start soff out : Nat) (bits tl : Bool) :
     ∀ (ps : List Part) (a : Nat) (acc : Array Slot), start ≤ a →
-      a ≤ (placeParts sz al start soff out bits a ps acc).1 ∧
-      ∃ new : List Slot, (placeParts sz al start soff out bits a ps acc).2.toList = acc.toList ++ new ∧
+      a ≤ (placeParts sz al start soff out bits tl a ps acc).1 ∧
+      ∃ new : List Slot, (placeParts sz al start soff out bits tl a ps acc).2.toList = acc.toList ++ new ∧
         (∀ x ∈ new, x.bits = bits ∧ soff + (a - start) ≤ x.fo ∧
-          x.fo + x.size ≤ soff + ((placeParts sz al start soff out bits a ps acc).1 - start)) ∧
+          x.fo + x.size ≤ soff + ((placeParts sz al start soff out bits tl a ps acc).1 - start)) ∧
         new.Pairwise (fun x y => x.fo + x.size ≤ y.fo)
   | [], a, acc, _ => ⟨Nat.le_refl _, [], by simp [placeParts], by simp, .nil⟩
   | p :: ps, a, acc, ha => by
     have hb := le_alignUp a (al p)
-    obtain ⟨h1, new, h2, h3, h4⟩ := placeParts_spec sz al start soff out bits ps
+    obtain ⟨h1, new, h2, h3, h4⟩ := placeParts_spec sz al start soff out bits tl ps
       (alignUp a (al p) + sz p)
-      (acc.push (Slot.mk p (alignUp a (al p)) (soff + (alignUp a (al p) - start)) (sz p) out bits))
+      (acc.push (Slot.mk p (alignUp a (al p)) (soff + (alignUp a (al p) - start)) (sz p) out bits tl))
       (by omega)
     simp only [placeParts]
-    refine ⟨by omega, Slot.mk p (alignUp a (al p)) (soff + (alignUp a (al p) - start)) (sz p) out bits
+    refine ⟨by omega, Slot.mk p (alignUp a (al p)) (soff + (alignUp a (al p) - start)) (sz p) out bits tl
       :: new, by rw [h2]; simp, ?_, ?_⟩
     · intro x hx
       rcases List.mem_cons.1 hx with rfl | hx
@@ -202,7 +202,8 @@ theorem PInv_placeIn {st : PSt} (h : PInv st) (sz al : Part → Nat) (nb : Part 
     PInv (placeIn sz al nb ta st s) ∧ (placeIn sz al nb ta st s).cur = st.cur := by
   refine ⟨?_, rfl⟩
   -- the section's start, file offset, and its parts
-  generalize hA0 : s.parts.foldl (fun m p => max m (al p)) (if s.name == ".tdata" then ta else 1) = a0
+  generalize hD : (s.name == ".tdata") = tdata
+  generalize hA0 : s.parts.foldl (fun m p => max m (al p)) (if tdata then ta else 1) = a0
   generalize hT : (s.name == ".tbss") = tbss
   generalize hN : (tbss || s.name == ".bss" || s.parts.all nb) = nobits
   have hst : (if tbss = true then alignUp st.tbssVa a0 else alignUp st.va a0) =
@@ -210,13 +211,13 @@ theorem PInv_placeIn {st : PSt} (h : PInv st) (sz al : Part → Nat) (nb : Part 
   generalize hS : (if tbss = true then alignUp st.tbssVa a0 else alignUp st.va a0) = start at hst
   generalize hO : (if tbss = true then st.off else st.off + (start - st.va)) = soff
   obtain ⟨hpa, new, hnew, hin, hpw⟩ := placeParts_spec sz al start soff (st.outs.size + 1) (!nobits)
-    s.parts.toList start st.slots (Nat.le_refl _)
-  generalize hR : placeParts sz al start soff (st.outs.size + 1) (!nobits) start s.parts.toList
-    st.slots = r at hpa hnew hin
+    (tdata || tbss) s.parts.toList start st.slots (Nat.le_refl _)
+  generalize hR : placeParts sz al start soff (st.outs.size + 1) (!nobits) (tdata || tbss) start
+    s.parts.toList st.slots = r at hpa hnew hin
   simp only [Nat.sub_self, Nat.add_zero] at hin
   have hd := h.diff; have hfe := h.fe; have hso := h.so; have hsv := h.sv; have hhdr := h.hdr
   unfold placeIn
-  simp only [hA0, hT, hN, hS, hO, hR]
+  simp only [hD, hA0, hT, hN, hS, hO, hR]
   cases tbss with
   | true =>
     have hnb : nobits = true := by rw [← hN]; simp

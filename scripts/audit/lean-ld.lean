@@ -2,6 +2,7 @@ import FV.Link.ExeLd
 import FV.Link.DeadCleanupExeLd
 import FV.Link.Ld.LayoutProof
 import FV.Link.Ld.LayoutTotal
+import FV.Link.Ld.BodyTotal
 
 -- the executable compiler's totality on `lean-ld`'s output (L2b stage 3e)
 #print axioms Link.compileExe_total_ld
@@ -33,3 +34,9 @@ import FV.Link.Ld.LayoutTotal
 #print axioms Link.Ld.layout_ok
 #print axioms Link.Ld.value_ok
 #print axioms Link.Ld.layout_ok_witness -- witness: native_decide
+
+-- the body of lean-ld's plan is built when its relocations apply (A1c, #409)
+#print axioms Link.Ld.relocVal_ok
+#print axioms Link.Ld.buildBody_layout
+#print axioms Link.Ld.assemble_layout_ok
+#print axioms Link.Ld.tinyPiece_relsOk

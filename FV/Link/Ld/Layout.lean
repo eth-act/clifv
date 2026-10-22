@@ -109,7 +109,8 @@ slot's address and file offset and at most its size, so that the plan's own cond
 (`Plan.okB`) hold by construction (`FV/Link/Ld/LayoutProof.lean`). -/
 
 /-- A placed part: the part, its address and file offset, its size, its output section's index
-(from `1`), and whether that output section has file bytes. -/
+(from `1`), whether that output section has file bytes and whether it is thread-local
+(`.tdata`, `.tbss`). -/
 structure Slot where
   part : Part
   addr : Nat
@@ -117,6 +118,7 @@ structure Slot where
   size : Nat
   out : Nat
   bits : Bool
+  tls : Bool
   deriving Inhabited
 
 /-- The placement's state: the output sections and closed segments so far, the address and
@@ -153,13 +155,13 @@ def PSt.seg (s : PSt) : Seg :=
 
 /-- The parts of an output section placed from address `a`, each aligned (`al`) and of size
 `sz`; a part at `b` has file offset `soff + (b - start)`. -/
-def placeParts (sz al : Part → Nat) (start soff out : Nat) (bits : Bool) :
+def placeParts (sz al : Part → Nat) (start soff out : Nat) (bits tl : Bool) :
     Nat → List Part → Array Slot → Nat × Array Slot
   | a, [], acc => (a, acc)
   | a, p :: ps, acc =>
     let b := alignUp a (al p)
-    placeParts sz al start soff out bits (b + sz p) ps
-      (acc.push { part := p, addr := b, fo := soff + (b - start), size := sz p, out, bits })
+    placeParts sz al start soff out bits tl (b + sz p) ps
+      (acc.push { part := p, addr := b, fo := soff + (b - start), size := sz p, out, bits, tls := tl })
 
 /-- A new segment of kind `k`, in a fresh 64 KiB page, when the kind changes (the open one
 closed). -/
@@ -181,7 +183,8 @@ def placeIn (sz al : Part → Nat) (nb : Part → Bool) (tlsAlign : Nat) (st : P
   let nobits := tbss || s.name == ".bss" || s.parts.all nb
   let start := if tbss then alignUp st.tbssVa a0 else alignUp st.va a0
   let soff := if tbss then st.off else st.off + (start - st.va)
-  let r := placeParts sz al start soff (st.outs.size + 1) (!nobits) start s.parts.toList st.slots
+  let r := placeParts sz al start soff (st.outs.size + 1) (!nobits) (tdata || tbss) start s.parts.toList
+    st.slots
   let a := r.1
   let size := a - start
   let flags := (if s.seg == 2 || tdata || tbss then shfWrite else 0) |||
