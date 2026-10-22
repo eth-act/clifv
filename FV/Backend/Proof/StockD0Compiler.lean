@@ -5,7 +5,7 @@ namespace Backend.Stock.D0.Compiler
 
 def legacyLowerChecked (f : Clif.Function) (verify : Bool) : Except String VCode := do
   let vc ← lowerFunction f
-  if verify && !Backend.Proof.Driver.lowerCheck f vc then
+  if verify && !Backend.lowerCheckFor f vc then
     throw "lowering rejected by the M7 lowering validator (lowerCheck)"
   pure vc
 

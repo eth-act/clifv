@@ -1,5 +1,6 @@
 import FV.Backend.Isel
 import FV.Compile.Subset
+import FV.Compile.StoreTyped
 
 namespace Backend
 
@@ -14,5 +15,12 @@ def abiSigs (f : Clif.Function) : Bool :=
 `E2E.InSubset.abiSigs`, `E2E.InSubset.indSigs`). -/
 def verifiable (f : Clif.Function) : Bool :=
   Compile.functionE f && abiSigs f && indSigsOk f
+
+/-- The typed theorem's conditions that do not need the rest of the file (`E2E.InSubsetT`:
+`subsetET`, `storeTyped`, `abiSigs`, `indSigs`; S11e5 Stage C): the typed movement scope
+`Compile.functionET` (float parameters, returns, block parameters, loads, stores, constants,
+`select`, `bitcast`), float stores storing float values. -/
+def verifiableT (f : Clif.Function) : Bool :=
+  Compile.functionET f && Compile.storeTypedB f && abiSigs f && indSigsOk f
 
 end Backend
