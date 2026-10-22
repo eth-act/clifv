@@ -368,25 +368,23 @@ def layDecide (st : St) (g : GcOut) : LayD := Id.run do
     osecs := osecs.push { name := ".tdata", seg := 0, parts := #[] }
   return { osecs, ehs, ehTotal, fdeCount, cieOut, pieceOut, ehStart, gotSlot, gotSyms }
 
+/-- The places the placement gives, one slot at a time (`slotMaps`). -/
+def slotStep (m : Array (Array Nat) × Array (Array Nat) × Std.HashMap String Nat ×
+    Std.HashMap (Nat × Nat) Nat) (sl : Slot) :
+    Array (Array Nat) × Array (Array Nat) × Std.HashMap String Nat × Std.HashMap (Nat × Nat) Nat :=
+  match sl.part with
+  | .input (f, i) => (m.1.modify f (·.set! i sl.addr), m.2.1.modify f (·.set! i sl.out), m.2.2)
+  | .common f k => (m.1, m.2.1, m.2.2.1, m.2.2.2.insert (f, k) sl.addr)
+  | .got => (m.1, m.2.1, m.2.2.1.insert "got" sl.addr, m.2.2.2)
+  | .eh => (m.1, m.2.1, m.2.2.1.insert "eh" sl.addr, m.2.2.2)
+  | .ehHdr => (m.1, m.2.1, m.2.2.1.insert "ehHdr" sl.addr, m.2.2.2)
+
 /-- The places the placement gives: per input section its address and output section index,
 the synthesized parts' and the common symbols' addresses. -/
 def slotMaps (files : Array Obj) (slots : Array Slot) :
     Array (Array Nat) × Array (Array Nat) × Std.HashMap String Nat × Std.HashMap (Nat × Nat) Nat :=
-  Id.run do
-  let mut secAddr : Array (Array Nat) := files.map fun f => Array.replicate f.secs.size 0
-  let mut secOut : Array (Array Nat) := files.map fun f => Array.replicate f.secs.size 0
-  let mut partAddr : Std.HashMap String Nat := {}
-  let mut commonAddr : Std.HashMap (Nat × Nat) Nat := {}
-  for sl in slots do
-    match sl.part with
-    | .input (f, i) =>
-      secAddr := secAddr.modify f (·.set! i sl.addr)
-      secOut := secOut.modify f (·.set! i sl.out)
-    | .common f k => commonAddr := commonAddr.insert (f, k) sl.addr
-    | .got => partAddr := partAddr.insert "got" sl.addr
-    | .eh => partAddr := partAddr.insert "eh" sl.addr
-    | .ehHdr => partAddr := partAddr.insert "ehHdr" sl.addr
-  return (secAddr, secOut, partAddr, commonAddr)
+  slots.foldl slotStep
+    (files.map fun f => Array.replicate f.secs.size 0, files.map fun f => Array.replicate f.secs.size 0, {}, {})
 
 /-- The TLS template's alignment: the largest of `.tdata`'s and `.tbss`'s parts. -/
 def tlsAlignOf (al : Part → Nat) (sorted : Array OSec) : Nat :=
@@ -413,8 +411,8 @@ variable (L : Lay) (o : Opts) (st : St) (g : GcOut)
 def outRange (n : String) : Option (Nat × Nat) :=
   (L.pst.outs.find? (·.name == n)).map fun s => (s.addr, s.addr + s.size)
 
-/-- The values of the linker-defined symbols. -/
-def synth (n : String) : Option Nat :=
+/-- The values of the linker-defined symbols with fixed names. -/
+def synthFixed (n : String) : Option Nat :=
   let lastSeg := L.segs.getLastD default
   let textEnd := ((L.segs.find? (·.kind == 1)).map fun s => s.vaddr + s.memsz).getD 0
   let dataEnd := lastSeg.vaddr + lastSeg.filesz
@@ -436,10 +434,15 @@ def synth (n : String) : Option Nat :=
   | "_GLOBAL_OFFSET_TABLE_" => some (L.partAddr.getD "got" 0)
   | "__eh_frame_start" => L.partAddr["eh"]?
   | "__eh_frame_hdr_start" => L.partAddr["ehHdr"]?
-  | _ =>
-    if n.startsWith "__start_" then (L.outRange (n.drop 8).toString).map (·.1)
-    else if n.startsWith "__stop_" then (L.outRange (n.drop 7).toString).map (·.2)
-    else none
+  | _ => none
+
+/-- **The values of the linker-defined symbols**: `__start_X`/`__stop_X` (the output section
+`X`'s bounds), the fixed names (`synthFixed`; none of them starts with `__start_` or
+`__stop_`). -/
+def synth (n : String) : Option Nat :=
+  if n.startsWith "__start_" then (L.outRange (n.drop 8).toString).map (·.1)
+  else if n.startsWith "__stop_" then (L.outRange (n.drop 7).toString).map (·.2)
+  else L.synthFixed o n
 
 /-- The output `.eh_frame`'s address. -/
 def ehAddr : Nat := L.partAddr.getD "eh" 0
@@ -484,29 +487,41 @@ def gotBytes : Except String ByteArray :=
     let (v, _) ← L.value o st g fi j
     pure (got ++ leBytes 8 (v % 2 ^ 64).toNat)) .empty
 
+/-- One relocation of a kept `.eh_frame` record `e` (of the input `.eh_frame` `es`): resolved
+at its place in the output `.eh_frame`; an FDE's function start goes to the `.eh_frame_hdr`
+table. -/
+def ehRel (e : EhOut) (acc : Array Rel × Array (Nat × Nat)) (r : Rela) :
+    Except String (Array Rel × Array (Nat × Nat)) := do
+  let P := L.ehAddr + e.out + (r.off - e.piece.off)
+  let ri ← L.relIn o st g e.file r P
+  let rels := acc.1.push { off := e.out + (r.off - e.piece.off), ty := r.type, ri }
+  if !e.piece.cie && r.off == e.piece.off + 8 then
+    let (v, _) ← L.value o st g e.file r.sym
+    pure (rels, acc.2.push (((v + r.addend) % 2 ^ 64).toNat, L.ehAddr + e.out))
+  else pure (rels, acc.2)
+
+/-- A kept `.eh_frame` record's bytes (its CIE pointer rewritten for an FDE). -/
+def ehBytes (e : EhOut) (es : EhSec) : ByteArray :=
+  let f := st.files[e.file]!
+  let src := f.secs[es.sec]!
+  let bytes := f.data.extract (src.off + e.piece.off) (src.off + e.piece.off + e.piece.size)
+  if !e.piece.cie then writeLE bytes 4 4 (e.out + 4 - L.cieOut.getD (e.file, e.ei, e.piece.cieOff) 0)
+  else bytes
+
+/-- One kept `.eh_frame` record placed in the output `.eh_frame` (`ehOut`). -/
+def ehRec (acc : ByteArray × Array Rel × Array (Nat × Nat)) (e : EhOut) :
+    Except String (ByteArray × Array Rel × Array (Nat × Nat)) :=
+  match g.eh[e.file]![e.ei]? with
+  | none => pure acc
+  | some es => do
+    let rt ← (es.relasIn e.piece.off (e.piece.off + e.piece.size)).foldlM (L.ehRel o st g e)
+      (acc.2.1, acc.2.2)
+    pure (place acc.1 e.out (L.ehBytes st e es), rt.1, rt.2)
+
 /-- **The output `.eh_frame`**: its bytes (each kept record at its offset, the CIE pointers
 rewritten), its relocations, and the `.eh_frame_hdr` table (function start, FDE address). -/
-def ehOut : Except String (ByteArray × Array Rel × Array (Nat × Nat)) := do
-  let mut buf : ByteArray := ⟨Array.replicate L.ehTotal 0⟩
-  let mut rels : Array Rel := #[]
-  let mut table : Array (Nat × Nat) := #[]
-  for e in L.ehs do
-    if let some es := g.eh[e.file]![e.ei]? then
-      let f := st.files[e.file]!
-      let src := f.secs[es.sec]!
-      let mut bytes := f.data.extract (src.off + e.piece.off) (src.off + e.piece.off + e.piece.size)
-      if !e.piece.cie then
-        let c := L.cieOut.getD (e.file, e.ei, e.piece.cieOff) 0
-        bytes := writeLE bytes 4 4 (e.out + 4 - c)
-      buf := place buf e.out bytes
-      for r in es.relasIn e.piece.off (e.piece.off + e.piece.size) do
-        let P := L.ehAddr + e.out + (r.off - e.piece.off)
-        let ri ← L.relIn o st g e.file r P
-        rels := rels.push { off := e.out + (r.off - e.piece.off), ty := r.type, ri }
-        if !e.piece.cie && r.off == e.piece.off + 8 then
-          let (v, _) ← L.value o st g e.file r.sym
-          table := table.push (((v + r.addend) % 2 ^ 64).toNat, L.ehAddr + e.out)
-  return (buf, rels, table)
+def ehOut : Except String (ByteArray × Array Rel × Array (Nat × Nat)) :=
+  L.ehs.foldlM (L.ehRec o st g) (⟨Array.replicate L.ehTotal 0⟩, #[], #[])
 
 /-- The `.eh_frame_hdr` table's bytes. -/
 def ehHdrBytes (table : Array (Nat × Nat)) : ByteArray :=
@@ -518,13 +533,14 @@ def ehHdrBytes (table : Array (Nat × Nat)) : ByteArray :=
       leBytes 4 (((L.ehAddr : Int) - (hAddr + 4)) % 2 ^ 32).toNat ++ leBytes 4 sortedT.size)
 
 /-- An input section's piece in its slot (none for `SHT_NOBITS`), with its relocations resolved
-(sorted by offset: the data check, `FV/Link/Ld/Data.lean`, walks them in order). -/
+at the section's address (sorted by offset: the data check, `FV/Link/Ld/Data.lean`, walks them
+in order). -/
 def inputPiece (sl : Slot) (fi si : Nat) : Except String (Option Piece) := do
   let f := st.files[fi]!
   let s := f.secs[si]!
   if s.type == shtNobits then return none
   let rels ← (f.relas si).toList.mapM fun r => do
-    let ri ← (L.relIn o st g fi r (sl.addr + r.off)).mapError (s!"{f.name}({s.name})+{r.off}: " ++ ·)
+    let ri ← (L.relIn o st g fi r (L.secAddr[fi]![si]! + r.off)).mapError (s!"{f.name}({s.name})+{r.off}: " ++ ·)
     pure ({ off := r.off, ty := r.type, ri } : Rel)
   return some (sl.piece (f.data.extract s.off (s.off + s.size)) (rels.mergeSort fun r r' => decide (r.off ≤ r'.off)))
 

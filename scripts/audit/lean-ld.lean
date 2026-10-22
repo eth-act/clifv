@@ -1,6 +1,7 @@
 import FV.Link.ExeLd
 import FV.Link.DeadCleanupExeLd
 import FV.Link.Ld.LayoutProof
+import FV.Link.Ld.LayoutTotal
 
 -- the executable compiler's totality on `lean-ld`'s output (L2b stage 3e)
 #print axioms Link.compileExe_total_ld
@@ -27,3 +28,8 @@ import FV.Link.Ld.LayoutProof
 #print axioms Link.Ld.PInv_layPre
 #print axioms Link.Ld.pieces_pairwise
 #print axioms Link.Ld.tinyLayout_okB -- witness: native_decide
+
+-- the planner accepts its resolved inputs when their references resolve (A1b, #409)
+#print axioms Link.Ld.layout_ok
+#print axioms Link.Ld.value_ok
+#print axioms Link.Ld.layout_ok_witness -- witness: native_decide
