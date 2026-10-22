@@ -79,7 +79,8 @@ theorem ofInt_imm64OfBits' {w : Nat} (hw : w ≤ 64) (b : BitVec w) :
     BitVec.setWidth_eq]
 
 /-- The round trip of an immediate: `toInst` of a presented `iconst` immediate. -/
-@[opt_monad, opt_imm] theorem ofInt_imm64OfBits {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+@[opt_monad, opt_imm] theorem ofInt_imm64OfBits {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (b : BitVec t.width) :
     BitVec.ofInt t.width (imm64OfBits b) = b :=
   ofInt_imm64OfBits' (by cases t <;> simp_all [Ty.width]) b
 
@@ -185,14 +186,16 @@ theorem toNat_beq_toNat {w : Nat} {x y : BitVec w} : (x.toNat == y.toNat) = (x =
 
 /-! ### The type-dependent constants of the helpers, at a non-`i128` type -/
 
-theorem ofClif_bits (t : Ty) : (CTy.ofClif t).bits = t.width := by cases t <;> rfl
+theorem ofClif_bits {t : Ty} (hv : t.isVec = false) : (CTy.ofClif t).bits = t.width := by
+  cases t <;> first | rfl | exact absurd hv (by decide)
 
-theorem tyMask_ofClif {t : Ty} (ht : t ≠ .i128) : Rust.tyMask (CTy.ofClif t) = .ok (2 ^ t.width - 1) := by
-  cases t <;> first | rfl | exact absurd rfl ht
+theorem tyMask_ofClif {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) :
+    Rust.tyMask (CTy.ofClif t) = .ok (2 ^ t.width - 1) := by
+  cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
-theorem width64_ofClif {t : Ty} (ht : t ≠ .i128) (fn : String) :
+theorem width64_ofClif {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (fn : String) :
     Rust.width64 fn (CTy.ofClif t) = .ok t.width := by
-  cases t <;> first | rfl | exact absurd rfl ht
+  cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
 theorem maskTo_of_lt {w : Nat} (h : w < 64) (x : Int) : Rust.maskTo w x = (BitVec.ofInt w x).toNat := by
   simp [Rust.maskTo, Nat.not_le.2 h]
@@ -307,157 +310,162 @@ macro_rules
     all_goals try simp (disch := decide) only [$ts,*]
     all_goals (set_option kbv.budgetScale 12 in kbv)))
 
-/-- Split a non-`i128` type into its four widths (reverting the given bit vectors). -/
+/-- Split a non-`i128`, non-vector type into its four widths (reverting the given bit vectors;
+the `i128` and vector cases are closed by the hypotheses `t ≠ .i128` and `t.isVec = false`). -/
 syntax "imm_cases" ident (ppSpace ident)* : tactic
 macro_rules
   | `(tactic| imm_cases $t) => `(tactic| (
     cases $t:ident <;>
-      simp only [ne_eq, not_true_eq_false, Ty.width, Nat.reducePow, Nat.reduceSub] at *))
+      simp only [ne_eq, not_true_eq_false, Ty.isVec, Bool.true_eq_false, Ty.width,
+        Nat.reducePow, Nat.reduceSub] at *))
   | `(tactic| imm_cases $t $bs*) => `(tactic| (
     revert $bs*
     cases $t:ident <;>
-      simp only [ne_eq, not_true_eq_false, Ty.width, Nat.reducePow, Nat.reduceSub] at * <;>
+      simp only [ne_eq, not_true_eq_false, Ty.isVec, Bool.true_eq_false, Ty.width,
+        Nat.reducePow, Nat.reduceSub] at * <;>
       intro $bs*))
 
 /-! ## Specifications (`opt_imm`) -/
 
-@[opt_imm] theorem imm64Add_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Add_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Add (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (b + c)) := by
   imm_pre [Rust.imm64Add]
   imm_cases t b c <;> imm_solve
 
-@[opt_imm] theorem imm64Sub_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Sub_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Sub (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (b - c)) := by
   imm_pre [Rust.imm64Sub]
   imm_cases t b c <;> imm_solve
 
-@[opt_imm] theorem imm64Mul_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Mul_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Mul (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (b * c)) := by
   imm_pre [Rust.imm64Mul]
   imm_cases t b c <;> imm_solve [setWidth_mul_mask]
 
-@[opt_imm] theorem imm64And_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64And_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64And (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (b &&& c)) := by
   imm_pre [Rust.imm64And]
   imm_cases t b c <;> imm_solve
 
-@[opt_imm] theorem imm64Or_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Or_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Or (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (b ||| c)) := by
   imm_pre [Rust.imm64Or]
   imm_cases t b c <;> imm_solve
 
-@[opt_imm] theorem imm64Xor_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Xor_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Xor (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (b ^^^ c)) := by
   imm_pre [Rust.imm64Xor]
   imm_cases t b c <;> imm_solve
 
-@[opt_imm] theorem imm64Not_spec {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+@[opt_imm] theorem imm64Not_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b : BitVec t.width) :
     Rust.imm64Not (CTy.ofClif t) (imm64OfBits b) = .ok (imm64OfBits (~~~b)) := by
   imm_pre [Rust.imm64Not]
   imm_cases t b <;> imm_solve
 
-@[opt_imm] theorem imm64Neg_spec {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+@[opt_imm] theorem imm64Neg_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b : BitVec t.width) :
     Rust.imm64Neg (CTy.ofClif t) (imm64OfBits b) = .ok (imm64OfBits (-b)) := by
   imm_pre [Rust.imm64Neg]
   imm_cases t b <;> imm_solve
 
-@[opt_imm] theorem imm64Umin_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Umin_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Umin (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.umin b c)) := by
   imm_pre [Rust.imm64Umin]
   imm_cases t b c <;> imm_solve
 
-@[opt_imm] theorem imm64Umax_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Umax_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Umax (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.umax b c)) := by
   imm_pre [Rust.imm64Umax]
   imm_cases t b c <;> imm_solve
 
-@[opt_imm] theorem imm64Smin_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Smin_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Smin (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.smin b c)) := by
   imm_pre [Rust.imm64Smin]
   imm_cases t b c <;> imm_solve [setWidth_setWidth64, setWidth_signExtend64, setWidth_ite]
 
-@[opt_imm] theorem imm64Smax_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Smax_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Smax (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.smax b c)) := by
   imm_pre [Rust.imm64Smax]
   imm_cases t b c <;> imm_solve [setWidth_setWidth64, setWidth_signExtend64, setWidth_ite]
 
-theorem imm64Icmp_eq_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_eq_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .eq (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .eq b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-theorem imm64Icmp_ne_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_ne_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .ne (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .ne b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-theorem imm64Icmp_slt_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_slt_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .slt (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .slt b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-theorem imm64Icmp_sge_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_sge_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .sge (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .sge b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-theorem imm64Icmp_sgt_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_sgt_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .sgt (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .sgt b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-theorem imm64Icmp_sle_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_sle_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .sle (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .sle b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-theorem imm64Icmp_ult_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_ult_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .ult (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .ult b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-theorem imm64Icmp_uge_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_uge_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .uge (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .uge b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-theorem imm64Icmp_ugt_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_ugt_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .ugt (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .ugt b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-theorem imm64Icmp_ule_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+theorem imm64Icmp_ule_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) .ule (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp .ule b c)) := by
   imm_pre [Rust.imm64Icmp, Rust.u64UextendImm64, Rust.i64SextendImm64]
   imm_cases t b c <;> imm_solve
 
-@[opt_imm] theorem imm64Icmp_spec {t : Ty} (ht : t ≠ .i128) (cc : IntCC) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Icmp_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (cc : IntCC)
+    (b c : BitVec t.width) :
     Rust.imm64Icmp (CTy.ofClif t) cc (imm64OfBits b) (imm64OfBits c) =
       .ok (imm64OfBits (Sem.icmp cc b c)) := by
   cases cc
-  · exact imm64Icmp_eq_spec ht b c
-  · exact imm64Icmp_ne_spec ht b c
-  · exact imm64Icmp_slt_spec ht b c
-  · exact imm64Icmp_sge_spec ht b c
-  · exact imm64Icmp_sgt_spec ht b c
-  · exact imm64Icmp_sle_spec ht b c
-  · exact imm64Icmp_ult_spec ht b c
-  · exact imm64Icmp_uge_spec ht b c
-  · exact imm64Icmp_ugt_spec ht b c
-  · exact imm64Icmp_ule_spec ht b c
+  · exact imm64Icmp_eq_spec ht hv b c
+  · exact imm64Icmp_ne_spec ht hv b c
+  · exact imm64Icmp_slt_spec ht hv b c
+  · exact imm64Icmp_sge_spec ht hv b c
+  · exact imm64Icmp_sgt_spec ht hv b c
+  · exact imm64Icmp_sle_spec ht hv b c
+  · exact imm64Icmp_ult_spec ht hv b c
+  · exact imm64Icmp_uge_spec ht hv b c
+  · exact imm64Icmp_ugt_spec ht hv b c
+  · exact imm64Icmp_ule_spec ht hv b c
 
 /-- `imm64_masked` of the `u64` of a presented immediate (`u64_from_imm64`: its bits). -/
-@[opt_imm] theorem imm64Masked_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width) :
+@[opt_imm] theorem imm64Masked_spec {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false) (b : BitVec t.width) :
     Rust.imm64Masked (CTy.ofClif t') (b.toNat : Int) = .ok (imm64OfBits (b.setWidth t'.width)) := by
   imm_pre [Rust.imm64Masked]
   imm_cases t b <;> imm_cases t' <;> imm_solve
@@ -631,7 +639,7 @@ theorem clz_aux {w : Nat} (hw : w ≤ 64) (b : BitVec w)
   rw [h1, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hc,
     Nat.mod_eq_of_lt (a := 64 - w) (by omega), Nat.mod_eq_of_lt (by omega)]
 
-theorem clz_setWidth_toNat {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+theorem clz_setWidth_toNat {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b : BitVec t.width) :
     (b.setWidth 64).clz.toNat = b.clz.toNat + (64 - t.width) ∧ b.clz.toNat ≤ t.width := by
   have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
   exact clz_aux hw b (clz_setWidth64 hw b)
@@ -643,13 +651,13 @@ theorem imm64OfBits_of_lt {w : Nat} (b : BitVec w) (h : b.toNat < 2 ^ 63) :
   simp only [Nat.reducePow, Int.reducePow] at h' ⊢
   rw [Int.bmod_eq_emod_of_lt] <;> rw [Int.emod_eq_of_lt] <;> omega
 
-@[opt_imm] theorem imm64Clz_spec {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+@[opt_imm] theorem imm64Clz_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b : BitVec t.width) :
     Rust.imm64Clz (CTy.ofClif t) (imm64OfBits b) = .ok (imm64OfBits (Sem.clz b)) := by
   imm_pre [Rust.imm64Clz]
   have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
   have e : BitVec.ofInt 64 (imm64OfBits b) = b.setWidth 64 := by
     rw [imm64OfBits_eq hw, BitVec.ofInt_toInt]
-  obtain ⟨h1, h2⟩ := clz_setWidth_toNat ht b
+  obtain ⟨h1, h2⟩ := clz_setWidth_toNat ht hv b
   rw [clz64_eq, e, h1, if_neg (show ¬ (b.clz.toNat + (64 - t.width) < 64 - t.width) by omega), Sem.clz, imm64OfBits_of_lt _ (by omega)]
   congr 1
   omega
@@ -663,7 +671,7 @@ theorem ctz_aux {w : Nat} (hw : w ≤ 64) (b : BitVec w)
   · rw [h, BitVec.toNat_setWidth, Nat.mod_eq_of_lt]
     exact Nat.lt_of_lt_of_le b.ctz.isLt (Nat.pow_le_pow_right (by decide) hw)
 
-theorem ctz_setWidth_toNat {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+theorem ctz_setWidth_toNat {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b : BitVec t.width) :
     b ≠ 0#t.width → (b.setWidth 64).ctz.toNat = b.ctz.toNat := by
   have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
   exact ctz_aux hw b (ctz_setWidth64 hw b)
@@ -673,19 +681,19 @@ theorem ctz_zero_toNat (w : Nat) : (0#w).ctz.toNat = w := by
     rw [BitVec.ctz_eq_reverse_clz]; exact BitVec.clz_eq_iff_eq_zero.2 (by simp)
   rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt Nat.lt_two_pow_self]
 
-@[opt_imm] theorem imm64Ctz_spec {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
+@[opt_imm] theorem imm64Ctz_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b : BitVec t.width) :
     Rust.imm64Ctz (CTy.ofClif t) (imm64OfBits b) = .ok (imm64OfBits (Sem.ctz b)) := by
   imm_pre [Rust.imm64Ctz]
   have hw : t.width ≤ 64 := by cases t <;> simp_all [Ty.width]
   have e : BitVec.ofInt 64 (imm64OfBits b) = b.setWidth 64 := by
     rw [imm64OfBits_eq hw, BitVec.ofInt_toInt]
-  rw [asU64_imm64OfBits ht, ctz64_eq, e, Sem.ctz]
+  rw [asU64_imm64OfBits ht hv, ctz64_eq, e, Sem.ctz]
   by_cases hb : b = 0#t.width
   · subst hb
     rw [imm64OfBits_of_lt _ (by rw [ctz_zero_toNat]; omega), ctz_zero_toNat]
     simp
   · have hn : b.toNat ≠ 0 := fun h => hb (BitVec.eq_of_toNat_eq (by simpa using h))
-    have hl := ctz_setWidth_toNat ht b hb
+    have hl := ctz_setWidth_toNat ht hv b hb
     have hlt : b.ctz.toNat < 2 ^ 63 := by
       have h1 := BitVec.lt_def.1 (BitVec.ctz_lt_iff_ne_zero.2 hb)
       simp only [BitVec.natCast_eq_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt Nat.lt_two_pow_self] at h1
@@ -779,7 +787,8 @@ theorem ofInt_mul_two_pow (x : Int) (k : Nat) :
 theorem int_toNat_natCast (n : Nat) : ((n : Int).toNat) = n := Int.toNat_natCast n
 theorem shiftLeft_toNat' {w v : Nat} (x : BitVec w) (y : BitVec v) : x <<< y.toNat = x <<< y := rfl
 
-@[opt_imm] theorem imm64Shl_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width)
+@[opt_imm] theorem imm64Shl_spec {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false) (b : BitVec t.width)
     (c : BitVec t'.width) :
     Rust.imm64Shl (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.ishl b c)) := by
   imm_pre [Rust.imm64Shl]
@@ -800,7 +809,8 @@ theorem toInt_div_two_pow {w : Nat} (x : BitVec w) (k : Nat) :
 theorem ushiftRight_toNat' {w v : Nat} (x : BitVec w) (y : BitVec v) : x >>> y.toNat = x >>> y := rfl
 theorem sshiftRight_toNat' {w v : Nat} (x : BitVec w) (y : BitVec v) : x.sshiftRight y.toNat = x.sshiftRight' y := rfl
 
-@[opt_imm] theorem imm64Ushr_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width)
+@[opt_imm] theorem imm64Ushr_spec {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false) (b : BitVec t.width)
     (c : BitVec t'.width) :
     Rust.imm64Ushr (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.ushr b c)) := by
   imm_pre [Rust.imm64Ushr]

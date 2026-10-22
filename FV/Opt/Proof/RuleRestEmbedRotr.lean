@@ -18,7 +18,8 @@ open Lean Elab Tactic in
 local elab_rules : tactic
   | `(tactic| kbv) => Opt.Proof.KernelBV.isolate (do evalTactic (← `(tactic| kbv_guard 400000 kbv_modsplit)))
 
-@[opt_imm] theorem imm64Rotr_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width)
+@[opt_imm] theorem imm64Rotr_spec {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false) (b : BitVec t.width)
     (c : BitVec t'.width) :
     Rust.imm64Rotr (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.rotr b c)) := by
   imm_pre [Rust.imm64Rotr]

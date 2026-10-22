@@ -277,9 +277,9 @@ theorem trem_natCast_toNat {w : Nat} (x y : BitVec w) :
   simp only [Rust.trem, BitVec.toNat_umod, ← Int.ofNat_tmod]
 
 /-- `x & ty_mask` of a presented immediate. -/
-theorem band64_mask_imm {t : Ty} (ht : t ≠ .i128) (c : BitVec t.width) :
+theorem band64_mask_imm {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (c : BitVec t.width) :
     Rust.band64 (Rust.asU64 (imm64OfBits c)) (2 ^ t.width - 1) = c.toNat := by
-  rw [asU64_imm64OfBits ht]
+  rw [asU64_imm64OfBits ht hv]
   imm_cases t c <;> (
     simp only [band64_eq, ofInt64_natCast_toNat, Int.reducePow, Int.reduceSub]
     rw [show (c.toNat : Int) = ((c.setWidth 64).toNat : Int) by
@@ -291,10 +291,10 @@ theorem band64_mask_imm {t : Ty} (ht : t ≠ .i128) (c : BitVec t.width) :
 set_option maxHeartbeats 4000000 in
 /-- `imm64_udiv`/`imm64_urem`/`imm64_srem`/`imm64_sdiv` (constant folding of `cprop.isle` 32-50):
 `none` exactly when Rust's checked operation fails. -/
-@[opt_imm] theorem imm64Udiv_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Udiv_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Udiv (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) =
       .ok (if c = 0#t.width then none else some (imm64OfBits (b / c))) := by
-  imm_pre [Rust.imm64Udiv, band64_mask_imm ht, tdiv_natCast_toNat, trem_natCast_toNat]
+  imm_pre [Rust.imm64Udiv, band64_mask_imm ht hv, tdiv_natCast_toNat, trem_natCast_toNat]
   imm_cases t b c <;> (
     simp (disch := decide) only [maskTo_of_lt, maskTo_64]
     by_cases hc : c = 0
@@ -304,10 +304,10 @@ set_option maxHeartbeats 4000000 in
       simp only [hc, hc', beq_iff_eq, ite_false, Except.ok.injEq, Option.some.injEq]
       imm_solve)
 set_option maxHeartbeats 4000000 in
-@[opt_imm] theorem imm64Urem_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Urem_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Urem (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) =
       .ok (if c = 0#t.width then none else some (imm64OfBits (b % c))) := by
-  imm_pre [Rust.imm64Urem, band64_mask_imm ht, tdiv_natCast_toNat, trem_natCast_toNat]
+  imm_pre [Rust.imm64Urem, band64_mask_imm ht hv, tdiv_natCast_toNat, trem_natCast_toNat]
   imm_cases t b c <;> (
     simp (disch := decide) only [maskTo_of_lt, maskTo_64]
     by_cases hc : c = 0
@@ -331,7 +331,7 @@ theorem sext_tySmin_16 : Rust.sext 16 (Rust.asI64 (2 ^ 15)) = (BitVec.intMin 16)
 theorem sext_tySmin_32 : Rust.sext 32 (Rust.asI64 (2 ^ 31)) = (BitVec.intMin 32).toInt := by decide
 theorem sext_tySmin_64 : Rust.sext 64 (Rust.asI64 (2 ^ 63)) = (BitVec.intMin 64).toInt := by decide
 
-@[opt_imm] theorem imm64Srem_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Srem_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Srem (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) =
       .ok (if (c.toInt == 0 || b.toInt == -2 ^ 63 && c.toInt == -1) = true then none
         else some (imm64OfBits (b.srem c))) := by
@@ -344,7 +344,7 @@ theorem sext_tySmin_64 : Rust.sext 64 (Rust.asI64 (2 ^ 63)) = (BitVec.intMin 64)
     · simp only [hC, ite_false, Except.ok.injEq, Option.some.injEq, Bool.false_eq_true]
       first | exact imm64OfBits_ofInt_toNat (by decide) _ | exact imm64OfBits_64 _)
 
-@[opt_imm] theorem imm64Sdiv_spec {t : Ty} (ht : t ≠ .i128) (b c : BitVec t.width) :
+@[opt_imm] theorem imm64Sdiv_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (b c : BitVec t.width) :
     Rust.imm64Sdiv (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) =
       .ok (if (b.toInt == (BitVec.intMin t.width).toInt && c.toInt == -1) = true then none
         else if (c.toInt == 0 || b.toInt == -2 ^ 63 && c.toInt == -1) = true then none

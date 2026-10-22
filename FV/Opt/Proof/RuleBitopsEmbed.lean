@@ -124,27 +124,28 @@ end
 /-- A presented node of the `iconst` shape (any type ids). -/
 @[opt_match] theorem ofInst_iconst_any {i : Inst} {a b : Nat} {k : Int} :
     ofInst i = some (.data a 35 [.data b 57 [], .int k]) ↔
-      ∃ t imm, t ≠ .i128 ∧ i = .iconst t imm ∧ a = 53 ∧ b = TyId.«Opcode» ∧ imm64OfBits imm = k := by
+      ∃ t imm, t ≠ .i128 ∧ t.isVec = false ∧ i = .iconst t imm ∧ a = 53 ∧ b = TyId.«Opcode» ∧
+        imm64OfBits imm = k := by
   constructor
   · intro h
     cases i
     case iconst t imm =>
       cases t <;> simp (config := {decide := true}) [ofInst, idata, opcode] at h ⊢ <;>
-        obtain ⟨rfl, rfl, h⟩ := h <;> exact ⟨_, by decide, imm, ⟨rfl, HEq.rfl⟩, rfl, rfl, h⟩
+        obtain ⟨rfl, rfl, h⟩ := h <;> exact ⟨_, by decide, by decide, imm, ⟨rfl, HEq.rfl⟩, rfl, rfl, h⟩
     all_goals (try simp (config := {decide := true}) [ofInst, idata, opcode] at h)
     case extend op t x => cases op <;> simp [ofInst, idata, opcode] at h
-  · rintro ⟨t, imm, ht, rfl, rfl, rfl, rfl⟩
-    cases t <;> first | rfl | exact absurd rfl ht
+  · rintro ⟨t, imm, ht, hv, rfl, rfl, rfl, rfl⟩
+    cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
 /-- The zero immediate of a presented `iconst`. -/
-@[opt_match] theorem imm64OfBits_eq_zero {t : Ty} (ht : t ≠ .i128) (b : BitVec t.width) :
-    imm64OfBits b = 0 ↔ b = 0#t.width := by
+@[opt_match] theorem imm64OfBits_eq_zero {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (b : BitVec t.width) : imm64OfBits b = 0 ↔ b = 0#t.width := by
   constructor
   · intro h
-    rw [← ofInt_imm64OfBits ht b, h]
+    rw [← ofInt_imm64OfBits ht hv b, h]
     rfl
   · rintro rfl
-    cases t <;> first | rfl | exact absurd rfl ht
+    cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
 /-- The all-ones immediate (`iconst_s ty -1`). -/
 @[opt_match] theorem toInt_eq_neg_one {t : Ty} (b : BitVec t.width) :
@@ -154,10 +155,11 @@ end
 
 /-- The sign-extended immediate of a presented `iconst` is its signed value. -/
 @[opt_match, opt_monad] theorem i64SextendImm64_imm64OfBits {t : Ty} (ht : t ≠ .i128)
-    (b : BitVec t.width) : Rust.i64SextendImm64 (CTy.ofClif t) (imm64OfBits b) = b.toInt := by
+    (hv : t.isVec = false) (b : BitVec t.width) :
+    Rust.i64SextendImm64 (CTy.ofClif t) (imm64OfBits b) = b.toInt := by
   cases t
-  all_goals first | exact absurd rfl ht | skip
-  all_goals (unfold Rust.i64SextendImm64; rw [ofClif_bits]; exact sext_imm64OfBits (by decide) b)
+  all_goals first | exact absurd rfl ht | exact absurd hv (by decide) | skip
+  all_goals (unfold Rust.i64SextendImm64; rw [ofClif_bits hv]; exact sext_imm64OfBits (by decide) b)
 
 /-- A type compared with an unknown environment value (a pattern variable bound twice). -/
 @[opt_match] theorem V.beq_ty_left (a : CTy) (v : V) : V.beq (.ty a) v = true ↔ v = .ty a := by
@@ -202,9 +204,9 @@ end
 /-! ## `iconst_u ty 0` and `i128` (the `ty_int` arm of `all_zero` builds `iconst_u ty 0`; at
 `i128` that is `uextend.i128 (iconst_u.i64 0)`) -/
 
-@[opt_monad, opt_imm] theorem tyUmax_ofClif {t : Ty} (ht : t ≠ .i128) :
+@[opt_monad, opt_imm] theorem tyUmax_ofClif {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) :
     Rust.tyUmax (CTy.ofClif t) = .ok (2 ^ t.width - 1) := by
-  cases t <;> first | rfl | exact absurd rfl ht
+  cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
 @[opt_monad, opt_imm] theorem tyUmax_ofClif_i64 :
     Rust.tyUmax (CTy.ofClif .i64) = .ok (2 ^ 64 - 1) := rfl
@@ -256,7 +258,9 @@ namespace Opt.Proof
 open Lean Meta Elab Tactic
 
 /-- `opt_split_i128_one`: for the first local `t : Clif.Ty` without a hypothesis `t ≠ .i128`,
-split on `t = .i128` (substituted) or `t ≠ .i128`; fails if there is none. -/
+split on `t = .i128` (substituted) or `t ≠ .i128`; for the first one with `t ≠ .i128` but
+without `t.isVec = false`, split on `t.isVec = false` or not (then the vector types, by cases);
+fails if there is none. -/
 elab "opt_split_i128_one" : tactic => withMainContext do
   let lctx ← getLCtx
   for d in lctx do
@@ -265,24 +269,33 @@ elab "opt_split_i128_one" : tactic => withMainContext do
     unless ty.isConstOf ``Clif.Ty do continue
     let x := d.toExpr
     let isI128 (e : Expr) : Bool := e.isConstOf ``Clif.Ty.i128
-    let mut has := false
+    let mut hasNe := false
+    let mut hasVec := false
     for d' in lctx do
       if d'.isImplementationDetail then continue
-      let t ← instantiateMVars d'.type
+      let t0 ← instantiateMVars d'.type
       -- `x ≠ .i128` or `¬ x = .i128` (syntactically)
-      let t := if t.isAppOfArity ``Not 1 then t.appArg! else t
+      let t := if t0.isAppOfArity ``Not 1 then t0.appArg! else t0
       if (t.isAppOfArity ``Ne 3 || t.isAppOfArity ``Eq 3) && t.appFn!.appArg! == x &&
           isI128 t.appArg! && d'.type.isAppOfArity ``Eq 3 == false then
-        has := true
-        break
-    if has then continue
+        hasNe := true
+      -- `x.isVec = false` (syntactically)
+      if t0.isAppOfArity ``Eq 3 && t0.appArg!.isConstOf ``Bool.false &&
+          t0.appFn!.appArg!.isAppOfArity ``Clif.Ty.isVec 1 && t0.appFn!.appArg!.appArg! == x then
+        hasVec := true
+    if hasNe && hasVec then continue
     let xs ← Term.exprToSyntax d.toExpr
-    evalTactic (← `(tactic| ((rcases Classical.em ($xs = Clif.Ty.i128) with h128 | h128) <;>
-      try subst h128)))
+    if !hasNe then
+      evalTactic (← `(tactic| ((rcases Classical.em ($xs = Clif.Ty.i128) with h128 | h128) <;>
+        try subst h128)))
+    else
+      evalTactic (← `(tactic| ((rcases Classical.em (Clif.Ty.isVec $xs = false) with hvec | hvec)
+        <;> [skip; (cases $xs:term <;> try simp only [Clif.Ty.isVec, not_true_eq_false,
+          Bool.true_eq_false, Bool.false_eq_true, not_false_eq_true] at hvec)])))
     return
   throwError "opt_split_i128_one: nothing to split"
 
-/-- Split every `Clif.Ty` local on `= .i128`. -/
+/-- Split every `Clif.Ty` local on `= .i128` and on `isVec`. -/
 macro "opt_split_i128" : tactic => `(tactic| repeat (any_goals opt_split_i128_one))
 
 end Opt.Proof
@@ -317,25 +330,25 @@ open Isle Isle.Opt Clif
 
 @[opt_monad, opt_imm] theorem asU64_neg_one : Rust.asU64 (-1) = 2 ^ 64 - 1 := by decide
 
-@[opt_monad, opt_imm] theorem band64_umax {t : Ty} (ht : t ≠ .i128) :
+@[opt_monad, opt_imm] theorem band64_umax {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) :
     Rust.band64 (2 ^ 64 - 1) (2 ^ t.width - 1) = 2 ^ t.width - 1 := by
-  cases t <;> first | decide | exact absurd rfl ht
+  cases t <;> first | exact absurd rfl ht | exact absurd hv (by decide) | decide
 
 @[opt_monad, opt_imm] theorem band64_umax_i64 :
     Rust.band64 (2 ^ 64 - 1) (2 ^ 64 - 1) = 2 ^ 64 - 1 := by decide
 
-@[opt_monad, opt_imm] theorem i64SextendU64_umax {t : Ty} (ht : t ≠ .i128) :
+@[opt_monad, opt_imm] theorem i64SextendU64_umax {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) :
     Rust.i64SextendU64 (CTy.ofClif t) (2 ^ t.width - 1) = .ok (-1) := by
-  cases t <;> first | rfl | exact absurd rfl ht
+  cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
 @[opt_monad, opt_imm] theorem i64SextendU64_umax_i64 :
     Rust.i64SextendU64 (CTy.ofClif .i64) (2 ^ 64 - 1) = .ok (-1) := rfl
 
 @[opt_monad, opt_imm] theorem int_beq_neg_one : ((-1 : Int) == -1) = true := by decide
 
-@[opt_monad, opt_imm] theorem ofInt_asI64_umax {t : Ty} (ht : t ≠ .i128) :
+@[opt_monad, opt_imm] theorem ofInt_asI64_umax {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) :
     BitVec.ofInt t.width (Rust.asI64 (2 ^ t.width - 1)) = BitVec.allOnes t.width := by
-  cases t <;> first | decide | exact absurd rfl ht
+  cases t <;> first | exact absurd rfl ht | exact absurd hv (by decide) | decide
 
 @[opt_monad, opt_imm] theorem ofInt_asI64_umax_i64 :
     BitVec.ofInt Clif.Ty.i64.width (Rust.asI64 (2 ^ 64 - 1)) = BitVec.allOnes Clif.Ty.i64.width := by

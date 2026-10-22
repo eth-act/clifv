@@ -979,25 +979,34 @@ elab "pow2_facts" : tactic => withMainContext do
         pow2_two_pow_ne_neg_one, Bool.false_eq_true] at $hi:ident))
     catch _ => pure ()
 
-/-- Width facts of a non-`i128` type, for `omega` (`2 ^ t.width` and `2 ^ (t.width - 1)` are atoms
-to it). -/
-theorem pow2_width_facts {t : Ty} (ht : t ≠ .i128) :
+/-- Width facts of a non-`i128`, non-vector type, for `omega` (`2 ^ t.width` and
+`2 ^ (t.width - 1)` are atoms to it). -/
+theorem pow2_width_facts {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) :
     8 ≤ t.width ∧ t.width ≤ 64 ∧ (t.width : Int) ≤ 2 ^ (t.width - 1) ∧
       (2 : Int) ^ t.width = 2 * 2 ^ (t.width - 1) ∧ (2 : Int) ^ t.width ≤ 18446744073709551616 ∧
       (2 : Int) ^ (t.width - 1) ≤ 9223372036854775808 := by
   cases t <;> simp_all [Ty.width] <;> decide
 
 open Lean Meta Elab Tactic in
-/-- `pow2_wfacts`: `pow2_width_facts` for the type with a hypothesis `t ≠ .i128`. -/
+/-- `pow2_wfacts`: `pow2_width_facts` for the type with hypotheses `t ≠ .i128` and
+`t.isVec = false`. -/
 elab "pow2_wfacts" : tactic => withMainContext do
-  for d in ← getLCtx do
+  let lctx ← getLCtx
+  for d in lctx do
     if d.isImplementationDetail then continue
     let ty ← instantiateMVars d.type
     if ty.isAppOfArity ``Ne 3 && (ty.getArg! 2).isConstOf ``Clif.Ty.i128 && (ty.getArg! 1).isFVar then
-      let h ← Term.exprToSyntax d.toExpr
-      evalTactic (← `(tactic| obtain ⟨_, _, _, _, _, _⟩ := pow2_width_facts $h))
-      return
-  throwError "pow2_wfacts: no type with a `≠ .i128` hypothesis"
+      let x := ty.getArg! 1
+      for d' in lctx do
+        if d'.isImplementationDetail then continue
+        let t' ← instantiateMVars d'.type
+        if t'.isAppOfArity ``Eq 3 && t'.appArg!.isConstOf ``Bool.false &&
+            t'.appFn!.appArg!.isAppOfArity ``Clif.Ty.isVec 1 && t'.appFn!.appArg!.appArg! == x then
+          let h ← Term.exprToSyntax d.toExpr
+          let hv ← Term.exprToSyntax d'.toExpr
+          evalTactic (← `(tactic| obtain ⟨_, _, _, _, _, _⟩ := pow2_width_facts $h $hv))
+          return
+  throwError "pow2_wfacts: no type with `≠ .i128` and `isVec = false` hypotheses"
 
 /-- Side conditions of the helper lemmas: a hypothesis, or linear arithmetic (with the width
 facts of `pow2_wfacts`, or once the widths are numerals). -/
