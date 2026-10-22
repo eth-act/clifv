@@ -37,6 +37,12 @@ theorem mkVariant_floatcc (cc : Clif.FloatCC) :
 theorem fccIdx_inj {a b : Clif.FloatCC} (h : fccIdx a = fccIdx b) : a = b := by
   cases a <;> cases b <;> simp [fccIdx] at h ⊢
 
+/-- `fccOk` excludes exactly `one` (`fccIdx 7`) and `ueq` (`fccIdx 9`). -/
+theorem fccOk_ne {cc : Clif.FloatCC} {k : Nat} (h : fccIdx cc = k) (hok : fccOk cc = true) :
+    k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 8 ∨ k = 10 ∨ k = 11 ∨
+      k = 12 ∨ k = 13 := by
+  cases cc <;> simp_all [fccIdx, fccOk]
+
 /-- `fp_cond_code` (`inst.isle:5230-5256`): the Arm condition testing `cc` on `FCMP`'s flags;
 none for `one`/`ueq`. -/
 def fpCond? : Clif.FloatCC → Option Cond
@@ -206,10 +212,15 @@ theorem fp_cond_code_ok {n : Nat} (hn : 40 ≤ n) {k : Nat} {s s' : LState × Ar
 
 /-! ## `instData` -/
 
-set_option maxHeartbeats 1000000 in
+section VNs
+attribute [local irreducible] Isle.Aarch64.program
+
+set_option maxHeartbeats 4000000 in
 theorem cmp_vn_FloatCompare : (variantNames 152)[11]? = some "FloatCompare" := by decide +kernel
-set_option maxHeartbeats 1000000 in
+set_option maxHeartbeats 4000000 in
 theorem cmp_vn_Fcmp : (variantNames 151)[112]? = some "Fcmp" := by decide +kernel
+
+end VNs
 
 /-- An instruction whose opcode name is `Fcmp` is a float operation. -/
 theorem instNames_fcmp {c : Clif.Inst} {s : String} (hs : s ∈ "Fcmp" :: fArithNames)
@@ -234,64 +245,121 @@ theorem instData_fcmp_inv {f : Clif.Function} {cl : Clif.Inst} {fs : List V}
   obtain ⟨ho1, ho2⟩ := instData_inv_names h (by decide)
   rw [cmp_vn_FloatCompare] at ho1
   rw [cmp_vn_Fcmp] at ho2
-  obtain ⟨op, ty, args, rfl⟩ := instNames_fcmp (s := "Fcmp")
-    (hs := by simp) (Option.some.inj ho2).symm
-  rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, rest⟩⟩⟩ <;>
-    simp only [instData, fBinaryOpcode, fUnaryOpcode, throw, throwThe, MonadExceptOf.throw,
-      reduceCtorEq] at h
-  all_goals
-    split at h
-    · rename_i hf hok
-      simp only [pure, Except.pure, Except.ok.injEq] at h
-      obtain ⟨-, h2, h3⟩ := mkVariant_eq_data h
-      simp only [List.cons.injEq, mkVariant_floatcc, List.cons.injEq, and_true] at h3
-      exact ⟨_, ty, x, y, rfl, hf, hok, h3⟩
-    · simp only [reduceCtorEq] at h
+  have h2 : (instNames cl).2 = "Fcmp" := (Option.some.inj ho2).symm
+  obtain ⟨op, ty, args, rfl⟩ := instNames_fcmp (s := "Fcmp") (hs := by simp) h2
+  rcases args with _ | ⟨x, _ | ⟨y, _ | ⟨z, rest⟩⟩⟩
+  · simp only [instData, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
+  · cases op <;>
+      simp only [instData, fUnaryOpcode, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
+    all_goals
+      first
+        | (split at h
+           · simp only [pure, Except.pure, Except.ok.injEq] at h
+             obtain ⟨hc, -, -⟩ := mkVariant_eq_data h
+             rw [cmp_vn_FloatCompare] at hc
+             simp at hc
+           · simp only [reduceCtorEq] at h)
+        | simp only [reduceCtorEq] at h
+  · cases op <;>
+      simp only [instData, fBinaryOpcode, fUnaryOpcode, throw, throwThe, MonadExceptOf.throw,
+        reduceCtorEq] at h
+    case fcmp cc =>
+      split at h
+      · rename_i hf
+        simp only [pure, Except.pure, Except.ok.injEq, Bool.and_eq_true] at h hf
+        obtain ⟨-, -, h3⟩ := mkVariant_eq_data h
+        simp only [List.cons.injEq] at h3
+        obtain ⟨-, hfs⟩ := h3
+        simp only [mkVariant_floatcc] at hfs
+        exact ⟨cc, ty, x, y, rfl, hf.1, hf.2, hfs⟩
+      · simp only [reduceCtorEq] at h
+    all_goals
+      first
+        | (split at h
+           · simp only [pure, Except.pure, Except.ok.injEq] at h
+             obtain ⟨hc, -, -⟩ := mkVariant_eq_data h
+             rw [cmp_vn_FloatCompare] at hc
+             simp at hc
+           · simp only [reduceCtorEq] at h)
+        | simp only [reduceCtorEq] at h
+  · simp only [instData, throw, throwThe, MonadExceptOf.throw, reduceCtorEq] at h
 
 /-! ## The contract -/
 
 section Contract
 
+/-- The `scalar_size` term's output index: the `OperandSize` variant of the type
+(`inst.isle:1623-1631`: `S8`/`S16`/`S32`/`S64`/`S128` for `i8`..`i128`, `S16`/`S32`/`S64` for
+`f16`/`f32`/`f64`; other types have no rule, so the call cannot succeed there). -/
+def ssIdx : CTy → Nat
+  | .int 8 => 0 | .int 16 => 1 | .int 32 => 2 | .int 64 => 3 | .int 128 => 4
+  | .float 16 => 1 | .float 32 => 2 | .float 64 => 3 | _ => 0
+
+theorem ssIdx_le (t : CTy) : ssIdx t ≤ 4 := by
+  unfold ssIdx
+  split <;> omega
+
+set_option maxHeartbeats 4000000 in
 include hp hc in
-/-- `scalar_size` at any type: the size index of the type's bits (rules exist only for the
-scalar types; at `invalid`/vectors no rule matches and the call cannot succeed). -/
+/-- `scalar_size` at any type: the size index of the type (rules exist only for the scalar
+types; at `invalid`/vectors no rule matches and the call cannot succeed). -/
 theorem scalar_size_ok {n : Nat} (hn : 40 ≤ n) {t : CTy}
     {s s' : LState × Array RuleId} {v : V}
     (h : ApplyInternal p (sem ctx) cfg n 95 307 [.ty t] s v s') :
-    v = .data 95 (szIdxOf t.bits) [] ∧ s'.1 = s.1 := by
-  cases t <;> simp only [CTy.bits] at *
-  all_goals
+    v = .data 95 (ssIdx t) [] ∧ s'.1 = s.1 := by
+  cases t with
+  | invalid =>
+    exfalso
     isel_split hp hc h 307
+    all_goals isel_inv [*, rule_inst_1623, rule_inst_1624, rule_inst_1625, rule_inst_1626,
+      rule_inst_1627, rule_inst_1629, rule_inst_1630, rule_inst_1631] at hm he
+    all_goals (simp only [Backend.Proof.sem_eq] at *; simp only [V.beq] at *; simp)
+  | vec lb nb fl =>
+    exfalso
+    isel_split hp hc h 307
+    all_goals isel_inv [*, rule_inst_1623, rule_inst_1624, rule_inst_1625, rule_inst_1626,
+      rule_inst_1627, rule_inst_1629, rule_inst_1630, rule_inst_1631] at hm he
+    all_goals (simp only [Backend.Proof.sem_eq] at *; simp only [V.beq] at *; simp)
+  | int w =>
+    isel_split hp hc h 307
+    all_goals isel_inv [*, rule_inst_1623, rule_inst_1624, rule_inst_1625, rule_inst_1626,
+      rule_inst_1627, rule_inst_1629, rule_inst_1630, rule_inst_1631] at hm he
     all_goals
-      isel_inv [*, rule_inst_1623, rule_inst_1624, rule_inst_1625, rule_inst_1626,
-        rule_inst_1627, rule_inst_1629, rule_inst_1630, rule_inst_1631, CTy.int.injEq,
-        CTy.float.injEq] at hm he
-    all_goals first
-      | rfl
-      | decide
-      | exact ⟨rfl, rfl⟩
-      | (exfalso; revert ‹CTy.int _ = CTy.int _›; decide)
-      | (exfalso; revert ‹CTy.float _ = CTy.float _›; decide)
+      first
+        | (have hw : CTy.int w = CTy.int 8 := by assumption
+           simp only [CTy.int.injEq] at hw; subst hw; rfl)
+        | (have hw : CTy.int w = CTy.int 16 := by assumption
+           simp only [CTy.int.injEq] at hw; subst hw; rfl)
+        | (have hw : CTy.int w = CTy.int 32 := by assumption
+           simp only [CTy.int.injEq] at hw; subst hw; rfl)
+        | (have hw : CTy.int w = CTy.int 64 := by assumption
+           simp only [CTy.int.injEq] at hw; subst hw; rfl)
+        | (have hw : CTy.int w = CTy.int 128 := by assumption
+           simp only [CTy.int.injEq] at hw; subst hw; rfl)
+  | float w =>
+    isel_split hp hc h 307
+    all_goals isel_inv [*, rule_inst_1623, rule_inst_1624, rule_inst_1625, rule_inst_1626,
+      rule_inst_1627, rule_inst_1629, rule_inst_1630, rule_inst_1631] at hm he
+    all_goals
+      first
+        | (have hw : CTy.float w = CTy.float 16 := by assumption
+           simp only [CTy.float.injEq] at hw; subst hw; rfl)
+        | (have hw : CTy.float w = CTy.float 32 := by assumption
+           simp only [CTy.float.injEq] at hw; subst hw; rfl)
+        | (have hw : CTy.float w = CTy.float 64 := by assumption
+           simp only [CTy.float.injEq] at hw; subst hw; rfl)
 
-/-- The scalar size of an index (the decoding `ofV` uses). -/
-def szOfIdx : Nat → ScalarSize
-  | 0 => .size8 | 1 => .size16 | 2 => .size32 | 3 => .size64 | _ => .size128
-
-/-- The condition instruction `fpu_cmp` builds decodes at any scalar size index `k ≤ 3`
-(`szIdxOf` of a type's bits is at most 3). -/
-theorem ofV_fpuCmp_some {k : Nat} (hk : k ≤ 3) {rx ry : Reg} :
+/-- The condition instruction `fpu_cmp` builds decodes at any scalar size index `k ≤ 4`
+(`ssIdx` of a type is at most 4). -/
+theorem ofV_fpuCmp_some {k : Nat} (hk : k ≤ 4) {rx ry : Reg} :
     ∃ m, MInst.ofV (.data 58 56 [.data 95 k [], .reg rx, .reg ry]) = some m ∧
       (k = 2 → m = .fpuCmp .size32 rx ry) ∧ (k = 3 → m = .fpuCmp .size64 rx ry) := by
-  match k, hk with
-  | 0, _ => exact ⟨_, by simp [MInst.ofV, V.scalarSize?, V.enum?, ScalarSize.ofIdx?, szOfIdx],
-    fun h => by omega, fun h => by omega⟩
-  | 1, _ => exact ⟨_, by simp [MInst.ofV, V.scalarSize?, V.enum?, ScalarSize.ofIdx?, szOfIdx],
-    fun h => by omega, fun h => by omega⟩
-  | 2, _ => exact ⟨_, by simp [MInst.ofV, V.scalarSize?, V.enum?, ScalarSize.ofIdx?, szOfIdx],
-    fun _ => rfl, fun h => by omega⟩
-  | 3, _ => exact ⟨_, by simp [MInst.ofV, V.scalarSize?, V.enum?, ScalarSize.ofIdx?, szOfIdx],
-    fun h => by omega, fun _ => rfl⟩
-  | _, hk => omega
+  rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4) with rfl | rfl | rfl | rfl | rfl
+  · exact ⟨.fpuCmp .size8 rx ry, rfl, fun h => by omega, fun h => by omega⟩
+  · exact ⟨.fpuCmp .size16 rx ry, rfl, fun h => by omega, fun h => by omega⟩
+  · exact ⟨.fpuCmp .size32 rx ry, rfl, fun _ => rfl, fun h => by omega⟩
+  · exact ⟨.fpuCmp .size64 rx ry, rfl, fun h => by omega, fun _ => rfl⟩
+  · exact ⟨.fpuCmp .size128 rx ry, rfl, fun h => by omega, fun h => by omega⟩
 
 /-- The `hsz` fact of `emit_fcmp_core` at `f32`: the size index `2`. -/
 theorem hsz32 {sz : ScalarSize} (h : sz = .size32) :
@@ -327,8 +395,14 @@ theorem emit_fcmp_okT {F : BitVec 64 → Prop} {isem : Sem} {f : Clif.Function}
   -- rules 527/528 (`one`/`ueq`): excluded by `fccOk`
   all_goals try
     (exfalso
-     rename_i hcc
-     subst hcc <;> cases cc <;> simp [fccOk] at hok)
+     have h9 : fccIdx cc = 9 := by assumption
+     have := fccOk_ne h9 hok
+     omega)
+  all_goals try
+    (exfalso
+     have h9 : fccIdx cc = 7 := by assumption
+     have := fccOk_ne h9 hok
+     omega)
   · -- rule 526
     obtain ⟨t, hty, -⟩ := (ext_value_type_iff ctx _ y _).mp
       ‹externExtract ctx T.value_type (.value y) _ = _›
@@ -340,15 +414,16 @@ theorem emit_fcmp_okT {F : BitVec 64 → Prop} {isem : Sem} {f : Clif.Function}
     obtain rfl := hctx.valueReg y ry hry
     obtain ⟨hk, -⟩ := scalar_size_ok hp hc (by omega)
       ‹ApplyInternal _ _ _ _ 95 307 [.ty t] _ _ _ _›
+    rw [hk]
     isel_call hp hc [fpu_cmp_ok, fp_cond_code_ok]
     subst_vars
     obtain ⟨cc', cond, hfk, hfc, -⟩ := ‹∃ cc c, _ = fccIdx cc ∧ fpCond? cc = some c ∧ _›
     have hcond : fpCond? cc = some cond := by
       obtain rfl := fccIdx_inj hfk
       exact hfc
-    obtain ⟨m, hmi, h32, h64⟩ := ofV_fpuCmp_some (by simp [szIdxOf])
+    obtain ⟨m, hmi, h32, h64⟩ := ofV_fpuCmp_some (ssIdx_le t)
       (rx := .vreg x (valClassOf ctx x)) (ry := .vreg y (valClassOf ctx y))
-      (k := szIdxOf t.bits)
+      (k := ssIdx t)
     refine ⟨[], Frag.nil _, .inr (.inr ⟨_, _, cond, rfl, hmi, (fpCond?_ne_al hcond).1,
       (fpCond?_ne_al hcond).2, rfl, ?_⟩), fun fr ρ b hh hdf hT => ?_⟩
     · rw [vuseNums_fpuCmp]
@@ -360,43 +435,23 @@ theorem emit_fcmp_okT {F : BitVec 64 → Prop} {isem : Sem} {f : Clif.Function}
       have hrt : CTy.ofClif ty = t := vholds_ty hdf hty hyv
       cases t with
       | invalid => simp [CTy.ofClif] at hrt
-      | int w =>
-        cases w <;> rw [← hrt] at hb <;> simp [Clif.FSem.fcmp] at hb
+      | int w => cases ty <;> simp [CTy.ofClif, Clif.FSem.fcmp] at hrt hb
       | float w =>
-        cases w with
-        | 32 =>
-          have hty32 : ty = .f32 := by
-            cases ty <;> simp [CTy.ofClif] at hrt ⊢
+        have hw : w = 32 ∨ w = 64 := by cases ty <;> simp_all [CTy.ofClif]
+        rcases hw with rfl | rfl
+        · have hty32 : ty = .f32 := by cases ty <;> simp_all [CTy.ofClif]
           subst hty32
-          rw [← hrt] at h32 h64
-          simp only [szIdxOf, CTy.bits] at h32 h64
-          rw [h32 rfl] at hmi
           obtain ⟨ms', -, -, hr'⟩ := emit_fcmp_core hctx hvb hcond hrx hry hty hmi rfl
-            (hsz32 (h32 rfl))
+            (hsz32 rfl)
           exact hr' fr ρ b hh hdf ⟨.f32, xa, xb, hxv, hyv, hb⟩
-        | 64 =>
-          have hty64 : ty = .f64 := by
-            cases ty <;> simp [CTy.ofClif] at hrt ⊢
+        · have hty64 : ty = .f64 := by cases ty <;> simp_all [CTy.ofClif]
           subst hty64
-          rw [← hrt] at h32 h64
-          simp only [szIdxOf, CTy.bits] at h32 h64
-          rw [h64 rfl] at hmi
           obtain ⟨ms', -, -, hr'⟩ := emit_fcmp_core hctx hvb hcond hrx hry hty hmi rfl
-            (hsz64 (h64 rfl))
+            (hsz64 rfl)
           exact hr' fr ρ b hh hdf ⟨.f64, xa, xb, hxv, hyv, hb⟩
-        | _ => simp [CTy.ofClif] at hrt
-      | vec lb n fl => simp [CTy.ofClif] at hrt
+      | vec lb n fl => cases ty <;> simp [CTy.ofClif] at hrt
 
 end Contract
-
-include hp hc in
-theorem probe655 {n : Nat} (hn : 200 ≤ n) {cc : Clif.FloatCC} {x y : Nat}
-    {s s' : LState × Array RuleId} {c : V}
-    (h : ApplyInternal p (sem ctx) cfg n 123 655 [.data 144 (fccIdx cc) [], .value x, .value y]
-      s c s') : True := by
-  obtain ⟨_, _, _, hL, hpre, _, _, _, _, _, _, hm, he, rfl, rfl⟩ :=
-    internal_split_first hc hp.t655 term_655_kind rfl (by rw [hp.r655]; simp; omega) h
-  trivial
 
 end Terms
 
