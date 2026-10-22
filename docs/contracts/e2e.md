@@ -4014,13 +4014,62 @@ E2E.backend_correct_final_cleanup_trapcall
   `backend_correct_world_cleanup_trapcall`, `regLevel_trapCall_value`, `regLevel_trapCall_world`,
   `trapEnv_of_trapped`: `[propext, Classical.choice, Quot.sound]`.
 
-Not yet covered (S9b–S9d, TO-PROVE §4 S9): traps of the callees of `try_call`/
+### Callee traps in the linked program (S9c, #376)
+
+`FV/E2E/LinkTrapCall.lean`, `FV/E2E/LinkTrapCallInd.lean`: the trap counterpart of `LinkArm`'s
+induction. The linked hook of a program callee that does not return gives `junkAt` (an error
+state), so on the linked machine a callee trap is a run that **stops**:
+
+```
+E2E.backend_correct_program_trap_budget (L : LinkSys) (hL : L.Ok) (hT : L.TrapsOk)
+  (hB : L.BaseTrapsOk) (hκ : L.Budget κ) (hf : f ∈ L.P.funcs) (M : Nat)
+  hent hres hF hgfree himg hbe hargs hcs hsav hrel hpl      -- as backend_correct_program_budget
+  (htr : L.std.TrapsD M f cs) (hrun : Clif.runLoop L.base L.P (M + 1) cs = .trapped c) :
+  L.TrapIn M f s c
+```
+
+(`backend_correct_program_trap`: the budget `L.K M`; `_peak`: depth `d` of the run of fuel `F`,
+`(L.peak F).TrapsD d f cs`; `_core`: any callee runs, `LinkSys.CrunOk`.)
+
+* **Observable** `TrapIn L M g s c` (inductive): the run of `L.mach M g` from `s` stops at step
+  `n` (`Stop`: no error there, the body's `sp`, no return into `g`'s own code before
+  (`PostTrace`), every later state errs) at a trap site of `g` with `c` (`site`), at a call of `g`
+  whose callee outside `P` traps with `c` in its CLIF semantics (`base`, `BaseTrapCall`), or at a
+  call of `g` of a function `h` of `P` (return address allowed for `h`, `RaOk`) whose activation
+  entered from that call state has `TrapIn` one level down (`prog`). `noRet_of_stop`,
+  `pcall_junk`: a stopping callee never returns to its caller, so its linked call is `junkAt`.
+* **Run premise** `TrapsD L M g cs` (`TrapsExplicitC` of the linked program, by depth):
+  `TrapsExplicitC` of the activation under `linkEnvR` (no memory-access trap) and the run under
+  `envR` traps as it does with the program callee traps outside the premise one level down made
+  stuck (`cutEnv`): every callee trap the run hits is one of an activation satisfying `TrapsD`.
+* **Premises**: `TrapsOk` (decided by the compiler: every function `CompiledCleanup`, passing
+  `lowerCheckU`, without `try_call` terminators); `BaseTrapsOk`, the outside code's trap contract
+  (next to `BaseOk`): `XTrapsOk` of the base externs, the base hook errs at a call whose base
+  callee traps (`stop`), the base hooks keep an error state (`err`, `tlsErr`; `hooks_err`: then
+  so does the linked machine).
+* **Proof** (`thmT_of`): the per-function theorem `backend_correct_world_cleanup_trapstop`
+  (`FV/E2E/WorldTrapStop.lean`: `backend_correct_world_cleanup_trapcall` with the trace, the
+  final `sp`/program and, at a trap site, the errors after it) under the activation's
+  environment with the uncovered callee traps stuck; its trapping callees' contract
+  `LinkSys.xTrapsOk`: for a program callee, `progX = none` because the callee's activation from
+  the canonical state has `TrapIn` (`progCallT`, from `ThmT (M - 1)`) and so does not return
+  (`progX_none`). At a callee-trap state the call goes outside `P` (`BaseTrapsOk.stop`) or to a
+  function of `P` entered from the actual call state (`progCallT` with `CallerOk` from the call
+  site's registers, `blSite`/`blrSite`; every caller state with its own body-entry world, no
+  non-interference needed).
+* **Non-vacuity** (`FV/E2E/LinkTrapCallWitness.lean`): `P = {f, h}`, `f` calls `h`, `h` is
+  `trap user1`, compiled by the shipped pipeline (`chk_true` receipt); `program_trap_applies`
+  (every premise but the entry state's); `f`'s run on `41` traps inside `h` (`run_traps`),
+  `cs0_trapsD` (the new premise holds), `cs0_not_trapsExplicit` (the premise of
+  `backend_correct_program_budget` does not).
+* `#print axioms` (`scripts/audit/traps.lean`): `backend_correct_program_trap{,_budget,_peak,
+  _core}`, `LinkSys.thmT`, `backend_correct_world_cleanup_trapstop`: `[propext,
+  Classical.choice, Quot.sound]`.
+
+Not yet covered (S9b, S9d, TO-PROVE §4 S9): traps of the callees of `try_call`/
 `try_call_indirect` (the device's exception would be caught by the handler semantics); the
-linked program (`LinkArm`: the linked hook of a program callee whose run traps returns no state,
-`junkAt`; the callee-trap state must continue in the callee's code, by induction on the depth,
-ending at a trap site of some function of the program or at a callee-trap state of a base
-callee, with `XTrapsOk` for the base environment in `BaseOk`); the executable bytes and
-`compileExe`/`Front` (`ExecRefines`' trap clause names the entered function's trap sites only).
+executable bytes and `compileExe`/`Front` (`ExecRefines`' trap clause names the entered
+function's trap sites only).
 
 ## Remaining (precise)
 
