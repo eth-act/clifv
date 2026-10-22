@@ -444,6 +444,20 @@ layers (`ThreadRefine.Refines.trans`). The backend layers 1–4 are open, so #38
 per-thread allocation metadata, no step for extern calls that touch memory, and one `tls_value`
 instance; widening those is part of the same item.
 
+## SIMD lane operations (S12 phase B, 2026-10-22)
+
+S12 phase A (`docs/plans/simd.md`) covers vector data movement: vector types, `load`/`store`,
+parameters, returns, calls and `bitcast`. Lane semantics and vector arithmetic (`splat`,
+`extractlane`, `insertlane`, vector `iadd`/`imul`/compares/shifts, widen/narrow, `shuffle`,
+`swizzle`, float lanes) are deferred: cg_clif implements SIMD intrinsics lane by lane through
+memory, so no function of `examples/deps`, the survey, fv-demo, vendor or core/alloc has such a
+vector instruction (`scripts/simd-scan.py`, 2026-10-22). They are needed only by Cranelift's
+SIMD runtests (177 files) and hand-written CLIF. Needed for them: `Clif.run` lane semantics
+(decisions recorded in `simd.md` §2), the Arm Advanced SIMD classes LNSym had and the port
+dropped (`Advanced_simd_{extract,permute,shift_by_immediate,table_lookup,three_different}`,
+compares and float lanes in `three_same`/`two_reg_misc`), co-simulation, and the vector ISLE
+roots (138 excluded root rules mention vector types). Start when a measured crate needs it.
+
 ## Other deferred items
 
 - **M3 validator** (Cranelift's own machine code vs CLIF, per function): paused on branch `agent/validator`. Only needed to ship Cranelift's bytes with assurance.

@@ -74,7 +74,7 @@ The path is DSL → CLIF (Cranelift IR) → AArch64. Cranelift is used as the wo
 
 - **DSL → Rust emission** (a fast path through rustc/LLVM, checked by a Charon/Aeneas round trip). *Not started. The Rust route taken instead is Rust → CLIF via rustc_codegen_cranelift, compiled by the Lean backend (M8).*
 - **Mid-end CLIF → CLIF optimisations.** *Done for the proven-rules configuration (see "Lean mid-end" under M7).*
-- **SIMD variants.** *Not started; vector code falls back to cg_clif.*
+- **SIMD variants.** *Planned (S12, `docs/plans/simd.md`): vector code falls back to cg_clif; the measured crates need vector data movement only (9 `examples/deps` functions).*
 - **x86-64.** It lacks an authoritative formal ISA source; AArch64 has Arm's ASL. *Not started.*
 - **A RISC-V target for a zkVM guest.** *Not started.*
 
