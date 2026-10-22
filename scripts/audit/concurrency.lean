@@ -745,3 +745,20 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.coveredCode_of_lsx
 #print axioms Concurrency.RealizeCompiled.CompiledLS.toLSX
 #print axioms Concurrency.RealizeCompiled.thread_compiledLSX_full
+-- T2j follow-ups (#473): whole-run atomic_cas storing a new value; resuming after a call
+#print axioms Concurrency.RealizeCompiled.WitnessC1.pair_full_rd
+#print axioms Concurrency.RealizeCompiled.WitnessC1.cstep_rd -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessC1.realizes_cas_full -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.oneEv_op1
+#print axioms Concurrency.CallSeg.moves_privP
+#print axioms Concurrency.CallSeg.rets_privP
+#print axioms Concurrency.CallSeg.srcStep_of_mstep_eq
+#print axioms Concurrency.CallSeg.srcStep_of_mstep_nil
+#print axioms Concurrency.CallSeg.tstep_transfer
+#print axioms Concurrency.CallSeg.tstep_priv1
+#print axioms Concurrency.CallSeg.ldar_evs_line
+#print axioms Concurrency.ClifCStepTerm.cstep_ret_pop
+#print axioms Concurrency.CallSeg.WitnessC.calleePath -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.mstep_ldar -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.cstep_ld -- witness: native_decide
+#print axioms Concurrency.CallSeg.WitnessC.funReal_ld -- witness: native_decide
