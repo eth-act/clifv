@@ -78,6 +78,7 @@ import FV.Concurrency.ArmAllocStraight
 import FV.Concurrency.ArmAllocWitness
 import FV.Concurrency.ArmAllocMem
 import FV.Concurrency.ArmAllocMemWitness
+import FV.Concurrency.ArmAllocMemLS
 import FV.Concurrency.SegRun
 import FV.Concurrency.IselVary
 import FV.Concurrency.IselFoot
