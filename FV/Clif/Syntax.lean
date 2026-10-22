@@ -53,6 +53,10 @@ def width : Ty → Nat
   | i8 => 8 | i16 => 16 | i32 => 32 | i64 => 64 | i128 => 128 | f32 => 32 | f64 => 64
   | vec s => s.width
 
+/- `simp [Ty.width]` evaluates the width of a concrete vector type to a numeral (`Ty.casesFlat`
+leaves concrete shapes), as it does for the scalar types. -/
+attribute [simp] VShape.width VShape.lanes VShape.laneBits
+
 /-- Byte width of a type. -/
 def bytes (t : Ty) : Nat := t.width / 8
 
