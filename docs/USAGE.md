@@ -5,8 +5,8 @@ your crate **and of its dependencies** are compiled by the all-Lean CLIF → AAr
 this repository. The Rust frontend is rustc_codegen_cranelift (cg_clif): it lowers Rust to
 CLIF, and for every function of every crate compiled for the target (the workspace members
 and all their dependencies: registry, git and path packages) the Lean backend compiles that
-CLIF again. Only std (the prebuilt standard library) and the host-side code that is not part
-of the program (build scripts, proc macros) are not. The Lean code replaces cg_clif's code
+CLIF again. Only std (the prebuilt standard library, unless `--build-std`) and the host-side
+code that is not part of the program (build scripts, proc macros) are not. The Lean code replaces cg_clif's code
 for that function. Functions the Lean backend cannot compile keep cg_clif's code
 (**fallback**), so the build never fails because of the Lean backend. After each build,
 `target/fv-report.json` and a summary on stderr list every function as one of:
@@ -80,8 +80,7 @@ and they run under `qemu-aarch64-static`.
    and the stock comparison still use it). `cargo install --path rust/crates/cargo-fv` also works: it installs both
    binaries, and they still use that checkout.
 5. cg_clif with this repository's patch, built once from the nightly's own sources (network
-   access, the `rustc-dev` component, about 40 s per variant):
-   ```
+   access, the `rustc-dev` and `rust-src` components, about 40 s per variant):
    FV_MEMCAP=16G scripts/memcap.sh scripts/build-cg-clif.sh
    ```
    The patch (`scripts/patches/cg-clif-extnames.patch`) makes cg_clif write, after every CLIF
@@ -93,6 +92,10 @@ and they run under `qemu-aarch64-static`.
    checkout; `cargo fv` uses the one for the build's panic strategy (see *Panics and
    unwinding*) and stops with an error when it is missing. The shipped
    `rustc-codegen-cranelift-preview` writes no tables and cannot be used.
+   The script also prepares the standard library's sources for `--build-std`
+   (`target/cg_clif/std-src/library`: the toolchain's `rust-src` with cg_clif's own
+   `patches/*-stdlib-*.patch`, which remove the 128-bit atomic types cg_clif cannot compile;
+   docs/plans/std.md).
 
 ## Usage
 
@@ -120,6 +123,7 @@ Options of `cargo fv` (all other options go to cargo unchanged):
 | `--verified` | with `--lean-link`: fail closed. An executable whose Lean-compiled part is outside the source domain `SrcScopeB` or the input conditions `InScopeP` is a link error (`lean-link … --verified` names the failing functions and conditions and does not write it) instead of the bare-linker fallback, so every executable the build writes is covered by `Link.DeadCleanup.compileExe_correct{,_peak,_source,_source_peak}`. Combine with `--no-fallback` to also require every member function in the Lean region. Own target directory |
 | `--lean-ld` | link every executable with the Lean static linker `lake exe lean-ld` (`Link.Ld.link`, docs/research/lean-linker.md §6) instead of rust-lld (the default with `--lean-link`): resolution, `--gc-sections`, layout, GOT, TLS relaxation, `.eh_frame_hdr` and the ELF writer in Lean; no debug sections are written. rust-lld still performs relocatable links (`ld -r`) and links an executable whose inputs `lean-ld` rejects (reported). With `--lean-link`, `lean-ld`'s output is the `file0` that `compileExe` checks; `Link.Ld.file0OkB_ld` proves `file0OkB` of it from the link spec's conditions on `lean-ld`'s plan (`Plan.specOkB`), so `Link.DeadCleanup.compileExe_total_ld` needs no check of the linker's output; `lean-link --ld` links again and decides `Plan.specOkB` against the executable's link spec, printing `lean-ld's plan meets the link spec` and adding `…_total_ld` to the `--verified` totality note. Needs `lake build lean-ld`. Own target directory |
 | `--rust-lld` | with `--lean-link`: link with rust-lld instead of `lean-ld` (the outside part's facts are then only `leanLink`'s checks of rust-lld's output, `file0OkB`) |
+| `--build-std` | compile the standard library like a dependency (cargo `-Zbuild-std=std,panic_unwind`, `panic_abort` with `--panic-abort`; cargo adds `test` for test harnesses) from the sources `scripts/build-cg-clif.sh` prepares: every std crate (std, core, alloc, test, proc_macro, panic_unwind and std's dependencies such as hashbrown, gimli, object) goes through cg_clif and the Lean backend; compiler_builtins stays on LLVM (cg_clif cannot compile its `f128` code) and musl libc prebuilt. The report counts the std crates as a third group (`std`); own target directory (`-std`). Measurements and limits (with `--lean-link --verified` some std/test functions fail `InScopeP`; `lean-link` takes hours on the ~30k-function region): docs/plans/std.md |
 
 `cargo fv report` prints the summary of the last build again. `--functions` lists every
 function with its status and reason, and `--json` prints `target/fv-report.json`.
@@ -135,6 +139,7 @@ Environment variables:
 | `FV_CG_CLIF` | the codegen backend: a cg_clif `.so` built with the patch of `scripts/build-cg-clif.sh` (default: `target/cg_clif/unwind/librustc_codegen_cranelift.so` of the checkout, with `--panic-abort` `target/cg_clif/abort/…`); `cranelift` (the shipped one) is an error, it writes no external-name tables |
 | `FV_ROOT` | the repository checkout with the tools |
 | `FV_OBJCOPY`, `FV_AR`, `FV_RUST_LLD` | tool paths |
+| `FV_STD_SRC` | the library source tree for `--build-std` (default `target/cg_clif/std-src/library` of the checkout) |
 | `CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER` | the runner (default `qemu-aarch64-static`) |
 
 Per package, `Cargo.toml` can keep functions on cg_clif, and the workspace's packages can keep
@@ -168,20 +173,24 @@ proc macros, `target/fv/<mode>/<profile>/`) do not depend on the Lean side and s
 workspace member), `counts`, and `functions`. Each function
 has `symbol`, `instance` (the Rust item, from cg_clif's dump), `status` (`verified`,
 `unverified` or `fallback`) and `reason`. The top level has `totals` and its split into
-`members` ("your crate(s)") and `deps` ("dependencies"); std is not compiled by us and has no
-function counts. Linked executables also have `binary`: how many function symbols in the
+`members` ("your crate(s)"), `deps` ("dependencies") and `std` (the standard library's crates,
+only with `--build-std`, where their units have `std: true`; without it std is prebuilt and has
+no function counts). Linked executables also have `binary`: how many function symbols in the
 executable resolve to Lean-compiled code (members and dependencies), plus any check failures,
 with `--lean-link` `lean_link` (the theorems covering the executable, `lean-link`'s
 `coverage:`), and `origin`: the executable's functions (distinct addresses) attributed through
 the link map
-to Lean code of the members (`lean_members`) or of the dependencies (`lean_deps`, and per
-package `lean_by_package`), cg_clif code of a crate we compiled (`cg_clif`: fallbacks and
-cg_clif-generated helpers without a CLIF dump), the prebuilt sysroot (`prebuilt`: std, core,
-alloc, compiler_builtins, musl libc) and other inputs (`other`: crates outside the scope with
-`--members-only`/skip-deps). In the summary, dependency libraries are the rows of kind `dep`,
-followed by the `your crate(s)` / `dependencies` / `total` rows, one `exe` line per
-executable with that attribution (`Lean in exe per dependency`), and the unverified and
-fallback reasons by count, separately for your crate(s) and the dependencies.
+to Lean code of the members (`lean_members`), of the dependencies (`lean_deps`) or of the std
+crates (`lean_std`, with `--build-std`), per package `lean_by_package` (with `--lean-link` the
+region's functions by their symbol, from the unit reports), cg_clif code of a crate we compiled
+(`cg_clif`: fallbacks and cg_clif-generated helpers without a CLIF dump), the prebuilt sysroot
+or LLVM code (`prebuilt`: std, core, alloc unless `--build-std`, compiler_builtins, musl libc)
+and other inputs (`other`: crates outside the scope with `--members-only`/skip-deps). In the
+summary, dependency libraries are the rows of kind `dep` and std crates of kind `std`, followed
+by the `your crate(s)` / `dependencies` / (`std (--build-std)`) / `total` rows, one `exe` line
+per executable with that attribution (`Lean in exe per dependency`, `per std crate`), and the
+unverified and fallback reasons by count, separately for your crate(s), the dependencies and
+std.
 The file covers the units of the last `cargo fv` command, fresh or rebuilt. The top-level
 `mode`, `profile` and `theorem` say what "verified" refers to, and `panic` the panic strategy
 and the codegen backend (also the second line of the summary).
@@ -420,7 +429,8 @@ and, for frames that must run code during unwinding, a landing pad and an LSDA.
   external-name tables, docs/contracts/frontend.md), `clif-data-export` (the object's data
   objects), the object surgery above and the linker (both checked, for the
   program's code, data objects and symbols, by the binary check), std (the prebuilt standard
-  library: std/core/alloc, compiler_builtins, musl libc; LLVM code), dependencies excluded by
+  library: std/core/alloc, compiler_builtins, musl libc; LLVM code; with `--build-std` only
+  compiler_builtins and musl libc), dependencies excluded by
   `--members-only`/skip-deps (cg_clif code), and everything the report lists as unverified
   or fallback (cg_clif code). `--opt` runs unproven rules. Build scripts and proc macros
   (e.g. `serde_derive`) run on the host at build time and are plain rustc: they are not part
@@ -951,8 +961,10 @@ the CPU qemu emulates has.)
   qemu. Executables are linked by `lean-ld` with `--lean-link`/`--lean-ld` (rust-lld when it
   rejects the inputs), otherwise by `rust-lld`; relocatable merges always use `rust-lld -r`.
 * Every crate compiled for the target goes through the Lean backend (`--members-only` and
-  skip-deps restrict it); std is the prebuilt LLVM one (rebuilding it with `-Zbuild-std`
-  would be the way to cover it, not done).
+  skip-deps restrict it); std is the prebuilt LLVM one unless `--build-std`, which compiles
+  its Rust crates too (compiler_builtins and musl libc stay outside; docs/plans/std.md for the
+  measurements: 99 % of std's functions verified, the rest floats; `--verified` executables
+  and the cost of `lean-link` on ~30k functions are the open items).
 * panic=unwind: full unwinding semantics (`Drop` during unwinding, `catch_unwind` in the crate)
   need the unwinding build of the patched cg_clif (Install, 5). The
   landing pads of Lean-compiled functions and their LSDA are compiled but not verified: the

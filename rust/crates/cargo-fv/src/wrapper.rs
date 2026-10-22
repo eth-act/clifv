@@ -548,19 +548,43 @@ fn exe_origin(cfg: &Config, meta: &UnitMeta, exe: &Path, map: &Path) -> Result<E
     let inputs = map_text_inputs(&text);
     let data = fs::read(exe).map_err(|e| format!("{}: {e}", exe.display()))?;
     let file = object::File::parse(&*data).map_err(|e| e.to_string())?;
-    let mut marked: HashSet<u64> = HashSet::new();
+    // marker address → the Lean-compiled function's symbol
+    let mut marked: HashMap<u64, String> = HashMap::new();
     let mut funcs: HashSet<u64> = HashSet::new();
     for s in file.symbols() {
         let Ok(n) = s.name() else { continue };
         if s.is_undefined() || n.is_empty() {
             continue;
         }
-        if n.starts_with(MARKER) {
-            marked.insert(s.address());
+        if let Some(f) = n.strip_prefix(MARKER) {
+            marked.insert(s.address(), f.to_string());
         } else if s.kind() == object::SymbolKind::Text && s.size() > 0 {
             funcs.insert(s.address());
         }
     }
+    // `--lean-link`: the region object (`leanlink::program_part`, named as one of this unit's
+    // objects) holds the Lean code of every unit linked; its functions are attributed by symbol
+    // to the unit reports that list them (renamed local symbols `__fv_<tag>_<symbol>`)
+    let mut by_symbol: Option<HashMap<String, (String, bool, bool)>> = None;
+    let mut symbol_owner = |f: &str| -> Option<(String, bool, bool)> {
+        let m = by_symbol.get_or_insert_with(|| {
+            let mut m = HashMap::new();
+            for e in fs::read_dir(&cfg.report_dir).into_iter().flatten().flatten() {
+                let Ok(text) = fs::read_to_string(e.path()) else { continue };
+                let Ok(u) = serde_json::from_str::<UnitReport>(&text) else { continue };
+                for f in u.functions.iter().filter(|f| f.status != Status::Fallback) {
+                    m.entry(f.symbol.clone()).or_insert_with(|| (u.package.clone(), u.dep, u.std));
+                }
+            }
+            m
+        });
+        let plain = f
+            .strip_prefix("__fv_")
+            .and_then(|r| r.split_once('_'))
+            .filter(|(t, _)| !t.is_empty() && t.bytes().all(|b| b.is_ascii_hexdigit()))
+            .map_or(f, |(_, s)| s);
+        m.get(plain).or_else(|| m.get(f)).cloned()
+    };
     let own_prefix = format!("{}.", meta.unit);
     // input file → (package, dependency?, std?) of the unit we compiled it in, if any
     let mut owners: HashMap<String, Option<(String, bool, bool)>> = HashMap::new();
@@ -585,8 +609,11 @@ fn exe_origin(cfg: &Config, meta: &UnitMeta, exe: &Path, map: &Path) -> Result<E
     for a in funcs {
         let i = inputs.partition_point(|(s, _, _)| *s <= a);
         let input = i.checked_sub(1).map(|i| &inputs[i]).filter(|(_, e, _)| a < *e).map(|(_, _, f)| f.as_str());
-        let owner = input.and_then(&mut owner_of);
-        match (marked.contains(&a), owner) {
+        let owner = match (marked.get(&a), input) {
+            (Some(f), Some(i)) if i.ends_with(".fvlean.rcgu.o") => symbol_owner(f).or_else(|| owner_of(i)),
+            _ => input.and_then(&mut owner_of),
+        };
+        match (marked.contains_key(&a), owner) {
             (true, Some((pkg, dep, std))) => {
                 if std {
                     o.lean_std += 1;

@@ -504,6 +504,21 @@ dropped (`Advanced_simd_{extract,permute,shift_by_immediate,table_lookup,three_d
 compares and float lanes in `three_same`/`two_reg_misc`), co-simulation, and the vector ISLE
 roots (138 excluded root rules mention vector types). Start when a measured crate needs it.
 
+## std through `cargo fv --build-std`: what stays outside (T3, #39, 2026-10-22)
+
+`cargo fv --build-std` compiles std's Rust crates like dependencies (`docs/plans/std.md`). Left:
+
+- **musl libc** (C, no C → CLIF path), **libunwind** (C/asm, its model already trusted, S10f),
+  **compiler_builtins** (cg_clif cannot compile its `f128` code; kept on LLVM) and the
+  **allocator shim** `__rust_alloc` & co. (cg_clif emits it without a CLIF dump; T3b).
+- **The 128-bit atomic types** are removed from core by cg_clif's own stdlib patch (cg_clif cannot
+  compile 128-bit atomics); crates using `AtomicU128`/`AtomicI128` do not build with
+  `--build-std`.
+- **The executable theorem with std in `P`**: 17–18 functions of std/test (and one of fv-demo whose
+  indirect calls can now reach std functions) fail `InScopeP`'s `indB`/`callScopeB`, so `--verified`
+  rejects the executables (T3c). `lean-link` and `link-check` take hours on a ~30k-function
+  region (T3d).
+
 ## Other deferred items
 
 - **M3 validator** (Cranelift's own machine code vs CLIF, per function): paused on branch `agent/validator`. Only needed to ship Cranelift's bytes with assurance.
