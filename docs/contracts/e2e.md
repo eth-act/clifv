@@ -4085,10 +4085,25 @@ functions over the validation budget (`Backend.validationBudget`: instructions �
 `compiled, unverified (validation budget)`.
 
 **Functions outside the theorem** (`FV/Backend.lean` `unverifiedReason?`: outside
-clif-subset-v2 E, calls (also `try_call`s) of functions of the same file, special-purpose parameters other than one `sret` pointer (`abiSigs`), indirect calls
+clif-subset-v2 E and its typed scope, calls (also `try_call`s) of functions of the same file, special-purpose parameters other than one `sret` pointer (`abiSigs`), indirect calls
 with more than 8 parameters or special-purpose parameters (`indSigsOk`)) are still
 compiled, without validation, and reported as unverified (`FileAsm.unverified`; `lean-backend`
 prints `compiled, unverified (outside backend_correct): …`).
+
+**The typed scope (S11e5 Stage C).** A function outside subset E is inside the theorem when
+it is in the typed scope (`Backend.verifiableT`: `Compile.functionET` — float parameters,
+returns, block parameters, loads, stores, constants, `select`, `bitcast` — with
+`Compile.storeTypedB`, `abiSigs`, `indSigsOk`); its lowering is validated by the typed
+validator `lowerCheckT` (`Backend.lowerCheckFor`: `lowerCheck` on subset E, `lowerCheckT`
+outside it; `lowerCheckT_of_lowerCheck`), and the theorems are `backend_correct_finalT`/
+`backend_correct_final_cleanupT` with `E2E.typedRules_program` (returns by class,
+`ArmRefinesT`). `FV/E2E/VerifiableT.lean`: `InSubsetT.of_verifiableT`,
+`verifiable_or_verifiableT_of_unverifiedReason`, `lowerChecked_spec`; witness
+`FVTest/E2E/FloatVerifiedW.lean`. Float arithmetic (`fadd` …, `fcmp`, conversions) stays
+outside (`functionET` has no arithmetic). The Stock routes are integer-only (their eligibility
+requires `i32`/`i64` signatures and bodies): on a typed function they produce `lowerFunction`'s
+code, accepted only by `lowerCheck` (which implies `lowerCheckT`, `lowerCheckT_of_lowerCheck`) or,
+as the last retry, by `lowerChecked`'s `lowerCheckT`.
 
 ## Contract changes taken (byte-identical)
 
