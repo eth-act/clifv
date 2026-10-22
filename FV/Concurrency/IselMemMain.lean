@@ -128,6 +128,95 @@ theorem pw_two {x x' : Prog.Ev SKind BVal} {y y' : Prog.Ev AKind BVal} (h : EvRe
     · exact h'
     · simp at h1; omega⟩
 
+theorem sagrees_head {m : Memory} {e : Ev} {es : List Ev} (h : SAgrees m (e :: es))
+    (hR : e.k.dir = .R) : readM e.n e.addr m = e.val :=
+  h.1 hR
+
+/-- **A read event at the access** against the CLIF read of the bytes the CLIF memory holds after
+storing the read memory's bytes there. -/
+theorem evrel_read {e : Ev} {M : Memory} {k : SKind} (hk : Maps k e.k) (hR : e.k.dir = .R)
+    (hag : readM e.n e.addr M = e.val) {a n : Nat} (hA : e.addr = BitVec.ofNat 64 a)
+    (hn : e.n = n) (ha : a < 2 ^ 64) (cm : Clif.Mem) :
+    EvRel Maps ⟨k, .R, a, n,
+      getB (cm.writeBits false a n (readM n (BitVec.ofNat 64 a) M)).bytes a n⟩
+      (ProgE2E.convEv e) := by
+  obtain ⟨h1, h2, h3⟩ := conv_at hag hA hn ha
+  refine ⟨hk, by simp [ProgE2E.convEv, hR], h1, h2, ?_⟩
+  rw [h3]
+  show _ = getB (cm.writeBits false a n (readM n (BitVec.ofNat 64 a) M)).bytes a n
+  rw [getB_writeBits, valB_false]
+
+/-- **A write event at the access** against a CLIF write of its bytes. -/
+theorem evrel_write {e : Ev} {k : SKind} (hk : Maps k e.k) (hW : e.k.dir = .W) {a n : Nat}
+    (hA : e.addr = BitVec.ofNat 64 a) (hn : e.n = n) (ha : a < 2 ^ 64) {v : BVal}
+    (hv : ProgE2E.bytesOf e.n e.val = v) : EvRel Maps ⟨k, .W, a, n, v⟩ (ProgE2E.convEv e) :=
+  ⟨hk, by simp [ProgE2E.convEv, hW], loc_at hA ha, hn, hv⟩
+
+/-- The memory after events ending with a write holds the write's bytes. -/
+theorem applyW_last {es : List Ev} {wr : Ev} (hW : wr.k.dir = .W) {A : BitVec 64} {n : Nat}
+    (hA : wr.addr = A) (hn : wr.n = n) (hn64 : n ≤ 2 ^ 64) (m : Memory) :
+    ∀ k < n, applyW (es ++ [wr]) m (A + BitVec.ofNat 64 k) = wr.val.extractLsb' (8 * k) 8 := by
+  obtain ⟨kk, addr, n', val⟩ := wr
+  simp only at hW hA hn ⊢
+  subst hA hn
+  intro k hk
+  rw [applyW_append]
+  simp only [applyW, hW, ite_true]
+  exact writeM_apply_in _ _ _ _ _ hn64 hk
+
+/-- **The bytes of a VCode write at a CLIF access are the CLIF write's bytes** (`bytes_of_mr`). -/
+theorem write_val {F : BitVec 64 → Prop} {sb : Nat} {syms : String → Option Nat}
+    {f : Clif.Function} {MR : MemRelT} (hMR : MemRelOk F sb syms f MR)
+    {sl : List (Clif.SlotId × Nat)} {cm : Clif.Mem} {w : ArmState} (hmr : MR sl cm w)
+    {a n : Nat} (hv : cm.valid a n = true) {big : Bool} {wd : Nat} {v : BitVec wd}
+    (hg : getB cm.bytes a n = valB big n v) {e : Ev} (ha : e.addr = BitVec.ofNat 64 a)
+    (hn : e.n = n)
+    (hmem : ∀ k < n, w.mem (e.addr + BitVec.ofNat 64 k) = e.val.extractLsb' (8 * k) 8) :
+    ProgE2E.bytesOf e.n e.val = valB big n v := by
+  rw [bytes_of_mr hMR hmr hv (getB_valB_some hg) ha hn hmem, hg]
+
+theorem getB_putB_valB (B : Bytes) {w : Nat} (big : Bool) (a n : Nat) (v : BitVec w) :
+    getB (putB B a n (valB big n v)) a n = valB big n v :=
+  bytesI.get_put_same B a n _ (valB_length big n v)
+
+/-- The memory instruction of an `atomic_rmw` (`casOkB`). -/
+theorem rmw_form {op : Clif.AtomicRmwOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {pp x : Nat}
+    {ms : List MInst} {mi : MInst} (h : casOkB (.atomicRmw op ty fl pp x) ms = true)
+    (hm : mi ∈ ms) (hk : akinds mi ≠ []) :
+    ∃ t op' fl' p x' d d1 d2, mi = .atomicRmwLoop t op' fl' (.vreg p .int) (.vreg x' .int)
+      (.vreg d .int) (.vreg d1 .int) (.vreg d2 .int) := by
+  have hmm : mi ∈ SegShape.memInsts ms := List.mem_filter.mpr ⟨hm, by
+    cases hh : akinds mi with
+    | nil => exact absurd hh hk
+    | cons _ _ => rfl⟩
+  have hP := List.all_eq_true.mp h mi hmm
+  split at hP
+  · simp only [Bool.and_eq_true] at hP
+    obtain ⟨⟨⟨⟨h1, h2⟩, h3⟩, h4⟩, h5⟩ := hP
+    obtain ⟨_, rfl⟩ := intV_eq h1
+    obtain ⟨_, rfl⟩ := intV_eq h2
+    obtain ⟨_, rfl⟩ := intV_eq h3
+    obtain ⟨_, rfl⟩ := intV_eq h4
+    obtain ⟨_, rfl⟩ := intV_eq h5
+    exact ⟨_, _, _, _, _, _, _, _, rfl⟩
+  · cases hP
+
+/-- The memory instruction of an `atomic_cas` (`casOkB`). -/
+theorem cas_form {ty : Clif.Ty} {fl : Clif.MemFlags} {pp ex x : Nat}
+    {ms : List MInst} {mi : MInst} (h : casOkB (.atomicCas ty fl pp ex x) ms = true)
+    (hm : mi ∈ ms) (hk : akinds mi ≠ []) :
+    ∃ t fl' p e x' d d1, mi = .atomicCasLoop t fl' (.vreg p .int) (.vreg e .int)
+      (.vreg x' .int) (.vreg d .int) (.vreg d1 .int) := by
+  have hmm : mi ∈ SegShape.memInsts ms := List.mem_filter.mpr ⟨hm, by
+    cases hh : akinds mi with
+    | nil => exact absurd hh hk
+    | cons _ _ => rfl⟩
+  have hP := List.all_eq_true.mp h mi hmm
+  repeat' split at hP
+  all_goals first
+    | exact ⟨_, _, _, _, _, _, _, rfl⟩
+    | cases hP
+
 section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
@@ -325,8 +414,9 @@ theorem mem_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
   have hres : isStore stm.inst = false → stm.results ≠ [] := by
     intro hs hnil
     rw [hs] at hlen0
-    rw [hnil] at hrl
-    simp at hlen0; omega
+    rw [hnil, List.length_nil] at hrl
+    simp only [Bool.false_eq_true, ite_false] at hlen0
+    omega
   -- the CLIF access holding the world's own bytes
   let cm1 := s.mem.writeBits false a nE (readM nE (BitVec.ofNat 64 a) w.mem)
   have hmr1 : MR slots cm1 w := mr_own hMR hmr hv
@@ -355,8 +445,8 @@ theorem mem_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     exact ⟨e.2.2.1, e.2.2.2⟩
   obtain ⟨rfl, rfl⟩ := hdet
   have hcsem : csem F fc X (mi0.mapRegs R) = csem F fc X mi0 := H.dsem.rename R gn H.shape.ren mi0
-  have hev2 : evs = cEvs F fc mi0 (vuses ops ρm) (patch evs wm) := by
-    rw [hev', CEvsInv.cEvs_mapRegs H.shape.ren]
+  have hev2 : evs = cEvs F fc mi0 (vuses ops ρm) (patch evs wm) :=
+    hev'.trans (congrFun (congrFun (CEvsInv.cEvs_mapRegs H.shape.ren F fc mi0) _) _)
   have hst : mi0.isCtl = false → csemWF fc mi0 (vuses ops ρm) = true ∧ Arm.CheckSPAlignment wm :=
     fun hc => ⟨hwf hc, halm⟩
   have hEA : AtA (BitVec.ofNat 64 a) nE evs := by
@@ -370,7 +460,190 @@ theorem mem_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
   obtain ⟨ρ'', w'', hc'', -⟩ := vtstep_next hvb hmidx
     (memBytes_form (by rw [SegShape.memBytes_mapRegs]; exact hn)) hstep
   subst hc''
-  sorry
+  ------------------------------------------------ the CLIF access holding the bytes read
+  have hn64 : nE ≤ 2 ^ 64 := by omega
+  have ha : a < 2 ^ 64 := by omega
+  have hMw : (patch evs wm).mem = applyR evs w.mem := by
+    simp only [patch, setMem_mem, hwm]
+  have hpw : patch evs w = write_mem_bytes nE (BitVec.ofNat 64 a)
+      (readM nE (BitVec.ofNat 64 a) (patch evs wm).mem) w := by
+    rw [patch_local hn64 hEA w, hMw]
+  have hmr2 : MR slots (s.mem.writeBits false a nE
+      (readM nE (BitVec.ofNat 64 a) (patch evs wm).mem)) (patch evs w) := by
+    rw [hpw]; exact hMR.store slots s.mem w a nE _ hmr hv
+  have hm2 := match_mem (s2 := { s with mem := (s.mem.writeBits false a nE
+      (readM nE (BitVec.ofNat 64 a) (patch evs wm).mem)) }) hm rfl rfl hmr2
+  obtain ⟨vs2, cm2', h2o⟩ := hok_any (s.mem.writeBits false a nE
+      (readM nE (BitVec.ofNat 64 a) (patch evs wm).mem)) rfl (writeBits_isSome _ _ _ _ _)
+  obtain ⟨hal2, hl2⟩ := outcome_shape hthr hnp hfe h2o
+  obtain ⟨s', hs2, hs'm⟩ := step_next_of hbody hnc hnci hs0 h0 h2o (by rw [hl2, hlen0])
+  obtain ⟨B', j', ρL, wL, hB', hstm', hbd', hk', hstar, hsr, hM⟩ :=
+    stmt_matchN H hm2 hbody (hind _) hs2
+  rw [hB] at hB'; cases hB'
+  have hjj : j' = j := by
+    have e1 := congrArg List.length (hbd.symm.trans hbd')
+    have := (List.getElem?_eq_some_iff.mp hstm').1
+    simp at e1; omega
+  subst j'
+  ------------------------------------------------ the world after the segment
+  have hseg' : seg f R bl b j =
+      pre0.map (·.mapRegs R) ++ mi0.mapRegs R :: post0.map (·.mapRegs R) := by
+    rw [hseg, hextra]; simp
+  rw [hseg'] at hsr
+  obtain ⟨ρ1, w1, hsr1, hsr2⟩ := seqRun_split hsr
+  have hdet2 : ρm = ρ1 ∧ patch evs wm = w1 := by
+    have hS1 := (vtrun_nil_starN h1 hpe (applyR evs w.mem)).1
+    have e1 : confMem (applyR evs w.mem) (.run ⟨b, k, ρ, w⟩) = .run ⟨b, k, ρ, patch evs w⟩ := rfl
+    have e2 : confMem (applyR evs w.mem) (.run ⟨b, k + pre0.length, ρm, wm⟩) =
+        .run ⟨b, k + pre0.length, ρm, patch evs wm⟩ := by
+      simp only [confMem, patch, hwm]
+    rw [e1, e2, hpl] at hS1
+    have hS2 := (seqRun_fall_starN hvb hsegpre hltpre hsr1).toN
+    simp only [List.length_map] at hS2
+    have e := vstepN_det hS1 hS2
+    simp only [VConf.run.injEq, VState.mk.injEq] at e
+    exact ⟨e.2.2.1, e.2.2.2⟩
+  obtain ⟨rfl, rfl⟩ := hdet2
+  obtain ⟨ops2, outs, w₁, hops2, hsem2, -, hrest⟩ := seqRun_cons_fall hsr2
+  rw [hops'] at hops2; cases hops2
+  have hw₁ : w₁.mem = applyW evs (patch evs wm).mem := by
+    have e := hf'.2 (patch evs wm).mem hf'.1
+    rw [setMem_self, hsem2] at e
+    simp only [Option.map_some, Option.some.injEq, Prod.mk.injEq] at e
+    obtain ⟨-, hw, -⟩ := e
+    rw [hw]; rfl
+  have hcovm : SegFoot.Covered fc (mi0.mapRegs R) :=
+    covered_of_instOkB (by rw [instOkB_mapRegs H.shape.ren]; exact hall' mi0 (by simp))
+  have hep : Arm.r .ERR (patch evs wm) = .None := by rw [patch, err_setMem]; exact hem
+  have halp : Arm.CheckSPAlignment (patch evs wm) := by rw [patch, spAlign_setMem]; exact halm
+  obtain ⟨he₁, hal₁, -⟩ := SegFoot.csem_keep hcovm.1 hcovm.2.1
+    (IselMemAux.covered_cov hcovm hops' ρm)
+    hep halp hsem2
+  have hpostc : ∀ i ∈ post0.map (·.mapRegs R), SegFoot.Covered fc i ∧ akinds i = [] := by
+    intro i hi
+    obtain ⟨i0, hi0, rfl⟩ := List.mem_map.mp hi
+    refine ⟨covered_of_instOkB (by
+      rw [instOkB_mapRegs H.shape.ren]; exact hall' i0 (by simp [hi0])), ?_⟩
+    rw [SegShape.akinds_mapRegs]; exact hpost0 _ hi0
+  obtain ⟨hwL, -, -⟩ := seqRun_nomem hX hpostc he₁ hal₁ hrest
+  have hmemW : ∀ (es : List Ev) (wr : Ev), evs = es ++ [wr] → wr.k.dir = .W →
+      ∀ kk < nE, wL.mem (wr.addr + BitVec.ofNat 64 kk) = wr.val.extractLsb' (8 * kk) 8 := by
+    intro es wr hes hW kk hkk
+    obtain ⟨hA', hn'⟩ := hEA wr (by rw [hes]; simp)
+    rw [hwL, hw₁, hes, hA']
+    exact applyW_last hW hA' hn' hn64 _ kk hkk
+  have hmrL : MR slots s'.mem wL := hM.2.2.2.1
+  have hvL : s'.mem.valid a nE = true := valid_of_allocs (c := s.mem) (by rw [hs'm]; exact hal2) hv
+  have hsub := VCodeEvents.cEvs_kinds F fc mi0 (vuses ops ρm) (patch evs wm)
+  rw [← hev2, hks] at hsub
+  have hcsem2 : csem F fc X mi0 (vuses ops ρm) (patch evs wm) = some (outs, w₁, .next) := by
+    rw [← hcsem]; exact hsem2
+  have hag0 : SAgrees (patch evs wm).mem evs := hf'.1
+  have hmi0 : mi0 ∈ pre0 ++ mi0 :: post0 := by simp
+  have hcas' := hms ▸ hcas
+  ------------------------------------------------ per statement
+  cases hi : stm.inst <;> rw [hi] at hthr hnp hfe hexp <;>
+    simp only [threadInstB, pureInst, SegShape.expect, reduceCtorEq, Option.some.injEq,
+      Prod.mk.injEq, Bool.false_eq_true] at hthr hnp hfe hexp
+  case load op ty fl pp off =>
+    obtain ⟨-, pv, hpv, hae⟩ := access_some_ite (hi ▸ hacc)
+    simp only [Prod.mk.injEq] at hae
+    obtain ⟨ea, en⟩ := hae
+    rw [← hexp.1] at hsub
+    obtain ⟨e, rfl, hek⟩ := single_of_sublist hsub hEne
+    have hc2 := cstep_load (s := { s with mem := (s.mem.writeBits false a nE
+      (readM nE (BitVec.ofNat 64 a) (patch [e] wm).mem)) }) hbody hi hpv hs2
+    rw [ea, en] at hc2
+    have hR : e.k.dir = .R := by rw [hek]; rfl
+    obtain ⟨hA, hn'⟩ := hEA e (by simp)
+    exact mem_complete hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+      (pw_one (evrel_read (by rw [hek]; rfl) hR (sagrees_head hag0 hR) hA hn' ha s.mem))
+  case atomicLoad ty fl pp =>
+    obtain ⟨-, pv, hpv, hae⟩ := access_some_ite (hi ▸ hacc)
+    simp only [Prod.mk.injEq] at hae
+    obtain ⟨ea, en⟩ := hae
+    rw [← hexp.1] at hsub
+    obtain ⟨e, rfl, hek⟩ := single_of_sublist hsub hEne
+    have hc2 := cstep_atomicLoad (s := { s with mem := (s.mem.writeBits false a nE
+      (readM nE (BitVec.ofNat 64 a) (patch [e] wm).mem)) }) hbody hi hpv hs2
+    rw [ea, en] at hc2
+    have hR : e.k.dir = .R := by rw [hek]; rfl
+    obtain ⟨hA, hn'⟩ := hEA e (by simp)
+    exact mem_complete hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+      (pw_one (evrel_read (by rw [hek]; exact .inl rfl) hR (sagrees_head hag0 hR) hA hn' ha s.mem))
+  case store op ty fl x pp off =>
+    obtain ⟨pv, hpv, hae⟩ := access_some (hi ▸ hacc)
+    simp only [Prod.mk.injEq] at hae
+    obtain ⟨ea, en⟩ := hae
+    obtain ⟨v, pv', hv', hpv'⟩ := store_parts (hi ▸ h2o)
+    rw [hpv] at hpv'; cases hpv'
+    rw [← hexp.1] at hsub
+    obtain ⟨e, rfl, hek⟩ := single_of_sublist hsub hEne
+    have hc2 := cstep_store (s := { s with mem := (s.mem.writeBits false a nE
+      (readM nE (BitVec.ofNat 64 a) (patch [e] wm).mem)) }) hbody hi hpv hv' hs2
+    have hown := cstep_own hc2 hs2 (by exact ⟨(fun h => nomatch h), trivial⟩)
+    rw [applyEvs_write] at hown
+    have hg : getB s'.mem.bytes a nE = valB (bigOf fl) nE v := by
+      rw [hown, ← ea, ← en]; exact getB_putB_valB _ _ _ _ _
+    rw [ea, en] at hc2
+    have hW : e.k.dir = .W := by rw [hek]; rfl
+    obtain ⟨hA, hn'⟩ := hEA e (by simp)
+    have hval := write_val hMR hmrL hvL hg hA hn' (hmemW [] e rfl hW)
+    exact mem_complete hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+      (pw_one (evrel_write (by rw [hek]; rfl) hW hA hn' ha hval))
+  case atomicStore ty fl x pp =>
+    obtain ⟨pv, hpv, hae⟩ := access_some (hi ▸ hacc)
+    simp only [Prod.mk.injEq] at hae
+    obtain ⟨ea, en⟩ := hae
+    obtain ⟨v, pv', hv', hpv'⟩ := atomicStore_parts (hi ▸ h2o)
+    rw [hpv] at hpv'; cases hpv'
+    rw [← hexp.1] at hsub
+    obtain ⟨e, rfl, hek⟩ := single_of_sublist hsub hEne
+    have hc2 := cstep_atomicStore (s := { s with mem := (s.mem.writeBits false a nE
+      (readM nE (BitVec.ofNat 64 a) (patch [e] wm).mem)) }) hbody hi hpv hv' hs2
+    have hown := cstep_own hc2 hs2 (by exact ⟨(fun h => nomatch h), trivial⟩)
+    rw [applyEvs_write] at hown
+    have hg : getB s'.mem.bytes a nE = valB (bigOf fl) nE v := by
+      rw [hown, ← ea, ← en]; exact getB_putB_valB _ _ _ _ _
+    rw [ea, en] at hc2
+    have hW : e.k.dir = .W := by rw [hek]; rfl
+    obtain ⟨hA, hn'⟩ := hEA e (by simp)
+    have hval := write_val hMR hmrL hvL hg hA hn' (hmemW [] e rfl hW)
+    exact mem_complete hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+      (pw_one (evrel_write (by rw [hek]; exact .inl rfl) hW hA hn' ha hval))
+  case atomicRmw op ty fl pp x =>
+    obtain ⟨-, pv, hpv, hae⟩ := access_some_ite (hi ▸ hacc)
+    simp only [Prod.mk.injEq] at hae
+    obtain ⟨ea, en⟩ := hae
+    obtain ⟨pv', v, old, hpv', hv', hold⟩ := rmw_parts (hi ▸ h2o)
+    rw [hpv] at hpv'; cases hpv'
+    obtain ⟨t, op', fl', p0, x0, d0, d1, d2, rfl⟩ :=
+      rmw_form (hi ▸ hcas') hmi0 (by rw [hks, ← hexp.1]; simp)
+    have hu : vuses ops ρm = [ρm (gn p0), ρm (gn x0)] := by
+      rw [operands_mapRegs H.shape.ren, operands_rmwLoop] at hops'
+      cases hops'; simp [vuses, rnOp]; rfl
+    rw [hu] at hcsem2 hev2
+    obtain ⟨wr, hevs, hwk, -, -⟩ := IselMemAux.cEvs_rmw_shape hep hcsem2
+    obtain ⟨r0, hevs', hrk⟩ : ∃ r0, evs = [r0, wr] ∧ r0.k = .acqXR := ⟨_, hev2.trans hevs, rfl⟩
+    subst hevs'
+    have hc2 := cstep_atomicRmw (s := { s with mem := (s.mem.writeBits false a nE
+      (readM nE (BitVec.ofNat 64 a) (patch [r0, wr] wm).mem)) }) hbody hi hpv hv' hold hs2
+    have hown := cstep_own hc2 hs2 (by exact ⟨fun _ => rfl, (fun h => nomatch h), trivial⟩)
+    rw [applyEvs_rw] at hown
+    have hg : getB s'.mem.bytes a nE = valB (bigOf fl) nE (Clif.Sem.atomicRmw op old v) := by
+      rw [hown, ← ea, ← en]; exact getB_putB_valB _ _ _ _ _
+    rw [ea, en] at hc2
+    have hR : r0.k.dir = .R := by rw [hrk]; rfl
+    have hW : wr.k.dir = .W := by rw [hwk]; rfl
+    obtain ⟨hA, hn'⟩ := hEA r0 (by simp)
+    obtain ⟨hAw, hnw⟩ := hEA wr (by simp)
+    have hval := write_val hMR hmrL hvL hg hAw hnw (hmemW [r0] wr rfl hW)
+    exact mem_complete hvb hmL hlt hpost hpl hpe h1 hstep h3 hstar.toN hM hc2 (by simp)
+      (pw_two (evrel_read (by rw [hrk]; exact .inr rfl) hR (sagrees_head hag0 hR) hA hn' ha s.mem)
+        (evrel_write (by rw [hwk]; exact .inr rfl) hW hAw hnw ha hval))
+  case atomicCas ty fl pp ex x =>
+    sorry
+  case fence => exact absurd trivial hfe
 
 end
 
