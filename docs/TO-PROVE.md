@@ -1031,9 +1031,13 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   outside (systemd-oomd under memory pressure, the slice limit) is retried at the same cap (≤ 3 times).
   With the shared cache, a module another worktree is building at that moment (flock in
   `<cache>/.fv-inflight/`, keyed by the sources of the module and its imports plus toolchain and
-  lakefile) waits for it and is then restored instead of built twice. Then the full `lake build …`
-  only replays. `--dry-run` prints the plan; `--no-batch-check`, `--no-dedup`, `--no-slice-gate` turn
-  the new parts off.
+  lakefile) waits for it and is then restored instead of built twice. Restored outputs are read-only
+  hard links into the cache: before building an out-of-date module the scheduler unlinks them, and a
+  build failing with `permission denied (error code: 13)` on one is unlinked and retried once.
+  Stopping the scheduler (SIGTERM, Ctrl-C) stops its running builds. Then the full `lake build …`
+  only replays. Measured (LEARNINGS.md): a full `FV FVTest` at a fully cached commit 27.5 min → 1.9 s;
+  a branch changing one mid-level module (58 modules to build) 38.8 → 16.3 min. `--dry-run` prints
+  the plan; `--no-batch-check`, `--no-dedup`, `--no-slice-gate` turn the new parts off.
 - **Shared build cache.** Set `FV_LAKE_CACHE=<dir>` (on the worktrees' filesystem; agents on the shared
   machine: `/home/kev/work/clifv-lake-cache`); `scripts/memcap.sh` then sets `LAKE_ARTIFACT_CACHE=true
   LAKE_RESTORE_ARTIFACTS=true LAKE_CACHE_DIR=<dir>`. Lake keys each module's outputs by the hash of its

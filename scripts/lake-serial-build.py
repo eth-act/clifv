@@ -86,7 +86,7 @@ def other_heavy_scopes(mine, heavy, by_usage=False):
     """Memcap scopes (systemd-run --scope) of other jobs that may use (by_usage: that do use) more
     than `heavy` bytes, and other lean processes whose RSS is above `heavy`."""
     out = []
-    for s in [*(CGROUP_USER / "app.slice").glob("*.scope"), *SLICE.glob("*.scope")]:
+    for s in (CGROUP_USER / "app.slice").glob("run-*.scope"):
         try:
             procs = set(map(int, (s / "cgroup.procs").read_text().split()))
             if not procs or procs & mine:
