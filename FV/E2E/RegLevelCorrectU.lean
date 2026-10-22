@@ -221,7 +221,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
     obtain ⟨b, k, ρ, w₁, vb, ops, outs, hstar, hvb, hi, hops, hvals, hsem⟩ := hret
     obtain ⟨n1, c1, hq1, hr1, -⟩ := forward hSim hRz' hstar hinit hq0'
     obtain ⟨ns, rfl⟩ := ctlCheck_rets hck hvb hi
-    rw [operands_rets] at hops
+    rw [operands_retsC] at hops
     cases hops
     have hsem' := hsem
     rw [hrets] at hsem'
@@ -229,9 +229,9 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
     obtain ⟨rfl, rfl, -⟩ := hsem'
     have h1 : VStep R.vc semU (.run ⟨b, k, ρ, w₁⟩) (.ret vals w₁) := by
       rw [hvals]
-      refine VStep.step hvb hi (operands_rets ns) (by rw [hvals] at hsem; exact hsem) ?_
+      refine VStep.step hvb hi (operands_retsC ns) (by rw [hvals] at hsem; exact hsem) ?_
         (VNext.ret rfl)
-      rw [List.toList_toArray, filter_isDef_retOps]; rfl
+      rw [List.toList_toArray, filter_isDef_retOpsC]; rfl
     obtain ⟨n2, c', c'', ⟨⟨hq2, -⟩, -⟩, hr2, hms, hr3, -⟩ :=
       forward_last hSim hRz' h1 _ c1 _ (Nat.le_refl _) hr1 hq1
     cases c'' with
@@ -246,7 +246,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         subst hb' hk' hw'
         rw [hvb] at hvb'; cases hvb'
         rw [hi] at hi'; cases hi'
-        rw [operands_rets] at hops'; cases hops'
+        rw [operands_retsC] at hops'; cases hops'
         have hsem3 := hsem2
         rw [hrets] at hsem3
         simp only [csem, Option.some.injEq, Prod.mk.injEq] at hsem3
@@ -300,7 +300,7 @@ theorem regLevelCorrect_coreU {R : RLU} (hR : R.Wf) {ra : BitVec 64}
           have e1 := hSim.ret hr3
           simp only [VConf.ret.injEq] at e1
           rw [e1.1] at hx
-          exact hvalsM _ (operands_rets ns) j v p x hj hx
+          exact hvalsM _ (operands_retsC ns) j v p x hj hx
         · intro a ha
           rw [hmem]
           exact hst.world.2.1 a ha
