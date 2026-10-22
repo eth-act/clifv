@@ -743,9 +743,7 @@ they are; the per-thread layers are new files.
   the compiled `fence; return` from the state after the prologue through its 18 saves (private
   `plainW` writes) and its `dmb ish` (`dmbEv`) satisfies `realizes_compiled`'s premises; every
   execution of its realized prefix is `Realizes`d by a CLIF thread from `csF` (one exists,
-  `wf_noReads`). The realized prefix is existential (excluding an early `Done` needs the allocated
-  code's progress); the witnesses below state their runs and the contract for every realized
-  prefix, and what the pairs are on the whole run.
+  `wf_noReads`). The realized prefix covers the whole run (T2j, below).
 * **Loads, stores, LL/SC loops, plain memory (done, T2l/T2m #446–#470).** `CompiledB`/
   `realizes_compiledB` (loops and branches, `arm_alloc_refines_br`) and `CompiledLS`/
   `thread_compiledLS`/**`realizes_compiledLS`** (also plain loads/stores, `MemScopeLS`,
@@ -763,6 +761,32 @@ they are; the per-thread layers are new files.
   stlxr`); generic `WitnessR.realizes_pair` (one thread, private plain prefix then an exclusive
   pair), `RealizeExec.wf_rmw`. Open in layer 4b: stack offsets built in x16 (`OneEvPreForm`);
   mixed-size accesses (T2i, #317).
+* **The realized prefix covers the whole run (done, T2j #473, `FV/Concurrency/ThreadProgress.lean`).**
+  Layer 4b could end the realized prefix where the allocated code is `Done` — returned, trapped,
+  or *without a step* — while the CLIF thread could still step. Excluded by a progress argument
+  through every layer: where layer 2's realized prefix is the whole VCode run, the run's last
+  configuration has a `VStep` (`IselThread.SimResP`/`SegResP`, `pure_segP`, `term_segP`,
+  `mem_segP`, `mem_completeP`, `isel_refines_entryP`: a run ending inside a segment follows the
+  driver's forward run of that segment — on the thread's own bytes for a memory statement,
+  `IselStep.vstep_of_starN`/`vstep_of_vtrun` — which steps there); `prepare` keeps it
+  (`PrepThread.prep_fwd`, `prep_thinP`), register allocation turns it into a step of the
+  allocated code (`AllocThread.alloc_thinP`, `sim_progress_at`), composed in
+  `ThreadCompose.isel_alloc_refinesP`; layer 4b ends at a configuration still related to an Arm
+  state (`ItemSim.withRel`, `arm_alloc_refinesQ`, `arm_alloc_refines_lsQ`), where a step of
+  covered code (`CoveredCode`, `coveredCode_of_ls`) is a thread step with the precise footprint
+  (**`srcStep_of_mstep`**: `ifoot_csem` on the error-free aligned world `StRel` gives; the
+  footprint's reads come first, `agrees_cEvs`), which `Done` excludes. **`arm_isel_refines_full`**,
+  `thread_full_of_sim`/`thread_compiledLS_full`, **`realizes_compiledLS_full`** (and the `B`/plain
+  versions): every thread's realized prefix is its whole Arm run, or a CLIF thread run realizing it
+  stops there (`Covers`; `Stop`: no step — returned, trapped, undefined behaviour — or an
+  `atomic_cas` on read-only data); `realizes_compiledLS` is now its corollary. The witnesses on
+  the whole run: `covers_full` (a covering prefix is the whole run when the CLIF thread cannot stop
+  at its start and its first step's events cannot sit in a strict prefix), `WitnessL.one_full`,
+  `WitnessR.pair_full`; **`WitnessL.realizes_load_full`**, **`WitnessS.realizes_store_full`**,
+  **`WitnessMP.realizes_mp_full`** (both prefixes whole, so `mp_reads` applies),
+  **`WitnessR.realizes_rmw_full`**; `WitnessC.realizes_cas_cov` (`Covers` only: that `atomic_cas`
+  stores the value it finds, and a CLIF `atomic_cas` leaving the bytes unchanged is a step with the
+  read alone, which realizes the run up to the `ldaxr` and returns).
 * **Backward from forward.** The layers are forward per-step simulations; `Refines` is
   backward (from the actual Arm trace to a CLIF run). The bridge is determinism of each level
   given its read values (receptiveness): the source run is the one reading the target's values
@@ -770,11 +794,13 @@ they are; the per-thread layers are new files.
 * **Widening** (§3c): extern calls that touch memory, per-thread allocation metadata,
   `tls_value`.
 
-**Layers 1–4 discharge `Realizes` for compiled code (#311, #38 closed by T2m).**
-`realizes_compiledLS` gives the contract `program_correct*` assume, for threads running compiled
-functions in the scope `MemScopeLS` (atomic loads/stores, `atomic_rmw`/`atomic_cas` LL/SC loops,
-fences, branches, plain loads/stores), with calls through `CallCompose.realizes_linked`; the
-witnesses above show it on `atomic_load`, `atomic_store`, message passing, `atomic_rmw` and
+**Layers 1–4 discharge `Realizes` for compiled code (#311, #38 closed by T2m), on realized
+prefixes that cover the runs (T2j, #473).** `realizes_compiledLS_full` gives the contract
+`program_correct*` assume, for threads running compiled functions in the scope `MemScopeLS`
+(atomic loads/stores, `atomic_rmw`/`atomic_cas` LL/SC loops, fences, branches, plain
+loads/stores), each thread's realized prefix its whole Arm run or ending where the CLIF thread
+stops, with calls through `CallCompose.realizes_linked`; the witnesses above show it on
+`atomic_load`, `atomic_store`, message passing and `atomic_rmw` on the whole runs, and on
 `atomic_cas`. Remaining scope widenings are tracked separately: stack offsets built in x16
 (`OneEvPreForm`), mixed-size accesses (T2i, #317).
 
