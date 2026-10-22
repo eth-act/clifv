@@ -554,6 +554,22 @@ of the ISLE rules: `formsCoveredB` the V3 coverage engine over `CtxInvT` (slice 
 free), which the typed coverage engine would also give (as `stmt_cov` does for subset E). A root
 that emits a form outside `FormOk` (e.g. a conversion) would need `FormOk`/`covTab` widened first.
 
+**Slice 8, the two typing gaps of the typed input scope (FloatChecks2).** Two of those four do
+*not* hold on every function of `fnScopeInTB`'s other conjuncts; both gaps are CLIF-verifier
+typing that the typed movement scope does not check (found by random typed-scope functions;
+with both checks, every sample passed all four). (1) The entry block's parameter classes:
+`function %a(f64, i64) -> i64 { block0(v0: i64, v1: i64): return v0 }` fails `ctlSpillB` (and
+`ctlInstsB` when the mismatched `Args` pair survives `prepare`); the existing
+`Backend.Proof.entryClassOkB` decides it. (2) Float `select` operands: `fW` with
+`select.f64 v1, v0, v3` (`v0 : i64`) lowers to an `fcsel` of an int vreg and fails
+`formsCoveredB`; new `Compile.selectTypedB` (`FV/Compile/SelectTyped.lean`, as `storeTypedB`).
+`E2E/LinkScopeInputDefsT2.lean`: `fnScopeInTB2 := fnScopeInTB && entryClassOkB &&
+selectTypedB`, `InScopeInT2`, `fnScopeInFailsT2` (`fnScopeInTB`/`InScopeInT` unchanged);
+`E2E/LinkScopeInputT2.lean`: `fnScopeInTB_of_T2`, `inScopeInT_of_T2`, integer inclusion
+`fnScopeInTB2_of_fnScopeInB`, `inScopeInT2_of_inScopeIn`. Witnesses
+`FVTest/E2E/FloatScopeT2.lean` (`fEntry`, `fSel`: each fails exactly one run-time check and the
+new typing check). `resClassOkB` never failed.
+
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
 (`machinst/lower.rs:630`, `retClass`), `gen_call_args` places arguments by `sigArgLocs`
