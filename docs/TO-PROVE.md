@@ -935,7 +935,10 @@ always; `keepsShapeB` on the decidable `Opt.shapeSafeB`, with a counterexample o
 composition `Opt.optimizeReport_complete` / `optimize_complete` / `optimizeExe_complete`: the
 optimiser equals its unvalidated pipeline `Opt.runStages` — hypothesis-free with simplify off
 (`Opt.optimize_complete_noSimp`), and under the explicit premise `Opt.SimpStageOk cfg` with
-simplify on. Open: `SimpStageOk` (simplify's own completeness).
+simplify on; `Opt.simpStageOk_of` reduces `SimpStageOk` to syntactic rule-set obligations
+(`SimpRulesOk`, `SkelRulesOk`; `Opt.optimize_complete_of_rules`). Open: those obligations for the
+`Config` rule sets (`.hand`: blocked by `pureBest`'s pre-inserted hash-consing entry; `.cranelift`:
+over the exported ISLE program) — until then the simplify-on result is narrowed to them.
 
 ### S1–S12. Scope extensions
 
@@ -1134,7 +1137,7 @@ label**; list the free ones with
 | R7 | [#21](https://github.com/eth-act/clifv/issues/21) Mid-end rule proofs: bitops (0 rules left) | **done** ([#207](https://github.com/eth-act/clifv/pull/207)) |
 | R8 | [#22](https://github.com/eth-act/clifv/issues/22) Mid-end rule proofs: extends (0 rules left) | **done** ([#206](https://github.com/eth-act/clifv/pull/206)) |
 | R9 | [#23](https://github.com/eth-act/clifv/issues/23) Mid-end rule proofs: skeleton (0 rules left) | **done** (`agent/skeleton-r9`) |
-| M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | in progress: `unreachableOk` (`Opt.unreachableOk_raw`), DCE (`Opt.dce_complete`), GVN (`Opt.gvn_complete`), LICM (`Opt.licm_complete`), dominators, guards, `optimize_complete` (simplify off; simplify on under `SimpStageOk`) done; open: `SimpStageOk` |
+| M1 | [#24](https://github.com/eth-act/clifv/issues/24) Mid-end validators: completeness (optional, quality only) | in progress: `unreachableOk` (`Opt.unreachableOk_raw`), DCE (`Opt.dce_complete`), GVN (`Opt.gvn_complete`), LICM (`Opt.licm_complete`), dominators, guards, `optimize_complete` (simplify off), simplify under rule-set obligations (`simpStageOk_of`) done; open: the obligations for `.hand`/`.cranelift` |
 | S1 | [#25](https://github.com/eth-act/clifv/issues/25) Optimiser with `call_indirect` and `try_call`/`try_call_indirect` | **done** ([#245](https://github.com/eth-act/clifv/pull/245)): `Opt.optimizeExe`, `Opt.optimizeProgramExe_refines`, `E2E.backend_correct_opt_exe`, `Link.compileExeOpt_*`; `lean-link --opt` |
 | S2 | [#26](https://github.com/eth-act/clifv/issues/26) Legalisation + optimisation composed; legalised functions in the linking theorem | **done**: legalised functions ([#214](https://github.com/eth-act/clifv/pull/214), `Link.compileExe_correct_source`); with the optimiser ([#245](https://github.com/eth-act/clifv/pull/245)): `E2E.backend_correct_legal_opt`, `Link.compileExeOpt_correct_source` |
 | S3 | [#27](https://github.com/eth-act/clifv/issues/27) Whole-program refinement of the original i128 source program | **done** with environment/run premises ([#214](https://github.com/eth-act/clifv/pull/214), `legalProg_refines`) |
