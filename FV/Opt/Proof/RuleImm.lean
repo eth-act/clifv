@@ -64,6 +64,26 @@ splits on: `none` makes a poison value). Stated for any condition-code index (`c
 @[opt_monad] theorem beq_i128_false {t : Ty} (ht : t ≠ .i128) : (t == .i128) = false := by
   simpa using ht
 
+/-- (Discharged from the context: presented `iconst`s are not vectors.) -/
+@[opt_monad] theorem isVec_false {t : Ty} (hv : t.isVec = false) : t.isVec = false := hv
+
+/-- `toInst`'s `iconst` guard `t == .i128 || t.isVec` once both sides are evaluated. -/
+@[opt_monad] theorem false_or_false : (false || false) = false := rfl
+@[opt_monad] theorem true_or_false : (true || false) = true := rfl
+@[opt_monad] theorem false_or_true : (false || true) = true := rfl
+
+/-- `isVec` at the scalar types (the `iconst` guard of `toInst` at a concrete type). -/
+@[opt_monad] theorem Ty.isVec_i8 : Clif.Ty.i8.isVec = false := rfl
+@[opt_monad] theorem Ty.isVec_i16 : Clif.Ty.i16.isVec = false := rfl
+@[opt_monad] theorem Ty.isVec_i32 : Clif.Ty.i32.isVec = false := rfl
+@[opt_monad] theorem Ty.isVec_i64 : Clif.Ty.i64.isVec = false := rfl
+@[opt_monad] theorem Ty.isVec_i128 : Clif.Ty.i128.isVec = false := rfl
+@[opt_monad] theorem Ty.isVec_f32 : Clif.Ty.f32.isVec = false := rfl
+@[opt_monad] theorem Ty.isVec_f64 : Clif.Ty.f64.isVec = false := rfl
+@[opt_monad] theorem Ty.isVec_vec (s : Clif.VShape) : (Clif.Ty.vec s).isVec = true := rfl
+@[opt_monad] theorem Ty.beq_vec_i128 (s : Clif.VShape) : (Clif.Ty.vec s == Clif.Ty.i128) = false := by
+  cases s <;> rfl
+
 /-! ## `Int` to `BitVec 64` -/
 
 theorem imm64OfBits_eq {w : Nat} (_hw : w ≤ 64) (b : BitVec w) :

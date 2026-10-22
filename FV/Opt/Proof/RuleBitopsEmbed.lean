@@ -151,7 +151,7 @@ end
 @[opt_match] theorem toInt_eq_neg_one {t : Ty} (b : BitVec t.width) :
     b.toInt = -1 ↔ b = BitVec.allOnes t.width := by
   rw [← BitVec.toInt_inj, BitVec.toInt_allOnes]
-  cases t <;> simp [Ty.width]
+  cases t <;> simp [Ty.width, VShape.width, VShape.lanes, VShape.laneBits]
 
 /-- The sign-extended immediate of a presented `iconst` is its signed value. -/
 @[opt_match, opt_monad] theorem i64SextendImm64_imm64OfBits {t : Ty} (ht : t ≠ .i128)
@@ -172,8 +172,9 @@ end
 @[opt_monad, opt_imm] theorem laneType_ofClif (t : Ty) : (CTy.ofClif t).laneType = CTy.ofClif t := by
   cases t <;> rfl
 
-@[opt_monad, opt_imm] theorem tyBits_ofClif (t : Ty) : Rust.tyBits (CTy.ofClif t) = .ok (t.width : Int) := by
-  cases t <;> rfl
+@[opt_monad, opt_imm] theorem tyBits_ofClif {t : Ty} (hv : t.isVec = false) :
+    Rust.tyBits (CTy.ofClif t) = .ok (t.width : Int) := by
+  cases t <;> first | rfl | exact absurd hv (by decide)
 
 /-- `ty_shift_mask`: `ty_bits - 1` never underflows. -/
 @[opt_monad, opt_imm] theorem checkedSubU_width (fn : String) (t : Ty) :
@@ -193,13 +194,42 @@ type) -/
 
 end
 
-@[opt_match, opt_monad] theorem CTy.ofClif_beq_float (t : Ty) (b : Nat) :
+/-- A presented type against a float type constant: `b` is not a vector marker (the constants are
+`F16`..`F128`, the specialisations below). -/
+theorem CTy.ofClif_beq_float (t : Ty) (b : Nat) (hb : b < 65 ∨ 74 < b) :
     (CTy.ofClif t == .float b) = (t.isFloat && b == t.width) := by
-  rw [Bool.eq_iff_iff]; cases t <;> simp [CTy.ofClif, Ty.width] <;> exact ⟨Eq.symm, Eq.symm⟩
+  rw [Bool.eq_iff_iff]; cases t <;> simp [CTy.ofClif, Ty.width] <;>
+    first | exact ⟨Eq.symm, Eq.symm⟩ | omega
 
-@[opt_match, opt_monad] theorem V.beq_ty_ofClif_float (t : Ty) (b : Nat) :
+@[opt_match, opt_monad] theorem CTy.ofClif_beq_float16 (t : Ty) :
+    (CTy.ofClif t == .float 16) = (t.isFloat && 16 == t.width) :=
+  CTy.ofClif_beq_float t 16 (by decide)
+@[opt_match, opt_monad] theorem CTy.ofClif_beq_float32 (t : Ty) :
+    (CTy.ofClif t == .float 32) = (t.isFloat && 32 == t.width) :=
+  CTy.ofClif_beq_float t 32 (by decide)
+@[opt_match, opt_monad] theorem CTy.ofClif_beq_float64 (t : Ty) :
+    (CTy.ofClif t == .float 64) = (t.isFloat && 64 == t.width) :=
+  CTy.ofClif_beq_float t 64 (by decide)
+@[opt_match, opt_monad] theorem CTy.ofClif_beq_float128 (t : Ty) :
+    (CTy.ofClif t == .float 128) = (t.isFloat && 128 == t.width) :=
+  CTy.ofClif_beq_float t 128 (by decide)
+
+theorem V.beq_ty_ofClif_float (t : Ty) (b : Nat) (hb : b < 65 ∨ 74 < b) :
     V.beq (.ty (CTy.ofClif t)) (.ty (.float b)) = (t.isFloat && b == t.width) := by
-  rw [← CTy.ofClif_beq_float]; rfl
+  rw [← CTy.ofClif_beq_float t b hb]; rfl
+
+@[opt_match, opt_monad] theorem V.beq_ty_ofClif_float16 (t : Ty) :
+    V.beq (.ty (CTy.ofClif t)) (.ty (.float 16)) = (t.isFloat && 16 == t.width) :=
+  V.beq_ty_ofClif_float t 16 (by decide)
+@[opt_match, opt_monad] theorem V.beq_ty_ofClif_float32 (t : Ty) :
+    V.beq (.ty (CTy.ofClif t)) (.ty (.float 32)) = (t.isFloat && 32 == t.width) :=
+  V.beq_ty_ofClif_float t 32 (by decide)
+@[opt_match, opt_monad] theorem V.beq_ty_ofClif_float64 (t : Ty) :
+    V.beq (.ty (CTy.ofClif t)) (.ty (.float 64)) = (t.isFloat && 64 == t.width) :=
+  V.beq_ty_ofClif_float t 64 (by decide)
+@[opt_match, opt_monad] theorem V.beq_ty_ofClif_float128 (t : Ty) :
+    V.beq (.ty (CTy.ofClif t)) (.ty (.float 128)) = (t.isFloat && 128 == t.width) :=
+  V.beq_ty_ofClif_float t 128 (by decide)
 
 /-! ## `iconst_u ty 0` and `i128` (the `ty_int` arm of `all_zero` builds `iconst_u ty 0`; at
 `i128` that is `uextend.i128 (iconst_u.i64 0)`) -/
@@ -289,9 +319,15 @@ elab "opt_split_i128_one" : tactic => withMainContext do
       evalTactic (← `(tactic| ((rcases Classical.em ($xs = Clif.Ty.i128) with h128 | h128) <;>
         try subst h128)))
     else
-      evalTactic (← `(tactic| ((rcases Classical.em (Clif.Ty.isVec $xs = false) with hvec | hvec)
-        <;> [skip; (cases $xs:term <;> try simp only [Clif.Ty.isVec, not_true_eq_false,
-          Bool.true_eq_false, Bool.false_eq_true, not_false_eq_true] at hvec)])))
+      let g ← getMainGoal
+      let rest := (← getGoals).drop 1
+      setGoals [g]
+      evalTactic (← `(tactic| rcases Classical.em (Clif.Ty.isVec $xs = false) with hvec | hvec))
+      let [gp, gn] ← getGoals | throwError "opt_split_i128_one: unexpected goals"
+      setGoals [gn]
+      evalTactic (← `(tactic| (cases $xs:term <;> try simp only [Clif.Ty.isVec, not_true_eq_false,
+        Bool.true_eq_false, Bool.false_eq_true, not_false_eq_true] at hvec)))
+      setGoals (gp :: (← getGoals) ++ rest)
     return
   throwError "opt_split_i128_one: nothing to split"
 
@@ -456,15 +492,8 @@ theorem bswap_bswap_128 (x : BitVec 128) : Clif.Sem.bswap (Clif.Sem.bswap x) = x
 theorem popcnt_bswap_128 (x : BitVec 128) : Clif.Sem.popcnt (Clif.Sem.bswap x) = Clif.Sem.popcnt x := by
   popcnt_bswap_tac 128
 
-theorem bswap_bswap (t : Clif.Ty) (x : BitVec t.width) : Clif.Sem.bswap (Clif.Sem.bswap x) = x := by
-  cases t
-  · exact bswap_bswap_8 x
-  · exact bswap_bswap_16 x
-  · exact bswap_bswap_32 x
-  · exact bswap_bswap_64 x
-  · exact bswap_bswap_128 x
-  · exact bswap_bswap_32 x
-  · exact bswap_bswap_64 x
+theorem bswap_bswap (t : Clif.Ty) (x : BitVec t.width) : Clif.Sem.bswap (Clif.Sem.bswap x) = x :=
+  bswap_bswap_of (by cases t <;> decide) x
 
 theorem popcnt_bswap (t : Clif.Ty) (x : BitVec t.width) :
     Clif.Sem.popcnt (Clif.Sem.bswap x) = Clif.Sem.popcnt x := by
@@ -476,6 +505,9 @@ theorem popcnt_bswap (t : Clif.Ty) (x : BitVec t.width) :
   · exact popcnt_bswap_128 x
   · exact popcnt_bswap_32 x
   · exact popcnt_bswap_64 x
+  all_goals first
+    | exact popcnt_bswap_64 (x : BitVec 64)
+    | exact popcnt_bswap_128 (x : BitVec 128)
 
 theorem bitrev_bitrev {w : Nat} (x : BitVec w) : Clif.Sem.bitrev (Clif.Sem.bitrev x) = x :=
   BitVec.reverse_reverse_eq
