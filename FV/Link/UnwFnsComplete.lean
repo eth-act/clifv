@@ -1,4 +1,6 @@
 import FV.Link.UnwFns
+import FV.E2E.EmitPreOk
+import FV.E2E.EmitLabels
 
 /-!
 # Completeness of the per-function unwinding checks (S10g, #404)
@@ -498,5 +500,142 @@ theorem unwindRows_complete {vc : VCode} {rf : RFunc} {af : AFunc} {k : Nat} {fa
     fun a ha x hx => by
       obtain ⟨i, t, rfl⟩ := hins x (List.mem_append_right _ (List.mem_flatMap.2 ⟨a, ha, hx⟩))
       simp [Line.insn?]⟩
+
+/-! ## The `try_call` premises from the prepared code -/
+
+/-- **The `try_call`s of the prepared code `vc`** have at least one handler; each a cleanup or
+catch tag (0 or 1) whose landing pad is a block of `vc` other than the entry block (decidable,
+`tryInfoOkB`). -/
+def TryInfoOk (vc : VCode) : Prop :=
+  ∀ vb ∈ vc.blocks.toList, ∀ c ti, MInst.tryCall c ti ∈ vb.insts.toList → ti.handlers ≠ [] ∧
+    ∀ h ∈ ti.handlers, (∃ n l, h = .tag n l ∧ n ≤ 1) ∧
+      (∃ vb' ∈ vc.blocks.toList, vb'.label = h.label) ∧ (vc.blocks[0]?.map (·.label)) ≠ some h.label
+
+/-- `TryInfoOk`, decided. -/
+def tryInfoOkB (vc : VCode) : Bool :=
+  vc.blocks.toList.all fun vb => vb.insts.toList.all fun
+    | .tryCall _ ti => !ti.handlers.isEmpty && ti.handlers.all fun h =>
+        (match h with | .tag n _ => decide (n ≤ 1) | .default _ => false) &&
+          vc.blocks.toList.any (·.label == h.label) && (vc.blocks[0]?.map (·.label)) != some h.label
+    | _ => true
+
+theorem tryInfoOk_of {vc : VCode} (h : tryInfoOkB vc = true) : TryInfoOk vc := by
+  intro vb hvb c ti hi
+  have h1 := List.all_eq_true.1 (List.all_eq_true.1 h vb hvb) _ hi
+  simp only [Bool.and_eq_true, Bool.not_eq_true', List.isEmpty_eq_false_iff, List.all_eq_true,
+    List.any_eq_true, beq_iff_eq, bne_iff_ne, ne_eq] at h1
+  refine ⟨h1.1, fun hd hhd => ?_⟩
+  obtain ⟨⟨htag, hex⟩, hne⟩ := h1.2 hd hhd
+  refine ⟨?_, hex, hne⟩
+  cases hd with
+  | tag n l => exact ⟨n, l, rfl, by simpa using htag⟩
+  | default l => cases htag
+
+/-- Substituting an allocation keeps a `try_call`'s handlers: a `try_call` result comes from a
+`try_call` with the same `TryInfo`. -/
+theorem tryCall_visit (regs : Array Reg) (i : MInst) :
+    E2E.PutPost (MInst.visitOperands (putOp regs) i)
+      (fun m => ∀ c ti, m = .tryCall c ti → ∃ c0, i = .tryCall c0 ti) := by
+  cases i
+  case call info =>
+    obtain ⟨d, us, ds⟩ := info
+    cases d <;> simp only [MInst.visitOperands, pure_bind] <;>
+      repeat' first | (with_reducible apply E2E.putPost_bind); intro _ | (with_reducible apply E2E.putPost_pure)
+    all_goals intro c ti h; cases h
+  case tryCall info ti =>
+    obtain ⟨d, us, ds⟩ := info
+    cases d <;> simp only [MInst.visitOperands, pure_bind] <;>
+      repeat' first | (with_reducible apply E2E.putPost_bind); intro _ | (with_reducible apply E2E.putPost_pure)
+    all_goals intro c ti' h; cases h; exact ⟨_, rfl⟩
+  all_goals
+    simp only [MInst.visitOperands]
+    repeat' first | (with_reducible apply E2E.putPost_bind); intro _ | (with_reducible apply E2E.putPost_pure)
+  all_goals intro c ti h; cases h
+
+theorem tryCall_assign {i : MInst} {regs : Array Reg} {c : CallInfo} {ti : TryInfo}
+    (h : i.assign regs = .ok (.tryCall c ti)) : ∃ c0, i = .tryCall c0 ti :=
+  E2E.assign_post h (tryCall_visit regs i) c ti rfl
+
+/-- A `try_call` of the allocated function is a `try_call` of the prepared code with the same
+handlers. -/
+theorem tryCall_of_af {vc : VCode} {rf : RFunc} {af : AFunc} (halloc : lowerRFunc vc rf = .ok af)
+    {ti : TryInfo} (h : some ti ∈ af.calls) :
+    ∃ vb ∈ vc.blocks.toList, ∃ c, MInst.tryCall c ti ∈ vb.insts.toList := by
+  obtain ⟨⟨-, -, hsz, hbl⟩, -⟩ := lowerRFunc_ok halloc
+  rw [calls_eq, List.mem_flatMap] at h
+  obtain ⟨⟨l, code⟩, hp, hc⟩ := h
+  obtain ⟨b, hb⟩ := List.mem_iff_getElem?.1 hp
+  have hb' : af.blocks[b]? = some (l, code) := by simpa using hb
+  have hlt : b < af.blocks.size := (Array.getElem?_eq_some_iff.1 hb').1
+  rw [hsz, Array.size_zip] at hlt
+  obtain ⟨vb, hvb⟩ : ∃ vb, vc.blocks[b]? = some vb :=
+    ⟨_, Array.getElem?_eq_getElem (by omega)⟩
+  obtain ⟨items, hit⟩ : ∃ items, rf.blocks[b]? = some items :=
+    ⟨_, Array.getElem?_eq_getElem (by omega)⟩
+  obtain ⟨code', hcode, haf⟩ := hbl b vb items hvb hit
+  rw [hb'] at haf
+  simp only [Option.some.injEq, Prod.mk.injEq] at haf
+  obtain ⟨-, rfl⟩ := haf
+  simp only [blockCalls, List.mem_filterMap] at hc
+  obtain ⟨a, ha, hac⟩ := hc
+  simp only [List.toList_toArray, List.mem_append] at ha
+  rcases ha with ha | ha
+  · split at ha <;> simp at ha; subst ha; cases hac
+  obtain ⟨it, -, c1, hit1, hac1⟩ := mem_itemsCode hcode ha
+  cases a with
+  | inst m =>
+    cases m with
+    | tryCall c' ti' =>
+      simp only [aCall, Option.some.injEq] at hac
+      subst hac
+      cases it with
+      | move src dst =>
+        have := EmitLabels.moveInsts_targets (itemCode_move_ok hit1) _ hac1
+        simp [MInst.targets] at this
+      | op k allocs =>
+        obtain ⟨regs, i, i', -, hi, hasg, hcases⟩ := itemCode_op hit1
+        have hi' : i' = .tryCall c' ti' := by
+          rcases hcases with ⟨rfl, -, -⟩ | ⟨ds, -, rfl⟩ | ⟨us, -, rfl⟩
+          · simp only [List.mem_singleton, AInst.inst.injEq] at hac1; exact hac1.symm
+          · cases hac1
+          · simp at hac1
+        subst hi'
+        refine ⟨vb, by simpa using Array.mem_of_getElem? hvb, ?_⟩
+        obtain ⟨c0, rfl⟩ := tryCall_assign hasg
+        exact ⟨c0, by simpa using Array.mem_of_getElem? hi⟩
+    | _ => simp [aCall] at hac
+  | _ => simp [aCall] at hac
+
+/-- **`HandlersOk` of the allocated function** from `TryInfoOk` of the prepared code. -/
+theorem handlersOk_of_tryInfo {vc : VCode} {rf : RFunc} {af : AFunc}
+    (halloc : lowerRFunc vc rf = .ok af) (hsize : rf.blocks.size = vc.blocks.size)
+    (ht : TryInfoOk vc) : HandlersOk af := by
+  obtain ⟨⟨-, -, hsz, hbl⟩, -⟩ := lowerRFunc_ok halloc
+  intro ti hti h hh
+  obtain ⟨vb, hvb, c, hc⟩ := tryCall_of_af halloc hti
+  obtain ⟨-, hall⟩ := ht vb hvb c ti hc
+  obtain ⟨htag, ⟨vb', hvb', hl⟩, -⟩ := hall h hh
+  refine ⟨htag, ?_⟩
+  obtain ⟨b, hb⟩ := List.mem_iff_getElem?.1 hvb'
+  have hb' : vc.blocks[b]? = some vb' := by simpa using hb
+  have hlt : b < vc.blocks.size := (Array.getElem?_eq_some_iff.1 hb').1
+  have hlt' : b < rf.blocks.size := by omega
+  obtain ⟨items, hit⟩ : ∃ items, rf.blocks[b]? = some items :=
+    ⟨_, Array.getElem?_eq_getElem hlt'⟩
+  obtain ⟨code, -, haf⟩ := hbl b vb' items hb' hit
+  exact ⟨b, _, by rw [haf, hl]⟩
+
+/-- **`PadsOk` of the allocated function** (at the entry block's label) from `TryInfoOk` of the
+prepared code. -/
+theorem padsOk_of_tryInfo {vc : VCode} {rf : RFunc} {af : AFunc}
+    (halloc : lowerRFunc vc rf = .ok af) (ht : TryInfoOk vc) {vb0 : VBlock}
+    (h0 : vc.blocks[0]? = some vb0) : PadsOk af vb0.label := by
+  intro ti hti
+  obtain ⟨vb, hvb, c, hc⟩ := tryCall_of_af halloc hti
+  obtain ⟨hne, hall⟩ := ht vb hvb c ti hc
+  refine ⟨hne, fun h hh he => ?_⟩
+  obtain ⟨-, -, hn⟩ := hall h hh
+  rw [h0] at hn
+  exact hn (by simp [he])
 
 end Link.EhCheck.Complete

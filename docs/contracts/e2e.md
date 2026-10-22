@@ -451,9 +451,13 @@ the `retN`/value arguments).
   negative 8-aligned CFA offsets, `SaveOk`, and the code is below 4 GiB; the emitted code starts
   with the entry label, the prologue and those stores' lines, `entry_static`). Witness:
   `Link.EhCheck.Complete.Witness.callSites_applies`/`padsNonzero_applies`/`unwindRows_applies`
-  (`DeadCleanupUnwindWitness.tc`, a `try_call` with a landing pad and callee-saves). Open:
-  deriving these premises from the input (the CLIF exception tables' tags, the CFG's labels, the
-  frame layout), and `unwCheck`, `lastCallsOk`, `savedCheck` (which fails for `large_frame`, see
+  (`DeadCleanupUnwindWitness.tc`, a `try_call` with a landing pad and callee-saves).
+  `HandlersOk`/`PadsOk` of the allocation follow from **`TryInfoOk vc`** of the prepared code
+  (every `try_call` has a handler, each a tag 0/1 whose landing pad is a block other than the
+  entry; decidable `tryInfoOkB`): `handlersOk_of_tryInfo`, `padsOk_of_tryInfo` (a `try_call` of
+  `af` is one of `vc` with the same handlers, `tryCall_of_af`); witness `Witness.tryInfo_applies`.
+  Open: `TryInfoOk` and `SaveOk` from the input (the CLIF exception tables' tags through
+  `lowerFunction`/`prepare`, the frame layout), and `unwCheck`, `lastCallsOk`, `savedCheck` (which fails for `large_frame`, see
   "Validators"), and `ehOkR` on lean-ld's output.
 * **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
   normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
