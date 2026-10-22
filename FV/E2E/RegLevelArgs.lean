@@ -1,12 +1,14 @@
 import FV.E2E.RegLevelOp
 import FV.Backend.Proof.LowerLemmas
+import FV.Backend.Proof.PairsC
 
 /-!
 # `Args` on the machine (M6)
 
 `Args` emits no code: its defs are the incoming argument registers. `lowerRFunc` checks
-(`ctlCheck`) that `Args` is instruction 0 of block 0 with (int vreg, argument register) pairs,
-that before it block 0 only has moves into memory, and that no edge enters block 0. Then, while
+(`ctlCheck`) that `Args` is instruction 0 of block 0 with class-compatible (vreg, argument
+register) pairs (`argPairOk`: an int vreg, or an f32/f64 vreg in v0–v7), that before it block 0
+only has moves into memory, and that no edge enters block 0. Then, while
 instruction 0 of block 0 is pending, the store holds the world's argument registers (`AInv`), so
 `MStep`'s writes of the `Args` defs change nothing (`realizes_args`).
 -/
@@ -29,13 +31,37 @@ theorem isVregInt_iff {r : Reg} (h : r.isVregInt = true) : ∃ n, r = .vreg n .i
   | vreg n c => cases c <;> simp_all [Reg.isVregInt]
   | _ => simp [Reg.isVregInt] at h
 
+/-- An accepted `Args` pair: a vreg (of either class) in an argument register. -/
+theorem argPairOk_facts {p : Reg × Reg} (h : argPairOk p = true) :
+    (∃ n c, p.1 = .vreg n c) ∧ p.2.isArgReg = true := by
+  obtain ⟨r, q⟩ := p
+  cases r with
+  | vreg n c =>
+    refine ⟨⟨n, c, rfl⟩, ?_⟩
+    cases c <;> cases q <;>
+      simp_all [argPairOk, Reg.isVregInt, Reg.isVregFloat, Reg.isFpArgReg, Reg.isArgReg] <;> omega
+  | _ => simp [argPairOk, Reg.isVregInt, Reg.isVregFloat] at h
+
+/-- An accepted `Args` pair is class-compatible: an int vreg in an argument register, or an
+f32/f64 vreg in an FP argument register v0–v7. -/
+theorem argPairOk_cls {p : Reg × Reg} (h : argPairOk p = true) :
+    (∃ n, p.1 = .vreg n .int ∧ p.2.isArgReg = true) ∨
+      (∃ n m, p.1 = .vreg n .float ∧ p.2 = .v m ∧ m < 8) := by
+  obtain ⟨r, q⟩ := p
+  cases r with
+  | vreg n c =>
+    cases c
+    · exact .inl ⟨n, rfl, by simpa [argPairOk, Reg.isVregInt, Reg.isVregFloat] using h⟩
+    · cases q <;> simp_all [argPairOk, Reg.isVregInt, Reg.isVregFloat, Reg.isFpArgReg]
+  | _ => simp [argPairOk, Reg.isVregInt, Reg.isVregFloat] at h
+
 theorem ctlCheck_args {vc : VCode} {rf : RFunc} (h : ctlCheck vc rf = true) {b k : Nat}
     {vb : VBlock} {ds : List (Reg × Reg)} (hvb : vc.blocks[b]? = some vb)
     (hi : vb.insts[k]? = some (.args ds)) :
-    b = 0 ∧ k = 0 ∧ ∀ p ∈ ds, (∃ n, p.1 = .vreg n .int) ∧ p.2.isArgReg = true := by
+    b = 0 ∧ k = 0 ∧ ∀ p ∈ ds, (∃ n c, p.1 = .vreg n c) ∧ p.2.isArgReg = true := by
   have h2 := ctlCheck_inst h hvb hi
   simp only [ctlInstOk, Bool.and_eq_true, beq_iff_eq, List.all_eq_true] at h2
-  exact ⟨h2.1.1, h2.1.2, fun p hp => ⟨isVregInt_iff (h2.2 p hp).1, (h2.2 p hp).2⟩⟩
+  exact ⟨h2.1.1, h2.1.2, fun p hp => argPairOk_facts (h2.2 p hp)⟩
 
 theorem ctlCheck_succ {vc : VCode} {rf : RFunc} (h : ctlCheck vc rf = true) {b j s : Nat}
     (hs : succOf vc b j = some s) : s ≠ 0 := by
@@ -191,6 +217,34 @@ theorem argPairs_of {ds : List (Reg × Reg)} (h : ∀ p ∈ ds, ∃ n, p.1 = .vr
     subst hn
     simp [argPairs, h1]
 
+/-! ## Class-general `Args` pairs (S11e5 Stage C; `argPairsC`, `PairsC`) -/
+
+theorem args_defs_selfC {m : Loc → CV} {w : Arm.ArmState} :
+    ∀ (ns : List (Nat × RegClass × Reg)) (al : List Loc), al.length = ns.length →
+      (∀ p ∈ (argOpsC ns).zip al, ∀ r, p.1.con = .fixed r → p.2 = .reg r) →
+      (∀ q ∈ ns, m (.reg q.2.2) = regVal w q.2.2) →
+      ∀ p ∈ ((argOpsC ns).zip al).zip (ns.map fun q => regVal w q.2.2), p.2 = m p.1.2
+  | [], _, _, _, _ => by simp
+  | q :: ns, [], hl, _, _ => by simp at hl
+  | q :: ns, l :: al, hl, hfix, hm => by
+    intro p hp
+    simp only [argOpsC, List.map_cons, List.zip_cons_cons, List.mem_cons] at hp
+    rcases hp with rfl | hp
+    · have := hfix (⟨q.1, q.2.1, .def, .late, .fixed q.2.2⟩, l) (by simp [argOpsC]) q.2.2 rfl
+      simp only at this ⊢
+      rw [this, hm q (by simp)]
+    · exact args_defs_selfC ns al (by simpa using hl)
+        (fun p hp r hr => hfix p (by
+          simp only [argOpsC, List.map_cons, List.zip_cons_cons]; exact List.mem_cons_of_mem _ hp) r hr)
+        (fun q' hq' => hm q' (by simp [hq'])) p hp
+
+theorem argOpsC_isDef (ns : List (Nat × RegClass × Reg)) : ∀ o ∈ argOpsC ns,
+    o.isDef = true ∧ o.isEarly = false ∧ o.isLate = true ∧ o.isUse = false := by
+  intro o ho
+  simp only [argOpsC, List.mem_map] at ho
+  obtain ⟨q, -, rfl⟩ := ho
+  simp [Operand.isDef, Operand.isEarly, Operand.isLate, Operand.isUse]
+
 theorem assign_args {ds : List (Reg × Reg)} {regs : Array Reg} {i' : MInst}
     (h : (MInst.args ds).assign regs = .ok i') : ∃ ds', i' = .args ds' := by
   unfold MInst.assign at h
@@ -215,8 +269,8 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
     Q R s c' := by
   have hck := (lowerRFunc_ok hR.alloc).2.2
   obtain ⟨rfl, rfl, hds⟩ := ctlCheck_args hck hvb hi
-  obtain ⟨ns, rfl, hns⟩ := argPairs_of (fun p hp => (hds p hp).1)
-  have hops := operands_args ns
+  obtain ⟨ns, rfl, hns⟩ := argPairsC_of (fun p hp => (hds p hp).1)
+  have hops := operands_argsC ns
   obtain ⟨j, vb0, items, pre, code, ls, ps1, ps2, T, hvb0, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
   rw [hvb] at hvb0; cases hvb0
@@ -248,41 +302,41 @@ theorem realizes_args {R : RL} (hR : R.Wf) {s : Arm.ArmState} {b k : Nat} {alloc
   rw [hops] at hops2; cases hops2
   obtain ⟨hsz', hloc, -, -⟩ := checkStatic_facts hstat
   -- the store is unchanged
-  have hdefs : ∀ (P : Operand → Bool), (∀ o ∈ argOps ns, P o = true) →
-      ((argOps ns).toArray.zip (regs.map Loc.reg)).toList.filter (fun p => P p.1) =
-        ((argOps ns).toArray.zip (regs.map Loc.reg)).toList := by
+  have hdefs : ∀ (P : Operand → Bool), (∀ o ∈ argOpsC ns, P o = true) →
+      ((argOpsC ns).toArray.zip (regs.map Loc.reg)).toList.filter (fun p => P p.1) =
+        ((argOpsC ns).toArray.zip (regs.map Loc.reg)).toList := by
     intro P hP
     rw [List.filter_eq_self]
     intro p hp
     exact hP _ (List.of_mem_zip (by simpa using hp)).1
   have hlenA : (regs.map Loc.reg).toList.length = ns.length := by
-    have := hsz'; simp [argOps] at this; simpa using this.symm
+    have := hsz'; simp [argOpsC] at this; simpa using this.symm
   have hm2 : m2 = m := by
-    have hE : ((((argOps ns).toArray.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
-        ((argPairs ns).map fun d => regVal w d.2)).filter (·.1.1.isEarly) = [] := by
+    have hE : ((((argOpsC ns).toArray.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
+        ((argPairsC ns).map fun d => regVal w d.2)).filter (·.1.1.isEarly) = [] := by
       rw [List.filter_eq_nil_iff]
       intro p hp
       have h1 := (List.mem_filter.mp (List.of_mem_zip hp).1).1
       have h3 := (List.of_mem_zip (by simpa using h1)).1
-      simpa using (argOps_isDef ns _ h3).2.1
+      simpa using (argOpsC_isDef ns _ h3).2.1
     rw [hE] at hcl
     funext l
     exact hcl.1 l (by simp [MInst.clobbers])
   subst m2
-  have hself : writeM m ((((argOps ns).toArray.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
-      ((argPairs ns).map fun d => regVal w d.2) |>.filter (·.1.1.isLate)) = m := by
+  have hself : writeM m ((((argOpsC ns).toArray.zip (regs.map Loc.reg)).toList.filter (·.1.isDef)).zip
+      ((argPairsC ns).map fun d => regVal w d.2) |>.filter (·.1.1.isLate)) = m := by
     apply writeM_self
     intro p hp
     have hp' := (List.mem_filter.mp hp).1
-    rw [hdefs _ (fun o ho => (argOps_isDef ns o ho).1)] at hp'
+    rw [hdefs _ (fun o ho => (argOpsC_isDef ns o ho).1)] at hp'
     simp only [Array.toList_zip, Array.toList_map] at hp'
-    refine args_defs_self ns (regs.toList.map Loc.reg) (by simpa using hlenA) ?_ ?_ p
-      (by simpa [argPairs, Function.comp_def] using hp')
+    refine args_defs_selfC ns (regs.toList.map Loc.reg) (by simpa using hlenA) ?_ ?_ p
+      (by simpa [argPairsC, Function.comp_def] using hp')
     · intro p hp r hr
       exact (hloc p (by simpa using hp)).2 r hr
     · intro q hq
-      exact hAO q.2 ⟨vb, argPairs ns, hvb, hi, .vreg q.1 .int, by
-        simp only [argPairs, List.mem_map]; exact ⟨q, hq, rfl⟩⟩
+      exact hAO q.2.2 ⟨vb, argPairsC ns, hvb, hi, .vreg q.1 q.2.1, by
+        simp only [argPairsC, List.mem_map]; exact ⟨q, hq, rfl⟩⟩
   rw [hself]
   exact ⟨j, vb, items, pre ++ [.op 0 (regs.map Loc.reg)], c2, ls, ps1, ps2, T, hvb, hit,
     by rw [hsplit]; simp, hchk', hc2, by simpa [codeLinesE] using hls, htr, hdrop, hpc, hst⟩

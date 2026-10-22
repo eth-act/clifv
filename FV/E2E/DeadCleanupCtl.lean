@@ -63,6 +63,6 @@ theorem ctlInsts_cleanup_pipeline {p : Clif.Program} {f : Clif.Function} {vc vcp
   refine ⟨fun b vb k i hb hi => ?_, prep_entry hp hdom hp0⟩
   rcases prep_ctl hp hdom hpv b vb k i hb hi with h | ⟨rfl, rfl, ds, rfl, ha⟩
   · exact h.2 b k
-  · simpa [ctlInstOk] using ha
+  · exact ctlInstOk_of_int (by simpa [ctlInstOkInt] using ha)
 
 end E2E

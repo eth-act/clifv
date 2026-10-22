@@ -385,13 +385,130 @@ registers, `RetRegsOk`, with the return types; `armRefinesT_of_actRet`), `E2E/Pa
 `InScopeIn`/`fnScopeInB`/`compileExe` are unchanged. Witnesses: `FVTest/E2E/FloatFinalT.lean`
 (`storeTypedB` of `fW`/`fMv`; `fBadStore`, a float store of an integer value, is rejected),
 `FVTest/E2E/FloatLinkT.lean` (`StoresTyped`, `TermIntPos`, `CompiledEitherT`, `fnScopeTB fW` and
-its consequences, `lowerScopeTB_of_lowerScopeB`). Open: the ten control families (FloatsC5);
+its consequences, `lowerScopeTB_of_lowerScopeB`). Open: the ten control families (FloatsC5; now
+proven, slice 5c: `typedRules_program`);
 `Link.compileExe_correctT` needs a typed port of the link induction (`LinkSys.Ok` has
 `subset : InSubset`, `compiled : CompiledEither`, and `LinkSys.Thm` fixes `us.map (·.2)` to
 x0, x1, …): a `LinkSysT` beside it (FV/E2E/LinkArmT.lean, LinkGoodT.lean, …) with `InSubsetT`,
 `CompiledEitherT`, `RetRegsOk` in its `Thm`, program callees integer-signature (`declSigB`, calls
 integer-only in `functionET`) so call sites keep x0..; `functionET` still excludes float calls and
 the S11f arithmetic.
+
+**S11e5 Stage C, slice 5a (float `Args`/`Rets` in `ctlCheck`).** The executable control-form
+check `ctlInstOk` (`FV/Backend/Regalloc.lean`) accepts class-compatible `Args`/`Rets` pairs
+(`argPairOk`, `retPairOk`: an `f32`/`f64` vreg in v0–v7, an int vreg as before), so a function
+with float parameters or returns is no longer rejected by `lowerRFunc` ("control-form check
+(ctlCheck) failed"); everything else stays int-vreg only. Old acceptance implies new
+(`ctlInstOk_of_int`, `ctlCheck_of_int` over the kept `ctlInstOkInt`/`ctlCheckInt`). The
+register-level `Args`/`Rets` proofs (`realizes_args`, `ret_machine`) run on class-general pairs
+(`argPairsC`, `operands_argsC`/`operands_retsC`, `rets_usesC`), so the register-level and E2E
+statements are unchanged; only d8–d15 (`keep`) are claimed preserved across calls. Witness:
+`FVTest/Backend/FloatCtlT.lean` (`(f64, i64, f32) -> f64`: widened check accepts, integer check
+rejected; `Dominated`, `LowerScopeT`).
+
+**Slice 5b (typed control-form facts, parts).** `Proof/SpillCtlFormsT.lean`:
+`spillInstOk_retsC`/`spillInstOk_argsC` (float `Rets`/`Args` pairs fixed to v0–v7, x0–x8 for
+int, meet `Spill.SpillInstOk`; v0–v7 are outside `calleeSaved`). `Proof/AbiClassRegs.lean`:
+`sigArgLocs_regsC` (the typed placement's registers are distinct and each parameter's is x8 for
+`sret` or of its class) and `spillInstOk_entryArgsT` (the typed entry `Args`). `functionET`
+does not check that the entry block's parameter types are the signature's (a CLIF-verifier
+fact): `Proof/EntryClass.lean` states it (`EntryClassOk`) and decides it on the input
+(`entryClassOkB`, `entryClassOk_of`); witness `FloatCtlT.entryClassOk_fCtl`. Parent decision:
+the typed chain takes the control-form/form-coverage/kill-free/class facts as run-time-decided
+premises (`ctlSpillB`, `formsCoveredB`, `killFreeB`, `resClassOkB`, `entryClassOkB`), like
+`lowersB` in `fnScopeB`. **Follow-up (input-only totality for floats):** proving those facts for
+every typed-scope input needs the V3/V4 abstract interpretations over `CtxInvT`. Their soundness
+is tied to E in the engine itself: `aPrune` prunes with the E exclusion checker `fails`, `γ`'s
+`.xv .data` means an `instE` instruction's data, `value_type` gives `eCTys`, and `put_in_reg`
+gives an int vreg (`IselCovSem`, `IselCovCheck`, `IselCovExt`, `IselCovFns`, `IselCovCtor`). The
+follow-up is a parametrised copy of the engine (`IselCov{Dom,Sem,Le,Form,Check,Sound,Fns,Ext,
+Ctor}`, about 3.5k lines) with a typed domain (pruning by `failsT` over `AVT`; a value kind for
+operands in integer positions, from `CtxInvT.intOps`: every `InstructionData` variant of the
+typed scope except `Ternary` (`select`), `Store`, `LoadNoOffset` (`bitcast`, `atomic_load`) and
+the calls has all its values in integer positions, so `put_in_reg` of such a field is an int
+vreg; float forms such as `fcsel` need the dual float fact, which needs the verifier's operand
+typing of `select`/`store`/`bitcast`), regenerated `shpTabT`/`covTabT` with kernel
+certificates (about 7 min, 3 GB each, as `shpTab`), the extern soundness over `CtxInvT`, the
+hand-checked call/`try_call`/`br_table` rules over `CtxInvT` (`IselShp{Call,Try,BrTable}`, about
+1k lines), and `iselCtlHypT`: several days of work.
+
+**Slice 5c (the ten typed control families, FloatsC5R).** `TypedRules` holds for the exported
+program: `E2E.typedRules_program` (`E2E/TypedRulesProg.lean`), so every `hT : TypedRules`
+premise of the typed final, dead-cleanup, world and scope theorems is discharged. The proofs are
+the integer ones (`IselCtl*`) over `CtxT`: `Proof/IselCtlUnmatchTI.lean` (`termUnmatchableT_program`,
+`branchExcludedUnmatchableT_program`, `tryUnmatchableT_program`, `tryIndUnmatchableT_program`:
+format arguments only), `Proof/IselCtlTermTI.lean` (`trap_ruleOkT`, `ret_ruleOkT`: `return` pins
+value `x` to the next return register of `valClassOf ctx x`, `mapM_valueRegT`, `retRegsC_eq`,
+class-general `rets` over `argPairsC`; `lowerTermRulesCorrectT_program`),
+`Proof/IselCtlCallTI.lean` (`call_bl_ruleOkT`, `call_got_ruleOkT`, `call_ind_ruleOkT`: arguments
+and callee integer vregs by `CtxInvT.intOps` (`mapM_valueRegTI`), integer returns by
+`CtxT.resTysE` (`CtxT.call_retClasses`); `callRulesCorrectTP_program`, `indRulesCorrectTP_program`
+and the unpinned `callRulesCorrectT_program`, `indRulesCorrectT_program`),
+`Proof/IselCtlBranchTI.lean` (`brif`, `tbnz`, `tbz`, `jump`, `br_table` on `TermIntPos`
+operands: `is_nonzero_cmp_okT`, `ExtOut.semT`, the `band` operand by `CtxInvT.intOps`;
+`branchRulesCorrectT_program`), `Proof/IselCtlTryTI.lean` (`try_bl_ruleOkT`, `try_got_ruleOkT`,
+`try_ind_ruleOkT` on `TermIntPos` arguments; `tryRulesCorrectTP_program`,
+`tryIndRulesCorrectTP_program`, `tryRulesCorrectT_program`, `tryIndRulesCorrectT_program`).
+Witnesses `FVTest/Backend/FloatCtlRulesT.lean`: typed, non-integer contexts of `fCtl` (the
+terminator families give `TermCallsT`; `return v0` of an `f64` is in v0), `fCall` (the `call`
+and `call_indirect` roots fire on subset-E calls between float values) and `fTry` (an integer
+`try_call` with `TermIntPos` in a function with float values). With slice 5a's widened
+`ctlCheck`, the float-signature witness `fMv` (float parameters, return and block parameters) now
+has `CompiledT`/`CompiledAT` and `FormsCovered` (`FVTest/E2E/FloatFinalT.lean`: `compiledT_mv`,
+`compiledAT_mv`, `formsCovered_mv`); `regLevelCorrect_backend_ex` is unchanged (its `Args`/`Rets`
+steps run on class-general pairs since slice 5a). `entryClassOkB` is not in the typed scope: no
+theorem of the typed chain consumes it (a mismatched entry `Args` pair already fails `ctlCheck`
+and so `lowerRFunc`); it becomes a premise with the typed control-shape analysis (`iselCtlHypT`,
+slice 5b follow-up). Open: `SpillCtlCheck`/`DeadCleanupCtl` rebuild needs `IselShpTotal`
+(about 7.7 GB).
+
+**Slice 8, groundwork (typed link layer, FloatsLinkT; in progress).** Completeness of the
+typed spill chain's control-form decider: `Proof/SpillInstCheckComplete.lean`
+(`opsOkB_of_opsOk`, `spillInstOkB_of_spillInstOk`, `ctlSpillB_of`; witness
+`FVTest/Backend/SpillInstCheckCompleteW.lean`), the first step of `InScopeP → InScopePT`
+(`ctlSpillB` on subset-E input from the integer `ctlSpillHyp`). Plan of the rest (drafts on
+`agent/floats-c8l-wip`, unbuilt until the c5f tree is cached): `LinkSys.OkT` (`InSubsetT`,
+`CompiledEitherT`; an `sret` function in subset E with the integer contract, `sretE`; program
+callees return integers, `calleeInt`), `LinkSys.ThmT` with `RetsOkT` (returns by class, x0.. for
+`sret`) and typed copies of the link/binary/exec layers (`*T.lean`, generated from the integer
+modules by their constant dependencies); `Link.compileExe_correctT` and
+`Link.DeadCleanup.compileExe_correctT` under `InScopePT` with `E2E.typedRules_program` inside and
+one decided premise `OutOkT` (`checkAlloc`'s verdict, form coverage with the artifact's frame,
+`sretRets`, `entryRegs`, `outFits`, call sites: facts whose completeness is proven only for
+subset E; the typed chain proves `AllocChecked`, the link-level world theorems need
+`checkAlloc`); integer corollaries `compileExe_correct_viaT` from `inScopePT_of_inScopeP`
+(`resClassOkB_of`, `ctlSpillB_of`, `formsCovered_complete`, `spillKillFree`) and
+`outOkT_of_inScopeP` (`chks_resultsT`).
+
+**Slice 8, totality half (typed input scope, FloatsTotT).** `E2E/LinkScopeInputDefsT.lean`:
+`fnScopeInTB` keeps every conjunct of `fnScopeInB` over the typed scope (`functionET`,
+`lowerScopeTB`) with `fnScopeTB`'s input checks `storeTypedB`/`tryArgClassOk`; a function outside
+subset E must also meet `resClassOkB` and the run-time decider `lowerOutTB` (`lowerFunction`
+succeeds; `ctlSpillB` of its output; `emitCondsB`, `formsCoveredB default`, `killFreeB` and
+`ctlInstsB` — `ctlInstOk` everywhere, `Args` first in block 0 — of `prepare`'s output), i.e. what
+the typed chain does not prove yet; `InScopeInT`, `fnScopeInFailsT`. Literal-pool `f64const`
+stays outside by `functionET`'s `f64PoolFree`. Proven: `Prep.prepare_okT` (`prepare` is total on
+`Dominated`/`LowerScopeT`: `trap_shapeRT`/`ret_shapeRT`/`termShapeR_runTermT`, `raw_termT`,
+`prepIn_of_lowerT`; `Proof/PrepareTotalT.lean`), the allocation/emission half on the typed
+pipeline (`E2E/EmitTotalT.lean`: `emitReady_spill_of`, `lowerAllocReady_emit_of` from
+`PrepDomain`, `AllocChecked`, `FormsCovered`, `CtlInsts` and `emitCondsB` alone;
+`lowerRFunc_spillAllocT`, `backend_total_emitT`), and in `E2E/LinkScopeInputT.lean` the integer
+inclusion `fnScopeInTB_of_fnScopeInB` (no extra premise) with its converse on subset E
+(`fnScopeInB_of_fnScopeInTB`), `fnScopeTB_of_inT` (outside E the typed input scope is in
+`fnScopeTB`, so `backend_correct_finalT_scope` applies), and **`pipeT_okT`**: `pipeT` succeeds on
+every function of `fnScopeInTB` for every allocator answer, with `lowerCheckT`, `prepCheck`,
+`AllocChecked` and `FormsCovered`; `resultsT_ok_inT` (crates), `resultsT_ok_input` (the integer
+conclusion re-derived). Witnesses `FVTest/E2E/FloatTotalT.lean` (`fW`: float load/const/select/
+store/bitcast, decided in `fnScopeInTB`, compiled by `pipeT_okT`; `crateW`; integer `fInt`).
+Remaining for `Link.compileExe_total_reach_inputT`, in order: typed ISLE progress (`IselProg` for
+the float roots: float forms in `stmtForms`/`prgTab`, `PInvT`, the extern helpers under
+`CtxInvT`), replacing `lowerOutTB`'s `lowerFunction` check; typed size/emission analyses
+(`iselSz`, `iselEmit`) for `emitCondsB`; completeness of `ctlSpillB`/`formsCoveredB`/`killFreeB`/
+`resClassOkB` on the typed scope (slice 6's open items) and typed `vc_ctl` (control-shape
+analysis) for `ctlInstsB`; the dead-cleanup pipeline (`pipeCleanupT_okT`: `prepare (prune vc)`'s
+spill acceptance and emission, typed `DeadCleanup*`); `leanLink`'s per-function checks
+(`chks`: `functionE`, integer `lowerCheck`, `checkAlloc` of the spill allocation) and
+`compileExe`'s gate widened to `InScopeInT`, then the LinkSysT port for correctness.
 
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class

@@ -1036,3 +1036,44 @@ eleven roots on it, `instScopeTA_float_arith`, `float_arith_fcmp_nomatch`
 
 **Boundary.** Nothing downstream consumes `LowerRulesCorrectFT`/`InstScopeTA` yet (the driver
 and the end-to-end scope keep `InstScopeT`).
+
+## Float `Args`/`Rets` in the control-form check (S11e5 Stage C, slice 5a)
+
+**Executable change (run-time behaviour).** `ctlInstOk` (`FV/Backend/Regalloc.lean`, run by
+`ctlCheck` in `lowerRFunc`) accepts class-compatible `Args`/`Rets` pairs: `argPairOk p` (an int
+vreg in an argument register x0–x8/v0–v7 as before, or an `f32`/`f64` vreg in v0–v7) and
+`retPairOk p` (an int vreg as before, or a float vreg in v0–v7; `Reg.isVregFloat`,
+`Reg.isFpArgReg`). Branch tests, symbol loads, jump tables, LL/SC loops and TLS stay int-vreg
+only. The earlier check is kept as `ctlInstOkInt`/`ctlCheckInt`;
+`ctlInstOk_of_int : ctlInstOkInt b k i = true → ctlInstOk b k i = true` and
+`ctlCheck_of_int : ctlCheckInt vc rf = true → ctlCheck vc rf = true` (old acceptance implies new).
+
+**Consumers generalised (statements unchanged except the two inversion lemmas).**
+`ctlCheck_args` now gives `∃ n c, p.1 = .vreg n c` (any class) for each pair (its only use, the
+argument register, is unchanged); `ctlCheck_rets` gives `∃ ns, us = argPairsC ns` with the
+class-general pairs `argPairsC : List (Nat × RegClass × Reg) → List (Reg × Reg)` and their
+operands `argOpsC`/`retOpsC` (`operands_argsC`, `operands_retsC`, `filter_isDef_retOpsC`,
+`argPairsC_of`, `FV/E2E/RegLevelArgs.lean`). `realizes_args` (the `Args` emits no code and keeps
+the store) and `ret_machine` (`rets_usesC`: the `j`-th returned value is in its fixed register)
+run on those, so `regLevelCorrect_backend*`, the dead-cleanup register-level theorem and every
+E2E statement are unchanged and now cover float `Args`/`Rets` at the register level; the
+integer `rets_uses` is kept (from `rets_usesC`, `retOps_eq_C`, `retPairs_eq_C`). Class facts:
+`argPairOk_facts`, `argPairOk_cls`, `retPairOk_vreg`, `retPairOk_cls`. `ctlInsts_pipeline` and
+`ctlInsts_cleanup_pipeline` derive the widened check from the integer one (`ctlInstOk_of_int`).
+Callee-saved v8–v15: nothing new claims more than the low 64 bits; the return proofs keep using
+`checkAlloc_sound`'s `keep` (`ckeep`) for d8–d15.
+
+**Non-vacuity.** `FVTest/Backend/FloatCtlT.lean`: `fCtl : (f64, i64, f32) -> f64` (`Args` with
+float vregs in v0/v1 and an int one in x0, `Rets` of a float vreg in v0): `ctlCheck_fCtl`
+(the widened check accepts its spill allocation) and `ctlCheckInt_fCtl` (the integer one
+rejected it), `ctlCheck_args_fCtl`, `dominated_fCtl`, `scopeT_fCtl : LowerScopeT fCtl`;
+`ctlCheckInt_fInt` with `ctlCheck_of_int` on an integer function.
+
+**Typed control-form pieces (slice 5b).** `Spill.spillInstOk_retsC`, `Spill.spillInstOk_argsC`
+(`Proof/SpillCtlFormsT.lean`; `spillInstOk_rets_of_C` recovers the integer one),
+`Spill.sigArgLocs_regsC` and `Spill.spillInstOk_entryArgsT` (`Proof/AbiClassRegs.lean`),
+`EntryClassOk`/`entryClassOkB`/`entryClassOk_of` (`Proof/EntryClass.lean`: the entry block's
+parameter classes are the signature's, a CLIF-verifier fact `functionET` does not check).
+`ctlSpill_typed` for every typed-scope input (an `IselCtlHyp` over `CtxInvT`) is deferred: the
+typed chain takes the control-form facts as a run-time-decided premise (`ctlSpillB`); the engine
+work it needs is listed in `docs/plans/floats.md` (slice 5b follow-up).
