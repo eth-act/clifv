@@ -122,6 +122,24 @@ abbrev AState := Array (List Sym)
 
 namespace AState
 
+/-! The traversals below are specified by `List` recursion: the kernel evaluates them linearly,
+while `Array.map`/`Array.mapIdx` (`Array.mapM`'s index loop: one `List.get` walk and one
+`List.concat` per element) and an indexed `List.range` scan are quadratic in the ~140
+locations; that made one `checkAllocAt` cost about 10 GB in `decide +kernel` certificates.
+Compiled code runs the `Array` versions (`@[csimp]`); `*_eq` give the `Array` forms to proofs. -/
+
+/-- `a.map f` (see above). -/
+def mapSets (f : List Sym → List Sym) (a : AState) : AState := ⟨a.toList.map f⟩
+
+/-- `mapSets` as compiled. -/
+def mapSetsArray (f : List Sym → List Sym) (a : AState) : AState := a.map f
+
+@[simp] theorem mapSets_eq (f : List Sym → List Sym) (a : AState) : a.mapSets f = a.map f := by
+  cases a; simp [mapSets]
+
+@[csimp] theorem mapSets_eq_mapSetsArray : @mapSets = @mapSetsArray := by
+  funext f a; exact mapSets_eq f a
+
 def get (a : AState) (l : Loc) : List Sym :=
   match l.index with
   | some i => a.getD i []
@@ -132,27 +150,98 @@ def put (a : AState) (l : Loc) (s : List Sym) : AState :=
   | some i => a.setIfInBounds i s
   | none => a
 
-def remove (a : AState) (s : Sym) : AState := a.map (·.filter (· != s))
+def remove (a : AState) (s : Sym) : AState := a.mapSets (·.filter (· != s))
+
+theorem remove_eq (a : AState) (s : Sym) : a.remove s = a.map (·.filter (· != s)) := by
+  simp only [remove, mapSets_eq]
 
 /-- A definition: the symbol leaves every location and is the only content of `l`. -/
 def define (a : AState) (l : Loc) (s : Sym) : AState := (a.remove s).put l [s]
 
+/-- `meet` on the location lists. -/
+def meetSets : List (List Sym) → List (List Sym) → List (List Sym)
+  | [], _ => []
+  | s :: as, bs => s.filter ((bs.headD []).contains ·) :: meetSets as bs.tail
+
 /-- Pointwise intersection (keeps the order of `a`, so `meet a b = a` iff `a ⊆ b`). -/
-def meet (a b : AState) : AState :=
+def meet (a b : AState) : AState := ⟨meetSets a.toList b.toList⟩
+
+/-- `meet` as compiled. -/
+def meetArray (a b : AState) : AState :=
   a.mapIdx fun i s => let t := b.getD i []; s.filter (t.contains ·)
+
+private theorem meetSets_length (as bs : List (List Sym)) : (meetSets as bs).length = as.length := by
+  induction as generalizing bs <;> simp [meetSets, *]
+
+private theorem meetSets_getElem (as bs : List (List Sym)) (i : Nat)
+    (h : i < (meetSets as bs).length) :
+    (meetSets as bs)[i] =
+      (as[i]'(by simpa [meetSets_length] using h)).filter (fun x => (bs.getD i []).contains x) := by
+  induction as generalizing bs i with
+  | nil => simp [meetSets] at h
+  | cons s as ih =>
+    cases i with
+    | zero => cases bs <;> simp [meetSets]
+    | succ i =>
+      simp only [meetSets, List.getElem_cons_succ]
+      rw [ih]
+      cases bs <;> simp
+
+theorem meet_eq (a b : AState) :
+    a.meet b = a.mapIdx fun i s => let t := b.getD i []; s.filter (t.contains ·) := by
+  apply Array.ext
+  · simp [meet, meetSets_length]
+  · intro i h₁ h₂
+    simp [meet, meetSets_getElem, Array.getD_eq_getD_getElem?, List.getD_eq_getElem?_getD]
+
+@[csimp] theorem meet_eq_meetArray : @meet = @meetArray := by
+  funext a b; exact meet_eq a b
 
 /-- The parallel copy `params := args` on symbols. -/
 def parCopy (a : AState) (params args : List Nat) : AState :=
   let ps := params.map Sym.vreg
-  a.map fun s =>
+  a.mapSets fun s =>
     let adds := (params.zip args).filterMap fun (p, x) =>
       if s.contains (.vreg x) then some (Sym.vreg p) else none
     let kept := s.filter (!ps.contains ·)
     kept ++ adds.filter (!kept.contains ·)
 
+theorem parCopy_eq (a : AState) (params args : List Nat) : a.parCopy params args =
+    let ps := params.map Sym.vreg
+    a.map fun s =>
+      let adds := (params.zip args).filterMap fun (p, x) =>
+        if s.contains (.vreg x) then some (Sym.vreg p) else none
+      let kept := s.filter (!ps.contains ·)
+      kept ++ adds.filter (!kept.contains ·) := by
+  simp only [parCopy, mapSets_eq]
+
+/-- `le` on the location lists. -/
+def leSets : List (List Sym) → List (List Sym) → Bool
+  | [], _ => true
+  | s :: as, bs => s.all ((bs.headD []).contains ·) && leSets as bs.tail
+
 /-- Pointwise inclusion `a ⊆ b` (every symbol `a` puts in a location, `b` puts there too). -/
-def le (a b : AState) : Bool :=
+def le (a b : AState) : Bool := leSets a.toList b.toList
+
+/-- `le` as compiled. -/
+def leArray (a b : AState) : Bool :=
   (List.range a.size).all fun i => (a.getD i []).all fun s => (b.getD i []).contains s
+
+private theorem leSets_eq (as bs : List (List Sym)) :
+    leSets as bs =
+      (List.range as.length).all fun i => (as.getD i []).all fun s => (bs.getD i []).contains s := by
+  induction as generalizing bs with
+  | nil => simp [leSets]
+  | cons s as ih =>
+    rw [List.length_cons, List.range_succ_eq_map]
+    cases bs <;> simp [leSets, ih, List.all_map, Function.comp_def]
+
+theorem le_eq (a b : AState) :
+    a.le b = (List.range a.size).all fun i => (a.getD i []).all fun s => (b.getD i []).contains s := by
+  simp [le, leSets_eq, Array.getD_eq_getD_getElem?, List.getD_eq_getElem?_getD]
+
+@[csimp] theorem le_eq_leArray : @le = @leArray := by
+  funext a b; exact le_eq a b
 
 end AState
 
@@ -246,11 +335,19 @@ def clobberAll (a : AState) (clob : List Reg) : AState :=
 branch's defs, `JTSequence`'s temporaries, are dead after the branch; the LL/SC loops' scratch
 registers; the proof's allocated-code semantics havocs them). -/
 def forgetDefs (a : AState) (pairs : List (Operand × Loc)) : AState :=
-  a.map (·.filter fun s => !(pairs.any fun p => p.1.kind == .def && s == .vreg p.1.vreg))
+  a.mapSets (·.filter fun s => !(pairs.any fun p => p.1.kind == .def && s == .vreg p.1.vreg))
+
+theorem forgetDefs_eq (a : AState) (pairs : List (Operand × Loc)) : forgetDefs a pairs =
+    a.map (·.filter fun s => !(pairs.any fun p => p.1.kind == .def && s == .vreg p.1.vreg)) := by
+  simp only [forgetDefs, AState.mapSets_eq]
 
 /-- The def vregs of the operands `os` leave every location (`forgetDefs` without locations). -/
 def forgetOps (a : AState) (os : List Operand) : AState :=
-  a.map (·.filter fun s => !(os.any fun o => o.kind == .def && s == .vreg o.vreg))
+  a.mapSets (·.filter fun s => !(os.any fun o => o.kind == .def && s == .vreg o.vreg))
+
+theorem forgetOps_eq (a : AState) (os : List Operand) : forgetOps a os =
+    a.map (·.filter fun s => !(os.any fun o => o.kind == .def && s == .vreg o.vreg)) := by
+  simp only [forgetOps, AState.mapSets_eq]
 
 /-- The transfer of an original instruction with operand–location pairs `pairs`, in execution
 order: early defs, clobbers, late defs; the defs past the first `keptDefs` are then forgotten. -/
