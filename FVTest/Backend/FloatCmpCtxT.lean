@@ -77,4 +77,4 @@ theorem fcmp_nan_witnesses :
         (fun cc => Clif.FSem.fcmp cc .f32 0x7fc00000#32 0x3f800000#32 = some false) ∧
       [Clif.FloatCC.ne, .uno, .ugt, .uge, .ult, .ule].all
         (fun cc => Clif.FSem.fcmp cc .f32 0x7fc00000#32 0x3f800000#32 = some true) := by
-  refine ⟨?_, ?_⟩ <;> rw [List.all_eq_true] <;> (intro cc hcc; cases hcc) <;> native_decide
+  refine ⟨by native_decide, by native_decide⟩
