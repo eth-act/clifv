@@ -23,7 +23,7 @@
 # --lean-link --verified on examples/fv-demo and examples/survey (cargo fv's per-executable binary
 # check runs `cargo fv link-proof` + `lake exe link-check` on every test executable).
 #
-# Budgets (128 GB machine, docs/TO-PROVE.md §7): scheduler GATE_BUDGET (48G), module caps up to
+# Budgets (128 GB machine, docs/TO-PROVE.md §7): scheduler GATE_BUDGET (32G), module caps up to
 # GATE_MAX_CAP (28G), single memcapped commands GATE_CAP (28G).
 #
 # The run-time gates call `qemu-aarch64-static`. When it is not on PATH (Ubuntu 26.04 has no
@@ -61,7 +61,7 @@ run_gate() { # LOGDIR CLIF; cwd: the worktree root
   local M12=(env FV_MEMCAP=12G LEAN_NUM_THREADS=2 scripts/memcap.sh)
   {
   echo "start $(date -Is) HEAD $(git rev-parse --short=8 HEAD)"
-  python3 scripts/lake-serial-build.py --budget "${GATE_BUDGET:-48G}" --max-cap "${GATE_MAX_CAP:-28G}" \
+  python3 scripts/lake-serial-build.py --budget "${GATE_BUDGET:-32G}" --max-cap "${GATE_MAX_CAP:-28G}" \
     --max-jobs 12 --others-by-usage --retry-failed --out "$L/sched" FV FVTest Corpus > "$L/sched.out" 2>&1
   r=$?; local nf; nf=$(grep -cE -- '-> fail' "$L/sched/sched.log" 2>/dev/null)
   echo "serial-build rc=$r fails=$nf: $(tail -n 1 "$L/sched/sched.log" 2>/dev/null)"

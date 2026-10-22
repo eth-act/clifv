@@ -60,6 +60,14 @@ None of these weaken what is proven: every compiler theorem still prints only `p
 - `FV_LAKE_CACHE` points every worktree at one shared Lake artifact cache (hard links; same filesystem as the worktrees): a fresh worktree at a built commit needs no rebuild (#253).
 - `scripts/lake-serial-build.py` builds module by module with caps from recorded peaks, runs light modules packed and heavy ones alone (#258).
 
+### Wrapper tools don't make cold builds faster
+- [turbo-lean](https://github.com/Th0rgal/turbo-lean) is not a Lean build: `turbo-lean build` runs the project's own `lake build` and caches the outputs. Its fast paths are cache hits and per-theorem checks against `sorry`-stubbed prefixes, which a gate cannot accept.
+- Measured on 7 heavy modules, run at the same time with the same caps: +4.1% wall, +1.4% CPU (a fixed ~35–50 s per call for hashing and ingest), same peak RSS, identical statements and axioms for all 22,322 constants. Not adopted (TurboLean, `docs/research/turbo-lean.md`). Our cost is kernel checking of single large declarations; only proof changes reduce it.
+
+### Some `.olean`s are not deterministic, so rebuilding them invalidates every dependent
+- `IselTermFactsCall` and `IselCtlTry` produce different `.olean` bytes on every build (three builds, three hashes); the other 5 sampled modules are byte-identical. Statements and axioms don't change.
+- Rebuilding `IselTermFactsCall` without the cache therefore rebuilt 30 downstream modules, including `KillTab` (~1,930 s). Restore such modules from the Lake cache instead of rebuilding them (TurboLean).
+
 ### Merge first, verify on main
 - When main moves faster than a full rebuild, a branch that passed its full checks on a recent main and rebases cleanly needs only a targeted build; a continuous main gate runs the full list afterwards and failures are fixed forward. A wrong merge can make main fail to build; it cannot make a false theorem pass, because the kernel checks every proof.
 
