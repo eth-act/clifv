@@ -225,13 +225,13 @@ theorem stmt_szT (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx op
     · exact .inr (lower_nonroot_nomatchT hctx hsc hx hi hc hrl hcr {})
     · exact .inl hle
   refine ⟨?_, ?_⟩
-  · exact cost_root_hand (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
+  · exact cost_root_handT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
       extWT_wt oracleWT_wt szCTab_ok
       (Hand := fun rl => rl ∈ program.rulesOf TId.lower ∧ (rl.id = 1031 ∨ rl.id = 1032 ∨ rl.id = 1033))
       (fun rl ⟨hrl, hid⟩ => handW_callT hctx hi hc hrl hid)
       data_program.t686 term_686_kind hrulesW (holds_instT hctx hi hc) (covSince_refl s) (n := 999999)
       lower_len happ
-  · exact cost_root (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
+  · exact cost_rootT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
       extWT_tg oracleWT_tg tgCTab_ok data_program.t686 term_686_kind hrulesT (holds_instT hctx hi hc)
       (covSince_refl s) happ
 
@@ -294,14 +294,14 @@ theorem branch_szT (hctx : CtxInvT f ctx) (hsp : InstSplit Compile.instET f ctx 
       · exact .inr (.inr hB)
     · exact .inl (cRuleLe_mono hle hcT)
   refine ⟨?_, ?_⟩
-  · exact cost_root_hand (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
+  · exact cost_root_handT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
       extWT_wt oracleWT_wt szCTab_ok (Hand := fun rl => Try rl ∨ Br rl)
       (fun rl hrl => by
         rcases hrl with hT | hB
         · exact hTryW rl hT
         · exact hBrW rl hB)
       data_program.t687 term_687_kind hrulesW hins (covSince_refl s) (n := 999999) lower_branch_len happ
-  · exact cost_root_hand (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
+  · exact cost_root_handT (md := covModelT logicImmComplete hctx hsp hsc hx hcl s) rfl (cov_sa hctx hcl s rfl)
       extWT_tg oracleWT_tg tgCTab_ok (Hand := Br) hBrT
       data_program.t687 term_687_kind hrulesT hins (covSince_refl s) (n := 999999) lower_branch_len happ
 
@@ -398,10 +398,10 @@ theorem retTrap_szT {c : Ctx} (hctx' : CtxInv f c) (hcl' : Cov.Clean c) {ti : Na
       simp only [termRootRule] at hroot
       simp only [hroot, Bool.not_true, Bool.false_or] at hf
       exact .inl hf
-  exact ⟨cost_root (md := covModelT logicImmComplete hctx' hsp' hsc' hx hcl' s) rfl (cov_sa hctx' hcl' s rfl)
+  exact ⟨cost_rootT (md := covModelT logicImmComplete hctx' hsp' hsc' hx hcl' s) rfl (cov_sa hctx' hcl' s rfl)
       extWT_wt oracleWT_wt szCTab_ok data_program.t686 term_686_kind hrulesW ⟨γT_c0_inst ti, trivial⟩
       (covSince_refl s) happ,
-    cost_root (md := covModelT logicImmComplete hctx' hsp' hsc' hx hcl' s) rfl (cov_sa hctx' hcl' s rfl)
+    cost_rootT (md := covModelT logicImmComplete hctx' hsp' hsc' hx hcl' s) rfl (cov_sa hctx' hcl' s rfl)
       extWT_tg oracleWT_tg tgCTab_ok data_program.t686 term_686_kind hrulesT ⟨γT_c0_inst ti, trivial⟩
       (covSince_refl s) happ⟩
 

@@ -33,15 +33,11 @@ the oracle's (`OracleWT`) and the checked cost table (`chkCostT`).
 
 * A failed rule attempt restores the state (`selectRule_none`, `selectRule_some_lt`); a
   committed rule costs its if-lets plus its right-hand side (`cRuleT`), and `fire` keeps the state.
-* The abstract environments a match passes through come from `SoundAtT` itself (`patArgs_env`,
-  `pat_env`: the rule without its if-lets, a single if-let).
-* `cost_root_hand`: a driver root whose rules pass `cRuleLeT`, never match, or are checked by
+* The abstract environments a match passes through come from `SoundAtT` itself (`patArgs_envT`,
+  `pat_envT`: the rule without its if-lets, a single if-let).
+* `cost_root_handT`: a driver root whose rules pass `cRuleLeT`, never match, or are checked by
   hand (`HandW`), grows `W` by at most the root's bound (`root_hand` for the cost).
 -/
-
-namespace Backend.Proof.Cov
-
-open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 
 variable {S : Clif.Inst → Bool} {iOps fOps : List Nat} {f : Clif.Function} {ctx : Ctx} {p : Program} {aext : TermId → AW → List AW}
   {actor : TermId → List AW → AW}
@@ -50,75 +46,10 @@ variable {S : Clif.Inst → Bool} {iOps fOps : List Nat} {f : Clif.Function} {ct
 
 /-! ## Maxima -/
 
-theorem foldl_max_ge_init : ∀ (xs : List Nat) (b : Nat), b ≤ xs.foldl max b
-  | [], _ => Nat.le_refl _
-  | x :: xs, b => Nat.le_trans (Nat.le_max_left b x) (foldl_max_ge_init xs (max b x))
-
-theorem le_foldl_max : ∀ {xs : List Nat} {x : Nat}, x ∈ xs → ∀ b, x ≤ xs.foldl max b
-  | y :: ys, x, hx, b => by
-    rcases List.mem_cons.mp hx with rfl | hx
-    · exact Nat.le_trans (Nat.le_max_right b x) (foldl_max_ge_init ys _)
-    · exact le_foldl_max hx _
-
 /-! ## Inversion of the cost analysis -/
 
-theorem cApply_aApply {ty : TypeId} {t : TermId} {as : List AW} {c : Nat}
-    (h : cApply p tab aw ctab apre aOracle ty t as = some c) :
-    ∃ a, aApply p tab actor apre aOracle ty t as = some a := by
-  unfold cApply at h
-  unfold aApply
-  by_cases hb : as.any AW.isBot = true
-  · simp [hb]
-  rw [Bool.not_eq_true] at hb
-  simp only [hb, Bool.false_eq_true, ↓reduceIte] at h ⊢
-  cases ht : termOf p t with
-  | error e => simp
-  | ok term =>
-    rw [ht] at h
-    simp only at h ⊢
-    split
-    all_goals first
-      | exact ⟨_, rfl⟩
-      | (rename_i hk; rw [hk] at h; simp only at h
-         split at h
-         · rename_i a ho; simp [ho]
-         · rename_i ho
-           simp only [ho]
-           split at h
-           · rename_i out htab; exact ⟨out, htab⟩
-           · cases h)
-      | (rename_i hk; rw [hk] at h; simp only at h; split at h <;> simp_all)
-
 /-- The cost analysis of an expression succeeds only where the abstract interpretation does. -/
-theorem cExpr_aExpr : ∀ (e : Isle.Expr) (env : List AW) (c : Nat),
-    cExpr p tab aw ctab actor apre aOracle e env = some c →
-    ∃ a, aExpr p tab actor apre aOracle e env = some a
-  | .var _ x, env, _, _ => ⟨_, by rw [aExpr]⟩
-  | .constBool .., _, _, _ => ⟨_, by rw [aExpr]⟩
-  | .constInt .., _, _, _ => ⟨_, by rw [aExpr]⟩
-  | .constPrim .., _, _, _ => ⟨_, by rw [aExpr]⟩
-  | .let ty bs body, env, c, h => by
-    simp only [cExpr] at h
-    split at h
-    · rename_i env' c1 hb hc
-      split at h
-      · rename_i d hd
-        obtain ⟨a, ha⟩ := cExpr_aExpr body env' d hd
-        exact ⟨a, by simp only [aExpr, hb, ha]⟩
-      · cases h
-    · cases h
-  | .term ty t args, env, c, h => by
-    simp only [cExpr] at h
-    split at h
-    · rename_i as c1 has hc
-      split at h
-      · rename_i d hd
-        obtain ⟨a, ha⟩ := cApply_aApply (actor := actor) hd
-        exact ⟨a, by simp only [aExpr, has, ha]⟩
-      · cases h
-    · cases h
-
-theorem cRuleLe_inv {ins : List AW} {c : Nat} {r : Rule}
+theorem cRuleLe_invT {ins : List AW} {c : Nat} {r : Rule}
     (h : cRuleLeT p tab aw ctab aext actor apre aOracle iOps fOps ins c r = true) :
     ∃ cs envs ds, (aPatArgsT p aext iOps fOps ins r.args (List.replicate r.vars.length .top)).mapM
         (cIfLetsT p tab aw ctab aext actor apre aOracle iOps fOps r.iflets) = some cs ∧
@@ -139,37 +70,11 @@ theorem cRuleLe_inv {ins : List AW} {c : Nat} {r : Rule}
     · cases hc'
   · cases h
 
-theorem ctabGet_le {t : TermId} {as : List AW} {c : Nat} (h : ctabGet ctab t as = some c) :
-    ∃ ins, (t, ins, c) ∈ ctab ∧ AW.leAll as ins = true := by
-  unfold ctabGet at h
-  cases hf : ctab.find? (fun e => e.1 == t && AW.leAll as e.2.1) with
-  | none => rw [hf] at h; cases h
-  | some e =>
-    rw [hf] at h
-    simp only [Option.map_some, Option.some.injEq] at h
-    subst h
-    have hm := List.mem_of_find?_eq_some hf
-    have hp := List.find?_some hf
-    simp only [Bool.and_eq_true, beq_iff_eq] at hp
-    exact ⟨e.2.1, by rw [← hp.1]; exact hm, hp.2⟩
-
-theorem chkCost_mem (hc : chkCostT p tab aw ctab aext actor apre aOracle iOps fOps = true) {t : TermId}
+theorem chkCost_memT (hc : chkCostT p tab aw ctab aext actor apre aOracle iOps fOps = true) {t : TermId}
     {ins : List AW} {c : Nat} (hm : (t, ins, c) ∈ ctab) :
     ∀ r ∈ p.rulesOf t, cRuleLeT p tab aw ctab aext actor apre aOracle iOps fOps ins c r = true := by
   have := List.all_eq_true.mp hc _ hm
   exact List.all_eq_true.mp this
-
-theorem mapM_single_flatten : ∀ (xs : List (List AW)),
-    (xs.mapM fun e => (some [e] : Option (List (List AW)))).map List.flatten = some xs
-  | [] => rfl
-  | x :: xs => by
-    have := mapM_single_flatten xs
-    cases hm : xs.mapM fun e => (some [e] : Option (List (List AW))) with
-    | none => rw [hm] at this; cases this
-    | some ys =>
-      rw [hm] at this
-      simp only [Option.map_some, Option.some.injEq] at this
-      simp [List.mapM_cons, hm, this]
 
 /-! ## Environments of a match, from `SoundAtT` -/
 
@@ -178,7 +83,7 @@ variable {md : CovModelT aext actor apre aOracle S iOps fOps p f ctx} {cfg : Con
 
 /-- The environment after a rule's argument patterns is described by one of `aPatArgsT`'s
 (`SoundAtT.mrule` for the rule without its if-lets). -/
-theorem patArgs_env (sa : ∀ n, SoundAtT md cfg tab n) {rl : Rule} {ins : List AW} {vs : List V}
+theorem patArgs_envT (sa : ∀ n, SoundAtT md cfg tab n) {rl : Rule} {ins : List AW} {vs : List V}
     {s : LState} {env0 : Isle.Interp.Env V} (hins : Holds2T S iOps fOps f ctx ins vs) (hIs : md.Is s)
     (hma : matchArgs p (sem ctx) s rl.args vs (Array.replicate rl.vars.length none) =
       .ok (some env0)) :
@@ -197,7 +102,7 @@ theorem patArgs_env (sa : ∀ n, SoundAtT md cfg tab n) {rl : Rule} {ins : List 
 
 /-- The environment after an if-let's pattern is described by one of `aPatT`'s (`SoundAtT.iflets`
 for that if-let alone). -/
-theorem pat_env (sa : ∀ n, SoundAtT md cfg tab n) {il : IfLet} {a : AW} {aenv : List AW}
+theorem pat_envT (sa : ∀ n, SoundAtT md cfg tab n) {il : IfLet} {a : AW} {aenv : List AW}
     {env env1 : Isle.Interp.Env V} {v : V} {s s1 : LState} {tr tr1 : Array RuleId} {k : Nat}
     (ha : aExpr p tab actor apre aOracle il.rhs aenv = some a) (he : EnvOKT S iOps fOps f ctx aenv env)
     (hIs : md.Is s)
@@ -313,7 +218,7 @@ theorem costAtT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab
         rcases hrules rl hrl with h | h
         · exact h
         · exact absurd hmatch (h m _ _ _)
-      obtain ⟨cs, envs, ds, hcs, hae, hds, hle⟩ := cRuleLe_inv hok
+      obtain ⟨cs, envs, ds, hcs, hae, hds, hle⟩ := cRuleLe_invT hok
       have hW1 := (ih m (by omega)).mrule _ _ _ _ _ _ _ _ _ hcs hins hIs hmatch
       obtain ⟨hIs1, aenv, haenv, he1⟩ := (sa m).mrule _ _ _ _ _ _ _ _ _ hae hins hIs hmatch
       obtain ⟨d, hd, hcd⟩ := mapM_some_mem hds aenv haenv
@@ -485,7 +390,7 @@ theorem costAtT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab
             · split at hca
               · obtain ⟨ins, hm, hle⟩ := ctabGet_le hca
                 exact hroot ty t term flags ex ins c vs s tr r s' tr' ht hk
-                  (fun rl hrl => .inl (chkCost_mem hct hm rl hrl)) (holds2_leT hle hvs) hIs h
+                  (fun rl hrl => .inl (chkCost_memT hct hm rl hrl)) (holds2_leT hle hvs) hIs h
               · cases hca
           | external fn =>
             simp only at hca
@@ -525,7 +430,7 @@ theorem costAtT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab
     cases o with
     | none => cases pure_ok h4
     | some env0 =>
-      obtain ⟨aenv0, hm0, he0⟩ := patArgs_env sa hins hIs hma
+      obtain ⟨aenv0, hm0, he0⟩ := patArgs_envT sa hins hIs hma
       obtain ⟨c0, hc0, hcif⟩ := mapM_some_mem hcs aenv0 hm0
       have := ihn.iflets _ _ _ _ _ _ _ _ _ hcif he0 hIs h4
       have := le_foldl_max hc0 0
@@ -561,7 +466,7 @@ theorem costAtT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab
                 cases n with
                 | zero => rw [evalExpr.eq_1] at h1; exact (throw_ok h1).elim
                 | succ k => exact ⟨k, rfl⟩
-              obtain ⟨aenv1, hm1, he1⟩ := pat_env sa ha he hIs h1 hmp
+              obtain ⟨aenv1, hm1, he1⟩ := pat_envT sa ha he hIs h1 hmp
               obtain ⟨d, hd, hcd⟩ := mapM_some_mem hds aenv1 hm1
               have := ihn.iflets _ _ _ _ _ _ _ _ _ hcd he1 hIs1 h6
               have := le_foldl_max hd 0
@@ -570,7 +475,7 @@ theorem costAtT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab
       · cases hci
 
 /-- **A root term whose rules cost at most `c` or never match** grows `W` by at most `c`. -/
-theorem cost_root (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab n)
+theorem cost_rootT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab n)
     (hext : ExtWT S iOps fOps f ctx apre aw W) (hor : OracleWT S iOps fOps p f ctx aOracle W)
     (hct : chkCostT p tab aw ctab aext actor apre aOracle iOps fOps = true)
     {vs : List V} {c : Nat} {ty : TypeId} {t : TermId} {term : Term} {flags : TermFlags}
@@ -587,7 +492,7 @@ theorem cost_root (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg t
 /-- **A root term whose rules cost at most `c`, never match, or are checked by hand**
 (`HandW`: at a fuel leaving every hand-checked match and right-hand side 1000 steps) grows `W`
 by at most `c` (`root_hand` for the cost). -/
-theorem cost_root_hand (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab n)
+theorem cost_root_handT (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md cfg tab n)
     (hext : ExtWT S iOps fOps f ctx apre aw W) (hor : OracleWT S iOps fOps p f ctx aOracle W)
     (hct : chkCostT p tab aw ctab aext actor apre aOracle iOps fOps = true)
     {vs : List V} {c : Nat} {Hand : Rule → Prop}
@@ -637,7 +542,7 @@ theorem cost_root_hand (hc : cfg.checkOverlap = false) (sa : ∀ n, SoundAtT md 
       | none => cases pure_ok h4; rfl
     subst hfin
     rcases hrules rl hrl with hok | hno | hhd
-    · obtain ⟨cs, envs, ds, hcs, hae, hds, hle⟩ := cRuleLe_inv hok
+    · obtain ⟨cs, envs, ds, hcs, hae, hds, hle⟩ := cRuleLe_invT hok
       have hW1 := (ca m).mrule _ _ _ _ _ _ _ _ _ hcs hins hIs hmatch
       obtain ⟨hIs1, aenv, haenv, he1⟩ := (sa m).mrule _ _ _ _ _ _ _ _ _ hae hins hIs hmatch
       obtain ⟨d, hd, hcd⟩ := mapM_some_mem hds aenv haenv
