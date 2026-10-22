@@ -4005,7 +4005,13 @@ E2E.backend_correct_final_cleanup_trapcall
   theorem to a compiled function calling a `%panic` that traps (`checks_true` receipt); on its
   entered state `cs0` the run traps with `user1` inside the callee, `cs0_trapsC` (the new
   premise holds), `cs0_not_trapsExplicit` (the old one does not), `cs0_unwinds` (the device).
-* `#print axioms`: `backend_correct_final_cleanup_trapcall`, `regLevel_trapCall_value`,
+* **Inside a linked program** (`FV/E2E/WorldTrapCall.lean`, the first step of S9c #376):
+  `backend_correct_world_cleanup_trapcall`, the same for an activation with the memory relation
+  `RelW`, the kept addresses `G` and the GOT pins `GotV vcp` (`ActEntry`, what `LinkArm`'s
+  induction applies per function; `backend_correct_world_cleanup`'s trap half widened), by
+  `iselSimU_relW_cleanup` and `regLevel_trapCall_world`; witness `world_applies`.
+* `#print axioms` (list `scripts/audit/traps.lean`): `backend_correct_final_cleanup_trapcall`,
+  `backend_correct_world_cleanup_trapcall`, `regLevel_trapCall_value`, `regLevel_trapCall_world`,
   `trapEnv_of_trapped`: `[propext, Classical.choice, Quot.sound]`.
 
 Not yet covered (S9b–S9d, TO-PROVE §4 S9): traps of the callees of `try_call`/

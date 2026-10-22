@@ -1,4 +1,4 @@
-import FV.E2E.DeadCleanupTrapCall
+import FV.E2E.WorldTrapCall
 import FV.E2E.DeadCleanupCover
 import FV.Backend.SpillAlloc
 
@@ -158,6 +158,34 @@ theorem final_applies {X0 : ExtSem} {H : ArmHooks} {syms : String → Option Nat
     (fun h => absurd h (by rw [ht]; decide)) (fun _ => xCallsOk_env _ _ _)
     (fun _ => xCallsIndOk_env _ _ _) (fun _ => xTrapsOk_Xn _ _ _ _) hsym rfl hent hres hbe hargs
     hcs hrel htr hrun
+
+/-- **`backend_correct_world_cleanup_trapcall` applies to the compiled function with a
+trapping callee** (the activation inside a linked program: `RelW`, `ActEntry`), leaving open
+the linker's symbol addresses (`hsym`) and the run's entry premises. -/
+theorem world_applies {X0 : ExtSem} {syms : String → Option Nat} {K : Nat}
+    {F : BitVec 64 → Prop} {c : BitVec 64}
+    (hsym : ∀ n b, syms n = some b → (Xn X0).sym n 0 = BitVec.ofNat 64 b)
+    {w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hcs : ClifEntry source args cs)
+    (hrel : RelW ⟨F, syms, af.slotBase, (RAFrame.compute vcp rf).intBase⟩ source c
+      cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F source.sig args w₀)
+    (htr : TrapsExplicitC env { funcs := [] } cs) {fuel : Nat} {tc : Clif.TrapCode}
+    (hrun : Clif.runLoop env { funcs := [] } fuel cs = .trapped tc) :
+    ∀ (H : ArmHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64) (s : Arm.ArmState),
+      ActEntry vcp rf af fa fb K F G (Xn X0) H base ra s w₀ →
+      ∃ n, TrapAt fb base tc (runX (ArmStepX (Xn X0) H fa) n s) ∨
+        (CallTrapAt vcp F K G s fa base (Xn X0) (GotV vcp)
+            (TrapCallSem env (source.externs.map (·.2)) (indSigs source)
+              (RelW ⟨F, syms, af.slotBase, (RAFrame.compute vcp rf).intBase⟩ source c) (Xn X0) tc)
+            (runX (ArmStepX (Xn X0) H fa) n s) ∧
+          ∀ i < n, actGoodX vcp rf af fa fb base s (Xn X0) H K G (GotV vcp)
+            (runX (ArmStepX (Xn X0) H fa) i s)) := by
+  obtain ⟨hv, hs, -, hc, hlU⟩ := facts
+  exact backend_correct_world_cleanup_trapcall (InSubset.of_verifiable hv (fun _ => rfl)) hc hlU
+    rfl source_noTry (formsCovered_cleanup_complete (lowerScope_of hs) hc.lower hc.prepare _)
+    (xCallsOk_env _ _ _) (xCallsIndOk_env _ _ _) (xTrapsOk_Xn _ _ _ _) hsym rfl hcs hrel hargs
+    htr hrun
 
 /-! ## A run the new theorem covers and the old one excludes -/
 
