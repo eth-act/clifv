@@ -96,6 +96,18 @@ and they run under `qemu-aarch64-static`.
    (`target/cg_clif/std-src/library`: the toolchain's `rust-src` with cg_clif's own
    `patches/*-stdlib-*.patch`, which remove the 128-bit atomic types cg_clif cannot compile;
    docs/plans/std.md).
+6. Optional, on a shared machine: cap all clifv builds together. `scripts/memcap.sh` puts every
+   build scope in the systemd user slice `clifv.slice` (`FV_SLICE` overrides the name); give
+   that slice a total limit once:
+   ```
+   mkdir -p ~/.config/systemd/user
+   printf '[Slice]\nMemoryAccounting=yes\nMemoryHigh=96G\nMemoryMax=100G\nMemorySwapMax=0\n' \
+       > ~/.config/systemd/user/clifv.slice
+   systemctl --user daemon-reload && systemctl --user start clifv.slice
+   ```
+   Then a runaway build kills a clifv module (the serial scheduler retries it) instead of the
+   kernel's OOM killer picking any process on the machine. Without the unit file the slice has
+   no limit and each build is capped only by its own `FV_MEMCAP`.
 
 ## Usage
 
