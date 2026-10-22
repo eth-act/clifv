@@ -1,14 +1,20 @@
 import FV.Link.ExeT
 import FV.Link.DeadCleanupExeT
 import FV.E2E.LinkScopeInputT
+import FV.E2E.LinkScopeInputCleanupT
 import FV.E2E.TypedRulesProg
 import FVTest.Link.FloatExeT
 import FVTest.E2E.FloatTotalT
+import FVTest.E2E.FloatCleanupTotalT
 
 -- S11e5 Stage C (#35): the typed scope (float data movement, float parameters and returns)
 #print axioms E2E.typedRules_program
 #print axioms E2E.LinkCheck.pipeT_okT
 #print axioms E2E.LinkCheck.resultsT_ok_inT
+#print axioms E2E.LinkCheck.pipeCleanupT_okT
+#print axioms E2E.LinkCheck.resultsCleanupT_ok_inT
+#print axioms E2E.LinkCheck.resultsCleanupT_ok_input
+#print axioms E2E.backend_total_emit_cleanupT
 #print axioms E2E.LinkCheck.inScopeInT_of_inScopeIn
 #print axioms E2E.LinkCheck.inScopePT_of_inScopeP
 #print axioms E2E.LinkCheck.outOkT_of_inScopeP
@@ -30,3 +36,5 @@ import FVTest.E2E.FloatTotalT
 #print axioms E2E.FloatExeTWitness.correct_peakT_spec -- witness: native_decide
 #print axioms E2E.FloatExeTWitness.correctT_specC -- witness: native_decide
 #print axioms E2E.FloatExeTWitness.viaT_baseline -- witness: native_decide
+#print axioms FloatCleanupTotalT.pipeCleanupT_okT_w
+#print axioms FloatCleanupTotalT.resultsCleanupT_ok_inT_w -- witness: native_decide
