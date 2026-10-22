@@ -60,7 +60,7 @@ theorem indSigsA : indSigs fA = [] := List.isEmpty_iff.mp checksA.2.2.2.1
 /-- **`fA` is in the subset for every program** (it calls nothing). -/
 theorem inSubsetA (p : Clif.Program) : InSubset p fA := by
   have hv := checksA.2.2.2.2.1
-  simp only [verifiable, abiSigs, indSigsOk, Bool.and_eq_true, List.all_eq_true,
+  simp only [verifiable, abiSigs, indSigsAbiOk, Bool.and_eq_true, List.all_eq_true,
     decide_eq_true_eq, and_assoc] at hv
   obtain ⟨hE, hf, hext, hind⟩ := hv
   have hno : ∀ fn e, fA.extern? fn = some e → False := fun fn e he => by

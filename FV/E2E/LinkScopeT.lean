@@ -97,7 +97,8 @@ theorem inSubsetT_of_fnScopeT {g : Clif.Function} (h : fnScopeTB g = true) (p : 
     exact Clif.Program.bare_func? _ _
   · intro sig hs
     have := List.all_eq_true.mp hind sig hs
-    simpa [Bool.and_eq_true, decide_eq_true_eq] using this
+    simp only [Bool.and_eq_true, decide_eq_true_eq] at this
+    exact this.2
 
 /-- **The allocation the backend lowers is `AllocChecked`** for a function in the typed input
 scope, whatever the untrusted allocator answered (slice 6's `allocChecked_allocResultT`, its
