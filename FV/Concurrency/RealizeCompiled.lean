@@ -222,4 +222,63 @@ theorem realizes_compiled {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Na
           exact hdisj i hi' j hj e _ y hy (by rw [hd]; exact hF) (hl ▸ hP))
   exact ⟨PC, φ, hPn.trans hn, fun i _ => hs0 i, hruns, hreal⟩
 
+/-! ## Executions without reads -/
+
+/-- A strict total order on program events (initial writes first, then thread, step, event). -/
+def PEvLt : PEv → PEv → Prop
+  | .init q, .init q' => q < q'
+  | .init _, .thr .. => True
+  | .thr .., .init _ => False
+  | .thr i j k, .thr i' j' k' => i < i' ∨ (i = i' ∧ (j < j' ∨ (j = j' ∧ k < k')))
+
+/-- Coherence of an execution of `P` without initial locations: the writes of a location in
+`PEvLt` order. -/
+def coW {σ K : Type} (P : Traces σ K BVal) (a b : PEv) : Prop :=
+  (P.exec [] (fun _ _ => False) (fun _ _ => False) (fun _ _ => False)).dir a = .W ∧
+  (P.exec [] (fun _ _ => False) (fun _ _ => False) (fun _ _ => False)).dir b = .W ∧
+  (P.exec [] (fun _ _ => False) (fun _ _ => False) (fun _ _ => False)).loc a =
+    (P.exec [] (fun _ _ => False) (fun _ _ => False) (fun _ _ => False)).loc b ∧ PEvLt a b
+
+/-- **Traces without reads have a well-formed execution**: no initial locations, no `rf`, no
+`rmw`, the writes of each location in `PEvLt` order. -/
+theorem wf_noReads {σ K : Type} (P : Traces σ K BVal)
+    (hR : ∀ e x, P.evAt e = some x → x.dir ≠ .R) :
+    (P.exec [] (fun _ _ => False) (coW P) (fun _ _ => False)).Wf where
+  po_irrefl a := PEv.po_irrefl a
+  po_trans _ _ _ := PEv.po_trans
+  po_tid _ _ := PEv.po_tid
+  po_total _ _ := PEv.po_total
+  rf_dir _ _ h := h.elim
+  rf_loc _ _ h := h.elim
+  rf_func _ _ _ h := h.elim
+  rf_total b h := by
+    exfalso
+    cases b with
+    | init q => simp [Traces.exec] at h
+    | thr i j k =>
+      simp only [Traces.exec] at h
+      split at h
+      · exact hR _ _ (by assumption) h
+      · cases h
+  co_dir _ _ h := ⟨h.1, h.2.1⟩
+  co_loc _ _ h := h.2.2.1
+  co_irrefl a h := by
+    have := h.2.2.2
+    cases a <;> simp [PEvLt] at this
+  co_trans a b c h1 h2 := ⟨h1.1, h2.2.1, h1.2.2.1.trans h2.2.2.1, by
+    have e1 := h1.2.2.2
+    have e2 := h2.2.2.2
+    cases a <;> cases b <;> cases c <;> simp only [PEvLt] at e1 e2 ⊢ <;> omega⟩
+  co_total a b ha hb hl hne := by
+    have : PEvLt a b ∨ PEvLt b a := by
+      cases a <;> cases b <;> simp only [PEvLt, ne_eq, PEv.init.injEq, PEv.thr.injEq,
+        reduceCtorEq, not_false_eq_true, true_or, or_true] at hne ⊢ <;> omega
+    rcases this with h | h
+    · exact .inl ⟨ha, hb, hl, h⟩
+    · exact .inr ⟨hb, ha, hl.symm, h⟩
+  rmw_dir _ _ h := h.elim
+  rmw_loc _ _ h := h.elim
+  rmw_po _ _ h := h.elim
+  rmw_imm _ _ _ h := h.elim
+
 end Concurrency.RealizeCompiled
