@@ -812,4 +812,140 @@ theorem relocOkB_of {B : Bnd} {al4 : SecId → Bool} {ty : Nat} {k : Tgt} {A pLo
       | _ => simp at hc
     · cases hc
 
+/-! ## The pieces' relocations -/
+
+theorem list_foldlM_inv {α β ε : Type} {f : β → α → Except ε β} {I : β → Prop} {l : List α}
+    (hstep : ∀ b a b', a ∈ l → I b → f b a = .ok b' → I b') :
+    ∀ (init res : β), I init → l.foldlM f init = .ok res → I res := by
+  induction l with
+  | nil => intro init res hi h; cases h; exact hi
+  | cons a l ih =>
+    intro init res hi h
+    rw [List.foldlM_cons] at h
+    cases h1 : f init a with
+    | error e => rw [h1] at h; cases h
+    | ok b =>
+      rw [h1] at h
+      exact ih (fun b x b' hx => hstep b x b' (List.mem_cons_of_mem _ hx)) b res
+        (hstep init a b (List.mem_cons_self ..) hi h1) h
+
+theorem array_foldlM_inv {α β ε : Type} {f : β → α → Except ε β} {I : β → Prop} {l : Array α}
+    (hstep : ∀ b a b', a ∈ l → I b → f b a = .ok b' → I b') (init res : β) (hi : I init)
+    (h : l.foldlM f init = .ok res) : I res := by
+  rw [← Array.foldlM_toList] at h
+  exact list_foldlM_inv (fun b a b' ha => hstep b a b' (Array.mem_toList_iff.1 ha)) init res hi h
+
+theorem place_size_ge {dest b : ByteArray} {o : Nat} (h : o ≤ dest.size) : dest.size ≤ (place dest o b).size := by
+  have h' : o ≤ dest.data.size := h
+  show dest.data.size ≤ (place dest o b).data.size
+  simp only [place, ByteArray.copySlice, Array.size_append, Array.size_extract]
+  omega
+
+/-- A relocation of the output `.eh_frame`: a kept record's relocation at its place. -/
+def EhRelOf (L : Lay) (o : Opts) (st : St) (g : GcOut) (rel : Rel) : Prop :=
+  ∃ e ∈ L.ehs.toList, ∃ r ∈ (ehRelas g e).toList, rel.off = e.out + (r.off - e.piece.off) ∧ rel.ty = r.type ∧
+    L.relIn o st g e.file r (L.ehAddr + e.out + (r.off - e.piece.off)) = .ok rel.ri
+
+/-- **The output `.eh_frame`**: at least its size, its relocations the kept records'. -/
+theorem ehOut_spec {L : Lay} {o : Opts} {st : St} {g : GcOut} (hout : ∀ e ∈ L.ehs, e.out ≤ L.ehTotal)
+    {res : ByteArray × Array Rel × Array (Nat × Nat)} (h : L.ehOut o st g = .ok res) :
+    L.ehTotal ≤ res.1.size ∧ ∀ rel ∈ res.2.1.toList, EhRelOf L o st g rel := by
+  unfold Lay.ehOut at h
+  refine array_foldlM_inv (I := fun acc => L.ehTotal ≤ acc.1.size ∧ ∀ rel ∈ acc.2.1.toList, EhRelOf L o st g rel)
+    (fun acc e acc' he hi hstep => ?_) _ _ ⟨by simp [ByteArray.size], by simp⟩ h
+  unfold Lay.ehRec at hstep
+  split at hstep
+  · simp only [pure, Except.pure, Except.ok.injEq] at hstep; subst hstep; exact hi
+  · rename_i es hes
+    simp only [bind, Except.bind] at hstep
+    split at hstep
+    · cases hstep
+    · rename_i rt hrt
+      simp only [pure, Except.pure, Except.ok.injEq] at hstep
+      subst hstep
+      refine ⟨Nat.le_trans hi.1 (place_size_ge (Nat.le_trans (hout e he) hi.1)), ?_⟩
+      refine array_foldlM_inv (I := fun a => ∀ rel ∈ a.1.toList, EhRelOf L o st g rel)
+        (fun b r b' hr hb hst => ?_) _ _ hi.2 hrt
+      unfold Lay.ehRel at hst
+      simp only [bind, Except.bind] at hst
+      split at hst
+      · cases hst
+      · rename_i ri hri
+        have hnew : ∀ rel ∈ (b.1.push { off := e.out + (r.off - e.piece.off), ty := r.type, ri }).toList,
+            EhRelOf L o st g rel := by
+          intro rel hrel
+          simp only [Array.toList_push, List.mem_append, List.mem_singleton] at hrel
+          rcases hrel with hrel | rfl
+          · exact hb rel hrel
+          · exact ⟨e, Array.mem_toList_iff.2 he, r, by unfold ehRelas; rw [hes]; exact Array.mem_toList_iff.2 hr,
+              rfl, rfl, hri⟩
+        split at hst
+        · split at hst
+          · cases hst
+          · simp only [pure, Except.pure, Except.ok.injEq] at hst; subst hst; exact hnew
+        · simp only [pure, Except.pure, Except.ok.injEq] at hst; subst hst; exact hnew
+
+theorem mod4_of {a m : Nat} (h1 : a % m = 0) (h2 : m % 4 = 0) : a % 4 = 0 :=
+  Nat.mod_eq_zero_of_dvd (Nat.dvd_trans (Nat.dvd_of_mod_eq_zero h2) (Nat.dvd_of_mod_eq_zero h1))
+
+section
+variable {o : Opts} {st : St} {g : GcOut}
+
+/-- **A resolved relocation passing the checks is in its type's range.** -/
+theorem relIn_relocOkB (hf : LFacts o st g) (hd : dOkB (layDecide st g) (layPre o st g).sorted = true)
+    {fi : Nat} {r : Rela} {P : Nat} {ri : RelIn} (h : (layPre o st g).relIn o st g fi r P = .ok ri)
+    {k : Tgt} (hk : tgtOf st g (layPre o st g).sorted fi r.sym = some k) {pLo pHi : Int}
+    {same : Option (SecId × Nat)} {pal4 : Bool}
+    (hc : relCheckB (bndOf o st g) (al4B st.files) r.type k r.addend pLo pHi same pal4 = true)
+    (hP : pLo ≤ P ∧ P ≤ pHi)
+    (hsame : ∀ t off, same = some (t, off) → P = (layPre o st g).secAddr[t.1]![t.2]! + off)
+    (hp4 : pal4 = true → P % 4 = 0) : relocOkB r.type ri = true := by
+  have hb : o.base ≤ (bndOf o st g).top := by show o.base ≤ o.base + _ + _; omega
+  obtain ⟨-, -, hgs, -⟩ := dOk_parts hd
+  unfold Lay.relIn at h
+  simp only [bind, Except.bind] at h
+  split at h
+  · cases h
+  rename_i Su hv
+  obtain ⟨S, uw⟩ := Su
+  simp only [pure, Except.pure, Except.ok.injEq] at h
+  subst h
+  have hval := value_in hf hd hb hk hv
+  -- the GOT slot's address
+  have hG : (0 : Int) ≤ (((layPre o st g).gotSlot[gotKey st.files fi r.sym]?.map fun k =>
+      ((layPre o st g).partAddr.getD "got" 0 + 8 * k : Nat)).getD 0 : Nat) ∧
+      ((((layPre o st g).gotSlot[gotKey st.files fi r.sym]?.map fun k =>
+      ((layPre o st g).partAddr.getD "got" 0 + 8 * k : Nat)).getD 0 : Nat) : Int) ≤
+        (bndOf o st g).top + 8 * (bndOf o st g).got := by
+    refine ⟨by omega, ?_⟩
+    cases hgk : (layPre o st g).gotSlot[gotKey st.files fi r.sym]? with
+    | none => simp
+    | some k' =>
+      have := hgs _ _ hgk
+      have := partAddr_le hf "got"
+      have hgot : (bndOf o st g).got = (layDecide st g).gotSyms.size := rfl
+      simp only [Option.map_some, Option.getD_some]
+      push_cast; omega
+  have htpb : (16 : Int) ≤ (alignUp 16 (layPre o st g).pst.tls.2.2.2.2 : Nat) ∧
+      ((alignUp 16 (layPre o st g).pst.tls.2.2.2.2 : Nat) : Int) ≤ 16 + (bndOf o st g).TD := by
+    have h1 := le_alignUp 16 (layPre o st g).pst.tls.2.2.2.2
+    have h2 := alignUp_le 16 (layPre o st g).pst.tls.2.2.2.2
+    have h3 := (hf.ti.start rfl).2.2
+    constructor <;> push_cast <;> omega
+  have := relocOkB_of hc hval (Int.ofNat_le.2 hP.1 |>.trans' (by omega) |> fun _ => hP) hG htpb
+    (fun t x hkt => ?_) (fun h4 => by have := hp4 h4; omega)
+  · convert this using 2
+    simp only [adjS]
+    push_cast
+    rfl
+  · subst hkt
+    obtain ⟨h1, h2, hS, hx, hb', htop, hal⟩ := value_img hf hk hv
+    refine ⟨((layPre o st g).secAddr[t.1]![t.2]! : Int), by rw [hS]; push_cast; rfl, by exact_mod_cast hb',
+      by have := hx; push_cast; omega, fun ha => ?_, fun off hso => by rw [hsame t off hso]; push_cast; rfl⟩
+    simp only [al4B, beq_iff_eq, getElem!_pos st.files t.1 h1, getElem!_pos st.files[t.1].secs t.2 h2] at ha
+    have := mod4_of hal ha
+    omega
+
+end
+
 end Link.Ld
