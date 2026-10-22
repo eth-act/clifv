@@ -19,6 +19,7 @@ import FV.E2E.LegalProgXWitness
 import FV.Front.RawExeUnwindSrcWitness
 import FV.Link.OptExeUnwindWitness
 import FV.Link.UnwFnsCompleteWitness
+import FV.Link.ExeUnwindExecWitness
 
 #print axioms Backend.Proof.UnwindTables.uleb?_uleb
 #print axioms Backend.Proof.UnwindTables.sleb?_sleb
@@ -157,3 +158,21 @@ import FV.Link.UnwFnsCompleteWitness
 #print axioms Link.EhCheck.Complete.handlersOk_of_tryInfo
 #print axioms Link.EhCheck.Complete.padsOk_of_tryInfo
 #print axioms Link.EhCheck.Complete.Witness.tryInfo_applies -- witness: native_decide
+#print axioms E2E.DeadCleanupExecBytes.walk_det
+#print axioms E2E.DeadCleanupExecBytes.machU_uSys
+#print axioms E2E.DeadCleanupExecBytes.unwindAt_sim
+#print axioms E2E.DeadCleanupExecBytes.unwFrame_call
+#print axioms E2E.DeadCleanupExecBytes.base_out
+#print axioms E2E.DeadCleanupExecBytes.prog_out
+#print axioms E2E.DeadCleanupExecBytes.act_simU
+#print axioms E2E.DeadCleanupExecBytes.ExecRefinesU.toExec
+#print axioms E2E.DeadCleanupExecBytes.exec_of_modelU
+#print axioms Link.DeadCleanup.exec_of_armU
+#print axioms Link.DeadCleanup.compileExe_correct_unwind_exec_of_good
+#print axioms Link.DeadCleanup.compileExe_correct_unwind_exec_peak_of_good
+#print axioms Link.DeadCleanup.compileExeOpt_correct_unwind_exec_peak_of_good
+#print axioms Link.DeadCleanup.UnwindExecWitness.exec_applies -- witness: native_decide
+#print axioms Link.DeadCleanup.UnwindExecWitness.opt_exec_applies -- witness: native_decide
+#print axioms Link.DeadCleanup.UnwindExecWitness.frame_continues -- witness: native_decide
+#print axioms Link.DeadCleanup.UnwindExecWitness.frame_eq -- witness: native_decide
+#print axioms Link.DeadCleanup.UnwindExecWitness.walk_out -- witness: native_decide
