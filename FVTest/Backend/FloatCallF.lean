@@ -1,5 +1,7 @@
 import FVTest.Backend.FloatCtlRulesT
 import FV.Backend.Proof.IselCtlCallF
+import FV.Backend.Proof.SpillInstCheck
+import FV.Backend.SpillAlloc
 
 /-!
 Non-vacuity of the typed `call` family with `f32`/`f64` arguments and returns (S11e6, #419):
@@ -12,7 +14,8 @@ Non-vacuity of the typed `call` family with `f32`/`f64` arguments and returns (S
 * `fCallStk` calls `%h` with nine `f64` arguments: the ninth is stored by `str d` at `[sp]`
   (`stackArgStore` of a float vreg) and the call returns an `f32` from v0.
 
-`callRulesCorrectTFP_program` applies to both (`callF_roots_apply`).
+`callRulesCorrectTFP_program` applies to both (`callF_roots_apply`). Their prepared code passes
+`ctlSpillB` and `lowerRFunc`'s control-form check `ctlCheck` (spill allocation).
 `lake build FVTest.Backend.FloatCallF`.
 -/
 
@@ -73,6 +76,20 @@ def callsOf (ms : List MInst) : List CallInfo :=
   ci.defs.map (·.1) == [.v 0] && ci.defs.all (·.2.homeCls == .float)
 -- `CtxInvT` fails on both (a `call` argument of float type), `CallCtxT` holds
 #guard !ctxOkT fCallF (ctxStOf fCallF).1 && !ctxOkT fCallStk (ctxStOf fCallStk).1
+
+/-- The prepared VCode of `f` (`default` if lowering or `prepare` fails). -/
+def vcpOf (f : Clif.Function) : VCode :=
+  match lowerFunction f >>= prepare with
+  | .ok vcp => vcp
+  | .error _ => default
+
+-- the control forms of the prepared code meet `SpillInstOk` (`ctlSpillB`: the call's fixed uses
+-- and defs are allocatable registers of their vregs' classes), and the control-form check
+-- `ctlCheck` inside `lowerRFunc` accepts the spill allocation
+#guard (lowerFunction fCallF >>= prepare).toBool && (lowerFunction fCallStk >>= prepare).toBool
+#guard Spill.ctlSpillB (vcpOf fCallF) && Spill.ctlSpillB (vcpOf fCallStk)
+#guard (lowerRFunc (vcpOf fCallF) (spillAlloc (vcpOf fCallF))).toBool
+#guard (lowerRFunc (vcpOf fCallStk) (spillAlloc (vcpOf fCallStk))).toBool
 
 theorem callCtx_fCallF : CallCtxT fCallF (ctxStOf fCallF).1 := callCtxOkB_sound (by native_decide)
 

@@ -587,7 +587,7 @@ data, result types and class-aware registers, `CtxInvT.toCallCtx`), because `Ctx
 integer-argument family over `CtxT` is an instance. Witnesses `FVTest/Backend/FloatCallF.lean`:
 `fCallF` (`%g(f64, i64, f32) -> f64`: uses v0, x0, v1, def v0 into a float vreg) and `fCallStk`
 (nine `f64` arguments, the ninth `str d` at `[sp]`, an `f32` return), both `CallCtxT` and not
-`CtxInvT`. Open (next slices): typed `try_call` (`tryRegsOf`/`gen_try_call_rets` by class, a
+`CtxInvT`; their prepared code passes `ctlSpillB` and `lowerRFunc` (`ctlCheck`). Open (next slices): typed `try_call` (`tryRegsOf`/`gen_try_call_rets` by class, a
 typed `LowerTryOk`), `call_indirect`/`try_call_indirect` (`sigIntB`), and plugging the families
 into the typed chain (`CtxInvT`'s `intArgs` without the `call` arguments, extern signatures
 `sigET` in the typed scope with an argument-class check).
