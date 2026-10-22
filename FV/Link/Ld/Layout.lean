@@ -83,7 +83,7 @@ inductive Part where
   | eh
   | ehHdr
   | common (f k : Nat)
-  deriving Inhabited, Repr, BEq
+  deriving Inhabited, Repr, BEq, DecidableEq
 
 /-- An output section being laid out. -/
 structure OSec where
@@ -109,7 +109,8 @@ slot's address and file offset and at most its size, so that the plan's own cond
 (`Plan.okB`) hold by construction (`FV/Link/Ld/LayoutProof.lean`). -/
 
 /-- A placed part: the part, its address and file offset, its size, its output section's index
-(from `1`), and whether that output section has file bytes. -/
+(from `1`), whether that output section has file bytes and whether it is thread-local
+(`.tdata`, `.tbss`). -/
 structure Slot where
   part : Part
   addr : Nat
@@ -117,6 +118,7 @@ structure Slot where
   size : Nat
   out : Nat
   bits : Bool
+  tls : Bool
   deriving Inhabited
 
 /-- The placement's state: the output sections and closed segments so far, the address and
@@ -153,13 +155,13 @@ def PSt.seg (s : PSt) : Seg :=
 
 /-- The parts of an output section placed from address `a`, each aligned (`al`) and of size
 `sz`; a part at `b` has file offset `soff + (b - start)`. -/
-def placeParts (sz al : Part → Nat) (start soff out : Nat) (bits : Bool) :
+def placeParts (sz al : Part → Nat) (start soff out : Nat) (bits tl : Bool) :
     Nat → List Part → Array Slot → Nat × Array Slot
   | a, [], acc => (a, acc)
   | a, p :: ps, acc =>
     let b := alignUp a (al p)
-    placeParts sz al start soff out bits (b + sz p) ps
-      (acc.push { part := p, addr := b, fo := soff + (b - start), size := sz p, out, bits })
+    placeParts sz al start soff out bits tl (b + sz p) ps
+      (acc.push { part := p, addr := b, fo := soff + (b - start), size := sz p, out, bits, tls := tl })
 
 /-- A new segment of kind `k`, in a fresh 64 KiB page, when the kind changes (the open one
 closed). -/
@@ -181,7 +183,8 @@ def placeIn (sz al : Part → Nat) (nb : Part → Bool) (tlsAlign : Nat) (st : P
   let nobits := tbss || s.name == ".bss" || s.parts.all nb
   let start := if tbss then alignUp st.tbssVa a0 else alignUp st.va a0
   let soff := if tbss then st.off else st.off + (start - st.va)
-  let r := placeParts sz al start soff (st.outs.size + 1) (!nobits) start s.parts.toList st.slots
+  let r := placeParts sz al start soff (st.outs.size + 1) (!nobits) (tdata || tbss) start s.parts.toList
+    st.slots
   let a := r.1
   let size := a - start
   let flags := (if s.seg == 2 || tdata || tbss then shfWrite else 0) |||
@@ -411,30 +414,36 @@ variable (L : Lay) (o : Opts) (st : St) (g : GcOut)
 def outRange (n : String) : Option (Nat × Nat) :=
   (L.pst.outs.find? (·.name == n)).map fun s => (s.addr, s.addr + s.size)
 
-/-- The values of the linker-defined symbols with fixed names. -/
-def synthFixed (n : String) : Option Nat :=
+/-- An array section's bound (`e`: its end), the end of the file bytes without one. -/
+def arrBound (k : String) (e : Bool) : Nat :=
+  let lastSeg := L.segs.getLastD default
+  match L.outRange k with
+  | some (a, b) => if e then b else a
+  | none => lastSeg.vaddr + lastSeg.filesz
+
+/-- The linker-defined symbols with fixed names and their values. -/
+def synthTable : List (String × Option Nat) :=
   let lastSeg := L.segs.getLastD default
   let textEnd := ((L.segs.find? (·.kind == 1)).map fun s => s.vaddr + s.memsz).getD 0
   let dataEnd := lastSeg.vaddr + lastSeg.filesz
-  let arr (k : String) (e : Bool) : Nat := match L.outRange k with
-    | some (a, b) => if e then b else a
-    | none => dataEnd
-  match n with
-  | "__init_array_start" => some (arr ".init_array" false)
-  | "__init_array_end" => some (arr ".init_array" true)
-  | "__fini_array_start" => some (arr ".fini_array" false)
-  | "__fini_array_end" => some (arr ".fini_array" true)
-  | "__preinit_array_start" => some (arr ".preinit_array" false)
-  | "__preinit_array_end" => some (arr ".preinit_array" true)
-  | "_end" | "end" | "__end" => some (lastSeg.vaddr + lastSeg.memsz)
-  | "_etext" | "etext" | "__etext" => some textEnd
-  | "_edata" | "edata" => some dataEnd
-  | "__bss_start" => some ((L.outRange ".bss").elim dataEnd (·.1))
-  | "__ehdr_start" | "__executable_start" => some o.base
-  | "_GLOBAL_OFFSET_TABLE_" => some (L.partAddr.getD "got" 0)
-  | "__eh_frame_start" => L.partAddr["eh"]?
-  | "__eh_frame_hdr_start" => L.partAddr["ehHdr"]?
-  | _ => none
+  let theEnd := lastSeg.vaddr + lastSeg.memsz
+  [("__init_array_start", some (L.arrBound ".init_array" false)),
+   ("__init_array_end", some (L.arrBound ".init_array" true)),
+   ("__fini_array_start", some (L.arrBound ".fini_array" false)),
+   ("__fini_array_end", some (L.arrBound ".fini_array" true)),
+   ("__preinit_array_start", some (L.arrBound ".preinit_array" false)),
+   ("__preinit_array_end", some (L.arrBound ".preinit_array" true)),
+   ("_end", some theEnd), ("end", some theEnd), ("__end", some theEnd),
+   ("_etext", some textEnd), ("etext", some textEnd), ("__etext", some textEnd),
+   ("_edata", some dataEnd), ("edata", some dataEnd),
+   ("__bss_start", some ((L.outRange ".bss").elim dataEnd (·.1))),
+   ("__ehdr_start", some o.base), ("__executable_start", some o.base),
+   ("_GLOBAL_OFFSET_TABLE_", some (L.partAddr.getD "got" 0)),
+   ("__eh_frame_start", L.partAddr["eh"]?),
+   ("__eh_frame_hdr_start", L.partAddr["ehHdr"]?)]
+
+/-- The values of the linker-defined symbols with fixed names (`synthTable`). -/
+def synthFixed (n : String) : Option Nat := ((L.synthTable o).lookup n).join
 
 /-- **The values of the linker-defined symbols**: `__start_X`/`__stop_X` (the output section
 `X`'s bounds), the fixed names (`synthFixed`; none of them starts with `__start_` or

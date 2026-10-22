@@ -97,17 +97,56 @@ theorem list_mapM_ok {α β ε : Type} {f : α → Except ε β} :
 
 /-! ## The placement's output sections and parts -/
 
-theorem placeParts_mem (sz al : Part → Nat) (start soff out : Nat) (bits : Bool) :
+theorem alignUp_le (n a : Nat) : alignUp n a ≤ n + a := by
+  unfold alignUp
+  have h := Nat.div_mul_le_self (n + max a 1 - 1) (max a 1)
+  have : max a 1 - 1 ≤ a := by omega
+  omega
+
+theorem alignUp_dvd (n a : Nat) : alignUp n a % max a 1 = 0 := by
+  unfold alignUp; exact Nat.mul_mod_left _ _
+
+/-- **The parts placed** lie between the start and the end reached, aligned, at their sizes,
+with the section's output index and flags. -/
+theorem placeParts_mem (sz al : Part → Nat) (start soff out : Nat) (bits tl : Bool) :
     ∀ (ps : List Part) (a : Nat) (acc : Array Slot) (x : Slot),
-      x ∈ (placeParts sz al start soff out bits a ps acc).2.toList → x ∈ acc.toList ∨ x.part ∈ ps
+      x ∈ (placeParts sz al start soff out bits tl a ps acc).2.toList → x ∈ acc.toList ∨
+        (x.part ∈ ps ∧ x.tls = tl ∧ x.out = out ∧ x.bits = bits ∧ a ≤ x.addr ∧
+          x.addr % max (al x.part) 1 = 0 ∧ x.size = sz x.part ∧
+          x.addr + x.size ≤ (placeParts sz al start soff out bits tl a ps acc).1)
   | [], _, _, _, h => .inl h
   | p :: ps, a, acc, x, h => by
-    rcases placeParts_mem sz al start soff out bits ps _ _ x h with h | h
+    have hb := le_alignUp a (al p)
+    have he := placeParts_end sz al start soff out bits tl ps (alignUp a (al p) + sz p)
+      (acc.push (Slot.mk p (alignUp a (al p)) (soff + (alignUp a (al p) - start)) (sz p) out bits tl))
+    rcases placeParts_mem sz al start soff out bits tl ps _ _ x h with h | h
     · simp only [Array.toList_push, List.mem_append, List.mem_singleton] at h
       rcases h with h | rfl
       · exact .inl h
-      · exact .inr (List.mem_cons_self ..)
-    · exact .inr (List.mem_cons_of_mem _ h)
+      · refine .inr ⟨List.mem_cons_self .., rfl, rfl, rfl, hb, alignUp_dvd _ _, rfl, ?_⟩
+        simp only [placeParts]; exact he
+    · obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := h
+      exact .inr ⟨List.mem_cons_of_mem _ h1, h2, h3, h4, by omega, h6, h7, h8⟩
+where
+  placeParts_end (sz al : Part → Nat) (start soff out : Nat) (bits tl : Bool) :
+      ∀ (ps : List Part) (a : Nat) (acc : Array Slot), a ≤ (placeParts sz al start soff out bits tl a ps acc).1
+    | [], _, _ => Nat.le_refl _
+    | p :: ps, a, acc => by
+      have := placeParts_end sz al start soff out bits tl ps (alignUp a (al p) + sz p)
+        (acc.push (Slot.mk p (alignUp a (al p)) (soff + (alignUp a (al p) - start)) (sz p) out bits tl))
+      have := le_alignUp a (al p)
+      simp only [placeParts]; omega
+
+/-- The end reached: at most the start and every part's alignment and size. -/
+theorem placeParts_bound (sz al : Part → Nat) (start soff out : Nat) (bits tl : Bool) :
+    ∀ (ps : List Part) (a : Nat) (acc : Array Slot),
+      (placeParts sz al start soff out bits tl a ps acc).1 ≤ a + (ps.map fun p => al p + sz p).sum
+  | [], _, _ => by simp [placeParts]
+  | p :: ps, a, acc => by
+    have := placeParts_bound sz al start soff out bits tl ps (alignUp a (al p) + sz p)
+      (acc.push (Slot.mk p (alignUp a (al p)) (soff + (alignUp a (al p) - start)) (sz p) out bits tl))
+    have := alignUp_le a (al p)
+    simp only [placeParts, List.map_cons, List.sum_cons]; omega
 
 /-- The placement's output sections are the sections placed, in order; its parts are theirs. -/
 theorem foldl_placeSec (sz al : Part → Nat) (nb : Part → Bool) (ta : Nat) :
@@ -123,11 +162,11 @@ theorem foldl_placeSec (sz al : Part → Nat) (nb : Part → Bool) (ta : Nat) :
       split <;> simp
     · rcases h2 x hx with h | ⟨t, ht, hp⟩
       · simp only [placeSec, placeIn] at h
-        rcases placeParts_mem _ _ _ _ _ _ _ _ _ x h with h | h
+        rcases placeParts_mem _ _ _ _ _ _ _ _ _ _ x h with h | h
         · left
           unfold PSt.openSeg at h
           split at h <;> exact h
-        · exact .inr ⟨s, List.mem_cons_self .., Array.mem_toList_iff.1 h⟩
+        · exact .inr ⟨s, List.mem_cons_self .., Array.mem_toList_iff.1 h.1⟩
       · exact .inr ⟨t, List.mem_cons_of_mem _ ht, hp⟩
 
 theorem layPre_outs (o : Opts) (st : St) (g : GcOut) :
@@ -173,7 +212,7 @@ theorem synth_some {L : Lay} {o : Opts} {n : String}
   simp only [h1, h2, Bool.false_eq_true, ↓reduceIte, synthNames, List.contains_iff_mem, List.mem_cons,
     List.mem_nil_iff, or_false] at h
   rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-    rfl | rfl | rfl <;> simp [Lay.synthFixed]
+    rfl | rfl | rfl <;> simp [Lay.synthFixed, Lay.synthTable, List.lookup]
 
 theorem value_ok {L : Lay} {o : Opts} {st : St} {g : GcOut} {fi j : Nat}
     (h : refOkB st g (L.pst.outs.toList.map (·.name)) fi j = true) :
