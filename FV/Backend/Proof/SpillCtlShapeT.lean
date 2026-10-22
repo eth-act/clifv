@@ -1,6 +1,9 @@
 import FV.Backend.Proof.SpillCtlPipe
 import FV.Backend.Proof.SpillCtlFormsT
 import FV.Backend.Proof.LowerLoopCtxT
+import FV.Backend.Proof.LowerDecide
+import FV.Compile.StoreTyped
+import FV.Compile.SelectTyped
 
 /-!
 # Control shapes of the typed lowering (S11 #35)
@@ -13,7 +16,9 @@ The typed lowering emits the control forms of the integer one (`CtlShape`) and, 
   `spillInstOk_of_ctlShapeT`: it meets `SpillInstOk` (`spillInstOk_retsC`).
 * `CtlSinceT`: `CtlSince` with `CtlShapeT`.
 * `rets_shapeT`: `gen_return`'s `Rets` of vregs has its shape.
-* `IselCtlHypT`: `IselCtlHyp` over the typed scope (`LowerScopeT`), with `CtlSinceT`.
+* `IselCtlHypT`: `IselCtlHyp` over the typed scope (`LowerScopeT`, with the typed coverage
+  analysis' input conditions: `dominatedB`, class-checked `store`s and `select`s), with
+  `CtlSinceT`; its terminator clause is restricted to `f`'s terminators.
 -/
 
 namespace Backend.Proof.Spill
@@ -104,15 +109,17 @@ theorem rets_shapeT (N : Nat) {rs ps : List Reg} (hv : ∀ r ∈ rs, ∃ n c, r 
 /-! ## The typed ISLE inversion -/
 
 /-- **`IselCtlHyp` over the typed scope**: every ISLE run of the driver, on `LowerScopeT`
-input, emits only control forms of the typed shapes `CtlShapeT`. -/
+input with class-checked `store`s and `select`s, emits only control forms of the typed shapes
+`CtlShapeT`. -/
 def IselCtlHypT : Prop :=
   ∀ (f : Clif.Function) (ctx : Ctx) (ranges : Array (Nat × Nat)) (st0 : LState),
-    Dominated f → LowerScopeT f → AbiSigsOk f → buildCtx f = .ok (ctx, ranges, st0) →
+    dominatedB f = true → LowerScopeT f → Compile.storeTypedB f = true →
+    Compile.selectTypedB f = true → AbiSigsOk f → buildCtx f = .ok (ctx, ranges, st0) →
     (∀ ii info inst s out s' tr, ctx.insts[ii]? = some info → info.clif = some inst →
       ctx.valDef.size ≤ s.nextVreg →
       runTerm ctx "lower" [.inst ii] s = .ok (out, s', tr) → CtlSinceT ctx.valDef.size s s') ∧
     (∀ ti t data targets s out s' tr, ti < ctx.insts.size →
-      ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → t.isTry = false →
+      ctx.insts[ti]? = some ⟨.op .unit, [], [], none⟩ → t.isTry = false → (∃ B ∈ f.blocks, B.term = t) →
       termData (abiTerm f t) = .ok data → ctx.valDef.size ≤ s.nextVreg →
       termCallF ctx ti data t targets s = .ok (out, s', tr) → CtlSinceT ctx.valDef.size s s') ∧
     (∀ ti t et data sig items lo trs st1 targets out s' tr, ti < ctx.insts.size →
