@@ -27,3 +27,4 @@ import FV.E2E.StockMixedDivWitness
 #print axioms E2E.StockMixedDivNIWitness.source_cases -- witness: native_decide
 #print axioms E2E.StockMixedDivNIWitness.compiled_exists -- witness: native_decide
 #print axioms E2E.StockMixedDivNIWitness.source_entry
+#print axioms E2E.StockMixedDivNIWitness.outcomeAgrees_sound

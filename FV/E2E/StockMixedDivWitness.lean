@@ -1,9 +1,4 @@
-import FV.E2E.StockMixedDivFixtures
-import FV.E2E.StockHighMulWitness
-import FV.Backend.Proof.StockScalarMixedDivDomain
-import FV.E2E.CompiledSemanticNI
-import FV.Backend.LinearScan
-import FV.Backend.Lowering.StockScalarNI
+import FV.E2E.StockMixedDivChecks
 namespace E2E.StockMixedDivNIWitness
 open Backend Backend.Proof Backend.Proof.Driver Backend.Stock.D0
 set_option autoImplicit false
@@ -12,89 +7,6 @@ set_option maxRecDepth 100000
 set_option maxHeartbeats 10000000
 attribute [local irreducible] Isle.Aarch64.program Stock.runTerm
 
-private def checks (config : Configuration) (op : Clif.DivOp) (safe : Bool) (cleanup : Bool) : Bool :=
-  lowerScopeB (function config op safe) && dominatedB (function config op safe) && sigAbiOk (function config op safe).sig &&
-  match Stock.lower (function config op safe) with
-  | .error _ => false
-  | .ok result =>
-    !lowerCheck (function config op safe) result.code &&
-    DivBoundary.check (function config op safe).sig result.code &&
-    Stock.Scalar.check (function config op safe) result.code && SemanticNI.check (function config op safe) result.code &&
-    (match Stock.Scalar.lowerValidated (function config op safe) with
-      | .error _ => false
-      | .ok vc => decide (vc = result.code)) &&
-    match Backend.prepare (Stock.Arithmetic.stage cleanup result.code) with
-    | .error _ => false
-    | .ok vcp =>
-      prepCheck (Stock.Arithmetic.stage cleanup result.code) vcp &&
-      match leanAlloc vcp with
-      | .error _ => false
-      | .ok rf =>
-        (checkAlloc vcp rf).isOk &&
-        match lowerRFunc vcp rf with
-        | .error _ => false
-        | .ok af =>
-          match emitFunc 0 af with
-          | .error _ => false
-          | .ok fa => formsCoveredB ⟨fa.k,af.slotBase⟩ vcp && fa.layout.isOk
-
-/-- Concrete original inputs used only to witness actual source outcomes. -/
-private def caseInput (config : Configuration) (positive : Bool) : Nat → BitVec (valueType config).width :=
-  fun i => BitVec.ofNat _ (if positive then 2*i+1 else 0)
-
-private def caseWanted (config : Configuration) (op : Clif.DivOp) (safe positive : Bool) :=
-  let input := caseInput config positive
-  Clif.Sem.div op (StockHighMulNIWitness.resultValue config input) (if safe then 2 else input 8)
-
-private def caseRun (config : Configuration) (op : Clif.DivOp) (safe positive : Bool) : Clif.Outcome :=
-  Clif.runLoop Clif.Env.empty {funcs := []} ((function config op safe).blocks[0]!.body.length+1)
-    ⟨frame config op safe (caseInput config positive) 4096,[],Clif.Mem.empty⟩
-
-private def outcomeAgrees (ty : Clif.Ty) (wanted : Except Clif.TrapCode (BitVec ty.width))
-    (actual : Clif.Outcome) : Bool :=
-  match wanted,actual with
-  | .error code,.trapped observed => code == observed
-  | .ok bits,.returned vals _ => decide (vals = [⟨ty,bits⟩])
-  | _,_ => false
-
-private def sourceCases (config : Configuration) (op : Clif.DivOp) (safe : Bool) : Bool :=
-  outcomeAgrees (valueType config) (caseWanted config op safe false) (caseRun config op safe false) &&
-  outcomeAgrees (valueType config) (caseWanted config op safe true) (caseRun config op safe true)
-
-private theorem outcomeAgrees_sound {ty : Clif.Ty}
-    {wanted : Except Clif.TrapCode (BitVec ty.width)} {actual : Clif.Outcome}
-    (checked : outcomeAgrees ty wanted actual = true) :
-    match wanted with
-    | .error code => actual = .trapped code
-    | .ok bits => ∃ mem,actual = .returned [⟨ty,bits⟩] mem := by
-  cases wanted with
-  | error code =>
-    cases actual with
-    | trapped observed =>
-      change (code == observed) = true at checked
-      have equal : code = observed := beq_iff_eq.mp checked
-      cases equal
-      rfl
-    | returned vals mem => change false = true at checked; cases checked
-    | stuck message => change false = true at checked; cases checked
-    | outOfFuel => change false = true at checked; cases checked
-  | ok bits =>
-    cases actual with
-    | returned vals mem =>
-      change decide (vals = [Clif.Val.mk ty bits]) = true at checked
-      have equal : vals = [Clif.Val.mk ty bits] := of_decide_eq_true checked
-      subst vals
-      exact ⟨mem,rfl⟩
-    | trapped code => change false = true at checked; cases checked
-    | stuck message => change false = true at checked; cases checked
-    | outOfFuel => change false = true at checked; cases checked
-
-
-
-private def grid : Bool := configurations.all fun config => operations.all fun op =>
-  [false,true].all fun safe => sourceCases config op safe && checks config op safe false && checks config op safe true
--- witness: native_decide (ninety-six fixed actual pipeline configurations only)
-theorem checks_true : grid = true := by native_decide
 /-- Actual source returns/traps inhabit the universal domain and all live
 prefix families. These are fixed witness inputs; the source domain is arbitrary. -/
 theorem source_cases (config : Configuration) (op : Clif.DivOp) (safe positive : Bool) :
@@ -102,15 +14,19 @@ theorem source_cases (config : Configuration) (op : Clif.DivOp) (safe positive :
     | .error code => caseRun config op safe positive = .trapped code
     | .ok bits => ∃ mem,caseRun config op safe positive = .returned [⟨valueType config,bits⟩] mem := by
   have h := List.all_eq_true.mp checks_true config (by cases config <;> simp [configurations])
-  have h := List.all_eq_true.mp h op (by cases op <;> simp [operations])
+  have h := List.all_eq_true.mp h op (by cases op <;> simp [operations,StockDivNIWitness.operations])
   have h := List.all_eq_true.mp h safe (by cases safe <;> simp)
   simp only [Bool.and_eq_true] at h
   have casesOk := h.1.1
   simp only [sourceCases,Bool.and_eq_true] at casesOk
-  apply outcomeAgrees_sound
-  cases positive with
-  | false => exact casesOk.1
-  | true => exact casesOk.2
+  have checked : outcomeAgrees (valueType config) (caseWanted config op safe positive)
+      (caseRun config op safe positive) = true := by
+    cases positive with
+    | false => exact casesOk.1
+    | true => exact casesOk.2
+  have result := outcomeAgrees_sound (ty := valueType config)
+    (wanted := caseWanted config op safe positive) (actual := caseRun config op safe positive) checked
+  cases wanted : caseWanted config op safe positive <;> simpa only [wanted] using result
 
 /-- Actual checked/allocated/emitted artifacts inhabit the complete division
 semantic domain in every ABI and cleanup mode, beyond the legacy checker. -/
@@ -125,7 +41,7 @@ theorem compiled_exists (config : Configuration) (op : Clif.DivOp) (safe : Bool)
       lowerCheck (function config op safe) result.code = false := by
   have h : checks config op safe cleanup = true := by
     have both := List.all_eq_true.mp checks_true config (by cases config <;> simp [configurations])
-    have both := List.all_eq_true.mp both op (by cases op <;> simp [operations])
+    have both := List.all_eq_true.mp both op (by cases op <;> simp [operations,StockDivNIWitness.operations])
     have both := List.all_eq_true.mp both safe (by cases safe <;> simp)
     simp only [Bool.and_eq_true] at both
     cases cleanup with
