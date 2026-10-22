@@ -234,7 +234,9 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
             | none =>
               c := { c with oracleError := c.oracleError + 1 }
               if verbose then
-                let msg := match rec.actual with | .error m => m | _ => ""
+                let msg := match rec.actual with
+                  | .error m => m
+                  | _ => "interpreter returned a non-vector value for a vector result"
                 notes := notes.push s!"  oracle error {showRun r}: {msg}"
           | none =>
             c := { c with disagree := c.disagree + 1 }
