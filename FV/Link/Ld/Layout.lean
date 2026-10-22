@@ -41,8 +41,8 @@ structure LinkOut where
   map : String
   plan : Plan
 
-/-- `n` rounded up to a multiple of `a` (`a ≥ 1`). -/
-def alignUp (n a : Nat) : Nat := (n + a - 1) / max a 1 * max a 1
+/-- `n` rounded up to a multiple of `a` (an alignment `0` counts as `1`). -/
+def alignUp (n a : Nat) : Nat := (n + max a 1 - 1) / max a 1 * max a 1
 
 /-- The priority of an init/fini array section (`.init_array.N`; `65536` without one). -/
 def arrPrio (n : String) : Nat :=
@@ -100,8 +100,180 @@ structure EhOut where
   out : Nat
   deriving Inhabited
 
-/-- **The Lean static linker's layout** of the resolved inputs: the plan and the link map. -/
-def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := do
+/-! ## Placement
+
+The output sections are placed in order by `placeSec`, a fold whose state `PSt` holds the
+address and file offset reached, the open segment and the placed parts (`Slot`s: address, file
+offset, size). The pieces of the body are then made slot by slot (`Lay.slotPiece`), each at its
+slot's address and file offset and at most its size, so that the plan's own conditions
+(`Plan.okB`) hold by construction (`FV/Link/Ld/LayoutProof.lean`). -/
+
+/-- A placed part: the part, its address and file offset, its size, its output section's index
+(from `1`), and whether that output section has file bytes. -/
+structure Slot where
+  part : Part
+  addr : Nat
+  fo : Nat
+  size : Nat
+  out : Nat
+  bits : Bool
+  deriving Inhabited
+
+/-- The placement's state: the output sections and closed segments so far, the address and
+file offset reached, the open segment (start, kind), the TLS template (address, offset, file
+size, memory size, alignment), the end of the file bytes, the `.tbss` address, the placed
+parts. -/
+structure PSt where
+  outs : Array OutSec
+  segs : Array Seg
+  va : Nat
+  off : Nat
+  segVa : Nat
+  segOff : Nat
+  cur : Nat
+  tls : Nat × Nat × Nat × Nat × Nat
+  fileEnd : Nat
+  tbssVa : Nat
+  slots : Array Slot
+  deriving Inhabited
+
+/-- The headers' size: the ELF header and seven program headers (`PT_PHDR`, three `PT_LOAD`,
+`PT_TLS`, `PT_GNU_EH_FRAME`, `PT_GNU_STACK`). -/
+def hdrSize : Nat := 64 + 56 * 7
+
+/-- The state before the first output section: the headers at the start of the `R` segment. -/
+def PSt.init (base : Nat) : PSt :=
+  { outs := #[], segs := #[], va := base + hdrSize, off := hdrSize, segVa := base, segOff := 0,
+    cur := 0, tls := (0, 0, 0, 0, 1), fileEnd := hdrSize, tbssVa := 0, slots := #[] }
+
+/-- The open segment, closed. -/
+def PSt.seg (s : PSt) : Seg :=
+  { kind := s.cur, vaddr := s.segVa, offset := s.segOff, filesz := s.fileEnd - s.segOff,
+    memsz := s.va - s.segVa }
+
+/-- The parts of an output section placed from address `a`, each aligned (`al`) and of size
+`sz`; a part at `b` has file offset `soff + (b - start)`. -/
+def placeParts (sz al : Part → Nat) (start soff out : Nat) (bits : Bool) :
+    Nat → List Part → Array Slot → Nat × Array Slot
+  | a, [], acc => (a, acc)
+  | a, p :: ps, acc =>
+    let b := alignUp a (al p)
+    placeParts sz al start soff out bits (b + sz p) ps
+      (acc.push { part := p, addr := b, fo := soff + (b - start), size := sz p, out, bits })
+
+/-- **One output section placed** (`sz`, `al`: its parts' sizes and alignments, `nb`: the
+parts without file bytes); a new segment, in a fresh 64 KiB page, when the kind changes. -/
+def placeSec (sz al : Part → Nat) (nb : Part → Bool) (tlsAlign : Nat) (st : PSt) (s : OSec) :
+    PSt :=
+  let st := if s.seg != st.cur then
+      let va := alignUp st.va 0x10000 + st.fileEnd % 0x10000
+      { st with segs := st.segs.push st.seg, cur := s.seg, off := st.fileEnd, va, segVa := va,
+                segOff := st.fileEnd }
+    else st
+  let a0 := s.parts.foldl (fun m p => max m (al p)) (if s.name == ".tdata" then tlsAlign else 1)
+  let tbss := s.name == ".tbss"
+  let nobits := tbss || s.name == ".bss" || s.parts.all nb
+  let start := if tbss then alignUp st.tbssVa a0 else alignUp st.va a0
+  let soff := if tbss then st.off else st.off + (start - st.va)
+  let (a, slots) := placeParts sz al start soff (st.outs.size + 1) (!nobits) start s.parts.toList
+    st.slots
+  let size := a - start
+  let flags := (if s.seg == 2 || s.name == ".tdata" || tbss then shfWrite else 0) |||
+    shfAlloc ||| (if s.seg == 1 then shfExec else 0) |||
+    (if s.name == ".tdata" || tbss then shfTls else 0)
+  let ty := if nobits then shtNobits else if s.name == ".init_array" then shtInitArray
+    else if s.name == ".fini_array" then shtFiniArray else shtProgbits
+  let os : OutSec :=
+    { name := s.name, type := ty, flags := flags, addr := start, off := soff, size := size, align := a0 }
+  let st := { st with slots := slots, outs := st.outs.push os }
+  let st := if s.name == ".tdata" then { st with tls := (start, soff, size, size, a0), tbssVa := a }
+    else st
+  if tbss then { st with tls := (st.tls.1, st.tls.2.1, st.tls.2.2.1, a - st.tls.1, st.tls.2.2.2.2) }
+  else
+    let off := st.off + (a - st.va)
+    { st with off, va := a, fileEnd := if nobits then st.fileEnd else off }
+
+/-- `b` cut to at most `n` bytes. -/
+def clampTo (n : Nat) (b : ByteArray) : ByteArray := if b.size ≤ n then b else b.extract 0 n
+
+/-- The GOT slot's key of symbol `j` of file `fi` (a local symbol: per file and index). -/
+def gotKey (files : Array Obj) (fi j : Nat) : String :=
+  let sy := files[fi]!.syms[j]!
+  if sy.bind == 0 || j < files[fi]!.firstGlobal then s!"\x00{fi}:{j}" else sy.name
+
+/-- **The layout's decisions** before any placement: the output sections (unsorted), the kept
+`.eh_frame` records (offsets in the output `.eh_frame`, its size with the terminator, the FDE
+count, the CIEs' and records' output offsets, each input `.eh_frame`'s start), the GOT's
+symbols. -/
+structure LayD where
+  osecs : Array OSec
+  ehs : Array EhOut
+  ehTotal : Nat
+  fdeCount : Nat
+  cieOut : Std.HashMap (Nat × Nat × Nat) Nat
+  pieceOut : Std.HashMap (Nat × Nat × Nat) Nat
+  ehStart : Std.HashMap (Nat × Nat) Nat
+  gotSlot : Std.HashMap String Nat
+  gotSyms : Array (Nat × Nat)
+
+namespace LayD
+
+variable (D : LayD) (files : Array Obj)
+
+/-- A part's size. -/
+def partSize (p : Part) : Nat := match p with
+  | .input (f, i) => files[f]!.secs[i]!.size
+  | .got => 8 * D.gotSyms.size
+  | .eh => D.ehTotal
+  | .ehHdr => 12 + 8 * D.fdeCount
+  | .common f k => files[f]!.syms[k]!.size
+
+/-- A part's alignment (at least `1`). -/
+def partAlign (p : Part) : Nat := match p with
+  | .input (f, i) => max files[f]!.secs[i]!.align 1
+  | .got | .eh => 8
+  | .ehHdr => 4
+  | .common f k => max files[f]!.syms[k]!.value 1
+
+/-- A part without file bytes. -/
+def partNb (p : Part) : Bool := match p with
+  | .input (f, i) => files[f]!.secs[i]!.type == shtNobits
+  | .common _ _ => true
+  | _ => false
+
+end LayD
+
+/-- **The layout**: its decisions, the output sections in order, the placement and the places it
+gives (input sections' addresses and output section indices, the synthesized parts' and common
+symbols' addresses). -/
+structure Lay extends LayD where
+  sorted : Array OSec
+  pst : PSt
+  segs : List Seg
+  secAddr : Array (Array Nat)
+  secOut : Array (Array Nat)
+  partAddr : Std.HashMap String Nat
+  commonAddr : Std.HashMap (Nat × Nat) Nat
+
+/-- The output sections in order: by segment, then rank (C-identifier sections by name),
+init/fini arrays' parts by priority. -/
+def sortOSecs (files : Array Obj) (osecs : Array OSec) : Array OSec :=
+  let lt (a b : OSec) : Bool := a.seg < b.seg || (a.seg == b.seg && (outRank a.name a.seg < outRank b.name b.seg ||
+    (outRank a.name a.seg == outRank b.name b.seg && a.name < b.name)))
+  let fix (s : OSec) : OSec :=
+    if s.name == ".init_array" || s.name == ".fini_array" || s.name == ".preinit_array" then
+      let prio (p : Part) : Nat := match p with
+        | .input (f, i) => arrPrio files[f]!.secs[i]!.name
+        | _ => 65536
+      -- a stable sort: by priority, then input order
+      let idx := s.parts.mapIdx fun i p => (prio p, i, p)
+      { s with parts := (idx.qsort fun a b => a.1 < b.1 || (a.1 == b.1 && a.2.1 < b.2.1)).map (·.2.2) }
+    else s
+  (([0, 1, 2].flatMap fun k =>
+    (osecs.toList.filter (·.seg == k)).mergeSort fun a b => !lt b a).map fix).toArray
+
+/-- **The layout's decisions** of the resolved inputs (`LayD`). -/
+def layDecide (st : St) (g : GcOut) : LayD := Id.run do
   let files := st.files
   let live := g.live
   -- output sections
@@ -155,9 +327,6 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := 
     (osecs, byName) := addPart osecs byName ".eh_frame" 0 .eh
     (osecs, byName) := addPart osecs byName ".eh_frame_hdr" 0 .ehHdr
   -- GOT slots: one per symbol a GOT relocation of a live section names
-  let gotKey (fi j : Nat) : String :=
-    let sy := files[fi]!.syms[j]!
-    if sy.bind == 0 || j < files[fi]!.firstGlobal then s!"\x00{fi}:{j}" else sy.name
   let mut gotSlot : Std.HashMap String Nat := {}
   let mut gotSyms : Array (Nat × Nat) := #[]
   for fi in [0:files.size] do
@@ -165,7 +334,7 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := 
       if live[fi]![si]! then
         for r in files[fi]!.relas si do
           if gotType r.type then
-            let k := gotKey fi r.sym
+            let k := gotKey files fi r.sym
             if !gotSlot.contains k then
               gotSlot := gotSlot.insert k gotSyms.size
               gotSyms := gotSyms.push (fi, r.sym)
@@ -175,217 +344,195 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := 
   if !byName.contains ".tdata" then
     byName := byName.insert ".tdata" osecs.size
     osecs := osecs.push { name := ".tdata", seg := 0, parts := #[] }
-  -- sort: by segment, then rank (C-identifier sections by name), init/fini arrays by priority
-  let sorted := (osecs.qsort fun a b =>
-    a.seg < b.seg || (a.seg == b.seg && (outRank a.name a.seg < outRank b.name b.seg ||
-      (outRank a.name a.seg == outRank b.name b.seg && a.name < b.name)))).map fun s =>
-    if s.name == ".init_array" || s.name == ".fini_array" || s.name == ".preinit_array" then
-      let prio (p : Part) : Nat := match p with
-        | .input (f, i) => arrPrio files[f]!.secs[i]!.name
-        | _ => 65536
-      -- a stable sort: by priority, then input order
-      let idx := s.parts.mapIdx fun i p => (prio p, i, p)
-      { s with parts := (idx.qsort fun a b => a.1 < b.1 || (a.1 == b.1 && a.2.1 < b.2.1)).map (·.2.2) }
-    else s
-  -- sizes and alignments of parts
-  let partSize (p : Part) : Nat := match p with
-    | .input (f, i) => files[f]!.secs[i]!.size
-    | .got => 8 * gotSyms.size
-    | .eh => ehTotal
-    | .ehHdr => 12 + 8 * fdeCount
-    | .common f k => files[f]!.syms[k]!.size
-  let partAlign (p : Part) : Nat := match p with
-    | .input (f, i) => max files[f]!.secs[i]!.align 1
-    | .got | .eh => 8
-    | .ehHdr => 4
-    | .common f k => max files[f]!.syms[k]!.value 1
-  let nph := 7
-  -- addresses
+  return { osecs, ehs, ehTotal, fdeCount, cieOut, pieceOut, ehStart, gotSlot, gotSyms }
+
+/-- The places the placement gives: per input section its address and output section index,
+the synthesized parts' and the common symbols' addresses. -/
+def slotMaps (files : Array Obj) (slots : Array Slot) :
+    Array (Array Nat) × Array (Array Nat) × Std.HashMap String Nat × Std.HashMap (Nat × Nat) Nat :=
+  Id.run do
   let mut secAddr : Array (Array Nat) := files.map fun f => Array.replicate f.secs.size 0
   let mut secOut : Array (Array Nat) := files.map fun f => Array.replicate f.secs.size 0
   let mut partAddr : Std.HashMap String Nat := {}
   let mut commonAddr : Std.HashMap (Nat × Nat) Nat := {}
-  let mut outs : Array OutSec := #[]
-  let mut segs : Array (Nat × Nat × Nat × Nat × Nat) := #[]   -- kind, vaddr, offset, filesz, memsz
-  let mut va := o.base
-  let mut off := 0
-  let mut segStart : Nat × Nat := (o.base, 0)
-  let mut cur := 0
-  let mut tls : Nat × Nat × Nat × Nat × Nat := (0, 0, 0, 0, 1)  -- vaddr, offset, filesz, memsz, align
-  let tlsAlign := sorted.foldl (fun m s => if s.name == ".tdata" || s.name == ".tbss" then
-      s.parts.foldl (fun m p => max m (partAlign p)) m else m) 1
-  va := va + 64 + 56 * nph
-  off := off + 64 + 56 * nph
-  let mut fileEnd := 0
-  let mut tbssVa := 0
-  for s in sorted do
-    if s.seg != cur then
-      -- close the segment, open the next in a fresh 64 KiB page
-      segs := segs.push (cur, segStart.1, segStart.2, fileEnd - segStart.2, va - segStart.1)
-      cur := s.seg
-      off := fileEnd
-      va := alignUp va 0x10000 + off % 0x10000
-      segStart := (va, off)
-    let a0 := s.parts.foldl (fun m p => max m (partAlign p)) (if s.name == ".tdata" then tlsAlign else 1)
-    let nobits := s.name == ".tbss" || s.name == ".bss" ||
-      s.parts.all (fun p => match p with
-        | .input (f, i) => files[f]!.secs[i]!.type == shtNobits
-        | .common _ _ => true
-        | _ => false)
-    let start0 := if s.name == ".tbss" then alignUp tbssVa a0 else alignUp va a0
-    let mut a := start0
-    for p in s.parts do
-      a := alignUp a (partAlign p)
-      match p with
-      | .input (f, i) =>
-        secAddr := secAddr.modify f (·.set! i a)
-        secOut := secOut.modify f (·.set! i (outs.size + 1))
-      | .common f k => commonAddr := commonAddr.insert (f, k) a
-      | .got => partAddr := partAddr.insert "got" a
-      | .eh => partAddr := partAddr.insert "eh" a
-      | .ehHdr => partAddr := partAddr.insert "ehHdr" a
-      a := a + partSize p
-    let size := a - start0
-    let soff := if s.name == ".tbss" then off else off + (start0 - va)
-    let flags := (if s.seg == 2 || s.name == ".tdata" || s.name == ".tbss" then shfWrite else 0) |||
-      shfAlloc ||| (if s.seg == 1 then shfExec else 0) |||
-      (if s.name == ".tdata" || s.name == ".tbss" then shfTls else 0)
-    let ty := if nobits then shtNobits else if s.name == ".init_array" then shtInitArray
-      else if s.name == ".fini_array" then shtFiniArray else shtProgbits
-    outs := outs.push { name := s.name, type := ty, flags, addr := start0, off := soff, size, align := a0 }
-    if s.name == ".tdata" then
-      tls := (start0, soff, size, size, a0)
-      tbssVa := a
-    if s.name == ".tbss" then
-      tls := (tls.1, tls.2.1, tls.2.2.1, a - tls.1, tls.2.2.2.2)
-    else
-      off := off + (a - va)
-      va := a
-      if !nobits then fileEnd := off
-  segs := segs.push (cur, segStart.1, segStart.2, fileEnd - segStart.2, va - segStart.1)
-  -- linker-defined symbols
-  let outRange (n : String) : Option (Nat × Nat) :=
-    (outs.find? (·.name == n)).map fun s => (s.addr, s.addr + s.size)
-  let lastSeg := segs.back!.2
-  let textEnd := ((segs.find? (·.1 == 1)).map fun s => s.2.1 + s.2.2.2.2).getD 0
-  let dataEnd := lastSeg.1 + lastSeg.2.2.1
-  let synth (n : String) : Option Nat :=
-    let arr (k : String) (e : Bool) : Nat := match outRange k with
-      | some (a, b) => if e then b else a
-      | none => dataEnd
-    match n with
-    | "__init_array_start" => some (arr ".init_array" false)
-    | "__init_array_end" => some (arr ".init_array" true)
-    | "__fini_array_start" => some (arr ".fini_array" false)
-    | "__fini_array_end" => some (arr ".fini_array" true)
-    | "__preinit_array_start" => some (arr ".preinit_array" false)
-    | "__preinit_array_end" => some (arr ".preinit_array" true)
-    | "_end" | "end" | "__end" => some (lastSeg.1 + lastSeg.2.2.2)
-    | "_etext" | "etext" | "__etext" => some textEnd
-    | "_edata" | "edata" => some dataEnd
-    | "__bss_start" => some ((outRange ".bss").elim dataEnd (·.1))
-    | "__ehdr_start" | "__executable_start" => some o.base
-    | "_GLOBAL_OFFSET_TABLE_" => some (partAddr.getD "got" 0)
-    | "__eh_frame_start" => partAddr["eh"]?
-    | "__eh_frame_hdr_start" => partAddr["ehHdr"]?
-    | _ =>
-      if n.startsWith "__start_" then (outRange (n.drop 8).toString).map (·.1)
-      else if n.startsWith "__stop_" then (outRange (n.drop 7).toString).map (·.2)
-      else none
-  let tlsStart := tls.1
-  let ehAddr := partAddr.getD "eh" 0
-  let tlsBase := alignUp 16 tls.2.2.2.2
-  -- symbol values: (value, undefined weak)
-  let value (fi j : Nat) : Except String (Int × Bool) :=
-    match st.target fi j with
-    | .sec t x _ =>
-      if placedIn t then pure ((secAddr[t.1]![t.2]! + x : Nat), false)
-      else match g.eh[t.1]!.findIdx? (·.sec == t.2) with
-      | some ei =>
-        -- a place in an input `.eh_frame`: its record's place in the output one
-        let ps := g.eh[t.1]![ei]!.pieces
-        let start := ehAddr + ehStart.getD (t.1, ei) 0
-        match ps.find? (fun p => p.off ≤ x ∧ x < p.off + p.size) with
-        | some p => match pieceOut[(t.1, ei, p.off)]? with
-          | some q => pure ((ehAddr + q + (x - p.off) : Nat), false)
-          | none => pure ((start : Nat), false)
+  for sl in slots do
+    match sl.part with
+    | .input (f, i) =>
+      secAddr := secAddr.modify f (·.set! i sl.addr)
+      secOut := secOut.modify f (·.set! i sl.out)
+    | .common f k => commonAddr := commonAddr.insert (f, k) sl.addr
+    | .got => partAddr := partAddr.insert "got" sl.addr
+    | .eh => partAddr := partAddr.insert "eh" sl.addr
+    | .ehHdr => partAddr := partAddr.insert "ehHdr" sl.addr
+  return (secAddr, secOut, partAddr, commonAddr)
+
+/-- The TLS template's alignment: the largest of `.tdata`'s and `.tbss`'s parts. -/
+def tlsAlignOf (al : Part → Nat) (sorted : Array OSec) : Nat :=
+  sorted.foldl (fun m s => if s.name == ".tdata" || s.name == ".tbss" then
+    s.parts.foldl (fun m p => max m (al p)) m else m) 1
+
+/-- **The layout** of the resolved inputs: the decisions (`layDecide`), the output sections
+sorted (`sortOSecs`) and placed (`placeSec`), from the base address after the headers. -/
+def layPre (o : Opts) (st : St) (g : GcOut) : Lay :=
+  let D := layDecide st g
+  let files := st.files
+  let sorted := sortOSecs files D.osecs
+  let pst := sorted.foldl (placeSec (D.partSize files) (LayD.partAlign files) (LayD.partNb files)
+    (tlsAlignOf (LayD.partAlign files) sorted)) (PSt.init o.base)
+  let (secAddr, secOut, partAddr, commonAddr) := slotMaps files pst.slots
+  { D with sorted, pst, segs := (pst.segs.push pst.seg).toList, secAddr, secOut, partAddr,
+           commonAddr }
+
+namespace Lay
+
+variable (L : Lay) (o : Opts) (st : St) (g : GcOut)
+
+/-- The output section `n`'s address range. -/
+def outRange (n : String) : Option (Nat × Nat) :=
+  (L.pst.outs.find? (·.name == n)).map fun s => (s.addr, s.addr + s.size)
+
+/-- The values of the linker-defined symbols. -/
+def synth (n : String) : Option Nat :=
+  let lastSeg := L.segs.getLastD default
+  let textEnd := ((L.segs.find? (·.kind == 1)).map fun s => s.vaddr + s.memsz).getD 0
+  let dataEnd := lastSeg.vaddr + lastSeg.filesz
+  let arr (k : String) (e : Bool) : Nat := match L.outRange k with
+    | some (a, b) => if e then b else a
+    | none => dataEnd
+  match n with
+  | "__init_array_start" => some (arr ".init_array" false)
+  | "__init_array_end" => some (arr ".init_array" true)
+  | "__fini_array_start" => some (arr ".fini_array" false)
+  | "__fini_array_end" => some (arr ".fini_array" true)
+  | "__preinit_array_start" => some (arr ".preinit_array" false)
+  | "__preinit_array_end" => some (arr ".preinit_array" true)
+  | "_end" | "end" | "__end" => some (lastSeg.vaddr + lastSeg.memsz)
+  | "_etext" | "etext" | "__etext" => some textEnd
+  | "_edata" | "edata" => some dataEnd
+  | "__bss_start" => some ((L.outRange ".bss").elim dataEnd (·.1))
+  | "__ehdr_start" | "__executable_start" => some o.base
+  | "_GLOBAL_OFFSET_TABLE_" => some (L.partAddr.getD "got" 0)
+  | "__eh_frame_start" => L.partAddr["eh"]?
+  | "__eh_frame_hdr_start" => L.partAddr["ehHdr"]?
+  | _ =>
+    if n.startsWith "__start_" then (L.outRange (n.drop 8).toString).map (·.1)
+    else if n.startsWith "__stop_" then (L.outRange (n.drop 7).toString).map (·.2)
+    else none
+
+/-- The output `.eh_frame`'s address. -/
+def ehAddr : Nat := L.partAddr.getD "eh" 0
+
+/-- **A symbol's value** (and whether it is an undefined weak one). -/
+def value (fi j : Nat) : Except String (Int × Bool) :=
+  let files := st.files
+  match st.target fi j with
+  | .sec t x _ =>
+    if (g.live[t.1]?.bind (·[t.2]?)).getD false then pure ((L.secAddr[t.1]![t.2]! + x : Nat), false)
+    else match g.eh[t.1]!.findIdx? (·.sec == t.2) with
+    | some ei =>
+      -- a place in an input `.eh_frame`: its record's place in the output one
+      let ps := g.eh[t.1]![ei]!.pieces
+      let start := L.ehAddr + L.ehStart.getD (t.1, ei) 0
+      match ps.find? (fun p => p.off ≤ x ∧ x < p.off + p.size) with
+      | some p => match L.pieceOut[(t.1, ei, p.off)]? with
+        | some q => pure ((L.ehAddr + q + (x - p.off) : Nat), false)
         | none => pure ((start : Nat), false)
-      | none =>
-        throw s!"{files[fi]!.name}: symbol {files[fi]!.syms[j]!.name} in a discarded section {files[t.1]!.secs[t.2]!.name} of {files[t.1]!.name}"
-    | .abs v => pure (v, false)
-    | .common f k => pure (commonAddr.getD (f, k) 0, false)
-    | .undef n w => match synth n with
-      | some v => pure (v, false)
-      | none => if w then pure (0, true) else throw s!"undefined symbol {n} (referenced from {files[fi]!.name})"
-  -- the pieces of the body: every placed input section, `.eh_frame` record and table, with its
-  -- relocations resolved: the plan's pieces (`assemble` builds the body from them, `FV/Link/Ld/Plan.lean`)
-  let gotAddr := partAddr.getD "got" 0
-  let relIn (fi : Nat) (r : Rela) (P : Nat) : Except String RelIn := do
-    let (S, uw) ← value fi r.sym
-    let G : Int := (gotSlot[gotKey fi r.sym]?.map fun k => (gotAddr + 8 * k : Nat)).getD 0
-    let S := if uw && branchType r.type then (P : Int) + 4 - r.addend
-      else if uw && (r.type == 275 || r.type == 274) then (P : Int) - r.addend else S
-    pure { S, A := r.addend, P, G, tp := tlsBase + (S + r.addend - tlsStart) }
-  let mut pieces : Array Piece := #[]
-  for fi in [0:files.size] do
-    let f := files[fi]!
-    for si in [0:f.secs.size] do
-      if live[fi]![si]! && f.secs[si]!.type != shtNobits then
-        let s := f.secs[si]!
-        let oo := outs[secOut[fi]![si]! - 1]!
-        let a := secAddr[fi]![si]!
-        let rels ← (f.relas si).toList.mapM fun r => do
-          let ri ← (relIn fi r (a + r.off)).mapError (s!"{f.name}({s.name})+{r.off}: " ++ ·)
-          pure ({ off := r.off, ty := r.type, ri } : Rel)
-        -- by offset (the data check, `FV/Link/Ld/Data.lean`, walks them in order)
-        let rels := rels.mergeSort fun r r' => decide (r.off ≤ r'.off)
-        pieces := pieces.push { addr := a, fo := oo.off + (a - oo.addr),
-                                bytes := f.data.extract s.off (s.off + s.size), rels }
-  -- the GOT
-  let gotOff := (outs.find? (·.name == ".got")).elim 0 (·.off)
-  if !gotSyms.isEmpty then
-    let mut got : ByteArray := .empty
-    for (fi, j) in gotSyms do
-      let (v, _) ← value fi j
-      got := got ++ leBytes 8 (v % 2 ^ 64).toNat
-    pieces := pieces.push { addr := gotAddr, fo := gotOff, bytes := got, rels := [] }
-  -- `.eh_frame` (each record with its CIE pointer rewritten) and `.eh_frame_hdr`
-  let ehOff := (outs.find? (·.name == ".eh_frame")).elim 0 (·.off)
+      | none => pure ((start : Nat), false)
+    | none =>
+      throw s!"{files[fi]!.name}: symbol {files[fi]!.syms[j]!.name} in a discarded section {files[t.1]!.secs[t.2]!.name} of {files[t.1]!.name}"
+  | .abs v => pure (v, false)
+  | .common f k => pure (L.commonAddr.getD (f, k) 0, false)
+  | .undef n w => match L.synth o n with
+    | some v => pure (v, false)
+    | none => if w then pure (0, true) else throw s!"undefined symbol {n} (referenced from {files[fi]!.name})"
+
+/-- **A relocation's inputs** at place `P`. -/
+def relIn (fi : Nat) (r : Rela) (P : Nat) : Except String RelIn := do
+  let (S, uw) ← L.value o st g fi r.sym
+  let G : Int := (L.gotSlot[gotKey st.files fi r.sym]?.map fun k => (L.partAddr.getD "got" 0 + 8 * k : Nat)).getD 0
+  let S := if uw && branchType r.type then (P : Int) + 4 - r.addend
+    else if uw && (r.type == 275 || r.type == 274) then (P : Int) - r.addend else S
+  let tlsStart := L.pst.tls.1
+  let tpBase := alignUp 16 L.pst.tls.2.2.2.2
+  pure { S, A := r.addend, P, G, tp := tpBase + (S + r.addend - tlsStart) }
+
+/-- The GOT's bytes: each slot's symbol's link-time value. -/
+def gotBytes : Except String ByteArray :=
+  L.gotSyms.foldlM (fun got (fi, j) => do
+    let (v, _) ← L.value o st g fi j
+    pure (got ++ leBytes 8 (v % 2 ^ 64).toNat)) .empty
+
+/-- **The output `.eh_frame`**: its bytes (each kept record at its offset, the CIE pointers
+rewritten), its relocations, and the `.eh_frame_hdr` table (function start, FDE address). -/
+def ehOut : Except String (ByteArray × Array Rel × Array (Nat × Nat)) := do
+  let mut buf : ByteArray := ⟨Array.replicate L.ehTotal 0⟩
+  let mut rels : Array Rel := #[]
   let mut table : Array (Nat × Nat) := #[]
-  for e in ehs do
+  for e in L.ehs do
     if let some es := g.eh[e.file]![e.ei]? then
-      let f := files[e.file]!
+      let f := st.files[e.file]!
       let src := f.secs[es.sec]!
       let mut bytes := f.data.extract (src.off + e.piece.off) (src.off + e.piece.off + e.piece.size)
       if !e.piece.cie then
-        let c := cieOut.getD (e.file, e.ei, e.piece.cieOff) 0
+        let c := L.cieOut.getD (e.file, e.ei, e.piece.cieOff) 0
         bytes := writeLE bytes 4 4 (e.out + 4 - c)
-      let mut rels : Array Rel := #[]
+      buf := place buf e.out bytes
       for r in es.relasIn e.piece.off (e.piece.off + e.piece.size) do
-        let P := ehAddr + e.out + (r.off - e.piece.off)
-        let ri ← relIn e.file r P
-        rels := rels.push { off := r.off - e.piece.off, ty := r.type, ri }
+        let P := L.ehAddr + e.out + (r.off - e.piece.off)
+        let ri ← L.relIn o st g e.file r P
+        rels := rels.push { off := e.out + (r.off - e.piece.off), ty := r.type, ri }
         if !e.piece.cie && r.off == e.piece.off + 8 then
-          let (v, _) ← value e.file r.sym
-          table := table.push (((v + r.addend) % 2 ^ 64).toNat, ehAddr + e.out)
-      pieces := pieces.push { addr := ehAddr + e.out, fo := ehOff + e.out, bytes, rels := rels.toList }
-  if ehTotal > 0 then
-    let hAddr := partAddr.getD "ehHdr" 0
-    let hOff := (outs.find? (·.name == ".eh_frame_hdr")).elim 0 (·.off)
-    let sortedT := table.qsort (fun a b => a.1 < b.1)
-    let mut hdr : ByteArray := leBytes 4 (1 + 0x1b * 256 + 0x03 * 65536 + 0x3b * 2 ^ 24) ++
-      leBytes 4 (((ehAddr : Int) - (hAddr + 4)) % 2 ^ 32).toNat ++ leBytes 4 sortedT.size
-    for (pc, fde) in sortedT do
-      hdr := hdr ++ leBytes 4 (((pc : Int) - hAddr) % 2 ^ 32).toNat ++
-        leBytes 4 (((fde : Int) - hAddr) % 2 ^ 32).toNat
-    pieces := pieces.push { addr := hAddr, fo := hOff, bytes := hdr, rels := [] }
-  -- the segments (`Plan.phdrs` adds `PT_PHDR`, `PT_TLS`, `PT_GNU_EH_FRAME`, `PT_GNU_STACK`)
-  let segList : List Seg := segs.toList.map fun (k, v, of, fs, ms) =>
-    { kind := k, vaddr := v, offset := of, filesz := fs, memsz := ms }
-  -- symbols: locals, then globals (the winners), then linker-defined ones
+          let (v, _) ← L.value o st g e.file r.sym
+          table := table.push (((v + r.addend) % 2 ^ 64).toNat, L.ehAddr + e.out)
+  return (buf, rels, table)
+
+/-- The `.eh_frame_hdr` table's bytes. -/
+def ehHdrBytes (table : Array (Nat × Nat)) : ByteArray :=
+  let hAddr := L.partAddr.getD "ehHdr" 0
+  let sortedT := table.qsort (fun a b => a.1 < b.1)
+  sortedT.foldl (fun hdr (pc, fde) => hdr ++ leBytes 4 (((pc : Int) - hAddr) % 2 ^ 32).toNat ++
+      leBytes 4 (((fde : Int) - hAddr) % 2 ^ 32).toNat)
+    (leBytes 4 (1 + 0x1b * 256 + 0x03 * 65536 + 0x3b * 2 ^ 24) ++
+      leBytes 4 (((L.ehAddr : Int) - (hAddr + 4)) % 2 ^ 32).toNat ++ leBytes 4 sortedT.size)
+
+/-- **The piece of a placed part** (none without file bytes): at the slot's address and file
+offset, at most its size; an input section with its relocations resolved (sorted by offset:
+the data check, `FV/Link/Ld/Data.lean`, walks them in order), the GOT, `.eh_frame`,
+`.eh_frame_hdr`. -/
+def slotPiece (got : ByteArray) (eh : ByteArray × Array Rel) (hdr : ByteArray) (sl : Slot) :
+    Except String (Option Piece) := do
+  if !sl.bits then return none
+  let mk (bytes : ByteArray) (rels : List Rel) : Piece :=
+    { addr := sl.addr, fo := sl.fo, bytes := clampTo sl.size bytes, rels }
+  match sl.part with
+  | .input (fi, si) =>
+    let f := st.files[fi]!
+    let s := f.secs[si]!
+    if s.type == shtNobits then return none
+    let rels ← (f.relas si).toList.mapM fun r => do
+      let ri ← (L.relIn o st g fi r (sl.addr + r.off)).mapError (s!"{f.name}({s.name})+{r.off}: " ++ ·)
+      pure ({ off := r.off, ty := r.type, ri } : Rel)
+    return some (mk (f.data.extract s.off (s.off + s.size)) (rels.mergeSort fun r r' => decide (r.off ≤ r'.off)))
+  | .got => return some (mk got [])
+  | .eh => return some (mk eh.1 eh.2.toList)
+  | .ehHdr => return some (mk hdr [])
+  | .common _ _ => return none
+
+/-- **The pieces of the body**: one per placed part with file bytes, in placement order. -/
+def pieces : Except String (List Piece) := do
+  let got ← L.gotBytes o st g
+  let (eh, rels, table) ← L.ehOut o st g
+  let ps ← L.pst.slots.toList.mapM (L.slotPiece o st g got (eh, rels) (L.ehHdrBytes table))
+  return ps.filterMap id
+
+/-- **The symbols**: locals, then globals (the winners), then linker-defined ones; and per input
+section, its symbols for the map. -/
+def syms : Array OutSym × Array (Array (Array (Nat × String))) := Id.run do
+  let files := st.files
+  let live := g.live
+  let tlsStart := L.pst.tls.1
   let mut locals : Array OutSym := #[]
   let mut globals : Array OutSym := #[]
-  -- per input section, its symbols for the map
   let mut mapSyms : Array (Array (Array (Nat × String))) := files.map fun f => Array.replicate f.secs.size #[]
   for fi in [0:files.size] do
     let f := files[fi]!
@@ -397,47 +544,68 @@ def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := 
         | some (.defd f' k _) => f' == fi && k == j
         | _ => false)
       if !win || !sy.inSec || !live[fi]![sy.shndx]! then continue
-      let a := secAddr[fi]![sy.shndx]! + sy.value
+      let a := L.secAddr[fi]![sy.shndx]! + sy.value
       let tlsSym := sy.type == 6
       let os : OutSym := { name := sy.name, value := if tlsSym then a - tlsStart else a, size := sy.size,
                            info := (if isLocal then 0 else sy.bind) * 16 + sy.type,
-                           shndx := secOut[fi]![sy.shndx]! }
+                           shndx := L.secOut[fi]![sy.shndx]! }
       if isLocal then locals := locals.push os else globals := globals.push os
       mapSyms := mapSyms.modify fi (·.modify sy.shndx (·.push (a, sy.name)))
   for (n, d) in st.syms.toList do
     match d with
     | .common f k =>
-      globals := globals.push { name := n, value := commonAddr.getD (f, k) 0,
+      globals := globals.push { name := n, value := L.commonAddr.getD (f, k) 0,
                                 size := files[f]!.syms[k]!.size, info := 16 + 1,
-                                shndx := (outs.findIdx? (·.name == ".bss")).elim 0 (· + 1) }
-    | .undef _ => if let some v := synth n then globals := globals.push { name := n, value := v, info := 16, shndx := shnAbs }
+                                shndx := (L.pst.outs.findIdx? (·.name == ".bss")).elim 0 (· + 1) }
+    | .undef _ => if let some v := L.synth o n then globals := globals.push { name := n, value := v, info := 16, shndx := shnAbs }
     | _ => pure ()
-  let entry ← match st.syms[o.entry]? with
-    | some (.defd f k _) =>
-      let sy := files[f]!.syms[k]!
-      if sy.inSec && live[f]![sy.shndx]! then pure (secAddr[f]![sy.shndx]! + sy.value)
-      else throw s!"entry {o.entry} not placed"
-    | _ => throw s!"undefined entry symbol {o.entry}"
-  -- the link map
+  return (locals ++ globals, mapSyms)
+
+/-- The entry symbol's address. -/
+def entry : Except String Nat :=
+  match st.syms[o.entry]? with
+  | some (.defd f k _) =>
+    let sy := st.files[f]!.syms[k]!
+    if sy.inSec && g.live[f]![sy.shndx]! then pure (L.secAddr[f]![sy.shndx]! + sy.value)
+    else throw s!"entry {o.entry} not placed"
+  | _ => throw s!"undefined entry symbol {o.entry}"
+
+/-- **The link map** (lld's format). -/
+def map (mapSyms : Array (Array (Array (Nat × String)))) : String := Id.run do
+  let files := st.files
+  let outs := L.pst.outs
   let mut map := "             VMA              LMA     Size Align Out     In      Symbol\n"
   for i in [0:outs.size] do
     let os := outs[i]!
     map := map ++ mapLine os.addr os.size os.align 0 os.name
-    for p in sorted[i]!.parts do
+    for p in L.sorted[i]!.parts do
       match p with
       | .input (f, si) =>
         let s := files[f]!.secs[si]!
-        map := map ++ mapLine secAddr[f]![si]! s.size (max s.align 1) 8 s!"{files[f]!.name}:({s.name})"
+        map := map ++ mapLine L.secAddr[f]![si]! s.size (max s.align 1) 8 s!"{files[f]!.name}:({s.name})"
         for (a, n) in (((mapSyms[f]?.bind (·[si]?)).getD #[]).qsort fun x y => x.1 < y.1) do
           map := map ++ mapLine a 0 0 16 n
       | _ => pure ()
-  let plan : Plan :=
-    { base := o.base, entry, segs := segList, tlsAddr := tls.1, tlsOff := tls.2.1,
-      tlsFilesz := tls.2.2.1, tlsMemsz := tls.2.2.2.1, tlsAlign := tls.2.2.2.2,
-      ehOff := (outs.find? (·.name == ".eh_frame_hdr")).elim 0 (·.off),
-      ehAddr := partAddr.getD "ehHdr" 0, ehSize := if ehTotal > 0 then 12 + 8 * fdeCount else 0,
-      size := fileEnd, pieces := pieces.toList, secs := outs, syms := locals ++ globals }
-  pure (plan, map)
+  return map
+
+/-- **The plan** of the layout, with the pieces, the entry and the symbols. -/
+def plan (entry : Nat) (pieces : List Piece) (syms : Array OutSym) : Plan :=
+  let P := L.pst
+  { base := o.base, entry, segs := L.segs, tlsAddr := P.tls.1, tlsOff := P.tls.2.1,
+    tlsFilesz := P.tls.2.2.1, tlsMemsz := P.tls.2.2.2.1, tlsAlign := P.tls.2.2.2.2,
+    ehOff := (P.outs.find? (·.name == ".eh_frame_hdr")).elim 0 (·.off),
+    ehAddr := L.partAddr.getD "ehHdr" 0, ehSize := if L.ehTotal > 0 then 12 + 8 * L.fdeCount else 0,
+    size := P.fileEnd, pieces, secs := P.outs, syms }
+
+end Lay
+
+/-- **The Lean static linker's layout** of the resolved inputs: the plan and the link map. -/
+def layout (o : Opts) (st : St) (g : GcOut) : Except String (Plan × String) := do
+  let L := layPre o st g
+  let pieces ← L.pieces o st g
+  let entry ← L.entry o st g
+  let (syms, mapSyms) := L.syms o st g
+  pure (L.plan o entry pieces syms, L.map st mapSyms)
 
 /-- **Links** the inputs: resolution (the entry and `-u` symbols as roots), `--gc-sections`,
 layout, the image of the plan (`assemble`). -/
