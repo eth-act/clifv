@@ -7,6 +7,7 @@ import FV.E2E.WorldUnwindWitness
 import FV.E2E.EhFrameFinal
 import FV.E2E.LegalUnwindWitness
 import FV.E2E.WorldUnwindNIWitness
+import FV.Link.UnwCheckInWitness
 import FV.E2E.LinkArmUProgWitness
 import FV.E2E.LinkArmUProgNIWitness
 import FV.Link.ExeUnwindWitness
@@ -170,6 +171,12 @@ import FV.E2E.WorldUnwindNIWitness
 #print axioms Link.EhCheck.Complete.prepare_good
 #print axioms Link.EhCheck.Complete.Witness.tryInfoOk_applies -- witness: native_decide
 #print axioms Link.EhCheck.Complete.Witness.input_applies -- witness: native_decide
+#print axioms Backend.Proof.UnwShape.tryEmS_run
+#print axioms Backend.Proof.stmtCall_hasCall
+#print axioms Backend.Proof.Driver.edgeOk_succ
+#print axioms Backend.Proof.Driver.tryExnB_of
+#print axioms Link.EhCheck.Complete.unwCheck_complete
+#print axioms Link.EhCheck.Complete.Witness.unwCheck_applies -- witness: native_decide
 #print axioms Link.EhCheck.Complete.savedCheckRF_spill
 #print axioms Link.EhCheck.Complete.savedCheckRF_build
 #print axioms Link.EhCheck.Complete.savedCheckRF_pipe
