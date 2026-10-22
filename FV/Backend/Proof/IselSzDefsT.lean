@@ -16,9 +16,6 @@ namespace Backend.Proof.Cov
 
 open Backend Backend.Proof Backend.Proof.Flow Isle Isle.Interp Isle.Aarch64
 
-/-- Cost table: per entry, an internal term, its abstract inputs and a weight. -/
-abbrev CTab := List (TermId × List AW × Nat)
-
 section Eval
 variable (p : Program) (tab : Tab) (aw : TermId → List AW → Option Nat) (ctab : CTab)
   (aext : TermId → AW → List AW)
