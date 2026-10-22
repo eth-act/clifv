@@ -228,10 +228,10 @@ theorem (`docs/contracts/e2e.md`, "`sret`"). Deferred:
 
 ## Stack-passed arguments: what `E2E.backend_correct_final` does not cover (2026-10-01)
 
-Stack-passed parameters and stack-passed arguments of `call` are inside the end-to-end theorem
-(`docs/contracts/e2e.md`, "Stack-passed parameters and `call` arguments"). Deferred:
-- stack-passed arguments of a `try_call` (`InSubset.tryRegArgs`, flagged unverified) and of
-  `call_indirect`/`try_call_indirect` (`InSubset.indSigs`, at most 8 register parameters);
+Stack-passed parameters and stack-passed arguments of `call`, `try_call` (agent/last-unverified)
+and `call_indirect`/`try_call_indirect` (S5, #29: `InSubset.indSigs` is `sigAbiOk` only) are
+inside the end-to-end theorem (`docs/contracts/e2e.md`, "Stack-passed parameters and `call`
+arguments", "Stack-passed arguments of indirect calls"). Deferred:
 - the callee contract `XCallsOk` relates the world the callee returns by `Rel.holds`, including
   `OutRel` of the caller's outgoing area; that the callee does not touch live CLIF memory in it
   is part of the environment contract, not derived from AAPCS64.
