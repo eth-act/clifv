@@ -102,8 +102,9 @@ theorem cvt_s32_f32_boundary :
 theorem cvt_u64_f32_boundary :
     [0x7fc00000#32, 0x7f800000#32, 0xff800000#32, 0x80000000#32, 0x5f800000#32].map
       (fun x => (Clif.FSem.toIntSat true 64 .f32 x, some (armToInt .f32ToU64 64 x))) =
-      [(some 0#64, some 0#64), (some (-1)#64, some (-1)#64), (some 0#64, some 0#64),
-        (some 0#64, some 0#64), (some (-1)#64, some (-1)#64)] := by
+      [(some 0#64, some 0#64), (some 0xffffffffffffffff#64, some 0xffffffffffffffff#64),
+        (some 0#64, some 0#64),
+        (some 0#64, some 0#64), (some 0xffffffffffffffff#64, some 0xffffffffffffffff#64)] := by
   native_decide
 
 /-- `fcvt_to_sint_sat.i64` of an `f32`: NaN, +∞, -∞, -0.0, 2^63, below -2^63. -/
@@ -141,8 +142,9 @@ theorem cvt_u64_f64_boundary :
     [0x7ff8000000000000#64, 0x7ff0000000000000#64, 0xfff0000000000000#64, 0x8000000000000000#64,
       0x43f0000000000000#64, 0x43efffffffffffff#64].map
       (fun x => (Clif.FSem.toIntSat true 64 .f64 x, some (armToInt .f64ToU64 64 x))) =
-      [(some 0#64, some 0#64), (some (-1)#64, some (-1)#64), (some 0#64, some 0#64),
-        (some 0#64, some 0#64), (some (-1)#64, some (-1)#64),
+      [(some 0#64, some 0#64), (some 0xffffffffffffffff#64, some 0xffffffffffffffff#64),
+        (some 0#64, some 0#64),
+        (some 0#64, some 0#64), (some 0xffffffffffffffff#64, some 0xffffffffffffffff#64),
         (some 0xfffffffffffff800#64, some 0xfffffffffffff800#64)] := by
   native_decide
 
@@ -154,26 +156,33 @@ theorem cvt_s64_f64_boundary :
       [(some 0#64, some 0#64), (some 0x7fffffffffffffff#64, some 0x7fffffffffffffff#64),
         (some 0x8000000000000000#64, some 0x8000000000000000#64), (some 0#64, some 0#64),
         (some 0x7fffffffffffffff#64, some 0x7fffffffffffffff#64),
-        (some 0x8000000000000000#64, some 0x8000000000000000#64), (some (-2)#64, some (-2)#64)] := by
+        (some 0x8000000000000000#64, some 0x8000000000000000#64),
+        (some 0xfffffffffffffffe#64, some 0xfffffffffffffffe#64)] := by
   native_decide
 
 /-- `fcvt_from_{u,s}int` (zero is `+0.0`, `u32::MAX`/`u64::MAX` round up to 2^32/2^64, the
 halfway tie 2^24 + 1 rounds to even, `i32::MIN`/`i64::MIN` are exact): CLIF's `FSem.fromInt`
 and `{s,u}cvtf` on the (extended) X register agree. -/
 theorem cvt_from_boundary :
-    (Clif.FSem.fromInt true (0#32) .f32, Clif.FSem.fromInt true (0xffffffff#32) .f32,
-      Clif.FSem.fromInt true (0x01000001#32) .f32, Clif.FSem.fromInt false (0x80000000#32) .f32,
-      Clif.FSem.fromInt true ((-1)#64) .f64, Clif.FSem.fromInt false (0x8000000000000000#64) .f64,
-      Clif.FSem.fromInt false (0xff#8) .f32, Clif.FSem.fromInt true (0xffff#16) .f64) =
-    (some (armFromInt .u32ToF32 32 0), some (armFromInt .u32ToF32 32 0xffffffff),
-      some (armFromInt .u32ToF32 32 0x01000001), some (armFromInt .i32ToF32 32 0x80000000),
-      some (armFromInt .u64ToF64 64 (-1)), some (armFromInt .i64ToF64 64 0x8000000000000000),
-      some (armFromInt .i32ToF32 32 ((0xff#8).signExtend 64)),
-      some (armFromInt .u32ToF64 64 ((0xffff#16).setWidth 64))) ∧
+    Clif.FSem.fromInt true (0#32) .f32 = some (armFromInt .u32ToF32 Clif.Ty.f32.width 0) ∧
+    Clif.FSem.fromInt true (0xffffffff#32) .f32 =
+      some (armFromInt .u32ToF32 Clif.Ty.f32.width 0xffffffff) ∧
+    Clif.FSem.fromInt true (0x01000001#32) .f32 =
+      some (armFromInt .u32ToF32 Clif.Ty.f32.width 0x01000001) ∧
+    Clif.FSem.fromInt false (0x80000000#32) .f32 =
+      some (armFromInt .i32ToF32 Clif.Ty.f32.width 0x80000000) ∧
+    Clif.FSem.fromInt true (0xffffffffffffffff#64) .f64 =
+      some (armFromInt .u64ToF64 Clif.Ty.f64.width (-1)) ∧
+    Clif.FSem.fromInt false (0x8000000000000000#64) .f64 =
+      some (armFromInt .i64ToF64 Clif.Ty.f64.width 0x8000000000000000) ∧
+    Clif.FSem.fromInt false (0xff#8) .f32 =
+      some (armFromInt .i32ToF32 Clif.Ty.f32.width ((0xff#8).signExtend 64)) ∧
+    Clif.FSem.fromInt true (0xffff#16) .f64 =
+      some (armFromInt .u32ToF64 Clif.Ty.f64.width ((0xffff#16).setWidth 64)) ∧
     (armFromInt .u32ToF32 32 0, armFromInt .u32ToF32 32 0xffffffff,
       armFromInt .u32ToF32 32 0x01000001, armFromInt .i32ToF32 32 0x80000000,
       armFromInt .u64ToF64 64 (-1), armFromInt .i64ToF64 64 0x8000000000000000,
       armFromInt .i32ToF32 32 ((0xff#8).signExtend 64)) =
     (0#32, 0x4f800000#32, 0x4b800000#32, 0xcf000000#32, 0x43f0000000000000#64,
       0xc3e0000000000000#64, 0xbf800000#32) := by
-  native_decide
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> native_decide
