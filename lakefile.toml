@@ -128,3 +128,11 @@ root = "FVTest.Backend.Lowering.StockCmpProductionRuntime"
 [[lean_exe]]
 name = "stock-cmp-linked"
 root = "FVTest.Backend.Lowering.StockCmpProductionLinked"
+
+[[lean_exe]]
+name = "stock-highmul-runtime"
+root = "FVTest.Backend.Lowering.StockHighMulProductionRuntime"
+
+[[lean_exe]]
+name = "stock-highmul-linked"
+root = "FVTest.Backend.Lowering.StockHighMulProductionLinked"

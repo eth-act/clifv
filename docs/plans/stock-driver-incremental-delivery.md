@@ -16,7 +16,7 @@ tree verified against validated 0d9f54fe plus its documentation receipt. [Logica
 records current normal/trust/runtime/native/CLI/retention/identity/example gates,
 exact original axiom/header parity and actual provenance. The actual squash and integrator notice are recorded in #44/#140/#261.
 
-Continue remaining pure scalar classes, starting with high multiplication and
+Continue remaining pure scalar classes, starting with
 division/remainder, using complete saved source wrappers and shared consumer composition. Read
 [the obligation ledger](../research/stock-driver-obligations.json); historical root
 inventories require current-source/scope reconciliation and are not coverage
@@ -121,7 +121,21 @@ variants compose mixed body/entry/return without excluding IntCompare syntax.
 Existing comparison numerical/helper proofs and all old theorem variants remain.
 All original identities/stages and ten prior native grids are retained.
 
-Next: high multiply/division/
+Signed/unsigned high multiplication passes author gates through shared consumers.
+[Terminal evidence](../research/stock-highmul-production-activation.md) records
+22 primary / 25 ownership checks, 1,732 audited roots, 1,675 prior axiom sets /
+32 public headers exact, and 2,832 native comparisons. Both current/retained
+consumer cohorts pass32 checks. Validated `16a5f963`; remote
+evidence `8abeffdf`. Complete existing highmul source transfer and
+shared composition are reused. All prior computations, identities and stages remain.
+
+For an isolated fixture repair or additive main reconciliation, preserve original
+record source heads. Carry unaffected evidence only after checking the exact
+source delta, import closure and unchanged relevant executable hashes; rerun
+current normal keys/trust, affected executable ownership and affected consumer
+cohorts. Never relabel historical passes. Unknown dependencies require reruns.
+
+Next: division/
 remainder; complete original widths/ABIs; every unchanged original #140 control/
 memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligation.
 Never exclude original accepted compare/cast syntax to simplify composition.

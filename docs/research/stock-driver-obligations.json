@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-22T04:50:46.106217+00:00",
+  "updated_utc": "2026-10-22T06:03:01.229204+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -20,9 +20,10 @@
       "i32/i64 negation, CLZ/CTZ, bit reversal/byte swap and rotations through shared scalar consumers",
       "i32/i64 popcount through shared scalar consumers",
       "i32/i64 signed and unsigned min/max through shared scalar consumers",
-      "i32/i64 integer comparisons and actual cast-of-icmp811 through shared scalar consumers (validated, squash pending)"
+      "i32/i64 integer comparisons and actual cast-of-icmp811 through shared scalar consumers",
+      "i32/i64 signed/unsigned high multiplication through shared scalar consumers (validated, squash pending)"
     ],
-    "pending": "High multiply/division/remainder and complete original integer widths/ABIs; every remaining original #140 control/memory/trap/effect/call/source/block/whole-driver simulation/completeness/consumer obligation remains."
+    "pending": "Division/remainder including original trapped outcomes; complete original widths/ABIs; every remaining original #140 control/memory/effect/call/source/block/whole-driver simulation/completeness/consumer obligation remains."
   },
   "roots": [
     {
@@ -2900,8 +2901,8 @@
       "id": 777,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Smulhi",
-      "saved_guarded_bridge": "FV/Backend/Proof/StockHighMulRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockHighMulSourceValues.lean",
+      "status": "actual source/retained record, guarded scan/body/entry-return and default shared production consumers validated; Stock-only completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -2909,15 +2910,17 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-highmul-production-activation.json",
+      "stock_only_completeness": false
     },
     {
       "rule": "rule_lower_1059",
       "id": 778,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Smulhi",
-      "saved_guarded_bridge": "FV/Backend/Proof/StockHighMulRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockHighMulSourceValues.lean",
+      "status": "actual source/retained record, guarded scan/body/entry-return and default shared production consumers validated; Stock-only completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -2925,15 +2928,17 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-highmul-production-activation.json",
+      "stock_only_completeness": false
     },
     {
       "rule": "rule_lower_1068",
       "id": 779,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Umulhi",
-      "saved_guarded_bridge": "FV/Backend/Proof/StockHighMulRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockHighMulSourceValues.lean",
+      "status": "actual source/retained record, guarded scan/body/entry-return and default shared production consumers validated; Stock-only completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -2941,15 +2946,17 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-highmul-production-activation.json",
+      "stock_only_completeness": false
     },
     {
       "rule": "rule_lower_1071",
       "id": 780,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Umulhi",
-      "saved_guarded_bridge": "FV/Backend/Proof/StockHighMulRecordValues.lean",
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockHighMulSourceValues.lean",
+      "status": "actual source/retained record, guarded scan/body/entry-return and default shared production consumers validated; Stock-only completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -2957,7 +2964,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-highmul-production-activation.json",
+      "stock_only_completeness": false
     },
     {
       "rule": "rule_lower_1116",

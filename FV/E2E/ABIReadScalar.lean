@@ -5,6 +5,7 @@ import FV.E2E.ABIReadBitSteps
 import FV.E2E.ABIReadPopcountSteps
 import FV.E2E.ABIReadComparisonSteps
 import FV.E2E.ABIReadBooleanSteps
+import FV.E2E.ABIReadHighMulSteps
 
 namespace E2E.ScalarBoundary
 open Backend Backend.Proof Backend.Proof.Driver Backend.DeadCleanup E2E.MixedFlagBoundary
@@ -15,7 +16,7 @@ private def special : MInst → Bool
   | .cset .. | .movK .. | .bitfieldMove .. | .extend .. | .bitRR ..
   | .movToFpu .. | .movFromVec .. | .vecMisc .. | .vecLanes .. | .vecRRR .. => true
   | .aluRRImm12 op .. => op == .subS
-  | .aluRRR op .. | .aluRRImmShift op .. => Backend.ABIReadScalar.shiftOp op || op == .extr
+  | .aluRRR op .. | .aluRRImmShift op .. => Backend.ABIReadScalar.shiftOp op || op == .extr || op == .sMulH || op == .uMulH
   | _ => false
 
 /-- Proof-only scalar producer specification frames original ABI reads while actual value
@@ -106,6 +107,11 @@ private theorem popcount_special {i : MInst} (checked : Backend.ABIReadScalar.po
 private theorem boolean_special {i : MInst} (checked : Backend.ABIReadScalar.booleanProducer i = true) : special i = true := by
   cases i <;> first | rfl | cases checked
 
+private theorem highmul_special {i : MInst} (checked : Backend.ABIReadScalar.highmulProducer i = true) : special i = true := by
+  cases i with
+  | aluRRR op sz rd rn rm => cases op <;> first | rfl | cases checked
+  | _ => cases checked
+
 private theorem comparison_sem_eq {i : MInst}
     (checked : Backend.ABIReadScalar.comparisonProducer i = true)
     (F : BitVec 64 → Prop) (ctx : FnCtx) (X : ExtSem) (us : List CV) (w : Arm.ArmState) :
@@ -146,7 +152,7 @@ theorem checked_step_frame {sig : Clif.Signature} {b k : Nat} {i : MInst}
     (run : sem F ctx X i us w = some (outs,t,ctl)) :
     FlagFrame w t ∧ (ctl = .next ∨ ctl = .ret) := by
   simp only [Backend.ABIReadScalar.instruction,Bool.or_eq_true] at checked
-  rcases checked with ((((((old | added) | shifted) | extended) | bit) | popcount) | comparison) | boolean
+  rcases checked with (((((((old | added) | shifted) | extended) | bit) | popcount) | comparison) | boolean) | highmul
   · simp only [sem,old_not_special old,Bool.false_eq_true,↓reduceIte] at run
     exact MixedFlagBoundary.checked_step_frame old run
   · simp only [sem,constant_special added,↓reduceIte] at run
@@ -171,6 +177,9 @@ theorem checked_step_frame {sig : Clif.Signature} {b k : Nat} {i : MInst}
   · simp only [sem,boolean_special boolean,↓reduceIte] at run
     obtain ⟨frame,control⟩ := BooleanRead.step_frame boolean run
     exact ⟨frame,.inl control⟩
+  · simp only [sem,highmul_special highmul,↓reduceIte] at run
+    obtain ⟨frame,control⟩ := HighMulRead.step_frame highmul run
+    exact ⟨frame,.inl control⟩
 
 theorem checked_step_transport {sig : Clif.Signature} {args : List Clif.Val}
     (types : args.map (·.ty) = sig.params.map (·.ty))
@@ -190,7 +199,7 @@ theorem checked_step_transport {sig : Clif.Signature} {args : List Clif.Val}
     (run : sem F ctx X i us w = some (outs,t,ctl)) :
     ∃ t', sem F ctx X i us w' = some (outs,t',ctl) ∧ SameWorld Z t t' := by
   simp only [Backend.ABIReadScalar.instruction,Bool.or_eq_true] at checked
-  rcases checked with ((((((old | added) | shifted) | extended) | bit) | popcount) | comparison) | boolean
+  rcases checked with (((((((old | added) | shifted) | extended) | bit) | popcount) | comparison) | boolean) | highmul
   · simp only [sem,old_not_special old,Bool.false_eq_true,↓reduceIte] at run ⊢
     exact MixedFlagBoundary.checked_step_transport types old current other worlds registers stack run
   · simp only [sem,constant_special added,↓reduceIte] at run ⊢
@@ -209,6 +218,8 @@ theorem checked_step_transport {sig : Clif.Signature} {args : List Clif.Val}
 
   · simp only [sem,boolean_special boolean,↓reduceIte] at run ⊢
     exact mspec_lockstep (BooleanRead.no_mem boolean) worlds run
+  · simp only [sem,highmul_special highmul,↓reduceIte] at run ⊢
+    exact mspec_lockstep (HighMulRead.no_mem highmul) worlds run
 
 namespace Realize
 theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
@@ -222,7 +233,7 @@ theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
     (executed : sem F ctx X i us w = some (outs,final,ctl)) :
     ∃ actual, valueSem F ctx X i us t = some (outs,actual,ctl) ∧ SameWorld F actual final := by
   simp only [Backend.ABIReadScalar.instruction,Bool.or_eq_true] at checked
-  rcases checked with ((((((old | added) | shifted) | extended) | bit) | popcount) | comparison) | boolean
+  rcases checked with (((((((old | added) | shifted) | extended) | bit) | popcount) | comparison) | boolean) | highmul
   · simp only [sem,old_not_special old,Bool.false_eq_true,↓reduceIte] at executed ⊢
     exact MixedFlagBoundary.Realize.step_realize types old frame arguments worlds entry executed
   · simp only [sem,constant_special added,↓reduceIte] at executed
@@ -262,6 +273,11 @@ theorem step_realize {sig : Clif.Signature} {args : List Clif.Val}
   · simp only [sem,boolean_special boolean,↓reduceIte] at executed
     obtain ⟨spec,run,related⟩ := mspec_lockstep (BooleanRead.no_mem boolean) worlds.symm executed
     rw [BooleanRead.spec_eq boolean] at run
+    obtain ⟨actual,realized,related'⟩ := refines_valueSem F ctx X _ us t outs spec run
+    exact ⟨actual,realized,related'.trans related.symm⟩
+  · simp only [sem,highmul_special highmul,↓reduceIte] at executed
+    obtain ⟨spec,run,related⟩ := mspec_lockstep (HighMulRead.no_mem highmul) worlds.symm executed
+    rw [HighMulRead.spec_eq highmul] at run
     obtain ⟨actual,realized,related'⟩ := refines_valueSem F ctx X _ us t outs spec run
     exact ⟨actual,realized,related'.trans related.symm⟩
 
