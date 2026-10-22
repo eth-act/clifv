@@ -11,7 +11,8 @@ open Isle Isle.Opt Clif
 
 set_option linter.unusedSimpArgs false
 
-@[opt_imm] theorem imm64Rotl_spec {t t' : Ty} (ht : t ≠ .i128) (ht' : t' ≠ .i128) (b : BitVec t.width)
+@[opt_imm] theorem imm64Rotl_spec {t t' : Ty} (ht : t ≠ .i128) (hv : t.isVec = false)
+    (ht' : t' ≠ .i128) (hv' : t'.isVec = false) (b : BitVec t.width)
     (c : BitVec t'.width) :
     Rust.imm64Rotl (CTy.ofClif t) (imm64OfBits b) (imm64OfBits c) = .ok (imm64OfBits (Sem.rotl b c)) := by
   imm_pre [Rust.imm64Rotl]

@@ -27,7 +27,7 @@ theorem masked_or_not64 (a : Int) :
 /-- Masking both unsigned immediates makes the guard a width-local complement test.
 The integer subtraction has already been eliminated by `masked_or_not64`, so the
 remaining four obligations contain only bitwise operations and zero-extension. -/
-theorem masked_or_guard {t : Ty} (ht : t ≠ .i128) (y z : BitVec t.width) :
+theorem masked_or_guard {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (y z : BitVec t.width) :
     (Rust.band64 (2 ^ t.width - 1) (z.toNat : Int) ==
       Rust.band64 (2 ^ t.width - 1) (Rust.asU64 (-(y.toNat : Int) - 1))) =
       (z == ~~~y) := by

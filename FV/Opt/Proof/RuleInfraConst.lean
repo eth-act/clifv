@@ -30,7 +30,7 @@ theorem asI64_asU64_cast (x : Int) : Rust.asI64 (Rust.asU64 x) = Rust.asI64 x :=
   simp only [Rust.asI64, Rust.asU64, BitVec.ofInt_natCast, BitVec.ofNat_toNat, BitVec.setWidth_eq]
 
 /-- Reading an `i64` at a non-`i128` width only sees its low bits. -/
-theorem ofInt_asI64_low {t : Ty} (ht : t ≠ .i128) (x : Int) :
+theorem ofInt_asI64_low {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (x : Int) :
     BitVec.ofInt t.width (Rust.asI64 x) = BitVec.ofInt t.width x := by
   imm_cases t <;> simp only [Rust.asI64, ofInt_toInt_signExtend] <;>
     (try simp (disch := decide) only [ofInt_eq_setWidth]) <;>
@@ -38,7 +38,7 @@ theorem ofInt_asI64_low {t : Ty} (ht : t ≠ .i128) (x : Int) :
 
 /-- `imm64_neg` of any immediate at a non-`i128` type (`imm64Neg_spec` needs a presented
 immediate `imm64OfBits b`; `cprop.isle` 269 negates `imm64 (i64_cast_unsigned k)`). -/
-theorem imm64Neg_ofInt {t : Ty} (ht : t ≠ .i128) (x : Int) :
+theorem imm64Neg_ofInt {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (x : Int) :
     Rust.imm64Neg (CTy.ofClif t) x = .ok (imm64OfBits (-(BitVec.ofInt t.width x))) := by
   imm_pre [Rust.imm64Neg]
   imm_cases t <;> imm_solve

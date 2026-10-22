@@ -176,9 +176,9 @@ theorem imm64Masked_i128 (x : Int) :
     Rust.imm64Masked (CTy.ofClif .i128) x = throw "ty_mask: unimplemented for > 64 bits" := rfl
 
 /-- `i64_sextend_u64` below 128 bits (`iconst_s`'s re-extension check). -/
-@[opt_imm] theorem i64SextendU64_spec {t : Ty} (ht : t ≠ .i128) (x : Int) :
+@[opt_imm] theorem i64SextendU64_spec {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) (x : Int) :
     Rust.i64SextendU64 (CTy.ofClif t) x = .ok (Rust.sext t.width (Rust.asI64 x)) := by
-  cases t <;> first | exact absurd rfl ht | rfl
+  cases t <;> first | exact absurd rfl ht | exact absurd hv (by decide) | rfl
 
 /-- `rule_bits_xb` that also decides closed side facts once the types are split (`Ty.i16 ==
 Ty.i8`, `decide (8 < 16)` from the rules of `iadd_uextend`/`isub_uextend`). -/

@@ -22,13 +22,13 @@ open Lean Meta Elab Tactic
 @[opt_monad] theorem ctorFn_subsume_poison {σ : Type} (G : EGraph σ) (t : CTy) (s : St σ) :
     ctorFn G "subsume" [.poison t] s = .ok (some (.poison t, s)) := rfl
 
-theorem tySmin_ofClif {t : Ty} (ht : t ≠ .i128) :
+theorem tySmin_ofClif {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) :
     Rust.tySmin (CTy.ofClif t) = .ok (2 ^ (t.width - 1)) := by
-  cases t <;> first | rfl | exact absurd rfl ht
+  cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
-theorem tySmax_ofClif {t : Ty} (ht : t ≠ .i128) :
+theorem tySmax_ofClif {t : Ty} (ht : t ≠ .i128) (hv : t.isVec = false) :
     Rust.tySmax (CTy.ofClif t) = .ok (2 ^ (t.width - 1) - 1) := by
-  cases t <;> first | rfl | exact absurd rfl ht
+  cases t <;> first | rfl | exact absurd rfl ht | exact absurd hv (by decide)
 
 /-- The lookups of a repeated pattern variable. -/
 macro "arr_step" : tactic => `(tactic| simp (config := {decide := true}) only
