@@ -333,6 +333,121 @@ theorem regLevel_trapCall_coreT {R : RL} (hR : R.Wf) {ra : BitVec 64}
     rw [hobj, hw] at hraise
     exact hend b k ρ w1 vb _ info ops _ w1 hstar hvb hi hops (.inr ⟨ti, rfl⟩) hraise
       (hhaltT info ti _ w1 0 w1 hraise) (by simp [defCons, hops])
+/-! ## The activation of a compiled function -/
 
+/-- **The register level of the explicit and the callee traps for the backend's code under the
+value semantics, `try_call`s included** (`regLevel_trapCall_value` without
+`vcp.hasTryCall = false`): for the VCode run under `valueSemU` with the trapping callees
+`xrT XT`, an explicit trap is a trap site of the machine run from the ABI entry or (the run
+passing a raising `tryCall` first) a callee-trap state; a raising `call` or `tryCall` is a
+callee-trap state at a call site of either kind (`CallTrapAtT`), every earlier state of the
+activation `GoodX`. -/
+theorem regLevel_trapCall_valueT {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : FnAsm}
+    {fb : FnBin} {k : Nat} (hcheck : AllocChecked vcp rf) (halloc : lowerRFunc vcp rf = .ok af)
+    (hemit : emitFunc k af = .ok fa) (hlayout : fa.layout = .ok fb) {X : ExtSem} {H : ArmHooks}
+    {K : Nat} (hcov : FormsCovered ⟨fa.k, af.slotBase⟩ vcp)
+    (hC : ∀ s, CalleeOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H vcp.CallSite)
+    (hTls : vcp.hasTls = true → ∀ s, TlsOk
+      (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s) K X H)
+    (XT : Option String → List CV → Arm.ArmState → Prop)
+    {base ra : BitVec 64} {s w₀ : Arm.ArmState} (hent : AbiEntry fb base ra s)
+    (hres : StackAvail K af s) (hbe : BodyEntry af s w₀) :
+    ∃ ρ₀ : Nat → CV,
+    let Fw := frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
+    let semV := valueSemU Fw ⟨fa.k, af.slotBase⟩ X (xrT XT)
+    let Stop := fun n => CallTrapAtT vcp Fw K (fun _ => False) s fa base X (fun _ _ => False) XT
+        (E2E.runX (ArmStepX X H fa) n s) ∧
+      ∀ i < n, actGoodX vcp rf af fa fb base s X H K (fun _ => False) (fun _ _ => False)
+        (E2E.runX (ArmStepX X H fa) i s)
+    (∀ c, VTraps vcp semV ρ₀ w₀ c →
+      ∃ n, TrapAt fb base c (E2E.runX (ArmStepX X H fa) n s) ∨ Stop n) ∧
+    (∀ obj w', VUnwinds vcp semV (xrT XT) ρ₀ w₀ obj w' → ∃ n, Stop n) ∧
+    (VTryRaiseFrom vcp semV (xrT XT) ⟨0, 0, ρ₀, w₀⟩ → ∃ n, Stop n) := by
+  obtain ⟨cc, ins, a0, hat, hok⟩ := hcheck
+  obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hlayout
+  obtain ⟨body, psF, hb, -, hk⟩ := emitFunc_ok hemit
+  subst hk
+  let R : RL := ⟨vcp, rf, af, fa, fb, lm, base, s, X, H, psF, K, fun _ => False, fun _ _ => False⟩
+  have hR : R.Wf := ⟨⟨cc, ins, a0, hat, hok⟩, halloc, hemit, hlayout, hlm,
+    by show 4 * fb.words.size ≤ 2 ^ 64; have := hent.fits; omega, hres, ⟨body, hb⟩,
+    hent.program, fun _ h => h.elim⟩
+  have hF : R.F = frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s :=
+    frameWG_false K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s
+  have hCg : CalleeOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.H R.vc.CallSite R.gv := by
+    rw [hF]; exact (hC s).g _ s _ _
+  have hreal := realizes_value_all hR hCg
+    (fun _ => calleeTryOkG_of_call (fun ctx info ti hS => hCg.os ctx info hS.callSite)
+      (fun _ _ _ h => callAt_tryCall_call h) (fun _ _ hS => trySite_clobberAll halloc hS))
+    (by rw [hF]; exact fun h => hTls h s) hcov
+  have hRz := realizes_haltTry (semU := valueSemVU R.gv R.F R.ctx R.X (xrT XT)) hreal
+    (fun _ _ _ h => valueSemVU_noRaise h)
+    (fun _ _ _ _ _ _ h hr => by rw [valueSemVU_call_raise h hr])
+  have hbe' : BodyEntryW R.F R.vc.EntryArg R.af R.s0 w₀ := by
+    rw [hF]
+    exact hbe.w _ fun r ⟨_, _, hvb, hi, _, hv⟩ =>
+      ((ctlCheck_args (lowerRFunc_ok halloc).2.2 hvb hi).2.2 _ hv).2
+  have hgot : GotSem R.gv R.X (haltTry (xrT XT) (valueSemVU R.gv R.F R.ctx R.X (xrT XT))) :=
+    fun _ _ _ _ => ⟨fun _ _ _ _ _ h => h.elim, fun _ _ _ _ _ _ h => h.elim⟩
+  have hnt : ∀ i, trapCode? i ≠ none → ∀ info ti, i ≠ .tryCall info ti := by
+    intro i ht info ti e; subst e; simp [trapCode?] at ht
+  obtain ⟨m₀, h1, h2, h3⟩ := regLevel_trapCall_coreT (XT := XT) hR hent.toCall hat hgot hRz
+    (fun i _ _ _ _ ht h => valueSemVU_halt_trap ht (by rwa [haltTry_not_try (hnt i ht)] at h))
+    (fun _ _ _ _ _ _ h => haltTry_raise h) hbe' (entryRho a0) (Inv_entryRho ckeep hok)
+  have e1 : valueSemVU R.gv R.F R.ctx R.X (xrT XT) =
+      valueSemU (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size af s)
+        ⟨fa.k, af.slotBase⟩ X (xrT XT) := by
+    rw [hF]
+    exact valueSemVU_bot _ _ _ _
+  have hstop : ∀ n, R.CallTrapPreT XT (E2E.runX R.step n R.s0) →
+      (∀ i < n, R.GoodX (E2E.runX R.step i R.s0)) →
+      CallTrapAtT vcp (frameW K (RAFrame.compute vcp rf).intBase (RAFrame.compute vcp rf).size
+          af s) K (fun _ => False) s fa base X (fun _ _ => False) XT
+          (E2E.runX (ArmStepX X H fa) n s) ∧
+        ∀ i < n, actGoodX vcp rf af fa fb base s X H K (fun _ => False) (fun _ _ => False)
+          (E2E.runX (ArmStepX X H fa) i s) := by
+    intro n hct ht
+    refine ⟨?_, fun i hi => (ht i hi).act⟩
+    have hct' : CallTrapAtT R.vc R.F R.K R.G R.s0 R.fa R.base R.X R.gv XT
+        (E2E.runX R.step n R.s0) := hct
+    rw [hF] at hct'
+    exact hct'
+  -- an earlier raising `tryCall` on the way
+  have hearly : ∀ v, (VConf.run ⟨0, 0, entryRho a0 m₀, w₀⟩ : VConf CV Arm.ArmState) = .run v →
+      VTryRaiseFrom R.vc (haltTry (xrT XT) (valueSemVU R.gv R.F R.ctx R.X (xrT XT))) (xrT XT) v →
+      ∃ n, R.CallTrapPreT XT (E2E.runX R.step n R.s0) ∧
+        ∀ i < n, R.GoodX (E2E.runX R.step i R.s0) := by
+    intro v hv htr
+    cases hv
+    exact h3 htr
+  refine ⟨entryRho a0 m₀, fun c htr => ?_, fun obj w' hu => ?_, fun hu => ?_⟩
+  · rw [← e1] at htr
+    obtain ⟨b, k, ρ, w, vb, i, ops, outs, w', hstar, hvb, hi, hops, hsem, htc⟩ := htr
+    rcases star_haltTry (XR := xrT XT) hstar with hs | ⟨v, hv, hT⟩
+    · have hsem' := (haltTry_not_try (XR := xrT XT)
+        (sem := valueSemVU R.gv R.F R.ctx R.X (xrT XT)) (hnt i (by rw [htc]; simp)) _ _).trans hsem
+      exact (h1 c ⟨b, k, ρ, w, vb, i, ops, outs, w', hs, hvb, hi, hops, hsem', htc⟩).imp
+        fun _ h => .inl h
+    · obtain ⟨n, hct, ht⟩ := hearly v hv hT
+      exact ⟨n, .inr (hstop n hct ht)⟩
+  · rw [← e1] at hu
+    obtain ⟨b, k, ρ, w1, vb, info, ops, outs, hstar, hvb, hi, hops, hraise, hsem, hlen⟩ := hu
+    rcases star_haltTry (XR := xrT XT) hstar with hs | ⟨v, hv, hT⟩
+    · have hsem' := (haltTry_not_try (XR := xrT XT)
+        (sem := valueSemVU R.gv R.F R.ctx R.X (xrT XT)) (i := .call info)
+        (fun _ _ h => by cases h) _ _).trans hsem
+      obtain ⟨n, hct, ht⟩ :=
+        h2 obj w' ⟨b, k, ρ, w1, vb, info, ops, outs, hs, hvb, hi, hops, hraise, hsem', hlen⟩
+      exact ⟨n, hstop n hct ht⟩
+    · obtain ⟨n, hct, ht⟩ := hearly v hv hT
+      exact ⟨n, hstop n hct ht⟩
+  · rw [← e1] at hu
+    obtain ⟨b, k, ρ, w1, vb, info, ti, ops, obj, w', hstar, hvb, hi, hops, hraise⟩ := hu
+    rcases star_haltTry (XR := xrT XT) hstar with hs | ⟨v, hv, hT⟩
+    · obtain ⟨n, hct, ht⟩ :=
+        h3 ⟨b, k, ρ, w1, vb, info, ti, ops, obj, w', hs, hvb, hi, hops, hraise⟩
+      exact ⟨n, hstop n hct ht⟩
+    · obtain ⟨n, hct, ht⟩ := hearly v hv hT
+      exact ⟨n, hstop n hct ht⟩
 
 end Backend.Proof
