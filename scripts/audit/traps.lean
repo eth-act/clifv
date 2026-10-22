@@ -3,6 +3,7 @@ import FV.E2E.WorldTrapCall
 import FV.E2E.LinkTrapCallWitness
 import FV.Front.RawExeTrap
 import FV.Link.DeadCleanupExeTrapWitness
+import FV.E2E.DeadCleanupTrapCallTry
 
 -- S9 (#33): callee traps. S9a: the per-function theorem (docs/contracts/e2e.md "Callee traps").
 #print axioms E2E.step_trapRel
@@ -85,3 +86,17 @@ import FV.Link.DeadCleanupExeTrapWitness
 #print axioms Link.DeadCleanup.TrapWitness.exec_traps -- witness: native_decide
 #print axioms Link.DeadCleanup.TrapWitness.cs0_trapsD -- witness: native_decide
 #print axioms Link.DeadCleanup.TrapWitness.cs0_not_trapsExplicit -- witness: native_decide
+-- S9b (#375), per function: callee traps of try_call/try_call_indirect
+-- (FV/E2E/TrapCallTry*.lean, RegLevelTrapCallTry.lean, DeadCleanupTrapCallTry.lean).
+#print axioms E2E.step_try_trap_stuck
+#print axioms E2E.raiseAt_of_trapRel_try
+#print axioms Backend.Proof.Driver.term_step_try_stop
+#print axioms Backend.Proof.Driver.sim_trapStop
+#print axioms Backend.Proof.Driver.driver_trapStop
+#print axioms Backend.Proof.Driver.prep_sound_tryRaise
+#print axioms E2E.tryRaise_cleanup
+#print axioms Backend.Proof.star_haltTry
+#print axioms Backend.Proof.realizes_haltTry
+#print axioms Backend.Proof.regLevel_trapCall_coreT
+#print axioms Backend.Proof.regLevel_trapCall_valueT
+#print axioms E2E.backend_correct_final_cleanup_trapcallT
