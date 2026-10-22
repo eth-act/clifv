@@ -34,7 +34,7 @@ private def sourceText (name : String) (c : Stock.D0.Configuration)
   -- A further dead operation distinguishes retained plain artifacts from the
   -- demand-driven Stock output, exercising consumer reconstruction fallback.
   let f := if retainedMixed then {f with blocks := f.blocks.map fun b =>
-    {b with body := b.body ++ [⟨[100],.binary .iadd (Stock.D0.valueType c) 0 1⟩]}} else f
+    {b with body := b.body ++ [⟨[101],.binary .iadd (Stock.D0.valueType c) 0 1⟩]}} else f
   f.print
 
 private def plan (s : LinkSpec) : Link.Ld.Plan :=
