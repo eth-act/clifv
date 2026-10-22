@@ -233,3 +233,8 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ClifCStep.Witness.cstep_atomicLoad0
 #print axioms Concurrency.ClifCStep.Witness.cstep_store0
 #print axioms Concurrency.ClifCStep.Witness.cstep_atomicCas0
+-- T2h layer 2d: from "touched" to the covering event, its address
+#print axioms Concurrency.IselCover.cover_of_not_runOut
+#print axioms Concurrency.IselCover.addr_eq_of_cover
+#print axioms Concurrency.IselCover.Witness.cover_ldar
+#print axioms Concurrency.IselCover.Witness.addr_eq_cover8

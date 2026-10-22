@@ -398,6 +398,13 @@ they are; the per-thread layers are new files.
     `0x8000` under `csem`), `atomicLoad_facts0`, `store_facts0`. Open: `access_in_events` on a
     statement of a compiled function (its `LowerInstOk` from `instCalls_of_rules`, `RunOut`
     from `ifoot_csem` along the run), part of 2e.
+    *From touched to the covering event (`IselCover.lean`):* `cover_of_not_runOut`: under
+    `RunFoot` (every instruction the run reaches steps with footprint `ev`), a byte that is not
+    outside every event lies in an event of an instruction the run reaches (`RunAt`);
+    `addr_eq_of_cover`: an `n`-byte event covering every byte of `[a, a + n)` (no wrap-around,
+    `MemRelOk.valid`) starts at `a`. Witnesses (`IselCoverWitness.lean`): `cover_ldar` (no
+    footprint of the `ldar` avoids `0x8000`: with that byte changed it loads `5`, not `0`),
+    `addr_eq_cover8`. Open: the event sizes of `cEvs` (`AtA` versions of `straight_avoid_of`).
   * **2e (assembly; open, CLIF side done):** the CLIF run reading the bytes the VCode run read
     (receptiveness of `CStep`), `ψ` mapping each CLIF event to its segment's memory event,
     `Refines` with `Priv` = the frame (the segment's other writes: outgoing call arguments).
