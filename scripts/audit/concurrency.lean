@@ -557,3 +557,14 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.LSWitness.scopeS
 #print axioms Concurrency.ArmAllocThread.LSWitness.not_memScopeB
 #print axioms Concurrency.ArmAllocThread.LSWitness.ls_premises -- witness: native_decide
+
+-- T2 (#311): layer 4b from the ABI entry (the prologue)
+#print axioms Concurrency.ArmAllocThread.stp_fplr_evs
+#print axioms Concurrency.ArmAllocThread.q_init_lines
+#print axioms Concurrency.ArmAllocThread.prologue_evs
+#print axioms Concurrency.ArmAllocThread.prun_prologue
+#print axioms Concurrency.ArmAllocThread.refines_privW
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_entry
+#print axioms Concurrency.RealizeCompiled.WitnessL.entry_premises -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessL.run_load_entry -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessL.refines_load_entry -- witness: native_decide

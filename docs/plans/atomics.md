@@ -618,9 +618,19 @@ they are; the per-thread layers are new files.
       point; layer 2 with call statements; the caller's resumption after the return), the
       thread's machine running the callee's code against the per-function `R.step`, and the
       witness of a compiled function calling a compiled `atomic_load` function.
+  * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
+    prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
+    `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
+    count exposed); `prologue_evs`, `prun_prologue` (a precise run under `OkPriv` through the
+    prologue is the single-core run, its one event a private plain write to the fp/lr slot);
+    `refines_privW`; **`arm_alloc_refines_entry`**: every precise run under `OkPriv` from the ABI
+    entry `R.s0` (`AbiCall`) realizes a run of the allocated code from `MConf.init … w₀` (any
+    `BodyEntryW` world), `arm_alloc_refines_br`'s conclusion, the prologue's write private
+    (composed by `CallCompose.Refines.app`). Witness (`ArmAllocEntryWitness.lean`):
+    `entry_premises`, `run_load_entry` (the compiled `atomic_load` from its ABI entry through the
+    prologue, the saves, `args`, the spill and the `ldar`), `refines_load_entry`.
   * open: `ItemSim` for plain loads/stores (multi-line address forms through x16; one-line
-    forms fit `OneEvForm`, their event equality per addressing mode is open); the prologue (from
-    the ABI entry).
+    forms fit `OneEvForm`, their event equality per addressing mode is open).
     Needed per form: **receptiveness** (the allocated code steps on every read value once it
     steps on one: the pc and error of a load do not depend on the loaded bytes) and **event
     equality** (the allocated instruction's Arm events are the canonical run's `cEvs`, address
