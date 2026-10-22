@@ -107,7 +107,14 @@ and they run under `qemu-aarch64-static`.
    ```
    Then a runaway build kills a clifv module (the serial scheduler retries it) instead of the
    kernel's OOM killer picking any process on the machine. Without the unit file the slice has
-   no limit and each build is capped only by its own `FV_MEMCAP`.
+   no limit and each build is capped only by its own `FV_MEMCAP`. `scripts/lake-serial-build.py`
+   reads the slice's MemoryHigh and starts a module only if its recorded peak still fits under it
+   (minus 4 GB), so concurrent schedulers queue instead of pushing the slice into reclaim, where
+   systemd-oomd kills whole scopes; a module killed that way is retried at the same cap, a module
+   killed at its own cap at twice the cap. Building many modules with the shared cache
+   (`FV_LAKE_CACHE`): the scheduler checks all modules in one `lake build --no-build` and builds
+   only those out of date; a module another worktree is building at the moment is restored from
+   the cache when that build ends instead of being built twice (docs/TO-PROVE.md §7).
 
 ## Usage
 

@@ -16,7 +16,7 @@ tree verified against validated 0d9f54fe plus its documentation receipt. [Logica
 records current normal/trust/runtime/native/CLI/retention/identity/example gates,
 exact original axiom/header parity and actual provenance. The actual squash and integrator notice are recorded in #44/#140/#261.
 
-Continue remaining pure scalar classes, starting with
+Continue remaining scalar classes, including real trapping
 division/remainder, using complete saved source wrappers and shared consumer composition. Read
 [the obligation ledger](../research/stock-driver-obligations.json); historical root
 inventories require current-source/scope reconciliation and are not coverage
@@ -135,8 +135,34 @@ source delta, import closure and unchanged relevant executable hashes; rerun
 current normal keys/trust, affected executable ownership and affected consumer
 cohorts. Never relabel historical passes. Unknown dependencies require reruns.
 
-Next: division/
-remainder; complete original widths/ABIs; every unchanged original #140 control/
+The complete singleton returned division/remainder class passes current author
+gates at `b1ef0c67` on `5c1351a0`, reconciled onto `aa81ed96` with documentation
+changes only. [Current and historical evidence](../research/stock-div-production-activation.md)
+records25 primary/27 ownership gates, actual normal/trust/native/runtime/encoder/
+identity/stage/consumer/retention/verified-example observations and remote
+backup `a2c9d0d8`. Every actual record retains its source head.
+The default compiler/checker/linker/generated-proof consumers include all four
+operations and real zero/overflow traps; original arbitrary operands/slots and
+old pure theorem variants remain. Source bridges retain8/16/32/64; production
+activation covers32/64 across six ABIs, both cleanup modes and both real allocators.
+
+Continue immediately with mixed scalar prefixes followed by a returned division.
+The universal return-and-trap domain and seven split proof modules compile, with
+all21 printed roots standard-only. Complete96 pipeline/source-observation
+witnesses, runtime29functions, linked/native/generated-consumer updates are saved
+but not yet production-validated/activated. Constant-divisor fixtures must observe
+790/791 rather than counting saved lemmas as executed coverage.
+
+A concrete build boundary can be delivered alongside the next implementation:
+extract unchanged VCode outcomes, their prefix lemmas, ArgsAtEntry and Reach into
+a stable interface; retain names/definitions and LowerSim re-exports. Isolated
+interface/PrepareSound/Statement/LowerSim copies compile; full affected gates
+are still required. Coordinate the shared-file boundary on140. This avoids
+rebuilding generated interpreter proofs after unrelated simulation additions.
+Do not stop at either this first trapping class or a performance-only packet.
+
+Next: mixed scalar prefixes and returned final division; broader colored/sunk
+instructions; complete original widths/ABIs; every unchanged original #140 control/
 memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligation.
 Never exclude original accepted compare/cast syntax to simplify composition.
 Universal successful lowering and downstream completeness remain. Fallback is
@@ -259,3 +285,23 @@ clean views/outputs; preserve dirty/unpublished source and unique evidence.
 Roughly 8 substantive PRs/day is pacing, never a quota or reason to fragment.
 Record implementation/porting/validation/operational-repair time. No routine
 confirmation; keep working until every original #140 obligation is complete.
+
+## Division compatibility gate and next mixed-body delivery
+
+The complete singleton returned division/remainder class is implemented and
+validated on the source heads in [its receipt](../research/stock-div-production-activation.md).
+Current main advanced from b9415cfb to f7074115 while the session was inactive,
+including allocator and linker contracts. The conflict-free reconciliation is
+pushed at6a205546; fresh required dependency/runtime/consumer gates are pending.
+The original receipt and source are backed remotely atf3e6f6bc. No current-main
+pass or merge is claimed before those checks finish.
+
+Next deliver arbitrary proved scalar prefixes followed by a returned final
+division. Derive that division’s actual record retention from the unchanged
+return-demand proof, and pure prefix unsunkness from pointwise quiet source
+colors beside the colored division. Compose real original trapped prefixes
+with the selected scan chunks; preserve memory/world changes in the generic
+prefix proof. This complete class can ship without first solving arbitrary
+position division-sinking, which remains an explicit subsequent obligation.
+All original #140 effects, calls, control, widths/ABIs, block/whole-driver
+simulation and universal Stock-only/downstream completeness remain active.

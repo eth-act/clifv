@@ -87,9 +87,16 @@ def highmulEligible (stm : Clif.Stmt) : Bool :=
 
 def highmulBodyEligible (stm : Clif.Stmt) : Bool := cmpBodyEligible stm || highmulEligible stm
 
+/-- First complete colored source class, with every original operand value.
+Old body selectors remain unchanged for artifact retention. -/
+def singleDivEligible (b : Clif.Block) : Bool :=
+  match b.body,b.term with
+  | [⟨[z],.div _ ty _ _⟩],.ret [z'] => z == z' && (ty == .i32 || ty == .i64)
+  | _,_ => false
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all highmulBodyEligible &&
+  | [b] => (b.body.all highmulBodyEligible || singleDivEligible b) &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
