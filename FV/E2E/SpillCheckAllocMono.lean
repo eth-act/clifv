@@ -93,14 +93,15 @@ theorem sub_transferOp {x y : AState} (h : Sub x y) (i : MInst) (P : List (Opera
 
 theorem sub_parCopy {x y : AState} (h : Sub x y) (ps xs : List Nat) :
     Sub (x.parCopy ps xs) (y.parCopy ps xs) := by
-  refine ⟨by simp only [AState.parCopy, Array.size_map]; exact h.1, fun l s hs => ?_⟩
+  refine ⟨by simp only [AState.parCopy_eq, Array.size_map]; exact h.1, fun l s hs => ?_⟩
   rcases AState.mem_get_parCopy hs with ⟨hs1, hn⟩ | ⟨p, z, hpz, rfl, hz⟩
   · exact mem_parCopy_keep (h.2 l s hs1) (fun p hp he => hn (he ▸ List.mem_map_of_mem hp))
   · exact mem_parCopy_add hpz (h.2 l _ hz)
 
 theorem get_meet (x y : AState) (l : Loc) :
     (x.meet y).get l = (x.get l).filter fun s => (y.get l).contains s := by
-  unfold AState.get AState.meet
+  rw [AState.meet_eq]
+  unfold AState.get
   split
   · rename_i i _
     rw [Array.getD_eq_getD_getElem?, Array.getElem?_mapIdx, Array.getD_eq_getD_getElem?,
@@ -108,7 +109,7 @@ theorem get_meet (x y : AState) (l : Loc) :
     cases x[i]? <;> simp
   · rfl
 
-theorem size_meet (x y : AState) : (x.meet y).size = x.size := by simp [AState.meet]
+theorem size_meet (x y : AState) : (x.meet y).size = x.size := by simp [AState.meet_eq]
 
 theorem sub_meet {z x y : AState} (h1 : Sub z x) (h2 : Sub z y) : Sub z (x.meet y) := by
   refine ⟨by rw [size_meet]; exact h1.1, fun l s hs => ?_⟩
@@ -202,7 +203,7 @@ theorem runBlock_mono {b : Nat} {x x' y : AState} (h : c.runBlock b x = .ok x') 
   exact hy
 
 theorem forgetOps_nil (a : AState) : forgetOps a [] = a := by
-  unfold forgetOps
+  rw [forgetOps_eq]
   simp only [List.any_nil, Bool.not_false]
   exact Array.map_id'' (fun L => List.filter_eq_self.mpr fun _ _ => rfl) a
 
@@ -382,7 +383,7 @@ theorem adds_facts (L : List Sym) (ps xs : List Nat) (hn : ps.Nodup) :
 
 theorem good_parCopy {K N : Nat} {a : AState} (h : Good K N a) {ps xs : List Nat}
     (hn : ps.Nodup) (hK : ∀ p ∈ ps, p < K) : Good K N (a.parCopy ps xs) := by
-  unfold AState.parCopy
+  rw [AState.parCopy_eq]
   refine good_map h _ (by simp) fun L hL => ?_
   obtain ⟨hA1, hA2⟩ := adds_facts L ps xs hn
   have hk := goodL_filter hL fun s => !(ps.map Sym.vreg).contains s
@@ -540,7 +541,8 @@ theorem wt_mapIdx_filter : ∀ (L : List (List Sym)) (p : Nat → Sym → Bool),
       omega
 
 theorem wt_meet (x y : AState) : wt (x.meet y) ≤ wt x ∧ (x.meet y ≠ x → wt (x.meet y) < wt x) := by
-  unfold wt AState.meet
+  rw [AState.meet_eq]
+  unfold wt
   rw [Array.toList_mapIdx]
   obtain ⟨h1, h2⟩ := wt_mapIdx_filter x.toList fun i s => (y.getD i []).contains s
   refine ⟨h1, fun hne => h2 fun e => hne ?_⟩
