@@ -1,0 +1,14 @@
+{
+  "utc": "2026-10-22T17:21:53.951960+00:00",
+  "source_head": "c0c0ebd0631bfa702bead77d196fbc70803193e3",
+  "drafts": {
+    "recovery/mixed-division-drafts/stock-div-next-trap-prefix.lean": "550176d01c0842c6b132162c28dc6e0d44b850cd9d5825cc8308c69e45dbfb0f",
+    "recovery/mixed-division-drafts/stock-div-next-quiet-colors.lean": "7b1028782e1274528b08b1ff398c806ae8cd7d720bfdc6c99f511a64d64831ee",
+    "recovery/mixed-division-drafts/stock-div-next-local-trap.lean": "9bb0671adde1b8b0e01284d95e358df26d002617e89c08c9fbf78a4270ec36b0",
+    "recovery/mixed-division-drafts/stock-div-next-mixed-source.lean": "7fd020a86f40b68ebeb6317db566065fd18dfda20949602af10a7a9cc49ceee2",
+    "recovery/mixed-division-drafts/stock-div-next-last-return-demand.lean": "ed484a47f17912293796baf701ebf1d2273d11286cbaff5bac11a0c788d3185b",
+    "recovery/mixed-division-drafts/stock-div-next-mixed-notes.md": "a22fece2784c7a95aae65b0bd13c090549f24bdf33a0f094e19e86355750cf69"
+  },
+  "state": "Unvalidated new drafts for the next complete production class. Earlier two generic drafts have their earlier compile logs in the full f3e6f6bc archive. No production completion claim.",
+  "next": "Pure scalar prefix followed by a returned final division; then arbitrary-position division, all remaining original140 obligations."
+}
