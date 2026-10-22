@@ -1,5 +1,12 @@
 # turbo-lean: evaluated, not adopted (2026-10-22)
 
+**Update (agent features re-evaluated, 2026-10-22, turbo-lean `ded00b8`, clifv `5c1351a0`):**
+see [Agent features](#agent-features-re-evaluated). The per-theorem edit loop
+(`check --decl`) works on our heavy proof modules. It is a large win when an agent edits a
+cheap theorem inside an expensive file: 0.04–1.3 s per edit instead of a 16–28 min module
+rebuild. It stays a dev-loop tool (`docs/USAGE.md`, "Fast proof-edit loop"). Singleflight, the
+memory governor and statement pinning are of no use to us.
+
 Question: can [Th0rgal/turbo-lean](https://github.com/Th0rgal/turbo-lean) replace stock Lean
 v4.34.1 for clifv's builds? Evaluated at turbo-lean commit
 [`a8e2269`](https://github.com/Th0rgal/turbo-lean/commit/a8e2269) (2026-10-22) against clifv
@@ -125,3 +132,92 @@ paths are caching (clifv already has one) and sorry-prefixed per-theorem checks,
 serve as gate evidence. Our build time is dominated by kernel checking of single large
 declarations (`decide +kernel`/`rfl` over generated ISLE data, `bv_decide`). This tool does not
 address that, and neither did the "fast-lean" toolchain evaluated earlier (BuildAccel).
+
+## Agent features re-evaluated
+
+Setup: worktree at clifv `5c1351a0`, dependencies restored from `FV_LAKE_CACHE`, turbo-lean
+`ded00b8` built with `cargo build --release` (its build script first needs `lake build` in
+`lean/`). Each sequence ran in one `scripts/memcap.sh` scope (`FV_MEMCAP=24G`,
+`LEAN_NUM_THREADS=2`) with a fresh `TURBO_LEAN_HOME` and no daemons running. Peaks are the
+scope's cgroup `memory.peak`, which includes the daemons. The machine was shared and loaded.
+
+### 1. Edit loop: `turbo-lean check <file> --decl <id>`
+
+"lake" means `lake build M` after a comment-only edit to `M`, with dependencies cached. Edits:
+`skip` inserted as the first tactic, then `skip; skip`. "broken" means `exfalso` inserted as the
+first tactic.
+
+| Module (theorem) | lake build M | cold check | unchanged | edit 1 / edit 2 | broken | scope peak |
+|---|---|---|---|---|---|---|
+| KillTab (`nop_rhs`) | 1,697 s | 1.47 s | 0.01 s (cache) | 0.11 / 0.11 s | rejected, 4.4 s, Lean error | 4.5 GB |
+| IselShpTry (`handOk_try`) | 1,658 s | 2.43 s | 0.02 s | 1.31 / 1.12 s | rejected after the 30 s timeout, no Lean error | 4.4 GB |
+| IselCtlTry (`tryRulesCorrectP`, has `have`s) | 952 s | 1.31 s | 0.01 s | 0.04 / 0.05 s | rejected, 3.8 s, Lean error | 3.5 GB |
+| FVTest SpillInstCheckCompleteW (`opsOkB_iRets`) | ~1.3 s | 4.99 s | 0.01 s | 0.10 / 0.09 s | rejected, 0.09 s, Lean error | 3.8 GB |
+| KillTab (`tabOkB_S`, 10× `decide +kernel` over the table) | (part of 1,697 s) | 788 s with `TURBO_LEAN_TIMEOUT_MS`; fails after 30 s without it | | | | 2.2 GB |
+| SpillInstCheckCompleteW (`spillInstOk_iRets`, `native_decide`) | | **rejected**: "Soundness hygiene violation … native_decide/ofReduceBool" | | | | |
+
+The very first `check` on the machine also compiles the Zygote worker binary, which is then
+cached in `/dev/shm/turbo-lean-staging-<uid>/fastcheck_shared_bins`. That first run took 30 s
+with a 6.9 GB scope peak, once.
+
+- **It accepts our files.** Custom tactics, `decide +kernel`, `set_option`s and the lakefile's
+  `weakLeanArgs` linter options caused no problems (it gets the environment from `lake env`).
+  Broken proofs were rejected each time, matching what lake would report: the same Lean error
+  text, except for `handOk_try`, which hit the timeout instead.
+- **Why it is fast:** every earlier theorem in the file becomes `:= sorry`, so a module's
+  expensive `decide +kernel` theorems are skipped unless the edited theorem *is* one of them.
+  Then the cost is that theorem's own kernel time (`tabOkB_S`: 788 s of KillTab's 1,697 s).
+  Imports load once per warm worker (~1 s for KillTab); later edits only re-elaborate the
+  edited theorem.
+- **Default 30 s limit.** The worker's limit comes from `TURBO_LEAN_TIMEOUT_MS`, read by the
+  daemon when it starts. `check --timeout` does not reach an already-running daemon. Heavy
+  theorems need the variable set before the first `check` (or the daemon killed and restarted).
+- **`native_decide` is rejected in every mode** (`server.rs`: source hygiene scan, no trusted
+  exemption). Witness theorems that use it cannot be checked. Other theorems in the same
+  witness file can be checked, but their prefix stubs it with `sorry`.
+- **Daemons.** The first `check` starts `turbo-lean serve` plus `turbo_zygote` workers that stay
+  running in the caller's memcap scope (1–4 GB each, 7 GB for the scope after a few checks).
+  They outlive the command, and the scope stays alive with them. Kill them when done.
+- **Not gate evidence:** the prefix is `sorry`'d, and cached verdicts are trusted. Merges keep
+  `lake build` and the axiom audits.
+
+### 2. Singleflight and memory governor (source reading)
+
+- **Singleflight** (`db.rs` `acquire_singleflight`, used by `build` in `lake_build.rs` and per
+  shard in `check.rs`): the key is a BLAKE3 hash over the whole project interface (or one
+  shard). If `<cache>/locks/<key>.done` exists, its outputs are used. Otherwise the caller
+  takes `flock(LOCK_EX|LOCK_NB)` on `<key>.lock`: the leader runs the work (plain
+  `lake build <targets>` for `build`) and writes `.done`. Followers block on `LOCK_SH`,
+  re-read `.done`, and take over as leader if it is missing (a crashed leader's lock is
+  released by the kernel). This does not apply to plain `lake build`. The `build` key covers
+  the whole project, not single modules. (Summary sent to BuildInfra for the cross-worktree
+  lock in `scripts/lake-serial-build.py`.)
+- **Memory governor** (`shm_cache.rs` `MemoryBudgetGovernor`, `zygote.rs`): the budget is
+  `--max-memory-mb` or ¾ of MemAvailable. It only sets turbo-lean's own shard-worker count,
+  the `/dev/shm` quota with disk spill, and an LRU that kills idle Zygote daemons above a
+  machine-wide total (default 2–12 GB). `have`-block fission splits only theorems checked by
+  `check` cold in low-memory mode (≤4096 MB) or with a cached cut. `--max-memory-mb 4096` did
+  not change the times above. Nothing bounds a `lean` process run by `lake build`, so memcap
+  stays our mechanism.
+
+### 3. Statement pinning: `pr-verify --disallow-statement-changes`
+
+Run on `origin/agent/build-diet` (`d8524602`) against `origin/main`:
+- Without `--scope`, it fails before the statement check: "PR Hygiene & Axiom Gate FAILED …
+  RegallocCheck.lean L140/L197/L243: csimp". It rejects `@[csimp]`, which build-diet adds on
+  purpose.
+- With `--scope FV/Backend/Proof` (4.8 s): it fails with 223 "statement-edited theorems" in 9
+  files. That is every theorem in each touched file. IselCmpBase only gained an `import` line,
+  yet all 35 of its theorems are flagged ("deleted"). The real changes (redefined
+  `AState.remove/meet/le`, the deleted private `observed_1..7`) are lost in the noise.
+  `--scope FV/E2E` still reports files outside the scope.
+- It cannot replace our statement-hash dumps (kernel statement hashes per constant): it is
+  file-granular and source-based, and it rejects `csimp`.
+
+### Recommendation
+
+- Agents MAY use `turbo-lean check --decl` to iterate on one theorem in a heavy module (usage:
+  `docs/USAGE.md`). Set `TURBO_LEAN_TIMEOUT_MS`, run it under memcap, kill the daemons
+  afterwards, and always finish with the normal lake build and audits before a PR.
+- Do not use `build`, `pr-verify`, `ci-verify` or the governor. Keep the statement-hash dumps
+  and `scripts/lake-serial-build.py`.
