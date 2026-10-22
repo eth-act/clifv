@@ -1,6 +1,7 @@
 import FV.Concurrency.ThreadCompose
 import FV.Concurrency.ArmAllocMove
 import FV.Concurrency.PrivCoh
+import FV.Concurrency.ArmAllocBranch
 
 /-!
 # The program-level contract for compiled code (T2k, #311)
@@ -97,16 +98,13 @@ theorem monPair_take {ls : List Lab} {n k : Nat} (hk : k ≤ n) {a b : Nat × Na
 
 /-! ## One compiled thread -/
 
-/-- **What the pipeline gives one thread** (module doc): the activation `RA` of the compiled
-CLIF function `f` (lowering `vc`, `prepare`d to `RA.vc`, allocated as `RA.rf`), the CLIF entry
-state `cs` (block 0, arguments `args`, related by `MR` to the entry world `w₀`), and the Arm
-state `s` related to the allocated code's entry configuration. -/
-structure Compiled (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.State)
-    (s : ArmState) : Prop where
-  wf : RA.Wf
-  scope : MemScope RA
-  gv : RA.gv = fun _ _ => False
-  front : ∃ (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
+/-- The pipeline facts of one compiled thread (`Compiled.front`): the CLIF function `f`
+(lowering `vc`, `prepare`d to `RA.vc`, allocated as `RA.rf`), layer 2's driver hypothesis and
+checks, the CLIF entry state `cs` (block 0, arguments `args`, related by `MR` to the entry world
+`w₀`), and `Q ∧ AInv` at the allocated code's entry configuration for the Arm state `s`. -/
+abbrev Front (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.State) (s : ArmState) :
+    Prop :=
+  ∃ (f : Clif.Function) (vc : VCode) (ctx : Ctx) (st0 : LState) (R : Reg → Reg)
     (gn : Nat → Nat) (bl : List BLow) (A : Nat → Nat → List Clif.ValueId) (MR : MemRelT)
     (slots : List (Clif.SlotId × Nat)) (sb : Nat) (syms : String → Option Nat)
     (B0 : Clif.Block) (args : List Clif.Val) (m₀ : Loc → CV) (w₀ : ArmState),
@@ -123,12 +121,32 @@ structure Compiled (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.Stat
     MR slots cs.mem w₀ ∧ ArgsAtEntry RA.F f.sig args w₀ ∧
     Q RA s (MConf.init RA.rf m₀ w₀) ∧ AInv RA (MConf.init RA.rf m₀ w₀)
 
-/-- **One compiled thread** (module doc): a precise Arm run under `OkPriv` from `s` realizes, on
-its first `k` steps, a CLIF thread run from `cs`, with `Refines Maps` (private set `PrivA RA`,
-the Arm prefix's monitor pairs atomic); the prefix is the whole run, or the CLIF thread stops, or
-the allocated code is done. -/
-theorem thread_compiled {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
-    {s : ArmState} (hc : Compiled env p RA cs s) {mon : Mon} {ls : List Lab} {t' : ArmState × Mon}
+/-- **What the pipeline gives one thread** (module doc): the activation `RA` of the compiled
+CLIF function, whose instructions are memory forms (`MemScope`), and its pipeline facts
+(`Front`). -/
+structure Compiled (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.State)
+    (s : ArmState) : Prop where
+  wf : RA.Wf
+  scope : MemScope RA
+  gv : RA.gv = fun _ _ => False
+  front : Front env p RA cs s
+
+/-- `Compiled` for functions with LL/SC loops and block-ending branches (`MemScopeB`, layer 4b
+`arm_alloc_refines_br`). -/
+structure CompiledB (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.State)
+    (s : ArmState) : Prop where
+  wf : RA.Wf
+  scope : MemScopeB RA
+  gv : RA.gv = fun _ _ => False
+  front : Front env p RA cs s
+
+theorem Compiled.toB {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {s : ArmState} (hc : Compiled env p RA cs s) : CompiledB env p RA cs s :=
+  ⟨hc.wf, memScopeB_of_memScopeL (memScopeL_of_memScope hc.scope), hc.gv, hc.front⟩
+
+/-- **One compiled thread, with loops and branches** (as `thread_compiled`, for `CompiledB`). -/
+theorem thread_compiledB {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {s : ArmState} (hc : CompiledB env p RA cs s) {mon : Mon} {ls : List Lab} {t' : ArmState × Mon}
     (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
     ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState) (ψ : Nat × Nat → Nat × Nat),
       k ≤ ls.length ∧ st 0 = .run cs ∧
@@ -140,7 +158,7 @@ theorem thread_compiled {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif
   obtain ⟨f, vc, ctx, st0, R, gn, bl, A, MR, slots, sb, syms, B0, args, m₀, w₀, H, hchk, hMR,
     hMRw, hX, hMem, hMRs, hreg, hprep, halloc, hB0, hcall, hfunc, hslots, hbody, hterm, hregs, hty,
     hsig, hmr, hargs, hq, hA⟩ := hc.front
-  obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hend⟩ := arm_alloc_refines_mv hc.wf hc.scope hq hA hr
+  obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hend⟩ := arm_alloc_refines_br hc.wf hc.scope hq hA hr
   obtain ⟨k, trS, t, ψ, hk, hrun, href, hendk⟩ :=
     arm_isel_refinesE (E := Done RA cE) hc.gv H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0
       hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr hM hAr hend hnA
@@ -156,19 +174,32 @@ theorem thread_compiled {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif
   · exact .inr (.inr ⟨m₀, w₀, trM, cE, hM, h⟩)
   · exact .inr (.inl (hlast ▸ h))
 
+/-- **One compiled thread** (module doc): a precise Arm run under `OkPriv` from `s` realizes, on
+its first `k` steps, a CLIF thread run from `cs`, with `Refines Maps` (private set `PrivA RA`,
+the Arm prefix's monitor pairs atomic); the prefix is the whole run, or the CLIF thread stops, or
+the allocated code is done. -/
+theorem thread_compiled {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {s : ArmState} (hc : Compiled env p RA cs s) {mon : Mon} {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
+    ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState) (ψ : Nat × Nat → Nat × Nat),
+      k ≤ ls.length ∧ st 0 = .run cs ∧
+      (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p (st trS.length) ∨
+        ∃ m₀ w₀ trM cE, MTRun RA.vc RA.rf RA.sem ckeep (cEvs RA.F RA.ctx) (MConf.init RA.rf m₀ w₀)
+          trM cE ∧ Done RA cE) :=
+  thread_compiledB hc.toB hr
+
 /-! ## The program -/
 
 /-- The private set of thread `i` of `n` compiled threads: its activation's (`PrivA`). -/
 def PrivN (n : Nat) (RA : Nat → RL) (i l : Nat) : Prop := i < n ∧ PrivA (RA i) l
 
-/-- **The contract for `n` compiled threads** (module doc). Each thread `i` runs the compiled code
-of `Compiled env p (RA i) (cs i) (sA i)` with a precise Arm run `ls i` under `OkPriv`; `k i` is
-the prefix `thread_compiled` realizes. Every execution of these prefixes (well formed, its `rmw`
-the threads' monitor pairs, its initial locations beyond the CLIF ones private to some thread,
-the CLIF ones with the same initial bytes) in which no thread's events touch another thread's
-private set is realized by CLIF threads from the `cs i` (`Realizes`, any outcome). -/
-theorem realizes_compiled {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Nat → RL}
-    {cs : Nat → Clif.State} {sA : Nat → ArmState} (hc : ∀ i < n, Compiled env p (RA i) (cs i) (sA i))
+/-- **The contract for `n` compiled threads, with loops and branches** (as `realizes_compiled`,
+for `CompiledB`). -/
+theorem realizes_compiledB {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Nat → RL}
+    {cs : Nat → Clif.State} {sA : Nat → ArmState}
+    (hc : ∀ i < n, CompiledB env p (RA i) (cs i) (sA i))
     {mon : Nat → Mon} {ls : Nat → List Lab} {t' : Nat → ArmState × Mon}
     (hr : ∀ i < n, PRun Policy.arm (RA i).step (OkPriv (RA i)) (sA i, mon i) (ls i) (t' i)) :
     ∃ k : Nat → Nat, (∀ i < n, k i ≤ (ls i).length) ∧
@@ -193,7 +224,7 @@ theorem realizes_compiled {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Na
       st 0 = .run (cs i) ∧ (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
       Refines Maps (PrivA (RA i)) (MonPair (evTr ((ls i).take k))) trS
         (conv (evTr ((ls i).take k))) ψ := fun i hi => by
-    obtain ⟨k, trS, st, ψ, hk, h0, hst, href, -⟩ := thread_compiled (hc i hi) (hr i hi)
+    obtain ⟨k, trS, st, ψ, hk, h0, hst, href, -⟩ := thread_compiledB (hc i hi) (hr i hi)
     exact ⟨k, trS, st, ψ, hk, h0, hst, href⟩
   let k : Nat → Nat := fun i => if hi : i < n then Classical.choose (hth i hi) else 0
   have hk : ∀ i (hi : i < n), ∃ (trS : List (List (Ev SKind BVal))) (st : Nat → TState)
@@ -221,6 +252,34 @@ theorem realizes_compiled {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Na
           rw [← htr i hi'] at hy
           exact hdisj i hi' j hj e _ y hy (by rw [hd]; exact hF) (hl ▸ hP))
   exact ⟨PC, φ, hPn.trans hn, fun i _ => hs0 i, hruns, hreal⟩
+
+/-- **The contract for `n` compiled threads** (module doc). Each thread `i` runs the compiled code
+of `Compiled env p (RA i) (cs i) (sA i)` with a precise Arm run `ls i` under `OkPriv`; `k i` is
+the prefix `thread_compiled` realizes. Every execution of these prefixes (well formed, its `rmw`
+the threads' monitor pairs, its initial locations beyond the CLIF ones private to some thread,
+the CLIF ones with the same initial bytes) in which no thread's events touch another thread's
+private set is realized by CLIF threads from the `cs i` (`Realizes`, any outcome). -/
+theorem realizes_compiled {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Nat → RL}
+    {cs : Nat → Clif.State} {sA : Nat → ArmState} (hc : ∀ i < n, Compiled env p (RA i) (cs i) (sA i))
+    {mon : Nat → Mon} {ls : Nat → List Lab} {t' : Nat → ArmState × Mon}
+    (hr : ∀ i < n, PRun Policy.arm (RA i).step (OkPriv (RA i)) (sA i, mon i) (ls i) (t' i)) :
+    ∃ k : Nat → Nat, (∀ i < n, k i ≤ (ls i).length) ∧
+      ∀ (PA : Traces ProgE2E.AState AKind BVal) (locsA locsC : List (Nat × Nat)) (MA0 MC0 : Bytes)
+        (rfA coA rmwA : Rel PEv), PA.n = n →
+        (∀ i < n, PA.tr i = conv (evTr ((ls i).take (k i)))) →
+        (PA.exec locsA rfA coA rmwA).Wf →
+        (∀ i < n, ∀ a b, rmwA (.thr i a.1 a.2) (.thr i b.1 b.2) ↔
+          MonPair (evTr ((ls i).take (k i))) a b) →
+        locsC <+: locsA →
+        (∀ q (h : q < locsA.length), locsC.length ≤ q → ∃ j, PrivN n RA j (locsA[q]).1) →
+        (∀ q (h : q < locsC.length),
+          bytesI.get MA0 (locsC[q]).1 (locsC[q]).2 = bytesI.get MC0 (locsC[q]).1 (locsC[q]).2) →
+        (∀ i < n, ∀ j < n, j ≠ i → ∀ q x, evAt (PA.tr i) q = some x → x.dir ≠ .F →
+          ¬ PrivA (RA j) x.loc) →
+        ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = n ∧
+          (∀ i < n, PC.st i 0 = .run (cs i)) ∧ PC.Runs (CStep env p) ∧
+          Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) :=
+  realizes_compiledB (fun i hi => (hc i hi).toB) hr
 
 /-! ## Executions without reads -/
 
