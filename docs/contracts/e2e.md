@@ -420,9 +420,8 @@ the `retN`/value arguments).
   `Clif.unlinkX_run` (`FV/E2E/LinkClifRevX.lean`, the converse of `runLoopX_linkR`). Witnesses:
   `E2E.LegalProgram.XWitness.caught_refines`/`unwound_refines` (`w(i128)` `try_call`s
   `mid(i128)`, whose call of `%throw` raises; every premise discharged by `decide +kernel`),
-  `Front.RawExeUnwindSrcWitness.raw_caught`/`raw_unwound`. Not covered: an executable-bytes
-  machine with unwinding (the theorem is about the linked machine whose tables are proven to be
-  the file's).
+  `Front.RawExeUnwindSrcWitness.raw_caught`/`raw_unwound`. The executable-bytes machine with
+  unwinding: below (its theorems keep the per-state facts `RunOkU` open).
 * **The optimising executable with unwinding (S10g, #404)**: `Link.DeadCleanup.compileExeOptU S
   file0` is `compileExeU S.opt file0` (`compileExeOpt`, then `unwOkB` of the optimised input;
   `compileExeOptU_placed`: what `lean-link --opt` decides) (`FV/Link/OptExeUnwind.lean`).
@@ -459,6 +458,46 @@ the `retN`/value arguments).
   Open: `TryInfoOk` and `SaveOk` from the input (the CLIF exception tables' tags through
   `lowerFunction`/`prepare`, the frame layout), and `unwCheck`, `lastCallsOk`, `savedCheck` (which fails for `large_frame`, see
   "Validators"), and `ehOkR` on lean-ld's output.
+* **The executable-bytes machine with unwinding (S10g, #404)** (`FV/E2E/DeadCleanupExecUnwind.lean`):
+  `E2E.DeadCleanupExecBytes.stepU I B Ub file` is `DeadCleanupExecBytes.step` (the processor on
+  the file's words; calls of code outside the program and TLS by the base hooks; a call of a
+  function of the program is executed from the file's words), except at a call of code outside
+  the program whose callee raises (`Ub`, `LinkSysU.Ub`: the callee and every frame below it
+  unwound, the call's state restored), where one step runs **phase 2 of the unwinder on the file's
+  tables** (`walk`, the unique end of the frame walk `Walk`): the frame of return address `ra` is
+  looked up in the file at `ra - 1` (`Link.EhCheck.unwTables`, libunwind's lookup of a caller's
+  frame) and handled by `Unw.unwindAt` (`unwFrame`: the personality installs a landing pad, unwinds
+  the frame by its row, or stops); a frame unwound by its row (`Continues`) whose restored return
+  address designates program code (`img I (ra' - 1)`) continues the walk with that frame, otherwise
+  the walk ends there (a pad, an error, or the exception leaving the program: an AAPCS64 return to
+  the outside caller, x0 the exception object). The model is `LinkSysU.machU` of the input
+  (`uSys`, `machU_uSys`). **`act_simU`**: every activation of the nested machine is simulated
+  (`Sim`: registers, memory but at the relocated instruction bytes), and an activation that leaves
+  its frame by unwinding is matched by the executable's raising step whose walk (`Pending`) is at
+  the caller's frame, so the walk composes frame by frame across the nested activations
+  (`frame_out`: one frame's phase 2 on `Sim`-related states, given the frame's save slots off the
+  relocated bytes, `RestoreOk`; `unwFrame_call`: the file's lookup at a call of `g` is `g`'s tables,
+  `TabsOk` from `compileExeU_tables`). `exec_of_modelU` transfers `ArmRefinesU` to **`ExecRefinesU`**
+  (a return, a trap, the exception leaving `f` with ExnRel on x0, the live CLIF bytes outside the
+  relocated instruction bytes as the memory; `ExecRefinesU.toExec`: `ExecRefines` for runs without
+  exceptions). Theorems (`FV/Link/ExeUnwindExec.lean`, `FV/Link/OptExeUnwindExec.lean`):
+  **`Link.DeadCleanup.compileExe_correct_unwind_exec_of_good`** (no reachable call cycle),
+  **`compileExe_correct_unwind_exec_peak_of_good`** (the run's peak call depth),
+  **`compileExeOpt_correct_unwind_exec_peak_of_good`** (through the mid-end): under
+  `compileExeU`/`compileExeOptU`, `compileExe_correct{,_peak}`'s premises for the outside call in
+  `r`, `compileExe_correct_unwind{,_peak}`'s for the linked program with unwinding with that call's
+  world, the raising base callees reading no relocated instruction byte (`UnwSim`, `HooksSim`'s
+  counterpart) and the outside caller's call instruction no program code (`¬ img I (x30 - 1)`:
+  else libunwind would take the caller's frame for a program frame), the executable machine with
+  unwinding from `r` refines the whole-program run with unwinding. **Open**: `RunOkU`, the per-state
+  facts of the model's run with unwinding (`StepOkU`: `StepOk` on `machU` plus `RestoreOk` at a
+  raising call; a frame left by unwinding lands on its return) — `binary_correct_exec_of_good`'s
+  `RunOk` for `machU`, to be discharged from the register-level traces with unwinding
+  (`RLU.GoodXU`) as `DeadCleanupExecGoodRun`/`GoodReads`/`Peak` do from `RunGoodL`. Witnesses:
+  `Link.DeadCleanup.UnwindExecWitness.exec_applies`/`opt_exec_applies`, and on `%rec`'s written
+  executable the walk's frame computed: `frame_continues` (the file's lookup, no LSDA, a CFA rule:
+  the self-call's frame is unwound in every state), `frame_eq` (its phase 2 on the file is the
+  model's), `walk_out`.
 * **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
   normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
   `normArgReg`, `retN` indices below the callee's return count), and checks that a `tryCall`
