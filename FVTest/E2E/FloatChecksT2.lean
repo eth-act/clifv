@@ -11,20 +11,21 @@ import FV.E2E.LinkScopeChecksT2
 
 namespace FloatChecksT2
 
-open Backend Backend.Proof E2E.LinkCheck FloatScopeT2
+open Backend Backend.Proof E2E.LinkCheck FloatFinalT FloatScopeT2
 
 /-- `fW` lowers and prepares. -/
 theorem fW_pipeline : ∃ vc vcp, lowerFunction fW = .ok vc ∧ prepare vc = .ok vcp := by
+  have h : (match lowerFunction fW with
+    | .ok vc => (prepare vc).toBool
+    | .error _ => false) = true := by native_decide
   cases hl : lowerFunction fW with
-  | error e => exact absurd hl (by native_decide)
+  | error e => rw [hl] at h; cases h
   | ok vc =>
+    rw [hl] at h
+    simp only at h
     cases hp : prepare vc with
-    | error e =>
-      have : (match lowerFunction fW with
-        | .ok vc => (prepare vc).toBool
-        | .error _ => false) = true := by native_decide
-      rw [hl, hp] at this; cases this
-    | ok vcp => exact ⟨vc, vcp, rfl, rfl⟩
+    | error e => rw [hp] at h; cases h
+    | ok vcp => exact ⟨vc, vcp, rfl, hp⟩
 
 theorem fW_resClass : Spill.resClassOkB fW = true := resClassOkB_of_T2 fnScopeInTB2_w
 
