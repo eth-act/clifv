@@ -7,7 +7,7 @@ import FV.E2E.SretReturnWitness
 #print axioms Backend.Proof.Driver.sim_run
 #print axioms Backend.Proof.Driver.driver_correct
 #print axioms Backend.Proof.Driver.sret_reach
-#print axioms Backend.Proof.Driver.runLoop_returned_tys
+#print axioms Backend.Proof.Driver.runLoop_returned_tys_entry
 #print axioms E2E.iselSimAbi_of_driver
 #print axioms E2E.backend_correct_of_layers_ex_abi
 #print axioms E2E.backend_correct_ex_abi

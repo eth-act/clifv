@@ -136,7 +136,7 @@ The proof covers them as follows.
   sretArg f args` (`sretArg`: the `sret` argument when `sigRets` returns the pointer, else
   nothing; `ArmRefinesAbi.armRefines` gives back `ArmRefines`). `backend_correct_final_sret`:
   for a function with an `sret` parameter `i` and no returns, x0 holds `args[i]` (the pointer
-  the caller passed in x8; `vals = []` by `runLoop_returned_tys`). The chain: `term_step_abi`
+  the caller passed in x8; `vals = []` by `runLoop_returned_tys_entry`). The chain: `term_step_abi`
   (the return's use values hold `vals ++ sv`, `sv` the frame's `sretRet f` values, `AllHold`),
   `sim_run_abi`/`driver_correct_abi` (`RunOkAbi Q`: `sv` satisfies any `Q` that holds of
   `sretRet f` in every reachable state; `term_step`, `sim_run`, `driver_correct` are the

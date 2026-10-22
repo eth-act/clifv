@@ -310,7 +310,7 @@ theorem runLoop_returned_reach {env : Clif.Env} {p : Clif.Program} {vals : List 
     | stuck m => rw [hs] at h; cases h
 
 /-- A `return` returns values of the function's return types. -/
-theorem stepTerm_ret_tys {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
+theorem stepTerm_ret_sigTys {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
     {xs : List Clif.ValueId} {vals : List Clif.Val} {cm : Clif.Mem}
     (h : Clif.stepTerm env p s (.ret xs) = .done vals cm) :
     vals.map (·.ty) = Clif.AbiParam.tys s.frame.func.sig.returns := by
@@ -332,7 +332,7 @@ theorem stepTerm_ret_tys {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
 
 /-- **A run of `f` from its entry returns values of `f`'s return types** (the run stays in
 `f`'s activation, `StOk`). -/
-theorem runLoop_returned_tys {env : Clif.Env} {p : Clif.Program} {f : Clif.Function}
+theorem runLoop_returned_tys_entry {env : Clif.Env} {p : Clif.Program} {f : Clif.Function}
     {cs : Clif.State}
     (hext : ∀ B ∈ f.blocks, ∀ st ∈ B.body, ∀ fn args, st.inst = .call fn args →
       ∀ e, f.extern? fn = some e → p.func? e.name = none)
@@ -365,7 +365,7 @@ theorem runLoop_returned_tys {env : Clif.Env} {p : Clif.Program} {f : Clif.Funct
     rcases hpos with ⟨hterm', -⟩ | ⟨-, et, bc, -, -, hterm'⟩
     · rw [hterm'] at hd
       cases hT : B.term with
-      | ret xs => rw [hT] at hd; rw [← hfunc']; exact stepTerm_ret_tys hd
+      | ret xs => rw [hT] at hd; rw [← hfunc']; exact stepTerm_ret_sigTys hd
       | jump bc0 =>
         rw [hT] at hd; exact absurd hd ((stepTerm_branch_ne (by simp [dests])).1 vals cm)
       | brif c t e =>

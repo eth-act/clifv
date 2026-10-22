@@ -411,7 +411,7 @@ theorem backend_correct_final_sret {p : Clif.Program} {f : Clif.Function} {k : N
   have hB0 : f.blocks[0]? = some B0 := by
     simpa [Clif.Function.entry?, List.head?_eq_getElem?] using hentB
   have hvals : vals = [] := by
-    have := runLoop_returned_tys hsub.externCalls hsub.tryExterns (noTail_of_subset hsub)
+    have := runLoop_returned_tys_entry hsub.externCalls hsub.tryExterns (noTail_of_subset hsub)
       (runPrem_of_entry hcs htr) (sretStable_of hS) hB0 hcs.callers hcs.func hbody hterm hrun
     rw [hnr] at this
     simpa [Clif.AbiParam.tys] using this
