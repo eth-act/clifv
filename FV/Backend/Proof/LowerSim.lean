@@ -1,4 +1,4 @@
-import FV.Backend.Proof.LowerOutcomes
+import FV.Backend.Proof.LowerValueRelations
 import FV.Backend.Proof.TryRegs
 
 /-!
@@ -573,14 +573,6 @@ theorem enter_match_br (H : DriverHyp f vc ctx st0 R gn bl A sem MR env p)
   simp only [List.getElem?_map, ha, Option.map_some, Option.some.injEq] at hx
   subst hx
   rw [hρ₂ a haA]; exact hh
-
-/-- DFG consistency only depends on the frame's function, slots and registers. -/
-theorem dfgCons_congr {fr fr' : Clif.Frame} (hf : fr'.func = fr.func) (hs : fr'.slots = fr.slots)
-    (hr : fr'.regs = fr.regs) (h : DFGCons ctx fr) : DFGCons ctx fr' := by
-  refine ⟨fun x j info cl v hd hi hc hp hv => ?_, fun x t v ht hv => h.2 x t v ht (hr ▸ hv)⟩
-  obtain ⟨vals, hev, hlk⟩ := h.1 x j info cl v hd hi hc hp (hr ▸ hv)
-  exact ⟨vals, fun cm => by rw [evalInst_congr hf hs cm cl (fun y _ => by rw [hr])]; exact hev cm,
-    hlk⟩
 
 /-! ## CLIF terminator steps -/
 
@@ -1695,13 +1687,6 @@ section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {sem : Sem}
   {MR : MemRelT} {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)}
-
-theorem loadVal_congr {F : BitVec 64 → Prop} {s t : Arm.ArmState} (op : LoadOp) {a : BitVec 64}
-    (h : ∀ x, ¬ F x → s.mem x = t.mem x) (hav : Avoids F op.bytes a) :
-    loadVal op a s = loadVal op a t := by
-  have hr : Arm.read_mem_bytes op.bytes a s = Arm.read_mem_bytes op.bytes a t :=
-    read_mem_bytes_congr _ a (fun k hk => h _ (hav k hk))
-  simp only [loadVal, hr]
 
 theorem loadOpOfBytes_facts {b : Nat} (hb : b = 1 ∨ b = 2 ∨ b = 4 ∨ b = 8) :
     (loadOpOfBytes b).bytes = b ∧ loadOpOfBytes b ≠ .fpuLoad128 ∧ loadSigned (loadOpOfBytes b) = false := by
