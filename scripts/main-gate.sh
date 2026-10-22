@@ -3,7 +3,8 @@
 #
 #   scripts/main-gate.sh run LOGDIR [CLIF]   the full list on this worktree's checkout (CLIF=1, the
 #                                            default, includes clif-filetests and opt-difftest);
-#                                            takes /tmp/clifv-heavy.lock; exit 0 iff green
+#                                            takes /tmp/clifv-heavy.lock; exit 0 iff green,
+#                                            3 when a host tool is missing (nothing run)
 #   scripts/main-gate.sh loop WORKTREE       forever: check out the newest origin/main tip in
 #                                            WORKTREE (a dedicated worktree), `run` it, record and
 #                                            post the result on #261; stop: touch $GATE_DIR/stop
@@ -38,7 +39,17 @@ ISSUE=261
 REPO=eth-act/clifv
 CLIFPATHS='FV/Clif FV/Opt FV/Float FVTest/Clif FVTest/Opt scripts/clif-filetests.sh scripts/clif-filetests-baseline.txt scripts/opt-difftest.sh rust/crates/clif-oracle'
 
-usage() { sed -n '2,8p' "$0" >&2; exit 2; }
+usage() { sed -n '2,11p' "$0" >&2; exit 2; }
+
+# Host tools the gates need (docs/USAGE.md, "Install"): a missing one stops the gate with exit
+# status 3 and is never recorded as a red run.
+check_tools() {
+  local t miss=()
+  for t in qemu-aarch64-static clang python3 gh "${LLVM_MC:-/usr/lib/llvm-18/bin/llvm-mc}"; do
+    command -v "$t" > /dev/null || miss+=("$t")
+  done
+  [ ${#miss[@]} = 0 ] || { echo "main-gate: missing host tools: ${miss[*]} (docs/USAGE.md, \"Install\")" >&2; return 3; }
+}
 
 run_gate() { # LOGDIR CLIF; cwd: the worktree root
   local L=$1 CLIF=${2:-1} W fail=0 r
@@ -148,6 +159,7 @@ loop() { # WORKTREE
     echo "run $s start $(date -Is) clif=$clif"
     flock "$LOCK" "$0" run-locked "$L" "$clif"
     rc=$?
+    [ $rc = 3 ] && { echo "run $s stopped $(date -Is): missing host tools, not recorded; loop exits"; rm -f "$GATE_DIR/loop.pid"; exit 3; }
     res=$([ $rc = 0 ] && echo GREEN || echo RED)
     [ $rc = 0 ] && lastgreen=$tip
     printf '%s\t%s\t%s\t%s\n' "$tip" "$res" "$L" "$([ $clif = 1 ] && [ $rc = 0 ] && echo clif || echo -)" >> "$R"
@@ -171,7 +183,7 @@ watch() {
 mkdir -p "$GATE_DIR"
 case "${1:-}" in
   run) [ $# -ge 2 ] || usage; flock "$LOCK" "$0" run-locked "$2" "${3:-1}" ;;
-  run-locked) [ $# -ge 2 ] || usage; cd "$(git rev-parse --show-toplevel)" && run_gate "$2" "${3:-1}" ;;
+  run-locked) [ $# -ge 2 ] || usage; check_tools || exit 3; cd "$(git rev-parse --show-toplevel)" && run_gate "$2" "${3:-1}" ;;
   loop)
     [ $# = 2 ] || usage
     W=$(cd "$2" && pwd) || exit 1
