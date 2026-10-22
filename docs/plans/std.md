@@ -98,19 +98,58 @@ one of its indirect calls can now reach a std function). Without `--verified` th
 written by the bare Lean linker (`Link.DeadCleanup.leanLink`, no compiler theorem); run under
 qemu they pass the same tests as before (lib test 21 passed, main test 0 tests, `ok`), with
 28568 / 27919 Lean-compiled functions, all of std but its float fallbacks. These are scope
-conditions of the compiler theorem (indirect calls, stack arguments: S5), not std-specific; the
-fix is either widening `indB`/`callScopeB` or dropping the failing functions from `P` at link time
-(§4, slice T3c).
+conditions of the compiler theorem (indirect calls, stack arguments: S5), not std-specific.
+
+**T3c (done): per-executable exclusion.** On an input outside `InScopeIn`/`SrcScopeB`,
+`lean-link --verified` now also prints the functions failing a *per-function* condition
+(`--verified: exclude: …`: `srcFails`, `fnScopeInFails`, `scopeFails`), when the program-wide
+conditions (`helperFreeB`, distinct names, `addrSlotsInputB`) hold. `cargo fv` then rebuilds the
+region without them (`pipeline::lean_variant`: the unit's Lean object again from its
+per-function objects, `lean-funcs.txt`, minus the excluded ones, cached per exclusion set), so
+their symbols bind to cg_clif's weak copies (outside code, like a fallback's), relinks and runs
+`lean-link` again (at most 4 rounds; every condition is decided again on the new input, nothing
+is assumed from the previous round). Leaving a function out of `P` only drops conjuncts of the
+other functions' conditions (each quantifies over `P`'s functions), so one round sufficed on
+fv-demo. The exclusion list is `target/fv/<mode>/tmp/exclude-<tag>.txt`; `cargo fv link-proof`
+leaves those functions out of the binary check's bundle; the `lean-link` line of the report
+names their number. fv-demo with `--build-std --lean-link --verified`: **both executables written
+by `Link.DeadCleanup.compileExe` and covered by `compileExe_correct{,_peak,_source,_source_peak}`
+(input in `InScopeIn`)**, 28550 (lib test, 18 excluded) / 27902 (main test, 17 excluded) functions
+in the region; under qemu lib test 21 passed, main test `ok`. The exceptional edges of one std
+function stay uncovered (`unwOkB: …: lastCallsOk`, S10). Widening `indB`/`callScopeB` (S5) would
+shrink the exclusion list; it is not needed for coverage of the rest.
 
 ### 2.2 Cost
 
 fv-demo debug with `--build-std`: cargo + cg_clif + `lean-backend` for all 32447 functions: about
 8 minutes (16 jobs). `lake exe lean-link` on the 28k-function region: **2 h 13 min / 2 h 26 min**
-per executable (before: seconds for 461/903 functions); the binary check (`link-check`) on the
-first executable was stopped after 2.5 h. Not profiled; the likely cost is the program-level
-checks that scan `P` once per function (`indB`, `callScopeB`, `mayB`), i.e. quadratic in the
-region size [inference]. Slice T3d. Without `--lean-link` (the default merge mode) and with
-`--no-binary-check`, `--build-std` costs minutes (survey below: 6 min).
+per executable before T3d (before `--build-std`: seconds for 461/903 functions); the binary check
+(`link-check`) on the first executable was stopped after 2.5 h.
+
+**T3d, lean-link (done):** profiled with gdb stack sampling (`perf` unavailable): the time was in
+list scans repeated per element, not in the compiler. Fixed, statements unchanged:
+
+* `InScopeIn`/`InScopeP`'s program-level conditions looked a name up in `P` (`P.func?`, a scan of
+  28k functions) at every declaration and call site, and in the image's symbols (`List.lookup`)
+  for every pair (function with indirect calls, function of `P`) in `indB`/`indSiteB`.
+  `Link.inScopePar`/`inScopeInPar` now evaluate `progScopeFastB`/`progScopeInFastB`
+  (FV/E2E/LinkScopeFast.lean): the same conditions with `P`'s functions in a hash map
+  (`funcMap`, `funcMap_get : (funcMap P)[n]? = P.func? n`) and the symbols in one
+  (`assocMap_get : (assocMap l)[n]? = l.lookup n`); `progScopeFastB_eq`, `progScopeInFastB_eq`,
+  `inScopePar_eq`, `inScopeInPar_eq` (axioms: propext, Classical.choice, Quot.sound);
+* the frontend bundle (`Front.assemble`/`buildSpec`): `reachSet` (data closure) made
+  `ds.length + 1` passes over all data objects (now a worklist, linear in the relocations);
+  `scopingB`/`localIds`/`globalNames` tested membership in each unit's `localNames` list (now a
+  hash set per unit, `PCgu.localIdents`/`globalIdents`, `scopingB_sound` unchanged);
+  `buildSpec` rebuilt the whole symbol table per outside name (now once); `sizesFor`/`linkAddrs`
+  used `List.lookup` per name (now `firstMap`).
+
+`lean-link --dead-cleanup --verified` on the lib test's region (28550 functions, 25868 data
+objects): **2 h 26 min → 11 min 55 s** (715 s, max RSS 2.3 GB; run while two `link-check`s used
+other cores). Without `--lean-link` (the default merge mode) and with `--no-binary-check`,
+`--build-std` costs minutes (survey below: 6 min). `link-check` (the per-executable binary
+check, `okB` with `--prune`) still scans per function (`List.lookup` in `LinkInput.addrOf`,
+`indToB` per `blr` site × `P`, `raCallB` per call × table): next part of T3d.
 
 ### 2.3 Survey
 
@@ -172,18 +211,50 @@ cannot go through `cargo fv`. Alternatives considered:
 So the boundary after T3 is musl's C API + libunwind + compiler_builtins' libcalls, with their
 contracts trusted (TO-PROVE §1.3 is updated accordingly).
 
+### 3.1 The outside-contract set that remains
+
+Measured on fv-demo's lib test with `--build-std --lean-link --verified` (T3c): the undefined
+symbols of the Lean region (`llvm-nm -u` of its `*.fvlean.rcgu.o`) that are not Rust symbols:
+**170 names**. Each call of one is an outside call whose callee contract is trusted: the AAPCS64
+callee contract `CalleeOk`/`CalleeOkG` (returns to the link register with `sp`, the callee-saved
+registers and the caller's frame kept, results in x0.., only its dead stack below `sp` clobbered)
+and the extern's semantics `XCallsOk`/`XCallsIndOk` (`env.extern n`, the memory relation kept;
+`XTrapsOk` where it does not return), docs/contracts/e2e.md. By area:
+
+* memory allocation (5): `calloc`, `free`, `malloc`, `posix_memalign`, `realloc`;
+* memory/string primitives (6; cg_clif also calls the first four for `copy`/`write_bytes`/`compare_bytes`): `memcmp`, `memcpy`, `memmove`, `memset`, `strlen`, `strnlen`;
+* compiler_builtins libcalls, LLVM-built (3): `__rust_u128_mulo`, `__udivti3`, `__umodti3`;
+* libunwind (its model is trusted by design, S10f) and its lookup (15): `dl_iterate_phdr`, `_Unwind_Backtrace`, `_Unwind_DeleteException`, `_Unwind_FindEnclosingFunction`, `_Unwind_GetCFA`, `_Unwind_GetDataRelBase`, `_Unwind_GetIP`, `_Unwind_GetIPInfo`, `_Unwind_GetLanguageSpecificData`, `_Unwind_GetRegionStart`, `_Unwind_GetTextRelBase`, `_Unwind_RaiseException`, `_Unwind_Resume`, `_Unwind_SetGR`, `_Unwind_SetIP`;
+* threads and TLS keys (16; the single-thread model of T2 applies): `pthread_attr_destroy`, `pthread_attr_getguardsize`, `pthread_attr_getstack`, `pthread_attr_init`, `pthread_attr_setstacksize`, `pthread_create`, `pthread_detach`, `pthread_getattr_np`, `pthread_join`, `pthread_key_create`, `pthread_key_delete`, `pthread_self`, `pthread_setname_np`, `pthread_setspecific`, `sched_getaffinity`, `sched_yield`;
+* process control and spawning (28): `abort`, `chroot`, `execvp`, `_exit`, `exit`, `fork`, `getpid`, `getppid`, `kill`, `killpg`, `pause`, `posix_spawnattr_destroy`, `posix_spawnattr_init`, `posix_spawnattr_setflags`, `posix_spawnattr_setpgroup`, `posix_spawnattr_setsigdefault`, `posix_spawn_file_actions_addchdir_np`, `posix_spawn_file_actions_adddup2`, `posix_spawn_file_actions_destroy`, `posix_spawn_file_actions_init`, `posix_spawnp`, `setgid`, `setgroups`, `setpgid`, `setsid`, `setuid`, `waitid`, `waitpid`;
+* file system and file descriptors (55): `chdir`, `chmod`, `chown`, `close`, `closedir`, `dirfd`, `dup`, `dup2`, `fchmod`, `fchmodat`, `fchown`, `fcntl`, `fdatasync`, `fdopendir`, `flock`, `fstat`, `fsync`, `ftruncate`, `futimens`, `getcwd`, `ioctl`, `isatty`, `lchown`, `linkat`, `lseek`, `lstat`, `mkdir`, `mkdirat`, `mkfifo`, `open`, `openat`, `opendir`, `pipe2`, `poll`, `pread`, `preadv`, `pwrite`, `pwritev`, `read`, `readdir`, `readlink`, `readv`, `realpath`, `rename`, `renameat`, `rmdir`, `sendfile`, `splice`, `stat`, `symlink`, `unlink`, `unlinkat`, `utimensat`, `write`, `writev`;
+* sockets and name resolution (20): `accept4`, `bind`, `connect`, `freeaddrinfo`, `gai_strerror`, `getaddrinfo`, `getpeername`, `getsockname`, `getsockopt`, `listen`, `recv`, `recvfrom`, `recvmsg`, `send`, `sendmsg`, `sendto`, `setsockopt`, `shutdown`, `socket`, `socketpair`;
+* signals (5): `sigaction`, `sigaddset`, `sigaltstack`, `sigemptyset`, `signal`;
+* memory mapping (3): `mmap`, `mprotect`, `munmap`;
+* environment, users, time, system (14; `environ` is data): `clock_gettime`, `clock_nanosleep`, `environ`, `__errno_location`, `getauxval`, `getenv`, `gethostname`, `getpwuid_r`, `getuid`, `setenv`, `syscall`, `sysconf`, `unsetenv`, `__xpg_strerror_r`.
+
+Besides those: std's optional libc symbols, looked up as weak data
+(`__rust_extern_with_linkage_*`: `copy_file_range`, `getrandom`, `gettid`, `pidfd_getpid`,
+`pidfd_spawnp`, `__cxa_thread_atexit_impl`, `__dso_handle`; std checks them for null before a
+call); musl's startup (`_start`/`_start_c`, `__libc_start_main`, the crt objects, which call
+`main`, i.e. enter the program, and run before it) and the TLS hook (`TlsOk`, T1); the remaining
+Rust code outside the region: the allocator shim `__rust_{alloc,dealloc,realloc,alloc_zeroed}`
+and `__rust_no_alloc_shim_is_unstable_v2` (cg_clif writes no CLIF dump for it, slice T3b), std's
+float fallbacks (S11), and the per-executable exclusions of T3c (17 / 18 functions on fv-demo,
+cg_clif's code). The list is what the region *references*; a given run calls a subset.
+
 ## 4. Slices
 
-* **T3a (this PR)**: `--build-std` wiring, std group in the report, attribution, response file,
+* **T3a (done, #396)**: `--build-std` wiring, std group in the report, attribution, response file,
   this plan, docs.
 * **T3b**: the allocator shim (`__rust_alloc` & co.): emit/dump it through cg_clif so it is in
   `P` (a forwarding function to `__rdl_alloc`); then the allocator boundary is exactly musl's
   `malloc` family.
-* **T3c**: `--verified` with `--build-std`: per-executable exclusion of the functions failing the
-  program-level conditions (rebuild the region without them; they keep cg_clif's weak copy), or
-  widen `indB`/`callScopeB` (stack arguments in indirect calls; with S5).
-* **T3d**: `lean-link`/`link-check` scaling to ~30k functions (index the program-level checks by
-  signature / callee instead of scanning `P` per function).
+* **T3c (done)**: `--verified` with `--build-std`: per-executable exclusion of the functions
+  failing a per-function condition (§2.1). Widening `indB`/`callScopeB` (stack arguments in
+  indirect calls; with S5) would shrink the exclusions.
+* **T3d**: `lean-link` scaling to ~30k functions: done (hash maps, §2.2: 2 h 26 min → 12 min);
+  `link-check` (the binary check) still to do.
 * **T3e**: release-profile and survey/examples/deps measurements with `--build-std` in the
   per-PR gate list once T3c/T3d make it affordable.
 * Floats in std: S11 (Floats11).

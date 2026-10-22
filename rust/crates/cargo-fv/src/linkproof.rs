@@ -208,6 +208,10 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
             links.iter().map(|l| l.0.as_str()).collect::<Vec<_>>().join("\n  "))),
     };
     let map = read_map(&map_path)?;
+    // `--lean-link --verified` (T3c): the functions the link left out of the region (cg_clif's
+    // code, outside the program)
+    let excluded = crate::leanlink::read_exclude(&tmp, &exe);
+    let mut n_excluded = 0;
     // the codegen units linked into it
     let mut cgus = Vec::new();
     let mut cgu_dir: HashMap<String, PathBuf> = HashMap::new();
@@ -257,6 +261,10 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
         let mut functions = Vec::new();
         for f in j["functions"].as_array().into_iter().flatten() {
             let fin = f["final"].as_str().unwrap_or_default().to_string();
+            if excluded.contains(&fin) {
+                n_excluded += 1;
+                continue;
+            }
             if !f["verified"].as_bool().unwrap_or(false) {
                 skipped.push((fin, format!("unverified: {}", f["reason"].as_str().unwrap_or("?"))));
                 continue;
@@ -331,7 +339,7 @@ pub fn run(target: &Path, root: &Path, args: &[String]) -> Result<i32, String> {
     fs::write(&bp, serde_json::to_string_pretty(&bundle).unwrap_or_default())
         .map_err(|e| format!("{}: {e}", bp.display()))?;
     eprintln!(
-        "cargo fv link-proof: {nfuncs} functions of {} codegen unit(s) of {exe} (skipped {}), {} executable symbols → {}",
+        "cargo fv link-proof: {nfuncs} functions of {} codegen unit(s) of {exe} (skipped {}, left out of the region {n_excluded}), {} executable symbols → {}",
         cgus.len(),
         skipped.len(),
         symbols.len(),

@@ -519,9 +519,11 @@ roots (138 excluded root rules mention vector types). Start when a measured crat
   compile 128-bit atomics); crates using `AtomicU128`/`AtomicI128` do not build with
   `--build-std`.
 - **The executable theorem with std in `P`**: 17–18 functions of std/test (and one of fv-demo whose
-  indirect calls can now reach std functions) fail `InScopeP`'s `indB`/`callScopeB`, so `--verified`
-  rejects the executables (T3c). `lean-link` and `link-check` take hours on a ~30k-function
-  region (T3d).
+  indirect calls can now reach std functions) fail `InScopeP`'s `indB`/`callScopeB`; `--verified`
+  leaves them out of the region per executable (T3c), so they run cg_clif's code. Widening
+  `indB`/`callScopeB` (S5) would bring them in. `link-check` still takes hours on a
+  ~30k-function region (T3d; `lean-link` takes 12 min).
+- **musl's API**: the 170 C/libcall names the region references (`docs/plans/std.md` §3.1).
 
 ## Other deferred items
 

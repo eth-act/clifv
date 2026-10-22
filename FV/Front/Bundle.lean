@@ -113,19 +113,31 @@ def dataLineName (l : String) : String :=
   let t := ((t.drop 5).toString.trimAscii.toString.drop 1).toString
   String.ofList (t.toList.takeWhile fun c => c.isAlphanum || c == '_' || c == '.' || c == '$')
 
-/-- The names a set of objects reaches in one more step: `s` with every relocation target of an
-object of `ds` named in `s`. -/
-def reachStep (ds : List DataObject) (s : Std.HashSet String) : Std.HashSet String :=
-  ds.foldl (fun s o => if s.contains o.name then o.refs.foldl (·.insert ·) s else s) s
+/-- The relocation targets of the objects named `n` (several objects may share a name: the
+targets of all of them), each object's `refs` computed once. -/
+def refsMap (ds : List DataObject) : Std.HashMap String (List String) :=
+  ds.foldl (fun m o => m.insert o.name (o.refs ++ m.getD o.name [])) {}
 
-/-- `fuel` steps of `reachStep` from `s`. -/
-def reachIter (ds : List DataObject) : Nat → Std.HashSet String → Std.HashSet String
-  | 0, s => s
-  | k + 1, s => reachIter ds k (reachStep ds s)
+/-- The worklist of `reachSet`: `fuel` names taken from `w`; each adds its objects' relocation
+targets not yet in `s` to `s` and to the worklist. -/
+def reachGo (m : Std.HashMap String (List String)) :
+    Nat → List String → Std.HashSet String → Std.HashSet String
+  | 0, _, s => s
+  | _, [], s => s
+  | k + 1, n :: w, s =>
+    let (new, s) := (m.getD n []).foldl
+      (fun (acc : List String × Std.HashSet String) r =>
+        if acc.2.contains r then acc else (r :: acc.1, acc.2.insert r)) ([], s)
+    reachGo m k (new ++ w) s
 
-/-- The names reachable from `roots` (one step per object suffices). -/
+/-- The names reachable from `roots` through the objects' relocations (the least set that holds
+the roots and is closed: `closedB` checks the result). A worklist: every name enters it once,
+so it is linear in the objects' relocations (the former `ds.length + 1` passes over every
+object were quadratic: minutes on std's units, T3d). -/
 def reachSet (ds : List DataObject) (roots : List String) : Std.HashSet String :=
-  reachIter ds (ds.length + 1) (roots.foldl (·.insert ·) {})
+  let m := refsMap ds
+  let s0 : Std.HashSet String := roots.foldl (·.insert ·) {}
+  reachGo m (roots.length + ds.foldl (fun k o => k + o.refs.length) 0 + 1) roots s0
 
 /-- `s` holds the roots and is closed under the relocations of the objects it names. -/
 def closedB (ds : List DataObject) (roots : List String) (s : Std.HashSet String) : Bool :=
@@ -223,22 +235,36 @@ def ScopingOk (us : List PCgu) (sc : Nat → String → String) : Prop :=
   ∀ i j u v n m, us[i]? = some u → us[j]? = some v → n ∈ u.idents → m ∈ v.idents →
     (sc i n = sc j m ↔ n = m ∧ (i = j ∨ (n ∉ u.localNames ∧ m ∉ v.localNames)))
 
+/-- The unit's local symbols as a hash set (one membership test per name; `localNames` is a list,
+and a test against it per name was quadratic on std's units, T3d). -/
+def PCgu.localSet (u : PCgu) : Std.HashSet String := u.localNames.foldl (·.insert ·) {}
+
+/-- The names `u` uses that are its local symbols. -/
+def PCgu.localIdents (u : PCgu) : List String :=
+  let ls := u.localSet
+  u.idents.filter ls.contains
+
+/-- The names `u` uses that are global (none of its local symbols). -/
+def PCgu.globalIdents (u : PCgu) : List String :=
+  let ls := u.localSet
+  u.idents.filter (!ls.contains ·)
+
 /-- The local symbols the units use: (unit index, name), without duplicates. -/
 def localIds (us : List PCgu) : List (Nat × String) :=
-  (us.zipIdx.flatMap fun (u, i) =>
-    (u.idents.filter (· ∈ u.localNames)).map (i, ·)).eraseDups
+  (us.zipIdx.flatMap fun (u, i) => u.localIdents.map (i, ·)).eraseDups
 
 /-- The global names the units use. -/
 def globalNames (us : List PCgu) : List String :=
-  us.flatMap fun u => u.idents.filter (· ∉ u.localNames)
+  us.flatMap PCgu.globalIdents
 
 /-- **`finOf us` is a scoping** (decided; `scopingB_sound`): every global name keeps its name;
 the local symbols get distinct names, none a global name. -/
 def scopingB (us : List PCgu) : Bool :=
-  us.all (fun u => (u.idents.filter (· ∉ u.localNames)).all fun n => u.fin n == n) &&
-  nodupB ((localIds us).map fun p => finOf us p.1 p.2) &&
+  us.all (fun u => u.globalIdents.all fun n => u.fin n == n) &&
+  let ls := localIds us
+  nodupB (ls.map fun p => finOf us p.1 p.2) &&
   let g : Std.HashSet String := (globalNames us).foldl (·.insert ·) {}
-  (localIds us).all fun p => !g.contains (finOf us p.1 p.2)
+  ls.all fun p => !g.contains (finOf us p.1 p.2)
 
 /-- **The program of the units under a scoping `sc`**: every function, unit by unit, renamed by
 its unit's naming. -/
@@ -331,11 +357,14 @@ def assemble (b : Bundle) : Except String Assembled :=
       | .error e => .error e
       | .ok fis => .ok (assembled us fis)
 
+/-- `l` as a hash map, the first entry of each name kept (`List.lookup`'s answer). -/
+def firstMap {α : Type} (l : List (String × α)) : Std.HashMap String α :=
+  l.foldl (fun m p => if m.contains p.1 then m else m.insert p.1 p.2) {}
+
 /-- **The symbol table**: the executable's symbols, then every unit's local symbols as
 `sym@tag`. -/
 def symTable (b : Bundle) : Std.HashMap String Nat :=
-  let l := b.symbols ++ b.units.flatMap fun u => u.localAddrs.map fun (o, a) => (o ++ "@" ++ u.tag, a)
-  l.foldl (fun m p => if m.contains p.1 then m else m.insert p.1 p.2) {}
+  firstMap (b.symbols ++ b.units.flatMap fun u => u.localAddrs.map fun (o, a) => (o ++ "@" ++ u.tag, a))
 
 /-- The address of `n`: its entry, else for `sym@tag` the executable's `sym` (a symbol defined
 once in the executable). -/
@@ -348,12 +377,14 @@ def addrOf (t : Std.HashMap String Nat) (n : String) : Option Nat :=
 it (`link-check`): its functions at their Lean code, then the names it uses. -/
 def linkAddrs (b : Bundle) (A : Assembled) : List (String × Nat) :=
   let t := symTable b
-  A.names.filterMap (fun n => (b.markers.lookup n).map (n, ·)) ++
+  let mk := firstMap b.markers
+  A.names.filterMap (fun n => mk[n]?.map (n, ·)) ++
     A.refs.filterMap fun n => (addrOf t n).map (n, ·)
 
 /-- The sizes of the named functions. -/
 def sizesFor (sz : List (String × Nat)) (names : List String) : Except String (List Nat) :=
-  names.mapM fun n => match sz.lookup n with
+  let m := firstMap sz
+  names.mapM fun n => match m[n]? with
     | some w => .ok w
     | none => .error s!"{n}: no size"
 
@@ -371,8 +402,11 @@ def buildSpec (b : Bundle) : Except String LinkSpec :=
       match A.names.head?.bind (fun n => b.markers.lookup n) with
       | none => .error "no function, or the first has no Lean code address"
       | some R =>
+        -- the symbol table once (built inside the `filterMap` it was rebuilt per name: a third of
+        -- `lean-link`'s time on std, T3d)
+        let t := symTable b
         .ok { funcs := A.funcs, names := A.names, sizes,
-              outside := A.refs.filterMap fun n => (addrOf (symTable b) n).map (n, ·),
+              outside := A.refs.filterMap fun n => (addrOf t n).map (n, ·),
               data := A.data, symNames := A.symNames, R }
 
 end Front

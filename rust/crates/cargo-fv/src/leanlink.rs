@@ -19,7 +19,13 @@
 //!    `Link.DeadCleanup.compileExeOpt`, the same on the functions the Lean mid-end optimised with
 //!    the proven rules, as `lean-backend --opt-proven-only` compiled the units), writes them into
 //!    the executable and names the theorems covering it ([`coverage`]); with `--verified` an
-//!    input outside the compiler's domain is an error (no bare-linker fallback).
+//!    input outside the compiler's domain is an error (no bare-linker fallback);
+//! 4. `--verified` (T3c): when `lean-link` lists functions failing a per-function input
+//!    condition (`--verified: exclude: …`; e.g. std's calls through a register next to calls of
+//!    `sret` functions, `indB`/`callScopeB`), they are written to the executable's
+//!    [`exclude_path`] and the link runs again with a region without them
+//!    ([`crate::pipeline::lean_variant`]): their symbols bind to cg_clif's weak copies, outside
+//!    code like a fallback's, and `cargo fv link-proof` leaves them out of the bundle.
 use crate::config::{Config, Mode};
 use crate::pipeline::run;
 use object::read::archive::ArchiveFile;
@@ -53,9 +59,38 @@ fn input_objects(args: &[String]) -> Result<BTreeSet<String>, String> {
     Ok(s)
 }
 
+/// The functions (final symbol names) of the executable `exe` left out of its region (T3c):
+/// `target/fv/<mode>/tmp/exclude-<tag>.txt`, one per line; written by the link, read by
+/// `cargo fv link-proof` (the lean-link input and the binary check).
+pub fn exclude_path(tmp_dir: &Path, exe: &str) -> PathBuf {
+    tmp_dir.join(format!("exclude-{}.txt", crate::pipeline::tag_of(exe)))
+}
+
+/// The functions [`exclude_path`] lists (none without the file).
+pub fn read_exclude(tmp_dir: &Path, exe: &str) -> BTreeSet<String> {
+    fs::read_to_string(exclude_path(tmp_dir, exe))
+        .map(|t| t.lines().filter(|l| !l.is_empty()).map(str::to_string).collect())
+        .unwrap_or_default()
+}
+
+/// The functions `lean-link --verified` asks to leave out of the region (its
+/// `--verified: exclude: …` line).
+pub fn exclusions(text: &str) -> BTreeSet<String> {
+    text.lines()
+        .filter_map(|l| l.split_once(": --verified: exclude: "))
+        .flat_map(|(_, names)| names.split(' ').filter(|n| !n.is_empty()).map(str::to_string))
+        .collect()
+}
+
 /// The program part of the link with arguments `args`: the region's object and the file
 /// listing its units' work directories (in placement order); `None` without Lean-compiled code.
-pub fn program_part(cfg: &Config, unit: &str, args: &[String]) -> Result<Option<(PathBuf, PathBuf)>, String> {
+/// The functions `exclude` lists are left out ([`crate::pipeline::lean_variant`]).
+pub fn program_part(
+    cfg: &Config,
+    unit: &str,
+    args: &[String],
+    exclude: &BTreeSet<String>,
+) -> Result<Option<(PathBuf, PathBuf)>, String> {
     let objs = input_objects(args)?;
     // object name → (fv-link.json's modification time, work directory): the newest
     let mut dirs: BTreeMap<String, (std::time::SystemTime, PathBuf)> = BTreeMap::new();
@@ -78,7 +113,11 @@ pub fn program_part(cfg: &Config, unit: &str, args: &[String]) -> Result<Option<
     let work = cfg.tmp_dir.join(format!("leanlink-{}", crate::pipeline::tag_of(unit)));
     let _ = fs::remove_dir_all(&work);
     fs::create_dir_all(&work).map_err(|e| format!("{}: {e}", work.display()))?;
-    let leans: Vec<PathBuf> = dirs.values().map(|(_, d)| d.join("lean.o")).collect();
+    let mut leans: Vec<PathBuf> = Vec::new();
+    for (_, d) in dirs.values() {
+        let variant = if exclude.is_empty() { None } else { crate::pipeline::lean_variant(cfg, d, exclude)? };
+        leans.push(variant.unwrap_or_else(|| d.join("lean.o")));
+    }
     // named as one of the unit's own objects (the report attributes its code to the unit)
     let obj = work.join(format!("{unit}.fvlean.rcgu.o"));
     run(Command::new(&cfg.rust_lld).args(["-flavor", "gnu", "-r", "-o"]).arg(&obj).args(&leans))?;
