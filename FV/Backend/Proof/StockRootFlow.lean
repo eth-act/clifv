@@ -115,7 +115,7 @@ private theorem stock_root_flow_rules {f : Clif.Function} {ctx : Ctx}
     · refine .inr fun m s0 env s1 hm => hres ?_
       simp only [h587, bne_self_eq_false, Bool.false_or, Bool.and_eq_true, beq_iff_eq] at hop
       have hn := stock_pinned_names view hctx hi0 hc hop.1 kind_nullAry kind_nop hm
-      rw [variantNames_Nop] at hn
+      rw [Proof.variantNames_Nop] at hn
       have hnop := instNames_nop (Option.some.inj hn).symm
       subst hnop
       obtain ⟨tys, hty, _, hlen⟩ := hctx.resTys ii info .nop hi0 hc
