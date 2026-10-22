@@ -178,9 +178,26 @@ The proof covers them as follows.
   the `i128` legalisation: `backend_correct_legal{,_env,_wide,_env_wide}_abi`
   (`FV/E2E/SretReturnLegal.lean`; premise `sretStableB g` on the legalised `g`, conclusion
   `ArmRefinesLegalAbi … (sretArg g args')`; witness `SretReturnWitness.swl_legal_abi`, an
-  `(i64 sret, i128)` function legalised by the compiler's pass). The other variants (`_unwind`,
-  the dead-cleanup/direct/opt legalisation copies, `OptX`/`_opt_exe*`) keep the CLIF-values
-  conclusion.
+  `(i64 sret, i128)` function legalised by the compiler's pass). The other variants (the linked
+  `_unwind` theorems, the dead-cleanup/direct/opt legalisation copies, `OptX`/`_opt_exe*`) keep
+  the CLIF-values conclusion.
+  *With unwinding* (`agent/AbiS7d-unw`, `FV/E2E/SretReturnUnwind.lean`):
+  `E2E.backend_correct_final_unwind_abi` (and `_ex_abi` for `CompiledA`) has
+  `backend_correct_final_unwind`'s premises plus `sretStableXB f` and the conclusion
+  `ArmRefinesUAbi … (sretArg f args) (Clif.runLoopX …)` (returns: x0.. hold `vals ++ sretArg f
+  args`; traps and exceptions as `ArmRefinesU`, `ArmRefinesUAbi.armRefinesU`);
+  `backend_correct_final_unwind_sret`: for an `sret` parameter `i` and no returns, a returned run
+  with unwinding leaves `args[i]` in x0 (`vals = []` by `runLoopX_returned_tys_entry`). Chain:
+  `sim_runX_abi`/`driver_correctU_abi` (`RunOkUAbi Q`, `FV/Backend/Proof/LowerSimUAbi.lean`),
+  `IselSimUAbi`, `iselSimUAbi_of_driver`, `iselSimU_final_abi`,
+  `backend_correct_of_layersU_ex_abi`. A caught exception continues at a `try_call`'s handler
+  block, which `sretStableB`'s `runTargets` do not include, so the CLIF fact (`sret_reachX`,
+  `FV/Backend/Proof/SretStableX.lean`: `StOkX`, `stOkX_stepX`, `stOkX_reach` over
+  `E2E.ReachX`; pending `jump`s to normal-return or handler blocks) takes the stronger check
+  `sretStableXB f` = `sretStableB f` and no handler block (`exnTargets`) has the `sretRet f` value
+  as a parameter (also guaranteed by Cranelift's verifier; not measured on the crates). Witness:
+  `SretReturnUnwindWitness.sw_returns_sret_unwind` (`sw` with its compilation and unwinding
+  tables, `unwCheck`, `XRaise.none`/`Unw.UnwHooks.none`).
 * **Calls**: `gen_call_args` puts argument `i` at `(locsOf sig)[i]`: a register (with at most 8
   parameters `x (abiArgIdx …)[i]`, `sigArgLocs_regs`) or a store to `[sp + off]` of the outgoing
   area (`argStores_run`); `gen_call_output` allocates one def per

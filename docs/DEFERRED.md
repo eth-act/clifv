@@ -215,8 +215,10 @@ theorem (`docs/contracts/e2e.md`, "`sret`"). Deferred:
   / `_sret` (`FV/E2E/SretReturnCleanup.lean`); the typed copies `backend_correct_finalT_abi` /
   `_sret` (`FV/E2E/SretReturnT.lean`); the executable theorem `compileExe_correct_abi`
   (`FV/Link/DeadCleanupExeAbi.lean`); `backend_correct_opt{,_proven}_abi`,
-  `backend_correct_legal{,_env,_wide,_env_wide}_abi`. Still with the CLIF-values conclusion
-  only: `_unwind`, the other legalisation variants (`_cleanup`, `_direct`, `_opt*`) and
+  `backend_correct_legal{,_env,_wide,_env_wide}_abi`; with unwinding
+  `backend_correct_final_unwind_abi` / `_unwind_sret` (premise `sretStableXB`: also no handler
+  block binds the `sret` value; not yet measured on the crates). Still with the CLIF-values
+  conclusion only: the linked `_unwind` theorems, the other legalisation variants (`_cleanup`, `_direct`, `_opt*`) and
   `OptX`/`_opt_exe*` (the same `_abi` copy of their composition);
 - `vmctx`/`sarg` parameters (flagged unverified, `sigAbiOk`): not emitted by cg_clif on aarch64
   (0 functions in fv-demo, the survey, `examples/deps`, vendor; `StructArgument` only for
