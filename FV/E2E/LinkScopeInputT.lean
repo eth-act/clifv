@@ -163,7 +163,8 @@ theorem pipeT_okT {g : Clif.Function} (h : fnScopeInTB g = true) (k : Nat) (base
     refine ⟨⟨k, vc, vcp, allocResult vcp (readyAnswer vcp (raAnswer vcp o)), af, fa, fb, base⟩,
       ?_, lowerCheckT_complete hD hS hl, Prep.prepCheck_complete hp (prepDomain_ofT hD hS hl),
       hacc, formsCovered_ctx hcov _⟩
-    simp [pipeT, hl, hp, ha, he, hla, bind, Except.bind, pure, Except.pure]
+    simp [pipeT, pipeTWithLowering, Backend.Stock.D0.defaultLower_eq_legacy, hl, hp, ha, he, hla,
+      bind, Except.bind, pure, Except.pure]
 
 /-- **Every function of a crate in the typed input scope compiles** (`results_of` over
 `InScopeInT`): the compiler's pipeline succeeds on each. -/

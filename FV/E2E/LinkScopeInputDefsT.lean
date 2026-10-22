@@ -40,8 +40,8 @@ def ctlInstsB (vc : VCode) : Bool :=
       | none => true
     | none => true) &&
   (match vc.blocks[0]? with
-    | some vb0 => (match vb0.insts[0]? with
-      | some (.args _) => true
+    | some vb0 => (match (vb0.insts[0]? : Option MInst) with
+      | some (MInst.args _) => true
       | _ => false) && decide (1 < vb0.insts.size)
     | none => false)
 
