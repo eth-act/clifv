@@ -92,6 +92,7 @@ theorem stock_lower_single_div_return_emitted {f : Clif.Function} {result : Resu
     ∃ (term record : ScanRecord) (body : BlockScan) (step : Step),
       SourceBodySplit f event b term body ∧ body.records = [record] ∧
       record.inst = blockStart f event.block ∧ record.input = term.output.state ∧
+      scanInstruction event.ctx event.block record.inst event.termInst event.isBranch record.input = .ok record.output ∧
       record ∈ event.output.records ∧
       record.output.step = some step ∧ step.decision = .emitted := by
   obtain ⟨term,body,termStep,split,member,unsunk,branch,recorded,emitted⟩ :=
@@ -120,7 +121,7 @@ theorem stock_lower_single_div_return_emitted {f : Clif.Function} {result : Resu
       change blockStart f event.block ≠ blockStart f event.block + 1
       omega
     obtain ⟨step,decision,actual⟩ := stock_mandatory_unsunk_emitted safe ordinary mandatory head
-    exact ⟨term,record,_,step,split,rfl,rfl,rfl,
+    exact ⟨term,record,_,step,split,rfl,rfl,rfl,head,
       split.retained record (by simp [record]),decision,actual⟩
 
 end Backend.Stock.Proof

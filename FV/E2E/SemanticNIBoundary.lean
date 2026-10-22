@@ -63,6 +63,14 @@ theorem entryRegs (hc : CompiledSemanticNI f k vc vcp rf af fa fb) :
       List.mem_filterMap.mpr ⟨loc,member,by rw [located]⟩
     obtain ⟨n,bound,pin⟩ := regs r found
     exact ⟨n,pin,bound⟩
+  | scalarDiv domain equal reads h =>
+    intro loc member r located
+    have regs := (Spill.locsOf_regs (functionE_sig_int domain.scope.subsetE).1
+      (Spill.sret_le_of_sigAbiOk domain.abi)).2
+    have found : r ∈ Spill.locRegs (locsOf f.sig) :=
+      List.mem_filterMap.mpr ⟨loc,member,by rw [located]⟩
+    obtain ⟨n,bound,pin⟩ := regs r found
+    exact ⟨n,pin,bound⟩
 
 /-- An ABI-read-only artifact contains no TLS helper; cleanup and checked
 preparation preserve that exclusion. -/
@@ -102,6 +110,20 @@ theorem noTlsScalar {sig : Clif.Signature} {code : VCode}
   obtain ⟨k,hi⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member')
   have supported := ScalarBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
   cases i <;> simp_all [Backend.ABIReadScalar.instruction,Backend.ABIReadScalar.constant,Backend.ABIReadScalar.shift,Backend.ABIReadScalar.extension,Backend.ABIReadScalar.bitProducer,Backend.ABIReadScalar.popcountProducer,Backend.ABIReadScalar.comparisonProducer,Backend.ABIReadScalar.booleanProducer,Backend.ABIReadScalar.highmulProducer,
+    Backend.ABIReadFlags.instruction,Backend.ABIReadOnly.instruction,
+    Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
+/-- Scalar producers add no TLS read; the retained ABI checks keep their exclusions. -/
+theorem noTlsDiv {sig : Clif.Signature} {code : VCode}
+    (checked : Backend.ABIReadDiv.check sig code = true) : code.hasTls = false := by
+  rw [VCode.hasTls,Array.any_eq_false']
+  intro vb member
+  apply Bool.eq_false_iff.mp
+  apply Array.any_eq_false'.mpr
+  intro i member'
+  obtain ⟨b,hb⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member)
+  obtain ⟨k,hi⟩ := List.mem_iff_getElem?.mp (Array.mem_toList_iff.mpr member')
+  have supported := DivBoundary.checked_instruction checked (by simpa using hb) (by simpa using hi)
+  cases i <;> simp_all [Backend.ABIReadDiv.instruction,Backend.ABIReadDiv.additional,Backend.ABIReadScalar.instruction,Backend.ABIReadScalar.constant,Backend.ABIReadScalar.shift,Backend.ABIReadScalar.extension,Backend.ABIReadScalar.bitProducer,Backend.ABIReadScalar.popcountProducer,Backend.ABIReadScalar.comparisonProducer,Backend.ABIReadScalar.booleanProducer,Backend.ABIReadScalar.highmulProducer,
     Backend.ABIReadFlags.instruction,Backend.ABIReadOnly.instruction,
     Backend.DeadCleanup.pureForm,Backend.ABIReadFlags.extra]
 
@@ -149,6 +171,16 @@ theorem hasTls_of_vcode_semantic {f : Clif.Function} {k : Nat} {vc vcp : VCode}
 
   | @scalar cleanup result domain equal reads h =>
     have raw := CompiledSemanticNI.noTlsScalar reads
+    have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
+      rw [equal]
+      cases cleanup with
+      | false => exact raw
+      | true => exact Backend.DeadCleanup.prune_noTls raw
+    have prepared := noTls_of_prepCheck h.prepOk staged
+    rw [prepared] at ht
+    cases ht
+  | @scalarDiv cleanup result domain equal reads h =>
+    have raw := CompiledSemanticNI.noTlsDiv reads
     have staged : (Stock.Arithmetic.stage cleanup result.code).hasTls = false := by
       rw [equal]
       cases cleanup with

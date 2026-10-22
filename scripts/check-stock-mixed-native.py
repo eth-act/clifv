@@ -28,6 +28,29 @@ def signed(value, bits):
 
 
 def run_commands(bits, kind="mixed"):
+    if kind == "div":
+        if options.kind == "div":
+            wanted |= {"stock_div_"+op for op in ("sdiv", "udiv", "srem", "urem")}
+        cases = run_commands(bits, "highmul")
+        low, high = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
+        pairs = [(7,2),(-7,2),(7,-2),(-7,-2),(low,-1),(low,1),
+                 (low,low),(high,low),(0,0),(1,0),(low,0),(0,low),(-1,high)]
+        mask = (1 << bits) - 1
+        for op in ("sdiv", "udiv", "srem", "urem"):
+            for a,b in pairs:
+                args = [0,a,2,11,22,33,44,55,b]
+                if b == 0:
+                    value = "int_divz"
+                elif op == "sdiv" and a == low and b == -1:
+                    value = "int_ovf"
+                else:
+                    x,y = (a & mask,b & mask) if op[0] == "u" else (a,b)
+                    q = abs(x) // abs(y)
+                    if (x < 0) != (y < 0):
+                        q = -q
+                    value = signed(q if op.endswith("div") else x - q*y,bits)
+                cases.append(("stock_div_"+op,args,value))
+        return cases
     low, high = -(1 << (bits - 1)), (1 << (bits - 1)) - 1
     vectors = [
         [0, 5, 2, 11, 22, 33, 44, 55, 7],
@@ -187,7 +210,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("artifacts", type=Path)
     parser.add_argument("--native-bin", type=Path, default=Path("rust/target/release/clif-native"))
-    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul"], default="mixed")
+    parser.add_argument("--class", dest="kind", choices=["mixed", "logical", "scalar", "not", "mul", "shift", "cast", "bit", "popcount", "minmax", "cmp", "highmul", "div"], default="mixed")
     options = parser.parse_args()
     root = options.artifacts.resolve()
     native = options.native_bin.resolve()
@@ -219,7 +242,7 @@ def main():
         names = {f["name"] for f in json.loads(table.read_text())["functions"]}
         wanted = {"stock_mixed_ni", "retained_arithmetic", "retained_scalar",
                   "retained_prologue", "retained_d0", "retained_legacy"}
-        if options.kind == "highmul":
+        if options.kind in ("highmul", "div"):
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_highmul_ni", "retained_cmp", "retained_minmax", "retained_popcount", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
         elif options.kind == "cmp":
             wanted = (wanted - {"stock_mixed_ni"}) | {"stock_cmp_ni", "retained_minmax", "retained_popcount", "retained_bit", "retained_cast", "retained_shift", "retained_mul", "retained_not", "retained_constant", "retained_logical", "retained_mixed"}
@@ -244,11 +267,13 @@ def main():
         assert names == wanted, names
         cases = run_commands(int(width), options.kind)
         attached = set()
+        ordered_cases = []
         def add_commands(match):
             name = match.group(1)
             attached.add(name)
+            ordered_cases.extend(case for case in cases if case[0] == name)
             commands = "\n".join(
-                f"; run: %{name}({', '.join(map(str, args))}) == {value}"
+                f"; run: %{name}({', '.join(map(str, args))}) == {value if isinstance(value,int) else 0}"
                 for function, args, value in cases if function == name
             )
             return match.group(0) + "\n" + commands + "\n"
@@ -280,10 +305,13 @@ def main():
                     reference_executions += len(cases)
             rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
             assert len(rows) == len(cases), (engine, source, len(rows), len(cases))
-            for row in rows:
+            for row, (_, _, value) in zip(rows,ordered_cases):
                 assert "file_error" not in row and row.get("expected"), row
                 assert row["expected"]["cmp"] == "==", row
-                assert row["actual"].get("returned") == row["expected"]["values"], row
+                if isinstance(value,str):
+                    assert row["actual"] == {"trapped":value}, row
+                else:
+                    assert row["actual"].get("returned") == row["expected"]["values"], row
             streams[engine] = rows
         assert [r["actual"] for r in streams["lean"]] == [r["actual"] for r in streams["cranelift"]]
         records.append({"allocator": allocator, "configuration": config, "cleanup": cleanup,
