@@ -238,3 +238,9 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.IselCover.addr_eq_of_cover
 #print axioms Concurrency.IselCover.Witness.cover_ldar
 #print axioms Concurrency.IselCover.Witness.addr_eq_cover8
+-- T2h layer 2e: the sizes of a VCode instruction's events
+#print axioms Concurrency.VCodeSize.straightEvs_size
+#print axioms Concurrency.VCodeSize.cEvs_size
+#print axioms Concurrency.VCodeSize.addr_eq_of_oneAcc
+#print axioms Concurrency.VCodeSize.Witness.ldar_oneAcc
+#print axioms Concurrency.VCodeSize.Witness.ldar_at
