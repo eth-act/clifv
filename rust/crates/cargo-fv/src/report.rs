@@ -61,17 +61,21 @@ pub struct BinaryCheck {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct ExeOrigin {
     pub functions: usize,
-    /// Lean-compiled code (a marker at the address), of a workspace member / a dependency.
+    /// Lean-compiled code (a marker at the address), of a workspace member / a dependency / the
+    /// standard library (`--build-std`).
     pub lean_members: usize,
     pub lean_deps: usize,
+    #[serde(default)]
+    pub lean_std: usize,
     /// Functions of crates we compiled that run cg_clif's code (fallbacks).
     pub cg_clif: usize,
-    /// Not compiled by us, prebuilt (the sysroot): std/core/alloc, compiler_builtins, musl libc.
+    /// Not compiled by us: the prebuilt sysroot (std/core/alloc, compiler_builtins, musl libc
+    /// and its crt objects); with `--build-std` compiler_builtins (LLVM) and musl libc.
     pub prebuilt: usize,
     /// Not compiled by us, other inputs: crates outside the scope (`--members-only`,
     /// skip-deps), linker-synthesised code.
     pub other: usize,
-    /// Lean-compiled functions per package (`<package>` or `<package> (dep)`).
+    /// Lean-compiled functions per package (`<package>`, `<package> (dep)` or `<package> (std)`).
     pub lean_by_package: BTreeMap<String, usize>,
 }
 
@@ -86,9 +90,13 @@ pub struct UnitReport {
     /// The crate root rustc compiled (as cargo passed it, e.g. `src/lib.rs`, `tests/t.rs`).
     #[serde(default)]
     pub src: String,
-    /// Not a workspace member: a dependency (registry, git or path package).
+    /// Not a workspace member: a dependency (registry, git or path package) or a crate of the
+    /// standard library.
     #[serde(default)]
     pub dep: bool,
+    /// A crate of the standard library built by `cargo fv --build-std` (`-Zbuild-std`).
+    #[serde(default)]
+    pub std: bool,
     /// The output rustc wrote (rlib or executable), for matching cargo's artifact messages.
     pub artifact: String,
     pub mode: String,
@@ -154,11 +162,14 @@ pub struct Report {
     #[serde(default)]
     pub panic: String,
     pub totals: Counts,
-    /// Of `totals`: the workspace members' units ("your crate(s)") and the dependencies'.
+    /// Of `totals`: the workspace members' units ("your crate(s)"), the dependencies' and, with
+    /// `--build-std`, the standard library's.
     #[serde(default)]
     pub members: Counts,
     #[serde(default)]
     pub deps: Counts,
+    #[serde(default)]
+    pub std: Counts,
     pub units: Vec<UnitEntry>,
 }
 
@@ -174,12 +185,20 @@ impl Report {
         let mut totals = Counts::default();
         let mut members = Counts::default();
         let mut deps = Counts::default();
+        let mut std = Counts::default();
         let units: Vec<UnitEntry> = units
             .into_iter()
             .map(|u| {
                 let counts = Counts::of(&u.functions);
                 totals.sum(&counts);
-                if u.dep { &mut deps } else { &mut members }.sum(&counts);
+                if u.std {
+                    &mut std
+                } else if u.dep {
+                    &mut deps
+                } else {
+                    &mut members
+                }
+                .sum(&counts);
                 UnitEntry { counts, unit: u }
             })
             .collect();
@@ -193,6 +212,7 @@ impl Report {
             totals,
             members,
             deps,
+            std,
             units,
         }
     }
@@ -235,14 +255,28 @@ impl Report {
         );
         for u in &self.units {
             let linked = u.unit.binary.as_ref().map(|b| b.lean_functions_linked.to_string()).unwrap_or_default();
-            // a dependency's library: kind `dep`
-            let kind = if u.unit.dep { "dep" } else { u.unit.kind.as_str() };
+            // a dependency's library: kind `dep`; a crate of the standard library: `std`
+            let kind = if u.unit.std {
+                "std"
+            } else if u.unit.dep {
+                "dep"
+            } else {
+                u.unit.kind.as_str()
+            };
             row(&mut s, &u.unit.package, kind, short_root(&u.unit.src), &u.counts, &linked);
         }
+        let built_std = self.units.iter().any(|u| u.unit.std);
         row(&mut s, "your crate(s)", "", "", &self.members, "");
         row(&mut s, "dependencies", "", "", &self.deps, "");
+        if built_std {
+            row(&mut s, "std (--build-std)", "", "", &self.std, "");
+        }
         row(&mut s, "total", "", "", &self.totals, "");
-        let _ = writeln!(s, "  std (not compiled by us: prebuilt std/core/alloc rlibs, plus compiler_builtins and musl libc)");
+        if built_std {
+            let _ = writeln!(s, "  not compiled by us: compiler_builtins (LLVM) and musl libc");
+        } else {
+            let _ = writeln!(s, "  std (not compiled by us: prebuilt std/core/alloc rlibs, plus compiler_builtins and musl libc)");
+        }
         let t = &self.totals;
         if t.verified_normal_returns > 0 {
             let _ = writeln!(
@@ -254,18 +288,21 @@ impl Report {
         }
         for u in &self.units {
             let Some(o) = u.unit.binary.as_ref().and_then(|b| b.origin.as_ref()) else { continue };
-            let deps: Vec<String> =
-                o.lean_by_package.iter().filter(|(p, _)| p.ends_with(" (dep)")).map(|(p, n)| format!("{} {n}", p.trim_end_matches(" (dep)"))).collect();
+            let per = |suffix: &str| -> Vec<String> {
+                o.lean_by_package.iter().filter(|(p, _)| p.ends_with(suffix)).map(|(p, n)| format!("{} {n}", p.trim_end_matches(suffix))).collect()
+            };
+            let (deps, std) = (per(" (dep)"), per(" (std)"));
             let _ = writeln!(
                 s,
-                "  exe {} ({} {}): {} functions: Lean {} (your crate(s) {}, dependencies {}), cg_clif fallback {}, std (prebuilt) {}, other not compiled by us {}",
+                "  exe {} ({} {}): {} functions: Lean {} (your crate(s) {}, dependencies {}, std {}), cg_clif fallback {}, prebuilt or LLVM (std unless --build-std, compiler_builtins, musl libc) {}, other not compiled by us {}",
                 u.unit.package,
                 u.unit.kind,
                 short_root(&u.unit.src),
                 o.functions,
-                o.lean_members + o.lean_deps,
+                o.lean_members + o.lean_deps + o.lean_std,
                 o.lean_members,
                 o.lean_deps,
+                o.lean_std,
                 o.cg_clif,
                 o.prebuilt,
                 o.other
@@ -273,11 +310,14 @@ impl Report {
             if !deps.is_empty() {
                 let _ = writeln!(s, "    Lean in exe per dependency: {}", deps.join(", "));
             }
+            if !std.is_empty() {
+                let _ = writeln!(s, "    Lean in exe per std crate: {}", std.join(", "));
+            }
         }
-        for (group, dep) in [("your crate(s)", false), ("dependencies", true)] {
+        for (group, dep, std) in [("your crate(s)", false, false), ("dependencies", true, false), ("std", true, true)] {
             for (label, st) in [("unverified", Status::Unverified), ("fallback", Status::Fallback)] {
                 let mut reasons: BTreeMap<String, usize> = BTreeMap::new();
-                for u in self.units.iter().filter(|u| u.unit.dep == dep) {
+                for u in self.units.iter().filter(|u| u.unit.dep == dep && u.unit.std == std) {
                     for f in u.unit.functions.iter().filter(|f| f.status == st) {
                         *reasons.entry(generalize(f.reason.as_deref().unwrap_or("?"))).or_default() += 1;
                     }

@@ -10,7 +10,7 @@ use std::process::{Command, Stdio};
 const USAGE: &str = "\
 usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--trap-replaced] [--keep-temps]
                                 [--panic-abort] [--members-only] [--no-binary-check] [--lean-link [--verified]]
-                                [--lean-ld | --rust-lld]
+                                [--lean-ld | --rust-lld] [--build-std]
                                 [cargo options] [-- args]
        cargo fv report [--functions] [--json] [--manifest-path PATH]
        cargo fv link-proof [--exe SUBSTR]… [--crate NAME] [--out DIR] [--lean FILE --module NAME]
@@ -18,10 +18,10 @@ usage: cargo fv <build|run|test> [--opt | --opt-proven-only] [--no-fallback] [--
 
 Builds for aarch64-unknown-linux-musl with rustc_codegen_cranelift; every function of every crate
 compiled for the target (the workspace members and their dependencies; not std, which is
-prebuilt, and not build scripts or proc macros, which run on the host) that the Lean backend
-compiles runs the Lean backend's code, the rest keeps cg_clif's (fallback). Executables run
-under qemu-aarch64-static. After a build the report is in target/fv-report.json (`cargo fv
-report` prints it).
+prebuilt unless --build-std, and not build scripts or proc macros, which run on the host) that
+the Lean backend compiles runs the Lean backend's code, the rest keeps cg_clif's (fallback).
+Executables run under qemu-aarch64-static. After a build the report is in target/fv-report.json
+(`cargo fv report` prints it).
 
   --opt               run the Lean mid-end (all rules; nothing is reported verified)
   --opt-proven-only   run the Lean mid-end with the proven rules (E2E.backend_correct_opt_exe_cleanup;
@@ -60,6 +60,11 @@ report` prints it).
   --rust-lld          (with --lean-link) link with rust-lld instead of lean-ld
   --panic-abort       build with -Cpanic=abort -Zpanic-abort-tests (default: panic=unwind, as cargo;
                       separate target dir)
+  --build-std         compile the standard library (std, core, alloc, panic_unwind/panic_abort and
+                      their dependencies) like a dependency (cargo -Zbuild-std), from the sources
+                      scripts/build-cg-clif.sh prepares (target/cg_clif/std-src; FV_STD_SRC
+                      overrides); compiler_builtins stays on LLVM and musl libc prebuilt; the
+                      report counts the std crates separately; separate target dir
   --functions         (report) list every function with its status and reason
   --json              (report) print target/fv-report.json
 
@@ -276,6 +281,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     let mut lean_ld = false;
     let mut rust_lld = false;
     let mut verified = false;
+    let mut build_std = false;
     let mut cargo_args = Vec::new();
     for a in before {
         match a.as_str() {
@@ -294,6 +300,7 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             "--verified" => verified = true,
             "--lean-ld" => lean_ld = true,
             "--rust-lld" => rust_lld = true,
+            "--build-std" => build_std = true,
             _ => cargo_args.push(a),
         }
     }
@@ -361,14 +368,15 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     skip_deps.dedup();
     // one target dir per configuration that changes the objects (cargo does not see FV_*)
     let fv_dir = target.join("fv").join(format!(
-        "{}{}{}{}{}{}{}",
+        "{}{}{}{}{}{}{}{}",
         mode.name(),
         if members_only { "-members" } else { "" },
         if trap_replaced { "-trap" } else { "" },
         if panic_abort { "-abort" } else { "" },
         if lean_link { "-leanlink" } else { "" },
         if verified { "-verified" } else { "" },
-        if lean_ld { "-leanld" } else { "" }
+        if lean_ld { "-leanld" } else { "" },
+        if build_std { "-std" } else { "" }
     ));
     let cfg = Config {
         root,
@@ -410,6 +418,22 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
         flags.extend(["-Cpanic=abort", "-Zpanic-abort-tests"].map(String::from));
         docflags.extend(["-Cpanic=abort", "-Zpanic-abort-tests"].map(String::from));
     }
+    // `--build-std`: the standard library is compiled like a dependency (`-Zbuild-std`), from the
+    // library sources scripts/build-cg-clif.sh prepares: the toolchain's `rust-src` with
+    // cg_clif's own patch removing the 128-bit atomic types (cg_clif cannot compile 128-bit
+    // atomics; it uses the same patch for its sysroot)
+    let std_src = build_std.then(|| {
+        let p = std::env::var_os("FV_STD_SRC")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| cfg.root.join("target/cg_clif/std-src/library"));
+        if !p.join("std/Cargo.toml").exists() {
+            die(&format!("--build-std: {} is not a library source tree; prepare it with scripts/build-cg-clif.sh (docs/USAGE.md)", p.display()));
+        }
+        p
+    });
+    if build_std {
+        cargo_args.push(format!("-Zbuild-std=std,{}", if panic_abort { "panic_abort" } else { "panic_unwind" }));
+    }
     let runner_var = "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER";
     // The pinned toolchain's lib dir first: `cargo fv` itself may run under another toolchain's
     // rustup proxy (e.g. a rust-toolchain.toml above the crate), which put that toolchain's lib
@@ -434,6 +458,10 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             .env_remove("RUSTFLAGS")
             .env("RUSTDOCFLAGS", docflags.join(" "))
             .envs(cfg.to_env());
+        if let Some(p) = &std_src {
+            // cargo's `-Zbuild-std` source root
+            c.env("__CARGO_TESTS_ONLY_SRC_ROOT", p);
+        }
         if std::env::var_os(runner_var).is_none() {
             c.env(runner_var, "qemu-aarch64-static");
         }
@@ -497,9 +525,10 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
             }
         }
     }
-    // members first, then dependencies
+    // members first, then dependencies, then the standard library
     units.sort_by(|a, b| {
-        (a.dep, &a.package, &a.crate_name, &a.kind, &a.src, &a.unit).cmp(&(b.dep, &b.package, &b.crate_name, &b.kind, &b.src, &b.unit))
+        (a.dep, a.std, &a.package, &a.crate_name, &a.kind, &a.src, &a.unit)
+            .cmp(&(b.dep, b.std, &b.package, &b.crate_name, &b.kind, &b.src, &b.unit))
     });
     let report = Report::new(&profile, mode.name(), mode.theorem().map(String::from), &panic_desc, units);
     let rp = report_path(&target);
@@ -509,9 +538,11 @@ fn cmd_cargo(sub: &str, rest: Vec<String>) -> i32 {
     }
     eprint!("{}", report.summary(false));
     let exes: Vec<usize> = report.units.iter().filter_map(|u| u.unit.binary.as_ref()).map(|b| b.lean_functions_linked).collect();
-    let (m, d) = (&report.members, &report.deps);
+    let (m, d, st) = (&report.members, &report.deps, &report.std);
+    let std_part =
+        if build_std { format!(", std {} of {} ({} verified)", st.verified + st.unverified, st.functions, st.verified) } else { String::new() };
     eprintln!(
-        "cargo fv: {} of {} functions compiled by the Lean backend ({} verified): your crate(s) {} of {} ({} verified), dependencies {} of {} ({} verified); report: {}",
+        "cargo fv: {} of {} functions compiled by the Lean backend ({} verified): your crate(s) {} of {} ({} verified), dependencies {} of {} ({} verified){std_part}; report: {}",
         report.totals.verified + report.totals.unverified,
         report.totals.functions,
         report.totals.verified,
