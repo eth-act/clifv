@@ -1,4 +1,4 @@
-import FV.E2E.LinkArm
+import FV.E2E.LinkGood
 import FV.E2E.DeadCleanupTrapCall
 
 /-! # Callee traps in the linked program: the trap observable and its premises (S9c, #376)
@@ -306,14 +306,18 @@ def ProgCallAt (g h : Clif.Function) (u : Arm.ArmState) : Prop :=
       (destOf info = none ∧ (blrTarget u).bind (symCallee L.Xb L.P) = some h))
 
 /-- **The run of the linked machine of depth `M` from an activation of `g` entered in `s` stops
-at step `n`**: the state there has no error and the activation's body `sp`, no earlier state
-returns into `g`'s own code with another `sp` (`PostTrace`), and every later state errs. -/
+at step `n`**: the state there has no error, the activation's program and body `sp`, no earlier
+state returns into `g`'s own code with another `sp` (`PostTrace`), every later state errs, and
+every state of the run (and of the returning activations nested in it) whose step ends without
+error has the per-state facts (`RunGoodL`, what the executable machine's simulation needs). -/
 structure Stop (M : Nat) (g : Clif.Function) (s : Arm.ArmState) (n : Nat) : Prop where
   room : frameDrop (L.A g).af ≤ (spv s).toNat
   trace : PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n
   err : Arm.r .ERR (runX (L.mach M g) n s) = .None
+  prog : (runX (L.mach M g) n s).program = (L.A g).fb.program (L.A g).base
   sp : spv (runX (L.mach M g) n s) = spv s - BitVec.ofNat 64 (frameDrop (L.A g).af)
   halt : ∀ m, Arm.r .ERR (runX (L.mach M g) (n + m + 1) s) ≠ .None
+  good : L.RunGoodL M g s
 
 /-- **The outside code's trap contract** (next to `BaseOk`; vacuous where no extern outside `P`
 traps): where the CLIF semantics of an extern outside `P` traps on a call's arguments and a

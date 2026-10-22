@@ -439,15 +439,22 @@ theorem thmT_of (hL : L.Ok) [hR : L.CrunOk] (hT : L.TrapsOk) (hB : L.BaseTrapsOk
     rw [L.frameDrop_eq hL hg]; have := hME.stack.1; omega
   have htr : PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.mach M g) s n :=
     by have := postTrace_of_actGoodX htrace; exact this
+  have hgoodOf : (∀ m, Arm.r .ERR (runX (L.mach M g) (n + m + 1) s) ≠ .None) →
+      L.RunGoodL M g s := fun hh =>
+    L.runGood_of_trace hL (fun _ => L.thmG hL hκ (M - 1)) hg hME (by exact htrace)
+      fun k _ he => Nat.lt_of_not_le fun hle => hh (k - n) (by
+        rw [show n + (k - n) + 1 = k + 1 by omega]; exact he)
   rcases hcase with ⟨hat, hhalt⟩ | hct
-  · exact .site ⟨hroom, htr, hat.err, hsp, hhalt⟩ hat
+  · exact .site ⟨hroom, htr, hat.err, hprog, hsp, hhalt, hgoodOf hhalt⟩ hat
   · have herr : Arm.r .ERR (runX (L.mach M g) n s) = .None := by
       obtain ⟨_, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, he, -⟩ := hct
       exact he
-    refine L.trapIn_callTrap hL hB hκ ih hg hWE hME (fun he => ⟨hroom, htr, herr, hsp, fun m => ?_⟩)
-      hprog hct
-    rw [show n + m + 1 = n + (m + 1) by omega, runX_add]
-    exact L.runX_mach_err hB M g m _ he
+    have hhalt : Arm.r .ERR (L.mach M g (runX (L.mach M g) n s)) ≠ .None →
+        ∀ m, Arm.r .ERR (runX (L.mach M g) (n + m + 1) s) ≠ .None := fun he m => by
+      rw [show n + m + 1 = n + (m + 1) by omega, runX_add]
+      exact L.runX_mach_err hB M g m _ he
+    exact L.trapIn_callTrap hL hB hκ ih hg hWE hME
+      (fun he => ⟨hroom, htr, herr, hprog, hsp, hhalt he, hgoodOf (hhalt he)⟩) hprog hct
 
 /-- **The trap statement at every depth.** -/
 theorem thmT (hL : L.Ok) [L.CrunOk] (hT : L.TrapsOk) (hB : L.BaseTrapsOk) (hκ : L.Budget κ) :
@@ -465,9 +472,9 @@ variable (L : LinkSys)
 
 theorem stop_withCrun (c : Nat → Clif.State → Clif.Outcome) {M : Nat} {g : Clif.Function}
     {s : Arm.ArmState} {n : Nat} (h : (L.withCrun c).Stop M g s n) : L.Stop M g s n := by
-  obtain ⟨h1, h2, h3, h4, h5⟩ := h
-  rw [L.mach_withCrun] at h2 h3 h4 h5
-  exact ⟨h1, h2, h3, h4, h5⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
+  rw [L.mach_withCrun] at h2 h3 h4 h5 h6
+  exact ⟨h1, h2, h3, h4, h5, h6, runGoodL_withCrun h7⟩
 
 /-- The trap observable of `L` with other callee runs is `L`'s (the machine is `L`'s,
 `mach_withCrun`). -/
