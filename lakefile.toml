@@ -112,3 +112,11 @@ root = "FVTest.Backend.Lowering.StockPopcountProductionRuntime"
 [[lean_exe]]
 name = "stock-popcount-linked"
 root = "FVTest.Backend.Lowering.StockPopcountProductionLinked"
+
+[[lean_exe]]
+name = "stock-minmax-runtime"
+root = "FVTest.Backend.Lowering.StockMinMaxProductionRuntime"
+
+[[lean_exe]]
+name = "stock-minmax-linked"
+root = "FVTest.Backend.Lowering.StockMinMaxProductionLinked"

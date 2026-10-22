@@ -40,8 +40,7 @@ def popcountProducer : MInst → Bool
 /-- Actual two-register and immediate comparisons used by min/max and later scalar classes. -/
 def comparisonProducer : MInst → Bool
   | .aluRRR .subS _ .xzr (.vreg _ .int) (.vreg _ .int) => true
-  | .aluRRImm12 .subS _ .xzr (.vreg _ .int) _
-  | .aluRRImm12 .addS _ .xzr (.vreg _ .int) _ => true
+  | .aluRRImm12 .subS _ .xzr (.vreg _ .int) _ => true
   | _ => false
 
 def instruction (sig : Clif.Signature) (b k : Nat) (i : MInst) : Bool :=

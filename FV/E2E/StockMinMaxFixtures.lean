@@ -10,8 +10,9 @@ def extraBody (config : Configuration) : List Clif.Stmt :=
    ⟨[203],.binary .umin ty 2 3⟩,⟨[204],.binary .umax ty 0 8⟩,
    ⟨[205],.iconst ty (BitVec.ofNat ty.width 7)⟩,
    ⟨[206],.iconst ty (BitVec.ofNat ty.width 0x123456789abcdef)⟩,
-   ⟨[207],.binary .smin ty 1 205⟩,⟨[208],.binary .smax ty 2 205⟩,
-   ⟨[209],.binary .umin ty 8 205⟩,⟨[210],.binary .umax ty 0 205⟩,
+   ⟨[240],.iconst ty (BitVec.ofInt ty.width (-7))⟩,
+   ⟨[207],.binary .smin ty 1 205⟩,⟨[208],.binary .smax ty 2 240⟩,
+   ⟨[209],.binary .umin ty 8 205⟩,⟨[210],.binary .umax ty 0 240⟩,
    ⟨[211],.binary .smin ty 206 1⟩,⟨[212],.binary .smax ty 206 2⟩,
    ⟨[213],.binary .umin ty 206 8⟩,⟨[214],.binary .umax ty 206 0⟩,
    ⟨[215],.binary .iadd ty 201 202⟩,⟨[216],.binary .bxor ty 215 203⟩,
@@ -29,15 +30,16 @@ def function (config : Configuration) : Clif.Function :=
 def resultValue (config : Configuration) (input : Nat → BitVec (valueType config).width) :
     BitVec (valueType config).width :=
   let small := BitVec.ofNat (valueType config).width 7
+  let negative := BitVec.ofInt (valueType config).width (-7)
   let large := BitVec.ofNat (valueType config).width 0x123456789abcdef
   let a := Clif.Sem.binary .smin (input 1) (input 2)
   let b := Clif.Sem.binary .smax (input 1) (input 8)
   let c := Clif.Sem.binary .umin (input 2) (input 3)
   let d := Clif.Sem.binary .umax (input 0) (input 8)
   let e := Clif.Sem.binary .smin (input 1) small
-  let f := Clif.Sem.binary .smax (input 2) small
+  let f := Clif.Sem.binary .smax (input 2) negative
   let g := Clif.Sem.binary .umin (input 8) small
-  let h := Clif.Sem.binary .umax (input 0) small
+  let h := Clif.Sem.binary .umax (input 0) negative
   let i := Clif.Sem.binary .smin large (input 1)
   let j := Clif.Sem.binary .smax large (input 2)
   let k := Clif.Sem.binary .umin large (input 8)

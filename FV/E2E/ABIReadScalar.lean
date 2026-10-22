@@ -13,7 +13,7 @@ set_option Elab.async false
 private def special : MInst → Bool
   | .movK .. | .bitfieldMove .. | .extend .. | .bitRR ..
   | .movToFpu .. | .movFromVec .. | .vecMisc .. | .vecLanes .. | .vecRRR .. => true
-  | .aluRRImm12 op .. => op == .subS || op == .addS
+  | .aluRRImm12 op .. => op == .subS
   | .aluRRR op .. | .aluRRImmShift op .. => Backend.ABIReadScalar.shiftOp op || op == .extr
   | _ => false
 

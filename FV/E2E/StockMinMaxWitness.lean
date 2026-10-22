@@ -56,7 +56,7 @@ private theorem family (config : Configuration) :
   · exact Or.inl (E2E.StockPopcountNIWitness.source_family config stm old)
   · dsimp only [extraBody] at minmax
     simp only [List.mem_cons,List.not_mem_nil,or_false] at minmax
-    rcases minmax with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    rcases minmax with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals
       apply Backend.Stock.Scalar.minmaxBodyEligible_sound
       cases config <;> rfl
@@ -134,7 +134,7 @@ theorem source_entry (config : Configuration) (input : Nat → BitVec (valueType
 /-- Full reference execution includes dependent selection, the consumed stack
 argument and the dead statement, for arbitrary values in all six configurations. -/
 theorem source_returns (config : Configuration) (input : Nat → BitVec (valueType config).width) (slot : Nat) :
-    Clif.runLoop Clif.Env.empty {funcs := []} 97 ⟨frame config input slot,[],Clif.Mem.empty⟩ =
+    Clif.runLoop Clif.Env.empty {funcs := []} 98 ⟨frame config input slot,[],Clif.Mem.empty⟩ =
 .returned [⟨valueType config,resultValue config input⟩] Clif.Mem.empty := by
   cases config <;> rfl
 end E2E.StockMinMaxNIWitness
@@ -147,8 +147,13 @@ def selectedRoots (result : Backend.Stock.Result) : List Nat :=
 
 def minmaxRoots (_config : Backend.Stock.D0.Configuration) : List Nat := [796,797,798,799]
 
+def comparisonFormsCovered (result : Backend.Stock.Result) : Bool :=
+  let code := result.code.blocks.toList.flatMap (fun b => b.insts.toList)
+  code.any (fun i => match i with | .aluRRR .subS _ .xzr _ _ => true | _ => false) &&
+  code.any (fun i => match i with | .aluRRImm12 .subS _ .xzr _ _ => true | _ => false)
+
 def minmaxRootsCovered (config : Backend.Stock.D0.Configuration) (result : Backend.Stock.Result) : Bool :=
-  (minmaxRoots config).all (selectedRoots result).contains
+  (minmaxRoots config).all (selectedRoots result).contains && comparisonFormsCovered result
 
 private def classChecks (config : Backend.Stock.D0.Configuration) : Bool :=
   Backend.Stock.Scalar.sourceOk (function config) &&
@@ -191,7 +196,9 @@ theorem selected_roots_present (config : Backend.Stock.D0.Configuration) :
         minmaxRootsCovered config result = true := by simpa only [lowered,Bool.and_eq_true] using h
     refine ⟨result,rfl,?_⟩
     intro id member
-    exact List.contains_iff_mem.mp (List.all_eq_true.mp both.2 id member)
+    have covered := both.2
+    simp only [minmaxRootsCovered,Bool.and_eq_true] at covered
+    exact List.contains_iff_mem.mp (List.all_eq_true.mp covered.1 id member)
 end E2E.StockMinMaxNIWitness
 
 namespace E2E.StockMinMaxNIWitness
