@@ -742,3 +742,6 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.LSXWitness.not_memScopeLS
 #print axioms Concurrency.ArmAllocThread.LSXWitness.lsx_premises -- witness: native_decide
 #print axioms Concurrency.ArmAllocThread.LSXWitness.lsx_run -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.coveredCode_of_lsx
+#print axioms Concurrency.RealizeCompiled.CompiledLS.toLSX
+#print axioms Concurrency.RealizeCompiled.thread_compiledLSX_full
