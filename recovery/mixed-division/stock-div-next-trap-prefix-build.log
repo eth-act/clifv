@@ -1,0 +1,15 @@
+/tmp/stock-div-next-trap-prefix.lean:52:5: error: unexpected token 'prefix'; expected '_' or identifier
+/tmp/stock-div-next-trap-prefix.lean:52:13: error: unexpected identifier; expected prec
+/tmp/stock-div-next-trap-prefix.lean:55:75: error: unexpected identifier; expected ':'
+/tmp/stock-div-next-trap-prefix.lean:100:68: error(lean.invalidField): Invalid field `seq_prefix`: The environment does not contain `Exists.seq_prefix`, so it is not possible to project the field `seq_prefix` from an expression
+  failed
+of type
+  ∃ k i_1 ops ρ₁ w₁ outs w₂,
+    seqRun sem
+          (List.map (fun x => MInst.mapRegs (lowerFunction.resolve aliases (aliases.size + 1)) x)
+            { inst := i, input := input, output := scan }.output.emitted.toList)
+          ρ' w' =
+        some (SeqEnd.stop k i_1 ops ρ₁ w₁ outs w₂ Ctl.halt) ∧
+      trapCode? i_1 = some code
+/tmp/stock-div-next-trap-prefix.lean:103:14: error(lean.unknownIdentifier): Unknown constant `Backend.Stock.Proof.TrapRun.seq_prefix`
+'Backend.Stock.Proof.ScansSpec.trap_refines' depends on axioms: [propext, sorryAx, Quot.sound]

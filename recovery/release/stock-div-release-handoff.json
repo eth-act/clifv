@@ -1,0 +1,12 @@
+{
+  "utc": "2026-10-22T17:50:52.762202+00:00",
+  "release_view": "/home/lee/clifv/.worktrees/stock-div-release-20261022",
+  "source_head": "c0c0ebd0631bfa702bead77d196fbc70803193e3",
+  "healthy_worker": 1747731,
+  "healthy_compiler": 1747812,
+  "healthy_module": "FV.Opt.Proof.RuleShifts3P2",
+  "worker_cap": "10G",
+  "release_budget": "6G/max1job until that worker finishes; aggregate16G/max2",
+  "no_healthy_proof_killed": true,
+  "reason": "Isolate release cache restoration from active optimizer outputs; one shared physical cache; remove old source view only after worker finishes and evidence retained."
+}

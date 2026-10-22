@@ -1,0 +1,2 @@
+'Backend.Stock.Proof.ScansSpec.record_inst_mem' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.ScansSpec.record_unique' depends on axioms: [propext, Quot.sound]

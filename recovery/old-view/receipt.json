@@ -1,0 +1,43 @@
+{
+  "utc": "2026-10-22T19:40:37.342735+00:00",
+  "old_head": "c0c0ebd0631bfa702bead77d196fbc70803193e3",
+  "extra_evidence": [
+    {
+      "path": ".lake/lake-module-peaks.tsv",
+      "bytes": 364602,
+      "sha256": "ba40b652004c0fdbe4bfc8ca29ab4f655fee531f118fadc7962f0a0d22778ebf"
+    },
+    {
+      "path": "examples/fv-demo/Cargo.lock",
+      "bytes": 151,
+      "sha256": "f9fce1da3225a2b33d1a803c8ecea1e710b9cc6cd5e3771059d9d41776b5b436"
+    },
+    {
+      "path": "examples/survey/Cargo.lock",
+      "bytes": 564,
+      "sha256": "cef2802d5e5be0aa96d7eda2db41fe56360b9e1ca543f5594308c93d93097e88"
+    }
+  ],
+  "moved_without_copying": [
+    {
+      "old": "/home/lee/clifv/.worktrees/stock-driver-incremental/target",
+      "preserved_at": "/home/lee/clifv/.worktrees/stock-div-release-20261022/target"
+    },
+    {
+      "old": "/home/lee/clifv/.worktrees/stock-driver-incremental/crate-proofs/.lake",
+      "preserved_at": "/home/lee/clifv/.worktrees/stock-div-release-20261022/crate-proofs/.lake"
+    },
+    {
+      "old": "/home/lee/clifv/.worktrees/stock-driver-incremental/examples/fv-demo/target",
+      "preserved_at": "/home/lee/clifv/.worktrees/stock-div-release-20261022/examples/fv-demo/target"
+    },
+    {
+      "old": "/home/lee/clifv/.worktrees/stock-driver-incremental/examples/survey/target",
+      "preserved_at": "/home/lee/clifv/.worktrees/stock-div-release-20261022/examples/survey/target"
+    }
+  ],
+  "canonical_build_not_removed": "/home/lee/clifv/.worktrees/driver-proof-resume/.lake/build",
+  "old_build_was_only_a_symlink": true,
+  "healthy_old_optimizer_completed": "FV.Opt.Proof.RuleShifts3P2",
+  "old_optimizer_success_log": "/tmp/stock-div-main3-final-build/FV.Opt.Proof.RuleShifts3P2.log"
+}
