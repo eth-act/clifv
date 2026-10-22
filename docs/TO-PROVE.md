@@ -1046,6 +1046,7 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   print only `propext`, `Classical.choice`, `Quot.sound`);
   `scripts/lean-backend-filetests.sh` (corpus 114/114, runtests ≥ 4672/0/0);
   `scripts/lean-backend-encode-check.sh` (0 differ); `lean-e2e-check` (≥ 1149 accepted, 0 rejected);
+  `scripts/arm-fault-cosim.sh` (memory-fault co-simulation against qemu, 0 failures);
   `cargo fv test --lean-link --verified` on `examples/fv-demo` and the survey; if CLIF semantics change,
   `scripts/clif-filetests.sh` at its baseline (`scripts/clif-filetests-baseline.txt`) and
   `scripts/opt-difftest.sh` with 0 failures.
