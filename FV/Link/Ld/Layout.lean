@@ -161,40 +161,58 @@ def placeParts (sz al : Part → Nat) (start soff out : Nat) (bits : Bool) :
     placeParts sz al start soff out bits (b + sz p) ps
       (acc.push { part := p, addr := b, fo := soff + (b - start), size := sz p, out, bits })
 
-/-- **One output section placed** (`sz`, `al`: its parts' sizes and alignments, `nb`: the
-parts without file bytes); a new segment, in a fresh 64 KiB page, when the kind changes. -/
-def placeSec (sz al : Part → Nat) (nb : Part → Bool) (tlsAlign : Nat) (st : PSt) (s : OSec) :
+/-- A new segment of kind `k`, in a fresh 64 KiB page, when the kind changes (the open one
+closed). -/
+def PSt.openSeg (st : PSt) (k : Nat) : PSt :=
+  if k != st.cur then
+    let va := alignUp st.va 0x10000 + st.fileEnd % 0x10000
+    { st with segs := st.segs.push st.seg, cur := k, off := st.fileEnd, va, segVa := va,
+              segOff := st.fileEnd }
+  else st
+
+/-- An output section placed in the open segment (`sz`, `al`: its parts' sizes and alignments,
+`nb`: the parts without file bytes). `.tbss` takes no address or file space: it follows
+`.tdata` in the TLS template only. -/
+def placeIn (sz al : Part → Nat) (nb : Part → Bool) (tlsAlign : Nat) (st : PSt) (s : OSec) :
     PSt :=
-  let st := if s.seg != st.cur then
-      let va := alignUp st.va 0x10000 + st.fileEnd % 0x10000
-      { st with segs := st.segs.push st.seg, cur := s.seg, off := st.fileEnd, va, segVa := va,
-                segOff := st.fileEnd }
-    else st
   let a0 := s.parts.foldl (fun m p => max m (al p)) (if s.name == ".tdata" then tlsAlign else 1)
   let tbss := s.name == ".tbss"
+  let tdata := s.name == ".tdata"
   let nobits := tbss || s.name == ".bss" || s.parts.all nb
   let start := if tbss then alignUp st.tbssVa a0 else alignUp st.va a0
   let soff := if tbss then st.off else st.off + (start - st.va)
-  let (a, slots) := placeParts sz al start soff (st.outs.size + 1) (!nobits) start s.parts.toList
-    st.slots
+  let r := placeParts sz al start soff (st.outs.size + 1) (!nobits) start s.parts.toList st.slots
+  let a := r.1
   let size := a - start
-  let flags := (if s.seg == 2 || s.name == ".tdata" || tbss then shfWrite else 0) |||
+  let flags := (if s.seg == 2 || tdata || tbss then shfWrite else 0) |||
     shfAlloc ||| (if s.seg == 1 then shfExec else 0) |||
-    (if s.name == ".tdata" || tbss then shfTls else 0)
+    (if tdata || tbss then shfTls else 0)
   let ty := if nobits then shtNobits else if s.name == ".init_array" then shtInitArray
     else if s.name == ".fini_array" then shtFiniArray else shtProgbits
   let os : OutSec :=
     { name := s.name, type := ty, flags := flags, addr := start, off := soff, size := size, align := a0 }
-  let st := { st with slots := slots, outs := st.outs.push os }
-  let st := if s.name == ".tdata" then { st with tls := (start, soff, size, size, a0), tbssVa := a }
-    else st
-  if tbss then { st with tls := (st.tls.1, st.tls.2.1, st.tls.2.2.1, a - st.tls.1, st.tls.2.2.2.2) }
-  else
-    let off := st.off + (a - st.va)
-    { st with off, va := a, fileEnd := if nobits then st.fileEnd else off }
+  let off := if tbss then st.off else st.off + (a - st.va)
+  { st with
+    outs := st.outs.push os, slots := r.2,
+    tls := if tdata then (start, soff, size, size, a0)
+      else if tbss then (st.tls.1, st.tls.2.1, st.tls.2.2.1, a - st.tls.1, st.tls.2.2.2.2)
+      else st.tls,
+    tbssVa := if tdata then a else st.tbssVa,
+    off := off, va := if tbss then st.va else a,
+    fileEnd := if nobits then st.fileEnd else off }
+
+/-- **One output section placed**: in a new segment when its kind changes. -/
+def placeSec (sz al : Part → Nat) (nb : Part → Bool) (tlsAlign : Nat) (st : PSt) (s : OSec) :
+    PSt :=
+  placeIn sz al nb tlsAlign (st.openSeg s.seg) s
 
 /-- `b` cut to at most `n` bytes. -/
 def clampTo (n : Nat) (b : ByteArray) : ByteArray := if b.size ≤ n then b else b.extract 0 n
+
+/-- The piece of slot `sl`: at its address and file offset, the bytes `bytes` cut to its size,
+the relocations `rels`. -/
+def Slot.piece (sl : Slot) (bytes : ByteArray) (rels : List Rel) : Piece :=
+  { addr := sl.addr, fo := sl.fo, bytes := clampTo sl.size bytes, rels }
 
 /-- The GOT slot's key of symbol `j` of file `fi` (a local symbol: per file and index). -/
 def gotKey (files : Array Obj) (fi j : Nat) : String :=
@@ -255,22 +273,26 @@ structure Lay extends LayD where
   partAddr : Std.HashMap String Nat
   commonAddr : Std.HashMap (Nat × Nat) Nat
 
-/-- The output sections in order: by segment, then rank (C-identifier sections by name),
-init/fini arrays' parts by priority. -/
-def sortOSecs (files : Array Obj) (osecs : Array OSec) : Array OSec :=
-  let lt (a b : OSec) : Bool := a.seg < b.seg || (a.seg == b.seg && (outRank a.name a.seg < outRank b.name b.seg ||
+/-- The order of output sections: by segment, then rank (C-identifier sections by name). -/
+def osecLt (a b : OSec) : Bool :=
+  a.seg < b.seg || (a.seg == b.seg && (outRank a.name a.seg < outRank b.name b.seg ||
     (outRank a.name a.seg == outRank b.name b.seg && a.name < b.name)))
-  let fix (s : OSec) : OSec :=
-    if s.name == ".init_array" || s.name == ".fini_array" || s.name == ".preinit_array" then
-      let prio (p : Part) : Nat := match p with
-        | .input (f, i) => arrPrio files[f]!.secs[i]!.name
-        | _ => 65536
-      -- a stable sort: by priority, then input order
-      let idx := s.parts.mapIdx fun i p => (prio p, i, p)
-      { s with parts := (idx.qsort fun a b => a.1 < b.1 || (a.1 == b.1 && a.2.1 < b.2.1)).map (·.2.2) }
-    else s
+
+/-- An init/fini array's parts by priority (a stable sort: by priority, then input order). -/
+def arrOrder (files : Array Obj) (s : OSec) : OSec :=
+  if s.name == ".init_array" || s.name == ".fini_array" || s.name == ".preinit_array" then
+    let prio (p : Part) : Nat := match p with
+      | .input (f, i) => arrPrio files[f]!.secs[i]!.name
+      | _ => 65536
+    let idx := s.parts.mapIdx fun i p => (prio p, i, p)
+    { s with parts := (idx.qsort fun a b => a.1 < b.1 || (a.1 == b.1 && a.2.1 < b.2.1)).map (·.2.2) }
+  else s
+
+/-- The output sections in order (`osecLt`, segment by segment), init/fini arrays' parts by
+priority. -/
+def sortOSecs (files : Array Obj) (osecs : Array OSec) : Array OSec :=
   (([0, 1, 2].flatMap fun k =>
-    (osecs.toList.filter (·.seg == k)).mergeSort fun a b => !lt b a).map fix).toArray
+    (osecs.toList.filter (·.seg == k)).mergeSort fun a b => !osecLt b a).map (arrOrder files)).toArray
 
 /-- **The layout's decisions** of the resolved inputs (`LayD`). -/
 def layDecide (st : St) (g : GcOut) : LayD := Id.run do
@@ -495,28 +517,28 @@ def ehHdrBytes (table : Array (Nat × Nat)) : ByteArray :=
     (leBytes 4 (1 + 0x1b * 256 + 0x03 * 65536 + 0x3b * 2 ^ 24) ++
       leBytes 4 (((L.ehAddr : Int) - (hAddr + 4)) % 2 ^ 32).toNat ++ leBytes 4 sortedT.size)
 
-/-- **The piece of a placed part** (none without file bytes): at the slot's address and file
-offset, at most its size; an input section with its relocations resolved (sorted by offset:
-the data check, `FV/Link/Ld/Data.lean`, walks them in order), the GOT, `.eh_frame`,
-`.eh_frame_hdr`. -/
+/-- An input section's piece in its slot (none for `SHT_NOBITS`), with its relocations resolved
+(sorted by offset: the data check, `FV/Link/Ld/Data.lean`, walks them in order). -/
+def inputPiece (sl : Slot) (fi si : Nat) : Except String (Option Piece) := do
+  let f := st.files[fi]!
+  let s := f.secs[si]!
+  if s.type == shtNobits then return none
+  let rels ← (f.relas si).toList.mapM fun r => do
+    let ri ← (L.relIn o st g fi r (sl.addr + r.off)).mapError (s!"{f.name}({s.name})+{r.off}: " ++ ·)
+    pure ({ off := r.off, ty := r.type, ri } : Rel)
+  return some (sl.piece (f.data.extract s.off (s.off + s.size)) (rels.mergeSort fun r r' => decide (r.off ≤ r'.off)))
+
+/-- **The piece of a placed part** (none without file bytes): an input section's, the GOT,
+`.eh_frame`, `.eh_frame_hdr`. -/
 def slotPiece (got : ByteArray) (eh : ByteArray × Array Rel) (hdr : ByteArray) (sl : Slot) :
-    Except String (Option Piece) := do
-  if !sl.bits then return none
-  let mk (bytes : ByteArray) (rels : List Rel) : Piece :=
-    { addr := sl.addr, fo := sl.fo, bytes := clampTo sl.size bytes, rels }
+    Except String (Option Piece) :=
+  if !sl.bits then pure none else
   match sl.part with
-  | .input (fi, si) =>
-    let f := st.files[fi]!
-    let s := f.secs[si]!
-    if s.type == shtNobits then return none
-    let rels ← (f.relas si).toList.mapM fun r => do
-      let ri ← (L.relIn o st g fi r (sl.addr + r.off)).mapError (s!"{f.name}({s.name})+{r.off}: " ++ ·)
-      pure ({ off := r.off, ty := r.type, ri } : Rel)
-    return some (mk (f.data.extract s.off (s.off + s.size)) (rels.mergeSort fun r r' => decide (r.off ≤ r'.off)))
-  | .got => return some (mk got [])
-  | .eh => return some (mk eh.1 eh.2.toList)
-  | .ehHdr => return some (mk hdr [])
-  | .common _ _ => return none
+  | .input fs => L.inputPiece o st g sl fs.1 fs.2
+  | .got => pure (some (sl.piece got []))
+  | .eh => pure (some (sl.piece eh.1 eh.2.toList))
+  | .ehHdr => pure (some (sl.piece hdr []))
+  | .common _ _ => pure none
 
 /-- **The pieces of the body**: one per placed part with file bytes, in placement order. -/
 def pieces : Except String (List Piece) := do

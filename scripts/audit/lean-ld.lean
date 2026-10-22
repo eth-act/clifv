@@ -1,5 +1,6 @@
 import FV.Link.ExeLd
 import FV.Link.DeadCleanupExeLd
+import FV.Link.Ld.LayoutProof
 
 -- the executable compiler's totality on `lean-ld`'s output (L2b stage 3e)
 #print axioms Link.compileExe_total_ld
@@ -19,3 +20,10 @@ import FV.Link.DeadCleanupExeLd
 #print axioms Link.Ld.regionPhsB_plan_witness
 #print axioms Link.Ld.file0OkB_assemble_witness -- witness: native_decide
 #print axioms Link.Ld.dataFastB_plan_witness -- witness: native_decide
+
+-- the planner meets its plan's conditions by construction (A1a, #409)
+#print axioms Link.Ld.layout_okB
+#print axioms Link.Ld.assemble_layout
+#print axioms Link.Ld.PInv_layPre
+#print axioms Link.Ld.pieces_pairwise
+#print axioms Link.Ld.tinyLayout_okB -- witness: native_decide
