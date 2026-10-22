@@ -463,8 +463,9 @@ theorem preMem {env : Env} {pre : List Line}
 
 open Classical in
 /-- **Receptiveness of a straight-line form with an event-free prefix** (`straightSem_pre`): the
-condition of the step does not depend on the memory (`straightSem_one` with the prefix's
-`preMem`). -/
+memory-independent shape of the step (`straightSem_one` with the prefix's `preMem`): the prefix's
+end state `y1` does not depend on the memory, and the step's value at any memory is the
+if-expression on the access's execution at that memory. -/
 theorem straightSem_pre {F : BitVec 64 → Prop} {ctx : FnCtx} {i ic : MInst} {uses : List CV}
     {w : ArmState} {ops : Array Operand} {pre : List Line} {x : Insn}
     {t : Option Clif.TrapCode} {a : ArmInst}
@@ -473,59 +474,114 @@ theorem straightSem_pre {F : BitVec 64 → Prop} {ctx : FnCtx} {i ic : MInst} {u
     (hk : ∀ ln ∈ pre, ∃ x' t', ln = .ins x' t' ∧ insnKind x' = none)
     (ha : x.toArmInst env0 = .ok a)
     (ha' : x.toArmInst { env0 with pc := env0.pc + 4 * pre.length } = .ok a)
-    (hc : CtlIndep a) (M : Memory) :
+    (hc : CtlIndep a) (y1 : ArmState)
+    (hy1 : execLines env0 pre (placeUses ops (canonRegs ops) uses w) = some y1) (M : Memory) :
     straightSem F ctx i uses (setMem M w) =
       if AccessOk F ctx ic (placeUses ops (canonRegs ops) uses w) ∧
-          (∃ t', execMInst ctx env0 ic (placeUses ops (canonRegs ops) uses w) = some t' ∧
-            Arm.r .ERR t' = .None ∧ t'.program = w.program) then
-        match execMInst ctx env0 ic (setMem M (placeUses ops (canonRegs ops) uses w)) with
-        | some t'' => some (defVals ops (canonRegs ops) t'', t'', Ctl.next)
-        | none => none
+          Arm.r .PC (exec_inst a (setMem M y1)) = Arm.r .PC (setMem M y1) + 4#64 ∧
+          Arm.r .ERR (exec_inst a (setMem M y1)) = .None ∧
+          (exec_inst a (setMem M y1)).program = w.program then
+        some (defVals ops (canonRegs ops) (exec_inst a (setMem M y1)),
+          exec_inst a (setMem M y1), Ctl.next)
       else none := by
   unfold straightSem
   simp only [hops, hic, placeUses_setMem, accessOk_setMem, execMInst, hl]
-  set y : ArmState := placeUses ops (canonRegs ops) uses w with hy
-  rw [execLines_append env0 pre [.ins x t] (setMem M y),
-    execLines_append env0 pre [.ins x t] y, preMem hk M y]
-  cases hp : execLines env0 pre y with
-  | none => simp [hp]
-  | some y1 =>
-    have e1 : execLines { env0 with pc := env0.pc + 4 * pre.length } [.ins x t] (setMem M y1) =
-        if Arm.r .PC (exec_inst a (setMem M y1)) = Arm.r .PC (setMem M y1) + 4#64 then
-          some (exec_inst a (setMem M y1)) else none := by
-      simp only [execLines, ha']
-    have e0 : execLines { env0 with pc := env0.pc + 4 * pre.length } [.ins x t] y1 =
-        if Arm.r .PC (exec_inst a y1) = Arm.r .PC y1 + 4#64 then
-          some (exec_inst a y1) else none := by
-      simp only [execLines, ha']
-    rw [e1, e0, hc M y1 |>.1, r_setMem]
-    simp only [Option.map_some, Option.bind_some]
-    by_cases hP : Arm.r .PC (exec_inst a y1) = Arm.r .PC y1 + 4#64
-    · rw [if_pos hP, hc M y1 |>.2.1, hc M y1 |>.2.2, setMem_program]
-      split
-      · rename_i hC
-        obtain ⟨t', hE, hER, hpr⟩ := hC.2
-        simp only [Option.some.injEq] at hE
-        subst hE
-        rw [if_pos hC.1, if_pos ⟨hER, hpr⟩]
+  rw [execLines_append env0 pre [.ins x t] (setMem M (placeUses ops (canonRegs ops) uses w)),
+    preMem hk M (placeUses ops (canonRegs ops) uses w), hy1]
+  simp only [Option.map_some, Option.bind_some]
+  have e1 : execLines { env0 with pc := env0.pc + 4 * pre.length } [.ins x t] (setMem M y1) =
+      if Arm.r .PC (exec_inst a (setMem M y1)) = Arm.r .PC (setMem M y1) + 4#64 then
+        some (exec_inst a (setMem M y1)) else none := by
+    simp only [execLines, ha']
+  rw [e1]
+  by_cases hA : AccessOk F ctx ic (placeUses ops (canonRegs ops) uses w)
+  · rw [if_pos hA]
+    by_cases hP : Arm.r .PC (exec_inst a (setMem M y1)) = Arm.r .PC (setMem M y1) + 4#64
+    · rw [if_pos hP]
+      show (if Arm.r .ERR (exec_inst a (setMem M y1)) = .None ∧
+          (exec_inst a (setMem M y1)).program = (setMem M w).program then
+        some (defVals ops (canonRegs ops) (exec_inst a (setMem M y1)),
+          exec_inst a (setMem M y1), Ctl.next) else none) = _
+      by_cases hC1 : Arm.r .ERR (exec_inst a (setMem M y1)) = .None ∧
+          (exec_inst a (setMem M y1)).program = (setMem M w).program
+      · rw [if_pos hC1, if_pos ⟨hA, hP, hC1.1, hC1.2.trans (setMem_program M w)⟩]
+      · rw [if_neg hC1, if_neg (fun h => hC1 ⟨h.2.2.1, h.2.2.2.trans (setMem_program M w)⟩)]
+    · rw [if_neg hP, if_neg (fun h => hP h.2.1)]
+  · rw [if_neg hA, if_neg (fun h => hA h.1)]
+
+/-! ## The events of the plain load/store instructions on any memory -/
+
+/-- **The events of a plain GPR load** (`lsb opc 1 = 1`, so a read) on `setMem M s` are the single
+read event at the base register's value plus the offset's value, of the access size, reading the
+memory `M` — so they only depend on the base and offset values (and the `sp`-alignment branch). -/
+theorem immEvs_gprR_eq (size opc : BitVec 2) (Rn Rt Rn' Rt' : BitVec 5)
+    (imm imm' : Arm.LDST.Reg_offset) (M : Memory) (s y : ArmState)
+    (ha : read_gpr 64 Rn s = read_gpr 64 Rn' y)
+    (hi : imm.value size.toNat s = imm'.value size.toNat y)
+    (hsig : Arm.BitVec.lsb opc 1 = 1#1)
+    (hRn : (Rn = 31#5) ↔ (Rn' = 31#5))
+    (h31s : Rn = 31#5 → CheckSPAlignment s) (h31y : Rn' = 31#5 → CheckSPAlignment y) :
+    immEvs (gprCls size opc Rn Rt imm) (setMem M s) =
+      immEvs (gprCls size opc Rn' Rt' imm') (setMem M y) := by
+  unfold immEvs
+  simp (config := {decide := true}) only [gprCls, hsig, if_false, and_true, not_false,
+    check_sp_sm']
+  split
+  · rfl
+  · split
+    · rfl
+    · by_cases hA1 : Rn = 31#5 ∧ ¬ CheckSPAlignment s
+      · have h31' : Rn' = 31#5 := hRn.mp hA1.1
+        have hny : ¬ CheckSPAlignment y := fun h => hA1.2 (by rw [check_sp_sm' M y]; exact h)
+        rw [if_pos hA1, if_pos ⟨h31', hny⟩]
         rfl
-      · rename_i hC
-        rcases hC with hA | hA
-        · rw [if_neg hA]
+      · by_cases hA2 : Rn' = 31#5 ∧ ¬ CheckSPAlignment y
+        · rw [if_neg hA1, if_pos hA2]
           rfl
-        · have hne : ¬ (Arm.r .ERR (exec_inst a y1) = .None ∧
-              (exec_inst a y1).program = w.program) :=
-            fun h => hA ⟨_, rfl, h.1, h.2⟩
-          by_cases hA2 : AccessOk F ctx ic y
-          · rw [if_pos hA2, if_neg hne]
-            rfl
-          · rw [if_neg hA2]
-            rfl
-    · rw [if_neg hP]
-      by_cases hA2 : AccessOk F ctx ic y
-      · rw [if_pos hA2]
+        · rw [if_neg hA1, if_neg hA2]
+          have haddr : read_gpr 64 Rn (setMem M s) + imm.value size.toNat (setMem M s) =
+              read_gpr 64 Rn' (setMem M y) + imm'.value size.toNat (setMem M y) := by
+            simp only [read_gpr_sm, offset_value_sm]
+            rw [ha, hi]
+          simp only [List.cons.injEq, Ev.mk.injEq]
+          exact ⟨rfl, haddr, rfl, by rw [haddr]⟩
+
+/-- **… of a plain GPR store** (`lsb opc 1 = 0`, `lsb opc 0 = 0`, so a write of the data
+register's bytes). -/
+theorem immEvs_gprW_eq (size opc : BitVec 2) (Rn Rt Rn' Rt' : BitVec 5)
+    (imm imm' : Arm.LDST.Reg_offset) (M : Memory) (s y : ArmState)
+    (ha : read_gpr 64 Rn s = read_gpr 64 Rn' y)
+    (hd : Arm.r (Arm.StateField.GPR Rt) s = Arm.r (Arm.StateField.GPR Rt') y)
+    (hi : imm.value size.toNat s = imm'.value size.toNat y)
+    (hnsig : ¬ (Arm.BitVec.lsb opc 1 = 1#1)) (hopc0 : Arm.BitVec.lsb opc 0 = 0#1)
+    (hRt : Rt ≠ 31#5 ∧ Rt' ≠ 31#5)
+    (hRn : (Rn = 31#5) ↔ (Rn' = 31#5))
+    (h31s : Rn = 31#5 → CheckSPAlignment s) (h31y : Rn' = 31#5 → CheckSPAlignment y) :
+    immEvs (gprCls size opc Rn Rt imm) (setMem M s) =
+      immEvs (gprCls size opc Rn' Rt' imm') (setMem M y) := by
+  unfold immEvs
+  simp (config := {decide := true}) only [gprCls, hnsig, hopc0, if_false, and_true, not_false,
+    check_sp_sm']
+  split
+  · rfl
+  · split
+    · rfl
+    · by_cases hA1 : Rn = 31#5 ∧ ¬ CheckSPAlignment s
+      · have h31' : Rn' = 31#5 := hRn.mp hA1.1
+        have hny : ¬ CheckSPAlignment y := fun h => hA1.2 (by rw [check_sp_sm' M y]; exact h)
+        rw [if_pos hA1, if_pos ⟨h31', hny⟩]
         rfl
-      · rw [if_neg hA2]
-        rfl
+      · by_cases hA2 : Rn' = 31#5 ∧ ¬ CheckSPAlignment y
+        · rw [if_neg hA1, if_pos hA2]
+          rfl
+        · rw [if_neg hA1, if_neg hA2]
+          have haddr : read_gpr 64 Rn (setMem M s) + imm.value size.toNat (setMem M s) =
+              read_gpr 64 Rn' (setMem M y) + imm'.value size.toNat (setMem M y) := by
+            simp only [read_gpr_sm, offset_value_sm]
+            rw [ha, hi]
+          simp only [List.cons.injEq, Ev.mk.injEq]
+          refine ⟨rfl, haddr, rfl, ?_⟩
+          simp only [ldst_read, read_gpr_zr_sm, read_gpr]
+          rw [if_neg hRt.1, if_neg hRt.2, hd]
 
 end Concurrency.ArmAllocThread
