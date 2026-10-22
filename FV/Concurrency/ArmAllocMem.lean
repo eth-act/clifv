@@ -905,13 +905,15 @@ theorem arm_alloc_refines_mem {R : RL} (hR : R.Wf) (hsc : MemScope R) (hnm : NoM
 /-! ## Precise one-step runs -/
 
 /-- **At an unhooked instruction line, every memory gives a precise one-step run** of the machine
-`R.step`, its label the instruction's events on that memory (no store exclusive). -/
-theorem exists_prun_line {R : RL} (hR : R.Wf) {s : ArmState} {j : Nat} {x : Insn}
+`R.step`, its label the instruction's events on that memory (a store exclusive: with the monitor
+armed, `Policy.arm.succ mon`). -/
+theorem exists_prun_lineS {R : RL} (hR : R.Wf) {s : ArmState} {j : Nat} {x : Insn}
     {t : Option Clif.TrapCode} (hj : R.fa.lines.toList[j]? = some (.ins x t)) (hh : x.hooked = false)
     (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
-    (herr : Arm.r .ERR s = .None)
-    (hnstx : ∀ a, x.toArmInst (R.envOf j) = .ok a → ∀ rel rs rn, clsOf a ≠ .stx rel rs rn)
-    (mon : Mon) (m : Memory) :
+    (herr : Arm.r .ERR s = .None) (mon : Mon)
+    (hsucc : ∀ a, x.toArmInst (R.envOf j) = .ok a → ∀ rel rs rn, clsOf a = .stx rel rs rn →
+      Policy.arm.succ mon)
+    (m : Memory) :
     ∃ a t', x.toArmInst (R.envOf j) = .ok a ∧ stepEvs (setMem m s) = instEvs a (setMem m s) ∧
       PRun Policy.arm R.step (fun _ _ => True) (s, mon) [⟨stepEvs (setMem m s), false⟩] t' := by
   have hline : ∀ m', ∃ a, x.toArmInst (R.envOf j) = .ok a ∧ R.step (setMem m' s) = exec_inst a (setMem m' s) ∧
@@ -937,7 +939,20 @@ theorem exists_prun_line {R : RL} (hR : R.Wf) {s : ArmState} {j : Nat} {x : Insn
     rw [hs1, hs2]; exact e
   have hdec0 : decodeAt s = some a := by rw [← decodeAt_setMem m s]; exact hdec
   refine ⟨a, _, ha, hev, .cons (.exec hk hag (ArmPrecise.footprint_of_setMem hfoot hag)
-    (fun rel rs rn h => absurd (by rw [cls_of_decode hdec0] at h; exact h) (hnstx a ha rel rs rn)))
+    (fun rel rs rn h => hsucc a ha rel rs rn (by rw [cls_of_decode hdec0] at h; exact h)))
     (.inr ⟨m, rfl⟩) trivial .nil⟩
+
+/-- **At an unhooked instruction line, every memory gives a precise one-step run** of the machine
+`R.step`, its label the instruction's events on that memory (no store exclusive). -/
+theorem exists_prun_line {R : RL} (hR : R.Wf) {s : ArmState} {j : Nat} {x : Insn}
+    {t : Option Clif.TrapCode} (hj : R.fa.lines.toList[j]? = some (.ins x t)) (hh : x.hooked = false)
+    (hprog : s.program = R.fb.program R.base) (hpc : Arm.r .PC s = R.pcOf j)
+    (herr : Arm.r .ERR s = .None)
+    (hnstx : ∀ a, x.toArmInst (R.envOf j) = .ok a → ∀ rel rs rn, clsOf a ≠ .stx rel rs rn)
+    (mon : Mon) (m : Memory) :
+    ∃ a t', x.toArmInst (R.envOf j) = .ok a ∧ stepEvs (setMem m s) = instEvs a (setMem m s) ∧
+      PRun Policy.arm R.step (fun _ _ => True) (s, mon) [⟨stepEvs (setMem m s), false⟩] t' :=
+  exists_prun_lineS hR hj hh hprog hpc herr mon
+    (fun a ha rel rs rn h => absurd h (hnstx a ha rel rs rn)) m
 
 end Concurrency.ArmAllocThread

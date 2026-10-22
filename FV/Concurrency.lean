@@ -134,6 +134,7 @@ import FV.Concurrency.ArmLoopSpec
 import FV.Concurrency.ArmAllocLoop
 import FV.Concurrency.ArmAllocLoopMem
 import FV.Concurrency.ArmAllocLoopWitness
+import FV.Concurrency.ArmAllocLoopFwd
 import FV.Concurrency.RealizeWitnessLoad
 import FV.Concurrency.ArmAllocBranch
 import FV.Concurrency.ArmAllocBranchWitness

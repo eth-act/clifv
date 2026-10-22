@@ -480,6 +480,15 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.RealizeCompiled.Compiled.toB
 #print axioms Concurrency.RealizeCompiled.thread_compiledB
 #print axioms Concurrency.RealizeCompiled.realizes_compiledB
+#print axioms Concurrency.RealizeCompiled.CompiledB.toLS
+#print axioms Concurrency.RealizeCompiled.thread_compiledLS
+#print axioms Concurrency.RealizeCompiled.realizes_compiledLS
+#print axioms Concurrency.ArmAllocThread.exists_prun_lineS
+#print axioms Concurrency.ArmAllocThread.step_fwdS
+#print axioms Concurrency.ArmAllocThread.prun_quiet
+#print axioms Concurrency.ArmAllocThread.rmw_at
+#print axioms Concurrency.ArmAllocThread.rmw_fwd
+#print axioms Concurrency.ArmAllocThread.rmw_lines
 
 -- T2 (#311): layer 4b calls, the linking induction (callee events through the callee's refinement)
 #print axioms Concurrency.CallCompose.XClosed.append
