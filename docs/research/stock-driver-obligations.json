@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-22T02:35:25.579542+00:00",
+  "updated_utc": "2026-10-22T04:50:46.106217+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -16,12 +16,13 @@
       "integer NOT/NOT-of-XOR via shared scalar consumers",
       "i32/i64 multiplication and fused multiply through shared scalar consumers",
       "i32/i64 ordinary shifts and fused bitfield pairs through shared scalar consumers",
-      "i32/i64 extension/reduction through shared scalar consumers (validated, squash pending)",
-      "i32/i64 negation, CLZ/CTZ, bit reversal/byte swap and rotations through shared scalar consumers (validated, squash pending)",
-      "i32/i64 popcount through shared scalar consumers (validated, squash pending)",
-      "i32/i64 signed and unsigned min/max through shared scalar consumers (validated, squash pending)"
+      "i32/i64 extension/reduction through shared scalar consumers",
+      "i32/i64 negation, CLZ/CTZ, bit reversal/byte swap and rotations through shared scalar consumers",
+      "i32/i64 popcount through shared scalar consumers",
+      "i32/i64 signed and unsigned min/max through shared scalar consumers",
+      "i32/i64 integer comparisons and actual cast-of-icmp811 through shared scalar consumers (validated, squash pending)"
     ],
-    "pending": "Integer comparisons including real cast-of-icmp811, high multiply/division/remainder and complete original integer widths/ABIs; every remaining original #140 control/memory/trap/effect/call/source/block/whole-driver simulation/completeness/consumer obligation remains."
+    "pending": "High multiply/division/remainder and complete original integer widths/ABIs; every remaining original #140 control/memory/trap/effect/call/source/block/whole-driver simulation/completeness/consumer obligation remains."
   },
   "roots": [
     {
@@ -3377,8 +3378,8 @@
       "id": 811,
       "source": "FV/Isle/Generated/Rules02.lean",
       "primary_opcode": "Uextend",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockCastCmpSourceValues.lean",
+      "status": "actual source/retained record, guarded scan/body/entry-return and default shared production consumers validated; Stock-only completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -3387,7 +3388,9 @@
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
       ],
-      "cast_class_exclusion": "CastBody.family_formats + stock_lower_source_statement_family; load/compare execution remains a later full-goal obligation"
+      "cast_class_exclusion": "Old CastBody.SafeFormat variants retained; broader memory-only variants execute real IntCompare look-through.",
+      "production_evidence": "docs/research/stock-cmp-production-activation.json",
+      "stock_only_completeness": false
     },
     {
       "rule": "rule_lower_1283",
@@ -5643,8 +5646,8 @@
       "id": 958,
       "source": "FV/Isle/Generated/Rules03.lean",
       "primary_opcode": "Icmp",
-      "saved_guarded_bridge": null,
-      "status": "requires current-source proof/composition review",
+      "saved_guarded_bridge": "FV/Backend/Proof/StockCmpActualDispatch.lean",
+      "status": "actual source/retained record, guarded scan/body/entry-return and default shared production consumers validated; Stock-only completeness remains",
       "scope_status_historical": "closure: actual selection requires membership; execution proof remains",
       "required": [
         "current scope exclusion OR actual matching/request/execution proof",
@@ -5652,7 +5655,9 @@
         "complete body/block/driver composition",
         "non-vacuity and transitive trust audit",
         "Stock-only completeness"
-      ]
+      ],
+      "production_evidence": "docs/research/stock-cmp-production-activation.json",
+      "stock_only_completeness": false
     },
     {
       "rule": "rule_lower_2237",
