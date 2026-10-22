@@ -1,7 +1,7 @@
 import FV.Backend.Proof.IselShpTFns
+import FV.Backend.Proof.IselShpTBase
 import FV.Backend.Proof.IselShpCtor
 import FV.Backend.Proof.IselCovTCtor
-import FV.Backend.Proof.SpillCtlShapeT
 
 /-!
 # Control shapes of the typed ISLE lowering: `emit`ted instructions and extern constructors
@@ -23,9 +23,6 @@ open Backend Backend.Proof Backend.Proof.Spill Backend.Proof.Flow Isle Isle.Inte
 open Backend.Proof.Cov (condBrKind_reg EmitS externCtor_shp reg?_eq kind_cases LogicImmComplete)
 
 variable {f : Clif.Function} {ctx : Ctx}
-
-/-- **The state invariant** of the typed control-shape analysis. -/
-def ShpIsT (N : Nat) (s0 s : LState) : Prop := CtlSinceT N s0 s ∧ N ≤ s.nextVreg
 
 /-! ## `emit`ted instructions -/
 
