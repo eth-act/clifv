@@ -204,3 +204,17 @@ import FVTest.Concurrency.LitmusFull
 -- T2h layer 2d core: accesses of a lowered statement by variation
 #print axioms Concurrency.IselVary.store_touched
 #print axioms Concurrency.IselVary.load_touched
+-- T2h layer 2d: footprint lemma, CLIF facts, accesses within the run's events
+#print axioms Concurrency.IselFoot.untouched_of_runOut
+#print axioms Concurrency.IselFoot.store_in_events
+#print axioms Concurrency.IselFoot.load_in_events
+#print axioms Concurrency.IselClif.load_facts
+#print axioms Concurrency.IselClif.store_facts
+#print axioms Concurrency.IselClif.atomicLoad_facts
+#print axioms Concurrency.IselClif.atomicStore_facts
+#print axioms Concurrency.IselClif.atomicRmw_facts
+#print axioms Concurrency.IselClif.atomicCas_facts
+#print axioms Concurrency.IselClif.access_in_events
+#print axioms Concurrency.IselClif.Witness.untouched_ldar
+#print axioms Concurrency.IselClif.Witness.atomicLoad_facts0
+#print axioms Concurrency.IselClif.Witness.store_facts0
