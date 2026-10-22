@@ -524,11 +524,35 @@ function of `fnScopeInTB` for every allocator answer, with `lowerCheckT`, `prepC
 Remaining for `Link.compileExe_total_reach_inputT`, in order: typed ISLE progress (`IselProg` for
 the float roots: float forms in `stmtForms`/`prgTab`, `PInvT`, the extern helpers under
 `CtxInvT`), replacing `lowerOutTB`'s `lowerFunction` check; typed size/emission analyses
-(`iselSz`, `iselEmit`) for `emitCondsB`; completeness of `ctlSpillB`/`formsCoveredB`/`killFreeB`/
+(`iselSz`, `iselEmit`) for `emitCondsB`; completeness of `ctlSpillB`/`formsCoveredB`/
 `resClassOkB` on the typed scope (slice 6's open items) and typed `vc_ctl` (control-shape
-analysis) for `ctlInstsB`; `leanLink`'s per-function checks
+analysis) for `ctlInstsB` (`killFreeB`: done, below); `leanLink`'s per-function checks
 (`chks`: `functionE`, integer `lowerCheck`, `checkAlloc` of the spill allocation) and
 `compileExe`'s gate widened to `InScopeInT`, then the LinkSysT port for correctness.
+
+**Slice 8, typed completeness of the run-time deciders (FloatChecksComplete).** `killFreeB` is
+proven on the typed scope: `E2E.spillKillFreeT` (`E2E/SpillKillFreeT.lean`: `Dominated`,
+`LowerScopeT`, `AbiSigsOk`, `ArityOk`, `tryArgClassOk` → `Spill.killFreeB` of `prepare
+(lowerFunction f)`) and `LinkCheck.killFreeB_of_scopeT` (from `fnScopeInTB`'s decided conjuncts
+`dominatedB`, `lowerScopeTB`, `sigAbiOk`, `indSigsOk`, `arityOkB`, `tryArgClassOk`), so
+`lowerOutTB`'s `killFreeB` conjunct can be dropped. Parts: `Kill.killRunsHypT`
+(`Proof/KillDriverT.lean`; the killed-vreg analysis is a uniform invariant over every root rule
+of the exported program, so only its two rule exclusions, `nop` 587 and I128 636/637, are
+re-proven over `CtxInvT`), `Kill.tryDefsExactT` (`Proof/KillTryDefsT.lean`; the `try_call`'s
+operands are integer positions, `termIntPos_of`), `Kill.killFreeB_lowerT`
+(`Proof/KillAssembleT.lean`, `KillAssemble` over `LowT`/`vcBlocksOfT`), statements
+`KillRunsHypT`/`TryDefsExactT` (`Proof/KillHypT.lean`). No premise names a float root: new
+roots need no new proof. Witness `FVTest/E2E/FloatKillFreeT.lean` (`fW`). The other four stay
+run-time conditions: on the current typed scope (`instET`: subset E, float constants, float
+`load`/`store`, `select`, `bitcast`; integer externs) they hold for every function as far as the
+rules go (float roots emit `FormOk`'s float forms into float vregs, no float root emits a control
+form, float `Args`/`Rets` pairs use v0–v7), but each proof needs a typed abstract interpretation
+of the ISLE rules: `formsCoveredB` the V3 coverage engine over `CtxInvT` (slice 5b follow-up,
+`IselCovT`), `ctlSpillB` and `ctlInstsB` the V4 control-shape engine (`iselCtlHypT`, typed
+`CtlShape`), `resClassOkB` a result-class fact tied to the result type (the class model
+`stmt_clsT` gives recorded classes only, and the root contracts' `ResultsHeld` leaves the class
+free), which the typed coverage engine would also give (as `stmt_cov` does for subset E). A root
+that emits a form outside `FormOk` (e.g. a conversion) would need `FormOk`/`covTab` widened first.
 
 **S11e5a (typed direct calls, on top of S11e4).** The lowering of a `call` is typed as
 Cranelift's: `gen_call_output` allocates one fresh vreg per ABI return of the return's class
