@@ -16,8 +16,8 @@ tree verified against validated 0d9f54fe plus its documentation receipt. [Logica
 records current normal/trust/runtime/native/CLI/retention/identity/example gates,
 exact original axiom/header parity and actual provenance. The actual squash and integrator notice are recorded in #44/#140/#261.
 
-Next: remaining pure scalar classes, starting with constants and NOT/fused logical
-forms, using saved guarded bridges and existing body/consumer composition. Read
+Continue remaining pure scalar classes, starting with high multiplication and
+division/remainder, using complete saved source wrappers and shared consumer composition. Read
 [the obligation ledger](../research/stock-driver-obligations.json); historical root
 inventories require current-source/scope reconciliation and are not coverage
 percentages. No whole-backlog port or new worktree is needed. Canonical saved work and terminal logical evidence are backed remotely at29f6be2f.
@@ -110,7 +110,18 @@ interpreted default and explicit native mode, validate target keys/binary hashes
 and compile generated proofs freshly. Reuse existing complete source wrappers
 before introducing another proof chain.
 
-Next: integer comparisons and actual cast-of-icmp811; high multiply/division/
+Integer comparisons and real cast-of-icmp811 pass author gates through shared
+production consumers. [Terminal evidence](../research/stock-cmp-production-activation.md)
+records22 primary/23 ownership gates,1675 audited roots, all1601 prior axiom sets/
+35 headers exact and2640 native comparisons. Both current/retained actual
+consumer cohorts pass32 checks. Validated `1dd7631f`;
+remote terminal evidence `d5788ea0`. Real CSET normalization,
+restricted original DFG operands, actual retained binding and memory-only cast
+variants compose mixed body/entry/return without excluding IntCompare syntax.
+Existing comparison numerical/helper proofs and all old theorem variants remain.
+All original identities/stages and ten prior native grids are retained.
+
+Next: high multiply/division/
 remainder; complete original widths/ABIs; every unchanged original #140 control/
 memory/trap/effect/call/source/block/whole-driver/completeness/consumer obligation.
 Never exclude original accepted compare/cast syntax to simplify composition.

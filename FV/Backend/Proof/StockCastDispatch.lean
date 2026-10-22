@@ -203,6 +203,70 @@ theorem stock_lower_cast_selected_rule_of_formats {f : Clif.Function} {result : 
     · exact eq_of_mem_of_id lower_ids_nodup selected.rule_mem
         (by rw [ScalarCast.extendRule,show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) base
 
+/-- Memory-only format exclusion permits the original comparison look-through.
+The older SafeFormat and its theorem remain unchanged. -/
+def MemoryFormat (inst : Clif.Inst) : Prop :=
+  (instNames inst).1 ≠ "LoadNoOffset" ∧ (instNames inst).1 ≠ "Load"
+
+/-- Actual source dispatch retains the fused comparison root instead of
+excluding original IntCompare syntax. Effectful look-through remains separate. -/
+theorem stock_lower_cast_selected_rule_of_memory_formats {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) {event : BlockScanEvent}
+    (events : event ∈ result.blockScans.toList)
+    (family : ∀ b ∈ f.blocks,∀ stm ∈ b.body,MemoryFormat stm.inst)
+    (sg : Bool) {i x : Nat} {info : IInfo} {ty : Clif.Ty}
+    (source : event.ctx.insts[i]? = some info) (clif : info.clif = some (.extend (ScalarCast.extendOp sg) ty x))
+    {st next : State} {out : V} {trace : List RuleId} (selected : LowerSelection event.ctx i st out next trace) :
+    selected.rule = ScalarCast.extendRule sg ∨ sg = false ∧ selected.rule = rule_lower_1281 := by
+  have inv := (stock_lower_record_context run scope events).1
+  have safe : ∀ (j : Nat) (info : IInfo) (cl : Clif.Inst),event.ctx.insts[j]? = some info →
+      info.clif = some cl → MemoryFormat cl := by
+    intro j info cl found original
+    exact stock_lower_source_statement_family run scope events MemoryFormat
+      family found original
+  have data := extend_data inv sg source clif
+  have ids := stock_selected_source_opcode_ids inv source clif data selected
+  cases sg with
+  | false =>
+    change selected.rule.id ∈ sourceOpcodeIds 141 at ids
+    rw [opcode_inventory.1] at ids
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at ids
+    rcases ids with atomic | comparison | load | base
+    · have chosen : selected.rule = rule_lower_1272 := eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+        (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) atomic
+      have matched := selected.matchedRun
+      rw [chosen] at matched
+      exact (excludes_format data_program inv "LoadNoOffset"
+        (fun j info cl found original => (safe j info cl found original).1)
+        (.typed 3 (.term 15 2 [.bind 14 1 (.wildcard 14)])) rfl rfl data_program.t2464 term_2464_kind (by decide +kernel) source data matched).elim
+    · exact Or.inr ⟨rfl,eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+        (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) comparison⟩
+    · have chosen : selected.rule = rule_lower_1300 := eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+        (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) load
+      have matched := selected.matchedRun
+      rw [chosen] at matched
+      exact (excludes_format data_program inv "Load"
+        (fun j info cl found original => (safe j info cl found original).2)
+        (.bound 4) rfl rfl data_program.t2463 term_2463_kind (by decide +kernel) source data matched).elim
+    · apply Or.inl
+      exact eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+        (by rw [ScalarCast.extendRule,show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) base
+  | true =>
+    change selected.rule.id ∈ sourceOpcodeIds 142 at ids
+    rw [opcode_inventory.2.1] at ids
+    simp only [List.mem_cons,List.not_mem_nil,or_false] at ids
+    rcases ids with load | base
+    · have chosen : selected.rule = rule_lower_1359 := eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+        (by rw [show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) load
+      have matched := selected.matchedRun
+      rw [chosen] at matched
+      exact (excludes_format data_program inv "Load"
+        (fun j info cl found original => (safe j info cl found original).2)
+        (.bound 4) rfl rfl data_program.t2463 term_2463_kind (by decide +kernel) source data matched).elim
+    · apply Or.inl
+      exact eq_of_mem_of_id lower_ids_nodup selected.rule_mem
+        (by rw [ScalarCast.extendRule,show TId.lower = 686 from rfl,data_program.r686]; decide +kernel) base
+
 /-- Original reduction selection has one reachable source root, without a
 fresh-result or selected-root input premise. -/
 

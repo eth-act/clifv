@@ -71,9 +71,17 @@ def minmaxEligible (stm : Clif.Stmt) : Bool :=
 
 def minmaxBodyEligible (stm : Clif.Stmt) : Bool := popcountBodyEligible stm || minmaxEligible stm
 
+/-- Comparisons compose with prior scalar classes, including real cast look-through. -/
+def cmpEligible (stm : Clif.Stmt) : Bool :=
+  match stm.inst with
+  | .icmp _ ty _ _ => ty == .i32 || ty == .i64
+  | _ => false
+
+def cmpBodyEligible (stm : Clif.Stmt) : Bool := minmaxBodyEligible stm || cmpEligible stm
+
 def eligible (f : Clif.Function) : Bool :=
   match f.blocks with
-  | [b] => b.body.all minmaxBodyEligible &&
+  | [b] => b.body.all cmpBodyEligible &&
       (match b.term with | .ret _ => true | _ => false) &&
       f.sig.params.all abiEligible && f.sig.returns.all abiEligible
   | _ => false
