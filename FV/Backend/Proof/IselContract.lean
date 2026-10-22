@@ -339,6 +339,35 @@ precision. -/
   | .size64 => some (IEEE.compare .b64 (a.setWidth 64) (b.setWidth 64))
   | _ => none
 
+/-- S11f-cvt: `fcvtzs`/`fcvtzu` (`fpuToInt`): the single/double operand truncated toward zero to
+a 32/64-bit signed/unsigned integer, saturating, NaN ↦ 0 (the Arm model's `exec_fp_int_cvt`:
+`FPToFixed` on the shared IEEE core); the result zero-extended into the X register
+(`X[d, intsize]`). -/
+@[simp] def fpuToIntVal (op : FpuToIntOp) (a : CV) : CV :=
+  match op with
+  | .f32ToU32 => ofX ((IEEE.toFixed .b32 (a.setWidth 32) true 32 .rz).setWidth 64)
+  | .f32ToI32 => ofX ((IEEE.toFixed .b32 (a.setWidth 32) false 32 .rz).setWidth 64)
+  | .f32ToU64 => ofX (IEEE.toFixed .b32 (a.setWidth 32) true 64 .rz)
+  | .f32ToI64 => ofX (IEEE.toFixed .b32 (a.setWidth 32) false 64 .rz)
+  | .f64ToU32 => ofX ((IEEE.toFixed .b64 (a.setWidth 64) true 32 .rz).setWidth 64)
+  | .f64ToI32 => ofX ((IEEE.toFixed .b64 (a.setWidth 64) false 32 .rz).setWidth 64)
+  | .f64ToU64 => ofX (IEEE.toFixed .b64 (a.setWidth 64) true 64 .rz)
+  | .f64ToI64 => ofX (IEEE.toFixed .b64 (a.setWidth 64) false 64 .rz)
+
+/-- S11f-cvt: `scvtf`/`ucvtf` (`intToFpu`): the low 32/64 bits of the X register as a
+signed/unsigned integer, rounded to nearest even to single/double precision (`FixedToFP`); the
+result zero-extended into the vector register (`write_sfp`). -/
+@[simp] def intToFpuVal (op : IntToFpuOp) (a : CV) : CV :=
+  match op with
+  | .u32ToF32 => (IEEE.fromFixed .b32 32 ((lo64 a).setWidth 32) true .rne).setWidth 128
+  | .i32ToF32 => (IEEE.fromFixed .b32 32 ((lo64 a).setWidth 32) false .rne).setWidth 128
+  | .u32ToF64 => (IEEE.fromFixed .b64 32 ((lo64 a).setWidth 32) true .rne).setWidth 128
+  | .i32ToF64 => (IEEE.fromFixed .b64 32 ((lo64 a).setWidth 32) false .rne).setWidth 128
+  | .u64ToF32 => (IEEE.fromFixed .b32 64 (lo64 a) true .rne).setWidth 128
+  | .i64ToF32 => (IEEE.fromFixed .b32 64 (lo64 a) false .rne).setWidth 128
+  | .u64ToF64 => (IEEE.fromFixed .b64 64 (lo64 a) true .rne).setWidth 128
+  | .i64ToF64 => (IEEE.fromFixed .b64 64 (lo64 a) false .rne).setWidth 128
+
 /-- S11f: scalar FP arithmetic and comparison (the shared IEEE core, `FPCR = 0`); a scalar FP
 result zeroes the register above it (`write_sfp`). `ispec`'s fallback: a separate match, so that
 `ispec`'s own match (whose equation lemmas every `simp [ispec]` realizes, within the default
@@ -349,6 +378,8 @@ heartbeats) keeps its size. -/
   | .fpuRR op sz rd _, [a] => (fpu1Val op sz a).map fun r => (defOut rd r, w, .next)
   | .fpuCmp sz _ _, [a, b] =>
     (fcmpOut sz a b).map fun c => ([], Arm.write_pstate (fcmpFlags c) w, .next)
+  | .fpuToInt op rd _, [a] => some (defOut rd (fpuToIntVal op a), w, .next)
+  | .intToFpu op rd _, [a] => some (defOut rd (intToFpuVal op a), w, .next)
   | _, _ => none
 
 /-- **Value-level meaning of the instruction forms the proven rules emit**, in terms of the
@@ -565,8 +596,10 @@ theorem ispecFP_next {i : MInst} {uses : List CV} {w : Arm.ArmState} {outs : Lis
   unfold ispecFP
   split
   all_goals intro h
-  all_goals simp only [Option.map_eq_some_iff, Prod.mk.injEq, reduceCtorEq] at h
-  all_goals (obtain ⟨_, -, -, -, h⟩ := h; exact h.symm)
+  all_goals simp only [Option.map_eq_some_iff, Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
+  all_goals first
+    | (obtain ⟨_, -, -, -, h⟩ := h; exact h.symm)
+    | exact h.2.2.symm
 
 /-- S11f: on a form, `ispec` is its fallback `ispecFP`, or `ispecFP` does not specify it. -/
 theorem ispec_fp_or (i : MInst) (uses : List CV) :

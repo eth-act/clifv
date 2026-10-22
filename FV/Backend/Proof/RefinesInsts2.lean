@@ -673,4 +673,18 @@ theorem ref_fpuCmp (sz : ScalarSize) (n m : Nat) (a b : CV) :
   · ref_tac
   · ref_tac
   · exact refAt_none' F ctx (fun w => by simp [ispec])
+
+/-! ### S11f-cvt: float ↔ integer conversions -/
+
+attribute [local simp] setWidth_b32N setWidth_b64N in
+set_option maxHeartbeats 4000000 in
+theorem ref_fpuToInt (op : FpuToIntOp) (d n : Nat) (a : CV) :
+    RefAt F ctx (.fpuToInt op (.vreg d .int) (.vreg n .float)) [a] := by
+  cases op <;> ref_tac
+
+attribute [local simp] setWidth_b32N setWidth_b64N in
+set_option maxHeartbeats 4000000 in
+theorem ref_intToFpu (op : IntToFpuOp) (d n : Nat) (a : CV) :
+    RefAt F ctx (.intToFpu op (.vreg d .float) (.vreg n .int)) [a] := by
+  cases op <;> ref_tac
 end Backend.Proof
