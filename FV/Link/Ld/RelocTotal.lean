@@ -553,6 +553,263 @@ theorem value_in (hf : LFacts o st g) (hd : dOkB (layDecide st g) (layPre o st g
           exact ⟨rfl, rfl⟩
       · cases hk
 
+/-- **A value in a placed section** is the section's address plus the offset. -/
+theorem value_img (hf : LFacts o st g) {fi j : Nat} {t : SecId} {x : Nat}
+    (hk : tgtOf st g (layPre o st g).sorted fi j = some (.img t x)) {S : Int} {uw : Bool}
+    (hv : (layPre o st g).value o st g fi j = .ok (S, uw)) :
+    ∃ h1 : t.1 < st.files.size, ∃ h2 : t.2 < st.files[t.1].secs.size,
+      S = ((layPre o st g).secAddr[t.1]![t.2]! + x : Nat) ∧ x ≤ st.files[t.1].secs[t.2].size ∧
+      (bndOf o st g).base ≤ (layPre o st g).secAddr[t.1]![t.2]! ∧
+      (layPre o st g).secAddr[t.1]![t.2]! + st.files[t.1].secs[t.2].size ≤ (bndOf o st g).top ∧
+      (layPre o st g).secAddr[t.1]![t.2]! % max (max st.files[t.1].secs[t.2].align 1) 1 = 0 := by
+  unfold tgtOf at hk
+  unfold Lay.value at hv
+  dsimp only at hk hv
+  split at hk
+  · rename_i t' x' tl htg
+    rw [htg] at hv
+    simp only at hv
+    split at hk
+    · rename_i hlive
+      rw [if_pos hlive] at hv
+      simp only [pure, Except.pure, Except.ok.injEq, Prod.mk.injEq] at hv
+      obtain ⟨rfl, rfl⟩ := hv
+      split at hk
+      · rename_i h1
+        split at hk
+        · rename_i hc
+          simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.not_eq_true', List.isEmpty_eq_false_iff] at hc
+          obtain ⟨⟨h2, hx⟩, hne⟩ := hc
+          obtain ⟨y, -, -, ha, -, hsz, hal, htop, himg, -⟩ := secAddr_spec hf h1 h2 hne
+          rw [getElem!_pos st.files[t'.1].secs t'.2 h2] at hx
+          split at hk
+          · rename_i hall
+            simp only [Option.some.injEq, Tgt.img.injEq] at hk
+            obtain ⟨rfl, rfl⟩ := hk
+            refine ⟨h1, h2, rfl, hx, ?_, ?_, ?_⟩ <;> rw [ha]
+            · exact himg hall
+            · rw [← hsz]; exact htop
+            · exact hal
+          · split at hk <;> cases hk
+        · cases hk
+      · cases hk
+    · split at hk <;> cases hk
+  · cases hk
+  · cases hk
+  · split at hk
+    · cases hk
+    · split at hk <;> cases hk
+
 end
+
+/-! ## The relocation checks -/
+
+/-- Types whose value `relocVal` never rejects. -/
+def freeTy (ty : Nat) : Bool :=
+  [0, 257, 260, 263, 264, 265, 266, 267, 268, 269, 276, 277, 278, 284, 285, 286, 299, 312, 542, 551,
+    563, 564, 569].contains ty
+
+/-- Types whose value and place must lie in `[0, 2 ^ 31)`. -/
+def farTy (ty : Nat) : Bool := [258, 261, 275, 311].contains ty
+
+/-- PC-relative branches and `adr`: their ranges. -/
+def nearRange (ty : Nat) : Option Int :=
+  if ty == 274 || ty == 280 then some (2 ^ 20) else if ty == 279 then some (2 ^ 15)
+  else if ty == 282 || ty == 283 then some (2 ^ 27) else none
+
+/-- TLS types: their bounds on the thread-pointer offset. -/
+def tlsRange (ty : Nat) : Option Int :=
+  if ty == 541 || ty == 562 then some (2 ^ 32) else if ty == 549 then some (2 ^ 24)
+  else if ty == 550 then some 4096 else none
+
+/-- A section's address is a multiple of 4 (its alignment is). -/
+def al4B (files : Array Obj) (t : SecId) : Bool := max (max files[t.1]!.secs[t.2]!.align 1) 1 % 4 == 0
+
+/-- **A relocation's checks**, without addresses: `ty` its type, `k` its symbol's kind, `A` its
+addend, its place in `[pLo, pHi]`; `same`: the place's section and offset (an input section's
+relocation); `pal4`: the place is a multiple of 4. -/
+def relCheckB (B : Bnd) (al4 : SecId → Bool) (ty : Nat) (k : Tgt) (A : Int) (pLo pHi : Int)
+    (same : Option (SecId × Nat)) (pal4 : Bool) : Bool :=
+  if freeTy ty then true
+  else if farTy ty then
+    (match k with | .tls _ => false | _ => true) &&
+    (match sIv B k with | some (lo, hi) => decide (0 ≤ lo + A ∧ hi + A < 2 ^ 31) | none => false) &&
+    decide (0 ≤ pLo ∧ pHi < 2 ^ 31) &&
+    (ty != 311 || decide (0 ≤ A ∧ (B.top : Int) + 8 * B.got + A < 2 ^ 31))
+  else match nearRange ty with
+  | some R =>
+    let al := ty == 282 || ty == 283
+    match k with
+    | .weak => true
+    | .img t x =>
+      match same with
+      | some (s, off) =>
+        if s = t then decide (-R ≤ x + A - off ∧ x + A - off < R) && (!al || (x + A - off) % 4 == 0)
+        else al && decide (-R ≤ B.base + A - pHi ∧ B.top + A - pLo < R ∧ (B.base : Int) ≤ pLo) &&
+          al4 t && x % 4 == 0 && A % 4 == 0 && pal4
+      | none => al && decide (-R ≤ B.base + A - pHi ∧ B.top + A - pLo < R ∧ (B.base : Int) ≤ pLo) &&
+          al4 t && x % 4 == 0 && A % 4 == 0 && pal4
+    | _ => false
+  | none =>
+    match tlsRange ty with
+    | some R =>
+      (match k with | .tls _ => true | _ => false) && decide (0 ≤ 16 + A ∧ 16 + 2 * (B.TD : Int) + B.TB + A < R)
+    | none => false
+
+/-- The value `relIn` resolves for a symbol of value `S` (`uw`: undefined weak). -/
+def adjS (ty : Nat) (S : Int) (uw : Bool) (A P : Int) : Int :=
+  if uw && branchType ty then P + 4 - A else if uw && (ty == 275 || ty == 274) then P - A else S
+
+theorem page_div {x P : Int} (hx : 0 ≤ x ∧ x < 2 ^ 31) (hP : 0 ≤ P ∧ P < 2 ^ 31) :
+    -2 ^ 20 ≤ (page x - page P) / 4096 ∧ (page x - page P) / 4096 < 2 ^ 20 := by
+  unfold page; omega
+
+/-- **The checks are sound**: a relocation passing `relCheckB`, its symbol's value in its
+kind's interval, its place in `[pLo, pHi]`, its GOT slot in `[0, top + 8 got]`, the TLS base in
+`[16, 16 + TD]`, has a value in its type's range. -/
+theorem relocOkB_of {B : Bnd} {al4 : SecId → Bool} {ty : Nat} {k : Tgt} {A pLo pHi : Int}
+    {same : Option (SecId × Nat)} {pal4 : Bool} (hc : relCheckB B al4 ty k A pLo pHi same pal4 = true)
+    {S P G tpb : Int} {tls1 : Nat} {uw : Bool} (hval : ValIn B tls1 k S uw) (hP : pLo ≤ P ∧ P ≤ pHi)
+    (hG : 0 ≤ G ∧ G ≤ B.top + 8 * B.got) (htpb : 16 ≤ tpb ∧ tpb ≤ 16 + B.TD)
+    (hsec : ∀ t x, k = .img t x → ∃ sa : Int, S = sa + x ∧ B.base ≤ sa ∧ sa + x ≤ B.top ∧
+      (al4 t = true → sa % 4 = 0) ∧ ∀ off, same = some (t, off) → P = sa + off)
+    (hp4 : pal4 = true → P % 4 = 0) :
+    relocOkB ty { S := adjS ty S uw A P, A, P, G, tp := tpb + (adjS ty S uw A P + A - tls1) } = true := by
+  unfold relCheckB at hc
+  split at hc
+  · rename_i hf
+    simp only [freeTy, List.contains_iff_mem, List.mem_cons, List.mem_nil_iff, or_false] at hf
+    rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  split at hc
+  · rename_i _ hfar
+    simp only [Bool.and_eq_true, decide_eq_true_eq, bne_iff_ne, ne_eq, Bool.or_eq_true] at hc
+    obtain ⟨⟨⟨hk, hiv⟩, hp⟩, h311⟩ := hc
+    simp only [farTy, List.contains_iff_mem, List.mem_cons, List.mem_nil_iff, or_false] at hfar
+    -- the value: S, or for 275 of a weak symbol the place
+    have hS : ∀ lo hi, sIv B k = some (lo, hi) → (ty ≠ 275 ∨ uw = false) →
+        lo ≤ adjS ty S uw A P ∧ adjS ty S uw A P ≤ hi := by
+      intro lo hi hlh h275
+      have hbt : branchType ty = false := by
+        rcases hfar with rfl | rfl | rfl | rfl <;> rfl
+      cases k with
+      | tls _ => cases hk
+      | weak =>
+        obtain ⟨rfl, rfl⟩ := hval
+        simp only [sIv, Option.some.injEq, Prod.mk.injEq] at hlh
+        obtain ⟨rfl, rfl⟩ := hlh
+        rcases h275 with h | h
+        · have h274 : ty ≠ 274 := by
+            intro e; subst e; omega
+          simp [adjS, hbt, h, h274]
+        · cases h
+      | _ =>
+        obtain ⟨rfl, hv⟩ := hval
+        simp only [adjS, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
+        exact hv lo hi hlh
+    revert hiv
+    split
+    · rename_i lo hi hlh
+      intro hiv
+      simp only [decide_eq_true_eq] at hiv
+      rcases hfar with rfl | rfl | rfl | rfl
+      · have := hS lo hi hlh (.inl (by decide)); simp only [relocOkB, decide_eq_true_eq]; omega
+      · have := hS lo hi hlh (.inl (by decide)); simp only [relocOkB, decide_eq_true_eq]; omega
+      · simp only [relocOkB, decide_eq_true_eq]
+        by_cases hw : uw = true
+        · subst hw
+          have : adjS 275 S true A P = P - A := by simp [adjS, branchType]
+          rw [this]; exact page_div (by omega) (by omega)
+        · have := hS lo hi hlh (.inr (by simpa using hw))
+          exact page_div (by omega) (by omega)
+      · simp only [relocOkB, decide_eq_true_eq]
+        have := h311.resolve_left (by decide)
+        exact page_div (by omega) (by omega)
+    · intro h; cases h
+  split at hc
+  · rename_i _ _ R hR
+    unfold nearRange at hR
+    have hty : ((ty = 274 ∨ ty = 280) ∧ R = 2 ^ 20) ∨ (ty = 279 ∧ R = 2 ^ 15) ∨
+        ((ty = 282 ∨ ty = 283) ∧ R = 2 ^ 27) := by
+      split at hR
+      · rename_i h; simp only [Option.some.injEq] at hR; simp only [Bool.or_eq_true, beq_iff_eq] at h
+        exact .inl ⟨h, hR.symm⟩
+      split at hR
+      · rename_i h; simp only [Option.some.injEq] at hR; simp only [beq_iff_eq] at h
+        exact .inr (.inl ⟨h, hR.symm⟩)
+      split at hR
+      · rename_i h; simp only [Option.some.injEq] at hR; simp only [Bool.or_eq_true, beq_iff_eq] at h
+        exact .inr (.inr ⟨h, hR.symm⟩)
+      · cases hR
+    cases k with
+    | weak =>
+      obtain ⟨rfl, rfl⟩ := hval
+      rcases hty with ⟨h | h, rfl⟩ | ⟨h, rfl⟩ | ⟨h | h, rfl⟩ <;> subst h <;>
+        simp [relocOkB, adjS, branchType] <;> omega
+    | img t x =>
+      dsimp only at hc
+      obtain ⟨sa, hSe, hb, ht, ha4, hsame⟩ := hsec t x rfl
+      obtain ⟨rfl, -⟩ := hval
+      have hadj : adjS ty S false A P = S := by simp [adjS]
+      rw [hadj]
+      -- the distance and its alignment
+      have key : -R ≤ S + A - P ∧ S + A - P < R ∧
+          ((ty = 282 ∨ ty = 283) → (S + A - P) % 4 = 0) := by
+        have cross : ((ty == 282 || ty == 283) && decide (-R ≤ B.base + A - pHi ∧ B.top + A - pLo < R ∧
+            (B.base : Int) ≤ pLo) && al4 t && x % 4 == 0 && A % 4 == 0 && pal4) = true →
+            -R ≤ S + A - P ∧ S + A - P < R ∧ ((ty = 282 ∨ ty = 283) → (S + A - P) % 4 = 0) := by
+          intro hc
+          simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.or_eq_true, beq_iff_eq] at hc
+          obtain ⟨⟨⟨⟨⟨hal, h1, h2, h3⟩, h4⟩, h5⟩, h6⟩, h7⟩ := hc
+          have := ha4 h4; have := hp4 h7
+          refine ⟨by omega, by omega, fun _ => by omega⟩
+        cases hso : same with
+        | none => rw [hso] at hc; exact cross hc
+        | some so =>
+          obtain ⟨s', off⟩ := so
+          rw [hso] at hc
+          simp only at hc
+          by_cases hst : s' = t
+          · subst hst
+            rw [if_pos rfl] at hc
+            have hPe := hsame off hso
+            simp only [Bool.and_eq_true, decide_eq_true_eq, Bool.or_eq_true, Bool.not_eq_true',
+              beq_iff_eq] at hc
+            obtain ⟨⟨h1, h2⟩, h3⟩ := hc
+            refine ⟨by omega, by omega, fun hal => ?_⟩
+            rcases h3 with h3 | h3
+            · rcases hal with rfl | rfl <;> simp at h3
+            · have : S + A - P = x + A - off := by omega
+              rw [this]; exact h3
+          · rw [if_neg hst] at hc
+            exact cross hc
+      rcases hty with ⟨h | h, rfl⟩ | ⟨h, rfl⟩ | ⟨h | h, rfl⟩ <;> subst h <;>
+        simp only [relocOkB, decide_eq_true_eq, Bool.and_eq_true, beq_iff_eq] <;>
+        first | omega | (exact ⟨by omega, key.2.2 (by simp)⟩)
+    | _ => simp at hc
+  · split at hc
+    · rename_i _ _ _ R hR
+      unfold tlsRange at hR
+      cases k with
+      | tls x =>
+        obtain ⟨rfl, h1, h2⟩ := hval
+        simp only [Bool.true_and, decide_eq_true_eq] at hc
+        have hadj : adjS ty S false A P = S := by simp [adjS]
+        rw [hadj]
+        split at hR
+        · rename_i h; simp only [Option.some.injEq] at hR; subst hR
+          simp only [Bool.or_eq_true, beq_iff_eq] at h
+          rcases h with rfl | rfl <;> simp only [relocOkB, decide_eq_true_eq] <;> omega
+        split at hR
+        · rename_i h; simp only [Option.some.injEq] at hR; subst hR
+          simp only [beq_iff_eq] at h; subst h
+          simp only [relocOkB, decide_eq_true_eq]; omega
+        split at hR
+        · rename_i h; simp only [Option.some.injEq] at hR; subst hR
+          simp only [beq_iff_eq] at h; subst h
+          simp only [relocOkB, decide_eq_true_eq]; omega
+        · cases hR
+      | _ => simp at hc
+    · cases hc
 
 end Link.Ld
