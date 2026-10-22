@@ -1,5 +1,6 @@
 import FV.E2E.LinkArmUX
 import FV.E2E.WorldUnwind
+import FV.E2E.LinkArmUGood
 
 /-!
 # The linking statement with unwinding at every depth (S10f, #233)
@@ -65,18 +66,26 @@ theorem thm_ofU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) (hN : �
       (hrunEq fuel).trans hrun
     obtain ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, hall⟩ :=
       (pipe (Clif.trapsExplicitX_of_ended (.inl ⟨_, _, hrun'⟩))).1 rvals cm' hrun'
-    exact ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs,
-      fun G ra s hME => hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s hME),
+    refine ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, fun G ra s hME => ?_,
       fun hNI => absurd hNI hN⟩
-  · exact (pipe (L.trapsExplicitX_envOfX hL hU hg hJ htrX)).2.1 c ((hrunEq fuel).trans hrun)
-      (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s hME)
+    obtain ⟨n, hret, hpt, hnu, htr⟩ := hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s hME)
+    exact ⟨n, hret, hpt, hnu, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+      Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actRet hME.abi hret)⟩
+  · obtain ⟨n, htrap, htr, hst⟩ := (pipe (L.trapsExplicitX_envOfX hL hU hg hJ htrX)).2.1 c
+      ((hrunEq fuel).trans hrun) (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s hME)
+    refine ⟨n, htrap, L.runGood_of_traceU hL hU ih hg hME htr fun k _ hk => ?_⟩
+    refine Nat.lt_of_not_le fun hle => hst (k - n) ?_
+    rw [show n + (k - n) + 1 = k + 1 by omega]
+    exact hk
   · have hrun' : Clif.runLoopX (L.envOfX M g (spv w₀)) L.P.bare fuel cs.toX = .unwound e cm' :=
       (hrunEq fuel).trans hrun
     obtain ⟨obj, wf, hex, hmem, hall⟩ :=
       (pipe (Clif.trapsExplicitX_of_ended (.inr ⟨_, _, hrun'⟩))).2.2 e cm' hrun'
-    exact ⟨obj, wf, hex, hmem,
-      fun G ra s hME => hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s hME),
-      fun hNI => absurd hNI hN⟩
+    refine ⟨obj, wf, hex, hmem, fun G ra s hME => ?_, fun hNI => absurd hNI hN⟩
+    obtain ⟨n, hu, hpt, hn0, hx, htr⟩ :=
+      hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s hME)
+    exact ⟨n, hu, hpt, hn0, hx, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+      Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actUnw hME.abi hu)⟩
 
 /-- **The linking statement with unwinding at every depth** (without non-interference). -/
 theorem thmU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] (hκ : L.Budget κ) (hN : ¬ L.NeedNI) :

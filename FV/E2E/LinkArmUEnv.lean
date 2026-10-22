@@ -306,6 +306,57 @@ class CrunOkX : Prop where
     (∀ msg, L.crunX M s ≠ .stuck msg) → L.crunX M s ≠ .outOfFuel →
     ∃ m, Clif.runLoopX E L.P.bare m s.toX = L.crunX M s
 
+/-! ## The per-state facts of the linked machine's runs with unwinding -/
+
+/-- The activation of `a` entered at `c` has returned in `t` (`LinkSys.RetL`). -/
+def RetU (a : Art) (c t : Arm.ArmState) : Prop :=
+  Arm.r .PC t = xreg 30 c ∧ Arm.r .ERR t = .None ∧ t.program = a.fb.program a.base ∧ spv t = spv c
+
+/-- The machine calls the function `h` of `P` at `s` from `g`'s code (`LinkSys.CallsAtL`). -/
+def CallsAtU (g : Clif.Function) (s : Arm.ArmState) (h : Clif.Function) : Prop :=
+  (∃ n, insnAt (L.A g).fa (progBase s) (Arm.r .PC s) = some (.bl n) ∧ L.P.func? n = some h) ∨
+  ((∃ x, insnAt (L.A g).fa (progBase s) (Arm.r .PC s) = some (.blr x)) ∧
+    (blrTarget s).bind (symCallee L.Xb L.P) = some h)
+
+/-- **The states of the activation of `g` at depth `M` entered at `c` of the linked machine with
+unwinding** before its return, and of the activations nested through its calls (returning or
+raising) whose step ends without error (`LinkSys.ReachL` on `machU`; the last three indices: the
+state's own activation's depth, function and entry, and the state). -/
+inductive ReachLU (L : LinkSysU) :
+    Nat → Clif.Function → Arm.ArmState → Nat → Clif.Function → Arm.ArmState → Arm.ArmState → Prop
+  | act {M g c k} : (∀ j ≤ k, ¬ RetU (L.A g) c (runX (L.machU M g) j c)) →
+      L.ReachLU M g c M g c (runX (L.machU M g) k c)
+  | nest {M g c k h M' g' c' t} :
+      (∀ j ≤ k, ¬ RetU (L.A g) c (runX (L.machU (M + 1) g) j c)) →
+      L.CallsAtU g (runX (L.machU (M + 1) g) k c) h →
+      Arm.r .ERR (runX (L.machU (M + 1) g) (k + 1) c) = .None →
+      L.ReachLU M h (enterAt (L.A h) (runX (L.machU (M + 1) g) k c)) M' g' c' t →
+      L.ReachLU (M + 1) g c M' g' c' t
+
+/-- At a `blr` of `g` at `t` whose target is the function `h` of `P`, the call is one through a
+register `tv` of `g`'s VCode by which `g` may enter `h` (`LinkSys.BlrAt`). -/
+def BlrAtU (g : Clif.Function) (t : Arm.ArmState) : Prop :=
+  ∀ x h, insnAt (L.A g).fa (L.A g).base (Arm.r .PC t) = some (.blr x) →
+    (blrTarget t).bind (symCallee L.Xb L.P) = some h →
+    ∃ info tv, (L.A g).vcp.CallSite info ∧ info.dest = .reg (.vreg tv .int) ∧ L.BlrTo g tv h
+
+/-- **The per-state facts at a state `t` of the activation of `g` at depth `M` entered at `c`**
+(`LinkSys.GoodAt` with unwinding): the register-level facts with unwinding (`actGoodXU`) of an
+activation on `machU M g`, the code image among the kept addresses `G` and holding `imgMem` at
+the entry and outside the activation's frame, and the callee of a `blr` one `g` may enter. -/
+def GoodAtU (M : Nat) (g : Clif.Function) (c t : Arm.ArmState) : Prop :=
+  ∃ X XR K G gv, Unw.ArmStepU X (L.hooksU M) (L.UU M) (L.A g).tables (L.A g).fa = L.machU M g ∧
+    actGoodXU (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (L.A g).base c X
+      (L.hooksU M) XR (L.UU M) (L.A g).tables K G gv t ∧
+    (∀ a, L.Img a → G a) ∧ (∀ a, L.Img a → c.mem a = L.imgMem a) ∧
+    (∀ a, L.Img a → ¬ StackBelow (frameDrop (L.A g).af) (spv c) a) ∧ L.BlrAtU g t
+
+/-- **Every state of the run with unwinding whose step ends without error has the per-state
+facts** (`LinkSys.RunGoodL` on `machU`). -/
+def RunGoodLU (M : Nat) (f : Clif.Function) (c : Arm.ArmState) : Prop :=
+  ∀ M' g c' t, L.ReachLU M f c M' g c' t → Arm.r .ERR (L.machU M' g t) = .None →
+    L.GoodAtU M' g c' t
+
 /-! ## The linking statement with unwinding -/
 
 /-- **The linking statement with unwinding at depth `M`** (`LinkSys.Thm` on the machine with
@@ -329,7 +380,8 @@ def ThmU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
         (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
           ∃ n, ActRet ra F G us outs wf s (runX (L.machU M g) n s) ∧
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧
-            ¬ UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s)) ∧
+            ¬ UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s) ∧
+            L.RunGoodLU M g s) ∧
         (L.NeedNI → ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
           RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
             g (spv w₀) cs.frame.slots cs.mem w₀' →
@@ -341,18 +393,20 @@ def ThmU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
           ∀ G ra s, L.MachEntry κ M g F G ra s w₀' →
             ∃ n, ActRet ra (fun a => F a ∨ D a) G us outs wf s (runX (L.machU M g) n s) ∧
               PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧
-              ¬ UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s))) ∧
+              ¬ UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s) ∧
+              L.RunGoodLU M g s)) ∧
     (TrapsExplicitX (L.envRX M g) L.P.bare cs → ∀ c : Clif.TrapCode,
       Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .trapped c →
       ∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
-        ∃ n, TrapAt (L.A g).fb (L.A g).base c (runX (L.machU M g) n s)) ∧
+        ∃ n, TrapAt (L.A g).fb (L.A g).base c (runX (L.machU M g) n s) ∧ L.RunGoodLU M g s) ∧
     (∀ (e : Clif.Exn) (cm' : Clif.Mem),
       Clif.runLoopX (L.envRX M g) L.P.bare fuel cs.toX = .unwound e cm' →
       ∃ (obj : BitVec 64) (wf : Arm.ArmState), ExnRel e obj ∧ MemRel F L.syms cm' wf ∧
         (∀ G ra s, L.MachEntry κ M g F G ra s w₀ →
           ∃ n, ActUnw ra F G obj wf s (runX (L.machU M g) n s) ∧
             PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧ 0 < n ∧
-            UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s)) ∧
+            UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s) ∧
+            L.RunGoodLU M g s) ∧
         (L.NeedNI → ∀ (D : BitVec 64 → Prop) (w₀' : Arm.ArmState),
           RelW ⟨F, L.syms, (L.A g).af.slotBase, (RAFrame.compute (L.A g).vcp (L.A g).rf).intBase⟩
             g (spv w₀) cs.frame.slots cs.mem w₀' →
@@ -364,7 +418,8 @@ def ThmU (κ : Nat → Clif.Function → Nat) (M : Nat) : Prop :=
           ∀ G ra s, L.MachEntry κ M g F G ra s w₀' →
             ∃ n, ActUnw ra (fun a => F a ∨ D a) G obj wf s (runX (L.machU M g) n s) ∧
               PostTrace (L.A g).fa (L.A g).af (L.A g).base (L.machU M g) s n ∧ 0 < n ∧
-              UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s)))
+              UnwExit (L.UU M) (L.A g).tables (L.A g).fa (runX (L.machU M g) (n - 1) s) ∧
+              L.RunGoodLU M g s))
 
 /-! ## The external semantics: unfolding, results, exclusivity -/
 

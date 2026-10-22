@@ -341,7 +341,7 @@ theorem progCallU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : ¬ L.NeedNI) {
       (ih h hh Fh vals cs w₀ m hWE).1 rvals cm' hm
     refine ⟨us, outs, wf, hus, hlen, hhold, hmemF cm' wf _ hrun (.inl ⟨_, rfl⟩) hmemR, hrs,
       fun t ht => ?_⟩
-    obtain ⟨k, hret, htrk, hnu⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact t ht)
+    obtain ⟨k, hret, htrk, hnu, -⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact t ht)
     obtain ⟨-, e1, e2⟩ := returnedCall_eq hc.layout hlm ht.ra hfd hfd' htrk
       ⟨hret.ret.pc, hret.ret.err, hret.prog.trans (program_enterAt _ _),
         hret.ret.sp.trans (spv_enterAt _ _)⟩ hnu
@@ -351,7 +351,7 @@ theorem progCallU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : ¬ L.NeedNI) {
   · obtain ⟨m, hm⟩ := hlink _ hrun (.inr ⟨_, _, rfl⟩)
     obtain ⟨obj, wf, hex, hmemR, hall, -⟩ := (ih h hh Fh vals cs w₀ m hWE).2.2 e cm' hm
     refine ⟨obj, wf, hex, hmemF cm' wf _ hrun (.inr ⟨_, rfl⟩) hmemR, fun t ht => ?_⟩
-    obtain ⟨k, hu, htrk, hk0, hx⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact t ht)
+    obtain ⟨k, hu, htrk, hk0, hx, -⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact t ht)
     obtain ⟨-, e1⟩ := raisedCall_eq hc.layout hlm ht.ra hfd hfd' htrk
       ⟨hu.ret.pc, hu.ret.err, hu.prog.trans (program_enterAt _ _),
         hu.ret.sp.trans (spv_enterAt _ _)⟩ hk0 hx

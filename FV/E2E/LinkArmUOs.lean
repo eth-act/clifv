@@ -201,8 +201,8 @@ theorem progOsCoreU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX]
     rw [L.regVal_canon _ _ _ hrA, placeArgs_regVal _ _ _ hnd harg (by rw [← hLu]; exact hj) hu,
       setVal_regVal]
   have hcOkC := L.callerOk_canon hL hh himgF uses w
-  obtain ⟨ks, hs_eq, hs_none, hs_ret⟩ := hcall t hcOk
-  obtain ⟨kc, hc_eq, -, hc_ret⟩ := hcall _ hcOkC
+  obtain ⟨ks, hs_eq, hs_none, hs_ret, -⟩ := hcall t hcOk
+  obtain ⟨kc, hc_eq, -, hc_ret, -⟩ := hcall _ hcOkC
   have hkeep := keep_of_armRet hs_ret.ret
   refine ⟨?_, ?_, ?_, fun r hr hnd' hnc => ?_, fun r _ hcs => ?_, hs_none⟩
   · rw [hs_eq, hc_eq]
@@ -309,8 +309,8 @@ theorem progRaiseCoreU (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX]
     rw [L.regVal_canon _ _ _ hrA, placeArgs_regVal _ _ _ hnd harg (by rw [← hLu]; exact hj) hu,
       setVal_regVal]
   have hcOkC := L.callerOk_canon hL hh himgF uses w
-  obtain ⟨ks, hs_eq, hs_ret⟩ := hall t hcOk
-  obtain ⟨kc, hc_eq, hc_ret⟩ := hall _ hcOkC
+  obtain ⟨ks, hs_eq, hs_ret, -⟩ := hall t hcOk
+  obtain ⟨kc, hc_eq, hc_ret, -⟩ := hall _ hcOkC
   rw [hc_eq, Option.some.injEq, Prod.mk.injEq] at hpr
   obtain ⟨rfl, rfl⟩ := hpr
   have hkeep := keep_of_armRet hs_ret.ret

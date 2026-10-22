@@ -770,5 +770,49 @@ theorem regLevelCorrect_coreUT {R : RLU} (hR : R.Wf) {ra : BitVec 64}
         rw [Arm.r_of_w_different h0, hfldT f hf' h29 h31]
         exact hW.1 f hf'
 
-
 end Backend.Proof
+
+namespace E2E
+
+open Backend Backend.Proof
+
+/-- At a state of the old trace the machine's callee of the call line (if any) does not raise
+(`RLU.noRaise_of_goodX`, by the call line's descriptor). -/
+theorem RLU.noRaise_desc {R : RLU} (hR : R.Wf)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    {u : Arm.ArmState} (g : R.GoodX u) : ∀ d, callDescAt R.fa u = some d → R.U.raise d u = none := by
+  intro d hd
+  obtain ⟨x, ⟨j, tt, hj, hpc⟩, -⟩ := g.line
+  have hins := insnAt_pc hR hj g.prog hpc
+  unfold callDescAt at hd
+  rw [hins] at hd
+  cases x with
+  | bl n =>
+    simp only [Option.some.injEq] at hd
+    exact RLU.noRaise_of_goodX hR hU g ⟨j, tt, hj, hpc⟩ (.inl ⟨n, rfl, hd.symm⟩)
+  | blr r =>
+    simp only [Option.some.injEq] at hd
+    exact RLU.noRaise_of_goodX hR hU g ⟨j, tt, hj, hpc⟩ (.inr ⟨r, rfl, hd.symm⟩)
+  | _ => cases hd
+
+/-- **The per-state facts of a run with unwinding of the activation with these data**
+(`actGoodX`'s counterpart; the fields `lm`, `psF` play no role): a state of the old trace whose
+call line's callee does not raise, or a raising-call state (`RLU.RaiseX`). -/
+def actGoodXU (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : FnBin) (base : BitVec 64)
+    (s0 : Arm.ArmState) (X : ExtSem) (H : ArmHooks) (XR : XRaise) (U : Unw.UnwHooks)
+    (T : Unw.FnTables) (K : Nat) (G : BitVec 64 → Prop) (gv : Nat → String → Prop)
+    (u : Arm.ArmState) : Prop :=
+  ((⟨⟨vcp, rf, af, fa, fb, {}, base, s0, X, H, {}, K, G, gv⟩, XR, U, T⟩ : RLU).GoodX u ∧
+      ∀ d, callDescAt fa u = some d → U.raise d u = none) ∨
+    (⟨⟨vcp, rf, af, fa, fb, {}, base, s0, X, H, {}, K, G, gv⟩, XR, U, T⟩ : RLU).RaiseX u
+
+/-- `actGoodXU` from the trace predicate `RLU.GoodXU` and the raising callees' contract. -/
+theorem actGoodXU_of {R : RLU} (hR : R.Wf)
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    {u : Arm.ArmState} (h : R.GoodXU u) :
+    actGoodXU R.vc R.rf R.af R.fa R.fb R.base R.s0 R.X R.H R.XR R.U R.T R.K R.G R.gv u := by
+  rcases h with g | g
+  · exact .inl ⟨g.act, RLU.noRaise_desc hR hU g⟩
+  · exact .inr ⟨⟨g.good, g.err, g.prog, g.sp, g.raise⟩, g.next, g.exit, g.tsp, g.blr, g.pre⟩
+
+end E2E

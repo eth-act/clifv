@@ -98,7 +98,7 @@ theorem progXU_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M :
   have hc0 := L.callerOk_canon hL hh himgF args w
   have hc1 := L.callerOk_canon hL hh himgF args w'
   have hsp' : spv w' = spv w := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨k, heq, -, hret⟩ := hall _ hc0
+  obtain ⟨k, heq, -, hret, -⟩ := hall _ hc0
   obtain ⟨k', heq', hret'⟩ := hni hN Z (L.canon h args w') hFZ
     ((SameWorld.mono hFZ hc1.world).trans hsw.symm) hc1.img
     (L.toLinkSys.regVal_canon_eq hL hh (argsAt_regLocs ha) w w') hc1.ra
@@ -171,7 +171,7 @@ theorem progXR_ni (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] (hN : L.NeedNI) {M :
   have hc0 := L.callerOk_canon hL hh himgF args w
   have hc1 := L.callerOk_canon hL hh himgF args w'
   have hsp' : spv w' = spv w := (hsw.1 _ (by simp [Masked])).symm
-  obtain ⟨k, heq, hret⟩ := hall _ hc0
+  obtain ⟨k, heq, hret, -⟩ := hall _ hc0
   obtain ⟨k', heq', hret'⟩ := hni hN Z (L.canon h args w') hFZ
     ((SameWorld.mono hFZ hc1.world).trans hsw.symm) hc1.img
     (L.toLinkSys.regVal_canon_eq hL hh (argsAt_regLocs ha) w w') hc1.ra
@@ -353,24 +353,40 @@ theorem thm_ofUN (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.B
       (hrunEq fuel).trans hrun
     obtain ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, hall, hni⟩ :=
       (pipe (Clif.trapsExplicitX_of_ended (.inl ⟨_, _, hrun'⟩))).1 rvals cm' hrun'
-    exact ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs,
-      fun G ra s hME => hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME),
-      fun hN D w₀' hrel' hsw hreg hstk G ra s hME =>
+    refine ⟨us, outs, wf, hus, hlen, hhold, hmem, hrs, fun G ra s hME => ?_,
+      fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
+    · obtain ⟨n, hret, hpt, hnu, htr⟩ :=
+        hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME)
+      exact ⟨n, hret, hpt, hnu, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+        Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actRet hME.abi hret)⟩
+    · obtain ⟨n, hret, hpt, hnu, htr⟩ :=
         hni (L.xniU hL hU hN ih hg hWE.img (spv w₀)) (L.xTlsU hL hN)
           (L.xrniU hL hU hNI hN ih hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
-          (L.UU M) G (L.A g).base ra s (hAE G ra s w₀' hME)⟩
-  · exact (pipe (L.trapsExplicitX_envOfX hL hU hg hJ htrX)).2.1 c ((hrunEq fuel).trans hrun)
-      (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME)
+          (L.UU M) G (L.A g).base ra s (hAE G ra s w₀' hME)
+      exact ⟨n, hret, hpt, hnu, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+        Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actRet hME.abi hret)⟩
+  · obtain ⟨n, htrap, htr, hst⟩ := (pipe (L.trapsExplicitX_envOfX hL hU hg hJ htrX)).2.1 c
+      ((hrunEq fuel).trans hrun) (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME)
+    refine ⟨n, htrap, L.runGood_of_traceU hL hU ih hg hME htr fun k _ hk => ?_⟩
+    refine Nat.lt_of_not_le fun hle => hst (k - n) ?_
+    rw [show n + (k - n) + 1 = k + 1 by omega]
+    exact hk
   · have hrun' : Clif.runLoopX (L.envOfX M g (spv w₀)) L.P.bare fuel cs.toX = .unwound e cm' :=
       (hrunEq fuel).trans hrun
     obtain ⟨obj, wf, hex, hmem, hall, hni⟩ :=
       (pipe (Clif.trapsExplicitX_of_ended (.inr ⟨_, _, hrun'⟩))).2.2 e cm' hrun'
-    exact ⟨obj, wf, hex, hmem,
-      fun G ra s hME => hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME),
-      fun hN D w₀' hrel' hsw hreg hstk G ra s hME =>
+    refine ⟨obj, wf, hex, hmem, fun G ra s hME => ?_,
+      fun hN D w₀' hrel' hsw hreg hstk G ra s hME => ?_⟩
+    · obtain ⟨n, hu, hpt, hn0, hx, htr⟩ :=
+        hall (L.hooksU M) (L.UU M) G (L.A g).base ra s (hAE G ra s w₀ hME)
+      exact ⟨n, hu, hpt, hn0, hx, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+        Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actUnw hME.abi hu)⟩
+    · obtain ⟨n, hu, hpt, hn0, hx, htr⟩ :=
         hni (L.xniU hL hU hN ih hg hWE.img (spv w₀)) (L.xTlsU hL hN)
           (L.xrniU hL hU hNI hN ih hg hWE.img (spv w₀)) D w₀' hrel' hsw hreg hstk (L.hooksU M)
-          (L.UU M) G (L.A g).base ra s (hAE G ra s w₀' hME)⟩
+          (L.UU M) G (L.A g).base ra s (hAE G ra s w₀' hME)
+      exact ⟨n, hu, hpt, hn0, hx, L.runGood_of_traceU hL hU ih hg hME htr fun k hno _ =>
+        Nat.lt_of_not_le fun hle => hno n hle (L.retU_of_actUnw hME.abi hu)⟩
 
 /-- **The linking statement with unwinding at every depth**, with non-interference. -/
 theorem thmUN (hL : L.Ok) (hU : L.OkU) (hNI : L.OkUNI) [L.CrunOkX] (hκ : L.Budget κ) :

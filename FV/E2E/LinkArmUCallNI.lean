@@ -48,7 +48,8 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
           L.praiseU (M + 1) h t = none ∧
           ActRet (Arm.r .PC t + 4) F
             (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a)
-            us outs wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t))) ∧
+            us outs wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t)) ∧
+          L.RunGoodLU M h (enterAt (L.A h) t)) ∧
         (L.NeedNI → ∀ (Z : BitVec 64 → Prop) (t : Arm.ArmState), (∀ a, F a → Z a) →
           SameWorld Z t w → (∀ a, L.Img a → t.mem a = L.imgMem a) →
           (∀ r ∈ regLocs h.sig, regVal t r = regVal (L.canon h uses w) r) →
@@ -69,7 +70,8 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
               Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program) ∧
           ActUnw (Arm.r .PC t + 4) F
             (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a)
-            obj wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t))) ∧
+            obj wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t)) ∧
+          L.RunGoodLU M h (enterAt (L.A h) t)) ∧
         (L.NeedNI → ∀ (Z : BitVec 64 → Prop) (t : Arm.ArmState), (∀ a, F a → Z a) →
           SameWorld Z t w → (∀ a, L.Img a → t.mem a = L.imgMem a) →
           (∀ r ∈ regLocs h.sig, regVal t r = regVal (L.canon h uses w) r) →
@@ -433,29 +435,30 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
           Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program ∧
         L.praiseU (M + 1) h t = none ∧
         ActRet (Arm.r .PC t + 4) Z G us outs wf (enterAt (L.A h) t)
-          (runX (L.machU M h) k (enterAt (L.A h) t)) := by
+          (runX (L.machU M h) k (enterAt (L.A h) t)) ∧
+        L.RunGoodLU M h (enterAt (L.A h) t) := by
       intro hN Z t hFZ hZ himgt hregt hrat hmt hstkt
       obtain ⟨w₀', hrel', hsw, hreg, hstk, hME'⟩ := key2 Z t hFZ hZ himgt hregt hmt hstkt
-      obtain ⟨k, hret, htrk, hnu⟩ := hni hN (fun a => Z a ∧ ¬ Fh a) w₀' hrel' hsw hreg hstk G
+      obtain ⟨k, hret, htrk, hnu, hrg⟩ := hni hN (fun a => Z a ∧ ¬ Fh a) w₀' hrel' hsw hreg hstk G
         (Arm.r .PC t + 4) (enterAt (L.A h) t) hME'
       obtain ⟨-, e1, e2⟩ := returnedCall_eq hc.layout hlm hrat hfd hfd' htrk
         ⟨hret.ret.pc, hret.ret.err, hret.prog.trans (program_enterAt _ _),
           hret.ret.sp.trans (spv_enterAt _ _)⟩ hnu
       exact ⟨k, e1, e2, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
         (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => h2.1))), hret.fields, hret.gkeep,
-        hret.prog⟩⟩
+        hret.prog⟩, hrg⟩
     refine ⟨us, outs, wf, hus, hlen, hhold, hmemF cm' wf _ hrun (.inl ⟨_, rfl⟩) hmemR, hrs,
       fun t ht => ?_, fun hN Z t a1 a2 a3 a4 a5 a6 a7 => by
-        obtain ⟨k, e1, -, e3⟩ := kNI hN Z t a1 a2 a3 a4 a5 a6 a7
+        obtain ⟨k, e1, -, e3, -⟩ := kNI hN Z t a1 a2 a3 a4 a5 a6 a7
         exact ⟨k, e1, e3⟩⟩
     by_cases hN : L.NeedNI
     · obtain ⟨c1, c2, c3, c4, c5, c6⟩ := hcomp t ht
       exact kNI hN F t c1 c2 c3 c4 ht.ra c5 c6
-    obtain ⟨k, hret, htrk, hnu⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact hN t ht)
+    obtain ⟨k, hret, htrk, hnu, hrg⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact hN t ht)
     obtain ⟨-, e1, e2⟩ := returnedCall_eq hc.layout hlm ht.ra hfd hfd' htrk
       ⟨hret.ret.pc, hret.ret.err, hret.prog.trans (program_enterAt _ _),
         hret.ret.sp.trans (spv_enterAt _ _)⟩ hnu
-    refine ⟨k, e1, e2, ?_⟩
+    refine ⟨k, e1, e2, ?_, hrg⟩
     rw [hFh hN] at hret
     exact hret
   · obtain ⟨m, hm⟩ := hlink _ hrun (.inr ⟨_, _, rfl⟩)
@@ -471,26 +474,31 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
           some (xreg 0 (runX (L.machU M h) k (enterAt (L.A h) t)),
             Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program) ∧
         ActUnw (Arm.r .PC t + 4) Z G obj wf (enterAt (L.A h) t)
-          (runX (L.machU M h) k (enterAt (L.A h) t)) := by
+          (runX (L.machU M h) k (enterAt (L.A h) t)) ∧
+        L.RunGoodLU M h (enterAt (L.A h) t) := by
       intro hN Z t hFZ hZ himgt hregt hrat hmt hstkt
       obtain ⟨w₀', hrel', hsw, hreg, hstk, hME'⟩ := key2 Z t hFZ hZ himgt hregt hmt hstkt
-      obtain ⟨k, hu, htrk, hk0, hx⟩ := hni hN (fun a => Z a ∧ ¬ Fh a) w₀' hrel' hsw hreg hstk G
-        (Arm.r .PC t + 4) (enterAt (L.A h) t) hME'
+      obtain ⟨k, hu, htrk, hk0, hx, hrg⟩ := hni hN (fun a => Z a ∧ ¬ Fh a) w₀' hrel' hsw hreg hstk
+        G (Arm.r .PC t + 4) (enterAt (L.A h) t) hME'
       obtain ⟨-, e1⟩ := raisedCall_eq hc.layout hlm hrat hfd hfd' htrk
         ⟨hu.ret.pc, hu.ret.err, hu.prog.trans (program_enterAt _ _),
           hu.ret.sp.trans (spv_enterAt _ _)⟩ hk0 hx
       exact ⟨k, e1, ⟨hu.ret, hu.x0, fun a ha => hu.mem a
         (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => h2.1))), hu.gkeep, hu.prog,
-        hu.fields⟩⟩
-    refine ⟨obj, wf, hex, hmemF cm' wf _ hrun (.inr ⟨_, rfl⟩) hmemR, fun t ht => ?_, kNI⟩
+        hu.fields⟩, hrg⟩
+    refine ⟨obj, wf, hex, hmemF cm' wf _ hrun (.inr ⟨_, rfl⟩) hmemR, fun t ht => ?_,
+      fun hN Z t a1 a2 a3 a4 a5 a6 a7 => by
+        obtain ⟨k, e1, e3, -⟩ := kNI hN Z t a1 a2 a3 a4 a5 a6 a7
+        exact ⟨k, e1, e3⟩⟩
     by_cases hN : L.NeedNI
     · obtain ⟨c1, c2, c3, c4, c5, c6⟩ := hcomp t ht
       exact kNI hN F t c1 c2 c3 c4 ht.ra c5 c6
-    obtain ⟨k, hu, htrk, hk0, hx⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact hN t ht)
+    obtain ⟨k, hu, htrk, hk0, hx, hrg⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t)
+      (hact hN t ht)
     obtain ⟨-, e1⟩ := raisedCall_eq hc.layout hlm ht.ra hfd hfd' htrk
       ⟨hu.ret.pc, hu.ret.err, hu.prog.trans (program_enterAt _ _),
         hu.ret.sp.trans (spv_enterAt _ _)⟩ hk0 hx
-    refine ⟨k, e1, ?_⟩
+    refine ⟨k, e1, ?_, hrg⟩
     rw [hFh hN] at hu
     exact hu
 
