@@ -674,7 +674,7 @@ they are; the per-thread layers are new files.
       `ldaxr` on x25), from the word check `WitnessX.ldxAcq_of_words`. Witnesses:
       `WitnessX.xClosed_llsc` (the `ldaxr; add; stlxr; cbnz` loop's run with a successful
       `stlxr`), `WitnessC.funReal_bl_open`.
-    * **The callee's return, on the witness (partly done, `CallResume.lean`, `CallLoadFull.lean`)**:
+    * **The callee's return and the caller's whole run, on the witness (done, `CallResume.lean`, `CallLoadFull.lean`, `CallLoadResume.lean`)**:
       generic `oneEv_op1` (one `OneEvForm` step from related states, related states after it),
       `moves_privP`/`linesAt_nonRet` (moves with every state at a line other than `ret`),
       `rets_privP` (the epilogue and `ret` per step: private events, the return address, `sp`,
@@ -686,10 +686,17 @@ they are; the per-thread layers are new files.
       with the caller's Arm state resumable, `PostA`, and its CLIF state ready to `return`), from
       a concrete path through its code (`calleePath`, `calleePost`), the `ldar`'s source step by
       layers 2–4a's progress (`mstep_ldar`), the CLIF load on the read bytes (`cstep_ld`).
-    * open: the caller's segment after the return (`Q` at the item after the call from `PostA`,
-      its moves, epilogue and CLIF `return`) and the `link_compose` instance giving the caller's
-      whole run; generically, layer 4b pausing at `rets`/calls needs a pc-discipline invariant
-      (no item's run leaves the code) and layer 2 the coverage of a returning CLIF thread.
+    * **The caller resumed (done, `CallLoadResume.lean`)**: generic **`resumeQ`** (`Q` at the item
+      after a call from `Q` at the call and the caller's state as the callee returns: the pc after
+      the `bl`/`blr`, no error, `sp`, program and the activation's addresses `R.F` as at the call;
+      the store the state holds), `realized_privSegS`; witness `prefixCQ` (the path to the `bl`
+      with `Q` there), `callerPost` (the caller's moves, restores, epilogue and `ret` after the
+      return, every step private), **`funReal_callFull`** (`link_compose` with the callee's return,
+      `Ret true = RetL`, the caller's invariant again after it; end condition `Returned`: the
+      CLIF thread has returned) and **`realizes_call_full`**: every precise run of `MC2` from the
+      caller's ABI entry is realized entirely or up to the CLIF thread's return. Open generically:
+      layer 4b pausing at `rets`/calls on a linked machine needs a pc-discipline invariant (no
+      item's run leaves the code) and layer 2 the coverage of a returning CLIF thread.
       Compiled `atomic_rmw`/`atomic_cas` callees from their ABI entry: done (`CallLLSCEntry.lean`: `compiledE_R`, `compiledE_C`,
       `funReal_rmw`, `funReal_cas` via `funReal_calleeX`); a compiled caller of the rmw callee is open.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
