@@ -1015,13 +1015,25 @@ mid-end is complete for every configuration: `Opt.optimize_complete_cfg`, `Opt.o
   systemd user manager, `memcap.sh` falls back (one stderr line) to a non-root watchdog: process-tree
   RssAnon + RssShmem polled every 0.2 s, SIGKILL and exit 137 above the cap.
 - **Building many modules.** `scripts/lake-serial-build.py --budget 16G <targets>` (targets: `FV`,
-  `FVTest`, a prefix such as `FV.Opt.Proof.`, or modules) runs one memcapped `lake build <M>` per module in
-  import order: cap = recorded peak (`scripts/lake-module-peaks.tsv`, refreshed in
-  `.lake/lake-module-peaks.tsv`) × 1.2 + 0.5 GB; light modules side by side (≤ 6) within the budget,
-  critical path first, backfilling only modules that cannot delay the next one; modules peaking above
-  12 GB alone, and only when ≥ 30 GB is available and no other job's memcap is above 12 GB; nothing
-  starts while less than 10 GB is available; a module killed at its cap is retried alone at twice the
-  cap. Then the full `lake build …` only replays. `--dry-run` prints the plan.
+  `FVTest`, a prefix such as `FV.Opt.Proof.`, or modules) first runs one `lake build --no-build` over
+  every wanted module: Lake restores what is built or in the shared cache and names the modules that are
+  out of date (not their dependents; those are checked the same way, in one batch, once their imports
+  are done; a final check over all modules confirms nothing is left). Only the out-of-date modules get
+  a memcapped `lake build <M>` each, in import order: cap = recorded peak (`scripts/lake-module-peaks.tsv`,
+  refreshed in `.lake/lake-module-peaks.tsv` with the scope's cgroup `memory.peak`) × 1.2 + 0.5 GB;
+  light modules side by side (≤ 6) within the budget, critical path first, backfilling only modules
+  that cannot delay the next one; modules peaking above 12 GB alone, and only when ≥ 30 GB is
+  available, no other job's memcap is above 12 GB and the module heads the machine-wide heavy queue
+  (`/tmp/clifv-heavy-queue`, oldest first; every scheduler leaves room for the head); a module starts
+  only if its recorded peak fits under `clifv.slice`'s MemoryHigh minus 4 GB (`--slice-margin`), counting
+  the slice's non-file memory; nothing starts while less than 10 GB is available. A module killed at
+  its own cap (the scope's `memory.events` `oom`) is retried alone at twice the cap; one killed from
+  outside (systemd-oomd under memory pressure, the slice limit) is retried at the same cap (≤ 3 times).
+  With the shared cache, a module another worktree is building at that moment (flock in
+  `<cache>/.fv-inflight/`, keyed by the sources of the module and its imports plus toolchain and
+  lakefile) waits for it and is then restored instead of built twice. Then the full `lake build …`
+  only replays. `--dry-run` prints the plan; `--no-batch-check`, `--no-dedup`, `--no-slice-gate` turn
+  the new parts off.
 - **Shared build cache.** Set `FV_LAKE_CACHE=<dir>` (on the worktrees' filesystem; agents on the shared
   machine: `/home/kev/work/clifv-lake-cache`); `scripts/memcap.sh` then sets `LAKE_ARTIFACT_CACHE=true
   LAKE_RESTORE_ARTIFACTS=true LAKE_CACHE_DIR=<dir>`. Lake keys each module's outputs by the hash of its

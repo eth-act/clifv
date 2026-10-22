@@ -55,7 +55,7 @@ one does not fit the budget, it reserves it and only modules that cannot delay i
 
 Logs: OUT/sched.log (one line per start/finish/check) and OUT/<module>.log / .time / .mem.
 """
-import argparse, fcntl, hashlib, os, pathlib, re, subprocess, sys, time, tomllib
+import argparse, fcntl, hashlib, os, pathlib, re, signal, subprocess, sys, time, tomllib
 
 GiB = 1024 ** 3
 CGROUP_USER = pathlib.Path(f"/sys/fs/cgroup/user.slice/user-{os.getuid()}.slice/"
@@ -264,6 +264,8 @@ def main():
     ap.add_argument("--slice-margin", default="4G",
                     help="headroom kept below the clifv slice's MemoryHigh/MemoryMax")
     a = ap.parse_args()
+    for sig in (signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, lambda s, _f: sys.exit(128 + s))  # run the clean-up in main()'s finally
 
     root = pathlib.Path(a.root).resolve()
     out = pathlib.Path(a.out or f"/tmp/lake-serial-build-{os.getpid()}")
@@ -484,6 +486,7 @@ def main():
     # ---- machine-wide heavy queue -------------------------------------------------------------
     use_slice = not a.no_slice_gate
     ticket = None          # (path, module) of this scheduler's waiting heavy module
+    queued_at = {}         # m -> time it first queued (keeps its place when it re-queues)
 
     def enqueue(m, est):
         nonlocal ticket
@@ -494,7 +497,11 @@ def main():
         dequeue()
         try:
             HEAVY_QUEUE.mkdir(mode=0o777, exist_ok=True)
-            p = HEAVY_QUEUE / f"{time.time_ns()}-{me}"
+            HEAVY_QUEUE.chmod(0o1777)
+        except OSError:
+            pass
+        try:
+            p = HEAVY_QUEUE / f"{queued_at.setdefault(m, time.time_ns())}-{me}"
             p.write_text(f"{est} {m}\n")
             ticket = (p, m)
         except OSError:
@@ -509,10 +516,54 @@ def main():
                 pass
             ticket = None
 
+    build_dir = (root / ".lake/build").resolve()
+    perm_denied = re.compile(r"permission denied \(error code: 13\)\s*\n\s*file: (\S+)")
+    perm_fixed = set()     # modules retried after unlinking read-only outputs
+
+    def unlink_readonly(paths):
+        """Remove read-only files (hard links into the shared Lake cache, mode 0444) under
+        .lake/build. Lean rewrites .ilean/.c in place (open with O_TRUNC), which fails with
+        `permission denied (error code: 13)` on such a link; unlinking first lets it write a new
+        file and leaves the cache entry, shared with every other worktree, untouched."""
+        n = 0
+        for p in paths:
+            try:
+                p = pathlib.Path(p)
+                if build_dir not in p.resolve().parents or p.stat().st_mode & 0o200:
+                    continue
+                p.unlink()
+                n += 1
+            except OSError:
+                pass
+        return n
+
+    def outputs(m):
+        """m's files in .lake/build (lib/lean/<M>.*, ir/<M>.*)."""
+        rel = m.replace(".", "/")
+        stem = rel.rsplit("/", 1)[-1]
+        for d in (build_dir / "lib/lean", build_dir / "ir"):
+            parent = (d / rel).parent
+            try:
+                yield from (q for q in parent.iterdir() if q.name.split(".", 1)[0] == stem)
+            except OSError:
+                pass
+
+    def module_of(path):
+        for d in (build_dir / "lib/lean", build_dir / "ir"):
+            try:
+                rel = pathlib.Path(path).relative_to(d)
+            except ValueError:
+                continue
+            return ".".join(rel.parent.parts + (rel.name.split(".", 1)[0],))
+        return None
+
     def start(m, c):
         nonlocal seq
         seq += 1
         unit = f"fvb-{me}-{seq}-" + re.sub(r"[^A-Za-z0-9_.:-]", "_", m)[:120]
+        if m in ood:
+            # known out of date: its old outputs are stale anyway (see unlink_readonly)
+            unlink_readonly(outputs(m))
         for ext in ("mem", "time"):
             (out / f"{m}.{ext}").unlink(missing_ok=True)
         env = dict(os.environ, FV_MEMCAP=f"{c // 2 ** 20}M",
@@ -522,8 +573,11 @@ def main():
         timing = (["/usr/bin/time", "-v", "-o", str(out / f"{m}.time")]
                   if pathlib.Path("/usr/bin/time").is_file() else
                   [sys.executable, str(root / "scripts/lake-time.py"), str(out / f"{m}.time")])
-        p = subprocess.Popen([*timing, memcap, "lake", "build", m],
-                             cwd=root, env=env, stdout=f, stderr=subprocess.STDOUT)
+        # own process group: on exit (SIGTERM, Ctrl-C, crash) the scheduler stops its builds, so a
+        # restarted scheduler never builds a module twice in one worktree (the second lean then
+        # fails writing over the first one's read-only cache links)
+        p = subprocess.Popen([*timing, memcap, "lake", "build", m], cwd=root, env=env, stdout=f,
+                             stderr=subprocess.STDOUT, start_new_session=True)
         running[m] = (p, time.time(), c, unit)
         polled.pop(m, None)
         say(f"start {m} cap={gib(c)} running={len(running)} "
@@ -603,20 +657,30 @@ def main():
                 did_build = re.search(r"Built " + re.escape(m) + r"\b", text) is not None
                 killed = (rc in (137, 143) or bool(st and st.get("oom"))
                           or re.search(r"exit code (137|143)|signal 9|Killed", text) is not None)
-                # own cap: the scope's oom counter; without stats, assume own unless the last
-                # polled peak was clearly below the cap
+                # killed at its own cap: the scope's oom counter (the stats file); without it (a
+                # kill from outside stops the whole scope), not if systemd-oomd logged the kill
+                # or the last polled peak was clearly below the cap
+                oomd = False
+                if killed and not (st and "oom" in st):
+                    oomd = oomd_killed(unit, t0)
                 own = (st["oom"] > 0 if st and "oom" in st
-                       else not (m in polled and polled[m] < 0.9 * c))
+                       else not (oomd or (m in polled and polled[m] < 0.9 * c)))
                 why = ""
                 if rc == 0:
                     status[m] = "ok"
                     if did_build:
                         built += 1
                         rec.write(f"{m}\t{(peak or rss) // 2 ** 20}\t{dt:.0f}\n"); rec.flush()
+                elif (bad_files := perm_denied.findall(text)) and m not in perm_fixed:
+                    # a module Lake rebuilt over a read-only cache link: unlink, retry once
+                    perm_fixed.add(m)
+                    n = unlink_readonly([q for b in bad_files if (x := module_of(b))
+                                         for q in outputs(x)])
+                    why = f" after unlinking {n} read-only cache links"
                 elif killed and not own and external.get(m, 0) < EXTERNAL_RETRIES:
+                    # killed from outside: back to the queue at the same cap (not alone)
                     external[m] = external.get(m, 0) + 1
-                    why = " (systemd-oomd)" if oomd_killed(unit, t0) else " (from outside)"
-                    # back to the queue at the same cap (not alone)
+                    why = " (killed by systemd-oomd)" if oomd else " (killed from outside)"
                 elif killed and own and c < max_cap:
                     retry_cap[m] = min(max_cap, 2 * c)
                 elif a.retry_failed and m not in retried:
@@ -625,7 +689,7 @@ def main():
                 else:
                     status[m] = "fail"
                 after = (status[m] if m in status else
-                         f"retry {gib(c)} killed{why}" if m not in retry_cap else
+                         f"retry {gib(c)}{why}" if m not in retry_cap else
                          f"retry {gib(retry_cap[m])}")
                 say(f"done {m} rc={rc} {dt:.0f}s maxrss={rss / GiB:.1f}G cgpeak={peak / GiB:.1f}G "
                     f"{'built' if did_build else 'up-to-date'} -> {after}")
@@ -734,6 +798,10 @@ def main():
                         continue
                     # solo: heavy module (gate passed) or retry after an OOM kill; drain first
                     if running:
+                        # our own light modules hold the memory, not the machine: do not block
+                        # the other schedulers' heavy modules meanwhile (m keeps its queue place)
+                        if ticket and ticket[1] == m:
+                            dequeue()
                         wait = f"draining for solo {m} ({gib(c)})"
                         break
                     if not claim(m):
@@ -749,6 +817,20 @@ def main():
             last_wait = key
             time.sleep(1)
     finally:
+        if running:
+            say(f"stopping {len(running)} running builds: {' '.join(sorted(running))}")
+            for sig in (signal.SIGTERM, signal.SIGKILL):
+                for p, _, _, unit in running.values():
+                    try:
+                        os.killpg(p.pid, sig)
+                    except OSError:
+                        pass
+                    subprocess.run(["systemctl", "--user", "kill", f"--signal={sig.name}",
+                                    f"{unit}.scope"], stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.DEVNULL)
+                t_end = time.time() + 10
+                while time.time() < t_end and any(p.poll() is None for p, _, _, _ in running.values()):
+                    time.sleep(0.2)
         dequeue()
         for m in list(locks):
             release(m)
