@@ -21,7 +21,7 @@ use crate::leanlink;
 use crate::pipeline::{self, read_syms, DumpIndex, MARKER};
 use crate::report::{BinaryCheck, ExeOrigin, FnReport, Status, UnitReport};
 use object::read::{Object, ObjectSymbol};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::ffi::OsString;
 use std::fs;
 use std::io::Write;
@@ -678,108 +678,146 @@ pub fn linker_main(meta_json: &str, argv: Vec<OsString>) -> i32 {
     let mut r = new_report(&cfg, &meta, &output);
     process_objects(&cfg, &meta, &objs, &mut r);
     write_report(&cfg, &r);
-    // `--lean-link`: the program part, one region the Lean linker writes after the link
-    let part = if cfg.lean_link {
-        match leanlink::program_part(&cfg, &meta.unit, &args) {
-            Ok(p) => p,
-            Err(e) => {
-                eprint_fv(&format!("--lean-link: {e}"));
-                return 1;
-            }
-        }
-    } else {
-        None
-    };
     // the link map attributes every function of the executable to its input object
     let _ = fs::create_dir_all(&cfg.tmp_dir);
     let map = cfg.tmp_dir.join(format!("link-{}.map", pipeline::tag_of(&output.display().to_string())));
-    // `--no-relax`: lld keeps the address pairs as emitted (`adrp; add`, the GOT `adrp; ldr`),
-    // resolving only their immediates, so the executable's code is the compiled words (the
-    // binary check, `E2E.BinCheck`); relaxed, they would become `nop; adr`
-    let mut extra: Vec<OsString> = vec!["--no-relax".into(), format!("-Map={}", map.display()).into()];
-    if let Some((obj, _)) = &part {
-        extra.extend([obj.clone().into_os_string(), "-u".into(), leanlink::START.into()]);
-    }
-    // `--lean-ld`: the Lean static linker (rustc's `-flavor gnu` dropped); rust-lld when it
-    // rejects the inputs
-    let mut code = None;
-    // `lean-ld`'s argument list, one per line (`lean-link --ld`: its plan checked against the
-    // link spec, `Plan.specOkB`)
-    let mut ld_args = None;
-    if cfg.lean_ld {
-        let tool = cfg.root.join(".lake/build/bin/lean-ld");
-        let mut args = Vec::new();
-        let mut it = argv.iter();
-        while let Some(a) = it.next() {
-            if a == "-flavor" {
-                it.next();
-            } else {
-                args.push(a.clone());
+    // `--lean-link --verified` (T3c): the functions left out of the region, found by the links
+    // below (`lean-link`'s `exclude:` line); a link of this executable starts without any
+    let exclude_file = leanlink::exclude_path(&cfg.tmp_dir, &output.display().to_string());
+    let _ = fs::remove_file(&exclude_file);
+    let mut exclude: BTreeSet<String> = BTreeSet::new();
+    let mut round = 0;
+    let (code, coverage, ld_args) = loop {
+        round += 1;
+        // `--lean-link`: the program part, one region the Lean linker writes after the link
+        let part = if cfg.lean_link {
+            match leanlink::program_part(&cfg, &meta.unit, &args, &exclude) {
+                Ok(p) => p,
+                Err(e) => {
+                    eprint_fv(&format!("--lean-link: {e}"));
+                    return 1;
+                }
+            }
+        } else {
+            None
+        };
+        // `--no-relax`: lld keeps the address pairs as emitted (`adrp; add`, the GOT `adrp; ldr`),
+        // resolving only their immediates, so the executable's code is the compiled words (the
+        // binary check, `E2E.BinCheck`); relaxed, they would become `nop; adr`
+        let mut extra: Vec<OsString> = vec!["--no-relax".into(), format!("-Map={}", map.display()).into()];
+        if let Some((obj, _)) = &part {
+            extra.extend([obj.clone().into_os_string(), "-u".into(), leanlink::START.into()]);
+        }
+        // `--lean-ld`: the Lean static linker (rustc's `-flavor gnu` dropped); rust-lld when it
+        // rejects the inputs
+        let mut code = None;
+        // `lean-ld`'s argument list, one per line (`lean-link --ld`: its plan checked against the
+        // link spec, `Plan.specOkB`)
+        let mut ld_args = None;
+        if cfg.lean_ld {
+            let tool = cfg.root.join(".lake/build/bin/lean-ld");
+            let mut args = Vec::new();
+            let mut it = argv.iter();
+            while let Some(a) = it.next() {
+                if a == "-flavor" {
+                    it.next();
+                } else {
+                    args.push(a.clone());
+                }
+            }
+            let t0 = std::time::Instant::now();
+            match Command::new(&tool).args(&args).args(&extra).output() {
+                Ok(o) if o.status.success() => {
+                    code = Some(0);
+                    eprint_fv(&format!("{}: linked by lean-ld in {} ms", output.display(), t0.elapsed().as_millis()));
+                    let path = map.with_extension("ldargs");
+                    let text: Vec<String> =
+                        args.iter().chain(extra.iter()).map(|a| a.to_string_lossy().into_owned()).collect();
+                    if fs::write(&path, text.join("\n")).is_ok() {
+                        ld_args = Some(path);
+                    }
+                }
+                Ok(o) => eprint_fv(&format!(
+                    "--lean-ld: {} failed, linking with rust-lld: {}",
+                    tool.display(),
+                    String::from_utf8_lossy(&o.stderr).trim()
+                )),
+                Err(e) => eprint_fv(&format!("--lean-ld: cannot run {} (lake build lean-ld): {e}; linking with rust-lld", tool.display())),
             }
         }
         let t0 = std::time::Instant::now();
-        match Command::new(&tool).args(&args).args(&extra).output() {
-            Ok(o) if o.status.success() => {
-                code = Some(0);
-                eprint_fv(&format!("{}: linked by lean-ld in {} ms", output.display(), t0.elapsed().as_millis()));
-                let path = map.with_extension("ldargs");
-                let text: Vec<String> =
-                    args.iter().chain(extra.iter()).map(|a| a.to_string_lossy().into_owned()).collect();
-                if fs::write(&path, text.join("\n")).is_ok() {
-                    ld_args = Some(path);
-                }
-            }
-            Ok(o) => eprint_fv(&format!(
-                "--lean-ld: {} failed, linking with rust-lld: {}",
-                tool.display(),
-                String::from_utf8_lossy(&o.stderr).trim()
-            )),
-            Err(e) => eprint_fv(&format!("--lean-ld: cannot run {} (lake build lean-ld): {e}; linking with rust-lld", tool.display())),
-        }
-    }
-    let t0 = std::time::Instant::now();
-    let mut code = match code {
-        Some(c) => c,
-        None => match Command::new(&cfg.rust_lld).args(&argv).args(&extra).status() {
-            Ok(s) => {
-                if cfg.lean_link || cfg.lean_ld {
-                    eprint_fv(&format!("{}: linked by rust-lld in {} ms", output.display(), t0.elapsed().as_millis()));
-                }
-                s.code().unwrap_or(1)
-            }
-            Err(e) => {
-                eprint_fv(&format!("cannot run {}: {e}", cfg.rust_lld.display()));
-                return 1;
-            }
-        },
-    };
-    if cfg.keep_link() {
-        // `cargo fv link-proof`: which executable this map is of
-        let rec = serde_json::json!({
-            "output": output,
-            "map": map,
-            "unit": meta.unit,
-            "package": meta.package,
-            "crate_name": meta.crate_name,
-            "kind": meta.kind,
-        });
-        let _ = fs::write(map.with_extension("json"), serde_json::to_string_pretty(&rec).unwrap_or_default());
-    }
-    let mut coverage = None;
-    if code == 0 {
-        if let Some((_, list)) = &part {
-            match leanlink::patch(&cfg, &output, list, ld_args.as_deref()) {
-                Ok(text) => {
-                    eprint!("{text}");
-                    coverage = leanlink::coverage(&text);
+        let mut code = match code {
+            Some(c) => c,
+            None => match Command::new(&cfg.rust_lld).args(&argv).args(&extra).status() {
+                Ok(s) => {
+                    if cfg.lean_link || cfg.lean_ld {
+                        eprint_fv(&format!("{}: linked by rust-lld in {} ms", output.display(), t0.elapsed().as_millis()));
+                    }
+                    s.code().unwrap_or(1)
                 }
                 Err(e) => {
-                    eprint_fv(&format!("--lean-link: {e}"));
-                    code = 1;
+                    eprint_fv(&format!("cannot run {}: {e}", cfg.rust_lld.display()));
+                    return 1;
+                }
+            },
+        };
+        if cfg.keep_link() {
+            // `cargo fv link-proof`: which executable this map is of
+            let rec = serde_json::json!({
+                "output": output,
+                "map": map,
+                "unit": meta.unit,
+                "package": meta.package,
+                "crate_name": meta.crate_name,
+                "kind": meta.kind,
+            });
+            let _ = fs::write(map.with_extension("json"), serde_json::to_string_pretty(&rec).unwrap_or_default());
+        }
+        let mut coverage = None;
+        if code == 0 {
+            if let Some((_, list)) = &part {
+                match leanlink::patch(&cfg, &output, list, ld_args.as_deref()) {
+                    Ok(text) => {
+                        eprint!("{text}");
+                        coverage = leanlink::coverage(&text).map(|c| {
+                            if exclude.is_empty() {
+                                c
+                            } else {
+                                format!(
+                                    "{c}; {} function(s) outside the input conditions keep cg_clif's code ({})",
+                                    exclude.len(),
+                                    exclude_file.display()
+                                )
+                            }
+                        });
+                    }
+                    Err(e) => {
+                        // `--verified`: link again without the functions failing a per-function
+                        // input condition (each round leaves out more; the conditions are decided
+                        // again on every link)
+                        let more = leanlink::exclusions(&e);
+                        if cfg.lean_link_verified && !cfg.trap_replaced && round < 4 && !more.is_subset(&exclude) {
+                            exclude.extend(more);
+                            eprint_fv(&format!(
+                                "--lean-link --verified: {}: {} function(s) fail a per-function input condition; linking again with their cg_clif code ({})",
+                                output.display(),
+                                exclude.len(),
+                                exclude_file.display()
+                            ));
+                            if let Err(e) = fs::write(&exclude_file, exclude.iter().map(|n| format!("{n}\n")).collect::<String>()) {
+                                eprint_fv(&format!("{}: {e}", exclude_file.display()));
+                                return 1;
+                            }
+                            continue;
+                        }
+                        eprint_fv(&format!("--lean-link: {e}"));
+                        code = 1;
+                    }
                 }
             }
         }
-    }
+        break (code, coverage, ld_args);
+    };
     if code == 0 {
         let mut b = check_binary(&output);
         b.lean_link = coverage;

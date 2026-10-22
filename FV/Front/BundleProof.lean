@@ -275,10 +275,19 @@ theorem finOf_eq {us : List PCgu} {i : Nat} {u : PCgu} (h : us[i]? = some u) (n 
 theorem mem_zipIdx {α : Type} {us : List α} {u : α} {i : Nat} : (u, i) ∈ us.zipIdx ↔ us[i]? = some u :=
   List.mem_zipIdx_iff_getElem?
 
+theorem PCgu.mem_localIdents {u : PCgu} {n : String} :
+    n ∈ u.localIdents ↔ n ∈ u.idents ∧ n ∈ u.localNames := by
+  simp only [PCgu.localIdents, PCgu.localSet, List.mem_filter, foldl_insert_empty]
+
+theorem PCgu.mem_globalIdents {u : PCgu} {n : String} :
+    n ∈ u.globalIdents ↔ n ∈ u.idents ∧ n ∉ u.localNames := by
+  simp only [PCgu.globalIdents, PCgu.localSet, List.mem_filter, Bool.not_eq_true',
+    Bool.eq_false_iff, ne_eq, foldl_insert_empty]
+
 theorem mem_localIds {us : List PCgu} {i : Nat} {n : String} :
     (i, n) ∈ localIds us ↔ ∃ u, us[i]? = some u ∧ n ∈ u.idents ∧ n ∈ u.localNames := by
-  simp only [localIds, List.mem_eraseDups, List.mem_flatMap, List.mem_map, List.mem_filter,
-    decide_eq_true_eq, Prod.mk.injEq]
+  simp only [localIds, List.mem_eraseDups, List.mem_flatMap, List.mem_map, PCgu.mem_localIdents,
+    Prod.mk.injEq]
   constructor
   · rintro ⟨⟨u, i'⟩, hu, n', ⟨hn, hl⟩, rfl, rfl⟩
     exact ⟨u, mem_zipIdx.mp hu, hn, hl⟩
@@ -287,8 +296,8 @@ theorem mem_localIds {us : List PCgu} {i : Nat} {n : String} :
 
 theorem mem_globalNames {us : List PCgu} {m : String} {j : Nat} {v : PCgu} (hv : us[j]? = some v)
     (hm : m ∈ v.idents) (hg : m ∉ v.localNames) : m ∈ globalNames us := by
-  simp only [globalNames, List.mem_flatMap, List.mem_filter, decide_eq_true_eq]
-  exact ⟨v, List.mem_of_getElem? hv, hm, hg⟩
+  simp only [globalNames, List.mem_flatMap]
+  exact ⟨v, List.mem_of_getElem? hv, PCgu.mem_globalIdents.mpr ⟨hm, hg⟩⟩
 
 /-- Distinct images under a map without duplicates. -/
 theorem inj_of_nodup_map {α β : Type} {f : α → β} : ∀ {l : List α}, (l.map f).Nodup →
@@ -304,13 +313,14 @@ theorem inj_of_nodup_map {α β : Type} {f : α → β} : ∀ {l : List α}, (l.
 
 /-- **The linked names are a scoping of the units** when `scopingB` holds. -/
 theorem scopingB_sound {us : List PCgu} (h : scopingB us = true) : ScopingOk us (finOf us) := by
-  simp only [scopingB, Bool.and_eq_true, List.all_eq_true, List.mem_filter, decide_eq_true_eq,
+  simp only [scopingB, Bool.and_eq_true, List.all_eq_true,
     beq_iff_eq, Bool.not_eq_true'] at h
-  obtain ⟨⟨hA, hB⟩, hC⟩ := h
+  obtain ⟨hA, hB, hC⟩ := h
   have hnd := nodupB_sound hB
   -- a global name keeps its name
   have hglob : ∀ {i u n}, us[i]? = some u → n ∈ u.idents → n ∉ u.localNames → finOf us i n = n :=
-    fun {_ _ n} hu hn hl => by rw [finOf_eq hu]; exact hA _ (List.mem_of_getElem? hu) n ⟨hn, hl⟩
+    fun {_ _ n} hu hn hl => by
+      rw [finOf_eq hu]; exact hA _ (List.mem_of_getElem? hu) n (PCgu.mem_globalIdents.mpr ⟨hn, hl⟩)
   -- a local symbol's name is no global name
   have hloc : ∀ {i u n}, us[i]? = some u → n ∈ u.idents → n ∈ u.localNames →
       finOf us i n ∉ globalNames us := fun {_ _ _} hu hn hl hg => by

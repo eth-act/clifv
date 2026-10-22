@@ -148,3 +148,7 @@ root = "FVTest.Backend.Lowering.StockHighMulProductionRuntime"
 [[lean_exe]]
 name = "stock-highmul-linked"
 root = "FVTest.Backend.Lowering.StockHighMulProductionLinked"
+
+[[lean_exe]]
+name = "link-prof"
+root = "FVTest.Link.LinkProfMain"
