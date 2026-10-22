@@ -1,13 +1,14 @@
 import FV.Backend.Proof.IselCtlCallTI
 import FV.Backend.Proof.IselTermFactsCallT
 import FV.Backend.Proof.PairsC
+import FV.Backend.Proof.DriverCheckT
 
 /-!
 # Family Ctl over typed contexts: `call` with `f32`/`f64` arguments and returns (S11e5 Stage B)
 
 The `call` rules of `lower` (`bl`, rule 1031; GOT + `blr`, rule 1032) on float-capable contexts
-(`CtxInvT`) for every extern signature the lowering accepts, not only integer ones
-(`IselCtlCallTI`'s `CallRulesCorrectTP` assumes integer arguments, `CtxInvT.intOps`, and integer
+for every extern signature the lowering accepts, not only integer ones (`IselCtlCallTI`'s
+`CallRulesCorrectTP` assumes integer arguments, `CtxInvT.intOps`, and integer
 returns, `CtxT.resTysE`). As Cranelift's aarch64 ABI (`gen_call_args`/`gen_call_output`/
 `gen_call_rets`, typed since S11e5a):
 
@@ -25,8 +26,15 @@ area), so it is unchanged. That a float argument is stored with its own byte siz
 from the frame's typing (`DFGCons`'s `FrameTyped`: a value of float class has a float type, and
 the CLIF call checks the argument types against the parameters).
 
-Results: `CallRulesCorrectTFP` (`CallRulesCorrectTP` over `CtxInvT`, every extern signature,
-with `MemRefinesFP`), `callRulesCorrectTFP_program`.
+The contexts are `CallCtxT`: the facts of a float-capable context the call rules use (the
+instruction data, the result types, value `x` in vreg `x` of its type's class). `CtxInvT` gives
+them (`CtxInvT.toCallCtx`), but `CtxInvT` also types every `call` argument as an integer
+(`intArgs`), so the float-argument calls are covered through `CallCtxT`; `callCtxOkB` decides it
+(`callCtxOkB_sound`).
+
+Results: `CallRulesCorrectTFP` (`CallRulesCorrectTP` over `CallCtxT`, every extern signature,
+with `MemRefinesFP`), `callRulesCorrectTFP_program`; `callRuleOkTP_of_TFP` (the integer-argument
+family over `CtxT` is an instance).
 -/
 
 namespace Backend.Proof
@@ -35,14 +43,32 @@ open Backend Isle Isle.Interp Isle.Aarch64
 
 set_option maxRecDepth 20000
 
-/-! ## The family -/
+/-! ## The contexts and the family -/
 
-/-- `CallRuleOkTP` over float-capable contexts (`CtxInvT`) for calls of any extern signature. -/
+/-- **The facts of a float-capable lowering context the call rules use**: `CtxInvT`'s instruction
+data, result types and class-aware value registers, without its integer typing of operands
+(`intArgs`, which lists the arguments of a `call`). -/
+structure CallCtxT (f : Clif.Function) (ctx : Ctx) : Prop where
+  func : ctx.func = f
+  data : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+    info.clif = some inst → instData f inst = .ok info.data
+  resTys : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+    info.clif = some inst →
+    ∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) = some tys ∧
+      info.resTys = tys.map CTy.ofClif ∧ info.results.length = tys.length
+  /-- value `x` has vreg `x`, of the class of its type -/
+  valueReg : ∀ (x : Nat) (r : Reg), ctx.valueReg? x = some r → r = .vreg x (valClassOf ctx x)
+
+theorem CtxInvT.toCallCtx {f : Clif.Function} {ctx : Ctx} (h : CtxInvT f ctx) : CallCtxT f ctx :=
+  ⟨h.func, h.data, h.resTys, h.valueReg⟩
+
+/-- `CallRuleOkTP` over the call facts of float-capable contexts (`CallCtxT`) for calls of any
+extern signature. -/
 def CallRuleOkTFP (Rd : BitVec 64 → Prop)
     (Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (isem : Sem) (MR : MemRelT)
     (env : Clif.Env) (cp : Clif.Program) (exts : List Clif.ExtFunc) (outB : Nat) (p : Program)
     (r : Rule) : Prop :=
-  ∀ (f : Clif.Function) (ctx : Ctx), CtxInvT f ctx → ExternsIn f exts →
+  ∀ (f : Clif.Function) (ctx : Ctx), CallCtxT f ctx → ExternsIn f exts →
   ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info → info.clif = some inst →
   (∀ fn args e, inst = .call fn args → f.extern? fn = some e → SigStackOk e.sig outB) →
   ∀ (cfg : Config), cfg.checkOverlap = false →
@@ -70,7 +96,7 @@ def CallRulesCorrectTFP (p : Program) : Prop :=
 /-! ## Typed-context facts -/
 
 /-- The registers of the values of a float-capable context: vreg `x` of `x`'s class. -/
-theorem mapM_valueRegT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) :
+theorem mapM_valueRegT {f : Clif.Function} {ctx : Ctx} (hctx : CallCtxT f ctx) :
     ∀ {xs : List Nat} {rs : List Reg}, xs.mapM ctx.valueReg? = some rs →
       rs = xs.map fun x => Reg.vreg x (valClassOf ctx x)
   | [], rs, h => by simp at h; simp [h]
@@ -80,6 +106,15 @@ theorem mapM_valueRegT {f : Clif.Function} {ctx : Ctx} (hctx : CtxInvT f ctx) :
     obtain ⟨r, hr, rs', hrs, rfl⟩ := h
     rw [hctx.valueReg x r hr, mapM_valueRegT hctx hrs]
     rfl
+
+/-- The number of CLIF results of a `call` is its callee's number of returns. -/
+theorem call_results_lengthC {f : Clif.Function} {ctx : Ctx} (hctx : CallCtxT f ctx) {ii : Nat}
+    {info : IInfo} {fn : Clif.FnRef} {args : List Nat} {ext : Clif.ExtFunc}
+    (hi : ctx.insts[ii]? = some info) (hc : info.clif = some (.call fn args))
+    (hext : f.extern? fn = some ext) : info.results.length = ext.sig.returns.length := by
+  obtain ⟨tys, htys, -, hl⟩ := hctx.resTys ii info _ hi hc
+  simp only [Clif.Inst.resultTypes, hext, Option.map_some, Option.some.injEq] at htys
+  rw [hl, ← htys, List.length_map]
 
 theorem valClass_ofClif_float {t : Clif.Ty} (h : (CTy.ofClif t).valClass = .float) :
     t = .f32 ∨ t = .f64 := by
@@ -869,7 +904,7 @@ theorem call_bl_ruleOkTF {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop}
   simp only [List.cons.injEq, and_true] at hfs
   obtain ⟨rfl, rfl⟩ := hfs
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
-  have hres := call_results_lengthT hctx hi hcl hext
+  have hres := call_results_lengthC hctx hi hcl hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
@@ -950,7 +985,7 @@ theorem call_got_ruleOkTF {p : Program} (hp : Data p) {Rd F : BitVec 64 → Prop
   have hfn : ctx.func.extern? fn = some ext := by rw [hctx.func]; exact hext
   have hcol : ext.colocated = false := hnot ‹V.data 152 6 _ = info.data›.symm hfn
   clear hnot
-  have hres := call_results_lengthT hctx hi hcl hext
+  have hres := call_results_lengthC hctx hi hcl hext
   simp only [ext_value_list_slice_iff, ext_func_ref_data_iff, hfn] at *
   isel_destruct; subst_vars
   simp only [List.cons.injEq, Option.some.injEq, and_true] at *
@@ -1019,14 +1054,70 @@ theorem callRulesCorrectTFP_program : CallRulesCorrectTFP program := by
   · rw [eq_of_mem_of_id lower_ids_nodup hr mem_lower_2518 (by rw [h]; rfl)]
     exact call_got_ruleOkTF data_program hMR hMem hFP hout hCR
 
-/-- The integer-argument family over typed contexts follows on the typed contexts with integer
-externs (`CtxT`), given the float store forms: `CallRulesCorrectTP`'s conclusion, as a check that
-the float family covers it. -/
+/-- The integer-argument family over typed contexts (`CtxT`) is an instance of the float one (a
+rule correct for every extern signature on `CallCtxT` contexts is `CallRuleOkTP`). -/
 theorem callRuleOkTP_of_TFP {Rd : BitVec 64 → Prop}
     {Pc : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop} {isem : Sem} {MR : MemRelT}
     {env : Clif.Env} {cp : Clif.Program} {exts : List Clif.ExtFunc} {outB : Nat} {p : Program}
     {r : Rule} (h : CallRuleOkTFP Rd Pc isem MR env cp exts outB p r) :
     CallRuleOkTP Rd Pc isem MR env cp exts outB p r :=
-  fun f ctx hctx hexts ii info inst hi hcl _ hstk => h f ctx hctx.inv hexts ii info inst hi hcl hstk
+  fun f ctx hctx hexts ii info inst hi hcl _ hstk =>
+    h f ctx hctx.inv.toCallCtx hexts ii info inst hi hcl hstk
+
+/-! ## `CallCtxT`, decided -/
+
+open Driver in
+/-- **`CallCtxT f ctx`, decided** (`ctxOkT`'s instruction-data, result-type and value-register
+checks). -/
+def callCtxOkB (f : Clif.Function) (ctx : Ctx) : Bool :=
+  decide (ctx.func = f) &&
+  ctx.insts.toList.all (fun info => match info.clif with
+    | some i =>
+      (match instData f i with
+        | .ok d => d == info.data
+        | .error _ => false) && ctxResTysOk f info i
+    | none => true) &&
+  (List.range ctx.valReg.size).all (fun x => match ctx.valueReg? x with
+    | some r => decide (r = .vreg x (valClassOf ctx x))
+    | none => true)
+
+open Driver in
+theorem callCtxOkB_sound {f : Clif.Function} {ctx : Ctx} (h : callCtxOkB f ctx = true) :
+    CallCtxT f ctx := by
+  simp only [callCtxOkB, Bool.and_eq_true, decide_eq_true_eq] at h
+  obtain ⟨⟨hfunc, hinsts⟩, hreg⟩ := h
+  have hmem : ∀ {ii : Nat} {info : IInfo}, ctx.insts[ii]? = some info → info ∈ ctx.insts.toList :=
+    fun hi => by rw [Array.mem_toList_iff]; exact Array.mem_of_getElem? hi
+  have hinst : ∀ (ii : Nat) (info : IInfo) (inst : Clif.Inst), ctx.insts[ii]? = some info →
+      info.clif = some inst →
+      (instData f inst = .ok info.data) ∧
+      (∃ tys, inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) =
+          some tys ∧
+        info.resTys = tys.map CTy.ofClif ∧ info.results.length = tys.length) := by
+    intro ii info inst hi hc
+    have := List.all_eq_true.mp hinsts info (hmem hi)
+    rw [hc] at this
+    simp only [Bool.and_eq_true] at this
+    obtain ⟨h1, h2⟩ := this
+    refine ⟨?_, ?_⟩
+    · cases hd : instData f inst with
+      | ok d => rw [hd] at h1; simpa using h1
+      | error e => rw [hd] at h1; simp at h1
+    · have h2' : ctxResTysOk f info inst = true := h2
+      unfold ctxResTysOk at h2'
+      cases hty : inst.resultTypes (fun r => (f.extern? r).map (·.sig)) (f.sigDecls.lookup ·) with
+      | none => rw [hty] at h2'; simp at h2'
+      | some tys =>
+        have h2'' : (decide (info.resTys = tys.map CTy.ofClif) &&
+            decide (info.results.length = tys.length)) = true := by
+          rw [hty] at h2'; exact h2'
+        simp only [Bool.and_eq_true, decide_eq_true_eq] at h2''
+        exact ⟨tys, rfl, h2''.1, h2''.2⟩
+  refine ⟨hfunc, fun ii info inst hi hc => (hinst ii info inst hi hc).1,
+    fun ii info inst hi hc => (hinst ii info inst hi hc).2, ?_⟩
+  intro x r hx
+  have := all_range hreg (lt_valReg hx)
+  rw [hx] at this
+  simpa using this
 
 end Backend.Proof
