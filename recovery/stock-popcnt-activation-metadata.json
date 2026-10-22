@@ -1,0 +1,10 @@
+{
+  "utc": "2026-10-22T01:37:14.102193+00:00",
+  "source_head": "1369656323f4c5f8a121021a93298a6517b8b2a0",
+  "archive_sha256": "a36c370c4ddad32ecf0e5e246dc6cb8419f1a56051a7f5b67448aaf1011b7fd7",
+  "archive_bytes": 16782198,
+  "files": 1583,
+  "terminal_receipt_sha256": "a57f31ce70eaeff77f39f097ab855096eaef1227aebe82c61aa496acff196daf",
+  "preserves_failures": true,
+  "next_packet_drafts_included": true
+}
