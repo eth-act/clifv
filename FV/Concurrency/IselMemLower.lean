@@ -155,6 +155,80 @@ theorem cstep_own {env : Clif.Env} {p : Clif.Program} {s s' : Clif.State}
   exact h1.2
 
 
+/-! ## The parts of a memory statement's outcome -/
+
+theorem store_parts {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame} {c : Clif.Mem}
+    {op : Clif.StoreOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {x pp : Nat} {off : Int}
+    {r : List Clif.Val × Clif.Mem} (h : instOutcome env p fr c (.store op ty fl x pp off) = .ok r) :
+    ∃ v pv, fr.getAs x ty = .ok v ∧ fr.regs pp = some pv := by
+  have h' : Clif.evalInst fr c (.store op ty fl x pp off) = .ok r := h
+  simp only [Clif.evalInst] at h'
+  obtain ⟨v, hv, h'⟩ := res_bind_eq_ok h'
+  obtain ⟨pv, hpv, -⟩ := res_bind_eq_ok h'
+  exact ⟨v, pv, hv, get_regs hpv⟩
+
+theorem atomicStore_parts {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame} {c : Clif.Mem}
+    {ty : Clif.Ty} {fl : Clif.MemFlags} {x pp : Nat} {r : List Clif.Val × Clif.Mem}
+    (h : instOutcome env p fr c (.atomicStore ty fl x pp) = .ok r) :
+    ∃ v pv, fr.getAs x ty = .ok v ∧ fr.regs pp = some pv := by
+  have h' : Clif.evalInst fr c (.atomicStore ty fl x pp) = .ok r := h
+  simp only [Clif.evalInst] at h'
+  obtain ⟨v, hv, h'⟩ := res_bind_eq_ok h'
+  obtain ⟨pv, hpv, -⟩ := res_bind_eq_ok h'
+  exact ⟨v, pv, hv, get_regs hpv⟩
+
+theorem rmw_parts {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame} {c : Clif.Mem}
+    {op : Clif.AtomicRmwOp} {ty : Clif.Ty} {fl : Clif.MemFlags} {pp x : Nat}
+    {r : List Clif.Val × Clif.Mem} (h : instOutcome env p fr c (.atomicRmw op ty fl pp x) = .ok r) :
+    ∃ pv v old, fr.regs pp = some pv ∧ fr.getAs x ty = .ok v ∧
+      c.load fl (Clif.effAddr pv 0) ty.bytes ty.width = .ok old := by
+  have h' : Clif.evalInst fr c (.atomicRmw op ty fl pp x) = .ok r := h
+  simp only [Clif.evalInst] at h'
+  obtain ⟨pv, hpv, h'⟩ := res_bind_eq_ok h'
+  obtain ⟨v, hv, h'⟩ := res_bind_eq_ok h'
+  obtain ⟨_, -, h'⟩ := res_bind_eq_ok h'
+  obtain ⟨old, hl, -⟩ := res_bind_eq_ok h'
+  exact ⟨pv, v, old, get_regs hpv, hv, hl⟩
+
+theorem cas_parts {env : Clif.Env} {p : Clif.Program} {fr : Clif.Frame} {c : Clif.Mem}
+    {ty : Clif.Ty} {fl : Clif.MemFlags} {pp ex x : Nat} {r : List Clif.Val × Clif.Mem}
+    (h : instOutcome env p fr c (.atomicCas ty fl pp ex x) = .ok r) :
+    ∃ pv ev v old, fr.regs pp = some pv ∧ fr.getAs ex ty = .ok ev ∧ fr.getAs x ty = .ok v ∧
+      c.load fl (Clif.effAddr pv 0) ty.bytes ty.width = .ok old := by
+  have h' : Clif.evalInst fr c (.atomicCas ty fl pp ex x) = .ok r := h
+  simp only [Clif.evalInst] at h'
+  obtain ⟨pv, hpv, h'⟩ := res_bind_eq_ok h'
+  obtain ⟨ev, he, h'⟩ := res_bind_eq_ok h'
+  obtain ⟨v, hv, h'⟩ := res_bind_eq_ok h'
+  obtain ⟨_, -, h'⟩ := res_bind_eq_ok h'
+  obtain ⟨old, hl, -⟩ := res_bind_eq_ok h'
+  exact ⟨pv, ev, v, old, get_regs hpv, he, hv, hl⟩
+
+/-- **The `atomic_cas` comparisons agree**: the CLIF statement's (the loaded value against the
+expected value) and its loop's (the bytes at the address against the expected value's vreg). -/
+theorem cas_cmp {cm : Clif.Mem} {a n : Nat} {ty : Clif.Ty} (hn : ty.bytes = n) (hn8 : n ≤ 8)
+    {old : BitVec ty.width} (hrd : cm.readBits false a n ty.width = some old)
+    (ha : a + n ≤ 2 ^ 64) {s : ArmState}
+    (hb : ∀ i < n, ∀ b, cm.bytes (a + i) = some b → Arm.read_mem (BitVec.ofNat 64 (a + i)) s = b)
+    {ev : BitVec ty.width} {u : CV} (hh : VHolds ⟨ty, ev⟩ u) :
+    old = ev ↔ readM n (BitVec.ofNat 64 a) s.mem = (lo64 u).setWidth (n * 8) := by
+  simp only [VHolds] at hh
+  have hW : ty.width = 8 * n := by rw [← width_bytes, hn]
+  revert old ev hrd hh
+  rw [hW]
+  intro old hrd ev hh
+  have hac := readBits_getLsbD_eq hrd ha hb
+  refine bits_eq_iff (by omega) (fun j => by rw [hac j, read_mem_bytes_eq]) (fun j => ?_)
+  rw [← hh]
+  simp only [lo64, BitVec.getLsbD_setWidth]
+  by_cases hj : j < 8 * n
+  · have h1 : j < n * 8 := by omega
+    have h2 : j < 64 := by omega
+    simp [hj, h1, h2]
+  · have h1 : ¬ j < n * 8 := by omega
+    simp [hj, h1]
+
+
 section
 variable {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
   {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId}
@@ -176,6 +250,7 @@ theorem mem_vreg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     (hpre0 : ∀ y ∈ pre0, akinds y = []) (hpost0 : ∀ y ∈ post0, akinds y = [])
     (hcov : ∀ i ∈ pre0 ++ mi0 :: post0, SegFoot.Covered fc i)
     (hres : isStore stm.inst = false → stm.results ≠ [])
+    (hcas : casOkB stm.inst (pre0 ++ mi0 :: post0) = true)
     {vs : List Clif.Val} {cm' : Clif.Mem}
     (h : instOutcome env p s.frame s.mem stm.inst = .ok (vs, cm'))
     {a n : Nat} (hacc : access s.frame stm.inst = some (a, n))
@@ -187,7 +262,9 @@ theorem mem_vreg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
       AtA (BitVec.ofNat 64 a) n (cEvs F fc mi0 (vuses ops ρb) wb) ∧
       (∃ r, csem F fc X mi0 (vuses ops ρb) wb = some r) ∧
       (mi0.isCtl = false → csemWF fc mi0 (vuses ops ρb) = true) ∧
-      Arm.r .ERR wb = .None ∧ Arm.CheckSPAlignment wb ∧ extraOf stm.results sl.rss = [] := by
+      Arm.r .ERR wb = .None ∧ Arm.CheckSPAlignment wb ∧ extraOf stm.results sl.rss = [] ∧
+      (∀ ty fl pp ex x, stm.inst = .atomicCas ty fl pp ex x → ∀ ev, s.frame.getAs ex ty = .ok ev →
+        ∃ ua uex ux, vuses ops ρb = [ua, uex, ux] ∧ VHolds ⟨ty, ev⟩ uex) := by
   obtain ⟨vb, hvb, hsllen, hstmts, -, -, -, -, hcode, htne, -⟩ := H.shape.blk b B L hB hL
   obtain ⟨⟨info, hinfo, hclif, hres'⟩, hemp, hst0, ⟨tr, hrun⟩, halias⟩ := hstmts j stm sl hstm hsl
   have hBmem : B ∈ f.blocks := List.mem_of_getElem? hB
@@ -260,11 +337,45 @@ theorem mem_vreg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     rcases IselMemAux.covered_cov (hcov mi0 hmi) hops ρm with h' | h'
     · rw [hc] at h'; cases h'
     · exact h'
-  refine ⟨ρb, wm, ops.map (rnOp gn), hsrb, hops', ?_, ?_, ?_, ?_, hem, halm, hextra⟩
+  have hcasx : ∀ ty fl pp ex x, stm.inst = .atomicCas ty fl pp ex x → ∀ ev,
+      s.frame.getAs ex ty = .ok ev → ∃ ua uex ux, vuses ops ρm = [ua, uex, ux] ∧
+        VHolds ⟨ty, ev⟩ uex := by
+    intro ty fl pp ex x hi ev hev
+    have hmk : (!(akinds mi0).isEmpty) = true := by
+      cases hk : akinds mi0 with
+      | nil => rw [VCodeEvents.cEvs_nil hk] at hne; exact absurd rfl hne
+      | cons _ _ => rfl
+    have hmm : mi0 ∈ SegShape.memInsts (pre0 ++ mi0 :: post0) := List.mem_filter.mpr ⟨hmi, hmk⟩
+    rw [hi] at hcas
+    have hP := List.all_eq_true.mp hcas mi0 hmm
+    have hxA : ex ∈ A b j := hargs ex (by rw [hi]; simp [instArgs])
+    have hnd : ¬ D ex := by
+      have h4 : ex < st0.nextVreg := H.cert.small b j ex hxA
+      intro hd
+      have h3 : sl.st.nextVreg ≤ ex := hd.1
+      exact absurd (Nat.lt_of_lt_of_le h4 hst0) (Nat.not_lt.mpr h3)
+    have hfr : ρm ex = ρ₀ ex :=
+      seqRun_fall_frame (fun m hm hxm => hnd (hdefs m (List.mem_append_left _ hm) ex hxm)) hpre
+    obtain ⟨v, hv, hhv⟩ := hheld ex hxA
+    rw [Backend.Proof.getAs_ok hev] at hv
+    cases hv
+    split at hP
+    · rename_i t fl' p' e x' d d1
+      have he : e = ex := by simpa using hP
+      subst he
+      rw [operands_casLoop] at hops
+      cases hops
+      refine ⟨_, _, _, rfl, ?_⟩
+      show VHolds _ (ρm _)
+      rw [hfr]
+      exact hhv
+    · cases hP
+  refine ⟨ρb, wm, ops.map (rnOp gn), hsrb, hops', ?_, ?_, ?_, ?_, hem, halm, hextra, ?_⟩
   · rw [hvu]; exact hne
   · rw [hvu]; exact hAt
   · rw [hvu]; exact hcs
   · rw [hvu]; exact hwf
+  · rw [hvu]; exact hcasx
 
 end
 
