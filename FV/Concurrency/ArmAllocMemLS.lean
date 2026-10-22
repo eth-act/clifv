@@ -557,5 +557,16 @@ theorem immEvs_store_eq (op : StoreOp) (hop : op ≠ .fpuStore128) (Rn Rt Rn' Rt
       · rw [if_neg hA1, if_neg hA2]
         simp (config := {decide := true}) [gprCls, ldst_read, read_gpr_zr_sm, read_gpr,
           read_gpr_sm, offset_value_sm, setMem_mem, ha, hi, hd, if_pos hRt.1, if_pos hRt.2]
+        refine ⟨?_, ?_⟩
+        · have ha' : r (StateField.GPR Rn) s = r (StateField.GPR Rn') y := by
+            simpa [read_gpr] using ha
+          simp only [r_setMem, ha']
+          congr 1
+          try simpa using hi
+        · have hz : ∀ n, read_gpr_zr n Rt s = read_gpr_zr n Rt' y := fun n => by
+            simp only [read_gpr_zr, read_gpr, hd]; rw [if_pos hRt.1, if_pos hRt.2]
+          first
+            | rw [if_pos hRt.1, if_pos hRt.2]
+            | (congr 1; exact hz _)
 
 end Concurrency.ArmAllocThread
