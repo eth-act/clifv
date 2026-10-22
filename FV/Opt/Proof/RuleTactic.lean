@@ -158,9 +158,67 @@ def closeVecCase (g : MVarId) : MetaM Bool := g.withContext do
         return true
   return false
 
+/-- The width of a vector type is 64 or 128. -/
+theorem vec_width_cases {s : Clif.VShape} {w : Nat} (h : (Clif.Ty.vec s).width = w) :
+    w = 64 ∨ w = 128 := by
+  subst h; exact Clif.VShape.width_eq s
+
+/-- The case `Ty.vec s` (`s` a local shape) of a goal whose target reads `s` only through the
+width `(Ty.vec s).width` (a bit-level goal): drop the hypotheses that read `s` otherwise,
+generalize the width and split it into 64 and 128 (two goals instead of ten shapes). `none`
+(state unchanged) when the goal is not of that form. -/
+def vecWidthSplit (g : MVarId) (s : FVarId) : MetaM (Option (List MVarId)) := do
+  let saved ← saveState
+  try
+    g.withContext do
+      let wE := mkApp (mkConst ``Clif.Ty.width) (mkApp (mkConst ``Clif.Ty.vec) (mkFVar s))
+      let onlyWidth (e : Expr) : MetaM Bool := do
+        return !((← kabstract (← instantiateMVars e) wE).containsFVar s)
+      unless ← onlyWidth (← g.getType) do
+        saved.restore; return none
+      let mut drop := #[]
+      for d in ← getLCtx do
+        if d.isImplementationDetail || d.fvarId == s then continue
+        let t ← instantiateMVars d.type
+        unless t.containsFVar s do continue
+        if ← onlyWidth t then continue
+        if ← isProp t then drop := drop.push d.fvarId
+        else
+          saved.restore; return none
+      let g ← g.tryClearMany drop
+      let (fvs, g) ← g.revertAfter s
+      let (gen, g) ← g.generalize #[{ expr := wE, xName? := `w, hName? := `hw }]
+      let some hW := gen[1]? | throwError "vecWidthSplit: generalize"
+      g.withContext do check (← g.getType)
+      let hc ← g.withContext do mkAppM ``vec_width_cases #[mkFVar hW]
+      let g ← g.assert `hwc (← g.withContext do inferType hc) hc
+      let (hcv, g) ← g.intro1
+      let subs ← g.cases hcv
+      let mut out := []
+      for sg in subs do
+        let some heq := sg.fields[0]? | throwError "vecWidthSplit: cases"
+        let g ← subst sg.mvarId heq.fvarId!
+        let (_, g) ← g.introNP fvs.size
+        -- the shape is now only read by the width equation: drop both
+        let rest ← g.withContext do
+          let mut ids := #[]
+          for d in ← getLCtx do
+            if !d.isImplementationDetail && d.fvarId != s &&
+                (← instantiateMVars d.type).containsFVar s then ids := ids.push d.fvarId
+          pure ids
+        let g ← g.tryClearMany rest
+        let g ← g.tryClear s
+        out := out ++ [g]
+      return some out
+  catch _ =>
+    saved.restore
+    return none
+
 /-- `opt_cases_ty`: `cases` every local variable of type `Clif.Ty`, `Clif.VShape` (the shape of a
-vector type, so that its width reduces to a numeral) or `Clif.IntCC`; a vector case of a type
-with a hypothesis `t.isVec = false` is closed at once. -/
+vector type, so that its width reduces to a numeral) or `Clif.IntCC`. A vector case `Ty.vec s` of
+a type with a hypothesis `t.isVec = false` is closed at once; one whose target reads `s` only
+through its width is split on the width (`vecWidthSplit`); otherwise `s` is split into the ten
+shapes. -/
 elab "opt_cases_ty" : tactic => do
   let rec go (g : MVarId) (fuel : Nat) : MetaM (List MVarId) := g.withContext do
     if fuel = 0 then return [g]
@@ -169,8 +227,16 @@ elab "opt_cases_ty" : tactic => do
       let ty ← instantiateMVars d.type
       if ty.isConstOf `Clif.Ty || ty.isConstOf `Clif.VShape || ty.isConstOf `Clif.IntCC then
         let gs ← g.cases d.fvarId
-        let gs ← gs.toList.filterM fun s => return !(← closeVecCase s.mvarId)
-        return (← gs.mapM fun s => go s.mvarId (fuel - 1)).flatten
+        let mut out := []
+        for sg in gs do
+          if ← closeVecCase sg.mvarId then continue
+          if ty.isConstOf `Clif.Ty && sg.ctorName == ``Clif.Ty.vec then
+            if let some sf := sg.fields[0]? then
+              if let some ws ← vecWidthSplit sg.mvarId sf.fvarId! then
+                for w in ws do out := out ++ (← go w (fuel - 1))
+                continue
+          out := out ++ (← go sg.mvarId (fuel - 1))
+        return out
     return [g]
   let gs ← getGoals
   let mut out := []
