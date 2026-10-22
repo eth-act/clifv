@@ -88,8 +88,8 @@ def CallLg (env : Clif.Env) (exts : List Clif.ExtFunc) (sigs : List Clif.Signatu
 signature `sig`, argument values `vals`, CLIF memory `cm`): two worlds that agree outside `Z ⊇ F`,
 both related to `cm` with stack pointer `sp0`, with the arguments as the call's kind puts them — a declared extern (in
 `exts`) with its arguments where the ABI puts them in both, or an indirect call (signature in
-`sigs`) with at most 8 register arguments — give, when the call returns on both, the same values
-and worlds that agree outside `Z`. -/
+`sigs`) with its arguments where its call-site signature's ABI puts them in both (S5) — give,
+when the call returns on both, the same values and worlds that agree outside `Z`. -/
 def XNI (F : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Clif.ExtFunc)
     (sigs : List Clif.Signature) (sp0 : BitVec 64)
     (Lg : String → Clif.Signature → List Clif.Val → Clif.Mem → Prop) (X : ExtSem) : Prop :=
@@ -101,7 +101,7 @@ def XNI (F : BitVec 64 → Prop) (syms : String → Option Nat) (exts : List Cli
     (∀ a, F a → Z a) → SameWorld Z w w' → MemRel F syms cm w → MemRel F syms cm w' →
     spv w = sp0 → spv w' = sp0 →
     ((∃ e ∈ exts, e.name = n ∧ e.sig = sig) ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w' ∨
-      sig ∈ sigs ∧ vals.length ≤ 8 ∧ AllHold vals args) →
+      sig ∈ sigs ∧ ArgsAt sig vals args w ∧ ArgsAt sig vals args w') →
     X.call d uses w = some (o, x) → X.call d uses w' = some (o', x') → o = o' ∧ SameWorld Z x x'
 
 /-- The TLSDESC resolver's flags do not depend on the world outside `F`. -/
@@ -182,12 +182,15 @@ theorem callLockstep {F : BitVec 64 → Prop} {syms : String → Option Nat} {X 
     · exact .inl ⟨rfl, rfl⟩
     · exact .inr ⟨rfl, hu⟩
   have hA : (∃ e ∈ exts, e.name = n1 ∧ e.sig = sig1) ∧ ArgsAt sig1 vals1 args1 w ∧
-      ArgsAt sig1 vals1 args1 w' ∨ sig1 ∈ sigs ∧ vals1.length ≤ 8 ∧ AllHold vals1 args1 := by
-    rcases ha1 with ⟨hk, ha1⟩ | ha1
-    · rcases ha2 with ⟨-, ha2⟩ | ha2
+      ArgsAt sig1 vals1 args1 w' ∨
+      sig1 ∈ sigs ∧ ArgsAt sig1 vals1 args1 w ∧ ArgsAt sig1 vals1 args1 w' := by
+    rcases ha1 with ⟨hk, ha1⟩ | ⟨hs1, ha1⟩
+    · rcases ha2 with ⟨-, ha2⟩ | ⟨-, ha2⟩
       · exact .inl ⟨hk, ha1, ha2⟩
-      · exact .inr ha2
-    · exact .inr ha1
+      · exact .inl ⟨hk, ha1, ha2⟩
+    · rcases ha2 with ⟨-, ha2⟩ | ⟨-, ha2⟩
+      · exact .inr ⟨hs1, ha1, ha2⟩
+      · exact .inr ⟨hs1, ha1, ha2⟩
   exact hNI n1 sig1 vals1 cm1 args1 (destName dest) us Z w w' o x o' x' hlg1 hd hFZ hw hm1 hm2 hc1
     hc2 hA hc hc'
 
@@ -668,6 +671,7 @@ theorem vcode_ni {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCod
     insts := instCalls_of_rules lowerRulesCorrect_program excludedUnmatchable callRulesCorrect
       indRulesCorrect memRulesCorrect_program hRef (mrStable_relW Γ f c) hcalls hicalls hmem
       (outArgsOk_relW Γ f c) (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB)
       (memRelOk_relW Γ f c)
     terms := termCalls_of_rules lowerTermRulesCorrect termUnmatchable branchRulesCorrect
       branchExcludedUnmatchable hRef (mrStable_relW Γ f c)
@@ -681,7 +685,7 @@ theorem vcode_ni {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCod
       (outArgsOk_relW Γ f c) hcalls, tryStack_mono (tryStack_of_check hc.lowerOk) houtB⟩
     tryExt := hsub.tryExterns
     tryInd := tryIndCalls_of_rules tryIndRulesCorrect tryIndUnmatchable hRef (mrStable_relW Γ f c)
-      hicalls
+      hmem (outArgsOk_relW Γ f c) (indStack_mono (indStack_of_check hc.lowerOk) houtB) hicalls
     tryIndSig := tryIndSig_of_subset hsub
     cfg := cfg_of_prepare hc.prepare }
   have HP : DriverHyp f vc ctx st0 R gn bl A (pairSem (csem F ⟨fa.k, af.slotBase⟩ X)) (MRP Γ f c D)

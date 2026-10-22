@@ -60,7 +60,9 @@ theorem backend_correct_of_rules_ex_validated {p : Clif.Program} {f : Clif.Funct
       (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
       (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f) (hcalls s'))
     (fun s' => tryIndCalls_of_rules htryIndRules htryIndUn (hRef s')
-      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hicalls s'))
+      (mrStable_holds ⟨F s', syms, slotOff, out⟩ f) (hmem s')
+      (outArgsOk_holds ⟨F s', syms, slotOff, out⟩ f)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) (hicalls s'))
     hM6 hRef hds hcalls hicalls hmem houtB hent hres hbe hargs hargF hcs hrel htr fuel
 
 theorem backend_correct_m4_ex_validated {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp : VCode}
