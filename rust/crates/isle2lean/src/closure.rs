@@ -70,6 +70,13 @@ pub const FLAG_OFF: &[&str] = &["use_lse"];
 /// `fmin` (517), `fmax` (525); `fpu_rr` of `sqrt` (533), `fneg` (541), `fabs` (549),
 /// `fpromote` (554), `fdemote` (559). `fcmp` into a register (2176, `emit_fcmp`) stays out until
 /// `fp_cond_code` is proven (`instData` rejects `fcmp`).
+/// S11f-cvt (#410) adds the scalar float/integer conversions (`FV/Backend/Proof/IselFloatCvt*.lean`,
+/// `LowerRulesCorrectFX`): `int_to_fpu` of `fcvt_from_uint` (724 `f32`/727 `f64` from `i8..i32`
+/// through `put_in_reg_zext32`, 730/733 from `i64`) and `fcvt_from_sint` (744/747 through
+/// `put_in_reg_sext32`, 750/753); `fpu_to_int_cvt_sat` of `fcvt_to_uint_sat` (764/770 to `i32`,
+/// 767/773 to `i64`) and `fcvt_to_sint_sat` (784/790, 787/793). `instData` admits the saturating
+/// conversions at `i32`/`i64` only (the `i8`/`i16` clamp of `fpu_to_int_cvt_sat` is not proven;
+/// cg_clif emits `i32` + an integer clamp for them).
 pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_63",
     "rule_lower_68",
@@ -92,6 +99,22 @@ pub const BACKEND_FLOAT_ROOTS: &[&str] = &[
     "rule_lower_549",
     "rule_lower_554",
     "rule_lower_559",
+    "rule_lower_724",
+    "rule_lower_727",
+    "rule_lower_730",
+    "rule_lower_733",
+    "rule_lower_744",
+    "rule_lower_747",
+    "rule_lower_750",
+    "rule_lower_753",
+    "rule_lower_764",
+    "rule_lower_767",
+    "rule_lower_770",
+    "rule_lower_773",
+    "rule_lower_784",
+    "rule_lower_787",
+    "rule_lower_790",
+    "rule_lower_793",
 ];
 
 pub const ROOTS: &[&str] = &["lower", "lower_branch"];
