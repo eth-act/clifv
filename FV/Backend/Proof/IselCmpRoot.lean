@@ -1,4 +1,5 @@
 import FV.Backend.Proof.IselCmpEmit
+import FV.Backend.Proof.IselFloatCmpEmit
 
 /-!
 # Family C root rules: `icmp` (2215), `uextend (icmp)` (1281)
@@ -255,14 +256,21 @@ theorem is_nonzero_cmp_okT {F : BitVec 64 → Prop} {isem : Sem} (hR : Refines F
   isel_split' hp hc h 650
   all_goals (try (isel_refute hp at hm; done))
   all_goals isel_inv' hp [] at hm he
-  · -- 4965 (fcmp): no `fcmp` in E
+  · -- 4965 (fcmp): `emit_fcmp`
     rcases ‹(∃ _ _, _) ∨ _› with ⟨_, _, _, rfl⟩ | ⟨-, rfl⟩ <;> isel_inv_simp [] at * <;> isel_destruct <;>
       subst_vars <;> isel_inv_simp [] at * <;> isel_destruct <;> subst_vars
     all_goals
       obtain ⟨hj⟩ : Nonempty (ctx.defInst? _ = some _) := ⟨‹_›⟩
       obtain ⟨hi⟩ : Nonempty (ctx.insts[_]? = some _) := ⟨‹_›⟩
       obtain ⟨hd⟩ : Nonempty (V.data 152 11 _ = _) := ⟨‹_›⟩
-      exact (opcode_absurdT hctx hj hi hd rfl (by decide)).elim
+      obtain ⟨cl, hcl⟩ := Option.isSome_iff_exists.mp (hctx.defClif _ _ _ hj hi)
+      have hdat := hctx.data _ _ cl hi hcl
+      rw [← hd] at hdat
+      obtain ⟨cc, ty, a, b, rfl, -, hok, -⟩ := instData_fcmp_inv hdat
+      obtain ⟨h655⟩ : Nonempty (ApplyInternal p (sem ctx) cfg _ 123 655 _ _ _ _) := ⟨‹_›⟩
+      refine (emit_fcmp_okT hp hc hctx (hn := by omega) hok hvb h655).weaken ?_
+      rintro fr ρ bb hh hdf ⟨v, hv, rfl⟩
+      exact (fcmp_truthy hdf hj hi hcl hv).2
   · -- 4966 (maybe_uextend (icmp …)): `emit_icmp`
     rcases ‹(∃ _ _, _) ∨ _› with ⟨uty, z, hdc, rfl⟩ | ⟨-, rfl⟩ <;> isel_inv_simp [] at * <;>
       isel_destruct <;> subst_vars <;> isel_inv_simp [] at * <;> isel_destruct <;> subst_vars
