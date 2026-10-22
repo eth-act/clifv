@@ -103,7 +103,7 @@ theorem chksT_resultsT {I : LinkInput} (hin : InScopePT I = true) (hout : OutOkT
   have hga : getOk (Except.ok (ε := String) a) = a := rfl
   simp only [outChksT, List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true, hga,
     progOf_resultsT] at ho
-  obtain ⟨⟨⟨⟨⟨⟨⟨hca, hcov⟩, hrets⟩, hent⟩, hout⟩, hsite⟩, hsr⟩, hci⟩ := ho
+  obtain ⟨hca, hcov, hrets, hent, hout, hsite, hsr, hci⟩ := ho
   have hca' : checkAlloc a.vcp a.rf = .ok () := toBool_unit hca
   have hc := CompiledT.of_lowerT (dominated_of hd) (lowerScopeT_of hs) hl hp hca' hlr hem hla
   have hfr := frame_of_lower hl hp hlr
