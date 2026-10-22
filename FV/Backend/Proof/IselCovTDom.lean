@@ -12,7 +12,8 @@ float-capable context needs:
 * `inst fs`: an instruction of the context of one of the instruction families `fs` (a family
   pairs the result types with an abstract `InstructionData` whose value fields are typed:
   `IselCovTFam`);
-* `movi`: the `ASIMDMovModImm` of the plain `movi` (`FormOk`'s `VecDupImm`).
+* `movi`: the `ASIMDMovModImm` of the plain `movi` (`FormOk`'s `VecDupImm`); `extv`: an
+  extended operand of an integer value (`extended_value_from_value`).
 
 `covOk` is `IselCovDom`'s with the float forms of `FormOk` (`fpuLoad`/`fpuStore` of `s`/`d`,
 `fpuRRR`, `fpuRR`, `fpuCmp`, the plain `movi`). `split` also splits a value's types (so a rule's
@@ -46,6 +47,8 @@ inductive AT where
   | inst (fs : List Nat)
   /-- An `ASIMDMovModImm` that `FormOk`'s `VecDupImm` accepts (zero, no shift, 32-bit form). -/
   | movi
+  /-- An extended operand `.op (.extended x e)` of an integer-typed value `x`. -/
+  | extv
   | alts (as : List AT)
   | data (t : TypeId) (k : Nat) (fs : List AT)
   | num (k : NK) (b : Nat)
@@ -345,6 +348,7 @@ def leBase : AT → AT → Bool
   | .valsAll ts, .valsAll us => ts.all fun t => us.any fun u => decide (u = t)
   | .inst fs, .inst gs => fs.all fun i => gs.contains i
   | .movi, .movi => true
+  | .extv, .extv => true
   | .num k b, .num k' b' => decide (k = k') && decide (b ≤ b')
   | _, _ => false
 

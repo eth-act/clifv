@@ -69,6 +69,11 @@ def aunS (a : AT) (n : Nat) : List (List AT) :=
 /-- The pattern cannot match a value `a` describes (beyond the shape checks). -/
 def aPrune (a : AT) : Bool := a.isBot
 
+/-- An instruction atom (on which the disabled-flag extractors fail, `flagOff`). -/
+def _root_.Backend.Proof.CovT.AT.isInst : AT → Bool
+  | .inst _ => true
+  | _ => false
+
 /-- Summary table: per entry, an internal term, its abstract inputs and output. -/
 abbrev Tab := List (TermId × List AT × AT)
 
@@ -98,7 +103,8 @@ def aPat (a : AT) (q : Pattern) (env : List AT) : List (List AT) :=
         (aun a k args.length).flatMap fun fs => aPatArgs fs args env
       | .struct =>
         (aunS a args.length).flatMap fun fs => aPatArgs fs args env
-      | .decl _ _ (some (.external _ _)) => aPatArgs (aext term.id a) args env
+      | .decl _ _ (some (.external _ _)) =>
+        if flagOff term.id && a.isInst then [] else aPatArgs (aext term.id a) args env
       | _ => [env]
     | .error _ => [env]
   | .constPrim ty n => if primOk a ty n then [env] else []

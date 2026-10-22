@@ -104,10 +104,13 @@ theorem deep_sound : ∀ (a : AT) (v : V), γ f ctx a v → DeepOk (AT.deep a) v
     obtain ⟨xs, rfl, -⟩ := h
     exact ⟨fun r hr => by simp [V.regsIn] at hr, fun _ => rfl⟩
   | .inst fs, v, h => by
-    obtain ⟨j, -, -, rfl, -⟩ := h
+    obtain ⟨j, -, rfl, -⟩ := h
     exact ⟨fun r hr => by simp [V.regsIn] at hr, fun _ => rfl⟩
   | .movi, v, h => by
     obtain ⟨i, rfl, -⟩ := h
+    exact ⟨fun r hr => by simp [V.regsIn, opRegs] at hr, fun _ => rfl⟩
+  | .extv, v, h => by
+    obtain ⟨x, e, b, rfl, -⟩ := h
     exact ⟨fun r hr => by simp [V.regsIn, opRegs] at hr, fun _ => rfl⟩
   | .alts as, v, h => by
     simp only [AT.deep]
@@ -248,9 +251,10 @@ theorem leBase_sound {a b : AT} (hle : AT.leBase a b = true) {v : V} (h : γ f c
     exact ⟨t, list_all_contains hle ht, hc⟩
   | inst gs =>
     cases a <;> simp only [AT.leBase, reduceCtorEq] at hle
-    obtain ⟨j, info, c, rfl, hi, hc, hd, i, hif, hF⟩ := h
-    exact ⟨j, info, c, rfl, hi, hc, hd, i, by simpa using List.all_eq_true.mp hle i hif, hF⟩
+    obtain ⟨j, info, rfl, hi, i, hif, hF⟩ := h
+    exact ⟨j, info, rfl, hi, i, by simpa using List.all_eq_true.mp hle i hif, hF⟩
   | movi => cases a <;> simp only [AT.leBase, reduceCtorEq] at hle; exact h
+  | extv => cases a <;> simp only [AT.leBase, reduceCtorEq] at hle; exact h
   | num k' b' =>
     cases a <;> simp only [AT.leBase, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq,
       reduceCtorEq] at hle
@@ -290,6 +294,7 @@ theorem le_sound : ∀ (a b : AT), AT.le a b = true → ∀ v, γ f ctx a v → 
   | .data _ _ _, .valsAll _, hle, _, _ => by simp [AT.le] at hle
   | .data _ _ _, .inst _, hle, _, _ => by simp [AT.le] at hle
   | .data _ _ _, .movi, hle, _, _ => by simp [AT.le] at hle
+  | .data _ _ _, .extv, hle, _, _ => by simp [AT.le] at hle
   | .data _ _ _, .num _ _, hle, _, _ => by simp [AT.le] at hle
   | .flat m c, b, hle, v, h => leBase_sound (by simpa [AT.le] using hle) h
   | .reg m, b, hle, v, h => leBase_sound (by simpa [AT.le] using hle) h
@@ -303,6 +308,7 @@ theorem le_sound : ∀ (a b : AT), AT.le a b = true → ∀ v, γ f ctx a v → 
   | .valsAll ts, b, hle, v, h => leBase_sound (by simpa [AT.le] using hle) h
   | .inst fs, b, hle, v, h => leBase_sound (by simpa [AT.le] using hle) h
   | .movi, b, hle, v, h => leBase_sound (by simpa [AT.le] using hle) h
+  | .extv, b, hle, v, h => leBase_sound (by simpa [AT.le] using hle) h
   | .num k b', b, hle, v, h => leBase_sound (by simpa [AT.le] using hle) h
   termination_by a b => sizeOf a + sizeOf b
   decreasing_by all_goals simp_wf <;> omega
@@ -363,7 +369,7 @@ theorem isBot_sound {a : AT} (hb : a.isBot = true) {v : V} (h : γ f ctx a v) : 
     | cons _ _ => simp [AT.isBot] at hb
   | inst fs =>
     cases fs with
-    | nil => obtain ⟨_, _, _, _, _, _, _, i, hi, -⟩ := h; cases hi
+    | nil => obtain ⟨_, _, _, _, i, hi, -⟩ := h; cases hi
     | cons _ _ => simp [AT.isBot] at hb
   | _ => simp [AT.isBot] at hb
 

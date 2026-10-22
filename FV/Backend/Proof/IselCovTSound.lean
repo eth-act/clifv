@@ -138,8 +138,9 @@ theorem aun_sound {a : AT} {t k : Nat} {vs : List V} (h : γ f ctx a (.data t k 
   | val ts => obtain ⟨_, he, _⟩ := h; cases he
   | vals ts => obtain ⟨_, he, _⟩ := h; cases he
   | valsAll ts => obtain ⟨_, he, _⟩ := h; cases he
-  | inst fs => obtain ⟨_, _, _, he, _⟩ := h; cases he
+  | inst fs => obtain ⟨_, _, he, _⟩ := h; cases he
   | movi => obtain ⟨_, he, _⟩ := h; cases he
+  | extv => obtain ⟨_, _, _, he, _⟩ := h; cases he
   | num k b => rcases numOk_shape h with ⟨_, he⟩ | ⟨_, he⟩ <;> cases he
 
 /-- **Fields of a struct value** (`aunS`). -/
@@ -176,8 +177,9 @@ theorem aunS_sound {a : AT} {t k : Nat} {vs : List V} (h : γ f ctx a (.data t k
   | val ts => obtain ⟨_, he, _⟩ := h; cases he
   | vals ts => obtain ⟨_, he, _⟩ := h; cases he
   | valsAll ts => obtain ⟨_, he, _⟩ := h; cases he
-  | inst fs => obtain ⟨_, _, _, he, _⟩ := h; cases he
+  | inst fs => obtain ⟨_, _, he, _⟩ := h; cases he
   | movi => obtain ⟨_, he, _⟩ := h; cases he
+  | extv => obtain ⟨_, _, _, he, _⟩ := h; cases he
   | num k b => rcases numOk_shape h with ⟨_, he⟩ | ⟨_, he⟩ <;> cases he
 
 /-! ## Integer constants -/
@@ -384,7 +386,17 @@ theorem aPat_sound : ∀ (q : Pattern) (a : AT) (aenv : List AT) (v : V) (env en
                 · cases h
                 · split at h
                   · rename_i fs hx
-                    exact aPatArgs_sound args _ aenv fs env env' st h (md.ext _ _ _ _ _ hv hx) he
+                    split
+                    · rename_i hfl
+                      simp only [Bool.and_eq_true] at hfl
+                      cases a with
+                      | inst fs' =>
+                        obtain ⟨j, -, rfl, -⟩ := hv
+                        rw [show (sem ctx).extract = externExtract ctx from rfl,
+                          ext_flagOff hfl.1] at hx
+                        cases hx
+                      | _ => simp [AT.isInst] at hfl
+                    · exact aPatArgs_sound args _ aenv fs env env' st h (md.ext _ _ _ _ _ hv hx) he
                   · split at h
                     · cases h
                     · cases h

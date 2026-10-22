@@ -57,6 +57,7 @@ def γP : AT → V → Prop
   | .valsAll ts, v => ∃ xs, v = .values xs ∧ ∀ x ∈ xs, ValIn ctx x ts
   | .inst fs, v => I fs v
   | .movi, v => ∃ i, v = .op (.movModImm i) ∧ MoviOk i
+  | .extv, v => ∃ x e b, v = .op (.extended x e) ∧ ctx.valueType? x = some (.int b)
   | .alts as, v => γAnyP as v
   | .data t k fs, v => ∃ vs, v = .data t k vs ∧ γLP fs vs
   | .num k b, v => NumOk k b v
@@ -121,6 +122,7 @@ theorem γP_mono {J : List Nat → V → Prop} (hIJ : ∀ fs v, I fs v → J fs 
   | .valsAll _, _, h => h
   | .inst fs, v, h => hIJ fs v h
   | .movi, _, h => h
+  | .extv, _, h => h
   | .num _ _, _, h => h
   | .alts as, v, h => by
     simp only [γP] at h ⊢
@@ -163,6 +165,7 @@ theorem mask_soundP {a : AT} {r : Reg} (h : γP ctx I a (.reg r)) : r.kind &&& a
   | valsAll ts => obtain ⟨xs, he, -⟩ := h; cases he
   | inst fs => obtain ⟨j, he⟩ := hI fs _ h; cases he
   | movi => obtain ⟨i, he, -⟩ := h; cases he
+  | extv => obtain ⟨x, e, b, he, -⟩ := h; cases he
   | alts as => simp only [AT.mask]; rcases kind_cases r with h | h | h | h <;> rw [h] <;> decide
   | data t k fs => obtain ⟨vs, he, -⟩ := h; cases he
   | num k b => rcases numOk_shape h with ⟨_, he⟩ | ⟨_, he⟩ <;> cases he
