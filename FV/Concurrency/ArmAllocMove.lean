@@ -148,7 +148,7 @@ def MoveCodeOk (R : RL) : Prop :=
 /-- **Every activation's move code is `MoveCodeOk`** (`moveLines_evs`, with the frame layout of
 `RL.frameOk`; `moveLines_noStx`). -/
 theorem moveCodeOk {R : RL} (hR : R.Wf) : MoveCodeOk R :=
-  fun c wh src dst hchk hLs hLd hT code hmi s hsp hal ls ps ps' hls =>
+  fun _ _ _ _ hchk hLs hLd hT _ hmi _ hsp hal _ _ _ hls =>
     ⟨fun env => moveLines_evs (R.frameOk hR) R.ctx R.af hchk hLs hLd hT hmi hsp hal hls env,
       moveLines_noStx R.ctx R.af hchk hmi hls⟩
 
@@ -156,15 +156,36 @@ theorem moveCodeOk {R : RL} (hR : R.Wf) : MoveCodeOk R :=
 abbrev MvC (b : Nat) (src dst : Loc) (its : List RItem) (m : Loc → CV) (w : ArmState) :
     MConf CV ArmState := .run ⟨b, .move src dst :: its, m, w⟩
 
-/-- **The per-item obligation at a move** (module doc). -/
-theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
-    {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
-    (hq : Q R s (MvC b src dst its m w)) (hA : AInv R (MvC b src dst its m w))
-    {ls : List Lab} {t' : ArmState × Mon}
-    (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
-    ItemSimOut Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure)
-        (s, mon) (MvC b src dst its m w) ls ∨ PrivW (PrivA R) (evTr ls) := by
-  have hq0 := hq
+/-- **Straight-line lines `ls1` at line `j`, run by the machine from `s` to `s'`** (the premises
+of `step_execLines`). -/
+structure LinesAt (R : RL) (j : Nat) (ls1 : List Line) (s s' : ArmState) : Prop where
+  at_ : ∀ k ln, ls1[k]? = some ln → R.fa.lines.toList[j + k]? = some ln
+  hook : ∀ x t, Line.ins x t ∈ ls1 → x.hooked = false
+  prog : s.program = R.fb.program R.base
+  pc : Arm.r .PC s = R.base + BitVec.ofNat 64 (lineOffset R.fa.lines.toList j)
+  err : Arm.r .ERR s = .None
+  inter : InterOk ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩ ls1 s
+  run : execLines ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩ ls1 s = some s'
+
+theorem LinesAt.iter {R : RL} (hR : R.Wf) {j : Nat} {ls1 : List Line} {s s' : ArmState}
+    (h : LinesAt R j ls1 s s') : iterN R.step ls1.length s = s' :=
+  iterN_execLines hR.layout hR.lm hR.fit ls1 j s s' h.at_ h.hook h.prog h.pc h.err h.inter h.run
+
+theorem LinesAt.seg {R : RL} (hR : R.Wf) {j : Nat} {ls1 : List Line} {s s' : ArmState}
+    (h : LinesAt R j ls1 s s') :
+    (segEvs R.step ls1.length s).flatten = linesEvs (R.envOf j) ls1 s :=
+  segEvs_execLines (X := R.X) (H := R.H) (base := R.base) hR.layout hR.lm hR.fit ls1 j s s' h.at_
+    h.hook h.prog h.pc h.err h.inter h.run
+
+/-- **A move's lines from `Q`** (`Backend.Proof.realizes_move`'s proof): the lines of its code
+run from `s` (`LinesAt`), `Q` at the next item after them, every event of their single-core
+steps private, no store exclusive. -/
+theorem move_lines {R : RL} (hR : R.Wf) {s : ArmState} {b : Nat} {src dst : Loc}
+    {its : List RItem} {m : Loc → CV} {w : ArmState} (hq : Q R s (MvC b src dst its m w)) :
+    ∃ j ls1 s' code, R.fr.moveInsts src dst = .ok code ∧
+      (∀ ps, codeLinesE R.ctx R.af code ps = .ok (ls1, ps)) ∧ LinesAt R j ls1 s s' ∧
+      Q R s' (.run ⟨b, its, upd m dst (m src), w⟩) ∧
+      ∀ i < ls1.length, (∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧ NoStx (iterN R.step i s) := by
   obtain ⟨j, vb, items, pre, code, ls0, ps1, ps2, T, hvb, hit, hsplit, hchk, hcode, hls, htr, hdrop,
     hpc, hst⟩ := hq
   obtain ⟨⟨c, wh, hcm⟩, hLs, hLd, hT, hchk'⟩ := move_facts hit hsplit hchk
@@ -190,21 +211,19 @@ theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
   have hat := lines_at hdrop'
   have hhook : ∀ x t, Line.ins x t ∈ ls1' → x.hooked = false := fun x t h => by
     obtain ⟨x', t', e, hh⟩ := hins _ h; cases e; exact hh
-  have hiter : iterN R.step ls1'.length s = s' :=
-    iterN_execLines hR.layout hR.lm hR.fit ls1' j s s' hat hhook
-      (by rw [hst.prog]) (by rw [hpc]; rfl) hst.err (hint _) (hrun _)
+  have hlat : LinesAt R j ls1' s s' :=
+    ⟨hat, hhook, by rw [hst.prog], by rw [hpc]; rfl, hst.err, hint _, hrun _⟩
   -- the move's lines: private events, no store exclusive
   obtain ⟨hev, hns⟩ := moveCodeOk hR c wh src dst hcm hLs hLd hT _ hc1 s hst.sp hst.align ls1' ps1 ps1
     (hcl ps1)
-  have hseg := segEvs_execLines (X := R.X) (H := R.H) (base := R.base) hR.layout hR.lm hR.fit ls1'
-    j s s' hat hhook (by rw [hst.prog]) (by rw [hpc]; rfl) hst.err (hint _) (hrun _)
+  have hseg := hlat.seg hR
   have hstep := step_execLines (X := R.X) (H := R.H) hR.layout hR.lm hR.fit hat hhook
     (by rw [hst.prog]) (by rw [hpc]; rfl) hst.err (hint _) (hrun _)
   have hpriv : ∀ i < ls1'.length, (∀ e ∈ stepEvs (iterN R.step i s), R.F e.addr) ∧
       NoStx (iterN R.step i s) := by
     intro i hi
     refine ⟨fun e he => hev (R.envOf j) e ?_, fun rel rs rn hc => ?_⟩
-    · have hm : e ∈ (segEvs (ArmStepX R.X R.H R.fa) ls1'.length s).flatten :=
+    · have hm : e ∈ (segEvs R.step ls1'.length s).flatten :=
         List.mem_flatten.2 ⟨_, stepEvs_mem_segEvs hi, he⟩
       rw [hseg] at hm
       exact hm
@@ -212,8 +231,8 @@ theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
       rw [show R.step = ArmStepX R.X R.H R.fa from rfl, cls_of_decode hdec] at hc
       exact hns x t (List.mem_of_getElem? hli) _ a ha rel rs rn hc
   -- the configuration and `Q` after the move
-  have hq' : Q R s' (.run ⟨b, its, upd m dst (m src), w⟩) := by
-    refine ⟨j + ls1'.length, vb, items, pre ++ [.move src dst], c2, ls2, ps1, ps2, T, hvb,
+  refine ⟨j, ls1', s', _, hc1, hcl, hlat, ?_, hpriv⟩
+  · refine ⟨j + ls1'.length, vb, items, pre ++ [.move src dst], c2, ls2, ps1, ps2, T, hvb,
       hit, by rw [hsplit]; simp, hchk', hc2, h2, htr, ?_, ?_, ?_⟩
     · rw [← List.drop_drop, hdrop', List.drop_left]
     · rw [execLines_pc (hrun ⟨lineOffset R.fa.lines.toList j, (R.lm[·]?)⟩), hpc]
@@ -235,7 +254,18 @@ theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
       exact hmo.mem _ (fun o ho => by
         have := fplr_outside hR hframe k hk o ho
         rwa [show R.spB = spOf s by rw [hst.sp]] at this ⊢)
-  have hA' : AInv R (.run ⟨b, its, upd m dst (m src), w⟩) := aInv_step hR hq0 hA .move
+
+/-- **The per-item obligation at a move** (module doc). -/
+theorem move_op {R : RL} (hR : R.Wf) {s : ArmState} {mon : Mon} {b : Nat}
+    {src dst : Loc} {its : List RItem} {m : Loc → CV} {w : ArmState}
+    (hq : Q R s (MvC b src dst its m w)) (hA : AInv R (MvC b src dst its m w))
+    {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm R.step (OkPriv R) (s, mon) ls t') :
+    ItemSimOut Policy.arm R.step (OkPriv R) (SrcStep R) (RelQ R) (PrivA R) (fun c => c.measure)
+        (s, mon) (MvC b src dst its m w) ls ∨ PrivW (PrivA R) (evTr ls) := by
+  obtain ⟨j, ls1', s', code, -, -, hlat, hq', hpriv⟩ := move_lines hR hq
+  have hiter := hlat.iter hR
+  have hA' : AInv R (.run ⟨b, its, upd m dst (m src), w⟩) := aInv_step hR hq hA .move
   by_cases hN : ls1'.length ≤ ls.length
   · obtain ⟨⟨s1, mon1⟩, r1, -⟩ := PRun.split (ls.take ls1'.length) (ls.drop ls1'.length)
       (by rw [List.take_append_drop]; exact hr)

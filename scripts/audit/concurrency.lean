@@ -380,3 +380,12 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.ctlIndep_fpReg_store
 #print axioms Concurrency.ArmAllocThread.ctlIndep_fpUnsc_load
 #print axioms Concurrency.ArmAllocThread.ctlIndep_fpUnsc_store
+-- T2k (#311): forward precise runs, realizes_fence
+#print axioms Concurrency.ArmAllocThread.move_lines
+#print axioms Concurrency.ArmAllocThread.step_fwd
+#print axioms Concurrency.ArmAllocThread.prun_fwd
+#print axioms Concurrency.ArmAllocThread.move_fwd
+#print axioms Concurrency.ArmAllocThread.moves_fwd
+#print axioms Concurrency.ArmAllocThread.q_head
+#print axioms Concurrency.RealizeCompiled.Witness.compiled_of -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.Witness.realizes_fence -- witness: native_decide

@@ -120,3 +120,5 @@ import FV.Concurrency.MoveEvs
 import FV.Concurrency.ArmAllocMove
 import FV.Concurrency.RealizeCompiled
 import FV.Concurrency.RealizeWitness
+import FV.Concurrency.ArmAllocFwd
+import FV.Concurrency.RealizeWitnessFence

@@ -602,7 +602,17 @@ they are; the per-thread layers are new files.
   traces without reads have a well-formed execution (`coW`). Witness (`RealizeWitness.lean`):
   `driverHyp_of` (the driver hypothesis of any checked function), `compiledF` (every premise of
   `Compiled` for the compiled `fence; return`: `Γ` with the activation's private set `RA.F`, empty
-  CLIF memory), `realizes_nil` (the contract on the empty run).
+  CLIF memory), `realizes_nil` (the contract on the empty run). Forward runs
+  (`ArmAllocFwd.lean`): `step_fwd`, `prun_fwd` (precise runs reading the thread's own bytes
+  through straight-line lines, `LinesAt`), `move_fwd`/`moves_fwd` (through moves, `Q` after them,
+  events private, of the kinds of the moves' lines), `q_head` (the first line of the remaining
+  code at the pc). Witness (`RealizeWitnessFence.lean`): **`realizes_fence`**, the precise run of
+  the compiled `fence; return` from the state after the prologue through its 18 saves (private
+  `plainW` writes) and its `dmb ish` (`dmbEv`) satisfies `realizes_compiled`'s premises; every
+  execution of its realized prefix is `Realizes`d by a CLIF thread from `csF` (one exists,
+  `wf_noReads`). Open: the realized prefix is existential (excluding an early `Done` needs the
+  allocated code's progress at the `fence`), and an `atomic_load`/`atomic_store` function (reads
+  of private slots and of shared memory: a well-formed execution with `rf`).
 * **Backward from forward.** The layers are forward per-step simulations; `Refines` is
   backward (from the actual Arm trace to a CLIF run). The bridge is determinism of each level
   given its read values (receptiveness): the source run is the one reading the target's values
