@@ -1,0 +1,2 @@
+'Backend.Stock.Proof.trapRun_seq_prefix' depends on axioms: [propext]
+'Backend.Stock.Proof.ScansSpec.trap_refines' depends on axioms: [propext, Quot.sound]

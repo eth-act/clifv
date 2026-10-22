@@ -1,0 +1,13 @@
+✔ [793/818] Built FV.Backend.Proof.StockScalarConstantDomain (1.3s)
+✔ [794/818] Built FV.Backend.Proof.StockScalarBnotDomain (1.3s)
+✔ [816/871] Built FV.Backend.Proof.StockScalarMulDomain (818ms)
+✔ [817/871] Built FV.Backend.Proof.StockScalarShiftDomain (783ms)
+✔ [860/902] Built FV.Backend.Proof.StockScalarCastDomain (827ms)
+✔ [861/902] Built FV.Backend.Proof.StockScalarBitDomain (831ms)
+✔ [895/925] Built FV.Backend.Proof.StockScalarPopcountDomain (846ms)
+✔ [896/925] Built FV.Backend.Proof.StockScalarMinMaxDomain (823ms)
+✔ [924/999] Built FV.Backend.Proof.StockScalarCmpDomain (746ms)
+✔ [925/999] Built FV.Backend.Proof.StockScalarHighMulDomain (771ms)
+✔ [998/999] Built FV.Backend.Proof.StockScalarDivDomain (874ms)
+✔ [999/999] Built FV.Backend.Proof.StockScalarCheck (1.7s)
+Build completed successfully (999 jobs).

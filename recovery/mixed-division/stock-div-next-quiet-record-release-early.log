@@ -1,0 +1,45 @@
+/tmp/stock-div-next-quiet-record.lean:62:48: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Array.getElem?_replicate, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-quiet-record.lean:62:61: warning: This simp argument is unused:
+  Array.getElem?_replicate
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [getElem!_def, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-quiet-record.lean:76:30: warning: This simp argument is unused:
+  Option.getD_some
+
+Hint: Omit it from the simp argument list.
+  [apply] simp only [getElem!_def, r]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-quiet-record.lean:86:12: warning: This simp argument is unused:
+  getElem!_def
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [Array.getElem?_replicate, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/tmp/stock-div-next-quiet-record.lean:86:25: warning: This simp argument is unused:
+  Array.getElem?_replicate
+
+Hint: Omit it from the simp argument list.
+  [apply] simp [getElem!_def, bound]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+'Backend.Stock.Proof.QuietSourceColors.sourceMetadata_quiet_single_block' depends on axioms: [propext, Quot.sound]
+'Backend.Stock.Proof.QuietSourceColors.buildCtx_quiet_single_block' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.QuietSourceColors.stock_lower_quiet_single_block_unsunk' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]
+'Backend.Stock.Proof.QuietSourceColors.actual_quiet_source_record' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound]

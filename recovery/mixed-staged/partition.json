@@ -1,0 +1,79 @@
+{
+  "status": "prepared from compiled combined draft; split module imports not validated yet; no production activation claim",
+  "parts": [
+    {
+      "path": "FV/Backend/Proof/StockScanTrapSemantics.lean",
+      "sha256": "743cf45d601ac6178cc70f66717d13ba4e8e9a0986fc404a401152ee51c84f6d",
+      "draft_lines": [
+        [
+          14,
+          113
+        ],
+        [
+          654,
+          689
+        ]
+      ]
+    },
+    {
+      "path": "FV/Backend/Proof/StockLocalSourceTrap.lean",
+      "sha256": "a3b13b96fbda333b94edf6e97450eaad2a3279017cc7cb93ea725547558e44f4",
+      "draft_lines": [
+        [
+          116,
+          241
+        ]
+      ]
+    },
+    {
+      "path": "FV/Backend/Proof/StockLocalTrapRefines.lean",
+      "sha256": "238f92e1e0e53d2591dc9553a27313271f272bb55782b8e69d566223fde0d4ae",
+      "draft_lines": [
+        [
+          245,
+          324
+        ]
+      ]
+    },
+    {
+      "path": "FV/Backend/Proof/StockQuietSourceRecords.lean",
+      "sha256": "61a8feaf8e0df92dbfdbf37d27fb6d8cd4b34f820d13baeb82852b2eb178f6cb",
+      "draft_lines": [
+        [
+          326,
+          562
+        ]
+      ]
+    },
+    {
+      "path": "FV/Backend/Proof/StockLastDivReturnDemand.lean",
+      "sha256": "43c71eaf7a3fa4f2870f7c69b9426c6fda7cc99a71ddd46e03a2949ddfaad8b8",
+      "draft_lines": [
+        [
+          565,
+          652
+        ]
+      ]
+    },
+    {
+      "path": "FV/Backend/Proof/StockMixedDivBodyRefines.lean",
+      "sha256": "f67a0257c588159bf3f3779c7ff76e0097edf4224f59aeeb9b4b6d52798337d1",
+      "draft_lines": [
+        [
+          692,
+          983
+        ]
+      ]
+    },
+    {
+      "path": "FV/Backend/Proof/StockScalarMixedDivDomain.lean",
+      "sha256": "f8a20c121c591e33574f00dae2202b92e3c0417ffbd77adbfffd2b5314a4c505",
+      "draft_lines": [
+        [
+          988,
+          1015
+        ]
+      ]
+    }
+  ]
+}

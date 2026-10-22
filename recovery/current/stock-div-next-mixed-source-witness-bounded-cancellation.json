@@ -1,0 +1,7 @@
+{
+  "utc": "2026-10-22T20:08:03.447065+00:00",
+  "actual_input_head": "7e13767cdc9a52585d0741efbb51df0391cad93a",
+  "status": "cancelled after over five minutes of symbolic definitional reduction, not a completed proof or a production-gate failure",
+  "scope": "optional next-class scratch source_runs attempt; source_entry already standard-only, source_runs pending; all source/logs preserved",
+  "reason": "Free the second bounded build slot for final current division packet reconciliation. No production build/cohort cancelled."
+}
