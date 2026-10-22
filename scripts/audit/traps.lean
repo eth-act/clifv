@@ -1,6 +1,8 @@
 import FV.E2E.DeadCleanupTrapCallWitness
 import FV.E2E.WorldTrapCall
 import FV.E2E.LinkTrapCallWitness
+import FV.Front.RawExeTrap
+import FV.Link.DeadCleanupExeTrapWitness
 
 -- S9 (#33): callee traps. S9a: the per-function theorem (docs/contracts/e2e.md "Callee traps").
 #print axioms E2E.step_trapRel
@@ -58,3 +60,28 @@ import FV.E2E.LinkTrapCallWitness
 #print axioms E2E.LinkTrapCallWitness.program_trap_applies -- witness: native_decide
 #print axioms E2E.LinkTrapCallWitness.cs0_trapsD -- witness: native_decide
 #print axioms E2E.LinkTrapCallWitness.cs0_not_trapsExplicit -- witness: native_decide
+-- S9d (#377): callee traps on the executable machine and in the bundle theorems
+-- (FV/E2E/DeadCleanupExecTrap.lean, FV/Link/DeadCleanupExeTrap.lean, FV/Front/RawExeTrap.lean).
+#print axioms E2E.LinkSys.progCallOk_bl
+#print axioms E2E.LinkSys.progCallOk_blr
+#print axioms E2E.DeadCleanupExecBytes.not_second_callPc
+#print axioms E2E.DeadCleanupExecBytes.runOkSN_of_good
+#print axioms E2E.DeadCleanupExecBytes.callsAt_of_progCallAt
+#print axioms E2E.DeadCleanupExecBytes.stepOkD_progCall
+#print axioms E2E.DeadCleanupExecBytes.exec_of_trapIn
+#print axioms E2E.DeadCleanupExecBytes.exec_trap_of_model
+#print axioms E2E.DeadCleanupExecBytes.trapsD_F
+#print axioms E2E.DeadCleanupExecBytes.binary_correct_exec_trap
+#print axioms E2E.DeadCleanupExecBytes.binary_correct_exec_trap_peak
+#print axioms Link.DeadCleanup.lowerU_of
+#print axioms Link.DeadCleanup.compileExe_correct_trap
+#print axioms Link.DeadCleanup.compileExe_correct_trap_peak
+#print axioms Link.DeadCleanup.compileExe_correct_source_trap
+#print axioms Link.DeadCleanup.compileExe_correct_source_trap_peak
+#print axioms Front.bundle_correct_source_trap
+#print axioms Front.bundle_correct_source_trap_peak
+#print axioms Front.bundle_correct_raw_trap
+#print axioms Front.bundle_correct_raw_trap_peak
+#print axioms Link.DeadCleanup.TrapWitness.exec_traps -- witness: native_decide
+#print axioms Link.DeadCleanup.TrapWitness.cs0_trapsD -- witness: native_decide
+#print axioms Link.DeadCleanup.TrapWitness.cs0_not_trapsExplicit -- witness: native_decide

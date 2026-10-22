@@ -305,6 +305,15 @@ def ProgCallAt (g h : Clif.Function) (u : Arm.ArmState) : Prop :=
     (destOf info = some h.name ∨
       (destOf info = none ∧ (blrTarget u).bind (symCallee L.Xb L.P) = some h))
 
+/-- **The facts at a call state `u` of `g` calling the function `h` of `P`** that the executable
+machine's call step needs (S9d): `h` is a function of `P`, the code image holds its bytes, and a
+`blr` at `u` is through a register other than `xzr` by which `g` may enter its target (`BlrAt`). -/
+structure ProgCallOk (g h : Clif.Function) (u : Arm.ArmState) : Prop where
+  mem : h ∈ L.P.funcs
+  code : ∀ a, L.Img a → u.mem a = L.imgMem a
+  xzr : ∀ x, insnAt (L.A g).fa (L.A g).base (Arm.r .PC u) = some (.blr x) → x ≠ .xzr
+  blrAt : L.BlrAt g u
+
 /-- **The run of the linked machine of depth `M` from an activation of `g` entered in `s` stops
 at step `n`**: the state there has no error, the activation's program and body `sp`, no earlier
 state returns into `g`'s own code with another `sp` (`PostTrace`), every later state errs, and
@@ -372,8 +381,8 @@ theorem LinkSys.trapsD_eq (L : LinkSys) (M : Nat) (g : Clif.Function) (cs : Clif
 /-- **The trap observable of the linked machine** of depth `M` from an activation of `g` entered
 in `s`, trap code `c`: the run stops (`Stop`) at a trap site of `g` with `c` (`site`), at a call
 of `g` whose callee outside `P` traps with `c` (`base`), or at a call of `g` of a function `h`
-of `P` (from a return address allowed for `h`, `RaOk`) whose activation entered from that call
-state has the observable one level down (`prog`). -/
+of `P` (from a return address allowed for `h`, `RaOk`, with the call state's facts `ProgCallOk`)
+whose activation entered from that call state has the observable one level down (`prog`). -/
 inductive LinkSys.TrapIn (L : LinkSys) : Nat → Clif.Function → Arm.ArmState → Clif.TrapCode →
     Prop
   | site {M : Nat} {g : Clif.Function} {s : Arm.ArmState} {c : Clif.TrapCode} {n : Nat} :
@@ -382,6 +391,7 @@ inductive LinkSys.TrapIn (L : LinkSys) : Nat → Clif.Function → Arm.ArmState 
       L.Stop M g s n → L.BaseTrapCall g c (runX (L.mach M g) n s) → L.TrapIn M g s c
   | prog {M : Nat} {g h : Clif.Function} {s : Arm.ArmState} {c : Clif.TrapCode} {n : Nat} :
       L.Stop (M + 1) g s n → L.ProgCallAt g h (runX (L.mach (M + 1) g) n s) →
+      L.ProgCallOk g h (runX (L.mach (M + 1) g) n s) →
       RaOk (L.A h) (Arm.r .PC (runX (L.mach (M + 1) g) n s)) →
       L.TrapIn M h (enterAt (L.A h) (runX (L.mach (M + 1) g) n s)) c → L.TrapIn (M + 1) g s c
 
@@ -395,7 +405,7 @@ theorem TrapIn.stop {L : LinkSys} {M : Nat} {g : Clif.Function} {s : Arm.ArmStat
   cases h with
   | site h _ => exact ⟨_, h⟩
   | base h _ => exact ⟨_, h⟩
-  | prog h _ _ _ => exact ⟨_, h⟩
+  | prog h _ _ _ _ => exact ⟨_, h⟩
 
 /-! ## No return -/
 

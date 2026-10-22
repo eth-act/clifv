@@ -4035,8 +4035,10 @@ E2E.backend_correct_program_trap_budget (L : LinkSys) (hL : L.Ok) (hT : L.TrapsO
   `n` (`Stop`: no error there, the body's `sp`, no return into `g`'s own code before
   (`PostTrace`), every later state errs) at a trap site of `g` with `c` (`site`), at a call of `g`
   whose callee outside `P` traps with `c` in its CLIF semantics (`base`, `BaseTrapCall`), or at a
-  call of `g` of a function `h` of `P` (return address allowed for `h`, `RaOk`) whose activation
-  entered from that call state has `TrapIn` one level down (`prog`). `noRet_of_stop`,
+  call of `g` of a function `h` of `P` (return address allowed for `h`, `RaOk`; the call state's
+  facts `ProgCallOk`: `h ∈ P`, the code image intact, a `blr` through a register other than `xzr`
+  by which `g` may enter `h`, what the executable's call step needs) whose activation entered
+  from that call state has `TrapIn` one level down (`prog`). `noRet_of_stop`,
   `pcall_junk`: a stopping callee never returns to its caller, so its linked call is `junkAt`.
 * **Run premise** `TrapsD L M g cs` (`TrapsExplicitC` of the linked program, by depth):
   `TrapsExplicitC` of the activation under `linkEnvR` (no memory-access trap) and the run under
@@ -4066,10 +4068,62 @@ E2E.backend_correct_program_trap_budget (L : LinkSys) (hL : L.Ok) (hT : L.TrapsO
   _core}`, `LinkSys.thmT`, `backend_correct_world_cleanup_trapstop`: `[propext,
   Classical.choice, Quot.sound]`.
 
-Not yet covered (S9b, S9d, TO-PROVE §4 S9): traps of the callees of `try_call`/
-`try_call_indirect` (the device's exception would be caught by the handler semantics); the
-executable bytes and `compileExe`/`Front` (`ExecRefines`' trap clause names the entered
-function's trap sites only).
+### Callee traps on the executable and in the bundle theorems (S9d, #377)
+
+`FV/E2E/DeadCleanupExecTrap.lean`, `FV/Link/DeadCleanupExeTrap.lean`, `FV/Front/RawExeTrap.lean`:
+`TrapIn` carried to the executable machine `step I B file`.
+
+```
+Link.DeadCleanup.compileExe_correct_trap (h : compileExeU S file0 = .ok file) (B : BaseEnv)
+  (hB : BaseOk (sys S.inputCleanup B)) (hH : HooksSim S.inputCleanup B)
+  (hBT : (sys S.inputCleanup B).BaseTrapsOk)
+  (hnoTry : ∀ g ∈ (prog S.inputCleanup).funcs, ∀ b ∈ g.blocks, b.term.isTry = false)
+  hf hc M hX ho hr                                  -- as compileExe_correct
+  (htr : (sys S.inputCleanup B).std.TrapsD M f cs) :
+  ExecRefinesC S.inputCleanup B (xreg 30 r) (step S.inputCleanup B file) r
+    (DeadCleanupBinCheck.RelocAt S.inputCleanup) (Clif.runLoop B.env (prog S.inputCleanup) (M + 1) cs)
+```
+
+(`compileExe_correct_trap_peak`: the run's peak call depth `d`, `((sys …).peak F).TrapsD d f cs`;
+`compileExe_correct_source_trap{,_peak}`: the original pre-legalisation program's trap, the
+`__*ti3` helpers being base externs covered by `BaseTrapsOk`; `Front.bundle_correct_source_trap
+{,_peak}`, `Front.bundle_correct_raw_trap{,_peak}`: cg_clif's program, as `bundle_correct_raw`.)
+
+* **Observable** `ExecRefinesC`: a return as `ExecRefines`; a trap with `c` is a state of the
+  executable's run with `TrapAtE … c`: at a trap site with `c` of **any** compiled function of
+  the program, or at a call of a compiled function whose callee outside the program traps with
+  `c` (`LinkSys.BaseTrapCall` of a model state the executable state simulates: the same registers,
+  the same bytes but at relocated instruction bytes). `ExecRefines.toC`: the old clause implies
+  it.
+* **Executable** `compileExeU` (`compileExe` with the unwind tables checked, what `lake exe
+  lean-link` decides): it decides `lowerCheckU` of every function (`lowerU_of`), which the
+  per-function trap theorem needs. Run premise `TrapsD` in place of `TrapsExplicit`; for a return
+  the old theorem applies (`TrapsExplicit` of a returning run, `trapsExplicit_of_run`).
+* **Proof** (`exec_of_trapIn`, induction on `TrapIn`): each level's run is simulated up to its
+  stop state (`act_simN`; `RunOkSN` from `Stop.good` with no GOT slot in `leanLink`'s output,
+  `runOkSN_of_good`; no return before the stop state from the entry's return address (top level,
+  `no_return`) or `noRet_of_stop` (nested)); a trap at the second word of an `adrp` pair as in
+  `exec_of_modelN`; a call word is no second word (`not_second_callPc`); at the call of a trapping
+  program callee the executable's `bl`/`blr` enters the callee (`call_enter`, with `StepOkD` at the
+  call state from the call line and `ProgCallOk`: `stepOkD_progCall`), whose activation has the
+  observable one level down. The model's observable comes from `backend_correct_program_trap_budget`
+  (`_peak`) for `LinkSys.ofInputCleanup` with the outside call's exterior (`trapsD_F`,
+  `baseTrapsOk_F`: the premises do not read it).
+* **Non-vacuity** (`FV/Link/DeadCleanupExeTrapWitness.lean`): `f(x, y) = h(x, y)`,
+  `h(x, y) = x / y` (`udiv`) compiled by `compileExeU` into a small static executable
+  (`compile_eq`, `native_decide`); with no code outside the program (`closedBase`) `f`'s run on
+  `(41, 0)` traps with `int_divz` inside `h` (`run_traps`), `cs0_trapsD` holds and the old premise
+  `TrapsExplicit` does not (`cs0_not_trapsExplicit`); `exec_traps`: every premise of
+  `compileExe_correct_trap` discharged but the entry contract (`Image.Intact`, `OutsideCall`,
+  `ClifRun`), the run of the written executable reaches a state at a trap with `int_divz`.
+* `#print axioms` (`scripts/audit/traps.lean`): every compiler theorem above `[propext,
+  Classical.choice, Quot.sound]`.
+
+Not yet covered: traps of the callees of `try_call`/`try_call_indirect` (S9b, #375: premise
+`hnoTry`), memory-access traps (`heap_oob` of a load/store: no fault model, excluded by
+`TrapsExplicitC`) and `MemBounded` of the source run (the bump allocator); the baseline
+`Link.compileExe` (its pipeline is not the cleanup pipeline the per-function trap theorem is
+proved for).
 
 ## Remaining (precise)
 
@@ -4077,10 +4131,12 @@ M4 (`LowerRulesCorrect` and the terminator statements) and M6 (`RegLevelCorrect`
 `Refines`/`MemRefines` of `csem`) are proven, `FormsCovered` follows from `formsCovered_complete`,
 and the program callees' contracts are discharged by `E2E.backend_correct_program` (induction on
 the call depth); the executable theorems are `Link.DeadCleanup.compileExe_correct{,_peak,_source,
-_source_peak}` and, from cg_clif's dumps, `Front.bundle_correct_raw{,_peak}`. What remains is
+_source_peak}` and, from cg_clif's dumps, `Front.bundle_correct_raw{,_peak}`; with callee traps
+`Link.DeadCleanup.compileExe_correct_trap{,_peak,_source_trap,_source_trap_peak}` and
+`Front.bundle_correct_raw_trap{,_peak}` (above). What remains is
 listed in `docs/TO-PROVE.md` (§1.1 for totality, §4 for scope, §5 for the trusted base); from this
 file: stack-passed arguments of indirect calls (`indSigs`, S5), memory-access traps (need a
-fault model; `TrapsExplicit`), and callee traps beyond S9a (above, "Callee traps").
+fault model; `TrapsExplicitC`), and traps of `try_call` callees (S9b, above, "Callee traps").
 
 ## Trusted (not proven)
 
