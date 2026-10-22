@@ -111,6 +111,9 @@ theorem armStepU_desc {X : ExtSem} {H : ArmHooks} {Uh : Unw.UnwHooks} {T : Unw.F
     unfold ArmStepX; simp only [heq]
   · rfl
 
+theorem nextOk_imp {R : RL} {u v w : Arm.ArmState} (h : R.NextOk u v) (e : v = w) :
+    R.NextOk u w := e ▸ h
+
 /-- **D1 from the register-level next-pc fact** (`RL.NextOk`) at a state of an activation of `g`
 entered at `c` whose return address is no second word. -/
 theorem cf_of_next (hI : okBCleanup I = true) (hF : ∀ g ∈ (prog I).funcs, FnOk I file g)
@@ -188,7 +191,7 @@ theorem stepOkU_of_good (hI : okBCleanup I = true) (hc : codeMapB I (tabOf I.res
   have hstep : Unw.ArmStepU X ((uSys I B U).hooksU M) ((uSys I B U).UU M) (art I g).tables
       (art I g).fa t = (uSys I B U).machU M g t := congrFun heq t
   -- the line at the pc and the facts common to both kinds of states
-  obtain ⟨x, j, tt, hj, hpc, herr, hprog, hcall, hblr, hnext, hcf⟩ : ∃ x j tt,
+  obtain ⟨x, j, tt, hj, hpc, herr, hprog, hcall, hblr, hcf, hnext⟩ : ∃ x j tt,
       (art I g).fa.lines.toList[j]? = some (.ins x tt) ∧
       Arm.r .PC t = (art I g).base + BitVec.ofNat 64 (lineOffset (art I g).fa.lines.toList j) ∧
       Arm.r .ERR t = .None ∧ t.program = (art I g).fb.program (art I g).base ∧
@@ -205,18 +208,18 @@ theorem stepOkU_of_good (hI : okBCleanup I = true) (hc : codeMapB I (tabOf I.res
           ∀ x tt, (art I g).fa.lines.toList[j]? = some (.ins x tt) → x.pairFirst = false) := by
     rcases hG with ⟨g0, hnr⟩ | ⟨r0, -⟩
     · obtain ⟨x, ⟨j, tt, hj, hpc⟩, htl⟩ := g0.line
-      have hn := g0.next
-      simp only [RL.step] at hn
-      rw [← armStepU_desc hnr, hstep] at hn
+      have hn := nextOk_imp g0.next
+        ((armStepU_desc (X := X) (H := (uSys I B U).hooksU M) (T := (art I g).tables) hnr).symm.trans
+          hstep)
+      unfold RL.NextOk at hn
       exact ⟨x, j, tt, hj, hpc, g0.err, g0.prog, fun h => by
         rcases h with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;> rfl,
-        fun r hr => g0.blr r ⟨j, tt, hj, by rw [hpc]; subst hr; rfl⟩, htl, hn⟩
+        fun r hr => by subst hr; exact g0.blr r ⟨j, tt, hj, hpc⟩, htl, hn⟩
     · obtain ⟨x, d, obj, t', ⟨j, tt, hj, hpc⟩, hd, -⟩ := r0.raise
-      have hn := r0.next
-      simp only [RLU.stepU] at hn
-      rw [hstep] at hn
+      have hn := nextOk_imp r0.next hstep
+      unfold RL.NextOk at hn
       refine ⟨x, j, tt, hj, hpc, r0.err, r0.prog, fun _ => ?_,
-        fun r hr => r0.blr r ⟨j, tt, hj, by rw [hpc]; subst hr; rfl⟩, ?_, hn⟩
+        fun r hr => by subst hr; exact r0.blr r ⟨j, tt, hj, hpc⟩, ?_, hn⟩
       · rcases hd with ⟨n, rfl, -⟩ | ⟨r, rfl, -⟩ <;> rfl
       · rcases hd with ⟨n, rfl, -⟩ | ⟨r, rfl, -⟩ <;> rfl
   have hins : insnAt (art I g).fa (art I g).base (Arm.r .PC t) = some x := by
@@ -290,9 +293,8 @@ theorem stepOkU_of_good (hI : okBCleanup I = true) (hc : codeMapB I (tabOf I.res
     · rw [hnr d hd] at hr
       cases hr
     · obtain ⟨hret, hprog'⟩ := r0.exit hp
-      simp only [RLU.stepU] at hret hprog'
-      rw [hstep] at hret hprog'
-      exact ⟨hret.pc, hret.err, hprog', hret.sp⟩
+      exact ⟨by rw [← hstep]; exact hret.pc, by rw [← hstep]; exact hret.err,
+        by rw [← hstep]; exact hprog', by rw [← hstep]; exact hret.sp⟩
 
 /-- **`RunOkU` from the per-state facts of the linked machine's run with unwinding**
 (`RunGoodLU` of `uSys`), for an activation whose return address is outside its code. -/

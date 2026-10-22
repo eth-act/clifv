@@ -20,6 +20,9 @@ import FV.Front.RawExeUnwindSrcWitness
 import FV.Link.OptExeUnwindWitness
 import FV.Link.UnwFnsCompleteWitness
 import FV.Link.ExeUnwindExecWitness
+import FV.Link.ExeUnwindExecGoodWitness
+import FV.E2E.LinkArmUProgGoodWitness
+import FV.E2E.WorldUnwindNIWitness
 
 #print axioms Backend.Proof.UnwindTables.uleb?_uleb
 #print axioms Backend.Proof.UnwindTables.sleb?_sleb
@@ -176,3 +179,31 @@ import FV.Link.ExeUnwindExecWitness
 #print axioms Link.DeadCleanup.UnwindExecWitness.frame_continues -- witness: native_decide
 #print axioms Link.DeadCleanup.UnwindExecWitness.frame_eq -- witness: native_decide
 #print axioms Link.DeadCleanup.UnwindExecWitness.walk_out -- witness: native_decide
+#print axioms Backend.Proof.RLU.stepU_q_raiseF
+#print axioms Backend.Proof.realizes_allUP
+#print axioms Backend.Proof.realizes_tryCall_raiseUF
+#print axioms Backend.Proof.regLevelCorrect_coreUTP
+#print axioms Backend.Proof.regLevelCorrect_coreUT
+#print axioms E2E.frameOkU_of
+#print axioms E2E.actGoodXU_of
+#print axioms E2E.regLevelCorrect_worldUTG
+#print axioms E2E.backend_correct_world_pipelineUG
+#print axioms E2E.backend_correct_world_ni_pipelineUG
+#print axioms E2E.LinkSysU.progCallUNQ
+#print axioms E2E.LinkSysU.progCallUN
+#print axioms E2E.LinkSysU.runGood_of_traceU
+#print axioms E2E.LinkSysU.thmGU
+#print axioms E2E.LinkSysU.thmUNG
+#print axioms E2E.backend_correct_program_budgetUG'
+#print axioms E2E.backend_correct_program_peakUG'
+#print axioms E2E.DeadCleanupExecBytes.runGoodLU_uSys
+#print axioms E2E.DeadCleanupExecBytes.stepOkU_of_good
+#print axioms E2E.DeadCleanupExecBytes.runOkU_of_good
+#print axioms Link.DeadCleanup.compileExe_correct_unwind_exec
+#print axioms Link.DeadCleanup.compileExe_correct_unwind_exec_peak
+#print axioms Link.DeadCleanup.compileExeOpt_correct_unwind_exec_peak
+#print axioms E2E.WorldUnwindWitness.world_appliesG -- witness: native_decide
+#print axioms E2E.LinkArmUProgGoodWitness.budgetUG'_applies -- witness: native_decide
+#print axioms Link.DeadCleanup.UnwindExecGoodWitness.exec_applies -- witness: native_decide
+#print axioms Link.DeadCleanup.UnwindExecGoodWitness.opt_exec_applies -- witness: native_decide
+#print axioms Link.DeadCleanup.UnwindExecGoodWitness.base_ok -- witness: native_decide
