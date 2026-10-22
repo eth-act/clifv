@@ -221,3 +221,15 @@ import FVTest.Concurrency.LitmusFull
 -- T2h layer 2c: the shape of a statement's lowered code
 #print axioms Concurrency.SegShape.segShape_segT
 #print axioms Concurrency.SegShape.Witness.atomics_segShape -- witness: native_decide
+-- T2h layer 2e groundwork: the CLIF thread steps of the memory statements
+#print axioms Concurrency.ClifCStep.cstep_of_eval
+#print axioms Concurrency.ClifCStep.cstep_load
+#print axioms Concurrency.ClifCStep.cstep_store
+#print axioms Concurrency.ClifCStep.cstep_atomicLoad
+#print axioms Concurrency.ClifCStep.cstep_atomicStore
+#print axioms Concurrency.ClifCStep.cstep_atomicRmw
+#print axioms Concurrency.ClifCStep.cstep_atomicCas
+#print axioms Concurrency.ClifCStep.cstep_fence
+#print axioms Concurrency.ClifCStep.Witness.cstep_atomicLoad0
+#print axioms Concurrency.ClifCStep.Witness.cstep_store0
+#print axioms Concurrency.ClifCStep.Witness.cstep_atomicCas0
