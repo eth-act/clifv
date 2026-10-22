@@ -1,4 +1,4 @@
-import FV.Backend.Proof.StockPureSourceExecution
+import FV.Backend.Proof.StockLocalSourceExecution
 import FV.Backend.Proof.StockArithmeticEntryRefines
 
 /-! Shared source-to-return composition used by the shipped logical class and constants.
@@ -38,10 +38,10 @@ private theorem factor_seg {vb : VBlock} {pre code post : Array MInst}
   simp [bound]
 
 /-- Compose a proved pure body with its actual placed return segment. -/
-theorem actual_pure_return_refines_at {f : Clif.Function} {result : Result}
+theorem actual_local_return_refines_at {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     (abi : sigAbiOk f.sig = true) {b : Clif.Block} (blocks : f.blocks = [b])
-    (family : ∀ stm ∈ b.body, pureInst stm.inst = true)
+    (family : ∀ stm ∈ b.body, LocalBody.LocalInst stm.inst)
     {xs : List Nat} (ret : b.term = .ret xs)
     {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
     {term : ScanRecord} {body : BlockScan} (split : SourceBodySplit f event b term body)
@@ -68,7 +68,7 @@ theorem actual_pure_return_refines_at {f : Clif.Function} {result : Result}
       (0,s.frame,s.mem) ρ w →
       RunOkABI f result.code isem MR s.frame.slots ⟨label,pre.size,ρ,w⟩ (.returned vals mem) := by
   have start : s.frame.body = b.body.drop 0 := by simpa using remaining
-  obtain ⟨t,left,total,ends,empty,steps,frame⟩ := actual_pure_source_execution_frame
+  obtain ⟨t,left,total,ends,empty,steps,frame⟩ := LocalBody.actual_local_source_execution_frame
     run events split family (j := 0) (by omega) start returned
   have tDefined : SourceDefinedAt f result.ctx event.block b.body.length t.frame := by
     apply ArithmeticBody.arithmetic_steps_defined run scope dominated events split.block
@@ -129,10 +129,10 @@ private theorem return_inbounds {vc : VCode} {isem : Backend.Proof.Sem}
       exact (Array.getElem?_eq_some_iff.mp instruction).1
 
 /-- Share ABI entry and return composition across proved pure body classes. -/
-theorem actual_pure_entry_return_refines_frame {f : Clif.Function} {result : Result}
+theorem actual_local_entry_return_refines_frame {f : Clif.Function} {result : Result}
     (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
     (abi : sigAbiOk f.sig = true) {b : Clif.Block} (blocks : f.blocks = [b])
-    (family : ∀ stm ∈ b.body, pureInst stm.inst = true)
+    (family : ∀ stm ∈ b.body, LocalBody.LocalInst stm.inst)
     {xs : List Nat} (ret : b.term = .ret xs)
     {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
     (entered : SourceEntry f args fr)
@@ -172,7 +172,7 @@ theorem actual_pure_entry_return_refines_frame {f : Clif.Function} {result : Res
   have held := stock_lower_entered_values_guarded_frame run scope dominated events entered values
     event.output.state w' mem'
   obtain ⟨term,body,split,bodyRun⟩ := bodyProvider event events
-  have finished := actual_pure_return_refines_at run scope dominated abi blocks family ret events split
+  have finished := actual_local_return_refines_at run scope dominated abi blocks family ret events split
     (s := ⟨fr,[],cm⟩) (by rw [frame]) rfl (by rw [frame]) (by rw [frame])
     defined returned refines stable bodyRun placed code ρ' w' held
   have room : pre.size < vb.insts.size := by
@@ -187,5 +187,71 @@ theorem actual_pure_entry_return_refines_frame {f : Clif.Function} {result : Res
     (by simpa only [Nat.zero_add,Array.length_toList] using room) execution
   refine ⟨entrySeed event.ctx fr,RunOkABI.prefix path ?_⟩
   simpa only [Nat.zero_add,Array.length_toList] using finished
+
+
+theorem actual_pure_return_refines_at {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) {b : Clif.Block} (blocks : f.blocks = [b])
+    (family : ∀ stm ∈ b.body, pureInst stm.inst = true)
+    {xs : List Nat} (ret : b.term = .ret xs)
+    {event : BlockScanEvent} (events : event ∈ result.blockScans.toList)
+    {term : ScanRecord} {body : BlockScan} (split : SourceBodySplit f event b term body)
+    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {s : Clif.State}
+    (func : s.frame.func = f) (callers : s.callers = [])
+    (remaining : s.frame.body = b.body) (terminal : s.frame.term = b.term)
+    (defined : SourceDefinedAt f result.ctx event.block 0 s.frame)
+    {vals : List Clif.Val} {mem : Clif.Mem}
+    (returned : Clif.runLoop env cp fuel s = .returned vals mem)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    {MR : MemRelT} (stable : MRStable F MR)
+    (bodyRun : ∀ s s', SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
+        ((List.range b.body.length).map (blockStart f event.block + ·)) s s' →
+        ∀ ρ w, GuardedScanRel f result event.ctx event.block MR event.output.state s ρ w → ∃ ρ' w',
+          seqRun isem (body.code.toList.map (·.mapRegs
+            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1)))) ρ w =
+            some (.fall ρ' w') ∧
+          GuardedScanRel f result event.ctx event.block MR term.output.state s' ρ' w')
+    {label : Nat} {vb : VBlock} {pre post : Array MInst}
+    (placed : result.code.blocks[label]? = some vb)
+    (code : vb.insts = pre ++ event.output.code.map (·.mapRegs
+      (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size+1))) ++ post) :
+    ∀ ρ w, GuardedScanRel f result event.ctx event.block MR event.output.state
+      (0,s.frame,s.mem) ρ w →
+      RunOkABI f result.code isem MR s.frame.slots ⟨label,pre.size,ρ,w⟩ (.returned vals mem) := by
+  exact actual_local_return_refines_at run scope dominated abi blocks
+    (fun stm member => by
+      have h := family stm member
+      cases shape : stm.inst <;> simpa [LocalBody.LocalInst,shape] using h)
+    ret events split func callers remaining terminal defined returned refines stable bodyRun placed code
+
+theorem actual_pure_entry_return_refines_frame {f : Clif.Function} {result : Result}
+    (run : Stock.lower f = .ok result) (scope : LowerScope f) (dominated : Dominated f)
+    (abi : sigAbiOk f.sig = true) {b : Clif.Block} (blocks : f.blocks = [b])
+    (family : ∀ stm ∈ b.body, pureInst stm.inst = true)
+    {xs : List Nat} (ret : b.term = .ret xs)
+    {args : List Clif.Val} {cm : Clif.Mem} {fr : Clif.Frame}
+    (entered : SourceEntry f args fr)
+    {env : Clif.Env} {cp : Clif.Program} {fuel : Nat} {vals : List Clif.Val} {mem : Clif.Mem}
+    (returned : Clif.runLoop env cp fuel ⟨fr,[],cm⟩ = .returned vals mem)
+    {F : BitVec 64 → Prop} {isem : Backend.Proof.Sem} (refines : Refines F isem)
+    (driver : DriverSem isem) {sb : Nat} {syms : String → Option Nat}
+    (memorySem : MemRefines F sb syms isem) {MR : MemRelT} (stable : MRStable F MR)
+    (bodyProvider : ∀ (event : BlockScanEvent), event ∈ result.blockScans.toList →
+      ∃ (term : ScanRecord) (body : BlockScan), SourceBodySplit f event b term body ∧
+        ∀ s s', SourceSteps (IndexedSourceInst env cp f event.ctx event.block)
+        ((List.range b.body.length).map (blockStart f event.block + ·)) s s' →
+        ∀ ρ w, GuardedScanRel f result event.ctx event.block MR event.output.state s ρ w → ∃ ρ' w',
+          seqRun isem (body.code.toList.map (·.mapRegs
+            (Backend.lowerFunction.resolve result.final.alias (result.final.alias.size + 1)))) ρ w =
+            some (.fall ρ' w') ∧
+          GuardedScanRel f result event.ctx event.block MR term.output.state s' ρ' w')
+    {w : Arm.ArmState} (memory : MR fr.slots cm w)
+    (arguments : ArgsAtEntry F f.sig args w) :
+    ∃ ρ, RunOkABI f result.code isem MR fr.slots ⟨0,0,ρ,w⟩ (.returned vals mem) := by
+  exact actual_local_entry_return_refines_frame run scope dominated abi blocks
+    (fun stm member => by
+      have h := family stm member
+      cases shape : stm.inst <;> simpa [LocalBody.LocalInst,shape] using h)
+    ret entered returned refines driver memorySem stable bodyProvider memory arguments
 
 end Backend.Stock.Proof.PureBody
