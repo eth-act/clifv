@@ -72,11 +72,17 @@ def loadOracle (path : System.FilePath) : IO (Except String (List OracleRecord))
       | .error e => return .error s!"{path}: {e}"
   return .ok out.toList
 
+/-- The type name the interpreter reports for a value of type `t`: its `DataValue::V128`/`V64`
+carry no lane type and report `i8x16`/`i8x8` (`DataValue::ty`). -/
+def oracleTyName : Ty → String
+  | .vec s => if s.width == 128 then "i8x16" else "i8x8"
+  | t => t.name
+
 /-- Agreement of our outcome with the interpreter's. `none`: the oracle reported an error
 (no comparison possible). -/
 def agree (o : Outcome) (a : OracleActual) : Option Bool :=
   match o, a with
-  | .returned vs _, .returned ws => some (vs.map (fun v => (v.ty.name, v.toNat)) == ws)
+  | .returned vs _, .returned ws => some (vs.map (fun v => (oracleTyName v.ty, v.toNat)) == ws)
   | .trapped c, .trapped d => some (c.name == d)
   | _, .error _ => none
   | _, _ => some false
@@ -93,7 +99,7 @@ def agreeUpToNaN (o : Outcome) (a : OracleActual) : Bool :=
   match o, a with
   | .returned vs _, .returned ws =>
     vs.length == ws.length && (vs.zip ws).all fun (v, (tn, n)) =>
-      v.ty.name == tn && (v.toNat == n || (isNaNBits v.ty v.toNat && isNaNBits v.ty n))
+      oracleTyName v.ty == tn && (v.toNat == n || (isNaNBits v.ty v.toNat && isNaNBits v.ty n))
   | _, _ => false
 
 end ClifFiletest

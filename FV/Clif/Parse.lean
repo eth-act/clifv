@@ -122,6 +122,8 @@ structure PState where
   aliases : List (ValueId × ValueId) := []
   externs : List (FnRef × ExtFunc) := []
   sigDecls : List (Nat × Signature) := []
+  /-- The values used by the current body line (`value`), for the vector check of `bodyLine`. -/
+  used : List ValueId := []
 
 abbrev P := ReaderT (Array Tok) (StateT PState (Except ParseError))
 
@@ -298,8 +300,11 @@ def collectAliases : P Unit := do
       | none => break
   modify fun s => { s with aliases := al }
 
-/-- A value use (aliases resolved). -/
-def value : P ValueId := do resolveAlias (← entity "v")
+/-- A value use (aliases resolved), recorded in `used` (the operands of the current line). -/
+def value : P ValueId := do
+  let v ← resolveAlias (← entity "v")
+  modify fun s => { s with used := v :: s.used }
+  return v
 
 def typeOf (v : ValueId) : P Ty := do
   match (← get).types.lookup v with
@@ -748,6 +753,20 @@ def resultTypes (i : Inst) : P (List Ty) := do
   | some ts => return ts
   | none => malformed "cannot determine the result types of an instruction"
 
+/-- Vector types in `Clif.run` (S12d, `docs/plans/simd.md` §2): data movement only. An
+instruction with a vector operand or result is accepted only if it is a whole-width `load` or
+`store` (not big-endian: Cranelift orders big-endian vector bytes per lane), a `bitcast` (not
+big-endian), a `select` with a scalar condition, or a call. Everything else with vectors (lane
+operations, vector arithmetic, which `Clif.run` would read as 128-bit integer operations) is
+`unsupported`. -/
+def vecInstOk (i : Inst) (condTy : Option Ty) : Bool :=
+  match i with
+  | .load .load _ flags _ _ | .store .store _ flags _ _ _ | .bitcast _ flags _ =>
+    flags.endianness != some .big
+  | .select .. => !(condTy.map Ty.isVec).getD true
+  | .call .. | .callIndirect .. => true
+  | _ => false
+
 /-- One body line: alias, instruction (with results) or terminator. -/
 def bodyLine : P (Option (Sum Stmt Terminator)) := do
   -- alias `vA -> vB`
@@ -764,11 +783,18 @@ def bodyLine : P (Option (Sum Stmt Terminator)) := do
     else pure []
   let op ← anyWord
   let sfx ← if ← optPunct '.' then some <$> ty else pure none
+  modify fun s => { s with used := [] }
   match ← item op sfx with
   | .inst i =>
     let tys ← resultTypes i
     if tys.length != results.length then
       malformed s!"{op}: {results.length} results given, {tys.length} expected"
+    let opTys ← (← get).used.mapM typeOf
+    if (opTys ++ tys).any Ty.isVec then
+      let condTy ← match i with
+        | .select _ c _ _ => some <$> typeOf c
+        | _ => pure none
+      if !vecInstOk i condTy then unsupported s!"{op} on vector types"
     for (r, t) in results.zip tys do defineValue r t
     return some (.inl { results, inst := i })
   | .term t =>
@@ -827,7 +853,7 @@ def function : P Function := do
 
 /-! ## Run commands -/
 
-def dataValue (t : Ty) : P Val := do
+def scalarValue (t : Ty) : P Val := do
   if t.isFloat then return ⟨t, ← floatLit t⟩
   match ← next with
   | .int s =>
@@ -835,6 +861,23 @@ def dataValue (t : Ty) : P Val := do
     | some i => return Val.ofInt t i
     | none => malformed s!"bad {t.name} value '{s}'"
   | tok => malformed s!"expected an {t.name} value, got '{tok.show}'"
+
+/-- A run-line value; a vector is `[l0 l1 …]`, lane 0 (the least significant, `Clif.Vec.lane`)
+first, each lane a literal of the lane type. -/
+def dataValue (t : Ty) : P Val := do
+  match t with
+  | .vec s =>
+    expectPunct '['
+    let lt : Ty := match s.laneBits, s.isFloatLane with
+      | 64, true => .f64 | 32, true => .f32 | 8, _ => .i8 | 16, _ => .i16 | 32, _ => .i32
+      | _, _ => .i64
+    let mut bits : BitVec s.width := 0
+    for i in [0:s.lanes] do
+      let l ← scalarValue lt
+      bits := Vec.setLane s.laneBits bits i (l.bits.setWidth s.laneBits)
+    expectPunct ']'
+    return ⟨.vec s, bits⟩
+  | _ => scalarValue t
 
 def dataValues (tys : List Ty) : P (List Val) := do
   let mut out := #[]
