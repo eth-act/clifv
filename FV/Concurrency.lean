@@ -28,7 +28,9 @@ with the Arm trace's monitor pairs; discharged for the functions without memory 
 of compiled code (`RealizeCompiled.realizes_compiled`; on the compiled `atomic_load` through its
 `ldar`: `RealizeCompiled.WitnessL.realizes_load`; on the compiled `atomic_store` through its
 `stlr`: `RealizeCompiled.WitnessS.realizes_store`; for both as two threads passing a message
-through location 0: `RealizeCompiled.WitnessMP.realizes_mp`, `RealizeCompiled.WitnessMP.mp_reads`).
+through location 0: `RealizeCompiled.WitnessMP.realizes_mp`, `RealizeCompiled.WitnessMP.mp_reads`); calls by the linking induction
+(`CallCompose.link_compose`: the callee's events through its own refinement, composed along the
+call; external callees under the trusted event contract `CallCompose.ExtEvContract`).
 The fragment model is weaker than the whole `aarch64.cat` (`Armv8Full.consistent_frag`); LSE
 atomics map by the same table (`Lse.lse_maps`). Nothing here changes the Arm model of `FV/Arm`.
 -/
@@ -136,3 +138,5 @@ import FV.Concurrency.ArmAllocBranch
 import FV.Concurrency.ArmAllocBranchWitness
 import FV.Concurrency.RealizeWitnessStore
 import FV.Concurrency.RealizeWitnessMP
+import FV.Concurrency.CallCompose
+import FV.Concurrency.CallComposeWitness

@@ -579,8 +579,48 @@ they are; the per-thread layers are new files.
     `MemScopeB` (`MemScopeL` and the branches), `itemSim_br`, **`arm_alloc_refines_br`**
     (`arm_alloc_refines_loop`'s conclusion). Witness (`ArmAllocBranchWitness.lean`):
     `br_premises` (`args; jump 1` / `rets`, the `jump`'s `b` dropped by the fall-through).
+  * **calls: the linking induction (composition done, `CallCompose.lean`)**. `csem`'s `call`
+    step has no events, but the callee's Arm code accesses memory. **Decision**: the thread's Arm
+    machine runs the callee's code (no hook), and the callee's events are matched through the
+    **callee's own refinement**, composed with the caller's along the call, as the linking
+    induction does for single-threaded runs (`E2E.ExecBytes.Reach`: the callee's activation at
+    depth `M`); an external callee's events are given by a trusted event contract.
+    * `XClosed` (every successful `stlxr` event of a segment follows an `ldaxr` event of it: no
+      monitor pair crosses into the segment, `monPair_left`/`monPair_right`); **`Refines.app`**:
+      refinements of consecutive Arm segments compose (`appMap`), the atomic updates the whole
+      trace's monitor pairs; `Realized env p Priv ls k c c'` (the first `k` labels realize a
+      `CRun` from `c` to `c'`, `Refines Maps Priv`, exclusive-closed), `Realized.trans`.
+    * `FunReal`: the **function contract** of an activation entered in `u` with the CLIF state
+      `c` (its frame pushed): every precise run under `ok` realizes a prefix that is the whole
+      run, ends in `E`, or ends where the activation has returned (`Ret`). `SegOk`: the segment
+      obligation of a function's activation with invariant `Inv` — the run realizes a prefix that
+      ends, returns, or ends (after at least the `bl`) at the entry of a callee (`Ent`), from whose
+      every return (`Ret` of the callee) `Inv` holds again.
+    * **`link_compose`**: segment obligations for the program's functions and function contracts
+      for the external ones give `FunReal` for every activation of every function (strong
+      induction on the run's length; the callee's realized prefix is spliced between the
+      caller's segments by `Realized.trans`). `realizes_linked`: `realizes_compiled` for threads
+      given by such contracts.
+    * **Trusted outside-code contract `ExtEvContract`** (a premise, `link_compose_ext`): for
+      every external callee entered in `u` with `c` running its CLIF-level specification, every
+      precise run of the thread's machine realizes (`Realized`) a CLIF-level run of the
+      specification — **its Arm events are those of that CLIF event trace**, with `Maps` kinds,
+      in order, the CLIF events outside the thread's private set, its other writes private, its
+      atomic updates monitor pairs — on a prefix that is the whole run, ends in `E`, or ends at
+      its return (`Ret`), and **the writes of that prefix avoid the caller's private set `Fr u`**.
+      Code outside the program (libc, the runtime) is not compiled by us; this contract is what
+      the theorems assume of it, like `CalleeOk` for single-threaded runs.
+    * Witness (`CallComposeWitness.lean`): `linked_sE`, the linking induction on a halted
+      `stepi` thread whose caller enters an external callee at every step (its `SegOk`,
+      `segOk_caller`; the callee's contract proven, `extContract`): every run is realized
+      entirely.
+    * open: the segment obligations of compiled functions (layer 4b with the call item a pause
+      point; layer 2 with call statements; the caller's resumption after the return), the
+      thread's machine running the callee's code against the per-function `R.step`, and the
+      witness of a compiled function calling a compiled `atomic_load` function.
   * open: `ItemSim` for plain loads/stores (multi-line address forms through x16; one-line
-    forms fit `OneEvForm`, their event equality per addressing mode is open), calls; the prologue (from the ABI entry).
+    forms fit `OneEvForm`, their event equality per addressing mode is open); the prologue (from
+    the ABI entry).
     Needed per form: **receptiveness** (the allocated code steps on every read value once it
     steps on one: the pc and error of a load do not depend on the loaded bytes) and **event
     equality** (the allocated instruction's Arm events are the canonical run's `cEvs`, address

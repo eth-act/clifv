@@ -152,12 +152,14 @@ theorem appMap_shift {n m : Nat} {ψ1 ψ2 : Nat × Nat → Nat × Nat} (q : Nat 
   rw [appMap_ge h]
   simp [shift]
 
-/-- **Refinements of consecutive Arm segments compose**, the second segment exclusive-closed (so
-no monitor pair of the whole trace starts in the first segment and ends in the second). -/
+/-- **Refinements of consecutive Arm segments compose**, the second segment exclusive-closed or
+the first one without load exclusive (so no monitor pair of the whole trace starts in the first
+segment and ends in the second). -/
 theorem Refines.app {A B : List (List (Ev K BVal))} {TA TB : List (List Ev)}
     {ψ1 ψ2 : Nat × Nat → Nat × Nat}
     (h1 : Refines MK Priv (MonPair TA) A (conv TA) ψ1)
-    (h2 : Refines MK Priv (MonPair TB) B (conv TB) ψ2) (hx : XClosed TB) :
+    (h2 : Refines MK Priv (MonPair TB) B (conv TB) ψ2)
+    (hx : XClosed TB ∨ ∀ a x, evAt TA a = some x → x.k ≠ .acqXR) :
     Refines MK Priv (MonPair (TA ++ TB)) (A ++ B) (conv (TA ++ TB))
       (appMap A.length TA.length ψ1 ψ2) := by
   have sA : ∀ p, (evAt A p).isSome → p.1 < A.length := fun p h => lt_of_isSome h
@@ -243,17 +245,21 @@ theorem Refines.app {A B : List (List (Ev K BVal))} {TA TB : List (List Ev)}
         rw [evAt_append_lt _ _ hqa] at hq
         rw [appMap_lt hpa, appMap_lt hqa] at hpr
         exact h1.pair_inv p q hp hq ((monPair_left (tA q hq)).1 hpr)
-      · -- a monitor pair from the first segment into the second: excluded by `XClosed`
+      · -- a monitor pair from the first segment into the second: excluded by `hx`
         exfalso
         rw [evAt_append_lt _ _ hpa] at hp
         rw [eS q hqa] at hq
         rw [appMap_lt hpa, appMap_ge hqa] at hpr
-        obtain ⟨-, ⟨y, hy, hyk⟩, -, hbt⟩ := hpr
-        rw [evAt_shift] at hy
-        obtain ⟨a, x, hx, hxk, hab⟩ := hx _ y hy hyk
-        refine (hbt (shift TA.length a) x ?_ (lt_shift.2 hab) (by rw [evAt_shift]; exact hx)).1 hxk
-        have := tA p hp
-        left; simp only [shift]; omega
+        obtain ⟨⟨x0, hx0, hx0k⟩, ⟨y, hy, hyk⟩, -, hbt⟩ := hpr
+        have hpl := tA p hp
+        rcases hx with hx | hx
+        · rw [evAt_shift] at hy
+          obtain ⟨a, x, hxa, hxk, hab⟩ := hx _ y hy hyk
+          refine (hbt (shift TA.length a) x ?_ (lt_shift.2 hab)
+            (by rw [evAt_shift]; exact hxa)).1 hxk
+          left; simp only [shift]; omega
+        · rw [evAt_append_lt _ _ hpl] at hx0
+          exact hx _ x0 hx0 hx0k
       · exfalso
         rw [eS p hpa] at hp
         rw [evAt_append_lt _ _ hqa] at hq
@@ -315,7 +321,7 @@ theorem Realized.trans {ls : List Lab} {k1 k2 : Nat} {c c1 c2 : TState}
   refine ⟨by simp at hk2; omega, A ++ B, appMap A.length (evTr (ls.take k1)).length ψ1 ψ2,
     r1.append r2, ?_, ?_⟩
   · rw [e]; exact x1.append x2
-  · rw [e]; exact Refines.app f1 f2 x2
+  · rw [e]; exact Refines.app f1 f2 (.inl x2)
 
 end realized
 
