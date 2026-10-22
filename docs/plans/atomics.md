@@ -739,6 +739,36 @@ they are; the per-thread layers are new files.
       return (layer 2's `Match` after the call from the callee's results and preserved registers),
       which the composition theorems (`ThreadCompose.isel_alloc_refinesP`, `arm_isel_refinesE'`)
       do not export; `resumeQ` gives layer 4b's side of the latter.
+      **What (2) and (3) still need (mapped 2026-10-22).** Layer 2 has no call case: the
+      multi-threaded check rejects call statements (`IselCheck.threadInstB`, `instOkB`:
+      `!isCallB`), `LowerSim.Match` requires `s.callers = []`, and `DriverHyp.ext` excludes calls of
+      program functions; the single-threaded call proof (`LowerSim.stmt_step` via
+      `CallsRefine`/`XCallsOk`, `IselCtlCallRules.call_sym_lowerInstOk`) covers external calls run
+      as one CLIF step. The pieces, in order:
+      * **(2a) the pause at layer 2**: a check admitting call statements to program functions
+        whose code is exactly the `call` (register arguments only, direct `bl`: no
+        `stackArgumentStores`, no GOT load), run with an `ExtSem` whose `call` has no step (so the
+        VCode/allocated runs stop at the call) and a result type of the layer-2 induction that, when
+        the whole VCode trace is realized and the VCode is at a statement boundary, returns the
+        `Match` there (`SimRes` gives no relation at its end; every segment lemma
+        `pure_seg…`/`mem_seg…`/`term_seg…` needs that variant). Layers 3/4a already return their
+        relation at the end (`PrepThread.prep_run`, `AllocThread.alloc_run`); the composition
+        (`isel_alloc_refinesR`, `arm_isel_refinesE'`) must export all three.
+      * **(2b) the callee's entry from the pause**: `CompiledE` of the callee from the caller's
+        `Match` at the call (the CLIF state after `stepCall`'s push, `ClifLift.pushC`) and layer
+        4b's `Q` at the `call` item (the fixed-use operands put the arguments in x0…, `ArgsAtEntry`).
+      * **(2c) the resume**: from the callee's return (pc after the `bl`, `sp`, `R.F` memory,
+        program — `resumeQ` — and in addition the callee-saved registers and the result registers
+        with `PrefixHold rvals outs` for the CLIF results; for a compiled callee from its layer 4b
+        at its epilogue, for an external one part of its `Ret`), rebuild layer 4a's `Match` by
+        `alloc_back` on the `call` step under an `ExtSem` returning exactly those outputs and that
+        world (`op_sound` takes arbitrary outputs), layer 3's by `prep_back`, and layer 2's
+        `LowerSim.Match` after `ClifCStepTerm.cstep_ret_pop` by `IselCtlCallRules.results_call`
+        (the other live vregs are untouched by the VCode `call`).
+      * **(3)** `SegOk` for a compiled function in `MemScopeLSC` on the machine of
+        `arm_alloc_refines_lsCL`: its segments are the runs between its entry, its calls' resumes
+        and its `rets`, each by layers 2–4b from the relation of (2a)/(2c); `link_compose_ext`
+        then gives `FunReal` for every activation, `realizes_linked` the program level.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
