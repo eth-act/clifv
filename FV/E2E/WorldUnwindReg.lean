@@ -156,12 +156,12 @@ theorem regLevelCorrect_worldUTG {vcp : VCode} {rf : RFunc} {af : AFunc} {fa : F
   refine ⟨fun us vals w hret => ?_, fun c htc => ?_, fun obj w hu => ?_⟩
   · obtain ⟨n, a1, a2, a3, a4, a5, a6, htr, hnot⟩ := h1 us vals w hret
     exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU fun i hi => (htr i hi).goodXU, hnot,
-      fun i hi => actGoodXU_of hR hU (htr i hi)⟩
+      fun i hi => actGoodXU_of hR hU hrows hcie hfde hsaved (htr i hi)⟩
   · obtain ⟨n, htrap, htr, hst⟩ := h2 c htc
-    exact ⟨n, htrap, fun i hi => actGoodXU_of hR hU (htr i hi), hst⟩
+    exact ⟨n, htrap, fun i hi => actGoodXU_of hR hU hrows hcie hfde hsaved (htr i hi), hst⟩
   · obtain ⟨n, a1, a2, a3, a4, a5, a6, htr, hn, hx⟩ := h3 obj w hu
     exact ⟨n, ⟨a1, a2, a3, a4, a5, a6⟩, postTrace_of_goodXU fun i hi => (htr i hi).goodXU, hn, hx,
-      fun i hi => actGoodXU_of hR hU (htr i hi)⟩
+      fun i hi => actGoodXU_of hR hU hrows hcie hfde hsaved (htr i hi)⟩
 
 /-- **The realisation of the value semantics with unwinding at an activation with kept addresses
 `G` and GOT pins `gv`**: from the callee contracts relative to `G` (`CalleeOkG`,

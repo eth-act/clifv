@@ -843,6 +843,135 @@ theorem RLU.noRaise_desc {R : RLU} (hR : R.Wf)
     exact RLU.noRaise_of_goodX hR hU g ⟨j, tt, hj, hpc⟩ (.inr ⟨r, rfl, hd.symm⟩)
   | _ => cases hd
 
+theorem mem_callIdx : ∀ (L : List Line) (j : Nat) (ln : Line), L[j]? = some ln → ln.isCall = true →
+    j ∈ UnwindTables.callIdx L
+  | [], _, _, h, _ => by simp at h
+  | l :: L, 0, ln, h, hc => by
+    simp only [List.getElem?_cons_zero, Option.some.injEq] at h
+    subst h
+    simp [UnwindTables.callIdx, hc]
+  | l :: L, j + 1, ln, h, hc => by
+    simp only [UnwindTables.callIdx, List.mem_append, List.mem_map]
+    exact .inr ⟨j, mem_callIdx L j ln (by simpa using h) hc, rfl⟩
+
+/-- The return offset of a call line is one `scanLines` collects. -/
+theorem ret_mem_scanLines {L : List Line} {j : Nat} {x : Insn} {t : Option Clif.TrapCode}
+    (hj : L[j]? = some (.ins x t)) (hx : (∃ n, x = .bl n) ∨ ∃ r, x = .blr r) :
+    lineOffset L j + 4 ∈ (scanLines L 0 [] []).2 := by
+  rw [UnwindTables.scanLines_rets_eq]
+  simp only [List.reverse_nil, List.nil_append, List.mem_map]
+  refine ⟨j, mem_callIdx L j _ hj ?_, by omega⟩
+  rcases hx with ⟨n, rfl⟩ | ⟨r, rfl⟩ <;> rfl
+
+/-- A save slot of the computed frame lies inside it. -/
+theorem saveOff_le {vc : VCode} {rf : RFunc} {af : AFunc} (halloc : lowerRFunc vc rf = .ok af)
+    {r : Reg} {o : Nat} (h : (RAFrame.compute vc rf).saveOff.lookup r = some o) :
+    o + 8 ≤ af.frameSize := by
+  have hsz : (RAFrame.compute vc rf).size ≤ af.frameSize := by
+    have e : (RAFrame.compute vc rf).total =
+        alignTo ((RAFrame.compute vc rf).size + vc.slotBytes) 16 := rfl
+    rw [(lowerRFunc_ok halloc).1.1, e]
+    exact Nat.le_trans (Nat.le_add_right _ _) (le_alignTo16 _)
+  obtain ⟨-, h2, h3, -⟩ := compute_facts vc rf
+  rcases save_entry h with ⟨i, hi, -, rfl, -⟩ | ⟨i, hi, -, rfl, -⟩ <;> omega
+
+/-- **The save slots that unwinding a raising call's frame reads lie in the activation's frame**
+(`StackBelow (frameDrop af) (spv s0)`, below the entry `sp`): at the raising call state `u`, for
+the unwinder's state `t` of the machine callee's raise, the CFA of the frame row at the call and
+every byte of every save slot of the row. -/
+def FrameOkU (R : RLU) (u : Arm.ArmState) : Prop :=
+  ∀ d obj t, callDescAt R.fa u = some d → R.U.raise d u = some (obj, t) →
+    ∀ cfa, (Unw.rowAt R.T.cie R.T.fde (Arm.r .PC u + 4 - 1 - R.base).toNat).cfa? t = some cfa →
+      ∀ p ∈ (Unw.rowAt R.T.cie R.T.fde (Arm.r .PC u + 4 - 1 - R.base).toNat).saved, ∀ k < 8,
+        StackBelow (frameDrop R.af) (spv R.s0) (cfa + BitVec.ofInt 64 p.2 + BitVec.ofNat 64 k)
+
+/-- **`FrameOkU` at a raising-call state** from the emitted tables (`unwindRows`, the CIE/FDE
+of the rows) and the save-slot check (`savedCheck`). -/
+theorem frameOkU_of {R : RLU} (hR : R.Wf) {rows : List (Nat × Cfi)}
+    (hrows : unwindRows R.af R.fa = .ok rows) (hcie : R.T.cie = UnwindTables.cieInsns)
+    (hfde : R.T.fde = UnwindTables.insnsFrom 0 rows) (hsaved : savedCheck R.vc R.rf = true)
+    {u : Arm.ArmState} (h : R.RaiseXF u) : FrameOkU R u := by
+  intro d obj t hd hr cfa hcfa p hp k hk
+  obtain ⟨x, d0, obj0, t0, ⟨j, tt, hj, hpc⟩, hd0, -⟩ := h.raise
+  have hins := insnAt_pc hR hj h.prog hpc
+  have hdx : (∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none) := by
+    unfold callDescAt at hd
+    rw [hins] at hd
+    rcases hd0 with ⟨n, rfl, -⟩ | ⟨r, rfl, -⟩
+    · simp only [Option.some.injEq] at hd; exact .inl ⟨n, rfl, hd.symm⟩
+    · simp only [Option.some.injEq] at hd; exact .inr ⟨r, rfl, hd.symm⟩
+  have hsp := h.tsp x d obj t ⟨j, tt, hj, hpc⟩ hdx hr
+  have hf : R.af.frame = true := lowerRFunc_frame hR.alloc
+  have hdrop : frameDrop R.af = R.af.frameSize + 16 := by simp [frameDrop, hf]
+  obtain ⟨-, lab, code, saved, hb, hsv, hrow⟩ := UnwindTables.unwindRows_frame hrows hf
+  have hret : lineOffset R.L j + 4 ∈ (scanLines R.fa.lines.toList 0 [] []).2 :=
+    ret_mem_scanLines hj (by rcases hdx with ⟨n, rfl, -⟩ | ⟨r, rfl, -⟩
+                             · exact .inl ⟨n, rfl⟩
+                             · exact .inr ⟨r, rfl⟩)
+  have hfit : lineOffset R.L j + 4 ≤ 2 ^ 64 := by
+    have h1' := lineOffset_succ R.L j _ hj
+    have h2' := lineOffset_le_size R.L (j + 1)
+    have h3' := layout_sum hR.layout
+    have h4' := hR.fit
+    simp only [Line.size, RL.L] at h1' h2' h3' ⊢
+    omega
+  have hoff : (Arm.r .PC u + 4 - 1 - R.base).toNat = lineOffset R.L j + 4 - 1 := by
+    rw [hpc]
+    simp only [RL.pcOf]
+    have : R.base + BitVec.ofNat 64 (lineOffset R.L j) + 4 - 1 - R.base =
+        BitVec.ofNat 64 (lineOffset R.L j + 3) := by
+      apply BitVec.eq_of_toNat_eq
+      simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat,
+        show (4 : BitVec 64).toNat = 4 from rfl, show (1 : BitVec 64).toNat = 1 from rfl]
+      have := R.base.isLt
+      omega
+    rw [this, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+    omega
+  rw [hoff, hcie, hfde, hrow _ hret] at hcfa hp
+  -- the CFA is the entry `sp`
+  have hcfa' : cfa = spv R.s0 := by
+    simp only [UnwindTables.frameRow, Unw.Row.cfa?, Unw.regVal?, show (31 : Nat) < 32 by decide,
+      ite_true, Option.map_some, Option.some.injEq] at hcfa
+    rw [← hcfa]
+    have e : Arm.r (.GPR (BitVec.ofNat 5 31)) t = spOf t := rfl
+    rw [e, hsp]
+    simp only [RL.spB, hdrop, spv]
+    exact BitVec.sub_add_cancel _ _
+  subst hcfa'
+  -- the row's offset of `p`: a slot inside the frame
+  obtain ⟨o, ho8, hpo⟩ : ∃ o : Nat, o + 8 ≤ R.af.frameSize + 16 ∧
+      p.2 = (o : Int) - 16 - R.af.frameSize := by
+    simp only [UnwindTables.frameRow, List.mem_append, List.mem_reverse, List.mem_cons,
+      List.not_mem_nil, or_false] at hp
+    rcases hp with hp | rfl | rfl
+    · have hc' := hsaved
+      simp only [savedCheck, hR.alloc, Bool.and_eq_true] at hc'
+      obtain ⟨-, haf⟩ := hc'
+      simp only [savedCheckAF, hb, decide_eq_true_eq] at haf
+      rw [haf] at hsv
+      obtain ⟨hs1, -⟩ := saveRowsOf_mem hsv
+      obtain ⟨r, -, o, -, ho, he⟩ := hs1 p.1 p.2 hp
+      exact ⟨o, by have := saveOff_le hR.alloc ho; omega, he⟩
+    · exact ⟨R.af.frameSize + 8, by omega, by dsimp only; omega⟩
+    · exact ⟨R.af.frameSize, by omega, by dsimp only; omega⟩
+  -- the address
+  obtain ⟨hB, hK⟩ := spBody_toNat hR.stack
+  rw [hdrop] at hB hK ⊢
+  obtain ⟨sb, hsb⟩ : ∃ sb, sb = spv R.s0 - BitVec.ofNat 64 (R.af.frameSize + 16) := ⟨_, rfl⟩
+  have hx : spv R.s0 = sb + BitVec.ofNat 64 (R.af.frameSize + 16) := by
+    rw [hsb]; exact (BitVec.sub_add_cancel _ _).symm
+  have ha : spv R.s0 + BitVec.ofInt 64 p.2 + BitVec.ofNat 64 k =
+      (spv R.s0 - BitVec.ofNat 64 (R.af.frameSize + 16)) + BitVec.ofNat 64 (o + k) := by
+    rw [hpo, ← hsb, hx, addr_saveRow, BitVec.add_assoc, BitVec.ofNat_add]
+  rw [ha]
+  have hlt := (spv R.s0).isLt
+  have ht : ((spv R.s0 - BitVec.ofNat 64 (R.af.frameSize + 16)) + BitVec.ofNat 64 (o + k)).toNat =
+      (spv R.s0).toNat - (R.af.frameSize + 16) + (o + k) := by
+    rw [BitVec.toNat_add, hB, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega : o + k < 2 ^ 64)]
+    exact Nat.mod_eq_of_lt (by omega)
+  simp only [StackBelow, ht]
+  omega
+
 /-- **The per-state facts of a run with unwinding of the activation with these data**
 (`actGoodX`'s counterpart; the fields `lm`, `psF` play no role): a state of the old trace whose
 call line's callee does not raise, or a raising-call state with its step facts (`RLU.RaiseXF`). -/
@@ -852,15 +981,21 @@ def actGoodXU (vcp : VCode) (rf : RFunc) (af : AFunc) (fa : FnAsm) (fb : FnBin) 
     (u : Arm.ArmState) : Prop :=
   ((⟨⟨vcp, rf, af, fa, fb, {}, base, s0, X, H, {}, K, G, gv⟩, XR, U, T⟩ : RLU).GoodX u ∧
       ∀ d, callDescAt fa u = some d → U.raise d u = none) ∨
-    (⟨⟨vcp, rf, af, fa, fb, {}, base, s0, X, H, {}, K, G, gv⟩, XR, U, T⟩ : RLU).RaiseXF u
+    ((⟨⟨vcp, rf, af, fa, fb, {}, base, s0, X, H, {}, K, G, gv⟩, XR, U, T⟩ : RLU).RaiseXF u ∧
+      FrameOkU ⟨⟨vcp, rf, af, fa, fb, {}, base, s0, X, H, {}, K, G, gv⟩, XR, U, T⟩ u)
 
-/-- `actGoodXU` from the trace predicate `RLU.GoodXUF` and the raising callees' contract. -/
+/-- `actGoodXU` from the trace predicate `RLU.GoodXUF`, the raising callees' contract, the
+emitted tables and the save-slot check. -/
 theorem actGoodXU_of {R : RLU} (hR : R.Wf)
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    {rows : List (Nat × Cfi)} (hrows : unwindRows R.af R.fa = .ok rows)
+    (hcie : R.T.cie = UnwindTables.cieInsns) (hfde : R.T.fde = UnwindTables.insnsFrom 0 rows)
+    (hsaved : savedCheck R.vc R.rf = true)
     {u : Arm.ArmState} (h : R.GoodXUF u) :
     actGoodXU R.vc R.rf R.af R.fa R.fb R.base R.s0 R.X R.H R.XR R.U R.T R.K R.G R.gv u := by
   rcases h with g | g
   · exact .inl ⟨g.act, RLU.noRaise_desc hR hU g⟩
-  · exact .inr ⟨⟨g.good, g.err, g.prog, g.sp, g.raise⟩, g.next, g.exit, g.tsp, g.blr, g.pre⟩
+  · exact .inr ⟨⟨⟨g.good, g.err, g.prog, g.sp, g.raise⟩, g.next, g.exit, g.tsp, g.blr, g.pre⟩,
+      frameOkU_of hR hrows hcie hfde hsaved g⟩
 
 end E2E

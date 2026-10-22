@@ -353,7 +353,7 @@ theorem pre_of_good {M : Nat} {g : Clif.Function} {F G : BitVec 64 → Prop} {s 
     {x : Insn} (hx : insnAt (L.A g).fa (L.A g).base (Arm.r .PC u) = some x)
     (hc : (∃ n, x = .bl n) ∨ ∃ r, x = .blr r) :
     (L.actRLU κ M g F G s).CallPre u ∨ (L.actRLU κ M g F G s).CallPreU u := by
-  rcases hG with ⟨hg, -⟩ | hr
+  rcases hG with ⟨hg, -⟩ | ⟨hr, -⟩
   · obtain ⟨x0, ⟨j, tt, hj, hpc⟩, -⟩ := hg.line
     have hj' : (L.A g).fa.lines.toList[j]? = some (.ins x0 tt) := hj
     have h0 : insnAt (L.A g).fa (L.A g).base (Arm.r .PC u) = some x0 := by
@@ -368,7 +368,7 @@ theorem prog_of_good {M : Nat} {g : Clif.Function} {F G : BitVec 64 → Prop} {s
     (hG : actGoodXU (L.A g).vcp (L.A g).rf (L.A g).af (L.A g).fa (L.A g).fb (L.A g).base s
       (L.XU κ M g F) (L.hooksU M) (L.XRU κ M g F) (L.UU M) (L.A g).tables (κ M g) G
       (GotV (L.A g).vcp) u) : u.program = (L.A g).fb.program (L.A g).base := by
-  rcases hG with ⟨hg, -⟩ | hr
+  rcases hG with ⟨hg, -⟩ | ⟨hr, -⟩
   · exact hg.prog
   · exact hr.prog
 
@@ -405,7 +405,7 @@ theorem runGood_of_traceU (hL : L.Ok) (hU : L.OkU) [L.CrunOkX] {M : Nat}
     have hne : (L.A g).fb.words.toList ≠ [] := by
       obtain ⟨x0, ⟨j, tt, hj, -⟩, -⟩ : ∃ x, (L.actRLU κ (M0 + 1) g F G s).AtLine
           (runX (L.machU (M0 + 1) g) k s) x ∧ True := by
-        rcases hG with ⟨hg', -⟩ | hr
+        rcases hG with ⟨hg', -⟩ | ⟨hr, -⟩
         · obtain ⟨x, hx, -⟩ := hg'.line; exact ⟨x, hx, trivial⟩
         · obtain ⟨x, -, -, -, hx, -⟩ := hr.raise; exact ⟨x, hx, trivial⟩
       obtain ⟨lm, hlm⟩ := FnAsm.layout_labelOffsets hc.layout
