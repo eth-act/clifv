@@ -28,10 +28,21 @@ open Arm ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.Driver VC
 
 /-! ## Results -/
 
+/-- The CLIF thread is at an `atomic_cas` on read-only data (outside layer 2's scope: its store
+would be stuck exactly when the comparison succeeds). -/
+def CasRO (t : TState) : Prop :=
+  ∃ s stm rest ty fl pp ex x a n, t = .run s ∧ s.frame.body = stm :: rest ∧
+    stm.inst = .atomicCas ty fl pp ex x ∧ IselClif.access s.frame stm.inst = some (a, n) ∧
+    s.mem.readonlyAt a n = true
+
+/-- Where a realized prefix may end: the CLIF thread has no step, or is at an `atomic_cas` on
+read-only data. -/
+def Stop (env : Clif.Env) (p : Clif.Program) (t : TState) : Prop := Done env p t ∨ CasRO t
+
 /-- **The VCode trace `tr` from a match with `s` is realized** (module doc). -/
 def SimRes (env : Clif.Env) (p : Clif.Program) (s : Clif.State) (tr : List (List Ev)) : Prop :=
   ∃ n trS t, n ≤ tr.length ∧ CRun env p (.run s) trS t ∧ Corr Maps trS (conv (tr.take n)) ∧
-    (n = tr.length ∨ Done env p t)
+    (n = tr.length ∨ Stop env p t)
 
 /-- **One segment's result** (module doc). -/
 def SegRes (env : Clif.Env) (p : Clif.Program) (vc : VCode) (sem : ISem CV ArmState)
@@ -168,7 +179,7 @@ theorem pure_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
     have hok := stmtOk_of hchk hB hstm hL hsl
     have hmi : SegShape.memInsts sl.st'.emitted.toList = [] := by
       simp only [stmtOkB, Bool.and_eq_true] at hok
-      have h2 := hok.1.2
+      have h2 := hok.1.1.2
       unfold SegShape.segShape at h2
       have he : SegShape.expect stm.inst = none := by
         cases h : stm.inst <;> rw [h] at hp <;> simp [pureInst] at hp <;> rfl
@@ -192,10 +203,10 @@ theorem pure_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
         (by rw [List.take_length]; exact corr_nil_tgts hpe), .inl rfl⟩
   | done v0 m0 => exact absurd hs (stmt_not_done hbody hext hind)
   | trapped c =>
-    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr ?_⟩
+    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_)⟩
     refine done_of_step (evShape_pure hbody hp) (by rw [hs]; rfl)
   | stuck m =>
-    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr ?_⟩
+    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_)⟩
     refine done_of_step (evShape_pure hbody hp) (by rw [hs]; rfl)
 
 /-- **The segment of a terminator**: a branch reaches the successor's match without events; a
@@ -273,14 +284,14 @@ theorem term_seg (H : DriverHyp f vc ctx st0 R gn bl A (csem F fc X) MR env p)
         | tryCall _ _ _ => rw [hT] at hnt'; cases hnt'
         | tryCallIndirect _ _ _ => rw [hT] at hnt'; cases hnt'
       simp [res, hcm]
-    refine .inl ⟨0, [[]], .ret vals, Nat.zero_le _, .cons hc .nil, .src .nil, .inr ?_⟩
+    refine .inl ⟨0, [[]], .ret vals, Nat.zero_le _, .cons hc .nil, .src .nil, .inr (.inl ?_)⟩
     rintro ⟨evs, t', h⟩
     exact h
   | trapped c =>
-    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr ?_⟩
+    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_)⟩
     refine done_of_step (evShape_term hbody) (by rw [hs]; rfl)
   | stuck m =>
-    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr ?_⟩
+    refine .inl ⟨0, [], .run s, Nat.zero_le _, .nil, .nil, .inr (.inl ?_)⟩
     refine done_of_step (evShape_term hbody) (by rw [hs]; rfl)
 
 end

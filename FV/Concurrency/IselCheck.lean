@@ -12,9 +12,9 @@ CLIF outcome. They are checked on the driver's lowering, by translation validati
 
 * `stmtOkB inst ms`: the statement is in the multi-threaded scope (`threadInstB`: a pure
   instruction (`pureInst`), `fence`, or a little-endian `load`/`atomic_*`, a `store`/
-  `atomic_store`), its code has the segment shape (`SegShape.segShape`), and every instruction of
+  `atomic_store`), its code has the segment shape (`SegShape.segShape`), every instruction of
   the code is a control form or a covered straight-line form (`FormOk`), not a call and not a
-  `rets`;
+  `rets`, and an `atomic_cas`'s loop compares with the expected value's vreg (`casOkB`);
 * `termOkB t ms`: the terminator is a branch, a return or a trap (no `try_call`, no tail call)
   and its code has no instruction with a memory kind;
 * **`threadCheck f`**: both, on the driver's lowering of `f` (as `lowerCheck` computes it);
@@ -48,9 +48,18 @@ def threadInstB : Clif.Inst → Bool
 `rets`. -/
 def instOkB (i : MInst) : Bool := (i.isCtl || FormOk default i) && !isCallB i && !isRetsB i
 
+/-- An `atomic_cas` compares with its expected value's own vreg (the loop's `expect` operand):
+the comparison of the code is the comparison of the CLIF statement. -/
+def casOkB (inst : Clif.Inst) (ms : List MInst) : Bool :=
+  match inst with
+  | .atomicCas _ _ _ ex _ => (memInsts ms).all fun i => match i with
+    | .atomicCasLoop _ _ _ (.vreg e _) _ _ _ => e == ex
+    | _ => false
+  | _ => true
+
 /-- **A statement and its code** (module doc). -/
 def stmtOkB (inst : Clif.Inst) (ms : List MInst) : Bool :=
-  threadInstB inst && segShape inst ms && ms.all instOkB
+  threadInstB inst && segShape inst ms && ms.all instOkB && casOkB inst ms
 
 /-- **A terminator and its code** (module doc). -/
 def termOkB (t : Clif.Terminator) (ms : List MInst) : Bool :=

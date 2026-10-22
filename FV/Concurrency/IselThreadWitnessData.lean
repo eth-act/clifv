@@ -39,8 +39,13 @@ def vcA : VCode := match lowerFunction fA with
   | .ok vc => vc
   | .error _ => default
 
-theorem lowerA : lowerFunction fA = .ok vcA :=
-  ok_of_isOkB (e := lowerFunction fA) default (by native_decide)
+theorem lowerA : lowerFunction fA = .ok vcA := by
+  have h : isOkB (lowerFunction fA) = true := by native_decide
+  unfold vcA
+  revert h
+  cases lowerFunction fA with
+  | ok x => intro _; rfl
+  | error e => intro h; cases h
 
 /-- The checks on `fA` and its lowering. -/
 theorem checksA : lowerCheck fA vcA = true ∧ IselCheck.threadCheck fA = true ∧
@@ -86,8 +91,9 @@ theorem driverHypA {Γ : E2E.Rel} {fctx : FnCtx} {X : ExtSem} {c : BitVec 64} {e
     rw [externsA]; intro ext h; cases h
   have hXI : XCallsIndOk env (indSigs fA) (RelW Γ fA c) X := by
     rw [indSigsA]; intro s h; cases h
-  have hRef : Refines Γ.F (csem Γ.F fctx X) := refines_csem _
-  have hmem : MemRefines Γ.F Γ.slotOff Γ.syms (csem Γ.F fctx X) := memRefines_csem X hslot hsym
+  have hRef : Refines Γ.F (csem Γ.F fctx X) := refines_csem Γ.F fctx X
+  have hmem : MemRefines Γ.F Γ.slotOff Γ.syms (csem Γ.F fctx X) :=
+    memRefines_csem Γ.F fctx X hslot hsym
   have hcalls := callsRefine_csem (F := Γ.F) (ctx := fctx) hX
   have hicalls := indCallsRefine_csem (F := Γ.F) (ctx := fctx) hXI hsym
     (fun _ _ _ h => h.1.1.symbols)
