@@ -16,6 +16,7 @@ import FV.Backend.Proof.IselEmitDefs
 import FV.Opt.Legalize128Pass
 import FVTest.Opt.Common
 import FV.E2E.LinkScopeInputDefs
+import FV.Backend.Proof.SretStable
 
 /-!
 # The M7 validators on real code (`lake exe lean-e2e-check [FILE.clif...]`)
@@ -51,6 +52,10 @@ replacement by conditions on the CLIF function alone (`fnScopeInB`: `sizeOkB`, `
 `iselInB`), both with the other per-function conditions of the backend's totality theorems
 (`dominatedB`, `lowerScopeB`, `arityOkB`, `entryParamsB`, `extendsWidenB`). A function one accepts
 and the other rejects fails the run (`fnScopeInB` implies `fnScopeB`: `fnScopeB_of_input`).
+
+For every function that returns its `sret` pointer (`sigRets`), it reports whether
+`sretStableB` holds (the premise of `E2E.backend_correct_final_abi`, whose conclusion has the
+pointer in x0 on return); a failure is printed, not rejected.
 
 Every file is first legalised (`Opt.Legalize128.parsedFile128`, as `lean-backend` does): a
 legalised `i128` function the validator `Opt.Legal.checkW` accepts is in scope (covered by
@@ -228,6 +233,8 @@ def main (args : List String) : IO UInt32 := do
   let mut tSpill := 0
   let mut arity := 0
   let mut entryP := 0
+  let mut sretFns := 0
+  let mut sretOk := 0
   let mut extW := 0
   let mut szIn := 0
   let mut szInMax := 0
@@ -297,6 +304,10 @@ def main (args : List String) : IO UInt32 := do
       else IO.println s!"{file}: %{f.name}: arityOkB fails (a branch argument count differs from its target's parameter count)"
       if Backend.Proof.Spill.entryParamsB f then entryP := entryP + 1
       else IO.println s!"{file}: %{f.name}: entryParamsB fails (the entry block's parameters differ from the signature's)"
+      if Backend.sigRets f.sig != f.sig.returns then
+        sretFns := sretFns + 1
+        if Backend.Proof.Driver.sretStableB f then sretOk := sretOk + 1
+        else IO.println s!"{file}: %{f.name}: sretStableB fails (the sret value is rebound): x0 on return outside backend_correct_final_abi"
       if Backend.Proof.Driver.extendsWidenB f then extW := extW + 1
       else IO.println s!"{file}: %{f.name}: extendsWidenB fails (a uextend/sextend that does not widen)"
       let bIn := E2E.sizeBoundIn f
@@ -425,6 +436,7 @@ def main (args : List String) : IO UInt32 := do
   IO.println s!"lowerCheck_complete conditions: dominatedB {dom}, lowerScopeB {scope}, both {both} (of {ok + bad} checked)"
   IO.println s!"arityOkB {arity} of {ok + bad}"
   IO.println s!"entryParamsB (entry block parameters = signature parameters; input condition of definite assignment) {entryP} of {ok + bad}"
+  IO.println s!"sretStableB (the sret pointer returned in x0, premise of backend_correct_final_abi) {sretOk} of {sretFns} functions returning their sret pointer"
   IO.println s!"extendsWidenB (IselEmitDefs, every uextend/sextend widens; input condition of backend_correct_final_total_emit_in) {extW} of {ok + bad}"
   IO.println s!"sizeOkB (SizeDefs, input-side size bound; input condition of backend_correct_final_total_emit_input) {szIn} of {ok + bad}; largest bound {szInMax} words (limit 2^24)"
   IO.println s!"per-function scope (lean-link): lowersB (fnScopeB, runs lowerFunction/prepare) {scopeOld}, input conditions (fnScopeInB: sizeOkB, driverInB, iselInB) {scopeIn} of {ok + bad}; disagreements {scopeMis}"
