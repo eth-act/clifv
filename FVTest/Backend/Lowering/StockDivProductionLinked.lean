@@ -31,10 +31,10 @@ private def configFor (i : Nat) : Stock.D0.Configuration :=
 private def sourceText (name : String) (c : Stock.D0.Configuration)
     (retainedMixed : Bool := false) (i : Nat := 0) : String :=
   let f := {E2E.StockDivNIWitness.function c (E2E.StockDivNIWitness.operations[(i : Nat) % 4]!) with name}
-  -- A further dead operation distinguishes retained plain artifacts from the
-  -- demand-driven Stock output, exercising consumer reconstruction fallback.
-  let f := if retainedMixed then {f with blocks := f.blocks.map fun b =>
-    {b with body := b.body ++ [⟨[101],.binary .iadd (Stock.D0.valueType c) 0 1⟩]}} else f
+  -- Retained mode selects the previous complete Logical lowering on this
+  -- same eligible source. Its legacy artifact differs from raw Stock output,
+  -- so real consumer reconstruction must discover a non-default route.
+  let _ := retainedMixed
   f.print
 
 private def plan (s : LinkSpec) : Link.Ld.Plan :=
