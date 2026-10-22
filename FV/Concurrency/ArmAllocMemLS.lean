@@ -431,4 +431,142 @@ theorem ctlIndep_fpUnsc_store (sz : ScalarSize) (hsz : FpSz sz) (imm9 : BitVec 9
   · exact sameCtl_ldstur_store_err hsz imm9 M y h31
   · exact sameCtl_ldstur_store hsz imm9 M y h31
 
+/-! ## Event-free prefixes of lines -/
+
+/-- The events of a line list whose lines' instructions have no memory kind are empty. -/
+theorem linesEvs_insKind_none : ∀ {env : Env} {pre : List Line} (s : ArmState),
+    (∀ ln ∈ pre, ∃ x t', ln = .ins x t' ∧ insnKind x = none) → linesEvs env pre s = []
+  | env, [], _, _ => rfl
+  | env, .ins i t :: pre, s, h => by
+    obtain ⟨x, u, e, hk⟩ := h _ List.mem_cons_self
+    cases e
+    simp only [linesEvs]
+    cases ha : i.toArmInst env with
+    | error _ => rfl
+    | ok ai =>
+      simp only [ha]
+      split
+      · simp only [instEvs_none ha hk, List.nil_append]
+        exact linesEvs_insKind_none _ (fun ln hl => h ln (List.mem_cons_of_mem _ hl))
+      · simp only [instEvs_none ha hk]
+  | env, .label _ :: _, _, h => by obtain ⟨x, t', e, -⟩ := h _ List.mem_cons_self; cases e
+  | env, .word _ _ :: _, _, h => by obtain ⟨x, t', e, -⟩ := h _ List.mem_cons_self; cases e
+
+/-- **An event-free prefix of lines does not touch the memory**: running it over `setMem M s` is
+`setMem M` of running it over `s` (its events are empty, so its footprint is memory-free). -/
+theorem preMem {env : Env} {pre : List Line}
+    (hk : ∀ ln ∈ pre, ∃ x t', ln = .ins x t' ∧ insnKind x = none) (M : Memory) (s : ArmState) :
+    execLines env pre (setMem M s) = (execLines env pre s).map (setMem M) := by
+  have h := ofoot_execLines env pre s
+  rw [linesEvs_insKind_none s hk] at h
+  simpa only [applyW] using h.2 M trivial
+
+open Classical in
+/-- **Receptiveness of a straight-line form with an event-free prefix** (`straightSem_pre`): the
+memory-independent shape of the step (`straightSem_one` with the prefix's `preMem`): the prefix's
+end state `y1` does not depend on the memory, and the step's value at any memory is the
+if-expression on the access's execution at that memory. -/
+theorem straightSem_pre {F : BitVec 64 → Prop} {ctx : FnCtx} {i ic : MInst} {uses : List CV}
+    {w : ArmState} {ops : Array Operand} {pre : List Line} {x : Insn}
+    {t : Option Clif.TrapCode} {a : ArmInst}
+    (hops : i.operands = .ok ops) (hic : i.assign (canonRegs ops) = .ok ic)
+    (hl : ic.lines ctx {} = .ok (pre ++ [.ins x t], {}))
+    (hk : ∀ ln ∈ pre, ∃ x' t', ln = .ins x' t' ∧ insnKind x' = none)
+    (ha : x.toArmInst env0 = .ok a)
+    (ha' : x.toArmInst { env0 with pc := env0.pc + 4 * pre.length } = .ok a)
+    (hc : CtlIndep a) (y1 : ArmState)
+    (hy1 : execLines env0 pre (placeUses ops (canonRegs ops) uses w) = some y1) (M : Memory) :
+    straightSem F ctx i uses (setMem M w) =
+      if AccessOk F ctx ic (placeUses ops (canonRegs ops) uses w) ∧
+          Arm.r .PC (exec_inst a (setMem M y1)) = Arm.r .PC (setMem M y1) + 4#64 ∧
+          Arm.r .ERR (exec_inst a (setMem M y1)) = .None ∧
+          (exec_inst a (setMem M y1)).program = w.program then
+        some (defVals ops (canonRegs ops) (exec_inst a (setMem M y1)),
+          exec_inst a (setMem M y1), Ctl.next)
+      else none := by
+  unfold straightSem
+  simp only [hops, hic, placeUses_setMem, accessOk_setMem, execMInst, hl]
+  rw [execLines_append env0 pre [.ins x t] (setMem M (placeUses ops (canonRegs ops) uses w)),
+    preMem hk M (placeUses ops (canonRegs ops) uses w), hy1]
+  simp only [Option.map_some, Option.bind_some]
+  have e1 : execLines { env0 with pc := env0.pc + 4 * pre.length } [.ins x t] (setMem M y1) =
+      if Arm.r .PC (exec_inst a (setMem M y1)) = Arm.r .PC (setMem M y1) + 4#64 then
+        some (exec_inst a (setMem M y1)) else none := by
+    simp only [execLines, ha']
+  rw [e1]
+  by_cases hA : AccessOk F ctx ic (placeUses ops (canonRegs ops) uses w)
+  · rw [if_pos hA]
+    by_cases hP : Arm.r .PC (exec_inst a (setMem M y1)) = Arm.r .PC (setMem M y1) + 4#64
+    · rw [if_pos hP]
+      show (if Arm.r .ERR (exec_inst a (setMem M y1)) = .None ∧
+          (exec_inst a (setMem M y1)).program = (setMem M w).program then
+        some (defVals ops (canonRegs ops) (exec_inst a (setMem M y1)),
+          exec_inst a (setMem M y1), Ctl.next) else none) = _
+      by_cases hC1 : Arm.r .ERR (exec_inst a (setMem M y1)) = .None ∧
+          (exec_inst a (setMem M y1)).program = (setMem M w).program
+      · rw [if_pos hC1, if_pos ⟨hA, hP, hC1.1, hC1.2.trans (setMem_program M w)⟩]
+      · rw [if_neg hC1, if_neg (fun h => hC1 ⟨h.2.2.1, h.2.2.2.trans (setMem_program M w)⟩)]
+    · rw [if_neg hP, if_neg (fun h => hP h.2.1)]
+  · rw [if_neg hA, if_neg (fun h => hA h.1)]
+
+/-! ## The events of the plain load/store instructions on any memory -/
+
+/-- **The events of a plain GPR load on any memory** are the single read event at the base
+register's value plus the offset's value, of the access size, reading the memory — so they only
+depend on the base and offset values (and the `sp`-alignment branch). -/
+theorem immEvs_load_eq (op : LoadOp) (hop : op ≠ .fpuLoad128) (Rn Rt Rn' Rt' : BitVec 5)
+    (imm imm' : Arm.LDST.Reg_offset) (M : Memory) (s y : ArmState)
+    (ha : read_gpr 64 Rn s = read_gpr 64 Rn' y)
+    (hi : imm.value op.fields.1.toNat s = imm'.value op.fields.1.toNat y)
+    (hRn : (Rn = 31#5) ↔ (Rn' = 31#5))
+    (h31s : Rn = 31#5 → CheckSPAlignment s) (h31y : Rn' = 31#5 → CheckSPAlignment y) :
+    immEvs (gprCls op.fields.1 op.fields.2.2 Rn Rt imm) (setMem M s) =
+      immEvs (gprCls op.fields.1 op.fields.2.2 Rn' Rt' imm') (setMem M y) := by
+  cases op <;> simp at hop <;> simp only [LoadOp.fields] at hi <;>
+  · simp (config := {decide := true}) only [immEvs, gprCls, LoadOp.fields, log2,
+      Arm.LDST.reg_imm_constrain_unpredictable, check_sp_sm', hRn, Bool.false_eq_true,
+      not_false_eq_true, and_true, and_false, false_and, decide_eq_true_eq, if_false, ite_true]
+    by_cases hA1 : Rn' = 31#5 ∧ ¬ CheckSPAlignment s
+    · exact absurd hA1 (fun h => h.2 (h31s (hRn.mpr h.1)))
+    · by_cases hA2 : Rn' = 31#5 ∧ ¬ CheckSPAlignment y
+      · exact absurd hA2 (fun h => h.2 (h31y h.1))
+      · rw [if_neg hA1, if_neg hA2]
+        simp only [read_gpr_sm, offset_value_sm, setMem_mem]
+        rw [ha, hi]
+        rfl
+
+/-- **… of a plain GPR store**: a write of the data register's bytes. -/
+theorem immEvs_store_eq (op : StoreOp) (hop : op ≠ .fpuStore128) (Rn Rt Rn' Rt' : BitVec 5)
+    (imm imm' : Arm.LDST.Reg_offset) (M : Memory) (s y : ArmState)
+    (ha : read_gpr 64 Rn s = read_gpr 64 Rn' y)
+    (hd : Arm.r (Arm.StateField.GPR Rt) s = Arm.r (Arm.StateField.GPR Rt') y)
+    (hi : imm.value op.fields.1.toNat s = imm'.value op.fields.1.toNat y)
+    (hRt : Rt ≠ 31#5 ∧ Rt' ≠ 31#5)
+    (hRn : (Rn = 31#5) ↔ (Rn' = 31#5))
+    (h31s : Rn = 31#5 → CheckSPAlignment s) (h31y : Rn' = 31#5 → CheckSPAlignment y) :
+    immEvs (gprCls op.fields.1 op.fields.2.2 Rn Rt imm) (setMem M s) =
+      immEvs (gprCls op.fields.1 op.fields.2.2 Rn' Rt' imm') (setMem M y) := by
+  cases op <;> simp at hop <;> simp only [StoreOp.fields] at hi <;>
+  · simp (config := {decide := true}) only [immEvs, gprCls, StoreOp.fields, log2,
+      Arm.LDST.reg_imm_constrain_unpredictable, check_sp_sm', hRn, Bool.false_eq_true,
+      not_false_eq_true, and_true, and_false, false_and, decide_eq_true_eq, if_false, ite_true]
+    by_cases hA1 : Rn' = 31#5 ∧ ¬ CheckSPAlignment s
+    · exact absurd hA1 (fun h => h.2 (h31s (hRn.mpr h.1)))
+    · by_cases hA2 : Rn' = 31#5 ∧ ¬ CheckSPAlignment y
+      · exact absurd hA2 (fun h => h.2 (h31y h.1))
+      · rw [if_neg hA1, if_neg hA2]
+        simp (config := {decide := true}) [gprCls, ldst_read, read_gpr_zr_sm, read_gpr,
+          read_gpr_sm, offset_value_sm, setMem_mem, ha, hi, hd, if_pos hRt.1, if_pos hRt.2]
+        refine ⟨?_, ?_⟩
+        · have ha' : r (StateField.GPR Rn) s = r (StateField.GPR Rn') y := by
+            simpa [read_gpr] using ha
+          simp only [r_setMem, ha']
+          congr 1
+          try simpa using hi
+        · have hz : ∀ n, read_gpr_zr n Rt s = read_gpr_zr n Rt' y := fun n => by
+            simp only [read_gpr_zr, read_gpr, hd]; rw [if_pos hRt.1, if_pos hRt.2]
+          first
+            | rw [if_pos hRt.1, if_pos hRt.2]
+            | (congr 1; exact hz _)
+
 end Concurrency.ArmAllocThread
