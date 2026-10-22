@@ -674,10 +674,24 @@ they are; the per-thread layers are new files.
       `ldaxr` on x25), from the word check `WitnessX.ldxAcq_of_words`. Witnesses:
       `WitnessX.xClosed_llsc` (the `ldaxr; add; stlxr; cbnz` loop's run with a successful
       `stlxr`), `WitnessC.funReal_bl_open`.
-    * open: the caller's resumption after the callee's return (layer 4b and layer 2 with call
-      items/statements as pause points: callee-saved registers, `sp` and frame restored by the
-      callee's compiled code), and a compiled `atomic_rmw`/`atomic_cas` callee entered from its
-      ABI entry (its `CompiledE` needs the rmw/cas forms at the entry-level witness).
+    * **The callee's return, on the witness (partly done, `CallResume.lean`, `CallLoadFull.lean`)**:
+      generic `oneEv_op1` (one `OneEvForm` step from related states, related states after it),
+      `moves_privP`/`linesAt_nonRet` (moves with every state at a line other than `ret`),
+      `rets_privP` (the epilogue and `ret` per step: private events, the return address, `sp`,
+      memory and program after), `srcStep_of_mstep_eq/_nil`, `tstep_transfer`, `tstep_priv1`,
+      `ldar_evs_line`, `ClifCStepTerm.cstep_ret_pop` (the CLIF return into a suspended caller).
+      Witness: the linked machine `MC2` switches back to the caller's program at the callee's
+      `ret` line; **`funReal_ld`**: the compiled `atomic_load` callee's contract *with its return*
+      (every precise run realizes a prefix that is the whole run or ends after the callee's `ret`
+      with the caller's Arm state resumable, `PostA`, and its CLIF state ready to `return`), from
+      a concrete path through its code (`calleePath`, `calleePost`), the `ldar`'s source step by
+      layers 2–4a's progress (`mstep_ldar`), the CLIF load on the read bytes (`cstep_ld`).
+    * open: the caller's segment after the return (`Q` at the item after the call from `PostA`,
+      its moves, epilogue and CLIF `return`) and the `link_compose` instance giving the caller's
+      whole run; generically, layer 4b pausing at `rets`/calls needs a pc-discipline invariant
+      (no item's run leaves the code) and layer 2 the coverage of a returning CLIF thread.
+      Compiled `atomic_rmw`/`atomic_cas` callees from their ABI entry: see `CallLLSCEntry.lean`
+      when merged.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
@@ -790,7 +804,7 @@ they are; the per-thread layers are new files.
   at its start and its first step's events cannot sit in a strict prefix), `WitnessL.one_full`,
   `WitnessR.pair_full`; **`WitnessL.realizes_load_full`**, **`WitnessS.realizes_store_full`**,
   **`WitnessMP.realizes_mp_full`** (both prefixes whole, so `mp_reads` applies),
-  **`WitnessR.realizes_rmw_full`**; `WitnessC.realizes_cas_cov` (`Covers` only: that `atomic_cas`
+  **`WitnessR.realizes_rmw_full`**; `WitnessC.realizes_cas_cov` (`Covers` only, and `WitnessC1.realizes_cas_full` on the whole run: the same compiled function with the replacement `1`, `pair_full_rd` with the read value `cstep_rd`; the former: that `atomic_cas`
   stores the value it finds, and a CLIF `atomic_cas` leaving the bytes unchanged is a step with the
   read alone, which realizes the run up to the `ldaxr` and returns).
 * **Backward from forward.** The layers are forward per-step simulations; `Refines` is
