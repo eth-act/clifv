@@ -17,8 +17,8 @@ bash scripts/stock-compiler-comparison.sh \
 ```
 
 Prerequisites: Linux, git, rustup, Python >=3.11, a C/C++ build toolchain, and the
-Lean version pinned in `lean-toolchain` (4.34.1). Put `lean` and `lake` on `PATH`,
-or set `LEAN_BIN_DIR=/path/to/lean-4.34.1/bin`. The script installs/selects Rust
+Lean version pinned in `lean-toolchain` (4.35.0). Put `lean` and `lake` on `PATH`,
+or set `LEAN_BIN_DIR=/path/to/lean-4.35.0/bin`. The script installs/selects Rust
 1.96.0, builds `lean-regalloc --release --locked`, builds `lean-backend`, clones
 the pinned Wasmtime source if absent, applies the instrumentation and builds the
 stock exporter with `--locked`. No QEMU or external LLVM binutils are needed.

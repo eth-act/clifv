@@ -35,9 +35,9 @@ runs:
     - name: Configure Lean and the Lake cache
       shell: bash
       run: |
-        echo "$RUNNER_TOOL_CACHE/lean-4.34.1-linux/bin" >> "$GITHUB_PATH"
+        echo "$RUNNER_TOOL_CACHE/lean-4.35.0-linux/bin" >> "$GITHUB_PATH"
         {
-          echo "LEAN_BIN_DIR=$RUNNER_TOOL_CACHE/lean-4.34.1-linux/bin"
+          echo "LEAN_BIN_DIR=$RUNNER_TOOL_CACHE/lean-4.35.0-linux/bin"
           # same filesystem as the workspace: Lake hard-links cached outputs into .lake/build
           echo "LAKE_CACHE_DIR=$HOME/lake-cache"
           echo "LAKE_ARTIFACT_CACHE=true"
@@ -53,8 +53,8 @@ runs:
       id: lean-cache
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
-        path: ${{ runner.tool_cache }}/lean-4.34.1-linux
-        key: lean-4.34.1-linux-47bf4bbd78f70c2e
+        path: ${{ runner.tool_cache }}/lean-4.35.0-linux
+        key: lean-4.35.0-linux-7289597a44543246
     - name: Install pinned Lean
       if: steps.lean-cache.outputs.cache-hit != 'true'
       shell: bash
@@ -63,9 +63,9 @@ runs:
         LEAN_TOOL_CACHE: ${{ runner.tool_cache }}
       run: |
         curl --fail --location --retry 3 \
-          https://github.com/leanprover/lean4/releases/download/v4.34.1/lean-4.34.1-linux.tar.zst \
+          https://github.com/leanprover/lean4/releases/download/v4.35.0/lean-4.35.0-linux.tar.zst \
           --output "$LEAN_ARCHIVE"
-        echo "47bf4bbd78f70c2e9670598ab7124d92b6efb7330ff33e5fbb4030f6fd72e4e4  $LEAN_ARCHIVE" | sha256sum --check
+        echo "7289597a44543246c9227b8cae501767e095ce17f6d448b95fc4a8dc97268f6d  $LEAN_ARCHIVE" | sha256sum --check
         tar --zstd -xf "$LEAN_ARCHIVE" -C "$LEAN_TOOL_CACHE"
     - name: Download baseline build
       if: inputs.base-run-id != ''

@@ -5,7 +5,7 @@ the `Clif.run` filetests, the VeriISLE cross-check and the differential corpus.
 
 | Component | Pin | Notes |
 | --- | --- | --- |
-| Lean toolchain | `leanprover/lean4:v4.34.1` | `lean-toolchain` |
+| Lean toolchain | `leanprover/lean4:v4.35.0` | `lean-toolchain`; the version FloatLib pins (`docs/contracts/float.md`) |
 | Rust toolchain | `1.96.0` | `rust-toolchain.toml`; needed because Cranelift 0.136 has MSRV 1.96 |
 | Cranelift crates | `=0.136.1` | `rust/Cargo.toml` workspace deps |
 | Wasmtime source | tag `v49.0.1`, commit `46c23a87dac1465986a8ad53ba6a7ae49372857b` | `scripts/fetch-third-party.sh` puts it in `third_party/wasmtime`; Cranelift 0.136.1 ships in this release |
