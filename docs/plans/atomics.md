@@ -274,7 +274,13 @@ they are; the per-thread layers are new files.
   * same direction, location, size and value, with kinds related by `MK`;
   * the footprint guarantee: source events never access `Priv`, and target writes outside the
     image write `Priv` (frame, spills, saved registers); target reads outside the image (a failed
-    LL/SC iteration's `ldaxr`) may read anything;
+    LL/SC iteration's `ldaxr`) may read anything. **Barriers are exempt** (`Refines.shared`:
+    only events with direction other than `.F`): a barrier accesses no memory (the Arm `dmb`
+    event `ArmInstFoot.dmbEv` has address 0, size 0 and no bytes), so it cannot touch private
+    data, and no layer needs to keep address 0 out of the private set (the layer-4b private set
+    is the frame `R.F`, which may contain it). `realizes_of_threads` uses `shared` only for
+    reads (and `PrivCoh.ownWrites_of_refines` only at writes), which are never barriers;
+    `Refines.trans` and `Img`/`RefA` (layer 4b) carry the same exemption;
   * atomic updates map to the target's atomic pairs `pairT`, and back.
 
   `realizes_of_threads` assembles the threads' refinements and outcomes into `Realizes`, given

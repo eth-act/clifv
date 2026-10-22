@@ -158,20 +158,21 @@ theorem privCoh_of_consistent {σ : Type} {P : Traces σ K BVal} {locs : List (N
 
 variable {K' : Type}
 
-/-- A refinement with a larger private set, when the source events avoid it. -/
+/-- A refinement with a larger private set, when the source events avoid it (fences exempt, as
+in `Refines.shared`). -/
 theorem Refines.mono_priv {MK : K → K' → Prop} {P P' : Nat → Prop}
     {pairT : Nat × Nat → Nat × Nat → Prop} {trS : List (List (Ev K V))}
     {trT : List (List (Ev K' V))} {ψ : Nat × Nat → Nat × Nat}
     (h : Refines MK P pairT trS trT ψ) (hP : ∀ l, P l → P' l)
-    (hsh : ∀ p x, evAt trS p = some x → ¬ P' x.loc) : Refines MK P' pairT trS trT ψ :=
+    (hsh : ∀ p x, evAt trS p = some x → x.dir ≠ .F → ¬ P' x.loc) : Refines MK P' pairT trS trT ψ :=
   { h with
     shared := hsh
     priv := fun p y hy hW hn => hP _ (h.priv p y hy hW hn) }
 
 /-- **`realizes_of_threads` with a private set per thread**: thread `i` refines its CLIF thread
 with its own private set `PrivT i` (`Refines.priv`: its writes outside the image), its source
-events avoid every thread's set, and the Arm initial locations beyond the CLIF ones are private to
-some thread. -/
+events other than fences avoid every thread's set, and the Arm initial locations beyond the CLIF
+ones are private to some thread. -/
 theorem realizes_of_threads_priv {T : TSem TState SKind BVal} {PA : Traces AState AKind BVal}
     {locsA locsC : List (Nat × Nat)} {MA0 MC0 : Bytes} {rfA coA rmwA : Rel PEv}
     {s0 : Nat → TState} {PrivT : Nat → Nat → Prop} {pairT : Nat → Nat × Nat → Nat × Nat → Prop}
@@ -186,7 +187,7 @@ theorem realizes_of_threads_priv {T : TSem TState SKind BVal} {PA : Traces AStat
       (ψ : Nat × Nat → Nat × Nat), stS 0 = s0 i ∧
       (∀ j (h : j < trS.length), T (stS j) trS[j] (stS (j + 1))) ∧
       Refines Maps (PrivT i) (pairT i) trS (PA.tr i) ψ ∧
-      (∀ p x, evAt trS p = some x → ∀ j, ¬ PrivT j x.loc) ∧
+      (∀ p x, evAt trS p = some x → x.dir ≠ .F → ∀ j, ¬ PrivT j x.loc) ∧
       Obs i (PA.st i (PA.tr i).length) (stS trS.length)) :
     ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = PA.n ∧ (∀ i, PC.st i 0 = s0 i) ∧
       PC.Runs T ∧ Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ Obs := by
@@ -194,7 +195,7 @@ theorem realizes_of_threads_priv {T : TSem TState SKind BVal} {PA : Traces AStat
     fun i hi => ?_
   obtain ⟨trS, stS, ψ, h0, hrun, href, hsh, hobs⟩ := hthr i hi
   exact ⟨trS, stS, ψ, h0, hrun,
-    Refines.mono_priv href (fun l h => ⟨i, h⟩) (fun p x hx ⟨j, hj⟩ => hsh p x hx j hj), hobs⟩
+    Refines.mono_priv href (fun l h => ⟨i, h⟩) (fun p x hx hF ⟨j, hj⟩ => hsh p x hx hF j hj), hobs⟩
 
 /-- **Only thread `i` writes `PrivT i`**, from the threads' guarantees: a write of thread `i` is
 an image of a source write (outside every private set, `Refines.shared`) or in `PrivT i`
@@ -203,7 +204,7 @@ theorem ownWrites_of_refines {σ : Type} {PA : Traces σ AKind BVal} {PrivT : Na
     (hdisj : ∀ i i' l, PrivT i l → PrivT i' l → i = i')
     (hthr : ∀ i < PA.n, ∃ (trS : List (List (Ev SKind BVal))) (pairT : Nat × Nat → Nat × Nat → Prop)
       (ψ : Nat × Nat → Nat × Nat), Refines Maps (PrivT i) pairT trS (PA.tr i) ψ ∧
-      (∀ p x, evAt trS p = some x → ∀ j, ¬ PrivT j x.loc)) :
+      (∀ p x, evAt trS p = some x → x.dir ≠ .F → ∀ j, ¬ PrivT j x.loc)) :
     ∀ i j k x, PA.evAt (.thr i j k) = some x → x.dir = .W → ∀ i', PrivT i' x.loc → i' = i := by
   intro i j k x hx hW i' hP
   have hi := evAt_some_lt hx
@@ -212,10 +213,10 @@ theorem ownWrites_of_refines {σ : Type} {PA : Traces σ AKind BVal} {PrivT : Na
   by_cases himg : ∃ q, (evAt trS q).isSome ∧ ψ q = (j, k)
   · obtain ⟨q, hq, hψ⟩ := himg
     obtain ⟨u, hu⟩ := Option.isSome_iff_exists.mp hq
-    obtain ⟨y, hy, -, -, hl, -⟩ := href.ev q u hu
+    obtain ⟨y, hy, -, hd, hl, -⟩ := href.ev q u hu
     rw [hψ, hx'] at hy
     cases hy
-    exact absurd (hl ▸ hP) (hsh q u hu i')
+    exact absurd (hl ▸ hP) (hsh q u hu (by rw [← hd, hW]; decide) i')
   · exact hdisj _ _ _ hP (href.priv (j, k) x hx' hW fun q hq e => himg ⟨q, hq, e⟩)
 
 end Concurrency.PrivCoh
