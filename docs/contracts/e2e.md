@@ -439,6 +439,22 @@ the `retN`/value arguments).
   the linked CLIF environment keeps the link-time symbols (`Opt.EnvKeepsSymbolsX`), the trap
   premise at every fuel. Witness: `Link.DeadCleanup.OptUnwindWitness.stmt`/`peak_applies`
   (`%rec`'s optimised executable; `compileExeOptU` by `native_decide`).
+* **Completeness of the per-function unwinding checks (S10g, #404, in progress)**
+  (`FV/Link/UnwFnsComplete.lean`, namespace `Link.EhCheck.Complete`): three of `unwFnsB`'s six
+  checks pass on what the pipeline emits, from structural premises on the allocation `af` and
+  the emitted code (`lowerRFunc vc rf = .ok af`, `emitFunc k af = .ok fa`, `fa.layout = .ok fb`,
+  the entry blocks `vc.blocks[0]?`/`rf.blocks[0]?`): **`callSites_complete`** (`HandlersOk af`:
+  every `try_call` handler is a cleanup/catch tag, 0 or 1, whose landing pad is a block of `af`),
+  **`padsNonzero_complete`** (`PadsOk af l0`: every `try_call` has a handler, none at the entry
+  block: the entry label is at offset 0 and every other label after the prologue's `stp`/`mov`,
+  `label_off_ge`), **`unwindRows_complete`** (the entry block's leading callee-save stores have
+  negative 8-aligned CFA offsets, `SaveOk`, and the code is below 4 GiB; the emitted code starts
+  with the entry label, the prologue and those stores' lines, `entry_static`). Witness:
+  `Link.EhCheck.Complete.Witness.callSites_applies`/`padsNonzero_applies`/`unwindRows_applies`
+  (`DeadCleanupUnwindWitness.tc`, a `try_call` with a landing pad and callee-saves). Open:
+  deriving these premises from the input (the CLIF exception tables' tags, the CFG's labels, the
+  frame layout), and `unwCheck`, `lastCallsOk`, `savedCheck` (which fails for `large_frame`, see
+  "Validators"), and `ehOkR` on lean-ld's output.
 * **Validators**: `lowerCheck` re-runs the `try_call` lowering (`lowTerm`, `TryLow`), checks the
   normal-return edge block (`succOk`: its `jump`, no parameters, the branch arguments
   `normArgReg`, `retN` indices below the callee's return count), and checks that a `tryCall`
