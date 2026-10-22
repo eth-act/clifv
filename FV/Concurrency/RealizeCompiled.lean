@@ -4,6 +4,7 @@ import FV.Concurrency.PrivCoh
 import FV.Concurrency.ArmAllocBranch
 import FV.Concurrency.ArmAllocLS
 import FV.Concurrency.ThreadProgress
+import FV.Concurrency.ArmAllocPause
 
 /-!
 # The program-level contract for compiled code (T2k, #311)
@@ -208,6 +209,61 @@ theorem thread_compiledLS_full {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs
       Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
       (k = ls.length ∨ Stop env p (st trS.length)) :=
   thread_full_of_sim hc.gv hc.front (itemSim_ls hc.wf hc.scope) (coveredCode_of_ls hc.scope) hr
+
+/-- **`thread_full_of_sim` with the return covered** (T2j follow-up; `refines_of_itemSimQ`,
+`ThreadProgress.arm_isel_refines_fullR`): where the CLIF thread has returned, the realized prefix is
+the whole run or the Arm run up to its end reaches a state related to the allocated code's end. -/
+theorem thread_full_of_simR {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {s : ArmState} (hgv : RA.gv = fun _ _ => False) (hfront : Front env p RA cs s)
+    (hsim : ItemSim Policy.arm RA.step (OkPriv RA) (SrcStep RA) (RelQ RA) (Done RA) (μR RA)
+      (PrivA RA)) (hcov : CoveredCode RA)
+    {mon : Mon} {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
+    ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState) (ψ : Nat × Nat → Nat × Nat),
+      k ≤ ls.length ∧ st 0 = .run cs ∧
+      (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p (st trS.length)) ∧
+      ∀ v, st trS.length = .ret v → k = ls.length ∨
+        ∃ tE cE, PRun Policy.arm RA.step (OkPriv RA) (s, mon) (ls.take k) tE ∧ RelQ RA tE cE ∧
+          Done RA cE := by
+  obtain ⟨f, vc, ctx, st0, R, gn, bl, A, MR, slots, sb, syms, B0, args, m₀, w₀, H, hchk, hMR,
+    hMRw, hX, hMem, hMRs, hreg, hprep, halloc, hB0, hcall, hfunc, hslots, hbody, hterm, hregs, hty,
+    hsig, hmr, hargs, hq, hA⟩ := hfront
+  obtain ⟨nA, trM, cE, ψA, hnA, hs, hAr, hendQ⟩ :=
+    refines_of_itemSimQ hsim hr (show RelQ RA (s, mon) _ from ⟨hq, hA⟩)
+  have hend : nA = ls.length ∨ (Done RA cE ∧ ∃ t, RelQ RA t cE) :=
+    hendQ.imp_right fun ⟨tE, _, hRE, hDE⟩ => ⟨hDE, tE, hRE⟩
+  obtain ⟨k, trS, t, ψ, hk, hrun, href, hendk, hretk⟩ :=
+    arm_isel_refines_fullR hgv hcov H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0
+      hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr (mtrun_of_srun hs) hAr hend hnA
+  obtain ⟨st, h0, hst, hlast⟩ := crun_states hrun
+  have href' : Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS
+      (conv (evTr (ls.take k))) ψ := by
+    refine Refines.pairT_congr href fun a b _ hb => monPair_take hk ?_
+    obtain ⟨hb1, -⟩ := evAt_isSome (show (evAt (conv (evTr (ls.take k))) (b.1, b.2)).isSome from hb)
+    have := hb1; simp [conv, evTr] at this; omega
+  refine ⟨k, trS, st, ψ, by omega, h0, hst, href', hendk.imp_right (hlast ▸ ·), fun v hv => ?_⟩
+  have hkA := hretk v (hlast ▸ hv)
+  subst hkA
+  rcases hendQ with h | ⟨tE, hrE, hRE, hDE⟩
+  · exact .inl h
+  · exact .inr ⟨tE, cE, hrE, hRE, hDE⟩
+
+/-- **One compiled thread with loops, branches and plain loads/stores, on the whole run, with the
+return covered** (`thread_full_of_simR` for `MemScopeLS`). -/
+theorem thread_compiledLS_fullR {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {s : ArmState} (hc : CompiledLS env p RA cs s) {mon : Mon} {ls : List Lab}
+    {t' : ArmState × Mon} (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
+    ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState) (ψ : Nat × Nat → Nat × Nat),
+      k ≤ ls.length ∧ st 0 = .run cs ∧
+      (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p (st trS.length)) ∧
+      ∀ v, st trS.length = .ret v → k = ls.length ∨
+        ∃ tE cE, PRun Policy.arm RA.step (OkPriv RA) (s, mon) (ls.take k) tE ∧ RelQ RA tE cE ∧
+          Done RA cE :=
+  thread_full_of_simR hc.gv hc.front (itemSim_ls hc.wf hc.scope) (coveredCode_of_ls hc.scope) hr
 
 /-- **One compiled thread, with loops, branches and plain loads/stores** (as `thread_compiled`,
 for `CompiledLS`). -/

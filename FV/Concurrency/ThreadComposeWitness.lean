@@ -133,4 +133,32 @@ theorem isel_alloc_refines_fA {Γ : E2E.Rel} {fctx : FnCtx} {c : BitVec 64} {env
     (memRefines_csem Γ.F fctx _ hslot hsym) (mrStable_relW Γ fA c) fA_reg checks3A.1 allocA hB0
     hcall hfunc hslots hbody hterm hregs hty hsig (fun _ => 0) hmr hargs hr
 
+/-- **Layers 2, 3 and 4a on `fA` with the return covered** (`isel_alloc_refinesR`): as
+`isel_alloc_refines_fA`; where the CLIF thread has returned, the realized prefix is the whole run
+of the allocated code. -/
+theorem isel_alloc_refinesR_fA {Γ : E2E.Rel} {fctx : FnCtx} {c : BitVec 64} {env : Clif.Env}
+    {p : Clif.Program} (hc : c.toNat % 16 = 0) (hslot : fctx.slotBase = Γ.slotOff)
+    (hsym : ∀ n b, Γ.syms n = some b → VCodeThread.Witness.X0.sym n 0 = BitVec.ofNat 64 b)
+    {keep : Reg → CV → CV} :
+    ∀ (slots : List (Clif.SlotId × Nat)) (cs : Clif.State) (B0 : Clif.Block)
+      (args : List Clif.Val) (m₀ : Loc → CV) (w₀ : ArmState) (trM : List (List Ev))
+      (cM : MConf CV ArmState),
+      fA.blocks[0]? = some B0 → cs.callers = [] → cs.frame.func = fA →
+      cs.frame.slots = slots → cs.frame.body = B0.body → cs.frame.term = B0.term →
+      Clif.Regs.empty.setMany (B0.params.map (·.1)) args = some cs.frame.regs →
+      args.map (·.ty) = B0.params.map (·.2) → args.map (·.ty) = fA.sig.params.map (·.ty) →
+      RelW Γ fA c slots cs.mem w₀ → ArgsAtEntry Γ.F fA.sig args w₀ →
+      MTRun vcpA rfA (csem Γ.F fctx VCodeThread.Witness.X0) keep (cEvs Γ.F fctx)
+        (MConf.init rfA m₀ w₀) trM cM →
+      ∃ m trS t ψ, m ≤ trM.length ∧ CRun env p (.run cs) trS t ∧
+        Refines Maps (fun _ => False) (StepPair (conv (trM.take m))) trS (conv (trM.take m)) ψ ∧
+        ((m = trM.length ∧ ∃ cM', MStep vcpA (csem Γ.F fctx VCodeThread.Witness.X0) keep rfA cM cM') ∨
+          Stop env p t) ∧ ∀ v, t = .ret v → m = trM.length := by
+  intro slots cs B0 args m₀ w₀ trM cM hB0 hcall hfunc hslots hbody hterm hregs hty hsig hmr
+    hargs hr
+  obtain ⟨ctx, st0, R, gn, bl, A, H, hchk⟩ := driverHypA (env := env) (p := p) (c := c) hslot hsym
+  exact isel_alloc_refinesR H hchk (memRelOk_relW Γ fA c) (relW_wf hc) VCodeThread.Witness.X0_tls
+    (memRefines_csem Γ.F fctx _ hslot hsym) (mrStable_relW Γ fA c) fA_reg checks3A.1 allocA hB0
+    hcall hfunc hslots hbody hterm hregs hty hsig (fun _ => 0) hmr hargs hr
+
 end Concurrency.ThreadCompose.Witness

@@ -513,4 +513,22 @@ theorem realizes_cas_full : ∃ (n : Nat) (lsP : List Lab) (eR eW : Ev) (t' : Ar
       exact ⟨h0, hF, fun hv => h1 (hv.trans hval)⟩
   exact h
 
+/-- **Non-vacuity of `thread_compiledLS_fullR`** on the compiled `atomic_cas` entered with x2 = 1:
+from the body entry after its prologue, every precise run is realized on a prefix that is the
+whole run or ends where the CLIF thread stops; where it has returned, the prefix is the whole run
+or reaches a state related to the allocated code's end. -/
+theorem thread_cas1_fullR (env : Clif.Env) (p : Clif.Program) : ∃ n, ∀ (mon : Mon) (ls : List Lab)
+    (t' : ArmState × Mon),
+    PRun Policy.arm RAC1.step (OkPriv RAC1) (iterN RAC1.step n RAC1.s0, mon) ls t' →
+    ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState) (ψ : Nat × Nat → Nat × Nat),
+      k ≤ ls.length ∧ st 0 = .run csC1 ∧
+      (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA RAC1) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p (st trS.length)) ∧
+      ∀ v, st trS.length = .ret v → k = ls.length ∨
+        ∃ tE cE, PRun Policy.arm RAC1.step (OkPriv RAC1) (iterN RAC1.step n RAC1.s0, mon)
+          (ls.take k) tE ∧ RelQ RAC1 tE cE ∧ Done RAC1 cE := by
+  obtain ⟨n, hq, hA⟩ := qRC1
+  exact ⟨n, fun mon ls t' hr => thread_compiledLS_fullR (compiled_ofC1 hq hA env p) hr⟩
+
 end Concurrency.RealizeCompiled.WitnessC1
