@@ -386,8 +386,12 @@ premise with `i128`) and the oracle (`BaseOk.baseKeepsPlace`). For a program wit
 legalisation is the identity and the source run is the compiled program's run from the same
 state (`prog_eq_src`, `ident_state`). No CLIF semantics change. Witnesses:
 `crate-proofs/Crates/NoBndWitness.lean` (the runs of the existing witnesses, without
-`srcBounded`). Still with `hbnd`: the baseline compiler's, the optimising and unwinding source
-theorems, the trap-callee variants (`RawExeTrap`).
+`srcBounded`). With callee traps (S9d, `compileExeU`): `compileExe_correct_source_trap{,_peak}_nobnd`
+(`FV/Link/DeadCleanupExeTrapNB.lean`) and `Front.bundle_correct_{source,raw}_trap{,_peak}_nobnd`
+(`FV/Front/RawExeTrapNB.lean`), witness `Link.DeadCleanup.TrapWitness.exec_source_traps`
+(`FV/Link/DeadCleanupExeTrapNBWitness.lean`: a source run trapping in a callee, `TrapsD` at every
+depth, `NoMemTrap`). Still with `hbnd`: the baseline compiler's, the optimising and unwinding
+source theorems.
 
 **Recursive programs and the shipped compiler (L1f, #217).** `Link.compileExe_correct_source_peak`
 (`FV/Link/ExeSource.lean`): the same without `hc`, the outside caller providing `frameDrop (art
