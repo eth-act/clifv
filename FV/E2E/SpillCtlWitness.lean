@@ -51,7 +51,7 @@ theorem lowerWitness_abi :
 theorem abiSigsOk_lowerWitness : AbiSigsOk lowerWitness := by
   have h := lowerWitness_abi
   simp only [Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
-  exact ⟨⟨h.1.1, h.1.2⟩, h.2⟩
+  exact ⟨⟨h.1.1, h.1.2⟩, fun s hs => (h.2 s hs).2⟩
 
 /-- **Non-vacuity of `ctlSpillHyp_of iselCtlHyp`**: its input premises hold for `lowerWitness`. -/
 theorem ctlSpillHyp_of_witness :

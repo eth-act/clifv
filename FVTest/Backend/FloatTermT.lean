@@ -74,6 +74,9 @@ theorem scopeT_tb : LowerScopeT fTb where
       rw [hi] at this; cases this
     · have := List.all_eq_true.mp h2 B hB
       rw [ht] at this; cases this
+  indStackLayout := by
+    have h : (Backend.indSigs fTb).all (fun s => stackLayoutOk s) = true := by native_decide
+    exact fun s hs => List.all_eq_true.mp h s hs
 
 theorem lowerFunction_tb : lowerFunction fTb = .ok (vcOf fTb) := by
   have hok : (lowerFunction fTb).toBool = true := by native_decide
@@ -225,6 +228,9 @@ theorem scopeT_call : LowerScopeT fCall where
       simpa [he] using this
     · have := List.all_eq_true.mp h2 B hB
       rw [ht] at this; cases this
+  indStackLayout := by
+    have h : (Backend.indSigs fCall).all (fun s => stackLayoutOk s) = true := by native_decide
+    exact fun s hs => List.all_eq_true.mp h s hs
 
 /-- **Witness**: `lowerCheckT_complete` on a float function with an integer `call`. -/
 theorem lowerCheckT_call : lowerCheckT fCall (vcOf fCall) = true :=

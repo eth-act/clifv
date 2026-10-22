@@ -101,6 +101,9 @@ theorem scopeT_mv : LowerScopeT fMv where
       rw [hi] at this; cases this
     · have := List.all_eq_true.mp h2 B hB
       rw [ht] at this; cases this
+  indStackLayout := by
+    have h : (Backend.indSigs fMv).all (fun s => stackLayoutOk s) = true := by native_decide
+    exact fun s hs => List.all_eq_true.mp h s hs
 
 /-- **Slice 1 witness**: `buildCtx_typed` on a float-movement function outside subset E. -/
 theorem buildCtx_typed_mv : ∃ ctx ranges st0, buildCtx fMv = .ok (ctx, ranges, st0) ∧

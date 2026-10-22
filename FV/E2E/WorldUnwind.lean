@@ -116,7 +116,8 @@ theorem iselSimU_relW_cleanup {p : Clif.Program} {f : Clif.Function} {k : Nat} {
   have HR : RaiseHyp f sem (RelW Γ f c) env F X XR slotOff syms (RAFrame.compute vcp rf).intBase :=
     ⟨raiseSem_valueSemU _ _ X XR, hRef, hmem, mrStable_relW Γ f c, outArgsOk_relW Γ f c,
       memRelOk_relW Γ f c, callsStack_mono (callsStack_of_check hc.lowerOk) houtB,
-      tryStack_mono (tryStack_of_check hc.lowerOk) houtB, hXR, hXRi, hsym,
+      tryStack_mono (tryStack_of_check hc.lowerOk) houtB,
+      indStack_mono (indStack_of_check hc.lowerOk) houtB, hXR, hXRi, hsym,
       fun sl cm w h => (memRelOk_relW Γ f c).symbols sl cm w h⟩
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by
@@ -415,7 +416,8 @@ theorem iselSimU_relW {p : Clif.Program} {f : Clif.Function} {k : Nat} {vc vcp :
   have HR : RaiseHyp f sem (RelW Γ f c) env F X XR slotOff syms (RAFrame.compute vcp rf).intBase :=
     ⟨raiseSem_csemU _ _ X XR, hRef, hmem, mrStable_relW Γ f c, outArgsOk_relW Γ f c,
       memRelOk_relW Γ f c, callsStack_mono (callsStack_of_check hc.lowerOk) houtB,
-      tryStack_mono (tryStack_of_check hc.lowerOk) houtB, hXR, hXRi, hsym,
+      tryStack_mono (tryStack_of_check hc.lowerOk) houtB,
+      indStack_mono (indStack_of_check hc.lowerOk) houtB, hXR, hXRi, hsym,
       fun sl cm w h => (memRelOk_relW Γ f c).symbols sl cm w h⟩
   obtain ⟨B0, hent, hbody, hterm, hty, hregs⟩ := hce.entry
   have hB0 : f.blocks[0]? = some B0 := by

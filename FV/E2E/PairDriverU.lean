@@ -131,8 +131,8 @@ theorem _root_.Backend.Proof.Driver.DriverHyp.sub {f : Clif.Function} {vc : VCod
         h i j => (ht ctx ti fn args et data sig items targets info trs lo st1 o st' tr a b c d e g
           h i j).sub hsub, hts⟩
     tryInd := fun f ctx ti callee args et data sig items targets info trs lo st1 o st' tr a b c d e g
-        h i j k => (H.tryInd f ctx ti callee args et data sig items targets info trs lo st1 o st'
-          tr a b c d e g h i j k).sub hsub }
+        h i j => (H.tryInd f ctx ti callee args et data sig items targets info trs lo st1 o st'
+          tr a b c d e g h i j).sub hsub }
 
 end
 
@@ -330,7 +330,8 @@ theorem vcode_niU (hsub : InSubset p f) (hc : Compiled f k vc vcp rf af fa fb)
       (driverSemG_pair_of hdU)) hUs
     (raiseHypW_pair_csemU (D := D) (p := p) ⟨fa.k, af.slotBase⟩ hslot hTls hexcl
       (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-      (tryStack_mono (tryStack_of_check hc.lowerOk) houtB) (outArgsOk_relW Γ f c) hXR hXRi hsym
+      (tryStack_mono (tryStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) (outArgsOk_relW Γ f c) hXR hXRi hsym
       hRNI)
     hdU (memRefines_csemU _ _ X XR hslot hsym) ρ₀ hce hrel hrel' hargs hsw hreg hstk htr fuel
 
@@ -438,7 +439,8 @@ theorem vcode_niU_value (hsub : InSubset p f) (hc : CompiledCleanup f k vc vcp r
       (driverSemG_pair_of hdU)) hUs
     (raiseHypW_pair_valueSemU (D := D) (p := p) ⟨fa.k, af.slotBase⟩ hslot hTls hexcl
       (callsStack_mono (callsStack_of_check hc.lowerOk) houtB)
-      (tryStack_mono (tryStack_of_check hc.lowerOk) houtB) (outArgsOk_relW Γ f c) hXR hXRi hsym
+      (tryStack_mono (tryStack_of_check hc.lowerOk) houtB)
+      (indStack_mono (indStack_of_check hc.lowerOk) houtB) (outArgsOk_relW Γ f c) hXR hXRi hsym
       hRNI)
     hdU (memRefines_valueSemU _ _ X XR hslot hsym) ρ₀ hce hrel hrel' hargs hsw hreg hstk htr fuel
 

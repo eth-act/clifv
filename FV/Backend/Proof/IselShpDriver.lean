@@ -286,7 +286,7 @@ theorem tryInd_sig (ha : AbiSigsOk f) {t : Clif.Terminator} {et : Clif.ExnTable}
   have hmem : sig ∈ indSigs f := by
     simp only [indSigs, List.mem_flatMap, List.mem_append]
     exact ⟨B, hB, .inr (by rw [hBt]; simp [hl])⟩
-  exact (ha.2 sig hmem).2
+  exact ha.2 sig hmem
 
 /-- **A `try_call`'s lowering emits control forms of their shapes.** -/
 theorem tryCall_shp (hctx : CtxInv f ctx) (hcl : Cov.Clean ctx) (ha : AbiSigsOk f) {ti : Nat}
