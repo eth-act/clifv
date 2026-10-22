@@ -143,7 +143,7 @@ def selectedRoots (result : Backend.Stock.Result) : List Nat :=
     event.output.records.filterMap fun record => record.output.step.bind fun step => step.rules.getLast?
 
 def highmulRoots (config : Backend.Stock.D0.Configuration) : List Nat :=
-  [811,819,958] ++ (if valueType config == .i64 then [777,779] else [778,780])
+  [811,819,958] ++ (if Backend.Stock.D0.valueType config == .i64 then [777,779] else [778,780])
 
 def highmulFormsCovered (result : Backend.Stock.Result) : Bool :=
   let code := result.code.blocks.toList.flatMap (fun b => b.insts.toList)
