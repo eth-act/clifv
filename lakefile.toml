@@ -25,6 +25,10 @@ name = "arm-cosim"
 root = "FVTest.Arm.Cosim.Main"
 
 [[lean_exe]]
+name = "arm-fault-cosim"
+root = "FVTest.Arm.Cosim.FaultMain"
+
+[[lean_exe]]
 name = "clif-filetest"
 root = "FVTest.Clif.Filetest"
 

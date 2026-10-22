@@ -9,7 +9,7 @@ keep their premises, new results get new names, every new top-level theorem a wi
 | Slice | State |
 | --- | --- |
 | F0 | this plan |
-| F1 | Arm fault model (`FV/ArmFault/`), witness, fault co-simulation |
+| F1 | done: `FV/ArmFault/Step.lean` (`stepF`, `runF_eq_run`, `runF_fault`, …), witnesses `FV/ArmFault/Witness.lean`, `scripts/arm-fault-cosim.sh` 152 forms, 30 400 vectors (20 577 faults), 0 failures (`docs/contracts/arm.md`, "Memory faults") |
 | F2–F7 | open (below) |
 
 ## Where we are
