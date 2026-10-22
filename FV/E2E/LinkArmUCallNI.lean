@@ -19,15 +19,12 @@ namespace LinkSysU
 variable (L : LinkSysU)
 variable {κ : Nat → Clif.Function → Nat}
 
-/-- **A call of a function `h` of `P` at depth `M + 1` on the linked machine with unwinding**
-(`progCallU` without `¬ NeedNI`, with the non-interference clauses of `LinkSys.progCall`): from a world `w` with room for the callee's stack and related to CLIF
-arguments and memory, when the callee run with unwinding (`crunX (M + 1)`) returns, one VCode
-outcome of `h` that the linked machine's call returns with (not raising) from every caller state
-compatible with `w` (`CallerOk`); when it ends `unwound`, an exception object related to the CLIF
-exception and a world related to the CLIF memory that the linked machine's call raises with from
-every compatible caller state, leaving the callee's frame as the ABI return (`ActUnw`). -/
-theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
-    (ih : L.ThmU κ M) {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
+/-- **A call of a function `h` of `P` at depth `M + 1` on the linked machine with unwinding,
+with a fact `Q` of the callee's activation** (`progCallUN` from `ThmUQ Q` one level down; with
+`ThmGU`, the per-state facts `RunGoodLU` of the callee's run). -/
+theorem progCallUNQ (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
+    {Q : Nat → Clif.Function → Arm.ArmState → Prop}
+    (ih : L.ThmUQ Q κ M) {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
     (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
     {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
     {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
@@ -48,7 +45,8 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
           L.praiseU (M + 1) h t = none ∧
           ActRet (Arm.r .PC t + 4) F
             (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a)
-            us outs wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t))) ∧
+            us outs wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t)) ∧
+          Q M h (enterAt (L.A h) t)) ∧
         (L.NeedNI → ∀ (Z : BitVec 64 → Prop) (t : Arm.ArmState), (∀ a, F a → Z a) →
           SameWorld Z t w → (∀ a, L.Img a → t.mem a = L.imgMem a) →
           (∀ r ∈ regLocs h.sig, regVal t r = regVal (L.canon h uses w) r) →
@@ -69,7 +67,8 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
               Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program) ∧
           ActUnw (Arm.r .PC t + 4) F
             (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a)
-            obj wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t))) ∧
+            obj wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t)) ∧
+          Q M h (enterAt (L.A h) t)) ∧
         (L.NeedNI → ∀ (Z : BitVec 64 → Prop) (t : Arm.ArmState), (∀ a, F a → Z a) →
           SameWorld Z t w → (∀ a, L.Img a → t.mem a = L.imgMem a) →
           (∀ r ∈ regLocs h.sig, regVal t r = regVal (L.canon h uses w) r) →
@@ -433,29 +432,30 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
           Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program ∧
         L.praiseU (M + 1) h t = none ∧
         ActRet (Arm.r .PC t + 4) Z G us outs wf (enterAt (L.A h) t)
-          (runX (L.machU M h) k (enterAt (L.A h) t)) := by
+          (runX (L.machU M h) k (enterAt (L.A h) t)) ∧
+        Q M h (enterAt (L.A h) t) := by
       intro hN Z t hFZ hZ himgt hregt hrat hmt hstkt
       obtain ⟨w₀', hrel', hsw, hreg, hstk, hME'⟩ := key2 Z t hFZ hZ himgt hregt hmt hstkt
-      obtain ⟨k, hret, htrk, hnu⟩ := hni hN (fun a => Z a ∧ ¬ Fh a) w₀' hrel' hsw hreg hstk G
+      obtain ⟨k, hret, htrk, hnu, hrg⟩ := hni hN (fun a => Z a ∧ ¬ Fh a) w₀' hrel' hsw hreg hstk G
         (Arm.r .PC t + 4) (enterAt (L.A h) t) hME'
       obtain ⟨-, e1, e2⟩ := returnedCall_eq hc.layout hlm hrat hfd hfd' htrk
         ⟨hret.ret.pc, hret.ret.err, hret.prog.trans (program_enterAt _ _),
           hret.ret.sp.trans (spv_enterAt _ _)⟩ hnu
       exact ⟨k, e1, e2, ⟨hret.ret, hret.regs, fun a ha => hret.mem a
         (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => h2.1))), hret.fields, hret.gkeep,
-        hret.prog⟩⟩
+        hret.prog⟩, hrg⟩
     refine ⟨us, outs, wf, hus, hlen, hhold, hmemF cm' wf _ hrun (.inl ⟨_, rfl⟩) hmemR, hrs,
       fun t ht => ?_, fun hN Z t a1 a2 a3 a4 a5 a6 a7 => by
-        obtain ⟨k, e1, -, e3⟩ := kNI hN Z t a1 a2 a3 a4 a5 a6 a7
+        obtain ⟨k, e1, -, e3, -⟩ := kNI hN Z t a1 a2 a3 a4 a5 a6 a7
         exact ⟨k, e1, e3⟩⟩
     by_cases hN : L.NeedNI
     · obtain ⟨c1, c2, c3, c4, c5, c6⟩ := hcomp t ht
       exact kNI hN F t c1 c2 c3 c4 ht.ra c5 c6
-    obtain ⟨k, hret, htrk, hnu⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact hN t ht)
+    obtain ⟨k, hret, htrk, hnu, hrg⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact hN t ht)
     obtain ⟨-, e1, e2⟩ := returnedCall_eq hc.layout hlm ht.ra hfd hfd' htrk
       ⟨hret.ret.pc, hret.ret.err, hret.prog.trans (program_enterAt _ _),
         hret.ret.sp.trans (spv_enterAt _ _)⟩ hnu
-    refine ⟨k, e1, e2, ?_⟩
+    refine ⟨k, e1, e2, ?_, hrg⟩
     rw [hFh hN] at hret
     exact hret
   · obtain ⟨m, hm⟩ := hlink _ hrun (.inr ⟨_, _, rfl⟩)
@@ -471,28 +471,106 @@ theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
           some (xreg 0 (runX (L.machU M h) k (enterAt (L.A h) t)),
             Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program) ∧
         ActUnw (Arm.r .PC t + 4) Z G obj wf (enterAt (L.A h) t)
-          (runX (L.machU M h) k (enterAt (L.A h) t)) := by
+          (runX (L.machU M h) k (enterAt (L.A h) t)) ∧
+        Q M h (enterAt (L.A h) t) := by
       intro hN Z t hFZ hZ himgt hregt hrat hmt hstkt
       obtain ⟨w₀', hrel', hsw, hreg, hstk, hME'⟩ := key2 Z t hFZ hZ himgt hregt hmt hstkt
-      obtain ⟨k, hu, htrk, hk0, hx⟩ := hni hN (fun a => Z a ∧ ¬ Fh a) w₀' hrel' hsw hreg hstk G
-        (Arm.r .PC t + 4) (enterAt (L.A h) t) hME'
+      obtain ⟨k, hu, htrk, hk0, hx, hrg⟩ := hni hN (fun a => Z a ∧ ¬ Fh a) w₀' hrel' hsw hreg hstk
+        G (Arm.r .PC t + 4) (enterAt (L.A h) t) hME'
       obtain ⟨-, e1⟩ := raisedCall_eq hc.layout hlm hrat hfd hfd' htrk
         ⟨hu.ret.pc, hu.ret.err, hu.prog.trans (program_enterAt _ _),
           hu.ret.sp.trans (spv_enterAt _ _)⟩ hk0 hx
       exact ⟨k, e1, ⟨hu.ret, hu.x0, fun a ha => hu.mem a
         (fun h' => ha (h'.elim (fun h1 => hFZ a h1.1) (fun h2 => h2.1))), hu.gkeep, hu.prog,
-        hu.fields⟩⟩
-    refine ⟨obj, wf, hex, hmemF cm' wf _ hrun (.inr ⟨_, rfl⟩) hmemR, fun t ht => ?_, kNI⟩
+        hu.fields⟩, hrg⟩
+    refine ⟨obj, wf, hex, hmemF cm' wf _ hrun (.inr ⟨_, rfl⟩) hmemR, fun t ht => ?_,
+      fun hN Z t a1 a2 a3 a4 a5 a6 a7 => by
+        obtain ⟨k, e1, e3, -⟩ := kNI hN Z t a1 a2 a3 a4 a5 a6 a7
+        exact ⟨k, e1, e3⟩⟩
     by_cases hN : L.NeedNI
     · obtain ⟨c1, c2, c3, c4, c5, c6⟩ := hcomp t ht
       exact kNI hN F t c1 c2 c3 c4 ht.ra c5 c6
-    obtain ⟨k, hu, htrk, hk0, hx⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t) (hact hN t ht)
+    obtain ⟨k, hu, htrk, hk0, hx, hrg⟩ := hall G (Arm.r .PC t + 4) (enterAt (L.A h) t)
+      (hact hN t ht)
     obtain ⟨-, e1⟩ := raisedCall_eq hc.layout hlm ht.ra hfd hfd' htrk
       ⟨hu.ret.pc, hu.ret.err, hu.prog.trans (program_enterAt _ _),
         hu.ret.sp.trans (spv_enterAt _ _)⟩ hk0 hx
-    refine ⟨k, e1, ?_⟩
+    refine ⟨k, e1, ?_, hrg⟩
     rw [hFh hN] at hu
     exact hu
+
+/-- **A call of a function `h` of `P` at depth `M + 1` on the linked machine with unwinding**
+(`progCallU` without `¬ NeedNI`, with the non-interference clauses of `LinkSys.progCall`): from a world `w` with room for the callee's stack and related to CLIF
+arguments and memory, when the callee run with unwinding (`crunX (M + 1)`) returns, one VCode
+outcome of `h` that the linked machine's call returns with (not raising) from every caller state
+compatible with `w` (`CallerOk`); when it ends `unwound`, an exception object related to the CLIF
+exception and a world related to the CLIF memory that the linked machine's call raises with from
+every compatible caller state, leaving the callee's frame as the ABI return (`ActUnw`). -/
+theorem progCallUN (hL : L.Ok) (hU : L.OkU) [hR : L.CrunOkX] {M : Nat}
+    (ih : L.ThmU κ M) {n : String} {h : Clif.Function} (hpf : L.P.func? n = some h)
+    (hcal : ∃ g ∈ L.P.funcs, L.Callee g h)
+    {F : BitVec 64 → Prop} (himgF : ∀ a, L.Img a → F a)
+    {uses : List CV} {w : Arm.ArmState} (herr : Arm.r .ERR w = .None)
+    (hal : (spv w).toNat % 16 = 0)
+    (hroom : frameDrop (L.A h).af + κ M h ≤ (spv w).toNat)
+    (hdead : ∀ a, StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a → F a ∧ ¬ L.Img a)
+    {vals : List Clif.Val} {cm : Clif.Mem} {cs : Clif.State}
+    (hmr : MemRel F L.syms cm w) (hargs : ArgsAt h.sig vals uses w)
+    (hsav : StackArgsAvoid F h.sig vals w) (hpl : L.NeedSlots → L.PlaceAt cm (spv w))
+    (hinit : Clif.initState L.P n vals cm = .ok cs) :
+    (∀ rvals cm', L.crunX (M + 1) cs = .returned rvals cm' →
+      ∃ (us : List (Reg × Reg)) (outs : List CV) (wf : Arm.ArmState),
+        us.map (·.2) = (List.range us.length).map Reg.x ∧ us.length = outs.length ∧
+        PrefixHold rvals outs ∧ MemRel F L.syms cm' wf ∧ (L.A h).vc.RetsSite us ∧
+        (∀ t, L.CallerOk F h uses w t → ∃ k,
+          L.pcallU (M + 1) h t =
+            Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program ∧
+          L.praiseU (M + 1) h t = none ∧
+          ActRet (Arm.r .PC t + 4) F
+            (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a)
+            us outs wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t))) ∧
+        (L.NeedNI → ∀ (Z : BitVec 64 → Prop) (t : Arm.ArmState), (∀ a, F a → Z a) →
+          SameWorld Z t w → (∀ a, L.Img a → t.mem a = L.imgMem a) →
+          (∀ r ∈ regLocs h.sig, regVal t r = regVal (L.canon h uses w) r) →
+          RaOk (L.A h) (Arm.r .PC t) → MemRel F L.syms cm t →
+          (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf h.sig).zip vals → ∀ k < v.ty.bytes,
+            t.mem (spv w + BitVec.ofNat 64 off + BitVec.ofNat 64 k) =
+              w.mem (spv w + BitVec.ofNat 64 off + BitVec.ofNat 64 k)) → ∃ k,
+          L.pcallU (M + 1) h t =
+            Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program ∧
+          ActRet (Arm.r .PC t + 4) Z
+            (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a)
+            us outs wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t)))) ∧
+    (∀ e cm', L.crunX (M + 1) cs = .unwound e cm' →
+      ∃ (obj : BitVec 64) (wf : Arm.ArmState), ExnRel e obj ∧ MemRel F L.syms cm' wf ∧
+        (∀ t, L.CallerOk F h uses w t → ∃ k,
+          L.praiseU (M + 1) h t =
+            some (xreg 0 (runX (L.machU M h) k (enterAt (L.A h) t)),
+              Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program) ∧
+          ActUnw (Arm.r .PC t + 4) F
+            (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a)
+            obj wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t))) ∧
+        (L.NeedNI → ∀ (Z : BitVec 64 → Prop) (t : Arm.ArmState), (∀ a, F a → Z a) →
+          SameWorld Z t w → (∀ a, L.Img a → t.mem a = L.imgMem a) →
+          (∀ r ∈ regLocs h.sig, regVal t r = regVal (L.canon h uses w) r) →
+          RaOk (L.A h) (Arm.r .PC t) → MemRel F L.syms cm t →
+          (∀ off v, (ArgLoc.stack off, v) ∈ (locsOf h.sig).zip vals → ∀ k < v.ty.bytes,
+            t.mem (spv w + BitVec.ofNat 64 off + BitVec.ofNat 64 k) =
+              w.mem (spv w + BitVec.ofNat 64 off + BitVec.ofNat 64 k)) → ∃ k,
+          L.praiseU (M + 1) h t =
+            some (xreg 0 (runX (L.machU M h) k (enterAt (L.A h) t)),
+              Arm.set_program (runX (L.machU M h) k (enterAt (L.A h) t)) t.program) ∧
+          ActUnw (Arm.r .PC t + 4) Z
+            (fun a => F a ∧ ¬ StackBelow (frameDrop (L.A h).af + κ M h) (spv w) a)
+            obj wf (enterAt (L.A h) t) (runX (L.machU M h) k (enterAt (L.A h) t)))) := by
+  have H := L.progCallUNQ hL hU (L.thmUQ_true ih) hpf hcal himgF herr hal hroom hdead hmr hargs
+    hsav hpl hinit
+  refine ⟨fun rvals cm' hr => ?_, fun e cm' hr => ?_⟩
+  · obtain ⟨us, outs, wf, a1, a2, a3, a4, a5, a6, a7⟩ := H.1 rvals cm' hr
+    exact ⟨us, outs, wf, a1, a2, a3, a4, a5,
+      fun t ht => (a6 t ht).imp fun _ h => ⟨h.1, h.2.1, h.2.2.1⟩, a7⟩
+  · obtain ⟨obj, wf, a1, a2, a3, a4⟩ := H.2 e cm' hr
+    exact ⟨obj, wf, a1, a2, fun t ht => (a3 t ht).imp fun _ h => ⟨h.1, h.2.1⟩, a4⟩
 
 end LinkSysU
 

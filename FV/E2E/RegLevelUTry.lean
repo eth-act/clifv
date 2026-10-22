@@ -150,15 +150,16 @@ theorem pad_label {R : RL} (hR : R.Wf) {ti : TryInfo} {ret : Nat} {e : Unw.CallS
       rw [← he]
   exact (labelOffsets_spec hR.lm _ _).mp (scanLines_labelOffsets hR.lm hlk)
 
-/-- **A raising `try_call` on the machine**: the callee raises, the personality installs the
-first handler's landing pad, and the machine is at the landing-pad edge block with the payload in
-the call's defs (`RealizesTryRaise`), for any semantics with `csemU`'s raising-`tryCall` clause
+/-- **A raising `try_call` on the machine, with the raising-call state's step facts**: the callee
+raises, the personality installs the first handler's landing pad, and the machine is at the
+landing-pad edge block with the payload in the call's defs, the raising-call state `RaiseXF`
+(`RealizesTryRaiseP … R.GoodXUF`), for any semantics with `csemU`'s raising-`tryCall` clause
 (`TryRaiseSem`: `R.semU`, `csemU`, the dead-cleanup chain's value semantics). -/
-theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
+theorem realizes_tryCall_raiseUF {R : RLU} (hR : R.Wf) {semU : Sem}
     (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
     (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU)
     (hT : LsdaAt R) (hpad : PadsNonzero R.af R.fa) (hsite : SiteAt R.toRL) :
-    RealizesTryRaise R semU := by
+    RealizesTryRaiseP R semU R.GoodXUF := by
   intro s b k allocs its m w vb info ti ops c' obj w2 hq _hA hvb hi hops hraise hm
   obtain ⟨j0, items, pre, regs, i', c1, c2, ls1, ls2, ps1, psm, ps2, T, cc, wh, ops', hal, hit,
     hsplit, hasg, hc1', hops', hstat, hchk', hcode2, h1, h2, htr, hdrop, hpc, hst⟩ := q_op hq hvb hi
@@ -201,7 +202,7 @@ theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
     (by rw [hst.sp]; exact RL.K_le hR) (fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha)
     hst.gkeep cc wh ops regs i' w hops hstat hasg hcpc hst.world hst.align hst.err hgg
   obtain ⟨t, hUr, hW, hFK, herrt, hprogt, hoth, hkeep⟩ := hraiseU obj _ hraise
-  obtain ⟨hstep1, hRX⟩ := RLU.stepU_q_raise hR hq hvb hi (.inr ⟨ti, rfl⟩) hUr
+  obtain ⟨hstep1, hRX, hdesc, hxzr⟩ := RLU.stepU_q_raiseF hR hq hvb hi (.inr ⟨ti, rfl⟩) hUr
   -- the personality: the first handler's landing pad
   obtain ⟨j, x', hj, hpcj, -, hmem⟩ := hsite s b k _ its m w vb _ info (some ti) hq hvb hi
     (.inr ⟨ti, rfl, rfl⟩)
@@ -357,7 +358,41 @@ theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
     rw [Arm.r_of_w_same, hpb]
     simp only [RL.pcOf, hjlo]
   · obtain rfl : i = 0 := by omega
-    exact .inr hRX
+    show R.GoodXUF s
+    have hnext : R.NextOk s (R.stepU s) := by
+      refine .inr (.inr (.inr ⟨jl, ?_, fun x tt h => by rw [hjl] at h; cases h⟩))
+      rw [hstepU, Arm.r_of_w_same, hpb]
+      simp only [RL.pcOf]
+      rw [lineOffset_succ _ _ _ hjl, hjlo]
+      simp [Line.size]
+    have hexit : Unw.personality R.T.lsda (Arm.r .PC s + 4 - 1 - progBase s).toNat = .continue →
+        ArmRet (xreg 30 R.s0) R.s0 (R.stepU s) ∧ (R.stepU s).program = R.fb.program R.base := by
+      intro hc
+      rw [hoff, hlsda, hpers] at hc
+      cases hc
+    have htsp : ∀ x d obj' t', R.AtLine s x →
+        ((∃ n, x = .bl n ∧ d = some n) ∨ (∃ r, x = .blr r ∧ d = none)) →
+        R.U.raise d s = some (obj', t') → spOf t' = R.spB := by
+      intro x d obj' t' hx hd hr'
+      obtain rfl := hdesc x d hx hd
+      rw [hUr] at hr'
+      cases hr'
+      exact hFK.1.trans hst.sp
+    exact .inr ⟨hRX, hnext, hexit, htsp, fun x hx => ⟨hxzr x hx, hst.code⟩,
+      ⟨.tryCall info ti, info, hsite0, .inr ⟨ti, rfl⟩, by rw [hst.sp]; exact RL.K_le hR,
+        fun a ha => by rw [hst.sp] at ha; exact RL.below_F ha, hst.gkeep, cc, wh, ops, regs, i', w,
+        obj, _, hops, hstat, hasg, hcpc, hst.world, hst.align, hst.err, hgg, hraise⟩⟩
+
+/-- **A raising `try_call` on the machine**: the callee raises, the personality installs the
+first handler's landing pad, and the machine is at the landing-pad edge block with the payload in
+the call's defs (`RealizesTryRaise`), for any semantics with `csemU`'s raising-`tryCall` clause
+(`TryRaiseSem`: `R.semU`, `csemU`, the dead-cleanup chain's value semantics). -/
+theorem realizes_tryCall_raiseU {R : RLU} (hR : R.Wf) {semU : Sem}
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU)
+    (hT : LsdaAt R) (hpad : PadsNonzero R.af R.fa) (hsite : SiteAt R.toRL) :
+    RealizesTryRaise R semU :=
+  (realizes_tryCall_raiseUF hR hU hsemT hgot hT hpad hsite).mono fun _ h => h.goodXU
 
 /-! ## Discharging `SiteAt` and `PadsNonzero` -/
 

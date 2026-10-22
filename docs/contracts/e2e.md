@@ -507,12 +507,20 @@ the `retN`/value arguments).
   world, the raising base callees reading no relocated instruction byte (`UnwSim`, `HooksSim`'s
   counterpart) and the outside caller's call instruction no program code (`¬ img I (x30 - 1)`:
   else libunwind would take the caller's frame for a program frame), the executable machine with
-  unwinding from `r` refines the whole-program run with unwinding. **Open**: `RunOkU`, the per-state
+  unwinding from `r` refines the whole-program run with unwinding, given `RunOkU`, the per-state
   facts of the model's run with unwinding (`StepOkU`: `StepOk` on `machU` plus `RestoreOk` at a
-  raising call; a frame left by unwinding lands on its return) — `binary_correct_exec_of_good`'s
-  `RunOk` for `machU`, to be discharged from the register-level traces with unwinding
-  (`RLU.GoodXU`) as `DeadCleanupExecGoodRun`/`GoodReads`/`Peak` do from `RunGoodL`. Witnesses:
-  `Link.DeadCleanup.UnwindExecWitness.exec_applies`/`opt_exec_applies`, and on `%rec`'s written
+  raising call; a frame left by unwinding lands on its return). **`RunOkU` is proven**
+  (`FV/E2E/DeadCleanupExecUnwindGood.lean`, `runOkU_of_good`) from the per-state facts the linking
+  statement with unwinding exports (`LinkSysU.ThmGU`, `RunGoodLU`: `actGoodXU` — `RL.GoodX` or a
+  raising call state `RLU.RaiseXF` with D1, the exit landing on the return, the restored `sp`, a
+  `blr`'s facts, the callee contract's premise, and `FrameOkU`: the save slots the frame's row
+  restores lie in the activation's frame — at every state of `ReachLU`;
+  `backend_correct_program_budgetUG'`/`_peakUG'`), so the theorems without it are
+  **`Link.DeadCleanup.compileExe_correct_unwind_exec`**, **`compileExe_correct_unwind_exec_peak`**,
+  **`compileExeOpt_correct_unwind_exec_peak`** (`FV/Link/ExeUnwindExecGood.lean`), with
+  `HooksSim` (as `compileExe_correct`) instead of `RunOkU`. Witnesses:
+  `Link.DeadCleanup.UnwindExecWitness.exec_applies`/`opt_exec_applies`,
+  `UnwindExecGoodWitness.exec_applies`/`opt_exec_applies` (closed base, `BaseOk` discharged), and on `%rec`'s written
   executable the walk's frame computed: `frame_continues` (the file's lookup, no LSDA, a CFA rule:
   the self-call's frame is unwound in every state), `frame_eq` (its phase 2 on the file is the
   model's), `walk_out`.

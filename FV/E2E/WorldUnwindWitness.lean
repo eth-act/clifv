@@ -45,6 +45,34 @@ theorem world_applies {X0 : ExtSem} {K : Nat} {F : BitVec 64 → Prop} {c : BitV
     (fun _ _ _ h => absurd rfl h) (fun _ _ h => by cases h) rfl
     hcs' rfl hrows rfl rfl hpad hlast hsv hcs hrel hargs htr fuel).2.2
 
+/-- **`backend_correct_world_pipelineUG` applies to the `try_call` function compiled by the
+dead-cleanup pipeline**: an exceptional end of its CLIF run is realised by every activation, every
+state before the end with the per-state facts with unwinding (`actGoodXU`). -/
+theorem world_appliesG {X0 : ExtSem} {K : Nat} {F : BitVec 64 → Prop} {c : BitVec 64}
+    {w₀ : Arm.ArmState} {args : List Clif.Val} {cs : Clif.State}
+    (hcs : ClifEntry source args cs)
+    (hrel : RelW ⟨F, fun _ => none, af.slotBase, (RAFrame.compute vcp rf).intBase⟩ source c
+      cs.frame.slots cs.mem w₀)
+    (hargs : ArgsAtEntry F source.sig args w₀)
+    (htr : TrapsExplicitX IselSimUWitness.env { funcs := [] } cs) (fuel : Nat) :
+    ∀ e cm, Clif.runLoopX IselSimUWitness.env { funcs := [] } fuel cs.toX = .unwound e cm →
+      ∃ (obj : BitVec 64) (w : Arm.ArmState), ExnRel e obj ∧ MemRel F (fun _ => none) cm w ∧
+        ∀ (H : ArmHooks) (U : Unw.UnwHooks) (G : BitVec 64 → Prop) (base ra : BitVec 64)
+          (s : Arm.ArmState),
+          ActEntryU vcp rf af fa fb K F G (Xr X0) H IselSimUWitness.XR U base ra s w₀ →
+          ∃ n, ActUnw ra F G obj w s (runX (Unw.ArmStepU (Xr X0) H U T fa) n s) ∧
+            PostTrace fa af base (Unw.ArmStepU (Xr X0) H U T fa) s n ∧ 0 < n ∧
+            UnwExit U T fa (runX (Unw.ArmStepU (Xr X0) H U T fa) (n - 1) s) ∧
+            ∀ i < n, actGoodXU vcp rf af fa fb base s (Xr X0) H IselSimUWitness.XR U T K G
+              (GotV vcp) (runX (Unw.ArmStepU (Xr X0) H U T fa) i s) := by
+  obtain ⟨hv, hs, -, hc, hlU, hsv, hpad, hlast, hcs', -, hrows⟩ := facts
+  exact (backend_correct_world_pipelineUG (InSubset.of_verifiable hv (fun _ => rfl)) (.cleanup hc)
+    hlU (formsCovered_cleanup_complete (lowerScope_of hs) hc.lower hc.prepare _)
+    (xCallsOk_env _ _ _) (xCallsIndOk_env _ _ _)
+    (IselSimUWitness.xRaiseOk _ _ _) (IselSimUWitness.xRaiseIndOk _ _ _)
+    (fun _ _ _ h => absurd rfl h) (fun _ _ h => by cases h) rfl
+    hcs' rfl hrows rfl rfl hpad hlast hsv hcs hrel hargs htr fuel).2.2
+
 /-- The raising callees' contract of `ActEntryU` holds for `Uw` at every activation. -/
 theorem unw_holds (X0 : ExtSem) (K : Nat) (F G : BitVec 64 → Prop) (s : Arm.ArmState)
     (base : BitVec 64) :

@@ -791,6 +791,27 @@ theorem realizesTryRaise_of_tables {R : RLU} (hR : R.Wf) {semU : Sem}
     rw [List.any_eq_false] at hn
     exact ((hn _ this) rfl).elim
 
+/-- **`realizesTryRaise_of_tables` with the raising-call states' step facts** (trace
+`R.GoodXUF`, `realizes_tryCall_raiseUF`). -/
+theorem realizesTryRaise_of_tablesF {R : RLU} (hR : R.Wf) {semU : Sem}
+    (hU : CalleeUnwOkG R.F R.K R.G R.s0 (CallAt R.fa R.base) R.X R.XR R.U R.vc.CallSite R.gv)
+    (hsemT : TryRaiseSem R.XR semU) (hgot : GotSem R.gv R.X semU) {lsda : Option (List CallSite)}
+    (hsites : callSites R.af R.fa = .ok lsda) (hlsda : R.T.lsda = lsda.map (List.map (·.entry)))
+    (hpad : PadsNonzero R.af R.fa) (hlast : lastCallsOk R.af R.fa = true) :
+    RealizesTryRaiseP R semU R.GoodXUF := by
+  cases lsda with
+  | some sites =>
+    exact realizes_tryCall_raiseUF hR hU hsemT hgot ⟨sites, callSites_ok hsites, hlsda⟩ hpad
+      (siteAt_of_check hR hlast)
+  | none =>
+    intro s b k allocs its m w vb info ti ops c' obj w' hq _ hvb hi
+    obtain ⟨j, x, -, -, -, hmem⟩ := siteAt_of_check hR hlast s b k allocs its m w vb _ info
+      (some ti) hq hvb hi (.inr ⟨ti, rfl, rfl⟩)
+    have hn := callSites_none hsites
+    have : (some ti : Option TryInfo) ∈ R.af.calls := (List.of_mem_zip hmem).1
+    rw [List.any_eq_false] at hn
+    exact ((hn _ this) rfl).elim
+
 /-- The realisation of `csemU` for a compiled function's activation (no kept addresses, no GOT
 pinning): `realizes_allU` from `realizes_all` and `realizes_tryCall_raiseU`. -/
 theorem realizes_csemU {R : RLU} (hR : R.Wf)
