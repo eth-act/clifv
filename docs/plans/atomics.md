@@ -544,11 +544,20 @@ they are; the per-thread layers are new files.
     (the compiled `args; fence; rets` with a hand-written move-free allocation: `R.Wf`,
     `MemScope`, not `NoEvScope`, `Q ∧ AInv` at `MConf.init`), `dmb_run`/`dmb_refines` (the
     one-step run through the `dmb ish` with its barrier event, refined).
+  * **moves (done, `ArmAllocMove.lean`, `MoveEvs.lean`)**: the run condition **`OkPriv`** (a
+    step's reads at private addresses, `PrivA`, return the thread's own bytes, its state's
+    memory; `PrivCoh` is its justification at the program level); `moveLines_evs`,
+    `moveLines_noStx` (every Arm event of a checked move's lines is in the frame, `FrameOk.inF`/
+    `tmpF`; no line is a store exclusive; `moveCodeOk`); `prun_priv` (a precise run under
+    `OkPriv` through private-only single-core steps is the single-core run); `move_op` (the
+    per-item obligation at a move: the move's lines, `Q` after them, private writes, no source
+    event); `itemSim_of_op_ok` (`itemSim_of_op` without `NoMoves`, for instruction items proven
+    under any run condition); **`arm_alloc_refines_mv`** (`arm_alloc_refines_mem` without
+    `NoMoves`, runs under `OkPriv`). Witness (`RealizeWitness.lean`): `mv_premises`, the CLIF
+    `fence; return` as the pipeline compiles it (lowering, `prepare`, `spillAlloc`: 18 saves,
+    the fence, 18 restores, the return), its allocation with moves.
   * open: `ItemSim` for plain loads/stores (multi-line address forms through x16; one-line
     forms fit `OneEvForm`, their event equality per addressing mode is open), the LL/SC loops,
-    moves (`spillAlloc` saves x19–x28 at every entry, so compiled CLIF functions are outside
-    `NoMoves`: a move's lines access the frame only — writes private, reads of `Priv` need a
-    `PRun` side condition `ok` returning the thread's own bytes, justified by `PrivCoh`),
     branches (a measure for the
     fall-through `jump`s, which emit no instruction), calls; the prologue (from the ABI entry).
     Needed per form: **receptiveness** (the allocated code steps on every read value once it
@@ -574,12 +583,26 @@ they are; the per-thread layers are new files.
     (`MTRun` under `csem`/`cEvs`) is realized up to `Stop` by a `CRun`, `Refines Maps`, no
     private location. Witness (`ThreadComposeWitness.lean`): `isel_alloc_refines_fA` on the atomics
     function as compiled (`prepare`, the spill allocation `spillAlloc`, both accepted).
-  * **`arm_isel_refines`** (all layers): given layer 4b's run-level refinement of a precise Arm
-    run from the allocated code's entry configuration (`refines_of_itemSim`'s form; `q_init`
-    gives that configuration, `MConf.init`), the Arm run (a prefix of it: up to the allocated
-    code's `Done` or the CLIF thread's `Stop`) realizes a `CRun`,
-    `Refines Maps (PrivA R) (MonPair …)`; `csemV_none`: without GOT-pinned calls the
-    activation's semantics is `csem`.
+  * **`arm_isel_refinesE`** (all layers): given layer 4b's run-level refinement of a precise Arm
+    run from the allocated code's entry configuration (`refines_of_itemSim`'s form, realized up
+    to an end condition `E` that is a parameter; `q_init` gives that configuration,
+    `MConf.init`), the Arm run (a prefix of it: up to `E` or the CLIF thread's `Stop`) realizes
+    a `CRun`, `Refines Maps (PrivA R) (MonPair …)`; `arm_isel_refines`: `E` the allocated
+    code's `Done`; `csemV_none`: without GOT-pinned calls the activation's semantics is `csem`.
+* **`Realizes` for compiled code (done for the memory scope, `FV/Concurrency/RealizeCompiled.lean`).**
+  `Compiled env p RA cs s`: what the pipeline gives one thread (the activation `RA.Wf`,
+  `MemScope`, no GOT calls; layer 2's `DriverHyp` and checks; the CLIF entry state `cs` related
+  by `MR` to the entry world; `Q ∧ AInv` at `MConf.init` for the Arm state `s`).
+  `thread_compiled`: a precise Arm run under `OkPriv` realizes, on a prefix (all of it, or until
+  the CLIF thread stops or the allocated code is done), a CLIF thread run from `cs`, the target's
+  atomic pairs its own monitor pairs (`monPair_take`, `Refines.pairT_congr`); `crun_states`.
+  **`realizes_compiled`**: for `n` compiled threads, every well-formed execution of these prefixes
+  whose `rmw` is the monitor pairs and in which no thread's events touch another's private set
+  is `Realizes`d by CLIF threads from the `cs i` (`realizes_of_threads_priv`). `wf_noReads`:
+  traces without reads have a well-formed execution (`coW`). Witness (`RealizeWitness.lean`):
+  `driverHyp_of` (the driver hypothesis of any checked function), `compiledF` (every premise of
+  `Compiled` for the compiled `fence; return`: `Γ` with the activation's private set `RA.F`, empty
+  CLIF memory), `realizes_nil` (the contract on the empty run).
 * **Backward from forward.** The layers are forward per-step simulations; `Refines` is
   backward (from the actual Arm trace to a CLIF run). The bridge is determinism of each level
   given its read values (receptiveness): the source run is the one reading the target's values

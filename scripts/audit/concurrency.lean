@@ -335,3 +335,23 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ThreadCompose.Witness.thin_take_w
 #print axioms Concurrency.ThreadCompose.Witness.refines_take_w
 #print axioms Concurrency.ThreadCompose.Witness.isel_alloc_refines_fA -- witness: native_decide
+-- T2k (#311): layer 4b with moves, arm_isel_refinesE, Realizes for compiled code
+#print axioms Backend.Proof.moveLines_evs
+#print axioms Backend.Proof.moveLines_noStx
+#print axioms Concurrency.ArmAllocThread.moveCodeOk
+#print axioms Concurrency.ArmAllocThread.prun_priv
+#print axioms Concurrency.ArmAllocThread.move_op
+#print axioms Concurrency.ArmAllocThread.itemSim_of_op_ok
+#print axioms Concurrency.ArmAllocThread.itemSim_mv
+#print axioms Concurrency.ArmAllocThread.arm_alloc_refines_mv
+#print axioms Concurrency.ThreadCompose.arm_isel_refinesE
+#print axioms Concurrency.RealizeCompiled.crun_states
+#print axioms Concurrency.RealizeCompiled.Refines.pairT_congr
+#print axioms Concurrency.RealizeCompiled.monPair_take
+#print axioms Concurrency.RealizeCompiled.thread_compiled
+#print axioms Concurrency.RealizeCompiled.realizes_compiled
+#print axioms Concurrency.RealizeCompiled.wf_noReads
+#print axioms Concurrency.RealizeCompiled.Witness.driverHyp_of
+#print axioms Concurrency.RealizeCompiled.Witness.compiledF -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.Witness.mv_premises -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.Witness.realizes_nil -- witness: native_decide
