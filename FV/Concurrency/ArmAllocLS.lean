@@ -425,9 +425,328 @@ set_option hygiene false in
 GPR is required (the encoder fails). -/
 macro "ldst_noV" : tactic => `(tactic| (
   simp [Insn.toArmInst, Insn.armFields, LoadOp.fields, StoreOp.fields, ldstFields, Reg.encZR,
-    Reg.encSP, Reg.encV, bind, Except.bind, Functor.map, Except.map, throw, throwThe,
+    Reg.encSP, Reg.encV, Insn.armFields.fpLdstSize, bind, Except.bind, Functor.map, Except.map, throw, throwThe,
     MonadExceptOf.throw] at ha <;>
   split at ha <;> (try cases ha) <;> (rename_i heq; repeat' split at heq) <;> (try cases heq)))
+
+theorem immEvs_fpLoad_cf (sz : ScalarSize) (hsz : FpSz sz) (Rn Rt : BitVec 5)
+    (imm : Arm.LDST.Reg_offset) (s : ArmState) (hsp : Rn = 31#5 → CheckSPAlignment s) :
+    immEvs (fpCls (fpSizeF sz) 1 Rn Rt imm) s =
+      [⟨.plainR, read_gpr 64 Rn s + imm.value (log2 sz.bytes) s, sz.bytes, readM sz.bytes (read_gpr 64 Rn s + imm.value (log2 sz.bytes) s) s.mem⟩] := by
+  have h31 : ¬ (Rn = 31#5 ∧ ¬ CheckSPAlignment s) := fun h => h.2 (hsp h.1)
+  rcases hsz with rfl | rfl <;>
+  · simp (config := {decide := true}) only [immEvs, fpCls, fpSizeF, ScalarSize.bytes,
+      Arm.LDST.supported_simd_reg_imm, Arm.LDST.reg_imm_constrain_unpredictable, h31, log2]
+    simp (config := {decide := true}) [lsb_facts, ldst_read, read_sfp]
+    all_goals rfl
+
+theorem ldsturEvs_fpLoad_cf (sz : ScalarSize) (hsz : FpSz sz) (Rn Rt : BitVec 5) (imm9 : BitVec 9)
+    (s : ArmState) (hsp : Rn = 31#5 → CheckSPAlignment s) :
+    ldsturEvs { size := fpSizeF sz, VR := 1#1, opc := 1, imm9 := imm9, Rn := Rn, Rt := Rt } s =
+      [⟨.plainR, read_gpr 64 Rn s + BitVec.signExtend 64 imm9, sz.bytes, readM sz.bytes (read_gpr 64 Rn s + BitVec.signExtend 64 imm9) s.mem⟩] := by
+  have h31 : ¬ (Rn = 31#5 ∧ ¬ CheckSPAlignment s) := fun h => h.2 (hsp h.1)
+  rcases hsz with rfl | rfl <;>
+  · simp (config := {decide := true}) only [ldsturEvs, fpSizeF, ScalarSize.bytes, h31]
+    simp (config := {decide := true}) [read_sfp]
+    all_goals rfl
+
+theorem immEvs_fpStore_cf (sz : ScalarSize) (hsz : FpSz sz) (Rn Rt : BitVec 5)
+    (imm : Arm.LDST.Reg_offset) (s : ArmState) (hsp : Rn = 31#5 → CheckSPAlignment s) :
+    immEvs (fpCls (fpSizeF sz) 0 Rn Rt imm) s =
+      [⟨.plainW, read_gpr 64 Rn s + imm.value (log2 sz.bytes) s, sz.bytes, (Arm.r (.SFP Rt) s).setWidth (sz.bytes * 8)⟩] := by
+  have h31 : ¬ (Rn = 31#5 ∧ ¬ CheckSPAlignment s) := fun h => h.2 (hsp h.1)
+  rcases hsz with rfl | rfl <;>
+  · simp (config := {decide := true}) only [immEvs, fpCls, fpSizeF, ScalarSize.bytes,
+      Arm.LDST.supported_simd_reg_imm, Arm.LDST.reg_imm_constrain_unpredictable, h31, log2]
+    simp (config := {decide := true}) [lsb_facts, ldst_read, read_sfp]
+    all_goals rfl
+
+theorem ldsturEvs_fpStore_cf (sz : ScalarSize) (hsz : FpSz sz) (Rn Rt : BitVec 5) (imm9 : BitVec 9)
+    (s : ArmState) (hsp : Rn = 31#5 → CheckSPAlignment s) :
+    ldsturEvs { size := fpSizeF sz, VR := 1#1, opc := 0, imm9 := imm9, Rn := Rn, Rt := Rt } s =
+      [⟨.plainW, read_gpr 64 Rn s + BitVec.signExtend 64 imm9, sz.bytes, (Arm.r (.SFP Rt) s).setWidth (sz.bytes * 8)⟩] := by
+  have h31 : ¬ (Rn = 31#5 ∧ ¬ CheckSPAlignment s) := fun h => h.2 (hsp h.1)
+  rcases hsz with rfl | rfl <;>
+  · simp (config := {decide := true}) only [ldsturEvs, fpSizeF, ScalarSize.bytes, h31]
+    simp (config := {decide := true}) [read_sfp]
+    all_goals rfl
+
+/-- **The emitted SIMD&FP load at a final mode**: memory-independent control and one event at the
+mode's address (closed form). -/
+theorem fpuLoad_line_cf (env : Env) (ctx : FnCtx) (sz : ScalarSize) (hsz : FpSz sz) (d : Nat)
+    (hd : d < 32) (m : AMode) (hm : FinalAM sz.bytes m) {ai : ArmInst}
+    (ha : Insn.toArmInst env (.fpuLoad sz (.v d) m) = .ok ai) :
+    CtlIndep ai ∧ ∀ y, (m.base = .sp → CheckSPAlignment y) →
+      instEvs ai y = [⟨.plainR, m.addr ctx sz.bytes y, sz.bytes, readM sz.bytes (m.addr ctx sz.bytes y) y.mem⟩] := by
+  cases m with
+  | unsignedOffset rn off =>
+    obtain ⟨hb, h1, h2⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    have e : Insn.toArmInst env (.fpuLoad sz (.v d) (.unsignedOffset rn off)) = .ok (fpUimmInst (fpSizeF sz) 1 (BitVec.ofNat 12 (off / sz.bytes)) Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpUimm_load sz hsz _ _ _, fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    rw [instEvs_fpUimm, immEvs_fpLoad_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.uimm12 (BitVec.ofNat 12 (off / sz.bytes))) (log2 sz.bytes) y = AMode.addr ctx (.unsignedOffset rn off) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr]
+      congr 1
+      exact uimm_value sz.bytes (by have := fpSz_bytes hsz; omega) off h1 h2
+    rw [hA]
+  | unscaled rn off =>
+    obtain ⟨hb, h1, h2⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    have e : Insn.toArmInst env (.fpuLoad sz (.v d) (.unscaled rn off)) = .ok (fpUnscInst (fpSizeF sz) 1 (BitVec.ofInt 9 off) Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpUnsc_load sz hsz _ _ _, fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    rw [instEvs_fpUnsc, ldsturEvs_fpLoad_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + BitVec.signExtend 64 (BitVec.ofInt 9 off) = AMode.addr ctx (.unscaled rn off) sz.bytes y := by
+      simp only [AMode.addr, hr]
+      congr 1
+      exact simm9_value off h1 h2
+    rw [hA]
+  | regReg rn rm =>
+    obtain ⟨hb, hi⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi ArmState.default
+    have e : Insn.toArmInst env (.fpuLoad sz (.v d) (.regReg rn rm)) = .ok (fpRegInst (fpSizeF sz) 1 Rm 3#3 0#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpReg_load sz hsz _ _ _ _ _ (by decide), fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRm] at hRm'; cases hRm'
+    rw [instEvs_fpReg _ _ _ _ _ _ _ (by decide), immEvs_fpLoad_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.reg Rm 3#3 0#1) (log2 sz.bytes) y = AMode.addr ctx (.regReg rn rm) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+      congr 1
+      rw [show Arm.decode_reg_extend 3#3 = .UXTX from rfl]
+      apply BitVec.eq_of_toNat_eq
+      simp [Arm.extend_reg, Arm.ExtendType.unsigned_len]
+      exact (regX y rm).isLt
+    rw [hA]
+  | regScaled rn rm =>
+    obtain ⟨hb, hi⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi ArmState.default
+    have e : Insn.toArmInst env (.fpuLoad sz (.v d) (.regScaled rn rm)) = .ok (fpRegInst (fpSizeF sz) 1 Rm 3#3 1#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpReg_load sz hsz _ _ _ _ _ (by decide), fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRm] at hRm'; cases hRm'
+    rw [instEvs_fpReg _ _ _ _ _ _ _ (by decide), immEvs_fpLoad_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.reg Rm 3#3 1#1) (log2 sz.bytes) y = AMode.addr ctx (.regScaled rn rm) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+      congr 1
+      rw [show Arm.decode_reg_extend 3#3 = .UXTX from rfl, ite_true]
+      exact uxtx_shift _ _ (fp_log2 hsz)
+    rw [hA]
+  | regScaledExtended rn rm ex =>
+    obtain ⟨hb, hi, hex⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi ArmState.default
+    have e : Insn.toArmInst env (.fpuLoad sz (.v d) (.regScaledExtended rn rm ex)) = .ok (fpRegInst (fpSizeF sz) 1 Rm ex.bits 1#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hex with rfl | rfl | rfl | rfl <;> rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpReg_load sz hsz _ _ _ _ _ (ext_lsb1 hex), fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRm] at hRm'; cases hRm'
+    rw [instEvs_fpReg _ _ _ _ _ _ _ (ext_lsb1 hex), immEvs_fpLoad_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.reg Rm ex.bits 1#1) (log2 sz.bytes) y = AMode.addr ctx (.regScaledExtended rn rm ex) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+      simp only [ite_true]
+    rw [hA]
+  | regExtended rn rm ex =>
+    obtain ⟨hb, hi, hex⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi ArmState.default
+    have e : Insn.toArmInst env (.fpuLoad sz (.v d) (.regExtended rn rm ex)) = .ok (fpRegInst (fpSizeF sz) 1 Rm ex.bits 0#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hex with rfl | rfl | rfl | rfl <;> rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpReg_load sz hsz _ _ _ _ _ (ext_lsb1 hex), fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRm] at hRm'; cases hRm'
+    rw [instEvs_fpReg _ _ _ _ _ _ _ (ext_lsb1 hex), immEvs_fpLoad_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.reg Rm ex.bits 0#1) (log2 sz.bytes) y = AMode.addr ctx (.regExtended rn rm ex) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+      rfl
+    rw [hA]
+  | _ => simp [FinalAM] at hm
+
+/-- **The emitted SIMD&FP store at a final mode**: memory-independent control and one event at the
+mode's address (closed form). -/
+theorem fpuStore_line_cf (env : Env) (ctx : FnCtx) (sz : ScalarSize) (hsz : FpSz sz) (d : Nat)
+    (hd : d < 32) (m : AMode) (hm : FinalAM sz.bytes m) {ai : ArmInst}
+    (ha : Insn.toArmInst env (.fpuStore sz (.v d) m) = .ok ai) :
+    CtlIndep ai ∧ ∀ y, (m.base = .sp → CheckSPAlignment y) →
+      instEvs ai y = [⟨.plainW, m.addr ctx sz.bytes y, sz.bytes, (Arm.r (.SFP (BitVec.ofNat 5 d)) y).setWidth (sz.bytes * 8)⟩] := by
+  cases m with
+  | unsignedOffset rn off =>
+    obtain ⟨hb, h1, h2⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    have e : Insn.toArmInst env (.fpuStore sz (.v d) (.unsignedOffset rn off)) = .ok (fpUimmInst (fpSizeF sz) 0 (BitVec.ofNat 12 (off / sz.bytes)) Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpUimm_store sz hsz _ _ _, fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    rw [instEvs_fpUimm, immEvs_fpStore_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.uimm12 (BitVec.ofNat 12 (off / sz.bytes))) (log2 sz.bytes) y = AMode.addr ctx (.unsignedOffset rn off) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr]
+      congr 1
+      exact uimm_value sz.bytes (by have := fpSz_bytes hsz; omega) off h1 h2
+    rw [hA]
+  | unscaled rn off =>
+    obtain ⟨hb, h1, h2⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    have e : Insn.toArmInst env (.fpuStore sz (.v d) (.unscaled rn off)) = .ok (fpUnscInst (fpSizeF sz) 0 (BitVec.ofInt 9 off) Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpUnsc_store sz hsz _ _ _, fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    rw [instEvs_fpUnsc, ldsturEvs_fpStore_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + BitVec.signExtend 64 (BitVec.ofInt 9 off) = AMode.addr ctx (.unscaled rn off) sz.bytes y := by
+      simp only [AMode.addr, hr]
+      congr 1
+      exact simm9_value off h1 h2
+    rw [hA]
+  | regReg rn rm =>
+    obtain ⟨hb, hi⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi ArmState.default
+    have e : Insn.toArmInst env (.fpuStore sz (.v d) (.regReg rn rm)) = .ok (fpRegInst (fpSizeF sz) 0 Rm 3#3 0#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpReg_store sz hsz _ _ _ _ _ (by decide), fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRm] at hRm'; cases hRm'
+    rw [instEvs_fpReg _ _ _ _ _ _ _ (by decide), immEvs_fpStore_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.reg Rm 3#3 0#1) (log2 sz.bytes) y = AMode.addr ctx (.regReg rn rm) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+      congr 1
+      rw [show Arm.decode_reg_extend 3#3 = .UXTX from rfl]
+      apply BitVec.eq_of_toNat_eq
+      simp [Arm.extend_reg, Arm.ExtendType.unsigned_len]
+      exact (regX y rm).isLt
+    rw [hA]
+  | regScaled rn rm =>
+    obtain ⟨hb, hi⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi ArmState.default
+    have e : Insn.toArmInst env (.fpuStore sz (.v d) (.regScaled rn rm)) = .ok (fpRegInst (fpSizeF sz) 0 Rm 3#3 1#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpReg_store sz hsz _ _ _ _ _ (by decide), fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRm] at hRm'; cases hRm'
+    rw [instEvs_fpReg _ _ _ _ _ _ _ (by decide), immEvs_fpStore_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.reg Rm 3#3 1#1) (log2 sz.bytes) y = AMode.addr ctx (.regScaled rn rm) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+      congr 1
+      rw [show Arm.decode_reg_extend 3#3 = .UXTX from rfl, ite_true]
+      exact uxtx_shift _ _ (fp_log2 hsz)
+    rw [hA]
+  | regScaledExtended rn rm ex =>
+    obtain ⟨hb, hi, hex⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi ArmState.default
+    have e : Insn.toArmInst env (.fpuStore sz (.v d) (.regScaledExtended rn rm ex)) = .ok (fpRegInst (fpSizeF sz) 0 Rm ex.bits 1#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hex with rfl | rfl | rfl | rfl <;> rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpReg_store sz hsz _ _ _ _ _ (ext_lsb1 hex), fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRm] at hRm'; cases hRm'
+    rw [instEvs_fpReg _ _ _ _ _ _ _ (ext_lsb1 hex), immEvs_fpStore_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.reg Rm ex.bits 1#1) (log2 sz.bytes) y = AMode.addr ctx (.regScaledExtended rn rm ex) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+      simp only [ite_true]
+    rw [hA]
+  | regExtended rn rm ex =>
+    obtain ⟨hb, hi, hex⟩ := hm
+    obtain ⟨Rn, hRn, -, h31⟩ := enc_base hb ArmState.default
+    obtain ⟨Rm, hRm, -⟩ := enc_idx hi ArmState.default
+    have e : Insn.toArmInst env (.fpuStore sz (.v d) (.regExtended rn rm ex)) = .ok (fpRegInst (fpSizeF sz) 0 Rm ex.bits 0#1 Rn (BitVec.ofNat 5 d)) := by
+      clear ha
+      rcases hex with rfl | rfl | rfl | rfl <;> rcases hsz with rfl | rfl <;>
+        simp_all [Insn.toArmInst, Insn.armFields, Insn.armFields.fpLdstSize, ldstFields, encV_v' hd,
+          uField, sField, Arm.ArmInst.norm, ScalarSize.bytes, fpSizeF, bind, Except.bind, pure, Except.pure,
+          fpUimmInst, fpUnscInst, fpRegInst] <;> rfl
+    rw [e] at ha; cases ha
+    refine ⟨ctlIndep_fpReg_store sz hsz _ _ _ _ _ (ext_lsb1 hex), fun y hsp => ?_⟩
+    obtain ⟨Rn', hRn', hr, -⟩ := enc_base hb y
+    rw [hRn] at hRn'; cases hRn'
+    obtain ⟨Rm', hRm', hrm⟩ := enc_idx hi y
+    rw [hRm] at hRm'; cases hRm'
+    rw [instEvs_fpReg _ _ _ _ _ _ _ (ext_lsb1 hex), immEvs_fpStore_cf sz hsz Rn _ _ y (fun h => hsp (by simp [AMode.base, h31 h]))]
+    have hA : read_gpr 64 Rn y + LDST.Reg_offset.value (.reg Rm ex.bits 0#1) (log2 sz.bytes) y = AMode.addr ctx (.regExtended rn rm ex) sz.bytes y := by
+      simp only [AMode.addr, Arm.LDST.Reg_offset.value, hr, hrm]
+      rfl
+    rw [hA]
+  | _ => simp [FinalAM] at hm
+
 
 /-! ## The plain load/store forms -/
 
@@ -436,6 +755,12 @@ theorem x_or_v {r : Reg} (h : r.allocatable = true) :
   rcases allocatable_cases h with ⟨q, rfl, hq, -⟩ | ⟨q, rfl, -⟩
   · exact .inl ⟨q, rfl, hq⟩
   · exact .inr ⟨q, rfl⟩
+
+theorem v_or_x {r : Reg} (h : r.allocatable = true) :
+    (∃ q, r = .v q ∧ q < 32) ∨ ∃ q, r = .x q := by
+  rcases allocatable_cases h with ⟨q, rfl, -, -⟩ | ⟨q, rfl, hq⟩
+  · exact .inr ⟨q, rfl⟩
+  · exact .inl ⟨q, rfl, hq⟩
 
 /-- **A GPR load at a `unsignedOffset` mode is a one-event form** (`OneEvForm`). -/
 theorem load_uoff_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : LoadOp} {d u : Nat} {off : Nat}
@@ -1096,6 +1421,643 @@ theorem store_regExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {op : StoreOp} 
         (fun h => by simp [AMode.base] at h), placeUses_setMem]
     simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
       setReg, List.range_succ, Arm.r_of_w_same, lo64_regVal_x, rnum, setMem_mem, r_setMem]
+
+
+/-- **A SIMD&FP fpuLoad at a `unsignedOffset` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuLoad_uoff_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u : Nat} {off : Nat}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuLoad sz (.vreg d .float) (.unsignedOffset (.vreg u .int) off) fl) = true) :
+    OneEvForm F ctx (.fpuLoad sz (.vreg d .float) (.unsignedOffset (.vreg u .int) off) fl) := by
+  have hop : FpSz sz ∧ off % sz.bytes = 0 ∧ off / sz.bytes < 4096 := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuLoad sz (.vreg d .float) (.unsignedOffset (.vreg u .int) off) fl).operands = .ok #[⟨d, .float, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 : Reg, (MInst.fpuLoad sz (.vreg d .float) (.unsignedOffset (.vreg u .int) off) fl).assign #[r0, r1] = .ok (.fpuLoad sz r0 (.unsignedOffset r1 off) fl) := fun _ _ => rfl
+  have hlines : ∀ (r0 r1 : Reg) ps, (MInst.fpuLoad sz r0 (.unsignedOffset r1 off) fl).lines ctx ps =
+      .ok ([.ins (.fpuLoad sz r0 (.unsignedOffset r1 off)) fl.trapCode], ps) := fun _ _ _ => rfl
+  have hfin : ∀ q, q ≤ 30 → FinalAM sz.bytes (.unsignedOffset (.x q) off) := fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuLoad_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuLoad_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inl ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuLoad sz (.v 0) (.unsignedOffset (.x 1) off) fl) hops
+      rfl (hlines _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuLoad_line_cf env ctx sz hop.1 p hp _ (hfin q (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuLoad at a `unscaled` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuLoad_unsc_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u : Nat} {off : Int}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuLoad sz (.vreg d .float) (.unscaled (.vreg u .int) off) fl) = true) :
+    OneEvForm F ctx (.fpuLoad sz (.vreg d .float) (.unscaled (.vreg u .int) off) fl) := by
+  have hop : FpSz sz ∧ -256 ≤ off ∧ off < 256 := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuLoad sz (.vreg d .float) (.unscaled (.vreg u .int) off) fl).operands = .ok #[⟨d, .float, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 : Reg, (MInst.fpuLoad sz (.vreg d .float) (.unscaled (.vreg u .int) off) fl).assign #[r0, r1] = .ok (.fpuLoad sz r0 (.unscaled r1 off) fl) := fun _ _ => rfl
+  have hlines : ∀ (r0 r1 : Reg) ps, (MInst.fpuLoad sz r0 (.unscaled r1 off) fl).lines ctx ps =
+      .ok ([.ins (.fpuLoad sz r0 (.unscaled r1 off)) fl.trapCode], ps) := fun _ _ _ => rfl
+  have hfin : ∀ q, q ≤ 30 → FinalAM sz.bytes (.unscaled (.x q) off) := fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuLoad_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuLoad_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inl ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuLoad sz (.v 0) (.unscaled (.x 1) off) fl) hops
+      rfl (hlines _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuLoad_line_cf env ctx sz hop.1 p hp _ (hfin q (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuLoad at a `regReg` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuLoad_regReg_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u v : Nat} 
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuLoad sz (.vreg d .float) (.regReg (.vreg u .int) (.vreg v .int)) fl) = true) :
+    OneEvForm F ctx (.fpuLoad sz (.vreg d .float) (.regReg (.vreg u .int) (.vreg v .int)) fl) := by
+  have hop : FpSz sz ∧ True := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuLoad sz (.vreg d .float) (.regReg (.vreg u .int) (.vreg v .int)) fl).operands = .ok #[⟨d, .float, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.fpuLoad sz (.vreg d .float) (.regReg (.vreg u .int) (.vreg v .int)) fl).assign #[r0, r1, r2] = .ok (.fpuLoad sz r0 (.regReg r1 r2) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.fpuLoad sz r0 (.regReg r1 r2) fl).lines ctx ps =
+      .ok ([.ins (.fpuLoad sz r0 (.regReg r1 r2)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM sz.bytes (.regReg (.x q) (.x r)) := fun q r hq hr => ⟨hq, hr⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuLoad_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuLoad_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inl ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuLoad sz (.v 0) (.regReg (.x 1) (.x 2)) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuLoad_line_cf env ctx sz hop.1 p hp _ (hfin q r (by omega) (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuLoad at a `regScaled` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuLoad_regScaled_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u v : Nat} 
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuLoad sz (.vreg d .float) (.regScaled (.vreg u .int) (.vreg v .int)) fl) = true) :
+    OneEvForm F ctx (.fpuLoad sz (.vreg d .float) (.regScaled (.vreg u .int) (.vreg v .int)) fl) := by
+  have hop : FpSz sz ∧ True := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuLoad sz (.vreg d .float) (.regScaled (.vreg u .int) (.vreg v .int)) fl).operands = .ok #[⟨d, .float, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.fpuLoad sz (.vreg d .float) (.regScaled (.vreg u .int) (.vreg v .int)) fl).assign #[r0, r1, r2] = .ok (.fpuLoad sz r0 (.regScaled r1 r2) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.fpuLoad sz r0 (.regScaled r1 r2) fl).lines ctx ps =
+      .ok ([.ins (.fpuLoad sz r0 (.regScaled r1 r2)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM sz.bytes (.regScaled (.x q) (.x r)) := fun q r hq hr => ⟨hq, hr⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuLoad_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuLoad_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inl ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuLoad sz (.v 0) (.regScaled (.x 1) (.x 2)) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuLoad_line_cf env ctx sz hop.1 p hp _ (hfin q r (by omega) (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuLoad at a `regScaledExtended` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuLoad_regScaledExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u v : Nat} {e : ExtendOp}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuLoad sz (.vreg d .float) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl) = true) :
+    OneEvForm F ctx (.fpuLoad sz (.vreg d .float) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl) := by
+  have hop : FpSz sz ∧ extOk e := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuLoad sz (.vreg d .float) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl).operands = .ok #[⟨d, .float, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.fpuLoad sz (.vreg d .float) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl).assign #[r0, r1, r2] = .ok (.fpuLoad sz r0 (.regScaledExtended r1 r2 e) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.fpuLoad sz r0 (.regScaledExtended r1 r2 e) fl).lines ctx ps =
+      .ok ([.ins (.fpuLoad sz r0 (.regScaledExtended r1 r2 e)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM sz.bytes (.regScaledExtended (.x q) (.x r) e) := fun q r hq hr => ⟨hq, hr, hop.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuLoad_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuLoad_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inl ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuLoad sz (.v 0) (.regScaledExtended (.x 1) (.x 2) e) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuLoad_line_cf env ctx sz hop.1 p hp _ (hfin q r (by omega) (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuLoad at a `regExtended` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuLoad_regExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u v : Nat} {e : ExtendOp}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuLoad sz (.vreg d .float) (.regExtended (.vreg u .int) (.vreg v .int) e) fl) = true) :
+    OneEvForm F ctx (.fpuLoad sz (.vreg d .float) (.regExtended (.vreg u .int) (.vreg v .int) e) fl) := by
+  have hop : FpSz sz ∧ extOk e := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuLoad sz (.vreg d .float) (.regExtended (.vreg u .int) (.vreg v .int) e) fl).operands = .ok #[⟨d, .float, .def, .late, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.fpuLoad sz (.vreg d .float) (.regExtended (.vreg u .int) (.vreg v .int) e) fl).assign #[r0, r1, r2] = .ok (.fpuLoad sz r0 (.regExtended r1 r2 e) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.fpuLoad sz r0 (.regExtended r1 r2 e) fl).lines ctx ps =
+      .ok ([.ins (.fpuLoad sz r0 (.regExtended r1 r2 e)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM sz.bytes (.regExtended (.x q) (.x r) e) := fun q r hq hr => ⟨hq, hr, hop.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuLoad_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuLoad_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inl ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .def, .late, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuLoad sz (.v 0) (.regExtended (.x 1) (.x 2) e) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuLoad_line_cf env ctx sz hop.1 p hp _ (hfin q r (by omega) (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuStore at a `unsignedOffset` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuStore_uoff_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u : Nat} {off : Nat}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuStore sz (.vreg d .float) (.unsignedOffset (.vreg u .int) off) fl) = true) :
+    OneEvForm F ctx (.fpuStore sz (.vreg d .float) (.unsignedOffset (.vreg u .int) off) fl) := by
+  have hop : FpSz sz ∧ off % sz.bytes = 0 ∧ off / sz.bytes < 4096 := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuStore sz (.vreg d .float) (.unsignedOffset (.vreg u .int) off) fl).operands = .ok #[⟨d, .float, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 : Reg, (MInst.fpuStore sz (.vreg d .float) (.unsignedOffset (.vreg u .int) off) fl).assign #[r0, r1] = .ok (.fpuStore sz r0 (.unsignedOffset r1 off) fl) := fun _ _ => rfl
+  have hlines : ∀ (r0 r1 : Reg) ps, (MInst.fpuStore sz r0 (.unsignedOffset r1 off) fl).lines ctx ps =
+      .ok ([.ins (.fpuStore sz r0 (.unsignedOffset r1 off)) fl.trapCode], ps) := fun _ _ _ => rfl
+  have hfin : ∀ q, q ≤ 30 → FinalAM sz.bytes (.unsignedOffset (.x q) off) := fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuStore_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuStore_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inr ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuStore sz (.v 0) (.unsignedOffset (.x 1) off) fl) hops
+      rfl (hlines _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuStore_line_cf env ctx sz hop.1 p hp _ (hfin q (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuStore at a `unscaled` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuStore_unsc_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u : Nat} {off : Int}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuStore sz (.vreg d .float) (.unscaled (.vreg u .int) off) fl) = true) :
+    OneEvForm F ctx (.fpuStore sz (.vreg d .float) (.unscaled (.vreg u .int) off) fl) := by
+  have hop : FpSz sz ∧ -256 ≤ off ∧ off < 256 := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuStore sz (.vreg d .float) (.unscaled (.vreg u .int) off) fl).operands = .ok #[⟨d, .float, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 : Reg, (MInst.fpuStore sz (.vreg d .float) (.unscaled (.vreg u .int) off) fl).assign #[r0, r1] = .ok (.fpuStore sz r0 (.unscaled r1 off) fl) := fun _ _ => rfl
+  have hlines : ∀ (r0 r1 : Reg) ps, (MInst.fpuStore sz r0 (.unscaled r1 off) fl).lines ctx ps =
+      .ok ([.ins (.fpuStore sz r0 (.unscaled r1 off)) fl.trapCode], ps) := fun _ _ _ => rfl
+  have hfin : ∀ q, q ≤ 30 → FinalAM sz.bytes (.unscaled (.x q) off) := fun q hq => ⟨hq, hop.2.1, hop.2.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuStore_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuStore_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inr ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, rfl⟩ := regs2 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuStore sz (.v 0) (.unscaled (.x 1) off) fl) hops
+      rfl (hlines _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuStore_line_cf env ctx sz hop.1 p hp _ (hfin q (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuStore at a `regReg` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuStore_regReg_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u v : Nat} 
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuStore sz (.vreg d .float) (.regReg (.vreg u .int) (.vreg v .int)) fl) = true) :
+    OneEvForm F ctx (.fpuStore sz (.vreg d .float) (.regReg (.vreg u .int) (.vreg v .int)) fl) := by
+  have hop : FpSz sz ∧ True := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuStore sz (.vreg d .float) (.regReg (.vreg u .int) (.vreg v .int)) fl).operands = .ok #[⟨d, .float, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.fpuStore sz (.vreg d .float) (.regReg (.vreg u .int) (.vreg v .int)) fl).assign #[r0, r1, r2] = .ok (.fpuStore sz r0 (.regReg r1 r2) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.fpuStore sz r0 (.regReg r1 r2) fl).lines ctx ps =
+      .ok ([.ins (.fpuStore sz r0 (.regReg r1 r2)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM sz.bytes (.regReg (.x q) (.x r)) := fun q r hq hr => ⟨hq, hr⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuStore_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuStore_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inr ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuStore sz (.v 0) (.regReg (.x 1) (.x 2)) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuStore_line_cf env ctx sz hop.1 p hp _ (hfin q r (by omega) (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuStore at a `regScaled` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuStore_regScaled_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u v : Nat} 
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuStore sz (.vreg d .float) (.regScaled (.vreg u .int) (.vreg v .int)) fl) = true) :
+    OneEvForm F ctx (.fpuStore sz (.vreg d .float) (.regScaled (.vreg u .int) (.vreg v .int)) fl) := by
+  have hop : FpSz sz ∧ True := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuStore sz (.vreg d .float) (.regScaled (.vreg u .int) (.vreg v .int)) fl).operands = .ok #[⟨d, .float, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.fpuStore sz (.vreg d .float) (.regScaled (.vreg u .int) (.vreg v .int)) fl).assign #[r0, r1, r2] = .ok (.fpuStore sz r0 (.regScaled r1 r2) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.fpuStore sz r0 (.regScaled r1 r2) fl).lines ctx ps =
+      .ok ([.ins (.fpuStore sz r0 (.regScaled r1 r2)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM sz.bytes (.regScaled (.x q) (.x r)) := fun q r hq hr => ⟨hq, hr⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuStore_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuStore_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inr ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuStore sz (.v 0) (.regScaled (.x 1) (.x 2)) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuStore_line_cf env ctx sz hop.1 p hp _ (hfin q r (by omega) (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuStore at a `regScaledExtended` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuStore_regScaledExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u v : Nat} {e : ExtendOp}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuStore sz (.vreg d .float) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl) = true) :
+    OneEvForm F ctx (.fpuStore sz (.vreg d .float) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl) := by
+  have hop : FpSz sz ∧ extOk e := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuStore sz (.vreg d .float) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl).operands = .ok #[⟨d, .float, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.fpuStore sz (.vreg d .float) (.regScaledExtended (.vreg u .int) (.vreg v .int) e) fl).assign #[r0, r1, r2] = .ok (.fpuStore sz r0 (.regScaledExtended r1 r2 e) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.fpuStore sz r0 (.regScaledExtended r1 r2 e) fl).lines ctx ps =
+      .ok ([.ins (.fpuStore sz r0 (.regScaledExtended r1 r2 e)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM sz.bytes (.regScaledExtended (.x q) (.x r) e) := fun q r hq hr => ⟨hq, hr, hop.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuStore_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuStore_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inr ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuStore sz (.v 0) (.regScaledExtended (.x 1) (.x 2) e) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuStore_line_cf env ctx sz hop.1 p hp _ (hfin q r (by omega) (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
+
+/-- **A SIMD&FP fpuStore at a `regExtended` mode is a one-event form** (`OneEvForm`). -/
+theorem fpuStore_regExt_form {F : BitVec 64 → Prop} {ctx : FnCtx} {sz : ScalarSize} {d u v : Nat} {e : ExtendOp}
+    {fl : Clif.MemFlags} (hfo : FormOk ctx (.fpuStore sz (.vreg d .float) (.regExtended (.vreg u .int) (.vreg v .int) e) fl) = true) :
+    OneEvForm F ctx (.fpuStore sz (.vreg d .float) (.regExtended (.vreg u .int) (.vreg v .int) e) fl) := by
+  have hop : FpSz sz ∧ extOk e := by
+    simpa [FormOk, memOk, FpSz] using hfo
+  have hops : (MInst.fpuStore sz (.vreg d .float) (.regExtended (.vreg u .int) (.vreg v .int) e) fl).operands = .ok #[⟨d, .float, .use, .early, .reg⟩, ⟨u, .int, .use, .early, .reg⟩, ⟨v, .int, .use, .early, .reg⟩] := rfl
+  have hasg : ∀ r0 r1 r2 : Reg, (MInst.fpuStore sz (.vreg d .float) (.regExtended (.vreg u .int) (.vreg v .int) e) fl).assign #[r0, r1, r2] = .ok (.fpuStore sz r0 (.regExtended r1 r2 e) fl) := fun _ _ _ => rfl
+  have hlines : ∀ (r0 r1 r2 : Reg) ps, (MInst.fpuStore sz r0 (.regExtended r1 r2 e) fl).lines ctx ps =
+      .ok ([.ins (.fpuStore sz r0 (.regExtended r1 r2 e)) fl.trapCode], ps) := fun _ _ _ _ => rfl
+  have hfin : ∀ q r, q ≤ 30 → r ≤ 30 → FinalAM sz.bytes (.regExtended (.x q) (.x r) e) := fun q r hq hr => ⟨hq, hr, hop.2⟩
+  obtain ⟨a0, ha0, -⟩ := exec_fpuStore_line env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega))
+    ArmState.default (fun h => by simp [AMode.base] at h)
+  have hcf0 := fpuStore_line_cf env0 ctx sz hop.1 0 (by omega) _ (hfin 1 2 (by omega) (by omega)) ha0
+  refine ⟨rfl, hfo, ⟨_, _, _, _, a0, hops, rfl, hlines _ _ _ _, ha0, hcf0.1⟩, ?_, ?_, ?_⟩
+  · intro ops regs i' hops' hsz hasg'
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    exact ⟨_, _, hlines _ _ _⟩
+  · intro ops regs i' x t env a hops' hsz hasg' hl ha
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    exact plain_arm ha (.inr (.inr (.inr ⟨_, _, _, rfl⟩)))
+  · intro s w ops regs i' x t env a hsw hops' hsz hall hasg' hl ha M
+    rw [hops] at hops'; cases hops'
+    obtain ⟨r0, r1, r2, rfl⟩ := regs3 hsz
+    rw [hasg] at hasg'; cases hasg'
+    rw [hlines] at hl
+    simp only [Except.ok.injEq, Prod.mk.injEq, List.cons.injEq, Line.ins.injEq, and_true] at hl
+    obtain ⟨⟨rfl, rfl⟩, -⟩ := hl
+    rcases v_or_x (hall (⟨d, .float, .use, .early, .reg⟩, r0) (by simp)) with ⟨p, rfl, hp⟩ | ⟨p, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨u, .int, .use, .early, .reg⟩, r1) (by simp)) with ⟨q, rfl, hq⟩ | ⟨q, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    rcases x_or_v (hall (⟨v, .int, .use, .early, .reg⟩, r2) (by simp)) with ⟨r, rfl, hr⟩ | ⟨r, rfl⟩
+    rotate_left
+    · rcases hop.1 with rfl | rfl <;> ldst_noV
+    unfold cEvs
+    simp only [MInst.isCtl, Bool.false_eq_true, ite_false]
+    rw [IselMemAux.straightEvs_one_line (ic := .fpuStore sz (.v 0) (.regExtended (.x 1) (.x 2) e) fl) hops
+      rfl (hlines _ _ _ _), linesEvs_single ha0, hcf0.2 _ (fun h => by simp [AMode.base] at h),
+      (fpuStore_line_cf env ctx sz hop.1 p hp _ (hfin q r (by omega) (by omega)) ha).2 _
+        (fun h => by simp [AMode.base] at h), placeUses_setMem]
+    simp [AMode.addr, regX, placeUses, useVals, Operand.isUse, canonRegs, canonReg, canonBase,
+      setReg, List.range_succ, Arm.r_of_w_same, rnum, setMem_mem, r_setMem, regVal, lo64,
+      BitVec.setWidth_setWidth_of_le]
 
 
 end Concurrency.ArmAllocThread
