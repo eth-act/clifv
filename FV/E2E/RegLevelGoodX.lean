@@ -15,8 +15,8 @@ state of an activation's run before its return. The executable machine of `E2E.E
 * `line`: the pc is at an instruction line of the function, not inside the TLS sequence past its
   `ldr` (`Insn.tlsTail`: the `add`/`blr` the TLS hook skips);
 * `next` (D1): the next state errs, returns to the entry's `x30`, is 4 bytes on, or is at a line
-  that does not follow the first word of an `adrp` pair (`Insn.pairFirst`), so the next pc is the
-  second word of a pair only after its first word;
+  that does not follow the first word of an `adrp` pair or a TLSDESC `adrp` (`Insn.pairFirst`), so
+  the next pc is the second word of a pair (or the TLSDESC `ldr`) only after its first word;
 * `got` (D4): at the `ldr` of a GOT pair the kept addresses `R.G` hold their entry bytes;
 * `blr`: a `blr` reads its target from a register other than `xzr`, and the code words are
   readable as data;
@@ -29,9 +29,10 @@ namespace Backend.Proof
 
 open Backend E2E
 
-/-- The first word of an `adrp` pair (its second word, `ldr`/`add`, is the next line). -/
+/-- The first word of an `adrp` pair (its second word, `ldr`/`add`, is the next line), or the
+TLSDESC `adrp` (its `ldr` is the next line). -/
 def _root_.Backend.Insn.pairFirst : Insn → Bool
-  | .adrpGot .. | .adrp .. => true
+  | .adrpGot .. | .adrp .. | .adrpTlsDesc .. => true
   | _ => false
 
 /-- The instructions of the TLS sequence past its `ldr` (the TLS hook runs them). -/
