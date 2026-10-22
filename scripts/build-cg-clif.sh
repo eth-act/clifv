@@ -36,7 +36,7 @@ SRC=$OUT/rust
 PATCH=$ROOT/scripts/patches/cg-clif-extnames.patch
 commit=$(rustc +"$TC" -vV | sed -n 's/^commit-hash: //p')
 [[ -n "$commit" ]] || { echo "no commit-hash in rustc +$TC -vV" >&2; exit 1; }
-rustup component add rustc-dev --toolchain "$TC"
+rustup component add rustc-dev rust-src --toolchain "$TC"
 mkdir -p "$OUT"
 if [[ ! -d "$SRC/.git" ]]; then
   git init -q "$SRC"
@@ -61,3 +61,13 @@ for variant in unwind abort; do
   cp "$OUT/target/release/librustc_codegen_cranelift.so" "$OUT/$variant/librustc_codegen_cranelift.so"
   echo "built $OUT/$variant/librustc_codegen_cranelift.so (cg_clif of rustc $commit, patched, ${features[*]:-no features})"
 done
+# `cargo fv --build-std`: the standard library's sources (the toolchain's `rust-src`) with
+# cg_clif's own `stdlib` patches, which cg_clif applies to the sysroot it builds for itself
+# (0027: the 128-bit atomic types are removed; cg_clif cannot compile 128-bit atomics)
+rm -rf "$OUT/std-src.tmp" && mkdir -p "$OUT/std-src.tmp"
+cp -r "$sysroot/lib/rustlib/src/rust/library" "$OUT/std-src.tmp/"
+for p in "$SRC"/compiler/rustc_codegen_cranelift/patches/*-stdlib-*.patch; do
+  patch -s -p1 -d "$OUT/std-src.tmp" <"$p"
+done
+rm -rf "$OUT/std-src" && mv "$OUT/std-src.tmp" "$OUT/std-src"
+echo "prepared $OUT/std-src/library (rust-src of $TC with cg_clif's stdlib patches, for cargo fv --build-std)"

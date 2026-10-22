@@ -40,6 +40,9 @@ struct UnitMeta {
     clif_dir: PathBuf,
     #[serde(default)]
     dep: bool,
+    /// A crate of the standard library built by `cargo fv --build-std` (`-Zbuild-std`).
+    #[serde(default)]
+    std: bool,
 }
 
 fn eprint_fv(msg: &str) {
@@ -64,6 +67,17 @@ fn opt_values(args: &[String], opt: &str) -> Vec<String> {
         i += 1;
     }
     v
+}
+
+/// `-Z name` / `-Zname`.
+fn has_z(args: &[String], name: &str) -> bool {
+    args.iter().enumerate().any(|(i, a)| a.strip_prefix("-Z") == Some(name) || (a == "-Z" && args.get(i + 1).is_some_and(|n| n == name)))
+}
+
+/// cargo marks the units of the standard library it builds with `-Zbuild-std` with
+/// `-Zforce-unstable-if-unmarked` (and only those).
+fn is_std_unit(args: &[String]) -> bool {
+    has_z(args, "force-unstable-if-unmarked")
 }
 
 /// `-C key=value` / `-Ckey=value`.
@@ -117,6 +131,8 @@ struct Invocation {
     links: bool,
     /// Not a workspace member.
     dep: bool,
+    /// A crate of the standard library (`--build-std`; `dep` too).
+    std: bool,
 }
 
 /// The invocation codegens a crate for the target that we compile: a workspace member, or
@@ -135,7 +151,8 @@ fn target_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
         return None;
     }
     let manifest = std::env::var_os("CARGO_MANIFEST_DIR")?;
-    let dep = !cfg.is_member(Path::new(&manifest));
+    let std = is_std_unit(args);
+    let dep = std || !cfg.is_member(Path::new(&manifest));
     if dep && !cfg.compiles_dep(&std::env::var("CARGO_PKG_NAME").unwrap_or_default()) {
         return None;
     }
@@ -155,7 +172,7 @@ fn target_invocation(cfg: &Config, args: &[String]) -> Option<Invocation> {
     let extra = codegen_opt(args, "extra-filename").unwrap_or_default();
     let out_dir = PathBuf::from(opt_values(args, "--out-dir").pop()?);
     let src = args.iter().find(|a| a.ends_with(".rs") && !a.starts_with('-')).cloned().unwrap_or_default();
-    Some(Invocation { unit: format!("{crate_name}{extra}"), src, crate_name, out_dir, kind, links, dep })
+    Some(Invocation { unit: format!("{crate_name}{extra}"), src, crate_name, out_dir, kind, links, dep, std })
 }
 
 /// The `could not copy "SRC" to "DST"` sources of rustc's `.ll` copy errors, if those are the
@@ -218,6 +235,7 @@ fn new_report(cfg: &Config, m: &UnitMeta, artifact: &Path) -> UnitReport {
         kind: m.kind.clone(),
         src: m.src.clone(),
         dep: m.dep,
+        std: m.std,
         artifact: artifact.display().to_string(),
         mode: cfg.mode.name().into(),
         theorem: cfg.mode.theorem().map(String::from),
@@ -340,6 +358,14 @@ pub fn wrapper_main(argv: Vec<OsString>) -> i32 {
         Some(Ok(c)) => c,
     };
     let args: Vec<String> = rest.iter().map(|a| a.to_string_lossy().into_owned()).collect();
+    // `--build-std`: compiler_builtins stays on LLVM (cg_clif cannot compile its f128 code; the
+    // libcalls stay outside code, like musl libc)
+    if is_std_unit(&args) && opt_values(&args, "--crate-name").last().is_some_and(|c| c == "compiler_builtins") {
+        let llvm: Vec<&String> = args.iter().filter(|a| !a.starts_with("-Zcodegen-backend=")).collect();
+        let e = Command::new(rustc).args(llvm).exec();
+        eprint_fv(&format!("cannot run {}: {e}", Path::new(rustc).display()));
+        return 1;
+    }
     let Some(inv) = target_invocation(&cfg, &args) else { return plain() };
 
     let clif_dir = inv.out_dir.join(format!("{}.clif", inv.unit));
@@ -351,6 +377,7 @@ pub fn wrapper_main(argv: Vec<OsString>) -> i32 {
         src: inv.src.clone(),
         clif_dir: clif_dir.clone(),
         dep: inv.dep,
+        std: inv.std,
     };
     let mut rargs = if inv.links { strip_linker(&args) } else { args.clone() };
     rargs.extend(["--emit=llvm-ir", "-Zunstable-options", "-Csymbol-mangling-version=hashed"].map(String::from));
@@ -534,23 +561,23 @@ fn exe_origin(cfg: &Config, meta: &UnitMeta, exe: &Path, map: &Path) -> Result<E
             funcs.insert(s.address());
         }
     }
-    // input file → (package, dependency?) of the unit we compiled it in, if any
     let own_prefix = format!("{}.", meta.unit);
-    let mut owners: HashMap<String, Option<(String, bool)>> = HashMap::new();
-    let mut owner_of = |f: &str| -> Option<(String, bool)> {
+    // input file → (package, dependency?, std?) of the unit we compiled it in, if any
+    let mut owners: HashMap<String, Option<(String, bool, bool)>> = HashMap::new();
+    let mut owner_of = |f: &str| -> Option<(String, bool, bool)> {
         owners
             .entry(f.to_string())
             .or_insert_with(|| {
                 let p = Path::new(f);
                 let name = p.file_name()?.to_string_lossy().into_owned();
                 if name.starts_with(&own_prefix) && name.ends_with(".rcgu.o") {
-                    return Some((meta.package.clone(), meta.dep));
+                    return Some((meta.package.clone(), meta.dep, meta.std));
                 }
                 // `<crate><extra-filename>` names the unit uniquely in the target dir
                 let unit = name.strip_prefix("lib")?.strip_suffix(".rlib")?;
                 let text = fs::read_to_string(cfg.report_dir.join(format!("{unit}.json"))).ok()?;
                 let u: UnitReport = serde_json::from_str(&text).ok()?;
-                Some((u.package, u.dep))
+                Some((u.package, u.dep, u.std))
             })
             .clone()
     };
@@ -560,8 +587,11 @@ fn exe_origin(cfg: &Config, meta: &UnitMeta, exe: &Path, map: &Path) -> Result<E
         let input = i.checked_sub(1).map(|i| &inputs[i]).filter(|(_, e, _)| a < *e).map(|(_, _, f)| f.as_str());
         let owner = input.and_then(&mut owner_of);
         match (marked.contains(&a), owner) {
-            (true, Some((pkg, dep))) => {
-                if dep {
+            (true, Some((pkg, dep, std))) => {
+                if std {
+                    o.lean_std += 1;
+                    *o.lean_by_package.entry(format!("{pkg} (std)")).or_default() += 1;
+                } else if dep {
                     o.lean_deps += 1;
                     *o.lean_by_package.entry(format!("{pkg} (dep)")).or_default() += 1;
                 } else {
@@ -574,7 +604,15 @@ fn exe_origin(cfg: &Config, meta: &UnitMeta, exe: &Path, map: &Path) -> Result<E
                 *o.lean_by_package.entry(format!("? {}", input.unwrap_or("?"))).or_default() += 1;
             }
             (false, Some(_)) => o.cg_clif += 1,
-            (false, None) if input.is_some_and(|f| f.contains("/lib/rustlib/")) => o.prebuilt += 1,
+            // the sysroot (prebuilt std, musl libc and its crt objects) or, with `--build-std`,
+            // compiler_builtins (LLVM)
+            (false, None)
+                if input.is_some_and(|f| {
+                    f.contains("/lib/rustlib/") || Path::new(f).file_name().is_some_and(|n| n.to_string_lossy().starts_with("libcompiler_builtins-"))
+                }) =>
+            {
+                o.prebuilt += 1
+            }
             (false, None) => o.other += 1,
         }
     }
