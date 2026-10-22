@@ -419,4 +419,26 @@ theorem realizes_cas : ∃ (n : Nat) (lsP : List Lab) (eR eW : Ev) (t' : ArmStat
     rmw_full hkR hkW fun l hl e he => (hevP l hl e he).2, fun env p M0 =>
     realizes_pair hc hr hevP hkR hkW (haW.trans haR.symm) (hnW.trans hnR.symm) env p M0⟩
 
+/-- **`Realizes` on the compiled `atomic_cas`, the realized prefix covering the run** (T2j,
+`realizes_pair_cov`): the run of `run_cas`; its realized prefix is the whole run, or a CLIF thread
+run from `csC` realizes it and then stops (`Covers`). The whole run does not follow here (unlike
+`WitnessR.realizes_rmw_full`): this `atomic_cas` stores the value it finds (`0` over `0`), and a
+CLIF `atomic_cas` whose store leaves the bytes unchanged is a step with the read alone
+(`ClifThread.evShape`), which realizes the run up to the `ldaxr` and then returns. -/
+theorem realizes_cas_cov : ∃ (n : Nat) (lsP : List Lab) (eR eW : Ev) (t' : ArmState × Mon),
+    PRun Policy.arm RAC.step (OkPriv RAC) (iterN RAC.step n RAC.s0, none) (pairLs lsP eR eW 2) t' ∧
+    eR.k = .acqXR ∧ eW.k = .relXW ∧ eR.addr = 0 ∧ eW.addr = 0 ∧ eR.n = 8 ∧ eW.n = 8 ∧
+    (∀ l ∈ lsP, ∀ e' ∈ l.evs, PrivA RAC e'.addr.toNat ∧ (e'.k = .plainW ∨ e'.k = .plainR)) ∧
+    ∀ (env : Clif.Env) (p : Clif.Program) (M0 : Bytes), ∃ k ≤ (pairLs lsP eR eW 2).length,
+      Covers env p RAC csC (pairLs lsP eR eW 2) k ∧
+      ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = 1 ∧ PC.st 0 0 = .run csC ∧
+        PC.Runs (CStep env p) ∧
+        Realizes (PA1 RAC (iterN RAC.step n RAC.s0) (pairLs lsP eR eW 2) k) (locs1 lsP eR) M0
+          (latestW (PA1 RAC (iterN RAC.step n RAC.s0) (pairLs lsP eR eW 2) k) (locs1 lsP eR))
+          (coL (PA1 RAC (iterN RAC.step n RAC.s0) (pairLs lsP eR eW 2) k) (locs1 lsP eR))
+          (rmwP (pairLs lsP eR eW 2) k) PC [(eR.addr.toNat, eR.n)] M0 φ (fun _ _ _ => True) := by
+  obtain ⟨n, lsP, eR, eW, t', hc, hr, hkR, hkW, haR, haW, hnR, hnW, hevP⟩ := run_cas
+  exact ⟨n, lsP, eR, eW, t', hr, hkR, hkW, haR, haW, hnR, hnW, hevP, fun env p M0 =>
+    realizes_pair_cov hc hr hevP hkR hkW (haW.trans haR.symm) (hnW.trans hnR.symm) env p M0⟩
+
 end Concurrency.RealizeCompiled.WitnessC

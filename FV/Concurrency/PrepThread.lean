@@ -408,6 +408,68 @@ theorem prep_run {ss : Array (Array Nat)} (H : PrepFacts vc vcp L ss ss') (hds :
     · obtain ⟨trS, srcE, hrS, hmE, hth⟩ := ih hm'
       exact ⟨_, srcE, .cons hs' hrS, hmE, .both hth⟩
 
+/-- **The progress of `prepare`** (T2j): from matched configurations, when the original has a
+step, so has the prepared code (the counterpart instruction, or the edge block's `jump`). -/
+theorem prep_fwd {ss : Array (Array Nat)} (H : PrepFacts vc vcp L ss ss') (hds : DriverSemG sem)
+    {src tgt src' : VConf CV ArmState} (hm : PMatch vc vcp sem ev L ss' src tgt)
+    (hs : VStep vc sem src src') : ∃ tgt', VStep vcp sem tgt tgt' := by
+  cases hm with
+  | ret => cases hs
+  | halt => cases hs
+  | @blk b b' k ρ w hLb hσ =>
+    obtain ⟨vb, vb', hvb, hvb', hpar, hba, hsz, hins, sb, sb', hsb, hsb', hsucc⟩ :=
+      (H.kept b b' hLb hσ).blocks
+    cases hs with
+    | @step _ _ _ _ vb0 i ops outs w' ctl c' hvb0 hi hops hsem hlen hnext =>
+      rw [hvb] at hvb0; cases hvb0
+      obtain ⟨i'', hi'', hsame⟩ := hins k i hi
+      obtain ⟨hops', hsem', -⟩ := sameInst_facts' hds hsame
+      have hopsP : i''.operands = .ok ops := by rw [hops']; exact hops
+      have hsemP : sem i'' (usesOf ops ρ) w = some (outs, w', ctl) := by rw [hsem']; exact hsem
+      cases hnext with
+      | next hlt => exact ⟨_, .step hvb' hi'' hopsP hsemP hlen (.next (by rw [hsz]; exact hlt))⟩
+      | @ret us hr =>
+        have e : i'' = .rets us := by
+          rcases hsame with e | hst
+          · exact e.trans hr
+          · exact absurd hr ((setTargets_facts hst).2.2.1 us)
+        exact ⟨_, .step hvb' hi'' hopsP hsemP hlen (.ret e)⟩
+      | halt => exact ⟨_, .step hvb' hi'' hopsP hsemP hlen .halt⟩
+      | @goto j s ρ' hlast hsuccS hedge =>
+        have hs : sb[j]? = some s := by
+          rw [H.cfg b j, hsb] at hsuccS; simpa using hsuccS
+        obtain ⟨s', t0, hs', ht0, hroute⟩ := hsucc j s hs
+        have hsuccT : succOf vcp b' j = some t0 := by rw [H.cfg' b' j, hsb']; simpa using ht0
+        have hLs := H.live b sb j s hLb hsb hs
+        obtain ⟨vs, vs', hvs, hvs', hpars, -, -, -, -⟩ := (H.kept s s' hLs hs').blocks
+        rcases hroute with rfl | ⟨hbnil, eb, l, heb, hebi, hebp, hebb, hts⟩
+        · have heq : ∀ ρx : Nat → CV, edgeEnv vcp b' t0 ρx = edgeEnv vc b s ρx := by
+            intro ρx
+            simp [edgeEnv, hvb, hvb', hvs, hvs', hpars, hba]
+          exact ⟨_, .step hvb' hi'' hopsP hsemP hlen
+            (.goto (by rw [hsz]; exact hlast) hsuccT ((heq _).trans hedge))⟩
+        · exact ⟨_, .step hvb' hi'' hopsP hsemP hlen (.goto (by rw [hsz]; exact hlast) hsuccT
+            (edgeEnv_nil hvb' heb (by rw [hba]; exact hbnil) hebp _))⟩
+  | @pend b b' k ρ w vb i ops outs w2 j s s' t eb l hLb hσ hvb hi hops hsem hlen hlast hsucc
+      hLs hs' hbnil heb hebi hebp hebb hts hfoot hevn =>
+    cases hs with
+    | @step _ _ _ _ vb0 i0 ops0 outs0 w0' ctl0 c0 hvb0 hi0 hops0 hsem0 hlen0 hnext0 =>
+      rw [hvb] at hvb0; cases hvb0
+      rw [hi] at hi0; cases hi0
+      rw [hops] at hops0; cases hops0
+      have e := hsem0.symm.trans hsem
+      simp only [Option.some.injEq, Prod.mk.injEq] at e
+      obtain ⟨rfl, rfl, rfl⟩ := e
+      cases hnext0 with
+      | @goto _ s0 ρ0 _ hsucc0 hedge0 =>
+        rw [hsucc] at hsucc0; cases hsucc0
+        obtain ⟨vs, vs', hvs, hvs', hpars, -, -, -, -⟩ := (H.kept s s' hLs hs').blocks
+        obtain ⟨hsp, -⟩ := edgeEnv_params hvb hvs hbnil hedge0
+        have hsp' : vs'.params = #[] := by rw [hpars]; exact hsp
+        have hsuccE : succOf vcp t 0 = some s' := by rw [H.cfg' t 0, hts]; rfl
+        exact ⟨_, .step heb (by rw [hebi]; rfl) (show (MInst.jump l).operands = .ok #[] from rfl)
+          (hds.jump l _) rfl (.goto (by rw [hebi]; rfl) hsuccE (edgeEnv_nil heb hvs' hebb hsp' _))⟩
+
 end
 
 /-- The step lengths of a run are bounded when the events are. -/
@@ -427,11 +489,9 @@ theorem vtrun_len {vc : VCode} {sem : ISem CV ArmState} {ev : MInst → List CV 
 def conv (tr : List (List Ev)) : List (List (Prog.Ev AKind ClifThread.BVal)) :=
   tr.map (·.map ProgE2E.convEv)
 
-/-- **`prepare` with interference, as traces**: a run of the prepared code `vcp` from the entry,
-reading any bytes, is realized by a run of the original `vc` from the entry with the same events
-up to steps without events (`Thin`), which returns (traps) with the same values and world when
-the prepared run does. -/
-theorem prep_thin {vc vcp : VCode} {sem : ISem CV ArmState}
+/-- **`prepare` with interference, as traces, with progress** (T2j): `prep_thin`, and when the
+original run's last configuration has a step, so has the prepared run's (`prep_fwd`). -/
+theorem prep_thinP {vc vcp : VCode} {sem : ISem CV ArmState}
     {ev : MInst → List CV → ArmState → List Ev} (hds : DriverSemG sem)
     (hcheck : prepCheck vc vcp = true)
     (hev : ∀ i ls i', i.setTargets ls = some i' → ev i' = ev i)
@@ -440,7 +500,8 @@ theorem prep_thin {vc vcp : VCode} {sem : ISem CV ArmState}
     {trT : List (List Ev)} {cT : VConf CV ArmState}
     (hrun : VTRun vcp sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trT cT) :
     ∃ trS cS, VTRun vc sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧ Thin trS trT ∧
-      (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) := by
+      (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) ∧
+      (∀ cS', VStep vc sem cS cS' → ∃ cT', VStep vcp sem cT cT') := by
   unfold prepCheck at hcheck
   split at hcheck
   · rename_i ss ps ss' ps' hcfg hcfg'
@@ -482,10 +543,28 @@ theorem prep_thin {vc vcp : VCode} {sem : ISem CV ArmState}
       · rename_i vb hvb; exact (Array.getElem?_eq_some_iff.mp hvb).1
       · cases h0
     obtain ⟨trS, cS, hrS, hmE, hth⟩ := prep_run H hds hev hgoto hrun (.blk hL0 h0)
-    refine ⟨trS, cS, hrS, hth, fun vals w h => ?_, fun w h => ?_⟩
+    refine ⟨trS, cS, hrS, hth, fun vals w h => ?_, fun w h => ?_,
+      fun cS' h => prep_fwd H hds hmE h⟩
     · subst h; cases hmE; rfl
     · subst h; cases hmE; rfl
   · cases hcheck
+
+/-- **`prepare` with interference, as traces**: a run of the prepared code `vcp` from the entry,
+reading any bytes, is realized by a run of the original `vc` from the entry with the same events
+up to steps without events (`Thin`), which returns (traps) with the same values and world when
+the prepared run does. -/
+theorem prep_thin {vc vcp : VCode} {sem : ISem CV ArmState}
+    {ev : MInst → List CV → ArmState → List Ev} (hds : DriverSemG sem)
+    (hcheck : prepCheck vc vcp = true)
+    (hev : ∀ i ls i', i.setTargets ls = some i' → ev i' = ev i)
+    (hgoto : ∀ i u w outs w2 j, sem i u w = some (outs, w2, .goto j) → ev i u w = [])
+    {ρ₀ : Nat → CV} {w₀ : ArmState}
+    {trT : List (List Ev)} {cT : VConf CV ArmState}
+    (hrun : VTRun vcp sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trT cT) :
+    ∃ trS cS, VTRun vc sem ev (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧ Thin trS trT ∧
+      (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) := by
+  obtain ⟨trS, cS, hrS, hth, hret, hhalt, -⟩ := prep_thinP hds hcheck hev hgoto hrun
+  exact ⟨trS, cS, hrS, hth, hret, hhalt⟩
 
 /-- **`prepare` with interference**: a run of the prepared code `vcp` from the entry, reading any
 bytes, is realized by a run of the original `vc` from the entry with the same events up to steps
@@ -584,6 +663,18 @@ theorem prep_thin_csem {vc vcp : VCode} {F : BitVec 64 → Prop} {ctx : FnCtx} {
     ∃ trS cS, VTRun vc (csem F ctx X) (cEvs F ctx) (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧ Thin trS trT ∧
       (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) :=
   prep_thin (driverSem_csem F ctx X).toDriverSemG hcheck
+    (fun _ _ _ h => cEvs_setTargets F ctx h) (fun _ _ _ _ _ _ h => csem_goto h) hrun
+
+/-- **`prepare` with interference, for `csem`, as traces, with progress** (`prep_thinP` with the
+precise footprint `cEvs`). -/
+theorem prep_thin_csemP {vc vcp : VCode} {F : BitVec 64 → Prop} {ctx : FnCtx} {X : ExtSem}
+    (hcheck : prepCheck vc vcp = true) {ρ₀ : Nat → CV} {w₀ : ArmState}
+    {trT : List (List Ev)} {cT : VConf CV ArmState}
+    (hrun : VTRun vcp (csem F ctx X) (cEvs F ctx) (.run ⟨0, 0, ρ₀, w₀⟩) trT cT) :
+    ∃ trS cS, VTRun vc (csem F ctx X) (cEvs F ctx) (.run ⟨0, 0, ρ₀, w₀⟩) trS cS ∧ Thin trS trT ∧
+      (∀ vals w, cT = .ret vals w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) ∧
+      (∀ cS', VStep vc (csem F ctx X) cS cS' → ∃ cT', VStep vcp (csem F ctx X) cT cT') :=
+  prep_thinP (driverSem_csem F ctx X).toDriverSemG hcheck
     (fun _ _ _ h => cEvs_setTargets F ctx h) (fun _ _ _ _ _ _ h => csem_goto h) hrun
 
 end Concurrency.PrepThread

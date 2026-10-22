@@ -3,6 +3,7 @@ import FV.Concurrency.ArmAllocMove
 import FV.Concurrency.PrivCoh
 import FV.Concurrency.ArmAllocBranch
 import FV.Concurrency.ArmAllocLS
+import FV.Concurrency.ThreadProgress
 
 /-!
 # The program-level contract for compiled code (T2k, #311)
@@ -31,12 +32,18 @@ threads running **compiled** functions, from the per-thread layers:
 * `CompiledLS`, `thread_compiledLS`, `realizes_compiledLS`: the same for functions with LL/SC
   loops, block-ending branches and plain loads/stores (`MemScopeLS`, `arm_alloc_refines_ls`);
   the `Compiled` and `CompiledB` versions are corollaries.
+* **The whole run** (T2j, #473): `thread_compiledLS_full`, **`realizes_compiledLS_full`** (and
+  the `B`/plain versions): the realized prefix of each thread is its whole Arm run, or a CLIF
+  thread run from `cs` realizes it and stops there (`Covers`; `IselThread.Stop`: no step —
+  returned, trapped, undefined behaviour — or an `atomic_cas` on read-only data): the allocated
+  code is never `Done` without the CLIF thread stopping (`ThreadProgress.arm_isel_refines_full`).
+  `thread_full_of_sim` is the one-thread statement for any layer-4b scope with covered code.
 -/
 
 namespace Concurrency.RealizeCompiled
 
 open Arm ArmThread Prog ClifThread ProgE2E Backend Backend.Proof Backend.Proof.Driver VCodeThread
-  PrepThread AllocThread IselCheck CorrRefine ClifCStepTerm IselThread ThreadRefine
+  PrepThread AllocThread IselCheck CorrRefine ClifCStepTerm IselThread ThreadRefine ThreadProgress
   ArmAllocThread ThreadCompose
 
 /-! ## Runs as state functions -/
@@ -161,6 +168,47 @@ theorem Compiled.toB {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.St
     {s : ArmState} (hc : Compiled env p RA cs s) : CompiledB env p RA cs s :=
   ⟨hc.wf, memScopeB_of_memScopeL (memScopeL_of_memScope hc.scope), hc.gv, hc.front⟩
 
+/-- **One compiled thread, its realized prefix the whole run or ending where the CLIF thread
+stops**, for any layer-4b scope (`hsim`, the per-item obligation of `R`'s code) whose code is
+covered (`ThreadProgress.CoveredCode`). -/
+theorem thread_full_of_sim {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {s : ArmState} (hgv : RA.gv = fun _ _ => False) (hfront : Front env p RA cs s)
+    (hsim : ItemSim Policy.arm RA.step (OkPriv RA) (SrcStep RA) (RelQ RA) (Done RA) (μR RA)
+      (PrivA RA)) (hcov : CoveredCode RA)
+    {mon : Mon} {ls : List Lab} {t' : ArmState × Mon}
+    (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
+    ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState) (ψ : Nat × Nat → Nat × Nat),
+      k ≤ ls.length ∧ st 0 = .run cs ∧
+      (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p (st trS.length)) := by
+  obtain ⟨f, vc, ctx, st0, R, gn, bl, A, MR, slots, sb, syms, B0, args, m₀, w₀, H, hchk, hMR,
+    hMRw, hX, hMem, hMRs, hreg, hprep, halloc, hB0, hcall, hfunc, hslots, hbody, hterm, hregs, hty,
+    hsig, hmr, hargs, hq, hA⟩ := hfront
+  obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hend⟩ := arm_alloc_refinesQ hsim hq hA hr
+  obtain ⟨k, trS, t, ψ, hk, hrun, href, hendk⟩ :=
+    arm_isel_refines_full hgv hcov H hchk hMR hMRw hX hMem hMRs hreg hprep halloc hB0
+      hcall hfunc hslots hbody hterm hregs hty hsig hmr hargs hr hM hAr hend hnA
+  obtain ⟨st, h0, hst, hlast⟩ := crun_states hrun
+  have href' : Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS
+      (conv (evTr (ls.take k))) ψ := by
+    refine Refines.pairT_congr href fun a b _ hb => monPair_take hk ?_
+    obtain ⟨hb1, -⟩ := evAt_isSome (show (evAt (conv (evTr (ls.take k))) (b.1, b.2)).isSome from hb)
+    have := hb1; simp [conv, evTr] at this; omega
+  exact ⟨k, trS, st, ψ, by omega, h0, hst, href', hendk.imp_right (hlast ▸ ·)⟩
+
+/-- **One compiled thread with loops, branches and plain loads/stores, its realized prefix the
+whole run or ending where the CLIF thread stops** (`thread_full_of_sim` for `MemScopeLS`). -/
+theorem thread_compiledLS_full {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {s : ArmState} (hc : CompiledLS env p RA cs s) {mon : Mon} {ls : List Lab}
+    {t' : ArmState × Mon} (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
+    ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState) (ψ : Nat × Nat → Nat × Nat),
+      k ≤ ls.length ∧ st 0 = .run cs ∧
+      (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p (st trS.length)) :=
+  thread_full_of_sim hc.gv hc.front (itemSim_ls hc.wf hc.scope) (coveredCode_of_ls hc.scope) hr
+
 /-- **One compiled thread, with loops, branches and plain loads/stores** (as `thread_compiled`,
 for `CompiledLS`). -/
 theorem thread_compiledLS {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
@@ -221,10 +269,107 @@ theorem thread_compiled {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif
           trM cE ∧ Done RA cE) :=
   thread_compiledB hc.toB hr
 
+/-- **One compiled thread with loops and branches, its realized prefix the whole run or ending
+where the CLIF thread stops.** -/
+theorem thread_compiledB_full {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {s : ArmState} (hc : CompiledB env p RA cs s) {mon : Mon} {ls : List Lab}
+    {t' : ArmState × Mon} (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
+    ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState) (ψ : Nat × Nat → Nat × Nat),
+      k ≤ ls.length ∧ st 0 = .run cs ∧
+      (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p (st trS.length)) :=
+  thread_compiledLS_full hc.toLS hr
+
+/-- **One compiled thread, its realized prefix the whole run or ending where the CLIF thread
+stops.** -/
+theorem thread_compiled_full {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {s : ArmState} (hc : Compiled env p RA cs s) {mon : Mon} {ls : List Lab}
+    {t' : ArmState × Mon} (hr : PRun Policy.arm RA.step (OkPriv RA) (s, mon) ls t') :
+    ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState) (ψ : Nat × Nat → Nat × Nat),
+      k ≤ ls.length ∧ st 0 = .run cs ∧
+      (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p (st trS.length)) :=
+  thread_compiledB_full hc.toB hr
+
 /-! ## The program -/
 
 /-- The private set of thread `i` of `n` compiled threads: its activation's (`PrivA`). -/
 def PrivN (n : Nat) (RA : Nat → RL) (i l : Nat) : Prop := i < n ∧ PrivA (RA i) l
+
+/-- **The realized prefix `k` of the Arm run `ls` covers it** (T2j): it is the whole run, or a
+CLIF thread run from `cs` realizes it (`Refines Maps`, private set `PrivA RA`, the prefix's monitor
+pairs atomic) and then stops (`IselThread.Stop`). -/
+def Covers (env : Clif.Env) (p : Clif.Program) (RA : RL) (cs : Clif.State) (ls : List Lab)
+    (k : Nat) : Prop :=
+  k = ls.length ∨ ∃ (trS : List (List (Ev SKind BVal))) (st : Nat → TState)
+    (ψ : Nat × Nat → Nat × Nat), st 0 = .run cs ∧
+    (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+    Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+    Stop env p (st trS.length)
+
+/-- **The contract for `n` compiled threads, with loops, branches and plain loads/stores, on
+realized prefixes that cover the runs** (T2j): `realizes_compiledLS`, and each thread's realized
+prefix `k i` is its whole Arm run or ends where a CLIF thread realizing it stops (`Covers`). -/
+theorem realizes_compiledLS_full {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Nat → RL}
+    {cs : Nat → Clif.State} {sA : Nat → ArmState}
+    (hc : ∀ i < n, CompiledLS env p (RA i) (cs i) (sA i))
+    {mon : Nat → Mon} {ls : Nat → List Lab} {t' : Nat → ArmState × Mon}
+    (hr : ∀ i < n, PRun Policy.arm (RA i).step (OkPriv (RA i)) (sA i, mon i) (ls i) (t' i)) :
+    ∃ k : Nat → Nat, (∀ i < n, k i ≤ (ls i).length) ∧
+      (∀ i < n, Covers env p (RA i) (cs i) (ls i) (k i)) ∧
+      ∀ (PA : Traces ProgE2E.AState AKind BVal) (locsA locsC : List (Nat × Nat)) (MA0 MC0 : Bytes)
+        (rfA coA rmwA : Rel PEv), PA.n = n →
+        (∀ i < n, PA.tr i = conv (evTr ((ls i).take (k i)))) →
+        (PA.exec locsA rfA coA rmwA).Wf →
+        (∀ i < n, ∀ a b, rmwA (.thr i a.1 a.2) (.thr i b.1 b.2) ↔
+          MonPair (evTr ((ls i).take (k i))) a b) →
+        locsC <+: locsA →
+        (∀ q (h : q < locsA.length), locsC.length ≤ q → ∃ j, PrivN n RA j (locsA[q]).1) →
+        (∀ q (h : q < locsC.length),
+          bytesI.get MA0 (locsC[q]).1 (locsC[q]).2 = bytesI.get MC0 (locsC[q]).1 (locsC[q]).2) →
+        (∀ i < n, ∀ j < n, j ≠ i → ∀ q x, evAt (PA.tr i) q = some x → x.dir ≠ .F →
+          ¬ PrivA (RA j) x.loc) →
+        ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = n ∧
+          (∀ i < n, PC.st i 0 = .run (cs i)) ∧ PC.Runs (CStep env p) ∧
+          Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) := by
+  classical
+  have hth : ∀ i (hi : i < n), ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState)
+      (ψ : Nat × Nat → Nat × Nat), k ≤ (ls i).length ∧
+      st 0 = .run (cs i) ∧ (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA (RA i)) (MonPair (evTr ((ls i).take k))) trS
+        (conv (evTr ((ls i).take k))) ψ ∧ (k = (ls i).length ∨ Stop env p (st trS.length)) :=
+    fun i hi => thread_compiledLS_full (hc i hi) (hr i hi)
+  let k : Nat → Nat := fun i => if hi : i < n then Classical.choose (hth i hi) else 0
+  have hk : ∀ i (hi : i < n), ∃ (trS : List (List (Ev SKind BVal))) (st : Nat → TState)
+      (ψ : Nat × Nat → Nat × Nat), k i ≤ (ls i).length ∧
+      st 0 = .run (cs i) ∧ (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
+      Refines Maps (PrivA (RA i)) (MonPair (evTr ((ls i).take (k i)))) trS
+        (conv (evTr ((ls i).take (k i)))) ψ ∧
+      (k i = (ls i).length ∨ Stop env p (st trS.length)) := fun i hi => by
+    simp only [k, hi, dite_true]
+    exact Classical.choose_spec (hth i hi)
+  refine ⟨k, fun i hi => by obtain ⟨_, _, _, h, -⟩ := hk i hi; exact h, fun i hi => ?_, ?_⟩
+  · obtain ⟨trS, st, ψ, -, h0, hst, href, hend⟩ := hk i hi
+    exact hend.imp_right fun h => ⟨trS, st, ψ, h0, hst, href, h⟩
+  intro PA locsA locsC MA0 MC0 rfA coA rmwA hn htr hwf hrmw hlocs hpriv0 hval0 hdisj
+  obtain ⟨PC, φ, hPn, hs0, hruns, hreal⟩ := PrivCoh.realizes_of_threads_priv (T := CStep env p)
+    (s0 := fun i => .run (cs i)) (PrivT := PrivN n RA)
+    (pairT := fun i => MonPair (evTr ((ls i).take (k i)))) (Obs := fun _ _ _ => True)
+    hwf (fun i hi => hrmw i (hn ▸ hi)) hlocs hpriv0 hval0 (fun i hi => by
+      have hi' : i < n := hn ▸ hi
+      obtain ⟨trS, st, ψ, -, h0, hst, href, -⟩ := hk i hi'
+      refine ⟨trS, st, ψ, h0, hst, ?_, ?_, trivial⟩
+      · rw [htr i hi']
+        exact Refines.congr href (fun _ _ h => h) fun l => ⟨fun h => ⟨hi', h⟩, fun h => h.2⟩
+      · intro q x hx hF j ⟨hj, hP⟩
+        by_cases e : j = i
+        · subst e; exact href.shared q x hx hF hP
+        · obtain ⟨y, hy, -, hd, hl, -⟩ := href.ev q x hx
+          rw [← htr i hi'] at hy
+          exact hdisj i hi' j hj e _ y hy (by rw [hd]; exact hF) (hl ▸ hP))
+  exact ⟨PC, φ, hPn.trans hn, fun i _ => hs0 i, hruns, hreal⟩
 
 /-- **The contract for `n` compiled threads, with loops, branches and plain loads/stores** (as
 `realizes_compiled`, for `CompiledLS`). -/
@@ -249,40 +394,8 @@ theorem realizes_compiledLS {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : 
         ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = n ∧
           (∀ i < n, PC.st i 0 = .run (cs i)) ∧ PC.Runs (CStep env p) ∧
           Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) := by
-  classical
-  have hth : ∀ i (hi : i < n), ∃ (k : Nat) (trS : List (List (Ev SKind BVal))) (st : Nat → TState)
-      (ψ : Nat × Nat → Nat × Nat), k ≤ (ls i).length ∧
-      st 0 = .run (cs i) ∧ (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
-      Refines Maps (PrivA (RA i)) (MonPair (evTr ((ls i).take k))) trS
-        (conv (evTr ((ls i).take k))) ψ := fun i hi => by
-    obtain ⟨k, trS, st, ψ, hk, h0, hst, href, -⟩ := thread_compiledLS (hc i hi) (hr i hi)
-    exact ⟨k, trS, st, ψ, hk, h0, hst, href⟩
-  let k : Nat → Nat := fun i => if hi : i < n then Classical.choose (hth i hi) else 0
-  have hk : ∀ i (hi : i < n), ∃ (trS : List (List (Ev SKind BVal))) (st : Nat → TState)
-      (ψ : Nat × Nat → Nat × Nat), k i ≤ (ls i).length ∧
-      st 0 = .run (cs i) ∧ (∀ j (h : j < trS.length), CStep env p (st j) trS[j] (st (j + 1))) ∧
-      Refines Maps (PrivA (RA i)) (MonPair (evTr ((ls i).take (k i)))) trS
-        (conv (evTr ((ls i).take (k i)))) ψ := fun i hi => by
-    simp only [k, hi, dite_true]
-    exact Classical.choose_spec (hth i hi)
-  refine ⟨k, fun i hi => by obtain ⟨_, _, _, h, -⟩ := hk i hi; exact h, ?_⟩
-  intro PA locsA locsC MA0 MC0 rfA coA rmwA hn htr hwf hrmw hlocs hpriv0 hval0 hdisj
-  obtain ⟨PC, φ, hPn, hs0, hruns, hreal⟩ := PrivCoh.realizes_of_threads_priv (T := CStep env p)
-    (s0 := fun i => .run (cs i)) (PrivT := PrivN n RA)
-    (pairT := fun i => MonPair (evTr ((ls i).take (k i)))) (Obs := fun _ _ _ => True)
-    hwf (fun i hi => hrmw i (hn ▸ hi)) hlocs hpriv0 hval0 (fun i hi => by
-      have hi' : i < n := hn ▸ hi
-      obtain ⟨trS, st, ψ, -, h0, hst, href⟩ := hk i hi'
-      refine ⟨trS, st, ψ, h0, hst, ?_, ?_, trivial⟩
-      · rw [htr i hi']
-        exact Refines.congr href (fun _ _ h => h) fun l => ⟨fun h => ⟨hi', h⟩, fun h => h.2⟩
-      · intro q x hx hF j ⟨hj, hP⟩
-        by_cases e : j = i
-        · subst e; exact href.shared q x hx hF hP
-        · obtain ⟨y, hy, -, hd, hl, -⟩ := href.ev q x hx
-          rw [← htr i hi'] at hy
-          exact hdisj i hi' j hj e _ y hy (by rw [hd]; exact hF) (hl ▸ hP))
-  exact ⟨PC, φ, hPn.trans hn, fun i _ => hs0 i, hruns, hreal⟩
+  obtain ⟨k, hk, -, h⟩ := realizes_compiledLS_full hc hr
+  exact ⟨k, hk, h⟩
 
 /-- **The contract for `n` compiled threads, with loops and branches** (as `realizes_compiled`,
 for `CompiledB`). -/
@@ -336,6 +449,147 @@ theorem realizes_compiled {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Na
           (∀ i < n, PC.st i 0 = .run (cs i)) ∧ PC.Runs (CStep env p) ∧
           Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) :=
   realizes_compiledB (fun i hi => (hc i hi).toB) hr
+
+/-- **The contract for `n` compiled threads with loops and branches, on realized prefixes that
+cover the runs** (`realizes_compiledLS_full` for `CompiledB`). -/
+theorem realizes_compiledB_full {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Nat → RL}
+    {cs : Nat → Clif.State} {sA : Nat → ArmState}
+    (hc : ∀ i < n, CompiledB env p (RA i) (cs i) (sA i))
+    {mon : Nat → Mon} {ls : Nat → List Lab} {t' : Nat → ArmState × Mon}
+    (hr : ∀ i < n, PRun Policy.arm (RA i).step (OkPriv (RA i)) (sA i, mon i) (ls i) (t' i)) :
+    ∃ k : Nat → Nat, (∀ i < n, k i ≤ (ls i).length) ∧
+      (∀ i < n, Covers env p (RA i) (cs i) (ls i) (k i)) ∧
+      ∀ (PA : Traces ProgE2E.AState AKind BVal) (locsA locsC : List (Nat × Nat)) (MA0 MC0 : Bytes)
+        (rfA coA rmwA : Rel PEv), PA.n = n →
+        (∀ i < n, PA.tr i = conv (evTr ((ls i).take (k i)))) →
+        (PA.exec locsA rfA coA rmwA).Wf →
+        (∀ i < n, ∀ a b, rmwA (.thr i a.1 a.2) (.thr i b.1 b.2) ↔
+          MonPair (evTr ((ls i).take (k i))) a b) →
+        locsC <+: locsA →
+        (∀ q (h : q < locsA.length), locsC.length ≤ q → ∃ j, PrivN n RA j (locsA[q]).1) →
+        (∀ q (h : q < locsC.length),
+          bytesI.get MA0 (locsC[q]).1 (locsC[q]).2 = bytesI.get MC0 (locsC[q]).1 (locsC[q]).2) →
+        (∀ i < n, ∀ j < n, j ≠ i → ∀ q x, evAt (PA.tr i) q = some x → x.dir ≠ .F →
+          ¬ PrivA (RA j) x.loc) →
+        ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = n ∧
+          (∀ i < n, PC.st i 0 = .run (cs i)) ∧ PC.Runs (CStep env p) ∧
+          Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) :=
+  realizes_compiledLS_full (fun i hi => (hc i hi).toLS) hr
+
+/-- **The contract for `n` compiled threads, on realized prefixes that cover the runs**
+(`realizes_compiledLS_full` for `Compiled`). -/
+theorem realizes_compiled_full {n : Nat} {env : Clif.Env} {p : Clif.Program} {RA : Nat → RL}
+    {cs : Nat → Clif.State} {sA : Nat → ArmState} (hc : ∀ i < n, Compiled env p (RA i) (cs i) (sA i))
+    {mon : Nat → Mon} {ls : Nat → List Lab} {t' : Nat → ArmState × Mon}
+    (hr : ∀ i < n, PRun Policy.arm (RA i).step (OkPriv (RA i)) (sA i, mon i) (ls i) (t' i)) :
+    ∃ k : Nat → Nat, (∀ i < n, k i ≤ (ls i).length) ∧
+      (∀ i < n, Covers env p (RA i) (cs i) (ls i) (k i)) ∧
+      ∀ (PA : Traces ProgE2E.AState AKind BVal) (locsA locsC : List (Nat × Nat)) (MA0 MC0 : Bytes)
+        (rfA coA rmwA : Rel PEv), PA.n = n →
+        (∀ i < n, PA.tr i = conv (evTr ((ls i).take (k i)))) →
+        (PA.exec locsA rfA coA rmwA).Wf →
+        (∀ i < n, ∀ a b, rmwA (.thr i a.1 a.2) (.thr i b.1 b.2) ↔
+          MonPair (evTr ((ls i).take (k i))) a b) →
+        locsC <+: locsA →
+        (∀ q (h : q < locsA.length), locsC.length ≤ q → ∃ j, PrivN n RA j (locsA[q]).1) →
+        (∀ q (h : q < locsC.length),
+          bytesI.get MA0 (locsC[q]).1 (locsC[q]).2 = bytesI.get MC0 (locsC[q]).1 (locsC[q]).2) →
+        (∀ i < n, ∀ j < n, j ≠ i → ∀ q x, evAt (PA.tr i) q = some x → x.dir ≠ .F →
+          ¬ PrivA (RA j) x.loc) →
+        ∃ (PC : Traces TState SKind BVal) (φ : PEv → PEv), PC.n = n ∧
+          (∀ i < n, PC.st i 0 = .run (cs i)) ∧ PC.Runs (CStep env p) ∧
+          Realizes PA locsA MA0 rfA coA rmwA PC locsC MC0 φ (fun _ _ _ => True) :=
+  realizes_compiledB_full (fun i hi => (hc i hi).toB) hr
+
+/-! ## When the realized prefix is the whole run -/
+
+/-- **A covering prefix is the whole run** when the CLIF thread cannot stop at its start and no
+first step of it has its events (the non-fence ones shared, at distinct positions) in a strict
+prefix of the run: then the realizing CLIF run of `Covers` has no step, and stops at its start. -/
+theorem covers_full {env : Clif.Env} {p : Clif.Program} {RA : RL} {cs : Clif.State}
+    {ls : List Lab} {k : Nat} (hcov : Covers env p RA cs ls k) (hk : k ≤ ls.length)
+    (hgo : ¬ Stop env p (.run cs))
+    (hstep : ∀ evs t', CStep env p (.run cs) evs t' → ∀ k' < ls.length,
+      ∀ ψ : Nat × Nat → Nat × Nat,
+      (∀ i (hi : i < evs.length), evs[i].dir ≠ .F → ¬ PrivA RA evs[i].loc ∧
+        ∃ y, evAt (conv (evTr (ls.take k'))) (ψ (0, i)) = some y ∧ y.dir = evs[i].dir ∧
+          y.loc = evs[i].loc) →
+      (∀ i j (hi : i < evs.length) (hj : j < evs.length), i ≠ j → ψ (0, i) ≠ ψ (0, j)) → False) :
+    k = ls.length := by
+  rcases hcov with h | ⟨trS, st, ψ, h0, hst, href, hstop⟩
+  · exact h
+  refine Classical.byContradiction fun hne => ?_
+  cases trS with
+  | nil => exact hgo (by simpa [h0] using hstop)
+  | cons evs rest =>
+    have hs := hst 0 (by simp)
+    simp only [List.getElem_cons_zero, h0] at hs
+    have hat : ∀ i (hi : i < evs.length), evAt (evs :: rest) (0, i) = some evs[i] := fun i hi =>
+      evAt_of (by simp) (by simpa using hi)
+    refine hstep evs _ hs k (by omega) ψ (fun i hi hF => ?_) (fun i j hi hj hij e => ?_)
+    · obtain ⟨y, hy, -, hd, hl, -⟩ := href.ev _ _ (hat i hi)
+      exact ⟨href.shared _ _ (hat i hi) hF, y, hy, hd, hl⟩
+    · have := href.inj (by rw [hat i hi]; rfl) (by rw [hat j hj]; rfl) e
+      simp only [Prod.mk.injEq, true_and] at this
+      exact hij this
+
+/-- A non-call statement steps the same in every environment and program. -/
+theorem step_next_of_check {env : Clif.Env} {p : Clif.Program} {s : Clif.State}
+    {st : Clif.Stmt} {rest : List Clif.Stmt} (hb : s.frame.body = st :: rest)
+    (hc : ∀ fn args, st.inst ≠ .call fn args)
+    (hci : ∀ sig callee args, st.inst ≠ .callIndirect sig callee args)
+    (env0 : Clif.Env) (p0 : Clif.Program)
+    (h : (match Clif.step env0 p0 s with | .next _ => true | _ => false) = true) :
+    ∃ s', Clif.step env p s = .next s' := by
+  have e : Clif.step env p s = Clif.step env0 p0 s := by
+    rw [Clif.step_inst env p s st rest hb hc hci, Clif.step_inst env0 p0 s st rest hb hc hci]
+  rw [e]
+  cases h' : Clif.step env0 p0 s with
+  | next s' => exact ⟨s', rfl⟩
+  | _ => rw [h'] at h; cases h
+
+/-- A thread whose first statement is no `atomic_cas` is not at one on read-only data. -/
+theorem not_casRO {s : Clif.State} {st : Clif.Stmt} {rest : List Clif.Stmt}
+    (hb : s.frame.body = st :: rest) (hi : ∀ ty fl pp ex x, st.inst ≠ .atomicCas ty fl pp ex x) :
+    ¬ CasRO (.run s) := by
+  rintro ⟨s', stm, rest', ty, fl, pp, ex, x, a, n, he, hb', hi', -, -⟩
+  cases he
+  rw [hb] at hb'
+  cases hb'
+  exact hi _ _ _ _ _ hi'
+
+/-- **A thread whose step shape is one event of a non-fence kind** steps with a non-fence
+event. -/
+theorem nonFence_one {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {kd : SKind} {n : Nat}
+    (hsh : evShape s = [[(kd, n)]]) (hk : kd.dir ≠ .F) {evs : List (Ev SKind BVal)}
+    {t' : TState} (hs : CStep env p (.run s) evs t') : ∃ i, ∃ hi : i < evs.length, evs[i].dir ≠ .F := by
+  obtain ⟨⟨hm, hd⟩, -⟩ := hs
+  rw [hsh] at hm
+  simp only [List.mem_singleton] at hm
+  match evs, hm with
+  | [x], hm =>
+    simp only [List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq, and_true] at hm
+    refine ⟨0, by simp, ?_⟩
+    rw [List.getElem_cons_zero, (hd x (by simp)).1, hm.1]
+    exact hk
+
+/-- **A thread whose step shape is two events of non-fence kinds** steps with two non-fence
+events. -/
+theorem nonFence_two {env : Clif.Env} {p : Clif.Program} {s : Clif.State} {k1 k2 : SKind}
+    {n1 n2 : Nat} (hsh : evShape s = [[(k1, n1), (k2, n2)]]) (hk1 : k1.dir ≠ .F)
+    (hk2 : k2.dir ≠ .F) {evs : List (Ev SKind BVal)} {t' : TState}
+    (hs : CStep env p (.run s) evs t') :
+    ∃ hl : 1 < evs.length, evs[0].dir ≠ .F ∧ evs[1].dir ≠ .F := by
+  obtain ⟨⟨hm, hd⟩, -⟩ := hs
+  rw [hsh] at hm
+  simp only [List.mem_singleton] at hm
+  match evs, hm with
+  | [x, y], hm =>
+    simp only [List.map_cons, List.map_nil, List.cons.injEq, Prod.mk.injEq, and_true] at hm
+    refine ⟨by simp, ?_, ?_⟩
+    · rw [List.getElem_cons_zero, (hd x (by simp)).1, hm.1.1]; exact hk1
+    · simp only [List.getElem_cons_succ, List.getElem_cons_zero]
+      rw [(hd y (by simp)).1, hm.2.1]; exact hk2
 
 /-! ## Executions without reads -/
 

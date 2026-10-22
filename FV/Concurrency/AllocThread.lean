@@ -158,17 +158,17 @@ theorem alloc_run (hc : CheckedAt vc rf c ins a0) {cm cmE : MConf CV ArmState}
 
 end
 
-/-- **Register allocation with interference, as traces**: if `checkAlloc vc rf` accepts, a run of
-the allocated code from the entry (store `m₀`, world `w₀`), reading any bytes, is realized by a
-VCode thread run from the entry (vreg file `ρ₀`) with the same events up to the moves (`Thin`),
-which returns (traps) with the same values and world when the allocated code does. -/
-theorem alloc_thin {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep : Reg → CV → CV}
+/-- **Register allocation with interference, as traces, with progress** (T2j): `alloc_thin`, and
+when the VCode run's last configuration has a step, so has the allocated code's
+(`sim_progress_at`). -/
+theorem alloc_thinP {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep : Reg → CV → CV}
     {ev : MInst → List CV → ArmState → List Ev} (h : checkAlloc vc rf = .ok ())
     (m₀ : Loc → CV) (ρ₀ : Nat → CV) (w₀ : ArmState)
     {trT : List (List Ev)} {cT : MConf CV ArmState}
     (hrun : MTRun vc rf sem keep ev (MConf.init rf m₀ w₀) trT cT) :
     ∃ trS cS, VTRun vc sem ev (VConf.init ρ₀ w₀) trS cS ∧ Thin trS trT ∧
-      (∀ vals m w, cT = .ret vals m w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) := by
+      (∀ vals m w, cT = .ret vals m w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) ∧
+      (∀ cS', VStep vc sem cS cS' → ∃ cT', MStep vc sem keep rf cT cT') := by
   obtain ⟨c, ins, hc⟩ := checked_of_checkAlloc h
   obtain ⟨a0, hat, hle⟩ := hc.at
   have hinv0 : Inv keep a0 m₀ ρ₀ (fun r => m₀ (.reg r)) := Inv_mono hle Inv_entryState
@@ -183,7 +183,7 @@ theorem alloc_thin {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep : Re
     simp only [MConf.init, VConf.init, this]
     exact ⟨rfl, rfl, vb, a0, out, hvb, hrb', hinv0, hedges⟩
   obtain ⟨trS, cS, hrS, hmE, hth⟩ := alloc_run hat hrun hinit
-  refine ⟨trS, cS, hrS, hth, fun vals m w hT => ?_, fun w hT => ?_⟩
+  refine ⟨trS, cS, hrS, hth, fun vals m w hT => ?_, fun w hT => ?_, fun cS' hv => ?_⟩
   · subst hT
     cases cS with
     | ret vals' w' => obtain ⟨rfl, rfl, -⟩ := hmE; rfl
@@ -192,6 +192,27 @@ theorem alloc_thin {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep : Re
     cases cS with
     | halt w' => cases hmE; rfl
     | _ => exact hmE.elim
+  · cases cT with
+    | run ms =>
+      cases cS with
+      | run vs => exact sim_progress_at sem keep hat hmE hv
+      | _ => exact hmE.elim
+    | ret => cases cS <;> first | exact hmE.elim | cases hv
+    | halt => cases cS <;> first | exact hmE.elim | cases hv
+
+/-- **Register allocation with interference, as traces**: if `checkAlloc vc rf` accepts, a run of
+the allocated code from the entry (store `m₀`, world `w₀`), reading any bytes, is realized by a
+VCode thread run from the entry (vreg file `ρ₀`) with the same events up to the moves (`Thin`),
+which returns (traps) with the same values and world when the allocated code does. -/
+theorem alloc_thin {vc : VCode} {rf : RFunc} {sem : ISem CV ArmState} {keep : Reg → CV → CV}
+    {ev : MInst → List CV → ArmState → List Ev} (h : checkAlloc vc rf = .ok ())
+    (m₀ : Loc → CV) (ρ₀ : Nat → CV) (w₀ : ArmState)
+    {trT : List (List Ev)} {cT : MConf CV ArmState}
+    (hrun : MTRun vc rf sem keep ev (MConf.init rf m₀ w₀) trT cT) :
+    ∃ trS cS, VTRun vc sem ev (VConf.init ρ₀ w₀) trS cS ∧ Thin trS trT ∧
+      (∀ vals m w, cT = .ret vals m w → cS = .ret vals w) ∧ (∀ w, cT = .halt w → cS = .halt w) := by
+  obtain ⟨trS, cS, hrS, hth, hret, hhalt, -⟩ := alloc_thinP h m₀ ρ₀ w₀ hrun
+  exact ⟨trS, cS, hrS, hth, hret, hhalt⟩
 
 /-- **Register allocation with interference**: if `checkAlloc vc rf` accepts, a run of the
 allocated code from the entry (store `m₀`, world `w₀`), reading any bytes, is realized by a VCode

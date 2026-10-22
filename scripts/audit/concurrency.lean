@@ -656,3 +656,49 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallSeg.WitnessC.funReal_call -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessC.realizes_call -- witness: native_decide
 #print axioms Concurrency.CallSeg.WitnessC.funReal_bl_open -- witness: native_decide
+-- T2j (#473): the realized prefix covers the whole run (layers 2-4a progress)
+#print axioms Concurrency.IselStep.vstep_of_starN
+#print axioms Concurrency.IselStep.vstep_of_vtrun
+#print axioms Concurrency.IselThread.simResP_of_seg
+#print axioms Concurrency.IselThread.pure_segP
+#print axioms Concurrency.IselThread.term_segP
+#print axioms Concurrency.IselMemSeg.mem_completeP
+#print axioms Concurrency.IselMemMain.mem_segP
+#print axioms Concurrency.IselRefines.seg_resP
+#print axioms Concurrency.IselEntry.isel_refines_entryP
+#print axioms Concurrency.PrepThread.prep_fwd
+#print axioms Concurrency.PrepThread.prep_thinP
+#print axioms Concurrency.PrepThread.prep_thin_csemP
+#print axioms Concurrency.AllocThread.alloc_thinP
+#print axioms Concurrency.ThreadCompose.isel_alloc_refinesP
+#print axioms Concurrency.ThreadProgress.arm_alloc_refinesQ
+#print axioms Concurrency.ThreadProgress.arm_alloc_refines_lsQ
+#print axioms Concurrency.ThreadProgress.coveredCode_of_ls
+#print axioms Concurrency.ThreadProgress.agrees_cEvs
+#print axioms Concurrency.ThreadProgress.srcStep_of_mstep
+#print axioms Concurrency.ThreadProgress.arm_isel_refines_full
+#print axioms Concurrency.RealizeCompiled.thread_full_of_sim
+#print axioms Concurrency.RealizeCompiled.thread_compiledLS_full
+#print axioms Concurrency.RealizeCompiled.thread_compiledB_full
+#print axioms Concurrency.RealizeCompiled.thread_compiled_full
+#print axioms Concurrency.RealizeCompiled.realizes_compiledLS_full
+#print axioms Concurrency.RealizeCompiled.realizes_compiledB_full
+#print axioms Concurrency.RealizeCompiled.realizes_compiled_full
+#print axioms Concurrency.RealizeCompiled.covers_full
+#print axioms Concurrency.RealizeCompiled.step_next_of_check
+#print axioms Concurrency.RealizeCompiled.not_casRO
+#print axioms Concurrency.RealizeCompiled.nonFence_one
+#print axioms Concurrency.RealizeCompiled.nonFence_two
+#print axioms Concurrency.RealizeCompiled.WitnessL.realizes_one_cov
+#print axioms Concurrency.RealizeCompiled.WitnessL.one_full
+#print axioms Concurrency.RealizeCompiled.WitnessL.realizes_one_full
+#print axioms Concurrency.RealizeCompiled.WitnessL.cstep_csL -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessL.realizes_load_full -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessS.realizes_store_full -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessMP.realizes_n_cov
+#print axioms Concurrency.RealizeCompiled.WitnessMP.realizes_mp_full -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessR.realizes_pair_cov
+#print axioms Concurrency.RealizeCompiled.WitnessR.pair_full
+#print axioms Concurrency.RealizeCompiled.WitnessR.realizes_pair_full
+#print axioms Concurrency.RealizeCompiled.WitnessR.realizes_rmw_full -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessC.realizes_cas_cov -- witness: native_decide
