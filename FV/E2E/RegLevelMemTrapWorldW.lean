@@ -11,7 +11,18 @@ before the trap state with `GoodX` and the writes `RL.WritesAt`).
 
 namespace Backend.Proof
 
-open Backend E2E
+open Backend E2E Backend.DeadCleanup Backend.Proof.Driver
+
+private theorem valueSemV_halt' {gv : Nat → String → Prop} {F : BitVec 64 → Prop}
+    {ctx : FnCtx} {X : ExtSem} {i : MInst} {us outs : List CV}
+    {w w' : Arm.ArmState} (h : valueSemV gv F ctx X i us w = some (outs, w', .halt)) :
+    csemV gv F ctx X i us w = some (outs, w', .halt) := by
+  by_cases hp : pureForm i = true
+  · have hs : mspec ctx.slotBase i us w = some (outs, w', .halt) := by
+      simpa [valueSemV, hp] using h
+    have := (mspec_pure hp hs).2
+    cases this
+  · simpa [valueSemV, hp] using h
 
 /-- **The register level of the explicit and the memory traps** under the dead-cleanup chain's
 value semantics (`regLevelCorrect_world_atX_value`'s trap half): an explicit trap of the VCode run
