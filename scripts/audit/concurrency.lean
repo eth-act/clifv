@@ -455,3 +455,7 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.ArmAllocThread.BranchWitness.not_memScopeL
 #print axioms Concurrency.ArmAllocThread.BranchWitness.jump_dropped -- witness: native_decide
 #print axioms Concurrency.ArmAllocThread.BranchWitness.br_premises -- witness: native_decide
+#print axioms Concurrency.ArmAllocThread.Witness.wf_ofAt
+#print axioms Concurrency.ArmAllocThread.Witness.abi_ofAt
+#print axioms Concurrency.RealizeCompiled.WitnessS.compiled_ofS -- witness: native_decide
+#print axioms Concurrency.RealizeCompiled.WitnessS.realizes_store -- witness: native_decide

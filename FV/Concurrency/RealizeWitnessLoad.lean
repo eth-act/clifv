@@ -58,8 +58,8 @@ def vcpL : VCode := match Backend.prepare vcL with
 /-- The spill allocation. -/
 def rfL : RFunc := spillAlloc vcpL
 
-/-- The activation. -/
-abbrev RAL : RL := ArmAllocThread.Witness.act vcpL rfL
+/-- The activation, entered with `sp = 0x6000` (its frame disjoint from `act`'s at `0x8000`). -/
+abbrev RAL : RL := ArmAllocThread.Witness.actAt 0x6000#64 vcpL rfL
 
 theorem checksL : lowerCheck fL vcL = true ∧ IselCheck.threadCheck fL = true ∧
     fL.externs.isEmpty = true ∧ (indSigs fL).isEmpty = true ∧ verifiable fL = true ∧
@@ -89,7 +89,7 @@ theorem factsL : (lowerRFunc vcpL rfL).toBool = true ∧ (emitFunc 0 RAL.af).toB
 
 theorem wfRL : RAL.Wf := by
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := factsL
-  exact ArmAllocThread.Witness.wf_of allocL h1 h2 h3 h4 h5 h6 h7 h8 h9
+  exact ArmAllocThread.Witness.wf_ofAt (by decide) (by decide) allocL h1 h2 h3 h4 h5 h6 h7 h8 h9
 
 theorem codeRL : ∀ k < RAL.fb.words.size,
     Arm.read_mem_bytes 4 (0x10000#64 + BitVec.ofNat 64 (4 * k)) RAL.s0 = RAL.fb.words[k]! := by
@@ -115,7 +115,8 @@ abbrev w₀L : ArmState := E2E.bodyOf RAL.af RAL.s0
 theorem qRL : ∃ n, Q RAL (iterN RAL.step n RAL.s0)
       (MConf.init RAL.rf (locVal RAL.fr (iterN RAL.step n RAL.s0)) w₀L) ∧
     AInv RAL (MConf.init RAL.rf (locVal RAL.fr (iterN RAL.step n RAL.s0)) w₀L) := by
-  obtain ⟨n, -, hq, hA, -⟩ := q_init wfRL (ArmAllocThread.Witness.abi_of factsL.2.2.2.2.2.2.2.1 codeRL)
+  obtain ⟨n, -, hq, hA, -⟩ := q_init wfRL
+    (ArmAllocThread.Witness.abi_ofAt (by decide) factsL.2.2.2.2.2.2.2.1 codeRL)
     ((E2E.Binary.bodyEntry_bodyOf RAL.af RAL.s0).w RAL.F entryArgRL)
   exact ⟨n, hq, hA⟩
 
@@ -191,7 +192,7 @@ theorem regsL_eq : Clif.Regs.empty.setMany (B0L.params.map (·.1)) argsL = some 
 
 theorem errW₀L : Arm.r .ERR w₀L = .None := by
   rw [E2E.r_bodyOf _ _ (by simp) (by simp)]
-  exact (ArmAllocThread.Witness.abi_of factsL.2.2.2.2.2.2.2.1 codeRL).err
+  exact (ArmAllocThread.Witness.abi_ofAt (by decide) factsL.2.2.2.2.2.2.2.1 codeRL).err
 
 /-- The frame addresses of an activation, as a check. -/
 def fB (R : Backend.Proof.RL) (a : BitVec 64) : Bool :=
@@ -200,8 +201,8 @@ def fB (R : Backend.Proof.RL) (a : BitVec 64) : Bool :=
     (decide (R.af.frameSize ≤ d) && decide (d < frameDrop R.af)) ||
     R.s0.program.any (fun p => decide ((a - p.1).toNat < 4))
 
-theorem fB_of {vc : VCode} {rf : RFunc} {a : BitVec 64}
-    (h : (ArmAllocThread.Witness.act vc rf).F a) : fB (ArmAllocThread.Witness.act vc rf) a = true := by
+theorem fB_of {R : Backend.Proof.RL} (hK : R.K = 0) (hG : ∀ a, ¬ R.G a) {a : BitVec 64}
+    (h : R.F a) : fB R a = true := by
   unfold Backend.Proof.RL.F frameWG frameW frameF StackBelow CodeAddr at h
   simp only [fB, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq, List.any_eq_true]
   rcases h with ((h | h | h) | h) | h
@@ -211,16 +212,15 @@ theorem fB_of {vc : VCode} {rf : RFunc} {a : BitVec 64}
     exact .inr (List.any_eq_true.mpr ⟨p, hp, by simpa using hd⟩)
   · exfalso
     obtain ⟨h1, h2⟩ := h
-    have hK : (ArmAllocThread.Witness.act vc rf).K = 0 := rfl
     omega
-  · exact h.elim
+  · exact (hG _ h).elim
 
 /-- **The first 8 bytes are no frame address.** -/
 theorem notF_low : ∀ x < 8, ¬ RAL.F (BitVec.ofNat 64 x) := by
   have h : ∀ x < 8, fB RAL (BitVec.ofNat 64 x) = false := by native_decide
   intro x hx hF
   have := h x hx
-  rw [fB_of hF] at this
+  rw [fB_of rfl (fun _ h => h) hF] at this
   cases this
 
 theorem relL : E2E.RelW ΓL fL (E2E.spv w₀L) [] memL w₀L := by
