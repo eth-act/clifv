@@ -116,7 +116,7 @@ def PEv.tid : PEv → Nat
 
 /-- The execution graph of the traces with the initial locations `locs` (location, size) and the
 relations `rf`, `co`, `rmw`. Positions without an event are fences of no thread order
-significance (`dir = F`, no `rf`/`co`). -/
+significance (`dir = F`, no `rf`/`co`) and are not events (`ev`). -/
 def Traces.exec (P : Traces σ K V) (locs : List (Nat × Nat)) (rf co rmw : Rel PEv) : Exec PEv where
   tid := PEv.tid
   dir e := match e with
@@ -133,6 +133,9 @@ def Traces.exec (P : Traces σ K V) (locs : List (Nat × Nat)) (rf co rmw : Rel 
   rf := rf
   co := co
   rmw := rmw
+  ev e := match e with
+    | .init q => q < locs.length
+    | e => (P.evAt e).isSome
 
 /-- The size of an event. -/
 def Traces.sz (P : Traces σ K V) (locs : List (Nat × Nat)) : PEv → Nat

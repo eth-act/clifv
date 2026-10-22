@@ -50,8 +50,24 @@ coherence `co`, `rmw` (exclusive pair / atomic update); `fr = rf⁻¹;co`; `com 
 Well-formedness `Exec.Wf`: `po` a strict order within a thread, total on each thread; `rf` from a
 write to a read of the same location, functional and total on reads (initial writes are events);
 `co` a strict total order on the writes of each location; `rmw` relates a read to its write, same
-thread and location, `po`-adjacent. Locations are abstract (no mixed-size accesses: Rust's atomics
-of a type are accessed at that type; a mixed-size model, Flur et al. POPL 2017, is T2i, #317).
+thread and location, `po`-adjacent among the events: no element `po`-between the two halves
+accesses memory or holds an event (`Exec.ev`, fences included). Locations are abstract (no
+mixed-size accesses: Rust's atomics of a type are accessed at that type; a mixed-size model, Flur
+et al. POPL 2017, is T2i, #317).
+
+*Why `ev` (T2m, #311).* Executions built from traces (`Traces.exec`) index events by program
+position `.thr i j k` (thread, step, slot); every `PEv` is an element of `E`, also the empty slots
+after a step's events (`dir = F`, `ev` false). The first `Wf` required immediacy over every
+element, so the empty slot `.thr i j 1` after an `ldaxr`'s single event lay `po`-between it and the
+`stlxr` of a later step: no execution with a successful Arm LL/SC pair was well formed and
+`realizes_compiled` was vacuous for them. Armv8's `rmw` relates the exclusive pair through program
+order among events, and empty positions are not events, so `Wf.rmw_imm` now skips elements that
+neither access memory nor hold an event (a `dmb` between the pair still breaks it:
+`Litmus.gap_fence_not_wf`; the empty slot does not: `Litmus.gap_empty_wf`). `Exec.ev` defaults to
+all elements, so for executions on abstract events nothing changes. The first definition is kept
+as `Exec.WfStrict` (`WfStrict.wf : WfStrict → Wf`); every theorem taking `Wf` (DRF-SC, mapping
+soundness, `program_correct*`, `realizes_*`) holds for the new `Wf` (their proofs used immediacy
+only for a `co`-related write, `Armv8.atomicity`).
 
 **Arm side: the Armv8 axiomatic model, restricted to the fragment.** Event kinds `plainR`, `plainW`,
 `acqR` (`ldar`), `relW` (`stlr`), `acqXR` (`ldaxr`), `relXW` (`stlxr`), `dmb` (`dmb ish`, a full

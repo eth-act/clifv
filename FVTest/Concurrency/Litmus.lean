@@ -56,6 +56,8 @@ structure Lit (n : Nat) where
   rf : List (Nat × Nat)
   co : List (Nat × Nat)
   rmw : List (Nat × Nat) := []
+  /-- elements that hold no event (empty program positions, `Exec.ev`) -/
+  noev : List Nat := []
 
 abbrev Lit.exec {n : Nat} (t : Lit n) : Exec (Fin n) where
   tid e := t.tid.getD e.val 0
@@ -65,6 +67,7 @@ abbrev Lit.exec {n : Nat} (t : Lit n) : Exec (Fin n) where
   rf a b := (a.val, b.val) ∈ t.rf
   co a b := (a.val, b.val) ∈ t.co
   rmw a b := (a.val, b.val) ∈ t.rmw
+  ev e := e.val ∉ t.noev
 
 abbrev Lit.ak {n : Nat} (t : Lit n) (e : Fin n) : AKind := t.kind.getD e.val .dmb
 
@@ -319,5 +322,29 @@ def incOk : Lit 5 where
 theorem inc_ok : incOk.exec.Wf ∧ Armv8.Consistent incOk.exec incOk.ak := by
   refine ⟨by constructor <;> decide, ?_⟩
   consistent_by (fun e : Fin 5 => e.val)
+
+/-! ## Empty positions inside an exclusive pair (`Exec.Wf.rmw_imm`). Events: 0 init x; thread 0:
+1 `ldaxr`, 2 a position after it in its step, 3 `stlxr`. -/
+
+/-- Position 2 holds no event (`ev2 = false`, the `ldaxr` step's empty second slot) or holds a
+`dmb` (`ev2 = true`). -/
+def gapT (ev2 : Bool) : Lit 4 where
+  tid := [10, 0, 0, 0]
+  kind := [.plainW, .acqXR, .dmb, .relXW]
+  loc := [0, 0, 0, 0]
+  po := [(1, 2), (2, 3), (1, 3)]
+  rf := [(0, 1)]
+  co := [(0, 3)]
+  rmw := [(1, 3)]
+  noev := if ev2 then [] else [2]
+
+/-- **An empty position between the pair keeps the execution well formed** (it is not strictly
+well formed: the first model's immediacy quantified over every position). -/
+theorem gap_empty_wf : (gapT false).exec.Wf ∧ ¬ (gapT false).exec.WfStrict :=
+  ⟨by constructor <;> decide, fun h => h.rmw_imm_all 1 3 2 (by decide) (by decide) (by decide)⟩
+
+/-- **A fence between the pair is not well formed.** -/
+theorem gap_fence_not_wf : ¬ (gapT true).exec.Wf := fun h =>
+  h.rmw_imm 1 3 2 (by decide) (by decide) (by decide) (.inr (by decide))
 
 end Concurrency.Litmus

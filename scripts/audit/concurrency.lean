@@ -202,6 +202,10 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.Litmus.inc_both0_b
 #print axioms Concurrency.Litmus.inc_wf
 #print axioms Concurrency.Litmus.inc_ok
+#print axioms Concurrency.Litmus.gap_empty_wf
+#print axioms Concurrency.Litmus.gap_fence_not_wf
+#print axioms Concurrency.Exec.WfStrict.wf
+#print axioms Concurrency.Armv8.atomicity
 #print axioms Concurrency.Litmus.mp_full
 #print axioms Concurrency.Litmus.mp_dmb_addr_frag
 #print axioms Concurrency.Litmus.mp_dmb_addr_full
