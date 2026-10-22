@@ -32,7 +32,8 @@ theorem simplify_eq (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : I
         { defs := (simpFold rules skel allowed skelOk rematConst f info).1.defs,
           types := (simpFold rules skel allowed skelOk rematConst f info).1.types,
           subst := (simpFold rules skel allowed skelOk rematConst f info).2.1,
-          logs := (simpFold rules skel allowed skelOk rematConst f info).2.2.2 }) := rfl
+          logs := (simpFold rules skel allowed skelOk rematConst f info).2.2.2,
+          partials := (simpFold rules skel allowed skelOk rematConst f info).1.partials }) := rfl
 
 /-- **The end of the run** (module doc): `st`, `S`, `out`, `logs` the final state, renaming,
 output blocks and block records. -/

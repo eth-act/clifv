@@ -558,14 +558,20 @@ Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`, `CheckSpec.lean`, `Compl
   `Opt.optimizeExe_complete_noSimp`. Witness `Opt.CompleteOptimizeWitness.witness` (GVN, DCE and
   LICM all change the function).
 
-- Simplify (`FV/Opt/Proof/CompleteSimp*.lean`): `Opt.simpStageOk_of : SimpRulesOk cfg.simplifyFn →
-  SkelRulesOk cfg.skeletonFn → SimpStageOk cfg`, from `Opt.simplify_complete` (`simpOk`, the
+- Simplify (`FV/Opt/Proof/CompleteSimp*.lean`): `Opt.simpStageOk_of : SimpRulesProv cfg.simplifyFn →
+  SkelRulesProv cfg.skeletonFn → SimpStageOk cfg`, from `Opt.simplify_complete` (`simpOk`, the
   re-check after `removeUnreachable`, and `SimpGuard` on the output of `simplify` with
   `allowedIn`/`skelAllowedIn`), hence `Opt.optimize_complete_of_rules`. The rule-set obligations
-  (`CompleteSimpHyp.lean`) are syntactic: rule candidates and `make` operands stay in the e-graph
-  closure of the root's operands and made values (never the root itself), with the root's type;
-  skeleton candidates are non-pure, non-symbol instructions, and rewritten terminators are branches
-  to the original's blocks with the same argument types (`SkelCandOk`). The pass layers:
+  (`FV/Opt/Proof/RulesProv.lean`) only say that the rules *pass values on*: for any set `Q` of
+  values closed under node operands and any `make` returning `Q` values for nodes over `Q`, every
+  candidate (and, for `simplify_skeleton`, every value of a candidate) is in `Q`. The pass's guards
+  do the rest (`Opt.optimizeAt`, `Opt.skelMake`, `Opt.runSkel`): `make` hash-conses and simplifies
+  only well-typed nodes over known values other than the root; another node over graph values
+  becomes a *partial node* (`SState.partials`: it has its value but is outside the rules' graph,
+  not hash-consed, never a candidate), a node over values outside the graph a fresh dummy value;
+  candidates other than the root must be known values of its type (`SState.candOk`), skeleton
+  candidates `skelCandOk` (known values; non-pure, non-symbol instructions; rewritten terminators
+  are branches to the original's blocks with the same argument types — `SkelCandOk`). The pass layers:
   `materialize` (`mat_spec`), the rule driver (`opt_spec`, `runSkel_ok`), skeleton statements and
   terminators (`skelStmt_ok`, `skelTerm_ok`), pure statements (`pure_ok`), the run invariant
   (`SimpInv`, `RunDone`, `simplify_run_inv`) and the assembly (`simp_complete_of_run`). Witness
@@ -573,11 +579,27 @@ Proven so far (`FV/Opt/Proof/CompleteUnreachable.lean`, `CheckSpec.lean`, `Compl
   `Opt.simplify_incomplete_symbolValue`: with the former `allowedIn` (`isPure`), `simpOk` rejected
   a well-formed function with `symbol_value` in sibling blocks.
 
-The obligations are discharged for the empty rule set (`simpRulesOk_noRules`), the hand skeleton
-rules (`skelRulesOk_hand`) and the hand rules (`Opt.simpRulesOk_hand`,
-`FV/Opt/Proof/CompleteSimpHand.lean`), hence `Opt.simpStageOk_hand` and
-`Opt.optimize_complete_hand cfg (hr : cfg.rules = .hand)`; witness
-`Opt.CompleteSimpWitness.witness_hand` (`x + 0 ⇒ x` fires, no pass error). For that, `pureBest` no
+The obligations are discharged for every rule set a `Config` can select: the empty rule set
+(`simpRulesProv_noRules`), the hand rules (`Opt.simpRulesProv_hand`, `Opt.skelRulesProv_hand`,
+`FV/Opt/Proof/CompleteSimpHand.lean`) and the exported Cranelift rules with any allow-list
+(`Opt.simpRulesProv_isle`, `Opt.skelRulesProv_isle`, `FV/Opt/Proof/IsleProv.lean`: an instance of
+the program-generic value invariant of the ISLE interpreter, `Opt.Proof.runMultiTerm_prov` in
+`FV/Opt/Proof/InterpProv.lean`; the rule data is never inspected). Hence, for **every**
+configuration (`FV/Opt/Proof/CompleteSimpAll.lean`): `Opt.simpStageOk_cfg cfg : SimpStageOk cfg`
+and `Opt.optimize_complete_cfg cfg f0 (h : ∃ i, check (removeUnreachable f0) = .ok i) :
+(optimizeReport cfg f0).2.passError = none ∧ (optimizeReport cfg f0).1 = runStages cfg
+(removeUnreachable f0)`, with the instances `Opt.optimize_complete_exe` (`exeConfig`) and
+`Opt.optimize_complete_default`, and for `optimizeExe` (the executables' entry point, shape-safe
+inputs) `Opt.optimizeExe_complete_cfg`/`Opt.optimizeExe_complete_exe`; witnesses
+`Opt.CompleteSimpAll.witness_exe` and `witness_exe_entry` (`x + 0 ⇒ x` with
+`exeConfig`), and `Opt.CompleteSimpWitness.witness_hand` for the hand rules
+(`Opt.optimize_complete_hand`). The guards never fire on the inputs: `scripts/opt-compare.py`
+against the binary without them, 2642 files (corpus+extrt 50, runtests 395, survey and fv-demo
+dumps 2197) × default, `--opt-proven-only`, `--opt-rules hand`: all byte-identical, `--stats`
+identical. The certificate carries the partial nodes (`SimpCert.partials`, part of the graph
+`SimpCert.graph`) and `simpOk` checks that none is a leaf of the input.
+
+Earlier step (the hand rules): `pureBest` no
 longer puts `inst ↦ v` into the hash-consing table before the rules run (as in Cranelift's
 `insert_pure_enode`, the node enters the table after its rules ran, mapped to the best value):
 with the pre-insertion a nested `make` of the root's node returned `v` itself, which the
@@ -586,9 +608,6 @@ obligation excludes. Measured with `scripts/opt-compare.py` (both binaries, ever
 fv-demo dumps 2197); hand: all byte-identical; default and proven: 2497 byte-identical, 145 equal up
 to a per-function renumbering of values with identical `--stats`, 0 other differences.
 
-**Narrowed (open, #24 stays open):** `.cranelift` needs both obligations proven over the exported
-ISLE program, so with the Cranelift rules (the default and `exeConfig`) `optimize_complete` holds
-only under these explicit rule-set premises.
 
 ### Simplify pass proof (MidSimplify, MidSimplify2: done)
 
@@ -649,9 +668,9 @@ and 150 `--ext` functions each: 7 200/7 200 runs agree); `opt-difftest`: corpus 
 (proven-only 2 753), runtests 3 383 → 3 040, 0 fail.
 
 Driver sanity checks added for the proof (MidSimplify; never fire on these inputs):
-made nodes only over *known* values (graph nodes or available values; else a fresh dummy
-value), made nodes that are not well-typed over solid values are recorded as `partialVals`
-and not simplified (no e-class recorded), top-level statements enter the graph only if new,
+made nodes only over values of the graph (else a fresh dummy value); made nodes that are not
+well-typed over known values other than the rewritten root are recorded as partial nodes
+(`SState.partials`, see the completeness section above) and not simplified, top-level statements enter the graph only if new,
 below `next`, well-typed over available operands (else kept outside the graph, which
 `simpOk` rejects), clones must be well-typed and typed values, no cycle in `materialize`,
 `chooseBest`'s sort result filtered by membership, `chooseSkel` as a recursive scan, the

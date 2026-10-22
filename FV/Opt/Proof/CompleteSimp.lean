@@ -18,14 +18,14 @@ to what the pipeline needs of the simplify stage (`Opt.SimpStageOk`):
   `check_removeUnreachable_of_wfCert'`), and the guard facts `SimpGuard` hold (`RunDone.guard`).
 
 `simp_complete_of_run` combines them; `Opt.simpStageOk_of` instantiates them with the run invariant
-`Opt.simplify_run_inv` (the rule hypotheses `SimpRulesOk`/`SkelRulesOk`, `symbol_value` excluded by
+`Opt.simplify_run_inv` (the rule hypotheses `SimpRulesProv`/`SkelRulesProv`, `symbol_value` excluded by
 `allowedIn_symbolValue`), and `Opt.optimize_complete_of_rules` is the mid-end's completeness under
-the rule hypotheses. With the hand rules the hypotheses hold (`Opt.simpRulesOk_hand`,
-`Opt.skelRulesOk_hand`): `Opt.simpStageOk_hand`, `Opt.optimize_complete_hand`.
+the rule hypotheses. With the hand rules the hypotheses hold (`Opt.simpRulesProv_hand`,
+`Opt.skelRulesProv_hand`): `Opt.simpStageOk_hand`, `Opt.optimize_complete_hand`.
 `Opt.CompleteSimpWitness.witness`: on a function whose two blocks compute the same `iconst`, the
 empty rule set's hash-consing renames the second to the first, and the theorem applies;
 `Opt.CompleteSimpWitness.witness_hand`: the hand rule `x + 0 ⇒ x` fires and the hand-rule theorems
-apply.
+apply. Every configuration (the Cranelift rules included): `FV/Opt/Proof/CompleteSimpAll.lean`.
 -/
 
 namespace Opt
@@ -369,6 +369,7 @@ theorem simpOk_of {f g : Function} {fi : Info} {cert : SimpCert} (hhdr : SameHdr
     (hlen : g.blocks.length = f.blocks.length) (hch : cert.subst.chainFree = true)
     (hwf : Wf g (wfData g (gInfo fi cert)))
     (hleaf : ∀ x, (initAvail f).contains x = true → cert.types.get? x = fi.types.get? x)
+    (hpl : ∀ x, cert.partials.contains x = true → (initAvail f).contains x = false)
     (hbl : ∀ (i : Nat) (b : Block), f.blocks[i]? = some b → ∃ (b' : Block) (lg : BlockLog),
       g.blocks[i]? = some b' ∧ cert.logs[i]? = some (some lg) ∧ b'.id = b.id ∧
       b'.params = b.params ∧
@@ -384,13 +385,18 @@ theorem simpOk_of {f g : Function} {fi : Info} {cert : SimpCert} (hhdr : SameHdr
         cert.defs.contains r = false ∧ (initAvail f).contains r = true)) :
     simpOk f g fi cert = true := by
   simp only [simpOk, sameHeader, Bool.and_eq_true, beq_iff_eq, List.all_eq_true]
-  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨hhdr.name, hhdr.sig⟩, hhdr.slots⟩, hhdr.globals⟩, hhdr.externs⟩, hlen⟩, hch⟩,
-    wfCert_complete hwf⟩, ?_⟩, ?_⟩
+  refine ⟨⟨⟨⟨⟨⟨⟨⟨⟨⟨hhdr.name, hhdr.sig⟩, hhdr.slots⟩, hhdr.globals⟩, hhdr.externs⟩, hlen⟩, hch⟩,
+    wfCert_complete hwf⟩, ?_⟩, ?_⟩, ?_⟩
   · rintro ⟨x, d⟩ hx
     have hx' : (initAvail f).get? x = some d := by
       rw [Std.HashMap.mem_toList_iff_getElem?_eq_some] at hx
       simpa [Std.HashMap.get?_eq_getElem?] using hx
     simpa using hleaf x ((hm_contains_iff _ _).2 (by rw [hx']; rfl))
+  · rintro ⟨x, d⟩ hx
+    have hx' : cert.partials.get? x = some d := by
+      rw [Std.HashMap.mem_toList_iff_getElem?_eq_some] at hx
+      simpa [Std.HashMap.get?_eq_getElem?] using hx
+    simpa using hpl x ((hm_contains_iff _ _).2 (by rw [hx']; rfl))
   · rintro ⟨⟨b, b'⟩, i⟩ hz
     rw [List.mem_zipIdx_iff_getElem?, List.getElem?_zip_eq_some] at hz
     obtain ⟨hb, hb'⟩ := hz
@@ -475,9 +481,13 @@ theorem RunDone.leafIn (hc : Checked f info) {i : Nat} {b : Block} (hb : f.block
 
 /-- **The validator accepts the output.** -/
 theorem RunDone.simpOk (hc : Checked f info) (h : RunDone f info allowed skelOk st S out logs) :
-    simpOk f (outFn f out) info { defs := st.defs, types := st.types, subst := S, logs } = true := by
+    simpOk f (outFn f out) info
+      { defs := st.defs, types := st.types, subst := S, logs, partials := st.partials } = true := by
   refine simpOk_of ⟨rfl, rfl, rfl, rfl, rfl⟩ (by simp [h.outEq.1]) h.chainFreeB (h.wf hc)
-    (fun x hx => h.leafTy hc hx) ?_
+    (fun x hx => h.leafTy hc hx) (fun x hx => ?_) ?_
+  · cases hl : (initAvail f).contains x with
+    | false => rfl
+    | true => exact absurd (h.rinv.partialsBig x hx) (Nat.not_lt.2 (hc.leaf_le hl))
   intro i b hb
   obtain ⟨lg, hlg, hbo⟩ := h.blockAt hb
   obtain ⟨b0', bo, hb0', hbo', hsf, htl, hto⟩ := h.done i lg hlg
@@ -598,7 +608,7 @@ accepts it once its unreachable blocks are removed, and the guard facts hold. -/
 theorem simp_complete_of_run {F0 : Function} (hc : Checked f info)
     (hRun : RunDone f info (allowedIn F0) (skelAllowedIn F0) st S out logs) :
     simpOk f (S.apply (outFn f out)) info
-        { defs := st.defs, types := st.types, subst := S, logs } = true ∧
+        { defs := st.defs, types := st.types, subst := S, logs, partials := st.partials } = true ∧
       (∃ i, check (removeUnreachable (S.apply (outFn f out))) = .ok i) ∧
       SimpGuard F0 f (S.apply (outFn f out)) := by
   rw [hRun.apply_eq]
@@ -626,7 +636,7 @@ end Assemble
 validator accepts the output, `check` accepts it once its unreachable blocks are removed, and the
 guard facts hold (`F0`: the pipeline's input, whose `allowedIn` excludes `symbol_value`). -/
 theorem simplify_complete {rules : SimplifyFn} {skel : SkeletonFn} (rematConst : Bool)
-    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel) (F0 g : Function) (info : Info)
+    (hR : SimpRulesProv rules) (hK : SkelRulesProv skel) (F0 g : Function) (info : Info)
     (hg : check g = .ok info) :
     simpOk g (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).1 info
         (simplify rules skel (allowedIn F0) (skelAllowedIn F0) rematConst g info).2.2 = true ∧
@@ -637,27 +647,27 @@ theorem simplify_complete {rules : SimplifyFn} {skel : SkeletonFn} (rematConst :
   simplify_complete_of_inv hc (simplify_run_inv hc hR hK (allowedIn_symbolValue F0))
 
 /-- **Completeness of the simplify stage** (`SimpStageOk`) under the rule hypotheses. -/
-theorem simpStageOk_of {cfg : Config} (hR : SimpRulesOk cfg.simplifyFn)
-    (hK : SkelRulesOk cfg.skeletonFn) : SimpStageOk cfg :=
+theorem simpStageOk_of {cfg : Config} (hR : SimpRulesProv cfg.simplifyFn)
+    (hK : SkelRulesProv cfg.skeletonFn) : SimpStageOk cfg :=
   fun F0 g info hg => simplify_complete cfg.rematConst hR hK F0 g info hg
 
 /-- **Completeness of the mid-end under the rule hypotheses** (`optimizeReport_complete` with
 `simpStageOk_of`): on an input that is well formed once its unreachable blocks are removed, no stage
 of `optimizeReport` stops and the result is the unvalidated pipeline. -/
-theorem optimize_complete_of_rules {cfg : Config} (hR : SimpRulesOk cfg.simplifyFn)
-    (hK : SkelRulesOk cfg.skeletonFn) (f0 : Function)
+theorem optimize_complete_of_rules {cfg : Config} (hR : SimpRulesProv cfg.simplifyFn)
+    (hK : SkelRulesProv cfg.skeletonFn) (f0 : Function)
     (h : ∃ i, check (removeUnreachable f0) = .ok i) :
     (optimizeReport cfg f0).2.passError = none ∧
       (optimizeReport cfg f0).1 = runStages cfg (removeUnreachable f0) :=
   optimizeReport_complete cfg f0 h (.inr (simpStageOk_of hR hK))
 
-/-- **Completeness of the simplify stage with the hand rules** (`simpRulesOk_hand`,
-`skelRulesOk_hand`). -/
+/-- **Completeness of the simplify stage with the hand rules** (`simpRulesProv_hand`,
+`skelRulesProv_hand`). -/
 theorem simpStageOk_hand {cfg : Config} (hr : cfg.rules = .hand) : SimpStageOk cfg := by
   cases cfg
   simp only at hr
   subst hr
-  exact simpStageOk_of simpRulesOk_hand skelRulesOk_hand
+  exact simpStageOk_of simpRulesProv_hand skelRulesProv_hand
 
 /-- **Completeness of the mid-end with the hand rules**: on an input that is well formed once its
 unreachable blocks are removed, no stage of `optimizeReport` stops and the result is the
@@ -688,8 +698,8 @@ abbrev run : Function × SimplifyStats × SimpCert :=
 
 /-- **Non-vacuity of `simplify_complete`**: `fn` is well formed; hash-consing (no rule fires) renames
 `v1` to `v0`, defined in the dominating block 0, so block 1 loses its statement and returns `v0`; and
-the theorem applies (the empty rule set satisfies `SimpRulesOk`, the hand skeleton rules
-`SkelRulesOk`): the validator accepts, `check` accepts after `removeUnreachable`, the guard facts hold. -/
+the theorem applies (the empty rule set satisfies `SimpRulesProv`, the hand skeleton rules
+`SkelRulesProv`): the validator accepts, `check` accepts after `removeUnreachable`, the guard facts hold. -/
 theorem witness :
     check fn = .ok (coreInfo fn) ∧
       run.1.blocks.map (·.body) = [[{ results := [0], inst := .iconst .i32 7 }], []] ∧
@@ -703,7 +713,7 @@ theorem witness :
     · rename_i i hi; rw [hi, ← coreInfo_of_check hi]
     · cases h0
   exact ⟨hc, by native_decide, by native_decide, by native_decide,
-    simplify_complete false simpRulesOk_noRules skelRulesOk_hand fn fn _ hc⟩
+    simplify_complete false simpRulesProv_noRules skelRulesProv_hand fn fn _ hc⟩
 
 /-- `v2 = v0 + 0` with `v1 = iconst.i32 0`. -/
 def fnHand : Function where
@@ -720,7 +730,7 @@ abbrev runHand : Function × SimplifyStats × SimpCert :=
   simplify HandRules.simplify HandRules.simplifySkeleton (allowedIn fnHand) (skelAllowedIn fnHand)
     false fnHand (coreInfo fnHand)
 
-/-- **Non-vacuity of `simpRulesOk_hand`**: on `fnHand` the hand rule `x_op_zero` renames `v2` to
+/-- **Non-vacuity of `simpRulesProv_hand`**: on `fnHand` the hand rule `x_op_zero` renames `v2` to
 `v0` (the block returns `v0`), and `simplify_complete` applies with the hand rules: the validator
 accepts, `check` accepts after `removeUnreachable`, the guard facts hold; the whole pipeline with
 the hand rules does not stop (`optimize_complete_hand`). -/
@@ -741,7 +751,7 @@ theorem witness_hand :
     have h0 : removeUnreachable fnHand = fnHand := by native_decide
     rw [h0, hc]
   exact ⟨hc, by native_decide, by native_decide,
-    simplify_complete false simpRulesOk_hand skelRulesOk_hand fnHand fnHand _ hc,
+    simplify_complete false simpRulesProv_hand skelRulesProv_hand fnHand fnHand _ hc,
     (optimize_complete_hand { rules := .hand } rfl fnHand ⟨_, hr⟩).1⟩
 
 end Opt.CompleteSimpWitness

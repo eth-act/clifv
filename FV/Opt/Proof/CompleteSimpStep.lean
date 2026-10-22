@@ -409,7 +409,7 @@ theorem RunXInv.opsAt (hc : Checked f info) (h : RunXInv f info allowed skelOk l
 
 theorem stepStmt_pure {rules : SimplifyFn} {skel : SkeletonFn} {cfg : Cfg} {s : Stmt} {v : ValueId}
     (hres : s.results = [v]) (hpi : isPure (mapOperands S.find s.inst) = true)
-    (hchk : (st.known v || decide (st.next ≤ v) ||
+    (hchk : (st.inGraph v || decide (st.next ≤ v) ||
       !(operands (mapOperands S.find s.inst)).all st.avail.contains ||
       !st.typedNode (mapOperands S.find s.inst) ||
       st.types.get? v != SState.nodeTy (mapOperands S.find s.inst)) = false) :
@@ -420,7 +420,7 @@ theorem stepStmt_pure {rules : SimplifyFn} {skel : SkeletonFn} {cfg : Cfg} {s : 
 
 /-- **A pure statement** keeps the invariant. -/
 theorem step_pure {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
-    (hR : SimpRulesOk rules) (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false)
+    (hR : SimpRulesProv rules) (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false)
     (h : RunXInv f info allowed skelOk logs bi j lgs st S) {b0 : Block} {s : Stmt} {v : ValueId}
     (hb0 : f.blocks[bi]? = some b0) (hs : b0.body[j]? = some s) (hres : s.results = [v])
     (hpure : isPure s.inst = true) :
@@ -474,7 +474,12 @@ theorem step_pure {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
     obtain ⟨x, hx, rfl⟩ := mem_ops_map hy
     obtain ⟨d, t, hd, -⟩ := (h.ops hc hb0 hs hx).2.2.1
     exact (hm_contains_iff _ _).2 (by rw [h.rinv.m.defAvail _ d t hd]; rfl)
-  have hchk : (st.known v || decide (st.next ≤ v) ||
+  have hvg : st.inGraph v = false := by
+    simp only [SState.inGraph, hvk, Bool.false_or]
+    cases hp : st.partials.contains v with
+    | false => rfl
+    | true => exact absurd (h.rinv.partialsBig v hp) (Nat.not_lt.2 hvle)
+  have hchk : (st.inGraph v || decide (st.next ≤ v) ||
       !(operands (mapOperands S.find s.inst)).all st.avail.contains ||
       !st.typedNode (mapOperands S.find s.inst) ||
       st.types.get? v != SState.nodeTy (mapOperands S.find s.inst)) = false := by
@@ -485,7 +490,7 @@ theorem step_pure {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
       simp only [SState.typedNode, hpi, h.rinv.m.fn, hpt, Bool.and_self]
     have e3 : (st.types.get? v != SState.nodeTy (mapOperands S.step s.inst)) = false := by
       rw [hty]; simp
-    simp only [hvk, decide_eq_false (Nat.not_le.2 hvn), e1, e2, e3, Bool.not_true, Bool.or_self]
+    simp only [hvg, decide_eq_false (Nat.not_le.2 hvn), e1, e2, e3, Bool.not_true, Bool.or_self]
   rw [stepStmt_pure hres (by rw [hfind]; exact hpi) hchk, hfind]
   have hbV := CurV_bi (lgs := lgs) h.notbi hb0
   have hP0 := pure_ok (V := CurV f logs bi lgs) (B := Bad f logs bi j S)
@@ -758,7 +763,7 @@ theorem rinv_kept {V : Nat → Option Block} {B : ValueId → Prop} {st : SState
     RInv f (emitV V bi [t]) (fun y => B y ∧ y ∉ R) (fun _ => False) (fun _ => False) st := by
   have hm : MInv f (emitV V bi [t]) B st :=
     h.m.emitRes hb fun y hy => ⟨hav y (htr ▸ hy), fun d k hk => hnd y d k hk (hbad y (htr ▸ hy))⟩
-  refine RInv.weakenB ⟨hm, h.noPartial, h.memo, h.alts⟩ (fun y hy => hy.1) (fun y d hy hb1 hb2 => ?_)
+  refine RInv.weakenB ⟨hm, h.partialsBig, h.memo, h.alts⟩ (fun y hy => hy.1) (fun y d hy hb1 hb2 => ?_)
     (fun y n _ ha hb1 hb2 => ?_)
   · have hyR : y ∈ R := Classical.byContradiction fun hn => hb2 ⟨hb1, hn⟩
     rw [hav y hyR] at hy; cases hy
@@ -844,7 +849,7 @@ theorem rep_out (hc : Checked f info) {idom : Array (Option Nat)} {V : Nat → O
 
 /-- **A skeleton statement** keeps the invariant. -/
 theorem step_skel {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
-    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel)
+    (hR : SimpRulesProv rules) (hK : SkelRulesProv skel)
     (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false)
     (h : RunXInv f info allowed skelOk logs bi j lgs st S) {b0 : Block} {s : Stmt}
     (hb0 : f.blocks[bi]? = some b0) (hs : b0.body[j]? = some s) (hsk : skeletonStmt s = true) :
@@ -1159,7 +1164,7 @@ theorem step_skel {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
       have h2 := ((h1.m.noResult (bi := bi) (s := { inst := a }) rfl).noResult (bi := bi)
         (s := { inst := c }) rfl)
       rw [emitV_append, emitV_append] at h2
-      exact ⟨by simpa using h2, h1.noPartial, h1.memo, h1.alts⟩
+      exact ⟨by simpa using h2, h1.partialsBig, h1.memo, h1.alts⟩
     simp only [List.foldl]
     refine step_gen hc h hb0 hs (by
         change RInv f (emitV _ bi stmts.toList) _ _ _ _; rw [hstm, hBe]; exact hRI)
@@ -1237,7 +1242,7 @@ variable {f : Function} {info : Info} {allowed skelOk : Inst → Bool}
 
 /-- **One statement** keeps the invariant. -/
 theorem step_stmt {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
-    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel)
+    (hR : SimpRulesProv rules) (hK : SkelRulesProv skel)
     (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false) {j : Nat} {lgs : List StmtLog}
     {st : SState} {S : Subst} (h : RunXInv f info allowed skelOk logs bi j lgs st S) {b0 : Block}
     {s : Stmt} (hb0 : f.blocks[bi]? = some b0) (hs : b0.body[j]? = some s) :
@@ -1253,7 +1258,7 @@ theorem step_stmt {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
 
 /-- The statements of block `bi` from statement `k` on (the fold of `Opt.stepBlock`). -/
 theorem stmts_fold {rules : SimplifyFn} {skel : SkeletonFn} (hc : Checked f info)
-    (hR : SimpRulesOk rules) (hK : SkelRulesOk skel)
+    (hR : SimpRulesProv rules) (hK : SkelRulesProv skel)
     (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false) {b0 : Block}
     (hb0 : f.blocks[bi]? = some b0) :
     ∀ (rest : List Stmt) (k : Nat) (st : SState) (S : Subst) (lgs : Array StmtLog),

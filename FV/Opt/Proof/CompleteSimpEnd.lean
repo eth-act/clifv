@@ -51,7 +51,7 @@ theorem MInv.view {f : Function} {V V' : Nat → Option Block} {B : ValueId → 
 theorem RInv.view {f : Function} {V V' : Nat → Option Block} {B X : ValueId → Prop}
     {XN : Inst → Prop} {st : SState} (h : RInv f V B X XN st) (h1 : VExt V V') (h2 : VExt V' V) :
     RInv f V' B X XN st :=
-  ⟨h.m.view h1 h2, h.noPartial, h.memo, h.alts⟩
+  ⟨h.m.view h1 h2, h.partialsBig, h.memo, h.alts⟩
 
 theorem foldl_out_toList (l : List StmtLog) (acc : Array Stmt) :
     (l.foldl (fun acc lg => acc ++ lg.out) acc).toList = acc.toList ++ outsOf l := by
@@ -87,7 +87,7 @@ variable {f : Function} {info : Info} {allowed skelOk : Inst → Bool} {rules : 
   {out : Array Block}
 
 /-- **The end of a block** (module doc). -/
-theorem block_end (hc : Checked f info) (hR : SimpRulesOk rules) (hK : SkelRulesOk skel)
+theorem block_end (hc : Checked f info) (hR : SimpRulesProv rules) (hK : SkelRulesProv skel)
     (hsym : ∀ ty gv, allowed (.symbolValue ty gv) = false) {b0 : Block}
     (hb0 : f.blocks[bi]? = some b0) {lgs : Array StmtLog}
     (h : RunXInv f info allowed skelOk logs bi b0.body.length lgs.toList st S)

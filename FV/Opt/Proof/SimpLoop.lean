@@ -33,32 +33,44 @@ variable {ρ : Valuation} {fr : Frame} {mem : Mem}
 structure Mono (ρ : Valuation) (fr : Frame) (mem : Mem) (st st' : SState) : Prop where
   known : ∀ x, st.known x = true → st'.known x = true
   fix : ∀ x, st.known x = true → gval ρ fr mem st' x = gval ρ fr mem st x
+  /-- The graph (partial nodes included) grows, with the same values. -/
+  inGraph : ∀ x, st.inGraph x = true → st'.inGraph x = true
+  fixG : ∀ x, st.inGraph x = true → gval ρ fr mem st' x = gval ρ fr mem st x
   trap : st'.trapBlocks = st.trapBlocks
   fn : st'.fn = st.fn
 
-theorem Mono.refl (st : SState) : Mono ρ fr mem st st := ⟨fun _ h => h, fun _ _ => rfl, rfl, rfl⟩
+theorem Mono.refl (st : SState) : Mono ρ fr mem st st :=
+  ⟨fun _ h => h, fun _ _ => rfl, fun _ h => h, fun _ _ => rfl, rfl, rfl⟩
 
 theorem Mono.trans {st1 st2 st3 : SState} (h1 : Mono ρ fr mem st1 st2) (h2 : Mono ρ fr mem st2 st3) :
     Mono ρ fr mem st1 st3 :=
   ⟨fun x h => h2.known x (h1.known x h), fun x h => (h2.fix x (h1.known x h)).trans (h1.fix x h),
+   fun x h => h2.inGraph x (h1.inGraph x h),
+   fun x h => (h2.fixG x (h1.inGraph x h)).trans (h1.fixG x h),
    h2.trap.trans h1.trap, h2.fn.trans h1.fn⟩
 
 theorem Grow.mono {st st' : SState} (h : Grow ρ fr mem st st') : Mono ρ fr mem st st' :=
-  ⟨h.known, h.fix, h.trap, h.fn⟩
+  ⟨h.known, fun x hk => h.fix x (inGraph_of_known hk), h.inGraph, h.fix, h.trap, h.fn⟩
 
 theorem MGrow.mono {st st' : SState} (h : MGrow ρ fr mem st st') : Mono ρ fr mem st st' :=
-  ⟨h.known, h.fix, h.trap, h.fn⟩
+  ⟨h.known, h.fix, h.inGraph, h.fixG, h.trap, h.fn⟩
 
 /-- Same graph and known values. -/
 theorem Mono.of_graph {st st' : SState} (hd : st'.defs = st.defs)
     (ha : ∀ x, st.avail.contains x = true → st'.avail.contains x = true)
-    (ht : st'.trapBlocks = st.trapBlocks) (hf : st'.fn = st.fn) : Mono ρ fr mem st st' := by
-  have hgr : st'.graph = st.graph := by funext x; simp [SState.graph, hd]
-  refine ⟨fun x hx => ?_, fun x _ => by simp only [gval, hgr], ht, hf⟩
-  simp only [SState.known, Bool.or_eq_true] at hx ⊢
-  rcases hx with hx | hx
-  · exact .inl (by rw [hd]; exact hx)
-  · exact .inr (ha x hx)
+    (ht : st'.trapBlocks = st.trapBlocks) (hf : st'.fn = st.fn) (hp : st'.partials = st.partials) :
+    Mono ρ fr mem st st' := by
+  have hgr : st'.graph = st.graph := by funext x; simp [SState.graph, hd, hp]
+  have hk : ∀ x, st.known x = true → st'.known x = true := by
+    intro x hx
+    simp only [SState.known, Bool.or_eq_true] at hx ⊢
+    rcases hx with hx | hx
+    · exact .inl (by rw [hd]; exact hx)
+    · exact .inr (ha x hx)
+  refine ⟨hk, fun x _ => by simp only [gval, hgr], fun x hx => ?_, fun x _ => by simp only [gval, hgr],
+    ht, hf⟩
+  simp only [SState.inGraph, Bool.or_eq_true, hp] at hx ⊢
+  exact hx.imp (hk x) id
 
 end
 
@@ -308,7 +320,7 @@ variable {f : Function} {ρ : Valuation} {fr : Frame} {mem : Mem}
 theorem gval_le {st st' : SState} (h : GInv f ρ fr mem st) (hm : Mono ρ fr mem st st') :
     Valuation.Le (gval ρ fr mem st) (gval ρ fr mem st') := by
   intro x a hx
-  rw [hm.fix x (known_of_gval h hx)]; exact hx
+  rw [hm.fixG x (inGraph_of_gval h hx)]; exact hx
 
 /-- An instruction whose operands were materialised (`materializeAll`, renaming `m`) evaluates,
 when it does not get stuck, as before the renaming. -/
@@ -845,23 +857,30 @@ end Skel
 section Stmt
 variable {f : Function} {ρ : Valuation} {fr : Frame} {mem : Mem}
 
-/-- `stepStmt` enters the node of a new statement value `w` (below `next`, unknown) over available
-operands. -/
+/-- `stepStmt` enters the node of a new statement value `w` (below `next`, outside the graph)
+over available operands. -/
 theorem insertAt_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv f fr mem)
-    {w : ValueId} {n : Inst} (hw : st.known w = false) (hwn : w < st.next)
+    {w : ValueId} {n : Inst} (hw : st.inGraph w = false) (hwn : w < st.next)
     (hn : ∀ y ∈ operands n, st.avail.contains y = true) (hty : st.typedNode n = true)
     (htw : st.types.get? w = SState.nodeTy n)
     (hd : st'.defs = st.defs.insert w n) (ht : st'.types = st.types) (hnx : st'.next = st.next)
     (ha : st'.avail = st.avail) (hal : st'.alts = st.alts) (hm : st'.memo = st.memo)
-    (hf : st'.fn = st.fn) (hc : st'.classes = {}) (hp : st'.partialVals = st.partialVals)
+    (hf : st'.fn = st.fn) (hc : st'.classes = {}) (hp : st'.partials = st.partials)
     (htr : st'.trapBlocks = st.trapBlocks) :
-    GInv f ρ fr mem st' ∧ Mono ρ fr mem st st' ∧ st'.solid w = true ∧
+    GInv f ρ fr mem st' ∧ Mono ρ fr mem st st' ∧ st'.known w = true ∧
       gval ρ fr mem st' w = evalNode (withRegs fr (gval ρ fr mem st)) mem n ∧
       ∃ a, gval ρ fr mem st' w = some a := by
   have hnk : ∀ y ∈ operands n, st.known y = true := fun y hy => known_of_avail (hn y hy)
-  obtain ⟨hfix, hnew⟩ := gval_insert h hw hnk hd
+  have hg : st'.graph = graphInsert st.graph w n := by
+    funext x
+    simp only [SState.graph, graphInsert, hd, hp, hm_get?_insert]
+    by_cases hx : w = x
+    · subst hx; simp
+    · simp [hx, Ne.symm hx]
+  obtain ⟨hfix, hnew⟩ := gval_insert h hw (fun y hy => inGraph_of_known (hnk y hy)) hg
   obtain ⟨a, hev, hta⟩ := typed_total h hE hty (fun u hu => h.tot u (hn u hu) |>.imp fun _ h => h.1)
-  have hwa : st.avail.contains w = false := (known_false hw).2
+  obtain ⟨hwk, hwp⟩ := inGraph_false hw
+  have hwa : st.avail.contains w = false := (known_false hwk).2
   have hdw : st'.defs.get? w = some n := by rw [hd, hm_get?_insert]; simp
   have hkw : st'.known w = true := known_of_defs hdw
   have hdx : ∀ x, x ≠ w → st'.defs.get? x = st.defs.get? x := by
@@ -887,27 +906,22 @@ theorem insertAt_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv 
         simp only [Std.HashMap.get?_eq_getElem?] at this hd0
         rw [this, hd0] at hx; cases hx
       · rw [ha] at hx; rw [hx] at ha0; cases ha0
-  have hunk : ∀ x, x ≠ w → st.known x = false → gval ρ fr mem st' x = none := by
+  have him : ∀ x, st.inGraph x = true → st'.inGraph x = true := by
+    intro x hx
+    simp only [SState.inGraph, Bool.or_eq_true, hp] at hx ⊢
+    exact hx.imp (hkm x) id
+  have hunk : ∀ x, x ≠ w → st.inGraph x = false → gval ρ fr mem st' x = none := by
     intro x hx hk
+    obtain ⟨hk1, hp1⟩ := inGraph_false hk
     have hd' : st'.graph x = none := by
-      simp only [SState.graph]; rw [hdx x hx]; exact (known_false hk).1
+      rw [hg]; simp only [graphInsert, if_neg hx]; exact graph_none hk1 hp1
     rw [gval, den_leaf hd']
     cases hρ : ρ x with
     | none => rfl
-    | some a => rw [known_of_avail (h.leaf x a hρ).1] at hk; cases hk
-  have hpw : st.partialVals.contains w = false := by
-    cases hc' : st.partialVals.contains w with
-    | false => rfl
-    | true => rw [h.partialKnown w hc'] at hw; cases hw
-  have hsw : st'.solid w = true := by
-    simp only [SState.solid, hkw, hp, hpw, Bool.not_false, Bool.and_self]
-  have hsm : ∀ x, st.solid x = true → st'.solid x = true := by
-    intro x hx
-    simp only [SState.solid, Bool.and_eq_true, Bool.not_eq_true'] at hx ⊢
-    exact ⟨hkm x hx.1, by rw [hp]; exact hx.2⟩
+    | some a => rw [known_of_avail (h.leaf x a hρ).1] at hk1; cases hk1
   have hgw : gval ρ fr mem st' w = some a := by rw [hnew, hev]
-  refine ⟨⟨hf.trans h.fn, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ⟨hkm, hfix, htr, hf⟩, hsw,
-    hnew, a, hgw⟩
+  refine ⟨⟨hf.trans h.fn, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    ⟨hkm, fun x hx => hfix x (inGraph_of_known hx), him, hfix, htr, hf⟩, hkw, hnew, a, hgw⟩
   · intro x m hx y hy
     by_cases hxw : x = w
     · rw [hxw, hdw] at hx; cases hx; exact hkm y (hnk y hy)
@@ -925,43 +939,48 @@ theorem insertAt_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv 
   · intro x hx
     rw [ha] at hx
     obtain ⟨a', h1', h2'⟩ := h.tot x hx
-    exact ⟨a', by rw [hfix x (known_of_avail hx)]; exact h1', by rw [ht]; exact h2'⟩
+    exact ⟨a', by rw [hfix x (inGraph_of_known (known_of_avail hx))]; exact h1', by rw [ht]; exact h2'⟩
   · intro x t a' hx hv
     rw [ht] at hx
     by_cases hxw : x = w
     · subst hxw
       rw [hgw] at hv; cases hv
       rw [htw, hta] at hx; exact (Option.some.inj hx)
-    · cases hk : st.known x with
+    · cases hk : st.inGraph x with
       | true => rw [hfix x hk] at hv; exact h.types x t a' hx hv
       | false => rw [hunk x hxw hk] at hv; cases hv
   · intro x ms hx
     rw [hal] at hx
     obtain ⟨hk, hms⟩ := h.alts x ms hx
     refine ⟨hkm x hk, fun m hm a' hv => ?_⟩
-    rw [hfix x hk] at hv
+    rw [hfix x (inGraph_of_known hk)] at hv
     have := hms m hm a' hv
-    rw [hfix m (known_of_gval h this)]; exact this
+    rw [hfix m (inGraph_of_gval h this)]; exact this
   · intro n' w' hx
     rw [hm] at hx
     obtain ⟨hk, hw'⟩ := h.memo n' w' hx
     refine ⟨fun y hy => hkm y (hk y hy), fun a' hv => ?_⟩
     rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st)) (fr' := withRegs fr (gval ρ fr mem st'))
-      rfl rfl rfl (fun y hy => hfix y (hk y hy))] at hv
+      rfl rfl rfl (fun y hy => hfix y (inGraph_of_known (hk y hy)))] at hv
     have := hw' a' hv
-    rw [hfix w' (known_of_gval h this)]; exact this
+    rw [hfix w' (inGraph_of_gval h this)]; exact this
   · intro x hx
-    rw [hp] at hx; exact hkm x (h.partialKnown x hx)
+    rw [hp] at hx
+    obtain ⟨h1, h2⟩ := h.partials x hx
+    refine ⟨by rw [hnx]; exact h1, ?_⟩
+    have hxw : x ≠ w := fun he => by rw [he, hwp] at hx; cases hx
+    cases hk : st'.known x with
+    | false => rfl
+    | true => rw [hkb x hxw hk] at h2; cases h2
+  · intro x m hx y hy
+    rw [hp] at hx
+    exact him y (h.partialsClosed x m hx y hy)
   · intro x hx
     by_cases hxw : x = w
     · subst hxw; exact ⟨a, hgw, by rw [ht, htw, hta]⟩
-    · have hxs : st.solid x = true := by
-        simp only [SState.solid, Bool.and_eq_true, Bool.not_eq_true'] at hx ⊢
-        exact ⟨hkb x hxw hx.1, by rw [← hp]; exact hx.2⟩
-      obtain ⟨a', h1', h2'⟩ := h.solid x hxs
-      have hk : st.known x = true := by
-        simp only [SState.solid, Bool.and_eq_true] at hxs; exact hxs.1
-      exact ⟨a', by rw [hfix x hk]; exact h1', by rw [ht]; exact h2'⟩
+    · have hk := hkb x hxw hx
+      obtain ⟨a', h1', h2'⟩ := h.knownVal x hk
+      exact ⟨a', by rw [hfix x (inGraph_of_known hk)]; exact h1', by rw [ht]; exact h2'⟩
   · intro k ms hx
     rw [hc] at hx; simp at hx
 
@@ -969,11 +988,11 @@ theorem insertAt_spec {st st' : SState} (h : GInv f ρ fr mem st) (hE : GoodEnv 
 theorem availInsert_spec {st st' : SState} (h : GInv f ρ fr mem st) {x : ValueId} {bi : Nat}
     (hx : st.known x = true) (hxv : ∃ a, gval ρ fr mem st x = some a ∧ st.types.get? x = some a.ty)
     (ha : st'.avail = st.avail.insert x bi) (hd : st'.defs = st.defs) (ht : st'.types = st.types)
-    (hf : st'.fn = st.fn) (hn : st'.next = st.next) (hp : st'.partialVals = st.partialVals)
+    (hf : st'.fn = st.fn) (hn : st'.next = st.next) (hp : st'.partials = st.partials)
     (hal : st'.alts = st.alts) (hm : st'.memo = st.memo) (hc : st'.classes = st.classes)
     (htr : st'.trapBlocks = st.trapBlocks) :
     GInv f ρ fr mem st' ∧ Mono ρ fr mem st st' := by
-  have hgr : st'.graph = st.graph := by funext y; simp [SState.graph, hd]
+  have hgr : st'.graph = st.graph := by funext y; simp [SState.graph, hd, hp]
   have hg : gval ρ fr mem st' = gval ρ fr mem st := by simp only [gval, hgr]
   have hk : ∀ y, st'.known y = (st.known y || x == y) := by
     intro y
@@ -987,18 +1006,8 @@ theorem availInsert_spec {st st' : SState} (h : GInv f ρ fr mem st) {x : ValueI
     rcases hy with hy | rfl
     · exact hy
     · exact hx
-  have hs : ∀ y, st'.solid y = st.solid y := by
-    intro y
-    simp only [SState.solid, hp]
-    cases hky : st.known y
-    · have : st'.known y = false := by
-        cases h' : st'.known y
-        · rfl
-        · rw [hkb y h'] at hky; cases hky
-      rw [this]
-    · rw [hkm y hky]
-  refine ⟨⟨hf.trans h.fn, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
-    Mono.of_graph hd (fun y hy => by rw [ha, hm_contains_insert]; simp [hy]) htr hf⟩
+  refine ⟨⟨hf.trans h.fn, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩,
+    Mono.of_graph hd (fun y hy => by rw [ha, hm_contains_insert]; simp [hy]) htr hf hp⟩
   · intro y m hy z hz; rw [hd] at hy; exact hkm z (h.closed y m hy z hz)
   · intro y hy; rw [hn]; exact h.fresh y (hkb y hy)
   · intro y hy; rw [hn] at hy; exact h.freshρ y hy
@@ -1019,11 +1028,25 @@ theorem availInsert_spec {st st' : SState} (h : GInv f ρ fr mem st) {x : ValueI
   · intro n w hy; rw [hm] at hy; rw [hg]
     obtain ⟨h1, h2⟩ := h.memo n w hy
     exact ⟨fun z hz => hkm z (h1 z hz), h2⟩
-  · intro y hy; rw [hp] at hy; exact hkm y (h.partialKnown y hy)
-  · intro y hy; rw [hs] at hy; rw [hg, ht]; exact h.solid y hy
+  · intro y hy; rw [hp] at hy
+    obtain ⟨h1, h2⟩ := h.partials y hy
+    refine ⟨by rw [hn]; exact h1, ?_⟩
+    cases hk' : st'.known y with
+    | false => rfl
+    | true => rw [hkb y hk'] at h2; cases h2
+  · intro y m hy z hz; rw [hp] at hy
+    have := h.partialsClosed y m hy z hz
+    simp only [SState.inGraph, Bool.or_eq_true, hp] at this ⊢
+    exact this.imp (hkm z) id
+  · intro y hy; rw [hg, ht]
+    rw [hk] at hy
+    simp only [Bool.or_eq_true, beq_iff_eq] at hy
+    rcases hy with hy | rfl
+    · exact h.knownVal y hy
+    · exact hxv
   · intro k ms hy; rw [hc] at hy
     obtain ⟨o, ho, h2⟩ := h.classes k ms hy
-    exact ⟨o, by rw [hs]; exact ho, by rw [hg]; exact h2⟩
+    exact ⟨o, hkm o ho, by rw [hg]; exact h2⟩
 
 /-- Recording the alternatives of a value. -/
 theorem altsInsert_spec {st st' : SState} (h : GInv f ρ fr mem st) {x : ValueId}
@@ -1031,11 +1054,11 @@ theorem altsInsert_spec {st st' : SState} (h : GInv f ρ fr mem st) {x : ValueId
     (hms : ∀ m ∈ ms, ∀ a, gval ρ fr mem st x = some a → gval ρ fr mem st m = some a)
     (hal : st'.alts = st.alts.insert x ms) (hd : st'.defs = st.defs) (ha : st'.avail = st.avail)
     (ht : st'.types = st.types) (hf : st'.fn = st.fn) (hn : st'.next = st.next)
-    (hp : st'.partialVals = st.partialVals) (hm : st'.memo = st.memo)
+    (hp : st'.partials = st.partials) (hm : st'.memo = st.memo)
     (hc : st'.classes = st.classes) (htr : st'.trapBlocks = st.trapBlocks) :
     GInv f ρ fr mem st' ∧ Mono ρ fr mem st st' := by
   refine ⟨h.of_graph hd ha ht hf (by rw [hn]; exact Nat.le_refl _) hp ?_ (by rw [hm]; exact h.memo)
-    (by rw [hc]; exact h.classes), Mono.of_graph hd (fun y hy => by rw [ha]; exact hy) htr hf⟩
+    (by rw [hc]; exact h.classes), Mono.of_graph hd (fun y hy => by rw [ha]; exact hy) htr hf hp⟩
   intro y ms' hy
   rw [hal, hm_get?_insert] at hy
   split at hy
@@ -1053,8 +1076,8 @@ theorem pureBest_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) {st st1
     (hops : ∀ y ∈ operands inst, st.known y = true)
     (hnode : ∀ a, evalNode (withRegs fr (gval ρ fr mem st)) mem inst = some a →
       gval ρ fr mem st v = some a)
-    (hsv : st.solid v = true) (h : pureBest rules allowed bi st v inst = (best, st1)) :
-    GInv f ρ fr mem st1 ∧ Mono ρ fr mem st st1 ∧ st1.solid v = true ∧
+    (hsv : st.known v = true) (h : pureBest rules allowed bi st v inst = (best, st1)) :
+    GInv f ρ fr mem st1 ∧ Mono ρ fr mem st st1 ∧ st1.known v = true ∧
       ∀ a, evalNode (withRegs fr (gval ρ fr mem st1)) mem inst = some a →
         gval ρ fr mem st1 best = some a := by
   cases hhit : memoHit st bi inst with
@@ -1088,18 +1111,18 @@ theorem pureBest_spec (hS : SimplifySound rules) (hE : GoodEnv f fr mem) {st st1
     obtain ⟨hI2, hG2⟩ := memo_insert_spec (st' := { st1' with memo := st1'.memo.insert inst b })
       hI1 (fun y hy => hM.known y (hops y hy)) hfwd rfl rfl rfl rfl rfl rfl (Nat.le_refl _) rfl rfl
       rfl rfl
-    refine ⟨hI2, hM.trans hG2.mono, hG2.solid v (hG1.solid v hsv), fun a ha => ?_⟩
+    refine ⟨hI2, hM.trans hG2.mono, hG2.known v (hG1.known v hsv), fun a ha => ?_⟩
     have ha' : evalNode (withRegs fr (gval ρ fr mem st1')) mem inst = some a := by
       rw [evalNode_congr (fr := withRegs fr (gval ρ fr mem st1'))
         (fr' := withRegs fr (gval ρ fr mem { st1' with memo := st1'.memo.insert inst b }))
-        rfl rfl rfl (fun y hy => hG2.fix y (hM.known y (hops y hy)))] at ha
+        rfl rfl rfl (fun y hy => hG2.fix y (inGraph_of_known (hM.known y (hops y hy))))] at ha
       exact ha
     have hb := hfwd a ha'
-    rw [hG2.fix b (known_of_gval hI1 hb)]; exact hb
+    rw [hG2.fix b (inGraph_of_gval hI1 hb)]; exact hb
 
 theorem pureEmit_spec (hE : GoodEnv f fr mem) {st1 st' : SState} {subst subst' : Subst} {s : Stmt}
     {inst : Inst} {v best : ValueId} {lg : StmtLog} (hI1 : GInv f ρ fr mem st1)
-    (hvs : st1.solid v = true) (hops : ∀ y ∈ operands inst, st1.known y = true)
+    (hvs : st1.known v = true) (hops : ∀ y ∈ operands inst, st1.known y = true)
     (hF : ∀ a, evalNode (withRegs fr (gval ρ fr mem st1)) mem inst = some a →
       gval ρ fr mem st1 best = some a)
     (hnode1 : ∀ a, gval ρ fr mem st1 v = some a →
@@ -1109,8 +1132,7 @@ theorem pureEmit_spec (hE : GoodEnv f fr mem) {st1 st' : SState} {subst subst' :
       LogFact (withRegs fr (gval ρ fr mem st')) mem (gval ρ fr mem st') lg ∧
       (∀ x ∈ lg.srcOps, st'.known x = true) ∧ st'.known (lg.rep v) = true ∧
       ∀ a, gval ρ fr mem st' (lg.rep v) = some a → gval ρ fr mem st1 best = some a := by
-  have hkv : st1.known v = true := by
-    simp only [SState.solid, Bool.and_eq_true] at hvs; exact hvs.1
+  have hkv : st1.known v = true := hvs
   have hkeep : ({ st1 with avail := st1.avail.insert v bi }, subst, StmtLog.keep { s with inst }) =
       (st', subst', lg) → (∀ a, gval ρ fr mem st1 v = some a → gval ρ fr mem st1 best = some a) →
       GInv f ρ fr mem st' ∧ Mono ρ fr mem st1 st' ∧
@@ -1121,7 +1143,7 @@ theorem pureEmit_spec (hE : GoodEnv f fr mem) {st1 st' : SState} {subst subst' :
     simp only [Prod.mk.injEq] at he
     obtain ⟨rfl, -, rfl⟩ := he
     obtain ⟨hI', hM'⟩ := availInsert_spec (st' := { st1 with avail := st1.avail.insert v bi }) hI1
-      hkv (hI1.solid v hvs) rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl
+      hkv (hI1.knownVal v hvs) rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl
     refine ⟨hI', hM', trivial, fun x hx => by simp [StmtLog.srcOps] at hx, hM'.known v hkv,
       fun a ha => ?_⟩
     simp only [StmtLog.rep] at ha ⊢
@@ -1145,7 +1167,7 @@ theorem pureEmit_spec (hE : GoodEnv f fr mem) {st1 st' : SState} {subst subst' :
       have hM3 := hM2.trans hG3.mono
       have hwv : ∀ a, gval ρ fr mem st1 best = some a → gval ρ fr mem st' w = some a := by
         intro a ha
-        rw [hG3.fix w (known_of_avail hok.avail), hok.val]; exact ha
+        rw [hG3.fix w (inGraph_of_known (known_of_avail hok.avail)), hok.val]; exact ha
       refine ⟨hI3, hM3, fun a ha => ?_, fun x hx => ?_, ?_, fun a ha => ?_⟩
       · apply hwv
         apply hF
@@ -1155,7 +1177,7 @@ theorem pureEmit_spec (hE : GoodEnv f fr mem) {st1 st' : SState} {subst subst' :
       · simp only [StmtLog.srcOps] at hx; exact hM3.known x (hops x hx)
       · exact hG3.known w (known_of_avail hok.avail)
       · simp only [StmtLog.rep] at ha
-        rw [hG3.fix w (known_of_avail hok.avail), hok.val] at ha; exact ha
+        rw [hG3.fix w (inGraph_of_known (known_of_avail hok.avail)), hok.val] at ha; exact ha
     · exact hkeep h (fun a ha => hF a (hnode1 a ha))
 
 theorem pureAlts_spec {st1 st' : SState} {v best : ValueId} {lg : StmtLog}
@@ -1170,12 +1192,12 @@ theorem pureAlts_spec {st1 st' : SState} {v best : ValueId} {lg : StmtLog}
     refine altsInsert_spec hI' hrk ?_ rfl rfl rfl rfl rfl rfl rfl rfl rfl rfl
     intro m hm a ha
     obtain ⟨o, ho, hjust⟩ := hI1.classes best ms hc
-    obtain ⟨a', ha', -⟩ := hI1.solid o ho
+    obtain ⟨a', ha', -⟩ := hI1.knownVal o ho
     obtain ⟨hb', hms⟩ := hjust a' ha'
     have hb := hrep a ha
     rw [hb] at hb'; cases hb'
     have hm1 := hms m hm
-    rw [hM.fix m (known_of_gval hI1 hm1)]; exact hm1
+    rw [hM.fixG m (inGraph_of_gval hI1 hm1)]; exact hm1
   simp only [pureAlts]
   cases hc : st1.classes.get? best with
   | none => simp only [Option.getD_none, List.isEmpty_nil, Bool.not_true]; split <;> exact ⟨hI', Mono.refl _⟩
@@ -1227,8 +1249,7 @@ theorem stepStmt_spec (hS : SimplifySound rules) (hK : SkeletonSound skel) (hE :
       obtain ⟨st2, subst2, lg2⟩ := rC
       simp only [Prod.mk.injEq] at h
       obtain ⟨rfl, rfl, rfl⟩ := h
-      have hkv : (pureInsert st v inst).known v = true := by
-        simp only [SState.solid, Bool.and_eq_true] at hsvA; exact hsvA.1
+      have hkv : (pureInsert st v inst).known v = true := hsvA
       have hops1 : ∀ y ∈ operands inst, st1.known y = true := fun y hy => hM1.known y (hopsA y hy)
       have hnode1 : ∀ a, gval ρ fr mem st1 v = some a →
           evalNode (withRegs fr (gval ρ fr mem st1)) mem inst = some a := by
@@ -1519,7 +1540,7 @@ theorem init_ginv (hf : check f = .ok info) (hG : SGood f info ρ fr mem) (remat
     obtain ⟨a, ha⟩ := Option.isSome_iff_exists.1 h1
     obtain ⟨t, ht⟩ := Option.isSome_iff_exists.1 (initAvail_typed hf hx)
     exact ⟨a, ha, by rw [ht, hG.ty x a t ha ht]⟩
-  refine ⟨rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨rfl, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro x m hx; simp [initSState] at hx
   · intro x hx; rw [hk] at hx; exact initAvail_lt hx
   · intro x hx
@@ -1542,10 +1563,10 @@ theorem init_ginv (hf : check f = .ok info) (hG : SGood f info ρ fr mem) (remat
   · intro x ms hx; simp [initSState] at hx
   · intro n w hx; simp [initSState] at hx
   · intro x hx; simp [initSState] at hx
+  · intro x m hx; simp [initSState] at hx
   · intro x hx
-    simp only [SState.solid, Bool.and_eq_true] at hx
     rw [hk] at hx
-    obtain ⟨a, ha, ht⟩ := htot x hx.1
+    obtain ⟨a, ha, ht⟩ := htot x hx
     exact ⟨a, by rw [hg]; exact ha, by simpa [initSState] using ht⟩
   · intro k ms hx; simp [initSState] at hx
 

@@ -41,6 +41,7 @@ theorem simplifyPassSimU_proven {cfg : Config} (hr : cfg.rules = .cranelift)
 
 /-! ## The pipeline -/
 
+set_option maxHeartbeats 1000000 in
 /-- **The mid-end pipeline refines with handler edges**, for inputs passing the fresh-value
 guard (`optimizeReport_simX`). -/
 theorem optimizeReport_simU (cfg : Config)

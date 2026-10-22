@@ -120,20 +120,9 @@ def notCall : Inst → Bool
   | .call .. => false
   | _ => true
 
-/-- Not a `symbol_value`, `tls_value` or `func_addr` (the instructions reading the link-time
-symbols). -/
-def notSym : Inst → Bool
-  | .symbolValue .. | .tlsValue .. | .funcAddr .. => false
-  | _ => true
-
 /-- A result-free conditional trap (it keeps memory): the prefixes of terminator rewrites. -/
 def trapOk (t : Stmt) : Bool := t.results.isEmpty && match t.inst with
   | .trapz .. | .trapnz .. => true
-  | _ => false
-
-/-- A branch (the terminators the skeleton rules may rewrite). -/
-def isBranch : Terminator → Bool
-  | .jump .. | .brif .. | .brTable .. => true
   | _ => false
 
 /-- A statement that is not a single-result pure node (its results are graph leaves). -/
@@ -204,6 +193,7 @@ def simpOk (f g : Function) (fi : Info) (cert : SimpCert) : Bool :=
   sameHeader f g && g.blocks.length == f.blocks.length && cert.subst.chainFree &&
     wfCert g fi.cfg cert.types &&
     (L.toList.all fun (x, _) => cert.types.get? x == fi.types.get? x) &&
+    (cert.partials.toList.all fun (x, _) => !L.contains x) &&
     ((f.blocks.zip g.blocks).zipIdx.all fun ((b, b'), i) =>
       match cert.logs[i]? with
       | some (some lg) =>

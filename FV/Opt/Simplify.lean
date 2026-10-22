@@ -93,9 +93,10 @@ structure SState where
   stats : SimplifyStats := {}
   /-- The function being simplified (typing of made nodes). -/
   fn : Function
-  /-- Made nodes that are not well-typed nodes over `solid` values (never with the rule sets of
-  `FV/Opt/Optimize.lean`): they are not simplified, so no e-class is recorded for them. -/
-  partialVals : Std.HashSet ValueId := {}
+  /-- Partial nodes: nodes `make` records without simplifying them (never with the rule sets of
+  `FV/Opt/Optimize.lean`; see `optimizeAt`). They are not in the rules' graph (`enodes`), not
+  hash-consed and never candidates. -/
+  partials : Std.HashMap ValueId Inst := {}
 
 namespace SState
 
@@ -131,22 +132,31 @@ def known (st : SState) (y : ValueId) : Bool := st.defs.contains y || st.avail.c
 def typedNode (st : SState) (n : Inst) : Bool :=
   isPure n && pureTyped (fun x => st.types.get? x) st.fn n
 
-/-- A node over known values: only such nodes enter the graph (a sanity check that never fails
-with the rule sets of `FV/Opt/Optimize.lean`; the proof of the pass needs that the value of a
-node never depends on values the graph does not know yet). -/
+/-- A node over known values: only such nodes enter the graph (the proof of the pass needs
+that the value of a node never depends on values the graph does not know yet). -/
 def nodeOk (st : SState) (n : Inst) : Bool := (operands n).all st.known
 
-/-- A known value that is not `partial`. -/
-def solid (st : SState) (y : ValueId) : Bool := st.known y && !st.partialVals.contains y
+/-- `y` has a node or is available, or is a partial node. -/
+def inGraph (st : SState) (y : ValueId) : Bool := st.known y || st.partials.contains y
 
-/-- A made node that gets simplified: well-typed, over solid values. -/
-def solidNode (st : SState) (n : Inst) : Bool := (operands n).all st.solid && st.typedNode n
-
-/-- A fresh value with no node: what `make` returns for a node that is not `nodeOk`. -/
+/-- A fresh value with no node: what `make` returns for a node over values outside the graph
+(see `optimizeAt`). -/
 def dummy (st : SState) : ValueId × SState := (st.next, { st with next := st.next + 1 })
+
 
 /-- The type of the single result of a pure node. -/
 def nodeTy (n : Inst) : Option Ty := (n.resultTypes (fun _ => none) (fun _ => none)).bind List.head?
+
+/-- The candidates `optimizeAt` keeps for `v`: `v` itself, or known values of `v`'s type. -/
+def candOk (st : SState) (v : ValueId) (c : ValueId × Bool) : Bool :=
+  c.1 == v || (st.known c.1 && st.types.get? c.1 == st.types.get? v)
+
+/-- Record `n` as the partial node of the fresh `st.next`, with its type (see `optimizeAt`). -/
+def insertPartial (st : SState) (n : Inst) : ValueId × SState :=
+  (st.next, { st with next := st.next + 1, partials := st.partials.insert st.next n,
+                      types := match nodeTy n with
+                        | some t => st.types.insert st.next t
+                        | none => st.types })
 
 end SState
 
@@ -168,19 +178,24 @@ def chooseBest (st : SState) (v : ValueId) (cands : List (ValueId × Bool)) : Va
     (best, { st with classes := st.classes.insert best (members.filter (· != best)) })
 
 /-- Simplify the value `v` of a freshly inserted node, with `d` levels of rewrite depth left
-(`make` recurses with one level less). Returns the best value of `v`'s e-class. -/
+(`make` recurses with one level less). Returns the best value of `v`'s e-class.
+
+Guards (never taken with the rule sets of `FV/Opt/Optimize.lean`; the completeness proof needs
+them, `Opt.SimpRulesProv`): `make` hash-conses, inserts and simplifies only well-typed pure nodes
+over known values other than `v`. Any other node over graph values is recorded as a partial node
+(`SState.insertPartial`: it keeps its value, but is not simplified, not hash-consed and never a
+candidate), and a node over values outside the graph gets a fresh value with no node
+(`SState.dummy`). Candidates other than `v` must be known values of `v`'s type. -/
 def optimizeAt (rules : SimplifyFn) (allowed : Inst → Bool) : Nat → SState → ValueId → ValueId × SState
   | 0, st, v => (v, st)
   | d + 1, st, v =>
     let make := fun (st : SState) (n : Inst) =>
-      if !st.nodeOk n then st.dummy else
+      if !(operands n).all st.inGraph then st.dummy else
+      if !st.nodeOk n || (operands n).contains v || !st.typedNode n then st.insertPartial n else
       match st.memo.get? n with
       | some w => (w, st)
       | none =>
-        let solidN := st.solidNode n
         let (w, st) := st.insertNode allowed n
-        if !solidN then (w, { st with partialVals := st.partialVals.insert w, memo := st.memo.insert n w })
-        else
         let (b, st) := optimizeAt rules allowed d st w
         (b, { st with memo := st.memo.insert n b })
     match rules SState.enodes (fun st x => st.types.get? x) make st v with
@@ -188,6 +203,7 @@ def optimizeAt (rules : SimplifyFn) (allowed : Inst → Bool) : Nat → SState �
       (v, { st with stats := { st.stats with errors := st.stats.errors + 1 } })
     | .ok (cands, names, st) =>
       let fired := names.foldl (fun m n => m.insert n ((m.get? n).getD 0 + 1)) st.stats.fired
+      let cands := cands.filter (st.candOk v)
       chooseBest { st with stats := { st.stats with fired } } v cands
 
 /-- The state after emitting `x' = n'`, a copy of `x`, in block `bi`. -/
@@ -276,21 +292,67 @@ def skelCandidate : Isle.Opt.SkelInst → Bool
   | .term (.brif ..) | .term (.brTable ..) => true
   | _ => false
 
-/-- `make` for the skeleton rules: hash-cons, else insert and simplify (full depth). -/
+/-- The block calls of a terminator (`checkCore`'s `calls`). -/
+def termCalls : Terminator → List BlockCall
+  | .jump d => [d]
+  | .brif _ t e => [t, e]
+  | .brTable _ d t => d :: t
+  | _ => []
+
+/-- Not a `symbol_value`, `tls_value` or `func_addr` (the instructions reading the link-time
+symbols). -/
+def notSym : Inst → Bool
+  | .symbolValue .. | .tlsValue .. | .funcAddr .. => false
+  | _ => true
+
+/-- A branch (the terminators the skeleton rules may rewrite). -/
+def isBranch : Terminator → Bool
+  | .jump .. | .brif .. | .brTable .. => true
+  | _ => false
+
+/-- A replacement instruction the pass may emit: over known values, not pure, not reading a
+link-time symbol. -/
+def skelInstOk (st : SState) (j : Inst) : Bool :=
+  !isPure j && notSym j && (operands j).all st.known
+
+/-- A replacement terminator of `t`: a branch over known values whose block calls go where
+`t`'s go, with arguments of the same types, and whose `br_table` index is an `i32`. -/
+def skelTermOk (st : SState) (t t' : Terminator) : Bool :=
+  isBranch t' && (termOperands t').all st.known &&
+    (termCalls t').all (fun bc' => (termCalls t).any fun bc =>
+      bc'.block == bc.block && bc'.args.map st.types.get? == bc.args.map st.types.get?) &&
+    match t' with
+    | .brTable x _ _ => st.types.get? x == some .i32
+    | _ => true
+
+/-- A skeleton candidate the pass may apply to `i` (a guard never taken with the rule sets of
+`FV/Opt/Optimize.lean`; the completeness proof needs it, `Opt.SkelRulesProv`): the values it
+mentions are known, and its instructions and terminators are `skelInstOk`/`skelTermOk`. -/
+def skelCandOk (st : SState) : Isle.Opt.SkelInst → Isle.Opt.SkelSimp → Bool
+  | .inst _, .removeWithVal v => st.known v
+  | .inst _, .replace (.inst j) => skelInstOk st j
+  | .inst _, .replaceBranchCond c => st.known c
+  | .inst _, .replaceWithTwo (.inst a) (.inst b) => skelInstOk st a && skelInstOk st b
+  | .term t, .replace (.term t') => skelTermOk st t t'
+  | .term _, .replaceBranchCond c => st.known c
+  | .term t, .replaceWithTwo (.inst a) (.term t') => skelInstOk st a && skelTermOk st t t'
+  | _, _ => true
+
+/-- `make` for the skeleton rules: hash-cons, else insert and simplify (full depth); the
+guards of `optimizeAt`. -/
 def skelMake (rules : SimplifyFn) (allowed : Inst → Bool) (st : SState) (n : Inst) :
     ValueId × SState :=
-  if !st.nodeOk n then st.dummy else
+  if !(operands n).all st.inGraph then st.dummy else
+  if !st.nodeOk n || !st.typedNode n then st.insertPartial n else
   match st.memo.get? n with
   | some w => (w, st)
   | none =>
-    let solidN := st.solidNode n
     let (w, st) := st.insertNode allowed n
-    if !solidN then (w, { st with partialVals := st.partialVals.insert w, memo := st.memo.insert n w })
-    else
     let (b, st) := optimizeAt rules allowed rewriteLimit { st with memo := st.memo.insert n w } w
     (b, { st with memo := st.memo.insert n b })
 
-/-- Run the skeleton rules on `i`; the chosen simplification, if any. -/
+/-- Run the skeleton rules on `i`; the chosen simplification, if any (among the `skelCandOk`
+candidates). -/
 def runSkel (skel : SkeletonFn) (rules : SimplifyFn) (allowed : Inst → Bool) (st : SState)
     (i : Isle.Opt.SkelInst) : Option Isle.Opt.SkelSimp × SState :=
   if !skelCandidate i then (none, st) else
@@ -298,7 +360,7 @@ def runSkel (skel : SkeletonFn) (rules : SimplifyFn) (allowed : Inst → Bool) (
       (fun st b => st.trapBlocks.get? b) { st with made := {} } i with
   | .error _ => (none, { st with stats := { st.stats with errors := st.stats.errors + 1 } })
   | .ok (cands, names, st1) =>
-    let c := chooseSkel i cands
+    let c := chooseSkel i (cands.filter (skelCandOk st1 i))
     let fired := names.foldl (fun m n => m.insert n ((m.get? n).getD 0 + 1)) st1.stats.fired
     let st1 := { st1 with stats := { st1.stats with fired } }
     match c with
@@ -470,6 +532,8 @@ structure SimpCert where
   types : Std.HashMap ValueId Ty
   subst : Subst
   logs : Array (Option BlockLog)
+  /-- The partial nodes (`SState.partials`). -/
+  partials : Std.HashMap ValueId Inst := {}
   deriving Inhabited
 
 /-! ## The pass -/
@@ -552,7 +616,7 @@ def stepStmt (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst →
   | [v], true =>
     -- sanity (never fails on `check`ed input): a new value, a well-typed node over known
     -- values; otherwise the statement is kept outside the graph (and `simpOk` rejects)
-    if st.known v || st.next ≤ v || !(operands inst).all st.avail.contains || !st.typedNode inst ||
+    if st.inGraph v || st.next ≤ v || !(operands inst).all st.avail.contains || !st.typedNode inst ||
         st.types.get? v != SState.nodeTy inst then
       (st, subst, .keep { s with inst })
     else
@@ -591,6 +655,6 @@ def simplify (rules : SimplifyFn) (skel : SkeletonFn) (allowed skelOk : Inst →
     (stepBlock rules skel allowed skelOk info.cfg blocks)
     (initSState f info rematConst, {}, blocks, Array.replicate blocks.size none)
   (subst.apply { f with blocks := out.toList }, st.stats,
-   { defs := st.defs, types := st.types, subst, logs })
+   { defs := st.defs, types := st.types, subst, logs, partials := st.partials })
 
 end Opt

@@ -112,7 +112,7 @@ theorem binv_init {rematConst : Bool} (hc : Checked f info) :
            availSrc := fun _ _ h _ => .inl h, defsSrc := ?_, defsLeaf := ?_, doneAv := ?_,
            substOk := ?_, outs := ?_, done := ?_, size := by simp, altsNB := ?_, keysRes := ?_,
            availBig := ?_, ciDone := ?_, defNB := ?_, outSize := by simp, outEq := ?_ }
-  · refine { m := ?_, noPartial := fun _ => by simp [initSState], memo := ?_, alts := ?_ }
+  · refine { m := ?_, partialsBig := fun _ => by simp [initSState], memo := ?_, alts := ?_ }
     · refine { fn := rfl, maxLt := by simp [initSState], knownLt := ?_, typesFresh := ?_,
                defsTy := ?_, altsKnown := ?_, availDef := ?_, defAvail := ?_, newBig := ?_,
                badLe := ?_, uniq := ?_ }

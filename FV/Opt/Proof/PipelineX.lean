@@ -87,6 +87,7 @@ theorem simplifyPassSimX_proven {cfg : Config} (hr : cfg.rules = .cranelift)
 
 /-! ## The pipeline -/
 
+set_option maxHeartbeats 1000000 in
 /-- **The mid-end pipeline refines**, `call_indirect` and `try_call` included, for inputs
 passing the fresh-value guard. -/
 theorem optimizeReport_simX (cfg : Config)

@@ -156,7 +156,7 @@ theorem binv_start (hc : Checked f info) (h : RunBInv f info allowed skelOk st S
            size := h.size, altsNB := ?_, keysRes := h.keysRes, availBig := h.availBig,
            ciDone := h.ciDone, defNB := ?_, cur := ?_, notbi := hn, preds := hpreds,
            ciCur := ?_ }
-  · refine { m := ?_, noPartial := h.rinv.noPartial, memo := ?_, alts := h.rinv.alts }
+  · refine { m := ?_, partialsBig := h.rinv.partialsBig, memo := ?_, alts := h.rinv.alts }
     · refine { fn := hm.fn, maxLt := hm.maxLt, knownLt := hm.knownLt, typesFresh := hm.typesFresh,
                defsTy := hm.defsTy, altsKnown := hm.altsKnown, availDef := ?_, defAvail := ?_,
                newBig := ?_, badLe := fun x hx => hm.badLe x (hB21 x hx), uniq := ?_ }
