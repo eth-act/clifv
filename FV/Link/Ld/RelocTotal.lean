@@ -919,7 +919,7 @@ theorem relIn_relocOkB (hf : LFacts o st g) (hd : dOkB (layDecide st g) (layPre 
         (bndOf o st g).top + 8 * (bndOf o st g).got := by
     refine ⟨by omega, ?_⟩
     cases hgk : (layPre o st g).gotSlot[gotKey st.files fi r.sym]? with
-    | none => simp
+    | none => simp; omega
     | some k' =>
       have := hgs _ _ hgk
       have := partAddr_le hf "got"
@@ -932,12 +932,9 @@ theorem relIn_relocOkB (hf : LFacts o st g) (hd : dOkB (layDecide st g) (layPre 
     have h2 := alignUp_le 16 (layPre o st g).pst.tls.2.2.2.2
     have h3 := (hf.ti.start rfl).2.2
     constructor <;> push_cast <;> omega
-  have := relocOkB_of hc hval (Int.ofNat_le.2 hP.1 |>.trans' (by omega) |> fun _ => hP) hG htpb
+  have := relocOkB_of hc hval hP hG htpb
     (fun t x hkt => ?_) (fun h4 => by have := hp4 h4; omega)
-  · convert this using 2
-    simp only [adjS]
-    push_cast
-    rfl
+  · exact this
   · subst hkt
     obtain ⟨h1, h2, hS, hx, hb', htop, hal⟩ := value_img hf hk hv
     refine ⟨((layPre o st g).secAddr[t.1]![t.2]! : Int), by rw [hS]; push_cast; rfl, by exact_mod_cast hb',
