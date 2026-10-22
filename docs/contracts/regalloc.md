@@ -130,13 +130,18 @@ save `move (reg r) (save r)` at the entry and a restore before every `Rets`.
 ```
 fp + 16 + off     incoming stack arguments
 fp + 8, fp        saved lr, fp                                  <- x29
+sp + size         explicit CLIF stack slots (Cranelift layout; `slotBase`)
 sp + fmoveTmp     16-byte temporary for float reg→reg moves (if any)
-sp + saveBase     callee-save slots: float 16 bytes each, then int 8 bytes each
 sp + floatBase    float spill slots, 16 bytes each (if any float value is spilled)
-sp + intBase      int spill slots, 8 bytes each
-sp + outgoing     explicit CLIF stack slots (Cranelift layout)
-sp                outgoing stack arguments
+sp + spillBase    int spill slots, 8 bytes each
+sp + intBase      callee-save slots: float 16 bytes each, then int 8 bytes each
+sp                outgoing stack arguments (intBase = alignTo outgoing 16)
 ```
+
+The save slots come first (#479), so they end by `intBase + 208` whatever the number of spill
+slots and stay in `str`'s immediate range (`saveFrameB_always`): each save is one `str` with an
+unwind row. `unwindRows` fails rather than emit tables without a row when a callee-saved
+register is stored through x16 right after the saves (`farSave`).
 
 Moves lower to `mov` (int reg→reg), `str`/`ldr` to/from frame slots, float reg→reg through
 `fmoveTmp` (store+load). `Args` disappears; `Rets` becomes the epilogue. A leaf function with

@@ -72,7 +72,7 @@ differs: stock pushes a callee-saved register there, and Lean allocates the fram
 Stock pushes callee-saved registers in pairs with pre-indexed stores, then
 allocates the rest of the frame (`gen_clobber_save`, `isa/aarch64/abi.rs:774`). Lean allocates one frame and stores the registers into
 save slots inside it. The saves and restores are allocator moves (`RAFrame.compute`,
-`FV/Backend/Regalloc.lean:230-239`), and `ctlCheck` and the register-level proof
+`FV/Backend/Regalloc.lean`), and `ctlCheck` and the register-level proof
 rely on that shape.
 
 134 of these 139 are in the atomics tests, whose LL/SC loops use the fixed
@@ -109,7 +109,7 @@ ret                                ret
 
 Matching stock also means matching its frame layout. Upward from `sp`, stock has
 the outgoing-argument area, CLIF stack slots, spill slots, then the pushed
-registers (`machinst/abi.rs:64-92`). Lean has spill slots, save slots, then CLIF
+registers (`machinst/abi.rs:64-92`). Lean has save slots (since #479), spill slots, then CLIF
 stack slots.
 
 ### 3. Same length, different registers (207)
