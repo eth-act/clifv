@@ -57,7 +57,15 @@ and they run under `qemu-aarch64-static`.
 2. `qemu-aarch64-static` on `PATH`. With `--panic-abort`, `cargo test` of a `should_panic`
    test needs the binfmt_misc registration too: the test harness then runs the test in a child
    process (`/proc/sys/fs/binfmt_misc/qemu-aarch64`, from the `qemu-user-static` package).
-3. LLVM 18 binutils (`/usr/lib/llvm-18/bin/llvm-objcopy`, `llvm-ar`).
+   Ubuntu 26.04 has no `qemu-user-static` package: `qemu-user`'s binaries are static but named
+   `qemu-aarch64`, so install it (`sudo apt install qemu-user qemu-user-binfmt`) and link
+   `qemu-aarch64-static` to `/usr/bin/qemu-aarch64` in a `PATH` directory. Without root:
+   ```
+   apt-get download qemu-user && dpkg-deb -x qemu-user_*.deb ~/qemu-root
+   ln -s ~/qemu-root/usr/bin/qemu-aarch64 ~/.local/bin/qemu-aarch64-static
+   ```
+3. LLVM 18 binutils (`/usr/lib/llvm-18/bin/llvm-objcopy`, `llvm-ar`; the gates also use its
+   `llvm-mc`, `LLVM_MC` overrides) and `clang` (the gates' aarch64 test drivers).
 4. The repository's tools, built once from the repository root:
    ```
    FV_MEMCAP=16G scripts/memcap.sh lake build lean-backend clif-decode
