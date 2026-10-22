@@ -116,7 +116,8 @@ run_gate() { # LOGDIR CLIF; cwd: the worktree root
 }
 
 post_result() { # SHA RESULT LOGDIR LASTGREEN
-  local s=$1 res=$2 L=$3 lastgreen=$4
+  local s res=$2 L=$3 lastgreen=$4
+  s=$(git rev-parse --short=8 "$1")
   {
     echo "**Main gate $res** on \`$s\` ($(git log -1 --format=%s "$s" | cut -c1-100))"
     echo; echo '```'; cat "$L/summary.log"; echo '```'
