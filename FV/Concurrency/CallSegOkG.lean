@@ -254,7 +254,7 @@ namespace Concurrency.CallSegOkG
 open Arm ArmThread Prog ClifThread Backend Backend.Proof Backend.Proof.Driver VCodeThread
   PrepThread AllocThread IselCheck ThreadRefine IselCall IselCallRet ArmAllocThread E2E
   ClifCStepTerm IselThread CallRetsEnd CallRetsN CallSegAbi LinkedMachine LinkedMachine.Link
-  CallComposeT
+  CallComposeT CallArgsL2 CallArgsEntry CallArgsAt CallResumeChecks
 
 /-! ## Activations -/
 
@@ -326,6 +326,17 @@ structure StatOk (L : Link) (env : Clif.Env) (p : Clif.Program) (g : Act) : Prop
   minit : ∀ (m₀ : Loc → CV) (ρ₀ : Nat → CV) (w₀ : ArmState),
     Backend.Proof.Match g.cc g.ins ckeep (fun r => m₀ (.reg r)) (MConf.init g.F.rf m₀ w₀)
       (VConf.init ρ₀ w₀)
+  res : callResLenB g.f = true
+  cu : callUseRegsBl g.f g.bl = true
+  ar : CallArity.callArityBl g.f g.bl = true
+  low : lowerCheck g.f g.vc = true
+  ind : indSigs g.f = []
+  ver : verifiable g.f = true
+  nt : g.f.blocks.all (fun B => !B.term.isTry) = true
+  out0 : g.vc.outgoing = 0
+  uv : CallUsesVirt g.F.vc
+  dv : CallDefsVirt g.F.vc
+  uniq : ∀ e ∈ g.f.externs, ∀ e' ∈ g.f.externs, e.2.name = e'.2.name → e.2 = e'.2
 
 /-- The pause of a chain segment at a call: the three relations and `Q` at the paused `call`. -/
 def CallPz (L : Link) (g : Act) (r₀ : Reg → CV) (x0 : ArmState × Mon) (P : List Lab)
@@ -449,5 +460,55 @@ theorem ret_seg {Bnd : Nat → Prop} (hS : StatOk L env p g) (hb : ∀ a, PrivA 
         .inr (.inr ⟨vals, cm, regs, v, hdone, hreg, hRC, hv, hv1, rfl⟩)⟩
       show RealizedT env p Bnd ls n _ _ _ _
       rw [hext]; exact hRT
+
+/-! ## The call pause: the CLIF call -/
+
+theorem mem_of_lookup {α β : Type} [BEq α] [LawfulBEq α] :
+    ∀ {l : List (α × β)} {a : α} {b : β}, l.lookup a = some b → (a, b) ∈ l
+  | [], _, _, h => by simp at h
+  | (x, y) :: l, a, b, h => by
+    simp only [List.lookup] at h
+    split at h
+    · rename_i hx
+      cases h
+      have : a = x := by simpa using hx
+      subst this; exact List.mem_cons_self ..
+    · exact List.mem_cons_of_mem _ (mem_of_lookup h)
+
+/-- **A CLIF call that steps** (below any callers): the extern, its arguments of the declared
+types, and a program function of matching signature types (no environment extern). -/
+theorem call_next {ext : List (Clif.Frame × List Clif.ValueId)} {s : Clif.State}
+    {results : List Clif.ValueId} {fn : Clif.FnRef} {args : List Clif.ValueId}
+    {rest : List Clif.Stmt} (hb : s.frame.body = { results, inst := .call fn args } :: rest)
+    (henv : ∀ e ∈ s.frame.func.externs, env.extern e.2.name = none) {s1 : Clif.State}
+    (hs : Clif.step env p (ClifLift.pushC ext s) = .next s1) :
+    ∃ e vals callee, s.frame.func.extern? fn = some e ∧ s.frame.getMany args = .ok vals ∧
+      vals.map (·.ty) = Clif.AbiParam.tys e.sig.params ∧ p.func? e.name = some callee ∧
+      Clif.AbiParam.tys callee.sig.params = Clif.AbiParam.tys e.sig.params ∧
+      Clif.AbiParam.tys callee.sig.returns = Clif.AbiParam.tys e.sig.returns := by
+  rw [Clif.step_call env p _ rest results fn args (by simpa [ClifLift.pushC] using hb)] at hs
+  simp only [Clif.stepCall, ClifLift.pushC] at hs
+  cases he : s.frame.func.extern? fn with
+  | none => simp [he, Clif.StepResult.ofRes] at hs
+  | some e =>
+    cases hv : s.frame.getMany args with
+    | trap c => simp [he, hv, Clif.StepResult.ofRes] at hs
+    | stuck m => simp [he, hv, Clif.StepResult.ofRes] at hs
+    | ok vals =>
+      by_cases ht : vals.map (·.ty) = Clif.AbiParam.tys e.sig.params
+      · cases hc : p.func? e.name with
+        | none =>
+          have := henv _ (mem_of_lookup he)
+          simp [he, hv, ht, hc, this, Clif.StepResult.ofRes, Clif.checkTys, Clif.Res.check] at hs
+        | some callee =>
+          by_cases hsig : Clif.AbiParam.tys callee.sig.params = Clif.AbiParam.tys e.sig.params ∧
+              Clif.AbiParam.tys callee.sig.returns = Clif.AbiParam.tys e.sig.returns
+          · exact ⟨e, vals, callee, rfl, rfl, ht, hc, hsig.1, hsig.2⟩
+          · exfalso
+            simp [he, hv, ht, hc, Clif.StepResult.ofRes, Clif.checkTys, Clif.Res.check] at hs
+            split at hs
+            · exact absurd ‹_› hsig
+            · cases hs
+      · simp [he, hv, ht, Clif.StepResult.ofRes, Clif.checkTys, Clif.Res.check] at hs
 
 end Concurrency.CallSegOkG
