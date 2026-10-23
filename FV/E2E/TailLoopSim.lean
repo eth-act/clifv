@@ -254,23 +254,45 @@ def SpsOk (s : State) : Prop := ∀ pl, s.mem.place = some pl → Chain pl.frame
 
 theorem enterSlots_sps (f : Function) (mem : Mem) :
     (mem.place = none → (enterSlots f mem).2.place = none) ∧
-    ∀ pl, mem.place = some pl →
-      (enterSlots f mem).2.place = some { pl with sps := spOf pl.frame f.name pl.sps :: pl.sps } := by
+    ∀ pl, mem.place = some pl → ∃ ini,
+      (enterSlots f mem).2.place = some { pl with sps := spOf pl.frame f.name pl.sps :: pl.sps,
+        init := ini } := by
   refine ⟨(enterSlots_place f mem).1, fun pl h => ?_⟩
+  obtain ⟨sp, ini, hsp, -⟩ := (enterSlots_place f mem).2 pl h
+  refine ⟨ini, ?_⟩
+  rw [hsp]
   cases hf : pl.frame f.name with
   | none =>
-    simp only [enterSlots, h, hf, spOf]
-    exact (bumpSlots_facts f.slots _).1
+    have e : (enterSlots f mem).2.place = some { pl with sps := pl.sps.headD 0 :: pl.sps } := by
+      simp only [enterSlots, h, hf]
+      exact (bumpSlots_facts f.slots _).1
+    rw [hsp] at e
+    simp only [Option.some.injEq, Place.mk.injEq] at e
+    simp only [spOf, hf, e.1]
   | some p =>
     obtain ⟨d, off⟩ := p
-    simp only [enterSlots, h, hf, spOf]
-    exact (placeSlots_facts _ _ f.slots _).1
+    have e : ∀ m0 : Mem,
+        (placeSlots f.slots (pl.sps.headD 0 - BitVec.ofNat 64 d) off m0).2.place = m0.place :=
+      fun m0 => (placeSlots_facts _ _ f.slots ([], m0)).1
+    have e2 : ∃ ini', (enterSlots f mem).2.place =
+        some { pl with sps := (pl.sps.headD 0 - BitVec.ofNat 64 d) :: pl.sps, init := ini' } := by
+      simp only [enterSlots, h, hf, initSlots_place, e]
+      cases pl.init with
+      | none => exact ⟨_, rfl⟩
+      | some i =>
+        by_cases hs : f.slots.isEmpty
+        · exact ⟨_, by simp only [initPlace, hs, if_true]⟩
+        · exact ⟨_, by simp only [initPlace, hs, Option.map_some, Place.advance]; rfl⟩
+    obtain ⟨ini', e2⟩ := e2
+    rw [hsp] at e2
+    simp only [Option.some.injEq, Place.mk.injEq] at e2
+    simp only [spOf, hf, e2.1]
 
 theorem enterFunc_sps {f : Function} {vals : List Val} {mem mem1 : Mem} {fr1 : Frame}
     (h : enterFunc f vals mem = .ok (fr1, mem1)) :
     (mem.place = none → mem1.place = none) ∧
-    ∀ pl, mem.place = some pl →
-      mem1.place = some { pl with sps := spOf pl.frame f.name pl.sps :: pl.sps } := by
+    ∀ pl, mem.place = some pl → ∃ ini,
+      mem1.place = some { pl with sps := spOf pl.frame f.name pl.sps :: pl.sps, init := ini } := by
   obtain ⟨_, _, _, _, _, _, he, _⟩ := Opt.enterFunc_ok h
   have := enterSlots_sps f mem
   rw [he] at this
@@ -304,14 +326,14 @@ theorem selfTail_mem {f : Function} (hs : f.slots = []) {mem : Mem} {ns : List S
     have hl : mem.leave = mem := by simp [Mem.leave, hp]
     rw [hl]; simp [enterSlots, hp, bumpSlots, hs]
   | some pl =>
-    obtain ⟨sps, frm⟩ := pl
+    obtain ⟨sps, frm, ini⟩ := pl
     have hch := hc _ hp
     cases sps with
     | nil => exact absurd hch (by simp [Chain])
     | cons x xs =>
       simp only [Chain] at hch
       obtain ⟨hx, -⟩ := hch
-      have hl : mem.leave = { mem with place := some ⟨xs, frm⟩ } := by simp [Mem.leave, hp]
+      have hl : mem.leave = { mem with place := some ⟨xs, frm, ini⟩ } := by simp [Mem.leave, hp]
       rw [hl]
       simp only [spOf] at hx
       cases hfr : frm f.name with
@@ -323,7 +345,8 @@ theorem selfTail_mem {f : Function} (hs : f.slots = []) {mem : Mem} {ns : List S
       | some p =>
         obtain ⟨d, off⟩ := p
         simp only [hfr] at hx
-        simp only [enterSlots, hfr, placeSlots, hs, List.foldl_nil, Prod.mk.injEq, true_and]
+        simp only [enterSlots, hfr, placeSlots, hs, List.foldl_nil, initSlots_nil, Prod.mk.injEq,
+          true_and]
         rw [← hx]
         cases mem; simp_all
 
@@ -492,7 +515,9 @@ theorem sps_enter {c : Function} {vals : List Val} {mem mem1 : Mem} {fr1 : Frame
   intro pl1 h1
   cases hm : mem.place with
   | none => rw [(enterFunc_sps he).1 hm] at h1; cases h1
-  | some pl => rw [(enterFunc_sps he).2 pl hm] at h1; cases h1; exact ⟨rfl, hc pl hm⟩
+  | some pl =>
+    obtain ⟨ini, e⟩ := (enterFunc_sps he).2 pl hm
+    rw [e] at h1; cases h1; exact ⟨rfl, hc pl hm⟩
 
 theorem sps_leave {mem : Mem} {bs : List Nat} {n : String} {ns : List String}
     (hc : ∀ pl, mem.place = some pl → Chain pl.frame (n :: ns) pl.sps) :

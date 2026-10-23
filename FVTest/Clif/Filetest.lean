@@ -1,6 +1,7 @@
 import FV.Clif
 import FV.Clif.Unwind
 import FV.Opt.Legalize128Pass
+import FV.Opt.ZeroSlots
 import FVTest.Clif.OracleJson
 
 /-!
@@ -174,7 +175,8 @@ def sameOutcome : Outcome → Outcome → Bool
   | _, _ => false
 
 def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord))
-    (printDir : Option String) (rustEnv : Bool) (legal : Bool) (unwind : Bool := false) :
+    (printDir : Option String) (rustEnv : Bool) (legal : Bool) (unwind : Bool := false)
+    (zero : Bool := false) :
     IO Counts := do
   let src ← IO.FS.readFile path
   let pf0 := parseFile src
@@ -186,7 +188,11 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
   let supported := pf.funcs.filterMap fun f => f.func.toOption
   let data := match pf.data with | .ok ds => ds | .error _ => []
   if let .error e := pf.data then notes := notes.push s!"  data directives: {e}"
-  let prog : Program := { header := pf.header, data, funcs := supported }
+  let prog0 : Program := { header := pf.header, data, funcs := supported }
+  -- `--zero-slots` (#537, docs/plans/uninit.md design B): every function with its stack slots
+  -- zero-filled at entry (`Opt.zeroSlots`), the semantics Cranelift's interpreter has.
+  let prog : Program :=
+    if zero then { prog0 with funcs := prog0.funcs.map Opt.zeroSlots } else prog0
   -- The legalised program (`--legalize128`): every legalisable function rewritten to
   -- plain i8..i64 CLIF (`Opt.Legalize128`), the others unchanged.
   let legalProg : Program :=
@@ -280,7 +286,7 @@ def runFile (verbose : Bool) (path : String) (oracle : Option (List OracleRecord
   return c
 
 def usage : String :=
-  "usage: clif-filetest [-v] [--oracle-dir DIR | --oracle FILE.json] [--print-dir DIR] [--rust-env] [--legalize128] [--unwind] FILE.clif..."
+  "usage: clif-filetest [-v] [--oracle-dir DIR | --oracle FILE.json] [--print-dir DIR] [--rust-env] [--legalize128] [--unwind] [--zero-slots] FILE.clif..."
 
 end ClifFiletest
 
@@ -293,6 +299,7 @@ def main (args : List String) : IO UInt32 := do
   let mut rustEnv := false
   let mut legal := false
   let mut unwind := false
+  let mut zero := false
   let mut files := #[]
   let mut rest := args
   while !rest.isEmpty do
@@ -304,6 +311,7 @@ def main (args : List String) : IO UInt32 := do
     | "--rust-env" :: r => rustEnv := true; rest := r
     | "--legalize128" :: r => legal := true; rest := r
     | "--unwind" :: r => unwind := true; rest := r
+    | "--zero-slots" :: r => zero := true; rest := r
     | f :: r => files := files.push f; rest := r
     | [] => pure ()
   if files.isEmpty then
@@ -333,7 +341,7 @@ def main (args : List String) : IO UInt32 := do
           IO.println s!"{f}: oracle file {p} missing"
           badOracle := badOracle + 1
           pure none
-    let c ← runFile verbose f oracle printDir rustEnv legal unwind
+    let c ← runFile verbose f oracle printDir rustEnv legal unwind zero
     if c.unsupported > 0 then filesWithUnsupported := filesWithUnsupported + 1
     total := total.add c
   let legalTotal := if legal then

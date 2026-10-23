@@ -171,7 +171,7 @@ def frO : String → Option (Nat × (SlotId → Nat)) := fun _ => some (0, fun _
 def placeB : Bool :=
   match initState P "w" [⟨.i128, 5⟩] Mem.empty with
   | .ok s => s.mem.allocs.isEmpty &&
-      isReturned (runLoopX xeU P 20 { s with mem := { s.mem with place := some ⟨[0x8000], frO⟩ } }.toX)
+      isReturned (runLoopX xeU P 20 { s with mem := { s.mem with place := some ⟨[0x8000], frO, none⟩ } }.toX)
   | _ => false
 
 theorem placeB_true : placeB = true := by decide +kernel
@@ -191,7 +191,7 @@ theorem placed_w : ∃ cs m2, ClifEntry wF [⟨.i128, 5⟩] cs ∧ cs.mem.place 
     simp only [Bool.and_eq_true] at h
     obtain ⟨hal, ho⟩ := h
     have hs0 := clifEntry_initState hp hin
-    let cs : State := { s with mem := { s.mem with place := some ⟨[0x8000], frO⟩ } }
+    let cs : State := { s with mem := { s.mem with place := some ⟨[0x8000], frO, none⟩ } }
     have hcs : ClifEntry wF [⟨.i128, 5⟩] cs :=
       ⟨hs0.callers, hs0.func, hs0.sig, hs0.entry, hs0.slotIds⟩
     obtain ⟨m2, hr⟩ : ∃ m2, runLoopX xeU P 20 cs.toX = .returned [] m2 := by
