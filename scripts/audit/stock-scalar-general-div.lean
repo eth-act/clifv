@@ -46,3 +46,5 @@ set_option pp.privateNames true
 #print axioms Backend.Stock.Proof.SinkRules.DriverWitness.two_division_source_zero -- witness: native_decide
 #print axioms Backend.Stock.Proof.SinkRules.DriverWitness.two_division_source_overflow -- witness: native_decide
 #print axioms Backend.Stock.Proof.SinkRules.DriverWitness.two_division_records -- witness: native_decide
+
+#print axioms Backend.Stock.Proof.SinkRules.BranchWitness.try_call_format_witness
