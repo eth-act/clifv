@@ -81,7 +81,7 @@ def tryCallsOf (f : Clif.Function) : List CallInfo :=
 
 /-- The exception table operand of the first block's terminator, integer and typed. -/
 def opnds (f : Clif.Function) : Bool × Bool :=
-  match (f.blocks[0]?.map (·.term)) with
+  match (f.blocks[0]?.map (·.term) : Option Clif.Terminator) with
   | some (.tryCall _ _ et) => ((exnTableOpnd f et).toBool, (exnTableOpndC f et).toBool)
   | _ => (false, false)
 

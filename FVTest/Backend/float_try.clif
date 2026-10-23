@@ -17,7 +17,7 @@ function %try_scale(f64, i64) -> f64 {
     fn0 = %scale(f64, i64) -> f64
 
 block0(v0: f64, v1: i64):
-    try_call fn0(v0, v1), sig0, block1(ret0), [ default: block2(exn0) ]
+    try_call fn0(v0, v1), sig0, block1(ret0), [ tag1: block2(exn0) ]
 
 block1(v2: f64):
     return v2
@@ -30,7 +30,8 @@ block2(v3: i64):
 
 function %pair(f32, i64) -> f32, i64 {
 block0(v0: f32, v1: i64):
-    v2 = iadd_imm v1, 1
+    v3 = iconst.i64 1
+    v2 = iadd v1, v3
     return v0, v2
 }
 
@@ -39,7 +40,7 @@ function %try_pair(f32, i64) -> i64, f32 {
     fn0 = %pair(f32, i64) -> f32, i64
 
 block0(v0: f32, v1: i64):
-    try_call fn0(v0, v1), sig0, block1(ret1, ret0), [ tag1: block2(exn0), default: block2(exn1) ]
+    try_call fn0(v0, v1), sig0, block1(ret1, ret0), [ tag1: block2(exn0) ]
 
 block1(v2: i64, v3: f32):
     return v2, v3
@@ -60,7 +61,7 @@ function %try_stk(f64, f64) -> f64 {
     fn0 = %stk(f64, f64, f64, f64, f64, f64, f64, f64, f64) -> f64
 
 block0(v0: f64, v1: f64):
-    try_call fn0(v0, v0, v0, v0, v0, v0, v0, v0, v1), sig0, block1(ret0), [ default: block2(exn0) ]
+    try_call fn0(v0, v0, v0, v0, v0, v0, v0, v0, v1), sig0, block1(ret0), [ tag1: block2(exn0) ]
 
 block1(v2: f64):
     return v2
