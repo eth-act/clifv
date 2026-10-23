@@ -800,23 +800,42 @@ they are; the per-thread layers are new files.
         thread stops, or — with `NoCall` — entirely, ending at a call statement related by all
         three relations to the run's last configuration; `prep_run`/`alloc_run` keep the
         relations, `PrepThread.prepFacts_of_check` gives `prepare`'s); witness
-        `CallResumeWitness.isel_alloc_fC`. **Still open**, in order: (i) layer 4b in it
-        (`arm_alloc_refines_lsCL` from `Q ∧ AInv` at the segment's start, then
-        `isel_alloc_refinesC` on its allocated run and `Refines.take` as in
-        `ThreadCompose.arm_isel_refinesE'`; the `Done` end excluded as in
-        `ThreadProgress.arm_isel_refines_fullR`); the entry's relations (`MConf.init`,
-        `VConf.init` as `AllocThread.alloc_thinP`/`IselCall.isel_refines_entryC` build them);
-        (ii) the end at a `rets` item: the epilogue and `ret` (`CallResume.rets_privP`,
-        `RegLevelFrame.ret_machine`) and the CLIF return pop (`ClifCStepTerm.cstep_ret_pop`), giving
-        the callee contract `Ret` of (2c) (callee-saved registers from the checker's `.ret` `Match`,
-        the result registers, `MemAgree`); (iii) (2b) the callee's entry from the relations at the
+        `CallResumeWitness.isel_alloc_fC`. **Done since** (#529 and its follow-up): (i) layer 4b
+        composed (`CallLayers.arm_isel_refinesG2`/`G`/`C`) and the entry's relations
+        (`CallLayers.prep_init`, `alloc_init`, `isel_alloc_refines_entryC`,
+        **`arm_isel_refines_entryC`**; witness `CallEntryWitness.arm_entry_fC` on the linked
+        machine `MC2`); (ii) the `rets` end at the layers: layer 2 pauses at a `return` too
+        (`IselCallRet.isel_refinesCR`, `isel_refines_entryCR`; `IselRetT.term_stepRT` is
+        `term_step` on `DriverHypT`), `CallRets.ret_pause` (a done `return`'s VCode tail is
+        event-free and returns values holding the CLIF ones), `CallRets.isel_alloc_refinesCR(G)`,
+        `CallRetsAlloc.rets_alloc` (from `Q` and the checker's relation at a `rets` item: the
+        epilogue and `ret` reach the return address, `sp` as at entry, memory kept, the `rets`'
+        uses in their fixed registers, every callee-saved register equal up to `ckeep` to the
+        checker's entry value) and `ret_link` (those uses are the VCode's returned values),
+        composed in **`CallRetsEnd.arm_isel_refinesCR`**/**`arm_isel_refines_entryCR`** with the
+        return contract `RetEnd` at a `rets` pause (witness `CallRetsWitness.arm_entryCR_fC`).
+        **Still open**, in order: (ii') the CLIF return pop in the linked thread
+        (`ClifCStepTerm.cstep_ret_pop` under `ClifLift.pushC`), turning `RetEnd` into (2c)'s
+        premises (`resume_layers`: `hpres` from callee-saved and the frame's memory, `hkeep`;
+        `isel_resumeC`: `PrefixHold` and the memory relation at the caller's slots); the epilogue's
+        Arm steps realized as a private segment (`CallLoadFull.realized_privSeg` with
+        `CallResume.rets_privP`); the two `rets` ends `arm_isel_refinesCR` leaves unresolved
+        (layer 4b at `Done`/`AtCall` while layer 2 is at a done `return`) excluded;
+        (iii) (2b) the callee's entry from the relations at the
         pause (`enterFunc`'s CLIF state under `ClifLift.pushC`, the arguments in x0… from the call's
         fixed uses, the callee's `RL` from the caller's state at the `bl`, its memory relation);
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
-        other activations' slots, so the first scope is functions without stack slots) and a
-        linked machine dispatching on the program of the return address; then `SegOk`,
-        `link_compose_ext`, and `realizes_call_full`/the rmw-callee witness as instances.
+        other activations' slots) and a linked machine dispatching on the program of the return
+        address; then `SegOk`, `link_compose_ext`, and `realizes_call_full`/the rmw-callee witness
+        as instances. **Scope measurement (2026-10-23)** for the planned first scope "functions
+        without CLIF stack slots" (`f.slots = []`), on the retained `bin-check` CLIF dumps:
+        functions using atomics (`atomic_load/store/rmw/cas`, `fence`) without slots — fv-demo
+        0/12, survey (4 of 18 executables' dumps on disk) 0/6, deps 1/54; their direct callers
+        without slots — fv-demo 7/10, survey 4/4, deps 30/63. Every excluded function has
+        `explicit_slot`s (mostly 8/16/1 bytes). So that scope covers essentially no function
+        that itself uses atomics. The thread-wide private set therefore has to cover activations
+        with stack slots: each activation's slots lie in its own Arm frame, below the caller's.
   * **the prologue, from the ABI entry (done, `ArmAllocEntry.lean`)**: `stp_fplr_evs` (the
     prologue's `stp x29, x30, [sp, #-16]!`: one plain write at `sp - 16`, no exclusive);
     `q_init_lines` (`RegLevelFrame.q_init` with the prologue's lines, `LinesAt`, and its step
