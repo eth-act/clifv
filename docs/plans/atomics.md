@@ -853,7 +853,21 @@ they are; the per-thread layers are new files.
         with the three relations, or at a done `return` with `RetEnd`;
         (iii) (2b) the callee's entry from the relations at the
         pause (`enterFunc`'s CLIF state under `ClifLift.pushC`, the arguments in x0… from the call's
-        fixed uses, the callee's `RL` from the caller's state at the `bl`, its memory relation);
+        fixed uses, the callee's `RL` from the caller's state at the `bl`, its memory relation).
+        **Done (`CallEntryPremises.lean`, witness `CallEntryPremisesWitness.entry_premises_L`)**:
+        `prologue_fields`, `regVal_calleeSaved_congr`, **`entry_premises`** — for a callee whose ABI
+        entry state agrees with the caller's state at the call but in the pc and `x30` (the link),
+        `resume_premises_of_retEnd`'s `hr₀` (the checker entry values after the prologue),
+        `hsp0` and `hra`. **Open: `hmr`** (the callee's run up to its `rets` pause keeps the
+        caller's `RA.FK` memory). Layer 4b does not export it: its `Refines` private set is
+        `PrivA RB = RB.F`, which contains `RB.G = RA.FK` (`Nested.keep`), so an unmatched callee
+        write is only known to be in `RB.F`. Needed: layer 4b with the private set without the kept
+        addresses (`frameWG … (G := ∅)`: the frame and the callees' dead stack) — the base event
+        facts (`MoveCodeOk`/`moveLines_evs`, the prologue's `fplr_inF`, the `LSForm` stack
+        accesses) stated in the frame, the item lemmas (`ArmAllocMove/Mem/Loop/Branch/LS/LSX`,
+        `itemSim_lsCN`/`lsCL`) generic in the private set; then every write of the callee's precise
+        run avoids `RB.G` (matched writes avoid `RB.F` by `Img.shared`), its reads there are its
+        own (`OkPriv`), so the memory at `RA.FK` is kept (`TStep`: `applyR`, `Footprint`);
         (iv) the thread-wide private set (every activation's `PrivA` and the CLIF events' avoidance
         of it; with CLIF stack slots in callees the private sets of different activations overlap
         other activations' slots) and a linked machine dispatching on the program of the return
