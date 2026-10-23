@@ -1,5 +1,5 @@
 {
-  "updated_utc": "2026-10-23T06:26:29.775747+00:00",
+  "updated_utc": "2026-10-23T14:47:50.735985+00:00",
   "goal": 140,
   "complete": false,
   "inventory_warning": "Historical517root inventory is a source map, not current reachability/execution coverage. Reconcile generated source hashes and current typed scope before using partition counts.",
@@ -25,7 +25,7 @@
       "singleton returned i32/i64 division/remainder with original traps (512,6a80a595)",
       "scalar prefixes followed by returned i32/i64 division/remainder, source return+trap Domain and default consumers (521)"
     ],
-    "pending": "Independent exact-body outcome/value import boundary513; arbitrary-position/undemanded/sunk division and other colored effects; complete original widths/ABIs/control/memory/calls/exceptions; source/block/whole-driver simulation and Stock-only/downstream completeness.",
+    "pending": "Unused/consumed/multiple-division production activation; complete original widths/ABIs/control/memory/calls/exceptions; source/block/whole-driver simulation and Stock-only/downstream completeness. Optional exact-body import boundary #513 remains preserved separately.",
     "validated_pending_merge": {
       "class": "Single returned i32/i64 division/remainder, all four operations, arbitrary original values including real zero/overflow traps",
       "validated_code_head": "b1ef0c67f455eecb643883a414904016bab65d8f",
@@ -8618,8 +8618,12 @@
     "validated_head": "bc53c102d2bc03e2006daa8f76d8e92331075391",
     "receipt": "docs/research/stock-no-load-sink.md",
     "actual_helper_no_load_frame": true,
-    "source_driver_composition_complete": false,
+    "source_driver_composition_complete": true,
     "unused_division_production_active": false,
-    "evidence_backup": "3aee0321674d2c88b56437cde27d543f4cb5f0f7"
+    "evidence_backup": "3aee0321674d2c88b56437cde27d543f4cb5f0f7",
+    "source_class": "Existing scalar families and arbitrary division bodies; no-load source contexts",
+    "source_driver_validated_head": "66cff515c6a2dfc9efb82335be0711998f881e86",
+    "source_driver_receipt": "docs/research/stock-general-div-source.md",
+    "source_driver_evidence": "39e8973aa776b761ec6c62b772cc5d57cae0454e"
   }
 }
