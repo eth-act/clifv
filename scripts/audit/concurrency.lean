@@ -853,6 +853,24 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.IselCall.match_atCall
 #print axioms Concurrency.IselCall.vtrun_atCall
 #print axioms Concurrency.IselCall.isel_pauseC
-#print axioms Concurrency.IselCall.Witness.driverHypT_of
 #print axioms Concurrency.IselCall.Witness.atCall_csC -- witness: native_decide
 #print axioms Concurrency.IselCall.Witness.isel_pause_fC -- witness: native_decide
+-- the caller resumed after a call: layers 2, 3, 4a, 4b (#473, 2c)
+#print axioms Concurrency.IselResume.inSubset_nil
+#print axioms Concurrency.IselResume.mrStable_pin
+#print axioms Concurrency.IselResume.outArgsOk_pin
+#print axioms Concurrency.IselResume.memRelOk_pin
+#print axioms Concurrency.IselResume.match_pin
+#print axioms Concurrency.IselResume.driverHypT_mk
+#print axioms Concurrency.IselResume.driverHypT_of
+#print axioms Concurrency.IselResume.isel_resumeC
+#print axioms Concurrency.IselCall.Witness.isel_resume_fC -- witness: native_decide
+#print axioms Concurrency.CallSeg.resumeQW
+#print axioms Concurrency.CallSeg.resumeQ
+#print axioms Concurrency.CallResumeL.writeM_fun
+#print axioms Concurrency.CallResumeL.mstep_call
+#print axioms Concurrency.CallResumeL.alloc_call_vstep
+#print axioms Concurrency.CallResumeL.pmatch_call
+#print axioms Concurrency.CallResumeL.prep_vstep_next
+#print axioms Concurrency.CallResumeL.resume_layers
+#print axioms Concurrency.CallResumeL.Witness.resume_RC -- witness: native_decide

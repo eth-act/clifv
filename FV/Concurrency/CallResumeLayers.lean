@@ -202,4 +202,42 @@ theorem prep_vstep_next (H : PrepFacts vc vcp L ss ss') {sem : ISem CV ArmState}
 
 end prep
 
+/-! ## Layers 3, 4a and 4b together -/
+
+/-- **Layers 3, 4a and 4b after a call's return** (module doc). -/
+theorem resume_layers {R : RL} (hR : R.Wf) {vc : VCode} {L : Nat → Prop}
+    {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc R.vc L ss ss')
+    {ev : MInst → List CV → ArmState → List Ev} {c : CheckCtx} {ins : Array (Option AState)}
+    {a0 : AState} {r₀ : Reg → CV} (hc : CheckedAt R.vc R.rf c ins a0)
+    {x y : ArmState} {b k : Nat} {allocs : Array Loc} {its : List RItem} {m : Loc → CV}
+    {w : ArmState} {ρ : Nat → CV} {src : VConf CV ArmState}
+    (hP : PMatch vc R.vc R.sem ev L ss' src (.run ⟨b, k, ρ, w⟩))
+    (hA : MatchRun c ins ckeep r₀ ⟨b, .op k allocs :: its, m, w⟩ ⟨b, k, ρ, w⟩)
+    (hq : Q R x (.run ⟨b, .op k allocs :: its, m, w⟩)) {vb : VBlock} {info : CallInfo}
+    (hvb : R.vc.blocks[b]? = some vb) (hi : vb.insts[k]? = some (.call info))
+    (hk : k + 1 < vb.insts.size) {ops : Array Operand} (hops : (MInst.call info).operands = .ok ops)
+    (hsz : allocs.size = ops.size)
+    (hpres : ∀ l, ValidLoc l → Live R.rf l → (∀ c ∈ (MInst.call info).clobbers, l ≠ .reg c) →
+      locVal R.fr y l = locVal R.fr x l)
+    (hkeep : ∀ c ∈ (MInst.call info).clobbers, c ∈ calleeSaved →
+      ckeep c (regVal y c) = ckeep c (regVal x c))
+    (hpc : Arm.r .PC y = Arm.r .PC x + 4#64) (herr : Arm.r .ERR y = .None)
+    (hsp : spOf y = spOf x) (hmem : ∀ a, R.FK a → y.mem a = x.mem a)
+    (hprog : y.program = x.program) (X : ExtSem) :
+    ∃ b0 m' ρ', src = .run ⟨b0, k, ρ, w⟩ ∧
+      VStep vc (csem R.F R.ctx (xcallX X
+        ((((ops.zip allocs).toList.filter (·.1.isDef))).map fun p => locVal R.fr y p.2) y))
+        (.run ⟨b0, k, ρ, w⟩) (.run ⟨b0, k + 1, ρ', y⟩) ∧
+      PMatch vc R.vc R.sem ev L ss' (.run ⟨b0, k + 1, ρ', y⟩) (.run ⟨b, k + 1, ρ', y⟩) ∧
+      MatchRun c ins ckeep r₀ ⟨b, its, m', y⟩ ⟨b, k + 1, ρ', y⟩ ∧
+      Q R y (.run ⟨b, its, m', y⟩) := by
+  obtain ⟨m', hms, hst'⟩ := mstep_call hq hvb hi hk hops hsz hpres hkeep X y
+  obtain ⟨ρ', hv4, hA'⟩ := alloc_call_vstep hc hA hvb hi (fun u w0 r h => by
+    simp only [csem, xcallX, Option.map_some, Option.some.injEq] at h
+    subst h; rfl) hms
+  obtain ⟨b0, rfl, hLb, hσ⟩ := pmatch_call hP hvb hi
+  exact ⟨b0, m', ρ', rfl, prep_vstep_next H3 (driverSem_csem _ _ _).toDriverSemG hLb hσ hv4,
+    .blk hLb hσ, hA', CallSeg.resumeQW hR hq hvb hi hpc herr hsp hmem hprog hst'
+      (SameWorld.refl _ _)⟩
+
 end Concurrency.CallResumeL
