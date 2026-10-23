@@ -15,12 +15,14 @@ spill fallback, V4), `FV/Backend/Regalloc.lean`
 - [x] `lean-regalloc`: regalloc2 **0.15.2, unchanged crate**, Cranelift 0.136.1's options
       (`Algorithm::Ion`, `validate_ssa`), regalloc2's own checker run as a cross-check;
       `cargo build -p lean-regalloc` warning-free
-- [x] regalloc2 was the **default** allocator of `lean-backend`, `lean-backend-armrun`,
-      `scripts/lean-backend-filetests.sh`, `scripts/lean-backend-encode-check.sh` until
-      2026-10-18; since V4b-2 (#274) the default is the Lean allocator (`--regalloc lean`,
-      section "The Lean allocator"), and regalloc2 is optional (`--regalloc
-      regalloc2|regalloc2-small`; the default under `--stock-config`); the stack-slot allocator
-      is kept as `--regalloc stack`; `--regalloc spill` forces the V4 fallback
+- [x] regalloc2 is the **default** allocator of `lean-backend` (and so of `cargo fv`),
+      `scripts/lean-backend-filetests.sh` and `scripts/lean-backend-encode-check.sh`, as in
+      Cranelift (#551, 2026-10-23; it was until 2026-10-18, then V4b-2 (#274) made the Lean
+      allocator the default, `--regalloc lean`, section "The Lean allocator", which stays
+      available and is still `lean-backend-armrun`'s default); `--regalloc regalloc2-small`
+      stresses spills; the stack-slot allocator is kept as `--regalloc stack`; `--regalloc spill`
+      forces the V4 fallback. `lean-regalloc` is given the code in Cranelift's vreg numbering
+      (section "Cranelift's vreg numbering" below)
 - [x] every allocation is validated by the executable Lean checker `checkAlloc`; since V4
       (2026-10-05) a rejection (by it, or by regalloc2's checker), a failure of `lean-regalloc`
       or its absence is **no longer a compile error**: the function gets the spill allocation
@@ -236,6 +238,32 @@ Witnesses: `FVTest/Backend/FloatSpillT.lean` (`fMv`, float parameters/loads/stor
 `select`/`bitcast`/block parameters/return: all premises decided, `spillAcceptedT_mv`,
 `checkAlloc_mv`; the integer corollaries on `lowerWitness`'s source).
 
+## Cranelift's vreg numbering (#551, `FVTest/Backend/OracleOrder.lean`)
+
+regalloc2's answer depends on the vreg numbers of its input, not only on the code: bundles are
+created in vreg order and a bundle's probe into the register list starts at its index plus its
+first instruction (`ion/process.rs`). Cranelift numbers vregs as its lowering allocates them
+(192 reserved numbers, the CLIF values in layout order, then the temporaries of the backward
+instruction traversal, aliases resolved); the legacy lowering numbers its temporaries forward,
+so on identical code regalloc2 chose other registers than in stock Cranelift (e.g.
+`ldr x3`/`ldr x5` instead of `ldr x4`/`ldr x5`). `lean-backend` therefore gives `lean-regalloc`
+the Stock driver's code (`Stock.lower`, Cranelift's traversal and numbering, after the same
+dead cleanup and `prepare`) whenever its regalloc2 input is the prepared VCode's up to an
+injective vreg renaming (`OracleOrder.sameInput`: same CFG, per instruction the same operands
+with the same kinds/positions/constraints, clobbers and branch/return kind, same block
+parameters and branch arguments), else the prepared VCode itself. The answer names no vregs, so
+it is rebuilt against the prepared VCode (`buildRFunc vcp`) and checked by `checkAlloc` as
+before: nothing new is trusted, and no theorem changes. `FV_RA_DIAG=<file>` appends one line
+per function: the code regalloc2 was given (`stock`, or the first difference) and which
+allocation was lowered.
+
+Measured (`scripts/stock-crate-parity.py`, debug, byte-identical functions vs cg_clif):
+fv-demo 303 (Lean allocator) → 338 (regalloc2 on the legacy numbering) → 491 of 1372;
+survey a_arith/d_loops_iters/f_crypto/g_u128 293 → 523 of 1562. Every regalloc2 answer was
+accepted (0 spill fallbacks); in fv-demo 486 functions get the Stock numbering, and of the
+functions where the allocation is the only remaining cause none does: their code differs from
+Cranelift's (causes in #551).
+
 ## The Lean allocator (`leanAlloc`, V4b, `--regalloc lean`)
 
 `leanAlloc : VCode → Except String RFunc` (`FV/Backend/LinearScan.lean`, #57/#273) is a
@@ -250,8 +278,8 @@ the allocation of every in-scope function is accepted (`E2E.leanAlloc_accepted`:
 spill allocation), and `E2E.backend_correct_final_leanAlloc` is the end-to-end theorem for it
 (see "Proof" below).
 
-Since V4b-2 (#274) it is the default allocator of `lean-backend`, `lean-backend-armrun`, the
-filetest and encode-check scripts, and so of `cargo fv` (which no longer needs `lean-regalloc`).
+From V4b-2 (#274) to #551 it was the default allocator of `lean-backend`, the filetest and
+encode-check scripts, and so of `cargo fv`; it is still `lean-backend-armrun`'s default.
 For `cargo fv --keep-temps` (`cargo fv link-proof`, `--lean-link`, the binary check),
 `lean-backend` writes the answers to `$FV_RA_OUT` in the schema of `lean-regalloc`'s output
 (`allocateLeanAnswers`, `raAnswerJson`: every move as an edit before the next instruction,

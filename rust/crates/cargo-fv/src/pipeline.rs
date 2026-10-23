@@ -414,8 +414,8 @@ fn compile_one(
             .args(cfg.mode.backend_args())
             .args(["--personality", "rust_eh_personality"]);
         // `--keep-temps`: keep the register allocator's answers next to the object (`cargo fv
-        // link-proof` and `lean-link` rebuild the allocations from them in Lean): lean-backend's
-        // Lean allocator writes them to `$FV_RA_OUT` (`FVTest/Backend/AllocChoice.lean`)
+        // link-proof` and `lean-link` rebuild the allocations from them in Lean): lean-backend
+        // writes regalloc2's answers to `$FV_RA_OUT` (`FVTest/Backend/Main.lean`)
         if cfg.keep_link() {
             cmd.env(crate::linkproof::RA_OUT, out.with_extension("ra.json"));
         }

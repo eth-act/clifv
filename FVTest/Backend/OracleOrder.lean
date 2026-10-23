@@ -13,12 +13,14 @@ numbers its temporaries forward, so regalloc2 picks other registers than in stoc
 even on identical code.
 
 This module is the untrusted oracle side only: when the Stock driver's code (`Stock.lower`,
-Cranelift's traversal and numbering) is, after the same dead cleanup and `prepare`, the
-prepared VCode `vcp` up to a renaming of vregs (`alphaEquiv`), `lean-regalloc` is given the
-Stock-numbered code instead of `vcp`. regalloc2's answer names no vregs (per-operand
-allocations, edits at program points, spill slots), and the renamed code has the same operands
-in the same order with the same kinds, positions and constraints, so the answer is read back
-against `vcp` (`buildRFunc vcp`) and checked by `checkAlloc` on `vcp`, exactly as before.
+Cranelift's traversal and numbering), after the same dead cleanup and `prepare`, gives
+regalloc2 the same input as the prepared VCode `vcp` up to a renaming of vregs (`sameInput`:
+the same control-flow graph; per instruction the same operands in the same order with the same
+kinds, positions and constraints, the same clobbers and the same branch/return kind; the same
+block parameters and branch arguments), `lean-regalloc` is given the Stock-numbered code
+instead of `vcp`. regalloc2's answer names no vregs (per-operand allocations, edits at program
+points, spill slots), so it is read back against `vcp` (`buildRFunc vcp`) and checked by
+`checkAlloc` on `vcp`, exactly as before: nothing here is trusted.
 -/
 
 namespace Backend.OracleOrder
@@ -41,16 +43,18 @@ def matchOps (m inv : Std.HashMap Nat Nat) (a b : Array Operand) :
 def regOps (cls : Reg → Option (Nat × RegClass)) (rs : Array Reg) : Array Operand :=
   rs.filterMap fun r => (cls r).map fun (n, c) => ⟨n, c, .use, .early, .any⟩
 
-/-- Is `b` the code of `a` with its vregs renamed injectively (same blocks, labels and
-instructions; every instruction's operands in the same order with the same kinds, positions
-and constraints)? -/
-def alphaEquiv (a b : VCode) : Bool := Id.run do
+/-- Is regalloc2's input for `b` (`vcodeJson b`) that for `a` with its vregs renamed
+injectively? -/
+def sameInput (a b : VCode) : Bool := Id.run do
   if a.blocks.size != b.blocks.size then return false
+  match a.cfg, b.cfg with
+  | .ok (sa, pa), .ok (sb, pb) => if sa != sb || pa != pb then return false
+  | _, _ => return false
   let vr : Reg → Option (Nat × RegClass) := fun | .vreg n c => some (n, c) | _ => none
   let mut m : Std.HashMap Nat Nat := {}
   let mut inv : Std.HashMap Nat Nat := {}
   for (x, y) in a.blocks.zip b.blocks do
-    if x.label != y.label || x.insts.size != y.insts.size then return false
+    if x.insts.size != y.insts.size then return false
     if x.params.size != y.params.size || x.branchArgs.size != y.branchArgs.size then return false
     match matchOps m inv (regOps vr x.params) (regOps vr y.params) with
     | none => return false
@@ -59,22 +63,16 @@ def alphaEquiv (a b : VCode) : Bool := Id.run do
     | none => return false
     | some (m', inv') => m := m'; inv := inv'
     for (i, j) in x.insts.zip y.insts do
+      if i.isTerminator != j.isTerminator || i.isRet != j.isRet || i.clobbers != j.clobbers then
+        return false
       match i.operands, j.operands with
       | .ok oi, .ok oj =>
         match matchOps m inv oi oj with
         | none => return false
         | some (m', inv') => m := m'; inv := inv'
       | _, _ => return false
-  -- the renaming maps every instruction, parameter list and argument list of `a` onto `b`'s
-  let ren : Reg → Reg := fun
-    | .vreg n c => .vreg (m[n]?.getD n) c
-    | r => r
   let cls (v : VCode) (n : Nat) : Option RegClass := v.classes[n]?
-  for (n, n') in m.toList do
-    if cls a n != cls b n' then return false
-  pure <| (a.blocks.zip b.blocks).all fun (x, y) =>
-    x.insts.map (MInst.mapRegs ren) == y.insts &&
-    x.params.map ren == y.params && x.branchArgs.map ren == y.branchArgs
+  pure <| m.toList.all fun (n, n') => cls a n == cls b n'
 
 /-- Diagnostics (`FV_RA_DIAG`): the first instruction where `a` and `b` differ with their vregs
 erased (`none`: no such instruction, the difference is in the vreg structure). -/
@@ -104,7 +102,7 @@ def oracleCodeWhy (f : Option Clif.Function) (deadCleanup : Bool) (vcp : VCode) 
       let vc := { r.code with name := vcp.name }
       let vc := if deadCleanup then DeadCleanup.prune vc else vc
       match prepare vc with
-      | .ok s => if alphaEquiv vcp s then (s, "stock") else (vcp, s!"different code: {firstDiff vcp s}")
+      | .ok s => if sameInput vcp s then (s, "stock") else (vcp, s!"different code: {firstDiff vcp s}")
       | .error e => (vcp, s!"prepare: {e}")
 
 def oracleCode (f : Option Clif.Function) (deadCleanup : Bool) (vcp : VCode) : VCode :=

@@ -14,13 +14,15 @@ import FV.E2E.RegLevelUTry
 `lake exe lean-backend <in.clif> <out.o|out.s> [--traps <out.json>] [--rules <out.txt>]
 [--dump <dir>] [--regalloc lean|regalloc2|spill|stack|regalloc2-small] [--personality <sym>]
 [--opt [--opt-* options]]`: compile every function of a `.clif` file with the
-Lean backend (`FV/Backend.lean`). Register allocation: `lean` (default; the Lean allocator
-`leanAlloc`, `FV/Backend/LinearScan.lean`, every allocation validated by the Lean checker
-`checkAlloc` with the spill allocation as fallback, `docs/contracts/regalloc.md`; with
-`$FV_RA_OUT` set, its answers are written there, `FVTest/Backend/AllocChoice.lean`),
-`regalloc2` (the external `lean-regalloc` oracle, `$LEAN_REGALLOC` or
-`rust/target/release/lean-regalloc`, validated the same way; the default under
-`--stock-config`), `spill` (the fallback for every function), `stack` (the
+Lean backend (`FV/Backend.lean`). Register allocation: `regalloc2` (default, as Cranelift: the
+external `lean-regalloc` oracle, `$LEAN_REGALLOC` or `rust/target/release/lean-regalloc`, given
+the code in Cranelift's vreg numbering where the Stock driver's code is the same up to renaming,
+`FVTest/Backend/OracleOrder.lean`; every allocation validated by the Lean checker `checkAlloc`
+with the spill allocation as fallback, `docs/contracts/regalloc.md`; with `$FV_RA_OUT` set, the
+answers are written there; with `$FV_RA_DIAG` set, one line per function is appended there: the
+code regalloc2 was given and the allocation lowered), `lean` (the Lean allocator `leanAlloc`,
+`FV/Backend/LinearScan.lean`, validated the same way, `FVTest/Backend/AllocChoice.lean`),
+`spill` (the fallback for every function), `stack` (the
 stack-slot baseline), or `regalloc2-small` (regalloc2 with the 10-register stress environment
 `smallEnv`, for testing spill code). If the output path ends in `.o`, write an ELF relocatable object encoded
 by the Lean encoder (`FV/Backend/{Encode,Obj}.lean`, no assembler); otherwise write assembly
@@ -81,7 +83,7 @@ structure Opts where
   traps : Option String := none
   rules : Option String := none
   dump : Option String := none
-  /-- `--regalloc`; default `lean` (`regalloc2` under `--stock-config`). -/
+  /-- `--regalloc`; default `regalloc2`. -/
   regalloc : Option String := none
   opt : Option Opt.Config := none
   personality : Option String := none
