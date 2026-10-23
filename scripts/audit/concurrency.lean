@@ -880,3 +880,6 @@ import FVTest.Concurrency.LitmusFull
 #print axioms Concurrency.CallLayers.isel_alloc_refinesC
 #print axioms Concurrency.CallResumeL.Witness.prepC -- witness: native_decide
 #print axioms Concurrency.CallResumeL.Witness.isel_alloc_fC -- witness: native_decide
+#print axioms Concurrency.CallLayers.coveredCodeC_of_lsC
+#print axioms Concurrency.CallLayers.srcStep_of_mstepC
+#print axioms Concurrency.CallLayers.arm_isel_refinesC

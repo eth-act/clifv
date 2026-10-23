@@ -1,5 +1,8 @@
 import FV.Concurrency.IselCall
 import FV.Concurrency.ThreadCompose
+import FV.Concurrency.ThreadProgress
+import FV.Concurrency.RealizeCompiled
+import FV.Concurrency.ArmAllocLinked
 
 /-!
 # Layers 2, 3 and 4a from related configurations, pausing at calls (#473, (3))
@@ -18,7 +21,16 @@ again (the callee's entry and the caller's resume start from them). So:
   realizing the whole run (as `isel_alloc_refinesR`); or, with an external semantics without
   `call` step (`IselCall.NoCall`), **the whole run, ending at a call statement whose CLIF state
   is related to the run's last configuration by all three relations** (`prep_run`, `alloc_run`,
-  `IselCall.isel_refinesC`, `match_atCall`, `vtrun_atCall`).
+  `IselCall.isel_refinesC`, `match_atCall`, `vtrun_atCall`);
+* `CoveredCodeC`/`srcStep_of_mstepC`: `ThreadProgress.CoveredCode`/`srcStep_of_mstep` admitting
+  calls, whose allocated item has no step when the external semantics has none;
+* **`arm_isel_refinesC`** (all layers, on a linked machine agreeing with the activation's step
+  at its lines other than `ret`, `ArmAllocLinked.AgreesAt`): from `Q ∧ AInv` and the three
+  relations at a segment's start, every precise run under `OkPriv` realizes (`Refines Maps`,
+  private set `PrivA`) a CLIF thread run on a prefix: the whole run, or ending where the CLIF
+  thread stops, or ending (all of layer 4b's prefix) at a state related by `RelQ` to the
+  allocated code at a `call` item, the CLIF state at the call statement related to it by the
+  three relations, or at a `rets` item (with layer 2's end there).
 -/
 
 namespace Concurrency.CallLayers
@@ -106,5 +118,162 @@ theorem isel_alloc_refinesC (H : DriverHypT f vc ctx st0 R gn bl A (csem F fc X)
     | halt => cases hpE
 
 end
+
+/-! ## Layer 4b -/
+
+open ArmAllocThread
+
+/-- **Every instruction of the activation's code is covered or a call.** -/
+def CoveredCodeC (R : RL) : Prop :=
+  ∀ (b : Nat) (vb : VBlock) (k : Nat) (i : MInst), R.vc.blocks[b]? = some vb →
+    vb.insts[k]? = some i → (∃ info, i = .call info) ∨ SegFoot.Covered R.ctx i
+
+theorem coveredCodeC_of_lsC {R : RL} (h : MemScopeLSC R) : CoveredCodeC R := fun b vb k i hb hi =>
+  (h b vb k i hb hi).elim (fun h => .inr (ThreadProgress.covered_of_memFormL h)) fun h =>
+    h.elim (fun h => .inr (ThreadProgress.covered_of_brForm h)) fun h =>
+      h.elim (fun h => .inr (ThreadProgress.covered_of_formOk h.1)) .inl
+
+/-- **The allocated code's progress, as a thread, admitting calls** (`srcStep_of_mstep`): with an
+external semantics without `call` step, a step of the allocated code is not a call. -/
+theorem srcStep_of_mstepC {R : RL} (hcov : CoveredCodeC R) (hgv : R.gv = fun _ _ => False)
+    (hX : TlsMemFree R.X) (hX0 : NoCall R.X) {s : ArmState}
+    {c c' : MConf CV ArmState} (hq : Q R s c) (hs : MStep R.vc R.sem ckeep R.rf c c') :
+    ∃ evs c'', SrcStep R c evs c'' := by
+  cases hs with
+  | move => exact ⟨[], _, .move⟩
+  | @op b k allocs its m w vb i ops outs outs' w' ctl m2 c' hvb hi hops hsz hsem hlen hho hclob
+      hnext =>
+    rcases hcov b vb k i hvb hi with ⟨info, rfl⟩ | ⟨hnc, hnt, hcv⟩
+    · exfalso
+      have hsem' := hsem
+      simp only [RL.sem, hgv, ThreadCompose.csemV_none, csem] at hsem'
+      rw [hX0] at hsem'
+      cases hsem'
+    have hstr := q_stRel hq
+    have herrw : Arm.r .ERR w = .None := by
+      rw [← hstr.world.1 .ERR (by simp [Masked]), hstr.err]
+    have halw : CheckSPAlignment w :=
+      align_of_sp (show Arm.r (.GPR 31#5) w = Arm.r (.GPR 31#5) s from
+        (hstr.world.1 (.GPR 31#5) (by simp [Masked])).symm) hstr.align
+    obtain ⟨regs, -, hsz', -, huses⟩ := q_regs hq hvb hi hops
+    have hst : i.isCtl = false →
+        csemWF R.ctx i (itemUses ops allocs m) = true ∧ CheckSPAlignment w := by
+      intro hctl
+      have hfo : FormOk R.ctx i = true := by
+        rcases hcv with h | h
+        · rw [hctl] at h; cases h
+        · exact h
+      refine ⟨?_, halw⟩
+      rw [huses]
+      simp [csemWF, hfo, hops, useVals_length ops regs hsz']
+    have hfoot := ifoot_csem (F := R.F) (ctx := R.ctx) (uses := itemUses ops allocs m) hX herrw
+      hnc hnt hst
+    have hsemC : csem R.F R.ctx R.X i (itemUses ops allocs m) w = some (outs, w', ctl) := by
+      rw [← R.sem_eq hnc hnt]; exact hsem
+    have hp := patch_of_agrees (ThreadProgress.agrees_cEvs herrw hfoot hsemC)
+    refine ⟨cEvs R.F R.ctx i (itemUses ops allocs m) w, c', .op hvb hi hops ?_ ?_ ?_⟩
+    · rw [hp]
+    · rw [hp]
+      unfold IFoot at hfoot ⊢
+      simp only [R.sem_eq hnc hnt]
+      exact hfoot
+    · rw [hp]
+      exact .op hvb hi hops hsz hsem hlen hho hclob hnext
+
+/-- **All layers from related configurations, pausing at calls** (module doc). -/
+theorem arm_isel_refinesC {RA : RL} (hR : RA.Wf) (hsc : MemScopeLSC RA)
+    (hgv : RA.gv = fun _ _ => False) {g : ArmState → ArmState} (hg : AgreesAt RA g)
+    {f : Clif.Function} {vc : VCode} {ctx : Ctx} {st0 : LState} {R : Reg → Reg}
+    {gn : Nat → Nat} {bl : List BLow} {A : Nat → Nat → List Clif.ValueId} {MR : MemRelT}
+    {env : Clif.Env} {p : Clif.Program} {slots : List (Clif.SlotId × Nat)} {sb : Nat}
+    {syms : String → Option Nat}
+    (H : DriverHypT f vc ctx st0 R gn bl A (csem RA.F RA.ctx RA.X) MR env p)
+    (hchk : threadCheckBlC f bl = true) (hMR : MemRelOk RA.F sb syms f MR)
+    (hMRw : ∀ sl cm w, MR sl cm w → Arm.r .ERR w = .None ∧ Arm.CheckSPAlignment w)
+    (hX : TlsMemFree RA.X) (hX0 : NoCall RA.X)
+    {L : Nat → Prop} {ss ss' : Array (Array Nat)} (H3 : PrepFacts vc RA.vc L ss ss')
+    {cc : CheckCtx} {ins : Array (Option AState)} {a0 : AState}
+    (hc : CheckedAt RA.vc RA.rf cc ins a0) {r₀ : Reg → CV}
+    {s : Clif.State} {vV vP : VState CV ArmState} {cM : MState CV ArmState} {x : ArmState}
+    {mon : Mon}
+    (hm2 : Match f ctx R gn bl A MR slots s vV)
+    (hm3 : PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV) (.run vP))
+    (hm4 : MatchRun cc ins ckeep r₀ cM vP) (hq : Q RA x (.run cM)) (hA : AInv RA (.run cM))
+    {ls : List Lab} {t' : ArmState × Mon} (hr : PRun Policy.arm g (OkPriv RA) (x, mon) ls t') :
+    ∃ k trS t ψ, k ≤ ls.length ∧ CRun env p (.run s) trS t ∧
+      Refines Maps (PrivA RA) (MonPair (evTr (ls.take k))) trS (conv (evTr (ls.take k))) ψ ∧
+      (k = ls.length ∨ Stop env p t ∨
+        (∃ tE cE, PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧ RelQ RA tE cE ∧
+          AtRets RA cE) ∨
+        (∃ tE s' vV' vP' cM', PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) tE ∧
+          RelQ RA tE (.run cM') ∧ Pause RA (.run cM') ∧ t = .run s' ∧ AtCallS s' ∧
+          Match f ctx R gn bl A MR slots s' vV' ∧
+          PMatch vc RA.vc (csem RA.F RA.ctx RA.X) (cEvs RA.F RA.ctx) L ss' (.run vV') (.run vP') ∧
+          MatchRun cc ins ckeep r₀ cM' vP')) := by
+  have hsem : RA.sem = csem RA.F RA.ctx RA.X := by
+    show csemV RA.gv RA.F RA.ctx RA.X = _
+    rw [hgv, csemV_none]
+  obtain ⟨nA, trM, cE, ψA, hnA, hM, hAr, hend⟩ := arm_alloc_refines_lsCL hR hsc hg hq hA hr
+  rw [hsem] at hM
+  obtain ⟨m, trS, t, ψ, hm, hrun, href, hendm⟩ :=
+    isel_alloc_refinesC H hchk hMR hMRw hX hX0 H3 hc hm2 hm3 hm4 hM
+  have h1 : ∀ j (hj : j < (conv (evTr (ls.take nA))).length),
+      (conv (evTr (ls.take nA)))[j].length ≤ 1 := by
+    intro j hj
+    have hl := prun_len hr j (by simp [conv, evTr] at hj ⊢; omega)
+    simp only [conv, evTr, List.getElem_map, List.length_map, List.getElem_take] at hl ⊢
+    exact hl
+  obtain ⟨k, hk, hAk, hkfull⟩ := Refines.take hAr h1 m
+  have hlenA : (conv (evTr (ls.take nA))).length = nA := by
+    simp [conv, evTr]; omega
+  have htk : (conv (evTr (ls.take nA))).take k = conv (evTr (ls.take k)) := by
+    simp only [conv, evTr, ← List.map_take, List.take_take]
+    rw [Nat.min_eq_left (by omega)]
+  rw [htk] at hAk
+  have hm' : (conv trM).take m = conv (trM.take m) := by simp [conv, List.map_take]
+  rw [hm'] at hAk
+  have href2 := Refines.congr (Refines.trans href hAk) (MK' := Maps) (P' := PrivA RA)
+    (fun a c ⟨b, h1, h2⟩ => h2 ▸ h1)
+    (fun l => ⟨fun h => by rcases h with h | h; exact h.elim; exact h, fun h => .inr h⟩)
+  have hPA : ∀ {t : ArmState × Mon} {n : Nat}, n ≤ ls.length → k = n →
+      PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take n) t →
+      PRun Policy.arm g (OkPriv RA) (x, mon) (ls.take k) t := fun _ e h => e ▸ h
+  have hpair : ∀ a b, (evAt (conv (evTr (ls.take k))) a).isSome →
+      (evAt (conv (evTr (ls.take k))) b).isSome →
+      (MonPair (evTr (ls.take nA)) a b ↔ MonPair (evTr (ls.take k)) a b) := by
+    intro a b _ hb
+    refine RealizeCompiled.monPair_take (by omega : k ≤ nA) ?_
+    obtain ⟨hb1, -⟩ := evAt_isSome (show (evAt (conv (evTr (ls.take k))) (b.1, b.2)).isSome from hb)
+    have := hb1; simp [conv, evTr] at this; omega
+  refine ⟨k, trS, t, _, by omega, hrun, RealizeCompiled.Refines.pairT_congr href2 hpair, ?_⟩
+  rcases hendm with ⟨⟨h, cM', hmst⟩ | h, -⟩ | ⟨hfm, s', vV', vP', cM', ht, hat, rfl, hm2', hm3', hm4'⟩
+  · have hk' := hkfull (by simp [conv, h])
+    rw [hlenA] at hk'
+    rcases hend with h' | ⟨tE, hpre, hrq, hD | hcall | hrets⟩
+    · exact .inl (hk'.trans h')
+    · exfalso
+      rw [← hsem] at hmst
+      rcases hD with ⟨vals, m', w', rfl⟩ | ⟨w', rfl⟩ | hD
+      · cases hmst
+      · cases hmst
+      · obtain ⟨evs, c'', hs⟩ := srcStep_of_mstepC (coveredCodeC_of_lsC hsc) hgv hX hX0 hrq.1 hmst
+        exact hD evs c'' hs
+    · exfalso
+      obtain ⟨b, k0, allocs, its, mm, ww, vb, info, rfl, hvb, hi⟩ := hcall
+      cases hmst with
+      | op hvb1 hi1 _ _ hsem1 =>
+        rw [hvb] at hvb1; cases hvb1
+        rw [hi] at hi1; cases hi1
+        simp only [csem] at hsem1
+        rw [hX0] at hsem1
+        cases hsem1
+    · exact .inr (.inr (.inl ⟨tE, cE, hPA hnA hk' hpre, hrq, hrets⟩))
+  · exact .inr (.inl h)
+  · have hk' := hkfull (by simp [conv, hfm])
+    rw [hlenA] at hk'
+    rcases hend with h' | ⟨tE, hpre, hrq, hP⟩
+    · exact .inl (hk'.trans h')
+    · exact .inr (.inr (.inr ⟨tE, s', vV', vP', cM', hPA hnA hk' hpre, hrq, hP, ht, hat, hm2', hm3',
+        hm4'⟩))
 
 end Concurrency.CallLayers
