@@ -4,9 +4,9 @@ import FV.Backend.Proof.LowerLemmas
 import FV.Opt.Proof.SemFacts
 
 /-!
-Semantic omission obligations. The actual stock guard permits nontrapping loads
-as well as memory-free arithmetic. Omitting their code preserves memory and
-traps, while ignoring their source results preserves demanded mapped values.
+Semantic omission obligations. The actual stock guard permits memory-free arithmetic
+(every load is lowered, as in cranelift-codegen 0.135.0, #588). Omitting its code preserves
+memory and traps, while ignoring its source results preserves demanded mapped values.
 This is a local simulation step, not yet the whole backward-schedule proof.
 The Opt.SemFacts dependency intentionally shares existing source-semantics
 lemmas; these facts do not depend on optimizing the input function.
@@ -15,15 +15,6 @@ lemmas; these facts do not depend on optimizing the input function.
 namespace Backend.Stock.Proof
 
 open Backend.Proof Backend.Proof.Driver
-
-private theorem load_noTrap (mem : Clif.Mem) (flags : Clif.MemFlags)
-    (hflags : flags.trapCode = none) (addr n w : Nat) (c : Clif.TrapCode) :
-    mem.load flags addr n w ≠ .trap c := by
-  simp only [Clif.Mem.load]
-  unfold Clif.Mem.checkAccess
-  split
-  · split <;> simp
-  · simp [hflags]
 
 /-- Every source operation eligible for omission preserves memory on successful
 evaluation and cannot produce a trap. Undefined/nontrapping invalid inputs may
@@ -36,19 +27,6 @@ theorem mustLower_quiet {fr : Clif.Frame} {mem : Clif.Mem} {inst : Clif.Inst}
     | (simp [mustLower] at hm; done)
     | (apply Opt.evalInst_removable; rfl)
     | skip
-  case load op ty flags p offset =>
-    have hflags : flags.trapCode = none := by
-      cases hf : flags.trapCode <;> simp [mustLower, Clif.MemFlags.notrap, hf] at hm ⊢
-    refine ⟨fun vals mem' h => ?_, fun c h => ?_⟩
-    · simp only [Clif.evalInst, Opt.Res.bind_eq_ok, Opt.Res.pure_eq_ok,
-        Prod.mk.injEq] at h
-      obtain ⟨_, _, _, _, _, _, _, rfl⟩ := h
-      rfl
-    · simp only [Clif.evalInst, Opt.Res.bind_eq_trap, Opt.Frame.get_ne_trap,
-        Opt.Res.check_ne_trap, Opt.Res.pure_ne_trap,
-        false_or, and_false, exists_false, or_false] at h
-      obtain ⟨_, _, _, _, hload⟩ := h
-      exact load_noTrap mem flags hflags _ _ _ c hload
   all_goals
     refine ⟨fun vals mem' h => ?_, fun c h => ?_⟩ <;>
       simp only [Clif.evalInst, Clif.Frame.getAs, Opt.Res.bind_eq_ok,
@@ -123,14 +101,14 @@ theorem scan_omitted_semantic {ctx : Ctx} {block i ti : Nat} {isBranch : Bool}
     ValuesHeld.omittedResults (by simpa only [hinfo] using facts.2.2.1) hset,
     facts.2.2.2.2.2.2.2.1⟩
 
-/-! The source executes a real nontrapping load, yielding 9. Its result v0 is
-ignored, while demanded pointer v1 remains held by vreg 193. The machine does
-not have to materialize 9 into vreg 192. -/
+/-! The source executes an `iconst`, yielding 9. Its result v0 is ignored, while demanded
+pointer v1 remains held by vreg 193. The machine does not have to materialize 9 into vreg 192.
+(Until #588 this was an unused `notrap` load, which the stock driver no longer omits.) -/
 
-private def omittedLoad : Clif.Inst := .load .load .i8 { trapCode := none } 1 0
+private def omittedLoad : Clif.Inst := .iconst .i8 9
 
 private def omittedFrame : Clif.Frame := {
-  func := unusedCtx.func
+  func := omitCtx.func
   regs := fun x => if x = 1 then some (.ofInt .i64 100) else none
   slots := []
   body := [⟨[0], omittedLoad⟩]
@@ -152,7 +130,7 @@ private def omittedStep : Step := omittedOutput.step.getD default
 
 private def omittedRF (n : Nat) : CV := if n = 193 then 100 else 0
 
-private theorem omitted_held : ValuesHeld (Demanded omittedInput) unusedCtx omittedFrame omittedRF := by
+private theorem omitted_held : ValuesHeld (Demanded omittedInput) omitCtx omittedFrame omittedRF := by
   intro x _ v hv
   by_cases hx : x = 1
   · subst x
@@ -161,7 +139,7 @@ private theorem omitted_held : ValuesHeld (Demanded omittedInput) unusedCtx omit
     exact ⟨193, rfl, by unfold VHolds; decide⟩
   · simp [omittedFrame, hx] at hv
 
-private theorem omitted_scan : scanInstruction unusedCtx 0 0 1 false omittedInput =
+private theorem omitted_scan : scanInstruction omitCtx 0 0 1 false omittedInput =
     .ok omittedOutput := rfl
 
 private theorem omitted_eval : Clif.evalInst omittedFrame omittedMem omittedLoad =
@@ -185,23 +163,23 @@ theorem mustLower_outcome_quiet_witness :
 
 theorem ValuesHeld.omittedResults_witness :
     omittedFrame.regs.setMany [0] [Clif.Val.ofInt .i8 9] = some omittedRegs ∧
-    (ValuesHeld (Demanded omittedInput) unusedCtx { omittedFrame with regs := omittedRegs } omittedRF ↔
-      ValuesHeld (Demanded omittedInput) unusedCtx omittedFrame omittedRF) ∧
-    ValuesHeld (Demanded omittedInput) unusedCtx { omittedFrame with regs := omittedRegs } omittedRF ∧
+    (ValuesHeld (Demanded omittedInput) omitCtx { omittedFrame with regs := omittedRegs } omittedRF ↔
+      ValuesHeld (Demanded omittedInput) omitCtx omittedFrame omittedRF) ∧
+    ValuesHeld (Demanded omittedInput) omitCtx { omittedFrame with regs := omittedRegs } omittedRF ∧
     omittedRegs 0 = some (.ofInt .i8 9) ∧ ¬VHolds (.ofInt .i8 9) (omittedRF 192) := by
-  have hi := ValuesHeld.omittedResults (ctx := unusedCtx) (fr := omittedFrame) (ρ := omittedRF)
+  have hi := ValuesHeld.omittedResults (ctx := omitCtx) (fr := omittedFrame) (ρ := omittedRF)
     (st := omittedInput) (results := [0]) (vals := [.ofInt .i8 9]) (regs := omittedRegs)
     (by intro x hx; simp only [List.mem_singleton] at hx; subst x; rfl) rfl
   exact ⟨rfl, hi, hi.mpr omitted_held, rfl, by unfold VHolds; decide⟩
 
 theorem scan_omitted_semantic_witness :
-    scanInstruction unusedCtx 0 0 1 false omittedInput = .ok omittedOutput ∧
+    scanInstruction omitCtx 0 0 1 false omittedInput = .ok omittedOutput ∧
     instOutcome Clif.Env.empty { funcs := [] } omittedFrame omittedMem omittedLoad =
       .ok ([Clif.Val.ofInt .i8 9], omittedMem) ∧
     (∀ c, instOutcome Clif.Env.empty { funcs := [] } omittedFrame omittedMem omittedLoad ≠ .trap c) ∧
-    ValuesHeld (Demanded omittedInput) unusedCtx { omittedFrame with regs := omittedRegs } omittedRF ∧
+    ValuesHeld (Demanded omittedInput) omitCtx { omittedFrame with regs := omittedRegs } omittedRF ∧
     omittedOutput.emitted = #[] := by
-  have h := scan_omitted_semantic (step := omittedStep) (info := unusedCtx.insts[0]!)
+  have h := scan_omitted_semantic (step := omittedStep) (info := omitCtx.insts[0]!)
     (ρ := omittedRF) (regs := omittedRegs) (env := Clif.Env.empty) (p := { funcs := [] })
     (fr := omittedFrame) (cm := omittedMem) (vals := [.ofInt .i8 9])
     omitted_scan rfl rfl rfl rfl rfl
